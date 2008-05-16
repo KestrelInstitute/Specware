@@ -12,190 +12,187 @@
 	    (:optional ";;   $TESTDIR/lisp/WasCausingSegFault.lisp")
 	    (:optional "creating directory: $TESTDIR/lisp/")
 	    (:optional ";; Directory $TESTDIR/lisp/ does not exist, will create.")
-	    (:optional 
-	     "WARNING: Non-constructive def for STRING-SPE:explode"
-	     "WARNING: Non-constructive def for FUNCTIONS::injective?"
-	     "WARNING: Non-constructive def for FUNCTIONS::surjective?"
-	     "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1"
-	     "WARNING: Non-constructive def for INTEGER-SPE:pred"
-	     "WARNING: Non-constructive def for INTEGER-SPE:positive?"
-	     "WARNING: Non-constructive def for INTEGERAUX::|!-|"
-	     "WARNING: Non-constructive def for INTEGER-SPE:+-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:*-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:div-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:divides-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:gcd-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:lcm-2"
-	     "WARNING: Non-constructive def for CHAR-SPE:ord"
-	     ";;; Suppressing generated def for BOOLEAN-SPE:show"
-	     ";;; Suppressing generated def for CHAR-SPE:ord"
-	     ";;; Suppressing generated def for INTEGERAUX::|!-|"
-	     ";;; Suppressing generated def for INTEGER-SPE:+-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:--2"
-	     ";;; Suppressing generated def for INTEGER-SPE:positive?"
-	     ";;; Suppressing generated def for INTEGER-SPE:<-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:<=-2"
-	     ";;; Suppressing generated def for CHAR-SPE:isLowerCase"
-	     ";;; Suppressing generated def for CHAR-SPE:isUpperCase"
-	     ";;; Suppressing generated def for CHAR-SPE:isAlpha"
-	     ";;; Suppressing generated def for CHAR-SPE:isNum"
-	     ";;; Suppressing generated def for CHAR-SPE:isAlphaNum"
-	     ";;; Suppressing generated def for CHAR-SPE:isAscii"
-	     ";;; Suppressing generated def for CHAR-SPE:show"
-	     ";;; Suppressing generated def for CHAR-SPE:toLowerCase"
-	     ";;; Suppressing generated def for CHAR-SPE:toString"
-	     ";;; Suppressing generated def for CHAR-SPE:toUpperCase"
-	     ";;; Suppressing generated def for INTEGER-SPE:*-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:div-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:div"
-	     ";;; Suppressing generated def for INTEGER-SPE:divides-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:divides"
-	     ";;; Suppressing generated def for INTEGER-SPE:gcd-2"
-	     ";;; Suppressing generated def for STRING-SPE:explode"
-	     ";;; Suppressing generated def for INTEGER-SPE:rem-2"
-	     ";;; Suppressing generated def for STRING-SPE:concat-2"
-	     ";;; Suppressing generated def for STRING-SPE:^-2"
-	     ";;; Suppressing generated def for NAT-SPE:natToString"
-	     ";;; Suppressing generated def for INTEGER-SPE:intToString"
-	     ";;; Suppressing generated def for INTEGER-SPE:lcm-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:multipleOf-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:multipleOf"
-	     ";;; Suppressing generated def for INTEGER-SPE:pred"
-	     ";;; Suppressing generated def for STRING-SPE:|!length|"
-	     ";;; Suppressing generated def for STRING-SPE:substring-3"
-	     ";;; Suppressing generated def for NAT-SPE:stringToNat"
-	     ";;; Suppressing generated def for INTEGER-SPE:stringToInt"
-	     ";;; Suppressing generated def for INTEGER-SPE:toString"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!*|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!+|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!-|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!<=|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!<|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!gcd|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!lcm|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!rem|"
-	     ";;; Suppressing generated def for NAT-SPE:toString"
-	     ";;; Suppressing generated def for STRING-SPE:++-2"
-	     ";;; Suppressing generated def for STRING-SPE:compare-2"
-	     ";;; Suppressing generated def for STRING-SPE:<-2"
-	     ";;; Suppressing generated def for STRING-SPE:<=-2"
-	     ";;; Suppressing generated def for STRING-SPE:^"
-	     ";;; Suppressing generated def for STRING-SPE:all-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:all"
-	     ";;; Suppressing generated def for STRING-SPE:compare"
-	     ";;; Suppressing generated def for STRING-SPE:concat"
-	     ";;; Suppressing generated def for STRING-SPE:concatList"
-	     ";;; Suppressing generated def for STRING-SPE:exists-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:leq-2"
-	     ";;; Suppressing generated def for STRING-SPE:leq"
-	     ";;; Suppressing generated def for STRING-SPE:lt-2"
-	     ";;; Suppressing generated def for STRING-SPE:lt"
-	     ";;; Suppressing generated def for STRING-SPE:map-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:newline"
-	     ";;; Suppressing generated def for STRING-SPE:sub-2"
-	     ";;; Suppressing generated def for STRING-SPE:sub"
-	     ";;; Suppressing generated def for STRING-SPE:substring"
-	     ";;; Suppressing generated def for STRING-SPE:toScreen"
-	     ";;; Suppressing generated def for STRING-SPE:translate-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:translate"
-	     ";;; Suppressing generated def for STRING-SPE:writeLine"
-	     ";;; Suppressing generated def for STRING-SPE:|!<=|"
-	     ";;; Suppressing generated def for STRING-SPE:|!<|"
-	     ";;; Suppressing generated def for STRING-SPE:|!exists|"
-	     ";;; Suppressing generated def for STRING-SPE:|!map|")
+	    (:optional "WARNING: Non-constructive def for String-Spec::explode")
+	    (:optional "WARNING: Non-constructive def for Functions::injective?")
+	    (:optional "WARNING: Non-constructive def for Functions::surjective?")
+	    (:optional "WARNING: Non-constructive def for Functions::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::pred")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::positive?")
+	    (:optional "WARNING: Non-constructive def for IntegerAux::|!-|")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::+-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::*-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::div-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::divides-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::gcd-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::lcm-2")
+	    (:optional "WARNING: Non-constructive def for Char-Spec::ord")
+	    (:optional ";;; Suppressing generated def for Boolean-Spec::show")
+	    (:optional ";;; Suppressing generated def for Char-Spec::ord")
+	    (:optional ";;; Suppressing generated def for IntegerAux::|!-|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::+-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::--2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::positive?")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::<-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::<=-2")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isLowerCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isUpperCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAlpha")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isNum")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAlphaNum")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAscii")
+	    (:optional ";;; Suppressing generated def for Char-Spec::show")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toLowerCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toString")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toUpperCase")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::*-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::div-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::div")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::divides-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::divides")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::gcd-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::explode")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::rem-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::concat-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::^-2")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::natToString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::intToString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::lcm-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::multipleOf-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::multipleOf")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::pred")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!length|")
+	    (:optional ";;; Suppressing generated def for String-Spec::substring-3")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::stringToNat")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::stringToInt")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::toString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!*|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!+|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!-|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!<=|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!<|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!gcd|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!lcm|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!rem|")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::toString")
+	    (:optional ";;; Suppressing generated def for String-Spec::++-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::compare-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::<-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::<=-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::^")
+	    (:optional ";;; Suppressing generated def for String-Spec::all-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::all")
+	    (:optional ";;; Suppressing generated def for String-Spec::compare")
+	    (:optional ";;; Suppressing generated def for String-Spec::concat")
+	    (:optional ";;; Suppressing generated def for String-Spec::concatList")
+	    (:optional ";;; Suppressing generated def for String-Spec::exists-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::leq-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::leq")
+	    (:optional ";;; Suppressing generated def for String-Spec::lt-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::lt")
+	    (:optional ";;; Suppressing generated def for String-Spec::map-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::newline")
+	    (:optional ";;; Suppressing generated def for String-Spec::sub-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::sub")
+	    (:optional ";;; Suppressing generated def for String-Spec::substring")
+	    (:optional ";;; Suppressing generated def for String-Spec::toScreen")
+	    (:optional ";;; Suppressing generated def for String-Spec::translate-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::translate")
+	    (:optional ";;; Suppressing generated def for String-Spec::writeLine")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!<=|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!<|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!exists|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!map|")
 	    ";;; Generating lisp file $TESTDIR/lisp/WasCausingSegFault.lisp"
-	    (:optional
-	     "WARNING: Non-constructive def for STRING-SPE:explode"
-	     "WARNING: Non-constructive def for FUNCTIONS::injective?"
-	     "WARNING: Non-constructive def for FUNCTIONS::surjective?"
-	     "WARNING: Non-constructive def for FUNCTIONS::inverse-1-1"
-	     "WARNING: Non-constructive def for INTEGER-SPE:pred"
-	     "WARNING: Non-constructive def for INTEGER-SPE:positive?"
-	     "WARNING: Non-constructive def for INTEGERAUX::|!-|"
-	     "WARNING: Non-constructive def for INTEGER-SPE:+-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:*-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:div-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:divides-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:gcd-2"
-	     "WARNING: Non-constructive def for INTEGER-SPE:lcm-2"
-	     "WARNING: Non-constructive def for CHAR-SPE:ord"
-	     ";;; Suppressing generated def for BOOLEAN-SPE:show"
-	     ";;; Suppressing generated def for CHAR-SPE:ord"
-	     ";;; Suppressing generated def for INTEGERAUX::|!-|"
-	     ";;; Suppressing generated def for INTEGER-SPE:+-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:--2"
-	     ";;; Suppressing generated def for INTEGER-SPE:positive?"
-	     ";;; Suppressing generated def for INTEGER-SPE:<-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:<=-2"
-	     ";;; Suppressing generated def for CHAR-SPE:isLowerCase"
-	     ";;; Suppressing generated def for CHAR-SPE:isUpperCase"
-	     ";;; Suppressing generated def for CHAR-SPE:isAlpha"
-	     ";;; Suppressing generated def for CHAR-SPE:isNum"
-	     ";;; Suppressing generated def for CHAR-SPE:isAlphaNum"
-	     ";;; Suppressing generated def for CHAR-SPE:isAscii"
-	     ";;; Suppressing generated def for CHAR-SPE:show"
-	     ";;; Suppressing generated def for CHAR-SPE:toLowerCase"
-	     ";;; Suppressing generated def for CHAR-SPE:toString"
-	     ";;; Suppressing generated def for CHAR-SPE:toUpperCase"
-	     ";;; Suppressing generated def for INTEGER-SPE:*-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:div-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:div"
-	     ";;; Suppressing generated def for INTEGER-SPE:divides-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:divides"
-	     ";;; Suppressing generated def for INTEGER-SPE:gcd-2"
-	     ";;; Suppressing generated def for STRING-SPE:explode"
-	     ";;; Suppressing generated def for INTEGER-SPE:rem-2"
-	     ";;; Suppressing generated def for STRING-SPE:concat-2"
-	     ";;; Suppressing generated def for STRING-SPE:^-2"
-	     ";;; Suppressing generated def for NAT-SPE:natToString"
-	     ";;; Suppressing generated def for INTEGER-SPE:intToString"
-	     ";;; Suppressing generated def for INTEGER-SPE:lcm-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:multipleOf-2"
-	     ";;; Suppressing generated def for INTEGER-SPE:multipleOf"
-	     ";;; Suppressing generated def for INTEGER-SPE:pred"
-	     ";;; Suppressing generated def for STRING-SPE:|!length|"
-	     ";;; Suppressing generated def for STRING-SPE:substring-3"
-	     ";;; Suppressing generated def for NAT-SPE:stringToNat"
-	     ";;; Suppressing generated def for INTEGER-SPE:stringToInt"
-	     ";;; Suppressing generated def for INTEGER-SPE:toString"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!*|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!+|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!-|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!<=|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!<|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!gcd|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!lcm|"
-	     ";;; Suppressing generated def for INTEGER-SPE:|!rem|"
-	     ";;; Suppressing generated def for NAT-SPE:toString"
-	     ";;; Suppressing generated def for STRING-SPE:++-2"
-	     ";;; Suppressing generated def for STRING-SPE:compare-2"
-	     ";;; Suppressing generated def for STRING-SPE:<-2"
-	     ";;; Suppressing generated def for STRING-SPE:<=-2"
-	     ";;; Suppressing generated def for STRING-SPE:^"
-	     ";;; Suppressing generated def for STRING-SPE:all-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:all"
-	     ";;; Suppressing generated def for STRING-SPE:compare"
-	     ";;; Suppressing generated def for STRING-SPE:concat"
-	     ";;; Suppressing generated def for STRING-SPE:concatList"
-	     ";;; Suppressing generated def for STRING-SPE:exists-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:leq-2"
-	     ";;; Suppressing generated def for STRING-SPE:leq"
-	     ";;; Suppressing generated def for STRING-SPE:lt-2"
-	     ";;; Suppressing generated def for STRING-SPE:lt"
-	     ";;; Suppressing generated def for STRING-SPE:map-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:newline"
-	     ";;; Suppressing generated def for STRING-SPE:sub-2"
-	     ";;; Suppressing generated def for STRING-SPE:sub"
-	     ";;; Suppressing generated def for STRING-SPE:substring"
-	     ";;; Suppressing generated def for STRING-SPE:toScreen"
-	     ";;; Suppressing generated def for STRING-SPE:translate-1-1"
-	     ";;; Suppressing generated def for STRING-SPE:translate"
-	     ";;; Suppressing generated def for STRING-SPE:writeLine"
-	     ";;; Suppressing generated def for STRING-SPE:|!<=|"
-	     ";;; Suppressing generated def for STRING-SPE:|!<|"
-	     ";;; Suppressing generated def for STRING-SPE:|!exists|"
-	     ";;; Suppressing generated def for STRING-SPE:|!map|"
-	     )
+	    (:optional "WARNING: Non-constructive def for String-Spec::explode")
+	    (:optional "WARNING: Non-constructive def for Functions::injective?")
+	    (:optional "WARNING: Non-constructive def for Functions::surjective?")
+	    (:optional "WARNING: Non-constructive def for Functions::inverse-1-1")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::pred")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::positive?")
+	    (:optional "WARNING: Non-constructive def for IntegerAux::|!-|")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::+-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::*-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::div-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::divides-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::gcd-2")
+	    (:optional "WARNING: Non-constructive def for Integer-Spec::lcm-2")
+	    (:optional "WARNING: Non-constructive def for Char-Spec::ord")
+	    (:optional ";;; Suppressing generated def for Boolean-Spec::show")
+	    (:optional ";;; Suppressing generated def for Char-Spec::ord")
+	    (:optional ";;; Suppressing generated def for IntegerAux::|!-|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::+-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::--2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::positive?")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::<-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::<=-2")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isLowerCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isUpperCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAlpha")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isNum")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAlphaNum")
+	    (:optional ";;; Suppressing generated def for Char-Spec::isAscii")
+	    (:optional ";;; Suppressing generated def for Char-Spec::show")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toLowerCase")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toString")
+	    (:optional ";;; Suppressing generated def for Char-Spec::toUpperCase")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::*-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::div-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::div")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::divides-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::divides")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::gcd-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::explode")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::rem-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::concat-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::^-2")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::natToString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::intToString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::lcm-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::multipleOf-2")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::multipleOf")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::pred")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!length|")
+	    (:optional ";;; Suppressing generated def for String-Spec::substring-3")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::stringToNat")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::stringToInt")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::toString")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!*|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!+|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!-|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!<=|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!<|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!gcd|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!lcm|")
+	    (:optional ";;; Suppressing generated def for Integer-Spec::|!rem|")
+	    (:optional ";;; Suppressing generated def for Nat-Spec::toString")
+	    (:optional ";;; Suppressing generated def for String-Spec::++-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::compare-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::<-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::<=-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::^")
+	    (:optional ";;; Suppressing generated def for String-Spec::all-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::all")
+	    (:optional ";;; Suppressing generated def for String-Spec::compare")
+	    (:optional ";;; Suppressing generated def for String-Spec::concat")
+	    (:optional ";;; Suppressing generated def for String-Spec::concatList")
+	    (:optional ";;; Suppressing generated def for String-Spec::exists-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::leq-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::leq")
+	    (:optional ";;; Suppressing generated def for String-Spec::lt-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::lt")
+	    (:optional ";;; Suppressing generated def for String-Spec::map-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::newline")
+	    (:optional ";;; Suppressing generated def for String-Spec::sub-2")
+	    (:optional ";;; Suppressing generated def for String-Spec::sub")
+	    (:optional ";;; Suppressing generated def for String-Spec::substring")
+	    (:optional ";;; Suppressing generated def for String-Spec::toScreen")
+	    (:optional ";;; Suppressing generated def for String-Spec::translate-1-1")
+	    (:optional ";;; Suppressing generated def for String-Spec::translate")
+	    (:optional ";;; Suppressing generated def for String-Spec::writeLine")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!<=|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!<|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!exists|")
+	    (:optional ";;; Suppressing generated def for String-Spec::|!map|")
 	    ""))
 
  )

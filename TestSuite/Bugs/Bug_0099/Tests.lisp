@@ -19,7 +19,9 @@
 	    " type PosNat = (Nat | posNat?)"
 	    " "
 	    " op  succ : Nat -> Nat"
-	    " conjecture Nat.succ_Obligation_subsort is fa(n : Nat) natural?(succ n)"
+	    (:alternatives
+	     " conjecture Nat.succ_Obligation_subsort is fa(n : Nat) natural?(succ n)"
+	     " conjecture Nat.succ_Obligation_subsort is fa(n : Nat) succ n >= 0")
 	    " "
 	    " def succ n = succ n"
 	    " proof Isa Thy_Morphism"
