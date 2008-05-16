@@ -237,7 +237,7 @@
 		 )
 	    (setf (gethash child-name ht-name-to-reductions) 
 		  new-child-reductions)
-	    (print (gethash child-name ht-name-to-reductions))
+	    (gethash child-name ht-name-to-reductions)
 	    ))))
     ))
 
