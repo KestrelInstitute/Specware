@@ -41,9 +41,10 @@ spec
  sort VQid                  = Vertex.Elem * QualifiedId
  sort QuotientClass         = List VQid
  sort CompressedQuotientSet = List {
-                                    original   : QuotientClass,  % The original elements found by quotient set algorithm.
-                                    dominating : QuotientClass   % If some of those elements belong to a dominating vertex, 
-                                                                 % then just those, otherwise, all the original elements.
+                                    original : QuotientClass,  % The original elements found by quotient set algorithm.
+	 	                    final    : QuotientClass   % If some element belongs to a dominating vertex, 
+							       % then it will be the only final element, 
+                                                               % otherwise all original elements will be final elements.
                                     }
  sort VertexRanking         = List Vertex.Elem
 
@@ -91,14 +92,14 @@ spec
   %%
   %% For a substitution, some vertices will dominate others, which means that 
   %% the names they assign to types and ops will be used in the apex spec to 
-  %% the  exclusion of any names from less-dominate vertices.  
+  %% the  exclusion of any names from subordinate vertices.  
   %%
   %% * This means the apex spec will print more simply (fewer types and ops with aliases). 
   %%
-  %% * It also means that the cocone morphisms from less-dominate vertices will in
-  %%   general be translations, not simple inclusions, since the names they assign 
-  %%   to types and ops won't be present in the apex spec, as they would be for a
-  %%   simple colimit.
+  %% * It also means that the cocone morphisms from subordinate vertices will in
+  %%   general be translations, not simple identity morphisms, since the names they 
+  %%   assign to types and ops won't be present in the apex spec, as they would be 
+  %%   for a simple colimit.
   %%
   let 
      def extract_sorts (spc : Spec) =
@@ -143,9 +144,11 @@ spec
   %% (1) Create quotient sets of connected items : List (List (Vertex.Elem * QualifiedId))
   %%     This should take about O(N log N), where N is the number of items in the diagram.
   %%     The O(log N) factor is from using tree-based functional maps, so in principle 
-  %%     this could be optimized to O(1) with clever refinement.
+  %%     this factor could be optimized to O(1) with clever refinement, for O(N) overall..
   %% -------------------------------------------------------------------------------------------------------------
 
+  %% For each equivalence class, list the elements of the class and also note whether 
+  %% some distinguished element from the class will be the only one to survive in the apex spec.
   let sort_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_sorts          sortMap dominating_vertices in
   let   op_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_ops              opMap dominating_vertices in
   %% let prop_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_non_base_props propMap dominating_vertices in
@@ -153,14 +156,12 @@ spec
   %% let _ = showVQidQuotientSets [("sort", sort_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
 
   %% -------------------------------------------------------------------------------------------------------------
-  %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
+  %% (2) Disambiguate the target names appearing in those quotient sets, by (only if necessary) 
   %%     prepending the name of the node that introduced them.
-  %%     Create vqid => <disambiguated qid> for those vqid's whose 
-  %%     internal qid (the one that would be used by an identity mapping)
+  %%     Create vqid => <disambiguated qid> for those vqid's whose original qid 
   %%     would be ambiguous.
   %%     This should be O(N log N) as above.
   %% -------------------------------------------------------------------------------------------------------------
-
 
   %% let _ = toScreen "----------------------------------------\nSorts:\n" in
   let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset in
@@ -404,13 +405,13 @@ spec
 
   let qset = extractQuotientSet final_mfset_vqid_map in % List List VQid
   map (fn original_vqids ->
-       let dominating_vqids =
+       let final_vqids =
            case find_dominating_vqids dominating_vertices original_vqids of
              | [] -> original_vqids  %% if no vqids dominate, then treat all as dominating
              | vqids -> vqids
        in
-         {original   = original_vqids,
-          dominating = dominating_vqids})
+         {original = original_vqids,
+          final    = final_vqids})
       qset
 
  def find_dominating_vqids (dominating_vertices : VertexRanking) (vqids : List VQid) = 
@@ -423,10 +424,9 @@ spec
          dominating_vertices
 
  %% ================================================================================
- %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
+ %% (2) Disambiguate the target names appearing in those quotient sets, by (only if necessary) 
  %%     prepending the name of the node that introduced them.
- %%     Create vqid => <disambiguated qid> for those vqid's whose 
- %%     internal qid (the one that would be used by an identity mapping)
+ %%     Create vqid => <disambiguated qid> for those vqid's whose original qid 
  %%     would be ambiguous.
  %%     This should be O(N log N) as above.
  %% ================================================================================
@@ -434,7 +434,7 @@ spec
  op computeVQidToApexQidAndAliasesMap : CompressedQuotientSet -> PolyMap.Map (VQid, QualifiedId * Aliases)
  def computeVQidToApexQidAndAliasesMap qset =
 
-   let qid_to_class_indices = makeQidToClassIndicesMap qset in 
+   let qid_to_class_indices = makeQidToClassIndicesMap qset in
    
    %% let _ = showQidToClassIndices qid_to_class_indices in
 
@@ -444,25 +444,33 @@ spec
 
    List.foldl (fn (class, vqid_to_apex_qid_and_aliases_map) ->
 	       let (aliases, local_map) = % local to this class
- 	           foldl (fn (vqid as (vertex, qid as Qualified (qualifier, id)), 
-			      (aliases, local_map))
-			  ->
+ 	           foldl (fn (vqid, (aliases, local_map)) ->
+			  let (vertex, default_apex_qid as Qualified(qualifier, id)) =
+			      case class.final of
+				| [dominant_vqid] -> dominant_vqid
+				| _ -> vqid
+			  in
 			  let (apex_qid, aliases) =
-			      case eval qid_to_class_indices qid of
+			      case eval qid_to_class_indices default_apex_qid of
 				| [n] -> 
-				  %% let _ = writeLine("unique class index for " ^ printQualifiedId qid ^ " = " ^ anyToString n) in
-				  (qid, aliases) % unique, no need to disambiguate
+				  %% let _ = writeLine("unique class index for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString n) in
+				  (default_apex_qid, aliases) % unique, no need to disambiguate
 				| nn   -> 
-				  if qid = Boolean_Boolean or qid = unqualified_Boolean then
+				  if default_apex_qid = Boolean_Boolean or default_apex_qid = unqualified_Boolean then
 				    (Boolean_Boolean, [Boolean_Boolean])
 				  else
-				    %% let _ = writeLine("ambigous class indices for " ^ printQualifiedId qid ^ " = " ^ anyToString nn) in
-				    let new_qid = reviseQId (vertex, qualifier, id, id_to_qualifiers) in
-				    %% let _ = writeLine("revising " ^ printQualifiedId qid ^ " to " ^ printQualifiedId new_qid) in
-				    (new_qid, aliases)
+				    %% let _ = writeLine("ambigous class indices for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString nn) in
+				    let revised_apex_qid = reviseQId (vertex, qualifier, id, id_to_qualifiers) in
+				    %% let _ = writeLine("revising " ^ printQualifiedId default_apex_qid ^ " to " ^ printQualifiedId revised_apex_qid) in
+				    (revised_apex_qid, aliases)
 			  in
-			    (cons (apex_qid, aliases),
-			     update local_map vqid apex_qid))
+			  let new_aliases = if member (apex_qid, aliases) then 
+                                              aliases
+                                            else 
+					      cons (apex_qid, aliases) 
+			  in
+			  let updated_map = update local_map vqid apex_qid in
+			  (new_aliases, updated_map))
 		         ([], PolyMap.emptyMap)
 		         class.original
 	       in 
@@ -501,7 +509,7 @@ spec
 			  else
 			    update qid_to_class_indices qid (Cons (class_index, prior_class_indices)))
 	             qid_to_class_indices
-		     class.original,
+		     class.final,
 	       class_index + 1))
              (PolyMap.emptyMap, 0)
 	     qset
@@ -527,7 +535,7 @@ spec
 		     else
 		       update id_to_qualifiers id (Cons (qualifier, prior_qualifiers)))
 	        id_to_qualifiers
-	        class.original)
+	        class.final)
          PolyMap.emptyMap 
 	 qset
      
