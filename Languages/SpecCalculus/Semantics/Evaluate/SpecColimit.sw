@@ -146,11 +146,10 @@ spec
   %%     this could be optimized to O(1) with clever refinement.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let sort_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_sorts          sortMap dominating_vertices in
-  let   op_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_ops              opMap dominating_vertices in
- %let prop_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_non_base_props propMap dominating_vertices in
+  let sort_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_sorts          sortMap dominating_vertices in
+  let   op_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_ops              opMap dominating_vertices in
+  %% let prop_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_non_base_props propMap dominating_vertices in
 
-  %% debugging
   %% let _ = showVQidQuotientSets [("sort", sort_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
 
   %% -------------------------------------------------------------------------------------------------------------
@@ -162,17 +161,16 @@ spec
   %%     This should be O(N log N) as above.
   %% -------------------------------------------------------------------------------------------------------------
 
-  %% debugging
-  %% let _ = toScreen "----------------------------------------\nSorts:\n" in
-  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset_map in
-  %% debugging
-  %% let _ = toScreen "----------------------------------------\nOps:\n" in
-  let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset_map in
-  %% debugging
-  %% let _ = toScreen "----------------------------------------\nProps:\n" in
- %let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset_map in
 
-  %% debugging
+  %% let _ = toScreen "----------------------------------------\nSorts:\n" in
+  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset in
+
+  %% let _ = toScreen "----------------------------------------\nOps:\n" in
+  let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset in
+
+  %% let _ = toScreen "----------------------------------------\nProps:\n" in
+  %% let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset in
+
   %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
 
   %% -------------------------------------------------------------------------------------------------------------
@@ -239,7 +237,6 @@ spec
 		      dg
   in
 
-  %% debugging
   % let _ = toScreen ("\nV2SM rules: "^ (anyToString vertex_to_sm_rules ) ^ "\n") in
   % let _ = showVertexToRenamingExprMaps vertex_to_sm_rules in
 
@@ -438,11 +435,11 @@ spec
  def computeVQidToApexQidAndAliasesMap qset =
 
    let qid_to_class_indices = makeQidToClassIndicesMap qset in 
-   %% debugging
+   
    %% let _ = showQidToClassIndices qid_to_class_indices in
 
    let id_to_qualifiers = makeIdToQualifiersMap qset in
-   %% debugging
+   
    %% let _ = showIdToQualifiers id_to_qualifiers in
 
    List.foldl (fn (class, vqid_to_apex_qid_and_aliases_map) ->
