@@ -38,7 +38,14 @@ spec
  %%  vqid's provide unique labels of items (of a given type such as sort or op) 
  %%   within specs across entire diagram
 
- sort VQid          = Vertex.Elem * QualifiedId
+ sort VQid                  = Vertex.Elem * QualifiedId
+ sort QuotientClass         = List VQid
+ sort CompressedQuotientSet = List {
+                                    original   : QuotientClass,  % The original elements found by quotient set algorithm.
+                                    dominating : QuotientClass   % If some of those elements belong to a dominating vertex, 
+                                                                 % then just those, otherwise, all the original elements.
+                                    }
+ sort VertexRanking         = List Vertex.Elem
 
  sort VQidSortMap   = PolyMap.Map (VQid, SortInfo)
  sort VQidOpMap     = PolyMap.Map (VQid, OpInfo)
@@ -46,10 +53,11 @@ spec
 
  %% ----
 
- op computeQuotientSet  : fa (info) SpecDiagram                                -> 
-                                    (Spec     -> List (Qualifier * Id * info)) ->
-				    (Morphism -> QualifiedIdMap)               ->
-				    QuotientSet
+ op computeCompressedQuotientSet  : [info] SpecDiagram                                -> 
+                                           (Spec     -> List (Qualifier * Id * info)) ->
+				           (Morphism -> QualifiedIdMap)               ->
+                                           VertexRanking                              ->
+				           CompressedQuotientSet
 
  %% ----
 
@@ -75,7 +83,7 @@ spec
    %% For an ordinary colimit, all vertices are equivalent--none dominate, so list is empty.
    auxSpecColimit base_spec [] dg  
 
- op  auxSpecColimit : Spec -> List Vertex.Elem -> SpecDiagram -> Option SpecInitialCocone * Option String
+ op  auxSpecColimit : Spec -> VertexRanking -> SpecDiagram -> Option SpecInitialCocone * Option String
  def auxSpecColimit base_spec dominating_vertices dg =  
   %%
   %% The colimit is effectively computed in a slice category over the base spec.
@@ -138,9 +146,9 @@ spec
   %%     this could be optimized to O(1) with clever refinement.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let sort_qset : QuotientSet = computeQuotientSet dg extract_sorts sortMap in 
-  let   op_qset : QuotientSet = computeQuotientSet dg extract_ops     opMap in 
- %let prop_qset : QuotientSet = computeQuotientSet dg extract_non_base_props propMap in 
+  let sort_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_sorts          sortMap dominating_vertices in
+  let   op_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_ops              opMap dominating_vertices in
+ %let prop_qset_map : CompressedQuotientSet = computeCompressedQuotientSet dg extract_non_base_props propMap dominating_vertices in
 
   %% debugging
   %% let _ = showVQidQuotientSets [("sort", sort_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
@@ -156,13 +164,13 @@ spec
 
   %% debugging
   %% let _ = toScreen "----------------------------------------\nSorts:\n" in
-  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset in
+  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset_map in
   %% debugging
   %% let _ = toScreen "----------------------------------------\nOps:\n" in
-  let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset in
+  let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset_map in
   %% debugging
   %% let _ = toScreen "----------------------------------------\nProps:\n" in
- %let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset in
+ %let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset_map in
 
   %% debugging
   %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
@@ -341,10 +349,11 @@ spec
  %% diagram, using MFSet.merge to produce implicit quotient sets of items that are 
  %% connected via morphisms labelling those edges.
 
- def fa (info) computeQuotientSet (dg           : SpecDiagram)
-                                  (select_items : Spec -> List (Qualifier * Id * info))
-				  (sm_qid_map   : Morphism -> QualifiedIdMap)
-  : QuotientSet =				    
+ def [info] computeCompressedQuotientSet (dg                  : SpecDiagram)
+                                         (select_items        : Spec -> List (Qualifier * Id * info))
+                                         (sm_qid_map          : Morphism -> QualifiedIdMap)
+                                         (dominating_vertices : VertexRanking)
+  : CompressedQuotientSet =				    
   %% "mfset" = "Merge/Find Set", "vqid" = "vertex, qualified id", 
   let initial_mfset_vqid_map = 
       %% VQid => {Rank = 0, Parent = None, Value = VQid}
@@ -396,7 +405,25 @@ spec
   %% Extract the implicit quotient sets as a list of explicit lists of MFSet nodes 
   %% (Don't confuse MFSet nodes with the entirely distinct diagram nodes.)
 
-  extractQuotientSet final_mfset_vqid_map % List List VQid
+  let qset = extractQuotientSet final_mfset_vqid_map in % List List VQid
+  map (fn original_vqids ->
+       let dominating_vqids =
+           case find_dominating_vqids dominating_vertices original_vqids of
+             | [] -> original_vqids  %% if no vqids dominate, then treat all as dominating
+             | vqids -> vqids
+       in
+         {original   = original_vqids,
+          dominating = dominating_vqids})
+      qset
+
+ def find_dominating_vqids (dominating_vertices : VertexRanking) (vqids : List VQid) = 
+   %% return all the vqids associated with the first dominating vertex that has any associated vqids 
+   foldl (fn (dominating_vertex, dominating_vqids) ->
+            case dominating_vqids of
+              | [] -> filter (fn (vqid : VQid) -> dominating_vertex = vqid.1) vqids
+              | _ -> dominating_vqids)
+         []
+         dominating_vertices
 
  %% ================================================================================
  %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
@@ -407,7 +434,7 @@ spec
  %%     This should be O(N log N) as above.
  %% ================================================================================
 
- op computeVQidToApexQidAndAliasesMap : QuotientSet -> PolyMap.Map (VQid, QualifiedId * Aliases)
+ op computeVQidToApexQidAndAliasesMap : CompressedQuotientSet -> PolyMap.Map (VQid, QualifiedId * Aliases)
  def computeVQidToApexQidAndAliasesMap qset =
 
    let qid_to_class_indices = makeQidToClassIndicesMap qset in 
@@ -440,7 +467,7 @@ spec
 			    (cons (apex_qid, aliases),
 			     update local_map vqid apex_qid))
 		         ([], PolyMap.emptyMap)
-		         class
+		         class.original
 	       in 
 	       let boolean? = member (Boolean_Boolean, aliases) in
 	       List.foldl (fn (vqid, vqid_to_apex_qid_and_aliases_map) ->
@@ -451,13 +478,13 @@ spec
 				   else
 				     (eval local_map vqid, aliases)))
 		            vqid_to_apex_qid_and_aliases_map
-		            class)
+		            class.original)
  	      PolyMap.emptyMap
 	      qset
 
  %% --------------------------------------------------------------------------------
 
- op  makeQidToClassIndicesMap : QuotientSet -> PolyMap.Map (QualifiedId, List Integer)
+ op  makeQidToClassIndicesMap : CompressedQuotientSet -> PolyMap.Map (QualifiedId, List Integer)
  def makeQidToClassIndicesMap qset =
    let (qid_to_class_indices, _) = 
        %% QualifiedId => List EquivalentClass
@@ -477,14 +504,14 @@ spec
 			  else
 			    update qid_to_class_indices qid (Cons (class_index, prior_class_indices)))
 	             qid_to_class_indices
-		     class,
+		     class.original,
 	       class_index + 1))
              (PolyMap.emptyMap, 0)
 	     qset
    in
    qid_to_class_indices
 
- op  makeIdToQualifiersMap : QuotientSet -> PolyMap.Map (Id, List Qualifier)
+ op  makeIdToQualifiersMap : CompressedQuotientSet -> PolyMap.Map (Id, List Qualifier)
  def makeIdToQualifiersMap qset = 
    %% This records all the qualifiers associated with an id, so if we
    %%  need to requalify that id, we can see what's already in use.
@@ -503,7 +530,7 @@ spec
 		     else
 		       update id_to_qualifiers id (Cons (qualifier, prior_qualifiers)))
 	        id_to_qualifiers
-	        class)
+	        class.original)
          PolyMap.emptyMap 
 	 qset
      
@@ -669,7 +696,7 @@ spec
  %% Misc debugging support
  %% ================================================================================
 
- op showVQidQuotientSets : List (String * QuotientSet) -> ()
+ op showVQidQuotientSets : List (String * CompressedQuotientSet) -> ()
  def showVQidQuotientSets qsets_data =
    (toScreen "------------------------------------------\n\n";
     List.app (fn (qset_type, qset) ->
@@ -678,15 +705,15 @@ spec
              qsets_data;
     toScreen "------------------------------------------\n\n")
 
- op showVQidQuotientSet : QuotientSet -> String
+ op showVQidQuotientSet : CompressedQuotientSet -> String
  def showVQidQuotientSet qset = ppFormat (ppVQidQuotientSet qset)
 
- op ppVQidQuotientSet : QuotientSet -> Doc
+ op ppVQidQuotientSet : CompressedQuotientSet -> Doc
  def ppVQidQuotientSet qset =
    let def ppClass class =
         ppConcat [
 		  ppString "{  ",
-		  ppSep (ppString ", ") (map ppVQid class),
+		  ppSep (ppString ", ") (map ppVQid class.original),
 		  ppString "  }"
 		 ]
    in
