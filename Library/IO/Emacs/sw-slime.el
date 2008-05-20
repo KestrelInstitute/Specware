@@ -330,7 +330,8 @@ to end end."
      (slime-propertize-region '(face slime-repl-output-face)
        (let ((start (point)))
 	  (insert string)
-	  (x-symbol-decode-region start (point))))
+	  (when sw:use-x-symbol
+	    (x-symbol-decode-region start (point)))))
      (when (and (= (point) slime-repl-prompt-start-mark)
                 (not (bolp)))
        (insert "\n")

@@ -1376,7 +1376,7 @@ If anyone has a good algorithm for this..."
 (defun sw:gcl-current-file ()
   (interactive)
   (save-buffer)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name t)))
+  (let ((filename (sw:containing-specware-unit-id t)))
     (lisp-or-specware-command ":swll " "lgen-lisp " filename)))
 
 (defun sw:evaluate-region (beg end)
@@ -1901,7 +1901,7 @@ If anyone has a good algorithm for this..."
   ())
 
 (defun forward-chars-counting-x-symbols (i)
-  (if (or (not x-symbol-mode) (< i 1))
+  (if (or (not sw:use-x-symbol) (not x-symbol-mode) (< i 1))
       (forward-char i)
     (while (> i 0) 
       (let ((x-symbol-char (cdr (x-symbol-charsym-after (point)))))
