@@ -11,7 +11,7 @@
 ;; defvar specwareWizard? here (as opposed to def in Monad.sw) 
 ;; to avoid having CMUCL treat it as a constant, in which case
 ;; code under the false branch would be optimized away!
-(defvar SPECCALC::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
+(defvar SpecCalc::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
 
 (defparameter quotient-tag
   (list :|Quotient|))
@@ -211,10 +211,10 @@
   (or (not x) y))
 
 ;; Optimization
-(define-compiler-macro LIST-SPEC::|!length| (l)
+(define-compiler-macro List-Spec::|!length| (l)
   `(length ,l))
 
-;;(define-compiler-macro LIST-SPEC::++-2 (l1 l2)
+;;(define-compiler-macro List-Spec::++-2 (l1 l2)
 ;;  `(append ,l1 ,l2))
 
 

@@ -283,9 +283,9 @@ SpecToLisp qualifying spec
 		 | Base (Qualified ("Integer", "Integer"), _, _) -> "="
 		 | Base (Qualified ("String",  "String"),  _, _) -> "string="
 		 | Base (Qualified ("Char",    "Char"),    _, _) -> "eq"
-		 | _ -> "slang-built-in::slang-term-equals-2")
-	  | _ -> "slang-built-in::slang-term-equals-2")
-     | _ -> "slang-built-in::slang-term-equals-2"
+		 | _ -> "Slang-Built-In::slang-term-equals-2")
+	  | _ -> "Slang-Built-In::slang-term-equals-2")
+     | _ -> "Slang-Built-In::slang-term-equals-2"
 
  %
  % Ad hoc optimization of the inequality operation.
@@ -299,14 +299,14 @@ SpecToLisp qualifying spec
 	      "/="
 	    else
 	      (case stripSubsorts (sp, s) of
-		 | Boolean                                    _  -> "slang-built-in:boolean-term-not-equals-2"
+		 | Boolean                                    _  -> "Slang-Built-In:boolean-term-not-equals-2"
 		 | Base (Qualified ("Nat",     "Nat"),     _, _) -> "/="
 		 | Base (Qualified ("Integer", "Integer"), _, _) -> "/="
-		 | Base (Qualified ("String",  "String"),  _, _) -> "slang-built-in:string-term-not-equals-2"  % careful! string/= won't work
+		 | Base (Qualified ("String",  "String"),  _, _) -> "Slang-Built-In:string-term-not-equals-2"  % careful! string/= won't work
 		 | Base (Qualified ("Char",    "Char"),    _, _) -> "char/="
-		 | _ -> "slang-built-in::slang-term-not-equals-2")
-	  | _ -> "slang-built-in::slang-term-not-equals-2")
-     | _ -> "slang-built-in::slang-term-not-equals-2"
+		 | _ -> "Slang-Built-In::slang-term-not-equals-2")
+	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
+     | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
  op  mkLTermOp : fa (a) Spec * String * StringSet.Set * (Fun * Sort * a) * Option (MS.Term) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
@@ -365,7 +365,7 @@ SpecToLisp qualifying spec
        % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
        %       This means it is not commutative (to the contrapositive) wrt termination.
        (case optArgs of
-         %| None -> mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
+         %| None -> mkLOp ("Slang-Built-In:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
 	  | Some (Record ([(_, x), (_, y)], _)) ->
 	    % "x => y" = "if x then y else true" = "or (~ x, y)"
 	    mkLApply (mkLOp ("cl:or"),         
@@ -494,9 +494,9 @@ SpecToLisp qualifying spec
                   % let _ = toScreen("\nQuotient tvs     = " ^  anyToString tvs   ^ "\n") in
                   % let _ = toScreen("\nQuotient equiv   = " ^  anyToString equiv ^ "\n") in
                   (case optArgs of
-                     | None      -> mkLApply (mkLOp "slang-built-in::quotient", 
+                     | None      -> mkLApply (mkLOp "Slang-Built-In::quotient", 
                                               [equiv])
-                     | Some term -> mkLApply (mkLOp "slang-built-in::quotient-1-1", 
+                     | Some term -> mkLApply (mkLOp "Slang-Built-In::quotient-1-1", 
                                               [equiv, mkLTerm (sp, dpn, vars, term)]))
                 | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
           | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
@@ -507,9 +507,9 @@ SpecToLisp qualifying spec
                 | (tvs, Quotient _) ->
                   %% Don't need the equivalence relation when doing a choose
                   (case optArgs of
-                     | None      -> mkLApply (mkLOp "slang-built-in::choose", 
+                     | None      -> mkLApply (mkLOp "Slang-Built-In::choose", 
                                               [])
-                     | Some term -> mkLApply (mkLOp "slang-built-in::choose-1", 
+                     | Some term -> mkLApply (mkLOp "Slang-Built-In::choose-1", 
                                               [mkLTerm (sp, dpn, vars, term)]))
                 | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
           | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
@@ -607,10 +607,10 @@ SpecToLisp qualifying spec
 	     case args of
 	       | [f, val] ->
 		 if identityFn? f then
-		   Some (mkLApply (mkLOp "slang-built-in::quotient-element", 
+		   Some (mkLApply (mkLOp "Slang-Built-In::quotient-element", 
 				   [mkLTerm (sp, dpn, vars, val)]))
 		 else 
-		   Some (mkLApply (mkLOp "slang-built-in::choose-1-1", 
+		   Some (mkLApply (mkLOp "Slang-Built-In::choose-1-1", 
 				   [mkLTerm (sp, dpn, vars, f), 
 				    mkLTerm (sp, dpn, vars, val)]))
 	       | _ -> None % shouldn't happen
@@ -770,7 +770,7 @@ SpecToLisp qualifying spec
 	    %% lisp compiler will not spuriously warn about them being unused.
 	    %%
 	    let free_vars = List.map (fn (id,_) -> specId (id, "")) (freeVars term) in
-	    mkLApply(mkLOp "CL:ERROR",
+	    mkLApply(mkLOp "cl:error",
 		     [%% The following lisp format string says to successively 
 		      %% take two things from the argument list and then:
 		      %%  print the first (a string) using ~A (so no surrounding quotes),
@@ -781,7 +781,7 @@ SpecToLisp qualifying spec
 		      %% (list "aa" aa "foo" foo" xyz "xyz")
 		      %% At lisp runtime, that creates a (heterogenous!) list with 
 		      %% the name of each var followed by the value it is bound to.
-		      mkLApply (mkLOp "LIST",
+		      mkLApply (mkLOp "list",
 				foldl (fn (id, args) ->
 				       args ++ [mkLString id, Var id])
 				      []
@@ -1386,8 +1386,9 @@ SpecToLisp qualifying spec
  def warn_about_non_constructive_defs defs =
    %% mkLTerm incorporates non_constructive_format_msg into certain calls to error
    app (fn (uname, tm) ->
-	if calls_specific_error? tm non_constructive_format_msg then
-	  System.warn ("Non-constructive def for " ^ uname)
+	if calls_specific_error? tm non_constructive_format_msg
+            && ~(member (uname, SuppressGeneratedDefuns))
+          then System.warn ("Non-constructive def for " ^ uname)
 	else
 	  ())
        defs
@@ -1397,7 +1398,7 @@ SpecToLisp qualifying spec
    let 
       def aux tm =
 	case tm of
-	  | Apply  (Op "CL:ERROR", msg :: _) -> msg = format_str
+	  | Apply  (Op "cl:error", msg :: _) -> msg = format_str
 	  | Apply  (tm, tms)       -> aux tm || exists aux tms
 	  | Lambda (_,   _,   tm)  -> aux tm
 	  | If     (tm1, tm2, tm3) -> aux tm1 || aux tm2 || aux tm3

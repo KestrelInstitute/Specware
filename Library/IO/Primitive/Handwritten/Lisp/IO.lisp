@@ -57,7 +57,7 @@
   (get-universal-time))
 
 (defun getCurrentDirectory-0 ()
-  (convert-windows-filename (namestring (specware::current-directory))))
+  (convert-windows-filename (namestring (Specware::current-directory))))
 
 (defun convert-windows-filename (filestr)
   (declare (simple-string filestr))
@@ -140,7 +140,7 @@
 ;;;  op read_unicode_chars_from_file : Filename * Encoding -> Option UChars
 ;;;  op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()
 
-(defun unicode::read_unicode_chars_from_file-2 (filename decoding)
+(defun Unicode::read_unicode_chars_from_file-2 (filename decoding)
   (let ((bytes (readBytesFromFile filename)))
     (case (car bytes)
       (:|None| '(:|None|))
@@ -148,13 +148,13 @@
 		     (let ((uchars (funcall decoding (cdr bytes))))
 		       uchars))))))
 
-(defun unicode::write_unicode_chars_to_file-3 (uchars filename encoding)
+(defun Unicode::write_unicode_chars_to_file-3 (uchars filename encoding)
   (let ((bytes (funcall encoding uchars)))
     (writeBytesToFile-2 bytes filename)))
 
 ;; Used by prover interface:
 ;; Hopefully not Allegro specific.
-(defun parser4::read_list_of_s_expressions_from_string (string)
+(defun Parser4::read_list_of_s_expressions_from_string (string)
   (let ((done? nil)
 	(whitespaces '(#\space #\tab #\newline)))
     (let* ((trimmed-string (string-trim whitespaces string))
@@ -201,7 +201,7 @@
 
 ;; translate invalid file name characters to valid ones
 (defun convertToFileName(str)
-  (let* ((chars (STRING-SPEC::explode str))
+  (let* ((chars (String-Spec::explode str))
 	 (translated-char-strings 
 	  (mapcar #'(lambda (ch) 
 		      (case ch

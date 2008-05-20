@@ -24,7 +24,7 @@
 (defmacro |!time| (x) (time x))
 
 ;;; #-Lispworks
-;;; (defun getenv (x) (specware::getenv x))
+;;; (defun getenv (x) (Specware::getenv x))
 
 ;; The Lisp getenv returns nil if the name is not in the environment. 
 ;; Otherwise it returns a string. We want to be able to distinguish
@@ -32,7 +32,7 @@
 
 ;;; op getEnv : String -> Option String
 (defun getEnv (name)
-  (let ((val (specware::getenv name)))
+  (let ((val (Specware::getenv name)))
     (if (or (eq val nil) (equal val ""))    ; I think it returns "" if not set
 	(cons :|None| nil)
       (cons :|Some| val))))
@@ -45,7 +45,7 @@
   (ensure-final-slash
    (cl:substitute #\/ #\\
 		  #+(or win32 winnt mswindows)
-		  (or (specware::getenv "TEMP") (specware::getenv "TMP")
+		  (or (Specware::getenv "TEMP") (Specware::getenv "TMP")
 		      #+allegro
 		      (namestring (SYSTEM:temporary-directory)))
 		  #+(and (not unix) Lispworks) (namestring SYSTEM::*TEMP-DIRECTORY*)

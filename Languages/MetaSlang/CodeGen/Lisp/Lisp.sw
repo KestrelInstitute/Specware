@@ -244,10 +244,15 @@ ListADT qualifying spec {
            ("(progn ", " ", ")")
            (List.map ppTerm ts)
 
+  op warnAboutSuppressingDefuns?: Boolean = false
+
   def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
     if member (s, SpecToLisp.SuppressGeneratedDefuns) then
       let comment = ";;; Suppressing generated def for " ^ s in
-      let _ = toScreen(comment ^ "\n") in
+      let _ = if warnAboutSuppressingDefuns?
+                then toScreen(comment ^ "\n")
+                else ()
+      in
       blockFill (0, [(0, string comment), (0, PrettyPrint.newline ())])
     else
       case term

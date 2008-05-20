@@ -27,11 +27,11 @@
   (union debug::*hidden-functions*
 	 '(excl::fwrap-hook excl::trace-fwrapper
 	   excl::internal-invoke-debugger
-	   EXCL::%INVOKES)))
+	   excl::%invokes)))
 
 #+allegro
-(setq DEBUG::*HIDDEN-PACKAGE-INTERNALS*
-  (remove :EXCL DEBUG::*HIDDEN-PACKAGE-INTERNALS*))
+(setq debug::*hidden-package-internals*
+  (remove :excl debug::*hidden-package-internals*))
 
 (defvar *dont-break-next-call* nil)
 (defvar *currently-broken-fns* nil)
@@ -183,21 +183,21 @@
 
 #+allegro
 (defun be- (n)
-;;;: sjw: 7/5/96 16:11  Allow for (car fm) to be (EXCL::ENCAPSULATED RESOLVED-SETFORMERS)
+;;;: sjw: 7/5/96 16:11  Allow for (car fm) to be (excl::encapsulated resolved-setformers)
 ;;; as in Allegro CL 4.3
   (let* ((fm (quiet-do-command "dn" n))
-	 (fm (if (eq (car fm) 'EXCL::TRACE-HOOK)
+	 (fm (if (eq (car fm) 'excl::trace-hook)
 		 (cons (fourth fm) (fifth fm))
 	       fm))
 	 (fn (if (consp (car fm))
-		 (if (eq (caar fm) 'LABELS)
+		 (if (eq (caar fm) 'labels)
 		     (car fm)
 		   (second (car fm)))
 	       (car fm)))
 	 (fn (if (or (symbolp fn) (listp fn))
 		 fn
-	       (EXCL::EXTERNAL-FN_SYMDEF fn)))
-	 (EXCL::*INHIBIT-TRACE* nil)
+	       (excl::external-fn_symdef fn)))
+	 (excl::*inhibit-trace* nil)
 	 (*dont-break-next-call* (and (member fn *currently-broken-fns* :test 'equal)
 				      (or (not (symbolp fn))
 					  (gethash (fdefinition fn)
@@ -222,7 +222,7 @@
 #+allegro
 (defun bg! ()
   (if-break-move-to-caller)
-  (let ((EXCL::*INHIBIT-TRACE* t))
+  (let ((excl::*inhibit-trace* t))
     (top-level:do-command "restart")))
 
 #+allegro
@@ -231,7 +231,7 @@
 	 (fn (if (consp (car fm))
 		 (second (car fm))
 	       (car fm)))
-	 (EXCL::*INHIBIT-TRACE* t))
+	 (excl::*inhibit-trace* t))
     (apply fn (cdr fm))))
 
 

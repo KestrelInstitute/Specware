@@ -1,5 +1,5 @@
-(defpackage :IO-SPEC) 
-(in-package :IO-SPEC)
+(defpackage :IO-Spec)
+(in-package :IO-Spec)
 
 (defun withOpenFileForRead-2 (name p)
   (with-open-file (s name :direction :input :if-does-not-exist :error)
@@ -131,7 +131,7 @@
   ;; (concatenate 'string re::*specware-home-directory* "/" s))
 
 ;;; Lisp functions to avoid creating grarbage for indentation strings when prettyprinting
-(defpackage "PRETTYPRINT")
+(defpackage :PrettyPrint)
 
 (defun make-blanks-array (n)
   (let ((a (make-array n)))
@@ -144,28 +144,28 @@
 (defvar *blanks-array* (make-blanks-array *blanks-array-size*))
 
 ;; op defined in /Library/PrettyPrinter/BjornerEspinosa
-(defun prettyprint::blanks (n)
+(defun PrettyPrint::blanks (n)
   (if (= n 0) ""
     (if (<= n *blanks-array-size*) (svref *blanks-array* (- n 1))
       (format nil "~vT" n))))
 
-(defpackage "EMACS")
+(defpackage "Emacs")
 (defun gotoFilePosition-3 (file line col)
-  (emacs::goto-file-position file line col))
+  (Emacs::goto-file-position file line col))
 
 (defun emacsEval (str)
-  (emacs::eval-in-emacs str))
+  (Emacs::eval-in-emacs str))
 
 (defun chooseMenu (strs)
-  (emacs::open-multiple-choice-window strs))
+  (Emacs::open-multiple-choice-window strs))
 
 ;;; The following used by send-message-to-lisp
-(defvar emacs::*procs* 0)
+(defvar Emacs::*procs* 0)
 
 #-mcl
 (defun makeProcess (sym)
   (let* 
-      ((procNum emacs::*procs*)
+      ((procNum Emacs::*procs*)
        (procName (format nil "Specware process : ~S" procNum)) 
        (proc #+allegro
 	     (mp:process-run-function procName 
@@ -179,7 +179,7 @@
 				      (list sym)))
        )
     (declare (ignore proc))
-    (setq emacs::*procs* (1+ procNum))
+    (setq Emacs::*procs* (1+ procNum))
     procName))
 
 (defun my-eval (x)
@@ -188,5 +188,5 @@
     (eval x)))
 
 #+(or allegro Lispworks)
-(defun emacs::kill-process (procName)
+(defun Emacs::kill-process (procName)
   (mp::process-kill (mp::process-name-to-process procName)))
