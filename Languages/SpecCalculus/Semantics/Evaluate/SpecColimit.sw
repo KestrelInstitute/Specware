@@ -67,10 +67,31 @@ spec
  %%  be modified to better reflect that reality.
  %% ================================================================================
 
+
+
  def SpecCalc.specColimit dg =  % TODO: would be nice to have Position, but Cat structure precludes that
+   %% TODO: base spec should be an arg to specColimit, or part of monad
+   let base_spec = getBaseImportSpec () in  
+   %% For an ordinary colimit, all vertices are equivalent--none dominate, so list is empty.
+   auxSpecColimit base_spec [] dg  
 
-  let base_spec = getBaseImportSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
-
+ op  auxSpecColimit : Spec -> List Vertex.Elem -> SpecDiagram -> Option SpecInitialCocone * Option String
+ def auxSpecColimit base_spec dominating_vertices dg =  
+  %%
+  %% The colimit is effectively computed in a slice category over the base spec.
+  %% TODO:  clarify this better
+  %%
+  %% For a substitution, some vertices will dominate others, which means that 
+  %% the names they assign to types and ops will be used in the apex spec to 
+  %% the  exclusion of any names from less-dominate vertices.  
+  %%
+  %% * This means the apex spec will print more simply (fewer types and ops with aliases). 
+  %%
+  %% * It also means that the cocone morphisms from less-dominate vertices will in
+  %%   general be translations, not simple inclusions, since the names they assign 
+  %%   to types and ops won't be present in the apex spec, as they would be for a
+  %%   simple colimit.
+  %%
   let 
      def extract_sorts (spc : Spec) =
        foldriAQualifierMap (fn (qualifier, id, info, sorts) ->
@@ -686,12 +707,12 @@ spec
     toScreen "==========================================\n")
 
  def showVQidToQidAliasesMap vqid_to_qid_and_aliases_map =
-   toScreen ("\nVQid => QualifiedId * Aliases:\n\n"                  
+   toScreen ("\nVQid => [ QualifiedId ] Aliases\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn vqid -> fn (qid, aliases) ->
 					     cons (ppConcat [ppVQid vqid,
-							     ppString " => ",
+							     ppString " => [ ",
 							     ppQid qid,
-							     ppString " * ",
+							     ppString " ] ",
 							     (ppSep (ppString ", ") (map ppQid aliases)),
 							     ppString "\n"],
 						   result))

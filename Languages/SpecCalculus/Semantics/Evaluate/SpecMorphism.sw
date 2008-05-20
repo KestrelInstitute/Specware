@@ -22,7 +22,7 @@ coherence conditions of the morphism elements.
     (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);
     coercedCodValue <- return (coerceToSpec codValue);
-    sm_tm <- return ((SpecMorph (domTerm, codTerm, [], pragmas), Internal "nowhere"));
+    sm_tm <- return ((SpecMorph (domTerm, codTerm, morphRules, pragmas), Internal "nowhere"));
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules pragmas (positionOf domTerm) (Some sm_tm);
