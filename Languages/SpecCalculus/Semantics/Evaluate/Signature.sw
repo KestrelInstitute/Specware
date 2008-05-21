@@ -15,16 +15,17 @@ SpecCalc qualifying spec {
   op evaluateReturnUID        : Position -> RelativeUID                                          -> SpecCalc.Env (ValueInfo * UnitId)
   op evaluateUID              : Position -> RelativeUID                                          -> SpecCalc.Env ValueInfo
   op evaluateSpec             : List (SpecElem Position)                             -> Position -> SpecCalc.Env ValueInfo
-  op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position)) * (SM_Pragmas Position) -> SpecCalc.Env ValueInfo
+  op evaluateSpecMorph        : SCTerm * SCTerm * (List (SpecMorphRule Position)) 
+                                                * (SM_Pragmas Position)              -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecPrism        : SCTerm * List SCTerm * PrismModeTerm Position        -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateSpecInterp       : SCTerm * SCTerm * (SpecInterpRules Position)         -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateExtendMorph      : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluateLispCompile      : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
   op evaluateLispCompileLocal : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
   op evaluateJavaGen          : ValueInfo * (SpecCalc.Term Position) * Option String             -> SpecCalc.Env ValueInfo
-  op evaluateDiag             : List (DiagElem Position)                                         -> SpecCalc.Env ValueInfo
+  op evaluateDiag             : List (DiagElem Position)                             -> Position -> SpecCalc.Env ValueInfo
   op evaluateDiagMorph        : SCTerm * SCTerm * (List (DiagMorphRule Position))                -> SpecCalc.Env ValueInfo
-  op evaluateColimit          : SCTerm                                                           -> SpecCalc.Env ValueInfo
+  op evaluateColimit          : SCTerm                                               -> Position -> SpecCalc.Env ValueInfo
   op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
   op evaluatePrint            : SCTerm * Boolean                                                 -> SpecCalc.Env ValueInfo
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
@@ -101,6 +102,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.52  2007/07/11 20:41:27  westfold
+%% Initial version of syntax for transform statement.
+%%
 %% Revision 1.51  2006/05/27 00:21:55  westfold
 %% Add support for x-symbol
 %%

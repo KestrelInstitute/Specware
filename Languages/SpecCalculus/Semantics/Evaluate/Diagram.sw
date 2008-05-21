@@ -13,7 +13,7 @@ the coherence conditions that come up? Commutativity of sketches.
 Lots of proof obligations. Needs thought.
 
 \begin{spec}
-  def SpecCalc.evaluateDiag elems = {
+  def SpecCalc.evaluateDiag elems pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating diagram-term at " ^ (uidToString unitId)^"\n");
     (dgm : SpecDiagram, timeStamp, depUIDs) <-

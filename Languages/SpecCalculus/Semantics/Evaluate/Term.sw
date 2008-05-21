@@ -43,17 +43,17 @@ This is a monadic interpreter for the Spec Calculus.
    let pos = positionOf term in
    case (valueOf term) of
     | Print       term     -> SpecCalc.evaluatePrint       (term,false)
-    | UnitId      unitId   -> SpecCalc.evaluateUID         (positionOf term) unitId
-    | Spec        elems    -> SpecCalc.evaluateSpec        elems pos
-    | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields
-    | SpecInterp  fields   -> SpecCalc.evaluateSpecInterp  fields pos % tenatitve
-    | SpecPrism   fields   -> SpecCalc.evaluateSpecPrism   fields pos % tenatitve
+    | UnitId      unitId   -> SpecCalc.evaluateUID         pos unitId
+    | Spec        elems    -> SpecCalc.evaluateSpec        elems     pos
+    | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields    pos
+    | SpecInterp  fields   -> SpecCalc.evaluateSpecInterp  fields    pos % tenatitve
+    | SpecPrism   fields   -> SpecCalc.evaluateSpecPrism   fields    pos % tenatitve
     | ExtendMorph term     -> SpecCalc.evaluateExtendMorph term
-    | Diag        elems    -> SpecCalc.evaluateDiag        elems
-    | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term
-    | Subst       args     -> SpecCalc.evaluateSubstitute  args pos
-    | OpRefine    args     -> SpecCalc.evaluateOpRefine    args pos
-    | Transform   args     -> SpecCalc.evaluateTransform   args pos
+    | Diag        elems    -> SpecCalc.evaluateDiag        elems     pos
+    | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term  pos
+    | Subst       args     -> SpecCalc.evaluateSubstitute  args      pos
+    | OpRefine    args     -> SpecCalc.evaluateOpRefine    args      pos
+    | Transform   args     -> SpecCalc.evaluateTransform   args      pos
     | DiagMorph   fields   -> SpecCalc.evaluateDiagMorph   fields
 
     | Qualify  (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
@@ -70,13 +70,13 @@ This is a monadic interpreter for the Spec Calculus.
           SpecCalc.evaluateTermInfo sub_term
         }
 
-    | Translate   (tm, renaming)  -> SpecCalc.evaluateTranslate   tm renaming pos
+    | Translate   (tm, renaming)  -> SpecCalc.evaluateTranslate   tm renaming   pos
 
     | Obligations (sub_term)      -> SpecCalc.evaluateObligations sub_term
-    | Expand      (sub_term)      -> SpecCalc.evaluateExpand      sub_term pos
-    | Prove       args            -> SpecCalc.evaluateProve       args pos
-    | ProofCheck  args            -> SpecCalc.evaluateProofCheck  args pos
-    | Generate    args            -> SpecCalc.evaluateGenerate    args pos
+    | Expand      (sub_term)      -> SpecCalc.evaluateExpand      sub_term      pos
+    | Prove       args            -> SpecCalc.evaluateProve       args          pos
+    | ProofCheck  args            -> SpecCalc.evaluateProofCheck  args          pos
+    | Generate    args            -> SpecCalc.evaluateGenerate    args          pos
     | Reduce      (msTerm,scTerm) -> SpecCalc.reduce              msTerm scTerm pos
     | Other       args            -> SpecCalc.evaluateOther       args pos  % used for extensions to Specware
     | Quote       value_info      -> return value_info

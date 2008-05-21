@@ -15,9 +15,10 @@ For morphisms, evaluate the domain and codomain terms, and check
 coherence conditions of the morphism elements. 
 
 \begin{spec}
-  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules,pragmas) = {
+  def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules,pragmas) pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-morphism at " ^ (uidToString unitId) ^ "\n");
+    % print (";;; Elaborating spec-morphism in " ^ (uidToString unitId) ^ " at " ^ print pos ^ "\n");
     (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);

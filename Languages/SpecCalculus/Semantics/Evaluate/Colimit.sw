@@ -8,7 +8,7 @@ SpecCalc qualifying spec
  import UnitId/Utilities  % for uidToString, if used...
  import SpecColimit
 
- def SpecCalc.evaluateColimit term = 
+ def SpecCalc.evaluateColimit term pos = 
    {
     unitId <- getCurrentUID;
     print (";;; Elaborating diagram-colimit at " ^ (uidToString unitId) ^ "\n");
