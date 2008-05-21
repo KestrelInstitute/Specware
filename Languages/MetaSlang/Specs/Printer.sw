@@ -1388,15 +1388,15 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?,a)) :: (OpDef (qid2,_)) :: r_els ->
+	   | (Op (qid1,def?,a)) :: (r1_els as (OpDef (qid2,_)) :: r2_els) ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
-                  ppOpDeclThenDef context (opinfo,aux(r_els, false, result))
+                  ppOpDeclThenDef context (opinfo,aux(r2_els, false, result))
 		else if def? then
-                  ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclWithDef context (opinfo,aux(r1_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,a),r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(r1_els, true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
