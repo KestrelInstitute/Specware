@@ -878,8 +878,10 @@ spec
                               (opInfoDefs opinfo)
                          in
                          if new_tccs = [] then tcc
-                           else       % Split Op into decl and def
-                             ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tcc.1, claimNames))
+                           else if exists (fn Property(_,_,_,fm,_) -> containsRefToOp?(fm, qid)) new_tccs
+                             then % Split Op into decl and def
+                                  ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tcc.1, claimNames)
+                             else (new_tccs ++ tcc.1,claimNames))
                  | OpDef (qid as Qualified(q, id), _) ->
                    (case findTheOp(spc,qid) of
                       | Some opinfo ->
@@ -957,6 +959,7 @@ spec
 %		    noPos)
 
  def makeTypeCheckObligationSpec (spc) =
+   % let _ = writeLine(printSpec spc) in
    %let spc = lambdaLift(instantiateHOFns(spc),false) in
 %   case getOptSpec (Some "/Library/Base/WFO") of
 %     | None -> fail "Error in processing /Library/Base/WFO"
@@ -964,8 +967,11 @@ spec
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
    let (new_elements,_) = checkSpec spc in
-   removeDuplicateImports		% could be done more efficiently for special case
-     (spc << {elements = new_elements})
+   let spc = removeDuplicateImports		% could be done more efficiently for special case
+               (spc << {elements = new_elements})
+   in
+   % let _ = writeLine(printSpec spc) in
+   spc
 
 % op  boundVars   : Gamma -> List Var
 % op  boundTyVars : Gamma -> TyVars
