@@ -1265,6 +1265,20 @@ If anyone has a good algorithm for this..."
       (setq filename (substring filename 2)))
     filename))
 
+(unless (fboundp 'match-string-no-properties)
+  (defun match-string-no-properties (num &optional string)
+  "Return string of text matched by last search, without text properties.
+NUM specifies which parenthesized expression in the last regexp.
+ Value is nil if NUMth pair didn't match, or there were less than NUM pairs.
+Zero means the entire text matched by the whole regexp or whole string.
+STRING should be given if the last search was by `string-match' on STRING."
+  (if (match-beginning num)
+      (if string
+	  (substring-no-properties string (match-beginning num)
+				   (match-end num))
+	(buffer-substring-no-properties (match-beginning num)
+					(match-end num))))))
+
 (defun sw:containing-specware-unit-id (relativise)
   (save-excursion
     (end-of-line)
