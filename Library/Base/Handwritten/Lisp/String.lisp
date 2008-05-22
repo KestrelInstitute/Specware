@@ -302,12 +302,14 @@
 
 (defun toScreen (x)
   (declare (type cl:simple-string x))
-  (common-lisp::format t "~A" x))
+  (princ x t)
+  (force-output t))
 
 (defun writeLine (x)
   (declare (type cl:simple-string x))
-  (common-lisp::format t "~A" x)
-  (common-lisp::format t "~%"))
+  (princ x t)
+  (terpri t)
+  (force-output))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
