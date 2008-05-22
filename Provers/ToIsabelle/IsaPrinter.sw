@@ -10,6 +10,7 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/AbstractSyntax/Types
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/MetaSlang/Transformations/RemoveSubsorts
+ import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
  import /Languages/MetaSlang/Specs/TypeObligations
  import /Languages/MetaSlang/Specs/Environment
@@ -378,7 +379,7 @@ IsaTermPrinter qualifying spec
 	       else spc
     in
     let spc = if simplify?
-                then simplifySpec spc
+                then simplifyTopSpec spc
                 else spc
     in
     let spc = if addObligations?
@@ -390,6 +391,7 @@ IsaTermPrinter qualifying spec
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
     in
+    let spc = emptyTypesToSubtypes spc in
     let spc = removeSubSorts spc coercions in
     let spc = addCoercions coercions spc in
     prLinesCat 0 [[prString "theory ", prString c.thy_name],
