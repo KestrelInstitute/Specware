@@ -903,7 +903,8 @@ Utilities qualifying spec
 
  op mkSimpBind: Binder * List Var * MS.Term -> MS.Term
  def mkSimpBind(b, vars, term) =
-   if vars = [] or (freeVars term = [] & b = Forall) then term
+   if vars = []
+     then term
      else Bind(b,vars,term,noPos)
 
  op  mkSimpImplies: MS.Term * MS.Term -> MS.Term
@@ -1009,6 +1010,13 @@ Utilities qualifying spec
                              | Fun(Op _,_,_) -> true
                              | _ -> false)
       term
+
+  op [a] containsRefToOp?(term: ATerm a, qid: QualifiedId): Boolean =
+    existsSubTerm (fn t -> case t of
+                             | Fun(Op(qid1,_),_,_) -> qid = qid1
+                             | _ -> false)
+      term
+
 
   op  lambda?: [a] ATerm a -> Boolean
   def lambda? t =
@@ -1381,7 +1389,7 @@ Utilities qualifying spec
     | _ -> srt
 
 
-  type TyVarSubst = List(Id * Sort)
+  type TyVarSubst = List(TyVar * Sort)
   op  instantiateTyVars: Sort * TyVarSubst -> Sort
   def instantiateTyVars(s,tyVarSubst) =
     case s of
@@ -1508,6 +1516,44 @@ Utilities qualifying spec
           n
     in
       loop 1
+
+  op knownNonEmptyBaseTypes: List QualifiedId =
+    [Qualified("Integer", "Integer"), Qualified("Nat","Nat"), Qualified("Char","Char"),
+     Qualified("String", "String"), Qualified("List","List"), Qualified("Option","Option")]
+
+  op existsOpWithType?(ty: Sort, spc: Spec): Boolean =
+    foldriAQualifierMap
+      (fn (q, id, info, result) ->
+         result
+        || (equalType?(firstOpDefInnerSort info, ty) ))
+      false spc.ops
+
+  op existsTrueExistentialAxiomForType?(ty: Sort, spc: Spec): Boolean =
+    foldlSpecElements (fn (el,result) ->
+                         result || (case el of
+                                      | Property(Axiom, _, _,
+                                                 Bind(Exists, [(_,ex_ty)], Fun(Bool true,_,_), _),_) ->
+                                        equalType?(ex_ty, ty)
+                                      | _ -> false))
+      false spc.elements
+
+  op knownNonEmpty?(ty: Sort, spc: Spec): Boolean =
+    case ty of
+      | Base(qid,tvs,_) ->
+        member(qid, knownNonEmptyBaseTypes)
+          || tvs ~= []                  % Not completely safe
+          || (let Some info = findTheSort(spc, qid) in
+              knownNonEmpty?(info.dfn, spc))
+          || existsOpWithType?(ty, spc)
+         %% Leave out for now as it messes up emptyTypesToSubtypes
+         %% || existsTrueExistentialAxiomForType?(ty, spc)
+      | Quotient(sty,_,_) -> knownNonEmpty?(sty, spc)
+      | Pi(_,sty,_) -> knownNonEmpty?(sty, spc)
+      | And(sty::_,_) -> knownNonEmpty?(sty, spc)
+      | Subsort _ -> false
+      | TyVar _ -> false
+      | Any _ -> false
+      | _ -> true
 
 endspec
 
