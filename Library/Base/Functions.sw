@@ -76,7 +76,7 @@ Functions qualifying spec
 
   % mapping to Isabelle:
 
-  proof Isa ThyMorphism Hilbert_Choice
+  proof Isa ThyMorphism
     Functions.id \_rightarrow id
     Functions.o \_rightarrow o Left 24
     Functions.:> -> o Left 24 reversed
