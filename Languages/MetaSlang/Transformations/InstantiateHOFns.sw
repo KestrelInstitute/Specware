@@ -589,12 +589,6 @@ spec
       | Record (fields,_) -> map (fn (_,x) -> x) fields
       | _ -> [t]
 
-  op  mkTuplePat  : List Pattern  -> Pattern
-  def mkTuplePat pats =
-    case pats of
-      | [pat] -> pat
-      | _ -> RecordPat (tagTuple(pats), noPos)
-
   op  matchPairs: Pattern * Term -> List (Var * Term)
   def matchPairs(p,t) =
     case (p,t) of
