@@ -244,7 +244,7 @@ spec
        %% Quantification simplification
        %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
        | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
-       | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
+       | Bind(Exists,_,_,_) -> simplifyExists spc (existsComponents term)
        | Bind(Exists1,_,_,_) -> simplifyExists1(exists1Components term)
        | Apply(Fun(Project i,_,_),Record(m,_),_) ->
 	 (case getField(m,i) of
@@ -298,12 +298,16 @@ spec
 				     else Some(simpSubstitute(spc,c,sbst)))
 		   cjs,
 		 simpSubstitute(spc,bod,sbst)))
-       | _ -> if exists (fn cj -> equivTerm? spc (cj, bod)) cjs
-	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false)
+       | _ -> if (exists (fn cj -> equivTerm? spc (cj, bod)) cjs
+	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false))
+                 && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
 	       then mkTrue()
 	       else
 		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
-		 let simpVs = filter (fn v -> exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs)) vs in
+		 let simpVs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
+                                             || ~(knownNonEmpty?(v.2, spc)))
+                                vs
+                 in
 		 if simplCJs = cjs && simpVs = vs
 		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
 		   else simplifyForall spc (simpVs,simplCJs,bod)
@@ -369,8 +373,12 @@ spec
 	  | _ -> None)
       | _ -> None
 
-  op  simplifyExists: List Var * List MS.Term -> MS.Term
-  def simplifyExists(vs,cjs) =
+  op  simplifyExists: Spec -> List Var * List MS.Term -> MS.Term
+  def simplifyExists spc (vs,cjs) =
+    let vs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) cjs)
+                            || ~(knownNonEmpty?(v.2, spc)))
+               vs
+    in
     mkSimpBind(Exists,vs,mkSimpConj cjs)    
 
   op  simplifyExists1: List Var * List MS.Term -> MS.Term
@@ -455,5 +463,24 @@ spec
    % let _ = toScreen("After:\n" ^ printSpec simp_spc ^ "\n\n") in
    simp_spc
     
+ op simplifyTopSpec(spc: Spec): Spec =
+   let (new_elts, new_ops) =
+       foldr (fn (elt, (elts, ops)) ->
+                case elt of
+                  | Property(ty, qid, tvs, tm, a) ->
+                    (Cons(Property(ty, qid, tvs, simplify spc tm, a), elts), ops)
+                  | Op(qid as Qualified(q,id), true, _) ->
+                    let Some info = findTheOp(spc, qid) in
+                    (Cons(elt, elts),
+                     insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
+                  | OpDef(qid as Qualified(q,id), _) ->
+                    let Some info = findTheOp(spc, qid) in
+                    (Cons(elt, elts),
+                     insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
+                  | _ -> (Cons(elt, elts), ops))
+         ([], spc.ops) spc.elements
+   in
+   spc << {ops = new_ops, elements = new_elts}
+
 endspec
 
