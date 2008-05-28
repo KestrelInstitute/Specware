@@ -1577,7 +1577,7 @@ redefining or declaring that type or `op with the same full
 <!--====================================================================-->
 <para>
 <<
-||`import-declaration ::= import `spec-term
+||`import-declaration ::= import `spec-term { , `spec-term }*
 >>
 Sample `import-declaration:
 [[
@@ -1586,13 +1586,23 @@ Sample `import-declaration:
 </para>
 <!-- ================================================================= -->
 <para>
+An `import-declaration of the form [[import ]]$S$<subscript>1</subscript>[[, ]]...[[, ]]$S<subscript>n</subscript>$, where $n$ > 1, is equivalent to the
+sequence of `import-declarations
+[[
+||    import $S<subscript>1</subscript>$
+||    ...
+||    import $S<subscript>n</subscript>$
+]]
+</para>
+<!-- ================================================================= -->
+<para>
 An `import-declaration is contained in some `spec-form, and 
-to elaborate that `spec-form the `spec-term of
-the `import-declaration is elaborated first, giving some
-`spec $S$.
+to elaborate that `spec-form the `spec-terms of
+its `import-declarations are elaborated first, giving
+a sequence of `specs.
 The `import-declaration has then the effect as if the
-`declarations of the imported `spec
-$S$ are expanded in place.
+`declarations of the imported `specs as elaborated
+are expanded in place, replacing the `import-declaration.
 This cascades: if `spec $A$ imports
 $B$, and `spec
 $B$ imports
@@ -2853,8 +2863,8 @@ The inhabitants of the record type
 ...
 [[, $F<subscript>n</subscript>$ : $T<subscript>n</subscript>$}]]
 are precisely all $n$-tuples
-($v<subscript>1</subscript>$,
-$v<subscript>2</subscript>$, ... ,
+($v$<subscript>1</subscript>,
+$v$<subscript>2</subscript>, ... ,
 $v<subscript>n</subscript>$), where each
 $v<subscript>i</subscript>$ has type
 $T<subscript>i</subscript>$, for
