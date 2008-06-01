@@ -301,15 +301,23 @@
   (format nil "~c" #\newline))
 
 (defun toScreen (x)
+  ;; Note: (format t ...) goes to *standard-output*
+  ;;    but (princ ... t) goes to *terminal-io*
+  ;; Confusing, but that's the standard...
+  ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
   (declare (type cl:simple-string x))
-  (princ x t)
-  (force-output t))
+  (princ x *standard-output*)
+  (force-output *standard-output*))
 
 (defun writeLine (x)
+  ;; Note: (format t ...) goes to *standard-output*
+  ;;    but (princ ... t) goes to *terminal-io*
+  ;; Confusing, but that's the standard...
+  ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
   (declare (type cl:simple-string x))
-  (princ x t)
-  (terpri t)
-  (force-output))
+  (princ x *standard-output*)
+  (terpri *standard-output*)
+  (force-output *standard-output*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
