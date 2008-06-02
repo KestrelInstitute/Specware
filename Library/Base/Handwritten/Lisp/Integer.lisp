@@ -7,33 +7,36 @@
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
 
 (setq SpecToLisp::SuppressGeneratedDefuns
-  (append '("Integer-Spec::pred"
-	    "Integer-Spec::positive?"
-	    "IntegerAux::|!-|"
-	    "Integer-Spec::+-2"
-	    "Integer-Spec::|!+|"
-	    "Integer-Spec::--2"
-	    "Integer-Spec::|!-|"
-            "Integer-Spec::~"
-	    "Integer-Spec::*-2"
-	    "Integer-Spec::|!*|"
-	    "Integer-Spec::<-2"
-	    "Integer-Spec::|!<|"
-	    "Integer-Spec::<=-2"
-	    "Integer-Spec::|!<=|"
-	    "Integer-Spec::div-2"
-	    "Integer-Spec::div"
-	    "Integer-Spec::rem-2"
-	    "Integer-Spec::|!rem|"
-	    "Integer-Spec::divides-2"
-	    "Integer-Spec::divides"
-	    "Integer-Spec::multipleOf-2"
-	    "Integer-Spec::multipleOf"
-	    "Integer-Spec::gcd-2"
-	    "Integer-Spec::|!gcd|"
-	    "Integer-Spec::lcm-2"
-	    "Integer-Spec::|!lcm|"
+  (append '(
+	    ;; upper-case versions:
+	    "INTEGER-SPEC::pred"
+	    "INTEGER-SPEC::positive?"
+	    "INTEGERAUX::|!-|"
+	    "INTEGER-SPEC::+-2"
+	    "INTEGER-SPEC::|!+|"
+	    "INTEGER-SPEC::--2"
+	    "INTEGER-SPEC::|!-|"
+            "INTEGER-SPEC::~"
+	    "INTEGER-SPEC::*-2"
+	    "INTEGER-SPEC::|!*|"
+	    "INTEGER-SPEC::<-2"
+	    "INTEGER-SPEC::|!<|"
+	    "INTEGER-SPEC::<=-2"
+	    "INTEGER-SPEC::|!<=|"
+	    "INTEGER-SPEC::div-2"
+	    "INTEGER-SPEC::div"
+	    "INTEGER-SPEC::rem-2"
+	    "INTEGER-SPEC::|!rem|"
+	    "INTEGER-SPEC::divides-2"
+	    "INTEGER-SPEC::divides"
+	    "INTEGER-SPEC::multipleOf-2"
+	    "INTEGER-SPEC::multipleOf"
+	    "INTEGER-SPEC::gcd-2"
+	    "INTEGER-SPEC::|!gcd|"
+	    "INTEGER-SPEC::lcm-2"
+	    "INTEGER-SPEC::|!lcm|"
 
+	    ;; mixed-case versions:
             "Integer-Spec::pred"
 	    "Integer-Spec::positive?"
 	    "IntegerAux::|!-|"
@@ -64,18 +67,17 @@
 	   SpecToLisp::SuppressGeneratedDefuns))
 
 
-(defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
-
-(setq SpecToLisp::SuppressGeneratedDefuns
-      (append '("Integer-Spec::pred"
-		"Integer-Spec::positive?"
-		"Integer-Spec::|!+|"
-		"Integer-Spec::|!-|"
-		"Integer-Spec::|!*|"
-		"Integer-Spec::div"
-		"Integer_::|!-|"
-		"IntegerAux::|!-|")
-	      SpecToLisp::SuppressGeneratedDefuns))
+;; redundant?
+;; (setq SpecToLisp::SuppressGeneratedDefuns
+;;       (append '("Integer-Spec::pred"
+;; 		"Integer-Spec::positive?"
+;; 		"Integer-Spec::|!+|"
+;; 		"Integer-Spec::|!-|"
+;; 		"Integer-Spec::|!*|"
+;; 		"Integer-Spec::div"
+;; 		"Integer_::|!-|"
+;; 		"IntegerAux::|!-|")
+;; 	      SpecToLisp::SuppressGeneratedDefuns))
 
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,
 ;;; the other takes one argument that is a pair. In MetaSlang, there is no such
