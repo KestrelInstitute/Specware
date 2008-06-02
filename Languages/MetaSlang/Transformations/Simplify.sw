@@ -300,7 +300,7 @@ spec
 		 simpSubstitute(spc,bod,sbst)))
        | _ -> if (exists (fn cj -> equivTerm? spc (cj, bod)) cjs
 	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false))
-                 && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
+                % && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
 	       then mkTrue()
 	       else
 		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
