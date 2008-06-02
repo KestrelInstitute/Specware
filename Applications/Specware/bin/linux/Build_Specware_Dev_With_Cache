@@ -99,10 +99,12 @@ fi
 cd "$SPECWARE4"/Applications/Specware/bin/linux/
 
 echo " "
-if [ -f Specware4-with-cache.$IMAGE_EXTENSION ]; then
-  echo "Saving previous specware image ..."
-  echo "mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION"
-  mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION
+if [ -f $BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION ]; then
+  if [ -f $BIN_DIR/Specware4.$IMAGE_EXTENSION ]; then
+      echo "Saving previous specware image ..."
+      echo "mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION"
+      mv -f $BIN_DIR/Specware4.$IMAGE_EXTENSION $BIN_DIR/Specware4-save.$IMAGE_EXTENSION
+  fi
   echo "Installing cached specware image ..."
   echo "mv -f $BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION $BIN_DIR/Specware4.$IMAGE_EXTENSION"
   mv -f $BIN_DIR/Specware4-with-cache.$IMAGE_EXTENSION $BIN_DIR/Specware4.$IMAGE_EXTENSION
