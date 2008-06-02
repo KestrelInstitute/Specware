@@ -1335,7 +1335,9 @@ AnnSpecPrinter qualifying spec
 				     (2, ppSpecAll context im_sp)])),
 		     ppResult))
 	     | Recursive ->
-	       ppSpecElementsAux context im_sp import_directions im_elements result)
+	       %% for now, showx is broken, but simply changing spc to im_sp is not the fix...
+	       %% use sp, not im_sp, to get correct context for show
+	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
 	 | Op (qid,def?,_) ->
 	   (case findTheOp(spc,qid) of
@@ -1391,20 +1393,15 @@ AnnSpecPrinter qualifying spec
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
-                  let zz = aux(r2_els, false, result) in
-                  ppOpDeclThenDef context (opinfo,zz)
+                  ppOpDeclThenDef context (opinfo,aux(r2_els, false, result))
 		else if def? then
-                  let zz = aux(r1_els, false, result) in
-                  ppOpDeclWithDef context (opinfo,zz) % TODO: discriminate decl-with-def from decl-then-def
+                  ppOpDeclWithDef context (opinfo,aux(r1_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  let zz = aux(r1_els, true, result) in
-                  ppOpDecl context afterOp? (opinfo,zz)
+                  ppOpDecl context afterOp? (opinfo,aux(r1_els, true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[3]: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))
-	   | el :: r_els -> 
-             let zz = aux(r_els,(embed? Op) el,result) in
-             ppSpecElement(el,afterOp?,zz)
+	   | el :: r_els -> ppSpecElement(el,afterOp?,aux(r_els,(embed? Op) el,result))
    in
      aux(elements,true,result)
        
@@ -1457,8 +1454,9 @@ AnnSpecPrinter qualifying spec
 				     (0, ppSpecAll context im_sp)])),
 		     ppResult))
 	     | Recursive ->
-	       %% let _ = toScreen (anyToString im_sp_tm^"\n\n") in
-	       ppSpecElementsAux context im_sp import_directions im_elements result)
+	       %% for now, showx is broken, but simply changing spc to im_sp is not the fix...
+	       %% use sp, not im_sp, to get correct context for show
+	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
 	 | Op (qid,def?,_) ->
 	   (case findTheOp(spc,qid) of
