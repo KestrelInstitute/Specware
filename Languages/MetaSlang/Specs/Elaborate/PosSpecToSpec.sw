@@ -3,6 +3,7 @@ PosSpecToSpec qualifying spec
 
  import  ../Environment
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
+ import ../../Transformations/NormalizeTypes
 
  def correctEqualityType (spc: Spec, eq_or_neq: Fun, ty: Sort, eq_args: MS.Term, pos1: Position)
      : MS.Term =
@@ -76,34 +77,36 @@ PosSpecToSpec qualifying spec
   let {sorts, ops, elements, qualifier} = spc in
 %  let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp = (convertPTerm, convertPSort, fn x -> x) in
-  spc << { ops = if ~(hasLocalOp? spc) then 
-                   ops
-		 else
-                   mapOpInfosUnqualified (fn info ->
-					  if someOpAliasIsLocal? (info.names, spc) then
-					    info << {dfn = mapTerm tsp info.dfn}
-					  else 
-					    info)
-			      ops,
+  let spc = spc << { ops = if ~(hasLocalOp? spc) then 
+                              ops
+                            else
+                              mapOpInfosUnqualified (fn info ->
+                                                     if someOpAliasIsLocal? (info.names, spc) then
+                                                       info << {dfn = mapTerm tsp info.dfn}
+                                                     else 
+                                                       info)
+                                         ops,
 
-          sorts = if ~(hasLocalSort? spc) then 
-                   sorts
-                  else
-		   mapSortInfos (fn info ->
-				 if someSortAliasIsLocal? (info.names, spc) then
-				   info << {dfn = mapSort tsp info.dfn}
-				 else 
-				   info)
-				sorts,
+                     sorts = if ~(hasLocalSort? spc) then 
+                              sorts
+                             else
+                              mapSortInfos (fn info ->
+                                            if someSortAliasIsLocal? (info.names, spc) then
+                                              info << {dfn = mapSort tsp info.dfn}
+                                            else 
+                                              info)
+                                           sorts,
 
-          elements =  map (fn el ->
-                             case el of
-                               | Property (pt, qid, tvs, term, a) -> 
-                                 Property(pt, qid, tvs, 
-                                          mapTerm tsp term, a)
-                               | _ -> el)
-                           elements
-         }
+                     elements =  map (fn el ->
+                                        case el of
+                                          | Property (pt, qid, tvs, term, a) -> 
+                                            Property(pt, qid, tvs, 
+                                                     mapTerm tsp term, a)
+                                          | _ -> el)
+                                      elements
+                    }
+  in
+  normalizeNewTypes spc
 
 
  op  convertPosTermToTerm : MS.Term -> MS.Term
