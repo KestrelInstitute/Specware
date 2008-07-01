@@ -1430,7 +1430,8 @@ Utilities qualifying spec
                              if id1 = id2 then
                                (case (s1,s2) of
                                   | (None,None) -> Some pairs 
-                                  | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
+                                  | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs)
+                                  | _ -> None)
                              else None)
               | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
                 if equalTerm?(t1,t2) then % not equivTerm?
@@ -1448,6 +1449,9 @@ Utilities qualifying spec
                   then typeMatchL(ts,ts2,pairs,match)
                 else
                   let s2x = unfoldBase(spc,srt2) in
+                  if embed? CoProduct s2x || embed? Quotient s2x  % If names different then not equal
+                    then None
+                  else
                   if equalType? (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
                     then Some pairs
                   else match(srt1,s2x,pairs)
