@@ -885,7 +885,10 @@ Utilities qualifying spec
 	| (Fun(Bool false,_,_),_) -> t1
 	| (_,Fun(Bool true,_,_)) -> t1
 	| (_,Fun(Bool false,_,_)) -> t2
-	| _ -> MS.mkAnd(t1,t2)
+	| _ ->
+          if termIn?(t1, getConjuncts t2)
+            then t2
+            else MS.mkAnd(t1,t2)
 
  op  mkSimpConj: List MS.Term -> MS.Term
  def mkSimpConj(cjs) =
@@ -931,6 +934,14 @@ Utilities qualifying spec
 	 | Fun(Bool false,_,_) -> negateTerm(t1)
 	 | _ -> mkIff (t1,t2)
 
+
+  op mkOptLambda(pat: Pattern, tm: MS.Term): MS.Term =
+    case tm of
+      | Apply(f,arg,_) ->
+        (case patternToTerm pat of
+           | Some pat_tm | equalTerm?(pat_tm, arg) -> f
+           | _ -> mkLambda(pat, tm))
+      | _ -> mkLambda(pat, tm)
 
  op  identityFn?: [a] ATerm a -> Boolean
  def identityFn? f =
@@ -1387,6 +1398,116 @@ Utilities qualifying spec
 	   else
 	     srt)
     | _ -> srt
+
+  op tryUnfoldBase (spc: Spec) (ty: Sort): Option Sort =
+    let exp_ty = unfoldBaseOne(spc, ty) in
+    if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
+      then None
+      else Some exp_ty
+
+ op existsInFullType? (spc: Spec) (pred?: Sort -> Boolean) (ty: Sort): Boolean =
+   pred? ty ||
+   (case ty of
+      | Base _ ->
+        (case tryUnfoldBase spc ty of
+           | None -> false
+           | Some uf_ty -> existsInFullType? spc pred? uf_ty)
+      | Arrow(x,y,_) -> existsInFullType? spc pred? x || existsInFullType? spc pred? y
+      | Product(prs,_) -> exists (fn (_,f_ty) -> existsInFullType? spc pred? f_ty) prs
+      | CoProduct(prs,_)  -> exists (fn (_,o_f_ty) ->
+                                       case o_f_ty of
+                                         | Some f_ty -> existsInFullType? spc pred? f_ty
+                                         | None -> false)
+                               prs
+      | Quotient(x,_,_) -> existsInFullType? spc pred? x
+      | Subsort(x,_,_) -> existsInFullType? spc pred? x
+      | And(tys,_) -> exists (existsInFullType? spc pred?) tys
+      | _ -> false)
+
+ op subtype?(sp: Spec, srt: Sort): Boolean =
+   case srt of
+     | Subsort _ -> true
+     | _ ->
+       let exp_srt =  unfoldBase (sp, srt) in
+       if srt = exp_srt then false
+         else subtype?(sp, exp_srt)
+
+ op subtypeComps(sp: Spec, ty: Sort): Option(Sort * MS.Term) =
+   case ty of
+     | Subsort(sty,p,_) -> Some(sty,p)
+     | _ ->
+       let exp_ty =  unfoldBase (sp, ty) in
+       if ty = exp_ty then None
+         else subtypeComps(sp, exp_ty)
+
+  op raiseSubtype(ty: Sort, spc: Spec): Sort =
+  %% Bring subtypes to the top-level
+    % let _ = writeLine("rt: "^printSort ty) in
+    case ty of
+      | Base(qid, args, a) ->
+        let args = map (fn tyi -> raiseSubtype(tyi, spc)) args in
+        if exists (fn tyi -> subtype?(spc, tyi)) args
+          then
+          let Qualified(q,id) = qid in
+          let pred_name = id^"_P" in
+          let pred_qid = Qualified(q, pred_name) in
+          (case AnnSpec.findTheOp(spc, pred_qid) of
+             | Some _ ->
+               let arg_comps = map (fn tyi ->
+                                    case subtypeComps(spc, tyi) of
+                                      | Some pr -> pr
+                                      | None -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
+                                 args
+               in
+               let (bare_args, arg_preds) = unzip arg_comps in
+               let bare_ty = Base(qid, bare_args, a) in
+               Subsort(bare_ty,
+                       mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
+                                                     mkArrow(bare_ty, boolSort))),
+                              arg_preds),
+                       a)
+             | None ->
+               (case tryUnfoldBase spc ty of
+                  | None -> ty
+                  | Some exp_ty -> raiseSubtype(exp_ty, spc)))
+        else
+          (case tryUnfoldBase spc ty of
+             | None -> ty
+             | Some exp_ty -> raiseSubtype(exp_ty, spc))
+      | Subsort(s_ty, p, a) ->
+        (case raiseSubtype(s_ty, spc) of
+           | Subsort(sss_ty, pr, _) ->
+             let v = ("x", sss_ty) in
+             Subsort(sss_ty, mkLambda(mkVarPat v, mkAnd(mkApply(p, mkVar v), mkApply(pr, mkVar v))), a)
+           | _ -> ty)
+      | Product(flds, a) ->
+        if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
+          then let (bare_flds, arg_vars, pred,_) =
+                foldl (fn ((id,tyi), (bare_flds, arg_vars, pred, i)) ->
+                         case subtypeComps(spc, tyi) of
+                           | Some(t,p) -> let v = ("x"^toString i, t)  in
+                                          (bare_flds ++ [(id,t)],
+                                           arg_vars ++ [mkVarPat v],
+                                           mkAnd(pred, mkApply(p, mkVar v)),
+                                           i+1)
+                           | None -> (bare_flds ++ [(id,tyi)],
+                                      arg_vars ++ [mkWildPat tyi],
+                                      pred,
+                                      i+1))
+                  ([],[],trueTerm,0) flds
+               in
+               Subsort(Product(bare_flds,a), mkLambda(mkTuplePat arg_vars, pred), a)
+          else ty
+ %     | Arrow(dom, rng ,a) ->
+%        (case raiseSubtype(dom,spc) of
+%           | Subsort(d,d_p,_) ->
+%             %% Using d would be more natural, but then you have to change the type of all variable refs
+%             %% to avoid unnecessary type annotation in Isabelle output (or else freeVars needs to be
+%             %% fixed to ignore types
+%             let f_ty = Arrow(dom,rng,a) in
+%             Subsort(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
+%           | _ -> ty)
+      | _ -> ty
 
 
   type TyVarSubst = List(TyVar * Sort)

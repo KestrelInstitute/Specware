@@ -45,7 +45,7 @@ spec
      case srt
        of Subsort(srt,pred,_) ->
           let (ds,tvs,spc,qid,name,ty,names) = gamma in
-          assertSubtypeCond(term,srt,(cons(Cond(mkLetOrApply(pred,term,gamma)),ds),
+          assertSubtypeCond(term,srt,(Cons(Cond(mkLetOrApply(pred,term,gamma)),ds),
 				      tvs,spc,qid,name,ty,names))
         | _ -> gamma
 
@@ -88,7 +88,7 @@ spec
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,ty,names)) = 
    case cond of
      | Fun((Bool true,_,_)) -> gamma
-     | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,ty,names)
+     | _ -> (Cons(Cond cond,ds),tvs,spc,qid,name,ty,names)
  def insert((x,srt),gamma as (ds,tvs,spc,qid,name,ty,names))  = 
      let ds = Cons(Var(x,srt),ds) in
      let i = case StringMap.find (!names, x)
@@ -101,10 +101,10 @@ spec
      gamma
 % Subsort conditions:
  def insertLet(decls,(ds,tvs,spc,qid,name,ty,names)) = 
-     (cons(Let decls,ds),tvs,spc,qid,name,ty,names)
+     (Cons(Let decls,ds),tvs,spc,qid,name,ty,names)
  def insertLetRec(decls,(ds,tvs,spc,qid,name,ty,names)) =
    let _ = app (fn((x,_),_)-> names := StringMap.insert(!names,x,0)) decls in
-   (cons(LetRec decls,ds),tvs,spc,qid,name,ty,names)
+   (Cons(LetRec decls,ds),tvs,spc,qid,name,ty,names)
 
  def printDecl(d:Decl) = 
      case d
@@ -171,7 +171,7 @@ spec
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
      let term = foldl insert term decls in
-     % let _ = writeLine("Simplifying "^printTerm term) in
+     % let _ = writeLine("Simplifying "^printTerm term^"\nto\n"^printTerm(simplify spc term)) in
      case if simplifyObligations? then simplify spc term else term of
        | Fun(Bool true,_,_) -> None
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
@@ -208,7 +208,7 @@ spec
        let (vsprs,rgamma)
           = foldl (fn ((id,s),(vs,gamma)) ->
 		   let (nv,ngamma) = freshVar(name0,s,gamma) in
-		   (cons((id,nv),vs),ngamma))
+		   (Cons((id,nv),vs),ngamma))
               ([],gamma) prs
        in
        (mkRecord(rev vsprs),rgamma)
@@ -539,7 +539,7 @@ spec
 	    List.foldr
 	      (fn (((_,tau),(id,p)),(g,terms))-> 
 	       let (gamma,trm) = bindPattern(g,p,tau) in 
-	       (gamma,cons((id,trm),terms)))
+	       (gamma,Cons((id,trm),terms)))
 	      (gamma,[]) fields
 	in
 	let trm = mkRecord(terms) in
@@ -679,6 +679,13 @@ spec
 	      | _ -> Let(decls,trm,noPos))
 	| _ -> trm
 
+ op maybeRaiseSubtype(ty: Sort, spc: Spec): Sort =
+   %% Temporary backward compatibility until we add these functions at type-check time rather
+   %% than just in the Isabelle translator
+   case findTheOp(spc, Qualified("List","List_P")) of
+     | Some _ -> raiseSubtype(ty, spc)
+     | None -> ty
+
  def <=	 (tcc,gamma,M,tau,sigma) = 
    (%writeLine(printTerm M^ " : "^ printSort tau^" <= "^ printSort sigma); 
     subtypeRec([],tcc,gamma,M,tau,sigma))
@@ -694,9 +701,9 @@ spec
 %                printSort tau^" <= "^
 %       	        printSort sigma)
 %      in
-   let pairs  = cons((tau,sigma),pairs) 	in 
-   let tau1   = unfoldBase(gamma,tau)    	in
-   let sigma1 = unfoldBase(gamma,sigma)  	in
+   let pairs  = Cons((tau,sigma),pairs) in 
+   let tau1   = maybeRaiseSubtype(unfoldBeforeCoProduct(spc,tau),   spc) in
+   let sigma1 = maybeRaiseSubtype(unfoldBeforeCoProduct(spc,sigma), spc) in
    if tau1 = sigma1
       then tcc
    else
@@ -774,16 +781,16 @@ spec
          else
          addFailure(tcc,
                     gamma,
-                    printSort tau^
+                    " "^printSort tau^
                     " could not be made subsort of "^
                     printSort sigma)
       | (Boolean(_), Boolean(_)) -> tcc
       | (Boolean(_), _) ->
          addFailure(tcc,
                     gamma,
-                    printSort tau^
+                    printSort tau1^
                     " could not be made subsort of "^
-                    printSort sigma)
+                    printSort sigma1)
       | (_, Boolean(_)) ->
          addFailure(tcc,
                     gamma,

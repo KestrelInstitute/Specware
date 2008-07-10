@@ -444,6 +444,7 @@ AnnSpec qualifying spec
    map (fn el ->
 	case el of
 	  | Property (pt, nm, tvs, term, a) ->
+            % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
             Property (pt, nm, tvs, mapTerm tsp term, a)
 	  | Import   (s_tm, i_sp, elts, a)  ->
             Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
