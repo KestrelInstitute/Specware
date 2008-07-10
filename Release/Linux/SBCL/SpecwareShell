@@ -1,6 +1,6 @@
 #!/bin/sh
 
-act='launch Specware in SBCL, no XEmacs'
+act='launch Specware in SBCL (no XEmacs)'
 
 ########################################################################
 
