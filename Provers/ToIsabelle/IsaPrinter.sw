@@ -9,7 +9,7 @@ IsaTermPrinter qualifying spec
  import /Library/Legacy/DataStructures/ListUtilities
  import /Languages/SpecCalculus/AbstractSyntax/Types
  import /Languages/SpecCalculus/Semantics/Value
- import /Languages/MetaSlang/Transformations/RemoveSubsorts
+ import /Languages/MetaSlang/Transformations/SubtypeElimination
  import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
  import /Languages/MetaSlang/Specs/TypeObligations
@@ -32,7 +32,8 @@ IsaTermPrinter qualifying spec
 		 trans_table: TransInfo,
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
-                 newVarCount: Ref Nat}
+                 newVarCount: Ref Nat,
+                 source_of_thy_morphism?: Boolean}
 
  type Pragma = String * String * String * Position
 
@@ -44,11 +45,13 @@ IsaTermPrinter qualifying spec
 
  op  getSpec: Context \_rightarrow Spec
  def getSpec {printTypes?=_,recursive?=_,thy_name=_,spec? = Some spc,
-              currentUID=_,trans_table=_,coercions=_,overloadedConstructors=_,newVarCount=_} = spc
+              currentUID=_,trans_table=_,coercions=_,overloadedConstructors=_,
+              newVarCount=_,source_of_thy_morphism?=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
  def getCurrentUID {printTypes?=_,recursive?=_,thy_name=_,spec?=_,currentUID = Some uid,
-                    trans_table=_,coercions=_,overloadedConstructors=_,newVarCount=_} =
+                    trans_table=_,coercions=_,overloadedConstructors=_,newVarCount=_,
+                    source_of_thy_morphism?=_} =
    uid
 
 
@@ -127,7 +130,7 @@ IsaTermPrinter qualifying spec
    let main_name = last path in
    let path_dir = butLast path in 
    let mainPath = concatList (foldr (\_lambda (elem,result) \_rightarrow cons("/",cons(elem,result)))
-			        ["/Isa/",main_name]
+			        ["/Isa/",thyName main_name]
 				(if device? then tl path_dir else path_dir))
    in if device?
 	then (hd path) ^ mainPath
@@ -216,6 +219,12 @@ IsaTermPrinter qualifying spec
       | Some loc_nm \_rightarrow (last uid.path,uidToIsaName uid,"_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path,uidToIsaName uid,"")
 
+  op isaLibrarySpecNames: List String = ["List", "Integer", "Nat"]
+  op thyName(spname: String): String =
+    if member(spname, isaLibrarySpecNames)
+      then "SW_"^spname
+      else spname
+
   op uidStringPairForValueOrTerm
        (c: Context, val: Value, sc_tm: Term)
        : Option((String \_times String \_times String) \_times Value \_times UnitId) =
@@ -227,12 +236,12 @@ IsaTermPrinter qualifying spec
          case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
            | None \_rightarrow None
            | Some real_val \_rightarrow
-             Some((thynm, sw_file, thy_file ^ ".thy"),
+             Some((thyName thynm, sw_file, thyName thy_file ^ ".thy"),
                   val, uid))
       | Some((thynm,filnm,hash),uid) \_rightarrow
-        Some((thynm ^ hash,
+        Some((thyName(thynm ^ hash),
               filnm  ^ ".sw",
-              filnm ^ hash ^ ".thy"),
+              thyName(filnm ^ hash) ^ ".thy"),
              val, uid)
 
   op uidStringPairForTerm(c: Context, sc_tm: Term): Option((String \_times String \_times String) \_times UnitId) =
@@ -329,7 +338,8 @@ IsaTermPrinter qualifying spec
 			       trans_table = emptyTranslationTable,
                                coercions = [],
                                overloadedConstructors = [],
-                               newVarCount = Ref 0}
+                               newVarCount = Ref 0,
+                               source_of_thy_morphism? = false}
 			value
     in
     format(80, main_pp_val)
@@ -370,31 +380,45 @@ IsaTermPrinter qualifying spec
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = toScreen("0:\n"^printSpec spc^"\n") in
+    let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
+    let source_of_thy_morphism? = exists (fn el ->
+                                            case el of
+                                              | Pragma("proof",prag_str,"end-proof",_)
+                                                  | some?(isaThyMorphismPragma prag_str)
+                                                  \_rightarrow true
+                                              | _ \_rightarrow false)
+                                     spc.elements
+    in
     let trans_table = thyMorphismMaps spc in
     let c = c << {spec? = Some spc,
-                  trans_table = trans_table}
+                  trans_table = trans_table,
+                  source_of_thy_morphism? = source_of_thy_morphism?}
     in
     let spc = if lambdaLift?
                then lambdaLift(spc,false)
 	       else spc
     in
-    let spc = if simplify?
+    let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat","Nat")))
                 then simplifyTopSpec spc
                 else spc
     in
+    let spc = addSubtypePredicateLifters spc in
+    let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
+    let c = c << {coercions = coercions,
+                  overloadedConstructors = overloadedConstructors spc}
+    in
+    let spc = addSubtypePredicateParams spc coercions in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
     in
-    let spc = normalizeTypes spc in
-    let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubSorts!
-    let c = c << {coercions = coercions,
-                  overloadedConstructors = overloadedConstructors spc}
-    in
     let spc = emptyTypesToSubtypes spc in
-    let spc = removeSubSorts spc coercions in
+    let spc = normalizeNewTypes spc in
+    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
+    let spc = removeSubTypes spc coercions in
+    % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
-    prLinesCat 0 [[prString "theory ", prString c.thy_name],
+    prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
 		  [ppSpecElements c spc (filter elementFilter spc.elements)],
@@ -542,13 +566,13 @@ IsaTermPrinter qualifying spec
     in
     prLines 0 (aux c spc elems)
 
-%  op  normalizeSpecElements: SpecElements \_rightarrow SpecElements
-%  def normalizeSpecElements elts =
-%    case elts of
-%      | [] \_rightarrow []
-%      | (Op qid1) :: (OpDef qid2) :: rst | qid1 = qid2 \_rightarrow
-%        Cons(Op qid1, normalizeSpecElements rst)
-%      | x::rst \_rightarrow Cons(x,normalizeSpecElements rst)
+  op  normalizeSpecElements: SpecElements \_rightarrow SpecElements
+  def normalizeSpecElements elts =
+    case elts of
+      | [] \_rightarrow []
+      | (Op (qid1,false,a)) :: (OpDef (qid2,_)) :: rst | qid1 = qid2 \_rightarrow
+        Cons(Op(qid1,true,a), normalizeSpecElements rst)
+      | x::rst \_rightarrow Cons(x, normalizeSpecElements rst)
 
   op  ppSpecElement: Context \_rightarrow Spec \_rightarrow SpecElement \_rightarrow Option Pragma
                     \_rightarrow SpecElements \_rightarrow Pretty
@@ -1151,6 +1175,11 @@ IsaTermPrinter qualifying spec
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term, _) comm prf =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
+    %% Axioms are mapped to theorems in theory morphisms
+    let propType = if propType = Axiom && c.source_of_thy_morphism?
+                     then Theorem
+                     else propType
+    in
     let annotation =
         case findBracketAnnotation(prf) of
 	  | Some str \_rightarrow prConcat [prSpace, prString str]
@@ -1291,6 +1320,12 @@ IsaTermPrinter qualifying spec
                   | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
                     Some(mainId qid)
                   | _ -> None)
+            | And       \_rightarrow Some "\\<and>"
+            | Or        \_rightarrow Some "\\<or>"
+            | Implies   \_rightarrow Some "\\<longrightarrow>"
+            | Iff       \_rightarrow Some "="
+            | Equals    \_rightarrow Some "="
+            | NotEquals \_rightarrow Some "\\<noteq>"
             | _ -> None
     in
     % let _ = writeLine("is "^anyToString result) in
@@ -1306,9 +1341,6 @@ IsaTermPrinter qualifying spec
       | (NatPat _,_,_)::_ -> true
       | (CharPat _,_,_)::_ -> true
       | _ -> false
-
-  op mkArbitrary(ty: Sort): MS.Term =
-    mkOp(Qualified(toIsaQual,"arbitrary"), ty)
 
   %% Should also handle tuples?
   op caseToIf(c: Context, match: Match, c_tm: MS.Term): MS.Term =
@@ -1815,9 +1847,6 @@ IsaTermPrinter qualifying spec
       | OneName (id,fxty) \_rightarrow prString id
       | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
       | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
-
-  %% For internal use. Choose unparseable name
-  def toIsaQual = "ToIsa-Internal"
 
   def omittedQualifiers = ["Double","String",toIsaQual]  % "IntegerAux" "Option" ...?
 
