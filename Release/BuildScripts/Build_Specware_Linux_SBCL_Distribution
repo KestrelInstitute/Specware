@@ -34,7 +34,7 @@ if [ ! -d "$DISTRIBUTION" ]; then
   exit -1
 fi
 
-/usr/share/cmulisp/bin/lisp <<EOF
+/usr/local/bin/sbcl <<EOF
 	(load "BuildSpecwareDistribution.lisp")
         (build-specware-release $VERBOSE)
 	(quit)
