@@ -258,6 +258,7 @@ Integer qualifying spec
    Integer.>=           -> \<ge> Left 20
    Integer.>            -> >     Left 20
    Integer.div          -> div   Left 26
+   Integer./            -> div   Left 26
    Integer.rem          -> mod   Left 26
    Integer.min          -> min curried
    Integer.max          -> max curried
