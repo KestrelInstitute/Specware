@@ -13,11 +13,19 @@ Functions qualifying spec
   theorem identity is [a,b]
     fa (f: a -> b) id o f = f
                 && f o id = f
+  proof Isa Functions__identity__stp
+    apply(auto)
+    apply(rule ext, auto)
+    apply(rule ext, auto)
+  end-proof
 
   theorem associativity is [a,b,c,d]
     fa (f: a -> b, g: b -> c, h: c -> d) (h o g) o f = h o (g o f)
   proof Isa
     apply(simp add: o_assoc)
+  end-proof
+  proof Isa Functions__associativity__stp
+    apply(rule ext, simp)
   end-proof
 
   % forward (a.k.a. diagrammatic) composition:
@@ -45,6 +53,10 @@ Functions qualifying spec
 
   op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
     fn y:b -> the(x:a) f x = y
+
+  proof Isa inverse__stp_Obligation_the
+    apply(simp add: Functions__injective_p__stp_def)
+  end-proof
 
   theorem inverse is [a,b]
     fa(f:Bijection(a,b)) f o inverse f = id
