@@ -86,6 +86,8 @@ spec
 	               then simplifyOne spc (substitute(body,[(v,e)]))
 		       else term
 	      | _ -> term)
+        | Let ([(WildPat _,e)], body, _) ->
+          if sideEffectFree(e) then body else term
 	| _ -> term
 
   op noInterveningSideEffectsBefore?: MS.Term * (MS.Term -> Boolean) -> Boolean 
@@ -274,6 +276,17 @@ spec
      let term = tupleInstantiate spc term in
      term
 
+  op countDeReferencesIn(v: Var, tms: List MS.Term): Nat =
+    foldl (fn (t,i) ->
+             foldSubTerms (fn (st,i) ->
+                             case st of
+                               | Apply(Fun(Project _,_,_), Var (sv,_), _)
+                               | equalVar?(v,sv) ->
+                                 i + 1
+                               | _ -> i)
+               i t)
+      0 tms
+
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
   def simplifyForall spc (vs,cjs,bod) =
     case normForallBody (bod,varNamesSet(vs,Cons(bod,cjs)),spc) of
@@ -285,11 +298,15 @@ spec
 		 | None -> false
 		 | Some(v,e) ->
 		   simpleOrConstrTerm? e
-                     || (foldl (fn (cji,r) -> r + countVarRefs(cji,v)) (countVarRefs(bod,v)) cjs)
-                       = 2) % This one and the one we want to replace
+                     || (let num_refs = foldl (fn (cji,r) -> r + countVarRefs(cji,v))
+                                         (countVarRefs(bod,v)) cjs
+                         in
+                         num_refs - 1 = 1 % This one and the one we want to replace
+                           || embed? Record e
+                             && num_refs - 1 = countDeReferencesIn(v, Cons(bod, cjs))))
            cjs
       of Some cj ->
-	 (case  bindEquality (cj,vs) of
+	 (case bindEquality (cj,vs) of
 	    | Some (pr as (sv,_)) ->
 	      let sbst = [pr] in
 	      simplifyForall spc
@@ -308,6 +325,8 @@ spec
                                              || ~(knownNonEmpty?(v.2, spc)))
                                 vs
                  in
+                 let bod_cjs = getConjuncts bod in
+                 let bod = mkConj(filter (fn c -> ~(termIn?(c,simplCJs))) bod_cjs) in
 		 if simplCJs = cjs && simpVs = vs
 		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
 		   else simplifyForall spc (simpVs,simplCJs,bod)
@@ -387,21 +406,25 @@ spec
 
   op simplifyRecordBind(spc: Spec, pats: List (Id * Pattern), acts: List (Id * MS.Term), body: MS.Term)
      : Option MS.Term =
-    if all (fn(_,VarPat _) -> true |_ -> false) pats 
-      then (if all (fn(_,Var _) -> true |_ -> false) acts
+    if all (fn(_,VarPat _) -> true | (_,WildPat _) -> true | _ -> false) pats 
+      then (if all (fn(_,Var _) -> true | _ -> false) acts
               then Some(substitute(body,makeSubstFromRecord(pats,acts)))
               else
               %% Sequentializing binds: rename to avoid variable capture
               let (binds,sbst,_)
                  = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
-                          let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
-                          if member(v.1,fvs)
-                            then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
-                                 (Cons((VarPat(nv,a),val),binds),
-                                  Cons((v,Var(nv,a)),sbst),
-                                  new_fvs)
+                            let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
+                            if member(v.1,fvs)
+                              then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
+                                (Cons((VarPat(nv,a),val),binds),
+                                 Cons((v,Var(nv,a)),sbst),
+                                 new_fvs)
                             else (Cons((vp,val),binds),sbst,new_fvs)
-                              )
+                          | (((_,vp as WildPat _),(_,val)),(binds,sbst,fvs)) ->
+                            if sideEffectFree val then (binds,sbst,fvs)
+                            else
+                            let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
+                            (Cons((vp,val),binds),sbst,new_fvs))
                      ([],[],[]) (zip(pats,acts))
               in
               let body = substitute(body,sbst) in
@@ -426,7 +449,9 @@ spec
 
   op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
   def makeSubstFromRecord(pats,acts) =
-    foldl (fn ((id,VarPat(v,_)),result) -> Cons((v,findField(id,acts)),result))
+    foldl (fn ((id,VarPat(v,_)),result)
+             -> Cons((v,findField(id,acts)),result)
+             | (_,result) -> result)
       []
       pats
 
