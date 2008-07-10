@@ -42,7 +42,6 @@ spec
 
   op  addCoercions: TypeCoercionTable \_rightarrow Spec \_rightarrow Spec
   def addCoercions coercions spc =
-    % let _ = writeLine(printSpec spc) in
     let
       def mapTermTop info =
         % let _ = writeLine("\n") in
@@ -73,18 +72,23 @@ spec
         let n_tm = liftCoercion(n_tm,rm_ty,ty) in
 	if delayCoercion? \_or overloadedTerm? n_tm then n_tm
 	else
-        % let _ = writeLine(printTerm tm^": "^printSort rm_ty ^"\n-> " ^ printSort ty^"\n") in
 	case needsCoercion?(ty,rm_ty,coercions,spc) of
           | Some(toSuper?, tb) \_rightarrow
             if toSuper? then coerceToSuper(n_tm,tb) else coerceToSub(n_tm,tb)
           | None \_rightarrow
+        % let _ = writeLine(printTerm tm^": "^printSort rm_ty ^"\n-> " ^ printSort ty^"\n") in
         if simpleTerm n_tm then         % Var or Op
           case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
             | (Some(dom,rng), Some(rm_dom, rm_rng))
                 | ~(opaqueType?(ty, coercions, spc))
                   && (some?(needsCoercion?(dom,rm_dom,coercions,spc))
                        || some?(needsCoercion?(rng,rm_rng,coercions,spc))) ->
-              mkLambda(mkVarPat("x",dom), mapTerm(mkApply(n_tm,mkVar("x",dom)), rng))
+              (case productOpt(spc,dom) of
+                | Some fields \_rightarrow
+                  let (v_pat,v_tm) = patTermVarsForProduct fields in
+                  mkLambda(v_pat, mapTerm(mkApply(n_tm,v_tm), rng))
+                | None \_rightarrow
+                  mkLambda(mkVarPat("x",dom), mapTerm(mkApply(n_tm,mkVar("x",dom)), rng)))
             | _ ->
           case (productOpt(spc,ty), productOpt(spc,rm_ty)) of
             | (Some fields, Some rm_fields)
@@ -93,7 +97,7 @@ spec
                     (zip(fields,rm_fields)) \_rightarrow
               let (v_pat,v_tm) = patTermVarsForProduct rm_fields in
               mkLet([(v_pat, n_tm)], v_tm)
-          %% !! Need more general cases as well
+            %% !! Need more general cases as well
             | _ \_rightarrow n_tm
         else n_tm
 
@@ -166,7 +170,8 @@ spec
                     then Apply(coerce_fn,new_tm,a)
                     else new_tm))
                | _ \_rightarrow tm)
-          | Apply(f as Fun(overloaded_op,_,_),x,a) | overloaded_op = Equals \_or overloaded_op = NotEquals \_rightarrow
+          | Apply(f as Fun(overloaded_op,_,_),x,a)
+              | overloaded_op = Equals \_or overloaded_op = NotEquals \_rightarrow
             (case checkCoercions x of
                | Some(tb,coerce_fn) ->
                  (case x of
@@ -232,31 +237,37 @@ spec
           | Let(m,b,a) \_rightarrow Let(m,coerceToSub(b,tb),a)
           | _ \_rightarrow mkApply(tb.coerceToSub,tm)
     in
-    spc << {ops = foldl (fn (el,ops) \_rightarrow
-			 case el of
-			   | Op (qid as Qualified(q,id), true, _) \_rightarrow % true means decl includes def
-			     (case AnnSpec.findTheOp(spc,qid) of
-			       | Some info \_rightarrow
-				 insertAQualifierMap (ops, q, id,
-						      info << {dfn = mapTermTop info})
-			       | None \_rightarrow ops)
-			   | OpDef (qid as Qualified(q,id), _) \_rightarrow
-			     (case AnnSpec.findTheOp(spc,qid) of
-			       | Some info \_rightarrow
-				 insertAQualifierMap (ops, q, id,
-						      info << {dfn = mapTermTop info})
-			       | None \_rightarrow ops)
-			   | _ \_rightarrow ops)
-	            spc.ops
-		    spc.elements,
-	    %% mapOpInfos (fn info \_rightarrow info << {dfn = mapTermTop info}) spc.ops,
-	    elements = map (fn el \_rightarrow
-			      case el of
-				| Property(pt,nm,tvs,term,a) \_rightarrow
-				  Property(pt,nm,tvs,mapTerm(term,boolSort),a)
-				| _ \_rightarrow el)
-	                 spc.elements}
-    
+    % let _ = printSpecWithSortsToTerminal spc in
+    let spc =
+        spc << {ops = foldl (fn (el,ops) \_rightarrow
+                             case el of
+                               | Op (qid as Qualified(q,id), true, _) \_rightarrow
+                                 %% true means decl includes def
+                                 (case AnnSpec.findTheOp(spc,qid) of
+                                   | Some info \_rightarrow
+                                     insertAQualifierMap (ops, q, id,
+                                                          info << {dfn = mapTermTop info})
+                                   | None \_rightarrow ops)
+                               | OpDef (qid as Qualified(q,id), _) \_rightarrow
+                                 (case AnnSpec.findTheOp(spc,qid) of
+                                   | Some info \_rightarrow
+                                     insertAQualifierMap (ops, q, id,
+                                                          info << {dfn = mapTermTop info})
+                                   | None \_rightarrow ops)
+                               | _ \_rightarrow ops)
+                        spc.ops
+                        spc.elements,
+                %% mapOpInfos (fn info \_rightarrow info << {dfn = mapTermTop info}) spc.ops,
+                elements = map (fn el \_rightarrow
+                                  case el of
+                                    | Property(pt,nm,tvs,term,a) \_rightarrow
+                                      Property(pt,nm,tvs,mapTerm(term,boolSort),a)
+                                    | _ \_rightarrow el)
+                             spc.elements}
+    in
+    % let _ = writeLine(printSpec spc) in
+    spc
+
   op  subsortOf?: Sort * QualifiedId * Spec \_rightarrow Boolean
   def subsortOf?(ty,qid,spc) =
     % let _ = toScreen(printQualifiedId qid^" <:? "^printSort ty^"\n") in
