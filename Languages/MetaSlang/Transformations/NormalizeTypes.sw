@@ -18,36 +18,37 @@ NormTypes qualifying spec
          else result)
       [] spc.sorts
 
-  op normalizeType (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort)) (ty: Sort): Sort =
+  op normalizeType (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort), checkTop?: Boolean) (ty: Sort): Sort =
     if replaceableType? ty
-      \_and \_not (exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
+      \_and \_not (checkTop? && exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
      then
        case foldl (\_lambda ((qid,tvs,top_ty),result) \_rightarrow
                    case result of
                      | None \_rightarrow
+                       % let _ = writeLine("nt: "^printSort ty^" =~= "^printSort top_ty) in
                        (case typeMatch(top_ty,ty,spc,false) of
                           | Some tyvar_sbst \_rightarrow
-                            if ty = top_ty then None else
-%				  let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
+                            if checkTop? && ty = top_ty then None else
+			  %  let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
 %						   ^"\ntyvar_sbst:\n"^(anyToString tyvar_sbst)
 %						   ^"\n tvs:\n"^(anyToString tvs)) in
                             Some(qid,tvs,tyvar_sbst)
                           | None \_rightarrow None)
                      | _ \_rightarrow result)
               None typeNameInfo of
-         | Some (qid,tvs,tyvar_sbst) \_rightarrow
+         | Some (qid,tvs,tyvar_sbst) | length tvs = length tyvar_sbst \_rightarrow
            Base(qid,map (\_lambda tv \_rightarrow case find (\_lambda (tv1,_) \_rightarrow tv = tv1) tyvar_sbst of
                                    | Some(_,ty_i) \_rightarrow ty_i)
                       tvs,
                  sortAnn ty)
 
-         | None \_rightarrow ty
+         | _ \_rightarrow ty
      else ty
 
   %% Replaces type expressions by their named sorts
   op normalizeTypes(spc: Spec): Spec =
     let typeNameInfo = topLevelTypes spc in
-    mapSpec (id,normalizeType(spc,typeNameInfo),id) spc
+    mapSpec (id,normalizeType(spc,typeNameInfo,true),id) spc
  
   op normDef(qid as Qualified(q,id), map_fns, spc): Spec =
     case findTheOp(spc, qid) of
@@ -56,19 +57,27 @@ NormTypes qualifying spec
 
   op normSortDef(qid as Qualified(q,id), map_fns, spc): Spec =
     case findTheSort(spc, qid) of
-      | Some info \_rightarrow spc \_guillemotleft {sorts = insertAQualifierMap (spc.sorts, q, id, info \_guillemotleft {dfn = mapSort map_fns info.dfn})}
+      | Some info \_rightarrow
+        spc \_guillemotleft {sorts = insertAQualifierMap (spc.sorts, q, id, info \_guillemotleft {dfn = mapSort map_fns info.dfn})}
       | None \_rightarrow spc
 
   %% Normalize without normalizing imports
   op normalizeNewTypes(spc: Spec): Spec =
     let typeNameInfo = topLevelTypes spc in
-    let map_fns = (id, normalizeType(spc,typeNameInfo),id) in
-    let spc = spc \_guillemotleft {elements = mapSpecProperties map_fns spc.elements} in
+    let map_fns = (id, normalizeType(spc,typeNameInfo,false),id) in
+    let spc = spc \_guillemotleft {elements = map (fn el ->
+                                       case el of
+                                         | Property (pt, nm, tvs, term, a) ->
+                                           % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
+                                           Property (pt, nm, tvs, mapTerm map_fns term, a)
+                                         | _ -> el)
+                                  spc.elements}
+    in
     foldl (fn (el, spc) \_rightarrow
            case el of
              | OpDef(qid,_) \_rightarrow normDef(qid, map_fns, spc)
              | Op(qid,true,_) \_rightarrow normDef(qid, map_fns, spc)
-             | SortDef(qid,_) \_rightarrow normSortDef(qid, map_fns, spc)
+             %| SortDef(qid,_) \_rightarrow normSortDef(qid, map_fns, spc)
              | _ \_rightarrow spc)
       spc spc.elements
 
