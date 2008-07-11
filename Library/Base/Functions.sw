@@ -36,6 +36,7 @@ Functions qualifying spec
 
   op [a,b] injective? (f: a -> b) : Boolean =
     fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
+  proof Isa injective_p__stp [simp] end-proof
 
   op [a,b] surjective? (f: a -> b) : Boolean =
     fa (y:b) (ex (x:a) f x = y)
@@ -54,8 +55,21 @@ Functions qualifying spec
   op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
     fn y:b -> the(x:a) f x = y
 
-  proof Isa inverse__stp_Obligation_the
-    apply(simp add: Functions__injective_p__stp_def)
+  proof Isa inverse__stp_Obligation_subsort
+    sorry
+  end-proof
+
+  proof Isa inverse_Obligation_subsort
+    sorry
+  end-proof
+
+  proof Isa inverse_Obligation_the
+    apply(auto simp add: bij_def surj_def inj_on_def)
+    sorry
+  end-proof
+
+  proof Isa inverse_subtype_constr
+    sorry
   end-proof
 
   theorem inverse is [a,b]
@@ -64,17 +78,29 @@ Functions qualifying spec
   proof Isa
     apply(simp add: bij_def surj_iff inj_iff)
   end-proof
+  proof Isa inverse__stp [simp]
+    apply(auto)
+    apply(rule ext, auto)
+    sorry
+  end-proof
 
   theorem f_inverse_apply is [a,b]
     fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
   proof Isa
     apply(simp add: bij_def surj_f_inv_f)
   end-proof
+  proof Isa
+    apply(auto)
+    sorry
+  end-proof
 
   theorem inverse_f_apply is [a,b]
     fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
   proof Isa
     apply(simp add: bij_def inv_f_f)
+  end-proof
+  proof Isa f_inverse_apply__stp
+    sorry
   end-proof
 
   % eta conversion:

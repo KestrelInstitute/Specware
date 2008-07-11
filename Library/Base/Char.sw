@@ -11,6 +11,9 @@ Char qualifying spec
 
   % chr n is the character at position n in table:
   op chr : Bijection ({n:Nat | n < 256}, Char)
+  proof Isa chr_subtype_constr
+    sorry
+  end-proof
 
   (* Metaslang's character literals are simply syntactic shortcuts for
   expressions chr n, where n is a natural literal less than 256. For example, #A
@@ -19,6 +22,10 @@ Char qualifying spec
   % position of character in table:
   op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
   proof Isa [simp] end-proof
+  proof Isa ord_subtype_constr
+    sorry
+  end-proof
+
 
   % predicates for various kinds of characters:
 
@@ -45,10 +52,19 @@ Char qualifying spec
   op toUpperCase (c:Char) : Char =
     if isLowerCase c then chr(ord c - ord #a + ord #A) else c
   proof Isa [simp] end-proof
+  proof Isa toUpperCase_Obligation_subsort0
+    sorry
+  end-proof
 
   op toLowerCase (c:Char) : Char =
     if isUpperCase c then chr(ord c - ord #A + ord #a) else c
   proof Isa [simp] end-proof
+  proof Isa toLowerCase_Obligation_subsort
+    sorry
+  end-proof
+  proof Isa toLowerCase_Obligation_subsort0
+    sorry
+  end-proof
 
   % characters can be linearly ordered according to positions in table:
 

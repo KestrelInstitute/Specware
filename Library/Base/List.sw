@@ -12,6 +12,13 @@ List qualifying spec
       p Nil &&  % base
       (fa (x:a, l:List a) p l => p(Cons(x,l))) =>  % step
       (fa (l:List a) p l)
+  proof Isa
+    sorry
+  end-proof
+  proof Isa induction__stp
+    sorry
+  end-proof
+
 
   (* Metaslang's list displays [...], list patterns [...], and cons patterns
   ...::..., are simply syntactic shortcuts for expressions and patterns
@@ -78,15 +85,13 @@ List qualifying spec
   proof Isa nthTail_Obligation_subsort
   apply (auto simp add: List__null_length)
   end-proof
-  proof Isa nthTail_Obligation_subsort1
-  apply(auto, arith)
-  end-proof
 
   theorem length_nthTail is [a]
     fa(l: List a,n: Nat) n <= length l => length(nthTail(l,n)) = length l - n
   proof Isa [simp]
     apply(induct_tac l n rule: List__nthTail.induct)
     apply(auto)
+    sorry
   end-proof
 
   % last (rightmost) element of (non-empty) list:
@@ -121,15 +126,13 @@ List qualifying spec
   proof Isa removeFirstElems_Obligation_subsort
     apply(auto simp add: List__null_length)
   end-proof
-  proof Isa removeFirstElems_Obligation_subsort1
-  apply(auto, arith)
-  end-proof
 
   theorem length_removeFirstElems is [a]
      fa(l: List a,i: Nat) i <= length l => length(removeFirstElems(l,i)) = length l - i
   proof Isa [simp]
     apply(induct_tac l i rule: List__removeFirstElems.induct)
     apply(auto)
+    sorry
   end-proof
 
   % sublist from the i-th element (inclusive) to the j-th element (exclusive):
@@ -334,6 +337,12 @@ List qualifying spec
 
   op [a,b] isoList: Bijection(a,b) -> Bijection(List a, List b) =
     fn iso_elem -> map iso_elem
+  proof Isa isoList_Obligation_subsort
+    sorry
+  end-proof
+  proof Isa isoList_subtype_constr
+    sorry
+  end-proof
 
   % deprecated:
 

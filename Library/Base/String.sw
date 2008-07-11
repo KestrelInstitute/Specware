@@ -167,11 +167,23 @@ String qualifying spec
     let cs = explode s in
     (exists isNum cs) &&
     ((all isNum cs) || (hd cs = #- && all isNum (tl cs)))
+  proof Isa Integer__intConvertible_Obligation_subsort
+    sorry
+  end-proof
+  proof Isa Integer__intConvertible_Obligation_subsort0
+    sorry
+  end-proof
 
   op Integer.stringToInt (s:String | Integer.intConvertible s) : Integer =
     let firstchar::_ = explode s in
     if firstchar = #- then - (stringToNat (substring (s,1,length s)))
                       else    stringToNat s
+  proof Isa Integer__stringToInt_Obligation_subsort0
+    sorry
+  end-proof
+  proof Isa Integer__stringToInt_Obligation_subsort1
+    sorry
+  end-proof
 
   % convert characters to strings:
 

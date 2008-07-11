@@ -36,6 +36,13 @@ Option qualifying spec
 
   op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
     fn iso_elem -> mapOption iso_elem
+  proof Isa isoOption_Obligation_subsort
+    sorry
+  end-proof
+
+  proof Isa isoOption_subtype_constr
+    sorry
+  end-proof
 
   % mapping to Isabelle:
 

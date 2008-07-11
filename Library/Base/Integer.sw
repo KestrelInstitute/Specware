@@ -22,16 +22,33 @@ Integer qualifying spec
   op zero : Integer
 
   op succ : Bijection (Integer, Integer)
+  proof Isa succ_subtype_constr
+    sorry
+  end-proof
 
   axiom induction is
     fa (p : Integer -> Boolean)
       p zero &&
       (fa(i) p i => p (succ i) && p (inverse succ i)) =>
       (fa(i) p i)
+  proof Isa
+    sorry
+  end-proof
 
   % we name the predecessor function, which is the inverse of succ:
 
   op pred : Bijection (Integer, Integer) = inverse succ
+  proof Isa pred_subtype_constr
+    sorry
+  end-proof
+
+  proof Isa -verbatim
+defs Integer__succ_def[simp]:
+  "Integer__succ i \<equiv> i + 1"
+theorem Integer__pred_def[simp]:
+  "Integer__pred i = i - 1"
+  sorry
+  end-proof
 
   % number 1:
 
@@ -56,6 +73,9 @@ Integer qualifying spec
     satisfiesInductiveDef? positive? &&
     (fa(p?) satisfiesInductiveDef? p? =>
             (fa(i) positive? i => p? i))
+  proof Isa positive_p_Obligation_the
+    sorry
+  end-proof
 
   op negative? (i:Integer) : Boolean = ~ (positive? i) && ~ (zero? i)
 
@@ -68,6 +88,9 @@ Integer qualifying spec
                           minus zero = zero &&
     (fa(i) positive? i => minus i    = pred (minus (pred i))) &&
     (fa(i) negative? i => minus i    = succ (minus (succ i)))
+  proof Isa e_dsh_Obligation_the
+    sorry
+  end-proof
 
   % legacy synonym (qualifier avoids confusion with boolean negation):
 
@@ -79,6 +102,9 @@ Integer qualifying spec
     (fa(j)                  plus (zero, j) = j) &&
     (fa(i,j) positive? i => plus (i,    j) = succ (plus (pred i, j))) &&
     (fa(i,j) negative? i => plus (i,    j) = pred (plus (succ i, j)))
+  proof Isa e_pls_Obligation_the
+    sorry
+  end-proof
 
   % subtraction:
 
@@ -90,6 +116,9 @@ Integer qualifying spec
     (fa(j)                  times (zero, j) = zero) &&
     (fa(i,j) positive? i => times (i,    j) = times (pred i, j) + j) &&
     (fa(i,j) negative? i => times (i,    j) = times (succ i, j) - j)
+  proof Isa e_ast_Obligation_the
+    sorry
+  end-proof
 
   % relational operators:
 
@@ -107,6 +136,9 @@ Integer qualifying spec
   % absolute value:
 
   op abs (i:Integer) : {j:Integer | j >= zero} = if i >= zero then i else (- i)
+  proof Isa abs_subtype_constr
+    apply(auto simp add: Integer__abs_def)
+  end-proof
 
   % subtype for non-zero integers (useful to define division):
 
@@ -123,6 +155,9 @@ Integer qualifying spec
     (ex(r) abs i = abs j * abs q + r && zero <= r && r < abs j) &&
     (i * j >= zero => q >= zero) &&
     (i * j <= zero => q <= zero)
+  proof Isa div_Obligation_the
+    sorry
+  end-proof
 
   % better synonym:
 
@@ -204,6 +239,15 @@ Integer qualifying spec
        z >= zero && z divides x && z divides y &&
     % and is divided by any integer that also divides x and y:
        (fa(w:Integer) w divides x && w divides y => w divides z)
+  proof Isa gcd_Obligation_subsort
+    sorry
+  end-proof
+  proof Isa gcd_Obligation_the
+    sorry
+  end-proof
+  proof Isa gcd_subtype_constr
+    sorry
+  end-proof
 
   op lcm (x:Integer, y:Integer) : {z:Integer | z >= zero} =
     the(z:Integer)
@@ -211,6 +255,15 @@ Integer qualifying spec
        z >= zero && z multipleOf x && z multipleOf y &&
     % and any integer that is a multiple of x and y is also a multiple of z:
        (fa(w:Integer) w multipleOf x && w multipleOf y => z multipleOf w)
+  proof Isa lcm_Obligation_subsort
+    sorry
+  end-proof
+  proof Isa lcm_Obligation_the
+    sorry
+  end-proof
+  proof Isa lcm_subtype_constr
+    sorry
+  end-proof
 
   (* If x and y are not both 0, their g.c.d. is positive and is the largest
   integer (according to the usual ordering on the integers) that divides both x
