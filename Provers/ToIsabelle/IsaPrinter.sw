@@ -1102,7 +1102,9 @@ IsaTermPrinter qualifying spec
            then vs
           else
           if (termFixity f = Nonfix \_and \_not (overloadedIsabelleOp? c f))
-             \_or length(wildFindUnQualified((getSpec c).ops, id)) = 1
+             \_or (length(wildFindUnQualified((getSpec c).ops, id)) = 1
+                   %% The following is only necessary for base specs
+                   && length(wildFindUnQualified((getBaseSpec()).ops, id)) <= 1)
             then removeArgs(vs,args)
             else vs
  %         case wildFindUnQualified((getSpec c).ops, id) of
@@ -1388,7 +1390,7 @@ IsaTermPrinter qualifying spec
            else prConcat [ppConstructor constr_id,
                           prSpace,
                           ppTerm c Nonfix term2]
-         | (Lambda (match as (_ :: _ :: _), _),_) \_rightarrow
+         | (Lambda (match, _),_) \_rightarrow
            if nonCaseMatch? match
              then ppTerm c parentTerm (caseToIf(c, match, term2))
              else enclose?(parentTerm \_noteq Top,
@@ -1402,15 +1404,15 @@ IsaTermPrinter qualifying spec
            prConcat [prString pid,
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
 						          term2)]]
-         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e \_longrightarrow 0 <= e
-           let term2 = case term2 of
-                         | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toIsaQual \_rightarrow
-                           %% In this case it is known true, but leave it in for now for transparency
-                           x
-                         | _ \_rightarrow term2
-           in
-           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
-                                       [mkNat 0, term2]))
+%         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e \_longrightarrow 0 <= e
+%           let term2 = case term2 of
+%                         | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toIsaQual \_rightarrow
+%                           %% In this case it is known true, but leave it in for now for transparency
+%                           x
+%                         | _ \_rightarrow term2
+%           in
+%           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
+%                                       [mkNat 0, term2]))
          | (Fun(Op(qid,Infix _),_,a), term2) ->
            let spc = getSpec c in
            ppTerm c parentTerm
@@ -1523,6 +1525,8 @@ IsaTermPrinter qualifying spec
 				prConcat(addSeparator prSpace (map (ppVarWithSort c) vars)),
 				prString ". "],
 			       [ppTerm c Top term]])
+      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
+        prApply(Lambda([(p, trueTerm ,bod)], a), t)
       | Let (decls,term,_) \_rightarrow
 	let def ppDecl (pattern,term) =
 	      prBreakCat 2 [[ppPattern c pattern (Some ""),
