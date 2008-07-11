@@ -1,13 +1,16 @@
 theory Char
 imports SW_Nat
 begin
-consts Char__chr :: " (nat,char)Functions__Bijection"
-axioms Char__chr_subtype_constr: 
-  "bij Char__chr"
-consts Char__ord :: " (char,nat)Functions__Bijection"
-defs Char__ord_def: "Char__ord \<equiv> inv Char__chr"
-axioms Char__ord_subtype_constr [simp]: 
-  "bij Char__ord"
+consts Char__chr :: "nat \<Rightarrow> char"
+theorem Char__chr_subtype_constr: 
+  "Functions__bijective_p__stp(\<lambda> (n::nat). n < 256,\<lambda> ignore. True) Char__chr"
+    sorry
+consts Char__ord :: "char \<Rightarrow> nat"
+defs Char__ord_def: 
+  "Char__ord \<equiv> Functions__inverse__stp (\<lambda> (n::nat). n < 256) Char__chr"
+theorem Char__ord_subtype_constr: 
+  "Functions__bijective_p__stp(\<lambda> ignore. True,\<lambda> (n::nat). n < 256) Char__ord"
+    sorry
 consts Char__isUpperCase :: "char \<Rightarrow> bool"
 defs Char__isUpperCase_def [simp]: 
   "Char__isUpperCase c
@@ -30,36 +33,41 @@ consts Char__isAlphaNum :: "char \<Rightarrow> bool"
 defs Char__isAlphaNum_def [simp]: 
   "Char__isAlphaNum c \<equiv> (Char__isAlpha c \<or> Char__isNum c)"
 consts Char__isAscii :: "char \<Rightarrow> bool"
-defs Char__isAscii_def [simp]: "Char__isAscii c \<equiv> Char__ord c < 128"
-consts Char__toUpperCase :: "char \<Rightarrow> char"
+defs Char__isAscii_def [simp]: "Char__isAscii c \<equiv> (Char__ord c < 128)"
 theorem Char__toUpperCase_Obligation_subsort: 
   "\<lbrakk>Char__isLowerCase c\<rbrakk> \<Longrightarrow> 
-   0 
-     \<le> int (Char__ord c) - int (Char__ord CHR ''a'') 
-             + int (Char__ord CHR ''A'')"
+   (int (Char__ord c) - int (Char__ord CHR ''a'')) + int (Char__ord CHR ''A'') 
+     \<ge> 0"
   apply(auto)
   done
-
+theorem Char__toUpperCase_Obligation_subsort0: 
+  "\<lbrakk>Char__isLowerCase c\<rbrakk> \<Longrightarrow> 
+   (int (Char__ord c) - int (Char__ord CHR ''a'')) + int (Char__ord CHR ''A'') 
+     < 256"
+    sorry
+consts Char__toUpperCase :: "char \<Rightarrow> char"
 defs Char__toUpperCase_def [simp]: 
   "Char__toUpperCase c
      \<equiv> (if Char__isLowerCase c then 
-          Char__chr (nat (int (Char__ord c) - int (Char__ord CHR ''a'') 
+          Char__chr (nat ((int (Char__ord c) - int (Char__ord CHR ''a'')) 
                             + int (Char__ord CHR ''A'')))
         else 
           c)"
-consts Char__toLowerCase :: "char \<Rightarrow> char"
 theorem Char__toLowerCase_Obligation_subsort: 
   "\<lbrakk>Char__isUpperCase c\<rbrakk> \<Longrightarrow> 
-   0 
-     \<le> int (Char__ord c) - int (Char__ord CHR ''A'') 
-             + int (Char__ord CHR ''a'')"
-  apply(auto)
-  done
-
+   (int (Char__ord c) - int (Char__ord CHR ''A'')) + int (Char__ord CHR ''a'') 
+     \<ge> 0"
+    sorry
+theorem Char__toLowerCase_Obligation_subsort0: 
+  "\<lbrakk>Char__isUpperCase c\<rbrakk> \<Longrightarrow> 
+   (int (Char__ord c) - int (Char__ord CHR ''A'')) + int (Char__ord CHR ''a'') 
+     < 256"
+    sorry
+consts Char__toLowerCase :: "char \<Rightarrow> char"
 defs Char__toLowerCase_def [simp]: 
   "Char__toLowerCase c
      \<equiv> (if Char__isUpperCase c then 
-          Char__chr (nat (int (Char__ord c) - int (Char__ord CHR ''A'') 
+          Char__chr (nat ((int (Char__ord c) - int (Char__ord CHR ''A'')) 
                             + int (Char__ord CHR ''a'')))
         else 
           c)"

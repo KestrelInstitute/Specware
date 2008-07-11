@@ -20,4 +20,3 @@ recdef Boolean__compare "{}"
         else 
           if x = True then Greater else Less)"
 end
-

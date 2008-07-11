@@ -1,14 +1,36 @@
 theory Option
-imports Compare
+imports Compare Functions
 begin
+consts Option__Option_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option \<Rightarrow> bool"
+primrec 
+  "Option__Option_P P_a None = True"
+  "Option__Option_P P_a (Some x0) = (P_a::'a \<Rightarrow> bool) x0"
 consts Option__some :: "'a \<Rightarrow> 'a option"
-defs Option__some_def: "Option__some x \<equiv> Some x"
+defs Option__some_def: "Option__some \<equiv> Some"
 consts Option__none :: "'a option"
 defs Option__none_def: "Option__none \<equiv> None"
 consts Option__some_p :: "'a option \<Rightarrow> bool"
-defs Option__some_p_def: "Option__some_p x \<equiv> x \<noteq> Option__none"
+defs Option__some_p_def: "Option__some_p x \<equiv> (x \<noteq> Option__none)"
 consts Option__none_p :: "'a option \<Rightarrow> bool"
-defs Option__none_p_def: "Option__none_p x \<equiv> x = Option__none"
+defs Option__none_p_def: "Option__none_p x \<equiv> (x = Option__none)"
 consts Option__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                            'a option \<times> 'a option \<Rightarrow> Compare__Comparison"
+defs Option__compare_def: 
+  "Option__compare comp_v
+     \<equiv> (\<lambda> ((o1::'a option),(o2::'a option)). 
+          case (o1,o2)
+           of (Some x,Some y) \<Rightarrow> comp_v(x,y)
+            | (None,Some _) \<Rightarrow> Less
+            | (Some _,None) \<Rightarrow> Greater
+            | (None,None) \<Rightarrow> Equal)"
+theorem Option__isoOption_Obligation_subsort: 
+  "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (option_map iso_elem)"
+    sorry
+consts Option__isoOption :: " ('a,'b)Functions__Bijection \<Rightarrow> 
+                              ('a option,'b option)Functions__Bijection"
+defs Option__isoOption_def: 
+  "Option__isoOption iso_elem \<equiv> option_map iso_elem"
+theorem Option__isoOption_subtype_constr: 
+  "\<lbrakk>bij dom_isoOption\<rbrakk> \<Longrightarrow> bij (Option__isoOption dom_isoOption)"
+    sorry
 end
