@@ -2133,7 +2133,7 @@ With an argument, it doesn't convert imports."
     (proof-shell-ready-prover)
     ;(proof-cd-sync)
     (proof-assistant-invisible-command-ifposs   ;proof-shell-invisible-command
-     (format "ML  {* ThyLoad.add_path \"%s/Library/Isa/\" *}"
+     (format "ML_val  {* ThyLoad.add_path \"%s/Library/Isa/\" *}"
 	     (getenv "SPECWARE4")))))
 
 (sw:add-specware-to-isabelle-path)
