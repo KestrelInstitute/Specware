@@ -17,7 +17,7 @@ theorem Integer__pred_subtype_constr:
 
 defs Integer__succ_def[simp]:
   "Integer__succ i \<equiv> i + 1"
-theorem Integer__pred_def[simp]:
+theorem pred_def[simp]:
   "Integer__pred i = i - 1"
   sorry
   
