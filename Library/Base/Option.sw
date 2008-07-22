@@ -38,11 +38,22 @@ Option qualifying spec
     fn iso_elem -> mapOption iso_elem
 
   proof Isa isoOption_Obligation_subsort
-    sorry
+   apply(simp add: bij_def, auto) 
+   (** first subgoal **)
+   apply(simp add: inj_on_def option_map_def, auto)
+   apply (simp split: option.split_asm)
+   (** second subgoal **)
+   apply(simp add:surj_def option_map_def, auto)
+   apply (induct_tac y)
+   (** subgoal 2.1    **)
+   apply (simp split: option.split)
+   (** subgoal 2.2 needs some guidance   **)
+   apply (drule_tac x = "a" in  spec, auto)
+   apply (rule_tac x="Some x" in exI, auto)
   end-proof
 
   proof Isa isoOption_subtype_constr
-    sorry
+   apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subsort)
   end-proof
 
   % mapping to Isabelle:

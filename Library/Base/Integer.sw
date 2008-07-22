@@ -22,6 +22,15 @@ Integer qualifying spec
   op zero : Integer
 
   op succ : Bijection (Integer, Integer)
+
+  % ---------------- comment added by CK ------------------------------------
+  % In Specware, succ is specified axiomatically as a bijection on Integers
+  % Since Isabelle lacks subtypes, this specification results in a proof obligation 
+  % requiring us to show that succ is in fact a bijection, which of course is
+  % impossible without an explicit definition of succ. 
+
+  % Unfortunately, we cannot inject the Isabelle definition of Integer__succ
+  % before the proof obligation, so we have to abandon the proof
   proof Isa succ_subtype_constr
     sorry
   end-proof
@@ -39,7 +48,7 @@ Integer qualifying spec
 
   op pred : Bijection (Integer, Integer) = inverse succ
   proof Isa pred_subtype_constr
-    sorry
+    apply(auto simp add: Integer__pred_def bij_imp_bij_inv Integer__succ_subtype_constr)
   end-proof
 
   proof Isa -verbatim
@@ -47,7 +56,7 @@ defs Integer__succ_def[simp]:
   "Integer__succ i \<equiv> i + 1"
 theorem Integer__pred_def[simp]:
   "Integer__pred i = i - 1"
-  sorry
+  apply(auto simp: add Integer__succ_def Integer__pred_def inv_def)
   end-proof
 
   % number 1:
@@ -84,6 +93,17 @@ theorem Integer__pred_def[simp]:
 
   % unary minus (qualifier avoids confusion with binary minus):
 
+  % The symbol - is not viewed as a function in Isabelle unless an "op" is 
+  % added in front. Furthermore, it is defined to be a binary symbol in HOL.thy
+  % unless the context says otherwise. Finally, it is overloaded, so the
+  % morphism must map "-" and "~" to "(uminus::int  \<Rightarrow> int)"
+  % Currently, the translator does not support that
+  % Also, this mapping will replace "- i" by "uminus i", which is not what we intend
+  % 
+  % Since we define IntegerAux.- explicitly, it is probably best to declare it as 
+  % mapping on the integers (instead of a bijection) and explicitly formulate the
+  % theorem stating that "fn (i:int) -> - i"  is a bijection or something similar. 
+
   op IntegerAux.- : Bijection (Integer, Integer) = the(minus)
                           minus zero = zero &&
     (fa(i) positive? i => minus i    = pred (minus (pred i))) &&
@@ -91,10 +111,20 @@ theorem Integer__pred_def[simp]:
   proof Isa e_dsh_Obligation_the
     sorry
   end-proof
+  proof Isa e_dsh_subtype_constr
+    sorry
+  end-proof
+  proof Isa e_tld_subtype_constr
+    sorry
+  end-proof
 
   % legacy synonym (qualifier avoids confusion with boolean negation):
 
   op Integer.~ : Bijection (Integer, Integer) = -
+
+  % Most of the operators below are overloaded in Isabelle while some of the
+  % proof obligations require knowing that i,j are integers
+  % the translator must inject the types if the context is ambiguous
 
   % addition:
 
@@ -136,6 +166,9 @@ theorem Integer__pred_def[simp]:
   % absolute value:
 
   op abs (i:Integer) : {j:Integer | j >= zero} = if i >= zero then i else (- i)
+  proof Isa abs_Obligation_subsort
+     sorry
+  end-proof
   proof Isa abs_subtype_constr
     apply(auto simp add: Integer__abs_def)
   end-proof
@@ -254,7 +287,7 @@ theorem Integer__pred_def[simp]:
     % z is non-negative and is a multiple of both x and y:
        z >= zero && z multipleOf x && z multipleOf y &&
     % and any integer that is a multiple of x and y is also a multiple of z:
-       (fa(w:Integer) w multipleOf x && w multipleOf y => z multipleOf w)
+       (fa(w:Integer) w multipleOf x && w multipleOf y => w multipleOf z)
   proof Isa lcm_Obligation_subsort
     sorry
   end-proof
@@ -289,7 +322,7 @@ theorem Integer__pred_def[simp]:
   because otherwise the l.c.m. would always be negative (or 0, if x = y = 0). *)
 
   theorem lcm_smallest_abs_multiple is
-    fa (x:Integer, y:Integer, w:Integer)
+    fa (x:Integer, y:Integer, w:NonZeroInteger)
       w multipleOf x && w multipleOf y => lcm(x,y) <= abs w
   proof Isa
     sorry

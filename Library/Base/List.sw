@@ -338,10 +338,16 @@ List qualifying spec
   op [a,b] isoList: Bijection(a,b) -> Bijection(List a, List b) =
     fn iso_elem -> map iso_elem
   proof Isa isoList_Obligation_subsort
-    sorry
+   apply(simp add: bij_def, auto) 
+   (** first subgoal is proved by auto **)
+   apply(simp add: surj_def, auto)
+   apply (induct_tac y, auto)
+   (** subgoal 2.1 is proved by auto, the other one needs some guidance **)
+   apply (drule_tac x = "a" in  spec, auto)
+   apply (rule_tac x="xa#x" in exI, auto)
   end-proof
   proof Isa isoList_subtype_constr
-    sorry
+   apply(simp add:  List__isoList_def List__isoList_Obligation_subsort)
   end-proof
 
   % deprecated:
