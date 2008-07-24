@@ -29,6 +29,11 @@ spec
   op opaqueType?(ty: Sort, coercions: TypeCoercionTable, spc: Spec): Boolean =
     exists (fn tb \_rightarrow subsortOf?(ty,tb.subtype,spc)) coercions
 
+  op idFn?(t: MS.Term): Boolean =
+    case t of
+      | Fun(Op(Qualified(_, "id"),_),_,_) -> true
+      | _ -> false
+
   op patTermVarsForProduct(fields: List(Id * Sort)): MS.Pattern * MS.Term =
     let (pats,tms,_) = foldr (fn ((fld_i,p_ty), (pats,tms,i)) ->
                                 let v = ("x_"^toString i, p_ty) in
@@ -230,12 +235,16 @@ spec
         case tm of
           | Apply(f,x,_) | f = tb.coerceToSub \_rightarrow x
           | Let(m,b,a) \_rightarrow Let(m,coerceToSuper(b,tb),a)
-          | _ \_rightarrow mkApply(tb.coerceToSuper,tm)
+          | _ \_rightarrow
+            if idFn? tb.coerceToSuper then tm
+              else mkApply(tb.coerceToSuper,tm)
       def coerceToSub(tm,tb) =
         case tm of
           | Apply(f,x,_) | f = tb.coerceToSuper \_rightarrow x
           | Let(m,b,a) \_rightarrow Let(m,coerceToSub(b,tb),a)
-          | _ \_rightarrow mkApply(tb.coerceToSub,tm)
+          | _ \_rightarrow
+            if idFn? tb.coerceToSub then tm
+              else mkApply(tb.coerceToSub,tm)
     in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc =
