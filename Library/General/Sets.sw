@@ -272,7 +272,7 @@ Set qualifying spec
 
 
   proof Isa Thy_Morphism Set
-    type Set.Set -> set (Set__r_in,Collect)
+    type Set.Set -> set (id,id)
     Set.collect -> Collect
     Set.in? -> \<in> Left 20
     Set.nin? -> \<notin> Left 20
