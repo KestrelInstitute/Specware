@@ -70,8 +70,11 @@ SpecNorm qualifying spec
   op maybeRelativize?(t: MS.Term, tb: PolyOpTable): Boolean =
     existsSubTerm (fn tm ->
                      case tm of
-                       | Fun(Op(Qualified(q,id),_),_,_) -> some?(findAQualifierMap(tb,q,id))
-                       | Bind_ -> true
+                       | Fun(Op(Qualified(q,id),_),_,_) ->
+                         some?(findAQualifierMap(tb,q,id))
+                       | Fun(Equals, _, _) -> true
+                       | Fun(NotEquals, _, _) -> true
+                       | Bind _ -> true
                        | The _ -> true
                        | _ -> false)
       t
@@ -90,6 +93,7 @@ SpecNorm qualifying spec
 
   op tryRelativizeTerm(tvs: TyVars, tm: MS.Term, tb: PolyOpTable, ty: Sort, ho_eqfns: List QualifiedId, spc: Spec)
       : List(Id * MS.Term) =
+    % let _ = writeLine("tm: "^printTerm tm) in
     if tvs = [] || ~(maybeRelativize?(tm, tb))then []
     else
     let tv_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolSort)))) tvs in
@@ -362,6 +366,8 @@ SpecNorm qualifying spec
   op completeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom,rng), Some(rm_dom, _)) ->
+        if embed? Var t && equalType?(dom, rm_dom) then t
+        else
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None -> t
            | Some(sup_ty, pred) ->
