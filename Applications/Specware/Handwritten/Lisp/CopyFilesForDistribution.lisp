@@ -127,6 +127,8 @@
 
   (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware")
 		       (in-distribution-dir "Specware.terminal"))
+  (specware::copy-directory (in-specware-dir "Release/Mac/sbcl/Specware.app/")
+                            (in-distribution-dir "Specware.app/"))
   (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware.sh")
 		       (in-distribution-dir "SpecwareShell.sh"))
   (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")

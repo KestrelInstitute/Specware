@@ -43,6 +43,8 @@
 
   (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Isabelle_Specware")
 		       (in-distribution-dir "Isabelle_Specware.terminal"))
+  (specware::copy-directory (in-specware-dir "Release/Mac/sbcl/Isabelle_Specware.app/")
+                            (in-distribution-dir "Isabelle_Specware.app/"))
   (specware::copy-file (in-specware-dir "Release/Mac/sbcl/XEmacs_Specware")
 		       (in-distribution-dir "XEmacs_Specware"))
   )
