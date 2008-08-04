@@ -419,4 +419,7 @@ AnnSpec qualifying spec
    %% May want to make the ignoreSubsort? be a parameter rather than false
    (equivType? spc (s1, s2))
 
+ op equivTermIn? (spc: Spec) (t1: MS.Term, tms: List MS.Term): Boolean =
+   exists (fn t2 -> equivTerm? spc (t1,t2)) tms
+
 end-spec
