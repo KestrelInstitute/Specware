@@ -133,6 +133,9 @@ Functions qualifying spec
 
   theorem eta is [a,b]
     fa(f: a -> b) (fn x -> f x) = f
+  proof Isa eta__stp
+    apply(rule ext, simp)
+  end-proof
 
   % used by obligation generator:
 
