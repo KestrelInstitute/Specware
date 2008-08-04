@@ -116,7 +116,7 @@ MetaSlangRewriter qualifying spec
    (mapFlat 
       (fn rule ->
           let _ = if debugApplyRewrites? then
-                   (writeLine("boundVars: "^anyToString boundVars);
+                   (%writeLine("boundVars: "^anyToString boundVars);
                     printRule rule;
                     writeLine("Matching "^printTerm rule.lhs^" against\n"^printTerm term))
                    else ()
@@ -823,7 +823,7 @@ MetaSlangRewriter qualifying spec
 	       | None -> Nil
                      ))
    in
-      let term = dereferenceAll emptySubstitution term in
+      %let term = dereferenceAll emptySubstitution term in
       rewriteRec(rules0,emptySubstitution,term,boundVars,[],0)
 
  op rewriteOnce : 
