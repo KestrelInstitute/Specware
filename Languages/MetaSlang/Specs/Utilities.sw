@@ -1482,21 +1482,21 @@ Utilities qualifying spec
            | _ -> ty)
       | Product(flds, a) ->
         if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
-          then let (bare_flds, arg_vars, pred,_) =
-                foldl (fn ((id,tyi), (bare_flds, arg_vars, pred, i)) ->
+          then let (bare_flds, arg_fld_vars, pred,_) =
+                foldl (fn ((id,tyi), (bare_flds, arg_fld_vars, pred, i)) ->
                          case subtypeComps(spc, tyi) of
                            | Some(t,p) -> let v = ("x"^toString i, t)  in
                                           (bare_flds ++ [(id,t)],
-                                           arg_vars ++ [mkVarPat v],
+                                           arg_fld_vars ++ [(id,mkVarPat v)],
                                            mkAnd(pred, mkApply(p, mkVar v)),
                                            i+1)
                            | None -> (bare_flds ++ [(id,tyi)],
-                                      arg_vars ++ [mkWildPat tyi],
+                                      arg_fld_vars ++ [(id,mkWildPat tyi)],
                                       pred,
                                       i+1))
                   ([],[],trueTerm,0) flds
                in
-               Subsort(Product(bare_flds,a), mkLambda(mkTuplePat arg_vars, pred), a)
+               Subsort(Product(bare_flds,a), mkLambda(mkRecordPat arg_fld_vars, pred), a)
           else ty
  %     | Arrow(dom, rng ,a) ->
 %        (case raiseSubtype(dom,spc) of
