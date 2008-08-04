@@ -116,8 +116,8 @@ spec
  op printGamma: Gamma -> ()
  def printGamma(decls,_,_,_,_,_,_) = 
      let _ = app (fn decl -> 
-		(String.toScreen (printDecl decl);
- 		 String.toScreen "; "))
+		(toScreen (printDecl decl);
+ 		 toScreen "; "))
 		(rev decls)
      in
      let _ = writeLine "" in
@@ -170,6 +170,8 @@ spec
 	       | Let decls ->    Let(decls,formula,noPos)
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
+     % let _ = writeLine(printTerm term) in
+     % let _ = app (fn d -> writeLine(printDecl d)) decls in
      let term = foldl insert term decls in
      % let _ = writeLine("Simplifying "^printTerm term^"\nto\n"^printTerm(simplify spc term)) in
      case if simplifyObligations? then simplify spc term else term of
@@ -683,7 +685,13 @@ spec
    %% Temporary backward compatibility until we add these functions at type-check time rather
    %% than just in the Isabelle translator
    case findTheOp(spc, Qualified("List","List_P")) of
-     | Some _ -> raiseSubtype(ty, spc)
+     | Some _ ->
+       let n_ty = raiseSubtype(ty, spc) in
+       if equalType?(n_ty,ty) then ty
+         else %let _ = writeLine(printSort ty^" --> "^printSort n_ty) in
+              %let Subsort(_,p,_) = n_ty in
+              %let _ = writeLine("Raised "^printSort ty^"\nstp: "^printTerm p) in
+              n_ty
      | None -> ty
 
  def <=	 (tcc,gamma,M,tau,sigma) = 
@@ -696,26 +704,28 @@ spec
       exists (fn p -> p = (tau,sigma)) pairs
       then tcc
    else
-%      let _ = String.writeLine
+%      let _ = writeLine
 %       	   (printTerm M^ " : "^
 %                printSort tau^" <= "^
 %       	        printSort sigma)
 %      in
-   let pairs  = Cons((tau,sigma),pairs) in 
-   let tau1   = maybeRaiseSubtype(unfoldBeforeCoProduct(spc,tau),   spc) in
-   let sigma1 = maybeRaiseSubtype(unfoldBeforeCoProduct(spc,sigma), spc) in
+   let pairs  = Cons((tau,sigma), pairs) in 
+   let tau0   = maybeRaiseSubtype(tau, spc) in
+   let tau1   = unfoldBeforeCoProduct(spc,tau0) in
+   let sigma0 = maybeRaiseSubtype(sigma, spc) in
+   let sigma1 = unfoldBeforeCoProduct(spc, sigma0) in
    if tau1 = sigma1
       then tcc
    else
    case tau1 
      of Subsort(tau2,pred,_) -> 
-%	  let _ = String.writeLine("Asserting "^printTerm pred) in
+	%  let _ = writeLine("Asserting "^printTerm pred) in
         let gamma = assertCond(mkLetOrApply(pred,M,gamma),gamma) in
         subtypeRec(pairs,tcc,gamma,M,tau2,sigma)
       | _ -> 
    case sigma1 
      of Subsort(sigma2,pred,_) -> 
-%	  let _ = String.writeLine("Verifying "^printTerm pred) in
+%	  let _ = writeLine("Verifying "^printTerm pred) in
         let tcc = subtypeRec(pairs,tcc,gamma,M,tau,sigma2) in
         let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma),"_subsort") in
         tcc
