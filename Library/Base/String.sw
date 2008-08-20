@@ -8,13 +8,15 @@ String qualifying spec
   type String.String  % qualifier required for internal parsing reasons
 
   % string that consists of argument list of characters:
+
   op implode : Bijection (List Char, String)
 
   (* Metaslang's string literals are simply syntactic shortcuts for expressions
-  implode l, where l is a list of characters. For example, "Spec" stands for
-  implode [#S,#p,#e,#c]. *)
+  of the form implode l, where l is a list of characters. For example,
+  "Specware" stands for implode [#S,#p,#e,#c,#w,#a,#r,#e]. *)
 
   % list of constituent characters of strings:
+
   op explode : String -> List Char = inverse implode
 
   % number of constituent characters:
