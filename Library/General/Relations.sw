@@ -3,78 +3,79 @@ Relation qualifying spec
   import Sets
 
   % relations as sets of pairs:
+
   type Relation(a,b) = Set (a * b)
 
-  op domain : [a,b] Relation(a,b) -> Set a
-  def domain r = fn x -> (ex(y) r(x,y))
+  % domain and range:
 
-  op range : [a,b] Relation(a,b) -> Set b
-  def range r = fn y -> (ex(x) r(x,y))
+  op [a,b] domain (r: Relation(a,b)) : Set a = fn x:a -> (ex(y:b) r(x,y))
 
-  % range values related to domain value:
-  op apply : [a,b] Relation(a,b) -> a -> Set b
-  def apply r x = fn y -> r(x,y)
+  op [a,b] range (r: Relation(a,b)) : Set b = fn y:b -> (ex(x:a) r(x,y))
 
-  % domain values related to range value (apply inverse):
-  op applyi : [a,b] Relation(a,b) -> b -> Set a
-  def applyi r y = fn x -> r(x,y)
+  % range/domain values related to domain/range value (set):
 
-  % lifting of `apply' to sets:
-  op applys : [a,b] Relation(a,b) -> Set a -> Set b
-  def applys r xS = fn y -> (ex(x) x in? xS && r(x,y))
+  op [a,b] apply (r: Relation(a,b)) (x:a) : Set b = fn y:b -> r(x,y)
 
-  % lifting of `applyi' to sets:
-  op applyis : [a,b] Relation(a,b) -> Set b -> Set a
-  def applyis r yS = fn x -> (ex(y) y in? yS && r(x,y))
+  op [a,b] applyi (r: Relation(a,b)) (y:b) : Set a = fn x:a -> r(x,y)
 
-  % forward composition:
-  op :> infixl 24 : [a,b,c] Relation(a,b) * Relation(b,c) -> Relation(a,c)
-  def :> (r1,r2) = fn (x,z) -> (ex(y) r1(x,y) && r2(y,z))
+  op [a,b] applys (r: Relation(a,b)) (xS: Set a) : Set b =
+    fn y:b -> (ex(x:a) x in? xS && r(x,y))
 
-  % backward composition:
-  op o infixl 24 : [a,b,c] Relation(b,c) * Relation(a,b) -> Relation(a,c)
-  def o (r1,r2) = r2 :> r1
+  op [a,b] applyis (r: Relation(a,b)) (yS: Set b) : Set a =
+    fn x:a -> (ex(y:b) y in? yS && r(x,y))
+
+  % forward and backward composition:
+
+  op [a,b,c] :> (r1: Relation(a,b), r2: Relation(b,c)) infixl 24
+                : Relation(a,c) = fn (x:a,z:c) -> (ex(y:b) r1(x,y) && r2(y,z))
+
+  op [a,b,c] o (r1: Relation(b,c), r2: Relation(a,b)) infixl 24
+               : Relation(a,c) = r2 :> r1
   proof Isa -> o_R end-proof
 
-  op inverse : [a,b] Relation(a,b) -> Relation(b,a)
-  def inverse r = fn (y,x) -> r(x,y)
+  % inverse:
 
-  % remove pairs whose domain value is not in argument set:
-  op restrictDomain infixl 25 : [a,b] Relation(a,b) * Set a -> Relation(a,b)
-  def restrictDomain (r,xS) = fn (x,y) -> r(x,y) && x in? xS
+  op [a,b] inverse (r: Relation(a,b)) : Relation(b,a) = fn (y,x) -> r(x,y)
 
-  % remove pairs whose range value is not in argument set:
-  op restrictRange infixl 25 : [a,b] Relation(a,b) * Set b -> Relation(a,b)
-  def restrictRange (r,yS) = fn (x,y) -> r(x,y) && y in? yS
+  % remove pairs whose domain/range value is not in argument set:
+
+  op [a,b] restrictDomain (r: Relation(a,b), xS: Set a) infixl 25
+                          : Relation(a,b) = fn (x,y) -> r(x,y) && x in? xS
+
+  op [a,b] restrictRange (r: Relation(a,b), yS: Set b) infixl 25
+                         : Relation(a,b) = fn (x,y) -> r(x,y) && y in? yS
 
   % some range value for every domain value:
-  op total? : [a,b] Relation(a,b) -> Boolean
-  def total? r = (domain r = full)
+
+  op [a,b] total? (r: Relation(a,b)) : Boolean = (domain r = full)
 
   type TotalRelation(a,b) = (Relation(a,b) | total?)
 
   % some domain value for every range value:
-  op surjective? : [a,b] Relation(a,b) -> Boolean
-  def surjective? r = (range r = full)
+
+  op [a,b] surjective? (r: Relation(a,b)) : Boolean = (range r = full)
 
   type SurjectiveRelation(a,b) = (Relation(a,b) | surjective?)
 
   % at most one range value for every domain value:
-  op functional? : [a,b] Relation(a,b) -> Boolean
-  def functional? r = (fa(x) (single? \/ empty?) (apply r x))
+
+  op [a,b] functional? (r: Relation(a,b)) : Boolean =
+    fa(x) (single? \/ empty?) (apply r x)
 
   type Map(a,b) = (Relation(a,b) | functional?)
 
   % at most one domain value for every range value:
-  op injective? : [a,b] Relation(a,b) -> Boolean
-  def injective? r = (fa(y) (single? \/ empty?) (applyi r y))
+
+  op [a,b] injective? (r: Relation(a,b)) : Boolean =
+    fa(y) (single? \/ empty?) (applyi r y)
 
   type InjectiveRelation(a,b) = (Relation(a,b) | injective?)
 
   % cardinalities:
-  type FiniteRelation(a,b) = (Relation(a,b) | finite?)
-  type InfiniteRelation(a,b) = (Relation(a,b) | infinite?)
-  type CountableRelation(a,b) = (Relation(a,b) | countable?)
+
+  type      FiniteRelation(a,b) = (Relation(a,b) | finite?)
+  type    InfiniteRelation(a,b) = (Relation(a,b) | infinite?)
+  type   CountableRelation(a,b) = (Relation(a,b) | countable?)
   type UncountableRelation(a,b) = (Relation(a,b) | uncountable?)
 
 endspec

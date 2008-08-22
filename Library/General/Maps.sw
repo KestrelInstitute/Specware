@@ -2,64 +2,62 @@ MapAC qualifying spec
 
   import Relations
 
-  % spec `Relations' defines type `Map(a,b)'
+  % recall that spec `Relations' defines type `Map(a,b)'
 
-  op definedAt infixl 20 : [a,b] Map(a,b) * a -> Boolean
-  def definedAt (m,x) = x in? domain m
+  % map (not) defined at element:
 
-  op undefinedAt infixl 20 : [a,b] Map(a,b) * a -> Boolean
-  def undefinedAt (m,x) = x nin? domain m
+  op [a,b] definedAt (m: Map(a,b), x:a) infixl 20 : Boolean = x in? domain m
 
-  % value of map at point, i.e. map application:
-  op @ infixl 30 : [a,b] ((Map(a,b) * a) | definedAt) -> b
-  def @ (m,x) = the(y) m(x,y)
+  op [a,b] undefinedAt (m: Map(a,b), x:a) infixl 20 : Boolean = x nin? domain m
 
-  % "totalization" of `@' using `Option':
-  op @@ infixl 30 : [a,b] Map(a,b) * a -> Option b
-  def @@ (m,x) = if m definedAt x then Some (m @ x) else None
+  % map application (op @@ is a totalization of @):
 
-  % update map (analogous to record update):
-  op <<< infixl 25 : [a,b] Map(a,b) * Map(a,b) -> Map(a,b)
-  def <<< (m1,m2) = the(m)
+  op [a,b] @ (m: Map(a,b), x:a | m definedAt x) infixl 30 : b = the(y:b) m(x,y)
+
+  op [a,b] @@ (m: Map(a,b), x:a) infixl 30 : Option b =
+    if m definedAt x then Some (m @ x) else None
+
+  % update map at point(s) (analogous to record update):
+
+  op [a,b] <<< (m1: Map(a,b), m2: Map(a,b)) infixl 25 : Map(a,b) = the(m)
     domain m = domain m1 \/ domain m2 &&
     (fa(x) x in? domain m =>
            m @ x = (if m2 definedAt x then m2 @ x else m1 @ x))
 
-  % update map at one point:
-  op update : [a,b] Map(a,b) -> a -> b -> Map(a,b)
-  def update m x y = m <<< single (x, y)
+  op [a,b] update (m: Map(a,b)) (x:a) (y:b) : Map(a,b) = m <<< single (x, y)
 
-  % remove domain values from map:
-  op -- infixl 25 : [a,b] Map(a,b) * Set a -> Map(a,b)
-  def -- (m,xS) = m restrictDomain (~~ xS)
+  % remove domain value(s) from map:
 
-  % remove domain value from map:
-  op - infixl 25 : [a,b] Map(a,b) * a -> Map(a,b)
-  def - (m,x) = m -- single x
+  op [a,b] -- (m: Map(a,b), xS: Set a) infixl 25 : Map(a,b) =
+    m restrictDomain (~~ xS)
+
+  op [a,b] - (m: Map(a,b), x:a) infixl 25 : Map(a,b) = m -- single x
   proof Isa -> mless [simp] end-proof
 
   % maps agree on intersection of domains:
-  op agree? : [a,b] Map(a,b) * Map(a,b) -> Boolean
-  def agree?(m1,m2) = functional? (m1 \/ m2)
+
+  op [a,b] agree? (m1: Map(a,b), m2: Map(a,b)) : Boolean =
+    functional? (m1 \/ m2)
 
   type TotalMap(a,b) = (Map(a,b) | total?)
 
-  % convert function to (total) map:
-  op fromFunction : [a,b] (a -> b) -> TotalMap(a,b)
-  def fromFunction f = (fn (x,y) -> y = f x)
+  % convert between (total) maps and functions:
 
-  % convert total map to function:
-  op toFunction : [a,b] TotalMap(a,b) -> (a -> b)
-  def toFunction = inverse fromFunction
+  op [a,b] fromFunction (f: a -> b) : TotalMap(a,b) = fn (x,y) -> y = f x
+
+  op toFunction : [a,b] TotalMap(a,b) -> (a -> b) = inverse fromFunction
+
+  % surjective and injective:
 
   type SurjectiveMap(a,b) = (Map(a,b) | Relation.surjective?)
 
   type InjectiveMap(a,b) = (Map(a,b) | Relation.injective?)
 
   % cardinalities:
-  type FiniteMap(a,b) = (Map(a,b) | finite?)
-  type InfiniteMap(a,b) = (Map(a,b) | infinite?)
-  type CountableMap(a,b) = (Map(a,b) | countable?)
+
+  type      FiniteMap(a,b) = (Map(a,b) | finite?)
+  type    InfiniteMap(a,b) = (Map(a,b) | infinite?)
+  type   CountableMap(a,b) = (Map(a,b) | countable?)
   type UncountableMap(a,b) = (Map(a,b) | uncountable?)
 
 endspec
