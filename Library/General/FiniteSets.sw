@@ -26,122 +26,106 @@ FSet qualifying spec
 
   op toFSet : [a] Bijection (FiniteSet a, FSet a)
 
-  op fromFSet : [a] FSet a -> FiniteSet a
-  def fromFSet = inverse toFSet
+  op fromFSet : [a] FSet a -> FiniteSet a = inverse toFSet
 
   % operations and subtypes (see spec `Sets'):
 
-  op in? infixl 20 : [a] a * FSet a -> Boolean
-  def in? (x,s) = x in? fromFSet s
+  op [a] in? (x:a, s: FSet a) infixl 20 : Boolean = x in? fromFSet s
   proof Isa -> in_fset? end-proof
 
-  op nin? infixl 20 : [a] a * FSet a -> Boolean
-  def nin? (x,s) = x nin? fromFSet s
+  op [a] nin? (x:a, s: FSet a) infixl 20 : Boolean = x nin? fromFSet s
   proof Isa -> nin_fset? end-proof
 
-  op <= infixl 20 : [a] FSet a * FSet a -> Boolean
-  def <= (s1,s2) = fromFSet s1 <= fromFSet s2
+  op [a] <= (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+    fromFSet s1 <= fromFSet s2
   proof Isa -> <=_fset? end-proof
 
-  op < infixl 20 : [a] FSet a * FSet a -> Boolean
-  def < (s1,s2) = fromFSet s1 < fromFSet s2
+  op [a] < (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+    fromFSet s1 < fromFSet s2
   proof Isa -> <_fset? end-proof
 
-  op >= infixl 20 : [a] FSet a * FSet a -> Boolean
-  def >= (s1,s2) = fromFSet s1 >= fromFSet s2
+  op [a] >= (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+    fromFSet s1 >= fromFSet s2
   proof Isa -> >=_fset? end-proof
 
-  op > infixl 20 : [a] FSet a * FSet a -> Boolean
-  def > (s1,s2) = fromFSet s1 > fromFSet s2
+  op [a] > (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+    fromFSet s1 > fromFSet s2
   proof Isa -> >_fset? end-proof
 
-  op /\ infixr 25 : [a] FSet a * FSet a -> FSet a
-  def /\ (s1,s2) = toFSet (fromFSet s1 /\ fromFSet s2)
+  op [a] /\ (s1: FSet a, s2: FSet a) infixr 25 : FSet a =
+    toFSet (fromFSet s1 /\ fromFSet s2)
 
-  op \/ infixr 24 : [a] FSet a * FSet a -> FSet a
-  def \/ (s1,s2) = toFSet (fromFSet s1 \/ fromFSet s2)
+  op [a] \/ (s1: FSet a, s2: FSet a) infixr 24 : FSet a =
+    toFSet (fromFSet s1 \/ fromFSet s2)
 
-  op -- infixl 25 : [a] FSet a * FSet a -> FSet a
-  def -- (s1,s2) = toFSet (fromFSet s1 -- fromFSet s2)
+  op [a] -- (s1: FSet a, s2: FSet a) infixl 25 : FSet a =
+    toFSet (fromFSet s1 -- fromFSet s2)
 
-  op * infixl 27 : [a,b] FSet a * FSet b -> FSet (a * b)
-  def * (s1,s2) = toFSet (fromFSet s1 * fromFSet s2)
+  op [a,b] * (s1: FSet a, s2: FSet b) infixl 27 : FSet (a * b) =
+    toFSet (fromFSet s1 * fromFSet s2)
   proof Isa -> *_fset? end-proof
 
-  op power : [a] FSet a -> FSet (FSet a)
-  def power s = toFSet (map toFSet (power (fromFSet s)))
+  op [a] power (s: FSet a) : FSet (FSet a) =
+    toFSet (map toFSet (power (fromFSet s)))
 
-  op empty : [a] FSet a
-  def empty = toFSet empty
+  op empty : [a] FSet a = toFSet empty
   proof Isa -> empty_fset? end-proof
 
-  op empty? : [a] FSet a -> Boolean
-  def empty? s = empty? (fromFSet s)
+  op [a] empty? (s: FSet a) : Boolean = empty? (fromFSet s)
 
-  op nonEmpty? : [a] FSet a -> Boolean
-  def nonEmpty? s = nonEmpty? (fromFSet s)
+  op [a] nonEmpty? (s: FSet a) : Boolean = nonEmpty? (fromFSet s)
 
   type NonEmptyFSet a = (FSet a | nonEmpty?)
 
-  op single : [a] a -> FSet a
-  def single x = toFSet (single x)
+  op [a] single (x:a) : FSet a = toFSet (single x)
 
-  op single? : [a] FSet a -> Boolean
-  def single? s = single? (fromFSet s)
+  op [a] single? (s: FSet a) : Boolean = single? (fromFSet s)
 
-  op onlyMemberOf infixl 20 : [a] a * FSet a -> Boolean
-  def onlyMemberOf (x,s) = x onlyMemberOf (fromFSet s)
+  op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Boolean =
+    x onlyMemberOf (fromFSet s)
 
   type SingletonFSet a = (FSet a | single?)
 
-  op theMember : [a] SingletonFSet a -> a
-  def theMember s = theMember (fromFSet s)
+  op [a] theMember (s: SingletonFSet a) : a = theMember (fromFSet s)
 
-  op <| infixl 25 : [a] FSet a * a -> FSet a
-  def <| (s,x) = toFSet (fromFSet s <| x)
+  op [a] <| (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s <| x)
   proof Isa -> with_fs [simp] end-proof
 
-  op - infixl 25 : [a] FSet a * a -> FSet a
-  def - (s,x) = toFSet (fromFSet s - x)
+  op [a] - (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s - x)
   proof Isa -> -_fset? end-proof
 
-  op map : [a,b] (a -> b) -> FSet a -> FSet b
-  def map f s = toFSet (map f (fromFSet s))
+  op [a,b] map (f: a -> b) (s: FSet a) : FSet b = toFSet (map f (fromFSet s))
 
-  op FSet.mapPartial : [a,b] (a -> Option b) -> FSet a -> FSet b
-  def [a, b] FSet.mapPartial (f:(a -> Option b)) (s:FSet a) =
+  op [a,b] FSet.mapPartial (f: a -> Option b) (s: FSet a) : FSet b =
     toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
 
-  op size : [a] FSet a -> Nat
-  def size s = size (fromFSet s)
+  op [a] size (s: FSet a) : Nat = size (fromFSet s)
 
-  op foldable? : [a,b] b * (b * a -> b) * FSet a -> Boolean
-  def foldable?(c,f,s) = foldable? (c, f, fromFSet s)
+  op [a,b] foldable? (c:b, f: b * a -> b, s: FSet a) : Boolean =
+    foldable? (c, f, fromFSet s)
 
-  op fold : [a,b] ((b * (b * a -> b) * FSet a) | foldable?) -> b
-  def fold(c,f,s) = fold (c, f, fromFSet s)
+  op [a,b] fold (c:b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
+    fold (c, f, fromFSet s)
 
-  op powerf : [a] FSet a -> FSet (FSet a)
-  def powerf = power  % no difference for finite sets
+  op powerf : [a] FSet a -> FSet (FSet a) = power
 
   % we must strengthen the domain to non-empty sets of sets,
   % because in spec `Sets' we have `//\\ empty = full':
-  op //\\ : [a] NonEmptyFSet (FSet a) -> FSet a
-  def //\\ setOfSets = toFSet (//\\ (map fromFSet (fromFSet setOfSets)))
+  op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
+    toFSet (//\\ (map fromFSet (fromFSet ss)))
 
-  op \\// : [a] FSet (FSet a) -> FSet a
-  def \\// setOfSets = toFSet (\\// (map fromFSet (fromFSet setOfSets)))
+  op [a] \\// (ss: FSet (FSet a)) : FSet a =
+    toFSet (\\// (map fromFSet (fromFSet ss)))
 
-  op forall? : [a] (a -> Boolean) -> FSet a -> Boolean
-  def forall? p s = fromFSet s <= p
+  op [a] forall? (p: a -> Boolean) (s: FSet a) : Boolean = fromFSet s <= p
 
-  op exists? : [a] (a -> Boolean) -> FSet a -> Boolean
-  def exists? p s = nonEmpty? (fromFSet s /\ p)
+  op [a] exists? (p: a -> Boolean) (s: FSet a) : Boolean =
+    nonEmpty? (fromFSet s /\ p)
 
-  op exists1? : [a] (a -> Boolean) -> FSet a -> Boolean
-  def exists1? p s = single? (fromFSet s /\ p)
+  op [a] exists1? (p: a -> Boolean) (s: FSet a) : Boolean =
+    single? (fromFSet s /\ p)
 
-  op filter : [a] (a -> Boolean) -> FSet a -> FSet a
-  def filter p s = toFSet (fromFSet s /\ p)
+  op [a] filter (p: a -> Boolean) (s: FSet a) : FSet a =
+    toFSet (fromFSet s /\ p)
 
 endspec
