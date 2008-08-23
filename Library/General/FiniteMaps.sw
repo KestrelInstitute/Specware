@@ -15,8 +15,7 @@ FMap qualifying spec
 
   op toFMap : [a,b] Bijection (FiniteMap(a,b), FMap(a,b))
 
-  op fromFMap : [a,b] FMap(a,b) -> FiniteMap(a,b)
-  def fromFMap = inverse toFMap
+  op fromFMap : [a,b] FMap(a,b) -> FiniteMap(a,b) = inverse toFMap
 
   (* Since `FiniteMap' is a subtype of `Map' which is a subtype of `Relation'
   which is a subtype of `Set', it "inherits" ops for maps, (endo)relations,
@@ -29,153 +28,139 @@ FMap qualifying spec
 
   % operations and subtypes:
 
-  op maps? : [a,b] FMap(a,b) -> a -> b -> Boolean
-  def maps? m x y = (x,y) in? fromFMap m
+  op [a,b] maps? (m: FMap(a,b)) (x:a) (y:b) : Boolean = (x,y) in? fromFMap m
 
-  op domain : [a,b] FMap(a,b) -> FSet a
-  def domain m = toFSet (domain (fromFMap m))
+  op [a,b] domain (m: FMap(a,b)) : FSet a = toFSet (domain (fromFMap m))
 
-  op range : [a,b] FMap(a,b) -> FSet b
-  def range m = toFSet (range (fromFMap m))
+  op [a,b] range (m: FMap(a,b)) : FSet b = toFSet (range (fromFMap m))
 
-  op definedAt infixl 20 : [a,b] FMap(a,b) * a -> Boolean
-  def definedAt (m,x) = (fromFMap m) definedAt x
+  op [a,b] definedAt (m: FMap(a,b), x:a) infixl 20 : Boolean =
+    (fromFMap m) definedAt x
 
-  op undefinedAt infixl 20 : [a,b] FMap(a,b) * a -> Boolean
-  def undefinedAt (m,x) = (fromFMap m) undefinedAt x
+  op [a,b] undefinedAt (m: FMap(a,b), x:a) infixl 20 : Boolean =
+    (fromFMap m) undefinedAt x
 
-  op @ infixl 30 : [a,b] ((FMap(a,b) * a) | definedAt) -> b
-  def @ (m,x) = (fromFMap m) @ x
+  op [a,b] @ (m: FMap(a,b), x:a | m definedAt x) infixl 30 : b =
+    (fromFMap m) @ x
   proof Isa -> @_fm end-proof
 
-  op @@ infixl 30 : [a,b] FMap(a,b) * a -> Option b
-  def @@ (m,x) = (fromFMap m) @@ x
+  op [a,b] @@ (m: FMap(a,b), x:a) infixl 30 : Option b = (fromFMap m) @@ x
 
-  op applyi : [a,b] FMap(a,b) -> b -> FSet a
-  def applyi m y = toFSet (applyi (fromFMap m) y)
+  op [a,b] applyi (m: FMap(a,b)) (y:b) : FSet a =
+    toFSet (applyi (fromFMap m) y)
 
-  op applys : [a,b] FMap(a,b) -> FSet a -> FSet b
-  def applys m xS = toFSet (applys (fromFMap m) (fromFSet xS))
+  op [a,b] applys (m: FMap(a,b)) (xS: FSet a) : FSet b =
+    toFSet (applys (fromFMap m) (fromFSet xS))
 
-  op applyis : [a,b] FMap(a,b) -> FSet b -> FSet a
-  def applyis m yS = toFSet (applyis (fromFMap m) (fromFSet yS))
+  op [a,b] applyis (m: FMap(a,b)) (yS: FSet b) : FSet a =
+    toFSet (applyis (fromFMap m) (fromFSet yS))
 
-  op id : [a] FSet a -> FMap(a,a)
-  def id dom = toFMap (idOver (fromFSet dom))
+  op [a] id (dom: FSet a) : FMap(a,a) = toFMap (idOver (fromFSet dom))
 
-  op :> infixl 24 : [a,b,c] FMap(a,b) * FMap(b,c) -> FMap(a,c)
-  def :> (m1,m2) = toFMap (fromFMap m1 :> fromFMap m2)
+  op [a,b,c] :> (m1: FMap(a,b), m2: FMap(b,c)) infixl 24 : FMap(a,c) =
+    toFMap (fromFMap m1 :> fromFMap m2)
 
-  op o infixl 24 : [a,b,c] FMap(b,c) * FMap(a,b) -> FMap(a,c)
-  def o (m1,m2) = toFMap (fromFMap m1 o fromFMap m2)
+  op [a,b,c] o (m1: FMap(b,c), m2: FMap(a,b)) infixl 24 : FMap(a,c) =
+    toFMap (fromFMap m1 o fromFMap m2)
   proof Isa -> o_fm end-proof
 
-  op <= infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
-  def <= (m1,m2) = fromFMap m1 <= fromFMap m2
+  op [a,b] <= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+    fromFMap m1 <= fromFMap m2
   proof Isa -> <=_fm end-proof
 
-  op < infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
-  def < (m1,m2) = fromFMap m1 < fromFMap m2
+  op [a,b] < (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+    fromFMap m1 < fromFMap m2
   proof Isa -> <_fm end-proof
 
-  op >= infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
-  def >= (m1,m2) = fromFMap m1 >= fromFMap m2
+  op [a,b] >= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+    fromFMap m1 >= fromFMap m2
   proof Isa -> >=_fm end-proof
 
-  op > infixl 20 : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
-  def > (m1,m2) = fromFMap m1 > fromFMap m2
+  op [a,b] > (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+    fromFMap m1 > fromFMap m2
   proof Isa -> >_fm end-proof
 
-  op empty : [a,b] FMap(a,b)
-  def empty = toFMap empty
+  op empty : [a,b] FMap(a,b) = toFMap empty
   proof Isa -> empty_fm end-proof
 
-  op empty? : [a,b] FMap(a,b) -> Boolean
-  def empty? m = empty? (fromFMap m)
+  op [a,b] empty? (m: FMap(a,b)) : Boolean = empty? (fromFMap m)
 
-  op nonEmpty? : [a,b] FMap(a,b) -> Boolean
-  def nonEmpty? m = nonEmpty? (fromFMap m)
+  op [a,b] nonEmpty? (m: FMap(a,b)) : Boolean = nonEmpty? (fromFMap m)
 
   type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
 
-  op <<< infixl 25 : [a,b] FMap(a,b) * FMap(a,b) -> FMap(a,b)
-  def <<< (m1,m2) = toFMap (fromFMap m1 <<< fromFMap m2)
+  op [a,b] <<< (m1: FMap(a,b), m2: FMap(a,b)) infixl 25 : FMap(a,b) =
+    toFMap (fromFMap m1 <<< fromFMap m2)
 
-  op update : [a,b] FMap(a,b) -> a -> b -> FMap(a,b)
-  def update m x y = toFMap (update (fromFMap m) x y)
+  op [a,b] update (m: FMap(a,b)) (x:a) (y:b) : FMap(a,b) =
+    toFMap (update (fromFMap m) x y)
 
-  op -- infixl 25 : [a,b] FMap(a,b) * FSet a -> FMap(a,b)
-  def -- (m,xS) = toFMap (fromFMap m -- fromFSet xS)
+  op [a,b] -- (m: FMap(a,b), xS: FSet a) infixl 25 : FMap(a,b) =
+    toFMap (fromFMap m -- fromFSet xS)
   proof Isa -> --_fm end-proof
 
-  op - infixl 25 : [a,b] FMap(a,b) * a -> FMap(a,b)
-  def - (m,x) = toFMap (fromFMap m - x)
+  op [a,b] - (m: FMap(a,b), x:a) infixl 25 : FMap(a,b) =
+    toFMap (fromFMap m - x)
   proof Isa -> less_fm end-proof
 
-  op agree? : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
-  def agree?(m1,m2) = agree? (fromFMap m1, fromFMap m2)
+  op [a,b] agree? (m1: FMap(a,b), m2: FMap(a,b)) : Boolean =
+    agree? (fromFMap m1, fromFMap m2)
 
-  op /\ infixr 25 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
-  def /\ (m1,m2) = toFMap (fromFMap m1 /\ fromFMap m2)
+  op [a,b] /\ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 25
+              : FMap(a,b) = toFMap (fromFMap m1 /\ fromFMap m2)
 
-  op \/ infixr 24 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
-  def \/ (m1,m2) = toFMap (fromFMap m1 \/ fromFMap m2)
+  op [a,b] \/ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 24
+              : FMap(a,b) = toFMap (fromFMap m1 \/ fromFMap m2)
 
-  op forall? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
-  def forall? p m = fromFMap m <= p
+  op [a,b] forall? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+    fromFMap m <= p
 
-  op exists? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
-  def exists? p m = nonEmpty? (fromFMap m /\ p)
+  op [a,b] exists? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+    nonEmpty? (fromFMap m /\ p)
 
-  op exists1? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
-  def exists1? p m = single? (fromFMap m /\ p)
+  op [a,b] exists1? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+    single? (fromFMap m /\ p)
 
-  op filter : [a,b] (a * b -> Boolean) -> FMap(a,b) -> FMap(a,b)
-  def filter p m = toFMap (fromFMap m /\ p)
+  op [a,b] filter (p: a * b -> Boolean) (m: FMap(a,b)) : FMap(a,b) =
+    toFMap (fromFMap m /\ p)
 
-  op restrictDomain infixl 25 : [a,b] FMap(a,b) * (a -> Boolean) -> FMap(a,b)
-  def restrictDomain (m,p) = toFMap (fromFMap m restrictDomain p)
+  op [a,b] restrictDomain (m: FMap(a,b), p: a -> Boolean) infixl 25
+                          : FMap(a,b) = toFMap (fromFMap m restrictDomain p)
 
-  op restrictRange infixl 25 : [a,b] FMap(a,b) * (b -> Boolean) -> FMap(a,b)
-  def restrictRange (m,p) = toFMap (fromFMap m restrictRange p)
+  op [a,b] restrictRange (m: FMap(a,b), p: b -> Boolean) infixl 25
+                         : FMap(a,b) = toFMap (fromFMap m restrictRange p)
 
-  op single : [a,b] a -> b -> FMap(a,b)
-  def single x y = toFMap (single (x,y))
+  op [a,b] single (x:a) (y:b) : FMap(a,b) = toFMap (single (x,y))
 
-  op single? : [a,b] FMap(a,b) -> Boolean
-  def single? m = single? (fromFMap m)
+  op [a,b] single? (m: FMap(a,b)) : Boolean = single? (fromFMap m)
 
   type SingletonFMap(a,b) = (FMap(a,b) | single?)
 
-  op thePair : [a,b] SingletonFMap(a,b) -> a * b
-  def thePair m = theMember (fromFMap m)
+  op [a,b] thePair (m: SingletonFMap(a,b)) : a * b = theMember (fromFMap m)
 
-  op size : [a,b] FMap(a,b) -> Nat
-  def size m = size (fromFMap m)
+  op [a,b] size (m: FMap(a,b)) : Nat = size (fromFMap m)
 
-  op foldable? : [a,b,c] c * (c * (a*b) -> c) * FMap(a,b) -> Boolean
-  def foldable?(c,f,m) = foldable? (c, f, fromFMap m)
+  op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Boolean =
+    foldable? (c, f, fromFMap m)
 
-  op fold : [a,b,c] ((c * (c * (a*b) -> c) * FMap(a,b)) | foldable?) -> c
-  def fold(c,f,m) = fold (c, f, fromFMap m)
+  op [a,b,c] fold (c:c, f: c * (a*b) -> c, m: FMap(a,b) |
+                   foldable?(c,f,m)) : c = fold (c, f, fromFMap m)
 
-  op injective? : [a,b] FMap(a,b) -> Boolean
-  def injective? m = Relation.injective? (fromFMap m)
+  op [a,b] injective? (m: FMap(a,b)) : Boolean =
+    Relation.injective? (fromFMap m)
 
   type InjectiveFMap(a,b) = (FMap(a,b) | injective?)
 
-  op inverse : [a,b] InjectiveFMap(a,b) -> InjectiveFMap(b,a)
-  def inverse m = toFMap (inverse (fromFMap m))
+  op [a,b] inverse (m: InjectiveFMap(a,b)) : InjectiveFMap(b,a) =
+    toFMap (inverse (fromFMap m))
 
   % apply function to all range values:
-  op map : [a,b,c] (b -> c) -> FMap(a,b) -> FMap(a,c)
-  def [a,b,c] map f m =
+  op [a,b,c] map (f: b -> c) (m: FMap(a,b)) : FMap(a,c) =
     let fLiftedToPairs: a * b -> a * c = (fn (x,y) -> (x, f y)) in
     toFMap (map fLiftedToPairs (fromFMap m))
 
   % like previous op but also include domain value:
-  op mapWithDomain : [a,b,c] (a * b -> c) -> FMap(a,b) -> FMap(a,c)
-  def [a,b,c] mapWithDomain f m =
+  op [a,b,c] mapWithDomain (f: a * b -> c) (m: FMap(a,b)) : FMap(a,c) =
     let fLiftedToPairs: a * b -> a * c = (fn (x,y) -> (x, f(x,y))) in
     toFMap (map fLiftedToPairs (fromFMap m))
 
@@ -183,10 +168,9 @@ FMap qualifying spec
   `FMap(a,b)' and `FSet(a*b)' are just isomorphic. So, we provide explicit
   conversions here. *)
 
-  op toFSet : [a,b] FMap(a,b) -> FSet(a*b)
-  def toFSet m = toFSet (fromFMap m)
+  op [a,b] toFSet (m: FMap(a,b)) : FSet(a*b) = toFSet (fromFMap m)
 
-  op fromFSet : [a,b] {s : FSet(a*b) | functional? (fromFSet s)} -> FMap(a,b)
-  def fromFSet s = toFMap (fromFSet s)
+  op [a,b] fromFSet (s : FSet(a*b) | functional? (fromFSet s)) : FMap(a,b) =
+    toFMap (fromFSet s)
 
 endspec
