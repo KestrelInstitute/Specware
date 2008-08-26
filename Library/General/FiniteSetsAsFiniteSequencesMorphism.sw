@@ -1,1 +1,1 @@
-morphism /Library/General/FiniteSets -> FiniteSetsAsFiniteSequences {}
+morphism FiniteSets -> FiniteSetsAsFiniteSequences {}

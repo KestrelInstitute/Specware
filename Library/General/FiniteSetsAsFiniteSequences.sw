@@ -1,6 +1,6 @@
 FSet qualifying spec
 
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequences, Sets
 
   % sets as equivalence classes of sequences without repeated elements:
   type FSet a = (InjectiveFSeq a) / permutationOf
@@ -42,7 +42,7 @@ FSet qualifying spec
   op [a] \/ (s1: FSet a, s2: FSet a) infixr 24 : FSet a =
     choose[FSet] (fn seq1 ->
     choose[FSet] (fn seq2 ->
-    quotient[FSet] (seq1 FSeq.++ filter (fn x -> x nin? seq1) seq2)
+    quotient[FSet] (seq1 ++ filter (fn x -> x nin? seq1) seq2)
     ) s2
     ) s1
 
@@ -53,7 +53,7 @@ FSet qualifying spec
     ) s2
     ) s1
 
-  op empty : [a] FSet a = quotient[FSet] FSeq.empty
+  op empty : [a] FSet a = quotient[FSet] empty
 
   op [a] empty? (s: FSet a) : Boolean = (s = empty)
 
@@ -93,13 +93,13 @@ FSet qualifying spec
     quotient[FSet] (mapPartial f seq)
     ) s
 
-  op [a] size (s: FSet a) : Nat = choose[FSet] FSeq.length s
+  op [a] size (s: FSet a) : Nat = choose[FSet] length s
 
   op [a,b] foldable? (c:b, f: b * a -> b, s: FSet a) : Boolean =
     foldable? (c, f, fromFSet s)  % not executable
 
-  op [a,b] fold (c:b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
-    choose[FSet] (foldl f c) s
+  op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)): b =
+    choose[FSet] (foldl (fn (x,y) -> f(y,x)) c) s
 
   op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
     choose[FSet] (fn seqOfSets -> 
@@ -108,7 +108,7 @@ FSet qualifying spec
 
   op [a] \\// (ss: FSet (FSet a)) : FSet a =
     choose[FSet] (fn seqOfSets -> 
-    FSeq.foldl (\/) empty seqOfSets
+    foldl (\/) empty seqOfSets
     ) ss
 
   op [a,b] * (s1: FSet a, s2: FSet b) infixl 27 : FSet (a * b) =

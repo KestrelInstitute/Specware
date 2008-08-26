@@ -101,10 +101,10 @@ FSet qualifying spec
 
   op [a] size (s: FSet a) : Nat = size (fromFSet s)
 
-  op [a,b] foldable? (c:b, f: b * a -> b, s: FSet a) : Boolean =
+  op [a,b] foldable? (c: b, f: b * a -> b, s: FSet a) : Boolean =
     foldable? (c, f, fromFSet s)
 
-  op [a,b] fold (c:b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
+  op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
     fold (c, f, fromFSet s)
 
   op powerf : [a] FSet a -> FSet (FSet a) = power

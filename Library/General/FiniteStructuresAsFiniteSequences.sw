@@ -3,7 +3,7 @@ spec
   import FiniteMapsAsFiniteSequences
 
   op FSeq.toSet : [a] FSeq a -> FSet a
-  def FSeq.toSet = foldl (<|) empty
+  def FSeq.toSet = foldl (fn (x,s) -> s <| x) empty
 
   op FSeq.//\\ : [a] NonEmptyFSeq (FSet a) -> FSet a
   def FSeq.//\\ seqOfSets = foldl (/\) (first seqOfSets) (rtail seqOfSets)

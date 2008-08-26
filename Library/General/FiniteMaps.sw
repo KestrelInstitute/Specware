@@ -143,8 +143,8 @@ FMap qualifying spec
   op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Boolean =
     foldable? (c, f, fromFMap m)
 
-  op [a,b,c] fold (c:c, f: c * (a*b) -> c, m: FMap(a,b) |
-                   foldable?(c,f,m)) : c = fold (c, f, fromFMap m)
+  op [a,b,c] fold(c: c, f: c * (a*b) -> c, m: FMap(a,b) | foldable?(c,f,m)): c =
+    fold (c, f, fromFMap m)
 
   op [a,b] injective? (m: FMap(a,b)) : Boolean =
     Relation.injective? (fromFMap m)
