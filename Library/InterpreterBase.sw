@@ -1,6 +1,11 @@
 %%% This adds definitions to some ops in the Base that have handwritten lisp definitions
-spec
-  import Base
+ExecutableList = morphism Base/List -> Base/List_Executable {}
+% ExecutableStringList = Base/String_Executable[ExecutableList]
+ExecutableString = morphism Base/String -> Base/String_Executable {}
+
+InterpreterBase0 = Base[ExecutableString][ExecutableList]
+
+InterpreterBase = refine InterpreterBase0 by {
 
   (* The following def's have been commented out because they are now present in
   the base library spec String. Once we make sure that everything works fine,
@@ -21,6 +26,8 @@ spec
 				 then -(stringToNat(substring(s,1,length s)))
 			       else stringToNat s
   def Nat.natToString = Nat.toString
+ *)
+
   def Nat.stringToNat s =
        (let def charToDigit (c : (Char | isNum)) : Nat =
 	case c of
@@ -41,6 +48,5 @@ spec
 		  | hd::tl -> stringToNatAux (tl, res * 10 + charToDigit hd)
 	  in
 	    stringToNatAux(explode s, 0))
-*)
+}
 
-endspec
