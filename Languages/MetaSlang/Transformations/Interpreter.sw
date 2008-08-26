@@ -181,12 +181,20 @@ spec
     in
     let _ = postTrace(t,val,depth) in
     val
+
+  %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
+  op interpreterBaseSpec: Spec
+
+  op findTheOpInterp(spc: Spec, qid: QualifiedId): Option OpInfo =
+    case findTheOp (interpreterBaseSpec, qid) of
+      | None -> findTheOp (spc, qid)
+      | v -> v
   
   op  evalFun: Fun * MS.Term * MS.Sort * Subst * Spec * Nat -> Value
   def evalFun(fun,t,ty,sb,spc,depth) =
     case fun of
       | Op (qid, _) ->
-        (case findTheOp (spc, qid) of
+        (case findTheOpInterp (spc, qid) of
 	   | Some info ->
              %% Being suppressed is used here as a proxy for "has a non-constructive definition"
 	     (if definedOpInfo? info && ~(avoidExpanding? qid) then
