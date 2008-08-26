@@ -80,8 +80,8 @@ Specware qualifying spec
   %% evaluateUnitId is designed to be called from application programs to
   %% get a unit from a unit id string.
 
-  op  evaluateUnitId : String -> Option SpecCalc.Value
-  def evaluateUnitId path =
+  % op  evaluateUnitId : String -> Option SpecCalc.Value
+  def Specware.evaluateUnitId path =
     let
       %% Ignore exceptions
       def handler _ (* except *) =
