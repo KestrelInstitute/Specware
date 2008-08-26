@@ -1,4 +1,7 @@
+%%% Obsolete
+
 PrNat qualifying spec
+
 
   import ../Base/Nat
 

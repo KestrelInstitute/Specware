@@ -1,6 +1,6 @@
 List qualifying spec
 
- import Option, Nat
+ import Option, Integer
 
  % inductive definition of lists:
 

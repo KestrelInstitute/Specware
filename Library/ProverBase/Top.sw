@@ -4,7 +4,7 @@ spec
   import Functions
   import Integer
   import List
-  import Nat
+%  import Nat
   import Option
   import String
   import System

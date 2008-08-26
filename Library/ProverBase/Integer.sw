@@ -1,6 +1,6 @@
 PrInteger qualifying spec
 
-  import ../Base/Nat
+  import ../Base/Integer
 
   type ProverNat = {i: Integer | i >= 0}
 
@@ -20,7 +20,7 @@ PrInteger qualifying spec
   %type Nat.Nat = (Integer | natural?)
 
 
-  axiom succ_def is fa(n) Integer.succ n = n + 1
+  axiom succ_def is fa(n) Integer.isucc n = n + 1
 
   % negating zero is a no-op
   axiom minus_zero is
@@ -117,5 +117,47 @@ PrInteger qualifying spec
      a <= x &&
      c + x <= d =>
      a + c <= d
+
+  %% Formerly in Nat.sw
+  axiom zero_not_succ1 is
+    ~(ex (n : Nat) zero = Nat.succ n)
+
+  axiom zero_not_succ2 is
+    fa (n : Nat) ~(zero = Nat.succ n)
+
+  axiom succ_injective is
+    fa (n1:Nat, n2:Nat) Nat.succ n1 = Nat.succ n2 => n1 = n2
+
+  axiom induction is
+    fa (p : Nat -> Boolean)
+      p zero &&
+      (fa (n:Nat) p n => p (Nat.succ n)) =>
+      (fa (n:Nat) p n)
+
+  axiom posNat?_def is
+    fa (n: Nat) posNat?(n) <=> (n ~= zero)
+
+  axiom zero_def is zero = 0
+
+  axiom one_def is one = 1
+
+% axiom two_def is two = 2
+
+  axiom plus_def1 is
+    fa(n:Nat) n + 0 = n
+  axiom plus_def2 is
+    fa(n:Nat, n0:Nat) n + Nat.succ n0 = Nat.succ(n + n0)
+
+  axiom lte_def1 is
+    fa(n:Nat) 0 <= n
+  axiom lte_def2 is
+    fa(n:Nat) ~(Nat.succ n <= 0)
+  axiom lte_def3 is
+    fa(n1:Nat, n2:Nat) Nat.succ n1 <= Nat.succ n2 <=> n1 <= n2
+
+  axiom minus_def1 is
+    fa(n:Nat) n - 0 = n
+  axiom minus_def2 is
+    fa(n1:Nat, n2:Nat) n2 <= n1 => Nat.succ n1 - Nat.succ n2 = n1 - n2
 
 endspec
