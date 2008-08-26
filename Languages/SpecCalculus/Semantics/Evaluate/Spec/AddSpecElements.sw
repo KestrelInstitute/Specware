@@ -28,7 +28,7 @@ SpecCalc qualifying spec
   in
   {
     mapM (fn name -> 
-	  if basicQualifiedId? name then
+	  if false then    % basicQualifiedId? name then
 	    raise (SpecError (pos, (printAliases new_names)^" is a basic type, hence cannot be redeclared."))
 	  else
 	    return ())
@@ -121,7 +121,7 @@ SpecCalc qualifying spec
                         new_names
   in {
     mapM (fn name -> 
-	  if basicQualifiedId? name then
+	  if false then    %basicQualifiedId? name then
 	    raise (SpecError (pos, (printAliases new_names)^" is a basic op, hence cannot be redeclared."))
 	  else
 	    return ())
