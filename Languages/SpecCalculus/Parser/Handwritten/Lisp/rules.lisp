@@ -814,7 +814,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :CLOSED-EXPRESSION-NSWB ()
   (:anyof
-   (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<")
+   (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<, ::")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
    (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination, not starting with [")
    )
@@ -876,6 +876,7 @@ If we want the precedence to be optional:
 			     ':left-lcb ':right-lcb))
    ((:tuple "\\_guillemotleft")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
 					   ':left-lcb ':right-lcb))
+   ((:tuple "::")  (make-unqualified-op-ref "Cons" ':left-lcb ':right-lcb))
    ))
 
 ;;; ------------------------------------------------------------------------
@@ -1639,7 +1640,11 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-OP-REFINE ()
   (:tuple "refine" (1 :SC-TERM) "by" "{"
 	  (2 (:repeat+ (:anyof :OP-DEFINITION
-			       :OP-DECLARATION) nil)) "}")
+			       :OP-DECLARATION
+                               :SORT-DECLARATION
+                               :SORT-DEFINITION
+                               :CLAIM-DEFINITION
+                               :PRAGMA-DECLARATION) nil)) "}")
   (make-sc-op-refine 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
