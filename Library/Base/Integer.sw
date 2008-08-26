@@ -31,6 +31,9 @@ Integer qualifying spec
   % we name the predecessor function, which is the inverse of succ:
 
   op pred : Bijection (Integer, Integer) = inverse succ
+  proof Isa
+    sorry
+  end-proof
   proof Isa pred_subtype_constr
    apply(auto simp add: bij_def inj_on_def surj_def)
    apply(rule_tac x="y + 1" in exI, auto)
@@ -148,6 +151,9 @@ end-proof
                           minus zero = zero &&
     (fa(i) positive? i => minus i    = pred (minus (pred i))) &&
     (fa(i) negative? i => minus i    = succ (minus (succ i)))
+  proof Isa
+    sorry
+  end-proof
 
   proof Isa e_dsh_Obligation_the
    apply(rule_tac a="zminus" in ex1I,simp_all)
@@ -183,6 +189,9 @@ end-proof
     (fa(j)                  plus (zero, j) = j) &&
     (fa(i,j) positive? i => plus (i,    j) = succ (plus (pred i, j))) &&
     (fa(i,j) negative? i => plus (i,    j) = pred (plus (succ i, j)))
+  proof Isa
+    sorry
+  end-proof
   proof Isa e_pls_Obligation_the
    apply(rule_tac a="\<lambda>(i,j). i+j" in ex1I, auto)
    apply(rule ext, auto simp add: split_paired_all)
@@ -201,6 +210,9 @@ end-proof
     (fa(j)                  times (zero, j) = zero) &&
     (fa(i,j) positive? i => times (i,    j) = times (pred i, j) + j) &&
     (fa(i,j) negative? i => times (i,    j) = times (succ i, j) - j)
+  proof Isa
+    sorry
+  end-proof
   proof Isa e_ast_Obligation_the
    (*** Isabelle's arithmetic decision procedure is quite weak ****)
    (*** We have to apply generic laws of integral domains      ****)
@@ -217,8 +229,14 @@ end-proof
   op > (i:Integer, j:Integer) infixl 20 : Boolean = j < i
 
   op <= (i:Integer, j:Integer) infixl 20 : Boolean = i < j || i = j
+  proof Isa
+    sorry
+  end-proof
 
   op >= (i:Integer, j:Integer) infixl 20 : Boolean = i > j || i = j
+  proof Isa
+    sorry
+  end-proof
 
   theorem <=_and_>=_are_converses is
     fa (i:Integer, j:Integer) (i <= j) = (j >= i)
@@ -226,9 +244,7 @@ end-proof
   % absolute value:
 
   op abs (i:Integer) : {j:Integer | j >= zero} = if i >= zero then i else (- i)
-  proof Isa 
-   apply(auto)
-  end-proof
+
 % --------------------------------------------------------
 % Soundness check: note that we map to zabs instead of abs
 % because abs is polymorphic
@@ -296,6 +312,9 @@ end-proof
     (ex(r) abs i = abs j * abs q + r && zero <= r && r < abs j) &&
     (i * j >= zero => q >= zero) &&
     (i * j <= zero => q <= zero)
+  proof Isa
+    sorry
+  end-proof
   proof Isa div_Obligation_the
   (***********************************************************************
    ** Consider 4 cases separately and use the above theorem as lemma
@@ -340,12 +359,21 @@ end-proof
   % we define remainder in such a way that i = j * (i div j) + (i rem j):
 
   op rem (i:Integer, j:NonZeroInteger) infixl 26 : Integer = i - j * (i / j)
+  proof Isa
+    sorry
+  end-proof
 
   % min and max:
 
   op min (i:Integer, j:Integer) : Integer = if i < j then i else j
+  proof Isa
+    sorry
+  end-proof
 
   op max (i:Integer, j:Integer) : Integer = if i > j then i else j
+  proof Isa
+    sorry
+  end-proof
 
   % comparison:
 
@@ -360,6 +388,9 @@ end-proof
 
   op divides (x:Integer, y:Integer) infixl 20 : Boolean =
     ex(z:Integer) x * z = y
+  proof Isa
+    sorry
+  end-proof
 
   (* If x is not 0, the notion is equivalent to saying that the remainder of the
   division of y by x is 0. *)
@@ -424,6 +455,9 @@ end-proof
        z >= zero && z divides x && z divides y &&
     % and is divided by any integer that also divides x and y:
        (fa(w:Integer) w divides x && w divides y => w divides z)
+  proof Isa
+    sorry
+  end-proof
   proof Isa gcd_Obligation_subsort
     apply(rule_tac Q="\<lambda>z. z\<ge>0" and a="zgcd(x,y)" in theI2, auto)
     apply(rule zgcd_geq_zero)
@@ -472,6 +506,9 @@ end-proof
        z >= zero && z multipleOf x && z multipleOf y &&
     % and any integer that is a multiple of x and y is also a multiple of z:
        (fa(w:Integer) w multipleOf x && w multipleOf y => w multipleOf z)
+  proof Isa
+    sorry
+  end-proof
   proof Isa lcm_Obligation_subsort
    (****** Avoid auto, it is slow because it tries too much ********************)
    apply(simp, rule_tac Q="\<lambda>z. z\<ge>0" and a="zlcm(x,y)" in theI2, safe)

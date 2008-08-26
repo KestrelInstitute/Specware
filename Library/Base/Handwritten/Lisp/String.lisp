@@ -7,95 +7,72 @@
 
 (setq SpecToLisp::SuppressGeneratedDefuns
       (append '("STRING-SPEC::implode"
-		"STRING-SPEC::explode"
-		"STRING-SPEC::|!length|"
-		"STRING-SPEC::concat-2"
-		"STRING-SPEC::concat"
-		"STRING-SPEC::++-2"
-		"STRING-SPEC::!++"
-		"STRING-SPEC::^-2"
-		"STRING-SPEC::^"
-		"STRING-SPEC::map-1-1"
-		"STRING-SPEC::|!map|"
-		"STRING-SPEC::exists-1-1"
-		"STRING-SPEC::|!exists|"
-		"STRING-SPEC::all-1-1"
-		"STRING-SPEC::all"
-		"STRING-SPEC::sub-2"
-		"STRING-SPEC::sub"
-		"STRING-SPEC::substring-3"
-		"STRING-SPEC::substring"
-		"STRING-SPEC::concatList"
-		"STRING-SPEC::translate-1-1"
-		"STRING-SPEC::translate"
-		"STRING-SPEC::compare-2"
-		"STRING-SPEC::compare"
-		"STRING-SPEC::<-2"
-		"STRING-SPEC::|!<|"
-		"STRING-SPEC::<=-2"
-		"STRING-SPEC::|!<=|"
-		"STRING-SPEC::lt-2"
-		"STRING-SPEC::lt"
-		"STRING-SPEC::leq-2"
-		"STRING-SPEC::leq"
-		"STRING-SPEC::newline"
-		"STRING-SPEC::toScreen"
-		"STRING-SPEC::writeLine"
-		"BOOLEAN-SPEC::show"
-		"INTEGER-SPEC::toString"
-		"INTEGER-SPEC::intToString"
-		"INTEGER-SPEC::stringToInt"
-		"NAT-SPEC::toString"
-		"NAT-SPEC::natToString"
-		"NAT-SPEC::stringToNat"
-		"CHAR-SPEC::show"
-		"CHAR-SPEC::toString"
-
+                "STRING-SPEC::explode"
+                "STRING-SPEC::|!length|"
+                "STRING-SPEC::|!@-2|"
+                "STRING-SPEC::|!@|"
+                "STRING-SPEC::subFromTo-3"
+                "STRING-SPEC::subFromTo"
+                "STRING-SPEC::++-2"
+                "STRING-SPEC::!++"
+                "STRING-SPEC::|!forall?-1-1|"
+                "STRING-SPEC::|!forall?|"
+                "STRING-SPEC::|!exists?-1-1|"
+                "STRING-SPEC::|!exists?|"
+                "STRING-SPEC::map-1-1"
+                "STRING-SPEC::|!map|"
+                "STRING-SPEC::flatten"
+                "STRING-SPEC::translate-1-1"
+                "STRING-SPEC::translate"
+                "STRING-SPEC::compare-2"
+                "STRING-SPEC::compare"
+                "STRING-SPEC::<-2"
+                "STRING-SPEC::|!<|"
+                "STRING-SPEC::<=-2"
+                "STRING-SPEC::|!<=|"
+                "STRING-SPEC::newline"
+                "STRING-SPEC::toScreen"
+                "STRING-SPEC::writeLine"
+                "BOOLEAN-SPEC::show"
+                "INTEGER-SPEC::intToString"
+                "INTEGER-SPEC::stringToInt"
+                "NAT-SPEC::natToString"
+                "NAT-SPEC::stringToNat"
+                "CHAR-SPEC::show"
                 "String-Spec::implode"
-		"String-Spec::explode"
-		"String-Spec::|!length|"
-		"String-Spec::concat-2"
-		"String-Spec::concat"
-		"String-Spec::++-2"
-		"String-Spec::!++"
-		"String-Spec::^-2"
-		"String-Spec::^"
-		"String-Spec::map-1-1"
-		"String-Spec::|!map|"
-		"String-Spec::exists-1-1"
-		"String-Spec::|!exists|"
-		"String-Spec::all-1-1"
-		"String-Spec::all"
-		"String-Spec::sub-2"
-		"String-Spec::sub"
-		"String-Spec::substring-3"
-		"String-Spec::substring"
-		"String-Spec::concatList"
-		"String-Spec::translate-1-1"
-		"String-Spec::translate"
-		"String-Spec::compare-2"
-		"String-Spec::compare"
-		"String-Spec::<-2"
-		"String-Spec::|!<|"
-		"String-Spec::<=-2"
-		"String-Spec::|!<=|"
-		"String-Spec::lt-2"
-		"String-Spec::lt"
-		"String-Spec::leq-2"
-		"String-Spec::leq"
-		"String-Spec::newline"
-		"String-Spec::toScreen"
-		"String-Spec::writeLine"
-		"Boolean-Spec::show"
-		"Integer-Spec::toString"
-		"Integer-Spec::intToString"
-		"Integer-Spec::stringToInt"
-		"Nat-Spec::toString"
-		"Nat-Spec::natToString"
-		"Nat-Spec::stringToNat"
-		"Char-Spec::show"
-		"Char-Spec::toString")
-	      SpecToLisp::SuppressGeneratedDefuns))
+                "String-Spec::explode"
+                "String-Spec::|!length|"
+                "String-Spec::|!@-2|"
+                "String-Spec::|!@|"
+                "String-Spec::subFromTo-3"
+                "String-Spec::subFromTo"
+                "String-Spec::++-2"
+                "String-Spec::!++"
+                "String-Spec::|!forall?-1-1|"
+                "String-Spec::|!forall?|"
+                "String-Spec::|!exists?-1-1|"
+                "String-Spec::|!exists?|"
+                "String-Spec::map-1-1"
+                "String-Spec::|!map|"
+                "String-Spec::flatten"
+                "String-Spec::translate-1-1"
+                "String-Spec::translate"
+                "String-Spec::compare-2"
+                "String-Spec::compare"
+                "String-Spec::<-2"
+                "String-Spec::|!<|"
+                "String-Spec::<=-2"
+                "String-Spec::|!<=|"
+                "String-Spec::newline"
+                "String-Spec::toScreen"
+                "String-Spec::writeLine"
+                "Boolean-Spec::show"
+                "Integer-Spec::intToString"
+                "Integer-Spec::stringToInt"
+                "Nat-Spec::natToString"
+                "Nat-Spec::stringToNat"
+                "Char-Spec::show")
+              SpecToLisp::SuppressGeneratedDefuns))
 
 
 ;;; For each curried binary op, there are two Lisp functions. One takes the
@@ -113,211 +90,161 @@
 
 
 (defun implode (s) 
-  (coerce s 'string))
+ (coerce s 'string))
 
 (defun explode (s) 
-  (coerce s 'list))
+ (coerce s 'list))
 
 (defun |!length| (x)
-  (declare (type cl:simple-string x))
-  (the cl:fixnum 
-    (array-dimension x 0)))
+ (declare (type cl:simple-string x))
+ (the cl:fixnum 
+   (array-dimension x 0)))
 
-(defun concat-2 (x y)
-  (declare (type cl:simple-string x y))
-  (the cl:simple-string 
-    (concatenate 'string x y)))
+(defun |!@-2| (s n)
+ (declare (type cl:simple-string s) (type cl:fixnum n))
+ (elt s n))
 
-;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
-(define-compiler-macro concat-2 (x y)
-  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x)) ,y))
+(defun |!@| (sn)
+ (declare (cons sn))
+ (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
 
-(defun concat (xy)
-  (declare (cons xy))
-  (the cl:simple-string 
-    (concatenate 'string 
-                 (the cl:simple-string (car xy)) 
-                 (the cl:simple-string (cdr xy)))))
+(defun subFromTo-3 (s start end)
+ (declare (type cl:simple-string s) (type cl:fixnum start end))
+ (the cl:simple-string (subseq s start end)))
+
+(define-compiler-macro subFromTo-3 (s start end)
+ `(subseq
+    (the cl:simple-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
+
+(defun subFromTo (sse)
+ (the cl:simple-string (subseq (the cl:simple-string (svref sse 0))
+                                    (the cl:fixnum (svref sse 1))
+                                    (the cl:fixnum (svref sse 2)))))
 
 (defun ++-2 (x y)
-  (declare (type cl:simple-string x y))
-  (the cl:simple-string 
-    (concatenate 'string x y)))
+ (declare (type cl:simple-string x y))
+ (the cl:simple-string 
+   (concatenate 'string x y)))
 
 ;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
 (define-compiler-macro ++-2 (x y)
-  `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x))
-		,y))
+ `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x))
+               ,y))
 
 (defun |!++| (xy)
-  (declare (cons xy))
-  (the cl:simple-string 
-    (concatenate 'string 
-                 (the cl:simple-string (car xy)) 
-                 (the cl:simple-string (cdr xy)))))
+ (declare (cons xy))
+ (the cl:simple-string 
+   (concatenate 'string 
+                (the cl:simple-string (car xy)) 
+                (the cl:simple-string (cdr xy)))))
 
-(defun ^-2 (x y)
-  (declare (type cl:simple-string x y))
-  (the cl:simple-string 
-    (concatenate 'string x y)))
+(defun |!forall?| (p)
+ (lambda (s)
+   (every p s)))
 
-;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
-(define-compiler-macro ^-2 (x y)
-  `(concatenate 'string ,x ,(if (stringp y) y `(the cl:simple-string ,y))))
+(defun |!forall?-1-1| (p s)
+ (every p s))
 
-(defun ^ (xy)
-  (declare (cons xy))
-  (the cl:simple-string 
-    (concatenate 'string 
-                 (the cl:simple-string (car xy)) 
-                 (the cl:simple-string (cdr xy)))))
+(defun |!exists?| (p)
+ (lambda (s)
+   (some p s)))
+
+(defun |exists?-1-1| (p s)
+ (some p s))
 
 (defun |!map| (f)
-  (lambda (s)
-    (map 'string f (the cl:simple-string s))))
+ (lambda (s)
+   (map 'string f (the cl:simple-string s))))
 
 (defun map-1-1 (f s)
-  (map 'string f (the cl:simple-string s)))
+ (map 'string f (the cl:simple-string s)))
 
-(defun |!exists| (p)
-  (lambda (s)
-    (some p s)))
-
-(defun exists-1-1 (p s)
-  (some p s))
-
-(defun all (p)
-  (lambda (s)
-    (every p s)))
-
-(defun all-1-1 (p s)
-  (every p s))
-
-(defun sub-2 (s n)
-  (declare (type cl:simple-string s) (type cl:fixnum n))
-  (elt s n))
-
-(defun sub (sn)
-  (declare (cons sn))
-  (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
-
-(defun substring-3 (s start end)
-  (declare (type cl:simple-string s) (type cl:fixnum start end))
-  (the cl:simple-string (subseq s start end)))
-
-(define-compiler-macro substring-3 (s start end)
-  `(subseq
-     (the cl:simple-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
-
-(defun substring (sse)
-  (the cl:simple-string (subseq (the cl:simple-string (svref sse 0))
-                                     (the cl:fixnum (svref sse 1))
-                                     (the cl:fixnum (svref sse 2)))))
-
-(defun concatList (x)
-  (the cl:simple-string 
-    (apply #'concatenate 'string x)))
+(defun flatten (x)
+ (the cl:simple-string 
+   (apply #'concatenate 'string x)))
 
 (defun translate (f)
-  (lambda (str)
-    (let* ((chars (explode str))
-           (translated-char-strings 
-            (mapcar #'(lambda (ch) 
-                        (string (funcall f ch)))
-                    chars)))
-      (declare (type list translated-char-strings))
-      (the cl:simple-string 
-        (apply #'concatenate 'string translated-char-strings)))))
+ (lambda (str)
+   (let* ((chars (explode str))
+          (translated-char-strings 
+           (mapcar #'(lambda (ch) 
+                       (string (funcall f ch)))
+                   chars)))
+     (declare (type list translated-char-strings))
+     (the cl:simple-string 
+       (apply #'concatenate 'string translated-char-strings)))))
 
 (defun translate-1-1 (f str)
-  (let* ((chars (explode str))
-         (translated-char-strings 
-          (mapcar #'(lambda (ch) 
-                      (string (funcall f ch)))
-                  chars)))
-    (declare (type list translated-char-strings))
-    (the cl:simple-string 
-      (apply #'concatenate 'string translated-char-strings))))
+ (let* ((chars (explode str))
+        (translated-char-strings 
+         (mapcar #'(lambda (ch) 
+                     (string (funcall f ch)))
+                 chars)))
+   (declare (type list translated-char-strings))
+   (the cl:simple-string 
+     (apply #'concatenate 'string translated-char-strings))))
 
 (defun String-Spec::compare-2 (s1 s2)
-  (if (string< s1 s2)
-      '(:|Less|)
-      (if (string< s2 s1) '(:|Greater|) '(:|Equal|))))
+ (if (string< s1 s2)
+     '(:|Less|)
+     (if (string< s2 s1) '(:|Greater|) '(:|Equal|))))
 
 (defun String-Spec::compare (s1s2)
-  (String-Spec::compare-2 (car s1s2) (cdr s1s2)))
-
-(defun lt-2 (s1 s2)
-  (declare (type cl:simple-string s1 s2))
-  (if (string< s1 s2) t nil))
-
-(defun lt (s1s2)
-  (if (string< (the cl:simple-string (car s1s2))
-               (the cl:simple-string (cdr s1s2)))
-   t nil))
-
-(defun leq-2 (s1 s2)
-  (declare (type cl:simple-string s1 s2))
-  (if (string<= s1 s2) t nil))
-
-(defun leq (s1s2)
-  (if (string<= (the cl:simple-string (car s1s2))
-                (the cl:simple-string (cdr s1s2)))
-   t nil))
+ (String-Spec::compare-2 (car s1s2) (cdr s1s2)))
 
 (defun <-2 (s1 s2)
-  (declare (type cl:simple-string s1 s2))
-  (if (string< s1 s2) t nil))
+ (declare (type cl:simple-string s1 s2))
+ (if (string< s1 s2) t nil))
 
 (define-compiler-macro <-2 (x y)
-  `(string< (the cl:simple-string ,x) (the cl:simple-string ,y)))
+ `(string< (the cl:simple-string ,x) (the cl:simple-string ,y)))
 
 (defun |!<| (s1s2)
-  (if (string< (the cl:simple-string (car s1s2))
-               (the cl:simple-string (cdr s1s2)))
-   t nil))
+ (if (string< (the cl:simple-string (car s1s2))
+              (the cl:simple-string (cdr s1s2)))
+  t nil))
 
 (defun <=-2 (s1 s2)
-  (declare (type cl:simple-string s1 s2))
-  (if (string<= s1 s2) t nil))
+ (declare (type cl:simple-string s1 s2))
+ (if (string<= s1 s2) t nil))
 
 (define-compiler-macro <=-2 (x y)
-  `(string<= (the cl:simple-string ,x) (the cl:simple-string ,y)))
+ `(string<= (the cl:simple-string ,x) (the cl:simple-string ,y)))
 
 (defun |!<=| (s1s2)
-  (if (string<= (the cl:simple-string (car s1s2))
-                (the cl:simple-string (cdr s1s2)))
-   t nil))
+ (if (string<= (the cl:simple-string (car s1s2))
+               (the cl:simple-string (cdr s1s2)))
+  t nil))
 
 (define-compiler-macro >-2 (x y)
-  `(let ((x ,x) (y ,y))
-     (string< (the cl:simple-string y) (the cl:simple-string x))))
+ `(let ((x ,x) (y ,y))
+    (string< (the cl:simple-string y) (the cl:simple-string x))))
 
 (define-compiler-macro >=-2 (x y)
-  `(let ((x ,x) (y ,y))
-     (string<= (the cl:simple-string y) (the cl:simple-string x))))
+ `(let ((x ,x) (y ,y))
+    (string<= (the cl:simple-string y) (the cl:simple-string x))))
 
 (defparameter newline
-  (format nil "~c" #\newline))
+ (format nil "~c" #\newline))
 
 (defun toScreen (x)
-  ;; Note: (format t ...) goes to *standard-output*
-  ;;    but (princ ... t) goes to *terminal-io*
-  ;; Confusing, but that's the standard...
-  ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
-  (declare (type cl:simple-string x))
-  (princ x *standard-output*)
-  (force-output *standard-output*))
+ ;; Note: (format t ...) goes to *standard-output*
+ ;;    but (princ ... t) goes to *terminal-io*
+ ;; Confusing, but that's the standard...
+ ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
+ (declare (type cl:simple-string x))
+ (princ x *standard-output*)
+ (force-output *standard-output*))
 
 (defun writeLine (x)
-  ;; Note: (format t ...) goes to *standard-output*
-  ;;    but (princ ... t) goes to *terminal-io*
-  ;; Confusing, but that's the standard...
-  ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
-  (declare (type cl:simple-string x))
-  (princ x *standard-output*)
-  (terpri *standard-output*)
-  (force-output *standard-output*))
+ ;; Note: (format t ...) goes to *standard-output*
+ ;;    but (princ ... t) goes to *terminal-io*
+ ;; Confusing, but that's the standard...
+ ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
+ (declare (type cl:simple-string x))
+ (princ x *standard-output*)
+ (terpri *standard-output*)
+ (force-output *standard-output*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -326,7 +253,7 @@
 
 
 (defun show (x)
-  (if x "true" "false"))
+ (if x "true" "false"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -334,68 +261,59 @@
 (in-package :Integer-Spec)
 
 
-(defun toString (x)
-  (declare (type integer x))
-  (the string (princ-to-string x)))
-
 (defun intToString (x)
-  (declare (type integer x))
-  (the string (princ-to-string x)))
+ (declare (type integer x))
+ (the string (princ-to-string x)))
 
 (defun stringToInt (s)
-  (declare (type string s))
-  (multiple-value-bind (n new-index)
-      (parse-integer s :junk-allowed t)
-    (cond ((null n)
-	   (System-Spec::fail 
-	    (format nil "stringToInt could not parse ~S" 
-		    s)))
-	  ((< new-index (length s))
-	   (System-Spec::fail
-	    (format nil "stringToInt found ~D, but also extra junk in ~S" 
-		    n s)))
-	  ((let ((c0 (char s 0))) 
-	     (or (digit-char-p c0) 
-		 (eq c0 #\-)))
-	   (the integer n))
-	  (t
-	   (System-Spec::fail
-	    (format nil "stringToInt: leading ~:C in ~S is not allowed"
-		    (char s 0) s))))))
-
+ (declare (type string s))
+ (multiple-value-bind (n new-index)
+     (parse-integer s :junk-allowed t)
+   (cond ((null n)
+          (System-Spec::fail 
+           (format nil "stringToInt could not parse ~S" 
+                   s)))
+         ((< new-index (length s))
+          (System-Spec::fail
+           (format nil "stringToInt found ~D, but also extra junk in ~S" 
+                   n s)))
+         ((let ((c0 (char s 0))) 
+            (or (digit-char-p c0) 
+                (eq c0 #\-)))
+          (the integer n))
+         (t
+          (System-Spec::fail
+           (format nil "stringToInt: leading ~:C in ~S is not allowed"
+                   (char s 0) s))))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defpackage :Nat-Spec)
 (in-package :Nat-Spec)
 
 
-(defun toString (x)
-  (declare (type integer x))
-  (the string (princ-to-string x)))
-
 (defun natToString (x)
-  (declare (type integer x))
-  (the string (princ-to-string x)))
+ (declare (type integer x))
+ (the string (princ-to-string x)))
 
 (defun stringToNat (s)
-  (declare (type string s))
-  ;; lisp automatically returns the first value as a normal value
-  (multiple-value-bind (n new-index)
-      (parse-integer s :junk-allowed t)
-    (cond ((null n)
-	   (System-Spec::fail
-	    (format nil "stringToNat could not parse ~S" 
-		    s)))
-	  ((< new-index (length s))
-	   (System-Spec::fail
-	    (format nil "stringToNat found ~D, but also extra junk in ~S" 
-		    n s)))
-	  ((digit-char-p (char s 0))
-	   (the integer n))
-	  (t
-	   (System-Spec::fail
-	    (format nil "stringToNat: leading ~:C in ~S is not allowed"
-		    (char s 0) s))))))
+ (declare (type string s))
+ ;; lisp automatically returns the first value as a normal value
+ (multiple-value-bind (n new-index)
+     (parse-integer s :junk-allowed t)
+   (cond ((null n)
+          (System-Spec::fail
+           (format nil "stringToNat could not parse ~S" 
+                   s)))
+         ((< new-index (length s))
+          (System-Spec::fail
+           (format nil "stringToNat found ~D, but also extra junk in ~S" 
+                   n s)))
+         ((digit-char-p (char s 0))
+          (the integer n))
+         (t
+          (System-Spec::fail
+           (format nil "stringToNat: leading ~:C in ~S is not allowed"
+                   (char s 0) s))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -403,8 +321,5 @@
 (in-package :Char-Spec)
 
 
-(defun toString (x)
-  (string x))
-
 (defun show (x)
-  (string x))
+ (string x))

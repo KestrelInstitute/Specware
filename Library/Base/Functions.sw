@@ -15,8 +15,7 @@ Functions qualifying spec
                 && f o id = f
   proof Isa Functions__identity__stp
     apply(auto)
-    apply(rule ext, auto)
-    apply(rule ext, auto)
+    apply(rule ext, simp)+
   end-proof
 
   theorem associativity is [a,b,c,d]
@@ -36,13 +35,22 @@ Functions qualifying spec
 
   op [a,b] injective? (f: a -> b) : Boolean =
     fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
+  proof Isa
+    apply(simp add: inj_on_def)
+  end-proof
   proof Isa injective_p__stp [simp] end-proof
 
   op [a,b] surjective? (f: a -> b) : Boolean =
     fa (y:b) (ex (x:a) f x = y)
+  proof Isa
+    apply(simp add: surj_def eq_commute)
+  end-proof
 
   op [a,b] bijective? (f: a -> b) : Boolean =
     injective? f && surjective? f
+  proof Isa
+    apply(simp add: bij_def)
+  end-proof
 
   type Injection (a,b) = ((a -> b) | injective?)
 
@@ -54,6 +62,11 @@ Functions qualifying spec
 
   op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
     fn y:b -> the(x:a) f x = y
+  proof Isa
+    apply(simp add: inv_def)
+    sorry
+  end-proof
+  proof Isa inverse__stp [simp] end-proof
 
   proof Isa inverse__stp_Obligation_subsort
     apply(auto)
@@ -81,8 +94,8 @@ Functions qualifying spec
   proof Isa inverse_Obligation_subsort
     apply(subgoal_tac "( \<lambda>y. THE x. f x = y) = inv f")
     apply(auto simp add: bij_def)
-    apply(drule surj_imp_inj_inv, auto)
-    apply(drule inj_imp_surj_inv, auto)
+    apply(erule surj_imp_inj_inv)
+    apply(erule inj_imp_surj_inv)
     apply(rule ext, rule the_equality, auto simp add: surj_f_inv_f)
   end-proof
 
@@ -93,17 +106,17 @@ Functions qualifying spec
 
   proof Isa inverse_subtype_constr
     apply(auto simp add: bij_def)
-    apply(drule surj_imp_inj_inv, auto)
-    apply(drule inj_imp_surj_inv, auto)
+    apply(erule surj_imp_inj_inv)
+    apply(erule inj_imp_surj_inv)
   end-proof
 
-  theorem inverse is [a,b]
+  theorem inverse_comp is [a,b]
     fa(f:Bijection(a,b)) f o inverse f = id
                       && inverse f o f = id
   proof Isa
     apply(simp add: bij_def surj_iff inj_iff)
   end-proof
-  proof Isa inverse__stp [simp]
+  proof Isa inverse_comp__stp
     apply(auto)
     apply(rule ext, auto, rule the1I2, auto)
     apply(rule ext, auto)
@@ -113,10 +126,6 @@ Functions qualifying spec
     fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
   proof Isa
     apply(simp add: bij_def surj_f_inv_f)
-  end-proof
-  proof Isa
-    apply(auto)
-    sorry
   end-proof
 
   theorem inverse_f_apply is [a,b]
@@ -144,13 +153,13 @@ Functions qualifying spec
   % mapping to Isabelle:
 
   proof Isa ThyMorphism
-    Functions.id \_rightarrow id
-    Functions.o \_rightarrow o Left 24
-    Functions.:> -> o Left 24 reversed
-    Functions.injective? \_rightarrow inj
-    Functions.surjective? \_rightarrow surj
-    Functions.bijective? \_rightarrow bij
-    Functions.inverse \_rightarrow inv
+    Functions.id          -> id
+    Functions.o           -> o Left 24
+    Functions.:>          -> o Left 24 reversed
+    Functions.injective?  -> inj
+    Functions.surjective? -> surj
+    Functions.bijective?  -> bij
+    Functions.inverse     -> inv
   end-proof
 
 endspec

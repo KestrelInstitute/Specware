@@ -1,247 +1,209 @@
 String qualifying spec
 
-  import Char, List
+ import Char, List
 
-  (* A string is a finite sequence of characters (of type Char). Thus, we define
-  type String by isomorphism with lists of characters. *)
+ (* A string is a finite sequence of characters (of type Char). Thus, we define
+ type String by isomorphism with lists of characters. *)
 
-  type String.String  % qualifier required for internal parsing reasons
+ type String.String  % qualifier required for internal parsing reasons
 
-  % string that consists of argument list of characters:
+ % string that consists of argument list of characters:
 
-  op implode : Bijection (List Char, String)
+ op implode : Bijection (List Char, String)
 
-  (* Metaslang's string literals are simply syntactic shortcuts for expressions
-  of the form implode l, where l is a list of characters. For example,
-  "Specware" stands for implode [#S,#p,#e,#c,#w,#a,#r,#e]. *)
+ (* Metaslang's string literals are simply syntactic shortcuts for expressions
+ of the form implode l, where l is a list of characters. For example,
+ "Specware" stands for implode [#S,#p,#e,#c,#w,#a,#r,#e]. *)
 
-  % list of constituent characters of strings:
+ % list of constituent characters of a string:
 
-  op explode : String -> List Char = inverse implode
+ op explode : String -> List Char = inverse implode
 
-  % number of constituent characters:
+ % analogues of some list ops:
 
-  op length (s:String) : Nat = List.length (explode s)
+ op length (s:String) : Nat = length (explode s)
 
-  % concatenation:
+ op @ (s:String, i:Nat | i < length s) infixl 30 : Char = (explode s) @ i
 
-  op concat (s1:String, s2:String) : String =
-    implode (List.concat (explode s1, explode s2))
+ op subFromTo (s:String, i:Nat, j:Nat | i <= j && j <= length s) : String =
+   implode (subFromTo (explode s, i, j))
 
-  op ++ infixl 25 : String * String -> String = concat
+ op ++ (s1:String, s2:String) infixl 25 : String =
+   implode ((explode s1) ++ (explode s2))
 
-  op ^  infixl 25 : String * String -> String = concat
+ op forall? (p: Char -> Boolean) (s: String) : Boolean =
+   forall? p (explode s)
 
-  % apply function to characters element-wise:
+ op exists? (p: Char -> Boolean) (s: String) : Boolean =
+   exists? p (explode s)
 
-  op map (f: Char -> Char) (s: String) : String =
-    implode (List.map f (explode s))
+ op map (f: Char -> Char) (s: String) : String =
+   implode (map f (explode s))
 
-  % true iff some/each character satisfies p:
+ op flatten (ss: List String) : String = implode (flatten (map explode ss))
 
-  op exists (p: Char -> Boolean) (s: String) : Boolean =
-    List.exists p (explode s)
+ % replace each character with a string and concatenate:
 
-  op all    (p: Char -> Boolean) (s: String) : Boolean =
-    List.all    p (explode s)
+ op translate (subst: Char -> String) (s: String) : String =
+   flatten (map subst (explode s))
 
-  % n-th character of string (counting from 0, left-to-right):
+ % strings can be linearly ordered and compared element-wise and regarding
+ % the empty string smaller than any non-empty string:
 
-  op sub (s:String, n:Nat | n < length s) : Char = nth (explode s, n)
+ op compare (s1:String, s2:String) : Comparison =
+   compare Char.compare (explode s1, explode s2)
 
-  % substring from the i-th character (inclusive) to the j-th character
-  % (exclusive):
+ % linear ordering relations:
 
-  op substring (s:String, i:Nat, j:Nat | i <= j && j <= length s) : String =
-    implode (sublist (explode s, i, j))
+ op <  (s1:String, s2:String) infixl 20 : Boolean = (compare(s1,s2) = Less)
 
-  % concatenate all the strings in the list, in order:
+ op <= (s1:String, s2:String) infixl 20 : Boolean = (s1 < s2 || s1 = s2)
 
-  op concatList (ss: List String) : String =
-    case ss of
+ op >  (s1:String, s2:String) infixl 20 : Boolean = (s2 <  s1)
+
+ op >= (s1:String, s2:String) infixl 20 : Boolean = (s2 <= s1)
+
+ % string consisting of just the newline character:
+
+ op newline : String = "\n"
+
+ % convert booleans to strings:
+
+ op Boolean.show (x:Boolean) : String = if x then "true" else "false"
+
+ % convert naturals to strings:
+
+ op Nat.digitToString (d:Nat | d < 10) : String =
+   case d of
+   | 0 -> "0"
+   | 1 -> "1"
+   | 2 -> "2"
+   | 3 -> "3"
+   | 4 -> "4"
+   | 5 -> "5"
+   | 6 -> "6"
+   | 7 -> "7"
+   | 8 -> "8"
+   | 9 -> "9"
+
+ op Nat.natToString (x:Nat) : String =
+   if x < 10 then digitToString x
+   else natToString (x div 10) ++ digitToString (x rem 10)
+
+ op Nat.show : Nat -> String = natToString
+
+ % convert strings to naturals (if convertible):
+
+ op Nat.natConvertible (s:String) : Boolean =
+   ex(x:Nat) natToString x = s
+
+ op Nat.stringToNat (s:String | natConvertible s) : Nat =
+   the(x:Nat) natToString x = s
+
+ % convert integers to strings:
+
+ op Integer.intToString (x:Integer) : String =
+   if x >= 0 then        natToString   x
+             else "-" ++ natToString (-x)
+
+ % In the translation of the following theorem we MUST add the type constraint
+ % to x to make the proof go through
+ proof Isa intToString_Obligation_subsort
+  sorry
+ end-proof
+
+ op Integer.show : Integer -> String = intToString
+
+ % convert strings to integers (if convertible):
+
+ op Integer.intConvertible (s:String) : Boolean =
+   ex(x:Integer) intToString x = s
+
+ op Integer.stringToInt (s:String | intConvertible s) : Integer =
+   the(x:Integer) intToString x = s
+
+ % convert characters to strings:
+
+ op Char.show (c:Char) : String = implode [c]
+
+ % convert comparisons to strings:
+
+ op Compare.show : Comparison -> String = fn
+   | Greater -> "Greater"
+   | Equal   -> "Equal"
+   | Less    -> "Less"
+
+ % given conversion from type a to String, convert Option a to String:
+
+ op [a] Option.show (shw: a -> String) : Option a -> String = fn
+   | None   -> "None"
+   | Some x -> "(Some " ^ (shw x) ^ ")"
+
+ % convert list of strings to string, using given separator:
+
+ op List.show (sep:String) (l: List String) : String =
+   case l of
       | []     -> ""
-      | s::ss1 -> s ^ (concatList ss1)
+      | hd::[] -> hd
+      | hd::tl -> hd ++ sep ++ (List.show sep tl)
 
-  % replace each character with a string and concatenate:
+ % deprecated:
 
-  op translate (subst: Char -> String) (s: String) : String =
-    concatList (map subst (explode s))
+ op sub : {(s,n) : String * Nat | n < length s} -> Char = (@)
 
-  % strings can be linearly ordered and compared element-wise and regarding
-  % the empty string smaller than any non-empty string:
+ op substring : {(s,i,j) : String * Nat * Nat |
+                 i <= j && j <= length s} -> String = subFromTo
 
-  op compare (s1:String, s2:String) : Comparison =
-    List.compare Char.compare (explode s1, explode s2)
+ op concat : String * String -> String = (++)
 
-  % linear ordering relations:
+ op ^ infixl 25 : String * String -> String = (++)
 
-  op <  (s1:String, s2:String) infixl 20 : Boolean = (compare(s1,s2) = Less)
+ op all : (Char -> Boolean) -> String -> Boolean = forall?
 
-  op <= (s1:String, s2:String) infixl 20 : Boolean = (s1 < s2 || s1 = s2)
+ op exists : (Char -> Boolean) -> String -> Boolean = exists?
 
-  op >  (s1:String, s2:String) infixl 20 : Boolean = (s2 <  s1)
+ op concatList : List String -> String = flatten
 
-  op >= (s1:String, s2:String) infixl 20 : Boolean = (s2 <= s1)
+ op toScreen (s:String) : () = ()
 
-  op lt  infixl 20 : String * String -> Boolean = (<)   % deprecated
+ op writeLine (s:String) : () = ()
 
-  op leq infixl 20 : String * String -> Boolean = (<=)  % deprecated
+ op lt infixl 20 : String * String -> Boolean = (<)
 
-  % string consisting of just newline character:
+ op leq infixl 20 : String * String -> Boolean = (<=)
 
-  op newline : String = "\n"
+ op Boolean.toString : Boolean -> String = Boolean.show
 
-  % deprecated:
+ op Nat.toString : Nat -> String = Nat.show
 
-  op toScreen  (s:String) : () = ()
-  op writeLine (s:String) : () = ()
+ op Integer.toString : Integer -> String = Integer.show
 
-  % convert booleans to strings:
+ op Char.toString : Char -> String = Char.show
 
-  op Boolean.show (x:Boolean) : String = if x then "true" else "false"
+ % mapping to Isabelle:  --- MUST BE REVISED ---
 
-  op Boolean.toString : Boolean -> String = Boolean.show  % deprecated
-
-  % convert naturals to strings:
-
-  op Nat.natToString (x:Nat) : String =
-    let def digitToString (d:Nat | d < 10) : String =
-        case d of
-        | 0 -> "0"
-        | 1 -> "1"
-        | 2 -> "2"
-        | 3 -> "3"
-        | 4 -> "4"
-        | 5 -> "5"
-        | 6 -> "6"
-        | 7 -> "7"
-        | 8 -> "8"
-        | 9 -> "9" in
-    let def natToStringAux (x:Nat, res:String) : String =
-        if x < 10 then (digitToString x) ^ res
-        else natToStringAux (x div 10, digitToString (x rem 10) ^ res) in
-    natToStringAux (x, "")
-  proof Isa natToString__natToStringAux "measure (\_lambda (x,res). x)"
-  end-proof
-
-  op Nat.show     : Nat -> String = Nat.natToString
-  op Nat.toString : Nat -> String = Nat.natToString  % deprecated
-
-  % convert naturals to strings (if convertible):
-
-  op Nat.natConvertible (s:String) : Boolean =
-    let cs = explode s in
-    (exists isNum cs) && (all isNum cs)
-
-  op Nat.stringToNat (s:String | Nat.natConvertible s) : Nat =
-    let def charToDigit (c:Char | isNum c) : Nat =
-        case c of
-        | #0 -> 0
-        | #1 -> 1
-        | #2 -> 2
-        | #3 -> 3
-        | #4 -> 4
-        | #5 -> 5
-        | #6 -> 6
-        | #7 -> 7
-        | #8 -> 8
-        | #9 -> 9 in
-    let def stringToNatAux (chars: List Char, res:Nat | all isNum chars) : Nat =
-        case chars of
-           | []     -> res
-           | hd::tl -> stringToNatAux (tl, res * 10 + charToDigit hd) in
-    stringToNatAux (explode s, 0)
-  proof Isa stringToNat__stringToNatAux "measure (\_lambda(chars,res). length chars)"
-  end-proof
-
-  % convert integers to strings:
-
-  op Integer.intToString (x:Integer) : String =
-    if x >= 0 then       Nat.natToString   x
-              else "-" ^ Nat.natToString (-x)
-
-  % In the translation of the following theorem we MUST add the type constraint to x
-  % to make the proof go through
-  proof Isa intToString_Obligation_subsort
-   sorry
-  end-proof
-
-  op Integer.show     : Integer -> String = Integer.intToString
-  op Integer.toString : Integer -> String = Integer.intToString  % deprecated
-
-  % convert strings to integers (if convertible):
-
-  op Integer.intConvertible (s:String) : Boolean =
-    let cs = explode s in
-    (exists isNum cs) &&
-    ((all isNum cs) || (hd cs = #- && all isNum (tl cs)))
-  proof Isa Integer__intConvertible_Obligation_subsort
-    apply (insert empty_null [of cs], auto)
-  end-proof
-  proof Isa Integer__intConvertible_Obligation_subsort0
-    apply (insert empty_null [of cs], auto)
-  end-proof
-
-  op Integer.stringToInt (s:String | Integer.intConvertible s) : Integer =
-    let firstchar::_ = explode s in
-    if firstchar = #- then - (stringToNat (substring (s,1,length s)))
-                      else    stringToNat s
-  %% Theorem requires information about character codes and cannot be proven.
-  proof Isa Integer__stringToInt_Obligation_subsort0
-    sorry
-  end-proof
-  proof Isa Integer__stringToInt_Obligation_subsort1
-    apply(auto simp add: Integer__intConvertible_def Nat__natConvertible_def)
-  end-proof
-
-  % convert characters to strings:
-
-  op Char.show (c:Char) : String = implode [c]
-
-  op Char.toString : Char -> String = Char.show  % deprecated
-
-  % convert comparisons to strings:
-
-  op Compare.show : Comparison -> String = fn
-    | Greater -> "Greater"
-    | Equal   -> "Equal"
-    | Less    -> "Less"
-
-  % given conversion from type a to String, convert Option a to String:
-
-  op [a] Option.show (shw: a -> String) : Option a -> String = fn
-    | None   -> "None"
-    | Some x -> "(Some " ^ (shw x) ^ ")"
-
-  % convert list of strings to string, using given separator:
-
-  op List.show (sep:String) (l: List String) : String =
-    case l of
-       | []     -> ""
-       | hd::[] -> hd
-       | hd::tl -> hd ^ sep ^ (List.show sep tl)
-
-  % mapping to Isabelle:
-
-  proof Isa ThyMorphism
-    type String.String \_rightarrow string
-    String.explode \_rightarrow id
-    String.implode \_rightarrow id
-    String.length \_rightarrow length
-    String.concat \_rightarrow @ Left 25
-    String.++ \_rightarrow @ Left 25
-    String.^ \_rightarrow @ Left 25
-    String.map \_rightarrow map
-    String.exists \_rightarrow list_ex
-    String.all \_rightarrow list_all
-    String.sub \_rightarrow ! Left 40
-    String.concatList \_rightarrow concat
-    String.lt  \_rightarrow <  Left 20
-    String.leq \_rightarrow <= Left 20
-    String.<  \_rightarrow <  Left 20
-    String.<= \_rightarrow <= Left 20
-    String.>  \_rightarrow >  Left 20
-    String.>= \_rightarrow >= Left 20
-  end-proof
+ proof Isa ThyMorphism
+   type String.String \_rightarrow string
+   String.explode \_rightarrow id
+   String.implode \_rightarrow id
+   String.length \_rightarrow length
+   String.concat \_rightarrow @ Left 25
+   String.++ \_rightarrow @ Left 25
+   String.^ \_rightarrow @ Left 25
+   String.map \_rightarrow map
+   String.exists? \_rightarrow list_ex
+   String.exists \_rightarrow list_ex
+   String.forall? \_rightarrow list_all
+   String.all \_rightarrow list_all
+   String.@ \_rightarrow ! Left 40
+   String.sub \_rightarrow ! Left 40
+   String.concatList \_rightarrow concat
+   String.lt  \_rightarrow <  Left 20
+   String.leq \_rightarrow <= Left 20
+   String.<  \_rightarrow <  Left 20
+   String.<= \_rightarrow <= Left 20
+   String.>  \_rightarrow >  Left 20
+   String.>= \_rightarrow >= Left 20
+ end-proof
 
 endspec
