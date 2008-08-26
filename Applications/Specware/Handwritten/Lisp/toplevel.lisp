@@ -530,7 +530,7 @@
     (ensure-directories-exist tmp-dir)
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
       (format s "spec~%")
-      (when *swe-use-interpreter?*
+      (when nil   ; *swe-use-interpreter?*  handled explicitly in Interpreter
 	(format s "  import ~A~%" "/Library/InterpreterBase")
 	(incf input-line-num))
       (when (not (null *current-swe-spec*))
@@ -601,6 +601,9 @@
        (fboundp 'emacs::eval-with-emacs)
        (funcall 'emacs::eval-with-emacs "(sw-use-x-symbol?)")))
 
+(defvar interpreterBaseName "/Library/InterpreterBase")
+(defvar MSInterpreter::interpreterBaseSpec)
+
 ;; Specware::initializeInterpreterBaseAux is funcalled from 
 ;; Specware::initializeInterpreterBase-0 in Preface.lisp, which in turn is called from
 ;; intializeSpecware in Specware.sw
@@ -611,8 +614,7 @@
       (progn
 	;; clear base names so adding defs for base ops won't complain
 	(SpecCalc::clearBaseNames_fromLisp nil)
-	(let ((*swe-return-value?* t))
-	  (swe "0")))
+	(setq MSInterpreter::interpreterBaseSpec (sc-val interpreterBaseName)))
     ;; restore base names
     (SpecCalc::setBaseNames_fromLisp nil)))
 
