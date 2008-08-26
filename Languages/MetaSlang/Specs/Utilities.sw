@@ -187,7 +187,7 @@ Utilities qualifying spec
 	      let (vars,sub,freeNames) = repBoundVars(map (fn(v,_) -> v) decls,sub,freeNames) 
 	      in
 	      let terms = List.map (fn (_,trm) -> replace2(trm,sub,freeNames)) decls in
-	      let decls = ListPair.zip (vars,terms) in
+	      let decls = zip (vars,terms) in
 	      LetRec(decls,
 		     replace2(M,sub,freeNames),
 		     a)
@@ -512,7 +512,7 @@ Utilities qualifying spec
 	      let (vars,sub,freeNames) = substBoundVars(List.map (fn(v,_) -> v) decls,sub,freeNames) 
 	      in
 	      let terms = List.map (fn (_,trm) -> substitute2(trm,sub,freeNames)) decls in
-	      let decls = ListPair.zip (vars,terms) in
+	      let decls = zip (vars,terms) in
 	      LetRec(decls,
 		     substitute2(M,sub,freeNames),
 		     a)
@@ -1377,8 +1377,13 @@ Utilities qualifying spec
 	 | None -> srt
 	 | Some info ->
 	   if definedSortInfo? info then
-	     let (tvs, srt) = unpackFirstSortDef info in
-	     let ssrt = substSort (zip (tvs, srts), srt) in
+	     let (tvs, srt_def) = unpackFirstSortDef info in
+             if length tvs ~= length srts
+               then (% writeLine("Type arg# mismatch: "^printSort srt);
+                     %% This can arise because of inadequacy of patternSort on QuotientPat
+                     srt_def)
+             else
+	     let ssrt = substSort (zip (tvs, srts), srt_def) in
 	     unfoldBaseV (sp, ssrt, verbose)
 	   else
 	     srt)
@@ -1681,257 +1686,3 @@ Utilities qualifying spec
       | _ -> true
 
 endspec
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%      unused stuff -- increasingly obsolete
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%
-%%%  op  printDefinedOps: [a] ASpec a -> String
-%%%  def printDefinedOps spc =
-%%%    let localized_spec =
-%%%        {importInfo = spc.importInfo << {imports = emptyImports},
-%%%	 sorts      = emptyASortMap,
-%%%	 ops        = filterOpMap (fn (_, _, _, defs) -> defs ~= []) spc.ops,
-%%%	 properties = emptyAProperties}
-%%%    in
-%%%      printSpec localized_spec
-%%%
-%%%  op removeUndefinedOps : [a] ASpec a -> ASpec a
-%%%
-%%%  op removeDefinitions  : [a] ASpec a -> ASpec a
-%%%  def removeDefinitions spc =
-%%%    {importInfo       = spc.importInfo,
-%%%     ops              = mapOpInfos (fn (aliases, fixity, srt, _) -> 
-%%% 				 (aliases, fixity, srt, []))
-%%%                                 spc.ops,
-%%%     sorts            = spc.sorts,
-%%%     properties       = emptyAProperties}
-%%% 
-%%%
-%%%  %% Spec equality
-%%%  op specEqual? : Spec * Spec -> Boolean
-%%%  op subspec?   : Spec * Spec -> Boolean
-%%% 
-%%% def specEqual? (s1, s2) =
-%%%   %% don't test importInfo as it just gives info about how the spec was constructed
-%%%   %(s1.imports                = s2.imports)                &
-%%%   (s1.properties             = s2.properties)             &
-%%%   equalAQualifierMap?(s1.sorts, s2.sorts) &
-%%%   equalAQualifierMap?(s1.ops, s2.ops)
-%%%
-%%% def subspec? (s1, s2) =
-%%%   %ListUtilities.subset? (s1.imports,    s2.imports)    &
-%%%   ListUtilities.subset? (s1.properties, s2.properties) &
-%%%   subsetAQualifierMap?  (s1.sorts,      s2.sorts)      &
-%%%   subsetAQualifierMap?  (s1.ops,        s2.ops)
-%%%
-%%%
-%%% op disableProperties : IntegerSet.Set * Spec -> Spec
-%%% def disableProperties (indices,spc) = 
-%%%   if IntegerSet.isEmpty indices then
-%%%     spc
-%%%   else
-%%%     let idx = Ref 0 in
-%%%     let revised_ops =
-%%%         mapAQualifierMap
-%%%	   (fn(op_names,fixity,srt,defs) ->
-%%%		       (idx := !idx - 1;
-%%%		        if IntegerSet.member(indices,!idx)
-%%%			 then (op_names,fixity,srt,[])
-%%%			 else (op_names,fixity,srt,defs)))
-%%%	   spc.ops
-%%%     % let (_,ops) =
-%%%     %     (fn (m,StringMap.foldri 
-%%%     %             (fn (nm,(fxty,srt,defn),(idx,ops)) -> 
-%%%     %		    if IntegerSet.member(indices,idx)
-%%%     %			  then (idx - 1,StringMap.insert(ops,nm,(fxty,srt,None):OpInfo))
-%%%     %		    else (idx - 1,StringMap.insert(ops,nm,(fxty,srt,defn)))) 
-%%%     %	           (-1,StringMap.empty) spc.ops)) 
-%%%     in
-%%%     {importInfo       = spc.importInfo,
-%%%      sorts            = spc.sorts,
-%%%      ops              = revised_ops,
-%%%      properties       = filterWithIndex (fn (i,n) -> ~(IntegerSet.member(indices,i))) 
-%%%                                         spc.properties
-%%%     } 
-%%%
-%%%
-%%% op filterWithIndex : (Integer * Property -> Boolean) -> Properties -> Properties
-%%% def filterWithIndex p l = 
-%%%   let def fRec(n,l) = 
-%%%     case l of
-%%%       | []    -> [] 
-%%%       | x::xs ->
-%%%           if p(n,x) then
-%%%             cons(x,fRec(n + 1,xs))
-%%%		   else
-%%%             fRec(n + 1,xs)
-%%%   in
-%%%     fRec(0,l)
-%%%
-%%%
-%%% * ### As far as I can tell, the modifyNames family of functions are not used
-%%% %- --------------------------------------------------------------------------------
-%%% %- modify op and sort names in a spec, term, sort, etc.
-%%% %- - mSrt is a function for modifying sort QualifiedId's
-%%% %- - mOp is a function for modifying op QualifiedId's
-%%% %- --------------------------------------------------------------------------------
-%%% 
-%%% op modifyNamesSort: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Sort -> Sort
-%%% def modifyNamesSort(mSrt,mOp,srt) =
-%%%  case srt of
-%%%   | Arrow(s1,s2,a) ->
-%%%     Arrow(modifyNamesSort(mSrt,mOp,s1),
-%%%	   modifyNamesSort(mSrt,mOp,s2),
-%%%	   a)
-%%%   | Product(fields,a) ->
-%%%     Product(List.map (fn(id,s) -> (id,modifyNamesSort(mSrt,mOp,s))) fields,
-%%%	     a)
-%%%   | CoProduct(fields,a) ->
-%%%     CoProduct(List.map (fn(id,optsrt) ->
-%%%			 (id, case optsrt of
-%%%			       | Some s -> Some(modifyNamesSort(mSrt,mOp,s))
-%%%			       | None  -> None)) 
-%%%	                fields,
-%%%			a)
-%%%   | Quotient(srt,term,a) ->
-%%%     Quotient(modifyNamesSort(mSrt,mOp,srt),
-%%%	      modifyNamesTerm(mSrt,mOp,term),
-%%%	      a)
-%%%   | Subsort(srt,term,a) ->
-%%%     Subsort(modifyNamesSort(mSrt,mOp,srt),
-%%%	     modifyNamesTerm(mSrt,mOp,term),
-%%%	     a)
-%%%   | Base(qid,srts,a) ->
-%%%     Base(mSrt qid,
-%%%	  List.map (fn(s) -> modifyNamesSort(mSrt,mOp,s)) srts,
-%%%	  a)
-%%%   | _ -> srt
-%%%
-%%% op modifyNamesTerm: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * MS.Term -> MS.Term
-%%% def modifyNamesTerm(mSrt,mOp,term) =
-%%%   case term
-%%%     of Apply(t1,t2,a) ->
-%%%        Apply(modifyNamesTerm(mSrt,mOp,t1),
-%%%	      modifyNamesTerm(mSrt,mOp,t2),
-%%%	      a)
-%%%      | Record(fields,a) ->
-%%%	Record(List.map (fn(id,t) -> (id,modifyNamesTerm(mSrt,mOp,t))) fields,
-%%%	       a)
-%%%      | Bind(bnd,vars,t,a) -> 
-%%%	Bind(bnd,
-%%%	     List.map(fn(v) -> modifyNamesVar(mSrt,mOp,v)) vars,
-%%%	     modifyNamesTerm(mSrt,mOp,t),
-%%%	     a)
-%%%      | Let(pts,t,a) -> 
-%%%	Let(List.map (fn(pat,t) -> (modifyNamesPattern(mSrt,mOp,pat),modifyNamesTerm(mSrt,mOp,t))) pts,
-%%%	    modifyNamesTerm(mSrt,mOp,t),
-%%%	    a)
-%%%      | LetRec(vts,t,a) -> 
-%%%	LetRec(List.map (fn(v,t) -> (modifyNamesVar (mSrt,mOp,v),
-%%%				     modifyNamesTerm(mSrt,mOp,t))) 
-%%%	                vts,
-%%%	       modifyNamesTerm(mSrt,mOp,t),
-%%%	       a)
-%%%      | Var(v,a) -> 
-%%%	Var(modifyNamesVar(mSrt,mOp,v),
-%%%	    a)
-%%%      | Fun(f,s,a) -> 
-%%%	Fun(modifyNamesFun(mSrt,mOp,f),
-%%%	    modifyNamesSort(mSrt,mOp,s),
-%%%	    a)
-%%%      | Lambda(match,a)        -> 
-%%%	Lambda(List.map (fn(pat,t1,t2) -> (modifyNamesPattern(mSrt,mOp,pat),
-%%%					   modifyNamesTerm(mSrt,mOp,t1),
-%%%					   modifyNamesTerm(mSrt,mOp,t2))) 
-%%%                        match,
-%%%               a)
-%%%      | IfThenElse(t1,t2,t3,a) -> 
-%%%	IfThenElse(modifyNamesTerm(mSrt,mOp,t1),
-%%%		   modifyNamesTerm(mSrt,mOp,t2),
-%%%		   modifyNamesTerm(mSrt,mOp,t3),
-%%%		   a)
-%%%      | Seq(tl,a) -> 
-%%%	Seq(List.map (fn(t) -> modifyNamesTerm(mSrt,mOp,t)) tl,
-%%%	    a)
-%%%      | _ -> term
-%%%
-%%% op modifyNamesVar: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Var -> Var
-%%% def modifyNamesVar(mSrt,mOp,(id,srt)) = (id,modifyNamesSort(mSrt,mOp,srt))
-%%%
-%%% op modifyNamesPattern: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Pattern -> Pattern
-%%% def modifyNamesPattern(mSrt,mOp,pat) = 
-%%%   case pat
-%%%     of AliasPat(p1,p2,a) -> 
-%%%        AliasPat(modifyNamesPattern(mSrt,mOp,p1),
-%%%		 modifyNamesPattern(mSrt,mOp,p2),
-%%%		 a)
-%%%      | VarPat(v,a) -> 
-%%%	VarPat(modifyNamesVar(mSrt,mOp,v),
-%%%	       a)
-%%%      | EmbedPat(id,optpat,srt,a) -> 
-%%%	EmbedPat(id,
-%%%		 case optpat
-%%%		   of None   -> None
-%%%		    | Some p -> Some(modifyNamesPattern(mSrt,mOp,p)),
-%%%		 modifyNamesSort(mSrt,mOp,srt),
-%%%		 a)
-%%%      | RecordPat(fields,a) ->
-%%%	RecordPat(List.map (fn(id,p) -> (id,modifyNamesPattern(mSrt,mOp,p))) fields,
-%%%		  a)
-%%%      | WildPat(srt,a) -> 
-%%%	WildPat(modifyNamesSort(mSrt,mOp,srt),
-%%%		a)
-%%%      | QuotientPat(p,t,a) -> 
-%%%	QuotientPat(modifyNamesPattern(mSrt,mOp,p),
-%%%		    modifyNamesTerm(mSrt,mOp,t),
-%%%		    a)
-%%%      | _ -> pat
-%%%
-%%% op modifyNamesFun: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Fun -> Fun
-%%% def modifyNamesFun(_(* mSrt *),mOp,fun) =
-%%%   case fun
-%%%     of Op(qid,fxty) -> Op(mOp qid,fxty)
-%%%      | _            -> fun
-%%%
-%%% op modifyNamesSortInfo: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * SortInfo -> SortInfo
-%%% def modifyNamesSortInfo(mSrt,mOp,(sort_names, tyvars, defs)) =
-%%%   (rev (foldl (fn (sort_name, new_names) -> cons(mSrt sort_name, new_names)) nil sort_names),
-%%%    tyvars,
-%%%    map (fn (tvs, srt) -> 
-%%%	 (tvs, modifyNamesSort(mSrt, mOp, srt))) 
-%%%        defs)
-%%%
-%%%
-%%% op modifyNamesOpInfo: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * OpInfo -> OpInfo
-%%% def modifyNamesOpInfo(mSrt, mOp, (op_names, fixity, (tyvars, srt), defs)) =
-%%%   (rev (foldl (fn (op_name, new_names) -> cons(mOp op_name, new_names)) nil op_names),
-%%%    fixity,
-%%%    (tyvars, modifyNamesSort(mSrt,mOp,srt)),
-%%%    map (fn (tvs, term) ->
-%%%	 (tvs, modifyNamesTerm(mSrt,mOp,term)))
-%%%        defs)
-%%%
-%%% %% TODO: ??? FIX THIS
-%%% op modifyNamesSpec: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Spec -> Spec
-%%% def modifyNamesSpec (mSrt, mOp, spc) =
-%%%   {imports      = spc.imports,
-%%%    sorts        = StringMap.map (fn qmap -> StringMap.foldri (fn (id, si, res) -> 
-%%%								   let UnQualified newsrt = mSrt(UnQualified id) in
-%%%								   StringMap.insert (res,
-%%%										     newsrt,
-%%%										     modifyNamesSortInfo(mSrt,mOp,si)))
-%%%				                                  StringMap.empty 
-%%%								  qmap)
-%%%                                     spc.sorts,
-%%%    ops          = StringMap.map (fn qmap -> StringMap.foldri (fn (id, oi, res) -> 
-%%%								   let UnQualified newop = mOp(UnQualified id) in
-%%%								   StringMap.insert (res,
-%%%										     newop,
-%%%										     modifyNamesOpInfo (mSrt, mOp, oi)))
-%%%				                                  StringMap.empty
-%%%								  qmap)
-%%%                                     spc.ops,
-%%%    properties   = spc.properties
-%%%   }
-%%%

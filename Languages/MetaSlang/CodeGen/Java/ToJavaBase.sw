@@ -767,7 +767,7 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
 %                   ([],1) argTypeNames
 %  in
   let pars = map (fn(parType,parName) -> (false,getJavaTypeFromTypeId(parType),(parName,0))) 
-             (ListPair.zip(parTypeNames,parNames))
+             (zip(parTypeNames,parNames))
   in
   let retType = Some (getJavaTypeFromTypeId(retTypeName)) in
   let mods = [Public] in

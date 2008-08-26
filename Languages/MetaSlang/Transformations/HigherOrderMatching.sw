@@ -606,7 +606,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                                   then
                                     let stack1 = foldr
                                                    (fn ((M,N),stack) -> insert(M,N,stack))
-                                                   stack (ListPair.zip(Ms, Ns)) in
+                                                   stack (zip(Ms, Ns)) in
                                     matchPairs(context,subst,stack1)
                                 else []
                    in
@@ -656,7 +656,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                                            ((l, s_tm), pr))
                                       fields
                            in
-                           let (fields,pairs) = ListPair.unzip ls in
+                           let (fields,pairs) = unzip ls in
                            (true, Record(fields,noPos), pairs)
 
                          | [IfThenElse(p,q,r,a)] ->
@@ -693,7 +693,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                              if Ns ~= [] && closedTermV(N,context.boundVars)
                                then 
                                  let ls = map (fn n -> makeMatchForSubTerm(n,[])) Ns in
-                                 let (Ns,pairs) = ListPair.unzip ls in
+                                 let (Ns,pairs) = unzip ls in
                                  (true,foldl (fn (t1,t2) -> Apply(t2,t1,noPos)) N Ns,pairs)
                              else
                                (false,N,[])
@@ -1293,7 +1293,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
     case term of
       | Let ([(pat,N)],M,a) -> Apply (Lambda([(pat,trueTerm,M)],a),N,a)
       | Let (decls,M,a) -> 
-         let (pats,Ns) = ListPair.unzip decls in
+         let (pats,Ns) = unzip decls in
           Apply (Lambda([(mkTuplePat pats,trueTerm,M)], a),mkTuple Ns,a)
 %       | IfThenElse (M,N,P) -> 
 %          let srt = inferType(spc,N) in
