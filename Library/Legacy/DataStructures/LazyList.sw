@@ -11,8 +11,8 @@ spec
  op toList        : [a]   LazyList a -> List a
  op fromList      : [a]   List a -> LazyList a
  op unit          : [a]   a -> LazyList a
- op >>= infixl 25 : [a,b] LazyList a * (a -> LazyList b) -> LazyList b
- op @@  infixl 25 : [a]   LazyList a * (() -> LazyList a) -> LazyList a
+ op >>= infixl 30 : [a,b] LazyList a * (a -> LazyList b) -> LazyList b
+ op @@  infixl 30 : [a]   LazyList a * (() -> LazyList a) -> LazyList a
  op mapFlat       : [a,b] (a -> LazyList b) -> List a -> LazyList b
  op mapEach       : [a,b] (List a * a * List a -> LazyList b) -> List a -> LazyList b
  op map           : [a,b] (a -> b) -> LazyList a -> LazyList b
