@@ -8,7 +8,7 @@ spec
   import Base/List
   import Base/Option
   import Base/Integer
-  import Base/Nat
+%  import Base/Nat
   import Base/Compare
   import Base/Functions
   import Base/System

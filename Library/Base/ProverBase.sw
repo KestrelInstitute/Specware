@@ -3,7 +3,6 @@
 spec
 
   import Integer
-  import Nat
   import List
 %  import NatPlus
 
