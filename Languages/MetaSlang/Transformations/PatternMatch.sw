@@ -361,7 +361,7 @@ PatternMatch qualifying spec
   op partitionConstructors : Context * MS.Term * Rules -> List(DestructedRule)
 
   op  freshVar : Context * Sort -> Var
-  def freshVar(context,srt) = 
+  def freshVar(context,srt) =
       let num = ! context.counter + 1 in
       (context.counter := num;
        ("pV" ++ (Nat.toString num),srt)
@@ -774,7 +774,7 @@ def eliminateTerm context term =
  		then mkLet(decls,body)
 	 else 
 
-	 let (pats,terms) = ListPair.unzip decls in
+	 let (pats,terms) = unzip decls in
 	 %% let _ = writeLine "Let pattern elimination " in
 	 %% let _ = app (fn p -> writeLine (printPattern p)) pats in
 	 

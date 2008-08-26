@@ -142,7 +142,7 @@ spec
               of Some fields -> map mkField fields 
                | _ -> fail ("Product sort expected for let bound variable. Found "^printSort srt)
         in
-        let allFields = ListPair.zip(fields,varFields) in
+        let allFields = zip(fields,varFields) in
         let
            def findField(id,fields) = 
                case fields
@@ -326,6 +326,7 @@ spec
                                 vs
                  in
                  let bod_cjs = getConjuncts bod in
+                 % let _ = writeLine("Simplifying "^printTerm bod^"\nwrt:\n"^printTerm(mkConj simplCJs)) in
                  let bod = mkConj(filter (fn c -> ~(termIn?(c,simplCJs))) bod_cjs) in
 		 if simplCJs = cjs && simpVs = vs
 		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
@@ -415,7 +416,7 @@ spec
                  = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
                             if member(v.1,fvs)
-                              then let nv = (v.1 ^ "__" ^ (toString (length binds)),v.2) in
+                              then let nv = (v.1 ^ "__" ^ (Nat.toString (length binds)),v.2) in
                                 (Cons((VarPat(nv,a),val),binds),
                                  Cons((v,Var(nv,a)),sbst),
                                  new_fvs)

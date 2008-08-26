@@ -118,9 +118,9 @@ spec
 
        | Bind (b, idSrts, term, a) ->
          savingEnvContext c (fn () ->
-         let (ids, srts) = ListPair.unzip idSrts in
+         let (ids, srts) = unzip idSrts in
          let ids = List.map (fresh c) ids in
-         let idSrts = ListPair.zip (ids, srts) in
+         let idSrts = zip (ids, srts) in
          let term = renameTerm c term in
          Bind (b, idSrts, term, a))
 
@@ -132,21 +132,21 @@ spec
 
        | Let (decls, term, a) ->
          savingEnvContext c (fn () ->
-         let (pats, terms) = ListPair.unzip decls in
+         let (pats, terms) = unzip decls in
          let terms = renameTerms c terms in
          let pats = renamePatterns c pats in
-         let decls = ListPair.zip (pats, terms) in
+         let decls = zip (pats, terms) in
          let term = renameTerm c term in
          Let (decls, term, a))
 
        | LetRec (decls, term, a) ->
          savingEnvContext c (fn () ->
-         let (idSrts, terms) = ListPair.unzip decls in
-         let (ids, srts) = ListPair.unzip idSrts in
+         let (idSrts, terms) = unzip decls in
+         let (ids, srts) = unzip idSrts in
          let ids = List.map (fresh c) ids in
          let terms = renameTerms c terms in
-         let idSrts = ListPair.zip (ids, srts) in
-         let decls = ListPair.zip (idSrts, terms) in
+         let idSrts = zip (ids, srts) in
+         let decls = zip (idSrts, terms) in
          let term = renameTerm c term in
          LetRec (decls, term, a))
 
@@ -189,9 +189,9 @@ spec
        | EmbedPat (id, None, srt, a) -> p
 
        | RecordPat (idPats, a) ->
-	 let (ids, pats) = ListPair.unzip idPats in
+	 let (ids, pats) = unzip idPats in
 	 let pats = renamePatterns c pats in
-	 let idPats = ListPair.zip (ids, pats) in
+	 let idPats = zip (ids, pats) in
 	 RecordPat (idPats, a)
 
        | QuotientPat (p,                 qid, a) ->
