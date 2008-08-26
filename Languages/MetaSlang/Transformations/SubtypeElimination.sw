@@ -486,7 +486,9 @@ SpecNorm qualifying spec
 							   [], 
 							   s_fm, a)
 					in
-					Cons(el,Cons(axm,r)))
+                                        case r of
+                                          | (p as Pragma_)::rs -> [el, p, axm] ++ rs
+                                          | _ -> Cons(el,Cons(axm,r)))
 				 | _ \_rightarrow Cons(el,r))
 		           [] spc.elements}
     in
