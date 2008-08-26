@@ -557,7 +557,7 @@ SpecToLisp qualifying spec
 	   blockAtom (sp, dpn, vars, t3))
 
      | Let (decls, body, _) -> 
-       let (pats, terms) = ListPair.unzip decls in
+       let (pats, terms) = unzip decls in
        let  names = List.map patternName pats  in
        let  names = List.map (fn id -> specId (id, "")) names      in
        mkLLet (names, 
@@ -651,7 +651,7 @@ SpecToLisp qualifying spec
 	     Op id
 
 	 | Let (decls, body, _) ->
-	   let (pats, terms) = ListPair.unzip decls in
+	   let (pats, terms) = unzip decls in
 	   let  names = List.map patternName pats  in
 	   let  names = List.map (fn id -> specId (id, "")) names in
 	   mkLLet (names, 
@@ -1075,7 +1075,7 @@ SpecToLisp qualifying spec
      | Let (xs, args, body) -> 
        let body  = reduceTerm body          in
        let args  = List.map reduceTerm args in
-       let xArgs = ListPair.zip (xs, args)  in
+       let xArgs = zip (xs, args)  in
        %
        % Count along multiplicity of a variable in the let bound arguments.
        % This prevents capture in sequential substitution.
@@ -1411,11 +1411,11 @@ SpecToLisp qualifying spec
      aux tm
 
  op toLisp        : Spec -> LispSpec
- op toLispEnv     : Spec -> LispSpec
- op toLispFile    : Spec * String * String -> ()
- op toLispFileEnv : Spec * String * String -> ()
+ op toLispEnv     : Spec * Boolean -> LispSpec
+ op toLispFile    : Spec * String * String * Boolean -> ()
+ op toLispFileEnv : Spec * String * String * Boolean -> ()
 
- def toLisp spc = toLispEnv spc
+ def toLisp spc = toLispEnv (spc, true)
 
  op  instantiateHOFns? : Boolean
  def instantiateHOFns? = true
@@ -1426,7 +1426,33 @@ SpecToLisp qualifying spec
  op  removeCurrying? : Boolean
  def removeCurrying? = false
 
- def toLispEnv spc =
+ op substBaseSpecs? : Boolean = true
+ op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
+ 
+ op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap
+ op substBaseSpecs(spc: Spec): Spec =
+   let op_map =
+       foldl (fn (exec_spec_name, op_map) ->
+                case evaluateUnitId exec_spec_name of
+                  | None -> op_map
+                  | Some(Spec exec_spc) ->
+                    foldl (fn (el,op_map) ->
+                             case el of
+                               | Op(Qualified(q,id), true, _) ->
+                                 (case findAQualifierMap(exec_spc.ops, q, id) of
+                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
+                                    | None -> op_map)
+                               | OpDef(Qualified(q,id), _) ->
+                                 (case findAQualifierMap(exec_spc.ops, q, id) of
+                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
+                                    | None -> op_map)
+                               | _ -> op_map)
+                      op_map exec_spc.elements)
+         spc.ops baseExecutableSpecNames
+   in
+   spc << {ops = op_map}
+
+ def toLispEnv (spc, complete?) =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
    %% axioms are irrelevant for code generation
    let spc = setElements(spc,mapPartialSpecElements 
@@ -1436,6 +1462,7 @@ SpecToLisp qualifying spec
 			         | _ -> Some el)
 			       spc.elements)
    in
+   let spc = (if complete? && substBaseSpecs? then substBaseSpecs spc else spc) in
    let spc = (if removeCurrying?   then removeCurrying   spc else spc) in
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift(spc,true) else spc) in
@@ -1446,17 +1473,17 @@ SpecToLisp qualifying spec
    let lisp_spec = lisp spc in
    lisp_spec 
 
- def toLispFile (spc, file, preamble) =  
-   toLispFileEnv (spc, file, preamble) 
+ def toLispFile (spc, file, preamble, complete?) =  
+   toLispFileEnv (spc, file, preamble, complete?) 
 
- def toLispFileEnv (spc, file, preamble) =
+ def toLispFileEnv (spc, file, preamble, complete?) =
    % let _ = writeLine ("Writing Lisp file " ^ file) in
-   let spc = toLispEnv spc in
+   let spc = toLispEnv (spc, complete?) in
    ppSpecToFile (spc, file, preamble)
 
  op  toLispText : Spec -> Text
  def toLispText spc =
-   let lSpc = toLispEnv spc in
+   let lSpc = toLispEnv (spc, true) in
    let p = ppSpec lSpc in
    format (80, p)
       
@@ -1482,7 +1509,7 @@ SpecToLisp qualifying spec
 			         | _ -> None)
 			       spc.elements)
    in 
-     toLispFile (spc, file, preamble)
+     toLispFile (spc, file, preamble, false)
      
 
 (*
