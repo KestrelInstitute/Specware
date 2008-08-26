@@ -536,7 +536,7 @@ spec
 	returnPattern(gamma,mkFun(Embed(constr,false),tau2),tau2,tau)
       | RecordPat(fields,_) -> 
 	let fs     = product(getSpec gamma,tau) in
-	let fields = ListPair.zip(fs,fields)    in
+	let fields = zip(fs,fields)    in
 	let (gamma,terms) = 
 	    List.foldr
 	      (fn (((_,tau),(id,p)),(g,terms))-> 
@@ -897,8 +897,8 @@ spec
                          if new_tccs = [] then tcc
                            else if exists (fn Property(_,_,_,fm,_) -> containsRefToOp?(fm, qid)) new_tccs
                              then % Split Op into decl and def
-                                  ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tcc.1, claimNames)
-                             else (new_tccs ++ tcc.1,claimNames))
+                                  ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tccs, claimNames)
+                             else (new_tccs ++ tccs,claimNames))
                  | OpDef (qid as Qualified(q, id), _) ->
                    (case findTheOp(spc,qid) of
                       | Some opinfo ->
