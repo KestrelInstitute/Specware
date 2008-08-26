@@ -132,6 +132,7 @@ Prover qualifying spec
 
   def unLambdaDef (spc, srt, name, term) =
     let new_equality = mkUncurryEquality (spc, srt, name, term) in
+%    let _ = writeLine("new_eq: "^printTerm new_equality) in
     let (srt_vars,new_equality,piPos) =
         case new_equality of
 	  | Pi tp -> tp
@@ -195,11 +196,11 @@ Prover qualifying spec
 	       %let _ = if true && id = "p" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
 	       %let _ = if true && id = "length_Object$1$_$Object$2" then debug ("initialFmla: "^printTerm initialFmla) else () in
 	       let liftedFmlas = removePatternTop(spc, initialFmla) in
-	       let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
+	       %let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
 	       %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
 	       let defAxioms = map (fn (fmla:MS.Term) ->
 				    Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos), pos))
-	                         simplifiedLiftedFmlas
+	                         liftedFmlas
 	       in
 	       %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
 	       %let _ = writeLine (id^": in axiomFromOpDef Def part") in
