@@ -67,7 +67,7 @@ Prover qualifying spec
 
   %% compute the predicate constraining srt to its ultimate supersort
   def srtPred(spc, srt, tm) =
-    % let _ = writeLine ("TPB: "^printSort srt) in
+    % let _ = writeLine ("TPB: "^printTerm tm^": "^printSort srt) in
     let def topPredBaseSrt(srt) =
          case srt of
 	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatSort())
@@ -87,6 +87,7 @@ Prover qualifying spec
 	        | _ -> (None, Utilities.mkAnd(supPred, pred))) 
            | _ -> (None, mkTrue()) in
     let (topBaseQId, topPred) = topPredBaseSrt(srt) in
+    % let _ = writeLine (printTerm topPred^"  "^anyToString topBaseQId) in
     case topBaseQId of
       | Some topBaseQId ->
         let optSrt = findTheSort(spc, topBaseQId) in
