@@ -28,6 +28,7 @@ SpecCalc qualifying spec
   def evaluateSpecOpElem spc (elem, pos) =
     case elem of
       | Op(names, fxty, dfn) -> addOrRefineOp names fxty dfn spc pos false
+      | Pragma(prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, pos), spc))
       | _ -> raise (SpecError(pos,"Given refinement element is not an op definition."))
 
 endspec
