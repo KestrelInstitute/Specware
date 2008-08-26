@@ -559,7 +559,7 @@ spec
   %% Only have to include those that have a definition you don't want to use (and doesn't include "the")
   op builtInQids: List QualifiedId =
     [Qualified("String","explode"),
-     Qualified("Integer","pred"),
+     Qualified("Integer","ipred"),
      Qualified("Char","ord"),
      Qualified("Char","isUpperCase"),
      Qualified("Char","isLowerCase"),
@@ -612,7 +612,9 @@ spec
        | ("show", Int i)      -> String (toString i)
        | ("show", Bool b)     -> String (toString b)
        | ("show", Char c)     -> String (toString c)
-       | ("succ",Int i)       -> Int (Integer.succ i)
+       | ("isucc",Int i)      -> Int (isucc i)
+       | ("succ",Int i)       -> Int (isucc i)
+       | ("ipred",Int i)      -> Int (ipred i)
 
 %% Defined in InterpreterBase
 %       | ("stringToInt",String s)  ->
@@ -684,12 +686,36 @@ spec
        %| ">="  -> Bool(>=(intVals fields))
        %| "min" -> Int(min(intVals fields))
        %| "max" -> Int(max(intVals fields))
-       | "rem" -> let (x,y) = intVals fields in
+       | "modT" -> let (x,y) = intVals fields in
 		  if y = 0 then default()
-		    else Int(rem(x,y))
-       | "div" -> let (x,y) = intVals fields in
+		    else Int(modT(x,y))
+       | "divT" -> let (x,y) = intVals fields in
 		  if y = 0 then default()
-		    else Int(div(x,y))
+ 		    else Int(divT(x,y))
+       | "modE" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(modE(x,y))
+       | "divE" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(divE(x,y))
+       | "modF" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(modF(x,y))
+       | "divF" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(divF(x,y))
+       | "modC" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(modC(x,y))
+       | "divC" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(divC(x,y))
+       | "modR" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(modR(x,y))
+       | "divR" -> let (x,y) = intVals fields in
+		  if y = 0 then default()
+		    else Int(divR(x,y))
 
        %% string operations
        | "concat" -> String(concat(stringVals fields))
