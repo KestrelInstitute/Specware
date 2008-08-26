@@ -826,7 +826,7 @@ TypeChecker qualifying spec
 		  map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
 	in
 	let tyrows = unfoldConstraint (term_sort) in
-	let trow = ListPair.zip (row, tyrows) in
+	let trow = zip (row, tyrows) in
 	let row = map (fn ((id, t), (id2, ty))->
 		       if id = id2 then
 			 (id, single_pass_elaborate_term (env, t, ty))
@@ -944,10 +944,11 @@ TypeChecker qualifying spec
 
       | ApplyN (terms, pos) ->
 	let 
-          def tagTermWithInfixInfo (term : MS.Term) : FixatedTerm = 
+          def tagTermWithInfixInfo (term : MS.Term) : FixatedTerm =
 	    case term of
 	      | Fun (OneName (_,  Nonfix),  _, pos) -> Nonfix term
 	      | Fun (OneName (_,  Infix p), _, pos) -> Infix (term, p)
+              | Fun (OneName ("Cons",  _), _, pos) -> Infix(term, (Right, 24))
 	      | Fun (OneName (id, _),       _, pos) ->
 	        (case consistentTag (findVarOrOps (env, id, pos)) of
 		   | (true, (Some p)) -> Infix (term, p)
@@ -1578,7 +1579,7 @@ TypeChecker qualifying spec
       | RecordPat (row, pos) ->
 	let r = map (fn (id, srt)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
 	let _ = elaborateSort (env, (Product (r, pos)), sort1) in
-	let r = ListPair.zip (r, row) in
+	let r = zip (r, row) in
 	let (r, env, seenVars) = 
 	    foldl (fn (((id, srt), (_, p)), (row, env, seenVars)) ->
 		   let (p, env, seenVars) = elaboratePatternRec (env, p, srt, seenVars) in
