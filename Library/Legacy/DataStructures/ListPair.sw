@@ -3,8 +3,8 @@
 ListPair qualifying spec {
   import /Library/Base
 
-  op zip    : fa (a,b) List a *  List b -> List (a * b)
-  op unzip  : fa (a,b) List (a * b) -> List a *  List b
+%  op zip    : fa (a,b) List a *  List b -> List (a * b)
+%  op unzip  : fa (a,b) List (a * b) -> List a *  List b
   op map    : fa (a,b,c) (a * b -> c) -> List a * List b -> List c
   op all    : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
   op exists : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
@@ -12,18 +12,18 @@ ListPair qualifying spec {
   op foldl  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
   op app    : fa (a,b) (a * b -> ()) -> List a * List b -> ()
 
-  def zip (l,r) = 
-    case (l,r) of
-      | (a::l,b::r) -> Cons((a,b),zip(l,r))
-      | _ -> []
+%  def zip (l,r) = 
+%    case (l,r) of
+%      | (a::l,b::r) -> Cons((a,b),zip(l,r))
+%      | _ -> []
       
-  def unzip l =
-    let def unzipLoop (l,a,b) = 
-      case l of
-        | [] -> (List.rev a, List.rev b)
-        | (x,y)::l -> unzipLoop (l,Cons(x,a),Cons(y,b))
-    in
-      unzipLoop(l,[],[])
+%  def unzip l =
+%    let def unzipLoop (l,a,b) = 
+%      case l of
+%        | [] -> (List.rev a, List.rev b)
+%        | (x,y)::l -> unzipLoop (l,Cons(x,a),Cons(y,b))
+%    in
+%      unzipLoop(l,[],[])
 
   def map f (l,r) = 
     case (l,r) of
