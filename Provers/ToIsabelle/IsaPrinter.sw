@@ -414,10 +414,15 @@ IsaTermPrinter qualifying spec
     in
     let spc = emptyTypesToSubtypes spc in
     let spc = normalizeNewTypes spc in
-    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
     let spc = removeSubTypes spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
+    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
+    %let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat","Nat")))
+%                then simplifyTopSpec spc
+%                else spc
+%    in
+%     let _ = toScreen("2:\n"^printSpec spc^"\n") in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
@@ -451,7 +456,7 @@ IsaTermPrinter qualifying spec
     case removeEmpty(splitStringAt(line1," ")) of
      | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
        ~(name? = "fa"
-           \_or member(sub(name?,0), [#[,#\\,#",#-]))  % #" 
+           \_or member(sub(name?,0), [#[,#\\,#",#-]))  % #" #]
      | _ \_rightarrow false
 
   op verbatimIdString: String = "-verbatim"
@@ -466,6 +471,9 @@ IsaTermPrinter qualifying spec
        verbatim_str = verbatimIdString
      | _ \_rightarrow false
 
+  op namedOrVerbatimPragma?(p: Pragma): Boolean =
+    namedPragma? p
+      || (let (_,s,_,_) = p in verbatimPragma? s)
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info,spc) =
@@ -542,8 +550,8 @@ IsaTermPrinter qualifying spec
       def aux c spc r_elems =
 	case r_elems of
 	  | [] \_rightarrow []
-	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
-	    Cons(ppProperty c prop c_str (Some prag),
+	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst | ~(namedOrVerbatimPragma? prag) \_rightarrow
+	    Cons(ppProperty c prop c_str elems (Some prag),
 		 aux c spc rst)
 %	  | (Pragma(_,c_str,_,_)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
 %	    Cons(ppProperty c prop c_str (Some prag),
@@ -551,7 +559,7 @@ IsaTermPrinter qualifying spec
 %	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
 %	    Cons(ppProperty c prop "" (Some prag),
 %		 aux c spc rst)
-	  | el :: (rst as (Pragma prag) :: _) | ~(namedPragma? prag) \_rightarrow
+	  | el :: (rst as (Pragma prag) :: _) | ~(namedOrVerbatimPragma? prag) \_rightarrow
 	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
@@ -582,10 +590,7 @@ IsaTermPrinter qualifying spec
       | Op (qid as Qualified(_,nm),def?,_) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
-	     ppOpInfo c true def?
-               (case findPragmaNamed(elems,nm) of
-                  | None \_rightarrow opt_prag
-                  | prag \_rightarrow prag)
+	     ppOpInfo c true def? elems opt_prag
                (names,fixity,dfn)  % TODO: change  op_with_def?  to  def? -- no one looks at it??
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
@@ -594,11 +599,7 @@ IsaTermPrinter qualifying spec
       | OpDef(qid as Qualified(_,nm),_) \_rightarrow
 	(case AnnSpec.findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} \_rightarrow
-	     ppOpInfo c false true
-               (case findPragmaNamed(elems,nm) of
-                  | None \_rightarrow opt_prag
-                  | prag \_rightarrow prag)
-               (names,fixity,dfn)
+	     ppOpInfo c false true elems opt_prag (names,fixity,dfn)
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
@@ -617,14 +618,7 @@ IsaTermPrinter qualifying spec
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | Property prop \_rightarrow
-        let Qualified(q,nm) = propertyName prop in 
-	ppProperty c prop "" (case findPragmaNamed(elems,nm) of
-			        | None \_rightarrow
-                                  (case findPragmaNamed(elems,q^"__"^nm) of
-                                     | None \_rightarrow opt_prag
-                                     | prag \_rightarrow prag)
-				| prag \_rightarrow prag)
+      | Property prop \_rightarrow ppProperty c prop "" elems opt_prag
       | Pragma("proof",mid_str,"end-proof",pos) | verbatimPragma? mid_str \_rightarrow
         let verbatim_str = case search("\n",mid_str) of
                              | None \_rightarrow ""
@@ -638,31 +632,62 @@ IsaTermPrinter qualifying spec
 		  prString "*)"]
       | _ \_rightarrow prEmpty
 
- op  findPragmaNamed: SpecElements * String \_rightarrow Option Pragma
- def findPragmaNamed(elts,nm) =
-   case findPragmaNamed1(elts,nm) of
-     | Some p \_rightarrow 
-       Some p
+ op findPragmaNamed(elts: SpecElements, qid as (Qualified(q, nm)): QualifiedId, opt_prag: Option Pragma)
+     : Option Pragma =
+   % let _ = writeLine("findPragmaNamed: "^printQualifiedId qid^" opt_prag: "^anyToString opt_prag) in
+   case findPragmaNamed1(elts, q^"__"^nm) of
+     | Some p \_rightarrow Some p
+     | None \_rightarrow
+   case findPragmaNamed1(elts, qidToIsaString qid) of   % Allow Isabelle name
+     | Some p \_rightarrow Some p
+     | None \_rightarrow
+   %% Try without qualifier
+   case findPragmaNamed1(elts, nm) of
+     | Some p \_rightarrow Some p
      | None \_rightarrow                          % Allow Isabelle name
-       findPragmaNamed1(elts,ppIdStr nm)
+   case findPragmaNamed1(elts, ppIdStr nm) of
+     | Some p \_rightarrow Some p
+     | None \_rightarrow opt_prag                  
 
  op  findPragmaNamed1: SpecElements * String \_rightarrow Option Pragma
- def findPragmaNamed1(elts,nm) =
-    case elts of
-     | [] \_rightarrow None
-     | el::rst \_rightarrow
-       (case el of
-	  | Pragma(p_bod as ("proof",prag_str,"end-proof",_)) \_rightarrow
-	    (let line1 = case search("\n",prag_str) of
-                           | None \_rightarrow prag_str
-                           | Some n \_rightarrow substring(prag_str,0,n)
-             in
-	     case removeEmpty(splitStringAt(line1," ")) of
-	       | pragma_kind::thm_nm::r
-                 | (pragma_kind = "Isa" \_or pragma_kind = "isa") && thm_nm = nm \_rightarrow
-		 Some p_bod
-	       | _ \_rightarrow findPragmaNamed1(rst,nm))
-	  | _ \_rightarrow findPragmaNamed1(rst,nm))
+ def findPragmaNamed1(elts, nm) =
+   % let _ = writeLine("findPragmaNamed1: "^nm) in
+   let result =
+         case elts of
+          | [] \_rightarrow None
+          | el::rst \_rightarrow
+            (case el of
+               | Pragma(p_bod as ("proof",prag_str,"end-proof",_)) \_rightarrow
+                 (let line1 = case search("\n",prag_str) of
+                                | None \_rightarrow prag_str
+                                | Some n \_rightarrow substring(prag_str,0,n)
+                  in
+                  case removeEmpty(splitStringAt(line1," ")) of
+                    | pragma_kind::thm_nm::r
+                      | (pragma_kind = "Isa" \_or pragma_kind = "isa") && thm_nm = nm \_rightarrow
+                      Some p_bod
+                    | _ \_rightarrow findPragmaNamed1(rst,nm))
+               | _ \_rightarrow findPragmaNamed1(rst,nm))
+   in
+   % let _ = writeLine("returned: "^anyToString result) in
+   result
+
+ op mkEqualityFromLambdaDef(c: Context, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term =
+   case rhs_tm of
+     | Lambda ([(pat, _, body)], _) ->
+       (case patToTerm(pat, "d", c) of
+          | Some arg_tm ->
+            mkEqualityFromLambdaDef(c, mkApply(lhs_tm, arg_tm), body)
+          | None -> mkEquality (inferType(getSpec c, lhs_tm), lhs_tm, rhs_tm))
+     | _ -> mkEquality (inferType(getSpec c, lhs_tm), lhs_tm, rhs_tm)
+
+ op defToTheorem(c: Context, ty: Sort, name: QualifiedId, term: MS.Term): MS.Term =
+    let new_equality = mkEqualityFromLambdaDef (c, mkOp(name, ty), term) in
+    % let _ = writeLine("new_eq: "^printTerm new_equality) in
+    let faVars       = freeVars new_equality in
+    let new_equality = mkBind (Forall, faVars, new_equality) in
+    let eqltyWithPos = withAnnT (new_equality, termAnn term) in
+    eqltyWithPos
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts"]
@@ -731,12 +756,13 @@ IsaTermPrinter qualifying spec
  op precNumFudge: Nat = 40
  op targetFunctionDefs?: Boolean = false
 
- op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
+ op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
                  \_rightarrow Pretty
- def ppOpInfo c decl? def? opt_prag (aliases, fixity, dfn) =
+ def ppOpInfo c decl? def? elems opt_prag (aliases, fixity, dfn) =
    %% Doesn't handle multi aliases correctly
    let c = c << {newVarCount = Ref 0} in
    let mainId = hd aliases in
+   let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
    let (no_def?,mainId,fixity) =
        case specialOpInfo c mainId of
          | Some (isa_id,infix?,_,_,no_def?) \_rightarrow
@@ -746,10 +772,31 @@ IsaTermPrinter qualifying spec
               | None -> fixity)
          | _ \_rightarrow (false, mainId, fixity)
    in
-   if no_def? then prEmpty
+   let (tvs, ty, term) = unpackTerm dfn in
+   if no_def?
+     then
+       if def?
+         then  % Convert def to theorem
+           let mainId = hd aliases in
+           let Qualified(q,nm) = mainId in
+           % let _ = writeLine(nm^": "^anyToString opt_prag)in
+           % let _ = writeLine("def_tm: "^printTerm term) in
+           let initialFmla = defToTheorem(c, ty, mainId, term) in
+           % let _ = writeLine("def_thm1: "^printTerm initialFmla) in
+           let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
+           % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
+           %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
+           let (_,thms) = foldl (fn(fmla,(i,result)) ->
+                                   (i + 1,
+                                    result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
+                                                                                      else toString i)),
+                                                            tvs, fmla)]))
+                            (0,[]) liftedFmlas
+           in
+           prLines 0 (map (fn Property prop -> ppProperty c prop "" elems opt_prag) thms)                       
+         else prEmpty
    else
    let aliases = [mainId] in
-   let (tvs, ty, term) = unpackTerm dfn in
    let decl_list = 
          if decl?
            then [[prString "consts ",
@@ -847,11 +894,11 @@ IsaTermPrinter qualifying spec
 
  op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term = 
      case pat
-       of EmbedPat(con,None,srt,a) \_rightarrow 
-          Some(Fun(Embed(con,false),srt,a))
-        | EmbedPat(con,Some p,srt,a) \_rightarrow 
+       of EmbedPat(con,None,ty,a) \_rightarrow 
+          Some(Fun(Embed(con,false),ty,a))
+        | EmbedPat(con,Some p,ty,a) \_rightarrow 
           (case p of
-             | WildPat(pty,a) | multiArgConstructor?(con,srt,getSpec c) \_rightarrow
+             | WildPat(pty,a) | multiArgConstructor?(con,ty,getSpec c) \_rightarrow
                let tys = productSorts(getSpec c, pty) in
                let args = (foldr (fn (ty,(result,i)) ->
                                     let cnt = c.newVarCount in
@@ -860,13 +907,13 @@ IsaTermPrinter qualifying spec
                                     (Cons(Var((v,ty), a),result),i-1))
                              ([], length tys) tys).1
                in
-               Some (Apply(Fun(Embed(con,true),Arrow(pty,srt,a),a),mkTuple args,a))
+               Some (Apply(Fun(Embed(con,true),Arrow(pty,ty,a),a),mkTuple args,a))
              | _ ->
            case patToTerm(p, ext, c)
              of None \_rightarrow None
 	      | Some (trm) \_rightarrow 
-		let srt1 = patternSort p in
-		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
+		let ty1 = patternSort p in
+		Some (Apply(Fun(Embed(con,true),Arrow(ty1,ty,a),a),trm,a)))
         | RecordPat(fields,a) \_rightarrow 
 	  let
 	     def loop(new,old,i) = 
@@ -883,12 +930,12 @@ IsaTermPrinter qualifying spec
         | BoolPat(b, _) \_rightarrow Some(mkBool b)
         | StringPat(s, _) \_rightarrow Some(mkString s)
         | CharPat(c, _) \_rightarrow Some(mkChar c)
-        | VarPat((v,srt), a) \_rightarrow Some(Var((v,srt), a))
-        | WildPat(srt,a) \_rightarrow
+        | VarPat((v,ty), a) \_rightarrow Some(Var((v,ty), a))
+        | WildPat(ty,a) \_rightarrow
           let cnt = c.newVarCount in
                                     let _ = (cnt := !cnt + 1) in
           let v = "zzz_"^toString (!cnt) in
-          Some(Var((v,srt), a))
+          Some(Var((v,ty), a))
         | QuotientPat(pat,cond,_)  \_rightarrow None %% Not implemented
         | RestrictedPat(pat,cond,_)  \_rightarrow
 	  patToTerm(pat,ext, c)		% cond ??
@@ -1174,16 +1221,17 @@ IsaTermPrinter qualifying spec
        %% Probably should put other cases
       | _ \_rightarrow (t,vs)
 
-  op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow Option Pragma \_rightarrow Pretty
-  def ppProperty c (propType, name, tyVars, term, _) comm prf =
+  op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Pretty
+  def ppProperty c (propType, name, tyVars, term, _) comm elems opt_prag =
     % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
     %% Axioms are mapped to theorems in theory morphisms
+    let opt_prag = findPragmaNamed(elems, name, opt_prag) in
     let propType = if propType = Axiom && c.source_of_thy_morphism?
                      then Theorem
                      else propType
     in
     let annotation =
-        case findBracketAnnotation(prf) of
+        case findBracketAnnotation(opt_prag) of
 	  | Some str \_rightarrow prConcat [prSpace, prString str]
 	  | _ \_rightarrow
 	    let comm = stripSpaces comm in
@@ -1193,7 +1241,7 @@ IsaTermPrinter qualifying spec
 	      else prEmpty
     in
     let (prf_pp,includes_prf_terminator?) =
-        (case prf of
+        (case opt_prag of
 	   | Some(beg_str,mid_str,end_str,pos) \_rightarrow
 	     let len = length mid_str in
 	     (case search("\n",mid_str) of
@@ -1212,7 +1260,7 @@ IsaTermPrinter qualifying spec
 	 prString ": "],
 	 %ppTyVars tyVars,
 	 [prString "\"",
-	  ppPropertyTerm c (explicitUniversals prf) term,
+	  ppPropertyTerm c (explicitUniversals opt_prag) term,
 	  prString "\""]]
 	++ prf_pp
 	++ (case propType of
@@ -1398,8 +1446,8 @@ IsaTermPrinter qualifying spec
                                           ppTerm c Top term2],
                                          [prString " of ",
                                           ppMatch c match]])
-	 | (Fun (Project p, srt1, _), _) \_rightarrow
-	   let pid = projectorFun(p,srt1,getSpec c) in
+	 | (Fun (Project p, ty1, _), _) \_rightarrow
+	   let pid = projectorFun(p,ty1,getSpec c) in
 	   let encl? = \_not(isSimpleTerm? term2) in
            prConcat [prString pid,
 		     prConcat [prSpace, enclose?(encl?, ppTerm c (if encl? then Top else Nonfix)
@@ -1458,7 +1506,7 @@ IsaTermPrinter qualifying spec
 	        
     in
     case term of
-      | Apply (trm1, Record ([(id1, t1), (id2, t2)], a), _) \_rightarrow
+      | Apply (trm1, trm2 as (Record ([(id1, t1), (id2, t2)], a)), _) \_rightarrow
 	let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
 	      enclose?(encl?,
 		       prLinearCat (if same? then -2 else 2)
@@ -1471,9 +1519,10 @@ IsaTermPrinter qualifying spec
         let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
 	(case (parentTerm, fx) of
 	   | (_, (None, Nonfix, false, _)) \_rightarrow
-             prApply (trm1, Record([(id1, t1), (id2, t2)], a))
-	   | (_, (Some pr_op, Nonfix, true, _)) \_rightarrow
-             %% Curried
+             prApply (trm1, trm2)
+	   | (_, (Some pr_op, Nonfix, curried?, _)) \_rightarrow
+             if ~curried? then prApply(trm1, trm2)
+             else
 	     enclose?(parentTerm ~= Top,
 		      prLinearCat 2 [[pr_op,prSpace],
 				     [ppTerm c Nonfix t1,prSpace,ppTerm c Nonfix t2]])
@@ -1818,6 +1867,11 @@ IsaTermPrinter qualifying spec
                                 prString infix_str,
                                 prString " y"])
            | None \_rightarrow
+         if (qid = Qualified("IntegerAux","-") || qid = Qualified("Integer","~"))
+           && parentTerm ~= Infix(Left,1000)   % Only true if an application
+           then let vt = ("i",integerSort) in
+                ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun,ty), mkVar vt)))
+         else
          case specialOpInfo c qid of
            | Some(isa_id, _, curry?, _, _) \_rightarrow
              if curry?
@@ -1852,14 +1906,16 @@ IsaTermPrinter qualifying spec
       | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
       | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
-  def omittedQualifiers = ["Double","String",toIsaQual]  % "IntegerAux" "Option" ...?
+  def omittedQualifiers = [toIsaQual]  % "IntegerAux" "Option" ...?
 
-  op  ppQualifiedId : QualifiedId \_rightarrow Pretty
-  def ppQualifiedId (Qualified (qualifier,id)) =
+  op qidToIsaString(Qualified (qualifier,id): QualifiedId): String =
     if (qualifier = UnQualified) \_or (member (qualifier,omittedQualifiers)) then
-      prString (ppIdStr id)
+      ppIdStr id
     else
-      prString (ppIdStr qualifier ^ "__" ^ ppIdStr id)
+      ppIdStr qualifier ^ "__" ^ ppIdStr id
+
+  op ppQualifiedId (qid: QualifiedId): Pretty =
+    prString(qidToIsaString qid)
 
   op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
   def ppOpQualifiedId c qid =
@@ -1867,7 +1923,7 @@ IsaTermPrinter qualifying spec
       | Some(s,_,_,_,_) \_rightarrow prString s
       | None \_rightarrow ppQualifiedId qid
 
-  %% May only need ops tyhat can be unary
+  %% May only need ops that can be unary
   op overloadedIsabelleOps: List String = ["+","-","^","abs","min","max"]
 
   op overloadedIsabelleOp? (c: Context) (f: MS.Term) : Boolean =
@@ -2054,7 +2110,7 @@ IsaTermPrinter qualifying spec
  op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean * Boolean
  def termFixity c term = 
    case term of
-     | Fun (termOp, srt, _) -> 
+     | Fun (termOp, _, _) -> 
        (case termOp of
 	  | Op (id, fixity) ->
 	    (case specialOpInfo c id of
