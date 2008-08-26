@@ -547,11 +547,12 @@ snark qualifying spec
     else
       let srt = firstSortDefInnerSort info in
       case srt of
-	| Subsort (supSrt, pred, _) ->
+	| Subsort (supSrt, pred, _) | false -> % Not sure what this is supposed to be but it is currently wrong
 	  let snarkSubSrtId = snarkSortId(id) in
 	  let subSrtVar = (snarkSubSrtId, srt) in
 	  let snarkBndVar = snarkBndVar(spc, subSrtVar, []) in
 	  let subSrtPred = srtPred(spc, srt, mkVar(subSrtVar)) in
+         % let _ = writeLine("subSrtPred: "^printTerm subSrtPred^" for var "^printTerm (mkVar(subSrtVar))) in
 	  let snarkSubSrtPred = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], subSrtPred) in
 	  Some (Lisp.list [snark_assert, Lisp.quote(snarkSubSrtPred),
 			   Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD","subSort" ^ snarkSubSrtId)])
