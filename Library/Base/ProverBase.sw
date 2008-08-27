@@ -4,7 +4,6 @@ spec
 
   import Integer
   import List
-%  import NatPlus
 
   type ProverNat = {i: Integer | i >= 0}
 
