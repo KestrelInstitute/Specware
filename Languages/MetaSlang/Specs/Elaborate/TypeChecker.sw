@@ -826,7 +826,11 @@ TypeChecker qualifying spec
 		  map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
 	in
 	let tyrows = unfoldConstraint (term_sort) in
-	let trow = zip (row, tyrows) in
+        if length tyrows ~= length row
+          then (error(env, "Mismatch in number of fields", pos);
+                Record (row, pos))
+        else
+	let trow = zip (row, tyrows) in 
 	let row = map (fn ((id, t), (id2, ty))->
 		       if id = id2 then
 			 (id, single_pass_elaborate_term (env, t, ty))
@@ -834,7 +838,7 @@ TypeChecker qualifying spec
 			 (error (env, "Field-name "^id^
 				 " is not the one imposed by sort constraint.  Expected field-name is: "^
 				 id2, pos);
-		      (id, t)))
+                          (id, t)))
 	              trow
 	in
 	  Record (row, pos)
