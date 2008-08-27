@@ -116,7 +116,7 @@ Functions qualifying spec
   proof Isa
     apply(simp add: bij_def surj_iff inj_iff)
   end-proof
-  proof Isa inverse_comp__stp
+  proof Isa inverse_comp__stp [simp]
     apply(auto)
     apply(rule ext, auto, rule the1I2, auto)
     apply(rule ext, auto)
