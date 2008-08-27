@@ -1882,9 +1882,8 @@ IsaTermPrinter qualifying spec
                else prString isa_id
            | _ -> ppOpQualifiedId c qid)
       | Project id \_rightarrow
-        let (dom, rng) = arrow(getSpec c, ty) in
-        ppTerm c parentTerm
-          (mkLambda(mkVarPat("tp",dom), mkApply(mkFun(fun,ty), mkVar("tp",dom))))
+        let (dom, _) = arrow(getSpec c, ty) in
+        ppTerm c parentTerm (mkLambda(mkVarPat("tp",dom), mkApply(mkFun(fun,ty), mkVar("tp",dom))))
       | RecordMerge \_rightarrow prString "<<"
       | Embed (id,b) \_rightarrow
         (let spc = getSpec c in
@@ -1894,8 +1893,10 @@ IsaTermPrinter qualifying spec
                 | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
                 | None -> ppConstructor id)
            | _ \_rightarrow ppConstructor id)
-      | Embedded id \_rightarrow ppConstructor id
-      | Select id \_rightarrow prConcat [prString "select ", prString id]
+      | Embedded id \_rightarrow
+        let (dom, _) = arrow(getSpec c, ty) in
+        ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
+      | Select id \_rightarrow prConcat [prString "select ", prString id] % obsolete?
       | Nat n \_rightarrow prString (Nat.toString n)
       | Char chr \_rightarrow prConcat [prString "CHR ''",
 			      prString (Char.toString chr),
