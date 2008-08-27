@@ -11,8 +11,8 @@ Option qualifying spec
   op some : [a] a -> Option a = embed Some
   op none : [a]      Option a = embed None
 
-  op [a] some? (x: Option a) : Boolean = (x ~= none)
-  op [a] none? (x: Option a) : Boolean = (x  = none)
+  op [a] some? (x: Option a) : Boolean = (x ~= None)
+  op [a] none? (x: Option a) : Boolean = (x  = None)
 
   (* Given a comparison function over type a, type Option a can be linearly
   ordered and compared by considering the extra element None to be smaller than
