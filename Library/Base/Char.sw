@@ -10,6 +10,7 @@ Char qualifying spec
   type Char.Char  % qualifier required for internal parsing reasons
 
   % chr n is the character at position n in table:
+
   op chr : Bijection ({n:Nat | n < 256}, Char)
   proof Isa chr_subtype_constr
    apply(auto)
@@ -32,6 +33,7 @@ Char qualifying spec
   stands for chr 65. *)
 
   % position of character in table:
+
   op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
   proof Isa
     sorry
@@ -59,7 +61,6 @@ theorem Char_ord_inv:
   done
 end-proof
 % ------------------------------------------------------
-
 
   % predicates for various kinds of characters:
 
