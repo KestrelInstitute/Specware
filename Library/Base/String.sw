@@ -180,7 +180,7 @@ String qualifying spec
 
  op Char.toString : Char -> String = Char.show
 
- % mapping to Isabelle:  --- MUST BE REVISED ---
+ % mapping to Isabelle:
 
  proof Isa ThyMorphism
    type String.String \_rightarrow string

@@ -599,7 +599,7 @@ List qualifying spec
       | []     -> ()
       | hd::tl -> (f hd; app f tl)
 
- % mapping to Isabelle: --- NEEDS TO BE REVISED ---
+ % mapping to Isabelle:
 
  proof Isa Thy_Morphism List
    type List.List \_rightarrow list
