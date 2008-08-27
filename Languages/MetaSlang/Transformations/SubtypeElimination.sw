@@ -182,13 +182,34 @@ SpecNorm qualifying spec
   op mkArbitrary(ty: Sort): MS.Term =
     mkOp(Qualified(toIsaQual,"arbitrary"), ty)
 
-  op mkSubtypeFnPredicate(domPred: MS.Term, f_ty: Sort, dom_ty: Sort, ran_ty: Sort): MS.Term =
+  op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
+    if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
+    else
     let f_v = ("f", f_ty) in
-    let x_v = ("x", dom_ty) in
-    mkLambda(mkVarPat f_v, mkBind(Forall, [x_v],
-                                  mkImplies(mkNot(mkApply(domPred, mkVar x_v)),
-                                            mkEquality(ran_ty, mkApply(mkVar f_v, mkVar x_v),
-                                                       mkArbitrary ran_ty))))
+    let dom_restr = case dom_ty of
+                      | Subsort(dom_ty, domPred, _) ->
+                        let x_v = ("x", dom_ty) in
+                        mkBind(Forall, [x_v],
+                               mkImplies(mkNot(mkApply(domPred, mkVar x_v)),
+                                         mkEquality(ran_ty, mkApply(mkVar f_v, mkVar x_v),
+                                                    mkArbitrary ran_ty)))
+                      | _ -> trueTerm
+    in
+    let ran_restr = case ran_ty of
+                      | Subsort(ran_ty, ranPred, _) ->
+                        (case dom_ty of
+                           | Subsort(dom_ty, domPred, _) ->
+                             let x_v = ("x", dom_ty) in
+                             mkBind(Forall, [x_v],
+                                    mkImplies(mkApply(domPred, mkVar x_v),
+                                              mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
+                           | _ ->
+                             let x_v = ("x", dom_ty) in
+                             mkBind(Forall, [x_v],
+                                    mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
+                      | _ -> trueTerm
+    in
+    Some(mkLambda(mkVarPat f_v, Utilities.mkAnd(ran_restr, dom_restr)))
 
   op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
   %% Bring subtypes to the top-level
@@ -249,14 +270,9 @@ SpecNorm qualifying spec
                Subsort(Product(bare_flds,a), mkLambda(mkTuplePat arg_vars, pred), a)
           else ty
       | Arrow(dom, rng ,a) ->
-        (case raiseSubtypeFn(dom,spc) of
-           | Subsort(d,d_p,_) ->
-             %% Using d would be more natural, but then you have to change the type of all variable refs
-             %% to avoid unnecessary type annotation in Isabelle output (or else freeVars needs to be
-             %% fixed to ignore types
-             let f_ty = Arrow(dom,rng,a) in
-             Subsort(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
-           | _ -> ty)
+        (case mkSubtypeFnPredicate(raiseSubtypeFn(dom,spc), raiseSubtypeFn(rng,spc), ty) of
+           | Some pred -> Subsort(ty, pred, a)
+           | None -> ty)
       | _ -> ty
  
   op relativizeQuantifiers(spc: Spec) (t: MS.Term): MS.Term =
