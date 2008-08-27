@@ -13,4 +13,5 @@ refine /Library/Base/String by {
    let firstchar::_ = explode s in
    if firstchar = #- then - (stringToNat (substring (s,1,length s)))
                      else    stringToNat s
+
 }
