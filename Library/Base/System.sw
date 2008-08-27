@@ -1,7 +1,5 @@
 System qualifying spec 
   import String
-  import List
-  import Option
 
   op fail     : [a] String -> a
 
