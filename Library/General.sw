@@ -5,6 +5,7 @@ in the subdirectory General can be of course used. *)
 
 spec
 
+  import General/Orders
   import General/FiniteStructures
   import General/Assert
 
