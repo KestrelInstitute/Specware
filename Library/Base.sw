@@ -6,7 +6,6 @@ implicit importing of spec Base. *)
 
 spec
 
-  import Base/Empty      % So that spec can avoid importing Base spec
   import Base/String
   import Base/System
 
