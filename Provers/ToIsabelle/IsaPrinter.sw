@@ -377,6 +377,40 @@ IsaTermPrinter qualifying spec
 		            spc))
 *)
 
+  %% Convert definitions of ops mapped by thy morphism to theorems
+  op thyMorphismDefsToTheorems (c: Context) (spc: Spec): Spec =
+    let def maybeAddTheoremForDef(qid, el) =
+          case specialOpInfo c qid of
+            | Some(_,_,_,_,true) \_rightarrow
+              (case AnnSpec.findTheOp(spc,qid) of
+                 | Some {names=_,fixity=_,dfn,fullyQualified?=_} \_rightarrow
+                   let (tvs, ty, term) = unpackTerm dfn in
+                   let Qualified(q,nm) = qid in
+                   % let _ = writeLine("def_tm: "^printTerm term) in
+                   let initialFmla = defToTheorem(c, ty, qid, term) in
+                   let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
+                   % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
+                   %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
+                   let (_,thms) = foldl (fn(fmla,(i,result)) ->
+                                           (i + 1,
+                                            result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
+                                                                                              else toString i)),
+                                                                    tvs, fmla)]))
+                                    (0,[]) liftedFmlas
+                   in
+                   el::thms
+                 | _ \_rightarrow [el])
+            | _ \_rightarrow [el]
+    in
+    let newelements = foldr (fn (el, elts) \_rightarrow
+                              case el of
+                                | Op(qid, true, _) \_rightarrow maybeAddTheoremForDef(qid, el) ++ elts
+                                | OpDef(qid, _) \_rightarrow maybeAddTheoremForDef(qid, el) ++ elts
+                                | _ \_rightarrow el::elts)
+                        [] spc.elements
+    in
+    spc \_guillemotleft {elements = newelements}
+
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = toScreen("0:\n"^printSpec spc^"\n") in
@@ -412,6 +446,7 @@ IsaTermPrinter qualifying spec
                then makeTypeCheckObligationSpec spc
 	       else spc
     in
+    let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = normalizeNewTypes spc in
     let spc = removeSubTypes spc coercions in
@@ -754,7 +789,145 @@ IsaTermPrinter qualifying spec
 		      prString ")"]
 
  op precNumFudge: Nat = 40
- op targetFunctionDefs?: Boolean = false
+ op targetFunctionDefs?: Boolean = true
+
+
+  op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
+  def defToFunCases c op_tm bod =
+    let
+      def aux(hd, bod) =
+        %let _ = writeLine("dtfc: "^printTerm hd^" = "^printTerm bod) in
+	case bod of
+	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) \_rightarrow
+	    aux(Apply(hd,mkVar v,a), term)
+          | Lambda ([(pattern,_,term)],a) \_rightarrow
+            (case patToTerm (pattern,"", c) of
+               | Some pat_tm \_rightarrow
+                 aux (Apply(hd,pat_tm,a), term)
+               | _ \_rightarrow [(hd,bod)])
+	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
+	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
+	     then foldl (\_lambda ((pati,_,bodi), cases) \_rightarrow
+			 case patToTerm(pati,"", c) of
+			   | Some pati_tm \_rightarrow
+                             let new_cases = aux_case(substitute(hd,[(v,pati_tm)]), bodi) in
+			     (cases ++ new_cases)
+			   | _ \_rightarrow
+                             let new_cases = aux_case(hd,bodi) in
+                             (cases ++ new_cases))
+		    [] pats
+	     else [(hd,bod)]
+          | Apply (Lambda (pats,_), arg as Record(var_tms,_), _)
+              | tupleFields? var_tms    % ??
+                &&  all (fn (_,t) \_rightarrow embed? Var t) var_tms
+%                && (case hd of
+%                      | Apply(_,param,_) \_rightarrow equalTerm?(param,arg)
+%                      | _ \_rightarrow false)
+            \_rightarrow
+            let def matchPat (p: Pattern, cnd, bod: MS.Term): Option(MS.Term * MS.Term) =
+                  case p of
+                    | RecordPat(rpats,_) \_rightarrow
+                      let sbst = mapPartial (fn ((_,v_tm as Var(v,_)),(_,p1)) \_rightarrow
+                                               case p1 of
+                                                 | WildPat _ \_rightarrow Some(v,v_tm)  % id
+                                                 | _ \_rightarrow
+                                               case patToTerm (p1, "", c) of
+                                                 | Some p_tm \_rightarrow Some(v,p_tm)
+                                                 | None \_rightarrow None)
+                                  (zip (var_tms, rpats))
+                      in
+                      if length sbst ~= length rpats then None
+                      else
+                      let pat_tms = map (fn (_,p_tm) \_rightarrow p_tm) sbst in
+                      let Apply(hd_hd,_,a) = hd in
+                      Some(Apply(hd_hd,mkTuple pat_tms,a), substitute(bod,sbst))
+                    | VarPat(v,_) \_rightarrow Some(hd,substitute(bod,[(v,arg)]))
+                    | WildPat _ \_rightarrow Some(hd,bod)
+                    | AliasPat(VarPat(v,_),p2,_) \_rightarrow matchPat(p2,cnd,substitute(bod,[(v,arg)]))
+                    | RestrictedPat(rp,_,_) \_rightarrow matchPat(rp,cnd,bod)
+                    | _ \_rightarrow None
+            in
+            let cases = mapPartial matchPat pats in
+            if length cases = length pats
+              then cases
+              else [(hd,bod)]
+          | Let([(pat,Var(v,_))],bod,a) | member(v, freeVars hd) \_rightarrow
+            (case patToTerm(pat,"", c) of
+               | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
+                                    substitute(bod,[(v,pat_tm)]))
+               | None \_rightarrow [(hd,bod)])
+          | IfThenElse(Apply(Fun(Equals, _,_),
+                             Record([("1", vr as Var(v as (vn,s),_)),
+                                     ("2",zro as Fun(Nat 0,_,_))],_),
+                             _),
+                       then_cl, else_cl, _)
+              | natSort? s \_and inVars?(v, freeVars hd) \_rightarrow
+            let cases1 = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)])) in
+            let cases2 = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
+                                                             mkArrow(natSort, natSort)),
+                                                        vr))]),
+                             simpSubstitute(getSpec c, else_cl,
+                                            [(v,mkApply(mkOp(Qualified("Integer","+"),
+                                                             mkArrow(mkProduct [natSort, natSort],
+                                                                     natSort)),
+                                                        mkTuple[vr,mkNat 1]))]))
+            in
+            cases1 ++ cases2
+	  | _ \_rightarrow [(hd,bod)]
+      def aux_case(hd,bod: MS.Term) =
+        aux(hd,bod) 
+      def fix_vars(hd,bod) =
+	let fvs = freeVars hd ++ freeVars bod in
+	let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
+	if rename_fvs = [] then (hd,bod)
+	  else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
+	       (substitute(hd,sb), substitute(bod,sb))
+    in
+    case bod of
+      | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow
+        defToFunCases c op_tm (Lambda ([(rpat, condn, tm)], a))
+      | _ \_rightarrow
+    let cases =
+          case bod of
+            | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
+                | varOrTuplePattern? recd \_rightarrow
+              let Some arg = patToTerm(recd,"", c) in
+              let cases = aux(Apply(op_tm, arg, a), tm) in
+              cases
+	    | _ \_rightarrow aux(op_tm, bod)
+    in
+    %let _ = writeLine(" = "^toString (length cases)^", "^toString tuple?) in
+    (map fix_vars cases)
+
+ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_prag: Option Pragma) (fixity: Fixity)
+     : Pretty =
+   let mainId = hd aliases in
+   let op_tm = mkFun (Op (mainId, fixity), ty) in
+   let cases = defToFunCases c op_tm dfn in
+   let pp_cases = map (fn (lhs, rhs) ->
+                         let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
+                         prConcat[prString "\"",
+                                  ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                  prString "\""])
+                    cases
+   in
+   prLinesCat 0 ([[prString "fun ", ppIdInfo aliases,
+                  prString " :: \"",
+                  ppType c Top true ty,
+                  prString "\""]
+                  ++ (case fixity of
+                        | Infix(assoc,prec) \_rightarrow
+                          [prString "\t(",
+                           case assoc of
+                             | Left  \_rightarrow prString "infixl \""
+                             | Right \_rightarrow prString "infixr \"",
+                           ppInfixDefId (mainId),
+                           prString "\" ",
+                           prString (toString (prec + precNumFudge)),
+                           prString ")"]
+                        | _ \_rightarrow []),
+                  [prString "where"],
+                  [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]])
 
  op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
                  \_rightarrow Pretty
@@ -774,29 +947,16 @@ IsaTermPrinter qualifying spec
    in
    let (tvs, ty, term) = unpackTerm dfn in
    if no_def?
-     then
-       if def?
-         then  % Convert def to theorem
-           let mainId = hd aliases in
-           let Qualified(q,nm) = mainId in
-           % let _ = writeLine(nm^": "^anyToString opt_prag)in
-           % let _ = writeLine("def_tm: "^printTerm term) in
-           let initialFmla = defToTheorem(c, ty, mainId, term) in
-           % let _ = writeLine("def_thm1: "^printTerm initialFmla) in
-           let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
-           % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
-           %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
-           let (_,thms) = foldl (fn(fmla,(i,result)) ->
-                                   (i + 1,
-                                    result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
-                                                                                      else toString i)),
-                                                            tvs, fmla)]))
-                            (0,[]) liftedFmlas
-           in
-           prLines 0 (map (fn Property prop -> ppProperty c prop "" elems opt_prag) thms)                       
-         else prEmpty
+     then prEmpty
    else
    let aliases = [mainId] in
+   if decl? && def? && targetFunctionDefs?
+       %% The following conditions are temporary!!
+       && none?(findMeasureAnnotation opt_prag)
+       && length(defToFunCases c (mkFun (Op (mainId, fixity), ty)) term) > 1
+     then
+       ppFunctionDef c aliases term ty opt_prag fixity
+   else
    let decl_list = 
          if decl?
            then [[prString "consts ",
@@ -841,7 +1001,7 @@ IsaTermPrinter qualifying spec
                            prString "\"",
                            ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
                            prString "\""]
-          else if recursive? || tuple? % \_and ~(simpleHead? lhs))
+          else if recursive? % || tuple? % \_and ~(simpleHead? lhs))
               then
                 prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
                                case findMeasureAnnotation opt_prag of
@@ -856,6 +1016,9 @@ IsaTermPrinter qualifying spec
                                               ppTerm c (Infix(Left,100)) rhs,
                                               prString "\""]]]]
           else
+            let (lhs,rhs) = if tuple? then addExplicitTyping2(c,op_tm,body)
+                             else (lhs,rhs)
+            in
             prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
                            case findBracketAnnotation opt_prag of
                              | Some anot \_rightarrow prConcat[prSpace,prString anot]
@@ -1223,7 +1386,7 @@ IsaTermPrinter qualifying spec
 
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term, _) comm elems opt_prag =
-    % let _ = toScreen ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n") in
+    % let _ = writeLine ((MetaSlang.printQualifiedId name) ^ ": " ^ comm ^ "\n"^ printTerm term) in
     %% Axioms are mapped to theorems in theory morphisms
     let opt_prag = findPragmaNamed(elems, name, opt_prag) in
     let propType = if propType = Axiom && c.source_of_thy_morphism?
