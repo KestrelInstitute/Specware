@@ -520,6 +520,15 @@ SpecNorm qualifying spec
              id)
       spc
 
+  op removeSubtypesInTerm (spc: Spec) (t: MS.Term): MS.Term =
+    let t = mapTerm(relativizeQuantifiers spc, id, id) t in
+    mapTerm (id,fn s \_rightarrow
+		   case s of
+		     | Subsort(supTy,_,_) \_rightarrow supTy
+		     | _ \_rightarrow s,
+             id)
+      t
+
   op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: List Sort, param_ty: Sort, spc: Spec)
      : Option MS.Term =
     let pred_qid = Qualified(q,id^"_P") in
