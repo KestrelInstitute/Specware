@@ -136,7 +136,6 @@ List qualifying spec
 
  op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
    suffix (l, length l - n)
- proof Isa "measure (\_lambda(l,n). n)" end-proof
  proof Isa removePrefix_Obligation_subsort
    apply(auto simp add: List__empty_length)
  end-proof
@@ -579,7 +578,6 @@ List qualifying spec
    case l of
    | [] -> r
    | hd::tl -> rev2 (tl, Cons (hd, r))
- proof Isa "measure (\_lambda(l,r). length l)" end-proof
 
  op rev : [a] List a -> List a = reverse
 
