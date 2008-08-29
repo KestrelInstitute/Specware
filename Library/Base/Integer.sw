@@ -147,8 +147,8 @@ end-proof
   theorem induction_pos_neg is
     fa (p : Int -> Boolean)
       p zero &&
-      (fa(i:Int) positive? i && p i => p (isucc i)) &&
-      (fa(i:Int) negative? i && p i => p (ipred i)) =>
+      (fa(i:Int) ~ (negative? i) && p i => p (isucc i)) &&
+      (fa(i:Int) ~ (positive? i) && p i => p (ipred i)) =>
       (fa(i:Int) p i)
 
   % unary minus (qualifier avoids confusion with binary minus):
