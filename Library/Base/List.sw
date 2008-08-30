@@ -329,11 +329,11 @@ List qualifying spec
 
  % rotate list leftward/rightward by n positions:
 
- op [a] rotateLeft (l: List a, n:Nat) : List a =
+ op [a] rotateLeft (l: List1 a, n:Nat) : List a =
    let n = n rem (length l) in  % rotating by length(l) has no effect
    removePrefix (l, n) ++ prefix (l, n)
 
- op [a] rotateRight (l: List a, n:Nat) : List a =
+ op [a] rotateRight (l: List1 a, n:Nat) : List a =
    let n = n rem (length l) in  % rotating by length(l) has no effect
    suffix (l, n) ++ removeSuffix (l, n)
 
