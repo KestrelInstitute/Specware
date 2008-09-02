@@ -357,12 +357,10 @@ List qualifying spec
 
  op [a] positionsSuchThat (l: List a, p: a -> Boolean) : InjList Nat =
    the (POSs: InjList Nat)
-   % each index in POSs is of element satsifying p:
-   (fa(i:Nat) i in? POSs => p (l @ i)) &&
-   % each index of element satisfying p is in POSs:
-   (fa(i:Nat) i < length l && p (l @ i) => i in? POSs) &&
-   % indices in POSs are ordered:
-   increasingNats? POSs
+     % indices in POSs are ordered:
+     increasingNats? POSs &&
+     % POSs contains all and only indices of elements satisfying p:
+     (fa(i:Nat) i in? POSs <=> i < length l && p (l @ i))
 
  % leftmost/rightmost position of element satisfying predicate (None if none):
 
@@ -396,12 +394,10 @@ List qualifying spec
 
  op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
    the (POSs: InjList Nat)
-   % each index in POSs is of occurrence of subl in supl:
-   (fa(i:Nat) i in? POSs => sublistAt? (subl, i, supl)) &&
-   % each index of occurrence of subl in supl is in POSs:
-   (fa(i:Nat) sublistAt? (subl, i, supl) => i in? POSs) &&
-   % indices in POSs are ordered:
-   increasingNats? POSs
+     % indices in POSs are ordered:
+     increasingNats? POSs &&
+     % POSs contains all and only indices of occurrence of subl in supl:
+     (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
 
  % if subl is a sublist of supl (in the sense that supl = ... ++ subl ++ ...),
  % return starting position of leftmost/rightmost occurrence of subl within
