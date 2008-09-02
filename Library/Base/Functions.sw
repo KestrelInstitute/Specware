@@ -146,9 +146,17 @@ Functions qualifying spec
     apply(rule ext, simp)
   end-proof
 
-  % used by obligation generator:
+  % true iff relation is well-founded:
 
-  op  wfo: [a] (a * a -> Boolean) -> Boolean
+  op [a] wellFounded? (rel: a * a -> Boolean) : Boolean =
+    % each non-empty predicate:
+    fa (p: a -> Boolean) (ex(y:a) p y) =>
+    % has a minimal element w.r.t. rel:
+      (ex(y:a) p y && (fa(x:a) p x => ~ (rel(x,y))))
+
+  % deprecated:
+
+  op wfo: [a] (a * a -> Boolean) -> Boolean = wellFounded?
 
   % mapping to Isabelle:
 
