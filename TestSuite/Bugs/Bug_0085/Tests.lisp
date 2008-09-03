@@ -26,9 +26,9 @@
 	    "     quotient[Q] y__1 = quotient[Q] y__2 => y__1 + 1 = y__2 + 1"
 	    " conjecture f_Obligation_subsort is "
 	    (:alternatives
-	     ("    fa(x : Q, y : Integer) "
+	     ("    fa(x : Q, y : Int) "
 	      "     natural? y && x = quotient[Q]  y => natural?(y + 1)")
-	     "    fa(x : Q, y : Integer) y >= 0 && x = quotient[Q]  y => y + 1 >= 0")
+	     "    fa(x : Q, y : Int) y >= 0 && x = quotient[Q]  y => y + 1 >= 0")
 	    " "
 	    " def f x = let quotient[Q] y = x in "
 	    "           y + 1"
@@ -48,9 +48,9 @@
 	    "     quotient[Q]  y__1 = quotient[Q]  y__2 => [y__1 + 1] = [y__2 + 1]"
 	    " conjecture f2_Obligation_subsort is "
 	    (:alternatives
-	     ("    fa(x : Q, y : Integer) "
+	     ("    fa(x : Q, y : Int) "
 	      "     natural? y && x = quotient[Q]  y => natural?(y + 1)")
-	     "    fa(x : Q, y : Integer) y >= 0 && x = quotient[Q]  y => y + 1 >= 0")
+	     "    fa(x : Q, y : Int) y >= 0 && x = quotient[Q]  y => y + 1 >= 0")
 	    " "
 	    " def f2 x = let quotient[Q] y = x in "
 	    "            [y + 1]"

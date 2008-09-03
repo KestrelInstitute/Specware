@@ -9,9 +9,9 @@
 ;;; Elaborating spec at $TESTDIR/EvenToOdd#S1
 ;;; Elaborating spec at $TESTDIR/EvenToOdd#S2
 Error in morphism: Inconsistent type def mapping for Even +-> Odd
-The domain type {n : Nat | ex(m : Integer) n = 2 * m}
-  translates to {n : Nat | ex(m : Integer) n = 2 * m}
-   which is not {n : Nat | ex(m : Integer) n = 2 * m + 1}
+The domain type {n : Nat | ex(m : Int) n = 2 * m}
+  translates to {n : Nat | ex(m : Int) n = 2 * m}
+   which is not {n : Nat | ex(m : Int) n = 2 * m + 1}
  found in $TESTDIR/EvenToOdd.sw
 9.13-9.14")
 
