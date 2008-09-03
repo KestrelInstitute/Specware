@@ -47,7 +47,6 @@
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
-	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
 	     ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"

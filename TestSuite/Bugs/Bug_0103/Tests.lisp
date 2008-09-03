@@ -25,7 +25,6 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List")
-	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Nat")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
