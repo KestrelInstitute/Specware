@@ -240,6 +240,17 @@ refine /Library/Base/List by {
    let len = length l in
    if n = len then l else Cons (x, extendLeft (l, x, n-1))
 
+ op [a] List.unflatten (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
+                       : List (List a) =
+   case lens of
+   | [] -> []
+   | len::lens -> prefix(l,len) :: unflatten (removePrefix(l,len), lens)
+
+ op [a] List.unflattenu
+        (l: List a, n:PosNat | n divides length l) : List (List a) =
+   if empty? l then []
+   else prefix(l,n) :: unflattenu (removePrefix(l,n), n)
+
  op List.noRepetitions? : [a] List a -> Boolean = fn
    | []     -> true
    | hd::tl -> hd nin? tl && noRepetitions? tl

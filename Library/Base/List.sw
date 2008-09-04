@@ -341,6 +341,21 @@ List qualifying spec
 
  op [a] flatten (ll: List (List a)) : List a = foldl (fn (x,y) -> y ++ x) [] ll
 
+ % group list elements into sublists of given lengths (note that we allow
+ % empty sublists, but we require the total sum of the lengths to equal the
+ % length of the starting list):
+
+ op [a] unflatten (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
+                  : List (List a) =
+   the (ll: List (List a))
+      flatten ll = l &&
+      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
+
+ % specialization to sublists of uniform lengths n > 0:
+
+ op [a] unflattenu (l: List a, n:PosNat | n divides length l) : List (List a) =
+   unflatten (l, repeat n (length l div n))
+
  % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
  op [a] noRepetitions? (l: List a) : Boolean =
