@@ -1510,7 +1510,9 @@ STRING should be given if the last search was by `string-match' on STRING."
 		   (substring sym 2 -1)
 		 sym)))
       (let ((results (sw:eval-in-lisp (make-search-form qualifier sym)))
-            (current (cons "Op" (sw::file-to-specware-unit-id buffer-file-name nil))))
+            (current (cons "Op" (if buffer-file-name
+                                    (sw::file-to-specware-unit-id buffer-file-name nil)
+                                  ""))))
 	(message nil)
 	(setq results (if (member results '(nil NIL Error:))
                           (list current)
@@ -1556,7 +1558,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		    (re-search-forward	; def fie.foo
 		     (concat "\\bdef\\s-\\w+\\." qsym "\\b") nil t)
 		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
-		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
+		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b"(concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; op fie.foo
 		     (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t)
 		    (re-search-forward	; op [a] fie.foo
