@@ -965,8 +965,7 @@ AnnSpecPrinter qualifying spec
    case tyVars of
      | [] -> string ""
      | _ -> AnnTermPrinter.ppList string 
-                                  (prettysNone [string " ", pp.LBrack], 
-				   pp.Comma, pp.RBrack)
+                                  (pp.LBrack, pp.Comma, pp.RBrack)
                                   tyVars
 
  def ppTyVars (pp : ATermPrinter) tvs = 
@@ -1070,7 +1069,7 @@ AnnSpecPrinter qualifying spec
                   | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
                   | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
             (0, string " :"), 
-            (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+            (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                (0, string " "), 
                                (3, ppSort context ([index, opIndex], Top) srt)])),
             (0, string " ")]
@@ -1080,9 +1079,12 @@ AnnSpecPrinter qualifying spec
      def ppDecl tm =
        let (tvs, srt, tm) = unpackTerm tm in
        (1, blockFill (0, 
-                      [(0, pp.Op), 
-                       (0, string " "), 
-                       (0, ppOpNames ())]
+                      [(0, pp.Op)] ++ 
+                       %(0, string " "),
+                       (if printOpWithDef? & tvs ~= []
+                          then [(0, ppForallTyVars pp tvs), (0, string " ")]
+                        else []) ++
+                       [(0, ppOpNames ())]
                       ++
                       (if printOpWithDef? then
                          case (tm, srt) of
@@ -1095,7 +1097,7 @@ AnnSpecPrinter qualifying spec
                                     | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
                                     | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
                               (0, string " :"), 
-                              (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                              (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                                  (0, string " "), 
                                                  (3, ppSort context ([index, opIndex], Top) srt)])),
                               (0, string " ")]
@@ -1156,7 +1158,7 @@ AnnSpecPrinter qualifying spec
 	if m <= 1 then
 	  if n <= 1 then
 	    %% Precede with new line only if both op and def 
-	    (if blankLine? then [(0, string " ")] else [])
+	    [(0, string " ")]   %(if blankLine? then [(0, string " ")] else [])
 	  else
 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
 	else
@@ -1237,7 +1239,7 @@ AnnSpecPrinter qualifying spec
    in
    let ppDecls = if printDef? then [] else map ppDecl decls in
    let ppDefs  = if printDef? then map ppDef  defs else []  in
-   (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
+   (index + 1, [(0, string " ")] ++ warnings ++ ppDecls ++ ppDefs ++ lines)
 
    % op isBuiltIn? : Import -> Boolean
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
@@ -1369,7 +1371,7 @@ AnnSpecPrinter qualifying spec
 		(0, []))
 	 | Property prop ->
 	   (index+1,
-	    Cons(ppProperty context (index, prop),ppResult))
+	    (0, string " ") :: Cons(ppProperty context (index, prop),ppResult))
 	 | Comment (str,_) ->
 	   (index+1,
 	    if exists (fn char -> char = #\n) str then
@@ -1383,8 +1385,8 @@ AnnSpecPrinter qualifying spec
 		    ppResult))
 	 | Pragma (prefix, body, postfix, pos)->
 	   (index+1,
-	    Cons ((1, string (prefix ^ body ^ postfix)),
-		  ppResult))
+	    (0, string " ") :: Cons ((1, string (prefix ^ body ^ postfix)),
+                                     ppResult))
 
      def aux(elements,afterOp?,result) =
          case elements of
