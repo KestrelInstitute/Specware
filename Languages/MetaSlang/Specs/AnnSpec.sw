@@ -4,6 +4,7 @@ AnnSpec qualifying spec
  import MSTerm
  import QualifierMapAsSTHTable2
  import SpecCalc
+ import ../AbstractSyntax/Equalities
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
@@ -725,10 +726,29 @@ AnnSpec qualifying spec
  def appendElement  (spc, new_element) = spc << {elements = spc.elements ++ [new_element]}
  def prependElement (spc, new_element) = spc << {elements = Cons (new_element, spc.elements)}
 
+ op [a] equalSpecElement?(el1: ASpecElement a, el2: ASpecElement a): Boolean =
+   case (el1, el2) of
+     | (Import(tm1, spc1, _, _), Import(tm2, spc2, _, _)) -> tm1 = tm2 && spc1 = spc2 % ?
+     | (Sort(qid1, _), Sort(qid2, _)) -> qid1 = qid2
+     | (SortDef(qid1, _), SortDef(qid2, _)) -> qid1 = qid2
+     | (Op(qid1, def1?,_), Op(qid2, def2?, _)) -> qid1 = qid2 && def1? = def2?
+     | (OpDef(qid1, _), OpDef(qid2, _)) -> qid1 = qid2
+     | (Property(pty1, qid1, tvs1, bod1, _), Property(pty2, qid2,tvs2, bod2, _)) ->
+       pty1 = pty2 && qid1 = qid2 && tvs1 = tvs2 && equalTerm?(bod1, bod2)
+     | (Comment(str1, _), Comment(str2, _)) -> str1 = str2
+     | (Pragma(stra1, strb1, strc1, _), Pragma(stra2, strb2, strc2, _)) ->
+       stra1 = strb2 && strb1 = strb2 & strc1 = strc2
+     | _ -> false
+
  def addElementAfter(spc, new_element, old_element) =
    spc << {elements = let elts = spc.elements in
 	              let i = index (elts, old_element) in
 		      take (i, elts) ++ [new_element] ++ drop (i, elts)}
+
+ op [a] addElementBefore(spc: ASpec a, new_element: ASpecElement a, old_element: ASpecElement a): ASpec a =
+   spc << {elements = let elts = spc.elements in
+	              let i = index (elts, old_element) in
+		      take (i-1, elts) ++ [new_element] ++ drop (i-1, elts)}
 
  def someSortAliasIsLocal? (aliases, spc) =
    exists (fn el ->
