@@ -12,6 +12,7 @@
 	    ""
 	    "spec  "
 	    " import B"
+            ""
 	    " type Interval = {start : Integer, stop : Integer}"
 	    (:optional " ")
 	    " op  isEmptyInterval? : Interval -> Boolean"

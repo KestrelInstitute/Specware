@@ -11,6 +11,7 @@
 	    ""
 	    "spec  "
 	    " import C"
+            ""
 	    " type D"
 	    "endspec"
 	    ""

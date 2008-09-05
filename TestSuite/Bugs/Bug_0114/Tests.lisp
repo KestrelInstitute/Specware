@@ -14,6 +14,7 @@
 	    ";;; Elaborating spec at $TESTDIR/Colimit#T"
 	    ""
 	    "spec  "
+	    " "
 	    (:alternatives 
 	     (" type {X, Y, Z}")
 	     (" type {X, X, Y}")
