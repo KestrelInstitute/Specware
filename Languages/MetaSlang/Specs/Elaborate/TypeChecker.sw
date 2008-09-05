@@ -437,6 +437,11 @@ TypeChecker qualifying spec
       | None -> undeclaredName (env, trm, id, srt, pos)
       | _    -> ambiguousCons (env, trm, id, srt, pos)
 
+  op tryResolveNameFromSort(env: LocalEnv, trm:MS.Term, id: String, srt: Sort, pos: Position): Option MS.Term =
+    case mkEmbed0 (env, srt, id) of
+      | Some id -> Some(Fun (Embed (id, false), checkSort (env, srt), pos))
+      | None -> mkEmbed1 (env, srt, trm, id, pos) 
+
  def checkOp (info, env) =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
    let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env))
@@ -537,6 +542,15 @@ TypeChecker qualifying spec
       | Fun (OneName (id, fixity), srt, pos) ->
         (let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
 	 %% resolve sort from environment
+         % let _ = writeLine("Trying to resolve name "^id^": "^printSort srt) in
+         case findVar(env, id, pos) of
+           | Some(term as Var ((id, srt), a)) ->
+             let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
+             Var ((id, srt), pos)
+           | None ->
+         case tryResolveNameFromSort(env, trm, id, srt, pos) of
+           | Some t -> t
+           | _ -> 
 	 case findVarOrOps (env, id, pos) of
 	   | terms as _::_ ->
 	     %% selectTermWithConsistentSort calls consistentSortOp?, which calls unifySorts 
@@ -546,7 +560,7 @@ TypeChecker qualifying spec
 		  let srt = termSort term in
 		  let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
 		  (case term of
-		     | Var ((id, _),          pos) -> Var ((id, srt),         pos)
+		     | Var ((id, _),          pos) -> Var ((id, srt),         pos)  % Now handled above
 		     | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
 		     | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
 		     | _ -> System.fail "Variable or constant expected"))
@@ -1253,6 +1267,19 @@ TypeChecker qualifying spec
    %   while givenSort is A (the domain sort of the function); rather
    %   ill-chosen names.
 
+  op elaborateSortForPat (env: LocalEnv, pat: Pattern, givenSort: Sort, expectedSort: Sort): Sort =
+    let givenSortChecked = checkSort (env, givenSort) in
+    %% unifySorts has side effect of modifying metatyvar links
+    let success = unifySorts env true givenSortChecked expectedSort in
+    ((if success then
+	()
+      else             
+	let msg = newLines ["Could not match type " ^ printSort givenSort, 
+			    "                with " ^ printSort expectedSort]
+	in
+	  error (env, msg, patAnn pat));
+     givenSortChecked)
+
   def elaborateSort (env, s1, s2) = 
     let s1Checked = checkSort (env, s1) in
     %% unifySorts has side effect of modifying metatyvar links
@@ -1299,7 +1326,7 @@ TypeChecker qualifying spec
 	  %% This checks that a sum-sort constructor is given the proper sort
           def findId ls = 
 	    case ls of
-	      | [] -> Some (undeclaredName (env, trm, id, srt, pos))
+	      | [] -> None   % Some (undeclaredName (env, trm, id, srt, pos))
 	      | (constructor_id, Some constructor_dom_sort) :: row -> 
 	        if id = constructor_id then
 		  %%  let _ = String.writeLine ("coprod: "^printSort (Arrow (s, CoProduct (row, pos0)), pos0)) in
@@ -1307,7 +1334,7 @@ TypeChecker qualifying spec
 		  %%  let _ = String.writeLine ("srt1: "^printSort found_sort) in
 		  %%  let _ = String.writeLine ("dom:  "^printSort (sum_sort, pos)) in
 		  let constructor_dom_sort = checkSort (env, constructor_dom_sort) in
-		  let _ (* dom *) = elaborateSort (env, withAnnS (sum_sort, pos), constructor_dom_sort) in
+		  let _ (* dom *) = elaborateSort (env, constructor_dom_sort, withAnnS (sum_sort, pos)) in
 		  Some (Fun (Embed (id, true), checkSort (env, srt), pos))
 		else 
 		  findId row
@@ -1363,14 +1390,14 @@ TypeChecker qualifying spec
   %% If id is the unique name of a constructor, use that constructor
   def uniqueConstr (env, trm, id, pos) =
     case StringMap.find (env.constrs, id) of
-      | Some [srt_info] ->
-        let (_, c_srt) = metafySort srt_info in
+      | Some [(qid, srt_info)] ->
+        let (v_srt, c_srt) = metafyBaseType (qid, srt_info, termAnn trm) in
 	let id_srt = case c_srt of
 		       | CoProduct (fields, pos) ->
 	                 (case find (fn (id2, _) -> id = id2) fields of
-			    | Some (_, Some dom_srt) -> Arrow (dom_srt, c_srt, pos)
-			    | _ -> c_srt)
-		       | _ -> c_srt
+			    | Some (_, Some dom_srt) -> Arrow (dom_srt, v_srt, pos)
+			    | _ -> v_srt)
+		       | _ -> v_srt
 	in
 	(case mkEmbed0 (env, id_srt, id) of
 	   | Some id -> Some (Fun (Embed (id, false), checkSort (env, id_srt), pos))
@@ -1385,14 +1412,14 @@ TypeChecker qualifying spec
 	     case unfoldSort (env, dom) of
 	       | Product (row, _) -> 
                  (let def findId ls = 
-		  case ls of
-		    | [] -> None : Option MS.Term
-		    | (selector_id, selector_rng_srt) :: ids -> 
-		      if id = selector_id then
-			(elaborateSort (env, withAnnS (rng, pos), selector_rng_srt);
-			 Some (Fun (Project id, srt, pos)))
-		      else 
-			findId ids
+                        case ls of
+                          | [] -> None : Option MS.Term
+                          | (selector_id, selector_rng_srt) :: ids -> 
+                            if id = selector_id then
+                              (elaborateSort (env, selector_rng_srt, withAnnS (rng, pos));
+                               Some (Fun (Project id, srt, pos)))
+                            else 
+                              findId ids
 		  in
 		    findId row)
 	       | Subsort (ssrt, _, _) -> analyzeDom ssrt
@@ -1486,13 +1513,13 @@ TypeChecker qualifying spec
 	  (env, Cons (id, seenVars))
     in
     case p of
-      | WildPat (s, pos) -> (WildPat (elaborateSort (env, s, sort1), pos), env, seenVars)
-      | BoolPat   _ -> (elaborateSort (env, sort1, type_bool);   (p, env, seenVars))
-      | NatPat    _ -> (elaborateSort (env, sort1, type_nat);    (p, env, seenVars))
-      | StringPat _ -> (elaborateSort (env, sort1, type_string); (p, env, seenVars))
-      | CharPat   _ -> (elaborateSort (env, sort1, type_char);   (p, env, seenVars))
+      | WildPat (s, pos) -> (WildPat (elaborateSortForPat (env, p, s, sort1), pos), env, seenVars)
+      | BoolPat   _ -> (elaborateSortForPat (env, p, type_bool, sort1);   (p, env, seenVars))
+      | NatPat    _ -> (elaborateSortForPat (env, p, type_nat, sort1);    (p, env, seenVars))
+      | StringPat _ -> (elaborateSortForPat (env, p, type_string, sort1); (p, env, seenVars))
+      | CharPat   _ -> (elaborateSortForPat (env, p, type_char, sort1);   (p, env, seenVars))
       | VarPat ((id, srt), pos) -> 
-        let srt = elaborateSort (env, srt, sort1)  in 
+        let srt = elaborateSortForPat (env, p, srt, sort1)  in 
 	(case lookupEmbedId (env, id, srt) of
 	   | Some None -> (EmbedPat (id, None, srt, pos), env, seenVars)
 	   | Some _ -> 
@@ -1505,15 +1532,15 @@ TypeChecker qualifying spec
 		  | None ->
 		    let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
 		    (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
-		  | Some [srt_info] ->
-		    let (_, c_srt) = metafySort srt_info in
-		    (VarPat ((id, c_srt), pos), env, seenVars)
+		  | Some [(qid, srt_info)] ->
+		    let (v_srt, c_srt) = metafyBaseType (qid,srt_info,pos) in
+		    (VarPat ((id, v_srt), pos), env, seenVars)
 		  | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
 	     else
 	       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
 	       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars))
       | SortedPat (pat, srt, _) -> 
-	let srt = elaborateSort (env, srt, sort1) in
+	let srt = elaborateSortForPat (env, p, srt, sort1) in
 	let (p, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
 	(p, env, seenVars)
       | AliasPat (pat1, pat2, pos) ->
@@ -1521,14 +1548,14 @@ TypeChecker qualifying spec
 	let (pat2, env, seenVars) = elaboratePatternRec (env, pat2, sort1, seenVars) in
 	(AliasPat (pat1, pat2, pos), env, seenVars)
       | EmbedPat (embedId, pattern, sort0, pos) ->
-	let sort0 = elaborateSort (env, sort0, sort1) in
+	let sort0 = elaborateSortForPat (env, p, sort0, sort1) in
 	let sort0 =
 	    if undeterminedSort? sort0 then
 	       %% See if there is only one constructor with this name
 	       (case StringMap.find (env.constrs, embedId) of
-		  | Some [srt_info] ->
-		    let (_, c_srt) = metafySort srt_info in
-		    elaborateSort (env, c_srt, sort1)
+		  | Some [(qid,srt_info)] ->
+		    let (v_srt, c_srt) = metafyBaseType (qid, srt_info, pos) in
+		    elaborateSortForPat (env, p, v_srt, sort1)
 		  | _ -> sort0)
 	     else
 	       sort0
@@ -1582,7 +1609,7 @@ TypeChecker qualifying spec
 	      (EmbedPat (embedId, pat, sort1, pos), env, seenVars)
       | RecordPat (row, pos) ->
 	let r = map (fn (id, srt)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
-	let _ = elaborateSort (env, (Product (r, pos)), sort1) in
+	let _ = elaborateSortForPat (env, p, (Product (r, pos)), sort1) in
 	let r = zip (r, row) in
 	let (r, env, seenVars) = 
 	    foldl (fn (((id, srt), (_, p)), (row, env, seenVars)) ->

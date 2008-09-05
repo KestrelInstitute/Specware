@@ -15,7 +15,7 @@ Utilities qualifying spec
        errors     : Ref (List (String * Position)),
        vars       : StringMap MS.Sort,
        firstPass? : Boolean,
-       constrs    : StringMap (List Sort),
+       constrs    : StringMap (List (QualifiedId * Sort)),
        file       : String}
  
  op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
@@ -89,6 +89,27 @@ Utilities qualifying spec
      let mtvs = List.map (fn (_, (MetaTyVar (y, _))) -> y) tv_map in
      (mtvs, srt)
 
+ op metafyBaseType(qid: QualifiedId, ty: Sort, pos: Position): Sort * Sort =
+   let (tvs, srt) = unpackSort ty in
+   if null tvs then
+     (Base(qid,[],pos),srt)
+   else
+   let mtvar_position = pos in          % Internal "metafySort"
+   let tv_map = List.map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs in
+   let  def mapTyVar (tv, tvs, pos) : MS.Sort = 
+	  case tvs of
+	    | [] -> TyVar (tv, pos)
+	    | (tv1, s) :: tvs -> 
+	      if tv = tv1 then s else mapTyVar (tv, tvs, pos)
+
+        def cp (srt : MS.Sort) = 
+	  case srt of
+	    | TyVar (tv, pos) -> mapTyVar (tv, tv_map, pos)
+	    | srt -> srt
+     in
+     let srt = mapSort (id, cp, id) srt in
+     let mtvs = List.map (fn (_, mv) -> mv) tv_map in
+     (Base(qid,mtvs,pos), srt)
 
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
@@ -127,24 +148,24 @@ Utilities qualifying spec
 	   }
 
  %% Computes a map from constructor names to set of sorts for them
- def computeConstrMap spc : StringMap (List Sort) =
+ def computeConstrMap spc : StringMap (List (QualifiedId * Sort)) =
    let sorts = spc.sorts in
    let 
 
-     def addConstr (id, cp_srt, constrMap) =
+     def addConstr (id, qid, cp_srt, constrMap) =
        case StringMap.find (constrMap, id) of
-	 | None -> StringMap.insert (constrMap, id, [cp_srt])
+	 | None -> StringMap.insert (constrMap, id, [(qid, cp_srt)])
 	 | Some srt_prs ->
-	   if exists (fn o_srt -> sameCPSort? (o_srt, cp_srt)) srt_prs then
+	   if exists (fn (o_qid,o_srt) -> qid = o_qid) srt_prs then
 	     constrMap
 	   else 
-	     StringMap.insert (constrMap, id, cons (cp_srt, srt_prs))
+	     StringMap.insert (constrMap, id,  (qid, cp_srt) :: srt_prs)
 
-     def addSort (dfn, constrMap) =
+     def addSort qid (dfn, constrMap) =
        let (tvs, srt) = unpackSort dfn in
        case srt : MS.Sort of
 	 | CoProduct (row, _) ->
-	   foldl (fn ((id, _), constrMap) -> addConstr (id, dfn, constrMap)) 
+	   foldl (fn ((id, _), constrMap) -> addConstr (id, qid, dfn, constrMap)) 
 	         constrMap
 		 row
 	   %% | Base (Qualified (qid, id), _, _) ->
@@ -158,7 +179,7 @@ Utilities qualifying spec
 	 | _ -> constrMap
    in
      foldSortInfos (fn (info, constrMap) -> 
-		    foldl addSort constrMap (sortInfoDefs info))
+		    foldl (addSort (primarySortName info)) constrMap (sortInfoDefs info))
                    StringMap.empty 
 		   sorts
 
@@ -339,6 +360,11 @@ Utilities qualifying spec
   %% (I.e., unqualified is not a wildcard here.)
   findAQualifierMap (env.internal.ops, qualifier, id)
 
+ op findVar(env: LocalEnv, id: Id, a: Position): Option MS.Term =
+   case StringMap.find (env.vars, id) of
+      | Some srt -> Some(Var ((id, srt), a))
+      | None -> None
+
  def findVarOrOps (env, id, a) =
   let 
     def mkTerm (a, info) =
@@ -458,8 +484,11 @@ Utilities qualifying spec
 	     else 
 	       NotUnify (srt1, srt2))
 
+ op debugUnify?: Boolean = false
+
   op unify : LocalEnv * Sort * Sort * List (Sort * Sort) * Boolean -> Unification
  def unify (env, s1, s2, pairs, ignoreSubsorts?) = 
+   let _ = if debugUnify? then writeLine("Unifying "^printSort s1^" with "^printSort s2) else () in
    let spc  = env.internal in
    let pos1 = sortAnn s1  in
    let pos2 = sortAnn s2  in
@@ -513,28 +542,6 @@ Utilities qualifying spec
 	   %                  else 
 	   %                    NotUnify (srt1, srt2)
 
-	| (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
-	  if exists (fn (p1, p2) -> 
-		     %% p = (srt1, srt2) 
-		     %% need predicate that chases metavar links
-		     equalType? (p1, srt1) &
-		     equalType? (p2, srt2))
-	            pairs 
-	    then
-	      Unify pairs
-	  else if id = id2 then
-	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubsorts?, unify)
-	  else 
-	    let s1x = unfoldSort (env, srt1) in
-	    let s2x = unfoldSort (env, srt2) in
-	    if equalType? (s1, s1x) & equalType? (s2x, s2) then
-	      NotUnify  (srt1, srt2)
-	    else 
-	      unify (env, withAnnS (s1x, pos1), 
-		     withAnnS (s2x, pos2), 
-		     cons ((s1, s2), pairs), 
-		     ignoreSubsorts?)
-
 	| (Boolean _, Boolean _) -> Unify pairs
 
 	| (TyVar (id1, _), TyVar (id2, _)) -> 
@@ -564,6 +571,28 @@ Utilities qualifying spec
 	  else
 	    (linkMetaTyVar mtv (withAnnS (s1, pos1)); 
 	     Unify pairs)
+
+	| (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
+	  if exists (fn (p1, p2) -> 
+		     %% p = (srt1, srt2) 
+		     %% need predicate that chases metavar links
+		     equalType? (p1, srt1) &
+		     equalType? (p2, srt2))
+	            pairs 
+	    then
+	      Unify pairs
+	  else if id = id2 then
+	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubsorts?, unify)
+	  else 
+	    let s1x = unfoldSort (env, srt1) in
+	    let s2x = unfoldSort (env, srt2) in
+	    if equalType? (s1, s1x) & equalType? (s2x, s2) then
+	      NotUnify  (srt1, srt2)
+	    else 
+	      unify (env, withAnnS (s1x, pos1), 
+		     withAnnS (s2x, pos2), 
+		     cons ((s1, s2), pairs), 
+		     ignoreSubsorts?)
 
 	% TODO: alpha equivalence...
 	% | (Pi _, Pi _) -> alpha equivalence directly
@@ -689,11 +718,14 @@ Utilities qualifying spec
      | And        (tms,           _) -> exists (fn t -> occursT (mtv, t)) tms
      | _  -> false
 
+ op break(s: String): () = ()
+
  (* Apply substitution as variable linking *)
   op linkMetaTyVar : MS.MetaTyVar -> MS.Sort -> ()
  def linkMetaTyVar (mtv : MS.MetaTyVar) tm = 
    let cell = ! mtv in
-   (%%String.writeLine ("Linking "^name^Nat.toString uniqueId^" with "^printSort t);
+   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.toString cell.uniqueId^" with "^printSort tm) else ();
+    if embed? CoProduct tm then break("copr") else ();
     mtv := cell << {link = Some tm})
 
   op simpleTerm : MS.Term -> Boolean
