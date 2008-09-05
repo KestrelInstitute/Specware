@@ -1558,7 +1558,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		    (re-search-forward	; def fie.foo
 		     (concat "\\bdef\\s-\\w+\\." qsym "\\b") nil t)
 		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
-		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b"(concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
+		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; op fie.foo
 		     (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t)
 		    (re-search-forward	; op [a] fie.foo
