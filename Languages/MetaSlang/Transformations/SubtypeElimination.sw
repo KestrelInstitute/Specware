@@ -213,7 +213,6 @@ SpecNorm qualifying spec
 
   op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
   %% Bring subtypes to the top-level
-    % let _ = writeLine("rt: "^printSort ty) in
     case ty of
       | Base(qid, args, a) ->
         let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
@@ -240,11 +239,17 @@ SpecNorm qualifying spec
              | None ->
                (case tryUnfoldBase spc ty of
                   | None -> ty
-                  | Some exp_ty -> raiseSubtypeFn(exp_ty, spc)))
+                  | Some exp_ty ->
+                    let raise_ty = raiseSubtypeFn(exp_ty, spc) in
+                    if embed? Subsort raise_ty
+                      then raise_ty else ty))
         else
           (case tryUnfoldBase spc ty of
              | None -> ty
-             | Some exp_ty -> raiseSubtypeFn(exp_ty, spc))
+             | Some exp_ty ->
+               let raise_ty = raiseSubtypeFn(exp_ty, spc) in
+               if embed? Subsort raise_ty
+                 then raise_ty else ty)
       | Subsort(s_ty, p, a) ->
         (case raiseSubtypeFn(s_ty, spc) of
            | Subsort(sss_ty, pr, _) ->
