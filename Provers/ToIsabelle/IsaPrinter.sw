@@ -727,7 +727,7 @@ IsaTermPrinter qualifying spec
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
-   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO"]
+   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False"]
 
  op ppConstructor(c_nm: String): Pretty =
    prString (if member(c_nm, notImplicitVarNames)
@@ -805,6 +805,8 @@ IsaTermPrinter qualifying spec
                | Some pat_tm \_rightarrow
                  aux (Apply(hd,pat_tm,a), term)
                | _ \_rightarrow [(hd,bod)])
+          | Apply(Lambda(match, _),arg,_) | nonCaseMatch? match ->
+            aux(hd, caseToIf(c, match, arg))
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
 	     then foldl (\_lambda ((pati,_,bodi), cases) \_rightarrow
@@ -1149,7 +1151,7 @@ IsaTermPrinter qualifying spec
   def defToCases c op_tm bod infix? =
     let
       def aux(hd, bod, tuple?) =
-        %let _ = writeLine("aux("^printTerm bod^", "^toString tuple?^")") in
+        % let _ = writeLine("aux("^printTerm bod^", "^toString tuple?^")") in
 	case bod of
 	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
 	    aux(Apply(hd,mkVar v,a), term, tuple?)
