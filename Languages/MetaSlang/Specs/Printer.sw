@@ -1001,7 +1001,7 @@ AnnSpecPrinter qualifying spec
 			(0, pp.ppFormulaDesc (" "^ (if q = UnQualified then "" else q^".")^id)), 
 			(0, string " "), 
 			(0, pp.Is), 
-			% (0, if null tyVars then string "" else string " sort"), 
+                        (0, if null tyVars then string "" else string " "), 
 			(0, ppForallTyVars pp tyVars), 
 			(0, string " "), 
 			(3, ppTerm context ([index, propertyIndex], Top) term)]))
@@ -1110,7 +1110,8 @@ AnnSpecPrinter qualifying spec
                                 | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
                                 | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
                           (0, string " :"), 
-                          (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                          (0, blockNone (0, [(0, if null tvs then string "" else string " "),
+                                             (0, ppForallTyVars pp tvs), 
                                              (0, string " "), 
                                              (3, ppSort context ([index, opIndex], Top) srt)]))
                           ])))
