@@ -477,7 +477,7 @@ List qualifying spec
                                   : Option (a * List a) =
    case rightmostPositionSuchThat (l, p) of
    | None   -> None
-   | Some i -> Some (l @ i, suffix (l, i))
+   | Some i -> Some (l @ i, removePrefix (l, i))
 
  % delete element from list:
 
