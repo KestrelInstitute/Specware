@@ -96,9 +96,12 @@ SpecCalc qualifying spec
 
   %% called by evaluateSpecElem and LiftPattern
  def addOp new_names new_fixity new_dfn old_spec pos =
-   addOrRefineOp new_names new_fixity new_dfn old_spec pos true
+   {(sp,_) <- addOrRefineOp new_names new_fixity new_dfn old_spec pos None true;
+    return sp}
 
- def addOrRefineOp new_names new_fixity new_dfn old_spec pos addOnly? =
+ op  addOrRefineOp: QualifiedIds -> Fixity -> MS.Term -> Spec -> Position -> Option SpecElement -> Boolean
+                  -> SpecCalc.Env(Spec * Option SpecElement)
+ def addOrRefineOp new_names new_fixity new_dfn old_spec pos opt_next_el addOnly? =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
@@ -208,9 +211,26 @@ SpecCalc qualifying spec
                          "Op "^(printAliases new_names)^" refers to multiple prior ops"));
 
     sp <- return (setOps (old_spec, new_ops));
-    return (appendElement (sp, case old_infos of
-                                 | [] -> Op    (primaryName, definedTerm? new_dfn, pos)
-                                 | _  -> OpDef (primaryName, pos)))
+    let el = case old_infos of
+               | _::_ | addOnly? -> OpDef (primaryName, pos)
+               | _ -> Op (primaryName, definedTerm? new_dfn, pos)
+    in
+    return (if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
+              else if old_infos = [] || addOnly?
+                     then addElementBeforeOrAtEnd(sp, el, opt_next_el)
+              else let elts = foldr (fn (eli, elts) ->
+                                       case eli of
+                                         | OpDef(qid,_) | qid = primaryName ->
+                                           elts
+                                         | Op(qid, _, _) | qid = primaryName ->
+                                           el::elts
+                                         | _ -> eli::elts)
+                                 [] sp.elements
+                   in
+                   if member(el, elts)
+                    then setElements(sp, elts)
+                    else addElementBeforeOrAtEnd(sp, el, opt_next_el),
+            Some el)
     }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -256,6 +276,11 @@ SpecCalc qualifying spec
  def addPragma      (pragma_content, spc) = 
    let spc = setElements (spc, spc.elements ++ [Pragma pragma_content]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
+
+ def addElementBeforeOrAtEnd(spc: Spec, new_elt: SpecElement, opt_old_elt: Option SpecElement): Spec =
+   case opt_old_elt of
+     | None -> appendElement(spc, new_elt)
+     | Some old_elt -> addElementBefore(spc, new_elt, old_elt)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
