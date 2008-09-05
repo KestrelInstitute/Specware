@@ -289,13 +289,13 @@ Utilities qualifying spec
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
  def insertVar (new_var, vars) = 
-   if (exists (fn v -> equalVar? (v, new_var)) vars) then
+   if (exists (fn v -> v.1 = new_var.1) vars) then
      vars
    else
      Cons (new_var, vars)
 
  def deleteVar (var_to_remove, vars) = 
-   List.filter (fn v -> ~(equalVar? (v, var_to_remove))) vars
+   List.filter (fn v -> v.1 ~= var_to_remove.1) vars
 
  def insertVars (vars_to_add,    original_vars) = foldl insertVar original_vars vars_to_add
  def deleteVars (vars_to_remove, original_vars) = foldl deleteVar original_vars vars_to_remove
