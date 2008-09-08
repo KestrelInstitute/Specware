@@ -481,4 +481,23 @@ spec
    case arrowOpt (sp, srt) of
      | Some (TyVar _, _) -> true
      | _                -> false
+
+
+ op mkEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term =
+   case rhs_tm of
+     | Lambda ([(pat, _, body)], _) ->
+       (case patternToTerm(pat) of
+          | Some arg_tm ->
+            mkEqualityFromLambdaDef(spc, mkApply(lhs_tm, arg_tm), body)
+          | None -> mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm))
+     | _ -> mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm)
+
+ op defToTheorem(spc: Spec, ty: Sort, name: QualifiedId, term: MS.Term): MS.Term =
+    let new_equality = mkEqualityFromLambdaDef (spc, mkOp(name, ty), term) in
+    % let _ = writeLine("new_eq: "^printTerm new_equality) in
+    let faVars       = freeVars new_equality in
+    let new_equality = mkBind (Forall, faVars, new_equality) in
+    let eqltyWithPos = withAnnT (new_equality, termAnn term) in
+    eqltyWithPos
+
 endspec
