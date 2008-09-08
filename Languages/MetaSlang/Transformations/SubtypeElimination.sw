@@ -394,7 +394,7 @@ SpecNorm qualifying spec
            | Some(sup_ty, pred) ->
              let v = ("x", sup_ty) in
              mkLambda(mkVarPat v,
-                      MS.mkIfThenElse(mkApply(pred, mkVar v),
+                      MS.mkIfThenElse(simplifiedApply(pred, mkVar v, spc),
                                       mkApply(t, mkVar v),
                                       mkArbitrary rng)))
       | _ -> t
