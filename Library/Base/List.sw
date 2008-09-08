@@ -404,7 +404,7 @@ List qualifying spec
                                   length pre = i
 
  % if subl is a sublist of supl, return starting positions of all occurrences of
- % subl within supl (there could be more than one), otherwise return None:
+ % subl within supl (there could be more than one):
 
  op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
    the (POSs: InjList Nat)
