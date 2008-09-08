@@ -159,17 +159,58 @@
 (defconst specware-keywords-regexp
   (regexp-opt specware-keywords))
 
+
 (defconst specware-font-lock-keywords
-  (list (list specware-definition-regexp
-	      '(2 font-lock-reserved-word-face keep))
+  (if (featurep 'xemacs)
+      (list (list specware-definition-regexp
+		  '(2 font-lock-reserved-word-face keep))
+	    (list (concat specware-definition-regexp
+			  "\\(\\(\\w\\|\\s_\\|-\\|\\.\\)+\\)")
+		  '(3 font-lock-function-name-face keep))
+	    (list (concat symbol-sep "let" symbol-sep
+			  "+\\(def \\|\\(.*?\\)=\\)")
+		  '(1 font-lock-function-name-face keep))
+	    ;; next two cases are for above except for vars that don't start at beginning of line
+	    ;;(list "[^?a-z0-9A-Z---]\\(var\\)\\s-" 1 'font-lock-reserved-word-face)
+	    ;; symbol followed by a : is a defining occurrence
+;;; Doesn't work and very inefficient
+;;;	(list (concat symbol-sep
+;;;		      "\\(\\(\\w\\|\\s_\\|-\\)+\\)\\( \\|\t\\|\n\\)*:\\s_")
+;;;	  1 'font-lock-function-name-face)
+	    (list (concat symbol-sep "\\("
+			  specware-keywords-regexp
+			  "\\)" symbol-sep)`
+		  1 'font-lock-reserved-word-face 'keep)
+					; ... keyword is at the end of a line ...
+	    (list (concat symbol-sep "\\("
+			  specware-keywords-regexp
+			  "\\)$")
+		  1 'font-lock-reserved-word-face 'keep)
+					; ... keyword is at the beginning of a line ...
+	    (list (concat "^\\("
+			  specware-keywords-regexp
+			  "\\)$")
+		  1 'font-lock-reserved-word-face 'keep)
+					; ... keyword is the only thing on the line ...
+	    (list (concat "^\\("
+			  specware-keywords-regexp
+			  "\\)" symbol-sep)
+		  1 'font-lock-reserved-word-face 'keep)
+	    "&&" "||" "=>" "=" "~=" "~" "<" ">" "->" "<-" ";" ":" "::" ":=" "|" "_"
+	    "+->" "\\." "!" "*" "<<"   ; no? "}" "{" "]" "\\[" "(" ")"
+;;;	; Fixed width if % followed by 2 spaces, %%%, tab, or space--- or nothing
+;;;	'("\\(%+\\(  \\|%%%\\|\t\\| \t\\| ---\\|---\\|$\\).*$\\)"
+;;;	  1 font-lock-fixed-width-comment-face t)
+	    )
+    (list "&&" "||" "=>" "=" "~=" "~" "<" "+->" ">" "->" "<-" ";" "::" ":=" ":" "|" "_"
+	"\\." "!" "*" "<<"           ; no? "}" "{" "]" "\\[" "(" ")"
 	(list (concat specware-definition-regexp
 		      "\\(\\(\\w\\|\\s_\\|-\\|\\.\\)+\\)")
 	      '(3 font-lock-function-name-face keep))
-	(list (concat symbol-sep "let" symbol-sep
-		      "+\\(def \\|\\(.*?\\)=\\)")
-	      '(1 font-lock-function-name-face keep))
+;;  	(list specware-definition-regexp
+;;  	      '(2 font-lock-keyword-face keep))
 	;; next two cases are for above except for vars that don't start at beginning of line
-	;;(list "[^?a-z0-9A-Z---]\\(var\\)\\s-" 1 'font-lock-reserved-word-face)
+	;;(list "[^?a-z0-9A-Z---]\\(var\\)\\s-" 1 'font-lock-keyword-face)
 	;; symbol followed by a : is a defining occurrence
 ;;; Doesn't work and very inefficient
 ;;;	(list (concat symbol-sep
@@ -178,28 +219,30 @@
 	(list (concat symbol-sep "\\("
 		      specware-keywords-regexp
 		      "\\)" symbol-sep)`
-	      1 'font-lock-reserved-word-face 'keep)
+	      1 'font-lock-keyword-face 'keep)
 	; ... keyword is at the end of a line ...
 	(list (concat symbol-sep "\\("
 		      specware-keywords-regexp
 		      "\\)$")
-	      1 'font-lock-reserved-word-face 'keep)
+	      1 'font-lock-keyword-face 'keep)
 	; ... keyword is at the beginning of a line ...
 	(list (concat "^\\("
 		      specware-keywords-regexp
 		      "\\)$")
-	      1 'font-lock-reserved-word-face 'keep)
+	      1 'font-lock-keyword-face 'keep)
 	; ... keyword is the only thing on the line ...
 	(list (concat "^\\("
 		      specware-keywords-regexp
 		      "\\)" symbol-sep)
-	      1 'font-lock-reserved-word-face 'keep)
-	"&&" "||" "=>" "=" "~=" "~" "<" ">" "->" "<-" ";" ":" "::" ":=" "|" "_"
-	"+->" "\\." "!" "*" "<<"           ; no? "}" "{" "]" "\\[" "(" ")"
+	      1 'font-lock-keyword-face 'keep)
+	(list (concat symbol-sep "let" symbol-sep
+		      "+\\(def \\|\\(.*?\\)=\\)")
+	      '(1 font-lock-variable-name-face keep))
+
 ;;;	; Fixed width if % followed by 2 spaces, %%%, tab, or space--- or nothing
 ;;;	'("\\(%+\\(  \\|%%%\\|\t\\| \t\\| ---\\|---\\|$\\).*$\\)"
 ;;;	  1 font-lock-fixed-width-comment-face t)
-	))
+	)))
 
 ;(defconst specware-font-lock-keywords specware-font-lock-keywords)
 
