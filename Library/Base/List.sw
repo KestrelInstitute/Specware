@@ -363,7 +363,7 @@ List qualifying spec
 
  type InjList a = (List a | noRepetitions?)
 
- % ordered (injective) list of natural numbers:
+ % (strictly) ordered (injective) list of natural numbers:
 
  op increasingNats? (nats: List Nat) : Boolean =
    fa(i:Nat) i < length nats - 1 => nats @ i < nats @ (i+1)
