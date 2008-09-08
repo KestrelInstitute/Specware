@@ -413,10 +413,9 @@ List qualifying spec
      % POSs contains all and only indices of occurrence of subl in supl:
      (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
 
- % if subl is a sublist of supl (in the sense that supl = ... ++ subl ++ ...),
- % return starting position of leftmost/rightmost occurrence of subl within
- % supl (there could be more than one), as well as the list of elements
- % following/preceding subl within supl, otherwise return None:
+ % if subl is a sublist of supl, return starting position of leftmost/rightmost
+ % occurrence of subl within supl (there could be more than one), as well as the
+ % list of elements following/preceding subl within supl, otherwise return None:
 
  op [a] leftmostPositionOfSublistAndFollowing
         (subl: List a, supl: List a) : Option (Nat * List a) =
@@ -432,13 +431,13 @@ List qualifying spec
    let i = last POSs in
    Some (i, prefix (supl, i))
 
- % split sequence at index into preceding elements, element at index, and
+ % split list at index into preceding elements, element at index, and
  % following elements:
 
  op [a] splitAt (l: List a, i:Nat | i < length l) : List a * a * List a =
    (prefix(l,i), l@i, removePrefix(l,i+1))
 
- % split sequence at leftmost/rightmost element satisfying predicate (None
+ % split list at leftmost/rightmost element satisfying predicate (None
  % if no element satisfies predicate):
 
  op [a] splitAtLeftmost (p: a -> Boolean) (l: List a)
