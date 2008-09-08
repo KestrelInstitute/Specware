@@ -147,10 +147,6 @@ spec
  def unfoldBase((_,_,spc,_,_,_,_),tau) = 
      Utilities.unfoldBase(spc,tau)
 
- op  mkConjecture: QualifiedId * TyVars * MS.Term -> SpecElement
- def mkConjecture(qid,tvs,fm) =
-   Property(Conjecture,qid,tvs,fm,noPos)
-
  def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_,_),description) = 
      let descName = id^" :"^description in
      let name = mkQualifiedId(qid, descName) in
