@@ -387,7 +387,7 @@ IsaTermPrinter qualifying spec
                    let (tvs, ty, term) = unpackTerm dfn in
                    let Qualified(q,nm) = qid in
                    % let _ = writeLine("def_tm: "^printTerm term) in
-                   let initialFmla = defToTheorem(c, ty, qid, term) in
+                   let initialFmla = defToTheorem(getSpec c, ty, qid, term) in
                    let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
                    % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
                    %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
@@ -707,31 +707,14 @@ IsaTermPrinter qualifying spec
    % let _ = writeLine("returned: "^anyToString result) in
    result
 
- op mkEqualityFromLambdaDef(c: Context, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term =
-   case rhs_tm of
-     | Lambda ([(pat, _, body)], _) ->
-       (case patToTerm(pat, "d", c) of
-          | Some arg_tm ->
-            mkEqualityFromLambdaDef(c, mkApply(lhs_tm, arg_tm), body)
-          | None -> mkEquality (inferType(getSpec c, lhs_tm), lhs_tm, rhs_tm))
-     | _ -> mkEquality (inferType(getSpec c, lhs_tm), lhs_tm, rhs_tm)
-
- op defToTheorem(c: Context, ty: Sort, name: QualifiedId, term: MS.Term): MS.Term =
-    let new_equality = mkEqualityFromLambdaDef (c, mkOp(name, ty), term) in
-    % let _ = writeLine("new_eq: "^printTerm new_equality) in
-    let faVars       = freeVars new_equality in
-    let new_equality = mkBind (Forall, faVars, new_equality) in
-    let eqltyWithPos = withAnnT (new_equality, termAnn term) in
-    eqltyWithPos
-
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
-   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False"]
+   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not"]
 
  op ppConstructor(c_nm: String): Pretty =
    prString (if member(c_nm, notImplicitVarNames)
-               then c_nm ^ "___c"
+               then c_nm ^ "___C"
                else c_nm)
 
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
@@ -1098,7 +1081,7 @@ IsaTermPrinter qualifying spec
         | VarPat((v,ty), a) \_rightarrow Some(Var((v,ty), a))
         | WildPat(ty,a) \_rightarrow
           let cnt = c.newVarCount in
-                                    let _ = (cnt := !cnt + 1) in
+          let _ = (cnt := !cnt + 1) in
           let v = "zzz_"^toString (!cnt) in
           Some(Var((v,ty), a))
         | QuotientPat(pat,cond,_)  \_rightarrow None %% Not implemented
@@ -2076,7 +2059,8 @@ IsaTermPrinter qualifying spec
 
   op qidToIsaString(Qualified (qualifier,id): QualifiedId): String =
     if (qualifier = UnQualified) \_or (member (qualifier,omittedQualifiers)) then
-      ppIdStr id
+      if member(id,notImplicitVarNames) then id ^ "__c"
+        else ppIdStr id
     else
       ppIdStr qualifier ^ "__" ^ ppIdStr id
 
