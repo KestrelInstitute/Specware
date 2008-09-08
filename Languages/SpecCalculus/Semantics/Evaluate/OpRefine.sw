@@ -22,17 +22,22 @@ SpecCalc qualifying spec
 
   op  evaluateSpecOpElems : ASpec Position -> List (SpecElem Position) -> SpecCalc.Env (ASpec Position)
   def evaluateSpecOpElems src_spec op_elts = 
-    {(spc,_) <- foldrM evaluateSpecOpElem (src_spec, None) op_elts;
+    {(spc,opt_el,pragmas) <- foldrM evaluateSpecOpElem (src_spec, None, []) op_elts;
+     let spc = if pragmas = [] then spc else addElementsBeforeOrAtEnd(spc, pragmas, opt_el) in
      return spc}
 
-  op  evaluateSpecOpElem : (Spec * Option SpecElement) -> SpecElem Position -> SpecCalc.Env (Spec * Option SpecElement)
-  def evaluateSpecOpElem (spc, opt_next_el) (elem, pos) =
+  op  evaluateSpecOpElem : (Spec * Option SpecElement * SpecElements) -> SpecElem Position
+      -> SpecCalc.Env (Spec * Option SpecElement * SpecElements)
+  def evaluateSpecOpElem (spc, opt_next_el, pragmas) (elem, pos) =
     %let _ = writeLine("opt_next_el: "^anyToString opt_next_el^"\n"^printSpec spc) in
     case elem of
-      | Op(names, fxty, dfn) -> addOrRefineOp names fxty dfn spc pos opt_next_el false
+      | Op(names, fxty, dfn) ->
+        {(spc,next_el) <- addOrRefineOp names fxty dfn spc pos opt_next_el false;
+         let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
+         return (spc,Some next_el,[])}
       | Pragma(prefix, body, postfix) ->
         let prag = Pragma(prefix, body, postfix, pos) in
-        return (addElementBeforeOrAtEnd(spc, prag, opt_next_el), Some prag)
+        return (spc, opt_next_el, prag::pragmas)
       | _ -> raise (SpecError(pos,"Given refinement element is not an op definition."))
 
 endspec

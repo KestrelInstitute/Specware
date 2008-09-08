@@ -1,6 +1,7 @@
 SpecCalc qualifying spec 
  import ../../Environment
  import AccessSpec
+ import /Languages/MetaSlang/Specs/Environment
 
  op addSort        :  List QualifiedId            -> Sort -> Spec -> Position -> SpecCalc.Env (Spec)
  op addOp          :  List QualifiedId -> Fixity  -> MS.Term -> Spec -> Position -> SpecCalc.Env (Spec)
@@ -100,7 +101,7 @@ SpecCalc qualifying spec
     return sp}
 
  op  addOrRefineOp: QualifiedIds -> Fixity -> MS.Term -> Spec -> Position -> Option SpecElement -> Boolean
-                  -> SpecCalc.Env(Spec * Option SpecElement)
+                  -> SpecCalc.Env(Spec * SpecElement)
  def addOrRefineOp new_names new_fixity new_dfn old_spec pos opt_next_el addOnly? =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
@@ -215,7 +216,7 @@ SpecCalc qualifying spec
                | _::_ | addOnly? -> OpDef (primaryName, pos)
                | _ -> Op (primaryName, definedTerm? new_dfn, pos)
     in
-    return (if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
+    let sp = if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
               else if old_infos = [] || addOnly?
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
@@ -228,9 +229,30 @@ SpecCalc qualifying spec
                                  [] sp.elements
                    in
                    if member(el, elts)
-                    then setElements(sp, elts)
-                    else addElementBeforeOrAtEnd(sp, el, opt_next_el),
-            Some el)
+                     then setElements(sp, elts)
+                   else addElementBeforeOrAtEnd(sp, el, opt_next_el)
+    in
+    let sp = if old_infos = [] || addOnly? then sp
+             else
+             let dfn = (hd old_infos).dfn in
+             let (tvs, ty, term) = unpackTerm dfn in
+             if anyTerm? term
+               then sp
+             else
+             let Qualified(q,nm) = primaryName in
+             let initialFmla = defToTheorem(sp, ty, primaryName, term) in
+             % let _ = writeLine("def_thm: "^printTerm initialFmla) in
+             let liftedFmlas = [initialFmla] in % removePatternTop(sp, initialFmla) in
+             let (_,thms) = foldl (fn(fmla,(i,result)) ->
+                                     (i + 1,
+                                      result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
+                                                                                          else toString i)),
+                                                              tvs, fmla)]))
+                              (0,[]) liftedFmlas
+             in
+             addElementsAfter(sp, thms, el)
+    in
+    return (sp, el)
     }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -276,6 +298,11 @@ SpecCalc qualifying spec
  def addPragma      (pragma_content, spc) = 
    let spc = setElements (spc, spc.elements ++ [Pragma pragma_content]) in
    spc    % addLocalPropertyName(spc,propertyName new_property)
+
+ def addElementsBeforeOrAtEnd(spc: Spec, new_elts: SpecElements, opt_old_elt: Option SpecElement): Spec =
+   case opt_old_elt of
+     | None -> setElements(spc, spc.elements ++ new_elts)
+     | Some old_elt -> addElementsBefore(spc, new_elts, old_elt)
 
  def addElementBeforeOrAtEnd(spc: Spec, new_elt: SpecElement, opt_old_elt: Option SpecElement): Spec =
    case opt_old_elt of
