@@ -66,7 +66,6 @@ AnnSpec qualifying spec
      | Property _ -> true
      | _ -> false
 
-
  type AProperty    a = PropertyType * PropertyName * TyVars * ATerm a * a
  type PropertyType   = | Axiom | Theorem | Conjecture
  type AProperties  a = List (AProperty a)
@@ -740,15 +739,44 @@ AnnSpec qualifying spec
        stra1 = strb2 && strb1 = strb2 & strc1 = strc2
      | _ -> false
 
- def addElementAfter(spc, new_element, old_element) =
+ op [a] addElementsAfter(spc: ASpec a, new_elements: ASpecElements a, old_element: ASpecElement a): ASpec a =
    spc << {elements = let elts = spc.elements in
-	              let i = index (elts, old_element) in
-		      take (i, elts) ++ [new_element] ++ drop (i, elts)}
+	              let i = case findIndex (fn el -> equalSpecElement?(el, old_element)) elts of
+                                | Some(i,_) -> i+1
+                                | None -> length elts
+                      in
+		      take (i, elts) ++ new_elements ++ drop (i, elts)}
+
+ op [a] addElementAfter(spc: ASpec a, new_element: ASpecElement a, old_element: ASpecElement a): ASpec a =
+   addElementsAfter(spc, [new_element], old_element)
+
+ op [a] addElementsBefore(spc: ASpec a, new_elements: ASpecElements a, old_element: ASpecElement a): ASpec a =
+   spc << {elements = let elts = spc.elements in
+	              let i = case findIndex (fn el -> equalSpecElement?(el, old_element)) elts of
+                                | Some(i,_) -> i
+                                | None -> length elts
+                      in
+		      take (i, elts) ++ new_elements ++ drop (i, elts)}
 
  op [a] addElementBefore(spc: ASpec a, new_element: ASpecElement a, old_element: ASpecElement a): ASpec a =
+   addElementsBefore(spc, [new_element], old_element)
+
+ op [a] conjecture?(p: ASpecElement a): Boolean =
+   case p of
+     | Property(Conjecture,_,_,_,_) -> true
+     | _ -> false
+
+ op [a] addElementsAfterConjecture(spc: ASpec a, new_elements: ASpecElements a, old_element: ASpecElement a): ASpec a =
    spc << {elements = let elts = spc.elements in
-	              let i = index (elts, old_element) in
-		      take (i-1, elts) ++ [new_element] ++ drop (i-1, elts)}
+	              let i = case findIndex (fn el -> equalSpecElement?(el, old_element)) elts of
+                                | Some(i,_) ->
+                                  if i+1 < length elts && conjecture?(nth(elts, i+1))
+                                    then i+2
+                                    else i+1
+                                | None -> length elts
+                      in
+		      take (i, elts) ++ new_elements ++ drop (i, elts)}
+
 
  def someSortAliasIsLocal? (aliases, spc) =
    exists (fn el ->
