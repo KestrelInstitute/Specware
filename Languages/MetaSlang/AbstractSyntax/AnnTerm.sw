@@ -454,6 +454,14 @@ MetaSlang qualifying spec
  op maybeAndSort  : [b] List (ASort b) * b -> ASort b % Defined in Equalities.sw
  op maybeAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
 
+ op [a] anyTerm?(t: ATerm a): Boolean =
+   case t of
+     | Any _ -> true
+     | Pi(_, tm, _) -> anyTerm? tm
+     | And([tm], _) -> anyTerm? tm
+     | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
+     | _ -> false
+
  def unpackTerm t =
    let (tvs, tm) = 
        case t of
