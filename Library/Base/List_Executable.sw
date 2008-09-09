@@ -29,10 +29,6 @@ refine /Library/Base/List by {
    in
    loop 0
 
- op List.length : [a] List a -> Nat = fn
-   | []    -> 0
-   | _::tl -> 1 + (length tl)
-
  op [a] List.@ (l: List a, i:Nat | i < length l) infixl 30 : a =
    let hd::tl = l in  % non-empty because length > i >= 0
    if i = 0 then hd else tl @ (i-1)
@@ -41,8 +37,6 @@ refine /Library/Base/List by {
    case l of
    | []     -> None
    | hd::tl -> if i = 0 then Some hd else tl @@ (i-1)
-
- op List.empty : [a] List a = Nil
 
  op List.empty? : [a] List a -> Boolean = fn
    | [] -> true

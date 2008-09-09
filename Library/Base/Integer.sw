@@ -39,19 +39,6 @@ Integer qualifying spec
     apply(rule_tac x="y + 1" in exI, auto)
    end-proof
 
-
-% ------------------------------------------------------
-% Soundness check: we map succ/pred to Int.succ/Int.pred
-% Check that Int.pred is in fact the inverse of Int.succ
-% 
-proof Isa -verbatim
-theorem Integer__pred_props:
-  "pred = inv succ"
-  apply(rule ext, rule sym, auto simp add: inv_def)
-  done
-end-proof
- % ------------------------------------------------------
-
   axiom induction is
     fa (p : Int -> Boolean)
       p zero &&
@@ -62,6 +49,8 @@ end-proof
    apply(rule_tac k="0" in int_ge_induct,simp_all)
    apply(rule_tac k="0" in int_le_induct,simp_all)
   end-proof
+
+  % add infinity axiom!
 
   % number 1:
   op one : Int = isucc zero

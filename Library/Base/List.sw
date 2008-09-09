@@ -46,8 +46,10 @@ List qualifying spec
 
  % number of elements in list:
 
- op [a] length (l: List a) : Nat = the(n:Nat)
-   (list_1 l) definedOnInitialSegmentOfLength n
+ op [a] length (l: List a) : Nat =
+   case l of
+   | []    -> 0
+   | _::tl -> 1 + length tl
 
  % useful to define subtype of lists of given length:
 
@@ -70,7 +72,7 @@ List qualifying spec
 
  % empty list (i.e. with no elements):
 
- op empty : [a] List a = list (fn x -> None)
+ op empty : [a] List a = []
 
  theorem length_empty is [a] length (empty: List a) = 0
  proof Isa [simp] end-proof
@@ -330,11 +332,11 @@ List qualifying spec
  % rotate list leftward/rightward by n positions:
 
  op [a] rotateLeft (l: List1 a, n:Nat) : List a =
-   let n = n rem (length l) in  % rotating by length(l) has no effect
+   let n = n mod (length l) in  % rotating by length(l) has no effect
    removePrefix (l, n) ++ prefix (l, n)
 
  op [a] rotateRight (l: List1 a, n:Nat) : List a =
-   let n = n rem (length l) in  % rotating by length(l) has no effect
+   let n = n mod (length l) in  % rotating by length(l) has no effect
    suffix (l, n) ++ removeSuffix (l, n)
 
  % concatenate all the lists in a list, in order:
