@@ -3,10 +3,10 @@
 % IsabelleExtensions.sw
 %
 % This file contains only definitions and theorems that are not included in the 
-% Isabelle standard theories but are needed (or helpful) to prove SpecWare
+% Isabelle standard theories but are needed (or helpful) to prove Specware
 % proof obligations. 
 %
-% From the SpecWare point of view it is empty
+% From the Specware point of view it is empty
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 spec
