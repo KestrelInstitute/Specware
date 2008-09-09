@@ -1,5 +1,7 @@
 Compare qualifying spec
 
+  import IsabelleExtensions
+
   % possible results of a comparison (w.r.t. a linear order):
 
   type Comparison =
