@@ -1,33 +1,7 @@
 theory Char
-imports SW_Nat Char_nat
+imports SW_Integer Char_nat
 begin
-theorem Char__chr_subtype_constr: 
-  "Functions__bijective_p__stp(\<lambda> (n::nat). n < 256,\<lambda> ignore. True) char_of_nat"
-   apply(auto)
-   apply(rule_tac s="nat_of_char (char_of_nat x2)" in ssubst)
-   apply(simp add: nat_of_char_of_nat)
-   apply(rule_tac s="nat_of_char (char_of_nat x1)" in ssubst)
-   apply(simp)
-   apply(simp (no_asm) add: nat_of_char_of_nat, simp)
-   apply(rule_tac x="nat_of_char y" in exI, safe)
-   (*** Apart from lemma nat_of_char_of_nat there is little information about nat_of_char **)
-   apply(subgoal_tac "\<exists>x. y = char_of_nat x", safe)
-   apply(simp add: nat_of_char_of_nat)
-   apply(rule_tac x="nat_of_char y" in exI)
-   apply(rule sym, rule char_of_nat_of_char)
-   apply(rule char_of_nat_of_char)
-  done
-theorem Char__ord_subtype_constr: 
-  "Functions__bijective_p__stp(\<lambda> ignore. True,\<lambda> (n::nat). n < 256) nat_of_char"
-   apply(auto)
-   apply(rule_tac s="char_of_nat (nat_of_char  x2)" in ssubst)
-   apply(rule sym, rule char_of_nat_of_char)
-   apply(rule_tac s="char_of_nat (nat_of_char  x1)" in ssubst)
-   apply(simp)
-   apply(rule sym, rule char_of_nat_of_char)
-   apply(rule_tac x="char_of_nat y" in exI)
-   apply(simp add: nat_of_char_of_nat)
-  done
+
 
 theorem Char_ord_inv:
   "(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i) \<and> char_of_nat(nat_of_char c) = c"
@@ -104,7 +78,8 @@ defs Char__toLowerCase_def [simp]:
         else 
           c)"
 consts Char__compare :: "char \<times> char \<Rightarrow> Compare__Comparison"
-recdef Char__compare "{}"
-  "Char__compare(c1,c2)
-     = Integer__compare(int (nat_of_char c1),int (nat_of_char c2))"
+defs Char__compare_def: 
+  "Char__compare
+     \<equiv> (\<lambda> ((c1::char),(c2::char)). 
+          Integer__compare(int (nat_of_char c1),int (nat_of_char c2)))"
 end

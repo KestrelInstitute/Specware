@@ -1,5 +1,5 @@
 theory Base
-imports Empty String Compare System
+imports String Compare System
 begin
  
 end
