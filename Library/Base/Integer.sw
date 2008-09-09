@@ -32,7 +32,7 @@ Integer qualifying spec
 
   op ipred : Bijection (Int, Int) = inverse isucc
    proof Isa
-     sorry
+    apply(rule ext, rule sym, auto simp add: inv_def)
    end-proof
    proof Isa ipred_subtype_constr
     apply(auto simp add: bij_def inj_on_def surj_def)
@@ -110,23 +110,15 @@ end-proof
 proof Isa -verbatim
 theorem Integer__positive_p_alt_def[simp]:
   "Integer__positive_p = (\<lambda>i. i>0)"
-  apply(simp add:Integer__positive_p_def 
-                      Integer__positive_p__satisfiesInductiveDef_p_def)  
+  apply(simp add:Integer__positive_p_def)
   (************ The following fact is needed twice in the proof   **********)
   apply(subgoal_tac "\<forall>P i. P (1::int) \<and> (\<forall>i. P i \<longrightarrow> P (i + 1)) \<and> 0<i \<longrightarrow> P i")
-  apply(rule_tac Q="\<lambda>pos. pos= (\<lambda>i.0<i)" and a="\<lambda>i. 0<i" in theI2, simp_all)
+  apply(rule_tac Q="\<lambda>pos. pos=(\<lambda>i. i>0)" in the1I2)
+  apply(rule Integer__positive_p_Obligation_the)
+  apply(simp add: Integer__positive_p__satisfiesInductiveDef_p_def, clarify)  
   (************ Now we essentially have to repeat the above proof **********) 
-  apply(clarify)
-  apply(drule_tac x="p_p" in spec, rotate_tac 3, drule_tac x="i" in spec, clarify)
-  (*** Show uniqueness    ***)
-  apply(clarify, rule ext)
-  apply(drule_tac x="x" in spec, rotate_tac 3, drule_tac x="i" in spec)
-  apply(drule_tac x="\<lambda>i. 0<i" in spec, rule iffI, simp_all)
-  (*** And, by chance, again  ***)
-  apply(clarify, rule ext)
-  apply(drule_tac x="x" in spec, rotate_tac 3, drule_tac x="i" in spec)
-  apply(drule_tac x="\<lambda>i. 0<i" in spec, rule iffI, simp_all)
-  (*** Finally: prove the stated fact by positive induction ***)
+  apply(rule ext,drule_tac x="x" in spec, rotate_tac -1, drule_tac x="i" in spec)
+  apply(rotate_tac 2, drule_tac x="\<lambda>i. 0<i" in spec, rule iffI, simp_all)
   apply(clarify, rule_tac k="0" in int_gr_induct, simp_all)
 done
 
@@ -150,6 +142,11 @@ end-proof
       (fa(i:Int) ~ (negative? i) && p i => p (isucc i)) &&
       (fa(i:Int) ~ (positive? i) && p i => p (ipred i)) =>
       (fa(i:Int) p i)
+  proof Isa
+   apply(simp, cases i)
+   apply(rule_tac k="0" in int_ge_induct, simp_all)
+   apply(rule_tac k="0" in int_le_induct, simp_all)
+  end-proof 
 
   % unary minus (qualifier avoids confusion with binary minus):
 
@@ -173,10 +170,11 @@ end-proof
    apply(auto simp add: bij_def inj_on_def surj_def)
    apply(rule_tac x ="-y" in  exI, auto)
   end-proof
-  proof Isa e_tld_subtype_constr
-   apply(rule IntegerAux__e_dsh_subtype_constr)
+  proof Isa IntegerAux__e_dsh__def
+   apply(rule the1_equality [symmetric])
+   apply(rule IntegerAux__e_dsh_Obligation_the)
+   apply(simp add: IntegerAux__e_dsh_subtype_constr)
   end-proof
-
 
   % addition:
 
@@ -190,7 +188,12 @@ end-proof
    apply(rule_tac p="\<lambda>a. x (a,b)  = a+b" in Integer__induction, auto)
    apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)+
   end-proof
-
+  proof Isa e_pls__def
+   apply(rule the1_equality [symmetric])
+   apply(rule Integer__e_pls_Obligation_the)
+   apply(auto)
+  end-proof
+  
   % subtraction:
 
   op - (i:Int, j:Int) infixl 25 : Int = i + (- j)
@@ -209,6 +212,12 @@ end-proof
    apply(rule_tac p="\<lambda>a. x (a,b)  = a*b" in Integer__induction, auto)
    apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto simp add: ring_distribs)+
   end-proof
+  proof Isa e_ast__def
+   apply(rule the1_equality [symmetric])
+   apply(rule Integer__e_ast_Obligation_the)
+   apply(auto simp add: ring_distribs)
+  end-proof
+
 
   % relational operators:
 
@@ -240,6 +249,9 @@ end-proof
       p 0 &&
       (fa(n:Nat) p n => p (n+1)) =>
       (fa(n:Nat) p n)
+  proof Isa 
+    apply(rule nat_induct, auto)
+  end-proof
 
   % positive (i.e. non-zero) natural numbers:
 
@@ -259,6 +271,9 @@ end-proof
          if i > 0 then  1  % positive
     else if i < 0 then -1  % negative
     else (* i = 0 *)    0  % zero
+  proof Isa sign_subtype_constr
+   apply(auto simp add: Integer__sign_def)
+  end-proof
 
   % absolute value:
 
@@ -277,6 +292,9 @@ end-proof
 
   op divides (x:Int, y:Int) infixl 20 : Boolean =
     ex(z:Int) x * z = y
+  proof Isa divides__def
+    apply(auto simp add: dvd_def)
+  end-proof
 
   theorem non_zero_divides_iff_zero_remainder is
     fa (x:NonZeroInteger, y:Int) x divides y <=> y rem x = zero
@@ -288,17 +306,11 @@ end-proof
 
   theorem any_divides_zero is
     fa(x:Int) x divides 0
-  proof Isa
-    apply(simp add: Integer__divides_def)
-  end-proof
 
   (* Only 0 is divided by 0, because multiplying any number by 0 yields 0. *)
 
   theorem only_zero_is_divided_by_zero is
     fa(x:Int) 0 divides x => x = 0
-  proof Isa
-      apply(simp add: Integer__divides_def)
-  end-proof
 
   (* Since the division and remainder operations are not defined for non-zero
   divisors (see ops div and rem above), it may seem odd that our definition
@@ -338,46 +350,20 @@ end-proof
        z divides x && z divides y &&
     % and is divided by any integer that also divides x and y:
        (fa(w:Int) w divides x && w divides y => w divides z)
-  proof Isa gcd_Obligation_subsort
-    apply(rule_tac Q="\<lambda>z. z\<ge>0" and a="zgcd(x,y)" in theI2, auto)
-    apply(rule zgcd_geq_zero)
-    apply(simp add: zgcd_greatest_iff)
-    apply(rule dvd_antisym, auto)
-    apply(rule zgcd_geq_zero)
-    apply(simp add: zgcd_greatest_iff)
+  proof Isa
+   apply(rule the1_equality [symmetric])
+   apply(rule Integer__gcd_Obligation_the)
+   apply(simp add: zgcd_greatest_iff)
   end-proof
   proof Isa gcd_Obligation_the
-   apply(rule_tac a="zgcd(x,y)" in ex1I, auto)
-   (*** similar proof ***) 
-    apply(rule zgcd_geq_zero)
+    apply(rule_tac a="igcd(x,y)" in ex1I, auto)
     apply(simp add: zgcd_greatest_iff)
+    apply(subgoal_tac "int xa =zgcd (x,y)")
+    apply(simp only: igcd_to_zgcd [symmetric])
     apply(rule dvd_antisym, auto)
     apply(rule zgcd_geq_zero)
     apply(simp add: zgcd_greatest_iff)
   end-proof
-  proof Isa gcd_subtype_constr
-  apply(induct dom_gcd, simp add: split_paired_all)
-  apply(rule_tac Q="\<lambda>z. 0\<le>z" and a="zgcd(a,b)" in theI2, auto)   
-  apply(rule zgcd_geq_zero)
-  apply(simp add: zgcd_greatest_iff)
-  apply(rule dvd_antisym, auto, rule zgcd_geq_zero, simp add: zgcd_greatest_iff)
-  end-proof
-% ----------------------------------------------------------------------
-% gcd could be mapped to Isabelle's zgcd, defined in IsabelleExtensions
-% see also IntPrimes.thy in the NumberTheory directory
-%
-proof Isa -verbatim
-theorem Integer__gcd_is_zgcd[simp]: 
-  "Integer__gcd = zgcd"
-   apply(rule ext, simp add: split_paired_all)
-   apply(rule_tac Q="\<lambda>z. z = zgcd(a,b)" and a="zgcd(a,b)" in theI2, auto)
-   (*** again asimilar proof ***)     
-   apply(rule zgcd_geq_zero)
-   apply(simp add: zgcd_greatest_iff)
-   apply(rule dvd_antisym, auto, rule zgcd_geq_zero, simp add: zgcd_greatest_iff)+
-  done
-end-proof
-% ----------------------------------------------------------------------
 
   op lcm (x:Int, y:Int) : Nat =
     the(z:Nat)
@@ -385,46 +371,21 @@ end-proof
        z multipleOf x && z multipleOf y &&
     % and any integer that is a multiple of x and y is also a multiple of z:
        (fa(w:Int) w multipleOf x && w multipleOf y => w multipleOf z)
+  proof Isa
+   apply(rule the1_equality [symmetric])
+   apply(rule Integer__lcm_Obligation_the)
+   apply(simp add: zlcm_least)
+  end-proof
 
-  (* If x and y are not both 0, their g.c.d. is positive and is the largest
-  integer (according to the usual ordering on the integers) that divides both x
-  and y. If x = y = 0, their g.c.d. is 0. *)
-  proof Isa lcm_Obligation_subsort
-   (****** Avoid auto, it is slow because it tries too much ********************)
-   apply(simp, rule_tac Q="\<lambda>z. z\<ge>0" and a="zlcm(x,y)" in theI2, safe)
-   apply(rule zlcm_geq_zero)
-   apply(rule zlcm_least, simp_all)
-   apply(rule dvd_antisym, simp_all, rule zlcm_geq_zero, rule zlcm_least, simp_all)
-  end-proof
   proof Isa lcm_Obligation_the
-   apply(simp, rule_tac a="zlcm(x,y)" in ex1I, safe)
-   (*** similar proof ***) 
+   apply(rule_tac a="ilcm(x,y)" in ex1I, simp_all)
+   apply(simp add: zlcm_least)
+   apply(subgoal_tac "int xa =zlcm (x,y)")
+   apply(simp only: ilcm_to_zlcm [symmetric])
+   apply(rule dvd_antisym, simp_all)
    apply(rule zlcm_geq_zero)
    apply(rule zlcm_least, simp_all)
-   apply(rule dvd_antisym, simp_all, rule zlcm_geq_zero, rule zlcm_least, simp_all)
   end-proof
-  proof Isa lcm_subtype_constr
-  apply(induct dom_lcm, simp add: split_paired_all)
-  apply(rule_tac  Q="\<lambda>z. z\<ge>0" and a="zlcm(a,b)" in theI2, safe)  
-  apply(rule zlcm_geq_zero)
-  apply(rule zlcm_least, simp_all)
-  apply(rule dvd_antisym, simp_all, rule zlcm_geq_zero, rule zlcm_least, simp_all)
-  end-proof
-% ----------------------------------------------------------------------
-% lcm could be mapped to Isabelle's zlcm, defined in IsabelleExtensions
-%
-proof Isa -verbatim
-theorem Integer__lcm_is_zlcm[simp]: 
-  "Integer__lcm = zlcm"
-   apply(rule ext, simp add: split_paired_all)
-   apply(rule_tac Q="\<lambda>z. z = zlcm(a,b)" and a="zlcm (a,b)" in theI2, safe)
-   (*** again asimilar proof ***)     
-   apply(rule zlcm_geq_zero)
-   apply(rule zlcm_least, simp_all)
-   apply(rule dvd_antisym, simp_all, rule zlcm_geq_zero, rule zlcm_least, simp_all)+
-  done
-end-proof
-% ----------------------------------------------------------------------
 
   (* If x and y are not both 0, their g.c.d. is positive and is the largest
   integer (according to the usual ordering on the integers) that divides both x
@@ -436,8 +397,8 @@ end-proof
       gcd(x,y) divides x && gcd(x,y) divides y &&
       (fa(w:Int) w divides x && w divides y => gcd(x,y) >= w)
   proof Isa
-    apply(subgoal_tac "0 < zgcd (x, y)", auto)
-    apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)+
+    apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
+    apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)
     apply(rule classical, auto simp add: zgcd_def gcd_zero)+
   end-proof
 
@@ -451,14 +412,20 @@ end-proof
     fa (x:Int, y:Int, w:Int0)
       w multipleOf x && w multipleOf y => lcm(x,y) <= abs w
   proof Isa
-    apply(simp, drule_tac w="w" and x="x" and y="y" in zlcm_least, simp_all)
-   apply(rule zdvd_imp_le, auto simp add: zdvd_abs2)
+    apply(subgoal_tac "int (ilcm (x, y)) \_le abs w", simp_all (no_asm_simp))
+    apply(rule zdvd_imp_le)
+    apply(auto simp add:zlcm_least zdvd_abs2)
   end-proof
 
   % exact division of integers:
 
   op / (i:Int, j:Int0 | j divides i) infixl 26 : Int =
     the(k:Int) i = j * k
+  proof Isa e_fsl_Obligation_the
+   apply(rule_tac a="i div j"in ex1I)
+   apply(auto simp add: dvd_def)
+  end-proof 
+
 
   (* The division of two integers (with non-zero divisor) may yield a rational
   that is not an integer. An integer division operation always returns an
@@ -490,10 +457,13 @@ end-proof
     % to the magnitude of the dividend without exceeding it:
     else the(q:Int) sign q = sign i * sign j
                  && abs i - abs j < abs (q * j) && abs (q * j) <= abs i
+  proof Isa divT_Obligation_the
+    sorry
+  end-proof
 
   op modT (i:Int, j:Int0) infixl 26 : Int = i - j * (i divT j)
 
-  (* Some examples of divT and modT. *)
+  (* Some examples of divT and modT.
 
   theorem divT_examples is
      14 divT  5 =  2 &&  11 divT  5 =  2 &&
@@ -506,6 +476,7 @@ end-proof
     -14 modT  5 = -4 && -11 modT  5 = -1 &&
      14 modT -5 =  4 &&  11 modT -5 =  1 &&
     -14 modT -5 = -4 && -11 modT -5 = -1
+   *)
 
   (* Division by truncation coincides with exact division when divisor divides
   dividend evenly. *)
@@ -571,7 +542,7 @@ end-proof
 
   op modF (i:Int, j:Int0) infixl 26 : Int = i - j * (i divF j)
 
-  (* Some examples of divF and modF. *)
+  (* Some examples of divF and modF.
 
   theorem divF_examples is
      14 divF  5 =  2 &&  11 divF  5 =  2 &&
@@ -584,6 +555,7 @@ end-proof
     -14 modF  5 =  1 && -11 modF  5 =  4 &&
      14 modF -5 = -1 &&  11 modF -5 = -4 &&
     -14 modF -5 = -4 && -11 modF -5 = -1
+ *)
 
   (* Division by flooring coincides with exact division when divisor divides
   dividend evenly. *)
@@ -653,7 +625,7 @@ end-proof
 
   op modC (i:Int, j:Int0) infixl 26 : Int = i - j * (i divC j)
 
-  (* Some examples of divC and modC. *)
+  (* Some examples of divC and modC.
 
   theorem divC_examples is
      14 divC  5 =  3 &&  11 divC  5 =  3 &&
@@ -666,6 +638,7 @@ end-proof
     -14 modC  5 = -4 && -11 modC  5 = -1 &&
      14 modC -5 =  4 &&  11 modC -5 =  1 &&
     -14 modC -5 =  1 && -11 modC -5 =  4
+ *)
 
   (* Division by ceiling coincides with exact division when divisor divides
   dividend evenly. *)
@@ -755,7 +728,7 @@ end-proof
 
   op modR (i:Int, j:Int0) infixl 26 : Int = i - j * (i divR j)
 
-  (* Some examples of divR and modR. *)
+  (* Some examples of divR and modR.
 
   theorem divR_examples is
      14 divR  5 =  3 &&  11 divR  5 =  2 &&
@@ -768,6 +741,7 @@ end-proof
     -14 modR  5 =  1 && -11 modR  5 = -1 &&
      14 modR -5 = -1 &&  11 modR -5 =  1 &&
     -14 modR -5 =  1 && -11 modR -5 = -1
+   *)
 
   (* Division by rounding coincides with exact division when divisor divides
   dividend evenly. *)
@@ -808,7 +782,7 @@ end-proof
   op modE (i:Int, j:Int0) infixl 26 : Int = the(r:Int)
     ex(q:Int) euclidianDivision? (i, j, q, r)
 
-  (* Some examples of divE and modE. *)
+  (* Some examples of divE and modE.
 
   theorem divE_examples is
      14 divE  5 =  2 &&  11 divE  5 =  2 &&
@@ -821,6 +795,7 @@ end-proof
     -14 modE  5 = 1 && -11 modE  5 = 4 &&
      14 modE -5 = 4 &&  11 modE -5 = 1 &&
     -14 modE -5 = 1 && -11 modE -5 = 4
+ *)
 
   (* Euclidean division coincides with exact division when divisor divides
   dividend evenly. *)
@@ -885,12 +860,17 @@ end-proof
   type Integer = Int
   type NonZeroInteger = Int0
   op Nat.natural? (i:Int) : Boolean = i >= 0
+
   op Integer.~ : Bijection (Int, Int) = -
+  proof Isa e_tld_subtype_constr
+   apply(rule IntegerAux__e_dsh_subtype_constr)
+  end-proof
+
   op Integer.rem infixl 26 : Int * Int0 -> Int = modT
 
   % mapping to Isabelle:
 
-  proof Isa Thy_Morphism Presburger IsabelleExtensions
+  proof Isa Thy_Morphism Presburger
    type Integer.Int -> int
    type Integer.Integer -> int
    type Nat.Nat     -> nat (int,nat) [+,*,div,rem,mod,<=,<,>=,>,abs,min,max]
@@ -915,6 +895,8 @@ end-proof
    Integer.min      -> min curried
    Integer.max      -> max curried
    Integer.divides  -> zdvd  Left 30 
+   Integer.gcd      -> igcd
+   Integer.lcm      -> ilcm
    Nat.succ         -> Suc
   end-proof
 
