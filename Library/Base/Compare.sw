@@ -1,5 +1,10 @@
 Compare qualifying spec
 
+  % ------------------------------------------------------------------------
+  % Make sure that the extensions to standard Isabelle are loaded
+  % This is done solely for verification purposes
+  % ------------------------------------------------------------------------
+
   import IsabelleExtensions
 
   % possible results of a comparison (w.r.t. a linear order):
