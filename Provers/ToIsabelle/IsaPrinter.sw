@@ -491,7 +491,7 @@ IsaTermPrinter qualifying spec
     case removeEmpty(splitStringAt(line1," ")) of
      | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
        ~(name? = "fa"
-           \_or member(sub(name?,0), [#[,#\\,#",#-]))  % #" #]
+           \_or member(sub(name?,0), [#(,#[,#\\,#",#-]))  % #" #]
      | _ \_rightarrow false
 
   op verbatimIdString: String = "-verbatim"
@@ -657,7 +657,7 @@ IsaTermPrinter qualifying spec
       | Pragma("proof",mid_str,"end-proof",pos) | verbatimPragma? mid_str \_rightarrow
         let verbatim_str = case search("\n",mid_str) of
                              | None \_rightarrow ""
-                             | Some n \_rightarrow substring(mid_str,n,length mid_str)
+                             | Some n \_rightarrow specwareToIsaString(substring(mid_str,n,length mid_str))
         in
         prLines 0 [prString verbatim_str]
 	   
@@ -666,6 +666,40 @@ IsaTermPrinter qualifying spec
 		  prString str,
 		  prString "*)"]
       | _ \_rightarrow prEmpty
+
+ op xSymbolWords: List String = ["and", "or", "lbrakk", "rbrakk", "in", "lambda", "Rightarrow", "Longrightarrow",
+                                 "forall", "exists", "equiv", "ge", "le", "times", "plus", "minus", "union",
+                                 "noteq"]
+ op findXSymbolWord(s: String, start: Nat): Option Nat =
+   let def find1 words =
+         case words of
+           | [] \_rightarrow None
+           | w::r \_rightarrow
+             let end_pos = start + length w - 1 in
+             if testSubseqEqual?(w,s,0,start)
+               then Some (end_pos)
+               else find1 r
+   in
+   find1 xSymbolWords
+            
+
+ op specwareToIsaString(s: String): String =
+   case search("\\_", s) of
+     | None \_rightarrow s
+     | Some i \_rightarrow
+   let len = length s in
+   let def loop j =
+         if j >= len then j-1
+         else if isAlphaNum(s@j)
+                 then loop(j+1)
+                 else j-1
+   in
+   let j = case findXSymbolWord(s,i+2) of
+             | Some j \_rightarrow j
+             | None \_rightarrow loop(i+2)
+   in
+   substring(s,0,i+1) ++ "<" ++ substring(s,i+2,j+1) ++ ">" ++ specwareToIsaString(substring(s,j+1,len))
+         
 
  op findPragmaNamed(elts: SpecElements, qid as (Qualified(q, nm)): QualifiedId, opt_prag: Option Pragma)
      : Option Pragma =
@@ -884,6 +918,21 @@ IsaTermPrinter qualifying spec
     %let _ = writeLine(" = "^toString (length cases)^", "^toString tuple?) in
     (map fix_vars cases)
 
+  op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Boolean =
+    case opt_prag of
+      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
+        let len = length mid_str in
+        (case search("\n",mid_str) of
+           | None \_rightarrow ([], false)
+           | Some n \_rightarrow
+             let prf_str = stripExcessWhiteSpace(substring(mid_str,n+1,len)) in
+             ([[prString(specwareToIsaString prf_str)]],
+              proofEndsWithTerminator? prf_str))
+      | _ \_rightarrow ([], false)
+
+ op defaultFunctionProof: String =
+    "by pat_completeness auto\ntermination by lexicographic_order"
+
  op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_prag: Option Pragma) (fixity: Fixity)
      : Pretty =
    let mainId = hd aliases in
@@ -896,23 +945,55 @@ IsaTermPrinter qualifying spec
                                   prString "\""])
                     cases
    in
-   prLinesCat 0 ([[prString "fun ", ppIdInfo aliases,
-                  prString " :: \"",
-                  ppType c Top true ty,
-                  prString "\""]
-                  ++ (case fixity of
-                        | Infix(assoc,prec) \_rightarrow
-                          [prString "\t(",
-                           case assoc of
-                             | Left  \_rightarrow prString "infixl \""
-                             | Right \_rightarrow prString "infixr \"",
-                           ppInfixDefId (mainId),
-                           prString "\" ",
-                           prString (toString (prec + precNumFudge)),
-                           prString ")"]
-                        | _ \_rightarrow []),
-                  [prString "where"],
-                  [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]])
+   case findParenAnnotation opt_prag of
+     | None \_rightarrow
+       prLinesCat 0 ([[prString "fun ", ppIdInfo aliases,
+                      prString " :: \"",
+                      ppType c Top true ty,
+                      prString "\""]
+                      ++ (case fixity of
+                            | Infix(assoc,prec) \_rightarrow
+                              [prString "\t(",
+                               case assoc of
+                                 | Left  \_rightarrow prString "infixl \""
+                                 | Right \_rightarrow prString "infixr \"",
+                               ppInfixDefId (mainId),
+                               prString "\" ",
+                               prString (toString (prec + precNumFudge)),
+                               prString ")"]
+                            | _ \_rightarrow []),
+                      [prString "where"],
+                      [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]])
+     | Some patt_control_str \_rightarrow
+       let (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
+       prLinesCat 0 ([[prString "function ",
+                       (if patt_control_str = "()" then prString ""
+                          else prConcat [prString patt_control_str, prSpace]),
+                       ppIdInfo aliases,
+                       prString " :: \"",
+                       ppType c Top true ty,
+                       prString "\""]
+                      ++ (case fixity of
+                            | Infix(assoc,prec) \_rightarrow
+                              [prString "\t(",
+                               case assoc of
+                                 | Left  \_rightarrow prString "infixl \""
+                                 | Right \_rightarrow prString "infixr \"",
+                               ppInfixDefId (mainId),
+                               prString "\" ",
+                               prString (toString (prec + precNumFudge)),
+                               prString ")"]
+                            | _ \_rightarrow []),
+                      [prString "where"],
+                      [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]]
+                   ++ prf_pp
+                   ++ (if prf_pp = []
+			then [[prString defaultFunctionProof]]
+                            ++ (if proofEndsWithTerminator? defaultFunctionProof then []
+                                  else [[prString "done", prEmpty]])
+			else (if includes_prf_terminator?
+                                then []
+                                else [[prString "done",prEmpty]])))
 
  op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
                  \_rightarrow Pretty
@@ -990,7 +1071,7 @@ IsaTermPrinter qualifying spec
               then
                 prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
                                case findMeasureAnnotation opt_prag of
-                                 | Some anot \_rightarrow prConcat[prString anot]
+                                 | Some anot \_rightarrow prConcat[prString (specwareToIsaString anot)]
                                  | None \_rightarrow prConcat [prString (if recursive?
                                                                  then "\"measure size\""
                                                                else "\"{}\"")]],
@@ -1006,7 +1087,7 @@ IsaTermPrinter qualifying spec
             in
             prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
                            case findBracketAnnotation opt_prag of
-                             | Some anot \_rightarrow prConcat[prSpace,prString anot]
+                             | Some anot \_rightarrow prConcat[prSpace,prString(specwareToIsaString anot)]
                              | None \_rightarrow prEmpty,
                            prString ": "],
                           [prBreakCat 2 [[prString "\"",
@@ -1025,7 +1106,7 @@ IsaTermPrinter qualifying spec
       | (cases,true) \_rightarrow
         prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
                        case findMeasureAnnotation opt_prag of
-                         | Some anot \_rightarrow prConcat[prString anot]
+                         | Some anot \_rightarrow prConcat[prString (specwareToIsaString anot)]
                          | None \_rightarrow prConcat [prString (if recursive?
                                                          then "\"measure size\""
                                                          else "\"{}\"")]],
@@ -1380,7 +1461,7 @@ IsaTermPrinter qualifying spec
     in
     let annotation =
         case findBracketAnnotation(opt_prag) of
-	  | Some str \_rightarrow prConcat [prSpace, prString str]
+	  | Some str \_rightarrow prConcat [prSpace, prString (specwareToIsaString str)]
 	  | _ \_rightarrow
 	    let comm = stripSpaces comm in
 	    let len = length comm in
@@ -1388,18 +1469,7 @@ IsaTermPrinter qualifying spec
 	      then prString " [simp]"
 	      else prEmpty
     in
-    let (prf_pp,includes_prf_terminator?) =
-        (case opt_prag of
-	   | Some(beg_str,mid_str,end_str,pos) \_rightarrow
-	     let len = length mid_str in
-	     (case search("\n",mid_str) of
-		| None \_rightarrow ([], false)
-		| Some n \_rightarrow
-                  let prf_str = stripExcessWhiteSpace(substring(mid_str,n+1,len)) in
-		  ([[prString(prf_str)]],
-                   proofEndsWithTerminator? prf_str))
-	   | _ \_rightarrow ([], false))
-    in
+    let (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
     prLinesCat 2
       ([[ppPropertyType propType,
 	 prSpace,
@@ -1423,11 +1493,20 @@ IsaTermPrinter qualifying spec
 
   op defaultProof: String = "apply(auto)"
 
+  op lastLineEnds(prf: String): Boolean =
+    let beg_last_line = case findLast("\n", prf) of
+                          | Some i -> i+1
+                          | None -> 0
+    in
+   % let real_beg_last_line = skipWhiteSpace(prf, beg_last_line) in
+    some?(searchBetween("by ", prf, beg_last_line, length prf))
+
   op proofEndsWithTerminator?(prf: String): Boolean =
     let len = length prf in
     len >= 4 \_and testSubseqEqual?("done",prf,0,len-4)
    \_or len >= 5  \_and testSubseqEqual?("sorry",prf,0,len-5)
    \_or len >= 3  \_and testSubseqEqual?("qed",prf,0,len-5)
+   \_or lastLineEnds prf
 
   op  stripExcessWhiteSpace: String \_rightarrow String
   def stripExcessWhiteSpace s =
@@ -1450,6 +1529,9 @@ IsaTermPrinter qualifying spec
     let end_fa_pos = case search(" fa ",prag_str) of
 		       | Some n \_rightarrow n+4
 		       | None \_rightarrow
+                     case search(" \\<forall>",prag_str) of
+		       | Some n \_rightarrow n+9
+		       | None \_rightarrow 
 		     case search(" \\_forall",prag_str) of
 		       | Some n \_rightarrow n+9
 		       | None \_rightarrow length prag_str
@@ -1473,6 +1555,14 @@ IsaTermPrinter qualifying spec
       | Some (_,prag_str,_,_) \_rightarrow
     let end_pos =  endOfFirstLine prag_str in
     findStringBetween(prag_str, "[", "]", 0, endOfFirstLine prag_str)
+
+  op findParenAnnotation(prf: Option Pragma): Option String =
+    case prf of
+      | None \_rightarrow None
+      | Some (_,prag_str,_,_) \_rightarrow
+    let end_pos =  endOfFirstLine prag_str in
+    findStringBetween(prag_str, "(", ")", 0, endOfFirstLine prag_str)
+
 
   op  findMeasureAnnotation: Option Pragma \_rightarrow Option String
   def findMeasureAnnotation prf =
@@ -1788,7 +1878,7 @@ IsaTermPrinter qualifying spec
       | "5" \_rightarrow (if arity = 5 then "fifthl" else "fifth")
       | "6" \_rightarrow (if arity = 6 then "sixthl" else "sixth")
       | "7" \_rightarrow (if arity = 7 then "seventhl" else "seventh")
-      | "8" \_rightarrow (if arity = 8 then "eigthl" else "eigth")
+      | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
       | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
       | _ \_rightarrow p
 
