@@ -42,6 +42,23 @@ String qualifying spec
   def search (s1, s2) =
     searchBetween(s1, s2, 0, length s2)
 
+  op findLast(pat: String, s: String): Option Nat =
+    let len_s = length s in
+    let len_pat = length pat in
+    let def loop(pos, last) =
+          case searchBetween(pat, s, pos, len_s) of
+            | Some i -> loop(i+len_pat, Some i)
+            | None -> last
+    in
+    loop(0, None)
+
+  op skipWhiteSpace(s: String, i: Nat): Nat =
+    let len = length s in
+    if i >= len then len
+      else if whiteSpaceChar?(s @ i)
+            then skipWhiteSpace(s, i+1)
+            else i
+
   op findStringBetween(s: String, beg_str: String, end_str: String, start_pos: Nat, fin_pos: Nat): Option String =
     let open_pos = case searchBetween(beg_str,s,start_pos,fin_pos) of
 		     | Some n \_rightarrow n
