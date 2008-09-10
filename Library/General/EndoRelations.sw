@@ -59,7 +59,7 @@ EndoRelation qualifying spec
 
   type Equivalence a = (EndoRelation a | equivalence?)
 
-  % add partial equivalence = symmetric && transitive
+  % NOTE: add partial equivalence = symmetric && transitive
 
   % closure operators:
 
