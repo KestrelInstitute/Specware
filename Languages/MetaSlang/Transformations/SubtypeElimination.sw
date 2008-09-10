@@ -188,7 +188,7 @@ SpecNorm qualifying spec
     let f_v = ("f", f_ty) in
     let dom_restr = case dom_ty of
                       | Subsort(dom_ty, domPred, _) ->
-                        let x_v = ("x", dom_ty) in
+                        let x_v = ("x__dom", dom_ty) in
                         mkBind(Forall, [x_v],
                                mkImplies(mkNot(mkApply(domPred, mkVar x_v)),
                                          mkEquality(ran_ty, mkApply(mkVar f_v, mkVar x_v),
@@ -199,12 +199,12 @@ SpecNorm qualifying spec
                       | Subsort(ran_ty, ranPred, _) ->
                         (case dom_ty of
                            | Subsort(dom_ty, domPred, _) ->
-                             let x_v = ("x", dom_ty) in
+                             let x_v = ("y__dom", dom_ty) in
                              mkBind(Forall, [x_v],
                                     mkImplies(mkApply(domPred, mkVar x_v),
                                               mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
                            | _ ->
-                             let x_v = ("x", dom_ty) in
+                             let x_v = ("z__dom", dom_ty) in
                              mkBind(Forall, [x_v],
                                     mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
                       | _ -> trueTerm
@@ -253,7 +253,7 @@ SpecNorm qualifying spec
       | Subsort(s_ty, p, a) ->
         (case raiseSubtypeFn(s_ty, spc) of
            | Subsort(sss_ty, pr, _) ->
-             let v = ("x", sss_ty) in
+             let v = ("x__l", sss_ty) in
              Subsort(sss_ty, mkLambda(mkVarPat v, Utilities.mkAnd(mkApply(p, mkVar v), mkApply(pr, mkVar v))), a)
            | _ -> ty)
       | Product(flds, a) ->
@@ -392,7 +392,7 @@ SpecNorm qualifying spec
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None -> t
            | Some(sup_ty, pred) ->
-             let v = ("x", sup_ty) in
+             let v = ("x__s", sup_ty) in
              mkLambda(mkVarPat v,
                       MS.mkIfThenElse(simplifiedApply(pred, mkVar v, spc),
                                       mkApply(t, mkVar v),
@@ -637,7 +637,7 @@ SpecNorm qualifying spec
                                                                        boolSort, a)))
                                                    tvs),
                                       mkLambda
-                                        (mkVarPat("x", param_ty),
+                                        (mkVarPat("x__c", param_ty),
                                          mkApply(Lambda
                                                    (map (fn (id,o_ty) ->
                                                            case o_ty of
@@ -649,7 +649,7 @@ SpecNorm qualifying spec
                                                                (EmbedPat(id, Some p, param_ty, a), 
                                                                 trueTerm, p_t))
                                                       constrs, a),
-                                                 mkVar("x", param_ty))))
+                                                 mkVar("x__c", param_ty))))
                            | Product _ ->
                              let (p,p_t) = typePattern(ty_def, spc) in
                              mkLambda(mkTuplePat(map (fn tv -> mkVarPat("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)))
