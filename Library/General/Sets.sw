@@ -173,6 +173,8 @@ Set qualifying spec
     (ex (f: Nat -> a, n:Nat)
       (fa(x:a) x in? s => (ex(i:Nat) i < n && f i = x)))
 
+  % add induction theorem on finite sets
+
   type FiniteSet a = (Set a | finite?)
 
   op size : [a] FiniteSet a -> Nat = the(size)

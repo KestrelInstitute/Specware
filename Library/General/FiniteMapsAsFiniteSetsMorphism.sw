@@ -1,1 +1,1 @@
-morphism /Library/General/FiniteMaps -> FiniteMapsAsFiniteSets {}
+morphism FiniteMaps -> FiniteMapsAsFiniteSets {}

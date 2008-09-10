@@ -1,8 +1,6 @@
 FMap qualifying spec
 
-  import /Library/General/Maps,
-         /Library/General/EndoRelations,
-         /Library/General/FiniteSets
+  import Maps, EndoRelations, FiniteSets
 
   % maps as (functional) sets of pairs:
   type FMap(a,b) = (FSet (a * b) | (functional? o fromFSet))

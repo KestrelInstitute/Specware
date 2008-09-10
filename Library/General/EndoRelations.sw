@@ -59,6 +59,8 @@ EndoRelation qualifying spec
 
   type Equivalence a = (EndoRelation a | equivalence?)
 
+  % add partial equivalence = symmetric && transitive
+
   % closure operators:
 
   op [a] reflexiveClosure (r: EndoRelation a) : ReflexiveRelation a =
