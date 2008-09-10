@@ -2,22 +2,29 @@ Integer qualifying spec
 
   import Compare, Functions
 
-  (* We introduce integers via a Peano-like axiomatization. Intuitively, Peano's
-  axioms for the natural numbers state that natural numbers form a chain that
-  starts with 0 and proceeds via the successor function, that the chain never
-  crosses itself (either at 0 or at any other natural number), and that there
-  are no natural numbers outside the chain. Integers form a chain that has 0 as
-  its "middle" point and that proceeds forward and backward via the successor
-  and predecessor functions. Thus, it suffices to introduce a constant for 0,
-  and a bijective successor function. Bijectivity implies that there is an
-  inverse, which is the predecessor function. Bijectivity also implies that the
-  bidirectionally infinite chain of integers never crosses itself. To complete
-  the axiomatization, we need an induction-style axiom stating that there are no
-  integers ouside the chain. The induction principle is the following: prove P
-  for 0 and prove that P is preserved by both successor and predecessor (this
-  ensures that we "reach" every integer). We call the successor function on
-  integers "isucc" to distinguish it from the (more frequently used) successor
-  function on naturals "succ". We also call the inverse of isucc "ipred". *)
+  (* We introduce integers via a Peano-like axiomatization.
+
+  Intuitively, Peano's axioms for the natural numbers state that natural numbers
+  form a chain that starts with 0 and proceeds via the successor function, that
+  the chain never crosses itself (either at 0 or at any other natural number),
+  and that there are no natural numbers outside the chain.
+
+  Integers form a chain that has 0 as its "middle" point and that proceeds
+  forward and backward via the successor and predecessor functions. Thus, we
+  introduce a constant for 0, and a bijective successor function. Bijectivity
+  implies that there is an inverse, which is the predecessor function.
+  Bijectivity also implies that the chain of integers never crosses itself. To
+  complete the axiomatization, we need an infinite axiom and an induction
+  axiom. The infinity axiom says that the chain of integers is infinite (i.e. it
+  is not circular): this is expressed by the existence of a function over the
+  integers that is injective but not surjective. The induction axiom says that
+  there are no integers ouside the chain. The induction principle is the
+  following: prove P for 0 and prove that P is preserved by both successor and
+  predecessor (this ensures that we "reach" every integer).
+
+  We call the successor function on integers "isucc" to distinguish it from the
+  (more frequently used) successor function on naturals "succ". We also call the
+  inverse of isucc "ipred", for symmetry. *)
 
   type Int
 
@@ -38,6 +45,9 @@ Integer qualifying spec
     apply(auto simp add: bij_def inj_on_def surj_def)
     apply(rule_tac x="y + 1" in exI, auto)
    end-proof
+
+  axiom infinity is
+    ex (f : Int -> Int) injective? f && ~ (surjective? f)
 
   axiom induction is
     fa (p : Int -> Boolean)
@@ -206,7 +216,6 @@ end-proof
    apply(rule Integer__e_ast_Obligation_the)
    apply(auto simp add: ring_distribs)
   end-proof
-
 
   % relational operators:
 
