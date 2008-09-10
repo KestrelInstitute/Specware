@@ -15,6 +15,10 @@
     #+mcl       (ccl::getenv varname)
     #+lispworks (hcl::getenv varname)	;?
     #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+    #+sbcl      (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+		    (sb-ext:posix-getenv  varname))
+    #+gcl       (si:getenv varname)
+    #+clisp     (ext:getenv varname)
     ))
 
 (defvar *specware4* (Specware::getenv "SPECWARE4"))
