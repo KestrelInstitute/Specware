@@ -74,12 +74,12 @@ lemma Functions__bijective_p__stp_simp[simp]:
   "Functions__bijective_p__stp (A,B) f = bij_ON f A B"
   by (simp add: Functions__bijective_p__stp_def bij_ON_def)
 lemma Functions__bijective_p__stp_univ[simp]:
-  "Functions__bijective_p__stp (A,\<lambda>x. True) f = bij_on f A UNIV"
-  by (simp add: Functions__bijective_p__stp_simp univ_true bij_ON_UNIV_bij_on)
+  "Functions__bijective_p__stp (A,\_lambda x. True) f = bij_on f A UNIV"
+  by (simp add: univ_true bij_ON_UNIV_bij_on)
 
 lemma Functions__bij_inv_stp:
-   "Functions__bijective_p__stp (A,\<lambda>x. True) f \<Longrightarrow> Functions__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
-   by (simp add: Functions__bijective_p__stp_simp univ_true bij_ON_imp_bij_ON_inv)
+   "Functions__bijective_p__stp (A,\_lambda x. True) f \_Longrightarrow Functions__bijective_p__stp (\_lambdax. True, A) (inv_on A f)"
+   by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 end-proof
 
   type Injection (a,b) = ((a -> b) | injective?)
@@ -98,27 +98,27 @@ end-proof
   end-proof
   proof Isa -verbatim
 lemma Functions__inverse__stp_alt:
-   "\<lbrakk>inj_on f A; y \<in> f`A\<rbrakk> \<Longrightarrow> Functions__inverse__stp A f y = inv_on A f y"
+   "\_lbrakkinj_on f A; y \_in f`A\_rbrakk \_Longrightarrow Functions__inverse__stp A f y = inv_on A f y"
    by (auto simp add: Functions__inverse__stp_def, 
        rule the_equality, auto simp add:mem_def inj_on_def)
 
 lemma Functions__inverse__stp_apply [simp]:
-   "\<lbrakk>bij_ON f A B; y \<in> B\<rbrakk> \<Longrightarrow> Functions__inverse__stp A f y = inv_on A f y"
+   "\_lbrakkbij_ON f A B; y \_in B\_rbrakk \_Longrightarrow Functions__inverse__stp A f y = inv_on A f y"
     by(auto simp add: bij_ON_def surj_on_def,
        erule Functions__inverse__stp_alt,
        simp add: image_def)
 
 lemma Functions__inverse__stp_simp:
-   "bij_on f A UNIV \<Longrightarrow> Functions__inverse__stp A f = inv_on A f"
+   "bij_on f A UNIV \_Longrightarrow Functions__inverse__stp A f = inv_on A f"
    by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
 end-proof
 
   proof Isa inverse__stp_Obligation_subsort
     apply(simp only: Functions__bijective_p__stp_simp univ_true)
-    apply(subgoal_tac "(\<lambda>y. THE x. P__a x \<and> f x = y) = inv_on P__a f", simp)    
+    apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f", simp)
     apply(simp add: bij_ON_imp_bij_ON_inv)
     apply(auto simp add: bij_ON_def, 
-          thin_tac "\<forall>x0. \<not> P__a x0 \<longrightarrow> f x0 = arbitrary")
+          thin_tac "\_forallx0. \_not P__a x0 \_longrightarrow f x0 = arbitrary")
     apply(rule ext)
     apply(rule the_equality, auto)
     apply(simp add: surj_on_def Bex_def)
@@ -130,13 +130,13 @@ end-proof
     apply(rotate_tac -1, drule_tac x="y" in spec, auto)
   end-proof
 
-  (* Since we map SpecWare's "inverse f = \<lambda>y. THE x. f x = y)"
-     to Isabelle's           "inv f     = \<lambda>y. SOME x. f x = y)"
+  (* Since we map SpecWare's "inverse f = \_lambday. THE x. f x = y)"
+     to Isabelle's           "inv f     = \_lambday. SOME x. f x = y)"
      we need to show that this is the same if f is a bijection
   *)
 
   proof Isa inverse_Obligation_subsort
-    apply(subgoal_tac "( \<lambda>y. THE x. f x = y) = inv f")
+    apply(subgoal_tac "( \_lambday. THE x. f x = y) = inv f")
     apply(auto simp add: bij_def)
     apply(erule surj_imp_inj_inv)
     apply(erule inj_imp_surj_inv)
@@ -171,14 +171,14 @@ end-proof
   proof Isa
     apply(simp add: bij_def surj_f_inv_f)
   end-proof
+  proof Isa f_inverse_apply__stp
+    apply(auto simp add: mem_def bij_ON_def)
+  end-proof
 
   theorem inverse_f_apply is [a,b]
     fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
   proof Isa
     apply(simp add: bij_def inv_f_f)
-  end-proof
-  proof Isa f_inverse_apply__stp
-    apply(auto simp add: mem_def bij_ON_def)
   end-proof
   proof Isa inverse_f_apply__stp
     apply(auto simp add: mem_def bij_ON_def)
