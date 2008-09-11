@@ -28,7 +28,7 @@ if [ -z "$LISP" ]; then
   fi
 fi
 
-export BIG_LISP="$LISP --dynamic-space-size 2000 --end-runtime-options"
+export BIG_LISP="$LISP --dynamic-space-size 1000 --end-runtime-options"
 export LISP_VERSION="SBCL"
 export BATCH_LISP="$BIG_LISP"
 
@@ -60,8 +60,8 @@ export BATCH_LISP="$BIG_LISP"
 # 512 is default
 # 1000 is too large
 
-export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size 2000 --end-runtime-options"}
-export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size 2000 --end-runtime-options"}
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size 1000 --end-runtime-options"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size 1000 --end-runtime-options"}
 
 echo " "
 echo "  Verify_SBCL:  LISP_MODE            = [$LISP_MODE]"
