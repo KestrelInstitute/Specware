@@ -1491,7 +1491,7 @@ IsaTermPrinter qualifying spec
                                 then []
                                 else [[prString "done",prEmpty]]))))
 
-  op defaultProof: String = "apply(auto)"
+  op defaultProof: String = "by auto"
 
   op lastLineEnds(prf: String): Boolean =
     let beg_last_line = case findLast("\n", prf) of
@@ -1500,7 +1500,12 @@ IsaTermPrinter qualifying spec
     in
    % let real_beg_last_line = skipWhiteSpace(prf, beg_last_line) in
     %% Should be more sophisticated
-    some?(searchBetween("by", prf, beg_last_line, length prf))
+    case searchBetween("by", prf, beg_last_line, length prf) of
+      | None -> false
+      | Some n -> (n = 0 || whiteSpaceChar?(prf@(n-1)))
+                 && length prf > n+3
+                 && (whiteSpaceChar?(prf@(n+2))
+                       || prf@(n+2) = #()
 
   op proofEndsWithTerminator?(prf: String): Boolean =
     let len = length prf in
