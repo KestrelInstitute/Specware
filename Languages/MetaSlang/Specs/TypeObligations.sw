@@ -891,9 +891,12 @@ spec
                               (opInfoDefs opinfo)
                          in
                          if new_tccs = [] then tcc
-                           else if exists (fn Property(_,_,_,fm,_) -> containsRefToOp?(fm, qid)) new_tccs
-                             then % Split Op into decl and def
-                                  ([OpDef(qid,pos)] ++ new_tccs ++ [Op(qid,false,pos)] ++ tccs, claimNames)
+                           else
+                             let op_ref_new_tccs = filter (fn Property(_,_,_,fm,_) -> containsRefToOp?(fm, qid)) new_tccs in
+                             if op_ref_new_tccs ~= []
+                               then % If
+                               let indep_new_tccs = filter (fn p -> ~(member(p, op_ref_new_tccs))) new_tccs in
+                                  (op_ref_new_tccs ++ [el] ++ indep_new_tccs ++ tccs, claimNames)
                              else (new_tccs ++ tccs,claimNames))
                  | OpDef (qid as Qualified(q, id), _) ->
                    (case findTheOp(spc,qid) of
@@ -958,10 +961,9 @@ spec
                    |- fm ?? boolSort
                  | _ -> tcc
 	      in
-              case (el,tccs) of
-                | (Op(qid1,true, _),(OpDef(qid2, _)):: _) | qid1 = qid2 ->   % Split Op(qid,true)
-                  (tccs, claimNames)
-                | _ -> (Cons(el,tccs), claimNames))
+              if member(el, tccs)
+                then (tccs, claimNames)
+                else (el::tccs, claimNames))
          tcc spc.elements
      in			       
        (rev tccs,claimNames)
