@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports GCD List Hilbert_Choice Recdef Datatype
+imports Datatype Recdef Hilbert_Choice List GCD
 begin
 
 (*************************************************************
@@ -19,6 +19,8 @@ consts
   seventh :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h \<Rightarrow> 'g"
   eighthl :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h \<Rightarrow> 'h"
   eighth  :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i \<Rightarrow> 'h"
+  ninthl  :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i \<Rightarrow> 'i"
+  ninth   :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i * 'j \<Rightarrow> 'i"
 
 defs
   second_def  [simp]: "second x  \<equiv> fst(snd x)"
@@ -34,6 +36,8 @@ defs
   seventh_def [simp]: "seventh x \<equiv> fst(snd(snd(snd(snd(snd(snd x))))))"
   eighthl_def [simp]: "eighthl x \<equiv> snd(snd(snd(snd(snd(snd(snd x))))))"
   eighth_def  [simp]: "eighth x  \<equiv> fst(snd(snd(snd(snd(snd(snd(snd x)))))))"
+  ninthl_def  [simp]: "ninthl x  \<equiv> snd(snd(snd(snd(snd(snd(snd(snd x)))))))"
+  ninth_def   [simp]: "ninth x   \<equiv> fst(snd(snd(snd(snd(snd(snd(snd(snd x))))))))"
 
 
 (******************************************************************************
@@ -45,6 +49,33 @@ lemma mem_reverse:   "x\<in>P \<Longrightarrow> P x"
 
 lemma univ_true:     "(\<lambda>x. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
+
+
+(******************************************************************************
+ * Abbreviations for subtype regularization
+ ******************************************************************************)
+
+fun PFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
+where
+  "PFun P f = (\<lambda>x . if P x then f x else arbitrary)"
+
+fun Fun_P :: "(('a \<Rightarrow> bool) * ('b \<Rightarrow> bool)) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
+where
+  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)) \<and> (\<not>(Pa x) \<longrightarrow> f x = arbitrary))"
+
+fun Fun_PD :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
+where
+  "Fun_PD Pa f = (\<forall>x .\<not>(Pa x) \<longrightarrow> f x = arbitrary)"
+
+fun Fun_PR :: "('b \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
+where
+  "Fun_PR Pb f = (\<forall>x . Pb(f x))"
+
+
+consts TRUE :: "('a \<Rightarrow> bool)"
+defs
+  TRUE_def [simp]: "TRUE \<equiv> \<lambda>x. True"
+
 
 (******************************************************************************
  * Functions on subtypes:

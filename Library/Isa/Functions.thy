@@ -10,9 +10,8 @@ theorem Functions__o__def:
   apply(auto)
   done
 theorem Functions__identity__stp: 
-  "\<lbrakk>\<forall>(x::'a). \<not> ((P__a::'a \<Rightarrow> bool) x) \<longrightarrow> f x = arbitrary\<rbrakk> \<Longrightarrow> 
-   (\<lambda> (x::'a). if P__a x then (id o f) x else arbitrary) = f 
-     \<and> (\<lambda> (x::'a). if P__a x then (f o id) x else arbitrary) = f"
+  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   PFun P__a (id o f) = f \<and> PFun P__a (f o id) = f"
     apply(auto)
     apply(rule ext, simp)+
   done
@@ -21,9 +20,8 @@ theorem Functions__identity:
   apply(auto)
   done
 theorem Functions__associativity__stp: 
-  "\<lbrakk>\<forall>(x::'a). \<not> ((P__a::'a \<Rightarrow> bool) x) \<longrightarrow> f x = arbitrary\<rbrakk> \<Longrightarrow> 
-   (\<lambda> (x::'a). if P__a x then ((h o g) o f) x else arbitrary) 
-     = (\<lambda> (x::'a). if P__a x then (h o (g o f)) x else arbitrary)"
+  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   PFun P__a ((h o g) o f) = PFun P__a (h o (g o f))"
     apply(rule ext, simp)
   done
 theorem Functions__associativity: 
@@ -81,25 +79,25 @@ lemma Functions__bijective_p__stp_simp[simp]:
   "Functions__bijective_p__stp (A,B) f = bij_ON f A B"
   by (simp add: Functions__bijective_p__stp_def bij_ON_def)
 lemma Functions__bijective_p__stp_univ[simp]:
-  "Functions__bijective_p__stp (A,\<lambda>x. True) f = bij_on f A UNIV"
-  by (simp add: Functions__bijective_p__stp_simp univ_true bij_ON_UNIV_bij_on)
+  "Functions__bijective_p__stp (A,\<lambda> x. True) f = bij_on f A UNIV"
+  by (simp add: univ_true bij_ON_UNIV_bij_on)
 
 lemma Functions__bij_inv_stp:
-   "Functions__bijective_p__stp (A,\<lambda>x. True) f \<Longrightarrow> Functions__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
-   by (simp add: Functions__bijective_p__stp_simp univ_true bij_ON_imp_bij_ON_inv)
+   "Functions__bijective_p__stp (A,\<lambda> x. True) f \<Longrightarrow> Functions__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
+   by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 
 types  ('a,'b)Functions__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Functions__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Functions__Bijection = "'a \<Rightarrow> 'b"
 theorem Functions__inverse__stp_Obligation_subsort: 
   "\<lbrakk>Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
-    \<forall>(x0::'a). \<not> (P__a x0) \<longrightarrow> f x0 = arbitrary; 
+    Fun_PD P__a f; 
     Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f\<rbrakk> \<Longrightarrow> 
    Functions__bijective_p__stp(\<lambda> ignore. True,P__a) (\<lambda> (y::'b). 
                                                        (THE (x::'a). 
                                                        P__a x \<and> f x = y))"
     apply(simp only: Functions__bijective_p__stp_simp univ_true)
-    apply(subgoal_tac "(\<lambda>y. THE x. P__a x \<and> f x = y) = inv_on P__a f", simp)    
+    apply(subgoal_tac "(\<lambda>y. THE x. P__a x \<and> f x = y) = inv_on P__a f", simp)
     apply(simp add: bij_ON_imp_bij_ON_inv)
     apply(auto simp add: bij_ON_def, 
           thin_tac "\<forall>x0. \<not> P__a x0 \<longrightarrow> f x0 = arbitrary")
@@ -110,7 +108,7 @@ theorem Functions__inverse__stp_Obligation_subsort:
   done
 theorem Functions__inverse__stp_Obligation_the: 
   "\<lbrakk>Functions__bijective_p__stp((P__a::'a \<Rightarrow> bool),\<lambda> ignore. True) (f::'a \<Rightarrow> 'b); 
-    \<forall>(x0::'a). \<not> (P__a x0) \<longrightarrow> f x0 = arbitrary; 
+    Fun_PD P__a f; 
     P__a (x::'a); 
     Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
     P__a x\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
@@ -162,21 +160,9 @@ lemma Functions__inverse__stp_simp:
    by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
 
 theorem Functions__inverse_comp__stp [simp]: 
-  "\<lbrakk>Functions__bijective_p__stp(P__a,(P__b::'b \<Rightarrow> bool)) f; 
-    \<forall>(x0::'a). P__a x0 \<longrightarrow> P__b (f x0); 
-    \<forall>(x0::'a). \<not> (P__a x0) \<longrightarrow> f x0 = arbitrary\<rbrakk> \<Longrightarrow> 
-   (\<lambda> (x::'b). 
-      if P__b x then 
-        (f o Functions__inverse__stp P__a f) x
-      else 
-        arbitrary) 
-     = (\<lambda> (x::'b). if P__b x then id x else arbitrary) 
-     \<and> (\<lambda> (x::'a). 
-          if P__a x then 
-            (Functions__inverse__stp P__a f o f) x
-          else 
-            arbitrary) 
-         = (\<lambda> (x::'a). if P__a x then id x else arbitrary)"
+  "\<lbrakk>Functions__bijective_p__stp(P__a,P__b) f; Fun_P(P__a,P__b) f\<rbrakk> \<Longrightarrow> 
+   PFun P__b (f o Functions__inverse__stp P__a f) = PFun P__b id 
+     \<and> PFun P__a (Functions__inverse__stp P__a f o f) = PFun P__a id"
     apply(auto)
     apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
     apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
@@ -187,8 +173,7 @@ theorem Functions__inverse_comp:
   done
 theorem Functions__f_inverse_apply__stp: 
   "\<lbrakk>Functions__bijective_p__stp(P__a,(P__b::'b \<Rightarrow> bool)) f; 
-    \<forall>(x0::'a). P__a x0 \<longrightarrow> P__b (f x0); 
-    \<forall>(x0::'a). \<not> (P__a x0) \<longrightarrow> f x0 = arbitrary; 
+    Fun_P(P__a,P__b) f; 
     P__b x\<rbrakk> \<Longrightarrow> f (Functions__inverse__stp P__a f x) = x"
     apply(auto simp add: mem_def bij_ON_def)
   done
@@ -198,7 +183,7 @@ theorem Functions__f_inverse_apply:
   done
 theorem Functions__inverse_f_apply__stp: 
   "\<lbrakk>Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
-    \<forall>(x0::'a). \<not> (P__a x0) \<longrightarrow> f x0 = arbitrary; 
+    Fun_PD P__a f; 
     P__a (x::'a)\<rbrakk> \<Longrightarrow> Functions__inverse__stp P__a f (f x) = x"
     apply(auto simp add: mem_def bij_ON_def)
   done
@@ -207,13 +192,32 @@ theorem Functions__inverse_f_apply:
     apply(simp add: bij_def inv_f_f)
   done
 theorem Functions__eta__stp: 
-  "\<lbrakk>\<forall>(x::'a). \<not> ((P__a::'a \<Rightarrow> bool) x) \<longrightarrow> (f::'a \<Rightarrow> 'b) x = arbitrary\<rbrakk> \<Longrightarrow> 
-   (\<lambda> (x::'a). if P__a x then case x of x \<Rightarrow> f x else arbitrary) = f"
+  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> PFun P__a (\<lambda> (x::'a). f x) = f"
     apply(rule ext, simp)
   done
 theorem Functions__eta: 
   "(\<lambda> (x::'a). (f::'a \<Rightarrow> 'b) x) = f"
   apply(auto)
   done
+consts Functions__wellFounded_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
+                                         ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
+defs Functions__wellFounded_p__stp_def: 
+  "Functions__wellFounded_p__stp P__a rel
+     \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
+          Fun_PD P__a p 
+            \<longrightarrow> ((\<exists>(y::'a). P__a y \<and> p y) 
+               \<longrightarrow> (\<exists>(y::'a). 
+                      P__a y 
+                        \<and> (p y \<and> (\<forall>(x::'a). P__a x \<longrightarrow> (p x \<longrightarrow> \<not> (rel(x,y))))))))"
+consts Functions__wellFounded_p :: "('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
+defs Functions__wellFounded_p_def: 
+  "Functions__wellFounded_p rel
+     \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
+          (\<exists>(y::'a). p y) 
+            \<longrightarrow> (\<exists>(y::'a). p y \<and> (\<forall>(x::'a). p x \<longrightarrow> \<not> (rel(x,y)))))"
+consts Functions__wfo__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
+defs Functions__wfo__stp_def: 
+  "Functions__wfo__stp P__a \<equiv> Functions__wellFounded_p__stp P__a"
 consts Functions__wfo :: "('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
+defs Functions__wfo_def: "Functions__wfo \<equiv> Functions__wellFounded_p"
 end
