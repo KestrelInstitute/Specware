@@ -10,7 +10,8 @@ fi
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 # Use the directory of this file as the value of SPECWARE4
-SPECWARE4=`dirname $0`
+cd `dirname $0`/../../..
+SPECWARE4=`pwd`
 export SPECWARE4
 
 # Test whether SPECWARE4 has been set
@@ -66,33 +67,6 @@ if [ -z "$SWPATH" ]; then
   export SWPATH
 fi
 
-
-# Try to find lisp executable:
-
-if [ -z "$LISP" ]; then
-   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp; do
-      if [ -x "$L" ]; then
-         LISP="$L"; break
-      fi
-   done
-fi
-
-if [ -z "$LISP" ]; then
-   echo "Failed to $act, no LISP executable found" 2>&1
-   exit 1
-fi
-
-if [ ! -x "$LISP" ]; then
-   echo "Failed to $act, $LISP is not executable" 2>&1
-   exit 1
-fi
-
-if [ -z "$SPECWARE_INIT_FORM" ]; then
-   SPECWARE_INIT_FORM=NIL
-   export SPECWARE_INIT_FORM
-fi
-
-LISP_DIR=`dirname "$LISP"`
 LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
 LISP_HEAP_IMAGE=NONE
 LISP_DIRECTORY="$SPECWARE4"/
