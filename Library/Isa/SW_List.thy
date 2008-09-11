@@ -724,17 +724,17 @@ theorem List__null__def:
   "null = null"
   by auto
 theorem List__hd__def: 
-  "PFun List__nonEmpty_p hd = PFun List__nonEmpty_p hd"
+  "RFun List__nonEmpty_p hd = RFun List__nonEmpty_p hd"
   by auto
 theorem List__tl__def: 
-  "PFun List__nonEmpty_p tl = PFun List__nonEmpty_p tl"
+  "RFun List__nonEmpty_p tl = RFun List__nonEmpty_p tl"
   by auto
 theorem List__concat__def: 
   "(\<lambda> (x,y). x @ y) = (\<lambda> (x,y). x @ y)"
   by auto
 theorem List__nth__def: 
-  "PFun (\<lambda> ((l::'a list),(i::nat)). i < length l) (\<lambda> (x,y). x ! y) 
-     = PFun (\<lambda> ((l::'a list),(i::nat)). i < length l) (\<lambda> (x,y). x ! y)"
+  "RFun (\<lambda> ((l::'a list),(i::nat)). i < length l) (\<lambda> (x,y). x ! y) 
+     = RFun (\<lambda> ((l::'a list),(i::nat)). i < length l) (\<lambda> (x,y). x ! y)"
   by auto
 consts List__nthTail :: "'a list \<times> nat \<Rightarrow> 'a list"
 defs List__nthTail_def: "List__nthTail \<equiv> List__removePrefix"

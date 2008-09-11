@@ -64,14 +64,12 @@ lemma univ_true:     "(\_lambdax. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
 
 (******************************************************************************
-
-(******************************************************************************
  * Abbreviations for subtype regularization
  ******************************************************************************)
 
-fun PFun :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow 'a \_Rightarrow 'b"
+fun RFun :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow 'a \_Rightarrow 'b"
 where
-  "PFun P f = (\_lambdax . if P x then f x else arbitrary)"
+  "RFun P f = (\_lambdax . if P x then f x else arbitrary)"
 
 fun Fun_P :: "(('a \_Rightarrow bool) * ('b \_Rightarrow bool)) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where

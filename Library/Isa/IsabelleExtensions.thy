@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports Datatype Recdef Hilbert_Choice List GCD
+imports GCD List Hilbert_Choice Recdef Datatype
 begin
 
 (*************************************************************
@@ -50,14 +50,13 @@ lemma mem_reverse:   "x\<in>P \<Longrightarrow> P x"
 lemma univ_true:     "(\<lambda>x. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
 
-
 (******************************************************************************
  * Abbreviations for subtype regularization
  ******************************************************************************)
 
-fun PFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
+fun RFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
 where
-  "PFun P f = (\<lambda>x . if P x then f x else arbitrary)"
+  "RFun P f = (\<lambda>x . if P x then f x else arbitrary)"
 
 fun Fun_P :: "(('a \<Rightarrow> bool) * ('b \<Rightarrow> bool)) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where

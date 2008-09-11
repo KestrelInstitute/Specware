@@ -387,7 +387,7 @@ SpecNorm qualifying spec
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None -> t
            | Some(sup_ty, pred) ->
-             mkApply(mkApply(mkOp(Qualified(toIsaQual, "PFun"),
+             mkApply(mkApply(mkOp(Qualified(toIsaQual, "RFun"),
                                   mkArrow(inferType(spc, pred),
                                           mkArrow(rm_ty,
                                                   ty))),

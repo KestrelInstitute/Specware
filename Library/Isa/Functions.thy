@@ -3,25 +3,23 @@ imports IsabelleExtensions
 begin
 theorem Functions__id__def: 
   "id x = x"
-  apply(auto)
-  done
+  by auto
 theorem Functions__o__def: 
   "(g o f) x = g (f x)"
-  apply(auto)
-  done
+  by auto
 theorem Functions__identity__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
-   PFun P__a (id o f) = f \<and> PFun P__a (f o id) = f"
+   RFun P__a (id o f) = f 
+     \<and> RFun P__a (f o id) = f"
     apply(auto)
     apply(rule ext, simp)+
   done
 theorem Functions__identity: 
   "id o f = f \<and> f o id = f"
-  apply(auto)
-  done
+  by auto
 theorem Functions__associativity__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
-   PFun P__a ((h o g) o f) = PFun P__a (h o (g o f))"
+   RFun P__a ((h o g) o f) = RFun P__a (h o (g o f))"
     apply(rule ext, simp)
   done
 theorem Functions__associativity: 
@@ -30,15 +28,16 @@ theorem Functions__associativity:
   done
 theorem Functions__e_cl_gt__def: 
   "g o f = g o f"
-  apply(auto)
-  done
+  by auto
 consts Functions__injective_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 defs Functions__injective_p__stp_def: 
   "Functions__injective_p__stp P__a f
      \<equiv> (\<forall>(x1::'a) (x2::'a). 
-          P__a x1 \<and> P__a x2 \<longrightarrow> (f x1 = f x2 \<longrightarrow> x1 = x2))"
+          P__a x1 \<and> P__a x2 
+            \<longrightarrow> (f x1 = f x2 \<longrightarrow> x1 = x2))"
 theorem Functions__injective_p__def: 
-  "inj f = (\<forall>(x1::'a) (x2::'a). f x1 = f x2 \<longrightarrow> x1 = x2)"
+  "inj f 
+     = (\<forall>(x1::'a) (x2::'a). f x1 = f x2 \<longrightarrow> x1 = x2)"
     apply(simp add: inj_on_def)
   done
 
@@ -52,7 +51,9 @@ defs Functions__surjective_p__stp_def:
   "Functions__surjective_p__stp
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool),(P__b::'b \<Rightarrow> bool)). 
           \<lambda> (f::'a \<Rightarrow> 'b). 
-            \<forall>(y::'b). P__b y \<longrightarrow> (\<exists>(x::'a). P__a x \<and> f x = y))"
+            \<forall>(y::'b). 
+              P__b y 
+                \<longrightarrow> (\<exists>(x::'a). P__a x \<and> f x = y))"
 theorem Functions__surjective_p__def: 
   "surj f = (\<forall>(y::'b). \<exists>(x::'a). f x = y)"
     apply(simp add: surj_def eq_commute)
@@ -93,9 +94,8 @@ theorem Functions__inverse__stp_Obligation_subsort:
   "\<lbrakk>Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
     Fun_PD P__a f; 
     Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f\<rbrakk> \<Longrightarrow> 
-   Functions__bijective_p__stp(\<lambda> ignore. True,P__a) (\<lambda> (y::'b). 
-                                                       (THE (x::'a). 
-                                                       P__a x \<and> f x = y))"
+   Functions__bijective_p__stp(\<lambda> ignore. True,P__a)
+      (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
     apply(simp only: Functions__bijective_p__stp_simp univ_true)
     apply(subgoal_tac "(\<lambda>y. THE x. P__a x \<and> f x = y) = inv_on P__a f", simp)
     apply(simp add: bij_ON_imp_bij_ON_inv)
@@ -117,10 +117,12 @@ theorem Functions__inverse__stp_Obligation_the:
   done
 consts Functions__inverse__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b \<Rightarrow> 'a"
 defs Functions__inverse__stp_def: 
-  "Functions__inverse__stp P__a f y \<equiv> (THE (x::'a). P__a x \<and> f x = y)"
+  "Functions__inverse__stp P__a f y
+     \<equiv> (THE (x::'a). P__a x \<and> f x = y)"
 theorem Functions__inverse_Obligation_subsort: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> 
-   bij (\<lambda> (y::'b). (THE (x::'a). (f:: ('a,'b)Functions__Bijection) x = y))"
+   bij
+      (\<lambda> (y::'b). (THE (x::'a). (f:: ('a,'b)Functions__Bijection) x = y))"
     apply(subgoal_tac "( \<lambda>y. THE x. f x = y) = inv f")
     apply(auto simp add: bij_def)
     apply(erule surj_imp_inj_inv)
@@ -128,7 +130,8 @@ theorem Functions__inverse_Obligation_subsort:
     apply(rule ext, rule the_equality, auto simp add: surj_f_inv_f)
   done
 theorem Functions__inverse_Obligation_the: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). (f:: ('a,'b)Functions__Bijection) x = (y::'b)"
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> 
+   \<exists>!(x::'a). (f:: ('a,'b)Functions__Bijection) x = (y::'b)"
     apply(auto simp add: bij_def surj_def inj_on_def)
     apply(drule spec, erule exE, drule sym, auto)
   done
@@ -161,8 +164,10 @@ lemma Functions__inverse__stp_simp:
 
 theorem Functions__inverse_comp__stp [simp]: 
   "\<lbrakk>Functions__bijective_p__stp(P__a,P__b) f; Fun_P(P__a,P__b) f\<rbrakk> \<Longrightarrow> 
-   PFun P__b (f o Functions__inverse__stp P__a f) = PFun P__b id 
-     \<and> PFun P__a (Functions__inverse__stp P__a f o f) = PFun P__a id"
+   RFun P__b (f o Functions__inverse__stp P__a f) 
+     = RFun P__b id 
+     \<and> RFun P__a (Functions__inverse__stp P__a f o f) 
+         = RFun P__a id"
     apply(auto)
     apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
     apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
@@ -184,7 +189,8 @@ theorem Functions__f_inverse_apply:
 theorem Functions__inverse_f_apply__stp: 
   "\<lbrakk>Functions__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
     Fun_PD P__a f; 
-    P__a (x::'a)\<rbrakk> \<Longrightarrow> Functions__inverse__stp P__a f (f x) = x"
+    P__a (x::'a)\<rbrakk> \<Longrightarrow> 
+   Functions__inverse__stp P__a f (f x) = x"
     apply(auto simp add: mem_def bij_ON_def)
   done
 theorem Functions__inverse_f_apply: 
@@ -192,13 +198,12 @@ theorem Functions__inverse_f_apply:
     apply(simp add: bij_def inv_f_f)
   done
 theorem Functions__eta__stp: 
-  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> PFun P__a (\<lambda> (x::'a). f x) = f"
+  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> RFun P__a (\<lambda> (x::'a). f x) = f"
     apply(rule ext, simp)
   done
 theorem Functions__eta: 
   "(\<lambda> (x::'a). (f::'a \<Rightarrow> 'b) x) = f"
-  apply(auto)
-  done
+  by auto
 consts Functions__wellFounded_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                          ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
 defs Functions__wellFounded_p__stp_def: 
@@ -208,13 +213,17 @@ defs Functions__wellFounded_p__stp_def:
             \<longrightarrow> ((\<exists>(y::'a). P__a y \<and> p y) 
                \<longrightarrow> (\<exists>(y::'a). 
                       P__a y 
-                        \<and> (p y \<and> (\<forall>(x::'a). P__a x \<longrightarrow> (p x \<longrightarrow> \<not> (rel(x,y))))))))"
+                        \<and> (p y 
+                         \<and> (\<forall>(x::'a). 
+                              P__a x \<longrightarrow> (p x \<longrightarrow> \<not> (rel(x,y))))))))"
 consts Functions__wellFounded_p :: "('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
 defs Functions__wellFounded_p_def: 
   "Functions__wellFounded_p rel
      \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
           (\<exists>(y::'a). p y) 
-            \<longrightarrow> (\<exists>(y::'a). p y \<and> (\<forall>(x::'a). p x \<longrightarrow> \<not> (rel(x,y)))))"
+            \<longrightarrow> (\<exists>(y::'a). 
+                   p y 
+                     \<and> (\<forall>(x::'a). p x \<longrightarrow> \<not> (rel(x,y)))))"
 consts Functions__wfo__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
 defs Functions__wfo__stp_def: 
   "Functions__wfo__stp P__a \<equiv> Functions__wellFounded_p__stp P__a"
