@@ -5,7 +5,9 @@ SpecNorm qualifying spec
   %% Polymorphic ops have versions that have a predicate for each polymorphic variable
   type PolyOpTable = AQualifierMap(QualifiedId * List TyVar)
 
-  op mkTruePred(ty: Sort): MS.Term = mkLambda(mkWildPat ty, trueTerm)
+  op mkTruePred(ty: Sort): MS.Term =
+    % mkOp(Qualified(toIsaQual,"TRUE"), mkArrow(ty, boolSort))
+    mkLambda(mkWildPat ty, trueTerm)
 
   op substTyVarsWithSubtypes(tv_map: List(TyVar * MS.Term), tm: MS.Term): MS.Term =
     let result = instantiateTyVarsInTerm(tm, map (fn (tv,v) ->
@@ -185,31 +187,24 @@ SpecNorm qualifying spec
   op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
     if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
     else
-    let f_v = ("f", f_ty) in
-    let dom_restr = case dom_ty of
-                      | Subsort(dom_ty, domPred, _) ->
-                        let x_v = ("x__dom", dom_ty) in
-                        mkBind(Forall, [x_v],
-                               mkImplies(mkNot(mkApply(domPred, mkVar x_v)),
-                                         mkEquality(ran_ty, mkApply(mkVar f_v, mkVar x_v),
-                                                    mkArbitrary ran_ty)))
-                      | _ -> trueTerm
-    in
-    let ran_restr = case ran_ty of
-                      | Subsort(ran_ty, ranPred, _) ->
-                        (case dom_ty of
-                           | Subsort(dom_ty, domPred, _) ->
-                             let x_v = ("y__dom", dom_ty) in
-                             mkBind(Forall, [x_v],
-                                    mkImplies(mkApply(domPred, mkVar x_v),
-                                              mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
-                           | _ ->
-                             let x_v = ("z__dom", dom_ty) in
-                             mkBind(Forall, [x_v],
-                                    mkApply(ranPred, mkApply(mkVar f_v, mkVar x_v))))
-                      | _ -> trueTerm
-    in
-    Some(mkLambda(mkVarPat f_v, Utilities.mkAnd(ran_restr, dom_restr)))
+    case (dom_ty, ran_ty) of
+      | (Subsort(dom_ty, domPred, _), Subsort(ran_ty, ranPred, _)) ->
+        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_P"),
+                          mkArrow(mkProduct[mkArrow(dom_ty, boolSort),
+                                            mkArrow(ran_ty, boolSort)],
+                                  mkArrow(f_ty, f_ty))),
+                     mkTuple [domPred, ranPred]))
+      | (Subsort(dom_ty, domPred, _), _) ->
+        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
+                          mkArrow(mkArrow(dom_ty, boolSort),
+                                  mkArrow(f_ty, f_ty))),
+                     domPred))
+      | (_, Subsort(ran_ty, ranPred, _)) ->
+        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PR"),
+                          mkArrow(mkArrow(ran_ty, boolSort),
+                                  mkArrow(f_ty, f_ty))),
+                     ranPred))
+      | _ -> None
 
   op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
   %% Bring subtypes to the top-level
@@ -392,11 +387,12 @@ SpecNorm qualifying spec
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None -> t
            | Some(sup_ty, pred) ->
-             let v = ("x__s", sup_ty) in
-             mkLambda(mkVarPat v,
-                      MS.mkIfThenElse(simplifiedApply(pred, mkVar v, spc),
-                                      mkApply(t, mkVar v),
-                                      mkArbitrary rng)))
+             mkApply(mkApply(mkOp(Qualified(toIsaQual, "PFun"),
+                                  mkArrow(inferType(spc, pred),
+                                          mkArrow(rm_ty,
+                                                  ty))),
+                             pred),
+                     t))
       | _ -> t
 
   op doTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
