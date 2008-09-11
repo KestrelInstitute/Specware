@@ -34,7 +34,7 @@ Set qualifying spec
   % were isomorphic to predicates, but now it can be probably removed for
   % Isabelle 2008, where sets are equal to predicates:
   %% Coercion function that maps a Set to a Predicate
-  op [a] r_in (s: Set a) (x: a): Boolean = x in? s
+  %% op [a] r_in (s: Set a) (x: a): Boolean = x in? s
 
   % (strict) sub/superset:
 
