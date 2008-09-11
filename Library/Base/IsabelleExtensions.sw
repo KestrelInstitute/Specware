@@ -32,6 +32,8 @@ consts
   seventh :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h \_Rightarrow 'g"
   eighthl :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h \_Rightarrow 'h"
   eighth  :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i \_Rightarrow 'h"
+  ninthl  :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i \_Rightarrow 'i"
+  ninth   :: "'a * 'b * 'c * 'd * 'e * 'f * 'g * 'h * 'i * 'j \_Rightarrow 'i"
 
 defs
   second_def  [simp]: "second x  \_equiv fst(snd x)"
@@ -47,6 +49,8 @@ defs
   seventh_def [simp]: "seventh x \_equiv fst(snd(snd(snd(snd(snd(snd x))))))"
   eighthl_def [simp]: "eighthl x \_equiv snd(snd(snd(snd(snd(snd(snd x))))))"
   eighth_def  [simp]: "eighth x  \_equiv fst(snd(snd(snd(snd(snd(snd(snd x)))))))"
+  ninthl_def  [simp]: "ninthl x  \_equiv snd(snd(snd(snd(snd(snd(snd(snd x)))))))"
+  ninth_def   [simp]: "ninth x   \_equiv fst(snd(snd(snd(snd(snd(snd(snd(snd x))))))))"
 
 
 (******************************************************************************
@@ -58,6 +62,34 @@ lemma mem_reverse:   "x\_inP \_Longrightarrow P x"
 
 lemma univ_true:     "(\_lambdax. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
+
+(******************************************************************************
+
+(******************************************************************************
+ * Abbreviations for subtype regularization
+ ******************************************************************************)
+
+fun PFun :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow 'a \_Rightarrow 'b"
+where
+  "PFun P f = (\_lambdax . if P x then f x else arbitrary)"
+
+fun Fun_P :: "(('a \_Rightarrow bool) * ('b \_Rightarrow bool)) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
+where
+  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)) \_and (\_not(Pa x) \_longrightarrow f x = arbitrary))"
+
+fun Fun_PD :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
+where
+  "Fun_PD Pa f = (\_forallx .\_not(Pa x) \_longrightarrow f x = arbitrary)"
+
+fun Fun_PR :: "('b \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
+where
+  "Fun_PR Pb f = (\_forallx . Pb(f x))"
+
+
+consts TRUE :: "('a \_Rightarrow bool)"
+defs
+  TRUE_def [simp]: "TRUE \_equiv \_lambdax. True"
+
 
 (******************************************************************************
  * Functions on subtypes:
