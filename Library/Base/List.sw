@@ -78,6 +78,9 @@ List qualifying spec
  proof Isa [simp] end-proof
 
  op [a] empty? (l: List a) : Boolean = (l = empty)
+ proof Isa
+   by (simp add: null_empty)
+ end-proof
 
  theorem empty?_length is [a] fa (l: List a) empty? l = (length l = 0)
  proof Isa
@@ -138,9 +141,6 @@ List qualifying spec
 
  op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
    suffix (l, length l - n)
- proof Isa removePrefix_Obligation_subsort
-   apply(auto simp add: List__empty_length)
- end-proof
 
  theorem length_removePrefix is [a]
     fa (l: List a, n:Nat) n <= length l =>
