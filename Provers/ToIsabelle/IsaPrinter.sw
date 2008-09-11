@@ -1499,7 +1499,8 @@ IsaTermPrinter qualifying spec
                           | None -> 0
     in
    % let real_beg_last_line = skipWhiteSpace(prf, beg_last_line) in
-    some?(searchBetween("by ", prf, beg_last_line, length prf))
+    %% Should be more sophisticated
+    some?(searchBetween("by", prf, beg_last_line, length prf))
 
   op proofEndsWithTerminator?(prf: String): Boolean =
     let len = length prf in
@@ -1733,7 +1734,7 @@ IsaTermPrinter qualifying spec
 %                                mkAppl(term1, [mkVar("x",t1), mkVar("y",t2)]))
 %                     | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
               | _ ->
-	    prConcat [ppTerm c (Infix(Left,1000)) term1,
+	    prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                       case term2 of
                         | Record _ \_rightarrow ppTerm c Top term2
                         | _ \_rightarrow
@@ -1841,6 +1842,8 @@ IsaTermPrinter qualifying spec
 			     ppTerm c (if infix? parentTerm then Top else parentTerm) term])
       | Var (v,_) \_rightarrow ppVarWithoutSort v
       | Fun (fun,ty,_) \_rightarrow ppFun c parentTerm fun ty
+%      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
+%        prString "TRUE"                 % \_lambdax. True
       | Lambda ([(pattern,_,term)],_) \_rightarrow
         enclose?(parentTerm \_noteq Top,
                  prBreakCat 2 [[lengthString(2, "\\<lambda> "),
