@@ -91,6 +91,9 @@ Set qualifying spec
   % set with no elements (lift `false' to sets):
 
   op empty : [a] Set a = fn _ -> false
+  proof Isa
+    by (auto simp add: mem_def)
+  end-proof
 
   op [a] empty? (s: Set a) : Boolean = (s = empty)
   proof Isa [simp] end-proof
@@ -104,7 +107,9 @@ Set qualifying spec
   % set with all elements (lift `true' to sets):
 
   op full : [a] Set a = fn _ -> true
-  proof Isa [simp] end-proof
+  proof Isa
+    by (auto simp add: mem_def)
+  end-proof
 
   op [a] full? (s: Set a) : Boolean = (s = full)
   proof Isa [simp] end-proof
@@ -131,6 +136,12 @@ Set qualifying spec
   type SingletonSet a = (Set a | single?)
 
   op [a] theMember (s: SingletonSet a) : a = the(x:a) x in? s
+  proof Isa theMember__stp_Obligation_the
+    apply(auto simp add: Set__single_p__stp_def mem_def)
+  end-proof
+  proof Isa theMember_Obligation_the
+    apply(auto simp add: mem_def)
+  end-proof
 
   % add member to set (triangle points towards set):
 
@@ -172,6 +183,28 @@ Set qualifying spec
     % (which are "pseudo-types" because of the free variables `n' and `s'):
     (ex (f: Nat -> a, n:Nat)
       (fa(x:a) x in? s => (ex(i:Nat) i < n && f i = x)))
+  proof Isa
+
+  apply(simp add: Set__empty_p_def)
+  apply(rule iffI)
+
+    apply(induct rule:finite_induct)
+     apply(auto)
+      apply(rule_tac x="›ly::nat. x::'a" in exI)
+      apply(rule_tac x="1" in exI)
+      apply(rule_tac x="0" in exI)
+      apply(simp)
+      apply(rule_tac x="›ly::nat. if y = n then x::'a else f y" in exI)
+      apply(rule_tac x="n + 1" in exI)
+      apply(intro allI conjI impI)
+      apply(rule_tac x="n" in exI, simp)
+      apply(drule_tac x="xa" in spec)
+      apply(drule mp, assumption)
+      apply(erule exE)
+      apply(rule_tac x="i" in exI)
+      apply(simp)
+
+  end-proof
 
   type FiniteSet a = (Set a | finite?)
 
@@ -280,6 +313,7 @@ Set qualifying spec
     Set.* -> <*> Left 27
     Set.power -> Pow
     Set.empty -> {}
+    Set.full  -> UNIV
     Set.finite? -> finite
   end-proof
 
