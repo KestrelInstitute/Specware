@@ -611,24 +611,34 @@ List qualifying spec
 
  proof Isa Thy_Morphism List
    type List.List \_rightarrow list
+   List.empty \_rightarrow []
    List.nil \_rightarrow []
+   List.|> \_rightarrow # Right 23
    List.cons \_rightarrow # Right 23
    List.insert \_rightarrow # Right 23
    List.length \_rightarrow length
+   List.empty? \_rightarrow null
    List.null \_rightarrow null
+   List.head \_rightarrow  hd  
+   List.tail \_rightarrow  tl
    List.hd \_rightarrow  hd  
    List.tl \_rightarrow  tl
    List.concat \_rightarrow  @ Left 25
    List.++ \_rightarrow  @ Left 25
+   List.@ \_rightarrow ! Left 35
    List.nth \_rightarrow ! Left 35
    List.last \_rightarrow  last
    List.butLast \_rightarrow  butlast
+   List.reverse \_rightarrow rev
    List.rev \_rightarrow rev
    List.flatten \_rightarrow concat
+   List.in? \_rightarrow  mem Left 22
    List.member \_rightarrow  mem Left 22
    List.map \_rightarrow map
    List.mapPartial \_rightarrow  filtermap  
+   List.exists? \_rightarrow list_ex  
    List.exists \_rightarrow list_ex  
+   List.forall? \_rightarrow  list_all  
    List.all \_rightarrow  list_all  
    List.filter \_rightarrow  filter  
  end-proof
