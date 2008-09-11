@@ -182,7 +182,7 @@ Set qualifying spec
     % there is a surjective function from {i:Nat | i < n} to {x:a | x in? s}
     % (which are "pseudo-types" because of the free variables `n' and `s'):
     (ex (f: Nat -> a, n:Nat)
-      (fa(x:a) x in? s => (ex(i:Nat) i < n && f i = x)))
+      (fa(x:a) x in? s <=> (ex(i:Nat) i < n && f i = x)))
   proof Isa
 
   apply(simp add: Set__empty_p_def)
@@ -190,11 +190,11 @@ Set qualifying spec
 
     apply(induct rule:finite_induct)
      apply(auto)
-      apply(rule_tac x="›ly::nat. x::'a" in exI)
+      apply(rule_tac x="\_lambday::nat. x::'a" in exI)
       apply(rule_tac x="1" in exI)
       apply(rule_tac x="0" in exI)
       apply(simp)
-      apply(rule_tac x="›ly::nat. if y = n then x::'a else f y" in exI)
+      apply(rule_tac x="\_lambday::nat. if y = n then x::'a else f y" in exI)
       apply(rule_tac x="n + 1" in exI)
       apply(intro allI conjI impI)
       apply(rule_tac x="n" in exI, simp)
