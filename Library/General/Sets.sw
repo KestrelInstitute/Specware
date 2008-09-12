@@ -170,6 +170,21 @@ Set qualifying spec
 
   op [a,b] setGeneratedBy (f: a -> b) : Set b = map f full
 
+  proof Isa verbatim
+  lemma empty_application:
+  "{} x = (x \_in {})"
+   by (simp add: mem_def)
+  lemma union_application:
+  "(s \_union t) x = (x \_in (s \_union t))"
+   by (simp add: mem_def)
+  lemma insert_lambda:
+  "insert x (\_lambday. P y) = insert x {y. P y}"
+   by (rule set_ext, simp add: Collect_def mem_def)
+  lemma Set_single_simp [simp]:
+  "Set__single x = {x}"
+   by (rule set_ext, simp, simp add: mem_def)
+  end-proof
+
   % finite sets:
 
   op [a] finite? (s: Set a) : Boolean =
@@ -184,29 +199,95 @@ Set qualifying spec
     (ex (f: Nat -> a, n:Nat)
       (fa(x:a) x in? s <=> (ex(i:Nat) i < n && f i = x)))
   proof Isa
-
-  apply(simp add: Set__empty_p_def)
+  apply(simp)
   apply(rule iffI)
 
     apply(induct rule:finite_induct)
+     apply(simp)
+     apply(simp)
      apply(auto)
       apply(rule_tac x="\_lambday::nat. x::'a" in exI)
       apply(rule_tac x="1" in exI)
-      apply(rule_tac x="0" in exI)
-      apply(simp)
-      apply(rule_tac x="\_lambday::nat. if y = n then x::'a else f y" in exI)
+      apply(simp add: eq_ac)
+      apply(rule_tac x="\_lambdai::nat. if i = n then x::'a else f i" in exI)
       apply(rule_tac x="n + 1" in exI)
-      apply(intro allI conjI impI)
+      apply(intro allI iffI impI)
+      apply(elim disjE)
       apply(rule_tac x="n" in exI, simp)
-      apply(drule_tac x="xa" in spec)
-      apply(drule mp, assumption)
-      apply(erule exE)
-      apply(rule_tac x="i" in exI)
+(* List.ex_nat_less_eq: (\_existsm<?n. ?P m) = (\_existsm\_in{0..<?n}. ?P m) *)
+      apply(simp add: ex_nat_less_eq)
+      apply(erule bexE) (* \_lbrakk\_existsx\_in?A. ?P x; \_Andx. \_lbrakkx \_in ?A; ?P x\_rbrakk \_Longrightarrow ?Q\_rbrakk \_Longrightarrow ?Q *)
+      apply(rule_tac x="i" in bexI)
       apply(simp)
+      apply(simp)
+      apply(simp add: ex_nat_less_eq)
+      apply(erule bexE)
+      apply(split split_if_asm)
+      apply(simp)
+      apply(rule disjI2)
+      apply(rule_tac x="i" in bexI, assumption)
+      apply(clarsimp)
+
+(* finite_conv_nat_seg_image: "finite A = (\_exists (n::nat) f. A = f ` {i::nat. i<n})" *)
+
+      apply(simp only: finite_conv_nat_seg_image)
+      apply(rule_tac x="n" in exI)
+      apply(rule_tac x="f" in exI)
+      apply(auto)
 
   end-proof
 
   type FiniteSet a = (Set a | finite?)
+
+  theorem finite_insert is [a]
+    fa (s: FiniteSet a, x: a)
+      finite? s \_Rightarrow finite? (s <| x)
+  proof Isa Set__finite_insert__stp
+  apply(simp add: Set__finite_p__stp_def Set__empty_p__stp_def)
+  apply(unfold empty_application)
+  apply(rule disjI2)
+  apply(erule disjE)
+
+   apply(clarsimp)
+   apply(rule_tac x="\_lambdai. x" in exI)
+   apply(simp)
+   apply(rule_tac x="1" in exI)
+   apply(simp add: insert_lambda)
+(*
+   apply(unfold union_application)
+   apply(simp)
+*)
+   apply(intro allI impI)
+   apply(simp add: mem_def eq_ac)
+
+   apply(erule exE)
+   apply(elim conjE)
+   apply(erule exE)
+   apply(case_tac "x \_in s")
+   apply(rule_tac x="f" in exI)
+   apply(rule conjI, simp)
+   apply(rule_tac x="n" in exI)
+   apply(intro allI impI)
+   apply(rotate_tac 3)
+   apply(erule_tac x="xa" in allE)
+   apply(drule mp, assumption)
+   apply(simp add: mem_def)
+   apply(simp add: union_application)
+   apply(simp add: mem_def)
+
+   apply(rule_tac x="\_lambdai. if i = n then x else f i" in exI)
+
+   apply(rule ext)
+   apply(unfold union_application)
+   apply(simp)
+   apply(simp add: mem_def Set__single_def)
+   apply(case_tac "P__a xa")
+   apply(simp)
+
+  apply(rule disjI2)
+  apply(r
+  done
+  end-proof
 
   theorem induction is [a]
     fa (p: FiniteSet a -> Boolean)
@@ -217,6 +298,12 @@ Set qualifying spec
   op size : [a] FiniteSet a -> Nat = the(size)
     (size empty = 0) &&
     (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
+
+  proof Isa Set__size__stp_Obligation_the
+  apply(rule_tac a="RFun (Fun_PD P__a) card" in ex1I)
+  apply(simp)
+  apply(intro conjI allI impI)
+  end-proof
 
   op [a] hasSize (s: Set a, n:Nat) infixl 20 : Boolean =
     finite? s && size s = n
