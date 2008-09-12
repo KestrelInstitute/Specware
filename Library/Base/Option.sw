@@ -1,6 +1,6 @@
 Option qualifying spec
 
-  import Compare, Functions
+  import Compare, Function
 
   % add an extra element to a type:
 

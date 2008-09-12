@@ -1,6 +1,6 @@
 String qualifying spec
 
- import Char, List
+ import Character, List
 
  (* A string is a finite sequence of characters (of type Char). Thus, we define
  type String by isomorphism with lists of characters. *)

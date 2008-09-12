@@ -1,6 +1,6 @@
 Integer qualifying spec
 
-  import Compare, Functions
+  import Compare, Function
 
   (* We introduce integers via a Peano-like axiomatization.
 
