@@ -213,10 +213,10 @@ List qualifying spec
 
  % fold from left/right:
 
- op [a,b] foldl (f: a * b -> b) (base:b) (l: List a) : b =
+ op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
    case l of
    | [] -> base
-   | hd::tl -> foldl f (f (hd, base)) tl
+   | hd::tl -> foldl f (f (base, hd)) tl
 
  op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
    case l of
@@ -341,7 +341,7 @@ List qualifying spec
 
  % concatenate all the lists in a list, in order:
 
- op [a] flatten (ll: List (List a)) : List a = foldl (fn (x,y) -> y ++ x) [] ll
+ op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
 
  % group list elements into sublists of given lengths (note that we allow
  % empty sublists, but we require the total sum of the lengths to equal the
