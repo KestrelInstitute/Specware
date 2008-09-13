@@ -29,13 +29,6 @@ Set qualifying spec
 
   op [a] nin? (x:a, s: Set a) infixl 20 : Boolean = ~(x in? s)
 
-  %%%%% NOTE %%%%%
-  % this was probably motivated by the translator to Isabelle 2007, where sets
-  % were isomorphic to predicates, but now it can be probably removed for
-  % Isabelle 2008, where sets are equal to predicates:
-  %% Coercion function that maps a Set to a Predicate
-  %% op [a] r_in (s: Set a) (x: a): Boolean = x in? s
-
   % (strict) sub/superset:
 
   op [a] <= (s1: Set a, s2: Set a) infixl 20 : Boolean =
