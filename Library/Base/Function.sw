@@ -1,4 +1,4 @@
-Functions qualifying spec
+Function qualifying spec
   
   % ------------------------------------------------------------------------
   % Make sure that the extensions to standard Isabelle are loaded
@@ -20,7 +20,7 @@ Functions qualifying spec
   theorem identity is [a,b]
     fa (f: a -> b) id o f = f
                 && f o id = f
-  proof Isa Functions__identity__stp
+  proof Isa Function__identity__stp
     apply(auto)
     apply(rule ext, simp)+
   end-proof
@@ -30,7 +30,7 @@ Functions qualifying spec
   proof Isa
     apply(simp add: o_assoc)
   end-proof
-  proof Isa Functions__associativity__stp
+  proof Isa Function__associativity__stp
     apply(rule ext, simp)
   end-proof
 
@@ -46,9 +46,9 @@ Functions qualifying spec
     apply(simp add: inj_on_def)
   end-proof
   proof Isa -verbatim
-lemma Functions__injective_p__stp_simp [simp]:
-  "Functions__injective_p__stp P f = (inj_on f P)"
-  by (auto simp add: Functions__injective_p__stp_def inj_on_def mem_def)
+lemma Function__injective_p__stp_simp [simp]:
+  "Function__injective_p__stp P f = (inj_on f P)"
+  by (auto simp add: Function__injective_p__stp_def inj_on_def mem_def)
   end-proof
   
 
@@ -58,9 +58,9 @@ lemma Functions__injective_p__stp_simp [simp]:
     apply(simp add: surj_def eq_commute)
   end-proof
   proof Isa -verbatim
-lemma Functions__surjective_p__stp_simp[simp]:
-  "Functions__surjective_p__stp (A,B) f = surj_on f A B"
-  by (auto simp add: Functions__surjective_p__stp_def Ball_def Bex_def mem_def surj_on_def)
+lemma Function__surjective_p__stp_simp[simp]:
+  "Function__surjective_p__stp (A,B) f = surj_on f A B"
+  by (auto simp add: Function__surjective_p__stp_def Ball_def Bex_def mem_def surj_on_def)
 end-proof
 
   op [a,b] bijective? (f: a -> b) : Boolean =
@@ -70,15 +70,15 @@ end-proof
   end-proof
   proof Isa bijective_p__stp end-proof
   proof Isa -verbatim
-lemma Functions__bijective_p__stp_simp[simp]:
-  "Functions__bijective_p__stp (A,B) f = bij_ON f A B"
-  by (simp add: Functions__bijective_p__stp_def bij_ON_def)
-lemma Functions__bijective_p__stp_univ[simp]:
-  "Functions__bijective_p__stp (A,\_lambda x. True) f = bij_on f A UNIV"
+lemma Function__bijective_p__stp_simp[simp]:
+  "Function__bijective_p__stp (A,B) f = bij_ON f A B"
+  by (simp add: Function__bijective_p__stp_def bij_ON_def)
+lemma Function__bijective_p__stp_univ[simp]:
+  "Function__bijective_p__stp (A,\_lambda x. True) f = bij_on f A UNIV"
   by (simp add: univ_true bij_ON_UNIV_bij_on)
 
-lemma Functions__bij_inv_stp:
-   "Functions__bijective_p__stp (A,\_lambda x. True) f \_Longrightarrow Functions__bijective_p__stp (\_lambdax. True, A) (inv_on A f)"
+lemma Function__bij_inv_stp:
+   "Function__bijective_p__stp (A,\_lambda x. True) f \_Longrightarrow Function__bijective_p__stp (\_lambdax. True, A) (inv_on A f)"
    by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 end-proof
 
@@ -97,24 +97,24 @@ end-proof
     apply(auto simp add: bij_def surj_f_inv_f)
   end-proof
   proof Isa -verbatim
-lemma Functions__inverse__stp_alt:
-   "\_lbrakkinj_on f A; y \_in f`A\_rbrakk \_Longrightarrow Functions__inverse__stp A f y = inv_on A f y"
-   by (auto simp add: Functions__inverse__stp_def, 
+lemma Function__inverse__stp_alt:
+   "\_lbrakkinj_on f A; y \_in f`A\_rbrakk \_Longrightarrow Function__inverse__stp A f y = inv_on A f y"
+   by (auto simp add: Function__inverse__stp_def, 
        rule the_equality, auto simp add:mem_def inj_on_def)
 
-lemma Functions__inverse__stp_apply [simp]:
-   "\_lbrakkbij_ON f A B; y \_in B\_rbrakk \_Longrightarrow Functions__inverse__stp A f y = inv_on A f y"
+lemma Function__inverse__stp_apply [simp]:
+   "\_lbrakkbij_ON f A B; y \_in B\_rbrakk \_Longrightarrow Function__inverse__stp A f y = inv_on A f y"
     by(auto simp add: bij_ON_def surj_on_def,
-       erule Functions__inverse__stp_alt,
+       erule Function__inverse__stp_alt,
        simp add: image_def)
 
-lemma Functions__inverse__stp_simp:
-   "bij_on f A UNIV \_Longrightarrow Functions__inverse__stp A f = inv_on A f"
+lemma Function__inverse__stp_simp:
+   "bij_on f A UNIV \_Longrightarrow Function__inverse__stp A f = inv_on A f"
    by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
 end-proof
 
   proof Isa inverse__stp_Obligation_subsort
-    apply(simp only: Functions__bijective_p__stp_simp univ_true)
+    apply(simp only: Function__bijective_p__stp_simp univ_true)
     apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f", simp)
     apply(simp add: bij_ON_imp_bij_ON_inv)
     apply(auto simp add: bij_ON_def, 
@@ -207,13 +207,13 @@ end-proof
   % mapping to Isabelle:
 
   proof Isa ThyMorphism
-    Functions.id          -> id
-    Functions.o           -> o Left 24
-    Functions.:>          -> o Left 24 reversed
-    Functions.injective?  -> inj
-    Functions.surjective? -> surj
-    Functions.bijective?  -> bij
-    Functions.inverse     -> inv
+    Function.id          -> id
+    Function.o           -> o Left 24
+    Function.:>          -> o Left 24 reversed
+    Function.injective?  -> inj
+    Function.surjective? -> surj
+    Function.bijective?  -> bij
+    Function.inverse     -> inv
   end-proof
 
 endspec
