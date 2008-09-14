@@ -1,13 +1,13 @@
 FMap qualifying spec
 
   (* The motivation for this spec is analogous to the one for spec
-  `FiniteSets'; see comments in that spec.
+  `FiniteSet'; see comments in that spec.
 
-  Some of the operations on maps in spec `Maps' involve sets. In this spec, we
-  use the (refinable) finite sets specified in spec `FiniteSets', otherwise we
+  Some of the operations on maps in spec `Map' involve sets. In this spec, we
+  use the (refinable) finite sets specified in spec `FiniteSet', otherwise we
   would be unable to refine this spec for finite maps. *)
 
-  import Maps, EndoRelations, FiniteSets
+  import Map, EndoRelation, FiniteSet
 
   type FMap(a,b)
 

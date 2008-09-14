@@ -1,6 +1,6 @@
 EndoRelation qualifying spec
 
-  import Relations
+  import Relation
 
   type EndoRelation a = Relation(a,a)
 

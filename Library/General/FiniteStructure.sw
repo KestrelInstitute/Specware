@@ -2,9 +2,9 @@ spec
 
  (* This spec defines ops that involve different kinds of finite structures
  (sets, sequences, etc.) and that therefore do not "belong" to any of spec
- `FiniteSets', `FiniteSequences', etc. *)
+ `FiniteSet', `FiniteSequence', etc. *)
 
- import FiniteSets, FiniteMaps, FiniteSequences
+ import FiniteSet, FiniteMap, FiniteSequence
 
  % convert sequence to set:
  op FSeq.toSet : [a] FSeq a -> FSet a

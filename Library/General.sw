@@ -5,8 +5,8 @@ in the subdirectory General can be of course used. *)
 
 spec
 
-  import General/Orders
-  import General/FiniteStructures
+  import General/Order
+  import General/FiniteStructure
   import General/Assert
 
 endspec

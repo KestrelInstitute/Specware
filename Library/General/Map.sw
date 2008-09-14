@@ -1,6 +1,6 @@
 (* change this qualifier to "Map" -> *) MapAC qualifying spec
 
-  import Relations
+  import Relation
 
   % recall that spec `Relations' defines type `Map(a,b)'
 

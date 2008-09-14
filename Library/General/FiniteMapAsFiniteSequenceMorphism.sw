@@ -1,0 +1,1 @@
+morphism FiniteMap -> FiniteMapAsFiniteSequence {}

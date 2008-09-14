@@ -1,2 +1,0 @@
-% substitution:
-FiniteMapsAsFiniteSets[FiniteSetsAsFiniteSequencesMorphism]

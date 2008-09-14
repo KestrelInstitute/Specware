@@ -2,5 +2,5 @@
 JCRE specs are updated to no longer reference finite sequences but lists. *)
 
 spec
-  import FiniteSequences
+  import FiniteSequence
 endspec

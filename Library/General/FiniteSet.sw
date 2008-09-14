@@ -1,6 +1,6 @@
 FSet qualifying spec
 
-  (* The spec `Sets' defines a subtype `FiniteSet' for finite sets. In
+  (* The spec `Set' defines a subtype `FiniteSet' for finite sets. In
   principle, that subtype could be used in specs and then refined, e.g. in
   terms of lists, to obtain an executable implementation. In practice,
   currently Specware requires morphisms, which are used to express refinement,
@@ -9,7 +9,7 @@ FSet qualifying spec
   For this reason, we introduce here an "alternative" type for finite sets,
   called `FSet', and constrain it to be isomorphic to type `FiniteSet'.
   Operations on `FSet' are defined in terms of the isomorphism and of
-  operations in spec `Sets'.
+  operations in spec `Set'.
 
   By not equating type `FSet' to any other type (we only constrain it to be
   isomorphic to type `FiniteSet'), we leave the possibility open to refine it,
@@ -18,7 +18,7 @@ FSet qualifying spec
   should not use the isomorphisms, which are only used here internally to
   constrain type `FSet'. *)
 
-  import Sets
+  import Set
 
   type FSet a
 
@@ -28,7 +28,7 @@ FSet qualifying spec
 
   op fromFSet : [a] FSet a -> FiniteSet a = inverse toFSet
 
-  % operations and subtypes (see spec `Sets'):
+  % operations and subtypes (see spec `Set'):
 
   op [a] in? (x:a, s: FSet a) infixl 20 : Boolean = x in? fromFSet s
   proof Isa -> in_fset? end-proof
@@ -110,7 +110,7 @@ FSet qualifying spec
   op powerf : [a] FSet a -> FSet (FSet a) = power
 
   % we must strengthen the domain to non-empty sets of sets,
-  % because in spec `Sets' we have `//\\ empty = full':
+  % because in spec `Set' we have `//\\ empty = full':
   op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
     toFSet (//\\ (map fromFSet (fromFSet ss)))
 

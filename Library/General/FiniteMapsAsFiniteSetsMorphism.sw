@@ -1,1 +1,0 @@
-morphism FiniteMaps -> FiniteMapsAsFiniteSets {}

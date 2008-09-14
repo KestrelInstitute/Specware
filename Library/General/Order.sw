@@ -1,6 +1,6 @@
 Order qualifying spec
 
-  import EndoRelations
+  import EndoRelation
 
   % various kinds of orders:
 
@@ -21,7 +21,7 @@ Order qualifying spec
     partialOrder? r &&
     % the following is sometimes called "totality" in the
     % context of orders, but `total?' is already defined in
-    % spec `Relations' with a different meaning
+    % spec `Relation' with a different meaning
     (fa(x,y) r(x,y) || r(y,x))
 
   type LinearOrder a = (EndoRelation a | linearOrder?)

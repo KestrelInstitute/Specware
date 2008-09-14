@@ -1,9 +1,9 @@
 spec
 
-  import FiniteMapsAsFiniteSequences
+  import FiniteMapAsFiniteSequence
 
   op FSeq.toSet : [a] FSeq a -> FSet a
-  def FSeq.toSet = foldl (fn (x,s) -> s <| x) empty
+  def FSeq.toSet = foldl (<|) empty
 
   op FSeq.//\\ : [a] NonEmptyFSeq (FSet a) -> FSet a
   def FSeq.//\\ seqOfSets = foldl (/\) (first seqOfSets) (rtail seqOfSets)
@@ -11,11 +11,11 @@ spec
   op FSeq.\\// : [a] FSeq (FSet a) -> FSet a
   def FSeq.\\// = foldl (\/) empty
 
-  % copied from spec `FiniteStructures':
+  % copied from spec `FiniteStructure':
   op FMap.//\\ : [a,b] NonEmptyFMap (a, FSet b) -> FSet b
   def FMap.//\\ setValuedMap = FSet.//\\ (range setValuedMap)
 
-  % copied from spec `FiniteStructures':
+  % copied from spec `FiniteStructure':
   op FMap.\\// : [a,b] FMap (a, FSet b) -> FSet b
   def FMap.\\// setValuedMap = FSet.\\// (range setValuedMap)
 

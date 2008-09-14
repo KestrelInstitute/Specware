@@ -1,6 +1,6 @@
 FSet qualifying spec
 
-  import /Library/General/FiniteSequences, Sets
+  import /Library/General/FiniteSequence, Set
 
   % sets as equivalence classes of sequences without repeated elements:
   type FSet a = (InjectiveFSeq a) / permutationOf
@@ -99,7 +99,7 @@ FSet qualifying spec
     foldable? (c, f, fromFSet s)  % not executable
 
   op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)): b =
-    choose[FSet] (foldl (fn (x,y) -> f(y,x)) c) s
+    choose[FSet] (foldl f c) s
 
   op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
     choose[FSet] (fn seqOfSets -> 

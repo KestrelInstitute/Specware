@@ -9,11 +9,11 @@ Set qualifying spec
   definitional extension; therefore, it is readily seen to be consistent.
 
   The fact that type `Set' is defined means that sets as specified here cannot
-  be later refined into a representation different from predicates. This
-  should not be a problem because sets may be infinite and therefore cannot be
-  refined to be executable (because equality is undecidable). Sets as defined
-  here are useful for specification purposes, not for execution. Finite sets
-  as defined in spec `FiniteSets' can instead be refined to be executable. *)
+  be later refined into a representation different from predicates. This should
+  not be a problem because sets may be infinite and therefore cannot be refined
+  to be executable (because equality is undecidable). Sets as defined here are
+  useful for specification purposes, not for execution. Finite sets as defined
+  in spec `FiniteSet' can instead be refined to be executable. *)
 
   %%%%% NOTE %%%%%
   % this was probably motivated by the translator to Isabelle 2007, where sets

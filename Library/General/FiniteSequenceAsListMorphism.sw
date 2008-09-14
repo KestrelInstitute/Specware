@@ -1,0 +1,1 @@
+morphism FiniteSequence -> FiniteSequenceAsList {}

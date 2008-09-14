@@ -1,6 +1,6 @@
 Relation qualifying spec
 
-  import Sets
+  import Set
 
   % relations as sets of pairs:
 
