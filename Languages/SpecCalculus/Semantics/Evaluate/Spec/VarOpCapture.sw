@@ -77,7 +77,7 @@ SpecCalc qualifying spec
 
      | ApplyN (tms, a) ->
        let (new_tms, tms_changed?, all_op_names) = 
-           foldl (fn (tm, (new_tms, tms_changed?, all_op_names)) ->
+           foldl (fn ((new_tms, tms_changed?, all_op_names), tm) ->
 		  let (new_tm, tm_changed?, op_names) = deconflictTermRec tm in
 		  (new_tms ++ [new_tm], 
 		   tms_changed? || tm_changed?,
@@ -94,7 +94,7 @@ SpecCalc qualifying spec
 
      | Record (row, a) ->
        let (new_row, row_changed?, all_op_names) = 
-           foldl (fn ((id, tm), (new_row, row_changed?, all_op_names)) -> 
+           foldl (fn ((new_row, row_changed?, all_op_names), (id, tm)) -> 
 		  let (new_tm, tm_changed?, op_names) = deconflictTermRec tm in
 		  (new_row ++ [(id, new_tm)], 
 		   row_changed? || tm_changed?,
@@ -112,7 +112,7 @@ SpecCalc qualifying spec
      | Bind (bnd, vars, tm, a) ->
        let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
        let (new_vars, vars_changed?, vars_op_names, captures) = 
-           foldl (fn ((id, srt), (new_vars, vars_changed?, all_op_names, captures)) -> 
+           foldl (fn ((new_vars, vars_changed?, all_op_names, captures), (id, srt)) -> 
 		  let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
 		  let new_captures = (if member (id, tm_op_names) then
 					captures ++ [id]
@@ -145,11 +145,11 @@ SpecCalc qualifying spec
      | Let (decls, body, a) ->
        let (new_body, changed?, body_op_names) = deconflictTermRec body in
        let (new_decls, changed?, decls_op_names, captures) = 
-           foldl (fn (decl as (pat, tm), (new_decls, changed?, decls_op_names, captures)) ->
+           foldl (fn ((new_decls, changed?, decls_op_names, captures), decl as (pat, tm)) ->
 		  let pvars = patVars pat in
 		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
 		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
-		  let new_captures = (foldl (fn ((id,_), captures) ->
+		  let new_captures = (foldl (fn (captures, (id,_)) ->
 					     if member (id, body_op_names) then
 					       captures ++ [id]
 					     else
@@ -182,7 +182,7 @@ SpecCalc qualifying spec
      | LetRec (decls, body, a) ->
        let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
        let (new_decls, decls_changed?, decls_op_names, captures) =
-           foldl (fn (((id, srt), tm), (new_decls, decls_changed?, decls_op_names, captures)) ->
+           foldl (fn ((new_decls, decls_changed?, decls_op_names, captures), ((id, srt), tm)) ->
 		  let new_captures = (if member (id, body_op_names) then
 					captures ++ [id]
 				      else
@@ -237,12 +237,12 @@ SpecCalc qualifying spec
 
      | Lambda (matches, a) ->
        let (new_matches, matches_changed?, matches_op_names, matches_captures) = 
-           foldl (fn ((pat, cond, body), (new_matches, matches_changed?, matches_op_names, matches_captures)) ->
+           foldl (fn ((new_matches, matches_changed?, matches_op_names, matches_captures), (pat, cond, body)) ->
 		  let pvars = patVars pat in
 		  let (new_pat,  pat_changed?,  pat_op_names)  = deconflictPatRec  pat  in
 		  let (new_cond, cond_changed?, cond_op_names) = deconflictTermRec cond in
 		  let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
-		  let captures = foldl (fn ((id,_), captures) ->
+		  let captures = foldl (fn (captures, (id,_)) ->
 					if member (id, body_op_names) then
 					  captures ++ [id]
 					else
@@ -313,7 +313,7 @@ SpecCalc qualifying spec
 
      | Seq (tms, a) ->
        let (new_tms, tms_changed?, tms_op_names) = 
-           foldl (fn (tm, (new_tms, tms_changed?, tms_op_names)) ->
+           foldl (fn ((new_tms, tms_changed?, tms_op_names), tm) ->
 		  let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
 		  (new_tms ++ [new_tm],
 		   tms_changed? || tm_changed?,
@@ -350,7 +350,7 @@ SpecCalc qualifying spec
 
      | And (tms, a)    -> 
        let (new_tms, tms_changed?, tms_op_names) =
-           foldl (fn (tm, (new_tms, tms_changed?, tms_op_names)) ->
+           foldl (fn ((new_tms, tms_changed?, tms_op_names), tm) ->
 		  let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
 		  (new_tms ++ [new_tm],
 		   tms_changed? || tm_changed?,
@@ -387,7 +387,7 @@ SpecCalc qualifying spec
 	   
      | Product (row, a) ->
        let (new_row, row_changed?, row_op_names) = 
-           foldl (fn ((id, srt), (new_row, row_changed?, row_op_names)) ->
+           foldl (fn ((new_row, row_changed?, row_op_names), (id, srt)) ->
 		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
 		  (new_row ++ [(id, new_srt)],
 		   row_changed? || srt_changed?,
@@ -404,7 +404,7 @@ SpecCalc qualifying spec
 	     
      | CoProduct (row, a) ->
        let (new_row, row_changed?, row_op_names) = 
-           foldl (fn ((id, opt_srt), (new_row, row_changed?, row_op_names)) ->
+           foldl (fn ((new_row, row_changed?, row_op_names), (id, opt_srt)) ->
 		  let (new_srt, srt_changed?, srt_op_names) = 
 		      case opt_srt of
 			| None -> (None, false, [])
@@ -450,7 +450,7 @@ SpecCalc qualifying spec
 
      | Base (qid as Qualified(_,id), srts, a) ->
        let (new_srts, srts_changed?, srts_op_names) = 
-           foldl (fn (srt, (new_srts, srts_changed?, srts_op_names)) ->
+           foldl (fn ((new_srts, srts_changed?, srts_op_names), srt) ->
 		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
 		  (new_srts ++ [srt],
 		   srts_changed? || srt_changed?,
@@ -496,7 +496,7 @@ SpecCalc qualifying spec
 	  
      | And (srts, a) -> 
        let (new_srts, srts_changed?, srts_op_names) = 
-           foldl (fn (srt, (new_srts, srts_changed?, srts_op_names)) ->
+           foldl (fn ((new_srts, srts_changed?, srts_op_names), srt) ->
 		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
 		  (new_srts ++ [srt],
 		   srts_changed? || srt_changed?,
@@ -563,7 +563,7 @@ SpecCalc qualifying spec
 
      | RecordPat (fields, a) ->
        let (new_fields, fields_changed?, fields_op_names) =
-           foldl (fn ((id, pat), (new_fields, fields_changed?, fields_op_names)) ->
+           foldl (fn ((new_fields, fields_changed?, fields_op_names), (id, pat)) ->
 		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
 		  (new_fields ++ [(id, new_pat)],
 		   fields_changed? || pat_changed?,

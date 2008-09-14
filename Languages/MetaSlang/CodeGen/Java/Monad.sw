@@ -125,10 +125,10 @@ def getImports =
 op addClsDecl: ClsDecl -> JGenEnv ()
 def addClsDecl decl =
   fn state ->
-  (Ok (), maybeAddClsDecl (decl, state))
+  (Ok (), maybeAddClsDecl (state, decl))
 
-op  maybeAddClsDecl : ClsDecl * State -> State
-def maybeAddClsDecl (decl, state) =
+op  maybeAddClsDecl : State * ClsDecl -> State
+def maybeAddClsDecl (state, decl) =
   let old_decls = state.clsDecls in
   if member (decl, old_decls) then
     state
@@ -177,7 +177,7 @@ def maybeAddClsDecl (decl, state) =
    %% list_b is suppressed.
    %% Unfortunately, the location of the names to compare is different for 
    %% each list, so this is verbose:
-   let new_fields = foldl (fn (a, fields) ->
+   let new_fields = foldl (fn (fields, a) ->
 			   if exists (fn b -> b.3.1 = a.3.1) body_b.flds then
 			     fields
 			   else
@@ -185,7 +185,7 @@ def maybeAddClsDecl (decl, state) =
 			  body_b.flds
 			  body_a.flds
    in
-   let new_methods = foldl (fn (a, methods) ->
+   let new_methods = foldl (fn (methods, a) ->
 			    if exists (fn b -> b.1.3 = a.1.3) body_b.meths then
 			      methods
 			    else
@@ -193,7 +193,7 @@ def maybeAddClsDecl (decl, state) =
                            body_b.meths
 			   body_a.meths
    in
-   let new_constrs = foldl (fn (a, constrs) ->
+   let new_constrs = foldl (fn (constrs, a) ->
 			    if exists (fn b -> b.2 = a.2) body_b.constrs then
 			      constrs
 			    else

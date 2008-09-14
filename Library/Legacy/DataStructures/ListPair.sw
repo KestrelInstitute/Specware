@@ -9,7 +9,7 @@ ListPair qualifying spec {
   op all    : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
   op exists : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
   op foldr  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
-  op foldl  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
+  op foldl  : fa (a,b,c) (c * a * b -> c) -> c -> List a * List b -> c 
   op app    : fa (a,b) (a * b -> ()) -> List a * List b -> ()
 
 %  def zip (l,r) = 
@@ -47,7 +47,7 @@ ListPair qualifying spec {
 
   def foldl f u (l,r) = 
     case (l,r) of
-      | (x::l,y::r) -> foldl f (f (x,y,u)) (l,r)
+      | (x::l,y::r) -> foldl f (f (u,x,y)) (l,r)
       | _ -> u
 
   def app f (l,r) = 

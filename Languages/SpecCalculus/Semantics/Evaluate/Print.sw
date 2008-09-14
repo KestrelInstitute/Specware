@@ -269,7 +269,7 @@ SpecCalc qualifying spec {
 	    vertice_set
    in
    let pp_vertice_entries = 
-       foldl (fn (vertex, pp_entries) -> 
+       foldl (fn (pp_entries,vertex) -> 
 	      Cons (ppGroup 
 		    (ppConcat 
 		     [ppElem vertex, 
@@ -372,7 +372,7 @@ SpecCalc qualifying spec {
 	      ]))
    in
    let sms =
-       foldl (fn (sm, cod_strs) ->
+       foldl (fn (cod_strs,sm) ->
 	      let doc = ppConcat [ppBreak,
 				  ppMorphismX base_spec reverse_context sm]
 	      in

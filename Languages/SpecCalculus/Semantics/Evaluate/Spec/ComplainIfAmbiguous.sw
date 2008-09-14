@@ -55,7 +55,7 @@ SpecCalc qualifying spec
          case ambiguous_sorts of
 	   | [] -> ""
 	   | _ ->
-	     (foldl (fn (sort_info, msg) ->
+	     (foldl (fn (msg, sort_info) ->
 		     msg ^ (ppFormat (ppASortInfo sort_info)))
 	            "\nAmbiguous types:\n"
 		    ambiguous_sorts)
@@ -65,7 +65,7 @@ SpecCalc qualifying spec
          case bad_fixity_ops of
 	   | [] -> ""
 	   | _ ->
-	     (foldl (fn (opinfo, msg) ->
+	     (foldl (fn (msg, opinfo) ->
 		     msg ^ (printAliases opinfo.names) ^ " : " ^ (ppFormat (ppFixity opinfo.fixity)))
 	            "\nOps with multiple fixities:\n"
 		    bad_fixity_ops)
@@ -74,7 +74,7 @@ SpecCalc qualifying spec
          case ambiguous_ops of
 	   | [] -> ""
 	   | _ ->
-	     (foldl (fn (opinfo, msg) ->
+	     (foldl (fn (msg, opinfo) ->
 		     msg ^ (ppFormat (ppAOpInfo opinfo)))
 	            "\nAmbiguous ops:\n"
 		    ambiguous_ops)

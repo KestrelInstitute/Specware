@@ -111,7 +111,7 @@ MetaSlang qualifying spec
      | [name] -> printQualifiedId name
      | first::rest ->
        "{" ^ (printQualifiedId first) ^
-       (foldl (fn (qid, str) -> str ^ ", " ^ printQualifiedId qid)
+       (foldl (fn (str, qid) -> str ^ ", " ^ printQualifiedId qid)
 	      ""
 	      rest)
        ^ "}"
@@ -1124,19 +1124,19 @@ MetaSlang qualifying spec
 
      | Apply     (M, N, _)     -> foldSubTerms f (foldSubTerms f newVal M) N
 
-     | ApplyN    (Ms,       _) -> foldl (fn (M,val)     -> foldSubTerms f val M) newVal Ms
+     | ApplyN    (Ms,       _) -> foldl (fn (val,M)     -> foldSubTerms f val M) newVal Ms
 
-     | Record    (fields, _)   -> foldl (fn ((_,M),val) -> foldSubTerms f val M) newVal fields
+     | Record    (fields, _)   -> foldl (fn (val,(_,M)) -> foldSubTerms f val M) newVal fields
 
      | Bind      (_,_,M,    _) -> foldSubTerms f newVal M
 
      | The       (_,M,      _) -> foldSubTerms f newVal M
 
-     | Let       (decls, N, _) -> foldl (fn ((_,M),val) -> foldSubTerms f val M)
+     | Let       (decls, N, _) -> foldl (fn (val,(_,M)) -> foldSubTerms f val M)
                                         (foldSubTerms f newVal N) 
 					decls
 
-     | LetRec    (decls, N, _) -> foldl (fn ((_,M),val) -> (foldSubTerms f val M))
+     | LetRec    (decls, N, _) -> foldl (fn (val,(_,M)) -> (foldSubTerms f val M))
 				        (foldSubTerms f newVal N) 
 					decls
 
@@ -1144,7 +1144,7 @@ MetaSlang qualifying spec
 
      | Fun _                   -> newVal
 
-     | Lambda    (rules,    _) -> foldl (fn ((p, c, M),val) ->
+     | Lambda    (rules,    _) -> foldl (fn (val,(p, c, M)) ->
 					 foldSubTerms f (foldSubTerms f (foldSubTermsPat f val p) c) M)
 					newVal rules
 
@@ -1154,13 +1154,13 @@ MetaSlang qualifying spec
 						             N)
 					       P
 
-     | Seq       (Ms,       _) -> foldl (fn (M,val) -> foldSubTerms f val M) newVal Ms
+     | Seq       (Ms,       _) -> foldl (fn (val,M) -> foldSubTerms f val M) newVal Ms
 
      | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
 
      | Pi        (_,   M,   _) -> foldSubTerms f newVal M
 
-    %| And       (tms,      _) -> foldl (fn (tm,val) -> foldSubTerms f val tm) newVal tms % really want join/meet of fold results
+    %| And       (tms,      _) -> foldl (fn (val,tm) -> foldSubTerms f val tm) newVal tms % really want join/meet of fold results
 
      | Any                  _  -> newVal
 
@@ -1178,7 +1178,7 @@ MetaSlang qualifying spec
 
 	 | Apply     (M as Lambda (rules,  _), N, _) ->	% case statement
 	   let val = (foldSubTermsEvalOrder f val N) in
-	   foldl (fn ((_,c,M),val) ->
+	   foldl (fn (val,(_,c,M)) ->
 		  foldSubTermsEvalOrder f (foldSubTermsEvalOrder f val c) M)
 	         val rules
 
@@ -1186,11 +1186,11 @@ MetaSlang qualifying spec
 	                                                  (foldSubTermsEvalOrder f val M)
 							  N
 
-	 | ApplyN    (Ms,     _) -> foldl (fn (M,val) -> 
+	 | ApplyN    (Ms,     _) -> foldl (fn (val,M) -> 
 					   foldSubTermsEvalOrder f val M)
 		                          val Ms
 
-	 | Record    (fields, _) -> foldl (fn ((_,M),val) -> 
+	 | Record    (fields, _) -> foldl (fn (val,(_,M)) -> 
 					    foldSubTermsEvalOrder f val M)
 					  val fields
 
@@ -1198,13 +1198,13 @@ MetaSlang qualifying spec
 
 	 | The       (_,M,    _) -> foldSubTermsEvalOrder f val M
 
-	 | Let       (decls,N,_) -> let dval = foldl (fn ((_, M), val) ->
+	 | Let       (decls,N,_) -> let dval = foldl (fn (val,(_, M)) ->
 						      foldSubTermsEvalOrder f val M)
 						     val decls
 				    in 
 				      foldSubTermsEvalOrder f dval N
 
-	 | LetRec    (decls,N,_) -> foldl (fn ((_, M), val) -> 
+	 | LetRec    (decls,N,_) -> foldl (fn (val,(_, M)) -> 
 					   foldSubTermsEvalOrder f val M)
 				          (foldSubTermsEvalOrder f val N) 
 					  decls
@@ -1217,7 +1217,7 @@ MetaSlang qualifying spec
 				    %% lambda is evaluated before its contents
 				    %% this is an approximation as we don't know when
 				    %% contents will be evaluated
-				    foldl (fn ((p, c, M), val) ->
+				    foldl (fn (val,(p, c, M)) ->
 					   foldSubTermsEvalOrder f
 					     (foldSubTermsEvalOrder f
 					        (foldSubTermsEvalOrderPat f val p) c) 
@@ -1230,7 +1230,7 @@ MetaSlang qualifying spec
 					N)
 				      P
 
-	 | Seq       (Ms,     _) -> foldl (fn (M, val) ->
+	 | Seq       (Ms,     _) -> foldl (fn (val,M) ->
 					   foldSubTermsEvalOrder f val M)
 					  val Ms
 
@@ -1238,7 +1238,7 @@ MetaSlang qualifying spec
 
          | Pi        (_,  M,  _) -> foldSubTermsEvalOrder f val M
 
-        %| And       (tms,    _) -> foldl (fn (tms, val) -> foldSubTermsEvalOrder f val tm) val tms % really want join/meet of fold results
+        %| And       (tms,    _) -> foldl (fn (val,tms) -> foldSubTermsEvalOrder f val tm) val tms % really want join/meet of fold results
 
          | Any                _  -> val
 
@@ -1261,7 +1261,7 @@ MetaSlang qualifying spec
        foldSubPatterns f (foldSubPatterns f result p1) p2
      | EmbedPat(id, Some pat,_,_) -> foldSubPatterns f result pat
      | RecordPat(fields,_) ->
-       foldl (fn ((_,p),r)-> foldSubPatterns f r p) result fields
+       foldl (fn (r,(_,p))-> foldSubPatterns f r p) result fields
      | QuotientPat  (pat,_,_) -> foldSubPatterns f result pat
      | RestrictedPat(pat,_,_) -> foldSubPatterns f result pat
      | SortedPat    (pat,_,_) -> foldSubPatterns f result pat

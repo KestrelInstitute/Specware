@@ -331,7 +331,7 @@ def patternNamesOpt (pattern) =
   case pattern of
     | VarPat((id,_),_) -> Some [id]
     | RecordPat(fields,_) ->
-      List.foldl (fn ((_,p), namesOpt) ->
+      List.foldl (fn (namesOpt,(_,p)) ->
 		  case namesOpt of
 		    | Some names ->
 		      (case patternNameOpt(p) of

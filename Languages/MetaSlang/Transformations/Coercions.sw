@@ -194,14 +194,14 @@ spec
       def checkCoercions1 tm =
         case tm of
           | Apply(Lambda (match, _), _, _) ->
-            foldl (\_lambda ((_,_,x),result) \_rightarrow checkCoercions2(result,x))
+            foldl (\_lambda (result, (_,_,x)) \_rightarrow checkCoercions2(result,x))
               (true, None) match
           | Apply(f,_,_) \_rightarrow
             (case find (fn tb \_rightarrow f = tb.coerceToSuper \_or f = tb.coerceToSub) coercions of
                | Some tb \_rightarrow (true, Some(tb,f))
                | None \_rightarrow (false,None))
           | Record(row, _) \_rightarrow
-            (foldl (\_lambda ((_,x),result) \_rightarrow checkCoercions2(result,x))
+            (foldl (\_lambda (result, (_,x)) \_rightarrow checkCoercions2(result,x))
                (true, None) row)
           | Let(_,x,_) \_rightarrow checkCoercions1 x
           | IfThenElse(_,x,y,_) \_rightarrow checkCoercions2(checkCoercions1 x,y)
@@ -248,7 +248,7 @@ spec
     in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc =
-        spc << {ops = foldl (fn (el,ops) \_rightarrow
+        spc << {ops = foldl (fn (ops,el) \_rightarrow
                              case el of
                                | Op (qid as Qualified(q,id), true, _) \_rightarrow
                                  %% true means decl includes def

@@ -144,7 +144,7 @@ spec
 	  | Seq(tms,_) -> nth (map (fn s -> evalRec(s,sb,spc,depth+1)) tms, (length tms) - 1)
 	  | Let(decls, body, a) ->
 	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1))) decls in
-	     case foldl (fn ((pat,e),ssb) ->
+	     case foldl (fn (ssb,(pat,e)) ->
 			  case ssb of
 			    | Some sbr ->
 			      %% The e are evaluated in the outer environment (sb not sbr)
@@ -157,7 +157,7 @@ spec
 		| None -> Unevaluated (Let(map (fn (pat,e) -> (pat,valueToTerm e)) rdecls, body, a)))
 	  | LetRec(decls, body, _) ->
 	    let ids = rev(map (fn ((v,_),_) -> v) decls) in
-	    (case foldl (fn (((v,_),e),ssb) ->
+	    (case foldl (fn (ssb,((v,_),e)) ->
 			 case ssb of
 			   | Some nsb ->
 			     Some(addToSubst(nsb,v,
@@ -450,7 +450,7 @@ spec
 	| RecordPat(fields, _) ->
 	  (case N of
 	     | RecordVal valFields ->
-	       foldl (fn ((lbl,rpat),result) ->
+	       foldl (fn (result,(lbl,rpat)) ->
 		      case result of
 			| Match S ->
 			  (case lookup(valFields,lbl) of
@@ -518,7 +518,7 @@ spec
   op  mkLetOrsubst: MS.Term * Subst * Subst -> MS.Term
   def mkLetOrsubst(t,newSb,oldSb) =
     let def splitSubst sb =
-          List.foldl (fn ((vr,val),(letSb,substSb)) ->
+          List.foldl (fn ((letSb,substSb),(vr,val)) ->
 		 if evalConstant? val	% Could be more discriminating
 		  then (letSb,Cons((vr,valueToTerm val),substSb))
 		  else (Cons((vr,valueToTerm val),letSb),substSb))
@@ -528,7 +528,7 @@ spec
     if localSb = emptySubst then t
       else
       let fvs = freeVars t in
-      let usedSb = foldl (fn ((id1,v),rsb) ->
+      let usedSb = foldl (fn (rsb,(id1,v)) ->
 			  case find (fn (id2,_) -> id1 = id2) fvs of
 			    | Some vr -> Cons((vr,v),rsb)
 			    | None -> rsb)

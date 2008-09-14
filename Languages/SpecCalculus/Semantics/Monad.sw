@@ -57,7 +57,7 @@ This runs a monadic program and lifts the result out of the monad.
         (case state.exceptions of
 	   | [] -> x
 	   | exceptions ->
-	     fail (foldl (fn (exception, s) -> s ^ "\n" ^ (printException exception))
+	     fail (foldl (fn (s, exception) -> s ^ "\n" ^ (printException exception))
 		         "run: uncaught exceptions:\n  "
 			 (rev exceptions)))
       | (Exception exception, _) -> 
@@ -131,7 +131,7 @@ Raise an exception. Should this be called throw?
   op  raise_any_pending_exceptions : Env ()
   def raise_any_pending_exceptions =
     fn state ->
-      let exceptions = rev (foldl (fn (e, exceptions) ->
+      let exceptions = rev (foldl (fn (exceptions, e) ->
                                      case e of
                                        | Warning (pos, msg) ->
                                          let _ = toScreen ("\n; WARNING at " ^ anyToString pos ^ " " ^ anyToString msg ^ "\n") in

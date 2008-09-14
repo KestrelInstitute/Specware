@@ -161,11 +161,11 @@ Utilities qualifying spec
 	   else 
 	     StringMap.insert (constrMap, id,  (qid, cp_srt) :: srt_prs)
 
-     def addSort qid (dfn, constrMap) =
+     def addSort qid (constrMap, dfn) =
        let (tvs, srt) = unpackSort dfn in
        case srt : MS.Sort of
 	 | CoProduct (row, _) ->
-	   foldl (fn ((id, _), constrMap) -> addConstr (id, qid, dfn, constrMap)) 
+	   foldl (fn (constrMap, (id,_)) -> addConstr (id, qid, dfn, constrMap)) 
 	         constrMap
 		 row
 	   %% | Base (Qualified (qid, id), _, _) ->
@@ -297,9 +297,9 @@ Utilities qualifying spec
 	       ((if l1 ~= l2 then
 		   error (env,
 			  "\nInstantiation list (" ^ 
-			  (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" ts) ^
+			  (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" ts) ^
 			  " ) does not match argument list (" ^ 
-			  (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
+			  (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
 			  " )",
 			  pos)
 		 else 
@@ -327,7 +327,7 @@ Utilities qualifying spec
 		     unfoldSortRec (env,
 				    instantiateScheme (env, pos, ts, dfn),
 				    %% Watch for self-references, even via aliases: 
-				    foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
+				    foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
 				          qids
 					  info.names))
           | [] -> 
@@ -391,9 +391,9 @@ Utilities qualifying spec
    if ~(length types = length tvs) then
      (error (env, 
 	     "\nInstantiation list (" ^ 
-	     (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" types) ^
+	     (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" types) ^
 	     " ) does not match argument list (" ^ 
-	     (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
+	     (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
 	     " )",
 	     pos);
       sss)
@@ -500,7 +500,7 @@ Utilities qualifying spec
      case (srt1, srt2) of
 
        | (And (srts1, _), _) ->
-         foldl (fn (s1, result) ->
+         foldl (fn (result,s1) ->
 		case result of
 		  | Unify _ -> result
 		  | _ -> unify (env, s1, srt2, pairs, ignoreSubsorts?))
@@ -508,7 +508,7 @@ Utilities qualifying spec
 	       srts1
        
        | (_, And (srts2, _)) ->
-         foldl (fn (s2, result) ->
+         foldl (fn (result,s2) ->
 		case result of
 		  | Unify _ -> result
 		  | _ -> unify (env, srt1, s2, pairs, ignoreSubsorts?))

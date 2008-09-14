@@ -391,7 +391,7 @@ IsaTermPrinter qualifying spec
                    let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
                    % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
                    %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
-                   let (_,thms) = foldl (fn(fmla,(i,result)) ->
+                   let (_,thms) = foldl (fn((i,result), fmla) ->
                                            (i + 1,
                                             result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
                                                                                               else toString i)),
@@ -826,7 +826,7 @@ IsaTermPrinter qualifying spec
             aux(hd, caseToIf(c, match, arg))
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
-	     then foldl (\_lambda ((pati,_,bodi), cases) \_rightarrow
+	     then foldl (\_lambda (cases, (pati,_,bodi)) \_rightarrow
 			 case patToTerm(pati,"", c) of
 			   | Some pati_tm \_rightarrow
                              let new_cases = aux_case(substitute(hd,[(v,pati_tm)]), bodi) in
@@ -1228,7 +1228,7 @@ IsaTermPrinter qualifying spec
             aux(hd, caseToIf(c, match, arg), tuple?)
 	  | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
 	    if exists (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
-	     then foldl (\_lambda ((pati,_,bodi), (cases,not_prim)) \_rightarrow
+	     then foldl (\_lambda ((cases,not_prim), (pati,_,bodi)) \_rightarrow
 			 case patToTerm(pati,"", c) of
 			   | Some pati_tm \_rightarrow
                              let (new_cases,n_p) = aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?) in
@@ -1343,17 +1343,17 @@ IsaTermPrinter qualifying spec
 
   op addExplicitTyping_n1(c: Context, lhs: List MS.Term, rhs: MS.Term): List MS.Term * MS.Term =
     if addExplicitTyping? then
-      let fvs = removeDuplicates(foldl (\_lambda (t,vs) \_rightarrow
+      let fvs = removeDuplicates(foldl (\_lambda (vs,t) \_rightarrow
                                         freeVars t ++ vs)
                                    (freeVars rhs) lhs)
       in
       %let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
-      let vs = foldl (\_lambda (t,vs) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
+      let vs = foldl (\_lambda (vs,t) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
       %let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
       let vs = filterConstrainedVars(c,rhs,vs) in
       %let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
 
-      let (lhs,vs) = foldl (\_lambda (st,(lhs,vs)) \_rightarrow
+      let (lhs,vs) = foldl (\_lambda ((lhs,vs),st) \_rightarrow
                              let (st,vs) = addExplicitTypingForVars(st,vs) in
                              (lhs ++ [st], vs))
                         ([],vs) lhs
@@ -1417,7 +1417,7 @@ IsaTermPrinter qualifying spec
         let (t2,vs) = addExplicitTypingForVars(t2,vs) in
         (Apply(t1,t2,a),vs)
       | Record(prs,a) \_rightarrow
-        let (prs,vs) = foldl (\_lambda ((id,st),(prs,vs)) \_rightarrow
+        let (prs,vs) = foldl (\_lambda ((prs,vs),(id,st)) \_rightarrow
                              let (st,vs) = addExplicitTypingForVars(st,vs) in
                              (Cons((id,st),prs), vs))
                         ([],vs) prs
@@ -1441,7 +1441,7 @@ IsaTermPrinter qualifying spec
         let (t3,vs) = addExplicitTypingForVars(t3,vs) in
         (IfThenElse(t1,t2,t3,a),vs)
       | Lambda(cases,a) ->
-        let (cases,vs) = foldl (fn ((p,c,t),(result,vs)) ->
+        let (cases,vs) = foldl (fn ((result,vs),(p,c,t)) ->
                                   let (t,vs) = addExplicitTypingForVars(t,vs) in
                                   (result ++ [(p,c,t)], vs))
                            ([],vs) cases
@@ -2417,27 +2417,27 @@ IsaTermPrinter qualifying spec
    let def att(id, s) =
          (if id = "" then "e" else id) ^ s
    in
-   let id = foldl (\_lambda(#?,id) -> att(id, "_p")
-                   | (#=,id) -> att(id, "_eq")
-                   | (#<,id) -> att(id, "_lt")
-                   | (#>,id) -> att(id, "_gt")
-                   | (#~,id) -> att(id, "_tld")
-                   | (#/,id) -> att(id, "_fsl")
-                   | (#\\,id) -> att(id, "_bsl")
-                   | (#-,id) -> att(id, "_dsh")
-                   | (#*,id) -> att(id, "_ast")
-                   | (#+,id) -> att(id, "_pls")
-                   | (#|,id) -> att(id, "_bar")
-                   | (#!,id) -> att(id, "_excl")
-                   | (#@,id) -> att(id, "_at")
-                   | (##,id) -> att(id, "_hsh")
-                   | (#$,id) -> att(id, "_dolr")
-                   | (#^,id) -> att(id, "_crt")
-                   | (#&,id) -> att(id, "_amp")
-                   | (#',id) -> att(id, "_cqt")
-                   | (#`,id) -> att(id, "_oqt")
-                   | (#:,id) -> att(id, "_cl")
-		   | (c,id) -> id ^ toString(c)) "" idarray
+   let id = foldl (\_lambda(id,#?) -> att(id, "_p")
+                   | (id,#=) -> att(id, "_eq")
+                   | (id,#<) -> att(id, "_lt")
+                   | (id,#>) -> att(id, "_gt")
+                   | (id,#~) -> att(id, "_tld")
+                   | (id,#/) -> att(id, "_fsl")
+                   | (id,#\\) -> att(id, "_bsl")
+                   | (id,#-) -> att(id, "_dsh")
+                   | (id,#*) -> att(id, "_ast")
+                   | (id,#+) -> att(id, "_pls")
+                   | (id,#|) -> att(id, "_bar")
+                   | (id,#!) -> att(id, "_excl")
+                   | (id,#@) -> att(id, "_at")
+                   | (id,##) -> att(id, "_hsh")
+                   | (id,#$) -> att(id, "_dolr")
+                   | (id,#^) -> att(id, "_crt")
+                   | (id,#&) -> att(id, "_amp")
+                   | (id,#') -> att(id, "_cqt")
+                   | (id,#`) -> att(id, "_oqt")
+                   | (id,#:) -> att(id, "_cl")
+		   | (id,c) -> id ^ toString(c)) "" idarray
    in id
 
  op  isSimpleTerm? : MS.Term \_rightarrow Boolean
@@ -2499,7 +2499,7 @@ IsaTermPrinter qualifying spec
        (\_lambda (info, result as (found,overloaded)) \_rightarrow
           case sortInnerSort(info.dfn) of
             | CoProduct(prs,_) \_rightarrow
-              foldl (\_lambda ((id,_), (found,overloaded)) \_rightarrow
+              foldl (\_lambda ((found,overloaded),(id,_)) \_rightarrow
                        if member(id,found)
                          then (         found, Cons(id,overloaded))
                        else (Cons(id,found),          overloaded))

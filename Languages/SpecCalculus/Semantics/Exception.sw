@@ -112,7 +112,7 @@ SpecCalc qualifying spec
   op printTypeErrors : List(String * Position) -> String
   def printTypeErrors errs =
     if length errs = 0 then "" else
-    let def printErr((msg,pos),(result,lastfilename)) =
+    let def printErr((result,lastfilename),(msg,pos)) =
           let filename = (case pos of
 			    | File (filename, left, right) -> filename
 			    | _ -> "")
@@ -135,7 +135,7 @@ SpecCalc qualifying spec
     case exceptions of 
       | [] -> ""
       | _ ->
-        let def print_exception (exception, (result, opt_lastfilename)) =
+        let def print_exception ((result, opt_lastfilename), exception) =
 	     (case decodeException exception of
 		| (None, msg) ->
 		  (printException exception,

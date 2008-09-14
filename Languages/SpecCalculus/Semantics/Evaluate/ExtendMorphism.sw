@@ -66,7 +66,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   let srtMap = morph.sortMap in
   let codIds = answerVarsFromSnark() in
   let domIds = map (fn (id,_) -> id) domVars in
-  let newOpMap = foldl (fn (domId, codId, map) -> (update map (mkUnQualifiedId(domId)) (mkUnQualifiedId(codId)))) opMap (domIds, codIds) in
+  let newOpMap = foldl (fn (map, domId, codId) -> (update map (mkUnQualifiedId(domId)) (mkUnQualifiedId(codId)))) opMap (domIds, codIds) in
   let _ = if specwareDebug? then map (fn (id) -> System.print("domOp: " ^ id ^ "\n")) domIds else [""] in
   let _ = if specwareDebug? then map (fn (id) -> System.print("codOp: " ^ id ^ "\n")) codIds else [""] in
   %%let _ = if specwareDebug? then printTermToTerminal(domIds) else () in
@@ -79,7 +79,7 @@ def mkExistential (spc, term) =
   let opsToQuantify = termOpsInSpec(term, spc) in
   let newVars = map (fn (Fun (Op (Qualified (q, id), _), srt, a)) -> (id, srt))
                     opsToQuantify in
-  let opToVarMap = ListPair.foldl (fn (Fun (Op (qid, _), _, _), var, map)
+  let opToVarMap = ListPair.foldl (fn (map, Fun (Op (qid, _), _, _), var)
 			       -> (update map qid var))
                          emptyMap (opsToQuantify, newVars) in
   let
@@ -119,7 +119,7 @@ def termOpsInSpec?(term, spc) =
 	 let res = mapRec bdy in res
 
        | Record     (row, a) -> 
-	 let res = foldl (fn ((_, trm), res) -> res or (mapRec trm)) false row in
+	 let res = foldl (fn (res, (_, trm)) -> res or (mapRec trm)) false row in
 	   res
 
        | IfThenElse (       t1,        t2,        t3, a) -> 
@@ -129,7 +129,7 @@ def termOpsInSpec?(term, spc) =
 	   resT1 or resT2 or resT3
 
        | Lambda     (match, a) -> 
-         let resMatch = foldl (fn ((pat, cond, trm), res) -> res or (mapRec trm)) false match in
+         let resMatch = foldl (fn (res, (pat, cond, trm)) -> res or (mapRec trm)) false match in
 	   resMatch
 
        | Bind       (bnd, vars, trm, a) -> 
@@ -142,11 +142,11 @@ def termOpsInSpec?(term, spc) =
 	   resT1 or resT2
 
        | Seq        (                terms, a) -> 
-	 let resTerms = foldl (fn (trm, res) -> res or (mapRec trm)) false terms in
+	 let resTerms = foldl (fn (res, trm) -> res or (mapRec trm)) false terms in
 	   resTerms
 
        | ApplyN     (                terms, a) -> 
-	 let resTerms = foldl (fn (trm, res) -> res or (mapRec trm)) false terms in
+	 let resTerms = foldl (fn (res, trm) -> res or (mapRec trm)) false terms in
 	   resTerms
 
        | SortedTerm (       trm,                  srt, a) -> 
@@ -181,7 +181,7 @@ def termOpsInSpec(term, spc) =
 	 let res = mapRec bdy in res
 
        | Record     (row, a) -> 
-	 let res = foldl (fn ((_, trm), res) -> res ++ (mapRec trm)) [] row in
+	 let res = foldl (fn (res, (_, trm)) -> res ++ (mapRec trm)) [] row in
 	   res
 
        | IfThenElse (       t1,        t2,        t3, a) -> 
@@ -191,7 +191,7 @@ def termOpsInSpec(term, spc) =
 	   resT1 ++ resT2 ++ resT3
 
        | Lambda     (match, a) -> 
-         let resMatch = foldl (fn ((pat, cond, trm), res) -> res ++ (mapRec trm)) [] match in
+         let resMatch = foldl (fn (res, (pat, cond, trm)) -> res ++ (mapRec trm)) [] match in
 	   resMatch
 
        | Bind       (bnd, vars, trm, a) -> 
@@ -204,11 +204,11 @@ def termOpsInSpec(term, spc) =
 	   resT1 ++ resT2
 
        | Seq        (                terms, a) -> 
-	 let resTerms = foldl (fn (trm, res) -> res ++ (mapRec trm)) [] terms in
+	 let resTerms = foldl (fn (res, trm) -> res ++ (mapRec trm)) [] terms in
 	   resTerms
 
        | ApplyN     (                terms, a) -> 
-	 let resTerms = foldl (fn (trm, res) -> res ++ (mapRec trm)) [] terms in
+	 let resTerms = foldl (fn (res, trm) -> res ++ (mapRec trm)) [] terms in
 	   resTerms
 
        | SortedTerm (       trm,                  srt, a) -> 

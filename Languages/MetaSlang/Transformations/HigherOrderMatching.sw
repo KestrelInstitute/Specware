@@ -318,7 +318,7 @@ beta contraction.
              else (Cons((x,y), pairs), hard_pairs))
         ([],[]) (fields1, fields2)
    in
-     foldl (fn ((x,y), stack) -> insert(x,y,stack))	
+     foldl (fn (stack,(x,y)) -> insert(x,y,stack))	
         stack (pairs ++ hard_pairs)
 
 \end{spec}
@@ -639,8 +639,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                          let srt = inferType(context.spc,subst,trm) in
                          let srt = foldr mkArrow srt (termTypes ++ map(fn(_,ty) -> ty) bound_vs) in
                          let v = freshVar(context,srt) in
-                         (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v (varTerms ++ map mkVar bound_vs),
-                          (foldl (fn (t1,t2)-> Apply(t2,t1,noPos)) v (terms ++ map mkVar bound_vs), trm))
+                         (foldl (fn (t1,t2)-> Apply(t1,t2,noPos)) v (varTerms ++ map mkVar bound_vs),
+                          (foldl (fn (t1,t2)-> Apply(t1,t2,noPos)) v (terms ++ map mkVar bound_vs), trm))
 
                    in
                    let (sound,N1,pairs) = 
@@ -694,7 +694,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                                then 
                                  let ls = map (fn n -> makeMatchForSubTerm(n,[])) Ns in
                                  let (Ns,pairs) = unzip ls in
-                                 (true,foldl (fn (t1,t2) -> Apply(t2,t1,noPos)) N Ns,pairs)
+                                 (true,foldl (fn (t1,t2) -> Apply(t1,t2,noPos)) N Ns,pairs)
                              else
                                (false,N,[])
                    in
@@ -869,7 +869,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 		  | Arrow(srt1,srt2,_) -> 
 		    let srt1 = foldr mkArrow srt1 (map (fn (_,s) -> s) vars) in
 		    let X = freshVar(context,srt1) in
-		    let trm = foldl (fn (v,t2) -> mkApply(t2,mkVar(v))) X vars in
+		    let trm = foldl (fn (t1,v) -> mkApply(t1,mkVar(v))) X vars in
 		    projectSort(srt2,mkApply(N,trm)) 
 		  | _ -> [])
       in

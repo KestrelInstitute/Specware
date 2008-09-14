@@ -68,7 +68,7 @@ UnitId_Dependency.
 	      ppNewline,
 	      ppString "[Dependencies: "]
              ++
-	     (foldl (fn (uid, docs) -> 
+	     (foldl (fn (docs,uid) -> 
 		     case docs of
 		       | [] -> [ppUID uid]
 		       | _  -> docs ++ [ppNewline, ppUID uid])

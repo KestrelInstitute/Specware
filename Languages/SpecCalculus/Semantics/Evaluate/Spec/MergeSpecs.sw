@@ -6,7 +6,7 @@ SpecCalc qualifying spec
  op  mergeSortInfo : Spec -> SortMap -> SortInfo -> SortMap
  def mergeSortInfo _(*spc*) sorts info =
    let 
-     def aux (Qualified (q, id), new_info) =
+     def aux (new_info, Qualified (q, id)) =
        case findAQualifierMap (sorts, q, id) of
 	 | None -> new_info
 	 | Some old_info ->
@@ -17,7 +17,7 @@ SpecCalc qualifying spec
 	   let (old_decls, old_defs) = sortInfoDeclsAndDefs old_info in
 	   let (new_decls, new_defs) = sortInfoDeclsAndDefs new_info in
 	   let combined_decls =
-               foldl (fn (new_decl, combined_decls) ->
+               foldl (fn (combined_decls, new_decl) ->
 		      %% For now, use equalType?, as opposed to equivType? -- 
 	              %% will do that compression later in compressDefs when full context is available
 		      if exists (fn old_decl -> equalType? (new_decl, old_decl)) combined_decls then
@@ -28,7 +28,7 @@ SpecCalc qualifying spec
 		     new_decls
 	   in
 	   let combined_defs =
-               foldl (fn (new_def, combined_defs) ->
+               foldl (fn (combined_defs, new_def) ->
 		      %% For now, use equalType?, as opposed to equivType? -- 
 	              %% will do that compression later in compressDefs when full context is available
 		      if exists (fn old_def -> equalType? (new_def, old_def)) combined_defs then
@@ -45,7 +45,7 @@ SpecCalc qualifying spec
 	    dfn   = combined_dfn}
    in
    let merged_info = foldl aux info info.names in
-   foldl (fn (Qualified (q, id), sorts) ->
+   foldl (fn (sorts, Qualified (q, id)) ->
 	  insertAQualifierMap (sorts, q, id, merged_info))
          sorts
 	 merged_info.names  % new and old
@@ -53,7 +53,7 @@ SpecCalc qualifying spec
  op  mergeOpInfo : Spec -> OpMap -> OpInfo -> OpMap
  def mergeOpInfo spc ops info =
    let
-     def aux (Qualified (q, id), new_info) =
+     def aux (new_info, Qualified (q, id)) =
        case findAQualifierMap (ops, q, id) of
 	 | None -> new_info
 	 | Some old_info ->
@@ -72,7 +72,7 @@ SpecCalc qualifying spec
 	     let (old_decls, old_defs) = opInfoDeclsAndDefs old_info in
 	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
 	     let combined_decls =
-	         foldl (fn (new_decl, combined_decls) ->
+	         foldl (fn (combined_decls, new_decl) ->
 			if exists (fn old_decl -> equivTerm? spc (new_decl, old_decl)) combined_decls then
 			  combined_decls
 			else
@@ -81,7 +81,7 @@ SpecCalc qualifying spec
 		       new_decls
 	     in
 	     let combined_defs =
-	         foldl (fn (new_def, combined_defs) ->
+	         foldl (fn (combined_defs, new_def) ->
 			if exists (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
 			  combined_defs
 			else
@@ -97,7 +97,7 @@ SpecCalc qualifying spec
 			  fullyQualified? = false}
    in
    let merged_info = foldl aux info info.names in
-   foldl (fn (Qualified (q, id), ops) ->
+   foldl (fn (ops, Qualified (q, id)) ->
 	  insertAQualifierMap (ops, q, id, merged_info))
          ops 
 	 merged_info.names  % new and old

@@ -211,7 +211,7 @@ XML qualifying spec
 		 so_we       = "fail immediately"}
 
   def compute_attribute_value (items : List AttValue_Item) : UString = % TODO -- use monad state for refs
-    foldl (fn (item, result) ->
+    foldl (fn (result, item) ->
 	   result ++ (case item of
 			| NonRef ustr -> ustr
 			| Ref    _    -> ustring "<some ref>"))

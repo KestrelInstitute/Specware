@@ -38,7 +38,7 @@ AnnSpec qualifying spec
        let tvs = map mkTyVar tvs in
        let xxx_defs = map (fn name -> mkBase (name, tvs)) info.names in 
        let new_defs = 
-           foldl (fn (old_def, new_defs) ->
+           foldl (fn (new_defs,old_def) ->
 		  if (% given {A,B,C} = B
 		      % drop that definition
 		      % note: equalType?, not equivType?, because we don't want to drop true defs
@@ -85,7 +85,7 @@ AnnSpec qualifying spec
      | _ ->
        let pos = termAnn info.dfn in
        let new_decls =
-           foldl (fn (old_decl, new_decls) ->
+           foldl (fn (new_decls,old_decl) ->
 		  let old_sort = termSort old_decl in
 		  if exists (fn new_decl -> 
 			     let new_sort = termSort new_decl in
@@ -100,7 +100,7 @@ AnnSpec qualifying spec
 		 (old_decls ++ old_defs)
        in
        let new_defs =
-           foldl (fn (old_def, new_defs) ->
+           foldl (fn (new_defs,old_def) ->
 		  if exists (fn new_def -> equivTerm? spc (old_def, new_def)) new_defs then
 		    new_defs
 		  else
@@ -123,7 +123,7 @@ AnnSpec qualifying spec
    %% TODO: make this more agressive -- at least look among imported elements for prior elements
    %% TODO: use equivTerm? to compare axiom/thorem/conjecture bodies
    %% TODO: consider recursive version -- but perhaps some philosophical concens wrt pruning among imported elements
-   foldl (fn (elt, prior_elts) ->
+   foldl (fn (prior_elts,elt) ->
 	  if member (elt, prior_elts) then
 	    prior_elts
 	  else

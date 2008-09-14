@@ -47,7 +47,7 @@ XML qualifying spec
       | [] -> ""
       | exceptions ->
         "\nXML Errors:\n" ^
-	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext)))
+	(foldl (fn (result, exception) -> result ^ (print_one_XML_Exception (exception, state.utext)))
 	  "" (rev exceptions)) ^
 	"\n\n"
 
@@ -69,7 +69,7 @@ XML qualifying spec
 	 | []  -> "\n <we had no expectations?> \n"
 	 | [_] -> "\n we expected: \n"
 	 | _   -> "\n we expected one of: \n")
-    ^ (let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 x.we_expected in
+    ^ (let max_length = foldl (fn (max_length, (s1, _)) -> max (max_length, length s1)) 0 x.we_expected in
        let
          def pad n =
 	   if n >= max_length then
@@ -77,7 +77,7 @@ XML qualifying spec
 	   else
 	     " " ^ pad (n + 1)
        in
-	 foldl (fn ((s1, s2), result) ->
+	 foldl (fn (result, (s1, s2)) ->
 		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " -- " ^ s2)
 	       ""
 	       x.we_expected)

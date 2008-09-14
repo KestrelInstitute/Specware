@@ -43,32 +43,32 @@ I2LToC qualifying spec {
     let cspc = emptyCSpec(impunit.name) in
     let cspc = addBuiltIn(ctxt,cspc) in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4TypeDefinition(ctxt,cspc,typedef))
 		cspc impunit.decls.typedefs
     in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4OpDecl(ctxt,cspc,typedef))
 		cspc impunit.decls.opdecls
     in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4FunDecl(ctxt,cspc,typedef))
 		cspc impunit.decls.funDecls
     in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4FunDefn(ctxt,cspc,typedef))
 		cspc impunit.decls.funDefns
     in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4VarDecl(ctxt,cspc,typedef))
 		cspc impunit.decls.varDecls
     in
     let cspc = List.foldl
-                (fn(typedef,cspc) ->
+                (fn(cspc,typedef) ->
 		 c4MapDecl(ctxt,cspc,typedef))
 		cspc impunit.decls.mapDecls
     in
@@ -195,7 +195,7 @@ I2LToC qualifying spec {
       | Stads stadsbody -> let returnstmt = ReturnVoid in
                            let (cspc,block,stmts) =
                              List.foldl
-			     (fn(stadcode,(cspc,block,stmts)) -> 
+			     (fn((cspc,block,stmts),stadcode) -> 
 			      let (cspc,block,stadstmts) = 
 			             c4StadCode(ctxt,cspc,block,stadsbody,returnstmt,stadcode) in
 			      let stmts = concat(stmts,stadstmts) in
@@ -225,7 +225,7 @@ I2LToC qualifying spec {
 	case typ of
 	  | Struct fields -> let (cspc,initstr,initstrIsUseful) =
 	                       List.foldl
-	                       (fn((id,t),(cspc,initstr,useful)) -> 
+	                       (fn((cspc,initstr,useful),(id,t)) -> 
 				let (cspc,initstr0,useful0) = structCheck(cspc,t,cons(id,ids)) in
 				let initstr = if initstr="" then initstr0 else initstr^","^initstr0 in
 				(cspc,initstr,useful or useful0)
@@ -267,7 +267,7 @@ I2LToC qualifying spec {
       | Some ns ->
 	let nstrs = List.map Nat.toString ns in
 	let (cspc,rtype) = c4Type(ctxt,cspc,returntype) in
-	let arraytype = List.foldl (fn(nstr,arraytype) ->
+	let arraytype = List.foldl (fn(arraytype,nstr) ->
 				    ArrayWithSize(nstr,arraytype))
 	                rtype nstrs
 	in
@@ -394,7 +394,7 @@ I2LToC qualifying spec {
 
   op c4Types: CgContext * CSpec * I2L.Types -> CSpec * CTypes
   def c4Types(ctxt,cspc,types) =
-    List.foldl (fn(t,(cspc,ctypes)) ->
+    List.foldl (fn((cspc,ctypes),t) ->
 		let (cspc,ct) = c4Type(ctxt,cspc,t) in
 		(cspc,List.concat(ctypes,[ct])))
     (cspc,[]) types
@@ -467,7 +467,7 @@ I2LToC qualifying spec {
 		  % if we have projections, the map name must be the prefix of the last field name
 		  % otherwise of the id itself
 		  let (id,projections) =
-			 (List.foldl (fn(p,s) -> s^"_"^(getProjectionFieldName p)) (getMapName(id)) projections,[])
+			 (List.foldl (fn(s,p) -> s^"_"^(getProjectionFieldName p)) (getMapName(id)) projections,[])
 		  in
 		  let cexpr1 = addProjections(f(Var(id,ctype)),projections) in
 		  let arrayrefs = List.foldr (fn(e1,e2) -> ArrayRef(e2,e1)) cexpr1 cexprs in
@@ -544,7 +544,7 @@ I2LToC qualifying spec {
 	  (case exprs of
 	     | [] -> let fndecl = (fnid,[],ctype) in
 		     (cspc,block,Apply(Fn(fndecl),[]))
-             | _::_ -> let (cspc,ctypes) = foldl (fn((_,ty),(cspc,ctypes)) -> 
+             | _::_ -> let (cspc,ctypes) = foldl (fn((cspc,ctypes),(_,ty)) -> 
 						  let (cspc,ctype) = c4Type(ctxt,cspc,ty) in
 						  (cspc,concat(ctypes,[ctype]))
 						 ) (cspc,[]) exprs in
@@ -769,14 +769,14 @@ I2LToC qualifying spec {
 
   op c4Expressions: CgContext * CSpec * CBlock * Expressions -> CSpec * CBlock * CExps
   def c4Expressions(ctxt,cspc,block,exprs) =
-    List.foldl (fn(expr,(cspc,block,cexprs)) ->
+    List.foldl (fn((cspc,block,cexprs),expr) ->
 		let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
 		(cspc,block,concat(cexprs,[cexpr])))
     (cspc,block,[]) exprs
 
   op c4InitializerExpressions: CgContext * CSpec * CBlock * Expressions -> CSpec * CBlock * CExps
   def c4InitializerExpressions(ctxt,cspc,block,exprs) =
-    List.foldl (fn(expr,(cspc,block,cexprs)) ->
+    List.foldl (fn((cspc,block,cexprs),expr) ->
 		let (cspc,block,cexpr) = c4InitializerExpression(ctxt,cspc,block,expr) in
 		(cspc,block,concat(cexprs,[cexpr])))
     (cspc,block,[]) exprs
@@ -953,7 +953,7 @@ I2LToC qualifying spec {
     let cspc = mergeCSpecs([cspc,declscspc]) in
     let (cspc,block,stepstmts) =
        List.foldl
-       (fn(stp,(cspc,block,stmts)) ->
+       (fn((cspc,block,stmts),stp) ->
 	let (cspc,block,stpstmts) = c4StepCode(ctxt,cspc,block,allstads,returnstmt,stp) in
 	(cspc,block,concat(stmts,stpstmts))
        ) (cspc,block,[]) stadcode.steps
@@ -966,7 +966,7 @@ I2LToC qualifying spec {
     let gotostmt = if stadIsFinal(allstads,gotolbl) then returnstmt else Goto gotolbl in
     let (cspc,block,rules_stmts) = c4StepRule(ctxt,cspc,block,Some gotostmt,rule) in
     %List.foldl 
-    %                               (fn(rule,(cspc,block,rulestmts)) -> 
+    %                               (fn((cspc,block,rulestmts),rule) -> 
     %				    let (cspc,block,rule1stmts) = c4StepRule(ctxt,cspc,block,rule) in
     %				    (cspc,block,concat(rulestmts,rule1stmts))
     %				   ) (cspc,block,[]) rules
@@ -998,7 +998,7 @@ I2LToC qualifying spec {
       | UpdateBlock(upddecls,updates) ->
 	let (cspc,block,declstmts) =
 	    List.foldl
-	    (fn(((_,id),typ,optexpr),(cspc,block,updstmts)) ->
+	    (fn((cspc,block,updstmts),((_,id),typ,optexpr)) ->
 	     let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	     let iddecl = (id,ctype) in
 	     let optinit = if ctxt.useRefTypes then getMallocApply(cspc,ctype) else None in
@@ -1015,7 +1015,7 @@ I2LToC qualifying spec {
 	    ) (cspc,block,[]) upddecls
 	in
 	let (cspc,block,updatestmts) =
-	    List.foldl (fn(update,(cspc,block,updatestmts)) ->
+	    List.foldl (fn((cspc,block,updatestmts),update) ->
 			let (cspc,block,stmts) = c4StepRule(ctxt,cspc,block,None,Update update) in
 			(cspc,block,concat(updatestmts,stmts))
 		       ) (cspc,block,[]) updates

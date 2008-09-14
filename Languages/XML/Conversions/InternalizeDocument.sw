@@ -99,7 +99,7 @@ XML qualifying spec
       internalize_Attributes_and_Elements (Full element, product_sd, table)
     else
       let possible_magic_values =
-          foldl (fn ((field_name, field_sd), possible_magic_values) ->
+          foldl (fn (possible_magic_values, (field_name, field_sd)) ->
 		 case possible_magic_values of
 		   | None -> None
 		   | Some magic_values ->
@@ -138,7 +138,7 @@ XML qualifying spec
   def find_matching_sub_element (element    : PossibleElement,
 				 field_name : IdDescriptor)
     : Option PossibleElement =
-    foldl (fn ((_, item), result) ->
+    foldl (fn (result, (_, item)) ->
 	   case result of
 	     | Some _ -> result
 	     | _ ->
@@ -217,7 +217,7 @@ XML qualifying spec
 		  fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
 	   | _ -> 
 	     fail ("decoding CoProduct: XML datum named " ^ (string element_name) ^ " doesn't match any of " ^ 
-		   (foldl (fn ((name, _), result) ->
+		   (foldl (fn (result, (name, _)) ->
 			   case result of
 			     | "" -> name
 			     | _ -> result ^ ", " ^ name)
@@ -308,7 +308,7 @@ XML qualifying spec
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as List for " ^ (print_SortDescriptor list_sd) ^ "\n") in
     let element_sd = hd args in
-    let data = rev (foldl (fn ((possible_chardata,item), result) ->
+    let data = rev (foldl (fn (result, (possible_chardata,item)) ->
 			   %%% let _ = toScreen ((level_str level) ^ "Seeking next list element: " ^ (print_SortDescriptor element_sd) ^ "\n") in
 			   case item of
 			     | Element element ->

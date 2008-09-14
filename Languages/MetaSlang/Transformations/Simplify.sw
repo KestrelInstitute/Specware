@@ -277,7 +277,7 @@ spec
      term
 
   op countDeReferencesIn(v: Var, tms: List MS.Term): Nat =
-    foldl (fn (t,i) ->
+    foldl (fn (i,t) ->
              foldSubTerms (fn (st,i) ->
                              case st of
                                | Apply(Fun(Project _,_,_), Var (sv,_), _)
@@ -298,7 +298,7 @@ spec
 		 | None -> false
 		 | Some(v,e) ->
 		   simpleOrConstrTerm? e
-                     || (let num_refs = foldl (fn (cji,r) -> r + countVarRefs(cji,v))
+                     || (let num_refs = foldl (fn (r,cji) -> r + countVarRefs(cji,v))
                                          (countVarRefs(bod,v)) cjs
                          in
                          num_refs - 1 = 1 % This one and the one we want to replace
@@ -342,9 +342,9 @@ spec
 
   op  varNamesSet: List Var * List MS.Term -> StringSet.Set
   def varNamesSet(vs,tms) =
-    foldl (fn ((nm,_),nm_set) -> StringSet.add(nm_set,nm))
+    foldl (fn (nm_set,(nm,_)) -> StringSet.add(nm_set,nm))
       StringSet.empty
-      (vs ++ foldl (fn (t,fvs) -> freeVars t ++ fvs) [] tms)
+      (vs ++ foldl (fn (fvs,t) -> freeVars t ++ fvs) [] tms)
     
 
   op  normForallBody: MS.Term * StringSet.Set * Spec -> Option(List Var * List MS.Term * MS.Term)
@@ -450,9 +450,9 @@ spec
 
   op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
   def makeSubstFromRecord(pats,acts) =
-    foldl (fn ((id,VarPat(v,_)),result)
+    foldl (fn (result,(id,VarPat(v,_)))
              -> Cons((v,findField(id,acts)),result)
-             | (_,result) -> result)
+             | (result,_) -> result)
       []
       pats
 

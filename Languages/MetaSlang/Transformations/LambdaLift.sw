@@ -265,7 +265,7 @@ def patternVars (pat:Pattern): List Var =
      mkOp (qualname, mkArrow (dom, rng))
    else if ~simulateClosures? then
      let pats = patternToList pat in
-     let oVars = foldl (fn (p, result) ->
+     let oVars = foldl (fn (result, p) ->
 			let newV = case p of
 				     | VarPat (v, _) -> v
 				     | _ -> ("Xv-"^ (Nat.toString (length result)), 
@@ -370,7 +370,7 @@ def patternVars (pat:Pattern): List Var =
    case trm of
      | Apply ((Lambda (match as _::_), vars1), t) ->
        let (infos1, match) =
-           foldl (fn ((p, t1, trm2 as (t2, vars)), (infos, match)) -> 
+           foldl (fn ((infos, match), (p, t1, trm2 as (t2, vars))) -> 
 		  %let (infos1, t1) = lambdaLiftTerm (env, (t1, [])) in
 		  let (infos2, t2) = lambdaLiftTerm (env, trm2) in
 		  let match = concat (match, [(p, t1, t2)]) in
@@ -523,7 +523,7 @@ in
 	        | _ -> System.fail "liftDecl Non-lambda abstracted term")
 	       decls
        in
-       let env1 = foldl (fn ((_, oper), env) -> insertOper (oper, env)) env tmpOpers in
+       let env1 = foldl (fn (env, (_, oper)) -> insertOper (oper, env)) env tmpOpers in
 
 % Step 3.
        let
@@ -693,7 +693,7 @@ in
 
  op  makeNewVars: List Sort -> List Var
  def makeNewVars srts =
-   foldl (fn (s, result) ->
+   foldl (fn (result, s) ->
 	  Cons (("llp-"^Nat.toString (length result), s), result))
          [] 
 	 srts
@@ -794,7 +794,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	   | [v] -> mkLet ([(mkVarPat v, closureArg)], body)
 	   | _ -> 
 	     let (decls, n) = 
-	         List.foldl (fn (v, (decls, n)) ->
+	         List.foldl (fn ((decls, n), v) ->
 			     (cons (mkProject (v, n), decls), n + 1)) 
 		            ([], 1) 
 		            freeVars
@@ -826,7 +826,7 @@ def toAny     = Term `TranslationBasic.toAny`
 
  op  varsToString: List Var -> String
  def varsToString vars = 
-   (List.foldl (fn (v as (id, srt), s) ->
+   (List.foldl (fn (s, v as (id, srt)) ->
 		s ^ (if s = "[" then "" else " ")
 		^ id ^ ":" ^ printSort srt)
               "[" 

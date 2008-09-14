@@ -38,12 +38,12 @@ spec
     pmode <- case pmode_tm of | Uniform s -> return (Uniform s);
     timestamp <- return (case pmode of
 			   | Uniform _ -> 
-			     List.foldl (fn ((_,x,_), (y : TimeStamp)) -> max (x, y))
+			     List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
 			                domTimeStamp
 					sm_valueinfos);
     deps <- return (case pmode of
 		      | Uniform _ -> 
-		        List.foldl (fn ((_,_,x), (y : List UnitId)) -> listUnion (x, y))
+		        List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
 			           domDepUIDs
 				   sm_valueinfos);
     prism_tm <- return (SpecPrism prism_tm, pos);
@@ -84,13 +84,13 @@ spec
 			   | _ -> raise (TypeCheck (pos, "non-interp in prism")))
                         iso_valueinfos;
 
-    timestamp <- return (List.foldl (fn ((_,x,_), (y : TimeStamp)) -> max (x, y))
-			            (List.foldl (fn ((_,x,_), (y : TimeStamp)) -> max (x, y))
+    timestamp <- return (List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
+			            (List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
 				                domTimeStamp
 						sm_valueinfos)
 				    iso_valueinfos);
-    deps <- return (List.foldl (fn ((_,_,x), (y : List UnitId)) -> listUnion (x, y))
-		               (List.foldl (fn ((_,_,x), (y : List UnitId)) -> listUnion (x, y))
+    deps <- return (List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
+		               (List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
 				           domDepUIDs
 					   sm_valueinfos)
 			       iso_valueinfos);

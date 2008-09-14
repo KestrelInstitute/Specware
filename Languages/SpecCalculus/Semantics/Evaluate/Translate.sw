@@ -165,7 +165,7 @@ SpecCalc qualifying spec
 		   | [name] -> " and type " ^ (explicitPrintQualifiedId name)
 		   | first::rest ->
 		     " and types " ^ (explicitPrintQualifiedId first) ^
-		     (foldl (fn (qid, str) -> str ^ ", " ^ explicitPrintQualifiedId qid)
+		     (foldl (fn (str, qid) -> str ^ ", " ^ explicitPrintQualifiedId qid)
 		      ""
 		      rest)
 	     in
@@ -204,7 +204,7 @@ SpecCalc qualifying spec
 		   | [name] -> " and op " ^ (explicitPrintQualifiedId name)
 		   | first::rest ->
 		     " and ops " ^ (explicitPrintQualifiedId first) ^
-		     (foldl (fn (qid, str) -> str ^ ", " ^ explicitPrintQualifiedId qid)
+		     (foldl (fn (str, qid) -> str ^ ", " ^ explicitPrintQualifiedId qid)
 		      ""
 		      rest)
 	     in
@@ -733,7 +733,7 @@ SpecCalc qualifying spec
 	let new_tm = 
 	    case opt_renaming of
 	      | Some (rules, pos) ->
-	        let rules = foldl (fn (rule, rules) ->
+	        let rules = foldl (fn (rules, rule) ->
 				   case rule of
 				     | (Sort (dom_qid, _, _), _) ->
 				       (case findTheSort (spc, dom_qid) of

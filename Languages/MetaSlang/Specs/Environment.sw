@@ -307,7 +307,7 @@ spec
 %          let specdepslist = StringSet.toList(getDependenciesSpec(spc)) in
 %          let spcsfinished = cons(spc,spcsfinished) in
 %          let spclist = List.foldl
-%                        (fn (spcn, spclist) ->
+%                        (fn (spclist, spcn) ->
 %                         let spcnl = List.map (fn(spc) -> spc.name) spclist in
 %                         if member (spcn, spcnl) then 
 %                           spclist
@@ -323,7 +323,7 @@ spec
 %  in
 %  %- allspecs contain all specs that are used by specs + the spec itself
 %  let allspecs = getDependenciesSpecTrans0(env,[spc],[]) in
-%  let allspecs = foldl (fn (spcname, spcs) ->
+%  let allspecs = foldl (fn (spcs,spcname) ->
 %                        let spcnames = List.map (fn (spc : Spec) -> spc.name) spcs in
 %                        if member (spcname, spcnames) then 
 %                         spcs
@@ -422,7 +422,7 @@ spec
       | [] -> mainTerm
       | rvterms ->
 	let (_,vbinds) =
-	      foldl (fn (t,(i,result)) -> (i+1,result ++ [(t,"tv--"^toString i,inferType(spc,t))]))
+	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^toString i,inferType(spc,t))]))
 	        (0,[]) rvterms
 	in
 	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
@@ -450,7 +450,7 @@ spec
 	 | Some (_,sub_sort) -> 
 	   mkApply (mkProject (id, super_sort, sub_sort),term)
 	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
-                             ^(foldl (fn ((id2, _),res) -> res^id2^" ") "" fields)
+                             ^(foldl (fn (res,(id2, _)) -> res^id2^" ") "" fields)
                              ^"at "^print(termAnn term)))
      | _ -> System.fail "Product sort expected for mkProjectTerm"    
 

@@ -386,7 +386,7 @@ XML qualifying spec
 			   value : AttValue}
 
   def no_external_entity_references? (attribute : ElementAttribute, dtd : DocTypeDecl) : Boolean =
-    foldl (fn (item : AttValue_Item, ok?) ->
+    foldl (fn (ok?, item : AttValue_Item) ->
 	   case item of
 	     | Ref (Entity entity_ref) -> ~ (ref_to_external_entity? (entity_ref.name, dtd))
              %% Ref (Char _) -> ok?
@@ -576,13 +576,13 @@ XML qualifying spec
     case internal_dtd.decls of
       | Some dtd_decls ->
         %% parameter-entity references not at the top level can occur only within entity values
-        foldl (fn (markup_item, ok?) ->
+        foldl (fn (ok?, markup_item) ->
 	       case markup_item of
 
 		 | Entity (PE decl) ->
 		   (case decl.pedef of
 		      | Value evalue ->
-		        (foldl (fn (item, ok?) ->
+		        (foldl (fn (ok?, item) ->
 			        case item of
 				  | PERef _ -> false
 				  | _ -> ok?)
@@ -593,7 +593,7 @@ XML qualifying spec
 		 | Entity (GE decl) ->
 		   (case decl.edef of
 		      | Value evalue ->
-		        (foldl (fn (item, ok?) ->
+		        (foldl (fn (ok?, item) ->
 				case item of
 				  | PERef _ -> false
 				  | _ -> ok?)
@@ -1474,7 +1474,7 @@ XML qualifying spec
       | _ -> false
 
   def unique_attributes? tag =
-    let (all_unique?, _) = (foldl (fn (attr, (all_unique?, names)) ->
+    let (all_unique?, _) = (foldl (fn ((all_unique?, names), attr) ->
 				   if all_unique? then
 				     if member (attr.name, names) then
 				       (false, [])

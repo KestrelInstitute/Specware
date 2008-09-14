@@ -275,7 +275,7 @@ it easy to experiment with different UnitId path resolution strategies..
 	  | _ ->
 	    []
       def find_suffix_wrt shadow =
-	foldl (fn (shadow_path, opt_suffix) -> 
+	foldl (fn (opt_suffix, shadow_path) -> 
 	       case opt_suffix of
 		 | Some _ -> opt_suffix
 		 | _ -> 
@@ -285,7 +285,7 @@ it easy to experiment with different UnitId path resolution strategies..
 	      None
 	      shadow
     in
-      case (foldl (fn (shadow, paths) ->
+      case (foldl (fn (paths,shadow) ->
 		   paths ++ expand shadow)
 	          []
 		  shadowingPaths) 
@@ -371,7 +371,7 @@ handled correctly.
 
   op checkForMultipleDefs: List (Decl Position) -> Env ()
   def checkForMultipleDefs decls =
-    case foldl (fn ((name,term),result as (seenNames,duplicate?)) ->
+    case foldl (fn (result as (seenNames,duplicate?), (name,term)) ->
 	        case duplicate? of
 		 | None -> if member(name,seenNames)
 		            then (seenNames,Some(name,term))

@@ -54,11 +54,11 @@ XML qualifying spec
       implode (rev (trim (rev (trim chars))))
 
   def element_type_attribute (element : PossibleElement) : Option String =
-    foldl (fn (attribute : ElementAttribute, result) ->
+    foldl (fn (result, attribute : ElementAttribute) ->
 	   case result of
 	     | Some _ -> result
 	     | _ -> (if "type" = (string attribute.name) then
-		       Some (foldl (fn (item, result) ->
+		       Some (foldl (fn (result, item) ->
 				    result ^ (case item of
 						| NonRef ustr -> string ustr
 						| Ref _ -> "<xmlref>"))
@@ -70,11 +70,11 @@ XML qualifying spec
 	  element.stag.attributes
 
   def etag_type_attribute (etag : EmptyElemTag) : Option String =
-    foldl (fn (attribute : ElementAttribute, result) ->
+    foldl (fn (result, attribute : ElementAttribute) ->
 	   case result of
 	     | Some _ -> result
 	     | _ -> (if "type" = (string attribute.name) then
-		       Some (foldl (fn (item, result) ->
+		       Some (foldl (fn (result, item) ->
 				    result ^ (case item of
 						| NonRef ustr -> string ustr
 						| Ref _ -> "<xmlref>"))

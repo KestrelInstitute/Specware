@@ -328,11 +328,11 @@ I2L qualifying spec {
 			       | Some t -> typeDepends0(iu,t,deps)
 			       | None -> deps
 			    )
-	  | Struct fields -> List.foldl (fn((_,t),deps) -> typeDepends0(iu,t,deps)) deps fields
-	  | Union fields -> List.foldl (fn((_,t),deps) -> typeDepends0(iu,t,deps)) deps fields
-	  | Tuple types -> List.foldl (fn(t,deps) -> typeDepends0(iu,t,deps)) deps types
+	  | Struct fields -> List.foldl (fn(deps,(_,t)) -> typeDepends0(iu,t,deps)) deps fields
+	  | Union fields -> List.foldl (fn(deps,(_,t)) -> typeDepends0(iu,t,deps)) deps fields
+	  | Tuple types -> List.foldl (fn(deps,t) -> typeDepends0(iu,t,deps)) deps types
 	  | BoundList(t,_) -> typeDepends0(iu,t,deps)
-	  | FunOrMap(types,t) -> List.foldl (fn(t,deps) -> typeDepends0(iu,t,deps)) 
+	  | FunOrMap(types,t) -> List.foldl (fn(deps,t) -> typeDepends0(iu,t,deps)) 
 	                         (typeDepends0(iu,t,deps)) types
 	  | Ref t -> typeDepends0(iu,t,deps)
 	  | _ -> deps
@@ -458,7 +458,7 @@ I2L qualifying spec {
 	  | None -> []
 	  | Some stc -> let targets = List.map (fn(_,trg) -> trg) stc.steps in
 	                List.foldl
-			  (fn(stadname,visited) ->
+			  (fn(visited,stadname) ->
 			   if List.member(stadname,visited) then visited
 			   else
 			     reachableStads0(stadname,cons(stadname,visited))

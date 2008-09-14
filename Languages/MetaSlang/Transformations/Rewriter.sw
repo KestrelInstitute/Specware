@@ -56,7 +56,7 @@ MetaSlangRewriter qualifying spec
    else
    let (simpleRules, condRules) =
        %% foldl is arbitrary
-       foldl (fn (rl, (simpleRules, condRules)) ->
+       foldl (fn ((simpleRules, condRules), rl) ->
                 if some? rl.condition
                   then (simpleRules, Cons(rl, condRules))
                   else (Cons(rl, simpleRules), condRules))
@@ -69,7 +69,7 @@ MetaSlangRewriter qualifying spec
    %% Prefer unconditional match if result is the same -- happens with subtypes and type parameters
 %    let opt_num = if length results > 1 then
 %                   let (t1,(s1,rule1,_,_))::_ = results in
-%                   (foldl (fn ((t1,(s1,rule1,_,_)), (opt_num,t2,s2,rule2)) ->
+%                   (foldl (fn ((opt_num,t2,s2,rule2), (t1,(s1,rule1,_,_))) ->
 %                            if equalTerm?(t1,t2) && s2.3 ~= [] && s1.3 = []
 %                              then (opt_num + 1, t1, s1, rule1)
 %                              else (opt_num, t1, s1, rule1))
@@ -80,7 +80,7 @@ MetaSlangRewriter qualifying spec
        if length results < 2 then results
          else
          let (t1,(s1,rule1,_,_))::_ = results in
-         (foldl (fn (ri as (ti,(si,rulei,_,_)), (new_results,tr,sr,ruler)) ->
+         (foldl (fn ((new_results,tr,sr,ruler), ri as (ti,(si,rulei,_,_))) ->
                    if equalTerm?(ti,tr)
                      then
                        if equalList?(sr.3,si.3,equalTerm?)
@@ -292,7 +292,7 @@ MetaSlangRewriter qualifying spec
                addDemodRules(assertRules(context, condn, "Subtype", false),rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
-       foldl (fn ((_,p), rules) -> addPatternRestriction(context, p, rules)) rules fields
+       foldl (fn (rules, (_,p)) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
                              addDemodRules(assertRules(context,condn,"Restriction",false), rules))

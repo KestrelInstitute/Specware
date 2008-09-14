@@ -24,7 +24,7 @@ IsaTermPrinter qualifying spec
  op  thyMorphismMaps: Spec \_rightarrow TransInfo
  def thyMorphismMaps spc =
    (foldlSpecElements
-     (fn (el,(result, prev_id)) \_rightarrow
+     (fn ((result, prev_id),el) \_rightarrow
       case el of
        | Pragma("proof",prag_str,"end-proof",_) \_rightarrow
          (case isaThyMorphismPragma prag_str of
@@ -93,7 +93,7 @@ IsaTermPrinter qualifying spec
  op  parseMorphMap: String * TransInfo \_rightarrow TransInfo
  def parseMorphMap (morph_str,result) =
    let lines = splitStringAt(morph_str,"\n") in
-   let def parseLine (s,result) =
+   let def parseLine (result,s) =
          case splitStringAt(s,"\\_rightarrow") of
 	   | [lhs,rhs] \_rightarrow
 	     processLine(lhs,rhs,result)

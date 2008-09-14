@@ -782,7 +782,7 @@ SpecToLisp qualifying spec
 		      %% At lisp runtime, that creates a (heterogenous!) list with 
 		      %% the name of each var followed by the value it is bound to.
 		      mkLApply (mkLOp "list",
-				foldl (fn (id, args) ->
+				foldl (fn (args, id) ->
 				       args ++ [mkLString id, Var id])
 				      []
 				      free_vars)]))
@@ -800,7 +800,7 @@ SpecToLisp qualifying spec
      def compress (chars, have_whitespace?) =
        %% avoid deep recursions...
        let (chars, _) = 
-           foldl (fn (char, (chars, have_whitespace?)) ->
+           foldl (fn ((chars, have_whitespace?), char) ->
                     if whitespace? char then
                       if have_whitespace? then
                         (chars, have_whitespace?)
@@ -1178,7 +1178,7 @@ SpecToLisp qualifying spec
        if i > n then 
 	 (Some (reduceTerm (mkLLambda (params, 
 				       [], 
-				       foldl (fn ((vars, vals), bod) ->
+				       foldl (fn (bod, (vars, vals)) ->
 					      mkLLet (vars, vals, bod))
 				             term 
 					     let_binds)))) 
@@ -1286,7 +1286,7 @@ SpecToLisp qualifying spec
    %           | [] -> (defaultSpecwarePackage, [])
    let
      def mkLOpDef (q, id, info, defs) = % ???
-       foldl (fn (dfn, defs) -> 
+       foldl (fn (defs, dfn) -> 
 	      let (tvs, srt, term) = unpackTerm dfn in
 	      let term = lispTerm (spc, defPkgName, term) in
 	      let qid = Qualified (q, id) in
@@ -1432,11 +1432,11 @@ SpecToLisp qualifying spec
  op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap
  op substBaseSpecs(spc: Spec): Spec =
    let op_map =
-       foldl (fn (exec_spec_name, op_map) ->
+       foldl (fn (op_map, exec_spec_name) ->
                 case evaluateUnitId exec_spec_name of
                   | None -> op_map
                   | Some(Spec exec_spc) ->
-                    foldl (fn (el,op_map) ->
+                    foldl (fn (op_map, el) ->
                              case el of
                                | Op(Qualified(q,id), true, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of

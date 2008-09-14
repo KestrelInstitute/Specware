@@ -26,7 +26,7 @@ Prover qualifying spec
          let srtList = case srt of
 			 | Product (idSrtList, _) -> map (fn (_, srt) -> srt) idSrtList
 	                 | _ -> map (fn (_, term) -> inferType(spc, term)) args1 in
-         ListPair.foldl ((fn ((srt, (_, a1)), (_, a2), res) ->
+         ListPair.foldl ((fn (res, (srt, (_, a1)), (_, a2)) ->
 		   let argEq = mkDeComposedEquality(spc, srt, a1, a2) in
 		   Utilities.mkAnd(argEq, res)))
 	       (mkTrue(): Term) (zip(srtList, args1), (args2: (List (Id * Term))))
@@ -228,7 +228,7 @@ def removePatternCase(spc, term) =
   let def removePatternCaseCase((pat, _(* cond *), body), negPrevCases) = 
         let bodyCondTerms = removePatternTerm(spc, body) in
 	let patTerms = patternToTerms(pat) in
-	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in
+	let patVars = foldl(fn(res,term) -> freeVars(term)++res) [] patTerms in
 	%let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
 	let res = combinePatTermsBodyCondTermsCaseCondTerms
 	            (patTerms, patVars, caseTermCondTerms, bodyCondTerms, negPrevCases)
@@ -247,7 +247,7 @@ def removePatternCase(spc, term) =
 	    let tlCaseCondTerms = removePatternCaseCases(tlCases, negNewCases) in
 	    hdCaseCondTerms++tlCaseCondTerms in
   let res = removePatternCaseCases(cases, mkTrue()) in
-  %let res = foldl (fn (singleCase, resCondTerms) -> removePatternCaseCase(singleCase)++resCondTerms) [] cases in
+  %let res = foldl (fn (resCondTerms,singleCase) -> removePatternCaseCase(singleCase)++resCondTerms) [] cases in
   %let _ = writeLine("RemovePatternCase: "^printTerm(term)) in
   %let _ = writeLine(natToString(length(cases))^ " cases.") in
   %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
@@ -305,7 +305,7 @@ def removePatternCase(spc, term) =
             Cons (v1, insertNewVar (v, l1))
 
   op varUnion: List Var * List Var -> List Var
-  def varUnion(vl1, vl2) = foldl insertNewVar vl1 vl2
+  def varUnion(vl1, vl2) = foldl (fn (l,v) -> insertNewVar(v,l)) vl1 vl2
 
   op removePatternBind: Spec * Term -> CondTerms
   def removePatternBind(spc, term as Bind (binder, bndVars, body, b)) =

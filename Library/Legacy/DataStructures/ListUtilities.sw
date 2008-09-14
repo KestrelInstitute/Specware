@@ -58,7 +58,7 @@ ListUtilities qualifying spec {
       | [] -> l 
       | elem::l -> ListUtilities.insert (elem,removeDuplicates(l))
 
-  def listUnion (l1, l2)  = foldl ListUtilities.insert l1 l2
+  def listUnion (l1, l2)  = foldl (fn (result,x) -> ListUtilities.insert(x,result)) l1 l2
 
   def enumerate (i, j) = 
     if i > j then

@@ -352,7 +352,7 @@ FM qualifying spec
 	       if c = zero then []
 	       else [Constant c]
 	    | _ -> [t1, t2] in
-     let def buildRes(t, res) =
+     let def buildRes(res,t) =
           case res of
 	    | [] -> (case t of | Constant c -> if c = zero then [] else [t] | _ -> [t])
 	    | _ ->
@@ -367,8 +367,8 @@ FM qualifying spec
     %let _ = writeLine("elim: "^printPoly(poly)) in
     let res =
     if zeroPoly? poly then poly else
-      let lcm = foldl (fn ((Constant c), res) -> (lcm(denominator c, res))
-                        | ((Monom(c, _)), res) -> lcm(denominator c, res))
+      let lcm = foldl (fn (res,(Constant c)) -> (lcm(denominator c, res))
+                        | (res,(Monom(c, _))) -> lcm(denominator c, res))
                       (denominator(hdCoef(poly))) poly in
        map (fn (Monom (coef, var)) -> Monom (coef * lcm, var)
                  | (Constant coef) -> Constant (coef * lcm))
@@ -379,8 +379,8 @@ FM qualifying spec
   op reduceCoefs: Poly -> Poly
   def reduceCoefs(poly) =
     if zeroPoly?(poly) then poly else
-    let gcd:Coef = foldl (fn ((Constant c), res) -> (gcd(c, res))
-			 | ((Monom(c, _)), res) -> gcd(c, res)) (hdCoef(poly)) poly in
+    let gcd:Coef = foldl (fn (res,(Constant c)) -> (gcd(c, res))
+			 | (res,(Monom(c, _))) -> gcd(c, res)) (hdCoef(poly)) poly in
     map (fn (Monom (coef, var)) -> Monom (coef div gcd, var)
               | (Constant coef) -> Constant (coef div gcd))
         poly

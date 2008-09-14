@@ -155,7 +155,7 @@ spec
  op  makeVerificationCondition: Gamma * MS.Term * String * StringSet.Set -> Option(QualifiedId * TyVars * MS.Term)
  def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_,_),term,id_tag,claimNames) = 
      let
-	def insert(decl,formula) = 
+	def insert(formula,decl) = 
 	    case decl
 	      of Var v ->        
 		 if isFree(v,formula)
@@ -204,7 +204,7 @@ spec
    case sigma1 of
      | Product(prs,_) ->
        let (vsprs,rgamma)
-          = foldl (fn ((id,s),(vs,gamma)) ->
+          = foldl (fn ((vs,gamma),(id,s)) ->
 		   let (nv,ngamma) = freshVar(name0,s,gamma) in
 		   (Cons((id,nv),vs),ngamma))
               ([],gamma) prs
@@ -251,7 +251,7 @@ spec
         let spc = getSpec gamma in
         let types = product(spc,tau) in
         let
-            def checkField((id,term),(id2,tau),tcc) = 
+            def checkField(tcc,(id,term),(id2,tau)) = 
                 (tcc,gamma) |- term ?? tau
         in
         % Check recursively that every element is well typed 
@@ -261,7 +261,7 @@ spec
         tcc
 
       | Bind(binder,vars,body,_) -> 
-        let gamma = foldl insert gamma vars        in
+        let gamma = foldl (fn (x,y) -> insert(y,x))  gamma vars        in
         let tcc = (tcc,gamma) |- body ?? boolSort  in
         let tcc = <= (tcc,gamma,M,boolSort,tau)    in
         tcc
@@ -273,7 +273,7 @@ spec
         tcc
       | Let(decls,body,_)    ->
         let (tcc,gamma) =
-             foldl (fn ((pat,trm),(tcc,ngamma)) ->
+             foldl (fn ((tcc,ngamma),(pat,trm)) ->
                     let sigma1 = patternSort pat                         in
                     let (ngamma,tp) = bindPattern(ngamma,pat,sigma1)     in
                     %% This is alternative to insertLet below
@@ -294,11 +294,11 @@ spec
         tcc
 
       | LetRec(decls,body,_) ->
-        let gamma = foldl (fn ((v,_),gamma) -> insert(v,gamma))
+        let gamma = foldl (fn (gamma,(v,_)) -> insert(v,gamma))
                       gamma decls
         in
         let tcc =
-            foldl (fn (((_,srt),t),tcc) ->
+            foldl (fn (tcc,((_,srt),t)) ->
                    let spc = getSpec gamma in
                    let tcc = (tcc,gamma) |- t ?? srt in
                    tcc)
@@ -408,9 +408,9 @@ spec
    freshName(gamma,base_name)
 
  op  checkRule: Sort * Sort * Option MS.Term * Boolean
-               -> (Pattern * MS.Term * MS.Term) * (TypeCheckConditions * Gamma)
+               -> (TypeCheckConditions * Gamma) * (Pattern * MS.Term * MS.Term)  
                -> TypeCheckConditions * Gamma
- def checkRule(dom,rng,optArg,casesDisjoint?) ((pat,cond,body),(tcc,gamma)) = 
+ def checkRule(dom,rng,optArg,casesDisjoint?) ((tcc,gamma),(pat,cond,body)) = 
      let (gamma0,tp) = bindPattern(gamma,pat,dom) 	  in
      let (condn,gamma1)
         = case optArg of
@@ -618,7 +618,7 @@ spec
    let predSort = mkArrow(mkProduct [paramSort,paramSort],boolSort) in
    let pred = ("pred",predSort) in
    let rhs = mkAppl(mkVar pred,[recParam,param]) in
-   let def insert(decl,formula) = 
+   let def insert(formula,decl) = 
 	 case decl
 	   of Var v ->        
 	      if isFree(v,formula)
@@ -739,7 +739,7 @@ spec
         tcc
       | (Product(fields1,_),Product(fields2,_)) -> 
         let tcc = ListPair.foldl 
-                    (fn((_,t1),(id,t2),tcc) -> 
+                    (fn(tcc,(_,t1),(id,t2)) -> 
                      subtypeRec(pairs,tcc,gamma,
                                 mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
                                         M),
@@ -749,7 +749,7 @@ spec
         tcc
       | (CoProduct(fields1,_),CoProduct(fields2,_)) ->
         let tcc = ListPair.foldl 
-              (fn((_,t1),(id,t2),tcc) -> 
+              (fn(tcc,(_,t1),(id,t2)) -> 
                  (case (t1,t2)
                     of (Some t1,Some t2) -> 
                        let gamma = assertCond(mkApply(mkFun(Embedded id, mkArrow(sigma,boolSort)),
@@ -771,7 +771,7 @@ spec
             then
             %%  let ps1 = ListPair.zip(srts1,srts2) in % unused
             let tcc = ListPair.foldl
-                         (fn (s1,s2,tcc) -> 
+                         (fn (tcc,s1,s2) -> 
                              let x = freshName(gamma,"B") in
                              let gamma1 = insert((x,s1),gamma) in
                              %let gamma2 = insert((x,s2),gamma) in
@@ -851,7 +851,7 @@ spec
 
  def checkSpec spc = 
    %let localOps = spc.importInfo.localOps in
-   let names = foldl (fn (el,m) ->
+   let names = foldl (fn (m,el) ->
 		      case el of
 			| Op    (qid,def?,_) -> insertQID(qid, m)
 			| OpDef (qid,_)      -> insertQID(qid, m)
@@ -862,7 +862,7 @@ spec
    let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau, Ref names) in
    let tcc = ([],empty) in
    let (tccs,claimNames) =
-       foldl (fn (el,tcc as (tccs,claimNames)) ->
+       foldl (fn (tcc as (tccs,claimNames),el) ->
 	      let (tccs,claimNames) =
                 case el of
                  | Op (qid as Qualified(q, id), true, pos) -> % true means decl includes def

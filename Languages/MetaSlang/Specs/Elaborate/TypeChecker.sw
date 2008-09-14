@@ -122,7 +122,7 @@ TypeChecker qualifying spec
 	  ops
 
       def elaborate_local_ops (ops, env, poly?) =
-	foldl (fn (el,ops) ->
+	foldl (fn (ops,el) ->
 	       case getQIdIfOp el of
 		 | None -> ops
 		 | Some(Qualified(q,id)) ->
@@ -157,7 +157,7 @@ TypeChecker qualifying spec
 
 
       def reelaborate_local_ops (ops, env) =
-	foldl (fn (el,ops) ->
+	foldl (fn (ops,el) ->
 	       case getQIdIfOp el of
 		 | None -> ops
 		 | Some(Qualified(q,id)) ->
@@ -241,7 +241,7 @@ TypeChecker qualifying spec
 	    (printQualifiedId given_sort_qid)
 	    ^ (case instance_sorts of
 		 | []     -> ""    
-		 | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
+		 | hd::tl -> "("^ "??" ^ (foldl (fn (str, instance_sort) ->
 						 str^", "^ "??")
 					  ""
 					  tl) 
@@ -269,7 +269,7 @@ TypeChecker qualifying spec
 			    ^ (case tvs of
 				 | [] -> ""    
 				 | hd::tl -> 
-				   "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
+				   "("^ hd ^ (foldl (fn (str, tv) -> str^", "^ tv) "" tl) ^ ")")
 			in                                
 			let msg = "Type reference " ^ (given_sort_str ())
 			          ^" does not match declared type " ^ found_sort_str
@@ -284,7 +284,7 @@ TypeChecker qualifying spec
 		      %% We know that there are multiple options 
 		      %% (which implies that the given_sort_qid is unqualified), 
 		      %% and that none of them are unqualified, so complain.
-		      let candidates_str = foldl (fn (other_info, str) -> 
+		      let candidates_str = foldl (fn (str, other_info) -> 
 						  str ^", "^  printAliases other_info.names)
 		                                 (printAliases info.names)
 						 other_infos
@@ -354,7 +354,7 @@ TypeChecker qualifying spec
 
       | And (srts, pos) ->
 	let (new_srts, changed?) =  
-            foldl (fn (srt, (new_srts, changed?)) ->
+            foldl (fn ((new_srts, changed?), srt) ->
 		   let new_srt = checkSort (env, srt) in
 		   (new_srts ++ [new_srt],
 		    changed? || (new_srt ~= srt)))
@@ -465,8 +465,8 @@ TypeChecker qualifying spec
 	 tvs_used  (* Probably correct ;-*)
        else 
 	 (error (env, 
-		 "mismatch between bound vars [" ^ (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^ "]"
-		 ^            " and free vars [" ^ (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs_used) ^ "]",
+		 "mismatch between bound vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs) ^ "]"
+		 ^            " and free vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs_used) ^ "]",
 		 termAnn dfn);
 	  tvs)
    in
@@ -880,7 +880,7 @@ TypeChecker qualifying spec
       | Bind (bind, vars, term, pos) ->
 	let _ = elaborateSort (env, term_sort, type_bool) in
 	let (vars, env) = 
-	    foldl (fn ((id, srt), (vars, env)) ->
+	    foldl (fn ((vars, env), (id, srt)) ->
 		   let srt = checkSort (env, srt) in
 		   (cons ((id, srt), vars), 
 		    addVariable (env, id, srt)))
@@ -1156,7 +1156,7 @@ TypeChecker qualifying spec
 	          (error (env,
 			  "Several matches for overloaded op " ^ id ^ " of " ^
 			  (printMaybeAndType srt) ^
-			  (foldl (fn (tm, str) -> str ^
+			  (foldl (fn (str, tm) -> str ^
 				  (case tm of
 				     | Fun (OneName  (     id2, _), _, _) -> " "^id2
 				     | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
@@ -1200,7 +1200,7 @@ TypeChecker qualifying spec
 			    (error (env,
 				    "Several matches for overloaded op " ^ id ^ " of " ^
 				    (printMaybeAndType srt) ^
-				    (foldl (fn (tm, str) -> str ^
+				    (foldl (fn (str, tm) -> str ^
 					    (case tm of
 					       | Fun (OneName  (     id2, _), _, _) -> " "^id2
 					       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
@@ -1212,7 +1212,7 @@ TypeChecker qualifying spec
   def printMaybeAndType srt =
     case srt of
       | And (srt :: srts, _) ->
-        foldl (fn (srt, s) -> s ^ " and type " ^ (printSort srt) ^ "\n")
+        foldl (fn (s, srt) -> s ^ " and type " ^ (printSort srt) ^ "\n")
 	("type " ^ (printSort srt) ^ "\n")
 	srts
       | _ ->
@@ -1612,7 +1612,7 @@ TypeChecker qualifying spec
 	let _ = elaborateSortForPat (env, p, (Product (r, pos)), sort1) in
 	let r = zip (r, row) in
 	let (r, env, seenVars) = 
-	    foldl (fn (((id, srt), (_, p)), (row, env, seenVars)) ->
+	    foldl (fn ((row, env, seenVars), ((id, srt), (_, p))) ->
 		   let (p, env, seenVars) = elaboratePatternRec (env, p, srt, seenVars) in
 		   (cons ((id, p), row), env, seenVars))
 	      ([], env, seenVars) r
@@ -1686,7 +1686,7 @@ TypeChecker qualifying spec
 	  | id::tvs ->  
 	    if StringSet.member (already_seen, id) then
 	      error (env, 
-		     "Repeated type variables : " ^ (foldl (fn (tv, str) -> str ^ " " ^ tv) "" tvs),
+		     "Repeated type variables : " ^ (foldl (fn (str, tv) -> str ^ " " ^ tv) "" tvs),
 		     pos)
 	    else 
 	      aux (tvs, StringSet.add (already_seen, id))

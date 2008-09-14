@@ -92,7 +92,7 @@ spec
 
  op unionProofDecls: List SCDecl * List SCDecl -> List SCDecl
  def unionProofDecls(pfDecls1, pfDecls2) =
-    let def insert (pd as (pdName, _), pfDecls) = 
+    let def insert (pfDecls, pd as (pdName, _)) = 
     case pfDecls of
       | [] -> [pd]
       | pd1::pds ->
@@ -100,7 +100,7 @@ spec
 	  if pdName = pdName1 then
             pfDecls
           else
-            Cons (pd1, insert (pd, pds)) in
+            Cons (pd1, insert (pds, pd)) in
      foldl insert pfDecls1 pfDecls2
 
  op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
@@ -371,6 +371,11 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.30  2007/05/24 00:41:05  westfold
+%% Remove WFO spec move wfo to Functions
+%% Improve SNARK's handling of succ
+%% Make punits recognize import of base spec
+%%
 %% Revision 1.29  2007/05/09 20:47:08  westfold
 %% Add position information to ASpecElements
 %%

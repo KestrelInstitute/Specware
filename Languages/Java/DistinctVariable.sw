@@ -100,7 +100,7 @@ def distinctVar(term, ids) =
     | LetRec _ -> (term,ids) %fail("inner function definitions not yet supported.")
     %(term,ids)
     | SortedTerm(t,_,_) -> distinctVar(t,ids)
-    | Seq(terms,b) -> foldl (fn(term,(Seq(terms,b),ids0)) ->
+    | Seq(terms,b) -> foldl (fn((Seq(terms,b),ids0),term) ->
 			     let (t,ids) = distinctVar(term,ids0) in
 			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
 
@@ -166,7 +166,7 @@ def distinctVarCase(term, ids) =
   let caseTerm = caseTerm(term) in
   let (newCaseTerm, newIds1) = distinctVar(caseTerm, ids) in
   let cases = caseCases(term) in
-  let (caseBodys,newIds2) = foldl (fn ((pat, cond, patBody),(caseBodies,ids)) -> 
+  let (caseBodys,newIds2) = foldl (fn ((caseBodies,ids),(pat, cond, patBody)) -> 
 				   (caseBodies++[patBody],ids++(getPatternIds pat))
 				  ) ([],newIds1) cases
   in
@@ -182,7 +182,7 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
     | [(VarPat (v, _), letTerm)] ->
     let (vId, vSrt) = v in
     let (newLetTerm, newIds) = distinctVar(letTerm, ids) in
-    %let _ = writeLine(";;      let variable found: "^vId^", newIds=["^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" newIds)^"]") in
+    %let _ = writeLine(";;      let variable found: "^vId^", newIds=["^(foldl (fn(s,id) -> if s = "" then id else s^","^id) "" newIds)^"]") in
     if member(vId, newIds)
       then distinctVarLetNewVar(v, newLetTerm, letBody, newIds)
     else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
@@ -264,7 +264,7 @@ def mkNewId(id, n) =
 				  %% srtTermDelta flattens record patterns -- is this desired?
 				  let (old_formals, old_body) = srtTermDelta (old_srt, old_term) in  
 				  let old_ids = map (fn (id, srt) -> id) old_formals in
-				  %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(id,s) -> if s = "" then id else s^","^id) "" ids)) in
+				  %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(s,id) -> if s = "" then id else s^","^id) "" ids)) in
 				  let (new_body, new_ids) = distinctVar (old_body, old_ids) in
 				  let isConstantOp? = case old_srt of Arrow _ -> false | _ -> true in
 				  let new_dom = srtDomKeepSubsorts old_srt in

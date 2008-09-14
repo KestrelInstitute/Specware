@@ -536,7 +536,7 @@ spec
                    iso_info: IsoInfoList,
                    iso_fn_info: IsoFnInfo)
      : List (OpInfo * OpInfo) =
-    let ign_qids = foldl (fn (((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_)), result) ->
+    let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
                             [iso_qid, osi_qid] ++ result)
                      [] iso_info
     in
@@ -599,7 +599,7 @@ spec
     let (prime_type_iso_info, spc) = newPrimedTypes(spc, base_iso_info, iso_fn_info) in
     let iso_info = base_iso_info ++ prime_type_iso_info in
     %% Add definitions for newly introduced iso fns
-    let spc = foldl (fn (((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)), spc) ->
+    let spc = foldl (fn (spc, ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
                        let spc = addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref in
                        let spc = addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref in
                        spc)
@@ -607,12 +607,12 @@ spec
                 prime_type_iso_info
     in
     let (spc, iso_thm_qids) =
-        foldl (fn (((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)), (spc, iso_thm_qids)) ->
+        foldl (fn ((spc, iso_thm_qids), ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
                  makeIsoTheorems(spc, iso_ref, osi_ref, tvs, src_ty, trg_ty, iso_thm_qids))
           (spc, []) iso_info
     in
     let new_defs = makePrimedOps(spc, iso_info, iso_fn_info) in
-    let spc = foldl (fn ((opinfo,opinfo_pr),spc) ->
+    let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
                      let qid  = hd opinfo.names in
                      let qid_pr = hd opinfo_pr.names in
                      let spc = appendElement(spc,Op(qid_pr,true,noPos)) in

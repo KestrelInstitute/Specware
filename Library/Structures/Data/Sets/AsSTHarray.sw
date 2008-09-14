@@ -68,5 +68,5 @@ spec
      ]
 
   def toList s = SetSTHashtable.to_List s
-  def fromList l = foldl (fn (e,r) -> insert r e) empty l
+  def fromList l = foldl (fn (r,e) -> insert r e) empty l
 endspec

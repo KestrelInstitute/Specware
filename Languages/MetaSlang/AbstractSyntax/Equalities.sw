@@ -109,7 +109,7 @@ MetaSlang qualifying spec
         Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
 
      | (And        (tms1,        _), 
-        And        (tms2,        _)) -> foldl (fn (t1, t2, eq?) -> eq? && equalTerm? (t1, t2))
+        And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTerm? (t1, t2))
 					      true
 					      (tms1, tms2)
 
@@ -183,7 +183,7 @@ MetaSlang qualifying spec
 
      | (And        (srts1,       _),  
         And        (srts2,       _)) -> %% TODO: Handle reordering?
-					foldl (fn (s1, s2, eq?) ->  
+					foldl (fn (eq?, s1, s2) ->  
 					       eq? && equalType? (s1, s2))
 					      true
 					      (srts1, srts2)
@@ -199,8 +199,8 @@ MetaSlang qualifying spec
      %% then complains if any sorts and ops from the dom spec of the morphism have
      %% failed to find a match in the spec that morphism is being applied to.
 
-     | (And (srts1, _),  _) -> foldl (fn (s1, eq?) -> eq? || equalType? (s1, s2)) false srts1
-     | (_,  And (srts2, _)) -> foldl (fn (s2, eq?) -> eq? || equalType? (s1, s2)) false srts2
+     | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
+     | (_,  And (srts2, _)) -> foldl (fn (eq?, s2) -> eq? || equalType? (s1, s2)) false srts2
 
      | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
@@ -367,7 +367,7 @@ MetaSlang qualifying spec
         Pi         (tvs2, t2,    _)) -> tvs1 = tvs2 && equalTermStruct? (t1, t2) % TODO: handle alpha equivalence
 
      | (And        (tms1,        _), 
-        And        (tms2,        _)) -> foldl (fn (t1, t2, eq?) -> eq? && equalTermStruct? (t1, t2))
+        And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTermStruct? (t1, t2))
 					      true
 					      (tms1, tms2)
 
@@ -466,7 +466,7 @@ MetaSlang qualifying spec
 
  def MetaSlang.maybeAndSort (srts, pos) =
    let non_dup_sorts =
-       foldl (fn (srt, pending_srts) ->
+       foldl (fn (pending_srts, srt) ->
                 if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
                   pending_srts
                 else
@@ -486,7 +486,7 @@ MetaSlang qualifying spec
 
  def MetaSlang.maybeAndTerm (tms, pos) =
    let non_dup_terms =
-       foldl (fn (tm, pending_tms) ->
+       foldl (fn (pending_tms, tm) ->
               if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
                 pending_tms
               else

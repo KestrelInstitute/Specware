@@ -187,7 +187,7 @@ spec
 op standaloneM: JavaStmt * (List String * String) * (List String * String) * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def standaloneM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   let argNameBase = "arg" in
-  let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
+  let (parNames,_) = foldl (fn((argnames,nmb),argType) -> 
 		    let argname = argNameBase^Integer.toString(nmb) in
 		    (concat(argnames,[argname]),nmb+1))
                    ([],1) apdom
@@ -220,7 +220,7 @@ def standAloneFromSortM(s,srt,k,l) =
 op mapSortColM: (Sort -> JGenEnv Id) * List Sort -> JGenEnv (List String)
 def mapSortColM(srtf,srtl) =
   mapM (fn(srt) -> srtf srt) srtl
-%  foldl (fn(srt,(srtl,col)) ->
+%  foldl (fn((srtl,col),srt) ->
 %	 let (sid,col1) = srtf srt in 
 %	 (concat(srtl,[sid]),concatCollected(col,col1))) 
 %  ([],nothingCollected) srtl

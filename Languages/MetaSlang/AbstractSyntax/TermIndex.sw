@@ -116,7 +116,7 @@ spec
 		in
 		    List.cons((prefix ++ [indexT]),getRec(1,Ms))
 		
-	    def addOne(path,index) = 
+	    def addOne(index,path) = 
 		TermDiscNet.addForPath(index,path,id)
         in
         let pairs = genPathSymPairs([],term) in

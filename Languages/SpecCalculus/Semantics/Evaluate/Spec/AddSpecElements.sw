@@ -16,7 +16,7 @@ SpecCalc qualifying spec
   let new_info = {names = new_names, 
 		  dfn   = new_dfn}
   in
-  let old_infos = foldl (fn (new_name, old_infos) ->
+  let old_infos = foldl (fn (old_infos,new_name) ->
                          case findTheSort (old_spec, new_name) of
                            | Some info -> 
                              if exists (fn old_info -> info = old_info) old_infos then
@@ -38,7 +38,7 @@ SpecCalc qualifying spec
      case old_infos of
        | [] ->
          %%  We're declaring a brand new sort.
-         return (foldl (fn (name as Qualified (q, id), new_sorts) ->                         
+         return (foldl (fn (new_sorts, name as Qualified (q, id)) ->
                         insertAQualifierMap (new_sorts, q, id, new_info))
                        old_spec.sorts
                        new_names)
@@ -61,7 +61,7 @@ SpecCalc qualifying spec
 		let new_info = {names = combined_names, 
 				dfn   = new_dfn}
 		in
-                return (foldl (fn (name as Qualified (q, id), new_sorts) ->                          
+                return (foldl (fn (new_sorts, name as Qualified (q, id)) ->
                                insertAQualifierMap (new_sorts, q, id, new_info))
                               old_spec.sorts
                               combined_names)
@@ -113,7 +113,7 @@ SpecCalc qualifying spec
 		  dfn    = new_dfn,
 		  fullyQualified? = false}
   in
-  let old_infos = foldl (fn (new_name, old_infos) ->
+  let old_infos = foldl (fn (old_infos, new_name) ->
                          case findTheOp (old_spec, new_name) of
                            | Some info -> 
                              if exists (fn old_info -> info = old_info) old_infos then
@@ -134,7 +134,7 @@ SpecCalc qualifying spec
    case old_infos of
      | [] ->
        %%  We're declaring a brand new op
-       return (foldl (fn (name as Qualified (q, id), new_ops) ->
+       return (foldl (fn (new_ops, name as Qualified (q, id)) ->
                       insertAQualifierMap (new_ops, q, id, new_info))
                      old_spec.ops
                      new_names)
@@ -191,7 +191,7 @@ SpecCalc qualifying spec
 						    dfn   = combined_dfn,
 						    fullyQualified? = false} 
 		  in
-		  return (foldl (fn (name as Qualified (q, id), new_ops) ->
+		  return (foldl (fn (new_ops, name as Qualified (q, id)) ->
 				 insertAQualifierMap (new_ops, q, id, combined_info))
 			  old_spec.ops
 			  combined_names)
@@ -243,7 +243,7 @@ SpecCalc qualifying spec
              let initialFmla = defToTheorem(sp, ty, primaryName, term) in
              % let _ = writeLine("def_thm: "^printTerm initialFmla) in
              let liftedFmlas = [initialFmla] in % removePatternTop(sp, initialFmla) in
-             let (_,thms) = foldl (fn(fmla,(i,result)) ->
+             let (_,thms) = foldl (fn((i,result), fmla) ->
                                      (i + 1,
                                       result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
                                                                                           else toString i)),
@@ -288,8 +288,8 @@ SpecCalc qualifying spec
  def addTheoremLast ((name, tvs, formula, a), spc) =  
    setElements (spc, spc.elements ++ [Property(Theorem, name, tvs, formula, a)])
 
- def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
- def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
+ def addConjectures (conjectures, spc) = foldl (fn (spc,cnj) -> addConjecture(cnj,spc)) spc conjectures
+ def addTheorems    (theorems,    spc) = foldl (fn (spc,thm) -> addTheorem   (thm,spc)) spc theorems
 
  def addComment     (str, a, spc) = 
    let spc = setElements (spc, spc.elements ++ [Comment (str,a)]) in

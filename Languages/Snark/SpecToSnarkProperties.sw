@@ -333,7 +333,7 @@ snark qualifying spec
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
 	let newVars = map(fn (var, srt) -> specId(var,""))
 	                 bndVars in
-	let bndVarsPred = foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res))
+	let bndVarsPred = foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res))
 			    (mkTrue()) bndVars in
 	let newTerm = case bndr of
 	                | Forall -> Utilities.mkSimpImplies(bndVarsPred, term)
@@ -380,13 +380,13 @@ snark qualifying spec
 	      | r -> r)
 	   | r -> r)
       | Record(prs,_) ->
-	foldl (fn ((_,tm),result) ->
+	foldl (fn (result,(_,tm)) ->
 	       case result of
 		 | None -> containsTheTerm tm
 		 | r -> r)
 	  None prs
       | Let(bnds,bod,_) ->
-	foldl (fn ((_,tm),result) ->
+	foldl (fn (result,(_,tm)) ->
 	       case result of
 		 | None -> containsTheTerm tm
 		 | r -> r)

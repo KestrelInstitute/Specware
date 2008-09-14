@@ -283,9 +283,9 @@ spec
 % List [ 64]:  op mapPartial      : fa(a,b) (a -> Option b) -> List a -> List b
     tester ("(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]", (mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]);
     tester ("let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]", let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]);
-% List [ 65]:  op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b
-    tester ("(foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13", (foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13);
-    tester ("let F = id ( foldl ( fn(m,n)->(m)rem(n) )) in (F ( 20 ) ( [77,47] )) = 13", let F = id ( foldl ( fn(m,n)->(m)rem(n) )) in (F ( 20 ) ( [77,47] )) = 13);
+% List [ 65]:  op foldl           : fa(a,b) (b * a -> b) -> b -> List a -> b
+    tester ("(foldl ( fn(m,n)->(n)rem(m) ) ( 20 ) ( [77,47] )) = 13", (foldl ( fn(m,n)->(n)rem(m) ) ( 20 ) ( [77,47] )) = 13);
+    tester ("let F = id ( foldl ( fn(m,n)->(n)rem(m) )) in (F ( 20 ) ( [77,47] )) = 13", let F = id ( foldl ( fn(m,n)->(n)rem(m) )) in (F ( 20 ) ( [77,47] )) = 13);
 % List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
     tester ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13", (foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13);
     tester ("let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13", let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13);

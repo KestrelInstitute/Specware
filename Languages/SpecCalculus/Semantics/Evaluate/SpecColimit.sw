@@ -356,7 +356,7 @@ spec
   let initial_mfset_vqid_map = 
       %% VQid => {Rank = 0, Parent = None, Value = VQid}
       foldOverVertices (fn mfset_map -> fn vertex ->
-			foldl (fn ((qualifier, id, inf), mfset_map) ->
+			foldl (fn (mfset_map, (qualifier, id, inf)) ->
 			       let vqid = (vertex, Qualified (qualifier, id)) in
 			       augmentMFSetMap mfset_map vqid)
 			      mfset_map  
@@ -381,7 +381,7 @@ spec
 		     let source_vertex = source_fn    edge in
 		     let target_vertex = target_fn    edge in
 		     let explicit_qid_map = sm_qid_map sm in
-		     foldl (fn ((q, id, _), mfset_map) ->
+		     foldl (fn (mfset_map, (q, id, _)) ->
 			    let dom_qid = Qualified(q, id) in
 			    let cod_qid = case evalPartial explicit_qid_map dom_qid of
 					    | Some cod_qid -> cod_qid
@@ -416,7 +416,7 @@ spec
 
  def find_dominating_vqids (dominating_vertices : VertexRanking) (vqids : List VQid) = 
    %% return all the vqids associated with the first dominating vertex that has any associated vqids 
-   foldl (fn (dominating_vertex, dominating_vqids) ->
+   foldl (fn (dominating_vqids, dominating_vertex) ->
             case dominating_vqids of
               | [] -> filter (fn (vqid : VQid) -> dominating_vertex = vqid.1) vqids
               | _ -> dominating_vqids)
@@ -442,9 +442,9 @@ spec
    
    %% let _ = showIdToQualifiers id_to_qualifiers in
 
-   List.foldl (fn (class, vqid_to_apex_qid_and_aliases_map) ->
+   List.foldl (fn (vqid_to_apex_qid_and_aliases_map, class) ->
 	       let (aliases, local_map) = % local to this class
- 	           foldl (fn (vqid, (aliases, local_map)) ->
+ 	           foldl (fn ((aliases, local_map), vqid) ->
 			  let (vertex, default_apex_qid as Qualified(qualifier, id)) =
 			      case class.final of
 				| [dominant_vqid] -> dominant_vqid
@@ -475,7 +475,7 @@ spec
 		         class.original
 	       in 
 	       let boolean? = member (Boolean_Boolean, aliases) in
-	       List.foldl (fn (vqid, vqid_to_apex_qid_and_aliases_map) ->
+	       List.foldl (fn (vqid_to_apex_qid_and_aliases_map, vqid) ->
 			   update vqid_to_apex_qid_and_aliases_map 
 			          vqid 
 				  (if boolean? then
@@ -495,8 +495,8 @@ spec
        %% QualifiedId => List EquivalentClass
        %% This lets us detect ambiguities
        %% O(N log N)
-       foldl (fn (class, (qid_to_class_indices, class_index)) ->
-	      (foldl (fn (vqid, qid_to_class_indices) ->
+       foldl (fn ((qid_to_class_indices, class_index), class) ->
+	      (foldl (fn (qid_to_class_indices, vqid) ->
 		      let qid = vqid.2 in
 		      case evalPartial qid_to_class_indices qid of
 			| None ->
@@ -521,8 +521,8 @@ spec
    %% This records all the qualifiers associated with an id, so if we
    %%  need to requalify that id, we can see what's already in use.
    %% O(N log N) 
-   foldl (fn (class, id_to_qualifiers) ->
-	  foldl (fn ((_, Qualified (qualifier, id)), id_to_qualifiers) ->
+   foldl (fn (id_to_qualifiers, class) ->
+	  foldl (fn (id_to_qualifiers, (_, Qualified (qualifier, id))) ->
 		 case evalPartial id_to_qualifiers id of
 		   | None -> 
 		     update id_to_qualifiers id [qualifier]
@@ -587,7 +587,7 @@ spec
    foldOverVertices (fn vertex_to_renaming_rules -> fn vertex : Vertex.Elem ->
 		     let spc = vertexLabel dg vertex in
 		     let renaming_rules = 
-			 foldl (fn ((qualifier, id, info), renaming_rules) ->
+			 foldl (fn (renaming_rules, (qualifier, id, info)) ->
 				let vertex_qid = Qualified(qualifier,id) in
 				let vqid = (vertex, vertex_qid) in
 				let (apex_qid, apex_aliases) = eval vqid_to_apex_qid_and_aliases vqid in
@@ -644,19 +644,19 @@ spec
 
  %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
  def convertSortRules renaming_rules =
-   foldl (fn ((Sort (dom_qid, cod_qid, aliases), _), new_sm_map) ->
+   foldl (fn (new_sm_map, (Sort (dom_qid, cod_qid, aliases), _)) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap
          renaming_rules
 
  def convertOpRules renaming_rules =
-   foldl (fn ((Op ((dom_qid, _), (cod_qid, _), aliases), _), new_sm_map) ->
+   foldl (fn (new_sm_map, (Op ((dom_qid, _), (cod_qid, _), aliases), _)) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap 
          renaming_rules
 
  %%% def convertPropRules renaming_rules = 
- %%%   foldl (fn ((Property (dom_qid, cod_qid), _), new_sm_map) ->
+ %%%   foldl (fn (new_sm_map, (Property (dom_qid, cod_qid), _)) ->
  %%%	      update new_sm_map dom_qid cod_qid)
  %%%         PolyMap.emptyMap 
  %%%         renaming_rules
@@ -685,7 +685,7 @@ spec
 	   else Cons(el,newElts)
        
    in
-   let newElts = foldl (fn (el,newElts) ->
+   let newElts = foldl (fn (newElts,el) ->
 			case el of
 			  | Op      (qid,def?,a) -> addIfNew (Op      (canonOp   qid, def?,a), newElts)
 			  | OpDef   (qid,a)      -> addIfNew (OpDef   (canonOp   qid,a),       newElts)

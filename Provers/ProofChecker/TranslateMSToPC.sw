@@ -442,7 +442,7 @@ Translate qualifying spec
          }
       | (Product (lFlds,_), Product (rFlds,_)) -> {
            subs <- mapListToFSeq (fn ((_,l),(_,r)) -> matchType spc l r) (zip lFlds rFlds);
-           return (foldl List.concat [] subs)
+           return (foldl (fn (x,y) -> List.concat(y,x)) [] subs)
          }
       | (CoProduct (lSums,_), CoProduct (rSums,_)) ->
          let
@@ -453,7 +453,7 @@ Translate qualifying spec
                | _ -> raise (Fail "bad")
          in {
            subs <- mapListToFSeq f (zip lSums rSums);
-           return (foldl List.concat [] subs)
+           return (foldl (fn (x,y) -> List.concat(y,x)) [] subs)
          }
       | (Quotient (lTyp,lTerm,_), Quotient (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
       | (Subsort (lTyp,lTerm,_), Subsort (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
@@ -647,7 +647,7 @@ Translate qualifying spec
   }
 
   op mapListToFSeq : fa(a,b) (a -> b) -> List a -> FSeq b
-  def mapListToFSeq f list = foldl (fn (x,fSeq) -> (f x) |> fSeq) empty list
+  def mapListToFSeq f list = foldl (fn (fSeq,x) -> (f x) |> fSeq) empty list
 
   op MSToPCTranslateMonad.mapListToFSeq : fa(a,b) (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (FSeq b)
   def MSToPCTranslateMonad.mapListToFSeq f list =

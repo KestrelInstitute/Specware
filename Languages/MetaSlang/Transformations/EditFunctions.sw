@@ -11,12 +11,12 @@ spec
       | Some globalContext ->
     let unitId = pathStringToCanonicalUID(uidStr,false) in
     let topUnitIds = findTopLevelImporters(unitId,globalContext) in
-    foldl (\_lambda (unitId,result) \_rightarrow
+    foldl (\_lambda (result,unitId) \_rightarrow
            case evalPartial globalContext unitId of
              | Some(Spec spc,_,_,_) ->
                foldriAQualifierMap
                  (fn (_, _, info, result) \_rightarrow
-                  foldl (fn (dfn,result) \_rightarrow
+                  foldl (fn (result,dfn) \_rightarrow
                          foldSubTerms
                            (fn (t,result) \_rightarrow
                             if pred(t,spc)
@@ -104,7 +104,7 @@ spec
           if current = [] then top
           else
           let (next,top) =
-              foldl (\_lambda (u1,(next,top)) \_rightarrow
+              foldl (\_lambda ((next,top),u1) \_rightarrow
                      let importers =
                          foldMap (fn importers -> fn u_par -> fn (val,_,depUIDs,_) \_rightarrow
                                   if member(u1,depUIDs) \_and (case val of Spec _ \_rightarrow true | _ \_rightarrow false)
@@ -133,7 +133,7 @@ spec
 	     if member(unitId1,depUIDs)
                then case val of
                       | Spec spc \_rightarrow
-                        (let result1 = foldl (fn (el,result) \_rightarrow
+                        (let result1 = foldl (fn (result,el) \_rightarrow
                                                case result of
                                                  | Some _ \_rightarrow result
                                                  | None \_rightarrow

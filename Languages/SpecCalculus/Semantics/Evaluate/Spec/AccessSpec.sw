@@ -12,7 +12,7 @@ SpecCalc qualifying spec
 op getStringAttributesFromSpec: Spec -> StringMap.Map String
 def getStringAttributesFromSpec spc =
   let ops = opsAsList spc in
-  foldl (fn ((_ , id, info), map) ->
+  foldl (fn (map, (_ , id, info)) ->
 	 let defs = opInfoDefs info in
 	 case defs of
 	   | term :: _ ->

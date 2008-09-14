@@ -39,7 +39,7 @@ XML qualifying spec
     let 
        def mkrecord args =
 	 let (_, reversed_args : List (Id * MS.Term)) =
-	 (foldl (fn (arg : MS.Term, (n : Nat, args : List (Id * MS.Term))) ->
+	 (foldl (fn ((n : Nat, args : List (Id * MS.Term)), arg : MS.Term) ->
 		 (n + 1,
 		  cons ((Nat.toString n, arg),
 			args)))
@@ -82,7 +82,7 @@ XML qualifying spec
 								   convert y])
 	   
 	   | Product    (fields,            _) -> mkapp ("XML", "MakeProductSortDescriptor",
-							 (foldl (fn ((id, srt), result) ->
+							 (foldl (fn (result,(id, srt)) ->
 								 mkapp ("List", "cons-2",
 									mkrecord [mkapp ("List", "cons-2", 
 											 mkrecord [tag id, 
@@ -92,7 +92,7 @@ XML qualifying spec
 								(rev fields)))
 	   
 	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortDescriptor",
-							 (foldl (fn ((id, opt_srt), result) ->
+							 (foldl (fn (result,(id, opt_srt)) ->
 								 mkapp ("List", "cons-2",
 									mkrecord [mkapp ("List", "cons-2",
 											 mkrecord [tag id,
@@ -130,7 +130,7 @@ XML qualifying spec
 	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortDescriptor-3",
 							 mkrecord [tag q,
 								   tag id, 
-								   (foldl (fn (srt, result) ->
+								   (foldl (fn (result,srt) ->
 									   mkapp ("List", "cons-2", 
 										  mkrecord [convert srt, result]))
 								          mynil
@@ -141,7 +141,7 @@ XML qualifying spec
 	   
 	   | MetaTyVar  (mtv,               _) -> tag "<Some MetaTyVar??>"
     in
-      foldl (fn ((srt, expansion), trm) -> 
+      foldl (fn (trm,(srt, expansion)) -> 
 	     mkapp ("List", "cons-2",
 		    mkrecord [mkapp ("List", "cons-2",
 				     mkrecord [convert srt, 
@@ -158,7 +158,7 @@ XML qualifying spec
 
   def sort_expansion_table (env, srt) =
    let 
-      def add_to_table (srt, table) =
+      def add_to_table (table, srt) =
 	let expansion = unfoldSort_once (env, srt) in
 	%%  let _ = toScreen ("\n-----------------------------\n") in
 	%%  let _ = show_sort ("     Sort", srt) in
@@ -171,24 +171,24 @@ XML qualifying spec
 	  let new_table = cons ((srt, expansion), table) in
 	  %%  let _ = toScreen ("\n *** ADDED *** \n") in
 	  %%  let _ = toScreen ("\n-----------------------------\n") in
-	  scan (expansion, new_table)
+	  scan (new_table, expansion)
 
-      def scan (srt, table) =
+      def scan (table,srt) =
 	case srt of
-	  | CoProduct (row,    pos)   -> (foldl (fn ((id, opt_srt), table) -> 
+	  | CoProduct (row,    pos)   -> (foldl (fn (table,(id, opt_srt)) -> 
 						 case opt_srt of 
-						   | Some srt -> scan (srt, table)
+						   | Some srt -> scan (table,srt)
 						   | None -> table)
 					        table
 						row)
-	  | Product   (row,    pos)   -> (foldl (fn ((id, srt), table) -> scan (srt, table))
+	  | Product   (row,    pos)   -> (foldl (fn (table,(id, srt)) -> scan (table,srt))
 					        table
 						row)
-	  | Arrow     (t1, t2, pos)   -> scan (t1, scan (t2, table))
-	  | Quotient  (t, pred, pos)  -> scan (t, table)
-	  | Subsort   (t, pred, pos)  -> scan (t, table)
+	  | Arrow     (t1, t2, pos)   -> scan (scan (table,t1), t2)
+	  | Quotient  (t, pred, pos)  -> scan (table,t)
+	  | Subsort   (t, pred, pos)  -> scan (table,t)
 	  | Base      (nm, srts, pos) -> (let already_seen? = 
-					      (foldl (fn ((old_srt, _), seen?) -> 
+					      (foldl (fn (seen?,(old_srt, _)) -> 
 						      seen? or (case old_srt of
 								  | Base (old_nm, _, _) -> 
 								    (nm = old_nm 
@@ -207,7 +207,7 @@ XML qualifying spec
 					  let table = (if already_seen? then
 							 table
 						       else
-							 add_to_table (srt, table))
+							 add_to_table (table,srt))
 					  in
 					    foldl scan table srts)
 	  | Boolean   _               -> table
@@ -216,9 +216,9 @@ XML qualifying spec
 	                                 if new_sort = srt then
 					   table
 					 else
-					   scan (new_sort, table)
+					   scan (table,new_sort)
    in
-     scan (srt, [])
+     scan ([], srt)
 
  %% ================================================================================
 

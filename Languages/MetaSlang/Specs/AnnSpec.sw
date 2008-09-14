@@ -122,7 +122,7 @@ AnnSpec qualifying spec
  def sortInfoDeclsAndDefs info =
    let
      def segregate srts =
-       foldl (fn (srt, (decls, defs)) ->
+       foldl (fn ((decls, defs), srt) ->
 	      if definedSort? srt then
 		(decls, defs ++ [srt])
 	      else
@@ -164,7 +164,7 @@ AnnSpec qualifying spec
  def termDeclsAndDefs tm =
    let
      def segregate tms =
-       foldl (fn (tm, (decls, defs)) ->
+       foldl (fn ((decls, defs), tm) ->
 	      if definedTerm? tm then
 		(decls, defs ++ [tm])
 	      else
@@ -305,7 +305,7 @@ AnnSpec qualifying spec
 	%% record that (identical) new value for all the aliases.
 	let new_info = opinfo_map info
 	in
-	foldl (fn (Qualified (q, id), new_map) ->
+	foldl (fn (new_map, Qualified (q, id)) ->
 	       insertAQualifierMap (new_map, q, id, new_info))
 	      new_map
 	      info.names
@@ -339,7 +339,7 @@ AnnSpec qualifying spec
 	%% When access is via a primary alias, update the info and
 	%% record that (identical) new value for all the aliases.
 	let new_info = sortinfo_map info in
-	foldl (fn (Qualified (q, id), new_map) ->
+	foldl (fn (new_map, Qualified (q, id)) ->
 	       insertAQualifierMap (new_map, q, id, new_info))
 	      new_map
 	      info.names
@@ -358,7 +358,7 @@ AnnSpec qualifying spec
 	%% When access is via a primary alias, update the info and
 	%% ecord that (identical) new value for all the aliases.
 	let new_info = opinfo_map info in
-	foldl (fn (Qualified (q, id), new_map) ->
+	foldl (fn (new_map, Qualified (q, id)) ->
 	       insertAQualifierMap (new_map, q, id, new_info))
 	      new_map
 	      info.names
@@ -374,7 +374,7 @@ AnnSpec qualifying spec
    foldriAQualifierMap
      (fn (q, id, info, new_map) ->
       if primarySortName? (q, id, info) && keep? info then
-	foldl (fn (Qualified(q, id), new_map) ->
+	foldl (fn (new_map, Qualified(q, id)) ->
 	       insertAQualifierMap (new_map, q, id, info))
 	      new_map
 	      info.names
@@ -388,7 +388,7 @@ AnnSpec qualifying spec
    foldriAQualifierMap
      (fn (q, id, info, new_map) ->
       if primaryOpName? (q, id, info) && keep? info then
-	foldl (fn (Qualified(q, id), new_map) ->
+	foldl (fn (new_map, Qualified(q, id)) ->
 	       insertAQualifierMap (new_map, q, id, info))
 	      new_map
 	      info.names
@@ -483,14 +483,14 @@ AnnSpec qualifying spec
      elements
 
 
- op  foldlSpecElements: [a] (SpecElement * a -> a) -> a -> SpecElements -> a
+ op  foldlSpecElements: [a] (a * SpecElement -> a) -> a -> SpecElements -> a
  def foldlSpecElements f ini els =
-   foldl (fn (el, result) ->
+   foldl (fn (result, el) ->
 	  case el of
 	    | Import (s_tm, i_sp, elts, _) ->
-	      let result1 = foldlSpecElements f (f (el, result)) elts in
-	      f (el, result1)
-	    | _ -> f (el, result))
+	      let result1 = foldlSpecElements f (f (result, el)) elts in
+	      f (result1, el)
+	    | _ -> f (result, el))
          ini
 	 els
 

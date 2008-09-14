@@ -91,7 +91,7 @@ PrettyPrint qualifying spec {
   %% Length of last line in text.
 
   def lengthStrings (strings : NatStrings) : Nat =
-    foldl (fn ((l,s), n) -> n + l) 0 strings
+    foldl (fn (n, (l,s)) -> n + l) 0 strings
 
   def lengthLast (t : Text) : Nat =
     case t

@@ -278,7 +278,7 @@ spec
 				        & member(i,fnIndices))
                            (tabulate (length args, id))
     in
-    let vSubst = foldl (fn (i,r) -> r ++ matchPairs(nth(vs,i),nth(args,i)))
+    let vSubst = foldl (fn (r,i) -> r ++ matchPairs(nth(vs,i),nth(args,i)))
                    [] replaceIndices
     in
     let remainingIndices =  filter (fn i -> ~(member(i,replaceIndices)))
@@ -333,7 +333,7 @@ spec
 	  | [] -> false
 	  | _ :: outer_pattern_vars ->
 	    (let (capture?, _) =
-	     foldl (fn (arg_vars, (capture?, outer_pattern_vars_list)) ->
+	     foldl (fn ((capture?, outer_pattern_vars_list),arg_vars) ->
 		    if capture? then
 		      (true, [])
 		    else if exists (fn av -> 
@@ -366,7 +366,7 @@ spec
 	    (index + 1, new_id)
       in
       let (_, temp_vars) = 
-	  foldl (fn (arg, (index, new_vars)) ->
+	  foldl (fn ((index, new_vars),arg) ->
 		 let (index, new_id) = find_unused_id index in
 		 let new_var = ((new_id, termSort arg), noPos) in
 		 (index,  new_vars ++ [new_var]))
@@ -525,7 +525,7 @@ spec
 		    then			% Uncurried
 		    (case argSort of
 		      | Product(fields,_) ->
-		        let vars = (foldl (fn ((label,srt),(result,i)) ->
+		        let vars = (foldl (fn ((result,i),(label,srt)) ->
 					    (result ++ [(label,("xxx-"^Nat.toString i,srt))],
 					     i+1))
 				      ([],0) fields).1
@@ -594,7 +594,7 @@ spec
     case (p,t) of
       | (VarPat(pv,_),t) -> [(pv,t)]
       | (RecordPat(pfields,_),Record(tfields,_)) ->
-        foldl (fn ((id,p1),r) -> r ++ matchPairs(p1,lookupId(id,tfields)))
+        foldl (fn (r,(id,p1)) -> r ++ matchPairs(p1,lookupId(id,tfields)))
 	  [] pfields
       | _ -> fail "matchPairs: Shouldn't happen"
 

@@ -60,7 +60,7 @@ AnnSpec qualifying spec
    %%       else
    %%         let env = initialEnv (spc, "internal") in
    %%         let all_diffs = diffTerm [] (t1, t2) in
-   %%         let filtered_diffs = foldl (fn (diff, diffs) ->
+   %%         let filtered_diffs = foldl (fn (diffs,diff) ->
    %%                                       case diff of
    %%                                         | Types (x,y) ->	
    %%                                           if new_equivType? spc (x, y) then
@@ -74,8 +74,8 @@ AnnSpec qualifying spec
    %%         in
    %%         let _ = toScreen("\n----------\n") in
    %%         let _ = toScreen("Old = " ^ toString old? ^ ", new = " ^ toString new? ^ "\n") in
-   %%         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[c]" all_diffs) in
-   %%         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[d]" filtered_diffs) in
+   %%         let _ = toScreen (foldl (fn (s,x) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[c]" all_diffs) in
+   %%         let _ = toScreen (foldl (fn (s,x) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[d]" filtered_diffs) in
    %%         let _ = toScreen("\n") in
    %%         let _ = toScreen("X = " ^ anyToString t1 ^ "\n") in
    %%         let _ = toScreen("Y = " ^ anyToString t2 ^ "\n") in
@@ -93,7 +93,7 @@ AnnSpec qualifying spec
    ||
    (let env = initialEnv (spc, "internal") in
     let all_diffs = diffTerm [] (x, y) in
-    let filtered_diffs = foldl (fn (diff, diffs) ->
+    let filtered_diffs = foldl (fn (diffs,diff) ->
                                   case diff of
                                     | Types (x,y) ->	
                                       if similarType? spc (x, y) then % allow A to match A|p, e.g. 0:Nat to match 0:Integer
@@ -229,7 +229,7 @@ AnnSpec qualifying spec
    %%       else
    %%         let env = initialEnv (spc, "internal") in
    %%         let all_diffs      = diffType [] (x, y) in
-   %%         let filtered_diffs = foldl (fn (diff, diffs) ->
+   %%         let filtered_diffs = foldl (fn (diffs,diff) ->
    %%                                       case diff of
    %%                                         | Types (x,y) ->	
    %%                                           let _ = toScreen("x  = " ^ anyToString x  ^ "\n") in
@@ -250,8 +250,8 @@ AnnSpec qualifying spec
    %%         in
    %%         let _ = toScreen("\n----------\n") in
    %%         let _ = toScreen("Old = " ^ toString old? ^ ", new = " ^ toString new? ^ "\n") in
-   %%         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[a]" all_diffs) in
-   %%         let _ = toScreen (foldl (fn (x, s) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[b]" filtered_diffs) in
+   %%         let _ = toScreen (foldl (fn (s,x) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[a]" all_diffs) in
+   %%         let _ = toScreen (foldl (fn (s,x) -> s ^  "   " ^ anyToString x ^ "\n") "\nDiffs[b]" filtered_diffs) in
    %%         let _ = toScreen("\n") in
    %%         let _ = toScreen("S1 = " ^ anyToString x ^ "\n") in
    %%         let _ = toScreen("S2 = " ^ anyToString y ^ "\n") in

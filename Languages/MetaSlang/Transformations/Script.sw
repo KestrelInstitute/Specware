@@ -272,7 +272,7 @@ spec
       else
         let children = immediateSubTerms top in
         if member(term,children) then Some top
-          else foldl (fn (c,result) ->
+          else foldl (fn (result,c) ->
                         if some? result then result
                           else parentTerm(term,c))
                  None children
@@ -388,7 +388,7 @@ spec
      : (MS.Term * MS.Term) * Boolean =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda (s,((term,top_term),tracing?)) \_rightarrow
+        foldl (\_lambda (((term,top_term),tracing?), s) \_rightarrow
                interpretTerm(spc,s,term,top_term,tracing?))
           ((term,top_term), tracing?) steps
       | Print -> let _ = writeLine(printTerm term) in ((term,top_term), tracing?)
@@ -440,7 +440,7 @@ spec
   op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): Spec * Boolean =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda (stp,(spc,tracing?)) \_rightarrow
+        foldl (\_lambda ((spc,tracing?), stp) \_rightarrow
                interpretSpec(spc,stp,tracing?))
           (spc,tracing?) steps
       | At(locs, scr) \_rightarrow
@@ -449,7 +449,7 @@ spec
                               ^" }")
                 else ()
         in
-        foldl (fn (Def qid, (spc,tracing?)) \_rightarrow
+        foldl (fn ((spc,tracing?), Def qid) \_rightarrow
                case findAllOps(spc,qid) of
                  | [] \_rightarrow (warn("Can't find op "^anyToString qid);
                             (spc,tracing?))

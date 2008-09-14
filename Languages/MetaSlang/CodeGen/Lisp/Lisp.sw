@@ -120,23 +120,23 @@ ListADT qualifying spec {
          | Var     _ -> names
          | Set     (_,term) -> ops(term,names)
          | Lambda  (_,_,term) -> ops(term,names)
-         | Apply   (term,terms) -> List.foldl ops (ops(term,names)) terms
+         | Apply   (term,terms) -> List.foldl (fn (names,tm) -> ops(tm,names)) (ops(term,names)) terms
          | If      (t1,t2,t3) -> ops(t1,ops(t2,ops(t3,names)))
          | IfThen  (t1,t2) -> ops(t1,ops(t2,names))
-         | Let     (_,terms,body) -> List.foldl ops (ops(body,names)) terms
-         | Letrec  (_,terms,body) -> List.foldl ops (ops(body,names)) terms
+         | Let     (_,terms,body) -> List.foldl (fn (names,tm) -> ops(tm,names)) (ops(body,names)) terms
+         | Letrec  (_,terms,body) -> List.foldl (fn (names,tm) -> ops(tm,names)) (ops(body,names)) terms
          | Seq     terms -> List.foldr ops names terms
 
   op  sortDefs: Definitions -> Definitions
   def sortDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
       let defMap = 
-	  List.foldl (fn((name,term),map)-> STHMap.update(map,name,(name,term)))
+	  List.foldl (fn(map, (name,term))-> STHMap.update(map,name,(name,term)))
 	  STHMap.emptyMap defs
       in
       let map = 
 	  List.foldl
-	    (fn((name,term),map) -> 
+	    (fn(map, (name,term)) -> 
 		let opers = ops(term,Set.empty) in
 		let opers = Set.toList opers in
 		STHMap.update(map,name,opers))
@@ -419,7 +419,7 @@ def addDefinition(modulename,defn,lspc) =
 % addDefinitions to LispSpec
 op addDefinitions: List (String*Definition) * LispSpec -> LispSpec
 def addDefinitions(defns,lspc) =
-  List.foldl (fn((modulename,defn),lspc)
+  List.foldl (fn(lspc,(modulename,defn))
 	       -> addDefinition(modulename,defn,lspc)) lspc defns
 
 }

@@ -625,7 +625,7 @@ AnnSpecPrinter qualifying spec
           | Any _ -> string "<anyterm>"
           | And (tms, _) -> prettysNone ([string "<AndTerms: "] 
 					 ++
-					 (foldl (fn (tm, pps) -> 
+					 (foldl (fn (pps, tm) -> 
 						 pps ++
 						 [ppTerm context (path, Top) tm,
 						  string " "])
@@ -766,7 +766,7 @@ AnnSpecPrinter qualifying spec
 
     | And (srts, _) -> prettysNone ([string "<AndSorts: "] 
 				    ++
-				    (foldl (fn (srt, pps) -> 
+				    (foldl (fn (pps, srt) -> 
 					    pps ++
 					    [ppSort context (path, Top : ParentSort) srt,
 					     string " "])
@@ -913,7 +913,7 @@ AnnSpecPrinter qualifying spec
  def printTyVars tvs =
    case tvs of
      | []     -> "[]"
-     | v1::vs -> "[" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ "]"
+     | v1::vs -> "[" ^ v1 ^ (foldl (fn (str, v) -> str ^","^ v) "" vs) ^ "]"
 
  def useXSymbols? = true
  def uiPrinter() = if useXSymbols? then XSymbolPrinter else asciiPrinter
@@ -1531,7 +1531,7 @@ AnnSpecPrinter qualifying spec
  def indentString prefix s =
    let newline_char = hd (explode newline) in
    let prefix = explode prefix in
-   let s = foldl (fn (char, s) ->
+   let s = foldl (fn (s, char) ->
 		  if char = newline_char then
 		    prefix ++ (cons (char, s))
 		  else
@@ -1660,7 +1660,7 @@ AnnSpecPrinter qualifying spec
 	spc.ops
    in
    let (counter, properties) = 
-       foldl (fn (el, result as (counter, list)) ->
+       foldl (fn (result as (counter, list), el) ->
 	      case el of
 		| Property(pt, qid, tvs, _, _) ->
 	          (counter + 1, 

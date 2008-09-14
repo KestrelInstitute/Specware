@@ -112,7 +112,7 @@ Prover qualifying spec
    case pattern of
      | VarPat ((id, _), _) -> Some [id]
      | RecordPat (fields, _) ->
-         List.foldl (fn ((_, p), namesOpt) ->
+         List.foldl (fn (namesOpt, (_, p)) ->
 		     case namesOpt of
 		       | Some names ->
 		        (case patternNameOpt p of
@@ -186,7 +186,7 @@ Prover qualifying spec
       | [] -> []
       | defs ->
         %% new: fold over all defs (but presumably just one for now)
-        foldl (fn (dfn, props) ->
+        foldl (fn (props, dfn) ->
 	       let (tvs, srt, term) = unpackTerm dfn in
 	       let pos = termAnn term in
 	       let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in

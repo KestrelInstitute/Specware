@@ -36,7 +36,7 @@ spec
 
    def addRules(rules,demod) = 
        foldl 
-	(fn((trm,rule),demod) -> addRule(trm,rule,demod))	
+	(fn(demod,(trm,rule)) -> addRule(trm,rule,demod))	
 	    demod rules
 
    def getRules ({idMap,index},term) = 

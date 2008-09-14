@@ -405,7 +405,7 @@ def srtId_internalM(srt,addIds?) =
        sep <- getSep;
        (dtypes,dsrtid) <- srtId_internalM(dsrt,false);
        (_,rsrtid) <- srtId_internalM(rsrt,addIds?);
-       (pars,_) <- return (foldl (fn(ty,(pars,nmb)) -> 
+       (pars,_) <- return (foldl (fn((pars,nmb),ty) -> 
 				  let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
 				  (concat(pars,[fpar]),nmb+1)
 				 ) ([],1) dtypes);
@@ -449,7 +449,7 @@ op mkArrowSrtId: List Id * Id -> JGenEnv String
 def mkArrowSrtId(domidlist,ranid) =
   let p = Internal "" in
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
-  let (fields,_) = foldl (fn(id,(fields,n)) -> 
+  let (fields,_) = foldl (fn((fields,n),id) -> 
 			  let field = (natToString(n),Base(mkUnQualifiedId(id),[],p):Sort) in 
 			  (concat(fields,[field]),n+1))
                    ([],1) domidlist
@@ -474,9 +474,9 @@ op mkJavaString: String -> JavaExpr
 def mkJavaString(s) =
   let chars = explode s in
   let s = foldl (fn
-		 | (#\",s) -> s^"\\\""
-		 | (#\n,s) -> s^"\\n"
-                 | (c,s) -> s^(toString c)
+		 | (s,#\") -> s^"\\\""
+		 | (s,#\n) -> s^"\\n"
+                 | (s,c) -> s^(toString c)
 		) "" chars
   in
   CondExp (Un (Prim (String (s))), None)
@@ -681,7 +681,7 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
 op mkAsrtExpr: Spec * List Var * List(Option MS.Term) -> Option MS.Term
 def mkAsrtExpr(spc,vars,dompreds) =
   let vars = if length(dompreds) = 1 & length(vars) > 1
-	       then let (fields,_) = foldl (fn((id,srt),(fields,n)) ->
+	       then let (fields,_) = foldl (fn((fields,n),(id,srt)) ->
 					    let b = sortAnn(srt) in
 					    let t = Var((id,srt),b) in
 					    let nstr = natToString(n) in
@@ -760,7 +760,7 @@ def getJavaTypeFromTypeId(id) =
 op mkMethDeclWithParNames: Id * List Id * Id * List Id * JavaStmt -> MethDecl
 def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt) =
   let body = [Stmt bodyStmt] in
-%  let (pars,_) = foldl (fn(argType,(types,nmb)) -> 
+%  let (pars,_) = foldl (fn((types,nmb),argType) -> 
 %		    let type = getJavaTypeFromTypeId(argType) in
 %		    let argname = argNameBase^Integer.toString(nmb) in
 %		    (concat(types,[(false,type,(argname,0))]),nmb+1))
@@ -777,7 +777,7 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
 
 op mkMethDecl: Id * List Id * Id * Id * JavaStmt -> MethDecl
 def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
-  let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
+  let (parNames,_) = foldl (fn((argnames,nmb),argType) -> 
 		    let argname = argNameBase^Integer.toString(nmb) in
 		    (concat(argnames,[argname]),nmb+1))
                    ([],1) argTypeNames

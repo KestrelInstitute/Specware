@@ -41,9 +41,9 @@ Utilities qualifying spec
        if ~(length type_args = length tvs) then
          (expansion_error (env, 
                            "\nInstantiation list (" ^ 
-                             (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" type_args) ^
+                             (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" type_args) ^
                              " ) does not match argument list (" ^ 
-                             (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
+                             (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
                              " )",
                            pos);
           unpacked_type)
@@ -97,9 +97,9 @@ Utilities qualifying spec
 	       ((if l1 ~= l2 then
 		   expansion_error (env,
                                     "\nInstantiation list (" ^ 
-                                      (foldl (fn (arg, s) -> s ^ " " ^ (printSort arg)) "" type_args) ^
+                                      (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" type_args) ^
                                       " ) does not match argument list (" ^ 
-                                      (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
+                                      (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
                                       " )",
                                     pos)
 		 else 
@@ -137,7 +137,7 @@ Utilities qualifying spec
                        expandTypeRec (env,
                                       instantiate_type_scheme (env, pos, type_args, dfn),
                                       %% Watch for self-references, even via aliases: 
-                                      foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
+                                      foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
                                             qids
                                             info.names))
           | [] -> 

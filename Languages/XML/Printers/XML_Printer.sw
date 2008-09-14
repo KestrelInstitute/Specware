@@ -148,7 +148,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_MiscList (items) : UString =
-    foldl (fn (item, result) ->  result ^ print_Misc item)
+    foldl (fn (result, item) ->  result ^ print_Misc item)
           []
 	  items
 
@@ -277,7 +277,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_ElementAttributes attributes : UString =
-    (foldl (fn (attr, result) -> result ^ print_ElementAttribute attr) [] attributes)
+    (foldl (fn (result, attr) -> result ^ print_ElementAttribute attr) [] attributes)
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
@@ -421,7 +421,7 @@ XML qualifying spec
     case decls of
       | Some {decls, w1} ->
         [91]   % '['
-	^ (foldl (fn (decl, result) -> result ^ print_InternalDecl decl) [] decls)
+	^ (foldl (fn (result, decl) -> result ^ print_InternalDecl decl) [] decls)
 	^ [93] % ']'
 	^ w1
       | _ -> []
@@ -537,7 +537,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_ExternalDecls decls =
-    foldl (fn (decl, result) -> result ^ print_ExternalDecl decl) [] decls
+    foldl (fn (result, decl) -> result ^ print_ExternalDecl decl) [] decls
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K17]  ExternalDecl        ::=  Decl
@@ -566,7 +566,7 @@ XML qualifying spec
 
   def print_IgnoreSectContents {prefix, contents} =
     (print_Ignore prefix) ^
-    (foldl (fn ((contents :IgnoreSectContents, ignore : Ignore), result) ->
+    (foldl (fn (result, (contents :IgnoreSectContents, ignore : Ignore)) ->
 	    result ^
 	    (ustring "<![") ^ (print_IgnoreSectContents contents) ^ (ustring "]]>") ^
 	    (print_Ignore ignore))
@@ -692,7 +692,7 @@ XML qualifying spec
     let alternatives = choice.alternatives in
     (ustring "(")
     ^
-    (foldl (fn ((w1, cp, w2), result) ->
+    (foldl (fn (result, (w1, cp, w2)) ->
 	    result
 	    ^ (case result of [] -> [] | _ -> ustring "|")
 	    ^ w1
@@ -711,7 +711,7 @@ XML qualifying spec
     let items = seq.items in
     (ustring "(")
     ^
-    (foldl (fn ((w1, cp, w2), result) ->
+    (foldl (fn (result, (w1, cp, w2)) ->
 	    result
 	    ^ (case result of [] -> [] | _ -> ustring ",")
 	    ^ w1
@@ -743,7 +743,7 @@ XML qualifying spec
     (ustring "(")
     ^ w1
     ^ (ustring "#PCDATA")
-    ^ (foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names)
+    ^ (foldl (fn (result, (w3, w4, name)) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names)
     ^ w2
     ^ (case names of
 	 | [] -> (ustring ")")
@@ -826,7 +826,7 @@ XML qualifying spec
 
   def print_AttlistDecl {w1, name, defs, w2} =
     (ustring "<!ATTLIST") ^ w1 ^ name ^
-    (foldl (fn (att_def, result) -> result ^ (print_AttDef att_def)) [] defs) ^
+    (foldl (fn (result, att_def) -> result ^ (print_AttDef att_def)) [] defs) ^
     w2 ^ (ustring ">")
 
   %% -------------------------------------------------------------------------------------------------
@@ -870,7 +870,7 @@ XML qualifying spec
 
   def print_NotationType {w1, w2, first, others, w3} =
     (ustring "NOTATION") ^ w1 ^ (ustring "(") ^ w2 ^ first ^
-    (foldl (fn ((w4, w5, name), result) -> result ^ w4 ^ (ustring "|") ^ w5 ^ name) [] others) ^
+    (foldl (fn (result, (w4, w5, name)) -> result ^ w4 ^ (ustring "|") ^ w5 ^ name) [] others) ^
     w3 ^ (ustring ")")
 
   %% -------------------------------------------------------------------------------------------------
@@ -879,7 +879,7 @@ XML qualifying spec
 
   def print_Enumeration {w1, first, others, w2} =
     (ustring "(") ^ w1 ^ (print_NmToken first) ^
-    (foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] others) ^
+    (foldl (fn (result, (w3, w4, name)) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] others) ^
     w2 ^ (ustring ")")
 
   %% -------------------------------------------------------------------------------------------------
@@ -1287,7 +1287,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_Content {items, trailer} =
-    (foldl (fn ((opt_char_data, item), result) ->
+    (foldl (fn (result, (opt_char_data, item)) ->
 	    result ^
 	    (case opt_char_data of
 	       | Some char_data -> print_CharData char_data
@@ -1441,7 +1441,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_EntityValue {qchar, items} =
-    [qchar] ^ (foldl (fn (item, result) -> result ^ (print_EntityValue_Item item)) [] items) ^ [qchar]
+    [qchar] ^ (foldl (fn (result, item) -> result ^ (print_EntityValue_Item item)) [] items) ^ [qchar]
 
   def print_EntityValue_Item x =
    case x of
@@ -1464,7 +1464,7 @@ XML qualifying spec
 
   %% For now at least, print the component items, as opposed to their composite value.
   def print_AttValue {qchar, items, value=_} =
-    [qchar] ^ (foldl (fn (item, result) -> result ^ (print_AttValue_Item item)) [] items) ^ [qchar]
+    [qchar] ^ (foldl (fn (result, item) -> result ^ (print_AttValue_Item item)) [] items) ^ [qchar]
 
   def print_AttValue_Item x =
     case x of
@@ -1666,7 +1666,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_Names (first, others) =
-    first ^ (foldl (fn ((white, name), result) -> result ^ white ^ name)
+    first ^ (foldl (fn (result, (white, name)) -> result ^ white ^ name)
 	           []
 		   others)
 
@@ -1681,7 +1681,7 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def print_NmTokens (first, others) =
-    first ^ (foldl (fn ((white, token), result) -> result ^ white ^ token)
+    first ^ (foldl (fn (result, (white, token)) -> result ^ white ^ token)
 		       []
 		       others)
 

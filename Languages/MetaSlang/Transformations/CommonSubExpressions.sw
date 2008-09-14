@@ -50,7 +50,7 @@ spec
         (t, cse, single_tms, poss_tms, names)
 
   op mkCurriedApply(f: MS.Term, terms: List MS.Term): MS.Term =
-    foldl (fn (t,r) -> mkApply(r,t)) f terms
+    foldl mkApply f terms
 
   op recAbstractCSE(t: MS.Term, names: List String, bindable?: Boolean, spc: Spec)
     : MS.Term * List MS.Term * List MS.Term * List MS.Term * List String =
@@ -154,7 +154,7 @@ spec
         let (new_binds,names,b_ces,b_single_tms,b_poss_tms)
            = if r_matches = [] then ([(p0,c0,b0)],names,[],tms0,ptms0)
              else
-             foldl (fn ((p1,c1,b1),(new_binds,names,b_ces,_,b_poss_tms)) ->
+             foldl (fn ((new_binds,names,b_ces,_,b_poss_tms),(p1,c1,b1)) ->
                       let (b1, _, tms1, ptms1, names) = recAbstractCSE(b1, names, true, spc) in
                       let bvs1 = patternVars p1 in
                       let tms1  = filter (fn ct -> ~(hasRefTo?(ct,bvs1)))  tms1 in

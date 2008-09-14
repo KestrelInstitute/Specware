@@ -297,8 +297,8 @@ Utilities qualifying spec
  def deleteVar (var_to_remove, vars) = 
    List.filter (fn v -> v.1 ~= var_to_remove.1) vars
 
- def insertVars (vars_to_add,    original_vars) = foldl insertVar original_vars vars_to_add
- def deleteVars (vars_to_remove, original_vars) = foldl deleteVar original_vars vars_to_remove
+ def insertVars (vars_to_add,    original_vars) = foldl (fn (vars, new_var)       -> insertVar(new_var,       vars)) original_vars vars_to_add
+ def deleteVars (vars_to_remove, original_vars) = foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
  def freeVarsRec (M : MS.Term) =   
    case M of
@@ -310,11 +310,11 @@ Utilities qualifying spec
 
      | Fun    _           -> []
 
-     | Lambda (rules,  _) -> foldl (fn (rl, vars) -> insertVars (freeVarsMatch rl, vars)) [] rules
+     | Lambda (rules,  _) -> foldl (fn (vars, rl) -> insertVars (freeVarsMatch rl, vars)) [] rules
 
      | Let (decls, M,  _) -> 
        let (pVars, tVars) =
-           foldl (fn ((pat, trm), (pVars, tVars)) -> 
+           foldl (fn ((pVars, tVars), (pat, trm)) -> 
 		  (insertVars (patVars     pat, pVars),
 		   insertVars (freeVarsRec trm, tVars)))
 	         ([], []) 
@@ -335,18 +335,18 @@ Utilities qualifying spec
      | IfThenElse (t1, t2, t3, _) -> 
        insertVars (freeVarsRec t1, insertVars (freeVarsRec t2, freeVarsRec t3))
 
-     | Seq (tms, _) -> foldl (fn (tm, vars) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | Seq (tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
 
      | SortedTerm (tm, _, _) -> freeVarsRec tm
 
      | Pi (_, tm, _) -> freeVarsRec tm
      
-     | And(tms, _) -> foldl (fn (tm, vars) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
      | Any _ -> []
 
  op  freeVarsList : [a] List(a * MS.Term) -> Vars
  def freeVarsList tms = 
-   foldl (fn ((_,tm), vars) -> insertVars (freeVarsRec tm, vars)) [] tms
+   foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
 
  def freeVarsMatch (pat, cond, body) = 
    let pvars = patVars     pat  in
@@ -361,7 +361,7 @@ Utilities qualifying spec
       | VarPat(v,_)            -> [v]
       | EmbedPat(_,Some p,_,_) -> patVars p
       | EmbedPat _             -> []
-      | RecordPat(fields,_)    -> foldl (fn ((_,p),vars) -> insertVars (patVars p, vars)) [] fields
+      | RecordPat(fields,_)    -> foldl (fn (vars,(_,p)) -> insertVars (patVars p, vars)) [] fields
       | WildPat _              -> []
       | StringPat _            -> []
       | BoolPat _              -> []
@@ -1491,7 +1491,7 @@ Utilities qualifying spec
       | Product(flds, a) ->
         if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
           then let (bare_flds, arg_fld_vars, pred,_) =
-                foldl (fn ((id,tyi), (bare_flds, arg_fld_vars, pred, i)) ->
+                foldl (fn ((bare_flds, arg_fld_vars, pred, i),(id,tyi)) ->
                          case subtypeComps(spc, tyi) of
                            | Some(t,p) -> let v = ("x"^toString i, t)  in
                                           (bare_flds ++ [(id,t)],
@@ -1662,7 +1662,7 @@ Utilities qualifying spec
       false spc.ops
 
   op existsTrueExistentialAxiomForType?(ty: Sort, spc: Spec): Boolean =
-    foldlSpecElements (fn (el,result) ->
+    foldlSpecElements (fn (result,el) ->
                          result || (case el of
                                       | Property(Axiom, _, _,
                                                  Bind(Exists, [(_,ex_ty)], Fun(Bool true,_,_), _),_) ->

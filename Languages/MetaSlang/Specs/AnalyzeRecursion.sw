@@ -22,7 +22,7 @@ spec
     let (cm, changed?) =
        foldriAQualifierMap (fn (q, id, old_calls, (cm, changed?)) ->
                              let new_calls =
-                                 foldl (fn (Qualified(qr,idr), new_calls) ->
+                                 foldl (fn (new_calls, Qualified(qr,idr)) ->
                                         let Some calls2 = findAQualifierMap(cm,qr,idr) in
                                         (filter (fn qid2 -> ~(member(qid2,new_calls))
                                                            && ~(member(qid2,old_calls)))

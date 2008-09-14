@@ -263,7 +263,7 @@ CUtils qualifying spec {
 
   op getStructDefns: CSpec -> CStructDefns
   def getStructDefns(cspc) =
-    List.foldl (fn(su,structs) ->
+    List.foldl (fn(structs,su) ->
 		case su of
 		  | Struct X -> concat(structs,[X])
 		  | _ -> structs
@@ -271,7 +271,7 @@ CUtils qualifying spec {
 
   op getUnionDefns: CSpec -> CUnionDefns
   def getUnionDefns(cspc) =
-    List.foldl (fn(su,unions) ->
+    List.foldl (fn(unions,su) ->
 		case su of
 		  | Union X -> concat(unions,[X])
 		  | _ -> unions
@@ -279,7 +279,7 @@ CUtils qualifying spec {
 
   op getTypeDefns: CSpec -> CTypeDefns
   def getTypeDefns(cspc) =
-    List.foldl (fn(su,typedefns) ->
+    List.foldl (fn(typedefns,su) ->
 		case su of
 		  | TypeDefn X -> concat(typedefns,[X])
 		  | _ -> typedefns
@@ -367,7 +367,7 @@ CUtils qualifying spec {
 
   op concatnew: fa(X) (X * X -> Boolean) -> List(X) * List(X) -> List(X)
   def concatnew eq (l1,l2) =
-    List.foldl (fn(elem,res) -> if memberEq eq (elem,res) then
+    List.foldl (fn(res,elem) -> if memberEq eq (elem,res) then
 				  res
 				else 
 				  concat(res,[elem]))
@@ -409,7 +409,7 @@ CUtils qualifying spec {
 
   op printCTypes: String -> List CType -> String
   def printCTypes sep types =
-    (foldl (fn(t,s) -> s^sep^(printCType t)) "" types)
+    (foldl (fn(s,t) -> s^sep^(printCType t)) "" types)
 
   type Destination = | File | Terminal | String
 
@@ -701,7 +701,7 @@ CUtils qualifying spec {
   def removePtrVoidTypeDefs(cspc) =
     let suts = cspc.structUnionTypeDefns in
     let suts = List.foldl
-               (fn(sut,suts) ->
+               (fn(suts,sut) ->
 		case sut of
 		  | TypeDefn (tname,Ptr(Void)) ->
 		    (case List.find (fn|TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
@@ -784,7 +784,7 @@ CUtils qualifying spec {
   op getSubTypes: CType -> CTypes
   def getSubTypes(t) =
     case t of
-      | Fn(tys,ty) -> List.foldl (fn(t,res) -> concat(res,getSubTypes(t))) (getSubTypes(ty)) tys
+      | Fn(tys,ty) -> List.foldl (fn(res,t) -> concat(res,getSubTypes(t))) (getSubTypes(ty)) tys
       | _ -> []
 
   op typeDepends: CSpec * CType * CTypes -> CTypes
@@ -798,14 +798,14 @@ CUtils qualifying spec {
 	  | Some (Struct (s,fields)) ->
 	    let deps = cons(Struct s,deps) in
 	    let types = List.map (fn(_,t)->t) fields in
-	    List.foldl (fn(t,deps) -> typeDepends0(t,deps)) deps types
+	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
 	  | Some (Union (u,fields)) ->
 	    let deps = cons(Union u,deps) in
 	    let types = List.map (fn(_,t)->t) fields in
-	    List.foldl (fn(t,deps) -> typeDepends0(t,deps)) deps types
+	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
 	  | _ -> deps
     in
-    List.foldl (fn(t,deps) -> typeDepends0(t,deps)) [] types
+    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) [] types
     
     % --------------------------------------------------------------------------------
 
@@ -874,7 +874,7 @@ CUtils qualifying spec {
         def identifyRec(cspc) =
 	  let suts = cspc.structUnionTypeDefns in
 	  %let _ = String.writeLine("---") in
-	  let cspc0 = List.foldl (fn(sut,cspc) -> processStructUnion(cspc,sut)) cspc suts in
+	  let cspc0 = List.foldl (fn(cspc,sut) -> processStructUnion(cspc,sut)) cspc suts in
 	  if cspc0 = cspc then cspc else identifyRec cspc0
       in
       let cspc = identifyRec(cspc) in
@@ -972,7 +972,7 @@ CUtils qualifying spec {
   def freeVarsExp(fvs,exp) =
     case exp of
       | Var(v,_) -> if member(v,fvs) then fvs else cons(v,fvs)
-      | Apply(e1,exps) -> List.foldl (fn(exp,fvs0) -> freeVarsExp(fvs0,exp)) (freeVarsExp(fvs,e1)) exps
+      | Apply(e1,exps) -> List.foldl (fn(fvs0,exp) -> freeVarsExp(fvs0,exp)) (freeVarsExp(fvs,e1)) exps
       | Unary(_,exp) -> freeVarsExp(fvs,exp)
       | Binary(_,e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
       | Cast(_,e) -> freeVarsExp(fvs,e)
@@ -982,7 +982,7 @@ CUtils qualifying spec {
       | IfExp(e1,e2,e3) -> freeVarsExp(freeVarsExp(freeVarsExp(fvs,e1),e2),e3)
       | Comma(e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
       | SizeOfExp(e) -> freeVarsExp(fvs,e)
-      | Field exps -> List.foldl (fn(exp,fvs0) -> freeVarsExp(fvs0,exp)) fvs exps
+      | Field exps -> List.foldl (fn(fvs0,exp) -> freeVarsExp(fvs0,exp)) fvs exps
       | _ -> fvs
 
   op freeVarsStmt: List String * CStmt * Boolean -> List String
@@ -1007,7 +1007,7 @@ CUtils qualifying spec {
 
   op freeVarsStmts: List String * CStmts * Boolean -> List String
   def freeVarsStmts(fvs,stmts,rec?) =
-     List.foldl (fn(stmt,fvs0) -> freeVarsStmt(fvs0,stmt,rec?)) fvs stmts
+     List.foldl (fn(fvs0,stmt) -> freeVarsStmt(fvs0,stmt,rec?)) fvs stmts
 
   op freeVarsBlock: List String * CBlock * Boolean -> List String
   def freeVarsBlock(fvs,block as (decls,stmts),rec?) =
@@ -1031,7 +1031,7 @@ CUtils qualifying spec {
   op showFreeVars: CBlock -> ()
   def showFreeVars(b) =
     let fvs = freeVars(b) in
-    let s = List.foldl (fn(v,s) -> if s = "" then v else v^","^s) "" fvs in
+    let s = List.foldl (fn(s,v) -> if s = "" then v else v^","^s) "" fvs in
     writeLine("freeVars: ["^s^"]")
 
   % auxiliary op for moving decls to the innermost block:
@@ -1047,7 +1047,7 @@ CUtils qualifying spec {
     in
     let
       def fvnumStmts(n0,stmts) =
-	List.foldl (fn(stmt,n) -> fvnum(freeVarsStmt([],stmt,true))+n) n0 stmts
+	List.foldl (fn(n,stmt) -> fvnum(freeVarsStmt([],stmt,true))+n) n0 stmts
     in
     case stmts of
       | [] -> 0

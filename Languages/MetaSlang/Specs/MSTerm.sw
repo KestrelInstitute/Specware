@@ -193,7 +193,7 @@ MS qualifying spec
 
  op  tupleFields?: fa(a) List (Id * a) -> Boolean
  def tupleFields? fields =
-   (foldl (fn ((id,_),i) ->
+   (foldl (fn (i,(id,_)) ->
 	   if i < 0 then i
 	     else if id = Nat.toString i then i + 1 else -1)
       1 fields)

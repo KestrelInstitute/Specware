@@ -85,7 +85,7 @@ SpecNorm qualifying spec
     foldSubTerms (fn (t,fvs) ->
                     case t of
                       | Bind(_,bndVars,_,_) ->
-                        foldl (fn ((vn,ty), fvs) ->
+                        foldl (fn (fvs,(vn,ty)) ->
                                  freeVars(srtPred(spc, ty, mkVar(vn,ty))) ++ fvs)
                            fvs bndVars
                       | The((vn,ty),_,_) ->
@@ -113,7 +113,7 @@ SpecNorm qualifying spec
   op addRelativizedOps(spc: Spec): Spec * PolyOpTable =
     let ho_eqfns = findHOEqualityFuns spc in
     let def relativizeElts(elts, top?, op_map, tb) =
-          foldl (fn (el, (new_elts, op_map, tb)) ->
+          foldl (fn ((new_elts, op_map, tb),el) ->
                  case el of
                    | Import(s_tm, i_sp, im_elts, a) ->
                      let (im_elts, op_map, tb) = relativizeElts(im_elts, false, op_map, tb) in
@@ -254,7 +254,7 @@ SpecNorm qualifying spec
       | Product(flds, a) ->
         if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
           then let (bare_flds, arg_vars, pred,_) =
-                foldl (fn ((id,tyi), (bare_flds, arg_vars, pred, i)) ->
+                foldl (fn ((bare_flds, arg_vars, pred, i),(id,tyi)) ->
                          case subtypeComps(spc, tyi) of
                            | Some(t,p) -> let v = ("x"^toString i, t)  in
                                           (bare_flds ++ [(id,t)],
@@ -309,7 +309,7 @@ SpecNorm qualifying spec
     case unfoldBeforeCoProduct(spc, ty) of
       | Arrow _ -> [ty]
       | TyVar _ -> [ty]
-      | Product(flds,_) -> foldl (fn ((_,tyi), result) -> hoTypesIn spc tyi ++ result) [] flds
+      | Product(flds,_) -> foldl (fn (result,(_,tyi)) -> hoTypesIn spc tyi ++ result) [] flds
       | Subsort(s_ty,_,_) -> hoTypesIn spc s_ty
       | _ -> []
 
@@ -438,7 +438,7 @@ SpecNorm qualifying spec
     % let _ = writeLine(anyToString ho_eqfns) in
     % let _ = writeLine(printSpec spc) in
     let spc =
-        spc << {ops = foldl (fn (el,ops) \_rightarrow
+        spc << {ops = foldl (fn (ops,el) \_rightarrow
                              case el of
                                | Op (qid as Qualified(q,id), true, _) \_rightarrow
                                  %% true means decl includes def
@@ -559,7 +559,7 @@ SpecNorm qualifying spec
                       | None -> (mkWildPat(ty), trueTerm)
                       | Some exp_ty -> aux(exp_ty, i)))
             | Product(prs, a) ->
-              let (pats, preds, _) = foldl (fn ((id,e_ty), (pats,preds,i)) ->
+              let (pats, preds, _) = foldl (fn ((pats,preds,i),(id,e_ty)) ->
                                             let (pat,pred) = aux(e_ty,i) in
                                             (Cons((id,pat), pats), Cons(pred, preds), i+1))
                                        ([], [], i*10) prs
@@ -599,7 +599,7 @@ SpecNorm qualifying spec
            in
            ([Op(pred_qid, ~(embed? Any ty_def), a), el] ++ n_elts, spc << {ops = op_map}))
         def addPredDeclss (elts, op_map) =
-          foldl (fn (el,(n_elts, op_map)) ->
+          foldl (fn ((n_elts, op_map),el) ->
                  case el of
                    | Sort sd -> addPredDecl(sd, el, n_elts, op_map)
                    | SortDef sd -> addPredDecl(sd, el, n_elts, op_map)
@@ -661,7 +661,7 @@ SpecNorm qualifying spec
     let (new_elts, spc) = addPredDeclss (spc.elements, spc) in
     let spc = spc << {elements = rev new_elts} in
     let spc = foldlSpecElements
-                (fn (el, spc) ->
+                (fn (spc, el) ->
                  case el of
                    | SortDef ty_qid -> addPredDef(ty_qid, spc)
                    | _ -> spc)

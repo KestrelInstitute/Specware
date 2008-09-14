@@ -193,7 +193,7 @@ This is like the above but accommodates the suffix as well.
     case uids of
       | [] -> "[]"
       | uid :: uids ->
-        "[" ^ (uidToString uid) ^ (foldl (fn (uid, s) -> s ^ ", " ^ uidToString uid) "" uids) ^ "]"
+        "[" ^ (uidToString uid) ^ (foldl (fn (s,uid) -> s ^ ", " ^ uidToString uid) "" uids) ^ "]"
 
  %op  SpecCalc.uidToString : UnitId -> String % already declared in /Languages/SpecCalculus/Semantics/Exception.sw
   def SpecCalc.uidToString {path,hashSuffix} =
@@ -579,7 +579,7 @@ emacs interface functions.
    let def findPaths(sp,path) =
          if sp = spc2
 	   then [path]
-	   else foldl (fn (el,result) ->
+	   else foldl (fn (result,el) ->
 		       case el of
 			 | Import(i_stm,i_spc,_,_) ->
 			   findPaths(i_spc,Cons(i_stm.1,path)) ++ result

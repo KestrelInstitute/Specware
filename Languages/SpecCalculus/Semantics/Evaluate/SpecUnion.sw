@@ -54,7 +54,7 @@ SpecUnion qualifying spec
  def opsUnion   specs = foldl unionOpMaps   emptyOpMap    specs
  def eltsUnion  specs = foldl unionElts     emptyElements specs
  
- def unionSortMaps (next_spec, sorts) =
+ def unionSortMaps (sorts, next_spec) =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_sorts at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
@@ -68,7 +68,7 @@ SpecUnion qualifying spec
                        sorts 
 		       next_spec.sorts
 
- def unionOpMaps (next_spec, ops) =
+ def unionOpMaps (ops, next_spec) =
    %% Assertion: If new_op_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
    foldriAQualifierMap (fn (q, id, info, ops) ->
@@ -81,7 +81,7 @@ SpecUnion qualifying spec
                        ops 
 		       next_spec.ops
 
- def unionElts (next_spec, elts) =
+ def unionElts (elts, next_spec) =
    %% TODO:  These might refer incorrectly into old specs
    %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
    %% TODO: This might be very inefficient

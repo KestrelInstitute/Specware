@@ -18,7 +18,7 @@ SpecCalc qualifying spec
     let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
     let 
       def collect_clashing_sorts_and_ops (elts, sorts, ops) =
-	foldl (fn (el, (sorts, ops)) ->
+	foldl (fn ((sorts, ops),el) ->
 	       case el of
 		 | Sort    (qid,_) -> 
 		   (case findAllSorts (should_be_empty_spec, qid) of
@@ -57,7 +57,7 @@ SpecCalc qualifying spec
         collect_clashing_sorts_and_ops (should_be_empty_spec.elements, [], []) 
     in
     let props_msg = 
-        foldl (fn (el,str) ->
+        foldl (fn (str,el) ->
 	       case el of
 		 | Property(_, prop_name, _, _, _) ->
 		   if str = "" then 
@@ -259,14 +259,14 @@ SpecCalc qualifying spec
        ""  
      else
        "  These sorts from the domain of the morphism are defined differently in the source spec: " ^ 
-       (foldl (fn (qid, s) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" sort_names)
+       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" sort_names)
        ^ "\n")
     ^
     (if op_names = [] then
        ""  
      else
        "  These ops from the domain of the morphism are defined differently in the source spec: " ^ 
-       (foldl (fn (qid, s) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" op_names)
+       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" op_names)
        ^ "\n")
     ^
     " in substitution term "

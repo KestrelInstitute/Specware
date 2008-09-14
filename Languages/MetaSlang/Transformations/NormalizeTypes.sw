@@ -22,7 +22,7 @@ NormTypes qualifying spec
     if replaceableType? ty
       \_and \_not (checkTop? && exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
      then
-       case foldl (\_lambda ((qid,tvs,top_ty),result) \_rightarrow
+       case foldl (\_lambda (result,(qid,tvs,top_ty)) \_rightarrow
                    case result of
                      | None \_rightarrow
                        % let _ = writeLine("nt: "^printSort ty^" =~= "^printSort top_ty) in
@@ -73,7 +73,7 @@ NormTypes qualifying spec
                                          | _ -> el)
                                   spc.elements}
     in
-    foldl (fn (el, spc) \_rightarrow
+    foldl (fn (spc,el) \_rightarrow
            case el of
              | OpDef(qid,_) \_rightarrow normDef(qid, map_fns, spc)
              | Op(qid,true,_) \_rightarrow normDef(qid, map_fns, spc)

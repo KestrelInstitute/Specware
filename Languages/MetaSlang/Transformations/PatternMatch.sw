@@ -789,7 +789,7 @@ def eliminateTerm context term =
 	           pats 
 	in
 	let (vars,_)  = 
-	    foldl (fn (v,(vars,num)) -> 
+	    foldl (fn ((vars,num), v) -> 
 		   (cons((Nat.toString num,v),vars),num + 1))
 	      ([],1) vs
 	in

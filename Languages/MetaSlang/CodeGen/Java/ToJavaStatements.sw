@@ -409,7 +409,7 @@ op translateUserApplToExprM: TCx * Id * List JGen.Type * JGen.Term * Nat * Nat *
 def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l, isField?) =
   %let _ = writeLine(";; argsTerm for op "^opId^": "^(printTermWithSorts argsTerm)) in
   let args = applyArgsToTerms(argsTerm) in
-  %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
+  %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(s,srt) -> " "^printSort(srt)) "" dom)) in
   {
    spc <- getEnvSpec;
    case findIndex (fn(srt) -> userType?(spc,srt)) dom of
@@ -708,7 +708,7 @@ op  remove_returns : JavaBlock -> JavaBlock
 def remove_returns block =
   %% Poor man's solution to get rid of unwanted returns.
   %% It would be better if they were never generated at all...
-  foldl (fn (block_stmt, block) ->
+  foldl (fn (block,block_stmt) ->
 	 block ++ 
 	 (case block_stmt of
 	    | Stmt (Return None)        -> []

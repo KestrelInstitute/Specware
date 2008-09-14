@@ -340,7 +340,7 @@ Specware qualifying spec
   def maybeAddSuffix path suffix =
      %% Scan for period from end of string back until
      %% first slash is encountered.
-    case foldl (fn (char, result) ->
+    case foldl (fn (result, char) ->
 	        case result of
                   | Some _ -> result 
                   | _ ->

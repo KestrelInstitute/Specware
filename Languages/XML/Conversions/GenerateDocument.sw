@@ -75,7 +75,7 @@ XML qualifying spec
 		| []            -> (print_qid qid)
 		| [arg]         -> (print_qid qid) ^ " " ^ (aux arg)
 		| first :: rest -> ((print_qid qid) ^ " (" ^
-				    (foldl (fn (arg, result) -> result ^ ", " ^ (aux arg))
+				    (foldl (fn (result, arg) -> result ^ ", " ^ (aux arg))
 				           (aux first)
 					   rest) ^
 				    ")"))
@@ -215,7 +215,7 @@ XML qualifying spec
 	    (let [element_sd] = args in
 	     let expanded_element_sd = expand_SortDescriptor(element_sd, table) in
 	     let items = Magic.magicCastToList datum in
-	     Some {items = rev (foldl (fn (item, items) ->
+	     Some {items = rev (foldl (fn (items, item) ->
 				       cons (generate_Content_Item (item,
 								    element_sd,
 								    expanded_element_sd,

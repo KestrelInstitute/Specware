@@ -60,7 +60,7 @@ SpecsToI2L qualifying spec {
       | Some (qid as Qualified(q,id)) -> %~(member(qid,ctxt.constrOps))
         %let _ = writeLine("useConstrCalls, id="^id) in
         let expl = concat(String.explode q, String.explode id) in
-	let (indl,_) = List.foldl (fn(c,(indl,n)) -> if c = #_ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
+	let (indl,_) = List.foldl (fn((indl,n),c) -> if c = #_ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
 	%% indl records positions of _'s in name
 	case indl of
 	  | n :: m :: _ -> 
@@ -104,11 +104,11 @@ SpecsToI2L qualifying spec {
 %    let _ = foldriAQualifierMap 
 %	   (fn(qid,name,(aliases,tvs,defs),l) -> 
 %	    let _ = writeLine("sort "^printQualifiedId(Qualified(qid,name))) in
-%	    let _ = writeLine("  typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tvs)) in
-%	    let _ = writeLine("  aliases:     "^(List.foldl (fn(qid0,s) -> s^(printQualifiedId(qid0))^" ") "" aliases)) in
+%	    let _ = writeLine("  typeVars: "^(List.foldl(fn(s,tv)->s^tv^" ") "" tvs)) in
+%	    let _ = writeLine("  aliases:     "^(List.foldl (fn(s,qid0) -> s^(printQualifiedId(qid0))^" ") "" aliases)) in
 %	    let _ = writeLine("  defs: ") in
 %	    let _ = List.app(fn(tvs,srt) -> 
-%			     let _ = writeLine("   typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tvs)) in
+%			     let _ = writeLine("   typeVars: "^(List.foldl(fn(s,tv)->s^tv^" ") "" tvs)) in
 %			     writeLine("   "^printSort(srt))) defs in
 %	    l)
 %	   [] spc.sorts
@@ -129,17 +129,17 @@ SpecsToI2L qualifying spec {
 				      l2
 					)
 			           [] spc.sorts,
-			opdecls  = List.foldl (fn | (OpDecl d,l3) -> concat(l3,[d]) | (_,l4) -> l4)
+			opdecls  = List.foldl (fn | (l3,OpDecl d) -> concat(l3,[d]) | (l4,_) -> l4)
 	                           [] transformedOps,
-			funDecls = List.foldl (fn | (FunDecl d,l5) -> concat(l5,[d])
-					          | (FunDefn{decl=d,body=_},l6) -> concat(l6,[d])
-		                                  | (_,l7) -> l7)
+			funDecls = List.foldl (fn | (l5,FunDecl d) -> concat(l5,[d])
+					          | (l6,FunDefn{decl=d,body=_}) -> concat(l6,[d])
+		                                  | (l7,_) -> l7)
 	                           [] transformedOps,
-			funDefns = List.foldl (fn | (FunDefn d,l8) -> concat(l8,[d]) | (_,l9) -> l9)
+			funDefns = List.foldl (fn | (l8,FunDefn d) -> concat(l8,[d]) | (l9,_) -> l9)
 	                           [] transformedOps,
-			varDecls = List.foldl (fn | (VarDecl d,l10) -> concat(l10,[d]) | (_,l11) -> l11)
+			varDecls = List.foldl (fn | (l10,VarDecl d) -> concat(l10,[d]) | (l11,_) -> l11)
 	                           [] transformedOps,
-			mapDecls = List.foldl (fn | (MapDecl d,l12) -> concat(l12,[d]) | (_,l13) -> l13)
+			mapDecls = List.foldl (fn | (l12,MapDecl d) -> concat(l12,[d]) | (l13,_) -> l13)
 	                           [] transformedOps
 		      }
 	      }
@@ -589,7 +589,7 @@ SpecsToI2L qualifying spec {
     % replaced by a VarDeref/FunCallDeref, as done below
 %    let def isOutputOp(varid as (spcname,lid)) =
 %          let outputops = ctxt.espc.interface.outputops in
-%          %let _ = String.writeLine("outputops: "^(List.foldl (fn(id,s) -> s^id^" ") "" outputops)) in
+%          %let _ = String.writeLine("outputops: "^(List.foldl (fn(s,id) -> s^id^" ") "" outputops)) in
 %	  (spcname = ctxt.espc.spc.name) & (List.member(lid,outputops))
 %    in
     case term of

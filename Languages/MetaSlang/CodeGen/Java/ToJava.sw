@@ -143,7 +143,7 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
   {
    old_decls <- getClsDecls;
    let (revised_decls, found_class?) = 
-       foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
+       foldl (fn ((decls, found_class?), cd as (lm, (cId, sc, si), cb)) ->
 	      if cId = srtId then
 		let new_fields = if member (fldDecl, cb.flds) then cb.flds else cons(fldDecl, cb.flds) in
 		let newCb = setFlds(cb, new_fields) in
@@ -172,7 +172,7 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
   {
    old_decls <- getClsDecls;
    let (revised_decls, found_class?) = 
-       foldl (fn (cd as (lm, (cId, sc, si), cb), (decls, found_class?)) ->
+       foldl (fn ((decls, found_class?), cd as (lm, (cId, sc, si), cb)) ->
 	      if cId = srtId then
 		let new_methods = if member (methDecl, cb.meths) then cb.meths else cons(methDecl, cb.meths) in
 		let newCb = setMethods(cb, new_methods) in
@@ -685,7 +685,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                              | VarPat((id,srt),b) -> 
                                [Some(Var((id,srt),b))]
                              | RecordPat(fields,b) -> 
-                               foldl (fn((_,p),varterms) ->
+                               foldl (fn(varterms,(_,p)) ->
                                         case p of
                                           | VarPat((id,srt),b) -> concat(varterms,[Some(Var((id,srt),b))])
                                           | _ -> concat(varterms,[None])) 
