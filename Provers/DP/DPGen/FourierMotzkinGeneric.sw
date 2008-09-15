@@ -206,7 +206,7 @@ FM qualifying spec
 
   op printList: fa (a) (a -> String) -> List a -> String -> String
   def printList printElem l sep =
-    foldl (fn (elem,s) -> s^(if s = "" then "" else sep)^(printElem elem))
+    foldl (fn (s,elem) -> s^(if s = "" then "" else sep)^(printElem elem))
     ""
     l
 
