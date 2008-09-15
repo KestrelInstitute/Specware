@@ -33,7 +33,7 @@ Integer qualifying spec
                       else base * (base ** (exp - 1))
 
 
-  import /Library/General/Sets
+  import /Library/General/Set
 
 
   % integer is minimum in set:

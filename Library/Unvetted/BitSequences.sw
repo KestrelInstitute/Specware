@@ -37,7 +37,7 @@ words.
 
 BitSeq qualifying spec
 
-  import Bits, IntegerExt, /Library/General/FiniteSequences
+  import Bits, IntegerExt, /Library/General/FiniteSequence
 
   % bitwise logical operations:
 

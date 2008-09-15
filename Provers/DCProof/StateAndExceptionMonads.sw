@@ -55,7 +55,7 @@ SStateExceptionMonad qualifying spec
      Monad(state,exc,a) * Monad(state,exc,b) -> Monad(state,exc,b)
   def monadSeq (m1,m2) = monadBind (m1, (fn _ -> m2))
 
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
 
   % apply monadic computation f to sequence s from left to right, returning
   % resulting sequence if no exceptions, otherwise stop at first exception:

@@ -44,7 +44,7 @@ endspec
 body = InteractionSequence qualifying spec
 
   import param,  % includes parameters
-         /Library/General/FiniteSequences, Traces
+         /Library/General/FiniteSequence, Traces
 
   (* Given events and the partitioning predicate input?, we can define the
   complementary predicate output? as well as subtypes for input and output

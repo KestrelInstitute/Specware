@@ -1,6 +1,6 @@
 spec
 
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
   import GoalsA, ExtProofsAPI
 
   type Step = Goal -> Option (FSeq Goal * (FSeq Proof -> Proof))

@@ -1,7 +1,7 @@
 I = spec
 
   import GoalsA
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
 
   type Sequent
 

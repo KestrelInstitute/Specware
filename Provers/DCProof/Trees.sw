@@ -1,6 +1,6 @@
 spec
 
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
   %import ExtTypesAPI
   %import ExtExpressionImpl#MetaSlangExtExpr
   import GoalsA

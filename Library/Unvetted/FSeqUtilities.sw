@@ -10,7 +10,7 @@ No Unnecessary Baggage: Keep the same elements but no
 *)
 
 FSeq qualifying spec
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
 
   op  nub : [a] FSeq a -> FSeq a
   def nub xs =

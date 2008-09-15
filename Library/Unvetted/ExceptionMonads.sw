@@ -47,7 +47,7 @@ ExceptionMonad qualifying spec
      ExceptionMonad(exc,()) * ExceptionMonad(exc,a) -> ExceptionMonad(exc,a)
   def >>> (m1,m2) = m1 >> (fn _ -> m2)
 
-  import /Library/General/FiniteSequences
+  import /Library/General/FiniteSequence
 
   % apply monadic computation f to sequence s from left to right, returning
   % resulting sequence if no exceptions, otherwise stop at first exception:
