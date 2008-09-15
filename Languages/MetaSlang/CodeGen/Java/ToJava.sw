@@ -648,13 +648,13 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
    %let _ = toScreen("\n OpSort Range = [" ^ printSort opsrtrng ^ "]\n") in
    %let _ = writeLine("op "^id^": opsort="^printSort(opsrtrng)^", termsort="^printSort(srtrng)) in
    %let _ = writeLine("op "^id^": "^printSort(srt)) in
-   let trm = mapTerm (Functions.id,
+   let trm = mapTerm (Function.id,
                       (fn srt ->
                          case srt of
                            | Subsort (srt,_,_) -> srt 
                            | Quotient(srt,_,_) -> srt 
                            | srt               -> srt),
-                      Functions.id) 
+                      Function.id) 
                      trm
    in
      case srt of
