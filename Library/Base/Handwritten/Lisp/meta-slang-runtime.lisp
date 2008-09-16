@@ -220,7 +220,7 @@
 
 ;; assert is in Library/General/Assert
 ;; If optimization property speed is 3 and safety is less than 3 then this is compiled away.
-;; Otherwise it tests condition and breaks if it is false
+;; Otherwise it tests condition and gives a run-time error if it is false
 (defmacro Assert-Spec::|!assert| (condn)
           `(assert ,condn))
 
