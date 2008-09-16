@@ -237,10 +237,11 @@ spec
            | Some (p1,p2,polarity) ->
              let tcc1   = (tcc,gamma)   |- p1 ?? boolSort 	   in
              let gamma1 = assertCond(if polarity then p1 else negateTerm p1,gamma) in
-             let tcc2   = (tcc1,gamma1) |- p2 ?? tau 		   in
+             let tcc2   = (tcc1,gamma1) |- p2 ?? boolSort          in
+             let tcc2   = <= (tcc,gamma,M,boolSort,tau) 	   in
              tcc2
            | _ ->
-             let tcc  = (tcc,gamma) |- N2 ?? domain(spc,sigma1)  in
+             let tcc  = (tcc,gamma) |- N2 ?? domain(spc,sigma1)    in
              let tau2 = range(spc,sigma1) 		    	   in
              let tcc  = <= (tcc,gamma,M,tau2,tau) 		   in
              let tcc  = if generateTerminationConditions?
@@ -690,8 +691,8 @@ spec
               n_ty
      | None -> ty
 
- def <=	 (tcc,gamma,M,tau,sigma) = 
-   (%writeLine(printTerm M^ " : "^ printSort tau^" <= "^ printSort sigma); 
+ def <=	(tcc,gamma,M,tau,sigma) = 
+   (% writeLine(printTerm M^ " : "^ printSort tau^" <= "^ printSort sigma); 
     subtypeRec([],tcc,gamma,M,tau,sigma))
 
  def subtypeRec(pairs,tcc,gamma,M,tau,sigma) =
@@ -721,7 +722,7 @@ spec
       | _ -> 
    case sigma1 
      of Subsort(sigma2,pred,_) -> 
-%	  let _ = writeLine("Verifying "^printTerm pred) in
+	% let _ = writeLine("Verifying "^printTerm pred^" for "^printTerm M) in
         let tcc = subtypeRec(pairs,tcc,gamma,M,tau,sigma2) in
         let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma),"_subsort") in
         tcc
