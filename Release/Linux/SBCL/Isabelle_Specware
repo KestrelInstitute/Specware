@@ -6,4 +6,4 @@
 SCRIPTDIR=`/usr/bin/dirname $0`
 XEMACS_SPECWARE="$SCRIPTDIR"/XEmacs_Specware
 
-Isabelle -p $XEMACS_SPECWARE $* 
+Isabelle-interface -p $XEMACS_SPECWARE $* 
