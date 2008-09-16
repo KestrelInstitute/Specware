@@ -1521,6 +1521,9 @@ STRING should be given if the last search was by `string-match' on STRING."
                           results)))
         (goto-specware-meta-point-definition sym results)))))
 
+
+(defvar *end-of-def-regexp* "\\(\\b\\|\\s-\\|\\s(\\)")
+
 (defun goto-specware-meta-point-definition (sym results)
   (let* ((def-info (car results))
 	 (file (cdr def-info))
@@ -1550,25 +1553,25 @@ STRING should be given if the last search was by `string-match' on STRING."
 		  ;; type fie.foo
 		  (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
 	    (if (null current-prefix-arg)
-		(or (re-search-forward (concat "\\bdef\\s-+" qsym "\\b") nil t)
+		(or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
 		    (re-search-forward	; def fa(a) foo
-		     (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym "\\b") nil t)
-		    (re-search-forward	; def fa(a) foo
-		     (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
+		     (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
+		    (re-search-forward	; def [a] foo
+		     (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
 		    (re-search-forward	; def fie.foo
-		     (concat "\\bdef\\s-\\w+\\." qsym "\\b") nil t)
-		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
-		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
+		     (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
+		    (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
 		    (re-search-forward	; op fie.foo
-		     (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t)
+		     (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
 		    (re-search-forward	; op [a] fie.foo
-		     (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym "\\b") nil t))
-	      (or (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
-		  (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
+		     (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
+	      (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+		  (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
 		  (re-search-forward	; op fie.foo
-		   (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t)
+		   (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
 		  (re-search-forward	; op [a] fie.foo
-		   (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym "\\b") nil t))))
+		   (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))))
 	  (error "Can't find definition of %s in %s" qsym file)))
     (beginning-of-line)
     (recenter 4)
