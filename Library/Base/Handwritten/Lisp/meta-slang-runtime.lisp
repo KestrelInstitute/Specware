@@ -6,6 +6,7 @@
 (defpackage :SpecCalc)
 (defpackage :List-Spec)
 (defpackage :Slang-Built-In)
+(defpackage :Assert-Spec)
 (in-package :Slang-Built-In)
 
 ;; defvar specwareWizard? here (as opposed to def in Monad.sw) 
@@ -217,6 +218,11 @@
 ;;(define-compiler-macro List-Spec::++-2 (l1 l2)
 ;;  `(append ,l1 ,l2))
 
+;; assert is in Library/General/Assert
+;; If optimization property speed is 3 and safety is less than 3 then this is compiled away.
+;; Otherwise it tests condition and breaks if it is false
+(defmacro Assert-Spec::|!assert| (condn)
+          `(assert ,condn))
 
 #|
 
