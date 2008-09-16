@@ -39,7 +39,7 @@
 	    (:optional "creating directory: $TESTDIR/Snark/Option/")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Option/P.sw")
 	    (:optional "    Snark Log file: $TESTDIR/Snark/Option/P.log")
-            "P: Conjecture PFunctions.o_Obligation_exhaustive is Proved! *"
+            "P: Conjecture PFunction.o_Obligation_exhaustive is Proved! *"
 	    (:optional "")
 	    (:optional "")
 	    ))

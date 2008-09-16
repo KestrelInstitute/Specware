@@ -1,4 +1,4 @@
-O = PFunctions qualifying spec
+O = PFunction qualifying spec
 
   import /Provers/ProofChecker/Libs
 

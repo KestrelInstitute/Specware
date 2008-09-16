@@ -287,8 +287,8 @@
        ("(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]" :swe "(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]" :value '(:|Bool| . T))
        ("let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]" :swe "let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]" :value '(:|Bool| . T))
        ;; List [ 65]:  op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b
-       ("(foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :swe "(foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
-       ("let F = foldl ( fn(m,n)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :swe "let F = foldl ( fn(m,n)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
+       ("(foldl ( fn(n,m)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :swe "(foldl ( fn(n,m)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
+       ("let F = foldl ( fn(n,m)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :swe "let F = foldl ( fn(n,m)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
        ;; List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
        ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13" :swe "(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))
        ("let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13" :swe "let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))

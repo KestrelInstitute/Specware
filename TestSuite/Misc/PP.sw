@@ -1,5 +1,5 @@
 spec
-  type Injection1(a, b) = ((a -> b) | Functions.injective?)
+  type Injection1(a, b) = ((a -> b) | Function.injective?)
     % was 
     %  type T = ((| Foo | Fum) | truep)
     %  type T1 = {x: (| Foo | Fum) | true}
