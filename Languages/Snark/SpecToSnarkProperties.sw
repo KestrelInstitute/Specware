@@ -57,7 +57,10 @@ snark qualifying spec
 	     srt
 	   else
 	     let (tvs, srt2) = unpackFirstSortDef info in
-	     let ssrt = substSort (zip (tvs, srts), srt2) in
+	     let ssrt = if length tvs = length srts
+                          then substSort (zip (tvs, srts), srt2)
+                          else srt2     % Not sure what this means in general
+             in
 	     case ssrt of
 	       | Product   _ -> srt
 	       | Arrow     _ -> ssrt
