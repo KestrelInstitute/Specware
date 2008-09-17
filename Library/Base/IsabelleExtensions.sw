@@ -79,6 +79,11 @@ fun Fun_PD :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Righta
 where
   "Fun_PD Pa f = (\_forallx .\_not(Pa x) \_longrightarrow f x = arbitrary)"
 
+lemma RFunDAppl:
+  "\_lbrakkPD x\_rbrakk \_Longrightarrow RFunD PD f x = f x"
+  apply(auto)
+
+
 fun Fun_PR :: "('b \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
   "Fun_PR Pb f = (\_forallx . Pb(f x))"
