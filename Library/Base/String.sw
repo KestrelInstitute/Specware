@@ -137,7 +137,7 @@ String qualifying spec
 
  op [a] Option.show (shw: a -> String) : Option a -> String = fn
    | None   -> "None"
-   | Some x -> "(Some " ^ (shw x) ^ ")"
+   | Some x -> "(Some " ++ (shw x) ++ ")"
 
  % convert list of strings to string, using given separator:
 
