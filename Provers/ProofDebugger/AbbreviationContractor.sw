@@ -382,8 +382,8 @@ spec
     in
     let def ANDn (eS:ExtExpressions) : ExtExpression =
       if eS = empty then embed TRUE
-      else if single? eS then theElement eS
-      else  AND (first eS, ANDn (rtail eS))
+      else if ofLength? 1 eS then theElement eS
+      else  AND (head eS, ANDn (tail eS))
     in
     % traverse nested abstractions:
     let (tS, body) = processAbstractions (empty, 0, e) in
@@ -393,7 +393,7 @@ spec
       | THE (abbr mustBe_n, RECORD (fS, mustBe_tS), descBody) ->
         if mustBe_n = n && mustBe_tS = tS then
           let eS:ExtExpressions =
-              seq (fn(i:Nat) ->
+              list (fn(i:Nat) ->
                 if i < n then
                   Some (EQ (embed DOT (VAR (abbr n), RECORD (fS,tS), fS@i),
                             VAR (abbr i)))
@@ -407,7 +407,7 @@ spec
       | THE (abbr mustBe_n, PRODUCT mustBe_tS, descBody) ->
         if mustBe_n = n && mustBe_tS = tS then
           let eS:ExtExpressions =
-              seq (fn(i:Nat) ->
+              list (fn(i:Nat) ->
                 if i < n then
                   Some (EQ (embed DOT (VAR (abbr n),
                                        embed PRODUCT tS,
@@ -440,7 +440,7 @@ spec
     % gather constituents of nested applications:
     let eS = processApplications (empty, e) in
     % check whether first constituent is a record constructor:
-    case first eS of  % result of function processApplications is never empty
+    case head eS of  % result of function processApplications is never empty
       | RECC (fS, tS) ->
         (* Remember that we process expressions bottom-up, processing
         subexpressions before their containing expressions. Without the test
@@ -451,8 +451,8 @@ spec
         (fS, tS, empty), which is not what we want. The test of the if delays
         the contraction until we are processing the right (outermost)
         application. *)
-        if length (rtail eS) = length fS then
-          embed REC (fS, tS, rtail eS)
+        if length (tail eS) = length fS then
+          embed REC (fS, tS, tail eS)
         else e
       | _ -> e
 
@@ -479,7 +479,7 @@ spec
       let tS = longestCommonPrefix (tS_tS1, tS_tS2) in
       let tS1 = removePrefix (tS_tS1, length tS) in
       let tS2 = removePrefix (tS_tS2, length tS) in
-      if eS = seq (fn(i:Nat) ->
+      if eS = list (fn(i:Nat) ->
                 if i < n then
                   Some (embed DOT (VAR (abbr 1), t2, fS@i))
                 else if i < n+n1 then
@@ -568,7 +568,7 @@ spec
                     * ExtExpressions) =   % target expressions found in branches
       if empty? inBrS then Some (outBrS, eS)
       else
-        case first inBrS of
+        case head inBrS of
           | (vS, tS, EQ (e, p), r) ->
             (* We need to check that no free variable of e is bound in the
             binding branch. Without this check, we could end up contracting
@@ -576,7 +576,7 @@ spec
             if the left-hand side happens to contain variables among vS, which
             would yield a non-equivalent expression. *)
             if toSet vS /\ exprFreeVars e = empty then
-              transformBranches (outBrS <| (vS, tS, p, r), rtail inBrS, eS <| e)
+              transformBranches (outBrS <| (vS, tS, p, r), tail inBrS, eS <| e)
             else None
           | _ -> None
     in
@@ -589,7 +589,7 @@ spec
               the expansion to COND (it can only be determined from the
               expansion to nested CASE's, cf. LD). We arbitrarily pick type
               BOOL, assuming that the type will not be printed anyhow. *)
-              embed CASE (BOOL, t1, first eS (* = any element of eS *), brS)
+              embed CASE (BOOL, t1, head eS (* = any element of eS *), brS)
             else e
           | None -> e)
       | e -> e
@@ -599,9 +599,9 @@ spec
     case e of
       | CASE (BOOL, t1, e0, brS) ->
               % previous op assigns BOOL as target type to CASE
-        if single? brS then
+        if ofLength? 1 brS then
           let (vS, tS, p, r) = theElement brS in
-          if single? vS && single? tS then
+          if ofLength? 1 vS && ofLength? 1 tS then
             let v = theElement vS in
             let t = theElement tS in
             case (v, p, r) of
@@ -620,7 +620,7 @@ spec
   op contractNonRecursiveLet : Contraction
   def contractNonRecursiveLet = fn
     | e as CASE (t, t1, e0, brS) ->
-      if single? brS then
+      if ofLength? 1 brS then
         let (vS, tS, p, e1) = theElement brS in
         embed LET (t, t1, vS, tS, p, e0, e1)
       else e
@@ -629,7 +629,7 @@ spec
   op contractSimpleLet : Contraction
   def contractSimpleLet = fn
     | e as LET (t, t1, vS, mustBe_single_t, mustBe_VAR_v, e0, e1) ->
-      if single? vS && mustBe_VAR_v = VAR (theElement vS) &&
+      if ofLength? 1 vS && mustBe_VAR_v = VAR (theElement vS) &&
          mustBe_single_t = single t then
         embed LETSIMP (t1, theElement vS, t, e0, e1)
       else e
@@ -644,7 +644,7 @@ spec
       if mustBe_tS = tS &&
          mustAlsoBe_tS = tS &&
          mustBe_tupleVS = embed TUPLE (tS, map VAR vS) &&
-         single? brS then
+         ofLength? 1 brS then
         let (mustBe_vS,
              mustBe_tS,
              mustBe_tupleVS_eq_tupleES,

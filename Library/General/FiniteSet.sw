@@ -128,4 +128,16 @@ FSet qualifying spec
   op [a] filter (p: a -> Boolean) (s: FSet a) : FSet a =
     toFSet (fromFSet s /\ p)
 
+ % convert list to set:
+
+ op [a] List.toSet (l: List a) : FSet a = toFSet (fn x -> x in? l)
+
+ % intersection of all sets contained in a list:
+
+ op [a] List.//\\ (ls: List1 (FSet a)) : FSet a = //\\ (toSet ls)
+
+ % union of all sets contained in a list:
+
+ op [a] List.\\// (ls: List (FSet a)) : FSet a = \\// (toSet ls)
+
 endspec

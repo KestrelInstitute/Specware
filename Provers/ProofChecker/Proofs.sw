@@ -41,7 +41,7 @@ spec
   type Proof  % defined below
 
   % useful definition:
-  type Proofs  = FSeq Proof
+  type Proofs  = List Proof
 
   type Proof =
     % well-formed contexts:
@@ -65,7 +65,7 @@ spec
     | stRestr Proof
     | stRefl  Proof * Variable
     | stArr   Proof * Proof * Variable * Variable
-    | stRec   Proof * Proofs * Variable * FSeq Integer
+    | stRec   Proof * Proofs * Variable * List Integer
     % well-typed expressions:
     | exVar      Proof * Variable
     | exOp       Proof * Proofs * Operation
@@ -117,7 +117,7 @@ spec
         an    : AxiomName,
         ln    : LemmaName,
         n     : Integer,
-        iS    : FSeq Integer,
+        iS    : List Integer,
         jdg   : Judgement,
         prf   : Proof,
         prf1  : Proof,

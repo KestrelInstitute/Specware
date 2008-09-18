@@ -433,6 +433,7 @@ Translate qualifying spec
   % The latter is assumed to be free of type variables.
 
   op matchType : Spec -> MS.Sort -> MS.Sort -> Env (List (TyVar * Type))
+(* temporarily commented out:
   def matchType spc t1 t2 =
     case (t1,t2) of
       | (Arrow (l1,l2,_), Arrow (r1,r2,_)) -> {
@@ -442,7 +443,7 @@ Translate qualifying spec
          }
       | (Product (lFlds,_), Product (rFlds,_)) -> {
            subs <- mapListToFSeq (fn ((_,l),(_,r)) -> matchType spc l r) (zip lFlds rFlds);
-           return (foldl (fn (x,y) -> List.concat(y,x)) [] subs)
+           return (foldl (++) [] subs)
          }
       | (CoProduct (lSums,_), CoProduct (rSums,_)) ->
          let
@@ -462,6 +463,7 @@ Translate qualifying spec
              subs2 <- matchType spc t1 t2;
              return (subs1 List.++ subs2)
            }) [] (zip types1 types2)
+*)
 %%       | (_,Base (qid,[],_)) -> {
 %%            typeInfo <- findInMap spc.sorts qid;
 %%            matchType spc t1 typeInfo.dfn
@@ -483,6 +485,7 @@ Translate qualifying spec
 %%              | _ -> raise (Fail "matchType: mismatch of ")
 %%           }
 %%       | (TyVar _,TyVar _) -> raise (Fail "matchType: type instance contains type variables")
+(* temporarily commented out:
       | (TyVar (id,_),_) -> {
             newType <- catch (msToPC spc t2)
                (fn (Fail str) -> raise (Fail (str ^ "\nmatchType: matching type var " ^ id ^ " with type: " ^ (printSort t2))));
@@ -496,6 +499,7 @@ Translate qualifying spec
     case typ? of
       | None -> return UNIT
       | Some typ -> msToPC spc typ
+*)
 
   % Convert a type in MetaSlang abstract syntax to a type in the proof checker's abstract syntax.
   op Type.msToPC : Spec -> MS.Sort -> SpecCalc.Env Type
@@ -646,10 +650,11 @@ Translate qualifying spec
 %%% Change to produce user vars (as strings)
   }
 
-  op mapListToFSeq : fa(a,b) (a -> b) -> List a -> FSeq b
+  op mapListToFSeq : fa(a,b) (a -> b) -> List a -> List b
   def mapListToFSeq f list = foldl (fn (fSeq,x) -> (f x) |> fSeq) empty list
 
-  op MSToPCTranslateMonad.mapListToFSeq : fa(a,b) (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (FSeq b)
+  op MSToPCTranslateMonad.mapListToFSeq :
+     fa(a,b) (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (List b)
   def MSToPCTranslateMonad.mapListToFSeq f list =
     case list of
       | [] -> return empty
@@ -662,7 +667,7 @@ Translate qualifying spec
   op MSToPCTranslateMonad.mapQualifierMapToFSeq :
     fa(a,b) (Qualifier * Id * a -> SpecCalc.Env b)
          -> AQualifierMap a
-         -> SpecCalc.Env (FSeq b)
+         -> SpecCalc.Env (List b)
   def MSToPCTranslateMonad.mapQualifierMapToFSeq f qMap =
     let
       def newF (qual,id,a,rest) = {

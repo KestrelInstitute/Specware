@@ -56,11 +56,11 @@ spec
     let tP = typeProof(cxP, cx, subT) in
     let prf_predSeq = map2 (fn (subti, ti) -> subTypeProofX(cxP, cx, subti, ti)) (subTypes, types) in
     let (prfs, preds) = unzip prf_predSeq in
-    let conjuncts = seq (fn(i:Nat) -> if i < length flds then Some ((preds@i) @ DOT (VAR v, subTypes@i, flds@i))
+    let conjuncts = list (fn(i:Nat) -> if i < length flds then Some ((preds@i) @ DOT (VAR v, subTypes@i, flds@i))
            else None) in
     let r = FN (v, RECORD (flds, types), ANDn conjuncts) in
     (stRec(tP, prfs, v,  % permutation [0,...,length flds - 1]:
-           seq (fn(i:Nat) -> if i < length flds then Some i else None)),
+           list (fn(i:Nat) -> if i < length flds then Some i else None)),
      r)
 
   op subTypeProofX: Proof * Context * Type * Type  -> Proof * Expression

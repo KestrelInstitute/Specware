@@ -11,7 +11,7 @@ spec
   % return sequence [prod 1 ... prod n] of fields (empty if n=0):
   op firstNProductFields : Nat -> Fields
   def firstNProductFields n =
-    seq (fn(i:Nat) -> if i < n then Some (prod (i+1)) else None)
+    list (fn(i:Nat) -> if i < n then Some (prod (i+1)) else None)
 
   % product type:
   op PRODUCT : Types -> Type
@@ -28,16 +28,16 @@ spec
 
   % combine n>1 expressions via application, i.e. e1 @ ... @ en:
   % API private
-  op APPLYn : NonEmptyFSeq Expression -> Expression
+  op APPLYn : List1 Expression -> Expression
   def APPLYn eS = if length eS = 1 then theElement eS
-                  else  APPLYn (ltail eS)  @  last eS
+                  else  APPLYn (butLast eS)  @  last eS
 
   % multi-variable lambda abstraction:
   % API private
   op FNN : Variables * Types * Expression -> Expression
   def FNN (vS,tS,e) =
     if vS = empty || tS = empty then e
-    else FN (first vS, first tS, FNN (rtail vS, rtail tS, e))
+    else FN (head vS, head tS, FNN (tail vS, tail tS, e))
     % if length vS ~= length tS, excess variables or types are ignored
     % (we avoid subtypes in public ops)
 
@@ -73,8 +73,8 @@ spec
   % API private
   op ANDn : Expressions -> Expression
   def ANDn eS = if eS = empty then TRUE
-                else if single? eS then theElement eS
-                else  first eS  &&&  ANDn (rtail eS)
+                else if ofLength? 1 eS then theElement eS
+                else  head eS  &&&  ANDn (tail eS)
 
   % disjunction:
   op ||| infixr 24 : Expression * Expression -> Expression
@@ -84,8 +84,8 @@ spec
   % API private
   op ORn : Expressions -> Expression
   def ORn eS = if eS = empty then FALSE
-               else if single? eS then theElement eS
-               else  first eS  |||  ORn (rtail eS)
+               else if ofLength? 1 eS then theElement eS
+               else  head eS  |||  ORn (tail eS)
 
   % implication:
   op ==> infixr 23 : Expression * Expression -> Expression
@@ -122,7 +122,7 @@ spec
   % multi-variable universal quantification:
   op FAA : Variables * Types * Expression -> Expression
   def FAA (vS,tS,e) = if vS = empty || tS = empty then e
-                      else FA (first vS, first tS, FAA (rtail vS, rtail tS, e))
+                      else FA (head vS, head tS, FAA (tail vS, tail tS, e))
     % if length vS ~= length tS, excess variables or types are ignored
     % (we avoid subtypes in public ops)
 
@@ -150,7 +150,7 @@ spec
   % multi-variable existential quantification:
   op EXX : Variables * Types * Expression -> Expression
   def EXX (vS,tS,e) = if vS = empty || tS = empty then e
-                      else EX (first vS, first tS, EXX (rtail vS, rtail tS, e))
+                      else EX (head vS, head tS, EXX (tail vS, tail tS, e))
     % if length vS ~= length tS, excess variables or types are ignored
     % (we avoid subtypes in public ops)
 

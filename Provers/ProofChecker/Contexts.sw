@@ -17,10 +17,10 @@ spec
     | typeVarDeclaration TypeVariable
     | varDeclaration     Variable * Type
 
-  type Context = FSeq ContextElement
+  type Context = List ContextElement
 
   % API private
-  type Contexts = FSeq Context
+  type Contexts = List Context
 
   (* Unlike LD, we do not introduce a type for specs as contexts without
   (type) variable declarations. Rather, we incorporate the requirement into

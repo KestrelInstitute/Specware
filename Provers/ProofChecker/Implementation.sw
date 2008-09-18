@@ -17,6 +17,6 @@ MetaslangProofChecker qualifying spec
   import CheckerAndOtherAbbreviations
          [OtherAbbreviations_Refinement]
          [Primitives_Instantiation]
-         [/Library/General/FiniteStructureAsListMorphism]
+         [/Library/General/FiniteMapAsListMorphism]
 
 endspec

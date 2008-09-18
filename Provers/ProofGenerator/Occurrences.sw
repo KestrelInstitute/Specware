@@ -5,18 +5,18 @@ spec
   op typeVarsInType: Type -> TypeVariables
   op typeVarsInExpr: Expression -> TypeVariables
   
-  op +++ infixl 25 : [a] FSeq a * FSeq a -> FSeq a
+  op +++ infixl 25 : [a] List a * List a -> List a
   def +++(s1, s2) =
     let s2Unique = removeNones(map (fn (e2) -> if e2 in? s1 then None else Some e2) s2) in
     s1 ++ s2Unique
 
-  op uniqueConcat: [a] FSeq (FSeq a) -> FSeq a
+  op uniqueConcat: [a] List (List a) -> List a
   def uniqueConcat(seqOfSeqs) =
     if empty?(seqOfSeqs)
       then empty
     else
-      let s1 = first seqOfSeqs in
-      let seqOfSeqsRest = rtail seqOfSeqs in
+      let s1 = head seqOfSeqs in
+      let seqOfSeqsRest = tail seqOfSeqs in
       let restSeq = uniqueConcat seqOfSeqsRest in
       s1 +++ restSeq
   

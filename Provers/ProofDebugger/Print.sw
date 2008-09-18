@@ -22,7 +22,7 @@ spec
     let sep = "\n"^(ind n) in
     if empty?(ps)
       then ""
-    else printProofAux(first ps, n)^sep^printProofsAux(rtail ps, n)
+    else printProofAux(head ps, n)^sep^printProofsAux(tail ps, n)
 
   op printProofAux: Proof * Nat -> String
   def printProofAux(prf, n) =
@@ -93,8 +93,8 @@ spec
     if empty?(ps)
       then (hash, 0)
     else 
-      let (hash, res1) = countProofAux(first ps) in
-      let (hash , res2) = countProofsAux(rtail ps) in
+      let (hash, res1) = countProofAux(head ps) in
+      let (hash , res2) = countProofsAux(tail ps) in
       (hash, res1 + res2)
 
    def countProofAux(prf: Proof):(FMap(Proof, Nat) * Nat) =

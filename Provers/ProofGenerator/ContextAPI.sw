@@ -3,7 +3,7 @@ spec
   import ../ProofChecker/Spec
 
   op mkTypeSubstitution: TypeVariables * Types -> TypeSubstitution
-  def mkTypeSubstitution(tvs, ts) = fromSeqs(tvs, ts)
+  def mkTypeSubstitution(tvs, ts) = fromLists(tvs, ts)
 
   op typeDeclaration?: ContextElement -> Boolean
   def typeDeclaration?(ce) =

@@ -1,1 +1,0 @@
-morphism FiniteSet -> FiniteSetAsFiniteSequence {}

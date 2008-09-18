@@ -27,11 +27,11 @@ spec
     | abbr Integer
 
   % useful definitions:
-  type Operations    = FSeq Operation
-  type TypeVariables = FSeq TypeVariable
-  type Variables     = FSeq Variable
-  type Fields        = FSeq Field
-  type AxiomNames    = FSeq AxiomName
+  type Operations    = List Operation
+  type TypeVariables = List TypeVariable
+  type Variables     = List Variable
+  type Fields        = List Field
+  type AxiomNames    = List AxiomName
 
   (* Types depend on expressions, which depend on types. So, we first declare
   the meta types for types and expressions, and then define them below. *)
@@ -40,8 +40,8 @@ spec
   type Expression  % defined below
 
   % useful definitions:
-  type Types       = FSeq Type
-  type Expressions = FSeq Expression
+  type Types       = List Type
+  type Expressions = List Expression
 
   (* Unlike LD, we do not impose certain requirements (e.g. that the fields of
   a record type must be distinct) in the syntax. We incorporate such

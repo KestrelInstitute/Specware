@@ -50,10 +50,10 @@ spec
   def RECC (fS,tS) =
     let n:Nat = min (length fS, length tS) in
     let xS:Variables =
-        seq (fn(i:Nat) -> if i < n then Some (abbr i) else None) in
+        list (fn(i:Nat) -> if i < n then Some (abbr i) else None) in
     let x:Variable = abbr n in
     let eS:Expressions =
-        seq (fn(i:Nat) ->
+        list (fn(i:Nat) ->
           if i < n then Some (DOT (VAR x, RECORD(fS,tS), fS@i) == VAR (xS@i))
           else None) in
     FNN (xS, tS, THE (x, RECORD(fS,tS), ANDn eS))
@@ -79,7 +79,7 @@ spec
     let n:Nat = min (length fS, length tS) in
     let n1:Nat = min (length fS1, length tS1) in
     let n2:Nat = min (length fS2, length tS2) in
-    let eS:Expressions = seq (fn(i:Nat) ->
+    let eS:Expressions = list (fn(i:Nat) ->
       if i < n then Some (DOT (VAR y, t2, fS@i))
       else if i < n+n1 then Some (DOT (VAR x, t1, fS1@(i-n)))
       else if i < n+n1+n2 then Some (DOT (VAR y, t2, fS2@(i-n-n1)))
@@ -96,19 +96,19 @@ spec
                        Expression *
                        Expression
 
-  type BindingBranches = FSeq BindingBranch
+  type BindingBranches = List BindingBranch
 
   op COND : Type * BindingBranches -> Expression
   def COND (t,brS) =
     if empty? brS then
       TRUE @ TRUE
     else
-      let (vS,tS,b,e) = first brS in
+      let (vS,tS,b,e) = head brS in
       let x:Variable =
           minDistinctAbbrVar (toSet vS \/ exprFreeVars b \/ exprFreeVars e) in
       let branchResult:Expression = THE (x, t, EXX (vS, tS, b &&& VAR x == e)) in
-      if single? brS then branchResult
-      else IF (EXX (vS, tS, b), branchResult, COND (t, rtail brS))
+      if ofLength? 1 brS then branchResult
+      else IF (EXX (vS, tS, b), branchResult, COND (t, tail brS))
 
   op CASE : Type * Type * Expression * BindingBranches -> Expression
   def CASE (t,t1,e,brS) =
@@ -146,14 +146,14 @@ spec
     if tvS1 equiLong tvS && opInstancesInExpr o e = single (map VAR tvS1) then
       let x:Variable = minDistinctAbbrVar (exprFreeVars e) in
       let e1:Expression = exprSubstInExpr (OPI (o, map VAR tvS1)) (VAR x) e in
-      let t1:Type = typeSubstInType (fromSeqs (tvS, map VAR tvS1)) t in
+      let t1:Type = typeSubstInType (fromLists (tvS, map VAR tvS1)) t in
       single (lemma (ln, tvS1, EX1 (x, t1, VAR x == e1)))
           <| (axioM (an, tvS1, OPI (o, map VAR tvS1) == e))
     else
       single (lemma (ln, empty, TRUE @ TRUE))
 
   op SUMTY : TypeName * TypeVariables *
-             Operations * FSeq (Option Type) * Operations *
+             Operations * List (Option Type) * Operations *
              AxiomName * AxiomName * AxiomName * AxiomNames ->
              Context
   def SUMTY (tn, tvS, cS, t?S, gS, anInj, anSurj, anDisj, anGdefs) =
@@ -161,7 +161,7 @@ spec
       let n = length cS in
       let tvSty:Types = map VAR tvS in
       let constructorDeclarations : Context =
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some
               (let ciTy:Type =
                    case t?S @ i of
@@ -170,7 +170,7 @@ spec
               opDeclaration (cS@i, tvS, ciTy))
             else None) in
       let injectivityAxiom : Context =
-          let eS:Expressions = seq (fn(i:Nat) ->
+          let eS:Expressions = list (fn(i:Nat) ->
             if i < n then Some
               (case t?S @ i of
               | Some ti ->
@@ -186,7 +186,7 @@ spec
       let surjectivityAxiom : Context =
           let x:Variable = abbr 0 in
           let y:Variable = abbr 1 in
-          let eS:Expressions = seq (fn(i:Nat) ->
+          let eS:Expressions = list (fn(i:Nat) ->
             if i < n then Some
               (case t?S @ i of
               | Some ti ->
@@ -197,10 +197,10 @@ spec
           single (axioM (anSurj, tvS,
                          FA (x, TYPE (tn, tvSty), ORn eS))) in
       let disjointnessAxiom : Context =
-          let eSS : FSeq Expressions =
-              seq (fn(i:Nat) ->
+          let eSS : List Expressions =
+              list (fn(i:Nat) ->
                 if i < n then Some
-                  (seq (fn(j:Nat) ->
+                  (list (fn(j:Nat) ->
                     if j < i then Some
                       (let x:Variable = abbr 0 in
                        let y:Variable = abbr 1 in
@@ -222,13 +222,13 @@ spec
           single (axioM (anDisj, tvS, ANDn eS)) in
       let gTy:Type = TYPE (tn, tvSty) --> BOOL in
       let recognizerDeclarations : Context =
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some (opDeclaration (gS@i, tvS, gTy))
             else None) in
       let recognizerDefinitions : Context =
           let x:Variable = abbr 0 in
           let y:Variable = abbr 1 in
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some
               (let body:Expression =
                   case t?S @ i of

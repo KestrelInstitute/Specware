@@ -9,8 +9,8 @@ spec
   proofs. This spec defines the possible failures. *)
 
   type Failure =
-    | badPermutation                   FSeq Integer
-    | wrongPermutationLength           FSeq Integer
+    | badPermutation                   List Integer
+    | wrongPermutationLength           List Integer
     | fieldNotFound                    Field * Fields * Types
     | typeNotDeclared                  Context * TypeName
     | opNotDeclared                    Context * Operation

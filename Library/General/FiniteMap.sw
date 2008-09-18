@@ -173,4 +173,22 @@ FMap qualifying spec
   op [a,b] fromFSet (s : FSet(a*b) | functional? (fromFSet s)) : FMap(a,b) =
     toFMap (fromFSet s)
 
+  % intersection of all sets in a map's range:
+
+  op [a,b] FMap.//\\ (setValuedMap: NonEmptyFMap (a, FSet b)) : FSet b =
+    FSet.//\\ (range setValuedMap)
+
+  % union of all sets in a map's range:
+
+  op [a,b] FMap.\\// (setValuedMap: FMap (a, FSet b)) : FSet b =
+    FSet.\\// (range setValuedMap)
+
+  % construct map x1->y1,...,xn->yn from lists x1,...,xn and y1,...,yn:
+
+  op [a,b] FMap.fromLists
+           (domList: InjList a, rngList: List b | domList equiLong rngList)
+           : FMap(a,b) =
+    toFMap (fn (x,y) ->
+      (ex(i:Nat) i < length domList && domList @ i = x && y = rngList @ i))
+
 endspec

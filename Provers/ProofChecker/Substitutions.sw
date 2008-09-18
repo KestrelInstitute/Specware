@@ -36,7 +36,7 @@ spec
   % API private
   op isTypeSubstFrom? : TypeSubstitution * TypeVariables * Types -> Boolean
   def isTypeSubstFrom?(tsbs,tvS,tS) =
-    noRepetitions? tvS && length tvS = length tS && tsbs = fromSeqs (tvS, tS)
+    noRepetitions? tvS && length tvS = length tS && tsbs = fromLists (tvS, tS)
 
   % substitute variable with expression in expressions:
 

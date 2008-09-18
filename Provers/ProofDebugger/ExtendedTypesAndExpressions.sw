@@ -28,13 +28,13 @@ spec
   type ExtType
   type ExtExpression
 
-  type ExtTypes       = FSeq ExtType
-  type ExtExpressions = FSeq ExtExpression
+  type ExtTypes       = List ExtType
+  type ExtExpressions = List ExtExpression
 
   % we need to extend binding branches too:
   type ExtBindingBranch =
        Variables * ExtTypes * ExtExpression * ExtExpression
-  type ExtBindingBranches = FSeq ExtBindingBranch
+  type ExtBindingBranches = List ExtBindingBranch
 
   type ExtType =
     % core:

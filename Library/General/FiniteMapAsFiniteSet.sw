@@ -136,4 +136,14 @@ FMap qualifying spec
   op fromFSet : [a,b] {s: FSet (a*b) |
                        functional? (fromFSet s)} -> FMap(a,b) = id
 
+  op [a,b] FMap.//\\ (setValuedMap: NonEmptyFMap (a, FSet b)) : FSet b =
+    FSet.//\\ (range setValuedMap)
+
+  op [a,b] FMap.\\// (setValuedMap: FMap (a, FSet b)) : FSet b =
+    FSet.\\// (range setValuedMap)
+
+  op [a,b] FMap.fromLists
+           (domList: InjList a, rngList: List b | domList equiLong rngList)
+           : FMap(a,b) = toSet (zip (domList, rngList))
+
 endspec

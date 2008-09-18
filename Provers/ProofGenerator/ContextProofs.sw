@@ -45,15 +45,15 @@ spec
     if empty?(tvs)
       then (cxPrf, cx)
     else
-      let tv = first(tvs) in
-      let tvs = rtail(tvs) in
+      let tv = head(tvs) in
+      let tvs = tail(tvs) in
       let (cxPrf, cx) = typeVarDeclarationContextAndProof(cxPrf, cx, tv) in
       typeVarDeclarationsContextAndProof(cxPrf, cx, tvs)
   
   op typeVarDeclarations: TypeVariables -> Context
   def typeVarDeclarations(tvs) =
     if empty?(tvs) then empty
-    else typeVarDeclaration (first(tvs)) |> typeVarDeclarations(rtail(tvs))
+    else typeVarDeclaration (head(tvs)) |> typeVarDeclarations(tail(tvs))
 
   op cxMTProof: Context -> Proof
   def cxMTProof(_(*cx*)) =
@@ -108,7 +108,7 @@ spec
       then cxMTProof(cx)
     else
       let ce = last(cx) in
-      let cx = ltail(cx) in
+      let cx = butLast(cx) in
       if typeDeclaration?(ce) then cxTdecProof(cx, ce)
       else if opDeclaration?(ce) then cxOdecProof(cx, ce)
       else if axioM?(ce) then cxAxProof(cx, ce)

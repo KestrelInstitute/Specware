@@ -8,7 +8,7 @@ spec
   directly referenced FiniteStructures, then all those specs would have to be
   updated, as opposed to just updating this single spec). *)
 
-  import /Library/General/FiniteStructure
+  import /Library/General
   import /Library/Structures/Data/Maps/SimpleAsAlist
   import IntegerExt
   import StateAndExceptionMonads

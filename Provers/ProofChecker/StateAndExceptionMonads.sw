@@ -30,6 +30,8 @@ consistency with specs StateMonads and ExceptionMonads.
 
 StateExceptionMonad qualifying spec
 
+  import /Library/General
+
   type Result (exc, a) =
     | RETURN a
     | THROW  exc
@@ -55,17 +57,15 @@ StateExceptionMonad qualifying spec
      Monad(state,exc,()) * Monad(state,exc,a) -> Monad(state,exc,a)
   def >>> (m1,m2) = m1 >> (fn _ -> m2)
 
-  import /Library/General/FiniteSequence
-
   % apply monadic computation f to sequence s from left to right, returning
   % resulting sequence if no exceptions, otherwise stop at first exception:
 
-  op mapSeq : [state,exc,a,b] (a -> Monad(state,exc,b)) -> FSeq a ->
-                              Monad (state,exc, FSeq b)
+  op mapSeq : [state,exc,a,b] (a -> Monad(state,exc,b)) -> List a ->
+                              Monad (state,exc, List b)
   def mapSeq f s =
     if empty? s then return empty
-    else f (first s) >> (fn x ->
-         mapSeq f (rtail s) >> (fn r ->
+    else f (head s) >> (fn x ->
+         mapSeq f (tail s) >> (fn r ->
          return (x |> r)))
 
   % apply sequence of monadic computations ff to equally long sequence s
@@ -73,12 +73,12 @@ StateExceptionMonad qualifying spec
   % otherwise stop at first exception:
 
   op mapSeqSeq : [state,exc,a,b]
-     {(ff,s) : FSeq (a -> Monad(state,exc,b)) * FSeq a | ff equiLong s} ->
-     Monad (state,exc, FSeq b)
+     {(ff,s) : List (a -> Monad(state,exc,b)) * List a | ff equiLong s} ->
+     Monad (state,exc, List b)
   def mapSeqSeq (ff,s) =
     if empty? s then return empty
-    else (first ff) (first s) >> (fn x ->
-         mapSeqSeq (rtail ff, rtail s) >> (fn r ->
+    else (head ff) (head s) >> (fn x ->
+         mapSeqSeq (tail ff, tail s) >> (fn r ->
          return (x |> r)))
 
 endspec

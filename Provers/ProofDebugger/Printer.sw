@@ -14,18 +14,18 @@ spec
   spec should produce unambiguous and clear strings. *)
 
   % polymorphic op to print sequence of things with given separator:
-  op printSeq : [a] (a -> String) -> String -> FSeq a -> String
+  op printSeq : [a] (a -> String) -> String -> List a -> String
   def printSeq printElem separator seq =
     if empty? seq then ""
-    else if single? seq then printElem (theElement seq)
-    else printElem (first seq) ++ separator
-      ++ printSeq printElem separator (rtail seq)
+    else if ofLength? 1 seq then printElem (theElement seq)
+    else printElem (head seq) ++ separator
+      ++ printSeq printElem separator (tail seq)
 
   % synonym, for uniformity with the other ops in this spec:
   op printInteger : Integer -> String
   def printInteger = intToString
 
-  op printIntegers : FSeq Integer -> String
+  op printIntegers : List Integer -> String
   def printIntegers = printSeq printInteger ","
 
   op printTypeName : TypeName -> String

@@ -20,13 +20,13 @@ spec
 
   (* Check whether a finite sequence of integers is a permutation (see spec
   FiniteSequences in the Specware library). If it is, return it as a
-  permutation, i.e. as a value of type FSeq.Permutation. *)
-  op checkPermutation : FSeq Integer -> M Permutation
+  permutation, i.e. as a value of type List.Permutation. *)
+  op checkPermutation : List Integer -> M Permutation
   def checkPermutation prm =
     % all integers must be non-negative:
     ensure (forall? natural? prm) (badPermutation prm) >> (fn _ ->
     % convert sequence of non-negative integers to sequence of naturals:
-    (let prm1 : FSeq Nat = seq (fn(i:Nat) ->
+    (let prm1 : List Nat = list (fn(i:Nat) ->
        if i < length prm then Some (prm @ i) else None) in
     % sequence of naturals must form a permutation:
     ensure (permutation? prm1) (badPermutation prm) >> (fn _ ->
@@ -169,13 +169,13 @@ spec
   op checkTypeDecl : Context -> TypeName -> M Nat
   def checkTypeDecl cx tn =
     ensure (cx ~= empty) (typeNotDeclared (cx, tn)) >> (fn _ ->
-    (case first cx of
+    (case head cx of
        | typeDeclaration (tn1, n) ->
          if tn1 = tn then
            ensure (n >= 0) (negativeTypeArity (tn, n)) >> (fn _ ->
            OK n)
-         else checkTypeDecl (rtail cx) tn
-       | _ -> checkTypeDecl (rtail cx) tn))
+         else checkTypeDecl (tail cx) tn
+       | _ -> checkTypeDecl (tail cx) tn))
 
   (* Like previous op but also check that the arity coincides with the given
   argument. *)
@@ -189,44 +189,44 @@ spec
   op checkOpDecl : Context -> Operation -> M (TypeVariables * Type)
   def checkOpDecl cx o =
     ensure (cx ~= empty) (opNotDeclared (cx, o)) >> (fn _ ->
-    (case first cx of
+    (case head cx of
        | opDeclaration (o1, tvS, t) ->
          if o1 = o then OK (tvS, t)
-         else checkOpDecl (rtail cx) o
-       | _ -> checkOpDecl (rtail cx) o))
+         else checkOpDecl (tail cx) o
+       | _ -> checkOpDecl (tail cx) o))
 
   (* Check whether a context includes a named axiom. If it does, return the
   axiom information. *)
   op checkAxiom : Context -> AxiomName -> M (TypeVariables * Expression)
   def checkAxiom cx an =
     ensure (cx ~= empty) (axiomNotDeclared (cx, an)) >> (fn _ ->
-    (case first cx of
+    (case head cx of
        | axioM (an1, tvS, e) ->
          if an1 = an then OK (tvS, e)
-         else checkAxiom (rtail cx) an
-       | _ -> checkAxiom (rtail cx) an))
+         else checkAxiom (tail cx) an
+       | _ -> checkAxiom (tail cx) an))
 
   (* Check whether a context includes a named lemma. If it does, return the
   lemma information. *)
   op checkLemma : Context -> LemmaName -> M (TypeVariables * Expression)
   def checkLemma cx ln =
     ensure (cx ~= empty) (lemmaNotDeclared (cx, ln)) >> (fn _ ->
-    (case first cx of
+    (case head cx of
        | lemma (ln1, tvS, e) ->
          if ln1 = ln then OK (tvS, e)
-         else checkLemma (rtail cx) ln
-       | _ -> checkLemma (rtail cx) ln))
+         else checkLemma (tail cx) ln
+       | _ -> checkLemma (tail cx) ln))
 
   (* Check whether a context declares a variable. If it does, return its
   type. *)
   op checkVarDecl : Context -> Variable -> M Type
   def checkVarDecl cx v =
     ensure (cx ~= empty) (varNotDeclared (cx, v)) >> (fn _ ->
-    (case first cx of
+    (case head cx of
        | varDeclaration (v1, t) ->
          if v1 = v then OK t
-         else checkVarDecl (rtail cx) v
-       | _ -> checkVarDecl (rtail cx) v))
+         else checkVarDecl (tail cx) v
+       | _ -> checkVarDecl (tail cx) v))
 
   (* Check whether the given type variables and types form a valid type
   substitution. If they do, return the type substitution (as a value of type
@@ -238,7 +238,7 @@ spec
     ensure (noRepetitions? tvS && tvS equiLong tS)
            (badTypeSubstitution (tvS, tS)) >> (fn _ ->
     % make map from sequences (see op fromSeqs in spec FiniteStructures):
-    OK (fromSeqs (tvS, tS)))
+    OK (fromLists (tvS, tS)))
 
   (* Check whether a context consists solely of type variable declarations. If
   it does, return the type variables in the order they are declared. *)
@@ -252,10 +252,10 @@ spec
           % if context exhausted, return accumulated type variableS:
           if cx = empty then OK tvS
           % otherwise, keep processing context:
-          else case first cx of
+          else case head cx of
                    % if context element is a type variable declaraion,
                    % accumulate type variable and continue with rest of context:
-                 | typeVarDeclaration tv -> aux (rtail cx, tvS <| tv)
+                 | typeVarDeclaration tv -> aux (tail cx, tvS <| tv)
                    % stop and fail as soon as context element is not
                    % a type variable declaration:
                  | _ -> FAIL (notAllTypeVarDecls cx)
@@ -283,7 +283,7 @@ spec
     ensure (nonEmpty? cx && embed? varDeclaration (last cx))
            (contextNotEndingInVar cx) >> (fn _ ->
     (let varDeclaration (v, t) = last cx in
-    OK (ltail cx, v, t)))
+    OK (butLast cx, v, t)))
 
   (* Check whether cx1 is cx extended with an extra axiom with zero type
   variables and e as formula. If it is, return the axiom name. *)
@@ -293,7 +293,7 @@ spec
     ensure (nonEmpty? cx1 && embed? axioM (last cx1))
            (contextNotEndingInAxiom cx1) >> (fn _ ->
     % check that cx is cx1 minus the ending axiom:
-    ensure (ltail cx1 = cx) (notPrefixContext (cx, cx1)) >> (fn _ ->
+    ensure (butLast cx1 = cx) (notPrefixContext (cx, cx1)) >> (fn _ ->
     % extract axiom info:
     (let axioM (an, mustBe_empty, mustBe_e) = last cx1 in
     % check that axiom has zero type variables and the given formula:
@@ -356,12 +356,12 @@ spec
   non-zero number of proofs serves to ensure that there is a context to return
   (which would not be the case with zero proofs). (Op allEqualElements? is
   defined in the library spec FiniteSequences.) *)
-  op checkWFTypes : (NonEmptyFSeq Proof) -> M (Context * Types)
+  op checkWFTypes : (List1 Proof) -> M (Context * Types)
   def checkWFTypes prfS =
     mapSeq checkWFType prfS >> (fn pairS ->
     let (cxS, tS) = unzip pairS in
     ensure (allEqualElements? cxS) (notEqualContexts cxS) >> (fn _ ->
-    OK (first cxS, tS)))
+    OK (head cxS, tS)))
 
   (* Check proof of well-formed type in a context that extends the given
   context cx with type variables, returning the type variables and the
@@ -859,7 +859,7 @@ spec
       checkSubtypesWithContextAndLeftTypes cx tS prfS >> (fn (rS, tS1) ->
       checkPermutation prm >> (fn(prm1:Permutation) ->
       ensure (length prm1 = length fS) (wrongPermutationLength prm) >> (fn _ ->
-      (let conjuncts:Expressions = seq (fn(i:Nat) ->
+      (let conjuncts:Expressions = list (fn(i:Nat) ->
         if i < length fS then Some ((rS@i) @ DOT (VAR v, RECORD(fS,tS1), fS@i))
         else None) in
       let r:Expression =
@@ -993,7 +993,7 @@ spec
     | thRec (prf, v, v1) ->
       checkWFRecordType prf >> (fn (cx, fS, tS) ->
       ensure (v ~= v1) (nonDistinctVariables (v, v1)) >> (fn _ ->
-      (let conjuncts:Expressions = seq (fn(i:Nat) ->
+      (let conjuncts:Expressions = list (fn(i:Nat) ->
         if i < length fS then
           Some (DOT (VAR v, RECORD(fS,tS), fS@i) ==
                 DOT (VAR v1, RECORD(fS,tS), fS@i))

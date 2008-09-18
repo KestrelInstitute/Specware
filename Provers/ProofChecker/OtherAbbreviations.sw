@@ -34,10 +34,10 @@ spec
       % if length fS ~= length tS, excess fields or types are ignored
       % (we avoid subtypes in public ops)
     let xS:Variables =
-        seq (fn(i:Nat) -> if i < n then Some (abbr i) else None) in
+        list (fn(i:Nat) -> if i < n then Some (abbr i) else None) in
     let x:Variable = abbr n in
     let eS:Expressions =
-        seq (fn(i:Nat) ->
+        list (fn(i:Nat) ->
           if i < n then Some (DOT (VAR x, RECORD(fS,tS), fS@i) == VAR (xS@i))
           else None) in
     FNN (xS, tS, THE (x, RECORD(fS,tS), ANDn eS))
@@ -83,7 +83,7 @@ spec
     let n2:Nat = min (length fS2, length tS2) in
       % if length fS2 ~= length tS2, excess fields or types are ignored
       % (we avoid subtypes in public ops)
-    let eS:Expressions = seq (fn(i:Nat) ->
+    let eS:Expressions = list (fn(i:Nat) ->
       % common fields come from second record y:
       if i < n then Some (DOT (VAR y, t2, fS@i))
       % left-only fields come from first record x:
@@ -107,7 +107,7 @@ spec
                        Expression *         % condition or pattern
                        Expression           % result
 
-  type BindingBranches = FSeq BindingBranch
+  type BindingBranches = List BindingBranch
 
   (* LD defines a binding conditional to consist of one or more branches.
   Since here we avoid subtypes in public ops, we allow a binding conditional
@@ -124,14 +124,14 @@ spec
       TRUE @ TRUE  % arbitrary
     else
       % expand first branch:
-      let (vS,tS,b,e) = first brS in
+      let (vS,tS,b,e) = head brS in
       let x:Variable =
           minDistinctAbbrVar (toSet vS \/ exprFreeVars b \/ exprFreeVars e) in
       let branchResult:Expression = THE (x, t, EXX (vS, tS, b &&& VAR x == e)) in
       % return expansion if only branch, otherwise introduce conditional
       % and expand the other branches:
-      if single? brS then branchResult
-      else IF (EXX (vS, tS, b), branchResult, COND (t, rtail brS))
+      if ofLength? 1 brS then branchResult
+      else IF (EXX (vS, tS, b), branchResult, COND (t, tail brS))
 
   (* Similarly to binding conditionals, LD defines case expressions to contain
   at least one branch. Here, we allow zero branches, because we avoid subtypes
@@ -198,7 +198,7 @@ spec
     if tvS1 equiLong tvS && opInstancesInExpr o e = single (map VAR tvS1) then
       let x:Variable = minDistinctAbbrVar (exprFreeVars e) in
       let e1:Expression = exprSubstInExpr (OPI (o, map VAR tvS1)) (VAR x) e in
-      let t1:Type = typeSubstInType (fromSeqs (tvS, map VAR tvS1)) t in
+      let t1:Type = typeSubstInType (fromLists (tvS, map VAR tvS1)) t in
       single (lemma (ln, tvS1, EX1 (x, t1, VAR x == e1)))
           <| (axioM (an, tvS1, OPI (o, map VAR tvS1) == e))
     else
@@ -221,7 +221,7 @@ spec
   for that axiom, we arbitrarily pick the name for the injectivity axiom. *)
 
   op SUMTY : TypeName * TypeVariables *
-             Operations * FSeq (Option Type) * Operations *
+             Operations * List (Option Type) * Operations *
              AxiomName * AxiomName * AxiomName * AxiomNames ->
              Context
   def SUMTY (tn, tvS, cS, t?S, gS, anInj, anSurj, anDisj, anGdefs) =
@@ -229,7 +229,7 @@ spec
       let n = length cS in  % common length
       let tvSty:Types = map VAR tvS in  % type variables tvS as types
       let constructorDeclarations : Context =
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some
               (let ciTy:Type =  % type of i-th constructor
                    case t?S @ i of
@@ -238,7 +238,7 @@ spec
               opDeclaration (cS@i, tvS, ciTy))  % i-th constructor declaration
             else None) in
       let injectivityAxiom : Context =
-          let eS:Expressions = seq (fn(i:Nat) ->
+          let eS:Expressions = list (fn(i:Nat) ->
             if i < n then Some
               (case t?S @ i of
               | Some ti ->
@@ -255,7 +255,7 @@ spec
       let surjectivityAxiom : Context =
           let x:Variable = abbr 0 in
           let y:Variable = abbr 1 in
-          let eS:Expressions = seq (fn(i:Nat) ->
+          let eS:Expressions = list (fn(i:Nat) ->
             if i < n then Some
               (case t?S @ i of
               | Some ti ->
@@ -275,10 +275,10 @@ spec
       cases to consider, depending on whether the constructors have arguments
       or not. *)
       let disjointnessAxiom : Context =
-          let eSS : FSeq Expressions =
-              seq (fn(i:Nat) ->
+          let eSS : List Expressions =
+              list (fn(i:Nat) ->
                 if i < n then Some
-                  (seq (fn(j:Nat) ->
+                  (list (fn(j:Nat) ->
                     if j < i then Some
                       (let x:Variable = abbr 0 in
                        let y:Variable = abbr 1 in
@@ -300,13 +300,13 @@ spec
           single (axioM (anDisj, tvS, ANDn eS)) in
       let gTy:Type = TYPE (tn, tvSty) --> BOOL in  % type of (all) recognizers
       let recognizerDeclarations : Context =
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some (opDeclaration (gS@i, tvS, gTy))
             else None) in
       let recognizerDefinitions : Context =
           let x:Variable = abbr 0 in
           let y:Variable = abbr 1 in
-          seq (fn(i:Nat) ->
+          list (fn(i:Nat) ->
             if i < n then Some
               (let body:Expression =
                   case t?S @ i of
