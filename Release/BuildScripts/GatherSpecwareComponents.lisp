@@ -186,7 +186,6 @@
 		   '((("Base"                      "Handwritten" "Lisp") "meta-slang-runtime")
 		     (("Base"                      "Handwritten" "Lisp") "ProvideSpecwareRuntime")
 		     (("Base"                      "Handwritten" "Lisp") "Integer")
-		     (("Base"                      "Handwritten" "Lisp") "Nat")
 		     (("Base"                      "Handwritten" "Lisp") "Character")
 		     (("Base"                      "Handwritten" "Lisp") "String")
 		     (("Base"                      "Handwritten" "Lisp") "System")
