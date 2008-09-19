@@ -29,6 +29,10 @@
 (defconstant +maybe-open-comment-or-pragma-code+ -1)
 (defconstant +maybe-start-of-ad-hoc-token+       -2)
 
+(defconstant +return+                        13)
+(defconstant +linefeed+                      10)
+
+
 (defstruct tokenizer-parameters
   name
   whitespace-table
@@ -64,6 +68,16 @@
 	   (loop
 	     (let ((byte (read-byte (pseudo-stream-stream ,s-var) nil +tokenizer-eof+)))
 	       (cond ((eq byte +tokenizer-eof+)  (return +tokenizer-eof+))
+                     ((eq byte +return+) ; cr lf --> newline
+                      (let ((next-byte (read-byte (pseudo-stream-stream ,s-var)
+                                                  nil +tokenizer-eof+)))
+                        (cond ((eq next-byte +tokenizer-eof+)
+                               (return (code-char byte)))
+                              ((eq next-byte +linefeed+)
+                               (return #\newline))
+                              (t
+                               (ps-unread-char (code-char next-byte) ,s-var)
+                               (return #\return)))))
 		     ((< byte #x7F)              (return (code-char byte)))
 		     (t 
 		      (warn "Ignoring non-ASCII character: \~2,0X" byte)))))))))
