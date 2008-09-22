@@ -2112,9 +2112,11 @@ With an argument, it doesn't convert imports."
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes))
 	 (buf (find-file-noselect thy-file t)))
-    (kill-buffer buf)		; Because of x-symbol problems if it already exists
-    (sw:add-specware-to-isabelle-path)
-    (find-file-other-window thy-file)))
+    (if (string-match "Error: Unknown UID" thy-file)
+        (error "Error processing spec %s" filename)
+      (progn (kill-buffer buf)		; Because of x-symbol problems if it already exists
+             (sw:add-specware-to-isabelle-path)
+             (find-file-other-window thy-file)))))
 
 (defun sw:regenerate-isa-theories-for-uid ()
   "Regenerate Isabelle/HOL theories for unit."
@@ -2133,9 +2135,12 @@ With an argument, it doesn't convert imports."
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes))
 	 (buf (find-file-noselect thy-file t)))
-    (kill-buffer buf)		; Because of x-symbol problems if it already exists
-    (sw:add-specware-to-isabelle-path)
-    (find-file-other-window thy-file)))
+    (if (string-match "Error: Unknown UID" thy-file)
+        (error "Error processing spec %s" filename)
+      (progn 
+        (kill-buffer buf)		; Because of x-symbol problems if it already exists
+        (sw:add-specware-to-isabelle-path)
+        (find-file-other-window thy-file)))))
 
 (defun sw:add-specware-to-isabelle-path ()
   (when (fboundp 'proof-shell-invisible-command)
