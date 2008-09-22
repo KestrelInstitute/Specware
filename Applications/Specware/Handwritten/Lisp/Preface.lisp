@@ -118,7 +118,7 @@
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
 (defun home-dir ()
-  (specware::getenv #+mswindows "HOMEPATH" #-mswindows "HOME"))
+  (specware::getenv #+(or mswindows win32) "HOMEPATH" #-(or mswindows win32) "HOME"))
     
 ;;; Normalization utilities
 
@@ -128,14 +128,14 @@
     (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
       (setq path (concatenate 'string (home-dir) (subseq path 1))))
     (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
-    (when #+mswindows t #-mswindows nil
+    (when #+(or mswindows win32) t #-(or mswindows win32) nil
 	  (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
   path)
 
 (defun string-subst (str source target)
   (let (pos)
-    (loop while (setq pos (search source str :test #+mswindows #'string-equal
-				                   #-mswindows #'string=))
+    (loop while (setq pos (search source str :test #+(or mswindows win32) #'string-equal
+				                   #-(or mswindows win32) #'string=))
 	  do (setq str (concatenate 'string
 			 (subseq str 0 pos)
 			 target

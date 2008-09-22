@@ -94,7 +94,7 @@
       (setq *saved-swpath* swpath))
     (specware::setenv "SWPATH"
 		      (if swpath
-			  (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
+			  (format nil #-(or mswindows win32) "~A:~A" #+(or mswindows win32) "~A;~A"
 				  dir swpath)
 			dir))))
 
@@ -459,7 +459,7 @@
 			   (subseq saved-swpath 0
 				   ;; if position returns nil we get the whole
 				   ;; thing which is correct
-				   (position #+mswindows #\; #-mswindows #\:
+				   (position #+(or mswindows win32) #\; #-(or mswindows win32) #\:
 					     saved-swpath))
 			 "")
 		     (specware::current-directory)))
@@ -515,7 +515,7 @@
 	 (TypeChecker::complainAboutImplicitPolymorphicOps? nil)
 	 (old-swpath (or (specware::getEnv "SWPATH") ""))
 	 (new-swpath (format nil
-			     #-mswindows "~A:~A:~A" #+mswindows "~A;~A;~A"
+			     #-(or mswindows win32) "~A:~A:~A" #+(or mswindows win32) "~A;~A;~A"
 			     tmp-dir *current-swe-spec-dir* old-swpath))
 	 (emacs::*goto-file-position-store?* t)
 	 (emacs::*goto-file-position-stored* nil)
@@ -1113,15 +1113,15 @@
 (defun normalize-path (path add-specware4-dir?)
   (let* ((path-dirs (mapcar #'(lambda (nm)
 				(specware::ensure-final-slash (subst-home nm)))
-			    (specware::split-components path '(#+mswindows #\; #-mswindows #\:))))
+			    (specware::split-components path '(#+(or mswindows win32) #\; #-(or mswindows win32) #\:))))
 	 (specware4-dir (substitute #\/ #\\ (specware::ensure-final-slash (specware::getenv "SPECWARE4"))))
 	 (path-dirs-c-sw (if (and add-specware4-dir?
 				  (not (member specware4-dir path-dirs :test 'string-equal)))
 			     (nconc path-dirs (list specware4-dir))
 			   path-dirs)))
     (format nil
-	    #+mswindows"~{~a~^;~}"
-	    #-mswindows"~{~a~^:~}"
+	    #+(or mswindows win32)"~{~a~^;~}"
+	    #-(or mswindows win32)"~{~a~^:~}"
 	    path-dirs-c-sw)))
 
 (defun get-swpath ()
@@ -1355,7 +1355,7 @@
 		      #'(lambda (x)
 			  (declare (ignore x))
 			  (format t "~%The bash shell doesn't seem to be available.~%")
-			  #+MSWINDOWS (format t "~&(It is installed as part of the Cygwin installation.)~%")
+			  #+(OR MSWINDOWS WIN32) (format t "~&(It is installed as part of the Cygwin installation.)~%")
 			  (return-from bash nil))))
 	;; ACCORD feature is set by $ACCORD/Scripts/Lisp/BuildPreamble.lisp at build time
 	(format t 
