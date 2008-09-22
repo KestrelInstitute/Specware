@@ -7,7 +7,7 @@
 (format t "~%")
 
 (format t "~&Setting swpath to ")
-(cl-user::swpath (concatenate 'string (specware::getenv "SPECWARE4") #+mswindows";/" #-mswindows":/"))
+(cl-user::swpath (concatenate 'string (specware::getenv "SPECWARE4") #+(or mswindows win32)";/" #-(or mswindows win32)":/"))
 (format t "~2%")
 
 (test-directories ".")
