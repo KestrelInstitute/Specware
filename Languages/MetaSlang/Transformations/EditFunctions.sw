@@ -9,7 +9,7 @@ spec
     case optGlobalContext of
       | None -> []
       | Some globalContext ->
-    let unitId = pathStringToCanonicalUID(uidStr,false) in
+    let unitId = normalizeUID(pathStringToCanonicalUID(uidStr,false)) in
     let topUnitIds = findTopLevelImporters(unitId,globalContext) in
     foldl (\_lambda (result,unitId) \_rightarrow
            case evalPartial globalContext unitId of
