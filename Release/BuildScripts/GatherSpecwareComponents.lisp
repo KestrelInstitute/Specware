@@ -18,11 +18,11 @@
 ;;;
 ;;; Current candidates being used are:
 ;;;   Linux     SBCL      [was Linux Allegro, then Linux CMU]
-;;;   MSWIndows Allegro   [soon MSWindows SBCL]
+;;;   MSWIndows Allegro   [soon (Or Mswindows Win32) SBCL]
 ;;;   Mac       SBCL      
 ;;; --------------------------------------------------------------------------------
 
-(let ((selected-os   (list #+Linux 'Linux #+Mac 'Mac #+MSWindows 'MSWindows))
+(let ((selected-os   (list #+Linux 'Linux #+Mac 'Mac #+(Or Mswindows Win32) 'MSWindows))
       (selected-lisp (list #+CMU 'CMU #+SBCL 'SBCL #+Allegro 'Allegro #+OpenMCL 'OpenMCL)))
   (unless (= (length selected-os) 1)
     (error "Need exactly one OS selected, but have: ~S" selected-os))
@@ -144,7 +144,7 @@
   (prepare_Specware_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_Specware_Lib_Linux   specware-dir release-dir)
   #+Mac       (prepare_Specware_Lib_Mac     specware-dir release-dir)
-  #+MSWindows (prepare_Specware_Lib_Windows specware-dir release-dir)
+  #+(Or Mswindows Win32) (prepare_Specware_Lib_Windows specware-dir release-dir)
   )
 
 (defun prepare_Specware_Lib_Generic (specware-dir release-dir)
@@ -235,7 +235,7 @@
   (print-minor "Specware_Lib" "Mac")
   )
 
-#+MSWindows
+#+(Or Mswindows Win32)
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Windows")
@@ -268,7 +268,7 @@
   (prepare_XEmacs_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_XEmacs_Lib_Linux   specware-dir release-dir)
   #+Mac       (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
-  #+MSWindows (prepare_XEmacs_Lib_Windows specware-dir release-dir)
+  #+(Or Mswindows Win32) (prepare_XEmacs_Lib_Windows specware-dir release-dir)
   )
 
 (defun prepare_XEmacs_Lib_Generic (specware-dir release-dir)
@@ -474,7 +474,7 @@
   (print-minor "XEmacs_Lib" "Mac")
   )
 
-#+MSWindows
+#+(Or Mswindows Win32)
 (defun prepare_XEmacs_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "XEmacs_Lib" "Windows")
@@ -489,7 +489,7 @@
   (prepare_C_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_C_Lib_Linux   specware-dir release-dir)
   #+Mac       (prepare_C_Lib_Mac     specware-dir release-dir)
-  #+MSWindows (prepare_C_Lib_Windows specware-dir release-dir)
+  #+(Or Mswindows Win32) (prepare_C_Lib_Windows specware-dir release-dir)
   )
 
 #+Linux
@@ -504,7 +504,7 @@
   (print-minor "C_Lib" "Mac")
   )
 
-#+MSWindows
+#+(Or Mswindows Win32)
 (defun prepare_C_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "C_Lib" "Windows")
@@ -667,7 +667,7 @@
     (prepare_Specware_Generic specware-dir release-dir)
     #+Linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
     #+Mac       (prepare_Specware_Mac     specware-dir release-dir lisp-utilities-dir)
-    #+MSWindows (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
+    #+(Or Mswindows Win32) (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
     ))
 
 (defun prepare_Specware_Generic (specware-dir release-dir)
@@ -825,7 +825,7 @@
 		       (in-distribution-dir "XEmacs_Specware"))
   )
 
-#+MSWindows
+#+(Or Mswindows Win32)
 (defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Windows")
@@ -946,7 +946,7 @@
 	 #+OpenMCL   "????")
 	(os 
 	 #+Linux     "Linux"
-	 #+MSWindows "Windows" 
+	 #+(Or Mswindows Win32) "Windows" 
 	 #+Mac       "Mac OSX"))
 
     (format t "~&~%;;;   Preparing ~A patches for ~A under ~A...~%" fasl lisp os)
