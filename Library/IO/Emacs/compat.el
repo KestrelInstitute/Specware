@@ -13,8 +13,9 @@
 (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
 				(search "build" lisp-program) ; ??
 				;; for now, we use allegro on windows...
-			        (featurep 'mswindows)
-			        (featurep 'windows-nt))
+			        ;(featurep 'mswindows)
+			        ;(featurep 'windows-nt)
+                                )
 			    'allegro
 			  (if (search "dppccl" lisp-program)
 			      'openmcl
@@ -295,7 +296,7 @@
 				(if (eq *specware-lisp* 'cmulisp)
 				    "-core" "--core")
 				common-lisp-image-file)
-			(list)))
+			(list "--dynamic-space-size" "1000")))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file
