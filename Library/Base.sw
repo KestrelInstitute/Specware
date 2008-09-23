@@ -6,6 +6,7 @@ implicit importing of spec Base. *)
 
 spec
 
+  import Base/Empty                     % Must be cached for it to be useful
   import Base/String
   import Base/System
 
