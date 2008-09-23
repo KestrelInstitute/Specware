@@ -387,55 +387,57 @@ sLisp Heap Image File: ")
   
 (defun build-specware4 (&optional in-current-dir? auto-exit?)
   (interactive "P")
-  (let* ((*specware4-dir (sw::normalize-filename
-			 (if in-current-dir?
-			     (strip-final-slash (if (stringp in-current-dir?)
-						    in-current-dir?
-						  default-directory))
-			   (getenv "SPECWARE4"))))
-	 (build-dir (concat *specware4-dir "/Applications/Specware/Handwritten/Lisp"))
-	 (bin-dir (binary-directory *specware4-dir))
-	 (lisp-dir (concat *specware4-dir "/Applications/Specware/lisp"))
-	 (slash-dir (sw::normalize-filename "/"))
-	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
-	 (base-world-name
-	   (if (and (eq *specware-lisp* 'allegro))
-	       (concat bin-dir "/big-alisp." *lisp-image-extension*)
-	     nil))
-	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
-	 (specware4-base-lisp (concat *specware4-dir "/Applications/Specware/Specware4-base.lisp")))
-    (run-plain-lisp 1)
-    (when (and (file-exists-p specware4-base-lisp)
-	       (or (not (file-exists-p specware4-lisp))
-		   (file-newer-than-file-p specware4-base-lisp specware4-lisp)))
-      (when (file-exists-p specware4-lisp)
-	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
-      (copy-file specware4-base-lisp specware4-lisp t))
-    (sit-for 3)
-    (eval-in-lisp-in-order
-     (format "(cl:load %S)"
-	     (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities.lisp")))
-    (eval-in-lisp-in-order
-     (format "(cl:load %S)"
-	     (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
-    (eval-in-lisp-in-order
-     (format "(specware::setenv \"SWPATH\" %S)"
-	     (concat (sw::normalize-filename *specware4-dir)
-		     (if *windows-system-p* ";" ":")
-		     slash-dir)))
-    (eval-in-lisp-in-order
-     (format "(specware::setenv \"SPECWARE4\" %S)"
-	     (sw::normalize-filename *specware4-dir)))
-    (eval-in-lisp-in-order
-     (format "(cl:namestring (specware::change-directory %S))" build-dir))
-    (eval-in-lisp-in-order "(cl:time (cl:load \"Specware4.lisp\"))")
-    (continue-form-when-ready
-     ;; continue-form-when-ready kills the sublisp process, 
-     ;; then waits for a status change signal on that process
-     ;; before processing the given command
-     `(build-specware4-continue (, *specware4-dir) (, build-dir) (, bin-dir)
-                                (, slash-dir) (, world-name) (, base-world-name)
-                                (, auto-exit?)))))
+  (if (and (eq *specware-lisp* 'sbcl) (eq lisp-emacs-interface-type 'slime))
+      (specware-build in-current-dir?)
+    (let* ((*specware4-dir (sw::normalize-filename
+                            (if in-current-dir?
+                                (strip-final-slash (if (stringp in-current-dir?)
+                                                       in-current-dir?
+                                                     default-directory))
+                              (getenv "SPECWARE4"))))
+           (build-dir (concat *specware4-dir "/Applications/Specware/Handwritten/Lisp"))
+           (bin-dir (binary-directory *specware4-dir))
+           (lisp-dir (concat *specware4-dir "/Applications/Specware/lisp"))
+           (slash-dir (sw::normalize-filename "/"))
+           (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
+           (base-world-name
+            (if (and (eq *specware-lisp* 'allegro))
+                (concat bin-dir "/big-alisp." *lisp-image-extension*)
+              nil))
+           (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
+           (specware4-base-lisp (concat *specware4-dir "/Applications/Specware/Specware4-base.lisp")))
+      (run-plain-lisp 1)
+      (when (and (file-exists-p specware4-base-lisp)
+                 (or (not (file-exists-p specware4-lisp))
+                     (file-newer-than-file-p specware4-base-lisp specware4-lisp)))
+        (when (file-exists-p specware4-lisp)
+          (copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
+        (copy-file specware4-base-lisp specware4-lisp t))
+      (sit-for 3)
+      (eval-in-lisp-in-order
+       (format "(cl:load %S)"
+               (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities.lisp")))
+      (eval-in-lisp-in-order
+       (format "(cl:load %S)"
+               (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
+      (eval-in-lisp-in-order
+       (format "(specware::setenv \"SWPATH\" %S)"
+               (concat (sw::normalize-filename *specware4-dir)
+                       (if *windows-system-p* ";" ":")
+                       slash-dir)))
+      (eval-in-lisp-in-order
+       (format "(specware::setenv \"SPECWARE4\" %S)"
+               (sw::normalize-filename *specware4-dir)))
+      (eval-in-lisp-in-order
+       (format "(cl:namestring (specware::change-directory %S))" build-dir))
+      (eval-in-lisp-in-order "(cl:time (cl:load \"Specware4.lisp\"))")
+      (continue-form-when-ready
+       ;; continue-form-when-ready kills the sublisp process, 
+       ;; then waits for a status change signal on that process
+       ;; before processing the given command
+       `(build-specware4-continue (, *specware4-dir) (, build-dir) (, bin-dir)
+                                  (, slash-dir) (, world-name) (, base-world-name)
+                                  (, auto-exit?))))))
 
 (defun build-specware4-continue (*specware4-dir build-dir bin-dir slash-dir world-name base-world-name auto-exit?)
   (when (and base-world-name (not (file-exists-p base-world-name)))
@@ -699,7 +701,9 @@ sLisp Heap Image File: ")
 
 (defun bootstrap-specware4 (&optional in-current-dir? auto-exit?)
   (interactive "P")
-  (let ((*specware4-dir (sw::normalize-filename
+  (if (and (eq *specware-lisp* 'sbcl) (eq lisp-emacs-interface-type 'slime))
+      (specware-boot in-current-dir?)
+    (let ((*specware4-dir (sw::normalize-filename
 			(if in-current-dir? (strip-final-slash default-directory)
 			  (concat (getenv "SPECWARE4"))))))
     (run-specware4 *specware4-dir)
@@ -718,7 +722,7 @@ sLisp Heap Image File: ")
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
      ;; before processing the given command
-     `(build-specware4 (, *specware4-dir) (, auto-exit?)))))
+     `(build-specware4 (, *specware4-dir) (, auto-exit?))))))
 
 
 (defun test-specware-bootstrap (in-current-dir?)
