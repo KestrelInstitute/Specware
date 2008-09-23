@@ -37,7 +37,7 @@
 	(cons :|None| nil)
       (cons :|Some| val))))
 
-(defvar msWindowsSystem? #+mswindows t #-mswindows nil)
+(defvar msWindowsSystem? #+(or mswindows win32) t #-(or mswindows win32) nil)
 
 ;; The same function with the same name, but in a different package is
 ;; defined in Specware4/Applications/Handwritten/Lisp/load-utilities.lisp
