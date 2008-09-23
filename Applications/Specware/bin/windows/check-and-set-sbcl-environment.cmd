@@ -34,9 +34,11 @@ if "%SWPATH%"=="" set "SWPATH=C:/"
 rem set SWPATH only if unset
 
 set "SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows"
-set "LISP_EXECUTABLE=c:\Progra~1\Steel Bank Common Lisp\1.0\sbcl.exe"
-set "LISP_HEAP_IMAGE=%SPECWARE_BIN%\Specware4.sbclexe"
+set "LISP=sbcl.exe"
+set "LISP_EXECUTABLE=%SPECWARE_BIN%\Specware4.exe"
+set "LISP_HEAP_IMAGE=NONE"
 set "LISP_DIRECTORY=%Specware4%/"
+if "%SPECWARE_INIT_FORM%"=="" set "SPECWARE_INIT_FORM=NIL"
 
 rem  Move to Specware4 main directory:
 
