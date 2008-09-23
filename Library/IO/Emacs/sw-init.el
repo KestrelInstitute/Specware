@@ -579,8 +579,14 @@ sLisp Heap Image File: ")
 
 (defun start-specware-build-buffer ()
   (interactive)
-  (setq *specware-build-buffer* (get-buffer-create *specware-build-buffer-name*))
-  (shell *specware-build-buffer*)
+  ;; Works with newer shell.el but not older
+  ;;(setq *specware-build-buffer* (get-buffer-create *specware-build-buffer-name*))
+  ;;(shell *specware-build-buffer*)
+  (let ((shell-multiple-shells t))
+    (shell)
+    (rename-buffer *specware-build-buffer-name*)
+    (setq *specware-build-buffer* (current-buffer)))
+
   (require 'bridge)
   (set-buffer *specware-build-buffer-name*)
   (install-bridge)
