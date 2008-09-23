@@ -16,9 +16,7 @@ Set qualifying spec
   in spec `FiniteSet' can instead be refined to be executable. *)
 
   %%%%% NOTE %%%%%
-  % this was probably motivated by the translator to Isabelle 2007, where sets
-  % were isomorphic to predicates, but now it can be probably removed for
-  % Isabelle 2008, where sets are equal to predicates:
+  % Currently needed to allow Isabelle translation to Isabelle "set"
   type Predicate a = a -> Boolean
 
   type Set a = Predicate a
@@ -28,6 +26,10 @@ Set qualifying spec
   op [a] in? (x:a, s: Set a) infixl 20 : Boolean = s x
 
   op [a] nin? (x:a, s: Set a) infixl 20 : Boolean = ~(x in? s)
+
+  % Lifting a predicate from elements to regularized sets
+  op [a] Set_P (Pa: a -> Boolean) (s: Set a): Boolean =
+    fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
 
   % (strict) sub/superset:
 
