@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports GCD List Hilbert_Choice Recdef Datatype
+imports Datatype Recdef Hilbert_Choice List GCD
 begin
 
 (*************************************************************
@@ -54,27 +54,84 @@ lemma univ_true:     "(\<lambda>x. True) = UNIV"
  * Abbreviations for subtype regularization
  ******************************************************************************)
 
+consts regular_val :: 'a
+axioms arbitrary_bool [simp]:
+  "(regular_val::bool) = False"
+
 fun RFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
 where
-  "RFun P f = (\<lambda>x . if P x then f x else arbitrary)"
+  "RFun P f = (\<lambda>x . if P x then f x else regular_val)"
+
+lemma RFunAppl:
+  "\<lbrakk>PD x\<rbrakk> \<Longrightarrow> RFun PD f x = f x"
+  by auto
+
+lemma RFunEqual1:
+  "(\<forall>x. RFun PD f1 x = RFun PD f2 x) = (\<forall>x. PD x \<longrightarrow> f1 x = f2 x)"
+  by(auto simp add: RFunAppl)
+  
+lemma RFunEqual[simp]:
+  "(RFun PD f1 = RFun PD f2) = (\<forall>x. PD x \<longrightarrow> f1 x = f2 x)"
+  apply(simp only: RFunEqual1 [symmetric])
+  apply(intro iffI)
+  apply(auto)
+  done  
+
+fun RSet :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set"
+where
+  "RSet P s = {x . P x \<and> x \<in> s}"    (* Assumes regular_val = False *)
+ (* "RSet P s = {x . if P x then x \<in> s else regular_val}" *)
+ (* "RSet P s = RFun P s" *)
+
+lemma RSetAppl:
+  "\<lbrakk>PD x\<rbrakk> \<Longrightarrow> (x \<in> RSet PD s) = (x \<in> s)"
+  by (auto)
+  
+lemma RSetEqual1:
+  "(\<forall>x. (x \<in> RSet PD s1) = (x \<in> RSet PD s2)) = (\<forall>x. PD x \<longrightarrow> (x \<in> s1) = (x \<in> s2))"
+  by(auto simp add: RSetAppl)
+  
+lemma RSetEqual[simp]:
+  "(RSet PD s1 = RSet PD s2) = (\<forall>x. PD x \<longrightarrow> (x \<in> s1) = (x \<in> s2))"
+  apply(simp only: RSetEqual1 [symmetric])
+  apply(intro iffI)
+  apply(auto)
+  done  
+
+consts Set_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
+defs Set_P_def: 
+  "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \<forall>(x::'a). x \<in> s \<longrightarrow> Pa x *)
+
+lemma Set_P_RSet:
+  "\<lbrakk>Set_P PD s\<rbrakk> \<Longrightarrow> RSet PD s = s"
+  by (auto simp add: Set_P_def)
+
 
 fun Fun_P :: "(('a \<Rightarrow> bool) * ('b \<Rightarrow> bool)) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where
-  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)) \<and> (\<not>(Pa x) \<longrightarrow> f x = arbitrary))"
+  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)) \<and> (\<not>(Pa x) \<longrightarrow> f x = regular_val))"
 
 fun Fun_PD :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where
-  "Fun_PD Pa f = (\<forall>x .\<not>(Pa x) \<longrightarrow> f x = arbitrary)"
+  "Fun_PD Pa f = (\<forall>x .\<not>(Pa x) \<longrightarrow> f x = regular_val)"
 
 fun Fun_PR :: "('b \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where
-  "Fun_PR Pb f = (\<forall>x . Pb(f x))"
+  "Fun_PR Pb f = (\<forall>x. Pb(f x))"
+
+(* 
+lemma Fun_PD_RFun: "FunPD Pa f \<Longrightarrow> RFun Pa f = f"
+  apply(auto)
+  apply(drule Fun_PD_def)
+*)
 
 
 consts TRUE :: "('a \<Rightarrow> bool)"
 defs
   TRUE_def [simp]: "TRUE \<equiv> \<lambda>x. True"
 
+(* Not sure if we want this done automatically *)
+(* declare RFun.simps[simp del]  *)
 
 (******************************************************************************
  * Functions on subtypes:
@@ -418,6 +475,6 @@ definition
 lemma ilcm_to_zlcm [simp]:
   "int (ilcm (m,n)) = zlcm(m,n)"
   by(simp add: zlcm_def ilcm_def)
- 
+
 
 end

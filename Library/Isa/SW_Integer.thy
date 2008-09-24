@@ -1,5 +1,5 @@
 theory SW_Integer
-imports Compare Functions Presburger
+imports Compare Function Presburger
 begin
 theorem Integer__isucc_subtype_constr: 
   "bij succ"

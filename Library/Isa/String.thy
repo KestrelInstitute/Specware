@@ -84,7 +84,7 @@ where
                        if d + 1 = 8 then 
                          ''8''
                        else 
-                         if d + 1 = 9 then ''9'' else arbitrary)"
+                         if d + 1 = 9 then ''9'' else regular_val)"
 theorem Nat__natToString_Obligation_subsort: 
   "True"
   apply(auto)
@@ -151,12 +151,12 @@ theorem String__sub__def:
       if snd x < length (fst x) then 
         let (x,y) = x in x ! y
       else 
-        arbitrary) 
+        regular_val) 
      = (\<lambda> (x::string \<times> nat). 
           if snd x < length (fst x) then 
             let (x,y) = x in x ! y
           else 
-            arbitrary)"
+            regular_val)"
   apply(auto)
   done
 consts String__substring :: "string \<times> nat \<times> nat \<Rightarrow> string"

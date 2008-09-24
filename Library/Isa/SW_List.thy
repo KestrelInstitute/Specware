@@ -25,7 +25,7 @@ consts List__list :: "'a List__ListFunction \<Rightarrow> 'a list"
 consts List__list_1 :: "'a list \<Rightarrow> 'a List__ListFunction"
 defs List__list_1_def: 
   "List__list_1
-     \<equiv> Functions__inverse__stp
+     \<equiv> Function__inverse__stp
           (\<lambda> (f::nat \<Rightarrow> 'a option). 
              \<exists>(n::nat). f definedOnInitialSegmentOfLength n) List__list"
 
@@ -269,13 +269,13 @@ defs List__zip3_def:
 consts List__unzip :: "('a \<times> 'b) list \<Rightarrow> 'a list \<times> 'b list"
 defs List__unzip_def: 
   "List__unzip
-     \<equiv> Functions__inverse__stp (\<lambda> (x,y). x equiLong y) List__zip"
+     \<equiv> Function__inverse__stp (\<lambda> (x,y). x equiLong y) List__zip"
 
 
 consts List__unzip3 :: "('a \<times> 'b \<times> 'c) list \<Rightarrow> 'a list \<times> 'b list \<times> 'c list"
 defs List__unzip3_def: 
   "List__unzip3
-     \<equiv> Functions__inverse__stp
+     \<equiv> Function__inverse__stp
           (\<lambda> ((l1::'a list),(l2::'b list),(l3::'c list)). 
              l1 equiLong l2 \<and> l2 equiLong l3) List__zip3"
 
@@ -704,8 +704,8 @@ theorem List__isoList_Obligation_subsort:
   apply (drule_tac x = "a" in  spec, auto)
   apply (rule_tac x="xa#x" in exI, auto)
   done
-consts List__isoList :: " ('a,'b)Functions__Bijection \<Rightarrow> 
-                          ('a list,'b list)Functions__Bijection"
+consts List__isoList :: " ('a,'b)Function__Bijection \<Rightarrow> 
+                          ('a list,'b list)Function__Bijection"
 defs List__isoList_def: "List__isoList iso_elem \<equiv> map iso_elem"
 theorem List__isoList_subtype_constr: 
   "\<lbrakk>bij dom_isoList\<rbrakk> \<Longrightarrow> bij (List__isoList dom_isoList)"

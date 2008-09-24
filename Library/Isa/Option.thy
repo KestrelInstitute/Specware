@@ -1,5 +1,5 @@
 theory Option
-imports Compare Functions
+imports Compare Function
 begin
 fun Option__Option_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option \<Rightarrow> bool"
 where
@@ -22,12 +22,10 @@ where
  | "Option__compare comp_v(None,None) = Equal"
 theorem Option__mapOption__def: 
   "option_map f None = None"
-  apply(auto)
-  done
+  by auto
 theorem Option__mapOption__def1: 
   "option_map f (Some x) = Some (f x)"
-  apply(auto)
-  done
+  by auto
 theorem Option__isoOption_Obligation_subsort: 
   "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (option_map iso_elem)"
    apply(simp add: bij_def, auto) 
@@ -43,8 +41,8 @@ theorem Option__isoOption_Obligation_subsort:
    apply (drule_tac x = "a" in  spec, auto)
    apply (rule_tac x="Some x" in exI, auto)
   done
-consts Option__isoOption :: " ('a,'b)Functions__Bijection \<Rightarrow> 
-                              ('a option,'b option)Functions__Bijection"
+consts Option__isoOption :: " ('a,'b)Function__Bijection \<Rightarrow> 
+                              ('a option,'b option)Function__Bijection"
 defs Option__isoOption_def: 
   "Option__isoOption iso_elem \<equiv> option_map iso_elem"
 theorem Option__isoOption_subtype_constr: 
