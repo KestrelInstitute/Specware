@@ -30,6 +30,9 @@ Set qualifying spec
   % Lifting a predicate from elements to regularized sets
   op [a] Set_P (Pa: a -> Boolean) (s: Set a): Boolean =
     fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
+  proof Isa
+    by (simp add: Set_P_def)
+  end-proof
 
   % (strict) sub/superset:
 
@@ -128,14 +131,28 @@ Set qualifying spec
     single? s && x in? s
   proof Isa [simp] end-proof
 
+  proof Isa -verbatim
+  lemma empty_application:
+  "{} x = False"
+    apply(subgoal_tac "x \_in {} = False", simp add: mem_def)
+    apply(simp add: empty_iff)
+    done
+  lemma union_application:
+  "(s \_union t) x = (x \_in (s \_union t))"
+   by (simp add: mem_def)
+  lemma insert_lambda:
+  "insert x (\_lambday. P y) = insert x {y. P y}"
+   by (rule set_ext, simp add: Collect_def mem_def)
+  lemma Set_single_simp [simp]:
+  "Set__single x = {x}"
+   by (rule set_ext, simp, simp add: mem_def)
+  end-proof
+
   type SingletonSet a = (Set a | single?)
 
   op [a] theMember (s: SingletonSet a) : a = the(x:a) x in? s
   proof Isa theMember__stp_Obligation_the
-    apply(auto simp add: Set__single_p__stp_def mem_def)
-  end-proof
-  proof Isa theMember_Obligation_the
-    apply(auto simp add: mem_def)
+    apply(auto simp add: Set__single_p__stp_def)
   end-proof
 
   % add member to set (triangle points towards set):
@@ -164,21 +181,6 @@ Set qualifying spec
   y:b such that y = f x for some x:a. *)
 
   op [a,b] setGeneratedBy (f: a -> b) : Set b = map f full
-
-  proof Isa verbatim
-  lemma empty_application:
-  "{} x = (x \_in {})"
-   by (simp add: mem_def)
-  lemma union_application:
-  "(s \_union t) x = (x \_in (s \_union t))"
-   by (simp add: mem_def)
-  lemma insert_lambda:
-  "insert x (\_lambday. P y) = insert x {y. P y}"
-   by (rule set_ext, simp add: Collect_def mem_def)
-  lemma Set_single_simp [simp]:
-  "Set__single x = {x}"
-   by (rule set_ext, simp, simp add: mem_def)
-  end-proof
 
   % finite sets:
 
@@ -236,7 +238,7 @@ Set qualifying spec
 
   theorem finite_insert is [a]
     fa (s: FiniteSet a, x: a)
-      finite? s \_Rightarrow finite? (s <| x)
+      finite? (s <| x)
   proof Isa Set__finite_insert__stp
   apply(simp add: Set__finite_p__stp_def Set__empty_p__stp_def)
   apply(unfold empty_application)
@@ -380,6 +382,7 @@ Set qualifying spec
   proof Isa Thy_Morphism Set
     type Set.Set -> set (id,id)
     Set.collect -> Collect
+    Set.Set_P -> Set_P
     Set.in? -> \<in> Left 20
     Set.nin? -> \<notin> Left 20
     Set.<= -> \<subseteq> Left 20
