@@ -118,7 +118,7 @@ end-proof
     apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f", simp)
     apply(simp add: bij_ON_imp_bij_ON_inv)
     apply(auto simp add: bij_ON_def, 
-          thin_tac "\_forallx0. \_not P__a x0 \_longrightarrow f x0 = arbitrary")
+          thin_tac "\_forallx0. \_not P__a x0 \_longrightarrow f x0 = regular_val")
     apply(rule ext)
     apply(rule the_equality, auto)
     apply(simp add: surj_on_def Bex_def)

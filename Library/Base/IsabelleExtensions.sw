@@ -15,6 +15,7 @@ proof Isa Thy_Morphism Datatype Recdef Hilbert_Choice List GCD
 end-proof
 
 proof Isa -verbatim
+
 (*************************************************************
  * Define simple projections 
  *************************************************************)
@@ -67,32 +68,84 @@ lemma univ_true:     "(\_lambdax. True) = UNIV"
  * Abbreviations for subtype regularization
  ******************************************************************************)
 
+consts regular_val :: 'a
+axioms arbitrary_bool [simp]:
+  "(regular_val::bool) = False"
+
 fun RFun :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow 'a \_Rightarrow 'b"
 where
-  "RFun P f = (\_lambdax . if P x then f x else arbitrary)"
+  "RFun P f = (\_lambdax . if P x then f x else regular_val)"
+
+lemma RFunAppl:
+  "\_lbrakkPD x\_rbrakk \_Longrightarrow RFun PD f x = f x"
+  by auto
+
+lemma RFunEqual1:
+  "(\_forallx. RFun PD f1 x = RFun PD f2 x) = (\_forallx. PD x \_longrightarrow f1 x = f2 x)"
+  by(auto simp add: RFunAppl)
+  
+lemma RFunEqual[simp]:
+  "(RFun PD f1 = RFun PD f2) = (\_forallx. PD x \_longrightarrow f1 x = f2 x)"
+  apply(simp only: RFunEqual1 [symmetric])
+  apply(intro iffI)
+  apply(auto)
+  done  
+
+fun RSet :: "('a \_Rightarrow bool) \_Rightarrow 'a set \_Rightarrow 'a set"
+where
+  "RSet P s = {x . P x \_and x \_in s}"    (* Assumes regular_val = False *)
+ (* "RSet P s = {x . if P x then x \_in s else regular_val}" *)
+ (* "RSet P s = RFun P s" *)
+
+lemma RSetAppl:
+  "\_lbrakkPD x\_rbrakk \_Longrightarrow (x \_in RSet PD s) = (x \_in s)"
+  by (auto)
+  
+lemma RSetEqual1:
+  "(\_forallx. (x \_in RSet PD s1) = (x \_in RSet PD s2)) = (\_forallx. PD x \_longrightarrow (x \_in s1) = (x \_in s2))"
+  by(auto simp add: RSetAppl)
+  
+lemma RSetEqual[simp]:
+  "(RSet PD s1 = RSet PD s2) = (\_forallx. PD x \_longrightarrow (x \_in s1) = (x \_in s2))"
+  apply(simp only: RSetEqual1 [symmetric])
+  apply(intro iffI)
+  apply(auto)
+  done  
+
+consts Set_P :: "('a \_Rightarrow bool) \_Rightarrow 'a set \_Rightarrow bool"
+defs Set_P_def: 
+  "Set_P PD s \_equiv (\_forall(x::'a). \_not (PD x) \_longrightarrow x \_notin s)"    (* contrapos: \_forall(x::'a). x \_in s \_longrightarrow Pa x *)
+
+lemma Set_P_RSet:
+  "\_lbrakkSet_P PD s\_rbrakk \_Longrightarrow RSet PD s = s"
+  by (auto simp add: Set_P_def)
+
 
 fun Fun_P :: "(('a \_Rightarrow bool) * ('b \_Rightarrow bool)) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
-  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)) \_and (\_not(Pa x) \_longrightarrow f x = arbitrary))"
+  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)) \_and (\_not(Pa x) \_longrightarrow f x = regular_val))"
 
 fun Fun_PD :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
-  "Fun_PD Pa f = (\_forallx .\_not(Pa x) \_longrightarrow f x = arbitrary)"
-
-lemma RFunDAppl:
-  "\_lbrakkPD x\_rbrakk \_Longrightarrow RFunD PD f x = f x"
-  apply(auto)
-
+  "Fun_PD Pa f = (\_forallx .\_not(Pa x) \_longrightarrow f x = regular_val)"
 
 fun Fun_PR :: "('b \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
-  "Fun_PR Pb f = (\_forallx . Pb(f x))"
+  "Fun_PR Pb f = (\_forallx. Pb(f x))"
+
+(* 
+lemma Fun_PD_RFun: "FunPD Pa f \_Longrightarrow RFun Pa f = f"
+  apply(auto)
+  apply(drule Fun_PD_def)
+*)
 
 
 consts TRUE :: "('a \_Rightarrow bool)"
 defs
   TRUE_def [simp]: "TRUE \_equiv \_lambdax. True"
 
+(* Not sure if we want this done automatically *)
+(* declare RFun.simps[simp del]  *)
 
 (******************************************************************************
  * Functions on subtypes:
@@ -436,7 +489,7 @@ definition
 lemma ilcm_to_zlcm [simp]:
   "int (ilcm (m,n)) = zlcm(m,n)"
   by(simp add: zlcm_def ilcm_def)
- 
+
 end-proof
 
 endspec
