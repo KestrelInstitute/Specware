@@ -1665,7 +1665,7 @@ IsaTermPrinter qualifying spec
     case (isFiniteList term) of
       | Some terms \_rightarrow
 	prConcat [prString "[",
-		  prPostSep 0 blockFill (prString ",") (map (ppTerm c Top) terms),
+		  prPostSep 0 blockFill (prString ", ") (map (ppTerm c Top) terms),
 		  prString "]"]
       | None \_rightarrow
     let def prApply(term1, term2) =
@@ -1751,7 +1751,7 @@ IsaTermPrinter qualifying spec
 	        
     in
     case term of
-      | Apply (trm1, trm2 as (Record ([(id1, t1), (id2, t2)], a)), _) \_rightarrow
+      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) \_rightarrow
 	let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
 	      enclose?(encl?,
 		       prLinearCat (if same? then -2 else 2)
@@ -1759,14 +1759,18 @@ IsaTermPrinter qualifying spec
 			  [oper,prSpace,ppTerm c f2 t2]])
 	in
         let fx = termFixity c trm1 in
-        %% let _ = writeLine("parentTerm: "^anyToString parentTerm) in
-        %% let _ = writeLine(printTerm trm1 ^ "\n" ^ anyToString fx) in
+        % let _ = writeLine("parentTerm: "^anyToString parentTerm) in
+        % let _ = writeLine(printTerm trm1 ^ "\n" ^ anyToString fx) in
         let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
 	(case (parentTerm, fx) of
 	   | (_, (None, Nonfix, false, _)) \_rightarrow
-             prApply (trm1, trm2)
+             prApply (trm1, mkTuple[t1,t2])
 	   | (_, (Some pr_op, Nonfix, curried?, _)) \_rightarrow
-             if ~curried? then prApply(trm1, trm2)
+             if ~curried?
+               then enclose?(parentTerm ~= Top,
+                             prConcat[pr_op,
+                                      enclose?(true, prLinearCat 0 [[ppTerm c Nonfix t1, prString ", "],
+                                                                    [ppTerm c Nonfix t2]])])
              else
 	     enclose?(parentTerm ~= Top,
 		      prLinearCat 2 [[pr_op,prSpace],
@@ -1794,7 +1798,7 @@ IsaTermPrinter qualifying spec
 	   | ("1",_) :: _ \_rightarrow
 	     let def ppField (_,y) = ppTerm c Top y in
 	     prConcat [prString "(",
-		       prPostSep 0 blockFill (prString ",") (map ppField fields),
+		       prPostSep 0 blockFill (prString ", ") (map ppField fields),
 		       prString ")"]
 	   | _ \_rightarrow
 	     let def ppField (x,y) =
@@ -1803,7 +1807,7 @@ IsaTermPrinter qualifying spec
 			     ppTerm c Top y]
 	     in
 	       prConcat [prString "\\<lparr>",
-			 prPostSep 0 blockLinear (prString ",") (map ppField fields),
+			 prPostSep 0 blockLinear (prString ", ") (map ppField fields),
 			 prString "\\<rparr>"])
       | The (var,term,_) \_rightarrow
 	prBreak 0 [prString "(THE ",
@@ -1993,7 +1997,7 @@ IsaTermPrinter qualifying spec
 	  | ("1",_)::_ \_rightarrow
 	    let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) in
 	    prConcat [prString "(",
-		      prPostSep 0 blockFill (prString ",") (map ppField fields),
+		      prPostSep 0 blockFill (prString ", ") (map ppField fields),
 		      prString ")"]
 	  | _ \_rightarrow
 	    let def ppField (x,pat) =
@@ -2002,7 +2006,7 @@ IsaTermPrinter qualifying spec
 			    ppPattern c pat (extendWild wildstr x)]
 	    in
 	    prConcat [prString "{",
-		      prPostSep 0 blockLinear (prString ",") (map ppField fields),
+		      prPostSep 0 blockLinear (prString ", ") (map ppField fields),
 		      prString "}"])
       | WildPat (ty,_) \_rightarrow
         (case wildstr of
@@ -2268,7 +2272,7 @@ IsaTermPrinter qualifying spec
 		   ppTypeQualifiedId c qid]
       | Base (qid,tys,_) \_rightarrow
         prBreak 0 [prString " (",
-		   prPostSep 0 blockFill (prString ",") (map (ppType c Top in_quotes?) tys),
+		   prPostSep 0 blockFill (prString ", ") (map (ppType c Top in_quotes?) tys),
 		   prString ")",
 		   ppTypeQualifiedId c qid]      | Arrow (ty1,ty2,_) \_rightarrow
         enclose?(case parent of
@@ -2299,7 +2303,7 @@ IsaTermPrinter qualifying spec
 			    [ppType c Top in_quotes? y]]
 	     in
 	       prBreak 2 [prString "{",
-			  prPostSep 0 blockLinear(prString ",") (map ppField fields),
+			  prPostSep 0 blockLinear(prString ", ") (map ppField fields),
 			  prString "}"])
       | Quotient (ty,term,_) \_rightarrow
           prBreak 0 [prString "(",
