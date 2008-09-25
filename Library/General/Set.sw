@@ -132,17 +132,6 @@ Set qualifying spec
   proof Isa [simp] end-proof
 
   proof Isa -verbatim
-  lemma empty_application:
-  "{} x = False"
-    apply(subgoal_tac "x \_in {} = False", simp add: mem_def)
-    apply(simp add: empty_iff)
-    done
-  lemma union_application:
-  "(s \_union t) x = (x \_in (s \_union t))"
-   by (simp add: mem_def)
-  lemma insert_lambda:
-  "insert x (\_lambday. P y) = insert x {y. P y}"
-   by (rule set_ext, simp add: Collect_def mem_def)
   lemma Set_single_simp [simp]:
   "Set__single x = {x}"
    by (rule set_ext, simp, simp add: mem_def)
@@ -158,7 +147,6 @@ Set qualifying spec
   % add member to set (triangle points towards set):
 
   op [a] <| (s: Set a, x:a) infixl 25 : Set a = s \/ single x
-  proof Isa -> with_el [simp] end-proof
 
   % remove member from set:
 
@@ -201,7 +189,7 @@ Set qualifying spec
 
     apply(induct rule:finite_induct)
      apply(simp)
-     apply(simp)
+     apply(simp add: insert_not_empty)
      apply(auto)
       apply(rule_tac x="\_lambday::nat. x::'a" in exI)
       apply(rule_tac x="1" in exI)
@@ -240,50 +228,25 @@ Set qualifying spec
     fa (s: FiniteSet a, x: a)
       finite? (s <| x)
   proof Isa Set__finite_insert__stp
+  apply(case_tac "x \_in s")
+  apply(simp only: insert_absorb Set_P_RSet)
+ 
   apply(simp add: Set__finite_p__stp_def Set__empty_p__stp_def)
-  apply(unfold empty_application)
   apply(rule disjI2)
   apply(erule disjE)
 
    apply(clarsimp)
-   apply(rule_tac x="\_lambdai. x" in exI)
-   apply(simp)
-   apply(rule_tac x="1" in exI)
-   apply(simp add: insert_lambda)
-(*
-   apply(unfold union_application)
-   apply(simp)
-*)
-   apply(intro allI impI)
-   apply(simp add: mem_def eq_ac)
+   apply(rule_tac x="\_lambdai. x" in exI, simp)
+   apply(rule_tac x="1" in exI, simp add: eq_ac)
 
    apply(erule exE)
    apply(elim conjE)
-   apply(erule exE)
-   apply(case_tac "x \_in s")
-   apply(rule_tac x="f" in exI)
-   apply(rule conjI, simp)
-   apply(rule_tac x="n" in exI)
+   apply(erule exE, simp)
+   apply(rule_tac x="\_lambdai. if i = n then x else f i" in exI, simp)
+   apply(rule_tac x="Suc n" in exI)
    apply(intro allI impI)
-   apply(rotate_tac 3)
-   apply(erule_tac x="xa" in allE)
-   apply(drule mp, assumption)
-   apply(simp add: mem_def)
-   apply(simp add: union_application)
-   apply(simp add: mem_def)
-
-   apply(rule_tac x="\_lambdai. if i = n then x else f i" in exI)
-
-   apply(rule ext)
-   apply(unfold union_application)
-   apply(simp)
-   apply(simp add: mem_def Set__single_def)
-   apply(case_tac "P__a xa")
-   apply(simp)
-
-  apply(rule disjI2)
-  apply(r
-  done
+   apply(case_tac "xa=x", auto)
+    apply(rule_tac x="i" in exI, simp)+
   end-proof
 
   theorem induction is [a]
@@ -389,6 +352,7 @@ Set qualifying spec
     Set.< -> \<subset> Left 20
     Set.>= -> \<subseteq> Left 20 reversed
     Set.> -> \<subset> Left 20 reversed
+    Set.<| -> insert curried reversed
     Set.~~ -> -
     Set./\ -> \<inter> Left 25
     Set.//\\ -> \<Inter>
