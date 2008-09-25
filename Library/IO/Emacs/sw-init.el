@@ -685,7 +685,7 @@ sLisp Heap Image File: ")
                                       (specware-build-eval-emacs-str "(specware-boot %s t)"
                                                                      in-current-dir?)
                                       specware-executable)
-            (specware-build-command "(progn (cl:load %S) (sb-ext:save-lisp-and-die %S :executable t))"
+            (specware-build-command "(progn (cl:load %S) (format t \"Thread# = ~a\" (length (sb-thread:list-all-threads))) (force-output t) (sb-ext:save-lisp-and-die %S :executable t))"
                                     specware4-loader specware-executable)))
       (if secondTime?
           (message "Failed to build Specware!")
