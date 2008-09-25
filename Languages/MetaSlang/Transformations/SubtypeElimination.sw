@@ -184,6 +184,8 @@ SpecNorm qualifying spec
   op mkArbitrary(ty: Sort): MS.Term =
     mkOp(Qualified(toIsaQual,"arbitrary"), ty)
 
+  op regularizeBooleanToFalse?: Boolean = false
+
   op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
     if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
     else
@@ -194,6 +196,11 @@ SpecNorm qualifying spec
                                             mkArrow(ran_ty, boolSort)],
                                   mkArrow(f_ty, f_ty))),
                      mkTuple [domPred, ranPred]))
+      | (Subsort(dom_ty, domPred, _), Boolean _) | regularizeBooleanToFalse? -> 
+        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PDB"),
+                          mkArrow(mkArrow(dom_ty, boolSort),
+                                  mkArrow(f_ty, f_ty))),
+                     domPred))
       | (Subsort(dom_ty, domPred, _), _) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
                           mkArrow(mkArrow(dom_ty, boolSort),
@@ -379,15 +386,23 @@ SpecNorm qualifying spec
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
     maybePiTerm(tvs,SortedTerm(result,ty,termAnn tm)) 
 
+  op regularizeSets?: Boolean = true
+
   op completeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom,rng), Some(rm_dom, _)) ->
         if embed? Var t && equalType?(dom, rm_dom) then t
         else
+        let rfun = if embed? Boolean rng
+                     then case ty of
+                            | Base(Qualified("Set", "Set"),_,_) | regularizeSets? -> "RSet"
+                            | _ -> if regularizeBooleanToFalse? then "RFunB" else "RFun"
+                   else "RFun"
+        in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None -> t
            | Some(sup_ty, pred) ->
-             mkApply(mkApply(mkOp(Qualified(toIsaQual, "RFun"),
+             mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
                                   mkArrow(inferType(spc, pred),
                                           mkArrow(rm_ty,
                                                   ty))),
