@@ -435,9 +435,9 @@ sLisp Heap Image File: ")
        ;; continue-form-when-ready kills the sublisp process, 
        ;; then waits for a status change signal on that process
        ;; before processing the given command
-       `(build-specware4-continue (, *specware4-dir) (, build-dir) (, bin-dir)
-                                  (, slash-dir) (, world-name) (, base-world-name)
-                                  (, auto-exit?))))))
+       `(build-specware4-continue ,*specware4-dir ,build-dir ,bin-dir
+                                  ,slash-dir ,world-name ,base-world-name
+                                  ,auto-exit?)))))
 
 (defun build-specware4-continue (*specware4-dir build-dir bin-dir slash-dir world-name base-world-name auto-exit?)
   (when (and base-world-name (not (file-exists-p base-world-name)))
@@ -564,8 +564,8 @@ sLisp Heap Image File: ")
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
      ;; before processing the given command
-     `(build-specware4-continue (, *specware4-dir) (, dir) (, bin-dir)
-                                (, slash-dir) (, world-name) (, base-world-name)
+     `(build-specware4-continue ,*specware4-dir ,dir ,bin-dir
+                                ,slash-dir ,world-name ,base-world-name
                                 nil))))
 
 
@@ -722,7 +722,7 @@ sLisp Heap Image File: ")
      ;; continue-form-when-ready kills the sublisp process, 
      ;; then waits for a status change signal on that process
      ;; before processing the given command
-     `(build-specware4 (, *specware4-dir) (, auto-exit?))))))
+     `(build-specware4 ,*specware4-dir ,auto-exit?)))))
 
 
 (defun test-specware-bootstrap (in-current-dir?)
