@@ -122,7 +122,6 @@ Set qualifying spec
   % sets with exactly one element:
 
   op [a] single(*ton*) (x:a) : Set a = fn y:a -> y = x
-  proof Isa [simp] end-proof
 
   op [a] single? (s:Set a) : Boolean = (ex(x:a) s = single x)
   proof Isa [simp] end-proof
@@ -134,7 +133,7 @@ Set qualifying spec
   proof Isa -verbatim
   lemma Set_single_simp [simp]:
   "Set__single x = {x}"
-   by (rule set_ext, simp, simp add: mem_def)
+   by (rule set_ext, simp, simp add: mem_def Set__single_def)
   end-proof
 
   type SingletonSet a = (Set a | single?)
