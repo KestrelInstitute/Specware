@@ -6,6 +6,7 @@ Utilities qualifying spec
  import /Library/Legacy/DataStructures/StringUtilities 
  import Elaborate/Utilities
  import Equivalences
+ import ../AbstractSyntax/Fold
 
  type Vars = List Var
  type VarSubst = List (Var * MS.Term)
@@ -1030,6 +1031,45 @@ Utilities qualifying spec
                              | Fun(Op(qid1,_),_,_) -> qid = qid1
                              | _ -> false)
       term
+
+  op opsInTerm(tm: MS.Term): List QualifiedId =
+    foldSubTerms (fn (t,opids) ->
+                    case t of
+                      | Fun(Op(qid,_),_,_) | ~(member(qid,opids)) ->
+                        Cons(qid, opids)
+                      | _ -> opids)
+      [] tm
+
+  op opsInType(ty: Sort): List QualifiedId =
+    foldSort (fn result -> fn t ->
+                case t of
+                  | Fun(Op(qid,_),_,_) | qid nin? result -> qid::result
+                  | _ -> result,
+              fn result -> fn _ -> result,
+              fn result -> fn _ -> result)
+
+      [] ty
+
+  op typesInTerm(tm: MS.Term): List QualifiedId =
+    foldTerm (fn result -> fn _ -> result,
+              fn result -> fn t ->
+                case t of
+                  | Base(qid,_,_) | qid nin? result -> qid::result
+                  | _ -> result,
+              fn result -> fn _ -> result)
+
+      [] tm
+
+  op typesInType(ty: Sort): List QualifiedId =
+    foldSort (fn result -> fn _ -> result,
+              fn result -> fn t ->
+                case t of
+                  | Base(qid,_,_) | qid nin? result -> qid::result
+                  | _ -> result,
+              fn result -> fn _ -> result)
+
+      [] ty
+
 
 
   op  lambda?: [a] ATerm a -> Boolean

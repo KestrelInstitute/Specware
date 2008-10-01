@@ -675,8 +675,6 @@ AnnSpec qualifying spec
  op setElements      : [a] ASpec a * ASpecElements a  -> ASpec a
  op appendElement    : [a] ASpec a * ASpecElement  a  -> ASpec a
  op prependElement   : [a] ASpec a * ASpecElement  a  -> ASpec a
- op addElementAfter  : [a] ASpec a * ASpecElement  a * ASpecElement a -> ASpec a
-
 
  op someSortAliasIsLocal? : [b] Aliases * ASpec b -> Boolean
  op someOpAliasIsLocal?   : [b] Aliases * ASpec b -> Boolean
@@ -760,6 +758,9 @@ AnnSpec qualifying spec
 
  op [a] addElementBefore(spc: ASpec a, new_element: ASpecElement a, old_element: ASpecElement a): ASpec a =
    addElementsBefore(spc, [new_element], old_element)
+
+ op [a] deleteElement(spc: ASpec a, del_el: ASpecElement a): ASpec a =
+   setElements(spc, filter (fn el -> ~(equalSpecElement?(el, del_el))) spc.elements)
 
  op [a] conjecture?(p: ASpecElement a): Boolean =
    case p of

@@ -4,15 +4,6 @@ spec
 
   type CallsMap = AQualifierMap (List QualifiedId)
 
-  op opsInTerm(tm: MS.Term): List QualifiedId =
-    foldSubTerms (fn (t,opids) ->
-                    case t of
-                      | Fun(Op(qid,_),_,_) | ~(member(qid,opids)) ->
-                        Cons(qid, opids)
-                      | _ -> opids)
-      [] tm
-
-
   op iterateCallsMap(cm: CallsMap, count: Nat): CallsMap =
 %     let _ = appiAQualifierMap (fn (q,id,v) ->
 %                                  writeLine (q^"."^id^": "
