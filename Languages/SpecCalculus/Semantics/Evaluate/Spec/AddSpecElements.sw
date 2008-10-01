@@ -2,12 +2,20 @@ SpecCalc qualifying spec
  import ../../Environment
  import AccessSpec
  import /Languages/MetaSlang/Specs/Environment
+ import /Library/Legacy/DataStructures/TopSort
 
  op addSort        :  List QualifiedId            -> Sort -> Spec -> Position -> SpecCalc.Env (Spec)
  op addOp          :  List QualifiedId -> Fixity  -> MS.Term -> Spec -> Position -> SpecCalc.Env (Spec)
 
   %% called by evaluateSpecElem 
  def addSort new_names new_dfn old_spec pos =
+   {(sp,_) <- addOrRefineSort new_names new_dfn old_spec pos None true;
+    return sp}
+
+ op  addOrRefineSort: QualifiedIds -> Sort -> Spec -> Position -> Option SpecElement -> Boolean
+                  -> SpecCalc.Env(Spec * SpecElement)
+
+ def addOrRefineSort new_names new_dfn old_spec pos opt_next_el addOnly? =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
@@ -90,9 +98,25 @@ SpecCalc qualifying spec
          raise (SpecError (pos, 
                          "Sort "^(printAliases new_names)^" refers to multiple prior sorts"));
      sp <- return (setSorts (old_spec, new_sorts));
-     return (appendElement (sp, if definedSort? new_dfn
-			          then SortDef (primaryName, pos)
-				  else Sort (primaryName, pos)))
+     let el = if definedSort? new_dfn
+                then SortDef (primaryName, pos)
+              else Sort (primaryName, pos)
+     in
+     let sp = if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
+              else if old_infos = [] || addOnly?
+                     then addElementBeforeOrAtEnd(sp, el, opt_next_el)
+              else let elts = foldr (fn (eli, elts) ->
+                                       case eli of
+                                         | SortDef(qid,_) | qid = primaryName -> elts
+                                         | Sort(qid, _)   | qid = primaryName -> el::elts
+                                         | _                                  -> eli::elts)
+                                 [] sp.elements
+                   in
+                   if member(el, elts)
+                     then setElements(sp, elts)
+                   else addElementBeforeOrAtEnd(sp, el, opt_next_el)
+     in
+     return (sp, el)
     }
 
   %% called by evaluateSpecElem and LiftPattern
@@ -167,7 +191,7 @@ SpecCalc qualifying spec
             %%  New: def foo 
 	    (if ~addOnly?             %%  Old: op foo : ... or      (add definition)
 	                              %%  Old: def foo : ... = ...  (replace definition)
-	       or ~old_defined? then  %%  Old: op foo : ...
+	       || ~old_defined? then  %%  Old: op foo : ...
 	       let happy? = (case new_tvs of
 			       | [] ->
 			       %%  Old:  op foo : ...
@@ -221,17 +245,16 @@ SpecCalc qualifying spec
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
                                        case eli of
-                                         | OpDef(qid,_) | qid = primaryName ->
-                                           elts
-                                         | Op(qid, _, _) | qid = primaryName ->
-                                           el::elts
-                                         | _ -> eli::elts)
+                                         | OpDef(qid,_)  | qid = primaryName -> elts
+                                         | Op(qid, _, _) | qid = primaryName -> el::elts
+                                         | _                                 -> eli::elts)
                                  [] sp.elements
                    in
                    if member(el, elts)
                      then setElements(sp, elts)
                    else addElementBeforeOrAtEnd(sp, el, opt_next_el)
     in
+    %% If replacing then add proof obligation that old defn is a theorem
     let sp = if old_infos = [] || addOnly? then sp
              else
              let dfn = (hd old_infos).dfn in
@@ -338,6 +361,88 @@ SpecCalc qualifying spec
    else 
      setLocalProperties (spc, addToNames (new_local_op, localProperties))
 *)
- def addToNames (qid, qids) = cons (qid, qids)
+ def addToNames (qid, qids) = qid::qids
+
+ op lastOpInSpec(qids: List QualifiedId, spc: Spec | qids ~= []): QualifiedId =
+   let _ = writeLine("lookingForOps: "^anyToString(qids)) in
+   case qids of
+     | [qid] -> qid
+     | _ ->
+       foldl (fn (last_qid, el) ->
+                case el of
+                  | Op(op_id, _, _) | op_id in? qids -> op_id
+                  | _ -> last_qid)
+         (head qids) spc.elements
+
+ (* Adjust order of top-level ops to avoid forward references except for mutual recursion *)
+ op adjustElementOrder(spc: Spec): Spec =
+   let def refsToElements(op_ids, ty_ids) =
+             if op_ids = [] && ty_ids = [] then []
+             else
+             %% Inefficient, but good enough?
+             filter (fn | Op(op_id, _, _)   -> op_id in? op_ids
+                        | Sort(ty_id, _)    -> ty_id in? ty_ids
+                        | SortDef(ty_id, _) -> ty_id in? ty_ids
+                        | _ -> false)
+               spc.elements
+       def body_refs op_id =
+         let Some info = findTheOp(spc, op_id) in
+         refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
+       def element_refs el =
+         case el of
+           | Op(op_id, true, _) -> body_refs op_id
+           | OpDef(op_id, _)    -> body_refs op_id
+           | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
+           | SortDef(ty_id, _) ->
+             let Some info = findTheSort(spc, ty_id) in
+             %% make sure types are early until have better circularity resolution mechanism
+             refsToElements([],    % opsInType info.dfn, 
+                            typesInType info.dfn)
+           | _ -> []
+   in
+   setElements(spc, topSort(EQUAL, element_refs, spc.elements))
+
+% op adjustOpOrder(spc: Spec): Spec =
+%   let def moveIfForwardRefs(ref_ops, el, seen_ops, spc) =
+%         let forward_refs = filter (fn qid -> qid in? seen_ops) ref_ops in
+%         if forward_refs = [] then (seen_ops, spc)
+%         else                    
+%         let last_needed_qid = lastOpInSpec(forward_refs, spc) in
+%         let _ = writeLine("last op: "^printQualifiedId last_needed_qid) in
+%         %let _ = writeLine(printSpec spc) in
+%         let spc = deleteElement(spc, el) in
+%         %let _ = writeLine(printSpec spc) in
+%         let spc = addElementAfter(spc, el, Op(last_needed_qid, true, noPos)) in
+%         %let _ = writeLine(printSpec spc) in
+%         (seen_ops, spc)
+%       def moveOpDef?(op_id, el, seen_ops, spc) =
+%          case findTheOp(spc, op_id) of
+%            | Some info ->
+%              let _ = writeLine("Move op "^printQualifiedId op_id^" ? : "^anyToString(opsInTerm info.dfn)) in
+%              let seen_ops = info.names ++ seen_ops in
+%              moveIfForwardRefs(opsInTerm info.dfn, el, seen_ops, spc)
+%            %| _ -> (seen_ops, spc)   % Shouldn't happen
+%       def maybeMoveElt(el, result as (seen_ops, spc)) =
+%         case el of
+%           | Op(op_id, true, _) -> moveOpDef?(op_id, el, seen_ops, spc)
+%           | OpDef(op_id, _) -> moveOpDef?(op_id, el, seen_ops, spc)
+%           | Op(op_id, false, _) ->
+%             (case findTheOp(spc, op_id) of
+%                | Some info ->
+%                  let op_ty = firstOpDefInnerSort info in
+%                  moveIfForwardRefs(opsInType op_ty, el, seen_ops, spc)
+%                | _ -> result)
+%           | SortDef(ty_id, _) ->
+%             (case findTheSort(spc, ty_id) of
+%                | Some info ->
+%                  moveIfForwardRefs(opsInType info.dfn, el, seen_ops, spc)
+%                | _ -> result)
+%           | Property(_, p_nm, _, body, _) ->
+%             let _ = writeLine("Move thm "^printQualifiedId p_nm^" ? : "^anyToString(opsInTerm body)) in
+%             moveIfForwardRefs(opsInTerm body, el, seen_ops, spc)
+%           | _ -> result
+%   in
+%   let (_, spc) = foldr maybeMoveElt ([],spc) spc.elements in
+%   spc
 
 endspec

@@ -12,32 +12,65 @@ SpecCalc qualifying spec
      case coercedSpecValue of
        | Spec spc ->
          {
-	  pos_spec <- evaluateSpecOpElems spc op_elts;
+	  pos_spec <- evaluateSpecEltElems spc op_elts;
 	  elaborated_spec <- elaborateSpecM pos_spec;
 	  compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) pos;
-	  return (Spec compressed_spec, spec_timestamp,spec_dep_UIDs)
+          ordered_spec <- return(adjustElementOrder compressed_spec);
+	  return (Spec ordered_spec, spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TypeCheck (positionOf spec_tm, "op refinement attempted on a non-spec"))
      }
 
-  op  evaluateSpecOpElems : ASpec Position -> List (SpecElem Position) -> SpecCalc.Env (ASpec Position)
-  def evaluateSpecOpElems src_spec op_elts = 
-    {(spc,opt_el,pragmas) <- foldrM evaluateSpecOpElem (src_spec, None, []) op_elts;
+  op  evaluateSpecEltElems : ASpec Position -> List (SpecElem Position) -> SpecCalc.Env (ASpec Position)
+  def evaluateSpecEltElems src_spec elts = 
+    {src_spec <- return(exposeOpsForRefine(src_spec, elts));
+     (spc,opt_el,pragmas) <- foldrM evaluateSpecEltElem (src_spec, None, []) elts;
      let spc = if pragmas = [] then spc else addElementsBeforeOrAtEnd(spc, pragmas, opt_el) in
      return spc}
 
-  op  evaluateSpecOpElem : (Spec * Option SpecElement * SpecElements) -> SpecElem Position
+  op  evaluateSpecEltElem : (Spec * Option SpecElement * SpecElements) -> SpecElem Position
       -> SpecCalc.Env (Spec * Option SpecElement * SpecElements)
-  def evaluateSpecOpElem (spc, opt_next_el, pragmas) (elem, pos) =
+  def evaluateSpecEltElem (spc, opt_next_el, pragmas) (elem, pos) =
     %let _ = writeLine("opt_next_el: "^anyToString opt_next_el^"\n"^printSpec spc) in
     case elem of
       | Op(names, fxty, dfn) ->
         {(spc,next_el) <- addOrRefineOp names fxty dfn spc pos opt_next_el false;
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
+      | Sort(names, ty_defn) ->
+        {(spc,next_el) <- addOrRefineSort names ty_defn spc pos opt_next_el false;
+         let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
+         return (spc,Some next_el,[])}
       | Pragma(prefix, body, postfix) ->
         let prag = Pragma(prefix, body, postfix, pos) in
         return (spc, opt_next_el, prag::pragmas)
       | _ -> raise (SpecError(pos,"Given refinement element is not an op definition."))
+
+  op exposeOpsForRefine(spc: Spec, refine_elts: List (SpecElem Position)): Spec =
+    let ops = mapPartial (fn (elem,_) ->
+                                 case elem of
+                                   | Op(op_id::_, _, _) -> Some op_id
+                                   | _ -> None)
+                refine_elts
+    in
+    let tys = mapPartial (fn (elem,_) ->
+                                 case elem of
+                                   | Sort(ty_id::_, _) -> Some ty_id
+                                   | _ -> None)
+                refine_elts
+    in
+    let def maybeUnfoldImports(elts) =
+          foldl (fn (new_elts, el) ->
+                   case el of
+                     | Import(_, im_spc, im_elts, _)
+                         | exists (fn op_id -> some?(AnnSpec.findTheOp  (im_spc, op_id))) ops
+                          || exists (fn ty_id -> some?(AnnSpec.findTheSort(im_spc, ty_id))) tys
+                        ->
+                        maybeUnfoldImports im_elts ++ new_elts
+                     | _ -> el::new_elts)
+            [] elts
+    in
+    let new_elts = reverse(maybeUnfoldImports spc.elements) in
+    setElements(spc, new_elts)
 
 endspec
