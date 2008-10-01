@@ -2,6 +2,11 @@ SpecNorm qualifying spec
   import DefToAxiom
   import Coercions
 
+  op eagerRegularization?: Boolean = false
+  op regularizeSets?: Boolean = true
+  op regularizeBooleanToFalse?: Boolean = false    % Can do this effectively in IsabelleExtensions
+
+
   %% Polymorphic ops have versions that have a predicate for each polymorphic variable
   type PolyOpTable = AQualifierMap(QualifiedId * List TyVar)
 
@@ -70,6 +75,8 @@ SpecNorm qualifying spec
     (doTerm, doType, id)
 
   op maybeRelativize?(t: MS.Term, tb: PolyOpTable): Boolean =
+    if eagerRegularization? then true
+    else
     existsSubTerm (fn tm ->
                      case tm of
                        | Fun(Op(Qualified(q,id),_),_,_) ->
@@ -101,8 +108,8 @@ SpecNorm qualifying spec
     let tv_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolSort)))) tvs in
     % let _ = writeLine("tv_map: "^anyToString tv_map) in
     let st_tm = substTyVarsWithSubtypes(tv_map,tm) in
-    let rel_tm = mapTerm (polyCallsTransformers (spc,tb,false)) st_tm in
-    let rel_tm = doTerm(rel_tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
+    let rel_tm = mapTerm (polyCallsTransformers(spc,tb,false)) st_tm in
+    let rel_tm = regTerm(rel_tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
     % let _ = writeLine("rel_tm: "^printTerm rel_tm) in
     let fvs = freeVars rel_tm ++ subtypePredFreeVars(rel_tm, spc) in
     % let _ = writeLine("fvs: "^anyToString(subtypePredFreeVars(rel_tm, spc))) in
@@ -123,7 +130,7 @@ SpecNorm qualifying spec
                      (case AnnSpec.findTheOp(spc,qid) of
                         | Some opinfo ->
                           let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-                          (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns,spc) of
+                          (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc) of
                              | [] -> (new_elts ++ [el], op_map, tb)
                              | tv_map ->
                                let new_id = id ^ "__stp" in
@@ -183,8 +190,6 @@ SpecNorm qualifying spec
 
   op mkArbitrary(ty: Sort): MS.Term =
     mkOp(Qualified(toIsaQual,"arbitrary"), ty)
-
-  op regularizeBooleanToFalse?: Boolean = false
 
   op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
     if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
@@ -377,18 +382,17 @@ SpecNorm qualifying spec
       | Apply(f, _, _) -> possibleHoEqualTestableArg?(f, ho_eqfns)
       | _ -> false
 
-  op doTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
+  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let (tvs,ty,tm) = unpackFirstOpDef info in
-    let result = doTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
+    let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
     if equalTerm?(result, tm)
       then maybePiTerm(tvs,SortedTerm(tm,ty,termAnn tm)) 
     else
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
     maybePiTerm(tvs,SortedTerm(result,ty,termAnn tm)) 
 
-  op regularizeSets?: Boolean = true
-
-  op completeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
+  op regularizeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
+    % let _ = writeLine("Regularize: "^printTerm t^": "^printSort ty^" to "^printSort rm_ty) in
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom,rng), Some(rm_dom, _)) ->
         if embed? Var t && equalType?(dom, rm_dom) then t
@@ -400,7 +404,16 @@ SpecNorm qualifying spec
                    else "RFun"
         in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
-           | None -> t
+           | None ->
+             (case subtypeComps(spc, raiseSubtypeFn(rm_dom, spc)) of
+                | Some(sup_ty, pred) | eagerRegularization? ->
+                  mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
+                                       mkArrow(inferType(spc, pred),
+                                               mkArrow(rm_ty,
+                                                       ty))),
+                                  pred),
+                          t)
+                | _ -> t)
            | Some(sup_ty, pred) ->
              mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
                                   mkArrow(inferType(spc, pred),
@@ -410,45 +423,53 @@ SpecNorm qualifying spec
                      t))
       | _ -> t
 
-  op doTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
+  op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let rm_ty = inferType(spc,t) in
-    let t = if equal_testable? then completeIfPFun(t, ty, rm_ty, spc) else t in
+    let t = if equal_testable? && ~eagerRegularization?
+              then regularizeIfPFun(t, ty, rm_ty, spc)
+            else t
+    in
     case t of
       | Apply(f, x, a) ->
         let (dom, rng) = arrow(spc, inferType(spc, f)) in
-        Apply(doTerm(f, mkArrow(inferType(spc, x), ty), false, ho_eqfns, spc),
-              doTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns), ho_eqfns, spc), a)
+        Apply(regTerm(f, mkArrow(inferType(spc, x), ty), false, ho_eqfns, spc),
+              regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns), ho_eqfns, spc), a)
       | Record(row, a) ->
         let srts = map (fn (_,x) -> x) (product (spc,ty)) in
-        Record(map (fn ((idi,tmi), tyi) \_rightarrow (idi, doTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
+        Record(map (fn ((idi,tmi), tyi) \_rightarrow (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
                  (zip(row,srts)), a) 
       | Bind(b, vs, bod, a) ->
-        Bind(b, vs, doTerm(bod, boolSort, false, ho_eqfns, spc), a)
+        Bind(b, vs, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
       | The(v, bod, a) ->
-        The(v, doTerm(bod, boolSort, false, ho_eqfns, spc), a)
+        The(v, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
       | Let(decls, bod, a) ->
-        Let (map (fn (pat,trm) \_rightarrow (pat,doTerm(trm, patternSort pat, equal_testable?, ho_eqfns, spc)))
+        Let (map (fn (pat,trm) \_rightarrow (pat, regTerm(trm, patternSort pat, equal_testable?, ho_eqfns, spc)))
                decls,
-             doTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
+             regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
       | LetRec(decls, bod, a) ->
-        LetRec (map (fn ((id,srt), trm) \_rightarrow ((id,srt), doTerm(trm, srt, false, ho_eqfns, spc))) decls,
-                doTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
+        LetRec (map (fn ((id,srt), trm) \_rightarrow ((id,srt), regTerm(trm, srt, false, ho_eqfns, spc))) decls,
+                regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
       | Lambda(match, a) ->
-        Lambda (map (fn (pat,condn,trm) \_rightarrow
-                   (pat, doTerm(condn, boolSort, false, ho_eqfns, spc),
-                    doTerm(trm, range(spc,ty), false, ho_eqfns, spc))) % ?
-                   match,
-              a)
+        let lam_tm = 
+            Lambda (map (fn (pat,condn,trm) \_rightarrow
+                           (pat, regTerm(condn, boolSort, false, ho_eqfns, spc),
+                            regTerm(trm, range(spc,ty), false, ho_eqfns, spc))) % ?
+                      match,
+                    a)
+        in
+        if eagerRegularization?
+          then regularizeIfPFun(lam_tm, ty, rm_ty, spc)
+          else lam_tm
       | IfThenElse(x,y,z, a) ->
-        IfThenElse(doTerm(x, boolSort, false, ho_eqfns, spc),
-                   doTerm(y, ty, equal_testable?, ho_eqfns, spc),
-                   doTerm(z, ty, equal_testable?, ho_eqfns, spc), a)
+        IfThenElse(regTerm(x, boolSort, false, ho_eqfns, spc),
+                   regTerm(y, ty, equal_testable?, ho_eqfns, spc),
+                   regTerm(z, ty, equal_testable?, ho_eqfns, spc), a)
       %| Seq(tms, a) ->
       | SortedTerm(tm, tm_ty, a) ->
-        SortedTerm(doTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
+        SortedTerm(regTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
       | _ -> t
          
-  op completeFunctions(spc: Spec): Spec =
+  op regularizeFunctions(spc: Spec): Spec =
     let ho_eqfns = findHOEqualityFuns spc in
     % let _ = writeLine(anyToString ho_eqfns) in
     % let _ = writeLine(printSpec spc) in
@@ -460,13 +481,13 @@ SpecNorm qualifying spec
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info \_rightarrow
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = doTermTop(info, ho_eqfns, spc)})
+                                                          info << {dfn = regTermTop(info, ho_eqfns, spc)})
                                    | None \_rightarrow ops)
                                | OpDef (qid as Qualified(q,id), _) \_rightarrow
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info \_rightarrow
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = doTermTop(info, ho_eqfns, spc)})
+                                                          info << {dfn = regTermTop(info, ho_eqfns, spc)})
                                    | None \_rightarrow ops)
                                | _ \_rightarrow ops)
                         spc.ops
@@ -475,7 +496,7 @@ SpecNorm qualifying spec
                 elements = map (fn el \_rightarrow
                                   case el of
                                     | Property(pt, nm, tvs, term,a) \_rightarrow
-                                      Property(pt, nm, tvs, doTerm(term, boolSort, false, ho_eqfns, spc),a)
+                                      Property(pt, nm, tvs, regTerm(term, boolSort, false, ho_eqfns, spc),a)
                                     | _ \_rightarrow el)
                              spc.elements}
     in
@@ -495,8 +516,8 @@ SpecNorm qualifying spec
                                    else info)
                                 spc.sorts}
     in
-    %% Complete functions that may be used in equality tests
-    let spc = completeFunctions spc in
+    %% Regularize functions that may be used in equality tests
+    let spc = regularizeFunctions spc in
     %% Add subtype assertions from op declarations
     let spc = spc << {elements
 		       = foldr (fn (el,r) \_rightarrow
