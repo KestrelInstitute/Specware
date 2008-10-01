@@ -78,7 +78,7 @@ efficiently, but cmulisp may do better with local functions.
  * Term decorated with free variables in each sub-expression.
  *)
 
- type VarTerm = VarTermBody * FreeVars
+ type VarTerm = VarTermBody * FreeVars * Position
  type VarTermBody = 
   | Apply        VarTerm * VarTerm
   | Record       List (Id * VarTerm)
@@ -137,70 +137,70 @@ def patternVars (pat:Pattern): List Var =
 
      | Let (decls, body, a) -> 
        let decls = List.map (fn (pat, term) -> (pat, makeVarTerm term)) decls in
-       let vars  = flatten (List.map (fn (_, (_, vars)) -> vars) decls) in
+       let vars  = flatten (List.map (fn (_, (_, vars, _)) -> vars) decls) in
        let letVars = flatten (List.map (fn (pat, _) -> patternVars pat) decls) in
-       let body as (_, bodyVars) = makeVarTerm body in
+       let body as (_, bodyVars, _) = makeVarTerm body in
        let vars = removeDuplicates (vars ++ diffVs (bodyVars, letVars)) in
-       (Let (decls, body), vars) 
+       (Let (decls, body), vars, a) 
 
      | LetRec (decls, body, a) -> 
        let decls = List.map (fn (v, term) -> (v, makeVarTerm term)) decls in
-       let vars  = flatten (List.map (fn (_, (_, vars)) -> vars) decls) in
+       let vars  = flatten (List.map (fn (_, (_, vars, _)) -> vars) decls) in
        let letVars = List.map (fn (v, _) -> v) decls in
-       let body as (_, bodyVars) = makeVarTerm body in
+       let body as (_, bodyVars, _) = makeVarTerm body in
        let vars = removeDuplicates (vars ++ bodyVars) in
        let diffVars = diffVs (vars, letVars) in
-       (LetRec (decls, body), diffVars)
+       (LetRec (decls, body), diffVars, a)
 
      | Lambda (match, a) -> 
        % let (pat, _, _)::_ = match in
        %let _ = String.writeLine ("  lambda-term, pattern: "^MetaSlangPrint.printPattern pat) in
        let match = map (fn (pat, cond, term) -> (pat, cond, makeVarTerm term)) match in
-       let vars  = flatten (map (fn (_, _, (_, vars)) -> vars) match) in
+       let vars  = flatten (map (fn (_, _, (_, vars, _)) -> vars) match) in
        let boundVars = flatten (map (fn (pat, _, _) -> patternVars pat) match) in
        let vars = diffVs (vars, boundVars) in
-       (Lambda (match), vars)
+       (Lambda (match), vars, a)
        
-     | Var (v, a) -> (Var v, [v])
+     | Var (v, a) -> (Var v, [v], a)
 
-     | Fun (f, s, a) -> (Fun (f, s), [])
+     | Fun (f, s, a) -> (Fun (f, s), [], a)
 
      | IfThenElse (t1, t2, t3, a) -> 
-       let t1 as (_, vs1) = makeVarTerm t1 in
-       let t2 as (_, vs2) = makeVarTerm t2 in
-       let t3 as (_, vs3) = makeVarTerm t3 in
-       (IfThenElse (t1, t2, t3), removeDuplicates (vs1 ++ vs2 ++ vs3))
+       let t1 as (_, vs1, _) = makeVarTerm t1 in
+       let t2 as (_, vs2, _) = makeVarTerm t2 in
+       let t3 as (_, vs3, _) = makeVarTerm t3 in
+       (IfThenElse (t1, t2, t3), removeDuplicates (vs1 ++ vs2 ++ vs3), a)
        
      | Seq (terms, a) -> 
        let terms = List.map makeVarTerm terms in
-       let vars  = flatten (List.map (fn (_, vs) -> vs) terms) in
+       let vars  = flatten (List.map (fn (_, vs, _) -> vs) terms) in
        let vars  = removeDuplicates (vars) in
-       (Seq terms, vars)
+       (Seq terms, vars, a)
 
      | Apply (t1, t2, a) -> 
-       let t1 as (_, vs1) = makeVarTerm t1 in
-       let t2 as (_, vs2) = makeVarTerm t2 in
-       (Apply (t1, t2), removeDuplicates (vs1 ++ vs2))
+       let t1 as (_, vs1, _) = makeVarTerm t1 in
+       let t2 as (_, vs2, _) = makeVarTerm t2 in
+       (Apply (t1, t2), removeDuplicates (vs1 ++ vs2), a)
 
      | Record (fields, a) -> 
        let fields = List.map (fn (id, t) -> (id, makeVarTerm t)) fields in
-       let vars   = flatten (List.map (fn (_, (_, vs)) -> vs) fields) in
+       let vars   = flatten (List.map (fn (_, (_, vs, _)) -> vs) fields) in
        let vars   = removeDuplicates vars in
-       (Record fields, vars)
+       (Record fields, vars, a)
 
      | Bind (binder, bound, body, a) -> 
-       let body as (_, vs) = makeVarTerm body in
+       let body as (_, vs, _) = makeVarTerm body in
        let vars = diffVs (vs, bound) in
-       (Bind (binder, bound, body), vars)
+       (Bind (binder, bound, body), vars, a)
 
      | The (var, body, a) -> 
-       let body as (_, vs) = makeVarTerm body in
+       let body as (_, vs, _) = makeVarTerm body in
        let vars = diffVs (vs, [var]) in
-       (The (var, body), vars)
+       (The (var, body), vars, a)
 
      | SortedTerm (t, srt, a) ->
-       let (t, vars) = makeVarTerm t in
-       (t, vars)
+       let (t, vars, _) = makeVarTerm t in
+       (t, vars, a)
 
      | _ -> System.fail "makeVarTerm"
 
@@ -366,11 +366,11 @@ def patternVars (pat:Pattern): List Var =
 
  *)
 
- def lambdaLiftTerm (env, term as (trm, vars)) = 
+ def lambdaLiftTerm (env, term as (trm, vars, pos)) = 
    case trm of
-     | Apply ((Lambda (match as _::_), vars1), t) ->
+     | Apply ((Lambda (match as _::_), vars1, lpos), t) ->
        let (infos1, match) =
-           foldl (fn ((infos, match), (p, t1, trm2 as (t2, vars))) -> 
+           foldl (fn ((infos, match), (p, t1, trm2 as (t2, vars, _))) -> 
 		  %let (infos1, t1) = lambdaLiftTerm (env, (t1, [])) in
 		  let (infos2, t2) = lambdaLiftTerm (env, trm2) in
 		  let match = concat (match, [(p, t1, t2)]) in
@@ -381,7 +381,7 @@ def patternVars (pat:Pattern): List Var =
        in
 	 let (infos2, t2) = lambdaLiftTerm (env, t) in
 	 (infos1 ++ infos2, 
-	  Apply (Lambda (match, noPos), t2, noPos))
+	  Apply (Lambda (match, lpos), t2, pos))
 	 
 (*
 Let:
@@ -425,7 +425,7 @@ Given let definition:
      | Let (decls, body) -> 
        let opName = env.opName in
        let
-	 def liftDecl ((pat, term as (trm, vars)), (opers, env, decls)) =
+	 def liftDecl ((pat, term as (trm, vars, _)), (opers, env, decls)) =
 	   case (pat, trm) of
 	     | (VarPat ((id, srt), _), Lambda ([(pat2, cond, body)])) -> 
 	       let (opers2, body) = lambdaLiftTerm (env, body) in
@@ -447,7 +447,7 @@ Given let definition:
        (opers1 ++ opers2, 
 	case decls of
 	  | [] -> body
-	  | _  -> Let (decls, body, noPos)) 
+	  | _  -> Let (decls, body, pos)) 
 
 (*
 Let-rec:
@@ -503,7 +503,7 @@ in
 % Step 1.
        let opName = env.opName in
        let (free, bound) = 
-           List.foldr (fn ((v, (_, vars)), (free, bound)) ->
+           List.foldr (fn ((v, (_, vars, _)), (free, bound)) ->
 		       (vars ++ free, cons (v, bound)))
 	              ([], []) 
 		      decls 
@@ -513,7 +513,7 @@ in
 
 % Step 2.
        let tmpOpers =
-           map (fn (v as (id, srt), (Lambda ([(pat, _, body)]), _)) ->
+           map (fn (v as (id, srt), (Lambda ([(pat, _, body)]), _, _)) ->
 		let name = freshName (opName ^ "__" ^ id, env) in
                 let dom = domain(getSpecEnv env, srt) in
 		(body, 
@@ -550,7 +550,7 @@ in
 	    %of Some (liftInfo:LiftInfo) -> ([], mkApply (makeUnitClosureOp (), liftInfo.closure))
 	  | None -> 
 	    ([], 
-	     (Var ((id, srt), noPos))))
+	     (Var ((id, srt), pos))))
 %
 % If returning a function not taking arguments, then 
 % return a closure version of it.
@@ -572,7 +572,7 @@ in
        let (opers, body) = lambdaLiftTerm (env, body) in
        if ~simulateClosures? then
 	 (opers, 
-	  Lambda ([(pat, cond, body)], noPos))
+	  Lambda ([(pat, cond, body)], pos))
        else
 	 let num = !(env.counter) in
 	 let _ = env.counter := num + 1 in
@@ -600,10 +600,10 @@ in
        lambdaLiftTerm (env, 
 		       (Lambda [(mkTuplePat (map mkVarPat newVs), 
 				 mkTrue (), 
-				 (Apply ((Lambda match, vars), 
-					 mkVarTermTuple (map (fn x -> (Var x, [])) newVs)), 
-				  vars))], 
-			vars))
+				 (Apply ((Lambda match, vars, pos), 
+					 mkVarTermTuple (map (fn x -> (Var x, [], pos)) newVs)), 
+				  vars, pos))], 
+			vars, pos))
        
 
      | IfThenElse (t1, t2, t3) -> 
@@ -611,7 +611,7 @@ in
        let (opers2, t2) = lambdaLiftTerm (env, t2) in
        let (opers3, t3) = lambdaLiftTerm (env, t3) in
        (opers1 ++ opers2 ++ opers3, 
-	IfThenElse (t1, t2, t3, noPos))
+	IfThenElse (t1, t2, t3, pos))
 
      | Seq (terms) -> 
        let
@@ -621,12 +621,12 @@ in
        in
        let (opers, terms) = List.foldr liftRec ([], []) terms in
        (opers, 
-	Seq (terms, noPos))
+	Seq (terms, pos))
 
-     | Apply ((Lambda [(pat, Fun (Bool true, _, _), body)], vars1), term) -> 
+     | Apply ((Lambda [(pat, Fun (Bool true, _, _), body)], vars1, _), term) -> 
        lambdaLiftTerm (env, 
 		       (Let ([(pat, term)], body), 
-			vars ++ vars1))
+			vars ++ vars1, pos))
 
 
        % Distinguish between pure function application and
@@ -638,7 +638,7 @@ in
        let (opers2, nt2) = lambdaLiftTerm (env, t2) in
        let (opers1, nt1) = 
 	   case t1 of
-	     | (Fun (f, s), _) -> ([], Fun (f, s, noPos))
+	     | (Fun (f, s), _, fpos) -> ([], Fun (f, s, fpos))
 	     | _ -> lambdaLiftTerm (env, t1)
        in
        let opers = opers1 ++ opers2 in
@@ -646,7 +646,7 @@ in
 	  | Fun f ->
 	    if ~simulateClosures? then
 	      (case t1 of
-		 | (Var (id, srt), _) ->
+		 | (Var (id, srt), _, _) ->
 		    (case Map.apply (env.opers, id) of
 		       | Some {ident, name, freeVars, closure, pattern, domain, body} ->
 		         let oldArgs = termToList nt2 in
@@ -678,7 +678,7 @@ in
 	   (opers ++ opers2, cons ((id, t), fields))
        in
        let (opers, fields) = List.foldr liftRec ([], []) fields in
-       (opers, (Record (fields, noPos)))
+       (opers, (Record (fields, pos)))
 
      | Bind (binder, bound, body) -> 
        let (opers, liftBody) = lambdaLiftTerm (env, body) in
@@ -702,7 +702,7 @@ in
  def mkVarTermTuple vts =
    case vts of
      | [vt] -> vt
-     | _ -> (Record (tagTuple vts), [])
+     | _ -> (Record (tagTuple vts), [], noPos)
 
 (*
  spec TranslationBuiltIn = 
