@@ -1,10 +1,11 @@
 % Functions for folding functions over a term, sort and patten.
 
-spec {
+Utilities qualifying
+spec
  import AnnTerm
 
- sort Fold (a,b) = a -> b -> a
- sort TSP_Folds (a,b) = Fold (a,ATerm b) * Fold (a,ASort b) * Fold (a,APattern b)
+ type Fold (a,b) = a -> b -> a
+ type TSP_Folds (a,b) = Fold (a,ATerm b) * Fold (a,ASort b) * Fold (a,APattern b)
 
  op foldTerm    : fa(a,b) TSP_Folds (a,b) -> a -> ATerm b -> a
  op foldSort    : fa(a,b) TSP_Folds (a,b) -> a -> ASort b -> a
@@ -16,25 +17,28 @@ spec {
        | Fun (top, srt, a) -> foldSort tsp_folds acc srt
        | Var ((id, srt), a) -> foldSort tsp_folds acc srt
        | Let (decls, bdy, a) -> 
-           foldl (fn ((pat,trm),acc) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat) acc decls
+         foldl (fn (acc,(pat,trm)) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat) acc decls
        | LetRec (decls, bdy, a) -> 
-           foldl (fn (((id,srt),trm),acc) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt) acc decls
-       | Record (row, a) -> foldl (fn ((id,trm),acc) -> foldTerm tsp_folds acc trm) acc row
+         foldl (fn (acc,((id,srt),trm)) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt) acc decls
+       | Record (row, a) -> foldl (fn (acc,(id,trm)) -> foldTerm tsp_folds acc trm) acc row
        | IfThenElse (t1, t2, t3, a) -> 
-           foldTerm tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2) t3
+         foldTerm tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2) t3
        | Lambda (match, a) -> 
-           foldl (fn ((pat,cond,trm),acc)->
-             foldPattern tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc cond) trm) pat) acc match
+         foldl (fn (acc,(pat,cond,trm))->
+                  foldPattern tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc cond) trm) pat) acc match
        | Bind (bnd, vars, trm, a) -> 
-           foldTerm tsp_folds (foldl (fn ((id,srt),acc) -> foldSort tsp_folds acc srt) acc vars) trm
+         foldTerm tsp_folds (foldl (fn (acc,(id,srt)) -> foldSort tsp_folds acc srt) acc vars) trm
        | The ((id,srt), trm, a) -> foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
        | Apply (t1, t2,  a) -> foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2
        | Seq (terms, a) -> 
-           foldl (fn (trm,acc) -> foldTerm tsp_folds acc trm) acc terms
+         foldl (fn (acc,trm) -> foldTerm tsp_folds acc trm) acc terms
        | ApplyN (terms, a) -> 
-           foldl (fn (trm,acc) -> foldTerm tsp_folds acc trm) acc terms
+         foldl (fn (acc,trm) -> foldTerm tsp_folds acc trm) acc terms
        | SortedTerm (trm, srt, a) -> 
-           foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
+         foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
+       | Pi(_, trm, _) -> foldTerm tsp_folds acc trm
+       | And(trms, _) -> foldl (fn (acc, trm) -> foldTerm tsp_folds acc trm) acc trms
+       | Any _ -> acc
    in
      termFold foldOfChildren term
 
@@ -42,14 +46,14 @@ spec {
    let foldOfChildren =
      case srt of
        | CoProduct (row, a) ->
-           foldl (fn | ((id,None),acc) -> acc
-                     | ((id,Some srt),acc) -> foldSort tsp_folds acc srt) acc row 
+         foldl (fn | (acc,(id,None)) -> acc
+                   | (acc,(id,Some srt)) -> foldSort tsp_folds acc srt) acc row 
        | Product (row, a) -> 
-           foldl (fn ((id,srt),acc) -> foldSort tsp_folds acc srt) acc row 
+           foldl (fn (acc,(id,srt)) -> foldSort tsp_folds acc srt) acc row 
        | Arrow (s1, s2, a) -> foldSort tsp_folds (foldSort tsp_folds acc s1) s2
        | Quotient (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
        | Subsort (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
-       | Base (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
+       | Base (qid, srts, a) -> foldl (fn (acc,srt) -> foldSort tsp_folds acc srt) acc srts
        | Boolean _ -> acc
        | _ -> acc
    in
@@ -61,13 +65,14 @@ spec {
        | AliasPat (p1, p2, a) -> foldPattern tsp_folds (foldPattern tsp_folds acc p1) p2
        | EmbedPat (id, Some pat, srt, a) -> foldSort tsp_folds (foldPattern tsp_folds acc pat) srt
        | EmbedPat (id, None, srt, a) -> foldSort tsp_folds acc srt
-       | QuotientPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
+       | QuotientPat (pat, _, a) -> foldPattern tsp_folds acc pat
        | RestrictedPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | VarPat ((v, srt), a) -> foldSort tsp_folds acc srt
        | WildPat (srt, a) -> foldSort tsp_folds acc srt
-       | RecordPat (fields, a) -> foldl (fn ((id, pat),acc) -> foldPattern tsp_folds acc pat) acc fields
+       | RecordPat (fields, a) -> foldl (fn (acc,(id, pat)) -> foldPattern tsp_folds acc pat) acc fields
        | SortedPat (pat, srt, a) -> foldSort tsp_folds (foldPattern tsp_folds acc pat) srt
        | _ -> acc
   in
     patternFold foldOfChildren pattern
-}
+endspec
+
