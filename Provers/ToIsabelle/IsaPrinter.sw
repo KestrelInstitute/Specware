@@ -21,6 +21,11 @@ IsaTermPrinter qualifying spec
  op addObligations?: Boolean = true
  op lambdaLift?: Boolean     = true
  op simplify?: Boolean       = true
+ op usePosInfoForDefAnalysis?: Boolean = true
+ op printQuantifiersWithType?: Boolean = true
+ op defaultProof: String = "by auto"
+ op addExplicitTyping?: Boolean = true
+ op targetFunctionDefs?: Boolean = true
 
  type Pretty = PrettyPrint.Pretty
 
@@ -416,6 +421,7 @@ IsaTermPrinter qualifying spec
   def ppSpec c spc =
     % let _ = toScreen("0:\n"^printSpec spc^"\n") in
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
+    let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists (fn el ->
                                             case el of
                                               | Pragma("proof",prag_str,"end-proof",_)
@@ -807,8 +813,6 @@ IsaTermPrinter qualifying spec
 		      prString ")"]
 
  op precNumFudge: Nat = 40
- op targetFunctionDefs?: Boolean = true
-
 
   op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
   def defToFunCases c op_tm bod =
@@ -1002,6 +1006,7 @@ IsaTermPrinter qualifying spec
    %% Doesn't handle multi aliases correctly
    let c = c << {newVarCount = Ref 0} in
    let mainId = hd aliases in
+   % let _ = writeLine("Processing "^printQualifiedId mainId) in
    let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
    let (no_def?,mainId,fixity) =
        case specialOpInfo c mainId of
@@ -1212,14 +1217,24 @@ IsaTermPrinter qualifying spec
   op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Boolean =
     existsSubTerm (nonPrimitiveCall? hd) bod
 
+  op patternLambda?(v_pos: Position, lam_pos: Position): Boolean =
+    %% an explicit lambda will have beginning of variable close to beginning of lambda expr
+    usePosInfoForDefAnalysis?
+      => (case (v_pos, lam_pos) of
+            | (File(_,(_,_,v_byte),_), File(_,(_,_,lam_byte),_)) ->
+              v_byte - lam_byte > 4
+            | _ -> true)
+
   op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
   def defToCases c op_tm bod infix? =
     let
       def aux(hd, bod, tuple?) =
         % let _ = writeLine("aux("^printTerm bod^", "^toString tuple?^")") in
 	case bod of
-	  | Lambda ([(VarPat (v as (nm,ty),_),_,term)],a) | \_not tuple? \_rightarrow
-	    aux(Apply(hd,mkVar v,a), term, tuple?)
+	  | Lambda ([(VarPat (v as (nm,ty),v_pos),_,term)],a) | \_not tuple? \_rightarrow
+	    if patternLambda?(v_pos,a)
+              then aux(Apply(hd,mkVar v,a), term, tuple?)
+              else ([(hd,bod)], recursiveCallsNotPrimitive?(hd,bod))
           | Lambda ([(pattern,_,term)],a) | \_not tuple? \_rightarrow
             (case patToTerm (pattern,"", c) of
                | Some pat_tm | primitiveArg? pat_tm \_rightarrow
@@ -1321,8 +1336,6 @@ IsaTermPrinter qualifying spec
 	    | _ \_rightarrow aux(op_tm, bod, false) in
     %let _ = writeLine(" = "^toString (length cases)^", "^toString tuple?) in
     (map fix_vars cases, tuple?)
-
-  op addExplicitTyping?: Boolean = true
 
   op addExplicitTyping2(c: Context, lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
     if addExplicitTyping? then
@@ -1491,8 +1504,6 @@ IsaTermPrinter qualifying spec
 			else (if includes_prf_terminator?
                                 then []
                                 else [[prString "done",prEmpty]]))))
-
-  op defaultProof: String = "by auto"
 
   op lastLineEnds(prf: String): Boolean =
     let beg_last_line = case findLast("\n", prf) of
@@ -1904,8 +1915,6 @@ IsaTermPrinter qualifying spec
 
   op  ppVarWithoutSort : Var \_rightarrow Pretty
   def ppVarWithoutSort (id, _(* ty *)) = prString (ppIdStr id)
-
-  op printQuantifiersWithType?: Boolean = true
 
   op ppVarWithSort (c: Context) ((id,ty): Var): Pretty =
     if printQuantifiersWithType? then
