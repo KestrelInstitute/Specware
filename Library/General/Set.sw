@@ -15,8 +15,6 @@ Set qualifying spec
   useful for specification purposes, not for execution. Finite sets as defined
   in spec `FiniteSet' can instead be refined to be executable. *)
 
-  %%%%% NOTE %%%%%
-  % Currently needed to allow Isabelle translation to Isabelle "set"
   type Predicate a = a -> Boolean
 
   type Set a = Predicate a
