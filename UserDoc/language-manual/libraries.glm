@@ -1,5 +1,23 @@
-<appendix><title>Inbuilts and Base Libraries</title>
+<!-- NOTE:
 
+We have commented out the parts that describe the base libraries because they
+are now obsolete. Instead of manually updating the information in this appendix
+now and whenever we make future changes to the libraries, we plan to build a
+simple tool to generate the information in this appendix from the base libraries
+themselves. Until then, we decided that it was better to have no information
+about the base libraries in this appendix rather than having obsolete
+information.
+
+-->
+
+
+
+<appendix><title>Inbuilts</title>
+<!-- <appendix><title>Inbuilts and Base Libraries</title> -->
+
+<para> This appendix provides a brief description of the ``inbuilt'' types and
+operators. </para>
+<!--
 <para>
 This appendix provides a brief description of the types and operators
 that are either ``inbuilt'' or provided by the current base libraries.
@@ -12,6 +30,7 @@ However, for the <emphasis>unary</emphasis> operator [[-]] on integers,
 the qualifier is [[Integer_]] .
 Note, also, that inbuilts cannot be qualified.
 </para>
+-->
 
 <para>
 For the sake of brevity, [[infixl]] is abbreviated below
@@ -25,9 +44,9 @@ with the &Specware; distribution, for details (e.g. axioms).
 </para>
 -->
 
-<!-- Equality ****************************************************** -->
+<!-- Inbuilts ****************************************************** -->
 
-<section><title>Inbuilts</title>
+<!-- <section><title>Inbuilts</title> -->
  <para>
   <variablelist>
    <varlistentry>
@@ -109,10 +128,11 @@ with the &Specware; distribution, for details (e.g. axioms).
    </varlistentry>
   </variablelist>
  </para>
-</section>
+<!-- </section> -->
 
 <!-- Boolean ****************************************************** -->
 
+<!--
 <section><title>Boolean</title>
  <para>
   <variablelist>
@@ -162,9 +182,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- Integer ****************************************************** -->
 
+<!--
 <section><title>Integer</title>
  <para>
   <variablelist>
@@ -315,10 +337,12 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 
 <!-- Nat ****************************************************** -->
 
+<!--
 <section><title>Nat</title>
  <para>
   <variablelist>
@@ -422,9 +446,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- Char ****************************************************** -->
 
+<!--
 <section><title>Char</title>
  <para>
   <variablelist>
@@ -538,9 +564,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- String ****************************************************** -->
 
+<!--
 <section><title>String</title>
  <para>
   <variablelist>
@@ -690,9 +718,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- List ****************************************************** -->
 
+<!--
 <section><title>List</title>
  <para>
   <variablelist>
@@ -960,9 +990,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- Compare ****************************************************** -->
 
+<!--
 <section><title>Compare</title>
  <para>
   <variablelist>
@@ -1010,10 +1042,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
-
+-->
 
 <!-- Option ****************************************************** -->
 
+<!--
 <section><title>Option</title>
  <para>
   <variablelist>
@@ -1102,9 +1135,11 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
+-->
 
 <!-- Functions ****************************************************** -->
 
+<!--
 <section><title>Functions</title>
  <para>
   <variablelist>
@@ -1178,6 +1213,6 @@ with the &Specware; distribution, for details (e.g. axioms).
   </variablelist>
  </para>
 </section>
-
+-->
 
 </appendix>
