@@ -5,7 +5,7 @@ Compare qualifying spec
   % This is done solely for verification purposes
   % ------------------------------------------------------------------------
 
-  import IsabelleExtensions
+  import Boolean
 
   % possible results of a comparison (w.r.t. a linear order):
 

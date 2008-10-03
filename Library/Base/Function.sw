@@ -5,7 +5,7 @@ Function qualifying spec
   % This is done solely for verification purposes
   % ------------------------------------------------------------------------
 
-  import IsabelleExtensions 
+  import Boolean
 
   (* Functions are built-in in Metaslang (A -> B is the type of all functions
   from type A to type B). This spec introduces some operations on functions and
