@@ -74,9 +74,6 @@ List qualifying spec
 
  op empty : [a] List a = []
 
- theorem length_empty is [a] length (empty: List a) = 0
- proof Isa [simp] end-proof
-
  op [a] empty? (l: List a) : Boolean = (l = empty)
  proof Isa
    by (simp add: null_empty)
@@ -571,14 +568,17 @@ List qualifying spec
 
  op nthTail : [a] {(l,n) : List a * Nat | n <= length l} -> List a =
    removePrefix
+ proof Isa [simp] end-proof
 
  op member : [a] a * List a -> Boolean = (in?)
 
  op removeFirstElems : [a] {(l,n) : List a * Nat |
                             n <= length l} -> List a = removePrefix
+ proof Isa [simp] end-proof
 
  op sublist : [a] {(l,i,j) : List a * Nat * Nat |
                    i <= j && j <= length l} -> List a = subFromTo
+ proof Isa [simp] end-proof
 
  op exists : [a] (a -> Boolean) -> List a -> Boolean = exists?
 
@@ -592,15 +592,19 @@ List qualifying spec
  op rev : [a] List a -> List a = reverse
 
  op find : [a] (a -> Boolean) -> List a -> Option a = findLeftmost
+ proof Isa [simp] end-proof
 
  op firstUpTo : [a] (a -> Boolean) -> List a -> Option (a * List a) =
    findLeftmostAndPreceding
+ proof Isa [simp] end-proof
 
  op splitList : [a] (a -> Boolean) -> List a -> Option (List a * a * List a) =
    splitAtLeftmost
+ proof Isa [simp] end-proof
 
  op locationOf : [a] List a * List a -> Option (Nat * List a) =
    leftmostPositionOfSublistAndFollowing
+ proof Isa [simp] end-proof
 
  op [a] app (f: a -> ()) (l: List a) : () =
    case l of
