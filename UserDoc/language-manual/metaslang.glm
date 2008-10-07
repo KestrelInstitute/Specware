@@ -4398,7 +4398,7 @@ as a sub-`spec (see under
 ||endspec
 ]]
 (This `spec can be found, qualified with [[Monad]], in the library `spec
-<"/Library/Structures/Data/Monad">.)
+<"/Library/General/Monad">.)
 A `monadic-expression may further only be used when
 the non-monadic `expression it is equivalent to (see below)
 is itself a valid `expression.
