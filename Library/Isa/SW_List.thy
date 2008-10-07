@@ -54,9 +54,6 @@ defs List__e_at_at_def: "(l @@ i) \<equiv> List__list_1 l i"
 theorem List__empty__def: 
   "[] = []"
   by auto
-theorem List__length_empty [simp]: 
-  "length [] = 0"
-  by auto
 theorem List__empty_p__def: 
   "null l = (l = [])"
   by (simp add: null_empty)
@@ -737,15 +734,15 @@ theorem List__nth__def:
      = RFun (\<lambda> ((l::'a list),(i::nat)). i < length l) (\<lambda> (x,y). x ! y)"
   by auto
 consts List__nthTail :: "'a list \<times> nat \<Rightarrow> 'a list"
-defs List__nthTail_def: "List__nthTail \<equiv> List__removePrefix"
+defs List__nthTail_def [simp]: "List__nthTail \<equiv> List__removePrefix"
 theorem List__member__def: 
   "(\<lambda> (x,y). x mem y) = (\<lambda> (x,y). x mem y)"
   by auto
 consts List__removeFirstElems :: "'a list \<times> nat \<Rightarrow> 'a list"
-defs List__removeFirstElems_def: 
+defs List__removeFirstElems_def [simp]: 
   "List__removeFirstElems \<equiv> List__removePrefix"
 consts List__sublist :: "'a list \<times> nat \<times> nat \<Rightarrow> 'a list"
-defs List__sublist_def: "List__sublist \<equiv> List__subFromTo"
+defs List__sublist_def [simp]: "List__sublist \<equiv> List__subFromTo"
 theorem List__exists__def: 
   "list_ex = list_ex"
   by auto
@@ -761,14 +758,14 @@ theorem List__rev__def:
   "rev = rev"
   by auto
 consts List__find :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a option"
-defs List__find_def: "List__find \<equiv> List__findLeftmost"
+defs List__find_def [simp]: "List__find \<equiv> List__findLeftmost"
 consts List__firstUpTo :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> ('a \<times> 'a list) option"
-defs List__firstUpTo_def: "List__firstUpTo \<equiv> List__findLeftmostAndPreceding"
+defs List__firstUpTo_def [simp]: "List__firstUpTo \<equiv> List__findLeftmostAndPreceding"
 consts List__splitList :: "('a \<Rightarrow> bool) \<Rightarrow> 
                            'a list \<Rightarrow> ('a list \<times> 'a \<times> 'a list) option"
-defs List__splitList_def: "List__splitList \<equiv> List__splitAtLeftmost"
+defs List__splitList_def [simp]: "List__splitList \<equiv> List__splitAtLeftmost"
 consts List__locationOf :: "'a list \<times> 'a list \<Rightarrow> (nat \<times> 'a list) option"
-defs List__locationOf_def: 
+defs List__locationOf_def [simp]: 
   "List__locationOf \<equiv> List__leftmostPositionOfSublistAndFollowing"
 fun List__app :: "('a \<Rightarrow> unit) \<Rightarrow> 'a list \<Rightarrow> unit"
 where
