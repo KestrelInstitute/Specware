@@ -397,7 +397,7 @@ SpecNorm qualifying spec
       | (Some(dom,rng), Some(rm_dom, _)) ->
         if embed? Var t && equalType?(dom, rm_dom) then t
         else
-        let rfun = if embed? Boolean rng
+        let rfun = if embed? Boolean (stripSubsorts(spc, rng))
                      then case ty of
                             | Base(Qualified("Set", "Set"),_,_) | regularizeSets? -> "RSet"
                             | _ -> if regularizeBooleanToFalse? then "RFunB" else "RFun"
