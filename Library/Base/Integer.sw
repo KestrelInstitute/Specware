@@ -294,12 +294,6 @@ end-proof
     apply(auto simp add: dvd_def)
   end-proof
 
-  theorem non_zero_divides_iff_zero_remainder is
-    fa (x:Int0, y:Int) x divides y <=> y rem x = zero
-  proof Isa
-    apply(auto simp add:dvd_def)
-  end-proof
-
   (* Obviously, any integer divides 0. *)
 
   theorem any_divides_zero is
@@ -865,6 +859,12 @@ end-proof
   end-proof
 
   op Integer.rem infixl 26 : Int * Int0 -> Int = modT
+
+  theorem non_zero_divides_iff_zero_remainder is
+    fa (x:Int0, y:Int) x divides y <=> y rem x = zero
+  proof Isa
+    apply(auto simp add:dvd_def)
+  end-proof
 
   % mapping to Isabelle:
 
