@@ -74,6 +74,9 @@ List qualifying spec
 
  op empty : [a] List a = []
 
+ theorem length_empty is [a] length (empty: List a) = 0
+ proof Isa [simp] end-proof
+
  op [a] empty? (l: List a) : Boolean = (l = empty)
  proof Isa
    by (simp add: null_empty)
