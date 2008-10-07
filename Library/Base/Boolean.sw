@@ -8,6 +8,6 @@ Bool qualifying spec
   from Boolean to Bool in existing specs. When we change Boolean to Bool in the
   Specware implementation, the following type definition will be removed. *)
 
-  type Bool.Bool = Boolean
+  type Bool = Boolean
 
 endspec
