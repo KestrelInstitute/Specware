@@ -67,11 +67,11 @@ spec
 %%%% Nat
 
   theorem rem_m is
-    fa (p : Nat, q : Nat, m : NonZeroInteger)
+    fa (p : Nat, q : Nat, m : Int0)
       (m * p + q) rem m = q rem m
 
   theorem div_m is
-    fa (p : Nat, q : Nat, m : NonZeroInteger)
+    fa (p : Nat, q : Nat, m : Int0)
       (m * p + q) div m = p + (q div m)
 
 %%%% Functions

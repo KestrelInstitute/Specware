@@ -64,7 +64,7 @@ snark qualifying spec {
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Integer")), Lisp.symbol("KEYWORD", "IFF"), Lisp.quote(Lisp.symbol("SNARK", "NUMBER"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Nat")), Lisp.symbol("KEYWORD", "IFF"), Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "PosNat"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "NonZeroInteger"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Int0"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "LOGICAL"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "BOOLEAN"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Char"))],
@@ -72,7 +72,7 @@ snark qualifying spec {
 	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Integer")),
                                     Lisp.quote(Lisp.symbol("SNARK", "Nat")),
                                     Lisp.quote(Lisp.symbol("SNARK", "PosNat")),
-                                    Lisp.quote(Lisp.symbol("SNARK", "NonZeroInteger"))],
+                                    Lisp.quote(Lisp.symbol("SNARK", "Int0"))],
 	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Nat")),
 				     Lisp.quote(Lisp.symbol("SNARK", "PosNat"))]
       ]

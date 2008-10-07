@@ -9,7 +9,7 @@ Prover qualifying spec
   type GoalContent
   type Sequent
   type SequentFmlas = List SequentFmla
-  type SequentFmla = {fmla: MS.Term, index: NonZeroInteger, label: FmlaLabel, path: FmlaPath}
+  type SequentFmla = {fmla: MS.Term, index: Int0, label: FmlaLabel, path: FmlaPath}
   type FmlaLabel = String
   type FmlaPath = List Integer % A fmla path indicates the history of the fmla.
     % e.g. If the fmla is the second conjuct of splitting the first proof goal,

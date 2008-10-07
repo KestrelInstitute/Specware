@@ -18,7 +18,7 @@ op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp (Qualified (q, i)) =
   %(q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
   %||
-  ((q="Integer" || q="Nat" || q="PosNat") && (i="Integer" || i="NonZeroInteger" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" || i="<" || i="~" ||
+  ((q="Integer" || q="Nat" || q="PosNat") && (i="Integer" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" || i="<" || i="~" ||
 		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
   ||
   (q="IntegerAux" && i="-") % unary minus
