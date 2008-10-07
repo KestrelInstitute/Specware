@@ -2266,7 +2266,7 @@ IsaTermPrinter qualifying spec
 		     | Subsort \_rightarrow true
 		     | _ \_rightarrow false,
 		   prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
-       | Boolean _ \_rightarrow prString "bool"  
+      | Boolean _ \_rightarrow prString "bool"  
       | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
       | MetaTyVar (tyVar,_) \_rightarrow 
 	let ({link, uniqueId, name}) = ! tyVar in
