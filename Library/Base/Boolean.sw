@@ -10,4 +10,8 @@ Bool qualifying spec
 
   type Bool = Boolean
 
+  proof Isa ThyMorphism
+    type Bool.Bool -> bool
+  end-proof
+
 endspec
