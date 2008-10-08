@@ -14,7 +14,7 @@ Integer qualifying spec
   introduce a constant for 0, and a bijective successor function. Bijectivity
   implies that there is an inverse, which is the predecessor function.
   Bijectivity also implies that the chain of integers never crosses itself. To
-  complete the axiomatization, we need an infinitity axiom and an induction
+  complete the axiomatization, we need an infinity axiom and an induction
   axiom. The infinity axiom says that the chain of integers is infinite (i.e. it
   is not circular): this is expressed by the existence of a function over the
   integers that is injective but not surjective. The induction axiom says that
