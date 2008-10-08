@@ -55,30 +55,32 @@ SStateExceptionMonad qualifying spec
      Monad(state,exc,a) * Monad(state,exc,b) -> Monad(state,exc,b)
   def monadSeq (m1,m2) = monadBind (m1, (fn _ -> m2))
 
-  import /Library/General/FiniteSequence
-
   % apply monadic computation f to sequence s from left to right, returning
   % resulting sequence if no exceptions, otherwise stop at first exception:
 
-  op mapSeq : [state,exc,a,b] (a -> Monad(state,exc,b)) -> FSeq a ->
-                              Monad (state,exc, FSeq b)
+  op mapSeq : [state,exc,a,b] (a -> Monad(state,exc,b)) -> List a ->
+                              Monad (state,exc, List b)
   def mapSeq f s =
-    if empty? s then return empty
-    else {x <- f (first s);
-          r <- mapSeq f (rtail s);
-          return (x |> r)}
+    case s of
+      | [] -> return empty
+      | hd::rst ->
+        {x <- f hd;
+         r <- mapSeq f rst;
+         return (x |> r)}
 
   % apply sequence of monadic computations ff to equally long sequence s
   % from left to right, returning resulting sequence if no exceptions,
   % otherwise stop at first exception:
 
   op mapSeqSeq : [state,exc,a,b]
-     {(ff,s) : FSeq (a -> Monad(state,exc,b)) * FSeq a | ff equiLong s} ->
-     Monad (state,exc, FSeq b)
+     {(ff,s) : List (a -> Monad(state,exc,b)) * List a | ff equiLong s} ->
+     Monad (state,exc, List b)
   def mapSeqSeq (ff,s) =
-    if empty? s then return empty
-    else {x <- (first ff) (first s);
-          r <- mapSeqSeq (rtail ff, rtail s);
+    case (ff,s) of
+      | (_,[]) -> return empty
+      | (ff1::rff, s1::rs) ->
+        {x <- ff1 s1;
+         r <- mapSeqSeq (rff, rs);
          return (x |> r)}
 
 endspec
