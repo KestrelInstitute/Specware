@@ -14,11 +14,15 @@ spec
        foldriAQualifierMap (fn (q, id, old_calls, (cm, changed?)) ->
                              let new_calls =
                                  foldl (fn (new_calls, Qualified(qr,idr)) ->
-                                        let Some calls2 = findAQualifierMap(cm,qr,idr) in
-                                        (filter (fn qid2 -> ~(member(qid2,new_calls))
-                                                           && ~(member(qid2,old_calls)))
-                                           calls2)
-                                        ++ new_calls)
+                                        case findAQualifierMap(cm,qr,idr) of
+                                          | Some calls2 ->
+                                            (filter (fn qid2 -> ~(member(qid2,new_calls))
+                                                       && ~(member(qid2,old_calls)))
+                                               calls2)
+                                            ++ new_calls
+                                          | None ->
+                                            let _ = warn("Undefined op?: "^qr^"."^idr) in
+                                            new_calls)
                                    [] old_calls
                              in
                                if new_calls = [] then (cm, changed?)
