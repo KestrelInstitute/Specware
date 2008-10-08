@@ -34,8 +34,8 @@ spec
   op findComplexIsoFns(spc: Spec): IsoFnInfo =
     foldOpInfos (fn (info, result) ->
                    case firstOpDefInnerSort info of
-                     | Arrow(Base(Qualified("Functions","Bijection"),_,_),
-                             Base(Qualified("Functions","Bijection"),
+                     | Arrow(Base(Qualified("Function","Bijection"),_,_),
+                             Base(Qualified("Function","Bijection"),
                                   [Base(qid1,_,_), Base(qid2,_,_)],
                                   _), _)
                          | qid1 = qid2 ->
@@ -68,7 +68,7 @@ spec
      : Spec * List QualifiedId =
     %% Thm inverse iso = osi
     let inv_thm1 = mkEquality(mkArrow(trg_ty,src_ty),
-                              mkApply(mkOpFromDef(Qualified("Functions","inverse"),
+                              mkApply(mkOpFromDef(Qualified("Function","inverse"),
                                                   mkArrow(mkArrow(src_ty,trg_ty),
                                                           mkArrow(trg_ty,src_ty)),
                                                   spc),
@@ -79,7 +79,7 @@ spec
     let spc = addTheorem((inverse_iso_is_osi_qid, tvs, inv_thm1, noPos), spc) in
 
     let inv_thm2 = mkEquality(mkArrow(src_ty,trg_ty),
-                              mkApply(mkOpFromDef(Qualified("Functions","inverse"),
+                              mkApply(mkOpFromDef(Qualified("Function","inverse"),
                                                   mkArrow(mkArrow(trg_ty,src_ty),
                                                           mkArrow(src_ty,trg_ty)),
                                                   spc),
@@ -221,10 +221,10 @@ spec
                        | _ -> false)
        def_ty
 
-  op identityFn(ty: Sort): MS.Term = mkInfixOp(Qualified("Functions","id"),Unspecified,mkArrow(ty,ty))
+  op identityFn(ty: Sort): MS.Term = mkInfixOp(Qualified("Function","id"),Unspecified,mkArrow(ty,ty))
   op identityFn?(tm: MS.Term): Boolean =
     case tm of
-      | Fun(Op(Qualified("Functions","id"),_),_,_) -> true
+      | Fun(Op(Qualified("Function","id"),_),_,_) -> true
       | _ -> false
 
   op mkCompose(f1: MS.Term, f2: MS.Term, spc: Spec): MS.Term =
@@ -236,7 +236,7 @@ spec
         let Some (dom,_) = arrowOpt(spc,f2_ty) in
         let Some (_,ran) = arrowOpt(spc,f1_ty) in
         let compose_ty = mkArrow(mkProduct[f1_ty,f2_ty], mkArrow(dom, ran)) in
-        let compose_fn = mkInfixOp(Qualified("Functions","o"), Infix(Left,24), compose_ty) in
+        let compose_fn = mkInfixOp(Qualified("Function","o"), Infix(Left,24), compose_ty) in
         mkAppl(compose_fn, [f1,f2])
 
   op isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
@@ -521,8 +521,8 @@ spec
                    mkApply(mkApply(mkInfixOp
                                      (Qualified("Option","mapOption"),
                                       Unspecified,
-                                      mkArrow(mkBase(Qualified("Functions","Bijection"), [src_ty,trg_ty]),
-                                              mkBase(Qualified("Functions","Bijection"),
+                                      mkArrow(mkBase(Qualified("Function","Bijection"), [src_ty,trg_ty]),
+                                              mkBase(Qualified("Function","Bijection"),
                                                      [mkBase(Qualified("Option","Option"), [src_ty]),
                                                       mkBase(Qualified("Option","Option"), [trg_ty])]))),
                                    iso_ref),
@@ -642,8 +642,8 @@ spec
                                        %LeftToRight(mkUnQualifiedId "f_if_then_else"),
                                        %% Should be in specs
                                        %% LeftToRight(mkUnQualifiedId "inverse_apply"),
-                                       Unfold(mkQualifiedId("Functions","o")),
-                                       Unfold(mkQualifiedId("Functions","id")),
+                                       Unfold(mkQualifiedId("Function","o")),
+                                       Unfold(mkQualifiedId("Function","id")),
                                     %   LeftToRight(mkUnQualifiedId "map_map_inv"),
                                        %% LeftToRight(mkUnQualifiedId "iso_set_fold"),
                                        %% LeftToRight(mkUnQualifiedId "iterate_inv_iso"),

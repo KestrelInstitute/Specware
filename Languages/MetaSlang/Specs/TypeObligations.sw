@@ -632,7 +632,7 @@ spec
    in
    let form = foldl insert rhs decls in
    let form = simplify spc form in
-   let form = mkBind(Exists,[pred],mkConj[mkApply(mkOp(Qualified("Functions","wfo"),
+   let form = mkBind(Exists,[pred],mkConj[mkApply(mkOp(Qualified("Function","wfo"),
 						       mkArrow(predSort,boolSort)),
 						  mkVar pred),
 					  form])

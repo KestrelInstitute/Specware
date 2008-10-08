@@ -135,7 +135,7 @@ def getStringAttributesFromSpec spc =
 			 "Boolean",    % can appear in raw translation rules
 			 "Char", 
 			 "Compare",
-			 "Functions",  % TODO: add Relations ?
+			 "Function",  % TODO: add Relations ?
 			 "Integer", 
 			 "IntegerAux", % special hack for unary minus
 			 "List",
