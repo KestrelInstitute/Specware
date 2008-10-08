@@ -7,7 +7,7 @@ spec
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
  import /Library/Structures/Data/Maps/SimpleAsAlist
 
- sort AQualifierMap b  = STHMap.Map(String,Map.Map(String,b))   
+ type AQualifierMap b  = STHMap.Map(String,Map.Map(String,b))   
  def foldriAQualifierMap f ini qm =
    foldi (fn(id,im,r) -> foldi(fn (q,v,r) -> f(q,id,v,r)) r im) ini qm
  def emptyAQualifierMap  = emptyMap       % 
@@ -52,11 +52,11 @@ spec
       [] m
  def qualifierIds m = STHMap.domainToList m
 
-  op SpecCalc.return : fa (a) a -> SpecCalc.Env a
-  op SpecCalc.monadBind : fa (a,b) (SpecCalc.Env a) * (a -> SpecCalc.Env b) -> SpecCalc.Env b
+ op SpecCalc.return : [a] a -> SpecCalc.Env a
+ op SpecCalc.monadBind : [a,b] (SpecCalc.Env a) * (a -> SpecCalc.Env b) -> SpecCalc.Env b
 
  %% Temporary to get stuff working
- op foldL: fa(a,b) (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
+ op foldL: [a,b] (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
  def foldL f e l =
    case l of
      | [] -> return e
