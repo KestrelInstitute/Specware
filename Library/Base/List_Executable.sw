@@ -32,6 +32,9 @@ refine /Library/Base/List by {
  op [a] List.@ (l: List a, i:Nat | i < length l) infixl 30 : a =
    let hd::tl = l in  % non-empty because length > i >= 0
    if i = 0 then hd else tl @ (i-1)
+ proof Isa List__e_at__def1
+  by (auto simp add: nth_Cons, case_tac i, auto)
+ end-proof
 
  op [a] List.@@ (l:List a, i:Nat) infixl 30 : Option a =
    case l of
@@ -41,10 +44,16 @@ refine /Library/Base/List by {
  op List.empty? : [a] List a -> Boolean = fn
    | [] -> true
    | _  -> false
+ proof Isa List__empty_p__def1
+   by (case_tac Wild__Var_0, auto)
+ end-proof
 
  op List.nonEmpty? : [a] List a -> Boolean = fn
    | [] -> false
    | _  -> true
+ proof Isa List__nonEmpty_p__def
+   by (case_tac l, auto)
+ end-proof
 
  op [a] List.theElement (l: List a | ofLength? 1 l) : a =
    let [hd] = l in hd
