@@ -48,6 +48,9 @@ Integer qualifying spec
 
   axiom infinity is
     ex (f : Int -> Int) injective? f && ~ (surjective? f)
+  proof Isa
+    sorry
+  end-proof
 
   axiom induction is
     fa (p : Int -> Boolean)
@@ -59,8 +62,6 @@ Integer qualifying spec
    apply(rule_tac k="0" in int_ge_induct,simp_all)
    apply(rule_tac k="0" in int_le_induct,simp_all)
   end-proof
-
-  % add infinity axiom!
 
   % number 1:
   op one : Int = isucc zero
@@ -475,6 +476,9 @@ end-proof
 
   theorem exact_divT is
     fa (i:Int, j:Int0) j divides i => i divT j = i / j
+  proof Isa
+    sorry
+  end-proof
 
   (* The quotient is the largest integer (in magnitude) that, when multiplied by
   the divisor, does not exceed the dividend (in magnitude). *)
@@ -484,39 +488,63 @@ end-proof
       % if k (multiplied by divisor) does not exceed dividend in magnitude,
       % then k does not exceed quotient in magnitude:
       abs (k * j) <= abs i  =>  abs k <= abs (i divT j)
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor or the dividend negates the quotient. *)
 
   theorem divT_of_negated_divisor is
     fa (i:Int, j:Int0) i divT -j = - (i divT j)
+  proof Isa
+    sorry
+  end-proof
 
   theorem divT_of_negated_dividend is
     fa (i:Int, j:Int0) -i divT j = - (i divT j)
+  proof Isa
+    sorry
+  end-proof
 
   (* The divisor evenly divides the dividend iff there is no remainder. *)
 
   theorem divides_iff_modT_0 is
     fa (i:Int, j:Int0) j divides i <=> i modT j = 0
+  proof Isa
+    sorry
+  end-proof
 
   (* The remainder is exceeded, in magnitude, by the divisor. *)
 
   theorem modT_less_than_divisor_in_abs is
     fa (i:Int, j:Int0) abs (i modT j) < abs j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor leaves the remainder unchanged. *)
 
   theorem modT_of_negated_divisor is
     fa (i:Int, j:Int0) i modT -j = i modT j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the dividend negates the remainder. *)
 
   theorem modT_of_negated_dividend is
     fa (i:Int, j:Int0) -i modT j = - (i modT j)
+  proof Isa
+    sorry
+  end-proof
 
   (* If non-zero, the sign of the remainder coincides with the dividend's. *)
 
   theorem sign_of_non_zero_modT is
     fa (i:Int, j:Int0) (i modT j) ~= 0 => sign (i modT j) = sign i
+  proof Isa
+    sorry
+  end-proof
 
   (* Another possible way to define integer division is by flooring (hence the
   "F") the result, i.e. approximating it with the largest integer that does not
@@ -531,8 +559,17 @@ end-proof
   op divF (i:Int, j:Int0) infixl 26 : Int =
     if i modT j = 0 || sign i = sign j then i divT j
                                        else i divT j - 1
+  proof Isa Integer__divF__def
+    sorry
+  end-proof
+  proof Isa Integer__divF__def1
+    sorry
+  end-proof
 
   op modF (i:Int, j:Int0) infixl 26 : Int = i - j * (i divF j)
+  proof Isa Integer__modF__def
+    sorry
+  end-proof
 
   (* Some examples of divF and modF.
 
@@ -554,6 +591,9 @@ end-proof
 
   theorem exact_divF is
     fa (i:Int, j:Int0) j divides i => i divF j = i / j
+  proof Isa
+    sorry
+  end-proof
 
   (* The quotient is the largest integer that, when multiplied by the divisor,
   does not exceed the dividend. *)
@@ -561,6 +601,9 @@ end-proof
   theorem divF_is_largest is
     fa (i:Int, j:Int0, k:Int)
       k * j <= i  =>  k <= i divF j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor or the dividend negates the quotient and decreases it
   by 1 unless division is exact. *)
@@ -568,26 +611,41 @@ end-proof
   theorem divF_of_negated_divisor is
     fa (i:Int, j:Int0) i divF -j = - (i divF j)
                                    - (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   theorem divF_of_negated_dividend is
     fa (i:Int, j:Int0) -i divF j = - (i divF j)
                                    - (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* The divisor evenly divides the dividend iff there is no remainder. *)
 
   theorem divides_iff_modF_0 is
     fa (i:Int, j:Int0) j divides i <=> i modF j = 0
+  proof Isa
+    sorry
+  end-proof
 
   (* The remainder is exceeded, in magnitude, by the divisor. *)
 
   theorem modF_less_than_divisor_in_abs is
     fa (i:Int, j:Int0) abs (i modF j) < abs j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor decreases a non-zero remainder by the divisor. *)
 
   theorem modF_of_negated_divisor is
     fa (i:Int, j:Int0) i modF -j = i modF j
                                    - j * (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the dividend negates the remainder and increases it by the divisor
   unless division is exact. *)
@@ -595,11 +653,17 @@ end-proof
   theorem modF_of_negated_dividend is
     fa (i:Int, j:Int0) -i modF j = - (i modF j)
                                    + j * (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* If non-zero, the sign of the remainder coincides with the divisor's. *)
 
   theorem sign_of_non_zero_modF is
     fa (i:Int, j:Int0) (i modF j) ~= 0 => sign (i modF j) = sign j
+  proof Isa
+    sorry
+  end-proof
 
   (* Another possible way to define integer division is by ceiling (hence the
   "C"), i.e. approximating it with the smallest integer that is not exceeded by
@@ -637,6 +701,9 @@ end-proof
 
   theorem exact_divC is
     fa (i:Int, j:Int0) j divides i => i divC j = i / j
+  proof Isa
+    sorry
+  end-proof
 
   (* The quotient is the smallest integer that, when multiplied by the divisor,
   is not exceeded by the dividend. *)
@@ -644,6 +711,9 @@ end-proof
   theorem divC_is_smallest is
     fa (i:Int, j:Int0, k:Int)
       k * j >= i  =>  k >= i divF j
+  proof Isa
+    sorry
+  end-proof
 
   (* The result of divC coincides with the result of divF if it is exact.
   Otherwise, the former is always 1 more than the latter. *)
@@ -652,6 +722,9 @@ end-proof
     fa (i:Int, j:Int0)
       (if j divides i then i divC j = i divF j
                       else i divC j = i divF j + 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor or the dividend negates the quotient and increases it
   by 1 unless division is exact. *)
@@ -659,26 +732,41 @@ end-proof
   theorem divC_of_negated_divisor is
     fa (i:Int, j:Int0) i divC -j = - (i divC j)
                                    + (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   theorem divC_of_negated_dividend is
     fa (i:Int, j:Int0) -i divC j = - (i divC j)
                                    + (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* The divisor evenly divides the dividend iff there is no remainder. *)
 
   theorem divides_iff_modC_0 is
     fa (i:Int, j:Int0) j divides i <=> i modC j = 0
+  proof Isa
+    sorry
+  end-proof
 
   (* The remainder is exceeded, in magnitude, by the divisor. *)
 
   theorem modC_less_than_divisor_in_abs is
     fa (i:Int, j:Int0) abs (i modC j) < abs j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor decreases a non-zero remainder by the divisor. *)
 
   theorem modC_of_negated_divisor is
     fa (i:Int, j:Int0) i modC -j = i modC j
                                    - j * (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the dividend negates the remainder and decreases it by the divisor
   unless division is exact. *)
@@ -686,11 +774,17 @@ end-proof
   theorem modC_of_negated_dividend is
     fa (i:Int, j:Int0) -i modC j = - (i modC j)
                                    - j * (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* If non-zero, the sign of the reminder is the opposite of the divisor's. *)
 
   theorem sign_of_non_zero_modC is
     fa (i:Int, j:Int0) (i modC j) ~= 0 => sign (i modC j) = - sign j
+  proof Isa
+    sorry
+  end-proof
 
   (* Yet another possible way to define integer division is by rounding (hence
   the "R"), i.e. approximating it with the closest integer. When two integers
@@ -717,6 +811,9 @@ end-proof
     division, the sign of q must be the sign of the exact division (which is
     also the sign of the product of i and j. *)
     (q ~= 0 => sign q = sign (i * j))
+  proof Isa Integer__divR_Obligation_the
+    sorry
+  end-proof
 
   op modR (i:Int, j:Int0) infixl 26 : Int = i - j * (i divR j)
 
@@ -740,19 +837,31 @@ end-proof
 
   theorem exact_divR is
     fa (i:Int, j:Int0) j divides i => i divR j = i / j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor or the dividend negates the quotient. *)
 
   theorem divR_of_negated_divisor is
     fa (i:Int, j:Int0) i divR -j = - (i divR j)
+  proof Isa
+    sorry
+  end-proof
 
   theorem divR_of_negated_dividend is
     fa (i:Int, j:Int0) -i divR j = - (i divR j)
+  proof Isa
+    sorry
+  end-proof
 
   (* The divisor evenly divides the dividend iff there is no remainder. *)
 
   theorem divides_iff_modR_0 is
     fa (i:Int, j:Int0) j divides i <=> i modR j = 0
+  proof Isa
+    sorry
+  end-proof
 
   (* Boute's paper (mentioned earlier) proposes yet another version of integer
   division, namely Euclidean division (hence the "E"). It is based on the
@@ -767,12 +876,21 @@ end-proof
   % given i and non-zero j, there exist unique q and r satisfying the predicate:
   theorem euclideanDivision is
     fa (i:Int, j:Int0) ex1 (qr: Int * Int) euclidianDivision? (i, j, qr.1, qr.2)
+  proof Isa
+    sorry
+  end-proof
 
   op divE (i:Int, j:Int0) infixl 26 : Int = the(q:Int)
     ex(r:Int) euclidianDivision? (i, j, q, r)
+  proof Isa Integer__divE_Obligation_the
+    sorry
+  end-proof
 
   op modE (i:Int, j:Int0) infixl 26 : Int = the(r:Int)
     ex(q:Int) euclidianDivision? (i, j, q, r)
+  proof Isa Integer__modE_Obligation_the
+    sorry
+  end-proof
 
   (* Some examples of divE and modE.
 
@@ -794,11 +912,17 @@ end-proof
 
   theorem exact_divE is
     fa (i:Int, j:Int0) j divides i => i divE j = i / j
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the divisor negates the quotient. *)
 
   theorem divE_of_negated_divisor is
     fa (i:Int, j:Int0) i divE -j = - (i divE j)
+  proof Isa
+    sorry
+  end-proof
 
   (* Negating the dividend negates the quotient and, unless division is exact,
   decreases resp. increases it by 1 if the divisor is positive
@@ -807,17 +931,26 @@ end-proof
   theorem divE_of_negated_dividend is
     fa (i:Int, j:Int0) -i divE j = - (i divE j)
                                    - sign j * (if j divides i then 0 else 1)
+  proof Isa
+    sorry
+  end-proof
 
   (* The following usual property can be taken as an alternative definition of
   op modE. *)
 
   theorem modE_alt_def is
     fa (i:Int, j:Int0) i modE j = i - j * (i divE j)
+  proof Isa
+    sorry
+  end-proof
 
   (* The divisor evenly divides the dividend iff there is no remainder. *)
 
   theorem divides_iff_modE_0 is
     fa (i:Int, j:Int0) j divides i <=> i modE j = 0
+  proof Isa
+    sorry
+  end-proof
 
   (* Division on natural numbers is typically defined to be euclidean, which
   (for natural numbers) gives the same results as truncation and flooring (but
@@ -827,13 +960,31 @@ end-proof
 
   theorem divE_equals_divT_on_naturals is
     fa (i:Nat, j:PosNat) i divE j = i divT j
+  proof Isa
+    sorry
+  end-proof
 
   theorem divE_equals_divF_on_naturals is
     fa (i:Nat, j:PosNat) i divE j = i divF j
+  proof Isa
+    sorry
+  end-proof
 
   op div (i:Nat, j:PosNat) infixl 26 : Nat = i divE j
+  proof Isa Integer__div_Obligation_subsort0
+    sorry
+  end-proof
+  proof Isa Integer__div__def
+    sorry
+  end-proof
 
   op mod (i:Nat, j:PosNat) infixl 26 : Nat = i modE j
+  proof Isa Integer__mod_Obligation_subsort0
+    sorry
+  end-proof
+  proof Isa Integer__mod__def
+    sorry
+  end-proof
 
   % min and max:
 
@@ -859,6 +1010,9 @@ end-proof
   end-proof
 
   op Integer.rem infixl 26 : Int * Int0 -> Int = modT
+  proof Isa Integer__rem__def
+    sorry
+  end-proof
 
   theorem non_zero_divides_iff_zero_remainder is
     fa (x:Int0, y:Int) x divides y <=> y rem x = zero
@@ -886,9 +1040,10 @@ end-proof
    Integer.>=       -> \<ge> Left 20
    Integer.>        -> >     Left 20
    Integer.abs      -> zabs
-   Integer.divE     -> div   Left 26
+   Integer.divF     -> div   Left 26
    Integer.div      -> div   Left 26
    Integer.rem      -> mod   Left 26
+   Integer.modF     -> mod   Left 26
    Integer.mod      -> mod   Left 26
    Integer.min      -> min curried
    Integer.max      -> max curried
