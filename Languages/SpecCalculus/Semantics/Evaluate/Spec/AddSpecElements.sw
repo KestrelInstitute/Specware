@@ -268,8 +268,8 @@ SpecCalc qualifying spec
              let liftedFmlas = [initialFmla] in % removePatternTop(sp, initialFmla) in
              let (_,thms) = foldl (fn((i,result), fmla) ->
                                      (i + 1,
-                                      result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
-                                                                                          else toString i)),
+                                      result ++ [mkConjecture(Qualified (q, nm^"__r_def"^(if i = 0 then ""
+                                                                                            else toString i)),
                                                               tvs, fmla)]))
                               (0,[]) liftedFmlas
              in
