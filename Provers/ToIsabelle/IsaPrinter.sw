@@ -355,7 +355,6 @@ IsaTermPrinter qualifying spec
   %% --------------------------------------------------------------------------------
 
   op  ppValue : Context \_rightarrow Value \_rightarrow Pretty
-% ???
   def ppValue c value =
     case value of
       | Spec spc \_rightarrow ppSpec c spc
@@ -954,7 +953,9 @@ IsaTermPrinter qualifying spec
      | None \_rightarrow
        prLinesCat 0 ([[prString "fun ", ppIdInfo aliases,
                       prString " :: \"",
-                      ppType c Top true ty,
+                      (case fixity of
+                         | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
+                         | _ \_rightarrow ppType c Top true ty),
                       prString "\""]
                       ++ (case fixity of
                             | Infix(assoc,prec) \_rightarrow
@@ -976,7 +977,9 @@ IsaTermPrinter qualifying spec
                           else prConcat [prString patt_control_str, prSpace]),
                        ppIdInfo aliases,
                        prString " :: \"",
-                       ppType c Top true ty,
+                       (case fixity of
+                         | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
+                         | _ \_rightarrow ppType c Top true ty),
                        prString "\""]
                       ++ (case fixity of
                             | Infix(assoc,prec) \_rightarrow
@@ -1008,10 +1011,10 @@ IsaTermPrinter qualifying spec
    let mainId = hd aliases in
    % let _ = writeLine("Processing "^printQualifiedId mainId) in
    let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
-   let (no_def?,mainId,fixity) =
+   let (no_def?, mainId, fixity) =
        case specialOpInfo c mainId of
-         | Some (isa_id,infix?,_,_,no_def?) \_rightarrow
-           (no_def?,mkUnQualifiedId(isa_id),
+         | Some (isa_id, infix?, _, _, no_def?) \_rightarrow
+           (no_def?, mkUnQualifiedId(isa_id),
             case infix? of
               | Some pr -> Infix pr
               | None -> fixity)
@@ -1024,8 +1027,9 @@ IsaTermPrinter qualifying spec
    let aliases = [mainId] in
    if decl? && def? && targetFunctionDefs?
        %% The following conditions are temporary!!
-       && none?(findMeasureAnnotation opt_prag)
-       && length(defToFunCases c (mkFun (Op (mainId, fixity), ty)) term) > 1
+       && (some?(findParenAnnotation opt_prag)
+            || none?(findMeasureAnnotation opt_prag)
+               && length(defToFunCases c (mkFun (Op (mainId, fixity), ty)) term) > 1)
      then
        ppFunctionDef c aliases term ty opt_prag fixity
    else
@@ -1036,7 +1040,7 @@ IsaTermPrinter qualifying spec
                  ppIdInfo aliases,
                  prString " :: \"",
                  (case fixity of
-                   | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
+                   | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
                    | _ \_rightarrow ppType c Top true ty),
                  prString "\""]
               ++ (case fixity of
@@ -1970,7 +1974,7 @@ IsaTermPrinter qualifying spec
 			 lengthString(3, " \\<Rightarrow> ")],
 			[ppTerm c Top term]]
     in
-      (prSep (-3) blockLinear (prString " | ") (map ppCase cases))
+      (prSep (-3) blockAll (prString " | ") (map ppCase cases))
 
   op  ppPattern : Context \_rightarrow Pattern \_rightarrow Option String \_rightarrow Pretty
   def ppPattern c pattern wildstr = 
