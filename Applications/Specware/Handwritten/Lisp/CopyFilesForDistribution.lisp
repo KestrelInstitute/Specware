@@ -6,7 +6,8 @@
 ;;;   Also assumes the directory contains only stuff that
 ;;    generate-application has just placed in it.
 
-(in-package :cl-user)
+(defpackage :Distribution (:use :common-lisp))
+(in-package :Distribution)
 
 ;;; ============ SPECWARE LIBRARY  ============
 
@@ -17,43 +18,28 @@
 ;;; Flushes CVS sub-directories and .cvsignore files
 
 (specware::make-directory (in-distribution-dir "Library/"))
-(specware::copy-directory (in-specware-dir     "Library/Base/")
-			  (in-distribution-dir "Library/Base/"))
-(delete-dir-if-present    (in-distribution-dir "Library/Base/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/Base/Isa/"))
-(delete-dir-if-present    (in-distribution-dir "Library/Base/Handwritten/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
+(copy-dist-directory (in-specware-dir     "Library/Base/")
+                     (in-distribution-dir "Library/Base/"))
 (delete-file-if-present   (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
 
-(specware::copy-directory (in-specware-dir     "Library/ProverBase/")
-			  (in-distribution-dir "Library/ProverBase/"))
-(delete-dir-if-present    (in-distribution-dir "Library/ProverBase/CVS/"))
+(copy-dist-directory (in-specware-dir     "Library/ProverBase/")
+                     (in-distribution-dir "Library/ProverBase/"))
 
-(specware::copy-file      (in-specware-dir     "Library/Base.sw")
-                          (in-distribution-dir "Library/Base.sw"))
-(specware::copy-file      (in-specware-dir     "Library/InterpreterBase.sw")
-                          (in-distribution-dir "Library/InterpreterBase.sw"))
+(copy-dist-file      (in-specware-dir     "Library/Base.sw")
+                     (in-distribution-dir "Library/Base.sw"))
+(copy-dist-file      (in-specware-dir     "Library/InterpreterBase.sw")
+                     (in-distribution-dir "Library/InterpreterBase.sw"))
 
 (specware::make-directory (in-distribution-dir "Library/IO/"))
-(specware::copy-directory (in-specware-dir     "Library/IO/Emacs/")
-			  (in-distribution-dir "Library/IO/Emacs/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/ilisp/"))
+(copy-dist-directory (in-specware-dir     "Library/IO/Emacs/")
+                     (in-distribution-dir "Library/IO/Emacs/"))
+(delete-dir-if-present (in-distribution-dir "Library/IO/Emacs/ilisp/"))
 
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/pcf/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/genfonts/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/origfonts/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/fonts/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/bigfonts/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/x-symbol/CVS/"))
-
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/IO/Emacs/slime/doc/CVS/"))
-
-(specware::copy-directory (in-specware-dir     "Library/General/")
-			  (in-distribution-dir "Library/General/"))
-(delete-dir-if-present    (in-distribution-dir "Library/General/CVS/"))
-(delete-dir-if-present    (in-distribution-dir "Library/General/Isa/"))
+(copy-dist-directory (in-specware-dir     "Library/General/")
+                     (in-distribution-dir "Library/General/"))
+(delete-dir-if-present (in-distribution-dir "Library/General/Isa/"))
+(copy-dist-file (in-specware-dir     "Library/Structures/Data/Monad.sw")
+                (in-distribution-dir "Library/General/Monad.sw"))
 
 (specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
@@ -77,25 +63,19 @@
 (format t "~&;;; Getting Examples ...~%")
 
 (specware::make-directory (in-distribution-dir "Examples/"))
-(specware::copy-directory (in-specware-dir     "UserDoc/tutorial/example/")
-			  (in-distribution-dir "Examples/Matching/"))
-(delete-dir-if-present    (in-distribution-dir "Examples/Matching/CVS"))
+(copy-dist-directory (in-specware-dir     "UserDoc/tutorial/example/")
+                     (in-distribution-dir "Examples/Matching/"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/Snark"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/Isa"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/asw"))
-(delete-dir-if-present    (in-distribution-dir "Examples/Matching/lisp"))
 (delete-file-if-present   (in-distribution-dir "Examples/Matching/.cvsignore"))
+(delete-file-if-present   (in-distribution-dir "Examples/Matching/MatchingRichard.sw"))
+(delete-file-if-present   (in-distribution-dir "Examples/Matching/MatchingRichardTheorems.sw"))
 
-(specware::copy-directory (in-specware-dir     "UserDoc/examples/")
-			  (in-distribution-dir "Examples/"))
-(delete-dir-if-present    (in-distribution-dir "Examples/CVS"))
-(delete-dir-if-present    (in-distribution-dir "Examples/simple1/CVS"))
+(copy-dist-directory (in-specware-dir     "UserDoc/examples/")
+                     (in-distribution-dir "Examples/"))
 (delete-file-if-present   (in-distribution-dir "Examples/simple1/test.lisp"))
-(delete-dir-if-present    (in-distribution-dir "Examples/simple2/CVS"))
 (delete-file-if-present   (in-distribution-dir "Examples/simple2/test.lisp"))
-(delete-dir-if-present    (in-distribution-dir "Examples/simple2/Refs/CVS"))
-(delete-dir-if-present    (in-distribution-dir "Examples/simple2/Specs/CVS"))
-(delete-dir-if-present    (in-distribution-dir "Examples/simple3/CVS"))
 (delete-file-if-present   (in-distribution-dir "Examples/simple3/test.lisp"))
 
 ;;; ============ DOCUMENTATION ============
@@ -105,16 +85,16 @@
 
 (specware::make-directory (in-distribution-dir "Documentation/"))
 
-(specware::copy-file      (in-specware-dir     "UserDoc/language-manual/SpecwareLanguageManual.pdf")
-		          (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
-(specware::copy-file      (in-specware-dir     "UserDoc/tutorial/SpecwareTutorial.pdf")
-		          (in-distribution-dir "Documentation/SpecwareTutorial.pdf"))
-(specware::copy-file      (in-specware-dir     "UserDoc/user-manual/SpecwareUserManual.pdf")
-		          (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
-(specware::copy-file      (in-specware-dir     "UserDoc/cheat-sheet/QuickReference.pdf")
-		          (in-distribution-dir "Documentation/Specware-QuickReference.pdf"))
+(copy-dist-file      (in-specware-dir     "UserDoc/language-manual/SpecwareLanguageManual.pdf")
+                     (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
+(copy-dist-file      (in-specware-dir     "UserDoc/tutorial/SpecwareTutorial.pdf")
+                     (in-distribution-dir "Documentation/SpecwareTutorial.pdf"))
+(copy-dist-file      (in-specware-dir     "UserDoc/user-manual/SpecwareUserManual.pdf")
+                     (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
+(copy-dist-file      (in-specware-dir     "UserDoc/cheat-sheet/QuickReference.pdf")
+                     (in-distribution-dir "Documentation/Specware-QuickReference.pdf"))
 
-;(specware::copy-file (in-specware-dir     "UserDoc/ReleaseNotes.txt")
+;(copy-dist-file (in-specware-dir     "UserDoc/ReleaseNotes.txt")
 ;		      (in-distribution-dir "Documentation/ReleaseNotes.txt"))
 
 
@@ -125,15 +105,38 @@
   (format t "~&;;;~%")
   (format t "~&;;; Getting Specware Start-up Scripts % Binary ...~%")
 
-  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware")
-		       (in-distribution-dir "Specware.terminal"))
-  (specware::copy-directory (in-specware-dir "Release/Mac/sbcl/Specware.app/")
-                            (in-distribution-dir "Specware.app/"))
-  (specware::copy-file (in-specware-dir "Release/Mac/sbcl/Specware.sh")
-		       (in-distribution-dir "SpecwareShell.sh"))
-  (specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
-		       (in-distribution-dir "Specware4.sbclexe"))
+  (copy-dist-file (in-specware-dir "Release/Mac/sbcl/Specware")
+                  (in-distribution-dir "Specware.terminal"))
+  (copy-dist-directory (in-specware-dir "Release/Mac/sbcl/Specware.app/")
+                       (in-distribution-dir "Specware.app/"))
+  (copy-dist-file (in-specware-dir "Release/Mac/sbcl/Specware.sh")
+                  (in-distribution-dir "SpecwareShell.sh"))
+  (copy-dist-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
+                  (in-distribution-dir "Specware4.sbclexe"))
   )
+#+(and sbcl linux)
+(progn
+  (format t "~&;;;~%")
+  (format t "~&;;; Getting Specware Start-up Scripts % Binary ...~%")
+
+  (copy-dist-file (in-specware-dir "Release/Linux/SBCL/Specware")
+                  (in-distribution-dir "Specware"))
+  (copy-dist-file (in-specware-dir "Release/Linux/SBCL/SpecwareShell")
+                  (in-distribution-dir "SpecwareShell"))
+  (copy-dist-file (in-specware-dir "Release/Linux/SBCL/Find_Specware_App_SBCL")
+                  (in-distribution-dir "Find_Specware_App_SBCL"))
+  (copy-dist-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
+                  (in-distribution-dir "Specware4.sbclexe"))
+;  (copy-dist-file (in-specware-dir "Release/Linux/install_gnome_desktop_icons_specware")
+;                  (in-distribution-dir "install_gnome_desktop_icons_specware"))
+  (copy-dist-file (in-specware-dir "Release/Linux/Find_SPECWARE4")
+                  (in-distribution-dir "Find_SPECWARE4"))
+  (copy-dist-file (in-specware-dir "Release/Linux/Find_XEMACS")
+                  (in-distribution-dir "Find_XEMACS"))
+  (copy-dist-file (in-specware-dir "Release/Linux/Update_Path")
+                  (in-distribution-dir "Update_Path"))
+  (copy-dist-file (in-specware-dir "Release/Linux/Update_SWPATH")
+                  (in-distribution-dir "Update_SWPATH")))
 
 ;;; ============ RUNTIME C LIBRARY ============
 
@@ -156,8 +159,8 @@
       (let ((filename (string-trim '(#\Space #\Tab) filename)))
 	(unless (equalp filename "")
 	  (let ((filename (format nil "Library/Clib/~a" filename)))
-	    (specware::copy-file (in-specware-dir     filename) 
-				 (in-distribution-dir filename))))))))
+	    (copy-dist-file (in-specware-dir     filename) 
+                            (in-distribution-dir filename))))))))
 
 (let ((saw? nil)
       (in-file  (in-distribution-dir "Library/Clib/gc6.6/Makefile"))

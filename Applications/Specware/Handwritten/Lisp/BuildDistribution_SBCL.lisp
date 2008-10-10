@@ -1,9 +1,11 @@
 ;; This file builds a distribution directory for Linux/Mac OS X/SBCL Runtime Specware.
 
 (defpackage :Specware)
-(in-package :cl-user)
+(defpackage :Distribution (:use :common-lisp))
+(in-package :Distribution)
 
 (defvar *including-isabelle-interface?* t)
+(defvar *verbose* nil)
 
 (format t "~%;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;~%")
 (format t "~&About to build distribution dir for Specware under SBCL on Linux or Mac OS X.~%")
@@ -41,6 +43,34 @@
 (load (format nil "~A/Applications/Handwritten/Lisp/load-utilities"
 	      Specware::*specware-dir*))
 
+(defparameter *fasl-type* specware::*fasl-type*)
+
+(defun load-builder (specware-dir distribution-dir)
+  (let* ((specware-buildscripts-dir 
+	  (make-pathname :directory (append (pathname-directory specware-dir) '("Release" "BuildScripts"))
+			 :defaults  specware-dir))
+	 (lisp-utilities-dir 
+	  (make-pathname :directory (append (pathname-directory distribution-dir) '("Lisp_Utilities"))
+			 :defaults  distribution-dir)))
+    (flet ((my-load (dir-pathname file)
+	     (let ((lisp-file (make-pathname :name file :type "lisp"      :defaults dir-pathname))
+		   (fasl-file (make-pathname :name file :type *fasl-type* :defaults dir-pathname)))
+	       (if (< (file-write-date lisp-file) (or (file-write-date fasl-file) 0))
+		   (progn (format t "~&Loading ~A~%" fasl-file)
+			  (load fasl-file))
+		 (progn (format t "~&Loading ~A~%" lisp-file)
+			(load (compile-file lisp-file)))))))
+      ;(my-load lisp-utilities-dir "dist-utils")
+      (my-load lisp-utilities-dir "dir-utils")
+      ;(my-load lisp-utilities-dir "MemoryManagement")
+      ;(my-load lisp-utilities-dir "save-image")
+      ;(my-load lisp-utilities-dir "LoadUtilities")
+)))
+
+(let ((distribution-dir (concatenate 'string (specware::getenv "DISTRIBUTION") "/")))
+  (load-builder Specware::*specware-dir* distribution-dir))
+
+
 ;;; ============ PARAMETERS ============
 
 ;;; Get version information from canonical source...
@@ -50,7 +80,10 @@
       (load version-file)
     (error "in BuildDistribution_SBCL.lisp:  Cannot find ~A" version-file)))
 
-(defparameter *Distribution-dir*  (concatenate 'string Specware::*specware-dir* "distribution-sbcl/Specware/"))
+(defparameter *Distribution-dir*  (concatenate 'string Specware::*specware-dir*
+                                               "distribution-sbcl/"
+                                               cl-user::*Specware-Version-Name*
+                                               "/"))
 
 (ensure-directories-exist *Distribution-dir*)
 

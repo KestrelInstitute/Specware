@@ -169,6 +169,14 @@
 
     (copy-dist-directory (extend-directory source-dir    "Isa")
 			 (extend-directory component-dir "Isa"))
+    
+    (copy-dist-directory (extend-directory source-dir    "General")
+			 (extend-directory component-dir "General"))
+
+    (copy-dist-file      (merge-pathnames (ensure-subdir-exists source-dir "Structures" "Data")
+                                          "Monad.sw")
+			 (merge-pathnames (ensure-subdir-exists component-dir "General")
+                                          "Monad.sw"))
 
     ;; When the user's Specware application starts, they need to load some 
     ;; handcoded definitions for a few primitive ops declared but not defined
@@ -725,7 +733,7 @@
 			   (extend-directory target-dir "Examples"))
 
       (copy-dist-directory (extend-directory source-dir "UserDoc" "isabelle-interface" "example")
-			   (extend-directory target-dir "Examples"))
+			   (extend-directory target-dir "Examples" "IsabelleInterface"))
 
       ;; (let ((snark-dir (extend-directory examples-dir "Matching" "Snark"))
       ;;       (lisp-dir  (extend-directory examples-dir "Matching" "lisp")))

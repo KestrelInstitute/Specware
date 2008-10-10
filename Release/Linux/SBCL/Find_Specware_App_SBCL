@@ -5,6 +5,7 @@
 INVOKED_HERE=`dirname $0`
 cd $INVOKED_HERE
 HERE=`pwd`
+SPECWARE4="$HERE"
 
 #########################################################################
 

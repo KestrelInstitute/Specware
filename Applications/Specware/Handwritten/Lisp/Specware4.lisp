@@ -7,7 +7,7 @@
 ;;; that is used for distribution builds.
 
 (defpackage :SpecToLisp)
-(defpackage :Specware (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
+(defpackage :Specware (:use :cl))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package :Specware)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
@@ -88,17 +88,18 @@
 	  dir
 	(concatenate 'string dir "/"))))
 
-;;; Get version information from canonical source...
-(let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
-			    *Specware-dir*)))
-  (if (probe-file version-file)
-      (load version-file)
-    (error "in Specware4.lisp:  Cannot find ~A" version-file)))
-	
 (defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
-#+cmu  (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
-#+sbcl (compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
+;;; Get version information from canonical source...
+(let ((version-file (in-specware-dir "Applications/Specware/Handwritten/Lisp/SpecwareVersion.lisp")))
+  (if (probe-file version-file)
+      (load version-file)
+    (error "in LoadSpecware.lisp:  Cannot find ~A" version-file)))
+
+#+cmu
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/cmucl-patch"))
+#+sbcl
+(compile-and-load-lisp-file (in-specware-dir "Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))

@@ -1,4 +1,4 @@
-(in-package :cl-user)
+(in-package :Distribution)
 
 (defun show-dirs (file &optional (max-level 4) (prefix ""))
   (let ((foo (namestring file)))

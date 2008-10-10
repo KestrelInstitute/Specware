@@ -181,11 +181,13 @@
      HandwrittenFiles
      )
 
-(defpackage "UTILITIES")
-(defpackage "MAP-SPEC")
-(defpackage "ANNSPEC")
-(defpackage "METASLANG")
+(defpackage :Utilities)
+(defpackage :Map-Spec)
+(defpackage :Annspec)
+(defpackage :MetaSlang)
 (defpackage :TypeChecker)
+(defpackage :PrettyPrint)
+
 
 #||
 #+allegro
@@ -201,7 +203,7 @@
 ||#
 
 
-(defpackage "PROVER")
+(defpackage :Prover)
 (defvar prover::wildCounter 0) ; to suppress annoying compiler warning
 
 ;; The following are specific to Specware and languages that
