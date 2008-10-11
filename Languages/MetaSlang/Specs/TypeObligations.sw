@@ -804,8 +804,8 @@ spec
                     printSort tau^
                     " could not be made subsort of "^
                     printSort sigma)
-      | _ -> (writeLine("subtypeRec: type error in "^printTerm M^"\nat "
-                        ^print(termAnn M)^"\n"^printSort tau^" <=? "^printSort sigma);
+      | _ -> (%writeLine("subtypeRec: type error in "^printTerm M^"\nat "
+              %          ^print(termAnn M)^"\n"^printSort tau^" <=? "^printSort sigma);
               tcc)
 
  op  equivalenceConjectures: MS.Term * Spec -> SpecElements
