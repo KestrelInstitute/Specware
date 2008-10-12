@@ -27,6 +27,33 @@ List qualifying spec
  type ListFunction a =
    {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
 
+ theorem unique_initial_segment_length is [a]
+  fa (f: Nat -> Option a, n1:Nat, n2:Nat)
+    f definedOnInitialSegmentOfLength n1 &&
+    f definedOnInitialSegmentOfLength n2 =>
+    n1 = n2
+ proof Isa
+  apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  apply (rule antisym)
+   apply (drule_tac x = n2 in spec)
+   apply (rotate_tac 2)
+   apply (drule_tac x = n2 in spec)
+   apply (simp add: Option__some_p_def Option__none_p_def)
+  apply (rotate_tac 1)
+  apply (drule_tac x = n1 in spec)
+  apply (drule_tac x = n1 in spec)
+  apply (simp add: Option__some_p_def Option__none_p_def)
+  done
+ end-proof
+
+ op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
+   f definedOnInitialSegmentOfLength n
+ proof Isa List__lengthOfListFunction_Obligation_the
+  by (auto simp add: List__unique_initial_segment_length)
+ end-proof
+
+ % isomorphisms between lists and list functions:
+
  op list : [a] Bijection (ListFunction a, List a) =
    fn f: ListFunction a ->
      case f 0 of
