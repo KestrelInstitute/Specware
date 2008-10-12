@@ -24,7 +24,7 @@ spec
   op checkPermutation : List Integer -> M Permutation
   def checkPermutation prm =
     % all integers must be non-negative:
-    ensure (forall? natural? prm) (badPermutation prm) >> (fn _ ->
+    ensure (forall? (fn x -> x >= 0) prm) (badPermutation prm) >> (fn _ ->
     % convert sequence of non-negative integers to sequence of naturals:
     (let prm1 : List Nat = list (fn(i:Nat) ->
        if i < length prm then Some (prm @ i) else None) in

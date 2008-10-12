@@ -1,7 +1,7 @@
 s = spec
   
   axiom negativePPP is
-    fa(n:PosNat) ~(natural? (- n))
+    fa(n:PosNat) ~(- n >= 0)
 
   conjecture c is false
 

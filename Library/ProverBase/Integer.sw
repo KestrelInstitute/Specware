@@ -6,9 +6,6 @@ PrInteger qualifying spec
 
   %type Integer.Integer  % qualifier required for internal parsing reasons
 
-  % true for non-negative integers:
-  %op natural? : Integer -> Boolean
-
   (* The following type definition defines the naturals to be a subtype of the
   integers. However, since the naturals have been axiomatized in spec Nat,
   this definition really constrains the integers to be a supertype of the
@@ -17,7 +14,6 @@ PrInteger qualifying spec
   that the qualifier Nat in Nat.Nat is needed because otherwise the following
   type definition would introduce a new unqualified type Nat. *)
 
-  %type Nat.Nat = (Integer | natural?)
 
 
   axiom succ_def is fa(n) Integer.isucc n = n + 1
