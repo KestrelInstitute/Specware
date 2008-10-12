@@ -18,6 +18,44 @@ refine /Library/Base/List by {
          | Some x -> Cons (x, loop (i+1))
      in
      loop 0
+ (* The local loop function above is currently translated into a recdef with the
+ subtype hypothesis of ListFunction missing, making termination impossible to
+ prove. The following verbatim Isabelle text shows the correct translation of
+ the function, together with the proof script to prove termination. When the
+ translator is fixed to produce the correct translation, we will remove the
+ "-verbatim" and the "function ..." below, leaving only the proof scripts. For
+ now, in order to run the translated Isabelle theory, the generated recdef must
+ be deleted manually. *)
+ proof Isa -verbatim
+  function List__list__loop :: "nat \<times> 'a List__ListFunction \<Rightarrow> 'a list" where
+  "List__list__loop(i, f)
+     = (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
+         (case f i
+           of None \<Rightarrow> []
+            | Some x \<Rightarrow> Cons x (List__list__loop(i + 1, f)))
+        else arbitrary)"
+  by auto
+  termination
+  apply
+   (relation "measure (\<lambda>(i,f). List__lengthOfListFunction f - i)")
+   apply auto
+  apply (subgoal_tac "i < List__lengthOfListFunction f")
+   apply auto
+  apply (subgoal_tac "x = List__lengthOfListFunction f")
+   apply (simp add: List__definedOnInitialSegmentOfLength_def)
+   apply clarify
+   apply (rotate_tac 2)
+   apply (drule_tac x = i in spec)
+   apply (auto simp add: Option__some_p_def Option__none_p_def)
+  apply (subgoal_tac
+         "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)")
+   apply (auto simp add: List__unique_initial_segment_length)
+  apply (auto simp add: List__lengthOfListFunction_def)
+  apply (rule theI')
+  apply (rule List__lengthOfListFunction_Obligation_the)
+  apply auto
+  done
+ end-proof
 
  op List.list_1 : [a] Bijection (List a, ListFunction a) =
    fn l: List a -> fn i:Nat -> l @@ i
