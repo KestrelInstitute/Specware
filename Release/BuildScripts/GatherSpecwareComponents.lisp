@@ -173,7 +173,7 @@
     (copy-dist-directory (extend-directory source-dir    "General")
 			 (extend-directory component-dir "General"))
 
-    (copy-dist-file      (merge-pathnames (ensure-subdir-exists source-dir "Structures" "Data")
+    (copy-dist-file      (merge-pathnames (ensure-subdirs-exist source-dir "Structures" "Data")
                                           "Monad.sw")
 			 (merge-pathnames (ensure-subdir-exists component-dir "General")
                                           "Monad.sw"))
