@@ -28,8 +28,6 @@ case "$SPECWARE4" in
     *)  SPECWARE4="`pwd`/$SPECWARE4";;
 esac
 
-echo "\$SPECWARE4=$SPECWARE4"
-
 # Test whether SPECWARE4 has been set
 
 if [ -z "$SPECWARE4" ]; then
@@ -98,9 +96,6 @@ LISP_DIRECTORY="$SPECWARE4"/
 export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
-
-echo SPECWARE4=$SPECWARE4
-
 
 # Load specware emacs files, do command line options (e.g. load and
 # start Isabelle and then run-specware4
