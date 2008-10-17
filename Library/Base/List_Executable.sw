@@ -56,6 +56,17 @@ refine /Library/Base/List by {
   apply auto
   done
  end-proof
+ (* The bijectivity obligation for op list as refined above follows from the
+ injectivity of op list as defined in spec List (which must be proved as part of
+ establishing the well-formedness of spec List) and from the correctness of the
+ refinement expressed by theorem List__list__r_def. The current
+ Specware-Isabelle translator does not make the proof of the bijectivity of op
+ list as defined in spec List available for this spec here, but future versions
+ of Specware will, and will probably also automatically discharge the
+ obligation. For now, we just ignore the obligation via "sorry". *)
+ proof Isa List__list_Obligation_subsort
+   sorry
+ end-proof
 
  op List.list_1 : [a] Bijection (List a, ListFunction a) =
    fn l: List a -> fn i:Nat -> l @@ i
