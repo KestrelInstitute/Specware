@@ -67,6 +67,17 @@ refine /Library/Base/List by {
  proof Isa List__list_Obligation_subsort
    sorry
  end-proof
+ (* The obligation List__list__r_def_Obligation_subsort really pertains the
+ definition op list in spec List, and not its refinement in spec
+ List_Executable. In fact, an alpha-equivalent obligation is generated from spec
+ List. Therefore, for now we ignore this obligation via "sorry". Once the
+ Specware-Isabelle translator no longer generates this redundant obligation, the
+ following "sorry" will be removed. *)
+ proof Isa List__list__r_def_Obligation_subsort
+ end-proof
+ proof Isa List__list_subtype_constr
+   by (unfold List__list_def, rule List__list_Obligation_subsort)
+ end-proof
 
  op List.list_1 : [a] Bijection (List a, ListFunction a) =
    fn l: List a -> fn i:Nat -> l @@ i
