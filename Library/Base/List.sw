@@ -1,64 +1,123 @@
 List qualifying spec
 
- import Option, Integer
+import Option, Integer
 
- % inductive definition of lists:
+% inductive definition of lists:
 
- type List.List a = | Nil | Cons a * List.List a
-      % qualifier required for internal parsing reasons
+type List.List a = | Nil | Cons a * List.List a
+     % qualifier required for internal parsing reasons
 
- (* Metaslang's list displays [...], list patterns [...], and cons patterns
- ...::..., are simply syntactic shortcuts for expressions and patterns
- involving Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons
- (3, Nil))) and hd::tl stands for Cons(hd,tl). *)
+(* Metaslang's list displays [...], list patterns [...], and cons patterns
+...::..., are simply syntactic shortcuts for expressions and patterns involving
+Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons (3, Nil)))
+and hd::tl stands for Cons(hd,tl). *)
 
- (* We index list elements from left to right, starting from 0. Thus, a list
- corresponds to a function defined on an initial segment of the natural numbers
- {i:Nat | i < n}, where n is the length of the list. In Metaslang, which has
- total functions and no dependent types, this kind of function can be
- represented as an Option-valued function that returns Some(...) on all the
- natural numbers i < n and None on all the natural numbers i >= n. *)
+(* We index list elements from left to right, starting from 0. Thus, a list
+corresponds to a function defined on an initial segment of the natural numbers
+{i:Nat | i < n}, where n is the length of the list. In Metaslang, which has
+total functions and no dependent types, this kind of function can be represented
+as an Option-valued function that returns Some(...) on all the natural numbers i
+< n and None on all the natural numbers i >= n. *)
 
- op [a] definedOnInitialSegmentOfLength
-        (f: Nat -> Option a, n:Nat) infixl 20 : Boolean =
-   (fa (i:Nat) i <  n => some? (f i)) &&
-   (fa (i:Nat) i >= n => none? (f i))
+op [a] definedOnInitialSegmentOfLength
+       (f: Nat -> Option a, n:Nat) infixl 20 : Boolean =
+  (fa (i:Nat) i <  n => some? (f i)) &&
+  (fa (i:Nat) i >= n => none? (f i))
 
- type ListFunction a =
-   {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
+type ListFunction a =
+  {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
 
- theorem unique_initial_segment_length is [a]
+theorem unique_initial_segment_length is [a]
   fa (f: Nat -> Option a, n1:Nat, n2:Nat)
     f definedOnInitialSegmentOfLength n1 &&
     f definedOnInitialSegmentOfLength n2 =>
     n1 = n2
- proof Isa
-  apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  apply (rule antisym)
-   apply (drule_tac x = n2 in spec)
-   apply (rotate_tac 2)
-   apply (drule_tac x = n2 in spec)
-   apply (simp add: Option__some_p_def Option__none_p_def)
-  apply (rotate_tac 1)
-  apply (drule_tac x = n1 in spec)
-  apply (drule_tac x = n1 in spec)
+proof Isa
+ apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ apply (rule antisym)
+  apply (drule_tac x = n2 in spec)
+  apply (rotate_tac 2)
+  apply (drule_tac x = n2 in spec)
   apply (simp add: Option__some_p_def Option__none_p_def)
-  done
- end-proof
+ apply (rotate_tac 1)
+ apply (drule_tac x = n1 in spec)
+ apply (drule_tac x = n1 in spec)
+ apply (simp add: Option__some_p_def Option__none_p_def)
+ done
+end-proof
 
- op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
-   f definedOnInitialSegmentOfLength n
- proof Isa List__lengthOfListFunction_Obligation_the
-  by (auto simp add: List__unique_initial_segment_length)
- end-proof
+op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
+  f definedOnInitialSegmentOfLength n
+proof Isa List__lengthOfListFunction_Obligation_the
+ by (auto simp add: List__unique_initial_segment_length)
+end-proof
 
- % isomorphisms between lists and list functions:
+theorem defined_on_length_of_list_function is [a]
+  fa (f: ListFunction a)
+    f definedOnInitialSegmentOfLength (lengthOfListFunction f)
+proof Isa List__defined_on_length_of_list_function
+  apply (simp only: List__lengthOfListFunction_def)
+  apply (rule theI')
+  apply (rule List__lengthOfListFunction_Obligation_the)
+  by assumption
+end-proof
 
- op list : [a] Bijection (ListFunction a, List a) =
-   fn f: ListFunction a ->
-     case f 0 of
-     | None   -> Nil
-     | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
+theorem defined_on_length_of_list_function' is [a]
+  fa (f: Nat -> Option a, n:Nat) f definedOnInitialSegmentOfLength n =>
+                                 n = lengthOfListFunction f
+proof Isa
+ apply (insert List__defined_on_length_of_list_function [of f])
+ apply (frule_tac P = "\<lambda>n. f definedOnInitialSegmentOfLength n" in exI)
+ by (auto simp add: List__unique_initial_segment_length)
+end-proof
+
+% isomorphisms between lists and list functions:
+
+op list : [a] Bijection (ListFunction a, List a) =
+  fn f: ListFunction a ->
+    case f 0 of
+    | None   -> Nil
+    | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
+proof Isa List__list_Obligation_subsort0
+ apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ apply (rule_tac x = "n - 1" in exI)
+ by auto
+end-proof
+(* Op list just above is currently translated into a recdef with the subtype
+hypothesis of ListFunction missing, making termination impossible to prove. The
+following verbatim Isabelle text shows the correct translation of the function,
+together with the proof script to prove termination. When the translator is
+fixed to produce the correct translation, we will remove the "-verbatim" and the
+"function ..." below, leaving only the proof scripts. For now, in order to
+process the translated Isabelle theory, the generated recdef must be deleted
+manually. *)
+proof Isa -verbatim
+ function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
+ "List__list f =
+    (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
+       case f 0
+         of None \<Rightarrow> []
+          | Some x \<Rightarrow> 
+            Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
+     else arbitrary)"
+ by auto
+ termination
+ apply (relation "measure List__lengthOfListFunction")
+  apply auto
+ apply (frule List__defined_on_length_of_list_function_cqt, auto)
+ apply (subgoal_tac "List__lengthOfListFunction f > 0 \<and>
+                     List__lengthOfListFunction (\<lambda>i. f (Suc i)) =
+                       List__lengthOfListFunction f - 1", auto)
+  apply (simp add: List__definedOnInitialSegmentOfLength_def
+                   Option__some_p_def Option__none_p_def, auto)
+ apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ apply (subgoal_tac "(\<lambda>i. f (i + 1))
+                     definedOnInitialSegmentOfLength
+                     (List__lengthOfListFunction f - 1)")
+  apply (drule List__defined_on_length_of_list_function_cqt, simp)
+ apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ done
+end-proof
 
  op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
     % we would like to use "-1" for inverse but we use "_" because "-" is
