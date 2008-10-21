@@ -101,14 +101,14 @@ refine /Library/Base/List by {
    | []     -> None
    | hd::tl -> if i = 0 then Some hd else tl @@ (i-1)
 
- op List.empty? : [a] List a -> Boolean = fn
+ op List.empty? : [a] List a -> Bool = fn
    | [] -> true
    | _  -> false
  proof Isa List__empty_p__def1
    by (case_tac Wild__Var_0, auto)
  end-proof
 
- op List.nonEmpty? : [a] List a -> Boolean = fn
+ op List.nonEmpty? : [a] List a -> Bool = fn
    | [] -> false
    | _  -> true
  proof Isa List__nonEmpty_p__def
@@ -118,12 +118,12 @@ refine /Library/Base/List by {
  op [a] List.theElement (l: List a | ofLength? 1 l) : a =
    let [hd] = l in hd
 
- op [a] List.in? (x:a, l: List a) infixl 20 : Boolean =
+ op [a] List.in? (x:a, l: List a) infixl 20 : Bool =
    case l of
    | []     -> false
    | hd::tl -> x = hd || x in? tl
 
- op [a] List.nin? (x:a, l: List a) infixl 20 : Boolean =
+ op [a] List.nin? (x:a, l: List a) infixl 20 : Bool =
    case l of
    | []     -> true
    | hd::tl -> x ~= hd && x nin? tl
@@ -183,27 +183,27 @@ refine /Library/Base/List by {
    let hd::tl = l in  % non-empty because length > i >= 0
    if i = 0 then Cons (x, tl) else Cons (hd, update (tl, i-1, x))
 
- op [a] List.forall? (p: a -> Boolean) : List a -> Boolean = fn
+ op [a] List.forall? (p: a -> Bool) : List a -> Bool = fn
    | []     -> true
    | hd::tl -> p hd && forall? p tl
 
- op [a] List.exists? (p: a -> Boolean) : List a -> Boolean = fn
+ op [a] List.exists? (p: a -> Bool) : List a -> Bool = fn
    | []     -> false
    | hd::tl -> p hd || exists? p tl
 
- op [a] List.exists1? (p: a -> Boolean) : List a -> Boolean = fn
+ op [a] List.exists1? (p: a -> Bool) : List a -> Bool = fn
    | []     -> false
    | hd::tl -> (p hd && ~ (exists? p tl)) || exists1? p tl
 
- op [a] List.foralli? (p: Nat * a -> Boolean) (l: List a) : Boolean =
-   let def loop (l: List a, i:Nat) : Boolean =
+ op [a] List.foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
+   let def loop (l: List a, i:Nat) : Bool =
        case l of
        | []     -> true
        | hd::tl -> p (i, hd) && loop (tl, i+1)
    in
    loop (l, 0)
 
- op [a] List.filter (p: a -> Boolean) : List a -> List a = fn
+ op [a] List.filter (p: a -> Bool) : List a -> List a = fn
    | []     -> Nil
    | hd::tl -> if p hd then Cons (hd, filter p tl) else filter p tl
 
@@ -254,7 +254,7 @@ refine /Library/Base/List by {
    |  None   ::tl ->          removeNones tl
 
  op List.matchingOptionLists? :
-   [a,b] List (Option a) * List (Option b) -> Boolean = fn
+   [a,b] List (Option a) * List (Option b) -> Bool = fn
    | ([],            [])            -> true
    | ((Some _)::tl1, (Some _)::tl2) -> matchingOptionLists? (tl1, tl2)
    | ( None   ::tl1,  None   ::tl2) -> matchingOptionLists? (tl1, tl2)
@@ -295,7 +295,7 @@ refine /Library/Base/List by {
  op [a] List.repeat (x:a) (n:Nat) : List a =
    if n = 0 then Nil else Cons (x, repeat x (n-1))
 
- op List.allEqualElements? : [a] List a -> Boolean = fn
+ op List.allEqualElements? : [a] List a -> Bool = fn
    | []     -> true
    | hd::tl -> forall? (fn x:a -> x = hd) tl
 
@@ -315,16 +315,16 @@ refine /Library/Base/List by {
    if empty? l then []
    else prefix(l,n) :: unflatten (removePrefix(l,n), n)
 
- op List.noRepetitions? : [a] List a -> Boolean = fn
+ op List.noRepetitions? : [a] List a -> Bool = fn
    | []     -> true
    | hd::tl -> hd nin? tl && noRepetitions? tl
 
- op List.increasingNats? : List Nat -> Boolean = fn
+ op List.increasingNats? : List Nat -> Bool = fn
    | []       -> true
    | [_]      -> true
    | x::y::tl -> x < y && increasingNats? (Cons(y,tl))
 
- op [a] List.positionsSuchThat (l: List a, p: a -> Boolean) : InjList Nat =
+ op [a] List.positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
    let def loop (l: List a, i:Nat) : InjList Nat =
        case l of
        | []     -> []
@@ -332,7 +332,7 @@ refine /Library/Base/List by {
    in
    loop (l, 0)
 
- op [a] List.leftmostPositionSuchThat (l: List a, p: a -> Boolean) : Option Nat =
+ op [a] List.leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
    let def loop (l: List a, i:Nat) : Option Nat =
        case l of
        | []     -> None
@@ -340,7 +340,7 @@ refine /Library/Base/List by {
    in
    loop (l, 0)
 
- op [a] List.rightmostPositionSuchThat (l: List a, p: a -> Boolean) : Option Nat =
+ op [a] List.rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
    let def loop (l: List a, i:Nat, result: Option Nat) : Option Nat =
        case l of
        | []     -> result
@@ -352,13 +352,13 @@ refine /Library/Base/List by {
    let Some pos = leftmostPositionSuchThat (l, fn y:a -> y = x) in pos
 
  % auxiliary op, not in spec List; true iff l1 is a prefix of l2:
- op [a] List.prefixOf? (l1: List a, l2: List a) : Boolean =
+ op [a] List.prefixOf? (l1: List a, l2: List a) : Bool =
    case (l1,l2) of
    | ([],       _)        -> true
    | (hd1::tl1, hd2::tl2) -> hd1 = hd2 && prefixOf? (tl1, tl2)
    | _                    -> false
 
- op [a] List.sublistAt? (subl: List a, i:Nat, supl: List a) : Boolean =
+ op [a] List.sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
    prefixOf? (subl, removePrefix (supl, i))
 
  op [a] List.positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
@@ -396,12 +396,12 @@ refine /Library/Base/List by {
    | Some i -> Some (i, prefix (supl, i))
    | None   -> None
 
- op [a] List.findLeftmost (p: a -> Boolean) (l: List a) : Option a =
+ op [a] List.findLeftmost (p: a -> Bool) (l: List a) : Option a =
    case l of
    | []     -> None
    | hd::tl -> if p hd then Some hd else findLeftmost p tl
 
- op [a] List.findRightmost (p: a -> Boolean) (l: List a) : Option a =
+ op [a] List.findRightmost (p: a -> Bool) (l: List a) : Option a =
    let def loop (l: List a, result: Option a) : Option a =
        case l of
        | []     -> result
@@ -425,7 +425,7 @@ refine /Library/Base/List by {
                              else Nil
    | _                    -> Nil
 
- op List.permutation? (prm: List Nat) : Boolean =
+ op List.permutation? (prm: List Nat) : Bool =
    noRepetitions? prm &&
    (let n = length prm in
    forall? (fn i:Nat -> i < n) prm)
@@ -434,7 +434,7 @@ refine /Library/Base/List by {
    let n = length l in
    list (fn(i:Nat) -> if i < n then l @@ (positionOf(prm,i)) else None)
 
- op [a] List.permutationOf (l1: List a, l2: List a) infixl 20 : Boolean =
+ op [a] List.permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
    let def deleteOne (x:a, l: List a) : Option (List a) =
        % delete exactly one (leftmost) occurrence of x in l,
        % return None if x does not occur in l:

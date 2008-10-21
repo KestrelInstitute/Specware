@@ -31,10 +31,10 @@ String qualifying spec
  op ++ (s1:String, s2:String) infixl 25 : String =
    implode ((explode s1) ++ (explode s2))
 
- op forall? (p: Char -> Boolean) (s: String) : Boolean =
+ op forall? (p: Char -> Bool) (s: String) : Bool =
    forall? p (explode s)
 
- op exists? (p: Char -> Boolean) (s: String) : Boolean =
+ op exists? (p: Char -> Bool) (s: String) : Bool =
    exists? p (explode s)
 
  op map (f: Char -> Char) (s: String) : String =
@@ -55,13 +55,13 @@ String qualifying spec
 
  % linear ordering relations:
 
- op <  (s1:String, s2:String) infixl 20 : Boolean = (compare(s1,s2) = Less)
+ op <  (s1:String, s2:String) infixl 20 : Bool = (compare(s1,s2) = Less)
 
- op <= (s1:String, s2:String) infixl 20 : Boolean = (s1 < s2 || s1 = s2)
+ op <= (s1:String, s2:String) infixl 20 : Bool = (s1 < s2 || s1 = s2)
 
- op >  (s1:String, s2:String) infixl 20 : Boolean = (s2 <  s1)
+ op >  (s1:String, s2:String) infixl 20 : Bool = (s2 <  s1)
 
- op >= (s1:String, s2:String) infixl 20 : Boolean = (s2 <= s1)
+ op >= (s1:String, s2:String) infixl 20 : Bool = (s2 <= s1)
 
  % string consisting of just the newline character:
 
@@ -69,7 +69,7 @@ String qualifying spec
 
  % convert booleans to strings:
 
- op Boolean.show (x:Boolean) : String = if x then "true" else "false"
+ op Boolean.show (x:Bool) : String = if x then "true" else "false"
 
  % convert naturals to strings:
 
@@ -94,7 +94,7 @@ String qualifying spec
 
  % convert strings to naturals (if convertible):
 
- op Nat.natConvertible (s:String) : Boolean =
+ op Nat.natConvertible (s:String) : Bool =
    ex(x:Nat) natToString x = s
 
  op Nat.stringToNat (s:String | natConvertible s) : Nat =
@@ -116,7 +116,7 @@ String qualifying spec
 
  % convert strings to integers (if convertible):
 
- op Integer.intConvertible (s:String) : Boolean =
+ op Integer.intConvertible (s:String) : Bool =
    ex(x:Integer) intToString x = s
 
  op Integer.stringToInt (s:String | intConvertible s) : Integer =
@@ -158,9 +158,9 @@ String qualifying spec
 
  op ^ infixl 25 : String * String -> String = (++)
 
- op all : (Char -> Boolean) -> String -> Boolean = forall?
+ op all : (Char -> Bool) -> String -> Bool = forall?
 
- op exists : (Char -> Boolean) -> String -> Boolean = exists?
+ op exists : (Char -> Bool) -> String -> Bool = exists?
 
  op concatList : List String -> String = flatten
 
@@ -168,11 +168,11 @@ String qualifying spec
 
  op writeLine (s:String) : () = ()
 
- op lt infixl 20 : String * String -> Boolean = (<)
+ op lt infixl 20 : String * String -> Bool = (<)
 
- op leq infixl 20 : String * String -> Boolean = (<=)
+ op leq infixl 20 : String * String -> Bool = (<=)
 
- op Boolean.toString : Boolean -> String = Boolean.show
+ op Boolean.toString : Bool -> String = Boolean.show
 
  op Nat.toString : Nat -> String = Nat.show
 

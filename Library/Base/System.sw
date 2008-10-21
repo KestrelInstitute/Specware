@@ -5,8 +5,8 @@ System qualifying spec
 
   %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
   op debug    : [a] String -> a % calls lisp's break if the specwareDebug? flag is set.
-  op proverUseBase?   : Boolean % Tests whether the proverUseBase? flag is set.
-  op specwareDebug?   : Boolean % Tests whether the specwareDebug? flag is set.
+  op proverUseBase?   : Bool % Tests whether the proverUseBase? flag is set.
+  op specwareDebug?   : Bool % Tests whether the specwareDebug? flag is set.
 
   %% Renamed from toString to avoid ambiguity with monomorphic toStrings
   op anyToString : [a] a -> String
@@ -24,7 +24,7 @@ System qualifying spec
 *)
   op getEnv : String -> Option String
 
-  op msWindowsSystem?: Boolean
+  op msWindowsSystem?: Bool
 
 (*
  The following holds the name of the temporary directory on the current
@@ -42,7 +42,7 @@ System qualifying spec
 *)
 
   op trueFilename : String -> String
-  op trueFilePath : List String * Boolean -> List String
+  op trueFilePath : List String * Bool -> List String
 
 (* 
  The following allows you wrap the main body you wish to execute [arg 3]
@@ -60,6 +60,6 @@ System qualifying spec
 *)
   op withRestartHandler : [a] String * (() -> ()) * (() -> a) -> a
 
-  op garbageCollect : Boolean -> ()
+  op garbageCollect : Bool -> ()
   op hackMemory     : ()      -> ()
 endspec

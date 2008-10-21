@@ -7,24 +7,6 @@ import Option, Integer
 type List.List a = | Nil | Cons a * List.List a
      % qualifier required for internal parsing reasons
 
-<<<<<<< List.sw
- (* Metaslang's list displays [...], list patterns [...], and cons patterns
- ...::..., are simply syntactic shortcuts for expressions and patterns
- involving Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons
- (3, Nil))) and hd::tl stands for Cons(hd,tl). *)
-
- (* We index list elements from left to right, starting from 0. Thus, a list
- corresponds to a function defined on an initial segment of the natural numbers
- {i:Nat | i < n}, where n is the length of the list. In Metaslang, which has
- total functions and no dependent types, this kind of function can be
- represented as an Option-valued function that returns Some(...) on all the
- natural numbers i < n and None on all the natural numbers i >= n. *)
-
- op [a] definedOnInitialSegmentOfLength
-        (f: Nat -> Option a, n:Nat) infixl 20 : Bool =
-   (fa (i:Nat) i <  n => some? (f i)) &&
-   (fa (i:Nat) i >= n => none? (f i))
-=======
 (* Metaslang's list displays [...], list patterns [...], and cons patterns
 ...::..., are simply syntactic shortcuts for expressions and patterns involving
 Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons (3, Nil)))
@@ -41,7 +23,6 @@ op [a] definedOnInitialSegmentOfLength
        (f: Nat -> Option a, n:Nat) infixl 20 : Boolean =
   (fa (i:Nat) i <  n => some? (f i)) &&
   (fa (i:Nat) i >= n => none? (f i))
->>>>>>> 1.63
 
 type ListFunction a =
   {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
