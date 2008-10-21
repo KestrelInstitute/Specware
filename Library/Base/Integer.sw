@@ -53,7 +53,7 @@ Integer qualifying spec
   end-proof
 
   axiom induction is
-    fa (p : Int -> Boolean)
+    fa (p : Int -> Bool)
       p zero &&
       (fa(i) p i => p (isucc i) && p (ipred i)) =>
       (fa(i) p i)
@@ -76,10 +76,10 @@ Integer qualifying spec
   the inductive definition, positive? is smaller than p?, i.e. all integers in
   positive? are also in p?. *)
 
-  op zero? (i:Int) : Boolean = (i = zero)
+  op zero? (i:Int) : Bool = (i = zero)
 
-  op positive? : Int -> Boolean = the(positive?)
-    let def satisfiesInductiveDef? (p? : Int -> Boolean) : Boolean =
+  op positive? : Int -> Bool = the(positive?)
+    let def satisfiesInductiveDef? (p? : Int -> Bool) : Bool =
         p? one &&
         (fa(i) p? i => p? (isucc i)) in
     satisfiesInductiveDef? positive? &&
@@ -101,7 +101,7 @@ Integer qualifying spec
    apply(clarify, drule_tac x="ia" in spec, simp)
   end-proof
 
-  op negative? (i:Int) : Boolean = ~ (positive? i) && ~ (zero? i)
+  op negative? (i:Int) : Bool = ~ (positive? i) && ~ (zero? i)
 
 
 % ----------------------------------------------------------------------
@@ -137,7 +137,7 @@ end-proof
   integers as two straight chains. *)
 
   theorem induction_pos_neg is
-    fa (p : Int -> Boolean)
+    fa (p : Int -> Bool)
       p zero &&
       (fa(i:Int) ~ (negative? i) && p i => p (isucc i)) &&
       (fa(i:Int) ~ (positive? i) && p i => p (ipred i)) =>
@@ -220,13 +220,13 @@ end-proof
 
   % relational operators:
 
-  op < (i:Int, j:Int) infixl 20 : Boolean = negative? (i - j)
+  op < (i:Int, j:Int) infixl 20 : Bool = negative? (i - j)
 
-  op > (i:Int, j:Int) infixl 20 : Boolean = j < i
+  op > (i:Int, j:Int) infixl 20 : Bool = j < i
 
-  op <= (i:Int, j:Int) infixl 20 : Boolean = i < j || i = j
+  op <= (i:Int, j:Int) infixl 20 : Bool = i < j || i = j
 
-  op >= (i:Int, j:Int) infixl 20 : Boolean = i > j || i = j
+  op >= (i:Int, j:Int) infixl 20 : Bool = i > j || i = j
 
   theorem <=_and_>=_are_converses is
     fa (i:Int, j:Int) (i <= j) = (j >= i)
@@ -244,7 +244,7 @@ end-proof
   % induction principle on natural numbers:
 
   theorem induction_naturals is
-    fa (p : Nat -> Boolean)
+    fa (p : Nat -> Bool)
       p 0 &&
       (fa(n:Nat) p n => p (n+1)) =>
       (fa(n:Nat) p n)
@@ -254,7 +254,7 @@ end-proof
 
   % positive (i.e. non-zero) natural numbers:
 
-  op Nat.posNat? (n:Nat) : Boolean = n > 0
+  op Nat.posNat? (n:Nat) : Bool = n > 0
 
   type Nat.PosNat = (Nat | posNat?)
 
@@ -289,7 +289,7 @@ end-proof
   Metaslang name), or equivalently that x is a factor of y, i.e. that y can be
   expressed as x * z for some integer z. *)
 
-  op divides (x:Int, y:Int) infixl 20 : Boolean =
+  op divides (x:Int, y:Int) infixl 20 : Bool =
     ex(z:Int) x * z = y
   proof Isa divides__def
     apply(auto simp add: dvd_def)
@@ -319,7 +319,7 @@ end-proof
   (* The notion of being a multiple is the converse of the "divides" relation: x
   is a multiple of y iff x = z * y for some integer z. *)
 
-  op multipleOf (x:Int, y:Int) infixl 20 : Boolean = y divides x
+  op multipleOf (x:Int, y:Int) infixl 20 : Bool = y divides x
 
 % ----------------------------------------------------------------------
 % For reasoning putposes it is useful to unfold multipleOf immediately
@@ -869,7 +869,7 @@ end-proof
   later used to define the ops divE and modE. *)
 
   % q and r are the quotient and remainder of the Euclidian division of i by j:
-  op euclidianDivision? (i:Int, j:Int0, q:Int, r:Int) : Boolean =
+  op euclidianDivision? (i:Int, j:Int0, q:Int, r:Int) : Bool =
     i = j * q + r &&
     0 <= r && r < abs j
 
@@ -1002,7 +1002,7 @@ end-proof
 
   type Integer = Int
   type NonZeroInteger = Int0
-  op Nat.natural? (i:Int) : Boolean = i >= 0
+  op Nat.natural? (i:Int) : Bool = i >= 0
 
   op Integer.~ : Bijection (Int, Int) = -
   proof Isa e_tld_subtype_constr

@@ -64,22 +64,22 @@ end-proof
 
   % predicates for various kinds of characters:
 
-  op isUpperCase (c:Char) : Boolean = (ord #A <= ord c && ord c <= ord #Z)
+  op isUpperCase (c:Char) : Bool = (ord #A <= ord c && ord c <= ord #Z)
   proof Isa [simp] end-proof
 
-  op isLowerCase (c:Char) : Boolean = (ord #a <= ord c && ord c <= ord #z)
+  op isLowerCase (c:Char) : Bool = (ord #a <= ord c && ord c <= ord #z)
   proof Isa [simp] end-proof
 
-  op isAlpha     (c:Char) : Boolean = isUpperCase c || isLowerCase c
+  op isAlpha     (c:Char) : Bool = isUpperCase c || isLowerCase c
   proof Isa [simp] end-proof
 
-  op isNum       (c:Char) : Boolean = (ord #0 <= ord c && ord c <= ord #9)
+  op isNum       (c:Char) : Bool = (ord #0 <= ord c && ord c <= ord #9)
   proof Isa [simp] end-proof
 
-  op isAlphaNum  (c:Char) : Boolean = isAlpha c || isNum c
+  op isAlphaNum  (c:Char) : Bool = isAlpha c || isNum c
   proof Isa [simp] end-proof
 
-  op isAscii     (c:Char) : Boolean = (ord c < 128)
+  op isAscii     (c:Char) : Bool = (ord c < 128)
   proof Isa [simp] end-proof
 
   % case conversions:

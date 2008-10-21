@@ -35,7 +35,7 @@ op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
 
 % injectivity, surjectivity, bijectivity:
 
-op [a,b] injective? (f: a -> b) : Boolean =
+op [a,b] injective? (f: a -> b) : Bool =
   fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
 proof Isa
   apply(simp add: inj_on_def)
@@ -47,7 +47,7 @@ lemma Function__injective_p__stp_simp [simp]:
 end-proof
 
 
-op [a,b] surjective? (f: a -> b) : Boolean =
+op [a,b] surjective? (f: a -> b) : Bool =
   fa (y:b) (ex (x:a) f x = y)
 proof Isa
   apply(simp add: surj_def eq_commute)
@@ -59,7 +59,7 @@ lemma Function__surjective_p__stp_simp[simp]:
                      Ball_def Bex_def mem_def surj_on_def)
 end-proof
 
-op [a,b] bijective? (f: a -> b) : Boolean =
+op [a,b] bijective? (f: a -> b) : Bool =
   injective? f && surjective? f
 proof Isa
   apply(simp add: bij_def)
@@ -193,15 +193,15 @@ end-proof
 
 % true iff relation is well-founded:
 
-op [a] wellFounded? (rel: a * a -> Boolean) : Boolean =
+op [a] wellFounded? (rel: a * a -> Bool) : Bool =
   % each non-empty predicate:
-  fa (p: a -> Boolean) (ex(y:a) p y) =>
+  fa (p: a -> Bool) (ex(y:a) p y) =>
   % has a minimal element w.r.t. rel:
     (ex(y:a) p y && (fa(x:a) p x => ~ (rel(x,y))))
 
 % deprecated:
 
-op wfo: [a] (a * a -> Boolean) -> Boolean = wellFounded?
+op wfo: [a] (a * a -> Bool) -> Bool = wellFounded?
 
 % mapping to Isabelle:
 

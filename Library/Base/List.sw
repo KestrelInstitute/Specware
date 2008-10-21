@@ -7,6 +7,24 @@ import Option, Integer
 type List.List a = | Nil | Cons a * List.List a
      % qualifier required for internal parsing reasons
 
+<<<<<<< List.sw
+ (* Metaslang's list displays [...], list patterns [...], and cons patterns
+ ...::..., are simply syntactic shortcuts for expressions and patterns
+ involving Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons
+ (3, Nil))) and hd::tl stands for Cons(hd,tl). *)
+
+ (* We index list elements from left to right, starting from 0. Thus, a list
+ corresponds to a function defined on an initial segment of the natural numbers
+ {i:Nat | i < n}, where n is the length of the list. In Metaslang, which has
+ total functions and no dependent types, this kind of function can be
+ represented as an Option-valued function that returns Some(...) on all the
+ natural numbers i < n and None on all the natural numbers i >= n. *)
+
+ op [a] definedOnInitialSegmentOfLength
+        (f: Nat -> Option a, n:Nat) infixl 20 : Bool =
+   (fa (i:Nat) i <  n => some? (f i)) &&
+   (fa (i:Nat) i >= n => none? (f i))
+=======
 (* Metaslang's list displays [...], list patterns [...], and cons patterns
 ...::..., are simply syntactic shortcuts for expressions and patterns involving
 Nil and Cons. For example, [1,2,3] stands for Cons (1, Cons (2, Cons (3, Nil)))
@@ -23,6 +41,7 @@ op [a] definedOnInitialSegmentOfLength
        (f: Nat -> Option a, n:Nat) infixl 20 : Boolean =
   (fa (i:Nat) i <  n => some? (f i)) &&
   (fa (i:Nat) i >= n => none? (f i))
+>>>>>>> 1.63
 
 type ListFunction a =
   {f : Nat -> Option a | ex(n:Nat) f definedOnInitialSegmentOfLength n}
@@ -139,7 +158,7 @@ end-proof
 
  % useful to define subtype of lists of given length:
 
- op [a] ofLength? (n:Nat) (l:List a) : Boolean = (length l = n)
+ op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
 
  % access element at index i (op @@ is a totalization of op @):
 
@@ -163,7 +182,7 @@ end-proof
  theorem length_empty is [a] length (empty: List a) = 0
  proof Isa [simp] end-proof
 
- op [a] empty? (l: List a) : Boolean = (l = empty)
+ op [a] empty? (l: List a) : Bool = (l = empty)
  proof Isa
    by (simp add: null_empty)
  end-proof
@@ -176,7 +195,7 @@ end-proof
 
  % non-empty lists (i.e. with at least one element):
 
- op [a] nonEmpty? (l: List a) : Boolean = (l ~= empty)
+ op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
  proof Isa [simp] end-proof    
 
  type List1 a = (List a | nonEmpty?)
@@ -189,10 +208,10 @@ end-proof
 
  % membership:
 
- op [a] in? (x:a, l: List a) infixl 20 : Boolean =
+ op [a] in? (x:a, l: List a) infixl 20 : Bool =
    ex(i:Nat) l @@ i = Some x
 
- op [a] nin? (x:a, l: List a) infixl 20 : Boolean = ~ (x in? l)
+ op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
 
  % sublist starting from index i of length n (note that if n is 0 then i could
  % be length(l), even though that is not a valid index in the list):
@@ -278,21 +297,21 @@ end-proof
 
  % quantifications:
 
- op [a] forall? (p: a -> Boolean) (l: List a) : Boolean =
+ op [a] forall? (p: a -> Bool) (l: List a) : Bool =
    fa(i:Nat) i < length l => p (l @ i)
 
- op [a] exists? (p: a -> Boolean) (l: List a) : Boolean =
+ op [a] exists? (p: a -> Bool) (l: List a) : Bool =
    ex(i:Nat) i < length l && p (l @ i)
 
- op [a] exists1? (p: a -> Boolean) (l: List a) : Boolean =
+ op [a] exists1? (p: a -> Bool) (l: List a) : Bool =
    ex1(i:Nat) i < length l && p (l @ i)
 
- op [a] foralli? (p: Nat * a -> Boolean) (l: List a) : Boolean =
+ op [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
    fa(i:Nat) i < length l => p (i, l @ i)
 
  % filter away elements not satisfying predicate:
 
- op [a] filter (p: a -> Boolean) (l: List a) : List a =
+ op [a] filter (p: a -> Bool) (l: List a) : List a =
    case l of
    | [] -> []
    | hd::tl -> (if p hd then [hd] else []) ++ filter p tl
@@ -311,7 +330,7 @@ end-proof
 
  % lists with the same length:
 
- op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Boolean =
+ op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Bool =
    length l1 = length l2
 
  % convert between list of tuples and tuple of lists:
@@ -354,7 +373,7 @@ end-proof
  % length and matching None and Some values at every position i):
 
  op [a,b] matchingOptionLists?
-          (l1: List (Option a), l2: List (Option b)) : Boolean =
+          (l1: List (Option a), l2: List (Option b)) : Bool =
    l1 equiLong l2 &&
    (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
 
@@ -384,7 +403,7 @@ end-proof
  op [a] repeat (x:a) (n:Nat) : List a =
    list (fn i:Nat -> if i < n then Some x else None)
 
- op [a] allEqualElements? (l: List a) : Boolean =
+ op [a] allEqualElements? (l: List a) : Bool =
    ex(x:a) l = repeat x (length l)
 
  % extend list leftward/rightward to length n, filling with x:
@@ -446,19 +465,19 @@ end-proof
 
  % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
- op [a] noRepetitions? (l: List a) : Boolean =
+ op [a] noRepetitions? (l: List a) : Bool =
    fa (i:Nat, j:Nat) i < length l && j < length l && i ~= j => l@i ~= l@j
 
  type InjList a = (List a | noRepetitions?)
 
  % (strictly) ordered (injective) list of natural numbers:
 
- op increasingNats? (nats: List Nat) : Boolean =
+ op increasingNats? (nats: List Nat) : Bool =
    fa(i:Nat) i < length nats - 1 => nats @ i < nats @ (i+1)
 
  % ordered list of positions of elements satisfying predicate:
 
- op [a] positionsSuchThat (l: List a, p: a -> Boolean) : InjList Nat =
+ op [a] positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
    the (POSs: InjList Nat)
      % indices in POSs are ordered:
      increasingNats? POSs &&
@@ -467,11 +486,11 @@ end-proof
 
  % leftmost/rightmost position of element satisfying predicate (None if none):
 
- op [a] leftmostPositionSuchThat (l: List a, p: a -> Boolean) : Option Nat =
+ op [a] leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
    let POSs = positionsSuchThat (l, p) in
    if empty? POSs then None else Some (head POSs)
 
- op [a] rightmostPositionSuchThat (l: List a, p: a -> Boolean) : Option Nat =
+ op [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
    let POSs = positionsSuchThat (l, p) in
    if empty? POSs then None else Some (last POSs)
 
@@ -487,7 +506,7 @@ end-proof
 
  % true iff subl occurs within supl at position i:
 
- op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Boolean =
+ op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
    ex (pre: List a, post: List a) pre ++ subl ++ post = supl &&
                                   length pre = i
 
@@ -527,13 +546,13 @@ end-proof
  % split list at leftmost/rightmost element satisfying predicate (None
  % if no element satisfies predicate):
 
- op [a] splitAtLeftmost (p: a -> Boolean) (l: List a)
+ op [a] splitAtLeftmost (p: a -> Bool) (l: List a)
                         : Option (List a * a * List a) =
    case leftmostPositionSuchThat (l, p) of
    | Some i -> Some (splitAt (l, i))
    | None   -> None
 
- op [a] splitAtRightmost (p: a -> Boolean) (l: List a)
+ op [a] splitAtRightmost (p: a -> Bool) (l: List a)
                          : Option (List a * a * List a) =
    case rightmostPositionSuchThat (l, p) of
    | Some i -> Some (splitAt (l, i))
@@ -541,24 +560,24 @@ end-proof
 
  % leftmost/rightmost element satisfying predicate (None if none):
 
- op [a] findLeftmost (p: a -> Boolean) (l: List a) : Option a =
+ op [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
    let lp = filter p l in
    if empty? lp then None else Some (head lp)
 
- op [a] findRightmost (p: a -> Boolean) (l: List a) : Option a =
+ op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
    let lp = filter p l in
    if empty? lp then None else Some (last lp)
 
  % return leftmost/rightmost element satisfying predicate as well as list of
  % preceding/following elements (None if no element satisfies predicate):
 
- op [a] findLeftmostAndPreceding (p: a -> Boolean) (l: List a)
+ op [a] findLeftmostAndPreceding (p: a -> Bool) (l: List a)
                                  : Option (a * List a) =
    case leftmostPositionSuchThat (l, p) of
    | None   -> None
    | Some i -> Some (l @ i, prefix (l, i))
 
- op [a] findRightmostAndFollowing (p: a -> Boolean) (l: List a)
+ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
                                   : Option (a * List a) =
    case rightmostPositionSuchThat (l, p) of
    | None   -> None
@@ -590,7 +609,7 @@ end-proof
  % a permutation of a list of length N is represented by
  % a permutation of the list of natural numbers 0,...,N-1:
 
- op permutation? (prm: List Nat) : Boolean =
+ op permutation? (prm: List Nat) : Bool =
    noRepetitions? prm && (fa(i:Nat) i in? prm => i < length prm)
 
  type Permutation = (List Nat | permutation?)
@@ -603,7 +622,7 @@ end-proof
 
  % true iff l2 is a permutation of l1 (and vice versa):
 
- op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Boolean =
+ op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
    ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
 
  % given a comparison function over type a, type List a can be linearly
@@ -645,7 +664,7 @@ end-proof
 
  op insert : [a] a * List a -> List a = (|>)
 
- op null : [a] List a -> Boolean = empty?
+ op null : [a] List a -> Bool = empty?
 
  op hd : [a] List1 a -> a = head
 
@@ -659,7 +678,7 @@ end-proof
    removePrefix
  proof Isa [simp] end-proof
 
- op member : [a] a * List a -> Boolean = (in?)
+ op member : [a] a * List a -> Bool = (in?)
 
  op removeFirstElems : [a] {(l,n) : List a * Nat |
                             n <= length l} -> List a = removePrefix
@@ -669,9 +688,9 @@ end-proof
                    i <= j && j <= length l} -> List a = subFromTo
  proof Isa [simp] end-proof
 
- op exists : [a] (a -> Boolean) -> List a -> Boolean = exists?
+ op exists : [a] (a -> Bool) -> List a -> Bool = exists?
 
- op all : [a] (a -> Boolean) -> List a -> Boolean = forall?
+ op all : [a] (a -> Bool) -> List a -> Bool = forall?
 
  op [a] rev2 (l: List a, r: List a) : List a =
    case l of
@@ -680,14 +699,14 @@ end-proof
 
  op rev : [a] List a -> List a = reverse
 
- op find : [a] (a -> Boolean) -> List a -> Option a = findLeftmost
+ op find : [a] (a -> Bool) -> List a -> Option a = findLeftmost
  proof Isa [simp] end-proof
 
- op firstUpTo : [a] (a -> Boolean) -> List a -> Option (a * List a) =
+ op firstUpTo : [a] (a -> Bool) -> List a -> Option (a * List a) =
    findLeftmostAndPreceding
  proof Isa [simp] end-proof
 
- op splitList : [a] (a -> Boolean) -> List a -> Option (List a * a * List a) =
+ op splitList : [a] (a -> Bool) -> List a -> Option (List a * a * List a) =
    splitAtLeftmost
  proof Isa [simp] end-proof
 

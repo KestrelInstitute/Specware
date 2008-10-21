@@ -23,7 +23,7 @@ op compare (cmp1:Comparison, cmp2:Comparison) : Comparison =
 qualifier to distinguish this op from the previous one and from similar ops in
 other specs (e.g. String.compare). *)
 
-op Boolean.compare (x:Boolean, y:Boolean) : Comparison =
+op Boolean.compare (x:Bool, y:Bool) : Comparison =
        if (x = y)    then Equal
   else if (x = true) then Greater
   else  (* x = false *)   Less
