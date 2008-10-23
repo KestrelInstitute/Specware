@@ -108,7 +108,7 @@ String qualifying spec
 
  % In the translation of the following theorem we MUST add the type constraint
  % to x to make the proof go through
- proof Isa intToString_Obligation_subsort
+ proof Isa intToString_Obligation_subtype
   sorry
  end-proof
 

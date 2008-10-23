@@ -213,7 +213,7 @@ end-proof
    apply(induct_tac l)
    apply(auto)
  end-proof
- proof Isa subFromTo_Obligation_subsort1
+ proof Isa subFromTo_Obligation_subtype1
  apply(auto, arith)
  end-proof
 
@@ -624,7 +624,7 @@ end-proof
 
  op [a,b] isoList : Bijection(a,b) -> Bijection (List a, List b) =
    fn iso_elem -> map iso_elem
- proof Isa isoList_Obligation_subsort
+ proof Isa isoList_Obligation_subtype
   apply(simp add: bij_def, auto) 
   (** first subgoal is proved by auto **)
   apply(simp add: surj_def, auto)
@@ -634,7 +634,7 @@ end-proof
   apply (rule_tac x="xa#x" in exI, auto)
  end-proof
  proof Isa isoList_subtype_constr
-  apply(simp add:  List__isoList_def List__isoList_Obligation_subsort)
+  apply(simp add:  List__isoList_def List__isoList_Obligation_subtype)
  end-proof
 
  % deprecated:

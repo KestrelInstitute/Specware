@@ -109,7 +109,7 @@ proof Isa -verbatim
     by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
 end-proof
 
-proof Isa inverse__stp_Obligation_subsort
+proof Isa inverse__stp_Obligation_subtype
   apply(simp only: Function__bijective_p__stp_simp univ_true)
   apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f",
         simp)
@@ -134,7 +134,7 @@ end-proof
    we need to show that this is the same if f is a bijection
 *)
 
-proof Isa inverse_Obligation_subsort
+proof Isa inverse_Obligation_subtype
   apply(subgoal_tac "( \_lambday. THE x. f x = y) = inv f")
   apply(auto simp add: bij_def)
   apply(erule surj_imp_inj_inv)

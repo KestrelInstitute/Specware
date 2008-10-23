@@ -87,17 +87,17 @@ end-proof
   op toUpperCase (c:Char) : Char =
     if isLowerCase c then chr(ord c - ord #a + ord #A) else c
   proof Isa [simp] end-proof
-  proof Isa toUpperCase_Obligation_subsort0
+  proof Isa toUpperCase_Obligation_subtype0
     apply(auto simp add:nat_of_char_def)
   end-proof
 
   op toLowerCase (c:Char) : Char =
     if isUpperCase c then chr(ord c - ord #A + ord #a) else c
   proof Isa [simp] end-proof
-  proof Isa toLowerCase_Obligation_subsort
+  proof Isa toLowerCase_Obligation_subtype
    apply(auto simp add:nat_of_char_def)
   end-proof
-  proof Isa toLowerCase_Obligation_subsort0
+  proof Isa toLowerCase_Obligation_subtype0
    apply(auto simp add:nat_of_char_def)
   end-proof
 

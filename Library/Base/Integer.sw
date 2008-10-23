@@ -971,7 +971,7 @@ end-proof
   end-proof
 
   op div (i:Nat, j:PosNat) infixl 26 : Nat = i divE j
-  proof Isa Integer__div_Obligation_subsort0
+  proof Isa Integer__div_Obligation_subtype0
     sorry
   end-proof
   proof Isa Integer__div__def
@@ -979,7 +979,7 @@ end-proof
   end-proof
 
   op mod (i:Nat, j:PosNat) infixl 26 : Nat = i modE j
-  proof Isa Integer__mod_Obligation_subsort0
+  proof Isa Integer__mod_Obligation_subtype0
     sorry
   end-proof
   proof Isa Integer__mod__def
