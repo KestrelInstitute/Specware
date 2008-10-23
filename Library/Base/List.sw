@@ -33,17 +33,30 @@ theorem unique_initial_segment_length is [a]
     f definedOnInitialSegmentOfLength n2 =>
     n1 = n2
 proof Isa
- apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
- apply (rule antisym)
-  apply (drule_tac x = n2 in spec)
-  apply (rotate_tac 2)
-  apply (drule_tac x = n2 in spec)
-  apply (simp add: Option__some_p_def Option__none_p_def)
- apply (rotate_tac 1)
- apply (drule_tac x = n1 in spec)
- apply (drule_tac x = n1 in spec)
- apply (simp add: Option__some_p_def Option__none_p_def)
- done
+proof -
+ fix f n1 n2
+ assume F1: "f definedOnInitialSegmentOfLength n1"
+ assume F2: "f definedOnInitialSegmentOfLength n2"
+ from F1 have N1: "Option__none_p (f n1)"
+  by (unfold List__definedOnInitialSegmentOfLength_def, auto)
+ from F2 have N2: "Option__none_p (f n2)"
+  by (unfold List__definedOnInitialSegmentOfLength_def, auto)
+ have I1: "\<not> n1 < n2"
+  proof (rule ccontr)
+   assume "\<not> \<not> n1 < n2"
+   with N1 F2 show False
+    by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                       Option__none_p_def Option__some_p_def)
+  qed
+ have I2: "\<not> n2 < n1"
+  proof (rule ccontr)
+   assume "\<not> \<not> n2 < n1"
+   with N2 F1 show False
+    by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                       Option__none_p_def Option__some_p_def)
+  qed
+ from I1 I2 show "n1 = n2" by auto
+qed
 end-proof
 
 op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
