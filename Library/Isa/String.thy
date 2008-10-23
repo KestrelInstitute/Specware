@@ -13,13 +13,13 @@ theorem String__length__def:
   "length s = length (id s)"
   apply(auto)
   done
-theorem String__e_at_Obligation_subsort: 
+theorem String__e_at_Obligation_subtype: 
   "\<lbrakk>(i::nat) < length s; let ignore = id s in i \<ge> 0\<rbrakk> \<Longrightarrow> 
    i < length (id s) \<and> i \<ge> 0"
   apply(auto)
   done
 
-theorem String__subFromTo_Obligation_subsort: 
+theorem String__subFromTo_Obligation_subtype: 
   "\<lbrakk>(i::nat) \<le> (j::nat); 
     j \<le> length s; 
     let ignore = id s in i \<ge> 0 \<and> j \<ge> 0\<rbrakk> \<Longrightarrow> 
@@ -85,12 +85,12 @@ where
                          ''8''
                        else 
                          if d + 1 = 9 then ''9'' else regular_val)"
-theorem Nat__natToString_Obligation_subsort: 
+theorem Nat__natToString_Obligation_subtype: 
   "True"
   apply(auto)
   done
 
-theorem Nat__natToString_Obligation_subsort1: 
+theorem Nat__natToString_Obligation_subtype1: 
   "\<lbrakk>\<not> ((x::nat) < 10); (x_2::int) = int (x mod 10)\<rbrakk> \<Longrightarrow> 
    x_2 < 10 \<and> x_2 \<ge> 0"
   apply(auto)

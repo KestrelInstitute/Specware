@@ -26,7 +26,7 @@ theorem Option__mapOption__def:
 theorem Option__mapOption__def1: 
   "option_map f (Some x) = Some (f x)"
   by auto
-theorem Option__isoOption_Obligation_subsort: 
+theorem Option__isoOption_Obligation_subtype: 
   "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (option_map iso_elem)"
    apply(simp add: bij_def, auto) 
    (** first subgoal **)
@@ -47,6 +47,6 @@ defs Option__isoOption_def:
   "Option__isoOption iso_elem \<equiv> option_map iso_elem"
 theorem Option__isoOption_subtype_constr: 
   "\<lbrakk>bij dom_isoOption\<rbrakk> \<Longrightarrow> bij (Option__isoOption dom_isoOption)"
-   apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subsort)
+   apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)
   done
 end

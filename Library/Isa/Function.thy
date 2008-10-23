@@ -90,7 +90,7 @@ lemma Function__bij_inv_stp:
 types  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
-theorem Function__inverse__stp_Obligation_subsort: 
+theorem Function__inverse__stp_Obligation_subtype: 
   "\<lbrakk>Function__bijective_p__stp(P__a,\<lambda> ignore. True) f; 
     Fun_PD P__a f; 
     Function__bijective_p__stp(P__a,\<lambda> ignore. True) f\<rbrakk> \<Longrightarrow> 
@@ -119,7 +119,7 @@ consts Function__inverse__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Ri
 defs Function__inverse__stp_def: 
   "Function__inverse__stp P__a f y
      \<equiv> (THE (x::'a). P__a x \<and> f x = y)"
-theorem Function__inverse_Obligation_subsort: 
+theorem Function__inverse_Obligation_subtype: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> 
    bij
       (\<lambda> (y::'b). (THE (x::'a). (f:: ('a,'b)Function__Bijection) x = y))"

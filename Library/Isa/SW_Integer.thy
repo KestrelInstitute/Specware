@@ -220,7 +220,7 @@ theorem Integer__e_lt_eq_and__gt_eq_are_converses:
   "((i::int) \<le> (j::int)) = (j \<ge> i)"
   apply(auto)
   done
-theorem Integer__induction_naturals_Obligation_subsort: 
+theorem Integer__induction_naturals_Obligation_subtype: 
   "\<lbrakk>(p::nat \<Rightarrow> bool) 0; p (n_1::nat)\<rbrakk> \<Longrightarrow> n_1 + 1 \<ge> 0"
   apply(auto)
   done
@@ -231,7 +231,7 @@ theorem Integer__induction_naturals:
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
 defs Nat__posNat_p_def: "Nat__posNat_p n \<equiv> (n > 0)"
 types Nat__PosNat = "nat"
-theorem Nat__succ_Obligation_subsort: 
+theorem Nat__succ_Obligation_subtype: 
   "succ (int n) \<ge> 0"
   apply(auto)
   done
@@ -239,13 +239,13 @@ theorem Nat__succ__def:
   "Suc n = nat (succ (int n))"
   apply(auto)
   done
-theorem Nat__pred_Obligation_subsort: 
+theorem Nat__pred_Obligation_subtype: 
   "\<lbrakk>(n::nat) > 0\<rbrakk> \<Longrightarrow> pred (int n) \<ge> 0"
   apply(auto)
   done
 consts Nat__pred :: "Nat__PosNat \<Rightarrow> nat"
 defs Nat__pred_def: "Nat__pred n \<equiv> nat (pred (int n))"
-theorem Integer__sign_Obligation_subsort: 
+theorem Integer__sign_Obligation_subtype: 
   "\<lbrakk>\<not> ((i::int) > 0); i < 0; (s_1::int) = - 1\<rbrakk> \<Longrightarrow> 
    s_1 = 0 \<or> (s_1 = 1 \<or> s_1 = - 1)"
   apply(auto)
@@ -259,7 +259,7 @@ theorem Integer__sign_subtype_constr:
    s = 0 \<or> (s = 1 \<or> s = - 1)"
    apply(auto simp add: Integer__sign_def)
   done
-theorem Integer__abs_Obligation_subsort: 
+theorem Integer__abs_Obligation_subtype: 
   "\<lbrakk>\<not> ((i::int) \<ge> 0)\<rbrakk> \<Longrightarrow> - i \<ge> 0"
   apply(auto)
   done
@@ -388,11 +388,11 @@ defs Integer__divT_def:
              \<and> zabs (q * j) \<le> zabs i)))"
 consts Integer__modT :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(infixl "modT" 66)
 defs Integer__modT_def: "(i modT j) \<equiv> (i - j * (i divT j))"
-theorem Integer__divT_of_negated_divisor_Obligation_subsort: 
+theorem Integer__divT_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
-theorem Integer__modT_of_negated_divisor_Obligation_subsort: 
+theorem Integer__modT_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
@@ -405,11 +405,11 @@ defs Integer__divF_def:
           i divT j - 1)"
 consts Integer__modF :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(infixl "modF" 66)
 defs Integer__modF_def: "(i modF j) \<equiv> (i - j * (i divF j))"
-theorem Integer__divF_of_negated_divisor_Obligation_subsort: 
+theorem Integer__divF_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
-theorem Integer__modF_of_negated_divisor_Obligation_subsort: 
+theorem Integer__modF_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
@@ -422,11 +422,11 @@ defs Integer__divC_def:
           i divT j + 1)"
 consts Integer__modC :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(infixl "modC" 66)
 defs Integer__modC_def: "(i modC j) \<equiv> (i - j * (i divC j))"
-theorem Integer__divC_of_negated_divisor_Obligation_subsort: 
+theorem Integer__divC_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
-theorem Integer__modC_of_negated_divisor_Obligation_subsort: 
+theorem Integer__modC_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
@@ -439,7 +439,7 @@ defs Integer__divR_def:
           \<and> (q \<noteq> 0 \<longrightarrow> Integer__sign q = Integer__sign (i * j))))"
 consts Integer__modR :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(infixl "modR" 66)
 defs Integer__modR_def: "(i modR j) \<equiv> (i - j * (i divR j))"
-theorem Integer__divR_of_negated_divisor_Obligation_subsort: 
+theorem Integer__divR_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
@@ -452,31 +452,31 @@ consts Integer__modE :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(inf
 defs Integer__modE_def: 
   "(i modE j)
      \<equiv> (THE (r::int). \<exists>(q::int). Integer__euclidianDivision_p(i,j,q,r))"
-theorem Integer__divE_of_negated_divisor_Obligation_subsort: 
+theorem Integer__divE_of_negated_divisor_Obligation_subtype: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
   apply(auto)
   done
-theorem Integer__divE_equals_divT_on_naturals_Obligation_subsort: 
+theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done
-theorem Integer__divE_equals_divT_on_naturals_Obligation_subsort0: 
+theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done
-theorem Integer__divE_equals_divF_on_naturals_Obligation_subsort: 
+theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done
-theorem Integer__divE_equals_divF_on_naturals_Obligation_subsort0: 
+theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done
-theorem Integer__div_Obligation_subsort: 
+theorem Integer__div_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done
-theorem Integer__mod_Obligation_subsort: 
+theorem Integer__mod_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   apply(auto)
   done

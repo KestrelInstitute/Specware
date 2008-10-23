@@ -6,7 +6,7 @@ defs Nat__natural_p_def: "Nat__natural_p (i::int) \<equiv> (i \<ge> 0)"
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
 defs Nat__posNat_p_def: "Nat__posNat_p n \<equiv> (n > 0)"
 types Nat__PosNat = "nat"
-theorem Nat__succ_Obligation_subsort: 
+theorem Nat__succ_Obligation_subtype: 
   "Integer__succ (int n) \<ge> 0"
   apply(auto)
   done

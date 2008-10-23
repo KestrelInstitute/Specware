@@ -33,14 +33,14 @@ defs Char__isAlphaNum_def [simp]:
   "Char__isAlphaNum c \<equiv> (Char__isAlpha c \<or> Char__isNum c)"
 consts Char__isAscii :: "char \<Rightarrow> bool"
 defs Char__isAscii_def [simp]: "Char__isAscii c \<equiv> (nat_of_char c < 128)"
-theorem Char__toUpperCase_Obligation_subsort: 
+theorem Char__toUpperCase_Obligation_subtype: 
   "\<lbrakk>Char__isLowerCase c\<rbrakk> \<Longrightarrow> 
    (int (nat_of_char c) - int (nat_of_char CHR ''a'')) 
      + int (nat_of_char CHR ''A'') 
      \<ge> 0"
   apply(auto)
   done
-theorem Char__toUpperCase_Obligation_subsort0: 
+theorem Char__toUpperCase_Obligation_subtype0: 
   "\<lbrakk>Char__isLowerCase c\<rbrakk> \<Longrightarrow> 
    (int (nat_of_char c) - int (nat_of_char CHR ''a'')) 
      + int (nat_of_char CHR ''A'') 
@@ -55,14 +55,14 @@ defs Char__toUpperCase_def [simp]:
                               + int (nat_of_char CHR ''A'')))
         else 
           c)"
-theorem Char__toLowerCase_Obligation_subsort: 
+theorem Char__toLowerCase_Obligation_subtype: 
   "\<lbrakk>Char__isUpperCase c\<rbrakk> \<Longrightarrow> 
    (int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
      + int (nat_of_char CHR ''a'') 
      \<ge> 0"
    apply(auto simp add:nat_of_char_def)
   done
-theorem Char__toLowerCase_Obligation_subsort0: 
+theorem Char__toLowerCase_Obligation_subtype0: 
   "\<lbrakk>Char__isUpperCase c\<rbrakk> \<Longrightarrow> 
    (int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
      + int (nat_of_char CHR ''a'') 
