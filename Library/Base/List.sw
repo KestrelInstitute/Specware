@@ -38,24 +38,24 @@ proof -
  assume F1: "f definedOnInitialSegmentOfLength n1"
  assume F2: "f definedOnInitialSegmentOfLength n2"
  from F1 have N1: "Option__none_p (f n1)"
-  by (unfold List__definedOnInitialSegmentOfLength_def, auto)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  from F2 have N2: "Option__none_p (f n2)"
-  by (unfold List__definedOnInitialSegmentOfLength_def, auto)
- have I1: "\<not> n1 < n2"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ have "n1 \<ge> n2"
   proof (rule ccontr)
-   assume "\<not> \<not> n1 < n2"
+   assume "\<not> n1 \<ge> n2"
    with N1 F2 show False
-    by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                       Option__none_p_def Option__some_p_def)
+     by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                        Option__none_p_def Option__some_p_def linorder_not_le)
   qed
- have I2: "\<not> n2 < n1"
+ have "n2 \<ge> n1"
   proof (rule ccontr)
-   assume "\<not> \<not> n2 < n1"
+   assume "\<not> n2 \<ge> n1"
    with N2 F1 show False
-    by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                       Option__none_p_def Option__some_p_def)
+     by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                        Option__none_p_def Option__some_p_def linorder_not_le)
   qed
- from I1 I2 show "n1 = n2" by auto
+ from `n1 \<ge> n2` `n2 \<ge> n1` show "n1 = n2" by auto
 qed
 end-proof
 
@@ -91,10 +91,22 @@ op list : [a] Bijection (ListFunction a, List a) =
     case f 0 of
     | None   -> Nil
     | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
-proof Isa List__list_Obligation_subsort0
- apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
- apply (rule_tac x = "n - 1" in exI)
- by auto
+proof Isa List__list_Obligation_subtype0
+proof -
+ fix f x
+ assume "\<exists>n. f definedOnInitialSegmentOfLength n"
+ then obtain n where FN: "f definedOnInitialSegmentOfLength n" ..
+ assume "f 0 = Some x"
+ with FN have "n > 0"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__none_p_def Option__some_p_def)
+ with FN have "(\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength (n - 1)"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__none_p_def Option__some_p_def)
+ thus
+   "\<exists>n_1. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n_1"
+   ..
+qed
 end-proof
 (* Op list just above is currently translated into a recdef with the subtype
 hypothesis of ListFunction missing, making termination impossible to prove. The
@@ -105,31 +117,60 @@ fixed to produce the correct translation, we will remove the "-verbatim" and the
 process the translated Isabelle theory, the generated recdef must be deleted
 manually. *)
 proof Isa -verbatim
- function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
- "List__list f =
-    (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
-       case f 0
-         of None \<Rightarrow> []
-          | Some x \<Rightarrow> 
-            Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
-     else arbitrary)"
- by auto
- termination
- apply (relation "measure List__lengthOfListFunction")
-  apply auto
- apply (frule List__defined_on_length_of_list_function_cqt, auto)
- apply (subgoal_tac "List__lengthOfListFunction f > 0 \<and>
-                     List__lengthOfListFunction (\<lambda>i. f (Suc i)) =
-                       List__lengthOfListFunction f - 1", auto)
-  apply (simp add: List__definedOnInitialSegmentOfLength_def
-                   Option__some_p_def Option__none_p_def, auto)
- apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
- apply (subgoal_tac "(\<lambda>i. f (i + 1))
+function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
+"List__list f =
+   (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
+      case f 0
+        of None \<Rightarrow> []
+         | Some x \<Rightarrow> 
+           Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
+    else arbitrary)"
+by (pat_completeness, auto)
+termination
+proof (relation "measure List__lengthOfListFunction")
+ show "wf (measure List__lengthOfListFunction)" by auto
+ next
+ show "\<And>f a.
+       \<lbrakk> Ex (op definedOnInitialSegmentOfLength f) ;
+       f 0 = Some a \<rbrakk> \<Longrightarrow>
+       (\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
+ proof -
+  fix f a
+  assume "Ex (op definedOnInitialSegmentOfLength f)"
+  hence "\<exists>n. f definedOnInitialSegmentOfLength n" .
+  hence "\<exists>!n. f definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__unique_initial_segment_length)
+  hence FL: "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+   by (unfold List__lengthOfListFunction_def, rule theI')
+  assume "f 0 = Some a"
+  with FL have "List__lengthOfListFunction f > 0"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__none_p_def Option__some_p_def)
+  with FL have FL': "(\<lambda>i. f (i + 1))
                      definedOnInitialSegmentOfLength
-                     (List__lengthOfListFunction f - 1)")
-  apply (drule List__defined_on_length_of_list_function_cqt, simp)
- apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
- done
+                     (List__lengthOfListFunction f - 1)"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__none_p_def Option__some_p_def)
+  hence "\<exists>m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
+   by auto
+  hence "\<exists>!m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
+   by (auto simp add: List__unique_initial_segment_length)
+  hence "(\<lambda>i. f (i + 1))
+         definedOnInitialSegmentOfLength
+         (List__lengthOfListFunction (\<lambda>i. f (i + 1)))"
+   by (unfold List__lengthOfListFunction_def, rule theI')
+  with FL' have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
+                 =
+                 List__lengthOfListFunction f - 1"
+   by (auto simp add: List__unique_initial_segment_length)
+  with `List__lengthOfListFunction f > 0`
+  have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
+        < List__lengthOfListFunction f"
+   by auto
+  thus "(\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
+   by auto
+ qed
+qed
 end-proof
 
  op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
