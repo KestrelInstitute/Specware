@@ -724,7 +724,7 @@ spec
      of Subsort(sigma2,pred,_) -> 
 	% let _ = writeLine("Verifying "^printTerm pred^" for "^printTerm M) in
         let tcc = subtypeRec(pairs,tcc,gamma,M,tau,sigma2) in
-        let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma),"_subsort") in
+        let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma),"_subtype") in
         tcc
       | _ ->
    case (tau1,sigma1)
@@ -789,20 +789,20 @@ spec
          addFailure(tcc,
                     gamma,
                     " "^printSort tau^
-                    " could not be made subsort of "^
+                    " could not be made subtype of "^
                     printSort sigma)
       | (Boolean(_), Boolean(_)) -> tcc
       | (Boolean(_), _) ->
          addFailure(tcc,
                     gamma,
                     printSort tau1^
-                    " could not be made subsort of "^
+                    " could not be made subtype of "^
                     printSort sigma1)
       | (_, Boolean(_)) ->
          addFailure(tcc,
                     gamma,
                     printSort tau^
-                    " could not be made subsort of "^
+                    " could not be made subtype of "^
                     printSort sigma)
       | _ -> (%writeLine("subtypeRec: type error in "^printTerm M^"\nat "
               %          ^print(termAnn M)^"\n"^printSort tau^" <=? "^printSort sigma);
@@ -956,7 +956,10 @@ spec
                                |- pred ?? srt)
                           tcc
                           (!subtypePreds))
-                 | Property(_,pname as Qualified (q, id),tvs,fm, _) ->
+                 | Property(_,pname as Qualified (q, id),tvs,fm, _)
+                     %% Don't generate obligations for refine theorems as proven in original
+                     | ~(testSubseqEqual?("__r_def", id, 0, length id - 7))
+                     ->
                    let fm = renameTerm (emptyContext()) fm in
                    (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
                    |- fm ?? boolSort
