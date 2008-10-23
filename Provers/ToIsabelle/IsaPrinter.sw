@@ -1525,9 +1525,9 @@ IsaTermPrinter qualifying spec
 
   op proofEndsWithTerminator?(prf: String): Boolean =
     let len = length prf in
-    len >= 4 \_and testSubseqEqual?("done",prf,0,len-4)
-   \_or len >= 5  \_and testSubseqEqual?("sorry",prf,0,len-5)
-   \_or len >= 3  \_and testSubseqEqual?("qed",prf,0,len-5)
+    testSubseqEqual?("done",prf,0,len-4)
+   \_or testSubseqEqual?("sorry",prf,0,len-5)
+   \_or testSubseqEqual?("qed",prf,0,len-3)
    \_or lastLineEnds prf
 
   op  stripExcessWhiteSpace: String \_rightarrow String
