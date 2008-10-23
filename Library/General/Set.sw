@@ -120,7 +120,6 @@ Set qualifying spec
   % sets with exactly one element:
 
   op [a] single(*ton*) (x:a) : Set a = fn y:a -> y = x
-  proof Isa [simp] end-proof
 
   op [a] single? (s:Set a) : Boolean = (ex(x:a) s = single x)
   proof Isa [simp] end-proof
