@@ -1242,6 +1242,7 @@ TypeChecker qualifying spec
 				   fillerA ^ termString ^ " of " ^ (printMaybeAndType givenSort), 
 				   fillerB ^ "with expected " ^ (printMaybeAndType expectedSort)]
 	in
+          % let _ = fail msg in
 	  error (env, msg, pos));
      givenSort)
 
