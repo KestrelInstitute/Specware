@@ -65,24 +65,24 @@ proof Isa List__lengthOfListFunction_Obligation_the
  by (auto simp add: List__unique_initial_segment_length)
 end-proof
 
-theorem defined_on_length_of_list_function is [a]
-  fa (f: ListFunction a)
-    f definedOnInitialSegmentOfLength (lengthOfListFunction f)
-proof Isa List__defined_on_length_of_list_function
-  apply (simp only: List__lengthOfListFunction_def)
-  apply (rule theI')
-  apply (rule List__lengthOfListFunction_Obligation_the)
-  by assumption
-end-proof
+%theorem defined_on_length_of_list_function is [a]
+%  fa (f: ListFunction a)
+%    f definedOnInitialSegmentOfLength (lengthOfListFunction f)
+%proof Isa List__defined_on_length_of_list_function
+%  apply (simp only: List__lengthOfListFunction_def)
+%  apply (rule theI')
+%  apply (rule List__lengthOfListFunction_Obligation_the)
+%  by assumption
+%end-proof
 
-theorem defined_on_length_of_list_function' is [a]
-  fa (f: Nat -> Option a, n:Nat) f definedOnInitialSegmentOfLength n =>
-                                 n = lengthOfListFunction f
-proof Isa
- apply (insert List__defined_on_length_of_list_function [of f])
- apply (frule_tac P = "\<lambda>n. f definedOnInitialSegmentOfLength n" in exI)
- by (auto simp add: List__unique_initial_segment_length)
-end-proof
+%theorem defined_on_length_of_list_function' is [a]
+%  fa (f: Nat -> Option a, n:Nat) f definedOnInitialSegmentOfLength n =>
+%                                 n = lengthOfListFunction f
+%proof Isa
+% apply (insert List__defined_on_length_of_list_function [of f])
+% apply (frule_tac P = "\<lambda>n. f definedOnInitialSegmentOfLength n" in exI)
+% by (auto simp add: List__unique_initial_segment_length)
+%end-proof
 
 % isomorphisms between lists and list functions:
 
