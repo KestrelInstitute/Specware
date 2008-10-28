@@ -15,18 +15,18 @@ Set qualifying spec
   useful for specification purposes, not for execution. Finite sets as defined
   in spec `FiniteSet' can instead be refined to be executable. *)
 
-  type Predicate a = a -> Boolean
+  type Predicate a = a -> Bool
 
   type Set a = Predicate a
 
   % membership:
 
-  op [a] in? (x:a, s: Set a) infixl 20 : Boolean = s x
+  op [a] in? (x:a, s: Set a) infixl 20 : Bool = s x
 
-  op [a] nin? (x:a, s: Set a) infixl 20 : Boolean = ~(x in? s)
+  op [a] nin? (x:a, s: Set a) infixl 20 : Bool = ~(x in? s)
 
   % Lifting a predicate from elements to regularized sets
-  op [a] Set_P (Pa: a -> Boolean) (s: Set a): Boolean =
+  op [a] Set_P (Pa: a -> Bool) (s: Set a): Bool =
     fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
   proof Isa
     by (simp add: Set_P_def)
@@ -34,14 +34,14 @@ Set qualifying spec
 
   % (strict) sub/superset:
 
-  op [a] <= (s1: Set a, s2: Set a) infixl 20 : Boolean =
+  op [a] <= (s1: Set a, s2: Set a) infixl 20 : Bool =
     fa(x) x in? s1 => x in? s2
 
-  op [a] < (s1: Set a, s2: Set a) infixl 20 : Boolean = (s1 <= s2 && s1 ~= s2)
+  op [a] < (s1: Set a, s2: Set a) infixl 20 : Bool = (s1 <= s2 && s1 ~= s2)
 
-  op [a] >= (s1: Set a, s2: Set a) infixl 20 : Boolean = (s2 <= s1)
+  op [a] >= (s1: Set a, s2: Set a) infixl 20 : Bool = (s2 <= s1)
 
-  op [a] > (s1: Set a, s2: Set a) infixl 20 : Boolean = (s2 < s1)
+  op [a] > (s1: Set a, s2: Set a) infixl 20 : Bool = (s2 < s1)
 
   % complement, intersection, and union (lift `~', `&&', and `||' to sets):
 
@@ -91,12 +91,12 @@ Set qualifying spec
     by (auto simp add: mem_def)
   end-proof
 
-  op [a] empty? (s: Set a) : Boolean = (s = empty)
+  op [a] empty? (s: Set a) : Bool = (s = empty)
   proof Isa [simp] end-proof
 
   % sets with at least 1 element:
 
-  op [a] nonEmpty? (s: Set a) : Boolean = (s ~= empty)
+  op [a] nonEmpty? (s: Set a) : Bool = (s ~= empty)
 
   type NonEmptySet a = (Set a | nonEmpty?)
 
@@ -107,12 +107,12 @@ Set qualifying spec
     by (auto simp add: mem_def)
   end-proof
 
-  op [a] full? (s: Set a) : Boolean = (s = full)
+  op [a] full? (s: Set a) : Bool = (s = full)
   proof Isa [simp] end-proof
 
   % sets with at least 1 missing element:
 
-  op [a] nonFull? (s: Set a) : Boolean = (s ~= full)
+  op [a] nonFull? (s: Set a) : Bool = (s ~= full)
   proof Isa [simp] end-proof
 
   type NonFullSet a = (Set a | nonFull?)
@@ -121,10 +121,10 @@ Set qualifying spec
 
   op [a] single(*ton*) (x:a) : Set a = fn y:a -> y = x
 
-  op [a] single? (s:Set a) : Boolean = (ex(x:a) s = single x)
+  op [a] single? (s:Set a) : Bool = (ex(x:a) s = single x)
   proof Isa [simp] end-proof
 
-  op [a] onlyMemberOf (x:a, s: Set a) infixl 20 : Boolean =
+  op [a] onlyMemberOf (x:a, s: Set a) infixl 20 : Bool =
     single? s && x in? s
   proof Isa [simp] end-proof
 
@@ -169,7 +169,7 @@ Set qualifying spec
 
   % finite sets:
 
-  op [a] finite? (s: Set a) : Boolean =
+  op [a] finite? (s: Set a) : Bool =
     % this disjunct ensures that the definition is correct in case a is empty;
     % if a is empty, Nat -> a is empty and the disjunct below (ex ...) is false,
     % but of course the empty set over empty a is finite (note that there is
@@ -247,7 +247,7 @@ Set qualifying spec
   end-proof
 
   theorem induction is [a]
-    fa (p: FiniteSet a -> Boolean)
+    fa (p: FiniteSet a -> Bool)
       p empty &&
       (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
       (fa (s: FiniteSet a) p s)
@@ -262,7 +262,7 @@ Set qualifying spec
   apply(intro conjI allI impI)
   end-proof
 
-  op [a] hasSize (s: Set a, n:Nat) infixl 20 : Boolean =
+  op [a] hasSize (s: Set a, n:Nat) infixl 20 : Bool =
     finite? s && size s = n
 
   (* In order to fold over a finite set, we need the folding function to be
@@ -273,7 +273,7 @@ Set qualifying spec
   sufficient that it is commutative on the elements of the set that we are
   folding over. *)
 
-  op [a,b] foldable? (c:b, f: b * a -> b, s: FiniteSet a) : Boolean =
+  op [a,b] foldable? (c:b, f: b * a -> b, s: FiniteSet a) : Bool =
     %% Definition of foldable? doesn't depend on initial value c, but it's
     %% convenient to have foldable? apply to entire sequence of args to fold.
     (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
@@ -292,11 +292,11 @@ Set qualifying spec
 
   % infinite, countable, and uncountable cardinality:
 
-  op infinite? : [a] Set a -> Boolean = ~~ finite?
+  op infinite? : [a] Set a -> Bool = ~~ finite?
 
   type InfiniteSet a = (Set a | infinite?)
 
-  op [a] countable? (s: Set a) : Boolean =
+  op [a] countable? (s: Set a) : Bool =
     infinite? s &&
     % there is a surjective function from Nat to {x:a | x in? s}
     % (the latter is a "pseudo-type" because of the free variable `s'):
@@ -305,16 +305,16 @@ Set qualifying spec
 
   type CountableSet a = (Set a | countable?)
 
-  op uncountable? : [a] Set a -> Boolean = infinite? /\  ~~ countable?
+  op uncountable? : [a] Set a -> Bool = infinite? /\  ~~ countable?
 
   type UncountableSet a = (Set a | uncountable?)
 
   % minimum/maximum set:
 
-  op [a] isMinIn (s: Set a, ss: Set (Set a)) infixl 20 : Boolean =
+  op [a] isMinIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
     s in? ss && (fa(s1) s1 in? ss => s <= s1)
 
-  op [a] hasMin? (ss: Set (Set a)) : Boolean = (ex(s) s isMinIn ss)
+  op [a] hasMin? (ss: Set (Set a)) : Bool = (ex(s) s isMinIn ss)
 
   type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
@@ -324,10 +324,10 @@ Set qualifying spec
     apply(auto simp add: Set__hasMin_p_def Set__isMinIn_def)
   end-proof
 
-  op [a] isMaxIn (s: Set a, ss: Set (Set a)) infixl 20 : Boolean =
+  op [a] isMaxIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
     s in? ss && (fa(s1) s1 in? ss => s >= s1)
 
-  op [a] hasMax? (ss: Set (Set a)) : Boolean = (ex(s) s isMaxIn ss)
+  op [a] hasMax? (ss: Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
 
   type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 

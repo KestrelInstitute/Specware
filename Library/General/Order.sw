@@ -4,20 +4,20 @@ Order qualifying spec
 
   % various kinds of orders:
 
-  op preOrder? : [a] EndoRelation a -> Boolean = reflexive? /\ transitive?
+  op preOrder? : [a] EndoRelation a -> Bool = reflexive? /\ transitive?
 
   type PreOrder a = (EndoRelation a | preOrder?)
 
-  op partialOrder? : [a] EndoRelation a -> Boolean = preOrder? /\ antisymmetric?
+  op partialOrder? : [a] EndoRelation a -> Bool = preOrder? /\ antisymmetric?
 
   type PartialOrder a = (EndoRelation a | partialOrder?)
 
-  op weakOrder? : [a] EndoRelation a -> Boolean =
+  op weakOrder? : [a] EndoRelation a -> Bool =
     reflexive? /\ antisymmetric? /\ negativeTransitive?
 
   type WeakOrder a = (EndoRelation a | weakOrder?)
 
-  op [a] linearOrder? (r: EndoRelation a) : Boolean =
+  op [a] linearOrder? (r: EndoRelation a) : Bool =
     partialOrder? r &&
     % the following is sometimes called "totality" in the
     % context of orders, but `total?' is already defined in
@@ -27,30 +27,30 @@ Order qualifying spec
   type LinearOrder a = (EndoRelation a | linearOrder?)
 
   theorem orderSubsumption is [a]
-    linearOrder?  <= (weakOrder?    : EndoRelation a -> Boolean) &&
-    weakOrder?    <= (partialOrder? : EndoRelation a -> Boolean) &&
-    partialOrder? <= (preOrder?     : EndoRelation a -> Boolean)
+    linearOrder?  <= (weakOrder?    : EndoRelation a -> Bool) &&
+    weakOrder?    <= (partialOrder? : EndoRelation a -> Bool) &&
+    partialOrder? <= (preOrder?     : EndoRelation a -> Bool)
 
   % make strict version of predicate over endorelations:
 
-  op [a] strict (p: EndoRelation a -> Boolean) (r: EndoRelation a) : Boolean =
+  op [a] strict (p: EndoRelation a -> Bool) (r: EndoRelation a) : Bool =
     % `r' satisfies strict version of `p' iff:
     irreflexive? r &&       % `r' is irreflexive and
     p (reflexiveClosure r)  % making `r' reflexive satisfies `p'
 
-  op strictPreOrder? : [a] EndoRelation a -> Boolean = strict preOrder?
+  op strictPreOrder? : [a] EndoRelation a -> Bool = strict preOrder?
 
   type StrictPreOrder a = (EndoRelation a | strictPreOrder?)
 
-  op strictPartialOrder? : [a] EndoRelation a -> Boolean = strict partialOrder?
+  op strictPartialOrder? : [a] EndoRelation a -> Bool = strict partialOrder?
 
   type StrictPartialOrder a = (EndoRelation a | strictPartialOrder?)
 
-  op strictWeakOrder? : [a] EndoRelation a -> Boolean = strict weakOrder?
+  op strictWeakOrder? : [a] EndoRelation a -> Bool = strict weakOrder?
 
   type StrictWeakOrder a = (EndoRelation a | strictWeakOrder?)
 
-  op strictLinearOrder? : [a] EndoRelation a -> Boolean = strict linearOrder?
+  op strictLinearOrder? : [a] EndoRelation a -> Bool = strict linearOrder?
 
   type StrictLinearOrder a = (EndoRelation a | strictLinearOrder?)
 

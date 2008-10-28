@@ -30,25 +30,25 @@ FSet qualifying spec
 
   % operations and subtypes (see spec `Set'):
 
-  op [a] in? (x:a, s: FSet a) infixl 20 : Boolean = x in? fromFSet s
+  op [a] in? (x:a, s: FSet a) infixl 20 : Bool = x in? fromFSet s
   proof Isa -> in_fset? end-proof
 
-  op [a] nin? (x:a, s: FSet a) infixl 20 : Boolean = x nin? fromFSet s
+  op [a] nin? (x:a, s: FSet a) infixl 20 : Bool = x nin? fromFSet s
   proof Isa -> nin_fset? end-proof
 
-  op [a] <= (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+  op [a] <= (s1: FSet a, s2: FSet a) infixl 20 : Bool =
     fromFSet s1 <= fromFSet s2
   proof Isa -> <=_fset? end-proof
 
-  op [a] < (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+  op [a] < (s1: FSet a, s2: FSet a) infixl 20 : Bool =
     fromFSet s1 < fromFSet s2
   proof Isa -> <_fset? end-proof
 
-  op [a] >= (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+  op [a] >= (s1: FSet a, s2: FSet a) infixl 20 : Bool =
     fromFSet s1 >= fromFSet s2
   proof Isa -> >=_fset? end-proof
 
-  op [a] > (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+  op [a] > (s1: FSet a, s2: FSet a) infixl 20 : Bool =
     fromFSet s1 > fromFSet s2
   proof Isa -> >_fset? end-proof
 
@@ -71,17 +71,17 @@ FSet qualifying spec
   op empty : [a] FSet a = toFSet empty
   proof Isa -> empty_fset? end-proof
 
-  op [a] empty? (s: FSet a) : Boolean = empty? (fromFSet s)
+  op [a] empty? (s: FSet a) : Bool = empty? (fromFSet s)
 
-  op [a] nonEmpty? (s: FSet a) : Boolean = nonEmpty? (fromFSet s)
+  op [a] nonEmpty? (s: FSet a) : Bool = nonEmpty? (fromFSet s)
 
   type NonEmptyFSet a = (FSet a | nonEmpty?)
 
   op [a] single (x:a) : FSet a = toFSet (single x)
 
-  op [a] single? (s: FSet a) : Boolean = single? (fromFSet s)
+  op [a] single? (s: FSet a) : Bool = single? (fromFSet s)
 
-  op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Boolean =
+  op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Bool =
     x onlyMemberOf (fromFSet s)
 
   type SingletonFSet a = (FSet a | single?)
@@ -101,7 +101,7 @@ FSet qualifying spec
 
   op [a] size (s: FSet a) : Nat = size (fromFSet s)
 
-  op [a,b] foldable? (c: b, f: b * a -> b, s: FSet a) : Boolean =
+  op [a,b] foldable? (c: b, f: b * a -> b, s: FSet a) : Bool =
     foldable? (c, f, fromFSet s)
 
   op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
@@ -117,15 +117,15 @@ FSet qualifying spec
   op [a] \\// (ss: FSet (FSet a)) : FSet a =
     toFSet (\\// (map fromFSet (fromFSet ss)))
 
-  op [a] forall? (p: a -> Boolean) (s: FSet a) : Boolean = fromFSet s <= p
+  op [a] forall? (p: a -> Bool) (s: FSet a) : Bool = fromFSet s <= p
 
-  op [a] exists? (p: a -> Boolean) (s: FSet a) : Boolean =
+  op [a] exists? (p: a -> Bool) (s: FSet a) : Bool =
     nonEmpty? (fromFSet s /\ p)
 
-  op [a] exists1? (p: a -> Boolean) (s: FSet a) : Boolean =
+  op [a] exists1? (p: a -> Bool) (s: FSet a) : Bool =
     single? (fromFSet s /\ p)
 
-  op [a] filter (p: a -> Boolean) (s: FSet a) : FSet a =
+  op [a] filter (p: a -> Bool) (s: FSet a) : FSet a =
     toFSet (fromFSet s /\ p)
 
  % convert list to set:

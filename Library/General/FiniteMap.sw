@@ -28,16 +28,16 @@ FMap qualifying spec
 
   % operations and subtypes:
 
-  op [a,b] maps? (m: FMap(a,b)) (x:a) (y:b) : Boolean = (x,y) in? fromFMap m
+  op [a,b] maps? (m: FMap(a,b)) (x:a) (y:b) : Bool = (x,y) in? fromFMap m
 
   op [a,b] domain (m: FMap(a,b)) : FSet a = toFSet (domain (fromFMap m))
 
   op [a,b] range (m: FMap(a,b)) : FSet b = toFSet (range (fromFMap m))
 
-  op [a,b] definedAt (m: FMap(a,b), x:a) infixl 20 : Boolean =
+  op [a,b] definedAt (m: FMap(a,b), x:a) infixl 20 : Bool =
     (fromFMap m) definedAt x
 
-  op [a,b] undefinedAt (m: FMap(a,b), x:a) infixl 20 : Boolean =
+  op [a,b] undefinedAt (m: FMap(a,b), x:a) infixl 20 : Bool =
     (fromFMap m) undefinedAt x
 
   op [a,b] @ (m: FMap(a,b), x:a | m definedAt x) infixl 30 : b =
@@ -64,28 +64,28 @@ FMap qualifying spec
     toFMap (fromFMap m1 o fromFMap m2)
   proof Isa -> o_fm end-proof
 
-  op [a,b] <= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+  op [a,b] <= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Bool =
     fromFMap m1 <= fromFMap m2
   proof Isa -> <=_fm end-proof
 
-  op [a,b] < (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+  op [a,b] < (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Bool =
     fromFMap m1 < fromFMap m2
   proof Isa -> <_fm end-proof
 
-  op [a,b] >= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+  op [a,b] >= (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Bool =
     fromFMap m1 >= fromFMap m2
   proof Isa -> >=_fm end-proof
 
-  op [a,b] > (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Boolean =
+  op [a,b] > (m1: FMap(a,b), m2: FMap(a,b)) infixl 20 : Bool =
     fromFMap m1 > fromFMap m2
   proof Isa -> >_fm end-proof
 
   op empty : [a,b] FMap(a,b) = toFMap empty
   proof Isa -> empty_fm end-proof
 
-  op [a,b] empty? (m: FMap(a,b)) : Boolean = empty? (fromFMap m)
+  op [a,b] empty? (m: FMap(a,b)) : Bool = empty? (fromFMap m)
 
-  op [a,b] nonEmpty? (m: FMap(a,b)) : Boolean = nonEmpty? (fromFMap m)
+  op [a,b] nonEmpty? (m: FMap(a,b)) : Bool = nonEmpty? (fromFMap m)
 
   type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
 
@@ -103,7 +103,7 @@ FMap qualifying spec
     toFMap (fromFMap m - x)
   proof Isa -> less_fm end-proof
 
-  op [a,b] agree? (m1: FMap(a,b), m2: FMap(a,b)) : Boolean =
+  op [a,b] agree? (m1: FMap(a,b), m2: FMap(a,b)) : Bool =
     agree? (fromFMap m1, fromFMap m2)
 
   op [a,b] /\ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 25
@@ -112,27 +112,27 @@ FMap qualifying spec
   op [a,b] \/ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 24
               : FMap(a,b) = toFMap (fromFMap m1 \/ fromFMap m2)
 
-  op [a,b] forall? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+  op [a,b] forall? (p: a * b -> Bool) (m: FMap(a,b)) : Bool =
     fromFMap m <= p
 
-  op [a,b] exists? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+  op [a,b] exists? (p: a * b -> Bool) (m: FMap(a,b)) : Bool =
     nonEmpty? (fromFMap m /\ p)
 
-  op [a,b] exists1? (p: a * b -> Boolean) (m: FMap(a,b)) : Boolean =
+  op [a,b] exists1? (p: a * b -> Bool) (m: FMap(a,b)) : Bool =
     single? (fromFMap m /\ p)
 
-  op [a,b] filter (p: a * b -> Boolean) (m: FMap(a,b)) : FMap(a,b) =
+  op [a,b] filter (p: a * b -> Bool) (m: FMap(a,b)) : FMap(a,b) =
     toFMap (fromFMap m /\ p)
 
-  op [a,b] restrictDomain (m: FMap(a,b), p: a -> Boolean) infixl 25
+  op [a,b] restrictDomain (m: FMap(a,b), p: a -> Bool) infixl 25
                           : FMap(a,b) = toFMap (fromFMap m restrictDomain p)
 
-  op [a,b] restrictRange (m: FMap(a,b), p: b -> Boolean) infixl 25
+  op [a,b] restrictRange (m: FMap(a,b), p: b -> Bool) infixl 25
                          : FMap(a,b) = toFMap (fromFMap m restrictRange p)
 
   op [a,b] single (x:a) (y:b) : FMap(a,b) = toFMap (single (x,y))
 
-  op [a,b] single? (m: FMap(a,b)) : Boolean = single? (fromFMap m)
+  op [a,b] single? (m: FMap(a,b)) : Bool = single? (fromFMap m)
 
   type SingletonFMap(a,b) = (FMap(a,b) | single?)
 
@@ -140,13 +140,13 @@ FMap qualifying spec
 
   op [a,b] size (m: FMap(a,b)) : Nat = size (fromFMap m)
 
-  op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Boolean =
+  op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Bool =
     foldable? (c, f, fromFMap m)
 
   op [a,b,c] fold(c: c, f: c * (a*b) -> c, m: FMap(a,b) | foldable?(c,f,m)): c =
     fold (c, f, fromFMap m)
 
-  op [a,b] injective? (m: FMap(a,b)) : Boolean =
+  op [a,b] injective? (m: FMap(a,b)) : Bool =
     Relation.injective? (fromFMap m)
 
   type InjectiveFMap(a,b) = (FMap(a,b) | injective?)

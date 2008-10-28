@@ -47,26 +47,26 @@ Relation qualifying spec
 
   % some range value for every domain value:
 
-  op [a,b] total? (r: Relation(a,b)) : Boolean = (domain r = full)
+  op [a,b] total? (r: Relation(a,b)) : Bool = (domain r = full)
 
   type TotalRelation(a,b) = (Relation(a,b) | total?)
 
   % some domain value for every range value:
 
-  op [a,b] surjective? (r: Relation(a,b)) : Boolean = (range r = full)
+  op [a,b] surjective? (r: Relation(a,b)) : Bool = (range r = full)
 
   type SurjectiveRelation(a,b) = (Relation(a,b) | surjective?)
 
   % at most one range value for every domain value:
 
-  op [a,b] functional? (r: Relation(a,b)) : Boolean =
+  op [a,b] functional? (r: Relation(a,b)) : Bool =
     fa(x) (single? \/ empty?) (apply r x)
 
   type Map(a,b) = (Relation(a,b) | functional?)
 
   % at most one domain value for every range value:
 
-  op [a,b] injective? (r: Relation(a,b)) : Boolean =
+  op [a,b] injective? (r: Relation(a,b)) : Bool =
     fa(y) (single? \/ empty?) (applyi r y)
 
   type InjectiveRelation(a,b) = (Relation(a,b) | injective?)

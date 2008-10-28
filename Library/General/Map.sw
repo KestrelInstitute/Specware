@@ -6,9 +6,9 @@
 
   % map (not) defined at element:
 
-  op [a,b] definedAt (m: Map(a,b), x:a) infixl 20 : Boolean = x in? domain m
+  op [a,b] definedAt (m: Map(a,b), x:a) infixl 20 : Bool = x in? domain m
 
-  op [a,b] undefinedAt (m: Map(a,b), x:a) infixl 20 : Boolean = x nin? domain m
+  op [a,b] undefinedAt (m: Map(a,b), x:a) infixl 20 : Bool = x nin? domain m
 
   % map application (op @@ is a totalization of @):
 
@@ -36,7 +36,7 @@
 
   % maps agree on intersection of domains:
 
-  op [a,b] agree? (m1: Map(a,b), m2: Map(a,b)) : Boolean =
+  op [a,b] agree? (m1: Map(a,b), m2: Map(a,b)) : Bool =
     functional? (m1 \/ m2)
 
   type TotalMap(a,b) = (Map(a,b) | total?)

@@ -14,39 +14,39 @@ EndoRelation qualifying spec
 
   % various properties of endorelations:
 
-  op [a] reflexive? (r: EndoRelation a) : Boolean = (fa(x) r(x,x))
+  op [a] reflexive? (r: EndoRelation a) : Bool = (fa(x) r(x,x))
 
   type ReflexiveRelation a = (EndoRelation a | reflexive?)
 
-  op [a] irreflexive? (r: EndoRelation a) : Boolean = (fa(x) ~~r(x,x))
+  op [a] irreflexive? (r: EndoRelation a) : Bool = (fa(x) ~~r(x,x))
 
   type IrreflexiveRelation a = (EndoRelation a | irreflexive?)
 
-  op [a] symmetric? (r: EndoRelation a) : Boolean = (fa(x,y) r(x,y) => r(y,x))
+  op [a] symmetric? (r: EndoRelation a) : Bool = (fa(x,y) r(x,y) => r(y,x))
 
   type SymmetricRelation a = (EndoRelation a | symmetric?)
 
-  op [a] antisymmetric? (r: EndoRelation a) : Boolean =
+  op [a] antisymmetric? (r: EndoRelation a) : Bool =
     fa(x,y) r(x,y) && r(y,x) => x = y
 
   type AntisymmetricRelation a = (EndoRelation a | antisymmetric?)
 
-  op [a] asymmetric? (r: EndoRelation a) : Boolean =
+  op [a] asymmetric? (r: EndoRelation a) : Bool =
     fa(x,y) ~ (r(x,y) && r(y,x))
 
   type AsymmetricRelation a = (EndoRelation a | asymmetric?)
 
-  op [a] transitive? (r: EndoRelation a) : Boolean =
+  op [a] transitive? (r: EndoRelation a) : Bool =
     fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
 
   type TransitiveRelation a = (EndoRelation a | transitive?)
 
-  op [a] negativeTransitive? (r: EndoRelation a) : Boolean =
+  op [a] negativeTransitive? (r: EndoRelation a) : Bool =
     fa(x,y,z) ~~r(x,y) && ~~r(y,z) => ~~r(x,z)
 
   type NegativeTransitiveRelation a = (EndoRelation a | negativeTransitive?)
 
-  op [a] trichotomous? (r: EndoRelation a) : Boolean =
+  op [a] trichotomous? (r: EndoRelation a) : Bool =
     % exactly one of `r(x,y)', `r(y,x)', and `x = y' holds:
     fa(x,y) r(x,y) && ~~r(y,x) && x ~= y
        || ~~r(x,y) &&   r(y,x) && x ~= y
@@ -54,12 +54,12 @@ EndoRelation qualifying spec
 
   type TrichotomousRelation a = (EndoRelation a | trichotomous?)
 
-  op equivalence? : [a] EndoRelation a -> Boolean =
+  op equivalence? : [a] EndoRelation a -> Bool =
     reflexive? /\ symmetric? /\ transitive?
 
   type Equivalence a = (EndoRelation a | equivalence?)
 
-  op partialEquivalence? : [a] EndoRelation a -> Boolean =
+  op partialEquivalence? : [a] EndoRelation a -> Bool =
     symmetric? /\ transitive?
 
   type PartialEquivalence a = (EndoRelation a | partialEquivalence?)

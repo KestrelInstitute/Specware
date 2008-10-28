@@ -14,23 +14,23 @@ FSet qualifying spec
   op [a] fromFSet (s: FSet a) : FiniteSet a =
     fn x -> choose[FSet] (fn l -> x in? l) s
 
-  op [a] in? (x:a, s: FSet a) infixl 20 : Boolean =
+  op [a] in? (x:a, s: FSet a) infixl 20 : Bool =
     choose[FSet] (fn l -> x in? l) s
 
-  op [a] nin? (x:a, s: FSet a) infixl 20 : Boolean = ~ (x in? s)
+  op [a] nin? (x:a, s: FSet a) infixl 20 : Bool = ~ (x in? s)
 
-  op [a] <= (s1: FSet a, s2: FSet a) infixl 20 : Boolean =
+  op [a] <= (s1: FSet a, s2: FSet a) infixl 20 : Bool =
     choose[FSet] (fn l1 ->
     choose[FSet] (fn l2 -> 
     forall? (fn x -> x in? l2) l1
     ) s2
     ) s1
 
-  op [a] < (s1: FSet a, s2: FSet a) infixl 20 : Boolean = (s1 <= s2 && s1 ~= s2)
+  op [a] < (s1: FSet a, s2: FSet a) infixl 20 : Bool = (s1 <= s2 && s1 ~= s2)
 
-  op [a] >= (s1: FSet a, s2: FSet a) infixl 20 : Boolean = (s2 <= s1)
+  op [a] >= (s1: FSet a, s2: FSet a) infixl 20 : Bool = (s2 <= s1)
 
-  op [a] > (s1: FSet a, s2: FSet a) infixl 20 : Boolean = (s2 < s1)
+  op [a] > (s1: FSet a, s2: FSet a) infixl 20 : Bool = (s2 < s1)
 
   op [a] /\ (s1: FSet a, s2: FSet a) infixr 25 : FSet a =
     choose[FSet] (fn l1 ->
@@ -55,18 +55,18 @@ FSet qualifying spec
 
   op empty : [a] FSet a = quotient[FSet] empty
 
-  op [a] empty? (s: FSet a) : Boolean = (s = empty)
+  op [a] empty? (s: FSet a) : Bool = (s = empty)
 
-  op nonEmpty? : [a] FSet a -> Boolean = ~~ empty?
+  op nonEmpty? : [a] FSet a -> Bool = ~~ empty?
 
   type NonEmptyFSet a = (FSet a | nonEmpty?)
 
   op [a] single (x:a) : FSet a = quotient[FSet] (single x)
 
-  op [a] single? (s: FSet a) : Boolean =
+  op [a] single? (s: FSet a) : Bool =
   choose[FSet] (fn l -> ofLength? 1 l) s
 
-  op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Boolean = (s = single x)
+  op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Bool = (s = single x)
 
   type SingletonFSet a = (FSet a | single?)
 
@@ -95,7 +95,7 @@ FSet qualifying spec
 
   op [a] size (s: FSet a) : Nat = choose[FSet] length s
 
-  op [a,b] foldable? (c:b, f: b * a -> b, s: FSet a) : Boolean =
+  op [a,b] foldable? (c:b, f: b * a -> b, s: FSet a) : Bool =
     foldable? (c, f, fromFSet s)  % not executable
 
   op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)): b =
@@ -123,16 +123,16 @@ FSet qualifying spec
 
   op powerf : [a] FSet a -> FSet (FSet a) = power
 
-  op [a] forall? (p: a -> Boolean) (s: FSet a) : Boolean =
+  op [a] forall? (p: a -> Bool) (s: FSet a) : Bool =
     choose[FSet] (forall? p) s
 
-  op [a] exists? (p: a -> Boolean) (s: FSet a) : Boolean =
+  op [a] exists? (p: a -> Bool) (s: FSet a) : Bool =
     choose[FSet] (exists? p) s
 
-  op [a] exists1? (p: a -> Boolean) (s: FSet a) : Boolean =
+  op [a] exists1? (p: a -> Bool) (s: FSet a) : Bool =
     choose[FSet] (exists? p) s
 
-  op [a] filter (p: a -> Boolean) (s: FSet a) : FSet a =
+  op [a] filter (p: a -> Bool) (s: FSet a) : FSet a =
     choose[FSet] (fn l -> 
     quotient[FSet] (filter p l)
     ) s
