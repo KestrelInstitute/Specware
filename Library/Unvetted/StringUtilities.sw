@@ -77,11 +77,11 @@ String qualifying spec
       | None -> s
       | Some i -> substring(s,0,i) ^ rep ^ replaceString(substring(s,i + length pat,length s),pat,rep)
 
-  op  testSubseqEqual? : String * String * Nat * Nat -> Boolean
+  op  testSubseqEqual? : String * String * Nat * Integer -> Boolean
   %% True if s1 from s1@i1 to end is the same as s2@i2 to s2@(i2+(length s1)-i1)
   def testSubseqEqual? (s1, s2, i1, i2) =
     let sz1 = length s1 in
-    if sz1 - i1 > length s2 - i2 then false
+    if sz1 - i1 > length s2 - i2 || i2 < 0 then false
     else
     let 
       def loop i =
