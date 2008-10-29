@@ -43,7 +43,7 @@ test."
 	((< emacs-minor-version minor) nil)
 	((null patch))
 	((string-match "^[0-9]+\\.[0-9]+\\.\\([0-9]+\\)" emacs-version)
-	 (>= (string-to-int (match-string 1 emacs-version)) patch)))))
+	 (>= (string-to-number (match-string 1 emacs-version)) patch)))))
 
 
 ;;;===========================================================================
@@ -71,8 +71,15 @@ test."
        (fboundp 'copy-tree)
        (locate-library "font-core")
        (locate-library "syntax")))
+
 ;; with the following line, "reveal invisible around point" won't work:
-;;   (setq x-symbol-emacs-has-font-lock-with-props 'invisible)
+(setq x-symbol-emacs-has-font-lock-with-props 
+      (if (boundp 'font-lock-extra-managed-props)
+	  'invisible))
+;; da: above seems no longer true with, e.g., works in Emacs 22.1.1.
+;; So enable this by default now since it results in better
+;; display, no space between text and sub/superscripts.
+
 
 ;; lisp/warnings.el,v 1.6(new): recommended
 (condition-case nil (require 'warnings) (error))
@@ -266,7 +273,13 @@ test."
 	  (aset char-coding-system-table (make-char name) t))
       (when registry
 	(set-fontset-font "fontset-default" name (cons "*" registry))
-	(when (eq graphic 0) (set-font-encoding registry name 0))
+	(when (eq graphic 0) 
+	  (cond 
+	   ((>= emacs-major-version 23)
+	    ;; this change not good enough: characters in xsymb font still lost
+	    (set-font-encoding registry name))
+	   (t
+	    (set-font-encoding registry name 0))))
 	(when ccl-program
 	  (add-to-list 'font-ccl-encoder-alist (cons registry ccl-program))))
       name)))
@@ -411,16 +424,32 @@ are separated with SEPARATOR (\", \" by default)."
 
 (defalias 'x-symbol-window-width 'window-width)
 
+(if
+    (>= emacs-major-version 23)
+  ;; da: emacs-23 version: maybe OK...
 (defun x-symbol-set-face-font (face font charsets default)
-  (let ((fontset (concat "fontset-" (symbol-name face))))
-    (unless (query-fontset fontset)
-      ;; We assume that the first time around we're using latin-8859-1
-      (new-fontset fontset
-		   (x-complement-fontset-spec (make-vector 14 "*")
-					      (list (cons 'ascii font)))))
-    (dolist (charset charsets)
-      (when charset (set-fontset-font fontset charset font)))
-    (set-face-font face fontset)))
+   (let* ((fontset-name (concat "fontset-"
+				(replace-in-string  
+				 (symbol-name face) "-" "")))
+	  (decomposed (x-decompose-font-name font))
+	  fontset)
+     (aset decomposed 11 fontset-name)
+     (setq fontset (new-fontset (x-compose-font-name decomposed)
+				(list (cons 'ascii font))))
+     (dolist (charset charsets)
+       (when charset (set-fontset-font fontset charset font)))
+     (set-face-font face fontset)))
+;; Otherwise, emacs-21/22 version
+ (defun x-symbol-set-face-font (face font charsets default)
+   (let ((fontset (concat "fontset-" (symbol-name face))))
+     (unless (query-fontset fontset)
+       ;; We assume that the first time around we're using latin-8859-1
+       (new-fontset fontset
+ 		   (x-complement-fontset-spec (make-vector 14 "*")
+ 					      (list (cons 'ascii font)))))
+     (dolist (charset charsets)
+       (when charset (set-fontset-font fontset charset font)))
+     (set-face-font face fontset))))
 
 (defun x-symbol-event-matches-key-specifier-p (event specifier)
   (if (consp specifier) (setq specifier (event-convert-list specifier)))

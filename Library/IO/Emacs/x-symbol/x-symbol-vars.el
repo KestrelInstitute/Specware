@@ -1665,7 +1665,7 @@ See `x-symbol-latin5-cset' and `x-symbol-init-cset'.")
 See `x-symbol-latin9-cset' and `x-symbol-init-cset'.")
 
 (defvar x-symbol-xsymb0-fonts
-  '("-xsymb-xsymb0%s-medium-r-normal--%d-%d0-75-75-p-*-adobe-fontspecific"
+  '("-xsymb-xsymb0%s-medium-r-normal--%d-*-75-75-p-*-adobe-fontspecific"
     "-adobe-symbol%s-medium-r-normal-*-*-%d0-*-*-*-*-adobe-fontspecific")
   "Fonts with registry/encoding \"adobe-fontspecific\".
 See `x-symbol-xsymb0-cset' and `x-symbol-init-cset'.")
@@ -1965,8 +1965,14 @@ REGEXP matches, no prefix is used.  See `x-symbol-image-convert-file'."
   :group 'x-symbol-image-general
   :type 'string)
 
+(defcustom x-symbol-image-converter-required nil
+  "*Whether or not images are required.  For Proof General, defaults to nil."
+  :group 'x-symbol-image-general
+  :type 'boolean)
+
 (defcustom x-symbol-image-converter
-  (when (console-type)
+  (when (and (console-type) 
+	     x-symbol-image-converter-required)
     (save-excursion
       (set-buffer (get-buffer-create " *x-symbol-image command*"))
       (erase-buffer)
@@ -2092,8 +2098,10 @@ VAR's options has been defined with `x-symbol-define-user-options'."
 ;;; DA's crude unicode hack
 ;;;===========================================================================
 
-(defvar x-symbol-use-unicode nil 
-  "*Non-nil to use default font as unicode font.")
+(defcustom x-symbol-use-unicode nil 
+  "*Non-nil to use default font as unicode font."
+  :group 'x-symbol-miscellaneous
+  :type 'boolean)
 
 
 

@@ -42,6 +42,7 @@
 (require (if (featurep 'mule) 'x-symbol-mule 'x-symbol-nomule))
 (eval-when-compile (require 'x-symbol-macs))
 (eval-when-compile (require 'cl))
+(eval-when-compile (require 'ccl))
 
 (eval-when-compile
   (defvar font-lock-extra-managed-props) ; font-lock of Emacs-21.4
@@ -915,6 +916,8 @@ characters in `x-symbol-coding' or `x-symbol-default-coding' if
 between START and END to BUFFER, make BUFFER current and do conversion
 there.  If BUFFER is non-nil, START and END must be buffer positions or
 START is a string, see kludgy feature of `write-region'."
+  (;; da: FIXME
+   if (x-symbol-language-value 'x-symbol-LANG-generated-data)
   (let ((grammar (x-symbol-language-value 'x-symbol-LANG-token-grammar))
 	(encode-table (x-symbol-generated-encode-table
 		       (x-symbol-language-value
@@ -965,7 +968,7 @@ START is a string, see kludgy feature of `write-region'."
       (if (functionp encode-spec)
 	  (funcall encode-spec encode-table fchar-table fchar-fb-table)
 	(x-symbol-encode-lisp encode-spec encode-table
-			      fchar-table fchar-fb-table)))))
+			      fchar-table fchar-fb-table))))))
 
 (defun x-symbol-encode-lisp (contexts encode-table fchar-table fchar-fb-table)
   (let ((before-context (car contexts))
@@ -1433,7 +1436,7 @@ command `x-symbol-mode' for details."
 				 (iso-latin-3 . iso-8859-3)
 				 (iso-latin-9 . iso-8859-9)
 				 (iso-latin-15 . iso-8859-15))))))
-	   (if cs (set-buffer-file-coding-system cs)))))
+	   (if cs (set-buffer-file-coding-system cs nil t)))))
   (if x-symbol-mode (x-symbol-init-font-lock))
   (if conversion
       (let ((modified (buffer-modified-p))
@@ -1552,6 +1555,9 @@ Append the global or token-language specific menu to MENU-ITEMS."
 		 menu-items)
 	 (or (and x-symbol-local-menu
 		  x-symbol-language
+		  ;; FIXME da: added clauses below
+		  (fboundp 'x-symbol-generated-menu-alist)
+		  (x-symbol-language-value 'x-symbol-LANG-generated-data)
 		  (x-symbol-generated-menu-alist
 		   (x-symbol-language-value 'x-symbol-LANG-generated-data)))
 	     x-symbol-menu-alist)))
@@ -1627,6 +1633,7 @@ It is not used if faces can have a property \"display table\", i.e., if
 				 x-symbol-invisible-display-table))
 	((and (fboundp 'create-fontset-from-ascii-font)
 	      x-symbol-invisible-font
+	      (not (eq x-symbol-emacs-has-font-lock-with-props 'invisible))
 	      (try-font-name x-symbol-invisible-font))
 	 ;; This is a mean and ugly hack.  Since Emacs seems unable to create a
 	 ;; face that makes text invisible, we simulate it by using a minuscule
@@ -3667,8 +3674,9 @@ language."
     (if language
 	(let ((generated (symbol-value
 			  (get language 'x-symbol-LANG-generated-data))))
-	  (setf (x-symbol-generated-menu-alist generated) menu-alist)
-	  (setf (x-symbol-generated-grid-alist generated) grid-alist))
+	  (when generated ;; da FIXME: sometimes not set?
+	    (setf (x-symbol-generated-menu-alist generated) menu-alist)
+	    (setf (x-symbol-generated-grid-alist generated) grid-alist)))
       (setq x-symbol-menu-alist menu-alist
 	    x-symbol-grid-alist grid-alist))))
 
@@ -4246,7 +4254,8 @@ uses it with TOKEN and CHARSYM."
     (breve 162 . t)
     (sterling 163 . t)
     (currency 164 . t)
-    (unused-l3/165 165 . unused)
+;; da: error in Emacs 23 anyway
+;;   (unused-l3/165 165 . unused)
     (Hcircumflex 166 (circumflex "H" hcircumflex))
     (section 167 . t)
     (diaeresis 168 . t)
@@ -4255,7 +4264,8 @@ uses it with TOKEN and CHARSYM."
     (Gbreve 171 (breve "G" gbreve))
     (Jcircumflex 172 (circumflex "J" jcircumflex))
     (hyphen 173 . t)
-    (unused-l3/174 174 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/174 174 . unused)
     (Zdotaccent 175 . t)
     (degree 176 . t)
     (hbar 177 (slash "h" Hbar))
@@ -4271,12 +4281,14 @@ uses it with TOKEN and CHARSYM."
     (gbreve 187 (breve "g" Gbreve))
     (jcircumflex 188 (circumflex "j" Jcircumflex))
     (onehalf 189 . t)
-    (unused-l3/190 190 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/190 190 . unused)
     (zdotaccent 191 . t)
     (Agrave 192 . t)
     (Aacute 193 . t)
     (Acircumflex 194 . t)
-    (unused-l3/195 195 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/195 195 . unused)
     (Adiaeresis 196 . t)
     (Cdotaccent 197 (dotaccent "C" cdotaccent))
     (Ccircumflex 198 (circumflex "C" ccircumflex))
@@ -4289,7 +4301,8 @@ uses it with TOKEN and CHARSYM."
     (Iacute 205 . t)
     (Icircumflex 206 . t)
     (Idiaeresis 207 . t)
-    (unused-l3/208 208 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/208 208 . unused)
     (Ntilde 209 . t)
     (Ograve 210 . t)
     (Oacute 211 . t)
@@ -4308,7 +4321,8 @@ uses it with TOKEN and CHARSYM."
     (agrave 224 . t)
     (aacute 225 . t)
     (acircumflex 226 . t)
-    (unused-l3/227 227 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/227 227 . unused)
     (adiaeresis 228 . t)
     (cdotaccent 229 (dotaccent "c" Cdotaccent))
     (ccircumflex 230 (circumflex "c" Ccircumflex))
@@ -4321,7 +4335,8 @@ uses it with TOKEN and CHARSYM."
     (iacute 237 . t)
     (icircumflex 238 . t)
     (idiaeresis 239 . t)
-    (unused-l3/240 240 . unused)
+;; da: error in Emacs 23 anyway
+;;    (unused-l3/240 240 . unused)
     (ntilde 241 . t)
     (ograve 242 . t)
     (oacute 243 . t)
@@ -4897,45 +4912,49 @@ uses it with TOKEN and CHARSYM."
 
 (defvar x-symbol-no-of-charsyms (+ 179 274)) ; latin{1,2,3,5,9}, xsymb{0,1}
 
+
 ;;;===========================================================================
 ;; Patch added by DA for Proof General with Carbon Emacs, with help from 
 ;; YAMAMOTO Mitsuharu <mituharu@math.s.chiba-u.ac.jp>.
 ;;;===========================================================================
 
 (defun x-symbol-mac-setup1 ()
-      ;; Use David Aspinall's xsymb1.ttf font
-      ;;    (setq x-symbol-xsymb1-name "xsymb1_ttf")
-      ;; Use Norbert Voelker's isaxsymb1.ttf font
-      (progn
-	(setq x-symbol-xsymb1-name "isaxsym")
-	(setq x-symbol-latin1-fonts nil)
-	(setq x-symbol-latin2-fonts nil)
-	(setq x-symbol-latin3-fonts nil)
-	(setq x-symbol-latin5-fonts nil)
-	(setq x-symbol-latin9-fonts nil)
-	(setq x-symbol-xsymb0-fonts
-	      '("-apple-symbol-medium-r-normal--%d-%d0-*-*-*-*-adobe-fontspecific"))
-	(setq x-symbol-xsymb1-fonts
-	      (list (concat "-apple-" x-symbol-xsymb1-name
-			    "-medium-r-normal--%d-%d0-*-*-*-*-iso10646-1")))))
+  ;; Use David Aspinall's xsymb1.ttf font
+  ;;    (setq x-symbol-xsymb1-name "xsymb1_ttf")
+  ;; Use Norbert Voelker's isaxsymb1.ttf font
+  ;;    (setq x-symbol-xsymb1-name "isaxsym")
+  ;; Use Makarius Wenzel's XSymb1.ttf font
+  ;;    (setq x-symbol-xsymb1-name "XSymb1")
+  (progn
+    (setq x-symbol-xsymb1-name "XSymb1")
+    (setq x-symbol-latin1-fonts nil)
+    (setq x-symbol-latin2-fonts nil)
+    (setq x-symbol-latin3-fonts nil)
+    (setq x-symbol-latin5-fonts nil)
+    (setq x-symbol-latin9-fonts nil)
+    (setq x-symbol-xsymb0-fonts
+	  '("-apple-symbol-medium-r-normal--%d-%d0-*-*-*-*-adobe-fontspecific"))
+    (setq x-symbol-xsymb1-fonts
+	  (list (concat "-apple-" x-symbol-xsymb1-name
+			"-medium-r-normal--%d-%d0-*-*-*-*-iso10646-1")))))
 
-(eval-and-compile  ;; da: tricky to compile this; define-ccl-program is a macro
-'(define-ccl-program ccl-encode-fake-xsymb1-font
-  `(0
-	((r2 = r1)
-	 (r1 = 0)
-	 (if (r0 == ,(charset-id 'xsymb1-right))
-	     (r2 |= 128))))
-  "CCL program for fake xsymb1 font"))
 
 (defun x-symbol-mac-setup2 ()
-  (setq font-ccl-encoder-alist
-	(cons (cons x-symbol-xsymb1-name ccl-encode-fake-xsymb1-font)
-	      font-ccl-encoder-alist))
   (set-fontset-font nil 'xsymb1-left 
 		    (cons x-symbol-xsymb1-name "iso10646-1"))
   (set-fontset-font nil 'xsymb1-right
 		    (cons x-symbol-xsymb1-name "iso10646-1"))
+  (eval 
+   '(define-ccl-program ccl-encode-fake-xsymb1-font
+      `(0
+	((r2 = r1)
+	 (r1 = 0)
+	 (if (r0 == ,(charset-id 'xsymb1-right))
+	     (r2 |= 128))))
+      "CCL program for fake xsymb1 font"))
+  (setq font-ccl-encoder-alist
+	(cons (cons x-symbol-xsymb1-name ccl-encode-fake-xsymb1-font)
+	      font-ccl-encoder-alist))
   (dolist (face '(x-symbol-face x-symbol-sub-face x-symbol-sup-face))
     (set-face-attribute face nil
 			:family 'unspecified :font 'unspecified)))
@@ -4946,14 +4965,10 @@ uses it with TOKEN and CHARSYM."
 ;;;===========================================================================
 
 
-(unless noninteractive
-  ;; necessary for batch compilation of x-symbol-image.el etc.  CW: maybe
-  ;; calling the init code here isn't that good after all (see info node
-  ;; "Miscellaneous Questions"), we'll see later...
+(defun x-symbol-startup ()
   (x-symbol-initialize)
   (setq x-symbol-all-charsyms nil)
 
-  ;; temp hack for console.  TODO: find better ways to prevent warnings etc
   (cond
    ;; temp hack for console.  TODO: find better ways to prevent warnings etc
    ((not (console-type))
@@ -4979,7 +4994,7 @@ uses it with TOKEN and CHARSYM."
     (setq x-symbol-xsymb0-fonts nil)
     (setq x-symbol-xsymb1-fonts nil)))
 
-  (if (eq window-system 'mac)
+  (if (memq window-system '(mac ns))
       (x-symbol-mac-setup1))
 
   (x-symbol-init-cset x-symbol-latin1-cset x-symbol-latin1-fonts
@@ -4999,10 +5014,15 @@ uses it with TOKEN and CHARSYM."
   (x-symbol-init-cset x-symbol-xsymb1-cset x-symbol-xsymb1-fonts
 		      x-symbol-xsymb1-table)
 
-  (if (eq window-system 'mac)
+  (if (memq window-system '(mac ns))
       (x-symbol-mac-setup2)))
 
-
+;; necessary for batch compilation of x-symbol-image.el etc.  CW: maybe
+;; calling the init code here isn't that good after all (see info node
+;; "Miscellaneous Questions"), we'll see later...
+(unless noninteractive
+  (x-symbol-startup))
+   
 ;; (when x-symbol-mule-change-default-face
 ;;   (set-face-font 'default (face-attribute 'x-symbol-face :font)))
 

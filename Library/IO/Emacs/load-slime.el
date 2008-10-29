@@ -14,6 +14,8 @@
 (unless *windows-system-p*
   (load (concat *specware-emacs* "augment-load-path.el")))
 
+;(loop for x in '(mule mule-autoloads mule-base-autoloads) do (setq features (remove x features)))
+
 (push (concat *specware-emacs* "slime/")
       load-path)
 

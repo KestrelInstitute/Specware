@@ -15,7 +15,10 @@
 (when (featurep 'xemacs)
   (pushnew (concat *specware* "/Library/IO/Emacs/") data-directory-list)
   (pushnew (concat *specware* "/Library/IO/Emacs/x-symbol/") data-directory-list))
+(when (featurep 'mule)
+  (define-specifier-tag 'mule-fonts))
 (require 'x-symbol)
+
 
 (defvar x-symbol-specware-name "Specware Symbols")
 (defvar x-symbol-specware-modes '(specware-mode specware-listener-mode))

@@ -150,9 +150,18 @@ found.  Return nil, if no default font for that registry could be found."
 	    (not (fboundp 'face-property-matching-instance)) ;Only for XEmacs.
 	    (and (null x-symbol-mule-change-default-face)
 		 (face-property-matching-instance 'default 'font
-						  (or (and (consp left) (car left))
-                                                      (and (consp right) (car right))
-                                                      left right)
+						  (let ((cset
+							 (or (car-safe left)
+							     (car-safe right))))
+						    (if (and
+							 (>= 21 emacs-major-version)
+							 (>= emacs-minor-version 5))
+							;; da: rough patch here for
+							;; brokage in 21.5  (beta28)
+							;; (including distributed version)
+							;; See `specifier-matching-instance'
+							(cons cset 'initial)
+						      cset))
 						  nil nil t))
 	    (let ((origfont (x-symbol-mule-default-font)))
 	      (set-face-property 'default 'font first nil
