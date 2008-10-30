@@ -673,9 +673,11 @@ IsaTermPrinter qualifying spec
 		  prString "*)"]
       | _ \_rightarrow prEmpty
 
- op xSymbolWords: List String = ["and", "or", "lbrakk", "rbrakk", "in", "lambda", "Rightarrow", "Longrightarrow",
-                                 "forall", "exists", "equiv", "ge", "le", "times", "plus", "minus", "union",
-                                 "noteq"]
+ op xSymbolWords: List String = ["and", "or", "And", "Or", "lbrakk", "rbrakk", "inter", "union",
+                                 "in", "notin", "lambda", 
+                                 "Rightarrow", "Longrightarrow", "noteq",
+                                 "forall", "exists", "equiv", "ge", "le", "times", "plus", "minus",
+                                 "Inter", "Sqinter", "Union", "Squnion", "Prod", "Sum"]
  op findXSymbolWord(s: String, start: Nat): Option Nat =
    let def find1 words =
          case words of
