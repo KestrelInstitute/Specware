@@ -89,7 +89,7 @@ proof -
    ..
 qed
 end-proof
-proof List__list_subtype_constr
+proof Isa List__list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
               (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
