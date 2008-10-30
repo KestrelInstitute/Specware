@@ -210,7 +210,51 @@ proof (auto simp add: Function__bijective_p__stp_def)
  show "surj_on List__list
                (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))
                (\<lambda>ignore. True)"
-  sorry
+  proof (auto simp only: surj_on_def)
+   fix l
+   show "\<exists>f \<in> \<lambda>f. Ex (op definedOnInitialSegmentOfLength f).
+           l = List__list f"
+    proof (induct l)
+     case Nil
+      def Fdef: f \<equiv> "(\<lambda>i. None) :: nat \<Rightarrow> 'c option"
+      hence Fseg: "f definedOnInitialSegmentOfLength 0"
+       by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                          Option__none_p_def)
+      hence SUB:
+        "f \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+       by (auto simp add: mem_def)
+      from Fdef Fseg have "[] = List__list f" by auto
+      with SUB show ?case by blast
+     next
+     case (Cons x l)
+      then obtain f where
+       "f \<in> (\<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n)
+        \<and>
+        l = List__list f"
+       by auto
+      hence Fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+        and FL: "l = List__list f"
+       by (auto simp add: mem_def)
+      def Fdef': f' \<equiv> "\<lambda>i. if i = 0 then Some x else f (i - 1)"
+      from Fseg
+      obtain n where FN: "f definedOnInitialSegmentOfLength n"
+       by auto
+      with Fdef' have FN': "f' definedOnInitialSegmentOfLength (n + 1)"
+       by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                          Option__some_p_def Option__none_p_def)
+      hence Fseg': "\<exists>n. f' definedOnInitialSegmentOfLength n" by auto
+      hence Fin': "f' \<in>
+                     (\<lambda>f'.
+                       \<exists>n'. f' definedOnInitialSegmentOfLength n')"
+       by (auto simp add: mem_def)
+      from Fdef' FN' FL have "x # l = List__list f'" by auto
+      with Fseg' Fin'
+      show "\<exists>f \<in>
+              \<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n.
+              x # l = List__list f"
+       by blast
+    qed
+  qed
 qed
 end-proof
 (* Op list just above is currently translated into a recdef with the subtype
