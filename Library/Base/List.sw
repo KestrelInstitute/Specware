@@ -65,25 +65,6 @@ proof Isa List__lengthOfListFunction_Obligation_the
  by (auto simp add: List__unique_initial_segment_length)
 end-proof
 
-%theorem defined_on_length_of_list_function is [a]
-%  fa (f: ListFunction a)
-%    f definedOnInitialSegmentOfLength (lengthOfListFunction f)
-%proof Isa List__defined_on_length_of_list_function
-%  apply (simp only: List__lengthOfListFunction_def)
-%  apply (rule theI')
-%  apply (rule List__lengthOfListFunction_Obligation_the)
-%  by assumption
-%end-proof
-
-%theorem defined_on_length_of_list_function' is [a]
-%  fa (f: Nat -> Option a, n:Nat) f definedOnInitialSegmentOfLength n =>
-%                                 n = lengthOfListFunction f
-%proof Isa
-% apply (insert List__defined_on_length_of_list_function [of f])
-% apply (frule_tac P = "\<lambda>n. f definedOnInitialSegmentOfLength n" in exI)
-% by (auto simp add: List__unique_initial_segment_length)
-%end-proof
-
 % isomorphisms between lists and list functions:
 
 op list : [a] Bijection (ListFunction a, List a) =
@@ -106,6 +87,130 @@ proof -
  thus
    "\<exists>n_1. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n_1"
    ..
+qed
+end-proof
+proof List__list_subtype_constr
+proof (auto simp add: Function__bijective_p__stp_def)
+ show "inj_on List__list
+              (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+  proof (unfold inj_on_def, clarify)
+   fix f1 :: "nat \<Rightarrow> 'b option"
+   fix f2 :: "nat \<Rightarrow> 'b option"
+   assume "f1 \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+   hence "\<exists>n1. f1 definedOnInitialSegmentOfLength n1"
+    by (auto simp add: mem_def)
+   then obtain n1 where F1defN1: "f1 definedOnInitialSegmentOfLength n1"
+    by auto
+   assume "f2 \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+   hence "\<exists>n2. f2 definedOnInitialSegmentOfLength n2"
+    by (auto simp add: mem_def)
+   then obtain n2 where F2defN2: "f2 definedOnInitialSegmentOfLength n2"
+    by auto
+   assume "List__list f1 = List__list f2"
+   with F1defN1 F2defN2 show "f1 = f2"
+   proof (induct n \<equiv> n1 arbitrary: f1 f2 n1 n2)
+    case 0
+     hence "\<forall>i. f1 i = None"
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                         Option__none_p_def)
+     with `f1 definedOnInitialSegmentOfLength n1` have "List__list f1 = []"
+      by (auto simp add: List__list.simps)
+     with `List__list f1 = List__list f2` have "List__list f2 = []" by auto
+     have "f2 0 = None"
+      proof (rule ccontr)
+       assume "f2 0 \<noteq> None"
+       hence "\<exists>x. f2 0 = Some x" by auto
+       then obtain x where "f2 0 = Some x" by auto
+       with `f2 definedOnInitialSegmentOfLength n2`
+       have "\<exists>xx. List__list f2 = x # xx"
+        by (auto simp add: List__list.simps
+                           Option__none_p_def Option__some_p_def)
+       with `List__list f2 = []` show False by auto
+      qed
+     have "n2 = 0"
+      proof (rule ccontr)
+       assume "n2 \<noteq> 0"
+       with `f2 definedOnInitialSegmentOfLength n2` have "f2 0 \<noteq> None"
+        by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                           Option__some_p_def Option__none_p_def)
+       with `f2 0 = None` show False by auto
+      qed
+     with `f2 definedOnInitialSegmentOfLength n2`
+     have "\<forall>i. f2 i = None"
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                         Option__none_p_def)
+     with `\<forall>i. f1 i = None` have "\<forall>i. f1 i = f2 i" by auto
+     hence "\<And>i. f1 i = f2 i" by auto
+     thus "f1 = f2" by (rule ext)
+    next
+    case (Suc n)
+     hence "\<exists>x. f1 0 = Some x"
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                         Option__some_p_def Option__none_p_def)
+     then obtain x where "f1 0 = Some x" by auto
+     with `f1 definedOnInitialSegmentOfLength n1`
+     have "List__list f1 = x # List__list (\<lambda>i. f1 (i + 1))" by auto
+     with `List__list f1 = List__list f2`
+     have "List__list f2 = x # List__list (\<lambda>i. f1 (i + 1))" by auto
+     have "f2 0 \<noteq> None"
+      proof (rule ccontr)
+       assume "\<not> f2 0 \<noteq> None"
+       hence "f2 0 = None" by auto
+       with `f2 definedOnInitialSegmentOfLength n2`
+       have "List__list f2 = []"
+        by (auto simp add: List__list.simps)
+       with `List__list f2 = x # List__list (\<lambda>i. f1 (i + 1))`
+            `f2 definedOnInitialSegmentOfLength n2`
+       show False by auto
+      qed
+     hence "\<exists>x'. f2 0 = Some x'" by auto
+     then obtain x' where "f2 0 = Some x'" by auto
+     with `f2 definedOnInitialSegmentOfLength n2`
+     have "List__list f2 = x' # List__list (\<lambda>i. f2 (i + 1))"
+      by (auto simp add: List__list.simps)
+     with `List__list f2 = x # List__list (\<lambda>i. f1 (i + 1))`
+     have "x = x'"
+      and "List__list (\<lambda>i. f1 (i + 1)) =
+           List__list (\<lambda>i. f2 (i + 1))"
+      by auto
+     from `Suc n = n1`
+          `f1 definedOnInitialSegmentOfLength n1`
+     have "(\<lambda>i. f1 (i + 1)) definedOnInitialSegmentOfLength n"
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                         Option__some_p_def Option__none_p_def)
+     from `f2 definedOnInitialSegmentOfLength n2`
+     have "(\<lambda>i. f2 (i + 1)) definedOnInitialSegmentOfLength (n2 - 1)"
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                         Option__some_p_def Option__none_p_def)
+     with Suc.hyps
+          `List__list (\<lambda>i. f1 (i + 1)) =
+           List__list (\<lambda>i. f2 (i + 1))`
+          `(\<lambda>i. f1 (i + 1)) definedOnInitialSegmentOfLength n`
+     have "(\<lambda>i. f1 (i + 1)) = (\<lambda>i. f2 (i + 1))" by auto
+     hence "\<And>i. f1 i = f2 i"
+      proof -
+       fix i
+       show "f1 i = f2 i"
+        proof (cases i)
+         case 0
+          with `f1 0 = Some x` `f2 0 = Some x'` `x = x'`
+          show ?thesis by auto
+         next
+         case (Suc j)
+          with `(\<lambda>i. f1 (i + 1)) = (\<lambda>i. f2 (i + 1))`
+               fun_cong [of "(\<lambda>i. f1 (i + 1))"
+                            "(\<lambda>i. f2 (i + 1))"]
+          show ?thesis by auto
+        qed
+      qed
+     thus "f1 = f2" by (rule ext)
+   qed
+  qed
+ next
+ show "surj_on List__list
+               (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))
+               (\<lambda>ignore. True)"
+  sorry
 qed
 end-proof
 (* Op list just above is currently translated into a recdef with the subtype
