@@ -533,7 +533,7 @@ SpecNorm qualifying spec
 				      | Fun(Bool true,_,_) \_rightarrow Cons(el,r)
 				      | s_fm \_rightarrow
 				        %let _ = writeLine (" --> "^printTerm s_fm) in
-					let axm = Property(Axiom, 
+					let axm = Property(if def? then Theorem else Axiom, 
 							   mkQualifiedId
 							     (q, id^"_subtype_constr"), 
 							   [], 
