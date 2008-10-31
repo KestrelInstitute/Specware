@@ -72,6 +72,73 @@ op list : [a] Bijection (ListFunction a, List a) =
     case f 0 of
     | None   -> Nil
     | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
+(* Op list just above is currently translated into a recdef with the subtype
+hypothesis of ListFunction missing, making termination impossible to prove. The
+following verbatim Isabelle text shows the correct translation of the function,
+together with the proof script to prove termination. When the translator is
+fixed to produce the correct translation, we will remove the "-verbatim" and the
+"function ..." below, leaving only the proof scripts. For now, in order to
+process the translated Isabelle theory, the generated recdef must be deleted
+manually. *)
+proof Isa -verbatim
+function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
+"List__list f =
+   (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
+      case f 0
+        of None \<Rightarrow> []
+         | Some x \<Rightarrow> 
+           Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
+    else arbitrary)"
+by (pat_completeness, auto)
+termination
+proof (relation "measure List__lengthOfListFunction")
+ show "wf (measure List__lengthOfListFunction)" by auto
+ next
+ show "\<And>f a.
+       \<lbrakk> Ex (op definedOnInitialSegmentOfLength f) ;
+       f 0 = Some a \<rbrakk> \<Longrightarrow>
+       (\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
+ proof -
+  fix f a
+  assume "Ex (op definedOnInitialSegmentOfLength f)"
+  hence "\<exists>n. f definedOnInitialSegmentOfLength n" .
+  hence "\<exists>!n. f definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__unique_initial_segment_length)
+  hence FL: "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+   by (unfold List__lengthOfListFunction_def, rule theI')
+  assume "f 0 = Some a"
+  with FL have "List__lengthOfListFunction f > 0"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__none_p_def Option__some_p_def)
+  with FL have FL': "(\<lambda>i. f (i + 1))
+                     definedOnInitialSegmentOfLength
+                     (List__lengthOfListFunction f - 1)"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__none_p_def Option__some_p_def)
+  hence "\<exists>m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
+   by auto
+  hence "\<exists>!m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
+   by (auto simp add: List__unique_initial_segment_length)
+  hence "(\<lambda>i. f (i + 1))
+         definedOnInitialSegmentOfLength
+         (List__lengthOfListFunction (\<lambda>i. f (i + 1)))"
+   by (unfold List__lengthOfListFunction_def, rule theI')
+  with FL' have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
+                 =
+                 List__lengthOfListFunction f - 1"
+   by (auto simp add: List__unique_initial_segment_length)
+  with `List__lengthOfListFunction f > 0`
+  have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
+        < List__lengthOfListFunction f"
+   by auto
+  thus "(\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
+   by auto
+ qed
+qed
+end-proof
+(* The following proves the obligation that the function passed to the recursive
+call of op list is in the ListFunction subtype, i.e. it is defined on some
+initial segment. *)
 proof Isa List__list_Obligation_subtype0
 proof -
  fix f x
@@ -89,6 +156,7 @@ proof -
    ..
 qed
 end-proof
+(* The following proves the bijectivity of op list. *)
 proof Isa List__list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
@@ -257,107 +325,73 @@ proof (auto simp add: Function__bijective_p__stp_def)
   qed
 qed
 end-proof
-(* Op list just above is currently translated into a recdef with the subtype
-hypothesis of ListFunction missing, making termination impossible to prove. The
-following verbatim Isabelle text shows the correct translation of the function,
-together with the proof script to prove termination. When the translator is
-fixed to produce the correct translation, we will remove the "-verbatim" and the
-"function ..." below, leaving only the proof scripts. For now, in order to
-process the translated Isabelle theory, the generated recdef must be deleted
-manually. *)
-proof Isa -verbatim
-function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
-"List__list f =
-   (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
-      case f 0
-        of None \<Rightarrow> []
-         | Some x \<Rightarrow> 
-           Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
-    else arbitrary)"
-by (pat_completeness, auto)
-termination
-proof (relation "measure List__lengthOfListFunction")
- show "wf (measure List__lengthOfListFunction)" by auto
- next
- show "\<And>f a.
-       \<lbrakk> Ex (op definedOnInitialSegmentOfLength f) ;
-       f 0 = Some a \<rbrakk> \<Longrightarrow>
-       (\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
- proof -
-  fix f a
-  assume "Ex (op definedOnInitialSegmentOfLength f)"
-  hence "\<exists>n. f definedOnInitialSegmentOfLength n" .
-  hence "\<exists>!n. f definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__unique_initial_segment_length)
-  hence FL: "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
-   by (unfold List__lengthOfListFunction_def, rule theI')
-  assume "f 0 = Some a"
-  with FL have "List__lengthOfListFunction f > 0"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__none_p_def Option__some_p_def)
-  with FL have FL': "(\<lambda>i. f (i + 1))
-                     definedOnInitialSegmentOfLength
-                     (List__lengthOfListFunction f - 1)"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__none_p_def Option__some_p_def)
-  hence "\<exists>m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
-   by auto
-  hence "\<exists>!m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
-   by (auto simp add: List__unique_initial_segment_length)
-  hence "(\<lambda>i. f (i + 1))
-         definedOnInitialSegmentOfLength
-         (List__lengthOfListFunction (\<lambda>i. f (i + 1)))"
-   by (unfold List__lengthOfListFunction_def, rule theI')
-  with FL' have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
-                 =
-                 List__lengthOfListFunction f - 1"
-   by (auto simp add: List__unique_initial_segment_length)
-  with `List__lengthOfListFunction f > 0`
-  have "List__lengthOfListFunction (\<lambda>i. f (i + 1))
-        < List__lengthOfListFunction f"
-   by auto
-  thus "(\<lambda>i. f (i + 1), f) \<in> measure List__lengthOfListFunction"
-   by auto
- qed
-qed
+(* The following obligation is redundant and should not be generated. Until the
+translator is changed not to generate it any more, we use "sorry" to ignore the
+obligation. *)
+proof Isa List__list_Obligation_subtype
+ sorry
 end-proof
 
- op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
-    % we would like to use "-1" for inverse but we use "_" because "-" is
-    % disallowed
+op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
+   % we would like to use "-1" for inverse but we use "_" because "-" is
+   % disallowed
+(* The bijectivity of op list_1 follows from the fact that inverse maps
+bijections to bijections. Therefore, the following obligation needs not be
+proved by the user. The translator could generate this as a theorem (which could
+be useful) with a working proof of it. For now, we use "sorry" to avoid
+supplying a proof (which, as just explained, the user should not need to
+supply). *)
+proof Isa List__list_1_subtype_constr
+ sorry
+end-proof
 
- % create list [f(0),...,f(n-1)] (this op is less flexible that op list
- % because it requires f to return an element of type a for every natural
- % number, even if the natural number is n or larger, which is not used):
+% create list [f(0),...,f(n-1)] (this op is less flexible that op list
+% because it requires f to return an element of type a for every natural
+% number, even if the natural number is n or larger, which is not used):
 
- op [a] tabulate (n:Nat, f: Nat -> a) : List a =
-   list (fn i:Nat -> if i < n then Some (f i) else None)
+op [a] tabulate (n:Nat, f: Nat -> a) : List a =
+  list (fn i:Nat -> if i < n then Some (f i) else None)
+(* The Isabelle obligation that the function constructed from n and f and given
+as argument to op list currently exhibits a variable capture, so we ignore the
+obligation via "sorry" and we state and prove the correct obligation via
+verbatim Isabelle text. *)
+proof Isa List__tabulate_Obligation_subtype
+ sorry
+end-proof
+proof Isa -verbatim
+theorem List__tabulate_Obligation_subtype: 
+  "\<exists>m. (\<lambda>i. if i < n then Some (f i) else None)
+               definedOnInitialSegmentOfLength
+               m"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+end-proof
 
- % number of elements in list:
+% number of elements in list:
 
- op [a] length (l: List a) : Nat =
-   case l of
-   | []    -> 0
-   | _::tl -> 1 + length tl
+op [a] length (l: List a) : Nat =
+  case l of
+  | []    -> 0
+  | _::tl -> 1 + length tl
 
- % useful to define subtype of lists of given length:
+% useful to define subtype of lists of given length:
 
- op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
+op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
 
- % access element at index i (op @@ is a totalization of op @):
+% access element at index i (op @@ is a totalization of op @):
 
- op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
-   let Some x = list_1 l i in x
+op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
+  let Some x = list_1 l i in x
 
- op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
+op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
 
- (* Since elements are indexed starting at 0, we tend to avoid mentioning the
- "first", "second", etc. element of a list. The reason is that the English
- ordinals "first", "second", etc. start at 1. We also tend to avoid talking
- about the "0-th" element. We mainly talk about "element i" of a list. We also
- call element 0 the "head" of the list. We use "last" for the last element,
- because it has no numeric connotation, just positional in relation to the
- other elements. *)
+(* Since elements are indexed starting at 0, we tend to avoid mentioning the
+"first", "second", etc. element of a list. The reason is that the English
+ordinals "first", "second", etc. start at 1. We also tend to avoid talking about
+the "0-th" element. We mainly talk about "element i" of a list. We also call
+element 0 the "head" of the list. We use "last" for the last element, because it
+has no numeric connotation, just positional in relation to the other
+elements. *)
 
  % empty list (i.e. with no elements):
 
