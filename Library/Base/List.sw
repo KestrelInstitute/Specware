@@ -351,18 +351,7 @@ end-proof
 
 op [a] tabulate (n:Nat, f: Nat -> a) : List a =
   list (fn i:Nat -> if i < n then Some (f i) else None)
-(* The Isabelle obligation that the function constructed from n and f and given
-as argument to op list currently exhibits a variable capture, so we ignore the
-obligation via "sorry" and we state and prove the correct obligation via
-verbatim Isabelle text. *)
 proof Isa List__tabulate_Obligation_subtype
- sorry
-end-proof
-proof Isa -verbatim
-theorem List__tabulate_Obligation_subtype: 
-  "\<exists>m. (\<lambda>i. if i < n then Some (f i) else None)
-               definedOnInitialSegmentOfLength
-               m"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def
                      Option__some_p_def Option__none_p_def)
 end-proof
