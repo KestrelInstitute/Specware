@@ -241,7 +241,7 @@ theorem Function__fxy_implies_inverse__stp:
     P__a (x::'a); 
     P__b y; 
     f x = y\<rbrakk> \<Longrightarrow> x = Function__inverse__stp P__a f y"
-proof -
+  proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
  assume PF: "Fun_P(P__a, P__b) f"
  assume PX: "P__a (x::'a)"
@@ -268,12 +268,7 @@ proof -
 qed
 theorem Function__fxy_implies_inverse: 
   "\<lbrakk>bij (f::'a \<Rightarrow> 'b); f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
-proof -
- assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
- assume FXY: "f x = y"
- have INV_SOME: "inv f y = (SOME x. f x = y)" by (auto simp add: inv_def)
-
-
+  sorry
 theorem Function__eta__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> RFun P__a (\<lambda> (x::'a). f x) = f"
   apply(rule ext, simp)

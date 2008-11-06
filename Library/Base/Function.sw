@@ -222,7 +222,11 @@ end-proof
 
 theorem fxy_implies_inverse is [a,b]
   fa (f:Bijection(a,b), x:a, y:b) f x = y => x = inverse f y
-proof Isa Function__fxy_implies_inverse
+% TO DO:
+proof Isa
+  sorry
+end-proof
+proof Isa Function__fxy_implies_inverse__stp
 proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
  assume PF: "Fun_P(P__a, P__b) f"
