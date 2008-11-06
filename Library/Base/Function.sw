@@ -153,6 +153,43 @@ proof Isa inverse_subtype_constr
   apply(erule inj_imp_surj_inv)
 end-proof
 
+(* The following Isabelle lemma enables the use of SOME to define inverse, which
+is sometimes more convenient than THE because only existence of a solution must
+be shown in a proof, not uniqueness. *)
+proof Isa -verbatim
+lemma inverse_SOME:
+ "\<lbrakk> Function__bijective_p__stp (domP,codP) f ; codP y \<rbrakk>
+  \<Longrightarrow>
+  Function__inverse__stp domP f y = (SOME x. domP x \<and> f x = y)"
+proof (auto simp add: Function__bijective_p__stp_def Function__inverse__stp_def)
+ assume CY: "codP y"
+ assume INJ: "inj_on f domP"
+ assume SURJ: "surj_on f domP codP"
+ from SURJ have "\<forall>y \<in> codP. \<exists>x \<in> domP. f x = y"
+  by (auto simp add: surj_on_def)
+ with CY have "\<exists>x \<in> domP. f x = y" by (auto simp add: mem_def)
+ then obtain x where DX: "domP x" and YX: "f x = y"
+  by (auto simp add: mem_def)
+ hence X: "domP x \<and> f x = y" by auto
+ have "\<And>x'. domP x' \<and> f x' = y \<Longrightarrow> x' = x"
+ proof -
+  fix x'
+  assume "domP x' \<and> f x' = y"
+  hence DX': "domP x'" and YX': "f x' = y" by auto
+  from INJ have
+   "\<forall>x \<in> domP. \<forall>x' \<in> domP.
+      f x = f x' \<longrightarrow> x = x'"
+   by (auto simp add: inj_on_def)
+  with DX DX' have "f x = f x' \<Longrightarrow> x = x'"
+   by (auto simp add: mem_def)
+  with YX YX' show "x' = x" by auto
+ qed
+ with X have "\<exists>!x. domP x \<and> f x = y" by (auto simp add: mem_def)
+ thus "(THE x. domP x \<and> f x = y) = (SOME x. domP x \<and> f x = y)"
+  by (rule THE_SOME)
+qed
+end-proof
+
 theorem inverse_comp is [a,b]
   fa(f:Bijection(a,b)) f o inverse f = id
                     && inverse f o f = id
