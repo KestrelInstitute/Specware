@@ -1,6 +1,7 @@
 theory IsabelleExtensions
-imports Datatype Recdef Hilbert_Choice List GCD
+imports GCD List Hilbert_Choice Recdef Datatype
 begin
+
 
 (*************************************************************
  * Define simple projections 
@@ -475,6 +476,22 @@ definition
 lemma ilcm_to_zlcm [simp]:
   "int (ilcm (m,n)) = zlcm(m,n)"
   by(simp add: zlcm_def ilcm_def)
+
+
+(*************************************************************
+* If a predicate has a unique solution, the definite and
+* indefinite description operators coincide.
+*************************************************************)
+
+lemma THE_SOME:
+ "\<exists>!x. P x \<Longrightarrow> (THE x. P x) = (SOME x. P x)"
+proof -
+ assume EX1: "\<exists>!x. P x"
+ hence "\<exists>x. P x" by auto
+ hence "P (SOME x. P x)" by (rule someI_ex)
+ with EX1 show ?thesis by (rule the1_equality)
+qed
+
 
 
 end
