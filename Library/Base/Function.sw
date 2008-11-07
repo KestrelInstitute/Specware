@@ -222,9 +222,19 @@ end-proof
 
 theorem fxy_implies_inverse is [a,b]
   fa (f:Bijection(a,b), x:a, y:b) f x = y => x = inverse f y
-% TO DO:
 proof Isa
-  sorry
+proof -
+ assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
+ assume FXY: "f x = y"
+ have INV_SOME: "inv f y = (SOME x. f x = y)" by (auto simp add: inv_def)
+ from FXY have "\<exists>x. f x = y" by auto
+ hence "f (SOME x. f x = y) = y" by (rule someI_ex)
+ with FXY have EQF: "f x = f (SOME x. f x = y)" by auto
+ from BIJ have "\<And>x'. f x = f x' \<Longrightarrow> x = x'"
+  by (auto simp add: bij_def inj_on_def)
+ with EQF have "x = (SOME x. f x = y)" by auto
+ with INV_SOME show "x = inv f y" by auto
+qed
 end-proof
 proof Isa Function__fxy_implies_inverse__stp
 proof -
