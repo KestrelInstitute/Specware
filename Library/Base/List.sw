@@ -88,7 +88,7 @@ function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
         of None \<Rightarrow> []
          | Some x \<Rightarrow> 
            Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
-    else arbitrary)"
+    else regular_val)"
 by (pat_completeness, auto)
 termination
 proof (relation "measure List__lengthOfListFunction")
@@ -366,6 +366,12 @@ op [a] length (l: List a) : Nat =
 % useful to define subtype of lists of given length:
 
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
+
+(* The following lemma relates the Metaslang definition of op list_1 to the
+Isabelle definition of the "nth" function (infix "!"). *)
+proof Isa -verbatim
+
+end-proof
 
 % access element at index i (op @@ is a totalization of op @):
 
