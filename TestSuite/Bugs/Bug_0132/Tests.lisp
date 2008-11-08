@@ -34,7 +34,7 @@
 	    " "
 	    " op  f : Nat -> Nat"
             ""
-	    " conjecture f_Obligation_subsort is "
+	    " conjecture f_Obligation_subtype is "
 	    "    fa(n : Nat) uniquelySatisfied?((fn m -> m = n))"
 	    " "
 	    " def f n = The((fn m -> m = n))"

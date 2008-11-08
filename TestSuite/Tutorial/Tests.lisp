@@ -74,7 +74,7 @@
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2A"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.log"
-	      "p2A: Conjecture word_matches_at?_Obligation_subsort in MatchingObligations#WordMatching_Oblig is Proved! *"
+	      "p2A: Conjecture word_matches_at?_Obligation_subtype in MatchingObligations#WordMatching_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -84,7 +84,7 @@
     :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2B"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2B.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2B.log"
-	      "p2B: Conjecture word_matches_at?_Obligation_subsort0 in MatchingObligations#WordMatching_Oblig is Proved! *"
+	      "p2B: Conjecture word_matches_at?_Obligation_subtype0 in MatchingObligations#WordMatching_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -95,7 +95,7 @@
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3A"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3A.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3A.log"
-	      "p3A: Conjecture word_matches_at?_Obligation_subsort in MatchingObligations#WordMatching0_Oblig is Proved! *"
+	      "p3A: Conjecture word_matches_at?_Obligation_subtype in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -105,7 +105,7 @@
     :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3B"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3B.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3B.log"
-	      "p3B: Conjecture word_matches_at?_Obligation_subsort0 in MatchingObligations#WordMatching0_Oblig is Proved! *"
+	      "p3B: Conjecture word_matches_at?_Obligation_subtype0 in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -116,7 +116,7 @@
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3C.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3C.log"
 	      ;; Sigh.  "C:" becomes "" in test output processing   
-	      "p3 Conjecture word_matches_aux?_Obligation_subsort in MatchingObligations#WordMatching0_Oblig is Proved! *"
+	      "p3 Conjecture word_matches_aux?_Obligation_subtype in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -171,7 +171,7 @@
     :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5B"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5B.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5B.log"
-	      "p5B: Conjecture find_matches_aux_Obligation_subsort in MatchingObligations#FindMatches0_Oblig is Proved! *"
+	      "p5B: Conjecture find_matches_aux_Obligation_subtype in MatchingObligations#FindMatches0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))

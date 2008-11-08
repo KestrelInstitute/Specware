@@ -13,7 +13,7 @@
 	    " "
 	    " op  f : [a] List(a) -> Nat"
             ""
-	    " conjecture f_Obligation_subsort is [a] "
+	    " conjecture f_Obligation_subtype is [a] "
 	    "    fa(l : List(a)) ~(l = []) && length l >= 0 => posNat?(length l)"
 	    " "
 	    " def f l = (case l"

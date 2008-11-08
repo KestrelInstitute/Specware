@@ -30,7 +30,7 @@
 	    "    fa(y__1 : Nat, y__2 : Nat)"
 	    "     quotient[Q] y__1 = quotient[Q] y__2 => y__1 + 1 = y__2 + 1"
             ""
-	    " conjecture f_Obligation_subsort is "
+	    " conjecture f_Obligation_subtype is "
 	    (:alternatives
 	     ("    fa(x : Q, y : Int) "
 	      "     natural? y && x = quotient[Q]  y => natural?(y + 1)")
@@ -41,12 +41,12 @@
 	    " "
 	    " op  g : Q -> Nat"
             ""
-	    " conjecture g_Obligation_subsort is "
+	    " conjecture g_Obligation_subtype is "
 	    "    fa(m : Nat, n : Nat) eq_mod10(m, n) => m + 1 = n + 1"
             ""
 	    (:alternatives
-	     " conjecture g_Obligation_subsort0 is fa(y : Nat) natural?(y + 1)"
-	     " conjecture g_Obligation_subsort0 is fa(y : Nat) y + 1 >= 0")
+	     " conjecture g_Obligation_subtype0 is fa(y : Nat) natural?(y + 1)"
+	     " conjecture g_Obligation_subtype0 is fa(y : Nat) y + 1 >= 0")
 	    " "
 	    " def g x = choose[Q] ((fn y -> y + 1)) x"
 	    " "
@@ -56,7 +56,7 @@
 	    "    fa(y__1 : Nat, y__2 : Nat) "
 	    "     quotient[Q]  y__1 = quotient[Q]  y__2 => [y__1 + 1] = [y__2 + 1]"
             ""
-	    " conjecture f2_Obligation_subsort is "
+	    " conjecture f2_Obligation_subtype is "
 	    (:alternatives
 	     ("    fa(x : Q, y : Int) "
 	      "     natural? y && x = quotient[Q]  y => natural?(y + 1)")
@@ -67,12 +67,12 @@
 	    " "
 	    " op  g2 : Q -> List(Nat)"
             ""
-	    " conjecture g2_Obligation_subsort is "
+	    " conjecture g2_Obligation_subtype is "
 	    "    fa(m : Nat, n : Nat) eq_mod10(m, n) => [m + 1] = [n + 1]"
             ""
 	    (:alternatives
-	     " conjecture g2_Obligation_subsort0 is fa(y : Nat) natural?(y + 1)"
-	     " conjecture g2_Obligation_subsort0 is fa(y : Nat) y + 1 >= 0")
+	     " conjecture g2_Obligation_subtype0 is fa(y : Nat) natural?(y + 1)"
+	     " conjecture g2_Obligation_subtype0 is fa(y : Nat) y + 1 >= 0")
 	    " "
 	    " def g2 x = choose[Q] ((fn y -> [y + 1])) x"
 	    (:optional " ")

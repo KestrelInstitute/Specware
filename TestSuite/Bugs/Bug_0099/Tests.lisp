@@ -20,8 +20,8 @@
 	    " "
 	    " op  succ : Nat -> Nat"
 	    (:alternatives
-	     " conjecture Nat.succ_Obligation_subsort is fa(n : Nat) natural?(succ n)"
-	     " conjecture Nat.succ_Obligation_subsort is fa(n : Nat) succ n >= 0")
+	     " conjecture Nat.succ_Obligation_subtype is fa(n : Nat) natural?(succ n)"
+	     " conjecture Nat.succ_Obligation_subtype is fa(n : Nat) succ n >= 0")
 	    " "
 	    " def succ n = succ n"
 	    " proof Isa Thy_Morphism"
@@ -65,7 +65,7 @@
 	     ";; ensure-directories-exist: creating $TESTDIR/Snark/MinusOb/MinusProof.log"
 	     ";; Directory $TESTDIR/Snark/ does not exist, will create."
 	     ";; Directory $TESTDIR/Snark/MinusOb/ does not exist, will create.")
-	    "MinusProof: Conjecture minus_def2_Obligation_subsort in ONat is Proved! using Snark*."
+	    "MinusProof: Conjecture minus_def2_Obligation_subtype in ONat is Proved! using Snark*."
 	    (:optional "")
 	    (:optional "")
 	    (:optional "")
