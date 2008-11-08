@@ -56,26 +56,26 @@ p1 = prove symb_matches?_Obligation_exhaustive in MatchingObligations#SymbolMatc
 
 
 %% One of the word_matches_at?_Obligation is no longer generated because it is trivially true
-p2 = prove word_matches_at?_Obligation_subsort  in MatchingObligations#WordMatching_Oblig
-p3 = prove word_matches_at?_Obligation_subsort0 in MatchingObligations#WordMatching_Oblig
+p2 = prove word_matches_at?_Obligation_subtype  in MatchingObligations#WordMatching_Oblig
+p3 = prove word_matches_at?_Obligation_subtype0 in MatchingObligations#WordMatching_Oblig
 
-p5  = prove word_matches_at?_Obligation_subsort   in 
+p5  = prove word_matches_at?_Obligation_subtype   in 
 MatchingObligations#WordMatching_Oblig %%MatchingRichardSpec
 %%options use_support
 
 
 
 
-p6  = prove word_matches_at?_Obligation_subsort0  in 
+p6  = prove word_matches_at?_Obligation_subtype0  in 
 MatchingObligations#WordMatching0_Oblig %MatchingRichardSpec
 options use_support_list
 
 % name not in spec
-%p7  = prove word_matches_at?_Obligation_subsort1  
+%p7  = prove word_matches_at?_Obligation_subtype1  
 %in MatchingObligations#WordMatching0_Oblig
 %options use_support_list
 
-p8  = prove word_matches_aux?_Obligation_subsort  in 
+p8  = prove word_matches_aux?_Obligation_subtype  in 
 MatchingObligations#WordMatching0_Oblig
 options use_support_list
 (*  %% termination proof
@@ -95,7 +95,7 @@ p12 = prove find_matches_Obligation_exhaustive    %%
 in MatchingObligations#FindMatches0_Oblig 
 options use_support_list
 
-p13 = prove find_matches_aux_Obligation_subsort  %% 
+p13 = prove find_matches_aux_Obligation_subtype  %% 
 in MatchingObligations#FindMatches0_Oblig
 options use_support_list
 (*  %% termination proof

@@ -80,13 +80,13 @@ import MatchingObligations#WordMatching0_Oblig
    => length(nthTail(msg,pos)) = length(msg) - pos
 
 %% same as p5.
-  conjecture word_matches_at?_Obligation_subsort_richard is
+  conjecture word_matches_at?_Obligation_subtype_richard is
     fa(pos:Nat, msg:Message, wrd:Word)
         ~(pos + length wrd > length msg)
      => pos <= length msg
 
 %% same as p6
-  conjecture word_matches_at?_Obligation_subsort0_richard is
+  conjecture word_matches_at?_Obligation_subtype0_richard is
     fa(pos:Nat, msg:Message, wrd:Word) 
        ~(pos + length wrd > length msg) 
     => length wrd <= length(nthTail(msg,pos))
@@ -96,7 +96,7 @@ import MatchingObligations#WordMatching0_Oblig
     length(cons(msym,msg1)) = length(msg1) + 1
 
 %% same as p8
-  conjecture word_matches_aux?_Obligation_subsort_2 is
+  conjecture word_matches_aux?_Obligation_subtype_2 is
     fa(wrd1:Word, wsym:Symbol, msg1:Message, msym)
         length(cons(wsym,wrd1)) <= length(cons(msym,msg1))
      => length wrd1 <= length msg1 
@@ -201,13 +201,13 @@ chaining_left_zero =
 prove chaining_left_zero
 in MatchingRichardSpec
 
-word_matches_at?_Obligation_subsort_richard =
-prove word_matches_at?_Obligation_subsort_richard
+word_matches_at?_Obligation_subtype_richard =
+prove word_matches_at?_Obligation_subtype_richard
 in MatchingRichardSpec
 options use_support
 
-word_matches_at?_Obligation_subsort0_richard =
-prove word_matches_at?_Obligation_subsort0_richard
+word_matches_at?_Obligation_subtype0_richard =
+prove word_matches_at?_Obligation_subtype0_richard
 in MatchingRichardSpec
 options use_support
 
@@ -218,8 +218,8 @@ in MatchingRichardSpec
 options use_support
 
 %% not proved
-word_matches_aux?_Obligation_subsort_2 =
-prove word_matches_aux?_Obligation_subsort_2
+word_matches_aux?_Obligation_subtype_2 =
+prove word_matches_aux?_Obligation_subtype_2
 in MatchingRichardSpec
 options use_support
 
@@ -229,18 +229,18 @@ p1 = prove symb_matches?_Obligation_exhaustive in MatchingObligations#SymbolMatc
 
 
 %% One of the word_matches_at?_Obligation is no longer generated because it is trivially true
-p2 = prove word_matches_at?_Obligation_subsort  in MatchingObligations#WordMatching_Oblig
-p3 = prove word_matches_at?_Obligation_subsort0 in MatchingObligations#WordMatching_Oblig
+p2 = prove word_matches_at?_Obligation_subtype  in MatchingObligations#WordMatching_Oblig
+p3 = prove word_matches_at?_Obligation_subtype0 in MatchingObligations#WordMatching_Oblig
 
-p5  = prove word_matches_at?_Obligation_subsort   in 
+p5  = prove word_matches_at?_Obligation_subtype   in 
 MatchingRichardSpec
 options use_support
 % MatchingObligations#WordMatching0_Oblig
-p6  = prove word_matches_at?_Obligation_subsort0  in 
+p6  = prove word_matches_at?_Obligation_subtype0  in 
 MatchingRichardSpec
 % MatchingObligations#WordMatching0_Oblig
-%p7  = prove word_matches_at?_Obligation_subsort1  in MatchingObligations#WordMatching0_Oblig
-p8  = prove word_matches_aux?_Obligation_subsort  in MatchingObligations#WordMatching0_Oblig
+%p7  = prove word_matches_at?_Obligation_subtype1  in MatchingObligations#WordMatching0_Oblig
+p8  = prove word_matches_aux?_Obligation_subtype  in MatchingObligations#WordMatching0_Oblig
 p9  = prove word_matches_aux?_Obligation_termination in MatchingObligations#WordMatching0_Oblig
 p10 = prove word_matches_aux?_Obligation_exhaustive in MatchingObligations#WordMatching0_Oblig
 
@@ -248,7 +248,7 @@ p10 = prove word_matches_aux?_Obligation_exhaustive in MatchingObligations#WordM
 % p11 = prove ... in MatchingObligations#WordMatching_Ref0_Oblig
 
 p12 = prove find_matches_Obligation_exhaustive   in MatchingObligations#FindMatches0_Oblig
-p13 = prove find_matches_aux_Obligation_subsort  in MatchingObligations#FindMatches0_Oblig
+p13 = prove find_matches_aux_Obligation_subtype  in MatchingObligations#FindMatches0_Oblig
 p14 = prove find_matches_aux_Obligation_termination in MatchingObligations#FindMatches0_Oblig
 
 p15 = prove match_finding in MatchingObligations#FindMatches_Ref0_Oblig
