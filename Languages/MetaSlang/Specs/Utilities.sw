@@ -919,6 +919,8 @@ Utilities qualifying spec
    case t1 of
      | Fun(Bool true,_,_)  -> t2
      | Fun(Bool false,_,_) -> mkTrue() % was mkFalse() !!
+     | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
+       mkSimpImplies(mkAnd(t1,p1), q1)
      | _ -> 
        case t2 of
         % We can't optimize (x => true) to true, as one might expect from logic.
