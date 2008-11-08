@@ -132,10 +132,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 				  | SortedTerm(trm,_,_) -> stripSortedTerm trm
 				  | _ -> trm)
 			  in
-			  (case stripSortedTerm dfn of
-			     | Any _ -> true
-			     | _ -> false
-			    ))
+                          anyTerm?(stripSortedTerm dfn))
       in
       %let _ = writeLine(";; translateApplyToExpr: "^q^"."^id^", isField? = " ^ toString isField?) in
       let rng = inferTypeFoldRecords(spc,term) in

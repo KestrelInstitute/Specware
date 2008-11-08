@@ -1206,9 +1206,7 @@ def isAnyTerm? t =
      | SortedTerm(trm,_,_) -> stripSortedTerm trm
      | _ -> trm)
   in
-  case stripSortedTerm t of
-    | Any _ -> true
-    | _ -> false
+  anyTerm? t
 
 % --------------------------------------------------------------------------------
 %

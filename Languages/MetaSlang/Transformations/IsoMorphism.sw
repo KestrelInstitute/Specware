@@ -544,9 +544,8 @@ spec
       (fn (q, nm, info, result) ->
        let qid = Qualified(q,nm) in
        let (tvs, op_ty, dfn) = unpackTerm info.dfn in
-       case dfn  of
-         | Any _ -> result
-         | _ ->
+       if anyTerm? dfn then result
+       else
        let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
        if member(qid,ign_qids)
          \_or equivType? spc (op_ty_pr,op_ty)

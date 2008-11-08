@@ -72,12 +72,7 @@ def initialState = {
 		    createFieldFun     = (fn tm -> 
                                             %% Suppress field declarations for undefined functions
                                             let (tvs, typ, tm) = unpackTerm tm in
-                                            case tm of
-                                              | Any _ -> 
-                                                (case typ of
-                                                   | Arrow _ -> false
-                                                   | _ -> true)
-                                              | _ -> true),
+                                            ~(anyTerm? tm && embed? Arrow typ)),
                     ignoreTypeDefFun   = fn _ -> false,
 		    isClassNameFun     = fn _ -> false,
 		    cresCounter        = 0
