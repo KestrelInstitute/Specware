@@ -409,7 +409,7 @@ Should we check to see if qid is in cod_map??
 	      | Some cod_qid ->
 	        (case findTheOp (cod_spec, cod_qid) of
 		   | Some cod_info ->
-		     let dom_defined? = case dom_dfn of | Any _ -> false | _ -> true in
+		     let dom_defined? = ~(anyTerm? dom_dfn) in
 		       if dom_defined? && (opInfoDefs cod_info = []) then
 			 let msg = "Inconsistent op def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^
 			           "\nThe domain op     " ^ (printQualifiedId dom_qid) ^ " has a definition: " ^ (printTerm dom_dfn) ^ 
