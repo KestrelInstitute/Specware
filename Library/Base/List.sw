@@ -370,13 +370,98 @@ op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
 (* The following lemma relates the Metaslang definition of op list_1 to the
 Isabelle definition of the "nth" function (infix "!"). *)
 proof Isa -verbatim
-
+lemma list_1_Isa_nth:
+ "List__list_1 l = (\<lambda>i. if i < length l then Some (l!i) else None)"
+proof (induct l)
+ case Nil
+  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
+                     \<exists>n. f definedOnInitialSegmentOfLength n"
+  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
+  from List__list_subtype_constr
+  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have FPL: "Fun_P (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have LI: "List__list_1 [] = Function__inverse__stp domP List__list []"
+   by (auto simp add: List__list_1_def domP_def)
+  def f \<equiv> "\<lambda>i. if i < length [] then Some (l!i) else None"
+  hence f_all_None: "f = (\<lambda>i. None)" by auto
+  hence f_init_seg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  hence "domP f" by (auto simp add: domP_def)
+  have "codP []" by (auto simp add: codP_def)
+  from f_init_seg f_all_None have "List__list f = []" by auto
+  with BIJ FPL `domP f` `codP []`
+  have "f = Function__inverse__stp domP List__list []"
+   by (auto simp add: Function__fxy_implies_inverse__stp)
+  with LI f_def show ?case by auto
+ next
+ case (Cons x l)
+  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
+                     \<exists>n. f definedOnInitialSegmentOfLength n"
+  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
+  from List__list_subtype_constr
+  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have FPL: "Fun_P (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have LI: "List__list_1 (x # l) =
+            Function__inverse__stp domP List__list (x # l)"
+   by (auto simp add: List__list_1_def domP_def)
+  def f \<equiv> "(\<lambda>i. if i < length l then Some (l!i) else None)
+           :: nat \<Rightarrow> 'a option"
+  hence f_init_seg: "f definedOnInitialSegmentOfLength (length l)"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  hence "domP f" by (auto simp add: domP_def)
+  have "codP l" by (auto simp add: codP_def)
+  from f_def Cons.hyps have IH: "List__list_1 l = f" by auto
+  hence IH': "List__list (List__list_1 l) = List__list f" by auto
+  from BIJ FPL `codP l`
+  have "List__list (Function__inverse__stp domP List__list l) = l"
+   by (auto simp only: Function__f_inverse_apply__stp)
+  hence "List__list (List__list_1 l) = l"
+   by (auto simp only: List__list_1_def domP_def)
+  with IH' have "List__list f = l" by auto
+  def f' \<equiv> "\<lambda>i. if i < length (x # l)
+                               then Some ((x # l) ! i) else None"
+  have f'_f: "f' = (\<lambda>i. if i = 0 then Some x else f (i - 1))"
+  proof
+   fix i
+   show "f' i = (if i = 0 then Some x else f (i - 1))"
+   proof (cases i)
+    case 0
+     thus ?thesis by (auto simp add: f'_def f_def)
+    next
+    case (Suc j)
+     thus ?thesis by (auto simp add: f'_def f_def)
+   qed
+  qed
+  from f'_def
+  have f'_init_seg: "f' definedOnInitialSegmentOfLength (Suc (length l))"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  hence "domP f'" by (auto simp add: domP_def)
+  have "codP (x # l)" by (auto simp add: codP_def)
+  from f'_f f'_init_seg
+  have "List__list f' = x # List__list f" by auto
+  with `List__list f = l` have "List__list f' = x # l" by auto
+  with BIJ FPL `domP f'` `codP (x # l)`
+  have "f' = Function__inverse__stp domP List__list (x # l)"
+   by (auto simp add: Function__fxy_implies_inverse__stp)
+  with LI f'_def show ?case by auto
+qed
 end-proof
 
 % access element at index i (op @@ is a totalization of op @):
 
 op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
   let Some x = list_1 l i in x
+
+proof Isa List__e_at__def
+  by (auto simp add: list_1_Isa_nth)
+end-proof
 
 op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
 
@@ -388,56 +473,109 @@ element 0 the "head" of the list. We use "last" for the last element, because it
 has no numeric connotation, just positional in relation to the other
 elements. *)
 
- % empty list (i.e. with no elements):
+% empty list (i.e. with no elements):
 
- op empty : [a] List a = []
+op empty : [a] List a = []
 
- theorem length_empty is [a] length (empty: List a) = 0
- proof Isa [simp] end-proof
+theorem length_empty is [a] length (empty: List a) = 0
+proof Isa [simp] end-proof
 
- op [a] empty? (l: List a) : Bool = (l = empty)
- proof Isa
-   by (simp add: null_empty)
- end-proof
+op [a] empty? (l: List a) : Bool = (l = empty)
+proof Isa
+  by (simp add: null_empty)
+end-proof
 
- theorem empty?_length is [a] fa (l: List a) empty? l = (length l = 0)
- proof Isa
-   apply(case_tac l)
-   apply(auto)
- end-proof
+theorem empty?_length is [a] fa (l: List a) empty? l = (length l = 0)
+proof Isa
+  apply(case_tac l)
+  apply(auto)
+end-proof
 
- % non-empty lists (i.e. with at least one element):
+% non-empty lists (i.e. with at least one element):
 
- op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
- proof Isa [simp] end-proof    
+op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
+proof Isa [simp] end-proof    
 
- type List1 a = (List a | nonEmpty?)
+type List1 a = (List a | nonEmpty?)
 
- % singleton list:
+% singleton list:
 
- op [a] single (x:a) : List a = [x]
+op [a] single (x:a) : List a = [x]
 
- op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
+op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
 
- % membership:
+proof Isa List__theElement__stp_Obligation_the
+proof -
+ assume "List__ofLength_p 1 l"
+ hence L1: "length l = 1" by (auto simp add: List__ofLength_p_def)
+ def x \<equiv> "hd l"
+ from L1 have Lne: "l \<noteq> []" by auto
+ with x_def have Lht: "l = x # tl l" by auto
+ from Lne have "length l = 1 + length (tl l)" by auto
+ with L1 have "length (tl l) = 0" by arith
+ hence "tl l = []" by blast
+ with Lht have Lx: "l = [x]" by auto
+ assume "List__List_P P__a l"
+ with Lx have Px: "P__a x" by auto
+ have "\<And>y. P__a y \<and> l = [y] \<Longrightarrow> y = x"
+ proof -
+  fix y
+  assume "P__a y \<and> l = [y]"
+  with Lx show "y = x" by auto
+ qed
+ with Px Lx show ?thesis by (auto simp add: ex1I)
+qed
+end-proof
 
- op [a] in? (x:a, l: List a) infixl 20 : Bool =
-   ex(i:Nat) l @@ i = Some x
+proof Isa List__theElement_Obligation_the
+proof
+ def x \<equiv> "hd l"
+ show "List__ofLength_p 1 l \<Longrightarrow> l = [x]"
+ proof -
+  assume "List__ofLength_p 1 l"
+  hence L1: "length l = 1" by (auto simp add: List__ofLength_p_def)
+  hence Lne: "l \<noteq> []" by auto
+  with x_def have Lht: "l = x # tl l" by auto
+  from Lne have "length l = 1 + length (tl l)" by auto
+  with L1 have "length (tl l) = 0" by arith
+  hence "tl l = []" by blast
+  with Lht show Lx: "l = [x]" by auto
+ qed
+ next
+ show "\<And>y. \<lbrakk>List__ofLength_p 1 l; l = [y]\<rbrakk>
+                \<Longrightarrow> y = hd l"
+ proof -
+  fix y
+  assume "l = [y]"
+  thus "y = hd l" by auto
+ qed
+qed
+end-proof
 
- op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
+% membership:
 
- % sublist starting from index i of length n (note that if n is 0 then i could
- % be length(l), even though that is not a valid index in the list):
+op [a] in? (x:a, l: List a) infixl 20 : Bool =
+  ex(i:Nat) l @@ i = Some x
 
- op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
-   list (fn j:Nat -> if j < n then Some (l @ (i + j)) else None)
+op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
 
- % sublist from index i (inclusive) to index j (exclusive); if i = j then we
- % could have i = j = length l, even though those are not valid indices:
+% sublist starting from index i of length n (note that if n is 0 then i could
+% be length(l), even though that is not a valid index in the list):
 
- op [a] subFromTo
-        (l: List a, i:Nat, j:Nat | i <= j && j <= length l) : List a =
-   subFromLong (l, i, j - i)
+op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
+  list (fn j:Nat -> if j < n then Some (l @ (i + j)) else None)
+
+proof Isa List__subFromLong_Obligation_subtype
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+end-proof
+
+% sublist from index i (inclusive) to index j (exclusive); if i = j then we
+% could have i = j = length l, even though those are not valid indices:
+
+op [a] subFromTo
+       (l: List a, i:Nat, j:Nat | i <= j && j <= length l) : List a =
+  subFromLong (l, i, j - i)
 
  theorem subFromTo_whole is
    [a] fa (l: List a) subFromTo (l, 0, length l) = l
