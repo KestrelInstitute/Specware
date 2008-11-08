@@ -468,13 +468,7 @@ MetaSlang qualifying spec
 	 | Pi (tvs, tm, _) -> (tvs, tm)
          | And ([tm], _) -> ([], tm)
 	 | And (tms, _) ->
-           (let real_tms = filter (fn tm ->
-                                     case tm of
-                                       | Any _ -> false
-                                       | SortedTerm (Any _, _, _) -> false
-                                       | _ -> true)
-                             tms
-            in
+           (let real_tms = filter (fn tm -> ~(anyTerm? tm)) tms in
               case real_tms of
                 | [tm] -> ([], tm)
                 | _ -> fail ("unpackTerm: Trying to unpack an And of terms."))
