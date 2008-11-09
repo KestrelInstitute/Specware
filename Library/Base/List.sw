@@ -557,6 +557,66 @@ end-proof
 op [a] in? (x:a, l: List a) infixl 20 : Bool =
   ex(i:Nat) l @@ i = Some x
 
+proof Isa List__in_p__def
+proof (induct l)
+ case Nil
+  show ?case by (auto simp add: List__e_at_at_def list_1_Isa_nth)
+ next
+ case (Cons h l)
+  show ?case
+  proof (cases "x = h")
+   case True
+    hence MEM: "x mem (h # l)" by simp
+    from `x = h` have "(h # l) @@ 0 = Some x"
+     by (auto simp add: List__e_at_at_def list_1_Isa_nth)
+    with MEM show ?thesis by auto
+   next
+   case False
+    hence MEM: "x mem (h # l) = x mem l" by simp
+    have "(\<exists>i. (h # l) @@ i = Some x) = (\<exists>i. l @@ i = Some x)"
+    proof -
+     have LR: "\<exists>i. (h # l) @@ i = Some x \<Longrightarrow>
+               \<exists>i. l @@ i = Some x"
+     proof -
+      assume "\<exists>i. (h # l) @@ i = Some x"
+      then obtain i where HLIX: "(h # l) @@ i = Some x" by auto
+      have "i > 0"
+      proof (rule ccontr)
+       assume "\<not> i > 0"
+       hence "i = 0" by arith
+       hence "(h # l) @@ i = Some h"
+        by (auto simp add: List__e_at_at_def list_1_Isa_nth)
+       with HLIX have "h = x" by auto
+       with `x \<noteq> h` show False by auto
+      qed
+      hence "(h # l) @@ i = l @@ (i - 1)"
+       by (auto simp add: List__e_at_at_def list_1_Isa_nth nth_Cons')
+      with HLIX have "l @@ (i - 1) = Some x" by auto
+      thus ?thesis by auto
+     qed
+     have RL: "\<exists>i. l @@ i = Some x \<Longrightarrow>
+               \<exists>i. (h # l) @@ i = Some x"
+     proof -
+      assume "\<exists>i. l @@ i = Some x"
+      then obtain i where LIX: "l @@ i = Some x" by auto
+      have "i < length l"
+      proof (rule ccontr)
+       assume "\<not> i < length l"
+       hence "l @@ i = None"
+        by (auto simp add: List__e_at_at_def list_1_Isa_nth)
+       with LIX show False by auto
+      qed
+      with LIX have "(h # l) @@ (i + 1) = Some x"
+       by (auto simp add: List__e_at_at_def list_1_Isa_nth)
+      thus "\<exists>i. (h # l) @@ i = Some x" by auto
+     qed
+     from LR RL show ?thesis by (rule iffI)
+    qed
+    with Cons.hyps MEM show ?thesis by auto
+  qed
+qed
+end-proof
+
 op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
 
 % sublist starting from index i of length n (note that if n is 0 then i could
