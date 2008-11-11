@@ -122,10 +122,8 @@
 	  #+gcl       (si:chdir         directory)
 	  #+cmu       (setf (extensions:default-directory) directory)
 	  #+cmu       (unix:unix-chdir directory)
-	  #+(and sbcl (not win32))
-	              (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
-          #+(and sbcl win32)
-	              ()		; Place holder
+	  #+sbcl      (sb-posix:chdir directory)
+	  ;            (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
 	  #+clisp     (setf (ext:default-directory) directory)
 					;#+gcl       
 	  ;; in Allegro CL, at least,
