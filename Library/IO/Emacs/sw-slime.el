@@ -103,6 +103,11 @@ balanced."
          (slime-repl-newline-and-indent)
          (message "[input not complete]"))))
 
+(defcustom sw:input-read-only nil
+  "If non-nil then make input read-only"
+  :type 'boolean
+  :group 'specware)
+
 ;; Based on slime-repl-send-input
 (defun sw-send-input (&optional newline)
   "Goto to the end of the input and send the current input.
@@ -122,7 +127,8 @@ If NEWLINE is true then add a newline at the end of the input."
     (let ((overlay (make-overlay slime-repl-input-start-mark end)))
       ;; These properties are on an overlay so that they won't be taken
       ;; by kill/yank.
-      (overlay-put overlay 'read-only t)
+      (when sw:input-read-only
+        (overlay-put overlay 'read-only t))
       (overlay-put overlay 'face 'slime-repl-input-face)))
   (slime-repl-add-to-input-history 
    (buffer-substring slime-repl-input-start-mark
