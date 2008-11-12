@@ -45,11 +45,8 @@
 
 (defparameter *fasl-type* specware::*fasl-type*)
 
-(defun load-builder (specware-dir distribution-dir)
-  (let* ((specware-buildscripts-dir 
-	  (make-pathname :directory (append (pathname-directory specware-dir) '("Release" "BuildScripts"))
-			 :defaults  specware-dir))
-	 (lisp-utilities-dir 
+(defun load-builder (distribution-dir)
+  (let* ((lisp-utilities-dir 
 	  (make-pathname :directory (append (pathname-directory distribution-dir) '("Lisp_Utilities"))
 			 :defaults  distribution-dir)))
     (flet ((my-load (dir-pathname file)
@@ -68,7 +65,7 @@
 )))
 
 (let ((distribution-dir (concatenate 'string (specware::getenv "DISTRIBUTION") "/")))
-  (load-builder Specware::*specware-dir* distribution-dir))
+  (load-builder distribution-dir))
 
 
 ;;; ============ PARAMETERS ============
