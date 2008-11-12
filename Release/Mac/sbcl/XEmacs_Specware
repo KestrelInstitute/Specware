@@ -4,7 +4,7 @@
 # files. See "man bash" for details. 
 
 # Use the directory of this file as the value of SPECWARE4
-SPECWARE4=`/usr/bin/dirname $0`
+SPECWARE4=`pwd`
 export SPECWARE4
 
 # Ensure SPECWARE4 is set to full pathname:
