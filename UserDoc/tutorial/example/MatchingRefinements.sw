@@ -67,7 +67,7 @@ FindMatches0 = spec
 
 
   op find_matches(msg: Message, wrds: List Word): List Match =
-    foldl (fn(mtchs,wrd) ->
+    foldl (fn(wrd,mtchs) ->
              case find_matches_aux(msg,wrd,0)
                of Some pos ->
                   Cons({word = wrd, position = pos},
