@@ -29,7 +29,7 @@ Test = spec
       map match2string
           (find_matches(string2message mstr, map string2word wstrs))
 
- def implode l = foldl (fn (c,s) -> s ^ toString c) "" l
+ def implode l = foldl (fn (s,c) -> s ^ toString c) "" l
  def explode s =
    if s = "" then []
      else Cons(sub(s,0),explode(substring(s,1,length s)))
