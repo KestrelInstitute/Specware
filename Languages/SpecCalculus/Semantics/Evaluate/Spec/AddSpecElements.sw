@@ -390,7 +390,7 @@ SpecCalc qualifying spec
          refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
        def element_refs el =
          case el of
-           | Op(op_id, true, _) -> body_refs op_id
+           | Op(op_id, _, _) -> body_refs op_id
            | OpDef(op_id, _)    -> body_refs op_id
            | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
            | SortDef(ty_id, _) ->
