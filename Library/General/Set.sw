@@ -252,6 +252,324 @@ Set qualifying spec
       (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
       (fa (s: FiniteSet a) p s)
 
+proof Isa Set__induction__stp
+proof -
+ txt {* We define a local predicate @{term "atMostOfSize s n"} saying when a set
+ @{term s} has at most size @{term n}: all the elements of @{term s} are covered
+ by a function @{term f} from the natural numbers @{text "0\<dots>n-1"}. *}
+ def atMostOfSize \<equiv>
+     "\<lambda> (s::'a set) (n::nat).
+        \<exists> (f:: nat \<Rightarrow> 'a).
+          \<forall>x \<in> s. \<exists>i < n. x = f i"
+ txt {* The truth of the local predicate just defined implies the finiteness of
+ the set as captured by the predicate @{const Set__finite_p__stp}, provided that
+ all the elements of the set satisfy the (subtype) argument predicate of @{const
+ Set__finite_p__stp}, of course. *}
+ have FIN: "\<And> (s::'a set) n P.
+            \<lbrakk> atMostOfSize s n ; Set_P P s \<rbrakk>
+            \<Longrightarrow> Set__finite_p__stp P s"
+ proof -
+  fix s :: "'a set"
+  fix n :: nat
+  fix P :: "'a \<Rightarrow> bool"
+  assume "atMostOfSize s n"
+  assume "Set_P P s"
+  show "Set__finite_p__stp P s"
+  proof (unfold Set__finite_p__stp_def)
+   show "Set__empty_p__stp P s \<or>
+         (\<exists> (f :: nat \<Rightarrow> 'a) n.
+           Fun_PR P f \<and>
+             (\<forall>x. P x \<longrightarrow>
+                  (x \<in> s) = (\<exists>i<n. f i = x)))"
+   proof cases
+    txt {* If @{term s} is empty, we are done because the first disjunct that
+    defines @{const Set__finite_p__stp} is true. *}
+    assume "Set__empty_p__stp P s"
+    thus ?thesis by auto
+   next
+    txt {* Otherwise, since @{term s} is not empty, we find the function @{term
+    f} that fulfills @{const Set__finite_p__stp} from a function @{term g} that
+    fulfills @{term atMostOfSize}. *}
+    assume "\<not> Set__empty_p__stp P s"
+    txt {* We first single out an element @{term y} of @{term s}, which
+    satisfies @{term P} because all the elements of @{term s} satisfy @{term P}
+    by hypothesis. *}
+    hence "s \<noteq> {}" by (auto simp add: Set__empty_p__stp_def)
+    then obtain y where "y \<in> s" by auto
+    with `Set_P P s` have "P y" by (auto simp add: Set_P_def)
+    txt {* From the assumption that @{term s} has at most size @{term n}, we
+    find a function @{term g} covering @{term s} from the natural numbers @{text
+    "0\<dots>n-1"}, which fulfills @{term atMostOfSize}. *}
+    from `atMostOfSize s n` obtain g
+    where "\<forall>x \<in> s. \<exists>i < n. x = g i"
+     by (auto simp add: atMostOfSize_def)
+    txt {* According to the definition of @{term atMostOfSize}, each element of
+    @{term s} is the image of some @{term "i < n"} under @{term g}, but there
+    could be some @{term "i < n"} that @{term g} maps to something outside
+    @{term s}. In contrast, the function @{term f} needed to fulfill @{const
+    Set__finite_p__stp} must map every @{term "i < n"} to some element of
+    @{term s}. This is easily achieved by remapping any @{term "i < n"} mapped
+    by @{term g} outside @{term s}, to the element @{term y} that we singled
+    out earlier. *}
+    def f \<equiv> "\<lambda>i. if (g i \<notin> RSet P s) then y else g i"
+    txt {* Now we prove that @{term f} and @{term n} fulfill (the second
+    disjunct of) @{const Set__finite_p__stp}. *}
+    have "Fun_PR P f \<and>
+          (\<forall>x. P x \<longrightarrow>
+               (x \<in> s) = (\<exists>i<n. f i = x))"
+    proof
+     from f_def `P y` show "Fun_PR P f" by auto
+    next
+     show "\<forall>x. P x \<longrightarrow>
+              (x \<in> s) = (\<exists>i<n. f i = x)"
+     proof (rule allI, rule impI)
+      fix x
+      assume "P x"
+      show "(x \<in> s) = (\<exists>i<n. f i = x)"
+      proof
+       assume "x \<in> s"
+       with `\<forall>x \<in> s. \<exists>i < n. x = g i`
+       obtain i where "i < n" and "g i = x" by auto
+       with `P x` `x \<in> s` f_def show "\<exists>i<n. f i = x" by auto
+      next
+       assume "\<exists>i<n. f i = x"
+       then obtain i where "i < n" and "f i = x" by auto
+       show "x \<in> s"
+       proof cases
+        assume "g i \<notin> RSet P s"
+        with f_def `f i = x` `y \<in> s` show ?thesis by auto
+       next
+        assume "\<not> g i \<notin> RSet P s"
+        with f_def `f i = x` show ?thesis by auto
+       qed
+      qed
+     qed
+    qed
+    hence "\<exists> (f :: nat \<Rightarrow> 'a) n.
+            Fun_PR P f \<and>
+              (\<forall>x. P x \<longrightarrow>
+                 (x \<in> s) = (\<exists>i<n. f i = x))"
+     by auto
+    thus ?thesis by (rule disjI2)
+   qed
+  qed
+ qed
+ txt {* Thus we have proved @{text FIN}. *}
+ txt {* Conversely, if a set @{term s} is finite as defined by @{const
+ Set__finite_p__stp}, and all its elements satisfy the subtype predicate @{term
+ P}, the set has size at most @{term n} for some @{term n}. *}
+ have FIN': "\<And> (s::'a set) P.
+             \<lbrakk> Set__finite_p__stp P s ; Set_P P s \<rbrakk>
+             \<Longrightarrow> \<exists>n. atMostOfSize s n"
+ proof -
+  fix s :: "'a set"
+  fix P :: "'a \<Rightarrow> bool"
+  assume "Set_P P s"
+  assume "Set__finite_p__stp P s"
+  txt {* We first unfold @{const Set__finite_p__stp}, obtaining a
+  disjunction. *}
+  hence "Set__empty_p__stp P s \<or>
+         (\<exists> f (n::nat). Fun_PR P f \<and>
+                        (\<forall>x. P x \<longrightarrow>
+                                (x \<in> s) = (\<exists>i < n. f i = x)))"
+   by (unfold Set__finite_p__stp_def)
+  txt {* Then we prove the conclusion under each disjunct. *}
+  thus "\<exists>n. atMostOfSize s n"
+  proof (rule disjE)
+   txt {* If @{term s} is empty, it has size at most 0. *}
+   assume "Set__empty_p__stp P s"
+   hence "s = {}" by (auto simp add: Set__empty_p__stp_def)
+   have "atMostOfSize s 0"
+   proof (auto simp add: atMostOfSize_def)
+    fix x
+    assume "x \<in> s"
+    with `s = {}` show False by auto
+   qed
+   thus ?thesis by auto
+  next
+   txt {* If there is a function @{term f} and a natural number @{term n}
+   fulfilling the second disjunct of the definition of @{const
+   Set__finite_p__stp}, the set @{term s} has size at most @{term n} and
+   this is witnessed by @{term f} itself. *}
+   assume "\<exists> f (n::nat). Fun_PR P f \<and>
+                         (\<forall>x. P x \<longrightarrow>
+                               (x \<in> s) = (\<exists>i < n. f i = x))"
+   then obtain f n
+   where "Fun_PR P (f :: nat \<Rightarrow> 'a)" and
+         "\<forall>x. P x \<longrightarrow>
+             (x \<in> s) = (\<exists>i < n. f i = x)" by auto
+   have "atMostOfSize s n"
+   proof (auto simp add: atMostOfSize_def, rule exI, auto)
+    fix x::'a
+    assume "x \<in> s"
+    with `Set_P P s` have "P x" by (auto simp add: Set_P_def)
+    with `\<forall>x. P x \<longrightarrow>
+            (x \<in> s) = (\<exists>i < n. f i = x)`
+         `x \<in> s`
+    show "\<exists>i < n. x = f i" by auto
+   qed
+   thus ?thesis by auto
+  qed
+ qed
+ txt {* We define a local predicate @{term "q n"} saying when @{term p} (the
+ predicate mentioned in the induction theorem) holds on all the sets of size at
+ most @{term n} whose elements all satisfy @{term P__a} (the subtype
+ predicate). *}
+ def q \<equiv> "\<lambda> (n::nat).
+                 \<forall>s. atMostOfSize s n \<and>
+                             Set_P P__a s \<longrightarrow> p s"
+ txt {* We state all the assumptions of the theorem. *}
+ assume "Fun_PD
+          (\<lambda> (x__l::'a set).
+            Set__finite_p__stp P__a x__l \<and>
+            Set_P P__a x__l)
+          (p::'a set \<Rightarrow> bool)"
+ assume "Set__finite_p__stp P__a s"
+ assume "Set_P P__a s"
+ assume "p {}"
+ assume "\<forall> (s::'a set) (x::'a).
+          (Set__finite_p__stp P__a s \<and> Set_P P__a s)
+          \<and> P__a x 
+          \<longrightarrow> (p s \<longrightarrow> p (insert x s))"
+ txt {* We prove that @{term p} holds on all finite sets by proving that @{term
+ q} holds on all natural numbers, by induction on the natural numbers. *}
+ have "\<And>n. q n"
+ proof -
+  fix n
+  show "q n"
+  proof (induct n)
+   txt {* The base case is proved by noticing that only the empty set has at
+   most size 0, and the truth of @{term p} on the empty set is among the
+   assumptions of the theorem. *}
+   case 0
+   show "q 0"
+   proof (auto simp add: q_def)
+    fix s
+    assume "atMostOfSize s 0"
+    have "s = {}"
+    proof (rule ccontr)
+     assume "s \<noteq> {}"
+     then obtain x where "x \<in> s" by auto
+     with `atMostOfSize s 0` have "\<exists>i < (0::nat). x = f i"
+      by (auto simp add: atMostOfSize_def)
+     thus False by auto
+    qed
+    with `p {}` show "p s" by auto
+   qed
+  next
+   txt {* For the induction step, we first unfold @{term q} to get a useful
+   induction hypothesis. *}
+   case (Suc n)
+   hence IH: "\<And>s. \<lbrakk> atMostOfSize s n ; Set_P P__a s \<rbrakk>
+                       \<Longrightarrow> p s"
+    by (auto simp add: q_def)
+   txt {* We first unfold @{term q}. *}
+   show "q (Suc n)"
+   proof (auto simp add: q_def)
+    txt {* We consider a set @{term s} of size at most @{term "Suc n"} whose
+    elements all satisfy @{term P__a}. *}
+    fix s
+    assume "Set_P P__a s"
+    assume "atMostOfSize s (Suc n)"
+    txt {* We find a function @{term f} that fulfills @{term atMostOfSize}. *}
+    then obtain f where "\<forall>x \<in> s. \<exists>i < Suc n. x = f i"
+     by (auto simp add: atMostOfSize_def)
+    txt {* We show the conclusion by distinguishing two cases. *}
+    show "p s"
+    proof cases
+     txt {* If @{term s} also has size at most @{term n}, the conclusion
+     immediately follows by inductive hypothesis. *}
+     assume "atMostOfSize s n"
+     with `Set_P P__a s` IH show ?thesis by auto
+    next
+     txt {* If @{term s} does not also have size at most @{term n}, there must
+     be some @{term x} in @{term s} that is not the image of any @{term "i < n"}
+     under @{term f}.*}
+     assume "\<not> atMostOfSize s n"
+     then obtain x where "x \<in> s" and "\<forall>i < n. x \<noteq> f i"
+       by (auto simp add: atMostOfSize_def)
+     txt {* But because @{term s} has size at most @{term "Suc n"}, that @{term
+     x} must be the image of @{term n} under @{term f}. *}
+     with `\<forall>x \<in> s. \<exists>i < Suc n. x = f i`
+     obtain i where "i < Suc n" and "x = f i" by auto
+     have "i = n"
+     proof (rule ccontr)
+      assume "i \<noteq> n"
+      with `i < Suc n` have "i < n" by auto
+      with `\<forall>i < n. x \<noteq> f i` have "x \<noteq> f i" by auto
+      with `x = f i` show False by auto
+     qed
+     with `x = f i` have "x = f n" by auto
+     txt {* Moreover, every other element @{term y} of @{term s} must be in the
+     image of some @{term "i < n"} under @{term f}. *}
+     have "\<forall>y \<in> s. y \<noteq> x \<longrightarrow>
+                               (\<exists>i<n. f i = y)"
+     proof auto
+      fix y
+      assume "y \<in> s"
+      assume "y \<noteq> x"
+      from `y \<in> s` `\<forall>y \<in> s. \<exists>i < Suc n. y = f i`
+      obtain i where "i < Suc n" and "y = f i" by auto
+      have "i < n"
+      proof (rule ccontr)
+       assume "\<not> i < n"
+       with `i < Suc n` have "i = n" by auto
+       with `x = f n` `y \<noteq> x` `y = f i` show False by auto
+      qed
+      with `y = f i` show "\<exists>i<n. f i = y" by auto
+     qed
+     txt {* Now consider the set @{term s0} obtained by removing @{term x} from
+     @{term s}. *}
+     def s0 \<equiv> "s - {x}"
+     txt {* This set must have size at most @{term n}, as witnessed by the same
+     function @{term f} that witnesses @{term s} having size at most @{term "Suc
+     n"}. *}
+     with `\<forall>y \<in> s.
+             y \<noteq> x \<longrightarrow> (\<exists>i<n. f i = y)`
+     have "\<forall>y \<in> s0. \<exists>i<n. y = f i" by auto
+     hence "atMostOfSize s0 n" by (auto simp add: atMostOfSize_def)
+     txt {* Since all the elements of @{term s} satisfy @{term P} by hypothesis,
+     so do all the elements of @{term s0}. *}
+     from `Set_P P__a s` s0_def have "Set_P P__a s0"
+      by (auto simp add: Set_P_def)
+     with `atMostOfSize s0 n` `q n` q_def have "p s0" by auto
+     txt {* We now use the property @{text FIN} proved earlier, to prove that
+     @{term s0} is finite. *}
+     from `atMostOfSize s0 n` `Set_P P__a s0` FIN
+     have "Set__finite_p__stp P__a s0" by auto
+     txt {* From the hypothesis that all the elements of @{term s} satisfy
+     @{term P__a}, in particular the element @{term x} that we removed from
+     @{term s} to obtain @{term s0} satisfies @{term P__a}. *}
+     from `Set_P P__a s` `x \<in> s` have "P__a x" by (auto simp add: Set_P_def)
+     txt {* We can finally instantiate the induction step of the theorem that we
+     are trying to prove (which is one of the assumptions of the theorem) to
+     @{term s0} and @{term x}. *}
+     with `\<forall> (s::'a set) (x::'a).
+             (Set__finite_p__stp P__a s \<and> Set_P P__a s)
+             \<and> P__a x  
+             \<longrightarrow> (p s \<longrightarrow> p (insert x s))`
+          `Set__finite_p__stp P__a s0`
+          `Set_P P__a s0`
+          `p s0`
+     have "p (insert x s0)" by auto
+     with s0_def have "insert x s0 = s" by auto
+     with `p (insert x s0)` show "p s" by auto
+    qed
+   qed
+  qed
+ qed
+ txt {* Recall that in order to prove the theorem we have to show @{term "p s"}
+ (for arbitrary @{term s}) under the assumptions on @{term s} that we have
+ already stated. The fact, just proved, that @{term "q n"} holds for arbitrary
+ @{term n} is used as follows: the finiteness of @{term s} implies the existence
+ of some @{term n} such that @{term s} has size at most @{term n}, and therefore
+ we can conclude @{term "p s"} from @{term "q n"}. *}
+ from `Set_P P__a s` `Set__finite_p__stp P__a s` FIN'
+ obtain n where "atMostOfSize s n" by auto
+ with `q n` `Set_P P__a s` show "p s" by (auto simp add: q_def)
+qed
+end-proof
+
   op size : [a] FiniteSet a -> Nat = the(size)
     (size empty = 0) &&
     (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
