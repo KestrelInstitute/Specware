@@ -7,6 +7,7 @@
 	       (:export :load-swank :*source-directory* :*fasl-directory*))
 
 (defvar *VERBOSE* nil)
+(defvar *test?* nil)
 
 ;;  --------------------------------------------------------------------------------
 ;;; Since we compile files as part of this process, we assume we are running this
@@ -108,11 +109,12 @@
 ;;; Toplevel
 ;;; ================================================================================
 
-(defun cl-user::prepare_specware_release (specware-dir distribution-dir &optional (*verbose* t))
+(defun cl-user::prepare_specware_release (specware-dir distribution-dir &optional (*verbose* t) (*test?* nil))
   (declare (special cl-user::*Specware-Version-Name*))
   (let ((specware-dir     (truename specware-dir))
 	(distribution-dir (truename distribution-dir))
-	(release-dir      (truename (ensure-subdirs-exist distribution-dir "Releases" 
+	(release-dir      (truename (ensure-subdirs-exist (if *test?* specware-dir distribution-dir)
+                                                          "Releases" 
 							  cl-user::*Specware-Version-Name*))))
 
     (format t "~&;;; Preparing release of ~A~%" cl-user::*Specware-Version-Name*)
@@ -151,7 +153,9 @@
   (print-minor "Specware_Lib" "generic")
   (let* ((source-dir       (ensure-subdir-exists specware-dir "Library"))
 	 ;;
-	 (component-dir    (ensure-subdirs-exist release-dir "Specware_Lib" "Generic")))
+	 (component-dir    (if *test?*
+                               (ensure-subdir-exists release-dir "Library")
+                               (ensure-subdirs-exist release-dir "Specware_Lib" "Generic"))))
 
     ;; First the standard Specware libaries...
 
@@ -224,9 +228,12 @@
 (defun prepare_Specware_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Linux")
-  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Specware_Lib"))
-	 (generic-dir      (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp"))
-	 (linux-dir        (ensure-subdirs-exist lib-dir "Linux"   "Base" "Handwritten" "Lisp")))
+  (let* ((lib-dir          (if *test?* (ensure-subdirs-exist release-dir "Library")
+                               (ensure-subdirs-exist release-dir "Specware_Lib")))
+	 (generic-dir      (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp")))
+	 (linux-dir        (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Linux"   "Base" "Handwritten" "Lisp"))))
     (dolist (file (sorted-directory generic-dir))
       (let* ((pn            (pathname file))
 	     (name          (pathname-name pn))
@@ -247,9 +254,12 @@
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Windows")
-  (let* ((lib-dir          (ensure-subdirs-exist release-dir "Specware_Lib"))
-	 (generic-dir      (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp"))
-	 (windows-dir      (ensure-subdirs-exist lib-dir "Windows" "Base" "Handwritten" "Lisp")))
+  (let* ((lib-dir          (if *test?* (ensure-subdirs-exist release-dir "Library")
+                               (ensure-subdirs-exist release-dir "Specware_Lib")))
+	 (generic-dir      (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp")))
+	 (windows-dir      (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Windows" "Base" "Handwritten" "Lisp"))))
     (dolist (file (sorted-directory generic-dir))
       (let* ((pn            (pathname file))
 	     (name          (pathname-name pn))
@@ -291,10 +301,11 @@
   ;;
   (let* ((source-dir       (extend-directory specware-dir "Library" "IO" "Emacs"))
 	 ;;
-	 (component-dir    (ensure-subdirs-exist release-dir "Emacs_Lib"))
+	 (component-dir    (if *test?* (ensure-subdirs-exist release-dir "Library" "IO" "Emacs")
+                               (ensure-subdirs-exist release-dir "Emacs_Lib")))
 	 ;;
-	 (generic-dir      (ensure-subdir-exists component-dir "Generic"))
-	 (slime-dir        (ensure-subdir-exists component-dir "slime"))
+	 (generic-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "Generic")))
+	 (slime-dir        (if *test?* component-dir (ensure-subdir-exists component-dir "slime")))
 	 (ilisp-dir        (ensure-subdir-exists component-dir "ilisp"))
 	 (xeli-dir         (ensure-subdir-exists component-dir "xeli"))
 	 (openmcl-dir      (ensure-subdir-exists component-dir "OpenMCL"))
@@ -532,13 +543,13 @@
 				(do ((line (read-line s nil nil) (read-line s nil nil)))
 				    ((null line)
 				     (sort filenames 'namestring-lessp))
-				  (let ((line (string-trim '(#\Space #\Tab) line)))
+				  (let ((line (string-trim '(#\Space #\Tab #\Return) line)))
 				    (unless (equal line "")
 				      (push line filenames)))))))
 	 ;;
-	 (target-clib-dir   (ensure-subdirs-exist release-dir "C_Lib" "Generic"))
+	 (target-clib-dir   (if *test?* (ensure-subdirs-exist release-dir "Library" "Clib")
+                                (ensure-subdirs-exist release-dir "C_Lib" "Generic")))
 	 (target-clib-path  (pathname-directory target-clib-dir)))
-    
     ;; --------------------
     ;; mention any discrepencies between files listed in cgen-distribution-files vs. files found in directory
     ;;
@@ -605,8 +616,6 @@
 	(cond ((and (null name) (null type))
 	       (ensure-directories-exist (make-pathname :directory target-path 
 							:defaults  target-clib-dir)))
-	      ((equalp name "CVS")  ; redundant: copy-dist-file would ignore file
-	       nil)
 	      (t
 	       (let ((source-file (make-pathname :directory source-path
 						 :name      name
@@ -682,7 +691,7 @@
   (print-minor "Specware" "generic")
   (let* ((source-dir  (ensure-subdirs-exist specware-dir))
 	 (generic-dir (ensure-subdirs-exist source-dir  "Release" "Generic"))
-	 (target-dir  (ensure-subdirs-exist release-dir "Specware" "Generic")))
+	 (target-dir  (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Generic"))))
 
     ;; License file (InstallShield looks for this)
     (copy-dist-file (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults generic-dir)
@@ -764,7 +773,7 @@
 	 #+SBCL
 	 (source-linux-sbcl-dir   (ensure-subdirs-exist source-dir "Release" "Linux" "SBCL"))
 	 ;;
-	 (target-dir              (ensure-subdirs-exist release-dir "Specware" "Linux"))
+	 (target-dir              (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Linux")))
 
 	 ;; a list of files to load into the new application
 	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities")
@@ -787,8 +796,7 @@
 				    #+SBCL 
 				    (list (merge-pathnames source-linux-sbcl-dir "Specware")
 					  (merge-pathnames source-linux-sbcl-dir "SpecwareShell")
-					  (merge-pathnames source-linux-sbcl-dir "Find_SBCL")
-					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
+<					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
 					  (merge-pathnames source-linux-sbcl-dir "Isabelle_Specware")
 					  (merge-pathnames source-linux-sbcl-dir "XEmacs_Specware")
 					  )
@@ -833,7 +841,7 @@
 		       (in-distribution-dir "XEmacs_Specware"))
   )
 
-#+(Or Mswindows Win32)
+#+(And Allegro (Or Mswindows Win32))
 (defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Windows")
@@ -843,7 +851,7 @@
 	 (source-windows-dir         (ensure-subdirs-exist source-dir "Release" "Windows"))
 	 (source-windows-allegro-dir (ensure-subdirs-exist source-dir "Release" "Windows" "Allegro"))
 	 ;;
-	 (target-dir                 (ensure-subdirs-exist release-dir "Specware" "Windows"))
+	 (target-dir                 (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Windows")))
 	 (specware-exe-file          (format nil "~A.exe" cl-user::*Specware-Name*))
 
 	 ;; a list of files to load into the new application
@@ -928,6 +936,80 @@
       (format t "~&;;;  -j suppresses directories in names~%")
       (format t "~&;;;  -9 is highest compression level~%")
       (excl::run-shell-command zip-cmd))
+    ;; Patches
+    (prepare_patch_dir source-dir target-dir)
+    ))
+
+
+#+(And SBCL (Or Mswindows Win32))
+(defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
+  (declare (special cl-user::*Specware-Name*))
+  (print-minor "Specware" "Windows")
+  (let* ((source-dir              (ensure-subdirs-exist specware-dir))
+	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
+	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
+	 (source-windows-dir      (ensure-subdirs-exist source-dir "Release" "Windows"))
+	 (source-windows-sbcl-dir (ensure-subdirs-exist source-dir "Release" "Windows" "SBCL"))
+	 ;;
+	 (target-dir              (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Windows")))
+         (specware-exe-file       (format nil "~A.exe" cl-user::*Specware-Name*))
+
+	 ;; a list of files to load into the new application
+	 (files-to-load           (list (merge-pathnames lisp-utilities-dir      "LoadUtilities")
+					(merge-pathnames lisp-utilities-dir      "MemoryManagement")
+					(merge-pathnames lisp-utilities-dir      "CompactMemory")
+					(merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
+					(merge-pathnames source-buildscripts-dir "LoadSpecware")
+					(merge-pathnames source-buildscripts-dir "SpecwareLicense")))
+
+	 ;; a list of files put on the distribution directory
+	 (files-to-copy           (append
+				    #+SBCL 
+				    (list (merge-pathnames source-windows-sbcl-dir "Specware.cmd")
+					  (merge-pathnames source-windows-sbcl-dir "SpecwareShell.cmd")
+					  (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL.cmd")
+                                          (merge-pathnames source-windows-sbcl-dir "start-in-xemacs-slime.cmd")
+                                          (merge-pathnames source-windows-sbcl-dir "Find_SPECWARE4.cmd")
+					  ;; (merge-pathnames source-windows-sbcl-dir "Isabelle_Specware")
+					  ;; (merge-pathnames source-windows-sbcl-dir "XEmacs_Specware")
+					  )
+				    (list
+				    ; (merge-pathnames source-windows-dir      "install_gnome_desktop_icons_specware")
+				     (merge-pathnames source-windows-dir      "Find_XEMACS.cmd")
+				    ;
+				     (merge-pathnames source-windows-dir      "Update_Path.cmd")
+				     (merge-pathnames source-windows-dir      "Update_SWPATH.cmd")
+				     (merge-pathnames source-generic-dir      "StartSpecwareShell.lisp")
+				     ))))
+
+    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+
+    ;; Installation Scripts
+    
+    ;; Executables/Images
+    (dolist (filename (list (format nil "~A.lic" cl-user::*Specware-Name*)
+			    specware-exe-file
+			    "Specware.cmd"
+			    "SpecwareShell.cmd"
+			    "Find_Specware_App_SBCL.cmd"
+			    "start-in-xemacs-slime.cmd"
+			    "Find_XEMACS.cmd"
+			    "Find_SPECWARE4.cmd"
+			    "Update_Path.cmd"
+			    "Update_SWPATH.cmd"
+			    "StartSpecwareShell.lisp"))
+      (let ((filename (format nil "~A~A" target-dir filename)))
+	(when (probe-file filename)
+	  (format t "~&;;; Deleting old version of ~A~%" filename)
+	  (delete-file filename))))
+    (generate-new-lisp-application #-win32 "sbcl" #+win32 (format nil "~asbcl.exe" (sb-ext::posix-getenv "SBCL_HOME"))
+				   (format nil "~A.exe" cl-user::*Specware-Name*)
+				   target-dir
+				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
+				   files-to-copy
+				   t
+				   :executable? t)
+
     ;; Patches
     (prepare_patch_dir source-dir target-dir)
     ))
