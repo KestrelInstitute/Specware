@@ -8,7 +8,7 @@
 
 (defvar *VERBOSE* nil)
 (defvar *test?* nil)
-(defvar *copy-elc-files?* t)
+(defvar *copy-elc-files?* nil)
 
 ;;  --------------------------------------------------------------------------------
 ;;; Since we compile files as part of this process, we assume we are running this
@@ -24,7 +24,7 @@
 ;;;   Mac       SBCL      
 ;;; --------------------------------------------------------------------------------
 
-(let ((selected-os   (list #+Linux 'Linux #+Mac 'Mac #+(Or Mswindows Win32) 'MSWindows))
+(let ((selected-os   (list #+Linux 'Linux #+(Or Mac Darwin) 'Mac #+(Or Mswindows Win32) 'MSWindows))
       (selected-lisp (list #+CMU 'CMU #+SBCL 'SBCL #+Allegro 'Allegro #+OpenMCL 'OpenMCL)))
   (unless (= (length selected-os) 1)
     (error "Need exactly one OS selected, but have: ~S" selected-os))
@@ -146,7 +146,7 @@
   (print-major "Specware_Lib")
   (prepare_Specware_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_Specware_Lib_Linux   specware-dir release-dir)
-  #+Mac       (prepare_Specware_Lib_Mac     specware-dir release-dir)
+  #+(Or Mac Darwin) (prepare_Specware_Lib_Mac     specware-dir release-dir)
   #+(Or Mswindows Win32) (prepare_Specware_Lib_Windows specware-dir release-dir)
   )
 
@@ -248,11 +248,25 @@
 		       (merge-pathnames linux-dir   name_and_type)))))
     ))
 
-#+Mac
-(defun prepare_Specware_Lib_Mac (specware-dir release-dir)
-  (declare (ignore specware-dir release-dir))
+#+(Or Mac Darwin)
+(defun prepare_Specware_Lib_Mac   (specware-dir release-dir)
+  (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Mac")
-  )
+  (let* ((lib-dir          (if *test?* (ensure-subdirs-exist release-dir "Library")
+                               (ensure-subdirs-exist release-dir "Specware_Lib")))
+	 (generic-dir      (if *test?* (ensure-subdirs-exist lib-dir   "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp")))
+	 (mac-dir          (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+                               (ensure-subdirs-exist lib-dir "Mac"   "Base" "Handwritten" "Lisp"))))
+    (dolist (file (sorted-directory generic-dir))
+      (let* ((pn            (pathname file))
+	     (name          (pathname-name pn))
+	     (type          (pathname-type pn))
+	     (name_and_type (format nil "~A.~A" name type)))
+	(when (equal type *fasl-type*)
+	  (rename-file (merge-pathnames generic-dir name_and_type)
+		       (merge-pathnames mac-dir     name_and_type)))))
+    ))
 
 #+(Or Mswindows Win32)
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
@@ -260,9 +274,9 @@
   (print-minor "Specware_Lib" "Windows")
   (let* ((lib-dir          (if *test?* (ensure-subdirs-exist release-dir "Library")
                                (ensure-subdirs-exist release-dir "Specware_Lib")))
-	 (generic-dir      (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+	 (generic-dir      (if *test?* (ensure-subdirs-exist lib-dir   "Base" "Handwritten" "Lisp")
                                (ensure-subdirs-exist lib-dir "Generic" "Base" "Handwritten" "Lisp")))
-	 (windows-dir      (if *test?* (ensure-subdirs-exist lib-dir "Base" "Handwritten" "Lisp")
+	 (windows-dir      (if *test?* (ensure-subdirs-exist lib-dir   "Base" "Handwritten" "Lisp")
                                (ensure-subdirs-exist lib-dir "Windows" "Base" "Handwritten" "Lisp"))))
     (dolist (file (sorted-directory generic-dir))
       (let* ((pn            (pathname file))
@@ -289,7 +303,7 @@
   (print-major "XEmacs_Lib")
   (prepare_XEmacs_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_XEmacs_Lib_Linux   specware-dir release-dir)
-  #+Mac       (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
+  #+(Or Mac Darwin) (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
   #+(Or Mswindows Win32) (prepare_XEmacs_Lib_Windows specware-dir release-dir)
   )
 
@@ -497,7 +511,7 @@
   (print-minor "XEmacs_Lib" "Linux")
   )
 
-#+Mac
+#+(Or Mac Darwin)
 (defun prepare_XEmacs_Lib_Mac     (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "XEmacs_Lib" "Mac")
@@ -517,7 +531,7 @@
   (print-major "C_Lib")
   (prepare_C_Lib_Generic specware-dir release-dir)
   #+Linux     (prepare_C_Lib_Linux   specware-dir release-dir)
-  #+Mac       (prepare_C_Lib_Mac     specware-dir release-dir)
+  #+(Or Mac Darwin) (prepare_C_Lib_Mac     specware-dir release-dir)
   #+(Or Mswindows Win32) (prepare_C_Lib_Windows specware-dir release-dir)
   )
 
@@ -527,7 +541,7 @@
   (print-minor "C_Lib" "Linux")
   )
 
-#+Mac
+#+(Or Mac Darwin)
 (defun prepare_C_Lib_Mac     (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "C_Lib" "Mac")
@@ -693,7 +707,7 @@
   (let ((lisp-utilities-dir (truename (ensure-subdirs-exist distribution-dir "Lisp_Utilities"))))
     (prepare_Specware_Generic specware-dir release-dir)
     #+Linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
-    #+Mac       (prepare_Specware_Mac     specware-dir release-dir lisp-utilities-dir)
+    #+(Or Mac Darwin) (prepare_Specware_Mac specware-dir release-dir lisp-utilities-dir)
     #+(Or Mswindows Win32) (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
     ))
 
@@ -708,9 +722,11 @@
 		    (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults target-dir))
 
     ;; Icons
+    #-darwin
     (copy-dist-file (make-pathname :name "S" :type "ico" :defaults (extend-directory specware-dir "Icons"))
 		    (make-pathname :name "S" :type "ico" :defaults target-dir))
     
+    #-darwin
     (copy-dist-file (make-pathname :name "KestrelBird" :type "xpm" :defaults (extend-directory specware-dir "Icons"))
 		    (make-pathname :name "KestrelBird" :type "xpm" :defaults target-dir))
     
@@ -840,15 +856,77 @@
     (prepare_patch_dir source-dir target-dir)
     ))
 
-#+Mac
+#+(Or Mac Darwin)
 (defun prepare_Specware_Mac (specware-dir release-dir lisp-utilities-dir)
-  ;; work in progress...
-  (declare (ignore specware-dir release-dir lisp-utilities-dir))
+  (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Mac")
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/Isabelle_Specware")
-		       (in-distribution-dir "Isabelle_Specware.terminal"))
-  (specware::copy-file (in-specware-dir "Release/Mac/SBCL/XEmacs_Specware")
-		       (in-distribution-dir "XEmacs_Specware"))
+  (let* ((source-dir              (ensure-subdirs-exist specware-dir))
+	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
+	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
+	 (source-mac-dir          (ensure-subdirs-exist source-dir "Release" "Mac"))
+	 #+CMUCL
+	 (source-mac-cmucl-dir    (ensure-subdirs-exist source-dir "Release" "Mac" "CMUCL"))
+	 #+SBCL
+	 (source-mac-sbcl-dir     (ensure-subdirs-exist source-dir "Release" "Mac" "sbcl"))
+	 ;;
+	 (target-dir              (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Mac")))
+
+	 ;; a list of files to load into the new application
+	 (files-to-load (list (merge-pathnames lisp-utilities-dir      "LoadUtilities")
+                              (merge-pathnames lisp-utilities-dir      "MemoryManagement")
+                              (merge-pathnames lisp-utilities-dir      "CompactMemory")
+                              (merge-pathnames source-buildscripts-dir "BuildSpecwarePreamble")
+                              (merge-pathnames source-buildscripts-dir "LoadSpecware")
+                              (merge-pathnames source-buildscripts-dir "SpecwareLicense")))
+
+	 ;; a list of files put on the distribution directory
+	 (files-to-copy (append
+                         #+CMUCL
+                         (list (merge-pathnames source-mac-cmucl-dir "Specware")
+                               (merge-pathnames source-mac-cmucl-dir "SpecwareShell")
+                               (merge-pathnames source-mac-cmucl-dir "Find_CMUCL")
+                               (merge-pathnames source-mac-cmucl-dir "Find_Specware_App_CMUCL")
+                               (merge-pathnames source-mac-cmucl-dir "Isabelle_Specware")
+                               (merge-pathnames source-mac-cmucl-dir "XEmacs_Specware")
+                               )
+                         #+SBCL 
+                         (list (merge-pathnames source-mac-sbcl-dir "Specware.terminal")
+                               (merge-pathnames source-mac-sbcl-dir "SpecwareShell.sh")
+                               ; (merge-pathnames source-mac-sbcl-dir "Find_Specware_App_SBCL")
+                               (merge-pathnames source-mac-sbcl-dir "Isabelle_Specware.terminal")
+                               (merge-pathnames source-mac-sbcl-dir "XEmacs_Specware")
+                               )
+                         (list
+                          (merge-pathnames source-generic-dir  "StartSpecwareShell.lisp")
+                          ))))
+
+    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+
+    ;; Installation Scripts
+    
+    ;; Executables/Images
+    (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
+				   #+CMUCL (format nil "~A.cmuimage" cl-user::*Specware-Name*)
+
+				   #+SBCL  "/usr/local/bin/sbcl"
+				   #+SBCL  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
+
+				   target-dir
+				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
+				   files-to-copy
+				   t
+				   :executable? t)
+
+    #+SBCL
+    (copy-dist-directory (extend-directory source-mac-sbcl-dir "Specware.app")
+                         (extend-directory release-dir         "Specware.app"))
+    #+SBCL
+    (copy-dist-directory (extend-directory source-mac-sbcl-dir "Isabelle_Specware.app")
+                         (extend-directory release-dir         "Isabelle_Specware.app"))
+
+    ;; Patches
+    (prepare_patch_dir source-dir target-dir)
+    )
   )
 
 #+(And Allegro (Or Mswindows Win32))
@@ -1047,7 +1125,7 @@
 	(os 
 	 #+Linux     "Linux"
 	 #+(Or Mswindows Win32) "Windows" 
-	 #+Mac       "Mac OSX"))
+	 #+(Or Mac Darwin)      "Mac OSX"))
 
     (format t "~&~%;;;   Preparing ~A patches for ~A under ~A...~%" fasl lisp os)
     (when *verbose*
