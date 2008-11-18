@@ -290,6 +290,8 @@ ListADT qualifying spec {
      streamWriter(stream,"\n"))
 
   op ppSpecToFile : LispSpec * String * String -> ()
+  
+  op maxDefsPerFile: Int = 1000
 
   def ppSpecToFile (spc, file, preamble) =
     %% Rewritten to not use ppSpec which requires a lot of space for large specs
@@ -307,7 +309,29 @@ ListADT qualifying spec {
 	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
 	streamWriter(stream,";;; Definitions\n\n");
-	app (fn ldef -> ppDefToStream(ldef,stream)) defs))
+        if length defs < maxDefsPerFile
+          then app (fn ldef -> ppDefToStream(ldef,stream)) defs
+        else
+        let fileNameBase = subFromTo(file, 0, length file - 5) in   % Remove ".lisp"
+        let def writeSubFiles(rem_defs, i) =
+              if rem_defs = [] then ()
+              else
+              let subfileBase = fileNameBase^"--"^show i in
+              let subfile = subfileBase^".lisp" in
+              let num_remaining = length rem_defs in
+              (IO.withOpenFileForWrite
+                 (subfile,
+                  fn substream ->
+                    (streamWriter(substream, "\n(in-package :" ^ name ^ ")\n\n");
+                     app (fn ldef -> ppDefToStream(ldef, substream))
+                       (subFromTo(rem_defs, 0, min(maxDefsPerFile, num_remaining)))));
+               streamWriter(stream, "
+(eval-when (:compile-toplevel)
+  (compile-file \"" ^ subfile ^ "\"))
+(load \"" ^ subfileBase ^ "\")\n");
+               writeSubFiles(subFromTo(rem_defs, min(maxDefsPerFile, num_remaining), num_remaining), i + 1))
+         in writeSubFiles(defs, 1)))
+      
 
   def ppSpec (s : LispSpec) : PrettyPrint.Pretty =
       let defs = sortDefs(s.opDefns) 	in
