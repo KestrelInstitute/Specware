@@ -18,5 +18,5 @@ call Update_Path
 call Update_SWPATH
 call Find_Specware_App_SBCL
 
-start "ignore" "%LISP_EXECUTABLE%" +t "Specware Shell" +s "%SPECWARE4%\StartSpecwareShell.lisp" -I "%LISP_HEAP_IMAGE%" -e "(setq emacs::*use-emacs-interface?* nil)"
+start "Specware Shell" "%LISP_EXECUTABLE%"  --eval "(setq emacs::*use-emacs-interface?* nil)" --load "%SPECWARE4%\StartSpecwareShell.lisp"
 
