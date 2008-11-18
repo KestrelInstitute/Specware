@@ -8,6 +8,7 @@
 
 (defvar *VERBOSE* nil)
 (defvar *test?* nil)
+(defvar *copy-elc-files?* t)
 
 ;;  --------------------------------------------------------------------------------
 ;;; Since we compile files as part of this process, we assume we are running this
@@ -177,6 +178,9 @@
     (copy-dist-directory (extend-directory source-dir    "General")
 			 (extend-directory component-dir "General"))
 
+    (copy-dist-file      (merge-pathnames source-dir    "General.sw")
+			 (merge-pathnames component-dir "General.sw"))
+
     (copy-dist-file      (merge-pathnames (ensure-subdirs-exist source-dir "Structures" "Data")
                                           "Monad.sw")
 			 (merge-pathnames (ensure-subdir-exists component-dir "General")
@@ -306,9 +310,7 @@
 	 ;;
 	 (generic-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "Generic")))
 	 (slime-dir        (if *test?* component-dir (ensure-subdir-exists component-dir "slime")))
-	 (ilisp-dir        (ensure-subdir-exists component-dir "ilisp"))
-	 (xeli-dir         (ensure-subdir-exists component-dir "xeli"))
-	 (openmcl-dir      (ensure-subdir-exists component-dir "OpenMCL"))
+	 (openmcl-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "OpenMCL")))
 	 ;;
 	 (generic-dirs     '("x-symbol"))
 	 (x-files          '(;; "x-symbol-specware.el" is in files.el
@@ -318,6 +320,8 @@
 				     "compile.el"
 				     "hideshow.el"
 				     "hideshow.elc"
+                                     #-(Or Mswindows Win32)
+                                     "augment-load-path.el"
 				     "specware_logo.xpm")
 				   x-files
 				   (with-open-file (s (merge-pathnames source-dir "files.el"))
@@ -361,6 +365,8 @@
 			     "load-openmcl.elc"
 			     "sw-slime.elc" 
 			     ))
+         (distribution::*ignored-types*
+          (if *copy-elc-files?* distribution::*ignored-types* (cons "elc" distribution::*ignored-types*)))
 	 ;;
 	 (all-files        (append generic-files slime-files ilisp-files xeli-files openmcl-files ignored-files))
 	 (all-dirs         (append generic-dirs  slime-dirs  ilisp-dirs  xeli-dirs  openmcl-dirs  ignored-dirs))
@@ -431,7 +437,8 @@
       )
 
     ;; Ilisp
-    (progn
+    #-SBCL
+    (let ((ilisp-dir        (ensure-subdir-exists component-dir "ilisp")))
 
       (dolist (dir ilisp-dirs)
 	(copy-dist-directory (extend-directory source-dir dir)
@@ -443,9 +450,11 @@
       )
 
     ;; xeli
+    #+Allegro
     (progn
 
-      (let* ((specware-xeli-dir (extend-directory source-dir "xeli"))
+      (let* ((xeli-dir         (ensure-subdir-exists component-dir "xeli"))
+             (specware-xeli-dir (extend-directory source-dir "xeli"))
 	     (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
 				    ;; the 6.2 version of xeli is buggy, so use 7.0 version even with 6.2 lisp
 				    #+Linux     "/usr/local/acl/acl70/xeli/" ; 6.2 version is buggy
@@ -469,6 +478,7 @@
 
 
     ;; OpenMCL
+    #+OpenMCL
     (progn
       (dolist (dir openmcl-dirs)
 	(copy-dist-directory (extend-directory source-dir  dir)
@@ -796,7 +806,7 @@
 				    #+SBCL 
 				    (list (merge-pathnames source-linux-sbcl-dir "Specware")
 					  (merge-pathnames source-linux-sbcl-dir "SpecwareShell")
-<					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
+					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
 					  (merge-pathnames source-linux-sbcl-dir "Isabelle_Specware")
 					  (merge-pathnames source-linux-sbcl-dir "XEmacs_Specware")
 					  )
