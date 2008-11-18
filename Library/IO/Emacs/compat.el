@@ -48,6 +48,8 @@
     (sbcl    "sfsl")
     (gcl     "o")))
 
+(defvar *sbcl-size* 800 "Size of --dynamic-space-size for sbcl")
+
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
@@ -296,7 +298,7 @@
 				(if (eq *specware-lisp* 'cmulisp)
 				    "-core" "--core")
 				common-lisp-image-file)
-			(list "--dynamic-space-size" "1000")))
+			(list "--dynamic-space-size" (format "%S" *sbcl-size*))))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file
