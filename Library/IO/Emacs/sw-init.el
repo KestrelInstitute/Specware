@@ -637,7 +637,7 @@ sLisp Heap Image File: ")
             (file-newer-than-file-p specware4-base-lisp specware-executable))
         (specware-build in-current-dir? nil 'boot)
       (progn (specware-build-command "cd %s" (shell-filename *specware4-dir))
-             (specware-build-command "%S --dynamic-space-size 1000" specware-executable) 
+             (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
              (sit-for 5)
              (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::quit))"
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
@@ -672,7 +672,7 @@ sLisp Heap Image File: ")
     (when (and (not continuation?) (sbcl-running-in-build-buffer))
       (specware-build-command "(cl-user::quit)"))
     (specware-build-command "cd %s" (shell-filename build-dir))
-    (specware-build-command "sbcl --dynamic-space-size 1000") ; Generalize later
+    (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
     (sit-for 2)
     (if (and (file-exists-p specware4-lisp-binary)
              (file-newer-than-file-p specware4-lisp-binary specware4-lisp))
