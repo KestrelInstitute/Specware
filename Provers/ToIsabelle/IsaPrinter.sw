@@ -516,6 +516,13 @@ IsaTermPrinter qualifying spec
     namedPragma? p
       || (let (_,s,_,_) = p in verbatimPragma? s)
 
+  %% Originally was just supertype but generalized to also be a named type
+  op getSuperTypeOp(ty: Sort): QualifiedId =
+    case ty of
+      | Base(superty,_,_) \_rightarrow superty
+      | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
+      | _ \_rightarrow fail("Not a Subsort and not a named type")
+
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
     Map.foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps), val) \_rightarrow
@@ -535,13 +542,6 @@ IsaTermPrinter qualifying spec
                      overloadedOps = overloadedOps},
                     val))
       [] trans_info.type_map
-
-  %% Originally was just supertype but generalized to also be a named type
-  op getSuperTypeOp(ty: Sort): QualifiedId =
-    case ty of
-      | Base(superty,_,_) \_rightarrow superty
-      | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
-      | _ \_rightarrow fail("Not a Subsort and not a named type")
 
   def baseSpecName = "Empty"
 
