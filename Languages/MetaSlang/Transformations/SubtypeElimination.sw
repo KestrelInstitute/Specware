@@ -22,8 +22,11 @@ SpecNorm qualifying spec
     %let _ = writeLine("r: "^printTermWithSorts result) in
     result
 
+  op subtypeC?(spc: Spec, ty: Sort, coercions: TypeCoercionTable): Boolean =
+    subtype?(spc, ty) & ~(opaqueType?(ty, coercions, spc))
  
-  op polyCallsTransformers (spc: Spec, tb: PolyOpTable, types?: Boolean): TSP_Maps_St =
+  op polyCallsTransformers (spc: Spec, tb: PolyOpTable, types?: Boolean, coercions: TypeCoercionTable)
+     : TSP_Maps_St =
     let def doTerm (t: MS.Term): MS.Term =
           case t of
             | Fun(Op(qid as Qualified(q,id),fix?),ty,a) ->
@@ -34,14 +37,14 @@ SpecNorm qualifying spec
                  | None -> t
                  | Some opinfo ->
                let (tvs,ty1,defn) = unpackFirstOpDef opinfo in
-               %let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printSort ty) in
-               %let _ = writeLine("Matching with: "^printSort ty1) in
+               % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printSort ty) in
+               % let _ = writeLine("Matching with: "^printSort ty1) in
                case typeMatch(ty1,ty,spc,false) of
                  | None -> t
                  | Some tvsubst ->
                let tvsubst = filter (fn (tv,_) -> member(tv, used_tvs)) tvsubst in
-               %let _ = writeLine(anyToString tvsubst) in
-               if exists (fn (_,s_ty) -> subtype?(spc,s_ty)) tvsubst
+               % let _ = writeLine(anyToString tvsubst) in
+               if exists (fn (_,s_ty) -> subtypeC?(spc,s_ty, coercions)) tvsubst
                  then let predArgs = map (fn tv -> let Some(_,s_ty) =
                                                          find (fn (tvi,_) -> tv = tvi) tvsubst
                                                    in
@@ -50,13 +53,13 @@ SpecNorm qualifying spec
                                                      | None -> mkTruePred s_ty)
                                        used_tvs
                       in
-                      %let _ = app (fn pred -> writeLine(printTerm pred)) predArgs in
+                      % let _ = app (fn pred -> writeLine(printTerm pred)) predArgs in
                       let predTypes = map (fn pred -> inferType(spc, pred)) predArgs in
                       let new_t = mkAppl(Fun(Op(r_qid,Nonfix),
                                              mkArrow(mkProduct predTypes, ty), a),
                                          predArgs)
                       in
-                      %let _ = writeLine("New t: "^printTerm new_t) in
+                      % let _ = writeLine("New t: "^printTerm new_t) in
                       new_t
                  else t)
             | _ -> t
@@ -100,7 +103,8 @@ SpecNorm qualifying spec
                       | _ -> fvs)
       [] t
 
-  op tryRelativizeTerm(tvs: TyVars, tm: MS.Term, tb: PolyOpTable, ty: Sort, ho_eqfns: List QualifiedId, spc: Spec)
+  op tryRelativizeTerm(tvs: TyVars, tm: MS.Term, tb: PolyOpTable, ty: Sort, ho_eqfns: List QualifiedId, spc: Spec,
+                       coercions: TypeCoercionTable)
       : List(Id * MS.Term) =
     % let _ = writeLine("tm: "^printTerm tm) in
     if tvs = [] || ~(maybeRelativize?(tm, tb))then []
@@ -108,7 +112,7 @@ SpecNorm qualifying spec
     let tv_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolSort)))) tvs in
     % let _ = writeLine("tv_map: "^anyToString tv_map) in
     let st_tm = substTyVarsWithSubtypes(tv_map,tm) in
-    let rel_tm = mapTerm (polyCallsTransformers(spc,tb,false)) st_tm in
+    let rel_tm = mapTerm (polyCallsTransformers(spc, tb, false, coercions)) st_tm in
     let rel_tm = regTerm(rel_tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
     % let _ = writeLine("rel_tm: "^printTerm rel_tm) in
     let fvs = freeVars rel_tm ++ subtypePredFreeVars(rel_tm, spc) in
@@ -117,7 +121,7 @@ SpecNorm qualifying spec
     % let _ = writeLine("opt_tv_map: "^anyToString opt_tv_map) in
     opt_tv_map
 
-  op addRelativizedOps(spc: Spec): Spec * PolyOpTable =
+  op addRelativizedOps(spc: Spec, coercions: TypeCoercionTable): Spec * PolyOpTable =
     let ho_eqfns = findHOEqualityFuns spc in
     let def relativizeElts(elts, top?, op_map, tb) =
           foldl (fn ((new_elts, op_map, tb),el) ->
@@ -130,7 +134,7 @@ SpecNorm qualifying spec
                      (case AnnSpec.findTheOp(spc,qid) of
                         | Some opinfo ->
                           let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-                          (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc) of
+                          (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc, coercions) of
                              | [] -> (new_elts ++ [el], op_map, tb)
                              | tv_map ->
                                let new_id = id ^ "__stp" in
@@ -139,7 +143,6 @@ SpecNorm qualifying spec
                                                                   map (fn (tv,_) -> tv) tv_map))
                                in
                                let rel_ty_tm = substTyVarsWithSubtypes (tv_map, SortedTerm(dfn,ty,noPos)) in
-                               % let rel_ty_tm = mapTerm (polyCallsTransformers (spc,tb)) rel_ty_tm in
                                let SortedTerm(rel_dfn,ty,_) = rel_ty_tm in
                                let rel_tm = mkLambda(mkTuplePat(map (fn (_,Var v) -> VarPat v) tv_map),
                                                      rel_dfn)
@@ -156,12 +159,11 @@ SpecNorm qualifying spec
                         | _ -> (new_elts ++ [el], op_map, tb))
                    | Property(knd, qid as Qualified(q,id), tvs, bod, a) | tvs ~= [] & knd ~= Conjecture ->
                      % let _ = writeLine("Trying "^printQualifiedId qid^": "^printTerm bod) in
-                     (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc) of
+                     (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc, coercions) of
                         | [] -> (new_elts ++ [el], op_map, tb)
                         | tv_map ->
                           let new_id = id ^ "__stp" in
                           let rel_bod = substTyVarsWithSubtypes (tv_map, bod) in
-                          % let rel_bod = mapTerm (polyCallsTransformers (spc,tb)) rel_bod in
                           let new_bod = Bind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, rel_bod, a) in
                           let new_prop = Property(knd, Qualified(q,new_id), tvs, new_bod, a)in
                           (new_elts ++ [new_prop, el], op_map, tb))
@@ -175,12 +177,11 @@ SpecNorm qualifying spec
 
   op  addSubtypePredicateParams: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec
   def addSubtypePredicateParams spc coercions =
-    %% Remove subsort definition for directly-implemented subsorts
     %let _ = writeLine(printSpec spc) in
-    let (spc, tbl) = addRelativizedOps(spc) in
+    let (spc, tbl) = addRelativizedOps(spc, coercions) in
     %let _ = writeLine(anyToString tbl) in
-    let spc = mapSpec (polyCallsTransformers(spc, tbl, false)) spc in
-    let spc = mapSpec (polyCallsTransformers(spc, tbl, true)) spc in
+    let spc = mapSpec (polyCallsTransformers(spc, tbl, false, coercions)) spc in
+    let spc = mapSpec (polyCallsTransformers(spc, tbl, true,  coercions)) spc in
    % let _ = writeLine(printSpec spc) in
     spc
 
