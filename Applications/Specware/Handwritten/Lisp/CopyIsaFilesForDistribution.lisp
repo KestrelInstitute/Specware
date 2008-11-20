@@ -14,7 +14,7 @@
 (format t "~&;;; Getting Isabelle Interface library files ...~%")
 
 (copy-dist-directory (in-specware-dir     "Library/Isa/")
-			  (in-distribution-dir "Library/Isa/"))
+                     (in-distribution-dir "Library/Isa/"))
 
 
 ;;; ============ EXAMPLES ============

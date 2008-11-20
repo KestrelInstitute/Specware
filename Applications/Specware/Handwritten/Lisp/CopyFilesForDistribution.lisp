@@ -109,7 +109,7 @@
                   (in-distribution-dir "Specware.terminal"))
   (copy-dist-directory (in-specware-dir "Release/Mac/sbcl/Specware.app/")
                        (in-distribution-dir "Specware.app/"))
-  (copy-dist-file (in-specware-dir "Release/Mac/sbcl/Specware.sh")
+  (copy-dist-file (in-specware-dir "Release/Mac/sbcl/SpecwareShell.sh")
                   (in-distribution-dir "SpecwareShell.sh"))
   (copy-dist-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.sbclexe")
                   (in-distribution-dir "Specware4.sbclexe"))
