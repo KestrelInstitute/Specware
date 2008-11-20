@@ -23,7 +23,13 @@ SpecNorm qualifying spec
     result
 
   op subtypeC?(spc: Spec, ty: Sort, coercions: TypeCoercionTable): Boolean =
-    subtype?(spc, ty) & ~(opaqueType?(ty, coercions, spc))
+    case ty of
+     | Subsort _ -> true
+     | Base (qid, _, _) | exists (fn tb \_rightarrow qid = tb.subtype) coercions -> false
+     | _ ->
+       let exp_ty =  unfoldBaseOne(spc, ty) in
+       if ty = exp_ty then false
+         else subtypeC?(spc, exp_ty, coercions)
  
   op polyCallsTransformers (spc: Spec, tb: PolyOpTable, types?: Boolean, coercions: TypeCoercionTable)
      : TSP_Maps_St =
