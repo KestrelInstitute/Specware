@@ -246,7 +246,7 @@ IsaTermPrinter qualifying spec
                   val, uid))
       | Some((thynm, filnm, hash), uid) \_rightarrow
         Some((thyName(thynm ^ hash),
-              filnm  ^ ".sw",
+              uidToFullPath uid ^ ".sw",
               thyName(filnm ^ hash) ^ ".thy"),
              val, uid)
 
@@ -266,7 +266,7 @@ IsaTermPrinter qualifying spec
           | Some(val, uid) \_rightarrow
             let (thynm, filnm, hash) = unitIdToIsaString uid in
             Some((thynm ^ hash,
-                  filnm  ^ ".sw",
+                  uidToFullPath uid ^ ".sw",
                   filnm ^ hash),
                  uid))
       | _ \_rightarrow None
@@ -575,7 +575,7 @@ IsaTermPrinter qualifying spec
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
         let _ = if c.recursive?
 	          then
-		    if fileOlder?(sw_fil_nm, thy_fil_nm)
+		    if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
 		      then ()
 		    else toFile(thy_fil_nm,
                                 showValue(val, c.recursive?, Some uid, Some thy_nm))
