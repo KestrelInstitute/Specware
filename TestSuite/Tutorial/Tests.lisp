@@ -204,11 +204,12 @@
    ("Tutorial: swl find-matches" 
     :swl "/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
     :output '(";;; Generating lisp file $TESTDIR/find-matches.lisp"
+              "WARNING: Non-constructive def for List-Spec::lengthOfListFunction"
 	      "WARNING: Non-constructive def for List-Spec::definedOnInitialSegmentOfLength-2"
-	      "WARNING: Non-constructive def for Functions::wellFounded?"
-	      "WARNING: Non-constructive def for Functions::inverse-1-1"
-	      "WARNING: Non-constructive def for Functions::surjective?"
-	      "WARNING: Non-constructive def for Functions::injective?"
+	      "WARNING: Non-constructive def for Function-Spec::wellFounded?"
+	      "WARNING: Non-constructive def for Function-Spec::inverse-1-1"
+	      "WARNING: Non-constructive def for Function-Spec::surjective?"
+	      "WARNING: Non-constructive def for Function-Spec::injective?"
 	      "")
     :files '("$TESTDIR/find-matches.lisp"))
 
