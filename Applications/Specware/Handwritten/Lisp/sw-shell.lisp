@@ -159,8 +159,7 @@
 						 (let ((stream (make-synonym-stream '*terminal-io*)))
 						   (setf *standard-input* stream)
 						   (setf *standard-output* stream)
-						   (format t "~&Received EOF on *standard-input*, ~
-				  switching to *terminal-io*.~%")))
+						   (format t "~&Received EOF on *standard-input*, switching to *terminal-io*.~%")))
 						((> number-of-eofs eofs-before-quit)
 						 (format t "~&Received more than ~D EOFs; Aborting.~%"
 							 eofs-before-quit)
