@@ -3,34 +3,6 @@
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
-# Use the directory of this file as the value of SPECWARE4
-SPECWARE4=`/usr/bin/dirname $0`
-export SPECWARE4
-
-# Ensure SPECWARE4 is set to full pathname:
-
-case "$SPECWARE4" in
-    /*) : ok;;
-    *)  SPECWARE4="`pwd`/$SPECWARE4";;
-esac
-
-# Ensure SWPATH is set
-
-if [ -z "$SWPATH" ]; then
-  SWPATH="/"
-  export SWPATH
-fi
-
-LISP_EXECUTABLE="$SPECWARE4"/Specware4.sbclexe
-LISP_HEAP_IMAGE=NONE
-LISP_DIRECTORY="$SPECWARE4"/
-export LISP_EXECUTABLE
-export LISP_HEAP_IMAGE
-export LISP_DIRECTORY
-
-echo SPECWARE4=$SPECWARE4
-
-
 # Load specware emacs files, do command line options (e.g. load and
 # start Isabelle and then run-specware4
 
