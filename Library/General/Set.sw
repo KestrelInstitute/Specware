@@ -183,7 +183,6 @@ Set qualifying spec
   proof Isa
   apply(simp)
   apply(rule iffI)
-
     apply(induct rule:finite_induct)
      apply(simp)
      apply(simp add: insert_not_empty)
@@ -198,7 +197,9 @@ Set qualifying spec
       apply(rule_tac x="n" in exI, simp)
 (* List.ex_nat_less_eq: (\_existsm<?n. ?P m) = (\_existsm\_in{0..<?n}. ?P m) *)
       apply(simp add: ex_nat_less_eq)
-      apply(erule bexE) (* \_lbrakk\_existsx\_in?A. ?P x; \_Andx. \_lbrakkx \_in ?A; ?P x\_rbrakk \_Longrightarrow ?Q\_rbrakk \_Longrightarrow ?Q *)
+      apply(erule bexE)
+      (* \_lbrakk\_existsx\_in?A. ?P x; \_Andx. \_lbrakkx \_in ?A; ?P x\_rbrakk
+         \_Longrightarrow ?Q\_rbrakk \_Longrightarrow ?Q *)
       apply(rule_tac x="i" in bexI)
       apply(simp)
       apply(simp)
@@ -209,14 +210,12 @@ Set qualifying spec
       apply(rule disjI2)
       apply(rule_tac x="i" in bexI, assumption)
       apply(clarsimp)
-
-(* finite_conv_nat_seg_image: "finite A = (\_exists (n::nat) f. A = f ` {i::nat. i<n})" *)
-
+(* finite_conv_nat_seg_image:
+   "finite A = (\_exists (n::nat) f. A = f ` {i::nat. i<n})" *)
       apply(simp only: finite_conv_nat_seg_image)
       apply(rule_tac x="n" in exI)
       apply(rule_tac x="f" in exI)
       apply(auto)
-
   end-proof
 
   type FiniteSet a = (Set a | finite?)
@@ -227,15 +226,12 @@ Set qualifying spec
   proof Isa Set__finite_insert__stp
   apply(case_tac "x \_in s")
   apply(simp only: insert_absorb Set_P_RSet)
- 
   apply(simp add: Set__finite_p__stp_def Set__empty_p__stp_def)
   apply(rule disjI2)
   apply(erule disjE)
-
    apply(clarsimp)
    apply(rule_tac x="\_lambdai. x" in exI, simp)
    apply(rule_tac x="1" in exI, simp add: eq_ac)
-
    apply(erule exE)
    apply(elim conjE)
    apply(erule exE, simp)
@@ -246,11 +242,11 @@ Set qualifying spec
     apply(rule_tac x="i" in exI, simp)+
   end-proof
 
-  theorem induction is [a]
-    fa (p: FiniteSet a -> Bool)
-      p empty &&
-      (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
-      (fa (s: FiniteSet a) p s)
+theorem induction is [a]
+  fa (p: FiniteSet a -> Bool)
+    p empty &&
+    (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
+    (fa (s: FiniteSet a) p s)
 
 proof Isa Set__induction__stp
 proof -
