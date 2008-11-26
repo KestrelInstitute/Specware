@@ -363,6 +363,59 @@ op [a] length (l: List a) : Nat =
   | []    -> 0
   | _::tl -> 1 + length tl
 
+theorem length_is_length_of_list_function is [a]
+  fa (f: ListFunction a) lengthOfListFunction f = length (list f)
+proof Isa
+proof (induct n \<equiv> "List__lengthOfListFunction f" arbitrary: f)
+case 0
+ from prems have "\<exists>!n. f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__unique_initial_segment_length)
+ hence "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+  by (unfold List__lengthOfListFunction_def, rule theI')
+ with prems have "f definedOnInitialSegmentOfLength 0" by auto
+ hence "f 0 = None"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__none_p_def)
+ with prems have "List__list f = []" by auto
+ hence "length (List__list f) = 0" by auto
+ with prems show ?case by auto
+next
+case (Suc n)
+ from prems have "\<exists>!n. f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__unique_initial_segment_length)
+ hence "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+  by (unfold List__lengthOfListFunction_def, rule theI')
+ with prems have "f definedOnInitialSegmentOfLength (Suc n)" by auto
+ then obtain x where "f 0 = Some x"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def)
+ with prems have "List__list f = Cons x (List__list (\<lambda>i. f (i + 1)))"
+  by auto
+ from `f definedOnInitialSegmentOfLength (Suc n)`
+  have "(\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ hence "\<exists>n. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n"
+  by auto
+ hence "\<exists>!n. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__unique_initial_segment_length)
+ hence "(\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength
+        (List__lengthOfListFunction (\<lambda>i. f (i + 1)))"
+  by (unfold List__lengthOfListFunction_def, rule theI')
+ with `(\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n`
+  have "n = List__lengthOfListFunction (\<lambda>i. f (i + 1))"
+   by (auto simp add: List__unique_initial_segment_length)
+ with `\<exists>n. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n`
+      Suc.hyps
+  have "List__lengthOfListFunction (\<lambda>i. f (i + 1)) =
+        length (List__list (\<lambda>i. f (i + 1)))"
+   by auto
+ with `n = List__lengthOfListFunction (\<lambda>i. f (i + 1))`
+  have "length (List__list (\<lambda>i. f (i + 1))) = n" by auto
+ hence "length (Cons x (List__list (\<lambda>i. f (i + 1)))) = Suc n" by auto
+ with prems show ?case by auto
+qed
+end-proof
+
 % useful to define subtype of lists of given length:
 
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
@@ -630,6 +683,9 @@ proof Isa List__subFromLong_Obligation_subtype
                      Option__some_p_def Option__none_p_def)
 end-proof
 
+theorem subFromLong_whole is [a]
+ fa (l: List a) subFromLong (l, 0, length l) = l
+
 % sublist from index i (inclusive) to index j (exclusive); if i = j then we
 % could have i = j = length l, even though those are not valid indices:
 
@@ -637,15 +693,16 @@ op [a] subFromTo
        (l: List a, i:Nat, j:Nat | i <= j && j <= length l) : List a =
   subFromLong (l, i, j - i)
 
- theorem subFromTo_whole is
-   [a] fa (l: List a) subFromTo (l, 0, length l) = l
- proof Isa [simp]
-   apply(induct_tac l)
-   apply(auto)
- end-proof
- proof Isa subFromTo_Obligation_subtype1
- apply(auto, arith)
- end-proof
+proof Isa subFromTo_Obligation_subtype1
+apply(auto, arith)
+end-proof
+
+theorem subFromTo_whole is [a]
+  fa (l: List a) subFromTo (l, 0, length l) = l
+proof Isa [simp]
+  apply(induct_tac l)
+  apply(auto)
+end-proof
 
  % extract/remove prefix/suffix of length n:
 
