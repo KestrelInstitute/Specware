@@ -685,6 +685,53 @@ end-proof
 
 theorem subFromLong_whole is [a]
  fa (l: List a) subFromLong (l, 0, length l) = l
+proof Isa
+proof (induct l)
+case Nil
+ def f \<equiv> "(\<lambda>j. if j < 0 then Some ([] ! j) else None)
+                 :: nat \<Rightarrow> 'a option"
+ hence UNFOLD: "List__subFromLong ([], 0, length []) = List__list f"
+  by (auto simp add: List__subFromLong_def del: List__list.simps)
+ with f_def have "f definedOnInitialSegmentOfLength 0"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+ with f_def have "List__list f = []" by auto
+ with UNFOLD show ?case by auto
+next
+case (Cons x l)
+ def n \<equiv> "length l"
+ def f \<equiv> "\<lambda>j. if j < Suc n then Some ((x#l) ! j) else None"
+ from f_def
+  have Fsimp: "f = (\<lambda>j. if j < Suc n
+                                then Some ((x#l) ! (0 + j)) else None)"
+   by (auto simp add: ext)
+ from f_def have Fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+ def g \<equiv> "\<lambda>j. if j < n then Some (l ! j) else None"
+ from g_def
+  have Gsimp: "g = (\<lambda>j. if j < n then Some (l ! (0 + j)) else None)"
+   by (auto simp add: ext)
+ from f_def have f0: "f 0 = Some x" by simp
+ from f0 Fseg
+  have UnfoldLF: "List__list f = Cons x (List__list (\<lambda>j. f (j + 1)))"
+   by auto
+ from f_def g_def have f1_g: "(\<lambda>j. f (j + 1)) = g"
+  by (auto simp add: ext)
+ from UnfoldLF f1_g have Lf_Lg: "List__list f = x # List__list g" by auto
+ from Cons.hyps n_def have IndHyp: "List__subFromLong (l, 0, n) = l" by auto
+ from n_def have "List__subFromLong (x#l, 0, length (x#l)) =
+                  List__subFromLong (x#l, 0, Suc n)"
+  by auto
+ also from Fsimp have "\<dots> = List__list f"
+  by (auto simp add: List__subFromLong_def del: List__list.simps)
+ also from Lf_Lg have "\<dots> = x # List__list g" by auto
+ also from Gsimp have "\<dots> = x # List__subFromLong (l, 0, n)"
+  by (auto simp add: List__subFromLong_def del: List__list.simps)
+ also from IndHyp have "\<dots> = x # l" by auto
+ finally show ?case .
+qed
+end-proof
 
 % sublist from index i (inclusive) to index j (exclusive); if i = j then we
 % could have i = j = length l, even though those are not valid indices:
