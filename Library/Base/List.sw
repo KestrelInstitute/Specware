@@ -683,6 +683,32 @@ proof Isa List__subFromLong_Obligation_subtype
                      Option__some_p_def Option__none_p_def)
 end-proof
 
+theorem length_subFromLong is [a]
+  fa (l:List a, i:Nat, n:Nat) i + n <= length l =>
+    length (subFromLong (l, i, n)) = n
+proof Isa
+proof -
+ def subl \<equiv> "List__subFromLong(l,i,n)"
+ and f \<equiv> "\<lambda>j. if j < n then Some (l ! (i + j)) else None"
+ hence "subl = List__list f" by (auto simp add: List__subFromLong_def)
+ from f_def have "f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+ hence "\<exists>n. f definedOnInitialSegmentOfLength n" by auto
+ hence "\<exists>!n. f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__unique_initial_segment_length)
+ hence "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+  by (auto simp add: theI' List__lengthOfListFunction_def)
+ with `f definedOnInitialSegmentOfLength n`
+  have "List__lengthOfListFunction f = n"
+   by (auto simp add: List__unique_initial_segment_length)
+ with `subl = List__list f` `\<exists>n. f definedOnInitialSegmentOfLength n`
+  have "length subl = n"
+   by (auto simp add: List__length_is_length_of_list_function)
+ with subl_def show ?thesis by auto
+qed
+end-proof
+
 theorem subFromLong_whole is [a]
  fa (l: List a) subFromLong (l, 0, length l) = l
 proof Isa
@@ -747,42 +773,108 @@ end-proof
 theorem subFromTo_whole is [a]
   fa (l: List a) subFromTo (l, 0, length l) = l
 proof Isa [simp]
-  apply(induct_tac l)
-  apply(auto)
+  by (auto simp add: List__subFromTo_def List__subFromLong_whole)
 end-proof
 
- % extract/remove prefix/suffix of length n:
+% extract/remove prefix/suffix of length n:
 
- op [a] prefix (l: List a, n:Nat | n <= length l) : List a =
-   subFromLong (l, 0, n)
+op [a] prefix (l: List a, n:Nat | n <= length l) : List a =
+  subFromLong (l, 0, n)
 
- op [a] suffix (l: List a, n:Nat | n <= length l) : List a =
-   subFromLong (l, length l - n, n)
+op [a] suffix (l: List a, n:Nat | n <= length l) : List a =
+  subFromLong (l, length l - n, n)
 
- op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
-   suffix (l, length l - n)
+op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
+  suffix (l, length l - n)
 
- theorem length_removePrefix is [a]
-    fa (l: List a, n:Nat) n <= length l =>
-      length (removePrefix(l,n)) = length l - n
- proof Isa [simp]
-   apply(induct_tac l i rule: List__removePrefix.induct)
-   apply(auto)
-   sorry
- end-proof
+op [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
+  prefix (l, length l - n)
 
- op [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
-   prefix (l, length l - n)
+theorem length_prefix is [a]
+  fa (l: List a, n:Nat) n <= length l =>
+    length (prefix (l, n)) = n
+proof Isa
+  by (auto simp add: List__prefix_def List__length_subFromLong)
+end-proof
 
- % specialization of previous four ops to n = 1:
+theorem length_suffix is [a]
+  fa (l: List a, n:Nat) n <= length l =>
+    length (suffix (l, n)) = n
+proof Isa
+  by (auto simp add: List__suffix_def List__length_subFromLong)
+end-proof
 
- op [a] head (l: List1 a) : a = theElement (prefix (l, 1))
+theorem length_removePrefix is [a]
+  fa (l: List a, n:Nat) n <= length l =>
+    length (removePrefix(l,n)) = length l - n
+proof Isa [simp]
+  by (auto simp add: List__removePrefix_def List__length_suffix)
+end-proof
 
- op [a] last (l: List1 a) : a = theElement (suffix (l, 1))
+theorem length_removeSuffix is [a]
+  fa (l: List a, n:Nat) n <= length l =>
+    length (removeSuffix(l,n)) = length l - n
+proof Isa [simp]
+  by (auto simp add: List__removeSuffix_def List__length_prefix)
+end-proof
 
- op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
+% specialization of previous four ops to n = 1:
 
- op [a] butLast (l: List1 a) : List a = removeSuffix (l, 1)
+op [a] head (l: List1 a) : a = theElement (prefix (l, 1))
+
+op [a] last (l: List1 a) : a = theElement (suffix (l, 1))
+
+op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
+
+op [a] butLast (l: List1 a) : List a = removeSuffix (l, 1)
+
+proof Isa List__head_Obligation_subtype
+  by (cases l, auto)
+end-proof
+
+proof Isa List__head_Obligation_subtype0
+  by (cases l, auto simp add: List__length_prefix List__ofLength_p_def)
+end-proof
+
+proof Isa List__head__def
+proof -
+ assume "l \<noteq> []"
+ then obtain x and r where "l = x # r" by (cases l, auto)
+ hence "hd l = x" by auto
+ have preX: "List__prefix (l, 1) = [x]"
+ proof -
+  def f \<equiv> "\<lambda>j. if j < 1 then Some (l ! (0 + j)) else None"
+  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  from f_def have f1None: "(\<lambda>j. f (j + 1)) = (\<lambda>j. None)"
+   by (auto simp add: ext)
+  from f_def `l = x # r` have f0: "f 0 = Some x" by auto
+  have allNoneSeg: "\<exists>n. (\<lambda>j. None) definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  with f1None fseg f0 have Lfx: "List__list f = [x]" by auto
+  from f_def have "List__prefix (l, 1) = List__list f"
+   by (auto simp add: List__prefix_def List__subFromLong_def)
+  also with Lfx have "\<dots> = [x]" by auto
+  finally show ?thesis .
+ qed
+ have "List__theElement [x] = x"
+  by (auto simp add: List__theElement_def)
+ with preX have "List__theElement (List__prefix (l, 1)) = x" by auto
+ with `hd l = x` show ?thesis by auto
+qed
+end-proof
+
+proof Isa List__last_Obligation_subtype
+  by (cases l, auto)
+end-proof
+
+proof Isa List__last_Obligation_subtype0
+  by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
+end-proof
+
+
 
  theorem length_butLast is [a]
    fa (l: List1 a) length (butLast l) = length l - 1
