@@ -874,15 +874,23 @@ proof Isa List__last_Obligation_subtype0
   by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
 end-proof
 
+proof Isa List__tail_Obligation_subtype
+  by (cases l, auto)
+end-proof
 
+proof Isa List__butLast_Obligation_subtype
+  by (cases l, auto)
+end-proof
 
- theorem length_butLast is [a]
-   fa (l: List1 a) length (butLast l) = length l - 1
- proof Isa [simp] end-proof
+theorem length_butLast is [a]
+  fa (l: List1 a) length (butLast l) = length l - 1
+proof Isa [simp] end-proof
 
- theorem length_butLast_order is [a]
-   fa (l: List1 a) length (butLast l) < length l
- proof Isa [simp] end-proof
+theorem length_butLast_order is [a]
+  fa (l: List1 a) length (butLast l) < length l
+proof Isa [simp]
+  by (auto simp add: List__length_butLast)
+end-proof
 
  % concatenation:
 
