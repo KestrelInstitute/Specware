@@ -874,6 +874,45 @@ proof Isa List__last_Obligation_subtype0
   by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
 end-proof
 
+proof Isa List__last__def
+proof -
+ def x \<equiv> "last l"
+ def bl \<equiv> "butlast l"
+ assume "l \<noteq> []"
+ with x_def bl_def have decomp_l: "l = bl @ [x]" by auto
+ have "List__suffix (bl @ [x], 1) = [x]"
+ proof -
+  def f \<equiv> "(\<lambda>j. if j < 1 then Some ((bl @ [x]) ! (length bl + j)) else None)
+           :: nat \<Rightarrow> 'a option"
+  and g \<equiv> "(\<lambda>j. if j < 1 then Some ([x] ! (0 + j)) else None)
+           :: nat \<Rightarrow> 'a option"
+  and g' \<equiv> "(\<lambda>j. if j < 0 then Some ([] ! (0 + j + 1)) else None)
+            :: nat \<Rightarrow> 'a option"
+  from f_def g_def have "f = g" by (auto simp add: ext)
+  from g_def g'_def have g'_g: "g' = (\<lambda>j. g (j + 1))" by (auto simp add: ext)
+  from g_def have g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  from g'_def have g'_iseg:  "\<exists>n. g' definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def ext)
+  have "List__suffix (bl @ [x], 1) =
+        List__subFromLong (bl @ [x], length bl, 1)"
+   by (auto simp add: List__suffix_def)
+  also with f_def have "\<dots> = List__list f"
+   by (auto simp add: List__subFromLong_def)
+  also with arg_cong `f = g` have "\<dots> = List__list g" by auto
+  also with g_def g_iseg have "\<dots> = x # List__list (\<lambda>j. g (j + 1))" by auto
+  also with g'_g have "\<dots> = x # List__list g'" by auto
+  also with g'_def g'_iseg have "\<dots> = x # []" by auto
+  finally show ?thesis .
+ qed
+ with decomp_l have "List__theElement (List__suffix (l, 1)) = x"
+  by (auto simp add: List__theElement_def)
+ with x_def show ?thesis by auto
+qed
+end-proof
+
 proof Isa List__tail_Obligation_subtype
   by (cases l, auto)
 end-proof
