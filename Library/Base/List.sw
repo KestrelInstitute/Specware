@@ -80,15 +80,7 @@ fixed to produce the correct translation, we will remove the "-verbatim" and the
 "function ..." below, leaving only the proof scripts. For now, in order to
 process the translated Isabelle theory, the generated recdef must be deleted
 manually. *)
-proof Isa -verbatim
-function List__list :: "'a List__ListFunction \<Rightarrow> 'a list" where
-"List__list f =
-   (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
-      case f 0
-        of None \<Rightarrow> []
-         | Some x \<Rightarrow> 
-           Cons x (List__list (\<lambda> (i::nat). f (i + 1)))
-    else regular_val)"
+proof Isa list ()
 by (pat_completeness, auto)
 termination
 proof (relation "measure List__lengthOfListFunction")
