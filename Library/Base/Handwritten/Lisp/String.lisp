@@ -11,6 +11,8 @@
                 "STRING-SPEC::|!length|"
                 "STRING-SPEC::|!@-2|"
                 "STRING-SPEC::|!@|"
+                "STRING-SPEC::sub-2"
+                "STRING-SPEC::sub"
                 "STRING-SPEC::subFromTo-3"
                 "STRING-SPEC::subFromTo"
                 "STRING-SPEC::++-2"
@@ -44,6 +46,8 @@
                 "String-Spec::|!length|"
                 "String-Spec::|!@-2|"
                 "String-Spec::|!@|"
+                "String-Spec::sub-2"
+                "String-Spec::sub"
                 "String-Spec::subFromTo-3"
                 "String-Spec::subFromTo"
                 "String-Spec::++-2"
@@ -107,6 +111,15 @@
 (defun |!@| (sn)
  (declare (cons sn))
  (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
+
+(defun sub-2 (s n)
+ (declare (type cl:simple-string s) (type cl:fixnum n))
+ (elt s n))
+
+(defun sub (sn)
+ (declare (cons sn))
+ (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
+
 
 (defun subFromTo-3 (s start end)
  (declare (type cl:simple-string s) (type cl:fixnum start end))
