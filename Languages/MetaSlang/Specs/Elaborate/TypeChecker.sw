@@ -461,8 +461,8 @@ TypeChecker qualifying spec
    let new_tvs =
        if null tvs then
 	 tvs_used
-       else if length tvs_used = length tvs then
-	 tvs_used  (* Probably correct ;-*)
+       else if equalTyVarSets?(tvs_used, tvs) then
+	 tvs  (* Probably correct ;-*)
        else 
 	 (error (env, 
 		 "mismatch between bound vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs) ^ "]"
