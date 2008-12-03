@@ -1511,14 +1511,36 @@ IsaTermPrinter qualifying spec
                                 then []
                                 else [[prString "done",prEmpty]]))))
 
+  op backwardsSExpr(s: String, pos: Nat): Option Nat =
+    if pos >= length s then None
+    else
+    let def skip_back(i, paren_depth, non_ws?) =
+          if i < 0 then None
+          else
+          let chr = s@i in
+          if chr = #) then skip_back(i-1, paren_depth+1, true)
+           else if chr = #(
+             then if paren_depth = 1 then Some i
+                    else skip_back(i-1, paren_depth-1, true)
+           else if paren_depth = 0 && whiteSpaceChar? chr
+             then if non_ws? then Some(i+1)
+                   else skip_back(i-1, paren_depth, false)
+           else skip_back(i-1, paren_depth, true)
+    in
+    skip_back(pos, 0, false)
+
   op lastLineEnds(prf: String): Boolean =
-    let beg_last_line = case findLast("\n", prf) of
+    let len_prf = length prf in
+    case backwardsSExpr(prf, len_prf-1) of
+      | None -> false
+      | Some end_char ->
+    let beg_last_line = case findLastBefore("\n", prf, end_char) of
                           | Some i -> i+1
                           | None -> 0
     in
    % let real_beg_last_line = skipWhiteSpace(prf, beg_last_line) in
     %% Should be more sophisticated
-    case searchBetween("by", prf, beg_last_line, length prf) of
+    case searchBetween("by", prf, beg_last_line, end_char) of
       | None -> false
       | Some n -> (n = 0 || whiteSpaceChar?(prf@(n-1)))
                  && length prf > n+3
