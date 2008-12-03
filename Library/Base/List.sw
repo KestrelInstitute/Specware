@@ -61,6 +61,8 @@ end-proof
 
 op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
   f definedOnInitialSegmentOfLength n
+
+% uniqueness of n such that "f definedOnInitialSegmentOfLength n":
 proof Isa List__lengthOfListFunction_Obligation_the
  by (auto simp add: List__unique_initial_segment_length)
 end-proof
@@ -72,14 +74,8 @@ op list : [a] Bijection (ListFunction a, List a) =
     case f 0 of
     | None   -> Nil
     | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
-(* Op list just above is currently translated into a recdef with the subtype
-hypothesis of ListFunction missing, making termination impossible to prove. The
-following verbatim Isabelle text shows the correct translation of the function,
-together with the proof script to prove termination. When the translator is
-fixed to produce the correct translation, we will remove the "-verbatim" and the
-"function ..." below, leaving only the proof scripts. For now, in order to
-process the translated Isabelle theory, the generated recdef must be deleted
-manually. *)
+
+% well-definedness of op list:
 proof Isa list ()
 by (pat_completeness, auto)
 termination
@@ -128,9 +124,9 @@ proof (relation "measure List__lengthOfListFunction")
  qed
 qed
 end-proof
-(* The following proves the obligation that the function passed to the recursive
-call of op list is in the ListFunction subtype, i.e. it is defined on some
-initial segment. *)
+
+% the function passed to the recursive call of op list is in the ListFunction
+% subtype, i.e. it is defined on some initial segment:
 proof Isa List__list_Obligation_subtype0
 proof -
  fix f x
@@ -148,7 +144,8 @@ proof -
    ..
 qed
 end-proof
-(* The following proves the bijectivity of op list. *)
+
+% bijectivity of op list:
 proof Isa List__list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
@@ -317,6 +314,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
   qed
 qed
 end-proof
+
 (* The following obligation is redundant and should not be generated. Until the
 translator is changed not to generate it any more, we use "sorry" to ignore the
 obligation. *)
@@ -327,6 +325,7 @@ end-proof
 op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
    % disallowed
+
 (* The bijectivity of op list_1 follows from the fact that inverse maps
 bijections to bijections. Therefore, the following obligation needs not be
 proved by the user. The translator could generate this as a theorem (which could
@@ -343,6 +342,8 @@ end-proof
 
 op [a] tabulate (n:Nat, f: Nat -> a) : List a =
   list (fn i:Nat -> if i < n then Some (f i) else None)
+
+% the argument to op list is in the ListFunction subtype:
 proof Isa List__tabulate_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def
                      Option__some_p_def Option__none_p_def)
@@ -354,6 +355,8 @@ op [a] length (l: List a) : Nat =
   case l of
   | []    -> 0
   | _::tl -> 1 + length tl
+
+% length of list and length of corresponding list function coincide:
 
 theorem length_is_length_of_list_function is [a]
   fa (f: ListFunction a) lengthOfListFunction f = length (list f)
@@ -412,8 +415,8 @@ end-proof
 
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
 
-(* The following lemma relates the Metaslang definition of op list_1 to the
-Isabelle definition of the "nth" function (infix "!"). *)
+% Isabelle lemma that relates the Metaslang definition of op list_1 to the
+% Isabelle definition of the "nth" function (infix "!"):
 proof Isa -verbatim
 lemma list_1_Isa_nth:
  "List__list_1 l = (\<lambda>i. if i < length l then Some (l!i) else None)"
@@ -504,6 +507,7 @@ end-proof
 op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
   let Some x = list_1 l i in x
 
+% correctness of mapping from Metaslang's @ to Isabelle's !:
 proof Isa List__e_at__def
   by (auto simp add: list_1_Isa_nth)
 end-proof
@@ -526,7 +530,9 @@ theorem length_empty is [a] length (empty: List a) = 0
 proof Isa [simp] end-proof
 
 op [a] empty? (l: List a) : Bool = (l = empty)
-proof Isa
+
+% correctness of mapping from Metaslang's empty? to Isabelle's null:
+proof Isa List__empty_p_def
   by (simp add: null_empty)
 end-proof
 
@@ -549,6 +555,7 @@ op [a] single (x:a) : List a = [x]
 
 op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
 
+% uniqueness of x such as "l = [x]", relativized to a subtype predicate:
 proof Isa List__theElement__stp_Obligation_the
 proof -
  assume "List__ofLength_p 1 l"
@@ -572,6 +579,7 @@ proof -
 qed
 end-proof
 
+% uniqueness of x such as "l = [x]":
 proof Isa List__theElement_Obligation_the
 proof
  def x \<equiv> "hd l"
@@ -602,6 +610,7 @@ end-proof
 op [a] in? (x:a, l: List a) infixl 20 : Bool =
   ex(i:Nat) l @@ i = Some x
 
+% correctness of mapping from Metaslang's in? to Isabelle's mem:
 proof Isa List__in_p__def
 proof (induct l)
  case Nil
@@ -670,6 +679,7 @@ op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
 op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   list (fn j:Nat -> if j < n then Some (l @ (i + j)) else None)
 
+% the argument to op list is in the ListFunction subtype:
 proof Isa List__subFromLong_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def
                      Option__some_p_def Option__none_p_def)
@@ -758,10 +768,6 @@ op [a] subFromTo
        (l: List a, i:Nat, j:Nat | i <= j && j <= length l) : List a =
   subFromLong (l, i, j - i)
 
-proof Isa subFromTo_Obligation_subtype1
-apply(auto, arith)
-end-proof
-
 theorem subFromTo_whole is [a]
   fa (l: List a) subFromTo (l, 0, length l) = l
 proof Isa [simp]
@@ -820,14 +826,17 @@ op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
 
 op [a] butLast (l: List1 a) : List a = removeSuffix (l, 1)
 
+% proof that "1 <= length l":
 proof Isa List__head_Obligation_subtype
   by (cases l, auto)
 end-proof
 
+% proof that "prefix (l, 1)" has length 1:
 proof Isa List__head_Obligation_subtype0
   by (cases l, auto simp add: List__length_prefix List__ofLength_p_def)
 end-proof
 
+% correctness of mapping from Metaslang's head to Isabelle's hd:
 proof Isa List__head__def
 proof -
  assume "l \<noteq> []"
@@ -858,14 +867,17 @@ proof -
 qed
 end-proof
 
+% proof that "1 <= length l":
 proof Isa List__last_Obligation_subtype
   by (cases l, auto)
 end-proof
 
+% proof that "suffix (l, 1)" has length 1:
 proof Isa List__last_Obligation_subtype0
   by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
 end-proof
 
+% correctness of mapping from Metaslang's last to Isabelle's last:
 proof Isa List__last__def
 proof -
  def x \<equiv> "last l"
@@ -905,6 +917,7 @@ proof -
 qed
 end-proof
 
+% proof that "1 <= length l":
 proof Isa List__tail_Obligation_subtype
   by (cases l, auto)
 end-proof
