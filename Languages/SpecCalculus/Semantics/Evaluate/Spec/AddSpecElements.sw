@@ -56,7 +56,7 @@ SpecCalc qualifying spec
 	 let combined_names = removeDuplicates combined_names in % redundant?
 	 let (old_tvs, old_srt) = unpackFirstSortDef old_info in
 	 let (new_tvs, new_srt) = unpackFirstSortDef new_info in
-         if new_tvs = old_tvs then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
+         if equalTyVarSets?(new_tvs, old_tvs) then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
            (let old_dfn = old_info.dfn in
 	    case (definedSort? old_dfn, definedSort? new_dfn) of
               | (false, false) ->
@@ -200,7 +200,7 @@ SpecCalc qualifying spec
 			       | _ -> 
 			       %%  Old:  op foo : ...
 			       %%  New:  def [a,b,c] foo ... = ...
-			       new_tvs = old_tvs)
+			       equalTyVarSets?(new_tvs, old_tvs))
 	       in
 	       (if happy? then
 		  let combined_srt = (case (old_srt, new_srt) of
