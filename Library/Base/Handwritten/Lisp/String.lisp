@@ -108,6 +108,9 @@
  (declare (type cl:simple-string s) (type cl:fixnum n))
  (elt s n))
 
+(define-compiler-macro |!@-2| (s n)
+  `(elt (the cl:simple-string ,s) (the cl:fixnum ,n)))
+
 (defun |!@| (sn)
  (declare (cons sn))
  (elt (the cl:simple-string (car sn)) (the cl:fixnum (cdr sn))))
@@ -115,6 +118,9 @@
 (defun sub-2 (s n)
  (declare (type cl:simple-string s) (type cl:fixnum n))
  (elt s n))
+
+(define-compiler-macro sub-2 (s n)
+  `(elt (the cl:simple-string ,s) (the cl:fixnum ,n)))
 
 (defun sub (sn)
  (declare (cons sn))
