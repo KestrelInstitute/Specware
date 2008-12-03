@@ -93,6 +93,7 @@ Set qualifying spec
 
   op [a] empty? (s: Set a) : Bool = (s = empty)
   proof Isa [simp] end-proof
+  proof Isa Set__empty_p__stp [simp] end-proof
 
   % sets with at least 1 element:
 
@@ -226,7 +227,7 @@ Set qualifying spec
   proof Isa Set__finite_insert__stp
   apply(case_tac "x \_in s")
   apply(simp only: insert_absorb Set_P_RSet)
-  apply(simp add: Set__finite_p__stp_def Set__empty_p__stp_def)
+  apply(simp add: Set__finite_p__stp_def)
   apply(rule disjI2)
   apply(erule disjE)
    apply(clarsimp)
@@ -247,6 +248,17 @@ theorem induction is [a]
     p empty &&
     (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
     (fa (s: FiniteSet a) p s)
+
+proof Isa induction__stp_Obligation_subtype
+  by (simp add: Set__finite_p__stp_def)
+end-proof
+proof Isa induction__stp_Obligation_subtype0
+  apply(rule conjI)
+  prefer 2
+  apply(erule ssubst, assumption)
+  apply(erule ssubst)
+  by (rule Set__finite_insert__stp)
+end-proof
 
 proof Isa Set__induction__stp
 proof -
@@ -290,7 +302,7 @@ proof -
     txt {* We first single out an element @{term y} of @{term s}, which
     satisfies @{term P} because all the elements of @{term s} satisfy @{term P}
     by hypothesis. *}
-    hence "s \<noteq> {}" by (auto simp add: Set__empty_p__stp_def)
+    hence "s \<noteq> {}" by auto
     then obtain y where "y \<in> s" by auto
     with `Set_P P s` have "P y" by (auto simp add: Set_P_def)
     txt {* From the assumption that @{term s} has at most size @{term n}, we
@@ -374,7 +386,7 @@ proof -
   proof (rule disjE)
    txt {* If @{term s} is empty, it has size at most 0. *}
    assume "Set__empty_p__stp P s"
-   hence "s = {}" by (auto simp add: Set__empty_p__stp_def)
+   hence "s = {}" by auto
    have "atMostOfSize s 0"
    proof (auto simp add: atMostOfSize_def)
     fix x
@@ -570,7 +582,18 @@ end-proof
     (size empty = 0) &&
     (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
 
-  proof Isa Set__size__stp_Obligation_the
+  proof Isa size__stp_Obligation_subtype
+  by (simp add: Set__finite_p__stp_def)
+  end-proof
+
+  proof Isa size__stp_Obligation_subtype0
+  apply(rule conjI)
+  prefer 2
+  apply(erule ssubst, assumption)
+  by (auto simp only: Set__finite_insert__stp)
+  end-proof
+
+  proof Isa size__stp_Obligation_the
   apply(rule_tac a="RFun (Fun_PD P__a) card" in ex1I)
   apply(simp)
   apply(intro conjI allI impI)
