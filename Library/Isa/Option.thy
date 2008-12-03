@@ -16,10 +16,11 @@ defs Option__none_p_def: "Option__none_p x \<equiv> (x = None)"
 fun Option__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                         'a option \<times> 'a option \<Rightarrow> Compare__Comparison"
 where
-   "Option__compare comp_v(Some x,Some y) = comp_v(x,y)"
- | "Option__compare comp_v(None,Some zzz_3) = Less"
- | "Option__compare comp_v(Some zzz_4,None) = Greater"
- | "Option__compare comp_v(None,None) = Equal"
+   "Option__compare comp_v(Some x, Some y) 
+      = comp_v(x, y)"
+ | "Option__compare comp_v(None, Some zzz_3) = Less"
+ | "Option__compare comp_v(Some zzz_4, None) = Greater"
+ | "Option__compare comp_v(None, None) = Equal"
 theorem Option__mapOption__def: 
   "option_map f None = None"
   by auto
@@ -41,10 +42,11 @@ theorem Option__isoOption_Obligation_subtype:
    apply (drule_tac x = "a" in  spec, auto)
    apply (rule_tac x="Some x" in exI, auto)
   done
-consts Option__isoOption :: " ('a,'b)Function__Bijection \<Rightarrow> 
-                              ('a option,'b option)Function__Bijection"
+consts Option__isoOption :: " ('a, 'b)Function__Bijection \<Rightarrow> 
+                              ('a option, 'b option)Function__Bijection"
 defs Option__isoOption_def: 
-  "Option__isoOption iso_elem \<equiv> option_map iso_elem"
+  "Option__isoOption
+     \<equiv> (\<lambda> (iso_elem:: ('a, 'b)Function__Bijection). option_map iso_elem)"
 theorem Option__isoOption_subtype_constr: 
   "\<lbrakk>bij dom_isoOption\<rbrakk> \<Longrightarrow> bij (Option__isoOption dom_isoOption)"
    apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)

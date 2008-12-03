@@ -268,7 +268,18 @@ theorem Function__fxy_implies_inverse__stp:
 qed
 theorem Function__fxy_implies_inverse: 
   "\<lbrakk>bij (f::'a \<Rightarrow> 'b); f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
-  sorry
+  proof -
+ assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
+ assume FXY: "f x = y"
+ have INV_SOME: "inv f y = (SOME x. f x = y)" by (auto simp add: inv_def)
+ from FXY have "\<exists>x. f x = y" by auto
+ hence "f (SOME x. f x = y) = y" by (rule someI_ex)
+ with FXY have EQF: "f x = f (SOME x. f x = y)" by auto
+ from BIJ have "\<And>x'. f x = f x' \<Longrightarrow> x = x'"
+  by (auto simp add: bij_def inj_on_def)
+ with EQF have "x = (SOME x. f x = y)" by auto
+ with INV_SOME show "x = inv f y" by auto
+qed
 theorem Function__eta__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> RFun P__a (\<lambda> (x::'a). f x) = f"
   apply(rule ext, simp)

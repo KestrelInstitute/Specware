@@ -1,5 +1,5 @@
 theory Compare
-imports IsabelleExtensions
+imports Boolean
 begin
 datatype Compare__Comparison = Equal
                              | Greater
@@ -8,7 +8,7 @@ consts Compare__compare :: "Compare__Comparison \<times> Compare__Comparison \<R
                             Compare__Comparison"
 defs Compare__compare_def: 
   "Compare__compare
-     \<equiv> (\<lambda> ((cmp1::Compare__Comparison),(cmp2::Compare__Comparison)). 
+     \<equiv> (\<lambda> ((cmp1::Compare__Comparison), (cmp2::Compare__Comparison)). 
           if cmp1 = cmp2 then 
             Equal
           else 
@@ -19,7 +19,7 @@ defs Compare__compare_def:
 consts Boolean__compare :: "bool \<times> bool \<Rightarrow> Compare__Comparison"
 defs Boolean__compare_def: 
   "Boolean__compare
-     \<equiv> (\<lambda> ((x::bool),(y::bool)). 
+     \<equiv> (\<lambda> ((x::bool), (y::bool)). 
           if x = y then 
             Equal
           else 
