@@ -299,6 +299,10 @@ MetaSlang qualifying spec
    all (fn (tyV1, tyV2) -> equalTyVar? (tyV1, tyV2)) 
        (tyVars1, tyVars2)
 
+ op equalTyVarSets?(tyVars1: TyVars, tyVars2: TyVars): Boolean =
+   length tyVars1 = length tyVars2
+     && all (fn tyV1 -> tyV1 in? tyVars2) tyVars1
+
  def equalTermStruct? (t1, t2) =
    case (t1, t2) of
 
