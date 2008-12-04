@@ -1064,10 +1064,7 @@ IsaTermPrinter qualifying spec
 
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Fixity \_rightarrow Pretty
   def ppDef c op_nm ty opt_prag body fixity =
-    let recursive? = existsSubTerm (fn t \_rightarrow case t of Fun(Op(nm,_),_,_) \_rightarrow op_nm = nm
-                                               | _ \_rightarrow false)
-                       body
-    in
+    let recursive? = containsRefToOp?(body, op_nm) in
     let op_tm = mkFun (Op (op_nm, fixity), ty) in
     let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
     case defToCases c op_tm body infix? of
