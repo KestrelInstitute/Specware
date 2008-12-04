@@ -1324,11 +1324,109 @@ next
 qed
 end-proof
 
- % prepend/append element (note that |> and <| point into list):
+% correctness of mapping of Metaslang's ++ to Isabelle's @:
+proof Isa List__e_pls_pls__def
+proof -
+ def P \<equiv> "(\<lambda>l. length l = length l1 + length l2 \<and>
+                List__prefix (l, length l1) = l1 \<and>
+                List__suffix (l, length l2) = l2)
+          :: 'a list \<Rightarrow> bool"
+ have sat: "P (l1 @ l2)"
+ proof (unfold P_def)
+  def l \<equiv> "l1 @ l2"
+  hence lenl: "length l = length l1 + length l2"
+   by (auto simp add: List.length_append)
+  have prel: "List__prefix(l, length l1) = l1"
+  proof -
+   def f \<equiv> "\<lambda>j. if j < length l1
+                               then Some (l ! (0 + j)) else None"
+   def g \<equiv> "\<lambda>j. if j < length l1
+                               then Some (l1 ! (0 + j)) else None"
+   have "f = g"
+   proof
+    fix j
+    show "f j = g j"
+    proof (cases "j < length l1")
+     assume "j < length l1"
+     with l_def have "l ! j = l1 ! j" by (auto simp add: List.nth_append)
+     hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
+            (if j < length l1 then Some (l1 ! (0 + j)) else None)"
+      by auto
+     with f_def g_def show ?thesis by auto
+    next
+     assume "\<not> j < length l1"
+     hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
+            (if j < length l1 then Some (l1 ! (0 + j)) else None)"
+      by auto
+     with f_def g_def show ?thesis by auto
+    qed
+   qed
+   from f_def have "List__prefix (l, length l1) = List__list f"
+    by (auto simp add: List__prefix_def List__subFromLong_def
+                  del: List__list.simps)
+   also with `f = g` have "\<dots> = List__list g" by auto
+   also with g_def have "\<dots> = List__subFromLong (l1, 0, length l1)"
+    by (auto simp add: List__subFromLong_def del: List__list.simps)
+   also have "\<dots> = l1" by (auto simp add: List__subFromLong_whole)
+   finally show ?thesis .
+  qed
+  have sufl: "List__suffix(l, length l2) = l2"
+  proof -
+   def f \<equiv> "\<lambda>j. if j < length l2
+                    then Some (l ! (length l - length l2 + j)) else None"
+   def g \<equiv> "\<lambda>j. if j < length l2
+                    then Some (l2 ! (0 + j)) else None"
+   have "f = g"
+   proof
+    fix j
+    show "f j = g j"
+    proof (cases "j < length l2")
+     assume "j < length l2"
+     with l_def lenl have "l ! (length l - length l2 + j) = l2 ! j"
+      by (auto simp add: List.nth_append)
+     hence "(if j < length l2 then
+             Some (l ! (length l - length l2 + j)) else None) =
+            (if j < length l2 then Some (l2 ! (0 + j)) else None)"
+      by auto
+     with f_def g_def show ?thesis by auto
+    next
+     assume "\<not> j < length l2"
+     hence "(if j < length l2 then
+             Some (l ! (length l - length l2 + j)) else None) =
+            (if j < length l2 then Some (l2 ! (0 + j)) else None)"
+      by auto
+     with f_def g_def show ?thesis by auto
+    qed
+   qed
+   from f_def have "List__suffix (l, length l2) = List__list f"
+    by (auto simp add: List__suffix_def List__subFromLong_def
+                  del: List__list.simps)
+   also with `f = g` have "\<dots> = List__list g" by auto
+   also with g_def have "\<dots> = List__subFromLong (l2, 0, length l2)"
+    by (auto simp add: List__subFromLong_def del: List__list.simps)
+   also have "\<dots> = l2" by (auto simp add: List__subFromLong_whole)
+   finally show ?thesis .
+  qed
+  from lenl prel sufl
+   show "length l = length l1 + length l2 \<and>
+         List__prefix(l, length l1) = l1 \<and>
+         List__suffix(l, length l2) = l2"
+    by auto
+ qed
+ have ex1: "\<exists>!l. P l"
+  by (auto simp add: P_def List__e_pls_pls_Obligation_the)
+ hence sat': "P (THE l. P l)" by (rule theI')
+ from ex1 have "\<And> x y. \<lbrakk> P x ; P y \<rbrakk> \<Longrightarrow> x = y" by auto
+ with sat sat' have "l1 @ l2 = (THE l. P l)" by auto
+ with P_def show ?thesis by auto
+qed
+end-proof
 
- op [a] |> (x:a, l: List a) infixr 25 : List1 a = [x] ++ l
+% prepend/append element (note that |> and <| point into list):
 
- op [a] <| (l: List a, x:a) infixl 25 : List1 a = l ++ [x]
+op [a] |> (x:a, l: List a) infixr 25 : List1 a = [x] ++ l
+
+op [a] <| (l: List a, x:a) infixl 25 : List1 a = l ++ [x]
 
  % update element at index i:
 
