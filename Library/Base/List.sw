@@ -411,6 +411,30 @@ case (Suc n)
 qed
 end-proof
 
+% length of tabulate equals argument n:
+
+theorem length_tabulate is [a]
+  fa (n:Nat, f: Nat -> a) length (tabulate (n, f)) = n
+proof Isa
+proof -
+ def f \<equiv> "(\<lambda>j. if j < n then Some (f j) else None)
+                 :: nat \<Rightarrow> 'a option"
+ hence f_def_n: "f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+ hence "\<And>m. f definedOnInitialSegmentOfLength m \<Longrightarrow> m = n"
+  by (auto simp add: List__unique_initial_segment_length)
+ with f_def_n have "(THE n. f definedOnInitialSegmentOfLength n) = n"
+  by (rule the_equality)
+ hence "List__lengthOfListFunction f = n"
+  by (auto simp add: List__lengthOfListFunction_def)
+ from f_def_n have "\<exists>n. f definedOnInitialSegmentOfLength n" by auto
+ with `List__lengthOfListFunction f = n` have "length (List__list f) = n"
+  by (auto simp add: List__length_is_length_of_list_function)
+ with f_def show ?thesis by (auto simp add: List__tabulate_def)
+qed
+end-proof
+
 % useful to define subtype of lists of given length:
 
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
@@ -512,6 +536,13 @@ proof Isa List__e_at__def
   by (auto simp add: list_1_Isa_nth)
 end-proof
 
+theorem element_of_tabulate is [a]
+  fa (n:Nat, f: Nat -> a, i:Nat) i < n => tabulate (n, f) @ i = f i
+
+proof Isa List__element_of_tabulate_Obligation_subtype
+  by (auto simp add: List__length_tabulate)
+end-proof
+
 op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
 
 (* Since elements are indexed starting at 0, we tend to avoid mentioning the
@@ -532,7 +563,7 @@ proof Isa [simp] end-proof
 op [a] empty? (l: List a) : Bool = (l = empty)
 
 % correctness of mapping from Metaslang's empty? to Isabelle's null:
-proof Isa List__empty_p_def
+proof Isa List__empty_p__def
   by (simp add: null_empty)
 end-proof
 
@@ -922,13 +953,136 @@ proof Isa List__tail_Obligation_subtype
   by (cases l, auto)
 end-proof
 
+% correctness of mapping from Metaslang's tail to Isabelle's tl:
+proof Isa List__tail__def
+proof -
+ def x \<equiv> "hd l"
+ def r \<equiv> "tl l"
+ assume "l \<noteq> []"
+ with x_def r_def have "l = x # r" by auto
+ hence len_l_r: "length l = length r + 1" by auto
+ have "List__removePrefix (l, 1) = r"
+ proof -
+  def f \<equiv> "\<lambda>j. if j < length l - 1
+                              then Some (l ! (Suc 0 + j)) else None"
+  def g \<equiv> "\<lambda>j. if j < length r
+                              then Some (r ! (0 + j)) else None"
+  have "f = g"
+  proof
+   fix j
+   show "f j = g j"
+   proof (cases "j < length l - 1")
+    assume "j < length l - 1"
+    with `l = x # r` List.nth_Cons_Suc have "l ! (1 + j) = r ! (0 + j)"
+     by auto
+    with len_l_r
+     have "(if j < length l - 1 then Some (l ! (Suc 0 + j)) else None) =
+           (if j < length r then Some (r ! (0 + j)) else None)"
+      by auto
+    with f_def g_def show "f j = g j" by auto
+   next
+    assume "\<not> j < length l - 1"
+    with len_l_r
+     have "(if j < length l - 1 then Some (l ! (Suc 0 + j)) else None) =
+           (if j < length r then Some (r ! (0 + j)) else None)"
+      by auto
+    with f_def g_def show "f j = g j" by auto
+   qed
+  qed
+  from g_def have g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  from `l \<noteq> []` have "length l > 0" by auto
+  hence "length l - (length l - 1) = 1" by arith
+  hence "List__removePrefix (l, 1) = List__subFromLong (l, 1, length l - 1)"
+   by (auto simp add: List__removePrefix_def List__suffix_def)
+  also with f_def have "\<dots> = List__list f"
+   by (auto simp add: List__subFromLong_def)
+  also with `f = g` have "\<dots> = List__list g" by auto
+  also with g_def g_iseg have "\<dots> = List__subFromLong (r, 0, length r)"
+   by (auto simp add: List__subFromLong_def)
+  also with List__subFromLong_whole have "\<dots> = r" by auto
+  finally show ?thesis .
+ qed
+ with r_def show ?thesis by auto
+qed
+end-proof
+
+% proof that "1 <= length l":
 proof Isa List__butLast_Obligation_subtype
   by (cases l, auto)
 end-proof
 
+% correctness of mapping from Metaslang's butLast to Isabelle's butlast:
+proof Isa List__butLast__def
+proof -
+ def x \<equiv> "last l"
+ def bl \<equiv> "butlast l"
+ assume "l \<noteq> []"
+ with x_def bl_def have decomp_l: "l = bl @ [x]" by auto
+ hence len1: "length (bl @ [x]) = length bl + 1" by auto
+ have "List__removeSuffix (bl @ [x], 1) = bl"
+ proof -
+  def f \<equiv> "\<lambda>j. if j < length (bl @ [x]) - Suc 0
+                then Some ((bl @ [x]) ! (0 + j)) else None"
+  def g \<equiv> "\<lambda>j. if j < length bl
+                              then Some (bl ! (0 + j)) else None"
+  hence g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                      Option__some_p_def Option__none_p_def)
+  have "f = g"
+  proof
+   fix j
+   show "f j = g j"
+   proof (cases "j < length bl")
+    assume "j < length bl"
+    with List.nth_append
+     have "(bl @ [x]) ! j = bl ! j" by (auto simp add: List.nth_append)
+    hence X: "(bl @ [x]) ! (0 + j) = bl ! (0 + j)" by auto
+    with len1 have "j < length (bl @ [x]) - Suc 0" by auto
+    with `j < length bl` X
+     have "(if j < length (bl @ [x]) - Suc 0
+            then Some ((bl @ [x]) ! (0 + j)) else None) =
+           (if j < length bl then Some (bl ! (0 + j)) else None)"
+      by auto
+    with f_def g_def show ?thesis by auto
+   next
+    assume "\<not> j < length bl"
+    with len1 have "\<not> j < length (bl @ [x]) - Suc 0" by auto
+    with `\<not> j < length bl`
+     have "(if j < length (bl @ [x]) - Suc 0
+            then Some ((bl @ [x]) ! (0 + j)) else None) =
+           (if j < length bl then Some (bl ! (0 + j)) else None)"
+      by auto
+    with f_def g_def show ?thesis by auto
+   qed
+  qed
+  have "List__removeSuffix (bl @ [x], 1) =
+        List__subFromLong (bl @ [x], 0, length (bl @ [x]) - 1)"
+   by (auto simp add: List__removeSuffix_def List__prefix_def)
+  also with f_def have "\<dots> = List__list f"
+   by (auto simp add: List__subFromLong_def del: List__list.simps)
+  also with `f = g` have "\<dots> = List__list g" by auto
+  also with g_def g_iseg have "\<dots> = List__subFromLong (bl, 0, length bl)"
+   by (auto simp add: List__subFromLong_def)
+  also with List__subFromLong_whole have "\<dots> = bl" by auto
+  finally show ?thesis .
+ qed
+ with bl_def decomp_l show ?thesis by auto
+qed
+end-proof
+
 theorem length_butLast is [a]
   fa (l: List1 a) length (butLast l) = length l - 1
-proof Isa [simp] end-proof
+proof Isa [simp]
+proof -
+ assume  ASM: "l \<noteq> []"
+ with List.append_butlast_last_id have "l = butlast l @ [last l]" by auto
+ with ASM have "length l = length (butlast l) + 1"
+  by (auto simp add: List.length_butlast)
+ thus ?thesis by auto
+qed
+end-proof
 
 theorem length_butLast_order is [a]
   fa (l: List1 a) length (butLast l) < length l
@@ -936,12 +1090,137 @@ proof Isa [simp]
   by (auto simp add: List__length_butLast)
 end-proof
 
- % concatenation:
+% concatenation:
 
- op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
-   length l = length l1 + length l2 &&
-   prefix (l, length l1) = l1 &&
-   suffix (l, length l2) = l2
+op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
+  length l = length l1 + length l2 &&
+  prefix (l, length l1) = l1 &&
+  suffix (l, length l2) = l2
+
+% uniqueness of l satisfying definition of op ++:
+proof Isa List__e_pls_pls_Obligation_the
+proof
+ def l \<equiv> "l1 @ l2"
+ hence lenl: "length l = length l1 + length l2"
+  by (auto simp add: List.length_append)
+ have prel: "List__prefix(l, length l1) = l1"
+ proof -
+  def f \<equiv> "\<lambda>j. if j < length l1
+                              then Some (l ! (0 + j)) else None"
+  def g \<equiv> "\<lambda>j. if j < length l1
+                              then Some (l1 ! (0 + j)) else None"
+  have "f = g"
+  proof
+   fix j
+   show "f j = g j"
+   proof (cases "j < length l1")
+    assume "j < length l1"
+    with l_def have "l ! j = l1 ! j" by (auto simp add: List.nth_append)
+    hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
+           (if j < length l1 then Some (l1 ! (0 + j)) else None)"
+     by auto
+    with f_def g_def show ?thesis by auto
+   next
+    assume "\<not> j < length l1"
+    hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
+           (if j < length l1 then Some (l1 ! (0 + j)) else None)"
+     by auto
+    with f_def g_def show ?thesis by auto
+   qed
+  qed
+  from f_def have "List__prefix (l, length l1) = List__list f"
+   by (auto simp add: List__prefix_def List__subFromLong_def
+                 del: List__list.simps)
+  also with `f = g` have "\<dots> = List__list g" by auto
+  also with g_def have "\<dots> = List__subFromLong (l1, 0, length l1)"
+   by (auto simp add: List__subFromLong_def del: List__list.simps)
+  also have "\<dots> = l1" by (auto simp add: List__subFromLong_whole)
+  finally show ?thesis .
+ qed
+ have sufl: "List__suffix(l, length l2) = l2"
+ proof -
+  def f \<equiv> "\<lambda>j. if j < length l2
+                   then Some (l ! (length l - length l2 + j)) else None"
+  def g \<equiv> "\<lambda>j. if j < length l2
+                   then Some (l2 ! (0 + j)) else None"
+  have "f = g"
+  proof
+   fix j
+   show "f j = g j"
+   proof (cases "j < length l2")
+    assume "j < length l2"
+    with l_def lenl have "l ! (length l - length l2 + j) = l2 ! j"
+     by (auto simp add: List.nth_append)
+    hence "(if j < length l2 then
+            Some (l ! (length l - length l2 + j)) else None) =
+           (if j < length l2 then Some (l2 ! (0 + j)) else None)"
+     by auto
+    with f_def g_def show ?thesis by auto
+   next
+    assume "\<not> j < length l2"
+    hence "(if j < length l2 then
+            Some (l ! (length l - length l2 + j)) else None) =
+           (if j < length l2 then Some (l2 ! (0 + j)) else None)"
+     by auto
+    with f_def g_def show ?thesis by auto
+   qed
+  qed
+  from f_def have "List__suffix (l, length l2) = List__list f"
+   by (auto simp add: List__suffix_def List__subFromLong_def
+                 del: List__list.simps)
+  also with `f = g` have "\<dots> = List__list g" by auto
+  also with g_def have "\<dots> = List__subFromLong (l2, 0, length l2)"
+   by (auto simp add: List__subFromLong_def del: List__list.simps)
+  also have "\<dots> = l2" by (auto simp add: List__subFromLong_whole)
+  finally show ?thesis .
+ qed
+ from lenl prel sufl
+  show "length l = length l1 + length l2 \<and>
+        List__prefix(l, length l1) = l1 \<and>
+        List__suffix(l, length l2) = l2"
+   by auto
+next
+ fix l::"'a list"
+ assume "length l = length l1 + length l2 \<and>
+         List__prefix (l, length l1) = l1 \<and>
+         List__suffix (l, length l2) = l2"
+ hence lenl: "length l = length l1 + length l2"
+   and prel: "List__prefix (l, length l1) = (l1::'a list)"
+   and sufl: "List__suffix (l, length l2) = (l2::'a list)"
+  by auto
+ show "l = l1 @ l2"
+ proof (rule List.nth_equalityI)
+  from lenl show "length l = length (l1 @ l2)"
+   by (auto simp add: List.length_append)
+ next
+  show "\<forall>i < length l. l ! i = (l1 @ l2) ! i"
+  proof
+   fix i
+   show "i < length l \<longrightarrow> l ! i = (l1 @ l2) ! i"
+   proof
+    assume "i < length l"
+    show "l ! i = (l1 @ l2) ! i"
+    proof (cases "i < length l1")
+     def f \<equiv> "\<lambda>j. if j < length l1
+                                 then Some (l ! (0 + j)) else None"
+     assume "i < length l1"
+     hence "(l1 @ l2) ! i = l1 ! i" by (auto simp add: List.nth_append)
+     also with prel have "\<dots> = (List__prefix (l, length l1)) ! i" by auto
+     also with f_def have "\<dots> = (List__list f) ! i"
+      by (auto simp add: List__prefix_def List__subFromLong_def
+                    del: List__list.simps)
+     (* TO DO: *)
+     show ?thesis sorry
+    next
+     assume "\<not> i < length l1"
+     (* TO DO: *)
+     show ?thesis sorry
+    qed
+   qed
+  qed
+ qed
+qed
+end-proof
 
  % prepend/append element (note that |> and <| point into list):
 
