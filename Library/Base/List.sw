@@ -538,7 +538,63 @@ end-proof
 
 theorem element_of_tabulate is [a]
   fa (n:Nat, f: Nat -> a, i:Nat) i < n => tabulate (n, f) @ i = f i
+proof Isa
+proof (induct n arbitrary: f i)
+case 0
+ thus ?case by auto
+next
+case (Suc n)
+ def g \<equiv> "\<lambda>j. f (j + 1)"
+ def F \<equiv> "\<lambda>j. if j < Suc n then Some (f j) else None"
+ def G \<equiv> "\<lambda>j. if j < n then Some (g j) else None"
+ have G_F: "G = (\<lambda>j. F (j + 1))"
+ proof
+  fix j
+  show "G j = F (j + 1)"
+  proof (cases "j < n")
+   assume "j < n"
+   hence "j + 1 < Suc n" by auto
+   from `j < n` G_def have "G j = Some (g j)" by auto
+   also with g_def have "\<dots> = Some (f (j + 1))" by auto
+   also with `j + 1 < Suc n` F_def have "\<dots> = F (j + 1)" by auto
+   finally show ?thesis .
+  next
+   assume "\<not> j < n"
+   hence "\<not> j + 1 < Suc n" by auto
+   from `\<not> j < n` G_def have "G j = None" by auto
+   also with `\<not> j + 1 < Suc n` F_def have "\<dots> = F (j + 1)" by auto
+   finally show ?thesis .
+  qed
+ qed
+ from F_def have tab_F: "List__tabulate (Suc n, f) = List__list F"
+  by (auto simp add: List__tabulate_def)
+ from G_def have tab_G: "List__tabulate (n, g) = List__list G"
+  by (auto simp add: List__tabulate_def)
+ from F_def have F0: "F 0 = Some (f 0)" by auto
+ from F_def have "\<exists>m. F definedOnInitialSegmentOfLength m"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+ with F0 G_F have LF_decomp: "List__list F = f 0 # List__list G" by auto
+ have "List__list F ! i = f i"
+ proof (cases "i = 0")
+  assume "i = 0"
+  with LF_decomp show ?thesis by auto
+ next
+  assume "\<not> i = 0"
+  then obtain k where "Suc k = i" by (cases i, auto)
+  with LF_decomp have Fi_Gk: "List__list F ! i = List__list G ! k" by auto
+  from Suc.prems `Suc k = i` have "k < n" by auto
+  with Suc.hyps have "List__tabulate (n, g) ! k = g k" by auto
+  with tab_G have "List__list G ! k = g k" by auto
+  with g_def have "List__list G ! k = f (k + 1)" by auto
+  with `Suc k = i` have "List__list G ! k = f i" by auto
+  with Fi_Gk show ?thesis by auto
+ qed
+ with tab_F show ?case by auto
+qed
+end-proof
 
+% i < length (tabulate (n, f)):
 proof Isa List__element_of_tabulate_Obligation_subtype
   by (auto simp add: List__length_tabulate)
 end-proof
@@ -1203,18 +1259,64 @@ next
     proof (cases "i < length l1")
      def f \<equiv> "\<lambda>j. if j < length l1
                                  then Some (l ! (0 + j)) else None"
+     def h \<equiv> "\<lambda>j. l ! (0 + j)"
+     from f_def h_def
+      have f_h: "f = (\<lambda>j. if j < length l1 then Some (h j) else None)"
+       by (auto simp add: ext)
      assume "i < length l1"
      hence "(l1 @ l2) ! i = l1 ! i" by (auto simp add: List.nth_append)
      also with prel have "\<dots> = (List__prefix (l, length l1)) ! i" by auto
      also with f_def have "\<dots> = (List__list f) ! i"
       by (auto simp add: List__prefix_def List__subFromLong_def
                     del: List__list.simps)
-     (* TO DO: *)
-     show ?thesis sorry
+     also with f_h
+      have "\<dots> = (List__list
+                   (\<lambda>j. if j < length l1
+                                then Some (h j) else None)) ! i"
+       by auto
+     also have "\<dots> = (List__tabulate (length l1, h) ! i)"
+       by (auto simp add: List__tabulate_def del: List__list.simps)
+     also with `i < length l1` have "\<dots> = h i"
+      by (auto simp add: List__element_of_tabulate)
+     also with h_def have "\<dots> = l ! i" by auto
+     finally show ?thesis ..
     next
-     assume "\<not> i < length l1"
-     (* TO DO: *)
-     show ?thesis sorry
+     def f \<equiv> "\<lambda>j. if j < length l2
+                  then Some (l ! (length l - length l2 + j)) else None"
+     def h \<equiv> "\<lambda>j. l ! (length l - length l2 + j)"
+     from f_def h_def
+      have f_h: "f = (\<lambda>j. if j < length l2 then Some (h j) else None)"
+       by (auto simp add: ext)
+     assume ASM: "\<not> i < length l1"
+     with `i < length l` lenl have "i - length l1 < length l2" by arith
+     from ASM have "(l1 @ l2) ! i = l2 ! (i - length l1)"
+      by (auto simp add: List.nth_append)
+     also with sufl
+      have "\<dots> = (List__suffix (l, length l2)) ! (i - length l1)"
+       by auto
+     also with f_def
+      have "\<dots> = (List__list f) ! (i - length l1)"
+       by (auto simp add: List__suffix_def List__subFromLong_def
+                     del: List__list.simps)
+     also with f_h
+      have "\<dots> = (List__list
+                   (\<lambda>j. if j < length l2 then Some (h j) else None)) !
+                 (i - length l1)"
+       by auto
+     also have "\<dots> = (List__tabulate (length l2, h) ! (i - length l1))"
+       by (auto simp add: List__tabulate_def del: List__list.simps)
+     also with `i - length l1 < length l2` have "\<dots> = h (i - length l1)"
+      by (auto simp add: List__element_of_tabulate)
+     also with h_def
+      have "\<dots> = l ! (length l - length l2 + (i - length l1))"
+       by auto
+     also with ASM have "\<dots> = l ! (length l - length l2 + i - length l1)"
+      by auto
+     also with lenl
+      have "\<dots> = l ! (length l - (length l1 + length l2) + i)"
+       by auto
+     also with lenl have "\<dots> = l ! i" by auto
+     finally show ?thesis ..
     qed
    qed
   qed
