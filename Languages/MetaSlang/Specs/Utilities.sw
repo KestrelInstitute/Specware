@@ -281,7 +281,10 @@ Utilities qualifying spec
     exists (fn v1 -> equalVar?(v,v1)) vs
 
   op hasRefTo?(t: MS.Term, vs: List Var): Boolean =
-    exists (fn v -> inVars?(v, vs)) (freeVars t)
+    existsSubTerm (fn t \_rightarrow case t of
+                             | Var(v,_) -> inVars?(v, vs)
+                             | _ -> false)
+      t
 
  op removeDuplicateVars: List Var -> List Var
  def removeDuplicateVars vars = 
