@@ -196,7 +196,7 @@ SpecNorm qualifying spec
   def toIsaQual = "ToIsa-Internal"
 
   op mkArbitrary(ty: Sort): MS.Term =
-    mkOp(Qualified(toIsaQual,"arbitrary"), ty)
+    mkOp(Qualified(toIsaQual, "regular_val"), ty)
 
   op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
     if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
@@ -391,12 +391,18 @@ SpecNorm qualifying spec
 
   op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let (tvs,ty,tm) = unpackFirstOpDef info in
+    let recursive? = containsRefToOp?(tm, primaryOpName info) in
     let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
+    let result = if recursive?
+                  then   % May need condition to prove termination
+                    regularizeIfPFun(result, ty, inferType(spc,result), spc)
+                  else result
+    in
     if equalTerm?(result, tm)
-      then maybePiTerm(tvs,SortedTerm(tm,ty,termAnn tm)) 
+      then maybePiTerm(tvs, SortedTerm(tm,ty,termAnn tm)) 
     else
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
-    maybePiTerm(tvs,SortedTerm(result,ty,termAnn tm)) 
+    maybePiTerm(tvs, SortedTerm(result,ty,termAnn tm)) 
 
   op regularizeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
     % let _ = writeLine("Regularize: "^printTerm t^": "^printSort ty^" to "^printSort rm_ty) in
@@ -410,24 +416,25 @@ SpecNorm qualifying spec
                             | _ -> if regularizeBooleanToFalse? then "RFunB" else "RFun"
                    else "RFun"
         in
+        let def mkRFun(pred, t) =
+              case (pred, t) of
+                | (Lambda([(pred_pat, Fun(Bool true,_,_), pred_bod)],_),
+                   Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_))
+                    | rfun = "RFun" && equalPatternStruct?(pred_pat, fn_pat) ->
+                  mkLambda(fn_pat, Utilities.mkIfThenElse(pred_bod, fn_bod, mkArbitrary ty))
+                | _ ->
+                  mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
+                                       mkArrow(inferType(spc, pred),
+                                               mkArrow(rm_ty, ty))),
+                                  pred),
+                          t)
+        in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None ->
              (case subtypeComps(spc, raiseSubtypeFn(rm_dom, spc)) of
-                | Some(sup_ty, pred) | eagerRegularization? ->
-                  mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
-                                       mkArrow(inferType(spc, pred),
-                                               mkArrow(rm_ty,
-                                                       ty))),
-                                  pred),
-                          t)
+                | Some(sup_ty, pred) | eagerRegularization? -> mkRFun(pred, t)
                 | _ -> t)
-           | Some(sup_ty, pred) ->
-             mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
-                                  mkArrow(inferType(spc, pred),
-                                          mkArrow(rm_ty,
-                                                  ty))),
-                             pred),
-                     t))
+           | Some(sup_ty, pred) -> mkRFun(pred, t))
       | _ -> t
 
   op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
