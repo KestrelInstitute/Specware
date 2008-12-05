@@ -1,10 +1,11 @@
 (in-package :cl-user)
 (defpackage :SpecCalc)
+(defpackage :String-Spec)
 (defpackage :MSInterpreter)
 (defpackage :JGen)
-(defpackage :IO-SPEC)
-(defpackage :SYSTEM-SPEC)
-(defpackage :EMACS)
+(defpackage :IO-Spec)
+(defpackage :System-Spec)
+(defpackage :Emacs)
 (defpackage :TypeChecker)
 (defpackage :SWShell)
 (defpackage :swank)
@@ -1331,7 +1332,7 @@
     (if (and (stringp str) (> (length str) 0))
 	(let* ((fn_and_args 
 		;; TODO: not quite right -- shouldn't break on spaces within strings, etc.
-		(speccalc::splitstringatchar-1-1 #\Space str)) 
+		(String-Spec::splitStringAt-2 str " ")) 
 	       (fn   (car fn_and_args))
 	       (args (cdr fn_and_args)))
 	  (handler-bind ((error 
