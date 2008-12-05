@@ -1038,11 +1038,13 @@ Utilities qualifying spec
       term
 
   op opsInTerm(tm: MS.Term): List QualifiedId =
-    foldSubTerms (fn (t,opids) ->
-                    case t of
-                      | Fun(Op(qid,_),_,_) | ~(member(qid,opids)) ->
-                        Cons(qid, opids)
-                      | _ -> opids)
+    foldTerm (fn opids -> fn t ->
+                case t of
+                  | Fun(Op(qid,_),_,_) | ~(member(qid,opids)) ->
+                    Cons(qid, opids)
+                  | _ -> opids,
+              fn result -> fn _ -> result,
+              fn result -> fn _ -> result)
       [] tm
 
   op opsInType(ty: Sort): List QualifiedId =
