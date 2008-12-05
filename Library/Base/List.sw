@@ -1416,7 +1416,9 @@ proof -
  have ex1: "\<exists>!l. P l"
   by (auto simp add: P_def List__e_pls_pls_Obligation_the)
  hence sat': "P (THE l. P l)" by (rule theI')
- from ex1 have "\<And> x y. \<lbrakk> P x ; P y \<rbrakk> \<Longrightarrow> x = y" by auto
+ from ex1
+  have "\<And> x y. \<lbrakk> P x ; P y \<rbrakk> \<Longrightarrow> x = y"
+   by auto
  with sat sat' have "l1 @ l2 = (THE l. P l)" by auto
  with P_def show ?thesis by auto
 qed
@@ -1428,64 +1430,195 @@ op [a] |> (x:a, l: List a) infixr 25 : List1 a = [x] ++ l
 
 op [a] <| (l: List a, x:a) infixl 25 : List1 a = l ++ [x]
 
- % update element at index i:
+% result of |> is always in List1 subtype:
+proof Isa List__e_bar_gt_subtype_constr
+  by (auto simp add: Let_def split_def)
+end-proof
 
- op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
-   list (fn j:Nat -> if j = i then Some x else l @@ j)
+% result of <| is always in List1 subtype:
+proof Isa List__e_lt_bar_subtype_constr
+  by (auto simp add: Let_def split_def List__e_lt_bar_def)
+end-proof
 
- % quantifications:
+% update element at index i:
 
- op [a] forall? (p: a -> Bool) (l: List a) : Bool =
-   fa(i:Nat) i < length l => p (l @ i)
+op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
+  list (fn j:Nat -> if j = i then Some x else l @@ j)
 
- op [a] exists? (p: a -> Bool) (l: List a) : Bool =
-   ex(i:Nat) i < length l && p (l @ i)
+% argument of op list is in ListFunction subtype:
+proof Isa List__update_Obligation_subtype
+by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                   List__e_at_at_def Option__some_p_def Option__none_p_def
+                   list_1_Isa_nth)
+end-proof
 
- op [a] exists1? (p: a -> Bool) (l: List a) : Bool =
-   ex1(i:Nat) i < length l && p (l @ i)
+% quantifications:
 
- op [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
-   fa(i:Nat) i < length l => p (i, l @ i)
+op [a] forall? (p: a -> Bool) (l: List a) : Bool =
+  fa(i:Nat) i < length l => p (l @ i)
 
- % filter away elements not satisfying predicate:
+op [a] exists? (p: a -> Bool) (l: List a) : Bool =
+  ex(i:Nat) i < length l && p (l @ i)
 
- op [a] filter (p: a -> Bool) (l: List a) : List a =
-   case l of
-   | [] -> []
-   | hd::tl -> (if p hd then [hd] else []) ++ filter p tl
+op [a] exists1? (p: a -> Bool) (l: List a) : Bool =
+  ex1(i:Nat) i < length l && p (l @ i)
 
- % fold from left/right:
+op [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
+  fa(i:Nat) i < length l => p (i, l @ i)
 
- op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
-   case l of
-   | [] -> base
-   | hd::tl -> foldl f (f (base, hd)) tl
+% correctness of mapping from Metaslang's forall? to Isabelle's list_all:
+proof Isa List__forall_p__def
+proof (induct l)
+case Nil
+ show ?case by auto
+next
+case (Cons x l)
+ have "list_all p (x # l) = (p x \<and> list_all p l)" by simp
+ also with Cons.hyps
+  have "\<dots> = (p x \<and> (\<forall>i < length l. p (l ! i)))"
+   by auto
+ also have "\<dots> = (\<forall>i < length (x # l). p ((x # l) ! i))"
+ proof
+  assume "p x \<and> (\<forall>i < length l. p (l ! i))"
+  hence PX: "p x" and PL: "\<forall>i < length l. p (l ! i)" by auto
+  show "\<forall>i < length (x # l). p ((x # l) ! i)"
+  proof (rule allI, rule impI)
+   fix i
+   assume asm: "i < length (x # l)"
+   show "p ((x # l) ! i)"
+   proof (cases i)
+   case 0
+    with PX show ?thesis by auto
+   next
+   case (Suc j)
+    with asm nth_Cons_Suc PL show ?thesis by auto
+   qed
+  qed
+ next
+  assume asm: "\<forall>i < length (x # l). p ((x # l) ! i)"
+  show "p x \<and> (\<forall>i < length l. p (l ! i))"
+  proof
+   from asm show "p x" by auto
+  next
+   show "\<forall>i < length l. p (l ! i)"
+   proof (rule allI, rule impI)
+    fix i
+    def j \<equiv> "Suc i"
+    assume "i < length l"
+    with j_def nth_Cons_Suc asm show "p (l ! i)" by auto
+   qed
+  qed
+ qed
+ finally show ?case .
+qed
+end-proof
 
- op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
-   case l of
-   | [] -> base
-   | hd::tl -> f (hd, foldr f base tl)
+% correctness of mapping from Metaslang's exists? to Isabelle's list_ex:
+proof Isa List__exists_p__def
+proof (induct l)
+case Nil
+ show ?case by auto
+next
+case (Cons x l)
+ with Cons.hyps
+  have "list_ex p (x # l) = (p x \<or> (\<exists>i < length l. p (l ! i)))"
+   by auto
+ also have "\<dots> = (\<exists>i < length (x # l). p ((x # l) ! i))"
+ proof
+  assume "p x \<or> (\<exists>i < length l. p (l ! i))"
+  thus "\<exists>i < length (x # l). p ((x # l) ! i)"
+  proof
+   assume "p x"
+   thus ?thesis by auto
+  next
+   assume "\<exists>i < length l. p (l ! i)"
+   with nth_Cons_Suc show ?thesis by auto
+  qed
+ next
+  assume "\<exists>i < length (x # l). p ((x # l) ! i)"
+  then obtain i where IL: "i < length (x # l)" and PI: "p ((x # l) ! i)"
+   by auto
+  show "p x \<or> (\<exists>i < length l. p (l ! i))"
+  proof (cases i)
+  case 0
+   with PI nth_Cons_0 show ?thesis by auto
+  next
+  case (Suc j)
+   with PI nth_Cons_Suc have PJ: "p (l ! j)" by auto
+   from IL `i = Suc j` have JL: "j < length l" by auto
+   from JL PJ show ?thesis by auto
+  qed
+ qed
+ finally show ?case .
+qed
+end-proof
 
- % lists with the same length:
+% filter away elements not satisfying predicate:
 
- op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Bool =
-   length l1 = length l2
+op [a] filter (p: a -> Bool) (l: List a) : List a =
+  case l of
+  | [] -> []
+  | hd::tl -> (if p hd then [hd] else []) ++ filter p tl
 
- % convert between list of tuples and tuple of lists:
+% fold from left/right:
 
- op [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
-   list (fn i:Nat -> if i < length l1 then Some (l1 @ i, l2 @ i) else None)
+op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
+  case l of
+  | [] -> base
+  | hd::tl -> foldl f (f (base, hd)) tl
 
- op [a,b,c] zip3 (l1: List a, l2: List b, l3: List c |
-                  l1 equiLong l2 && l2 equiLong l3) : List (a * b * c) =
-   list (fn i:Nat -> if i < length l1
-                     then Some (l1 @ i, l2 @ i, l3 @ i) else None)
+op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
+  case l of
+  | [] -> base
+  | hd::tl -> f (hd, foldr f base tl)
 
- op unzip : [a,b] List (a * b) -> (List a * List b | equiLong) = inverse zip
+% lists with the same length:
 
- op unzip3 : [a,b,c] List (a * b * c) ->
-                     {(l1,l2,l3) : List a * List b * List c |
-                      l1 equiLong l2 && l2 equiLong l3} = inverse zip3
+op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Bool =
+  length l1 = length l2
+
+% convert between list of tuples and tuple of lists:
+
+op [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
+  list (fn i:Nat -> if i < length l1 then Some (l1 @ i, l2 @ i) else None)
+
+op [a,b,c] zip3 (l1: List a, l2: List b, l3: List c |
+                 l1 equiLong l2 && l2 equiLong l3) : List (a * b * c) =
+  list (fn i:Nat -> if i < length l1
+                    then Some (l1 @ i, l2 @ i, l3 @ i) else None)
+
+op unzip : [a,b] List (a * b) -> (List a * List b | equiLong) = inverse zip
+
+op unzip3 : [a,b,c] List (a * b * c) ->
+                    {(l1,l2,l3) : List a * List b * List c |
+                     l1 equiLong l2 && l2 equiLong l3} = inverse zip3
+
+% argument to op list in definition of op zip is in ListFunction subtype:
+proof Isa List__zip_Obligation_subtype
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+end-proof
+
+% i < length l2 in definition of op zip:
+proof Isa List__zip_Obligation_subtype0
+  by (auto simp add: List__equiLong_def)
+end-proof
+
+% argument to op list in definition of op zip3 is in ListFunction subtype:
+proof Isa List__zip3_Obligation_subtype
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def
+                     Option__some_p_def Option__none_p_def)
+end-proof
+
+% i < length l2 in definition of op zip3:
+proof Isa List__zip3_Obligation_subtype0
+  by (auto simp add: List__equiLong_def)
+end-proof
+
+% i < length l3 in definition of op zip3:
+proof Isa List__zip3_Obligation_subtype1
+  by (auto simp add: List__equiLong_def)
+end-proof
 
  % homomorphically apply function to all elements of list(s):
 
