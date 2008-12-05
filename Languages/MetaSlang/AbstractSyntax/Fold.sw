@@ -16,16 +16,24 @@ spec
      case term of
        | Fun (top, srt, a) -> foldSort tsp_folds acc srt
        | Var ((id, srt), a) -> foldSort tsp_folds acc srt
-       | Let (decls, bdy, a) -> 
-         foldl (fn (acc,(pat,trm)) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat) acc decls
+       | Let (decls, bdy, a) ->
+         let acc = foldl (fn (acc,(pat,trm)) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat)
+                     acc decls
+         in
+         foldTerm tsp_folds acc bdy
        | LetRec (decls, bdy, a) -> 
-         foldl (fn (acc,((id,srt),trm)) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt) acc decls
+         let acc = foldl (fn (acc,((id,srt),trm)) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt)
+                     acc decls
+         in
+         foldTerm tsp_folds acc bdy
        | Record (row, a) -> foldl (fn (acc,(id,trm)) -> foldTerm tsp_folds acc trm) acc row
        | IfThenElse (t1, t2, t3, a) -> 
          foldTerm tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2) t3
        | Lambda (match, a) -> 
          foldl (fn (acc,(pat,cond,trm))->
-                  foldPattern tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc cond) trm) pat) acc match
+                  foldPattern tsp_folds (foldTerm tsp_folds (foldTerm tsp_folds acc cond) trm)
+                    pat)
+           acc match
        | Bind (bnd, vars, trm, a) -> 
          foldTerm tsp_folds (foldl (fn (acc,(id,srt)) -> foldSort tsp_folds acc srt) acc vars) trm
        | The ((id,srt), trm, a) -> foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
@@ -55,6 +63,8 @@ spec
        | Subsort (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
        | Base (qid, srts, a) -> foldl (fn (acc,srt) -> foldSort tsp_folds acc srt) acc srts
        | Boolean _ -> acc
+       | Pi(_, srt, _) -> foldSort tsp_folds acc srt
+       | And(srts, _) -> foldl (fn (acc, srt) -> foldSort tsp_folds acc srt) acc srts
        | _ -> acc
    in
      sortFold foldOfChildren srt
