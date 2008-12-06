@@ -15,6 +15,7 @@ op [a,b,c] o (g: b -> c, f: a -> b) infixl 24 : a -> c = fn x:a -> g (f x)
 theorem identity is [a,b]
   fa (f: a -> b) id o f = f
               && f o id = f
+% relativized to subtypes:
 proof Isa Function__identity__stp
   apply(auto)
   apply(rule ext, simp)+
@@ -25,6 +26,7 @@ theorem associativity is [a,b,c,d]
 proof Isa
   apply(simp add: o_assoc)
 end-proof
+% relativized to subtypes:
 proof Isa Function__associativity__stp
   apply(rule ext, simp)
 end-proof
@@ -37,21 +39,24 @@ op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
 
 op [a,b] injective? (f: a -> b) : Bool =
   fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
+% correctness of mapping of Metaslang's injective? to Isabelle's inj:
 proof Isa
   apply(simp add: inj_on_def)
 end-proof
+
 proof Isa -verbatim
 lemma Function__injective_p__stp_simp [simp]:
   "Function__injective_p__stp P f = (inj_on f P)"
   by (auto simp add: Function__injective_p__stp_def inj_on_def mem_def)
 end-proof
 
-
 op [a,b] surjective? (f: a -> b) : Bool =
   fa (y:b) (ex (x:a) f x = y)
+% correctness of mapping of Metaslang's surjective? to Isabelle's surj:
 proof Isa
   apply(simp add: surj_def eq_commute)
 end-proof
+
 proof Isa -verbatim
 lemma Function__surjective_p__stp_simp[simp]:
   "Function__surjective_p__stp (A,B) f = surj_on f A B"
@@ -61,21 +66,22 @@ end-proof
 
 op [a,b] bijective? (f: a -> b) : Bool =
   injective? f && surjective? f
+% correctness of mapping of Metaslang's bijective? to Isabelle's bij:
 proof Isa
   apply(simp add: bij_def)
 end-proof
-proof Isa bijective_p__stp end-proof
+
 proof Isa -verbatim
-  lemma Function__bijective_p__stp_simp[simp]:
-    "Function__bijective_p__stp (A,B) f = bij_ON f A B"
-    by (simp add: Function__bijective_p__stp_def bij_ON_def)
-  lemma Function__bijective_p__stp_univ[simp]:
-    "Function__bijective_p__stp (A,\_lambda x. True) f = bij_on f A UNIV"
-    by (simp add: univ_true bij_ON_UNIV_bij_on)
-  lemma Function__bij_inv_stp:
-    "Function__bijective_p__stp (A,\_lambda x. True) f \_Longrightarrow
-     Function__bijective_p__stp (\_lambdax. True, A) (inv_on A f)"
-    by (simp add: univ_true bij_ON_imp_bij_ON_inv)
+lemma Function__bijective_p__stp_simp[simp]:
+  "Function__bijective_p__stp (A,B) f = bij_ON f A B"
+  by (simp add: Function__bijective_p__stp_def bij_ON_def)
+lemma Function__bijective_p__stp_univ[simp]:
+  "Function__bijective_p__stp (A,\_lambda x. True) f = bij_on f A UNIV"
+  by (simp add: univ_true bij_ON_UNIV_bij_on)
+lemma Function__bij_inv_stp:
+  "Function__bijective_p__stp (A,\_lambda x. True) f \_Longrightarrow
+   Function__bijective_p__stp (\_lambdax. True, A) (inv_on A f)"
+  by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 end-proof
 
 type Injection (a,b) = ((a -> b) | injective?)
@@ -88,25 +94,27 @@ type Bijection (a,b) = ((a -> b) | bijective?)
 
 op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
   fn y:b -> the(x:a) f x = y
+% correctness of mapping of Metaslang's inverse to Isabelle's inv:
 proof Isa
   apply(rule sym, rule the_equality)
   apply(auto simp add: bij_def surj_f_inv_f)
 end-proof
+
 proof Isa -verbatim
-  lemma Function__inverse__stp_alt:
-    "\_lbrakkinj_on f A; y \_in f`A\_rbrakk \_Longrightarrow
-     Function__inverse__stp A f y = inv_on A f y"
-    by (auto simp add: Function__inverse__stp_def, 
-        rule the_equality, auto simp add:mem_def inj_on_def)
-  lemma Function__inverse__stp_apply [simp]:
-    "\_lbrakkbij_ON f A B; y \_in B\_rbrakk \_Longrightarrow
-     Function__inverse__stp A f y = inv_on A f y"
-    by(auto simp add: bij_ON_def surj_on_def,
-       erule Function__inverse__stp_alt,
-       simp add: image_def)
-  lemma Function__inverse__stp_simp:
-    "bij_on f A UNIV \_Longrightarrow Function__inverse__stp A f = inv_on A f"
-    by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
+lemma Function__inverse__stp_alt:
+  "\_lbrakkinj_on f A; y \_in f`A\_rbrakk \_Longrightarrow
+   Function__inverse__stp A f y = inv_on A f y"
+  by (auto simp add: Function__inverse__stp_def, 
+      rule the_equality, auto simp add:mem_def inj_on_def)
+lemma Function__inverse__stp_apply [simp]:
+  "\_lbrakkbij_ON f A B; y \_in B\_rbrakk \_Longrightarrow
+   Function__inverse__stp A f y = inv_on A f y"
+  by(auto simp add: bij_ON_def surj_on_def,
+     erule Function__inverse__stp_alt,
+     simp add: image_def)
+lemma Function__inverse__stp_simp:
+  "bij_on f A UNIV \_Longrightarrow Function__inverse__stp A f = inv_on A f"
+  by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
 end-proof
 
 proof Isa inverse__stp_Obligation_subtype
