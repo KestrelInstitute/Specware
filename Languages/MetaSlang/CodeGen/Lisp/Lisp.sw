@@ -316,19 +316,22 @@ ListADT qualifying spec {
         let def writeSubFiles(rem_defs, i) =
               if rem_defs = [] then ()
               else
-              let subfileBase = fileNameBase^"--"^show i in
+              let post_fix = "--"^show i in
+              let subfileBase = fileNameBase^post_fix in
               let subfile = subfileBase^".lisp" in
               let num_remaining = length rem_defs in
               (IO.withOpenFileForWrite
                  (subfile,
                   fn substream ->
-                    (streamWriter(substream, "\n(in-package :" ^ name ^ ")\n\n");
+                    (streamWriter(substream, "(in-package :" ^ name ^ ")\n\n");
                      app (fn ldef -> ppDefToStream(ldef, substream))
                        (subFromTo(rem_defs, 0, min(maxDefsPerFile, num_remaining)))));
                streamWriter(stream, "
 (eval-when (:compile-toplevel)
-  (compile-file \"" ^ subfile ^ "\"))
-(load \"" ^ subfileBase ^ "\")\n");
+  (compile-file (make-pathname :name (concatenate 'string (pathname-name *compile-file-pathname*) \"" ^ post_fix ^ "\")
+                               :defaults *compile-file-pathname*)))
+(load (make-pathname :name (concatenate 'string (pathname-name *load-pathname*) \"" ^ post_fix ^ "\")
+                     :defaults *load-pathname*))\n");
                writeSubFiles(subFromTo(rem_defs, min(maxDefsPerFile, num_remaining), num_remaining), i + 1))
          in writeSubFiles(defs, 1)))
       
