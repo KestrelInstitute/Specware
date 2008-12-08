@@ -41,7 +41,7 @@ SpecCalc qualifying spec
      %% print (printSpecFlat baseSpec);
      baseProverSpec <- return(subtractSpecProperties(baseProverSpec,baseSpec));
      %% print (printSpecFlat baseProverSpec);
-     rewriteProverSpec <- getRewriteProverSpec;
+     % rewriteProverSpec <- getRewriteProverSpec;
      proverLogFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "log");
      finalSpecFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "sw");
      _ <- return (ensureDirectoriesExist proverLogFileName);
@@ -63,7 +63,7 @@ SpecCalc qualifying spec
 			     expandedSpec,
 			     specName,
 			     baseProverSpec,
-			     rewriteProverSpec,
+			     % rewriteProverSpec,
 			     proverName, 
 			     assertions, 
 			     proverOptions,
@@ -140,14 +140,14 @@ SpecCalc qualifying spec
      %return (subtractSpecProperties(baseProverSpec, baseSpec)) %baseProverSpec % 
     }
 
-  op getRewriteProverSpec : Env Spec
-  def getRewriteProverSpec = 
-    {
-     (optBaseUnitId,baseSpec) <- getBase;
-     proverRewriteUnitId <- pathToRelativeUID "/Library/Base/ProverRewrite";
-     (Spec rewriteProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverRewrite") proverRewriteUnitId;
-     return (subtractSpecProperties(rewriteProverSpec, baseSpec))
-    }
+%  op getRewriteProverSpec : Env Spec
+%  def getRewriteProverSpec = 
+%    {
+%     (optBaseUnitId,baseSpec) <- getBase;
+%     proverRewriteUnitId <- pathToRelativeUID "/Library/Base/ProverRewrite";
+%     (Spec rewriteProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverRewrite") proverRewriteUnitId;
+%     return (subtractSpecProperties(rewriteProverSpec, baseSpec))
+%    }
 
  def proverOptionsFromSpec (name, spc, specName) = {
    possibleOptionsOp <- return(AnnSpec.findTheOp (spc, name));
@@ -219,14 +219,14 @@ SpecCalc qualifying spec
      then pid = cid
    else cq = pq & cid = pid
 
- op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * Spec * String * 
+ op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * String * 
                   Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean
- def proveInSpec (proofName, claimName, spc, specName, baseSpc, rewriteSpc, proverName,
-		  assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = 
+ def proveInSpec (proofName, claimName, spc, specName, baseSpc, % rewriteSpc,
+                  proverName, assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = 
    let _ = debug("pinspec") in
    let props             = allProperties spc        in
    let baseHypothesis    = allProperties baseSpc    in
-   let rewriteHypothesis = allProperties rewriteSpc in
+   % let rewriteHypothesis = allProperties rewriteSpc in
    let props_upto_conjecture = firstUpTo (fn (pType, pName, _, _, _) -> 
                                             member (pType, [Conjecture,Theorem]) && 
                                             claimNameMatch (claimName, pName))
@@ -260,7 +260,7 @@ SpecCalc qualifying spec
          case missingHypothesis of 
            | [] -> 
              return (proveWithHypothesis (proofName, claim, actualHypothesis, spc, specName,
-                                          baseHypothesis, baseSpc, rewriteHypothesis, rewriteSpc,
+                                          baseHypothesis, baseSpc, % rewriteHypothesis,  rewriteSpc,
                                           proverName, proverOptions, includeBase, answerVariable,
                                           proverLogFileName))
            | _ -> 
@@ -381,35 +381,35 @@ SpecCalc qualifying spec
    else " in "^runTime^" seconds."
    
  op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
-                         List Property * Spec *
+                         % List Property * Spec *
                          String * List LispCell * Boolean * AnswerVar * String -> Boolean
 
- def proveWithHypothesis(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-			 rewriteHypothesis, rewriteSpc,
-			 proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
+ def proveWithHypothesis(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
+                         % rewriteSpc,
+                         proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    if proverName = "FourierM"
      then 
        proveWithHypothesisFM(proofName, claim, spc, specName, proverName, false)
    else
      if proverName = "Snark"
-       then proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-				     rewriteHypothesis, rewriteSpc,
-				     proverName, proverOptions, includeBase, answerVariable, snarkLogFileName)
+       then proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
+                                     % rewriteSpc,
+                                     proverName, proverOptions, includeBase, answerVariable, snarkLogFileName)
      else
        let fmRes = proveWithHypothesisFM(proofName, claim, spc, specName, "FourierM", true) in
        fmRes ||
-       proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-				rewriteHypothesis, rewriteSpc,
-				"Snark", proverOptions, includeBase, answerVariable, snarkLogFileName)
+       proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
+                                % rewriteSpc,
+                                "Snark", proverOptions, includeBase, answerVariable, snarkLogFileName)
 
 
  op proveWithHypothesisSnark: Option String * Property * List Property * Spec * Option String * List Property * Spec *
-                         List Property * Spec *
+                         % List Property * % Spec *
                          String * List LispCell * Boolean * AnswerVar * String -> Boolean
 
- def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-			      rewriteHypothesis, rewriteSpc,
-			      proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
+ def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
+                              % rewriteSpc,
+                              proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    let _ = debug("preovWithHyp") in
    let _ = if ~(proverName = "Snark") then writeLine(proverName ^ " is not supported; using Snark instead.") else () in
    let (claimType,claimName,_,_,_) = claim in
@@ -426,8 +426,8 @@ SpecCalc qualifying spec
 			       then  map (fn (prop) -> snarkProperty(context, baseSpc, prop))
 				     baseHypothesis
 			     else [] in
-   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewriteSpc, prop))
-                                     rewriteHypothesis in
+%   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewriteSpc, prop))
+%                                     rewriteHypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
    let snarkSubsortHypothesis = snarkSubsortProperties(context, spc) in
    let snarkPropertyHypothesis = foldr (fn (prop, list) ->
@@ -440,7 +440,7 @@ SpecCalc qualifying spec
        | None -> snarkConjectureRemovePattern(context, spc, claim)
        | Some var -> snarkAnswer(context, spc, claim, [var]) in
    let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkSortDecls, snarkOpDecls,
-					      snarkBaseHypothesis, snarkRewriteHypothesis,
+					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
    let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
    let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
@@ -478,11 +478,11 @@ SpecCalc qualifying spec
    proved
 
  %print-clocks??
- op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
+ op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
                            * List LispCell * LispCell -> LispCell
 
  def makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
-			 snarkBaseHypothesis, snarkRewriteHypothesis,
+			 snarkBaseHypothesis, % snarkRewriteHypothesis,
 			 snarkHypothesis, snarkConjecture) =
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
    let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
@@ -528,7 +528,7 @@ SpecCalc qualifying spec
    Lisp.++ (Lisp.list proverOptions)
    Lisp.++ (Lisp.list [setOfSupportOn])
    Lisp.++ (Lisp.list snarkBaseHypothesis)
-   Lisp.++ (Lisp.list snarkRewriteHypothesis)
+%   Lisp.++ (Lisp.list snarkRewriteHypothesis)
 %% ??   Lisp.++ (Lisp.list [setOfSupportOff])
    Lisp.++ (Lisp.list proverOptions)
    Lisp.++ (Lisp.list baseAxioms)
@@ -563,18 +563,18 @@ Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
    Lisp.++ (Lisp.list snarkHypothesis)
    Lisp.++ (Lisp.list [snarkConjecture])
 
- op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
+ op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
                            * List LispCell * LispCell * String -> LispCell
 
  def makeSnarkProveEvalForm(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis,
-			    snarkRewriteHypothesis,
+			    % snarkRewriteHypothesis,
 			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %let _ = if specwareDebug? then writeLine(" using: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
    let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
-					      snarkBaseHypothesis, snarkRewriteHypothesis,
+					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture) in
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),
