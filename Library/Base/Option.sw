@@ -6,10 +6,7 @@ Option qualifying spec
 
   type Option a = | None | Some a
 
-  % ops synonym of embedders and embedding tests:
-
-  op some : [a] a -> Option a = embed Some
-  op none : [a]      Option a = embed None
+  % synonyms of embedding tests ("embed? Some" and "embed? None"):
 
   op [a] some? (x: Option a) : Bool = (x ~= None)
   op [a] none? (x: Option a) : Bool = (x  = None)
@@ -55,6 +52,11 @@ Option qualifying spec
   proof Isa isoOption_subtype_constr
    apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)
   end-proof
+
+  % deprecated:
+
+  op some : [a] a -> Option a = embed Some
+  op none : [a]      Option a = embed None
 
   % mapping to Isabelle:
 
