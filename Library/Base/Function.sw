@@ -15,7 +15,6 @@ op [a,b,c] o (g: b -> c, f: a -> b) infixl 24 : a -> c = fn x:a -> g (f x)
 theorem identity is [a,b]
   fa (f: a -> b) id o f = f
               && f o id = f
-% relativized to subtypes:
 proof Isa Function__identity__stp
   apply(auto)
   apply(rule ext, simp)+
@@ -26,7 +25,6 @@ theorem associativity is [a,b,c,d]
 proof Isa
   apply(simp add: o_assoc)
 end-proof
-% relativized to subtypes:
 proof Isa Function__associativity__stp
   apply(rule ext, simp)
 end-proof
@@ -39,7 +37,6 @@ op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
 
 op [a,b] injective? (f: a -> b) : Bool =
   fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
-% correctness of mapping of Metaslang's injective? to Isabelle's inj:
 proof Isa
   apply(simp add: inj_on_def)
 end-proof
@@ -52,7 +49,6 @@ end-proof
 
 op [a,b] surjective? (f: a -> b) : Bool =
   fa (y:b) (ex (x:a) f x = y)
-% correctness of mapping of Metaslang's surjective? to Isabelle's surj:
 proof Isa
   apply(simp add: surj_def eq_commute)
 end-proof
@@ -66,7 +62,6 @@ end-proof
 
 op [a,b] bijective? (f: a -> b) : Bool =
   injective? f && surjective? f
-% correctness of mapping of Metaslang's bijective? to Isabelle's bij:
 proof Isa
   apply(simp add: bij_def)
 end-proof
@@ -94,7 +89,6 @@ type Bijection (a,b) = ((a -> b) | bijective?)
 
 op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
   fn y:b -> the(x:a) f x = y
-% correctness of mapping of Metaslang's inverse to Isabelle's inv:
 proof Isa
   apply(rule sym, rule the_equality)
   apply(auto simp add: bij_def surj_f_inv_f)
@@ -136,11 +130,6 @@ proof Isa inverse__stp_Obligation_the
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)
 end-proof
-
-(* Since we map SpecWare's "inverse f = \_lambday. THE x. f x = y)"
-   to Isabelle's           "inv f     = \_lambday. SOME x. f x = y)"
-   we need to show that this is the same if f is a bijection
-*)
 
 proof Isa inverse_Obligation_subtype
   apply(subgoal_tac "( \_lambday. THE x. f x = y) = inv f")
