@@ -16,9 +16,9 @@ defs Compare__compare_def:
               Less
             else 
               Greater)"
-consts Boolean__compare :: "bool \<times> bool \<Rightarrow> Compare__Comparison"
-defs Boolean__compare_def: 
-  "Boolean__compare
+consts Bool__compare :: "bool \<times> bool \<Rightarrow> Compare__Comparison"
+defs Bool__compare_def: 
+  "Bool__compare
      \<equiv> (\<lambda> ((x::bool), (y::bool)). 
           if x = y then 
             Equal

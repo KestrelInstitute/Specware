@@ -1,5 +1,5 @@
 theory Base
-imports Empty String System
+imports Empty String System Deprecated
 begin
 
 end

@@ -1,5 +1,5 @@
 theory String
-imports Char SW_List
+imports Character SW_List
 begin
 theorem String__implode_subtype_constr: 
   "bij id"

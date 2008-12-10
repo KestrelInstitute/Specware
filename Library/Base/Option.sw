@@ -56,11 +56,6 @@ proof Isa isoOption_subtype_constr
  apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)
 end-proof
 
-% deprecated:
-
-op some : [a] a -> Option a = embed Some
-op none : [a]      Option a = embed None
-
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism
