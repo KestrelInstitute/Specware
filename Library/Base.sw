@@ -10,9 +10,9 @@ cached as well. *)
 
 spec
 
-  import Base/Empty
-  import Base/String
-  import Base/System
-  import Base/Deprecated
+import Base/Empty
+import Base/String
+import Base/System
+import Base/Deprecated
 
 endspec
