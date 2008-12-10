@@ -15,11 +15,11 @@ Compare qualifying spec
                       else (*  cmp1 = Greater ||
                                cmp2 = Less *)       Greater
 
-  op Boolean.compare : Boolean * Boolean -> Compare.Comparison
+  op Bool.compare : Boolean * Boolean -> Compare.Comparison
 
-  def Boolean.compare(x,y) = if (x = y)    then Equal
-                        else if (x = true) then Greater
-                        else  (* x = false *)   Less
+  def Bool.compare(x,y) = if (x = y)    then Equal
+                     else if (x = true) then Greater
+                     else  (* x = false *)   Less
 *)
 
 endspec
