@@ -1647,410 +1647,410 @@ proof Isa List__zip3_Obligation_subtype1
   by (auto simp add: List__equiLong_def)
 end-proof
 
- % homomorphically apply function to all elements of list(s):
+% homomorphically apply function to all elements of list(s):
 
- op [a,b] map (f: a -> b) (l: List a) : List b =
-   list (fn i:Nat -> if i < length l then Some (f (l @ i)) else None)
+op [a,b] map (f: a -> b) (l: List a) : List b =
+  list (fn i:Nat -> if i < length l then Some (f (l @ i)) else None)
 
- op [a,b,c] map2 (f: a * b -> c)
-                 (l1: List a, l2: List b | l1 equiLong l2) : List c =
-   map f (zip (l1, l2))
+op [a,b,c] map2 (f: a * b -> c)
+                (l1: List a, l2: List b | l1 equiLong l2) : List c =
+  map f (zip (l1, l2))
 
- op [a,b,c,d] map3 (f: a * b * c -> d)
-                   (l1: List a, l2: List b, l3: List c |
-                    l1 equiLong l2 && l2 equiLong l3) : List d =
-   map f (zip3 (l1, l2, l3))
+op [a,b,c,d] map3 (f: a * b * c -> d)
+                  (l1: List a, l2: List b, l3: List c |
+                   l1 equiLong l2 && l2 equiLong l3) : List d =
+  map f (zip3 (l1, l2, l3))
 
- % remove all None elements from a list of optional values, and also remove the
- % Some wrappers:
+% remove all None elements from a list of optional values, and also remove the
+% Some wrappers:
 
- op [a] removeNones (l: List (Option a)) : List a = the (l': List a)
-   map (embed Some) l' = filter (embed? Some) l
+op [a] removeNones (l: List (Option a)) : List a = the (l': List a)
+  map (embed Some) l' = filter (embed? Some) l
 
- % true iff two lists of optional values have the same "shape" (i.e. same
- % length and matching None and Some values at every position i):
+% true iff two lists of optional values have the same "shape" (i.e. same
+% length and matching None and Some values at every position i):
 
- op [a,b] matchingOptionLists?
-          (l1: List (Option a), l2: List (Option b)) : Bool =
-   l1 equiLong l2 &&
-   (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
+op [a,b] matchingOptionLists?
+         (l1: List (Option a), l2: List (Option b)) : Bool =
+  l1 equiLong l2 &&
+  (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
 
- % homomorphically apply partial function (captured via Option) to all elements
- % of list(s), removing elements on which the function is not defined:
+% homomorphically apply partial function (captured via Option) to all elements
+% of list(s), removing elements on which the function is not defined:
 
- op [a,b] mapPartial (f: a -> Option b) (l: List a) : List b =
-   removeNones (map f l)
+op [a,b] mapPartial (f: a -> Option b) (l: List a) : List b =
+  removeNones (map f l)
 
- op [a,b,c] mapPartial2 (f: a * b -> Option c)
-                        (l1: List a, l2: List b | l1 equiLong l2) : List c =
-   mapPartial f (zip (l1, l2))
+op [a,b,c] mapPartial2 (f: a * b -> Option c)
+                       (l1: List a, l2: List b | l1 equiLong l2) : List c =
+  mapPartial f (zip (l1, l2))
 
- op [a,b,c,d] mapPartial3 (f: a * b * c -> Option d)
-                          (l1: List a, l2: List b, l3: List c |
-                           l1 equiLong l2 && l2 equiLong l3) : List d =
-   mapPartial f (zip3 (l1, l2, l3))
+op [a,b,c,d] mapPartial3 (f: a * b * c -> Option d)
+                         (l1: List a, l2: List b, l3: List c |
+                          l1 equiLong l2 && l2 equiLong l3) : List d =
+  mapPartial f (zip3 (l1, l2, l3))
 
- % reverse list:
+% reverse list:
 
- op [a] reverse (l: List a) : List a =
-   list (fn i:Nat -> if i < length l
-                     then Some (l @ (length l - i - 1)) else None)
+op [a] reverse (l: List a) : List a =
+  list (fn i:Nat -> if i < length l
+                    then Some (l @ (length l - i - 1)) else None)
 
- % list of repeated elements:
+% list of repeated elements:
 
- op [a] repeat (x:a) (n:Nat) : List a =
-   list (fn i:Nat -> if i < n then Some x else None)
+op [a] repeat (x:a) (n:Nat) : List a =
+  list (fn i:Nat -> if i < n then Some x else None)
 
- op [a] allEqualElements? (l: List a) : Bool =
-   ex(x:a) l = repeat x (length l)
+op [a] allEqualElements? (l: List a) : Bool =
+  ex(x:a) l = repeat x (length l)
 
- % extend list leftward/rightward to length n, filling with x:
+% extend list leftward/rightward to length n, filling with x:
 
- op [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
-   (repeat x (n - length l)) ++ l
+op [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
+  (repeat x (n - length l)) ++ l
 
- op [a] extendRight (l: List a, x:a, n:Nat | n >= length l) : List a =
-   l ++ (repeat x (n - length l))
+op [a] extendRight (l: List a, x:a, n:Nat | n >= length l) : List a =
+  l ++ (repeat x (n - length l))
 
- % extend shorter list to length of longer list, leftward/rightward:
+% extend shorter list to length of longer list, leftward/rightward:
 
- op [a,b] equiExtendLeft (l1: List a, l2: List b, x1:a, x2:b)
+op [a,b] equiExtendLeft (l1: List a, l2: List b, x1:a, x2:b)
+                        : (List a * List b | equiLong) =
+  if length l1 < length l2 then     (extendLeft (l1, x1, length l2), l2)
+                           else (l1, extendLeft (l2, x2, length l1))
+
+op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
                          : (List a * List b | equiLong) =
-   if length l1 < length l2 then     (extendLeft (l1, x1, length l2), l2)
-                            else (l1, extendLeft (l2, x2, length l1))
+  if length l1 < length l2 then     (extendRight (l1, x1, length l2), l2)
+                           else (l1, extendRight (l2, x2, length l1))
 
- op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
-                          : (List a * List b | equiLong) =
-   if length l1 < length l2 then     (extendRight (l1, x1, length l2), l2)
-                            else (l1, extendRight (l2, x2, length l1))
+% shift list leftward/rightward by n positions, filling with x:
 
- % shift list leftward/rightward by n positions, filling with x:
+op [a] shiftLeft (l: List a, x:a, n:Nat) : List a =
+  removePrefix (l ++ repeat x n, n)
 
- op [a] shiftLeft (l: List a, x:a, n:Nat) : List a =
-   removePrefix (l ++ repeat x n, n)
+op [a] shiftRight (l: List a, x:a, n:Nat) : List a =
+  removeSuffix (repeat x n ++ l, n)
 
- op [a] shiftRight (l: List a, x:a, n:Nat) : List a =
-   removeSuffix (repeat x n ++ l, n)
+% rotate list leftward/rightward by n positions:
 
- % rotate list leftward/rightward by n positions:
+op [a] rotateLeft (l: List1 a, n:Nat) : List a =
+  let n = n mod (length l) in  % rotating by length(l) has no effect
+  removePrefix (l, n) ++ prefix (l, n)
 
- op [a] rotateLeft (l: List1 a, n:Nat) : List a =
-   let n = n mod (length l) in  % rotating by length(l) has no effect
-   removePrefix (l, n) ++ prefix (l, n)
+op [a] rotateRight (l: List1 a, n:Nat) : List a =
+  let n = n mod (length l) in  % rotating by length(l) has no effect
+  suffix (l, n) ++ removeSuffix (l, n)
 
- op [a] rotateRight (l: List1 a, n:Nat) : List a =
-   let n = n mod (length l) in  % rotating by length(l) has no effect
-   suffix (l, n) ++ removeSuffix (l, n)
+% concatenate all the lists in a list, in order:
 
- % concatenate all the lists in a list, in order:
+op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
 
- op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
+% group list elements into sublists of given lengths (note that we allow
+% empty sublists, but we require the total sum of the lengths to equal the
+% length of the starting list):
 
- % group list elements into sublists of given lengths (note that we allow
- % empty sublists, but we require the total sum of the lengths to equal the
- % length of the starting list):
+op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
+                  : List (List a) =
+  the (ll: List (List a))
+     flatten ll = l &&
+     (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
 
- op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
-                   : List (List a) =
-   the (ll: List (List a))
-      flatten ll = l &&
-      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
+% mundane specialization to sublists of uniform length n > 0:
 
- % mundane specialization to sublists of uniform length n > 0:
+op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
+  unflattenL (l, repeat n (length l div n))
 
- op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
-   unflattenL (l, repeat n (length l div n))
+% list without repeated elements (i.e. "injective", if viewed as a mapping):
 
- % list without repeated elements (i.e. "injective", if viewed as a mapping):
+op [a] noRepetitions? (l: List a) : Bool =
+  fa (i:Nat, j:Nat) i < length l && j < length l && i ~= j => l@i ~= l@j
 
- op [a] noRepetitions? (l: List a) : Bool =
-   fa (i:Nat, j:Nat) i < length l && j < length l && i ~= j => l@i ~= l@j
+type InjList a = (List a | noRepetitions?)
 
- type InjList a = (List a | noRepetitions?)
+% (strictly) ordered (injective) list of natural numbers:
 
- % (strictly) ordered (injective) list of natural numbers:
+op increasingNats? (nats: List Nat) : Bool =
+  fa(i:Nat) i < length nats - 1 => nats @ i < nats @ (i+1)
 
- op increasingNats? (nats: List Nat) : Bool =
-   fa(i:Nat) i < length nats - 1 => nats @ i < nats @ (i+1)
+% ordered list of positions of elements satisfying predicate:
 
- % ordered list of positions of elements satisfying predicate:
+op [a] positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
+  the (POSs: InjList Nat)
+    % indices in POSs are ordered:
+    increasingNats? POSs &&
+    % POSs contains all and only indices of elements satisfying p:
+    (fa(i:Nat) i in? POSs <=> i < length l && p (l @ i))
 
- op [a] positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
-   the (POSs: InjList Nat)
-     % indices in POSs are ordered:
-     increasingNats? POSs &&
-     % POSs contains all and only indices of elements satisfying p:
-     (fa(i:Nat) i in? POSs <=> i < length l && p (l @ i))
+% leftmost/rightmost position of element satisfying predicate (None if none):
 
- % leftmost/rightmost position of element satisfying predicate (None if none):
+op [a] leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
+  let POSs = positionsSuchThat (l, p) in
+  if empty? POSs then None else Some (head POSs)
 
- op [a] leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
-   let POSs = positionsSuchThat (l, p) in
-   if empty? POSs then None else Some (head POSs)
+op [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
+  let POSs = positionsSuchThat (l, p) in
+  if empty? POSs then None else Some (last POSs)
 
- op [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
-   let POSs = positionsSuchThat (l, p) in
-   if empty? POSs then None else Some (last POSs)
+% ordered list of positions of given element:
 
- % ordered list of positions of given element:
+op [a] positionsOf (l: List a, x:a) : InjList Nat =
+  positionsSuchThat (l, fn y:a -> y = x)
 
- op [a] positionsOf (l: List a, x:a) : InjList Nat =
-   positionsSuchThat (l, fn y:a -> y = x)
+% position of element in injective list that has element:
 
- % position of element in injective list that has element:
+op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
+  theElement (positionsOf (l, x))
 
- op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
-   theElement (positionsOf (l, x))
+% true iff subl occurs within supl at position i:
 
- % true iff subl occurs within supl at position i:
+op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
+  ex (pre: List a, post: List a) pre ++ subl ++ post = supl &&
+                                 length pre = i
 
- op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
-   ex (pre: List a, post: List a) pre ++ subl ++ post = supl &&
-                                  length pre = i
+% return starting positions of all occurrences of subl within supl:
 
- % return starting positions of all occurrences of subl within supl:
+op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
+  the (POSs: InjList Nat)
+    % indices in POSs are ordered:
+    increasingNats? POSs &&
+    % POSs contains all and only indices of occurrence of subl in supl:
+    (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
 
- op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
-   the (POSs: InjList Nat)
-     % indices in POSs are ordered:
-     increasingNats? POSs &&
-     % POSs contains all and only indices of occurrence of subl in supl:
-     (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
+% if subl is a sublist of supl, return starting position of leftmost/rightmost
+% occurrence of subl within supl (there could be more than one), as well as the
+% list of elements following/preceding subl within supl, otherwise return None:
 
- % if subl is a sublist of supl, return starting position of leftmost/rightmost
- % occurrence of subl within supl (there could be more than one), as well as the
- % list of elements following/preceding subl within supl, otherwise return None:
+op [a] leftmostPositionOfSublistAndFollowing
+       (subl: List a, supl: List a) : Option (Nat * List a) =
+  let POSs = positionsOfSublist (subl, supl) in
+  if empty? POSs then None else
+  let i = head POSs in
+  Some (i, removePrefix (supl, i + length subl))
 
- op [a] leftmostPositionOfSublistAndFollowing
-        (subl: List a, supl: List a) : Option (Nat * List a) =
-   let POSs = positionsOfSublist (subl, supl) in
-   if empty? POSs then None else
-   let i = head POSs in
-   Some (i, removePrefix (supl, i + length subl))
+op [a] rightmostPositionOfSublistAndPreceding
+       (subl: List a, supl: List a) : Option (Nat * List a) =
+  let POSs = positionsOfSublist (subl, supl) in
+  if empty? POSs then None else
+  let i = last POSs in
+  Some (i, prefix (supl, i))
 
- op [a] rightmostPositionOfSublistAndPreceding
-        (subl: List a, supl: List a) : Option (Nat * List a) =
-   let POSs = positionsOfSublist (subl, supl) in
-   if empty? POSs then None else
-   let i = last POSs in
-   Some (i, prefix (supl, i))
+% split list at index into preceding elements, element at index, and
+% following elements:
 
- % split list at index into preceding elements, element at index, and
- % following elements:
+op [a] splitAt (l: List a, i:Nat | i < length l) : List a * a * List a =
+  (prefix(l,i), l@i, removePrefix(l,i+1))
 
- op [a] splitAt (l: List a, i:Nat | i < length l) : List a * a * List a =
-   (prefix(l,i), l@i, removePrefix(l,i+1))
+% split list at leftmost/rightmost element satisfying predicate (None
+% if no element satisfies predicate):
 
- % split list at leftmost/rightmost element satisfying predicate (None
- % if no element satisfies predicate):
+op [a] splitAtLeftmost (p: a -> Bool) (l: List a)
+                       : Option (List a * a * List a) =
+  case leftmostPositionSuchThat (l, p) of
+  | Some i -> Some (splitAt (l, i))
+  | None   -> None
 
- op [a] splitAtLeftmost (p: a -> Bool) (l: List a)
+op [a] splitAtRightmost (p: a -> Bool) (l: List a)
                         : Option (List a * a * List a) =
-   case leftmostPositionSuchThat (l, p) of
-   | Some i -> Some (splitAt (l, i))
-   | None   -> None
+  case rightmostPositionSuchThat (l, p) of
+  | Some i -> Some (splitAt (l, i))
+  | None   -> None
 
- op [a] splitAtRightmost (p: a -> Bool) (l: List a)
-                         : Option (List a * a * List a) =
-   case rightmostPositionSuchThat (l, p) of
-   | Some i -> Some (splitAt (l, i))
-   | None   -> None
+% leftmost/rightmost element satisfying predicate (None if none):
 
- % leftmost/rightmost element satisfying predicate (None if none):
+op [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
+  let lp = filter p l in
+  if empty? lp then None else Some (head lp)
 
- op [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
-   let lp = filter p l in
-   if empty? lp then None else Some (head lp)
+op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
+  let lp = filter p l in
+  if empty? lp then None else Some (last lp)
 
- op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
-   let lp = filter p l in
-   if empty? lp then None else Some (last lp)
+% return leftmost/rightmost element satisfying predicate as well as list of
+% preceding/following elements (None if no element satisfies predicate):
 
- % return leftmost/rightmost element satisfying predicate as well as list of
- % preceding/following elements (None if no element satisfies predicate):
+op [a] findLeftmostAndPreceding (p: a -> Bool) (l: List a)
+                                : Option (a * List a) =
+  case leftmostPositionSuchThat (l, p) of
+  | None   -> None
+  | Some i -> Some (l @ i, prefix (l, i))
 
- op [a] findLeftmostAndPreceding (p: a -> Bool) (l: List a)
+op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
                                  : Option (a * List a) =
-   case leftmostPositionSuchThat (l, p) of
-   | None   -> None
-   | Some i -> Some (l @ i, prefix (l, i))
+  case rightmostPositionSuchThat (l, p) of
+  | None   -> None
+  | Some i -> Some (l @ i, removePrefix (l, i))
 
- op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
-                                  : Option (a * List a) =
-   case rightmostPositionSuchThat (l, p) of
-   | None   -> None
-   | Some i -> Some (l @ i, removePrefix (l, i))
+% delete element from list:
 
- % delete element from list:
+op [a] delete (x:a) (l: List a) : List a =
+  filter (fn y:a -> y ~= x) l
 
- op [a] delete (x:a) (l: List a) : List a =
-   filter (fn y:a -> y ~= x) l
+% remove from l1 all the elements that occur in l2 (i.e. list difference):
 
- % remove from l1 all the elements that occur in l2 (i.e. list difference):
+op [a] diff (l1: List a, l2: List a) : List a =
+  filter (fn x:a -> x nin? l2) l1
 
- op [a] diff (l1: List a, l2: List a) : List a =
-   filter (fn x:a -> x nin? l2) l1
+% longest common prefix/suffix of two lists:
 
- % longest common prefix/suffix of two lists:
+op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
+  let len:Nat = the(len:Nat)
+      len <= length l1 &&
+      len <= length l2 &&
+      prefix (l1, len) = prefix (l2, len) &&
+      (length l1 = len || length l2 = len || l1 @ len ~= l2 @ len) in
+  prefix (l1, len)
 
- op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
-   let len:Nat = the(len:Nat)
-       len <= length l1 &&
-       len <= length l2 &&
-       prefix (l1, len) = prefix (l2, len) &&
-       (length l1 = len || length l2 = len || l1 @ len ~= l2 @ len) in
-   prefix (l1, len)
+op [a] longestCommonSuffix (l1: List a, l2: List a) : List a =
+  reverse (longestCommonPrefix (reverse l1, reverse l2))
 
- op [a] longestCommonSuffix (l1: List a, l2: List a) : List a =
-   reverse (longestCommonPrefix (reverse l1, reverse l2))
+% a permutation of a list of length N is represented by
+% a permutation of the list of natural numbers 0,...,N-1:
 
- % a permutation of a list of length N is represented by
- % a permutation of the list of natural numbers 0,...,N-1:
+op permutation? (prm: List Nat) : Bool =
+  noRepetitions? prm && (fa(i:Nat) i in? prm => i < length prm)
 
- op permutation? (prm: List Nat) : Bool =
-   noRepetitions? prm && (fa(i:Nat) i in? prm => i < length prm)
+type Permutation = (List Nat | permutation?)
 
- type Permutation = (List Nat | permutation?)
+% permute by moving element at position i to position prm @ i:
 
- % permute by moving element at position i to position prm @ i:
+op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
+  the (r: List a) r equiLong l &&
+                  (fa(i:Nat) i < length l => l @ i = r @ (prm@i))
 
- op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
-   the (r: List a) r equiLong l &&
-                   (fa(i:Nat) i < length l => l @ i = r @ (prm@i))
+% true iff l2 is a permutation of l1 (and vice versa):
 
- % true iff l2 is a permutation of l1 (and vice versa):
+op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
+  ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
 
- op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
-   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
+% given a comparison function over type a, type List a can be linearly
+% ordered and compared element-wise and regarding the empty list as smaller
+% than any non-empty list:
 
- % given a comparison function over type a, type List a can be linearly
- % ordered and compared element-wise and regarding the empty list as smaller
- % than any non-empty list:
+op [a] compare
+       (comp: a * a -> Comparison) (l1: List a, l2: List a) : Comparison =
+  case (l1,l2) of
+     | (hd1::tl1,hd2::tl2) -> (case comp (hd1, hd2) of
+                                  | Equal  -> compare comp (tl1, tl2)
+                                  | result -> result)
+     | ([],      []      ) -> Equal
+     | ([],      _       ) -> Less
+     | (_,       []      ) -> Greater
 
- op [a] compare
-        (comp: a * a -> Comparison) (l1: List a, l2: List a) : Comparison =
-   case (l1,l2) of
-      | (hd1::tl1,hd2::tl2) -> (case comp (hd1, hd2) of
-                                   | Equal  -> compare comp (tl1, tl2)
-                                   | result -> result)
-      | ([],      []      ) -> Equal
-      | ([],      _       ) -> Less
-      | (_,       []      ) -> Greater
+% lift isomorphism to lists, element-wise:
 
- % lift isomorphism to lists, element-wise:
+op [a,b] isoList : Bijection(a,b) -> Bijection (List a, List b) =
+  fn iso_elem -> map iso_elem
+proof Isa isoList_Obligation_subtype
+ apply(simp add: bij_def, auto) 
+ (** first subgoal is proved by auto **)
+ apply(simp add: surj_def, auto)
+ apply (induct_tac y, auto)
+ (** subgoal 2.1 is proved by auto, the other one needs some guidance **)
+ apply (drule_tac x = "a" in  spec, auto)
+ apply (rule_tac x="xa#x" in exI, auto)
+end-proof
+proof Isa isoList_subtype_constr
+ apply(simp add:  List__isoList_def List__isoList_Obligation_subtype)
+end-proof
 
- op [a,b] isoList : Bijection(a,b) -> Bijection (List a, List b) =
-   fn iso_elem -> map iso_elem
- proof Isa isoList_Obligation_subtype
-  apply(simp add: bij_def, auto) 
-  (** first subgoal is proved by auto **)
-  apply(simp add: surj_def, auto)
-  apply (induct_tac y, auto)
-  (** subgoal 2.1 is proved by auto, the other one needs some guidance **)
-  apply (drule_tac x = "a" in  spec, auto)
-  apply (rule_tac x="xa#x" in exI, auto)
- end-proof
- proof Isa isoList_subtype_constr
-  apply(simp add:  List__isoList_def List__isoList_Obligation_subtype)
- end-proof
+% deprecated:
 
- % deprecated:
+op nil : [a] List a = empty
 
- op nil : [a] List a = empty
+op cons : [a] a * List a -> List a = (|>)
 
- op cons : [a] a * List a -> List a = (|>)
+op insert : [a] a * List a -> List a = (|>)
 
- op insert : [a] a * List a -> List a = (|>)
+op null : [a] List a -> Bool = empty?
 
- op null : [a] List a -> Bool = empty?
+op hd : [a] List1 a -> a = head
 
- op hd : [a] List1 a -> a = head
+op tl : [a] List1 a -> List a = tail
 
- op tl : [a] List1 a -> List a = tail
+op concat : [a] List a * List a -> List a = (++)
 
- op concat : [a] List a * List a -> List a = (++)
+op nth : [a] {(l,i) : List a * Nat | i < length l} -> a = (@)
 
- op nth : [a] {(l,i) : List a * Nat | i < length l} -> a = (@)
+op nthTail : [a] {(l,n) : List a * Nat | n <= length l} -> List a =
+  removePrefix
+proof Isa [simp] end-proof
 
- op nthTail : [a] {(l,n) : List a * Nat | n <= length l} -> List a =
-   removePrefix
- proof Isa [simp] end-proof
+op member : [a] a * List a -> Bool = (in?)
 
- op member : [a] a * List a -> Bool = (in?)
+op removeFirstElems : [a] {(l,n) : List a * Nat |
+                           n <= length l} -> List a = removePrefix
+proof Isa [simp] end-proof
 
- op removeFirstElems : [a] {(l,n) : List a * Nat |
-                            n <= length l} -> List a = removePrefix
- proof Isa [simp] end-proof
+op sublist : [a] {(l,i,j) : List a * Nat * Nat |
+                  i <= j && j <= length l} -> List a = subFromTo
+proof Isa [simp] end-proof
 
- op sublist : [a] {(l,i,j) : List a * Nat * Nat |
-                   i <= j && j <= length l} -> List a = subFromTo
- proof Isa [simp] end-proof
+op exists : [a] (a -> Bool) -> List a -> Bool = exists?
 
- op exists : [a] (a -> Bool) -> List a -> Bool = exists?
+op all : [a] (a -> Bool) -> List a -> Bool = forall?
 
- op all : [a] (a -> Bool) -> List a -> Bool = forall?
+op [a] rev2 (l: List a, r: List a) : List a =
+  case l of
+  | [] -> r
+  | hd::tl -> rev2 (tl, Cons (hd, r))
 
- op [a] rev2 (l: List a, r: List a) : List a =
-   case l of
-   | [] -> r
-   | hd::tl -> rev2 (tl, Cons (hd, r))
+op rev : [a] List a -> List a = reverse
 
- op rev : [a] List a -> List a = reverse
+op find : [a] (a -> Bool) -> List a -> Option a = findLeftmost
+proof Isa [simp] end-proof
 
- op find : [a] (a -> Bool) -> List a -> Option a = findLeftmost
- proof Isa [simp] end-proof
+op firstUpTo : [a] (a -> Bool) -> List a -> Option (a * List a) =
+  findLeftmostAndPreceding
+proof Isa [simp] end-proof
 
- op firstUpTo : [a] (a -> Bool) -> List a -> Option (a * List a) =
-   findLeftmostAndPreceding
- proof Isa [simp] end-proof
+op splitList : [a] (a -> Bool) -> List a -> Option (List a * a * List a) =
+  splitAtLeftmost
+proof Isa [simp] end-proof
 
- op splitList : [a] (a -> Bool) -> List a -> Option (List a * a * List a) =
-   splitAtLeftmost
- proof Isa [simp] end-proof
+op locationOf : [a] List a * List a -> Option (Nat * List a) =
+  leftmostPositionOfSublistAndFollowing
+proof Isa [simp] end-proof
 
- op locationOf : [a] List a * List a -> Option (Nat * List a) =
-   leftmostPositionOfSublistAndFollowing
- proof Isa [simp] end-proof
+op [a] app (f: a -> ()) (l: List a) : () =
+  case l of
+     | []     -> ()
+     | hd::tl -> (f hd; app f tl)
 
- op [a] app (f: a -> ()) (l: List a) : () =
-   case l of
-      | []     -> ()
-      | hd::tl -> (f hd; app f tl)
+% mapping to Isabelle:
 
- % mapping to Isabelle:
-
- proof Isa Thy_Morphism List
-   type List.List \_rightarrow list
-   List.empty \_rightarrow []
-   List.nil \_rightarrow []
-   List.|> \_rightarrow # Right 23
-   List.cons \_rightarrow # Right 23
-   List.insert \_rightarrow # Right 23
-   List.length \_rightarrow length
-   List.empty? \_rightarrow null
-   List.null \_rightarrow null
-   List.head \_rightarrow  hd  
-   List.tail \_rightarrow  tl
-   List.hd \_rightarrow  hd  
-   List.tl \_rightarrow  tl
-   List.concat \_rightarrow  @ Left 25
-   List.++ \_rightarrow  @ Left 25
-   List.@ \_rightarrow ! Left 35
-   List.nth \_rightarrow ! Left 35
-   List.last \_rightarrow  last
-   List.butLast \_rightarrow  butlast
-   List.reverse \_rightarrow rev
-   List.rev \_rightarrow rev
-   List.flatten \_rightarrow concat
-   List.in? \_rightarrow  mem Left 22
-   List.member \_rightarrow  mem Left 22
-   List.map \_rightarrow map
-   List.mapPartial \_rightarrow  filtermap  
-   List.exists? \_rightarrow list_ex  
-   List.exists \_rightarrow list_ex  
-   List.forall? \_rightarrow  list_all  
-   List.all \_rightarrow  list_all  
-   List.filter \_rightarrow  filter  
- end-proof
+proof Isa Thy_Morphism List
+  type List.List \_rightarrow list
+  List.empty \_rightarrow []
+  List.nil \_rightarrow []
+  List.|> \_rightarrow # Right 23
+  List.cons \_rightarrow # Right 23
+  List.insert \_rightarrow # Right 23
+  List.length \_rightarrow length
+  List.empty? \_rightarrow null
+  List.null \_rightarrow null
+  List.head \_rightarrow  hd  
+  List.tail \_rightarrow  tl
+  List.hd \_rightarrow  hd  
+  List.tl \_rightarrow  tl
+  List.concat \_rightarrow  @ Left 25
+  List.++ \_rightarrow  @ Left 25
+  List.@ \_rightarrow ! Left 35
+  List.nth \_rightarrow ! Left 35
+  List.last \_rightarrow  last
+  List.butLast \_rightarrow  butlast
+  List.reverse \_rightarrow rev
+  List.rev \_rightarrow rev
+  List.flatten \_rightarrow concat
+  List.in? \_rightarrow  mem Left 22
+  List.member \_rightarrow  mem Left 22
+  List.map \_rightarrow map
+  List.mapPartial \_rightarrow  filtermap  
+  List.exists? \_rightarrow list_ex  
+  List.exists \_rightarrow list_ex  
+  List.forall? \_rightarrow  list_all  
+  List.all \_rightarrow  list_all  
+  List.filter \_rightarrow  filter  
+end-proof
 
 endspec
