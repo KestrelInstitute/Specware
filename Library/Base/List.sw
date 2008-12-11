@@ -62,7 +62,6 @@ end-proof
 op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
   f definedOnInitialSegmentOfLength n
 
-% uniqueness of n such that "f definedOnInitialSegmentOfLength n":
 proof Isa List__lengthOfListFunction_Obligation_the
  by (auto simp add: List__unique_initial_segment_length)
 end-proof
@@ -75,7 +74,6 @@ op list : [a] Bijection (ListFunction a, List a) =
     | None   -> Nil
     | Some x -> Cons (x, list (fn i:Nat -> f (i+1)))
 
-% well-definedness of op list:
 proof Isa list ()
 by (pat_completeness, auto)
 termination
@@ -145,7 +143,6 @@ proof -
 qed
 end-proof
 
-% bijectivity of op list:
 proof Isa List__list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
@@ -315,25 +312,70 @@ proof (auto simp add: Function__bijective_p__stp_def)
 qed
 end-proof
 
-(* The following obligation is redundant and should not be generated. Until the
-translator is changed not to generate it any more, we use "sorry" to ignore the
-obligation. *)
 proof Isa List__list_Obligation_subtype
- sorry
+proof -
+ def A \<equiv> "\<lambda> (f::nat \<Rightarrow> 'a option).
+            \<exists>(n::nat). f definedOnInitialSegmentOfLength n"
+ def B \<equiv> "\<lambda> ignore:: 'a list. True"
+ def body \<equiv> "\<lambda> (f::'a List__ListFunction). 
+               case f 0
+                of None \<Rightarrow> []
+                 | Some x \<Rightarrow> 
+                   Cons x (List__list (\<lambda> (i::nat). f (i + 1)))"
+ from List__list_subtype_constr
+  have "inj_on List__list A" and "surj_on List__list A B"
+   by (auto simp add: A_def B_def Function__bijective_p__stp_def)
+ have "inj_on body A"
+ proof (auto simp add: inj_on_def)
+  fix f1 f2
+  assume "f1 \<in> A" and "f2 \<in> A" and "body f1 = body f2"
+  from `f1 \<in> A` have "A f1" by (auto simp add: mem_def)
+  hence "body f1 = List__list f1" by (auto simp add: body_def A_def)
+  from `f2 \<in> A` have "A f2" by (auto simp add: mem_def)
+  hence "body f2 = List__list f2" by (auto simp add: body_def A_def)
+  with `body f1 = List__list f1` `body f1 = body f2`
+   have "List__list f1 = List__list f2" by auto
+  with `f1 \<in> A` `f2 \<in> A` `inj_on List__list A`
+   show "f1 = f2" by (auto simp add: inj_on_def)
+ qed
+ have "surj_on body A B"
+ proof (auto simp add: surj_on_def)
+  fix l
+  assume "l \<in> B"
+  with `surj_on List__list A B`
+   obtain f where "f \<in> A" and "l = List__list f"
+    by (auto simp add: surj_on_def)
+  hence "l = body f" by (auto simp add: mem_def body_def A_def)
+  with `f \<in> A` show "\<exists>f \<in> A. l = body f" by auto
+ qed
+ with `inj_on body A` show ?thesis
+  by (auto simp add: body_def A_def B_def Function__bijective_p__stp_def)
+qed
 end-proof
 
 op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
    % disallowed
 
-(* The bijectivity of op list_1 follows from the fact that inverse maps
-bijections to bijections. Therefore, the following obligation needs not be
-proved by the user. The translator could generate this as a theorem (which could
-be useful) with a working proof of it. For now, we use "sorry" to avoid
-supplying a proof (which, as just explained, the user should not need to
-supply). *)
 proof Isa List__list_1_subtype_constr
- sorry
+proof -
+ have "defined_on List__list
+                  (\<lambda> (f::nat \<Rightarrow> 'a option).
+                   \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
+                  (\<lambda> ignore :: 'a list. True)"
+  by (auto simp add: defined_on_def mem_def)
+ with List__list_subtype_constr
+  have "Function__bijective_p__stp
+         (\<lambda> ignore. True, 
+          \<lambda> (f::nat \<Rightarrow> 'a option). 
+            \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
+         (Function__inverse__stp
+          (\<lambda> (f::nat \<Rightarrow> 'a option). 
+             \<exists>(n::nat).
+               f definedOnInitialSegmentOfLength n) List__list)"
+   by (rule Function__inverse__stp_bijective)
+  thus ?thesis by (auto simp add: List__list_1_def)
+qed
 end-proof
 
 % create list [f(0),...,f(n-1)] (this op is less flexible that op list
@@ -531,7 +573,6 @@ end-proof
 op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
   let Some x = list_1 l i in x
 
-% correctness of mapping from Metaslang's @ to Isabelle's !:
 proof Isa List__e_at__def
   by (auto simp add: list_1_Isa_nth)
 end-proof
@@ -618,7 +659,6 @@ proof Isa [simp] end-proof
 
 op [a] empty? (l: List a) : Bool = (l = empty)
 
-% correctness of mapping from Metaslang's empty? to Isabelle's null:
 proof Isa List__empty_p__def
   by (simp add: null_empty)
 end-proof
@@ -642,7 +682,6 @@ op [a] single (x:a) : List a = [x]
 
 op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
 
-% uniqueness of x such as "l = [x]", relativized to a subtype predicate:
 proof Isa List__theElement__stp_Obligation_the
 proof -
  assume "List__ofLength_p 1 l"
@@ -666,7 +705,6 @@ proof -
 qed
 end-proof
 
-% uniqueness of x such as "l = [x]":
 proof Isa List__theElement_Obligation_the
 proof
  def x \<equiv> "hd l"
@@ -697,7 +735,6 @@ end-proof
 op [a] in? (x:a, l: List a) infixl 20 : Bool =
   ex(i:Nat) l @@ i = Some x
 
-% correctness of mapping from Metaslang's in? to Isabelle's mem:
 proof Isa List__in_p__def
 proof (induct l)
  case Nil
@@ -923,7 +960,6 @@ proof Isa List__head_Obligation_subtype0
   by (cases l, auto simp add: List__length_prefix List__ofLength_p_def)
 end-proof
 
-% correctness of mapping from Metaslang's head to Isabelle's hd:
 proof Isa List__head__def
 proof -
  assume "l \<noteq> []"
@@ -964,7 +1000,6 @@ proof Isa List__last_Obligation_subtype0
   by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
 end-proof
 
-% correctness of mapping from Metaslang's last to Isabelle's last:
 proof Isa List__last__def
 proof -
  def x \<equiv> "last l"
@@ -1009,7 +1044,6 @@ proof Isa List__tail_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-% correctness of mapping from Metaslang's tail to Isabelle's tl:
 proof Isa List__tail__def
 proof -
  def x \<equiv> "hd l"
@@ -1069,7 +1103,6 @@ proof Isa List__butLast_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-% correctness of mapping from Metaslang's butLast to Isabelle's butlast:
 proof Isa List__butLast__def
 proof -
  def x \<equiv> "last l"
@@ -1153,7 +1186,6 @@ op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
   prefix (l, length l1) = l1 &&
   suffix (l, length l2) = l2
 
-% uniqueness of l satisfying definition of op ++:
 proof Isa List__e_pls_pls_Obligation_the
 proof
  def l \<equiv> "l1 @ l2"
@@ -1324,7 +1356,6 @@ next
 qed
 end-proof
 
-% correctness of mapping of Metaslang's ++ to Isabelle's @:
 proof Isa List__e_pls_pls__def
 proof -
  def P \<equiv> "(\<lambda>l. length l = length l1 + length l2 \<and>
@@ -1430,12 +1461,10 @@ op [a] |> (x:a, l: List a) infixr 25 : List1 a = [x] ++ l
 
 op [a] <| (l: List a, x:a) infixl 25 : List1 a = l ++ [x]
 
-% result of |> is always in List1 subtype:
 proof Isa List__e_bar_gt_subtype_constr
   by (auto simp add: Let_def split_def)
 end-proof
 
-% result of <| is always in List1 subtype:
 proof Isa List__e_lt_bar_subtype_constr
   by (auto simp add: Let_def split_def List__e_lt_bar_def)
 end-proof
@@ -1466,7 +1495,6 @@ op [a] exists1? (p: a -> Bool) (l: List a) : Bool =
 op [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
   fa(i:Nat) i < length l => p (i, l @ i)
 
-% correctness of mapping from Metaslang's forall? to Isabelle's list_all:
 proof Isa List__forall_p__def
 proof (induct l)
 case Nil
@@ -1513,7 +1541,6 @@ case (Cons x l)
 qed
 end-proof
 
-% correctness of mapping from Metaslang's exists? to Isabelle's list_ex:
 proof Isa List__exists_p__def
 proof (induct l)
 case Nil
