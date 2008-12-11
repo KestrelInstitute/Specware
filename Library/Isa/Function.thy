@@ -77,16 +77,20 @@ theorem Function__bijective_p__def:
   apply(simp add: bij_def)
   done
 
-  lemma Function__bijective_p__stp_simp[simp]:
-    "Function__bijective_p__stp (A,B) f = bij_ON f A B"
-    by (simp add: Function__bijective_p__stp_def bij_ON_def)
-  lemma Function__bijective_p__stp_univ[simp]:
-    "Function__bijective_p__stp (A,\<lambda> x. True) f = bij_on f A UNIV"
-    by (simp add: univ_true bij_ON_UNIV_bij_on)
-  lemma Function__bij_inv_stp:
-    "Function__bijective_p__stp (A,\<lambda> x. True) f \<Longrightarrow>
-     Function__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
-    by (simp add: univ_true bij_ON_imp_bij_ON_inv)
+lemma Function__bijective_p__stp_simp[simp]:
+  "Function__bijective_p__stp (A,B) f = bij_ON f A B"
+  by (simp add: Function__bijective_p__stp_def bij_ON_def)
+
+
+lemma Function__bijective_p__stp_univ[simp]:
+  "Function__bijective_p__stp (A,\<lambda> x. True) f = bij_on f A UNIV"
+  by (simp add: univ_true bij_ON_UNIV_bij_on)
+
+
+lemma Function__bij_inv_stp:
+  "Function__bijective_p__stp (A,\<lambda> x. True) f \<Longrightarrow>
+   Function__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
+  by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 
 types  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
@@ -151,20 +155,81 @@ theorem Function__inverse__def:
   apply(auto simp add: bij_def surj_f_inv_f)
   done
 
-  lemma Function__inverse__stp_alt:
-    "\<lbrakk>inj_on f A; y \<in> f`A\<rbrakk> \<Longrightarrow>
-     Function__inverse__stp A f y = inv_on A f y"
-    by (auto simp add: Function__inverse__stp_def, 
-        rule the_equality, auto simp add:mem_def inj_on_def)
-  lemma Function__inverse__stp_apply [simp]:
-    "\<lbrakk>bij_ON f A B; y \<in> B\<rbrakk> \<Longrightarrow>
-     Function__inverse__stp A f y = inv_on A f y"
-    by(auto simp add: bij_ON_def surj_on_def,
-       erule Function__inverse__stp_alt,
-       simp add: image_def)
-  lemma Function__inverse__stp_simp:
-    "bij_on f A UNIV \<Longrightarrow> Function__inverse__stp A f = inv_on A f"
-    by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
+lemma Function__inverse__stp_alt:
+  "\<lbrakk>inj_on f A; y \<in> f`A\<rbrakk> \<Longrightarrow>
+   Function__inverse__stp A f y = inv_on A f y"
+  by (auto simp add: Function__inverse__stp_def, 
+      rule the_equality, auto simp add:mem_def inj_on_def)
+
+
+lemma Function__inverse__stp_apply [simp]:
+  "\<lbrakk>bij_ON f A B; y \<in> B\<rbrakk> \<Longrightarrow>
+   Function__inverse__stp A f y = inv_on A f y"
+  by(auto simp add: bij_ON_def surj_on_def,
+     erule Function__inverse__stp_alt,
+     simp add: image_def)
+
+
+lemma Function__inverse__stp_simp:
+  "bij_on f A UNIV \<Longrightarrow> Function__inverse__stp A f = inv_on A f"
+  by (rule ext, simp add: bij_ON_UNIV_bij_on [symmetric])
+
+
+lemma Function__inverse__stp_bijective:
+  "\<lbrakk>Function__bijective_p__stp (A, B) f; defined_on f A B\<rbrakk>
+   \<Longrightarrow>
+   Function__bijective_p__stp (B, A) (Function__inverse__stp A f)"
+proof -
+ def fi \<equiv> "Function__inverse__stp A f"
+ assume "defined_on f A B"
+ assume "Function__bijective_p__stp (A, B) f"
+ hence "inj_on f A" and "surj_on f A B" by (auto simp add: bij_ON_def)
+ have "inj_on fi B"
+ proof (auto simp add: inj_on_def)
+  fix y1 y2
+  assume "y1 \<in> B" and "y2 \<in> B" and "fi y1 = fi y2"
+  from `surj_on f A B` `y1 \<in> B`
+   obtain x1 where "x1 \<in> A" and "y1 = f x1"
+    by (auto simp add: surj_on_def)
+  hence "A x1 \<and> f x1 = y1" by (auto simp add: mem_def)
+  with `inj_on f A` have "\<And>x. A x \<and> f x = y1 \<Longrightarrow> x = x1"
+   by (auto simp add: inj_on_def mem_def)
+  with `A x1 \<and> f x1 = y1`
+   have "(THE x. A x \<and> f x = y1) = x1" by (rule the_equality)
+  hence "x1 = fi y1" by (auto simp add: fi_def Function__inverse__stp_def)
+  from `surj_on f A B` `y2 \<in> B`
+   obtain x2 where "x2 \<in> A" and "y2 = f x2"
+    by (auto simp add: surj_on_def)
+  hence "A x2 \<and> f x2 = y2" by (auto simp add: mem_def)
+  with `inj_on f A` have "\<And>x. A x \<and> f x = y2 \<Longrightarrow> x = x2"
+   by (auto simp add: inj_on_def mem_def)
+  with `A x2 \<and> f x2 = y2`
+   have "(THE x. A x \<and> f x = y2) = x2" by (rule the_equality)
+  hence "x2 = fi y2" by (auto simp add: fi_def Function__inverse__stp_def)
+  with `x1 = fi y1` `fi y1 = fi y2` have "x1 = x2" by auto
+  with `y1 = f x1` `y2 = f x2` show "y1 = y2" by auto
+ qed
+ have "surj_on fi B A"
+ proof (auto simp add: surj_on_def)
+  fix x
+  assume "x \<in> A"
+  def y \<equiv> "f x"
+  with `x \<in> A` `defined_on f A B` have "y \<in> B"
+   by (auto simp add: defined_on_def)
+  have "x = fi y"
+  proof -
+   from `x \<in> A` y_def have "A x \<and> f x = y" by (auto simp add: mem_def)
+   with `inj_on f A` have "\<And>z. A z \<and> f z = y \<Longrightarrow> z = x"
+    by (auto simp add: inj_on_def mem_def)
+   with `A x \<and> f x = y`
+    have "(THE z. A z \<and> f z = y) = x" by (rule the_equality)
+   thus "x = fi y" by (auto simp add: fi_def Function__inverse__stp_def)
+  qed
+  with `y \<in> B` show "\<exists>y \<in> B. x = fi y" by auto
+ qed
+ with `inj_on fi B` have "bij_ON fi B A" by (auto simp add: bij_ON_def)
+ with fi_def show ?thesis by auto
+qed
 
 
 lemma inverse_SOME:
