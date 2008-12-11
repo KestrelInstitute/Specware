@@ -339,18 +339,6 @@ proof Isa eta__stp
   apply(rule ext, simp)
 end-proof
 
-% true iff relation is well-founded:
-
-op [a] wellFounded? (rel: a * a -> Bool) : Bool =
-  % each non-empty predicate:
-  fa (p: a -> Bool) (ex(y:a) p y) =>
-  % has a minimal element w.r.t. rel:
-    (ex(y:a) p y && (fa(x:a) p x => ~ (rel(x,y))))
-
-% deprecated:
-
-op wfo: [a] (a * a -> Bool) -> Bool = wellFounded?
-
 % mapping to Isabelle:
 
 proof Isa ThyMorphism

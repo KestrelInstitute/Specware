@@ -64,6 +64,14 @@ EndoRelation qualifying spec
 
   type PartialEquivalence a = (EndoRelation a | partialEquivalence?)
 
+  op [a] wellFounded? (r: EndoRelation a) : Bool =
+    % each non-empty predicate:
+    fa (p: a -> Bool) (ex(y:a) p y) =>
+    % has a minimal element w.r.t. the relation:
+      (ex(y:a) p y && (fa(x:a) p x => ~ (r(x,y))))
+
+  type WellFoundedRelation a = (EndoRelation a | wellFounded?)
+
   % closure operators:
 
   op [a] reflexiveClosure (r: EndoRelation a) : ReflexiveRelation a =
