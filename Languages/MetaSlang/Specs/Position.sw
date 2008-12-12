@@ -2,11 +2,11 @@ Position qualifying spec {
 
  % first char is at line 1, column 0, byte 0
 
- sort Filename = String
- sort LineColumn     = (Nat * Nat)          
- sort LineColumnByte = (Nat * Nat * Nat)   
+ type Filename = String
+ type LineColumn     = (Nat * Nat)          
+ type LineColumnByte = (Nat * Nat * Nat)   
 
- sort Position     = | Internal String % msg explains context for term
+ type Position     = | Internal String % msg explains context for term
                      | String   String   * LineColumnByte * LineColumnByte 
                      | File     Filename * LineColumnByte * LineColumnByte 
 
