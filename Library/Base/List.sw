@@ -1647,6 +1647,107 @@ proof Isa List__zip3_Obligation_subtype1
   by (auto simp add: List__equiLong_def)
 end-proof
 
+proof Isa List__unzip_Obligation_subtype
+proof (auto simp add: Function__bijective_p__stp_def)
+ show "inj_on (List__zip :: 'a list \<times> 'b list \<Rightarrow>
+                            ('a \<times> 'b) list)
+              (\<lambda>(x,y). x equiLong y)"
+ proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
+  fix l1_l2 :: "'a list \<times> 'b list"
+  fix r1_r2 :: "'a list \<times> 'b list"
+  assume "l1_l2 \<in> (\<lambda>(x,y). x equiLong y)"
+  assume "r1_r2 \<in> (\<lambda>(x,y). x equiLong y)"
+  assume "List__zip l1_l2 = List__zip r1_r2"
+  def l1 \<equiv> "fst l1_l2"
+  and l2 \<equiv> "snd l1_l2"
+  and r1 \<equiv> "fst r1_r2"
+  and r2 \<equiv> "snd r1_r2"
+  with `l1_l2 \<in> (\<lambda>(x,y). x equiLong y)`
+       `r1_r2 \<in> (\<lambda>(x,y). x equiLong y)`
+   have "length l1 = length l2" and "length r1 = length r2"
+    by (auto simp add: mem_def List__equiLong_def)
+  from `List__zip l1_l2 = List__zip r1_r2` l1_def l2_def r1_def r2_def
+   have "List__zip (l1,l2) = List__zip (r1,r2)" by auto
+  def fl \<equiv> "\<lambda>i. if i < length l1 then Some (l1!i,l2!i) else None"
+  and fr \<equiv> "\<lambda>i. if i < length r1 then Some (r1!i,r2!i) else None"
+  with `List__zip (l1,l2) = List__zip (r1,r2)`
+   have "List__list fl = List__list fr" by (auto simp add: List__zip_def)
+  from fl_def have fl_seg: "\<exists>n. fl definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  from fr_def have fr_seg: "\<exists>n. fr definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  from List__list_subtype_constr
+   have "inj_on List__list
+                (\<lambda>f:: nat \<Rightarrow> ('a \<times> 'b) option.
+                    \<exists>n. f definedOnInitialSegmentOfLength n)"
+    by (auto simp add: Function__bijective_p__stp_def)
+  with fl_seg fr_seg `List__list fl = List__list fr`
+   have "fl = fr"
+    by (auto simp add: inj_on_def mem_def del: List__list.simps)
+  have "length l1 \<ge> length r1"
+  proof (rule ccontr)
+   assume "\<not> length l1 \<ge> length r1"
+   hence "length l1 < length r1" by auto
+   with fl_def fr_def have "fl (length l1) \<noteq> fr (length l1)" by auto
+   with `fl = fr` show False by auto
+  qed
+  have "length l1 \<le> length r1"
+  proof (rule ccontr)
+   assume "\<not> length l1 \<le> length r1"
+   hence "length l1 > length r1" by auto
+   with fl_def fr_def have "fl (length r1) \<noteq> fr (length r1)" by auto
+   with `fl = fr` show False by auto
+  qed
+  with `length l1 \<ge> length r1` have "length l1 = length r1" by auto
+  with `length l1 = length l2` `length r1 = length r2`
+   have "length l2 = length r2" by auto
+  have "\<forall>i < length l1. l1 ! i = r1 ! i"
+  proof
+   fix i
+   from `fl = fr` have "fl i = fr i" by auto
+   show "i < length l1 \<longrightarrow> l1 ! i = r1 ! i"
+   proof
+    assume "i < length l1"
+    with `length l1 = length r1` have "i < length r1" by auto
+    with `i < length l1` `fl i = fr i` fl_def fr_def
+     show "l1 ! i = r1 ! i" by auto
+   qed
+  qed
+  with `length l1 = length r1` have "l1 = r1"
+   by (auto simp add: list_eq_iff_nth_eq)
+  have "\<forall>i < length l2. l2 ! i = r2 ! i"
+  proof
+   fix i
+   from `fl = fr` have "fl i = fr i" by auto
+   show "i < length l2 \<longrightarrow> l2 ! i = r2 ! i"
+   proof
+    assume "i < length l2"
+    with `length l1 = length l2` have "i < length l1" by auto
+    with `length l1 = length r1` have "i < length r1" by auto
+    with `i < length l1` `fl i = fr i` fl_def fr_def
+     show "l2 ! i = r2 ! i" by auto
+   qed
+  qed
+  with `length l2 = length r2` have "l2 = r2"
+   by (auto simp add: list_eq_iff_nth_eq)
+  with `l1 = r1` l1_def l2_def r1_def r2_def
+  show "l1_l2 = r1_r2" by (auto simp add: Pair_fst_snd_eq)
+ qed
+next
+ show "surj_on (List__zip :: 'a list \<times> 'b list \<Rightarrow>
+                             ('a \<times> 'b) list)
+               (\<lambda>(x,y). x equiLong y) (\<lambda>_. True)"
+ proof (auto simp add: surj_on_def)
+  fix ll :: "('a \<times> 'b) list"
+  assume "ll \<in> (\<lambda>_. True)"
+  show "\<exists> l1_l2 \<in> (\<lambda>(x,y). x equiLong y).
+           ll = List__zip l1_l2"
+   txt {* \<dots> IN PROGRESS \<dots> *}
+   sorry
+ qed
+qed
+end-proof
+
 % homomorphically apply function to all elements of list(s):
 
 op [a,b] map (f: a -> b) (l: List a) : List b =
@@ -2020,37 +2121,38 @@ op [a] app (f: a -> ()) (l: List a) : () =
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism List
-  type List.List \_rightarrow list
-  List.empty \_rightarrow []
+  type List.List  \_rightarrow list
+  List.length     \_rightarrow length
+  List.@          \_rightarrow !        Left  35
+  List.empty      \_rightarrow []
+  List.empty?     \_rightarrow null
+  List.in?        \_rightarrow mem      Left  22
+  List.head       \_rightarrow hd
+  List.last       \_rightarrow last
+  List.tail       \_rightarrow tl
+  List.butLast    \_rightarrow butlast
+  List.++         \_rightarrow @        Left  25
+  List.|>         \_rightarrow #        Right 23
+  List.forall?    \_rightarrow list_all
+  List.exists?    \_rightarrow list_ex
+  List.filter     \_rightarrow filter
+  List.map        \_rightarrow map
+  List.mapPartial \_rightarrow filtermap
+  List.reverse    \_rightarrow rev
+  List.flatten    \_rightarrow concat
+  % deprecated:
   List.nil \_rightarrow []
-  List.|> \_rightarrow # Right 23
   List.cons \_rightarrow # Right 23
   List.insert \_rightarrow # Right 23
-  List.length \_rightarrow length
-  List.empty? \_rightarrow null
   List.null \_rightarrow null
-  List.head \_rightarrow  hd  
-  List.tail \_rightarrow  tl
   List.hd \_rightarrow  hd  
   List.tl \_rightarrow  tl
   List.concat \_rightarrow  @ Left 25
-  List.++ \_rightarrow  @ Left 25
-  List.@ \_rightarrow ! Left 35
   List.nth \_rightarrow ! Left 35
-  List.last \_rightarrow  last
-  List.butLast \_rightarrow  butlast
-  List.reverse \_rightarrow rev
   List.rev \_rightarrow rev
-  List.flatten \_rightarrow concat
-  List.in? \_rightarrow  mem Left 22
   List.member \_rightarrow  mem Left 22
-  List.map \_rightarrow map
-  List.mapPartial \_rightarrow  filtermap  
-  List.exists? \_rightarrow list_ex  
   List.exists \_rightarrow list_ex  
-  List.forall? \_rightarrow  list_all  
   List.all \_rightarrow  list_all  
-  List.filter \_rightarrow  filter  
 end-proof
 
 endspec
