@@ -8,8 +8,8 @@ Utilities qualifying spec
  import /Library/Unvetted/StringUtilities               % search
  import /Languages/MetaSlang/AbstractSyntax/Equalities  % equalType?
 
- sort Environment = StringMap Spec
- sort LocalEnv = 
+ type Environment = StringMap Spec
+ type LocalEnv = 
       {importMap  : Environment,
        internal   : Spec,
        errors     : Ref (List (String * Position)),
@@ -252,10 +252,13 @@ Utilities qualifying spec
  %          | _ -> 
  %            gotoErrorLocation other_errors)
  %     | _ -> ()
+
+ op traceErrors?: Boolean = false
  
  def error (env, msg, pos) =
+   let _ = if traceErrors? then writeLine(msg^" at\n"^Position.print pos) else () in
    let errors = env.errors in
-   errors := cons ((msg, pos), ! errors)
+   errors := (msg, pos) :: !errors
 
  def addVariable (env, id, srt) =
    env << {vars = StringMap.insert (env.vars, id, srt)}
@@ -406,7 +409,7 @@ Utilities qualifying spec
       new_srt)
 
 
- sort Unification = | NotUnify  MS.Sort * MS.Sort 
+ type Unification = | NotUnify  MS.Sort * MS.Sort 
                     | Unify List (MS.Sort * MS.Sort)
 
   op unifyL : [a] LocalEnv * MS.Sort * MS.Sort * 
