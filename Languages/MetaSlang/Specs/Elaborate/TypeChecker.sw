@@ -162,7 +162,9 @@ TypeChecker qualifying spec
 		 | None -> ops
 		 | Some(Qualified(q,id)) ->
 	       case findAQualifierMap(ops,q,id) of
-		 | Some info -> insertAQualifierMap(ops,q,id,checkOp(info, env)))
+		 | Some info ->
+                   % let _ = writeLine("Checking "^q^"."^id) in
+                   insertAQualifierMap(ops,q,id,checkOp(info, env)))
 	   ops given_spec.elements
 
 %	if localOps = [] then ops
