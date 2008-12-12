@@ -17,6 +17,8 @@ spec
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
   import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
+  op orderElements?: Boolean = true
+
   op makeNewPrimedQid(Qualified(q,id): QualifiedId, exists?: QualifiedId -> Boolean): QualifiedId =
     let primed_qid = Qualified(q,id^"'") in
     if exists? primed_qid
@@ -252,9 +254,12 @@ spec
                   mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty', spc)
                 | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
            | None ->
-             case lookupIsoInfo(qid, iso_info) of
-               | Some((iso_fn,_,_,_),_) -> iso_fn
-               | None -> identityFn ty)
+         case lookupIsoInfo(qid, iso_info) of
+           | Some((iso_fn,_,_,_),_) -> iso_fn
+           | None ->
+         let uf_ty = unfoldBaseOne(spc, ty) in
+         if ty = uf_ty then identityFn ty
+           else isoTypeFn (spc, iso_info, iso_fn_info) uf_ty)
       | Arrow(dom,ran,_) ->
         let fnarg = ("f",ty) in
         mkLambda(mkVarPat fnarg, 
@@ -697,5 +702,6 @@ spec
            spc.ops
     in
     let spc = spc \_guillemotleft {ops = simp_ops} in
+    let spc = if orderElements? then adjustElementOrder spc else spc in
     spc
 endspec
