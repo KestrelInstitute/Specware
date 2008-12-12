@@ -2121,38 +2121,38 @@ op [a] app (f: a -> ()) (l: List a) : () =
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism List
-  type List.List  \_rightarrow list
-  List.length     \_rightarrow length
-  List.@          \_rightarrow !        Left  35
-  List.empty      \_rightarrow []
-  List.empty?     \_rightarrow null
-  List.in?        \_rightarrow mem      Left  22
-  List.head       \_rightarrow hd
-  List.last       \_rightarrow last
-  List.tail       \_rightarrow tl
-  List.butLast    \_rightarrow butlast
-  List.++         \_rightarrow @        Left  25
-  List.|>         \_rightarrow #        Right 23
-  List.forall?    \_rightarrow list_all
-  List.exists?    \_rightarrow list_ex
-  List.filter     \_rightarrow filter
-  List.map        \_rightarrow map
-  List.mapPartial \_rightarrow filtermap
-  List.reverse    \_rightarrow rev
-  List.flatten    \_rightarrow concat
+  type List.List  -> list
+  List.length     -> length
+  List.@          -> !        Left  35
+  List.empty      -> []
+  List.empty?     -> null
+  List.in?        -> mem      Left  22
+  List.head       -> hd
+  List.last       -> last
+  List.tail       -> tl
+  List.butLast    -> butlast
+  List.++         -> @        Left  25
+  List.|>         -> #        Right 23
+  List.forall?    -> list_all
+  List.exists?    -> list_ex
+  List.filter     -> filter
+  List.map        -> map
+  List.mapPartial -> filtermap
+  List.reverse    -> rev
+  List.flatten    -> concat
   % deprecated:
-  List.nil \_rightarrow []
-  List.cons \_rightarrow # Right 23
-  List.insert \_rightarrow # Right 23
-  List.null \_rightarrow null
-  List.hd \_rightarrow  hd  
-  List.tl \_rightarrow  tl
-  List.concat \_rightarrow  @ Left 25
-  List.nth \_rightarrow ! Left 35
-  List.rev \_rightarrow rev
-  List.member \_rightarrow  mem Left 22
-  List.exists \_rightarrow list_ex  
-  List.all \_rightarrow  list_all  
+  List.nil -> []
+  List.cons -> # Right 23
+  List.insert -> # Right 23
+  List.null -> null
+  List.hd ->  hd  
+  List.tl ->  tl
+  List.concat ->  @ Left 25
+  List.nth -> ! Left 35
+  List.rev -> rev
+  List.member ->  mem Left 22
+  List.exists -> list_ex  
+  List.all ->  list_all  
 end-proof
 
 endspec
