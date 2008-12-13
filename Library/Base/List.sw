@@ -46,14 +46,14 @@ proof -
    assume "\<not> n1 \<ge> n2"
    with N1 F2 show False
      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                        Option__none_p_def Option__some_p_def linorder_not_le)
+                        linorder_not_le)
   qed
  have "n2 \<ge> n1"
   proof (rule ccontr)
    assume "\<not> n2 \<ge> n1"
    with N2 F1 show False
      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                        Option__none_p_def Option__some_p_def linorder_not_le)
+                        linorder_not_le)
   qed
  from `n1 \<ge> n2` `n2 \<ge> n1` show "n1 = n2" by auto
 qed
@@ -94,13 +94,11 @@ proof (relation "measure List__lengthOfListFunction")
    by (unfold List__lengthOfListFunction_def, rule theI')
   assume "f 0 = Some a"
   with FL have "List__lengthOfListFunction f > 0"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__none_p_def Option__some_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   with FL have FL': "(\<lambda>i. f (i + 1))
                      definedOnInitialSegmentOfLength
                      (List__lengthOfListFunction f - 1)"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__none_p_def Option__some_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   hence "\<exists>m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
    by auto
   hence "\<exists>!m. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength m"
@@ -132,11 +130,9 @@ proof -
  then obtain n where FN: "f definedOnInitialSegmentOfLength n" ..
  assume "f 0 = Some x"
  with FN have "n > 0"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__none_p_def Option__some_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with FN have "(\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength (n - 1)"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__none_p_def Option__some_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  thus
    "\<exists>n_1. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n_1"
    ..
@@ -165,8 +161,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
    proof (induct n \<equiv> n1 arbitrary: f1 f2 n1 n2)
     case 0
      hence "\<forall>i. f1 i = None"
-      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                         Option__none_p_def)
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      with `f1 definedOnInitialSegmentOfLength n1` have "List__list f1 = []"
       by (auto simp add: List__list.simps)
      with `List__list f1 = List__list f2` have "List__list f2 = []" by auto
@@ -177,30 +172,26 @@ proof (auto simp add: Function__bijective_p__stp_def)
        then obtain x where "f2 0 = Some x" by auto
        with `f2 definedOnInitialSegmentOfLength n2`
        have "\<exists>xx. List__list f2 = x # xx"
-        by (auto simp add: List__list.simps
-                           Option__none_p_def Option__some_p_def)
+        by (auto simp add: List__list.simps)
        with `List__list f2 = []` show False by auto
       qed
      have "n2 = 0"
       proof (rule ccontr)
        assume "n2 \<noteq> 0"
        with `f2 definedOnInitialSegmentOfLength n2` have "f2 0 \<noteq> None"
-        by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                           Option__some_p_def Option__none_p_def)
+        by (auto simp add: List__definedOnInitialSegmentOfLength_def)
        with `f2 0 = None` show False by auto
       qed
      with `f2 definedOnInitialSegmentOfLength n2`
      have "\<forall>i. f2 i = None"
-      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                         Option__none_p_def)
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      with `\<forall>i. f1 i = None` have "\<forall>i. f1 i = f2 i" by auto
      hence "\<And>i. f1 i = f2 i" by auto
      thus "f1 = f2" by (rule ext)
     next
     case (Suc n)
      hence "\<exists>x. f1 0 = Some x"
-      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                         Option__some_p_def Option__none_p_def)
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      then obtain x where "f1 0 = Some x" by auto
      with `f1 definedOnInitialSegmentOfLength n1`
      have "List__list f1 = x # List__list (\<lambda>i. f1 (i + 1))" by auto
@@ -230,12 +221,10 @@ proof (auto simp add: Function__bijective_p__stp_def)
      from `Suc n = n1`
           `f1 definedOnInitialSegmentOfLength n1`
      have "(\<lambda>i. f1 (i + 1)) definedOnInitialSegmentOfLength n"
-      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                         Option__some_p_def Option__none_p_def)
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      from `f2 definedOnInitialSegmentOfLength n2`
      have "(\<lambda>i. f2 (i + 1)) definedOnInitialSegmentOfLength (n2 - 1)"
-      by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                         Option__some_p_def Option__none_p_def)
+      by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      with Suc.hyps
           `List__list (\<lambda>i. f1 (i + 1)) =
            List__list (\<lambda>i. f2 (i + 1))`
@@ -272,8 +261,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
      case Nil
       def Fdef: f \<equiv> "(\<lambda>i. None) :: nat \<Rightarrow> 'c option"
       hence Fseg: "f definedOnInitialSegmentOfLength 0"
-       by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                          Option__none_p_def)
+       by (auto simp add: List__definedOnInitialSegmentOfLength_def)
       hence SUB:
         "f \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
        by (auto simp add: mem_def)
@@ -294,8 +282,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
       obtain n where FN: "f definedOnInitialSegmentOfLength n"
        by auto
       with Fdef' have FN': "f' definedOnInitialSegmentOfLength (n + 1)"
-       by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                          Option__some_p_def Option__none_p_def)
+       by (auto simp add: List__definedOnInitialSegmentOfLength_def)
       hence Fseg': "\<exists>n. f' definedOnInitialSegmentOfLength n" by auto
       hence Fin': "f' \<in>
                      (\<lambda>f'.
@@ -387,8 +374,7 @@ op [a] tabulate (n:Nat, f: Nat -> a) : List a =
 
 % the argument to op list is in the ListFunction subtype:
 proof Isa List__tabulate_Obligation_subtype
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 % number of elements in list:
@@ -411,8 +397,7 @@ case 0
   by (unfold List__lengthOfListFunction_def, rule theI')
  with prems have "f definedOnInitialSegmentOfLength 0" by auto
  hence "f 0 = None"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with prems have "List__list f = []" by auto
  hence "length (List__list f) = 0" by auto
  with prems show ?case by auto
@@ -462,8 +447,7 @@ proof -
  def f \<equiv> "(\<lambda>j. if j < n then Some (f j) else None)
                  :: nat \<Rightarrow> 'a option"
  hence f_def_n: "f definedOnInitialSegmentOfLength n"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  hence "\<And>m. f definedOnInitialSegmentOfLength m \<Longrightarrow> m = n"
   by (auto simp add: List__unique_initial_segment_length)
  with f_def_n have "(THE n. f definedOnInitialSegmentOfLength n) = n"
@@ -501,8 +485,7 @@ proof (induct l)
   def f \<equiv> "\<lambda>i. if i < length [] then Some (l!i) else None"
   hence f_all_None: "f = (\<lambda>i. None)" by auto
   hence f_init_seg: "\<exists>n. f definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   hence "domP f" by (auto simp add: domP_def)
   have "codP []" by (auto simp add: codP_def)
   from f_init_seg f_all_None have "List__list f = []" by auto
@@ -526,8 +509,7 @@ proof (induct l)
   def f \<equiv> "(\<lambda>i. if i < length l then Some (l!i) else None)
            :: nat \<Rightarrow> 'a option"
   hence f_init_seg: "f definedOnInitialSegmentOfLength (length l)"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   hence "domP f" by (auto simp add: domP_def)
   have "codP l" by (auto simp add: codP_def)
   from f_def Cons.hyps have IH: "List__list_1 l = f" by auto
@@ -554,8 +536,7 @@ proof (induct l)
   qed
   from f'_def
   have f'_init_seg: "f' definedOnInitialSegmentOfLength (Suc (length l))"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   hence "domP f'" by (auto simp add: domP_def)
   have "codP (x # l)" by (auto simp add: codP_def)
   from f'_f f'_init_seg
@@ -613,8 +594,7 @@ case (Suc n)
   by (auto simp add: List__tabulate_def)
  from F_def have F0: "F 0 = Some (f 0)" by auto
  from F_def have "\<exists>m. F definedOnInitialSegmentOfLength m"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with F0 G_F have LF_decomp: "List__list F = f 0 # List__list G" by auto
  have "List__list F ! i = f i"
  proof (cases "i = 0")
@@ -805,8 +785,7 @@ op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
 
 % the argument to op list is in the ListFunction subtype:
 proof Isa List__subFromLong_Obligation_subtype
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 theorem length_subFromLong is [a]
@@ -818,8 +797,7 @@ proof -
  and f \<equiv> "\<lambda>j. if j < n then Some (l ! (i + j)) else None"
  hence "subl = List__list f" by (auto simp add: List__subFromLong_def)
  from f_def have "f definedOnInitialSegmentOfLength n"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  hence "\<exists>n. f definedOnInitialSegmentOfLength n" by auto
  hence "\<exists>!n. f definedOnInitialSegmentOfLength n"
   by (auto simp add: List__unique_initial_segment_length)
@@ -845,8 +823,7 @@ case Nil
  hence UNFOLD: "List__subFromLong ([], 0, length []) = List__list f"
   by (auto simp add: List__subFromLong_def del: List__list.simps)
  with f_def have "f definedOnInitialSegmentOfLength 0"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with f_def have "List__list f = []" by auto
  with UNFOLD show ?case by auto
 next
@@ -858,8 +835,7 @@ case (Cons x l)
                                 then Some ((x#l) ! (0 + j)) else None)"
    by (auto simp add: ext)
  from f_def have Fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  def g \<equiv> "\<lambda>j. if j < n then Some (l ! j) else None"
  from g_def
   have Gsimp: "g = (\<lambda>j. if j < n then Some (l ! (0 + j)) else None)"
@@ -912,12 +888,73 @@ op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
 op [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
   prefix (l, length l - n)
 
+proof Isa List__prefix__def
+proof (induct n arbitrary: l)
+case 0
+ show ?case by (auto simp add:
+   List__definedOnInitialSegmentOfLength_def List__subFromLong_def)
+next
+case (Suc n)
+ hence "length l > 0" by auto
+ then obtain x and r where LXR: "l = x # r" by (cases l, auto)
+ with Suc.prems have "n \<le> length r" by auto
+ have TAKE: "take (Suc n) (x # r) = x # take n r" by auto
+ def f \<equiv> "\<lambda>j::nat. if j < Suc n
+                    then Some ((x#r) ! (0 + j)) else None"
+ hence fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ from f_def have F0: "f 0 = Some x" by auto
+ def g \<equiv> "\<lambda>j::nat. if j < n then Some (r ! (0 + j)) else None"
+ with f_def have FG: "g = (\<lambda>j. f (j + 1))" by (auto simp add: ext)
+ from g_def have "List__subFromLong (r, 0, n) = List__list g"
+  by (auto simp add: List__subFromLong_def)
+ from f_def have "List__subFromLong (x # r, 0, Suc n) = List__list f"
+  by (auto simp add: List__subFromLong_def)
+ also with fseg F0 FG have "\<dots> = x # List__list g" by auto
+ also with g_def have "\<dots> = x # List__subFromLong (r, 0, n)"
+  by (auto simp add: List__subFromLong_def)
+ also with Suc.hyps `n \<le> length r` have "\<dots> = x # take n r" by auto
+ finally have "List__subFromLong (x # r, 0, Suc n) = x # take n r" .
+ with TAKE LXR show ?case by auto
+qed
+end-proof
+
+proof Isa List__removePrefix__def
+proof (induct n arbitrary: l)
+case 0
+ show ?case by (auto simp add: List__suffix_def List__subFromLong_whole)
+next
+case (Suc n)
+ hence "length l > 0" by auto
+ then obtain x and r where LXR: "l = x # r" by (cases l, auto)
+ with Suc.prems have "n \<le> length r" by auto
+ have DROP: "drop (Suc n) (x # r) = drop n r" by auto
+ def fl \<equiv> "\<lambda>j. if j < length (x # r) - Suc n
+               then Some ((x # r) ! (Suc n + j)) else None"
+ and fr \<equiv> "\<lambda>j. if j < length r - n
+                       then Some (r ! (n + j)) else None"
+ hence "fl = fr" by (auto simp add: ext)
+ from Suc.prems LXR
+  have "List__suffix (x # r, length (x # r) - Suc n) =
+        List__subFromLong (x # r, Suc n, length (x # r) - Suc n)"
+   by (auto simp add: List__suffix_def)
+ also with fl_def have "\<dots> = List__list fl"
+  by (auto simp add: List__subFromLong_def)
+ also with `fl = fr` have "\<dots> = List__list fr" by auto
+ also with fr_def have "\<dots> = List__subFromLong (r, n, length r - n)"
+  by (auto simp add: List__subFromLong_def)
+ also with `n \<le> length r` have "\<dots> = List__suffix (r, length r - n)"
+  by (auto simp add: List__suffix_def)
+ also with Suc.hyps `n \<le> length r` have "\<dots> = drop n r" by auto
+ finally have "List__suffix (x # r, length (x # r) - Suc n) = drop n r"
+  by auto
+ with DROP LXR show ?case by auto
+qed
+end-proof
+
 theorem length_prefix is [a]
   fa (l: List a, n:Nat) n <= length l =>
     length (prefix (l, n)) = n
-proof Isa
-  by (auto simp add: List__prefix_def List__length_subFromLong)
-end-proof
 
 theorem length_suffix is [a]
   fa (l: List a, n:Nat) n <= length l =>
@@ -929,9 +966,6 @@ end-proof
 theorem length_removePrefix is [a]
   fa (l: List a, n:Nat) n <= length l =>
     length (removePrefix(l,n)) = length l - n
-proof Isa [simp]
-  by (auto simp add: List__removePrefix_def List__length_suffix)
-end-proof
 
 theorem length_removeSuffix is [a]
   fa (l: List a, n:Nat) n <= length l =>
@@ -957,37 +991,11 @@ end-proof
 
 % proof that "prefix (l, 1)" has length 1:
 proof Isa List__head_Obligation_subtype0
-  by (cases l, auto simp add: List__length_prefix List__ofLength_p_def)
+  by (cases l, auto simp add: List__ofLength_p_def)
 end-proof
 
 proof Isa List__head__def
-proof -
- assume "l \<noteq> []"
- then obtain x and r where "l = x # r" by (cases l, auto)
- hence "hd l = x" by auto
- have preX: "List__prefix (l, 1) = [x]"
- proof -
-  def f \<equiv> "\<lambda>j. if j < 1 then Some (l ! (0 + j)) else None"
-  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
-  from f_def have f1None: "(\<lambda>j. f (j + 1)) = (\<lambda>j. None)"
-   by (auto simp add: ext)
-  from f_def `l = x # r` have f0: "f 0 = Some x" by auto
-  have allNoneSeg: "\<exists>n. (\<lambda>j. None) definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
-  with f1None fseg f0 have Lfx: "List__list f = [x]" by auto
-  from f_def have "List__prefix (l, 1) = List__list f"
-   by (auto simp add: List__prefix_def List__subFromLong_def)
-  also with Lfx have "\<dots> = [x]" by auto
-  finally show ?thesis .
- qed
- have "List__theElement [x] = x"
-  by (auto simp add: List__theElement_def)
- with preX have "List__theElement (List__prefix (l, 1)) = x" by auto
- with `hd l = x` show ?thesis by auto
-qed
+by (cases l, auto simp add: List__theElement_def)
 end-proof
 
 % proof that "1 <= length l":
@@ -1008,27 +1016,28 @@ proof -
  with x_def bl_def have decomp_l: "l = bl @ [x]" by auto
  have "List__suffix (bl @ [x], 1) = [x]"
  proof -
-  def f \<equiv> "(\<lambda>j. if j < 1 then Some ((bl @ [x]) ! (length bl + j)) else None)
+  def f \<equiv> "(\<lambda>j. if j < 1
+                      then Some ((bl @ [x]) ! (length bl + j)) else None)
            :: nat \<Rightarrow> 'a option"
   and g \<equiv> "(\<lambda>j. if j < 1 then Some ([x] ! (0 + j)) else None)
            :: nat \<Rightarrow> 'a option"
   and g' \<equiv> "(\<lambda>j. if j < 0 then Some ([] ! (0 + j + 1)) else None)
             :: nat \<Rightarrow> 'a option"
   from f_def g_def have "f = g" by (auto simp add: ext)
-  from g_def g'_def have g'_g: "g' = (\<lambda>j. g (j + 1))" by (auto simp add: ext)
+  from g_def g'_def have g'_g: "g' = (\<lambda>j. g (j + 1))"
+   by (auto simp add: ext)
   from g_def have g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   from g'_def have g'_iseg:  "\<exists>n. g' definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def ext)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def ext)
   have "List__suffix (bl @ [x], 1) =
         List__subFromLong (bl @ [x], length bl, 1)"
    by (auto simp add: List__suffix_def)
   also with f_def have "\<dots> = List__list f"
    by (auto simp add: List__subFromLong_def)
   also with arg_cong `f = g` have "\<dots> = List__list g" by auto
-  also with g_def g_iseg have "\<dots> = x # List__list (\<lambda>j. g (j + 1))" by auto
+  also with g_def g_iseg have "\<dots> = x # List__list (\<lambda>j. g (j + 1))"
+   by auto
   also with g'_g have "\<dots> = x # List__list g'" by auto
   also with g'_def g'_iseg have "\<dots> = x # []" by auto
   finally show ?thesis .
@@ -1045,57 +1054,7 @@ proof Isa List__tail_Obligation_subtype
 end-proof
 
 proof Isa List__tail__def
-proof -
- def x \<equiv> "hd l"
- def r \<equiv> "tl l"
- assume "l \<noteq> []"
- with x_def r_def have "l = x # r" by auto
- hence len_l_r: "length l = length r + 1" by auto
- have "List__removePrefix (l, 1) = r"
- proof -
-  def f \<equiv> "\<lambda>j. if j < length l - 1
-                              then Some (l ! (Suc 0 + j)) else None"
-  def g \<equiv> "\<lambda>j. if j < length r
-                              then Some (r ! (0 + j)) else None"
-  have "f = g"
-  proof
-   fix j
-   show "f j = g j"
-   proof (cases "j < length l - 1")
-    assume "j < length l - 1"
-    with `l = x # r` List.nth_Cons_Suc have "l ! (1 + j) = r ! (0 + j)"
-     by auto
-    with len_l_r
-     have "(if j < length l - 1 then Some (l ! (Suc 0 + j)) else None) =
-           (if j < length r then Some (r ! (0 + j)) else None)"
-      by auto
-    with f_def g_def show "f j = g j" by auto
-   next
-    assume "\<not> j < length l - 1"
-    with len_l_r
-     have "(if j < length l - 1 then Some (l ! (Suc 0 + j)) else None) =
-           (if j < length r then Some (r ! (0 + j)) else None)"
-      by auto
-    with f_def g_def show "f j = g j" by auto
-   qed
-  qed
-  from g_def have g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
-  from `l \<noteq> []` have "length l > 0" by auto
-  hence "length l - (length l - 1) = 1" by arith
-  hence "List__removePrefix (l, 1) = List__subFromLong (l, 1, length l - 1)"
-   by (auto simp add: List__removePrefix_def List__suffix_def)
-  also with f_def have "\<dots> = List__list f"
-   by (auto simp add: List__subFromLong_def)
-  also with `f = g` have "\<dots> = List__list g" by auto
-  also with g_def g_iseg have "\<dots> = List__subFromLong (r, 0, length r)"
-   by (auto simp add: List__subFromLong_def)
-  also with List__subFromLong_whole have "\<dots> = r" by auto
-  finally show ?thesis .
- qed
- with r_def show ?thesis by auto
-qed
+by (cases l, auto)
 end-proof
 
 % proof that "1 <= length l":
@@ -1117,8 +1076,7 @@ proof -
   def g \<equiv> "\<lambda>j. if j < length bl
                               then Some (bl ! (0 + j)) else None"
   hence g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                      Option__some_p_def Option__none_p_def)
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   have "f = g"
   proof
    fix j
@@ -1148,7 +1106,7 @@ proof -
   qed
   have "List__removeSuffix (bl @ [x], 1) =
         List__subFromLong (bl @ [x], 0, length (bl @ [x]) - 1)"
-   by (auto simp add: List__removeSuffix_def List__prefix_def)
+   by (auto simp add: List__removeSuffix_def List__prefix__def)
   also with f_def have "\<dots> = List__list f"
    by (auto simp add: List__subFromLong_def del: List__list.simps)
   also with `f = g` have "\<dots> = List__list g" by auto
@@ -1191,40 +1149,7 @@ proof
  def l \<equiv> "l1 @ l2"
  hence lenl: "length l = length l1 + length l2"
   by (auto simp add: List.length_append)
- have prel: "List__prefix(l, length l1) = l1"
- proof -
-  def f \<equiv> "\<lambda>j. if j < length l1
-                              then Some (l ! (0 + j)) else None"
-  def g \<equiv> "\<lambda>j. if j < length l1
-                              then Some (l1 ! (0 + j)) else None"
-  have "f = g"
-  proof
-   fix j
-   show "f j = g j"
-   proof (cases "j < length l1")
-    assume "j < length l1"
-    with l_def have "l ! j = l1 ! j" by (auto simp add: List.nth_append)
-    hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
-           (if j < length l1 then Some (l1 ! (0 + j)) else None)"
-     by auto
-    with f_def g_def show ?thesis by auto
-   next
-    assume "\<not> j < length l1"
-    hence "(if j < length l1 then  Some (l ! (0 + j)) else None) =
-           (if j < length l1 then Some (l1 ! (0 + j)) else None)"
-     by auto
-    with f_def g_def show ?thesis by auto
-   qed
-  qed
-  from f_def have "List__prefix (l, length l1) = List__list f"
-   by (auto simp add: List__prefix_def List__subFromLong_def
-                 del: List__list.simps)
-  also with `f = g` have "\<dots> = List__list g" by auto
-  also with g_def have "\<dots> = List__subFromLong (l1, 0, length l1)"
-   by (auto simp add: List__subFromLong_def del: List__list.simps)
-  also have "\<dots> = l1" by (auto simp add: List__subFromLong_whole)
-  finally show ?thesis .
- qed
+ from l_def have prel: "take (length l1) l = l1" by auto
  have sufl: "List__suffix(l, length l2) = l2"
  proof -
   def f \<equiv> "\<lambda>j. if j < length l2
@@ -1264,16 +1189,16 @@ proof
  qed
  from lenl prel sufl
   show "length l = length l1 + length l2 \<and>
-        List__prefix(l, length l1) = l1 \<and>
+        take (length l1) l = l1 \<and>
         List__suffix(l, length l2) = l2"
    by auto
 next
  fix l::"'a list"
  assume "length l = length l1 + length l2 \<and>
-         List__prefix (l, length l1) = l1 \<and>
+         take (length l1) l = l1 \<and>
          List__suffix (l, length l2) = l2"
  hence lenl: "length l = length l1 + length l2"
-   and prel: "List__prefix (l, length l1) = (l1::'a list)"
+   and prel: "take (length l1) l = (l1::'a list)"
    and sufl: "List__suffix (l, length l2) = (l2::'a list)"
   by auto
  show "l = l1 @ l2"
@@ -1297,9 +1222,9 @@ next
        by (auto simp add: ext)
      assume "i < length l1"
      hence "(l1 @ l2) ! i = l1 ! i" by (auto simp add: List.nth_append)
-     also with prel have "\<dots> = (List__prefix (l, length l1)) ! i" by auto
-     also with f_def have "\<dots> = (List__list f) ! i"
-      by (auto simp add: List__prefix_def List__subFromLong_def
+     also with prel have "\<dots> = (take (length l1) l) ! i" by auto
+     also with f_def lenl have "\<dots> = (List__list f) ! i"
+      by (auto simp add: List__prefix__def List__subFromLong_def
                     del: List__list.simps)
      also with f_h
       have "\<dots> = (List__list
@@ -1477,8 +1402,7 @@ op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
 % argument of op list is in ListFunction subtype:
 proof Isa List__update_Obligation_subtype
 by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                   List__e_at_at_def Option__some_p_def Option__none_p_def
-                   list_1_Isa_nth)
+                   List__e_at_at_def list_1_Isa_nth)
 end-proof
 
 % quantifications:
@@ -1622,8 +1546,7 @@ op unzip3 : [a,b,c] List (a * b * c) ->
 
 % argument to op list in definition of op zip is in ListFunction subtype:
 proof Isa List__zip_Obligation_subtype
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 % i < length l2 in definition of op zip:
@@ -1633,8 +1556,7 @@ end-proof
 
 % argument to op list in definition of op zip3 is in ListFunction subtype:
 proof Isa List__zip3_Obligation_subtype
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def Option__none_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 % i < length l2 in definition of op zip3:
@@ -2121,25 +2043,27 @@ op [a] app (f: a -> ()) (l: List a) : () =
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism List
-  type List.List  -> list
-  List.length     -> length
-  List.@          -> !        Left  35
-  List.empty      -> []
-  List.empty?     -> null
-  List.in?        -> mem      Left  22
-  List.head       -> hd
-  List.last       -> last
-  List.tail       -> tl
-  List.butLast    -> butlast
-  List.++         -> @        Left  25
-  List.|>         -> #        Right 23
-  List.forall?    -> list_all
-  List.exists?    -> list_ex
-  List.filter     -> filter
-  List.map        -> map
-  List.mapPartial -> filtermap
-  List.reverse    -> rev
-  List.flatten    -> concat
+  type List.List    -> list
+  List.length       -> length
+  List.@            -> !        Left  35
+  List.empty        -> []
+  List.empty?       -> null
+  List.in?          -> mem      Left  22
+  List.prefix       -> take     curried  reversed
+  List.removePrefix -> drop     curried  reversed
+  List.head         -> hd
+  List.last         -> last
+  List.tail         -> tl
+  List.butLast      -> butlast
+  List.++           -> @        Left  25
+  List.|>           -> #        Right 23
+  List.forall?      -> list_all
+  List.exists?      -> list_ex
+  List.filter       -> filter
+  List.map          -> map
+  List.mapPartial   -> filtermap
+  List.reverse      -> rev
+  List.flatten      -> concat
   % deprecated:
   List.nil -> []
   List.cons -> # Right 23
