@@ -200,9 +200,12 @@ FM qualifying spec
 	}
     else return None
 
+  (* Calls to debugWrite are replaced by inline code for efficiency reason, 
+     i.e. content is not computed unless debugFM is true.
   op debugWrite: String -> ()
   def debugWrite content =
     if debugFM then toScreen content else ()
+  *)
 
   op printList: fa (a) (a -> String) -> List a -> String -> String
   def printList printElem l sep =
@@ -221,10 +224,10 @@ FM qualifying spec
   % of a set of equalities
   def FMRefuteInt?(ineqSet) =
     {
-     _ <- return(debugWrite("FM: input:\n"^printIneqSet(ineqSet)));
+     _ <- return(if debugFM then toScreen("FM: input:\n"^printIneqSet(ineqSet)) else ());
      mapSeq (fn i -> putInfo(i, axiomIR(i))) ineqSet;
      ineqSetN <- IneqSet.normalize(ineqSet);
-     _ <- return(debugWrite("FM: Norm:\n"^printIneqSet(ineqSetN)));
+     _ <- return(if debugFM then toScreen("FM: Norm:\n"^printIneqSet(ineqSetN)) else ());
      posP <- getProof(ineqSetN);
      case posP of
        | Some p -> return (Proof p)
@@ -232,16 +235,16 @@ FM qualifying spec
       {
        ineqSetS <- return (sortIneqSet(ineqSetN));
        ineqSetI <- integerPreProcess(ineqSetS);
-       _ <- return(debugWrite("FM: INTEGER:\n"^printIneqSet(ineqSetI)));
+       _ <- return(if debugFM then toScreen("FM: INTEGER:\n"^printIneqSet(ineqSetI)) else ());
        completeIneqs <- fourierMotzkin(ineqSetI);
-       _ <- return(debugWrite("FM: output:\n"^printIneqSet(completeIneqs)));
+       _ <- return(if debugFM then toScreen("FM: output:\n"^printIneqSet(completeIneqs)) else ());
        posP <- getProof(completeIneqs);
        case posP of
 	 | Some p -> return (Proof p)
 	 | None ->
 	 {
 	  counter <- return(generateCounterExample(completeIneqs));
-	  _ <- return(debugWrite("FM: Counter:\n"^printIneqSet(counter)));
+	  _ <- return(if debugFM then toScreen("FM: Counter:\n"^printIneqSet(counter)) else ());
 	  return (Counter counter)
 	}}}
 
