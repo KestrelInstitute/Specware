@@ -116,14 +116,15 @@ StandardSpec qualifying spec
  op mkApplyN      : MS.Term * MS.Term                 -> MS.Term
  def mkApplyN (t1, t2) : MS.Term = ApplyN ([t1, t2],       internalPosition)
 
- op mkList        : List MS.Term * Position * MS.Sort -> MS.Term
- def mkList (terms : List MS.Term, pos, element_type) = 
-  let list_type  = Base (Qualified ("List", "List"),                                [element_type], pos) in
-  let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),  list_type,      pos) in
-  let consFun    = Fun   (Embed     ("Cons", true),                                  cons_type,      pos) in
-  let empty_list = Fun   (Embed     ("Nil",  false),                                 list_type,      pos) in
+ def mkList (terms : List MS.Term, pos: Position, element_type: MS.Sort): MS.Term = 
+  let list_type  = Base (Qualified ("List", "List"),  [element_type], pos) in
+  let list1_type = Base (Qualified ("List", "List1"), [element_type], pos) in
+  let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),
+                          list1_type, pos) in
+  let consFun    = Fun   (Embed     ("Cons", true),  cons_type, pos) in
+  let empty_list = Fun   (Embed     ("Nil",  false), list_type, pos) in
   let def mkCons (x, xs) = ApplyN ([consFun, Record( [("1",x), ("2",xs)], pos)], pos) in
-  List.foldr mkCons empty_list terms
+  foldr mkCons empty_list terms
 
  % ------------------------------------------------------------------------
  %  Recursive constructors of MS.Pattern's
