@@ -1,9 +1,8 @@
-\section{Simple MetaSlang Pretty Printer}
+(* Simple MetaSlang Pretty Printer
 
-A simple pretty printer for MetaSlang.
+A simple pretty printer for MetaSlang. *)
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import AnnTerm
   import /Library/PrettyPrinter/WadlerLindig
 
@@ -18,7 +17,7 @@ SpecCalc qualifying spec {
 
   op ppATerm : fa (a) ATerm a -> Pretty
   def ppATerm term =
-    case (isFiniteList term) of
+    case isFiniteList term of
         Some terms ->
           ppGrConcat [
             ppString "[",
@@ -26,12 +25,10 @@ SpecCalc qualifying spec {
             ppString "]"
           ]
       | None ->
-\end{spec}
-
+(*
 When we see an infix operator applied to a product, then we print it
 infix with brackets. And similarly when we see an \verb+Equals+.
-
-\begin{spec}
+*)
         (case term of
           | Apply (Fun (Op (qid,Infix (assoc,prec)),srt,_),
 		   Record ([("1",left),("2",right)],_), _) ->
@@ -562,35 +559,4 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
       | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
 
-  op isFiniteList : fa (a) ATerm a -> Option (List (ATerm a))
-  def isFiniteList term =  
-    case term of
-      | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) -> Some []
-      | Apply (Fun(Embed("Cons",true), 
-		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				   _),
-			  Base (Qualified("List", "List"), _, _),
-			  _),
-		   _),
-	       Record ([(_,t1),(_,t2)],_),
-	       _) 
-        -> 
-	  (case isFiniteList t2 of
-             | Some terms -> Some (Cons (t1,terms))
-             | _ -> None)
-      | ApplyN ([Fun (Embed ("Cons", true), 
-		      Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				      _),
-			     Base (Qualified("List", "List"), _, _),
-			     _),
-		      _),
-		 Record ([(_, t1), (_, t2)], _),
-		 _], 
-		_)
-	-> 
-          (case isFiniteList t2 of
-             | Some terms -> Some (Cons (t1,terms))
-             | _ -> None)
-     | _ -> None
-}
-\end{spec}
+endspec
