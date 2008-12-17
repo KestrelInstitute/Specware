@@ -122,36 +122,6 @@ AnnSpecPrinter qualifying spec
      | (lbl, r) :: row -> lbl = Nat.toString i & isShortTuple (i + 1, row)
       
 
- def [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
-   case term of
-     | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) -> Some []
-     | Apply (Fun (Embed("Cons", true), 
-		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				   _),
-			  Base (Qualified("List", "List"), _, _),
-			  _),
-		   _),
-	      Record ([(_, t1), (_, t2)], _),
-	      _)
-       -> 
-       (case isFiniteList t2 of
-	  | Some terms -> Some (cons (t1, terms))
-	  | _ ->  None)
-     | ApplyN ([Fun (Embed ("Cons", true), 
-		     Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				     _),
-			    Base (Qualified("List", "List"), _, _),
-			    _),
-		     _),
-		Record ([(_, t1), (_, t2)], _),
-		_],
-	       _) 
-       -> 
-       (case isFiniteList t2 of
-	  | Some terms -> Some (cons (t1, terms))
-	  | _  ->  None)
-     | _ -> None
-
  def initialize (pp, printSort?) : PrContext = 
    {pp                 = pp,
     printSort          = printSort?,
@@ -429,7 +399,7 @@ AnnSpecPrinter qualifying spec
 	      def ppDs (index, l, separator, decls) = 
 		case decls of
 		  | [] -> []
-		  | (pat, trm) :: decls -> cons (ppD (index, l, separator, pat, trm), 
+		  | (pat, trm) :: decls -> Cons (ppD (index, l, separator, pat, trm), 
 						 ppDs (index + 1, 5, pp.LetDeclsAnd, decls))
 	    in
 	      enclose(case parentTerm of
@@ -847,7 +817,7 @@ AnnSpecPrinter qualifying spec
  %                        ppPattern context ([1]++ path, false) p2])
      | EmbedPat (id, Some pat, _(* srt *), _) -> 
        enclose (enclosed, 
-		prettysFill (cons (pp.fromString id, 
+		prettysFill (Cons (pp.fromString id, 
 				   if singletonPattern pat then
 				     [string " ", 
 				      ppPattern context ([0]++ path, false) pat]
@@ -882,7 +852,7 @@ AnnSpecPrinter qualifying spec
 %	          prettysNone ([left,
 %			       prettysLinear (addSeparator sep 
 %					      (mapWithIndex (fn (i, x) ->
-%							     f (cons (i, path), x)) ps))]
+%							     f (Cons (i, path), x)) ps))]
 %		               ++ [pp.Bar,ppTerm context ([1]++ path, Top) term]
 %			       ++ [right])
 %	    in
@@ -1533,9 +1503,9 @@ AnnSpecPrinter qualifying spec
    let prefix = explode prefix in
    let s = foldl (fn (s, char) ->
 		  if char = newline_char then
-		    prefix ++ (cons (char, s))
+		    prefix ++ (Cons (char, s))
 		  else
-		    cons (char, s))
+		    Cons (char, s))
                  []  
 		 (explode s)
    in
@@ -1638,7 +1608,7 @@ AnnSpecPrinter qualifying spec
    let sorts = 
        foldriAQualifierMap 
         (fn (q, id, _, sorts) -> 
-	 cons (prettysNone [string ("  \\pdfoutline goto name {"^"???"^":Type:"
+	 Cons (prettysNone [string ("  \\pdfoutline goto name {"^"???"^":Type:"
 				   ^ (if q = UnQualified then "" else q^".")^id^"} {"), 
 			   string (if q = UnQualified then "" else q^"."), 
 			   string id, 
@@ -1650,7 +1620,7 @@ AnnSpecPrinter qualifying spec
    let ops = 
        foldriAQualifierMap 
         (fn (q, id, _, ops) -> 
-	 cons (prettysNone [string ("  \\pdfoutline goto name {"^"???"^":Op:"
+	 Cons (prettysNone [string ("  \\pdfoutline goto name {"^"???"^":Op:"
 				   ^ (if q = UnQualified then "" else q^".")^id^"} {"), 
 			   string (if q = UnQualified then "" else q^"."), 
 			   string id, 
@@ -1664,7 +1634,7 @@ AnnSpecPrinter qualifying spec
 	      case el of
 		| Property(pt, qid, tvs, _, _) ->
 	          (counter + 1, 
-		   cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
+		   Cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
 				 "  {"^ printQualifiedId qid ^ "}"), 
 			 list))
 		| _ -> result)
