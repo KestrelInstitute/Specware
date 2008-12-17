@@ -1774,12 +1774,28 @@ IsaTermPrinter qualifying spec
 %                                mkAppl(term1, [mkVar("x",t1), mkVar("y",t2)]))
 %                     | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
               | _ ->
-	    prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
-                       case term2 of
-                         | Record _ \_rightarrow ppTerm c Top term2
-                         | _ \_rightarrow
-                           let encl? = \_not(isSimpleTerm? term2) in
-                           prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]])
+            (case termFixity c term1 of
+               | (Some pp_id,_,true,reversed) ->  % op translated to curried
+                 let terms2 = MS.termToList term2 in
+                 let terms2 = if reversed then reverse terms2 else terms2 in
+                 if length terms2 = 1
+                   then
+                     let spc = getSpec c in
+                     let Some fields = productOpt(spc, inferType(spc, term2)) in
+                     let (rec_pat, rec_tm) = patTermVarsForProduct fields in
+                     ppTerm c parentTerm (MS.mkLet([(rec_pat, term2)], mkApply(term1, rec_tm)))
+                 else
+                 prBreak 2 [pp_id,
+                            prSpace,
+                            prPostSep 2 blockFill prSpace
+                              (map (ppTermEncloseComplex? c Nonfix) terms2)]
+               | _ ->                 
+	     prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
+                        case term2 of
+                          | Record _ \_rightarrow ppTerm c Top term2
+                          | _ \_rightarrow
+                            let encl? = \_not(isSimpleTerm? term2) in
+                            prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 	        
     in
     case term of
@@ -2350,37 +2366,6 @@ IsaTermPrinter qualifying spec
 		     prString ")"]
 
       | mystery \_rightarrow fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
-
-  op  isFiniteList : MS.Term \_rightarrow Option (List MS.Term)
-  def isFiniteList term =  
-    case term of
-      | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) \_rightarrow Some []
-      | Apply (Fun(Embed("Cons",true), 
-		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				   _),
-			  Base (Qualified("List", "List"), _, _),
-			  _),
-		   _),
-	       Record ([(_,t1),(_,t2)],_),
-	       _) 
-        \_rightarrow 
-	  (case isFiniteList t2 of
-             | Some terms \_rightarrow Some (Cons (t1,terms))
-             | _ \_rightarrow None)
-      | ApplyN ([Fun (Embed ("Cons", true), 
-		      Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				      _),
-			     Base (Qualified("List", "List"), _, _),
-			     _),
-		      _),
-		 Record ([(_, t1), (_, t2)], _),
-		 _], 
-		_)
-	\_rightarrow 
-          (case isFiniteList t2 of
-             | Some terms \_rightarrow Some (Cons (t1,terms))
-             | _ \_rightarrow None)
-     | _ \_rightarrow None
 
  op  ppLitString: String \_rightarrow Pretty
  def ppLitString id = prString(IO.formatString1("~S",id))
