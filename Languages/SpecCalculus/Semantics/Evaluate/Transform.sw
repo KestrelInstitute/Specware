@@ -47,6 +47,8 @@ spec
                                 return (Fold qid)}
       | Item("unfold",opid,_) -> {qid <- makeQID opid;
                                   return (Unfold qid)}
+      | Item("rewrite",opid,_) -> {qid <- makeQID opid;
+                                   return (Rewrite qid)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
 
  op getSearchString(se: TransformExpr): SpecCalc.Env String =
