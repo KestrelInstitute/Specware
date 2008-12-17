@@ -654,7 +654,7 @@ end-proof
 op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
 proof Isa [simp] end-proof    
 
-type List1 a = (List a | nonEmpty?)
+type List.List1 a = (List a | nonEmpty?)
 
 % singleton list:
 
