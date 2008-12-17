@@ -114,7 +114,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- op defRule (context: Context, q: String, id: String, info : OpInfo, includeLambdaRules?: Boolean): List RewriteRule = 
+ op defRule (context: Context, q: String, id: String, info : OpInfo, includeAll?: Boolean): List RewriteRule = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstOpDef info in
      let rule = 
@@ -125,7 +125,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	  freeVars  = [],	
 	  tyVars    = tvs}
      in
-       deleteLambdaFromRule context ([rule],if includeLambdaRules? then [rule] else [])
+       deleteLambdaFromRule context includeAll? ([rule], if includeAll? then [rule] else [])
    else
      []
 
@@ -136,23 +136,39 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 %% If this is not possible, return the empty list of
 %% rules, disabling the further use of the rule.
 %%
+ op equalToArg?(tm: MS.Term, apply_tm: MS.Term): Boolean =
+   case apply_tm of
+     | Apply(_, arg_tm, _) -> equalTerm?(tm, arg_tm)
+     | _ -> false
 
- def deleteLambdaFromRule context = 
-     fn ([],old) -> old
-      | (rule::rules,old) -> 
+ op deleteLambdaFromRule (context: Context) (includeAll?: Boolean)
+     : List RewriteRule * List RewriteRule -> List RewriteRule = 
+     fn ([], old) -> old
+      | (rule::rules, old) -> 
         (case rule.rhs
-           of Lambda(matches, _) ->
-	      if disjointMatches matches
-		 then
-		 deleteMatches(context,matches,rule,rules, Cons(freshRule(context,rule),old)) 
-	      else old 
-	    | _ -> deleteLambdaFromRule context 
-			(rules, Cons(freshRule(context,rule),old)))
+           of Lambda(matches, _) | disjointMatches matches ->
+              let new_rule = freshRule(context, rule) in
+              deleteMatches(context, matches, rule, rules,
+                            if includeAll? then new_rule::old else old,
+                            includeAll?) 
+            | Apply(Lambda(matches, _), case_tm, _)    % As above with implicit eta
+                | equalToArg?(case_tm, rule.lhs) && disjointMatches matches ->
+              let Apply(hd, _, _) = rule.lhs in
+              let rule = rule << {lhs = hd} in
+              let new_rule = freshRule(context, rule) in
+              deleteMatches(context, matches, rule, rules,
+                            if includeAll? then new_rule::old else old,
+                            includeAll?) 
+	    | _ ->
+              let new_rule = freshRule(context, rule) in
+              deleteLambdaFromRule context includeAll? (rules, new_rule::old))
 
- def deleteMatches(context,matches,rule,rules,old) = 
+ op deleteMatches(context: Context, matches: Match, rule: RewriteRule, rules: List RewriteRule,
+                  old: List RewriteRule, includeAll?: Boolean)
+     : List RewriteRule = 
      case matches
-       of [] -> deleteLambdaFromRule context (rules,old)
-	| (pat,cond,body)::matches -> 
+       of [] -> deleteLambdaFromRule context includeAll? (rules,old)
+	| (pat,cond,body)::r_matches -> 
      case patternToTerm(context,pat,[],[])
        of None -> []
         | Some (patternTerm,vars,S) -> 
@@ -164,11 +180,9 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
                 rhs  = body,
 		condition = addToCondition(rule.condition,cond),
 		freeVars = rule.freeVars ++ vars,
-		tyVars = rule.tyVars
-	      }
+		tyVars = rule.tyVars }
           in
-          deleteMatches(context,matches,
-			rule,cons(rule1,rules),old)
+          deleteMatches(context, r_matches, rule, rule1::rules, old, includeAll?)
 
  def addToCondition(condition : Option MS.Term,cond:MS.Term):Option MS.Term = 
      case (condition,cond)
