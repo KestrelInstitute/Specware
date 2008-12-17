@@ -11,8 +11,9 @@ spec
     | Def QualifiedId
 
   type RuleSpec =
-    | Unfold   QualifiedId
-    | Fold     QualifiedId
+    | Unfold      QualifiedId
+    | Fold        QualifiedId
+    | Rewrite     QualifiedId
     | LeftToRight QualifiedId
     | RightToLeft QualifiedId
     | AllDefs
@@ -47,8 +48,9 @@ spec
 
  op ppRuleSpec(rl: RuleSpec): WadlerLindig.Pretty =
    case rl of
-     | Unfold qid -> ppConcat [ppString "unfold ", ppQid qid]
-     | Fold   qid -> ppConcat   [ppString "fold ", ppQid qid]
+     | Unfold  qid -> ppConcat   [ppString "unfold ", ppQid qid]
+     | Fold    qid -> ppConcat   [ppString "fold ", ppQid qid]
+     | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
      | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
      | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
      | AllDefs -> ppString "alldefs"
@@ -119,6 +121,7 @@ spec
  %% For convenience calling from lisp
  op mkFold(qid: QualifiedId): RuleSpec = Fold qid
  op mkUnfold(qid: QualifiedId): RuleSpec = Unfold qid
+ op mkRewrite(qid: QualifiedId): RuleSpec = Rewrite qid
  op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
  op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
  op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
@@ -130,6 +133,8 @@ spec
      | "f" \_rightarrow mkFold
      | "unfold" \_rightarrow mkUnfold
      | "uf" \_rightarrow mkUnfold
+     | "rewrite" \_rightarrow mkRewrite
+     | "rw" \_rightarrow mkRewrite
      | "lr" \_rightarrow mkLeftToRight
      | "lefttoright" \_rightarrow mkLeftToRight
      | "left-to-right" \_rightarrow mkLeftToRight
@@ -159,6 +164,12 @@ spec
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, true))
+                                              info.names))
+                              (findAllOps(spc,qid))))
+      | Rewrite(qid as Qualified(q,nm)) \_rightarrow   % Like Unfold but only most specific rules
+        warnIfNone(qid, "Op ",
+                   flatten (map (fn info ->
+                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, false))
                                               info.names))
                               (findAllOps(spc,qid))))
       | Fold(qid) \_rightarrow
