@@ -18,25 +18,9 @@ op List.list : [a] Bijection (ListFunction a, List a) =
     in
     loop 0
 
-(* The local loop function above is currently translated into a recdef with the
-subtype hypothesis of ListFunction missing, making termination impossible to
-prove. The following verbatim Isabelle text shows the correct translation of
-the function, together with the proof script to prove termination. When the
-translator is fixed to produce the correct translation, we will remove the
-"-verbatim" and the "function ..." below, leaving only the proof scripts. For
-now, in order to run the translated Isabelle theory, the generated recdef must
-be deleted manually. *)
-proof Isa -verbatim
- function List__list__loop ::
-          "nat \<times> 'a List__ListFunction \<Rightarrow> 'a list" where
- "List__list__loop(i, f)
-    = (if (\<exists>n. f definedOnInitialSegmentOfLength n) then
-        (case f i
-          of None \<Rightarrow> []
-           | Some x \<Rightarrow> Cons x (List__list__loop(i + 1, f)))
-       else arbitrary)"
- by auto
- termination
+proof Isa list__loop ()
+by (pat_completeness, auto)
+termination
  apply
   (relation "measure (\<lambda>(i,f). List__lengthOfListFunction f - i)")
   apply auto
@@ -78,6 +62,7 @@ Specware-Isabelle translator no longer generates this redundant obligation, the
 following "sorry" will be removed. *)
 proof Isa List__list__r_def_Obligation_subsort
 end-proof
+
 proof Isa List__list_subtype_constr
   by (unfold List__list_def, rule List__list_Obligation_subsort)
 end-proof
