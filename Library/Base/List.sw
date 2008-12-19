@@ -655,6 +655,7 @@ op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
 proof Isa [simp] end-proof    
 
 type List.List1 a = (List a | nonEmpty?)
+     % qualifier required for internal parsing reasons
 
 % singleton list:
 
@@ -1372,6 +1373,89 @@ by (auto simp add: List__definedOnInitialSegmentOfLength_def
                    List__e_at_at_def list_1_Isa_nth)
 end-proof
 
+proof Isa List__update__def
+proof (induct l arbitrary: i)
+case Nil
+ thus ?case by auto
+next
+case (Cons h l)
+ show ?case
+ proof (cases i)
+ case 0
+  hence "(h # l)[i := x] = x # l" by auto
+  also have "\<dots> = List__list (\<lambda>j. if j = i
+                                       then Some x else (h # l) @@ j)"
+  proof -
+   def f \<equiv> "\<lambda>j. if j = i then Some x else (h # l) @@ j"
+   def f' \<equiv> "\<lambda>j. if j = 0 then Some x else
+                  if j < length l + 1 then Some ((h # l) ! j) else None"
+   with 0 f_def have "f = f'"
+    by (auto simp add: List__e_at_at_def list_1_Isa_nth ext)
+   def g \<equiv> "\<lambda>j. if j < length l then Some (l ! j) else None"
+   with `f = f'` f'_def
+    have gf: "g = (\<lambda>j. f (j + 1))" by (auto simp add: ext)
+   from f_def 0 have f0: "f 0 = Some x" by auto
+   with `f = f'` f'_def
+    have fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+     by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+   have "List__list g = l"
+   proof -
+    def Pa \<equiv> "\<lambda>(h:: nat \<Rightarrow> 'a option).
+                \<exists>n. h definedOnInitialSegmentOfLength n"
+    def Pb \<equiv> "\<lambda>(_:: 'a list). True"
+    from Pa_def Pb_def
+     have INV: "List__list_1 = Function__inverse__stp Pa List__list"
+      by (auto simp add: List__list_1_def)
+    from Pa_def Pb_def List__list_subtype_constr
+     have BIJ: "Function__bijective_p__stp (Pa, Pb) List__list" by auto
+    from Pa_def Pb_def have REG: "Fun_P (Pa, Pb) List__list" by auto
+    from Pb_def have "Pb l" by auto
+    with BIJ REG
+     have "List__list (Function__inverse__stp Pa List__list l) = l"
+      by (rule Function__f_inverse_apply__stp)
+    with INV have "List__list (List__list_1 l) = l" by auto
+    also with g_def have "\<dots> = List__list g"
+     by (auto simp add: list_1_Isa_nth)
+    thus ?thesis by auto
+   qed
+   with f0 fseg gf have "List__list f = x # l" by auto
+   with f_def show ?thesis by auto
+  qed
+  finally show ?thesis .
+ next
+ case (Suc k)
+  hence "(h # l)[i := x] = h # l[k := x]" by auto
+  also have "\<dots> = List__list (\<lambda>j. if j = i
+                                       then Some x else (h # l) @@ j)"
+  proof -
+   def f \<equiv> "\<lambda>j. if j = i then Some x else (h # l) @@ j"
+   def f' \<equiv> "\<lambda>j. if j = Suc k then Some x else
+                  if j < length l + 1 then Some ((h # l) ! j) else None"
+   with Suc f_def have "f = f'"
+    by (auto simp add: ext List__e_at_at_def list_1_Isa_nth)
+   def g \<equiv> "\<lambda>j. if j = k then Some x else l @@ j"
+   def g' \<equiv> "\<lambda>j. if j = k then Some x else
+                  if j < length l then Some (l ! j) else None"
+   with g_def have "g = g'"
+    by (auto simp add: ext List__e_at_at_def list_1_Isa_nth)
+   from f'_def g'_def have "g' = (\<lambda>j. f' (j + 1))"
+    by (auto simp add: ext)
+   with `f = f'` `g = g'` have gf: "g = (\<lambda>j. f (j + 1))" by auto
+   from `f = f'` f'_def Suc Cons.prems
+    have fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+     by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+   from `f = f'` f'_def have f0: "f 0 = Some h" by auto
+   from Suc Cons.prems have KL: "k < length l" by auto
+   with fseg gf f0 have "List__list f = h # List__list g" by auto
+   also with Cons.hyps KL g_def have "\<dots> = h # l[k := x]" by auto
+   finally have "List__list f = h # l[k := x]" .
+   with f_def show ?thesis by auto
+  qed
+  finally show ?thesis .
+ qed
+qed
+end-proof
+
 % quantifications:
 
 op [a] forall? (p: a -> Bool) (l: List a) : Bool =
@@ -2012,18 +2096,19 @@ op [a] app (f: a -> ()) (l: List a) : () =
 proof Isa Thy_Morphism List
   type List.List    -> list
   List.length       -> length
-  List.@            -> !        Left  35
+  List.@            -> !            Left  35
   List.empty        -> []
   List.empty?       -> null
-  List.in?          -> mem      Left  22
-  List.prefix       -> take     curried  reversed
-  List.removePrefix -> drop     curried  reversed
+  List.in?          -> mem          Left  22
+  List.prefix       -> take         curried  reversed
+  List.removePrefix -> drop         curried  reversed
   List.head         -> hd
   List.last         -> last
   List.tail         -> tl
   List.butLast      -> butlast
-  List.++           -> @        Left  25
-  List.|>           -> #        Right 23
+  List.++           -> @            Left  25
+  List.|>           -> #            Right 23
+  List.update       -> list_update  curried
   List.forall?      -> list_all
   List.exists?      -> list_ex
   List.filter       -> filter
