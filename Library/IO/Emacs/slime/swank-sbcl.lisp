@@ -630,14 +630,14 @@ stack."
 ;;; If there's no debug-block info, we return the (less precise)
 ;;; source-location of the corresponding function.
 
-(defun code-location-source-location (code-location)
-  (let* ((dsource (sb-di:code-location-debug-source code-location))
-         (plist (sb-c::debug-source-plist dsource)))
-    (if (getf plist :emacs-buffer)
-        (emacs-buffer-source-location code-location plist)
-        (ecase (sb-di:debug-source-from dsource)
-          (:file (file-source-location code-location))
-          (:lisp (lisp-source-location code-location))))))
+;(defun code-location-source-location (code-location)
+;  (let* ((dsource (sb-di:code-location-debug-source code-location))
+;         (plist (sb-c::debug-source-plist dsource)))
+;    (if (getf plist :emacs-buffer)
+;        (emacs-buffer-source-location code-location plist)
+;        (ecase (sb-di:debug-source-from dsource)
+;          (:file (file-source-location code-location))
+;          (:lisp (lisp-source-location code-location))))))
 
 ;;; FIXME: The naming policy of source-location functions is a bit
 ;;; fuzzy: we have FUNCTION-SOURCE-LOCATION which returns the
@@ -686,21 +686,21 @@ stack."
                      `(:position ,(1+ pos))
                      `(:snippet ,snippet))))))
 
-(defun code-location-debug-source-name (code-location)
-  (sb-c::debug-source-name (sb-di::code-location-debug-source code-location)))
+;(defun code-location-debug-source-name (code-location)
+;  (sb-c::debug-source-name (sb-di::code-location-debug-source code-location)))
 
-(defun code-location-debug-source-created (code-location)
-  (sb-c::debug-source-created
-   (sb-di::code-location-debug-source code-location)))
+;(defun code-location-debug-source-created (code-location)
+;  (sb-c::debug-source-created
+;   (sb-di::code-location-debug-source code-location)))
 
-(defun code-location-debug-fun-fun (code-location)
-  (sb-di:debug-fun-fun (sb-di:code-location-debug-fun code-location)))
+;(defun code-location-debug-fun-fun (code-location)
+;  (sb-di:debug-fun-fun (sb-di:code-location-debug-fun code-location)))
 
-(defun code-location-has-debug-block-info-p (code-location)
-  (handler-case
-      (progn (sb-di:code-location-debug-block code-location)
-             t)
-    (sb-di:no-debug-blocks  () nil)))
+;(defun code-location-has-debug-block-info-p (code-location)
+;  (handler-case
+;      (progn (sb-di:code-location-debug-block code-location)
+;             t)
+;    (sb-di:no-debug-blocks  () nil)))
 
 (defun stream-source-position (code-location stream)
   (let* ((cloc (sb-debug::maybe-block-start-location code-location))
