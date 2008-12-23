@@ -626,8 +626,9 @@ spec
                 spc new_defs
     in    
     let recursive_ops = recursiveOps spc in
-    let unfolds = map (fn (opinfo,_) -> Unfold(hd opinfo.names)) new_defs in
-    let iso_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
+    let rewrite_old = map (fn (opinfo,_) -> Rewrite(hd opinfo.names)) new_defs in
+    let unfold_old  = map (fn (opinfo,_) -> Unfold (hd opinfo.names)) new_defs in
+    let iso_osi_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
     let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
                                     if member(osi_qid, recursive_ops)
                                       || ~(definedOp?(spc, osi_qid))
@@ -635,37 +636,36 @@ spec
                                       else Some(Unfold osi_qid))
                         iso_info
     in
+    let iso_intro_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                          if member(iso_qid, recursive_ops) then None
+                                          else Some(Unfold iso_qid))
+                              prime_type_iso_info
+    in
+    let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
     let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                     if member(iso_qid, recursive_ops) then None
                                       else Some(Unfold iso_qid))
                         iso_info
     in
-    let complex_iso_fn_unfolds = map (fn (_,qid) -> Unfold qid) iso_fn_info in
+    let _ = writeLine("iso: "^anyToString iso_unfolds) in
+    let complex_iso_fn_unfolds = map (fn (_,qid) -> Rewrite qid) iso_fn_info in
+    let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
+                       Rewrite(mkQualifiedId("Function","id")),
+                       Unfold(mkQualifiedId("Option","mapOption"))]
+    in
     let main_script = Steps([%SimpStandard,
-                             Simplify([
-                                       %LeftToRight(mkUnQualifiedId "f_if_then_else"),
-                                       %% Should be in specs
-                                       %% LeftToRight(mkUnQualifiedId "inverse_apply"),
-                                       Unfold(mkQualifiedId("Function","o")),
-                                       Unfold(mkQualifiedId("Function","id")),
-                                    %   LeftToRight(mkUnQualifiedId "map_map_inv"),
-                                       %% LeftToRight(mkUnQualifiedId "iso_set_fold"),
-                                       %% LeftToRight(mkUnQualifiedId "iterate_inv_iso"),
-                                    %   LeftToRight(mkUnQualifiedId "map_empty"),
-                                    %   LeftToRight(mkUnQualifiedId "map_doubleton"),
-                                    %   LeftToRight(mkUnQualifiedId "case_map"),
-                                       %LeftToRight(mkUnQualifiedId "unfold_let_osi"),
-                                       Unfold(mkQualifiedId("Option","mapOption"))]
-                                        ++ iso_rewrites
+                             Simplify(gen_unfolds
+                                        %++ iso_osi_rewrites
                                         %++ osi_unfolds
                                         ++ complex_iso_fn_unfolds
-                                        ++ unfolds
+                                        ++ rewrite_old
                                         ++ extra_rules)]
                             ++
-                            [ Simplify(iso_rewrites ++ osi_unfolds ++ extra_rules)
+                            [ Simplify(gen_unfolds ++ complex_iso_fn_unfolds ++ iso_intro_unfolds ++ rewrite_old
+                                         ++ iso_osi_rewrites ++ osi_unfolds ++ extra_rules)
                             % AbstractCommonExpressions
                              ]
-                            ++ [ Simplify(iso_rewrites ++ osi_unfolds ++ iso_unfolds ++ extra_rules)
+                            ++ [ Simplify(gen_unfolds ++ unfold_old ++ iso_osi_rewrites ++ osi_unfolds ++ iso_unfolds ++ extra_rules)
                                   % AbstractCommonExpressions
                                   ])
     in
