@@ -2112,6 +2112,8 @@ proof Isa Thy_Morphism List
   List.forall?      -> list_all
   List.exists?      -> list_ex
   List.filter       -> filter
+  List.foldl        -> foldl'
+  List.foldr        -> foldr'
   List.map          -> map
   List.mapPartial   -> filtermap
   List.reverse      -> rev
