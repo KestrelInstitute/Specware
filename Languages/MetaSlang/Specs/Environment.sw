@@ -501,4 +501,64 @@ spec
     let eqltyWithPos = withAnnT (cond_equality, termAnn term) in
     eqltyWithPos
 
+(*
+ * Freshvar generates a unique suffix with the inserted name.
+ *)
+
+ type UsedNames = StringSet.Set
+
+ op freshName: String * UsedNames -> String * UsedNames 
+ def freshName(name0,names) = 
+     let name1 = StringUtilities.freshName(name0,names) in
+     (name1,StringSet.add(names,name1))
+
+ def freshNames(name0,xs,names) =
+     let (nameList,names) =  
+             foldr (fn (_,(nameList,names)) -> 
+                let (name1,names) = freshName(name0,names) in
+                (cons(name1,nameList),names))
+                ([],names) xs
+     in
+     (nameList,names)
+
+
+ op normalizeLambda(term: MS.Term, usedNames: StringSet.Set, spc: Spec): MS.Term =
+   case term of
+     | Lambda((pat1,_,_)::(_::_),_) ->
+       (let dom = patternSort pat1 in
+        case productOpt(spc, dom) of
+          | None ->
+            let (name,_) = freshName("x",usedNames) in
+            let x = (name, dom) in
+            mkLambda(mkVarPat x, mkApply(term, mkVar x))
+          | Some fields ->
+            let (names,_) = freshNames("x",fields,usedNames) in
+            let vars = map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
+            mkLambda(mkRecordPat(map (fn (l,v) -> (l, mkVarPat v)) vars),
+                     mkApply(term, mkRecord(map (fn (l,v) -> (l, mkVar v)) vars))))
+      | Lambda([(pat, cnd, bod)], pos) ->
+        let usedNames = foldl (fn (usedNames, (vn,_)) ->
+                                 StringSet.add(usedNames, vn))
+                          usedNames (patVars pat)
+        in
+        Lambda([(pat, cnd, normalizeLambda(bod, usedNames, spc))], pos)
+      | _ -> term
+
+ op normalizeTopLevelLambdas(spc: Spec): Spec =
+   setOps (spc, 
+           mapOpInfos (fn info -> 
+                         let pos = termAnn info.dfn in
+                         let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+                         let new_defs =
+                             map (fn dfn ->
+                                    let pos = termAnn dfn in
+                                    let (tvs, srt, term) = unpackTerm dfn in
+                                    let tm = normalizeLambda(term, empty, spc) in
+                                    maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+                               old_defs
+                         in
+                           let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+                           info << {dfn = new_dfn})
+           spc.ops)
+
 endspec
