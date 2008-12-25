@@ -61,10 +61,69 @@ spec
               ops
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  op tryUnfold(spc: Spec, tm: Term): Option Term =
+    % let _ = writeLine("tryUnfold: "^printTerm tm) in
+    case tm of
+      | Apply (f,a,_) ->
+       (case f of
+	  %% Uncurried case
+          | Fun(Op(qid,_),srt,_) ->
+            (case findTheOp(spc, qid) of
+               | None -> None
+               | Some opinfo ->
+                 if sizeTerm opinfo.dfn > unfoldSizeThreshold then None
+                 else
+                 let (tvs, ty, dfn) = unpackFirstOpDef opinfo in
+                 case dfn of
+                   | Lambda _ ->
+                     Some(simplifiedApply(dfn, a, spc))
+                   | _ -> None)
+          | Apply _ ->
+	    (case getCurryArgs tm of
+	       | None -> None
+	       | Some(f,args) ->
+		 (case f of
+		    | Fun(Op(qid,_),srt,_) ->
+		      (case findTheOp(spc, qid) of
+                         | None -> None
+                         | Some opinfo ->
+                           if sizeTerm opinfo.dfn > unfoldSizeThreshold then None
+                           else
+                             let (tvs, ty, dfn) = unpackFirstOpDef opinfo in
+                             case dfn of
+                               | Lambda _ ->
+                                 let inst_tm = foldl mkApply dfn args in
+                                 Some(simplify spc inst_tm)
+                               | _ -> None)
+                    | _ -> None))
+          | _ -> None)
+     | _ -> None
+               
+
+  op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
+    case tm of
+      | Apply(Lambda(rules, _), a, _) ->
+        (case tryUnfold(spc, a) of
+           | None -> tm
+           | Some uf_tm ->
+         % let _ = writeLine("succeeded: "^printTerm uf_tm) in
+         let uf_tm = simplify spc uf_tm in
+         case patternMatchRules(rules, uf_tm) of
+           | None -> tm
+           | Some(sub, M) ->
+             let binds = map (fn (v,val) -> (mkVarPat v, val)) sub in
+             simplifyOne spc (mkLet(binds, M)))
+      | _ -> tm
 
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
   def unFoldTerms(spc,m) =
-    let simplifyTerm = simplify spc in
+    let def simplifyTerm x =
+          % let _ = writeLine("Simplifying "^printTerm x) in
+          let result = simplify spc x in
+          let result = simplifyUnfoldCase spc result in
+          % let _ = writeLine("-> "^printTerm result) in
+          result
+    in
     mapSpecNotingOpNames (fn outer_qid -> (fn t -> maybeUnfoldTerm(outer_qid,t,m,simplifyTerm,spc)),
 			  id,
 			  id)

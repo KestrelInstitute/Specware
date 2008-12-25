@@ -207,7 +207,7 @@ spec
 %         simplifyOne spc (Let([(p,e)],body,pos))
        | Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
 	     body,_) ->
-	 substitute(body,[(v,letTerm)]) 
+	 simplifyOne spc (substitute(body,[(v,letTerm)])) 
        %% Distribution of terms over application
        %% (if p then x else y) z --> if p then x z else y z
        | Apply(IfThenElse(t1,t2,t3,a),tm,_) ->

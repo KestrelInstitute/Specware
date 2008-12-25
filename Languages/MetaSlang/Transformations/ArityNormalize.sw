@@ -35,7 +35,7 @@
 
 *)
 
-ArityNormalize qualifying spec { 
+ArityNormalize qualifying spec
  import ../Specs/Environment
  % import StringUtilities          % imported by SpecEnvironment
  % import MetaSlang               % imported by SpecEnvironment
@@ -75,8 +75,7 @@ ArityNormalize qualifying spec {
 % a record (possibly subsetted)
 
 
- sort UsedNames = StringSet.Set
- sort Gamma         = List(String * Option(Sort * Nat))
+ type Gamma         = List(String * Option(Sort * Nat))
 
  op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
@@ -84,24 +83,6 @@ ArityNormalize qualifying spec {
 % op opArity   : Spec * String * String -> Option(Sort * Nat)
 
 
-
-(*
- * Freshvar generates a unique suffix with the inserted name.
- *)
-
- op freshName: String * UsedNames -> String * UsedNames 
- def freshName(name0,names) = 
-     let name1 = StringUtilities.freshName(name0,names) in
-     (name1,StringSet.add(names,name1))
-
- def freshNames(name0,xs,names) =
-     let (nameList,names) =  
-             foldr (fn (_,(nameList,names)) -> 
-                let (name1,names) = freshName(name0,names) in
-                (cons(name1,nameList),names))
-                ([],names) xs
-     in
-     (nameList,names)
 
 (*
  Arities are associated with term identifiers according to 
@@ -234,7 +215,7 @@ ArityNormalize qualifying spec {
                        | _ -> 
                         let (name,_) = freshName("x",usedNames) in
                         let x = (name,dom) in
-                        Lambda([((VarPat(x,noPos)),mkTrue(),Apply(term,Var(x,noPos),noPos))],noPos))
+                        mkLambda(mkVarPat x, mkApply(term, mkVar x)))
          | Some fields ->
       (case fields
         of (*[_] -> term                        % Singleton products don't get changed
@@ -245,15 +226,9 @@ ArityNormalize qualifying spec {
 	  then term
 	 else
            let (names,_) = freshNames("x",fields,usedNames) in
-           let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
-           let trm:MS.Term  = Lambda 
-                              ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,noPos))) vars,noPos),
-                                    mkTrue(),
-                                    Apply(term,Record((map 
-                                        (fn (l,v) -> 
-                                            (l,(Var(v,noPos)):MS.Term)) vars),noPos),noPos))],noPos)
-           in
-           trm)))
+           let vars = map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
+           mkLambda(mkRecordPat(map (fn (l,v) -> (l, mkVarPat v)) vars),
+                    mkApply(term, mkRecord(map (fn (l,v) -> (l, mkVar v)) vars))))))
 
  def simplePattern pattern = 
       case pattern
@@ -449,4 +424,4 @@ ArityNormalize qualifying spec {
         | _ -> result
 
  ****)
-}
+endspec
