@@ -674,6 +674,8 @@ sLisp Heap Image File: ")
     (specware-build-command "cd %s" (shell-filename build-dir))
     (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
     (sit-for 2)
+    (specware-build-command "(cl:load %S)"
+                            (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors"))
     (if (and (file-exists-p specware4-lisp-binary)
              (file-newer-than-file-p specware4-lisp-binary specware4-lisp))
         (progn
