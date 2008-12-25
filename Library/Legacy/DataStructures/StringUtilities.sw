@@ -1,6 +1,6 @@
 
 StringUtilities qualifying spec 
-{
+
   import StringSetSplay
 
   op freshName  : String * StringSet.Set -> String
@@ -44,4 +44,4 @@ StringUtilities qualifying spec
 	      loop (chars, cons(ch, token_chars), strings)
     in
       loop (chars, [], [])
-}
+endspec
