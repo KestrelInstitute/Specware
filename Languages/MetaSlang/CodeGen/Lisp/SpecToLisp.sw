@@ -1464,6 +1464,7 @@ SpecToLisp qualifying spec
    in
    let spc = (if complete? && substBaseSpecs? then substBaseSpecs spc else spc) in
    let spc = (if removeCurrying?   then removeCurrying   spc else spc) in
+   let spc = normalizeTopLevelLambdas spc in
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift(spc,true) else spc) in
    let spc = translateMatch spc in
