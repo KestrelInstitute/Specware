@@ -1735,4 +1735,76 @@ Utilities qualifying spec
       | Any _ -> false
       | _ -> true
 
+ type MatchResult = | Match VarSubst | NoMatch | DontKnow
+
+ op  patternMatch : Pattern * MS.Term * VarSubst -> MatchResult 
+
+ def patternMatch(pat:Pattern,N,S) = 
+     case pat
+       of VarPat(x, _) -> Match(Cons((x,N),S))
+	| WildPat _ -> Match S
+	| RecordPat(fields, _) -> 
+	  let fields2 = map (fn (l,p) -> (l,patternSort p,p)) fields in
+	  let srt = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
+	  let 
+	      def loop(fields,S) : MatchResult = 
+	          case fields
+		    of (l,s,p)::fields ->
+			let N =
+			    (case N
+			       of Record(NFields,_) -> findField(l,NFields)
+		                | _ -> Apply(Fun(Project l,Arrow(srt,s,noPos),noPos),N,noPos)) in
+		        (case patternMatch(p,N,S)
+			   of Match S -> loop(fields,S)
+			    | r -> r)
+		     | [] -> Match S
+	  in
+	  loop(fields2,S)
+	| EmbedPat(lbl,None,srt,_) -> 
+	  (case N
+	     of Fun(Embed(lbl2,_),_,_) -> if lbl = lbl2 then Match S else NoMatch
+	      | Apply(Fun(Embed(_,true),_,_),_,_) -> NoMatch
+	      | _ -> DontKnow)
+	| EmbedPat(lbl,Some p,srt,_) -> 
+	  (case N
+	     of Fun(Embed(lbl2,_),_,_) -> NoMatch
+	      | Apply(Fun(Embed(lbl2,true),_,_),N2,_) -> 
+		if lbl = lbl2 
+		   then patternMatch(p,N2,S)
+		else NoMatch
+	      | _ -> DontKnow)
+        | RestrictedPat(p,_,_) ->
+          (case patternMatch(p,N,S) of
+             %% Assume we can't decide predicate
+             | NoMatch -> NoMatch
+             | _ -> DontKnow)
+	| StringPat(n,_) ->
+	  (case N
+	    of Fun(String m,_,_) -> (if n = m then Match S else NoMatch)
+	     | _ -> DontKnow)
+	| BoolPat(n,_) ->
+	  (case N
+	    of Fun(Bool m,_,_) -> (if n = m then Match S else NoMatch)
+	     | _ -> DontKnow)
+	| CharPat(n,_) ->
+	  (case N
+	    of Fun(Char m,_,_) -> (if n = m then Match S else NoMatch)
+	     | _ -> DontKnow)
+	| NatPat(n,_) ->
+	  (case N
+	    of Fun(Nat m,_,_) -> (if n = m then Match S else NoMatch)
+	     | _ -> DontKnow)
+	| _ -> DontKnow
+
+ op  patternMatchRules : Match * MS.Term -> Option (VarSubst * MS.Term)
+ def patternMatchRules(rules,N) = 
+     case rules 
+       of [] -> None
+        | (pat,Fun(Bool true,_,_),body)::rules -> 
+	  (case patternMatch(pat,N,[])
+	     of Match S -> Some(S,body)
+	      | NoMatch -> patternMatchRules(rules,N)
+	      | DontKnow -> None)
+	| _ :: rules -> None
+
 endspec
