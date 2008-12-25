@@ -1154,7 +1154,7 @@ MetaSlang qualifying spec
 
      | Pi        (_,   M,   _) -> foldSubTerms f newVal M
 
-    %| And       (tms,      _) -> foldl (fn (val,tm) -> foldSubTerms f val tm) newVal tms % really want join/meet of fold results
+     | And       (tm1::tms, _) -> foldSubTerms f newVal tm1
 
      | Any                  _  -> newVal
 
