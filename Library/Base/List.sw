@@ -1605,6 +1605,43 @@ proof Isa List__zip_Obligation_subtype0
   by (auto simp add: List__equiLong_def)
 end-proof
 
+proof Isa List__zip__def
+proof (induct l2 arbitrary: l1)
+case Nil
+ hence "length l1 = 0" by (auto simp add: List__equiLong_def)
+ def f \<equiv> "(\<lambda>i. if i < length l1 then Some (l1!i, []!i) else None)
+          :: nat \<Rightarrow> ('a \<times> 'b) option"
+ hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ with `length l1 = 0` f_def have "List__list f = []" by auto
+ have "zip l1 [] = []" by auto
+ with `List__list f = []` f_def show ?case by auto
+next
+case (Cons h2 l2')
+ def h1 \<equiv> "hd l1" and l1' \<equiv> "tl l1"
+ from Cons have "l1 \<noteq> []" by (auto simp add: List__equiLong_def)
+ with h1_def l1'_def have "l1 = h1 # l1'" by (auto simp add: hd_Cons_tl)
+ with `l1 equiLong (h2 # l2')` have "l1' equiLong l2'"
+  by (auto simp add: List__equiLong_def)
+ def f \<equiv> "\<lambda>i. if i < length l1
+                    then Some (l1 ! i, (h2 # l2') ! i) else None"
+ hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ def f' \<equiv> "\<lambda>i. if i < length l1'
+                      then Some (l1'!i, l2'!i) else None"
+ with f_def `l1 = h1 # l1'`
+  have f_f': "(\<lambda>i. f (i + 1)) = f'" by (auto simp add: ext)
+ with f_def `l1 = h1 # l1'` have f0: "f 0 = Some (h1, h2)" by auto
+ from `l1 = h1 # l1'` have "zip l1 (h2 # l2') = (h1,h2) # zip l1' l2'"
+  by auto
+ also with `l1' equiLong l2'` Cons.hyps f'_def
+  have "\<dots> = (h1,h2) # List__list f'" by auto
+ also with fseg f_f' f0 `l1 = h1 # l1'` have "\<dots> = List__list f" by auto
+ finally have "zip l1 (h2 # l2') = List__list f" .
+ with f_def show ?case by auto
+qed
+end-proof
+
 % argument to op list in definition of op zip3 is in ListFunction subtype:
 proof Isa List__zip3_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
@@ -2114,6 +2151,7 @@ proof Isa Thy_Morphism List
   List.filter       -> filter
   List.foldl        -> foldl'
   List.foldr        -> foldr'
+  List.zip          -> zip          curried
   List.map          -> map
   List.mapPartial   -> filtermap
   List.reverse      -> rev
