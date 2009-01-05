@@ -17,6 +17,10 @@
 ;; load time, there is no change to the behaviour of a program.
 #+allegro(setq xref::*record-xref-info* nil)
 
+#+sbcl (eval-when (:compile-toplevel :load-toplevel :execute)
+         (let ((sb-fasl:*fasl-file-type* "fasl"))
+           (require :sb-posix)))
+
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
 ;; file. Perhaps they should be factored into a separate file as they
