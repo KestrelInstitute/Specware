@@ -21,6 +21,10 @@
          (let ((sb-fasl:*fasl-file-type* "fasl"))
            (require :sb-posix)))
 
+(defun sw-parse-namestring (str)
+  #-sbcl (parse-namestring str)
+  #+sbcl (sb-ext:parse-native-namestring str))
+
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
 ;; file. Perhaps they should be factored into a separate file as they
@@ -102,7 +106,7 @@
 			       (pathname-directory (or default-dir (current-directory)))
 			       (split-dir-components directory))))
       (make-pathname :directory dir
-		     :device dev))))
+		     :device (or dev (pathname-device default-dir))))))
 
 (defvar *tdir*)
 (defvar *tdirp*)
@@ -416,11 +420,11 @@
   ;; #-allegro
   ;; this is the desired behavior
   (let* ((source-dirpath (if (stringp source)
-			     (parse-namestring (ensure-final-slash source))
+			     (sw-parse-namestring (ensure-final-slash source))
 			   source))
 	 ;(source-dirpath (merge-pathnames (make-pathname :name :wild) source-dirpath))
 	 (target-dirpath (if (stringp target)
-			     (parse-namestring (ensure-final-slash target))
+			     (sw-parse-namestring (ensure-final-slash target))
 			   target)))
     #+mcl 
     (when recursive? 
@@ -442,7 +446,7 @@
       (excl:delete-directory-and-files dir)
     (excl:delete-directory dir))
   #-allegro
-  (let* ((dirpath (if (stringp dir) (parse-namestring dir) dir))
+  (let* ((dirpath (if (stringp dir) (sw-parse-namestring dir) dir))
 	 (dirstr (if (stringp dir) dir (namestring dirpath))))
     (if contents?
 	(progn
