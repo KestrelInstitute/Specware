@@ -106,7 +106,7 @@
 			       (pathname-directory (or default-dir (current-directory)))
 			       (split-dir-components directory))))
       (make-pathname :directory dir
-		     :device (or dev (pathname-device default-dir))))))
+		     :device (or dev (and default-dir (pathname-device default-dir)))))))
 
 (defvar *tdir*)
 (defvar *tdirp*)
