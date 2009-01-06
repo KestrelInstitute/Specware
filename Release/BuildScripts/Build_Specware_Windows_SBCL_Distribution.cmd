@@ -27,7 +27,7 @@ set "LISP_HEAP_IMAGE=NONE
 
 cd "%SPECWARE4%\Release\BuildScripts\"
 
-start "ignore" %FLAGS% "%LISP_EXECUTABLE%"  +t "Build Specware Distribution" -L "BuildSpecwareDistribution.lisp" -e '(progn (user::build-specware-release %VERBOSE%) (sleep 9) (exit 0))'
+start "Build Specware Distribution" sbcl --load "BuildSpecwareDistribution.lisp" --eval "(progn (cl-user::build-specware-release %VERBOSE%) (sleep 9) (exit 0))"
 
 
 
