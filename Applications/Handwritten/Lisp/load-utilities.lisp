@@ -408,7 +408,7 @@
     #+allegro (sys::make-directory dir)
     #+cmu     (unix:unix-mkdir dir #o755)
     #+mcl     (ccl:run-program "mkdir" (list dir))
-    #+sbcl    (sb-ext:run-program "/bin/mkdir" (list dir))
+    #+sbcl    (sb-unix:unix-mkdir dir #o755)
     #+gcl     (lisp:system (format nil "mkdir ~a" dir))))
 
 (defun copy-directory (source target &optional (recursive? t))
