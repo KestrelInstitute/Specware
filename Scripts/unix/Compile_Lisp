@@ -52,6 +52,7 @@ echo " "
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).  [??Why is this a good thing to do??]
 
+LOAD_UTILITIES="$SPECWARE4"/Applications/Handwritten/Lisp/load-utilities
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
@@ -61,6 +62,7 @@ $BATCH_LISP <<-XXXX
 	#+MCL     (format t "OpenMCL version~%")
 	#+SBCL    (format t "SBCL version~%")
 	(format t "compiling...~%")
+        (load "$LOAD_UTILITIES")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
 	#+Allegro (enlarge-stack) 
