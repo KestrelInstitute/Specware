@@ -69,6 +69,7 @@ fi
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).  [??Why is this a good thing to do??]
 
+LOAD_UTILITIES="$SPECWARE4"/Applications/Handwritten/Lisp/load-utilities
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
@@ -76,15 +77,17 @@ SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 echo " "
 cd $APP_DIR
 $BATCH_LISP <<-XXXX
+        (format t "~%--------------------------------------------------------------------------------~%")
+        #+Allegro (format t "~&Allegro version~%") 
+        #+CMU     (format t "~&CMU version~%") 
+        #+MCL     (format t "~&OpenMCL version~%") 
+        #+SBCL    (format t "~&SBCL version~%")
+        (load "$LOAD_UTILITIES")
+        (specware::compile-and-load-lisp-file "$LOAD_UTILITIES")
+        (load "$EXIT_ON_ERRORS") 
+        (load "$MEMORY_MANAGEMENT") 
+        (load "$SAVE_IMAGE") 
 	(progn
-         (format t "~%--------------------------------------------------------------------------------~%")
-	 #+Allegro (format t "~&Allegro version~%") 
-	 #+CMU     (format t "~&CMU version~%") 
-         #+MCL     (format t "~&OpenMCL version~%") 
-         #+SBCL    (format t "~&SBCL version~%") 
-	 (load "$EXIT_ON_ERRORS") 
-	 (load "$MEMORY_MANAGEMENT") 
-	 (load "$SAVE_IMAGE") 
 	 #+Allegro (compact-memory nil 0 32000000)   ; not verbose
 	 #+Allegro (set-gc-parameters-for-build nil) ; not verbose
          (format t "~%--------------------------------------------------------------------------------~%")
