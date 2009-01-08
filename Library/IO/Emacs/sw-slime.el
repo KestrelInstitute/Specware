@@ -366,9 +366,11 @@ to end end."
   "Face for Lisp output in the SLIME REPL."
   :group 'slime-repl)
 
+(defvar sw:system-name "Specware")
 
 (defun slime-repl-update-banner ()
-  (let* ((banner (format "Specware %s on %s %s"
+  (let* ((banner (format "%s %s on %s %s"
+                         sw:system-name
 			 (sw:eval-in-lisp "(if (boundp '*Specware-version*) *Specware-version* \"\")")
                          (slime-lisp-implementation-type)
 			 (slime-lisp-implementation-version)
