@@ -1760,6 +1760,51 @@ next
 qed
 end-proof
 
+proof Isa List__unzip_subtype_constr
+proof (auto simp: Let_def)
+ fix x :: "'a list"
+ fix y :: "'b list"
+ assume "List__unzip dom_unzip = (x,y)"
+ hence IZXY: "Function__inverse__stp
+                (\<lambda>(x,y). x equiLong y)
+                (\<lambda>(x,y). zip x y) dom_unzip = (x,y)"
+  by (auto simp: List__unzip_def)
+ have "(\<lambda>_. True) dom_unzip" by auto
+ with List__unzip_Obligation_subtype
+  have "Function__inverse__stp
+          (\<lambda>(x,y). x equiLong y) (\<lambda>(x,y). zip x y) dom_unzip =
+        (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
+                 (\<lambda>(x,y). zip x y) p = dom_unzip)"
+   by (rule inverse_SOME)
+ with IZXY
+  have SXY: "(SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
+                      (\<lambda>(x,y). zip x y) p = dom_unzip) = (x,y)" by auto
+ from List__unzip_Obligation_subtype
+  have "surj_on (\<lambda>(x,y). zip x y) (\<lambda>(x,y). x equiLong y) UNIV"
+   by (auto simp: bij_on_def)
+ hence "\<exists>p \<in> (\<lambda>(x,y). x equiLong y).
+             dom_unzip = (\<lambda>(x,y). zip x y) p"
+   by (auto simp: surj_on_def)
+ then obtain p where "(\<lambda>(x,y). x equiLong y) p"
+                 and "(\<lambda>(x,y). zip x y) p = dom_unzip"
+  by (auto simp: mem_def)
+ hence "\<exists>p. (\<lambda>(x,y). x equiLong y) p \<and>
+                    (\<lambda>(x,y). zip x y) p = dom_unzip"
+  by auto
+ hence "(\<lambda>(x,y). x equiLong y)
+          (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
+                   (\<lambda>(x,y). zip x y) p = dom_unzip)
+        \<and>
+        (\<lambda>(x,y). zip x y)
+          (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
+                   (\<lambda>(x,y). zip x y) p = dom_unzip)
+        = dom_unzip"
+  by (rule someI_ex)
+ with SXY have "(\<lambda>(x,y). x equiLong y) (x,y)" by auto
+ thus "x equiLong y" by auto
+qed
+end-proof
+
 proof Isa List__unzip3_Obligation_subtype
 (* proof (auto simp add: Function__bijective_p__stp_def) *)
 (*  show "inj_on (List__zip :: 'a list \<times> 'b list \<Rightarrow> *)
