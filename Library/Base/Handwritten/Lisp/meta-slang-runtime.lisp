@@ -117,47 +117,48 @@
 
 ;;; This is twice as fast as the version above...
 (defun slang-term-equals-2 (t1 t2)
+  (declare (optimize speed))
   (or (eq t1 t2)
       (typecase t1
-	(null      (null    t2))
-	(string    (string= t1 t2))
-	(symbol    (eq      t1 t2))
-	(number    (=       t1 t2)) ; catches complex numbers, etc.
-	(character (eq      t1 t2))
-	(cons      (and (consp t2) 
-			;;   Cons cells are equal if their elements are equal too.
-			(slang-term-equals-2 (car t1) (car t2))
-			(slang-term-equals-2 (cdr t1) (cdr t2))))
+        (null      (null    t2))
+        (string    (string= t1 t2))
+        (symbol    (eq      t1 t2))
+        (number    (=       t1 t2))    ; catches complex numbers, etc.
+        (character (eq      t1 t2))
+        (cons      (and (consp t2) 
+                        ;;   Cons cells are equal if their elements are equal too.
+                        (slang-term-equals-2 (car t1) (car t2))
+                        (slang-term-equals-2 (cdr t1) (cdr t2))))
         (vector    (cond ((and   
-			   ;; (quotient? t1) 
-			   ;; (quotient? t2)
-			   (eq (svref t1 0) quotient-tag)
-			   (vectorp t2)
-			   (eq (svref t2 0) quotient-tag)
-			   )
-			  ;; Determine equality by calling the quotient 
-			  ;; operator in the second position 
-			  (funcall (svref t1 1) ; (quotient-relation t1)
-				   (cons (svref t1 2) ; (quotient-element t1) 
-				         (svref t2 2) ; (quotient-element t2)
-				   )))
-			 (t
-			  (and
-			   ;; Two vectors (corresponding to tuple types)
-			   ;; are equal if all their elements are equal.
-			   (vectorp t2)
-			   (let ((dim1 (array-dimension t1 0))
+                           ;; (quotient? t1) 
+                           ;; (quotient? t2)
+                           (eq (svref t1 0) quotient-tag)
+                           (vectorp t2)
+                           (eq (svref t2 0) quotient-tag)
+                           )
+                          ;; Determine equality by calling the quotient 
+                          ;; operator in the second position 
+                          (funcall (svref t1 1) ; (quotient-relation t1)
+                                   (cons (svref t1 2) ; (quotient-element t1) 
+                                         (svref t2 2) ; (quotient-element t2)
+                                         )))
+                         (t
+                          (and
+                           ;; Two vectors (corresponding to tuple types)
+                           ;; are equal if all their elements are equal.
+                           (vectorp t2)
+                           (let ((dim1 (array-dimension t1 0))
                                  (dim2 (array-dimension t2 0)))
                              (and (eql dim1 dim2)
-    		                  (do ((i 0 (+ i 1))
+                                  (do ((i 0 (+ i 1))
                                        (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
-			            ((or (= i dim1) (not v-equal)) v-equal))))))))
-	(hash-table
-	 ;; This can happen, for example, when comparing specs, which use maps from
-	 ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
-	 ;; with hash tables in the associated Handwritten/Lisp/MapAsSTHarray.lisp
-	 ;; Expensive pair of sub-map tests, but should be used rarely:
-	 (and (eql (hash-table-count t1) (hash-table-count t2))
+                                      ((or (= i dim1) (not v-equal)) v-equal))))))))
+        (hash-table
+         ;; This can happen, for example, when comparing specs, which use maps from
+         ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
+         ;; with hash tables in the associated Handwritten/Lisp/MapAsSTHarray.lisp
+         ;; Expensive pair of sub-map tests, but should be used rarely:
+         (and (eql (hash-table-count t1) (hash-table-count t2))
               (block comparison-of-entries
                 ;; fail if t1 disagrees with t2 for something in the domain of t1
                 (maphash #'(lambda (k v) 
@@ -172,20 +173,20 @@
 ;                         t2)
                 ;; the maps are functionally equivalent
                 t)))
-	(pathname
-	 ;; As long as we might have hash-tables, maybe pathnames?
-	 (equal t1 t2))
-	(t 
-	 ;; structures, etc. will end up here
-	 ;; print semi-informative error message, but avoid printing
-	 ;; what could be enormous structures...
-	 (progn 
-	   (warn "In slang-term-equals, ill formed terms of types ~S and ~S are ~A~%" 
-		 (type-of t1)
-		 (type-of t2)
-		 (if (equal t1 t2) "LISP:EQUAL" "not LISP:EQUAL"))
-	   ;; would it be better to just fail?
-	   (equal t1 t2))))))
+        (pathname
+         ;; As long as we might have hash-tables, maybe pathnames?
+         (equal t1 t2))
+        (t 
+         ;; structures, etc. will end up here
+         ;; print semi-informative error message, but avoid printing
+         ;; what could be enormous structures...
+         (progn 
+           (warn "In slang-term-equals, ill formed terms of types ~S and ~S are ~A~%" 
+                 (type-of t1)
+                 (type-of t2)
+                 (if (equal t1 t2) "LISP:EQUAL" "not LISP:EQUAL"))
+           ;; would it be better to just fail?
+           (equal t1 t2))))))
 
 (defun slang-term-equals (x) (slang-term-equals-2 (car x) (cdr x)))
 
@@ -239,12 +240,13 @@
   ;; HASH-TABLE behavior before we fall through to the generic STRUCTURE-OBJECT
   ;; comparison behavior.
   (typecase key
+    (simple-string (sxhash key))
     (array (array-swxhash key depthoid))
     (hash-table (hash-table-swxhash key))
     (structure-object (structure-object-swxhash key depthoid))
     (cons (list-swxhash key depthoid))
     (number (number-swxhash key))
-    (character (char-code (char-upcase key)))
+    (character (char-code key))
     (t (sxhash key))))
 
 (defun array-swxhash (key depthoid)
