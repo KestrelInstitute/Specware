@@ -53,10 +53,9 @@
 (defun ctxt-map-as-harray--initial-harray-history-pair (x)
   (declare (ignore x))
   (ctxt-map-as-harray--make-harray-history-pair
-   (make-hash-table :test 'equal
-		    :size *ctxt-map-as-harray--initial-harray-size*
-		    :rehash-size *ctxt-map-as-harray--rehash-size*)
-    nil))
+   (Specware::make-sw-hash-table :size *ctxt-map-as-harray--initial-harray-size*
+                                 :rehash-size *ctxt-map-as-harray--rehash-size*)
+   nil))
 
 (defmacro ctxt-map-as-harray--set-history (pr hist)
    `(setf (cdr ,pr) ,hist))
@@ -134,7 +133,7 @@
 		(setf curr-hist p-hist)))
 	    (ctxt-map-as-harray--set-history pr last-hist)))))))
 
-(defvar emptyMap (ctxt-map-as-harray--harray-map (make-hash-table :test 'equal :size 0)))
+(defvar emptyMap (ctxt-map-as-harray--harray-map (Specware::make-sw-hash-table :size 0)))
 
 (defun ctxt-map-as-harray--update (m x y)
   (ctxt-map-as-harray-assure-current m)
@@ -197,10 +196,9 @@
     (if (= sz 0)
       emptyMap
       (progn (ctxt-map-as-harray-assure-current table)
-	     (let ((result (make-hash-table :test 'equal
-					    :size sz
-					    :rehash-size
-					      *ctxt-map-as-harray--rehash-size*)))
+	     (let ((result (Specware::make-sw-hash-table :size sz
+                                                         :rehash-size
+                                                         *ctxt-map-as-harray--rehash-size*)))
 	       (maphash #'(lambda (key val)
 			    (setf (gethash key result)
 			      (mkSome (funcall f (cons key (cdr val))))))
@@ -214,10 +212,9 @@
     (if (= sz 0)
       emptyMap
       (progn (ctxt-map-as-harray-assure-current table)
-	     (let ((result (make-hash-table :test 'equal
-					    :size sz
-					    :rehash-size
-					      *ctxt-map-as-harray--rehash-size*)))
+	     (let ((result (Specware::make-sw-hash-table :size sz
+                                                         :rehash-size
+                                                         *ctxt-map-as-harray--rehash-size*)))
 	       (maphash #'(lambda (key val)
 			    (setf (gethash key result)
 			      (mkSome (funcall f (cdr val)))))
@@ -232,10 +229,9 @@
       emptyMap
       (progn
 	(ctxt-map-as-harray-assure-current table)
-	(let ((result (make-hash-table :test 'equal
-				       :size *ctxt-map-as-harray--initial-harray-size*
-				       :rehash-size
-				       *ctxt-map-as-harray--rehash-size*)))
+	(let ((result (Specware::make-sw-hash-table :size *ctxt-map-as-harray--initial-harray-size*
+                                                    :rehash-size
+                                                    *ctxt-map-as-harray--rehash-size*)))
 	  (maphash #'(lambda (key val)
 		       (let ((val (funcall f (cdr val))))
 			 (unless (equal val *undefined*)
@@ -251,10 +247,9 @@
       emptyMap
       (progn
 	(ctxt-map-as-harray-assure-current table)
-	(let ((result (make-hash-table :test 'equal
-				       :size *ctxt-map-as-harray--initial-harray-size*
-				       :rehash-size
-				       *ctxt-map-as-harray--rehash-size*)))
+	(let ((result (Specware::make-sw-hash-table :size *ctxt-map-as-harray--initial-harray-size*
+                                                    :rehash-size
+                                                    *ctxt-map-as-harray--rehash-size*)))
 	  (maphash #'(lambda (key val)
 		       (let ((val (funcall f (cdr val))))
 			 (unless (equal val *undefined*)

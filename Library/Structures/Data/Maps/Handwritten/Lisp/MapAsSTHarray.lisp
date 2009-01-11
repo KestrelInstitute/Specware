@@ -35,9 +35,8 @@
 (defparameter *map-as-undo-harray--rehash-size* 2.0)
 
 (defun map-as-undo-harray--initial-harray ()
-  (make-hash-table :test 'equal
-		   :size *map-as-undo-harray--initial-harray-size*
-		   :rehash-size *map-as-undo-harray--rehash-size*))
+  (Specware::make-sw-hash-table :size *map-as-undo-harray--initial-harray-size*
+                                :rehash-size *map-as-undo-harray--rehash-size*))
 
 (defmacro map-as-undo-harray--set-undo-list (m undo-list)
    `(setf (svref ,m 2) ,undo-list))
@@ -46,10 +45,9 @@
    `(setf (svref ,m 1) nil))
 
 (defun make-hash-table-same-size (table)
-  (make-hash-table :test 'equal
-		   :size (hash-table-count table)
-		   :rehash-size
-		   *map-as-undo-harray--rehash-size*))
+  (Specware::make-sw-hash-table :size (hash-table-count table)
+                                :rehash-size
+                                *map-as-undo-harray--rehash-size*))
 
 (defun copy-hash-table (table)
   (let ((result (make-hash-table-same-size table)))
@@ -92,7 +90,7 @@
 	(nreverse undo-list)
 	(make-map-as-undo-harray new-table nil)))))
 
-(defparameter STH_empty_map (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
+(defparameter STH_empty_map (make-map-as-undo-harray (Specware::make-sw-hash-table :size 0) nil))
 
 (defun map-as-undo-harray--update (m x y)
   (if (eq m STH_empty_map)

@@ -37,15 +37,13 @@
 (defparameter *map-as-undo-harray--rehash-size* 2.0)
 
 (defun map-as-undo-harray--initial-harray ()
-  (make-hash-table :test 'equal
-		   :size *map-as-undo-harray--initial-harray-size*
-		   :rehash-size *map-as-undo-harray--rehash-size*))
+  (Specware::make-sw-hash-table :size *map-as-undo-harray--initial-harray-size*
+                                :rehash-size *map-as-undo-harray--rehash-size*))
 
 (defun make-hash-table-same-size (table)
-  (make-hash-table :test 'equal
-		   :size (hash-table-count table)
-		   :rehash-size
-		   *map-as-undo-harray--rehash-size*))
+  (Specware::make-sw-hash-table :size (hash-table-count table)
+                                :rehash-size
+                                *map-as-undo-harray--rehash-size*))
 
 (defun copy-hash-table (table)
   (let ((result (make-hash-table-same-size table)))
@@ -94,7 +92,8 @@
 	m)))
 	     
 
-(defparameter BTH_empty_map (make-map-as-undo-harray (make-hash-table :test 'equal :size 0) nil))
+(defparameter BTH_empty_map (make-map-as-undo-harray (Specware::make-sw-hash-table :size 0)
+                                                     nil))
 
 (defun map-as-undo-harray--update (m x y)
   (if (eq m BTH_empty_map)
