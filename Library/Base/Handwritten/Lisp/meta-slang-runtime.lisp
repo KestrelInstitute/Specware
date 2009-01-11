@@ -3,6 +3,7 @@
 ;; The functions here are referenced in code produced by 
 ;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
+(defpackage :Specware)
 (defpackage :SpecCalc)
 (defpackage :List-Spec)
 (defpackage :Slang-Built-In)
@@ -156,19 +157,21 @@
 	 ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
 	 ;; with hash tables in the associated Handwritten/Lisp/MapAsSTHarray.lisp
 	 ;; Expensive pair of sub-map tests, but should be used rarely:
-	 (catch 'fail
-	   ;; fail if t1 disagrees with t2 for something in the domain of t1
-	   (maphash #'(lambda (k v) 
-			(unless (slang-term-equals-2 v (gethash k t2))
-			  (throw 'fail nil)))
-		    t1)
-	   ;; fail if t2 disagrees with t1 for something in the domain of t2
-	   (maphash #'(lambda (k v) 
-			(unless (slang-term-equals-2 v (gethash k t1))
-			  (throw 'fail nil)))
-		    t2)
-	   ;; the maps are functionally equivalent
-	   t))
+	 (and (eql (hash-table-count t1) (hash-table-count t2))
+              (block comparison-of-entries
+                ;; fail if t1 disagrees with t2 for something in the domain of t1
+                (maphash #'(lambda (k v) 
+                             (unless (slang-term-equals-2 v (gethash k t2))
+                               (return-from comparison-of-entries nil)))
+                         t1)
+;; This is unnecessary if sizes are the same
+;                ;; fail if t2 disagrees with t1 for something in the domain of t2
+;                (maphash #'(lambda (k v) 
+;                             (unless (slang-term-equals-2 v (gethash k t1))
+;                               (return-from comparison-of-entries nil)))
+;                         t2)
+                ;; the maps are functionally equivalent
+                t)))
 	(pathname
 	 ;; As long as we might have hash-tables, maybe pathnames?
 	 (equal t1 t2))
@@ -186,8 +189,214 @@
 
 (defun slang-term-equals (x) (slang-term-equals-2 (car x) (cdr x)))
 
+(defun sw-equal? (x y) (slang-term-equals-2 x y))
+
 (defun slang-term-not-equals-2 (x y) 
   (not (slang-term-equals-2 x y)))
+
+;;; swxhash: Hash function for slang-term-equals (based on sbcl psxhash for equalp)
+(defconstant +max-hash-depthoid+ 4)
+(declaim (inline mix))
+(defun mix (x y)
+  ;; FIXME: We wouldn't need the nasty (SAFETY 0) here if the compiler
+  ;; were smarter about optimizing ASH. (Without the THE FIXNUM below,
+  ;; and the (SAFETY 0) declaration here to get the compiler to trust
+  ;; it, the sbcl-0.5.0m cross-compiler running under Debian
+  ;; cmucl-2.4.17 turns the ASH into a full call, requiring the
+  ;; UNSIGNED-BYTE 32 argument to be coerced to a bignum, requiring
+  ;; consing, and thus generally obliterating performance.)
+  (declare (optimize (speed 3) (safety 0)))
+  (declare (type (and fixnum unsigned-byte) x y))
+  ;; the ideas here:
+  ;;   * Bits diffuse in both directions (shifted left by up to 2 places
+  ;;     in the calculation of XY, and shifted right by up to 5 places
+  ;;     by the ASH).
+  ;;   * The #'+ and #'LOGXOR operations don't commute with each other,
+  ;;     so different bit patterns are mixed together as they shift
+  ;;     past each other.
+  ;;   * The arbitrary constant in the #'LOGXOR expression is intended
+  ;;     to help break up any weird anomalies we might otherwise get
+  ;;     when hashing highly regular patterns.
+  ;; (These are vaguely like the ideas used in many cryptographic
+  ;; algorithms, but we're not pushing them hard enough here for them
+  ;; to be cryptographically strong.)
+  (let* ((xy (+ (* x 3) y)))
+    (logand most-positive-fixnum
+            (logxor 441516657
+                    xy
+                    (ash xy -5)))))
+
+(defmacro mixf (v val) `(setq ,v (mix ,v ,val)))
+
+(defun swxhash (key &optional (depthoid +max-hash-depthoid+))
+  (declare (optimize speed))
+  (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
+  ;; Note: You might think it would be cleaner to use the ordering given in the
+  ;; table from Figure 5-13 in the EQUALP section of the ANSI specification
+  ;; here. So did I, but that is a snare for the unwary! Nothing in the ANSI
+  ;; spec says that HASH-TABLE can't be a STRUCTURE-OBJECT, and in fact our
+  ;; HASH-TABLEs *are* STRUCTURE-OBJECTs, so we need to pick off the special
+  ;; HASH-TABLE behavior before we fall through to the generic STRUCTURE-OBJECT
+  ;; comparison behavior.
+  (typecase key
+    (array (array-swxhash key depthoid))
+    (hash-table (hash-table-swxhash key))
+    (structure-object (structure-object-swxhash key depthoid))
+    (cons (list-swxhash key depthoid))
+    (number (number-swxhash key))
+    (character (char-code (char-upcase key)))
+    (t (sxhash key))))
+
+(defun array-swxhash (key depthoid)
+  (declare (optimize speed))
+  (declare (type array key))
+  (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
+  (typecase key
+    ;; VECTORs have to be treated specially because ANSI specifies
+    ;; that we must respect fill pointers.
+    (vector
+     (macrolet ((frob ()
+                  '(let ((result 572539))
+                     (declare (type fixnum result))
+                     (mixf result (length key))
+                    (when (plusp depthoid)
+                      (decf depthoid)
+                      (dotimes (i (length key))
+                       (declare (type fixnum i))
+                       (mixf result
+                             (swxhash (aref key i) depthoid))))
+                    result))
+                (make-dispatch (types)
+                  `(typecase key
+                     ,@(loop for type in types
+                             collect `(,type
+                                       (frob))))))
+       (make-dispatch (simple-base-string
+                       (simple-array character (*))
+                       simple-vector
+                       (simple-array (unsigned-byte 8) (*))
+                       (simple-array fixnum (*))
+                       t))))
+    ;; Any other array can be hashed by working with its underlying
+    ;; one-dimensional physical representation.
+    (t
+     (let ((result 60828))
+       (declare (type fixnum result))
+       (dotimes (i (array-rank key))
+         (mixf result (array-dimension key i)))
+       (when (plusp depthoid)
+         (decf depthoid)
+         (dotimes (i (array-total-size key))
+          (mixf result
+                (swxhash (row-major-aref key i) depthoid))))
+       result))))
+
+(defun structure-object-swxhash (key depthoid)
+  (declare (optimize speed))
+  (declare (type structure-object key))
+  (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
+  (let* ((layout (%instance-layout key)) ; i.e. slot #0
+         (length (layout-length layout))
+         (classoid (layout-classoid layout))
+         (name (classoid-name classoid))
+         (result (mix (sxhash name) (the fixnum 79867))))
+    (declare (type fixnum result))
+    (dotimes (i (min depthoid (- length 1 (layout-n-untagged-slots layout))))
+      (declare (type fixnum i))
+      (let ((j (1+ i))) ; skipping slot #0, which is for LAYOUT
+        (declare (type fixnum j))
+        (mixf result
+              (swxhash (%instance-ref key j)
+                       (1- depthoid)))))
+    ;; KLUDGE: Should hash untagged slots, too.  (Although +max-hash-depthoid+
+    ;; is pretty low currently, so they might not make it into the hash
+    ;; value anyway.)
+    result))
+
+(defun list-swxhash (key depthoid)
+  (declare (optimize speed))
+  (declare (type list key))
+  (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
+  (cond ((null key)
+         (the fixnum 480929))
+        ((zerop depthoid)
+         (the fixnum 779578))
+        (t
+         (mix (swxhash (car key) (1- depthoid))
+              (swxhash (cdr key) (1- depthoid))))))
+
+(defun hash-table-swxhash (key)
+  (declare (optimize speed))
+  (declare (type hash-table key))
+  (let ((result 103924836))
+    (declare (type fixnum result))
+    (mixf result (hash-table-count key))
+    (mixf result (sxhash (hash-table-test key)))
+    result))
+
+(defun number-swxhash (key)
+  (declare (optimize speed))
+  (declare (type number key))
+  (flet ((sxhash-double-float (val)
+           (declare (type double-float val))
+           ;; FIXME: Check to make sure that the DEFTRANSFORM kicks in and the
+           ;; resulting code works without consing. (In Debian cmucl 2.4.17,
+           ;; it didn't.)
+           (sxhash val)))
+    (etypecase key
+      (integer (sxhash key))
+      (float (macrolet ((frob (type)
+                          (let ((lo (coerce most-negative-fixnum type))
+                                (hi (coerce most-positive-fixnum type)))
+                            `(cond (;; This clause allows FIXNUM-sized integer
+                                    ;; values to be handled without consing.
+                                    (<= ,lo key ,hi)
+                                    (multiple-value-bind (q r)
+                                        (floor (the (,type ,lo ,hi) key))
+                                      (if (zerop (the ,type r))
+                                          (sxhash q)
+                                          (sxhash-double-float
+                                           (coerce key 'double-float)))))
+                                   (t
+                                    (multiple-value-bind (q r) (floor key)
+                                      (if (zerop (the ,type r))
+                                          (sxhash q)
+                                          (sxhash-double-float
+                                           (coerce key 'double-float)))))))))
+               (etypecase key
+                 (single-float (frob single-float))
+                 (double-float (frob double-float)))))
+      (rational (if (and (<= most-negative-double-float
+                             key
+                             most-positive-double-float)
+                         (= (coerce key 'double-float) key))
+                    (sxhash-double-float (coerce key 'double-float))
+                    (sxhash key)))
+      (complex (if (zerop (imagpart key))
+                   (number-swxhash (realpart key))
+                   (let ((result 330231))
+                     (declare (type fixnum result))
+                     (mixf result (number-swxhash (realpart key)))
+                     (mixf result (number-swxhash (imagpart key)))
+                     result))))))
+
+;;; slang-term-equal? hashtables  (for sbcl allegro & cmucl)
+#+sbcl
+(sb-int:define-hash-table-test 'sw-equal? #'slang-term-equals-2 #'swxhash)
+#+cmucl
+(ext:define-hash-table-test 'sw-equal? #'slang-term-equals-2 #'swxhash)
+
+;(defun Specware::make-sw-hash-table (&rest real-args)
+;  #+allegro (apply #'make-hash-table :test #'slang-term-equals-2 :hash-function #'swxhash
+;                   real-args)
+;  #-allegro (apply #'make-hash-table :test 'sw-equal?
+;                   real-args))
+
+(defun Specware::make-sw-hash-table (&key (size 16) (rehash-size 1.5))
+  #+allegro (apply #'make-hash-table :test #'slang-term-equals-2 :hash-function #'swxhash
+                   real-args)
+  #-allegro (make-hash-table :test 'sw-equal?
+                             :size size :rehash-size rehash-size))
 
 ;;; optimizations of not-equals for Booleans and Strings:
 
