@@ -146,6 +146,7 @@
 (defvar HandwrittenFiles
   '(
     ; "Library/Base/Handwritten/Lisp/Boolean.lisp"
+    "Library/Base/Handwritten/Lisp/meta-slang-runtime.lisp"
     "Library/Base/Handwritten/Lisp/Integer.lisp"
 ;    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Character.lisp"
@@ -254,7 +255,9 @@
 
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-		 (compile-and-load-lisp-file (in-specware-dir file)))
+		 (when (equal file "Applications/Specware/lisp/Specware4.lisp")
+                   (time (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp"))))
+                 (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
 
