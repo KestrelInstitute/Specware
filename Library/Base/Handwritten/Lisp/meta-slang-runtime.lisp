@@ -196,7 +196,8 @@
   (not (slang-term-equals-2 x y)))
 
 ;;; swxhash: Hash function for slang-term-equals (based on sbcl psxhash for equalp)
-(defconstant +max-hash-depthoid+ 4)
+(eval-when (compile load)
+  (defconstant +max-hash-depthoid+ 4))
 (declaim (inline mix))
 (defun mix (x y)
   ;; FIXME: We wouldn't need the nasty (SAFETY 0) here if the compiler
@@ -395,8 +396,8 @@
 ;                   real-args))
 
 (defun Specware::make-sw-hash-table (&key (size 16) (rehash-size 1.5))
-  #+allegro (apply #'make-hash-table :test #'slang-term-equals-2 :hash-function #'swxhash
-                   real-args)
+  #+allegro (make-hash-table :test 'slang-term-equals-2 :hash-function #'swxhash
+                             :size size :rehash-size rehash-size)
   #-allegro (make-hash-table :test 'sw-equal?
                              :size size :rehash-size rehash-size))
 
