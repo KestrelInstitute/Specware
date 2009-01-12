@@ -117,7 +117,7 @@
 
 ;;; This is twice as fast as the version above...
 (defun slang-term-equals-2 (t1 t2)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (or (eq t1 t2)
       (typecase t1
         (null      (null    t2))
@@ -207,7 +207,7 @@
   ;; cmucl-2.4.17 turns the ASH into a full call, requiring the
   ;; UNSIGNED-BYTE 32 argument to be coerced to a bignum, requiring
   ;; consing, and thus generally obliterating performance.)
-  (declare (optimize (speed 3) (safety 0)))
+  #+sbcl(declare (optimize (speed 3) (safety 0)))
   (declare (type (and fixnum unsigned-byte) x y))
   ;; the ideas here:
   ;;   * Bits diffuse in both directions (shifted left by up to 2 places
@@ -231,7 +231,7 @@
 (defmacro mixf (v val) `(setq ,v (mix ,v ,val)))
 
 (defun swxhash (key &optional (depthoid +max-hash-depthoid+))
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
   ;; Note: You might think it would be cleaner to use the ordering given in the
   ;; table from Figure 5-13 in the EQUALP section of the ANSI specification
@@ -251,7 +251,7 @@
     (t (sxhash key))))
 
 (defun array-swxhash (key depthoid)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type array key))
   (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
   (typecase key
@@ -295,9 +295,11 @@
        result))))
 
 (defun structure-object-swxhash (key depthoid)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type structure-object key))
   (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
+  #-sbcl (the fixnum 481929)
+  #+sbcl
   (let* ((layout (%instance-layout key)) ; i.e. slot #0
          (length (layout-length layout))
          (classoid (layout-classoid layout))
@@ -317,7 +319,7 @@
     result))
 
 (defun list-swxhash (key depthoid)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type list key))
   (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
   (cond ((null key)
@@ -329,7 +331,7 @@
               (swxhash (cdr key) (1- depthoid))))))
 
 (defun hash-table-swxhash (key)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type hash-table key))
   (let ((result 103924836))
     (declare (type fixnum result))
@@ -338,7 +340,7 @@
     result))
 
 (defun number-swxhash (key)
-  (declare (optimize speed))
+  #+sbcl(declare (optimize speed))
   (declare (type number key))
   (flet ((sxhash-double-float (val)
            (declare (type double-float val))
@@ -396,7 +398,7 @@
 ;                   real-args))
 
 (defun Specware::make-sw-hash-table (&key (size 16) (rehash-size 1.5))
-  #+allegro (make-hash-table :test 'slang-term-equals-2 :hash-function #'swxhash
+  #+allegro (make-hash-table :test 'slang-term-equals-2 :hash-function 'swxhash
                              :size size :rehash-size rehash-size)
   #-allegro (make-hash-table :test 'sw-equal?
                              :size size :rehash-size rehash-size))
