@@ -181,7 +181,7 @@
       (format t "~&~%Output from the lower process being created:~%")
       (format t "~&========================================================~%")
       (unwind-protect 
-	  (setq process (sb-ext:run-program base-lisp '() :wait t :input "/tmp/cmds" :output t :error :output))
+	  (setq process (sb-ext:run-program base-lisp '("--disable-debugger") :wait t :input "/tmp/cmds" :output t :error :output))
 	(if (null process)
 	    (error "Problem creating lower process: ~A" base-lisp)
 	  (let ((rc (process-exit-code process)))
