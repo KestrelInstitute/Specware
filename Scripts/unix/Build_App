@@ -37,7 +37,6 @@ HERE=`/usr/bin/dirname $0`
 # bash convention for . means the file is processed inline (as if copied here)
 . $HERE/Verify_Lisp ${LISP_MODE}
 
-
 # name of executable file to be created:
 EXECUTABLE=${APP_NAME}.${EXECUTABLE_EXTENSION}
 
@@ -73,9 +72,10 @@ echo " "
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).  [??Why is this a good thing to do??]
 
-EXIT_ON_ERRORS=$SPECWARE4/Applications/Handwritten/Lisp/exit-on-errors
-MEMORY_MANAGEMENT=$SPECWARE4/Applications/Handwritten/Lisp/memory-management
-SAVE_IMAGE=$SPECWARE4/Applications/Handwritten/Lisp/save-image
+LOAD_UTILITIES="$SPECWARE4"/Applications/Handwritten/Lisp/load-utilities
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 
 if [ "$LISP_MODE" == "SBCL" ]; then
   MAKE_EXECUTABLE=":executable? t"
@@ -83,12 +83,16 @@ else
   MAKE_EXECUTABLE=""
 fi
 
+echo " "
 cd ${APP_DIR}
 $BATCH_LISP <<-XXXX
-	#+Allegro (format t "Allegro version~%") 
+        (format t "~%--------------------------------------------------------------------------------~%")
+	#+Allegro (format t "Allegro version~%")
 	#+CMU     (format t "CMU version~%") 
-        #+MCL     (format t "OpenMCL version~%") 
-        #+SBCL    (format t "SBCL version~%") 
+	#+MCL     (format t "OpenMCL version~%") 
+	#+SBCL    (format t "SBCL version~%") 
+	(load "$LOAD_UTILITIES")
+	(specware::compile-and-load-lisp-file "$LOAD_UTILITIES")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
 	(load "$SAVE_IMAGE") 

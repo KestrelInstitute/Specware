@@ -45,7 +45,7 @@ else
 fi
 
 ls -sltr ${GEN_DIR}/${APP_NAME}.* 2>&1
-if [ -f ${GEN_DIR}/${APP_NAME}.$FASL_EXTENSION ]; then
+if [ -f ${GEN_DIR}/${APP_NAME}.${FASL_EXTENSION} ]; then
   echo "  Build_Dev:  Found ${APP_NAME}.$FASL_EXTENSION"
 else
   echo "  Build_Dev:  Missing ${APP_NAME}.$FASL_EXTENSION -- run Compile_${APP_NAME}_Lisp_${LISP_MODE}"
@@ -75,18 +75,18 @@ MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 
 echo " "
-cd $APP_DIR
+cd ${APP_DIR}
 $BATCH_LISP <<-XXXX
         (format t "~%--------------------------------------------------------------------------------~%")
-        #+Allegro (format t "~&Allegro version~%") 
-        #+CMU     (format t "~&CMU version~%") 
-        #+MCL     (format t "~&OpenMCL version~%") 
-        #+SBCL    (format t "~&SBCL version~%")
-        (load "$LOAD_UTILITIES")
-        (specware::compile-and-load-lisp-file "$LOAD_UTILITIES")
-        (load "$EXIT_ON_ERRORS") 
-        (load "$MEMORY_MANAGEMENT") 
-        (load "$SAVE_IMAGE") 
+	#+Allegro (format t "~&Allegro version~%")
+	#+CMU     (format t "~&CMU version~%") 
+	#+MCL     (format t "~&OpenMCL version~%") 
+	#+SBCL    (format t "~&SBCL version~%")
+	(load "$LOAD_UTILITIES")
+	(specware::compile-and-load-lisp-file "$LOAD_UTILITIES")
+	(load "$EXIT_ON_ERRORS") 
+	(load "$MEMORY_MANAGEMENT") 
+	(load "$SAVE_IMAGE") 
 	(progn
 	 #+Allegro (compact-memory nil 0 32000000)   ; not verbose
 	 #+Allegro (set-gc-parameters-for-build nil) ; not verbose
