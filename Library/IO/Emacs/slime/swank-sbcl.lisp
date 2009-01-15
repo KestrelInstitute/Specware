@@ -702,127 +702,127 @@ stack."
 ;             t)
 ;    (sb-di:no-debug-blocks  () nil)))
 
-(defun stream-source-position (code-location stream)
-  (let* ((cloc (sb-debug::maybe-block-start-location code-location))
-	 (tlf-number (sb-di::code-location-toplevel-form-offset cloc))
-	 (form-number (sb-di::code-location-form-number cloc)))
-    (multiple-value-bind (tlf pos-map) (read-source-form tlf-number stream)
-      (let* ((path-table (sb-di::form-number-translations tlf 0))
-             (path (cond ((<= (length path-table) form-number)
-                          (warn "inconsistent form-number-translations")
-                          (list 0))
-                         (t
-                          (reverse (cdr (aref path-table form-number)))))))
-        (source-path-source-position path tlf pos-map)))))
+;(defun stream-source-position (code-location stream)
+;  (let* ((cloc (sb-debug::maybe-block-start-location code-location))
+;	 (tlf-number (sb-di::code-location-toplevel-form-offset cloc))
+;	 (form-number (sb-di::code-location-form-number cloc)))
+;    (multiple-value-bind (tlf pos-map) (read-source-form tlf-number stream)
+;      (let* ((path-table (sb-di::form-number-translations tlf 0))
+;             (path (cond ((<= (length path-table) form-number)
+;                          (warn "inconsistent form-number-translations")
+;                          (list 0))
+;                         (t
+;                          (reverse (cdr (aref path-table form-number)))))))
+;        (source-path-source-position path tlf pos-map)))))
 
-(defun string-source-position (code-location string)
-  (with-input-from-string (s string)
-    (stream-source-position code-location s)))
+;(defun string-source-position (code-location string)
+;  (with-input-from-string (s string)
+;    (stream-source-position code-location s)))
 
-;;; source-path-file-position and friends are in swank-source-path-parser
+;;;; source-path-file-position and friends are in swank-source-path-parser
 
-(defun safe-source-location-for-emacs (code-location)
-  (if *debug-definition-finding*
-      (code-location-source-location code-location)
-      (handler-case (code-location-source-location code-location)
-        (error (c) (list :error (format nil "~A" c))))))
+;(defun safe-source-location-for-emacs (code-location)
+;  (if *debug-definition-finding*
+;      (code-location-source-location code-location)
+;      (handler-case (code-location-source-location code-location)
+;        (error (c) (list :error (format nil "~A" c))))))
 
-(defimplementation frame-source-location-for-emacs (index)
-  (safe-source-location-for-emacs
-   (sb-di:frame-code-location (nth-frame index))))
+;(defimplementation frame-source-location-for-emacs (index)
+;  (safe-source-location-for-emacs
+;   (sb-di:frame-code-location (nth-frame index))))
 
-(defun frame-debug-vars (frame)
-  "Return a vector of debug-variables in frame."
-  (sb-di::debug-fun-debug-vars (sb-di:frame-debug-fun frame)))
+;(defun frame-debug-vars (frame)
+;  "Return a vector of debug-variables in frame."
+;  (sb-di::debug-fun-debug-vars (sb-di:frame-debug-fun frame)))
 
-(defun debug-var-value (var frame location)
-  (ecase (sb-di:debug-var-validity var location)
-    (:valid (sb-di:debug-var-value var frame))
-    ((:invalid :unknown) ':<not-available>)))
+;(defun debug-var-value (var frame location)
+;  (ecase (sb-di:debug-var-validity var location)
+;    (:valid (sb-di:debug-var-value var frame))
+;    ((:invalid :unknown) ':<not-available>)))
 
-(defimplementation frame-locals (index)
-  (let* ((frame (nth-frame index))
-	 (loc (sb-di:frame-code-location frame))
-	 (vars (frame-debug-vars frame)))
-    (loop for v across vars collect
-          (list :name (sb-di:debug-var-symbol v)
-                :id (sb-di:debug-var-id v)
-                :value (debug-var-value v frame loc)))))
+;(defimplementation frame-locals (index)
+;  (let* ((frame (nth-frame index))
+;	 (loc (sb-di:frame-code-location frame))
+;	 (vars (frame-debug-vars frame)))
+;    (loop for v across vars collect
+;          (list :name (sb-di:debug-var-symbol v)
+;                :id (sb-di:debug-var-id v)
+;                :value (debug-var-value v frame loc)))))
 
-(defimplementation frame-var-value (frame var)
-  (let* ((frame (nth-frame frame))
-         (dvar (aref (frame-debug-vars frame) var)))
-    (debug-var-value dvar frame (sb-di:frame-code-location frame))))
+;(defimplementation frame-var-value (frame var)
+;  (let* ((frame (nth-frame frame))
+;         (dvar (aref (frame-debug-vars frame) var)))
+;    (debug-var-value dvar frame (sb-di:frame-code-location frame))))
 
-(defimplementation frame-catch-tags (index)
-  (mapcar #'car (sb-di:frame-catches (nth-frame index))))
+;(defimplementation frame-catch-tags (index)
+;  (mapcar #'car (sb-di:frame-catches (nth-frame index))))
 
-(defimplementation eval-in-frame (form index)
-  (let ((frame (nth-frame index)))
-    (funcall (the function
-               (sb-di:preprocess-for-eval form
-                                          (sb-di:frame-code-location frame)))
-             frame)))
+;(defimplementation eval-in-frame (form index)
+;  (let ((frame (nth-frame index)))
+;    (funcall (the function
+;               (sb-di:preprocess-for-eval form
+;                                          (sb-di:frame-code-location frame)))
+;             frame)))
 
-(defun sb-debug-catch-tag-p (tag)
-  (and (symbolp tag)
-       (not (symbol-package tag))
-       (string= tag :sb-debug-catch-tag)))
+;(defun sb-debug-catch-tag-p (tag)
+;  (and (symbolp tag)
+;       (not (symbol-package tag))
+;       (string= tag :sb-debug-catch-tag)))
 
-(defimplementation return-from-frame (index form)
-  (let* ((frame (nth-frame index))
-         (probe (assoc-if #'sb-debug-catch-tag-p
-                          (sb-di::frame-catches frame))))
-    (cond (probe (throw (car probe) (eval-in-frame form index)))
-          (t (format nil "Cannot return from frame: ~S" frame)))))
+;(defimplementation return-from-frame (index form)
+;  (let* ((frame (nth-frame index))
+;         (probe (assoc-if #'sb-debug-catch-tag-p
+;                          (sb-di::frame-catches frame))))
+;    (cond (probe (throw (car probe) (eval-in-frame form index)))
+;          (t (format nil "Cannot return from frame: ~S" frame)))))
 
-;; FIXME: this implementation doesn't unwind the stack before
-;; re-invoking the function, but it's better than no implementation at
-;; all.
-(defimplementation restart-frame (index)
-  (let ((frame (nth-frame index)))
-    (return-from-frame index (sb-debug::frame-call-as-list frame))))
+;;; FIXME: this implementation doesn't unwind the stack before
+;;; re-invoking the function, but it's better than no implementation at
+;;; all.
+;(defimplementation restart-frame (index)
+;  (let ((frame (nth-frame index)))
+;    (return-from-frame index (sb-debug::frame-call-as-list frame))))
 
-;;;;; reference-conditions
+;;;;;; reference-conditions
 
-(defimplementation format-sldb-condition (condition)
-  (let ((sb-int:*print-condition-references* nil))
-    (princ-to-string condition)))
+;(defimplementation format-sldb-condition (condition)
+;  (let ((sb-int:*print-condition-references* nil))
+;    (princ-to-string condition)))
 
-(defimplementation condition-references (condition)
-  (if (typep condition 'sb-int:reference-condition)
-      (sb-int:reference-condition-references condition)
-      '()))
+;(defimplementation condition-references (condition)
+;  (if (typep condition 'sb-int:reference-condition)
+;      (sb-int:reference-condition-references condition)
+;      '()))
 
-
-;;;; Profiling
+;
+;;;;; Profiling
 
-(defimplementation profile (fname)
-  (when fname (eval `(sb-profile:profile ,fname))))
+;(defimplementation profile (fname)
+;  (when fname (eval `(sb-profile:profile ,fname))))
 
-(defimplementation unprofile (fname)
-  (when fname (eval `(sb-profile:unprofile ,fname))))
+;(defimplementation unprofile (fname)
+;  (when fname (eval `(sb-profile:unprofile ,fname))))
 
-(defimplementation unprofile-all ()
-  (sb-profile:unprofile)
-  "All functions unprofiled.")
+;(defimplementation unprofile-all ()
+;  (sb-profile:unprofile)<
+;  "All functions unprofiled.")
 
-(defimplementation profile-report ()
-  (sb-profile:report))
+;(defimplementation profile-report ()
+;  (sb-profile:report))
 
-(defimplementation profile-reset ()
-  (sb-profile:reset)
-  "Reset profiling counters.")
+;(defimplementation profile-reset ()
+;  (sb-profile:reset)
+;  "Reset profiling counters.")
 
-(defimplementation profiled-functions ()
-  (sb-profile:profile))
+;(defimplementation profiled-functions ()
+;  (sb-profile:profile))
 
-(defimplementation profile-package (package callers methods)
-  (declare (ignore callers methods))
-  (eval `(sb-profile:profile ,(package-name (find-package package)))))
+;(defimplementation profile-package (package callers methods)
+;  (declare (ignore callers methods))
+;  (eval `(sb-profile:profile ,(package-name (find-package package)))))
 
-
-;;;; Inspector
+;
+;;;;; Inspector
 
 (defclass sbcl-inspector (inspector)
   ())
@@ -830,69 +830,70 @@ stack."
 (defimplementation make-default-inspector ()
   (make-instance 'sbcl-inspector))
 
-(defmethod inspect-for-emacs ((o t) (inspector sbcl-inspector))
-  (declare (ignore inspector))
-  (cond ((sb-di::indirect-value-cell-p o)
-         (values "A value cell." (label-value-line*
-                                  (:value (sb-kernel:value-cell-ref o)))))
-	(t
-	 (multiple-value-bind (text label parts) (sb-impl::inspected-parts o)
-           (if label
-               (values text (loop for (l . v) in parts
-                                  append (label-value-line l v)))
-               (values text (loop for value in parts  for i from 0
-                                  append (label-value-line i value))))))))
+;(defmethod inspect-for-emacs ((o t) (inspector sbcl-inspector))
+;  (declare (ignore inspector))
+;  (cond ((sb-di::indirect-value-cell-p o)
+;         (values "A value cell." (label-value-line*
+;                                  (:value (sb-kernel:value-cell-ref o)))))
+;	(t
+;	 (multiple-value-bind (text label parts) (sb-impl::inspected-parts o)
+;           (if label
+;               (values text (loop for (l . v) in parts
+;                                  append (label-value-line l v)))
+;               (values text (loop for value in parts  for i from 0
+;                                  append (label-value-line i value))))))))
 
-(defmethod inspect-for-emacs ((o function) (inspector sbcl-inspector))
-  (declare (ignore inspector))
-  (let ((header (sb-kernel:widetag-of o)))
-    (cond ((= header sb-vm:simple-fun-header-widetag)
-	   (values "A simple-fun."
-                   (label-value-line*
-                    (:name (sb-kernel:%simple-fun-name o))
-                    (:arglist (sb-kernel:%simple-fun-arglist o))
-                    (:self (sb-kernel:%simple-fun-self o))
-                    (:next (sb-kernel:%simple-fun-next o))
-                    (:type (sb-kernel:%simple-fun-type o))
-                    (:code (sb-kernel:fun-code-header o)))))
-	  ((= header sb-vm:closure-header-widetag)
-	   (values "A closure."
-                   (append
-                    (label-value-line :function (sb-kernel:%closure-fun o))
-                    `("Closed over values:" (:newline))
-                    (loop for i below (1- (sb-kernel:get-closure-length o))
-                          append (label-value-line
-                                  i (sb-kernel:%closure-index-ref o i))))))
-	  (t (call-next-method o)))))
+;(defmethod inspect-for-emacs ((o function) (inspector sbcl-inspector))
+;  (declare (ignore inspector))
+;  (let ((header (sb-kernel:widetag-of o)))
+;    (cond ((= header sb-vm:simple-fun-header-widetag)
+;	   (values "A simple-fun."
+;                   (label-value-line*
+;                    (:name (sb-kernel:%simple-fun-name o))
+;                    (:arglist (sb-kernel:%simple-fun-arglist o))
+;                    (:self (sb-kernel:%simple-fun-self o))
+;                    (:next (sb-kernel:%simple-fun-next o))
+;                    (:type (sb-kernel:%simple-fun-type o))
+;                    (:code (sb-kernel:fun-code-header o)))))
+;                    (:type (sb-kernel:%simple-fun-type o))
+;	  ((= header sb-vm:closure-header-widetag)
+;	   (values "A closure."
+;                   (append
+;                    (label-value-line :function (sb-kernel:%closure-fun o))
+;                    `("Closed over values:" (:newline))
+;                    (loop for i below (1- (sb-kernel:get-closure-length o))
+;                          append (label-value-line
+;                                  i (sb-kernel:%closure-index-ref o i))))))
+;	  (t (call-next-method o)))))
 
-(defmethod inspect-for-emacs ((o sb-kernel:code-component) (_ sbcl-inspector))
-  (declare (ignore _))
-  (values (format nil "~A is a code data-block." o)
-          (append
-           (label-value-line*
-            (:code-size (sb-kernel:%code-code-size o))
-            (:entry-points (sb-kernel:%code-entry-points o))
-            (:debug-info (sb-kernel:%code-debug-info o))
-            (:trace-table-offset (sb-kernel:code-header-ref
-                                  o sb-vm:code-trace-table-offset-slot)))
-           `("Constants:" (:newline))
-           (loop for i from sb-vm:code-constants-offset
-                 below (sb-kernel:get-header-data o)
-                 append (label-value-line i (sb-kernel:code-header-ref o i)))
-           `("Code:" (:newline)
-             , (with-output-to-string (s)
-                 (cond ((sb-kernel:%code-debug-info o)
-                        (sb-disassem:disassemble-code-component o :stream s))
-                       (t
-                        (sb-disassem:disassemble-memory
-                         (sb-disassem::align
-                          (+ (logandc2 (sb-kernel:get-lisp-obj-address o)
-                                       sb-vm:lowtag-mask)
-                             (* sb-vm:code-constants-offset
-                                sb-vm:n-word-bytes))
-                          (ash 1 sb-vm:n-lowtag-bits))
-                         (ash (sb-kernel:%code-code-size o) sb-vm:word-shift)
-                         :stream s))))))))
+;(defmethod inspect-for-emacs ((o sb-kernel:code-component) (_ sbcl-inspector))
+;  (declare (ignore _))
+;  (values (format nil "~A is a code data-block." o)
+;          (append
+;           (label-value-line*
+;            (:code-size (sb-kernel:%code-code-size o))
+;            (:entry-points (sb-kernel:%code-entry-points o))
+;            (:debug-info (sb-kernel:%code-debug-info o))
+;            (:trace-table-offset (sb-kernel:code-header-ref
+;                                  o sb-vm:code-trace-table-offset-slot)))
+;           `("Constants:" (:newline))
+;           (loop for i from sb-vm:code-constants-offset
+;                 below (sb-kernel:get-header-data o)
+;                 append (label-value-line i (sb-kernel:code-header-ref o i)))
+;           `("Code:" (:newline)
+;             , (with-output-to-string (s)
+;                 (cond ((sb-kernel:%code-debug-info o)
+;                        (sb-disassem:disassemble-code-component o :stream s))
+;                       (t
+;                        (sb-disassem:disassemble-memory
+;                         (sb-disassem::align
+;                          (+ (logandc2 (sb-kernel:get-lisp-obj-address o)
+;                                       sb-vm:lowtag-mask)
+;                             (* sb-vm:code-constants-offset
+;                                sb-vm:n-word-bytes))
+;                          (ash 1 sb-vm:n-lowtag-bits))
+;                         (ash (sb-kernel:%code-code-size o) sb-vm:word-shift)
+;                         :stream s))))))))
 
 (defmethod inspect-for-emacs ((o sb-kernel:fdefn) (inspector sbcl-inspector))
   (declare (ignore inspector))
