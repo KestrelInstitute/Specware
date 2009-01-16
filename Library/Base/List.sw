@@ -1806,150 +1806,187 @@ qed
 end-proof
 
 proof Isa List__unzip3_Obligation_subtype
-(* proof (auto simp add: Function__bijective_p__stp_def) *)
-(*  show "inj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list \<Rightarrow> *)
-(*                             ('a \<times> 'b \<times> 'c) list) *)
-(*               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)" *)
-(*  proof (unfold inj_on_def, rule ballI, rule ballI, rule impI) *)
-(*   fix l1_l2_l3 :: "'a list \<times> 'b list \<times> 'c list" *)
-(*   fix r1_r2_r3 :: "'a list \<times> 'b list \<times> 'c list" *)
-(*   assume "l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)" *)
-(*   assume "r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)" *)
-(*   assume "List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3" *)
-(*   def l1 \<equiv> "fst l1_l2_l3" *)
-(*   and l2 \<equiv> "fst (snd l1_l2_l3)" *)
-(*   and l3 \<equiv> "snd (snd l1_l2_l3)" *)
-(*   and r1 \<equiv> "fst r1_r2_r3" *)
-(*   and r2 \<equiv> "fst (snd r1_r2_r3)" *)
-(*   and r3 \<equiv> "snd (snd r1_r2_r3)" *)
-(*   with `l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)` *)
-(*        `r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)` *)
-(*    have "length l1 = length l2" and "length r1 = length r2" *)
-(*     and "length l2 = length l3" and "length r2 = length r3" *)
-(*     and "length l1 = length l3" and "length r1 = length r3" *)
-(*     by (auto simp add: mem_def List__equiLong_def) *)
-(*   from `List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3` *)
-(*        l1_def l2_def l3_def r1_def r2_def r3_def *)
-(*    have "List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)" by auto *)
-(*   def fl \<equiv> "\<lambda>i. if i < length l1 then Some (l1!i,l2!i,l3!i) else None" *)
-(*   and fr \<equiv> "\<lambda>i. if i < length r1 then Some (r1!i,r2!i,r3!i) else None" *)
-(*   with `List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)` *)
-(*    have "List__list fl = List__list fr" by (auto simp add: List__zip3_def) *)
-(*   from fl_def have fl_seg: "\<exists>n. fl definedOnInitialSegmentOfLength n" *)
-(*    by (auto simp add: List__definedOnInitialSegmentOfLength_def) *)
-(*   from fr_def have fr_seg: "\<exists>n. fr definedOnInitialSegmentOfLength n" *)
-(*    by (auto simp add: List__definedOnInitialSegmentOfLength_def) *)
-(*   from List__list_subtype_constr *)
-(*    have "inj_on List__list *)
-(*                 (\<lambda>f:: nat \<Rightarrow> ('a \<times> 'b \<times> 'c) option. *)
-(*                     \<exists>n. f definedOnInitialSegmentOfLength n)" *)
-(*     by (auto simp add: Function__bijective_p__stp_def) *)
-(*   with fl_seg fr_seg `List__list fl = List__list fr` *)
-(*    have "fl = fr" *)
-(*     by (auto simp add: inj_on_def mem_def del: List__list.simps) *)
-(*   have "length l1 \<ge> length r1" *)
-(*   proof (rule ccontr) *)
-(*    assume "\<not> length l1 \<ge> length r1" *)
-(*    hence "length l1 < length r1" by auto *)
-(*    with fl_def fr_def have "fl (length l1) \<noteq> fr (length l1)" by auto *)
-(*    with `fl = fr` show False by auto *)
-(*   qed *)
-(*   have "length l1 \<le> length r1" *)
-(*   proof (rule ccontr) *)
-(*    assume "\<not> length l1 \<le> length r1" *)
-(*    hence "length l1 > length r1" by auto *)
-(*    with fl_def fr_def have "fl (length r1) \<noteq> fr (length r1)" by auto *)
-(*    with `fl = fr` show False by auto *)
-(*   qed *)
-(*   with `length l1 \<ge> length r1` have "length l1 = length r1" by auto *)
-(*   with `length l1 = length l2` `length r1 = length r2` *)
-(*    have "length l2 = length r2" by auto *)
-(*   with `length l2 = length l3` `length r2 = length r3` *)
-(*    have "length l3 = length r3" by auto *)
-(*   have "\<forall>i < length l1. l1 ! i = r1 ! i" *)
-(*   proof *)
-(*    fix i *)
-(*    from `fl = fr` have "fl i = fr i" by auto *)
-(*    show "i < length l1 \<longrightarrow> l1 ! i = r1 ! i" *)
-(*    proof *)
-(*     assume "i < length l1" *)
-(*     with `length l1 = length r1` have "i < length r1" by auto *)
-(*     with `i < length l1` `fl i = fr i` fl_def fr_def *)
-(*      show "l1 ! i = r1 ! i" by auto *)
-(*    qed *)
-(*   qed *)
-(*   with `length l1 = length r1` have "l1 = r1" *)
-(*    by (auto simp add: list_eq_iff_nth_eq) *)
-(*   have "\<forall>i < length l2. l2 ! i = r2 ! i" *)
-(*   proof *)
-(*    fix i *)
-(*    from `fl = fr` have "fl i = fr i" by auto *)
-(*    show "i < length l2 \<longrightarrow> l2 ! i = r2 ! i" *)
-(*    proof *)
-(*     assume "i < length l2" *)
-(*     with `length l1 = length l2` have "i < length l1" by auto *)
-(*     with `length l1 = length r1` have "i < length r1" by auto *)
-(*     with `i < length l1` `fl i = fr i` fl_def fr_def *)
-(*      show "l2 ! i = r2 ! i" by auto *)
-(*    qed *)
-(*   qed *)
-(*   with `length l2 = length r2` have "l2 = r2" *)
-(*    by (auto simp add: list_eq_iff_nth_eq) *)
-(*   have "\<forall>i < length l3. l3 ! i = r3 ! i" *)
-(*   proof *)
-(*    fix i *)
-(*    from `fl = fr` have "fl i = fr i" by auto *)
-(*    show "i < length l3 \<longrightarrow> l3 ! i = r3 ! i" *)
-(*    proof *)
-(*     assume "i < length l3" *)
-(*     with `length l1 = length l3` have "i < length l1" by auto *)
-(*     with `length l1 = length r1` have "i < length r1" by auto *)
-(*     with `i < length l1` `fl i = fr i` fl_def fr_def *)
-(*      show "l3 ! i = r3 ! i" by auto *)
-(*    qed *)
-(*   qed *)
-(*   with `length l3 = length r3` have "l3 = r3" *)
-(*    by (auto simp add: list_eq_iff_nth_eq) *)
-(*   with `l1 = r1` `l2 = r2` l1_def l2_def l3_def r1_def r2_def r3_def *)
-(*   show "l1_l2_l3 = r1_r2_r3" by (auto simp add: Pair_fst_snd_eq) *)
-(*  qed *)
-(* next *)
-(*  show "surj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list \<Rightarrow> *)
-(*                               ('a \<times> 'b \<times> 'c) list) *)
-(*                (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) (\<lambda>_. True)" *)
-(*  proof (auto simp add: surj_on_def) *)
-(*   fix lll :: "('a \<times> 'b \<times> 'c) list" *)
-(*   show "\<exists> l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z). *)
-(*            lll = List__zip3 l1_l2_l3" *)
-(*   proof (induct lll) *)
-(*   case Nil *)
-(*    def l1 \<equiv> "[] :: 'a list" and l2 \<equiv> "[] :: 'b list" and l3 \<equiv> "[] :: 'c list" *)
-(*    hence MEM: "(l1,l2,l3) \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)" *)
-(*     by (auto simp: List__equiLong_def mem_def) *)
-(*    def f \<equiv> "\<lambda>i. if i < length l1 then Some (l1!i, l2!i, l3!i) else None" *)
-(*    hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n" *)
-(*     by (auto simp: List__definedOnInitialSegmentOfLength_def) *)
-(*    with f_def l1_def have "[] = List__zip3 (l1,l2,l3)" *)
-(*     by (auto simp: List__zip3_def) *)
-(*    with MEM show ?case by blast *)
-(*   next *)
-(*   case (Cons hhh ttt) *)
-(*    then obtain t1_t2_t3 *)
-(*     where "t1_t2_t3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)" *)
-(*       and "ttt = List__zip3 t1_t2_t3" *)
-(*      by blast *)
-(*    def h1 \<equiv> "fst hhh" and h2 \<equiv> "fst (snd hhh)" and h3 \<equiv> "snd (snd hhh)" *)
-(*    and t1 \<equiv> "fst t1_t2_t3" *)
-(*    and t2 \<equiv> "fst (snd t1_t2_t3)" *)
-(*    and t3 \<equiv> "snd (snd t1_t2_t3)" *)
-(*    def l1 \<equiv> "h1 # t1" and l2 \<equiv> "h2 # t2" and l3 \<equiv> "h3 # t3" *)
-(*    def ft \<equiv> "\<lambda>i. if i < length t1 then Some (t1!i, t2!i, t3!i) else None" *)
-(*    with `ttt = List__zip3 t1_t2_t3` t1_def t2_def t3_def *)
-(*     have "ttt = List__list ft" *)
-(*  by (auto simp: List__zip3_def) *)
-(*    sorry *)
-(*  qed *)
-(* qed *)
+proof (auto simp add: Function__bijective_p__stp_def)
+ show "inj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
+                             \<Rightarrow>
+                            ('a \<times> 'b \<times> 'c) list)
+              (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+ proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
+  fix l1_l2_l3 :: "'a list \<times> 'b list \<times> 'c list"
+  fix r1_r2_r3 :: "'a list \<times> 'b list \<times> 'c list"
+  assume "l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+  assume "r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+  assume "List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3"
+  def l1 \<equiv> "fst l1_l2_l3"
+  and l2 \<equiv> "fst (snd l1_l2_l3)"
+  and l3 \<equiv> "snd (snd l1_l2_l3)"
+  and r1 \<equiv> "fst r1_r2_r3"
+  and r2 \<equiv> "fst (snd r1_r2_r3)"
+  and r3 \<equiv> "snd (snd r1_r2_r3)"
+  with `l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)`
+       `r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)`
+   have "length l1 = length l2" and "length r1 = length r2"
+    and "length l2 = length l3" and "length r2 = length r3"
+    and "length l1 = length l3" and "length r1 = length r3"
+    by (auto simp add: mem_def List__equiLong_def)
+  from `List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3`
+       l1_def l2_def l3_def r1_def r2_def r3_def
+   have "List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)" by auto
+  def fl \<equiv> "\<lambda>i. if i < length l1
+                               then Some (l1!i,l2!i,l3!i) else None"
+  and fr \<equiv> "\<lambda>i. if i < length r1
+                               then Some (r1!i,r2!i,r3!i) else None"
+  with `List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)`
+   have "List__list fl = List__list fr" by (auto simp add: List__zip3_def)
+  from fl_def have fl_seg: "\<exists>n. fl definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  from fr_def have fr_seg: "\<exists>n. fr definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  from List__list_subtype_constr
+   have "inj_on List__list
+                (\<lambda>f:: nat \<Rightarrow>
+                              ('a \<times> 'b \<times> 'c) option.
+                    \<exists>n. f definedOnInitialSegmentOfLength n)"
+    by (auto simp add: Function__bijective_p__stp_def)
+  with fl_seg fr_seg `List__list fl = List__list fr`
+   have "fl = fr"
+    by (auto simp add: inj_on_def mem_def del: List__list.simps)
+  have "length l1 \<ge> length r1"
+  proof (rule ccontr)
+   assume "\<not> length l1 \<ge> length r1"
+   hence "length l1 < length r1" by auto
+   with fl_def fr_def have "fl (length l1) \<noteq> fr (length l1)" by auto
+   with `fl = fr` show False by auto
+  qed
+  have "length l1 \<le> length r1"
+  proof (rule ccontr)
+   assume "\<not> length l1 \<le> length r1"
+   hence "length l1 > length r1" by auto
+   with fl_def fr_def have "fl (length r1) \<noteq> fr (length r1)" by auto
+   with `fl = fr` show False by auto
+  qed
+  with `length l1 \<ge> length r1` have "length l1 = length r1" by auto
+  with `length l1 = length l2` `length r1 = length r2`
+   have "length l2 = length r2" by auto
+  with `length l2 = length l3` `length r2 = length r3`
+   have "length l3 = length r3" by auto
+  have "\<forall>i < length l1. l1 ! i = r1 ! i"
+  proof
+   fix i
+   from `fl = fr` have "fl i = fr i" by auto
+   show "i < length l1 \<longrightarrow> l1 ! i = r1 ! i"
+   proof
+    assume "i < length l1"
+    with `length l1 = length r1` have "i < length r1" by auto
+    with `i < length l1` `fl i = fr i` fl_def fr_def
+     show "l1 ! i = r1 ! i" by auto
+   qed
+  qed
+  with `length l1 = length r1` have "l1 = r1"
+   by (auto simp add: list_eq_iff_nth_eq)
+  have "\<forall>i < length l2. l2 ! i = r2 ! i"
+  proof
+   fix i
+   from `fl = fr` have "fl i = fr i" by auto
+   show "i < length l2 \<longrightarrow> l2 ! i = r2 ! i"
+   proof
+    assume "i < length l2"
+    with `length l1 = length l2` have "i < length l1" by auto
+    with `length l1 = length r1` have "i < length r1" by auto
+    with `i < length l1` `fl i = fr i` fl_def fr_def
+     show "l2 ! i = r2 ! i" by auto
+   qed
+  qed
+  with `length l2 = length r2` have "l2 = r2"
+   by (auto simp add: list_eq_iff_nth_eq)
+  have "\<forall>i < length l3. l3 ! i = r3 ! i"
+  proof
+   fix i
+   from `fl = fr` have "fl i = fr i" by auto
+   show "i < length l3 \<longrightarrow> l3 ! i = r3 ! i"
+   proof
+    assume "i < length l3"
+    with `length l1 = length l3` have "i < length l1" by auto
+    with `length l1 = length r1` have "i < length r1" by auto
+    with `i < length l1` `fl i = fr i` fl_def fr_def
+     show "l3 ! i = r3 ! i" by auto
+   qed
+  qed
+  with `length l3 = length r3` have "l3 = r3"
+   by (auto simp add: list_eq_iff_nth_eq)
+  with `l1 = r1` `l2 = r2` l1_def l2_def l3_def r1_def r2_def r3_def
+  show "l1_l2_l3 = r1_r2_r3" by (auto simp add: Pair_fst_snd_eq)
+ qed
+next
+ show "surj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
+                              \<Rightarrow>
+                              ('a \<times> 'b \<times> 'c) list)
+               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+               (\<lambda>_. True)"
+ proof (auto simp add: surj_on_def)
+  fix lll :: "('a \<times> 'b \<times> 'c) list"
+  show "\<exists> l1_l2_l3 \<in>
+                (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z).
+           lll = List__zip3 l1_l2_l3"
+  proof (induct lll)
+  case Nil
+   def l1 \<equiv> "[] :: 'a list"
+   and l2 \<equiv> "[] :: 'b list"
+   and l3 \<equiv> "[] :: 'c list"
+   hence MEM: "(l1,l2,l3) \<in>
+               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+    by (auto simp: List__equiLong_def mem_def)
+   def f \<equiv> "\<lambda>i. if i < length l1
+                               then Some (l1!i, l2!i, l3!i) else None"
+   hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+    by (auto simp: List__definedOnInitialSegmentOfLength_def)
+   with f_def l1_def have "[] = List__zip3 (l1,l2,l3)"
+    by (auto simp: List__zip3_def)
+   with MEM show ?case by blast
+  next
+  case (Cons hhh ttt)
+   then obtain t1_t2_t3
+    where TEQL: "t1_t2_t3 \<in>
+                 (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+      and "ttt = List__zip3 t1_t2_t3"
+     by blast
+   def h1 \<equiv> "fst hhh"
+   and h2 \<equiv> "fst (snd hhh)"
+   and h3 \<equiv> "snd (snd hhh)"
+   and t1 \<equiv> "fst t1_t2_t3"
+   and t2 \<equiv> "fst (snd t1_t2_t3)"
+   and t3 \<equiv> "snd (snd t1_t2_t3)"
+   hence "t1_t2_t3 = (t1,t2,t3)" by auto
+   with TEQL have "length t1 = length t2" and "length t2 = length t3"
+    by (auto simp: mem_def List__equiLong_def)
+   def l1 \<equiv> "h1 # t1" and l2 \<equiv> "h2 # t2" and l3 \<equiv> "h3 # t3"
+   with `length t1 = length t2` `length t2 = length t3`
+    have LEQL: "(l1,l2,l3) \<in>
+                (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+     by (auto simp: mem_def List__equiLong_def)
+   def ft \<equiv> "\<lambda>i. if i < length t1
+                                then Some (t1!i, t2!i, t3!i) else None"
+   with `ttt = List__zip3 t1_t2_t3` `t1_t2_t3 = (t1,t2,t3)`
+    have "ttt = List__list ft" by (auto simp: List__zip3_def)
+   def f \<equiv> "\<lambda>i. if i < length l1
+                               then Some (l1!i, l2!i, l3!i) else None"
+   with l1_def l2_def l3_def have "f 0 = Some (h1,h2,h3)" by auto
+   with h1_def h2_def h3_def have F0: "f 0 = Some hhh" by auto
+   from f_def have fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+    by (auto simp: List__definedOnInitialSegmentOfLength_def)
+   from f_def ft_def l1_def l2_def l3_def
+    have F_FT: "(\<lambda>i. f (i + 1)) = ft"
+     by (auto simp: ext)
+   with F0 fseg have "List__list f = hhh # List__list ft" by auto
+   with `ttt = List__list ft` have "hhh # ttt = List__list f" by auto
+   from f_def have "List__zip3 (l1,l2,l3) = List__list f"
+    by (auto simp: List__zip3_def)
+   with `hhh # ttt = List__list f` have "hhh # ttt = List__zip3 (l1,l2,l3)"
+    by auto
+   with LEQL show ?case by blast
+  qed
+ qed
+qed
 end-proof
 
 % homomorphically apply function to all elements of list(s):
