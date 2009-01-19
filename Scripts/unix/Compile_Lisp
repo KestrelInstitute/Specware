@@ -67,6 +67,7 @@ $BATCH_LISP <<-XXXX
 	(load "$MEMORY_MANAGEMENT") 
 	#+Allegro (enlarge-stack) 
 	(exiting-on-errors 
+	  (format t "loading $MAIN_COMPILE_FILE ...~%")
 	  (load "$MAIN_COMPILE_FILE"))
 	(exit-from-lisp 0)
 XXXX
