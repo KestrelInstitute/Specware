@@ -1989,6 +1989,56 @@ next
 qed
 end-proof
 
+proof Isa List__unzip3_subtype_constr
+proof auto
+ fix l1::"'a list"
+ and l2::"'b list"
+ and l3::"'c list"
+ assume "List__unzip3 dom_unzip3 = (l1,l2,l3)"
+ hence IZL: "Function__inverse__stp
+               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+               List__zip3 dom_unzip3
+             = (l1,l2,l3)"
+  by (auto simp: List__unzip3_def)
+ have "(\<lambda>_. True) dom_unzip3" by auto
+ with List__unzip3_Obligation_subtype
+  have "Function__inverse__stp
+          (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+          List__zip3 dom_unzip3 =
+        (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
+                 List__zip3 l = dom_unzip3)"
+   by (rule inverse_SOME)
+ with IZL
+  have SL: "(SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                     \<and> List__zip3 l = dom_unzip3) = (l1,l2,l3)" by auto
+ from List__unzip3_Obligation_subtype
+  have "surj_on List__zip3 (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+                           UNIV"
+   by (auto simp: bij_on_def)
+ hence "\<exists>l \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z).
+             dom_unzip3 = List__zip3 l"
+   by (auto simp: surj_on_def)
+ then obtain l where "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l"
+                 and "List__zip3 l = dom_unzip3"
+  by (auto simp: mem_def)
+ hence "\<exists>l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                 \<and> List__zip3 l = dom_unzip3"
+  by auto
+ hence "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
+                   List__zip3 l = dom_unzip3)
+        \<and>
+        List__zip3
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
+                   List__zip3 l = dom_unzip3)
+        = dom_unzip3"
+  by (rule someI_ex)
+ with SL have "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) (l1,l2,l3)"
+  by auto
+ thus "l1 equiLong l2" and "l2 equiLong l3" by auto
+qed
+end-proof
+
 % homomorphically apply function to all elements of list(s):
 
 op [a,b] map (f: a -> b) (l: List a) : List b =
