@@ -2053,6 +2053,10 @@ op [a,b,c,d] map3 (f: a * b * c -> d)
                    l1 equiLong l2 && l2 equiLong l3) : List d =
   map f (zip3 (l1, l2, l3))
 
+proof Isa List__map_Obligation_subtype
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
 % remove all None elements from a list of optional values, and also remove the
 % Some wrappers:
 
