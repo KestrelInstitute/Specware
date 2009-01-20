@@ -56,6 +56,10 @@ LOAD_UTILITIES="$SPECWARE4"/Applications/Handwritten/Lisp/load-utilities
 EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 
+/bin/rm "$LOAD_UTILITIES".fasl
+/bin/rm "$EXIT_ON_ERRORS".fasl
+/bin/rm "$MEMORY_MANAGEMENT".fasl
+
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version~%") 
 	#+CMU     (format t "CMU version~%") 
