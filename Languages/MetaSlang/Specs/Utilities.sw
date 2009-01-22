@@ -11,6 +11,8 @@ Utilities qualifying spec
  type Vars = List Var
  type VarSubst = List (Var * MS.Term)
 
+ op varNames(vs: Vars): List Id = map (fn (vn,_) -> vn) vs
+
  op substitute    : MS.Term * VarSubst -> MS.Term
  op freeVars      : MS.Term -> Vars
 
@@ -421,7 +423,7 @@ Utilities qualifying spec
    removeDuplicateVars(foldSubTerms (fn (t,r) -> boundVars t ++ r) [] t)
 
  op boundVarNamesIn(t: MS.Term): List Id =
-   map (fn (vn,_) -> vn) (boundVarsIn t)
+   varNames(boundVarsIn t)
 
  % This implementation of substitution 
  % completely ignores free variables in sorts.
@@ -473,9 +475,7 @@ Utilities qualifying spec
  def substitute(M,sub) = 
    if null sub then M else 
    let freeNames = foldr (fn ((v,trm),vs) -> 
-                            StringSet.union (StringSet.fromList
-                                               (List.map (fn (n,_) -> n)
-                                                  (freeVars trm)),
+                            StringSet.union (StringSet.fromList(varNames(freeVars trm)),
                                              vs)) 
                      StringSet.empty sub
    in 
@@ -561,27 +561,27 @@ Utilities qualifying spec
    (%String.writeLine ("Returning "^MetaSlangPrint.printTerm M1);
     M1)
 
- def substBoundVars(vars,sub,freeNames) = 
-   List.foldr (fn(v,(vars,sub,freeNames)) -> 
-	       let (v,sub,freeNames) = substBoundVar(v,sub,freeNames) in
-	       (cons(v,vars),sub,freeNames))
-              ([],sub,freeNames) vars
+ def substBoundVars(vars, sub, freeNames) = 
+   foldr (fn(v, (vars, sub, freeNames)) -> 
+            let (v, sub, freeNames) = substBoundVar(v, sub, freeNames) in
+            (v::vars, sub, freeNames))
+     ([], sub, freeNames) vars
 	
- def substBoundVar((id,s),sub,freeNames) = 
-   let sub = deleteVarFromSub((id,s),sub,[]) in
-   if StringSet.member(freeNames,id) then
-     let id2 = StringUtilities.freshName(id,freeNames) in
-     let sub2 = cons(((id,s),mkVar(id2,s)),sub) in
-     ((id2,s),sub2,StringSet.add(freeNames,id2))
+ def substBoundVar((id, s), sub, freeNames) = 
+   let sub = deleteVarFromSub((id, s), sub, []) in
+   if StringSet.member(freeNames, id) then
+     let id2 = StringUtilities.freshName(id, freeNames) in
+     let sub2 = ((id, s), mkVar(id2, s)) :: sub in
+     ((id2, s), sub2, StringSet.add(freeNames, id2))
    else
-     ((id,s),sub,freeNames)
+     ((id, s), sub, freeNames)
 
- def deleteVarFromSub(v,sub,sub2) = 
+ def deleteVarFromSub(v, sub, sub2) = 
    case sub
-     of []         -> sub2
-      | (w,M)::sub -> if v.1 = w.1
+     of []          -> sub2
+      | (w, M)::sub -> if v.1 = w.1
 		      then sub ++ sub2
-		      else deleteVarFromSub (v, sub, cons((w,M),sub2))
+		      else deleteVarFromSub (v, sub, (w,M)::sub2)
 
  def substPattern(pat,sub,freeNames) = 
    case pat:Pattern
@@ -636,7 +636,7 @@ Utilities qualifying spec
 
 
  op renameBoundVars(term: MS.Term, vs: List Var): MS.Term =
-   let freeNames = StringSet.fromList(map(fn (n,_) -> n) vs) in
+   let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
  %- --------------------------------------------------------------------------
@@ -841,7 +841,7 @@ Utilities qualifying spec
      let
 	def loopP(p:Pattern,vs) = 
 	    case p
-	      of VarPat(v,_) -> cons(v,vs)
+	      of VarPat(v,_) -> Cons(v,vs)
 	       | RecordPat(fields,_) -> 
 		 foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
 	       | EmbedPat(_,None,_,_) -> vs
@@ -971,44 +971,69 @@ Utilities qualifying spec
        -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
 
+  op addVarNames(vs: List Var, name_set: StringSet.Set): StringSet.Set =
+    foldl (fn (name_set, (n,_)) -> StringSet.add(name_set, n)) name_set vs
+
   %% Given a universal quantification return list of quantified variables, conditions and rhs
-  op  forallComponents: [a] ATerm a -> List (AVar a) * List (ATerm a) * ATerm a
+  op  forallComponents: MS.Term -> List Var * List MS.Term * MS.Term
   def forallComponents t =
-    case t of
-      | Bind(Forall,vs,bod,_) ->
-	let (rVs,rLhsCjs,rRhs) = forallComponents bod in
-	(vs ++ rVs,rLhsCjs,rRhs)
-      | Apply(Fun(Implies, _,_),
-	     Record([("1",lhs),("2",rhs)],_),_) ->
-        let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
-	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
-      | _ -> ([],[],t)
+    %let _ = writeLine("forallComponents:\n"^printTerm t) in
+    let def aux(t, sbst, freeNames) =
+          case t of
+            | Bind(Forall, vs, bod, _) ->
+              let (vs, sbst, freeNames) = substBoundVars(vs, sbst, freeNames) in
+              let freeNames =  addVarNames(vs, freeNames) in
+              let (rVs, rLhsCjs, rRhs) = aux(bod, sbst, freeNames) in
+              (vs ++ rVs,  rLhsCjs, rRhs)
+            | Apply(Fun(Implies, _, _),
+                    Record([("1", lhs), ("2", rhs)],_),_) ->
+              let (rVs, rLhsCjs, rRhs) = aux(rhs, sbst, freeNames) in
+              (rVs, getConjuncts(substitute(lhs, sbst)) ++ rLhsCjs, rRhs)
+            | _ -> ([], [], substitute(t, sbst))
+     in
+     let freeNames = StringSet.fromList(varNames(freeVars t)) in
+     let result as (vs, condns, bod) = aux(t, [], freeNames) in
+     %let _ = writeLine("Vars: "^ anyToString(map (fn (x,_) -> x) vs)) in
+     %let _ = writeLine("Conds: "^foldl (fn (s,t) -> s ^" "^printTerm t) "" condns) in
+     result
 
   %% Given an existential quantification return list of quantified variables and conjuncts
-  op  existsComponents: [a] ATerm a -> List (AVar a) * List (ATerm a)
+  op  existsComponents: MS.Term -> List Var * List MS.Term
   def existsComponents t =
-    case t of
-      | Bind(Exists,vs,bod,_) ->
-	let (rVs,rLhsCjs) = existsComponents bod in
-	(vs ++ rVs,rLhsCjs)
-      | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
-        let (lVs,lLhsCjs) = existsComponents lhs in
-        let (rVs,rLhsCjs) = existsComponents rhs in
-	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
-      | _ -> ([],[t])
+    let def aux(t, sbst, freeNames) =
+          case t of
+            | Bind(Exists,vs,bod,_) ->
+              let (vs, sbst, freeNames) = substBoundVars(vs, sbst, freeNames) in
+              let freeNames =  addVarNames(vs, freeNames) in
+              let (rVs,rLhsCjs) = aux(bod, sbst, freeNames) in
+              (vs ++ rVs,rLhsCjs)
+            | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
+              let (lVs,lLhsCjs) = aux(lhs, sbst, freeNames) in
+              let (rVs,rLhsCjs) = aux(rhs, sbst, freeNames) in
+              (lVs ++ rVs,lLhsCjs ++ rLhsCjs)
+            | _ -> ([],[substitute(t, sbst)])
+    in
+    let freeNames = StringSet.fromList(varNames(freeVars t)) in
+    aux(t, [], freeNames)
 
   %% Given an existential (one) quantification return list of quantified variables and conjuncts
-  op  exists1Components: [a] ATerm a -> List (AVar a) * List (ATerm a)
+  op  exists1Components: MS.Term -> List Var * List MS.Term
   def exists1Components t =
-    case t of
-      | Bind(Exists1,vs,bod,_) ->
-	let (rVs,rLhsCjs) = exists1Components bod in
-	(vs ++ rVs,rLhsCjs)
-      | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
-        let (lVs,lLhsCjs) = exists1Components lhs in
-        let (rVs,rLhsCjs) = exists1Components rhs in
-	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
-      | _ -> ([],[t])
+    let def aux(t, sbst, freeNames) =
+          case t of
+            | Bind(Exists1,vs,bod,_) ->
+              let (vs, sbst, freeNames) = substBoundVars(vs, sbst, freeNames) in
+              let freeNames =  addVarNames(vs, freeNames) in
+              let (rVs,rLhsCjs) = aux(bod, sbst, freeNames) in
+              (vs ++ rVs,rLhsCjs)
+            | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
+              let (lVs,lLhsCjs) = aux(lhs, sbst, freeNames) in
+              let (rVs,rLhsCjs) = aux(rhs, sbst, freeNames) in
+              (lVs ++ rVs,lLhsCjs ++ rLhsCjs)
+            | _ -> ([],[substitute(t, sbst)])
+    in
+    let freeNames = StringSet.fromList(varNames(freeVars t)) in
+    aux(t, [], freeNames)
 
   op  varTerm?: [a] ATerm a -> Boolean
   def varTerm? t =
