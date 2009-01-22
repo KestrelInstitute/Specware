@@ -2057,6 +2057,30 @@ proof Isa List__map_Obligation_subtype
   by (auto simp: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
+proof Isa List__map__def
+proof (induct l)
+case Nil
+ have MAP: "map f [] = []" by auto
+ def g \<equiv> "\<lambda>i. if i < length [] then Some (f ([] ! i)) else None"
+ hence gseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+ with g_def have "List__list g = []" by auto
+ with g_def MAP show ?case by auto
+next
+case (Cons h t)
+ have MAP: "map f (h # t) = f h # map f t" by auto
+ def g \<equiv> "\<lambda>i. if i < length (h # t)
+                             then Some (f ((h # t) ! i)) else None"
+ hence gseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+ def g' \<equiv> "\<lambda>i. if i < length t then Some (f (t ! i)) else None"
+ with g_def have G_G': "g' = (\<lambda>i. g (i + 1))" by (auto simp: ext)
+ from g_def have G0: "g 0 = Some (f h)" by auto
+ with G_G' gseg have "List__list g = f h # List__list g'" by auto
+ with Cons.hyps MAP g'_def g_def show ?case by auto
+qed
+end-proof
+
 % remove all None elements from a list of optional values, and also remove the
 % Some wrappers:
 
