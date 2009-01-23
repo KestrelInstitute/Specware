@@ -2087,6 +2087,91 @@ end-proof
 op [a] removeNones (l: List (Option a)) : List a = the (l': List a)
   map (embed Some) l' = filter (embed? Some) l
 
+proof Isa List__removeNones_Obligation_the
+proof (induct l)
+case Nil
+ show ?case
+ proof
+  def l' \<equiv> "[] :: 'a list"
+  thus "map Some l' =
+        filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                           | _ \<Rightarrow> False) []"
+   by auto
+ next
+  fix l'' :: "'a list"
+  assume "map Some l'' =
+          filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                             | _ \<Rightarrow> False) []"
+  hence "map Some l'' = []" by auto
+  thus "l'' = []" by auto
+ qed
+next
+case (Cons h t)
+ then obtain t'
+ where EXT:"map Some t' =
+            filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                               | _ \<Rightarrow> False) t"
+  by auto
+ with Cons
+  have UNT:
+    "\<And>t''. map Some t'' =
+            filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                               | _ \<Rightarrow> False) t
+            \<Longrightarrow> t'' = t'"
+   by auto
+ def l' \<equiv> "case h of None \<Rightarrow> t' | Some x \<Rightarrow> x # t'"
+ show ?case
+ proof
+  from l'_def EXT
+   show "map Some l' =
+         filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                            | _ \<Rightarrow> False) (h # t)"
+    by (cases h, auto)
+ next
+  fix l'' :: "'a list"
+  assume l''_ht:
+         "map Some l'' =
+          filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                             | _ \<Rightarrow> False) (h # t)"
+  show "l'' = l'"
+  proof (cases h)
+  case None
+   with l'_def have "l' = t'" by auto
+   from None l''_ht
+    have "map Some l'' =
+          filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                             | _ \<Rightarrow> False) t"
+     by auto
+   with UNT have "l'' = t'" by auto
+   with `l' = t'` show ?thesis by auto
+  next
+  case (Some x)
+   with l'_def have "l' = x # t'" by auto
+   from Some l''_ht
+    have "map Some l'' =
+          h # filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                                 | _ \<Rightarrow> False) t"
+     by auto
+   with Some obtain t'' where "l'' = x # t''" by auto
+   with Some have "map Some l'' = h # map Some t''" by auto
+   from Some
+    have "filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                             | _ \<Rightarrow> False) (h # t) =
+          h # filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                                 | _ \<Rightarrow> False) t"
+     by auto
+   with l''_ht `map Some l'' = h # map Some t''`
+    have "map Some t'' =
+          filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                             | _ \<Rightarrow> False) t"
+     by auto
+   with UNT have "t'' = t'" by auto
+   with `l'' = x # t''` `l' = x # t'` show ?thesis by auto
+  qed
+ qed
+qed
+end-proof
+
 % true iff two lists of optional values have the same "shape" (i.e. same
 % length and matching None and Some values at every position i):
 
@@ -2094,6 +2179,10 @@ op [a,b] matchingOptionLists?
          (l1: List (Option a), l2: List (Option b)) : Bool =
   l1 equiLong l2 &&
   (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
+
+proof Isa List__matchingOptionLists_p_Obligation_subtype
+  by (auto simp: List__equiLong_def)
+end-proof
 
 % homomorphically apply partial function (captured via Option) to all elements
 % of list(s), removing elements on which the function is not defined:
@@ -2116,10 +2205,18 @@ op [a] reverse (l: List a) : List a =
   list (fn i:Nat -> if i < length l
                     then Some (l @ (length l - i - 1)) else None)
 
+proof Isa List__reverse_Obligation_subtype
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
 % list of repeated elements:
 
 op [a] repeat (x:a) (n:Nat) : List a =
   list (fn i:Nat -> if i < n then Some x else None)
+
+proof Isa List__repeat_Obligation_subtype
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+end-proof
 
 op [a] allEqualElements? (l: List a) : Bool =
   ex(x:a) l = repeat x (length l)
@@ -2161,6 +2258,14 @@ op [a] rotateLeft (l: List1 a, n:Nat) : List a =
 op [a] rotateRight (l: List1 a, n:Nat) : List a =
   let n = n mod (length l) in  % rotating by length(l) has no effect
   suffix (l, n) ++ removeSuffix (l, n)
+
+proof Isa List__rotateLeft_Obligation_subtype
+  by (auto simp: Nat__posNat_p_def)
+end-proof
+
+proof Isa List__rotateRight_Obligation_subtype
+  by (auto simp: Nat__posNat_p_def)
+end-proof
 
 % concatenate all the lists in a list, in order:
 
