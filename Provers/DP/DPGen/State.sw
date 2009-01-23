@@ -2,7 +2,7 @@ spec
 
   % API private all
 
-  import /Library/Structures/Data/Maps/SimpleAsAlist
+  import /Library/Structures/Data/Maps/SimpleAsSTHarray
   import IR qualifying (InferenceRules[InferenceRulesI#IRInterface])
 
   (* This spec defines the state that the proof checker monad uses. Currently
@@ -18,7 +18,7 @@ spec
 
   type Info = Proof
   type State =
-    {ineqInfo: Map.Map(Ineq, Info)}
+    {ineqInfo: Map(Ineq, Info)}
            % from /Library/Structures/Data/Maps/SimpleAsAlist
 
   op initialState: State
