@@ -291,6 +291,17 @@
     (cerror "Go on with * set to NIL."
             "EVAL returned an unbound marker."))
   (values-list /))
+
+
+;;; Rename on windows doesn't allow overwrite of file
+#+win32
+(defun sb-unix:unix-rename (name1 name2)
+  (declare (type sb-unix:unix-pathname name1 name2))
+  (when (sb-unix:unix-stat name2)
+    (sb-unix:unix-unlink name2))
+  (sb-win32::void-syscall* (("MoveFile" 8 t) sb-win32::system-string sb-win32::system-string)
+                           name1 name2))
+
 )
 
 ;; #+win32
@@ -364,14 +375,6 @@
                           (decf pos))
                         (make-and-return-result-string pos))
                  (add-chunk))))))))
-
-;;; Rename on windows doesn't allow overwrite of file
-#+win32
-(defun sb!unix:unix-rename (name1 name2)
-  (declare (type sb!unix:unix-pathname name1 name2))
-  (when (sb!unix:unix-stat name2)
-    (sb!unix:unix-unlink name2))
-  (void-syscall* (("MoveFile" 8 t) system-string system-string) name1 name2))
 
 
 (in-package :cl-user)
