@@ -2199,6 +2199,77 @@ op [a,b,c,d] mapPartial3 (f: a * b * c -> Option d)
                           l1 equiLong l2 && l2 equiLong l3) : List d =
   mapPartial f (zip3 (l1, l2, l3))
 
+proof Isa List__mapPartial__def
+proof -
+ from List__removeNones_Obligation_the
+  have UNIQ:
+    "\<exists>! r. map Some r =
+           filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                      | _ \<Rightarrow> False) (map f l)"
+   by blast
+ have "\<And>r. map Some r =
+            filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                       | _ \<Rightarrow> False) (map f l)
+           \<Longrightarrow> filtermap f l = r"
+ proof -
+  fix r
+  show "map Some r =
+        filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                   | _ \<Rightarrow> False) (map f l)
+        \<Longrightarrow> filtermap f l = r"
+  proof (induct l arbitrary: r)
+  case Nil
+   assume "map Some r =
+           filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                      | _ \<Rightarrow> False) (map f [])"
+   hence "r = []" by auto
+   have "filtermap f [] = []" by auto
+   with `r = []` show ?case by auto
+  next
+  case (Cons h t)
+   assume ASM:
+     "map Some r =
+      filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                         | _ \<Rightarrow> False)
+             (map f (h # t))"
+   show "filtermap f (h # t) = r"
+   proof (cases "f h")
+   case None
+    with ASM have "map Some r =
+                   filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                              | _ \<Rightarrow> False)
+                          (map f t)"
+     by auto
+    with Cons.hyps have "filtermap f t = r" by auto
+    from None have "filtermap f (h # t) = filtermap f t" by auto
+    with `filtermap f t = r` show ?thesis by auto
+   next
+   case (Some x)
+    with ASM
+     have "map Some r =
+           f h # filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                                    | _ \<Rightarrow> False)
+                        (map f t)"
+     by auto
+    with Some obtain r'
+     where "r = x # r'"
+       and "map Some r' =
+            filter (\<lambda>cp. case cp of Some _ \<Rightarrow> True
+                                               | _ \<Rightarrow> False)
+                   (map f t)"
+     by auto
+    with Cons.hyps have "filtermap f t = r'" by auto
+    from Some have "filtermap f (h # t) = x # filtermap f t" by auto
+    with `filtermap f t = r'` have "filtermap f (h # t) = x # r'" by auto
+    with `r = x # r'` show ?thesis by auto
+   qed
+  qed
+ qed
+ with UNIQ show "filtermap f l = List__removeNones (map f l)"
+  by (auto simp: theI2 List__removeNones_def)
+qed
+end-proof
+
 % reverse list:
 
 op [a] reverse (l: List a) : List a =
