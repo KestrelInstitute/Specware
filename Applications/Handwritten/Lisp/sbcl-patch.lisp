@@ -299,6 +299,71 @@
 ;;     (declare (string proto))
 ;;     (cdr (assoc (string-downcase proto) proto-db :test #'equal))))
 
+;; read-line in windows includes \Return (^M) at end
+(defun ansi-stream-read-line-from-frc-buffer (stream eof-error-p eof-value)
+  (prepare-for-fast-read-char stream
+    (declare (ignore %frc-method%))
+    (let ((chunks-total-length 0)
+          (chunks nil))
+      (declare (type index chunks-total-length)
+               (list chunks))
+      (labels ((refill-buffer ()
+                 (prog1
+                     (fast-read-char-refill stream nil nil)
+                   (setf %frc-index% (ansi-stream-in-index %frc-stream%))))
+               (newline-position ()
+                 (position #\Newline (the (simple-array character (*))
+                                       %frc-buffer%)
+                           :test #'char=
+                           :start %frc-index%))
+               (make-and-return-result-string (pos)
+                 (let* ((len (+ (- (or pos %frc-index%)
+                                   %frc-index%)
+                                chunks-total-length))
+                        (res (make-string len))
+                        (start 0))
+                   (declare (type index start))
+                   (when chunks
+                     (dolist (chunk (nreverse chunks))
+                       (declare (type (simple-array character) chunk))
+                       (replace res chunk :start1 start)
+                       (incf start (length chunk))))
+                   (unless (null pos)
+                     (replace res %frc-buffer%
+                              :start1 start
+                              :start2 %frc-index% :end2 pos)
+                     (setf %frc-index% (1+ pos)))
+                   (done-with-fast-read-char)
+                   (return-from ansi-stream-read-line-from-frc-buffer (values res (null pos)))))
+               (add-chunk ()
+                 (let* ((end (length %frc-buffer%))
+                        (len (- end %frc-index%))
+                        (chunk (make-string len)))
+                   (replace chunk %frc-buffer% :start2 %frc-index% :end2 end)
+                   (push chunk chunks)
+                   (incf chunks-total-length len)
+                   (when (refill-buffer)
+                     (make-and-return-result-string nil)))))
+        (declare (inline make-and-return-result-string
+                         refill-buffer))
+        (when (and (= %frc-index% +ansi-stream-in-buffer-length+)
+                   (refill-buffer))
+          ;; EOF had been reached before we read anything
+          ;; at all. Return the EOF value or signal the error.
+          (done-with-fast-read-char)
+          (return-from ansi-stream-read-line-from-frc-buffer
+            (values (eof-or-lose stream eof-error-p eof-value) t)))
+        (loop
+           (let ((pos (newline-position)))
+             (if pos
+                 (progn (when (and (not (eq pos 0))
+                                   (eq (elt (the (simple-array character (*))
+                                              %frc-buffer%)
+                                            (- pos 1))
+                                       #\Return))
+                          (decf pos))
+                        (make-and-return-result-string pos))
+                 (add-chunk))))))))
 
 (in-package :cl-user)
 
@@ -308,3 +373,4 @@
   (+ dynamic-space-size-bytes
      (- sb-vm::read-only-space-end sb-vm::read-only-space-start)
      (- sb-vm::static-space-end sb-vm::static-space-start)))
+
