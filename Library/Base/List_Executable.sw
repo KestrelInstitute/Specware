@@ -70,12 +70,13 @@ end-proof
 op List.list_1 : [a] Bijection (List a, ListFunction a) =
   fn l: List a -> fn i:Nat -> l @@ i
 
-op [a] List.tabulate (n:Nat, f: Nat -> a) : List a =
-  let def loop (i:Nat) : List a =
-      if i = n then Nil
-               else Cons (f i, loop (i+1))
+op [a] List.tabulate (n: Nat, f: Nat -> a) : List a =
+  let def loop (i: Nat, result: List a) : List a =
+      if i = 0 then result
+               else let i = i-1 in
+                    loop(i, f i :: result)
   in
-  loop 0
+  loop (n, [])
 
 op [a] List.@ (l: List a, i:Nat | i < length l) infixl 30 : a =
   let hd::tl = l in  % non-empty because length > i >= 0
@@ -120,11 +121,11 @@ op [a] List.subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   prefix (removePrefix (l, i), n)
 
 op [a] List.prefix (l: List a, n:Nat | n <= length l) : List a =
-  let def loop (l: List a, i:Nat) : List a =
-      if i = n then Nil
+  let def loop (l: List a, i: Nat) : List a =
+      if i = n then []
                else case l of
-                    | hd::tl -> Cons (hd, loop (tl, i+1))
-                    | []     -> Nil  % never happens because i < n <= length
+                    | hd::tl -> hd :: loop (tl, i+1)
+                    | []     -> []  % never happens because i < n <= length
   in
   loop (l, 0)
 
