@@ -120,14 +120,15 @@ op [a] List.nin? (x:a, l: List a) infixl 20 : Bool =
 op [a] List.subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   prefix (removePrefix (l, i), n)
 
-op [a] List.prefix (l: List a, n:Nat | n <= length l) : List a =
-  let def loop (l: List a, i: Nat) : List a =
-      if i = n then []
+%% Make tail-recursive so that it scales for very long lists at the expense of doing a reverse at end.
+op [a] List.prefix (l: List a, n: Nat | n <= length l) : List a =
+  let def loop (l: List a, i: Nat, result: List a) : List a =
+      if i = 0 then result
                else case l of
-                    | hd::tl -> hd :: loop (tl, i+1)
-                    | []     -> []  % never happens because i < n <= length
+                    | hd::tl -> loop (tl, i-1, hd::result)
+                    | []     -> result  % never happens because i < n <= length
   in
-  loop (l, 0)
+  reverse(loop (l, n, []))
 
 op [a] List.suffix (l: List a, n:Nat | n <= length l) : List a =
   removePrefix (l, length l - n)
