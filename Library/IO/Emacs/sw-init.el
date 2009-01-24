@@ -750,7 +750,9 @@ sLisp Heap Image File: ")
   (let ((len (length dirname)))
     (if (equal ?/ (elt dirname (- len 1)))
 	(substring dirname 0 (- len 1))
-      dirname)))
+      (if (equal ?\\ (elt dirname (- len 1)))
+	(substring dirname 0 (- len 1))
+      dirname))))
 
 (defun run-PSL (&optional in-current-dir?)
   ;;  ... SEMI-OBSOLETE -- NEEDS REVIEW IF USED ...
