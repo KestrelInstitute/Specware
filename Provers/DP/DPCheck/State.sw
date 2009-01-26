@@ -18,8 +18,7 @@ spec
 
   type Info = Ineq
   type State =
-    {proofInfo: Map.Map(Proof, Info)}
-           % from /Library/Structures/Data/Maps/SimpleAsAlist
+    {proofInfo: Map(Proof, Info)}
 
   op initialState: State
   def initialState = {proofInfo = emptyMap}
