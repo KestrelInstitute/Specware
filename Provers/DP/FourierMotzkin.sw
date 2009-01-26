@@ -4,7 +4,7 @@ FM qualifying spec
   import Rational
 %  import /Library/Legacy/Utilities/Lisp
 
-  sort CompPred =
+  type CompPred =
     | Gt
     | Lt
     | GtEq
@@ -12,9 +12,9 @@ FM qualifying spec
     | Eq
     | Neq
 
-  sort Var = String
+  type Var = String
 
-  sort Coef = Rational
+  type Coef = Rational
 
   op Rational.toCoef: Rational -> Coef
   def Rational.toCoef(r) = r
@@ -22,13 +22,13 @@ FM qualifying spec
   op Integer.toCoef: Integer -> Coef
   def Integer.toCoef(i) = intToRat(i)
 
-%  sort Denom = Integer
+%  type Denom = Integer
 
-  sort Term = 
+  type Term = 
     | Constant Coef
     | Monom (Coef * Var)
 
-  sort Poly = List Term
+  type Poly = List Term
 
   op mkConstant: Coef -> Term
   def mkConstant(c) = Constant c
@@ -74,7 +74,7 @@ FM qualifying spec
   op minusOnePoly: Poly
   def minusOnePoly = mkConstantPoly(zero-one)
 
-  sort Ineq = CompPred * Poly
+  type Ineq = CompPred * Poly
 
   op mkIneq: CompPred * Poly -> Ineq
   def mkIneq(comp, p) = (comp, p)
@@ -525,7 +525,7 @@ FM qualifying spec
 	| _ -> Equal
     else polyRes
 
-  sort IneqSet = List Ineq
+  type IneqSet = List Ineq
 
   op sortIneqSet: IneqSet -> IneqSet
   def sortIneqSet(ineqSet) =
