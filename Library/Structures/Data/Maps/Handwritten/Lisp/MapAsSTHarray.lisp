@@ -129,6 +129,8 @@
   (let ((m (map-as-undo-harray-assure-current m)))
     (hash-table-count (map-as-undo-harray--harray m))))
 
+(defvar *m1*)
+
 (defun STH_apply-2 (m x)
   ;(incf *map-as-undo-harray-ref-count*)
   (let ((val
@@ -143,6 +145,9 @@
 		 return (cdar l)
 		 finally (return (gethash x (map-as-undo-harray--harray m)
 					  *undefined*)))))))
+;     (when (eq val *undefined*)
+;       (setq *m1* m)
+;       (format t "(STH_apply-2 '~a) = ~a~%" x val))
     (if (eq val *undefined*) *undefined*
       (mkSome val))))
 
