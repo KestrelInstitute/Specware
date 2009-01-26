@@ -66,6 +66,7 @@ $BATCH_LISP <<-XXXX
 	#+MCL     (format t "OpenMCL version~%")
 	#+SBCL    (format t "SBCL version~%")
 	(format t "compiling...~%")
+        #+sbcl (setq sb-fasl:*fasl-file-type* "sfsl")
         (load "$LOAD_UTILITIES")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
@@ -73,7 +74,7 @@ $BATCH_LISP <<-XXXX
 	(exiting-on-errors 
 	  (format t "loading $MAIN_COMPILE_FILE ...~%")
 	  (load "$MAIN_COMPILE_FILE"))
-	(exit-from-lisp 0)
+	(cl-user::exit-from-lisp 0)
 XXXX
 RC=$?
 
