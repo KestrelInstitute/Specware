@@ -322,7 +322,8 @@
   #+allegro (sys:copy-file source target :preserve-time t)
   #+mcl     (ccl:copy-file source target :if-exists :supersede)
   #+cmu     (ext:run-program    "cp"      (list (namestring source) (namestring target)))
-  #+sbcl    (sb-ext:run-program "/bin/cp" (list (namestring source) (namestring target)))
+  #+sbcl    (sb-ext:run-program #-win32 "/bin/cp"  #+win32 "c:\\cygwin\\bin\\cp.exe"
+                                (list (namestring source) (namestring target)))
   #-(or allegro cmu sbcl mcl)
   ;; use unsigned-byte to avoid problems reading x-symbol chars
   ;; For example, read-char might complain for chars with codes above #xC0

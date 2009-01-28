@@ -98,7 +98,7 @@ be the option to run each (test ...) form in a fresh image.
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
     do (let* ((dirpath (if (stringp dir)
-			   (make-pathname :directory dir :name :wild)
+			   (specware::sw-parse-namestring (specware::ensure-final-slash dir))
 			 dir)))
 	 ;; sort the directory items to make runs more predictable
 	 (loop for dir-item in (sorted-directory dirpath)
@@ -111,7 +111,7 @@ be the option to run each (test ...) form in a fresh image.
   (setq specware::specware4 (specware::getenv "SPECWARE4"))
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (parse-namestring (specware::ensure-final-slash dir))
+			    (specware::sw-parse-namestring (specware::ensure-final-slash dir))
 			  dir))
 	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
 					  dirpath)))
@@ -284,7 +284,8 @@ be the option to run each (test ...) form in a fresh image.
 				    ((not (null lisp   )) (eval (read-from-string (normalize-input lisp    ))))
 				    ((not (null path   )) (cl-user::swpath        (normalize-input path     )))
 				    ((not (null swprb? )) (cl-user::swprb         swprb                      ))
-				    )))))))
+				    ))))))
+          (output (normalize-end-of-lines output)))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)
@@ -333,22 +334,29 @@ be the option to run each (test ...) form in a fresh image.
 	(unless (equal Specware::temporaryDirectory "/tmp/")
 	  (setq str (replace-string str Specware::temporaryDirectory "/tmp/")))
 	(setq str (replace-string str specware::specware4 "$SPECWARE"))
-	(setq str (replace-string str "C:" "")))
+	(setq str (replace-string str "C:$TESTDIR" "$TESTDIR"))
+        (setq str (replace-string str "c:$TESTDIR" "$TESTDIR")))
     str))
 
 (defun normalize-input (str)
   (setq str (replace-string str "$TESTDIR/" *test-temporary-directory-name*))
   (replace-string str "$SPECWARE" specware::specware4))
 
+
+;;; Remove \return (for windows)
+(defun normalize-end-of-lines (str)
+  (replace-string str "
+" ""))
+
 ;; There must be a better way of doing this
 (defun replace-string (str old new)
   (let (match)
-    (loop while (setq match (search old str))
-	  do (setq str (concatenate 'string
-			 (subseq str 0 match)
-			 new
-			 (subseq str (+ match (length old))))))
-    str))
+    (if (setq match (search old str))
+	(concatenate 'string
+                     (subseq str 0 match)
+                     new
+                     (replace-string (subseq str (+ match (length old))) old new))
+        str)))
 
 (defun format-output-errors (results)
   (let ((partial-match-at-start? (first results))
