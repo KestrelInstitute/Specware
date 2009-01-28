@@ -493,5 +493,30 @@ proof -
 qed
 
 
+(*************************************************************
+* Isabelle's foldl and foldr functions slightly differ from
+* Metaslang's foldl and foldr ops because (1) their function
+* argument f is curried in Isabelle but not in Metaslang and
+* (2) the second and third arguments of foldr are switched.
+* The following two Isabelle functions bridge these gaps, by
+* having the same form as the Metaslang ops and by being
+* defined in terms of the Isabelle functions in the obvious
+* way. The following two functions are the targets of the
+* Metaslang-Isabelle mapping in the Specware base library for
+* lists. We declare their definitions as simplification rules
+* so that they are always expanded in proofs.
+*************************************************************)
+
+definition foldl' ::
+  "('b \<times> 'a \<Rightarrow> 'b) \<Rightarrow>
+   'b \<Rightarrow> 'a list \<Rightarrow> 'b" where
+[simp]: "foldl' f base l \<equiv> foldl (\<lambda>b a. f(b,a)) base l"
+
+definition foldr' ::
+  "('a \<times> 'b \<Rightarrow> 'b) \<Rightarrow>
+   'b \<Rightarrow> 'a list \<Rightarrow> 'b" where
+[simp]: "foldr' f base l \<equiv> foldr (\<lambda>a b. f (a,b)) l base"
+
+
 
 end
