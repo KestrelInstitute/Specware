@@ -2395,6 +2395,40 @@ proof Isa List__repeat_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
+proof Isa List__repeat__def
+proof (induct n)
+case 0
+ def f \<equiv> "\<lambda>i::nat. if i < 0 then Some x else None"
+ hence "\<exists>m. f definedOnInitialSegmentOfLength m"
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+ with f_def have "List__list f = []" by auto
+ with f_def show ?case by auto
+next
+case (Suc n)
+ def f \<equiv> "\<lambda>i::nat. if i < Suc n then Some x else None"
+ hence fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+  by (auto simp: List__definedOnInitialSegmentOfLength_def)
+ def f' \<equiv> "\<lambda>i::nat. if i < n then Some x else None"
+ with f_def have f_f': "f' = (\<lambda>i. f (i + 1))" by auto
+ with f_def have f0: "f 0 = Some x" by auto
+ with fseg f_f' have Lf: "List__list f = x # List__list f'" by auto
+ from f'_def Suc.hyps have "replicate n x = List__list f'" by auto
+ with Lf have "replicate (Suc n) x = List__list f" by auto
+ with f_def show ?case by auto
+qed
+end-proof
+
+theorem repeat_length is [a]
+  fa (x:a, n:Nat) length (repeat x n) = n
+
+proof Isa List__repeat_length__stp
+  by (induct n, auto)
+end-proof
+
+proof Isa List__repeat_length
+  by (induct n, auto)
+end-proof
+
 op [a] allEqualElements? (l: List a) : Bool =
   ex(x:a) l = repeat x (length l)
 
@@ -2405,6 +2439,30 @@ op [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
 
 op [a] extendRight (l: List a, x:a, n:Nat | n >= length l) : List a =
   l ++ (repeat x (n - length l))
+
+theorem extendLeft_length is [a]
+  fa (l: List a, x:a, n:Nat) n >= length l =>
+    length (extendLeft (l, x, n)) = n
+
+theorem extendRight_length is [a]
+  fa (l: List a, x:a, n:Nat) n >= length l =>
+    length (extendRight (l, x, n)) = n
+
+proof Isa List__extendLeft_length__stp
+  by (auto simp: List__extendLeft_def)
+end-proof
+
+proof Isa List__extendLeft_length
+  by (auto simp: List__extendLeft_def)
+end-proof
+
+proof Isa List__extendRight_length__stp
+  by (auto simp: List__extendRight_def)
+end-proof
+
+proof Isa List__extendRight_length
+  by (auto simp: List__extendRight_def)
+end-proof
 
 % extend shorter list to length of longer list, leftward/rightward:
 
@@ -2417,6 +2475,25 @@ op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
                          : (List a * List b | equiLong) =
   if length l1 < length l2 then     (extendRight (l1, x1, length l2), l2)
                            else (l1, extendRight (l2, x2, length l1))
+
+proof Isa List__equiExtendLeft_Obligation_subtype0
+  by (auto simp: List__extendLeft_def List__repeat_length
+                 length_append List__equiLong_def)
+end-proof
+
+proof Isa List__equiExtendLeft_Obligation_subtype2
+  by (auto simp: List__extendLeft_def List__repeat_length
+                 length_append List__equiLong_def)
+end-proof
+
+proof Isa List__equiExtendLeft_subtype_constr
+(* proof (auto simp: Let_def) *)
+(*  fix x y *)
+(*  assume "List__equiExtendLeft dom_equiExtendLeft = (x,y)" *)
+(*  show "x equiLong y" *)
+(*  proof (unfold List__equiLong_def, cases dom_equiExtendLeft) *)
+(*   fix l1 l2 x1 x2 *)
+end-proof
 
 % shift list leftward/rightward by n positions, filling with x:
 
