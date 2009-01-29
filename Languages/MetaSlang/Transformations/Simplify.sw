@@ -375,6 +375,7 @@ spec
 
   op  simpSubstitute: Spec * MS.Term *  List (Var * MS.Term) -> MS.Term
   def simpSubstitute(spc,t,sbst) =
+    % let _ = toScreen("\nBefore subst:\n" ^ printTerm t ^ "\n") in
     let stm = substitute(t,sbst) in
     % let _ = toScreen("After subst:\n" ^ printTerm stm ^ "\n") in
     let result = simplify spc stm in

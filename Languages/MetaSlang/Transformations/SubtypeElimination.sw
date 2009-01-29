@@ -417,22 +417,36 @@ SpecNorm qualifying spec
                    else "RFun"
         in
         let def mkRFun(pred, t) =
-              case (pred, t) of
-                | (Lambda([(pred_pat, Fun(Bool true,_,_), pred_bod)],_),
-                   Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_))
-                    | rfun = "RFun" && equalPatternStruct?(pred_pat, fn_pat) ->
-                  mkLambda(fn_pat, Utilities.mkIfThenElse(pred_bod, fn_bod, mkArbitrary ty))
-                | _ ->
-                  mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
-                                       mkArrow(inferType(spc, pred),
-                                               mkArrow(rm_ty, ty))),
-                                  pred),
-                          t)
+              let pred = simplify spc pred in
+              let reg_t =
+                  case (pred, t) of
+                    | (Lambda([(pred_pat, Fun(Bool true,_,_), pred_bod)],_),
+                       Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_))
+                        | rfun = "RFun" ->
+                      (case matchPatterns(fn_pat, pred_pat) of
+                         | Some sb ->
+                           mkLambda(fn_pat, Utilities.mkIfThenElse(substitute(pred_bod, sb), fn_bod, mkArbitrary ty))
+                         | None ->
+                           mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
+                                                mkArrow(inferType(spc, pred),
+                                                        mkArrow(rm_ty, ty))),
+                                           pred),
+                                   t))
+                    | _ ->
+                      mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
+                                           mkArrow(inferType(spc, pred),
+                                                   mkArrow(rm_ty, ty))),
+                                      pred),
+                              t)
+              in
+              %let _ = writeLine("Regularize: "^printTerm t^" to\n"^printTerm reg_t) in
+              reg_t
         in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None ->
              (case subtypeComps(spc, raiseSubtypeFn(rm_dom, spc)) of
-                | Some(sup_ty, pred) | eagerRegularization? -> mkRFun(pred, t)
+                | Some(sup_ty, pred) | eagerRegularization? ->
+                  mkRFun(pred, t)
                 | _ -> t)
            | Some(sup_ty, pred) -> mkRFun(pred, t))
       | _ -> t
@@ -449,6 +463,7 @@ SpecNorm qualifying spec
         Apply(regTerm(f, mkArrow(inferType(spc, x), ty), false, ho_eqfns, spc),
               regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns), ho_eqfns, spc), a)
       | Record(row, a) ->
+        % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ty) in
         let srts = map (fn (_,x) -> x) (product (spc,ty)) in
         Record(map (fn ((idi,tmi), tyi) \_rightarrow (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
                  (zip(row,srts)), a) 
