@@ -62,6 +62,8 @@ be the option to run each (test ...) form in a fresh image.
 #+darwin (defvar *test-temporary-directory-name-non-private*)
 (defvar *test-driver-file-name* "Tests.lisp")
 
+;;; These two are same except in windows where first has \'s instead of /'s
+(defvar *test-temporary-directory-name0* "SpecwareTest")
 (defvar *test-temporary-directory-name* "SpecwareTest")
 
 (defmacro run-test-directories-rec  (&body dirs)
@@ -143,7 +145,8 @@ be the option to run each (test ...) form in a fresh image.
 		 file))
 	 (*test-directory* (directory-namestring path))
 	 (*test-temporary-directory* (get-temporary-directory))
-	 (*test-temporary-directory-name* (replace-string (directory-namestring *test-temporary-directory*) "\\" "/"))
+         (*test-temporary-directory-name0* (directory-namestring *test-temporary-directory*))
+	 (*test-temporary-directory-name* (replace-string *test-temporary-directory-name0* "\\" "/"))
 	 #+darwin (*test-temporary-directory-name-non-private* *test-temporary-directory-name*)
 	 (*test-temporary-directory-name*
 	  #+darwin (format nil "/private~a" *test-temporary-directory-name*)
@@ -329,6 +332,7 @@ be the option to run each (test ...) form in a fresh image.
 (defun normalize-output (str)
   (if (stringp str)
       (let ((str (replace-string str *test-temporary-directory-name* "$TESTDIR/")))
+        #+win32 (setq str (replace-string str *test-temporary-directory-name0* "$TESTDIR\\"))
 	#+darwin (setq str (replace-string str *test-temporary-directory-name-non-private* "$TESTDIR/"))
 	(setq str (replace-string str "~/" (concatenate 'string (specware::getenv "HOME") "/")))
 	(unless (equal Specware::temporaryDirectory "/tmp/")
