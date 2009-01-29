@@ -1832,4 +1832,30 @@ Utilities qualifying spec
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
+  op [a] mergeSomeLists(ol1: Option(List a), ol2: Option(List a)): Option(List a) =
+    case (ol1, ol2) of
+      | (Some l1, Some l2) -> Some(l1 ++ l2)
+      | _ -> None
+
+  %% ignores types
+  op matchPatterns(p1: Pattern, p2: Pattern): Option VarSubst =
+    if equalPatternStruct?(p1, p2) then Some []
+      else
+      case (p1, p2) of
+        | (VarPat(v1, a), VarPat(v2, _)) ->
+          Some(if equalVarStruct?(v1, v2) then []
+               else [(v2, Var(v1, a))])
+        | (RecordPat(xs1,_), RecordPat(xs2,_)) ->
+          foldl (fn (result, ((label1, x1), (label2, x2))) ->
+                  case result of
+                    | None -> None
+                    | Some sb ->
+                  if label1 = label2 then mergeSomeLists(result, matchPatterns(x1, x2))
+                   else None)
+            (Some []) (zip(xs1, xs2))
+        | (_, WildPat _) -> Some []
+        | (RestrictedPat(x1, t1, _), _) -> matchPatterns(x1, p2)
+        | (_, RestrictedPat(x2, t2, _)) -> matchPatterns(p1, x2)
+        | _ -> None
+
 endspec
