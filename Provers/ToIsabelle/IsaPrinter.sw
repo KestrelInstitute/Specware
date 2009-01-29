@@ -434,6 +434,7 @@ IsaTermPrinter qualifying spec
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
     in
+    let spc = normalizeTopLevelLambdas spc in
     let spc = if lambdaLift?
                then lambdaLift(spc, false)
 	       else spc
@@ -452,13 +453,14 @@ IsaTermPrinter qualifying spec
                then makeTypeCheckObligationSpec spc
 	       else spc
     in
+    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = normalizeNewTypes spc in
     let spc = removeSubTypes spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
-    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
+    % let _ = toScreen("2:\n"^printSpec spc^"\n") in
     %let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
 %                then simplifyTopSpec spc
 %                else spc
@@ -902,6 +904,15 @@ IsaTermPrinter qualifying spec
       def aux_case(hd,bod: MS.Term) =
         aux(hd,bod) 
       def fix_vars(hd,bod) =
+        case hd of
+          | Fun(_, ty, _) ->
+            (case arrowOpt(getSpec c, ty) of
+               | Some(dom,_) ->
+                 let new_v = mkVar("x__a", dom) in
+                 (mkApply(hd, new_v), mkApply(bod, new_v))
+               %% Shouldn't happen?
+               | None -> (hd,bod))
+          | _ ->
 	let fvs = freeVars hd ++ freeVars bod in
 	let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
 	if rename_fvs = [] then (hd,bod)
