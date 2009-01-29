@@ -482,7 +482,7 @@ spec
      | Some (TyVar _, _) -> true
      | _                -> false
 
- op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term * List MS.Term=
+ op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term * List MS.Term =
    case rhs_tm of
      | Lambda ([(pat, _, body)], _) ->
        (case patternToTermPlusConds(pat) of
