@@ -122,12 +122,12 @@
 	      ))
 
 					; fails
-   ("Tutorial: MatchingProofs p3D (termination)" 
+   ("Tutorial: MatchingProofs p3D (uniqueness)" 
     :sw "/UserDoc/tutorial/example/MatchingProofs#p3D"
     :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3D"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3D.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3D.log"
-	      "p3D: Conjecture word_matches_aux?_Obligation_termination in MatchingObligations#WordMatching0_Oblig is Proved! *"
+	      "p3D: Conjecture word_matches_aux?_Obligation_uniqueness in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -155,7 +155,7 @@
 	      (:optional "")
 	      ))
 
-   ("Tutorial: MatchingProofs p5A (exhausive)"
+   ("Tutorial: MatchingProofs p5A (exhaustive)"
     :sw "/UserDoc/tutorial/example/MatchingProofs#p5A"
     :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig"
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5A"
@@ -177,13 +177,13 @@
 	      ))
 
 					; fails
-   ("Tutorial: MatchingProofs p5C (termination)"
+   ("Tutorial: MatchingProofs p5C (uniqueness)"
     :sw "/UserDoc/tutorial/example/MatchingProofs#p5C"
     :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5C"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5C.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5C.log"
 	      ;; Sigh.  "C:" becomes "" in test output processing   
-	      "p5 Conjecture find_matches_aux_Obligation_termination in MatchingObligations#FindMatches0_Oblig is Proved! *"
+	      "p5 Conjecture find_matches_aux_Obligation_uniqueness in MatchingObligations#FindMatches0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -206,7 +206,6 @@
     :output '(";;; Generating lisp file $TESTDIR/find-matches.lisp"
               "WARNING: Non-constructive def for List-Spec::lengthOfListFunction"
 	      "WARNING: Non-constructive def for List-Spec::definedOnInitialSegmentOfLength-2"
-	      "WARNING: Non-constructive def for Function-Spec::wellFounded?"
 	      "WARNING: Non-constructive def for Function-Spec::inverse-1-1"
 	      "WARNING: Non-constructive def for Function-Spec::surjective?"
 	      "WARNING: Non-constructive def for Function-Spec::injective?"
