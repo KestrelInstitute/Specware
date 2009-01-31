@@ -2487,12 +2487,45 @@ proof Isa List__equiExtendLeft_Obligation_subtype2
 end-proof
 
 proof Isa List__equiExtendLeft_subtype_constr
-(* proof (auto simp: Let_def) *)
-(*  fix x y *)
-(*  assume "List__equiExtendLeft dom_equiExtendLeft = (x,y)" *)
-(*  show "x equiLong y" *)
-(*  proof (unfold List__equiLong_def, cases dom_equiExtendLeft) *)
-(*   fix l1 l2 x1 x2 *)
+proof (auto simp: Let_def)
+ fix x y
+ assume XY: "List__equiExtendLeft dom_equiExtendLeft = (x,y)"
+ show "x equiLong y"
+ proof (unfold List__equiLong_def, cases dom_equiExtendLeft)
+  fix l1 l2 x1 x2
+  assume "dom_equiExtendLeft = (l1, l2, x1, x2)"
+  with XY have "List__equiExtendLeft (l1, l2, x1, x2) = (x,y)" by auto
+  thus "length x = length y"
+   by (cases "length l1 < length l2",
+       auto simp: List__equiExtendLeft_def List__extendLeft_length)
+ qed
+qed
+end-proof
+
+proof Isa List__equiExtendRight_Obligation_subtype0
+  by (auto simp: List__extendRight_def List__repeat_length
+                 length_append List__equiLong_def)
+end-proof
+
+proof Isa List__equiExtendRight_Obligation_subtype2
+  by (auto simp: List__extendRight_def List__repeat_length
+                 length_append List__equiLong_def)
+end-proof
+
+proof Isa List__equiExtendRight_subtype_constr
+proof (auto simp: Let_def)
+ fix x y
+ assume XY: "List__equiExtendRight dom_equiExtendRight = (x,y)"
+ show "x equiLong y"
+ proof (unfold List__equiLong_def, cases dom_equiExtendRight)
+  fix l1 l2 x1 x2
+  assume "dom_equiExtendRight = (l1, l2, x1, x2)"
+  with XY have "List__equiExtendRight (l1, l2, x1, x2) = (x,y)" by auto
+  thus "length x = length y"
+   by (cases "length l1 < length l2",
+       auto simp: List__equiExtendRight_def List__extendRight_length)
+ qed
+qed
 end-proof
 
 % shift list leftward/rightward by n positions, filling with x:
@@ -2524,6 +2557,10 @@ end-proof
 % concatenate all the lists in a list, in order:
 
 op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
+
+proof Isa List__flatten__def
+  by (auto simp: concat_conv_foldl)
+end-proof
 
 % group list elements into sublists of given lengths (note that we allow
 % empty sublists, but we require the total sum of the lengths to equal the
