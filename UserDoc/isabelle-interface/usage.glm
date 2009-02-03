@@ -8,11 +8,11 @@
 &Specware; and &Isabelle; can both be started up normally, each
 	   running under their own XEmacs job, but it convenient to
 	   run them under the same XEmacs. To do this run
-	   [[SpecwareIsabelle]].
+	   [[Isabelle_Specware]].
 </para>
 
 <para>
-Currently Isabelle does not run under Windows so this script is not
+Currently Isabelle does not run under Windows except with cygwin so this script is not
 	  available there. However, the translator can run from
 	  &Specware; even if &Isabelle; is not running.
 </para>
@@ -55,27 +55,28 @@ An embedded &Isabelle; proof script in a &Specware; spec consists of an
 ||    apply(auto)
 ||  end-proof
 ]]
-If the last command before end-proof is not [[done]] or [[sorry]], the
-command [[done]] is inserted.
+If the last command before end-proof is not [[done]], [[sorry]],
+[[qed]] or [[by]], the command [[done]] is inserted.
 </para>
 
 <para>
-
-The proof script should occur immediately after the theorem that it
+The proof script should occur immediately after the theorem or definition that it
 applies to. If the script applies to a proof obligation that is not
 explicit in the spec, then the name of the obligation should appear
-after [[proof Isa]], on the same line.
+after [[proof Isa]], on the same line. There are rare cases where an
+obligation is inserted between a definition and an immediately
+following proof script, which causes the proof script to be
+ignored. If this happen, then the name of the op should be explicitly given.
 </para>
 
 <para>
 If the user does not supply a proof script for a theorem then the
-   translator will supply the script [[apply(auto)]] which may be all
+   translator will supply the script [[by  auto]] which may be all
    that is required to prove simple theorems.
 </para>
 
 <para>
-Annotations for theorems may be included on the [[proof Isa]]
-	    line. For example,
+Annotations for theorems may be included on the [[proof Isa]] line. For example,
 
 [[
 ||  theorem Simplify_valif_normif is
