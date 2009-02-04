@@ -829,15 +829,6 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
               [] (unifySorts(context,subst,srt1,srt2,Some N))
       else []
 
- op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
-   case v_subst of
-     | [] -> t
-     | (v,vt)::_ | equalTerm?(vt,t) && ~((embed? Fun) vt)-> mkVar v
-     | _ :: r -> reverseSubst r t
-
- op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
-   if sbst = [] then tm
-     else mapTerm (reverseSubst sbst, id, id) tm
 
 (* lambda-binders are matched by matching every pair of pattern against eachother.
   The pair of patterns that are compared must match precisely the same instances, thus,
