@@ -707,7 +707,7 @@ spec
      | None -> ty
 
  def <=	(tcc, gamma, M, tau, sigma) = 
-   (% writeLine(printTerm M^ " : "^ printSort tau^" <= "^ printSort sigma); 
+   (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma); 
     subtypeRec([], tcc, gamma, M, tau, sigma))
 
  def subtypeRec(pairs, tcc, gamma, M, tau, sigma) =
@@ -726,6 +726,8 @@ spec
    let tau1   = unfoldBeforeCoProduct(spc, tau0) in
    let sigma0 = maybeRaiseSubtype(sigma, spc) in
    let sigma1 = unfoldBeforeCoProduct(spc, sigma0) in
+   %let _ = writeLine("tau0: "^printSort tau0^", "^"tau1: "^printSort tau1^", "^
+   %                  "\nsig0: "^printSort sigma0^", "^"sig1: "^printSort sigma1) in
    if tau1 = sigma1
       then tcc
    else
