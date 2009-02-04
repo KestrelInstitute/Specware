@@ -639,6 +639,17 @@ Utilities qualifying spec
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
+
+ op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
+   case v_subst of
+     | [] -> t
+     | (v,vt)::_ | equalTerm?(vt,t) && ~(embed? Fun vt) -> mkVar v
+     | _ :: r -> reverseSubst r t
+
+ op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
+   if sbst = [] then tm
+     else mapTerm (reverseSubst sbst, id, id) tm
+
  %- --------------------------------------------------------------------------
 
  def report_unimplemented_for_cgen = false
