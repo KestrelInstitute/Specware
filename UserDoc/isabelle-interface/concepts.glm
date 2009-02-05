@@ -26,7 +26,7 @@ An example Specware spec with Isabelle proofs is given in
 <"Examples/IsabelleInterface/BoolEx.sw">. This spec corresponds to the
 Isabelle theory in section 2.2.4 of the &IsabelleHOL; tutorial.
 <!-- 
-As another example, all of the proof obligations of the specs in
+As another example, the proof obligations of the specs in
 <"Examples/Matching/MatchingSpecs.sw"> can be translated and proved by
 &Isabelle; without any user annotation. 
 -->

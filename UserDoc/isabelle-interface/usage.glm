@@ -137,7 +137,9 @@ Recursive functions that are translated to [[recdefs]] can have a measure
 function specified on the [[proof Isa]] line, by including it between double-quotes.
 For example:
 
-[[proof Isa "measure (\<quote>\\</quote><lambda>(wrd,sym). length wrd)" end-proof]]
+[[
+||proof Isa "measure (\<quote>\\</quote><lambda>(wrd,sym). length wrd)" end-proof
+]]
 </para> 
 
 
@@ -157,19 +159,18 @@ A translation table for &Specware; types and ops is introduced by a
 [[
 ||  proof Isa Thy_Morphism Presburger
 ||    type Integer.Integer -> int
-||    type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
-||    Integer.+ -> +  Left 25
-||    Integer.- -> -  Left 25
+||    type Integer.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
+||    Integer.+    -> +  Left 25
+||    Integer.-    -> -  Left 25
 ||    IntegerAux.- -> -
-||    Integer.~ -> -
-||    Integer.* -> *  Left 27
-||    Integer.div -> *  Left 27
-||    Integer.rem -> *  Left 27
-||    Integer.<= -> \<quote>\\</quote><le>  Left 20
-||    Integer.< -> <  Left 20
-||    Integer.>= -> \<quote>\\</quote><ge>  Left 20
-||    Integer.> -> >  Left 20
-||    Integer.min -> min curried
+||    Integer.*    -> *  Left 27
+||    Integer.div  -> *  Left 27
+||    Integer.rem  -> *  Left 27
+||    Integer.<=   -> \<quote>\\</quote><le>  Left 20
+||    Integer.<    -> <  Left 20
+||    Integer.>=   -> \<quote>\\</quote><ge>  Left 20
+||    Integer.>    -> >  Left 20
+||    Integer.min  -> min curried
 ||    Integer.max -> max curried
 ||   end-proof
 ]]
