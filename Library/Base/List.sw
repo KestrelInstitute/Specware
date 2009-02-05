@@ -2569,6 +2569,7 @@ end-proof
 op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
                   : List (List a) =
   the (ll: List (List a))
+     ll equiLong lens &&
      flatten ll = l &&
      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
 
@@ -2576,6 +2577,10 @@ op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
 
 op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
   unflattenL (l, repeat n (length l div n))
+
+proof Isa List__unflattenL_Obligation_subtype
+  by (auto simp: List__equiLong_def)
+end-proof
 
 % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
