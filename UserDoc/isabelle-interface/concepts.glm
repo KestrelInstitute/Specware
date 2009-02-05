@@ -49,6 +49,32 @@ the user can force translation to [[function]]. Non-recursive
 functions are translated to [[defs]], except in some cases they are
 translated to [[fun]] which allows more pattern matching.  </para>
 
+<para> The main difference in the logics of &Specware; and &IsabelleHOL;
+is that &Specware; has predicate sub-types. In most cases a sub-type is
+translated to its super-type and translations of quantifications over
+a sub-type introduce an explicit application of the sub-type
+predicate. A subtlety is that we need to consider the case that
+polymorphic type variables may be instantiated with subtypes. When
+necessary, e.g., for a predicate like [[injective?]], a single op is
+translated to two &Isabelle; ops, the ordinary one and one with an
+extra argument for a predicate or predicates corresponding to subtype
+predicates for type variables. Another subtlety is with respect to
+equality of functions with subtype domains. These are translated to
+&Isabelle; functions with expanded domains, but to preserve equality
+these are regularized to have a single value outside the restricted
+domain. This regularization is not needed if the function is applied
+to an argument, because it may only be applied to an argument for
+which the predicate holds, so in some cases we do the regularization
+lazily, i.e., give the function its unregularized definition, but
+regularize it in contexts where it may be used in an equality.
+</para>
+
+<para> There is a capability for translating a sub-type differently
+from its super-type. This is used for the type [[Nat]] which is
+translated to [[nat]] rather than [[int]]. In general, this may lead
+to coercions between [[nat]] and [[int]] being inserted.
+</para>
+
 <para> This initial translator has a number of limitations. It should
 translate all &Specware; specs but not all translated definitions and
 constructs will be accepted by &IsabelleHOL;. In particular,
