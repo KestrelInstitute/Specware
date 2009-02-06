@@ -47,11 +47,13 @@
 
   op toFunction : [a,b] TotalMap(a,b) -> (a -> b) = inverse fromFunction
 
-  % surjective and injective:
+  % surjective, injective, and bijective:
 
   type SurjectiveMap(a,b) = (Map(a,b) | Relation.surjective?)
 
   type InjectiveMap(a,b) = (Map(a,b) | Relation.injective?)
+
+  type BijectiveMap(a,b) = (Map(a,b) | Relation.bijective?)
 
   % cardinalities:
 
