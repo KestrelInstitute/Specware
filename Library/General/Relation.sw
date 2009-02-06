@@ -71,6 +71,24 @@ Relation qualifying spec
 
   type InjectiveRelation(a,b) = (Relation(a,b) | injective?)
 
+  % exactly one range/domain value for each domain/range value:
+
+  op [a,b] bijective? : Relation(a,b) -> Bool =
+    total? /\ surjective? /\ functional? /\ injective?
+
+  type BijectiveRelation(a,b) = (Relation(a,b) | bijective?)
+
+  % relative totality, surjectivity, and bijectivity:
+
+  op [a,b] totalOn? (s:Set a) (r:Relation(a,b)) : Bool =
+    domain r = s
+
+  op [a,b] surjectiveOn? (s:Set b) (r:Relation(a,b)) : Bool =
+    range r = s
+
+  op [a,b] bijectiveOn? (s:Set a) (s':Set b) : Relation(a,b) -> Bool =
+    totalOn? s /\ surjectiveOn? s' /\ functional? /\ injective?
+
   % cardinalities:
 
   type      FiniteRelation(a,b) = (Relation(a,b) | finite?)
