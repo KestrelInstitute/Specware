@@ -47,6 +47,13 @@
 
   op toFunction : [a,b] TotalMap(a,b) -> (a -> b) = inverse fromFunction
 
+  % convert between maps and (partial) functions (modeled via Option):
+
+  op [a,b] fromPartialFun (f: a -> Option b) : Map(a,b) =
+    fn (x,y) -> f x = Some y
+
+  op toPartialFun : [a,b] Map(a,b) -> (a -> Option b) = inverse fromPartialFun
+
   % surjective, injective, and bijective:
 
   type SurjectiveMap(a,b) = (Map(a,b) | Relation.surjective?)
