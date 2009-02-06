@@ -2573,14 +2573,96 @@ op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
      flatten ll = l &&
      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
 
+proof Isa List__unflattenL_Obligation_subtype
+  by (auto simp: List__equiLong_def)
+end-proof
+
+proof Isa List__unflattenL_Obligation_the
+proof (induct lens arbitrary: l)
+case Nil
+ hence MTL: "l = []" by auto
+ def ll \<equiv> "[] :: 'a list list"
+ hence  EQL: "ll equiLong []" by (auto simp: List__equiLong_def)
+ from ll_def MTL have CAT: "concat ll = l" by auto
+ from ll_def have LENS: "\<forall>i < length ll. length (ll!i) = []!i" by auto
+ have "\<And>ll'. ll' equiLong [] \<and>
+              concat ll' = l \<and>
+              (\<forall>i < length ll. length (ll!i) = []!i)
+       \<Longrightarrow> ll' = ll"
+ proof clarify
+  fix ll'::"'a list list"
+  assume "ll' equiLong []"
+  with ll_def show "ll' = ll" by (auto simp: List__equiLong_def)
+ qed
+ with EQL CAT LENS show ?case by blast
+next
+case (Cons len lens)
+ def t \<equiv> "drop len l"
+ and h \<equiv> "take len l"
+ with append_take_drop_id have "l = h @ t" by auto
+ from Cons have "len + foldl' (\<lambda>(x,y). x + y) 0 lens = length l"
+  by (auto simp: foldl_foldr1_lemma)
+ hence "len \<le> length l" by auto
+ with h_def have "length h = len" by auto
+ with `l = h @ t` Cons have "foldl' (\<lambda>(x,y). x + y) 0 lens = length t"
+  by (auto simp: foldl_foldr1_lemma)
+ with Cons.hyps obtain ll0
+  where EQL0: "ll0 equiLong lens"
+  and CAT0: "concat ll0 = t"
+  and LENS0: "\<forall>i < length ll0. length (ll0!i) = lens!i"
+   by blast
+ def ll \<equiv> "h # ll0"
+ with EQL0 have EQL: "ll equiLong (len # lens)"
+  by (auto simp: List__equiLong_def)
+ from ll_def CAT0 `l = h @ t` have CAT: "concat ll = l" by auto
+ have LENS: "\<forall>i < length ll. length (ll!i) = (len#lens)!i"
+ proof (rule allI, rule impI)
+  fix i
+  assume "i < length ll"
+  show "length (ll ! i) = (len # lens) ! i"
+  proof (cases i)
+   case 0
+   with ll_def `length h = len` show ?thesis by auto
+  next
+   case (Suc j)
+   with `i < length ll` ll_def have "j < length ll0" by auto
+   with Suc LENS0 ll_def show ?thesis by auto
+  qed
+ qed
+ have "\<And>ll'. ll' equiLong (len#lens) \<and> concat ll' = l \<and>
+              (\<forall>i < length ll'. length (ll'!i) = (len#lens)!i)
+       \<Longrightarrow> ll' = ll"
+ proof -
+  fix ll'::"'a list list"
+  assume "ll' equiLong (len#lens) \<and> concat ll' = l \<and>
+          (\<forall>i < length ll'. length (ll'!i) = (len#lens)!i)"
+  hence EQL': "ll' equiLong (len # lens)"
+  and CAT': "concat ll' = l"
+  and LENS': "\<forall>i < length ll'. length (ll'!i) = (len#lens)!i"
+   by auto
+  def h' \<equiv> "hd ll'" and ll0' \<equiv> "tl ll'"
+  with EQL' have LL': "ll' = h' # ll0'"
+   by (cases ll', auto simp: List__equiLong_def)
+  with EQL' have EQL0': "ll0' equiLong lens" by (auto simp: List__equiLong_def)
+  from LL' LENS' have "length h' = len" by auto
+  with `length h = len` CAT' `l = h @ t` LL'
+   have CAT0': "concat ll0' = t" by auto
+  from LENS' LL'
+   have LENS0': "\<forall>i < length ll0'. length (ll0'!i) = lens!i" by auto
+  from Cons.hyps `foldl' (\<lambda>(x,y). x + y) 0 lens = length t`
+       EQL0 CAT0 LENS0 EQL0' CAT0' LENS0'
+   have "ll0' = ll0" by auto
+  from CAT' LL' `l = h @ t` `length h = len` CAT0' have "h = h'" by auto
+  with `ll0' = ll0` LL' ll_def show "ll' = ll" by auto
+ qed
+ with EQL CAT LENS show ?case by blast
+qed
+end-proof
+
 % mundane specialization to sublists of uniform length n > 0:
 
 op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
   unflattenL (l, repeat n (length l div n))
-
-proof Isa List__unflattenL_Obligation_subtype
-  by (auto simp: List__equiLong_def)
-end-proof
 
 % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
