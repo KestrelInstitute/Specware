@@ -50,7 +50,7 @@ Specware-Isabelle translator does not make the proof of the bijectivity of op
 list as defined in spec List available for this spec here, but future versions
 of Specware will, and will probably also automatically discharge the
 obligation. For now, we just ignore the obligation via "sorry". *)
-proof Isa List__list_Obligation_subsort
+proof Isa List__list_Obligation_subtype
   sorry
 end-proof
 
