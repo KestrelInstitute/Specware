@@ -2664,6 +2664,43 @@ end-proof
 op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
   unflattenL (l, repeat n (length l div n))
 
+proof Isa List__unflatten_Obligation_subtype
+proof -
+ have LEM: "\<And>m n. foldl' (\<lambda>(x,y). x + y) 0 (replicate m n) = m * n"
+ proof -
+  fix m::nat
+  fix n::nat
+  show "foldl' (\<lambda>(x,y). x + y) 0 (replicate m n) = m * n"
+   by (induct m, auto simp: foldl_foldr1_lemma)
+ qed
+ have "int (length l) \<ge> 0" by auto
+ assume "n > 0"
+ hence "int n > 0" by auto
+ assume "(int n) zdvd (int (length l))"
+ hence "\<exists>zk. int (length l) = zk * int n"
+  by (auto simp: zdvd_def dvd_def)
+ then obtain zk where MUL: "int (length l) = zk * int n" by auto
+ have "zk \<ge> 0"
+ proof (rule ccontr)
+  assume "\<not> 0 \<le> zk"
+  hence "zk < 0" by auto
+  with `int n > 0` have "zk * int n < 0" by (auto simp: mult_pos_neg2)
+  with MUL `int (length l) \<ge> 0` show False by auto
+ qed
+ def k \<equiv> "nat zk"
+ with int_eq_iff `zk \<ge> 0` have "int k = zk" by auto
+ with MUL have "int (length l) = int k * int n" by auto
+ hence "int (length l) = int (k * n)" by (auto simp: int_mult)
+ hence "length l = k * n" by auto
+ with `n > 0` have "length l div n = k" by auto
+ with LEM
+  have "foldl' (\<lambda>(x,y). x + y) 0 (replicate (length l div n) n) = k * n"
+   by auto
+ also with `length l = k * n` have "\<dots> = length l" by auto
+ finally show ?thesis .
+qed
+end-proof
+
 % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
 op [a] noRepetitions? (l: List a) : Bool =
@@ -2923,32 +2960,33 @@ op [a] app (f: a -> ()) (l: List a) : () =
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism List
-  type List.List    -> list
-  List.length       -> length
-  List.@            -> !            Left  35
-  List.empty        -> []
-  List.empty?       -> null
-  List.in?          -> mem          Left  22
-  List.prefix       -> take         curried  reversed
-  List.removePrefix -> drop         curried  reversed
-  List.head         -> hd
-  List.last         -> last
-  List.tail         -> tl
-  List.butLast      -> butlast
-  List.++           -> @            Left  25
-  List.|>           -> #            Right 23
-  List.update       -> list_update  curried
-  List.forall?      -> list_all
-  List.exists?      -> list_ex
-  List.filter       -> filter
-  List.foldl        -> foldl'
-  List.foldr        -> foldr'
-  List.zip          -> zip          curried
-  List.map          -> map
-  List.mapPartial   -> filtermap
-  List.reverse      -> rev
-  List.repeat       -> replicate             reversed
-  List.flatten      -> concat
+  type List.List      -> list
+  List.length         -> length
+  List.@              -> !            Left  35
+  List.empty          -> []
+  List.empty?         -> null
+  List.in?            -> mem          Left  22
+  List.prefix         -> take         curried  reversed
+  List.removePrefix   -> drop         curried  reversed
+  List.head           -> hd
+  List.last           -> last
+  List.tail           -> tl
+  List.butLast        -> butlast
+  List.++             -> @            Left  25
+  List.|>             -> #            Right 23
+  List.update         -> list_update  curried
+  List.forall?        -> list_all
+  List.exists?        -> list_ex
+  List.filter         -> filter
+  List.foldl          -> foldl'
+  List.foldr          -> foldr'
+  List.zip            -> zip          curried
+  List.map            -> map
+  List.mapPartial     -> filtermap
+  List.reverse        -> rev
+  List.repeat         -> replicate             reversed
+  List.flatten        -> concat
+  List.noRepetitions? -> distinct
   % deprecated:
   List.nil -> []
   List.cons -> # Right 23
