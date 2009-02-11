@@ -54,17 +54,24 @@ proof Isa List__list_Obligation_subtype
   sorry
 end-proof
 
-(* The obligation List__list__r_def_Obligation_subsort really pertains the
-definition op list in spec List, and not its refinement in spec
-List_Executable. In fact, an alpha-equivalent obligation is generated from spec
-List. Therefore, for now we ignore this obligation via "sorry". Once the
-Specware-Isabelle translator no longer generates this redundant obligation, the
-following "sorry" will be removed. *)
-proof Isa List__list__r_def_Obligation_subsort
-end-proof
-
 proof Isa List__list_subtype_constr
-  by (unfold List__list_def, rule List__list_Obligation_subsort)
+proof -
+ from List__list_def
+  have "List__list = (\<lambda>f. List__list__loop(0,f))" by (auto intro: ext)
+  hence "Function__bijective_p__stp
+           (\<lambda> (f::nat \<Rightarrow> 'a option). 
+              \<exists>(n::nat). f definedOnInitialSegmentOfLength n,
+            \<lambda> ignore. True)
+           List__list
+         =
+         Function__bijective_p__stp
+           (\<lambda> (f::nat \<Rightarrow> 'a option). 
+              \<exists>(n::nat). f definedOnInitialSegmentOfLength n,
+            \<lambda> ignore. True)
+           (\<lambda>f. List__list__loop(0,f))"
+   by (rule arg_cong)
+ with List__list_Obligation_subtype show ?thesis by auto
+qed
 end-proof
 
 op List.list_1 : [a] Bijection (List a, ListFunction a) =
