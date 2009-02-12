@@ -42,6 +42,53 @@ termination
  done
 end-proof
 
+proof Isa -verbatim
+lemma List__list__loop_Suc:
+"(\<exists>l. f definedOnInitialSegmentOfLength l) \<Longrightarrow>
+ List__list__loop (Suc i, f) = List__list__loop (i, \<lambda>j. f (Suc j))"
+proof -
+ def Lf \<equiv> "List__lengthOfListFunction f"
+ assume fseg: "\<exists>l. f definedOnInitialSegmentOfLength l"
+ with List__lengthOfListFunction_Obligation_the
+  have "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
+   by (auto simp: List__lengthOfListFunction_def intro: theI')
+ with Lf_def have fseg_Lf: "f definedOnInitialSegmentOfLength Lf" by auto
+ from fseg_Lf
+  have "(\<lambda>j. f (Suc j)) definedOnInitialSegmentOfLength (Lf - 1)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+ hence f'seg: "\<exists>l'.
+                 (\<lambda>j. f (Suc j)) definedOnInitialSegmentOfLength l'"
+  by auto
+ show ?thesis
+ proof (induct n \<equiv> "Lf - Suc i" arbitrary: i)
+  case 0
+  hence "Lf \<le> Suc i" by auto
+  with fseg_Lf have "f (Suc i) = None"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with fseg have "List__list__loop (Suc i, f) = []" by auto
+  from `f (Suc i) = None` have "(\<lambda>j. f (Suc j)) i = None" by auto
+  with f'seg have "List__list__loop (i, \<lambda>j. f (Suc j)) = []" by auto
+  with `List__list__loop (Suc i, f) = []` show ?case by auto
+ next
+  case (Suc n)
+  hence "Lf - Suc (Suc i) = n" by auto
+  with Suc.hyps
+  have IH: "List__list__loop (Suc (Suc i), f) =
+            List__list__loop (Suc i, \<lambda>j. f (Suc j))" by auto
+  from Suc have "Suc i < Lf" by auto
+  with fseg_Lf obtain x where "f (Suc i) = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with fseg have "List__list__loop (Suc i, f) =
+                  x # List__list__loop (Suc (Suc i), f)" by auto
+  from `f (Suc i) = Some x` have "(\<lambda>j. f (Suc j)) i = Some x" by auto
+  with f'seg have "List__list__loop (i, \<lambda>j. f (Suc j)) =
+                   x # List__list__loop (Suc i, \<lambda>j. f (Suc j))" by auto
+  with `List__list__loop (Suc i, f) = x # List__list__loop (Suc (Suc i), f)` IH
+   show ?case by auto
+ qed
+qed
+end-proof
+
 (* The bijectivity obligation for op list as refined above follows from the
 injectivity of op list as defined in spec List (which must be proved as part of
 establishing the well-formedness of spec List) and from the correctness of the
@@ -71,6 +118,29 @@ proof -
            (\<lambda>f. List__list__loop(0,f))"
    by (rule arg_cong)
  with List__list_Obligation_subtype show ?thesis by auto
+qed
+end-proof
+
+proof Isa List__list__r_def
+proof (cases "f 0")
+ case None
+ assume fseg: "\<exists>(n::nat). f definedOnInitialSegmentOfLength n"
+ with None show ?thesis by (auto simp: List__list_def)
+next
+ case (Some x)
+ assume fseg: "\<exists>(n::nat). f definedOnInitialSegmentOfLength n"
+ with Some have "List__list f = x # List__list__loop (1, f)"
+  by (auto simp: List__list_def)
+ also with fseg List__list__loop_Suc
+  have "\<dots> = x # List__list__loop (0, \<lambda>i. f (i + 1))"
+   by (auto simp del: List__list__loop.simps)
+ also with Some
+  have "\<dots> =
+        (case f 0 of None \<Rightarrow> []
+                   | Some x \<Rightarrow> x #
+                                      (List__list (\<lambda>i. f (i + 1))))"
+   by (auto simp: List__list_def)
+ finally show ?thesis .
 qed
 end-proof
 
