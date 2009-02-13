@@ -39,6 +39,14 @@
 	main-dir-str
       (format nil ".~a" main-dir-str))))
 
+;; The same function with the same name, but in a different package is
+;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
+(defun ensure-final-slash (dirname)
+  (if (member (elt dirname (- (length dirname) 1))
+	      '(#\/ #\\))
+      dirname
+    (concatenate 'string dirname "/")))
+
 (defun current-directory ()
   ;; we need consistency: all pathnames, or all strings, or all lists
   ;; of strings, ...
@@ -263,14 +271,6 @@
     (funcall ccl::*overwrite-dialog-hook* filename prompt)
     filename))
 )
-
-;; The same function with the same name, but in a different package is
-;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
-(defun ensure-final-slash (dirname)
-  (if (member (elt dirname (- (length dirname) 1))
-	      '(#\/ #\\))
-      dirname
-    (concatenate 'string dirname "/")))
 
 (defparameter temporaryDirectory
   (ensure-final-slash
