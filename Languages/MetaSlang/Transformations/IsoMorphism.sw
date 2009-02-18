@@ -641,13 +641,13 @@ spec
                                           else Some(Unfold iso_qid))
                               prime_type_iso_info
     in
-    let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
+    % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
     let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                     if member(iso_qid, recursive_ops) then None
                                       else Some(Unfold iso_qid))
                         iso_info
     in
-    let _ = writeLine("iso: "^anyToString iso_unfolds) in
+    % let _ = writeLine("iso: "^anyToString iso_unfolds) in
     let complex_iso_fn_unfolds = map (fn (_,qid) -> Rewrite qid) iso_fn_info in
     let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
                        Rewrite(mkQualifiedId("Function","id")),
