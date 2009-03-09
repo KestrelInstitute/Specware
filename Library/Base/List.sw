@@ -3299,6 +3299,23 @@ next
 qed
 end-proof
 
+proof Isa List__positionsSuchThat_subtype_constr
+proof (cases dom_positionsSuchThat)
+ case (Pair l p)
+ def POSs \<equiv> "List__positionsSuchThat (l, p)"
+ and P \<equiv> "\<lambda>POSs::nat list.
+           distinct POSs \<and>
+           List__increasingNats_p POSs \<and>
+           (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+ with List__positionsSuchThat_Obligation_the P_def
+  have "\<exists>!POSs. P POSs" by blast
+ hence "P (THE POSs. P POSs)" by (rule theI')
+ hence "P POSs" by (auto simp: POSs_def List__positionsSuchThat_def P_def)
+ with P_def have "distinct POSs" by auto
+ with POSs_def Pair show ?thesis by auto
+qed
+end-proof
+
 % leftmost/rightmost position of element satisfying predicate (None if none):
 
 op [a] leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
