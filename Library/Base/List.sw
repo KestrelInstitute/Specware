@@ -3331,6 +3331,14 @@ op [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
 op [a] positionsOf (l: List a, x:a) : InjList Nat =
   positionsSuchThat (l, fn y:a -> y = x)
 
+proof Isa List__positionsOf_subtype_constr
+proof (cases dom_positionsOf)
+ case (Pair l x)
+ thus ?thesis
+  by (auto simp: List__positionsOf_def List__positionsSuchThat_subtype_constr)
+qed
+end-proof
+
 % position of element in injective list that has element:
 
 op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
