@@ -9,18 +9,18 @@
       (append '("STRING-SPEC::implode"
                 "STRING-SPEC::explode"
                 "STRING-SPEC::|!length|"
-                "STRING-SPEC::|!@-2|"
-                "STRING-SPEC::|!@|"
+                "STRING-SPEC::|@-2|"
+                "STRING-SPEC::|@|"
                 "STRING-SPEC::sub-2"
                 "STRING-SPEC::sub"
                 "STRING-SPEC::subFromTo-3"
                 "STRING-SPEC::subFromTo"
                 "STRING-SPEC::++-2"
                 "STRING-SPEC::!++"
-                "STRING-SPEC::|!forall?-1-1|"
-                "STRING-SPEC::|!forall?|"
-                "STRING-SPEC::|!exists?-1-1|"
-                "STRING-SPEC::|!exists?|"
+                "STRING-SPEC::forall?-1-1"
+                "STRING-SPEC::forall?"
+                "STRING-SPEC::exists?-1-1"
+                "STRING-SPEC::exists?|"
                 "STRING-SPEC::map-1-1"
                 "STRING-SPEC::|!map|"
                 "STRING-SPEC::flatten"
@@ -44,7 +44,7 @@
                 "String-Spec::implode"
                 "String-Spec::explode"
                 "String-Spec::|!length|"
-                "String-Spec::|!@-2|"
+                "String-Spec::@-2"
                 "String-Spec::|!@|"
                 "String-Spec::sub-2"
                 "String-Spec::sub"
@@ -52,10 +52,10 @@
                 "String-Spec::subFromTo"
                 "String-Spec::++-2"
                 "String-Spec::!++"
-                "String-Spec::|!forall?-1-1|"
-                "String-Spec::|!forall?|"
-                "String-Spec::|!exists?-1-1|"
-                "String-Spec::|!exists?|"
+                "String-Spec::forall?-1-1"
+                "String-Spec::forall?"
+                "String-Spec::exists?-1-1"
+                "String-Spec::exists?"
                 "String-Spec::map-1-1"
                 "String-Spec::|!map|"
                 "String-Spec::flatten"
@@ -104,11 +104,11 @@
  (the cl:fixnum 
    (array-dimension x 0)))
 
-(defun |!@-2| (s n)
+(defun @-2 (s n)
  (declare (type cl:simple-string s) (type cl:fixnum n))
  (elt s n))
 
-(define-compiler-macro |!@-2| (s n)
+(define-compiler-macro @-2 (s n)
   `(elt (the cl:simple-string ,s) (the cl:fixnum ,n)))
 
 (defun |!@| (sn)
@@ -157,18 +157,18 @@
                 (the cl:simple-string (car xy)) 
                 (the cl:simple-string (cdr xy)))))
 
-(defun |!forall?| (p)
+(defun forall? (p)
  (lambda (s)
    (every p s)))
 
-(defun |!forall?-1-1| (p s)
+(defun forall?-1-1 (p s)
  (every p s))
 
-(defun |!exists?| (p)
+(defun exists? (p)
  (lambda (s)
    (some p s)))
 
-(defun |exists?-1-1| (p s)
+(defun exists?-1-1 (p s)
  (some p s))
 
 (defun |!map| (f)
