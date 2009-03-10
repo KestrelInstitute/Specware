@@ -57,7 +57,9 @@
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
-	    )
+	    ;; Temporary because of race condition bug with slime
+            ;; (setq *features* (remove :sb-thread *features*))
+            )
 
 #+mcl     (progn
 	    (ccl:egc nil)		                                ; Turn off ephemeral gc as it is inefficient
@@ -66,7 +68,7 @@
 	    )
 
 ;; The following defines functions such as:
-;;;   specware::getenv
+;;;   Specware::getenv
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
 ;;    make-system
@@ -77,7 +79,7 @@
   (load utils)
   (compile-and-load-lisp-file utils))
 
-(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
+(defparameter Specware4 (substitute #\/ #\\ (Specware::getenv "SPECWARE4")))
 
 (if (null Specware::Specware4)
     (warn "SPECWARE4 environment var not set")
@@ -314,11 +316,11 @@
 ;;================================================================================
 
 #+sbcl (progn
-	 (defvar *sbcl-home* (specware::getenv "SBCL_HOME")) ; see note above
+	 (defvar *sbcl-home* (Specware::getenv "SBCL_HOME")) ; see note above
 	 (push  #'(lambda () 
 		    (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
-		    (specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
+		    (Specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
 		    )
 		sb-ext:*init-hooks*)
 	 )
@@ -346,7 +348,7 @@
 (when *using-slime-interface?*
   `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
      (format nil "~a/Library/IO/Emacs/slime/" 
-	     (specware::getenv "SPECWARE4")))
+	     (Specware::getenv "SPECWARE4")))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
     (load loader :verbose t))
   )
