@@ -224,10 +224,11 @@ IsaTermPrinter qualifying spec
       | Some loc_nm \_rightarrow (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path, uidToIsaName uid, "")
 
-  op isaLibrarySpecNames: List String = ["List", "Integer", "Nat", "Set", "Map", "Fun",
-                                         "Lattices", "Orderings", "SAT", "Relation"]
+  op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun", 
+                                         "lattices", "orderings", "sat", "relation",
+                                         "gcd", "datatype", "recdef", "hilbert_choice"]
   op thyName(spname: String): String =
-    if member(spname, isaLibrarySpecNames)
+    if member(map toLowerCase spname, isaLibrarySpecNames)
       then "SW_"^spname
       else spname
 
@@ -453,7 +454,6 @@ IsaTermPrinter qualifying spec
                then makeTypeCheckObligationSpec spc
 	       else spc
     in
-    % let _ = toScreen("1:\n"^printSpec spc^"\n") in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = normalizeNewTypes spc in
