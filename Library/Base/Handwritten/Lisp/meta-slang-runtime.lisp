@@ -120,16 +120,9 @@
   #+sbcl(declare (optimize speed))
   (or (eq t1 t2)
       (typecase t1
-        (null      (null    t2))
-        (string    (string= t1 t2))
-        (symbol    (eq      t1 t2))
-        (number    (=       t1 t2))    ; catches complex numbers, etc.
-        (character (eq      t1 t2))
-        (cons      (and (consp t2) 
-                        ;;   Cons cells are equal if their elements are equal too.
-                        (slang-term-equals-2 (car t1) (car t2))
-                        (slang-term-equals-2 (cdr t1) (cdr t2))))
-        (vector    (cond ((and   
+        (array (typecase t1
+                 (string    (string= t1 t2))
+                 (vector    (cond ((and   
                            ;; (quotient? t1) 
                            ;; (quotient? t2)
                            (eq (svref t1 0) quotient-tag)
@@ -153,6 +146,17 @@
                                   (do ((i 0 (+ i 1))
                                        (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
                                       ((or (= i dim1) (not v-equal)) v-equal))))))))
+                 (t (equalp t1 t2))
+                 ))
+        ;(null      (null    t2))
+        ;(string    (string= t1 t2))
+        (symbol    (eq      t1 t2))
+        (cons      (and (consp t2) 
+                        ;;   Cons cells are equal if their elements are equal too.
+                        (slang-term-equals-2 (car t1) (car t2))
+                        (slang-term-equals-2 (cdr t1) (cdr t2))))
+        (number    (=       t1 t2))    ; catches complex numbers, etc.
+        (character (eq      t1 t2))
         (hash-table
          ;; This can happen, for example, when comparing specs, which use maps from
          ;; /Library/Structures/Data/Maps/SimpleAsSTHarray.sw that are implemented
@@ -241,11 +245,12 @@
   ;; HASH-TABLE behavior before we fall through to the generic STRUCTURE-OBJECT
   ;; comparison behavior.
   (typecase key
-    (simple-string (sxhash key))
-    (array (array-swxhash key depthoid))
+    (cons (list-swxhash key depthoid))
+    (array (typecase key
+             (simple-string (sxhash key))
+             (t (array-swxhash key depthoid))))
     (hash-table (hash-table-swxhash key))
     (structure-object (structure-object-swxhash key depthoid))
-    (cons (list-swxhash key depthoid))
     (number (number-swxhash key))
     (character (char-code key))
     (t (sxhash key))))
@@ -298,7 +303,7 @@
   #+sbcl(declare (optimize speed))
   (declare (type structure-object key))
   (declare (type (integer 0 #.+max-hash-depthoid+) depthoid))
-  #-sbcl (the fixnum 481929)
+  #-sbcl (the fixnum 481929)            ; just some number
   #+sbcl
   (let* ((layout (%instance-layout key)) ; i.e. slot #0
          (length (layout-length layout))
@@ -429,8 +434,8 @@
 (define-compiler-macro List-Spec::|!length| (l)
   `(length ,l))
 
-;;(define-compiler-macro List-Spec::++-2 (l1 l2)
-;;  `(append ,l1 ,l2))
+(define-compiler-macro List-Spec::++-2 (l1 l2)
+ `(append ,l1 ,l2))
 
 ;; assert is in Library/General/Assert
 ;; If optimization property speed is 3 and safety is less than 3 then this is compiled away.
