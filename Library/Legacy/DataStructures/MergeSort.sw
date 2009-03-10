@@ -1,13 +1,12 @@
-\section{MergeSort} 
+(* MergeSort
 
 List sorting routines using a smooth applicative merge sort
 Taken from the SML/NJ distribution, which again is
 taken from, ML for the Working Programmer, LCPaulson. pg 99-100, which again is.
 taken from ...
+*)
 
-\begin{spec} 
-MergeSort qualifying spec {
-  import /Library/Base
+MergeSort qualifying spec
 
   op sortGT     : fa(a) (a * a -> Boolean) -> List a -> List a
   op uniqueSort : fa(a) (a * a -> Comparison) -> List a -> List a
@@ -55,15 +54,18 @@ MergeSort qualifying spec {
              | _ -> samsorting (ls, [], 0))
          
   def uniqueSort cmpfn ls = 
-    let def merge(xs,ys) = 
+    let
+      def merge_r(xs,ys,r) = 
       case (xs,ys) of
-        | ([],ys) -> ys
-        | (xs,[]) -> xs
+        | ([],ys) -> rev r ++ ys
+        | (xs,[]) -> rev r ++ xs
         | (x::rxs,y::rys) ->
             (case cmpfn (x,y) of
-              | Greater -> Cons(y,merge(xs,rys))
-              | Equal   -> merge(xs,rys)
-              | _       -> Cons(x,merge(rxs,ys))) in
+              | Greater -> merge_r(xs,rys,y::r)
+              | Equal   -> merge_r(xs,rys,r)
+              | _       -> merge_r(rxs,ys,x::r))
+      def merge(xs,ys) = merge_r(xs,ys,[])
+    in
     let def mergepairs(ls,k) = 
       case ls of
         | [l] -> ls
@@ -95,5 +97,4 @@ MergeSort qualifying spec {
     case xs of
       | (x::(rest as (y::_))) -> ~(cmpGT (x,y)) & (sorted cmpGT rest)
       | _ -> true
-}
-\end{spec} 
+endspec
