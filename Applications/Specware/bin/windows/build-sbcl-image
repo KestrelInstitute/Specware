@@ -106,7 +106,7 @@ cd Handwritten/Lisp
 # first time compiles everything.  This may not be necessary but it is
 # easier just to load it twice rather than to try to figure out if something
 # needs to be compiled.
-"$LISP" --core "$INITIMAGE" <<-XXXX
+"$LISP" -core "$INITIMAGE" <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
@@ -121,7 +121,7 @@ XXXX
 echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "
-"$LISP" --core "$INITIMAGE" <<-XXXX
+"$LISP" -core "$INITIMAGE" <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(load "$MEMORY_MANAGEMENT")
 	(set-gc-parameters-for-build nil)

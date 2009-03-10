@@ -133,10 +133,7 @@
 		 (case *specware-lisp*
 		   ((cmulisp sbcl)
 		     (if common-lisp-image-file
-			 (concat common-lisp-image-name
-				 (if (eq *specware-lisp* 'cmulisp)
-				     " -core " " --core ")
-				 common-lisp-image-file)
+			 (concat common-lisp-image-name " -core " common-lisp-image-file)
 		       common-lisp-image-name))
 		   (allegro (concat common-lisp-image-name
 				    " "
@@ -294,10 +291,7 @@
 		   (case *specware-lisp*
 		     ((cmulisp sbcl)
 		      (if common-lisp-image-file
-			  (list ;common-lisp-image-name
-				(if (eq *specware-lisp* 'cmulisp)
-				    "-core" "--core")
-				common-lisp-image-file)
+			  (list "-core" common-lisp-image-file)
 			(list "--dynamic-space-size" (format "%S" *sbcl-size*))))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
