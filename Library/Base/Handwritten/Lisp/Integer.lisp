@@ -4,6 +4,7 @@
 (defpackage :Integer_)
 (defpackage :IntegerAux)
 (defpackage :Nat-Spec)
+(defpackage :specware)
 (in-package :Integer-Spec)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
@@ -79,10 +80,10 @@
 
 ;;; mechanism for allowing the user to declare global restrictions on integers:
 (eval-when (compile load)
- (defvar specware::*integer-impl* 'integer))
+ (defvar Specware::*integer-impl* 'integer))
 
 (defmacro the-int (x)
- `(the ,specware::*integer-impl* ,x))
+ `(the ,Specware::*integer-impl* ,x))
 
 (defconstant zero 0)
 
