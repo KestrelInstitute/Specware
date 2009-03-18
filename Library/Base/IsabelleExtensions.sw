@@ -507,6 +507,18 @@ qed
 
 
 (*************************************************************
+* Something defined via the definite description operator
+* satisfies the defining predicate, provided that the solution
+* is unique. This lemma is convenient for functions defined
+* via the definite description operator.
+*************************************************************)
+
+lemma eq_the_sat:
+"\<lbrakk> \<exists>!x. P x ; y = (THE y. P y)\<rbrakk> \<Longrightarrow> P y"
+by (auto simp: theI')
+
+
+(*************************************************************
 * Isabelle's foldl and foldr functions slightly differ from
 * Metaslang's foldl and foldr ops because (1) their function
 * argument f is curried in Isabelle but not in Metaslang and
