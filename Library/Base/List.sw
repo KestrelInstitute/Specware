@@ -3344,6 +3344,62 @@ end-proof
 op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
   theElement (positionsOf (l, x))
 
+proof Isa List__positionOf_Obligation_subtype
+proof
+ assume "distinct l"
+ assume "x_2 = List__positionsOf (l, x)"
+ hence "x_2 = (THE POSs.
+                   distinct POSs \<and>
+                   List__increasingNats_p POSs \<and>
+                   (\<forall>i. i mem POSs = (i < length l \<and> l ! i = x)))"
+  by (auto simp: List__positionsOf_def List__positionsSuchThat_def)
+ with List__positionsSuchThat_Obligation_the
+  have "distinct x_2 \<and>
+        List__increasingNats_p x_2 \<and>
+        (\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x))"
+   by (rule eq_the_sat)
+ hence D: "distinct x_2"
+   and I: "List__increasingNats_p x_2"
+   and M: "\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x)"
+  by auto
+ assume "x mem l"
+ hence "\<exists>i < length l. l ! i = x"
+  by (auto iff: mem_iff in_set_conv_nth)
+ then obtain i where "i < length l" and "l ! i = x" by auto
+ with M have "i mem x_2" by auto
+ hence "\<exists>k < length x_2. x_2!k = i"
+  by (auto iff: mem_iff in_set_conv_nth)
+ then obtain k where "k < length x_2" and "x_2!k = i" by auto
+ hence "length x_2 > 0" by auto
+ have "length x_2 < 2"
+ proof (rule ccontr)
+  assume "\<not> length x_2 < 2"
+  hence "length x_2 \<ge> 2" by auto
+  def k' \<equiv> "(if k = 0 then 1 else 0) :: nat"
+  hence "k' \<noteq> k" by auto
+  def i' \<equiv> "x_2!k'"
+  from k'_def `length x_2 \<ge> 2` have "k' < length x_2" by auto
+  with i'_def have "i' mem x_2" by (auto iff: mem_iff in_set_conv_nth)
+  with M have "i' < length l" and "l ! i' = x" by auto
+  from List__noRepetitions_p__def D
+       `k < length x_2` `k' < length x_2` `k' \<noteq> k`
+   have "x_2!k \<noteq> x_2!k'" by auto
+  with `x_2!k = i` i'_def have "i \<noteq> i'" by auto
+  with List__noRepetitions_p__def
+       `distinct l` `i < length l` `i' < length l`
+   have "l!i \<noteq> l!i'" by auto
+  with `l!i = x` `l!i' = x` show False by auto
+ qed
+ with `length x_2 > 0` have "length x_2 = 1" by arith
+ thus "List__ofLength_p 1 x_2" by (auto simp: List__ofLength_p_def)
+next
+ assume "\<forall>x_1. x_1 = List__positionsOf (l, x) \<longrightarrow>
+               distinct x_1 \<and> List__List_P (op \<le> 0) x_1"
+    and "x_2 = List__positionsOf (l, x)"
+ thus "List__List_P (op \<le> 0) x_2" by auto
+qed
+end-proof
+
 % true iff subl occurs within supl at position i:
 
 op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
@@ -3377,6 +3433,26 @@ op [a] rightmostPositionOfSublistAndPreceding
   let i = last POSs in
   Some (i, prefix (supl, i))
 
+proof Isa List__leftmostPositionOfSublistAndFollowing_Obligation_subtype
+proof
+ assume "\<not> (null POSs)"
+ thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
+next
+ assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
+ thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
+qed
+end-proof
+
+proof Isa List__rightmostPositionOfSublistAndPreceding_Obligation_subtype
+proof
+ assume "\<not> (null POSs)"
+ thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
+next
+ assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
+ thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
+qed
+end-proof
+
 % split list at index into preceding elements, element at index, and
 % following elements:
 
@@ -3407,6 +3483,14 @@ op [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
 op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   let lp = filter p l in
   if empty? lp then None else Some (last lp)
+
+proof Isa List__findLeftmost_Obligation_subtype
+  by (auto simp: List__nonEmpty_p_def)
+end-proof
+
+proof Isa List__findRightmost_Obligation_subtype
+  by (auto simp: List__nonEmpty_p_def)
+end-proof
 
 % return leftmost/rightmost element satisfying predicate as well as list of
 % preceding/following elements (None if no element satisfies predicate):
