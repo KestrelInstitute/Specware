@@ -75,13 +75,13 @@ rem Fourth, look under C:\Program Files\XEmacs, if it exists
 
 if exist "C:\Program Files\XEmacs" (
   if "%XEMACS%"=="" (
-    for /F "tokens=*" %%i in ('dir /B C:\Program Files\XEmacs\xemacs-2*') do (
+    for /F "tokens=*" %%i in ('dir /B "C:\Program Files\XEmacs\xemacs-2*"') do (
      echo setting XEMACS to C:\Program Files\XEmacs\%%i
      set "XEMACS=C:\Program Files\XEmacs\%%i"
     )
   ) else if not exist "%XEMACS%\i586-pc-win32\xemacs.exe" (
     echo Cannot find "%XEMACS%\i586-pc-win32\xemacs.exe"
-    for /F "tokens=*" %%i in ('dir /B C:\Program Files\XEmacs\xemacs-2*') do (
+    for /F "tokens=*" %%i in ('dir /B "C:\Program Files\XEmacs\xemacs-2*"') do (
      echo revising XEMACS to C:\Program Files\XEmacs\%%i
      set "XEMACS=C:\Program Files\XEmacs\%%i"
     )
