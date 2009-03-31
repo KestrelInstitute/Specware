@@ -3406,6 +3406,37 @@ op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
   ex (pre: List a, post: List a) pre ++ subl ++ post = supl &&
                                  length pre = i
 
+% the empty sublist occurs in l at all positions i from 0 to length l:
+theorem empty_sublist is [a]
+  fa (l:List a, i:Nat) i <= length l => sublistAt? ([], i, l)
+
+proof Isa List__empty_sublist
+proof -
+ assume "i \<le> length l"
+ def pre \<equiv> "take i l" and post \<equiv> "drop i l"
+ with `i \<le> length l` have "pre @ [] @ post = l \<and> length pre = i"
+  by auto
+ hence "\<exists>pre post. pre @ [] @ post = l \<and> length pre = i" by auto
+ thus "List__sublistAt_p([], i, l)" by (auto simp: List__sublistAt_p_def)
+qed
+end-proof
+
+% upper limit to position of sublist:
+theorem sublist_position_upper is [a]
+  fa (subl:List a, supl:List a, i:Nat)
+    sublistAt? (subl, i, supl) => i <= length supl - length subl
+
+proof Isa List__sublist_position_upper
+proof -
+ assume "List__sublistAt_p(subl, i, supl)"
+ hence "\<exists>pre post. pre @ subl @ post = supl \<and> length pre = i"
+  by (auto simp: List__sublistAt_p_def)
+ then obtain pre and post where "pre @ subl @ post = supl" and "length pre = i"
+  by auto
+ thus "int i \<le> int (length supl) - int (length subl)" by auto
+qed
+end-proof
+
 % return starting positions of all occurrences of subl within supl:
 
 op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
