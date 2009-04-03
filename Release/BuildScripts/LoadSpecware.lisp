@@ -57,7 +57,9 @@
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
-	    )
+	    ;; Temporary because of race condition bug with slime
+            ;; (setq *features* (remove :sb-thread *features*))
+            )
 
 #+mcl     (progn
 	    (ccl:egc nil)		                                ; Turn off ephemeral gc as it is inefficient
