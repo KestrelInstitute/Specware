@@ -18,6 +18,9 @@ FM qualifying spec
     case ineqSet of
       | [] -> return []
       | _ ->
+    if contradictIneqGtEq in? ineqSet
+      then return [contradictIneqGtEq]
+      else
       {
       (topVarIneqs, newIneqs) <- fmStep(ineqSet);
       solvedNewIneqs <- fourierMotzkin(newIneqs);
@@ -29,9 +32,9 @@ FM qualifying spec
     case ineqSet of
       | [] -> return ([], [])
       | hdIneq::tlIneq ->
-      case hdVarOpt(hdIneq) of
-	| Some ineqHdVar -> processIneq0(ineqHdVar, ineqSet)
-	| _ -> return (ineqSet, [])
+    case hdVarOpt(hdIneq) of
+      | Some ineqHdVar -> processIneq0(ineqHdVar, ineqSet)
+      | _ -> return (ineqSet, [])
 
   (* First finds all the ineqs that contain the largest remaining variable.
      Then chains all the ineqs with that variable.
@@ -45,12 +48,12 @@ FM qualifying spec
 		      | Some _ -> ~(equal?(hdVar(ineq), var))
 		      | None -> true),
 		ineqSet) in
-    %let _ = writeLine("Chains for: "^print(var)^ " in ") in
-    %let _ = writeIneqSet(ineqSet) in
-    %let _ = writeLine("is: ") in
-    %let _ = writeIneqSet(respc) in
-    %let _ = writeLine("AND ---") in
-    %let _ = writeIneqSet(resnpc) in
+%    let _ = writeLine("Chains for: "^print(var)^ " in ") in
+%    let _ = writeIneqSet(ineqSet) in
+%    let _ = writeLine("is: ") in
+%    let _ = writeIneqSet(respc) in
+%    let _ = writeLine("AND ---") in
+%    let _ = writeIneqSet(resnpc) in
     return res
   
   op processIneq0: Var * IneqSet -> Ineq.M (IneqSet * IneqSet)
@@ -61,8 +64,9 @@ FM qualifying spec
     newIneqs <- processPossibleIneqs(possibleChains);
     newIneqSet <- return (nonChains++newIneqs);
     newIneqSet <- return (sortIneqSet(newIneqSet));
-    %let _ = writeLine("processIneq0: "^ print(var)^" results in") in
-    %let _ = writeIneqSet(newIneqSet) in
+    newIneqSet <- return (filterSubsumed(newIneqSet));
+%    let _ = writeLine("processIneq0: "^ print(var)^" results in") in
+%    let _ = writeIneqSet(newIneqSet) in
     return (possibleChains, newIneqSet)
      }
 
@@ -247,6 +251,63 @@ FM qualifying spec
 	  _ <- return(if debugFM then toScreen("FM: Counter:\n"^printIneqSet(counter)) else ());
 	  return (Counter counter)
 	}}}
+
+  op subsumeTerm(t1: Term, t2: Term): Option Comparison =
+    if constant? t1 && constant? t2
+      then Some(compare(constant(t1), constant(t2)))
+    else if equal?(t1, t2) then Some Equal
+      else None
+
+  op compareAdd(c1: Comparison, c2: Comparison): Option Comparison =
+    case (c1, c2) of
+    | _ | c1 = c2 -> Some c1
+    | (Equal, _)  -> Some c2
+    | (_, Equal)  -> Some c1
+    | _ -> None
+
+  op subsumePoly(p1: Poly, p2: Poly): Option Comparison =
+    let def aux(p1, p2, comp): Option Comparison =
+          if constant? p1 && constant? p2
+            then compareAdd(comp, compare(constant(p1), constant(p2)))
+          else if zero? p1 || zero? p2
+            then None
+          else
+          case subsumeTerm(hdTerm p1, hdTerm p2) of
+          | None -> None
+          | Some ncomp ->
+          case compareAdd(comp, ncomp) of
+          | None -> None
+          | Some ccomp -> aux(restPoly p1, restPoly p2, ccomp)
+     in
+     let result = aux(p1, p2, Equal) in
+     %(if some? result
+%       then writeLine("subsumePoly: "^print p1^" =?= "^print p2^"\n  "^anyToString result)
+%       else (); result)
+      result
+
+  op filterSubsumed(ineqSet: IneqSet): IneqSet =
+    rev(foldl (fn (ineqSet, ineq) ->
+               %if ineq = trueIneq then ineqSet
+%               else
+               if ineqSet = [] then [ineq]
+               else
+               let l_ineq = head ineqSet in
+               let cmp   = compPred ineq in
+               let l_cmp = compPred l_ineq in
+               if cmp ~= l_cmp || cmp = Eq || cmp = Neq then ineq::ineqSet
+               else
+               case subsumePoly(poly ineq, poly l_ineq) of
+               | None -> ineq::ineqSet
+               | Some Equal -> ineqSet
+               | Some Less ->
+                 if cmp = Gt || cmp = GtEq
+                   then ineq :: tail ineqSet
+                   else ineqSet
+               | Some Greater ->
+                 if cmp = Gt || cmp = GtEq
+                   then ineqSet
+                   else ineq :: tail ineqSet)
+          [] ineqSet)
 
 
   op generateCounterExample: IneqSet -> IneqSet
