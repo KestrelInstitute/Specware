@@ -910,7 +910,8 @@ Utilities qualifying spec
 
  op  mkSimpConj: List MS.Term -> MS.Term
  def mkSimpConj(cjs) =
-  case cjs
+  let cjs = foldl (fn (cjs, cj) -> if termIn?(cj, cjs) then cjs else cj::cjs) [] cjs in
+  case rev cjs
     of []     -> mkTrue()
      | [x]    -> x
      | x::rcs -> mkAnd (x, mkConj rcs)
