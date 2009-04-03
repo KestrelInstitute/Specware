@@ -207,9 +207,16 @@ Poly qualifying spec
 	    | Less -> Greater
 	    | Greater -> Less
 
+  op PolyTerm.equal?(t1: Term, t2: Term): Boolean =
+    if constant?(t1) && constant?(t2)
+      then constant(t1) = constant(t2)
+    else if constant?(t1) || constant?(t2) then false
+    else equal?(var(t1), var(t2)) & constant(t1) = constant(t2)
+
   op compare: Poly * Poly -> Comparison
   def compare(p1, p2) =
     if equal(p1, p2) then Equal
+    else if constant?(p1) && constant?(p2) then compare(constant(p1), constant(p2))
     else if zero?(p1) then Greater
     else if zero?(p2) then Less
     else if constant?(p1) then Greater
