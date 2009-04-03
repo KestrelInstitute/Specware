@@ -436,9 +436,9 @@ proof -
  assume "Set_P P__a s"
  assume "p {}"
  assume "\<forall> (s::'a set) (x::'a).
-          (Set__finite_p__stp P__a s \<and> Set_P P__a s)
-          \<and> P__a x 
-          \<longrightarrow> (p s \<longrightarrow> p (insert x s))"
+          Set__finite_p__stp P__a s \<and>
+          (Set_P P__a s \<and> (P__a x \<and> p s))
+          \<longrightarrow> p (insert x s)"
  txt {* We prove that @{term p} holds on all finite sets by proving that @{term
  q} holds on all natural numbers, by induction on the natural numbers. *}
  have "\<And>n. q n"
@@ -553,9 +553,9 @@ proof -
      are trying to prove (which is one of the assumptions of the theorem) to
      @{term s0} and @{term x}. *}
      with `\<forall> (s::'a set) (x::'a).
-             (Set__finite_p__stp P__a s \<and> Set_P P__a s)
-             \<and> P__a x  
-             \<longrightarrow> (p s \<longrightarrow> p (insert x s))`
+            Set__finite_p__stp P__a s \<and>
+            (Set_P P__a s \<and> (P__a x \<and> p s))
+            \<longrightarrow> p (insert x s)`
           `Set__finite_p__stp P__a s0`
           `Set_P P__a s0`
           `p s0`
