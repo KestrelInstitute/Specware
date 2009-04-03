@@ -138,11 +138,21 @@ Ineq qualifying spec
     if zero?(p)
       then normalizeZeroIneq(comp)
     else
-      if comp = Gt then mkIneq(Gt, p)
-      else
-	if comp = GtEq then mkIneq(GtEq, p)
-	else if comp = Eq then mkIneq(Eq, p)
-	  else mkIneq(oppositeComp(comp), negate(p))
+      if constant?(p)
+        then
+          if constant(p) > toCoef(0)
+            then
+              if comp = Gt || comp = GtEq || comp = Neq then trueIneq
+                else falseIneq
+            else  % negative
+              if comp = Lt || comp = LtEq || comp = Neq then trueIneq
+                else falseIneq
+        else
+          if comp = Gt then mkIneq(Gt, p)
+          else
+            if comp = GtEq then mkIneq(GtEq, p)
+            else if comp = Eq then mkIneq(Eq, p)
+              else mkIneq(oppositeComp(comp), negate(p))
 
   op normalizeZeroIneq: CompPred -> Ineq
   def normalizeZeroIneq(c) =
