@@ -29,6 +29,8 @@
                      (in-distribution-dir "Library/Base.sw"))
 (copy-dist-file      (in-specware-dir     "Library/InterpreterBase.sw")
                      (in-distribution-dir "Library/InterpreterBase.sw"))
+(copy-dist-file      (in-specware-dir     "Library/General.sw")
+                     (in-distribution-dir "Library/General.sw"))
 
 (specware::make-directory (in-distribution-dir "Library/IO/"))
 (copy-dist-directory (in-specware-dir     "Library/IO/Emacs/")
