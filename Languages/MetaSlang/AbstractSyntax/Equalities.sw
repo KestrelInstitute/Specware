@@ -501,6 +501,13 @@ MetaSlang qualifying spec
                     else
                       pending_tms ++ [tm]
                   | _ ->
+                    %% For symmetry: any-term may occur before or after real term
+                    let pending_tms = filter (fn pending_tm ->
+                                                case termInnerTerm pending_tm of
+                                                  | Any _ -> ~(equalType? (termSort tm, termSort pending_tm))
+                                                  | _ -> true)
+                                        pending_tms
+                    in
                     pending_tms ++ [tm])
              []
 	     tms
