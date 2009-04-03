@@ -460,6 +460,11 @@ IsaTermPrinter qualifying spec
     let spc = removeSubTypes spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
+    %% Second round of simplification could be avoided with smarter construction
+    let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
+                then simplifyTopSpec spc
+                else spc
+    in
     % let _ = toScreen("2:\n"^printSpec spc^"\n") in
     %let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
 %                then simplifyTopSpec spc
