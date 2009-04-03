@@ -442,6 +442,13 @@ MetaSlang qualifying spec
      | And _ -> srt % fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
      | _ -> srt
 
+ op [a] anySort?(t: ASort a): Boolean =
+   case t of
+     | Any _        -> true
+     | Pi(_, tm, _) -> anySort? tm
+     | And(tms, _)  -> all anySort? tms
+     | _ -> false
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -456,9 +463,10 @@ MetaSlang qualifying spec
 
  op [a] anyTerm?(t: ATerm a): Boolean =
    case t of
-     | Any _ -> true
-     | Pi(_, tm, _) -> anyTerm? tm
-     | And([tm], _) -> anyTerm? tm
+     | Any _                 -> true
+     | Pi(_, tm, _)          -> anyTerm? tm
+     | SortedTerm(tm, _, _)  -> anyTerm? tm
+     | And(tms, _)           -> all anyTerm? tms
      | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
      | _ -> false
 
@@ -471,7 +479,7 @@ MetaSlang qualifying spec
            (let real_tms = filter (fn tm -> ~(anyTerm? tm)) tms in
               case real_tms of
                 | [tm] -> ([], tm)
-                | _ -> fail ("unpackTerm: Trying to unpack an And of terms."))
+                | _ -> fail ("unpackTerm: Trying to unpack an And of terms.\n"^printTerm t))
 	 | _ -> ([], t)
    in
    case tm of
@@ -1639,7 +1647,7 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  Misc constructors
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+ 
   op mkAndOp : [a] a -> ATerm a
  def mkAndOp a =
    let bool_sort = Boolean a in
