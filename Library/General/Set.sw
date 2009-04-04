@@ -607,6 +607,10 @@ apply(intro conjI allI impI)
 sorry
 end-proof
 
+proof Isa Set__size_Obligation_the
+ sorry
+end-proof
+
 op [a] hasSize (s: Set a, n:Nat) infixl 20 : Bool =
   finite? s && size s = n
 
@@ -630,9 +634,65 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
+proof Isa Set__fold__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype2
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype3
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype4
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_subtype5
+ sorry
+end-proof
+
+proof Isa Set__fold__stp_Obligation_the
+ sorry
+end-proof
+
+proof Isa Set__fold_Obligation_the
+ sorry
+end-proof
+
 % finite powerset:
 
 op [a] powerf (s: Set a) : Set (FiniteSet a) = power s /\ finite?
+
+proof Isa Set__powerf__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa Set__powerf__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa Set__powerf__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa Set__powerf_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa Set__powerf_Obligation_subtype0
+ sorry
+end-proof
 
 % infinite, countable, and uncountable cardinality:
 
@@ -664,6 +724,10 @@ type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
 op [a] min (ss: SetOfSetsWithMin a) : Set a = the(s) s isMinIn ss
 
+proof Isa Set__min__stp_Obligation_the
+ sorry
+end-proof
+
 proof Isa  Set__min_Obligation_the
   apply(auto simp add: Set__hasMin_p_def Set__isMinIn_def)
 end-proof
@@ -676,6 +740,10 @@ op [a] hasMax? (ss: Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
 type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
+
+proof Isa Set__max__stp_Obligation_the
+ sorry
+end-proof
 
 proof Isa  Set__max_Obligation_the
   apply(auto simp add: Set__hasMax_p_def Set__isMaxIn_def)
