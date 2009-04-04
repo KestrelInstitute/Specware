@@ -352,29 +352,4 @@ theorem Function__eta__stp:
 theorem Function__eta: 
   "(\<lambda> (x::'a). (f::'a \<Rightarrow> 'b) x) = f"
   by auto
-consts Function__wellFounded_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
-                                        ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
-defs Function__wellFounded_p__stp_def: 
-  "Function__wellFounded_p__stp P__a rel
-     \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
-          Fun_PD P__a p 
-            \<longrightarrow> ((\<exists>(y::'a). P__a y \<and> p y) 
-               \<longrightarrow> (\<exists>(y::'a). 
-                      P__a y 
-                        \<and> (p y 
-                         \<and> (\<forall>(x::'a). 
-                              P__a x \<longrightarrow> (p x \<longrightarrow> \<not> (rel(x, y))))))))"
-consts Function__wellFounded_p :: "('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
-defs Function__wellFounded_p_def: 
-  "Function__wellFounded_p rel
-     \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
-          (\<exists>(y::'a). p y) 
-            \<longrightarrow> (\<exists>(y::'a). 
-                   p y 
-                     \<and> (\<forall>(x::'a). p x \<longrightarrow> \<not> (rel(x, y)))))"
-consts Function__wfo__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
-defs Function__wfo__stp_def: 
-  "Function__wfo__stp P__a \<equiv> Function__wellFounded_p__stp P__a"
-consts Function__wfo :: "('a \<times> 'a \<Rightarrow> bool) \<Rightarrow> bool"
-defs Function__wfo_def: "Function__wfo \<equiv> Function__wellFounded_p"
 end
