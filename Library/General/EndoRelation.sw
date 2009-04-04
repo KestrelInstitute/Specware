@@ -1,89 +1,185 @@
 EndoRelation qualifying spec
 
-  import Relation
+import Relation
 
-  type EndoRelation a = Relation(a,a)
+type EndoRelation a = Relation(a,a)
 
-  % identity:
+% identity:
 
-  op id : [a] EndoRelation a = (=)
+op id : [a] EndoRelation a = (=)
 
-  % identity over given domain:
+% identity over given domain:
 
-  op [a] idOver (s: Set a) : EndoRelation a = s * s
+op [a] idOver (s: Set a) : EndoRelation a = s * s
 
-  % various properties of endorelations:
+% various properties of endorelations:
 
-  op [a] reflexive? (r: EndoRelation a) : Bool = (fa(x) r(x,x))
+op [a] reflexive? (r: EndoRelation a) : Bool = (fa(x) r(x,x))
 
-  type ReflexiveRelation a = (EndoRelation a | reflexive?)
+type ReflexiveRelation a = (EndoRelation a | reflexive?)
 
-  op [a] irreflexive? (r: EndoRelation a) : Bool = (fa(x) ~~r(x,x))
+op [a] irreflexive? (r: EndoRelation a) : Bool = (fa(x) ~~r(x,x))
 
-  type IrreflexiveRelation a = (EndoRelation a | irreflexive?)
+type IrreflexiveRelation a = (EndoRelation a | irreflexive?)
 
-  op [a] symmetric? (r: EndoRelation a) : Bool = (fa(x,y) r(x,y) => r(y,x))
+op [a] symmetric? (r: EndoRelation a) : Bool = (fa(x,y) r(x,y) => r(y,x))
 
-  type SymmetricRelation a = (EndoRelation a | symmetric?)
+type SymmetricRelation a = (EndoRelation a | symmetric?)
 
-  op [a] antisymmetric? (r: EndoRelation a) : Bool =
-    fa(x,y) r(x,y) && r(y,x) => x = y
+op [a] antisymmetric? (r: EndoRelation a) : Bool =
+  fa(x,y) r(x,y) && r(y,x) => x = y
 
-  type AntisymmetricRelation a = (EndoRelation a | antisymmetric?)
+type AntisymmetricRelation a = (EndoRelation a | antisymmetric?)
 
-  op [a] asymmetric? (r: EndoRelation a) : Bool =
-    fa(x,y) ~ (r(x,y) && r(y,x))
+op [a] asymmetric? (r: EndoRelation a) : Bool =
+  fa(x,y) ~ (r(x,y) && r(y,x))
 
-  type AsymmetricRelation a = (EndoRelation a | asymmetric?)
+type AsymmetricRelation a = (EndoRelation a | asymmetric?)
 
-  op [a] transitive? (r: EndoRelation a) : Bool =
-    fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
+op [a] transitive? (r: EndoRelation a) : Bool =
+  fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
 
-  type TransitiveRelation a = (EndoRelation a | transitive?)
+type TransitiveRelation a = (EndoRelation a | transitive?)
 
-  op [a] negativeTransitive? (r: EndoRelation a) : Bool =
-    fa(x,y,z) ~~r(x,y) && ~~r(y,z) => ~~r(x,z)
+op [a] negativeTransitive? (r: EndoRelation a) : Bool =
+  fa(x,y,z) ~~r(x,y) && ~~r(y,z) => ~~r(x,z)
 
-  type NegativeTransitiveRelation a = (EndoRelation a | negativeTransitive?)
+type NegativeTransitiveRelation a = (EndoRelation a | negativeTransitive?)
 
-  op [a] trichotomous? (r: EndoRelation a) : Bool =
-    % exactly one of `r(x,y)', `r(y,x)', and `x = y' holds:
-    fa(x,y) r(x,y) && ~~r(y,x) && x ~= y
-       || ~~r(x,y) &&   r(y,x) && x ~= y
-       || ~~r(x,y) && ~~r(y,x) && x  = y
+op [a] trichotomous? (r: EndoRelation a) : Bool =
+  % exactly one of `r(x,y)', `r(y,x)', and `x = y' holds:
+  fa(x,y) r(x,y) && ~~r(y,x) && x ~= y
+     || ~~r(x,y) &&   r(y,x) && x ~= y
+     || ~~r(x,y) && ~~r(y,x) && x  = y
 
-  type TrichotomousRelation a = (EndoRelation a | trichotomous?)
+type TrichotomousRelation a = (EndoRelation a | trichotomous?)
 
-  op equivalence? : [a] EndoRelation a -> Bool =
-    reflexive? /\ symmetric? /\ transitive?
+op equivalence? : [a] EndoRelation a -> Bool =
+  reflexive? /\ symmetric? /\ transitive?
 
-  type Equivalence a = (EndoRelation a | equivalence?)
+type Equivalence a = (EndoRelation a | equivalence?)
 
-  op partialEquivalence? : [a] EndoRelation a -> Bool =
-    symmetric? /\ transitive?
+op partialEquivalence? : [a] EndoRelation a -> Bool =
+  symmetric? /\ transitive?
 
-  type PartialEquivalence a = (EndoRelation a | partialEquivalence?)
+type PartialEquivalence a = (EndoRelation a | partialEquivalence?)
 
-  op [a] wellFounded? (r: EndoRelation a) : Bool =
-    % each non-empty predicate:
-    fa (p: a -> Bool) (ex(y:a) p y) =>
-    % has a minimal element w.r.t. the relation:
-      (ex(y:a) p y && (fa(x:a) p x => ~ (r(x,y))))
+op [a] wellFounded? (r: EndoRelation a) : Bool =
+  % each non-empty predicate:
+  fa (p: a -> Bool) (ex(y:a) p y) =>
+  % has a minimal element w.r.t. the relation:
+    (ex(y:a) p y && (fa(x:a) p x => ~ (r(x,y))))
 
-  type WellFoundedRelation a = (EndoRelation a | wellFounded?)
+type WellFoundedRelation a = (EndoRelation a | wellFounded?)
 
-  % closure operators:
+% closure operators:
 
-  op [a] reflexiveClosure (r: EndoRelation a) : ReflexiveRelation a =
-    min (fn rc -> r <= rc && reflexive? rc)
+op [a] reflexiveClosure (r: EndoRelation a) : ReflexiveRelation a =
+  min (fn rc -> r <= rc && reflexive? rc)
 
-  op [a] symmetricClosure (r: EndoRelation a) : SymmetricRelation a =
-    min (fn rc -> r <= rc && symmetric? rc)
+op [a] symmetricClosure (r: EndoRelation a) : SymmetricRelation a =
+  min (fn rc -> r <= rc && symmetric? rc)
 
-  op [a] transitiveClosure (r: EndoRelation a) : TransitiveRelation a =
-    min (fn rc -> r <= rc && transitive? rc)
+op [a] transitiveClosure (r: EndoRelation a) : TransitiveRelation a =
+  min (fn rc -> r <= rc && transitive? rc)
 
-  op [a] equivalenceClosure (r: EndoRelation a) : Equivalence a =
-    min (fn rc -> r <= rc && equivalence? rc)
+op [a] equivalenceClosure (r: EndoRelation a) : Equivalence a =
+  min (fn rc -> r <= rc && equivalence? rc)
+
+proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa EndoRelation__reflexiveClosure_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__reflexiveClosure_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__reflexiveClosure_subtype_constr
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__symmetricClosure_subtype_constr
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__transitiveClosure_subtype_constr
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa EndoRelation__equivalenceClosure_subtype_constr
+ sorry
+end-proof
 
 endspec
