@@ -32,10 +32,10 @@ op zero : Int
 
 op isucc : Bijection (Int, Int)
 
- proof Isa Integer__isucc_subtype_constr
-  apply(auto simp add: bij_def inj_on_def surj_def)
-  apply(rule_tac x="y - 1" in exI, auto)
- end-proof
+proof Isa Integer__isucc_subtype_constr
+ apply(auto simp add: bij_def inj_on_def surj_def)
+ apply(rule_tac x="y - 1" in exI, auto)
+end-proof
 
 op ipred : Bijection (Int, Int) = inverse isucc
  proof Isa
@@ -373,7 +373,6 @@ proof Isa
  apply(rule Integer__lcm_Obligation_the)
  apply(simp add: zlcm_least)
 end-proof
-
 proof Isa lcm_Obligation_the
  apply(rule_tac a="ilcm(x,y)" in ex1I, simp_all)
  apply(simp add: zlcm_least)
@@ -514,6 +513,7 @@ op modT (i:Int, j:Int0) infixl 26 : Int = i - j * (i divT j)
 proof Isa
   apply (simp add: modT_alt_def)
 end-proof
+
 (* Some examples of divT and modT.
 
 theorem divT_examples is
@@ -527,7 +527,7 @@ theorem modT_examples is
   -14 modT  5 = -4 && -11 modT  5 = -1 &&
    14 modT -5 =  4 &&  11 modT -5 =  1 &&
   -14 modT -5 = -4 && -11 modT -5 = -1
- *)
+*)
 
 (* Division by truncation coincides with exact division when divisor divides
 dividend evenly. *)
@@ -644,7 +644,7 @@ theorem modF_examples is
   -14 modF  5 =  1 && -11 modF  5 =  4 &&
    14 modF -5 = -1 &&  11 modF -5 = -4 &&
   -14 modF -5 = -4 && -11 modF -5 = -1
- *)
+*)
 
 (* Division by flooring coincides with exact division when divisor divides
 dividend evenly. *)
@@ -658,13 +658,6 @@ end-proof
 (* The quotient is the largest integer that, when multiplied by the divisor,
 does not exceed the dividend. *)
 
-(*******************************************************************************
- The following theorem is not correct - below is a possible fix
- **************************************************
-theorem divF_is_largest is
-  fa (i:Int, j:Int0, k:Int)
-    k * j <= i  =>  k <= i divF j
-*******************************************************************************)
 theorem divF_is_largest is
   fa (i:Int, j:Int0, k:Int)
     k * (abs j) <= i * (sign j)  =>  k <= i divF j
@@ -672,7 +665,6 @@ proof Isa
 apply(simp add: abs_if sign_def div_is_largest_pos div_is_largest_neg
            split: split_if_asm)    
 end-proof
-
 
 (* Negating the divisor or the dividend negates the quotient and decreases it by
 1 unless division is exact. *)
@@ -746,7 +738,6 @@ again coincides with the result of divT. If instead i and j have the same sign,
 the exact results is positive and thus ceiling is 1 less than truncating,
 i.e. the result is the result of divT increased by 1. *)
 
-
 op divC (i:Int, j:Int0) infixl 26 : Int =
   if i modT j = 0 || sign i ~= sign j then i divT j
                                       else i divT j + 1
@@ -776,7 +767,7 @@ theorem modC_examples is
   -14 modC  5 = -4 && -11 modC  5 = -1 &&
    14 modC -5 =  4 &&  11 modC -5 =  1 &&
   -14 modC -5 =  1 && -11 modC -5 =  4
- *)
+*)
 
 (* Division by ceiling coincides with exact division when divisor divides
 dividend evenly. *)
@@ -790,20 +781,12 @@ end-proof
 (* The quotient is the smallest integer that, when multiplied by the divisor, is
 not exceeded by the dividend. *)
 
-(*******************************************************************************
- The following theorem is not correct - below is a possible fix
- **************************************************
-theorem divC_is_smallest is
-  fa (i:Int, j:Int0, k:Int)
-    k * j >= i  =>  k >= i divC j
-*******************************************************************************)
 theorem divC_is_smallest is
   fa (i:Int, j:Int0, k:Int)
     k * (abs j) >= i * (sign j)  =>  k >= i divC j
 proof Isa
   apply (auto simp add: neq_iff divC_is_smallest_pos divC_is_smallest_neg)
 end-proof
-
 
 (* The result of divC coincides with the result of divF if it is exact.
 Otherwise, the former is always 1 more than the latter. *)
@@ -857,13 +840,6 @@ end-proof
 
 (* Negating the divisor decreases a non-zero remainder by the divisor. *)
 
-(*******************************************************************************
- The following theorem is not correct - below is a possible fix
- **************************************************
-theorem modC_of_negated_divisor is
-  fa (i:Int, j:Int0) i modC -j = i modC j
-                                 - j * (if j divides i then 0 else 1)
-*******************************************************************************)
 theorem modC_of_negated_divisor is
   fa (i:Int, j:Int0) i modC -j = i modC j
                                  + j * (if j divides i then 0 else 1)
@@ -950,7 +926,7 @@ theorem modR_examples is
   -14 modR  5 =  1 && -11 modR  5 = -1 &&
    14 modR -5 = -1 &&  11 modR -5 =  1 &&
   -14 modR -5 =  1 && -11 modR -5 = -1
- *)
+*)
 
 (* Division by rounding coincides with exact division when divisor divides
 dividend evenly. *)
@@ -1046,7 +1022,7 @@ theorem modE_examples is
   -14 modE  5 = 1 && -11 modE  5 = 4 &&
    14 modE -5 = 4 &&  11 modE -5 = 1 &&
   -14 modE -5 = 1 && -11 modE -5 = 4
- *)
+*)
 
 (* Euclidean division coincides with exact division when divisor divides
 dividend evenly. *)

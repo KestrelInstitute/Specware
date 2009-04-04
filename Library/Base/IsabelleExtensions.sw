@@ -957,7 +957,7 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 * it to the negative ones
 *
 * Isabelle Standard: sign of mod depends on sign of divisor
-* SpecWare 
+* Specware 
 *     - divT/modT: truncate the rational number, then take the rest
 *     - divF/modF: flooring division, same as Isabelle's div/mod
 *     - divC/modC: ceiling division
@@ -967,7 +967,7 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 *                     if rest is exactly .5, choose the even number
 *     - divE/modE: mod is always positive (Euclidean)
 *     - ndiv/nmod: Euclidean division on natural numbers
-* The definitons that I give here are more direct than the ones in SpecWare
+* The definitons that I give here are more direct than the ones in Specware
 * which allows me to use existing Isabelle theorems about div/mod also for
 * the other concepts
 ********************************************************************************)
@@ -1116,8 +1116,6 @@ lemma divides_iff_modT_0:         "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longr
   by (simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
 lemma exact_divT:                 "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i = j * (i divT j)"
   by (simp add: divides_iff_modT_0 modT_alt_def)
-
-(********** what about uniqueness ??? **************)
 
 (**************************** negation *********************************)
 lemma divT_zminus1:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> -i divT j = -(i divT j)"
@@ -1287,7 +1285,6 @@ lemma divR_def_aux6: "\<lbrakk>a \<noteq> (0\<Colon>int); b \<noteq> (0\<Colon>i
   apply (drule div_pos_neg_less, simp, simp)
   apply (drule div_neg_pos_less, simp, simp)
 done
-
 
 (*********** now the concrete subgoals of the proof obligation ***********)
 
@@ -1601,8 +1598,6 @@ lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod
   by (auto simp add: modE_alt_def divE_def,
       cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto, 
       simp add: abs_via_sign ring_simps)
-
-
 
 end-proof
 
