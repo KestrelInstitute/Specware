@@ -238,6 +238,10 @@ end-proof
 op [a,b] restrictRange (m: FMap(a,b), p: b -> Bool) infixl 25
                        : FMap(a,b) = toFMap (fromFMap m restrictRange p)
 
+proof Isa FMap__restrictDomain_Obligation_subtype
+ sorry
+end-proof
+
 op [a,b] single (x:a) (y:b) : FMap(a,b) = toFMap (single (x,y))
 
 proof Isa FMap__single_Obligation_subtype
