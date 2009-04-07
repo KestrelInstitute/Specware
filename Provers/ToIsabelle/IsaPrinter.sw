@@ -395,8 +395,8 @@ IsaTermPrinter qualifying spec
                    % let _ = writeLine("def_tm: "^printTerm term) in
                    let initialFmla = defToTheorem(getSpec c, ty, qid, term) in
                    let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
-                   % let _ = writeLine("def_thm1: "^printTerm (hd liftedFmlas)) in
-                   %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
+                   % let _ = app (fn fmla -> writeLine("def_thm1: "^printTerm fmla)) liftedFmlas in
+                   let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
                    let (_,thms) = foldl (fn((i, result), fmla) ->
                                            (i + 1,
                                             result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
@@ -1714,7 +1714,7 @@ IsaTermPrinter qualifying spec
 
   op  ppTerm : Context \_rightarrow ParentTerm \_rightarrow MS.Term \_rightarrow Pretty
   def ppTerm c parentTerm term =
-    % let _ = writeLine(printTerm term^": "^anyToString parentTerm) in
+    %let _ = writeLine(printTerm term^": "^anyToString parentTerm) in
     case (isFiniteList term) of
       | Some terms \_rightarrow
 	prConcat [prString "[",
@@ -1723,6 +1723,15 @@ IsaTermPrinter qualifying spec
       | None \_rightarrow
     let def prApply(term1, term2) =
        case (term1, term2) of
+         | (Apply(Fun(Op(qid, _), _, _), t1, _), _) | reversedNonfixOp? c qid ->
+           %% Reversed curried op, not infix
+           let Some(isa_id,_,_,reversed,_) = specialOpInfo c qid in
+           enclose?(parentTerm ~= Top,
+                    prBreak 2 [prString isa_id,
+                               prSpace,
+                               ppTermEncloseComplex? c Nonfix term2,
+                               prSpace,
+                               ppTermEncloseComplex? c Nonfix t1])
 	 | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) \_rightarrow
            let spc = getSpec c in
 	   if multiArgConstructor?(constr_id,range(spc,ty),spc) then
@@ -1796,16 +1805,30 @@ IsaTermPrinter qualifying spec
                  let terms2 = if reversed then reverse terms2 else terms2 in
                  if length terms2 = 1
                    then
-                     let spc = getSpec c in
-                     let Some fields = productOpt(spc, inferType(spc, term2)) in
-                     let (rec_pat, rec_tm) = patTermVarsForProduct fields in
-                     ppTerm c parentTerm (MS.mkLet([(rec_pat, term2)], mkApply(term1, rec_tm)))
+                     (let spc = getSpec c in
+                      case productOpt(spc, inferType(spc, term2)) of
+                        | Some fields ->
+                          let (rec_pat, rec_tm) = patTermVarsForProduct fields in
+                          ppTerm c parentTerm (MS.mkLet([(rec_pat, term2)], mkApply(term1, rec_tm)))
+                        | None ->
+                      case arrowOpt(spc, inferType(spc, term)) of
+                        | Some(dom, _) ->
+                          let new_v = ("cv", dom) in
+                          ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
+                        | None -> fail("Can't reverse term: "^printTerm term))
                  else
                  prBreak 2 [pp_id,
                             prSpace,
                             prPostSep 2 blockFill prSpace
                               (map (ppTermEncloseComplex? c Nonfix) terms2)]
-               | _ ->                 
+               | (Some pp_id,_,false,true) ->
+                 (let spc = getSpec c in
+                  case arrowOpt(spc, inferType(spc, term)) of
+                    | Some(dom, _) ->
+                      let new_v = ("cv", dom) in
+                      ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
+                    | None -> fail("Can't reverse term: "^printTerm term))
+           | _ ->                 
 	     prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                         case term2 of
                           | Record _ \_rightarrow ppTerm c Top term2
@@ -2187,12 +2210,17 @@ IsaTermPrinter qualifying spec
                 ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun,ty), mkVar vt)))
          else
          case specialOpInfo c qid of
-           | Some(isa_id, _, curry?, _, _) \_rightarrow
-             if curry?
+           | Some(isa_id, _, curry?, reversed?, _) \_rightarrow
+             if curry? || reversed?
                then (let spc = getSpec c in
                      case productOpt(spc,domain(spc,ty)) of
                        | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
-                       | None -> prString isa_id)
+                       | None ->
+                     case arrowOpt(spc, ty) of
+                       | Some(dom, _) ->
+                         let new_v = ("cv0", dom) in
+                         ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun,ty), mkVar new_v)))
+                       | _ -> prString isa_id)
                else prString isa_id
            | _ -> ppOpQualifiedId c qid)
       | Project id \_rightarrow
@@ -2419,6 +2447,11 @@ IsaTermPrinter qualifying spec
 	  | _              -> (None, Nonfix, false, false))
      | _ -> (None, Nonfix, false, false)
  
+ op reversedNonfixOp? (c: Context) (qid: QualifiedId): Boolean =
+   case specialOpInfo c qid of
+     | Some(_ ,None,_,true,_) -> true
+     | _ -> false
+
  op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
  def enclose?(encl? ,pp) =
    if encl? then prConcat [prString "(", pp, prString ")"]
