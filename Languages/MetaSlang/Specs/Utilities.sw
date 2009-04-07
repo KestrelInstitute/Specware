@@ -639,6 +639,8 @@ Utilities qualifying spec
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
+ op renameShadowedVars(term: MS.Term): MS.Term =
+   renameBoundVars(term, freeVars term)
 
  op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
    case v_subst of
