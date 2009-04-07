@@ -315,22 +315,33 @@ spec
 				     else Some(simpSubstitute(spc,c,sbst)))
 		   cjs,
 		 simpSubstitute(spc,bod,sbst)))
-       | _ -> if (exists (fn cj -> equivTerm? spc (cj, bod)) cjs
-	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false))
-                % && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
-	       then mkTrue()
-	       else
-		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
-		 let simpVs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
-                                             || ~(knownNonEmpty?(v.2, spc)))
-                                vs
-                 in
-                 let bod_cjs = getConjuncts bod in
-                 % let _ = writeLine("Simplifying "^printTerm bod^"\nwrt:\n"^printTerm(mkConj simplCJs)) in
-                 let bod = mkConj(filter (fn c -> ~(termIn?(c,simplCJs))) bod_cjs) in
-		 if simplCJs = cjs && simpVs = vs
-		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
-		   else simplifyForall spc (simpVs,simplCJs,bod)
+       | _ ->
+     if (exists (fn cj -> equivTerm? spc (cj, bod)) cjs
+        || (case bod of Fun(Bool true,_,_) -> true | _ -> false))
+       % && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
+      then mkTrue()
+      else
+        %% x = f y && p(f y) => q(f y) --> x = f y && p x => q x
+        let bind_cjs = filter (fn cj -> some?(bindEquality(cj,vs))) cjs in
+        let (cjs, bod) = foldl (fn ((cjs, bod), cj) ->
+                                  let Some bnd = bindEquality (cj,vs) in
+                                  (map (fn cji -> if cj = cji then cji
+                                                   else invertSubst(cji, [bnd]))
+                                     cjs,
+                                   invertSubst(bod, [bnd])))
+                           (cjs, bod) bind_cjs
+        in
+        let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
+        let simpVs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
+                                    || ~(knownNonEmpty?(v.2, spc)))
+                       vs
+        in
+        let bod_cjs = getConjuncts bod in
+        % let _ = writeLine("Simplifying "^printTerm bod^"\nwrt:\n"^printTerm(mkConj simplCJs)) in
+        let bod = mkConj(filter (fn c -> ~(equivTermIn? spc (c,simplCJs))) bod_cjs) in
+        if simplCJs = cjs && simpVs = vs
+          then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+          else simplifyForall spc (simpVs,simplCJs,bod)
 
   op  simplifyConjunct: MS.Term * Spec -> List MS.Term 
   def simplifyConjunct (cj,spc) =
