@@ -1,7 +1,6 @@
 theory IsabelleExtensions
-imports GCD List Hilbert_Choice Recdef Datatype
+imports Char_nat GCD List Hilbert_Choice Recdef Datatype
 begin
-
 
 
 (*************************************************************
@@ -225,18 +224,15 @@ constdefs
 
 lemma defined_on_simp_set: 
   "defined_on f A B = (\<forall>x\<in>A. f x \<in> B)"
-  apply(auto simp add: defined_on_def image_def subset_eq)
-done
+  by (auto simp add: defined_on_def image_def subset_eq)
 
 lemma defined_on_simp: 
   "defined_on f A B = (\<forall>x. A x \<longrightarrow> B(f x))"
-  apply(auto simp add: defined_on_simp_set Ball_def mem_def)
-done
+  by (auto simp add: defined_on_simp_set Ball_def mem_def)
 
 lemma defined_on_UNIV [simp]: 
   "defined_on f A UNIV"
-  apply(simp add: defined_on_def image_def)
-done
+  by (simp add: defined_on_def image_def)
 
 
 lemma inv_on_mem:
@@ -254,18 +250,18 @@ done
 
 lemma inv_on_f_f [simp]: 
   "\<lbrakk>inj_on f A; x \<in> A\<rbrakk> \<Longrightarrow>  inv_on A f (f x) = x"
-  apply(simp add: inv_on_def Inv_f_f)
-done
+  by (simp add: inv_on_def Inv_f_f)
 
 lemma f_inv_on_f [simp]: 
   "\<lbrakk>y \<in> f`A\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
-  apply(simp add: inv_on_def  f_Inv_f)
-done
+  by (simp add: inv_on_def  f_Inv_f)
+
+lemma inv_on_f_eq: "\<lbrakk>inj_on f A; f x = y; x \<in> A\<rbrakk>  \<Longrightarrow> x = inv_on A f y"
+  by(simp add: inv_on_def Inv_f_eq)
 
 lemma surj_on_f_inv_on_f [simp]: 
   "\<lbrakk>surj_on f A B; y\<in>B\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
-  apply(simp add: image_def Collect_def mem_def surj_on_def)
-done
+  by (simp add: image_def Collect_def mem_def surj_on_def)
 
 
 lemma inj_on_imp_surj_on_UNIV_inv: 
@@ -291,24 +287,33 @@ done
 
 lemma bij_on_imp_bij_on_inv: 
    "bij_on f A B \<Longrightarrow> bij_on (inv_on A f) B A"
-   apply(auto simp add: bij_on_def inj_on_imp_surj_on_inv surj_on_imp_inj_on_inv defined_on_inv)
-done
+  by (auto simp add: bij_on_def inj_on_imp_surj_on_inv 
+                     surj_on_imp_inj_on_inv defined_on_inv)
+
 
 lemma bij_ON_UNIV_bij_on: 
    "bij_ON f A UNIV = bij_on f A UNIV"
-   apply(auto simp add: bij_on_def bij_ON_def defined_on_def)
-done
+  by (auto simp add: bij_on_def bij_ON_def defined_on_def)
 
 lemma bij_ON_imp_bij_ON_inv: 
    "bij_ON f A UNIV \<Longrightarrow> bij_ON (inv_on A f) UNIV A"
-   apply(simp add: bij_ON_def  surj_on_imp_inj_on_inv inj_on_imp_surj_on_UNIV_inv)
-done
+  by (simp add: bij_ON_def  surj_on_imp_inj_on_inv inj_on_imp_surj_on_UNIV_inv)
 
 lemma bij_ON_imp_bij_on_inv: 
    "bij_ON f A UNIV \<Longrightarrow> bij_on (inv_on A f) UNIV A"
-   apply(simp add: bij_ON_UNIV_bij_on bij_on_imp_bij_on_inv)
-done
+  by (simp add: bij_ON_UNIV_bij_on bij_on_imp_bij_on_inv)
 
+(*************************************************************
+* A few insights about characters
+*************************************************************)
+
+
+lemma nat_of_char_less_256 [simp]: "nat_of_char y < 256"
+  apply (subgoal_tac "\<exists>x. y = char_of_nat x", safe)
+  apply (simp add: nat_of_char_of_nat)
+  apply (rule_tac x="nat_of_char y" in exI)
+  apply (simp add: char_of_nat_of_char)
+done 
 
 (*************************************************************
 *
@@ -944,7 +949,7 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 * it to the negative ones
 *
 * Isabelle Standard: sign of mod depends on sign of divisor
-* SpecWare 
+* Specware 
 *     - divT/modT: truncate the rational number, then take the rest
 *     - divF/modF: flooring division, same as Isabelle's div/mod
 *     - divC/modC: ceiling division
@@ -954,7 +959,7 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 *                     if rest is exactly .5, choose the even number
 *     - divE/modE: mod is always positive (Euclidean)
 *     - ndiv/nmod: Euclidean division on natural numbers
-* The definitons that I give here are more direct than the ones in SpecWare
+* The definitons that I give here are more direct than the ones in Specware
 * which allows me to use existing Isabelle theorems about div/mod also for
 * the other concepts
 ********************************************************************************)
@@ -1103,8 +1108,6 @@ lemma divides_iff_modT_0:         "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longr
   by (simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
 lemma exact_divT:                 "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i = j * (i divT j)"
   by (simp add: divides_iff_modT_0 modT_alt_def)
-
-(********** what about uniqueness ??? **************)
 
 (**************************** negation *********************************)
 lemma divT_zminus1:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> -i divT j = -(i divT j)"
@@ -1274,7 +1277,6 @@ lemma divR_def_aux6: "\<lbrakk>a \<noteq> (0\<Colon>int); b \<noteq> (0\<Colon>i
   apply (drule div_pos_neg_less, simp, simp)
   apply (drule div_neg_pos_less, simp, simp)
 done
-
 
 (*********** now the concrete subgoals of the proof obligation ***********)
 

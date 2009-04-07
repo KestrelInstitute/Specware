@@ -3,44 +3,36 @@ imports SW_Integer Char_nat
 begin
 theorem Char__chr_subtype_constr: 
   "Function__bijective_p__stp(\<lambda> (n::nat). n < 256, \<lambda> ignore. True) char_of_nat"
-sorry
-(*    apply(auto) *)
-(*    apply(rule_tac s="nat_of_char (char_of_nat x2)" in ssubst) *)
-(*    apply(simp add: nat_of_char_of_nat) *)
-(*    apply(rule_tac s="nat_of_char (char_of_nat x1)" in ssubst) *)
-(*    apply(simp) *)
-(*    apply(simp (no_asm) add: nat_of_char_of_nat, simp) *)
-(*    apply(rule_tac x="nat_of_char y" in exI, safe) *)
-   (*** Apart from lemma nat_of_char_of_nat there is little information about nat_of_char **)
-(*    apply(subgoal_tac "\<exists>x. y = char_of_nat x", safe) *)
-(*    apply(simp add: nat_of_char_of_nat) *)
-(*    apply(rule_tac x="nat_of_char y" in exI) *)
-(*    apply(rule sym, rule char_of_nat_of_char) *)
-(*    apply(rule char_of_nat_of_char) *)
-(*   done *)
+   apply (auto simp add: bij_on_def inj_on_def surj_on_def mem_def Bex_def)
+ apply (rule_tac s="nat_of_char (char_of_nat x)" in ssubst)
+ apply (simp add: nat_of_char_of_nat,
+        thin_tac  "char_of_nat x = char_of_nat y", simp add: nat_of_char_of_nat)
+ apply (rule_tac x="nat_of_char y" in exI)
+ apply (simp add: char_of_nat_of_char)
+  done
 theorem Char__ord_subtype_constr: 
   "Function__bijective_p__stp(\<lambda> ignore. True, \<lambda> (n::nat). n < 256) nat_of_char"
-sorry
-(*    apply(auto) *)
-(*    apply(rule_tac s="char_of_nat (nat_of_char  x2)" in ssubst) *)
-(*    apply(rule sym, rule char_of_nat_of_char) *)
-(*    apply(rule_tac s="char_of_nat (nat_of_char  x1)" in ssubst) *)
-(*    apply(simp) *)
-(*    apply(rule sym, rule char_of_nat_of_char) *)
-(*    apply(rule_tac x="char_of_nat y" in exI) *)
-(*    apply(simp add: nat_of_char_of_nat) *)
-(*   done *)
+   apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)
+ apply(rule_tac s="char_of_nat (nat_of_char  x)" in ssubst)
+ apply(simp add: char_of_nat_of_char,
+       thin_tac "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
+ apply (rule_tac x="char_of_nat y" in exI)
+ apply (simp add: nat_of_char_of_nat)
+  done
 theorem Char__ord__def: 
   "nat_of_char 
      = Function__inverse__stp (\<lambda> (n::nat). n < 256) char_of_nat"
-    sorry
+   apply (insert Char__chr_subtype_constr, 
+        simp add: Function__inverse__stp_simp bij_on_def Ball_def mem_def, 
+        clarify, thin_tac "surj_on ?f ?A ?B")
+ apply (rule ext)
+ apply (rule inv_on_f_eq, auto simp add: mem_def char_of_nat_of_char)
+  done
 
 theorem Char_ord_inv:
-  "(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i) \<and> char_of_nat(nat_of_char c) = c"
-  apply(safe)
-  apply(simp add: nat_of_char_of_nat)
-  apply(rule char_of_nat_of_char)
-  done
+"(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i)
+ \<and> char_of_nat(nat_of_char c) = c"
+  by (simp add: nat_of_char_of_nat char_of_nat_of_char)
 
 consts Char__isUpperCase :: "char \<Rightarrow> bool"
 defs Char__isUpperCase_def [simp]: 
@@ -77,7 +69,7 @@ theorem Char__toUpperCase_Obligation_subtype0:
    (int (nat_of_char c) - int (nat_of_char CHR ''a'')) 
      + int (nat_of_char CHR ''A'') 
      < 256"
-    apply(auto simp add:nat_of_char_def)
+  apply (simp add:nat_of_char_def)
   done
 consts Char__toUpperCase :: "char \<Rightarrow> char"
 defs Char__toUpperCase_def [simp]: 
@@ -94,14 +86,14 @@ theorem Char__toLowerCase_Obligation_subtype:
    (int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
      + int (nat_of_char CHR ''a'') 
      \<ge> 0"
-   apply(auto simp add:nat_of_char_def)
+   apply (simp add:nat_of_char_def)
   done
 theorem Char__toLowerCase_Obligation_subtype0: 
   "\<lbrakk>Char__isUpperCase c\<rbrakk> \<Longrightarrow> 
    (int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
      + int (nat_of_char CHR ''a'') 
      < 256"
-   apply(auto simp add:nat_of_char_def)
+   apply (simp add:nat_of_char_def)
   done
 consts Char__toLowerCase :: "char \<Rightarrow> char"
 defs Char__toLowerCase_def [simp]: 

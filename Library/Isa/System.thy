@@ -1,5 +1,5 @@
 theory System
-imports String Compare Function SW_Integer
+imports String
 begin
 consts System__fail :: "string \<Rightarrow> 'a"
 consts System__debug :: "string \<Rightarrow> 'a"

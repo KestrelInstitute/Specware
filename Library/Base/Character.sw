@@ -13,20 +13,12 @@ type Char.Char  % qualifier required for internal parsing reasons
 
 op chr : Bijection ({n:Nat | n < 256}, Char)
 proof Isa chr_subtype_constr
- apply(auto)
- apply(rule_tac s="nat_of_char (char_of_nat x2)" in ssubst)
- apply(simp add: nat_of_char_of_nat)
- apply(rule_tac s="nat_of_char (char_of_nat x1)" in ssubst)
- apply(simp)
- apply(simp (no_asm) add: nat_of_char_of_nat, simp)
- apply(rule_tac x="nat_of_char y" in exI, safe)
- (*** Apart from lemma nat_of_char_of_nat there is little information about
-      nat_of_char **)
- apply(subgoal_tac "\<exists>x. y = char_of_nat x", safe)
- apply(simp add: nat_of_char_of_nat)
- apply(rule_tac x="nat_of_char y" in exI)
- apply(rule sym, rule char_of_nat_of_char)
- apply(rule char_of_nat_of_char)
+ apply (auto simp add: bij_on_def inj_on_def surj_on_def mem_def Bex_def)
+ apply (rule_tac s="nat_of_char (char_of_nat x)" in ssubst)
+ apply (simp add: nat_of_char_of_nat,
+        thin_tac  "char_of_nat x = char_of_nat y", simp add: nat_of_char_of_nat)
+ apply (rule_tac x="nat_of_char y" in exI)
+ apply (simp add: char_of_nat_of_char)
 end-proof
 
 (* Metaslang's character literals are simply syntactic shortcuts for expressions
@@ -37,17 +29,19 @@ chr 65. *)
 
 op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
 proof Isa
-  sorry
+ apply (insert Char__chr_subtype_constr, 
+        simp add: Function__inverse__stp_simp bij_on_def Ball_def mem_def, 
+        clarify, thin_tac "surj_on ?f ?A ?B")
+ apply (rule ext)
+ apply (rule inv_on_f_eq, auto simp add: mem_def char_of_nat_of_char)
 end-proof
 proof Isa ord_subtype_constr
- apply(auto)
- apply(rule_tac s="char_of_nat (nat_of_char  x2)" in ssubst)
- apply(rule sym, rule char_of_nat_of_char)
- apply(rule_tac s="char_of_nat (nat_of_char  x1)" in ssubst)
- apply(simp)
- apply(rule sym, rule char_of_nat_of_char)
- apply(rule_tac x="char_of_nat y" in exI)
- apply(simp add: nat_of_char_of_nat)
+ apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)
+ apply(rule_tac s="char_of_nat (nat_of_char  x)" in ssubst)
+ apply(simp add: char_of_nat_of_char,
+       thin_tac "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
+ apply (rule_tac x="char_of_nat y" in exI)
+ apply (simp add: nat_of_char_of_nat)
 end-proof
 
 % ------------------------------------------------------
@@ -57,10 +51,7 @@ proof Isa -verbatim
 theorem Char_ord_inv:
 "(i<256 \<longrightarrow> nat_of_char(char_of_nat i) = i)
  \<and> char_of_nat(nat_of_char c) = c"
-apply(safe)
-apply(simp add: nat_of_char_of_nat)
-apply(rule char_of_nat_of_char)
-done
+  by (simp add: nat_of_char_of_nat char_of_nat_of_char)
 end-proof
 % ------------------------------------------------------
 
@@ -90,17 +81,17 @@ op toUpperCase (c:Char) : Char =
   if isLowerCase c then chr(ord c - ord #a + ord #A) else c
 proof Isa [simp] end-proof
 proof Isa toUpperCase_Obligation_subtype0
-  apply(auto simp add:nat_of_char_def)
+  apply (simp add:nat_of_char_def)
 end-proof
 
 op toLowerCase (c:Char) : Char =
   if isUpperCase c then chr(ord c - ord #A + ord #a) else c
 proof Isa [simp] end-proof
 proof Isa toLowerCase_Obligation_subtype
- apply(auto simp add:nat_of_char_def)
+ apply (simp add:nat_of_char_def)
 end-proof
 proof Isa toLowerCase_Obligation_subtype0
- apply(auto simp add:nat_of_char_def)
+ apply (simp add:nat_of_char_def)
 end-proof
 
 % characters can be linearly ordered according to positions in table:
