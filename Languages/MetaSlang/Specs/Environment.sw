@@ -528,11 +528,11 @@ spec
        (let dom = patternSort pat1 in
         case productOpt(spc, dom) of
           | None ->
-            let (name,_) = freshName("x",usedNames) in
+            let (name,_) = freshName("xx",usedNames) in
             let x = (name, dom) in
             mkLambda(mkVarPat x, mkApply(term, mkVar x))
           | Some fields ->
-            let (names,_) = freshNames("x",fields,usedNames) in
+            let (names,_) = freshNames("xx",fields,usedNames) in
             let vars = map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
             mkLambda(mkRecordPat(map (fn (l,v) -> (l, mkVarPat v)) vars),
                      mkApply(term, mkRecord(map (fn (l,v) -> (l, mkVar v)) vars))))
