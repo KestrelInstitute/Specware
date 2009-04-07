@@ -93,7 +93,7 @@ spec
                   let (v_pat,v_tm) = patTermVarsForProduct fields in
                   mkLambda(v_pat, mapTerm(mkApply(n_tm,v_tm), rng))
                 | None \_rightarrow
-                  mkLambda(mkVarPat("x",dom), mapTerm(mkApply(n_tm,mkVar("x",dom)), rng)))
+                  mkLambda(mkVarPat("xz",dom), mapTerm(mkApply(n_tm,mkVar("xz",dom)), rng)))
             | _ ->
           case (productOpt(spc,ty), productOpt(spc,rm_ty)) of
             | (Some fields, Some rm_fields)
