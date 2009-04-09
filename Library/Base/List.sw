@@ -3446,6 +3446,612 @@ op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
     % POSs contains all and only indices of occurrence of subl in supl:
     (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
 
+proof Isa List__positionsOfSublist_Obligation_the
+proof (induct supl)
+ case Nil
+ def POSs \<equiv> "(if subl = [] then [0] else []) :: nat list"
+ hence D: "distinct POSs" by auto
+ from POSs_def have I: "List__increasingNats_p POSs"
+  by (auto simp: List__increasingNats_p_def)
+ from POSs_def
+  have M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, [])"
+   by (auto simp: List__sublistAt_p_def)
+ with D I have
+  SAT: "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>i. i mem POSs = List__sublistAt_p(subl, i, []))"
+   by auto
+ have "\<And>POSs'. distinct POSs' \<and>
+                List__increasingNats_p POSs' \<and>
+                (\<forall>i. i mem POSs' = List__sublistAt_p(subl, i, []))
+                \<Longrightarrow> POSs' = POSs"
+ proof -
+  fix POSs' :: "nat list"
+  assume "distinct POSs' \<and>
+          List__increasingNats_p POSs' \<and>
+          (\<forall>i. i mem POSs' = List__sublistAt_p(subl, i, []))"
+  hence D': "distinct POSs'"
+    and I': "List__increasingNats_p POSs'"
+    and M': "\<forall>i. i mem POSs' = List__sublistAt_p(subl, i, [])"
+   by auto
+  have "POSs' = (if subl = [] then [0] else [])"
+  proof (cases subl)
+   case Nil
+   with M' List__sublist_position_upper [of subl _ "[]"]
+           List__empty_sublist [of _ "[]"]
+   have "\<forall>i. i mem POSs' = (i = 0)" by auto
+   hence "set POSs' = {0}" by (auto simp: mem_iff)
+   with D' distinct_card [of POSs'] have "length POSs' = 1" by auto
+   with `set POSs' = {0}` have "POSs' = [0]" by (cases POSs', auto)
+   with Nil show ?thesis by auto
+  next
+   case Cons
+   with M' List__sublist_position_upper [of subl _ "[]"]
+           List__empty_sublist [of _ "[]"]
+   have "\<forall>i. i mem POSs' = False" by auto
+   hence "POSs' = []" by (auto simp: mem_iff)
+   with Cons show ?thesis by auto
+  qed
+  with POSs_def show "POSs' = POSs" by auto
+ qed
+ with SAT show ?case by (rule ex1I, auto)
+next
+ case (Cons h t)
+ then obtain POSs0
+  where "distinct POSs0 \<and>
+         List__increasingNats_p POSs0 \<and>
+         (\<forall>i. i mem POSs0 = List__sublistAt_p(subl, i, t))"
+   by blast
+ hence D0: "distinct POSs0"
+   and I0: "List__increasingNats_p POSs0"
+   and M0: "\<forall>i. i mem POSs0 = List__sublistAt_p(subl, i, t)"
+  by auto
+ show ?case
+ proof (cases "List__sublistAt_p (subl, 0, h#t)")
+  assume "List__sublistAt_p (subl, 0, h#t)"
+  def POSs \<equiv> "0 # map Suc POSs0"
+  with D0 have D: "distinct POSs" by (auto simp: distinct_map)
+  have I: "List__increasingNats_p POSs"
+  proof (unfold List__increasingNats_p_def, clarify)
+   fix i
+   assume "int i < int (length POSs) - 1"
+   show "POSs ! i < POSs ! (i + 1)"
+   proof (cases i)
+    case 0
+    with POSs_def have "POSs ! i = 0" by auto
+    from POSs_def have "POSs ! (i + 1) = map Suc POSs0 ! i" by auto
+    also with `int i < int (length POSs) - 1` nth_map POSs_def
+     have "\<dots> = Suc (POSs0 ! i)" by auto
+    finally have "POSs ! (i + 1) = Suc (POSs0 ! i)" .
+    with `POSs ! i = 0` show ?thesis by auto
+   next
+    case (Suc j)
+    with POSs_def have "POSs ! i = map Suc POSs0 ! j" by auto
+    also with `int i < int (length POSs) - 1` nth_map POSs_def Suc
+     have "\<dots> = Suc (POSs0 ! j)" by auto
+    finally have "POSs ! i = Suc (POSs0 ! j)" by auto
+    from POSs_def Suc have "POSs ! (i + 1) = map Suc POSs0 ! i" by auto
+    also with `int i < int (length POSs) - 1` nth_map POSs_def Suc
+     have "\<dots> = Suc (POSs0 ! (j + 1))" by auto
+    finally have "POSs ! (i + 1) = Suc (POSs0 ! (j + 1))" .
+    from POSs_def `int i < int (length POSs) - 1` Suc
+     have "int j < int (length POSs0) - 1" by auto
+    with I0 have "POSs0 ! j < POSs0 ! (j + 1)"
+     by (auto simp: List__increasingNats_p_def)
+    with `POSs ! i = Suc (POSs0 ! j)`
+         `POSs ! (i + 1) = Suc (POSs0 ! (j + 1))`
+     show ?thesis by auto
+   qed
+  qed
+  have M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, h#t)"
+  proof (rule allI, rule iffI)
+   fix i
+   assume "i mem POSs"
+   show "List__sublistAt_p (subl, i, h#t)"
+   proof (cases "i = hd POSs")
+    assume "i = hd POSs"
+    with POSs_def have "i = 0" by auto
+    with `List__sublistAt_p (subl, 0, h#t)` show ?thesis by auto
+   next
+    assume "i \<noteq> hd POSs"
+    with `i mem POSs` POSs_def have "i mem map Suc POSs0" by auto
+    hence "\<exists>k < length (map Suc POSs0). (map Suc POSs0) ! k = i"
+     by (auto iff: mem_iff in_set_conv_nth)
+    then obtain k where "k < length (map Suc POSs0)"
+                    and "(map Suc POSs0) ! k = i" by auto
+    hence "i = Suc (POSs0 ! k)" by auto
+    from `k < length (map Suc POSs0)` have "k < length POSs0" by auto
+    hence "(POSs0 ! k) mem POSs0" by (auto iff: mem_iff)
+    with M0 have "List__sublistAt_p (subl, POSs0 ! k, t)"
+     by auto
+    have "List__sublistAt_p (subl, i, h#t)"
+    proof -
+     from `List__sublistAt_p (subl, POSs0 ! k, t)`
+     obtain pre and post
+      where "t = pre @ subl @ post" and "length pre = POSs0!k"
+       by (auto simp: List__sublistAt_p_def)
+     def pre' \<equiv> "h # pre"
+     with `t = pre @ subl @ post` `length pre = POSs0!k`
+      have "h#t = pre' @ subl @ post" and "length pre' = Suc (POSs0!k)"
+       by auto
+     with `i = Suc (POSs0 ! k)` show ?thesis
+      by (auto simp: List__sublistAt_p_def)
+    qed
+    thus ?thesis by auto
+   qed
+  next
+   fix i
+   assume "List__sublistAt_p (subl, i, h#t)"
+   show "i mem POSs"
+   proof (cases i)
+    case 0
+    with POSs_def show ?thesis by auto
+   next
+    case (Suc j)
+    have "List__sublistAt_p (subl, j, t)"
+    proof -
+     from `List__sublistAt_p (subl, i, h#t)`
+      obtain pre and post
+       where "h#t = pre @ subl @ post" and "length pre = i"
+        by (auto simp: List__sublistAt_p_def eq_sym_conv)
+     with Suc have "pre \<noteq> []" by auto
+     with hd_Cons_tl have "pre = hd pre # tl pre" by auto
+     with `h#t = pre @ subl @ post`
+      have "h#t = hd pre # (tl pre @ subl @ post)" by auto
+     hence "t = tl pre @ subl @ post" by auto
+     from `length pre = i` Suc have "length (tl pre) = j" by auto
+     with `t = tl pre @ subl @ post` show ?thesis
+      by (auto simp: List__sublistAt_p_def)
+    qed
+    with M0 have "j mem POSs0" by auto
+    hence "\<exists>k < length POSs0. POSs0 ! k = j"
+     by (auto iff: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
+    with Suc POSs_def have "POSs ! (Suc k) = i" by auto
+    with `k < length POSs0` POSs_def have "Suc k < length POSs" by auto
+    with `POSs ! (Suc k) = i` show ?thesis by (auto iff: mem_iff)
+   qed
+  qed
+  with D I have
+   SAT: "distinct POSs \<and>
+         List__increasingNats_p POSs \<and>
+         (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, h # t))"
+    by auto
+  have "\<And>POSs'. distinct POSs' \<and>
+                 List__increasingNats_p POSs' \<and>
+                 (\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t))
+                 \<Longrightarrow> POSs' = POSs"
+  proof -
+   fix POSs'
+   assume "distinct POSs' \<and>
+           List__increasingNats_p POSs' \<and>
+           (\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t))"
+   hence D': "distinct POSs'"
+     and I': "List__increasingNats_p POSs'"
+     and M': "\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t)"
+    by auto
+   from M' `List__sublistAt_p (subl, 0, h # t)`
+    have "0 mem POSs'" by auto
+   hence "\<exists>k < length POSs'. POSs' ! k = 0"
+    by (auto iff: mem_iff in_set_conv_nth)
+   then obtain k where "k < length POSs'" and "POSs' ! k = 0" by auto
+   have "k = 0"
+   proof (rule ccontr)
+    assume "k \<noteq> 0"
+    with `k < length POSs'` have "k - 1 < length POSs' - 1" by auto
+    hence "int (k - 1) < int (length POSs') - 1" by auto
+    with I' List__increasingNats_p_def `k \<noteq> 0`
+     have "POSs' ! (k - 1) < POSs' ! k" by auto
+    with `POSs' ! k = 0` show False by auto
+   qed
+   from `k < length POSs'` have "POSs' \<noteq> []" by auto
+   with hd_conv_nth have "hd POSs' = POSs' ! 0" by auto
+   with `k = 0` `POSs' ! k = 0` have "hd POSs' = 0" by auto
+   def POSs0' \<equiv> "map (\<lambda>i. i - 1) (tl POSs')"
+   have TL_NTH: "\<forall>k < length POSs' - 1. tl POSs' ! k = POSs' ! (k + 1)"
+   proof clarify
+    fix k
+    assume "k < length POSs' - 1"
+    with nth_drop have "drop 1 POSs' ! k = POSs' ! (k + 1)" by auto
+    thus "tl POSs' ! k = POSs' ! (k + 1)" by (auto simp: drop_Suc)
+   qed
+   have "list_all (op \<noteq> 0) (tl POSs')"
+   proof (auto iff: list_all_length)
+    fix k
+    assume "k < length POSs' - Suc 0"
+    hence "k + 1 < length POSs'" by auto
+    with TL_NTH have "tl POSs' ! k = POSs' ! (k + 1)" by auto
+    with `k < length POSs' - Suc 0` I'
+     have "POSs' ! k < POSs' ! (k + 1)"
+      by (auto simp: List__increasingNats_p_def)
+    with `tl POSs' ! k = POSs' ! (k + 1)` show "0 < tl POSs' ! k" by auto
+   qed
+   hence TL_NZ: "\<forall>k < length POSs' - 1. tl POSs' ! k \<noteq> 0"
+    by (auto simp: list_all_length)
+   from POSs0'_def nth_map TL_NTH
+    have POSs0'_NTH:
+      "\<forall>k < length POSs0'. POSs0' ! k = (tl POSs' ! k) - 1"
+     by auto
+   have D0': "distinct POSs0'"
+   proof (auto simp: List__noRepetitions_p__def)
+    fix k k'
+    assume CONTRA: "POSs0' ! k = POSs0' ! k'"
+    assume "k < length POSs0'"
+    and "k' < length POSs0'"
+    and "k \<noteq> k'"
+    with POSs0'_def
+     have "k + 1 < length POSs'"
+     and "k' + 1 < length POSs'"
+     and "k + 1 \<noteq> k' + 1"
+      by auto
+    with D' have "POSs' ! (k + 1) \<noteq> POSs' ! (k' + 1)"
+     by (auto simp: List__noRepetitions_p__def)
+    with TL_NTH `k < length POSs0'` `k' < length POSs0'` POSs0'_def
+     have "tl POSs' ! k \<noteq> tl POSs' ! k'" by auto
+    with TL_NZ `k < length POSs0'` `k' < length POSs0'` POSs0'_def
+     have "tl POSs' ! k \<noteq> 0" and "tl POSs' ! k' \<noteq> 0" by auto
+    with `tl POSs' ! k \<noteq> tl POSs' ! k'`
+     have "(tl POSs' ! k) - 1 \<noteq> (tl POSs' ! k') - 1" by auto
+    with POSs0'_NTH `k < length POSs0'` `k' < length POSs0'`
+     have "POSs0' ! k \<noteq> POSs0' ! k'" by auto
+    with CONTRA show False by auto
+   qed
+   have I0': "List__increasingNats_p POSs0'"
+   proof (auto simp: List__increasingNats_p_def)
+    fix k
+    assume "int k < int (length POSs0') - 1"
+    hence "k < length POSs0' - 1" by auto
+    with POSs0'_NTH have "POSs0' ! k = (tl POSs' ! k) - 1" by auto
+    from `k < length POSs0' - 1` have "k + 1 < length POSs0'" by auto
+    with POSs0'_NTH have "POSs0' ! Suc k = (tl POSs' ! Suc k) - 1" by auto
+    from `k < length POSs0' - 1` POSs0'_def have "k + 1 < length POSs' - 1"
+     by auto
+    with I' have "POSs' ! (k + 1) < POSs' ! (k + 2)"
+     by (auto simp: List__increasingNats_p_def)
+    with TL_NTH `k + 1 < length POSs' - 1`
+     have "tl POSs' ! k < POSs' ! (k + 2)" by auto
+    with TL_NTH `k + 1 < length POSs' - 1`
+     have "tl POSs' ! k < tl POSs' ! (k + 1)" by auto
+    with TL_NZ `k + 1 < length POSs' - 1`
+     have "tl POSs' ! k \<noteq> 0" and "tl POSs' ! (k + 1) \<noteq> 0" by auto
+    with `tl POSs' ! k < tl POSs' ! (k + 1)`
+     have "tl POSs' ! k - 1 < tl POSs' ! (k + 1) - 1" by auto
+    with `POSs0' ! k = (tl POSs' ! k) - 1`
+         `POSs0' ! Suc k = (tl POSs' ! Suc k) - 1`
+     show "POSs0' ! k < POSs0' ! Suc k" by auto
+   qed
+   have M0': "\<forall>i. i mem POSs0' = List__sublistAt_p (subl, i, t)"
+   proof (rule allI, rule iffI)
+    fix i
+    assume "i mem POSs0'"
+    hence "\<exists>k < length POSs0'. POSs0' ! k = i"
+     by (auto iff: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
+    with POSs0'_def nth_map have "i = tl POSs' ! k - 1" by auto
+    from `k < length POSs0'` POSs0'_def have "k < length POSs' - 1" by auto
+    with TL_NZ have "tl POSs' ! k \<noteq> 0" by auto
+    with `i = tl POSs' ! k - 1` have "tl POSs' ! k = i + 1" by auto
+    with `k < length POSs' - 1` TL_NTH have "POSs' ! (k + 1) = i + 1" by auto
+    from `k < length POSs' - 1` have "k + 1 < length POSs'" by auto
+    with `POSs' ! (k + 1) = i + 1`
+     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+    with M' have "List__sublistAt_p (subl, i + 1, h # t)" by auto
+    show "List__sublistAt_p (subl, i, t)"
+    proof -
+     from `List__sublistAt_p (subl, i + 1, h # t)`
+      obtain pre and post
+       where "h # t = pre @ subl @ post" and "length pre = i + 1"
+        by (auto simp: List__sublistAt_p_def eq_sym_conv)
+     hence "pre \<noteq> []" by auto
+     with hd_Cons_tl have "pre = hd pre # tl pre" by auto
+     with `h # t = pre @ subl @ post`
+      have "h # t = hd pre # tl pre @ subl @ post" by auto
+     hence "t = tl pre @ subl @ post" by auto
+     from `pre = hd pre # tl pre` `length pre = i + 1`
+      have "length (tl pre) = i" by auto
+     with `t = tl pre @ subl @ post` show ?thesis
+      by (auto simp: List__sublistAt_p_def)
+    qed
+   next
+    fix i
+    assume "List__sublistAt_p (subl, i, t)"
+    have "List__sublistAt_p (subl, i + 1, h # t)"
+    proof -
+     from `List__sublistAt_p (subl, i, t)` obtain pre and post
+      where "pre @ subl @ post = t" and "length pre = i"
+       by (auto simp: List__sublistAt_p_def)
+     def pre' \<equiv> "h # pre"
+     with `pre @ subl @ post = t` and `length pre = i`
+      have "pre' @ subl @ post = h # t" and "length pre' = i + 1"
+       by auto
+     thus ?thesis by (auto simp: List__sublistAt_p_def)
+    qed
+    with M' have "(i + 1) mem POSs'" by auto
+    hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
+     by (auto simp: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
+    with `hd POSs' = 0` `POSs' \<noteq> []` have "k \<noteq> 0"
+     by (cases k, auto simp: hd_conv_nth)
+    with `k < length POSs'` TL_NTH `POSs' ! k = i + 1`
+     have "tl POSs' ! (k - 1) = i + 1" by auto
+    with `k \<noteq> 0` POSs0'_NTH POSs0'_def `k < length POSs'`
+     have "POSs0' ! (k - 1) = i" by auto
+    from `k < length POSs'` `k \<noteq> 0` POSs0'_def
+     have "k - 1 < length POSs0'" by auto
+    with `POSs0' ! (k - 1) = i`
+     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+   qed
+   with I0' D0' Cons.hyps D0 I0 M0
+    have "POSs0' = POSs0" by auto
+   have "POSs' = 0 # map Suc POSs0'"
+   proof (rule nth_equalityI, auto)
+    from POSs0'_def `POSs' \<noteq> []`
+     show "length POSs' = Suc (length POSs0')" by auto
+   next
+    fix j
+    assume "j < length POSs'"
+    show "POSs' ! j = (0 # map Suc POSs0') ! j"
+    proof (cases j)
+     case 0
+     with `POSs' ! k = 0` `k = 0` show ?thesis by auto
+    next
+     case (Suc j0)
+     with `j < length POSs'` TL_NTH have "POSs' ! j = tl POSs' ! j0" by auto
+     with Suc have "(0 # map Suc POSs0') ! j = map Suc POSs0' ! j0" by auto
+     with POSs0'_def nth_map Suc `j < length POSs'` TL_NZ
+      have "map Suc POSs0' ! j0 = tl POSs' ! j0" by auto
+     with `POSs' ! j = tl POSs' ! j0`
+          `(0 # map Suc POSs0') ! j = map Suc POSs0' ! j0`
+          `map Suc POSs0' ! j0 = tl POSs' ! j0`
+      show "POSs' ! j = (0 # map Suc POSs0') ! j" by auto
+    qed
+   qed
+   with `POSs0' = POSs0` POSs_def
+    show "POSs' = POSs" by auto
+  qed
+  with SAT show ?case by (rule ex1I, auto)
+ next
+  assume "\<not> List__sublistAt_p (subl, 0, h # t)"
+  def POSs \<equiv> "map Suc POSs0"
+  with D0 have D: "distinct POSs" by (auto simp: distinct_map)
+  have I: "List__increasingNats_p POSs"
+  proof (unfold List__increasingNats_p_def, clarify)
+   fix i
+   assume "int i < int (length POSs) - 1"
+   with nth_map POSs_def
+    have "POSs ! i = Suc (POSs0 ! i)" by auto
+   also with I0 `int i < int (length POSs) - 1` POSs_def
+    have "\<dots> < Suc (POSs0 ! (i + 1))"
+     by (auto simp: List__increasingNats_p_def)
+   also with nth_map POSs_def `int i < int (length POSs) - 1`
+    have "\<dots> = POSs ! (i + 1)" by auto
+   finally show "POSs ! i < POSs ! (i + 1)" by auto
+  qed
+  have M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, h # t)"
+  proof (rule allI, rule iffI)
+   fix i
+   assume "i mem POSs"
+   hence "\<exists>k < length POSs. POSs ! k = i"
+    by (auto iff: mem_iff in_set_conv_nth)
+   then obtain k where "k < length POSs" and "POSs ! k = i" by auto
+   with POSs_def nth_map
+    have "k < length POSs0" and "Suc (POSs0 ! k) = i" by auto
+   hence "(POSs0!k) mem POSs0"
+    by (auto iff: mem_iff in_set_conv_nth)
+   with M0 have "List__sublistAt_p (subl, POSs0!k, t)" by auto
+   show "List__sublistAt_p (subl, i, h # t)"
+   proof -
+    from `List__sublistAt_p (subl, POSs0!k, t)` obtain pre and post
+     where "pre @ subl @ post = t" and "length pre = POSs0!k"
+      by (auto simp: List__sublistAt_p_def)
+    def pre' \<equiv> "h # pre"
+    with `pre @ subl @ post = t` `length pre = POSs0!k` `Suc (POSs0!k) = i`
+     have "pre' @ subl @ post = h # t" and "length pre' = i"
+      by auto
+    thus ?thesis by (auto simp: List__sublistAt_p_def)
+   qed
+  next
+   fix i
+   assume "List__sublistAt_p (subl, i, h # t)"
+   show "i mem POSs"
+   proof (cases i)
+    case 0
+    with POSs_def `\<not> List__sublistAt_p (subl, 0, h # t)`
+                  `List__sublistAt_p (subl, i, h # t)`
+     show ?thesis by auto
+   next
+    case (Suc j)
+    have "List__sublistAt_p (subl, j, t)"
+    proof -
+     from `List__sublistAt_p (subl, i, h # t)` obtain pre and post
+      where "h # t = pre @ subl @ post" and "length pre = i"
+       by (auto simp: List__sublistAt_p_def eq_sym_conv)
+     with Suc have "pre \<noteq> []" by auto
+     with hd_Cons_tl have "pre = hd pre # tl pre" by auto
+     with `h # t = pre @ subl @ post`
+      have "h # t = hd pre # tl pre @ subl @ post" by auto
+     hence "t = tl pre @ subl @ post" by auto
+     from Suc `pre = hd pre # tl pre` `length pre = i`
+      have "length (tl pre) = j" by auto
+     with `t = tl pre @ subl @ post` show ?thesis
+      by (auto simp: List__sublistAt_p_def)
+    qed
+    with M0 have "j mem POSs0" by auto
+    hence "\<exists>k < length POSs0. POSs0 ! k = j"
+     by (auto iff: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
+    with Suc POSs_def have "POSs ! k = i" by auto
+    with `k < length POSs0` POSs_def show ?thesis by (auto iff: mem_iff)
+   qed
+  qed
+  with D I have
+   SAT: "distinct POSs \<and>
+         List__increasingNats_p POSs \<and>
+         (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, h # t))"
+    by auto
+  have "\<And>POSs'. distinct POSs' \<and>
+                 List__increasingNats_p POSs' \<and>
+                 (\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t))
+                 \<Longrightarrow> POSs' = POSs"
+  proof -
+   fix POSs'
+   assume "distinct POSs' \<and>
+           List__increasingNats_p POSs' \<and>
+           (\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t))"
+   hence D': "distinct POSs'"
+     and I': "List__increasingNats_p POSs'"
+     and M': "\<forall>i. i mem POSs' = List__sublistAt_p (subl, i, h # t)"
+    by auto
+   def POSs0' \<equiv> "map (\<lambda>i. i - 1) POSs'"
+   have NZ: "\<forall>k < length POSs'. POSs' ! k \<noteq> 0"
+   proof (rule allI, rule impI)
+    fix k
+    assume "k < length POSs'"
+    hence "(POSs'!k) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+    with M' have "List__sublistAt_p (subl, POSs'!k, h # t)"
+     by auto
+    show "POSs'!k \<noteq> 0"
+    proof (rule ccontr)
+     assume "\<not> POSs'!k \<noteq> 0"
+     with `List__sublistAt_p (subl, POSs'!k, h # t)`
+          `\<not> List__sublistAt_p (subl, 0, h # t)` show False by auto
+    qed
+   qed
+   from POSs0'_def nth_map
+    have POSs0'_NTH: "\<forall>k < length POSs0'. POSs0' ! k = (POSs' ! k) - 1"
+     by auto
+   have D0': "distinct POSs0'"
+   proof (auto simp: List__noRepetitions_p__def)
+    fix k k'
+    assume CONTRA: "POSs0' ! k = POSs0' ! k'"
+    assume "k < length POSs0'"
+    and "k' < length POSs0'"
+    and "k \<noteq> k'"
+    with D' POSs0'_def have "POSs' ! k \<noteq> POSs' ! k'"
+     by (auto simp: List__noRepetitions_p__def)
+    with NZ `k < length POSs0'` `k' < length POSs0'` POSs0'_def
+     have "POSs' ! k \<noteq> 0" and "POSs' ! k' \<noteq> 0" by auto
+    with `POSs' ! k \<noteq> POSs' ! k'`
+     have "(POSs' ! k) - 1 \<noteq> (POSs' ! k') - 1" by auto
+    with POSs0'_NTH `k < length POSs0'` `k' < length POSs0'`
+     have "POSs0' ! k \<noteq> POSs0' ! k'" by auto
+    with CONTRA show False by auto
+   qed
+   have I0': "List__increasingNats_p POSs0'"
+   proof (auto simp: List__increasingNats_p_def)
+    fix k
+    assume "int k < int (length POSs0') - 1"
+    hence "k < length POSs0' - 1" by auto
+    with POSs0'_NTH have "POSs0' ! k = (POSs' ! k) - 1" by auto
+    from `k < length POSs0' - 1` have "k + 1 < length POSs0'" by auto
+    with POSs0'_NTH have "POSs0' ! Suc k = (POSs' ! Suc k) - 1" by auto
+    from `k < length POSs0' - 1` POSs0'_def have "k < length POSs' - 1"
+     by auto
+    with I' have "POSs' ! k < POSs' ! (k + 1)"
+     by (auto simp: List__increasingNats_p_def)
+    with NZ POSs0'_def `k < length POSs' - 1`
+     have "POSs' ! k \<noteq> 0" and "POSs' ! (k + 1) \<noteq> 0" by auto
+    with `POSs' ! k < POSs' ! (k + 1)`
+     have "POSs' ! k - 1 < POSs' ! (k + 1) - 1" by auto
+    with `POSs0' ! k = (POSs' ! k) - 1`
+         `POSs0' ! Suc k = (POSs' ! Suc k) - 1`
+     show "POSs0' ! k < POSs0' ! Suc k" by auto
+   qed
+   have M0': "\<forall>i. i mem POSs0' = List__sublistAt_p (subl, i, t)"
+   proof (rule allI, rule iffI)
+    fix i
+    assume "i mem POSs0'"
+    hence "\<exists>k < length POSs0'. POSs0' ! k = i"
+     by (auto iff: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
+    with POSs0'_def nth_map have "i = POSs' ! k - 1" by auto
+    from `k < length POSs0'` POSs0'_def have "k < length POSs'" by auto
+    with NZ have "POSs' ! k \<noteq> 0" by auto
+    with `i = POSs' ! k - 1` have "POSs' ! k = i + 1" by auto
+    with `k < length POSs'`
+     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+    with M' have "List__sublistAt_p (subl, i + 1, h # t)" by auto
+    show "List__sublistAt_p (subl, i, t)"
+    proof -
+     from `List__sublistAt_p (subl, i + 1, h # t)`
+      obtain pre and post
+       where "h # t = pre @ subl @ post" and "length pre = i + 1"
+        by (auto simp: List__sublistAt_p_def eq_sym_conv)
+     hence "pre \<noteq> []" by auto
+     with hd_Cons_tl have "pre = hd pre # tl pre" by auto
+     with `h # t = pre @ subl @ post`
+      have "h # t = hd pre # tl pre @ subl @ post" by auto
+     hence "t = tl pre @ subl @ post" by auto
+     from `pre = hd pre # tl pre` `length pre = i + 1`
+      have "length (tl pre) = i" by auto
+     with `t = tl pre @ subl @ post` show ?thesis
+      by (auto simp: List__sublistAt_p_def)
+    qed
+   next
+    fix i
+    assume "List__sublistAt_p (subl, i, t)"
+    have "List__sublistAt_p (subl, i + 1, h # t)"
+    proof -
+     from `List__sublistAt_p (subl, i, t)` obtain pre and post
+      where "pre @ subl @ post = t" and "length pre = i"
+       by (auto simp: List__sublistAt_p_def)
+     def pre' \<equiv> "h # pre"
+     with `pre @ subl @ post = t` `length pre = i`
+      have "pre' @ subl @ post = h # t" and "length pre' = i + 1"
+       by auto
+     thus ?thesis by (auto simp: List__sublistAt_p_def)
+    qed
+    with M' have "(i + 1) mem POSs'" by auto
+    hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
+     by (auto simp: mem_iff in_set_conv_nth)
+    then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
+    with POSs0'_NTH POSs0'_def `k < length POSs'`
+     have "POSs0' ! k = i" by auto
+    from `k < length POSs'` POSs0'_def
+     have "k < length POSs0'" by auto
+    with `POSs0' ! k = i`
+     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+   qed
+   with I0' D0' Cons.hyps D0 I0 M0
+    have "POSs0' = POSs0" by auto
+   have "POSs' = map Suc POSs0'"
+   proof (rule nth_equalityI, auto)
+    from POSs0'_def
+     show "length POSs' = length POSs0'" by auto
+   next
+    fix j
+    assume "j < length POSs'"
+    with NZ have "POSs' ! j \<noteq> 0" by auto
+    with POSs0'_def nth_map `j < length POSs'` NZ
+     have "map Suc POSs0' ! j = POSs' ! j" by auto
+    thus "POSs' ! j = (map Suc POSs0') ! j" by auto
+   qed
+   with `POSs0' = POSs0` POSs_def
+    show "POSs' = POSs" by auto
+  qed
+  with SAT show ?case by (rule ex1I, auto)
+ qed
+qed
+end-proof
+
+proof Isa List__positionsOfSublist_subtype_constr
+proof (cases dom_positionsOfSublist)
+ case (Pair subl supl)
+ def POSs \<equiv> "List__positionsOfSublist (subl, supl)"
+ and P \<equiv> "\<lambda>POSs::nat list.
+           distinct POSs \<and>
+           List__increasingNats_p POSs \<and>
+           (\<forall>(i::nat). i mem POSs = List__sublistAt_p (subl, i, supl))"
+ with List__positionsOfSublist_Obligation_the
+  have "\<exists>!POSs. P POSs" by blast
+ hence "P (THE POSs. P POSs)" by (rule theI')
+ hence "P POSs"
+  by (simp add: POSs_def List__positionsOfSublist_def P_def)
+ with P_def have "distinct POSs" by auto
+ with POSs_def Pair show ?thesis by auto
+qed
+end-proof
+
 % if subl is a sublist of supl, return starting position of leftmost/rightmost
 % occurrence of subl within supl (there could be more than one), as well as the
 % list of elements following/preceding subl within supl, otherwise return None:
@@ -3484,6 +4090,58 @@ next
 qed
 end-proof
 
+proof Isa List__leftmostPositionOfSublistAndFollowing_Obligation_subtype1
+proof -
+ assume "List__positionsOfSublist (subl, supl) = POSs"
+ hence "POSs =
+        (THE POSs.
+           distinct POSs \<and>
+           List__increasingNats_p POSs \<and>
+           (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)))"
+  by (auto simp: List__positionsOfSublist_def)
+ with List__positionsOfSublist_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl))"
+   by (rule eq_the_sat)
+ hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
+  by auto
+ assume "hd POSs = i" and "\<not> null POSs"
+ hence "i mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, i, supl)" by auto
+ then obtain pre and post
+  where "pre @ subl @ post = supl" and "length pre = i"
+   by (auto simp: List__sublistAt_p_def)
+ thus ?thesis by auto
+qed
+end-proof
+
+proof Isa List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0
+proof -
+ assume "List__positionsOfSublist (subl, supl) = POSs"
+ hence "POSs =
+        (THE POSs.
+           distinct POSs \<and>
+           List__increasingNats_p POSs \<and>
+           (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)))"
+  by (auto simp: List__positionsOfSublist_def)
+ with List__positionsOfSublist_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl))"
+   by (rule eq_the_sat)
+ hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
+  by auto
+ assume "last POSs = i" and "\<not> null POSs"
+ hence "i mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, i, supl)" by auto
+ then obtain pre and post
+  where "pre @ subl @ post = supl" and "length pre = i"
+   by (auto simp: List__sublistAt_p_def)
+ thus ?thesis by auto
+qed
+end-proof
+
 % split list at index into preceding elements, element at index, and
 % following elements:
 
@@ -3504,6 +4162,60 @@ op [a] splitAtRightmost (p: a -> Bool) (l: List a)
   case rightmostPositionSuchThat (l, p) of
   | Some i -> Some (splitAt (l, i))
   | None   -> None
+
+proof Isa List__splitAtLeftmost_Obligation_subtype
+proof -
+ def POSs \<equiv> "List__positionsSuchThat (l, p)"
+ assume "List__leftmostPositionSuchThat (l, p) = Some i"
+ with POSs_def
+  have IF: "(if null POSs then None else Some (hd POSs)) = Some i"
+   by (auto simp: List__leftmostPositionSuchThat_def Let_def)
+ hence NE: "POSs \<noteq> []" by (cases POSs, auto)
+ with IF have I: "i = hd POSs" by (auto simp: null_empty)
+ with NE have "i mem POSs" by (auto simp: mem_iff)
+ from POSs_def
+  have "POSs = (THE POSs.
+          distinct POSs \<and>
+          List__increasingNats_p POSs \<and>
+          (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i))))"
+   by (auto simp: List__positionsSuchThat_def)
+ with List__positionsSuchThat_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+   by (rule eq_the_sat)
+ hence "\<forall>i. i mem POSs = (i < length l \<and> p (l ! i))" by auto
+ with `i mem POSs` have "i < length l \<and> p (l ! i)" by auto
+ thus ?thesis by auto
+qed
+end-proof
+
+proof Isa List__splitAtRightmost_Obligation_subtype
+proof -
+ def POSs \<equiv> "List__positionsSuchThat (l, p)"
+ assume "List__rightmostPositionSuchThat (l, p) = Some i"
+ with POSs_def
+  have IF: "(if null POSs then None else Some (last POSs)) = Some i"
+   by (auto simp: List__rightmostPositionSuchThat_def Let_def)
+ hence NE: "POSs \<noteq> []" by (cases POSs, auto)
+ with IF have I: "i = last POSs" by (auto simp: null_empty)
+ with NE have "i mem POSs" by (auto simp: mem_iff)
+ from POSs_def
+  have "POSs = (THE POSs.
+          distinct POSs \<and>
+          List__increasingNats_p POSs \<and>
+          (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i))))"
+   by (auto simp: List__positionsSuchThat_def)
+ with List__positionsSuchThat_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+   by (rule eq_the_sat)
+ hence "\<forall>i. i mem POSs = (i < length l \<and> p (l ! i))" by auto
+ with `i mem POSs` have "i < length l \<and> p (l ! i)" by auto
+ thus ?thesis by auto
+qed
+end-proof
 
 % leftmost/rightmost element satisfying predicate (None if none):
 
@@ -3537,6 +4249,78 @@ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
   case rightmostPositionSuchThat (l, p) of
   | None   -> None
   | Some i -> Some (l @ i, removePrefix (l, i))
+
+proof Isa List__findLeftmostAndPreceding_Obligation_subtype
+proof -
+ def POSs \<equiv> "List__positionsSuchThat (l, p)"
+ assume "List__leftmostPositionSuchThat (l, p) = Some i"
+ with POSs_def
+  have IF: "(if null POSs then None else Some (hd POSs)) = Some i"
+   by (auto simp: List__leftmostPositionSuchThat_def Let_def)
+ hence NE: "POSs \<noteq> []" by (cases POSs, auto)
+ with IF have I: "i = hd POSs" by (auto simp: null_empty)
+ with NE have "i mem POSs" by (auto simp: mem_iff)
+ from POSs_def
+  have "POSs = (THE POSs.
+          distinct POSs \<and>
+          List__increasingNats_p POSs \<and>
+          (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i))))"
+   by (auto simp: List__positionsSuchThat_def)
+ with List__positionsSuchThat_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+   by (rule eq_the_sat)
+ hence "\<forall>i. i mem POSs = (i < length l \<and> p (l ! i))" by auto
+ with `i mem POSs` have "i < length l \<and> p (l ! i)" by auto
+ thus ?thesis by auto
+qed
+end-proof
+
+proof Isa List__findLeftmostAndPreceding_Obligation_subtype0
+proof -
+ assume "List__leftmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ with List__findLeftmostAndPreceding_Obligation_subtype
+  have "i < length l" by auto
+ thus ?thesis by auto
+qed
+end-proof
+
+proof Isa List__findRightmostAndFollowing_Obligation_subtype
+proof -
+ def POSs \<equiv> "List__positionsSuchThat (l, p)"
+ assume "List__rightmostPositionSuchThat (l, p) = Some i"
+ with POSs_def
+  have IF: "(if null POSs then None else Some (last POSs)) = Some i"
+   by (auto simp: List__rightmostPositionSuchThat_def Let_def)
+ hence NE: "POSs \<noteq> []" by (cases POSs, auto)
+ with IF have I: "i = last POSs" by (auto simp: null_empty)
+ with NE have "i mem POSs" by (auto simp: mem_iff)
+ from POSs_def
+  have "POSs = (THE POSs.
+          distinct POSs \<and>
+          List__increasingNats_p POSs \<and>
+          (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i))))"
+   by (auto simp: List__positionsSuchThat_def)
+ with List__positionsSuchThat_Obligation_the
+  have "distinct POSs \<and>
+        List__increasingNats_p POSs \<and>
+        (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+   by (rule eq_the_sat)
+ hence "\<forall>i. i mem POSs = (i < length l \<and> p (l ! i))" by auto
+ with `i mem POSs` have "i < length l \<and> p (l ! i)" by auto
+ thus ?thesis by auto
+qed
+end-proof
+
+proof Isa List__findRightmostAndFollowing_Obligation_subtype0
+proof -
+ assume "List__rightmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ with List__findRightmostAndFollowing_Obligation_subtype
+  have "i < length l" by auto
+ thus ?thesis by auto
+qed
+end-proof
 
 % delete element from list:
 
