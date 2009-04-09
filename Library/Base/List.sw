@@ -4345,6 +4345,125 @@ op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
 op [a] longestCommonSuffix (l1: List a, l2: List a) : List a =
   reverse (longestCommonPrefix (reverse l1, reverse l2))
 
+proof Isa List__longestCommonPrefix_Obligation_the
+proof -
+ def P \<equiv> "\<lambda>len::nat.
+          len \<le> length l1 \<and>
+          len \<le> length l2 \<and>
+          take len l1 = take len l2"
+ hence BOUND: "\<forall>n. P n \<longrightarrow> n < length l1 + 1" by auto
+ def len \<equiv> "Greatest P"
+ from P_def have "P 0" by auto
+ with BOUND len_def have "P len" by (auto intro: GreatestI)
+ with P_def
+  have "len \<le> length l1" and
+       "len \<le> length l2" and
+       "take len l1 = take len l2"
+   by auto
+ have DISJ: "length l1 = len \<or>
+             length l2 = len \<or>
+             l1 ! len \<noteq> l2 ! len"
+ proof -
+  have "length l1 \<noteq> len \<and> length l2 \<noteq> len
+        \<longrightarrow> l1 ! len \<noteq> l2 ! len"
+  proof
+   assume "length l1 \<noteq> len \<and> length l2 \<noteq> len"
+   with `len \<le> length l1` `len \<le> length l2`
+    have "len < length l1" and "len < length l2" by auto
+   hence "len + 1 \<le> length l1" and "len + 1 \<le> length l2" by auto
+   show "l1 ! len \<noteq> l2 ! len"
+   proof (rule ccontr)
+    assume "\<not> (l1 ! len \<noteq> l2 ! len)"
+    hence "l1 ! len = l2 ! len" by auto
+    have "\<And>i. i < len \<Longrightarrow> l1 ! i = l2 ! i"
+    proof -
+     fix i
+     assume "i < len"
+     with nth_take
+      have "take len l1 ! i = l1 ! i" and "take len l2 ! i = l2 ! i"
+       by auto
+     with `take len l1 = take len l2`
+      show "l1 ! i = l2 ! i" by auto
+    qed
+    have "\<And>i. i < len + 1 \<Longrightarrow> l1 ! i = l2 ! i"
+    proof -
+     fix i
+     assume "i < len + 1"
+     with `\<And>i. i < len \<Longrightarrow>
+              l1 ! i = l2 ! i` `l1 ! len = l2 ! len`
+      show "l1 ! i = l2 ! i" by (cases "i = len", auto)
+    qed
+    with `len + 1 \<le> length l1` `len + 1 \<le> length l2` nth_take_lemma
+     have "take (len + 1) l1 = take (len + 1) l2" by auto
+    with `len + 1 \<le> length l1` `len + 1 \<le> length l2` P_def
+     have "P (len + 1)" by auto
+    with Greatest_le BOUND len_def
+     have "len + 1 \<le> len" by auto
+    thus False by auto
+   qed
+  qed
+  thus ?thesis by auto
+ qed
+ show ?thesis
+ proof
+  from DISJ `P len` P_def
+   show "len \<le> length l1 \<and>
+         len \<le> length l2 \<and>
+         take len l1 = take len l2 \<and>
+         (length l1 = len \<or> length l2 = len \<or>
+          l1 ! len \<noteq> l2 ! len)"
+    by auto
+ next
+  fix len'
+  assume ASM: "len' \<le> length l1 \<and>
+               len' \<le> length l2 \<and>
+               take len' l1 = take len' l2 \<and>
+               (length l1 = len' \<or> length l2 = len' \<or>
+                l1 ! len' \<noteq> l2 ! len')"
+  with P_def have "P len'" by auto
+  with Greatest_le BOUND len_def have "len' \<le> len" by auto
+  show "len' = len"
+  proof (rule ccontr)
+   assume "len' \<noteq> len"
+   with `len' \<le> len` have "len' < len" by auto
+   with `len \<le> length l1` `len \<le> length l2`
+   have "length l1 \<noteq> len'" and "length l2 \<noteq> len'" by auto
+   with ASM have "l1 ! len' \<noteq> l2 ! len'" by auto
+   from `len' < len` nth_take
+    have "take len l1 ! len' = l1 ! len'"
+     and "take len l2 ! len' = l2 ! len'" by auto
+   with `take len l1 = take len l2`
+    have "l1 ! len' = l2 ! len'" by auto
+   with `l1 ! len' \<noteq> l2 ! len'` show False by auto
+  qed
+ qed
+qed
+end-proof
+
+proof Isa List__longestCommonPrefix_Obligation_subtype1
+proof -
+ def len \<equiv> "THE len. len \<le> length l1 \<and>
+                     len \<le> length l2 \<and>
+                     take len l1 = take len l2 \<and>
+                     (length l1 = len \<or> length l2 = len \<or>
+                      l1 ! len \<noteq> l2 ! len)"
+ hence "len = (THE len. len \<le> length l1 \<and>
+                        len \<le> length l2 \<and>
+                        take len l1 = take len l2 \<and>
+                        (length l1 = len \<or> length l2 = len \<or>
+                         l1 ! len \<noteq> l2 ! len))"
+  by auto
+ with List__longestCommonPrefix_Obligation_the
+  have "len \<le> length l1 \<and>
+        len \<le> length l2 \<and>
+        take len l1 = take len l2 \<and>
+        (length l1 = len \<or> length l2 = len \<or>
+         l1 ! len \<noteq> l2 ! len)"
+   by (rule eq_the_sat)
+ with len_def show ?thesis by auto
+qed
+end-proof
+
 % a permutation of a list of length N is represented by
 % a permutation of the list of natural numbers 0,...,N-1:
 
@@ -4359,10 +4478,26 @@ op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   the (r: List a) r equiLong l &&
                   (fa(i:Nat) i < length l => l @ i = r @ (prm@i))
 
+proof Isa List__permute_Obligation_subtype
+ by (auto simp: List__equiLong_def)
+end-proof
+
+proof Isa List__permute_Obligation_subtype0
+ by (auto simp: List__permutation_p_def List__equiLong_def mem_iff nth_mem)
+end-proof
+
+proof Isa List__permute_Obligation_the
+ sorry
+end-proof
+
 % true iff l2 is a permutation of l1 (and vice versa):
 
 op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
+
+proof Isa List__permutationOf_Obligation_subtype
+ by (auto simp: List__equiLong_def)
+end-proof
 
 % given a comparison function over type a, type List a can be linearly
 % ordered and compared element-wise and regarding the empty list as smaller
