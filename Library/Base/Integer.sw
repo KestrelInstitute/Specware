@@ -431,7 +431,6 @@ theorem Integer__e_fsl_equality [simp]:
 done
 end-proof
 
-
 (* The division of two integers (with non-zero divisor) may yield a rational
 that is not an integer. An integer division operation always returns an integer,
 which, in general, is an approximation of the exact rational result.  There are
