@@ -4487,7 +4487,83 @@ proof Isa List__permute_Obligation_subtype0
 end-proof
 
 proof Isa List__permute_Obligation_the
- sorry
+proof -
+ assume PERM: "List__permutation_p prm"
+ assume "l equiLong prm"
+ hence LEN: "length l = length prm" by (auto simp: List__equiLong_def)
+ def f \<equiv> "\<lambda>i. l ! (THE j. j < length prm \<and> i = prm ! j)"
+ def r \<equiv> "List__tabulate (length l, f)"
+ hence "r equiLong l"
+  by (auto simp: List__equiLong_def List__length_tabulate)
+ have "\<forall>i. i < length l \<longrightarrow> l ! i = r ! (prm ! i)"
+ proof (rule allI, rule impI)
+  fix i::nat
+  assume IL: "i < length l"
+  with LEN have IP: "i < length prm" by auto
+  with nth_mem have "(prm ! i) mem prm" by (auto simp: mem_iff)
+  with PERM LEN have "(prm ! i) < length l"
+   by (auto simp: List__permutation_p_def)
+  with r_def f_def List__element_of_tabulate
+   have R: "r ! (prm ! i) =
+            l ! (THE j. j < length prm \<and> prm ! i = prm ! j)"
+    by auto
+  from IP have Isat: "i < length prm \<and> prm ! i = prm ! i" by auto
+  have "\<And>j. j < length prm \<and> prm ! i = prm ! j
+                 \<Longrightarrow> j = i"
+  proof -
+   fix j::nat
+   assume "j < length prm \<and> prm ! i = prm ! j"
+   hence JP: "j < length prm" and IJ: "prm ! i = prm ! j" by auto
+   from PERM have "distinct prm" by (auto simp: List__permutation_p_def)
+   with List__noRepetitions_p__def JP IP IJ show "j = i" by auto
+  qed
+  with Isat have "(THE j. j < length prm \<and> prm ! i = prm ! j) = i"
+   by (rule the_equality)
+  with R show "l ! i = r ! (prm ! i)" by auto
+ qed
+ with `r equiLong l`
+  have Rok: "r equiLong l \<and> (\<forall>i < length l. l ! i = r ! (prm ! i))"
+   by auto
+ show ?thesis
+ proof
+  from Rok
+  show "r equiLong l \<and> (\<forall>i < length l. l ! i = r ! (prm ! i))"
+   by auto
+ next
+  fix r'
+  assume ASM: "r' equiLong l \<and>
+               (\<forall>i < length l. l ! i = r' ! (prm ! i))"
+  with `r equiLong l` have R'R: "length r' = length r"
+   by (auto simp: List__equiLong_def)
+  have "\<forall>j < length r'. r' ! j = r ! j"
+  proof (rule allI, rule impI)
+   fix j::nat
+   assume "j < length r'"
+   with `length r' = length r` `r equiLong l`
+    have JL: "j < length l" by (auto simp: List__equiLong_def)
+   with LEN have JP: "j < length prm" by auto
+   have "\<exists>i < length prm. prm ! i = j"
+   proof (rule ccontr)
+    assume "\<not> (\<exists>i < length prm. prm ! i = j)"
+    hence JN: "j \<notin> set prm" by (auto iff: in_set_conv_nth)
+    from PERM have "distinct prm" by (auto simp: List__permutation_p_def)
+    with distinct_card have CARDeq: "card (set prm) = length prm" by auto
+    from PERM have "\<forall>k. k mem prm \<longrightarrow> k < length prm"
+     by (auto simp: List__permutation_p_def)
+    hence SUBEQ: "set prm \<subseteq> {..< length prm}" by (auto simp: mem_iff)
+    with JP JN have "set prm \<subset> {..< length prm}" by auto
+    with finite_lessThan [of "length prm"]
+     have "card (set prm) < card {..< length prm}"
+      by (rule psubset_card_mono)
+    with card_lessThan have "card (set prm) < length prm" by auto
+    with CARDeq show False by auto
+   qed
+   then obtain i where "i < length prm" and "prm ! i = j" by auto
+   with Rok ASM LEN [THEN sym] show "r' ! j = r ! j" by auto
+  qed
+  with R'R show "r' = r" by (rule nth_equalityI)
+ qed
+qed
 end-proof
 
 % true iff l2 is a permutation of l1 (and vice versa):
