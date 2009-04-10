@@ -367,13 +367,15 @@ theorem Integer__e_fsl_Obligation_the:
    apply(rule_tac a="i div j"in ex1I)
  apply(auto simp add: dvd_def)
   done
-consts Integer__e_fsl :: "int \<Rightarrow> Integer__Int0 \<Rightarrow> int"	(infixl "'/" 66)
-defs Integer__e_fsl_def: "(i / j) \<equiv> (THE (k::int). i = j * k)"
+theorem Integer__e_fsl__def: 
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> 
+   i div j = (THE (k::int). i = j * k)"
+   by (rule the1I2, rule Integer__e_fsl_Obligation_the, auto)
 
 theorem Integer__e_fsl_equality [simp]:
   "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk>
-   \<Longrightarrow> (k = i / j) = (i = j * k)"
-  apply(auto simp add:Integer__e_fsl_def)
+   \<Longrightarrow> (k = i div j) = (i = j * k)"
+  apply(auto simp add:Integer__e_fsl__def)
   apply(rule the1I2)
   apply(rule Integer__e_fsl_Obligation_the, auto)
 done
@@ -444,7 +446,7 @@ theorem Integer__modT__def:
   apply (simp add: modT_alt_def)
   done
 theorem Integer__exact_divT: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divT j = i / j"
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divT j = i div j"
   apply (simp add: divides_iff_modT_0 modT_alt_def)
   done
 theorem Integer__divT_is_largest_in_abs: 
@@ -504,9 +506,8 @@ theorem Integer__modF__def:
   apply(cut_tac a=i and b=j and k=0 in zdiv_zmod_equality, arith)
   done
 theorem Integer__exact_divF: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i div j = i / j"
-  apply(simp add: zdvd_iff_zmod_eq_0 Integer__modF__def)
-  done
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i div j = i div j"
+  by auto
 theorem Integer__divF_is_largest: 
   "\<lbrakk>(j::int) \<noteq> 0; 
     (k::int) * int (zabs j) \<le> i * sign j\<rbrakk> \<Longrightarrow> k \<le> i div j"
@@ -574,9 +575,8 @@ theorem Integer__modC__def:
    apply(simp add: modC_def)
   done
 theorem Integer__exact_divC: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divC j = i / j"
-  apply(simp add: modC_def divC_def Integer__exact_divF)
-  done
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divC j = i div j"
+  by (simp add: divC_def)
 theorem Integer__divC_is_smallest: 
   "\<lbrakk>(j::int) \<noteq> 0; 
     (k::int) * int (zabs j) \<ge> i * sign j\<rbrakk> \<Longrightarrow> k \<ge> i divC j"
@@ -672,7 +672,7 @@ theorem Integer__modR__def:
   apply (simp add: modR_def)
   done
 theorem Integer__exact_divR: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divR j = i / j"
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divR j = i div j"
    apply(simp add: divides_iff_modR_0 modR_def)
   done
 theorem Integer__divR_of_negated_divisor_Obligation_subtype: 
@@ -740,7 +740,7 @@ theorem Integer__modE__def:
         auto simp add: modE_alt_def divE_def div_abs_unique)
   done
 theorem Integer__exact_divE: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divE j = i / j"
+  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divE j = i div j"
   apply (simp add: divides_iff_modE_0 modE_alt_def)
   done
 theorem Integer__divE_of_negated_divisor_Obligation_subtype: 

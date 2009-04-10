@@ -417,6 +417,9 @@ end-proof
 
 op / (i:Int, j:Int0 | j divides i) infixl 26 : Int =
   the(k:Int) i = j * k
+proof Isa
+ by (rule the1I2, rule Integer__e_fsl_Obligation_the, auto)
+end-proof
 proof Isa e_fsl_Obligation_the
  apply(rule_tac a="i div j"in ex1I)
  apply(auto simp add: dvd_def)
@@ -424,8 +427,8 @@ end-proof
 proof Isa -verbatim
 theorem Integer__e_fsl_equality [simp]:
   "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk>
-   \<Longrightarrow> (k = i / j) = (i = j * k)"
-  apply(auto simp add:Integer__e_fsl_def)
+   \<Longrightarrow> (k = i div j) = (i = j * k)"
+  apply(auto simp add:Integer__e_fsl__def)
   apply(rule the1I2)
   apply(rule Integer__e_fsl_Obligation_the, auto)
 done
@@ -650,9 +653,6 @@ dividend evenly. *)
 
 theorem exact_divF is
   fa (i:Int, j:Int0) j divides i => i divF j = i / j
-proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0 Integer__modF__def)
-end-proof
 
 (* The quotient is the largest integer that, when multiplied by the divisor,
 does not exceed the dividend. *)
@@ -774,7 +774,7 @@ dividend evenly. *)
 theorem exact_divC is
   fa (i:Int, j:Int0) j divides i => i divC j = i / j
 proof Isa
-  apply(simp add: modC_def divC_def Integer__exact_divF)
+  by (simp add: divC_def)
 end-proof
 
 (* The quotient is the smallest integer that, when multiplied by the divisor, is
@@ -1156,6 +1156,7 @@ proof Isa Thy_Morphism Presburger
  Integer.>        -> >     Left 20
  Integer.sign     -> sign
  Integer.abs      -> zabs
+ Integer./        -> div   Left 22
  Integer.divT     -> divT  Left 22
  Integer.divF     -> div   Left 22
  Integer.divC     -> divC  Left 22
@@ -1168,9 +1169,9 @@ proof Isa Thy_Morphism Presburger
  Integer.modE     -> modE  Left 22
  Integer.div      -> div   Left 22
  Integer.mod      -> mod   Left 22
- Integer.rem      -> modT  Left 22 
- Integer.min      -> min curried
- Integer.max      -> max curried
+ Integer.rem      -> modT  Left 22
+ Integer.min      -> min           curried
+ Integer.max      -> max           curried
  Integer.divides  -> zdvd  Left 30 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
