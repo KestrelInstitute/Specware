@@ -39,6 +39,16 @@ CurryUtils qualifying spec
            | _ -> None
   in aux(t,0,[])
 
+  op mkCurriedApply(f: MS.Term, args: List MS.Term): MS.Term =
+    case args of
+      | [] -> f
+      | x::r -> mkCurriedApply(mkApply(f, x), r)
+
+  op mkCurriedLambda(params, body): MS.Term =
+    case params of
+      | [] -> body
+      | p::r -> mkLambda(p, mkCurriedLambda(r, body))
+
   op  curriedParams: MS.Term -> List Pattern * MS.Term
   def curriedParams defn =
     let def aux(t,vs) =
