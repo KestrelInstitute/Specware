@@ -20,13 +20,13 @@ spec
     let spc = simplifySpec spc in
     let m = makeUnfoldMap spc snark_hack? in
     %let m = mapAQualifierMap (renameDefInfo (emptyContext())) m in
-    let spc = unFoldTerms(spc,m) in
+    let spc = unFoldTerms(spc, m) in
     spc
 
-%  def renameDefInfo c (vs,defn,defsrt,fnIndices,curried?,recursive?) =
+%  def renameDefInfo c (vs, defn, defsrt, fnIndices, curried?, recursive?) =
 %    let vs = map (renamePattern c) vs in
 %    let defn = renameTerm c defn in
-%    (vs,defn,defsrt,fnIndices,curried?,recursive?)
+%    (vs, defn, defsrt, fnIndices, curried?, recursive?)
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,10 +64,10 @@ spec
   op tryUnfold(spc: Spec, tm: Term): Option Term =
     % let _ = writeLine("tryUnfold: "^printTerm tm) in
     case tm of
-      | Apply (f,a,_) ->
+      | Apply (f, a, _) ->
        (case f of
 	  %% Uncurried case
-          | Fun(Op(qid,_),srt,_) ->
+          | Fun(Op(qid, _), srt, _) ->
             (case findTheOp(spc, qid) of
                | None -> None
                | Some opinfo ->
@@ -81,9 +81,9 @@ spec
           | Apply _ ->
 	    (case getCurryArgs tm of
 	       | None -> None
-	       | Some(f,args) ->
+	       | Some(f, args) ->
 		 (case f of
-		    | Fun(Op(qid,_),srt,_) ->
+		    | Fun(Op(qid, _), srt, _) ->
 		      (case findTheOp(spc, qid) of
                          | None -> None
                          | Some opinfo ->
@@ -92,7 +92,7 @@ spec
                              let (tvs, ty, dfn) = unpackFirstOpDef opinfo in
                              case dfn of
                                | Lambda _ ->
-                                 let inst_tm = foldl mkApply dfn args in
+                                 let inst_tm = mkCurriedApply(dfn, args) in
                                  Some(simplify spc inst_tm)
                                | _ -> None)
                     | _ -> None))
@@ -111,12 +111,12 @@ spec
          case patternMatchRules(rules, uf_tm) of
            | None -> tm
            | Some(sub, M) ->
-             let binds = map (fn (v,val) -> (mkVarPat v, val)) sub in
+             let binds = map (fn (v, val) -> (mkVarPat v, val)) sub in
              simplifyOne spc (mkLet(binds, M)))
       | _ -> tm
 
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
-  def unFoldTerms(spc,m) =
+  def unFoldTerms(spc, m) =
     let def simplifyTerm x =
           % let _ = writeLine("Simplifying "^printTerm x) in
           let result = simplify spc x in
@@ -124,17 +124,17 @@ spec
           % let _ = writeLine("-> "^printTerm result) in
           result
     in
-    mapSpecNotingOpNames (fn outer_qid -> (fn t -> maybeUnfoldTerm(outer_qid,t,m,simplifyTerm,spc)),
+    mapSpecNotingOpNames (fn outer_qid -> (fn t -> maybeUnfoldTerm(outer_qid, t, m, simplifyTerm, spc)),
 			  id,
 			  id)
                          spc
 
   op  unfoldInTerm: QualifiedId * Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
-  def unfoldInTerm(outer_qid,tm,m,simplifyTerm,spc) =
-    mapSubTerms (fn t -> maybeUnfoldTerm(outer_qid, t,m,simplifyTerm,spc))
+  def unfoldInTerm(outer_qid, tm, m, simplifyTerm, spc) =
+    mapSubTerms (fn t -> maybeUnfoldTerm(outer_qid, t, m, simplifyTerm, spc))
       tm
 
-  %% (params,defn body,indices of applied fn args,curried?,recursive?)
+  %% (params, defn body, indices of applied fn args, curried?, recursive?)
   type DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
 
   op  makeUnfoldMap: Spec -> Boolean -> AQualifierMap DefInfo
@@ -148,7 +148,7 @@ spec
 	   let (tvs, srt, def1) = unpackTerm dfn in
 	   %% would like to remove tvs ~= [] condition but currently causes problem in Snark translation
 	   if (if snark_hack? then tvs ~= [] else true) && hoFnSort? (spc, srt)  && unfoldable? (Qualified (q, id), def1) then
-	     let numCurryArgs = curryShapeNum(spc,srt) in
+	     let numCurryArgs = curryShapeNum(spc, srt) in
              % see note below about debugging indexing error
              % let _ = toScreen ("\n numCurryArgs = " ^ (toString numCurryArgs) ^ " for " ^ (anyToString srt) ^ "\n") in
 	     let argSorts = (if numCurryArgs > 1 then
@@ -156,97 +156,100 @@ spec
 			     else 
 			       noncurryArgSorts (spc, srt))
 	     in
-	     let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
+	     let HOArgs = map (fn s -> hoSort?(spc, s)) argSorts in
 	     if numCurryArgs > 1 then
-	       analyzeCurriedDefn(Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
+	       analyzeCurriedDefn(Qualified(q, id), def1, numCurryArgs, HOArgs, srt)
 	     else 
-	       analyzeUnCurriedDefn(Qualified(q,id), def1, HOArgs, srt)
+	       analyzeUnCurriedDefn(Qualified(q, id), def1, HOArgs, srt)
 	   else 
 	     None)
       spc.ops
 
   op  analyzeCurriedDefn: QualifiedId * Term * Nat * List Boolean * Sort -> Option DefInfo
-  def analyzeCurriedDefn(qid,defn,numCurryArgs,HOArgs,srt) =
-    let (params,body) = curriedParams(defn) in
+  def analyzeCurriedDefn(qid, defn, numCurryArgs, HOArgs, srt) =
+    let (params, body) = curriedParams(defn) in
     if ~(length params = numCurryArgs) then None
     else
     let def normalizeCurriedAppl t =
 	  case getCurryArgs t of
-	    | Some(f as Fun(Op(nqid,_),_,_),args) ->
+	    | Some(f as Fun(Op(nqid, _), _, _), args) ->
 	      if nqid = qid & length args = numCurryArgs
-		then mkAppl(f,args)
+		then mkAppl(f, args)
 		else t
 	    | _ -> t
     in
     let normalizedBody = mapSubTerms normalizeCurriedAppl body in
-    analyzeDefn(qid,params,normalizedBody,HOArgs,true,srt)
+    analyzeDefn(qid, params, normalizedBody, HOArgs, true, srt)
 
   op  analyzeUnCurriedDefn: QualifiedId * Term * List Boolean * Sort -> Option DefInfo
-  def analyzeUnCurriedDefn(qid,defn,argSorts,srt) =
+  def analyzeUnCurriedDefn(qid, defn, argSorts, srt) =
     case defn of
-      | Lambda([(pat,_,body)],_) -> analyzeDefn(qid,getParams pat,body,argSorts,false,srt)
+      | Lambda([(pat, _, body)], _) -> analyzeDefn(qid, getParams pat, body, argSorts, false, srt)
       | _ -> None
 
   op  analyzeDefn: QualifiedId * List Pattern * Term * List Boolean * Boolean * Sort
                     -> Option DefInfo
-  def analyzeDefn(qid,params,body,HOArgs,curried?,srt) =
-    if ~(recursiveCallsPreserveHOParameters?(body,qid,params,HOArgs))
+  def analyzeDefn(qid, params, body, HOArgs, curried?, srt) =
+    if ~(recursiveCallsPreserveHOParameters?(body, qid, params, HOArgs, curried?))
       then None
     else
-    let patinds = tabulate(length params,id) in
+    let patinds = tabulate(length params, id) in
     % possibly useful to help debug current indexing error that happens with:  proc MatchingProofs
-    % Confusion with Functions.o  (possibly because it it typed using Function(a,b) instead of a -> b)
+    % Confusion with Functions.o  (possibly because it it typed using Function(a, b) instead of a -> b)
     % let _ = toScreen ("\n:Params  [" ^ (Nat.toString (List.length params))  ^ "]= " ^ (anyToString params) ^ "\n") in
     % let _ = toScreen ("\n:Patinds [" ^ (Nat.toString (List.length patinds)) ^ "]= " ^ (anyToString patinds) ^ "\n") in
     % let _ = toScreen ("\n:HOARgs  [" ^ (Nat.toString (List.length HOArgs))  ^ "]= " ^ (anyToString HOArgs)  ^ "\n") in
-    Some(params,body,srt,
-	 filter (fn i -> nth(HOArgs,i)) patinds,
+    Some(params, body, srt,
+	 filter (fn i -> nth(HOArgs, i)) patinds,
 	 curried?,
 	 %% Recursive?
 	 existsSubTerm
 	   (fn t -> case t of
-		      | Apply(Fun(Op(nqid,_),_,_),_,_) -> nqid = qid
+		      | Apply(Fun(Op(nqid, _), _, _), _, _) -> nqid = qid
 		      | _ -> false)
 	   body)
 
-  op  recursiveCallsPreserveHOParameters?: Term * QualifiedId * List Pattern * List Boolean
+  op  recursiveCallsPreserveHOParameters?: Term * QualifiedId * List Pattern * List Boolean * Boolean
                                           -> Boolean
-  def recursiveCallsPreserveHOParameters? (body,qid,params,HOArgs) =
+  def recursiveCallsPreserveHOParameters? (body, qid, params, HOArgs, curried?) =
     ~(existsSubTerm
         (fn t ->
 	  case t of
-	   | Apply(Fun(Op(nqid,_),_,_),args,_) ->
-	     if nqid = qid
-	       then ~(hoParamsSame?(params,termList args,HOArgs))
-	       else false
+	   | Apply(Fun(Op(nqid, _), _, _), args, _) | ~curried? && nqid = qid ->
+             ~(hoParamsSame?(params, termList args, HOArgs))
+           | Apply _ | curried? ->
+             (case getCurryArgs t of
+              | Some(Fun(Op(nqid, _), _, _), args) | nqid = qid ->
+                ~(hoParamsSame?(params, args, HOArgs))
+              | _ -> false)
 	   | _ -> false)
         body)
 
   op  hoParamsSame?: List Pattern * List Term * List Boolean -> Boolean
-  def hoParamsSame?(params,args,HOArgs) =
-    length params = length args
-      & all (fn i -> if nth(HOArgs,i)
-	              then patternMatchesTerm?(nth(params,i),nth(args,i))
+  def hoParamsSame?(params, args, HOArgs) =
+    length params >= length args
+      & all (fn i -> if nth(HOArgs, i)
+	              then patternMatchesTerm?(nth(params, i), nth(args, i))
 		      else true)
-          (tabulate(length params,id))
+          (tabulate(length args, id))
 
   op  patternMatchesTerm?: Pattern * Term -> Boolean
-  def patternMatchesTerm?(p,t) =
-    case (p,t) of
-      | (VarPat((vp,_),_),Var((v,_),_)) -> v = vp
-      | (RecordPat(pfields,_),Record(tfields,_)) ->
-        all (fn (id,pi) -> patternMatchesTerm?(pi,lookupId(id,tfields))) pfields
+  def patternMatchesTerm?(p, t) =
+    case (p, t) of
+      | (VarPat((vp, _), _), Var((v, _), _)) -> v = vp
+      | (RecordPat(pfields, _), Record(tfields, _)) ->
+        all (fn (id, pi) -> patternMatchesTerm?(pi, lookupId(id, tfields))) pfields
       | _ -> false
     
 (*
   %% Find parameters which are applied
-  def findAppliedParams(params,body,patinds) =
-    foldSubTerms (fn (t,r) ->
+  def findAppliedParams(params, body, patinds) =
+    foldSubTerms (fn (t, r) ->
 		  case t of
-		   | Apply(Var(v,_),_,_) ->
-		     map (fn i -> if v = nth(params,i)
+		   | Apply(Var(v, _), _, _) ->
+		     map (fn i -> if v = nth(params, i)
 				   then true
-				   else nth(r,i))
+				   else nth(r, i))
 		       patinds
 		   | _ -> r)
       (map (fn _ -> false) patinds)
@@ -255,25 +258,25 @@ spec
 
   %% has an argument that is HO. Arguments are either curried or product
   op  hoFnSort?: Spec * Sort -> Boolean
-  def hoFnSort? (spc,srt) =
-    case arrowOpt(spc,srt) of
+  def hoFnSort? (spc, srt) =
+    case arrowOpt(spc, srt) of
       | None -> false
-      | Some (dom,rng) ->
-        hoSort?(spc,dom)
-	  or (case arrowOpt(spc,rng) of
-		| Some _ -> hoFnSort? (spc,rng)
+      | Some (dom, rng) ->
+        hoSort?(spc, dom)
+	  or (case arrowOpt(spc, rng) of
+		| Some _ -> hoFnSort? (spc, rng)
 		| None ->
-	      case productOpt(spc,dom) of
+	      case productOpt(spc, dom) of
 		| None -> false
 		| Some fields ->
-		  exists (fn (_,s) -> arrow? (spc,s)) fields)
+		  exists (fn (_, s) -> arrow? (spc, s)) fields)
 
   op  hoSort?: Spec * Sort -> Boolean
-  def hoSort? (spc,srt) =
+  def hoSort? (spc, srt) =
     case stripSubsorts(spc, srt) of
       | Arrow _ -> true
-      | Product(fields,_) ->
-        exists (fn(_,s) -> hoSort?(spc,s)) fields
+      | Product(fields, _) ->
+        exists (fn(_, s) -> hoSort?(spc, s)) fields
       | _ -> false
 
   def unfoldSizeThreshold = 80
@@ -282,85 +285,106 @@ spec
   def unfoldable? (_ (* qid *), defn) =
     sizeTerm defn < unfoldSizeThreshold
 
-  def sizeTerm t = foldSubTerms (fn (_,sum) -> sum + 1) 0 t
+  op sizeTerm(t: MS.Term): Nat = foldSubTerms (fn (_, sum) -> sum + 1) 0 t
+
+  op termHead(t: MS.Term): MS.Term =
+    case t of
+      | Apply(f, _, _) -> termHead f
+      | _ -> t
+
+  op exploitableTerm?(t: MS.Term, unfoldMap: AQualifierMap DefInfo): Boolean =
+    ~(embed? Var t)
+%    constantTerm? t
+%      || (case termHead t of
+%            | Fun(Op(qid as Qualified(q, id), _), _, _) ->
+%              embed? Some (findAQualifierMap(unfoldMap, q, id))
+%            | _ -> false)
+       
 
   op  maybeUnfoldTerm: QualifiedId * Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
-  def maybeUnfoldTerm(outer_qid, t,unfoldMap,simplifyTerm,spc) =
+  def maybeUnfoldTerm(outer_qid, t, unfoldMap, simplifyTerm, spc) =
    case t of
-     | Apply (f,a,_) ->
+     | Apply (f, a, _) ->
        (case f of
 	  %% Uncurried case
-	  | Fun(Op(qid as Qualified(q,id),_),srt,_) ->
-	    (case findAQualifierMap(unfoldMap,q,id) of
+	  | Fun(Op(qid as Qualified(q, id), _), srt, _) ->
+	    (case findAQualifierMap(unfoldMap, q, id) of
 	       | None -> t
 	       | Some (vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 		 if ~curried?
 		      & length(termList a) > foldr max 0 fnIndices
-		      & exists (fn i -> constantTerm?(getTupleArg(a,i)))
+		      & exists (fn i -> exploitableTerm?(getTupleArg(a, i), unfoldMap))
 		          fnIndices
 		  then makeUnfoldedTerm
-		         (outer_qid, f,termToList a,inferType(spc,t),
-			  sortMatch(defsrt,srt,spc),
-			  vs,defn,fnIndices,recursive?,qid,id,
-			  unfoldMap,simplifyTerm,spc)
+		         (outer_qid, t, f, termToList a, inferType(spc, t),
+			  sortMatch(defsrt, srt, spc),
+			  vs, defn, fnIndices, recursive?, qid, id,
+			  unfoldMap, simplifyTerm, false, spc)
 		  else t)
 	  %% Curried case
 	  | Apply _ ->
 	    (case getCurryArgs t of
 	       | None -> t
-	       | Some(f,args) ->
+	       | Some(f, args) ->
 		 (case f of
-		    | Fun(Op(qid as Qualified(q,id),_),srt,_) ->
-		      (case findAQualifierMap(unfoldMap,q,id) of
+		    | Fun(Op(qid as Qualified(q, id), _), srt, _) ->
+		      (case findAQualifierMap(unfoldMap, q, id) of
 			 | None -> t
-			 | Some(vs,defn,defsrt,fnIndices,curried?,recursive?) ->
+			 | Some(vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 			   if curried? & (length args = length vs)
-			     & exists (fn i -> constantTerm?(nth(args,i)))
+			     & exists (fn i -> exploitableTerm?(nth(args, i), unfoldMap))
 			         fnIndices
-			    then makeUnfoldedTerm(outer_qid, f,args,inferType(spc,t),
-						  sortMatch(defsrt,srt,spc),
-						  vs,defn,fnIndices,recursive?,
-						  qid,id,unfoldMap,simplifyTerm,spc)
+			    then makeUnfoldedTerm(outer_qid, t, f, args, inferType(spc, t),
+						  sortMatch(defsrt, srt, spc),
+						  vs, defn, fnIndices, recursive?,
+						  qid, id, unfoldMap, simplifyTerm, true, spc)
 			    else t)
 		    | _ -> t))
 	  | _ -> t)
      | _ -> t
 
-  op  makeUnfoldedTerm: QualifiedId * Term * List Term * Sort * TyVarSubst * List Pattern * Term
+  op  makeUnfoldedTerm: QualifiedId * Term * Term * List Term * Sort * TyVarSubst * List Pattern * Term
                          * List Nat * Boolean * QualifiedId * String
-                         * AQualifierMap DefInfo * (Term -> Term) * Spec
+                         * AQualifierMap DefInfo * (Term -> Term) * Boolean * Spec
                       -> Term
-  def makeUnfoldedTerm(outer_qid, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
-		       recursive?, qid, nm, unfoldMap, simplifyTerm, spc) =
+  def makeUnfoldedTerm(outer_qid, orig_tm, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
+		       recursive?, qid, nm, unfoldMap, simplifyTerm, curried?, spc) =
 
-    let replaceIndices = filter (fn i -> constantTerm?(nth(args,i))
-				        & member(i,fnIndices))
+    let replaceIndices = filter (fn i -> constantTerm?(nth(args, i))
+				        & member(i, fnIndices))
                            (tabulate (length args, id))
     in
-    let vSubst = foldl (fn (r,i) -> r ++ matchPairs(nth(vs,i),nth(args,i)))
+    let vSubst = foldl (fn (r, i) -> r ++ matchPairs(nth(vs, i), nth(args, i)))
                    [] replaceIndices
     in
-    let remainingIndices =  filter (fn i -> ~(member(i,replaceIndices)))
+    let remainingIndices =  filter (fn i -> ~(member(i, replaceIndices)))
                               (tabulate (length args, id))
     in
-    let remainingParams = map (fn i -> nth(  vs,i)) remainingIndices in
-    let remainingArgs   = map (fn i -> nth(args,i)) remainingIndices in
+    let remainingParams = map (fn i -> nth(  vs, i)) remainingIndices in
+    let remainingArgs   = map (fn i -> nth(args, i)) remainingIndices in
     if recursive?
-      then makeRecursiveLocalDef(outer_qid,qid,nm,defbody,resultSort,tyVarSbst,
-				 remainingParams, remainingArgs,remainingIndices,
-				 vSubst,simplifyTerm)
-      else
+      then makeRecursiveLocalDef(outer_qid, qid, nm, defbody, resultSort, tyVarSbst,
+				 remainingParams, remainingArgs, remainingIndices,
+				 vSubst, curried?, length args, unfoldMap, simplifyTerm, spc)
+    else
       let defbody = instantiateTyVarsInTerm(defbody, tyVarSbst) in
-      let remainingParams = map (fn p -> instantiateTyVarsInPattern(p,tyVarSbst))
-                              remainingParams in
-
+      let remainingParams = map (fn p -> instantiateTyVarsInPattern(p, tyVarSbst))
+                              remainingParams
+      in
       let (remainingParams, remainingArgs) = 
           adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* vs, *) args, defbody)
       in
-
-      let newTm = makeLet(remainingParams,remainingArgs,defbody) in
-      let newTm = substitute(newTm,vSubst) in
-      unfoldInTerm(outer_qid, simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
+      % let defbody = simplifyTerm defbody in
+      let (newTm, sbst) = makeLet(remainingParams, remainingArgs, defbody, vSubst) in
+      let newTm = simplifyTerm newTm in
+      let newTm = substitute(newTm, sbst) in
+      let transNewTm = unfoldInTerm(outer_qid, simplifyTerm(newTm), unfoldMap, simplifyTerm, spc) in
+       let _ = if outer_qid = Qualified("<unqualified>","inferTypeOfExprs")
+                  then writeLine("uf:\n"^printTerm transNewTm^"\n\n") else () in
+      if transNewTm = newTm && sizeTerm newTm > sizeTerm orig_tm
+           && ~(exists (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst)
+        then orig_tm
+        else transNewTm
 
 
   def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* params, *) args, defbody) =
@@ -373,11 +397,11 @@ spec
     let 
       def similar? (param, arg) =
 	    case (param, arg) of
-	      | (VarPat ((param_id,_),_), Var ((arg_id,_),_)) -> 
+	      | (VarPat ((param_id, _), _), Var ((arg_id, _), _)) -> 
 	        param_id = arg_id
 	      | (RecordPat (p_fields, _), Record (a_fields, _)) ->
-	        all (fn (p,a) -> similar? (p,a)) 
-		    (zip ((map (fn field -> field.2) p_fields), 
+	        all (fn (p, a) -> similar? (p, a)) 
+		    (zip ((map (fn field -> field.2) p_fields),
 			  (map (fn field -> field.2) a_fields)))
 	      | _ -> false
     in
@@ -392,7 +416,7 @@ spec
 	  | [] -> false
 	  | _ :: outer_pattern_vars ->
 	    (let (capture?, _) =
-	     foldl (fn ((capture?, outer_pattern_vars_list),arg_vars) ->
+	     foldl (fn ((capture?, outer_pattern_vars_list), arg_vars) ->
 		    if capture? then
 		      (true, [])
 		    else if exists (fn av -> 
@@ -425,7 +449,7 @@ spec
 	    (index + 1, new_id)
       in
       let (_, temp_vars) = 
-	  foldl (fn ((index, new_vars),arg) ->
+	  foldl (fn ((index, new_vars), arg) ->
 		 let (index, new_id) = find_unused_id index in
 		 let new_var = ((new_id, termSort arg), noPos) in
 		 (index,  new_vars ++ [new_var]))
@@ -443,105 +467,116 @@ spec
   %% Returns nm if it is not referenced in t, otherwise adds -i to
   %% to make it unique
   op  locallyUniqueName: Id * Term -> Id
-  def locallyUniqueName(baseName,t) =
-    let def aux (baseName,t,i) =
+  def locallyUniqueName(baseName, t) =
+    let def aux (baseName, t, i) =
           let indName = baseName^"-"^(Nat.toString i) in
-	  if idReferenced?(indName,t)
-	    then aux(baseName,t,i+1)
+	  if idReferenced?(indName, t)
+	    then aux(baseName, t, i+1)
 	    else indName
-    in aux(baseName,t,0)
+    in aux(baseName, t, 0)
 
   op  idReferenced?: Id * Term -> Boolean
-  def idReferenced?(id,t) =
+  def idReferenced?(id, t) =
     existsSubTerm
       (fn st -> case st of
-                 | Var((id1,_),_) -> id = id1
+                 | Var((id1, _), _) -> id = id1
                  | _ -> false)
       t
 
-  def makeRecursiveLocalDef(outer_qid,qid,nm,defbody,resultSort,tyVarSubst,remainingParams,
-			    remainingArgs,remainingIndices,vSubst,simplifyTerm) =
+  def makeRecursiveLocalDef(outer_qid, qid, nm, defbody, resultSort, tyVarSubst, remainingParams,
+			    remainingArgs, remainingIndices, vSubst, curried?, numargs,
+                            unfoldMap, simplifyTerm, spc) =
     %% check name conflict with args and defbody. defbody should be safe
     %% because user can't put "--" in identifier, but to be safe
     %% We ignore provided "nm" (its probably equal to the id part of qid),
     %% and compute a new "nm" using the entire qualified id.
-    let prefix = (let Qualified(q,xid) = outer_qid in 
+    let prefix = (let Qualified(q, xid) = outer_qid in 
 		  if q = UnQualified then xid else q ^ "_" ^ xid)
     in
     let localFnName = locallyUniqueName(prefix^"_"^nm^"--local",
 					%% Just to give context of var names to avoid
-					mkTuple(cons(defbody,remainingArgs)))
+					mkTuple(cons(defbody, remainingArgs)))
     in
     let newArgTerm = mkTuple remainingArgs in
-    let instantiatedFnSort = mkArrow(termSort newArgTerm,resultSort) in
-    let localFn = (localFnName,instantiatedFnSort) in
+    let instantiatedFnSort = mkArrow(termSort newArgTerm, resultSort) in
+    let localFn = (localFnName, instantiatedFnSort) in
     let def foldRecursiveCall t =
           case t of
-	    | Apply(Fun(Op(nqid,_),_,_),arg,a) ->
-	      if ~(qid = nqid) then t
-	      else
+	    | Apply(Fun(Op(nqid, _), _, _), arg, a) | qid = nqid && List.length(termToList arg) = numargs ->
 	      let args = termToList arg in
 	      Apply(mkVar localFn,
-		    mkTuple(map (fn i -> nth(args,i)) remainingIndices),
+		    mkTuple(map (fn i -> nth(args, i)) remainingIndices),
 		    a)
+            | Apply _ | curried? ->
+              (case getCurryArgs t of
+               | Some(Fun(Op(nqid, _), _, _), args) | qid = nqid && length args = numargs ->
+                 mkApply(mkVar localFn,
+                         mkTuple(map (fn i -> nth(args, i)) remainingIndices))
+               | _ -> t)
 	    | _ -> t
     in
-    let instantiateTyVars = fn s -> instantiateTyVars(s,tyVarSubst) in
-    let defbody = mapTerm (id,instantiateTyVars,id) defbody in
+    let instantiateTyVars = fn s -> instantiateTyVars(s, tyVarSubst) in
+    let defbody = mapTerm (id, instantiateTyVars, id) defbody in
+    let Qualified(q_n, id_n) = qid in
+    let unfoldMap = removeAQualifierMap(unfoldMap, q_n, id_n) in
+    let defbody = unfoldInTerm(outer_qid, simplifyTerm defbody, unfoldMap, simplifyTerm, spc) in
     let localDefbody = mapSubTerms foldRecursiveCall defbody in
-    let localDef = substitute(mkLambda(mapPattern (id,instantiateTyVars,id)
-				         (mkTuplePat(remainingParams)),
-				       localDefbody),
-			      vSubst)
+    let _ = if outer_qid = Qualified("<unqualified>","inferTypeOfExprs")
+              then writeLine("loc_body:\n"^printTerm defbody^"\n\n"^printTerm localDefbody) else () in
+    let nparams = map (mapPattern (id, instantiateTyVars, id)) remainingParams in
+    let lam = mkLambda(mkTuplePat(nparams), localDefbody)
     in
-    simplifyTerm(mkLetRec([(localFn,localDef)],
-			  mkApply(mkVar localFn,newArgTerm)))
+    let localDef = substitute(lam, vSubst) in
+    %% Need to repeat as substitution may have introduced new opportunities
+    let localDef = unfoldInTerm(outer_qid, simplifyTerm localDef, unfoldMap, simplifyTerm, spc) in
+    simplifyTerm(mkLetRec([(localFn, localDef)],
+			  mkApply(mkVar localFn, newArgTerm)))
 
   op  sortMatch: Sort * Sort * Spec -> TyVarSubst
-  def sortMatch(s1,s2,spc) =
-   let def match(srt1,srt2,pairs) =
-        case (srt1,srt2) of
-	  | (TyVar(id1,_), srt2) -> 
-	    if some?(find (fn (id,_) -> id = id1) pairs)
+  def sortMatch(s1, s2, spc) =
+   let def match(srt1, srt2, pairs) =
+        case (srt1, srt2) of
+	  | (TyVar(id1, _), srt2) -> 
+	    if some?(find (fn (id, _) -> id = id1) pairs)
 	      then pairs
-	      else cons((id1,srt2),pairs)
-	  | (Arrow(t1,t2,_),Arrow(s1,s2,_)) -> 
-	    match(t2,s2,match(t1,s1,pairs))
-	  | (Product(r1,_),Product(r2,_)) -> 
-	    matchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
-	  | (CoProduct(r1,_),CoProduct(r2,_)) -> 
-	    matchL(r1,r2,pairs,
-		   fn((id1,s1),(id2,s2),pairs) ->
+	      else cons((id1, srt2), pairs)
+	  | (Arrow(t1, t2, _), Arrow(s1, s2, _)) -> 
+	    match(t2, s2, match(t1, s1, pairs))
+	  | (Product(r1, _), Product(r2, _)) -> 
+	    matchL(r1, r2, pairs, fn((_, s1), (_, s2), pairs) -> match(s1, s2, pairs)) 
+	  | (CoProduct(r1, _), CoProduct(r2, _)) -> 
+	    matchL(r1, r2, pairs,
+		   fn((id1, s1), (id2, s2), pairs) ->
 		    if id1 = id2 then
-		      (case (s1,s2) of
-			 | (None,None) -> pairs 
-			 | ((Some ss1),(Some ss2)) -> match(ss1,ss2,pairs))
+		      (case (s1, s2) of
+			 | (None, None) -> pairs 
+			 | ((Some ss1), (Some ss2)) -> match(ss1, ss2, pairs))
 		   else pairs)
-	  | (Quotient(ty,_,_),Quotient(ty2,_,_)) -> 
-	    match(ty,ty2,pairs)
-	  | (Subsort(ty,_,_),ty2) -> match(ty,ty2,pairs)
-	  | (ty,Subsort(ty2,_,_)) -> match(ty,ty2,pairs)
-	  | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
+	  | (Quotient(ty, _, _), Quotient(ty2, _, _)) -> 
+	    match(ty, ty2, pairs)
+	  | (Subsort(ty, _, _), ty2) -> match(ty, ty2, pairs)
+	  | (ty, Subsort(ty2, _, _)) -> match(ty, ty2, pairs)
+	  | (Base(id, ts, pos1), Base(id2, ts2, pos2)) ->
 	    if id = id2
-	      then matchL(ts,ts2,pairs,match)
+	      then matchL(ts, ts2, pairs, match)
 	      else
-		let s2x = unfoldBase(spc,srt2) in
-		if equalType? (srt2,s2x) % also reasonable: equivType? spc (srt2,s2x)
+		let s2x = unfoldBase(spc, srt2) in
+		if equalType? (srt2, s2x) % also reasonable: equivType? spc (srt2, s2x)
 		  then pairs
-		else match(srt1,s2x,pairs)
-	  | (_,Base _) ->
-	    let s2x = unfoldBase(spc,srt2) in
-	    if equalType? (srt2,s2x)  % also reasonable: equivType? spc (srt2,s2x)
+		else match(srt1, s2x, pairs)
+	  | (_, Base _) ->
+	    let s2x = unfoldBase(spc, srt2) in
+	    if equalType? (srt2, s2x)  % also reasonable: equivType? spc (srt2, s2x)
 	     then pairs
-	     else match(srt1,s2x,pairs)
+	     else match(srt1, s2x, pairs)
 	  | _ -> pairs
-  in match(s1,s2,[])
+  in match(s1, s2, [])
 
   op matchL: fa(a) List a * List a * TyVarSubst * (a * a * TyVarSubst -> TyVarSubst)
                  -> TyVarSubst
-  def matchL(l1,l2,pairs,matchElt) =
-    case (l1,l2)
-     of (e1::l1,e2::l2) -> matchL(l1,l2,matchElt(e1,e2,pairs),matchElt)
+  def matchL(l1, l2, pairs, matchElt) =
+    case (l1, l2)
+     of (e1::l1, e2::l2) -> matchL(l1, l2, matchElt(e1, e2, pairs), matchElt)
       | _ -> pairs
 
   op normalizeCurriedDefinitions: Spec -> Spec
@@ -570,37 +605,37 @@ spec
       setOps (spc, normOps)
 
   op  normalizeCurriedDefn: Term * List Sort -> Term
-  def normalizeCurriedDefn(defn,curryArgSorts) =
-    let def aux(defn,curryArgSorts,argNum) = 
+  def normalizeCurriedDefn(defn, curryArgSorts) =
+    let def aux(defn, curryArgSorts, argNum) = 
 	  case curryArgSorts of
 	    | [] -> defn
 	    | argSort::rSorts ->
 	      case defn of
-		| Lambda([(pat,pred,body)],a) ->
-		  Lambda([(pat,pred,aux(body,rSorts,argNum+1))],a)
+		| Lambda([(pat, pred, body)], a) ->
+		  Lambda([(pat, pred, aux(body, rSorts, argNum+1))], a)
 		| Lambda _ -> defn
 		| _ ->
 		  if argNum = 0 & rSorts = [] & product? argSort
 		    then			% Uncurried
 		    (case argSort of
-		      | Product(fields,_) ->
-		        let vars = (foldl (fn ((result,i),(label,srt)) ->
-					    (result ++ [(label,("xxx-"^Nat.toString i,srt))],
+		      | Product(fields, _) ->
+		        let vars = (foldl (fn ((result, i), (label, srt)) ->
+					    (result ++ [(label, ("xxx-"^Nat.toString i, srt))],
 					     i+1))
-				      ([],0) fields).1
-			in mkLambda(mkRecordPat(map (fn(l,v) -> (l,mkVarPat(v))) vars),
+				      ([], 0) fields).1
+			in mkLambda(mkRecordPat(map (fn(l, v) -> (l, mkVarPat(v))) vars),
 				    mkApply(defn,
-					    mkRecord(map (fn (l,v) -> (l,mkVar(v))) vars))))
+					    mkRecord(map (fn (l, v) -> (l, mkVar(v))) vars))))
 		  else 
-		  let nv = ("yyy-"^Nat.toString argNum,argSort) in
-		  mkLambda(mkVarPat(nv),aux(mkApply(defn,mkVar(nv)),rSorts,argNum+1))
-    in aux(defn,curryArgSorts,0)
+		  let nv = ("yyy-"^Nat.toString argNum, argSort) in
+		  mkLambda(mkVarPat(nv), aux(mkApply(defn, mkVar(nv)), rSorts, argNum+1))
+    in aux(defn, curryArgSorts, 0)
 
   op  transparentRenaming: Qualifier * Id * Term * Spec -> Qualifier * Id * Term
   %% If definition is just a renaming then "unfold"
   def transparentRenaming (q, id, def1, spc) =
     case def1 of
-      | Fun (Op (Qualified (q2, id2),_), _, _) ->
+      | Fun (Op (Qualified (q2, id2), _), _, _) ->
         (case findAQualifierMap (spc.ops, q2, id2) of
 	  | Some info -> 
 	    (let (decls, defs) = opInfoDeclsAndDefs info in
@@ -610,96 +645,86 @@ spec
 	  | _ -> (q, id, def1))
       | _ -> (q, id, def1)
 
-
-  op  getCurryArgs: Term -> Option(Term * List Term)
-  def getCurryArgs t =
-    let def aux(term,i,args) =
-        case term
-          of Fun(_,srt,_) ->
-             if i > 1
-               then Some(term,args)
-              else None
-           | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
-           | _ -> None
-  in aux(t,0,[])
-
   op  getTupleArg: Term * Nat -> Term
-  def getTupleArg(t,i) =
+  def getTupleArg(t, i) =
     case t of
-      | Record (tms,_) -> (nth(tms,i)).2
+      | Record (tms, _) -> (nth(tms, i)).2
       | tm -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
   op  termList: Term -> List Term
   def termList t =
     case t of
-      | Record(fields,_ ) -> foldr (fn ((_,st),r) -> cons(st,r)) [] fields
+      | Record(fields, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields
       | _ -> [t]
 
-  op  makeLet: List Pattern * List Term * Term -> Term
-  def makeLet(params,args,body) =
-    if params = [] then body
-    else
-    mkLet(tabulate (length params,fn i -> (nth(params,i),nth(args,i))),
-	  body)
+  op  makeLet: List Pattern * List Term * Term * VarSubst -> Term * VarSubst
+  def makeLet(params, args, body, sbst) =
+    case (params, args) of
+      | (p1::pr, a1::ar) ->
+        let (newbod, sbst) = makeLet(pr, ar, body, sbst) in
+        (case (p1, a1) of
+         | (VarPat(v,_), Var _) -> (newbod, (v, a1)::sbst)
+         | _ -> (mkLet([(p1, a1)], newbod), sbst))
+      | _ -> (body, sbst)
 
   op  termToList: Term -> List Term
   def termToList t =
     case t of
-      | Record (fields,_) -> map (fn (_,x) -> x) fields
+      | Record (fields, _) -> map (fn (_, x) -> x) fields
       | _ -> [t]
 
   op  matchPairs: Pattern * Term -> List (Var * Term)
-  def matchPairs(p,t) =
-    case (p,t) of
-      | (VarPat(pv,_),t) -> [(pv,t)]
-      | (RecordPat(pfields,_),Record(tfields,_)) ->
-        foldl (fn (r,(id,p1)) -> r ++ matchPairs(p1,lookupId(id,tfields)))
+  def matchPairs(p, t) =
+    case (p, t) of
+      | (VarPat(pv, _), t) -> [(pv, t)]
+      | (RecordPat(pfields, _), Record(tfields, _)) ->
+        foldl (fn (r, (id, p1)) -> r ++ matchPairs(p1, lookupId(id, tfields)))
 	  [] pfields
       | _ -> fail "matchPairs: Shouldn't happen"
 
   op  lookupId: Id *  List (Id * Term)  -> Term  
-  def lookupId(id,fields) =
-    case find (fn (id1,t1) -> id = id1) fields of
-      | Some (_,t) -> t
+  def lookupId(id, fields) =
+    case find (fn (id1, t1) -> id = id1) fields of
+      | Some (_, t) -> t
       | _ -> fail "lookupId: Shouldn't happen"
 
 %%% inCurryUtils
 %  op  curriedSort?: Spec * Sort -> Boolean
-%  def curriedSort?(sp,srt) = curryShapeNum(sp,srt) > 1
+%  def curriedSort?(sp, srt) = curryShapeNum(sp, srt) > 1
 
 %  op  curryShapeNum: Spec * Sort -> Nat
-%  def curryShapeNum(sp,srt) =
-%    case arrowOpt(sp,srt)
-%      of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
+%  def curryShapeNum(sp, srt) =
+%    case arrowOpt(sp, srt)
+%      of Some (_, rng) -> 1 + curryShapeNum(sp, rng)
 %       | _ -> 0
 
 %  op  curryArgSorts: Spec * Sort -> List Sort
-%  def curryArgSorts(sp,srt) =
-%    case arrowOpt(sp,srt)
-%      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
+%  def curryArgSorts(sp, srt) =
+%    case arrowOpt(sp, srt)
+%      of Some (dom, rng) -> cons(stripSubsorts(sp, dom), curryArgSorts(sp, rng))
 %       | _ -> []
 
 %  op  curriedParams: Term -> List Pattern * Term
 %  def curriedParams defn =
-%    let def aux(t,vs) =
+%    let def aux(t, vs) =
 %          case t of
-%	    | Lambda([(p,_,body)],_) ->
+%	    | Lambda([(p, _, body)], _) ->
 %	      if (case p of
 %		    | VarPat _ -> true
 %		    | RecordPat _ -> true
 %		    | _ -> false)
-%		then aux(body,vs ++ [p])
-%		else (vs,t)
-%	    | _ -> (vs,t)
+%		then aux(body, vs ++ [p])
+%		else (vs, t)
+%	    | _ -> (vs, t)
 %    in
-%    aux(defn,[])
+%    aux(defn, [])
 
 %  op  noncurryArgSorts: Spec * Sort -> List Sort
-%  def noncurryArgSorts(sp,srt) =
-%    case arrowOpt(sp,srt)
-%      of Some (dom,_) ->
-%	 (case productOpt(sp,dom) of
-%	   | Some fields -> map (fn(_,s) -> s) fields
+%  def noncurryArgSorts(sp, srt) =
+%    case arrowOpt(sp, srt)
+%      of Some (dom, _) ->
+%	 (case productOpt(sp, dom) of
+%	   | Some fields -> map (fn(_, s) -> s) fields
 %	   | _ -> [dom])
 %       | _ -> []
 
