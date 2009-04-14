@@ -675,6 +675,14 @@ spec
               if exists (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs
                 then opinfo
               else
+              let _ = if existsSubTerm (fn t -> case t of
+                      | And(_::(_::_),_) ->
+                        true
+                      | _ -> false) opinfo.dfn
+                      then (writeLine("Multiple defs for "^printQualifiedId (head opinfo.names));
+                            writeLine(printTerm opinfo.dfn))
+                      else ()
+              in
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
               let qid as Qualified(q,id) = hd opinfo.names in
               let _ = if traceIsomorphismGenerator? then writeLine("Simplify? "^printQualifiedId qid) else () in
