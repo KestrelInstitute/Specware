@@ -168,11 +168,11 @@ ListUtilities qualifying spec {
             | result -> result)
 
   def findIndex p l =
-    let def findIndexRec(p, l, n) =
+    let def findIndexRec(l, n) =
             case l of
 	      | [] -> None
-	      | hd::tl -> if p hd then Some (n, hd) else findIndexRec(p, tl, n+1) in
-      findIndexRec(p, l, 0)
+	      | hd::tl -> if p hd then Some (n, hd) else findIndexRec(tl, n+1) in
+      findIndexRec(l, 0)
     
 
   def mapWithIndexRec(f,ls,i) = 
