@@ -29,20 +29,18 @@ CurryUtils qualifying spec
 
   op  getCurryArgs: MS.Term -> Option(MS.Term * List MS.Term)
   def getCurryArgs t =
-    let def aux(term,i,args) =
+    let def aux(term, i, args) =
         case term
-          of Fun(_,srt,_) ->
+          of Fun(_, srt, _) ->
              if i > 1
-               then Some(term,args)
+               then Some(term, args)
               else None
-           | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
+           | Apply(t1, t2, _) -> aux(t1, i+1, t2::args)
            | _ -> None
-  in aux(t,0,[])
+  in aux(t, 0, [])
 
   op mkCurriedApply(f: MS.Term, args: List MS.Term): MS.Term =
-    case args of
-      | [] -> f
-      | x::r -> mkCurriedApply(mkApply(f, x), r)
+    foldl mkApply f args
 
   op mkCurriedLambda(params, body): MS.Term =
     case params of
