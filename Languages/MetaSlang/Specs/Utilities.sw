@@ -541,6 +541,7 @@ Utilities qualifying spec
 		  a)
 	    | SortedTerm(term, srt, a) ->
 	      SortedTerm(subst(term), srt, a)
+            | _ -> M
 
 	def substRule (pat,cond,term) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
