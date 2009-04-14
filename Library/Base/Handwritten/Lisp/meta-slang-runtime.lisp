@@ -201,7 +201,7 @@
 
 ;;; swxhash: Hash function for slang-term-equals (based on sbcl psxhash for equalp)
 (eval-when (compile load)
-  (defconstant +max-hash-depthoid+ 4))
+  (defconstant +max-hash-depthoid+ 5))
 (declaim (inline mix))
 (defun mix (x y)
   ;; FIXME: We wouldn't need the nasty (SAFETY 0) here if the compiler
