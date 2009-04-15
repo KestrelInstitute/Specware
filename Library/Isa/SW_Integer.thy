@@ -245,7 +245,7 @@ consts Nat__pred :: "Nat__PosNat \<Rightarrow> nat"
 defs Nat__pred_def: "Nat__pred n \<equiv> nat (pred (int n))"
 theorem Integer__sign_Obligation_subtype: 
   "\<lbrakk>\<not> ((i::int) > 0); i < 0; (s_1::int) = - 1\<rbrakk> \<Longrightarrow> 
-   s_1 = 0 \<or> (s_1 = 1 \<or> s_1 = - 1)"
+   s_1 = 0 \<or> (s_1 = 1 \<or> s_1 = s_1)"
   by auto
 theorem Integer__sign_subtype_constr: 
   "\<lbrakk>(s::int) = sign dom_sign\<rbrakk> \<Longrightarrow> s = 0 \<or> (s = 1 \<or> s = - 1)"

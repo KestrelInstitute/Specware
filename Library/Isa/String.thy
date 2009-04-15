@@ -173,8 +173,8 @@ theorem Nat__natToString_Obligation_subtype1:
   done
 theorem Nat__natToString_Obligation_subtype2: 
   "\<lbrakk>\<not> ((x::nat) < 10); 
-    x mod 10 \<ge> 0; 
-    (x_3::int) = int (x mod 10)\<rbrakk> \<Longrightarrow> x_3 < 10 \<and> x_3 \<ge> 0"
+    (x_3::int) \<ge> 0; 
+    x_3 = int (x mod 10)\<rbrakk> \<Longrightarrow> x_3 < 10"
   by auto
 consts Nat__natToString :: "nat \<Rightarrow> string"
 recdef Nat__natToString "measure size"

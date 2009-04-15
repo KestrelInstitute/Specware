@@ -902,8 +902,7 @@ defs List__subFromTo_def:
      \<equiv> (\<lambda> ((l::'a list), (i::nat), (j::nat)). 
           List__subFromLong(l, i, j - i))"
 theorem List__subFromTo_whole_Obligation_subtype: 
-  "\<lbrakk>length l \<ge> 0; (j::nat) = length l\<rbrakk> \<Longrightarrow> 
-   0 \<le> j \<and> j \<le> length l"
+  "\<lbrakk>(j::nat) \<ge> 0; j = length l\<rbrakk> \<Longrightarrow> 0 \<le> j \<and> j \<le> j"
   by auto
 theorem List__subFromTo_whole [simp]: 
   "List__subFromTo(l, 0, length l) = l"
@@ -2395,7 +2394,7 @@ theorem List__repeat_Obligation_subtype:
        definedOnInitialSegmentOfLength n0"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 theorem List__repeat__def: 
-  "replicate n x
+  "(replicate n x) 
      = List__list (\<lambda> (i::nat). if i < n then Some x else None)"
   proof (induct n)
 case 0
@@ -2426,11 +2425,12 @@ theorem List__repeat_length:
 consts List__allEqualElements_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> bool"
 defs List__allEqualElements_p__stp_def: 
   "List__allEqualElements_p__stp P__a l
-     \<equiv> (\<exists>(x::'a). P__a x \<and> l = replicate (length l) x)"
+     \<equiv> (\<exists>(x::'a). 
+          P__a x \<and> l = (replicate (length l) x))"
 consts List__allEqualElements_p :: "'a list \<Rightarrow> bool"
 defs List__allEqualElements_p_def: 
   "List__allEqualElements_p l
-     \<equiv> (\<exists>(x::'a). l = replicate (length l) x)"
+     \<equiv> (\<exists>(x::'a). l = (replicate (length l) x))"
 theorem List__extendLeft_Obligation_subtype: 
   "\<lbrakk>n \<ge> length l\<rbrakk> \<Longrightarrow> int n - int (length l) \<ge> 0"
   by auto
@@ -2438,7 +2438,7 @@ consts List__extendLeft :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a li
 defs List__extendLeft_def: 
   "List__extendLeft
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
-          replicate (n - length l) x @ l)"
+          (replicate (n - length l) x) @ l)"
 theorem List__extendRight_Obligation_subtype: 
   "\<lbrakk>n \<ge> length l\<rbrakk> \<Longrightarrow> int n - int (length l) \<ge> 0"
   by auto
@@ -2446,7 +2446,7 @@ consts List__extendRight :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a l
 defs List__extendRight_def: 
   "List__extendRight
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
-          l @ replicate (n - length l) x)"
+          l @ (replicate (n - length l) x))"
 theorem List__extendLeft_length__stp: 
   "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l; 
     P__a x; 
@@ -2552,29 +2552,28 @@ theorem List__equiExtendRight_subtype_constr:
  qed
 qed
 theorem List__shiftLeft_Obligation_subtype: 
-  "\<lbrakk>let ignore = l @ replicate n x in n \<ge> 0\<rbrakk> \<Longrightarrow> 
-   n \<le> length ((l::'a list) @ replicate n x) 
+  "\<lbrakk>let ignore = l @ (replicate n x) in n \<ge> 0\<rbrakk> \<Longrightarrow> 
+   n \<le> length ((l::'a list) @ (replicate n x)) 
      \<and> n \<ge> 0"
   by auto
 consts List__shiftLeft :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftLeft_def: 
   "List__shiftLeft
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
-          drop n (l @ replicate n x))"
+          drop n (l @ (replicate n x)))"
 theorem List__shiftRight_Obligation_subtype: 
-  "\<lbrakk>let ignore = replicate n x @ l in n \<ge> 0\<rbrakk> \<Longrightarrow> 
-   n \<le> length (replicate n x @ (l::'a list)) 
+  "\<lbrakk>let ignore = (replicate n x) @ l in n \<ge> 0\<rbrakk> \<Longrightarrow> 
+   n \<le> length ((replicate n x) @ (l::'a list)) 
      \<and> n \<ge> 0"
   by auto
 consts List__shiftRight :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftRight_def: 
   "List__shiftRight
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
-          List__removeSuffix(replicate n x @ l, n))"
+          List__removeSuffix((replicate n x) @ l, n))"
 theorem List__rotateLeft_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    length l \<ge> 0; 
-    x = int (length l)\<rbrakk> \<Longrightarrow> Nat__posNat_p (nat x) \<and> x \<ge> 0"
+  "\<lbrakk>(l::'a list) \<noteq> []; x \<ge> 0; x = int (length l)\<rbrakk> \<Longrightarrow> 
+   Nat__posNat_p (nat x)"
   by (auto simp: Nat__posNat_p_def)
 theorem List__rotateLeft_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
@@ -2594,9 +2593,8 @@ defs List__rotateLeft_def:
           in 
           (drop n l) @ (take n l))"
 theorem List__rotateRight_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    length l \<ge> 0; 
-    x = int (length l)\<rbrakk> \<Longrightarrow> Nat__posNat_p (nat x) \<and> x \<ge> 0"
+  "\<lbrakk>(l::'a list) \<noteq> []; x \<ge> 0; x = int (length l)\<rbrakk> \<Longrightarrow> 
+   Nat__posNat_p (nat x)"
   by (auto simp: Nat__posNat_p_def)
 theorem List__rotateRight_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
@@ -2766,7 +2764,7 @@ consts List__unflatten :: "'a list \<times> Nat__PosNat \<Rightarrow> 'a list li
 defs List__unflatten_def: 
   "List__unflatten
      \<equiv> (\<lambda> ((l::'a list), (n::Nat__PosNat)). 
-          List__unflattenL(l, replicate n (length l div n)))"
+          List__unflattenL(l, replicate (length l div n) n))"
 theorem List__noRepetitions_p__def: 
   "distinct l 
      = (\<forall>(i::nat) (j::nat). 
@@ -3399,9 +3397,8 @@ theorem List__leftmostPositionSuchThat_Obligation_subtype:
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
     \<not> (null POSs); 
     distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). int i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs 
-     \<and> List__List_P (\<lambda> (i_3::nat). int i_3 \<ge> 0) POSs"
+    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
+   List__nonEmpty_p POSs"
   by auto
 consts List__leftmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__leftmostPositionSuchThat_def: 
@@ -3415,9 +3412,8 @@ theorem List__rightmostPositionSuchThat_Obligation_subtype:
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
     \<not> (null POSs); 
     distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). int i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs 
-     \<and> List__List_P (\<lambda> (i_3::nat). int i_3 \<ge> 0) POSs"
+    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
+   List__nonEmpty_p POSs"
   by auto
 consts List__rightmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__rightmostPositionSuchThat_def: 
@@ -3441,14 +3437,10 @@ qed
 theorem List__positionOf_Obligation_subtype: 
   "\<lbrakk>distinct (l::'a list); 
     x mem l; 
-    \<forall>(x_1::nat list). 
-      x_1 = List__positionsOf(l, x) 
-        \<longrightarrow> distinct x_1 
-              \<and> List__List_P (\<lambda> (i::nat). i \<ge> 0) x_1; 
-    x_2 = List__positionsOf(l, x)\<rbrakk> \<Longrightarrow> 
-   List__ofLength_p 1 x_2 
-     \<and> List__List_P (\<lambda> (i_1::nat). i_1 \<ge> 0) x_2"
-  proof
+    distinct x_2; 
+    List__List_P (\<lambda> (i::nat). i \<ge> 0) x_2; 
+    x_2 = List__positionsOf(l, x)\<rbrakk> \<Longrightarrow> List__ofLength_p 1 x_2"
+  proof -
  assume "distinct l"
  assume "x_2 = List__positionsOf (l, x)"
  hence "x_2 = (THE POSs.
@@ -3495,11 +3487,6 @@ theorem List__positionOf_Obligation_subtype:
  qed
  with `length x_2 > 0` have "length x_2 = 1" by arith
  thus "List__ofLength_p 1 x_2" by (auto simp: List__ofLength_p_def)
-next
- assume "\<forall>x_1. x_1 = List__positionsOf (l, x) \<longrightarrow>
-               distinct x_1 \<and> List__List_P (op \<le> 0) x_1"
-    and "x_2 = List__positionsOf (l, x)"
- thus "List__List_P (op \<le> 0) x_2" by auto
 qed
 consts List__positionOf :: "'a List__InjList \<times> 'a \<Rightarrow> nat"
 defs List__positionOf_def: 
@@ -4155,14 +4142,10 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype:
     \<not> (null POSs); 
     distinct POSs; 
     List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs 
-     \<and> List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs"
-  proof
+   List__nonEmpty_p POSs"
+  proof -
  assume "\<not> (null POSs)"
  thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-next
- assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
- thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
 qed
 theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 
@@ -4218,14 +4201,10 @@ theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype:
     \<not> (null POSs); 
     distinct POSs; 
     List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs 
-     \<and> List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs"
-  proof
+   List__nonEmpty_p POSs"
+  proof -
  assume "\<not> (null POSs)"
  thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-next
- assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
- thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
 qed
 theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 

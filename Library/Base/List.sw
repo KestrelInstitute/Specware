@@ -3345,7 +3345,7 @@ op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
   theElement (positionsOf (l, x))
 
 proof Isa List__positionOf_Obligation_subtype
-proof
+proof -
  assume "distinct l"
  assume "x_2 = List__positionsOf (l, x)"
  hence "x_2 = (THE POSs.
@@ -3392,11 +3392,6 @@ proof
  qed
  with `length x_2 > 0` have "length x_2 = 1" by arith
  thus "List__ofLength_p 1 x_2" by (auto simp: List__ofLength_p_def)
-next
- assume "\<forall>x_1. x_1 = List__positionsOf (l, x) \<longrightarrow>
-               distinct x_1 \<and> List__List_P (op \<le> 0) x_1"
-    and "x_2 = List__positionsOf (l, x)"
- thus "List__List_P (op \<le> 0) x_2" by auto
 qed
 end-proof
 
@@ -4071,22 +4066,16 @@ op [a] rightmostPositionOfSublistAndPreceding
   Some (i, prefix (supl, i))
 
 proof Isa List__leftmostPositionOfSublistAndFollowing_Obligation_subtype
-proof
+proof -
  assume "\<not> (null POSs)"
  thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-next
- assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
- thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
 qed
 end-proof
 
 proof Isa List__rightmostPositionOfSublistAndPreceding_Obligation_subtype
-proof
+proof -
  assume "\<not> (null POSs)"
  thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-next
- assume "List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs"
- thus "List__List_P (\<lambda> (i_3::nat). i_3 \<ge> 0) POSs" by auto
 qed
 end-proof
 
