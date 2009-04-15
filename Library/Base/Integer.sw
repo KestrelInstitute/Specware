@@ -1119,21 +1119,6 @@ op compare (i:Int, j:Int) : Comparison = if i < j then Less
 % legacy, deprecated:
 
 type Integer = Int
-type NonZeroInteger = Int0
-op Nat.natural? (i:Int) : Bool = i >= 0
-
-op Integer.~ : Bijection (Int, Int) = -
-proof Isa e_tld_subtype_constr
- apply(rule IntegerAux__e_dsh_subtype_constr)
-end-proof
-
-op Integer.rem infixl 26 : Int * Int0 -> Int = modT
-
-theorem non_zero_divides_iff_zero_remainder is
-  fa (x:Int0, y:Int) x divides y <=> y rem x = zero
-proof Isa
-  apply (simp add: divides_iff_modT_0)
-end-proof
 
 % mapping to Isabelle:
 
@@ -1146,7 +1131,6 @@ proof Isa Thy_Morphism Presburger
  Integer.ipred    -> pred
  Integer.isucc    -> succ
  IntegerAux.-     -> -
- Integer.~        -> -
  Integer.+        -> +     Left 25
  Integer.-        -> -     Left 25
  Integer.*        -> *     Left 27
@@ -1169,7 +1153,6 @@ proof Isa Thy_Morphism Presburger
  Integer.modE     -> modE  Left 22
  Integer.div      -> div   Left 22
  Integer.mod      -> mod   Left 22
- Integer.rem      -> modT  Left 22
  Integer.min      -> min           curried
  Integer.max      -> max           curried
  Integer.divides  -> zdvd  Left 30 
