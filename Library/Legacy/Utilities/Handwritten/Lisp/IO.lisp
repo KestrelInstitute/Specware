@@ -101,8 +101,8 @@
 
 (defun fileOlder?-2 (f1 f2)
   ;#+allegro(excl::file-older-p f1 f2)
-  (let ((d1 (or (file-write-date f1) 0))
-	(d2 (or (file-write-date f2) 0)))
+  (let ((d1 (or (and #+win32(probe-file f1) (file-write-date f1)) 0))
+	(d2 (or (and #+win32(probe-file f2) (file-write-date f2)) 0)))
     (< d1 d2)))
 
 (defun ensureDirectoriesExist (s)
