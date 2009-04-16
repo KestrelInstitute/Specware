@@ -1535,13 +1535,19 @@ Utilities qualifying spec
        if ty = exp_ty then None
          else subtypeComps(sp, exp_ty)
 
+  op dontRaiseTypes: List QualifiedId = [Qualified("Nat", "Nat")]
+  op treatAsAtomicType?(ty: Sort): Boolean =
+    case ty of
+      | Base(qid, _, _) -> qid in? dontRaiseTypes
+      | _ -> false
+
   op raiseSubtype(ty: Sort, spc: Spec): Sort =
   %% Bring subtypes to the top-level
     % let _ = writeLine("rt: "^printSort ty) in
     case ty of
-      | Base(qid, args, a) ->
+      | Base(qid, args, a) | qid nin? dontRaiseTypes ->
         let args = map (fn tyi -> raiseSubtype(tyi, spc)) args in
-        if exists (fn tyi -> subtype?(spc, tyi)) args
+        if exists (fn tyi -> ~(treatAsAtomicType? tyi) && subtype?(spc, tyi)) args
           then
           let Qualified(q,id) = qid in
           let pred_name = id^"_P" in
