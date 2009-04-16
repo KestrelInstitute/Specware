@@ -62,7 +62,7 @@ end-proof
 op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
   f definedOnInitialSegmentOfLength n
 
-proof Isa List__lengthOfListFunction_Obligation_the
+proof Isa lengthOfListFunction_Obligation_the
  by (auto simp add: List__unique_initial_segment_length)
 end-proof
 
@@ -121,7 +121,7 @@ proof (relation "measure List__lengthOfListFunction")
 qed
 end-proof
 
-proof Isa List__list_Obligation_subtype0
+proof Isa list_Obligation_subtype0
 proof -
  fix f x
  assume "\<exists>n. f definedOnInitialSegmentOfLength n"
@@ -137,7 +137,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__list_subtype_constr
+proof Isa list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
               (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
@@ -297,7 +297,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
 qed
 end-proof
 
-proof Isa List__list_Obligation_subtype
+proof Isa list_Obligation_subtype
 proof -
  def A \<equiv> "\<lambda> (f::nat \<Rightarrow> 'a option).
             \<exists>(n::nat). f definedOnInitialSegmentOfLength n"
@@ -405,7 +405,7 @@ op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
    % disallowed
 
-proof Isa List__list_1_subtype_constr
+proof Isa list_1_subtype_constr
 proof -
  have "defined_on List__list
                   (\<lambda> (f::nat \<Rightarrow> 'a option).
@@ -434,7 +434,7 @@ op [a] tabulate (n:Nat, f: Nat -> a) : List a =
   list (fn i:Nat -> if i < n then Some (f i) else None)
 
 % the argument to op list is in the ListFunction subtype:
-proof Isa List__tabulate_Obligation_subtype
+proof Isa tabulate_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
@@ -615,7 +615,7 @@ end-proof
 op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
   let Some x = list_1 l i in x
 
-proof Isa List__e_at__def
+proof Isa e_at__def
   by (auto simp add: list_1_Isa_nth)
 end-proof
 
@@ -677,7 +677,7 @@ qed
 end-proof
 
 % i < length (tabulate (n, f)):
-proof Isa List__element_of_tabulate_Obligation_subtype
+proof Isa element_of_tabulate_Obligation_subtype
   by (auto simp add: List__length_tabulate)
 end-proof
 
@@ -700,7 +700,7 @@ proof Isa [simp] end-proof
 
 op [a] empty? (l: List a) : Bool = (l = empty)
 
-proof Isa List__empty_p__def
+proof Isa empty_p__def
   by (simp add: null_empty)
 end-proof
 
@@ -724,7 +724,7 @@ op [a] single (x:a) : List a = [x]
 
 op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
 
-proof Isa List__theElement__stp_Obligation_the
+proof Isa theElement__stp_Obligation_the
 proof -
  assume "List__ofLength_p 1 l"
  hence L1: "length l = 1" by (auto simp add: List__ofLength_p_def)
@@ -747,7 +747,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__theElement_Obligation_the
+proof Isa theElement_Obligation_the
 proof
  def x \<equiv> "hd l"
  show "List__ofLength_p 1 l \<Longrightarrow> l = [x]"
@@ -777,7 +777,7 @@ end-proof
 op [a] in? (x:a, l: List a) infixl 20 : Bool =
   ex(i:Nat) l @@ i = Some x
 
-proof Isa List__in_p__def
+proof Isa in_p__def
 proof (induct l)
  case Nil
   show ?case by (auto simp add: List__e_at_at_def list_1_Isa_nth)
@@ -846,7 +846,7 @@ op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   list (fn j:Nat -> if j < n then Some (l @ (i + j)) else None)
 
 % the argument to op list is in the ListFunction subtype:
-proof Isa List__subFromLong_Obligation_subtype
+proof Isa subFromLong_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
@@ -950,7 +950,7 @@ op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
 op [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
   prefix (l, length l - n)
 
-proof Isa List__prefix__def
+proof Isa prefix__def
 proof (induct n arbitrary: l)
 case 0
  show ?case by (auto simp add:
@@ -981,7 +981,7 @@ case (Suc n)
 qed
 end-proof
 
-proof Isa List__removePrefix__def
+proof Isa removePrefix__def
 proof (induct n arbitrary: l)
 case 0
  show ?case by (auto simp add: List__suffix_def List__subFromLong_whole)
@@ -1047,30 +1047,30 @@ op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
 op [a] butLast (l: List1 a) : List a = removeSuffix (l, 1)
 
 % proof that "1 <= length l":
-proof Isa List__head_Obligation_subtype
+proof Isa head_Obligation_subtype
   by (cases l, auto)
 end-proof
 
 % proof that "prefix (l, 1)" has length 1:
-proof Isa List__head_Obligation_subtype0
+proof Isa head_Obligation_subtype0
   by (cases l, auto simp add: List__ofLength_p_def)
 end-proof
 
-proof Isa List__head__def
+proof Isa head__def
 by (cases l, auto simp add: List__theElement_def)
 end-proof
 
 % proof that "1 <= length l":
-proof Isa List__last_Obligation_subtype
+proof Isa last_Obligation_subtype
   by (cases l, auto)
 end-proof
 
 % proof that "suffix (l, 1)" has length 1:
-proof Isa List__last_Obligation_subtype0
+proof Isa last_Obligation_subtype0
   by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
 end-proof
 
-proof Isa List__last__def
+proof Isa last__def
 proof -
  def x \<equiv> "last l"
  def bl \<equiv> "butlast l"
@@ -1111,20 +1111,20 @@ qed
 end-proof
 
 % proof that "1 <= length l":
-proof Isa List__tail_Obligation_subtype
+proof Isa tail_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-proof Isa List__tail__def
+proof Isa tail__def
 by (cases l, auto)
 end-proof
 
 % proof that "1 <= length l":
-proof Isa List__butLast_Obligation_subtype
+proof Isa butLast_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-proof Isa List__butLast__def
+proof Isa butLast__def
 proof -
  def x \<equiv> "last l"
  def bl \<equiv> "butlast l"
@@ -1206,7 +1206,7 @@ op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
   prefix (l, length l1) = l1 &&
   suffix (l, length l2) = l2
 
-proof Isa List__e_pls_pls_Obligation_the
+proof Isa e_pls_pls_Obligation_the
 proof
  def l \<equiv> "l1 @ l2"
  hence lenl: "length l = length l1 + length l2"
@@ -1343,7 +1343,7 @@ next
 qed
 end-proof
 
-proof Isa List__e_pls_pls__def
+proof Isa e_pls_pls__def
 proof -
  def P \<equiv> "(\<lambda>l. length l = length l1 + length l2 \<and>
                 take (length l1) l = l1 \<and>
@@ -1415,11 +1415,11 @@ op [a] |> (x:a, l: List a) infixr 25 : List1 a = [x] ++ l
 
 op [a] <| (l: List a, x:a) infixl 25 : List1 a = l ++ [x]
 
-proof Isa List__e_bar_gt_subtype_constr
+proof Isa e_bar_gt_subtype_constr
   by (auto simp add: Let_def split_def)
 end-proof
 
-proof Isa List__e_lt_bar_subtype_constr
+proof Isa e_lt_bar_subtype_constr
   by (auto simp add: Let_def split_def List__e_lt_bar_def)
 end-proof
 
@@ -1429,12 +1429,12 @@ op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
   list (fn j:Nat -> if j = i then Some x else l @@ j)
 
 % argument of op list is in ListFunction subtype:
-proof Isa List__update_Obligation_subtype
+proof Isa update_Obligation_subtype
 by (auto simp add: List__definedOnInitialSegmentOfLength_def
                    List__e_at_at_def list_1_Isa_nth)
 end-proof
 
-proof Isa List__update__def
+proof Isa update__def
 proof (induct l arbitrary: i)
 case Nil
  thus ?case by auto
@@ -1531,7 +1531,7 @@ op [a] exists1? (p: a -> Bool) (l: List a) : Bool =
 op [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
   fa(i:Nat) i < length l => p (i, l @ i)
 
-proof Isa List__forall_p__def
+proof Isa forall_p__def
 proof (induct l)
 case Nil
  show ?case by auto
@@ -1577,7 +1577,7 @@ case (Cons x l)
 qed
 end-proof
 
-proof Isa List__exists_p__def
+proof Isa exists_p__def
 proof (induct l)
 case Nil
  show ?case by auto
@@ -1657,16 +1657,16 @@ op unzip3 : [a,b,c] List (a * b * c) ->
                      l1 equiLong l2 && l2 equiLong l3} = inverse zip3
 
 % argument to op list in definition of op zip is in ListFunction subtype:
-proof Isa List__zip_Obligation_subtype
+proof Isa zip_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 % i < length l2 in definition of op zip:
-proof Isa List__zip_Obligation_subtype0
+proof Isa zip_Obligation_subtype0
   by (auto simp add: List__equiLong_def)
 end-proof
 
-proof Isa List__zip__def
+proof Isa zip__def
 proof (induct l2 arbitrary: l1)
 case Nil
  hence "length l1 = 0" by (auto simp add: List__equiLong_def)
@@ -1704,21 +1704,21 @@ qed
 end-proof
 
 % argument to op list in definition of op zip3 is in ListFunction subtype:
-proof Isa List__zip3_Obligation_subtype
+proof Isa zip3_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 % i < length l2 in definition of op zip3:
-proof Isa List__zip3_Obligation_subtype0
+proof Isa zip3_Obligation_subtype0
   by (auto simp add: List__equiLong_def)
 end-proof
 
 % i < length l3 in definition of op zip3:
-proof Isa List__zip3_Obligation_subtype1
+proof Isa zip3_Obligation_subtype1
   by (auto simp add: List__equiLong_def)
 end-proof
 
-proof Isa List__unzip_Obligation_subtype
+proof Isa unzip_Obligation_subtype
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on (\<lambda>(x::'a list, y::'b list). zip x y)
               (\<lambda>(x,y). x equiLong y)"
@@ -1821,7 +1821,7 @@ next
 qed
 end-proof
 
-proof Isa List__unzip_subtype_constr
+proof Isa unzip_subtype_constr
 proof (auto simp: Let_def)
  fix x :: "'a list"
  fix y :: "'b list"
@@ -1866,7 +1866,7 @@ proof (auto simp: Let_def)
 qed
 end-proof
 
-proof Isa List__unzip3_Obligation_subtype
+proof Isa unzip3_Obligation_subtype
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
                              \<Rightarrow>
@@ -2050,7 +2050,7 @@ next
 qed
 end-proof
 
-proof Isa List__unzip3_subtype_constr
+proof Isa unzip3_subtype_constr
 proof auto
  fix l1::"'a list"
  and l2::"'b list"
@@ -2114,11 +2114,11 @@ op [a,b,c,d] map3 (f: a * b * c -> d)
                    l1 equiLong l2 && l2 equiLong l3) : List d =
   map f (zip3 (l1, l2, l3))
 
-proof Isa List__map_Obligation_subtype
+proof Isa map_Obligation_subtype
   by (auto simp: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
-proof Isa List__map__def
+proof Isa map__def
 proof (induct l)
 case Nil
  have MAP: "map f [] = []" by auto
@@ -2148,7 +2148,7 @@ end-proof
 op [a] removeNones (l: List (Option a)) : List a = the (l': List a)
   map (embed Some) l' = filter (embed? Some) l
 
-proof Isa List__removeNones_Obligation_the
+proof Isa removeNones_Obligation_the
 proof (induct l)
 case Nil
  show ?case
@@ -2241,7 +2241,7 @@ op [a,b] matchingOptionLists?
   l1 equiLong l2 &&
   (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
 
-proof Isa List__matchingOptionLists_p_Obligation_subtype
+proof Isa matchingOptionLists_p_Obligation_subtype
   by (auto simp: List__equiLong_def)
 end-proof
 
@@ -2260,7 +2260,7 @@ op [a,b,c,d] mapPartial3 (f: a * b * c -> Option d)
                           l1 equiLong l2 && l2 equiLong l3) : List d =
   mapPartial f (zip3 (l1, l2, l3))
 
-proof Isa List__mapPartial__def
+proof Isa mapPartial__def
 proof -
  from List__removeNones_Obligation_the
   have UNIQ:
@@ -2337,11 +2337,11 @@ op [a] reverse (l: List a) : List a =
   list (fn i:Nat -> if i < length l
                     then Some (l @ (length l - i - 1)) else None)
 
-proof Isa List__reverse_Obligation_subtype
+proof Isa reverse_Obligation_subtype
   by (auto simp: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
-proof Isa List__reverse__def
+proof Isa reverse__def
 proof (induct l)
 case Nil
  def f \<equiv> "(\<lambda>i. if i < length []
@@ -2391,11 +2391,11 @@ end-proof
 op [a] repeat (x:a) (n:Nat) : List a =
   list (fn i:Nat -> if i < n then Some x else None)
 
-proof Isa List__repeat_Obligation_subtype
+proof Isa repeat_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
-proof Isa List__repeat__def
+proof Isa repeat__def
 proof (induct n)
 case 0
  def f \<equiv> "\<lambda>i::nat. if i < 0 then Some x else None"
@@ -2421,11 +2421,11 @@ end-proof
 theorem repeat_length is [a]
   fa (x:a, n:Nat) length (repeat x n) = n
 
-proof Isa List__repeat_length__stp
+proof Isa repeat_length__stp
   by (induct n, auto)
 end-proof
 
-proof Isa List__repeat_length
+proof Isa repeat_length
   by (induct n, auto)
 end-proof
 
@@ -2448,19 +2448,19 @@ theorem extendRight_length is [a]
   fa (l: List a, x:a, n:Nat) n >= length l =>
     length (extendRight (l, x, n)) = n
 
-proof Isa List__extendLeft_length__stp
+proof Isa extendLeft_length__stp
   by (auto simp: List__extendLeft_def)
 end-proof
 
-proof Isa List__extendLeft_length
+proof Isa extendLeft_length
   by (auto simp: List__extendLeft_def)
 end-proof
 
-proof Isa List__extendRight_length__stp
+proof Isa extendRight_length__stp
   by (auto simp: List__extendRight_def)
 end-proof
 
-proof Isa List__extendRight_length
+proof Isa extendRight_length
   by (auto simp: List__extendRight_def)
 end-proof
 
@@ -2476,17 +2476,17 @@ op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
   if length l1 < length l2 then     (extendRight (l1, x1, length l2), l2)
                            else (l1, extendRight (l2, x2, length l1))
 
-proof Isa List__equiExtendLeft_Obligation_subtype0
+proof Isa equiExtendLeft_Obligation_subtype0
   by (auto simp: List__extendLeft_def List__repeat_length
                  length_append List__equiLong_def)
 end-proof
 
-proof Isa List__equiExtendLeft_Obligation_subtype2
+proof Isa equiExtendLeft_Obligation_subtype2
   by (auto simp: List__extendLeft_def List__repeat_length
                  length_append List__equiLong_def)
 end-proof
 
-proof Isa List__equiExtendLeft_subtype_constr
+proof Isa equiExtendLeft_subtype_constr
 proof (auto simp: Let_def)
  fix x y
  assume XY: "List__equiExtendLeft dom_equiExtendLeft = (x,y)"
@@ -2502,17 +2502,17 @@ proof (auto simp: Let_def)
 qed
 end-proof
 
-proof Isa List__equiExtendRight_Obligation_subtype0
+proof Isa equiExtendRight_Obligation_subtype0
   by (auto simp: List__extendRight_def List__repeat_length
                  length_append List__equiLong_def)
 end-proof
 
-proof Isa List__equiExtendRight_Obligation_subtype2
+proof Isa equiExtendRight_Obligation_subtype2
   by (auto simp: List__extendRight_def List__repeat_length
                  length_append List__equiLong_def)
 end-proof
 
-proof Isa List__equiExtendRight_subtype_constr
+proof Isa equiExtendRight_subtype_constr
 proof (auto simp: Let_def)
  fix x y
  assume XY: "List__equiExtendRight dom_equiExtendRight = (x,y)"
@@ -2546,11 +2546,11 @@ op [a] rotateRight (l: List1 a, n:Nat) : List a =
   let n = n mod (length l) in  % rotating by length(l) has no effect
   suffix (l, n) ++ removeSuffix (l, n)
 
-proof Isa List__rotateLeft_Obligation_subtype
+proof Isa rotateLeft_Obligation_subtype
   by (auto simp: Nat__posNat_p_def)
 end-proof
 
-proof Isa List__rotateRight_Obligation_subtype
+proof Isa rotateRight_Obligation_subtype
   by (auto simp: Nat__posNat_p_def)
 end-proof
 
@@ -2558,7 +2558,7 @@ end-proof
 
 op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
 
-proof Isa List__flatten__def
+proof Isa flatten__def
   by (auto simp: concat_conv_foldl)
 end-proof
 
@@ -2573,11 +2573,11 @@ op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
      flatten ll = l &&
      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
 
-proof Isa List__unflattenL_Obligation_subtype
+proof Isa unflattenL_Obligation_subtype
   by (auto simp: List__equiLong_def)
 end-proof
 
-proof Isa List__unflattenL_Obligation_the
+proof Isa unflattenL_Obligation_the
 proof (induct lens arbitrary: l)
 case Nil
  hence MTL: "l = []" by auto
@@ -2664,7 +2664,7 @@ end-proof
 op [a] unflatten (l: List a, n:PosNat | n divides length l) : List (List a) =
   unflattenL (l, repeat n (length l div n))
 
-proof Isa List__unflatten_Obligation_subtype
+proof Isa unflatten_Obligation_subtype
 proof -
  have LEM: "\<And>m n. foldl' (\<lambda>(x,y). x + y) 0 (replicate m n) = m * n"
  proof -
@@ -2708,7 +2708,7 @@ op [a] noRepetitions? (l: List a) : Bool =
 
 type InjList a = (List a | noRepetitions?)
 
-proof Isa List__noRepetitions_p__def
+proof Isa noRepetitions_p__def
 proof (induct l)
  case Nil thus ?case by auto
 next
@@ -2817,7 +2817,7 @@ op [a] positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
     % POSs contains all and only indices of elements satisfying p:
     (fa(i:Nat) i in? POSs <=> i < length l && p (l @ i))
 
-proof Isa List__positionsSuchThat_Obligation_the
+proof Isa positionsSuchThat_Obligation_the
 proof (induct l)
  case Nil
  def POSs \<equiv> "[] :: nat list"
@@ -3299,7 +3299,7 @@ next
 qed
 end-proof
 
-proof Isa List__positionsSuchThat_subtype_constr
+proof Isa positionsSuchThat_subtype_constr
 proof (cases dom_positionsSuchThat)
  case (Pair l p)
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
@@ -3331,7 +3331,7 @@ op [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
 op [a] positionsOf (l: List a, x:a) : InjList Nat =
   positionsSuchThat (l, fn y:a -> y = x)
 
-proof Isa List__positionsOf_subtype_constr
+proof Isa positionsOf_subtype_constr
 proof (cases dom_positionsOf)
  case (Pair l x)
  thus ?thesis
@@ -3344,54 +3344,53 @@ end-proof
 op [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
   theElement (positionsOf (l, x))
 
-proof Isa List__positionOf_Obligation_subtype
+proof Isa positionOf_Obligation_subtype
 proof -
  assume "distinct l"
- assume "x_2 = List__positionsOf (l, x)"
- hence "x_2 = (THE POSs.
-                   distinct POSs \<and>
-                   List__increasingNats_p POSs \<and>
-                   (\<forall>i. i mem POSs = (i < length l \<and> l ! i = x)))"
+ hence "List__positionsOf (l, x) = (THE POSs.
+                   distinct POSs \_and
+                   List__increasingNats_p POSs \_and
+                   (\_foralli. i mem POSs = (i < length l \_and l ! i = x)))"
   by (auto simp: List__positionsOf_def List__positionsSuchThat_def)
  with List__positionsSuchThat_Obligation_the
-  have "distinct x_2 \<and>
-        List__increasingNats_p x_2 \<and>
-        (\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x))"
+  have "distinct (List__positionsOf (l, x)) \_and
+        List__increasingNats_p (List__positionsOf (l, x)) \_and
+        (\_foralli. i mem (List__positionsOf (l, x)) = (i < length l \_and l ! i = x))"
    by (rule eq_the_sat)
- hence D: "distinct x_2"
-   and I: "List__increasingNats_p x_2"
-   and M: "\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x)"
+ hence D: "distinct (List__positionsOf (l, x))"
+   and I: "List__increasingNats_p (List__positionsOf (l, x))"
+   and M: "\_foralli. i mem (List__positionsOf (l, x)) = (i < length l \_and l ! i = x)"
   by auto
  assume "x mem l"
- hence "\<exists>i < length l. l ! i = x"
+ hence "\_existsi < length l. l ! i = x"
   by (auto iff: mem_iff in_set_conv_nth)
  then obtain i where "i < length l" and "l ! i = x" by auto
- with M have "i mem x_2" by auto
- hence "\<exists>k < length x_2. x_2!k = i"
+ with M have "i mem (List__positionsOf (l, x))" by auto
+ hence "\_existsk < length (List__positionsOf (l, x)). (List__positionsOf (l, x))!k = i"
   by (auto iff: mem_iff in_set_conv_nth)
- then obtain k where "k < length x_2" and "x_2!k = i" by auto
- hence "length x_2 > 0" by auto
- have "length x_2 < 2"
+ then obtain k where "k < length (List__positionsOf (l, x))" and "(List__positionsOf (l, x))!k = i" by auto
+ hence "length (List__positionsOf (l, x)) > 0" by auto
+ have "length (List__positionsOf (l, x)) < 2"
  proof (rule ccontr)
-  assume "\<not> length x_2 < 2"
-  hence "length x_2 \<ge> 2" by auto
-  def k' \<equiv> "(if k = 0 then 1 else 0) :: nat"
-  hence "k' \<noteq> k" by auto
-  def i' \<equiv> "x_2!k'"
-  from k'_def `length x_2 \<ge> 2` have "k' < length x_2" by auto
-  with i'_def have "i' mem x_2" by (auto iff: mem_iff in_set_conv_nth)
+  assume "\_not length (List__positionsOf (l, x)) < 2"
+  hence "length (List__positionsOf (l, x)) \_ge 2" by auto
+  def k' \_equiv "(if k = 0 then 1 else 0) :: nat"
+  hence "k' \_noteq k" by auto
+  def i' \_equiv "(List__positionsOf (l, x))!k'"
+  from k'_def `length (List__positionsOf (l, x)) \_ge 2` have "k' < length (List__positionsOf (l, x))" by auto
+  with i'_def have "i' mem (List__positionsOf (l, x))" by (auto iff: mem_iff in_set_conv_nth)
   with M have "i' < length l" and "l ! i' = x" by auto
   from List__noRepetitions_p__def D
-       `k < length x_2` `k' < length x_2` `k' \<noteq> k`
-   have "x_2!k \<noteq> x_2!k'" by auto
-  with `x_2!k = i` i'_def have "i \<noteq> i'" by auto
+       `k < length (List__positionsOf (l, x))` `k' < length (List__positionsOf (l, x))` `k' \_noteq k`
+   have "(List__positionsOf (l, x))!k \_noteq (List__positionsOf (l, x))!k'" by auto
+  with `(List__positionsOf (l, x))!k = i` i'_def have "i \_noteq i'" by auto
   with List__noRepetitions_p__def
        `distinct l` `i < length l` `i' < length l`
-   have "l!i \<noteq> l!i'" by auto
+   have "l!i \_noteq l!i'" by auto
   with `l!i = x` `l!i' = x` show False by auto
  qed
- with `length x_2 > 0` have "length x_2 = 1" by arith
- thus "List__ofLength_p 1 x_2" by (auto simp: List__ofLength_p_def)
+ with `length (List__positionsOf (l, x)) > 0` have "length (List__positionsOf (l, x)) = 1" by arith
+ thus "List__ofLength_p 1 (List__positionsOf (l, x))" by (auto simp: List__ofLength_p_def)
 qed
 end-proof
 
@@ -3405,7 +3404,7 @@ op [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
 theorem empty_sublist is [a]
   fa (l:List a, i:Nat) i <= length l => sublistAt? ([], i, l)
 
-proof Isa List__empty_sublist
+proof Isa empty_sublist
 proof -
  assume "i \<le> length l"
  def pre \<equiv> "take i l" and post \<equiv> "drop i l"
@@ -3421,7 +3420,7 @@ theorem sublist_position_upper is [a]
   fa (subl:List a, supl:List a, i:Nat)
     sublistAt? (subl, i, supl) => i <= length supl - length subl
 
-proof Isa List__sublist_position_upper
+proof Isa sublist_position_upper
 proof -
  assume "List__sublistAt_p(subl, i, supl)"
  hence "\<exists>pre post. pre @ subl @ post = supl \<and> length pre = i"
@@ -3441,7 +3440,7 @@ op [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
     % POSs contains all and only indices of occurrence of subl in supl:
     (fa(i:Nat) i in? POSs <=> sublistAt? (subl, i, supl))
 
-proof Isa List__positionsOfSublist_Obligation_the
+proof Isa positionsOfSublist_Obligation_the
 proof (induct supl)
  case Nil
  def POSs \<equiv> "(if subl = [] then [0] else []) :: nat list"
@@ -4029,7 +4028,7 @@ next
 qed
 end-proof
 
-proof Isa List__positionsOfSublist_subtype_constr
+proof Isa positionsOfSublist_subtype_constr
 proof (cases dom_positionsOfSublist)
  case (Pair subl supl)
  def POSs \<equiv> "List__positionsOfSublist (subl, supl)"
@@ -4065,21 +4064,7 @@ op [a] rightmostPositionOfSublistAndPreceding
   let i = last POSs in
   Some (i, prefix (supl, i))
 
-proof Isa List__leftmostPositionOfSublistAndFollowing_Obligation_subtype
-proof -
- assume "\<not> (null POSs)"
- thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-qed
-end-proof
-
-proof Isa List__rightmostPositionOfSublistAndPreceding_Obligation_subtype
-proof -
- assume "\<not> (null POSs)"
- thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-qed
-end-proof
-
-proof Isa List__leftmostPositionOfSublistAndFollowing_Obligation_subtype1
+proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype1
 proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
@@ -4105,7 +4090,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0
+proof Isa rightmostPositionOfSublistAndPreceding_Obligation_subtype0
 proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
@@ -4152,7 +4137,7 @@ op [a] splitAtRightmost (p: a -> Bool) (l: List a)
   | Some i -> Some (splitAt (l, i))
   | None   -> None
 
-proof Isa List__splitAtLeftmost_Obligation_subtype
+proof Isa splitAtLeftmost_Obligation_subtype
 proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__leftmostPositionSuchThat (l, p) = Some i"
@@ -4179,7 +4164,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__splitAtRightmost_Obligation_subtype
+proof Isa splitAtRightmost_Obligation_subtype
 proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__rightmostPositionSuchThat (l, p) = Some i"
@@ -4216,11 +4201,11 @@ op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   let lp = filter p l in
   if empty? lp then None else Some (last lp)
 
-proof Isa List__findLeftmost_Obligation_subtype
+proof Isa findLeftmost_Obligation_subtype
   by (auto simp: List__nonEmpty_p_def)
 end-proof
 
-proof Isa List__findRightmost_Obligation_subtype
+proof Isa findRightmost_Obligation_subtype
   by (auto simp: List__nonEmpty_p_def)
 end-proof
 
@@ -4239,7 +4224,7 @@ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
   | None   -> None
   | Some i -> Some (l @ i, removePrefix (l, i))
 
-proof Isa List__findLeftmostAndPreceding_Obligation_subtype
+proof Isa findLeftmostAndPreceding_Obligation_subtype
 proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__leftmostPositionSuchThat (l, p) = Some i"
@@ -4266,7 +4251,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__findLeftmostAndPreceding_Obligation_subtype0
+proof Isa findLeftmostAndPreceding_Obligation_subtype0
 proof -
  assume "List__leftmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
  with List__findLeftmostAndPreceding_Obligation_subtype
@@ -4275,7 +4260,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__findRightmostAndFollowing_Obligation_subtype
+proof Isa findRightmostAndFollowing_Obligation_subtype
 proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__rightmostPositionSuchThat (l, p) = Some i"
@@ -4302,7 +4287,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__findRightmostAndFollowing_Obligation_subtype0
+proof Isa findRightmostAndFollowing_Obligation_subtype0
 proof -
  assume "List__rightmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
  with List__findRightmostAndFollowing_Obligation_subtype
@@ -4334,7 +4319,7 @@ op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
 op [a] longestCommonSuffix (l1: List a, l2: List a) : List a =
   reverse (longestCommonPrefix (reverse l1, reverse l2))
 
-proof Isa List__longestCommonPrefix_Obligation_the
+proof Isa longestCommonPrefix_Obligation_the
 proof -
  def P \<equiv> "\<lambda>len::nat.
           len \<le> length l1 \<and>
@@ -4429,7 +4414,7 @@ proof -
 qed
 end-proof
 
-proof Isa List__longestCommonPrefix_Obligation_subtype1
+proof Isa longestCommonPrefix_Obligation_subtype1
 proof -
  def len \<equiv> "THE len. len \<le> length l1 \<and>
                      len \<le> length l2 \<and>
@@ -4467,15 +4452,15 @@ op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   the (r: List a) r equiLong l &&
                   (fa(i:Nat) i < length l => l @ i = r @ (prm@i))
 
-proof Isa List__permute_Obligation_subtype
+proof Isa permute_Obligation_subtype
  by (auto simp: List__equiLong_def)
 end-proof
 
-proof Isa List__permute_Obligation_subtype0
+proof Isa permute_Obligation_subtype0
  by (auto simp: List__permutation_p_def List__equiLong_def mem_iff nth_mem)
 end-proof
 
-proof Isa List__permute_Obligation_the
+proof Isa permute_Obligation_the
 proof -
  assume PERM: "List__permutation_p prm"
  assume "l equiLong prm"
@@ -4560,7 +4545,7 @@ end-proof
 op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
 
-proof Isa List__permutationOf_Obligation_subtype
+proof Isa permutationOf_Obligation_subtype
  by (auto simp: List__equiLong_def)
 end-proof
 
