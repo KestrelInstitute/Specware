@@ -156,10 +156,10 @@ end-proof
 op Nat.natToString (x:Nat) : String =
   if x < 10 then digitToString x
   else natToString (x div 10) ++ digitToString (x mod 10)
-proof Isa natToString_Obligation_subtype0
+proof Isa natToString_Obligation_subtype
  apply (simp add: Nat__posNat_p_def )
 end-proof
-proof Isa natToString_Obligation_subtype1
+proof Isa natToString_Obligation_subtype0
  apply (simp add: Nat__posNat_p_def )
 end-proof
 

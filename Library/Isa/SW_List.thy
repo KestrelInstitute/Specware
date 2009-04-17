@@ -2572,8 +2572,7 @@ defs List__shiftRight_def:
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
           List__removeSuffix((replicate n x) @ l, n))"
 theorem List__rotateLeft_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; x \<ge> 0; x = int (length l)\<rbrakk> \<Longrightarrow> 
-   Nat__posNat_p (nat x)"
+  "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
   by (auto simp: Nat__posNat_p_def)
 theorem List__rotateLeft_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
@@ -2593,8 +2592,7 @@ defs List__rotateLeft_def:
           in 
           (drop n l) @ (take n l))"
 theorem List__rotateRight_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; x \<ge> 0; x = int (length l)\<rbrakk> \<Longrightarrow> 
-   Nat__posNat_p (nat x)"
+  "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
   by (auto simp: Nat__posNat_p_def)
 theorem List__rotateRight_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
@@ -3396,9 +3394,7 @@ theorem List__leftmostPositionSuchThat_Obligation_subtype:
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
     \<not> (null POSs); 
-    distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs"
+    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 consts List__leftmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__leftmostPositionSuchThat_def: 
@@ -3411,9 +3407,7 @@ theorem List__rightmostPositionSuchThat_Obligation_subtype:
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
     \<not> (null POSs); 
-    distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs"
+    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 consts List__rightmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__rightmostPositionSuchThat_def: 
@@ -3437,56 +3431,54 @@ qed
 theorem List__positionOf_Obligation_subtype: 
   "\<lbrakk>distinct (l::'a list); 
     x mem l; 
-    distinct x_2; 
-    List__List_P (\<lambda> (i::nat). i \<ge> 0) x_2; 
-    x_2 = List__positionsOf(l, x)\<rbrakk> \<Longrightarrow> List__ofLength_p 1 x_2"
+    distinct (List__positionsOf(l, x))\<rbrakk> \<Longrightarrow> 
+   List__ofLength_p 1 (List__positionsOf(l, x))"
   proof -
  assume "distinct l"
- assume "x_2 = List__positionsOf (l, x)"
- hence "x_2 = (THE POSs.
+ hence "List__positionsOf (l, x) = (THE POSs.
                    distinct POSs \<and>
                    List__increasingNats_p POSs \<and>
                    (\<forall>i. i mem POSs = (i < length l \<and> l ! i = x)))"
   by (auto simp: List__positionsOf_def List__positionsSuchThat_def)
  with List__positionsSuchThat_Obligation_the
-  have "distinct x_2 \<and>
-        List__increasingNats_p x_2 \<and>
-        (\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x))"
+  have "distinct (List__positionsOf (l, x)) \<and>
+        List__increasingNats_p (List__positionsOf (l, x)) \<and>
+        (\<forall>i. i mem (List__positionsOf (l, x)) = (i < length l \<and> l ! i = x))"
    by (rule eq_the_sat)
- hence D: "distinct x_2"
-   and I: "List__increasingNats_p x_2"
-   and M: "\<forall>i. i mem x_2 = (i < length l \<and> l ! i = x)"
+ hence D: "distinct (List__positionsOf (l, x))"
+   and I: "List__increasingNats_p (List__positionsOf (l, x))"
+   and M: "\<forall>i. i mem (List__positionsOf (l, x)) = (i < length l \<and> l ! i = x)"
   by auto
  assume "x mem l"
  hence "\<exists>i < length l. l ! i = x"
   by (auto iff: mem_iff in_set_conv_nth)
  then obtain i where "i < length l" and "l ! i = x" by auto
- with M have "i mem x_2" by auto
- hence "\<exists>k < length x_2. x_2!k = i"
+ with M have "i mem (List__positionsOf (l, x))" by auto
+ hence "\<exists>k < length (List__positionsOf (l, x)). (List__positionsOf (l, x))!k = i"
   by (auto iff: mem_iff in_set_conv_nth)
- then obtain k where "k < length x_2" and "x_2!k = i" by auto
- hence "length x_2 > 0" by auto
- have "length x_2 < 2"
+ then obtain k where "k < length (List__positionsOf (l, x))" and "(List__positionsOf (l, x))!k = i" by auto
+ hence "length (List__positionsOf (l, x)) > 0" by auto
+ have "length (List__positionsOf (l, x)) < 2"
  proof (rule ccontr)
-  assume "\<not> length x_2 < 2"
-  hence "length x_2 \<ge> 2" by auto
+  assume "\<not> length (List__positionsOf (l, x)) < 2"
+  hence "length (List__positionsOf (l, x)) \<ge> 2" by auto
   def k' \<equiv> "(if k = 0 then 1 else 0) :: nat"
   hence "k' \<noteq> k" by auto
-  def i' \<equiv> "x_2!k'"
-  from k'_def `length x_2 \<ge> 2` have "k' < length x_2" by auto
-  with i'_def have "i' mem x_2" by (auto iff: mem_iff in_set_conv_nth)
+  def i' \<equiv> "(List__positionsOf (l, x))!k'"
+  from k'_def `length (List__positionsOf (l, x)) \<ge> 2` have "k' < length (List__positionsOf (l, x))" by auto
+  with i'_def have "i' mem (List__positionsOf (l, x))" by (auto iff: mem_iff in_set_conv_nth)
   with M have "i' < length l" and "l ! i' = x" by auto
   from List__noRepetitions_p__def D
-       `k < length x_2` `k' < length x_2` `k' \<noteq> k`
-   have "x_2!k \<noteq> x_2!k'" by auto
-  with `x_2!k = i` i'_def have "i \<noteq> i'" by auto
+       `k < length (List__positionsOf (l, x))` `k' < length (List__positionsOf (l, x))` `k' \<noteq> k`
+   have "(List__positionsOf (l, x))!k \<noteq> (List__positionsOf (l, x))!k'" by auto
+  with `(List__positionsOf (l, x))!k = i` i'_def have "i \<noteq> i'" by auto
   with List__noRepetitions_p__def
        `distinct l` `i < length l` `i' < length l`
    have "l!i \<noteq> l!i'" by auto
   with `l!i = x` `l!i' = x` show False by auto
  qed
- with `length x_2 > 0` have "length x_2 = 1" by arith
- thus "List__ofLength_p 1 x_2" by (auto simp: List__ofLength_p_def)
+ with `length (List__positionsOf (l, x)) > 0` have "length (List__positionsOf (l, x)) = 1" by arith
+ thus "List__ofLength_p 1 (List__positionsOf (l, x))" by (auto simp: List__ofLength_p_def)
 qed
 consts List__positionOf :: "'a List__InjList \<times> 'a \<Rightarrow> nat"
 defs List__positionOf_def: 
@@ -4140,13 +4132,8 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype:
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist((subl::'a list), (supl::'a list)) = POSs; 
     \<not> (null POSs); 
-    distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs"
-  proof -
- assume "\<not> (null POSs)"
- thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-qed
+    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+  by auto
 theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist(subl, (supl::'a list)) = POSs; 
@@ -4199,13 +4186,8 @@ theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype:
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist((subl::'a list), (supl::'a list)) = POSs; 
     \<not> (null POSs); 
-    distinct POSs; 
-    List__List_P (\<lambda> (i_2::nat). i_2 \<ge> 0) POSs\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p POSs"
-  proof -
- assume "\<not> (null POSs)"
- thus "List__nonEmpty_p POSs" by (auto simp: List__nonEmpty_p_def)
-qed
+    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+  by auto
 theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist((subl::'a list), supl) 
@@ -4834,4 +4816,4 @@ fun List__app :: "('a \<Rightarrow> unit) \<Rightarrow> 'a list \<Rightarrow> un
 where
    "List__app f [] = ()"
  | "List__app f (Cons hd_v tl_v) = List__app f tl_v"
-end 
+end

@@ -161,20 +161,15 @@ lemma Nat__digitToString_injective [simp]:
 done
 
 theorem Nat__natToString_Obligation_subtype: 
-  "True"
-  by auto
+  "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
+   apply (simp add: Nat__posNat_p_def )
+  done
 theorem Nat__natToString_Obligation_subtype0: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
    apply (simp add: Nat__posNat_p_def )
   done
 theorem Nat__natToString_Obligation_subtype1: 
-  "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
-   apply (simp add: Nat__posNat_p_def )
-  done
-theorem Nat__natToString_Obligation_subtype2: 
-  "\<lbrakk>\<not> ((x::nat) < 10); 
-    (x_3::int) \<ge> 0; 
-    x_3 = int (x mod 10)\<rbrakk> \<Longrightarrow> x_3 < 10"
+  "\<lbrakk>\<not> ((x::nat) < 10); x mod 10 \<ge> 0\<rbrakk> \<Longrightarrow> x mod 10 < 10"
   by auto
 consts Nat__natToString :: "nat \<Rightarrow> string"
 recdef Nat__natToString "measure size"
