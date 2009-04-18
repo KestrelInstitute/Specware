@@ -1401,6 +1401,9 @@ IsaTermPrinter qualifying spec
       (lhs,rhs)
     else (lhs,rhs)
 
+  %% Ops that are not polymorphic in Specware but are mapped to polymorphic ops in Isabelle
+  op isabelleOverloadedOps: List String = ["**"]
+
   op filterConstrainedVars(c: Context, t: MS.Term, vs: List Var): List Var =
     let def removeArgs(vs,args) =
           let v_args = mapPartial (\_lambda t \_rightarrow
@@ -1411,7 +1414,7 @@ IsaTermPrinter qualifying spec
                           args
           in diff(vs,v_args)
         def filterKnown(vs,id,f,args) =
-          if id = "natural?"
+          if id = "natural?" \_or id in? isabelleOverloadedOps 
              \_or exists (\_lambda ci \_rightarrow member(id,ci.overloadedOps))
                  c.coercions
            then vs
