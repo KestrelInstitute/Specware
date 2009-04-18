@@ -405,9 +405,10 @@ SpecNorm qualifying spec
     maybePiTerm(tvs, SortedTerm(result,ty,termAnn tm)) 
 
   op regularizeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
+    % ty is expected type, rm_ty is provided types
     % let _ = writeLine("Regularize: "^printTerm t^": "^printSort ty^" to "^printSort rm_ty) in
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
-      | (Some(dom,rng), Some(rm_dom, _)) ->
+      | (Some(dom, rng), Some(rm_dom, rm_rng)) ->
         if embed? Var t && equalType?(dom, rm_dom) then t
         else
         let rfun = if embed? Boolean (stripSubsorts(spc, rng))
@@ -418,6 +419,8 @@ SpecNorm qualifying spec
         in
         let def mkRFun(pred, t) =
               let pred = simplify spc pred in
+              %% We are only coercing domain so pass expectation for range down
+              let exp_ty = if equalType?(rng, rm_rng) then rm_ty else mkArrow(rm_dom, rng) in
               let reg_t =
                   case (pred, t) of
                     | (Lambda([(pred_pat, Fun(Bool true,_,_), pred_bod)],_),
@@ -425,21 +428,38 @@ SpecNorm qualifying spec
                         | rfun = "RFun" ->
                       (case matchPatterns(fn_pat, pred_pat) of
                          | Some sb ->
-                           mkLambda(fn_pat, Utilities.mkIfThenElse(substitute(pred_bod, sb), fn_bod, mkArbitrary ty))
+                           mkLambda(fn_pat, Utilities.mkIfThenElse(substitute(pred_bod, sb),
+                                                                   fn_bod, mkArbitrary ty))
+                         | None ->
+                       case patternToTerm fn_pat of
+                         | Some var_tm ->
+                           mkLambda(fn_pat, Utilities.mkIfThenElse(simplifiedApply(pred, var_tm, spc),
+                                                                   fn_bod, mkArbitrary ty))
                          | None ->
                            mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
                                                 mkArrow(inferType(spc, pred),
-                                                        mkArrow(rm_ty, ty))),
+                                                        mkArrow(exp_ty, ty))),
+                                           pred),
+                                   t))
+                    | (_, Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_)) ->
+                      (case patternToTerm fn_pat of
+                         | Some var_tm ->
+                           mkLambda(fn_pat, Utilities.mkIfThenElse(simplifiedApply(pred, var_tm, spc),
+                                                                   fn_bod, mkArbitrary ty))
+                         | None ->
+                           mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
+                                                mkArrow(inferType(spc, pred),
+                                                        mkArrow(exp_ty, ty))),
                                            pred),
                                    t))
                     | _ ->
                       mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
                                            mkArrow(inferType(spc, pred),
-                                                   mkArrow(rm_ty, ty))),
+                                                   mkArrow(exp_ty, ty))),
                                       pred),
                               t)
               in
-              %let _ = writeLine("Regularize: "^printTerm t^" to\n"^printTerm reg_t) in
+              % let _ = writeLine("Regularize: "^printTerm t^" to\n"^printTermWithSorts reg_t) in
               reg_t
         in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
