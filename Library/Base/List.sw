@@ -2546,14 +2546,6 @@ op [a] rotateRight (l: List1 a, n:Nat) : List a =
   let n = n mod (length l) in  % rotating by length(l) has no effect
   suffix (l, n) ++ removeSuffix (l, n)
 
-proof Isa rotateLeft_Obligation_subtype
-  by (auto simp: Nat__posNat_p_def)
-end-proof
-
-proof Isa rotateRight_Obligation_subtype
-  by (auto simp: Nat__posNat_p_def)
-end-proof
-
 % concatenate all the lists in a list, in order:
 
 op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
