@@ -450,6 +450,7 @@ IsaTermPrinter qualifying spec
                   overloadedConstructors = overloadedConstructors spc}
     in
     let spc = addSubtypePredicateParams spc coercions in
+    % let _ = printSpecWithSortsToTerminal spc in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
@@ -460,17 +461,17 @@ IsaTermPrinter qualifying spec
     let spc = removeSubTypes spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
+    % let _ = printSpecWithSortsToTerminal spc in
     %% Second round of simplification could be avoided with smarter construction
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
     in
-    % let _ = toScreen("2:\n"^printSpec spc^"\n") in
     %let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
 %                then simplifyTopSpec spc
 %                else spc
 %    in
-%     let _ = toScreen("2:\n"^printSpec spc^"\n") in
+    % let _ = toScreen("2:\n"^printSpec spc^"\n") in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
@@ -757,7 +758,7 @@ IsaTermPrinter qualifying spec
    result
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
-                                          "recdef", "primrec", "consts"]
+                                          "recdef", "primrec", "consts", "class", "primitive"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not"]
 
@@ -773,6 +774,11 @@ IsaTermPrinter qualifying spec
      | Qualified(qual, nm) | qual = UnQualified && member(nm, isabelleReservedWords) \_rightarrow
        prConcat [prString "\"", ppQualifiedId qid, prString "\""]
      | _ \_rightarrow  ppQualifiedId qid
+
+ op ppToplevelName(nm: String): Pretty =
+   if member(nm, isabelleReservedWords)
+     then prConcat [prString "\"", prString nm, prString "\""]
+     else prString nm
    
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
@@ -796,7 +802,7 @@ IsaTermPrinter qualifying spec
 		  ppIdInfo aliases,
 		  prString " = "]] ++
 		(map (\_lambda (fldname, fldty) \_rightarrow
-		      [prString fldname, prString " :: ", ppType c Top false fldty])
+		      [ppToplevelName fldname, prString " :: ", ppType c Top false fldty])
 		 fields))
 	   | _ \_rightarrow
 	     prBreakCat 2
