@@ -56,12 +56,16 @@ op compare (s1:String, s2:String) : Comparison =
 % linear ordering relations:
 
 op <  (s1:String, s2:String) infixl 20 : Bool = (compare(s1,s2) = Less)
+proof Isa -> <_s end-proof   % avoid overloading
 
 op <= (s1:String, s2:String) infixl 20 : Bool = (s1 < s2 || s1 = s2)
+proof Isa -> <=_s end-proof
 
 op >  (s1:String, s2:String) infixl 20 : Bool = (s2 <  s1)
+proof Isa -> >_s end-proof
 
 op >= (s1:String, s2:String) infixl 20 : Bool = (s2 <= s1)
+proof Isa -> >=_s end-proof
 
 % string consisting of just the newline character:
 
@@ -156,12 +160,6 @@ end-proof
 op Nat.natToString (x:Nat) : String =
   if x < 10 then digitToString x
   else natToString (x div 10) ++ digitToString (x mod 10)
-proof Isa natToString_Obligation_subtype
- apply (simp add: Nat__posNat_p_def )
-end-proof
-proof Isa natToString_Obligation_subtype0
- apply (simp add: Nat__posNat_p_def )
-end-proof
 
 % --------------------------------------------------------------------------------
 proof Isa -verbatim
