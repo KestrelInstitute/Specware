@@ -334,22 +334,22 @@ MS qualifying spec
   op mkUnaryBooleanFn : Fun * Position -> Term
  def mkUnaryBooleanFn (f,pos) =
    %let pos = Internal "mkUnaryBooleanFn" in
-   let pattern = VarPat (("x", Boolean pos), pos) in
+   let pattern = VarPat (("xb", Boolean pos), pos) in
    let f       = Fun (f, unaryBoolSort, pos) in
-   let arg     = Var (("x", Boolean pos), pos) in
+   let arg     = Var (("xb", Boolean pos), pos) in
    let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
    Lambda ([branch], pos)
 
  op  mkBinaryFn : Fun * Sort * Sort * Sort * Position -> Term
  def mkBinaryFn (f,t1,t2,t3,pos) =
    %let pos = Internal "mkBinaryFn" in
-   let pattern = RecordPat ([("1", VarPat(("x", t1), pos)),
-			     ("2", VarPat(("y", t2), pos))],
+   let pattern = RecordPat ([("1", VarPat(("xxx", t1), pos)),
+			     ("2", VarPat(("yyy", t2), pos))],
 			    pos)
    in
    let f       = Fun (f, Arrow(mkProduct[t1,t2],t3,pos), pos) in
-   let arg     = Record ([("1", Var(("x", t1), pos)),
-			  ("2", Var(("y", t2), pos))],
+   let arg     = Record ([("1", Var(("xxx", t1), pos)),
+			  ("2", Var(("yyy", t2), pos))],
 			 pos)
    in
    let branch  = (pattern, mkTrue(), ApplyN([f,arg],pos)) in
