@@ -77,11 +77,11 @@ spec
         let n_tm = liftCoercion(n_tm,rm_ty,ty) in
 	if delayCoercion? \_or overloadedTerm? n_tm then n_tm
 	else
+        % let _ = writeLine(printTerm tm^": "^printSort rm_ty ^"\n-> " ^ printSort ty^"\n") in
 	case needsCoercion?(ty,rm_ty,coercions,spc) of
           | Some(toSuper?, tb) \_rightarrow
             if toSuper? then coerceToSuper(n_tm,tb) else coerceToSub(n_tm,tb)
           | None \_rightarrow
-        % let _ = writeLine(printTerm tm^": "^printSort rm_ty ^"\n-> " ^ printSort ty^"\n") in
         if simpleTerm n_tm then         % Var or Op
           case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
             | (Some(dom,rng), Some(rm_dom, rm_rng))
@@ -149,10 +149,14 @@ spec
 	  | IfThenElse (t1, t2, t3, a) ->
 	    IfThenElse (mapTerm(t1,boolSort), mapTerm(t2,ty), mapTerm(t3,ty), a)
 	  | Seq (terms, a) ->
-	    Seq (terms, a)		% Fix !!!
+            let pre_trms = butLast terms in
+            let lst_trm  =    last terms in 
+	    Seq (map (fn trm -> mapTerm(trm, mkProduct [])) pre_trms
+                   ++ [mapTerm(lst_trm, ty)], a)
 	  | SortedTerm (trm, srt, a) ->
 	    SortedTerm (mapTerm(trm,srt), srt, a)
 	  | _ \_rightarrow tm
+
       def liftCoercion (tm,ty,target_ty) =
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort ty ^" -> "^ printSort target_ty ^"\n ") in
         case tm of
