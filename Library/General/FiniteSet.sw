@@ -70,6 +70,7 @@ end-proof
 
 op [a] -- (s1: FSet a, s2: FSet a) infixl 25 : FSet a =
   toFSet (fromFSet s1 -- fromFSet s2)
+proof Isa -> --_fs end-proof
 
 proof Isa FSet__e_dsh_dsh_Obligation_subtype
  sorry
@@ -121,6 +122,7 @@ op [a] single? (s: FSet a) : Bool = single? (fromFSet s)
 
 op [a] onlyMemberOf (x:a, s: FSet a) infixl 20 : Bool =
   x onlyMemberOf (fromFSet s)
+proof Isa -> onlyMemberOf_fs end-proof
 
 type SingletonFSet a = (FSet a | single?)
 

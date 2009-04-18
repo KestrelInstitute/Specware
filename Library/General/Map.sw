@@ -13,13 +13,16 @@ op [a,b] undefinedAt (m: Map(a,b), x:a) infixl 20 : Bool = x nin? domain m
 % map application (op @@ is a totalization of @):
 
 op [a,b] @ (m: Map(a,b), x:a | m definedAt x) infixl 30 : b = the(y:b) m(x,y)
+proof Isa -> @_m end-proof              % Avoid overloading
 
 op [a,b] @@ (m: Map(a,b), x:a) infixl 30 : Option b =
   if m definedAt x then Some (m @ x) else None
+proof Isa -> @@_m end-proof
 
 proof Isa MapAC__e_at__stp_Obligation_the
  sorry
 end-proof
+proof Isa -> @@_m end-proof
 
 proof Isa MapAC__e_at_Obligation_the
  sorry
@@ -74,6 +77,7 @@ end-proof
 
 op [a,b] -- (m: Map(a,b), xS: Set a) infixl 25 : Map(a,b) =
   m restrictDomain (~~ xS)
+proof Isa -> --_m end-proof
 
 op [a,b] - (m: Map(a,b), x:a) infixl 25 : Map(a,b) = m -- single x
 proof Isa -> mless [simp] end-proof

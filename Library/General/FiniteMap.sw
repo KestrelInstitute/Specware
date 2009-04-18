@@ -56,9 +56,11 @@ end-proof
 
 op [a,b] definedAt (m: FMap(a,b), x:a) infixl 20 : Bool =
   (fromFMap m) definedAt x
+proof Isa -> definedAt_fm end-proof
 
 op [a,b] undefinedAt (m: FMap(a,b), x:a) infixl 20 : Bool =
   (fromFMap m) undefinedAt x
+proof Isa -> undefinedAt_fm end-proof
 
 op [a,b] @ (m: FMap(a,b), x:a | m definedAt x) infixl 30 : b =
   (fromFMap m) @ x
@@ -69,6 +71,7 @@ proof Isa FMap__e_at_Obligation_subtype0
 end-proof
 
 op [a,b] @@ (m: FMap(a,b), x:a) infixl 30 : Option b = (fromFMap m) @@ x
+proof Isa -> @@_fm end-proof
 
 op [a,b] applyi (m: FMap(a,b)) (y:b) : FSet a =
   toFSet (applyi (fromFMap m) y)
@@ -107,6 +110,7 @@ end-proof
 
 op [a,b,c] :> (m1: FMap(a,b), m2: FMap(b,c)) infixl 24 : FMap(a,c) =
   toFMap (fromFMap m1 :> fromFMap m2)
+proof Isa -> :>_fm end-proof
 
 proof Isa FMap__e_cl_gt__stp_Obligation_subtype1
  sorry
@@ -159,6 +163,7 @@ type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
 
 op [a,b] <<< (m1: FMap(a,b), m2: FMap(a,b)) infixl 25 : FMap(a,b) =
   toFMap (fromFMap m1 <<< fromFMap m2)
+proof Isa -> <<<_fm end-proof
 
 proof Isa FMap__e_lt_lt_lt__stp_Obligation_subtype1
  sorry
@@ -200,6 +205,7 @@ op [a,b] agree? (m1: FMap(a,b), m2: FMap(a,b)) : Bool =
 
 op [a,b] /\ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 25
             : FMap(a,b) = toFMap (fromFMap m1 /\ fromFMap m2)
+proof Isa -> /\_fm end-proof
 
 proof Isa FMap__e_fsl_bsl_Obligation_subtype
  sorry
@@ -207,6 +213,7 @@ end-proof
 
 op [a,b] \/ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 24
             : FMap(a,b) = toFMap (fromFMap m1 \/ fromFMap m2)
+proof Isa -> \/_fm end-proof
 
 proof Isa FMap__e_bsl_fsl_Obligation_subtype
  sorry
@@ -230,6 +237,7 @@ end-proof
 
 op [a,b] restrictDomain (m: FMap(a,b), p: a -> Bool) infixl 25
                         : FMap(a,b) = toFMap (fromFMap m restrictDomain p)
+proof Isa -> restrictDomain_fm end-proof
 
 proof Isa FMap__restrictDomain_Obligation_subtype
  sorry
@@ -237,6 +245,7 @@ end-proof
 
 op [a,b] restrictRange (m: FMap(a,b), p: b -> Bool) infixl 25
                        : FMap(a,b) = toFMap (fromFMap m restrictRange p)
+proof Isa -> restrictRange_fm end-proof
 
 proof Isa FMap__restrictRange_Obligation_subtype
  sorry

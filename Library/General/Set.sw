@@ -252,9 +252,6 @@ proof Isa induction__stp_Obligation_subtype
   by (simp add: Set__finite_p__stp_def)
 end-proof
 proof Isa induction__stp_Obligation_subtype0
-  apply(rule conjI)
-  prefer 2
-  apply(erule ssubst, assumption)
   apply(erule ssubst)
   by (rule Set__finite_insert__stp)
 end-proof
@@ -590,9 +587,6 @@ by (simp add: Set__finite_p__stp_def)
 end-proof
 
 proof Isa size__stp_Obligation_subtype0
-apply(rule conjI)
-prefer 2
-apply(erule ssubst, assumption)
 by (auto simp only: Set__finite_insert__stp)
 end-proof
 
@@ -717,6 +711,7 @@ type UncountableSet a = (Set a | uncountable?)
 
 op [a] isMinIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s <= s1)
+proof Isa -> isMinIn_s end-proof
 
 op [a] hasMin? (ss: Set (Set a)) : Bool = (ex(s) s isMinIn ss)
 
@@ -729,11 +724,12 @@ proof Isa Set__min__stp_Obligation_the
 end-proof
 
 proof Isa  Set__min_Obligation_the
-  apply(auto simp add: Set__hasMin_p_def Set__isMinIn_def)
+  apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
 end-proof
 
 op [a] isMaxIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s >= s1)
+proof Isa -> isMaxIn_s end-proof
 
 op [a] hasMax? (ss: Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
 
@@ -746,7 +742,7 @@ proof Isa Set__max__stp_Obligation_the
 end-proof
 
 proof Isa  Set__max_Obligation_the
-  apply(auto simp add: Set__hasMax_p_def Set__isMaxIn_def)
+  apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)
 end-proof
 
 % mapping to Isabelle:
