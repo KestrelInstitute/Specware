@@ -67,12 +67,12 @@ theorem Order__orderSubsumption:
 theorem Order__strict__stp_Obligation_subtype: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
     EndoRelation__irreflexive_p__stp P__a r; 
-    \<forall>(x::('a \<times> 'a) set). 
-      x = EndoRelation__reflexiveClosure__stp P__a r 
-        \<longrightarrow> EndoRelation__reflexive_p__stp P__a x 
+    \<forall>(xss::('a \<times> 'a) set). 
+      xss = EndoRelation__reflexiveClosure__stp P__a r 
+        \<longrightarrow> EndoRelation__reflexive_p__stp P__a xss 
               \<and> Set_P
-                   (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) x\<rbrakk> \<Longrightarrow> 
-   Set_P (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1)
+                   (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1) xss\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1)
       (EndoRelation__reflexiveClosure__stp P__a r)"
   by auto
 consts Order__strict__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 

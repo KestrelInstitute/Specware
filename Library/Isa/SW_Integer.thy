@@ -230,7 +230,7 @@ theorem Integer__induction_naturals:
   apply(rule nat_induct, auto)
   done
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
-defs Nat__posNat_p_def: "Nat__posNat_p n \<equiv> (n > 0)"
+defs Nat__posNat_p_def [simp]: "Nat__posNat_p n \<equiv> (n > 0)"
 types Nat__PosNat = "nat"
 theorem Nat__succ_Obligation_subtype: 
   "succ (int n) \<ge> 0"

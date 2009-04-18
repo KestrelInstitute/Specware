@@ -2573,7 +2573,7 @@ defs List__shiftRight_def:
           List__removeSuffix((replicate n x) @ l, n))"
 theorem List__rotateLeft_Obligation_subtype: 
   "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
-  by (auto simp: Nat__posNat_p_def)
+  by auto
 theorem List__rotateLeft_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
     (n::nat) mod length l = (n_1::nat); 
@@ -2593,7 +2593,7 @@ defs List__rotateLeft_def:
           (drop n l) @ (take n l))"
 theorem List__rotateRight_Obligation_subtype: 
   "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
-  by (auto simp: Nat__posNat_p_def)
+  by auto
 theorem List__rotateRight_Obligation_subtype0: 
   "\<lbrakk>(l::'a list) \<noteq> []; 
     (n::nat) mod length l = (n_1::nat); 

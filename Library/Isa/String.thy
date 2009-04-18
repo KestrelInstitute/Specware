@@ -52,17 +52,17 @@ defs String__compare_def:
   "String__compare
      \<equiv> (\<lambda> ((s1::string), (s2::string)). 
           List__compare Char__compare(id s1, id s2))"
-consts String__e_lt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<" 60)
-defs String__e_lt_def: 
-  "(s1 < s2) \<equiv> (String__compare(s1, s2) = Less)"
-consts String__e_lt_eq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<=" 60)
-defs String__e_lt_eq_def: 
-  "((s1::string) <= (s2::string)) \<equiv> (s1 < s2 \<or> s1 = s2)"
-consts String__e_gt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">" 60)
-defs String__e_gt_def: "((s1::string) > (s2::string)) \<equiv> (s2 < s1)"
-consts String__e_gt_eq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">=" 60)
-defs String__e_gt_eq_def: 
-  "((s1::string) >= (s2::string)) \<equiv> (s2 <= s1)"
+consts e_lt_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<'_s" 60)
+defs e_lt_s_def: 
+  "(s1 <_s s2) \<equiv> (String__compare(s1, s2) = Less)"
+consts e_lt_eq_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<='_s" 60)
+defs e_lt_eq_s_def: 
+  "((s1::string) <=_s (s2::string)) \<equiv> (s1 <_s s2 \<or> s1 = s2)"
+consts e_gt_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">'_s" 60)
+defs e_gt_s_def: "((s1::string) >_s (s2::string)) \<equiv> (s2 <_s s1)"
+consts e_gt_eq_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">='_s" 60)
+defs e_gt_eq_s_def: 
+  "((s1::string) >=_s (s2::string)) \<equiv> (s2 <=_s s1)"
 consts String__newline :: "string"
 defs String__newline_def: "String__newline \<equiv> ''
 ''"
@@ -162,12 +162,10 @@ done
 
 theorem Nat__natToString_Obligation_subtype: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
-   apply (simp add: Nat__posNat_p_def )
-  done
+  by auto
 theorem Nat__natToString_Obligation_subtype0: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
-   apply (simp add: Nat__posNat_p_def )
-  done
+  by auto
 theorem Nat__natToString_Obligation_subtype1: 
   "\<lbrakk>\<not> ((x::nat) < 10); x mod 10 \<ge> 0\<rbrakk> \<Longrightarrow> x mod 10 < 10"
   by auto
@@ -344,9 +342,9 @@ defs String__toScreen_def: "String__toScreen s \<equiv> ()"
 consts String__writeLine :: "string \<Rightarrow> unit"
 defs String__writeLine_def: "String__writeLine s \<equiv> ()"
 consts String__lt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "lt" 60)
-defs String__lt_def: "(s1 lt s2) \<equiv> (s1 < s2)"
+defs String__lt_def: "(s1 lt s2) \<equiv> (s1 <_s s2)"
 consts String__leq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "leq" 60)
-defs String__leq_def: "(s1 leq s2) \<equiv> (s1 <= s2)"
+defs String__leq_def: "(s1 leq s2) \<equiv> (s1 <=_s s2)"
 consts Boolean__toString :: "bool \<Rightarrow> string"
 defs Boolean__toString_def: "Boolean__toString \<equiv> Boolean__show"
 consts Nat__toString :: "nat \<Rightarrow> string"

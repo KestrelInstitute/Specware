@@ -4,7 +4,7 @@ begin
 types 'a EndoRelation__EndoRelation = " ('a, 'a)Relation__Relation"
 consts EndoRelation__id :: "'a EndoRelation__EndoRelation"
 defs EndoRelation__id_def: 
-  "EndoRelation__id \<equiv> (\<lambda> ((x::'a), (y::'a)). x = y)"
+  "EndoRelation__id \<equiv> (\<lambda> ((xxx::'a), (yyy::'a)). xxx = yyy)"
 consts EndoRelation__idOver :: "'a set \<Rightarrow> 'a EndoRelation__EndoRelation"
 defs EndoRelation__idOver_def: "EndoRelation__idOver s \<equiv> (s <*> s)"
 consts EndoRelation__reflexive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
@@ -168,7 +168,7 @@ defs EndoRelation__wellFounded_p_def:
 types 'a EndoRelation__WellFoundedRelation = "'a EndoRelation__EndoRelation"
 theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype: 
   "Set_P
-      (\<lambda> ((x0::'a), (x1::'a)). (P__a::'a \<Rightarrow> bool) x0 \<and> P__a x1) X_2"
+      (\<lambda> ((xp0::'a), (xp1::'a)). (P__a::'a \<Rightarrow> bool) xp0 \<and> P__a xp1) X_2"
    sorry
 theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -178,25 +178,21 @@ theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype0:
            \<and> EndoRelation__reflexive_p__stp P__a rc) 
      \<and> Set_P
           (Set_P
-              (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
+              (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1))
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc 
                \<and> EndoRelation__reflexive_p__stp P__a rc)"
    sorry
 theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype1: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
-    Set_P (\<lambda> ((x0_2::'a), (x1_2::'a)). P__a x0_2 \<and> P__a x1_2)
-       (Set__min
-           (\<lambda> (rc::('a \<times> 'a) set). 
-              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-                \<and> EndoRelation__reflexive_p__stp P__a rc)); 
-    x_1 
+    Set_P
+       (\<lambda> ((xp0_2::'a), (xp1_2::'a)). P__a xp0_2 \<and> P__a xp1_2) xss_1; 
+    xss_1 
       = Set__min
            (\<lambda> (rc::('a \<times> 'a) set). 
-              r \<subseteq> rc 
+              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
                 \<and> EndoRelation__reflexive_p__stp P__a rc)\<rbrakk> \<Longrightarrow> 
-   EndoRelation__reflexive_p__stp P__a x_1 
-     \<and> Set_P (\<lambda> ((x0_3::'a), (x1_3::'a)). P__a x0_3 \<and> P__a x1_3) x_1"
+   EndoRelation__reflexive_p__stp P__a xss_1"
    sorry
 consts EndoRelation__reflexiveClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                'a EndoRelation__EndoRelation \<Rightarrow> 
@@ -233,7 +229,7 @@ theorem EndoRelation__reflexiveClosure_subtype_constr:
    sorry
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype: 
   "Set_P
-      (\<lambda> ((x0::'a), (x1::'a)). (P__a::'a \<Rightarrow> bool) x0 \<and> P__a x1) X_2"
+      (\<lambda> ((xp0::'a), (xp1::'a)). (P__a::'a \<Rightarrow> bool) xp0 \<and> P__a xp1) X_2"
    sorry
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -243,25 +239,21 @@ theorem EndoRelation__symmetricClosure__stp_Obligation_subtype0:
            \<and> EndoRelation__symmetric_p__stp P__a rc) 
      \<and> Set_P
           (Set_P
-              (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
+              (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1))
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc 
                \<and> EndoRelation__symmetric_p__stp P__a rc)"
    sorry
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype1: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
-    Set_P (\<lambda> ((x0_2::'a), (x1_2::'a)). P__a x0_2 \<and> P__a x1_2)
-       (Set__min
-           (\<lambda> (rc::('a \<times> 'a) set). 
-              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-                \<and> EndoRelation__symmetric_p__stp P__a rc)); 
-    x_1 
+    Set_P
+       (\<lambda> ((xp0_2::'a), (xp1_2::'a)). P__a xp0_2 \<and> P__a xp1_2) xss_1; 
+    xss_1 
       = Set__min
            (\<lambda> (rc::('a \<times> 'a) set). 
-              r \<subseteq> rc 
+              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
                 \<and> EndoRelation__symmetric_p__stp P__a rc)\<rbrakk> \<Longrightarrow> 
-   EndoRelation__symmetric_p__stp P__a x_1 
-     \<and> Set_P (\<lambda> ((x0_3::'a), (x1_3::'a)). P__a x0_3 \<and> P__a x1_3) x_1"
+   EndoRelation__symmetric_p__stp P__a xss_1"
    sorry
 consts EndoRelation__symmetricClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                'a EndoRelation__EndoRelation \<Rightarrow> 
@@ -298,7 +290,7 @@ theorem EndoRelation__symmetricClosure_subtype_constr:
    sorry
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype: 
   "Set_P
-      (\<lambda> ((x0::'a), (x1::'a)). (P__a::'a \<Rightarrow> bool) x0 \<and> P__a x1) X_2"
+      (\<lambda> ((xp0::'a), (xp1::'a)). (P__a::'a \<Rightarrow> bool) xp0 \<and> P__a xp1) X_2"
    sorry
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -308,25 +300,21 @@ theorem EndoRelation__transitiveClosure__stp_Obligation_subtype0:
            \<and> EndoRelation__transitive_p__stp P__a rc) 
      \<and> Set_P
           (Set_P
-              (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
+              (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1))
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc 
                \<and> EndoRelation__transitive_p__stp P__a rc)"
    sorry
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype1: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
-    Set_P (\<lambda> ((x0_2::'a), (x1_2::'a)). P__a x0_2 \<and> P__a x1_2)
-       (Set__min
-           (\<lambda> (rc::('a \<times> 'a) set). 
-              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-                \<and> EndoRelation__transitive_p__stp P__a rc)); 
-    x_1 
+    Set_P
+       (\<lambda> ((xp0_2::'a), (xp1_2::'a)). P__a xp0_2 \<and> P__a xp1_2) xss_1; 
+    xss_1 
       = Set__min
            (\<lambda> (rc::('a \<times> 'a) set). 
-              r \<subseteq> rc 
+              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
                 \<and> EndoRelation__transitive_p__stp P__a rc)\<rbrakk> \<Longrightarrow> 
-   EndoRelation__transitive_p__stp P__a x_1 
-     \<and> Set_P (\<lambda> ((x0_3::'a), (x1_3::'a)). P__a x0_3 \<and> P__a x1_3) x_1"
+   EndoRelation__transitive_p__stp P__a xss_1"
    sorry
 consts EndoRelation__transitiveClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                 'a EndoRelation__EndoRelation
@@ -364,7 +352,7 @@ theorem EndoRelation__transitiveClosure_subtype_constr:
    sorry
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype: 
   "Set_P
-      (\<lambda> ((x0::'a), (x1::'a)). (P__a::'a \<Rightarrow> bool) x0 \<and> P__a x1) X_2"
+      (\<lambda> ((xp0::'a), (xp1::'a)). (P__a::'a \<Rightarrow> bool) xp0 \<and> P__a xp1) X_2"
    sorry
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -374,25 +362,21 @@ theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype0:
            \<and> EndoRelation__equivalence_p__stp P__a rc) 
      \<and> Set_P
           (Set_P
-              (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
+              (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1))
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc 
                \<and> EndoRelation__equivalence_p__stp P__a rc)"
    sorry
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype1: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
-    Set_P (\<lambda> ((x0_2::'a), (x1_2::'a)). P__a x0_2 \<and> P__a x1_2)
-       (Set__min
-           (\<lambda> (rc::('a \<times> 'a) set). 
-              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-                \<and> EndoRelation__equivalence_p__stp P__a rc)); 
-    x_1 
+    Set_P
+       (\<lambda> ((xp0_2::'a), (xp1_2::'a)). P__a xp0_2 \<and> P__a xp1_2) xss_1; 
+    xss_1 
       = Set__min
            (\<lambda> (rc::('a \<times> 'a) set). 
-              r \<subseteq> rc 
+              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
                 \<and> EndoRelation__equivalence_p__stp P__a rc)\<rbrakk> \<Longrightarrow> 
-   EndoRelation__equivalence_p__stp P__a x_1 
-     \<and> Set_P (\<lambda> ((x0_3::'a), (x1_3::'a)). P__a x0_3 \<and> P__a x1_3) x_1"
+   EndoRelation__equivalence_p__stp P__a xss_1"
    sorry
 consts EndoRelation__equivalenceClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                  'a EndoRelation__EndoRelation

@@ -346,7 +346,8 @@ theorem Function__fxy_implies_inverse:
  with INV_SOME show "x = inv f y" by auto
 qed
 theorem Function__eta__stp: 
-  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> RFun P__a (\<lambda> (x::'a). f x) = f"
+  "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   (\<lambda> (x::'a). if P__a x then f x else regular_val) = f"
   apply(rule ext, simp)
   done
 theorem Function__eta: 
