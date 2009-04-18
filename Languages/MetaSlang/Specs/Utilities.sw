@@ -1578,7 +1578,7 @@ Utilities qualifying spec
       | Subsort(s_ty, p, a) ->
         (case raiseSubtype(s_ty, spc) of
            | Subsort(sss_ty, pr, _) ->
-             let v = ("x", sss_ty) in
+             let v = ("xss", sss_ty) in
              Subsort(sss_ty, mkLambda(mkVarPat v, mkAnd(mkApply(p, mkVar v), mkApply(pr, mkVar v))), a)
            | _ -> ty)
       | Product(flds, a) ->
@@ -1586,7 +1586,7 @@ Utilities qualifying spec
           then let (bare_flds, arg_fld_vars, pred,_) =
                 foldl (fn ((bare_flds, arg_fld_vars, pred, i),(id,tyi)) ->
                          case subtypeComps(spc, tyi) of
-                           | Some(t,p) -> let v = ("x"^toString i, t)  in
+                           | Some(t,p) -> let v = ("xp"^toString i, t)  in
                                           (bare_flds ++ [(id,t)],
                                            arg_fld_vars ++ [(id,mkVarPat v)],
                                            mkAnd(pred, mkApply(p, mkVar v)),
