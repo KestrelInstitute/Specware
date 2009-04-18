@@ -259,6 +259,7 @@ end-proof
 % positive (i.e. non-zero) natural numbers:
 
 op Nat.posNat? (n:Nat) : Bool = n > 0
+proof Isa [simp] end-proof
 
 type Nat.PosNat = (Nat | posNat?)
 
