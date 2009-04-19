@@ -139,7 +139,7 @@ PrString qualifying spec
                           if x < 10 then (digitToString x) ^ res
                                     else toStringAux
                                           (x div 10,
-                                           digitToString(x rem 10) ^ res) in
+                                           digitToString(x mod 10) ^ res) in
                   toStringAux(x,""))
 
   axiom char_toString_def is
