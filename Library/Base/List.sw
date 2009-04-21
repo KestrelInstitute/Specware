@@ -433,7 +433,6 @@ end-proof
 op [a] tabulate (n:Nat, f: Nat -> a) : List a =
   list (fn i:Nat -> if i < n then Some (f i) else None)
 
-% the argument to op list is in the ListFunction subtype:
 proof Isa tabulate_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
@@ -525,6 +524,7 @@ end-proof
 % useful to define subtype of lists of given length:
 
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
+proof Isa [simp] end-proof
 
 % Isabelle lemma that relates the Metaslang definition of op list_1 to the
 % Isabelle definition of the "nth" function (infix "!"):
@@ -676,7 +676,6 @@ case (Suc n)
 qed
 end-proof
 
-% i < length (tabulate (n, f)):
 proof Isa element_of_tabulate_Obligation_subtype
   by (auto simp add: List__length_tabulate)
 end-proof
@@ -721,13 +720,14 @@ type List.List1 a = (List a | nonEmpty?)
 % singleton list:
 
 op [a] single (x:a) : List a = [x]
+proof Isa [simp] end-proof
 
 op [a] theElement (l: List a | ofLength? 1 l) : a = the(x:a) (l = [x])
 
 proof Isa theElement__stp_Obligation_the
 proof -
  assume "List__ofLength_p 1 l"
- hence L1: "length l = 1" by (auto simp add: List__ofLength_p_def)
+ hence L1: "length l = 1" by auto
  def x \<equiv> "hd l"
  from L1 have Lne: "l \<noteq> []" by auto
  with x_def have Lht: "l = x # tl l" by auto
@@ -753,7 +753,7 @@ proof
  show "List__ofLength_p 1 l \<Longrightarrow> l = [x]"
  proof -
   assume "List__ofLength_p 1 l"
-  hence L1: "length l = 1" by (auto simp add: List__ofLength_p_def)
+  hence L1: "length l = 1" by auto
   hence Lne: "l \<noteq> []" by auto
   with x_def have Lht: "l = x # tl l" by auto
   from Lne have "length l = 1 + length (tl l)" by auto
@@ -838,6 +838,7 @@ qed
 end-proof
 
 op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
+proof Isa [simp] end-proof
 
 % sublist starting from index i of length n (note that if n is 0 then i could
 % be length(l), even though that is not a valid index in the list):
@@ -845,7 +846,6 @@ op [a] nin? (x:a, l: List a) infixl 20 : Bool = ~ (x in? l)
 op [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   list (fn j:Nat -> if j < n then Some (l @ (i + j)) else None)
 
-% the argument to op list is in the ListFunction subtype:
 proof Isa subFromLong_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
@@ -1046,28 +1046,24 @@ op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
 
 op [a] butLast (l: List1 a) : List a = removeSuffix (l, 1)
 
-% proof that "1 <= length l":
 proof Isa head_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-% proof that "prefix (l, 1)" has length 1:
 proof Isa head_Obligation_subtype0
-  by (cases l, auto simp add: List__ofLength_p_def)
+  by (cases l, auto)
 end-proof
 
 proof Isa head__def
 by (cases l, auto simp add: List__theElement_def)
 end-proof
 
-% proof that "1 <= length l":
 proof Isa last_Obligation_subtype
   by (cases l, auto)
 end-proof
 
-% proof that "suffix (l, 1)" has length 1:
 proof Isa last_Obligation_subtype0
-  by (cases l, auto simp add: List__length_suffix List__ofLength_p_def)
+  by (cases l, auto simp add: List__length_suffix)
 end-proof
 
 proof Isa last__def
@@ -1110,7 +1106,6 @@ proof -
 qed
 end-proof
 
-% proof that "1 <= length l":
 proof Isa tail_Obligation_subtype
   by (cases l, auto)
 end-proof
@@ -1119,7 +1114,6 @@ proof Isa tail__def
 by (cases l, auto)
 end-proof
 
-% proof that "1 <= length l":
 proof Isa butLast_Obligation_subtype
   by (cases l, auto)
 end-proof
@@ -1428,7 +1422,6 @@ end-proof
 op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
   list (fn j:Nat -> if j = i then Some x else l @@ j)
 
-% argument of op list is in ListFunction subtype:
 proof Isa update_Obligation_subtype
 by (auto simp add: List__definedOnInitialSegmentOfLength_def
                    List__e_at_at_def list_1_Isa_nth)
@@ -1639,6 +1632,7 @@ op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
 
 op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Bool =
   length l1 = length l2
+proof Isa [simp] end-proof
 
 % convert between list of tuples and tuple of lists:
 
@@ -1656,20 +1650,14 @@ op unzip3 : [a,b,c] List (a * b * c) ->
                     {(l1,l2,l3) : List a * List b * List c |
                      l1 equiLong l2 && l2 equiLong l3} = inverse zip3
 
-% argument to op list in definition of op zip is in ListFunction subtype:
 proof Isa zip_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-end-proof
-
-% i < length l2 in definition of op zip:
-proof Isa zip_Obligation_subtype0
-  by (auto simp add: List__equiLong_def)
 end-proof
 
 proof Isa zip__def
 proof (induct l2 arbitrary: l1)
 case Nil
- hence "length l1 = 0" by (auto simp add: List__equiLong_def)
+ hence "length l1 = 0" by auto
  def f \<equiv> "(\<lambda>i. if i < length l1 then Some (l1!i, []!i) else None)
           :: nat \<Rightarrow> ('a \<times> 'b) option"
  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
@@ -1680,10 +1668,9 @@ case Nil
 next
 case (Cons h2 l2')
  def h1 \<equiv> "hd l1" and l1' \<equiv> "tl l1"
- from Cons have "l1 \<noteq> []" by (auto simp add: List__equiLong_def)
+ from Cons have "l1 \<noteq> []" by auto
  with h1_def l1'_def have "l1 = h1 # l1'" by (auto simp add: hd_Cons_tl)
- with `l1 equiLong (h2 # l2')` have "l1' equiLong l2'"
-  by (auto simp add: List__equiLong_def)
+ with `l1 equiLong (h2 # l2')` have "l1' equiLong l2'" by auto
  def f \<equiv> "\<lambda>i. if i < length l1
                     then Some (l1 ! i, (h2 # l2') ! i) else None"
  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
@@ -1703,40 +1690,29 @@ case (Cons h2 l2')
 qed
 end-proof
 
-% argument to op list in definition of op zip3 is in ListFunction subtype:
 proof Isa zip3_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-end-proof
-
-% i < length l2 in definition of op zip3:
-proof Isa zip3_Obligation_subtype0
-  by (auto simp add: List__equiLong_def)
-end-proof
-
-% i < length l3 in definition of op zip3:
-proof Isa zip3_Obligation_subtype1
-  by (auto simp add: List__equiLong_def)
 end-proof
 
 proof Isa unzip_Obligation_subtype
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on (\<lambda>(x::'a list, y::'b list). zip x y)
-              (\<lambda>(x,y). x equiLong y)"
+              (\<lambda>(x,y). length x = length y)"
  proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
   fix l1_l2 :: "'a list \<times> 'b list"
   fix r1_r2 :: "'a list \<times> 'b list"
-  show "\<lbrakk>l1_l2 \<in> (\<lambda>(x,y). x equiLong y) ;
-                 r1_r2 \<in> (\<lambda>(x,y). x equiLong y) ;
+  show "\<lbrakk>l1_l2 \<in> (\<lambda>(x,y). length x = length y) ;
+                 r1_r2 \<in> (\<lambda>(x,y). length x = length y) ;
                  split zip l1_l2 = split zip r1_r2\<rbrakk> \<Longrightarrow>
         l1_l2 = r1_r2"
   proof (induct l \<equiv> "snd l1_l2" arbitrary: l1_l2 r1_r2)
   case Nil
-   hence "l1_l2 = ([], [])" by (auto simp: List__equiLong_def mem_def)
+   hence "l1_l2 = ([], [])" by (auto simp: mem_def)
    with Nil have "split zip r1_r2 = []" by auto
    have "r1_r2 = ([], [])"
    proof (cases "fst r1_r2  = []")
     assume "fst r1_r2 = []"
-    with Nil show ?thesis by (auto simp: List__equiLong_def mem_def)
+    with Nil show ?thesis by (auto simp: mem_def)
    next
     assume "\<not> fst r1_r2 = []"
     have "snd r1_r2 = []"
@@ -1746,25 +1722,25 @@ proof (auto simp add: Function__bijective_p__stp_def)
       by (auto simp: split_def length_zip)
      with `split zip r1_r2 = []` show False by auto
     qed
-    with Nil show ?thesis by (auto simp: List__equiLong_def mem_def)
+    with Nil show ?thesis by (auto simp: mem_def)
    qed
    with `l1_l2 = ([], [])` show "l1_l2 = r1_r2" by auto
   next
   case (Cons h2 t2)
    hence "length (snd l1_l2) > 0" by auto
-   with `l1_l2 \<in> (\<lambda>(x,y). x equiLong y)`
+   with `l1_l2 \<in> (\<lambda>(x,y). length x = length y)`
    have "length (fst l1_l2) > 0"
-    by (auto simp: List__equiLong_def mem_def)
+    by (auto simp: mem_def)
    then obtain h1 and t1 where "fst l1_l2 = h1 # t1"
     by (cases "fst l1_l2", auto)
    with Cons have "snd l1_l2 = h2 # t2" by auto
    with `fst l1_l2 = h1 # t1` `split zip l1_l2 = split zip r1_r2`
     have ZR: "split zip r1_r2 = (h1,h2) # zip t1 t2"
      by (auto simp: split_def)
-   from `l1_l2 \<in> (\<lambda>(x,y). x equiLong y)`
+   from `l1_l2 \<in> (\<lambda>(x,y). length x = length y)`
         `fst l1_l2 = h1 # t1` `snd l1_l2 = h2 # t2`
-    have "(t1,t2) \<in> (\<lambda>(x,y). x equiLong y)"
-     by (auto simp: List__equiLong_def mem_def)
+    have "(t1,t2) \<in> (\<lambda>(x,y). length x = length y)"
+     by (auto simp: mem_def)
    from ZR have "fst r1_r2 \<noteq> []"
     by (auto simp: split_def)
    then obtain g1 and u1 where "fst r1_r2 = g1 # u1"
@@ -1777,14 +1753,14 @@ proof (auto simp add: Function__bijective_p__stp_def)
     by (auto simp: split_def)
    with `fst r1_r2 = g1 # u1` `snd r1_r2 = g2 # u2`
     have "fst r1_r2 = h1 # u1" and "snd r1_r2 = h2 # u2" by auto
-   with `r1_r2 \<in> (\<lambda>(x,y). x equiLong y)`
-    have "(u1,u2) \<in> (\<lambda>(x,y). x equiLong y)"
-     by (auto simp: List__equiLong_def mem_def)
+   with `r1_r2 \<in> (\<lambda>(x,y). length x = length y)`
+    have "(u1,u2) \<in> (\<lambda>(x,y). length x = length y)"
+     by (auto simp: mem_def)
    from `fst r1_r2 = h1 # u1` `snd r1_r2 = h2 # u2` ZR
     have "split zip (t1,t2) = split zip (u1,u2)"
      by (auto simp: split_def)
-   with Cons.hyps `(t1,t2) \<in> (\<lambda>(x,y). x equiLong y)`
-                  `(u1,u2) \<in> (\<lambda>(x,y). x equiLong y)`
+   with Cons.hyps `(t1,t2) \<in> (\<lambda>(x,y). length x = length y)`
+                  `(u1,u2) \<in> (\<lambda>(x,y). length x = length y)`
     have "t1 = u1" and "t2 = u2" by auto
    with `fst l1_l2 = h1 # t1` `snd l1_l2 = h2 # t2`
         `fst r1_r2 = h1 # u1` `snd r1_r2 = h2 # u2`
@@ -1793,26 +1769,28 @@ proof (auto simp add: Function__bijective_p__stp_def)
  qed
 next
  show "surj_on (\<lambda>(x,y). zip x y)
-               (\<lambda>(x,y). x equiLong y) (\<lambda>_. True)"
+               (\<lambda>(x,y). length x = length y) (\<lambda>_. True)"
  proof (auto simp add: surj_on_def)
   fix lr
-  show "\<exists> l_r \<in> (\<lambda>(x,y). x equiLong y). lr = split zip l_r"
+  show "\<exists> l_r \<in> (\<lambda>(x,y). length x = length y).
+             lr = split zip l_r"
   proof (induct lr)
   case Nil
    def l_r \<equiv> "([], []) :: ('e list \<times> 'f list)"
-   hence EQL: "l_r \<in> (\<lambda>(x,y). x equiLong y)"
-    by (auto simp: mem_def List__equiLong_def)
+   hence EQL: "l_r \<in> (\<lambda>(x,y). length x = length y)"
+    by (auto simp: mem_def)
    from l_r_def have "[] = split zip l_r" by auto
    with EQL show ?case by auto
   next
   case (Cons hg tu)
    then obtain t_u
-    where "t_u \<in> (\<lambda>(x,y). x equiLong y)" and "tu = split zip t_u"
+    where "t_u \<in> (\<lambda>(x,y). length x = length y)"
+      and "tu = split zip t_u"
      by auto
    def l_r \<equiv> "(fst hg # fst t_u, snd hg # snd t_u)"
-   with `t_u \<in> (\<lambda>(x,y). x equiLong y)`
-    have EQL: "l_r \<in> (\<lambda>(x,y). x equiLong y)"
-     by (auto simp: List__equiLong_def mem_def)
+   with `t_u \<in> (\<lambda>(x,y). length x = length y)`
+    have EQL: "l_r \<in> (\<lambda>(x,y). length x = length y)"
+     by (auto simp: mem_def)
    from l_r_def `tu = split zip t_u`
     have "hg # tu = split zip l_r" by (auto simp: split_def)
    with EQL show ?case by auto
@@ -1862,7 +1840,7 @@ proof (auto simp: Let_def)
         = dom_unzip"
   by (rule someI_ex)
  with SXY have "(\<lambda>(x,y). x equiLong y) (x,y)" by auto
- thus "x equiLong y" by auto
+ thus "length x = length y" by auto
 qed
 end-proof
 
@@ -1871,12 +1849,15 @@ proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
                              \<Rightarrow>
                             ('a \<times> 'b \<times> 'c) list)
-              (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+              (\<lambda>(x,y,z). length x = length y \<and>
+                                 length y = length z)"
  proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
   fix l1_l2_l3 :: "'a list \<times> 'b list \<times> 'c list"
   fix r1_r2_r3 :: "'a list \<times> 'b list \<times> 'c list"
-  assume "l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
-  assume "r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+  assume "l1_l2_l3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
+                                            length y = length z)"
+  assume "r1_r2_r3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
+                                            length y = length z)"
   assume "List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3"
   def l1 \<equiv> "fst l1_l2_l3"
   and l2 \<equiv> "fst (snd l1_l2_l3)"
@@ -1884,12 +1865,14 @@ proof (auto simp add: Function__bijective_p__stp_def)
   and r1 \<equiv> "fst r1_r2_r3"
   and r2 \<equiv> "fst (snd r1_r2_r3)"
   and r3 \<equiv> "snd (snd r1_r2_r3)"
-  with `l1_l2_l3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)`
-       `r1_r2_r3 \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)`
+  with `l1_l2_l3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
+                                          length y = length z)`
+       `r1_r2_r3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
+                                          length y = length z)`
    have "length l1 = length l2" and "length r1 = length r2"
     and "length l2 = length l3" and "length r2 = length r3"
     and "length l1 = length l3" and "length r1 = length r3"
-    by (auto simp add: mem_def List__equiLong_def)
+    by (auto simp add: mem_def)
   from `List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3`
        l1_def l2_def l3_def r1_def r2_def r3_def
    have "List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)" by auto
@@ -1982,12 +1965,14 @@ next
  show "surj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
                               \<Rightarrow>
                               ('a \<times> 'b \<times> 'c) list)
-               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+               (\<lambda>(x,y,z). length x = length y \<and>
+                                  length y = length z)
                (\<lambda>_. True)"
  proof (auto simp add: surj_on_def)
   fix lll :: "('a \<times> 'b \<times> 'c) list"
   show "\<exists> l1_l2_l3 \<in>
-                (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z).
+                (\<lambda>(x,y,z). length x = length y \<and>
+                                   length y = length z).
            lll = List__zip3 l1_l2_l3"
   proof (induct lll)
   case Nil
@@ -1995,8 +1980,9 @@ next
    and l2 \<equiv> "[] :: 'b list"
    and l3 \<equiv> "[] :: 'c list"
    hence MEM: "(l1,l2,l3) \<in>
-               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
-    by (auto simp: List__equiLong_def mem_def)
+               (\<lambda>(x,y,z). length x = length y \<and>
+                                  length y = length z)"
+    by (auto simp: mem_def)
    def f \<equiv> "\<lambda>i. if i < length l1
                                then Some (l1!i, l2!i, l3!i) else None"
    hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
@@ -2008,7 +1994,8 @@ next
   case (Cons hhh ttt)
    then obtain t1_t2_t3
     where TEQL: "t1_t2_t3 \<in>
-                 (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
+                 (\<lambda>(x,y,z). length x = length y \<and>
+                                    length y = length z)"
       and "ttt = List__zip3 t1_t2_t3"
      by blast
    def h1 \<equiv> "fst hhh"
@@ -2019,12 +2006,13 @@ next
    and t3 \<equiv> "snd (snd t1_t2_t3)"
    hence "t1_t2_t3 = (t1,t2,t3)" by auto
    with TEQL have "length t1 = length t2" and "length t2 = length t3"
-    by (auto simp: mem_def List__equiLong_def)
+    by (auto simp: mem_def)
    def l1 \<equiv> "h1 # t1" and l2 \<equiv> "h2 # t2" and l3 \<equiv> "h3 # t3"
    with `length t1 = length t2` `length t2 = length t3`
     have LEQL: "(l1,l2,l3) \<in>
-                (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)"
-     by (auto simp: mem_def List__equiLong_def)
+                (\<lambda>(x,y,z). length x = length y \<and>
+                                   length y = length z)"
+     by (auto simp: mem_def)
    def ft \<equiv> "\<lambda>i. if i < length t1
                                 then Some (t1!i, t2!i, t3!i) else None"
    with `ttt = List__zip3 t1_t2_t3` `t1_t2_t3 = (t1,t2,t3)`
@@ -2096,7 +2084,7 @@ proof auto
   by (rule someI_ex)
  with SL have "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) (l1,l2,l3)"
   by auto
- thus "l1 equiLong l2" and "l2 equiLong l3" by auto
+ thus "length l1 = length l2" and "length l2 = length l3" by auto
 qed
 end-proof
 
@@ -2240,10 +2228,6 @@ op [a,b] matchingOptionLists?
          (l1: List (Option a), l2: List (Option b)) : Bool =
   l1 equiLong l2 &&
   (fa(i:Nat) i < length l1 => embed? None (l1@i) = embed? None (l2@i))
-
-proof Isa matchingOptionLists_p_Obligation_subtype
-  by (auto simp: List__equiLong_def)
-end-proof
 
 % homomorphically apply partial function (captured via Option) to all elements
 % of list(s), removing elements on which the function is not defined:
@@ -2477,21 +2461,19 @@ op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
                            else (l1, extendRight (l2, x2, length l1))
 
 proof Isa equiExtendLeft_Obligation_subtype0
-  by (auto simp: List__extendLeft_def List__repeat_length
-                 length_append List__equiLong_def)
+  by (auto simp: List__extendLeft_def List__repeat_length length_append)
 end-proof
 
 proof Isa equiExtendLeft_Obligation_subtype2
-  by (auto simp: List__extendLeft_def List__repeat_length
-                 length_append List__equiLong_def)
+  by (auto simp: List__extendLeft_def List__repeat_length length_append)
 end-proof
 
 proof Isa equiExtendLeft_subtype_constr
 proof (auto simp: Let_def)
  fix x y
  assume XY: "List__equiExtendLeft dom_equiExtendLeft = (x,y)"
- show "x equiLong y"
- proof (unfold List__equiLong_def, cases dom_equiExtendLeft)
+ show "length x = length y"
+ proof (cases dom_equiExtendLeft)
   fix l1 l2 x1 x2
   assume "dom_equiExtendLeft = (l1, l2, x1, x2)"
   with XY have "List__equiExtendLeft (l1, l2, x1, x2) = (x,y)" by auto
@@ -2503,21 +2485,19 @@ qed
 end-proof
 
 proof Isa equiExtendRight_Obligation_subtype0
-  by (auto simp: List__extendRight_def List__repeat_length
-                 length_append List__equiLong_def)
+  by (auto simp: List__extendRight_def List__repeat_length length_append)
 end-proof
 
 proof Isa equiExtendRight_Obligation_subtype2
-  by (auto simp: List__extendRight_def List__repeat_length
-                 length_append List__equiLong_def)
+  by (auto simp: List__extendRight_def List__repeat_length length_append)
 end-proof
 
 proof Isa equiExtendRight_subtype_constr
 proof (auto simp: Let_def)
  fix x y
  assume XY: "List__equiExtendRight dom_equiExtendRight = (x,y)"
- show "x equiLong y"
- proof (unfold List__equiLong_def, cases dom_equiExtendRight)
+ show "length x = length y"
+ proof (cases dom_equiExtendRight)
   fix l1 l2 x1 x2
   assume "dom_equiExtendRight = (l1, l2, x1, x2)"
   with XY have "List__equiExtendRight (l1, l2, x1, x2) = (x,y)" by auto
@@ -2565,16 +2545,12 @@ op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
      flatten ll = l &&
      (fa(i:Nat) i < length ll => length (ll @ i) = lens @ i)
 
-proof Isa unflattenL_Obligation_subtype
-  by (auto simp: List__equiLong_def)
-end-proof
-
 proof Isa unflattenL_Obligation_the
 proof (induct lens arbitrary: l)
 case Nil
  hence MTL: "l = []" by auto
  def ll \<equiv> "[] :: 'a list list"
- hence  EQL: "ll equiLong []" by (auto simp: List__equiLong_def)
+ hence  EQL: "ll equiLong []" by auto
  from ll_def MTL have CAT: "concat ll = l" by auto
  from ll_def have LENS: "\<forall>i < length ll. length (ll!i) = []!i" by auto
  have "\<And>ll'. ll' equiLong [] \<and>
@@ -2584,7 +2560,7 @@ case Nil
  proof clarify
   fix ll'::"'a list list"
   assume "ll' equiLong []"
-  with ll_def show "ll' = ll" by (auto simp: List__equiLong_def)
+  with ll_def show "ll' = ll" by auto
  qed
  with EQL CAT LENS show ?case by blast
 next
@@ -2604,8 +2580,7 @@ case (Cons len lens)
   and LENS0: "\<forall>i < length ll0. length (ll0!i) = lens!i"
    by blast
  def ll \<equiv> "h # ll0"
- with EQL0 have EQL: "ll equiLong (len # lens)"
-  by (auto simp: List__equiLong_def)
+ with EQL0 have EQL: "ll equiLong (len # lens)" by auto
  from ll_def CAT0 `l = h @ t` have CAT: "concat ll = l" by auto
  have LENS: "\<forall>i < length ll. length (ll!i) = (len#lens)!i"
  proof (rule allI, rule impI)
@@ -2634,15 +2609,19 @@ case (Cons len lens)
    by auto
   def h' \<equiv> "hd ll'" and ll0' \<equiv> "tl ll'"
   with EQL' have LL': "ll' = h' # ll0'"
-   by (cases ll', auto simp: List__equiLong_def)
-  with EQL' have EQL0': "ll0' equiLong lens" by (auto simp: List__equiLong_def)
+   by (cases ll', auto)
+  with EQL' have EQL0': "ll0' equiLong lens" by auto
   from LL' LENS' have "length h' = len" by auto
   with `length h = len` CAT' `l = h @ t` LL'
    have CAT0': "concat ll0' = t" by auto
   from LENS' LL'
    have LENS0': "\<forall>i < length ll0'. length (ll0'!i) = lens!i" by auto
   from Cons.hyps `foldl' (\<lambda>(x,y). x + y) 0 lens = length t`
-       EQL0 CAT0 LENS0 EQL0' CAT0' LENS0'
+   have "\<exists>!ll. ll equiLong lens \<and>
+               concat ll = t \<and>
+               (\<forall>i < length ll. length (ll ! i) = lens ! i)"
+    by auto
+  with EQL0 CAT0 LENS0 EQL0' CAT0' LENS0'
    have "ll0' = ll0" by auto
   from CAT' LL' `l = h @ t` `length h = len` CAT0' have "h = h'" by auto
   with `ll0' = ll0` LL' ll_def show "ll' = ll" by auto
@@ -3382,7 +3361,7 @@ proof -
   with `l!i = x` `l!i' = x` show False by auto
  qed
  with `length (List__positionsOf (l, x)) > 0` have "length (List__positionsOf (l, x)) = 1" by arith
- thus "List__ofLength_p 1 (List__positionsOf (l, x))" by (auto simp: List__ofLength_p_def)
+ thus "List__ofLength_p 1 (List__positionsOf (l, x))" by auto
 qed
 end-proof
 
@@ -4193,14 +4172,6 @@ op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   let lp = filter p l in
   if empty? lp then None else Some (last lp)
 
-proof Isa findLeftmost_Obligation_subtype
-  by (auto simp: List__nonEmpty_p_def)
-end-proof
-
-proof Isa findRightmost_Obligation_subtype
-  by (auto simp: List__nonEmpty_p_def)
-end-proof
-
 % return leftmost/rightmost element satisfying predicate as well as list of
 % preceding/following elements (None if no element satisfies predicate):
 
@@ -4444,23 +4415,19 @@ op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   the (r: List a) r equiLong l &&
                   (fa(i:Nat) i < length l => l @ i = r @ (prm@i))
 
-proof Isa permute_Obligation_subtype
- by (auto simp: List__equiLong_def)
-end-proof
-
 proof Isa permute_Obligation_subtype0
- by (auto simp: List__permutation_p_def List__equiLong_def mem_iff nth_mem)
+ by (auto simp: List__permutation_p_def mem_iff nth_mem)
 end-proof
 
 proof Isa permute_Obligation_the
 proof -
  assume PERM: "List__permutation_p prm"
  assume "l equiLong prm"
- hence LEN: "length l = length prm" by (auto simp: List__equiLong_def)
+ hence LEN: "length l = length prm" by auto
  def f \<equiv> "\<lambda>i. l ! (THE j. j < length prm \<and> i = prm ! j)"
  def r \<equiv> "List__tabulate (length l, f)"
  hence "r equiLong l"
-  by (auto simp: List__equiLong_def List__length_tabulate)
+  by (auto simp: List__length_tabulate)
  have "\<forall>i. i < length l \<longrightarrow> l ! i = r ! (prm ! i)"
  proof (rule allI, rule impI)
   fix i::nat
@@ -4499,14 +4466,13 @@ proof -
   fix r'
   assume ASM: "r' equiLong l \<and>
                (\<forall>i < length l. l ! i = r' ! (prm ! i))"
-  with `r equiLong l` have R'R: "length r' = length r"
-   by (auto simp: List__equiLong_def)
+  with `r equiLong l` have R'R: "length r' = length r" by auto
   have "\<forall>j < length r'. r' ! j = r ! j"
   proof (rule allI, rule impI)
    fix j::nat
    assume "j < length r'"
    with `length r' = length r` `r equiLong l`
-    have JL: "j < length l" by (auto simp: List__equiLong_def)
+    have JL: "j < length l" by auto
    with LEN have JP: "j < length prm" by auto
    have "\<exists>i < length prm. prm ! i = j"
    proof (rule ccontr)
@@ -4536,10 +4502,6 @@ end-proof
 
 op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
-
-proof Isa permutationOf_Obligation_subtype
- by (auto simp: List__equiLong_def)
-end-proof
 
 % given a comparison function over type a, type List a can be linearly
 % ordered and compared element-wise and regarding the empty list as smaller
