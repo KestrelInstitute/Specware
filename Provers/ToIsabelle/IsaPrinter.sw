@@ -225,7 +225,7 @@ IsaTermPrinter qualifying spec
       | _ \_rightarrow           (last uid.path, uidToIsaName uid, "")
 
   op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun", 
-                                         "lattices", "orderings", "sat", "relation",
+                                         "lattices", "orderings", "sat", "relation", "record",
                                          "gcd", "datatype", "recdef", "hilbert_choice"]
   op thyName(spname: String): String =
     if member(map toLowerCase spname, isaLibrarySpecNames)
@@ -758,7 +758,8 @@ IsaTermPrinter qualifying spec
    result
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
-                                          "recdef", "primrec", "consts", "class", "primitive"]
+                                          "recdef", "primrec", "consts", "class", "primitive",
+                                          "next"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not"]
 
@@ -1491,6 +1492,9 @@ IsaTermPrinter qualifying spec
         (Lambda(cases,a), vs)
        %% Probably should put other cases
       | _ \_rightarrow (t,vs)
+
+  %op addExplicitTypingForNumbers(tm: MS.Term): MS.Term =
+    
 
   op  ppProperty : Context \_rightarrow Property \_rightarrow String \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Pretty
   def ppProperty c (propType, name, tyVars, term, _) comm elems opt_prag =
@@ -2399,12 +2403,12 @@ IsaTermPrinter qualifying spec
 	   | _ \_rightarrow
 	     let def ppField (x,y) =
 	     prLinearCat 2 [[prString x,
-			     prString " : "],
+			     prString " :: "],
 			    [ppType c Top in_quotes? y]]
 	     in
-	       prBreak 2 [prString "{",
+	       prBreak 2 [prString "\\<lparr>",
 			  prPostSep 0 blockLinear(prString ", ") (map ppField fields),
-			  prString "}"])
+			  prString "\\<rparr>"])
       | Quotient (ty,term,_) \_rightarrow
           prBreak 0 [prString "(",
 		     ppType c Top in_quotes? ty,
