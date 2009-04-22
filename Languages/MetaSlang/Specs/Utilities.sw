@@ -1062,7 +1062,7 @@ Utilities qualifying spec
     case t of
       | Lambda _ -> true
       | Fun _    -> true
-      | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
+      | Record(fields,_) -> all (fn (_,stm) -> constantTerm? stm) fields
       | _        -> false
 
   op [a] containsOpRef?(term: ATerm a): Boolean =
