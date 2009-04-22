@@ -328,7 +328,13 @@
                            :test #'char=
                            :start %frc-index%))
                (make-and-return-result-string (pos)
-                 (let* ((len (+ (- (or pos %frc-index%)
+                 (let* ((crlf-p (and (not (eq pos 0))
+                                     (eq (elt (the (simple-array character (*))
+                                                %frc-buffer%)
+                                              (- pos 1))
+                                         #\Return)))
+                        (pos (if crlf-p (- pos 1) pos))
+                        (len (+ (- (or pos %frc-index%)
                                    %frc-index%)
                                 chunks-total-length))
                         (res (make-string len))
@@ -343,7 +349,8 @@
                      (replace res %frc-buffer%
                               :start1 start
                               :start2 %frc-index% :end2 pos)
-                     (setf %frc-index% (1+ pos)))
+                     (setf %frc-index% (1+ pos))
+                     (when crlf-p (incf %frc-index%)))
                    (done-with-fast-read-char)
                    (return-from ansi-stream-read-line-from-frc-buffer (values res (null pos)))))
                (add-chunk ()
@@ -367,13 +374,7 @@
         (loop
            (let ((pos (newline-position)))
              (if pos
-                 (progn (when (and (not (eq pos 0))
-                                   (eq (elt (the (simple-array character (*))
-                                              %frc-buffer%)
-                                            (- pos 1))
-                                       #\Return))
-                          (decf pos))
-                        (make-and-return-result-string pos))
+                 (make-and-return-result-string pos)
                  (add-chunk))))))))
 
 
