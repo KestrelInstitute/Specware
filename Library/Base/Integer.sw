@@ -1156,7 +1156,7 @@ proof Isa Thy_Morphism Presburger
  Integer.mod      -> mod   Left 22
  Integer.min      -> min           curried
  Integer.max      -> max           curried
- Integer.divides  -> zdvd  Left 30 
+ Integer.divides  -> zdvd  Left 22 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
  Nat.succ         -> Suc
