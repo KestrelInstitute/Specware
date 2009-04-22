@@ -100,19 +100,30 @@ spec
      | _ -> None
                
 
+  op patternMatchRulesToLet(rules: Match, m_tm: Term, spc: Spec): Option Term =
+    case patternMatchRules(rules, m_tm) of
+      | None -> None
+      | Some(sub, M) ->
+        let binds = map (fn (v, val) -> (mkVarPat v, val)) sub in
+        Some(simplifyOne spc (mkLet(binds, M)))
+
   op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
     case tm of
-      | Apply(Lambda(rules, _), a, _) ->
+      | Apply(Lambda(rules, _), a, _) | length rules > 1->
+        %% Unfold if function constructs term that matches one case
         (case tryUnfold(spc, a) of
            | None -> tm
            | Some uf_tm ->
          % let _ = writeLine("succeeded: "^printTerm uf_tm) in
-         let uf_tm = simplify spc uf_tm in
-         case patternMatchRules(rules, uf_tm) of
-           | None -> tm
-           | Some(sub, M) ->
-             let binds = map (fn (v, val) -> (mkVarPat v, val)) sub in
-             simplifyOne spc (mkLet(binds, M)))
+         case simplify spc uf_tm of
+           | Let(binds, let_body, a) ->
+             (case patternMatchRulesToLet(rules, let_body, spc) of
+                | Some exp_tm -> Let(binds, exp_tm, a)
+                | None -> tm)
+           | simp_uf_tm ->
+             (case patternMatchRulesToLet(rules, simp_uf_tm, spc) of
+                | Some exp_tm -> exp_tm
+                | None -> tm))
       | _ -> tm
 
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
@@ -279,11 +290,12 @@ spec
         exists (fn(_, s) -> hoSort?(spc, s)) fields
       | _ -> false
 
-  def unfoldSizeThreshold = 80
+  op unfoldSizeThreshold: Nat = 40
+  op unfoldHO_SizeThreshold: Nat = 80
   
   op  unfoldable?: QualifiedId * Term -> Boolean
   def unfoldable? (_ (* qid *), defn) =
-    sizeTerm defn < unfoldSizeThreshold
+    sizeTerm defn < unfoldHO_SizeThreshold
 
   op sizeTerm(t: MS.Term): Nat = foldSubTerms (fn (_, sum) -> sum + 1) 0 t
 
