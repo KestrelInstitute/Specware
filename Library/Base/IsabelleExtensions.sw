@@ -100,6 +100,19 @@ by (auto simp: theI')
 
 
 (*************************************************************
+* Something defined via the definite description operator
+* equals anything that satisfies the defining predicate,
+* provided that the solution is unique. This lemma is
+* convenient for functions defined via the definite
+* description operator.
+*************************************************************)
+
+lemma sat_eq_the:
+"\<lbrakk> \<exists>!x. P x ; y = (THE x. P x) ; P z\<rbrakk> \<Longrightarrow> y = z"
+by auto
+
+
+(*************************************************************
 * Isabelle's foldl and foldr functions slightly differ from
 * Metaslang's foldl and foldr ops because (1) their function
 * argument f is curried in Isabelle but not in Metaslang and
