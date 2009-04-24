@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports Base Datatype Recdef Hilbert_Choice List GCD Char_nat
+imports Char_nat GCD List Hilbert_Choice Recdef Datatype
 begin
 
 
