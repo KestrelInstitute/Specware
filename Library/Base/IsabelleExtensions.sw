@@ -382,6 +382,9 @@ defs zabs_def [simp]:            "zabs i \<equiv> nat (\<bar>i\<bar>)"
 consts sign :: "int \<Rightarrow>  int"
 defs sign_def:                   "sign i \<equiv> (if i=0 then 0 else if 0<i then 1 else - 1)"
 
+consts zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
+defs zpower_def [simp]: "x ** y \<equiv> x ^ y"
+
 (**************** and a few insights **********************)
    
 lemma nat_le_abs [simp]:         "nat \<bar>i\<bar> \<le> nat \<bar>j\<bar> = (\<bar>i\<bar> \<le> \<bar>j\<bar>)"
