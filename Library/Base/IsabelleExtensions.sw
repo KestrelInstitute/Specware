@@ -492,7 +492,7 @@ lemma abs_div :                  "\<bar>(i::int) div j\<bar> = i div j * (sign i
 done
 (********************** DIVIDES ******************************************)
 
-definition zdvd:: "int \<Rightarrow> int \<Rightarrow> bool"    (infixl "zdvd" 62)
+definition zdvd:: "int \<Rightarrow> int \<Rightarrow> bool"    (infixl "zdvd" 70)
 where             "i zdvd j \<equiv> i dvd j"
   
 lemma zdvd_is_dvd [simp]:          "i zdvd j = (i dvd j)"
@@ -995,22 +995,22 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 
 constdefs
 
-   divT :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divT" 62)
+   divT :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divT" 70)
    "a divT b \<equiv> (\<bar>a\<bar> div \<bar>b\<bar>) * (sign (a*b))"
 
-   modT :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modT" 62)
+   modT :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modT" 70)
    "a modT b \<equiv> (\<bar>a\<bar> mod \<bar>b\<bar>) * (sign a)"
 
-   divC :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divC" 62)
+   divC :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divC" 70)
    "a divC b \<equiv>  if b dvd a  then a div b  else (a div b) + 1" 
    (************************* old *******************************
    * "a divC b \<equiv> if b dvd a \<or> sign a \<noteq> sign b                   *   
    *                then a divT b   else (a divT b) + 1"        *
    *************************************************************)
-   modC :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modC" 62)
+   modC :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modC" 70)
    "a modC b \<equiv> a - b * (a divC b)"
  
-   divS :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divS" 62)
+   divS :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divS" 70)
    "a divS b \<equiv> if 2*\<bar>a mod b\<bar> \<ge> \<bar>b\<bar> 
                   then (a div b) + 1  else a div b" 
    (************************* old *******************************
@@ -1020,13 +1020,13 @@ constdefs
    * "a divS b \<equiv> if 2*\<bar>a modT b\<bar> \<ge> \<bar>b\<bar>                          * 
    *                then (a divT b) + sign(a*b) else  a divT b" *   
    *************************************************************)
-   modS :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modS" 62)
+   modS :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modS" 70)
    "a modS b \<equiv> a - b * (a divS b)"
 
    next_even :: "int \<Rightarrow> int"
    "next_even i \<equiv> if 2 dvd i then i else i+1"
 
-   divR :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divR" 62)  
+   divR :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "divR" 70)  
    (* this is pretty much the same as the two below but we 
       don't have to introduce next_even or divS
     *)
@@ -1043,13 +1043,13 @@ constdefs
    *                 then a divT b                              *
    *                 else a divS b"                             *   
    *************************************************************)
-   modR :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modR" 62)
+   modR :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modR" 70)
    "a modR b \<equiv> a - b * (a divR b)"
 
-   divE :: "int \<Rightarrow> int \<Rightarrow> int"                 	(infixl "divE" 62)
+   divE :: "int \<Rightarrow> int \<Rightarrow> int"                 	(infixl "divE" 70)
    "a divE b \<equiv> (a div \<bar>b\<bar>) * (sign b)"
 
-   modE :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modE" 62)
+   modE :: "int \<Rightarrow> int \<Rightarrow> int"              	(infixl "modE" 70)
    "a modE b \<equiv> a mod \<bar>b\<bar>"
 
 

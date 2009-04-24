@@ -1141,22 +1141,22 @@ proof Isa Thy_Morphism Presburger
  Integer.>        -> >     Left 20
  Integer.sign     -> sign
  Integer.abs      -> zabs
- Integer./        -> div   Left 22
- Integer.divT     -> divT  Left 22
- Integer.divF     -> div   Left 22
- Integer.divC     -> divC  Left 22
- Integer.divR     -> divR  Left 22
- Integer.divE     -> divE  Left 22
- Integer.modT     -> modT  Left 22
- Integer.modF     -> mod   Left 22
- Integer.modC     -> modC  Left 22
- Integer.modR     -> modR  Left 22
- Integer.modE     -> modE  Left 22
- Integer.div      -> div   Left 22
- Integer.mod      -> mod   Left 22
+ Integer./        -> div   Left 27
+ Integer.divT     -> divT  Left 27
+ Integer.divF     -> div   Left 27
+ Integer.divC     -> divC  Left 27
+ Integer.divR     -> divR  Left 27
+ Integer.divE     -> divE  Left 27
+ Integer.modT     -> modT  Left 27
+ Integer.modF     -> mod   Left 27
+ Integer.modC     -> modC  Left 27
+ Integer.modR     -> modR  Left 27
+ Integer.modE     -> modE  Left 27
+ Integer.div      -> div   Left 27
+ Integer.mod      -> mod   Left 27
  Integer.min      -> min           curried
  Integer.max      -> max           curried
- Integer.divides  -> zdvd  Left 22 
+ Integer.divides  -> zdvd  Left 27 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
  Nat.succ         -> Suc
