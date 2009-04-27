@@ -2,6 +2,9 @@
 
 (in-package :Parser4)
 
+(defvar *parser-node-number*)
+(defvar *all-nodes*)
+
 (defun reset-parser-debug-vars ()
   (setq *parser-node-number* 0)
   (setq *all-nodes* nil)
