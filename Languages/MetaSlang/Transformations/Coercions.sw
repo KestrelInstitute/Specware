@@ -16,10 +16,10 @@ spec
      : Option(Boolean * TypeCoercionInfo) =
     % let _ = writeLine(printSort gen_ty^" -~-> "^printSort ctxt_ty) in
     let result =
-          case find (fn tb \_rightarrow subsortOf?(gen_ty,tb.subtype,spc) \_and \_not(subsortOf?(ctxt_ty,tb.subtype,spc))) coercions of
+          case find (fn tb \_rightarrow subtypeOf?(gen_ty,tb.subtype,spc) \_and \_not(subtypeOf?(ctxt_ty,tb.subtype,spc))) coercions of
             | Some tb \_rightarrow Some(true, tb)
             | None \_rightarrow
-          case find (fn tb \_rightarrow subsortOf?(ctxt_ty,tb.subtype,spc) \_and \_not(subsortOf?(gen_ty,tb.subtype,spc))) coercions of
+          case find (fn tb \_rightarrow subtypeOf?(ctxt_ty,tb.subtype,spc) \_and \_not(subtypeOf?(gen_ty,tb.subtype,spc))) coercions of
             | Some tb \_rightarrow Some(false, tb)
             | None \_rightarrow None
     in
@@ -27,7 +27,7 @@ spec
     result
 
   op opaqueType?(ty: Sort, coercions: TypeCoercionTable, spc: Spec): Boolean =
-    exists (fn tb \_rightarrow subsortOf?(ty,tb.subtype,spc)) coercions
+    exists (fn tb \_rightarrow subtypeOf?(ty,tb.subtype,spc)) coercions
 
   op idFn?(t: MS.Term): Boolean =
     case t of
@@ -111,9 +111,9 @@ spec
 	case tm of
 	  | Apply (t1, t2, a) \_rightarrow
 	    let fn_ty = inferType(spc,t1) in
-            (case find (fn tb \_rightarrow subsortOf?(fn_ty,tb.subtype,spc)) coercions of
+            (case find (fn tb \_rightarrow subtypeOf?(fn_ty,tb.subtype,spc)) coercions of
                | Some tb | tb.subtype = Qualified("Set","Set")->
-                 (case subsortOf(fn_ty, tb.subtype, spc) of
+                 (case subtypeOf(fn_ty, tb.subtype, spc) of
                     | Some(Base(_,[p],_)) ->
                       let t1 = if embed? Fun t1 then t1 else mapTerm(t1,fn_ty) in
                       let t2 = mapTerm(t2,p) in
@@ -168,14 +168,14 @@ spec
                      \_or %% Special case for minus (probably not worth generalizing)
                        %% minus on nats is equal to minus on integers if we know result is a nat
                      (qual = "Integer" \_and idn = "-" %\_and coerce_fn = int
-                        \_and subsortOf?(target_ty,Qualified("Nat","Nat"),spc))
+                        \_and subtypeOf?(target_ty,Qualified("Nat","Nat"),spc))
                  \_rightarrow
                  (case x of
                     | Let(m,b,a1) -> Let(m, liftCoercion(Apply(f,b,a),ty,target_ty), a1)
                     | _ ->
                   let new_x = removeCoercions(x,coerce_fn,true) in
                   let new_tm = Apply(f,new_x,a) in
-                  (if subsortOf?(ty,tb.supertype,spc) % This needs to be modified to not use .supertype!!
+                  (if subtypeOf?(ty,tb.supertype,spc) % This needs to be modified to not use .supertype!!
                     then Apply(coerce_fn,new_tm,a)
                     else new_tm))
                | _ \_rightarrow tm)
@@ -280,45 +280,6 @@ spec
     in
     % let _ = writeLine(printSpec spc) in
     spc
-
-  op  subsortOf?: Sort * QualifiedId * Spec \_rightarrow Boolean
-  def subsortOf?(ty,qid,spc) =
-    % let _ = toScreen(printQualifiedId qid^" <:? "^printSort ty^"\n") in
-    let result =
-    case ty of
-      | Base(qid1,srts,_) \_rightarrow
-        qid1 = qid
-	 \_or (case findTheSort (spc, qid1) of
-	      | None -> false
-	      | Some info ->
-		if definedSortInfo? info then
-		  let (tvs, srt) = unpackFirstSortDef info in
-		  let ssrt = substSort (zip (tvs, srts), srt) in
-		  subsortOf?(ssrt,qid,spc)
-		else
-		  false)
-      | Subsort(t1,_,_) -> subsortOf?(t1,qid,spc)
-      | _ \_rightarrow false
-    in
-    % let _ = writeLine("= "^ (if result then "true" else "false")) in
-    result
-
-  op subsortOf(ty: Sort, qid: QualifiedId, spc: Spec): Option Sort =
-    case ty of
-      | Base(qid1,srts,_) \_rightarrow
-        if qid1 = qid then Some ty
-          else
-	 (case findTheSort (spc, qid1) of
-            | None -> None
-            | Some info ->
-              if definedSortInfo? info then
-                let (tvs, srt) = unpackFirstSortDef info in
-                let ssrt = substSort (zip (tvs, srts), srt) in
-                subsortOf(ssrt,qid,spc)
-              else
-                None)
-      | Subsort(t1,_,_) -> subsortOf(t1,qid,spc)
-      | _ \_rightarrow None
 
   op  overloadedTerm?: MS.Term \_rightarrow Boolean
   def overloadedTerm? tm =
