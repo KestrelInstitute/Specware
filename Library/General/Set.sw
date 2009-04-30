@@ -92,7 +92,7 @@ end-proof
 
 op [a] empty? (s: Set a) : Bool = (s = empty)
 proof Isa [simp] end-proof
-proof Isa Set__empty_p__stp [simp] end-proof
+proof Isa empty_p__stp [simp] end-proof
 
 % sets with at least 1 element:
 
@@ -223,7 +223,7 @@ type FiniteSet a = (Set a | finite?)
 theorem finite_insert is [a]
   fa (s: FiniteSet a, x: a)
     finite? (s <| x)
-proof Isa Set__finite_insert__stp
+proof Isa finite_insert__stp
 apply(case_tac "x \_in s")
 apply(simp only: insert_absorb Set_P_RSet)
 apply(simp add: Set__finite_p__stp_def)
@@ -252,11 +252,10 @@ proof Isa induction__stp_Obligation_subtype
   by (simp add: Set__finite_p__stp_def)
 end-proof
 proof Isa induction__stp_Obligation_subtype0
-  apply(erule ssubst)
   by (rule Set__finite_insert__stp)
 end-proof
 
-proof Isa Set__induction__stp
+proof Isa induction__stp
 proof -
  txt {* We define a local predicate @{term "atMostOfSize s n"} saying when a set
  @{term s} has at most size @{term n}: all the elements of @{term s} are covered
@@ -574,7 +573,7 @@ proof -
 qed
 end-proof
 
-proof Isa Set__induction
+proof Isa induction
  sorry
 end-proof
 
@@ -590,7 +589,7 @@ proof Isa size__stp_Obligation_subtype0
 by (auto simp only: Set__finite_insert__stp)
 end-proof
 
-proof Isa Set__size__stp_Obligation_subtype1
+proof Isa size__stp_Obligation_subtype1
  sorry
 end-proof
 
@@ -601,7 +600,7 @@ apply(intro conjI allI impI)
 sorry
 end-proof
 
-proof Isa Set__size_Obligation_the
+proof Isa size_Obligation_the
  sorry
 end-proof
 
@@ -628,39 +627,39 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
-proof Isa Set__fold__stp_Obligation_subtype
+proof Isa fold__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype0
+proof Isa fold__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype1
+proof Isa fold__stp_Obligation_subtype1
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype2
+proof Isa fold__stp_Obligation_subtype2
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype3
+proof Isa fold__stp_Obligation_subtype3
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype4
+proof Isa fold__stp_Obligation_subtype4
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_subtype5
+proof Isa fold__stp_Obligation_subtype5
  sorry
 end-proof
 
-proof Isa Set__fold__stp_Obligation_the
+proof Isa fold__stp_Obligation_the
  sorry
 end-proof
 
-proof Isa Set__fold_Obligation_the
+proof Isa fold_Obligation_the
  sorry
 end-proof
 
@@ -668,23 +667,15 @@ end-proof
 
 op [a] powerf (s: Set a) : Set (FiniteSet a) = power s /\ finite?
 
-proof Isa Set__powerf__stp_Obligation_subtype
+proof Isa powerf__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa Set__powerf__stp_Obligation_subtype0
- sorry
+proof Isa powerf__stp_Obligation_subtype0
+ by (simp add: Set_P_def mem_def)
 end-proof
 
-proof Isa Set__powerf__stp_Obligation_subtype1
- sorry
-end-proof
-
-proof Isa Set__powerf_Obligation_subtype
- sorry
-end-proof
-
-proof Isa Set__powerf_Obligation_subtype0
+proof Isa powerf_Obligation_subtype
  sorry
 end-proof
 
@@ -719,7 +710,7 @@ type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
 op [a] min (ss: SetOfSetsWithMin a) : Set a = the(s) s isMinIn ss
 
-proof Isa Set__min__stp_Obligation_the
+proof Isa min__stp_Obligation_the
  sorry
 end-proof
 
@@ -737,7 +728,7 @@ type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
 
-proof Isa Set__max__stp_Obligation_the
+proof Isa max__stp_Obligation_the
  sorry
 end-proof
 

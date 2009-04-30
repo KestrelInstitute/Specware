@@ -86,99 +86,83 @@ op [a] transitiveClosure (r: EndoRelation a) : TransitiveRelation a =
 op [a] equivalenceClosure (r: EndoRelation a) : Equivalence a =
   min (fn rc -> r <= rc && equivalence? rc)
 
-proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype
+proof Isa reflexiveClosure__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype0
+proof Isa reflexiveClosure__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__reflexiveClosure__stp_Obligation_subtype1
+proof Isa reflexiveClosure_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__reflexiveClosure_Obligation_subtype
+proof Isa reflexiveClosure_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__reflexiveClosure_Obligation_subtype0
+proof Isa reflexiveClosure_subtype_constr
  sorry
 end-proof
 
-proof Isa EndoRelation__reflexiveClosure_subtype_constr
+proof Isa symmetricClosure__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype
+proof Isa symmetricClosure__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype0
+proof Isa symmetricClosure_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure__stp_Obligation_subtype1
+proof Isa symmetricClosure_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure_Obligation_subtype
+proof Isa symmetricClosure_subtype_constr
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure_Obligation_subtype0
+proof Isa transitiveClosure__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__symmetricClosure_subtype_constr
+proof Isa transitiveClosure__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype
+proof Isa transitiveClosure_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype0
+proof Isa transitiveClosure_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure__stp_Obligation_subtype1
+proof Isa transitiveClosure_subtype_constr
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure_Obligation_subtype
+proof Isa equivalenceClosure__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure_Obligation_subtype0
+proof Isa equivalenceClosure__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__transitiveClosure_subtype_constr
+proof Isa equivalenceClosure_Obligation_subtype
  sorry
 end-proof
 
-proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype
+proof Isa equivalenceClosure_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype0
- sorry
-end-proof
-
-proof Isa EndoRelation__equivalenceClosure__stp_Obligation_subtype1
- sorry
-end-proof
-
-proof Isa EndoRelation__equivalenceClosure_Obligation_subtype
- sorry
-end-proof
-
-proof Isa EndoRelation__equivalenceClosure_Obligation_subtype0
- sorry
-end-proof
-
-proof Isa EndoRelation__equivalenceClosure_subtype_constr
+proof Isa equivalenceClosure_subtype_constr
  sorry
 end-proof
 

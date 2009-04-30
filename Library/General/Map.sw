@@ -111,6 +111,10 @@ proof Isa MapAC__fromFunction_Obligation_subtype
  sorry
 end-proof
 
+proof Isa MapAC__fromFunction_Obligation_subtype0
+ sorry
+end-proof
+
 proof Isa MapAC__fromFunction_subtype_constr
  sorry
 end-proof
