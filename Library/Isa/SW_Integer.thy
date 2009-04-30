@@ -766,10 +766,10 @@ theorem Integer__divides_iff_modE_0:
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modE j = 0)"
    apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
   done
-theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
+theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
-theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
+theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals: 
@@ -777,10 +777,10 @@ theorem Integer__divE_equals_divT_on_naturals:
    int i divE int j = int i divT int j"
   apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
   done
-theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
+theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
-theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
+theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals: 
