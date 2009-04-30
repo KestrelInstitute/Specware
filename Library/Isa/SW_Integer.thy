@@ -244,8 +244,8 @@ theorem Nat__pred_Obligation_subtype:
 consts Nat__pred :: "Nat__PosNat \<Rightarrow> nat"
 defs Nat__pred_def: "Nat__pred n \<equiv> nat (pred (int n))"
 theorem Integer__sign_Obligation_subtype: 
-  "\<lbrakk>\<not> ((i::int) > 0); i < 0; (s_1::int) = - 1\<rbrakk> \<Longrightarrow> 
-   s_1 = 0 \<or> (s_1 = 1 \<or> s_1 = s_1)"
+  "\<lbrakk>\<not> ((i::int) > 0); i < 0\<rbrakk> \<Longrightarrow> 
+   - 1 = 0 \<or> (- 1 = 1 \<or> - 1 = - 1)"
   by auto
 theorem Integer__sign_subtype_constr: 
   "\<lbrakk>(s::int) = sign dom_sign\<rbrakk> \<Longrightarrow> s = 0 \<or> (s = 1 \<or> s = - 1)"
@@ -498,7 +498,7 @@ theorem Integer__divF__def:
 theorem Integer__divF__def1: 
   "\<lbrakk>(j::int) \<noteq> 0; 
     \<not> (i modT j = 0 \<or> sign i = sign j)\<rbrakk> \<Longrightarrow> 
-   i div j = (i divT j) - 1"
+   i div j = i divT j - 1"
   apply(simp add: divides_iff_modT_0 [symmetric] divT_vs_div_else)
   done
 theorem Integer__modF__def: 
@@ -545,7 +545,7 @@ theorem Integer__modF_of_negated_divisor_Obligation_subtype:
 theorem Integer__modF_of_negated_divisor: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i mod - j 
-     = (i mod j) - j * (if j zdvd i then 0 else 1)"
+     = i mod j - j * (if j zdvd i then 0 else 1)"
   apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus2_eq_if)
   done
 theorem Integer__modF_of_negated_dividend: 
@@ -567,7 +567,7 @@ theorem Integer__divC__def:
 theorem Integer__divC__def1: 
   "\<lbrakk>(j::int) \<noteq> 0; 
     \<not> (i modT j = 0 \<or> sign i \<noteq> sign j)\<rbrakk> \<Longrightarrow> 
-   i divC j = (i divT j) + 1"
+   i divC j = i divT j + 1"
    apply(simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_eqsign)
   done
 theorem Integer__modC__def: 
@@ -587,7 +587,7 @@ theorem Integer__divC_divF_relation:
    if j zdvd i then 
      i divC j = i div j
    else 
-     i divC j = (i div j) + 1"
+     i divC j = i div j + 1"
    apply(simp add: divC_def)
   done
 theorem Integer__divC_of_negated_divisor_Obligation_subtype: 
@@ -625,7 +625,7 @@ theorem Integer__modC_of_negated_divisor_Obligation_subtype:
 theorem Integer__modC_of_negated_divisor: 
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i modC - j 
-     = (i modC j) + j * (if j zdvd i then 0 else 1)"
+     = i modC j + j * (if j zdvd i then 0 else 1)"
    apply(auto simp add: modC_def Integer__divC_of_negated_divisor ring_simps)
   done
 theorem Integer__modC_of_negated_dividend: 
@@ -766,22 +766,22 @@ theorem Integer__divides_iff_modE_0:
   "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modE j = 0)"
    apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
   done
-theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
-  by auto
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  by auto
+theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
    int i divE int j = int i divT int j"
   apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
   done
-theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
-  by auto
 theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  by auto
+theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
@@ -789,7 +789,7 @@ theorem Integer__divE_equals_divF_on_naturals:
   apply (simp add: divE_def sign_def int_mult [symmetric])
   done
 theorem Integer__div_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__div_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
@@ -801,7 +801,7 @@ theorem Integer__div__def:
          auto simp add: nat_eq_iff2 zdiv_int)
   done
 theorem Integer__mod_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; Nat__posNat_p (j::Nat__PosNat); j \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__mod_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i modE int j \<ge> 0"

@@ -11,17 +11,14 @@ theorem String__length__def:
   "length s = length (id s)"
   by auto
 theorem String__e_at_Obligation_subtype: 
-  "\<lbrakk>(i::nat) < length s; let ignore = id s in i \<ge> 0\<rbrakk> \<Longrightarrow> 
-   i < length (id s) \<and> i \<ge> 0"
+  "\<lbrakk>(i::nat) < length s\<rbrakk> \<Longrightarrow> i < length (id s)"
   by auto
 theorem String__e_at__def: 
   "\<lbrakk>i < length s\<rbrakk> \<Longrightarrow> s ! i = id s ! i"
   by auto
 theorem String__subFromTo_Obligation_subtype: 
-  "\<lbrakk>(i::nat) \<le> (j::nat); 
-    j \<le> length s; 
-    let ignore = id s in i \<ge> 0 \<and> j \<ge> 0\<rbrakk> \<Longrightarrow> 
-   j \<le> length (id s) \<and> (i \<ge> 0 \<and> j \<ge> 0)"
+  "\<lbrakk>(i::nat) \<le> (j::nat); j \<le> length s\<rbrakk> \<Longrightarrow> 
+   j \<le> length (id s)"
   by auto
 consts String__subFromTo :: "string \<times> nat \<times> nat \<Rightarrow> string"
 defs String__subFromTo_def: 
@@ -167,7 +164,7 @@ theorem Nat__natToString_Obligation_subtype0:
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
   by auto
 theorem Nat__natToString_Obligation_subtype1: 
-  "\<lbrakk>\<not> ((x::nat) < 10); x mod 10 \<ge> 0\<rbrakk> \<Longrightarrow> x mod 10 < 10"
+  "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> x mod 10 < 10"
   by auto
 consts Nat__natToString :: "nat \<Rightarrow> string"
 recdef Nat__natToString "measure size"

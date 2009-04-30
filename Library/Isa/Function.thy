@@ -97,8 +97,7 @@ types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
 theorem Function__inverse__stp_Obligation_subtype: 
   "\<lbrakk>Function__bijective_p__stp(P__a, \<lambda> ignore. True) f; 
-    Fun_PD P__a f; 
-    Function__bijective_p__stp(P__a, \<lambda> ignore. True) f\<rbrakk> \<Longrightarrow> 
+    Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    Function__bijective_p__stp(\<lambda> ignore. True, P__a)
       (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
   apply(simp only: Function__bijective_p__stp_simp univ_true)
@@ -116,9 +115,7 @@ theorem Function__inverse__stp_Obligation_subtype:
 theorem Function__inverse__stp_Obligation_the: 
   "\<lbrakk>Function__bijective_p__stp((P__a::'a \<Rightarrow> bool), \<lambda> ignore. True) (f::'a \<Rightarrow> 'b); 
     Fun_PD P__a f; 
-    P__a (x::'a); 
-    Function__bijective_p__stp(P__a, \<lambda> ignore. True) f; 
-    P__a x\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
+    P__a (x::'a)\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
   apply(auto simp add:
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)

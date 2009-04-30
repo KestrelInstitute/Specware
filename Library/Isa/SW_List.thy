@@ -601,8 +601,7 @@ theorem List__e_at__def:
   "\<lbrakk>Some (x::'a) = List__list_1 l i; i < length l\<rbrakk> \<Longrightarrow> l ! i = x"
   by (auto simp add: list_1_Isa_nth)
 theorem List__element_of_tabulate_Obligation_subtype: 
-  "\<lbrakk>(i::nat) < n; let ignore = List__tabulate(n, f) in i \<ge> 0\<rbrakk> \<Longrightarrow> 
-   i < length (List__tabulate(n, f)) \<and> i \<ge> 0"
+  "\<lbrakk>(i::nat) < n\<rbrakk> \<Longrightarrow> i < length (List__tabulate(n, f))"
   by (auto simp add: List__length_tabulate)
 theorem List__element_of_tabulate: 
   "\<lbrakk>(i::nat) < n\<rbrakk> \<Longrightarrow> List__tabulate(n, f) ! i = f i"
@@ -805,9 +804,8 @@ theorem List__subFromLong_Obligation_subtype0:
    i + j \<ge> 0"
   by auto
 theorem List__subFromLong_Obligation_subtype1: 
-  "\<lbrakk>(i::nat) + (n::nat) \<le> length l; 
-    (j::nat) < n; 
-    i + j \<ge> 0\<rbrakk> \<Longrightarrow> i + j < length l"
+  "\<lbrakk>(i::nat) + (n::nat) \<le> length l; (j::nat) < n\<rbrakk> \<Longrightarrow> 
+   i + j < length l"
   by auto
 consts List__subFromLong :: "'a list \<times> nat \<times> nat \<Rightarrow> 'a list"
 defs List__subFromLong_def: 
@@ -839,7 +837,7 @@ theorem List__length_subFromLong:
  with subl_def show ?thesis by auto
 qed
 theorem List__subFromLong_whole_Obligation_subtype: 
-  "\<lbrakk>length l \<ge> 0\<rbrakk> \<Longrightarrow> 0 + length l \<le> length l"
+  "0 + length l \<le> length l"
   by auto
 theorem List__subFromLong_whole: 
   "List__subFromLong(l, 0, length l) = l"
@@ -890,10 +888,7 @@ theorem List__subFromTo_Obligation_subtype:
   "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> int j - int i \<ge> 0"
   by auto
 theorem List__subFromTo_Obligation_subtype0: 
-  "\<lbrakk>i \<le> j; 
-    j \<le> length l; 
-    i \<ge> 0; 
-    int j - int i \<ge> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 
    int i + (int j - int i) \<le> int (length l)"
   by auto
 consts List__subFromTo :: "'a list \<times> nat \<times> nat \<Rightarrow> 'a list"
@@ -902,13 +897,13 @@ defs List__subFromTo_def:
      \<equiv> (\<lambda> ((l::'a list), (i::nat), (j::nat)). 
           List__subFromLong(l, i, j - i))"
 theorem List__subFromTo_whole_Obligation_subtype: 
-  "\<lbrakk>(j::nat) \<ge> 0; j = length l\<rbrakk> \<Longrightarrow> 0 \<le> j \<and> j \<le> j"
+  "\<lbrakk>(j::nat) = length l\<rbrakk> \<Longrightarrow> 0 \<le> j \<and> j \<le> j"
   by auto
 theorem List__subFromTo_whole [simp]: 
   "List__subFromTo(l, 0, length l) = l"
   by (auto simp add: List__subFromTo_def List__subFromLong_whole)
 theorem List__prefix_Obligation_subtype: 
-  "\<lbrakk>(n::nat) \<le> length l; n \<ge> 0\<rbrakk> \<Longrightarrow> 0 + n \<le> length l"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> 0 + n \<le> length l"
   by auto
 theorem List__prefix__def: 
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> (take n l) = List__subFromLong(l, 0, n)"
@@ -944,9 +939,7 @@ theorem List__suffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__suffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l; 
-    int (length l) - int n \<ge> 0; 
-    n \<ge> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
    (int (length l) - int n) + int n 
      \<le> int (length l)"
   by auto
@@ -959,7 +952,7 @@ theorem List__removePrefix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removePrefix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l; int (length l) - int n \<ge> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
    int (length l) - int n \<le> int (length l)"
   by auto
 theorem List__removePrefix__def: 
@@ -999,7 +992,7 @@ theorem List__removeSuffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removeSuffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l; int (length l) - int n \<ge> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
    int (length l) - int n \<le> int (length l)"
   by auto
 consts List__removeSuffix :: "'a list \<times> nat \<Rightarrow> 'a list"
@@ -1156,13 +1149,11 @@ theorem List__length_butLast_order [simp]:
   "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> length (butlast l) < length l"
   by (auto simp add: List__length_butLast)
 theorem List__e_pls_pls_Obligation_subtype: 
-  "\<lbrakk>length l = length l1 + length (l2::'a list); 
-    length l1 \<ge> 0\<rbrakk> \<Longrightarrow> length l1 \<le> length l"
+  "\<lbrakk>length l = length l1 + length l2\<rbrakk> \<Longrightarrow> length l1 \<le> length l"
   by auto
 theorem List__e_pls_pls_Obligation_subtype0: 
-  "\<lbrakk>length l = length (l1::'a list) + length l2; 
-    (take (length l1) l) = l1; 
-    length l2 \<ge> 0\<rbrakk> \<Longrightarrow> length l2 \<le> length l"
+  "\<lbrakk>length l = length l1 + length l2; 
+    (take (length l1) l) = l1\<rbrakk> \<Longrightarrow> length l2 \<le> length l"
   by auto
 theorem List__e_pls_pls_Obligation_the: 
   "\<exists>!(l::'a list). 
@@ -1612,8 +1603,7 @@ theorem List__zip_Obligation_subtype:
        definedOnInitialSegmentOfLength n"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 theorem List__zip_Obligation_subtype0: 
-  "\<lbrakk>(l1::'a list) equiLong l2; (i::nat) < length l1; i \<ge> 0\<rbrakk> \<Longrightarrow> 
-   i < length l2"
+  "\<lbrakk>l1 equiLong l2; (i::nat) < length l1\<rbrakk> \<Longrightarrow> i < length l2"
   by auto
 theorem List__zip__def: 
   "\<lbrakk>l1 equiLong l2\<rbrakk> \<Longrightarrow> 
@@ -1668,16 +1658,14 @@ theorem List__zip3_Obligation_subtype:
        definedOnInitialSegmentOfLength n"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 theorem List__zip3_Obligation_subtype0: 
-  "\<lbrakk>(l1::'a list) equiLong l2; 
+  "\<lbrakk>l1 equiLong l2; 
     l2 equiLong (l3::'c list); 
-    (i::nat) < length l1; 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l2"
+    (i::nat) < length l1\<rbrakk> \<Longrightarrow> i < length l2"
   by auto
 theorem List__zip3_Obligation_subtype1: 
-  "\<lbrakk>(l1::'a list) equiLong (l2::'b list); 
+  "\<lbrakk>l1 equiLong (l2::'b list); 
     l2 equiLong l3; 
-    (i::nat) < length l1; 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l3"
+    (i::nat) < length l1\<rbrakk> \<Longrightarrow> i < length l3"
   by auto
 consts List__zip3 :: "'a list \<times> 'b list \<times> 'c list \<Rightarrow> ('a \<times> 'b \<times> 'c) list"
 defs List__zip3_def: 
@@ -2237,9 +2225,7 @@ defs List__removeNones_def:
          = filter (\<lambda> (cp::'a option). case cp of Some _ \<Rightarrow> True
                                                | _ \<Rightarrow> False) l)"
 theorem List__matchingOptionLists_p_Obligation_subtype: 
-  "\<lbrakk>(l1::'a option list) equiLong l2; 
-    (i::nat) < length l1; 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l2"
+  "\<lbrakk>l1 equiLong l2; (i::nat) < length l1\<rbrakk> \<Longrightarrow> i < length l2"
   by auto
 consts List__matchingOptionLists_p :: "'a option list \<times> 'b option list \<Rightarrow> bool"
 defs List__matchingOptionLists_p_def: 
@@ -2346,7 +2332,7 @@ theorem List__reverse_Obligation_subtype0:
   "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> (int (length l) - int i) - 1 \<ge> 0"
   by auto
 theorem List__reverse_Obligation_subtype1: 
-  "\<lbrakk>i < length l; (int (length l) - int i) - 1 \<ge> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> 
    (int (length l) - int i) - 1 < int (length l)"
   by auto
 theorem List__reverse__def: 
@@ -2475,16 +2461,14 @@ theorem List__extendRight_length:
   "\<lbrakk>n \<ge> length l\<rbrakk> \<Longrightarrow> length (List__extendRight(l, x, n)) = n"
   by (auto simp: List__extendRight_def)
 theorem List__equiExtendLeft_Obligation_subtype: 
-  "\<lbrakk>length l1 < length l2; length l2 \<ge> 0\<rbrakk> \<Longrightarrow> 
-   length l2 \<ge> length l1"
+  "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> length l2 \<ge> length l1"
   by auto
 theorem List__equiExtendLeft_Obligation_subtype0: 
   "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> 
    List__extendLeft(l1, x1, length l2) equiLong l2"
   by (auto simp: List__extendLeft_def List__repeat_length length_append)
 theorem List__equiExtendLeft_Obligation_subtype1: 
-  "\<lbrakk>\<not> (length l1 < length l2); length l1 \<ge> 0\<rbrakk> \<Longrightarrow> 
-   length l1 \<ge> length l2"
+  "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> length l1 \<ge> length l2"
   by auto
 theorem List__equiExtendLeft_Obligation_subtype2: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> 
@@ -2517,16 +2501,14 @@ theorem List__equiExtendLeft_subtype_constr:
  qed
 qed
 theorem List__equiExtendRight_Obligation_subtype: 
-  "\<lbrakk>length l1 < length l2; length l2 \<ge> 0\<rbrakk> \<Longrightarrow> 
-   length l2 \<ge> length l1"
+  "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> length l2 \<ge> length l1"
   by auto
 theorem List__equiExtendRight_Obligation_subtype0: 
   "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> 
    List__extendRight(l1, x1, length l2) equiLong l2"
   by (auto simp: List__extendRight_def List__repeat_length length_append)
 theorem List__equiExtendRight_Obligation_subtype1: 
-  "\<lbrakk>\<not> (length l1 < length l2); length l1 \<ge> 0\<rbrakk> \<Longrightarrow> 
-   length l1 \<ge> length l2"
+  "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> length l1 \<ge> length l2"
   by auto
 theorem List__equiExtendRight_Obligation_subtype2: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> 
@@ -2559,9 +2541,7 @@ theorem List__equiExtendRight_subtype_constr:
  qed
 qed
 theorem List__shiftLeft_Obligation_subtype: 
-  "\<lbrakk>let ignore = l @ (replicate n x) in n \<ge> 0\<rbrakk> \<Longrightarrow> 
-   n \<le> length ((l::'a list) @ (replicate n x)) 
-     \<and> n \<ge> 0"
+  "n \<le> length ((l::'a list) @ (replicate n x))"
   by auto
 consts List__shiftLeft :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftLeft_def: 
@@ -2569,9 +2549,7 @@ defs List__shiftLeft_def:
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
           drop n (l @ (replicate n x)))"
 theorem List__shiftRight_Obligation_subtype: 
-  "\<lbrakk>let ignore = (replicate n x) @ l in n \<ge> 0\<rbrakk> \<Longrightarrow> 
-   n \<le> length ((replicate n x) @ (l::'a list)) 
-     \<and> n \<ge> 0"
+  "n \<le> length ((replicate n x) @ (l::'a list))"
   by auto
 consts List__shiftRight :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftRight_def: 
@@ -2579,17 +2557,13 @@ defs List__shiftRight_def:
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
           List__removeSuffix((replicate n x) @ l, n))"
 theorem List__rotateLeft_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
   by auto
 theorem List__rotateLeft_Obligation_subtype0: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    (n::nat) mod length l = (n_1::nat); 
-    n_1 \<ge> 0\<rbrakk> \<Longrightarrow> n_1 \<le> length l"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> (n::nat) mod length l \<le> length l"
   by auto
 theorem List__rotateLeft_Obligation_subtype1: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    (n::nat) mod length l = (n_1::nat); 
-    n_1 \<ge> 0\<rbrakk> \<Longrightarrow> n_1 \<le> length l"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> (n::nat) mod length l \<le> length l"
   by auto
 consts List__rotateLeft :: "'a List__List1 \<times> nat \<Rightarrow> 'a list"
 defs List__rotateLeft_def: 
@@ -2599,17 +2573,13 @@ defs List__rotateLeft_def:
           in 
           (drop n l) @ (take n l))"
 theorem List__rotateRight_Obligation_subtype: 
-  "\<lbrakk>(l::'a list) \<noteq> []; length l \<ge> 0\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
   by auto
 theorem List__rotateRight_Obligation_subtype0: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    (n::nat) mod length l = (n_1::nat); 
-    n_1 \<ge> 0\<rbrakk> \<Longrightarrow> n_1 \<le> length l"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> (n::nat) mod length l \<le> length l"
   by auto
 theorem List__rotateRight_Obligation_subtype1: 
-  "\<lbrakk>(l::'a list) \<noteq> []; 
-    (n::nat) mod length l = (n_1::nat); 
-    n_1 \<ge> 0\<rbrakk> \<Longrightarrow> n_1 \<le> length l"
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> (n::nat) mod length l \<le> length l"
   by auto
 consts List__rotateRight :: "'a List__List1 \<times> nat \<Rightarrow> 'a list"
 defs List__rotateRight_def: 
@@ -2623,10 +2593,9 @@ theorem List__flatten__def:
   by (auto simp: concat_conv_foldl)
 theorem List__unflattenL_Obligation_subtype: 
   "\<lbrakk>foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0 lens 
-      = length (concat (ll::'a list list)); 
+      = length (concat ll); 
     ll equiLong lens; 
-    (i::nat) < length ll; 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length lens"
+    (i::nat) < length ll\<rbrakk> \<Longrightarrow> i < length lens"
   by auto
 theorem List__unflattenL_Obligation_the: 
   "\<lbrakk>foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0 lens 
@@ -2872,15 +2841,13 @@ next
 qed
 types 'a List__InjList = "'a list"
 theorem List__increasingNats_p_Obligation_subtype: 
-  "\<lbrakk>int (i::nat) < int (length nats) - 1; i \<ge> 0\<rbrakk> \<Longrightarrow> 
-   i < length nats"
+  "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> i < length nats"
   by auto
 theorem List__increasingNats_p_Obligation_subtype0: 
   "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> i + 1 \<ge> 0"
   by auto
 theorem List__increasingNats_p_Obligation_subtype1: 
-  "\<lbrakk>int (i::nat) < int (length nats) - 1; 
-    i + 1 \<ge> 0\<rbrakk> \<Longrightarrow> i + 1 < length nats"
+  "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> i + 1 < length nats"
   by auto
 consts List__increasingNats_p :: "nat list \<Rightarrow> bool"
 defs List__increasingNats_p_def: 
@@ -3403,8 +3370,7 @@ qed
 theorem List__leftmostPositionSuchThat_Obligation_subtype: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
-    \<not> (null POSs); 
-    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 consts List__leftmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__leftmostPositionSuchThat_def: 
@@ -3416,8 +3382,7 @@ defs List__leftmostPositionSuchThat_def:
 theorem List__rightmostPositionSuchThat_Obligation_subtype: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsSuchThat((l::'a list), (p::'a \<Rightarrow> bool)) = POSs; 
-    \<not> (null POSs); 
-    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 consts List__rightmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bool) \<Rightarrow> nat option"
 defs List__rightmostPositionSuchThat_def: 
@@ -4141,8 +4106,7 @@ qed
 theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist((subl::'a list), (supl::'a list)) = POSs; 
-    \<not> (null POSs); 
-    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 
@@ -4151,11 +4115,9 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0:
   by auto
 theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype1: 
   "\<lbrakk>distinct (POSs::nat list); 
-    List__positionsOfSublist(subl, supl) = (POSs::nat List__InjList); 
-    \<not> (null POSs); 
-    hd POSs = (i::nat); 
-    i + length subl \<ge> 0\<rbrakk> \<Longrightarrow> 
-   i + length subl \<le> length supl"
+    List__positionsOfSublist(subl, supl) = POSs; 
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> 
+   hd POSs + length subl \<le> length supl"
   proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
@@ -4171,11 +4133,11 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype1:
    by (rule eq_the_sat)
  hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
- assume "hd POSs = i" and "\<not> null POSs"
- hence "i mem POSs" by (auto simp: mem_iff empty_null)
- with M have "List__sublistAt_p (subl, i, supl)" by auto
+ assume "\<not> null POSs"
+ hence "hd POSs mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, hd POSs, supl)" by auto
  then obtain pre and post
-  where "pre @ subl @ post = supl" and "length pre = i"
+  where "pre @ subl @ post = supl" and "length pre = hd POSs"
    by (auto simp: List__sublistAt_p_def)
  thus ?thesis by auto
 qed
@@ -4195,16 +4157,12 @@ defs List__leftmostPositionOfSublistAndFollowing_def:
 theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype: 
   "\<lbrakk>distinct (POSs::nat list); 
     List__positionsOfSublist((subl::'a list), (supl::'a list)) = POSs; 
-    \<not> (null POSs); 
-    distinct POSs\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> List__nonEmpty_p POSs"
   by auto
 theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0: 
   "\<lbrakk>distinct (POSs::nat list); 
-    List__positionsOfSublist((subl::'a list), supl) 
-      = (POSs::nat List__InjList); 
-    \<not> (null POSs); 
-    last POSs = (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i \<le> length supl"
+    List__positionsOfSublist((subl::'a list), supl) = POSs; 
+    \<not> (null POSs)\<rbrakk> \<Longrightarrow> last POSs \<le> length supl"
   proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
@@ -4220,11 +4178,11 @@ theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0:
    by (rule eq_the_sat)
  hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
- assume "last POSs = i" and "\<not> null POSs"
- hence "i mem POSs" by (auto simp: mem_iff empty_null)
- with M have "List__sublistAt_p (subl, i, supl)" by auto
+ assume "\<not> null POSs"
+ hence "last POSs mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, last POSs, supl)" by auto
  then obtain pre and post
-  where "pre @ subl @ post = supl" and "length pre = i"
+  where "pre @ subl @ post = supl" and "length pre = last POSs"
    by (auto simp: List__sublistAt_p_def)
  thus ?thesis by auto
 qed
@@ -4240,13 +4198,13 @@ defs List__rightmostPositionOfSublistAndPreceding_def:
           else 
             let i = last POSs in Some (i, take i supl))"
 theorem List__splitAt_Obligation_subtype: 
-  "\<lbrakk>(i::nat) < length l; i \<ge> 0\<rbrakk> \<Longrightarrow> i \<le> length l"
+  "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i \<le> length l"
   by auto
 theorem List__splitAt_Obligation_subtype0: 
   "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i + 1 \<ge> 0"
   by auto
 theorem List__splitAt_Obligation_subtype1: 
-  "\<lbrakk>(i::nat) < length l; i + 1 \<ge> 0\<rbrakk> \<Longrightarrow> i + 1 \<le> length l"
+  "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i + 1 \<le> length l"
   by auto
 consts List__splitAt :: "'a list \<times> nat \<Rightarrow> 'a list \<times> 'a \<times> 'a list"
 defs List__splitAt_def: 
@@ -4254,9 +4212,7 @@ defs List__splitAt_def:
      \<equiv> (\<lambda> ((l::'a list), (i::nat)). 
           (take i l, l ! i, drop (i + 1) l))"
 theorem List__splitAtLeftmost_Obligation_subtype: 
-  "\<lbrakk>List__leftmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l"
+  "\<lbrakk>List__leftmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i < length l"
   proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__leftmostPositionSuchThat (l, p) = Some i"
@@ -4289,9 +4245,7 @@ defs List__splitAtLeftmost_def:
          of Some i \<Rightarrow> Some (List__splitAt(l, i))
           | None \<Rightarrow> None)"
 theorem List__splitAtRightmost_Obligation_subtype: 
-  "\<lbrakk>List__rightmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l"
+  "\<lbrakk>List__rightmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i < length l"
   proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__rightmostPositionSuchThat (l, p) = Some i"
@@ -4344,9 +4298,7 @@ defs List__findRightmost_def:
         in 
         (if null lp then None else Some (last lp)))"
 theorem List__findLeftmostAndPreceding_Obligation_subtype: 
-  "\<lbrakk>List__leftmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l"
+  "\<lbrakk>List__leftmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i < length l"
   proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__leftmostPositionSuchThat (l, p) = Some i"
@@ -4372,11 +4324,9 @@ theorem List__findLeftmostAndPreceding_Obligation_subtype:
  thus ?thesis by auto
 qed
 theorem List__findLeftmostAndPreceding_Obligation_subtype0: 
-  "\<lbrakk>List__leftmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i \<le> length l"
+  "\<lbrakk>List__leftmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i \<le> length l"
   proof -
- assume "List__leftmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ assume "List__leftmostPositionSuchThat (l, p) = Some i"
  with List__findLeftmostAndPreceding_Obligation_subtype
   have "i < length l" by auto
  thus ?thesis by auto
@@ -4389,9 +4339,7 @@ defs List__findLeftmostAndPreceding_def:
          of None \<Rightarrow> None
           | Some i \<Rightarrow> Some (l ! i, take i l))"
 theorem List__findRightmostAndFollowing_Obligation_subtype: 
-  "\<lbrakk>List__rightmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length l"
+  "\<lbrakk>List__rightmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i < length l"
   proof -
  def POSs \<equiv> "List__positionsSuchThat (l, p)"
  assume "List__rightmostPositionSuchThat (l, p) = Some i"
@@ -4417,11 +4365,10 @@ theorem List__findRightmostAndFollowing_Obligation_subtype:
  thus ?thesis by auto
 qed
 theorem List__findRightmostAndFollowing_Obligation_subtype0: 
-  "\<lbrakk>List__rightmostPositionSuchThat(l, (p::'a \<Rightarrow> bool)) 
-      = Some (i::nat); 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i \<le> length l"
+  "\<lbrakk>List__rightmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> 
+   i \<le> length l"
   proof -
- assume "List__rightmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ assume "List__rightmostPositionSuchThat (l, p) = Some i"
  with List__findRightmostAndFollowing_Obligation_subtype
   have "i < length l" by auto
  thus ?thesis by auto
@@ -4443,19 +4390,17 @@ defs List__diff_def:
           filter (\<lambda> (x::'a). x nin? l2) l1)"
 theorem List__longestCommonPrefix_Obligation_subtype: 
   "\<lbrakk>(len::nat) \<le> length l1; 
-    len \<le> length (l2::'a list); 
+    len \<le> length l2; 
     (take len l1) = (take len l2); 
     \<not> (length l1 = len); 
-    \<not> (length l2 = len); 
-    len \<ge> 0\<rbrakk> \<Longrightarrow> len < length l1"
+    \<not> (length l2 = len)\<rbrakk> \<Longrightarrow> len < length l1"
   by auto
 theorem List__longestCommonPrefix_Obligation_subtype0: 
   "\<lbrakk>(len::nat) \<le> length (l1::'a list); 
     len \<le> length l2; 
     (take len l1) = (take len l2); 
     \<not> (length l1 = len); 
-    \<not> (length l2 = len); 
-    len \<ge> 0\<rbrakk> \<Longrightarrow> len < length l2"
+    \<not> (length l2 = len)\<rbrakk> \<Longrightarrow> len < length l2"
   by auto
 theorem List__longestCommonPrefix_Obligation_the: 
   "\<exists>!(len::nat). 
@@ -4557,14 +4502,7 @@ theorem List__longestCommonPrefix_Obligation_the:
  qed
 qed
 theorem List__longestCommonPrefix_Obligation_subtype1: 
-  "\<lbrakk>(THE (len::nat). 
-    len \<le> length l1 
-      \<and> (len \<le> length l2 
-       \<and> ((take len l1) = (take len l2) 
-        \<and> (length l1 = len 
-             \<or> (length l2 = len \<or> l1 ! len \<noteq> l2 ! len))))) 
-      \<ge> 0\<rbrakk> \<Longrightarrow> 
-   (THE (len::nat). 
+  "(THE (len::nat). 
    len \<le> length l1 
      \<and> (len \<le> length l2 
       \<and> ((take len l1) = (take len l2) 
@@ -4616,17 +4554,15 @@ defs List__permutation_p_def:
 types List__Permutation = "nat list"
 theorem List__permute_Obligation_subtype: 
   "\<lbrakk>List__permutation_p (prm::nat list); 
-    (l::'a list) equiLong prm; 
+    l equiLong prm; 
     (r::'a list) equiLong l; 
-    (i::nat) < length l; 
-    i \<ge> 0\<rbrakk> \<Longrightarrow> i < length prm"
+    (i::nat) < length l\<rbrakk> \<Longrightarrow> i < length prm"
   by auto
 theorem List__permute_Obligation_subtype0: 
   "\<lbrakk>List__permutation_p (prm::nat list); 
-    (l::'a list) equiLong (prm::List__Permutation); 
+    l equiLong (prm::List__Permutation); 
     r equiLong l; 
-    (i::nat) < length l; 
-    prm ! i \<ge> 0\<rbrakk> \<Longrightarrow> prm ! i < length r"
+    (i::nat) < length l\<rbrakk> \<Longrightarrow> prm ! i < length r"
    by (auto simp: List__permutation_p_def mem_iff nth_mem)
 theorem List__permute_Obligation_the: 
   "\<lbrakk>List__permutation_p (prm::nat list); l equiLong prm\<rbrakk> \<Longrightarrow> 
@@ -4720,9 +4656,8 @@ defs List__permute_def:
                  i < length l 
                    \<longrightarrow> l ! i = r ! (prm ! i))))"
 theorem List__permutationOf_Obligation_subtype: 
-  "\<lbrakk>List__permutation_p (prm::nat list); 
-    prm equiLong l1; 
-    List__permutation_p prm\<rbrakk> \<Longrightarrow> l1 equiLong prm"
+  "\<lbrakk>List__permutation_p (prm::nat list); prm equiLong l1\<rbrakk> \<Longrightarrow> 
+   l1 equiLong prm"
   by auto
 consts List__permutationOf :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool"	(infixl "permutationOf" 60)
 defs List__permutationOf_def: 

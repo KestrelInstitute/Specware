@@ -64,17 +64,6 @@ theorem Order__orderSubsumption:
      \<and> (Order__weakOrder_p \<subseteq> Order__partialOrder_p 
       \<and> Order__partialOrder_p \<subseteq> Order__preOrder_p)"
    sorry
-theorem Order__strict__stp_Obligation_subtype: 
-  "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (r::('a \<times> 'a) set); 
-    EndoRelation__irreflexive_p__stp P__a r; 
-    \<forall>(xss::('a \<times> 'a) set). 
-      xss = EndoRelation__reflexiveClosure__stp P__a r 
-        \<longrightarrow> EndoRelation__reflexive_p__stp P__a xss 
-              \<and> Set_P
-                   (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1) xss\<rbrakk> \<Longrightarrow> 
-   Set_P (\<lambda> ((xp0_1::'a), (xp1_1::'a)). P__a xp0_1 \<and> P__a xp1_1)
-      (EndoRelation__reflexiveClosure__stp P__a r)"
-  by auto
 consts Order__strict__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                               ('a EndoRelation__EndoRelation \<Rightarrow> bool) \<Rightarrow> 
                               'a EndoRelation__EndoRelation \<Rightarrow> bool"
