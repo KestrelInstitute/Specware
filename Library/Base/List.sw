@@ -4040,26 +4040,25 @@ proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
         (THE POSs.
-           distinct POSs \<and>
-           List__increasingNats_p POSs \<and>
-           (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)))"
+           distinct POSs \_and
+           List__increasingNats_p POSs \_and
+           (\_foralli. i mem POSs = List__sublistAt_p (subl, i, supl)))"
   by (auto simp: List__positionsOfSublist_def)
  with List__positionsOfSublist_Obligation_the
-  have "distinct POSs \<and>
-        List__increasingNats_p POSs \<and>
-        (\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl))"
+  have "distinct POSs \_and
+        List__increasingNats_p POSs \_and
+        (\_foralli. i mem POSs = List__sublistAt_p (subl, i, supl))"
    by (rule eq_the_sat)
- hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
+ hence M: "\_foralli. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
- assume "hd POSs = i" and "\<not> null POSs"
- hence "i mem POSs" by (auto simp: mem_iff empty_null)
- with M have "List__sublistAt_p (subl, i, supl)" by auto
+ assume "\_not null POSs"
+ hence "hd POSs mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, hd POSs, supl)" by auto
  then obtain pre and post
-  where "pre @ subl @ post = supl" and "length pre = i"
+  where "pre @ subl @ post = supl" and "length pre = hd POSs"
    by (auto simp: List__sublistAt_p_def)
  thus ?thesis by auto
-qed
-end-proof
+qedend-proof
 
 proof Isa rightmostPositionOfSublistAndPreceding_Obligation_subtype0
 proof -
@@ -4077,11 +4076,11 @@ proof -
    by (rule eq_the_sat)
  hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
- assume "last POSs = i" and "\<not> null POSs"
- hence "i mem POSs" by (auto simp: mem_iff empty_null)
- with M have "List__sublistAt_p (subl, i, supl)" by auto
+ assume "\_not null POSs"
+ hence "last POSs mem POSs" by (auto simp: mem_iff empty_null)
+ with M have "List__sublistAt_p (subl, last POSs, supl)" by auto
  then obtain pre and post
-  where "pre @ subl @ post = supl" and "length pre = i"
+  where "pre @ subl @ post = supl" and "length pre = last POSs"
    by (auto simp: List__sublistAt_p_def)
  thus ?thesis by auto
 qed
@@ -4216,7 +4215,7 @@ end-proof
 
 proof Isa findLeftmostAndPreceding_Obligation_subtype0
 proof -
- assume "List__leftmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ assume "List__leftmostPositionSuchThat (l, p) = Some i"
  with List__findLeftmostAndPreceding_Obligation_subtype
   have "i < length l" by auto
  thus ?thesis by auto
@@ -4252,7 +4251,7 @@ end-proof
 
 proof Isa findRightmostAndFollowing_Obligation_subtype0
 proof -
- assume "List__rightmostPositionSuchThat (l, p) = Some i" and "i \<ge> 0"
+ assume "List__rightmostPositionSuchThat (l, p) = Some i"
  with List__findRightmostAndFollowing_Obligation_subtype
   have "i < length l" by auto
  thus ?thesis by auto
