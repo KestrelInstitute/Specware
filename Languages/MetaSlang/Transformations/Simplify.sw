@@ -74,6 +74,7 @@ spec
 
  op  removeUnnecessaryVariable: Spec -> MS.Term -> MS.Term
  def removeUnnecessaryVariable spc term =
+     % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(VarPat (v,_),e)],body,_) ->
 	  let noSideEffects = sideEffectFree(e) in
@@ -121,7 +122,6 @@ spec
 %
  op  tupleInstantiate: Spec -> MS.Term -> MS.Term
  op tupleInstantiate (spc: Spec) (term:  MS.Term): MS.Term =
-   let term = removeUnnecessaryVariable spc term in
    let
       def elimTuple(zId,srt,fields,body) =
         let (zId,body) =
@@ -269,10 +269,13 @@ spec
             | Fun(Bool true, _,_) -> t2
             | Fun(Bool false,_,_) -> t1
             | _ -> term)
+       %% There are contexts where this is undesirable, e.g. at one stage in Isabelle translator
+       %% | Apply(p, Var((_,ty), _), _) | subtypePred?(ty, p, spc) -> trueTerm
        | _ ->
      case simplifyCase spc term of
        | Some tm -> tm
        | None ->
+     let term = removeUnnecessaryVariable spc term in
      let term = tupleInstantiate spc term in
      term
 
@@ -288,10 +291,29 @@ spec
       0 tms
 
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
-  def simplifyForall spc (vs,cjs,bod) =
-    case normForallBody (bod,varNamesSet(vs,Cons(bod,cjs)),spc) of
-      | Some(new_vs,new_cjs,new_bod) ->
-        simplifyForall spc (vs++new_vs,cjs++new_cjs,new_bod)
+  def simplifyForall spc (vs, cjs, bod) =
+    % let _ = writeLine("\nsfa: "^printTerm(mkConj cjs)^"\n => "^ printTerm bod) in
+    let name_set = varNamesSet(vs, bod::cjs) in
+    case normForallBody (bod, name_set, spc) of
+      | Some(new_vs, new_cjs, new_bod) ->
+        simplifyForall spc (vs++new_vs, cjs++new_cjs, new_bod)
+      | _ ->
+    case find (fn cj ->
+                case cj of
+                  | Let([(VarPat ((vn,_),_),e)], _, _) -> true
+                  | _ -> false)
+           cjs of
+      | Some(cj as Let([(VarPat (v as (vn, ty),_),e)], let_body, _)) | false ->
+        %% turn let bound var in conjunct to a universally quantified var
+        let new_vn = freshName(vn, name_set) in
+        let new_v = (new_vn, ty) in
+        let let_body = substitute(let_body, [(v, mkVar new_v)]) in
+        let new_cjs = foldr (fn (cji, cjs) ->
+                               if cji = cj then mkEquality(ty, mkVar new_v, e)::let_body::cjs
+                                 else cji::cjs)
+                        [] cjs
+        in
+        simplifyForall spc (new_v::vs, new_cjs, bod)
       | _ ->
     case find (fn cj ->
 	        case bindEquality (cj,vs) of
@@ -316,11 +338,6 @@ spec
 		   cjs,
 		 simpSubstitute(spc,bod,sbst)))
        | _ ->
-     if (exists (fn cj -> equivTerm? spc (cj, bod)) cjs
-        || (case bod of Fun(Bool true,_,_) -> true | _ -> false))
-       % && all (fn (_,ty) -> knownNonEmpty?(ty, spc)) vs
-      then mkTrue()
-      else
         %% x = f y && p(f y) => q(f y) --> x = f y && p x => q x
         let bind_cjs = filter (fn cj -> some?(bindEquality(cj,vs))) cjs in
         let (cjs, bod) = foldl (fn ((cjs, bod), cj) ->
@@ -339,9 +356,14 @@ spec
         let bod_cjs = getConjuncts bod in
         % let _ = writeLine("Simplifying "^printTerm bod^"\nwrt:\n"^printTerm(mkConj simplCJs)) in
         let bod = mkConj(filter (fn c -> ~(equivTermIn? spc (c,simplCJs))) bod_cjs) in
-        if simplCJs = cjs && simpVs = vs
-          then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
-          else simplifyForall spc (simpVs,simplCJs,bod)
+        if trueTerm? bod
+          then if true   % all (fn (_,ty) -> knownNonEmpty?(ty,spc)) vs
+                 then trueTerm
+                 else let poss_empty_tys = filter (fn (_,ty) -> ~(knownNonEmpty?(ty,spc))) vs in
+                      mkBind(Forall, poss_empty_tys, trueTerm)
+          else if simplCJs = cjs && simpVs = vs
+          then mkSimpBind(Forall, vs, mkSimpImplies(mkSimpConj cjs, bod))
+          else simplifyForall spc (simpVs, simplCJs, bod)
 
   op  simplifyConjunct: MS.Term * Spec -> List MS.Term 
   def simplifyConjunct (cj,spc) =
@@ -360,62 +382,72 @@ spec
 
   op  normForallBody: MS.Term * StringSet.Set * Spec -> Option(List Var * List MS.Term * MS.Term)
   %% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
-  def normForallBody(body,used_names,spc) =
+  def normForallBody(body, used_names, spc) =
     case body of
-      | Let([(pat,val)],let_body,_) ->	% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
+      | Let([(pat, val)], let_body, _) ->	% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
         (case patternToTerm pat of
 	   | Some pat_tm ->
 	     let new_vs = freeVars pat_tm in
-	     let (unique_vs,sb) = getRenamingSubst(new_vs,used_names) in
+	     let (unique_vs, sb) = getRenamingSubst(new_vs, used_names) in
 	     if sb = []
-	       then Some(unique_vs,[mkEquality(inferType(spc,pat_tm),pat_tm,val)],let_body)
-	       else Some(unique_vs,[mkEquality(inferType(spc,pat_tm),substitute(pat_tm,sb),val)],
-			 simpSubstitute(spc,let_body,sb))
+	       then Some(unique_vs, [mkEquality(inferType(spc, pat_tm), pat_tm, val)], let_body)
+	       else Some(unique_vs, [mkEquality(inferType(spc, pat_tm), substitute(pat_tm, sb), val)],
+			 simpSubstitute(spc, let_body, sb))
 	   | _ -> None)
+      | Apply(Fun(And,_,_), _, _) ->
+        (let cjs = getConjuncts body in
+         case foldr (fn (cj, (vs, lhs_cjs, rhs_cjs)) ->
+                      case normForallBody(cj, used_names, spc) of
+                        | Some(new_vs, new_lhs_cjs, new_rhs_cj) ->
+                          (new_vs ++ vs, new_lhs_cjs ++ lhs_cjs, new_rhs_cj :: rhs_cjs)
+                        | None -> (vs, lhs_cjs, cj :: rhs_cjs))
+               ([], [], []) cjs of
+          | ([], [], _) -> None
+          | (vs, lhs_cjs, rhs_cjs) -> Some (vs, lhs_cjs, mkConj rhs_cjs))
       | _ -> None
 
   op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MS.Term)
-  def getRenamingSubst(vs,used_names) =
-    foldr (fn (v as (nm,ty),(vs,sb)) ->
-	   let new_nm = StringUtilities.freshName(nm,used_names) in
+  def getRenamingSubst(vs, used_names) =
+    foldr (fn (v as (nm, ty), (vs, sb)) ->
+	   let new_nm = StringUtilities.freshName(nm, used_names) in
 	   if nm = new_nm
-	    then (Cons(v,vs),sb)
-	    else let new_v = (new_nm,ty) in
-	         (Cons(new_v,vs),Cons((v,mkVar new_v),sb)))
-      ([],[]) vs
+	    then (Cons(v, vs), sb)
+	    else let new_v = (new_nm, ty) in
+	         (Cons(new_v, vs), Cons((v, mkVar new_v), sb)))
+      ([], []) vs
 
   op  simpSubstitute: Spec * MS.Term *  List (Var * MS.Term) -> MS.Term
-  def simpSubstitute(spc,t,sbst) =
+  def simpSubstitute(spc, t, sbst) =
     % let _ = toScreen("\nBefore subst:\n" ^ printTerm t ^ "\n") in
-    let stm = substitute(t,sbst) in
+    let stm = substitute(t, sbst) in
     % let _ = toScreen("After subst:\n" ^ printTerm stm ^ "\n") in
     let result = simplify spc stm in
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
   op  bindEquality: MS.Term * List Var -> Option(Var * MS.Term)
-  def bindEquality (t,vs) =
+  def bindEquality (t, vs) =
     case t of
-      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) ->
+      | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
         (case e1 of
-	  | Var(v,_) | inVars?(v,vs) && ~(isFree(v,e2)) -> Some(v,e2)
+	  | Var(v, _) | inVars?(v, vs) && ~(isFree(v, e2)) -> Some(v, e2)
 	  | _ ->
 	 case e2 of
-	  | Var(v,_) | inVars?(v,vs) && ~(isFree(v,e1)) -> Some(v,e1)
+	  | Var(v, _) | inVars?(v, vs) && ~(isFree(v, e1)) -> Some(v, e1)
 	  | _ -> None)
       | _ -> None
 
   op  simplifyExists: Spec -> List Var * List MS.Term -> MS.Term
-  def simplifyExists spc (vs,cjs) =
-    let vs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) cjs)
-                            || ~(knownNonEmpty?(v.2, spc)))
+  def simplifyExists spc (vs, cjs) =
+    let vs = filter (fn v -> (exists (fn cj -> isFree(v, cj)) cjs)
+                            || ~(knownNonEmpty?(v.2,  spc)))
                vs
     in
-    mkSimpBind(Exists,vs,mkSimpConj cjs)    
+    mkSimpBind(Exists, vs, mkSimpConj cjs)    
 
   op  simplifyExists1: List Var * List MS.Term -> MS.Term
-  def simplifyExists1(vs,cjs) =
-    mkSimpBind(Exists1,vs,mkSimpConj cjs)    
+  def simplifyExists1(vs, cjs) =
+    mkSimpBind(Exists1, vs, mkSimpConj cjs)    
 
   op simplifyRecordBind(spc: Spec, pats: List (Id * Pattern), acts: List (Id * MS.Term), body: MS.Term)
      : Option MS.Term =
@@ -457,7 +489,7 @@ spec
       %% case v of (x,y) -> ... --> let x = v.1 and y = v.2 in ...
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),v as Var(vr,_),_) ->
         Some (simplifyOne spc
-                (mkLet(map (fn (id,p) -> (p,mkProjection(id,v,spc))) pats, body)))
+                (mkLet(map (fn (id,p) -> (p, mkProjection(id, v, spc))) pats, body)))
       | _ -> None
 
   op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
