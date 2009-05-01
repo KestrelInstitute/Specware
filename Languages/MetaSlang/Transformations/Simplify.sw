@@ -303,7 +303,7 @@ spec
                   | Let([(VarPat ((vn,_),_),e)], _, _) -> true
                   | _ -> false)
            cjs of
-      | Some(cj as Let([(VarPat (v as (vn, ty),_),e)], let_body, _)) | false ->
+      | Some(cj as Let([(VarPat (v as (vn, ty),_),e)], let_body, _)) ->
         %% turn let bound var in conjunct to a universally quantified var
         let new_vn = freshName(vn, name_set) in
         let new_v = (new_vn, ty) in
