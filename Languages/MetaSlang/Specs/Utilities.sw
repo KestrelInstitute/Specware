@@ -1589,6 +1589,8 @@ Utilities qualifying spec
               conjs
            then map (fn Apply(pi, _, _) -> pi) conjs
            else [pred]
+       | Apply(Fun(Op(Qualified("Set", "/\\"), _),_,_), Record([("1", p1), ("1", p2)], _), _) ->
+         decomposeConjPred p1 ++ decomposeConjPred p2
        | _ -> [pred]
 
    op decomposeListConjPred(preds: List MS.Term): List(List MS.Term) =
@@ -1855,6 +1857,10 @@ Utilities qualifying spec
                 (case (find (fn (id,_) -> id = id1) pairs) of
                    | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
                    | None -> Some(Cons((id1,srt2),pairs)))
+              | _ ->
+            if equivType? spc (srt1,srt2) then Some pairs
+            else
+            case (srt1,srt2) of
               | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
                 (case match(t1,s1,pairs) of
                    | Some pairs -> match(t2,s2,pairs)
@@ -1889,7 +1895,7 @@ Utilities qualifying spec
                   if embed? CoProduct s2x || embed? Quotient s2x  % If names different then not equal
                     then None
                   else
-                  if equalType? (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
+                  if equivType? spc (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
                     then Some pairs
                   else match(srt1,s2x,pairs)
               | (_,Base _) ->
