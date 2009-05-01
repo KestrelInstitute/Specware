@@ -419,7 +419,7 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    % let _ = toScreen("0:\n"^printSpec spc^"\n") in
+    % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists (fn el ->
@@ -459,19 +459,12 @@ IsaTermPrinter qualifying spec
     let spc = emptyTypesToSubtypes spc in
     let spc = normalizeNewTypes spc in
     let spc = removeSubTypes spc coercions in
-    % let _ = printSpecWithSortsToTerminal spc in
     let spc = addCoercions coercions spc in
-    % let _ = printSpecWithSortsToTerminal spc in
     %% Second round of simplification could be avoided with smarter construction
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
     in
-    %let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
-%                then simplifyTopSpec spc
-%                else spc
-%    in
-    % let _ = toScreen("2:\n"^printSpec spc^"\n") in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
@@ -761,7 +754,7 @@ IsaTermPrinter qualifying spec
                                           "recdef", "primrec", "consts", "class", "primitive",
                                           "next"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
-   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not"]
+   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not", "sub", "sup"]
 
  op ppConstructor(c_nm: String): Pretty =
    prString (if member(c_nm, notImplicitVarNames)
