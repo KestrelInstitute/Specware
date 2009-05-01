@@ -457,8 +457,8 @@ IsaTermPrinter qualifying spec
     in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
-    let spc = normalizeNewTypes spc in
     let spc = removeSubTypes spc coercions in
+    let spc = normalizeNewTypes spc in
     let spc = addCoercions coercions spc in
     %% Second round of simplification could be avoided with smarter construction
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
@@ -769,10 +769,17 @@ IsaTermPrinter qualifying spec
        prConcat [prString "\"", ppQualifiedId qid, prString "\""]
      | _ \_rightarrow  ppQualifiedId qid
 
+ op mkFieldName(nm: String): String = nm ^ "__fld"
+
  op ppToplevelName(nm: String): Pretty =
    if member(nm, isabelleReservedWords)
      then prConcat [prString "\"", prString nm, prString "\""]
      else prString nm
+
+ op quoteIf(quote?: Boolean, nm: String, pr: Pretty): Pretty =
+   if quote? && nm in? isabelleReservedWords then prConcat [prString "\"", pr, prString "\""]
+   else pr
+
    
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
@@ -796,7 +803,7 @@ IsaTermPrinter qualifying spec
 		  ppIdInfo aliases,
 		  prString " = "]] ++
 		(map (\_lambda (fldname, fldty) \_rightarrow
-		      [ppToplevelName fldname, prString " :: ", ppType c Top false fldty])
+		      [ppToplevelName (mkFieldName fldname), prString " :: ", ppType c Top false fldty])
 		 fields))
 	   | _ \_rightarrow
 	     prBreakCat 2
@@ -1896,7 +1903,7 @@ IsaTermPrinter qualifying spec
 		       prString ")"]
 	   | _ \_rightarrow
 	     let def ppField (x,y) =
-	           prConcat [prString x,
+	           prConcat [prString (mkFieldName x),
 			     prString " = ",
 			     ppTerm c Top y]
 	     in
@@ -1987,7 +1994,7 @@ IsaTermPrinter qualifying spec
       | "7" \_rightarrow (if arity = 7 then "seventhl" else "seventh")
       | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
       | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
-      | _ \_rightarrow p
+      | _ \_rightarrow mkFieldName p
 
   op  ppBinder : Binder \_rightarrow Pretty
   def ppBinder binder =
@@ -2093,7 +2100,7 @@ IsaTermPrinter qualifying spec
 		      prString ")"]
 	  | _ \_rightarrow
 	    let def ppField (x,pat) =
-		  prConcat [prString x,
+		  prConcat [prString (mkFieldName x),
 			    prString "=",
 			    ppPattern c pat (extendWild wildstr x)]
 	    in
@@ -2339,9 +2346,9 @@ IsaTermPrinter qualifying spec
       | CoProduct (taggedSorts,_) \_rightarrow 
         let def ppTaggedSort (id,optTy) =
 	case optTy of
-	  | None \_rightarrow ppConstructor id
+	  | None \_rightarrow quoteIf(~in_quotes?, id, ppConstructor id)
 	  | Some ty \_rightarrow
-	    prConcat [ppConstructor id, prSpace,
+	    prConcat [quoteIf(~in_quotes?, id, ppConstructor id), prSpace,
 		      case ty of
 			| Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
 			  prConcat(addSeparator prSpace
@@ -2395,7 +2402,7 @@ IsaTermPrinter qualifying spec
 			(map ppField fields))
 	   | _ \_rightarrow
 	     let def ppField (x,y) =
-	     prLinearCat 2 [[prString x,
+	     prLinearCat 2 [[prString (mkFieldName x),
 			     prString " :: "],
 			    [ppType c Top in_quotes? y]]
 	     in
