@@ -22,6 +22,7 @@ NormTypes qualifying spec
     if replaceableType? ty
       \_and \_not (checkTop? && exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
      then
+       % let _ = writeLine("nt: "printSort ty) in
        case foldl (\_lambda (result,(qid,tvs,top_ty)) \_rightarrow
                    case result of
                      | None \_rightarrow
@@ -87,6 +88,7 @@ NormTypes qualifying spec
       | Quotient _ \_rightarrow true
       | CoProduct _ \_rightarrow true
       | Subsort _ \_rightarrow true
+      | Product((id1,_)::_, a) -> id1 ~= "1"
       | _ \_rightarrow false
 
 endspec
