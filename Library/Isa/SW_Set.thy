@@ -83,7 +83,7 @@ defs Set__power__stp_def:
   "Set__power__stp P__a s
      \<equiv> (\<lambda> (sub::'a set). Set__e_lt_eq__stp P__a(sub, s))"
 theorem Set__power__def: 
-  "((sub::'a set) \<in> Pow s) = (sub \<subseteq> s)"
+  "((sub__v::'a set) \<in> Pow s) = (sub__v \<subseteq> s)"
   by auto
 theorem Set__empty__def: 
   "{} = (\<lambda> ignore. False)"
