@@ -655,6 +655,10 @@ proof Isa fold__stp_Obligation_subtype5
  sorry
 end-proof
 
+proof Isa fold__stp_Obligation_subtype6
+ sorry
+end-proof
+
 proof Isa fold__stp_Obligation_the
  sorry
 end-proof
