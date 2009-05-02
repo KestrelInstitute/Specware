@@ -274,6 +274,7 @@ SpecNorm qualifying spec
         if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
           then let (bare_flds, arg_id_vars, pred,_) =
                 foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
+                         let tyi = raiseSubtypeFn(tyi, spc) in
                          case subtypeComps(spc, tyi) of
                            | Some(t,p) -> let v = ("x"^toString i, t)  in
                                           (bare_flds ++ [(id,t)],
@@ -299,8 +300,9 @@ SpecNorm qualifying spec
     case t of
       | Bind(bndr,bndVars,bod,a) \_rightarrow
         let (bndVars,bndVarsPred) =
-            foldr (fn ((vn,ty), (bndVars,res)) ->
-                     let ty = raiseSubtypeFn(ty,spc) in
+            foldr (fn ((vn,ty0), (bndVars,res)) ->
+                     let ty = raiseSubtypeFn(ty0, spc) in
+                     % let _ = writeLine("relQ: "^printSort ty0^" ---> "^printSort ty) in
                      let pred_tm = srtPred(spc, ty, mkVar(vn,ty)) in
                      let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
                      (Cons((vn,ty),bndVars), Utilities.mkAnd(pred_tm, res)))
@@ -574,9 +576,9 @@ SpecNorm qualifying spec
 				 | Op(qid as (Qualified(q,id)), def?, a) \_rightarrow
 				   let Some info = AnnSpec.findTheOp(spc,qid) in
 				   let ty = firstOpDefInnerSort info in
-				   %let _ = toScreen (printSort ty) in
+				   % let _ = writeLine ("stc: "^printSort ty) in
 				   let subTypeFmla = opSubsortNoArityAxiom(spc, qid, ty) in
-				   % let _ = writeLine (printTerm subTypeFmla) in
+				    let _ = writeLine (printTerm subTypeFmla) in
 				   % ?? let liftedFmlas = removePatternTop(spc, subTypeFmla) in
 				   (case simplify spc subTypeFmla of
 				      | Fun(Bool true,_,_) \_rightarrow Cons(el,r)
