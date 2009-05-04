@@ -452,7 +452,8 @@
     (if contents?
 	(progn
 	  #+mcl  (ccl:run-program    "rm"      (list "-R" dirstr))
-	  #+sbcl (sb-ext:run-program "/bin/rm" (list "-R" dirstr))
+	  #+sbcl (sb-ext:run-program #-win32 "/bin/rm" #+win32 "c:/cygwin/bin/rm.exe"
+                                     (list "-R" dirstr))
 	  #-(or mcl sbcl)
 	  (loop for dir-item in (sw-directory dirpath)
 	    do (if (directory? dir-item)
@@ -460,7 +461,8 @@
 		 (delete-file dir-item))))
       (progn
 	#+mcl  (ccl:run-program    "rmdir"      (list dirstr))
-	#+sbcl (sb-ext:run-program "/bin/rmdir" (list dirstr))
+	#+sbcl (sb-ext:run-program #-win32 "/bin/rmdir" #+win32 "c:/cygwin/bin/rmdir.exe"
+                                   (list dirstr))
 	#+cmu  (unix:unix-rmdir dirstr)
 	#+gcl  (lisp:system (format nil "rmdir ~a" dirstr))
 	#-(or cmu gcl mcl sbcl) nil	; No general way
