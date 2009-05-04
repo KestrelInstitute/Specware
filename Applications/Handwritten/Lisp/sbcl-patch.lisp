@@ -328,12 +328,13 @@
                            :test #'char=
                            :start %frc-index%))
                (make-and-return-result-string (pos)
-                 (let* ((crlf-p (and (not (eq pos 0))
+                 (let* ((crlf-p (and pos
+                                     (not (eq pos 0))
                                      (eq (elt (the (simple-array character (*))
                                                 %frc-buffer%)
                                               (- pos 1))
                                          #\Return)))
-                        (pos (if crlf-p (- pos 1) pos))
+                        (pos (if (and crlf-p pos) (- pos 1) pos))
                         (len (+ (- (or pos %frc-index%)
                                    %frc-index%)
                                 chunks-total-length))
