@@ -127,6 +127,14 @@ ListADT qualifying spec {
          | Letrec  (_,terms,body) -> List.foldl (fn (names,tm) -> ops(tm,names)) (ops(body,names)) terms
          | Seq     terms -> List.foldr ops names terms
 
+  op moveDefparamsToEnd?: Boolean = true
+
+  op nonLambdaDef?((_, body): Definition): Boolean =
+    ~(embed? Lambda body)
+
+  op makeDefNil((nm, _): Definition): Definition =
+    (nm, Const(Boolean false))          % nil
+
   op  sortDefs: Definitions -> Definitions
   def sortDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
@@ -145,6 +153,19 @@ ListADT qualifying spec {
        let find = fn name -> (case STHMap.apply(map,name) of None -> [] | Some l -> l) in
        let names = TopSort.topSort(EQUAL,find,List.map (fn(n,_)-> n) defs) in
        let defs  = List.mapPartial (fn name -> STHMap.apply(defMap,name)) names in
+       let defs =
+           if moveDefparamsToEnd?
+             then
+               let defparams = filter nonLambdaDef? defs in
+               let defs = List.map (fn defn ->
+                                      if nonLambdaDef? defn
+                                        then makeDefNil defn
+                                      else defn)
+                            defs
+               in
+               defs ++ defparams
+             else defs
+       in
        defs
 
   %% Printing of characters is temporarily wrong due to bug in lexer.
