@@ -125,15 +125,18 @@
 
 (defun print-parser-session (session stream ignore-level)
   (declare (ignore ignore-level))
-  (format stream "<Parse of ~A using ~A (~D token~:P) from ~A yielding ~D result~:P with ~D gap~:P and ~D ambiguit~:@P>"
-	  (parse-session-file session)
-	  (parser-name      (parse-session-parser      session))
-	  (parser-rule-name (parse-session-start-rule  session))
-	  (length           (parse-session-locations   session))
-	  (length           (parse-session-results     session))
-	  (length           (parse-session-gaps        session))
-	  (length           (parse-session-ambiguities session))
-	  ))
+  (let* ((start-rule (parse-session-start-rule  session))
+         (start-rule-name (cond ((null start-rule) "a non-existant start-rule")
+                                (t (parser-rule-name start-rule)))))
+    (format stream "<Parse of ~A using ~A (~D token~:P) from ~A yielding ~D result~:P with ~D gap~:P and ~D ambiguit~:@P>"
+  	    (parse-session-file session)
+	    (parser-name      (parse-session-parser      session))
+	    start-rule-name
+	    (length           (parse-session-locations   session))
+	    (length           (parse-session-results     session))
+	    (length           (parse-session-gaps        session))
+	    (length           (parse-session-ambiguities session))
+	    )))
 
 (defun SUCCESSFUL-PARSE-SESSION? (session)
   (and (null (parse-session-gaps            session))

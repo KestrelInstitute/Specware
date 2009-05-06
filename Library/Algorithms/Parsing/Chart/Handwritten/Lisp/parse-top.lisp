@@ -30,6 +30,7 @@
 	 (start-rule (if start-rule-name
 			 (gethash start-rule-name (parser-ht-name-to-rule parser))
 		       (parser-toplevel-rule parser)))
+	 ;; start-rule could be nil, so be careful! (see below)
 	 (session (make-parse-session 
 		   :file                 file
 		   :parser               parser
@@ -38,7 +39,7 @@
 		   :report-gaps?         report-gaps?
 		   :report-ambiguities?  report-ambiguities?
 		   :error-reported?      nil
-		   :start-rule           start-rule
+		   :start-rule           start-rule ; possibly nil here!
 		   )))
     (setq *current-parser-session* session)
     (when-debugging 
@@ -63,28 +64,33 @@
 	)
       ;;
       (incf-timing-data 'before-attach-rules)
-      (parser-attach-rules session)
-      (incf-timing-data 'attach-rules)
-      (parser-get-values   session)
-      (incf-timing-data 'get-values)
-      ;;
-      (let ((n (length (parse-session-results session))))
-	(cond (*verbose?* 
-	       (comment "~6D resulting toplevel form~:P" n))
-	      ;; ((not (= n 1))
-	      ((> n 1)
-;;;	       (comment "Used parser ~A (~D rule~:P, package ~A)"
-;;;			(parser-name parser)
-;;;			(parser-total-rule-count parser)
-;;;			(package-name package))
-;;;	       (comment "~6D byte~:P in ~A" 
-;;;			(with-open-file (s file) (file-length s))       
-;;;			file)
-;;;	       (comment "~6D raw tokens" number-of-raw-tokens)
-;;;	       (comment "~6D non-comment token~:P" (1- (length locations)))
-;;;	       (when comment-eof-error?
-;;;		 (comment "     1 unterminated comment that runs to EOF"))
-	       (comment "~6D resulting toplevel form~:P" n))))
+      (cond ((null start-rule)
+             ;; could do this sooner, above, but waiting until here might provide more information when debugging...
+             (comment "Explicit start-rule does not exist in gramamr: ~A." start-rule-name)
+             (setf (parse-session-error-reported? session) t))
+            (t
+             (parser-attach-rules session)
+             (incf-timing-data 'attach-rules)
+             (parser-get-values   session)
+             (incf-timing-data 'get-values)
+             ;;
+             (let ((n (length (parse-session-results session))))
+        	(cond (*verbose?* 
+              	       (comment "~6D resulting toplevel form~:P" n))
+              	      ;; ((not (= n 1))
+              	      ((> n 1)
+	               ;; (comment "Used parser ~A (~D rule~:P, package ~A)"
+		       ;; 	(parser-name parser)
+		       ;; 	(parser-total-rule-count parser)
+		       ;; 	(package-name package))
+	               ;; (comment "~6D byte~:P in ~A" 
+		       ;; 	(with-open-file (s file) (file-length s))       
+		       ;; 	file)
+	               ;; (comment "~6D raw tokens" number-of-raw-tokens)
+	               ;; (comment "~6D non-comment token~:P" (1- (length locations)))
+	               ;; (when comment-eof-error?
+		       ;;  (comment "     1 unterminated comment that runs to EOF"))
+	               (comment "~6D resulting toplevel form~:P" n))))))
       ;;
       session)))
 
