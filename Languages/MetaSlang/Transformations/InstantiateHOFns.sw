@@ -312,7 +312,6 @@ spec
 %              embed? Some (findAQualifierMap(unfoldMap, q, id))
 %            | _ -> false)
        
-
   op  maybeUnfoldTerm: QualifiedId * Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
   def maybeUnfoldTerm(outer_qid, t, unfoldMap, simplifyTerm, spc) =
    case t of
@@ -361,7 +360,6 @@ spec
                       -> Term
   def makeUnfoldedTerm(outer_qid, orig_tm, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
 		       recursive?, qid, nm, unfoldMap, simplifyTerm, curried?, spc) =
-
     let replaceIndices = filter (fn i -> constantTerm?(nth(args, i))
 				        & member(i, fnIndices))
                            (tabulate (length args, id))
@@ -397,7 +395,6 @@ spec
            && ~(exists (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst)
         then orig_tm
         else transNewTm
-
 
   def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* params, *) args, defbody) =
 
