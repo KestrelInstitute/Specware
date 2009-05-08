@@ -28,6 +28,17 @@ proof Isa MapAC__e_at_Obligation_the
  sorry
 end-proof
 
+theorem map_result_in_range is [a,b]
+  fa (m:Map(a,b), x:a) m definedAt x => (m @ x) in? range m
+
+proof Isa MapAC__map_result_in_range__stp
+ sorry
+end-proof
+
+proof Isa MapAC__map_result_in_range
+ sorry
+end-proof
+
 % update map at point(s) (analogous to record update):
 
 op [a,b] <<< (m1: Map(a,b), m2: Map(a,b)) infixl 25 : Map(a,b) = the(m)

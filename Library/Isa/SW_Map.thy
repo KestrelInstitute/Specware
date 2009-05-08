@@ -52,6 +52,17 @@ defs MapAC__e_at_at__stp_def:
 consts e_at_at_m :: " ('a, 'b)Relation__Map \<Rightarrow> 'a \<Rightarrow> 'b option"	(infixl "@@'_m" 70)
 defs e_at_at_m_def: 
   "(m @@_m x) \<equiv> (if m definedAt x then Some (m @_m x) else None)"
+theorem MapAC__map_result_in_range__stp: 
+  "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    P__a (x::'a); 
+    MapAC__definedAt__stp P__b(m, x)\<rbrakk> \<Longrightarrow> 
+   m @_m x \<in> Relation__range__stp P__a m"
+   sorry
+theorem MapAC__map_result_in_range: 
+  "\<lbrakk>Relation__functional_p (m:: ('a, 'b)Relation__Relation); 
+    m definedAt x\<rbrakk> \<Longrightarrow> m @_m x \<in> Relation__range m"
+   sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p__stp((P__a::'a \<Rightarrow> bool), P__b) (m2::('a \<times> 'b) set); 
     Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
