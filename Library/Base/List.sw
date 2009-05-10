@@ -1021,7 +1021,7 @@ theorem length_prefix is [a]
 theorem length_suffix is [a]
   fa (l: List a, n:Nat) n <= length l =>
     length (suffix (l, n)) = n
-proof Isa
+proof Isa [simp]
   by (auto simp add: List__suffix_def List__length_subFromLong)
 end-proof
 
