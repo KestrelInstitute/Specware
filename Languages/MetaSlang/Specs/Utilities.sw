@@ -1294,7 +1294,7 @@ Utilities qualifying spec
         Some(Fun(Nat((foldl +) 0 (natVals fields)),
 		 sortFromField(fields,natSort),noPos))
       | "*" ->
-        Some(Fun(Nat((foldl *) 1 (natVals fields)),
+        Some(Fun(Nat((foldl * ) 1 (natVals fields)),
 		 sortFromField(fields,natSort),noPos))
       | "-"   -> evalBinary(nat -,natVals,fields,
 			    sortFromField(fields,natSort))
@@ -1579,6 +1579,36 @@ Utilities qualifying spec
        | Some(_, pt) -> equalTerm?(p, pt)
        | None -> false
 
+   op etaReduce(tm: MS.Term): MS.Term =
+     case tm of
+       | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
+                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
+         lam
+       | _ -> tm
+
+   op varRecordTerm?(tm: MS.Term): Boolean =
+     %% Var or product
+     case tm of
+       | Var _ -> true
+       | Record(fields, _) ->
+         all (fn (_, fld_tm) -> varRecordTerm? fld_tm) fields
+       | _ -> false
+
+   op varRecordPattern?(pat: Pattern): Boolean =
+     %% Var or product
+     case pat of
+       | VarPat _ -> true
+       | RecordPat(fields, _) ->
+         all (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
+       | _ -> false
+
+   op simpleLambda?(tm: MS.Term): Boolean =
+     %% One case, true pred & variable of product of variable pattern
+     case tm of
+       | Lambda([(pat, Fun(Bool True, _, _), _)], _) ->
+         varRecordPattern? pat
+       | _ -> false
+
    op decomposeConjPred(pred: MS.Term): List MS.Term =
      case pred of
        | Lambda([(VarPat(v,_), Fun(Bool True, _, _), conj as Apply(Fun(And,_,_), _, _))], _) ->
@@ -1589,9 +1619,11 @@ Utilities qualifying spec
               conjs
            then map (fn Apply(pi, _, _) -> pi) conjs
            else [pred]
-       | Apply(Fun(Op(Qualified("Set", "/\\"), _),_,_), Record([("1", p1), ("1", p2)], _), _) ->
+       | Apply(Fun(Op(Qualified("Set", "/\\"), _),_,_), Record([("1", p1), ("2", p2)], _), _) ->
          decomposeConjPred p1 ++ decomposeConjPred p2
-       | _ -> [pred]
+       | Apply(Fun(Op(Qualified("Bool", "&&&"), _),_,_), Record([("1", p1), ("2", p2)], _), _) ->
+         decomposeConjPred p1 ++ decomposeConjPred p2
+       | _ -> [etaReduce pred]
 
    op decomposeListConjPred(preds: List MS.Term): List(List MS.Term) =
      case preds of
@@ -1604,13 +1636,20 @@ Utilities qualifying spec
                    ++ predss)
            [] rpredss
 
+   op composeConjPreds(preds: List MS.Term): MS.Term =
+     case preds of
+       | [pred] -> etaReduce pred
+       | pred1::rpreds ->
+         let pred_ty = termSort pred1 in
+         mkAppl(mkInfixOp(Qualified("Bool", "&&&"),
+                          Infix(Right, 25),
+                          mkArrow(mkProduct[pred_ty, pred_ty], pred_ty)),
+                [pred1, composeConjPreds rpreds])
+
    op mkSubtypePreds(sss_ty: Sort, preds: List MS.Term, a: Position): Sort =
      case preds of
        | [] -> sss_ty
-       | [pred] -> Subsort(sss_ty, pred, a)
-       | _ ->
-     let v = ("xss", sss_ty) in
-     Subsort(sss_ty, mkLambda(mkVarPat v, mkConj(map (fn pi -> mkApply(pi, mkVar v)) preds)), a)
+       | _ -> Subsort(sss_ty, composeConjPreds preds, a)
 
    op composeSubtypes(sss_ty: Sort, p1: MS.Term, p2: MS.Term, a: Position): Sort =
      let p1s = decomposeConjPred p1 in
