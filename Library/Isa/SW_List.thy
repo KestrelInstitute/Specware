@@ -1002,7 +1002,7 @@ defs List__removeSuffix_def:
 theorem List__length_prefix: 
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> length (take n l) = n"
   by auto
-theorem List__length_suffix: 
+theorem List__length_suffix [simp]: 
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> length (List__suffix(l, n)) = n"
   by (auto simp add: List__suffix_def List__length_subFromLong)
 theorem List__length_removePrefix: 
@@ -2444,20 +2444,20 @@ defs List__extendRight_def:
   "List__extendRight
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
           l @ (replicate (n - length l) x))"
-theorem List__extendLeft_length__stp: 
+theorem List__length_extendLeft__stp [simp]: 
   "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l; 
     P__a x; 
     n \<ge> length l\<rbrakk> \<Longrightarrow> length (List__extendLeft(l, x, n)) = n"
   by (auto simp: List__extendLeft_def)
-theorem List__extendLeft_length: 
+theorem List__length_extendLeft [simp]: 
   "\<lbrakk>n \<ge> length l\<rbrakk> \<Longrightarrow> length (List__extendLeft(l, x, n)) = n"
   by (auto simp: List__extendLeft_def)
-theorem List__extendRight_length__stp: 
+theorem List__length_extendRight__stp [simp]: 
   "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l; 
     P__a x; 
     n \<ge> length l\<rbrakk> \<Longrightarrow> length (List__extendRight(l, x, n)) = n"
   by (auto simp: List__extendRight_def)
-theorem List__extendRight_length: 
+theorem List__length_extendRight [simp]: 
   "\<lbrakk>n \<ge> length l\<rbrakk> \<Longrightarrow> length (List__extendRight(l, x, n)) = n"
   by (auto simp: List__extendRight_def)
 theorem List__equiExtendLeft_Obligation_subtype: 
@@ -2466,14 +2466,14 @@ theorem List__equiExtendLeft_Obligation_subtype:
 theorem List__equiExtendLeft_Obligation_subtype0: 
   "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> 
    List__extendLeft(l1, x1, length l2) equiLong l2"
-  by (auto simp: List__extendLeft_def List__repeat_length length_append)
+  by (auto simp: List__extendLeft_def)
 theorem List__equiExtendLeft_Obligation_subtype1: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> length l1 \<ge> length l2"
   by auto
 theorem List__equiExtendLeft_Obligation_subtype2: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> 
    l1 equiLong List__extendLeft(l2, x2, length l1)"
-  by (auto simp: List__extendLeft_def List__repeat_length length_append)
+  by (auto simp: List__extendLeft_def)
 consts List__equiExtendLeft :: "'a list \<times> 'b list \<times> 'a \<times> 'b \<Rightarrow> 
                                 'a list \<times> 'b list"
 defs List__equiExtendLeft_def: 
@@ -2496,8 +2496,7 @@ theorem List__equiExtendLeft_subtype_constr:
   assume "dom_equiExtendLeft = (l1, l2, x1, x2)"
   with XY have "List__equiExtendLeft (l1, l2, x1, x2) = (x,y)" by auto
   thus "length x = length y"
-   by (cases "length l1 < length l2",
-       auto simp: List__equiExtendLeft_def List__extendLeft_length)
+   by (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
  qed
 qed
 theorem List__equiExtendRight_Obligation_subtype: 
@@ -2506,14 +2505,14 @@ theorem List__equiExtendRight_Obligation_subtype:
 theorem List__equiExtendRight_Obligation_subtype0: 
   "\<lbrakk>length l1 < length l2\<rbrakk> \<Longrightarrow> 
    List__extendRight(l1, x1, length l2) equiLong l2"
-  by (auto simp: List__extendRight_def List__repeat_length length_append)
+  by (auto simp: List__extendRight_def)
 theorem List__equiExtendRight_Obligation_subtype1: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> length l1 \<ge> length l2"
   by auto
 theorem List__equiExtendRight_Obligation_subtype2: 
   "\<lbrakk>\<not> (length l1 < length l2)\<rbrakk> \<Longrightarrow> 
    l1 equiLong List__extendRight(l2, x2, length l1)"
-  by (auto simp: List__extendRight_def List__repeat_length length_append)
+  by (auto simp: List__extendRight_def)
 consts List__equiExtendRight :: "'a list \<times> 'b list \<times> 'a \<times> 'b \<Rightarrow> 
                                  'a list \<times> 'b list"
 defs List__equiExtendRight_def: 
@@ -2536,10 +2535,57 @@ theorem List__equiExtendRight_subtype_constr:
   assume "dom_equiExtendRight = (l1, l2, x1, x2)"
   with XY have "List__equiExtendRight (l1, l2, x1, x2) = (x,y)" by auto
   thus "length x = length y"
-   by (cases "length l1 < length l2",
-       auto simp: List__equiExtendRight_def List__extendRight_length)
+   by (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
  qed
 qed
+theorem List__length_equiExtendLeft_1__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l1; 
+    List__List_P (P__b::'b \<Rightarrow> bool) l2; 
+    P__a x1; 
+    P__b x2\<rbrakk> \<Longrightarrow> 
+   length (fst (List__equiExtendLeft(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendLeft_def)
+theorem List__length_equiExtendLeft_1 [simp]: 
+  "length (fst (List__equiExtendLeft(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendLeft_def)
+theorem List__length_equiExtendLeft_2__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l1; 
+    List__List_P (P__b::'b \<Rightarrow> bool) l2; 
+    P__a x1; 
+    P__b x2\<rbrakk> \<Longrightarrow> 
+   length (snd (List__equiExtendLeft(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendLeft_def)
+theorem List__length_equiExtendLeft_2 [simp]: 
+  "length (snd (List__equiExtendLeft(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendLeft_def)
+theorem List__length_equiExtendRight_1__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l1; 
+    List__List_P (P__b::'b \<Rightarrow> bool) l2; 
+    P__a x1; 
+    P__b x2\<rbrakk> \<Longrightarrow> 
+   length (fst (List__equiExtendRight(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendRight_def)
+theorem List__length_equiExtendRight_1 [simp]: 
+  "length (fst (List__equiExtendRight(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendRight_def)
+theorem List__length_equiExtendRight_2__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l1; 
+    List__List_P (P__b::'b \<Rightarrow> bool) l2; 
+    P__a x1; 
+    P__b x2\<rbrakk> \<Longrightarrow> 
+   length (snd (List__equiExtendRight(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendRight_def)
+theorem List__length_equiExtendRight_2 [simp]: 
+  "length (snd (List__equiExtendRight(l1, l2, x1, x2))) 
+     = (max (length l1) (length l2))"
+  by (auto simp: List__equiExtendRight_def)
 theorem List__shiftLeft_Obligation_subtype: 
   "n \<le> length ((l::'a list) @ (replicate n x))"
   by auto
@@ -2556,6 +2602,26 @@ defs List__shiftRight_def:
   "List__shiftRight
      \<equiv> (\<lambda> ((l::'a list), (x::'a), (n::nat)). 
           List__removeSuffix((replicate n x) @ l, n))"
+theorem List__length_shiftLeft__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l; P__a x\<rbrakk> \<Longrightarrow> 
+   length (List__shiftLeft(l, x, n)) = length l"
+   by (auto simp: List__shiftLeft_def)
+theorem List__length_shiftLeft [simp]: 
+  "length (List__shiftLeft(l, x, n)) = length l"
+   by (auto simp: List__shiftLeft_def)
+theorem List__length_shiftRight__stp [simp]: 
+  "\<lbrakk>List__List_P (P__a::'a \<Rightarrow> bool) l; P__a x\<rbrakk> \<Longrightarrow> 
+   length (List__shiftRight(l, x, n)) = length l"
+  proof -
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ show ?thesis by (auto simp: List__shiftRight_def R)
+qed
+theorem List__length_shiftRight [simp]: 
+  "length (List__shiftRight(l, x, n)) = length l"
+  proof -
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ show ?thesis by (auto simp: List__shiftRight_def R)
+qed
 theorem List__rotateLeft_Obligation_subtype: 
   "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> Nat__posNat_p (length l)"
   by auto
@@ -2588,6 +2654,29 @@ defs List__rotateRight_def:
           let n = n mod length l 
           in 
           List__suffix(l, n) @ List__removeSuffix(l, n))"
+theorem List__length_rotateLeft [simp]: 
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> 
+   length (List__rotateLeft(l, n)) = length l"
+  proof (auto simp: List__rotateLeft_def Let_def)
+ assume NE: "l \<noteq> []"
+ let ?n = "n mod length l"
+ from NE have "?n < length l" by auto
+ thus "length l + min (length l) ?n - ?n = length l" by auto
+qed
+theorem List__length_rotateRight [simp]: 
+  "\<lbrakk>(l::'a list) \<noteq> []\<rbrakk> \<Longrightarrow> 
+   length (List__rotateRight(l, n)) = length l"
+  proof (auto simp: List__rotateRight_def Let_def)
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ assume NE: "l \<noteq> []"
+ let ?n = "n mod length l"
+ from NE have LT: "?n < length l" by auto
+ hence "int (length (List__removeSuffix (l, ?n))) = int (length l - ?n)"
+  by auto
+ hence "length (List__removeSuffix (l, ?n)) = length l - ?n"
+  by (auto simp: R)
+ with LT show "?n + length (List__removeSuffix (l, ?n)) = length l" by auto
+qed
 theorem List__flatten__def: 
   "concat ll = foldl' (\<lambda> (x,y). x @ y) [] ll"
   by (auto simp: concat_conv_foldl)

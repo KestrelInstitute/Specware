@@ -2424,27 +2424,27 @@ op [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
 op [a] extendRight (l: List a, x:a, n:Nat | n >= length l) : List a =
   l ++ (repeat x (n - length l))
 
-theorem extendLeft_length is [a]
+theorem length_extendLeft is [a]
   fa (l: List a, x:a, n:Nat) n >= length l =>
     length (extendLeft (l, x, n)) = n
 
-theorem extendRight_length is [a]
+theorem length_extendRight is [a]
   fa (l: List a, x:a, n:Nat) n >= length l =>
     length (extendRight (l, x, n)) = n
 
-proof Isa extendLeft_length__stp
+proof Isa length_extendLeft__stp [simp]
   by (auto simp: List__extendLeft_def)
 end-proof
 
-proof Isa extendLeft_length
+proof Isa length_extendLeft [simp]
   by (auto simp: List__extendLeft_def)
 end-proof
 
-proof Isa extendRight_length__stp
+proof Isa length_extendRight__stp [simp]
   by (auto simp: List__extendRight_def)
 end-proof
 
-proof Isa extendRight_length
+proof Isa length_extendRight [simp]
   by (auto simp: List__extendRight_def)
 end-proof
 
@@ -2461,11 +2461,11 @@ op [a,b] equiExtendRight (l1: List a, l2: List b, x1:a, x2:b)
                            else (l1, extendRight (l2, x2, length l1))
 
 proof Isa equiExtendLeft_Obligation_subtype0
-  by (auto simp: List__extendLeft_def List__repeat_length length_append)
+  by (auto simp: List__extendLeft_def)
 end-proof
 
 proof Isa equiExtendLeft_Obligation_subtype2
-  by (auto simp: List__extendLeft_def List__repeat_length length_append)
+  by (auto simp: List__extendLeft_def)
 end-proof
 
 proof Isa equiExtendLeft_subtype_constr
@@ -2478,18 +2478,17 @@ proof (auto simp: Let_def)
   assume "dom_equiExtendLeft = (l1, l2, x1, x2)"
   with XY have "List__equiExtendLeft (l1, l2, x1, x2) = (x,y)" by auto
   thus "length x = length y"
-   by (cases "length l1 < length l2",
-       auto simp: List__equiExtendLeft_def List__extendLeft_length)
+   by (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
  qed
 qed
 end-proof
 
 proof Isa equiExtendRight_Obligation_subtype0
-  by (auto simp: List__extendRight_def List__repeat_length length_append)
+  by (auto simp: List__extendRight_def)
 end-proof
 
 proof Isa equiExtendRight_Obligation_subtype2
-  by (auto simp: List__extendRight_def List__repeat_length length_append)
+  by (auto simp: List__extendRight_def)
 end-proof
 
 proof Isa equiExtendRight_subtype_constr
@@ -2502,10 +2501,57 @@ proof (auto simp: Let_def)
   assume "dom_equiExtendRight = (l1, l2, x1, x2)"
   with XY have "List__equiExtendRight (l1, l2, x1, x2) = (x,y)" by auto
   thus "length x = length y"
-   by (cases "length l1 < length l2",
-       auto simp: List__equiExtendRight_def List__extendRight_length)
+   by (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
  qed
 qed
+end-proof
+
+theorem length_equiExtendLeft_1 is [a,b]
+  fa (l1:List a, l2:List b, x1:a, x2:b)
+    length (equiExtendLeft (l1, l2, x1, x2)).1 = max (length l1, length l2)
+
+theorem length_equiExtendLeft_2 is [a,b]
+  fa (l1:List a, l2:List b, x1:a, x2:b)
+    length (equiExtendLeft (l1, l2, x1, x2)).2 = max (length l1, length l2)
+
+theorem length_equiExtendRight_1 is [a,b]
+  fa (l1:List a, l2:List b, x1:a, x2:b)
+    length (equiExtendRight (l1, l2, x1, x2)).1 = max (length l1, length l2)
+
+theorem length_equiExtendRight_2 is [a,b]
+  fa (l1:List a, l2:List b, x1:a, x2:b)
+    length (equiExtendRight (l1, l2, x1, x2)).2 = max (length l1, length l2)
+
+proof Isa length_equiExtendLeft_1__stp [simp]
+  by (auto simp: List__equiExtendLeft_def)
+end-proof
+
+proof Isa length_equiExtendLeft_1 [simp]
+  by (auto simp: List__equiExtendLeft_def)
+end-proof
+
+proof Isa length_equiExtendLeft_2__stp [simp]
+  by (auto simp: List__equiExtendLeft_def)
+end-proof
+
+proof Isa length_equiExtendLeft_2 [simp]
+  by (auto simp: List__equiExtendLeft_def)
+end-proof
+
+proof Isa length_equiExtendRight_1__stp [simp]
+  by (auto simp: List__equiExtendRight_def)
+end-proof
+
+proof Isa length_equiExtendRight_1 [simp]
+  by (auto simp: List__equiExtendRight_def)
+end-proof
+
+proof Isa length_equiExtendRight_2__stp [simp]
+  by (auto simp: List__equiExtendRight_def)
+end-proof
+
+proof Isa length_equiExtendRight_2 [simp]
+  by (auto simp: List__equiExtendRight_def)
 end-proof
 
 % shift list leftward/rightward by n positions, filling with x:
@@ -2516,6 +2562,34 @@ op [a] shiftLeft (l: List a, x:a, n:Nat) : List a =
 op [a] shiftRight (l: List a, x:a, n:Nat) : List a =
   removeSuffix (repeat x n ++ l, n)
 
+theorem length_shiftLeft is [a]
+  fa (l:List a, x:a, n:Nat) length (shiftLeft (l, x, n)) = length l
+
+theorem length_shiftRight is [a]
+  fa (l:List a, x:a, n:Nat) length (shiftRight (l, x, n)) = length l
+
+proof Isa length_shiftLeft__stp [simp]
+ by (auto simp: List__shiftLeft_def)
+end-proof
+
+proof Isa length_shiftLeft [simp]
+ by (auto simp: List__shiftLeft_def)
+end-proof
+
+proof Isa length_shiftRight__stp [simp]
+proof -
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ show ?thesis by (auto simp: List__shiftRight_def R)
+qed
+end-proof
+
+proof Isa length_shiftRight [simp]
+proof -
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ show ?thesis by (auto simp: List__shiftRight_def R)
+qed
+end-proof
+
 % rotate list leftward/rightward by n positions:
 
 op [a] rotateLeft (l: List1 a, n:Nat) : List a =
@@ -2525,6 +2599,35 @@ op [a] rotateLeft (l: List1 a, n:Nat) : List a =
 op [a] rotateRight (l: List1 a, n:Nat) : List a =
   let n = n mod (length l) in  % rotating by length(l) has no effect
   suffix (l, n) ++ removeSuffix (l, n)
+
+theorem length_rotateLeft is [a]
+  fa (l:List1 a, n:Nat) length (rotateLeft (l, n)) = length l
+
+theorem length_rotateRight is [a]
+  fa (l:List1 a, n:Nat) length (rotateRight (l, n)) = length l
+
+proof Isa length_rotateLeft [simp]
+proof (auto simp: List__rotateLeft_def Let_def)
+ assume NE: "l \<noteq> []"
+ let ?n = "n mod length l"
+ from NE have "?n < length l" by auto
+ thus "length l + min (length l) ?n - ?n = length l" by auto
+qed
+end-proof
+
+proof Isa length_rotateRight [simp]
+proof (auto simp: List__rotateRight_def Let_def)
+ have R: "\<And>x y. int x = int y \<Longrightarrow> x = y" by auto
+ assume NE: "l \<noteq> []"
+ let ?n = "n mod length l"
+ from NE have LT: "?n < length l" by auto
+ hence "int (length (List__removeSuffix (l, ?n))) = int (length l - ?n)"
+  by auto
+ hence "length (List__removeSuffix (l, ?n)) = length l - ?n"
+  by (auto simp: R)
+ with LT show "?n + length (List__removeSuffix (l, ?n)) = length l" by auto
+qed
+end-proof
 
 % concatenate all the lists in a list, in order:
 
