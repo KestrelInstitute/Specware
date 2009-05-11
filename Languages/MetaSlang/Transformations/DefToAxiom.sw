@@ -122,11 +122,6 @@ Prover qualifying spec
 	            (Some ([])) fields
      | _ -> None
 *)
-  op curryShapeNum: Spec * Sort -> Nat
-  def curryShapeNum (sp, srt) =
-    case arrowOpt (sp, srt)
-      of Some (dom, rng) -> 1 + curryShapeNum (sp, rng)
-       | _ -> 0
 
   op unLambdaDef: Spec * Sort * QualifiedId * MS.Term -> List MS.Term
 
