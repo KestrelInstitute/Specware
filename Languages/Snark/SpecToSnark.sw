@@ -440,7 +440,7 @@ snark qualifying spec {
     %let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
     %let _ = printSortToTerminal srt in
     %let _ = if name = "remove" then debug("remove") else () in
-    (case (Prover.curryShapeNum(spc, srt), sortArity(spc, srt))
+    (case (curryShapeNum(spc, srt), sortArity(spc, srt))
        of (1,None) ->     %let _ = debug("noArity") in 
 	 snarkFunctionNoArityDecl(spc, name, srt)
 	| (1, Some(_,arity)) -> %let _ = debug("noCurry") in 
