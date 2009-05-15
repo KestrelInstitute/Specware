@@ -141,10 +141,22 @@ spec
  def unfoldBase((_, _, spc, _, _, _, _, _), tau) = 
      Utilities.unfoldBase(spc, tau)
 
+ op notTypePredTerm? (spc: Spec, vs: Vars) (t: MS.Term): Boolean =
+   case t of
+     | Apply(p, Var(v as (_,ty), _), _) ->
+       ~(inVars?(v, vs) && subtypePred?(ty, p, spc))
+     | _ -> true
+
  op removeRedundantTypePredicates (spc: Spec) (tm: MS.Term): MS.Term =
    mapTerm (fn t ->
               case t of
-                | Apply(p, Var((_,ty), _), _) | subtypePred?(ty, p, spc) -> trueTerm
+                | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([(_,lhs), (_,rhs)], _), _), a) ->
+                  let lhs_cjs = filter (notTypePredTerm? (spc, vs)) (getConjuncts lhs) in
+                  let rhs_cjs = filter (notTypePredTerm? (spc, vs)) (getConjuncts rhs) in
+                  Bind(Forall, vs, mkSimpImplies(mkConj lhs_cjs, mkConj rhs_cjs), a)
+                | Bind(Exists, vs, bod, a) ->
+                  let cjs = filter (notTypePredTerm? (spc, vs)) (getConjuncts bod) in
+                  Bind(Exists, vs, mkConj cjs, a)
                 | _ -> t,
             id, id)
      tm
@@ -160,7 +172,7 @@ spec
                     else simplify spc oblig2
        in
        let _ = if traceObligationSimplify?
-                then writeLine("Simplifying "^printTerm oblig^"\nto\n"^printTerm oblig2)
+                then writeLine("Simplifying "^printTerm oblig^"\nto\n"^printTerm oblig3)
                 else ()
        in
        oblig3
@@ -286,10 +298,10 @@ spec
         let tcc = <= (tcc, gamma, M, boolSort, tau)    in
         tcc
       | The(v as (_, srt), body, _) ->
+        let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         let gamma = insert (v, gamma) in
         let tcc = (tcc, gamma) |- body ?? boolSort  in
         let tcc = <= (tcc, gamma, M, srt, tau)         in
-        let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         tcc
       | Let(decls, body, _)    ->
         let (tcc, gamma) =
