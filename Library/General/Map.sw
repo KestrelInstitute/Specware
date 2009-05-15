@@ -19,23 +19,23 @@ op [a,b] @@ (m: Map(a,b), x:a) infixl 30 : Option b =
   if m definedAt x then Some (m @ x) else None
 proof Isa -> @@_m end-proof
 
-proof Isa MapAC__e_at__stp_Obligation_the
+proof Isa e_at__stp_Obligation_the
  sorry
 end-proof
 proof Isa -> @@_m end-proof
 
-proof Isa MapAC__e_at_Obligation_the
+proof Isa e_at_Obligation_the
  sorry
 end-proof
 
 theorem map_result_in_range is [a,b]
   fa (m:Map(a,b), x:a) m definedAt x => (m @ x) in? range m
 
-proof Isa MapAC__map_result_in_range__stp
+proof Isa map_result_in_range__stp
  sorry
 end-proof
 
-proof Isa MapAC__map_result_in_range
+proof Isa map_result_in_range
  sorry
 end-proof
 
@@ -48,39 +48,43 @@ op [a,b] <<< (m1: Map(a,b), m2: Map(a,b)) infixl 25 : Map(a,b) = the(m)
 
 op [a,b] update (m: Map(a,b)) (x:a) (y:b) : Map(a,b) = m <<< single (x, y)
 
-proof Isa MapAC__e_lt_lt_lt__stp_Obligation_subtype
+proof Isa e_lt_lt_lt__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt__stp_Obligation_subtype0
+proof Isa e_lt_lt_lt__stp_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt__stp_Obligation_the
+proof Isa e_lt_lt_lt__stp_Obligation_the
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt_Obligation_subtype
+proof Isa e_lt_lt_lt_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt_Obligation_subtype0
+proof Isa e_lt_lt_lt_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt_Obligation_the
+proof Isa e_lt_lt_lt_Obligation_the
  sorry
 end-proof
 
-proof Isa MapAC__e_lt_lt_lt_subtype_constr
+proof Isa e_lt_lt_lt_subtype_constr
  sorry
 end-proof
 
-proof Isa MapAC__update__stp_Obligation_subtype
+proof Isa update__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__update_Obligation_subtype
+proof Isa update_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa update_subtype_constr
  sorry
 end-proof
 
@@ -93,15 +97,15 @@ proof Isa -> --_m end-proof
 op [a,b] - (m: Map(a,b), x:a) infixl 25 : Map(a,b) = m -- single x
 proof Isa -> mless [simp] end-proof
 
-proof Isa MapAC__e_dsh_dsh_Obligation_subtype
+proof Isa e_dsh_dsh_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__e_dsh_dsh_subtype_constr
+proof Isa e_dsh_dsh_subtype_constr
  sorry
 end-proof
 
-proof Isa MapAC__e_dsh_subtype_constr
+proof Isa e_dsh_subtype_constr
  sorry
 end-proof
 
@@ -118,19 +122,23 @@ op [a,b] fromFunction (f: a -> b) : TotalMap(a,b) = fn (x,y) -> y = f x
 
 op toFunction : [a,b] TotalMap(a,b) -> (a -> b) = inverse fromFunction
 
-proof Isa MapAC__fromFunction_Obligation_subtype
+proof Isa fromFunction_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__fromFunction_Obligation_subtype0
+proof Isa fromFunction_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa MapAC__fromFunction_subtype_constr
- sorry
+proof Isa fromFunction_subtype_constr
+ by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype0)
 end-proof
 
-proof Isa MapAC__toFunction_Obligation_subtype
+proof Isa fromFunction_subtype_constr1
+ by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype)
+end-proof
+
+proof Isa toFunction_Obligation_subtype
  sorry
 end-proof
 
@@ -141,15 +149,15 @@ op [a,b] fromPartialFun (f: a -> Option b) : Map(a,b) =
 
 op toPartialFun : [a,b] Map(a,b) -> (a -> Option b) = inverse fromPartialFun
 
-proof Isa MapAC__fromPartialFun_Obligation_subtype
+proof Isa fromPartialFun_Obligation_subtype
  sorry
 end-proof
 
-proof Isa MapAC__fromPartialFun_subtype_constr
- sorry
+proof Isa fromPartialFun_subtype_constr
+ by (simp only: MapAC__fromPartialFun_def MapAC__fromPartialFun_Obligation_subtype)
 end-proof
 
-proof Isa MapAC__toPartialFun_Obligation_subtype
+proof Isa toPartialFun_Obligation_subtype
  sorry
 end-proof
 

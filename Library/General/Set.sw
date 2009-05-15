@@ -422,10 +422,7 @@ proof -
                  \<forall>s. atMostOfSize s n \<and>
                              Set_P P__a s \<longrightarrow> p s"
  txt {* We state all the assumptions of the theorem. *}
- assume "Fun_PD
-          (\<lambda> (x__l::'a set).
-            Set__finite_p__stp P__a x__l \<and>
-            Set_P P__a x__l)
+ assume "Fun_PD (Set__finite_p__stp P__a &&& Set_P P__a)
           (p::'a set \<Rightarrow> bool)"
  assume "Set__finite_p__stp P__a s"
  assume "Set_P P__a s"

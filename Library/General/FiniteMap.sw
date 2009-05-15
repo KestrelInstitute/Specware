@@ -21,6 +21,10 @@ proof Isa fromFMap_subtype_constr
  sorry
 end-proof
 
+proof Isa fromFMap_subtype_constr1
+ sorry
+end-proof
+
 (* Since `FiniteMap' is a subtype of `Map' which is a subtype of `Relation'
 which is a subtype of `Set', it "inherits" ops for maps, (endo)relations, and
 sets. Since `FMap(a,b)' is only isomorphic to `FiniteSet(a*b)' (as opposed to
@@ -66,6 +70,10 @@ op [a,b] @ (m: FMap(a,b), x:a | m definedAt x) infixl 30 : b =
   (fromFMap m) @ x
 proof Isa -> @_fm end-proof
 
+proof Isa e_at__stp_Obligation_subtype
+ sorry
+end-proof
+
 proof Isa e_at_Obligation_subtype
  sorry
 end-proof
@@ -75,6 +83,10 @@ proof Isa -> @@_fm end-proof
 
 op [a,b] applyi (m: FMap(a,b)) (y:b) : FSet a =
   toFSet (applyi (fromFMap m) y)
+
+proof Isa applyi__stp_Obligation_subtype
+ sorry
+end-proof
 
 proof Isa applyi_Obligation_subtype
  sorry
@@ -103,6 +115,14 @@ proof Isa applyis_Obligation_subtype
 end-proof
 
 op [a] id (dom: FSet a) : FMap(a,a) = toFMap (idOver (fromFSet dom))
+
+proof Isa id__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa id__stp_Obligation_subtype0
+ sorry
+end-proof
 
 proof Isa id_Obligation_subtype
  sorry
@@ -212,6 +232,10 @@ op [a,b] -- (m: FMap(a,b), xS: FSet a) infixl 25 : FMap(a,b) =
   toFMap (fromFMap m -- fromFSet xS)
 proof Isa -> --_fm end-proof
 
+proof Isa e_dsh_dsh__stp_Obligation_subtype
+ sorry
+end-proof
+
 proof Isa e_dsh_dsh_Obligation_subtype
  sorry
 end-proof
@@ -219,6 +243,10 @@ end-proof
 op [a,b] - (m: FMap(a,b), x:a) infixl 25 : FMap(a,b) =
   toFMap (fromFMap m - x)
 proof Isa -> less_fm end-proof
+
+proof Isa e_dsh__stp_Obligation_subtype
+ sorry
+end-proof
 
 proof Isa e_dsh_Obligation_subtype
  sorry
@@ -231,6 +259,14 @@ op [a,b] /\ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 25
             : FMap(a,b) = toFMap (fromFMap m1 /\ fromFMap m2)
 proof Isa -> /\_fm end-proof
 
+proof Isa e_fsl_bsl__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa e_fsl_bsl__stp_Obligation_subtype0
+ sorry
+end-proof
+
 proof Isa e_fsl_bsl_Obligation_subtype
  sorry
 end-proof
@@ -242,6 +278,14 @@ end-proof
 op [a,b] \/ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 24
             : FMap(a,b) = toFMap (fromFMap m1 \/ fromFMap m2)
 proof Isa -> \/_fm end-proof
+
+proof Isa e_bsl_fsl__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa e_bsl_fsl__stp_Obligation_subtype0
+ sorry
+end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype
  sorry
@@ -263,6 +307,14 @@ op [a,b] exists1? (p: a * b -> Bool) (m: FMap(a,b)) : Bool =
 op [a,b] filter (p: a * b -> Bool) (m: FMap(a,b)) : FMap(a,b) =
   toFMap (fromFMap m /\ p)
 
+proof Isa filter__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa filter__stp_Obligation_subtype0
+ sorry
+end-proof
+
 proof Isa filter_Obligation_subtype
  sorry
 end-proof
@@ -275,6 +327,14 @@ op [a,b] restrictDomain (m: FMap(a,b), p: a -> Bool) infixl 25
                         : FMap(a,b) = toFMap (fromFMap m restrictDomain p)
 proof Isa -> restrictDomain_fm end-proof
 
+proof Isa restrictDomain__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa restrictDomain__stp_Obligation_subtype0
+ sorry
+end-proof
+
 proof Isa restrictDomain_Obligation_subtype
  sorry
 end-proof
@@ -286,6 +346,14 @@ end-proof
 op [a,b] restrictRange (m: FMap(a,b), p: b -> Bool) infixl 25
                        : FMap(a,b) = toFMap (fromFMap m restrictRange p)
 proof Isa -> restrictRange_fm end-proof
+
+proof Isa restrictRange__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa restrictRange__stp_Obligation_subtype0
+ sorry
+end-proof
 
 proof Isa restrictRange_Obligation_subtype
  sorry
@@ -311,6 +379,10 @@ type SingletonFMap(a,b) = (FMap(a,b) | single?)
 
 op [a,b] thePair (m: SingletonFMap(a,b)) : a * b = theMember (fromFMap m)
 
+proof Isa thePair__stp_Obligation_subtype
+ sorry
+end-proof
+
 op [a,b] size (m: FMap(a,b)) : Nat = size (fromFMap m)
 
 op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Bool =
@@ -318,6 +390,10 @@ op [a,b,c] foldable? (c:c, f: c * (a*b) -> c, m: FMap(a,b)) : Bool =
 
 op [a,b,c] fold(c: c, f: c * (a*b) -> c, m: FMap(a,b) | foldable?(c,f,m)): c =
   fold (c, f, fromFMap m)
+
+proof Isa fold__stp_Obligation_subtype
+ sorry
+end-proof
 
 proof Isa fold_Obligation_subtype
  sorry
@@ -330,6 +406,22 @@ type InjectiveFMap(a,b) = (FMap(a,b) | injective?)
 
 op [a,b] inverse (m: InjectiveFMap(a,b)) : InjectiveFMap(b,a) =
   toFMap (inverse (fromFMap m))
+
+proof Isa inverse__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa inverse__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa inverse__stp_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa inverse__stp_subtype_constr
+ sorry
+end-proof
 
 proof Isa inverse_Obligation_subtype
  sorry
@@ -352,6 +444,14 @@ op [a,b,c] map (f: b -> c) (m: FMap(a,b)) : FMap(a,c) =
   let fLiftedToPairs: a * b -> a * c = (fn (x,y) -> (x, f y)) in
   toFMap (map fLiftedToPairs (fromFMap m))
 
+proof Isa map__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa map__stp_Obligation_subtype0
+ sorry
+end-proof
+
 proof Isa map_Obligation_subtype
  sorry
 end-proof
@@ -364,6 +464,14 @@ end-proof
 op [a,b,c] mapWithDomain (f: a * b -> c) (m: FMap(a,b)) : FMap(a,c) =
   let fLiftedToPairs: a * b -> a * c = (fn (x,y) -> (x, f(x,y))) in
   toFMap (map fLiftedToPairs (fromFMap m))
+
+proof Isa mapWithDomain__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa mapWithDomain__stp_Obligation_subtype0
+ sorry
+end-proof
 
 proof Isa mapWithDomain_Obligation_subtype
  sorry

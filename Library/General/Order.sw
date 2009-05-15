@@ -31,11 +31,11 @@ theorem orderSubsumption is [a]
   weakOrder?    <= (partialOrder? : EndoRelation a -> Bool) &&
   partialOrder? <= (preOrder?     : EndoRelation a -> Bool)
 
-proof Isa Order__orderSubsumption__stp
+proof Isa orderSubsumption__stp
  sorry
 end-proof
 
-proof Isa Order__orderSubsumption
+proof Isa orderSubsumption
  sorry
 end-proof
 
@@ -66,22 +66,26 @@ type StrictLinearOrder a = (EndoRelation a | strictLinearOrder?)
 
 op [a] strictify (r: ReflexiveRelation a) : IrreflexiveRelation a = r -- id
 
-proof Isa Order__strictify_Obligation_subtype
+proof Isa strictify_Obligation_subtype
  sorry
 end-proof
 
-proof Isa Order__strictify_subtype_constr
+proof Isa strictify_subtype_constr
  sorry
 end-proof
 
 op unstrictify : [a] IrreflexiveRelation a -> ReflexiveRelation a =
   inverse strictify
 
-proof Isa Order__unstrictify_Obligation_subtype
+proof Isa unstrictify__stp_Obligation_subtype
  sorry
 end-proof
 
-proof Isa Order__unstrictify_subtype_constr
+proof Isa unstrictify_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa unstrictify_subtype_constr
  sorry
 end-proof
 
