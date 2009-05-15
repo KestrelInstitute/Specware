@@ -419,7 +419,7 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    % let _ = writeLine("0:\n"^printSpec spc) in
+    %  let _ = writeLine("0:\n"^printSpec spc) in
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists (fn el ->
@@ -754,7 +754,8 @@ IsaTermPrinter qualifying spec
                                           "recdef", "primrec", "consts", "class", "primitive",
                                           "next"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
-   ["hd","tl","comp","fold","map","o","size","mod","exp","snd","O","OO","True","False","Not", "sub", "sup"]
+   ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
+    "False", "Not", "sub", "sup", "Sigma"]
 
  op ppConstructor(c_nm: String): Pretty =
    prString (if member(c_nm, notImplicitVarNames)
