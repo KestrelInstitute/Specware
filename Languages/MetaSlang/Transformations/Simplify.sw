@@ -193,6 +193,11 @@ spec
      case term of
        | Let(decl1::decl2::decls,body,_) -> 
 	 simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
+       %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
+       | Let([(pat as RecordPat(pflds, _), tm as Record(tflds, _))], body, pos)
+           | varRecordPattern? pat && varRecordTerm? tm ->
+         let new_decls = map (fn ((_,p), (_,t)) -> (p,t)) (zip(pflds, tflds)) in
+         simplifyOne spc (Let(new_decls, body, pos))
        %% let y = x in f y  --> f x
        | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
 	 substitute(body,[(v,wVar)])
@@ -243,6 +248,10 @@ spec
                      Arrow(mkProduct[integerSort,integerSort],boolSort,a),
                      a),
                  [e, mkNat 0]))
+%       %% Eta fn v -> case v of p -> e --> fn p -> e
+%       | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
+%                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
+%         lam
        %% Quantification simplification
        %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
        | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
@@ -264,6 +273,19 @@ spec
                        ("2",Fun(Nat n2,_,_))],_), _)
            | n1 = n2 ->
          t1
+       | Apply(Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_),
+                     Record([("1", pred1), ("2", pred2)],_), _),
+               arg_tm, _) | termSize arg_tm < 40 ->
+         mkSimpConj [simplifiedApply(pred1, arg_tm, spc),
+                     simplifiedApply(pred2, arg_tm, spc)]
+       | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, _) ->
+         let preds = decomposeConjPred term in
+         (case find simpleLambda? preds of
+            | Some (lam as Lambda ([(pat, _, bod)], _)) ->
+              let other_preds = delete lam preds in
+              let Some arg_tm = patternToTerm pat in
+              mkLambda(pat, mkConj(bod::map (fn pred -> simplifiedApply(pred, arg_tm, spc)) other_preds))
+            | _ -> term)
        | IfThenElse(t1,t2,t3,a) ->
          (case t1 of
             | Fun(Bool true, _,_) -> t2
