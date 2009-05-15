@@ -102,7 +102,7 @@ op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
 
 proof Isa Thy_Morphism Char_nat
   type Char.Char \_rightarrow char
-  Char.chr       -> char_of_nat
+  Char.chr       -> Char__chr
   Char.ord       -> nat_of_char
 end-proof
 

@@ -405,16 +405,20 @@ op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
    % disallowed
 
+proof Isa list_1__stp_subtype_constr
+  sorry
+end-proof
+
 proof Isa list_1_subtype_constr
 proof -
  have "defined_on List__list
                   (\<lambda> (f::nat \<Rightarrow> 'a option).
                    \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
-                  (\<lambda> ignore :: 'a list. True)"
+                  TRUE"
   by (auto simp add: defined_on_def mem_def)
  with List__list_subtype_constr
   have "Function__bijective_p__stp
-         (\<lambda> ignore. True, 
+         (TRUE, 
           \<lambda> (f::nat \<Rightarrow> 'a option). 
             \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
          (Function__inverse__stp
@@ -424,6 +428,13 @@ proof -
    by (rule Function__inverse__stp_bijective)
   thus ?thesis by (auto simp add: List__list_1_def)
 qed
+end-proof
+
+proof Isa list_1_subtype_constr1
+  apply(unfold List__list_1_def)
+  apply(rule Function__inverse__stp_subtype_constr1)
+  apply(rule List__list_subtype_constr)
+  apply(rule List__list_subtype_constr1)
 end-proof
 
 % create list [f(0),...,f(n-1)] (this op is less flexible that op list
@@ -1422,6 +1433,10 @@ end-proof
 op [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
   list (fn j:Nat -> if j = i then Some x else l @@ j)
 
+proof Isa update__stp_Obligation_subtype
+  sorry
+end-proof
+
 proof Isa update_Obligation_subtype
 by (auto simp add: List__definedOnInitialSegmentOfLength_def
                    List__e_at_at_def list_1_Isa_nth)
@@ -1616,6 +1631,12 @@ op [a] filter (p: a -> Bool) (l: List a) : List a =
   | [] -> []
   | hd::tl -> (if p hd then [hd] else []) ++ filter p tl
 
+proof Isa -verbatim
+lemma List_P_filter [simp]:
+  "\_lbrakkList__List_P P__a l\_rbrakk \_Longrightarrow List__List_P P__a (filter Q l)"
+  by (induct l, auto)
+end-proof
+
 % fold from left/right:
 
 op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
@@ -1692,6 +1713,10 @@ end-proof
 
 proof Isa zip3_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+proof Isa unzip__stp_Obligation_subtype
+  sorry
 end-proof
 
 proof Isa unzip_Obligation_subtype
@@ -1803,45 +1828,49 @@ proof Isa unzip_subtype_constr
 proof (auto simp: Let_def)
  fix x :: "'a list"
  fix y :: "'b list"
- assume "List__unzip dom_unzip = (x,y)"
+ assume "List__unzip d__x = (x,y)"
  hence IZXY: "Function__inverse__stp
                 (\<lambda>(x,y). x equiLong y)
-                (\<lambda>(x,y). zip x y) dom_unzip = (x,y)"
+                (\<lambda>(x,y). zip x y) d__x = (x,y)"
   by (auto simp: List__unzip_def)
- have "(\<lambda>_. True) dom_unzip" by auto
+ have "TRUE d__x" by auto
  with List__unzip_Obligation_subtype
   have "Function__inverse__stp
-          (\<lambda>(x,y). x equiLong y) (\<lambda>(x,y). zip x y) dom_unzip =
+          (\<lambda>(x,y). x equiLong y) (\<lambda>(x,y). zip x y) d__x =
         (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
-                 (\<lambda>(x,y). zip x y) p = dom_unzip)"
+                 (\<lambda>(x,y). zip x y) p = d__x)"
    by (rule inverse_SOME)
  with IZXY
   have SXY: "(SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
-                      (\<lambda>(x,y). zip x y) p = dom_unzip) = (x,y)" by auto
+                      (\<lambda>(x,y). zip x y) p = d__x) = (x,y)" by auto
  from List__unzip_Obligation_subtype
   have "surj_on (\<lambda>(x,y). zip x y) (\<lambda>(x,y). x equiLong y) UNIV"
    by (auto simp: bij_on_def)
  hence "\<exists>p \<in> (\<lambda>(x,y). x equiLong y).
-             dom_unzip = (\<lambda>(x,y). zip x y) p"
+             d__x = (\<lambda>(x,y). zip x y) p"
    by (auto simp: surj_on_def)
  then obtain p where "(\<lambda>(x,y). x equiLong y) p"
-                 and "(\<lambda>(x,y). zip x y) p = dom_unzip"
+                 and "(\<lambda>(x,y). zip x y) p = d__x"
   by (auto simp: mem_def)
  hence "\<exists>p. (\<lambda>(x,y). x equiLong y) p \<and>
-                    (\<lambda>(x,y). zip x y) p = dom_unzip"
+                    (\<lambda>(x,y). zip x y) p = d__x"
   by auto
  hence "(\<lambda>(x,y). x equiLong y)
           (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
-                   (\<lambda>(x,y). zip x y) p = dom_unzip)
+                   (\<lambda>(x,y). zip x y) p = d__x)
         \<and>
         (\<lambda>(x,y). zip x y)
           (SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
-                   (\<lambda>(x,y). zip x y) p = dom_unzip)
-        = dom_unzip"
+                   (\<lambda>(x,y). zip x y) p = d__x)
+        = d__x"
   by (rule someI_ex)
  with SXY have "(\<lambda>(x,y). x equiLong y) (x,y)" by auto
  thus "length x = length y" by auto
 qed
+end-proof
+
+proof Isa unzip3__stp_Obligation_subtype
+  sorry
 end-proof
 
 proof Isa unzip3_Obligation_subtype
@@ -2039,52 +2068,103 @@ qed
 end-proof
 
 proof Isa unzip3_subtype_constr
-proof auto
+ proof auto
  fix l1::"'a list"
  and l2::"'b list"
  and l3::"'c list"
- assume "List__unzip3 dom_unzip3 = (l1,l2,l3)"
+ assume "(l1,l2,l3) = List__unzip3 d__x"
  hence IZL: "Function__inverse__stp
-               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
-               List__zip3 dom_unzip3
+               (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+               List__zip3 d__x
              = (l1,l2,l3)"
   by (auto simp: List__unzip3_def)
- have "(\<lambda>_. True) dom_unzip3" by auto
+ have "TRUE d__x" by auto
  with List__unzip3_Obligation_subtype
   have "Function__inverse__stp
-          (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
-          List__zip3 dom_unzip3 =
-        (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
-                 List__zip3 l = dom_unzip3)"
+          (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          List__zip3 d__x =
+        (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                 List__zip3 l = d__x)"
    by (rule inverse_SOME)
  with IZL
-  have SL: "(SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
-                     \<and> List__zip3 l = dom_unzip3) = (l1,l2,l3)" by auto
+  have SL: "(SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
+                     \_and List__zip3 l = d__x) = (l1,l2,l3)" by auto
  from List__unzip3_Obligation_subtype
-  have "surj_on List__zip3 (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+  have "surj_on List__zip3 (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
                            UNIV"
    by (auto simp: bij_on_def)
- hence "\<exists>l \<in> (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z).
-             dom_unzip3 = List__zip3 l"
+ hence "\_existsl \_in (\_lambda(x,y,z). x equiLong y \_and y equiLong z).
+             d__x = List__zip3 l"
    by (auto simp: surj_on_def)
- then obtain l where "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l"
-                 and "List__zip3 l = dom_unzip3"
+ then obtain l where "(\_lambda(x,y,z). x equiLong y \_and y equiLong z) l"
+                 and "List__zip3 l = d__x"
   by (auto simp: mem_def)
- hence "\<exists>l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
-                 \<and> List__zip3 l = dom_unzip3"
+ hence "\_existsl. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
+                 \_and List__zip3 l = d__x"
   by auto
- hence "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
-          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
-                   List__zip3 l = dom_unzip3)
-        \<and>
+ hence "(\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                   List__zip3 l = d__x)
+        \_and
         List__zip3
-          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
-                   List__zip3 l = dom_unzip3)
-        = dom_unzip3"
+          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                   List__zip3 l = d__x)
+        = d__x"
   by (rule someI_ex)
- with SL have "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) (l1,l2,l3)"
+ with SL have "(\_lambda(x,y,z). x equiLong y) (l1,l2,l3)"
   by auto
- thus "length l1 = length l2" and "length l2 = length l3" by auto
+ thus "length l1 = length l2"  by auto  
+qed
+end-proof
+
+%% Essentially repeats unzip3_subtype_constr proof. Could merge them
+proof Isa unzip3_subtype_constr1
+ proof auto
+ fix l1::"'a list"
+ and l2::"'b list"
+ and l3::"'c list"
+ assume "(l1,l2,l3) = List__unzip3 d__x"
+ hence IZL: "Function__inverse__stp
+               (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+               List__zip3 d__x
+             = (l1,l2,l3)"
+  by (auto simp: List__unzip3_def)
+ have "TRUE d__x" by auto
+ with List__unzip3_Obligation_subtype
+  have "Function__inverse__stp
+          (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          List__zip3 d__x =
+        (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                 List__zip3 l = d__x)"
+   by (rule inverse_SOME)
+ with IZL
+  have SL: "(SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
+                     \_and List__zip3 l = d__x) = (l1,l2,l3)" by auto
+ from List__unzip3_Obligation_subtype
+  have "surj_on List__zip3 (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+                           UNIV"
+   by (auto simp: bij_on_def)
+ hence "\_existsl \_in (\_lambda(x,y,z). x equiLong y \_and y equiLong z).
+             d__x = List__zip3 l"
+   by (auto simp: surj_on_def)
+ then obtain l where "(\_lambda(x,y,z). x equiLong y \_and y equiLong z) l"
+                 and "List__zip3 l = d__x"
+  by (auto simp: mem_def)
+ hence "\_existsl. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
+                 \_and List__zip3 l = d__x"
+  by auto
+ hence "(\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                   List__zip3 l = d__x)
+        \_and
+        List__zip3
+          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+                   List__zip3 l = d__x)
+        = d__x"
+  by (rule someI_ex)
+ with SL have "(\_lambda(x,y,z). y equiLong z) (l1,l2,l3)"
+  by auto
+ thus "length l2 = length l3"  by auto
 qed
 end-proof
 
@@ -2469,18 +2549,8 @@ proof Isa equiExtendLeft_Obligation_subtype2
 end-proof
 
 proof Isa equiExtendLeft_subtype_constr
-proof (auto simp: Let_def)
- fix x y
- assume XY: "List__equiExtendLeft dom_equiExtendLeft = (x,y)"
- show "length x = length y"
- proof (cases dom_equiExtendLeft)
-  fix l1 l2 x1 x2
-  assume "dom_equiExtendLeft = (l1, l2, x1, x2)"
-  with XY have "List__equiExtendLeft (l1, l2, x1, x2) = (x,y)" by auto
-  thus "length x = length y"
-   by (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
- qed
-qed
+  apply (auto simp: Let_def)
+  apply (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
 end-proof
 
 proof Isa equiExtendRight_Obligation_subtype0
@@ -2492,18 +2562,8 @@ proof Isa equiExtendRight_Obligation_subtype2
 end-proof
 
 proof Isa equiExtendRight_subtype_constr
-proof (auto simp: Let_def)
- fix x y
- assume XY: "List__equiExtendRight dom_equiExtendRight = (x,y)"
- show "length x = length y"
- proof (cases dom_equiExtendRight)
-  fix l1 l2 x1 x2
-  assume "dom_equiExtendRight = (l1, l2, x1, x2)"
-  with XY have "List__equiExtendRight (l1, l2, x1, x2) = (x,y)" by auto
-  thus "length x = length y"
-   by (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
- qed
-qed
+  apply (auto simp: Let_def)
+  apply (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
 end-proof
 
 theorem length_equiExtendLeft_1 is [a,b]
@@ -3374,19 +3434,17 @@ qed
 end-proof
 
 proof Isa positionsSuchThat_subtype_constr
-proof (cases dom_positionsSuchThat)
- case (Pair l p)
- def POSs \<equiv> "List__positionsSuchThat (l, p)"
- and P \<equiv> "\<lambda>POSs::nat list.
-           distinct POSs \<and>
-           List__increasingNats_p POSs \<and>
-           (\<forall>(i::nat). i mem POSs = (i < length l \<and> p (l ! i)))"
+  proof -
+ def POSs \_equiv "List__positionsSuchThat (l, p)"
+ and P \_equiv "\_lambdaPOSs::nat list.
+           distinct POSs \_and
+           List__increasingNats_p POSs \_and
+           (\_forall(i::nat). i mem POSs = (i < length l \_and p (l ! i)))"
  with List__positionsSuchThat_Obligation_the P_def
-  have "\<exists>!POSs. P POSs" by blast
+  have "\_exists!POSs. P POSs" by blast
  hence "P (THE POSs. P POSs)" by (rule theI')
  hence "P POSs" by (auto simp: POSs_def List__positionsSuchThat_def P_def)
- with P_def have "distinct POSs" by auto
- with POSs_def Pair show ?thesis by auto
+ with P_def show "distinct POSs" by auto
 qed
 end-proof
 
@@ -3406,11 +3464,7 @@ op [a] positionsOf (l: List a, x:a) : InjList Nat =
   positionsSuchThat (l, fn y:a -> y = x)
 
 proof Isa positionsOf_subtype_constr
-proof (cases dom_positionsOf)
- case (Pair l x)
- thus ?thesis
   by (auto simp: List__positionsOf_def List__positionsSuchThat_subtype_constr)
-qed
 end-proof
 
 % position of element in injective list that has element:
@@ -4103,20 +4157,19 @@ qed
 end-proof
 
 proof Isa positionsOfSublist_subtype_constr
-proof (cases dom_positionsOfSublist)
- case (Pair subl supl)
- def POSs \<equiv> "List__positionsOfSublist (subl, supl)"
- and P \<equiv> "\<lambda>POSs::nat list.
-           distinct POSs \<and>
-           List__increasingNats_p POSs \<and>
-           (\<forall>(i::nat). i mem POSs = List__sublistAt_p (subl, i, supl))"
+  proof -
+ def POSs \_equiv "List__positionsOfSublist (subl, supl)"
+ and P \_equiv "\_lambdaPOSs::nat list.
+           distinct POSs \_and
+           List__increasingNats_p POSs \_and
+           (\_forall(i::nat). i mem POSs = List__sublistAt_p (subl, i, supl))"
  with List__positionsOfSublist_Obligation_the
-  have "\<exists>!POSs. P POSs" by blast
+  have "\_exists!POSs. P POSs" by blast
  hence "P (THE POSs. P POSs)" by (rule theI')
  hence "P POSs"
   by (simp add: POSs_def List__positionsOfSublist_def P_def)
  with P_def have "distinct POSs" by auto
- with POSs_def Pair show ?thesis by auto
+ with POSs_def show ?thesis by auto
 qed
 end-proof
 

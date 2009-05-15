@@ -15,7 +15,7 @@ op [a,b,c] o (g: b -> c, f: a -> b) infixl 24 : a -> c = fn x:a -> g (f x)
 theorem identity is [a,b]
   fa (f: a -> b) id o f = f
               && f o id = f
-proof Isa Function__identity__stp
+proof Isa identity__stp
   apply(auto)
   apply(rule ext, simp)+
 end-proof
@@ -25,7 +25,7 @@ theorem associativity is [a,b,c,d]
 proof Isa
   apply(simp add: o_assoc)
 end-proof
-proof Isa Function__associativity__stp
+proof Isa associativity__stp
   apply(rule ext, simp)
 end-proof
 
@@ -182,7 +182,7 @@ qed
 end-proof
 
 proof Isa inverse__stp_Obligation_subtype
-  apply(simp only: Function__bijective_p__stp_simp univ_true)
+  apply(simp only: Function__bijective_p__stp_simp univ_true TRUE_def)
   apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f",
         simp)
   apply(simp add: bij_ON_imp_bij_ON_inv)
@@ -199,6 +199,18 @@ proof Isa inverse__stp_Obligation_the
   apply(auto simp add:
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)
+end-proof
+
+proof Isa inverse__stp_subtype_constr
+  by (simp only: Function__inverse__stp_def Function__inverse__stp_Obligation_subtype)
+end-proof
+
+proof Isa inverse__stp_subtype_constr1
+  apply (simp only: Function__inverse__stp_def Fun_PR.simps)
+  apply(rule allI)
+  apply(rule the1I2)
+  apply(rule Function__inverse__stp_Obligation_the)
+  apply(auto)
 end-proof
 
 proof Isa inverse_Obligation_subtype
@@ -303,7 +315,7 @@ proof -
  with INV_SOME show "x = inv f y" by auto
 qed
 end-proof
-proof Isa Function__fxy_implies_inverse__stp
+proof Isa fxy_implies_inverse__stp
 proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
  assume PF: "Fun_P(P__a, P__b) f"

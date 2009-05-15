@@ -13,8 +13,19 @@ Specware implementation, the following type definition will be removed. *)
 
 type Bool = Boolean
 
+op [a] ~~~ (p: a -> Bool) : a -> Bool = fn x:a -> ~(p x)
+
+op [a] &&& (p1: a -> Bool, p2: a -> Bool) infixr 25 : a -> Bool =
+  fn x:a -> p1 x && p2 x
+
+op [a] ||| (p1: a -> Bool, p2: a -> Bool) infixr 24 : a -> Bool =
+  fn x:a -> p1 x || p2 x
+
+op [a] TRUE: a -> Bool = fn x:a -> true
+
 proof Isa ThyMorphism
   type Bool.Bool -> bool
+  Bool.TRUE -> TRUE
 end-proof
 
 endspec
