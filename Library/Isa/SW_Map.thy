@@ -20,9 +20,8 @@ consts MapAC__undefinedAt :: " ('a, 'b)Relation__Map \<Rightarrow> 'a \<Rightarr
 defs MapAC__undefinedAt_def: 
   "(m undefinedAt x) \<equiv> (x \<notin> Relation__domain m)"
 theorem MapAC__e_at__stp_Obligation_the: 
-  "\<lbrakk>Relation__functional_p__stp(\<lambda> ignore. True, P__b) (m::('a \<times> 'b) set); 
+  "\<lbrakk>Relation__functional_p__stp(TRUE, P__b) (m::('a \<times> 'b) set); 
     Set_P (\<lambda> (ignore1, (x1::'b)). P__b x1) m; 
-    P__b (y::'b); 
     MapAC__definedAt__stp P__b((m:: ('a, 'b)Relation__Relation), (x::'a))\<rbrakk> \<Longrightarrow> 
    \<exists>!(y::'b). P__b y \<and> (x, y) \<in> m"
    sorry
@@ -63,6 +62,26 @@ theorem MapAC__map_result_in_range:
   "\<lbrakk>Relation__functional_p (m:: ('a, 'b)Relation__Relation); 
     m definedAt x\<rbrakk> \<Longrightarrow> m @_m x \<in> Relation__range m"
    sorry
+theorem MapAC__e_lt_lt_lt__stp_Obligation_the: 
+  "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m2::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
+    Relation__functional_p__stp(P__a, P__b) m1; 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m1\<rbrakk> \<Longrightarrow> 
+   \<exists>!(m::('a \<times> 'b) set). 
+     Relation__functional_p__stp(P__a, P__b) m 
+       \<and> (Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m 
+        \<and> (RSet P__a (Relation__domain__stp P__b m) 
+             = RSet P__a
+                  (Relation__domain__stp P__b m1 
+                     \<union> Relation__domain__stp P__b m2) 
+         \<and> (\<forall>(x::'a). 
+              P__a x \<and> x \<in> Relation__domain__stp P__b m 
+                \<longrightarrow> m @_m x 
+                      = (if MapAC__definedAt__stp P__b(m2, x) then 
+                           m2 @_m x
+                         else 
+                           m1 @_m x))))"
+   sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p__stp((P__a::'a \<Rightarrow> bool), P__b) (m2::('a \<times> 'b) set); 
     Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
@@ -97,28 +116,6 @@ theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype0:
     \<not> (MapAC__definedAt__stp P__b(m2, x))\<rbrakk> \<Longrightarrow> 
    MapAC__definedAt__stp P__b(m1, x)"
    sorry
-theorem MapAC__e_lt_lt_lt__stp_Obligation_the: 
-  "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m2::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
-    Relation__functional_p__stp(P__a, P__b) (m1::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m1; 
-    Relation__functional_p__stp(P__a, P__b) m; 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m\<rbrakk> \<Longrightarrow> 
-   \<exists>!(m::('a \<times> 'b) set). 
-     Relation__functional_p__stp(P__a, P__b) m 
-       \<and> (Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m 
-        \<and> (RSet P__a (Relation__domain__stp P__b m) 
-             = RSet P__a
-                  (Relation__domain__stp P__b m1 
-                     \<union> Relation__domain__stp P__b m2) 
-         \<and> (\<forall>(x::'a). 
-              P__a x \<and> x \<in> Relation__domain__stp P__b m 
-                \<longrightarrow> m @_m x 
-                      = (if MapAC__definedAt__stp P__b(m2, x) then 
-                           m2 @_m x
-                         else 
-                           m1 @_m x))))"
-   sorry
 consts MapAC__e_lt_lt_lt__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                    ('a, 'b)Relation__Relation
                                      \<times>  ('a, 'b)Relation__Relation \<Rightarrow> 
@@ -144,6 +141,21 @@ defs MapAC__e_lt_lt_lt__stp_def:
                                  m2 @_m x
                                else 
                                  m1 @_m x)))))"
+theorem MapAC__e_lt_lt_lt_Obligation_the: 
+  "\<lbrakk>Relation__functional_p (m2:: ('a, 'b)Relation__Relation); 
+    Relation__functional_p m1\<rbrakk> \<Longrightarrow> 
+   \<exists>!(m:: ('a, 'b)Relation__Relation). 
+     Relation__functional_p m 
+       \<and> (Relation__domain m 
+            = Relation__domain m1 \<union> Relation__domain m2 
+        \<and> (\<forall>(x::'a). 
+             x \<in> Relation__domain m 
+               \<longrightarrow> m @_m x 
+                     = (if m2 definedAt x then 
+                          m2 @_m x
+                        else 
+                          m1 @_m x)))"
+   sorry
 theorem MapAC__e_lt_lt_lt_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p (m2:: ('a, 'b)Relation__Relation); 
     Relation__functional_p (m1:: ('a, 'b)Relation__Relation); 
@@ -162,21 +174,6 @@ theorem MapAC__e_lt_lt_lt_Obligation_subtype0:
     x \<in> Relation__domain m; 
     \<not> (m2 definedAt x)\<rbrakk> \<Longrightarrow> m1 definedAt x"
    sorry
-theorem MapAC__e_lt_lt_lt_Obligation_the: 
-  "\<lbrakk>Relation__functional_p (m2:: ('a, 'b)Relation__Relation); 
-    Relation__functional_p m1\<rbrakk> \<Longrightarrow> 
-   \<exists>!(m:: ('a, 'b)Relation__Relation). 
-     Relation__functional_p m 
-       \<and> (Relation__domain m 
-            = Relation__domain m1 \<union> Relation__domain m2 
-        \<and> (\<forall>(x::'a). 
-             x \<in> Relation__domain m 
-               \<longrightarrow> m @_m x 
-                     = (if m2 definedAt x then 
-                          m2 @_m x
-                        else 
-                          m1 @_m x)))"
-   sorry
 consts MapAC__e_lt_lt_lt :: " ('a, 'b)Relation__Map \<Rightarrow> 
                               ('a, 'b)Relation__Map \<Rightarrow>  ('a, 'b)Relation__Map"	(infixl "<<<" 65)
 defs MapAC__e_lt_lt_lt_def: 
@@ -193,11 +190,8 @@ defs MapAC__e_lt_lt_lt_def:
                           else 
                             m1 @_m x))))"
 theorem MapAC__e_lt_lt_lt_subtype_constr: 
-  "\<lbrakk>Relation__functional_p
-       (fst (dom__lt_lt_lt::
-              ('a, 'b)Relation__Relation \<times>  ('a, 'b)Relation__Relation)); 
-    Relation__functional_p (snd dom__lt_lt_lt)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p (let (x,y) = dom__lt_lt_lt in x <<< y)"
+  "\<lbrakk>Relation__functional_p (m1:: ('a, 'b)Relation__Relation); 
+    Relation__functional_p m2\<rbrakk> \<Longrightarrow> Relation__functional_p (m1 <<< m2)"
    sorry
 theorem MapAC__update__stp_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
@@ -230,6 +224,10 @@ consts MapAC__update :: " ('a, 'b)Relation__Map \<Rightarrow>
                          'a \<Rightarrow> 'b \<Rightarrow>  ('a, 'b)Relation__Map"
 defs MapAC__update_def: 
   "MapAC__update m x y \<equiv> (m <<< Set__single(x, y))"
+theorem MapAC__update_subtype_constr: 
+  "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p (MapAC__update m x y)"
+   sorry
 theorem MapAC__e_dsh_dsh_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
    Relation__functional_p (m restrictDomain - xS)"
@@ -238,16 +236,15 @@ consts e_dsh_dsh_m :: " ('a, 'b)Relation__Map \<Rightarrow>
                        'a set \<Rightarrow>  ('a, 'b)Relation__Map"	(infixl "--'_m" 65)
 defs e_dsh_dsh_m_def: "(m --_m xS) \<equiv> (m restrictDomain - xS)"
 theorem MapAC__e_dsh_dsh_subtype_constr: 
-  "\<lbrakk>Relation__functional_p
-       (fst (dom__dsh_dsh:: ('a, 'b)Relation__Relation \<times> 'a set))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p (let (x,y) = dom__dsh_dsh in x --_m y)"
+  "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p ((m:: ('a, 'b)Relation__Map) --_m (xS::'a set))"
    sorry
 consts mless :: " ('a, 'b)Relation__Map \<Rightarrow> 'a \<Rightarrow>  ('a, 'b)Relation__Map"	(infixl "mless" 65)
 defs mless_def [simp]: 
   "((m:: ('a, 'b)Relation__Map) mless x) \<equiv> (m --_m Set__single x)"
 theorem MapAC__e_dsh_subtype_constr: 
-  "\<lbrakk>Relation__functional_p (fst (dom__dsh:: ('a, 'b)Relation__Relation \<times> 'a))\<rbrakk>
-    \<Longrightarrow> Relation__functional_p (let (x,y) = dom__dsh in x mless y)"
+  "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p ((m:: ('a, 'b)Relation__Map) mless (x::'a))"
    sorry
 consts MapAC__agree_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                 ('a, 'b)Relation__Relation
@@ -278,12 +275,14 @@ consts MapAC__fromFunction :: "('a \<Rightarrow> 'b) \<Rightarrow>  ('a, 'b)MapA
 defs MapAC__fromFunction_def: 
   "MapAC__fromFunction f \<equiv> (\<lambda> ((x::'a), (y::'b)). y = f x)"
 theorem MapAC__fromFunction_subtype_constr: 
-  "Relation__functional_p (MapAC__fromFunction dom_fromFunction) 
-     \<and> Relation__total_p (MapAC__fromFunction dom_fromFunction)"
-   sorry
+  "Relation__total_p (MapAC__fromFunction f)"
+   by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype0)
+theorem MapAC__fromFunction_subtype_constr1: 
+  "Relation__functional_p (MapAC__fromFunction f)"
+   by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype)
 theorem MapAC__toFunction_Obligation_subtype: 
-  "Function__bijective_p__stp(\<lambda> ignore. True, Relation__total_p)
-      MapAC__fromFunction"
+  "Function__bijective_p__stp
+     (TRUE, Relation__total_p &&& Relation__functional_p) MapAC__fromFunction"
    sorry
 consts MapAC__toFunction :: " ('a, 'b)MapAC__TotalMap \<Rightarrow> 'a \<Rightarrow> 'b"
 defs MapAC__toFunction_def: 
@@ -297,10 +296,10 @@ defs MapAC__fromPartialFun_def:
   "MapAC__fromPartialFun f
      \<equiv> (\<lambda> ((x::'a), (y::'b)). f x = Some y)"
 theorem MapAC__fromPartialFun_subtype_constr: 
-  "Relation__functional_p (MapAC__fromPartialFun dom_fromPartialFun)"
-   sorry
+  "Relation__functional_p (MapAC__fromPartialFun f)"
+   by (simp only: MapAC__fromPartialFun_def MapAC__fromPartialFun_Obligation_subtype)
 theorem MapAC__toPartialFun_Obligation_subtype: 
-  "Function__bijective_p__stp(\<lambda> ignore. True, Relation__functional_p)
+  "Function__bijective_p__stp(TRUE, Relation__functional_p)
       MapAC__fromPartialFun"
    sorry
 consts MapAC__toPartialFun :: " ('a, 'b)Relation__Map \<Rightarrow> 'a \<Rightarrow> 'b option"

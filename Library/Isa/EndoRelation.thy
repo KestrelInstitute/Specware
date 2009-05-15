@@ -216,8 +216,7 @@ defs EndoRelation__reflexiveClosure_def:
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc \<and> EndoRelation__reflexive_p rc)"
 theorem EndoRelation__reflexiveClosure_subtype_constr: 
-  "EndoRelation__reflexive_p
-      (EndoRelation__reflexiveClosure dom_reflexiveClosure)"
+  "EndoRelation__reflexive_p (EndoRelation__reflexiveClosure r)"
    sorry
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -269,8 +268,7 @@ defs EndoRelation__symmetricClosure_def:
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc \<and> EndoRelation__symmetric_p rc)"
 theorem EndoRelation__symmetricClosure_subtype_constr: 
-  "EndoRelation__symmetric_p
-      (EndoRelation__symmetricClosure dom_symmetricClosure)"
+  "EndoRelation__symmetric_p (EndoRelation__symmetricClosure r)"
    sorry
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -323,8 +321,7 @@ defs EndoRelation__transitiveClosure_def:
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc \<and> EndoRelation__transitive_p rc)"
 theorem EndoRelation__transitiveClosure_subtype_constr: 
-  "EndoRelation__transitive_p
-      (EndoRelation__transitiveClosure dom_transitiveClosure)"
+  "EndoRelation__transitive_p (EndoRelation__transitiveClosure r)"
    sorry
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype: 
   "\<lbrakk>Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
@@ -377,7 +374,6 @@ defs EndoRelation__equivalenceClosure_def:
           (\<lambda> (rc::('a \<times> 'a) set). 
              r \<subseteq> rc \<and> EndoRelation__equivalence_p rc)"
 theorem EndoRelation__equivalenceClosure_subtype_constr: 
-  "EndoRelation__equivalence_p
-      (EndoRelation__equivalenceClosure dom_equivalenceClosure)"
+  "EndoRelation__equivalence_p (EndoRelation__equivalenceClosure r)"
    sorry
 end

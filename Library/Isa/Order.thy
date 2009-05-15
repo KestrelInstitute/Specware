@@ -123,9 +123,28 @@ consts Order__strictify :: "'a EndoRelation__ReflexiveRelation \<Rightarrow>
 defs Order__strictify_def: 
   "Order__strictify r \<equiv> (r - EndoRelation__id)"
 theorem Order__strictify_subtype_constr: 
-  "\<lbrakk>EndoRelation__reflexive_p dom_strictify\<rbrakk> \<Longrightarrow> 
-   EndoRelation__irreflexive_p (Order__strictify dom_strictify)"
+  "\<lbrakk>EndoRelation__reflexive_p r\<rbrakk> \<Longrightarrow> 
+   EndoRelation__irreflexive_p (Order__strictify r)"
    sorry
+theorem Order__unstrictify__stp_Obligation_subtype: 
+  "Function__bijective_p__stp
+     (EndoRelation__reflexive_p__stp P__a 
+        &&& Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1), 
+      EndoRelation__irreflexive_p__stp P__a 
+        &&& Set_P
+               (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
+      Order__strictify"
+   sorry
+consts Order__unstrictify__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
+                                   'a EndoRelation__EndoRelation \<Rightarrow> 
+                                   'a EndoRelation__EndoRelation"
+defs Order__unstrictify__stp_def: 
+  "Order__unstrictify__stp P__a
+     \<equiv> Function__inverse__stp
+          (EndoRelation__reflexive_p__stp P__a 
+             &&& Set_P
+                    (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+          Order__strictify"
 theorem Order__unstrictify_Obligation_subtype: 
   "Function__bijective_p__stp
      (EndoRelation__reflexive_p, EndoRelation__irreflexive_p) Order__strictify"
@@ -136,7 +155,7 @@ defs Order__unstrictify_def:
   "Order__unstrictify
      \<equiv> Function__inverse__stp EndoRelation__reflexive_p Order__strictify"
 theorem Order__unstrictify_subtype_constr: 
-  "\<lbrakk>EndoRelation__irreflexive_p dom_unstrictify\<rbrakk> \<Longrightarrow> 
-   EndoRelation__reflexive_p (Order__unstrictify dom_unstrictify)"
+  "\<lbrakk>EndoRelation__irreflexive_p d__x\<rbrakk> \<Longrightarrow> 
+   EndoRelation__reflexive_p (Order__unstrictify d__x)"
    sorry
 end

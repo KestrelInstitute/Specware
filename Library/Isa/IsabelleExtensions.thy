@@ -320,13 +320,16 @@ lemma bij_ON_imp_bij_on_inv:
 * A few insights about characters
 *************************************************************)
 
-
 lemma nat_of_char_less_256 [simp]: "nat_of_char y < 256"
   apply (subgoal_tac "\<exists>x. y = char_of_nat x", safe)
   apply (simp add: nat_of_char_of_nat)
   apply (rule_tac x="nat_of_char y" in exI)
   apply (simp add: char_of_nat_of_char)
 done 
+
+(*  Char.chr is like char_of_nat except out of its domain, so we define a regularized version *)
+definition Char__chr :: "nat \<Rightarrow> char" where [simp]:
+  "Char__chr = RFun (\<lambda>i. i < 256) char_of_nat"
 
 (*************************************************************
 *
@@ -1606,8 +1609,6 @@ lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod
   by (auto simp add: modE_alt_def divE_def,
       cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto, 
       simp add: abs_via_sign ring_simps)
-
-
 
 
 end

@@ -44,7 +44,7 @@ defs Option__isoOption_def:
   "Option__isoOption
      \<equiv> (\<lambda> (iso_elem:: ('a, 'b)Function__Bijection). option_map iso_elem)"
 theorem Option__isoOption_subtype_constr: 
-  "\<lbrakk>bij dom_isoOption\<rbrakk> \<Longrightarrow> bij (Option__isoOption dom_isoOption)"
+  "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (Option__isoOption iso_elem)"
    apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)
   done
 end

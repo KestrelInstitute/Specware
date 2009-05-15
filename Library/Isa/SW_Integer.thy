@@ -248,7 +248,7 @@ theorem Integer__sign_Obligation_subtype:
    - 1 = 0 \<or> (- 1 = 1 \<or> - 1 = - 1)"
   by auto
 theorem Integer__sign_subtype_constr: 
-  "\<lbrakk>(s::int) = sign dom_sign\<rbrakk> \<Longrightarrow> s = 0 \<or> (s = 1 \<or> s = - 1)"
+  "\<lbrakk>(s::int) = sign i\<rbrakk> \<Longrightarrow> s = 0 \<or> (s = 1 \<or> s = - 1)"
    apply (simp add: sign_def)
   done
 theorem Integer__sign__def: 

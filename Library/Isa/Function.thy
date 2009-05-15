@@ -96,11 +96,10 @@ types  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
 theorem Function__inverse__stp_Obligation_subtype: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, \<lambda> ignore. True) f; 
-    Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
-   Function__bijective_p__stp(\<lambda> ignore. True, P__a)
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   Function__bijective_p__stp(TRUE, P__a)
       (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
-  apply(simp only: Function__bijective_p__stp_simp univ_true)
+  apply(simp only: Function__bijective_p__stp_simp univ_true TRUE_def)
   apply(subgoal_tac "(\<lambda>y. THE x. P__a x \<and> f x = y) = inv_on P__a f",
         simp)
   apply(simp add: bij_ON_imp_bij_ON_inv)
@@ -113,9 +112,8 @@ theorem Function__inverse__stp_Obligation_subtype:
   apply(drule_tac x="y" in spec, auto simp add: mem_def)
   done
 theorem Function__inverse__stp_Obligation_the: 
-  "\<lbrakk>Function__bijective_p__stp((P__a::'a \<Rightarrow> bool), \<lambda> ignore. True) (f::'a \<Rightarrow> 'b); 
-    Fun_PD P__a f; 
-    P__a (x::'a)\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
   apply(auto simp add:
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)
@@ -124,6 +122,20 @@ consts Function__inverse__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Ri
 defs Function__inverse__stp_def: 
   "Function__inverse__stp P__a f
      \<equiv> (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
+theorem Function__inverse__stp_subtype_constr: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   Function__bijective_p__stp(TRUE, P__a)
+      (Function__inverse__stp P__a f)"
+  by (simp only: Function__inverse__stp_def Function__inverse__stp_Obligation_subtype)
+theorem Function__inverse__stp_subtype_constr1: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   Fun_PR P__a (Function__inverse__stp P__a f)"
+  apply (simp only: Function__inverse__stp_def Fun_PR.simps)
+  apply(rule allI)
+  apply(rule the1I2)
+  apply(rule Function__inverse__stp_Obligation_the)
+  apply(auto)
+  done
 theorem Function__inverse_Obligation_subtype: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> 
    bij
@@ -141,7 +153,7 @@ theorem Function__inverse_Obligation_the:
   apply(drule spec, erule exE, drule sym, auto)
   done
 theorem Function__inverse_subtype_constr: 
-  "\<lbrakk>bij dom_inverse\<rbrakk> \<Longrightarrow> bij (inv dom_inverse)"
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> bij (inv f)"
   apply(auto simp add: bij_def)
   apply(erule surj_imp_inj_inv)
   apply(erule inj_imp_surj_inv)
@@ -287,7 +299,7 @@ theorem Function__f_inverse_apply:
   apply(simp add: bij_def surj_f_inv_f)
   done
 theorem Function__inverse_f_apply__stp: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, \<lambda> ignore. True) f; 
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; 
     Fun_PD P__a f; 
     P__a (x::'a)\<rbrakk> \<Longrightarrow> 
    Function__inverse__stp P__a f (f x) = x"
