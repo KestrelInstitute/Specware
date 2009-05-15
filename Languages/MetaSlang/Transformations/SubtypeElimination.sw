@@ -11,8 +11,8 @@ SpecNorm qualifying spec
   type PolyOpTable = AQualifierMap(QualifiedId * List TyVar)
 
   op mkTruePred(ty: Sort): MS.Term =
-    % mkOp(Qualified(toIsaQual,"TRUE"), mkArrow(ty, boolSort))
-    mkLambda(mkWildPat ty, trueTerm)
+    mkOp(Qualified("Bool","TRUE"), mkArrow(ty, boolSort))
+    % mkLambda(mkWildPat ty, trueTerm)
 
   op substTyVarsWithSubtypes(tv_map: List(TyVar * MS.Term), tm: MS.Term): MS.Term =
     let result = instantiateTyVarsInTerm(tm, map (fn (tv,v) ->
@@ -35,33 +35,38 @@ SpecNorm qualifying spec
      : TSP_Maps_St =
     let def doTerm (t: MS.Term): MS.Term =
           case t of
-            | Fun(Op(qid as Qualified(q,id),fix?),ty,a) ->
-              (case findAQualifierMap(tb,q,id) of
+            | Fun(Op(qid as Qualified(q, id), fix?), ty, a) ->
+              (case findAQualifierMap(tb, q, id) of
                  | None -> t
-                 | Some(r_qid,used_tvs) ->
+                 | Some(r_qid, used_tvs) ->
                case AnnSpec.findTheOp(spc, qid) of
                  | None -> t
                  | Some opinfo ->
-               let (tvs,ty1,defn) = unpackFirstOpDef opinfo in
+               let (tvs, ty1, defn) = unpackFirstOpDef opinfo in
                % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printSort ty) in
                % let _ = writeLine("Matching with: "^printSort ty1) in
-               case typeMatch(ty1,ty,spc,false) of
+               case typeMatch(ty1, ty, spc, false) of
                  | None -> t
                  | Some tvsubst ->
                let tvsubst = filter (fn (tv,_) -> member(tv, used_tvs)) tvsubst in
-               % let _ = writeLine(anyToString tvsubst) in
-               if exists (fn (_,s_ty) -> subtypeC?(spc,s_ty, coercions)) tvsubst
-                 then let predArgs = map (fn tv -> let Some(_,s_ty) =
+               % let _ = (writeLine "Subst";
+               %          app (fn (tv, ty) -> writeLine(tv^": "^printSort ty)) tvsubst) in
+               if exists (fn (_, s_ty) -> subtypeC?(spc, s_ty, coercions)) tvsubst
+                 then let predArgs = map (fn tv -> let Some(_, s_ty) =
                                                          find (fn (tvi,_) -> tv = tvi) tvsubst
                                                    in
-                                                   case subtypeComps(spc,s_ty) of
-                                                     | Some(_,pred) -> pred
-                                                     | None -> mkTruePred s_ty)
+                                                   let s_ty1 = raiseSubtypeFn(s_ty, spc) in
+                                                   % let _ = if equalType?(s_ty1, s_ty) then ()
+                                                   %      else writeLine("pct: "^printSort s_ty^" --> "^printSort s_ty1)
+                                                   % in
+                                                   case s_ty1 of
+                                                     | Subsort(_, pred, _) -> pred
+                                                     | _ -> mkTruePred s_ty)
                                        used_tvs
                       in
                       % let _ = app (fn pred -> writeLine(printTerm pred)) predArgs in
                       let predTypes = map (fn pred -> inferType(spc, pred)) predArgs in
-                      let new_t = mkAppl(Fun(Op(r_qid,Nonfix),
+                      let new_t = mkAppl(Fun(Op(r_qid, Nonfix),
                                              mkArrow(mkProduct predTypes, ty), a),
                                          predArgs)
                       in
@@ -183,12 +188,13 @@ SpecNorm qualifying spec
 
   op  addSubtypePredicateParams: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec
   def addSubtypePredicateParams spc coercions =
-    %let _ = writeLine(printSpec spc) in
+    % let _ = writeLine(printSpec spc) in
     let (spc, tbl) = addRelativizedOps(spc, coercions) in
-    %let _ = writeLine(anyToString tbl) in
+    %let _ = writeLine(printSpec spc) in
+    % let _ = writeLine(anyToString tbl) in
     let spc = mapSpec (polyCallsTransformers(spc, tbl, false, coercions)) spc in
     let spc = mapSpec (polyCallsTransformers(spc, tbl, true,  coercions)) spc in
-   % let _ = writeLine(printSpec spc) in
+    % let _ = writeLine(printSpec spc) in
     spc
 
 
@@ -206,31 +212,74 @@ SpecNorm qualifying spec
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_P"),
                           mkArrow(mkProduct[mkArrow(dom_ty, boolSort),
                                             mkArrow(ran_ty, boolSort)],
-                                  mkArrow(f_ty, f_ty))),
+                                  mkArrow(f_ty, boolSort))),
                      mkTuple [domPred, ranPred]))
       | (Subsort(dom_ty, domPred, _), Boolean _) | regularizeBooleanToFalse? -> 
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PDB"),
                           mkArrow(mkArrow(dom_ty, boolSort),
-                                  mkArrow(f_ty, f_ty))),
+                                  mkArrow(f_ty, boolSort))),
                      domPred))
       | (Subsort(dom_ty, domPred, _), _) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
                           mkArrow(mkArrow(dom_ty, boolSort),
-                                  mkArrow(f_ty, f_ty))),
+                                  mkArrow(f_ty, boolSort))),
                      domPred))
       | (_, Subsort(ran_ty, ranPred, _)) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PR"),
                           mkArrow(mkArrow(ran_ty, boolSort),
-                                  mkArrow(f_ty, f_ty))),
+                                  mkArrow(f_ty, boolSort))),
                      ranPred))
       | _ -> None
+
+  op changePatternType(pat: Pattern, ty: Sort, spc: Spec): Pattern =
+    case pat of
+      | VarPat((v, _), a) -> VarPat((v, ty), a)
+      | WildPat(_, a) -> WildPat(ty, a)
+      | RecordPat(pat_prs, a) ->
+        let ty_prs = product(spc, ty) in
+        let new_pat_prs = map (fn ((id, pat_pat), (_, tyi)) -> (id, changePatternType(pat_pat, tyi, spc)))
+                            (zip(pat_prs, ty_prs))
+        in
+        RecordPat(new_pat_prs, a)
+      | AliasPat(p1, p2, a) ->
+        AliasPat(changePatternType(p1, ty, spc), changePatternType(p2, ty, spc), a)
+      | _ -> pat
+    
+
+  op changeDomainType(fn_tm: MS.Term, dom_ty: Sort, spc: Spec): MS. Term =
+     let _ = writeLine("cdt: "^printTermWithSorts fn_tm^"  c  "^printSort dom_ty) in
+    let result =
+    case fn_tm of
+      | Fun(f, fn_ty, a) ->
+        (case rangeOpt(spc, fn_ty) of
+         | Some rng -> Fun(f, Arrow(dom_ty, rng, a), a)
+         | None -> fn_tm)
+      | Var((v, fn_ty), a) ->
+        (case rangeOpt(spc, fn_ty) of
+         | Some rng -> Var((v, Arrow(dom_ty, rng, a)), a)
+         | None -> fn_tm)
+      | Lambda(matches, a) ->
+        let n_matches = map (fn (pat, c, bod) ->
+                               let new_pat = changePatternType(pat, dom_ty, spc) in
+                               let sb = map (fn (old_v, new_v) -> (old_v, mkVar new_v))
+                                          (zip(patternVars pat, patternVars new_pat))
+                               in
+                               (new_pat, c, substitute(bod, sb)))
+                          matches
+        in
+        Lambda(n_matches, a)
+      | Let(decls, bod, a) ->
+        Let(decls, changeDomainType(bod, dom_ty, spc), a)
+      | _ -> fn_tm
+    in
+    let _ = writeLine("returned: "^ printTermWithSorts result) in result
 
   op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
   %% Bring subtypes to the top-level
     case ty of
-      | Base(qid, args, a) ->
+      | Base(qid, args, a) | qid nin? dontRaiseTypes ->
         let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
-        if exists (fn tyi -> subtype?(spc, tyi)) args
+        if exists (fn tyi -> embed? Subsort tyi) args
           then
           let Qualified(q,id) = qid in
           let pred_name = id^"_P" in
@@ -238,9 +287,9 @@ SpecNorm qualifying spec
           (case AnnSpec.findTheOp(spc, pred_qid) of
              | Some _ ->
                let arg_comps = map (fn tyi ->
-                                    case subtypeComps(spc, tyi) of
-                                      | Some pr -> pr
-                                      | None -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
+                                    case tyi of
+                                      | Subsort(styi, pr, _) -> (styi, pr)
+                                      | _ -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
                                  args
                in
                let (bare_args, arg_preds) = unzip arg_comps in
@@ -266,25 +315,23 @@ SpecNorm qualifying spec
                  then raise_ty else ty)
       | Subsort(s_ty, p, a) ->
         (case raiseSubtypeFn(s_ty, spc) of
-           | Subsort(sss_ty, pr, _) ->
-             let v = ("x__l", sss_ty) in
-             Subsort(sss_ty, mkLambda(mkVarPat v, Utilities.mkAnd(mkApply(p, mkVar v), mkApply(pr, mkVar v))), a)
+           | Subsort(sss_ty, pr, _) -> composeSubtypes(sss_ty, p, pr, a)
            | _ -> ty)
       | Product(flds, a) ->
-        if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
+        let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
+        if exists (fn (_,tyi) -> embed? Subsort tyi) flds
           then let (bare_flds, arg_id_vars, pred,_) =
                 foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
-                         let tyi = raiseSubtypeFn(tyi, spc) in
-                         case subtypeComps(spc, tyi) of
-                           | Some(t,p) -> let v = ("x"^toString i, t)  in
-                                          (bare_flds ++ [(id,t)],
-                                           arg_id_vars ++ [(id, mkVarPat v)],
-                                           Utilities.mkAnd(pred, mkApply(p, mkVar v)),
-                                           i+1)
-                           | None -> (bare_flds ++ [(id,tyi)],
-                                      arg_id_vars ++ [(id, mkWildPat tyi)],
-                                      pred,
-                                      i+1))
+                         case tyi of
+                           | Subsort(t,p,_) -> let v = ("x"^toString i, t)  in
+                                               (bare_flds ++ [(id,t)],
+                                                arg_id_vars ++ [(id, mkVarPat v)],
+                                                Utilities.mkAnd(pred, mkApply(p, mkVar v)),
+                                                i+1)
+                           | _ -> (bare_flds ++ [(id,tyi)],
+                                   arg_id_vars ++ [(id, mkWildPat tyi)],
+                                   pred,
+                                   i+1))
                   ([],[],trueTerm,0) flds
                in
                Subsort(Product(bare_flds,a),
@@ -554,6 +601,84 @@ SpecNorm qualifying spec
     % let _ = writeLine(printSpec spc) in
     spc
 
+  op typePred(spc: Spec, ty: Sort, tm: MS.Term): MS.Term =
+    case raiseSubtypeFn(ty, spc) of
+      | Subsort(_, pred, _) -> simplifiedApply(pred, tm, spc)
+      | _ -> trueTerm
+
+  op argName(i: Nat): String =
+    case i of
+      | 0 -> "d__x"
+      | 1 -> "d__y"
+      | 2 -> "d__z"
+      | _ -> "d__"^toString i
+
+  op tryUnpackLambda(tm: Option MS.Term): Option(Pattern * MS.Term) =
+    case tm of
+      | Some(Lambda([(pat, Fun(Bool true,_,_), bod)], _)) | varRecordPattern? pat -> Some(pat, bod)
+      | _ -> None
+
+  op termSubtypeCondn(spc: Spec, term: MS.Term, ty: Sort, defn?: Option MS.Term, depth: Nat): MS.Term =
+    % let _ = writeLine("\ntsc: "^printTerm term^": "^printSort ty^"\n"^(case defn? of
+    %                                                                     Some defn -> printTerm defn | _ -> "")) in
+    case unfoldBase(spc, ty) of
+      | Arrow(dom, rng, _) ->
+	(case unfoldBase(spc, dom) of
+          | Subsort(_, Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _), _) | varRecordPattern? pat ->
+            let Some arg_tm = patternToTerm pat in
+            let vs = patternVars pat in
+            let rangeTerm = mkApply(term, arg_tm) in
+            let rangePred = termSubtypeCondn(spc, rangeTerm, rng, None, depth + 1) in
+            mkBind(Forall, vs, mkSimpImplies(sub_ty_bod, rangePred))
+          | dom ->
+         case tryUnpackLambda(defn?) of
+          | Some(pat, bod) ->
+            %% Gives dependent-type capability
+            let Some arg_tm = patternToTerm pat in
+            let vs = patternVars pat in
+            let rangeTerm = mkApply(term, arg_tm) in
+            let rangePred = termSubtypeCondn(spc, rangeTerm, rng, Some bod, depth + 1) in
+            mkBind(Forall, vs, rangePred)
+          | _ ->
+         case dom of
+	  | Product(fields, _) ->
+            let name = argName depth in
+	    let domVars = map (fn (id: Id, ty) -> (name ^ "_" ^ id, ty))
+                              fields in
+	    let domVarTerms = map (fn (var) -> mkVar(var)) domVars in
+	    let rangeTerm = mkAppl(term, domVarTerms) in
+	    let rangePred = termSubtypeCondn(spc, rangeTerm, rng, None, depth + 1) in
+	    mkBind(Forall, domVars, rangePred)
+	  | _ ->
+            let name = argName depth in
+	    let domVar = (name, dom) in
+	    let domVarTerm = mkVar(domVar) in
+	    let rangeTerm = mkApply(term, domVarTerm) in
+	    let rangePred = termSubtypeCondn(spc, rangeTerm, rng, None, depth + 1) in
+	    mkBind(Forall, [domVar], rangePred))
+       | Subsort(s_ty, Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _), _) | varRecordPattern? pat ->
+         mkLet([(pat, term)], sub_ty_bod)
+       | _ -> typePred(spc, ty, term)
+
+  op opSubtypeTheorem(spc: Spec, opname: QualifiedId, fx: Fixity, ty: Sort, defn: MS.Term): MS.Term =
+    termSubtypeCondn(spc, mkInfixOp(opname, fx, ty), ty, Some defn, 0)
+
+  op separateRhsConjuncts(tm: MS.Term): List MS.Term =
+    case tm of
+      | Bind(Forall, vs, bod, a) ->
+        map (fn b -> Bind(Forall, vs, b, a)) (separateRhsConjuncts bod)
+      | Apply(Fun (Implies, _, _), Record([(_, lhs), (_, rhs)], _), _) ->
+        map (fn b -> mkImplies(lhs, b)) (separateRhsConjuncts rhs)
+      | Let(decls, bod, a) ->
+        map (fn b -> Let(decls, b, a)) (separateRhsConjuncts bod)
+      | Apply(Lambda([(pat, Fun(Bool true, _, _) ,bod)], _), e, a) | varRecordPattern? pat ->
+        map (fn b -> Let([(pat, e)], b, a)) (separateRhsConjuncts bod)
+      | Apply(Fun(And,_,_), _, _) -> flatten(map separateRhsConjuncts (getConjuncts tm))
+      | _ -> [tm]
+
+  op generateStpSubtypeConstrs?: Boolean = false % temporary
+  op stpFun?(id: String): Boolean =
+    testSubseqEqual?("__stp", id, 0, length id - 5)
 
   op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec
   def removeSubTypes spc coercions =
@@ -573,27 +698,31 @@ SpecNorm qualifying spec
     let spc = spc << {elements
 		       = foldr (fn (el,r) \_rightarrow
 				case el of
-				 | Op(qid as (Qualified(q,id)), def?, a) \_rightarrow
+				 | Op(qid as (Qualified(q,id)), def?, a) | ~(stpFun? id) \_rightarrow
 				   let Some info = AnnSpec.findTheOp(spc,qid) in
-				   let ty = firstOpDefInnerSort info in
-				   % let _ = writeLine ("stc: "^printSort ty) in
-				   let subTypeFmla = opSubsortNoArityAxiom(spc, qid, ty) in
-				    let _ = writeLine (printTerm subTypeFmla) in
+                                   let (tvs, ty, defn) = unpackFirstOpDef info in
+				   % let _ = writeLine ("\nstc: "^id^": "^printSort ty) in
+                                   % let _ = writeLine(printSort(raiseSubtypeFn(ty, spc))) in
+				   let subTypeFmla = opSubtypeTheorem(spc, qid, info.fixity, ty, defn) in
+				   % let _ = writeLine (printTerm subTypeFmla) in
 				   % ?? let liftedFmlas = removePatternTop(spc, subTypeFmla) in
 				   (case simplify spc subTypeFmla of
 				      | Fun(Bool true,_,_) \_rightarrow Cons(el,r)
 				      | s_fm \_rightarrow
-				        %let _ = writeLine (" --> "^printTerm s_fm) in
-					let axm = Property(if def? then Theorem else Axiom, 
-							   mkQualifiedId
-							     (q, id^"_subtype_constr"), 
-							   [], 
-							   s_fm, a)
+				        % let _ = writeLine (" --> "^printTerm s_fm) in
+                                        let fms = separateRhsConjuncts s_fm in
+					let thms = map (fn (i, fm) ->
+                                                          Property(if def? then Theorem else Axiom, 
+                                                                   mkQualifiedId
+                                                                     (q, id^"_subtype_constr"
+                                                                        ^(if i = 0 then "" else toString i)), 
+                                                                   [], fm, a))
+                                                     (tabulate (length fms, fn i -> (i, fms@i)))
 					in
                                         case r of
-                                          | (p as Pragma_)::rs -> [el, p, axm] ++ rs
-                                          | _ -> Cons(el,Cons(axm,r)))
-				 | _ \_rightarrow Cons(el,r))
+                                          | (p as Pragma_)::rs -> [el, p] ++ thms ++ rs
+                                          | _ -> el :: (thms ++ r))
+				  | _ \_rightarrow el :: r)
 		           [] spc.elements}
     in
     %let _ = writeLine(anyToString tbl) in
