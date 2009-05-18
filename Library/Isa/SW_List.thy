@@ -1404,7 +1404,7 @@ theorem List__e_bar_gt_Obligation_subtype:
   "List__nonEmpty_p ([x] @ (l::'a list))"
   by auto
 theorem List__e_bar_gt_subtype_constr: 
-  "List__nonEmpty_p (x # l)"
+  "x # l \<noteq> []"
   by (auto simp add: Let_def split_def)
 theorem List__e_bar_gt__def: 
   "x # l = [x] @ l"
@@ -1415,7 +1415,7 @@ theorem List__e_lt_bar_Obligation_subtype:
 consts List__e_lt_bar :: "'a list \<Rightarrow> 'a \<Rightarrow> 'a List__List1"	(infixl "<|" 65)
 defs List__e_lt_bar_def: "(l <| x) \<equiv> (l @ [x])"
 theorem List__e_lt_bar_subtype_constr: 
-  "List__nonEmpty_p (l <| x)"
+  "l <| x \<noteq> []"
   by (auto simp add: Let_def split_def List__e_lt_bar_def)
 theorem List__update__stp_Obligation_subtype: 
   "\<lbrakk>P__a x; List__List_P P__a l; (i::nat) < length l\<rbrakk> \<Longrightarrow> 

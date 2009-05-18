@@ -31,7 +31,7 @@ theorem FMap__fromFMap_subtype_constr:
    sorry
 theorem FMap__fromFMap_subtype_constr1: 
   "Relation__functional_p (FMap__fromFMap d__x)"
-  sorry
+   sorry
 consts FMap__maps_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> bool"
 defs FMap__maps_p__stp_def: 
@@ -1044,7 +1044,7 @@ defs FMap__inverse_def:
      \<equiv> FMap__toFMap (Relation__inverse (FMap__fromFMap m))"
 theorem FMap__inverse_subtype_constr: 
   "\<lbrakk>Relation__injective_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
-   FMap__injective_p (FMap__inverse m)"
+   Relation__injective_p (FMap__fromFMap (FMap__inverse m))"
    sorry
 consts FMap__map__fLiftedToPairs :: "'a \<times> 'b \<times> ('b \<Rightarrow> 'c) \<Rightarrow> 'a \<times> 'c"
 defs FMap__map__fLiftedToPairs_def: 
