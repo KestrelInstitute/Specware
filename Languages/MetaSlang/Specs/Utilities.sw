@@ -1798,7 +1798,7 @@ Utilities qualifying spec
     (ty1, ty2)     
 
   op raiseSubtype(ty: Sort, spc: Spec): Sort =
-  %% Bring subtypes to the top-level
+    %% Bring subtypes to the top-level
     % let _ = writeLine("rt: "^printSort ty) in
     case ty of
       | Base(qid, args, a) ->
@@ -1818,11 +1818,14 @@ Utilities qualifying spec
                in
                let (bare_args, arg_preds) = unzip arg_comps in
                let bare_ty = Base(qid, bare_args, a) in
-               Subsort(bare_ty,
-                       mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
-                                                     mkArrow(bare_ty, boolSort))),
-                              arg_preds),
-                       a)
+               let arg_preds_lst =  decomposeListConjPred arg_preds in
+               let preds = map (fn arg_preds ->
+                                  mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
+                                                                mkArrow(bare_ty, boolSort))),
+                                         arg_preds))
+                             arg_preds_lst
+               in
+               mkSubtypePreds(bare_ty, preds, a)
              | None ->
                (case tryUnfoldBase spc ty of
                   | None -> ty
@@ -1834,8 +1837,7 @@ Utilities qualifying spec
       | Subsort(s_ty, p, a) ->
         (case raiseSubtype(s_ty, spc) of
            | Subsort(sss_ty, pr, _) ->
-             let v = ("xss", sss_ty) in
-             Subsort(sss_ty, mkLambda(mkVarPat v, mkAnd(mkApply(p, mkVar v), mkApply(pr, mkVar v))), a)
+             composeSubtypes(sss_ty, p, pr, a)
            | _ -> ty)
       | Product(flds, a) ->
         if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
