@@ -114,6 +114,8 @@ SpecNorm qualifying spec
                       | _ -> fvs)
       [] t
 
+  op reduceStpFnArgs?: Boolean = true
+
   op tryRelativizeTerm(tvs: TyVars, tm: MS.Term, tb: PolyOpTable, ty: Sort, ho_eqfns: List QualifiedId, spc: Spec,
                        coercions: TypeCoercionTable)
       : List(Id * MS.Term) =
@@ -128,7 +130,11 @@ SpecNorm qualifying spec
     % let _ = writeLine("rel_tm: "^printTerm rel_tm) in
     let fvs = freeVars rel_tm ++ subtypePredFreeVars(rel_tm, spc) in
     % let _ = writeLine("fvs: "^anyToString(subtypePredFreeVars(rel_tm, spc))) in
-    let opt_tv_map = filter (fn (_,Var(v,_)) -> inVars?(v, fvs)) tv_map in
+    let opt_tv_map =
+         if reduceStpFnArgs?
+           then filter (fn (_,Var(v,_)) -> inVars?(v, fvs)) tv_map
+           else tv_map
+    in
     % let _ = writeLine("opt_tv_map: "^anyToString opt_tv_map) in
     opt_tv_map
 
@@ -275,7 +281,10 @@ SpecNorm qualifying spec
     let _ = writeLine("returned: "^ printTermWithSorts result) in result
 
   op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
-  %% Bring subtypes to the top-level
+    %% Bring subtypes to the top-level
+    %% Like raiseSubtype, but doesn't look inside Nat (because it should already have
+    %% been expanded) The two functions should be merged
+    % let _ = writeLine("rstf: "^printSort ty) in
     case ty of
       | Base(qid, args, a) | qid nin? dontRaiseTypes ->
         let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
@@ -294,11 +303,14 @@ SpecNorm qualifying spec
                in
                let (bare_args, arg_preds) = unzip arg_comps in
                let bare_ty = Base(qid, bare_args, a) in
-               Subsort(bare_ty,
-                       mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
-                                                     mkArrow(bare_ty, boolSort))),
-                              arg_preds),
-                       a)
+               let arg_preds_lst =  decomposeListConjPred arg_preds in
+               let preds = map (fn arg_preds ->
+                                  mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
+                                                                mkArrow(bare_ty, boolSort))),
+                                         arg_preds))
+                             arg_preds_lst
+               in
+               mkSubtypePreds(bare_ty, preds, a)
              | None ->
                (case tryUnfoldBase spc ty of
                   | None -> ty
@@ -602,8 +614,15 @@ SpecNorm qualifying spec
     spc
 
   op typePred(spc: Spec, ty: Sort, tm: MS.Term): MS.Term =
+    % let _ = writeLine("tp: "^printTerm tm^": "^printSort ty) in
     case raiseSubtypeFn(ty, spc) of
-      | Subsort(_, pred, _) -> simplifiedApply(pred, tm, spc)
+      | Subsort(_, pred, _) ->
+        % let _ = writeLine("tpp: "^printTerm pred) in
+        let pred = maybeUnfoldSubTypePred(spc, pred) in
+        (case pred of
+           | Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _) | varRecordPattern? pat ->
+             simplifyOne spc (mkLet([(pat, tm)], sub_ty_bod))
+           | _ -> simplifiedApply(pred, tm, spc))
       | _ -> trueTerm
 
   op argName(i: Nat): String =
@@ -656,8 +675,6 @@ SpecNorm qualifying spec
 	    let rangeTerm = mkApply(term, domVarTerm) in
 	    let rangePred = termSubtypeCondn(spc, rangeTerm, rng, None, depth + 1) in
 	    mkBind(Forall, [domVar], rangePred))
-       | Subsort(s_ty, Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _), _) | varRecordPattern? pat ->
-         mkLet([(pat, term)], sub_ty_bod)
        | _ -> typePred(spc, ty, term)
 
   op opSubtypeTheorem(spc: Spec, opname: QualifiedId, fx: Fixity, ty: Sort, defn: MS.Term): MS.Term =
@@ -678,7 +695,7 @@ SpecNorm qualifying spec
 
   op generateStpSubtypeConstrs?: Boolean = false % temporary
   op stpFun?(id: String): Boolean =
-    testSubseqEqual?("__stp", id, 0, length id - 5)
+    ~generateStpSubtypeConstrs? && testSubseqEqual?("__stp", id, 0, length id - 5)
 
   op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec
   def removeSubTypes spc coercions =
