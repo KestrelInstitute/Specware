@@ -32,6 +32,10 @@ op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
   | None   -> None
   | Some x -> Some (f x)
 
+proof Isa mapOption_subtype_constr
+  by (cases xx, auto)
+end-proof
+
 % lift isomorphism (i.e. bijection) to also map extra element:
 
 op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
