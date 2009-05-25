@@ -18,6 +18,7 @@ spec
  op map           : [a,b] (a -> b) -> LazyList a -> LazyList b
  op emptyList     : [a]   LazyList a
  op find          : [a] (a -> Boolean) -> LazyList a -> Option a
+ op find_n        : [a] (a -> Boolean) -> LazyList a -> Nat -> Option a
  op app	          : [a]   (a -> ()) -> LazyList a -> ()
 
  def emptyList = Nil
@@ -63,6 +64,14 @@ spec
      | Nil -> None
      | Cons(a,_) | p a -> Some a
      | Cons(_,f) -> find p (f())
+
+ def find_n p l n =
+   if n = 0 then None
+   else
+   case l of
+     | Nil -> None
+     | Cons(a,_) | p a -> Some a
+     | Cons(_,f) -> find_n p (f()) (n-1)
 
  def app f = fn Nil -> () | Cons(a,la) -> (f a; app f (la ()))
 
