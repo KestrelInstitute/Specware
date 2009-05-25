@@ -715,15 +715,18 @@ MetaSlangRewriter qualifying spec
      let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty)
      in rewriteRecursivePre(context,boundVars,rules,term,maxDepth)
 
+ op conditionResultLimit: Nat = 4
+
  def rewriteRecursivePre(context,boundVars,rules0,term,maxDepth) = 
    let	
       def rewritesToTrue(rules,term,boundVars,subst,history,backChain): Option SubstC =
           if trueTerm? term then Some subst
           else
 	  let results = rewriteRec(rules,subst,term,freeVars term,history,backChain+1) in
-          case LazyList.find (fn (rl,t,c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
+          case LazyList.find_n (fn (rl,t,c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
                  results
+                 conditionResultLimit
 	    of None -> None
 	     | Some((rl,t,c_subst)::_) ->
                %% Substitutions, history and conditional rewrites need work
@@ -802,7 +805,7 @@ MetaSlangRewriter qualifying spec
 	in
 	case rews
 	  of Nil -> unit history
-	   | _ -> 
+	   | _ ->
 	rews >>=
 	(fn (term,(subst,rule,boundVars,rules1)) -> 
 	    (context.traceDepth := traceDepth;
