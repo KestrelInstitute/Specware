@@ -684,23 +684,23 @@ spec
                       else ()
               in
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-              let qid as Qualified(q,id) = hd opinfo.names in
-              let _ = if traceIsomorphismGenerator? then writeLine("Simplify? "^printQualifiedId qid) else () in
+              let qid as Qualified(q, id) = hd opinfo.names in
               let ((simp_dfn,_),_) =
                   if simplifyIsomorphism?
-                    && existsSubTerm (fn t -> let ty = inferType(spc,t) in
+                    && existsSubTerm (fn t -> let ty = inferType(spc, t) in
                                               ~(equalType?(ty, isoType (spc, iso_info, iso_fn_info) false ty)))
                          dfn
                     && (simplifyUnPrimed?
-                          || none?(findTheOp(spc, Qualified(q,id^"'"))))
+                          || none?(findTheOp(spc, Qualified(q, id^"'"))))
                     then %let _ = if traceIsomorphismGenerator? then writeLine("Simplify? "^printQualifiedId qid) else () in
+                         let _ = if traceIsomorphismGenerator? then writeLine("Simplify? "^printQualifiedId qid) else () in
                          interpretTerm(spc, main_script, dfn, dfn, false)
-                    else ((dfn,dfn), false)
+                    else ((dfn, dfn), false)
               in
-              if equalTerm?(dfn,simp_dfn)
+              if equalTerm?(dfn, simp_dfn)
                 then opinfo
               else
-              let _ = if traceIsomorphismGenerator? then printDef(spc,qid) else () in
+              let _ = if traceIsomorphismGenerator? then printDef(spc, qid) else () in
               let new_dfn = maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos)) in
               let _ = if traceIsomorphismGenerator? then (writeLine(printQualifiedId qid^":");
                                                           writeLine(printTerm simp_dfn^"\n"))
