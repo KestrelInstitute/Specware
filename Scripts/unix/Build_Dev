@@ -76,6 +76,13 @@ SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 
 echo " "
 cd ${APP_DIR}
+
+if [ -z "$EXITING_ON_ERRORS" ]; then
+  EXITING_ON_ERRORS=exiting-on-errors
+fi
+
+echo "  Build_Dev:  EXITING_ON_ERRORS = [$EXITING_ON_ERRORS]"
+
 $BATCH_LISP <<-XXXX
         (format t "~%--------------------------------------------------------------------------------~%")
 	#+Allegro (format t "~&Allegro version~%")
@@ -92,7 +99,7 @@ $BATCH_LISP <<-XXXX
 	 #+Allegro (compact-memory nil 0 32000000)   ; not verbose
 	 #+Allegro (set-gc-parameters-for-build nil) ; not verbose
          (format t "~%--------------------------------------------------------------------------------~%")
-	 (exiting-on-errors 
+	 ($EXITING_ON_ERRORS 
 	  (load "$MAIN_BUILD_FILE"))
 	 (when (fboundp (quote gc)) (gc))
          (format t "~%--------------------------------------------------------------------------------~%")

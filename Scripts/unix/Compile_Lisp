@@ -60,6 +60,12 @@ MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 /bin/rm "$EXIT_ON_ERRORS".fasl
 /bin/rm "$MEMORY_MANAGEMENT".fasl
 
+if [ -z "$EXITING_ON_ERRORS" ]; then
+  EXITING_ON_ERRORS=exiting-on-errors
+fi
+
+echo "  Build_Dev:  EXITING_ON_ERRORS = [$EXITING_ON_ERRORS]"
+
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version~%") 
 	#+CMU     (format t "CMU version~%") 
@@ -71,7 +77,7 @@ $BATCH_LISP <<-XXXX
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
 	#+Allegro (enlarge-stack) 
-	(exiting-on-errors 
+	($EXITING_ON_ERRORS
 	  (format t "loading $MAIN_COMPILE_FILE ...~%")
 	  (load "$MAIN_COMPILE_FILE"))
 	(cl-user::exit-from-lisp 0)
