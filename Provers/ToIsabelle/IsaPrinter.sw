@@ -850,7 +850,8 @@ IsaTermPrinter qualifying spec
 	     then foldl (\_lambda (cases, (pati, _, bodi)) \_rightarrow
 			 case patToTerm(pati, "",  c) of
 			   | Some pati_tm \_rightarrow
-                             let new_cases = aux_case(substitute(hd, [(v, pati_tm)]), bodi) in
+                             let sbst = [(v, pati_tm)] in
+                             let new_cases = aux_case(substitute(hd, sbst), substitute(bodi, sbst)) in
 			     (cases ++ new_cases)
 			   | _ \_rightarrow
                              let new_cases = aux_case(hd, bodi) in
@@ -878,9 +879,7 @@ IsaTermPrinter qualifying spec
                       in
                       if length sbst ~= length rpats then None
                       else
-                      let pat_tms = map (fn (_, p_tm) \_rightarrow p_tm) sbst in
-                      let Apply(hd_hd,_,a) = hd in
-                      Some(Apply(hd_hd, mkTuple pat_tms, a), substitute(bod, sbst))
+                      Some(substitute(hd, sbst), substitute(bod, sbst))
                     | VarPat(v, _) \_rightarrow Some(hd, substitute(bod, [(v, arg)]))
                     | WildPat _ \_rightarrow Some(hd, bod)
                     | AliasPat(VarPat(v, _), p2, _) \_rightarrow matchPat(p2, cnd, substitute(bod, [(v, arg)]))
@@ -889,7 +888,7 @@ IsaTermPrinter qualifying spec
             in
             let cases = mapPartial matchPat pats in
             if length cases = length pats
-              then cases
+              then foldl (fn (cases, (lhs,rhs)) -> cases ++ aux(lhs,rhs)) [] cases
               else [(hd, bod)]
           | Let([(pat, Var(v,_))], bod, a) | member(v, freeVars hd) \_rightarrow
             (case patToTerm(pat, "",  c) of
