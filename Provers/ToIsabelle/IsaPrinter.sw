@@ -449,7 +449,7 @@ IsaTermPrinter qualifying spec
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
     in
-    let spc = addSubtypePredicateParams spc coercions in
+    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
@@ -457,7 +457,7 @@ IsaTermPrinter qualifying spec
     in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
-    let spc = removeSubTypes spc coercions in
+    let spc = removeSubTypes spc coercions stp_tbl in
     let spc = normalizeNewTypes spc in
     let spc = addCoercions coercions spc in
     %% Second round of simplification could be avoided with smarter construction
@@ -1055,7 +1055,13 @@ IsaTermPrinter qualifying spec
        %% The following conditions are temporary!!
        && (some?(findParenAnnotation opt_prag)
             || none?(findMeasureAnnotation opt_prag)
-               && length(defToFunCases c (mkFun (Op (mainId, fixity), ty)) term) > 1)
+               && (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
+                     | [(lhs, rhs)] ->
+                       (case lhs of
+                        | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
+                        | _ -> false)
+                     | _ -> true))
+               
      then
        ppFunctionDef c aliases term ty opt_prag fixity
    else
@@ -1086,6 +1092,12 @@ IsaTermPrinter qualifying spec
    let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity]] else []
    in prLinesCat 0 (decl_list ++ def_list)
 
+  op ensureNotCurried(lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
+    case lhs of
+      | Apply(h as Apply _, Var(v, _), _) ->
+        ensureNotCurried(h, mkLambda(mkVarPat v, rhs))
+      | _ -> (lhs, rhs)
+
   op  ppDef: Context \_rightarrow QualifiedId \_rightarrow Sort \_rightarrow Option Pragma \_rightarrow MS.Term \_rightarrow Fixity \_rightarrow Pretty
   def ppDef c op_nm ty opt_prag body fixity =
     let recursive? = containsRefToOp?(body, op_nm) in
@@ -1102,6 +1114,7 @@ IsaTermPrinter qualifying spec
                            prString "\""]
           else if recursive? % || tuple? % \_and ~(simpleHead? lhs))
               then
+                let (lhs, rhs) = ensureNotCurried(lhs, rhs) in
                 prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
                                case findMeasureAnnotation opt_prag of
                                  | Some anot \_rightarrow prConcat[prString (specwareToIsaString anot)]
@@ -1144,9 +1157,10 @@ IsaTermPrinter qualifying spec
                                                          then "\"measure size\""
                                                          else "\"{}\"")]],
                       [prLinesCat 0 (map (\_lambda(lhs,rhs) \_rightarrow
-                                          let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
+                                          let (lhs, rhs) = ensureNotCurried(lhs, rhs) in
+                                          let (lhs, rhs) = addExplicitTyping2(c, lhs, rhs) in
                                            [prString "\"",
-                                            ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                            ppTerm c Top (mkEquality(Any noPos, lhs, rhs)),
                                             prString "\""])
 					cases)]]
 
@@ -1634,7 +1648,9 @@ IsaTermPrinter qualifying spec
       | None \_rightarrow None
       | Some (_,prag_str,_,_) \_rightarrow
     let end_pos =  endOfFirstLine prag_str in
-    findStringBetween(prag_str, "(", ")", 0, endOfFirstLine prag_str)
+    if some?(searchBetween("\"", prag_str, 0, end_pos))
+      then None
+    else findStringBetween(prag_str, "(", ")", 0, end_pos)
 
 
   op  findMeasureAnnotation: Option Pragma \_rightarrow Option String
