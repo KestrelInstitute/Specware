@@ -1623,6 +1623,18 @@ lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod
       cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto, 
       simp add: abs_via_sign ring_simps)
 
+
+(******************** a simple fact about lists ********************)
+
+lemma nth_tl: "Suc i < length xs \<Longrightarrow> tl xs ! i = xs ! Suc i"
+proof -
+ assume "Suc i < length xs"
+ hence LE: "Suc i \<le> length xs" by auto
+ have "tl xs ! i = drop 1 xs ! i" by (auto simp: drop_Suc)
+ also with LE have "\<dots> = xs ! Suc i" by (auto simp: nth_drop)
+ finally show ?thesis .
+qed
+
 end-proof
 
 endspec
