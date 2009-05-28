@@ -4214,7 +4214,8 @@ proof -
   where "pre @ subl @ post = supl" and "length pre = hd POSs"
    by (auto simp: List__sublistAt_p_def)
  thus ?thesis by auto
-qedend-proof
+qed
+end-proof
 
 proof Isa rightmostPositionOfSublistAndPreceding_Obligation_subtype0
 proof -
