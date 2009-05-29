@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports Char_nat GCD List Hilbert_Choice Recdef Datatype
+imports Datatype Recdef Hilbert_Choice List GCD Char_nat
 begin
 
 
@@ -173,7 +173,8 @@ lemma RSetEqual[simp]:
 
 consts Set_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set_P_def: 
-  "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \<forall>(x::'a). x \<in> s \<longrightarrow> Pa x *)
+  "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \<forall>(x::'a). x \<in> s \<longrightarrow> PD x
+                                                     i.e. s \<subseteq> PD *)
 
 lemma Set_P_RSet:
   "\<lbrakk>Set_P PD s\<rbrakk> \<Longrightarrow> RSet PD s = s"
