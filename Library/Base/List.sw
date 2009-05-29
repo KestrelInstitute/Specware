@@ -4757,6 +4757,7 @@ op [a] app (f: a -> ()) (l: List a) : () =
 
 proof Isa Thy_Morphism List
   type List.List      -> list
+  List.List_P         -> list_all
   List.length         -> length
   List.@              -> !            Left  35
   List.empty          -> []
@@ -4795,7 +4796,7 @@ proof Isa Thy_Morphism List
   List.rev -> rev
   List.member ->  mem Left 22
   List.exists -> list_ex  
-  List.all ->  list_all  
+  List.all ->  list_all
 end-proof
 
 endspec

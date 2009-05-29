@@ -186,7 +186,8 @@ lemma RSetEqual[simp]:
 
 consts Set_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set_P_def: 
-  "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \<forall>(x::'a). x \<in> s \<longrightarrow> Pa x *)
+  "Set_P PD s \<equiv> (\<forall>(x::'a). \<not> (PD x) \<longrightarrow> x \<notin> s)"    (* contrapos: \_forall(x::'a). x \_in s \_longrightarrow PD x
+                                                     i.e. s \_subseteq PD *)
 
 lemma Set_P_RSet:
   "\<lbrakk>Set_P PD s\<rbrakk> \<Longrightarrow> RSet PD s = s"
