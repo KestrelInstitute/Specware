@@ -69,7 +69,9 @@
 (defun mkSome (val)
   (cons ':|Some| val))
 
+(defvar *maphash-htables* nil)
 (defvar *break-on-non-single-threaded-updates?* nil)
+
 ;;; (setq MapSTHashtable::*break-on-non-single-threaded-updates?* t)
 
 (defun map-as-undo-harray-assure-current (m)
@@ -82,12 +84,13 @@
       (when *break-on-non-single-threaded-updates?*
 	(break "Non-single-threaded update!"))
       (let ((new-table (copy-hash-table table)))
-	(loop for (dom . ran) in undo-list
-	   do (if (eq ran *undefined*)
-		  (remhash dom new-table)
-		(setf (gethash dom new-table) ran)))
+	(unless (map-as-undo-harray-current? m)
+          (loop for (dom . ran) in undo-list
+                do (if (eq ran *undefined*)
+                       (remhash dom new-table)
+                       (setf (gethash dom new-table) ran)))
 	;; Two nreverses leave things unchanged
-	(nreverse undo-list)
+          (nreverse undo-list))
 	(make-map-as-undo-harray new-table nil)))))
 
 (defparameter STH_empty_map (make-map-as-undo-harray (Specware::make-sw-hash-table :size 0) nil))
@@ -99,14 +102,17 @@
 	(let ((new-table (map-as-undo-harray--initial-harray)))
 	  (setf (gethash x new-table) y)
 	  (make-map-as-undo-harray new-table nil)))
-    (let ((m (map-as-undo-harray-assure-current m)))
+    (let* ((m (map-as-undo-harray-assure-current m))
+           (table (map-as-undo-harray--harray m)))
       ;(incf *map-as-undo-harray-set-count*)
       (let* ((last-undo-list (map-as-undo-harray--undo-list m))
-	     (table (map-as-undo-harray--harray m))
 	     (old-val (gethash x table *undefined*)))
 	(if (eq y old-val)
 	    m				; Optimize special case
 	  (progn
+            (when (member table *maphash-htables* :test 'eq)
+              (setq table (copy-hash-table table))
+              (setq m (make-map-as-undo-harray table nil)))
 	    (if (eq y *undefined*)
 		(progn (remhash x table))
 	      (progn (setf (gethash x table) y)))
@@ -119,7 +125,9 @@
 	      (make-map-as-undo-harray table new-undo-list))))))))
 
 (defun map-as-undo-harray--map-through-pairs (fn m)
-  (let ((m (map-as-undo-harray-assure-current m)))
+  (let* ((m (map-as-undo-harray-assure-current m))
+         (tbl (map-as-undo-harray--harray m))
+         (*maphash-htables* (cons tbl *maphash-htables*)))
     (maphash fn (map-as-undo-harray--harray m))))
 
 
