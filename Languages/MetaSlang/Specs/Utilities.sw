@@ -1579,6 +1579,25 @@ Utilities qualifying spec
        | Some(_, pt) -> equalTerm?(p, pt)
        | None -> false
 
+   op possiblySubtypeOf?(ty1: Sort, ty2: Sort, spc: Spec): Boolean =
+     equalType?(ty1, ty2)
+       || (case ty1 of
+             | Base(qid1, srts, _) \_rightarrow
+               (case ty2 of
+                  | Base(qid2, _, _) -> qid1 = qid2
+                  | _ -> false)
+               \_or (case findTheSort (spc, qid1) of
+                     | None -> false
+                     | Some info ->
+                       if definedSortInfo? info then
+                         let (tvs, srt) = unpackFirstSortDef info in
+                         let ssrt = substSort (zip (tvs, srts), srt) in
+                         possiblySubtypeOf?(ssrt, ty2, spc)
+                       else
+                         false)
+             | Subsort(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
+             | _ \_rightarrow false)
+
    op etaReduce(tm: MS.Term): MS.Term =
      case tm of
        | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
