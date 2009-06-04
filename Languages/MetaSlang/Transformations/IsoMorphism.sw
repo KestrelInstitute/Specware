@@ -255,7 +255,11 @@ spec
                 | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
            | None ->
          case lookupIsoInfo(qid, iso_info) of
-           | Some((iso_fn,_,_,_),_) -> iso_fn
+           | Some((iso_fn,_,_,_),_) ->
+             (case typeMatch(domain(spc, inferType(spc, iso_fn)), ty, spc, false) of
+               | None -> iso_fn         % Shouldn't happen
+               | Some subst -> instantiateTyVarsInTerm(iso_fn, subst))
+                 
            | None ->
          let uf_ty = unfoldBaseOne(spc, ty) in
          if ty = uf_ty then identityFn ty
@@ -355,7 +359,10 @@ spec
             let result_ty' = isoType (spc, iso_info, iso_fn_info) false result_ty in
             if equalType?(result_ty, result_ty')
               then new_bod
-            else simplifiedApply(isoTypeFn (spc, iso_info, iso_fn_info) result_ty, new_bod, spc)
+            else
+            let iso_fn = isoTypeFn (spc, iso_info, iso_fn_info) result_ty in
+            % let _ = writeLine("itf: "^ printTermWithSorts iso_fn ^ ": _ -> "^printSort result_ty) in
+            simplifiedApply(iso_fn, new_bod, spc)
     in
     makePrimeBody(tm, [], ty)    
 
@@ -460,7 +467,6 @@ spec
          let osi_ty  = mkArrow(qid'_ref, qid_ref) in
          let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
          let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, SortedTerm(Any noPos, osi_ty, noPos))) in
-
          (Cons(((iso_fn, tvs, qid_ref, qid'_ref),
                 (osi_fn, tvs, qid'_ref, qid_ref)),
                new_iso_info),
@@ -559,6 +565,7 @@ spec
           let qid_ref = mkOpFromDef(qid,op_ty,spc) in
           let qid_pr = makePrimedOpQid(qid, spc) in
           let dfn_pr = isoTerm (spc, iso_info, iso_fn_info) op_ty dfn in
+          % let _ = if nm = "inverse" then writeLine("mpo: "^printTermWithSorts dfn_pr) else () in
           let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
           let id_def_pr = makeTrivialDef(spc, dfn_pr, qid_pr_ref) in
           let new_dfn = osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr in
