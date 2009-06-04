@@ -1110,9 +1110,9 @@ skolemization transforms a proper matching problem into an inproper one.
 			then unify(subst,s1,s2,s1,equals,None)
 		      else [NotUnify(srt1,srt2)])
 	def unify(subst,srt1:Sort,srt2:Sort,srt1_orig:Sort,equals,optTerm: Option MS.Term): List Unification =
-%               let _ = writeLine("Matching "^printSort srt1^" --> "^printSort(dereferenceSort(subst,srt1))^" with \n"
-%                                 ^printSort srt2^" --> "^printSort(dereferenceSort(subst,srt2))) in
-	    case (dereferenceSort(subst,srt1),dereferenceSort(subst,srt2))
+            % let _ = writeLine("Matching "^printSort srt1^" --> "^printSort(dereferenceSort(subst,srt1))^" with \n"
+            %                   ^printSort srt2^" --> "^printSort(dereferenceSort(subst,srt2))) in
+	    case (dereferenceSort(subst,srt1), dereferenceSort(subst,srt2))
 	      of (Boolean _, Boolean_) -> [Unify subst]
                | (CoProduct(r1,_),CoProduct(r2,_)) -> 
 		 unifyCP(subst,srt1,srt2,r1,r2,equals)
@@ -1124,25 +1124,28 @@ skolemization transforms a proper matching problem into an inproper one.
                             | Unify (subst) -> unify(subst,t2,s2,t2,equals,None) ++ r
                             | notUnify -> Cons(notUnify, r))
                    [] (unify(subst,t1,s1,t1,equals,None))
-	       | (Quotient(ty1,trm1,_),Quotient(ty2,trm2,_)) -> 
+	       | (Quotient(ty1,trm1,_),Quotient(ty2,trm2,_)) -> % Shouldn't happen anymore
 		 if equalTerm?(trm1, trm2)
 		    then unify(subst,ty1,ty2,ty1,equals,None)
 		 else [NotUnify (srt1,srt2)]
 	       | (Subsort(ty1,p1,_),Subsort(ty2,p2,_))
                    | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
                  unify(subst,ty1,ty2,srt1_orig,equals,optTerm)
-	       | (bsrt1 as Base(id1,ts1,_),bsrt2 as Base(id2,ts2,_)) -> 
+	       | (bsrt1 as Base(id1,ts1,_), bsrt2 as Base(id2,ts2,_)) -> 
 		 if exists (fn p -> p = (bsrt1,bsrt2)) equals
 		    then [Unify subst]
 		 else 
 		 if id1 = id2 
 		    then unifyL(subst,bsrt1,bsrt2,ts1,ts2,equals,None,unify)
-	         else 
-		 let s1 = unfoldBase(spc,bsrt1) in
-		 let s2 = unfoldBase(spc,bsrt2) in
-		 if bsrt1 = s1 && s2 = bsrt2
-		    then  [NotUnify (bsrt1,bsrt2)]
-		 else unify(subst,s1,s2,srt1_orig,Cons((bsrt1,bsrt2),equals),optTerm)
+	         else
+                 (case (tryUnfoldBase spc bsrt1, tryUnfoldBase spc bsrt2) of
+                    | (None, None) -> [NotUnify (bsrt1,bsrt2)]
+                    | (Some s1, Some s2) -> unify(subst,s1,s2,srt1_orig,
+                                                  Cons((bsrt1,bsrt2),equals),optTerm)
+                    | (Some s1, None)    -> unify(subst,s1,bsrt2,srt1_orig,
+                                                  Cons((bsrt1,bsrt2),equals),optTerm)
+                    | (None, Some s2)    -> unify(subst,bsrt1,s2,srt1_orig,
+                                                  Cons((bsrt1,bsrt2),equals),optTerm))
 	       | (TyVar(v, _),TyVar(w, _)) -> 
 		 if v = w then [Unify subst] else [Unify (insert(v,srt2,subst))]
 	       | (TyVar(v, _),_) -> 
@@ -1153,14 +1156,16 @@ skolemization transforms a proper matching problem into an inproper one.
 		     if occursRec(subst,v,srt1) 
 			 then [NotUnify (srt1,srt2)]
 		     else [Unify(insert(v,srt1,subst))]
-	       | (bsrt1 as Base _,bsrt2) | bsrt1 ~= unfoldBase(spc,bsrt1) -> 
-                 let s1 = unfoldBase(spc,bsrt1) in
+	       | (bsrt1 as Base _, bsrt2)
+                   | some?(tryUnfoldBase spc bsrt1) && ~(possiblySubtypeOf?(bsrt2, bsrt1, spc))-> 
+                 let Some s1 = tryUnfoldBase spc bsrt1 in
                  unify(subst,s1,bsrt2,srt1_orig,Cons((bsrt1,bsrt2),equals),optTerm)
-	       | (bsrt1,bsrt2 as Base _) | bsrt2 ~= unfoldBase(spc,bsrt2) ->
-		 let s2 = unfoldBase(spc,bsrt2)  in
+	       | (bsrt1, bsrt2 as Base _)
+                   | some?(tryUnfoldBase spc bsrt2) && ~(possiblySubtypeOf?(bsrt1, bsrt2, spc))->
+		 let Some s2 = tryUnfoldBase spc bsrt2 in
 		 unify(subst,bsrt1,s2,srt1_orig,Cons((bsrt1,bsrt2),equals),optTerm)
                %% Analysis could be smarter here so that order of subtypes is not so important
-               | (Subsort(ty1,p1,_),ty2) ->
+               | (bsrt1 as Subsort(ty1 ,p1, _), ty2) | ~(possiblySubtypeOf?(ty2, bsrt1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
                  (case optTerm of
                        | None -> [NotUnify(srt1,srt2)]
