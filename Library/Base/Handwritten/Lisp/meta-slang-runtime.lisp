@@ -393,7 +393,11 @@
 
 ;;; slang-term-equal? hashtables  (for sbcl allegro & cmucl)
 #+sbcl
-(sb-int:define-hash-table-test 'sw-equal? #'slang-term-equals-2 #'swxhash)
+(if (find-symbol "DEFINE-HASH-TABLE-TEST" "SB-INT")
+    (eval `(,(find-symbol "DEFINE-HASH-TABLE-TEST" "SB-INT")
+             'sw-equal? #'slang-term-equals-2 #'swxhash))
+    (eval `(,(find-symbol "DEFINE-HASH-TABLE-TEST" "SB-EXT")
+             sw-equal? swxhash)))
 #+cmucl
 (ext:define-hash-table-test 'sw-equal? #'slang-term-equals-2 #'swxhash)
 
