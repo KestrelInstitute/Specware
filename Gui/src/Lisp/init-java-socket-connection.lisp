@@ -6,7 +6,7 @@
 (in-package :cl-user)
 
 (defun socket-number-from-command-line ()
-  (let ((command-line-arg? (member "socket" (system:command-line-arguments)
+  (let ((command-line-arg? (member "socket" (user-command-line-arguments)
 				   :test 'equal)))
     (if command-line-arg?
 	(let ((socketnum (read-from-string (second command-line-arg?))))

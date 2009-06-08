@@ -274,8 +274,8 @@
 
 #+allegro
 (defun start-java-connection? ()
-  (format t "Checking  command-line arguments: ~a~%" (system:command-line-arguments))
-  (when (member "socket" (system:command-line-arguments)
+  (format t "Checking  command-line arguments: ~a~%" (user-command-line-arguments))
+  (when (member "socket" (user-command-line-arguments)
 		:test 'equal)
     (load (in-specware-dir "Gui/src/Lisp/specware-socket-init"))))
 

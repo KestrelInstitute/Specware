@@ -151,6 +151,19 @@
 (defun full-file-name (file-or-dir)
   (namestring (make-pathname :name file-or-dir :defaults cl:*default-pathname-defaults*)))
 
+(defun program-and-user-command-line-arguments ()
+  ;; The invoked program name followed by a list of user command line arguments (skipping runtime/toplevel/etc. options).
+  #+allegro   (system::command-line-arguments)  ;; alisp -W -- x y z   =>   ("/usr/home/kestrel/xxx/alisp" "x" "y" "z")
+  #+sbcl      sb-ext:*posix-argv*               ;; sbcl --noinform --end-runtime-options  --no-userinit --end-toplevel-options x y z   =>   ("sbcl" "x" "y" "z")
+                                                ;; sbcl x y z      =>   ("sbcl" "x" "y" "z")
+                                                ;; sbcl -- x y z   =>   ("sbcl" "--" "x" "y" "z")
+  #-allegro #-sbcl '()
+  )
+
+(defun user-command-line-arguments ()
+  ;; A list of user command line arguments
+  (cdr (program-and-user-command-line-arguments)))
+
 #+(or mcl sbcl)					; doesn't have setenv built=in
 (defvar *environment-shadow* nil)
 
