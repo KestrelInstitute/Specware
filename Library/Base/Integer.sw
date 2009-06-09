@@ -32,18 +32,9 @@ op zero : Int
 
 op isucc : Bijection (Int, Int)
 
-proof Isa Integer__isucc_subtype_constr
- apply(auto simp add: bij_def inj_on_def surj_def)
- apply(rule_tac x="y - 1" in exI, auto)
-end-proof
-
 op ipred : Bijection (Int, Int) = inverse isucc
  proof Isa
   apply(rule ext, rule sym, auto simp add: inv_def)
- end-proof
- proof Isa ipred_subtype_constr
-  apply(auto simp add: bij_def inj_on_def surj_def)
-  apply(rule_tac x="y + 1" in exI, auto)
  end-proof
 
 axiom infinity is
@@ -172,14 +163,11 @@ proof Isa e_dsh_Obligation_the
  apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
  apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
 end-proof
-proof Isa e_dsh_subtype_constr 
- apply(auto simp add: bij_def inj_on_def surj_def)
- apply(rule_tac x ="-y" in  exI, auto)
-end-proof
 proof Isa IntegerAux__e_dsh__def
  apply(rule the1_equality [symmetric])
  apply(rule IntegerAux__e_dsh_Obligation_the)
- apply(simp add: IntegerAux__e_dsh_subtype_constr)
+ apply(auto simp add: bij_def inj_on_def surj_def)
+ apply(rule_tac x ="-y" in  exI, auto)
 end-proof
 
 % addition:
@@ -275,9 +263,6 @@ op sign (i:Int) : {s:Int | s = 0 || s = 1 || s = -1} =
        if i > 0 then  1  % positive
   else if i < 0 then -1  % negative
   else (* i = 0 *)    0  % zero
-proof Isa sign_subtype_constr
- apply (simp add: sign_def)
-end-proof
 
 % absolute value:
 
