@@ -732,7 +732,7 @@ SpecNorm qualifying spec
       | _ -> [tm]
 
 
-  op generateStpSubtypeConstrs?: Boolean = false % temporary
+  op generateStpSubtypeConstrs?: Boolean = true
 
   op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow PolyOpTable \_rightarrow Spec
   def removeSubTypes spc coercions stp_tbl =
