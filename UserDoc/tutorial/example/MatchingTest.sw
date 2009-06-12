@@ -4,7 +4,7 @@ Test = spec
 
   op word_char?(ch: Char): Boolean = isUpperCase ch
 
-  op msg_char?(ch: Char): Boolean = isUpperCase ch or ch = #*
+  op msg_char?(ch: Char): Boolean = isUpperCase ch || ch = #*
 
   type WordString = (String | all word_char?)
 
@@ -32,7 +32,7 @@ Test = spec
  def implode l = foldl (fn (s,c) -> s ^ toString c) "" l
  def explode s =
    if s = "" then []
-     else Cons(sub(s,0),explode(substring(s,1,length s)))
+     else sub(s,0) :: explode(substring(s,1,length s))
 
 endspec
 
@@ -40,8 +40,8 @@ Data = spec
   import Test
   op msg: MessageString = "**V*ALN**EC*E*S"
   op words: List WordString =
-    ["CERAMIC","CHESS","DECREE","FOOTMAN",
-     "INLET","MOLOCH","OCELOT","PROFUSE",
+    ["CERAMIC", "CHESS", "DECREE", "FOOTMAN",
+     "INLET"," MOLOCH", "OCELOT", "PROFUSE",
      "RESIDE", "REVEAL", "SECRET", "SODIUM",
      "SPECIES", "VESTIGE", "WALNUT", "YOGURT"]
 

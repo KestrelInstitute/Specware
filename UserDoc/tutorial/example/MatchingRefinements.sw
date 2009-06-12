@@ -13,9 +13,9 @@ WordMatching0 = spec
   import MatchingSpecs#SymbolMatching
 
   op word_matches_aux?(wrd: Word, msg: Message | length wrd <= length msg): Boolean =
-    case wrd of Nil -> true
-              | Cons(wsym,wrd1) ->
-                let Cons(msym,msg1) = msg in
+    case wrd of [] -> true
+              | wsym::wrd1 ->
+                let msym::msg1 = msg in
                 if symb_matches?(wsym,msym)
                   then word_matches_aux?(wrd1,msg1)
                   else false
@@ -25,8 +25,7 @@ WordMatching0 = spec
     fa(wrd: Word, msg: Message)
       length wrd <= length msg
         => word_matches_aux?(wrd, msg)
-          = (fa(i:Nat) i < length wrd =>
-              symb_matches?(nth(wrd,i), nth(msg,i)))
+          = (fa(i:Nat) i < length wrd => symb_matches?(wrd@i, msg@i))
   proof Isa fa wrd msg.
   apply(induct_tac wrd msg rule: word_matches_aux_p.induct)
   apply(auto)  
@@ -70,8 +69,7 @@ FindMatches0 = spec
     foldl (fn(mtchs,wrd) ->
              case find_matches_aux(msg,wrd,0)
                of Some pos ->
-                  Cons({word = wrd, position = pos},
-                       mtchs)
+                  {word = wrd, position = pos} :: mtchs
                 | None -> mtchs)
       []  
       wrds

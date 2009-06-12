@@ -153,11 +153,12 @@ matched by any symbol. This is captured by the following spec:</para>
 
 [[
 ||    SymbolMatching = spec
-||      import Symbols
+||    import Symbols
 ||    
-||      op symb_matches? : Symbol * Option Symbol -> Boolean
-||      def symb_matches?(s,os) = case os of Some s1 -> s = s1
-||                                         | None    -> true
+||    op symb_matches?(s: Symbol, os: Option Symbol): Boolean
+||      = case os of
+||          | Some s1 -> s = s1
+||          | None    -> true
 ||    endspec
 ]]
 
@@ -184,16 +185,16 @@ spec:</para>
 [[
 ||    WordMatching = spec
 ||    
-||      import Words
-||      import Messages
-||      import SymbolMatching
-||    
-||      op word_matches_at? : Word * Message * Nat -> Boolean
-||      def word_matches_at?(wrd,msg,pos) =
-||          pos + length wrd <= length msg &&
-||          (fa(i:Nat) i < length wrd =>
-||             symb_matches?(nth(wrd,i), nth(msg,pos+i)))
-||    
+||    import Words
+||    import Messages
+||    import SymbolMatching
+||  
+||    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
+||         : Boolean =
+||      pos + length wrd <= length msg &&
+||      (fa(i:Nat) i < length wrd
+||         => symb_matches?(wrd@i, msg@(pos+i)))
+||  
 ||    endspec
 ]]
 
@@ -218,7 +219,7 @@ symbol in [[msg]] at position [[pos + i]].</para>
 </orderedlist>
 
 <para>Note the use of [[symb_matches?]] previously defined.  The ops
-[[length]] and [[nth]] are built-in, polymorphic ops over lists: the
+[[length]] and [[@]] are built-in, polymorphic ops over lists: the
 former returns the length of a list, while the latter returns the n-th
 element of a list (n is numbered starting from 0).</para>
 
@@ -251,19 +252,20 @@ components have user-chosen names.</para>
 
 [[
 ||    FindMatches = spec
-||    
-||      import WordMatching
-||      import Matches
-||    
-||      op find_matches : Message * List Word -> List Match
-||      axiom match_finding is
-||            fa(msg,wrds,mtch)
-||              member(mtch,find_matches(msg,wrds)) <=>
-||              member(mtch.word,wrds) &&
-||              word_matches_at?(mtch.word,msg,mtch.position) &&
-||              (fa(pos) word_matches_at?(mtch.word,msg,pos) =>
-||                       pos >= mtch.position)
-||    
+||  
+||    import WordMatching
+||    import Matches
+||  
+||    op find_matches : Message * List Word -> List Match
+||    axiom match_finding is
+||      fa(msg,wrds,mtch)
+||        mtch in? find_matches(msg,wrds)
+||         <=>
+||        mtch.word in? wrds
+||         && word_matches_at?(mtch.word,msg,mtch.position)
+||         && (fa(pos) word_matches_at?(mtch.word,msg,pos)
+||               => pos >= mtch.position)
+||  
 ||    endspec
 ]]
 
@@ -450,29 +452,26 @@ executable way:</para>
 
 [[
 ||    WordMatching0 = spec
-||    
-||      import MatchingSpecs#Words
-||      import MatchingSpecs#Messages
-||      import MatchingSpecs#SymbolMatching
-||    
-||      op word_matches_at? : Word * Message * Nat -> Boolean
-||      def word_matches_at?(wrd,msg,pos) =
-||          if pos + length wrd > length msg
-||          then false
-||          else word_matches_aux?
-||                (wrd, if pos = 0 then msg
-||                                 else nthTail(msg, pos - 1))
-||    
-||      op word_matches_aux? :
-||         {(wrd,msg) : Word * Message | length wrd <= length msg}
-||         -> Boolean
-||      def word_matches_aux?(wrd,msg) =
-||          case wrd of Nil -> true
-||                    | Cons(wsym,wrd1) ->
-||                      let Cons(msym,msg1) = msg in
-||                      if symb_matches?(wsym,msym)
-||                      then word_matches_aux?(wrd1,msg1)
-||                      else false
+||  
+||    import MatchingSpecs#Words
+||    import MatchingSpecs#Messages
+||    import MatchingSpecs#SymbolMatching
+||  
+||    op word_matches_aux?(wrd: Word, msg: Message
+||                           | length wrd <= length msg)
+||         : Boolean =
+||      case wrd of [] -> true
+||                | wsym::wrd1 ->
+||                  let msym::msg1 = msg in
+||                  if symb_matches?(wsym,msym)
+||                    then word_matches_aux?(wrd1,msg1)
+||                    else false
+||  
+||    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
+||         : Boolean =
+||      if pos + length wrd > length msg
+||        then false
+||        else word_matches_aux?(wrd, nthTail(msg, pos))
 ||    
 ||    endspec
 ]]
@@ -528,29 +527,28 @@ defines op [[find_matches]] in an executable way:</para>
 
 [[
 ||    FindMatches0 = spec
-||    
-||      import MatchingSpecs#WordMatching
-||      import MatchingSpecs#Matches
-||    
-||      op find_matches : Message * List Word -> List Match
-||      def find_matches(msg,wrds) =
-||          foldl (fn(wrd,mtchs) ->
-||                   case find_matches_aux(msg,wrd,0)
-||                     of Some pos ->
-||                        Cons({word = wrd, position = pos},
-||                             mtchs)
-||                      | None -> mtchs)
-||                Nil
-||                wrds
-||    
-||      op find_matches_aux : Message * Word * Nat -> Option Nat
-||      def find_matches_aux(msg,wrd,pos) =
-||          if pos + length wrd > length msg
-||          then None
-||          else if word_matches_at?(wrd,msg,pos)
+||  
+||    import MatchingSpecs#WordMatching
+||    import MatchingSpecs#Matches
+||  
+||   op find_matches_aux(msg: Message, wrd: Word, pos: Nat)
+||        : Option Nat =
+||      if pos + length wrd > length msg
+||        then None
+||        else if word_matches_at?(wrd,msg,pos)
 ||               then Some pos
 ||               else find_matches_aux(msg, wrd, pos + 1)
-||    
+||  
+||    op find_matches(msg: Message, wrds: List Word)
+||         : List Match =
+||      foldl (fn(mtchs,wrd) ->
+||               case find_matches_aux(msg,wrd,0)
+||                 of Some pos ->
+||                    {word = wrd, position = pos} :: mtchs
+||                  | None -> mtchs)
+||        []  
+||        wrds
+||  
 ||    endspec
 ]]
 
@@ -818,49 +816,42 @@ strings. We do that inside a spec called [[Test]] in a file
 
 [[
 ||    Test = spec
-||    
-||      import MatchingRefinements#FindMatches
-||    
-||      op word_char? : Char -> Boolean
-||      def word_char? ch = isUpperCase ch
-||    
-||      op msg_char? : Char -> Boolean
-||      def msg_char? ch = isUpperCase ch or ch = #*
-||    
-||      type WordString = (String | all word_char?)
-||    
-||      type MessageString = (String | all msg_char?)
-||    
-||      op word2string : Word -> WordString
-||      def word2string wrd = implode wrd
-||    
-||      op string2word : WordString -> Word
-||      def string2word wstr = explode wstr
-||    
-||      op message2string : Message -> MessageString
-||      def message2string msg =
-||          implode(map (fn Some ch -> ch
-||                        | None -> #*)
-||                      msg)
-||
-||      op string2message : MessageString -> Message
-||      def string2message mstr =
-||          map (fn ch -> if ch = #* then None else Some ch)
-||              (explode mstr)
-||    
-||      type MatchString = {word : WordString, position : Nat}
-||    
-||      op match2string : Match -> MatchString
-||      def match2string mtch =
-||          {word     = word2string mtch.word,
-||           position = mtch.position}
-||    
-||      op test_find_matches :
-||         MessageString * List WordString -> List MatchString
-||      def test_find_matches(mstr,wstrs) =
-||          map match2string
-||              (find_matches(string2message mstr,
-||                            map string2word wstrs))
+||  
+||    import MatchingRefinements#FindMatches
+||  
+||    op word_char?(ch: Char): Boolean = isUpperCase ch
+||  
+||    op msg_char?(ch: Char): Boolean = isUpperCase ch || ch = #*
+||  
+||    type WordString = (String | all word_char?)
+||  
+||    type MessageString = (String | all msg_char?)
+||  
+||    op word2string(wrd: Word): WordString = implode wrd
+||  
+||    op string2word(wstr: WordString): Word = explode wstr
+||  
+||    op message2string(msg: Message): MessageString =
+||      implode(map (fn Some ch -> ch | None -> #*) msg)
+||  
+||    op string2message(mstr: MessageString): Message =
+||      map (fn ch -> if ch = #* then None else Some ch)
+||        (explode mstr)
+||  
+||    type MatchString = {word : WordString, position : Nat}
+||  
+||    op match2string(mtch: Match): MatchString =
+||        {word = word2string mtch.word, position = mtch.position}
+||  
+||    op test_find_matches(mstr: MessageString, wstrs: List WordString)
+||         : List MatchString =
+||      map match2string
+||        (find_matches(string2message mstr, map string2word wstrs))
+||  
+||    def implode l = foldl (fn (s,c) -> s ^ toString c) "" l
+||    def explode s =
+||      if s = "" then []
+||        else sub(s,0) :: explode(substring(s,1,length s))
 ||    
 ||    endspec
 ]]

@@ -31,9 +31,8 @@ WordMatching = spec
   import SymbolMatching
 
   op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
-      pos + length wrd <= length msg &&
-      (fa(i:Nat) i < length wrd =>
-         symb_matches?(nth(wrd,i), nth(msg,pos+i)))
+    pos + length wrd <= length msg &&
+    (fa(i:Nat) i < length wrd => symb_matches?(wrd@i, msg@(pos+i)))
 
 endspec
 
@@ -51,12 +50,12 @@ FindMatches = spec
 
   op find_matches : Message * List Word -> List Match
   axiom match_finding is
-        fa(msg,wrds,mtch)
-          member(mtch,find_matches(msg,wrds))
-           <=>
-          member(mtch.word,wrds)
-          && word_matches_at?(mtch.word,msg,mtch.position)
-          && (fa(pos) word_matches_at?(mtch.word,msg,pos) =>
-                pos >= mtch.position)
+    fa(msg,wrds,mtch)
+      mtch in? find_matches(msg,wrds)
+       <=>
+      mtch.word in? wrds
+       && word_matches_at?(mtch.word,msg,mtch.position)
+       && (fa(pos) word_matches_at?(mtch.word,msg,pos)
+             => pos >= mtch.position)
 
 endspec
