@@ -732,8 +732,6 @@ SpecNorm qualifying spec
       | _ -> [tm]
 
 
-  op generateStpSubtypeConstrs?: Boolean = true
-
   op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow PolyOpTable \_rightarrow Spec
   def removeSubTypes spc coercions stp_tbl =
     %% Remove subsort definition for directly-implemented subtypes
@@ -754,7 +752,7 @@ SpecNorm qualifying spec
                   foldr (fn (el,r) \_rightarrow
                          case el of
                          | Op(qid as (Qualified(q,id)), def?, a)
-                         | ~generateStpSubtypeConstrs? && ~(stpFun? id) \_rightarrow
+                             | ~(stpFun? id) \_rightarrow
                            let Some info = AnnSpec.findTheOp(spc,qid) in
                            let (tvs, ty, defn) = unpackFirstOpDef info in
                            % let _ = writeLine ("\nstc: "^id^": "^printSort ty) in
