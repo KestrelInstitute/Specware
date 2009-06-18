@@ -718,8 +718,8 @@ following command in a file named <"MatchingProofs.sw">, located in the
 same directory as <"MatchingObligations.sw">:</para>
 
 [[
-||    p1 = prove symb_matches? in
-||         MatchingObligations#SymbolMatching_Oblig
+||    p1A = prove symb_matches?_Obligation_exhaustive in
+||          MatchingObligations#SymbolMatching_Oblig
 ]]
 
 <para>At the shell, the user can issue this command to attempt the
@@ -729,11 +729,9 @@ proof:</para>
 ||    proc MatchingProofs#p1
 ]]
 
-<!-- commented out because it does not get proved
 <para>The obligation is translated to the Snark theorem prover and
 automatically proven based primarily on the knowledge of &Specware;'s
 [[Option]] type that we automatically send to Snark.</para>
--->
 
 </section> <!-- proof obligations -->
 
@@ -841,7 +839,7 @@ strings. We do that inside a spec called [[Test]] in a file
 ||    type MatchString = {word : WordString, position : Nat}
 ||  
 ||    op match2string(mtch: Match): MatchString =
-||        {word = word2string mtch.word, position = mtch.position}
+||      {word = word2string mtch.word, position = mtch.position}
 ||  
 ||    op test_find_matches(mstr: MessageString, wstrs: List WordString)
 ||         : List MatchString =
