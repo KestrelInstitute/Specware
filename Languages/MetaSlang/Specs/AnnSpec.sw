@@ -197,14 +197,17 @@ AnnSpec qualifying spec
 
  def firstSortDef info =
    let (decls, defs)  = sortInfoDeclsAndDefs info in
-   let first_def :: _ = defs ++ decls in
-   first_def
+   case defs ++ decls of
+     | first_def :: _ -> first_def
+     | _ -> (fail("No decls or defs for: "^anyToString info))
 
  def unpackFirstSortDef info =
    unpackSort (firstSortDef info)
 
  def firstSortDefTyVars info =
-   sortTyVars (firstSortDef info)
+   case info.dfn of
+     | And([], _) -> []
+     | _ -> sortTyVars (firstSortDef info)
 
  def firstSortDefInnerSort info =
    sortInnerSort (hd (sortInfoDefs info)) % fail if no decl but no def
