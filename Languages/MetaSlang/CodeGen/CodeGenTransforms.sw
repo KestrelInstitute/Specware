@@ -1774,4 +1774,35 @@ def showSorts spc =
   appSpec ((fn _ -> ()), (fn srt -> writeLine (printSort srt)), (fn _ -> ())) spc
 
 
+ %% To get an executable base
+ op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
+ op baseExecutableSpecNamesJ : List String = ["/Library/Base/List_Executable"]
+ 
+ op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap
+ op substBaseSpecs1(spc: Spec, baseExecutableSpecNames: List String): Spec =
+   let op_map =
+       foldl (fn (op_map, exec_spec_name) ->
+                case evaluateUnitId exec_spec_name of
+                  | None -> op_map
+                  | Some(Spec exec_spc) ->
+                    foldl (fn (op_map, el) ->
+                             case el of
+                               | Op(Qualified(q,id), true, _) ->
+                                 (case findAQualifierMap(exec_spc.ops, q, id) of
+                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
+                                    | None -> op_map)
+                               | OpDef(Qualified(q,id), _) ->
+                                 (case findAQualifierMap(exec_spc.ops, q, id) of
+                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
+                                    | None -> op_map)
+                               | _ -> op_map)
+                      op_map exec_spc.elements)
+         spc.ops baseExecutableSpecNames
+   in
+   spc << {ops = op_map}
+
+ op substBaseSpecs(spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNames)
+ op substBaseSpecsJ(spc: Spec): Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
+   
+
 endspec
