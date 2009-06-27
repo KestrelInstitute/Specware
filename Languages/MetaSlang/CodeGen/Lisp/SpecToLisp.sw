@@ -7,7 +7,7 @@ SpecToLisp qualifying spec
  import ../../Transformations/RemoveCurrying
  import ../../Transformations/RecordMerge
  import Lisp
- import ../../Specs/StandardSpec
+ import ../CodeGenTransforms
  import Suppress
 
  op lisp : Spec -> LispSpec
@@ -584,7 +584,7 @@ SpecToLisp qualifying spec
 
  op  sortOfOp : Spec * QualifiedId -> Sort
  def sortOfOp (sp, qid) =
-   case findTheOp (sp, qid) of
+   case AnnSpec.findTheOp (sp, qid) of
      | Some info -> 
        firstOpDefInnerSort info 
 
@@ -1427,30 +1427,6 @@ SpecToLisp qualifying spec
  def removeCurrying? = false
 
  op substBaseSpecs? : Boolean = true
- op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
- 
- op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap
- op substBaseSpecs(spc: Spec): Spec =
-   let op_map =
-       foldl (fn (op_map, exec_spec_name) ->
-                case evaluateUnitId exec_spec_name of
-                  | None -> op_map
-                  | Some(Spec exec_spc) ->
-                    foldl (fn (op_map, el) ->
-                             case el of
-                               | Op(Qualified(q,id), true, _) ->
-                                 (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
-                                    | None -> op_map)
-                               | OpDef(Qualified(q,id), _) ->
-                                 (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
-                                    | None -> op_map)
-                               | _ -> op_map)
-                      op_map exec_spc.elements)
-         spc.ops baseExecutableSpecNames
-   in
-   spc << {ops = op_map}
 
  def toLispEnv (spc, complete?) =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
