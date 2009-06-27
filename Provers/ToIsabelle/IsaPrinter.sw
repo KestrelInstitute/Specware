@@ -122,7 +122,7 @@ IsaTermPrinter qualifying spec
 
   type GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String \_rightarrow Option a
-  op  Specware.evaluateUnitId: String \_rightarrow Option Value
+  %op  Specware.evaluateUnitId: String \_rightarrow Option Value
   %op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
   op  Specware.cleanEnv : SpecCalc.Env ()
