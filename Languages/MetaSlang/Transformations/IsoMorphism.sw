@@ -174,6 +174,12 @@ spec
   type IsoInfo = MS.Term * TyVars * Sort * Sort
   type IsoInfoList = List(IsoInfo * IsoInfo)
 
+  op printIsoInfoList(iso_info: IsoInfoList): () =
+    app (fn ((tma1, _, tya1, tya2), (tmb1, _, tyb1, tyb2)) ->
+         (writeLine(printTerm tma1^": "^printSort tya1^" -> "^printSort tya2);
+          writeLine(printTerm tmb1^": "^printSort tyb1^" -> "^printSort tyb2)))
+      iso_info
+
   op lookupIsoInfo(qid: QualifiedId, iso_info: IsoInfoList): Option(IsoInfo * IsoInfo) =
     case iso_info of
       | [] -> None
@@ -542,11 +548,123 @@ spec
     in
     makePrimeBody(old_dfn, [], op_ty)    
 
+  op typeQid(ty: Sort): QualifiedId =
+    let Base(qid, _, _) = ty in
+    qid
+
+  op srcQId(((_,_,src_ty,_), _): IsoInfo * IsoInfo): QualifiedId = typeQid src_ty
+
+  op checkTypeOpacity?(tm: MS.Term, ty: Sort, base_src_QIds: List QualifiedId, src_QIds: List QualifiedId,
+                       spc: Spec): Boolean =
+    let def opacityPreserved?(d_ty, u_ty) =
+          % let _ = writeLine("oP?: "^printSort d_ty^" =?= "^printSort u_ty) in
+          equalType?(d_ty, u_ty)
+            ||
+          (
+           let result =
+             case (d_ty, u_ty) of
+               | (Arrow(x1, y1,  _), Arrow(x2, y2,  _)) ->
+                 opacityPreserved?(x1, x2) && opacityPreserved?(y1, y2)
+               | (Product(xs1, _), Product(xs2, _)) ->
+                 all (fn ((_, x1), (_, x2)) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
+               | (Subsort(x1, t1,  _), Subsort(x2, t2,  _)) ->
+                 equalTerm?(t1, t2) && opacityPreserved?(x1, x2)
+               | (Base(q1, xs1, _), Base(q2, xs2, _)) | q1 = q2 ->
+                 all (fn (x1, x2) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
+               | (Base(q1, xs1, _), Base(q2, xs2, _)) | q2 nin? base_src_QIds ->
+                 (case tryUnfoldBase spc u_ty of
+                  | Some u_ty1 -> opacityPreserved?(d_ty, u_ty1)
+                  | None ->
+                  if q1 in? base_src_QIds then false
+                  else
+                  case tryUnfoldBase spc d_ty of
+                  | Some d_ty1 -> opacityPreserved?(d_ty1, u_ty)
+                  | None -> false)
+               | (Subsort(x1, _,  _), _) ->
+                 opacityPreserved?(x1, u_ty)
+               | (_, Subsort(x2, _,  _)) ->
+                 opacityPreserved?(d_ty, x2)
+               | (Base(q1, _, _), _) | q1 nin? base_src_QIds ->
+                 (case tryUnfoldBase spc d_ty of
+                  | Some d_ty1 -> opacityPreserved?(d_ty1, u_ty)
+                  | None -> false)
+               | (_, Base(q2, _, _)) | q2 nin? base_src_QIds ->
+                 (case tryUnfoldBase spc u_ty of
+                  | Some u_ty1 -> opacityPreserved?(d_ty, u_ty1)
+                  | None -> false)
+               | _ -> false
+           in
+             % let _ = writeLine(if result then "is opq" else "not opq") in
+             result)
+        def cto?(tm, d_ty) =
+          % let _ = writeLine("cto?: "^printTerm tm) in
+          let u_ty = inferType(spc, tm) in
+          opacityPreserved?(d_ty, u_ty)
+            &&
+          (case tm of
+           | Apply (t1, t2, _) ->
+             let fn_ty = inferType(spc, t1) in
+             (case arrowOpt(spc, fn_ty) of
+              | None -> false
+              | Some(dom, _) ->
+                cto?(t1, mkArrow(dom, d_ty)) && cto?(t2, dom))
+           | Record (row, _) ->
+             let srts = map (project 2) (product (spc, d_ty)) in
+             all (fn (f_ty, (_, tmi)) -> cto?(tmi, f_ty))
+               (zip(srts, row))
+           | Bind (_, _, bod, _) -> cto?(bod, boolSort)
+           | The  (var,  bod, _) -> cto?(bod, boolSort)
+           | Let (decls, bdy, _) ->
+             cto?(bdy, d_ty)
+               && all (fn (pat, trm) -> cto?(trm, patternSort pat))
+                    decls
+           | LetRec (decls, bdy, _) ->
+             cto?(bdy, d_ty)
+               && all (fn ((_, lr_ty), trm) -> cto?(trm, lr_ty))
+                    decls
+           | Lambda (match, _) ->
+             let ran = range(spc, d_ty) in
+             all (fn (pat, condn, bod) ->
+                    cto?(condn, boolSort) && cto?(bod, ran))
+               match
+           | IfThenElse (t1, t2, t3, _) ->
+             cto?(t1, boolSort) && cto?(t2, d_ty) && cto?(t3, d_ty)
+           | Seq (terms, _) ->
+             let pre_trms = butLast terms in
+             let lst_trm  =    last terms in
+             cto?(lst_trm, d_ty)
+               && all (fn trm -> cto?(trm, mkProduct [])) pre_trms
+           | SortedTerm (trm, srt, _) -> cto?(trm, srt)
+           | _ -> true)
+    in
+    cto?(tm, ty)
+
+  op primeTermsTypes(tm: MS.Term, qidPrMap: QualifiedIdMap, iso_info: IsoInfoList): MS.Term =
+    mapTerm (fn t -> case t of
+             | Fun(Op(qid as Qualified(q,idn), fx), ty, a) ->
+               let nqid = case findAQualifierMap(qidPrMap, q, idn) of
+                            | Some nqid -> nqid
+                            | None      ->  qid
+               in
+               Fun(Op(nqid, fx), ty, a)
+             | _ -> t,
+             fn ty -> case ty of
+             | Base(qid, params, a) ->
+               (case lookupIsoInfo(qid, iso_info) of
+                | Some((_,_,_,r_ty as Base(osi_qid,_,_)), _) ->
+                  if params = [] then r_ty else Base(osi_qid, params, a)
+                | _ -> ty)
+             | _ -> ty,
+             id)
+      tm
+
+  type QualifiedIdMap = AQualifierMap(QualifiedId)
+
 %% (search-forward-regexp specware-definition-regexp) (match-string 0) (match-string 2)
   op makePrimedOps(spc: Spec,
                    iso_info: IsoInfoList,
                    iso_fn_info: IsoFnInfo)
-     : List (OpInfo * OpInfo) =
+     : QualifiedIdMap =
     let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
                             [iso_qid, osi_qid] ++ result)
                      [] iso_info
@@ -558,24 +676,53 @@ spec
        if anyTerm? dfn then result
        else
        let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
-       if member(qid,ign_qids)
-         \_or equivType? spc (op_ty_pr,op_ty)
+       if member(qid,ign_qids) \_or equivType? spc (op_ty_pr,op_ty)
          then result
         else
-          let qid_ref = mkOpFromDef(qid,op_ty,spc) in
           let qid_pr = makePrimedOpQid(qid, spc) in
-          let dfn_pr = isoTerm (spc, iso_info, iso_fn_info) op_ty dfn in
-          % let _ = if nm = "inverse" then writeLine("mpo: "^printTermWithSorts dfn_pr) else () in
-          let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
-          let id_def_pr = makeTrivialDef(spc, dfn_pr, qid_pr_ref) in
-          let new_dfn = osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr in
-          % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
-          Cons((info \_guillemotleft {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
-                info \_guillemotleft {names = [qid_pr],
-                        dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))}),
-               result))
-      []
+          insertAQualifierMap(result, q, nm, qid_pr))
+      emptyAQualifierMap
       spc.ops
+
+  op makePrimedOpDefs(spc:           Spec,
+                      iso_info:      IsoInfoList,
+                      iso_fn_info:   IsoFnInfo,
+                      base_src_QIds: List QualifiedId,
+                      src_QIds:      List QualifiedId,
+                      qidPrMap:      QualifiedIdMap)
+     : List (OpInfo * OpInfo) =
+    foldriAQualifierMap
+      (fn (q, nm, qid_pr, result) ->
+       let qid = Qualified(q,nm) in
+       let Some info = findTheOp(spc, qid) in
+       let (tvs, op_ty, dfn) = unpackTerm info.dfn in
+       let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
+       let qid_pr = makePrimedOpQid(qid, spc) in
+       let dfn_pr = if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc)
+                     then primeTermsTypes(dfn, qidPrMap, iso_info)
+                     else isoTerm (spc, iso_info, iso_fn_info) op_ty dfn
+       in
+       let _ = if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc)
+                then (writeLine("\nmpo: "^printQualifiedId qid_pr^" opaque!");
+                      let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
+                      writeLine(printTermWithSorts dfn^"\n"
+                                ^printTermWithSorts prim_dfn^"\n"
+                                ^
+                                  printTerm prim_dfn))
+                else writeLine("mpo: "^printQualifiedId qid_pr^" not opaque\n")
+       in
+       % let _ = if nm = "inverse" then writeLine("mpo: "^printTermWithSorts dfn_pr) else () in
+       let qid_pr_ref = mkInfixOp(qid_pr,info.fixity,op_ty_pr) in
+       let id_def_pr = makeTrivialDef(spc, dfn_pr, qid_pr_ref) in
+       let new_dfn = osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr in
+       % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
+       (info \_guillemotleft {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
+        info \_guillemotleft {names = [qid_pr],
+                dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
+       ::result)
+      []
+      qidPrMap
+
 
   op traceIsomorphismGenerator?: Boolean = false
   op simplifyIsomorphism?: Boolean = true
@@ -606,9 +753,11 @@ spec
         base_iso_info
       then spc
     else
+    let base_src_QIds = map srcQId base_iso_info in
     let iso_fn_info = findComplexIsoFns spc in
     let (prime_type_iso_info, spc) = newPrimedTypes(spc, base_iso_info, iso_fn_info) in
     let iso_info = base_iso_info ++ prime_type_iso_info in
+    let src_QIds = map srcQId iso_info in
     %% Add definitions for newly introduced iso fns
     let spc = foldl (fn (spc, ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
                        let spc = addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref in
@@ -622,7 +771,8 @@ spec
                  makeIsoTheorems(spc, iso_ref, osi_ref, tvs, src_ty, trg_ty, iso_thm_qids))
           (spc, []) iso_info
     in
-    let new_defs = makePrimedOps(spc, iso_info, iso_fn_info) in
+    let qidPrMap = makePrimedOps(spc, iso_info, iso_fn_info) in
+    let new_defs = makePrimedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap) in
     let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
                      let qid  = hd opinfo.names in
                      let qid_pr = hd opinfo_pr.names in
