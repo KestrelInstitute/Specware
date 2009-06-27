@@ -341,7 +341,8 @@ lemma nat_of_char_less_256 [simp]: "nat_of_char y < 256"
   apply (simp add: char_of_nat_of_char)
 done 
 
-(*  Char.chr is like char_of_nat except out of its domain, so we define a regularized version *)
+(*  Char.chr is like char_of_nat except out of its domain, 
+    so we define a regularized version *)
 definition Char__chr :: "nat \_Rightarrow char" where [simp]:
   "Char__chr = RFun (\_lambdai. i < 256) char_of_nat"
 
@@ -1636,6 +1637,16 @@ proof -
  finally show ?thesis .
 qed
 
+(******************** a simple fact about sets ********************)
+
+theorem permutation_set:
+  "\<forall>i\<in>S. i < card S \<Longrightarrow> \<forall>i< card S. i\<in>S"
+  apply (subgoal_tac "S \<subseteq> {..<card S}")
+  apply (rule ccontr, auto)
+  apply (subgoal_tac "S \<noteq> {..<card S}")
+  apply (drule psubsetI, simp)
+  apply (cut_tac A=S and B="{..<card S}" in psubset_card_mono, auto)
+done
 end-proof
 
 endspec
