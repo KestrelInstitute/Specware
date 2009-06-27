@@ -77,7 +77,7 @@ def checkSubsortFormat srt =
        if ok then
 	 return srt
        else
-	 raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
+	 return ssrt  %raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
     }
 
 op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv Boolean
@@ -227,7 +227,7 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
        %% As given here, without the call to baseTypeAlias, this is equivalent to:
        %%  case ut (spc, srt) of ...
        %% We present it this way for clarity and for consistency with translateApplyToExprM
-       case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt)) *) ) (concat (dom_sorts, [rng])) of
+       case utlist_internal (fn srt -> userType? (spc, srt) (* && ~(baseTypeAlias? (spc, srt)) *) ) (concat (dom_sorts, [rng])) of
 	 | Some usrt ->
 	   {
 	    classId <- srtIdM usrt;
@@ -885,22 +885,26 @@ def JGen.printJavaFile(jfile as (filename,jspc)) =
 op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
-  (q="Nat" & (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
+  (q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
   ||
-  (q="Integer" & (i="Integer" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
-		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
+  (q="Integer" && (i="Integer" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
+		   i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"
+                   || i="positive?"))
   ||
   (q="IntegerAux" && i="-") % unary minus
   ||
-  (q="Boolean" & (i="Boolean" || i="true" || i="false" || i="~" || i="&" || i="or" ||
-		  i="=>" || i="<=>" || i="~="))
+  (q="Boolean" && (i="Boolean" || i="true" || i="false" || i="~" || i="&" || i="or" ||
+		   i="=>" || i="<=>" || i="~="))
   ||
-  (q="Char" & (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
-	       i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
-               i="toLowerCase" || i="toString"))
+  (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
+	        i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
+                i="toLowerCase" || i="toString"))
   ||
-  (q="String" & (i="String" or i="writeLine" or i="toScreen" or i="concat" or i="++" or
-		 i="^" or i="newline" or i="length" or i="substring"))
+  (q="String" && (i="String" || i="writeLine" || i="toScreen" || i="concat" || i="++" ||
+                  i="^" || i="newline" || i="length" || i="substring"))
+  || %% Non-constructive
+  (q="Function" && i in? ["inverse", "surjective?", "injective?"])
+  || (q = "List" && i in? ["lengthOfListFunction", "list", "list_1"])
 
 % --------------------------------------------------------------------------------
 def printOriginalSpec? = false
@@ -913,6 +917,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  let spc = substBaseSpecsJ spc in
   let spc = identifyIntSorts spc in
 
   let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
