@@ -20,18 +20,26 @@ chr 65. *)
 % position of character in table:
 
 op ord : Bijection (Char, {n:Nat | n < 256}) = inverse chr
-proof Isa
- apply (subgoal_tac " bij_on char_of_nat (\<lambda>n. n < 256) UNIV")
- apply (simp add: Function__inverse__stp_simp bij_on_def Ball_def mem_def, 
-        clarify, thin_tac "surj_on ?f ?A ?B")
- apply (rule ext)
- apply (rule inv_on_f_eq, auto simp add: mem_def char_of_nat_of_char)
+proof Isa chr_subtype_constr
  apply (auto simp add: bij_on_def inj_on_def surj_on_def mem_def Bex_def)
  apply (rule_tac s="nat_of_char (char_of_nat x)" in ssubst)
  apply (simp add: nat_of_char_of_nat,
         thin_tac  "char_of_nat x = char_of_nat y", simp add: nat_of_char_of_nat)
  apply (rule_tac x="nat_of_char y" in exI)
  apply (simp add: char_of_nat_of_char)
+end-proof
+proof Isa ord_subtype_constr
+   apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)
+ apply (rule_tac s="char_of_nat (nat_of_char x)" in ssubst)
+ apply (simp add: char_of_nat_of_char,
+        thin_tac  "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
+ apply (rule_tac x="char_of_nat y" in exI)
+ apply (simp add: nat_of_char_of_nat)
+end-proof
+proof Isa ord__def
+ apply (cut_tac Char__chr_subtype_constr, simp add: Function__inverse__stp_simp )
+ apply (rule ext)
+ apply (rule inv_on_f_eq, auto simp add: bij_on_def mem_def char_of_nat_of_char)
 end-proof
 
 % ------------------------------------------------------
@@ -89,10 +97,13 @@ end-proof
 op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
 
 % mapping to Isabelle:
+% Because of subtyping requirements we cannot simply map Char.chr to Isabelle's
+% char_of_nat but have to use the regularized version Char__chr, which is 
+% defined in IsabelleExtensions 
 
 proof Isa Thy_Morphism Char_nat
   type Char.Char -> char
-  Char.chr       -> char_of_nat
+  Char.chr       -> Char__chr
   Char.ord       -> nat_of_char
 end-proof
 
