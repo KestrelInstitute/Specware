@@ -16,10 +16,15 @@ spec
  op makeTypeCheckObligationSpec: Spec -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
- def simplifyObligations? = true
+ op simplifyObligations?: Bool = true
  %% These two should be false for Isabelle conversion
- def generateTerminationConditions? = true
- def generateExhaustivityConditions? = true
+ op generateTerminationConditions? : Bool = true
+ op generateExhaustivityConditions?: Bool = true
+ op omitDefSubtypeConstrs?: Bool = false
+ op traceObligationSimplify?: Bool = false
+
+ op termSubstSizeLimit: Nat = 20
+
 
 
 % Auxiliary variable environment.
@@ -48,8 +53,6 @@ spec
           assertSubtypeCond(term, srt, (Cons(Cond(mkLetOrApply(pred, term, gamma)), ds),
                                         tvs, spc, qid, name, ty, names, lift?))
         | _ -> gamma
-
- op termSubstSizeLimit: Nat = 20
 
  op  mkLetOrApply: MS.Term * MS.Term * Gamma -> MS.Term
  def mkLetOrApply(fntm, arg, (ds, tvs, spc, qid, name, ty, names, lift?)) =
@@ -160,8 +163,6 @@ spec
                 | _ -> t,
             id, id)
      tm
-
- op traceObligationSimplify?: Bool = false
 
  op simplifyOblig (spc: Spec) (oblig: MS.Term): MS.Term =
    if simplifyObligations?
@@ -956,20 +957,24 @@ spec
                                                 | And (srts, _) -> srts
                                                 | _ -> [tau]
                                    in
-                                     foldr (fn (tau, tcc) ->
-                                            let gamma = gamma0 tvs
-                                                        %% Was unfoldStripSort but that cause infinite recursion.
-                                                        %% Is stripSubsorts sufficient (or necessary)?
-                                                          (Some (stripSubsorts(spc, tau)))
-                                                          (Some (qid, (curriedParams term).1))
-                                                          (Qualified (q, id ^ "_Obligation"))
-                                            in
-                                            let tcc = if generateTerminationConditions?
-                                                         then addUniqueExistenceCondition(tcc, gamma, term)
-                                                         else tcc
-                                            in
-                                            (tcc, gamma) |- term ?? tau)
-                                       tcc taus)
+                                   let taus = if omitDefSubtypeConstrs?
+                                               then map (fn tau -> stripRangeSubsorts(spc, tau)) taus
+                                               else taus
+                                   in
+                                   foldr (fn (tau, tcc) ->
+                                          let gamma = gamma0 tvs
+                                                      %% Was unfoldStripSort but that cause infinite recursion.
+                                                      %% Is stripSubsorts sufficient (or necessary)?
+                                                        (Some (stripSubsorts(spc, tau)))
+                                                        (Some (qid, (curriedParams term).1))
+                                                        (Qualified (q, id ^ "_Obligation"))
+                                          in
+                                          let tcc = if generateTerminationConditions?
+                                                       then addUniqueExistenceCondition(tcc, gamma, term)
+                                                       else tcc
+                                          in
+                                          (tcc, gamma) |- term ?? tau)
+                                     tcc taus)
                               ([], claimNames) 
                               (opInfoDefs opinfo)
                          in
@@ -998,19 +1003,23 @@ spec
                                             | And (srts, _) -> srts
                                             | _ -> [tau]
                                in
-                                 foldr (fn (tau, tcc) ->
-                                        let gamma = gamma0 tvs
-                                                        %% Was unfoldStripSort but that cause infinite recursion.
-                                                        %% Is stripSubsorts sufficient (or necessary)?
-                                                          (Some (stripSubsorts(spc, tau)))
-                                                          (Some (qid, (curriedParams term).1))
-                                                          (Qualified (q, id ^ "_Obligation"))
-                                        in
-                                        let tcc = if generateTerminationConditions?
-                                                     then addUniqueExistenceCondition(tcc, gamma, term)
-                                                     else tcc
-                                        in
-                                        (tcc, gamma) |- term ?? tau)
+                               let taus = if omitDefSubtypeConstrs?
+                                           then map (fn tau -> stripRangeSubsorts(spc, tau)) taus
+                                           else taus
+                               in
+                               foldr (fn (tau, tcc) ->
+                                      let gamma = gamma0 tvs
+                                                      %% Was unfoldStripSort but that cause infinite recursion.
+                                                      %% Is stripSubsorts sufficient (or necessary)?
+                                                        (Some (stripSubsorts(spc, tau)))
+                                                        (Some (qid, (curriedParams term).1))
+                                                        (Qualified (q, id ^ "_Obligation"))
+                                      in
+                                      let tcc = if generateTerminationConditions?
+                                                   then addUniqueExistenceCondition(tcc, gamma, term)
+                                                   else tcc
+                                      in
+                                      (tcc, gamma) |- term ?? tau)
                                    tcc taus)
                           (el::tccs, claimNames) 
                           (opInfoDefs opinfo))
