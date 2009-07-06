@@ -887,13 +887,13 @@ def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
   (q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
   ||
-  (q="Integer" && (i="Integer" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
+  (q="Integer" && (i="Integer" || i="Int" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
 		   i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"
                    || i="positive?"))
   ||
   (q="IntegerAux" && i="-") % unary minus
   ||
-  (q="Boolean" && (i="Boolean" || i="true" || i="false" || i="~" || i="&" || i="or" ||
+  (q="Boolean" && (i="Boolean" || i="Bool" || i="true" || i="false" || i="~" || i="&" || i="or" ||
 		   i="=>" || i="<=>" || i="~="))
   ||
   (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
@@ -914,6 +914,9 @@ def printTransformedSpec? = false
 def JGen.transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
+  let spc = instantiateHOFns spc in
+  let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
+  let spc = lambdaLift(spc,true) in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
@@ -925,9 +928,6 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
 
   let spc = letWildPatToSeq spc in
-  let spc = instantiateHOFns spc in
-  let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
-  let spc = lambdaLift(spc,true) in
   let spc = translateMatchJava spc in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in

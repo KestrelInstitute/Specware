@@ -443,7 +443,9 @@ spec
   def builtinJavaBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
     id = "Boolean" || % v3:p1 
+    id = "Bool" || % v3:p1 
     id = "Integer" || % v3:p1 
+    id = "Int" || % v3:p1 
     id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
     id = "String"  || % v3:p1 says NO  -- TODO: resolve this
     id = "Char"       % v3:p1 
