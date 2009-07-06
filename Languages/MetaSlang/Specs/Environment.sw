@@ -70,7 +70,7 @@ spec
 
  op unfoldStripSort1 : Spec * Sort * List(Sort) * Boolean -> Sort
  def unfoldStripSort1 (sp, srt, vsrts, verbose) =
-  if List.member(srt,vsrts) then
+  if typeIn?(srt, vsrts) then
     srt
   else
     case srt of
@@ -111,12 +111,25 @@ spec
     of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
      | srt -> srt
 
+ op stripRangeSubsorts(sp: Spec, srt: Sort): Sort =
+   case srt of
+     | Subsort (s_srt, _, _) -> stripRangeSubsorts (sp, s_srt)
+     | Arrow (d_srt, r_srt, a)-> Arrow(d_srt, stripRangeSubsorts (sp, r_srt), a)
+     | Base _ ->
+       let uf_srt = unfoldBase (sp, srt) in
+       if equalType?(uf_srt, srt) || embed? CoProduct srt || embed? Quotient srt
+         then srt
+         else stripRangeSubsorts (sp, uf_srt)
+     | _ -> srt
+   
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
    case stripSubsorts (sp, srt) of
      | Arrow (dom, rng, _) -> (dom, rng)
-     | mystery -> System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+     | mystery ->
+       % let _ = writeLine(printSpecFlat sp) in
+       System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
      
  def product (sp : Spec, srt : Sort) = 
    let srt = unfoldBase(sp,srt) in
