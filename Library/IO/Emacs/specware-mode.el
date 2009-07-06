@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 4.2.5")
+  "specware-mode, Version 4.2.6")
 
 (provide 'specware-mode)
 
@@ -2104,6 +2104,7 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? nil)
+                            (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
 		     filename
@@ -2127,6 +2128,7 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? nil)
+                            (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::deleteThyFilesForUID %S)
                         (IsaTermPrinter::printUIDtoThyFile-2 %S t))"
