@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports Datatype Recdef Hilbert_Choice List GCD Char_nat
+imports Char_nat GCD List Hilbert_Choice Recdef Datatype
 begin
 
 
@@ -328,7 +328,8 @@ lemma nat_of_char_less_256 [simp]: "nat_of_char y < 256"
   apply (simp add: char_of_nat_of_char)
 done 
 
-(*  Char.chr is like char_of_nat except out of its domain, so we define a regularized version *)
+(*  Char.chr is like char_of_nat except out of its domain, 
+    so we define a regularized version *)
 definition Char__chr :: "nat \<Rightarrow> char" where [simp]:
   "Char__chr = RFun (\<lambda>i. i < 256) char_of_nat"
 
@@ -1611,5 +1612,27 @@ lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod
       cut_tac i=i and j="\<bar>j\<bar>" in div_pos_low_bound, auto, 
       simp add: abs_via_sign ring_simps)
 
+
+(******************** a simple fact about lists ********************)
+
+lemma nth_tl: "Suc i < length xs \<Longrightarrow> tl xs ! i = xs ! Suc i"
+proof -
+ assume "Suc i < length xs"
+ hence LE: "Suc i \<le> length xs" by auto
+ have "tl xs ! i = drop 1 xs ! i" by (auto simp: drop_Suc)
+ also with LE have "\<dots> = xs ! Suc i" by (auto simp: nth_drop)
+ finally show ?thesis .
+qed
+
+(******************** a simple fact about sets ********************)
+
+theorem permutation_set:
+  "\<forall>i\<in>S. i < card S \<Longrightarrow> \<forall>i< card S. i\<in>S"
+  apply (subgoal_tac "S \<subseteq> {..<card S}")
+  apply (rule ccontr, auto)
+  apply (subgoal_tac "S \<noteq> {..<card S}")
+  apply (drule psubsetI, simp)
+  apply (cut_tac A=S and B="{..<card S}" in psubset_card_mono, auto)
+done
 
 end

@@ -105,7 +105,23 @@ proof Isa e_dsh_dsh_subtype_constr
  sorry
 end-proof
 
+proof Isa e_dsh_dsh_subtype_constr1
+ sorry
+end-proof
+
+proof Isa e_dsh_dsh_subtype_constr2
+ sorry
+end-proof
+
 proof Isa e_dsh_subtype_constr
+ sorry
+end-proof
+
+proof Isa e_dsh_subtype_constr1
+ sorry
+end-proof
+
+proof Isa e_dsh_subtype_constr2
  sorry
 end-proof
 
@@ -122,20 +138,28 @@ op [a,b] fromFunction (f: a -> b) : TotalMap(a,b) = fn (x,y) -> y = f x
 
 op toFunction : [a,b] TotalMap(a,b) -> (a -> b) = inverse fromFunction
 
-proof Isa fromFunction_Obligation_subtype
- sorry
-end-proof
-
-proof Isa fromFunction_Obligation_subtype0
- sorry
-end-proof
-
 proof Isa fromFunction_subtype_constr
- by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype0)
+ sorry
 end-proof
 
 proof Isa fromFunction_subtype_constr1
- by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype)
+ sorry
+end-proof
+
+proof Isa fromFunction_subtype_constr2
+ sorry
+end-proof
+
+proof Isa fromFunction_subtype_constr3
+ sorry
+end-proof
+
+proof Isa fromFunction_subtype_constr4
+ sorry
+end-proof
+
+proof Isa toFunction__stp_Obligation_subtype
+ sorry
 end-proof
 
 proof Isa toFunction_Obligation_subtype
@@ -149,12 +173,20 @@ op [a,b] fromPartialFun (f: a -> Option b) : Map(a,b) =
 
 op toPartialFun : [a,b] Map(a,b) -> (a -> Option b) = inverse fromPartialFun
 
-proof Isa fromPartialFun_Obligation_subtype
+proof Isa fromPartialFun_subtype_constr
  sorry
 end-proof
 
-proof Isa fromPartialFun_subtype_constr
- by (simp only: MapAC__fromPartialFun_def MapAC__fromPartialFun_Obligation_subtype)
+proof Isa fromPartialFun_subtype_constr1
+ sorry
+end-proof
+
+proof Isa fromPartialFun_subtype_constr2
+ sorry
+end-proof
+
+proof Isa toPartialFun__stp_Obligation_subtype
+ sorry
 end-proof
 
 proof Isa toPartialFun_Obligation_subtype

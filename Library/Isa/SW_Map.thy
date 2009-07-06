@@ -228,10 +228,6 @@ theorem MapAC__update_subtype_constr:
   "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
    Relation__functional_p (MapAC__update m x y)"
    sorry
-theorem MapAC__e_dsh_dsh_Obligation_subtype: 
-  "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p (m restrictDomain - xS)"
-   sorry
 consts e_dsh_dsh_m :: " ('a, 'b)Relation__Map \<Rightarrow> 
                        'a set \<Rightarrow>  ('a, 'b)Relation__Map"	(infixl "--'_m" 65)
 defs e_dsh_dsh_m_def: "(m --_m xS) \<equiv> (m restrictDomain - xS)"
@@ -239,12 +235,43 @@ theorem MapAC__e_dsh_dsh_subtype_constr:
   "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
    Relation__functional_p ((m:: ('a, 'b)Relation__Map) --_m (xS::'a set))"
    sorry
+theorem MapAC__e_dsh_dsh_subtype_constr1: 
+  "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P P__a xS\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p__stp(P__a, P__b)
+      (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+          ((m:: ('a, 'b)Relation__Relation) --_m xS))"
+   sorry
+theorem MapAC__e_dsh_dsh_subtype_constr2: 
+  "\<lbrakk>Relation__functional_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) (m::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P P__a xS\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+      ((m:: ('a, 'b)Relation__Relation) --_m xS)"
+   sorry
 consts mless :: " ('a, 'b)Relation__Map \<Rightarrow> 'a \<Rightarrow>  ('a, 'b)Relation__Map"	(infixl "mless" 65)
 defs mless_def [simp]: 
   "((m:: ('a, 'b)Relation__Map) mless x) \<equiv> (m --_m Set__single x)"
 theorem MapAC__e_dsh_subtype_constr: 
   "\<lbrakk>Relation__functional_p m\<rbrakk> \<Longrightarrow> 
    Relation__functional_p ((m:: ('a, 'b)Relation__Map) mless (x::'a))"
+   sorry
+theorem MapAC__e_dsh_subtype_constr1: 
+  "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    P__a (x::'a)\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p__stp(P__a, P__b)
+      (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+          ((m:: ('a, 'b)Relation__Relation) mless x))"
+   sorry
+theorem MapAC__e_dsh_subtype_constr2: 
+  "\<lbrakk>Relation__functional_p__stp((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool))
+       (m::('a \<times> 'b) set); 
+    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    P__a (x::'a)\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+      ((m:: ('a, 'b)Relation__Relation) mless x)"
    sorry
 consts MapAC__agree_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                 ('a, 'b)Relation__Relation
@@ -264,22 +291,43 @@ defs MapAC__agree_p_def:
      \<equiv> (\<lambda> ((m1:: ('a, 'b)Relation__Map), (m2:: ('a, 'b)Relation__Map)). 
           Relation__functional_p (m1 \<union> m2))"
 types  ('a,'b)MapAC__TotalMap = " ('a, 'b)Relation__Map"
-theorem MapAC__fromFunction_Obligation_subtype: 
-  "Relation__functional_p
-      (\<lambda> ((x::'a), (y::'b)). y = (f::'a \<Rightarrow> 'b) x)"
-   sorry
-theorem MapAC__fromFunction_Obligation_subtype0: 
-  "Relation__total_p (\<lambda> ((x::'a), (y::'b)). y = (f::'a \<Rightarrow> 'b) x)"
-   sorry
 consts MapAC__fromFunction :: "('a \<Rightarrow> 'b) \<Rightarrow>  ('a, 'b)MapAC__TotalMap"
 defs MapAC__fromFunction_def: 
   "MapAC__fromFunction f \<equiv> (\<lambda> ((x::'a), (y::'b)). y = f x)"
 theorem MapAC__fromFunction_subtype_constr: 
   "Relation__total_p (MapAC__fromFunction f)"
-   by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype0)
+   sorry
 theorem MapAC__fromFunction_subtype_constr1: 
   "Relation__functional_p (MapAC__fromFunction f)"
-   by (simp only: MapAC__fromFunction_def MapAC__fromFunction_Obligation_subtype)
+   sorry
+theorem MapAC__fromFunction_subtype_constr2: 
+  "\<lbrakk>Fun_P(P__a, P__b) f\<rbrakk> \<Longrightarrow> 
+   Relation__total_p__stp(P__a, P__b) (MapAC__fromFunction f)"
+   sorry
+theorem MapAC__fromFunction_subtype_constr3: 
+  "\<lbrakk>Fun_P(P__a, P__b) f\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p__stp(P__a, P__b)
+      (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+          (MapAC__fromFunction f))"
+   sorry
+theorem MapAC__fromFunction_subtype_constr4: 
+  "\<lbrakk>Fun_P(P__a, P__b) f\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) (MapAC__fromFunction f)"
+   sorry
+theorem MapAC__toFunction__stp_Obligation_subtype: 
+  "Function__bijective_p__stp
+     (Fun_P(P__a, P__b), 
+      Relation__total_p__stp(P__a, P__b) 
+        &&& (Relation__functional_p__stp(P__a, P__b) 
+           &&& Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)))
+      MapAC__fromFunction"
+   sorry
+consts MapAC__toFunction__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
+                                   ('a, 'b)Relation__Relation \<Rightarrow> 'a \<Rightarrow> 'b"
+defs MapAC__toFunction__stp_def: 
+  "MapAC__toFunction__stp
+     \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
+          Function__inverse__stp (Fun_P(P__a, P__b)) MapAC__fromFunction)"
 theorem MapAC__toFunction_Obligation_subtype: 
   "Function__bijective_p__stp
      (TRUE, Relation__total_p &&& Relation__functional_p) MapAC__fromFunction"
@@ -287,17 +335,39 @@ theorem MapAC__toFunction_Obligation_subtype:
 consts MapAC__toFunction :: " ('a, 'b)MapAC__TotalMap \<Rightarrow> 'a \<Rightarrow> 'b"
 defs MapAC__toFunction_def: 
   "MapAC__toFunction \<equiv> inv MapAC__fromFunction"
-theorem MapAC__fromPartialFun_Obligation_subtype: 
-  "Relation__functional_p
-      (\<lambda> ((x::'a), (y::'b)). (f::'a \<Rightarrow> 'b option) x = Some y)"
-   sorry
 consts MapAC__fromPartialFun :: "('a \<Rightarrow> 'b option) \<Rightarrow>  ('a, 'b)Relation__Map"
 defs MapAC__fromPartialFun_def: 
   "MapAC__fromPartialFun f
      \<equiv> (\<lambda> ((x::'a), (y::'b)). f x = Some y)"
 theorem MapAC__fromPartialFun_subtype_constr: 
   "Relation__functional_p (MapAC__fromPartialFun f)"
-   by (simp only: MapAC__fromPartialFun_def MapAC__fromPartialFun_Obligation_subtype)
+   sorry
+theorem MapAC__fromPartialFun_subtype_constr1: 
+  "\<lbrakk>Fun_P(P__a, Option__Option_P P__b) f\<rbrakk> \<Longrightarrow> 
+   Relation__functional_p__stp(P__a, P__b)
+      (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+          (MapAC__fromPartialFun f))"
+   sorry
+theorem MapAC__fromPartialFun_subtype_constr2: 
+  "\<lbrakk>Fun_P(P__a, Option__Option_P P__b) f\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+      (MapAC__fromPartialFun f)"
+   sorry
+theorem MapAC__toPartialFun__stp_Obligation_subtype: 
+  "Function__bijective_p__stp
+     (Fun_P(P__a, Option__Option_P P__b), 
+      Relation__functional_p__stp(P__a, P__b) 
+        &&& Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1))
+      MapAC__fromPartialFun"
+   sorry
+consts MapAC__toPartialFun__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
+                                     ('a, 'b)Relation__Relation \<Rightarrow> 
+                                    'a \<Rightarrow> 'b option"
+defs MapAC__toPartialFun__stp_def: 
+  "MapAC__toPartialFun__stp
+     \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
+          Function__inverse__stp (Fun_P(P__a, Option__Option_P P__b))
+             MapAC__fromPartialFun)"
 theorem MapAC__toPartialFun_Obligation_subtype: 
   "Function__bijective_p__stp(TRUE, Relation__functional_p)
       MapAC__fromPartialFun"

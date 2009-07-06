@@ -1088,21 +1088,13 @@ proof Isa
 end-proof
 
 op div (i:Nat, j:PosNat) infixl 26 : Nat = i divE j
-proof Isa div_Obligation_subtype0
-  apply (simp add: div_signs)
-end-proof
 proof Isa div__def
-  apply (drule_tac i=i in Integer__div_Obligation_subtype0, 
-         auto simp add: nat_eq_iff2 zdiv_int)
+  apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
 end-proof
 
 op mod (i:Nat, j:PosNat) infixl 26 : Nat = i modE j
-proof Isa mod_Obligation_subtype0
-   apply (simp)
-end-proof
 proof Isa mod__def
-  apply (drule_tac i=i in Integer__mod_Obligation_subtype0, 
-         auto simp add: nat_eq_iff2 zmod_int)
+  by (auto simp add: nat_eq_iff2 zmod_int)
 end-proof
 
 % min and max:

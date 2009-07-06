@@ -199,6 +199,10 @@ proof Isa empty_Obligation_subtype0
  sorry
 end-proof
 
+proof Isa empty_subtype_constr
+ sorry
+end-proof
+
 op [a,b] empty? (m: FMap(a,b)) : Bool = empty? (fromFMap m)
 
 op [a,b] nonEmpty? (m: FMap(a,b)) : Bool = nonEmpty? (fromFMap m)
@@ -373,6 +377,10 @@ proof Isa single_Obligation_subtype0
  sorry
 end-proof
 
+proof Isa single_subtype_constr
+ sorry
+end-proof
+
 op [a,b] single? (m: FMap(a,b)) : Bool = single? (fromFMap m)
 
 type SingletonFMap(a,b) = (FMap(a,b) | single?)
@@ -525,6 +533,10 @@ proof Isa fromLists_Obligation_subtype0
 end-proof
 
 proof Isa fromLists_Obligation_subtype1
+ sorry
+end-proof
+
+proof Isa fromLists_subtype_constr
  sorry
 end-proof
 

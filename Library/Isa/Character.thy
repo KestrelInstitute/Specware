@@ -2,7 +2,7 @@ theory Character
 imports SW_Integer Char_nat
 begin
 theorem Char__chr_subtype_constr: 
-  "Function__bijective_p__stp(\<lambda> (n::nat). n < 256, TRUE) Char__chr"
+  "Function__bijective_p__stp(\<lambda> (n::nat). n < 256, TRUE) char_of_nat"
    apply (auto simp add: bij_on_def inj_on_def surj_on_def mem_def Bex_def)
  apply (rule_tac s="nat_of_char (char_of_nat x)" in ssubst)
  apply (simp add: nat_of_char_of_nat,
@@ -11,14 +11,15 @@ theorem Char__chr_subtype_constr:
  apply (simp add: char_of_nat_of_char)
   done
 theorem Char__chr_subtype_constr1: 
-  "Fun_PD (\<lambda> (n::nat). n < 256) Char__chr"
+  "Fun_PD (\<lambda> (n::nat). n < 256)
+      (RFun (\<lambda> (n::nat). n < 256) char_of_nat)"
   by auto
 theorem Char__ord_subtype_constr: 
   "Function__bijective_p__stp(TRUE, \<lambda> (n::nat). n < 256) nat_of_char"
    apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)
- apply(rule_tac s="char_of_nat (nat_of_char  x)" in ssubst)
- apply(simp add: char_of_nat_of_char,
-       thin_tac "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
+ apply (rule_tac s="char_of_nat (nat_of_char x)" in ssubst)
+ apply (simp add: char_of_nat_of_char,
+        thin_tac  "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
  apply (rule_tac x="char_of_nat y" in exI)
  apply (simp add: nat_of_char_of_nat)
   done
@@ -27,12 +28,10 @@ theorem Char__ord_subtype_constr1:
   by auto
 theorem Char__ord__def: 
   "nat_of_char 
-     = Function__inverse__stp (\<lambda> (n::nat). n < 256) Char__chr"
-   apply (insert Char__chr_subtype_constr, 
-        simp add: Function__inverse__stp_simp bij_on_def Ball_def mem_def, 
-        clarify, thin_tac "surj_on ?f ?A ?B")
+     = Function__inverse__stp (\<lambda> (n::nat). n < 256) char_of_nat"
+   apply (cut_tac Char__chr_subtype_constr, simp add: Function__inverse__stp_simp )
  apply (rule ext)
- apply (rule inv_on_f_eq, auto simp add: mem_def char_of_nat_of_char)
+ apply (rule inv_on_f_eq, auto simp add: bij_on_def mem_def char_of_nat_of_char)
   done
 
 theorem Char_ord_inv:
@@ -81,7 +80,7 @@ consts Char__toUpperCase :: "char \<Rightarrow> char"
 defs Char__toUpperCase_def [simp]: 
   "Char__toUpperCase c
      \<equiv> (if Char__isLowerCase c then 
-          Char__chr
+          char_of_nat
              (nat
                  ((int (nat_of_char c) - int (nat_of_char CHR ''a'')) 
                     + int (nat_of_char CHR ''A'')))
@@ -105,7 +104,7 @@ consts Char__toLowerCase :: "char \<Rightarrow> char"
 defs Char__toLowerCase_def [simp]: 
   "Char__toLowerCase c
      \<equiv> (if Char__isUpperCase c then 
-          Char__chr
+          char_of_nat
              (nat
                  ((int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
                     + int (nat_of_char CHR ''a'')))

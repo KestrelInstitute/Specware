@@ -7,7 +7,13 @@ consts FSet__toFSet :: "'a Set__FiniteSet \<Rightarrow> 'a FSet__FSet"
 axioms FSet__toFSet_subtype_constr: 
   "Function__bijective_p__stp(finite, TRUE) FSet__toFSet"
 axioms FSet__toFSet_subtype_constr1: 
-  "Fun_PD finite FSet__toFSet"
+  "Fun_PD finite (RFun finite FSet__toFSet)"
+axioms FSet__toFSet_subtype_constr2: 
+  "Function__bijective_p__stp(Set__finite_p__stp P__a, TRUE) FSet__toFSet"
+axioms FSet__toFSet_subtype_constr3: 
+  "Fun_P
+     (Set__finite_p__stp P__a &&& Set_P P__a, FSet__FSet_P P__a)
+      (RFun (Set__finite_p__stp P__a &&& Set_P P__a) FSet__toFSet)"
 consts FSet__fromFSet__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a set"
 defs FSet__fromFSet__stp_def: 
   "FSet__fromFSet__stp P__a
@@ -165,9 +171,11 @@ theorem FSet__e_ast__stp_Obligation_subtype:
     Set_P (\<lambda> ((xp0::'a), (xp1::'b)). P__a xp0 \<and> P__b xp1)
        (FSet__fromFSet__stp P__a s1 
           <*> FSet__fromFSet__stp P__b s2)\<rbrakk> \<Longrightarrow> 
-   finite
-      (FSet__fromFSet__stp P__a s1 
-         <*> FSet__fromFSet__stp P__b s2)"
+   Set__finite_p__stp
+      (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+      (RSet (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+          (FSet__fromFSet__stp P__a s1 
+             <*> FSet__fromFSet__stp P__b s2))"
    sorry
 consts FSet__e_ast__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                             'a FSet__FSet \<times> 'b FSet__FSet \<Rightarrow> 
@@ -191,9 +199,10 @@ theorem FSet__power__stp_Obligation_subtype:
     Set_P (FSet__FSet_P P__a)
        (Set__map FSet__toFSet
            (Set__power__stp P__a (FSet__fromFSet__stp P__a s)))\<rbrakk> \<Longrightarrow> 
-   finite
-      (Set__map FSet__toFSet
-          (Set__power__stp P__a (FSet__fromFSet__stp P__a s)))"
+   Set__finite_p__stp (FSet__FSet_P P__a)
+      (RSet (FSet__FSet_P P__a)
+          (Set__map FSet__toFSet
+              (Set__power__stp P__a (FSet__fromFSet__stp P__a s))))"
    sorry
 consts FSet__power__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                             'a FSet__FSet \<Rightarrow> 'a FSet__FSet FSet__FSet"
@@ -215,6 +224,9 @@ theorem FSet__empty_Obligation_subtype:
   by auto
 consts empty_fset_p :: "'a FSet__FSet"
 defs empty_fset_p_def: "empty_fset_p \<equiv> FSet__toFSet {}"
+theorem FSet__empty_subtype_constr: 
+  "FSet__FSet_P P__a empty_fset_p"
+   sorry
 consts FSet__empty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__empty_p__stp_def: 
   "FSet__empty_p__stp P__a s
@@ -238,6 +250,9 @@ theorem FSet__single_Obligation_subtype:
 consts FSet__single :: "'a \<Rightarrow> 'a FSet__FSet"
 defs FSet__single_def: 
   "FSet__single x \<equiv> FSet__toFSet (Set__single x)"
+theorem FSet__single_subtype_constr: 
+  "\<lbrakk>P__a x\<rbrakk> \<Longrightarrow> FSet__FSet_P P__a (FSet__single x)"
+   sorry
 consts FSet__single_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__single_p__stp_def: 
   "FSet__single_p__stp P__a s
@@ -401,24 +416,27 @@ defs FSet__powerf__stp_def:
 consts FSet__powerf :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet FSet__FSet"
 defs FSet__powerf_def: "FSet__powerf \<equiv> FSet__power"
 theorem FSet__e_fsl_fsl_bsl_bsl__stp_Obligation_subtype0: 
-  "\<lbrakk>FSet__nonEmpty_p (ss::'a FSet__FSet FSet__FSet); 
+  "\<lbrakk>FSet__nonEmpty_p__stp (FSet__FSet_P P__a) ss; 
     FSet__FSet_P (FSet__FSet_P P__a) ss; 
     Set_P P__a
        (\<Inter>
-           (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss)))\<rbrakk> \<Longrightarrow> 
+           (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+               (FSet__fromFSet__stp (FSet__FSet_P P__a) ss)))\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp P__a
       (RSet P__a
           (\<Inter>
-              (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss))))"
+              (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+                  (FSet__fromFSet__stp (FSet__FSet_P P__a) ss))))"
    sorry
 consts FSet__e_fsl_fsl_bsl_bsl__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
-                                        'a FSet__FSet FSet__NonEmptyFSet \<Rightarrow> 
+                                        'a FSet__FSet FSet__FSet \<Rightarrow> 
                                         'a FSet__FSet"
 defs FSet__e_fsl_fsl_bsl_bsl__stp_def: 
   "FSet__e_fsl_fsl_bsl_bsl__stp P__a ss
      \<equiv> FSet__toFSet
           (\<Inter>
-              (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss)))"
+              (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+                  (FSet__fromFSet__stp (FSet__FSet_P P__a) ss)))"
 theorem FSet__e_fsl_fsl_bsl_bsl_Obligation_subtype0: 
   "\<lbrakk>Set__nonEmpty_p (FSet__fromFSet ss)\<rbrakk> \<Longrightarrow> 
    finite
@@ -434,11 +452,13 @@ theorem FSet__e_bsl_bsl_fsl_fsl__stp_Obligation_subtype:
   "\<lbrakk>FSet__FSet_P (FSet__FSet_P P__a) ss; 
     Set_P P__a
        (\<Union>
-           (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss)))\<rbrakk> \<Longrightarrow> 
+           (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+               (FSet__fromFSet__stp (FSet__FSet_P P__a) ss)))\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp P__a
       (RSet P__a
           (\<Union>
-              (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss))))"
+              (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+                  (FSet__fromFSet__stp (FSet__FSet_P P__a) ss))))"
    sorry
 consts FSet__e_bsl_bsl_fsl_fsl__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                         'a FSet__FSet FSet__FSet \<Rightarrow> 
@@ -447,7 +467,8 @@ defs FSet__e_bsl_bsl_fsl_fsl__stp_def:
   "FSet__e_bsl_bsl_fsl_fsl__stp P__a ss
      \<equiv> FSet__toFSet
           (\<Union>
-              (Set__map (FSet__fromFSet__stp P__a) (FSet__fromFSet ss)))"
+              (Set__map__stp (FSet__FSet_P P__a) (FSet__fromFSet__stp P__a)
+                  (FSet__fromFSet__stp (FSet__FSet_P P__a) ss)))"
 theorem FSet__e_bsl_bsl_fsl_fsl_Obligation_subtype: 
   "finite
       (\<Union> (Set__map FSet__fromFSet (FSet__fromFSet ss)))"
@@ -504,11 +525,11 @@ consts FSet__filter :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Ri
 defs FSet__filter_def: 
   "FSet__filter p s \<equiv> FSet__toFSet (FSet__fromFSet s \<inter> p)"
 theorem List__toSet__stp_Obligation_subtype: 
-  "\<lbrakk>List__List_P P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l\<rbrakk> \<Longrightarrow> 
    Set_P P__a (\<lambda> (x::'a). List__in_p__stp P__a(x, l))"
    sorry
 theorem List__toSet__stp_Obligation_subtype0: 
-  "\<lbrakk>List__List_P P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp P__a
       (\<lambda> (x::'a). 
          if P__a x then 
@@ -528,16 +549,19 @@ defs List__toSet_def:
   "List__toSet l \<equiv> FSet__toFSet (\<lambda> (x::'a). x mem l)"
 theorem List__e_fsl_fsl_bsl_bsl__stp_Obligation_subtype: 
   "\<lbrakk>List__nonEmpty_p (ls::'a FSet__FSet list); 
-    List__List_P (FSet__FSet_P P__a) ls; 
-    FSet__FSet_P (FSet__FSet_P P__a) (List__toSet ls)\<rbrakk> \<Longrightarrow> 
-   FSet__nonEmpty_p (List__toSet ls)"
+    list_all (FSet__FSet_P P__a) ls; 
+    FSet__FSet_P (FSet__FSet_P P__a)
+       (List__toSet__stp (FSet__FSet_P P__a) ls)\<rbrakk> \<Longrightarrow> 
+   FSet__nonEmpty_p__stp (FSet__FSet_P P__a)
+      (List__toSet__stp (FSet__FSet_P P__a) ls)"
    sorry
 consts List__e_fsl_fsl_bsl_bsl__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                         'a FSet__FSet List__List1 \<Rightarrow> 
                                         'a FSet__FSet"
 defs List__e_fsl_fsl_bsl_bsl__stp_def: 
   "List__e_fsl_fsl_bsl_bsl__stp P__a ls
-     \<equiv> FSet__e_fsl_fsl_bsl_bsl__stp P__a (List__toSet ls)"
+     \<equiv> FSet__e_fsl_fsl_bsl_bsl__stp P__a
+          (List__toSet__stp (FSet__FSet_P P__a) ls)"
 theorem List__e_fsl_fsl_bsl_bsl_Obligation_subtype: 
   "\<lbrakk>(ls::'a FSet__FSet list) \<noteq> []\<rbrakk> \<Longrightarrow> 
    FSet__nonEmpty_p (List__toSet ls)"
@@ -550,7 +574,8 @@ consts List__e_bsl_bsl_fsl_fsl__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
                                         'a FSet__FSet list \<Rightarrow> 'a FSet__FSet"
 defs List__e_bsl_bsl_fsl_fsl__stp_def: 
   "List__e_bsl_bsl_fsl_fsl__stp P__a ls
-     \<equiv> FSet__e_bsl_bsl_fsl_fsl__stp P__a (List__toSet ls)"
+     \<equiv> FSet__e_bsl_bsl_fsl_fsl__stp P__a
+          (List__toSet__stp (FSet__FSet_P P__a) ls)"
 consts List__e_bsl_bsl_fsl_fsl :: "'a FSet__FSet list \<Rightarrow> 'a FSet__FSet"
 defs List__e_bsl_bsl_fsl_fsl_def: 
   "List__e_bsl_bsl_fsl_fsl ls

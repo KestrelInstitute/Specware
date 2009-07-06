@@ -52,12 +52,15 @@ defs Order__linearOrder_p_def:
           \<and> (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<or> (y, x) \<in> r))"
 types 'a Order__LinearOrder = "'a EndoRelation__EndoRelation"
 theorem Order__orderSubsumption__stp: 
-  "Order__linearOrder_p__stp P__a 
-     \<subseteq> Order__weakOrder_p__stp P__a 
-     \<and> (Order__weakOrder_p__stp P__a 
-          \<subseteq> Order__partialOrder_p__stp P__a 
-      \<and> Order__partialOrder_p__stp P__a 
-          \<subseteq> Order__preOrder_p__stp P__a)"
+  "Set__e_lt_eq__stp
+      (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+     (Order__linearOrder_p__stp P__a, Order__weakOrder_p__stp P__a) 
+     \<and> (Set__e_lt_eq__stp
+           (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+          (Order__weakOrder_p__stp P__a, Order__partialOrder_p__stp P__a) 
+      \<and> Set__e_lt_eq__stp
+           (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+          (Order__partialOrder_p__stp P__a, Order__preOrder_p__stp P__a))"
    sorry
 theorem Order__orderSubsumption: 
   "Order__linearOrder_p \<subseteq> Order__weakOrder_p 
@@ -114,10 +117,6 @@ consts Order__strictLinearOrder_p :: "'a EndoRelation__EndoRelation \<Rightarrow
 defs Order__strictLinearOrder_p_def: 
   "Order__strictLinearOrder_p \<equiv> Order__strict Order__linearOrder_p"
 types 'a Order__StrictLinearOrder = "'a EndoRelation__EndoRelation"
-theorem Order__strictify_Obligation_subtype: 
-  "\<lbrakk>EndoRelation__reflexive_p r\<rbrakk> \<Longrightarrow> 
-   EndoRelation__irreflexive_p (r - EndoRelation__id)"
-   sorry
 consts Order__strictify :: "'a EndoRelation__ReflexiveRelation \<Rightarrow> 
                             'a EndoRelation__IrreflexiveRelation"
 defs Order__strictify_def: 
@@ -125,6 +124,16 @@ defs Order__strictify_def:
 theorem Order__strictify_subtype_constr: 
   "\<lbrakk>EndoRelation__reflexive_p r\<rbrakk> \<Longrightarrow> 
    EndoRelation__irreflexive_p (Order__strictify r)"
+   sorry
+theorem Order__strictify_subtype_constr1: 
+  "\<lbrakk>EndoRelation__reflexive_p__stp P__a r; 
+    Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
+   EndoRelation__irreflexive_p__stp P__a (Order__strictify r)"
+   sorry
+theorem Order__strictify_subtype_constr2: 
+  "\<lbrakk>EndoRelation__reflexive_p__stp (P__a::'a \<Rightarrow> bool) r; 
+    Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
+   Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (Order__strictify r)"
    sorry
 theorem Order__unstrictify__stp_Obligation_subtype: 
   "Function__bijective_p__stp

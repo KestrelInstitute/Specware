@@ -112,7 +112,11 @@ proof Isa power_Obligation_subtype
 end-proof
 
 op empty : [a] FSet a = toFSet empty
-proof Isa -> empty_fset? end-proof
+proof Isa -> empty_fset_p end-proof
+
+proof Isa empty_subtype_constr
+ sorry
+end-proof
 
 op [a] empty? (s: FSet a) : Bool = empty? (fromFSet s)
 
@@ -121,6 +125,10 @@ op [a] nonEmpty? (s: FSet a) : Bool = nonEmpty? (fromFSet s)
 type NonEmptyFSet a = (FSet a | nonEmpty?)
 
 op [a] single (x:a) : FSet a = toFSet (single x)
+
+proof Isa single_subtype_constr
+ sorry
+end-proof
 
 op [a] single? (s: FSet a) : Bool = single? (fromFSet s)
 

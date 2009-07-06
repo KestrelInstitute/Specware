@@ -69,32 +69,28 @@ defs Boolean__show_def:
 fun Nat__digitToString :: "nat \<Rightarrow> string"
 where
    "Nat__digitToString 0 = ''0''"
- | "Nat__digitToString (Suc d) 
-      = (if d + 1 = 1 then 
-           ''1''
-         else 
-           if d + 1 = 2 then 
-             ''2''
-           else 
-             if d + 1 = 3 then 
-               ''3''
-             else 
-               if d + 1 = 4 then 
-                 ''4''
-               else 
-                 if d + 1 = 5 then 
-                   ''5''
-                 else 
-                   if d + 1 = 6 then 
-                     ''6''
-                   else 
-                     if d + 1 = 7 then 
-                       ''7''
-                     else 
-                       if d + 1 = 8 then 
-                         ''8''
-                       else 
-                         if d + 1 = 9 then ''9'' else regular_val)"
+ | "Nat__digitToString (Suc 0) = ''1''"
+ | "Nat__digitToString (Suc (Suc 0)) = ''2''"
+ | "Nat__digitToString (Suc (Suc (Suc 0))) = ''3''"
+ | "Nat__digitToString (Suc (Suc (Suc (Suc 0)))) = ''4''"
+ | "Nat__digitToString (Suc (Suc (Suc (Suc (Suc 0))))) 
+      = ''5''"
+ | "Nat__digitToString
+       (Suc (Suc (Suc (Suc (Suc (Suc 0)))))) 
+      = ''6''"
+ | "Nat__digitToString
+       (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) 
+      = ''7''"
+ | "Nat__digitToString
+       (Suc
+           (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0)))))))) 
+      = ''8''"
+ | "Nat__digitToString
+       (Suc
+           (Suc
+               (Suc
+                   (Suc (Suc (Suc (Suc (Suc (Suc 0))))))))) 
+      = ''9''"
 
 lemma Nat__digitToString_singleton:
  "x<10 \<Longrightarrow> \<exists>(a::char). Nat__digitToString x = [a]"

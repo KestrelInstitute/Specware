@@ -41,8 +41,8 @@ end-proof
 op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
   fn iso_elem -> mapOption iso_elem
 
-proof Isa isoOption_Obligation_subtype
- apply(simp add: bij_def, auto) 
+proof Isa isoOption_subtype_constr
+ apply(simp add: Option__isoOption_def bij_def, auto)
  (** first subgoal **)
  apply(simp add: inj_on_def option_map_def, auto)
  apply (simp split: option.split_asm)
@@ -53,11 +53,28 @@ proof Isa isoOption_Obligation_subtype
  apply (simp split: option.split)
  (** subgoal 2.2 needs some guidance   **)
  apply (drule_tac x = "a" in  spec, auto)
- apply (rule_tac x="Some x" in exI, auto)
+ apply (rule_tac x="Some x" in exI, auto)  
 end-proof
 
-proof Isa isoOption_subtype_constr
- apply(simp add: Option__isoOption_def  Option__isoOption_Obligation_subtype)
+proof Isa isoOption_subtype_constr1
+ apply(simp add: bij_ON_def Option__isoOption_def, auto) 
+ (** first subgoal **)
+ apply(simp add: inj_on_def option_map_def, auto)
+ apply (simp split: option.split_asm add: Option__Option_P.simps mem_def)
+ (** second subgoal **)
+ apply(simp add:surj_on_def option_map_def, auto)
+ apply (simp add: Option__Option_P.simps mem_def)
+ apply (rule_tac P="y = None" in case_split_thm, auto)
+ (** subgoal 2.1    **)
+ apply (rule_tac x="None" in bexI, simp, simp add: mem_def)
+ (** subgoal 2.2 needs some guidance   **)
+ apply (drule_tac x = "ya" in  bspec, auto simp add: mem_def)
+ apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
+end-proof
+
+proof Isa Option__isoOption_subtype_constr2
+  apply(simp add: Option__isoOption_def, auto)
+  apply (rule_tac P="x = None" in case_split_thm, auto)
 end-proof
 
 % mapping to Isabelle:

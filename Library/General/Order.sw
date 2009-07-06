@@ -74,6 +74,14 @@ proof Isa strictify_subtype_constr
  sorry
 end-proof
 
+proof Isa strictify_subtype_constr1
+ sorry
+end-proof
+
+proof Isa strictify_subtype_constr2
+ sorry
+end-proof
+
 op unstrictify : [a] IrreflexiveRelation a -> ReflexiveRelation a =
   inverse strictify
 
