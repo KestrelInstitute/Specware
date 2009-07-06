@@ -409,6 +409,7 @@ I2LToC qualifying spec {
       | "String" -> Ptr(Char)
       | "Float" -> Float
       | "Boolean" -> Int
+      | "Bool" -> Int
       | _ -> System.fail("no such primitive type: \""^s^"\"")
 
 
