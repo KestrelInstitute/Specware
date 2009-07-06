@@ -327,6 +327,7 @@
 	   ((gen-obligations gen-oblig gen-obligs)
 	    (let ((TypeObligations::generateTerminationConditions? nil)
 		  (TypeObligations::generateExhaustivityConditions? nil)
+                  (TypeObligations::omitDefSubtypeConstrs? t)
 		  (Prover::treatNatSpecially? nil)
 		  (uid (if (not (null argstr))
 			   argstr
