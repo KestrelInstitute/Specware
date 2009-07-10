@@ -76,7 +76,7 @@ NormTypes qualifying spec
     in
     foldl (fn (spc,el) \_rightarrow
            case el of
-             | OpDef(qid,_) \_rightarrow normDef(qid, map_fns, spc)
+             | OpDef(qid,_,_) \_rightarrow normDef(qid, map_fns, spc)
              | Op(qid,true,_) \_rightarrow normDef(qid, map_fns, spc)
              %| SortDef(qid,_) \_rightarrow normSortDef(qid, map_fns, spc)
              | _ \_rightarrow spc)

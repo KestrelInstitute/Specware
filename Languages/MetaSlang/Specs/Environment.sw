@@ -122,6 +122,15 @@ spec
          else stripRangeSubsorts (sp, uf_srt)
      | _ -> srt
    
+ op booleanType?(spc: Spec, ty: Sort): Boolean =
+   case ty of
+     | Boolean _ -> true
+     | Base _ ->
+       (case tryUnfoldBase spc ty of
+          | Some uf_ty -> booleanType?(spc, uf_ty)
+          | None -> false)
+     | _ -> false
+
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
@@ -234,6 +243,7 @@ spec
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
      | SortedTerm (_, srt,               _) -> srt
      | Any a                                -> Any a
+     | And        (t1::_,                _) -> inferType (sp, t1)
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)

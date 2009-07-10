@@ -161,7 +161,7 @@ spec
       | None -> (warn("Can't find op "^anyToString qid);
                  ())
       | Some opinfo ->
-    let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+    let (tvs, ty, dfn) = unpackFirstTerm opinfo.dfn in
     let _ = writeLine(printQualifiedId qid^":") in
     writeLine(printTerm dfn)
 
@@ -202,7 +202,7 @@ spec
       | [] \_rightarrow (warn("No op with name: " ^ printQualifiedId qid);
                          None)
       | [opinfo] \_rightarrow
-        let (tvs, ty, tm) = unpackTerm opinfo.dfn in
+        let (tvs, ty, tm) = unpackFirstTerm opinfo.dfn in
         let qid = primaryOpName opinfo in
         let qid_ref = mkInfixOp(qid, opinfo.fixity, ty) in
         (case arrowOpt(spc, ty) of
@@ -425,7 +425,7 @@ spec
       | Fun(Op(qid,fixity),ty,_) ->
         (case findTheOp(spc, qid) of
            | Some opinfo ->
-             let (tvs, srt as Arrow(dom,ran,_), _) = unpackTerm opinfo.dfn in
+             let (tvs, srt as Arrow(dom,ran,_), _) = unpackFirstTerm opinfo.dfn in
              let uf_dom = unfoldBaseOne(spc, dom) in
              let newtm =
                  case uf_dom of
@@ -672,7 +672,7 @@ spec
     foldriAQualifierMap
       (fn (q, nm, info, result) ->
        let qid = Qualified(q,nm) in
-       let (tvs, op_ty, dfn) = unpackTerm info.dfn in
+       let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in
        if anyTerm? dfn then result
        else
        let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
@@ -695,7 +695,7 @@ spec
       (fn (q, nm, qid_pr, result) ->
        let qid = Qualified(q,nm) in
        let Some info = findTheOp(spc, qid) in
-       let (tvs, op_ty, dfn) = unpackTerm info.dfn in
+       let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in
        let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
        let qid_pr = makePrimedOpQid(qid, spc) in
        let dfn_pr = if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc)
@@ -840,7 +840,7 @@ spec
                             writeLine(printTerm opinfo.dfn))
                       else ()
               in
-              let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+              let (tvs, ty, dfn) = unpackFirstTerm opinfo.dfn in
               let qid as Qualified(q, id) = hd opinfo.names in
               let ((simp_dfn,_),_) =
                   if simplifyIsomorphism?

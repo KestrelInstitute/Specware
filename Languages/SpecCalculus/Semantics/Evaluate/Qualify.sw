@@ -186,7 +186,7 @@ SpecCalc qualifying spec
 		  sp,
 		  qualifySpecElements new_q immune_ids els, a)
       | Op      (qid,def?,a) -> Op      (qualifyOpId   new_q immune_ids qid, def?,a)
-      | OpDef   (qid,a)      -> OpDef   (qualifyOpId   new_q immune_ids qid,a)
+      | OpDef   (qid,refine?,a) -> OpDef   (qualifyOpId   new_q immune_ids qid, refine?,a)
       | Sort    (qid,a)      -> Sort    (qualifySortId new_q qid,a)
       | SortDef (qid,a)      -> SortDef (qualifySortId new_q qid,a)
       | Property (pt, qid, tvs, fmla, a) ->

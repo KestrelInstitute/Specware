@@ -852,39 +852,42 @@ def toAny     = Term `TranslationBasic.toAny`
 	 | {name = id, ident, pattern, domain, freeVars, body, closure}::m_opers -> 
 	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, body) in
 	   % TODO: Real names
-	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, noPos) in
+	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, noPos) in
 	   insertOpers (m_opers, q, r_elts, r_ops)
 
-     def doOp (q, id, info, r_elts, r_ops, decl?, a) = 
+     def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, a) = 
        %let _ = String.writeLine ("lambdaLift \""^id^"\"...") in
        if ~ (definedOpInfo? info)
 	 then addNewOpAux (info << {names = [Qualified (q, id)]},
-			   r_elts, r_ops, decl?, a)
+			   r_elts, r_ops, decl?, refine_num, a)
        else
-	 let (tvs, srt, term) = unpackFirstOpDef info in
+	 let (tvs, srt, full_term) = unpackTerm(info.dfn) in
+         let term = refinedTerm(full_term, refine_num) in
 	 case term of 
 	   | Lambda ([(pat, cond, term)], a) ->
-	     let env = mkEnv (q, id) in
+	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^toString refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     let term = Lambda ([(pat, cond, term)], a) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
-	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
+             let full_term = replaceNthTerm(full_term, refine_num, term) in
+	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, a)
+						r_elts, r_ops, decl?, refine_num, a)
 	     in
 	       insertOpers (rev opers, q, r_elts, r_ops)
 
 	   | _ ->
-	     let env = mkEnv (q, id) in
+	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^toString refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
-	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
+             let full_term = replaceNthTerm(full_term, refine_num, term) in
+	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, a)
+						r_elts, r_ops, decl?, refine_num, a)
 	     in
 	       insertOpers (rev opers, q, r_elts, r_ops)
 
@@ -908,10 +911,10 @@ def toAny     = Term `TranslationBasic.toAny`
 	      newOps)
 	   | Op (Qualified(q,id), true, a) -> % true means decl includes def
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,a))
-	   | OpDef(Qualified(q,id),a) ->
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,a))
+	   | OpDef(Qualified(q,id), refine_num, a) ->
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,a))
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,a))
 	   | Property p -> doProp(p,r_elts,r_ops)
 	   | _ -> (Cons(el,r_elts),r_ops))
 	 result
@@ -933,11 +936,11 @@ def toAny     = Term `TranslationBasic.toAny`
 %   in
 %     addNewOpAux (info, spc)
 
- op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Boolean * a -> ASpecElements a * AOpMap a
- def addNewOpAux (info, elts, ops, decl?, a) =
+ op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Boolean * Nat * a -> ASpecElements a * AOpMap a
+ def addNewOpAux (info, elts, ops, decl?, refine_num, a) =
    let name as Qualified (q, id) = primaryOpName info in
    let new_ops = insertAQualifierMap (ops, q, id, info) in
-   (Cons(if decl? then Op (name,true, a) else OpDef (name, a),elts), new_ops)
+   ((if decl? then Op (name,true, a) else OpDef (name, refine_num, a))::elts, new_ops)
 
 endspec
 

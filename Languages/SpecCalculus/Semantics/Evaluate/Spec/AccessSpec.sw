@@ -16,7 +16,7 @@ def getStringAttributesFromSpec spc =
 	 let defs = opInfoDefs info in
 	 case defs of
 	   | term :: _ ->
-	     (let (_, _, tm) = unpackTerm term in
+	     (let (_, _, tm) = unpackFirstTerm term in
 	      case tm of
 		| Fun (String val,_,_) -> StringMap.insert (map, id, val)
 		| _ -> map)
@@ -49,7 +49,7 @@ def getStringAttributesFromSpec spc =
 	     let defs = opInfoDefs info in
 	     case defs of
 	       | term :: _ ->
-	         (let (_, _, tm) = unpackTerm term in
+	         (let (_, _, tm) = unpackFirstTerm term in
 		  case tm of
 		    | Fun   (String val,      _, _) -> String val
 		    | Fun   (Nat    val,      _, _) -> Nat    val

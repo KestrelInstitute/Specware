@@ -409,7 +409,7 @@
   ;;  7 optional-def 
   ;;  8 l 
   ;;  9 r
-  (make-op-elem 1 2 3 4 5 6 7 ':left-lcb ':right-lcb))
+  (make-op-elem 1 2 3 4 5 6 7 :unspecified ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
@@ -451,12 +451,13 @@ If we want the precedence to be optional:
 ;;;  TODO: In doc: op-definition now uses qualified name, not just name
 ;;;  TODO: In code: compare op-definition with doc
 (define-sw-parser-rule :OP-DEFINITION ()
-  (:tuple "def"
+  (:tuple (8 (:optional "refine"))
+          "def"
           (:optional (3 :SORT-VARIABLE-BINDER))
           (1 :QUALIFIABLE-OP-NAMES)
           (6 :FORMAL-PARAMETERS)
           (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
-          :EQUALS
+          "="
           (7 :EXPRESSION))
   ;; args to make-op-elem are: 
   ;;  1 qualifiable-op-names 
@@ -468,7 +469,7 @@ If we want the precedence to be optional:
   ;;  7 optional-def 
   ;;  8 l 
   ;;  9 r
-  (make-op-elem 1 :unspecified 3 4 5 6 7 ':left-lcb ':right-lcb))
+  (make-op-elem 1 :unspecified 3 4 5 6 7 8 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
   (:repeat* :FORMAL-PARAMETER))

@@ -261,7 +261,7 @@ spec
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = mapTermTop info})
                                    | None \_rightarrow ops)
-                               | OpDef (qid as Qualified(q,id), _) \_rightarrow
+                               | OpDef (qid as Qualified(q,id), _, _) \_rightarrow
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info \_rightarrow
                                      insertAQualifierMap (ops, q, id,

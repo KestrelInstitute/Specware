@@ -563,13 +563,20 @@ spec
                     (Cons(Property(ty, qid, tvs, simplify spc tm, a), elts), ops)
                   | Op(qid as Qualified(q,id), true, _) ->
                     let Some info = findTheOp(spc, qid) in
-                    (Cons(elt, elts),
+                    (elt :: elts,
                      insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
-                  | OpDef(qid as Qualified(q,id), _) ->
-                    let Some info = findTheOp(spc, qid) in
-                    (Cons(elt, elts),
-                     insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
-                  | _ -> (Cons(elt, elts), ops))
+                  | OpDef(qid as Qualified(q,id), refine_num, _) ->
+                    (case findTheOp(spc, qid) of
+                       | None -> fail("Can't find def of op "^printQualifiedId qid)
+                       | Some info ->
+                     (elt :: elts,
+                      let (tvs, ty, full_dfn) = unpackTerm info.dfn in
+                      let dfn = refinedTerm(full_dfn, refine_num) in
+                      let simp_dfn = simplify spc dfn in
+                      let full_dfn = replaceNthTerm(full_dfn, refine_num, simp_dfn) in
+                      let new_dfn = maybePiTerm (tvs, SortedTerm (full_dfn, ty, termAnn dfn)) in
+                      insertAQualifierMap(ops, q, id, info << {dfn = new_dfn})))
+                  | _ -> (elt :: elts, ops))
          ([], spc.ops) spc.elements
    in
    spc << {ops = new_ops, elements = new_elts}

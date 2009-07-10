@@ -411,11 +411,50 @@ IsaTermPrinter qualifying spec
     let newelements = foldr (fn (el, elts) \_rightarrow
                               case el of
                                 | Op(qid, true, _) \_rightarrow maybeAddTheoremForDef(qid, el) ++ elts
-                                | OpDef(qid, _) \_rightarrow maybeAddTheoremForDef(qid, el) ++ elts
+                                | OpDef(qid, 0, _) \_rightarrow maybeAddTheoremForDef(qid, el) ++ elts
                                 | _ \_rightarrow el::elts)
                         [] spc.elements
     in
     spc \_guillemotleft {elements = newelements}
+
+  op renameRefinedDef(names: List QualifiedId, dfn: MS.Term, refine_num: Nat)
+     : List QualifiedId * MS.Term =
+    (map (refinedQID refine_num) names,
+     mapTerm (fn t -> case t of
+                       | Fun(Op(qid, inf), ty, a) | qid in? names ->
+                         Fun(Op(refinedQID refine_num qid, inf), ty, a)
+                       | _ -> t,
+              id, id)
+       dfn)
+
+  op addRefineObligations(spc: Spec): Spec =
+    %% Add equality obligations for refined ops
+    let (newelements, ops) =
+        foldr (fn (el, (elts, ops)) \_rightarrow
+                 case el of
+                   | OpDef(qid as Qualified(q,id), refine_num, _) | refine_num > 0 \_rightarrow
+                     let Some opinfo = AnnSpec.findTheOp(spc, qid) in
+                     let mainId = head opinfo.names in
+                     let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
+                     let (tvs, ty, full_dfn) = unpackTerm opinfo.dfn in
+                     let dfn = refinedTerm(full_dfn, refine_num) in
+                     let (new_names, new_dfn) = renameRefinedDef(opinfo.names, dfn, refine_num) in
+                     let full_dfn = replaceNthTerm(full_dfn, refine_num, new_dfn) in
+                     let new_dfn = maybePiTerm (tvs, SortedTerm (full_dfn, ty, termAnn dfn)) in
+                     let new_opinfo = opinfo << {%names = new_names,
+                                                 dfn   = new_dfn}
+                     in
+                     let ops = insertAQualifierMap (ops, q, id, new_opinfo) in
+                     %% Make equality obligations
+                     let eq_tm = mkEquality(ty, mkOp(mainId, ty), mkOp(refId, ty)) in
+                     let thm_name = nm^"__"^"obligation_refine_def" in
+                     let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
+                     (el::eq_oblig::elts, ops)
+                   | _ \_rightarrow (el::elts, ops))
+           ([], spc.ops) spc.elements
+    in
+    spc \_guillemotleft {elements = newelements,
+           ops      = ops}
 
   op maybeExpandRecordPattern(spc: Spec) (t: MS.Term): MS.Term =
     case t of
@@ -437,7 +476,6 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
-    % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists (fn el ->
@@ -469,6 +507,7 @@ IsaTermPrinter qualifying spec
     in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
+    let spc = addRefineObligations spc in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec spc
 	       else spc
@@ -484,6 +523,7 @@ IsaTermPrinter qualifying spec
                 then simplifyTopSpec spc
                 else spc
     in
+    % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
 		  [prString "begin"],
@@ -639,7 +679,7 @@ IsaTermPrinter qualifying spec
   def normalizeSpecElements elts =
     case elts of
       | [] \_rightarrow []
-      | (Op (qid1, false, a)) :: (OpDef (qid2,_)) :: rst | qid1 = qid2 \_rightarrow
+      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _)) :: rst | qid1 = qid2 \_rightarrow
         Cons(Op(qid1, true, a), normalizeSpecElements rst)
       | x::rst \_rightarrow Cons(x, normalizeSpecElements rst)
 
@@ -652,15 +692,16 @@ IsaTermPrinter qualifying spec
 	(case AnnSpec.findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} \_rightarrow
 	     ppOpInfo c true def? elems opt_prag
-               (names, fixity, dfn)  % TODO: change  op_with_def?  to  def? -- no one looks at it??
+               names fixity 0 dfn  % TODO: change  op_with_def?  to  def? -- no one looks at it??
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef(qid as Qualified(_,nm),_) \_rightarrow
+      | OpDef(qid as Qualified(_,nm), refine_num, _) \_rightarrow
 	(case AnnSpec.findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} \_rightarrow
-	     ppOpInfo c false true elems opt_prag (names, fixity, dfn)
+             let names = map (refinedQID refine_num) names in
+	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
@@ -882,7 +923,10 @@ IsaTermPrinter qualifying spec
                           | Some pati_tm \_rightarrow
                             let pati_tm = expandNatToSucc pati_tm in
                             let sbst = [(v, pati_tm)] in
-                            let new_cases = aux_case(substitute(hd, sbst), substitute(bodi, sbst)) in
+                            let s_bodi = if hasVarNameConflict?(pati_tm, [v]) then bodi
+                                          else substitute(bodi, sbst)
+                            in
+                            let new_cases = aux_case(substitute(hd, sbst), s_bodi) in
                             (cases ++ new_cases)
                           | _ \_rightarrow
                             let new_cases = aux_case(hd, bodi) in
@@ -910,7 +954,8 @@ IsaTermPrinter qualifying spec
                      in
                      if length sbst ~= length rpats then None
                      else
-                     Some(substitute(hd, sbst), substitute(bod, sbst))
+                     let bod_sbst = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sbst in
+                     Some(substitute(hd, sbst), substitute(bod, bod_sbst))
                    | VarPat(v, _) \_rightarrow Some(hd, substitute(bod, [(v, arg)]))
                    | WildPat _ \_rightarrow Some(hd, bod)
                    | AliasPat(VarPat(v, _), p2, _) \_rightarrow matchPat(p2, cnd, substitute(bod, [(v, arg)]))
@@ -923,8 +968,11 @@ IsaTermPrinter qualifying spec
              else [(hd, bod)]
          | Let([(pat, Var(v,_))], bod, a) | member(v, freeVars hd) \_rightarrow
            (case patToTerm(pat, "",  c) of
-              | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
-                                   substitute(bod,[(v,pat_tm)]))
+              | Some pat_tm \_rightarrow
+                let s_bod = if hasVarNameConflict?(pat_tm, [v]) then bod
+                            else substitute(bod,[(v,pat_tm)])
+                in
+                aux(substitute(hd, [(v,pat_tm)]), s_bod)
               | None \_rightarrow [(hd, bod)])
          | IfThenElse(Apply(Fun(Equals, _,_),
                             Record([("1", vr as Var(v as (vn,s),_)),
@@ -960,7 +1008,8 @@ IsaTermPrinter qualifying spec
        let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
        if rename_fvs = [] then (hd,bod)
          else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
-              (substitute(hd,sb), substitute(bod,sb))
+              let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
+              (substitute(hd,sb), substitute(bod,bod_sb))
    in
    case bod of
      | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow
@@ -1060,9 +1109,10 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                then []
                                else [[prString "done",prEmpty]])))
 
-op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma \_rightarrow Aliases \_times Fixity \_times MS.Term
-                \_rightarrow Pretty
-def ppOpInfo c decl? def? elems opt_prag (aliases, fixity, dfn) =
+op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
+                  \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
+                  \_rightarrow Pretty
+def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   %% Doesn't handle multi aliases correctly
   let c = c << {newVarCount = Ref 0} in
   let mainId = hd aliases in
@@ -1077,10 +1127,12 @@ def ppOpInfo c decl? def? elems opt_prag (aliases, fixity, dfn) =
              | None -> fixity)
         | _ \_rightarrow (false, mainId, fixity)
   in
-  let (tvs, ty, term) = unpackTerm dfn in
   if no_def?
     then prEmpty
   else
+  let (tvs, ty, term) = if def? then unpackNthTerm(dfn, refine_num)
+                         else unpackTerm(dfn)
+  in
   let aliases = [mainId] in
   if decl? && def? && targetFunctionDefs?
       %% The following conditions are temporary!!
@@ -1349,7 +1401,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      else
                      let pat_tms = map (fn (_,p_tm) \_rightarrow p_tm) sbst in
                      let Apply(hd_hd,_,a) = hd in
-                     Some(Apply(hd_hd,mkTuple pat_tms,a), substitute(bod,sbst))
+                     let bod_sbst = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sbst in
+                     Some(Apply(hd_hd,mkTuple pat_tms,a), substitute(bod,bod_sbst))
                    | VarPat(v,_) \_rightarrow Some(hd,substitute(bod,[(v,arg)]))
                    | WildPat _ \_rightarrow Some(hd,bod)
                    | AliasPat(VarPat(v,_),p2,_) \_rightarrow matchPat(p2,c,substitute(bod,[(v,arg)]))
@@ -1362,9 +1415,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
              else ([(hd,bod)], true)
          | Let([(pat,Var(v,_))],bod,a) | tuple? \_and member(v, freeVars hd) \_rightarrow
            (case patToTerm(pat,"", c) of
-              | Some pat_tm \_rightarrow aux(substitute(hd, [(v,pat_tm)]),
-                                   substitute(bod,[(v,pat_tm)]),
-                                   tuple? || ~(primitiveArg? pat_tm))
+              | Some pat_tm \_rightarrow
+                let s_bod = if hasVarNameConflict?(pat_tm, [v]) then bod
+                            else substitute(bod,[(v,pat_tm)])
+                in
+                aux(substitute(hd, [(v,pat_tm)]),
+                    s_bod,
+                    tuple? || ~(primitiveArg? pat_tm))
               | None \_rightarrow ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod)))
          | IfThenElse(Apply(Fun(Equals, _,_),
                             Record([("1", vr as Var(v as (vn,s),_)),
@@ -1392,7 +1449,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
        if rename_fvs = [] then (hd,bod)
          else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
-              (substitute(hd,sb), substitute(bod,sb))
+              let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
+              (substitute(hd,sb), substitute(bod,bod_sb))
    in
    case bod of
      | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow

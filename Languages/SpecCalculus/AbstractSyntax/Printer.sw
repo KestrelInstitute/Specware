@@ -334,7 +334,8 @@ SpecCalc qualifying spec
      | Import  term                   -> ppConcat [ppString "import ",
 						   ppSep (ppString ", ") (map ppTerm term)]
      | Sort    (aliases, dfn)         -> myppASortInfo (aliases, dfn)
-     | Op      (aliases, fixity, dfn) -> myppAOpInfo   (aliases, fixity, dfn)
+     | Op      (aliases, fixity, refine?, dfn) ->
+       myppAOpInfo(aliases, fixity, refine?, dfn)
      | Claim   (pr, nm, tvs, b)       -> ppAProperty   (pr,nm,tvs,b,a)
      | Comment str                    -> if exists (fn char -> char = #\n) str then
                                            ppConcat [ppString " (* ",
@@ -375,11 +376,11 @@ SpecCalc qualifying spec
 		       ppSep (ppString ",") (map ppString tvs),
 		       ppString ") "]
 
-  op myppAOpInfo : [a] Aliases * Fixity * ATerm a -> Doc
-  def myppAOpInfo (aliases, fixity, dfn) =
+  op myppAOpInfo : [a] Aliases * Fixity * Bool * ATerm a -> Doc
+  def myppAOpInfo (aliases, fixity, refine?, dfn) =
     let (decls, defs) = termDeclsAndDefs dfn in
     ppConcat [ppAOpDecl (aliases, fixity, decls),
-	      ppAOpDefs (aliases, defs)]
+	      ppAOpDefs (aliases, defs, refine?)]
 
   op ppAOpDecl : [a] Aliases * Fixity * List (ATerm a) -> Doc
  def ppAOpDecl (aliases, fixity, dfns) =
@@ -405,12 +406,13 @@ SpecCalc qualifying spec
 			    ppString "] "]),
 	     ppASort srt]
 
-  op ppAOpDefs : [a] Aliases * List (ATerm a) -> Doc
- def ppAOpDefs (aliases, defs) =
+  op ppAOpDefs : [a] Aliases * List (ATerm a) * Bool -> Doc
+ def ppAOpDefs (aliases, defs, refine?) =
    let 
      def pp_def dfn =
        let (tvs, srt, term) = unpackTerm dfn in
-       ppConcat [ppString "def ", 
+       ppConcat((if refine? then [ppString "refine "] else [])
+             ++ [ppString "def ", 
 		 (case tvs of
 		    | [] -> ppNil
 		    | _ -> 
@@ -419,7 +421,7 @@ SpecCalc qualifying spec
 				ppString "]"]),
 		 ppIdInfo aliases,
 		 ppString " = ",
-		 ppATerm term]
+		 ppATerm term])
    in
      case defs of
        | []    -> ppNil

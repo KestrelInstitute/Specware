@@ -196,7 +196,6 @@ TypeChecker qualifying spec
     let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false) in
     let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true)  in
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
-
     %% Elaborate properties
     let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_sorts, false) in
 
@@ -460,6 +459,7 @@ TypeChecker qualifying spec
    let elaborated_tm = single_pass_elaborate_term_top (env, tm, srt) in
    %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
    let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
+  % let _ = writeLine("chk: "^printTerm elaborated_tm^"\n"^anyToString elaborated_tm) in
    let new_tvs =
        if null tvs then
 	 tvs_used
@@ -1009,6 +1009,8 @@ TypeChecker qualifying spec
       | Fun (Iff,       srt, pos) -> (error (env, cantuse "<=>", pos); trm)
       | Fun (Equals,    srt, pos) -> (error (env, cantuse "=",   pos); trm)
       | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
+       
+      | And (tms, pos) -> And (map (fn tm -> single_pass_elaborate_term(env, tm, term_sort)) tms, pos)
 	
       | term -> (%System.print term;
 		 term)

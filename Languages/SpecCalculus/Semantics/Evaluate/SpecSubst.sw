@@ -20,7 +20,7 @@ SpecCalc qualifying spec
       def collect_clashing_sorts_and_ops (elts, sorts, ops) =
 	foldl (fn ((sorts, ops),el) ->
 	       case el of
-		 | Sort    (qid,_) -> 
+		 | Sort (qid,_) -> 
 		   (case findAllSorts (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Sort    but no info for " ^ printQualifiedId qid) in
@@ -34,14 +34,14 @@ SpecCalc qualifying spec
 			(sorts, ops)
 		      | _ ->
 			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
-		 | Op      (qid,def?,_) -> 
+		 | Op (qid,def?,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
 			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
-		 | OpDef   (qid,_) -> 
+		 | OpDef (qid,_,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: OpDef   but no info for " ^ printQualifiedId qid) in

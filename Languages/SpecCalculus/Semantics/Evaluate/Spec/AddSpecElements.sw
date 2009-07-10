@@ -4,8 +4,8 @@ SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Library/Legacy/DataStructures/TopSort
 
- op addSort        :  List QualifiedId            -> Sort -> Spec -> Position -> SpecCalc.Env (Spec)
- op addOp          :  List QualifiedId -> Fixity  -> MS.Term -> Spec -> Position -> SpecCalc.Env (Spec)
+ op addSort:  List QualifiedId -> Sort -> Spec -> Position -> SpecCalc.Env (Spec)
+ op addOp  :  List QualifiedId -> Fixity -> Bool -> MS.Term -> Spec -> Position -> SpecCalc.Env (Spec)
 
   %% called by evaluateSpecElem 
  def addSort new_names new_dfn old_spec pos =
@@ -120,13 +120,13 @@ SpecCalc qualifying spec
     }
 
   %% called by evaluateSpecElem and LiftPattern
- def addOp new_names new_fixity new_dfn old_spec pos =
-   {(sp,_) <- addOrRefineOp new_names new_fixity new_dfn old_spec pos None true;
+ def addOp new_names new_fixity refine? new_dfn old_spec pos =
+   {(sp,_) <- addOrRefineOp new_names new_fixity refine? new_dfn old_spec pos None true;
     return sp}
 
- op  addOrRefineOp: QualifiedIds -> Fixity -> MS.Term -> Spec -> Position -> Option SpecElement -> Boolean
+ op  addOrRefineOp: QualifiedIds -> Fixity -> Bool -> MS.Term -> Spec -> Position -> Option SpecElement -> Boolean
                   -> SpecCalc.Env(Spec * SpecElement)
- def addOrRefineOp new_names new_fixity new_dfn old_spec pos opt_next_el addOnly? =
+ def addOrRefineOp new_names new_fixity refine? new_dfn old_spec pos opt_next_el addOnly? =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
@@ -143,10 +143,20 @@ SpecCalc qualifying spec
                              if exists (fn old_info -> info = old_info) old_infos then
                                old_infos
                              else
-                               cons (info, old_infos)
+                               info :: old_infos
                            | _ -> old_infos)
                         []
                         new_names
+  in
+  let (old_infos, primaryName, new_info, new_names) =
+      if old_infos = [] && refine? && unQualifiedId?(primaryName)
+        then %% Implicit qualification
+             (case findAllOps(old_spec, primaryName) of
+                | [old_info] -> ([old_info], head(old_info.names),
+                                 new_info << {names = old_info.names},
+                                 old_info.names)
+                | _ -> ([], primaryName, new_info, new_names))
+      else (old_infos, primaryName, new_info, new_names)
   in {
     mapM (fn name -> 
 	  if false then    %basicQualifiedId? name then
@@ -158,6 +168,9 @@ SpecCalc qualifying spec
    case old_infos of
      | [] ->
        %%  We're declaring a brand new op
+       if refine?
+         then raise (SpecError (pos, "Attempt to refine "^(printAliases new_names)^" which is not defined."))
+       else
        return (foldl (fn (new_ops, name as Qualified (q, id)) ->
                       insertAQualifierMap (new_ops, q, id, new_info))
                      old_spec.ops
@@ -191,6 +204,7 @@ SpecCalc qualifying spec
             %%  New: def foo 
 	    (if ~addOnly?             %%  Old: op foo : ... or      (add definition)
 	                              %%  Old: def foo : ... = ...  (replace definition)
+               || refine?             %%  New: refine def foo : ... = ...  (add refined definition)
 	       || ~old_defined? then  %%  Old: op foo : ...
 	       let happy? = (case new_tvs of
 			       | [] ->
@@ -210,10 +224,15 @@ SpecCalc qualifying spec
 					 | (_, MetaTyVar _) -> old_srt
 					 | _ -> old_srt)   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
 		  in
+                  let new_tm = if refine?
+                                 then   %% Reverse order so most refined term first
+                                   And(new_tm :: opDefInnerTerms old_info, termAnn new_tm)
+                                else new_tm
+                  in
 		  let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
 		  let combined_info = old_info << {names = combined_names, 
-						    dfn   = combined_dfn,
-						    fullyQualified? = false} 
+                                                   dfn   = combined_dfn,
+                                                   fullyQualified? = false} 
 		  in
 		  return (foldl (fn (new_ops, name as Qualified (q, id)) ->
 				 insertAQualifierMap (new_ops, q, id, combined_info))
@@ -237,17 +256,18 @@ SpecCalc qualifying spec
 
     sp <- return (setOps (old_spec, new_ops));
     let el = case old_infos of
-               | _::_ | addOnly? -> OpDef (primaryName, pos)
+               | old_info::_ | refine? -> OpDef (primaryName, length(opDefInnerTerms old_info), pos)
+               | _::_ | addOnly? -> OpDef (primaryName, 0, pos)
                | _ -> Op (primaryName, definedTerm? new_dfn, pos)
     in
     let sp = if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
-              else if old_infos = [] || addOnly?
+              else if old_infos = [] || addOnly? || refine?
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
                                        case eli of
-                                         | OpDef(qid,_)  | qid = primaryName -> elts
-                                         | Op(qid, _, _) | qid = primaryName -> el::elts
-                                         | _                                 -> eli::elts)
+                                         | OpDef(qid,_,_) | qid = primaryName -> elts
+                                         | Op(qid, _, _)  | qid = primaryName -> el::elts
+                                         | _                                  -> eli::elts)
                                  [] sp.elements
                    in
                    if member(el, elts)
@@ -258,7 +278,7 @@ SpecCalc qualifying spec
     let sp = if old_infos = [] || addOnly? then sp
              else
              let dfn = (hd old_infos).dfn in
-             let (tvs, ty, term) = unpackTerm dfn in
+             let (tvs, ty, term) = unpackFirstTerm dfn in
              if anyTerm? term
                then sp
              else
@@ -390,8 +410,8 @@ SpecCalc qualifying spec
          refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
        def element_refs el =
          case el of
-           | Op(op_id, _, _) -> body_refs op_id
-           | OpDef(op_id, _)    -> body_refs op_id
+           | Op(op_id, _, _)    -> body_refs op_id
+           | OpDef(op_id, _, _) -> body_refs op_id
            | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
            | SortDef(ty_id, _) ->
              let Some info = findTheSort(spc, ty_id) in

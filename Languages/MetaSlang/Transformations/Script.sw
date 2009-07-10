@@ -206,7 +206,7 @@ spec
       (map (fn ty -> let Some(sty,p) = subtypeComps (context.spc, ty) in
               let v = ("x",ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
-              assertRules(context, fml, "Subtype", false))
+              assertRules(context, fml, "Subtype1", false))
         subtypes)
 
   op rewriteDebug?: Boolean = false
@@ -444,7 +444,7 @@ spec
     case findAllOps(spc,qid) of
       | [] \_rightarrow (warn("No defined op with that name."); None)
       | [opinfo] \_rightarrow
-        let (tvs, srt, tm) = unpackTerm opinfo.dfn in
+        let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
 
@@ -465,7 +465,7 @@ spec
                  | [] \_rightarrow (warn("Can't find op "^anyToString qid);
                             (spc,tracing?))
                  | [opinfo] \_rightarrow
-                   let (tvs, srt, tm) = unpackTerm opinfo.dfn in
+                   let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
                    let _ = if tracing? then writeLine(printTerm tm) else () in
                    let ((_,newtm),tracing?) = interpretTerm(spc, scr, tm, tm, tracing?) in
                    let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in

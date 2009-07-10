@@ -676,7 +676,7 @@ spec
 	 if exists (fn e ->
                       case (e, el) of
                         | (Op  (qid1,d1,_), Op  (qid2,d2,_)) -> qid1 = qid2 && d1 = d2
-                        | (OpDef  (qid1,_), OpDef  (qid2,_)) -> qid1 = qid2
+                        | (OpDef(qid1,refine1?,_), OpDef  (qid2,refine2?,_)) -> qid1 = qid2 && refine1? = refine2?
                         | (Sort   (qid1,_), Sort   (qid2,_)) -> qid1 = qid2
                         | (SortDef(qid1,_), SortDef(qid2,_)) -> qid1 = qid2
                         | _ -> false)
@@ -688,7 +688,7 @@ spec
    let newElts = foldl (fn (newElts,el) ->
 			case el of
 			  | Op      (qid,def?,a) -> addIfNew (Op      (canonOp   qid, def?,a), newElts)
-			  | OpDef   (qid,a)      -> addIfNew (OpDef   (canonOp   qid,a),       newElts)
+			  | OpDef   (qid, refine?,a) -> addIfNew (OpDef(canonOp  qid, refine?,a),newElts)
 			  | Sort    (qid,a)      -> addIfNew (Sort    (canonSort qid,a),       newElts)
 			  | SortDef (qid,a)      -> addIfNew (SortDef (canonSort qid,a),       newElts)
 			  | _ -> Cons(el,newElts))

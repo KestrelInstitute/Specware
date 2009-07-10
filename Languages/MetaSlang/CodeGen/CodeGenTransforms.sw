@@ -318,7 +318,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	let (new_decls_and_defs, minfo) =
 	    foldl (fn ((defs, minfo),def0) ->
-		   let (tvs, srt, trm) = unpackTerm def0 in
+		   let (tvs, srt, trm) = unpackFirstTerm def0 in
 		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 		   let (trm, minfo) = p2mTerm (spc, modifyConstructors?, trm, minfo) in
 		   let ndef = maybePiTerm (tvs, SortedTerm (trm, srt, termAnn def0)) in
@@ -362,7 +362,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		       fail ("Cannot find " ^ printQualifiedId qid ^ 
 			     "but could find " ^ (foldl (fn (s,info) -> s ++ " " ++ printAliases info.names) "" infos) ^
 			     "\nin spec\n" ^ printSpec spc))
-		 | OpDef (qid,_) ->
+		 | OpDef (qid,_,_) ->
 		   let Some opinfo = findTheOp(spc,qid) in
 		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
 		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
@@ -821,7 +821,7 @@ def incorporateMinfo(elts,el_s,
         if new_ops = old_ops then []
 	  else let opinfo :: r_ops = new_ops in
 	       let qid = primaryOpName opinfo in
-               Cons(OpDef (qid,noPos), 
+               Cons(OpDef (qid, 0, noPos), 
                     Cons(Op (qid,false,noPos), % false means don't print def as part of decl
                          newOps r_ops))
   in
@@ -937,7 +937,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
       foldriAQualifierMap
        (fn (q, i, info, minfo) ->
 	foldl (fn (minfo, dfn) ->
-	       let (_, srt, trm) = unpackTerm dfn in
+	       let (_, srt, trm) = unpackFirstTerm dfn in
 	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
 	       addMissingFromTerm (bspc, spc, ignore, trm, minfo))
 	      minfo
@@ -1283,7 +1283,8 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
-	 (addElementAfter (setOps (spc, newops), OpDef (opqid,noPos), SortDef (qid,noPos)), opnames)) % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
+	 (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, noPos),
+                           SortDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
       | _ -> (spc, [])
 
  (**
@@ -1334,7 +1335,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
-		     (addElementAfter (setOps (spc, newops), OpDef (opqid,noPos), SortDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
+		     (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, noPos), SortDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
 	            (spc, [])
 		    fields)
       | _ -> (spc, [])
@@ -1366,7 +1367,7 @@ def lambdaToInner spc =
 	     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	     let new_defs = 
 	         List.map (fn dfn ->
-			   let (tvs, srt, term) = unpackTerm dfn in
+			   let (tvs, srt, term) = unpackFirstTerm dfn in
 			   let new_tm = lambdaToInnerToplevelTerm (spc, term) in
 			   maybePiTerm (tvs, SortedTerm (new_tm, srt, termAnn term)))
 		          old_defs
@@ -1463,7 +1464,7 @@ def conformOpDecls spc =
 	     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	     let new_defs = 
 	         List.map (fn dfn ->
-			   let (tvs, srt, term) = unpackTerm dfn in
+			   let (tvs, srt, term) = unpackFirstTerm dfn in
 			   let new_tm = conformOpDeclsTerm (spc, srt, term, id) in
 			   maybePiTerm (tvs, SortedTerm (new_tm, srt, termAnn term)))
 		          old_defs
@@ -1791,7 +1792,7 @@ def showSorts spc =
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info -> insertAQualifierMap(op_map, q, id, info)
                                     | None -> op_map)
-                               | OpDef(Qualified(q,id), _) ->
+                               | OpDef(Qualified(q,id), _, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info -> insertAQualifierMap(op_map, q, id, info)
                                     | None -> op_map)

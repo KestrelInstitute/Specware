@@ -46,6 +46,7 @@ PosSpecToSpec qualifying spec
    let context = initializeMetaTyVars() in
    let
      def convertPTerm term =
+           % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
            case term of
              | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | eq_or_neq = Equals || eq_or_neq = NotEquals ->
                correctEqualityType(spc, eq_or_neq, ty, t2, pos)
@@ -73,7 +74,6 @@ PosSpecToSpec qualifying spec
 %% mapSpec is correct but unnecessarily maps non-locals
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
- 
   let {sorts, ops, elements, qualifier} = spc in
 %  let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp = (convertPTerm, convertPSort, fn x -> x) in

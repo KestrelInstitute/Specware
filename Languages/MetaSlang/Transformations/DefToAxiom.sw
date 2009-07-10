@@ -182,7 +182,7 @@ Prover qualifying spec
       | defs ->
         %% new: fold over all defs (but presumably just one for now)
         foldl (fn (props, dfn) ->
-	       let (tvs, srt, term) = unpackTerm dfn in
+	       let (tvs, srt, term) = unpackFirstTerm dfn in
 	       let pos = termAnn term in
 	       let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
 	       %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in

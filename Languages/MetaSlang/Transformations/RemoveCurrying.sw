@@ -61,7 +61,7 @@ RemoveCurrying qualifying spec
 	  let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 	  case old_defs of
 	    | old_def :: _ ->
-	      (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in
+	      (let (old_tvs, old_srt, old_tm) = unpackFirstTerm old_def in
 	       case newUncurriedOp (spc, id, old_srt) of
 		 | Some (new_id, new_srt) ->
 		   let new_ops = 
@@ -83,7 +83,7 @@ RemoveCurrying qualifying spec
 		   in
 		   let new_qid = Qualified (q, new_id) in
 		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
-                          Cons (OpDef (new_qid,noPos),
+                          Cons (OpDef (new_qid, 0, noPos),
                                 r_elts)),
                     new_ops)
 		 | None -> (Cons(old_el,r_elts),r_ops))
@@ -100,7 +100,7 @@ RemoveCurrying qualifying spec
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))
-	      | OpDef(Qualified(q,id),a) ->
+	      | OpDef(Qualified(q,id),_,a) ->
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))

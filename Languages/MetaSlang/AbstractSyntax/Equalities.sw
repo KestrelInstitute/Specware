@@ -491,9 +491,9 @@ MetaSlang qualifying spec
  def MetaSlang.maybeAndTerm (tms, pos) =
    let non_dup_terms =
        foldl (fn (pending_tms, tm) ->
-              if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
-                pending_tms
-              else
+           %   if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
+%                pending_tms
+%              else
                 case termInnerTerm tm of
                   | Any _ ->
                     if exists (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then

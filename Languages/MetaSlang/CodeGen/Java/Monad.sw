@@ -71,7 +71,7 @@ def initialState = {
 		    specialFun         = (fn _ -> return None),
 		    createFieldFun     = (fn tm -> 
                                             %% Suppress field declarations for undefined functions
-                                            let (tvs, typ, tm) = unpackTerm tm in
+                                            let (tvs, typ, tm) = unpackFirstTerm tm in
                                             ~(anyTerm? tm && embed? Arrow typ)),
                     ignoreTypeDefFun   = fn _ -> false,
 		    isClassNameFun     = fn _ -> false,

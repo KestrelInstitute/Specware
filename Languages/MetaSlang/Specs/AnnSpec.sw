@@ -52,7 +52,7 @@ AnnSpec qualifying spec
    | Sort     QualifiedId * b
    | SortDef  QualifiedId * b
    | Op       QualifiedId * Boolean * b  % if boolean is true, def was supplied as part of decl
-   | OpDef    QualifiedId * b
+   | OpDef    QualifiedId * Nat * b      % Nat is number of redefinitions
    | Property (AProperty b)
    | Comment  String * b
    | Pragma   String * String * String * b
@@ -243,6 +243,9 @@ AnnSpec qualifying spec
  def unpackFirstOpDef info =
    unpackTerm (firstOpDef info)
 
+ op [a] unpackNthOpDef(info: AOpInfo a, n: Nat): TyVars * ASort a * ATerm a =
+   unpackNthTerm(info.dfn, n)
+
  def firstOpDefTyVars info =
    termTyVars (firstOpDef info)
 
@@ -255,6 +258,11 @@ AnnSpec qualifying spec
 
  def firstOpDefInnerTerm info =
    termInnerTerm (hd (opInfoDefs info)) % fail if decl but no def
+
+ %%% Support for multiple defs
+
+ op [a] opDefInnerTerms(info: AOpInfo a): List(ATerm a) =
+   innerTerms info.dfn
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
@@ -732,7 +740,7 @@ AnnSpec qualifying spec
      | (Sort(qid1, _), Sort(qid2, _)) -> qid1 = qid2
      | (SortDef(qid1, _), SortDef(qid2, _)) -> qid1 = qid2
      | (Op(qid1, def1?,_), Op(qid2, def2?, _)) -> qid1 = qid2 && def1? = def2?
-     | (OpDef(qid1, _), OpDef(qid2, _)) -> qid1 = qid2
+     | (OpDef(qid1, refine1?, _), OpDef(qid2, refine2?, _)) -> qid1 = qid2 && refine1? = refine2?
      | (Property(pty1, qid1, tvs1, bod1, _), Property(pty2, qid2,tvs2, bod2, _)) ->
        pty1 = pty2 && qid1 = qid2 && tvs1 = tvs2 && equalTerm?(bod1, bod2)
      | (Comment(str1, _), Comment(str2, _)) -> str1 = str2
@@ -794,14 +802,14 @@ AnnSpec qualifying spec
    exists (fn el ->
 	   case el of
 	     | Op    (qid,_,_) -> member (qid, aliases)
-	     | OpDef (qid,_)   -> member (qid, aliases)
+	     | OpDef (qid,_,_) -> member (qid, aliases)
 	     | _ -> false)
           spc.elements
 
  def getQIdIfOp el =
    case el of
      | Op    (qid,_,_) -> Some qid
-     | OpDef (qid,_)   -> Some qid
+     | OpDef (qid,_,_) -> Some qid
      | _ -> None
 
  def localSort? (qid, spc) = 
@@ -816,7 +824,7 @@ AnnSpec qualifying spec
    exists (fn el ->
 	   case el of
 	     | Op    (qid1,_,_) -> qid = qid1
-	     | OpDef (qid1,_)   -> qid = qid1
+	     | OpDef (qid1,_,_) -> qid = qid1
 	     | _ -> false)
           spc.elements
 
@@ -840,7 +848,7 @@ AnnSpec qualifying spec
    removeDuplicates (mapPartial (fn el ->
 				 case el of
 				   | Op    (qid,_,_) -> Some qid
-				   | OpDef (qid,_)   -> Some qid
+				   | OpDef (qid,_,_) -> Some qid
 				   | _ -> None)
 		                spc.elements)
 

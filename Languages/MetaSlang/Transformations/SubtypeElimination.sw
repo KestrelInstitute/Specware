@@ -165,6 +165,7 @@ SpecNorm qualifying spec
                      (case AnnSpec.findTheOp(spc, qid) of
                       | Some opinfo ->
                         let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+                        % let dfn = refinedTerm(dfn, 0) in
                         (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc, coercions) of
                          | [] -> (new_elts ++ [el], op_map, tb)
                          | tv_map ->
@@ -477,13 +478,19 @@ SpecNorm qualifying spec
 
   op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let (tvs,ty,tm) = unpackFirstOpDef info in
-    let recursive? = containsRefToOp?(tm, primaryOpName info) in
-    let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
-    let result = if recursive?
-                  then   % May need condition to prove termination
-                    regularizeIfPFun(result, ty, inferType(spc,result), spc)
-                  else result
+    let tms = innerTerms tm in
+    let def reg1 tm =
+         let recursive? = containsRefToOp?(tm, primaryOpName info) in
+         let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
+         let result = if recursive?
+                       then   % May need condition to prove termination
+                         regularizeIfPFun(result, ty, inferType(spc,result), spc)
+                       else result
+         in
+         result
     in
+    let tms = map reg1 tms in
+    let result = maybeAndTerm(tms, termAnn tm) in
     if equalTerm?(result, tm)
       then maybePiTerm(tvs, SortedTerm(tm,ty,termAnn tm)) 
     else
@@ -559,7 +566,7 @@ SpecNorm qualifying spec
 
   op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let rm_ty = inferType(spc,t) in
-    let t = if equal_testable? && ~eagerRegularization?
+    let t = if equal_testable? && ~eagerRegularization? && ~(embed? And t)
               then regularizeIfPFun(t, ty, rm_ty, spc)
             else t
     in
@@ -602,6 +609,8 @@ SpecNorm qualifying spec
       %| Seq(tms, a) ->
       | SortedTerm(tm, tm_ty, a) ->
         SortedTerm(regTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
+      | And(tms, a) ->
+        And(map (fn tm -> regTerm(tm, ty, equal_testable?, ho_eqfns, spc)) tms, a)
       | _ -> t
          
   op regularizeFunctions(spc: Spec): Spec =
@@ -618,7 +627,7 @@ SpecNorm qualifying spec
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = regTermTop(info, ho_eqfns, spc)})
                                    | None \_rightarrow ops)
-                               | OpDef (qid as Qualified(q,id), _) \_rightarrow
+                               | OpDef (qid as Qualified(q,id), _, _) \_rightarrow
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info \_rightarrow
                                      insertAQualifierMap (ops, q, id,
@@ -740,20 +749,26 @@ SpecNorm qualifying spec
       let pred_thm = mapTerm (polyCallsTransformers(spc, stp_tbl, true, coercions)) pred_thm in
       mkConj[base_thm, pred_thm]
 
-  op separateRhsConjuncts(tm: MS.Term): List MS.Term =
+  op separateRhsConjuncts (spc: Spec) (tm: MS.Term): List MS.Term =
     case tm of
       | Bind(Forall, vs, bod, a) ->
-        map (fn b -> Bind(Forall, vs, b, a)) (separateRhsConjuncts bod)
+        map (fn b -> Bind(Forall, vs, b, a)) (separateRhsConjuncts spc bod)
       | Apply(Fun (Implies, _, _), Record([(_, lhs), (_, rhs)], _), _) ->
-        map (fn b -> mkImplies(lhs, b)) (separateRhsConjuncts rhs)
+        map (fn b -> mkImplies(lhs, b)) (separateRhsConjuncts spc rhs)
       | Let(decls, bod, a) ->
-        map (fn b -> Let(decls, b, a)) (separateRhsConjuncts bod)
+        map (fn b -> Let(decls, b, a)) (separateRhsConjuncts spc bod)
       | Apply(Lambda([(pat, Fun(Bool true, _, _) ,bod)], _), e, a) | varRecordPattern? pat ->
-        map (fn b -> Let([(pat, e)], b, a)) (separateRhsConjuncts bod)
-      | Apply(Fun(And,_,_), _, _) -> flatten(map separateRhsConjuncts (getConjuncts tm))
+        map (fn b -> Let([(pat, e)], b, a)) (separateRhsConjuncts spc bod)
+      | Apply(Fun(And,_,_), _, _) -> flatten(map (separateRhsConjuncts spc) (getConjuncts tm))
       | Apply(Apply(Fun(Op(Qualified(_, "Fun_PD"),_),_,_), p1, _),
-              Apply(Apply(Fun(Op(Qualified(_, "RFun"),_),_,_), p2, _), _, _), _) | equalTerm?(p1, p2) ->
-        []
+              f, _) ->
+        % let _ = writeLine("src: "^printTerm p1) in
+        (case arrowOpt(spc, inferType(spc, f)) of
+           | Some(rm_dom, _) ->
+             (case subtypeComps(spc, raiseSubtypeFn(rm_dom, spc)) of
+               | Some(_, pred) | equivTerm? spc (p1, pred) -> []
+               | _ -> [tm])
+           | None -> [tm])
       | _ -> [tm]
 
 
@@ -789,7 +804,7 @@ SpecNorm qualifying spec
                             | Fun(Bool true,_,_) \_rightarrow Cons(el,r)
                             | s_fm \_rightarrow
                               % let _ = writeLine (" --> "^printTerm s_fm) in
-                              let fms = separateRhsConjuncts s_fm in
+                              let fms = separateRhsConjuncts spc s_fm in
                               let thms = map (fn (i, fm) ->
                                               Property(if def? then Theorem else Axiom, 
                                                        mkQualifiedId

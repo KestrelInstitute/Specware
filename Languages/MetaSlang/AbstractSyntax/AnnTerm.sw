@@ -478,12 +478,12 @@ MetaSlang qualifying spec
 	 | And (tms, _) ->
            (let real_tms = filter (fn tm -> ~(anyTerm? tm)) tms in
               case real_tms of
-                | [tm] -> ([], tm)
+                | tm::_ -> ([], tm)
                 | _ -> fail ("unpackTerm: Trying to unpack an And of terms.\n"^printTerm t))
 	 | _ -> ([], t)
    in
    case tm of
-     | SortedTerm (tm, srt, _) -> (tvs, srt,         tm) 
+     | SortedTerm (tm, srt, _) -> (tvs, srt, tm) 
      | _                       -> (tvs, termSort tm, tm)
 
  def termTyVars tm =
@@ -527,15 +527,42 @@ MetaSlang qualifying spec
      | mystery -> fail ("\n No match in termSort with: " ^ (anyToString mystery) ^ "\n")
 
  def termInnerTerm tm =
-   let tm = 
-       case tm of
-	 | Pi (_, tm, _) -> tm
-	 | And _ -> fail ("termInnerTerm: Trying to extract inner term from an And of terms.")
-	 | _ -> tm
-   in
-     case tm of
-       | SortedTerm (tm, _, _) -> tm
-       | _                     -> tm
+   case tm of
+     | Pi (_, tm, _) -> termInnerTerm tm
+     | And (tm::_,_) -> termInnerTerm tm  % fail ("termInnerTerm: Trying to extract inner term from an And of terms.")
+     | SortedTerm (tm, _, _) -> termInnerTerm tm
+     | _                     -> tm
+
+ op [a] innerTerms(tm: ATerm a): List (ATerm a) =
+   case tm of
+     | Pi (_, tm, _) -> innerTerms tm
+     | And (tms,_) -> foldl (fn (rtms,tm) -> rtms ++ innerTerms tm) [] tms
+     | SortedTerm (tm, _, _) -> innerTerms tm
+     | Any _ -> []
+     | _                     -> [tm]
+
+ op [a] unpackFirstTerm(t: ATerm a): TyVars * ASort a * ATerm a =
+   let (tvs, ty, tm) = unpackTerm t in
+   (tvs, ty, termInnerTerm tm)
+
+ op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
+   let tms = innerTerms tm in
+   let len = length tms in
+   if i < len then tms@(len - i - 1)
+     else fail("Less than "^toString i^" refined terms")
+
+ op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
+   let (tvs, ty, tm) = unpackTerm t in
+   (tvs, ty, refinedTerm(tm, n))
+
+ op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
+   let tms = innerTerms full_tm in
+   let len = length tms in
+   if i >= len then fail("Less than "^toString i^" refined terms")
+   else
+   let (pref, _, post) = splitAt(tms, len - i - 1) in
+   maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Pattern components

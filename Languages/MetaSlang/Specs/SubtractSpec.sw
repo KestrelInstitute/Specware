@@ -117,13 +117,14 @@ AnnSpec qualifying spec
 		   | (_, SortedTerm (Any _, _, _)) -> true
 		   | (tm1, tm2) ->  equivTerm? s2 (tm1, tm2)))
 	  | _ -> false)
-     | OpDef (qid1, _) -> 
+     | OpDef (qid1, refine1?, _) -> 
        (case e2 of
-	  | OpDef (qid2, _) -> 
+	  | OpDef (qid2, refine2?, _) -> 
 	    let Some info1 = findTheOp (s1, qid1) in
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
+             && refine1? = refine2?
 	     && equivType? s2 (termSort info1.dfn, termSort info2.dfn)
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true

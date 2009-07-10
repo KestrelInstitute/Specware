@@ -47,7 +47,7 @@ IsaTermPrinter qualifying spec
               let import_strings = if member(el,spc.elements) then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
 	      (parseMorphMap(trans_string,result), None))
-       | OpDef (qid,_)   \_rightarrow (result,Some qid)
+       | OpDef (qid,_,_) \_rightarrow (result,Some qid)
        | Op    (qid,_,_) \_rightarrow (result,Some qid)
        | _               \_rightarrow (result,None))
      (emptyTranslationTable, None)

@@ -978,24 +978,25 @@ AnnSpecPrinter qualifying spec
 
  op  ppOpDecl: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDecl context blankLine? info_res =
-   ppOpDeclAux context (true, false, false) blankLine? info_res
+   ppOpDeclAux context (true, false, false, 0) blankLine? info_res
 
- op  ppOpDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
- def ppOpDef context info_res =
-   ppOpDeclAux context (false, true, false) true info_res
+ op  ppOpDef: [a] PrContext -> Nat -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDef context refine_num info_res =
+   ppOpDeclAux context (false, true, false, refine_num) true info_res
 
  op  ppOpDeclThenDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDeclThenDef context info_res =
-   ppOpDeclAux context (true, true, false) true info_res
+   ppOpDeclAux context (true, true, false, 0) true info_res
 
  op  ppOpDeclWithDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDeclWithDef context info_res =
-   ppOpDeclAux context (true, false, true) true info_res
+   ppOpDeclAux context (true, false, true, 0) true info_res
 
 
- op  ppOpDeclAux: [a] PrContext -> Boolean * Boolean * Boolean -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ op  ppOpDeclAux: [a] PrContext -> Boolean * Boolean * Boolean * Nat -> Boolean -> (AOpInfo a * IndexLines)
+                     -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
- def ppOpDeclAux context (printOp?, printDef?, printOpWithDef?) blankLine? (info, (index, lines)) =
+ def ppOpDeclAux context (printOp?, printDef?, printOpWithDef?, refine_num) blankLine? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
      def ppOpName (qid as Qualified (q, id)) =
@@ -1106,13 +1107,16 @@ AnnSpecPrinter qualifying spec
 	      (2, ppTerm context (path, Top) term)]
 	     
      def ppDef tm =
-       let (tvs, opt_srt, tm) = unpackTerm tm in
+       let (tvs, opt_srt, _) = unpackTerm tm in
+       let tm = refinedTerm(tm, refine_num) in
        let prettys = ppDefAux ([index, defIndex], tm) in
        (1, blockFill (0, 
 		      [(0, blockFill (0, 
 				      [(0, button1), 
-				       (0, button2), 
-				       (0, pp.Def), 
+				       (0, button2)]
+                                      ++ (if refine_num > 0 then [(0, pp.Refine)] else [])
+                                      ++
+				      [(0, pp.Def), 
 				       (if printSort? context then
 					  (0, ppForallTyVars pp tvs) 
 					else 
@@ -1322,9 +1326,9 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[1]: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | OpDef (qid,_) ->
+	 | OpDef (qid,refine_num,_) ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDef context (opinfo,result)
+	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[2]: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1362,7 +1366,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?,a)) :: (r1_els as (OpDef (qid2,_)) :: r2_els) ->
+	   | (Op (qid1,def?,a)) :: (r1_els as (OpDef (qid2,0,_)) :: r2_els) ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1441,9 +1445,9 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[4]: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
-	 | OpDef (qid,_) ->
+	 | OpDef (qid, refine_num, _) ->
 	   (case findTheOp(spc,qid) of
-	      | Some opinfo -> ppOpDef context (opinfo,result)
+	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[5]: " ^ printQualifiedId qid ^ "\n") in
 		(0, []))
@@ -1481,7 +1485,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?,a)) :: (OpDef (qid2,_)) :: r_els ->
+	   | (Op (qid1,def?,a)) :: (OpDef (qid2,0,_)) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1489,7 +1493,7 @@ AnnSpecPrinter qualifying spec
 		else if def? then
                   ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,a),r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,0,a),r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[6]: " ^ printQualifiedId qid1 ^ "\n") in
 		(0, []))

@@ -352,7 +352,7 @@ def opDelta(spc, oper) =
     | info::_ ->
       (case opInfoDefs info of
 	 | [dfn] ->
-	   (let (tvs, srt, tm) = unpackTerm dfn in
+	   (let (tvs, srt, tm) = unpackFirstTerm dfn in
 	    case tm of
 	      | Lambda ([(pat, cond, body)],_) ->
 	        let argNames = patternNamesOpt pat in
@@ -530,7 +530,7 @@ def liftPattern spc =
                     (fn (q, id, info, result) ->
 		     case opInfoDefs info of
 		       | [dfn] ->
-		         let (tvs, srt, term) = unpackTerm dfn in
+		         let (tvs, srt, term) = unpackFirstTerm dfn in
 			 let origOp = mkQualifiedId (q, id) in
 			 let (origOpVars, origOpBody) = srtTermDelta (srt, term) in
 			 let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
@@ -572,5 +572,5 @@ def addOpToSpec2((oper as Qualified(q,id), dom:(List Sort), rng:Sort, formals:Li
    
 def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =
   let b = termAnn(term) in
-  addOp [oper] Nonfix (SortedTerm (term, srt, noPos)) spc b
+  addOp [oper] Nonfix false (SortedTerm (term, srt, noPos)) spc b
 endspec

@@ -1287,7 +1287,7 @@ SpecToLisp qualifying spec
    let
      def mkLOpDef (q, id, info, defs) = % ???
        foldl (fn (defs, dfn) -> 
-	      let (tvs, srt, term) = unpackTerm dfn in
+	      let (tvs, srt, term) = unpackFirstTerm dfn in
 	      let term = lispTerm (spc, defPkgName, term) in
 	      let qid = Qualified (q, id) in
 	      let uName = unaryName (printPackageId (qid, defPkgName)) in

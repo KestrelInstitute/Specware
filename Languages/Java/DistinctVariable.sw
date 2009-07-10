@@ -260,7 +260,7 @@ def mkNewId(id, n) =
 			    else
 			      case opInfoDefs old_info of
 				| old_dfn :: _ ->
-			          let (old_tvs, old_srt, old_term) = unpackTerm old_dfn in
+			          let (old_tvs, old_srt, old_term) = unpackFirstTerm old_dfn in
 				  %% srtTermDelta flattens record patterns -- is this desired?
 				  let (old_formals, old_body) = srtTermDelta (old_srt, old_term) in  
 				  let old_ids = map (fn (id, srt) -> id) old_formals in

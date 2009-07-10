@@ -370,6 +370,7 @@ ArityNormalize qualifying spec
           convertToArity1(sp,gamma,usedNames,term)
         | Var _ -> convertToArity1(sp,gamma,usedNames,term)
         | Fun _ -> convertToArity1(sp,gamma,usedNames,term)
+        | And(tm::r_tms, a) -> And(normalizeArity(sp,gamma,usedNames,tm) :: r_tms, a)
 
 
   def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
@@ -385,8 +386,6 @@ ArityNormalize qualifying spec
            (Lambda([(VarPat(x,noPos),mkTrue(),
                      mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
 
- 
-
 %
 % This one ignores arity normalization in sorts, axioms and theorems.
 %     
@@ -400,7 +399,7 @@ ArityNormalize qualifying spec
 			let new_defs =
 			    map (fn dfn ->
 				 let pos = termAnn dfn in
-				 let (tvs, srt, term) = unpackTerm dfn in
+				 let (tvs, srt, term) = unpackFirstTerm dfn in
 				 let usedNames = addLocalVars (term, usedNames) in
 				 let tm = 
 				     normalizeArityTopLevel (spc, [], usedNames,

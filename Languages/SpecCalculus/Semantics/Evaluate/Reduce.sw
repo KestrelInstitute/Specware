@@ -25,7 +25,7 @@ SpecCalc qualifying spec
           tempOpName <- return (mkQualifiedId ("Reduce", "#reduce#"));
           newSrt <- return (Utilities.freshMetaTyVar ("reduce", pos));
           newDef <- return (SortedTerm (ms_term, newSrt, pos));
-	  newSpc <- addOp [tempOpName] Nonfix newDef spc pos;
+	  newSpc <- addOp [tempOpName] Nonfix false newDef spc pos;
           elabSpc <- elaborateSpecM newSpc;
           elabTerm <-
             case AnnSpec.findTheOp (elabSpc,tempOpName) of

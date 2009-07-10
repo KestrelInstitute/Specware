@@ -269,7 +269,7 @@ SpecCalc qualifying spec
  type SpecElemBody a =
    | Import  List (SpecCalc.Term a)
    | Sort    List QualifiedId          * ASort a
-   | Op      List QualifiedId * Fixity * ATerm a
+   | Op      List QualifiedId * Fixity * Bool * ATerm a
    | Claim   (PropertyType * PropertyName * TyVars * ATerm a)
    | Pragma  String * String * String
    | Comment String
@@ -293,8 +293,9 @@ SpecCalc qualifying spec
    in
      (Sort (names, dfn), pos)
 
- op  mkOpSpecElem : [a] OpNames * Fixity * TyVars * ASort a * List (ATerm a) * a -> SpecElem a
- def [a] mkOpSpecElem (names, fixity, tvs, srt, defs, pos) =
+ op [a] mkOpSpecElem: OpNames * Fixity * TyVars * ASort a * List (ATerm a) * Bool * a
+                      -> SpecElem a
+ def [a] mkOpSpecElem (names, fixity, tvs, srt, defs, refine?, pos) =
    %% We potentially could be smarter if srt is just a meta type var
    %% and use just a normal term instead of a typed term, but that's
    %% a complication we don't need now (or perhaps ever).
@@ -304,7 +305,7 @@ SpecCalc qualifying spec
 	 | [tm] -> tm
    in
    let dfn = maybePiTerm (tvs, dfn) in
-   (Op (names, fixity, dfn), pos)
+   (Op (names, fixity, refine?, dfn), pos)
 
  %% A diagram is defined by a list of elements. An element may be a labeled
  %% vertex or edge.

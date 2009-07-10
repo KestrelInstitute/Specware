@@ -156,7 +156,7 @@ spec
        case defs of
 	 | [] -> None
 	 | dfn :: _ ->
-	   let (tvs, srt, def1) = unpackTerm dfn in
+	   let (tvs, srt, def1) = unpackFirstTerm dfn in
 	   %% would like to remove tvs ~= [] condition but currently causes problem in Snark translation
 	   if (if snark_hack? then tvs ~= [] else true) && hoFnSort? (spc, srt)  && unfoldable? (Qualified (q, id), def1) then
 	     let numCurryArgs = curryShapeNum(spc, srt) in
@@ -601,7 +601,7 @@ spec
 	       let new_defs =
 	           map (fn dfn ->
 			let pos = termAnn dfn in
-			let (tvs, srt, def1) = unpackTerm dfn in
+			let (tvs, srt, def1) = unpackFirstTerm dfn in
 			let numCurryArgs = curryShapeNum (spc, srt) in
 			let argSorts     = curryArgSorts (spc, srt) in
 			let normDef1 = normalizeCurriedDefn (def1, argSorts) in

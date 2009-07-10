@@ -270,7 +270,8 @@
 		     optional-post-tvs 
 		     optional-type 
 		     optional-params 
-		     optional-def 
+		     optional-def
+                     optional-refine
 		     l r)
   (let* ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
 	 (fixity (if (equal  optional-fixity :unspecified) 
@@ -294,6 +295,7 @@
 	 (dfn                (if (equal optional-def :unspecified)
 				 (cons :|Any| pos)
 				 optional-def))
+         (refine?            (not (eq optional-refine :unspecified)))
 	 (typed-term         (make-sorted-term dfn typ l r))
 	 (typed-term         (if (equal optional-params :unspecified)
 				  typed-term 
@@ -305,7 +307,7 @@
 	 ;;   with (Base qid) replaced by (TyVar id) where appropriate.
 	 (typed-term         (cdr tvs-and-typed-term))
 	 (defs               (list typed-term)))
-    (SPECCALC::mkOpSpecElem-6 names fixity tvs typ defs pos)))
+    (SpecCalc::mkOpSpecElem-7 names fixity tvs typ defs refine? pos)))
 
 (defun bind-op-parameters (params term l r)
   (if (null params)

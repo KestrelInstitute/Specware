@@ -630,6 +630,8 @@ def eliminatePattern context pat =
 	 QuotientPat  (eliminatePattern context p, qid, a)
        | RestrictedPat (p,t,a) ->
 	 RestrictedPat(eliminatePattern context p,eliminateTerm context t,a)
+       | SortedPat (p, ty, a) ->
+         SortedPat (eliminatePattern context p, eliminateSort context ty, a)
 
 def eliminateSort context srt =
     case srt
@@ -818,14 +820,17 @@ def eliminateTerm context term =
 	LetRec(map (fn ((n,s),t)->
 			     ((n,eliminateSort context s),
 			      eliminateTerm context t)) decls,
-		eliminateTerm context body,a)
-       | Var((n,s),a) -> Var((n,eliminateSort context s),a)
-       | Fun(f,s,a) -> Fun(f,eliminateSort context s,a)
-       | IfThenElse(s1,s2,s3,a) -> 
-	 IfThenElse(eliminateTerm context s1,
-		    eliminateTerm context s2,
-		    eliminateTerm context s3,a)
-       | Seq(terms,a) -> Seq(map (eliminateTerm context) terms,a)
+		 eliminateTerm context body,a)
+      | Var((n,s),a) -> Var((n,eliminateSort context s),a)
+      | Fun(f,s,a) -> Fun(f,eliminateSort context s,a)
+      | IfThenElse(s1,s2,s3,a) -> 
+        IfThenElse(eliminateTerm context s1,
+                   eliminateTerm context s2,
+                   eliminateTerm context s3,a)
+      | Seq(terms,a) -> Seq(map (eliminateTerm context) terms,a)
+      | And(tm::r_tms, a) -> And(eliminateTerm context tm :: r_tms, a)
+      | SortedTerm(tm, ty, a) ->
+        SortedTerm(eliminateTerm context tm, eliminateSort context ty, a)
 
 
  op  simplifyPatternMatchResult: MS.Term -> Option MS.Term
@@ -967,7 +972,7 @@ def eliminateTerm context term =
                                let (old_decls, old_defs) = opInfoDeclsAndDefs info in
                                let new_defs = 
                                    map (fn dfn ->
-					let (tvs, srt, term) = unpackTerm dfn in
+					let (tvs, srt, term) = unpackFirstTerm dfn in
 					let new_srt = eliminateSort (mkContext id) srt in
 					let new_tm  = eliminateTerm (mkContext id) term in
 					let new_tm = simpLamBody new_tm in

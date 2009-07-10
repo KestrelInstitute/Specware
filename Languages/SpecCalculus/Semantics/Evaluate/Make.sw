@@ -153,7 +153,8 @@ spec
     let list_type   : Sort = Base (mkQualifiedId ("List",    "List"),   [mtv], noPos) in
     let string_type : Sort = Base (mkQualifiedId ("String" , "String"), [],    noPos) in
     let public_element : SpecElem Position = (Op ([mkUnQualifiedId "public"], 
-						  Unspecified, 
+						  Unspecified,
+                                                  false,
 						  ApplyN ([Fun (Embed ("Cons", true),
 								Arrow (Product ([("1", mtv), 
 										 ("2", list_type)],
@@ -168,8 +169,9 @@ spec
 					      noPos)
     in
     let package_element : SpecElem Position = (Op ([mkUnQualifiedId "package"], 
-			      Unspecified, 
-			      Fun (String s, string_type, noPos)),
+                                                   Unspecified,
+                                                   false,
+                                                   Fun (String s, string_type, noPos)),
 					       noPos)
     in
       SpecCalc.evaluateSpec [public_element, package_element] noPos 

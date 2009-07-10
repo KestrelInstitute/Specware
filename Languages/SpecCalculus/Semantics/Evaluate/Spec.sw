@@ -103,7 +103,7 @@ axioms, etc.
               spc               
               terms
       | Sort    (names,       dfn)               -> addSort names      dfn spc position
-      | Op      (names, fxty, dfn)               -> addOp   names fxty dfn spc position
+      | Op      (names, fxty, refine?, dfn)      -> addOp   names fxty refine? dfn spc position
 
       | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term,position), spc)) 
       | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term,position), spc))

@@ -33,8 +33,8 @@ SpecCalc qualifying spec
   def evaluateSpecEltElem (spc, opt_next_el, pragmas) (elem, pos) =
     %let _ = writeLine("opt_next_el: "^anyToString opt_next_el^"\n"^printSpec spc) in
     case elem of
-      | Op(names, fxty, dfn) ->
-        {(spc,next_el) <- addOrRefineOp names fxty dfn spc pos opt_next_el false;
+      | Op(names, fxty, refine?, dfn) ->
+        {(spc,next_el) <- addOrRefineOp names fxty refine? dfn spc pos opt_next_el false;
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
       | Sort(names, ty_defn) ->
@@ -49,7 +49,7 @@ SpecCalc qualifying spec
   op exposeOpsForRefine(spc: Spec, refine_elts: List (SpecElem Position)): Spec =
     let ops = mapPartial (fn (elem,_) ->
                                  case elem of
-                                   | Op(op_id::_, _, _) -> Some op_id
+                                   | Op(op_id::_, _, _, _) -> Some op_id
                                    | _ -> None)
                 refine_elts
     in

@@ -36,7 +36,7 @@ SpecCalc qualifying spec
 	      case el of
 		| Property prop            -> Cons (ppAProperty prop, result)
 		| Op       (qId,def?,_)    -> Cons (ppAOp qId,        result) % Currently does def as well  % TODO: discriminate decl-with-def from decl then def
-		| OpDef    (qId,_)         -> result                          % Cons(ppAOpDef   qId,result)
+		| OpDef    (qId,_,_)       -> result                          % Cons(ppAOpDef   qId,result)
 		| Sort     (qId,_)         -> Cons (ppASort qId,      result)
 		| SortDef  (qId,_)         -> result                          % Cons(ppASortDef qId,result)
 		| Comment  (str,_)         -> Cons (ppComment str,    result)
@@ -72,7 +72,7 @@ SpecCalc qualifying spec
 	      case el of
 		| Property prop                 -> Cons (ppAProperty prop, result)
 		| Op       (qId,def?,_)         -> Cons (ppAOp       qId,  result) % Currently does def as well
-		| OpDef    (qId,_)              -> result                          % Cons(ppAOpDef qId,result)
+		| OpDef    (qId,_,_)            -> result                          % Cons(ppAOpDef qId,result)
 		| Sort     (qId,_)              -> Cons (ppASort     qId,  result)
 		| SortDef  (qId,_)              -> result                          % Cons(ppASortDef qId,result)
 		| Comment  (str,_)              -> Cons (ppComment   str,  result)

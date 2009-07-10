@@ -96,7 +96,7 @@ spec
     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
     let new_defs = 
         map (fn dfn ->
-	     let (tvs, srt, term) = unpackTerm dfn in
+	     let (tvs, srt, term) = unpackFirstTerm dfn in
 	     maybePiTerm (tvs, SortedTerm (renameTerm c term, srt, termAnn dfn)))
 	    old_defs
     in

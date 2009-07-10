@@ -288,6 +288,13 @@ Utilities qualifying spec
                              | _ -> false)
       t
 
+ op hasVarNameConflict?(tm: MS.Term, vs: List Var): Boolean =
+   let names = map (project 1) vs in
+   existsSubTerm (fn t \_rightarrow case t of
+                            | Var((nm,_),_) -> nm in? names
+                            | _ -> false)
+     tm
+
  op removeDuplicateVars: List Var -> List Var
  def removeDuplicateVars vars = 
    case vars of
@@ -839,7 +846,7 @@ Utilities qualifying spec
        let new_defs = 
            map (fn tm ->
 		let pos = termAnn tm in
-		let (tvs, srt, tm) = unpackTerm tm in
+		let (tvs, srt, tm) = unpackFirstTerm tm in
 		Pi (tvs, SortedTerm (tm, letRecToLetTermSort srt, pos), pos))
 	       old_defs
        in
