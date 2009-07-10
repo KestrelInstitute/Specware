@@ -9,14 +9,11 @@ axioms FMap__toFMap_subtype_constr:
   "Function__bijective_p__stp(finite &&& Relation__functional_p, TRUE)
       FMap__toFMap"
 axioms FMap__toFMap_subtype_constr1: 
-  "Fun_PD (finite &&& Relation__functional_p)
-      (RFun (finite &&& Relation__functional_p) FMap__toFMap)"
-axioms FMap__toFMap_subtype_constr2: 
   "Function__bijective_p__stp
      (Set__finite_p__stp
          (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 
         &&& Relation__functional_p__stp(P__a, P__b), TRUE) FMap__toFMap"
-axioms FMap__toFMap_subtype_constr3: 
+axioms FMap__toFMap_subtype_constr2: 
   "Fun_P
      (Set__finite_p__stp
          (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 

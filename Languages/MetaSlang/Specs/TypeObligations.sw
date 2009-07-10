@@ -408,16 +408,68 @@ spec
      | (Fun(Implies, _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p => q -- can assume  p in q
      | _ -> None
 
+ op unconditionalPattern?(pat: Pattern): Boolean =
+   case pat of
+     | WildPat _ -> true
+     | VarPat _  -> true
+     | RecordPat(prs, _) -> all (fn (_,p) -> unconditionalPattern? p) prs
+     | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
+     | _ -> false
+
+ op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Boolean =
+   unconditionalPattern?(last pats)
+     || (case (pats, subtypeComps(spc, ty)) of
+           | ([RestrictedPat(pat, ty_tm,_)], Some(_, pat_pred)) -> 
+             let ty_pred = mkLambda(pat, ty_tm) in
+             let equiv? = equivTerm? spc (ty_pred, pat_pred) in
+             % let _ = writeLine(printTerm ty_pred^(if equiv? then " == " else " =~= ")^printTerm pat_pred) in
+             equiv?
+           | None ->
+         case coproductOpt(spc, ty) of
+           | Some(id_prs) ->
+             length id_prs = length  pats
+               && forall? (fn (id_ty,_) ->
+                             exists? (fn p ->
+                                        case p of
+                                          | EmbedPat(id_p, None, _, _) ->
+                                            id_ty = id_p
+                                          | EmbedPat(id_p, Some p_s, _, _) ->
+                                            id_ty = id_p && unconditionalPattern? p_s
+                                          | _ -> false)
+                               pats)
+                    id_prs
+           | None ->
+          if booleanType?(spc, ty)
+           then length pats = 2
+               && exists (fn p -> case p of
+                                   | BoolPat(true, _) -> true
+                                   | _ -> false)
+                    pats
+               && exists (fn p -> case p of
+                                   | BoolPat(false, _) -> true
+                                   | _ -> false)
+                    pats
+           else false)        
+    
+
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term
-                 -> TypeCheckConditions
+                -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
    let dom = domain(getSpec gamma, tau) 			 in
    let rng = range(getSpec gamma, tau)  		 	 in
    let casesDisjoint? = disjointMatches rules            in
    let (tcc, _) = foldl (checkRule(dom, rng, optArg, casesDisjoint?)) (tcc, gamma) rules  in
+   let exhaustive? = exhaustivePatterns?(map (project 1) rules, dom, getSpec gamma) in
+   % let _ = writeLine("\nExh "^toString exhaustive?^": "^printSort dom) in
+   % let _ = app (fn (p,_,_) -> writeLine(printPattern p)) rules in
+   if exhaustive? then tcc
+   else
    let rules = map (fn(p, c, b) -> ([p], c, mkTrue())) rules in
-   let x  = useNameFrom(gamma, optArg, "D")		 in
-   let vs = [mkVar(x, dom)] 	        	         in
+   let x = case optArg of
+              | Some(Var (v,_)) -> v
+              | _ -> (freshName(gamma, "D"), dom)
+   in
+   let vs = [mkVar x] in
    let (_, _, spc, _, Qualified(_, name), _, _, _) = gamma        in
    let context = {counter    = Ref 0,
 		  spc        = spc,
@@ -426,19 +478,23 @@ spec
 		  term       = None}
    in
    let trm = match(context, vs, rules, mkFalse(), mkFalse()) in
+   % let _ = writeLine("exh0?: "^printTerm trm^"\n"^printTerm (simplifyMatch trm)) in
    (case simplifyMatch(trm)
       of Fun(Bool true, _, _) -> tcc
        | trm -> if generateExhaustivityConditions?
-	          then addCondition(tcc, gamma, mkBind(Forall, [(x, dom)], trm), "_exhaustive")
+	          then % let _ = writeLine("exh1?: "^printTerm trm) in
+                       let frm = case optArg of
+                                   | Some(Var (v,_)) -> trm
+                                   | _ -> mkBind(Forall, [x], trm)
+                       in
+                       addCondition(tcc, gamma, frm, "_exhaustive")
                  else tcc)
 
  op  useNameFrom: Gamma * Option MS.Term * String -> String
  def useNameFrom(gamma, optTm, default) =
-   let base_name = case optTm of
-		    | Some(Var((nm, _), _)) -> nm
-                    | _ -> default
-   in
-   freshName(gamma, base_name)
+   case optTm of
+     | Some(Var((nm, _), _)) -> nm
+     | _ -> freshName(gamma, default)
 
  op  checkRule: Sort * Sort * Option MS.Term * Boolean
                -> (TypeCheckConditions * Gamma) * (Pattern * MS.Term * MS.Term)  
@@ -927,12 +983,16 @@ spec
      then m
      else StringMap.insert (m, id, 0)
 
+ op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
+   if refine_num = 0 then qid
+     else Qualified(q,nm^"__"^toString refine_num)
+
  def checkSpec spc = 
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (m, el) ->
 		      case el of
 			| Op    (qid, def?, _) -> insertQID(qid, m)
-			| OpDef (qid, _)      -> insertQID(qid, m)
+			| OpDef (qid, _, _)    -> insertQID(qid, m)
 			| _ -> m)
                      empty 
 		     spc.elements
@@ -950,6 +1010,7 @@ spec
                         let (new_tccs, claimNames) = 
                             foldr (fn (dfn, tcc) ->
                                    let (tvs, tau, term) = unpackTerm dfn in
+                                   let term = refinedTerm(term, 0) in
                                    let usedNames = addLocalVars (term, StringSet.empty) in
                                    %let term = etaExpand (spc, usedNames, tau, term) in
                                    let term = renameTerm (emptyContext ()) term in 
@@ -991,11 +1052,12 @@ spec
                            then let prag::tccs = tccs  in
                                 (indep_new_tccs ++ [el, prag] ++ op_ref_new_tccs ++ tccs, claimNames)
                            else (indep_new_tccs ++ [el]       ++ op_ref_new_tccs ++ tccs, claimNames))
-                 | OpDef (qid as Qualified(q, id), _) ->
+                 | OpDef (qid, refine_num, _) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo ->
                         foldr (fn (dfn, tcc) ->
                                let (tvs, tau, term) = unpackTerm dfn in
+                               let term = refinedTerm(term, refine_num) in
                                let usedNames = addLocalVars (term, StringSet.empty) in
                                %let term = etaExpand (spc, usedNames, tau, term) in
                                let term = renameTerm (emptyContext ()) term in 
@@ -1007,6 +1069,7 @@ spec
                                            then map (fn tau -> stripRangeSubsorts(spc, tau)) taus
                                            else taus
                                in
+                               let Qualified(q, id) = refinedQID refine_num qid in
                                foldr (fn (tau, tcc) ->
                                       let gamma = gamma0 tvs
                                                       %% Was unfoldStripSort but that cause infinite recursion.

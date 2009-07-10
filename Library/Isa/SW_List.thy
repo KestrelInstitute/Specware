@@ -288,19 +288,11 @@ theorem List__list_subtype_constr:
   qed
 qed
 theorem List__list_subtype_constr1: 
-  "Fun_PD
-      (\<lambda> (f::nat \<Rightarrow> 'a option). 
-         \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
-      (RFun
-          (\<lambda> (f::nat \<Rightarrow> 'a option). 
-             \<exists>(n::nat). f definedOnInitialSegmentOfLength n) List__list)"
-  by auto
-theorem List__list_subtype_constr2: 
   "Function__bijective_p__stp
      (\<lambda> (f::nat \<Rightarrow> 'a option). 
         \<exists>(n::nat). f definedOnInitialSegmentOfLength n, TRUE) List__list"
   by (simp only: List__list_subtype_constr)
-theorem List__list_subtype_constr3: 
+theorem List__list_subtype_constr2: 
   "Fun_P
      (\<lambda> (f::nat \<Rightarrow> 'a option). 
         (\<exists>(n::nat). f definedOnInitialSegmentOfLength n) 
@@ -457,7 +449,7 @@ defs List__tabulate_def:
 theorem List__tabulate_subtype_constr: 
   "\<lbrakk>Fun_PR P__a f\<rbrakk> \<Longrightarrow> list_all P__a (List__tabulate(n, f))"
   apply (auto simp add: List__tabulate_def simp del: List__list.simps)
-  apply (cut_tac P__a=P__a in List__list_subtype_constr3, simp del: List__list.simps)
+  apply (cut_tac P__a=P__a in List__list_subtype_constr2, simp del: List__list.simps)
   apply (drule_tac x="\<lambda>i. if i < n then Some (f i) else None" in spec, 
          auto simp del: List__list.simps)
   apply (rule_tac x=n in exI, 
@@ -5301,6 +5293,19 @@ defs List__permutationOf_def:
      \<equiv> (\<exists>(prm::nat list). 
           List__permutation_p prm 
             \<and> (prm equiLong l1 \<and> List__permute(l1, prm) = l2))"
+theorem List__compare_Obligation_exhaustive: 
+  "\<lbrakk>(pV1::'a list) = fst (D::'a list \<times> 'a list); 
+    (pV2::'a list) = snd D\<rbrakk> \<Longrightarrow> 
+   (if case pV1 of Cons _ _ \<Rightarrow> True
+                 | _ \<Rightarrow> False then 
+      case pV2 of Cons _ _ \<Rightarrow> True
+                | _ \<Rightarrow> False
+    else 
+      case pV1 of Nil \<Rightarrow> True
+                | _ \<Rightarrow> False) 
+     \<or> (case pV2 of Nil \<Rightarrow> True
+                  | _ \<Rightarrow> False)"
+  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
 fun List__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                       'a list \<times> 'a list \<Rightarrow> Compare__Comparison"
 where

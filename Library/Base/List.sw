@@ -297,11 +297,11 @@ proof (auto simp add: Function__bijective_p__stp_def)
 qed
 end-proof
 
-proof Isa list_subtype_constr2
+proof Isa list_subtype_constr1
   by (simp only: List__list_subtype_constr)
 end-proof
 
-proof Isa list_subtype_constr3
+proof Isa list_subtype_constr2
   apply (auto simp del: List__list.simps)
   apply (subgoal_tac "\_forallz. (\_foralli. Option__Option_P P__a (z i))
                          \_longrightarrow z definedOnInitialSegmentOfLength xa
@@ -487,7 +487,7 @@ end-proof
 
 proof Isa tabulate_subtype_constr
   apply (auto simp add: List__tabulate_def simp del: List__list.simps)
-  apply (cut_tac P__a=P__a in List__list_subtype_constr3, simp del: List__list.simps)
+  apply (cut_tac P__a=P__a in List__list_subtype_constr2, simp del: List__list.simps)
   apply (drule_tac x="\<lambda>i. if i < n then Some (f i) else None" in spec, 
          auto simp del: List__list.simps)
   apply (rule_tac x=n in exI, 
@@ -5087,6 +5087,10 @@ op [a] compare
      | ([],      []      ) -> Equal
      | ([],      _       ) -> Less
      | (_,       []      ) -> Greater
+
+proof Isa compare_Obligation_exhaustive
+  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
+end-proof
 
 % lift isomorphism to lists, element-wise:
 

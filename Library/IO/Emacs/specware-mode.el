@@ -2103,7 +2103,7 @@ With an argument, it doesn't convert imports."
 	 (thy-file (sw:eval-in-lisp
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
-                            (TypeObligations::generateExhaustivityConditions? nil)
+                            (TypeObligations::generateExhaustivityConditions? t)
                             (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
@@ -2127,7 +2127,7 @@ With an argument, it doesn't convert imports."
 	 (thy-file (sw:eval-in-lisp
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
-                            (TypeObligations::generateExhaustivityConditions? nil)
+                            (TypeObligations::generateExhaustivityConditions? t)
                             (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::deleteThyFilesForUID %S)

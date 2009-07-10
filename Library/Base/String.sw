@@ -306,6 +306,10 @@ op List.show (sep:String) (l: List String) : String =
      | hd::[] -> hd
      | hd::tl -> hd ++ sep ++ (List.show sep tl)
 
+proof Isa show_Obligation_exhaustive
+  by (cases l, auto)
+end-proof
+
 % deprecated:
 
 op sub : {(s,n) : String * Nat | n < length s} -> Char = (@)

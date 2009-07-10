@@ -66,6 +66,13 @@ defs String__newline_def: "String__newline \<equiv> ''
 consts Boolean__show :: "bool \<Rightarrow> string"
 defs Boolean__show_def: 
   "Boolean__show x \<equiv> (if x then ''true'' else ''false'')"
+theorem Nat__digitToString_Obligation_exhaustive: 
+  "\<lbrakk>(d::nat) \<ge> 0; d < 10\<rbrakk> \<Longrightarrow> 
+   0 = d 
+     \<or> (1 = d 
+      \<or> (2 = d 
+       \<or> (3 = d \<or> (4 = d \<or> (5 = d \<or> (6 = d \<or> (7 = d \<or> (8 = d \<or> 9 = d))))))))"
+  by auto
 fun Nat__digitToString :: "nat \<Rightarrow> string"
 where
    "Nat__digitToString 0 = ''0''"
@@ -302,6 +309,12 @@ fun Option__show :: "('a \<Rightarrow> string) \<Rightarrow> 'a option \<Rightar
 where
    "Option__show shw None = ''None''"
  | "Option__show shw (Some x) = (''(Some '' @ shw x) @ '')''"
+theorem List__show_Obligation_exhaustive: 
+  "(case (l::string list) of Nil \<Rightarrow> True
+                           | _ \<Rightarrow> False) 
+     \<or> (case l of Cons _ _ \<Rightarrow> True
+                | _ \<Rightarrow> False)"
+  by (cases l, auto)
 fun List__show :: "string \<Rightarrow> string list \<Rightarrow> string"
 where
    "List__show sep [] = ''''"

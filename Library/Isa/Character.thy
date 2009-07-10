@@ -10,10 +10,6 @@ theorem Char__chr_subtype_constr:
  apply (rule_tac x="nat_of_char y" in exI)
  apply (simp add: char_of_nat_of_char)
   done
-theorem Char__chr_subtype_constr1: 
-  "Fun_PD (\<lambda> (n::nat). n < 256)
-      (RFun (\<lambda> (n::nat). n < 256) char_of_nat)"
-  by auto
 theorem Char__ord_subtype_constr: 
   "Function__bijective_p__stp(TRUE, \<lambda> (n::nat). n < 256) nat_of_char"
    apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)

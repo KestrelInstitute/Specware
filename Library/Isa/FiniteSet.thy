@@ -7,10 +7,8 @@ consts FSet__toFSet :: "'a Set__FiniteSet \<Rightarrow> 'a FSet__FSet"
 axioms FSet__toFSet_subtype_constr: 
   "Function__bijective_p__stp(finite, TRUE) FSet__toFSet"
 axioms FSet__toFSet_subtype_constr1: 
-  "Fun_PD finite (RFun finite FSet__toFSet)"
-axioms FSet__toFSet_subtype_constr2: 
   "Function__bijective_p__stp(Set__finite_p__stp P__a, TRUE) FSet__toFSet"
-axioms FSet__toFSet_subtype_constr3: 
+axioms FSet__toFSet_subtype_constr2: 
   "Fun_P
      (Set__finite_p__stp P__a &&& Set_P P__a, FSet__FSet_P P__a)
       (RFun (Set__finite_p__stp P__a &&& Set_P P__a) FSet__toFSet)"
