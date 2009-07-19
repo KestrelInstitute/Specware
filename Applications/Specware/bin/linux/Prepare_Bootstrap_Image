@@ -101,7 +101,7 @@ fi
 # --------------------------------------------------------------------------------
 
 if [ ! -f lisp/Specware4.lisp ]; then
-   echo "Cannot find Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, Specware-base.lisp, or lisp/Specware.lisp"
+   echo "Cannot find Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, SpecwareLispFiles.tgz, or lisp/Specware.lisp"
    echo "Giving up."
    exit 1
 fi
