@@ -21,7 +21,7 @@ SCRIPT_DIR=`pwd`
 
 BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION
 SPECWARE4_IMAGE="$BIN_DIR"/Specware4.$IMAGE_EXTENSION
-SPECWARE_BASE_LISP="$SPECWARE4"/Applications/Specware/Specware4-base.lisp
+SPECWARE_LISP_FILES_TGZ="$SPECWARE4"/Applications/Specware/SpecwareLispFiles.tgz
 SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
 
 # --------------------------------------------------------------------------------
@@ -29,9 +29,9 @@ SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
 # --------------------------------------------------------------------------------
 
 if [ -f "$BOOTSTRAP_IMAGE" \
-     -a \( \( ! -f "$SPECWARE4_IMAGE"    \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE4_IMAGE"    \) \
-     -a \( \( ! -f "$SPECWARE_BASE_LISP" \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_BASE_LISP" \) \
-     -a \( \( ! -f "$SPECWARE_LISP"      \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_LISP"      \) ]; then
+     -a \( \( ! -f "$SPECWARE4_IMAGE"         \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE4_IMAGE"         \) \
+     -a \( \( ! -f "$SPECWARE_LISP_FILES_TGZ" \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_LISP_FILES_TGZ" \) \
+     -a \( \( ! -f "$SPECWARE_LISP"           \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_LISP"           \) ]; then
 
   echo "Using current $BOOTSTRAP_IMAGE"
   echo " " 
@@ -46,12 +46,12 @@ fi
 # --------------------------------------------------------------------------------
 
 if [ -f "$SPECWARE4_IMAGE" \
-     -a \( \( ! -f "$SPECWARE_BASE_LISP" \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_BASE_LISP" \) \
-     -a \( \( ! -f "$SPECWARE_LISP"      \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_LISP"      \) ]; then
+     -a \( \( ! -f "$SPECWARE_LISP_FILES_TGZ" \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_LISP_FILES_TGZ" \) \
+     -a \( \( ! -f "$SPECWARE_LISP"           \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_LISP"           \) ]; then
    
    #----------------- Use Specware4.dxl ------------------#
    
-   # Specware.$IMAGE_EXTENSION exists and neither Specware4-base.lisp nor Specware4.lisp is newer
+   # Specware.$IMAGE_EXTENSION exists and neither SpecwareLispFiles.tgz nor Specware4.lisp is newer
    echo " "
    echo "  Bootstrapping from existing Specware image: bin/linux/Specware4.$IMAGE_EXTENSION"
    echo " "
@@ -68,15 +68,15 @@ echo cd -P "$SPECWARE4"/Applications/Specware
 cd -P "$SPECWARE4"/Applications/Specware
 
 # --------------------------------------------------------------------------------
-# If necessary, copy Specware4-base.lisp to lisp/Specware4.lisp
+# If necessary, untar SpecwareLispFiles.tgz into lisp diectory
 # --------------------------------------------------------------------------------
 
-if [ -f "$SPECWARE_BASE_LISP" \
-     -a \(  \( ! -f "$SPECWARE_LISP" \) -o "$SPECWARE_BASE_LISP" -nt "$SPECWARE_LISP" \) ]; then
+if [ -f "$SPECWARE_LISP_FILES_TGZ" \
+     -a \(  \( ! -f "$SPECWARE_LISP" \) -o "$SPECWARE_LISP_FILES_TGZ" -nt "$SPECWARE_LISP" \) ]; then
  
    if [ -f "$SPECWARE_LISP" ]; then
       echo " " 
-      echo "  CVS saved lisp, Specware4-base.lisp, is newer than Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, and lisp/Specware4.lisp (or they do not even exist)"
+      echo "  CVS saved tar file, SpecwareLispFiles.tgz, is newer than Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, and lisp/Specware4.lisp (or they do not even exist)"
       echo " " 
    fi
    
@@ -85,13 +85,13 @@ if [ -f "$SPECWARE_BASE_LISP" \
       mkdir lisp
    fi
    
-   echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
-   cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+   echo "tar -xvzf SpecwareLispFiles.tgz"
+   tar -xvzf SpecwareLispFiles.tgz
    echo " "
    
 else
    echo " "
-   echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
+   echo "Bootstrapping from previously generated lisp: lisp/Specware*.lisp"
    echo " "
 fi
    
