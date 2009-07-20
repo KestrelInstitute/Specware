@@ -987,6 +987,8 @@ spec
    if refine_num = 0 then qid
      else Qualified(q,nm^"__"^toString refine_num)
 
+ op dontUnfoldTypes: List QualifiedId = [Qualified("Nat", "Nat")]
+
  def checkSpec spc = 
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (m, el) ->
@@ -1019,7 +1021,7 @@ spec
                                                 | _ -> [tau]
                                    in
                                    let taus = if omitDefSubtypeConstrs?
-                                               then map (fn tau -> stripRangeSubsorts(spc, tau)) taus
+                                               then map (fn tau -> stripRangeSubsorts(spc, tau, dontUnfoldTypes)) taus
                                                else taus
                                    in
                                    foldr (fn (tau, tcc) ->
@@ -1066,7 +1068,7 @@ spec
                                             | _ -> [tau]
                                in
                                let taus = if omitDefSubtypeConstrs?
-                                           then map (fn tau -> stripRangeSubsorts(spc, tau)) taus
+                                           then map (fn tau -> stripRangeSubsorts(spc, tau, dontUnfoldTypes)) taus
                                            else taus
                                in
                                let Qualified(q, id) = refinedQID refine_num qid in

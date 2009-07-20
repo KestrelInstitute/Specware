@@ -111,15 +111,16 @@ spec
     of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
      | srt -> srt
 
- op stripRangeSubsorts(sp: Spec, srt: Sort): Sort =
+ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): Sort =
    case srt of
-     | Subsort (s_srt, _, _) -> stripRangeSubsorts (sp, s_srt)
-     | Arrow (d_srt, r_srt, a)-> Arrow(d_srt, stripRangeSubsorts (sp, r_srt), a)
+     | Base(qid, _, _) | qid in? dontUnfoldQIds -> srt
+     | Subsort (s_srt, _, _) -> stripRangeSubsorts (sp, s_srt, dontUnfoldQIds)
+     | Arrow (d_srt, r_srt, a)-> Arrow(d_srt, stripRangeSubsorts (sp, r_srt, dontUnfoldQIds), a)
      | Base _ ->
        let uf_srt = unfoldBase (sp, srt) in
        if equalType?(uf_srt, srt) || embed? CoProduct srt || embed? Quotient srt
          then srt
-         else stripRangeSubsorts (sp, uf_srt)
+         else stripRangeSubsorts (sp, uf_srt, dontUnfoldQIds)
      | _ -> srt
    
  op booleanType?(spc: Spec, ty: Sort): Boolean =
@@ -475,7 +476,7 @@ spec
 	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
                              ^(foldl (fn (res,(id2, _)) -> res^id2^" ") "" fields)
                              ^"at "^print(termAnn term)))
-     | _ -> System.fail "Product sort expected for mkProjectTerm"    
+     | _ -> System.fail("Product sort expected for mkProjectTerm: "^printTermWithSorts term)
 
 
  op productLength(sp: Spec, srt:Sort): Nat = 
