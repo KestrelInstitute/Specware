@@ -6,9 +6,9 @@ Test = spec
 
   op msg_char?(ch: Char): Boolean = isUpperCase ch || ch = #*
 
-  type WordString = (String | all word_char?)
+  type WordString = (String | forall? word_char?)
 
-  type MessageString = (String | all msg_char?)
+  type MessageString = (String | forall? msg_char?)
 
   op word2string(wrd: Word): WordString = implode wrd
 
