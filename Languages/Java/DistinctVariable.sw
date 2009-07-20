@@ -104,12 +104,13 @@ def distinctVar(term, ids) =
 			     let (t,ids) = distinctVar(term,ids0) in
 			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
 
-    | Bind _ -> distinctVarBind(term, ids)
-    | The  _ -> distinctVarThe (term, ids)
-    | Pi   _ -> distinctVarPi  (term, ids)
-    | And  _ -> distinctVarAnd (term, ids)
+%    | Bind _ -> distinctVarBind(term, ids)
+%    | The  _ -> distinctVarThe (term, ids)
+%    | Pi   _ -> distinctVarPi  (term, ids)
+%    | And  _ -> distinctVarAnd (term, ids)
 
-    | _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
+    | _ -> (writeLine ("unsupported term format (in distinctVar): "^printTerm(term));
+            (term, ids))
 
 op distinctVars: List Term * List Id -> List Term * List Id
 def distinctVars(terms, ids) =
@@ -118,7 +119,7 @@ def distinctVars(terms, ids) =
     | term::terms ->
     let (newTerm, newIds) = distinctVar(term, ids) in
     let (restTerms, restIds) = distinctVars(terms, newIds) in
-    (cons(newTerm, restTerms), restIds)
+    (Cons(newTerm, restTerms), restIds)
 
 
 op distinctVarApply: Term * List Id -> Term * List Id
@@ -208,17 +209,17 @@ def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   (withAnnT(res,termAnn(letTerm)),finalIds)
 
 
-def distinctVarBind (term as Bind(binder, vars, body, _), ids) =
-  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+%def distinctVarBind (term as Bind(binder, vars, body, _), ids) =
+%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
 
-def distinctVarThe (term as The(var, body, _), ids) =
-  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+%def distinctVarThe (term as The(var, body, _), ids) =
+%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
 
-def distinctVarPi (term as Pi(tyvars, body, _), ids) =
-  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+%def distinctVarPi (term as Pi(tyvars, body, _), ids) =
+%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
 
-def distinctVarAnd (term as And(terms, _), ids) =
-  fail ("unsupported term format (in distinctVar)"^printTerm(term))
+%def distinctVarAnd (term as And(terms, _), ids) =
+%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
 
 op findNewId: Id * List Id -> Id
 
