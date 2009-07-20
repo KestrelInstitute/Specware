@@ -468,6 +468,30 @@ MetaSlang qualifying spec
 
  def equalVarStruct? ((id1,_), (id2,_)) = id1 = id2
 
+  %% List Term set operations
+  op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Boolean =
+    exists (fn t2 -> equalTerm?(t1,t2)) tms
+
+  op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    filter(fn t1 -> ~(termIn?(t1, tms2))) tms1
+
+  op [a] termsUnion(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    termsDiff(tms1,tms2) ++ tms2
+
+  op [a] termsIntersect(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
+    filter(fn t1 -> termIn?(t1, tms2)) tms1
+
+  op [a] typeIn?(t1: ASort a, tms: List (ASort a)): Boolean =
+    exists (fn t2 -> equalType?(t1,t2)) tms
+
+ op [a] removeDuplicateTerms(tms: List (ATerm a)): List (ATerm a) =
+   case tms of
+     | []    -> []
+     | [t]   -> [t]
+     | t1::r -> let nr = removeDuplicateTerms r in
+                if termIn?(t1, nr) then nr
+                  else t1::r
+
  def MetaSlang.maybeAndSort (srts, pos) =
    let non_dup_sorts =
        foldl (fn (pending_srts, srt) ->
