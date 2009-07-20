@@ -250,7 +250,8 @@ ArityNormalize qualifying spec
 	of Fun(Bool true,_,_) -> true
 	 | _ -> false
 
- def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term = 
+ def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term =
+     % let _ = writeLine("n_arity:\n"^printTerm term) in
      case term
        of Lambda(rules,a) -> 
           Lambda 
@@ -395,6 +396,7 @@ ArityNormalize qualifying spec
     setOps (spc, 
             mapOpInfos (fn info -> 
 			let pos = termAnn info.dfn in
+                        % let _ = writeLine("an: "^printQualifiedId(head info.names)) in
 			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
 			let new_defs =
 			    map (fn dfn ->
