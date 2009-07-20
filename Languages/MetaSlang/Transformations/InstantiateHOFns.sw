@@ -7,9 +7,9 @@ spec
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
-    %let _ = writeLine("Before HO Instantiation:\n"^printSpec spc) in
+    % let _ = writeLine("Before HO Instantiation:\n"^printSpec spc) in
     let result = aux_instantiateHOFns spc false in
-    %let _ = writeLine("After HO Instantiation:\n"^printSpec result) in
+    % let _ = writeLine("After HO Instantiation:\n"^printSpec result) in
     result
 
   %% snark interface can call this directly to set flag to true
@@ -74,9 +74,10 @@ spec
                  if sizeTerm opinfo.dfn > unfoldSizeThreshold then None
                  else
                  let (tvs, ty, dfn) = unpackFirstOpDef opinfo in
-                 case dfn of
-                   | Lambda _ ->
-                     Some(simplifiedApply(dfn, a, spc))
+                 case (dfn, typeMatch(ty, srt, spc, true)) of
+                   | (Lambda _, Some tyVarSubst) ->
+                     let inst_dfn = instantiateTyVarsInTerm(dfn, tyVarSubst) in
+                     Some(simplifiedApply(inst_dfn, a, spc))
                    | _ -> None)
           | Apply _ ->
 	    (case getCurryArgs tm of
@@ -90,9 +91,10 @@ spec
                            if sizeTerm opinfo.dfn > unfoldSizeThreshold then None
                            else
                              let (tvs, ty, dfn) = unpackFirstOpDef opinfo in
-                             case dfn of
-                               | Lambda _ ->
-                                 let inst_tm = mkCurriedApply(dfn, args) in
+                             case (dfn, typeMatch(ty, srt, spc, true)) of
+                               | (Lambda _, Some tyVarSubst) ->
+                                 let inst_dfn = instantiateTyVarsInTerm(dfn, tyVarSubst) in
+                                 let inst_tm = mkCurriedApply(inst_dfn, args) in
                                  Some(simplify spc inst_tm)
                                | _ -> None)
                     | _ -> None))
@@ -108,6 +110,7 @@ spec
         Some(simplifyOne spc (mkLet(binds, M)))
 
   op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
+    % let _ = writeLine("sufc: "^printTerm tm) in
     case tm of
       | Apply(Lambda(rules, _), a, _) | length rules > 1->
         %% Unfold if function constructs term that matches one case
@@ -124,6 +127,8 @@ spec
              (case patternMatchRulesToLet(rules, simp_uf_tm, spc) of
                 | Some exp_tm -> exp_tm
                 | None -> tm))
+      | Let(binds, bod, a) ->
+        simplifyOne spc (Let(binds, simplifyUnfoldCase spc bod, a))
       | _ -> tm
 
   op  unFoldTerms: Spec * AQualifierMap DefInfo -> Spec
