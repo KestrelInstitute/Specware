@@ -480,11 +480,12 @@ Utilities qualifying spec
    subst(srt) 
 
  def substitute(M,sub) = 
-   if null sub then M else 
+   if null sub then M else
+   let M_names = StringSet.fromList(varNames(freeVars M)) in
    let freeNames = foldr (fn ((v,trm),vs) -> 
                             StringSet.union (StringSet.fromList(varNames(freeVars trm)),
                                              vs)) 
-                     StringSet.empty sub
+                     M_names sub
    in 
    substitute2(M,sub,freeNames)
  
@@ -1132,22 +1133,6 @@ Utilities qualifying spec
       | Lambda _ -> true
       | _ -> false
 
-  %% List Term set operations
-  op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Boolean =
-    exists (fn t2 -> equalTerm?(t1,t2)) tms
-
-  op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
-    filter(fn t1 -> ~(termIn?(t1, tms2))) tms1
-
-  op [a] termsUnion(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
-    termsDiff(tms1,tms2) ++ tms2
-
-  op [a] termsIntersect(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
-    filter(fn t1 -> termIn?(t1, tms2)) tms1
-
-  op [a] typeIn?(t1: ASort a, tms: List (ASort a)): Boolean =
-    exists (fn t2 -> equalType?(t1,t2)) tms
-
  %% Evaluation of constant terms
  def evalSpecNames = ["Nat","Integer","String"] 
  def evalConstant?(term) =
@@ -1216,11 +1201,15 @@ Utilities qualifying spec
      ("Integer","compare"),
      ("List","length")]
 
+  op knownSideEffectFreeFns: List String =
+    ["toString", "return"]
+
   op  knownSideEffectFreeFn?: Fun -> Boolean
   def knownSideEffectFreeFn? f =
     case f of
       | Op(Qualified(qid),_) ->
         member(qid,knownSideEffectFreeQIds)
+          || qid.2 in? knownSideEffectFreeFns
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
       
@@ -1646,9 +1635,9 @@ Utilities qualifying spec
            then map (fn Apply(pi, _, _) -> pi) conjs
            else [pred]
        | Apply(Fun(Op(Qualified("Set", "/\\"), _),_,_), Record([("1", p1), ("2", p2)], _), _) ->
-         decomposeConjPred p1 ++ decomposeConjPred p2
+         removeDuplicateTerms(decomposeConjPred p1 ++ decomposeConjPred p2)
        | Apply(Fun(Op(Qualified("Bool", "&&&"), _),_,_), Record([("1", p1), ("2", p2)], _), _) ->
-         decomposeConjPred p1 ++ decomposeConjPred p2
+         removeDuplicateTerms(decomposeConjPred p1 ++ decomposeConjPred p2)
        | _ -> [etaReduce pred]
 
    op decomposeListConjPred(preds: List MS.Term): List(List MS.Term) =
