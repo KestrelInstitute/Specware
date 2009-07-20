@@ -856,19 +856,21 @@ def toAny     = Term `TranslationBasic.toAny`
 	   insertOpers (m_opers, q, r_elts, r_ops)
 
      def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, a) = 
-       %let _ = String.writeLine ("lambdaLift \""^id^"\"...") in
+       % let _ = writeLine ("lambdaLift \""^id^"\"...") in
        if ~ (definedOpInfo? info)
 	 then addNewOpAux (info << {names = [Qualified (q, id)]},
 			   r_elts, r_ops, decl?, refine_num, a)
        else
 	 let (tvs, srt, full_term) = unpackTerm(info.dfn) in
          let term = refinedTerm(full_term, refine_num) in
+         % let _ = writeLine(printTerm term) in
 	 case term of 
 	   | Lambda ([(pat, cond, term)], a) ->
 	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^toString refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     let term = Lambda ([(pat, cond, term)], a) in
+             % let _ = writeLine(" -->\n"^printTerm term) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
              let full_term = replaceNthTerm(full_term, refine_num, term) in
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
@@ -919,12 +921,13 @@ def toAny     = Term `TranslationBasic.toAny`
 	   | _ -> (Cons(el,r_elts),r_ops))
 	 result
 	 elts
-   in
+   in 
+   % let _ = printSpecFlatToTerminal spc in
    let (newElts,newOps) = liftElts(spc.elements, ([],spc.ops)) in
    let new_spc = spc << {ops        = newOps, 
                          elements   = newElts}
    in
-   % let _ = toScreen(printSpec new_spc) in
+   % let _ = printSpecFlatToTerminal new_spc in
    new_spc
 
 % op  addNewOp : fa (a) QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
