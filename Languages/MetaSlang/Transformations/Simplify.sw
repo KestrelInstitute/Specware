@@ -77,14 +77,18 @@ spec
      % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(VarPat (v,_),e)],body,_) ->
-	  let noSideEffects = sideEffectFree(e) in
+	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
 	  (case countVarRefs(body,v)
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
-	                 or noInterveningSideEffectsBefore?
+	                 || noInterveningSideEffectsBefore?
 			      (body,fn (Var (v2,_)) -> v = v2
 			             | _ -> false)
-	               then simplifyOne spc (substitute(body,[(v,e)]))
+	               then %let _ = if embed? Lambda e then writeLine("ruv: \n"^printTerm term) else () in
+                            let result = simplifyOne spc (substitute(body,[(v,e)])) in
+                            %let _ = if embed? Lambda e then writeLine("--> \n"^printTerm (substitute(body,[(v,e)]))
+                            %                                            ^"\n"^printTerm result) else () in
+                            result
 		       else term
 	      | _ -> term)
         | Let ([(WildPat _,e)], body, _) ->
@@ -278,14 +282,14 @@ spec
                arg_tm, _) | termSize arg_tm < 40 ->
          mkSimpConj [simplifiedApply(pred1, arg_tm, spc),
                      simplifiedApply(pred2, arg_tm, spc)]
-       | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, _) ->
+       | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, a) ->
          let preds = decomposeConjPred term in
          (case find simpleLambda? preds of
             | Some (lam as Lambda ([(pat, _, bod)], _)) ->
               let other_preds = delete lam preds in
               let Some arg_tm = patternToTerm pat in
               mkLambda(pat, mkConj(bod::map (fn pred -> simplifiedApply(pred, arg_tm, spc)) other_preds))
-            | _ -> term)
+            | _ -> composeConjPreds preds)
        | IfThenElse(t1,t2,t3,a) ->
          (case t1 of
             | Fun(Bool true, _,_) -> t2
@@ -543,9 +547,10 @@ spec
  op traceSimplify?: Boolean = false
 
  def simplify spc term =
-   let _ = if traceSimplify? then toScreen("Before:\n" ^ printTerm term ^ "\n") else () in
    let simp_term = mapSubTerms(simplifyOne spc) term in
-   let _ = if traceSimplify? then toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") else () in
+   let trace? = traceSimplify? && ~(equalTerm?(simp_term, term)) in
+   let _ = if trace? then toScreen("Before:\n" ^ printTerm term ^ "\n") else () in
+   let _ = if trace? then toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") else () in
    simp_term
 
  op  simplifySpec: Spec -> Spec
