@@ -4,8 +4,8 @@ A = spec
     end-spec
 
 B = spec
-     op foo : List Nat -> List Boolean
-     def foo nats =  map (fn(n:Nat) -> if n=0 then false else true) nats
+     op foo (nats: List Nat): List Boolean =
+       map (fn(n:Nat) -> if n=0 then false else true) nats
      type B 
     end-spec
 
