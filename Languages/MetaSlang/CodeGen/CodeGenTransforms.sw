@@ -40,10 +40,18 @@ def identifyIntSorts spc =
   let
     def identifyIntSort srt =
       case srt of
-	| Base (Qualified (_ (*"Nat"*),     "Nat"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "PosNat"),    [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Integer"*), "NZInteger"), [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "int"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "Nat"),       [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "PosNat"),    [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Integer"*), "NZInteger"), [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "int"),       [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "Int"),       [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "Int0"),       [], b) ->
+          Base (Qualified ("Integer", "Integer"), [], b)
 %	| Base (Qualified (_ (*"Nat"*),     "long"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
         % the following 6 lines actually do not belong here, they "repair" something that happens in PSL:
         % the qualifier of base types get lost. Thats also the reason why in the above lines the qualifier
@@ -54,6 +62,9 @@ def identifyIntSorts spc =
 	| Base (Qualified (s,        "Char"),   tv, b) -> Base (Qualified ("Char", "Char"), tv, b)
 	| Base (Qualified ("List",   "List"),   _,  b) -> srt
 	| Base (Qualified (s,        "List"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+	| Base (Qualified (s,       "List1"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+	| Base (Qualified (s,     "InjList"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+	| Base (Qualified (s, "Permutation"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
 	| _ -> srt
   in
   let termid = (fn t -> t) in
@@ -995,7 +1006,8 @@ def addMissingFromSort (bspc, spc, ignore, srt, minfo) =
 				         minfo 
 					 fields
     | Quotient (srt, term,  _) -> addMissingFromTerm (bspc, spc, ignore, term, addMissingFromSort (bspc, spc, ignore, srt, minfo))
-    | Subsort  (srt, term,  _) -> addMissingFromTerm (bspc, spc, ignore, term, addMissingFromSort (bspc, spc, ignore, srt, minfo))
+    | Subsort  (srt, term,  _) -> % addMissingFromTerm (bspc, spc, ignore, term, addMissingFromSort (bspc, spc, ignore, srt, minfo))
+      addMissingFromSort (bspc, spc, ignore, srt, minfo)
     | Base     (qid as Qualified (q, id), srts, _) ->
       if ignore qid then 
 	minfo 
@@ -1788,14 +1800,16 @@ def showSorts spc =
                   | Some(Spec exec_spc) ->
                     foldl (fn (op_map, el) ->
                              case el of
-                               | Op(Qualified(q,id), true, _) ->
+                               | Op(qid as Qualified(q,id), true, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
-                                    | None -> op_map)
-                               | OpDef(Qualified(q,id), _, _) ->
+                                    | Some info | embed? Some (AnnSpec.findTheOp(spc, qid)) ->
+                                      insertAQualifierMap(op_map, q, id, info)
+                                    | _ -> op_map)
+                               | OpDef(qid as Qualified(q,id), _, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info -> insertAQualifierMap(op_map, q, id, info)
-                                    | None -> op_map)
+                                    | Some info | embed? Some (AnnSpec.findTheOp(spc, qid)) ->
+                                      insertAQualifierMap(op_map, q, id, info)
+                                    | _ -> op_map)
                                | _ -> op_map)
                       op_map exec_spc.elements)
          spc.ops baseExecutableSpecNames

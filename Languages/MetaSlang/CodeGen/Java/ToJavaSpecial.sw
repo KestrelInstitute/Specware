@@ -247,7 +247,8 @@ spec
 	 return(Some (s1++s2++s3,expr,k,l))
 	}
 
-      | Apply(Fun(Op(Qualified("String","sub"),_),_,_),Record([(_,t1),(_,t2)],_),_) ->
+      | Apply(Fun(Op(Qualified("String",at_or_sub),_),_,_),Record([(_,t1),(_,t2)],_),_)
+          | at_or_sub in? ["@", "sub"] ->
 	{
 	 (s1,argexpr1,k,l) <- termToExpressionM(tcx,t1,k,l);
 	 (s2,argexpr2,k,l) <- termToExpressionM(tcx,t2,k,l);

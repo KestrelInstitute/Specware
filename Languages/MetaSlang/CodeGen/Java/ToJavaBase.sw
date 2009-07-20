@@ -257,6 +257,7 @@ def tt_v2(id) =
   case id of
     | "Boolean" -> (Basic (JBool), 0) % see tt_v3
     | "Integer" -> (Basic (JInt), 0)
+    | "Int" -> (Basic (JInt), 0)
     | "Nat" -> (Basic (JInt), 0)
     | "Char" -> (Basic (Char), 0)
     | "String" -> mkJavaObjectType("String")
@@ -680,6 +681,8 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
  *)
 op mkAsrtExpr: Spec * List Var * List(Option MS.Term) -> Option MS.Term
 def mkAsrtExpr(spc,vars,dompreds) =
+  % let _ = writeLine("mse: "^foldl (fn (r,(id,_)) -> r^" "^id) "" vars) in
+  % let _ = writeLine(foldl (fn (r,dp) -> r^(case dp of Some d -> ", "^printTerm d | _ -> " ? ")) "" dompreds) in
   let vars = if length(dompreds) = 1 & length(vars) > 1
 	       then let (fields,_) = foldl (fn((fields,n),(id,srt)) ->
 					    let b = sortAnn(srt) in
@@ -759,6 +762,8 @@ def getJavaTypeFromTypeId(id) =
  *)
 op mkMethDeclWithParNames: Id * List Id * Id * List Id * JavaStmt -> MethDecl
 def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt) =
+%   let _ = writeLine("mkMethDeclWithParNames: "^methodName^" "^anyToString parTypeNames
+%                       ^" "^anyToString parNames^": "^retTypeName) in
   let body = [Stmt bodyStmt] in
 %  let (pars,_) = foldl (fn((types,nmb),argType) -> 
 %		    let type = getJavaTypeFromTypeId(argType) in
@@ -1192,6 +1197,7 @@ def mapJavaIdent sep id =
 		  | (#>,id) -> sep^"GT"^id
 		  | (#-,id) -> "_"^id
 		  | (#',id) -> sep^"Prime"^id % maybe "_Prime" ^ id ?
+                  | (#@,id) -> sep^"AT"^id
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id

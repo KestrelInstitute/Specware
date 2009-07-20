@@ -35,7 +35,8 @@ def subSortToClsDecls(id, superSort, pred) =
     | _ -> 
       % TODO: arrive here for injective? and surjective? -- subsorts of arrow
       % let _ = toScreen("\nFOO: [" ^ anyToString id ^ "] [" ^ anyToString superSort ^ "] [" ^ anyToString pred ^ "]\n") in
-      raise(UnsupportedSubsortTerm(printSort superSort),sortAnn superSort)
+      %raise(UnsupportedSubsortTerm(id^": "^printSort superSort),sortAnn superSort)
+      return ()
 
 op mkSubSortConstrDecl: Id  * Id * Sort * Id -> JGenEnv ConstrDecl
 def mkSubSortConstrDecl(id, superSortId, superSort, predId) =

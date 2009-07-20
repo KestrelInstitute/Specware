@@ -13,6 +13,7 @@ import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/Simplify
 import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
+import /Languages/MetaSlang/Specs/SubtractSpec
 
 import Monad
 
@@ -124,7 +125,7 @@ def sortToClsDecls (q, id, sort_info) =
 	     let _ = writeLine(";; adding type alias: "^id^" = Boolean") in
 	     addTypeAlias(id, "Boolean")
 	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
-	     if q = "Accord" && (id = "Update" || id = "ProcType") then return () else
+	     if true || q = "Accord" && (id = "Update" || id = "ProcType") then return () else
 	     raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
 	}
      }
@@ -259,6 +260,7 @@ op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGe
 def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId) =
   {
    spc <- getEnvSpec;
+   % println("addStaticMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printSort srt);
    (vars, body) <- return(srtTermDelta(srt, trm));
    rngid <- tt_v3M rng;
    fpars <- varsToFormalParamsM vars;
@@ -325,6 +327,7 @@ op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option J
 def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
+   % println("addPrimArgsMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printSort srt);
    (vars, body) <- return(srtTermDelta(srt, trm));
    %rngId <- srtIdM rng;
    classId <- srtIdM rng;
@@ -604,6 +607,7 @@ def modifyClsDeclsFromOps =
    spc <- getEnvSpec;
    %clsDecls <- getClsDecls;
    opsAsList <- return (opsAsList spc);
+   println("ops: "^printOpNms spc);
    create_field? <- getCreateFieldFun;
    foldM (fn _ -> fn(qualifier,id,opinfo) ->
 	  if create_field? opinfo.dfn then
@@ -887,40 +891,73 @@ def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
   (q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
   ||
-  (q="Integer" && (i="Integer" || i="Int" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" ||
-		   i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"
-                   || i="positive?"))
+  (q="Integer" && (i="Integer" || i="Int" || i="Int0" || i="+" || i="-" || i="*" || i="div"
+                   || i="rem" || i="<" || i="<=" || i=">" || i=">=" || i="toString"
+                   || i="intToString" || i="show" || i="stringToInt"
+                   || i="positive?" || i="one" || i="zero" || i="isucc"))
   ||
   (q="IntegerAux" && i="-") % unary minus
   ||
   (q="Boolean" && (i="Boolean" || i="Bool" || i="true" || i="false" || i="~" || i="&" || i="or" ||
 		   i="=>" || i="<=>" || i="~="))
   ||
-  (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
+  (q="Char" && (i="Char" || i="chr" || i="ord" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
 	        i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
                 i="toLowerCase" || i="toString"))
   ||
   (q="String" && (i="String" || i="writeLine" || i="toScreen" || i="concat" || i="++" ||
-                  i="^" || i="newline" || i="length" || i="substring"))
+                  i="^" || i="newline" || i="length" || i="substring" || i="@" || i="sub"))
   || %% Non-constructive
-  (q="Function" && i in? ["inverse", "surjective?", "injective?"])
-  || (q = "List" && i in? ["lengthOfListFunction", "list", "list_1"])
+  (q="Function" && i in? ["inverse", "surjective?", "injective?", "bijective?", "Bijection"])
+  || (q = "List" && i in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength",
+                           "list", "list_1", "ListFunction"])
+  || (q = "Integer" && i in? ["positive?", "negative?"])
 
 % --------------------------------------------------------------------------------
 def printOriginalSpec? = false
 def printTransformedSpec? = false
 
+op printOpNms(spc: Spec): String =
+  let ops = opsAsList spc in
+  "("^toString(length ops)^")"^foldl (fn (s,o) -> s^" "^o.2) "" ops
+
+op etaExpandDefs(spc: Spec): Spec =
+  setOps (spc, 
+            mapOpInfos (fn info -> 
+			let pos = termAnn info.dfn in
+                        % let _ = writeLine("an: "^printQualifiedId(head info.names)) in
+			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+			let new_defs =
+			    map (fn dfn ->
+				 let pos = termAnn dfn in
+				 let (tvs, srt, term) = unpackFirstTerm dfn in
+				 let usedNames = addLocalVars (term, empty) in
+				 let tm = etaExpand (spc, usedNames, srt, term) in
+				 maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+			        old_defs
+			in
+			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+			info << {dfn = new_dfn})
+	               spc.ops)
+
 %op JGen.transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def JGen.transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
+  let spc = substBaseSpecsJ spc in
+  let spc = normalizeTopLevelLambdas spc in
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
+  let _ = writeLine("ops0: "^printOpNms spc) in
+  let spc = subtractSpec spc basespc in
+  let _ = writeLine("ops1: "^printOpNms spc) in
+  let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  let _ = writeLine("ops2: "^printOpNms spc) in
+  let spc = substBaseSpecsJ spc in
+  let _ = writeLine("ops3: "^printOpNms spc) in
   let spc = lambdaLift(spc,true) in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
-  let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-  let spc = substBaseSpecsJ spc in
   let spc = identifyIntSorts spc in
 
   let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
@@ -931,6 +968,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   let spc = translateMatchJava spc in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in
+  let spc = etaExpandDefs spc in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = distinctVariable(spc) in
   % let _ = toScreen("\n================================\n") in

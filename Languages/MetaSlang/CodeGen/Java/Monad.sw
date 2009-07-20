@@ -447,7 +447,12 @@ def monadBind (f, g1) =
 	| (Exception except, newState) -> (Exception except, newState)
 
 op monadSeq : fa (a,b) (JGenEnv a) * (JGenEnv b) -> JGenEnv b
-def monadSeq (f, g2) = monadBind (f, (fn _ -> g2))
+def monadSeq (f, g2) =   % monadBind (f, (fn _ -> g2))
+    %% Unfolded is more efficient
+    fn state ->
+      case (f state) of
+        | (Ok        _,      newState) -> (g2 newState)
+        | (Exception except, newState) -> (Exception except, newState)
 
 %% ================================================================================
 %%  catch is used at outer levels to process exceptions.
