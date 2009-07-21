@@ -456,16 +456,21 @@ IsaTermPrinter qualifying spec
     spc \_guillemotleft {elements = newelements,
            ops      = ops}
 
+  op makeSubstFromRecPats(pats: List(Id * Pattern), rec_tm: MS.Term, spc: Spec): List(Pattern * MS.Term) =
+    mapPartial (fn (fld, pat) -> if embed? WildPat pat then None
+                                  else Some(pat, mkProjectTerm(spc, fld, rec_tm)))
+      pats
+
   op maybeExpandRecordPattern(spc: Spec) (t: MS.Term): MS.Term =
     case t of
       | Let([(pat as RecordPat(pats,_), rec_tm)], body, _)
           | varOrRecordPattern? pat && ~(varOrTuplePattern? pat) ->
-        let binds = map (fn (fld, pat) -> (pat, mkProjectTerm(spc, fld, rec_tm))) pats in
+        let binds = makeSubstFromRecPats(pats, rec_tm, spc) in
         foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds
       | Lambda([(pat as RecordPat(pats,_), _, body)], _)
           | varOrRecordPattern? pat && ~(varOrTuplePattern? pat) ->
         let rec_v = ("record__v", patternSort pat) in
-        let binds = map (fn (fld, pat) -> (pat, mkProjectTerm(spc, fld, mkVar rec_v))) pats in
+        let binds = makeSubstFromRecPats(pats, mkVar rec_v, spc) in
         let let_bod = foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds in
         mkLambda(mkVarPat rec_v, let_bod)
       | _ -> t
@@ -2682,6 +2687,7 @@ def isSimplePattern? trm =
      | RecordPat(prs,_) | tupleFields? prs \_rightarrow
        all (\_lambda (_,p) \_rightarrow varOrTuplePattern? p) prs
      | RestrictedPat(pat,cond,_) \_rightarrow varOrTuplePattern? pat
+     | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
  op  varOrRecordPattern?: Pattern \_rightarrow Boolean
@@ -2691,6 +2697,7 @@ def isSimplePattern? trm =
      | RecordPat(prs,_) \_rightarrow
        all (\_lambda (_,p) \_rightarrow varOrRecordPattern? p) prs
      | RestrictedPat(pat,cond,_) \_rightarrow varOrRecordPattern? pat
+     | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
  op  simpleHead?: MS.Term \_rightarrow Boolean
