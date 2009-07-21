@@ -515,12 +515,12 @@ SpecNorm qualifying spec
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
     maybePiTerm(tvs, SortedTerm(result,ty,termAnn tm)) 
 
-  op regularizeIfPFun(t: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
+  op regularizeIfPFun(tm: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
     % ty is expected type, rm_ty is provided types
-    % let _ = writeLine("Regularize: "^printTerm t^": "^printSort ty^" to "^printSort rm_ty) in
+    % let _ = writeLine("Regularize: "^printTerm tm^": \n"^printSort ty^" to \n"^printSort rm_ty) in
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom, rng), Some(rm_dom, rm_rng)) ->
-        if embed? Var t && equalType?(dom, rm_dom) then t
+        if embed? Var tm && equalType?(dom, rm_dom) then tm
         else
         let rfun = if embed? Boolean (stripSubsorts(spc, rng))
                      then case ty of
@@ -528,12 +528,12 @@ SpecNorm qualifying spec
                             | _ -> if regularizeBoolToFalse? then "RFunB" else "RFun"
                    else "RFun"
         in
-        let def mkRFun(pred, t) =
+        let def mkRFun(pred, tm) =
               let pred = simplify spc pred in
               %% We are only coercing domain so pass expectation for range down
               let exp_ty = if equalType?(rng, rm_rng) then rm_ty else mkArrow(rm_dom, rng) in
-              let reg_t =
-                  case (pred, t) of
+              let reg_tm =
+                  case (pred, tm) of
                     | (Lambda([(pred_pat, Fun(Bool true,_,_), pred_bod)],_),
                        Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_))
                         | rfun = "RFun" ->
@@ -551,7 +551,7 @@ SpecNorm qualifying spec
                                                 mkArrow(inferType(spc, pred),
                                                         mkArrow(exp_ty, ty))),
                                            pred),
-                                   t))
+                                   tm))
                     | (_, Lambda([(fn_pat, Fun(Bool true,_,_), fn_bod)],_)) ->
                       (case patternToTerm fn_pat of
                          | Some var_tm ->
@@ -562,28 +562,32 @@ SpecNorm qualifying spec
                                                 mkArrow(inferType(spc, pred),
                                                         mkArrow(exp_ty, ty))),
                                            pred),
-                                   t))
+                                   tm))
+                    | (_, Apply(Apply(Fun(Op(Qualified(toIsaQual, rfun),_),_,_), prd, _),_,_)) | equalTerm?(prd, pred)->
+                      %% Don't regularize twice!
+                      tm
                     | _ ->
                       mkApply(mkApply(mkOp(Qualified(toIsaQual, rfun),
                                            mkArrow(inferType(spc, pred),
                                                    mkArrow(exp_ty, ty))),
                                       pred),
-                              t)
+                              tm)
               in
-              % let _ = writeLine("Regularize: "^printTerm t^" to\n"^printTerm reg_t) in
-              reg_t
+              % let _ = writeLine("Regularize: "^printTerm tm^" to\n"^printTerm reg_tm) in
+              reg_tm
         in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of
            | None ->
              (case subtypeComps(spc, raiseSubtypeFn(rm_dom, spc)) of
                 | Some(sup_ty, pred) | eagerRegularization? ->
-                  mkRFun(pred, t)
-                | _ -> t)
-           | Some(sup_ty, pred) -> mkRFun(pred, t))
-      | _ -> t
+                  mkRFun(pred, tm)
+                | _ -> tm)
+           | Some(sup_ty, pred) -> mkRFun(pred, tm))
+      | _ -> tm
 
   op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let rm_ty = inferType(spc,t) in
+    % let _ = writeLine("reg: "^toString equal_testable?^"\n"^printTerm t) in
     let t = if equal_testable? && ~eagerRegularization? && ~(embed? And t)
               then regularizeIfPFun(t, ty, rm_ty, spc)
             else t
@@ -771,11 +775,13 @@ SpecNorm qualifying spec
       else
         (case tryRelativizeTerm(tvs, base_thm, stp_tbl, boolSort, ho_eqfns, spc, coercions) of
            | ([],_) -> base_thm
-           | (tv_map,pred_tm) ->
+           | (tv_map, pred_tm) ->
          % let pred_tm = substTyVarsWithSubtypes(tv_map, pred_tm) in
+         % let _ = writeLine("ost: "^id^"\n"^printTerm pred_tm) in
          let pred_tm = mapTerm (polyCallsTransformers(spc, stp_tbl, true, coercions)) pred_tm in
-           let pred_thm = mkBind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, pred_tm) in
-           mkConj[base_thm, pred_thm]) 
+         % let _ = writeLine("tr:\n"^printTerm pred_tm) in
+         let pred_thm = mkBind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, pred_tm) in
+         mkConj[base_thm, pred_thm]) 
 
   op separateRhsConjuncts (spc: Spec) (tm: MS.Term): List MS.Term =
     case tm of
