@@ -232,8 +232,14 @@ theorem Integer__induction_naturals:
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
 defs Nat__posNat_p_def [simp]: "Nat__posNat_p n \<equiv> (n > 0)"
 types Nat__PosNat = "nat"
+theorem Nat__succ_Obligation_subtype: 
+  "succ (int n) \<ge> 0"
+  by auto
 theorem Nat__succ__def: 
   "Suc n = nat (succ (int n))"
+  by auto
+theorem Nat__pred_Obligation_subtype: 
+  "\<lbrakk>(n::nat) > 0\<rbrakk> \<Longrightarrow> pred (int n) \<ge> 0"
   by auto
 consts Nat__pred :: "Nat__PosNat \<Rightarrow> nat"
 defs Nat__pred_def: "Nat__pred n \<equiv> nat (pred (int n))"
@@ -249,6 +255,9 @@ theorem Integer__sign__def1:
   by auto
 theorem Integer__sign__def2: 
   "\<lbrakk>\<not> (i > 0); \<not> (i < 0)\<rbrakk> \<Longrightarrow> sign i = 0"
+  by auto
+theorem Integer__abs_Obligation_subtype: 
+  "\<lbrakk>\<not> ((i::int) \<ge> 0)\<rbrakk> \<Longrightarrow> - i \<ge> 0"
   by auto
 theorem Integer__abs__def: 
   "\<lbrakk>i \<ge> 0\<rbrakk> \<Longrightarrow> zabs i = nat i"
@@ -778,12 +787,18 @@ theorem Integer__divE_equals_divF_on_naturals:
 theorem Integer__div_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
+theorem Integer__div_Obligation_subtype0: 
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
+  sorry
 theorem Integer__div__def: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> i div j = nat (int i divE int j)"
   apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
   done
 theorem Integer__mod_Obligation_subtype: 
   "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  by auto
+theorem Integer__mod_Obligation_subtype0: 
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i modE int j \<ge> 0"
   by auto
 theorem Integer__mod__def: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> i mod j = nat (int i modE int j)"
