@@ -789,7 +789,8 @@ theorem Integer__div_Obligation_subtype:
   by auto
 theorem Integer__div_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
-  sorry
+  apply (simp add: div_signs)
+  done
 theorem Integer__div__def: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> i div j = nat (int i divE int j)"
   apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
