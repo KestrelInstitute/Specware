@@ -9,8 +9,7 @@ axioms FSet__toFSet_subtype_constr:
 axioms FSet__toFSet_subtype_constr1: 
   "Function__bijective_p__stp(Set__finite_p__stp P__a, TRUE) FSet__toFSet"
 axioms FSet__toFSet_subtype_constr2: 
-  "Fun_P
-     (Set__finite_p__stp P__a &&& Set_P P__a, FSet__FSet_P P__a)
+  "Fun_PD (Set__finite_p__stp P__a)
       (RFun (Set__finite_p__stp P__a &&& Set_P P__a) FSet__toFSet)"
 consts FSet__fromFSet__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a set"
 defs FSet__fromFSet__stp_def: 
@@ -20,9 +19,6 @@ defs FSet__fromFSet__stp_def:
 consts FSet__fromFSet :: "'a FSet__FSet \<Rightarrow> 'a Set__FiniteSet"
 defs FSet__fromFSet_def: 
   "FSet__fromFSet \<equiv> Function__inverse__stp finite FSet__toFSet"
-theorem FSet__fromFSet_subtype_constr: 
-  "finite (FSet__fromFSet d__x)"
-   sorry
 consts FSet__in_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a \<times> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__in_p__stp_def: 
   "FSet__in_p__stp P__a
@@ -56,8 +52,7 @@ defs FSet__e_lt__stp_def:
   "FSet__e_lt__stp P__a
      \<equiv> (\<lambda> ((s1::'a FSet__FSet), (s2::'a FSet__FSet)). 
           Set__e_lt__stp P__a
-            (RSet P__a (FSet__fromFSet__stp P__a s1), 
-             RSet P__a (FSet__fromFSet__stp P__a s2)))"
+            (FSet__fromFSet__stp P__a s1, FSet__fromFSet__stp P__a s2))"
 consts e_lt_fset_p :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"	(infixl "<'_fset?" 60)
 defs e_lt_fset_p_def: 
   "(s1 <_fset? s2)
@@ -79,8 +74,7 @@ defs FSet__e_gt__stp_def:
   "FSet__e_gt__stp P__a
      \<equiv> (\<lambda> ((s1::'a FSet__FSet), (s2::'a FSet__FSet)). 
           Set__e_gt__stp P__a
-            (RSet P__a (FSet__fromFSet__stp P__a s1), 
-             RSet P__a (FSet__fromFSet__stp P__a s2)))"
+            (FSet__fromFSet__stp P__a s1, FSet__fromFSet__stp P__a s2))"
 consts e_gt_fset_p :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"	(infixl ">'_fset?" 60)
 defs e_gt_fset_p_def: 
   "(s1 >_fset? s2)
@@ -222,22 +216,17 @@ theorem FSet__empty_Obligation_subtype:
   by auto
 consts empty_fset_p :: "'a FSet__FSet"
 defs empty_fset_p_def: "empty_fset_p \<equiv> FSet__toFSet {}"
-theorem FSet__empty_subtype_constr: 
-  "FSet__FSet_P P__a empty_fset_p"
-   sorry
 consts FSet__empty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__empty_p__stp_def: 
   "FSet__empty_p__stp P__a s
-     \<equiv> Set__empty_p__stp P__a
-          (RSet P__a (FSet__fromFSet__stp P__a s))"
+     \<equiv> Set__empty_p__stp P__a (FSet__fromFSet__stp P__a s)"
 consts FSet__empty_p :: "'a FSet__FSet \<Rightarrow> bool"
 defs FSet__empty_p_def: 
   "FSet__empty_p s \<equiv> Set__empty_p (FSet__fromFSet s)"
 consts FSet__nonEmpty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__nonEmpty_p__stp_def: 
   "FSet__nonEmpty_p__stp P__a s
-     \<equiv> Set__nonEmpty_p__stp P__a
-          (RSet P__a (FSet__fromFSet__stp P__a s))"
+     \<equiv> Set__nonEmpty_p__stp P__a (FSet__fromFSet__stp P__a s)"
 consts FSet__nonEmpty_p :: "'a FSet__FSet \<Rightarrow> bool"
 defs FSet__nonEmpty_p_def: 
   "FSet__nonEmpty_p s \<equiv> Set__nonEmpty_p (FSet__fromFSet s)"
@@ -248,14 +237,10 @@ theorem FSet__single_Obligation_subtype:
 consts FSet__single :: "'a \<Rightarrow> 'a FSet__FSet"
 defs FSet__single_def: 
   "FSet__single x \<equiv> FSet__toFSet (Set__single x)"
-theorem FSet__single_subtype_constr: 
-  "\<lbrakk>P__a x\<rbrakk> \<Longrightarrow> FSet__FSet_P P__a (FSet__single x)"
-   sorry
 consts FSet__single_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__single_p__stp_def: 
   "FSet__single_p__stp P__a s
-     \<equiv> Set__single_p__stp P__a
-          (RSet P__a (FSet__fromFSet__stp P__a s))"
+     \<equiv> Set__single_p__stp P__a (FSet__fromFSet__stp P__a s)"
 consts FSet__single_p :: "'a FSet__FSet \<Rightarrow> bool"
 defs FSet__single_p_def: 
   "FSet__single_p s \<equiv> Set__single_p (FSet__fromFSet s)"
@@ -263,8 +248,7 @@ consts FSet__onlyMemberOf__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a \<ti
 defs FSet__onlyMemberOf__stp_def: 
   "FSet__onlyMemberOf__stp P__a
      \<equiv> (\<lambda> ((x::'a), (s::'a FSet__FSet)). 
-          Set__onlyMemberOf__stp P__a
-            (x, RSet P__a (FSet__fromFSet__stp P__a s)))"
+          Set__onlyMemberOf__stp P__a(x, FSet__fromFSet__stp P__a s))"
 consts onlyMemberOf_fs :: "'a \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"	(infixl "onlyMemberOf'_fs" 60)
 defs onlyMemberOf_fs_def: 
   "((x::'a) onlyMemberOf_fs s) \<equiv> (x onlyMemberOf FSet__fromFSet s)"
@@ -273,10 +257,8 @@ theorem FSet__theMember__stp_Obligation_subtype:
   "\<lbrakk>FSet__single_p__stp P__a s; 
     FSet__FSet_P P__a s; 
     Set_P P__a (FSet__fromFSet__stp P__a s); 
-    Set__finite_p__stp P__a
-       (RSet P__a (FSet__fromFSet__stp P__a s))\<rbrakk> \<Longrightarrow> 
-   Set__single_p__stp P__a
-      (RSet P__a (FSet__fromFSet__stp P__a s))"
+    Set__finite_p__stp P__a (FSet__fromFSet__stp P__a s)\<rbrakk> \<Longrightarrow> 
+   Set__single_p__stp P__a (FSet__fromFSet__stp P__a s)"
    sorry
 consts FSet__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a"
 defs FSet__theMember__stp_def: 
@@ -377,7 +359,7 @@ defs FSet__foldable_p__stp_def:
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           \<lambda> ((c::'b), (f::'b \<times> 'a \<Rightarrow> 'b), (s::'a FSet__FSet)). 
             Set__foldable_p__stp(P__a, P__b)
-              (c, f, RFun P__a (FSet__fromFSet__stp P__a s)))"
+              (c, f, FSet__fromFSet__stp P__a s))"
 consts FSet__foldable_p :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__foldable_p_def: 
   "FSet__foldable_p
@@ -387,10 +369,8 @@ theorem FSet__fold__stp_Obligation_subtype:
   "\<lbrakk>FSet__FSet_P P__a s; 
     Fun_PD (\<lambda> (ignore1, (x1::'a)). P__a x1) (f::'b \<times> 'a \<Rightarrow> 'b); 
     FSet__foldable_p__stp(P__a, TRUE)((c::'b), f, s); 
-    Set__finite_p__stp P__a
-       (RSet P__a (FSet__fromFSet__stp P__a s))\<rbrakk> \<Longrightarrow> 
-   Set__foldable_p__stp(P__a, TRUE)
-     (c, f, RFun P__a (FSet__fromFSet__stp P__a s))"
+    Set__finite_p__stp P__a (FSet__fromFSet__stp P__a s)\<rbrakk> \<Longrightarrow> 
+   Set__foldable_p__stp(P__a, TRUE)(c, f, FSet__fromFSet__stp P__a s)"
    sorry
 consts FSet__fold__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                            'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a FSet__FSet \<Rightarrow> 'b"

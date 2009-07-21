@@ -14,12 +14,10 @@ axioms FMap__toFMap_subtype_constr1:
          (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 
         &&& Relation__functional_p__stp(P__a, P__b), TRUE) FMap__toFMap"
 axioms FMap__toFMap_subtype_constr2: 
-  "Fun_P
-     (Set__finite_p__stp
-         (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 
-        &&& (Relation__functional_p__stp(P__a, P__b) 
-           &&& Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)), 
-      FMap__FMap_P(P__a, P__b))
+  "Fun_PD
+      (Set__finite_p__stp
+          (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 
+         &&& Relation__functional_p__stp(P__a, P__b))
       (RFun
           (Set__finite_p__stp
               (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) 
@@ -44,12 +42,6 @@ consts FMap__fromFMap :: " ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'b)MapAC__Fini
 defs FMap__fromFMap_def: 
   "FMap__fromFMap
      \<equiv> Function__inverse__stp (finite &&& Relation__functional_p) FMap__toFMap"
-theorem FMap__fromFMap_subtype_constr: 
-  "finite (FMap__fromFMap d__x)"
-   sorry
-theorem FMap__fromFMap_subtype_constr1: 
-  "Relation__functional_p (FMap__fromFMap d__x)"
-   sorry
 consts FMap__maps_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> bool"
 defs FMap__maps_p__stp_def: 
@@ -458,9 +450,6 @@ theorem FMap__empty_Obligation_subtype0:
    sorry
 consts empty_fm :: " ('a, 'b)FMap__FMap"
 defs empty_fm_def: "empty_fm \<equiv> FMap__toFMap {}"
-theorem FMap__empty_subtype_constr: 
-  "FMap__FMap_P(P__a, P__b) empty_fm"
-   sorry
 consts FMap__empty_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__empty_p__stp_def: 
@@ -945,10 +934,6 @@ theorem FMap__single_Obligation_subtype0:
 consts FMap__single :: "'a \<Rightarrow> 'b \<Rightarrow>  ('a, 'b)FMap__FMap"
 defs FMap__single_def: 
   "FMap__single x y \<equiv> FMap__toFMap (Set__single(x, y))"
-theorem FMap__single_subtype_constr: 
-  "\<lbrakk>P__a x; P__b y\<rbrakk> \<Longrightarrow> 
-   FMap__FMap_P(P__a, P__b) (FMap__single x y)"
-   sorry
 consts FMap__single_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                 ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__single_p__stp_def: 
@@ -1094,6 +1079,16 @@ theorem FMap__inverse__stp_Obligation_subtype0:
       (RSet (\<lambda> ((x0::'b), (x1::'a)). P__b x0 \<and> P__a x1)
           (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))"
    sorry
+theorem FMap__inverse__stp_Obligation_subtype1: 
+  "\<lbrakk>FMap__injective_p__stp(P__a, P__b) m; 
+    FMap__FMap_P(P__a, P__b) m; 
+    FMap__FMap_P(P__b, P__a)
+       (FMap__toFMap
+           (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))\<rbrakk> \<Longrightarrow> 
+   FMap__injective_p__stp(P__b, P__a)
+      (FMap__toFMap
+          (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))"
+   sorry
 consts FMap__inverse__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow>  ('b, 'a)FMap__FMap"
 defs FMap__inverse__stp_def: 
@@ -1110,15 +1105,16 @@ theorem FMap__inverse_Obligation_subtype0:
   "\<lbrakk>Relation__injective_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
    finite (Relation__inverse (FMap__fromFMap m))"
    sorry
+theorem FMap__inverse_Obligation_subtype1: 
+  "\<lbrakk>Relation__injective_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
+   FMap__injective_p
+      (FMap__toFMap (Relation__inverse (FMap__fromFMap m)))"
+   sorry
 consts FMap__inverse :: " ('a, 'b)FMap__InjectiveFMap \<Rightarrow> 
                           ('b, 'a)FMap__InjectiveFMap"
 defs FMap__inverse_def: 
   "FMap__inverse m
      \<equiv> FMap__toFMap (Relation__inverse (FMap__fromFMap m))"
-theorem FMap__inverse_subtype_constr: 
-  "\<lbrakk>Relation__injective_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
-   Relation__injective_p (FMap__fromFMap (FMap__inverse m))"
-   sorry
 consts FMap__map__fLiftedToPairs :: "'a \<times> 'b \<times> ('b \<Rightarrow> 'c) \<Rightarrow> 'a \<times> 'c"
 defs FMap__map__fLiftedToPairs_def: 
   "FMap__map__fLiftedToPairs
@@ -1355,11 +1351,4 @@ defs FMap__fromLists_def:
                 \<exists>(i::nat). 
                   i < length domList 
                     \<and> (domList ! i = x \<and> y = rngList ! i)))"
-theorem FMap__fromLists_subtype_constr: 
-  "\<lbrakk>distinct (domList::'a list); 
-    list_all P__a domList; 
-    list_all P__b rngList; 
-    domList equiLong rngList\<rbrakk> \<Longrightarrow> 
-   FMap__FMap_P(P__a, P__b) (FMap__fromLists(domList, rngList))"
-   sorry
 end

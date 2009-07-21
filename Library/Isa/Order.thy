@@ -117,24 +117,14 @@ consts Order__strictLinearOrder_p :: "'a EndoRelation__EndoRelation \<Rightarrow
 defs Order__strictLinearOrder_p_def: 
   "Order__strictLinearOrder_p \<equiv> Order__strict Order__linearOrder_p"
 types 'a Order__StrictLinearOrder = "'a EndoRelation__EndoRelation"
+theorem Order__strictify_Obligation_subtype: 
+  "\<lbrakk>EndoRelation__reflexive_p r\<rbrakk> \<Longrightarrow> 
+   EndoRelation__irreflexive_p (r - EndoRelation__id)"
+   sorry
 consts Order__strictify :: "'a EndoRelation__ReflexiveRelation \<Rightarrow> 
                             'a EndoRelation__IrreflexiveRelation"
 defs Order__strictify_def: 
   "Order__strictify r \<equiv> (r - EndoRelation__id)"
-theorem Order__strictify_subtype_constr: 
-  "\<lbrakk>EndoRelation__reflexive_p r\<rbrakk> \<Longrightarrow> 
-   EndoRelation__irreflexive_p (Order__strictify r)"
-   sorry
-theorem Order__strictify_subtype_constr1: 
-  "\<lbrakk>EndoRelation__reflexive_p__stp P__a r; 
-    Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
-   EndoRelation__irreflexive_p__stp P__a (Order__strictify r)"
-   sorry
-theorem Order__strictify_subtype_constr2: 
-  "\<lbrakk>EndoRelation__reflexive_p__stp (P__a::'a \<Rightarrow> bool) r; 
-    Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) r\<rbrakk> \<Longrightarrow> 
-   Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1) (Order__strictify r)"
-   sorry
 theorem Order__unstrictify__stp_Obligation_subtype: 
   "Function__bijective_p__stp
      (EndoRelation__reflexive_p__stp P__a 
@@ -163,8 +153,4 @@ consts Order__unstrictify :: "'a EndoRelation__IrreflexiveRelation \<Rightarrow>
 defs Order__unstrictify_def: 
   "Order__unstrictify
      \<equiv> Function__inverse__stp EndoRelation__reflexive_p Order__strictify"
-theorem Order__unstrictify_subtype_constr: 
-  "\<lbrakk>EndoRelation__irreflexive_p d__x\<rbrakk> \<Longrightarrow> 
-   EndoRelation__reflexive_p (Order__unstrictify d__x)"
-   sorry
 end
