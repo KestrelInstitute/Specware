@@ -2,6 +2,8 @@ List qualifying spec
 
 import Option, Integer
 
+proof Isa -subtype_constrs -free-theorems end-proof
+
 % inductive definition of lists:
 
 type List.List a = | Nil | Cons a * List.List a

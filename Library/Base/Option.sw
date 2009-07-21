@@ -2,6 +2,8 @@ Option qualifying spec
 
 import Compare, Function
 
+proof Isa -subtype_constrs -free-theorems end-proof
+
 % add an extra element to a type:
 
 type Option a = | None | Some a
@@ -18,13 +20,12 @@ proof Isa [simp] end-proof  % always expand definition in Isabelle proof
 ordered and compared by considering the extra element None to be smaller than
 any element of a. *)
 
-op [a] compare
-   (comp: a * a -> Comparison) (o1: Option a, o2: Option a) : Comparison =
+op [a] compare (comp: a * a -> Comparison) (o1: Option a, o2: Option a): Comparison =
   case (o1,o2) of
-     | (Some x,Some y) -> comp (x,y)
-     | (None,  Some _) -> Less
-     | (Some _,None)   -> Greater
-     | (None,  None)   -> Equal
+    | (Some x,Some y) -> comp (x,y)
+    | (None,  Some _) -> Less
+    | (Some _,None)   -> Greater
+    | (None,  None)   -> Equal
 
 proof Isa compare_Obligation_exhaustive
   by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)

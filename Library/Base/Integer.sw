@@ -2,6 +2,8 @@ Integer qualifying spec
 
 import Compare, Function
 
+proof Isa -subtype_constrs -free-theorems end-proof
+
 (* We introduce integers via a Peano-like axiomatization.
 
 Intuitively, Peano's axioms for the natural numbers state that natural numbers
@@ -1088,6 +1090,9 @@ proof Isa
 end-proof
 
 op div (i:Nat, j:PosNat) infixl 26 : Nat = i divE j
+proof Isa div_Obligation_subtype0
+  apply (simp add: div_signs)
+end-proof
 proof Isa div__def
   apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
 end-proof
