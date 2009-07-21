@@ -12,7 +12,7 @@ SpecNorm qualifying spec
                   | Some n \_rightarrow substring(s, 0, n)
     in
     case removeEmpty(splitStringAt(line1, " ")) of
-     | "Isa"::str::rst | length str > 0 && str@0 = #- ->
+     | "Isa"::str::rst | length str > 1 && str@0 = #- && str@1 ~= #> ->
        Some(str::rst)
      | _ \_rightarrow None
 
