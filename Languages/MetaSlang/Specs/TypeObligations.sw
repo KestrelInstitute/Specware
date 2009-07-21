@@ -13,14 +13,13 @@ spec
  %type SpecElement  = QualifiedId * TyVars * MS.Term 
  type TypeCheckConditions = SpecElements * StringSet.Set
 
- op makeTypeCheckObligationSpec: Spec -> Spec
- op checkSpec : Spec -> TypeCheckConditions
+ op makeTypeCheckObligationSpec: Spec * Boolean -> Spec
+ op checkSpec : Spec * Boolean -> TypeCheckConditions
 
  op simplifyObligations?: Bool = true
  %% These two should be false for Isabelle conversion
  op generateTerminationConditions? : Bool = true
  op generateExhaustivityConditions?: Bool = true
- op omitDefSubtypeConstrs?: Bool = false
  op traceObligationSimplify?: Bool = false
 
  op termSubstSizeLimit: Nat = 20
@@ -989,7 +988,7 @@ spec
 
  op dontUnfoldTypes: List QualifiedId = [Qualified("Nat", "Nat")]
 
- def checkSpec spc = 
+ def checkSpec (spc, omitDefSubtypeConstrs?) = 
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (m, el) ->
 		      case el of
@@ -1143,16 +1142,9 @@ spec
 %					       hashSuffix = None}),
 %		    noPos)
 
- def makeTypeCheckObligationSpec (spc) =
+ def makeTypeCheckObligationSpec (spc, omitDefSubtypeConstrs?) =
    % let _ = writeLine(printSpec spc) in
-   %let spc = lambdaLift(instantiateHOFns(spc), false) in
-%   case getOptSpec (Some "/Library/Base/WFO") of
-%     | None -> fail "Error in processing /Library/Base/WFO"
-%     | Some wfoSpec ->
-   %% if you only do an addImport to the emptyspec you miss all the substance of the
-   %% original spec, thus we do an setImports to spc.
-   let (new_elements, _) = checkSpec spc in
-%% No longer need to removeDuplicateImports as we are no longer adding imports
+   let (new_elements, _) = checkSpec (spc, omitDefSubtypeConstrs?) in
    let spc = spc << {elements = new_elements} in
    % let _ = writeLine(printSpec spc) in
    spc
