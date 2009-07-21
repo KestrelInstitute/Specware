@@ -145,5 +145,5 @@ SpecCalc qualifying spec
     %% So far only does type conditions (for subsorts
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
-    makeTypeCheckObligationSpec (spc)
+    makeTypeCheckObligationSpec (spc, false)
 endspec
