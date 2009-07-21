@@ -16,7 +16,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/ArityNormalize
+% import /Languages/MetaSlang/Transformations/ArityNormalize
 
  op addObligations?: Boolean = true
  op lambdaLift?: Boolean     = true
@@ -474,6 +474,28 @@ IsaTermPrinter qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
+  op generateAllSubtypeConstrs?(spc: Spec): Boolean =
+    let (initial_make_subtype_constr_pragma?, _) =
+        foldl (fn (r as (initial_make_subtype_constr_pragma?, done?), el) ->
+               if done? then r
+               else
+               case el of
+                 | Pragma("proof", prag_str, "end-proof", _) \_rightarrow
+                   (case controlPragmaString prag_str of
+                      | Some strs \_rightarrow
+                        if makeSubtypeConstrTheoremsString in? strs
+                          then (true, false)
+                          else if noMakeSubtypeConstrTheoremsString in? strs
+                          then (false, true)
+                          else r
+                      | None -> r)
+                 | Op _ -> (initial_make_subtype_constr_pragma?, true)
+                 | _ -> r)
+          (false, false)
+          spc.elements
+    in
+    initial_make_subtype_constr_pragma?
+
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
@@ -509,7 +531,7 @@ IsaTermPrinter qualifying spec
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addRefineObligations spc in
     let spc = if addObligations?
-               then makeTypeCheckObligationSpec spc
+               then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc)
 	       else spc
     in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
@@ -560,21 +582,15 @@ IsaTermPrinter qualifying spec
            \_or member(sub(name?, 0), [#(,#[,#\\,#",#-]))  % #" #]
      | _ \_rightarrow false
 
+  op unnamedPragma?(p: Pragma): Boolean =
+    ~(namedPragma? p || controlPragma? p.2)
+
   op verbatimIdString: String = "-verbatim"
 
   op verbatimPragma?(s: String): Boolean =
-    let line1 = case search("\n", s) of
-                  | None \_rightarrow s
-                  | Some n \_rightarrow substring(s, 0, n)
-    in
-    case removeEmpty(splitStringAt(line1, " ")) of
-     | _::verbatim_str::_ \_rightarrow
-       verbatim_str = verbatimIdString
-     | _ \_rightarrow false
-
-  op namedOrVerbatimPragma?(p: Pragma): Boolean =
-    namedPragma? p
-      || (let (_,s,_,_) = p in verbatimPragma? s)
+    case controlPragmaString s of
+      | Some(str::_) \_rightarrow str = verbatimIdString
+      | _ \_rightarrow false
 
   %% Originally was just supertype but generalized to also be a named type
   op getSuperTypeOp(ty: Sort): QualifiedId =
@@ -651,7 +667,7 @@ IsaTermPrinter qualifying spec
       def aux c spc r_elems =
 	case r_elems of
 	  | [] \_rightarrow []
-	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst | ~(namedOrVerbatimPragma? prag) \_rightarrow
+	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst | unnamedPragma? prag \_rightarrow
 	    Cons(ppProperty c prop c_str elems (Some prag),
 		 aux c spc rst)
 %	  | (Pragma(_, c_str, _, _)) :: (Property prop) :: (Pragma prag) :: rst \_rightarrow
@@ -660,7 +676,7 @@ IsaTermPrinter qualifying spec
 %	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
 %	    Cons(ppProperty c prop "" (Some prag),
 %		 aux c spc rst)
-	  | el :: (rst as (Pragma prag) :: _) | ~(namedOrVerbatimPragma? prag) \_rightarrow
+	  | el :: (rst as (Pragma prag) :: _) | unnamedPragma? prag \_rightarrow
 	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
 	    let prettyr = aux c spc rst in
 	    if pretty1 = prEmpty
