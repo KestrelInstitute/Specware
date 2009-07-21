@@ -2104,20 +2104,21 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
-                            (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
 		     filename
 		     (if non-recursive? "nil" "t"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
-						   display-warning-suppressed-classes))
-	 (buf (find-file-noselect thy-file t)))
+						   display-warning-suppressed-classes)))
     (if (string-match "Error: Unknown UID" thy-file)
         (error "Error processing spec %s" filename)
-      (progn (kill-buffer buf)		; Because of x-symbol problems if it already exists
-             (sw:add-specware-to-isabelle-path)
-             (find-file-other-window thy-file)))))
+      (let ((buf (find-file-noselect thy-file t)))
+        (kill-buffer buf)		; Because of x-symbol problems if it already exists
+        (sw:add-specware-to-isabelle-path)
+        (find-file-other-window thy-file)
+        (when (fboundp 'proof-unregister-buffer-file-name)
+          (proof-unregister-buffer-file-name t))))))
 
 (defun sw:regenerate-isa-theories-for-uid ()
   "Regenerate Isabelle/HOL theories for unit."
@@ -2128,21 +2129,21 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
-                            (TypeObligations::omitDefSubtypeConstrs? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::deleteThyFilesForUID %S)
                         (IsaTermPrinter::printUIDtoThyFile-2 %S t))"
 		     filename filename)))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
-						   display-warning-suppressed-classes))
-	 (buf (find-file-noselect thy-file t)))
+						   display-warning-suppressed-classes)))
     (if (string-match "Error: Unknown UID" thy-file)
         (error "Error processing spec %s" filename)
-      (progn 
+      (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
         (sw:add-specware-to-isabelle-path)
-        (find-file-other-window thy-file)))))
+        (find-file-other-window thy-file)
+        (when (fboundp 'proof-unregister-buffer-file-name)
+          (proof-unregister-buffer-file-name t))))))
 
 (defun sw:add-specware-to-isabelle-path ()
   (when (fboundp 'proof-shell-invisible-command)
