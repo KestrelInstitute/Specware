@@ -5,7 +5,7 @@ PosSpecToSpec qualifying spec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import ../../Transformations/NormalizeTypes
 
- def correctEqualityType (spc: Spec, eq_or_neq: Fun, ty: Sort, eq_args: MS.Term, pos1: Position)
+ op correctEqualityType (spc: Spec, eq_or_neq: Fun, ty: Sort, eq_args: MS.Term, pos1: Position)
      : MS.Term =
     case (eq_args, unlinkSort ty) of
      | (Record ([("1", e1), ("2", e2)], _), 
@@ -41,6 +41,24 @@ PosSpecToSpec qualifying spec
         Apply(fn_tm, eq_args, pos1)
       | _ -> Apply(Fun(eq_or_neq, ty, pos1), eq_args, pos1)
 
+ op correctMapType(m: MS.Term, l: MS.Term, ty: Sort, spc: Spec, fx: Fixity, a: Position)
+     : MS.Term =
+   let m_ty = inferType(spc, m) in
+   let map_ty =
+       case arrowOpt(spc, m_ty) of
+       | None -> ty
+       | Some(dom, rng) ->
+         Arrow(m_ty, Arrow(Base(Qualified("List", "List"), [dom], a),
+                           Base(Qualified("List", "List"), [rng], a), a),
+               a)
+   in
+   let result =
+   Apply(Apply(Fun(Op(Qualified("List","map"),fx),map_ty,a), m, a),
+         l, a)
+   in
+   % let _ = writeLine(printTerm result) in
+   result
+
  op  convertPosSpecToSpec: Spec -> Spec
  def convertPosSpecToSpec spc =
    let context = initializeMetaTyVars() in
@@ -50,6 +68,8 @@ PosSpecToSpec qualifying spec
            case term of
              | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | eq_or_neq = Equals || eq_or_neq = NotEquals ->
                correctEqualityType(spc, eq_or_neq, ty, t2, pos)
+             | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) ->
+               correctMapType(m, l, ty, spc, fx, a)
 	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
 	     | ApplyN (t1::t2::terms,pos) -> 
 	       convertPTerm (ApplyN([t1,ApplyN(cons(t2,terms),pos)],pos))
