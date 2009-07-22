@@ -9,7 +9,7 @@
 (defparameter *Specware-Patch-Level*          6)
 
 (defparameter *Specware-Version*              "4.2.6")
-(defparameter *Specware-Version-Name*         "Specware-4-2-")
+(defparameter *Specware-Version-Name*         "Specware-4-2-6")
 (defparameter *Specware-Major-Version-String*  "4-2")           ; Used in patch detection and about-specware command
 
 (format t "~&========================================================~%")
