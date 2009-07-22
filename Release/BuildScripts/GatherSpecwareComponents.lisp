@@ -47,6 +47,13 @@
   (require "build")
   )
 
+(defun delete-file-if-present (file &optional msg)
+  (when (probe-file file)
+    (if (null msg)
+	(format t "~&;;; Deleting file ~A~%" file)
+      (format t "~&;;; ~A~%" msg))
+    (delete-file file)))
+
 ;; sigh -- miserable hack so we can read an emacs file without choking
 (defpackage "SW")
 (eval-when (compile eval load)
@@ -761,8 +768,8 @@
 			   (extend-directory examples-dir "Matching"))
       
       (let ((matching (extend-directory examples-dir "Matching")))
-	(delete-file (make-pathname :name "MatchingRichard"         :type "sw":defaults matching))
-	(delete-file (make-pathname :name "MatchingRichardTheorems" :type "sw":defaults matching)))
+	(delete-file-if-present (make-pathname :name "MatchingRichard"         :type "sw":defaults matching))
+	(delete-file-if-present (make-pathname :name "MatchingRichardTheorems" :type "sw":defaults matching)))
 
       (copy-dist-directory (extend-directory source-dir "UserDoc" "examples")
 			   (extend-directory target-dir "Examples"))
