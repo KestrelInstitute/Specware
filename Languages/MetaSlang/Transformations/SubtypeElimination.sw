@@ -398,6 +398,7 @@ SpecNorm qualifying spec
                      let ty = raiseSubtypeFn(ty0, spc) in
                      % let _ = writeLine("relQ: "^printSort ty0^" ---> "^printSort ty) in
                      let pred_tm = srtPred(spc, ty, mkVar(vn,ty)) in
+                     % let _ = writeLine("rq0: "^printTerm pred_tm) in
                      let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
                      (Cons((vn,ty),bndVars), Utilities.mkAnd(pred_tm, res)))
               ([],mkTrue()) bndVars
