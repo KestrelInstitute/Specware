@@ -191,11 +191,17 @@ spec
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
+     % let _ = if traceSimplify? then writeLine("s1: "^printTerm term) else () in
      case tryEvalOne spc term of
        | Some cterm -> cterm
        | _ ->
      case term of
-       | Let(decl1::decl2::decls,body,_) -> 
+       | Let(all_decls as decl1::decl2::decls,body,_) ->
+         let bndvars  = foldl (fn (pvs, (p, _)) -> patternVars p ++ pvs) [] all_decls in
+         if exists? (fn (_, t) -> hasVarNameConflict?(t, bndvars)) all_decls
+           then  %% Rename to avoid name overload 
+             simplifyOne spc (substitute(term, map (fn v -> (v, mkVar v)) bndvars))
+         else
 	 simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
        %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
        | Let([(pat as RecordPat(pflds, _), tm as Record(tflds, _))], body, pos)
