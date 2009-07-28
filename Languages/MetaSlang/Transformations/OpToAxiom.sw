@@ -82,6 +82,7 @@ Prover qualifying spec
              let predFn = maybeUnfoldSubTypePred (spc, predFn) in
              % let _ = writeLine("Unfold? "^printTerm predFn) in
              let pred = (simplify spc (mkApply(predFn, tm))) in
+             % let _ = writeLine("--> "^printTerm pred) in
 	     (case supBaseSrt of
 		| Some qid -> (Some qid, Utilities.mkAnd(supPred, pred))
 	        | _ -> (None, Utilities.mkAnd(supPred, pred))) 
