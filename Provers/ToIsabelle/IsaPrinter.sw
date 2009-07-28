@@ -833,7 +833,7 @@ IsaTermPrinter qualifying spec
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts", "class", "primitive",
-                                          "next"]
+                                          "next", "instance", "and"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
     "False", "Not", "sub", "sup", "Sigma"]
@@ -1163,7 +1163,10 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                     | [(lhs, rhs)] ->
                       (case lhs of
                        | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
-                       | _ -> false)
+                       | _ ->
+                       case fixity of
+                       | Infix _ \_rightarrow existsSubTerm (embed? Record) lhs
+                       | _ \_rightarrow false)
                     | _ -> true))
 
     then
