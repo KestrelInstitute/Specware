@@ -283,6 +283,11 @@ spec
                        ("2",Fun(Nat n2,_,_))],_), _)
            | n1 = n2 ->
          t1
+       %% (x:Nat) >= 0 --> true
+       | Apply(Fun(Op(Qualified("Integer",">="),_),_,_),
+               Record([("1", x), ("2", Fun(Nat 0, _, _))], _), _)
+           | subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
+         trueTerm
        | Apply(Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_),
                      Record([("1", pred1), ("2", pred2)],_), _),
                arg_tm, _) | termSize arg_tm < 40 ->
@@ -361,13 +366,19 @@ spec
            cjs
       of Some cj ->
 	 (case bindEquality (cj,vs) of
-	    | Some (pr as (sv,_)) ->
+	    | Some (pr as (sv as (_, sv_ty), s_tm)) ->
 	      let sbst = [pr] in
+              % let sv_ty = raiseSubtypeFn(sv_ty, spc) in
+              let pred_tm = case subtypeComps(spc, sv_ty) of
+                              | Some(_, pred) -> simplifiedApply(pred, s_tm, spc)
+                              | None -> trueTerm
+              in
 	      simplifyForall spc
 	        (filter (fn v -> ~(equalVar?(v, sv))) vs,
-		 mapPartial (fn c -> if c = cj then None
-				     else Some(simpSubstitute(spc,c,sbst)))
-		   cjs,
+                 pred_tm ::
+		   (mapPartial (fn c -> if c = cj then None
+                                        else Some(simpSubstitute(spc,c,sbst)))
+                      cjs),
 		 simpSubstitute(spc,bod,sbst)))
        | _ ->
         %% x = f y && p(f y) => q(f y) --> x = f y && p x => q x
