@@ -37,41 +37,19 @@
 	      (:optional "")
 	      (:optional "")
 	      ))
-
-   ("Tutorial: MatchingProofs p1A (exhaustive)"
-    :sw "/UserDoc/tutorial/example/MatchingProofs#p1A"
-    :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig"
-	      (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#SymbolMatching")
-	      (:optional ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingSpecs#Symbols")
-	      (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
-	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p1A"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
-	      ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
-	      (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
-	      (:optional ";; ensure-directories-exist: creating $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.log")
-	      (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/ does not exist, will create.")
-	      (:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/")
-	      (:optional ";; Directory $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/ does not exist, will create.")
-	      (:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/")
-	      (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
-	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.sw"
-	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p1A.log"
-	      "p1A: Conjecture symb_matches?_Obligation_exhaustive in MatchingObligations#SymbolMatching_Oblig is Proved! *"
-	      (:optional "")
-	      (:optional "")
-	      ))
-
    ("Tutorial: MatchingProofs p2A (subtype)" 
     :sw "/UserDoc/tutorial/example/MatchingProofs#p2A"
     :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching_Oblig"
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2A"
+              (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.log"
 	      "p2A: Conjecture word_matches_at?_Obligation_subtype in MatchingObligations#WordMatching_Oblig is Proved! *"
@@ -116,7 +94,7 @@
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3C.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3C.log"
 	      ;; Sigh.  "C:" becomes "" in test output processing   
-	      "p3 Conjecture word_matches_aux?_Obligation_subtype in MatchingObligations#WordMatching0_Oblig is Proved! *"
+	      "p3C: Conjecture word_matches_aux?_Obligation_subtype in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -128,16 +106,6 @@
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3D.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3D.log"
 	      "p3D: Conjecture word_matches_aux?_Obligation_uniqueness in MatchingObligations#WordMatching0_Oblig is Proved! *"
-	      (:optional "")
-	      (:optional "")
-	      ))
-
-   ("Tutorial: MatchingProofs p3E (exhaustive)"
-    :sw "/UserDoc/tutorial/example/MatchingProofs#p3E"
-    :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3E"
-	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3E.sw"
-	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p3E.log"
-	      "p3E: Conjecture word_matches_aux?_Obligation_exhaustive in MatchingObligations#WordMatching0_Oblig is Proved! *"
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -155,20 +123,10 @@
 	      (:optional "")
 	      ))
 
-   ("Tutorial: MatchingProofs p5A (exhaustive)"
-    :sw "/UserDoc/tutorial/example/MatchingProofs#p5A"
-    :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig"
-	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5A"
-	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5A.sw"
-	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5A.log"
-	      "p5A: Conjecture find_matches_Obligation_exhaustive in MatchingObligations#FindMatches0_Oblig is Proved! *"
-	      (:optional "")
-	      (:optional "")
-	      ))
-
    ("Tutorial: MatchingProofs p5B (subtype)"
     :sw "/UserDoc/tutorial/example/MatchingProofs#p5B"
-    :output '(";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5B"
+    :output '((:optional ";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#FindMatches0_Oblig")
+              ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p5B"
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5B.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p5B.log"
 	      "p5B: Conjecture find_matches_aux_Obligation_subtype in MatchingObligations#FindMatches0_Oblig is Proved! *"
