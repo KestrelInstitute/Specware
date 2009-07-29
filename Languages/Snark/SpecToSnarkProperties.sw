@@ -75,6 +75,7 @@ snark qualifying spec
 		    %| Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    %| Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
 		    %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
@@ -99,12 +100,14 @@ snark qualifying spec
 	     case s of 
 	       | Base (Qualified ("Nat",     "Nat"),     _, _) -> true
 	       | Base (Qualified ("Integer", "Integer"), _, _) -> true
+	       | Base (Qualified ("Integer", "Int"), _, _) -> true
 	       | Boolean _ -> true 
 	       | _ -> false 
 	   def builtinSnarkSort s =
 	     case s of 
 	       | Base (Qualified ("Nat",     "Nat"),     _, _) -> Lisp.symbol ("SNARK", "NUMBER")
 	       | Base (Qualified ("Integer", "Integer"), _, _) -> Lisp.symbol ("SNARK", "NUMBER")
+	       | Base (Qualified ("Integer", "Int"), _, _) -> Lisp.symbol ("SNARK", "NUMBER")
 	       | Boolean _ -> 
 	         if rng? then 
 		   Lisp.symbol("SNARK","BOOLEAN") 
@@ -131,6 +134,7 @@ snark qualifying spec
     case s of
       | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+      | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
 				      else Lisp.symbol("SNARK",snarkSortId(id))
       | Boolean _ -> Lisp.symbol("SNARK",snarkSortId("Boolean"))
