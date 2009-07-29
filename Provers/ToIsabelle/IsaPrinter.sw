@@ -1165,7 +1165,10 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                        | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
                        | _ ->
                        case fixity of
-                       | Infix _ \_rightarrow existsSubTerm (embed? Record) lhs
+                       | Infix _ \_rightarrow
+                         (foldSubTerms (fn (tm, count) -> if embed? Record tm then count + 1 else count)
+                            0 lhs)
+                          > 1
                        | _ \_rightarrow false)
                     | _ -> true))
 
