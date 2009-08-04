@@ -26,13 +26,13 @@ NormTypes qualifying spec
        case foldl (\_lambda (result,(qid,tvs,top_ty)) \_rightarrow
                    case result of
                      | None \_rightarrow
-                       % let _ = writeLine("nt: "^printSort ty^" =~= "^printSort top_ty) in
+                       % let _ = writeLine("qid: "^printQualifiedId qid^"\n"^"nt: "^printSort ty^" =~= "^printSort top_ty) in
                        (case typeMatch(top_ty,ty,spc,false) of
                           | Some tyvar_sbst \_rightarrow
                             if checkTop? && ty = top_ty then None else
-			  %  let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
-%						   ^"\ntyvar_sbst:\n"^(anyToString tyvar_sbst)
-%						   ^"\n tvs:\n"^(anyToString tvs)) in
+			    % let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
+                            %                     ^"\ntyvar_sbst:\n"^(anyToString tyvar_sbst)
+                            %                     ^"\n tvs:\n"^(anyToString tvs)) in
                             Some(qid,tvs,tyvar_sbst)
                           | None \_rightarrow None)
                      | _ \_rightarrow result)
