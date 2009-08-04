@@ -99,7 +99,10 @@ spec
             | (Some fields, Some rm_fields)
                 | exists (fn ((_,p_ty),(_,rm_p_ty)) ->
                             some?(needsCoercion?(p_ty,rm_p_ty,coercions,spc)))
-                    (zip(fields,rm_fields)) \_rightarrow
+                    (if length fields = length rm_fields
+                       then zip(fields,rm_fields)
+                       else let _ = writeLine("ac zip error: "^printTerm n_tm^": "^printSort rm_ty^"\n"^printSort ty) in
+                            []) \_rightarrow
               let (v_pat,v_tm) = patTermVarsForProduct rm_fields in
               mkLet([(v_pat, n_tm)], v_tm)
             %% !! Need more general cases as well
