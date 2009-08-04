@@ -1921,9 +1921,9 @@ Utilities qualifying spec
                 (case match(t1,s1,pairs) of
                    | Some pairs -> match(t2,s2,pairs)
                    | None -> None)
-              | (Product(r1,_),Product(r2,_)) -> 
+              | (Product(r1,_),Product(r2,_)) | length r1 = length r2 -> 
                 typeMatchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
-              | (CoProduct(r1,_),CoProduct(r2,_)) -> 
+              | (CoProduct(r1,_),CoProduct(r2,_)) | length r1 = length r2 -> 
                 typeMatchL(r1,r2,pairs,
                            fn((id1,s1),(id2,s2),pairs) ->
                              if id1 = id2 then
