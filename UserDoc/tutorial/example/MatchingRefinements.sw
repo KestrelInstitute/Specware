@@ -59,7 +59,7 @@ end-proof
 op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
   if pos + length wrd > length msg
     then false
-    else word_matches_aux?(wrd, nthTail(msg, pos))
+    else word_matches_aux?(wrd, removePrefix(msg, pos))
 
 endspec
 
