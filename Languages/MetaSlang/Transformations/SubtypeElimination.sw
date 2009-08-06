@@ -345,7 +345,7 @@ SpecNorm qualifying spec
                                          arg_preds))
                              arg_preds_lst
                in
-               mkSubtypePreds(bare_ty, preds, a)
+               mkSubtypePreds(bare_ty, preds, a, spc)
              | None ->
                (case tryUnfoldBase spc ty of
                   | None -> ty
@@ -362,7 +362,7 @@ SpecNorm qualifying spec
                  then raise_ty else ty)
       | Subsort(s_ty, p, a) ->
         (case raiseSubtypeFn(s_ty, spc) of
-           | Subsort(sss_ty, pr, _) -> composeSubtypes(sss_ty, p, pr, a)
+           | Subsort(sss_ty, pr, _) -> composeSubtypes(sss_ty, p, pr, a, spc)
            | _ -> ty)
       | Product(flds, a) ->
         let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
