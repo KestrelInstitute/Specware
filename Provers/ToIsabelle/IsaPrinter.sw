@@ -503,6 +503,7 @@ IsaTermPrinter qualifying spec
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
+    % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists (fn el ->
@@ -542,10 +543,10 @@ IsaTermPrinter qualifying spec
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
-    let spc = normalizeNewTypes spc in
-    let spc = addCoercions coercions spc in
     %% Second round of simplification could be avoided with smarter construction
     let spc = expandRecordPatterns spc in
+    let spc = normalizeNewTypes spc in
+    let spc = addCoercions coercions spc in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
