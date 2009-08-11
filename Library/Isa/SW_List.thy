@@ -2835,8 +2835,7 @@ defs List__equiExtendRight_def:
           else 
             (l1, List__extendRight(l2, x2, length l1)))"
 theorem List__equiExtendRight_subtype_constr: 
-  "let (x, y) = List__equiExtendRight(l1, l2, x1, x2) 
-   in 
+  "let (x, y) = List__equiExtendRight(l1, l2, x1, x2) in 
    x equiLong y"
   apply (auto simp: Let_def)
   apply (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
@@ -2846,8 +2845,7 @@ theorem List__equiExtendRight_subtype_constr1:
     list_all (P__b::'b \<Rightarrow> bool) l2; 
     P__a x1; 
     P__b x2\<rbrakk> \<Longrightarrow> 
-   let (x, y) = List__equiExtendRight(l1, l2, x1, x2) 
-   in 
+   let (x, y) = List__equiExtendRight(l1, l2, x1, x2) in 
    x equiLong y"
   by (simp only: List__equiExtendRight_subtype_constr)
 theorem List__equiExtendRight_subtype_constr2: 
@@ -2976,8 +2974,7 @@ consts List__rotateLeft :: "'a List__List1 \<times> nat \<Rightarrow> 'a list"
 defs List__rotateLeft_def: 
   "List__rotateLeft
      \<equiv> (\<lambda> ((l::'a List__List1), (n::nat)). 
-          let n = n mod length l 
-          in 
+          let n = n mod length l in 
           (drop n l) @ (take n l))"
 theorem List__rotateLeft_subtype_constr: 
   "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
@@ -2996,8 +2993,7 @@ consts List__rotateRight :: "'a List__List1 \<times> nat \<Rightarrow> 'a list"
 defs List__rotateRight_def: 
   "List__rotateRight
      \<equiv> (\<lambda> ((l::'a List__List1), (n::nat)). 
-          let n = n mod length l 
-          in 
+          let n = n mod length l in 
           List__suffix(l, n) @ List__removeSuffix(l, n))"
 theorem List__rotateRight_subtype_constr: 
   "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
@@ -3845,8 +3841,7 @@ consts List__leftmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> boo
 defs List__leftmostPositionSuchThat_def: 
   "List__leftmostPositionSuchThat
      \<equiv> (\<lambda> ((l::'a list), (p::'a \<Rightarrow> bool)). 
-          let POSs = List__positionsSuchThat(l, p) 
-          in 
+          let POSs = List__positionsSuchThat(l, p) in 
           if null POSs then None else Some (hd POSs))"
 theorem List__rightmostPositionSuchThat_Obligation_subtype: 
   "\<lbrakk>distinct (POSs::nat list); 
@@ -3857,8 +3852,7 @@ consts List__rightmostPositionSuchThat :: "'a list \<times> ('a \<Rightarrow> bo
 defs List__rightmostPositionSuchThat_def: 
   "List__rightmostPositionSuchThat
      \<equiv> (\<lambda> ((l::'a list), (p::'a \<Rightarrow> bool)). 
-          let POSs = List__positionsSuchThat(l, p) 
-          in 
+          let POSs = List__positionsSuchThat(l, p) in 
           if null POSs then None else Some (last POSs))"
 consts List__positionsOf :: "'a list \<times> 'a \<Rightarrow> nat List__InjList"
 defs List__positionsOf_def: 
@@ -4610,13 +4604,11 @@ consts List__leftmostPositionOfSublistAndFollowing :: "'a list \<times> 'a list 
 defs List__leftmostPositionOfSublistAndFollowing_def: 
   "List__leftmostPositionOfSublistAndFollowing
      \<equiv> (\<lambda> ((subl::'a list), (supl::'a list)). 
-          let POSs = List__positionsOfSublist(subl, supl) 
-          in 
+          let POSs = List__positionsOfSublist(subl, supl) in 
           if null POSs then 
             None
           else 
-            let i = hd POSs 
-            in 
+            let i = hd POSs in 
             Some (i, drop (i + length subl) supl))"
 theorem List__leftmostPositionOfSublistAndFollowing_subtype_constr: 
   "\<lbrakk>list_all P__a subl; list_all P__a supl\<rbrakk> \<Longrightarrow> 
@@ -4661,8 +4653,7 @@ consts List__rightmostPositionOfSublistAndPreceding :: "'a list \<times> 'a list
 defs List__rightmostPositionOfSublistAndPreceding_def: 
   "List__rightmostPositionOfSublistAndPreceding
      \<equiv> (\<lambda> ((subl::'a list), (supl::'a list)). 
-          let POSs = List__positionsOfSublist(subl, supl) 
-          in 
+          let POSs = List__positionsOfSublist(subl, supl) in 
           if null POSs then 
             None
           else 
@@ -4814,8 +4805,7 @@ theorem List__findLeftmost_Obligation_subtype:
 consts List__findLeftmost :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a option"
 defs List__findLeftmost_def: 
   "List__findLeftmost p l
-     \<equiv> (let lp = filter p l 
-        in 
+     \<equiv> (let lp = filter p l in 
         (if null lp then None else Some (hd lp)))"
 theorem List__findLeftmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
@@ -4831,8 +4821,7 @@ theorem List__findRightmost_Obligation_subtype:
 consts List__findRightmost :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a option"
 defs List__findRightmost_def: 
   "List__findRightmost p l
-     \<equiv> (let lp = filter p l 
-        in 
+     \<equiv> (let lp = filter p l in 
         (if null lp then None else Some (last lp)))"
 theorem List__findRightmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
