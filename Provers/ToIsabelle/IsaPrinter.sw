@@ -550,7 +550,7 @@ IsaTermPrinter qualifying spec
     let spc = normalizeNewTypes spc in
     let spc = addCoercions coercions spc in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
-                then simplifyTopSpec spc
+                then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
                 else spc
     in
     let c = c << {typeNameInfo = topLevelTypes spc} in
@@ -2084,11 +2084,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             ppTerm c Top term]]
        in
        enclose?(infix? parentTerm,
-                prLinearCat 0 [[prString "let ",
-                                prLinear 0 (addSeparator (prString "; ") (map ppDecl decls)),
-                                prSpace],
-                               [prString "in "],
-                               [ppTerm c parentTerm term]])
+                prLinear 0 [prLinear 0
+                              [prConcat[prString "let ",
+                                        prLinear 0 (addSeparator (prString "; ")
+                                                      (map ppDecl decls)),
+                                        prSpace],
+                               prString "in "],
+                            ppTerm c parentTerm term])
      | LetRec (decls,term,_) \_rightarrow
        let def ppDecl (v,term) =
              prBreak 0 [%prString "def ",
@@ -2097,9 +2099,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         ppTerm c Top term]
        in
        enclose?(infix? parentTerm,
-                prLinear 0 [prString "let",
-                            prConcat[prLinear 0 (map ppDecl decls),prSpace],
-                            prString "in ",
+                prLinear 0 [prLinear 0
+                              [prString "let",
+                               prConcat[prLinear 0 (map ppDecl decls), prSpace],
+                               prString "in "],
                             ppTerm c (if infix? parentTerm then Top else parentTerm) term])
      | Var (v,_) \_rightarrow ppVarWithoutSort v
      | Fun (fun,ty,_) \_rightarrow ppFun c parentTerm fun ty
