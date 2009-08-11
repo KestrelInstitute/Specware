@@ -67,7 +67,7 @@ consts Boolean__show :: "bool \<Rightarrow> string"
 defs Boolean__show_def: 
   "Boolean__show x \<equiv> (if x then ''true'' else ''false'')"
 theorem Nat__digitToString_Obligation_exhaustive: 
-  "\<lbrakk>(d::nat) \<ge> 0; d < 10\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>(d::nat) < 10\<rbrakk> \<Longrightarrow> 
    0 = d 
      \<or> (1 = d 
       \<or> (2 = d 
