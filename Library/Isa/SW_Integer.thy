@@ -763,10 +763,10 @@ theorem Integer__divides_iff_modE_0:
    apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
   done
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
@@ -774,10 +774,10 @@ theorem Integer__divE_equals_divT_on_naturals:
   apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
   done
 theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
@@ -785,7 +785,7 @@ theorem Integer__divE_equals_divF_on_naturals:
   apply (simp add: divE_def sign_def int_mult [symmetric])
   done
 theorem Integer__div_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__div_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
@@ -796,7 +796,7 @@ theorem Integer__div__def:
   apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
   done
 theorem Integer__mod_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0; (j::Nat__PosNat) \<ge> 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
+  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
   by auto
 theorem Integer__mod_Obligation_subtype0: 
   "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i modE int j \<ge> 0"
