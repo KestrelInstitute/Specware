@@ -1703,7 +1703,7 @@ Utilities qualifying spec
                                 Infix(Right, 25),
                                 mkArrow(mkProduct[pred_ty, pred_ty], pred_ty))
          in
-         foldr (fn (pred, result) -> mkAppl(op_exp, [pred, result]))
+         foldl (fn (result, pred) -> mkAppl(op_exp, [result, pred]))
            pred1 rpreds
 
    op mkSubtypePreds(sss_ty: Sort, preds: List MS.Term, a: Position, spc: Spec): Sort =
