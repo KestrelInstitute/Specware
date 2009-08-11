@@ -182,11 +182,11 @@ spec
               body
         -> 
         %let _ = writeLine(printTerm term) in
-        elimTuple(zId,srt,fields,body)
+        simplifyOne spc (elimTuple(zId,srt,fields,body))
       | Let([(VarPat((zId,srt),_),
               Apply(Fun(Op(Qualified("TranslationBuiltIn","mkTuple"),_),_,_),
                     Record(fields,_),_))],body,_) -> 
-        elimTuple(zId,srt,fields,body)
+        simplifyOne spc (elimTuple(zId,srt,fields,body))
       | _ -> term
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
