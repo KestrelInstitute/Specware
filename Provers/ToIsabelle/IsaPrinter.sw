@@ -38,7 +38,8 @@ IsaTermPrinter qualifying spec
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
                  newVarCount: Ref Nat,
-                 source_of_thy_morphism?: Boolean}
+                 source_of_thy_morphism?: Boolean,
+                 typeNameInfo: List(QualifiedId * TyVars * Sort)}
 
  type Pragma = String * String * String * Position
 
@@ -51,12 +52,12 @@ IsaTermPrinter qualifying spec
  op  getSpec: Context \_rightarrow Spec
  def getSpec {printTypes?=_, recursive?=_, thy_name=_, spec? = Some spc,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
-              newVarCount=_, source_of_thy_morphism?=_} = spc
+              newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
  def getCurrentUID {printTypes?=_, recursive?=_, thy_name=_, spec?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
-                    source_of_thy_morphism?=_} =
+                    source_of_thy_morphism?=_, typeNameInfo=_} =
    uid
 
 
@@ -346,7 +347,8 @@ IsaTermPrinter qualifying spec
                                coercions = [],
                                overloadedConstructors = [],
                                newVarCount = Ref 0,
-                               source_of_thy_morphism? = false}
+                               source_of_thy_morphism? = false,
+                               typeNameInfo = []}
 			value
     in
     format(80, main_pp_val)
@@ -551,6 +553,7 @@ IsaTermPrinter qualifying spec
                 then simplifyTopSpec spc
                 else spc
     in
+    let c = c << {typeNameInfo = topLevelTypes spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
@@ -853,6 +856,8 @@ IsaTermPrinter qualifying spec
      | _ \_rightarrow  ppQualifiedId qid
 
  op mkFieldName(nm: String): String = nm ^ "__fld"
+ op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String
+   = qidToIsaString qid^"__"^nm
 
  op ppToplevelName(nm: String): Pretty =
    if member(nm, isabelleReservedWords)
@@ -886,7 +891,8 @@ IsaTermPrinter qualifying spec
 		  ppIdInfo aliases,
 		  prString " = "]] ++
 		(map (\_lambda (fldname, fldty) \_rightarrow
-		      [ppToplevelName (mkFieldName fldname), prString " :: ", ppType c Top false fldty])
+		      [ppToplevelName (mkNamedRecordFieldName(mainId, fldname)),
+                       prString " :: ", ppType c Top false fldty])
 		 fields))
 	   | _ \_rightarrow
 	     prBreakCat 2
@@ -2042,8 +2048,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       prPostSep 0 blockFill (prString ", ") (map ppField fields),
                       prString ")"]
           | _ \_rightarrow
+            let spc = getSpec c in
+            let rec_ty = normalizeType (spc, c.typeNameInfo, false) (inferType(spc, term)) in
             let def ppField (x,y) =
-                  prConcat [prString (mkFieldName x),
+                  prConcat [prString (case rec_ty of
+                                      | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
+                                      | _ -> mkFieldName x),
                             prString " = ",
                             ppTerm c Top y]
             in
@@ -2075,7 +2085,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        in
        enclose?(infix? parentTerm,
                 prLinearCat 0 [[prString "let ",
-                                prLinear 0 (map ppDecl decls),
+                                prLinear 0 (addSeparator (prString "; ") (map ppDecl decls)),
                                 prSpace],
                                [prString "in "],
                                [ppTerm c parentTerm term]])
@@ -2120,9 +2130,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op  projectorFun: String * Sort * Spec \_rightarrow String
  def projectorFun (p, s, spc) =
-   let arity = case sortArity(spc, s) of
-                 | None \_rightarrow 1
-                 | Some(_, i) \_rightarrow i
+   let (prod_ty, arity) = case sortArity(spc, s) of
+                            | None \_rightarrow (s,1)
+                            | Some pr \_rightarrow pr
    in
    case p of
      | "1" \_rightarrow "fst"
@@ -2134,7 +2144,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "7" \_rightarrow (if arity = 7 then "seventhl" else "seventh")
      | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
-     | _ \_rightarrow mkFieldName p
+     | _ \_rightarrow
+   case prod_ty of
+     | Base(qid, _, _) -> mkNamedRecordFieldName(qid,p)
+     | _ -> mkFieldName p
 
  op  ppBinder : Binder \_rightarrow Pretty
  def ppBinder binder =
