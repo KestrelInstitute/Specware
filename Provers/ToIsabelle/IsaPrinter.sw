@@ -2131,6 +2131,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
      | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
+ op unfoldToNamedProduct(spc: Spec, ty: Sort): Sort =
+   % let _ = writeLine("ufnp: "^printSort ty) in
+   case ty of
+     | Base _ ->
+       (case tryUnfoldBase spc ty of
+        | Some (uf_ty as Base _) -> unfoldToNamedProduct(spc, uf_ty)
+        | Some (Subsort(sup_ty, _, _)) -> unfoldToNamedProduct(spc, sup_ty)
+        | _ -> ty)
+     | _ -> ty
+
  op  projectorFun: String * Sort * Spec \_rightarrow String
  def projectorFun (p, s, spc) =
    let (prod_ty, arity) = case sortArity(spc, s) of
@@ -2148,7 +2158,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
      | _ \_rightarrow
-   case prod_ty of
+   case unfoldToNamedProduct(spc, prod_ty) of
      | Base(qid, _, _) -> mkNamedRecordFieldName(qid,p)
      | _ -> mkFieldName p
 
