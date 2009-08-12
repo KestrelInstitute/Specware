@@ -717,7 +717,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
      case N
        of Apply(t1,t2,_) -> 
 	  let srt = dereferenceSort(subst,inferType(spc,subst,t1)) in
-	  (case SpecEnvironment.rangeOpt(spc,srt)
+	  (case Utilities.rangeOpt(spc,srt)
 	     of Some rng -> rng
 	      | None -> 
 		(% System.print N; printSpecWithSortsToTerminal spc;
@@ -1233,7 +1233,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
                 | [] -> mkTuple []
                 | [M] -> M
                 |  M::Ms -> 
-                    let srt = SpecEnvironment.inferType(spc,M) in
+                    let srt = Utilities.inferType(spc,M) in
                       Apply(bindPattern(WildPat(srt,a),loop Ms),M,a)
           in
             loop Ms
