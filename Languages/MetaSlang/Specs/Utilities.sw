@@ -1515,6 +1515,71 @@ Utilities qualifying spec
       | And(tys,_) -> exists (existsInFullType? spc pred?) tys
       | _ -> false)
 
+ op stripSubsorts (sp: Spec, srt: Sort): Sort = 
+  let X = unfoldBase (sp, srt) in
+  case X 
+    of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
+     | srt -> srt
+
+ op arrowOpt (sp : Spec, srt : Sort): Option (Sort * Sort) = 
+  case stripSubsorts (sp, unfoldBase (sp,srt))
+    of Arrow (dom, rng, _) -> Some (dom, rng)
+     | _ -> None
+
+ op ProcTypeOpt (sp : Spec, srt : Sort): Option (Sort * Sort) = 
+  case stripSubsorts (sp, srt) of
+    | Base (Qualified ("Accord", "ProcType"), [dom, rng, _], _) ->
+      Some (dom, rng)
+    | _ -> None
+
+ op rangeOpt (sp: Spec, srt: Sort): Option Sort = 
+  case arrowOpt (sp, srt) of
+    | None ->
+      (case ProcTypeOpt (sp, srt) of 
+	 | Some (_, rng) -> Some rng
+	 | _ -> None)
+    | Some (_, rng) -> Some rng
+
+ op productOpt (sp : Spec, srt : Sort): Option (List (Id * Sort)) = 
+  case stripSubsorts (sp, unfoldBase (sp,srt))
+    of Product (fields, _) -> Some fields
+     | _ -> None
+
+ op coproductOpt (sp : Spec, srt : Sort): Option (List (Id * Option Sort)) = 
+  case stripSubsorts (sp, unfoldBase (sp,srt))
+    of CoProduct (fields, _) -> Some fields
+     | _ -> None
+
+ op inferType (sp: Spec, tm : MS.Term): Sort = 
+  case tm
+    of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
+                                                  | Some rng -> rng
+						  | None ->
+						    System.fail ("inferType: Could not extract type for "
+                                                                   ^ printTermWithSorts tm
+                                                                   ^ " dom " ^ printSort (unfoldBase(sp,inferType(sp,t1)))))
+     | Bind       _                         -> boolSort
+     | Record     (fields,               a) -> Product(map (fn (id, t) -> 
+							    (id, inferType (sp, t)))
+						         fields,
+                                                       a)
+     | Let        (_, term,              _) -> inferType (sp, term)
+     | LetRec     (_, term,              _) -> inferType (sp, term)
+     | Var        ((_,srt),              _) -> srt
+     | Fun        (_, srt,               _) -> srt
+     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
+                                                       inferType (sp, body))
+     | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
+     | The        ((_,srt), _,           _) -> srt
+     | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
+     | Seq        ([],                   _) -> Product ([], noPos)
+     | Seq        ([M],                  _) -> inferType (sp, M)
+     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
+     | SortedTerm (_, srt,               _) -> srt
+     | Any a                                -> Any a
+     | And        (t1::_,                _) -> inferType (sp, t1)
+     | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
+
  op subtype?(sp: Spec, srt: Sort): Boolean =
    case srt of
      | Subsort _ -> true
@@ -1692,29 +1757,29 @@ Utilities qualifying spec
                    ++ predss)
            [] rpredss
 
-   op composeConjPreds(preds: List MS.Term, spc: Spec): MS.Term =
-     case preds of
-       | [pred] -> etaReduce pred
-       | pred1::rpreds ->
-         let pred_ty = foldl (fn (pred_ty, predi) -> commonSuperType(pred_ty, termSort predi, spc))
-                         (termSort pred1) rpreds
-         in
-         let op_exp = mkInfixOp(Qualified("Bool", "&&&"),
-                                Infix(Right, 25),
-                                mkArrow(mkProduct[pred_ty, pred_ty], pred_ty))
-         in
-         foldl (fn (result, pred) -> mkAppl(op_exp, [result, pred]))
-           pred1 rpreds
+  op composeConjPreds(preds: List MS.Term, spc: Spec): MS.Term =
+    case preds of
+      | [pred] -> etaReduce pred
+      | pred1::rpreds ->
+        let pred_ty = foldl (fn (pred_ty, predi) -> commonSuperType(pred_ty, inferType(spc, predi), spc))
+                        (inferType(spc, pred1)) rpreds
+        in
+        let op_exp = mkInfixOp(Qualified("Bool", "&&&"),
+                               Infix(Right, 25),
+                               mkArrow(mkProduct[pred_ty, pred_ty], pred_ty))
+        in
+        foldl (fn (result, pred) -> mkAppl(op_exp, [result, pred]))
+          pred1 rpreds
 
-   op mkSubtypePreds(sss_ty: Sort, preds: List MS.Term, a: Position, spc: Spec): Sort =
-     case preds of
-       | [] -> sss_ty
-       | _ -> Subsort(sss_ty, composeConjPreds(preds, spc), a)
+  op mkSubtypePreds(sss_ty: Sort, preds: List MS.Term, a: Position, spc: Spec): Sort =
+    case preds of
+      | [] -> sss_ty
+      | _ -> Subsort(sss_ty, composeConjPreds(preds, spc), a)
 
-   op composeSubtypes(sss_ty: Sort, p1: MS.Term, p2: MS.Term, a: Position, spc: Spec): Sort =
-     let p1s = decomposeConjPred p1 in
-     let p2s = decomposeConjPred p2 in
-     mkSubtypePreds(sss_ty, p1s ++ p2s, a, spc)
+  op composeSubtypes(sss_ty: Sort, p1: MS.Term, p2: MS.Term, a: Position, spc: Spec): Sort =
+    let p1s = decomposeConjPred p1 in
+    let p2s = decomposeConjPred p2 in
+    mkSubtypePreds(sss_ty, p1s ++ p2s, a, spc)
 
   op dontRaiseTypes: List QualifiedId = [Qualified("Nat", "Nat")]
   op treatAsAtomicType?(ty: Sort): Boolean =

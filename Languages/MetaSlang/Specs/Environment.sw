@@ -22,7 +22,6 @@ spec
  op empty       : ()                     -> SpecEnvironment
  op add         : SpecEnvironment * Spec -> SpecEnvironment 
  op add_rev     : Spec * SpecEnvironment -> SpecEnvironment 
- op inferType   : Spec * MS.Term -> Sort
 
 % %% makeSpecReportError is called only from ui::loadFile
 % %%  (and from some mysterious GlueFront routines)
@@ -104,14 +103,7 @@ spec
        | TyVar (tv, a) -> srt
      
 
- op stripSubsorts : Spec * Sort -> Sort
- def stripSubsorts (sp, srt) = 
-  let X = unfoldBase (sp, srt) in
-  case X 
-    of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
-     | srt -> srt
-
- op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): Sort =
+op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): Sort =
    case srt of
      | Base(qid, _, _) | qid in? dontUnfoldQIds -> srt
      | Subsort (s_srt, _, _) -> stripRangeSubsorts (sp, s_srt, dontUnfoldQIds)
@@ -174,12 +166,6 @@ spec
     of Arrow _ -> true
      | _ -> false
 
- op  arrowOpt     : Spec * Sort -> Option (Sort * Sort)
- op  rangeOpt     : Spec * Sort -> Option (Sort)
- op  productOpt   : Spec * Sort -> Option (List (Id * Sort))
- op  coproductOpt : Spec * Sort -> Option (List (Id * Option Sort))
-
-
  %- def arrowOpt(sp:Spec,srt:Sort) = 
  %-   let res = arrowOpt_(sp,srt) in
  %-   let _ = writeLine("arrowOpt("^printSort(srt)^")="^
@@ -188,64 +174,6 @@ spec
  %-                           | Some(dom,rng) -> printSort(Arrow(dom,rng)))) in
  %-   res
 
- def arrowOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
-    of Arrow (dom, rng, _) -> Some (dom, rng)
-     | _ -> None
-
- def ProcTypeOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt) of
-    | Base (Qualified ("Accord", "ProcType"), [dom, rng, _], _) ->
-      Some (dom, rng)
-    | _ -> None
-
- def rangeOpt (sp, srt) = 
-  case arrowOpt (sp, srt) of
-    | None ->
-      (case ProcTypeOpt (sp, srt) of 
-	 | Some (_, rng) -> Some rng
-	 | _ -> None)
-    | Some (_, rng) -> Some rng
-
- def productOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
-    of Product (fields, _) -> Some fields
-     | _ -> None
-
- def coproductOpt (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
-    of CoProduct (fields, _) -> Some fields
-     | _ -> None
-
- def inferType (sp, tm : MS.Term) = 
-  case tm
-    of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
-                                                  | Some rng -> rng
-						  | None ->
-						    System.fail ("inferType: Could not extract type for "
-                                                                   ^ printTermWithSorts tm
-                                                                   ^ " dom " ^ printSort (unfoldBase(sp,inferType(sp,t1)))))
-     | Bind       _                         -> boolSort
-     | Record     (fields,               a) -> Product(map (fn (id, t) -> 
-							    (id, inferType (sp, t)))
-						         fields,
-                                                       a)
-     | Let        (_, term,              _) -> inferType (sp, term)
-     | LetRec     (_, term,              _) -> inferType (sp, term)
-     | Var        ((_,srt),              _) -> srt
-     | Fun        (_, srt,               _) -> srt
-     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
-                                                       inferType (sp, body))
-     | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
-     | The        ((_,srt), _,           _) -> srt
-     | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
-     | Seq        ([],                   _) -> Product ([], noPos)
-     | Seq        ([M],                  _) -> inferType (sp, M)
-     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
-     | SortedTerm (_, srt,               _) -> srt
-     | Any a                                -> Any a
-     | And        (t1::_,                _) -> inferType (sp, t1)
-     | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
 % def booleanSort : Sort = Boolean noPos
