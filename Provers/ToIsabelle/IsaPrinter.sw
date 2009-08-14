@@ -463,18 +463,37 @@ IsaTermPrinter qualifying spec
                                   else Some(pat, mkProjectTerm(spc, fld, rec_tm)))
       pats
 
-  op maybeExpandRecordPattern(spc: Spec) (t: MS.Term): MS.Term =
-    case t of
-      | Let([(pat as RecordPat(pats,_), rec_tm)], body, _)
-          | varOrRecordPattern? pat && ~(varOrTuplePattern? pat) ->
-        let binds = makeSubstFromRecPats(pats, rec_tm, spc) in
-        foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds
-      | Lambda([(pat as RecordPat(pats,_), _, body)], _)
-          | varOrRecordPattern? pat && ~(varOrTuplePattern? pat) ->
+  op expandRecPatterns (spc: Spec) (pat: Pattern, condn: MS.Term, body: MS.Term): Pattern * MS.Term * MS.Term =
+    case pat of
+      | RecordPat(pats as (id1,_)::_,_) | id1 ~= "1" && varOrRecordPattern? pat ->
         let rec_v = ("record__v", patternSort pat) in
         let binds = makeSubstFromRecPats(pats, mkVar rec_v, spc) in
         let let_bod = foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds in
-        mkLambda(mkVarPat rec_v, let_bod)
+        (mkVarPat rec_v, condn, let_bod)
+      | RecordPat(pats, a) ->
+        let (newpats, condn, new_body)
+           = foldl (fn ((newpats, condn, body), (id, p)) ->
+                    let (new_p, condn, new_body) = expandRecPatterns spc (p, condn, body) in
+                    (newpats ++ [(id, new_p)], condn, new_body))
+              ([], condn, body) pats
+        in
+        (RecordPat(newpats, a), condn, new_body)
+      | AliasPat(p1, p2, a) ->
+        let (new_p2, condn, new_body) = expandRecPatterns spc (p2, condn, body) in
+        (AliasPat(p1, new_p2, a), condn, new_body)
+      | EmbedPat(id, Some p2, ty, a) ->
+        let (new_p2, condn, new_body) = expandRecPatterns spc (p2, condn, body) in
+        (EmbedPat(id, Some new_p2, ty, a), condn, new_body)
+      | _ -> (pat, condn, body)
+
+  op maybeExpandRecordPattern(spc: Spec) (t: MS.Term): MS.Term =
+    case t of
+      | Let([(pat as RecordPat(pats as (id1,_)::_,_), rec_tm)], body, _)
+          | id1 ~= "1" && varOrRecordPattern? pat ->
+        let binds = makeSubstFromRecPats(pats, rec_tm, spc) in
+        foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds
+      | Lambda (pats, a) ->
+        Lambda(map (expandRecPatterns spc) pats, a)
       | _ -> t
 
   op expandRecordPatterns(spc: Spec): Spec =
@@ -837,7 +856,7 @@ IsaTermPrinter qualifying spec
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts", "class", "primitive",
-                                          "next", "instance", "and"]
+                                          "next", "instance", "and", "open"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
     "False", "Not", "sub", "sup", "Sigma"]
@@ -2333,7 +2352,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             exists (\_lambda (id,opt_arg_ty) \_rightarrow
                     case opt_arg_ty of
                       | None \_rightarrow false
-                      | Some arg_ty \_rightarrow id = constrId \_and some?(productOpt(spc,arg_ty)))
+                      | Some arg_ty \_rightarrow id = constrId \_and tupleType?(spc,arg_ty))
               fields)
      | _ \_rightarrow false
 
