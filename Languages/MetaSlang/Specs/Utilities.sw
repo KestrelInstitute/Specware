@@ -1545,6 +1545,11 @@ Utilities qualifying spec
     of Product (fields, _) -> Some fields
      | _ -> None
 
+ op tupleType? (sp : Spec, srt : Sort): Boolean =
+   case productOpt(sp, srt) of
+     | Some(("1",_)::_) -> true
+     | _ -> false
+
  op coproductOpt (sp : Spec, srt : Sort): Option (List (Id * Option Sort)) = 
   case stripSubsorts (sp, unfoldBase (sp,srt))
     of CoProduct (fields, _) -> Some fields
