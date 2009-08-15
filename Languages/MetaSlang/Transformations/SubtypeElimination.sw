@@ -370,7 +370,7 @@ SpecNorm qualifying spec
           then let (bare_flds, arg_id_vars, pred,_) =
                 foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
                          case tyi of
-                           | Subsort(t,p,_) -> let v = ("x"^toString i, t)  in
+                           | Subsort(t,p,_) -> let v = ("x_"^id, t)  in
                                                (bare_flds ++ [(id,t)],
                                                 arg_id_vars ++ [(id, mkVarPat v)],
                                                 Utilities.mkAnd(pred, mkApply(p, mkVar v)),
