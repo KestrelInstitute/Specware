@@ -572,7 +572,7 @@ IsaTermPrinter qualifying spec
                 then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
                 else spc
     in
-    let c = c << {typeNameInfo = topLevelTypes spc} in
+    let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
 		  [prString "imports ", ppImports c spc.elements],
@@ -2089,7 +2089,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       prString ")"]
           | _ \_rightarrow
             let spc = getSpec c in
-            let rec_ty = normalizeType (spc, c.typeNameInfo, false) (inferType(spc, term)) in
+            let rec_ty = inferType(spc, term) in
+            let rec_ty = normalizeType (spc, c.typeNameInfo, false) rec_ty in
             let def ppField (x,y) =
                   prConcat [prString (case rec_ty of
                                       | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
