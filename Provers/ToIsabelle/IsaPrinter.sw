@@ -857,7 +857,7 @@ IsaTermPrinter qualifying spec
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts", "class", "primitive",
                                           "next", "instance", "and", "open"]
- op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
+ op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
     "False", "Not", "sub", "sup", "Sigma", "map"]
 
@@ -1072,7 +1072,7 @@ IsaTermPrinter qualifying spec
               | None -> (hd,bod))
          | _ ->
        let fvs = freeVars hd ++ freeVars bod in
-       let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
+       let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,disallowedVarNames)) fvs in
        if rename_fvs = [] then (hd,bod)
          else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
               let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
@@ -1519,7 +1519,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        if tuple? then aux(hd,bod,tuple?) else ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
      def fix_vars(hd,bod) =
        let fvs = freeVars hd ++ freeVars bod in
-       let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,notImplicitVarNames)) fvs in
+       let rename_fvs = filter (\_lambda (nm,_) \_rightarrow member(nm,disallowedVarNames)) fvs in
        if rename_fvs = [] then (hd,bod)
          else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
               let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
@@ -2210,17 +2210,22 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Exists \_rightarrow lengthString(1, "\\<exists>")
      | Exists1 \_rightarrow lengthString(2, "\\<exists>!")
 
+ op ppVarStr(nm: String): Pretty =
+   if nm in? disallowedVarNames then prString(nm^"__v")
+     else prString (ppIdStr nm)
+
  op  ppVarWithoutSort : Var \_rightarrow Pretty
- def ppVarWithoutSort (id, _(* ty *)) = prString (ppIdStr id)
+ def ppVarWithoutSort (id, _(* ty *)) =
+   ppVarStr id
 
  op ppVarWithSort (c: Context) ((id, ty): Var): Pretty =
    if printQuantifiersWithType? then
-     enclose?(true, prConcat [prString (ppIdStr id), prString "::", ppType c Top true ty])
-   else prString (ppIdStr id)
+     enclose?(true, prConcat [ppVarStr id, prString "::", ppType c Top true ty])
+   else ppVarStr id
 
  op  ppVar : Context \_rightarrow Var \_rightarrow Pretty
  def ppVar c (id, ty) =
-   prConcat [prString (ppIdStr id),
+   prConcat [ppVarStr id,
              prString ":",
              ppType c Top true ty]
 
@@ -2243,7 +2248,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Bind (Forall, vars, bod, a) \_rightarrow
        let expl_vars = filter (\_lambda (vn,_) \_rightarrow member(vn, explicit_universals)) vars in
        let renameImplicits = filter (\_lambda (vn,_) \_rightarrow \_not(member(vn, explicit_universals))
-                                                 \_and member(vn, notImplicitVarNames))
+                                                 \_and member(vn, disallowedVarNames))
                                vars
        in
        let bod = if renameImplicits = [] then bod
@@ -2288,7 +2293,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                     | RecordPat(("1",_)::_,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
                       prBreak 2 [prSpace,
                                  prPostSep 2 blockFill prSpace
-                                   (map (\_lambda p \_rightarrow enclose?(\_not(isSimplePattern? p),
+                                   (map (\_lambda p \_rightarrow enclose?(embed? EmbedPat pat,
                                                           ppPattern c p wildstr))
                                     (patternToList pat))]
                     | WildPat (pty,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
@@ -2296,7 +2301,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       prConcat [prSpace,
                                 prPostSep 0 blockFill prSpace
                                   (map (fn ty \_rightarrow ppPattern c (mkWildPat ty) wildstr) tys)]
-                    | _ \_rightarrow prConcat [prSpace, ppPattern c pat wildstr]]
+                    | _ \_rightarrow prConcat [prSpace, enclose?(embed? EmbedPat pat,
+                                                       ppPattern c pat wildstr)]]
      | RecordPat (fields,_) \_rightarrow
        (case fields of
          | [] \_rightarrow prString "()"
@@ -2373,8 +2379,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | Some fields \_rightarrow
             exists (\_lambda (id,opt_arg_ty) \_rightarrow
                     case opt_arg_ty of
-                      | None \_rightarrow false
-                      | Some arg_ty \_rightarrow id = constrId \_and tupleType?(spc,arg_ty))
+                      | Some(Product(("1",_)::_, _)) \_rightarrow id = constrId
+                      | _ \_rightarrow false)
               fields)
      | _ \_rightarrow false
 
@@ -2476,7 +2482,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op qidToIsaString(Qualified (qualifier,id): QualifiedId): String =
    if (qualifier = UnQualified) \_or (member (qualifier,omittedQualifiers)) then
-     if member(id,notImplicitVarNames) then id ^ "__c"
+     if member(id,disallowedVarNames) then id ^ "__c"
        else ppIdStr id
    else
      ppIdStr qualifier ^ "__" ^ ppIdStr id
