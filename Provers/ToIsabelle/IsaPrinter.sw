@@ -859,12 +859,21 @@ IsaTermPrinter qualifying spec
                                           "next", "instance", "and", "open"]
  op notImplicitVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
-    "False", "Not", "sub", "sup", "Sigma"]
+    "False", "Not", "sub", "sup", "Sigma", "map"]
 
- op ppConstructor(c_nm: String): Pretty =
-   prString (if member(c_nm, notImplicitVarNames)
-               then c_nm ^ "___C"
-               else c_nm)
+ op directConstructorTypes: List QualifiedId =
+   [Qualified("Option", "Option"),
+    Qualified("List", "List"),
+    Qualified("Compare", "Comparison")]
+
+ op ppConstructor(c_nm: String, qid: QualifiedId): Pretty =
+   prString(if qid in? directConstructorTypes then c_nm
+              else qidToIsaString qid^"__"^c_nm)
+
+ op ppConstructorTyped(c_nm: String, ty: Sort, spc: Spec): Pretty =
+   case unfoldToBaseNamedType(spc, ty) of
+     | Base(qid, _, _) -> ppConstructor(c_nm, qid)
+     | _ -> fail("Couldn't find coproduct type of constructor "^c_nm)
 
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
  def ppIdInfo qids =
@@ -875,8 +884,8 @@ IsaTermPrinter qualifying spec
      | _ \_rightarrow  ppQualifiedId qid
 
  op mkFieldName(nm: String): String = nm ^ "__fld"
- op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String
-   = qidToIsaString qid^"__"^nm
+ op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String =
+   qidToIsaString qid^"__"^nm
 
  op ppToplevelName(nm: String): Pretty =
    if member(nm, isabelleReservedWords)
@@ -897,12 +906,23 @@ IsaTermPrinter qualifying spec
    let (tvs, ty) = unpackSort dfn in
    if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
      then case ty of
-	   | CoProduct _ \_rightarrow
-	     prBreakCat 2
-	       [[prString "datatype ",
-		 ppTyVars tvs,
-		 ppIdInfo aliases],
-		[prString " = ", ppType c Top false ty]]
+	   | CoProduct(taggedSorts,_) \_rightarrow
+             (let def ppTaggedSort (id,optTy) =
+                case optTy of
+                  | None \_rightarrow ppConstructor(id, mainId)
+                  | Some ty \_rightarrow
+                    prConcat [ppConstructor(id, mainId), prSpace,
+                              case ty of
+                                | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+                                  prConcat(addSeparator prSpace
+                                             (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct false c_ty) fields))
+                                | _ \_rightarrow ppType c CoProduct false ty]
+              in
+              prBreakCat 2
+                [[prString "datatype ",
+                  ppTyVars tvs,
+                  ppIdInfo aliases],
+                 [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
 	   | Product (fields,_) | length fields > 0 && (hd fields).1 ~= "1" \_rightarrow
 	     prLinesCat 2
 	       ([[prString "record ",
@@ -1912,14 +1932,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                               ppTermEncloseComplex? c Nonfix t1])
         | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) \_rightarrow
           let spc = getSpec c in
-          if multiArgConstructor?(constr_id,range(spc,ty),spc) then
+          let constr_ty = range(spc,ty) in
+          if multiArgConstructor?(constr_id,constr_ty,spc) then
           %% Treat as curried
-             prBreak 2 [ppConstructor constr_id,
+             prBreak 2 [ppConstructorTyped(constr_id, constr_ty, spc),
                         prSpace,
                         prPostSep 2 blockFill prSpace
                           (map (ppTermEncloseComplex? c Nonfix)
                              (MS.termToList term2))]
-          else prConcat [ppConstructor constr_id,
+          else prConcat [ppConstructorTyped(constr_id, constr_ty, spc),
                          prSpace,
                          ppTerm c Nonfix term2]
         | (Lambda (match, _),_) \_rightarrow
@@ -2150,13 +2171,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
      | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
- op unfoldToNamedProduct(spc: Spec, ty: Sort): Sort =
+ op unfoldToBaseNamedType(spc: Spec, ty: Sort): Sort =
    % let _ = writeLine("ufnp: "^printSort ty) in
    case ty of
      | Base _ ->
        (case tryUnfoldBase spc ty of
-        | Some (uf_ty as Base _) -> unfoldToNamedProduct(spc, uf_ty)
-        | Some (Subsort(sup_ty, _, _)) -> unfoldToNamedProduct(spc, sup_ty)
+        | Some (uf_ty as Base _) -> unfoldToBaseNamedType(spc, uf_ty)
+        | Some (Subsort(sup_ty, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
         | _ -> ty)
      | _ -> ty
 
@@ -2177,7 +2198,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
      | _ \_rightarrow
-   case unfoldToNamedProduct(spc, prod_ty) of
+   case unfoldToBaseNamedType(spc, prod_ty) of
      | Base(qid, _, _) -> mkNamedRecordFieldName(qid,p)
      | _ -> mkFieldName p
 
@@ -2257,7 +2278,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | VarPat (v, _) \_rightarrow if c.printTypes? then ppVarWithSort c v
                         else ppVarWithoutSort v
      | EmbedPat (constr, pat, ty, _) \_rightarrow
-       prBreak 0 [ppConstructor constr,
+       prBreak 0 [ppConstructorTyped (constr, ty, getSpec c),
                   case pat of
                     | None \_rightarrow prEmpty
                     | Some pat \_rightarrow
@@ -2428,11 +2449,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Embed (id,b) \_rightarrow
        (let spc = getSpec c in
         case arrowOpt(spc,ty) of
-          | Some(dom,rng) | multiArgConstructor?(id,rng,spc) \_rightarrow
-            (case productOpt(spc,dom) of
-               | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
-               | None -> ppConstructor id)
-          | _ \_rightarrow ppConstructor id)
+          | Some(dom,rng) \_rightarrow
+            (if multiArgConstructor?(id,rng,spc)
+               then
+                 case productOpt(spc,dom) of
+                 | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
+                 | None -> ppConstructorTyped(id, rng, getSpec c)
+               else ppConstructorTyped(id, rng, getSpec c))
+          | None \_rightarrow ppConstructorTyped(id, ty, getSpec c))
      | Embedded id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
@@ -2528,24 +2552,25 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def ppType c parent in_quotes? ty =
    case ty of
      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
-     | CoProduct (taggedSorts,_) \_rightarrow 
-       let def ppTaggedSort (id,optTy) =
-       case optTy of
-         | None \_rightarrow quoteIf(~in_quotes?, id, ppConstructor id)
-         | Some ty \_rightarrow
-           prConcat [quoteIf(~in_quotes?, id, ppConstructor id), prSpace,
-                     case ty of
-                       | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
-                         prConcat(addSeparator prSpace
-                                    (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct in_quotes? c_ty) fields))
-                       | _ \_rightarrow ppType c CoProduct in_quotes? ty]
-       in
-         enclose?(case parent of
-                    | Product \_rightarrow true
-                    | CoProduct \_rightarrow true
-                    | Subsort \_rightarrow true
-                    | _ \_rightarrow false,
-                  prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
+      %% CoProduct only at top level
+%     | CoProduct (taggedSorts,_) \_rightarrow 
+%       let def ppTaggedSort (id,optTy) =
+%       case optTy of
+%         | None \_rightarrow quoteIf(~in_quotes?, id, ppConstructor id)
+%         | Some ty \_rightarrow
+%           prConcat [quoteIf(~in_quotes?, id, ppConstructor id), prSpace,
+%                     case ty of
+%                       | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+%                         prConcat(addSeparator prSpace
+%                                    (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct in_quotes? c_ty) fields))
+%                       | _ \_rightarrow ppType c CoProduct in_quotes? ty]
+%       in
+%         enclose?(case parent of
+%                    | Product \_rightarrow true
+%                    | CoProduct \_rightarrow true
+%                    | Subsort \_rightarrow true
+%                    | _ \_rightarrow false,
+%                  prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
      | Boolean _ \_rightarrow prString "bool"  
      | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
      | MetaTyVar (tyVar,_) \_rightarrow 
