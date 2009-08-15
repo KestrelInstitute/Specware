@@ -2042,7 +2042,9 @@ Utilities qualifying spec
                    | Some pairs -> match(t2,s2,pairs)
                    | None -> None)
               | (Product(r1,_),Product(r2,_)) | length r1 = length r2 -> 
-                typeMatchL(r1,r2,pairs,fn((_,s1),(_,s2),pairs) -> match(s1,s2,pairs)) 
+                typeMatchL(r1,r2,pairs,fn((id1,s1),(id2,s2),pairs) ->
+                                        if id1 = id2 then match(s1,s2,pairs)
+                                          else None) 
               | (CoProduct(r1,_),CoProduct(r2,_)) | length r1 = length r2 -> 
                 typeMatchL(r1,r2,pairs,
                            fn((id1,s1),(id2,s2),pairs) ->
@@ -2067,23 +2069,20 @@ Utilities qualifying spec
                 if id = id2
                   then typeMatchL(ts,ts2,pairs,match)
                 else
-                  let s2x = unfoldBase(spc,srt2) in
-                  if embed? CoProduct s2x || embed? Quotient s2x  % If names different then not equal
-                    then None
-                  else
-                  if equivType? spc (srt2,s2x) %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
-                    then Some pairs
-                  else match(srt1,s2x,pairs)
+                  (case tryUnfoldBase spc srt2 of
+                   | Some exp_ty2 -> match(srt1, exp_ty2, pairs)
+                   | None ->
+                     (case tryUnfoldBase spc srt1 of
+                      | Some exp_ty1 -> match(exp_ty1, srt2, pairs)
+                      | None -> None))
               | (_,Base _) ->
-                let s2x = unfoldBase(spc,srt2) in
-                if equalType? (srt2,s2x)     %% equivType? spc (srt2,s2x)  would also be reasonable -- see NormalizeTypes.sw for usage
-                  then None
-                else match(srt1,s2x,pairs)
+                (case tryUnfoldBase spc srt2 of
+                 | Some exp_ty2 -> match(srt1, exp_ty2, pairs)
+                 | None -> None)
               | (Base _,_) ->
-                let s1x = unfoldBase(spc,srt1) in
-                if equalType? (srt1,s1x)     %% equivType? spc (srt1,s1x)  would also be reasonable -- see NormalizeTypes.sw for usage
-                  then None
-                else match(s1x,srt2,pairs)
+                (case tryUnfoldBase spc srt1 of
+                 | Some exp_ty1 -> match(exp_ty1, srt2, pairs)
+                 | None -> None)
               | (Boolean _, Boolean _) -> Some pairs
               | _ -> None
         in
