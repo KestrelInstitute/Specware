@@ -30,8 +30,8 @@ op iterateRefMap(cm: RefMap, count: Nat): RefMap =
                                      true))
        (cm, false) cm
   in
-%  let _ = writeLine (toString count) in
-  if changed? & count < 100
+  % let _ = writeLine (toString count) in
+  if changed? && count < 100
     then iterateRefMap (cm, count + 1)
     else cm
 
@@ -52,7 +52,8 @@ op typeUsesTypesMap(spc: Spec): RefMap =
     spc.sorts
 
 op whoRefMap(spc: Spec): RefMap =
-  iterateRefMap (opUsesOpsMap spc, 0)
+  let ouo_map = opUsesOpsMap spc in
+  iterateRefMap (ouo_map, 0)
 
 op recursiveOps(spc: Spec): QualifiedIds =
   let calls_map = whoRefMap spc in
@@ -61,6 +62,18 @@ op recursiveOps(spc: Spec): QualifiedIds =
                            then Qualified(q,id)::result
                            else result)
     [] calls_map
+
+op recursiveOp?(qid: QualifiedId, uses_map: RefMap, max_depth: Nat): Boolean =
+  let def find_rec_use(Qualified(q_u, id_u), depth) =
+        if depth >= max_depth then false
+        else
+        case findAQualifierMap(uses_map, q_u, id_u) of
+          | None -> false
+          | Some uses ->
+            qid in? uses
+              || exists? (fn u_qid -> find_rec_use(u_qid, depth + 1)) uses
+  in
+  find_rec_use(qid, 0)  
 
 op invertRefMap(calls_map: RefMap): RefMap =
   foldriAQualifierMap (fn (q, id, calls, used_by) ->
