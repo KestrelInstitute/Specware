@@ -1008,7 +1008,7 @@
 	 ;; special cases for hex, octal, binary
 	 (set-last-positions)
 	 (local-read-char char char-code
-			  (go terminate-number-with-eof)
+			  (go terminate-zero-with-eof)
 			  ()
 			  (go terminate-number-with-extended-comment)
 			  ())
@@ -1155,6 +1155,9 @@
        terminate-number-with-eof
        ;; 
        (return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string)))
+       ;; 
+       terminate-zero-with-eof
+       (return-values-using-prior-last :NUMBER 0)
        ;; 
        ;; 
        terminate-hex-prematurely
