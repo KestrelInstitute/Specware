@@ -1793,28 +1793,35 @@ def showSorts spc =
  
  op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap
  op substBaseSpecs1(spc: Spec, baseExecutableSpecNames: List String): Spec =
-   let op_map =
-       foldl (fn (op_map, exec_spec_name) ->
+   %% Actually does an import
+   let (op_map, elements) =
+       foldl (fn ((op_map, elements), exec_spec_name) ->
                 case evaluateUnitId exec_spec_name of
-                  | None -> op_map
+                  | None -> (op_map, elements)
                   | Some(Spec exec_spc) ->
-                    foldl (fn (op_map, el) ->
+                    foldl (fn ((op_map, elements), el) ->
                              case el of
                                | Op(qid as Qualified(q,id), true, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info | embed? Some (AnnSpec.findTheOp(spc, qid)) ->
-                                      insertAQualifierMap(op_map, q, id, info)
-                                    | _ -> op_map)
+                                    | Some info -> 
+                                      (insertAQualifierMap(op_map, q, id, info),
+                                       if embed? Some (AnnSpec.findTheOp(spc, qid))
+                                         then elements ++ [el]
+                                         else elements)
+                                    | _ -> (op_map, elements))
                                | OpDef(qid as Qualified(q,id), _, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info | embed? Some (AnnSpec.findTheOp(spc, qid)) ->
-                                      insertAQualifierMap(op_map, q, id, info)
-                                    | _ -> op_map)
-                               | _ -> op_map)
-                      op_map exec_spc.elements)
-         spc.ops baseExecutableSpecNames
+                                    | Some info ->
+                                      (insertAQualifierMap(op_map, q, id, info),
+                                       if embed? Some (AnnSpec.findTheOp(spc, qid))
+                                         then elements ++ [el]
+                                         else elements)
+                                    | _ -> (op_map, elements))
+                               | _ -> (op_map, elements))
+                      (op_map, elements) exec_spc.elements)
+         (spc.ops, spc.elements) baseExecutableSpecNames
    in
-   spc << {ops = op_map}
+   spc << {ops = op_map, elements = elements}
 
  op substBaseSpecs(spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNames)
  op substBaseSpecsJ(spc: Spec): Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
