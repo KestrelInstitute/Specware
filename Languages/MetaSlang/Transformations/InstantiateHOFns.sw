@@ -2,7 +2,8 @@ InstantiateHO qualifying
 spec
   import Simplify
   import CurryUtils
-  import ../Specs/Utilities
+  import ../Specs/AnalyzeRecursion
+
   type Term = MS.Term
 
   op  instantiateHOFns: Spec -> Spec
@@ -155,6 +156,7 @@ spec
 
   op  makeUnfoldMap: Spec -> Boolean -> AQualifierMap DefInfo
   def makeUnfoldMap spc snark_hack? =
+    let use_map = opUsesOpsMap spc in
     mapiPartialAQualifierMap
       (fn (q, id, info) -> 
        let (decls, defs) = opInfoDeclsAndDefs info in
@@ -174,15 +176,15 @@ spec
 	     in
 	     let HOArgs = map (fn s -> hoSort?(spc, s)) argSorts in
 	     if numCurryArgs > 1 then
-	       analyzeCurriedDefn(Qualified(q, id), def1, numCurryArgs, HOArgs, srt)
+	       analyzeCurriedDefn(Qualified(q, id), def1, numCurryArgs, HOArgs, srt, use_map)
 	     else 
-	       analyzeUnCurriedDefn(Qualified(q, id), def1, HOArgs, srt)
+	       analyzeUnCurriedDefn(Qualified(q, id), def1, HOArgs, srt, use_map)
 	   else 
 	     None)
       spc.ops
 
-  op  analyzeCurriedDefn: QualifiedId * Term * Nat * List Boolean * Sort -> Option DefInfo
-  def analyzeCurriedDefn(qid, defn, numCurryArgs, HOArgs, srt) =
+  op  analyzeCurriedDefn: QualifiedId * Term * Nat * List Boolean * Sort * RefMap -> Option DefInfo
+  def analyzeCurriedDefn(qid, defn, numCurryArgs, HOArgs, srt, use_map) =
     let (params, body) = curriedParams(defn) in
     if ~(length params = numCurryArgs) then None
     else
@@ -195,17 +197,18 @@ spec
 	    | _ -> t
     in
     let normalizedBody = mapSubTerms normalizeCurriedAppl body in
-    analyzeDefn(qid, params, normalizedBody, HOArgs, true, srt)
+    analyzeDefn(qid, params, normalizedBody, HOArgs, true, srt, use_map)
 
-  op  analyzeUnCurriedDefn: QualifiedId * Term * List Boolean * Sort -> Option DefInfo
-  def analyzeUnCurriedDefn(qid, defn, argSorts, srt) =
+  op  analyzeUnCurriedDefn: QualifiedId * Term * List Boolean * Sort * RefMap -> Option DefInfo
+  def analyzeUnCurriedDefn(qid, defn, argSorts, srt, use_map) =
     case defn of
-      | Lambda([(pat, _, body)], _) -> analyzeDefn(qid, getParams pat, body, argSorts, false, srt)
+      | Lambda([(pat, _, body)], _) ->
+        analyzeDefn(qid, getParams pat, body, argSorts, false, srt, use_map)
       | _ -> None
 
-  op  analyzeDefn: QualifiedId * List Pattern * Term * List Boolean * Boolean * Sort
+  op  analyzeDefn: QualifiedId * List Pattern * Term * List Boolean * Boolean * Sort * RefMap
                     -> Option DefInfo
-  def analyzeDefn(qid, params, body, HOArgs, curried?, srt) =
+  def analyzeDefn(qid, params, body, HOArgs, curried?, srt, use_map) =
     if ~(recursiveCallsPreserveHOParameters?(body, qid, params, HOArgs, curried?))
       then None
     else
@@ -218,12 +221,7 @@ spec
     Some(params, body, srt,
 	 filter (fn i -> nth(HOArgs, i)) patinds,
 	 curried?,
-	 %% Recursive?
-	 existsSubTerm
-	   (fn t -> case t of
-		      | Apply(Fun(Op(nqid, _), _, _), _, _) -> nqid = qid
-		      | _ -> false)
-	   body)
+	 recursiveOp?(qid, use_map, 8))
 
   op  recursiveCallsPreserveHOParameters?: Term * QualifiedId * List Pattern * List Boolean * Boolean
                                           -> Boolean
@@ -394,8 +392,8 @@ spec
       let newTm = simplifyTerm newTm in
       let newTm = substitute(newTm, sbst) in
       let transNewTm = unfoldInTerm(outer_qid, simplifyTerm(newTm), unfoldMap, simplifyTerm, spc) in
-       let _ = if outer_qid = Qualified("<unqualified>","inferTypeOfExprs")
-                  then writeLine("uf:\n"^printTerm transNewTm^"\n\n") else () in
+%        let _ = if outer_qid = Qualified("Stitch","stitchMethod")
+%                   then writeLine("uf:\n"^printTerm transNewTm^"\n\n") else () in
       if transNewTm = newTm && sizeTerm newTm > sizeTerm orig_tm
            && ~(exists (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst)
         then orig_tm
