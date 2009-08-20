@@ -17,12 +17,12 @@ Lists = spec
                   | nnil -> 0
                   | ccons(hd,tl) -> 1 + len(tl)
 
-  op nthelem : {(l,n) : LList * Integer | 0 <= n & n < len(l)} -> X
+  op nthelem : {(l,n) : LList * Integer | 0 <= n && n < len(l)} -> X
   def nthelem(l,n) = case l of
                         | ccons(hd,tl) -> if n = 0 then hd
                                           else nthelem(tl,n-1)
 
-  op nthtail : {(l,n) : LList * Integer | 0 <= n & n < len(l)} -> LList
+  op nthtail : {(l,n) : LList * Integer | 0 <= n && n < len(l)} -> LList
   def nthtail(l,n) = case l of
                         | ccons(hd,tl) -> if n = 0 then tl
                                           else nthtail(tl,n-1)

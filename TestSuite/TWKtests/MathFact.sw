@@ -6,9 +6,9 @@ mathfacts = spec
     fa(i) zero div (Nat.succ i) = zero 
   op two: Nat
   axiom twodef is 
-    (one = Nat.succ zero) & (two = Nat.succ one)
+    (one = Nat.succ zero) && (two = Nat.succ one)
   axiom natcons is 
-    fa(i:Nat) i = zero or (ex(k:Nat) i = Nat.succ k)
+    fa(i:Nat) i = zero || (ex(k:Nat) i = Nat.succ k)
 endspec
 
 sum_spec = spec

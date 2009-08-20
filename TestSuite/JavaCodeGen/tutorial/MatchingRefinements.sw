@@ -1,7 +1,7 @@
 Symbols = spec
 
   op upcase? : Integer -> Boolean
-  def upcase?(i) = (65 <= i & i <= 90)
+  def upcase?(i) = (65 <= i && i <= 90)
   % characters represented as ASCII codes
 
   sort Symbol = (Integer | upcase?)

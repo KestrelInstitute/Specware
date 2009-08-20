@@ -25,7 +25,7 @@ position = spec
 
 move = spec
     import position
-    sort row     = {n : Nat | n > 0 & n <= 4}
+    sort row     = {n : Nat | n > 0 && n <= 4}
     sort move    = position * row * Nat
     op legal?:   move -> Boolean
     def legal?(m) = true
@@ -35,7 +35,7 @@ move = spec
 %       let pos = mov.1
 %         in 
 %           (project rw pos) >= num 
-%            & num > 0 
-%            & numPearls(pos) > n)
+%            && num > 0 
+%            && numPearls(pos) > n)
     sort legalMove =  {m: move | legal? m}
     end

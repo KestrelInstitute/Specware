@@ -35,13 +35,13 @@ spec
                        | consI(hd,tl) -> if hd = i then delete(tl,i)
                                          else consI(hd,delete(tl,i))
 
-  op prefix : {(l,n) : ListI * Integer | 0 <= n & n <= length(l)} -> ListI
+  op prefix : {(l,n) : ListI * Integer | 0 <= n && n <= length(l)} -> ListI
   def prefix(l,n) = if (n = 0) then nilI
                     else case l of
                             | consI(hd,tl) -> consI(hd,prefix(tl,n-1))
 
   op sublist : {(l,pos1,pos2) : ListI * Integer * Integer |
-                0 <= pos1 & pos1 < pos2 & pos2 <= length(l)} -> ListI
+                0 <= pos1 && pos1 < pos2 && pos2 <= length(l)} -> ListI
   def sublist(l,pos1,pos2) =
       if (pos1 = 0) then prefix(l,pos2)
       else case l of

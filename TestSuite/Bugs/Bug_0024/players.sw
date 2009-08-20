@@ -5,7 +5,7 @@ players is spec
    axiom namesDiffer is 
       fa(p1:player, p2:player, 
          s1:String, s2:String)
-      (playerName p1) = s1 & (playerName p2) = s2 & ~(p1 = p2) 
+      (playerName p1) = s1 && (playerName p2) = s2 && ~(p1 = p2) 
           => ~(s1 = s2)
    end
 

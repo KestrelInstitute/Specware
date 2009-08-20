@@ -6,7 +6,7 @@ spec
   def no_repetitions(l) = case l of
                              | nilI -> true
                              | consI(hd,tl) -> ~(member(hd,tl))
-                                             & no_repetitions(tl)
+                                             && no_repetitions(tl)
 
   sort ListNR = (ListI | no_repetitions)
 

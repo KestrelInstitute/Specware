@@ -11,24 +11,24 @@ spec
   def alltests : () = (% Boolean [  1]:  op ~             : Boolean -> Boolean
     tester ("(~ ( true )) = false", (~ ( true )) = false);
     tester ("(~ ( false )) = true", (~ ( false )) = true);
-% Boolean [  2]:  op &   infixr 15 : Boolean * Boolean -> Boolean 
-    tester ("(& ( false , false )) = false", (& ( false , false )) = false);
-    tester ("let A = id ( false , false ) in (& A) = false", let A = id ( false , false ) in (& A) = false);
-    tester ("(& ( false , true )) = false", (& ( false , true )) = false);
-    tester ("let A = id ( false , true ) in (& A) = false", let A = id ( false , true ) in (& A) = false);
-    tester ("(& ( true , false )) = false", (& ( true , false )) = false);
-    tester ("let A = id ( true , false ) in (& A) = false", let A = id ( true , false ) in (& A) = false);
-    tester ("(& ( true , true )) = true", (& ( true , true )) = true);
-    tester ("let A = id ( true , true ) in (& A) = true", let A = id ( true , true ) in (& A) = true);
-% Boolean [  3]:  op or  infixr 14 : Boolean * Boolean -> Boolean 
-    tester ("(or ( false , false )) = false", (or ( false , false )) = false);
-    tester ("let A = id ( false , false ) in (or A) = false", let A = id ( false , false ) in (or A) = false);
-    tester ("(or ( false , true )) = true", (or ( false , true )) = true);
-    tester ("let A = id ( false , true ) in (or A) = true", let A = id ( false , true ) in (or A) = true);
-    tester ("(or ( true , false )) = true", (or ( true , false )) = true);
-    tester ("let A = id ( true , false ) in (or A) = true", let A = id ( true , false ) in (or A) = true);
-    tester ("(or ( true , true )) = true", (or ( true , true )) = true);
-    tester ("let A = id ( true , true ) in (or A) = true", let A = id ( true , true ) in (or A) = true);
+% Boolean [  2]:  op &&   infixr 15 : Boolean * Boolean -> Boolean 
+    tester ("(&& ( false , false )) = false", (&& ( false , false )) = false);
+    tester ("let A = id ( false , false ) in (&& A) = false", let A = id ( false , false ) in (&& A) = false);
+    tester ("(&& ( false , true )) = false", (&& ( false , true )) = false);
+    tester ("let A = id ( false , true ) in (&& A) = false", let A = id ( false , true ) in (&& A) = false);
+    tester ("(&& ( true , false )) = false", (&& ( true , false )) = false);
+    tester ("let A = id ( true , false ) in (&& A) = false", let A = id ( true , false ) in (&& A) = false);
+    tester ("(&& ( true , true )) = true", (&& ( true , true )) = true);
+    tester ("let A = id ( true , true ) in (&& A) = true", let A = id ( true , true ) in (&& A) = true);
+% Boolean [  3]:  op ||  infixr 14 : Boolean * Boolean -> Boolean 
+    tester ("(|| ( false , false )) = false", (|| ( false , false )) = false);
+    tester ("let A = id ( false , false ) in (|| A) = false", let A = id ( false , false ) in (|| A) = false);
+    tester ("(|| ( false , true )) = true", (|| ( false , true )) = true);
+    tester ("let A = id ( false , true ) in (|| A) = true", let A = id ( false , true ) in (|| A) = true);
+    tester ("(|| ( true , false )) = true", (|| ( true , false )) = true);
+    tester ("let A = id ( true , false ) in (|| A) = true", let A = id ( true , false ) in (|| A) = true);
+    tester ("(|| ( true , true )) = true", (|| ( true , true )) = true);
+    tester ("let A = id ( true , true ) in (|| A) = true", let A = id ( true , true ) in (|| A) = true);
 % Boolean [  4]:  op =>  infixr 13 : Boolean * Boolean -> Boolean 
     tester ("(=> ( false , false )) = true", (=> ( false , false )) = true);
     tester ("let A = id ( false , false ) in (=> A) = true", let A = id ( false , false ) in (=> A) = true);
@@ -274,7 +274,7 @@ spec
     tester ("let A = id ( 4 , [3,5,7] ) in (member A) = false", let A = id ( 4 , [3,5,7] ) in (member A) = false);
     tester ("(member ( 5 , [3,5,7] )) = true", (member ( 5 , [3,5,7] )) = true);
     tester ("let A = id ( 5 , [3,5,7] ) in (member A) = true", let A = id ( 5 , [3,5,7] ) in (member A) = true);
-% List [ 62]:  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j & j <= length l} -> List a
+% List [ 62]:  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j && j <= length l} -> List a
     tester ("(sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]", (sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]);
     tester ("let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]", let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]);
 % List [ 63]:  op map             : fa(a,b) (a -> b) -> List a -> List b
@@ -450,7 +450,7 @@ spec
 % String [110]:  op sub           : {(s,n) : String * Nat | n < length s} -> Char
     tester ("(sub ( \"afn\" , 1 )) = #f", (sub ( "afn" , 1 )) = #f);
     tester ("let A = id ( \"afn\" , 1 ) in (sub A) = #f", let A = id ( "afn" , 1 ) in (sub A) = #f);
-% String [111]:  op substring     : {(s,i,j) : String * Nat * Nat | i < j & j <= length s} ->
+% String [111]:  op substring     : {(s,i,j) : String * Nat * Nat | i < j && j <= length s} ->
     tester ("(substring ( \"twitchy\" , 2, 6 )) = \"itch\"", (substring ( "twitchy" , 2, 6 )) = "itch");
     tester ("let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"", let A = id ( "twitchy" , 2, 6 ) in (substring A) = "itch");
 % String [112]:  op concatList    : List String -> String
