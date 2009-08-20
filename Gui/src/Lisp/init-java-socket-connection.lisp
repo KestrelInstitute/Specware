@@ -53,7 +53,7 @@
   (mp:process-run-function *java-listener-name* 'java-listener))
 
 (defun java-listener ()
-;;  (setq *socket-number* (read-from-string (specware::getenv "SpecBeansSocketPort")))
+;;  (setq *socket-number* (read-from-string (Specware::getenv "SpecBeansSocketPort")))
   (format t "Connecting on socket number ~a~%" *socket-number*)
   (setq *java-socket* (socket:make-socket :remote-port *socket-number*))
   (setq *java-socket-stream* *java-socket*)
@@ -108,7 +108,7 @@
     (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S "
 	    full-file-name file-name-unitId full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
-    (specware::change-directory  full-path-name)
+    (Specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
     (specware-process-unit file-name-unitId)
     (format t "~%~% FINISHED")))
@@ -130,7 +130,7 @@
     (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S "
 	    full-file-name file-name-unitId full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
-    (specware::change-directory  full-path-name)
+    (Specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
 
     (format t "~% GENERATING LISP FOR ~S" file-name-unitId)
@@ -152,7 +152,7 @@
     (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S "
 	    full-file-name file-name-unitId full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
-    (specware::change-directory  full-path-name)
+    (Specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
 
     (format t "~% GENERATING LISP FOR ~S" file-name-unitId)
@@ -172,7 +172,7 @@
     (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S "
 	    full-file-name file-name-unitId full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
-    (specware::change-directory  full-path-name)
+    (Specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
 
     (format t "~% GENERATING JAVA FOR ~S" file-name-unitId)
@@ -192,7 +192,7 @@
 (defun get-swpath ()
   (format t "~%Getting swpath")
   (jstatic "setSWPath" "edu.kestrel.netbeans.lisp.LispProcessManager"
-	   (specware::getenv "SWPATH")))
+	   (Specware::getenv "SWPATH")))
 
 (defpackage "SPECWARE")
 (defun Specware::reportErrorToJava-4 (file line col msg)

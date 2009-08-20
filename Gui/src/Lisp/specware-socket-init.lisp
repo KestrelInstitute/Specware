@@ -11,6 +11,9 @@
 ;;;
 ;;;
 ;;; $Log$
+;;; Revision 1.2  2003/06/19 18:16:59  weilyn
+;;; Fixed stuff for netbeans release
+;;;
 ;;; Revision 1.1  2003/06/17 22:27:18  westfold
 ;;; New socket interface to java
 ;;;
@@ -41,8 +44,8 @@
 
 (in-package :cl-user)
 
-(setq *specware-home* (or (specware::getenv "SPECWARE4") "~/Specware4"))
-(specware::setenv "SWPATH" (format nil "~A/" (specware::getenv "SPECWARE4")))
+(setq *specware-home* (or (Specware::getenv "SPECWARE4") "~/Specware4"))
+(Specware::setenv "SWPATH" (format nil "~A/" (specware::getenv "SPECWARE4")))
 
 (defun concat-specware (path)
   (concatenate 'string  *specware-home* path))
@@ -56,5 +59,5 @@
 
 
 (load (compile-file "specware:lisp-ui;init-java-socket-connection"))
-;?(specware::change-directory "specware:java-ui;")
+;?(Specware::change-directory "specware:java-ui;")
 (cl-user::init-java-listener)

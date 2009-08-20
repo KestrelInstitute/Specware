@@ -31,7 +31,7 @@
 (defun init-java-listener () 
   (when (and (not (javatools.jlinker::jlinker-query))
 	     (not (java-listener-running-p)))
-    (load (concatenate 'string specware::Specware4 "/Gui/src/Lisp/jl-config.cl")) 
+    (load (concatenate 'string Specware::Specware4 "/Gui/src/Lisp/jl-config.cl")) 
     (jlinker-listen :process-function #'print-result
 		    :init-args '(:lisp-file nil
 				 :lisp-host "localhost"
