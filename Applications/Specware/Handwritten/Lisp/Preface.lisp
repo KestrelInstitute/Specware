@@ -63,14 +63,14 @@
   ;; not *terminal-io*, string strings, etc.
   ;; There doesn't seem to be a concept of :error-output on windows
   (let ((rc 
-	 (cond ((eq (type-of *standard-output*) 'excl::FILE-SIMPLE-STREAM)
-		#+UNIX      (run-shell-command cmd :wait t :output *standard-output* :error-output :output) 
-		#+MSWINDOWS (run-shell-command cmd :wait t :output *standard-output*) 
-		#-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1))
+	 (cond ((eq (type-of *standard-output*) 'excl::file-simple-stream)
+		#+unix      (run-shell-command cmd :wait t :output *standard-output* :error-output :output) 
+		#+mswindows (run-shell-command cmd :wait t :output *standard-output*) 
+		#-(or unix mswindows) (progn (warn "ignoring non-[unix/mswindows] ALLEGRO RUN-CMD : ~A" cmd) 1))
 	       (t
-		#+UNIX      (run-shell-command cmd :wait t :error-output :output) 
-		#+MSWINDOWS (run-shell-command cmd :wait t)
-		#-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))))
+		#+unix      (run-shell-command cmd :wait t :error-output :output) 
+		#+mswindows (run-shell-command cmd :wait t)
+		#-(or unix mswindows) (progn (warn "ignoring non-[unix/mswindows] ALLEGRO RUN-CMD : ~A" cmd) 1)))))
     (cond ((equal rc 0)
 	   t)
 	  ;; #+MSWINDOWS (equal rc 2) ;; unclear if this can happen under "ok" conditions
@@ -83,11 +83,11 @@
 ;;;
 ;;;  op Specware.cd                    : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
 
-(defun specware::cd (&optional (dir ""))
+(defun Specware::cd (&optional (dir ""))
   (if (equal dir "")
       (setq dir (home-dir))
     (setq dir (subst-home dir)))
-  (let ((new-dir (specware::current-directory))
+  (let ((new-dir (Specware::current-directory))
 	(error? nil))
     (loop while (and (not error?) (> (length dir) 1) (equal (subseq dir 0 2) ".."))
       do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
@@ -100,17 +100,17 @@
 	       (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
 					    :defaults new-dir)))))
     (unless error?
-      (setq new-dir (specware::dir-to-path dir new-dir))
-      (when (specware::change-directory new-dir)
+      (setq new-dir (Specware::dir-to-path dir new-dir))
+      (when (Specware::change-directory new-dir)
 	(let* ((dirpath new-dir)
 	       (newdir (namestring dirpath)))
-	  (emacs::eval-in-emacs (format nil "(set-default-directory ~s)"
-					(specware::ensure-final-slash newdir)))
+	  (Emacs::eval-in-emacs (format nil "(set-default-directory ~s)"
+					(Specware::ensure-final-slash newdir)))
 	  (when (under-ilisp?)
-	    (emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
+	    (Emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
                                                (cons default-directory nil))"
-					  (specware::ensure-final-slash newdir)))))))
-    (princ (namestring (specware::current-directory)))
+					  (Specware::ensure-final-slash newdir)))))))
+    (princ (namestring (Specware::current-directory)))
     (values)))
 
 (defun under-ilisp? ()
@@ -118,7 +118,7 @@
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
 (defun home-dir ()
-  (specware::getenv #+(or mswindows win32) "HOMEPATH" #-(or mswindows win32) "HOME"))
+  (Specware::getenv #+(or mswindows win32) "HOMEPATH" #-(or mswindows win32) "HOME"))
     
 ;;; Normalization utilities
 
@@ -144,17 +144,17 @@
 
 
 (unless (fboundp 'cd)
-  (defun cd (&optional (dir "")) (specware::cd dir)))
+  (defun cd (&optional (dir "")) (Specware::cd dir)))
 
 ;;; --------------------------------------------------------------------------------
 ;;  The following is in ./Languages/SpecCalculus/Semantics/Evaluate/Make.sw:
 ;;;   op Specware.pwdAsString           : () -> String % defined in Preface.lisp
 
-(defun specware::pwdAsString-0 () ; used by make
-  (namestring (specware::current-directory)))
+(defun Specware::pwdAsString-0 () ; used by make
+  (namestring (Specware::current-directory)))
 
-(defun specware::currentDeviceAsString-0 () ; used by make and CPrint
-  (let ((x (pathname-device (specware::current-directory))))
+(defun Specware::currentDeviceAsString-0 () ; used by make and CPrint
+  (let ((x (pathname-device (Specware::current-directory))))
     (if (stringp x) (concatenate 'string x ":") ""))) 
 
 ;;; --------------------------------------------------------------------------------

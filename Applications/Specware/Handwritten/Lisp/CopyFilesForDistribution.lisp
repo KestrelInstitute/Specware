@@ -17,7 +17,7 @@
 ;;; Copy needed directories to distribution
 ;;; Flushes CVS sub-directories and .cvsignore files
 
-(specware::make-directory (in-distribution-dir "Library/"))
+(Specware::make-directory (in-distribution-dir "Library/"))
 (copy-dist-directory (in-specware-dir     "Library/Base/")
                      (in-distribution-dir "Library/Base/"))
 (delete-file-if-present   (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
@@ -32,7 +32,7 @@
 (copy-dist-file      (in-specware-dir     "Library/General.sw")
                      (in-distribution-dir "Library/General.sw"))
 
-(specware::make-directory (in-distribution-dir "Library/IO/"))
+(Specware::make-directory (in-distribution-dir "Library/IO/"))
 (copy-dist-directory (in-specware-dir     "Library/IO/Emacs/")
                      (in-distribution-dir "Library/IO/Emacs/"))
 (delete-dir-if-present (in-distribution-dir "Library/IO/Emacs/ilisp/"))
@@ -43,7 +43,7 @@
 (copy-dist-file (in-specware-dir     "Library/Structures/Data/Monad.sw")
                 (in-distribution-dir "Library/General/Monad.sw"))
 
-(specware::concatenate-files
+(Specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
 ; 		      "Base/Handwritten/Lisp/Nat"
 		      "Base/Handwritten/Lisp/Character"
@@ -64,7 +64,7 @@
 (format t "~&;;;~%")
 (format t "~&;;; Getting Examples ...~%")
 
-(specware::make-directory (in-distribution-dir "Examples/"))
+(Specware::make-directory (in-distribution-dir "Examples/"))
 (copy-dist-directory (in-specware-dir     "UserDoc/tutorial/example/")
                      (in-distribution-dir "Examples/Matching/"))
 (delete-dir-if-present    (in-distribution-dir "Examples/Matching/Snark"))
@@ -85,7 +85,7 @@
 (format t "~&;;;~%")
 (format t "~&;;; Getting Documentation ...~%")
 
-(specware::make-directory (in-distribution-dir "Documentation/"))
+(Specware::make-directory (in-distribution-dir "Documentation/"))
 
 (copy-dist-file      (in-specware-dir     "UserDoc/language-manual/SpecwareLanguageManual.pdf")
                      (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
@@ -144,15 +144,15 @@
 
 (format t "~&;;;~%")
 (format t "~&;;; Getting C library ...~%")
-(specware::make-directory (in-distribution-dir "Library/Clib/"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/include/"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/include/private/"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/cord"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/doc"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/Mac_files"))
-(specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/tests"))
-(specware::make-directory (in-distribution-dir "Library/Clib/Examples"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/include/"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/include/private/"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/cord"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/doc"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/Mac_files"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/gc6.6/tests"))
+(Specware::make-directory (in-distribution-dir "Library/Clib/Examples"))
 
 (with-open-file (s (in-specware-dir "Library/Clib/cgen-distribution-files"))
   (let ((eof (cons nil nil)))
@@ -189,7 +189,7 @@
 (format t "~&;;;~%")
 (let ((patch-dir (in-distribution-dir "Patches/")))
   (format t "~&;;; Creating new patch directory : ~A~%" patch-dir)
-  (specware::make-directory patch-dir))
+  (Specware::make-directory patch-dir))
 
 (format t "~&;;;~%")
 (format t "~&;;;     ===~%")

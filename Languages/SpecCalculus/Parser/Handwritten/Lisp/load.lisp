@@ -1,5 +1,5 @@
 (in-package :cl-user)
 
-(specware::make-system ".")
+(Specware::make-system ".")
 
 (defun foo () (parser4::parseSpecwareFile "Test.spec"))

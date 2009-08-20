@@ -222,7 +222,7 @@
   (make-sc-relative-unit-id 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FRAGMENT-ID ()
-  (:tuple (1 :CHARACTER) (:OPTIONAL (2 :NUMBER)) (:optional (3 :NAME)))
+  (:tuple (1 :CHARACTER) (:optional (2 :NUMBER)) (:optional (3 :NAME)))
   (make-fragment-id 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-UNIT-ID-PATH ()
@@ -246,7 +246,7 @@
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC ()
-  :spec-definition)
+  :SPEC-DEFINITION)
 
 (define-sw-parser-rule :SPEC-DEFINITION () ; deprecate
   (:anyof
@@ -671,7 +671,7 @@ If we want the precedence to be optional:
   ;; "{S}" is same as "S"
   (:anyof 
    ((:tuple (1 :QUALIFIABLE-SORT-NAME))                          (list 1))
-   ((:tuple "{" (2 (:REPEAT+ :QUALIFIABLE-SORT-NAME ",")) "}")   2)))
+   ((:tuple "{" (2 (:repeat+ :QUALIFIABLE-SORT-NAME ",")) "}")   2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-REF
@@ -857,16 +857,16 @@ If we want the precedence to be optional:
    ;; "~" is treated specially: see semantics.lisp
    ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator,
    ;; so we don't make "~" a keyword (which would exclude the latter)
-   ((:tuple "&")   (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
-   ((:tuple "&&")  (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_and")  (make-fun '(:|And|)    ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "or")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
-   ((:tuple "||")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_or")  (make-fun '(:|Or|)      ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "=>")  (make-fun '(:|Implies|)   ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_Rightarrow")  (make-fun '(:|Implies|) ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "<=>") (make-fun '(:|Iff|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_Leftrightarrow") (make-fun '(:|Iff|) ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "&")   (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ((:tuple "&&")  (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_and")  (make-fun '(:|And|)    MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ((:tuple "||")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_or")  (make-fun '(:|Or|)      MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "=>")  (make-fun '(:|Implies|)   MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_Rightarrow")  (make-fun '(:|Implies|) MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "<=>") (make-fun '(:|Iff|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "\\_Leftrightarrow") (make-fun '(:|Iff|) MS::binaryBoolSort ':left-lcb ':right-lcb))
    ;;
    ;; "=" is treated specially: see semantics.lisp
    ;; "=" refers to the built-in Equals, but can also appear as a keyword in other rules
@@ -1028,7 +1028,7 @@ If we want the precedence to be optional:
    ((:tuple (1 :QUALIFIABLE-OP-NAME))
     (list 1))
    ((:tuple "{"
-	    (2 (:REPEAT+ :QUALIFIABLE-OP-NAME ","))
+	    (2 (:repeat+ :QUALIFIABLE-OP-NAME ","))
 	    "}")
     2)))
 

@@ -26,7 +26,7 @@
 ;;;  The following can be used to find and load this file...
 ;;;
 ;;;  ;;; Get version information from canonical source...
-;;;  (let ((specware4 (specware::getenv "SPECWARE4")))
+;;;  (let ((specware4 (Specware::getenv "SPECWARE4")))
 ;;;    (if (equal specware4 nil)
 ;;;        (error "in xxx.lisp:  SPECWARE4 environment variable not set")
 ;;;      (let ((specware-dir

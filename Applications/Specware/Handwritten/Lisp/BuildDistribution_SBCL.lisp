@@ -33,17 +33,17 @@
     (if (null msg)
 	(format t "~&;;; Deleting dir  ~A~%" dir)
       (format t "~&;;; ~A~%" msg))
-    (specware::delete-directory dir)))
+    (Specware::delete-directory dir)))
 
 (defun make-dir-if-missing (dir)
   (unless (probe-file dir)
     (format t "~&;;; Making new    ~A~%" dir)
-    (specware::make-directory dir)))
+    (Specware::make-directory dir)))
 
 (load (format nil "~A/Applications/Handwritten/Lisp/load-utilities"
 	      Specware::*specware-dir*))
 
-(defparameter *fasl-type* specware::*fasl-type*)
+(defparameter *fasl-type* Specware::*fasl-type*)
 
 (defun load-builder (distribution-dir)
   (let* ((lisp-utilities-dir 
@@ -64,7 +64,7 @@
       ;(my-load lisp-utilities-dir "LoadUtilities")
 )))
 
-(let ((distribution-dir (concatenate 'string (specware::getenv "DISTRIBUTION") "/")))
+(let ((distribution-dir (concatenate 'string (Specware::getenv "DISTRIBUTION") "/")))
   (load-builder distribution-dir))
 
 
@@ -72,7 +72,7 @@
 
 ;;; Get version information from canonical source...
 (let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
-			    specware::*Specware-dir*)))
+			    Specware::*Specware-dir*)))
   (if (probe-file version-file)
       (load version-file)
     (error "in BuildDistribution_SBCL.lisp:  Cannot find ~A" version-file)))

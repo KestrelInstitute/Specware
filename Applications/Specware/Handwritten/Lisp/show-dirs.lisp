@@ -20,7 +20,7 @@
 		   (when (member (car chars) '(#\/ #\\))
 		     (setq suffix (cdr chars))))))
 	     (list-files (file level)
-	       (if (specware::directory? file)
+	       (if (Specware::directory? file)
 		   (let* ((foo (namestring file))
 			  (sub-files (directory 
 				      (if (member (schar foo (1- (length foo))) '(#\/ #\\))

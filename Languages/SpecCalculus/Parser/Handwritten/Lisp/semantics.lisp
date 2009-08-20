@@ -111,10 +111,10 @@
 ;;; ========================================================================
 
 (defun make-sc-toplevel-term (sc-term l r)
-  (speccalc::mkTerm-2 sc-term (make-pos l r)))
+  (SpecCalc::mkTerm-2 sc-term (make-pos l r)))
 
 (defun make-sc-toplevel-decls (sc-decls l r)
-  (speccalc::mkDecls-2 sc-decls (make-pos l r)))
+  (SpecCalc::mkDecls-2 sc-decls (make-pos l r)))
 
 (defun make-sc-decl (name sc-term l r)
   (declare (ignore l r))
@@ -140,7 +140,7 @@
 		      (t
 		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
-    (speccalc::mkUnitId-2 uid (make-pos l r))))
+    (SpecCalc::mkUnitId-2 uid (make-pos l r))))
 
 (defun make-sc-relative-unit-id (sc-unit-id-path optional-fragment-id l r)
   (let ((uid 
@@ -151,7 +151,7 @@
 		      (t
 		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
-    (speccalc::mkUnitId-2 uid (make-pos l r))))
+    (SpecCalc::mkUnitId-2 uid (make-pos l r))))
 
 (defun make-fragment-id (char optional-number optional-symbol l r)
   (declare (ignore l r))
@@ -202,11 +202,11 @@
 
 (defun make-sc-spec (declaration-sequence l r)
   :comment "A specification"
-  (speccalc::mkSpec-2 declaration-sequence (make-pos l r)))
+  (SpecCalc::mkSpec-2 declaration-sequence (make-pos l r)))
 
 (defun make-spec-definition (declaration-sequence l r) ; deprecate
   :comment "A specification"
-  (speccalc::mkSpec-2 declaration-sequence (make-pos l r)))
+  (SpecCalc::mkSpec-2 declaration-sequence (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  DECLARATION
@@ -240,7 +240,7 @@
           (tvs     (car tvs-srt))
 	  (defs    '())
 	  (pos     (make-pos l r)))
-    (SPECCALC::mkSortSpecElem-4 names tvs defs pos)))
+    (SpecCalc::mkSortSpecElem-4 names tvs defs pos)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
@@ -256,7 +256,7 @@
          (tvs      (car tvs-srt))
          (defs     (list (cdr tvs-srt)))
 	 (pos      (make-pos l r))) 
-    (SPECCALC::mkSortSpecElem-4 names tvs defs pos)))
+    (SpecCalc::mkSortSpecElem-4 names tvs defs pos)))
 
 
 ;;; ------------------------------------------------------------------------
@@ -312,16 +312,16 @@
 (defun bind-op-parameters (params term l r)
   (if (null params)
       term
-      (ms::mkLambda-2 
+      (MS::mkLambda-2 
        (car params)
        (bind-op-parameters (cdr params) term l r))))
 
 (defun make-restricted-formal-pattern (pat pred l r)
   (make-restricted-pattern pat pred l r)
-;  (ms::mkSortedPat-2
+;  (MS::mkSortedPat-2
 ;   pat 
-;   (ms::mkSubsort-2 (freshMetaTypeVar l r)
-;		    (ms::mkLambda-2 pat pred)))
+;   (MS::mkSubsort-2 (freshMetaTypeVar l r)
+;		    (MS::mkLambda-2 pat pred)))
   )
 
 (defun make-fixity (associativity priority l r)
@@ -497,7 +497,7 @@ If we want the precedence to be optional:
 	 ;; "~" is treated specially:
 	 ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator...
 	 (make-fun '(:|Not|)
-		   ms::unaryBoolSort
+		   MS::unaryBoolSort
 		   l r))
 	((equal name "=")
 	 ;; "=" is treated specially:
@@ -742,14 +742,14 @@ If we want the precedence to be optional:
 			   (l (svref pos 1))
 			   (r (svref pos 2)))
 		      (cond ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
-			     (ms::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0))
+			     (MS::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0))
 			    ((eq (car f) :|Not|)
-			     (ms::mkUnaryBooleanFn-2 f pos0))
+			     (MS::mkUnaryBooleanFn-2 f pos0))
 			    ((member (car f) '(:|Equals| :|NotEquals|))
 			     (let ((a1 (freshMetaTypeVar l r)))
-			       (ms::mkBinaryFn-5 f a1 a1 MS::boolSort pos0)))
+			       (MS::mkBinaryFn-5 f a1 a1 MS::boolSort pos0)))
 			    ((eq (car f) :|RecordMerge|)
-			     (ms::mkBinaryFn-5 f (freshMetaTypeVar l r) (freshMetaTypeVar l r)
+			     (MS::mkBinaryFn-5 f (freshMetaTypeVar l r) (freshMetaTypeVar l r)
 					       (freshMetaTypeVar l r) pos0))
 			    (t
 			     x)))))))
@@ -880,17 +880,17 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-let   (sc-decls sc-term l r)
-  (speccalc::mkLet-3 sc-decls sc-term (make-pos l r)))
+  (SpecCalc::mkLet-3 sc-decls sc-term (make-pos l r)))
 
 (defun make-sc-where (sc-decls sc-term l r)
-  (speccalc::mkWhere-3 sc-decls sc-term (make-pos l r)))
+  (SpecCalc::mkWhere-3 sc-decls sc-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-QUALIFY
 ;;; ========================================================================
 
 (defun make-sc-qualify (qualifer sc-term l r)
-  (speccalc::mkQualify-3 sc-term qualifer (make-pos l r)))
+  (SpecCalc::mkQualify-3 sc-term qualifer (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-HIDE
@@ -898,10 +898,10 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-hide (name-list sc-term l r)
-  (speccalc::mkHide-3 name-list sc-term (make-pos l r)))
+  (SpecCalc::mkHide-3 name-list sc-term (make-pos l r)))
 
 (defun make-sc-export (name-list sc-term l r)
-  (speccalc::mkExport-3 name-list sc-term (make-pos l r)))
+  (SpecCalc::mkExport-3 name-list sc-term (make-pos l r)))
 
 (defun make-sc-sort-ref      (sort-ref             l r)  
   (declare (ignore l r))
@@ -940,7 +940,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-translate (sc-term sc-translate-expr l r)
-  (speccalc::mkTranslate-3 sc-term sc-translate-expr (make-pos l r)))
+  (SpecCalc::mkTranslate-3 sc-term sc-translate-expr (make-pos l r)))
 
 (defun make-sc-translate-expr (rules l r)
   (cons rules
@@ -980,7 +980,7 @@ If we want the precedence to be optional:
   (let ((pragmas (if (eq pragmas :unspecified)
 		     '()
 		   pragmas)))
-    (speccalc::mkSpecMorph-5 dom-sc-term cod-sc-term rules pragmas (make-pos l r))))
+    (SpecCalc::mkSpecMorph-5 dom-sc-term cod-sc-term rules pragmas (make-pos l r))))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
@@ -1007,7 +1007,7 @@ If we want the precedence to be optional:
 
 (defun make-sc-diag (sc-diag-elems l r)
   :comment "A diagram"
-  (speccalc::mkDiag-2 sc-diag-elems (make-pos l r)))
+  (SpecCalc::mkDiag-2 sc-diag-elems (make-pos l r)))
 
 (defun make-sc-diag-node (node-name sc-term l r)
   (cons (cons :|Node| (cons node-name sc-term))
@@ -1022,51 +1022,51 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-colimit (diag l r)
-  (speccalc::mkColimit-2 diag (make-pos l r)))
+  (SpecCalc::mkColimit-2 diag (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 
 (defun make-sc-substitute (spec-term morph-term l r)
-  (speccalc::mkSubst-3 spec-term morph-term (make-pos l r)))
+  (SpecCalc::mkSubst-3 spec-term morph-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-OP-REFINE
 ;;; ========================================================================
 
 (defun make-sc-op-refine (spec-term elts l r)
-  (speccalc::mkOpRefine-3 spec-term elts (make-pos l r)))
+  (SpecCalc::mkOpRefine-3 spec-term elts (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-OP-TRANSFORM
 ;;; ========================================================================
 (defun make-sc-transform (spec-term transforms l r)
-  (speccalc::mkTransform-3 spec-term transforms (make-pos l r)))
+  (SpecCalc::mkTransform-3 spec-term transforms (make-pos l r)))
 
 (defun make-transform-name (name l r)
-  (speccalc::mkTransformName-2 name (make-pos l r)))
+  (SpecCalc::mkTransformName-2 name (make-pos l r)))
 
 (defun make-transform-number (num l r)
-  (speccalc::mkTransformNumber-2 num (make-pos l r)))
+  (SpecCalc::mkTransformNumber-2 num (make-pos l r)))
 
 (defun make-transform-string (num l r)
-  (speccalc::mkTransformString-2 num (make-pos l r)))
+  (SpecCalc::mkTransformString-2 num (make-pos l r)))
 
 (defun make-transform-qual (q name l r)
-  (speccalc::mkTransformQual-3 q name (make-pos l r)))
+  (SpecCalc::mkTransformQual-3 q name (make-pos l r)))
 
 (defun make-transform-item (oper transform l r)
-  (speccalc::mkTransformItem-3 oper transform (make-pos l r)))
+  (SpecCalc::mkTransformItem-3 oper transform (make-pos l r)))
 
 (defun make-transform-apply (trans1 transforms l r)
-  (speccalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
+  (SpecCalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
 
 (defun make-transform-apply-options (trans1 options l r)
-  (speccalc::mkTransformApplyOptions-3 trans1 options (make-pos l r)))
+  (SpecCalc::mkTransformApplyOptions-3 trans1 options (make-pos l r)))
 
 (defun make-transform-tuple (transforms l r)
-  (speccalc::mkTransformTuple-2 transforms (make-pos l r)))
+  (SpecCalc::mkTransformTuple-2 transforms (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH
@@ -1094,7 +1094,7 @@ If we want the precedence to be optional:
 			    optFilNm
 			  (string optFilNm))))
 	     (cons :|Some| fname)))))
-    (speccalc::mkGenerate-4 target-language 
+    (SpecCalc::mkGenerate-4 target-language 
 			    sc-term
 			    opt-filename
 			    (make-pos l r))))
@@ -1105,7 +1105,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-obligations (term l r)
-  (speccalc::mkObligations-2 term (make-pos l r)))
+  (SpecCalc::mkObligations-2 term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-PROVE
@@ -1126,10 +1126,10 @@ If we want the precedence to be optional:
     ;; "WELLFORMED" or "Checker" => ProofCheck ..
     ;; otherwise                 => Prove      ...
     (cond ((equal claim-name  (MetaSlang::mkUnQualifiedId "WELLFORMED"))
-	   (let ((claim '(:|WellFormed|)))	     (speccalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
+	   (let ((claim '(:|WellFormed|)))	     (SpecCalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
 	  ((equal prover-name "Checker")  
-	   (let ((claim (list :|Claim| claim-name))) (speccalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
-	  (t                                         (speccalc::mkProve-8       claim-name spec-term prover-name assertions options baseOptions answerVar here)))))
+	   (let ((claim (list :|Claim| claim-name))) (SpecCalc::mkProofCheck-7  claim      spec-term prover-name assertions options baseOptions           here)))
+	  (t                                         (SpecCalc::mkProve-8       claim-name spec-term prover-name assertions options baseOptions answerVar here)))))
 
 (defun make-sc-prover-options-from-string (s)
   (read_list_of_s_expressions_from_string s))
@@ -1142,19 +1142,19 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-expand (term l r)
-  (speccalc::mkExpand-2 term (make-pos l r)))
+  (SpecCalc::mkExpand-2 term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-REDUCE
 ;;; ========================================================================
 
 (defun make-sc-reduce (ms-term sc-term l r)
-  (speccalc::mkReduce-3 ms-term sc-term (make-pos l r)))
+  (SpecCalc::mkReduce-3 ms-term sc-term (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-EXTEND
 ;;; ========================================================================
 
 (defun make-sc-extend (term l r)
-  (speccalc::mkExtendMorph-2 term (make-pos l r)))
+  (SpecCalc::mkExtendMorph-2 term (make-pos l r)))
 

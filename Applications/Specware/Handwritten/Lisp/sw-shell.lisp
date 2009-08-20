@@ -72,7 +72,7 @@
     ("prwb"      . "[on] Include the base hypothesis when invokig Snark.")
     ("dev"      . "[on] Set *developer?*. No argument gives current setting.")
     ("wiz"      . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
-    ("swdbg"    . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
+    ("swdbg"    . "[on] Set System-Spec::specwareDebug?. No argument gives current setting.")))
 
 (defun print-shell-prompt () 
   (princ *prompt* *standard-output*)
@@ -115,16 +115,17 @@
 	 * ** ***
 	 / // ///
 	 ch)
-    (emacs::eval-in-emacs "(set-comint-prompt)")
+    (Emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
     (format t banner)
     (unwind-protect
 	(loop
+
 	  (set-specware-shell t)
 	  (fresh-line *standard-output*)
 	  (print-shell-prompt)
 	  (when *emacs-eval-form-after-prompt*
-	    (emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
+	    (Emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
 	    (setq *emacs-eval-form-after-prompt* nil))
 	  (catch ':top-level-reset	; Used by allegro :reset command
 	    (with-simple-restart (abort abort-message)
@@ -144,7 +145,7 @@
 					    (setq form (intern (symbol-name form) sw-shell-pkg)))
 					  (cond ((member form '(quit exit))
 						 (setq exiting-lisp? t)
-						 (specware::exit))
+						 (Specware::exit))
 						((eq form 'ok)
 						 (return))
 						((not (eq form magic-eof-cookie))
@@ -164,7 +165,7 @@
 						((> number-of-eofs eofs-before-quit)
 						 (format t "~&Received more than ~D EOFs; Aborting.~%"
 							 eofs-before-quit)
-						 (specware::exit))
+						 (Specware::exit))
 						(t
 						 (format t "~&Received EOF.~%"))))))))
       
@@ -217,10 +218,10 @@
 
 (defun sw-shell-0 ()
   (Specware::initializeSpecware-0)
-  (setq emacs::*use-emacs-interface?* nil)
+  (setq Emacs::*use-emacs-interface?* nil)
   (#+allegro excl:without-package-locks #-allegro progn
    (setf (symbol-function 'error) #'just-print-error-message))
-  (specware::change-directory (specware::getenv "SPECWARE4"))
+  (Specware::change-directory (Specware::getenv "SPECWARE4"))
   #+allegro
   (setq cl-user::*restart-actions* nil)
   #+allegro
@@ -301,10 +302,10 @@
 			(cl-user::sw-help argstr) ; refers to cl-user::*sw-help-strings*
 			))
 	   (cd        (if (null argstr)
-			  (princ (namestring (specware::current-directory)))
-			  (specware::cd argstr))
+			  (princ (namestring (Specware::current-directory)))
+			  (Specware::cd argstr))
 		      (values))
-	   (pwd       (princ (namestring (specware::current-directory))) (values))
+	   (pwd       (princ (namestring (Specware::current-directory))) (values))
 	   ((dir ls)       (cl-user::ls     (or argstr "")))
 	   (dirr      (cl-user::dirr   (or argstr "")))
 	   (path      (cl-user::swpath argstr))

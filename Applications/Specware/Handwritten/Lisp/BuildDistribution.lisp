@@ -2,7 +2,7 @@
 
 (defpackage :Specware)
 
-(defvar Specware4-dir (specware::getenv "SPECWARE4"))
+(defvar Specware4-dir (Specware::getenv "SPECWARE4"))
 (defun in-specware-dir (file) (concatenate 'string Specware4-dir "/" file))
 
 ;;; Get version information from canonical source...
@@ -60,4 +60,4 @@
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/copy-files-for-distribution.lisp"))
 
-(specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))
+(Specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))

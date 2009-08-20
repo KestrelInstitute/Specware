@@ -6,8 +6,12 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :invert))
+
 (defpackage :SpecToLisp)
-(defpackage :Specware (:use :cl))   ; Most systems default to this but not sbcl until patch loaded below
+(defpackage "Specware" (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
+  (:nicknames :specware))
 (in-package :Specware)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
@@ -53,7 +57,7 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
-		;(require :sb-sprof)
+		(require :sb-sprof)
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
@@ -108,6 +112,9 @@
    (declare (ignore condition))
    (muffle-warning))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :upcase))
+
 (handler-bind ((warning #'ignore-warning))
   (let ((foo (and (find-package "SNARK") (find-symbol "*HASH-DOLLAR-READTABLE*" "SNARK"))))
     ;; fix problem with #$ when snark is reloaded...
@@ -122,6 +129,9 @@
   (cl-user::make-or-load-snark-system))
 (format t "~%Finished loading Snark.")
 (finish-output t)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :invert))
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
@@ -201,7 +211,7 @@
 
 
 (defpackage :Prover)
-(defvar prover::wildCounter 0) ; to suppress annoying compiler warning
+(defvar Prover::wildCounter 0) ; to suppress annoying compiler warning
 
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state
@@ -259,7 +269,11 @@
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
 		 (when (equal file "Applications/Specware/lisp/Specware4.lisp")
-                   (time (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp"))))
+                   ;(sb-sprof:start-profiling)
+                   (time (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp")))
+                   ;(with-open-file (f "sb-sprof.out" :direction :output)
+                   ;  (sb-sprof:report :stream f))
+)
                  (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
@@ -281,6 +295,16 @@
 
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
+
+
+(defun set-readtable-invert ()
+  (setf (readtable-case *readtable*) :invert))
+
+(push  'set-readtable-invert 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-ext:*init-hooks*)
 
 ;;; Load base in correct location at startup
 (push  'Specware::initializeSpecware-0 

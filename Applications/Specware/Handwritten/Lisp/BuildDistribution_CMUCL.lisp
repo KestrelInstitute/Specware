@@ -28,12 +28,12 @@
     (if (null msg)
 	(format t "~&;;; Deleting dir  ~A~%" dir)
       (format t "~&;;; ~A~%" msg))
-    (specware::delete-directory dir)))
+    (Specware::delete-directory dir)))
 
 (defun make-dir-if-missing (dir)
   (unless (probe-file dir)
     (format t "~&;;; Making new    ~A~%" dir)
-    (specware::make-directory dir)))
+    (Specware::make-directory dir)))
 
 (defparameter *Specware-dir*  (format nil "~A/" (cdr (assoc :SPECWARE4 ext:*environment-list*))))
 (defun in-specware-dir     (file) (concatenate 'string *Specware-dir* file))
@@ -44,7 +44,7 @@
 
 ;;; Get version information from canonical source...
 (let ((version-file (format nil "~AApplications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"
-			    specware::*Specware-dir*)))
+			    Specware::*Specware-dir*)))
   (if (probe-file version-file)
       (load version-file)
     (error "in BuildDistribution_CMUCL.lisp:  Cannot find ~A" version-file)))

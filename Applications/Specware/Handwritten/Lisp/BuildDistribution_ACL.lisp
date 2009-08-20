@@ -32,12 +32,12 @@
     (if (null msg)
 	(format t "~&;;; Deleting dir  ~A~%" dir)
       (format t "~&;;; ~A~%" msg))
-    (specware::delete-directory dir)))
+    (Specware::delete-directory dir)))
 
 (defun make-dir-if-missing (dir)
   (unless (probe-file dir)
     (format t "~&;;; Making new    ~A~%" dir)
-    (specware::make-directory dir)))
+    (Specware::make-directory dir)))
 
 (require "BUILD")  ; workaround for annoying bug
 (require "genapp") ; workaround for annoying bug
@@ -152,7 +152,7 @@
     (format t "~&;;; Getting Allegro/emacs interface already in specware libarary. ...~%")
   (progn
     (format t "~&;;; Getting Allegro/emacs interface from ~A ...~%" (in-lisp-dir "xeli/"))
-    (specware::copy-directory (in-lisp-dir "xeli/") 
+    (Specware::copy-directory (in-lisp-dir "xeli/") 
 			      (in-distribution-dir "Library/IO/Emacs/xeli/"))))
 
 ;;; ============ AUTORUN FILES FOR CD ============
@@ -180,19 +180,19 @@
 (make-dir-if-missing *cd-dir*)
 
 (format t "~&;;; Adding Autorun for Windows: ~A~%" (in-cd-dir "Autorun.inf"))
-(specware::copy-file (in-specware-dir "Release/Autorun.inf")
+(Specware::copy-file (in-specware-dir "Release/Autorun.inf")
 		     (in-cd-dir "Autorun.inf"))
 
 (format t "~&;;; Adding install script for Windows: ~A~%" (in-cd-dir "InstallOnWindows.cmd"))
-(specware::copy-file (in-specware-dir "Release/InstallOnWindows.cmd")
+(Specware::copy-file (in-specware-dir "Release/InstallOnWindows.cmd")
 		     (in-cd-dir "InstallOnWindows.cmd"))
 
 (format t "~&;;; Adding install script for Linux: ~A~%" (in-cd-dir "InstallOnLinux"))
-(specware::copy-file (in-specware-dir "Release/InstallOnLinux")
+(Specware::copy-file (in-specware-dir "Release/InstallOnLinux")
 		     (in-cd-dir "InstallOnLinux"))
 
 (format t "~&;;; Adding install script for Mac: ~A~%" (in-cd-dir "InstallOnMac"))
-(specware::copy-file (in-specware-dir "Release/InstallOnMac")
+(Specware::copy-file (in-specware-dir "Release/InstallOnMac")
 		     (in-cd-dir "InstallOnMac"))
 
 ;;; ============ EMPTY DIRS TO RECEIVE INSTALLSHIELD RESULTS ============
