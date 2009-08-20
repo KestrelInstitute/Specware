@@ -6,8 +6,6 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
-(push :case-sensitive *features*)
-
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
