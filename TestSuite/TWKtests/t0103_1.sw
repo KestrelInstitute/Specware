@@ -16,7 +16,7 @@ player = spec
 position = spec 
    import player
 
-   sort position = Nat * Nat * Nat * Nat * Boolean
+   type position = Nat * Nat * Nat * Nat * Boolean
 
    op numPearls : position -> Nat
    def numPearls (b) = b.1 + b.2 + b.3 + b.4
@@ -25,8 +25,8 @@ position = spec
 
 move = spec
     import position
-    sort row     = {n : Nat | n > 0 & n <= 4}
-    sort move    = position * row * Nat
+    type row     = {n : Nat | n > 0 && n <= 4}
+    type move    = position * row * Nat
     op legal?:   move -> Boolean
     def legal?(m) = true
 %   def legal?(mov) = 
@@ -35,7 +35,7 @@ move = spec
 %       let pos = mov.1
 %         in 
 %           (project rw pos) >= num 
-%            & num > 0 
-%            & numPearls(pos) > n)
-    sort legalMove =  {m: move | legal?}
+%            && num > 0 
+%            && numPearls(pos) > n)
+    type legalMove =  {m: move | legal?}
     end

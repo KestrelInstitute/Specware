@@ -20,7 +20,7 @@ spec
  op WFO.wfo : fa(a) (a * a -> Boolean) -> Boolean
  def WFO.wfo pred = 
      fa(p : a -> Boolean) 
-      ex(y : a) p y => ex(y : a) (p y & fa(x : a) (p x => ~(pred(x, y))))
+      ex(y : a) p y => ex(y : a) (p y && fa(x : a) (p x => ~(pred(x, y))))
  conjecture doubleswitchidentity is 
     fa(i : Integer, j : Integer) switch(switch(i, j)) = (i, j)
 endspec

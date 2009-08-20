@@ -135,7 +135,7 @@
 	    (:optional "")))
 
  ("el Pattern A"
-  :lisp "(sw-user::f '(5))"
+  :lisp "(SW-User::f '(5))"
   :value 5)
 
  ("swe Pattern B"
@@ -150,7 +150,7 @@
 	    (:optional "")))
 
  ("el Pattern B"
-  :lisp "(sw-user::g '(5))"
+  :lisp "(SW-User::g '(5))"
   :value 5)
  )
 

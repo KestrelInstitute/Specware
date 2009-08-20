@@ -19,7 +19,7 @@
               (print (list (equalp (car first-form) 'require)
                            (equalp (cadr first-form) \"SpecwareRuntime\")))
               (load (compile-file \"lisp/S.lisp\"))
-              (print (sw-user::foo-2 \"abc\" \"def\"))))"
+              (print (SW-User::foo-2 \"abc\" \"def\"))))"
   :output '((:optional "")
 	    (:optional "")
 	    "(T T) "
