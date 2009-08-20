@@ -404,6 +404,12 @@ be the option to run each (test ...) form in a fresh image.
       (format s "~&;;;")
       )))
 
+(defun diff-files (wanted saw)
+  (let ((diffs (diff-output (io-spec::readStringFromFile wanted)
+                            (io-spec::readStringFromFile saw))))
+    (unless (null diffs)
+      (format-output-errors diffs))))
+
 (defun diff-output (wanted saw)
   (labels ((convert-to-lines (text)
 	     (if (stringp text)
@@ -517,7 +523,7 @@ be the option to run each (test ...) form in a fresh image.
 			 (matches? x (cdr y)))))      ; matches multiple chars
 		   (t
 		    (return nil)))))))
-    (or (equalp x y)
+    (or (string= x y)                   ; was equalp which is case-insensitive
 	(matches? (compress-whitespace (coerce x 'list))
 		  (compress-whitespace (coerce y 'list))))))
 
