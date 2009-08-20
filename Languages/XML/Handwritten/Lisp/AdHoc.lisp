@@ -17,7 +17,7 @@
 	(trailer (cdr xml-element-content))) 
     ;; Unicode.string is defined in /Library/IO/Unicode/UStringAsList.sw
     ;; which is compiled after this...
-    (read-from-string (funcall 'unicode::|!string| (cdr trailer)))))
+    (read-from-string (funcall 'Unicode::|!string| (cdr trailer)))))
 
 ;;; InternalizeDocument.sw: 
 ;;;   op internalize_EmptyElemTag_ad_hoc : fa (X) EmptyElemTag * SortDescriptor (* * QIdDescriptor * (List SortDescriptor) * SortDescriptorExpansionTable *) -> Option X

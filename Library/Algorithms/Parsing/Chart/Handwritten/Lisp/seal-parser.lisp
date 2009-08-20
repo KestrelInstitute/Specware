@@ -13,7 +13,7 @@
 				:symbol-package  symbol-package)))
     (setq *current-parser* new-parser)
     (when (null (pathname-type file))
-      (let ((fasl-file (make-pathname :type specware::*fasl-type* :defaults file))
+      (let ((fasl-file (make-pathname :type Specware::*fasl-type* :defaults file))
 	    (lisp-file (make-pathname :type "lisp" :defaults file)))
 	(unless (null lisp-file)
 	  (when (<= (or (file-write-date fasl-file) 0)
@@ -792,7 +792,7 @@
 	      (t
 	       (do-parser-rule-items (head-item child-rule)
 		 ;; repeat for each item that can start child production     (dotimes (i (length items))
-		 (let* ((item-handles-bv (parser-rule-item-POSSIBLE-HANDLES-BV head-item)))
+		 (let* ((item-handles-bv (parser-rule-item-possible-handles-bv head-item)))
 		   (unless (null item-handles-bv)
 		     (setq handles-bv (bit-ior handles-bv item-handles-bv)))
 		   (unless (parser-rule-item-optional? head-item)

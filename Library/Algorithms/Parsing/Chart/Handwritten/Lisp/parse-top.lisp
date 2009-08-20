@@ -19,7 +19,7 @@
   (when-debugging
    (reset-parser-debug-vars))
   ;; call garbageCollect if it looks plausible
-  (let ((gc (find-symbol "GARBAGECOLLECT" "SYSTEM-SPEC")))
+  (let ((gc (find-symbol "garbageCollect" "System-Spec")))
     (when (fboundp gc)
       (funcall gc nil)))
   ;;

@@ -43,7 +43,7 @@
        :defaults "../../../Handwritten/Lisp/load-utilities"
        :type     "lisp"))
 
-(defvar Specware4 (specware::getenv "SPECWARE4"))
+(defvar Specware4 (Specware::getenv "SPECWARE4"))
 
 ;;; Get version information from canonical source...
 (let ((version-file (format nil "~A/Applications/Specware/Handwritten/Lisp/SpecwareVersion.lisp"

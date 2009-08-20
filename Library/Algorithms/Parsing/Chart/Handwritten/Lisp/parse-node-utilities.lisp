@@ -14,7 +14,7 @@
 	 (push (apply 'format nil args) *warnings*))
 	(t
 	 (unless (parse-session-warning-issued? session)
-	   (emacs::goto-file-position (namestring (parse-session-file session))
+	   (Emacs::goto-file-position (namestring (parse-session-file session))
 				      (first location) (second location))
 	   (setf (parse-session-warning-issued? session) t))
 	 (apply 'warn args))))

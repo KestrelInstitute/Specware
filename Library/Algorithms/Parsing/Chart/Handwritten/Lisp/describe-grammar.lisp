@@ -32,7 +32,7 @@
 (defun print-grammar-ps-file (&optional just-rerun-latex? parser-tex-dir)
   (let* ((parser-tex-dir  
 	  (or parser-tex-dir
-	      (let* ((parser-handwritten-lisp-dir (specware::current-directory))
+	      (let* ((parser-handwritten-lisp-dir (Specware::current-directory))
 		     (parser-handwritten-dir      (reverse (cdr (reverse (pathname-directory parser-handwritten-lisp-dir)))))
 		     (parser-handwritten-tex-dir  (append parser-handwritten-dir '("TeX"))))
 		(make-pathname :directory parser-handwritten-tex-dir))))
@@ -276,7 +276,7 @@
 			    (pushnew sub-rule main-sub-rules))
 			  bnf)))))
 	    (push (if (parser-rule-item-optional? item)
-		      (list :OPTIONAL form)
+		      (list :optional form)
 		    form)
 		  sub-expressions)))))
     (if (parser-atomic-rule-p main-rule)
@@ -323,7 +323,7 @@
 			    (pushnew sub-rule main-sub-rules))
 			  bnf)))))
 	    (push (if (parser-rule-item-optional? item)
-		      (list :OPTIONAL form)
+		      (list :optional form)
 		    form)
 		  sub-expressions)))))
     (let ((xx

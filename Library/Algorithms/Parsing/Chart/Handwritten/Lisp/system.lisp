@@ -3,13 +3,13 @@
 (in-package :cl-user)
 
 (defun local-file (filename) 
-  (make-pathname :name filename :defaults #-gcl *LOAD-PATHNAME* #+gcl SI:*LOAD-PATHNAME*))
+  (make-pathname :name filename :defaults #-gcl *load-pathname* #+gcl si:*load-pathname*))
 
 (defun load-local-file (filename) 
-  (specware::load-lisp-file (local-file filename) :compiled? nil))
+  (Specware::load-lisp-file (local-file filename) :compiled? nil))
 
 (defun compile-and-load-local-file (filename) 
-  (specware::compile-and-load-lisp-file (local-file filename)))
+  (Specware::compile-and-load-lisp-file (local-file filename)))
 
 (load-local-file "parser-package") 
 
@@ -29,10 +29,10 @@
 
 ;; Delete old fasls in case we're switching allegro/cmucl, 
 ;; different versions, different debug/optimization settings, etc.
-#+(AND COMPILER (NOT SPECWARE-DISTRIBUTION)) ; but don't delete fasl files if there is no compiler to recreate them
+#+(and compiler (not specware-distribution)) ; but don't delete fasl files if there is no compiler to recreate them
 (dolist (f (directory (format nil "~A/Library/Algorithms/Parsing/Chart/Handwritten/Lisp/*.~A" 
-			      specware::specware4
-			      specware::*fasl-type*)))
+			      Specware::Specware4
+			      Specware::*fasl-type*)))
   (delete-file f))
     
 #+DEBUG-PARSER 
@@ -46,21 +46,21 @@
   (proclaim '(optimize (speed 3) (safety 1) (compilation-speed 0) (space 0) (debug 2)))
   )
 
-(defmacro parser4::when-debugging (&body body)  
+(defmacro Parser4::when-debugging (&body body)  
   #-DEBUG-PARSER ()
   #+DEBUG-PARSER `(progn ,@body)
   )
 
-(defmacro parser4::debugging-comment (&body body) 
-  `(parser4::when-debugging 
-    (when parser4::*verbose?*
-      (parser4::comment ,@body))))
+(defmacro Parser4::debugging-comment (&body body) 
+  `(Parser4::when-debugging 
+    (when Parser4::*verbose?*
+      (Parser4::comment ,@body))))
 
 (compile-and-load-local-file "comment-hack")
 (compile-and-load-local-file "parse-decls")
 
 #+DEBUG-PARSER (compile-and-load-local-file "parse-debug-1")
-#-DEBUG-PARSER (defun parser4::verify-all-parser-rule-references (parser) (declare (ignore parser)) nil)
+#-DEBUG-PARSER (defun Parser4::verify-all-parser-rule-references (parser) (declare (ignore parser)) nil)
 
 (compile-and-load-local-file "parse-add-rules")
 (compile-and-load-local-file "seal-parser")
@@ -80,11 +80,11 @@
 (compile-and-load-local-file "describe-grammar")
 
 (with-open-file (s (format nil "~A/Library/Algorithms/Parsing/Chart/Handwritten/Lisp/log.~A.status"
-			   specware::specware4
-			   specware::*fasl-type*)
+			   Specware::Specware4
+			   Specware::*fasl-type*)
 		   :direction :output :if-exists :supersede)
   (format s "~%;;; When lisp files were last compiled to ~A files ~A,~%"
-	  specware::*fasl-type*
+	  Specware::*fasl-type*
 	  (multiple-value-bind (sec min hour day month year)
 	      (decode-universal-time (get-universal-time))
 	    (format nil "at ~2,'0D:~2,'0D:~2,'0D on ~4,'0D-~2,'0D-~2,'0D" 

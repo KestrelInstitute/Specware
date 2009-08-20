@@ -441,24 +441,24 @@
     (:file   (cons :|File|     (vector (second *parser-source*) left right)))
     (:string (cons :|String|   (vector (second *parser-source*) left right)))
     (t       (when (< (incf *make-source-warnings-seen*) 10)
-	       (unless (equalp *parser-source* '(:INTERNAL "parser initialization"))
+	       (unless (equalp *parser-source* '(:internal "parser initialization"))
 		 (warn "In MAKE-REGION: What are we parsing? : ~S" *parser-source*)))
 	     (cons :|Internal| (second *parser-source*)))))
 
 ;;; ===== performance hacks ===
 
-(defvar *OLD-TIMING-DATA* nil)
-(defvar *TIMING-DATA*     nil)
-(defvar *LAST-REAL-TIME*  0)
-(defvar *LAST-RUN-TIME*   0)
+(defvar *old-timing-data* nil)
+(defvar *timing-data*     nil)
+(defvar *last-real-time*  0)
+(defvar *last-run-time*   0)
 
 (defun reset-timing-data ()
   (push *timing-data* *old-timing-data*)
   (setq *timing-data* nil))
 
 (defun incf-timing-data (key)
-  (let* ((run-time (GET-INTERNAL-RUN-TIME))
-	 (real-time (GET-INTERNAL-REAL-TIME))
+  (let* ((run-time (get-internal-run-time))
+	 (real-time (get-internal-real-time))
 	 (run-delta  (- run-time  *last-run-time*))
 	 (real-delta (- real-time *last-real-time*))
 	 (entry (assoc key *timing-data*)))
@@ -467,6 +467,6 @@
 	  (t
 	   (incf (cadr entry) run-delta)
 	   (incf (caddr entry) real-delta)))
-    (setq *last-run-time*  (GET-INTERNAL-RUN-TIME))
-    (setq *last-real-time* (GET-INTERNAL-REAL-TIME))))
+    (setq *last-run-time*  (get-internal-run-time))
+    (setq *last-real-time* (get-internal-real-time))))
 

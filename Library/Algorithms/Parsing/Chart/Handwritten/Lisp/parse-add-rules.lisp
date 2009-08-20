@@ -37,7 +37,7 @@
 	      (if (and (consp pattern) 
 		       (or (numberp (first pattern))
 			   (eq (first pattern) :optional)))
-		  `(:TUPLE ,pattern)
+		  `(:tuple ,pattern)
 		  pattern))
 	     (optional-pattern?
 	      (not (build-parser-rule parser rule-name pattern 
@@ -77,14 +77,14 @@
     (cons
      (if (atom (first pattern))
 	 (ecase (first pattern)
-	   (:ANYOF    (build-parser-anyof-rule  parser name (rest pattern)))
-	   (:TUPLE    (build-parser-tuple-rule  parser name (rest pattern)))
-	   (:PIECES   (build-parser-pieces-rule parser name (rest pattern)))
-	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern)))
-	   (:REPEAT*  (let* ((rulename 
+	   (:anyof    (build-parser-anyof-rule  parser name (rest pattern)))
+	   (:tuple    (build-parser-tuple-rule  parser name (rest pattern)))
+	   (:pieces   (build-parser-pieces-rule parser name (rest pattern)))
+	   (:repeat   (build-parser-repeat-rule parser name (rest pattern)))
+	   (:repeat*  (let* ((rulename 
 			      (build-parser-rule parser name 
 						 `(:anyof 
-						   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern))))) 
+						   ((:tuple (1 (:optional (:repeat ,@(rest pattern))))) 
 						    (if (eq '1 :unspecified) '() (list . 1)))
 						   )
 						 s-p-d
@@ -92,21 +92,21 @@
 			     (rule (gethash rulename (parser-ht-name-to-rule parser))))
 			(debugging-comment "Rule ~S is now optional: ~S." rulename rule)
 			rulename))
-           (:REPEAT+  (build-parser-rule parser name 
+           (:repeat+  (build-parser-rule parser name 
 					 `(:anyof
-					   ((:tuple (1 (:REPEAT ,@(rest pattern))))
+					   ((:tuple (1 (:repeat ,@(rest pattern))))
 					    (list . 1)))
 					 s-p-d
 					 o-s))
-	   (:REPEAT++ (build-parser-rule parser name 
+	   (:repeat++ (build-parser-rule parser name 
 					 (let ((elt (second pattern))
 					       (sep (third  pattern)))
 					   (if (null sep)
 					       `(:anyof
-						 ((:tuple (1 ,elt) (2 (:REPEAT ,@(rest pattern))))
+						 ((:tuple (1 ,elt) (2 (:repeat ,@(rest pattern))))
 						  (list 1 . 2)))
 					     `(:anyof
-					       ((:tuple (1 ,elt) ,sep (2 (:REPEAT ,@(rest pattern))))
+					       ((:tuple (1 ,elt) ,sep (2 (:repeat ,@(rest pattern))))
 						(list 1 . 2)))))
 					 s-p-d
 					 o-s))
@@ -152,7 +152,7 @@
 	    (semantic-index nil)
 	    (precedence     nil))
 	(loop while (consp pattern) do
-	  (cond ((eq (first pattern) :OPTIONAL)
+	  (cond ((eq (first pattern) :optional)
 		 (warn "In rule ~S, :optional is redundant: ~S"
 		       name 
 		       alternative-patterns)
@@ -186,7 +186,7 @@
 	    (semantic-index nil)
 	    (precedence     nil))
 	(loop while (consp pattern) do
-	  (cond ((eq (first pattern) :OPTIONAL)
+	  (cond ((eq (first pattern) :optional)
 		 (setq optional? t)
 		 (setq pattern (second pattern)))
 		((numberp (first pattern))
@@ -218,7 +218,7 @@
 	    (semantic-index nil)
 	    (precedence     nil))
 	(loop while (consp pattern) do
-	  (cond ((eq (first pattern) :OPTIONAL)
+	  (cond ((eq (first pattern) :optional)
 		 (warn "In rule ~S, :optional is redundant: ~S"
 		       name 
 		       field-patterns)
@@ -249,7 +249,7 @@
 	  (let ((semantic-index nil)
 		(precedence     nil))
 	    (loop while (consp element-pattern) do
-	      (cond ((eq (first element-pattern) :OPTIONAL)
+	      (cond ((eq (first element-pattern) :optional)
 		     (warn "In repeat rule ~S, element may not be :optional: ~S"
 			   name 
 			   pattern)
@@ -274,7 +274,7 @@
 	    (let ((semantic-index nil)
 		  (precedence     nil))
 	      (loop while (consp separator-pattern) do
-		(cond ((eq (first separator-pattern) :OPTIONAL)
+		(cond ((eq (first separator-pattern) :optional)
 		       (warn "In repeat rule ~S, separator may not be :optional: ~S"
 			     name 
 			     pattern)
