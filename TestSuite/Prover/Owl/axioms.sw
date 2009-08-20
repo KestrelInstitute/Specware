@@ -21,7 +21,7 @@
 
 owl_core = spec
 
-  sort Individual 
+  type Individual 
 
 %  The relation Class? characterizes those individuals that are 
 %  classes.
@@ -34,10 +34,10 @@ owl_core = spec
 % individuals in the class extension are called the instances of the
 % class.
 
-%  The sort Class consists of those individuals that are classes.
+%  The type Class consists of those individuals that are classes.
 %  Hence all classes are individuals, an Owl Full assumption.
 
-  sort Class = {x : Individual | Class? x}
+  type Class = {x : Individual | Class? x}
 
 %  We introduce relations for Type and SubClass: 
 
@@ -57,9 +57,9 @@ owl_core = spec
 
   op Property? : Individual -> Boolean
 
-% The Specware sort Property corresponds to the OWL Class Property.
+% The Specware type Property corresponds to the OWL Class Property.
   
-  sort Property = {x : Individual | Property? x}
+  type Property = {x : Individual | Property? x}
 
   op Property : Class
 
@@ -170,7 +170,7 @@ op differentFrom : Individual * Individual -> Boolean
 % Because Specware does not allow functions of variable arity, we
 % introduce AllDifferent on Lists of Individuals
 
-sort List
+type List
 
 op nil : List
 
@@ -198,7 +198,7 @@ axiom AllDifferent2_nil is
 axiom AllDifferent2_cons is
    fa(x : Individual, y: Individual, l : List)
     AllDifferent2(x, cons(y, l)) <=>
-    ~(x = y) & AllDifferent2(x, l)
+    ~(x = y) && AllDifferent2(x, l)
 
 op AllDifferent : List -> Boolean
 
@@ -210,7 +210,7 @@ axiom AllDifferent_nil is
 axiom AllDifferent_cons is
    fa(x : Individual, l : List)
      AllDifferent(cons(x, l)) <=>
-     AllDifferent2(x, l) & AllDifferent(l)
+     AllDifferent2(x, l) && AllDifferent(l)
 
 %  Suggested by SNARK 7/04
 conjecture theorem_not_AllDifferent_cons_xx is
@@ -222,7 +222,7 @@ op addOne : Individual * Class -> Class
    axiom addOne_of_type is
     fa(x : Individual, y : Individual, C : Class) 
      Type(x, addOne(y, C)) <=> 
-     (sameAs(x, y) or Type(x, C))
+     (sameAs(x, y) || Type(x, C))
 
    conjecture theorem_type_identity is
     fa(x : Individual, C : Class)
@@ -436,7 +436,7 @@ op oneOf :  Individual * Individual -> Class
   axiom oneOf_definition is
    fa(x : Individual, y : Individual, z : Individual)
      Type(z, oneOf(x, y)) <=>
-     (z = x or z = y)
+     (z = x || z = y)
 
   conjecture lemma_oneOf_vs_addOne is
    fa(x : Individual, y : Individual, z : Individual)
@@ -460,7 +460,7 @@ op intersectionOf : Class * Class -> Class
   axiom intersectionOf_definition is
   fa(C1 : Class, C2 : Class, x : Individual)
     Type(x, intersectionOf(C1, C2)) <=>
-    (Type(x, C1) & Type(x, C2))
+    (Type(x, C1) && Type(x, C2))
 
   conjecture theorem_intersectionOf_Nothing is
   fa(C : Class)equivalentClass(intersectionOf(C, Nothing), Nothing)
@@ -482,7 +482,7 @@ op unionOf : Class * Class -> Class
   axiom unionOf_definition is
   fa(C1 : Class, C2 : Class, x : Individual)
     Type(x, unionOf(C1, C2)) <=>
-    (Type(x, C1) or Type(x, C2))
+    (Type(x, C1) || Type(x, C2))
 
   conjecture theorem_unionOf_Nothing is
   fa(C : Class)equivalentClass(unionOf(C, Nothing), C)
@@ -527,7 +527,7 @@ op disjointWith : Class * Class -> Boolean
   axiom disjoint_implies_no_common_element is
    fa(C1 : Class, C2 : Class, x : Individual)
     disjointWith(C1, C2) =>
-    ~(Type(x, C1) & Type(x, C2))
+    ~(Type(x, C1) && Type(x, C2))
 
   
 % common(C1, C2) is a common element of C1 and C2, if one exists.
@@ -536,7 +536,7 @@ op common : Class * Class -> Individual
 
   axiom disjoint_if_no_common_element is
    fa(C1 : Class, C2 : Class)
-    ~(Type(common(C1, C2), C1) & Type(common(C1, C2), C2)) =>
+    ~(Type(common(C1, C2), C1) && Type(common(C1, C2), C2)) =>
     disjointWith(C1, C2)
 
   conjecture theorem_complements_are_disjoint is
@@ -618,13 +618,13 @@ op someValueFrom : Property * Class * Individual -> Individual
 
    axiom definition_someValuesFrom_RL is
     fa(P : Property, C : Class, x : Individual)
-     ((ex(y : Individual)(Holds(P,x,y) & Type(y, C))) =>
+     ((ex(y : Individual)(Holds(P,x,y) && Type(y, C))) =>
        Type(x, someValuesFrom(P,C)))  
 
    axiom definition_someValuesFrom_LR is
     fa(P : Property, C : Class, x : Individual)
      (Type(x, someValuesFrom(P,C)) =>
-       (Holds(P,x,someValueFrom(P, C, x)) & Type(someValueFrom(P, C, x), C))) 
+       (Holds(P,x,someValueFrom(P, C, x)) && Type(someValueFrom(P, C, x), C))) 
 
 
 %  SNARK found no proof--maybe x not P related to anything
@@ -730,11 +730,11 @@ owlnat = spec
 
   axiom antisymmetry_of_gtq is
    fa(x : Nat, y : Nat)
-   (x >= y & y >= x) => x = y
+   (x >= y && y >= x) => x = y
 
  axiom transitivity_of_gtq is
   fa(x : Nat, y : Nat, z : Nat)
-   (x >= y & y >= z) => x >= z
+   (x >= y && y >= z) => x >= z
 
   axiom zero_gtq is
   fa (y : Nat)
@@ -743,11 +743,11 @@ owlnat = spec
   axiom successor_gtq is
   fa(x : Nat, y : Nat)
    x + 1 >= y
-   =>  (1 + x = y or x >= y)
+   =>  (1 + x = y || x >= y)
 
   conjecture theorem_one_gtq is
   fa(y: Nat)
-   1 >= y => (1 = y or 0 = y)
+   1 >= y => (1 = y || 0 = y)
 
   def owl_nat_prove_options = "(use-resolution t) (use-hyperresolution
   nil) (use-negative-hyperresolution nil) (use-paramodulation)
@@ -865,8 +865,8 @@ import owlnat
       fa(C : Class)
         2 = card(C) =>
          (ex(x : Individual, y : Individual)
-          (Type(x, C) &
-           Type(y, C) &
+          (Type(x, C) &&
+           Type(y, C) &&
            ~(sameAs(x, y))))
 
    
@@ -919,7 +919,7 @@ op Cardinality : Property * Nat -> Class
   conjecture theorem_Cardinality_one is
   fa(P : Property, x : Individual, y1 : Individual, y2 : Individual)
    Type(x, Cardinality(P, 1)) =>
-   (Holds(P, x, y1) & Holds(P, x, y2) => sameAs(y1, y2))
+   (Holds(P, x, y1) && Holds(P, x, y2) => sameAs(y1, y2))
 
 op maxCardinality : Property * Nat -> Class
 
@@ -934,7 +934,7 @@ op maxCardinality : Property * Nat -> Class
   conjecture theorem_maxCardinality_one is
   fa(P : Property, x : Individual, y1 : Individual, y2 : Individual)
    Type(x, maxCardinality (P, 1)) =>
-   (Holds(P, x, y1) & Holds(P, x, y2) => sameAs(y1, y2))
+   (Holds(P, x, y1) && Holds(P, x, y2) => sameAs(y1, y2))
 
 op minCardinality : Property * Nat -> Class
 
@@ -967,19 +967,19 @@ import cardinality
   fa(P : Property, x : Individual, 
      y1 : Individual, y2 : Individual, y3 : Individual)
    Type(x, Cardinality(P, 2)) =>
-   (Holds(P, x, y1) & Holds(P, x, y2) & Holds(P, x, y3) => 
+   (Holds(P, x, y1) && Holds(P, x, y2) && Holds(P, x, y3) => 
    ~(AllDifferent(cons(y1, cons(y2, cons(y3, nil))))))
 
   conjecture theorem_Cardinality_two_not_same is
   fa(P : Property, x : Individual)
    Type(x, Cardinality(P, 2)) =>
     (ex(y1 : Individual, y2 : Individual)
-     (Holds(P, x, y1) & Holds(P, x, y2) &
+     (Holds(P, x, y1) && Holds(P, x, y2) &&
      ~(sameAs(y1, y2))))
 
   conjecture testcase_cardinality_002 is
   fa(P : Property, n : Nat, x : Individual)
-   (Type(x, maxCardinality(P, n)) & 
+   (Type(x, maxCardinality(P, n)) && 
     Type(x, minCardinality(P, n))) =>
   Type(x, Cardinality(P, n))
 
@@ -988,7 +988,7 @@ import cardinality
    Type(x, Cardinality(P, 0)) =>
     (ex(C : Class)
      fa(y : Individual)
-     ((Type(y, C) => Holds(P, x, y))  &
+     ((Type(y, C) => Holds(P, x, y))  &&
       card(C) = 0))
 
   conjecture theorem_Cardinality_not_same_one is
@@ -996,7 +996,7 @@ import cardinality
    Type(x, Cardinality(P, 1)) =>
     (ex(C : Class)
      fa(y : Individual)
-     ((Type(y, C) => Holds(P, x, y))  &
+     ((Type(y, C) => Holds(P, x, y))  &&
       card(C) = 1))
 
   conjecture theorem_minCardinality_not_same_n is
@@ -1004,7 +1004,7 @@ import cardinality
    Type(x, minCardinality(P, n)) =>
     (ex(C : Class)
      fa(y : Individual)
-     ((Type(y, C) => Holds(P, x, y))  &
+     ((Type(y, C) => Holds(P, x, y))  &&
       card(C)>= n))
 
 
@@ -1021,7 +1021,7 @@ import cardinality
    Type(x, Cardinality(P, n)) =>
     (ex(C : Class)
      fa(y : Individual)
-     ((Type(y, C) => Holds(P, x, y))  &
+     ((Type(y, C) => Holds(P, x, y))  &&
       card(C)= n))
 
 
@@ -1040,9 +1040,9 @@ import cardinality
     op b3 : Individual
 
     axiom antecedent_Cardinality_two is
-    Type(a, Cardinality(P, 2)) &
-    Holds(P,a,b1) &
-    Holds(P,a,b2) &
+    Type(a, Cardinality(P, 2)) &&
+    Holds(P,a,b1) &&
+    Holds(P,a,b2) &&
     Holds(P,a,b3)
 
     conjecture theorem_Cardinality_two_Alldifferent is
@@ -1070,11 +1070,11 @@ import owl_core
 
 op Data? : Individual -> Boolean
  
-sort Data = {x : Individual | Data? x}
+type Data = {x : Individual | Data? x}
 
 op DatatypeProperty? : Property -> Boolean
 
-sort DatatypeProperty = {x : Property | DatatypeProperty? x}
+type DatatypeProperty = {x : Property | DatatypeProperty? x}
 
 % 4.1.1 rdfs:subPropertyOf
 
@@ -1180,7 +1180,7 @@ sort DatatypeProperty = {x : Property | DatatypeProperty? x}
 
   conjecture theorem_inverseOf_is_symmetric is
    fa(P : Property, Q : Property, R : Property)
-     Holds(inverseOf, P, Q) & Holds(inverseOf, Q, R) =>
+     Holds(inverseOf, P, Q) && Holds(inverseOf, Q, R) =>
      Holds(equivalentProperty, P, R)
 
 % 4.3.1 owl:FunctionalProperty
@@ -1203,7 +1203,7 @@ sort DatatypeProperty = {x : Property | DatatypeProperty? x}
    fa(F : Property)
      Type(F, FunctionalProperty) <=>
      (fa(x : Individual, y1 : Individual, y2 : Individual)
-      (Holds(F,x,y1) & Holds(F,x,y2)  => y1 = y2))
+      (Holds(F,x,y1) && Holds(F,x,y2)  => y1 = y2))
 
 %% If prop belongs to owl:FunctionalProperty, and subject denotes a
 %% resource which is the subject of two prop triples, then the objects of
@@ -1234,7 +1234,7 @@ sort DatatypeProperty = {x : Property | DatatypeProperty? x}
    fa(F : Property)
      Type(F, InverseFunctionalProperty) <=>
      (fa(x1 : Individual, x2 : Individual, y : Individual)
-      (Holds(F,x1,y) & Holds(F,x2,y)  => x1 = x2))
+      (Holds(F,x1,y) && Holds(F,x2,y)  => x1 = x2))
 
   conjecture theorem_inverseOf_Functional_is_InverseFunctional is
    fa(F : Property, G : Property)
@@ -1262,7 +1262,7 @@ sort DatatypeProperty = {x : Property | DatatypeProperty? x}
    fa(F : Property)
      Type(F, TransitiveProperty) <=>
      (fa(x : Individual, y : Individual, z : Individual)
-      (Holds(F,x,y) & Holds(F,y,z)  => Holds(F,x,z)))
+      (Holds(F,x,y) && Holds(F,y,z)  => Holds(F,x,z)))
 
 % Typical examples of transitive properties are properties representing
 % certain part-whole relations. For example, we might want to say that
@@ -1283,7 +1283,7 @@ sort DatatypeProperty = {x : Property | DatatypeProperty? x}
       (fa(ChiantiClassico : Individual, 
 	 Tuscany : Individual, 
 	 Italy : Individual)
-          (Holds(subRegionOf, ChiantiClassico, Tuscany) &
+          (Holds(subRegionOf, ChiantiClassico, Tuscany) &&
 	   Holds(subRegionOf, Tuscany, Italy) =>
 	  Holds(subRegionOf, ChiantiClassico, Italy)))
 
@@ -1329,7 +1329,7 @@ import properties
      fa(Prop : Property)
      Type(Prop, FunctionalProperty) =>
      (fa(subject : Individual, object1 : Individual, object2 : Individual)
-      (Holds(Prop,subject,object1) & 
+      (Holds(Prop,subject,object1) && 
        Holds(Prop,subject,object2)  => 
        sameAs(object1, object2)))
 
@@ -1341,7 +1341,7 @@ import properties
      fa(Prop : Property)
      Type(Prop, FunctionalProperty) =>
      (fa(subject : Individual, object1 : Individual, object2 : Individual)
-      (Holds(Prop,subject,object1) & 
+      (Holds(Prop,subject,object1) && 
        Holds(Prop,subject,object2)  => 
        (fa (Prop2 : Property, value : Individual) 
 	(Holds(Prop2, object1, value) =>
