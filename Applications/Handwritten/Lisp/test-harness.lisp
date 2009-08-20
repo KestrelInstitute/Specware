@@ -110,10 +110,10 @@ be the option to run each (test ...) form in a fresh image.
 	     (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
-  (setq specware::specware4 (specware::getenv "SPECWARE4"))
+  (setq Specware::specware4 (specware::getenv "SPECWARE4"))
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (specware::sw-parse-namestring (specware::ensure-final-slash dir))
+			    (Specware::sw-parse-namestring (specware::ensure-final-slash dir))
 			  dir))
 	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
 					  dirpath)))
@@ -133,7 +133,7 @@ be the option to run each (test ...) form in a fresh image.
 				 (format nil "~a/~a~2,,,'0@a~2,,,'0@a~2,,,'0@a~2,,,'0@a~a/"
 					 *test-temporary-directory-name*
 					 year month day hour min i))
-				specware::temporaryDirectory)))
+				Specware::temporaryDirectory)))
       (if (probe-file dir)
 	  (get-temporary-directory-i (+ i 1))
 	dir))))
@@ -151,11 +151,11 @@ be the option to run each (test ...) form in a fresh image.
 	 (*test-temporary-directory-name*
 	  #+darwin (format nil "/private~a" *test-temporary-directory-name*)
 	  #-darwin *test-temporary-directory-name*)
-	 (old-directory (specware::current-directory)))
+	 (old-directory (Specware::current-directory)))
     (unless *quiet-about-dirs?* 
       (format t "~%;;;; Running test suite in directory ~a~%" *test-directory*))
     (ensure-directories-exist *test-temporary-directory*)
-    (specware::change-directory *test-temporary-directory*)
+    (Specware::change-directory *test-temporary-directory*)
     (tagbody
      (unwind-protect 
 	 (handler-case
@@ -174,7 +174,7 @@ be the option to run each (test ...) form in a fresh image.
 		  (warn "Unexpected problem with ~A: ~S" path condition)))
        (progn
 	 ;; always try to recover and proceed to the next test
-	 (specware::change-directory old-directory)
+	 (Specware::change-directory old-directory)
 	 ;; force-ouput so we can monitor interim results of long-running test suites:
 	 (force-output)
 	 ;; the go here aborts any attempt to throw out to higher levels...
@@ -192,8 +192,8 @@ be the option to run each (test ...) form in a fresh image.
 	  (ensure-directories-exist target)
 	  (if *quiet-copy?* 
 	      (with-output-to-string (*standard-output*)
-		(specware::copy-file source target))
-	    (specware::copy-file source target)))))
+		(Specware::copy-file source target))
+	    (Specware::copy-file source target)))))
 
 (defmacro test-directories (&body dirs)
   `(test-directories-fn '(,@dirs)))
@@ -208,8 +208,8 @@ be the option to run each (test ...) form in a fresh image.
       ;;(ensure-directories-exist target)
       (if *quiet-copy?*
 	  (with-output-to-string (*standard-output*)
-	    (specware::copy-directory source target t))
-	(specware::copy-directory source target t)))))
+	    (Specware::copy-directory source target t))
+	(Specware::copy-directory source target t)))))
 
 (defmacro test (&body test-forms)
   ; (setq *global-test-counter* 0)
@@ -268,12 +268,12 @@ be the option to run each (test ...) form in a fresh image.
     ;;        Incrementing fi:lisp-evalserver-number-reads here would be a better
     ;;        solution except that it doesn't seem to work.
     ;;
-    (emacs::eval-in-emacs (format nil "(message ~S)" msg)))
+    (Emacs::eval-in-emacs (format nil "(message ~S)" msg)))
   (let (val error-type (error-messages ())
-	(emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil)
+	(Emacs::*goto-file-position-store?* t)
+	(Emacs::*goto-file-position-stored* nil)
 	(cl-user::*running-test-harness?* t)
-	(specware::*dont-use-x-symbol?* t))
+	(Specware::*dont-use-x-symbol?* t))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (let ((*error-output* *standard-output*)) ; so we also collect warnings and error messages
 			   (multiple-value-setq (val error-type)
@@ -290,9 +290,9 @@ be the option to run each (test ...) form in a fresh image.
 				    ))))))
           (output (normalize-end-of-lines output)))
       (setq test-output (normalize-output test-output))
-      (when emacs::*goto-file-position-stored*
-	(setf (car emacs::*goto-file-position-stored*)
-	  (normalize-output (car emacs::*goto-file-position-stored*))))
+      (when Emacs::*goto-file-position-stored*
+	(setf (car Emacs::*goto-file-position-stored*)
+	  (normalize-output (car Emacs::*goto-file-position-stored*))))
       (when (and error-type (not error))
 	(push (format nil "~a" error-type) error-messages))
       (when (and (not error-type) error)
@@ -309,9 +309,9 @@ be the option to run each (test ...) form in a fresh image.
 	    (push (format-output-errors diff-results)
 		  error-messages))))
       (when (and file-goto-error
-		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
+		 (not (equal file-goto-error Emacs::*goto-file-position-stored*)))
 	(push (format nil "Expected error location: ~%~s~%;; Got:~%~s" file-goto-error
-		      emacs::*goto-file-position-stored*)
+		      Emacs::*goto-file-position-stored*)
 	      error-messages))
       (when files
 	(loop for file in files
@@ -334,17 +334,17 @@ be the option to run each (test ...) form in a fresh image.
       (let ((str (replace-string str *test-temporary-directory-name* "$TESTDIR/")))
         #+win32 (setq str (replace-string str *test-temporary-directory-name0* "$TESTDIR\\"))
 	#+darwin (setq str (replace-string str *test-temporary-directory-name-non-private* "$TESTDIR/"))
-	(setq str (replace-string str "~/" (concatenate 'string (specware::getenv "HOME") "/")))
+	(setq str (replace-string str "~/" (concatenate 'string (Specware::getenv "HOME") "/")))
 	(unless (equal Specware::temporaryDirectory "/tmp/")
 	  (setq str (replace-string str Specware::temporaryDirectory "/tmp/")))
-	(setq str (replace-string str specware::specware4 "$SPECWARE"))
+	(setq str (replace-string str Specware::specware4 "$SPECWARE"))
 	(setq str (replace-string str "C:$TESTDIR" "$TESTDIR"))
         (setq str (replace-string str "c:$TESTDIR" "$TESTDIR")))
     str))
 
 (defun normalize-input (str)
   (setq str (replace-string str "$TESTDIR/" *test-temporary-directory-name*))
-  (replace-string str "$SPECWARE" specware::specware4))
+  (replace-string str "$SPECWARE" Specware::specware4))
 
 
 ;;; Remove \return (for windows)

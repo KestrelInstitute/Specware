@@ -1,6 +1,6 @@
 (in-package :lisp)
 
-(specware::without-package-locks
+(Specware::without-package-locks
 
 (defun eval (original-exp)
   "Evaluates its single arg in a null lexical environment, returns the

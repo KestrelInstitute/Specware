@@ -51,7 +51,7 @@ Notes:
   ;; confirmation from the now defunct partner before killing itself.
   ;;
   ;; NOTE: As is, this doesn't work under Allegro on Windows when invoked from
-  ;;       emacs via (sw::eval-in-lisp "(emacs::kill-emacs-and-then-lisp)").
+  ;;       emacs via (sw::eval-in-lisp "(Emacs::kill-emacs-and-then-lisp)").
   ;;       Somehow the lisp process remains alive.
   ;;       Perhaps some simple tweak would work, but continue-form-when-ready
   ;;       in sw-init.el provides a rather different alternative solution:
@@ -62,7 +62,7 @@ Notes:
   ;;  so that communcation with xemacs remains active long
   ;;  enough for emacs to actually read the following command
   ;;  and react:
-  (emacs::eval-in-emacs "(progn (sit-for 2) (kill-emacs 0))")
+  (Emacs::eval-in-emacs "(progn (sit-for 2) (kill-emacs 0))")
   ;; Note: We return here before the call to sit-for completes.
   ;; The parent emacs process should now be on a path to die.
   ;; We don't particularly care if it dies before or after the 
@@ -79,9 +79,9 @@ Notes:
 ;;; Relies on select-mspe-object from msp-emacs.el (use M-x find-library)
 ;;; Extended from /usr/local/kiu/dev4/ki-patches/indep/msp-emacs.re
 ;;; The REFINE version calls re::mspe-object-selected 
-;;; the LISP   version calls emacs::mspe-object-selected
+;;; the LISP   version calls Emacs::mspe-object-selected
 
-(defun emacs::mspe-object-selected (n)
+(defun Emacs::mspe-object-selected (n)
    (setq *select-term-number-in-spec* n))
 
   ;;; JUNK to be deleted?
@@ -172,7 +172,7 @@ Notes:
 ;;; (le)(defun add-new-spec (builtIn specName)
 ;;; (le)  (format t "Adding menu item ~S~%" specName)
 ;;; (le)  (let ((set-focus-message
-;;; (le)	 (format nil "(emacs::set-specification-focus ~S )" specName)))
+;;; (le)	 (format nil "(Emacs::set-specification-focus ~S )" specName)))
 ;;; (le)  (eval-in-emacs 
 ;;; (le)   (format nil 
 ;;; (le)  "(progn (select-frame *current-specware-ui-foci-frame*)   (switch-to-buffer *mspe-buffer*)

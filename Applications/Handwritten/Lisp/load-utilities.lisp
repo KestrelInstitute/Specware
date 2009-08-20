@@ -454,7 +454,7 @@
 		 (copy-directory dir-item (extend-directory target-dirpath dir-item) t)
 		 (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 
-(defun specware::delete-directory (dir &optional (contents? t))
+(defun Specware::delete-directory (dir &optional (contents? t))
   #+allegro
   (if contents?
       (excl:delete-directory-and-files dir)
@@ -470,7 +470,7 @@
 	  #-(or mcl sbcl)
 	  (loop for dir-item in (sw-directory dirpath)
 	    do (if (directory? dir-item)
-		   (specware::delete-directory dir-item contents?)
+		   (Specware::delete-directory dir-item contents?)
 		 (delete-file dir-item))))
       (progn
 	#+mcl  (ccl:run-program    "rmdir"      (list dirstr))
@@ -494,13 +494,13 @@
        #+Allegro (declare (special cl-user::*redefinition-warnings*))
        ,@body)))
 
-(unless (fboundp 'specware::define-compiler-macro)
+(unless (fboundp 'Specware::define-compiler-macro)
   #+gcl
-  (defmacro specware::define-compiler-macro (name vl &rest body)
+  (defmacro Specware::define-compiler-macro (name vl &rest body)
     `(si::define-compiler-macro ,name ,vl,@ body)))
 
-(unless (fboundp 'specware::without-package-locks)
-  (defmacro specware::without-package-locks (&rest args)
+(unless (fboundp 'Specware::without-package-locks)
+  (defmacro Specware::without-package-locks (&rest args)
     #+cmu19 `(ext:without-package-locks ,@args)
     #+sbcl `(sb-ext:without-package-locks ,@args)
     #+allegro `(excl:without-package-locks ,@args)

@@ -10,13 +10,13 @@
   #+allegro(lep::eval-in-emacs string)
   #+Lispworks(eval string))
 
-(defvar emacs::*procs* 0)
+(defvar Emacs::*procs* 0)
 
 #-mcl
-(defun emacs::make-process (sym)
+(defun Emacs::make-process (sym)
   ;; *terminal-io* is already a background stream
   (let* 
-      ((procNum emacs::*procs*)
+      ((procNum Emacs::*procs*)
        (procName (format nil "Specware process : ~S" procNum)) 
        (proc #+allegro
 	     (mp:process-run-function procName 
@@ -30,7 +30,7 @@
 				      (list sym)))
        )
     (declare (ignore proc))
-    (setq emacs::*procs* (1+ procNum))
+    (setq Emacs::*procs* (1+ procNum))
     procName))
 
        
@@ -39,16 +39,16 @@
 	(*standard-output* *terminal-io*))
     (eval x)))
 
-(defun emacs::kill-process (procName)
+(defun Emacs::kill-process (procName)
   (mp::process-kill (mp::process-name-to-process procName)))
 
 
-(defvar emacs::*browser-bin* "netscape ")
+(defvar Emacs::*browser-bin* "netscape ")
 
 ;;; sjw: 3/15/01 Use -remote instead of starting a new netscape image
-(defun specware::call-netscape-with-url (url)
+(defun Specware::call-netscape-with-url (url)
   (run-shell-command
-   (format nil "~A -remote \"openURL(~A)\"" emacs::*browser-bin* url)
-   ;(concatenate 'string emacs::*browser-bin* "  " url)
+   (format nil "~A -remote \"openURL(~A)\"" Emacs::*browser-bin* url)
+   ;(concatenate 'string Emacs::*browser-bin* "  " url)
    :wait nil)
   )
