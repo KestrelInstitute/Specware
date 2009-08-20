@@ -6,13 +6,15 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
-#+casesensitive
+(push :case-sensitive *features*)
+
+#+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
 
 (defpackage :SpecToLisp)
 (defpackage :Specware (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
-  #+casesensitive
+  #+case-sensitive
   (:nicknames :specware))
 (in-package :Specware)
 
@@ -134,7 +136,7 @@
 (format t "~%Finished loading Snark.")
 (finish-output t)
 
-#+casesensitive
+#+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
 
@@ -305,7 +307,7 @@
 (defun set-readtable-invert ()
   (setf (readtable-case *readtable*) :invert))
 
-#+casesensitive
+#+case-sensitive
 (push  'set-readtable-invert 
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
