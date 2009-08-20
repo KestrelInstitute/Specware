@@ -1,5 +1,5 @@
-(defpackage :LISP-SPEC)
-(in-package :LISP-SPEC) 
+(defpackage :Lisp-Spec)
+(in-package :Lisp-Spec) 
 
 (defun nil-0  () nil)
 (defun |!nil|  (x) (declare (ignore x)) nil)

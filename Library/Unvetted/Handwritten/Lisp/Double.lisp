@@ -32,10 +32,10 @@
 ;; *double-impl* to something other than 'double-float before loading this file.
 ;;
 ;;(eval-when (compile load)
-;;  (defvar specware::*double-impl* 'double-float))
+;;  (defvar Specware::*double-impl* 'double-float))
 ;;
 ;;(defmacro the-double (x)
-;;  `(the ,specware::*double-impl* ,x))
+;;  `(the ,Specware::*double-impl* ,x))
 
 (defmacro the-double (x)
   `(the double-float ,x))

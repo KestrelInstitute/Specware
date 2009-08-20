@@ -172,7 +172,7 @@
 
    ("Tutorial: Load find-matches.lisp" 
     :lisp "(let (#+allegro excl:*redefinition-warnings*)
-           (specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\"))")
+           (Specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\"))")
 
    ("Tutorial: swll MatchingTest#Test" 
     :swll "/UserDoc/tutorial/example/MatchingTest#Test"

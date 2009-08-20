@@ -26,11 +26,11 @@
 ;;
 ;;; mechanism for allowing the user to declare global restrictions on doubles:
 ;;  (eval-when (compile load)
-;;    ;; (defvar specware::*complex-impl* '(complex double-float)))
-;;    (defvar specware::*complex-impl* '(complex rational)))
+;;    ;; (defvar Specware::*complex-impl* '(complex double-float)))
+;;    (defvar Specware::*complex-impl* '(complex rational)))
 ;;  
 ;;  (defmacro the-complex (x)
-;;    `(the ,specware::*complex-impl* ,x))
+;;    `(the ,Specware::*complex-impl* ,x))
 
 (defmacro the-complex (x)
   `(the (complex double-float) ,x))

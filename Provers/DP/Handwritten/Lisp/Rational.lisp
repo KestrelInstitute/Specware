@@ -22,13 +22,13 @@
 
 ;;; mechanism for allowing the user to declare global restrictions on rationals:
 (eval-when (compile load)
-  (defvar specware::*rational-impl* 'rational))
+  (defvar Specware::*rational-impl* 'rational))
 
 (defconstant zero 0)
 (defconstant one 1)
 
 (defmacro the-rat (x)
-  `(the ,specware::*rational-impl* ,x))
+  `(the ,Specware::*rational-impl* ,x))
 
 (defun |!denominator| (x)
   (declare (rational x))

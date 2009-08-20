@@ -4,7 +4,7 @@
 (defpackage :Integer_)
 (defpackage :IntegerAux)
 (defpackage :Nat-Spec)
-(defpackage :specware)
+(defpackage :Specware)
 (in-package :Integer-Spec)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ; note: defvar does not redefine if var already has a value
