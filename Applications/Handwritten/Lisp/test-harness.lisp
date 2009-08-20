@@ -139,7 +139,8 @@ be the option to run each (test ...) form in a fresh image.
 	dir))))
 
 (defun process-test-file (file)
-  (let* ((*package* (find-package "Specware-Test"))
+  (let* ((*package* (find-package #+case-sensitive "Specware-Test"
+                                  #-case-sensitive "SPECWARE-TEST"))
 	 (path (if (stringp file)
 		   (parse-namestring file)
 		 file))
