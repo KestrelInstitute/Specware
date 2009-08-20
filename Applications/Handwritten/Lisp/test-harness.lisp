@@ -6,21 +6,21 @@
 
 #|
 Top-level functions
-(specware-test::run-test-directories "dir1" "dir2" ...)
-runs specware-test::process-test-file on files dir1/Tests.lisp, 
+(Specware-Test::run-test-directories "dir1" "dir2" ...)
+runs Specware-Test::process-test-file on files dir1/Tests.lisp, 
 dir2/Tests.lisp, ...
 
-(specware-test::run-test-directories-rec "dir1" "dir2" ...)
-runs specware-test::run-test-directories on "dir1", "dir2", ... and all
+(Specware-Test::run-test-directories-rec "dir1" "dir2" ...)
+runs Specware-Test::run-test-directories on "dir1", "dir2", ... and all
 their subdirectories.
 
 Note this can be invoked with
 M-x sw:run-test-harness
-which will run specware-test::run-test-directories-rec on the directory
+which will run Specware-Test::run-test-directories-rec on the directory
 of the current buffer. (with an argument this runs just 
-specware-test::run-test-directories).
+Specware-Test::run-test-directories).
 
-(specware-test::process-test-file "file")
+(Specware-Test::process-test-file "file")
 expects a file that contains test forms like
 
 (test-directories ".")
@@ -90,7 +90,7 @@ be the option to run each (test ...) form in a fresh image.
 		     :device dev))))
 
 (defun sorted-directory (dirpath)
-  (sort (specware::sw-directory dirpath)
+  (sort (Specware::sw-directory dirpath)
 	#'(lambda (a b) 
 	    (string<= (namestring a) (namestring b)))))
 
@@ -100,20 +100,20 @@ be the option to run each (test ...) form in a fresh image.
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
     do (let* ((dirpath (if (stringp dir)
-			   (specware::sw-parse-namestring (specware::ensure-final-slash dir))
+			   (Specware::sw-parse-namestring (Specware::ensure-final-slash dir))
 			 dir)))
 	 ;; sort the directory items to make runs more predictable
 	 (loop for dir-item in (sorted-directory dirpath)
 	   unless (equal (pathname-name dir-item) "CVS")
 	   do (setq dir-item (normalize-directory dir-item))
-	   (when (specware::directory? dir-item)
+	   (when (Specware::directory? dir-item)
 	     (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
-  (setq Specware::specware4 (specware::getenv "SPECWARE4"))
+  (setq Specware::Specware4 (Specware::getenv "SPECWARE4"))
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (Specware::sw-parse-namestring (specware::ensure-final-slash dir))
+			    (Specware::sw-parse-namestring (Specware::ensure-final-slash dir))
 			  dir))
 	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
 					  dirpath)))
@@ -139,7 +139,7 @@ be the option to run each (test ...) form in a fresh image.
 	dir))))
 
 (defun process-test-file (file)
-  (let* ((*package* (find-package "SPECWARE-TEST"))
+  (let* ((*package* (find-package "Specware-Test"))
 	 (path (if (stringp file)
 		   (parse-namestring file)
 		 file))
@@ -337,14 +337,14 @@ be the option to run each (test ...) form in a fresh image.
 	(setq str (replace-string str "~/" (concatenate 'string (Specware::getenv "HOME") "/")))
 	(unless (equal Specware::temporaryDirectory "/tmp/")
 	  (setq str (replace-string str Specware::temporaryDirectory "/tmp/")))
-	(setq str (replace-string str Specware::specware4 "$SPECWARE"))
+	(setq str (replace-string str Specware::Specware4 "$SPECWARE"))
 	(setq str (replace-string str "C:$TESTDIR" "$TESTDIR"))
         (setq str (replace-string str "c:$TESTDIR" "$TESTDIR")))
     str))
 
 (defun normalize-input (str)
   (setq str (replace-string str "$TESTDIR/" *test-temporary-directory-name*))
-  (replace-string str "$SPECWARE" Specware::specware4))
+  (replace-string str "$SPECWARE" Specware::Specware4))
 
 
 ;;; Remove \return (for windows)
@@ -405,8 +405,8 @@ be the option to run each (test ...) form in a fresh image.
       )))
 
 (defun diff-files (wanted saw)
-  (let ((diffs (diff-output (io-spec::readStringFromFile wanted)
-                            (io-spec::readStringFromFile saw))))
+  (let ((diffs (diff-output (IO-Spec::readStringFromFile wanted)
+                            (IO-Spec::readStringFromFile saw))))
     (unless (null diffs)
       (format-output-errors diffs))))
 
