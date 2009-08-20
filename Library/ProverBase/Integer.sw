@@ -105,7 +105,7 @@ PrInteger qualifying spec
   axiom chaining is
    fa(x:Integer,a:Integer, b:Integer, c:Integer, d:Integer)
           a <= b + x
-        & c + x <= d 
+        && c + x <= d 
      => a + c <= d + b
 
   conjecture chaining_left_zero is
