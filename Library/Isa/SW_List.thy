@@ -1699,7 +1699,7 @@ theorem List__filter__def2:
      = [] @ filter p tl__v"
   by auto
 theorem List__foldl_subtype_constr: 
-  "\<lbrakk>Fun_P(\<lambda> ((x0::'b), ignore2). (P__b::'b \<Rightarrow> bool) x0, P__b) f; 
+  "\<lbrakk>Fun_P(\<lambda> ((x_1::'b), ignore2). (P__b::'b \<Rightarrow> bool) x_1, P__b) f; 
     P__b base\<rbrakk> \<Longrightarrow> P__b (foldl' f base l)"
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldl' f b l)", simp)
   apply(induct l, auto)
@@ -1712,7 +1712,7 @@ theorem List__foldl__def1:
      = foldl' f (f(base, hd__v)) tl__v"
   by auto
 theorem List__foldr_subtype_constr: 
-  "\<lbrakk>Fun_P(\<lambda> (ignore1, (x1::'b)). (P__b::'b \<Rightarrow> bool) x1, P__b) f; 
+  "\<lbrakk>Fun_P(\<lambda> (ignore1, (x_2::'b)). (P__b::'b \<Rightarrow> bool) x_2, P__b) f; 
     P__b base\<rbrakk> \<Longrightarrow> P__b (foldr' f base l)"
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldr' f b l)", simp)
   apply(induct l, auto)
@@ -1741,7 +1741,7 @@ theorem List__zip_subtype_constr:
   "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l1; 
     list_all (P__b::'b \<Rightarrow> bool) l2; 
     l1 equiLong l2\<rbrakk> \<Longrightarrow> 
-   list_all (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) (zip l1 l2)"
+   list_all (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) (zip l1 l2)"
   by (auto simp add: list_all_length)
 theorem List__zip__def: 
   "\<lbrakk>l1 equiLong l2\<rbrakk> \<Longrightarrow> 
@@ -1832,16 +1832,16 @@ theorem List__zip3_subtype_constr:
     l1 equiLong l2; 
     l2 equiLong l3\<rbrakk> \<Longrightarrow> 
    list_all
-      (\<lambda> ((x0::'a), (x1::'b), (x2::'c)). 
-         (P__a x0 \<and> P__b x1) \<and> P__c x2) (List__zip3(l1, l2, l3))"
+      (\<lambda> ((x_1::'a), (x_2::'b), (x_3::'c)). 
+         (P__a x_1 \<and> P__b x_2) \<and> P__c x_3) (List__zip3(l1, l2, l3))"
   by (auto simp add: list_all_length  List__zip3_alt)
 theorem List__unzip__stp_Obligation_subtype: 
   "Function__bijective_p__stp
-     (\<lambda> ((x0::'a list), (x1::'b list)). 
-        (list_all P__a x0 \<and> list_all P__b x1) 
-          \<and> x0 equiLong x1, 
+     (\<lambda> ((x_1::'a list), (x_2::'b list)). 
+        (list_all P__a x_1 \<and> list_all P__b x_2) 
+          \<and> x_1 equiLong x_2, 
       list_all
-         (\<lambda> ((x0_1::'a), (x1_1::'b)). P__a x0_1 \<and> P__b x1_1))
+         (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1))
       (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2)"
   apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def)
 apply (drule_tac f="map fst" in arg_cong, simp)
@@ -1856,9 +1856,9 @@ defs List__unzip__stp_def:
   "List__unzip__stp
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           Function__inverse__stp
-             (\<lambda> ((x0::'a list), (x1::'b list)). 
-                (list_all P__a x0 \<and> list_all P__b x1) 
-                  \<and> x0 equiLong x1)
+             (\<lambda> ((x_1::'a list), (x_2::'b list)). 
+                (list_all P__a x_1 \<and> list_all P__b x_2) 
+                  \<and> x_1 equiLong x_2)
              (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2))"
 theorem List__unzip_Obligation_subtype: 
   "Function__bijective_p__stp(\<lambda> (x,y). x equiLong y, TRUE)
@@ -2021,8 +2021,8 @@ theorem List__unzip3__stp_Obligation_subtype:
           \<and> ((list_all P__a l1 \<and> list_all P__b l2) 
            \<and> list_all P__c l3), 
       list_all
-         (\<lambda> ((x0_1::'a), (x1_1::'b), (x2_1::'c)). 
-            (P__a x0_1 \<and> P__b x1_1) \<and> P__c x2_1)) List__zip3"
+         (\<lambda> ((x_1_1::'a), (x_2_1::'b), (x_3_1::'c)). 
+            (P__a x_1_1 \<and> P__b x_2_1) \<and> P__c x_3_1)) List__zip3"
   apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def List__zip3_alt)
 apply (drule_tac f="map fst" in arg_cong, simp)
 apply (drule_tac f="map snd" in arg_cong, simp, 
@@ -2806,8 +2806,8 @@ theorem List__equiExtendLeft_subtype_constr2:
     list_all (P__b::'b \<Rightarrow> bool) l2; 
     P__a x1; 
     P__b x2; 
-    (x0, (x10::'b list)) = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
-   list_all P__a x0"
+    (x_1, (x_2::'b list)) = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
+   list_all P__a x_1"
   by (cases "length l1 < length l2",
       auto simp: List__equiExtendLeft_def List__extendLeft_subtype_constr)
 theorem List__equiExtendLeft_subtype_constr3: 
@@ -2815,8 +2815,8 @@ theorem List__equiExtendLeft_subtype_constr3:
     list_all P__b l2; 
     P__a x1; 
     P__b x2; 
-    ((x0::'a list), x10) = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
-   list_all P__b x10"
+    ((x_1::'a list), x_2) = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
+   list_all P__b x_2"
   by (cases "length l1 < length l2",
       auto simp: List__equiExtendLeft_def List__extendLeft_subtype_constr)
 theorem List__equiExtendRight_Obligation_subtype: 
@@ -2853,8 +2853,8 @@ theorem List__equiExtendRight_subtype_constr2:
     list_all (P__b::'b \<Rightarrow> bool) l2; 
     P__a x1; 
     P__b x2; 
-    (x0, (x10::'b list)) = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
-   list_all P__a x0"
+    (x_1, (x_2::'b list)) = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
+   list_all P__a x_1"
   by (cases "length l1 < length l2",
       auto simp: List__equiExtendRight_def List__extendRight_subtype_constr)
 theorem List__equiExtendRight_subtype_constr3: 
@@ -2862,8 +2862,8 @@ theorem List__equiExtendRight_subtype_constr3:
     list_all P__b l2; 
     P__a x1; 
     P__b x2; 
-    ((x0::'a list), x10) = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
-   list_all P__b x10"
+    ((x_1::'a list), x_2) = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
+   list_all P__b x_2"
   by (cases "length l1 < length l2",
       auto simp: List__equiExtendRight_def List__extendRight_subtype_constr)
 theorem List__length_equiExtendLeft_1__stp [simp]: 
@@ -4612,7 +4612,7 @@ defs List__leftmostPositionOfSublistAndFollowing_def:
             Some (i, drop (i + length subl) supl))"
 theorem List__leftmostPositionOfSublistAndFollowing_subtype_constr: 
   "\<lbrakk>list_all P__a subl; list_all P__a supl\<rbrakk> \<Longrightarrow> 
-   Option__Option_P (\<lambda> (ignore1, (x1::'a list)). list_all P__a x1)
+   Option__Option_P (\<lambda> (ignore1, (x_2::'a list)). list_all P__a x_2)
       (List__leftmostPositionOfSublistAndFollowing(subl, supl))"
   by (auto simp add: List__leftmostPositionOfSublistAndFollowing_def 
                      Let_def list_all_length)
@@ -4660,7 +4660,7 @@ defs List__rightmostPositionOfSublistAndPreceding_def:
             let i = last POSs in Some (i, take i supl))"
 theorem List__rightmostPositionOfSublistAndPreceding_subtype_constr: 
   "\<lbrakk>list_all P__a subl; list_all P__a supl\<rbrakk> \<Longrightarrow> 
-   Option__Option_P (\<lambda> (ignore1, (x1::'a list)). list_all P__a x1)
+   Option__Option_P (\<lambda> (ignore1, (x_2::'a list)). list_all P__a x_2)
       (List__rightmostPositionOfSublistAndPreceding(subl, supl))"
   by (auto simp add: List__rightmostPositionOfSublistAndPreceding_def 
                      Let_def list_all_length)
@@ -4681,20 +4681,20 @@ defs List__splitAt_def:
 theorem List__splitAt_subtype_constr: 
   "\<lbrakk>list_all P__a l; 
     i < length l; 
-    (x0, (x1::'a), (x2::'a list)) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
-   list_all P__a x0"
+    (x_1, (x_2::'a), (x_3::'a list)) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
+   list_all P__a x_1"
   by (simp add: List__splitAt_def list_all_length)
 theorem List__splitAt_subtype_constr1: 
   "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l; 
     i < length l; 
-    ((x0::'a list), (x1::'a), (x2::'a list)) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
-   P__a x1"
+    ((x_1::'a list), (x_2::'a), (x_3::'a list)) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
+   P__a x_2"
   by (simp add: List__splitAt_def list_all_length)
 theorem List__splitAt_subtype_constr2: 
   "\<lbrakk>list_all P__a l; 
     i < length l; 
-    ((x0::'a list), (x1::'a), x2) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
-   list_all P__a x2"
+    ((x_1::'a list), (x_2::'a), x_3) = List__splitAt(l, i)\<rbrakk> \<Longrightarrow> 
+   list_all P__a x_3"
   by (simp add: List__splitAt_def list_all_length)
 theorem List__splitAtLeftmost_Obligation_subtype: 
   "\<lbrakk>List__leftmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> i < length l"
@@ -4732,9 +4732,9 @@ defs List__splitAtLeftmost_def:
 theorem List__splitAtLeftmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a list), (x1::'a), (x2::'a list)). 
-         (list_all P__a x0 \<and> P__a x1) 
-           \<and> list_all P__a x2) (List__splitAtLeftmost p l)"
+      (\<lambda> ((x_1::'a list), (x_2::'a), (x_3::'a list)). 
+         (list_all P__a x_1 \<and> P__a x_2) 
+           \<and> list_all P__a x_3) (List__splitAtLeftmost p l)"
   apply (simp add: List__splitAtLeftmost_def  split: option.split,
          auto simp add: List__splitAt_def list_all_length)
   apply (thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x",
@@ -4783,9 +4783,9 @@ defs List__splitAtRightmost_def:
 theorem List__splitAtRightmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a list), (x1::'a), (x2::'a list)). 
-         (list_all P__a x0 \<and> P__a x1) 
-           \<and> list_all P__a x2) (List__splitAtRightmost p l)"
+      (\<lambda> ((x_1::'a list), (x_2::'a), (x_3::'a list)). 
+         (list_all P__a x_1 \<and> P__a x_2) 
+           \<and> list_all P__a x_3) (List__splitAtRightmost p l)"
   apply (simp add: List__splitAtRightmost_def  split: option.split,
          auto simp add: List__splitAt_def list_all_length)
   apply (thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x",
@@ -4874,7 +4874,8 @@ defs List__findLeftmostAndPreceding_def:
 theorem List__findLeftmostAndPreceding_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a), (x1::'a list)). P__a x0 \<and> list_all P__a x1)
+      (\<lambda> ((x_1::'a), (x_2::'a list)). 
+         P__a x_1 \<and> list_all P__a x_2)
       (List__findLeftmostAndPreceding p l)"
   apply (simp add:  List__findLeftmostAndPreceding_def split: option.split,
          thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x", 
@@ -4935,7 +4936,8 @@ defs List__findRightmostAndFollowing_def:
 theorem List__findRightmostAndFollowing_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a), (x1::'a list)). P__a x0 \<and> list_all P__a x1)
+      (\<lambda> ((x_1::'a), (x_2::'a list)). 
+         P__a x_1 \<and> list_all P__a x_2)
       (List__findRightmostAndFollowing p l)"
   apply (simp add:  List__findRightmostAndFollowing_def split: option.split,
          thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x", 
@@ -5468,8 +5470,8 @@ defs List__firstUpTo_def [simp]:
 theorem List__firstUpTo_subtype_constr: 
   "\<lbrakk>Fun_PD P__a d__x; list_all P__a d__y\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a), (x1::'a list)). P__a x0 \<and> list_all P__a x1)
-      (List__firstUpTo d__x d__y)"
+      (\<lambda> ((x_1::'a), (x_2::'a list)). 
+         P__a x_1 \<and> list_all P__a x_2) (List__firstUpTo d__x d__y)"
   by (simp add: List__findLeftmostAndPreceding_subtype_constr)
 consts List__splitList :: "('a \<Rightarrow> bool) \<Rightarrow> 
                            'a list \<Rightarrow> ('a list \<times> 'a \<times> 'a list) option"
@@ -5477,16 +5479,16 @@ defs List__splitList_def [simp]: "List__splitList \<equiv> List__splitAtLeftmost
 theorem List__splitList_subtype_constr: 
   "\<lbrakk>Fun_PD P__a d__x; list_all P__a d__y\<rbrakk> \<Longrightarrow> 
    Option__Option_P
-      (\<lambda> ((x0::'a list), (x1::'a), (x2::'a list)). 
-         (list_all P__a x0 \<and> P__a x1) 
-           \<and> list_all P__a x2) (List__splitList d__x d__y)"
+      (\<lambda> ((x_1::'a list), (x_2::'a), (x_3::'a list)). 
+         (list_all P__a x_1 \<and> P__a x_2) 
+           \<and> list_all P__a x_3) (List__splitList d__x d__y)"
   by (simp only: List__splitList_def List__splitAtLeftmost_subtype_constr)
 consts List__locationOf :: "'a list \<times> 'a list \<Rightarrow> (nat \<times> 'a list) option"
 defs List__locationOf_def [simp]: 
   "List__locationOf \<equiv> List__leftmostPositionOfSublistAndFollowing"
 theorem List__locationOf_subtype_constr: 
   "\<lbrakk>list_all P__a d__x_1; list_all P__a d__x_2\<rbrakk> \<Longrightarrow> 
-   Option__Option_P (\<lambda> (ignore1, (x1::'a list)). list_all P__a x1)
+   Option__Option_P (\<lambda> (ignore1, (x_2::'a list)). list_all P__a x_2)
       (List__locationOf(d__x_1, d__x_2))"
   by (simp add: List__leftmostPositionOfSublistAndFollowing_subtype_constr)
 fun List__app :: "('a \<Rightarrow> unit) \<Rightarrow> 'a list \<Rightarrow> unit"
