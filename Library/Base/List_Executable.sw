@@ -1,4 +1,5 @@
-refine /Library/Base/List by {
+spec
+import /Library/Base/List
 
 (* This spec refines some of the ops in the base spec List for lists to be
 executable and reasonably efficient when translated to Lisp by the Specware code
@@ -9,7 +10,7 @@ whose definition in spec List is already executable and reasonably efficient
 (also considering the refined versions of the ops that are referenced in the
 original definitions). All the other ops are re-defined below. *)
 
-op List.list : [a] Bijection (ListFunction a, List a) =
+refine def list : [a] Bijection (ListFunction a, List a) =
   fn f: ListFunction a ->
     let def loop (i:Nat) : List a =
         case f i of
@@ -18,7 +19,7 @@ op List.list : [a] Bijection (ListFunction a, List a) =
     in
     loop 0
 
-proof Isa list__loop ()
+proof Isa list__1__loop ()
 by (pat_completeness, auto)
 termination
  apply
@@ -43,9 +44,9 @@ termination
 end-proof
 
 proof Isa -verbatim
-lemma List__list__loop_Suc:
+lemma List__list__1__loop_Suc:
 "(\<exists>l. f definedOnInitialSegmentOfLength l) \<Longrightarrow>
- List__list__loop (Suc i, f) = List__list__loop (i, \<lambda>j. f (Suc j))"
+ List__list__1__loop (Suc i, f) = List__list__1__loop (i, \<lambda>j. f (Suc j))"
 proof -
  def Lf \<equiv> "List__lengthOfListFunction f"
  assume fseg: "\<exists>l. f definedOnInitialSegmentOfLength l"
@@ -65,25 +66,25 @@ proof -
   hence "Lf \<le> Suc i" by auto
   with fseg_Lf have "f (Suc i) = None"
    by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with fseg have "List__list__loop (Suc i, f) = []" by auto
+  with fseg have "List__list__1__loop (Suc i, f) = []" by auto
   from `f (Suc i) = None` have "(\<lambda>j. f (Suc j)) i = None" by auto
-  with f'seg have "List__list__loop (i, \<lambda>j. f (Suc j)) = []" by auto
-  with `List__list__loop (Suc i, f) = []` show ?case by auto
+  with f'seg have "List__list__1__loop (i, \<lambda>j. f (Suc j)) = []" by auto
+  with `List__list__1__loop (Suc i, f) = []` show ?case by auto
  next
   case (Suc n)
   hence "Lf - Suc (Suc i) = n" by auto
   with Suc.hyps
-  have IH: "List__list__loop (Suc (Suc i), f) =
-            List__list__loop (Suc i, \<lambda>j. f (Suc j))" by auto
+  have IH: "List__list__1__loop (Suc (Suc i), f) =
+            List__list__1__loop (Suc i, \<lambda>j. f (Suc j))" by auto
   from Suc have "Suc i < Lf" by auto
   with fseg_Lf obtain x where "f (Suc i) = Some x"
    by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with fseg have "List__list__loop (Suc i, f) =
-                  x # List__list__loop (Suc (Suc i), f)" by auto
+  with fseg have "List__list__1__loop (Suc i, f) =
+                  x # List__list__1__loop (Suc (Suc i), f)" by auto
   from `f (Suc i) = Some x` have "(\<lambda>j. f (Suc j)) i = Some x" by auto
-  with f'seg have "List__list__loop (i, \<lambda>j. f (Suc j)) =
-                   x # List__list__loop (Suc i, \<lambda>j. f (Suc j))" by auto
-  with `List__list__loop (Suc i, f) = x # List__list__loop (Suc (Suc i), f)` IH
+  with f'seg have "List__list__1__loop (i, \<lambda>j. f (Suc j)) =
+                   x # List__list__1__loop (Suc i, \<lambda>j. f (Suc j))" by auto
+  with `List__list__1__loop (Suc i, f) = x # List__list__1__loop (Suc (Suc i), f)` IH
    show ?case by auto
  qed
 qed
@@ -101,26 +102,6 @@ proof Isa List__list_Obligation_subtype
   sorry
 end-proof
 
-proof Isa List__list_subtype_constr
-proof -
- from List__list_def
-  have "List__list = (\<lambda>f. List__list__loop(0,f))" by (auto intro: ext)
-  hence "Function__bijective_p__stp
-           (\<lambda> (f::nat \<Rightarrow> 'a option). 
-              \<exists>(n::nat). f definedOnInitialSegmentOfLength n,
-            \<lambda> ignore. True)
-           List__list
-         =
-         Function__bijective_p__stp
-           (\<lambda> (f::nat \<Rightarrow> 'a option). 
-              \<exists>(n::nat). f definedOnInitialSegmentOfLength n,
-            \<lambda> ignore. True)
-           (\<lambda>f. List__list__loop(0,f))"
-   by (rule arg_cong)
- with List__list_Obligation_subtype show ?thesis by auto
-qed
-end-proof
-
 proof Isa List__list__r_def
 proof (cases "f 0")
  case None
@@ -129,11 +110,11 @@ proof (cases "f 0")
 next
  case (Some x)
  assume fseg: "\<exists>(n::nat). f definedOnInitialSegmentOfLength n"
- with Some have "List__list f = x # List__list__loop (1, f)"
+ with Some have "List__list f = x # List__list__1__loop (1, f)"
   by (auto simp: List__list_def)
- also with fseg List__list__loop_Suc
-  have "\<dots> = x # List__list__loop (0, \<lambda>i. f (i + 1))"
-   by (auto simp del: List__list__loop.simps)
+ also with fseg List__list__1__loop_Suc
+  have "\<dots> = x # List__list__1__loop (0, \<lambda>i. f (i + 1))"
+   by (auto simp del: List__list__1__loop.simps)
  also with Some
   have "\<dots> =
         (case f 0 of None \<Rightarrow> []
@@ -144,10 +125,10 @@ next
 qed
 end-proof
 
-op List.list_1 : [a] Bijection (List a, ListFunction a) =
+refine def list_1 : [a] Bijection (List a, ListFunction a) =
   fn l: List a -> fn i:Nat -> l @@ i
 
-op [a] List.tabulate (n: Nat, f: Nat -> a) : List a =
+refine def [a] tabulate (n: Nat, f: Nat -> a) : List a =
   let def loop (i: Nat, result: List a) : List a =
       if i = 0 then result
                else let i = i-1 in
@@ -155,50 +136,50 @@ op [a] List.tabulate (n: Nat, f: Nat -> a) : List a =
   in
   loop (n, [])
 
-op [a] List.@ (l: List a, i:Nat | i < length l) infixl 30 : a =
+refine def [a] @ (l: List a, i:Nat | i < length l) : a =
   let hd::tl = l in  % non-empty because length > i >= 0
   if i = 0 then hd else tl @ (i-1)
 proof Isa List__e_at__def1
  by (auto simp add: nth_Cons, case_tac i, auto)
 end-proof
 
-op [a] List.@@ (l:List a, i:Nat) infixl 30 : Option a =
+refine def [a] @@ (l:List a, i:Nat) : Option a =
   case l of
   | []     -> None
   | hd::tl -> if i = 0 then Some hd else tl @@ (i-1)
 
-op List.empty? : [a] List a -> Bool = fn
+refine def empty? : [a] List a -> Bool = fn
   | [] -> true
   | _  -> false
 proof Isa List__empty_p__def1
   by (case_tac Wild__Var_0, auto)
 end-proof
 
-op List.nonEmpty? : [a] List a -> Bool = fn
+refine def nonEmpty? : [a] List a -> Bool = fn
   | [] -> false
   | _  -> true
 proof Isa List__nonEmpty_p__def
   by (case_tac l, auto)
 end-proof
 
-op [a] List.theElement (l: List a | ofLength? 1 l) : a =
+refine def [a] theElement (l: List a | ofLength? 1 l) : a =
   let [hd] = l in hd
 
-op [a] List.in? (x:a, l: List a) infixl 20 : Bool =
+refine def [a] in? (x:a, l: List a) : Bool =
   case l of
   | []     -> false
   | hd::tl -> x = hd || x in? tl
 
-op [a] List.nin? (x:a, l: List a) infixl 20 : Bool =
+refine def [a] nin? (x:a, l: List a) : Bool =
   case l of
   | []     -> true
   | hd::tl -> x ~= hd && x nin? tl
 
-op [a] List.subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
+refine def [a] subFromLong (l: List a, i:Nat, n:Nat | i + n <= length l) : List a =
   prefix (removePrefix (l, i), n)
 
 %% Make tail-recursive so that it scales for very long lists at the expense of doing a reverse at end.
-op [a] List.prefix (l: List a, n: Nat | n <= length l) : List a =
+refine def [a] prefix (l: List a, n: Nat | n <= length l) : List a =
   let def loop (l: List a, i: Nat, result: List a) : List a =
       if i = 0 then result
                else case l of
@@ -207,62 +188,62 @@ op [a] List.prefix (l: List a, n: Nat | n <= length l) : List a =
   in
   reverse(loop (l, n, []))
 
-op [a] List.suffix (l: List a, n:Nat | n <= length l) : List a =
+refine def [a] suffix (l: List a, n:Nat | n <= length l) : List a =
   removePrefix (l, length l - n)
 
-op [a] List.removePrefix (l: List a, n:Nat | n <= length l) : List a =
+refine def [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
   if n = 0 then l
   else let _::tl = l in removePrefix (tl, n - 1)
 
-op [a] List.removeSuffix (l: List a, n:Nat | n <= length l) : List a =
+refine def [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
   prefix (l, length l - n)
 
-op [a] List.head (l: List1 a) : a =
+refine def [a] head (l: List1 a) : a =
   let hd::_ = l in hd
 
-op [a] List.last (l: List1 a) : a =
+refine def [a] last (l: List1 a) : a =
   case l of
   | [hd]   -> hd
   | hd::tl -> last tl
 
-op [a] List.tail (l: List1 a) : List a =
+refine def [a] tail (l: List1 a) : List a =
   let _::tl = l in tl
 
-op [a] List.butLast (l: List1 a) : List a =
+refine def [a] butLast (l: List1 a) : List a =
   case l of
   | [hd]   -> Nil
   | hd::tl -> Cons (hd, butLast tl)
 
-op [a] List.++  (l1: List a, l2: List a) infixl 25 : List a =
+refine def [a] ++  (l1: List a, l2: List a) : List a =
   case l1 of
   | [] -> l2
   | hd::tl -> Cons (hd, tl ++ l2)
 
-op [a] List.|> (x:a, l: List a) infixr 25 : List1 a =
+refine def [a] |> (x:a, l: List a) : List1 a =
   Cons (x, l)
 
-op [a] List.<| (l: List a, x:a) infixl 25 : List1 a =
+refine def [a] <| (l: List a, x:a) : List1 a =
   case l of
   | []     -> [x]
   | hd::tl -> Cons (hd, tl <| x)
 
-op [a] List.update (l: List a, i:Nat, x:a | i < length l) : List a =
+refine def [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
   let hd::tl = l in  % non-empty because length > i >= 0
   if i = 0 then Cons (x, tl) else Cons (hd, update (tl, i-1, x))
 
-op [a] List.forall? (p: a -> Bool) : List a -> Bool = fn
+refine def [a] forall? (p: a -> Bool) : List a -> Bool = fn
   | []     -> true
   | hd::tl -> p hd && forall? p tl
 
-op [a] List.exists? (p: a -> Bool) : List a -> Bool = fn
+refine def [a] exists? (p: a -> Bool) : List a -> Bool = fn
   | []     -> false
   | hd::tl -> p hd || exists? p tl
 
-op [a] List.exists1? (p: a -> Bool) : List a -> Bool = fn
+refine def [a] exists1? (p: a -> Bool) : List a -> Bool = fn
   | []     -> false
   | hd::tl -> (p hd && ~ (exists? p tl)) || exists1? p tl
 
-op [a] List.foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
+refine def [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
   let def loop (l: List a, i:Nat) : Bool =
       case l of
       | []     -> true
@@ -270,44 +251,44 @@ op [a] List.foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
   in
   loop (l, 0)
 
-op [a] List.filter (p: a -> Bool) : List a -> List a = fn
+refine def [a] filter (p: a -> Bool) : List a -> List a = fn
   | []     -> Nil
   | hd::tl -> if p hd then Cons (hd, filter p tl) else filter p tl
 
-op [a,b] List.zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
+refine def [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
   case (l1,l2) of
   | ([],       [])       -> Nil
   | (hd1::tl1, hd2::tl2) -> Cons ((hd1,hd2), zip (tl1,tl2))
 
-op [a,b,c] List.zip3 (l1: List a, l2: List b, l3: List c |
+refine def [a,b,c] zip3 (l1: List a, l2: List b, l3: List c |
                  l1 equiLong l2 && l2 equiLong l3) : List (a * b * c) =
   case (l1,l2,l3) of
   | ([],       [],       [])       -> Nil
   | (hd1::tl1, hd2::tl2, hd3::tl3) -> Cons ((hd1,hd2,hd3), zip3 (tl1,tl2,tl3))
 
-op List.unzip : [a,b] List (a * b) -> (List a * List b | equiLong) = fn
+refine def unzip : [a,b] List (a * b) -> (List a * List b | equiLong) = fn
   | []            -> (Nil, Nil)
   | (hd1,hd2)::tl -> let (tl1,tl2) = unzip tl in
                      (Cons(hd1,tl1), Cons(hd2,tl2))
 
-op List.unzip3 : [a,b,c] List (a * b * c) ->
+refine def unzip3 : [a,b,c] List (a * b * c) ->
                     {(l1,l2,l3) : List a * List b * List c |
                      l1 equiLong l2 && l2 equiLong l3} = fn
   | [] -> (Nil, Nil, Nil)
   | (hd1,hd2,hd3)::tl -> let (tl1,tl2,tl3) = unzip3 tl in
                          (Cons(hd1,tl1), Cons(hd2,tl2), Cons(hd3,tl3))
 
-op [a,b] List.map (f: a -> b) : List a -> List b = fn
+refine def [a,b] map (f: a -> b) : List a -> List b = fn
   | []     -> Nil
   | hd::tl -> Cons (f hd, map f tl)
 
-op [a,b,c] List.map2 (f: a * b -> c)
+refine def [a,b,c] map2 (f: a * b -> c)
                 (l1: List a, l2: List b | l1 equiLong l2) : List c =
   case (l1,l2) of
   | ([],       [])       -> Nil
   | (hd1::tl1, hd2::tl2) -> Cons (f(hd1,hd2), map2 f (tl1,tl2))
 
-op [a,b,c,d] List.map3 (f: a * b * c -> d)
+refine def [a,b,c,d] map3 (f: a * b * c -> d)
                   (l1: List a, l2: List b, l3: List c |
                    l1 equiLong l2 && l2 equiLong l3) : List d =
   case (l1,l2,l3) of
@@ -315,25 +296,25 @@ op [a,b,c,d] List.map3 (f: a * b * c -> d)
   | (hd1::tl1, hd2::tl2, hd3::tl3) -> Cons (f(hd1,hd2,hd3),
                                             map3 f (tl1,tl2,tl3))
 
-op List.removeNones : [a] List (Option a) -> List a = fn
+refine def removeNones : [a] List (Option a) -> List a = fn
   | []           -> Nil
   | (Some x)::tl -> Cons (x, removeNones tl)
   |  None   ::tl ->          removeNones tl
 
-op List.matchingOptionLists? :
+refine def matchingOptionLists? :
   [a,b] List (Option a) * List (Option b) -> Bool = fn
   | ([],            [])            -> true
   | ((Some _)::tl1, (Some _)::tl2) -> matchingOptionLists? (tl1, tl2)
   | ( None   ::tl1,  None   ::tl2) -> matchingOptionLists? (tl1, tl2)
   | _                              -> false
 
-op [a,b] List.mapPartial (f: a -> Option b) : List a -> List b = fn
+refine def [a,b] mapPartial (f: a -> Option b) : List a -> List b = fn
   | []     -> Nil
   | hd::tl -> (case f hd of
               | Some x -> Cons (x, mapPartial f tl)
               | None   ->          mapPartial f tl)
 
-op [a,b,c] List.mapPartial2 (f: a * b -> Option c)
+refine def [a,b,c] mapPartial2 (f: a * b -> Option c)
                        (l1: List a, l2: List b | l1 equiLong l2) : List c =
   case (l1,l2) of
   | ([],       [])       -> Nil
@@ -341,7 +322,7 @@ op [a,b,c] List.mapPartial2 (f: a * b -> Option c)
                             | Some x -> Cons (x, mapPartial2 f (tl1,tl2))
                             | None   ->          mapPartial2 f (tl1,tl2))
 
-op [a,b,c,d] List.mapPartial3 (f: a * b * c -> Option d)
+refine def [a,b,c,d] mapPartial3 (f: a * b * c -> Option d)
                          (l1: List a, l2: List b, l3: List c |
                           l1 equiLong l2 && l2 equiLong l3) : List d =
   case (l1,l2,l3) of
@@ -351,7 +332,7 @@ op [a,b,c,d] List.mapPartial3 (f: a * b * c -> Option d)
     | Some x -> Cons (x, mapPartial3 f (tl1,tl2,tl3))
     | None   ->          mapPartial3 f (tl1,tl2,tl3))
 
-op [a] List.reverse (l: List a) : List a =
+refine def [a] reverse (l: List a) : List a =
   let def loop (l: List a, r: List a) : List a =
       case l of
       | []     -> r
@@ -359,39 +340,39 @@ op [a] List.reverse (l: List a) : List a =
   in
   loop (l, Nil)
 
-op [a] List.repeat (x:a) (n:Nat) : List a =
+refine def [a] repeat (x:a) (n:Nat) : List a =
   if n = 0 then Nil else Cons (x, repeat x (n-1))
 
-op List.allEqualElements? : [a] List a -> Bool = fn
+refine def allEqualElements? : [a] List a -> Bool = fn
   | []     -> true
   | hd::tl -> forall? (fn x:a -> x = hd) tl
 
-op [a] List.extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
+refine def [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
   let len = length l in
   if n = len then l else Cons (x, extendLeft (l, x, n-1))
 
-op [a] List.unflattenL
+refine def [a] unflattenL
        (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
                        : List (List a) =
   case lens of
   | [] -> []
   | len::lens -> prefix(l,len) :: unflattenL (removePrefix(l,len), lens)
 
-op [a] List.unflatten
+refine def [a] unflatten
        (l: List a, n:PosNat | n divides length l) : List (List a) =
   if empty? l then []
   else prefix(l,n) :: unflatten (removePrefix(l,n), n)
 
-op List.noRepetitions? : [a] List a -> Bool = fn
+refine def noRepetitions? : [a] List a -> Bool = fn
   | []     -> true
   | hd::tl -> hd nin? tl && noRepetitions? tl
 
-op List.increasingNats? : List Nat -> Bool = fn
+refine def increasingNats? : List Nat -> Bool = fn
   | []       -> true
   | [_]      -> true
   | x::y::tl -> x < y && increasingNats? (Cons(y,tl))
 
-op [a] List.positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
+refine def [a] positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
   let def loop (l: List a, i:Nat) : InjList Nat =
       case l of
       | []     -> []
@@ -399,7 +380,7 @@ op [a] List.positionsSuchThat (l: List a, p: a -> Bool) : InjList Nat =
   in
   loop (l, 0)
 
-op [a] List.leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
+refine def [a] leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
   let def loop (l: List a, i:Nat) : Option Nat =
       case l of
       | []     -> None
@@ -407,7 +388,7 @@ op [a] List.leftmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
   in
   loop (l, 0)
 
-op [a] List.rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
+refine def [a] rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
   let def loop (l: List a, i:Nat, result: Option Nat) : Option Nat =
       case l of
       | []     -> result
@@ -415,7 +396,7 @@ op [a] List.rightmostPositionSuchThat (l: List a, p: a -> Bool) : Option Nat =
   in
   loop (l, 0, None)
 
-op [a] List.positionOf (l: InjList a, x:a | x in? l) : Nat =
+refine def [a] positionOf (l: InjList a, x:a | x in? l) : Nat =
   let Some pos = leftmostPositionSuchThat (l, fn y:a -> y = x) in pos
 
 % auxiliary op, not in spec List; true iff l1 is a prefix of l2:
@@ -425,10 +406,10 @@ op [a] List.prefixOf? (l1: List a, l2: List a) : Bool =
   | (hd1::tl1, hd2::tl2) -> hd1 = hd2 && prefixOf? (tl1, tl2)
   | _                    -> false
 
-op [a] List.sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
+refine def [a] sublistAt? (subl: List a, i:Nat, supl: List a) : Bool =
   prefixOf? (subl, removePrefix (supl, i))
 
-op [a] List.positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
+refine def [a] positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
   let def loop (supl': List a, i:Nat) : InjList Nat =
       % invariant: supl' = removePrefix (supl, i)
       case supl' of
@@ -438,7 +419,7 @@ op [a] List.positionsOfSublist (subl: List a, supl: List a) : InjList Nat =
   in
   loop (supl, 0)
 
-op [a] List.leftmostPositionOfSublistAndFollowing
+refine def [a] leftmostPositionOfSublistAndFollowing
        (subl: List a, supl: List a) : Option (Nat * List a) =
   let def loop (supl': List a, i:Nat) : Option (Nat * List a) =
       % invariant: supl' = removePrefix (supl, i)
@@ -450,7 +431,7 @@ op [a] List.leftmostPositionOfSublistAndFollowing
   in
   loop (supl, 0)
 
-op [a] List.rightmostPositionOfSublistAndPreceding
+refine def [a] rightmostPositionOfSublistAndPreceding
        (subl: List a, supl: List a) : Option (Nat * List a) =
   let def loop (supl': List a, i:Nat, lastPosFound: Option Nat) : Option Nat =
       % invariant: supl' = removePrefix (supl, i)
@@ -463,12 +444,12 @@ op [a] List.rightmostPositionOfSublistAndPreceding
   | Some i -> Some (i, prefix (supl, i))
   | None   -> None
 
-op [a] List.findLeftmost (p: a -> Bool) (l: List a) : Option a =
+refine def [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
   case l of
   | []     -> None
   | hd::tl -> if p hd then Some hd else findLeftmost p tl
 
-op [a] List.findRightmost (p: a -> Bool) (l: List a) : Option a =
+refine def [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   let def loop (l: List a, result: Option a) : Option a =
       case l of
       | []     -> result
@@ -476,32 +457,32 @@ op [a] List.findRightmost (p: a -> Bool) (l: List a) : Option a =
   in
   loop (l, None)
 
-op [a] List.delete (x:a) : List a -> List a = fn
+refine def [a] delete (x:a) : List a -> List a = fn
   | []     -> Nil
   | hd::tl -> if x = hd then delete x tl else Cons (hd, delete x tl)
 
-op [a] List.diff (l1: List a, l2: List a) : List a =
+refine def [a] diff (l1: List a, l2: List a) : List a =
   case l1 of
   | []     -> Nil
   | hd::tl -> if hd in? l2 then diff (tl, l2) else Cons (hd, diff (tl, l2))
 
-op [a] List.longestCommonPrefix (l1: List a, l2: List a) : List a =
+refine def [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
   case (l1,l2) of
   | (hd1::tl1, hd2::tl2) -> if hd1 = hd2
                             then Cons (hd1, longestCommonPrefix (tl1, tl2))
                             else Nil
   | _                    -> Nil
 
-op List.permutation? (prm: List Nat) : Bool =
+refine def permutation? (prm: List Nat) : Bool =
   noRepetitions? prm &&
   (let n = length prm in
   forall? (fn i:Nat -> i < n) prm)
 
-op [a] List.permute (l: List a, prm: Permutation | l equiLong prm) : List a =
+refine def [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   let n = length l in
   list (fn(i:Nat) -> if i < n then l @@ (positionOf(prm,i)) else None)
 
-op [a] List.permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
+refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
   let def deleteOne (x:a, l: List a) : Option (List a) =
       % delete exactly one (leftmost) occurrence of x in l,
       % return None if x does not occur in l:
@@ -518,4 +499,4 @@ op [a] List.permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
               | Some l2' -> l1' permutationOf l2'
               | None     -> false)
 
-}
+endspec
