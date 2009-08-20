@@ -6,17 +6,20 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
+#+casesensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
 
 (defpackage :SpecToLisp)
-(defpackage "Specware" (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
+(defpackage :Specware (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
+  #+casesensitive
   (:nicknames :specware))
 (in-package :Specware)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
-(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 3) (safety 1)
+                   #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -41,6 +44,7 @@
 	    )
 
 #+sbcl    (progn
+            ; (setq sb-ext:*derive-function-types* t) ; test
 	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
@@ -130,6 +134,7 @@
 (format t "~%Finished loading Snark.")
 (finish-output t)
 
+#+casesensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
 
@@ -300,6 +305,7 @@
 (defun set-readtable-invert ()
   (setf (readtable-case *readtable*) :invert))
 
+#+casesensitive
 (push  'set-readtable-invert 
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
