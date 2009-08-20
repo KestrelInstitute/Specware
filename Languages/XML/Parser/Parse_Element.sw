@@ -142,7 +142,7 @@ XML qualifying spec
       case possible_tag of
 	| Some tag ->
 	  {
-	   (when (~ ((well_formed_start_tag? tag) or (well_formed_empty_tag? tag)))
+	   (when (~ ((well_formed_start_tag? tag) || (well_formed_empty_tag? tag)))
 	    (error {kind        = WFC,
 		    requirement = "Each element must begin with a start tag or be an empty element tag.",
 		    start       = start,

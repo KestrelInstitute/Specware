@@ -44,7 +44,7 @@ variable, then it will appear twice is the list of UnitId's we generate.
         | Some str ->
           let paths = splitStringAt(str, specPathSeparator) in
           paths
-            ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,paths)
+            ++ (if specware4Dirs = [] || List.member(hd specware4Dirs,paths)
                  then [] else specware4Dirs)
         | _ -> ["/"] ++ specware4Dirs
     in

@@ -60,7 +60,7 @@ SpecUnion qualifying spec
    %%            refer to the same info at all the aliases within that info.
    foldriAQualifierMap (fn (q, id, info, sorts) ->
 			let Qualified (primary_q, primary_id) = primarySortName info in
-			if q = primary_q & id = primary_id then
+			if q = primary_q && id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
 			  mergeSortInfo next_spec sorts info % may introduce duplicate defs
 			else
@@ -73,7 +73,7 @@ SpecUnion qualifying spec
    %%            refer to the same info at all the aliases within that info.
    foldriAQualifierMap (fn (q, id, info, ops) ->
 			let Qualified (primary_q, primary_id) = primaryOpName info in
-			if q = primary_q & id = primary_id then
+			if q = primary_q && id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
 			  mergeOpInfo next_spec ops info % may introduce duplicate defs
 			else

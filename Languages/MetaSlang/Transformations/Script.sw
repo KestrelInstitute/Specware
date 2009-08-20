@@ -150,7 +150,7 @@ spec
    let Qualified(pq, pid) = pn in
    if cq = UnQualified
      then pid = cid
-   else cq = pq & cid = pid
+   else cq = pq && cid = pid
 
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
     if rls = []

@@ -207,7 +207,7 @@ SpecNorm qualifying spec
                            let new_el = Op(Qualified(q,new_id), true, a) in
                            (new_elts ++ [new_el, el], new_op_map, new_tb))
                       | _ -> (new_elts ++ [el], op_map, tb))
-               | Property(knd, qid as Qualified(q,id), tvs, bod, a) | tvs ~= [] & knd ~= Conjecture ->
+               | Property(knd, qid as Qualified(q,id), tvs, bod, a) | tvs ~= [] && knd ~= Conjecture ->
                      % let _ = writeLine("Trying "^printQualifiedId qid^": "^printTerm bod) in
                      (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc, coercions) of
                         | ([],_) -> (new_elts ++ [el], op_map, tb)

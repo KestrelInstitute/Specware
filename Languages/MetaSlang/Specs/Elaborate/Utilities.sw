@@ -138,7 +138,7 @@ Utilities qualifying spec
     | (CoProduct (row1, _), CoProduct (row2, _)) ->
       length row1 = length row2
       && all (fn (id1, cs1) ->
-	      exists (fn (id2, cs2) -> id1 = id2 & cs1 = cs2) row2)
+	      exists (fn (id2, cs2) -> id1 = id2 && cs1 = cs2) row2)
              row1
     | _ -> false
 
@@ -195,7 +195,7 @@ Utilities qualifying spec
        case (pos_1, pos_2) of
          | (File (file_1, left_1, right_1),
 	    File (file_2, left_2, right_2)) ->
-	   if file_1 = file_2 & left_1.1 = left_2.1 then
+	   if file_1 = file_2 && left_1.1 = left_2.1 then
 	     % If messages are on same line then prefer unidentified name error
 	     let unid1 = exists (fn str -> some? (search (str,msg_1))) priorityErrorStrings in
 	     let unid2 = exists (fn str -> some? (search (str,msg_2))) priorityErrorStrings in 
@@ -579,7 +579,7 @@ Utilities qualifying spec
 	  if exists (fn (p1, p2) -> 
 		     %% p = (srt1, srt2) 
 		     %% need predicate that chases metavar links
-		     equalType? (p1, srt1) &
+		     equalType? (p1, srt1) &&
 		     equalType? (p2, srt2))
 	            pairs 
 	    then
@@ -589,7 +589,7 @@ Utilities qualifying spec
 	  else 
 	    let s1x = unfoldSort (env, srt1) in
 	    let s2x = unfoldSort (env, srt2) in
-	    if equalType? (s1, s1x) & equalType? (s2x, s2) then
+	    if equalType? (s1, s1x) && equalType? (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
@@ -682,17 +682,17 @@ Utilities qualifying spec
       def occursOptRow (mtv, row) =
        case row of
 	 | [] -> false
-	 | (_, Some t) :: rRow -> occurs (mtv, t) or occursOptRow (mtv, rRow)
+	 | (_, Some t) :: rRow -> occurs (mtv, t) || occursOptRow (mtv, rRow)
 	 | (_, None)   :: rRow -> occursOptRow (mtv, rRow)
      def occursRow (mtv, row) =
        case row of
 	 | [] -> false
-	 | (_, t) :: rRow -> occurs (mtv, t) or occursRow (mtv, rRow)
+	 | (_, t) :: rRow -> occurs (mtv, t) || occursRow (mtv, rRow)
    in
    case srt of
      | CoProduct (row,     _) -> occursOptRow (mtv, row)
      | Product   (row,     _) -> occursRow    (mtv, row)
-     | Arrow     (t1, t2,  _) -> occurs (mtv, t1) or occurs (mtv, t2)
+     | Arrow     (t1, t2,  _) -> occurs (mtv, t1) || occurs (mtv, t2)
      %% sjw 3/404 It seems safe to ignore the predicates and it fixes bug 82
      | Quotient  (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
      | Subsort   (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
@@ -709,14 +709,14 @@ Utilities qualifying spec
    case pred of
      | ApplyN     (ms,            _) -> exists (fn M -> occursT (mtv, M)) ms
      | Record     (fields,        _) -> exists (fn (_, M) -> occursT (mtv, M)) fields
-     | Bind       (_, vars, body, _) -> exists (fn (_, s) -> occurs (mtv, s)) vars or occursT (mtv, body)
-     | The        ((_,s), body,   _) -> occurs (mtv, s) or occursT (mtv, body)
-     | IfThenElse (M, N, P,       _) -> occursT (mtv, M) or occursT (mtv, N) or occursT (mtv, P)
+     | Bind       (_, vars, body, _) -> exists (fn (_, s) -> occurs (mtv, s)) vars || occursT (mtv, body)
+     | The        ((_,s), body,   _) -> occurs (mtv, s) || occursT (mtv, body)
+     | IfThenElse (M, N, P,       _) -> occursT (mtv, M) || occursT (mtv, N) || occursT (mtv, P)
      | Var        ((_, s),        _) -> occurs (mtv, s)
      | Fun        (_, s,          _) -> occurs (mtv, s)
      | Seq        (ms,            _) -> exists (fn M -> occursT (mtv, M)) ms
-     | Let        (decls, body,   _) -> occursT (mtv, body) or exists (fn (p, M) -> occursT (mtv, M)) decls
-     | LetRec     (decls, body,   _) -> occursT (mtv, body) or exists (fn (p, M) -> occursT (mtv, M)) decls
+     | Let        (decls, body,   _) -> occursT (mtv, body) || exists (fn (p, M) -> occursT (mtv, M)) decls
+     | LetRec     (decls, body,   _) -> occursT (mtv, body) || exists (fn (p, M) -> occursT (mtv, M)) decls
      | Lambda     (rules,         _) -> exists (fn (p, c, M) -> occursT (mtv, M)) rules
      | And        (tms,           _) -> exists (fn t -> occursT (mtv, t)) tms
      | _  -> false

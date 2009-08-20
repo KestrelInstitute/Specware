@@ -670,12 +670,12 @@ MetaSlangRewriter qualifying spec
 	       of Fun(top,srt,_) -> true
 	        | Var((id,srt), _)  -> true
 	        | Let(decls,bdy,_) -> 
-	          all (fn (_,M) -> loop M) decls & loop bdy
+	          all (fn (_,M) -> loop M) decls && loop bdy
 	        | LetRec(decls,bdy,_) -> 
-	          all (fn (_,M) -> loop M) decls & loop bdy
+	          all (fn (_,M) -> loop M) decls && loop bdy
 	        | Record(row, _) -> 
 	          all (fn (_,M) -> loop M) row
-	        | IfThenElse(t1,t2,t3,_) -> loop t1 & loop t2 & loop t3
+	        | IfThenElse(t1,t2,t3,_) -> loop t1 && loop t2 && loop t3
 	        | Lambda(match,_) -> 
 	          all  (fn (_,_,M) -> loop M) match
                 | The(var,trm,_) -> loop trm
@@ -683,7 +683,7 @@ MetaSlangRewriter qualifying spec
 	        | Apply(t1,t2,_) -> 
 	          (case isFlexVar?(term) 
 		     of Some n -> NatMap.inDomain(S,n) 
-		      | None -> loop t1 & loop t2)
+		      | None -> loop t1 && loop t2)
 	        | Seq(terms,_) -> all loop terms
      in
      loop term

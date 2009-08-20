@@ -83,7 +83,7 @@ XML qualifying spec
   def explicit_attributes_and_elements? (element : PossibleElement)
     : Boolean =
     (case find_matching_sub_element (element, "attributes") of | Some _ -> true | _ -> false)
-    &
+    &&
     (case find_matching_sub_element (element, "elements")   of | Some _ -> true | _ -> false)
 
   def fa (X) internalize_PossibleElement_as_product (element    : PossibleElement,
@@ -95,7 +95,7 @@ XML qualifying spec
     %%  hence cannot be properly typed in metaslang,
     %%  hence there is "magic" here.
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as product for " ^ (print_SortDescriptor product_sd) ^ "\n") in
-    if (making_attributes_and_elements_explicit? field_sds) & ~(explicit_attributes_and_elements? element) then
+    if (making_attributes_and_elements_explicit? field_sds) && ~(explicit_attributes_and_elements? element) then
       internalize_Attributes_and_Elements (Full element, product_sd, table)
     else
       let possible_magic_values =
@@ -192,7 +192,7 @@ XML qualifying spec
 		(case element_type_attribute element of
 		   | Some str -> sd_option.1 = str
 		   | _ -> false)
-		or
+		||
 		ms_name_matches_xml_name? (sd_option.1, element_name))
 	       sd_options)
       of
@@ -398,7 +398,7 @@ XML qualifying spec
 		(case etag_type_attribute etag of
 		   | Some str -> sd_option.1 = str
 		   | _ -> false)
-		   or
+		   ||
 		   ms_name_matches_xml_name? (sd_option.1, etag.name))
 	       sd_options)
        of 

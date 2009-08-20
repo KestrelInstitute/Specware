@@ -364,7 +364,7 @@ def srtId_internalM(srt,addIds?) =
     | Base (Qualified (q, id), tvs, _) -> 
       {
        sep <- getSep;
-       id <- if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
+       id <- if length(tvs)>0 && (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
                 foldM (fn s -> fn srt ->
 		       {
 			id0 <- srtIdM srt;
@@ -592,7 +592,7 @@ def mkJavaIff(e1,e2) =
 
 op mkJavaEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaEq(e1, e2, t1) =
-  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
+  if (t1 = "Boolean" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
@@ -600,7 +600,7 @@ def mkJavaEq(e1, e2, t1) =
 
 op mkJavaNotEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaNotEq(e1, e2, t1) =
-  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
+  if (t1 = "Boolean" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
     then CondExp (Bin (NotEq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
@@ -683,7 +683,7 @@ op mkAsrtExpr: Spec * List Var * List(Option MS.Term) -> Option MS.Term
 def mkAsrtExpr(spc,vars,dompreds) =
   % let _ = writeLine("mse: "^foldl (fn (r,(id,_)) -> r^" "^id) "" vars) in
   % let _ = writeLine(foldl (fn (r,dp) -> r^(case dp of Some d -> ", "^printTerm d | _ -> " ? ")) "" dompreds) in
-  let vars = if length(dompreds) = 1 & length(vars) > 1
+  let vars = if length(dompreds) = 1 && length(vars) > 1
 	       then let (fields,_) = foldl (fn((fields,n),(id,srt)) ->
 					    let b = sortAnn(srt) in
 					    let t = Var((id,srt),b) in
@@ -1127,7 +1127,7 @@ def fieldsAreNumbered(fields) =
     def fieldsAreNumbered0(i,fields) =
       case fields of
 	| [] -> true
-	| (id,_)::fields -> id = Nat.toString(i) & fieldsAreNumbered0(i+1,fields)
+	| (id,_)::fields -> id = Nat.toString(i) && fieldsAreNumbered0(i+1,fields)
   in
   fieldsAreNumbered0(1,fields)
 

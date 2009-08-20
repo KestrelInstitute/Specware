@@ -96,7 +96,7 @@ meaningless unless an implementation is assumed.
   def inDomain? (map, key) =
     case map of
         [] -> false
-      | (x,y)::tl -> (x = key) or (inDomain? (tl, key))
+      | (x,y)::tl -> (x = key) || (inDomain? (tl, key))
 
   % op numItems : fa(a,key) Map (key,a) -> Nat
   def numItems = length

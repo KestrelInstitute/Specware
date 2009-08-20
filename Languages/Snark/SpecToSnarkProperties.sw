@@ -284,7 +284,7 @@ snark qualifying spec
 	       | _ ->
 	    let unfoldS1 = unfoldBaseUnInterp(sp, s1) in
 	    let unfoldS2 = unfoldBaseUnInterp(sp, s2) in
-	    let isfmla = boolSort?(unfoldS1) or boolSort?(unfoldS2) in
+	    let isfmla = boolSort?(unfoldS1) || boolSort?(unfoldS2) in
 	    let snarkArg1 =
 	        if isfmla
 		  then mkSnarkFmla(context, sp, dpn, vars, [], arg1)
@@ -307,7 +307,7 @@ snark qualifying spec
 	       | _ ->
 	    let unfoldS1 = unfoldBaseUnInterp(sp, s1) in
 	    let unfoldS2 = unfoldBaseUnInterp(sp, s2) in
-	    let isfmla = boolSort?(unfoldS1) or boolSort?(unfoldS2) in
+	    let isfmla = boolSort?(unfoldS1) || boolSort?(unfoldS2) in
 	    let snarkArg1 =
 	        if isfmla
 		  then mkSnarkFmla(context, sp, dpn, vars, [], arg1)

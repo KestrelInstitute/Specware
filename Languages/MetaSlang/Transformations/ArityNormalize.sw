@@ -239,10 +239,10 @@ ArityNormalize qualifying spec
  def simpleAbstraction(rules:Match) = 
      case rules
        of [(RecordPat(fields,_),cond,_)] -> 
-	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
+	  isTrue cond && all (fn(_,p)-> simplePattern p) fields
         | [(RestrictedPat(RecordPat(fields,_),_,_),cond,_)] -> 
-	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
-        | [(pat,cond,_)] -> simplePattern pat & isTrue cond
+	  isTrue cond && all (fn(_,p)-> simplePattern p) fields
+        | [(pat,cond,_)] -> simplePattern pat && isTrue cond
 	| _ -> false
 
   def isTrue(term:MS.Term) = 

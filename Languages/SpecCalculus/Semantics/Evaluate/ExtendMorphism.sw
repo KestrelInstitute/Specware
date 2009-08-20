@@ -119,17 +119,17 @@ def termOpsInSpec?(term, spc) =
 	 let res = mapRec bdy in res
 
        | Record     (row, a) -> 
-	 let res = foldl (fn (res, (_, trm)) -> res or (mapRec trm)) false row in
+	 let res = foldl (fn (res, (_, trm)) -> res || (mapRec trm)) false row in
 	   res
 
        | IfThenElse (       t1,        t2,        t3, a) -> 
 	 let resT1 = mapRec t1 in
 	 let resT2 = mapRec t2 in
 	 let resT3 = mapRec t3 in
-	   resT1 or resT2 or resT3
+	   resT1 || resT2 || resT3
 
        | Lambda     (match, a) -> 
-         let resMatch = foldl (fn (res, (pat, cond, trm)) -> res or (mapRec trm)) false match in
+         let resMatch = foldl (fn (res, (pat, cond, trm)) -> res || (mapRec trm)) false match in
 	   resMatch
 
        | Bind       (bnd, vars, trm, a) -> 
@@ -139,14 +139,14 @@ def termOpsInSpec?(term, spc) =
        | Apply      (       t1,        t2,  a) ->
 	 let resT1 = mapRec t1 in
 	 let resT2 = mapRec t2 in
-	   resT1 or resT2
+	   resT1 || resT2
 
        | Seq        (                terms, a) -> 
-	 let resTerms = foldl (fn (res, trm) -> res or (mapRec trm)) false terms in
+	 let resTerms = foldl (fn (res, trm) -> res || (mapRec trm)) false terms in
 	   resTerms
 
        | ApplyN     (                terms, a) -> 
-	 let resTerms = foldl (fn (res, trm) -> res or (mapRec trm)) false terms in
+	 let resTerms = foldl (fn (res, trm) -> res || (mapRec trm)) false terms in
 	   resTerms
 
        | SortedTerm (       trm,                  srt, a) -> 
@@ -249,13 +249,13 @@ def substOpMap (opMap, term) =
        | Let        (decls, bdy, a) -> 
 	 let newDecls = decls in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
+	 if decls = newDecls && bdy = newBdy then term
 	   else Let (newDecls, newBdy, a)
 
        | LetRec     (decls, bdy, a) -> 
 	 let newDecls = decls in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
+	 if decls = newDecls && bdy = newBdy then term
 	   else LetRec(newDecls, newBdy, a)
 
        | Record     (row, a) -> 
@@ -267,7 +267,7 @@ def substOpMap (opMap, term) =
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
 	 let newT3 = mapRec t3 in
-	 if newT1 = t1 & newT2 = t2 & newT3 = t3 then term
+	 if newT1 = t1 && newT2 = t2 && newT3 = t3 then term
 	   else IfThenElse (newT1, newT2, newT3, a)
 
        | Lambda     (match, a) -> 
@@ -280,13 +280,13 @@ def substOpMap (opMap, term) =
        | Bind       (bnd, vars, trm, a) -> 
 	 let newVars = vars in
 	 let newTrm = mapRec trm in
-	 if vars = newVars & trm = newTrm then term
+	 if vars = newVars && trm = newTrm then term
 	   else Bind (bnd, newVars, newTrm, a)
 
        | Apply      (       t1,        t2,  a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
-	 if newT1 = t1 & newT2 = t2 then term
+	 if newT1 = t1 && newT2 = t2 then term
 	  else Apply(mapRec newT1, mapRec newT2,  a)
 
        | Seq        (                terms, a) -> 
@@ -302,7 +302,7 @@ def substOpMap (opMap, term) =
        | SortedTerm (       trm,                  srt, a) -> 
 	 let newTrm = mapRec trm in
          let newSrt = srt in
-	 if newTrm = trm & srt = newSrt then term
+	 if newTrm = trm && srt = newSrt then term
 	   else SortedTerm (newTrm, newSrt, a)
 
    def mapRec term = 

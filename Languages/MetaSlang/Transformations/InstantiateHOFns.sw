@@ -191,7 +191,7 @@ spec
     let def normalizeCurriedAppl t =
 	  case getCurryArgs t of
 	    | Some(f as Fun(Op(nqid, _), _, _), args) ->
-	      if nqid = qid & length args = numCurryArgs
+	      if nqid = qid && length args = numCurryArgs
 		then mkAppl(f, args)
 		else t
 	    | _ -> t
@@ -242,7 +242,7 @@ spec
   op  hoParamsSame?: List Pattern * List Term * List Boolean -> Boolean
   def hoParamsSame?(params, args, HOArgs) =
     length params >= length args
-      & all (fn i -> if nth(HOArgs, i)
+      && all (fn i -> if nth(HOArgs, i)
 	              then patternMatchesTerm?(nth(params, i), nth(args, i))
 		      else true)
           (tabulate(length args, id))
@@ -277,7 +277,7 @@ spec
       | None -> false
       | Some (dom, rng) ->
         hoSort?(spc, dom)
-	  or (case arrowOpt(spc, rng) of
+	  || (case arrowOpt(spc, rng) of
 		| Some _ -> hoFnSort? (spc, rng)
 		| None ->
 	      case productOpt(spc, dom) of
@@ -326,8 +326,8 @@ spec
 	       | None -> t
 	       | Some (vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 		 if ~curried?
-		      & length(termList a) > foldr max 0 fnIndices
-		      & exists (fn i -> exploitableTerm?(getTupleArg(a, i), unfoldMap))
+		      && length(termList a) > foldr max 0 fnIndices
+		      && exists (fn i -> exploitableTerm?(getTupleArg(a, i), unfoldMap))
 		          fnIndices
 		  then makeUnfoldedTerm
 		         (outer_qid, t, f, termToList a, inferType(spc, t),
@@ -345,8 +345,8 @@ spec
 		      (case findAQualifierMap(unfoldMap, q, id) of
 			 | None -> t
 			 | Some(vs, defn, defsrt, fnIndices, curried?, recursive?) ->
-			   if curried? & (length args = length vs)
-			     & exists (fn i -> exploitableTerm?(nth(args, i), unfoldMap))
+			   if curried? && (length args = length vs)
+			     && exists (fn i -> exploitableTerm?(nth(args, i), unfoldMap))
 			         fnIndices
 			    then makeUnfoldedTerm(outer_qid, t, f, args, inferType(spc, t),
 						  sortMatch(defsrt, srt, spc),
@@ -364,7 +364,7 @@ spec
   def makeUnfoldedTerm(outer_qid, orig_tm, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
 		       recursive?, qid, nm, unfoldMap, simplifyTerm, curried?, spc) =
     let replaceIndices = filter (fn i -> constantTerm?(nth(args, i))
-				        & member(i, fnIndices))
+				        && member(i, fnIndices))
                            (tabulate (length args, id))
     in
     let vSubst = foldl (fn (r, i) -> r ++ matchPairs(nth(vs, i), nth(args, i)))
@@ -627,7 +627,7 @@ spec
 		  Lambda([(pat, pred, aux(body, rSorts, argNum+1))], a)
 		| Lambda _ -> defn
 		| _ ->
-		  if argNum = 0 & rSorts = [] & product? argSort
+		  if argNum = 0 && rSorts = [] && product? argSort
 		    then			% Uncurried
 		    (case argSort of
 		      | Product(fields, _) ->

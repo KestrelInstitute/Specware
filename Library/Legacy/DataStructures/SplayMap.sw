@@ -483,12 +483,12 @@ SplayMap qualifying spec {
 
   def all p? m =
     foldri
-      (fn (a, b, r) -> r & p? (a, b))
+      (fn (a, b, r) -> r && p? (a, b))
       true m
 
   def exists p? m =
     foldri
-      (fn (a, b, r) -> r or p? (a, b))
+      (fn (a, b, r) -> r || p? (a, b))
       false m
 
   def subset? (m1, m2) =

@@ -212,7 +212,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 	translateConstructToExprM(tcx, sid, id, argsTerm, k, l)
        }
      | Fun (Op (Qualified (q, id), _), _, _) ->
-       let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
+       let id = if (id = "~") && ((q = "Integer") || (q = "Nat")) then "-" else id in
        opvarcase(q,id)
      | _ -> translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l)
     %| _ -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
@@ -565,7 +565,7 @@ def getVarsPattern(pat) =
 		     | WildPat _ -> (cons("%",vids),true)
 		     | _ -> (vids,false)
 	     in
-	     (patvars,ok0? & ok?))
+	     (patvars,ok0? && ok?))
       ([],true) args
     | Some (VarPat((vid,_),_)) -> ([vid],true)
     | None -> ([],true)

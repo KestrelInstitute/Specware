@@ -705,7 +705,7 @@ def checkUnreachableCase(context,term,rules) =
 	  of [] -> false
 	   | [_] -> false
 	   | rule :: rules ->
-	     wildPattern? rule or nonfinalWildPattern? rules
+	     wildPattern? rule || nonfinalWildPattern? rules
   in if nonfinalWildPattern? rules
       then writeLine("Warning: Unreachable case in "^context.funName^"
 "
@@ -920,7 +920,7 @@ def eliminateTerm context term =
  def isShortTuple(i,row) = 
      case row
        of [] -> true
-	| (lbl,r)::row -> lbl = Nat.toString i & isShortTuple(i + 1,row)
+	| (lbl,r)::row -> lbl = Nat.toString i && isShortTuple(i + 1,row)
 
  op recordfields? : fa(A) List (Id * A) -> Boolean
  def recordfields?(fields) = ~(isShortTuple(1,fields))
@@ -1007,7 +1007,7 @@ endspec
        of (Lambda 
 	   [((VarPat(v1,_),pos0),(Fun(Bool true,_),_),
 	     (Let([(pat as (RecordPat fields,_),(Var v2,_))],body),_))],_) -> 
-	  if (v1 = v2) &  
+	  if (v1 = v2) &&  
 	     all (fn(_,(VarPat v3,_))-> ~(v1 = v3) | _ -> false) fields
 	  then 
 	  let letTerm:MS.Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in

@@ -32,7 +32,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
         (case term of
           | Apply (Fun (Op (qid,Infix (assoc,prec)),srt,_),
 		   Record ([("1",left),("2",right)],_), _) ->
-              if (isSimpleTerm? left) or (isSimpleTerm? right) then
+              if (isSimpleTerm? left) || (isSimpleTerm? right) then
                 ppGroup (ppConcat [
                   ppString "(",
                   ppATerm left,
@@ -70,7 +70,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 	      in
 		case opt_infix_string of
 		  | Some infix_string ->
-		    if (isSimpleTerm? left) or (isSimpleTerm? right) then
+		    if (isSimpleTerm? left) || (isSimpleTerm? right) then
 		      ppGroup (ppConcat [
 			ppString "(",
 			ppATerm left,
@@ -91,7 +91,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                       ]
 		  | _ ->
 		    %% same as Apply (term1, term2, _) below
-		    if (isSimpleTerm? term1) or (isSimpleTerm? term2) then
+		    if (isSimpleTerm? term1) || (isSimpleTerm? term2) then
 		      ppGroup (ppConcat [
 			ppString "(",
 			ppATerm term1,
@@ -116,7 +116,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppIndent (ppAppend ppBreak (ppAMatch match))
               ])
           | Apply (term1,term2,_) ->
-              if (isSimpleTerm? term1) or (isSimpleTerm? term2) then
+              if (isSimpleTerm? term1) || (isSimpleTerm? term2) then
                 ppGroup (ppConcat [
                   ppString "(",
                   ppATerm term1,
@@ -427,7 +427,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
-    if (qualifier = UnQualified) or (member (qualifier,omittedQualifiers)) then
+    if (qualifier = UnQualified) || (member (qualifier,omittedQualifiers)) then
       ppString id
     else
       ppString (qualifier ^ "." ^ id)
@@ -463,7 +463,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   def ppASort srt =
     case srt of
       | Arrow (srt1,srt2,_) ->
-          if (isSimpleSort? srt1) or (isSimpleSort? srt2) then
+          if (isSimpleSort? srt1) || (isSimpleSort? srt2) then
             ppGroup (ppConcat [
               ppString "(",
               ppASort srt1,

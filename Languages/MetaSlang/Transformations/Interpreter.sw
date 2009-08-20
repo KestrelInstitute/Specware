@@ -291,7 +291,7 @@ spec
 	(case a of
 	   | RecordVal(fields) -> 
 	     (case fields of
-		| [(_,Bool x),(_,Bool y)] -> Bool(x & y)
+		| [(_,Bool x),(_,Bool y)] -> Bool(x && y)
 		| [(_,Bool false),(_,_)]  -> Bool false
 		| [(_,_),(_,Bool false)]  -> Bool false
 		| [(_,ut),(_,Bool true)]  -> ut
@@ -302,7 +302,7 @@ spec
 	(case a of
 	   | RecordVal(fields) -> 
 	     (case fields of
-		| [(_,Bool x),(_,Bool y)] -> Bool(x or y)
+		| [(_,Bool x),(_,Bool y)] -> Bool(x || y)
 		| [(_,Bool true),(_,_)]   -> Bool true
 		| [(_,_),(_,Bool true)]   -> Bool true
 		| [(_,ut),(_,Bool false)] -> ut
@@ -386,7 +386,7 @@ spec
 	   | Bool b -> Some b
 	   | _ -> None)
       | RecordVal [("1",a1),("2",a2)] ->
-        (if evalConstant? a1 & evalConstant? a2
+        (if evalConstant? a1 && evalConstant? a2
 	  then (case (a1,a2) of
 		  | (Unevaluated t1,Unevaluated t2) ->
 		    if equivTerm? spc (t1, t2)
@@ -420,8 +420,8 @@ spec
   def letrecEnv?(dynSb,storedSb,letrecIds) =
           case (dynSb,letrecIds) of
 	    | ((idS,_)::rDynSb,id1::rids) ->
-	      (idS = id1 & letrecEnv?(rDynSb,storedSb,rids))
-	    | _ -> letrecIds = [] & dynSb = storedSb
+	      (idS = id1 && letrecEnv?(rDynSb,storedSb,rids))
+	    | _ -> letrecIds = [] && dynSb = storedSb
     
  %% Adapted from HigherOrderMatching 
  type MatchResult = | Match Subst | NoMatch | DontKnow
@@ -540,7 +540,7 @@ spec
   %% First list should contain second list as a tail
   op  ldiff: [a] List a * List a -> List a
   def ldiff(l1,l2) =
-    if l1 = l2 or l1 = [] then []
+    if l1 = l2 || l1 = [] then []
       else Cons(hd l1,ldiff(tl l1,l2))
       
 

@@ -469,10 +469,10 @@ CUtils qualifying spec {
        else
        if ord > 126 then [#_]
        else
-       if   ((ord >= 48) & (ord <=  57))
-	 or ((ord >= 65) & (ord <=  90))
-	 or ((ord >= 97) & (ord <= 122))
-         or (ord = 95) or (ord = 36)
+       if   ((ord >= 48) && (ord <=  57))
+	 || ((ord >= 65) && (ord <=  90))
+	 || ((ord >= 97) && (ord <= 122))
+         || (ord = 95) || (ord = 36)
 	 then [c]
        else
 	 case ord
@@ -826,7 +826,7 @@ CUtils qualifying spec {
 	      (case List.find (fn(sut) ->
 			       case sut of
 				 | Struct (id0,fields0) ->
-				   (id0 ~= id) & (equalVarDecls cspc (fields0,fields))
+				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
 				 | _ -> false) suts of
 		 | Some (Struct (id0,_)) ->
 		   let suts = List.filter (fn |Struct(id1,_) -> (id1 ~= id0)
@@ -850,7 +850,7 @@ CUtils qualifying spec {
 	      (case List.find (fn(sut) ->
 			       case sut of
 				 | Union (id0,fields0) ->
-				   (id0 ~= id) & (equalVarDecls cspc (fields0,fields))
+				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
 				 | _ -> false) suts of
 		 | Some (Union (id0,_)) ->
 		   let suts = List.filter (fn | Union(id1,_) -> id1 ~= id0
@@ -1019,7 +1019,7 @@ CUtils qualifying spec {
 	            | None -> fvs
 	in
 	let fvs1 = freeVarsBlock(fvs,(decls,stmts),rec?) in
-	let fvs1 = List.filter (fn(v0) -> v0 ~= v & ~(member(v0,fvs0))) fvs1 in
+	let fvs1 = List.filter (fn(v0) -> v0 ~= v && ~(member(v0,fvs0))) fvs1 in
 	concat(fvs0,fvs1)
 
   op freeVars: CBlock -> List String

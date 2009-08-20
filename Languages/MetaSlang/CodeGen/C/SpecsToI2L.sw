@@ -449,7 +449,7 @@ SpecsToI2L qualifying spec {
       def fieldsAreNumbered0(i,fields) =
 	case fields of
           | [] -> true
-	  | (id,_)::fields -> id = Nat.toString(i) & fieldsAreNumbered0(i+1,fields)
+	  | (id,_)::fields -> id = Nat.toString(i) && fieldsAreNumbered0(i+1,fields)
     in
     fieldsAreNumbered0(1,fields)
 
@@ -590,7 +590,7 @@ SpecsToI2L qualifying spec {
 %    let def isOutputOp(varid as (spcname,lid)) =
 %          let outputops = ctxt.espc.interface.outputops in
 %          %let _ = String.writeLine("outputops: "^(List.foldl (fn(s,id) -> s^id^" ") "" outputops)) in
-%	  (spcname = ctxt.espc.spc.name) & (List.member(lid,outputops))
+%	  (spcname = ctxt.espc.spc.name) && (List.member(lid,outputops))
 %    in
     case term of
 

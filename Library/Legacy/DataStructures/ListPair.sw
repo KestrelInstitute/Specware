@@ -32,12 +32,12 @@ ListPair qualifying spec {
 
   def all p (l,r) = 
     case (l,r) of
-      | (x::l,y::r) -> p (x,y) & all p (l,r)
+      | (x::l,y::r) -> p (x,y) && all p (l,r)
       | _ -> true
 
   def exists p (l,r) = 
     case (l,r) of
-      | (x::l,y::r) -> p (x,y) or exists p (l,r)
+      | (x::l,y::r) -> p (x,y) || exists p (l,r)
       | _ -> false
       
   def foldr f u (l,r) = 

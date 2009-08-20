@@ -56,7 +56,7 @@ Infix qualifying spec
 	    scan (delta0,applyPrefixes([Nonfix t] ++ rest)))
 	 | (Nonfix(t1)) :: (Infix(infix1,(a1,delta1))) :: rest -> 
 	   let rest = scan(delta1,rest) in
-	   if delta0 > delta1 or (delta0 = delta1 & a1 = Left) then
+	   if delta0 > delta1 || (delta0 = delta1 && a1 = Left) then
 	     %% The prior infix operator binds tighter than the first one here,
 	     %%  or binds the same and we're left-associating.
 	     %% Just return the existing list, and a subsequent re-scan will 
@@ -68,7 +68,7 @@ Infix qualifying spec
 	     %%  prior infix operator.
 	     (case rest of
 		| (Nonfix t2)::(Infix(infix2,(a2,delta2)))::(Nonfix t3)::rest -> 
-		  if delta1 > delta2 or (delta1 = delta2 & a1 = Left) then
+		  if delta1 > delta2 || (delta1 = delta2 && a1 = Left) then
 		    %% The first infix operator here also binds tighter than the second, 
 		    %%  or it binds the same and we're left-associating.
 		    [Nonfix(applyInfix(t1,infix1,t2)),

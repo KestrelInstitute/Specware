@@ -262,7 +262,7 @@ TypeChecker qualifying spec
 		    %%       so if some candidate has given_sort_qid as an exact alias, then that
 		    %%       candidate will be first in the list (see comments for findAllSorts),
 		    %%       in which case choose it.
-		    if ((null other_infos) or exists (fn alias -> alias = given_sort_qid) info.names) then
+		    if ((null other_infos) || exists (fn alias -> alias = given_sort_qid) info.names) then
 		      let (tvs, srt) = unpackFirstSortDef info in
 		      if length tvs ~= length instance_sorts then
 			let found_sort_str =

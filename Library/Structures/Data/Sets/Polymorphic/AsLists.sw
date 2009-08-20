@@ -13,7 +13,7 @@ spec
   def member? l x =
     case l of
       | [] -> false
-      | h::t -> (h = x) or (member? t x)
+      | h::t -> (h = x) || (member? t x)
 
   def subset? s1 s2 =
     all (fn e1 -> member? s2 e1) s1

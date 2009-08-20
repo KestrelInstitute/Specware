@@ -196,7 +196,7 @@ RemoveCurrying qualifying spec
 	                 decls
 	in
 	let newM = unCurryTermRec M in
-	if newM = M & newDecls = decls
+	if newM = M && newDecls = decls
 	  then tm
 	 else Let(newDecls,newM,a)
       | LetRec(decls,M,a) ->
@@ -204,7 +204,7 @@ RemoveCurrying qualifying spec
 	                 decls
 	in
 	let newM = unCurryTermRec M in
-	if newM = M & newDecls = decls
+	if newM = M && newDecls = decls
 	  then tm
 	 else LetRec(newDecls,newM,a)
       | The (var,term,a) ->
@@ -217,7 +217,7 @@ RemoveCurrying qualifying spec
 	let newT1 = unCurryTermRec t1 in
 	let newT2 = unCurryTermRec t2 in
 	let newT3 = unCurryTermRec t3 in
-	if newT1 = t1 & newT2 = t2 & newT3 = t3 then tm
+	if newT1 = t1 && newT2 = t2 && newT3 = t3 then tm
 	  else IfThenElse (newT1, newT2, newT3, a)
       | Seq(terms,a) -> Seq(map unCurryTermRec terms,a)
 %      | Bind(b,vars,M,_)  -> 

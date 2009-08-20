@@ -383,7 +383,7 @@ snark qualifying spec {
 
   op substringp: String * String -> Boolean
   def substringp(s1, s2) =
-    length(s1) <= length(s2) &
+    length(s1) <= length(s2) &&
     substring(s2, 0, length(s1)) = s1
 
   op snarkFunctionNoCurryDecl: Spec * String * Sort * Nat -> LispCell
@@ -397,8 +397,8 @@ snark qualifying spec {
 	  | _ ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 
-	    if substringp("project", name) or substringp("embed", name) then
-	      %let _ = if true or name = "remove" then debug("found it 1") else () in
+	    if substringp("project", name) || substringp("embed", name) then
+	      %let _ = if true || name = "remove" then debug("found it 1") else () in
 	      if fields = nil then
 		Lisp.list[declare_constant,
 			  Lisp.quote(Lisp.symbol("SNARK", name)),
@@ -420,7 +420,7 @@ snark qualifying spec {
 		| _ ->
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	                          fields in
-	    %let _ = if true or name = "remove" then debug("found it 2") else () in
+	    %let _ = if true || name = "remove" then debug("found it 2") else () in
 	      Lisp.list[declare_function,
 			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			Lisp.symbol("KEYWORD","SORT"),

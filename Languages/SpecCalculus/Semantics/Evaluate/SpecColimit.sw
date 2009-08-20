@@ -456,7 +456,7 @@ spec
 				  %% let _ = writeLine("unique class index for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString n) in
 				  (default_apex_qid, aliases) % unique, no need to disambiguate
 				| nn   -> 
-				  if default_apex_qid = Boolean_Boolean or default_apex_qid = unqualified_Boolean then
+				  if default_apex_qid = Boolean_Boolean || default_apex_qid = unqualified_Boolean then
 				    (Boolean_Boolean, [Boolean_Boolean])
 				  else
 				    %% let _ = writeLine("ambigous class indices for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString nn) in
@@ -595,8 +595,8 @@ spec
 				%% A rule is a no-op if it is just going to rename something to itself 
 				%% and moreover, that name is the primary name in the target.
 				let no_op? = case rule.1 of
-					       | Sort (x, y, first_alias :: _) -> x = y & x   = first_alias
-					       | Op   (x, y, first_alias :: _) -> x = y & x.1 = first_alias
+					       | Sort (x, y, first_alias :: _) -> x = y && x   = first_alias
+					       | Op   (x, y, first_alias :: _) -> x = y && x.1 = first_alias
 					       | _ -> false
 				in
 				  if no_op? then

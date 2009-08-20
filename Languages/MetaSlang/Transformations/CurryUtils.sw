@@ -23,7 +23,7 @@ CurryUtils qualifying spec
   def foldrPred f i l =
     List.foldr (fn (x,(changed?,result)) ->
 	   let (nchanged?,nx) = f x in
-	   (changed? or nchanged?,cons(nx,result)))
+	   (changed? || nchanged?,cons(nx,result)))
       (i,[])
       l
 

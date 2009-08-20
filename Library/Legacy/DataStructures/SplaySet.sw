@@ -184,13 +184,13 @@ SplaySet qualifying spec {
       | SplayObj{value,left = SplayNil,right = SplayNil} -> 
            memberT(comp,value,t2)
       | SplayObj{value,left,right = SplayNil} -> 
-           memberT(comp,value, t2) & treeIn(comp,left, t2)
+           memberT(comp,value, t2) && treeIn(comp,left, t2)
       | SplayObj{value,left = SplayNil,right} -> 
-           memberT(comp,value, t2) & treeIn(comp,right,t2)
+           memberT(comp,value, t2) && treeIn(comp,right,t2)
       | SplayObj{value,left,right} -> 
              memberT(comp,value, t2)
-           & treeIn(comp,left, t2) 
-           & treeIn(comp,right,t2)
+           && treeIn(comp,left, t2) 
+           && treeIn(comp,right,t2)
 
 
   %
@@ -199,14 +199,14 @@ SplaySet qualifying spec {
   def equal(set1,set2) = 
     case (set1,set2) of
       | (SET{root,nobj,comp},SET{root = r2,nobj = n2,comp = c2}) -> 
-                 nobj = n2 & treeIn(comp,State.! root,State.! r2)
+                 nobj = n2 && treeIn(comp,State.! root,State.! r2)
       | (EMPTY _,EMPTY _) -> true
       | _ -> false
 
   def isSubset(set1,set2) = 
     case (set1,set2) of
       | (SET {root,nobj,comp},SET{root = r2,nobj = n2,comp = c2}) -> 
-                 nobj <= n2 & treeIn(comp,State.! root,State.! r2)
+                 nobj <= n2 && treeIn(comp,State.! root,State.! r2)
       | (EMPTY _,_) -> true
       | _ -> false
 

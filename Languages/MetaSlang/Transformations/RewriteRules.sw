@@ -473,7 +473,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
       let vrs  = Ref (StringSet.fromList(StringMap.listDomain env1)) in
       let 
 	  def doVar(x,srt) = 
-	      if String.length(x) >= 2 & 
+	      if String.length(x) >= 2 && 
 		 String.sub(x,1) = #%
 		 then 
 	      (case StringMap.find(! env,x)

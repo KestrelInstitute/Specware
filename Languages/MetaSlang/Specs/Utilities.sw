@@ -113,29 +113,29 @@ Utilities qualifying spec
  def isFree (v,term) = 
    case term of
      | Var(w,_)               -> v = w
-     | Apply(M1,M2,_)         -> isFree(v,M1) or isFree(v,M2)
+     | Apply(M1,M2,_)         -> isFree(v,M1) || isFree(v,M2)
      | Record(fields,_)       -> exists (fn (_,M) -> isFree(v,M)) fields
      | Fun _                  -> false
      | Lambda(rules,_)        -> exists (fn (pat,cond,body) -> 
 					  ~(isPatBound(v,pat)) 
-					  & 
-					  (isFree(v,cond) or isFree(v,body)))
+					  && 
+					  (isFree(v,cond) || isFree(v,body)))
                                          rules
      | Let(decls,M,_)         -> exists (fn (_,M) -> isFree(v,M)) decls
-			  	  or
+			  	  ||
 				  (all (fn (p,_) -> ~(isPatBound(v,p))) decls
-				   &
+				   &&
 				   isFree(v,M))
      | LetRec(decls,M,_)      -> all (fn (w,_) -> ~(v = w)) decls 
-				  & 
+				  && 
 				  (exists (fn (_,M) -> isFree(v,M)) decls
-				   or 
+				   || 
 				   isFree(v,M)) 
      | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
 			          && isFree(v,M)
      | The(w,M,_)             -> ~(v = w) && isFree(v,M)
-     | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) or 
-			          isFree(v,t2) or 
+     | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) || 
+			          isFree(v,t2) || 
 				  isFree(v,t3)
      | SortedTerm(t,_,_)      -> isFree(v,t)
      | Seq(tms,_)             -> exists (fn t -> isFree(v,t)) tms
@@ -143,7 +143,7 @@ Utilities qualifying spec
  op isPatBound : Var * Pattern -> Boolean
  def isPatBound (v,pat) = 
    case pat of
-     | AliasPat(p1,p2,_)      -> isPatBound(v,p1) or isPatBound(v,p2)
+     | AliasPat(p1,p2,_)      -> isPatBound(v,p1) || isPatBound(v,p2)
      | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
      | VarPat(w,_)            -> v = w
      | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
@@ -1218,12 +1218,12 @@ Utilities qualifying spec
      case term
        of Var _ -> true
 	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
-	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f & sideEffectFree t
+	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f && sideEffectFree t
 	| Fun _ -> true
 	| IfThenElse(t1,t2,t3,_) -> 
 		(sideEffectFree t1) 
-	      & (sideEffectFree t2) 
-	      & (sideEffectFree t3)
+	      && (sideEffectFree t2) 
+	      && (sideEffectFree t3)
 	| _ -> false 
 
  op  evalBinary: [a] (a * a -> Fun) * (List(Id * MS.Term) -> List a)
@@ -1366,7 +1366,7 @@ Utilities qualifying spec
              else None)
         else None
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
-	if evalConstant?(N1) & evalConstant?(N2) then
+	if evalConstant?(N1) && evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
           (let eq? = equivTerm? spc (N1,N2) in  % equalTerm? would reject 0:Nat = 0:Integer
@@ -1392,7 +1392,7 @@ Utilities qualifying spec
       | IfThenElse(p,q,r,_) ->
         if trueTerm? p then Some q
           else if falseTerm? p then Some r
-          else if equivTerm? spc (q,r) & sideEffectFree p then Some q
+          else if equivTerm? spc (q,r) && sideEffectFree p then Some q
           else if trueTerm? q && falseTerm? r then Some p
           else if falseTerm? q && trueTerm? r then Some (negateTerm p)
           else None
@@ -1411,7 +1411,7 @@ Utilities qualifying spec
          List.all 
            (fn(pat2,_,_) -> disjointPatterns(pat1,pat2)) 
              matches 
-        & disjointMatches matches
+        && disjointMatches matches
 
  op  disjointPatterns: Pattern * Pattern -> Boolean
  def disjointPatterns = 
@@ -1427,9 +1427,9 @@ Utilities qualifying spec
 	 ListPair.exists 
 	   (fn ((_,p1),(_,p2)) -> disjointPatterns(p1,p2)) (fields1,fields2)
        | (AliasPat(p1,p2,_),p3) -> 
-	 disjointPatterns(p1,p3) or disjointPatterns(p2,p3)
+	 disjointPatterns(p1,p3) || disjointPatterns(p2,p3)
        | (p1,AliasPat(p2,p3,_)) -> 
-	 disjointPatterns(p1,p2) or disjointPatterns(p1,p3)
+	 disjointPatterns(p1,p2) || disjointPatterns(p1,p3)
        | (NatPat(i1, _),NatPat(i2, _)) -> ~(i1 = i2)
        | (BoolPat(b1, _),BoolPat(b2, _)) -> ~(b1 = b2)
        | (CharPat(c1, _),CharPat(c2, _)) -> ~(c1 = c2)

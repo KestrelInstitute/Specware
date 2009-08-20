@@ -95,6 +95,6 @@ MergeSort qualifying spec
          
   def sorted cmpGT xs = 
     case xs of
-      | (x::(rest as (y::_))) -> ~(cmpGT (x,y)) & (sorted cmpGT rest)
+      | (x::(rest as (y::_))) -> ~(cmpGT (x,y)) && (sorted cmpGT rest)
       | _ -> true
 endspec

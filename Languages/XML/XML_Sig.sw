@@ -208,19 +208,19 @@ XML qualifying spec
   type XMLDecl = (ElementTag | well_formed_xml_decl?)
 
   def well_formed_xml_decl? tag =
-    (tag.prefix  = ustring "?") &
-    (tag.name    = ustring "xml") &
-    (xml_decl_attributes? tag.attributes) &
+    (tag.prefix  = ustring "?") &&
+    (tag.name    = ustring "xml") &&
+    (xml_decl_attributes? tag.attributes) &&
     (tag.postfix = ustring "?")
 
   def xml_decl_attributes? attrs =
     case attrs of
       | xx :: tail ->
-        (version_attribute? xx) &
+        (version_attribute? xx) &&
 	(case tail of
 	   | []       -> true
-	   | [yy]     -> (encoding_attribute? yy) or (standalone_attribute? yy)
-	   | [yy, zz] -> (encoding_attribute? yy) &  (standalone_attribute? zz)
+	   | [yy]     -> (encoding_attribute? yy) || (standalone_attribute? yy)
+	   | [yy, zz] -> (encoding_attribute? yy) &&  (standalone_attribute? zz)
 	   | _ -> false)
       | _ -> false
 
@@ -236,15 +236,15 @@ XML qualifying spec
   type TextDecl = (ElementTag | well_formed_text_decl?) % similar to XMLDecl
 
   def well_formed_text_decl? tag =
-    (tag.prefix = ustring "?") &
-    (tag.name   = ustring "xml") &
-    (legal_text_decl_attributes? tag.attributes) &
+    (tag.prefix = ustring "?") &&
+    (tag.name   = ustring "xml") &&
+    (legal_text_decl_attributes? tag.attributes) &&
     (tag.postfix = ustring "?")
 
   def legal_text_decl_attributes? attrs =
     case attrs of
       | [xx]     -> encoding_attribute? xx
-      | [xx, yy] -> (version_attribute? xx) & (encoding_attribute? yy)
+      | [xx, yy] -> (version_attribute? xx) && (encoding_attribute? yy)
       | _        -> false
 
   %% -------------------------------------------------------------------------------------------------
@@ -254,7 +254,7 @@ XML qualifying spec
   %%  [KWFC: Text Decl]                             *[24] *[25] *[26]
   %%
   def version_attribute? attribute =
-    (attribute.name = ustring "version") &
+    (attribute.name = ustring "version") &&
     (case attribute.value.items  of
        | [NonRef ustring] -> version_num? ustring
        | _ -> false)
@@ -272,7 +272,7 @@ XML qualifying spec
   %%
   def encoding_attribute?   attribute =
     (attribute.name = ustring "encoding")
-    &
+    &&
     (case attribute.value.items  of
        | [NonRef ustr] -> legal_encoding_name? ustr
        | _ -> false)
@@ -283,7 +283,7 @@ XML qualifying spec
   %%
   def legal_encoding_name? (name : UChars) : Boolean =
     case name of
-      | char :: tail -> (latin_alphabetic_char? char) & (all? enc_name_char? tail)
+      | char :: tail -> (latin_alphabetic_char? char) && (all? enc_name_char? tail)
       | []           -> false
 
   %%
@@ -291,9 +291,9 @@ XML qualifying spec
   %%
   def standalone_attribute? attribute =
     (attribute.name = ustring "standalone")
-    &
+    &&
     (case attribute.value.items  of
-       | [NonRef ustr] -> (ustr = ustring "yes") or (ustr = ustring "no")
+       | [NonRef ustr] -> (ustr = ustring "yes") || (ustr = ustring "no")
        | _ -> false)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -778,7 +778,7 @@ XML qualifying spec
 
   def ignorable? uchars =
     (~ (sublist? (ustring "<![", uchars)))
-    &
+    &&
     (~ (sublist? (ustring "]]>", uchars)))
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1457,8 +1457,8 @@ XML qualifying spec
   type STag = ((ElementTag | well_formed_start_tag?) | unique_attributes?)
 
   def well_formed_start_tag? tag =
-    (null tag.prefix)          &
-    (~ (xml_prefix? tag.name)) &
+    (null tag.prefix)          &&
+    (~ (xml_prefix? tag.name)) &&
     (null tag.postfix)
 
   def xml_prefix? name =
@@ -1466,11 +1466,11 @@ XML qualifying spec
       %% Note: Formal Spec only excludes 3 char strings, but English spec
       %%       indicates that any string starting with xml is forbidden.
       | c0 :: c1 :: c2 :: _ ->
-        (((c0 = 88 (* X *)) or (c0 = 120 (* x *)))
-	 &
-	 ((c1 = 77 (* M *)) or (c1 = 109 (* m *)))
-	 &
-	 ((c2 = 76 (* L *)) or (c2 = 108 (* l *))))
+        (((c0 = 88 (* X *)) || (c0 = 120 (* x *)))
+	 &&
+	 ((c1 = 77 (* M *)) || (c1 = 109 (* m *)))
+	 &&
+	 ((c2 = 76 (* L *)) || (c2 = 108 (* l *))))
       | _ -> false
 
   def unique_attributes? tag =
@@ -1500,9 +1500,9 @@ XML qualifying spec
   type ETag = (ElementTag | well_formed_end_tag?)
 
   def well_formed_end_tag? tag =
-    (tag.prefix = [47])        &
-    (~ (xml_prefix? tag.name)) &
-    (null tag.attributes)      &
+    (tag.prefix = [47])        &&
+    (~ (xml_prefix? tag.name)) &&
+    (null tag.attributes)      &&
     (null tag.postfix)
 
   %% -------------------------------------------------------------------------------------------------
@@ -1540,8 +1540,8 @@ XML qualifying spec
   type EmptyElemTag = ((ElementTag | well_formed_empty_tag?) | unique_attributes?)
 
   def well_formed_empty_tag? tag =
-    (null tag.prefix)          &
-    (~ (xml_prefix? tag.name)) &
+    (null tag.prefix)          &&
+    (~ (xml_prefix? tag.name)) &&
     (tag.postfix = [47])          (* '/' *)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1615,7 +1615,7 @@ XML qualifying spec
 
   def char_data? ustr =
     (all? char_data_char? ustr)                 % i.e.g, char?, but not '<' or '%'
-    &
+    &&
     ~ (substring? (ustring "]]>", ustr))
 
   %% -------------------------------------------------------------------------------------------------
@@ -1895,8 +1895,8 @@ XML qualifying spec
 
   def name? ustr =
     case ustr of
-      | char :: tail ->  ((letter? char) or (char = 95 (* _ *)) or (char = 58 (* : *)))
-	&
+      | char :: tail ->  ((letter? char) || (char = 95 (* _ *)) || (char = 58 (* : *)))
+	&&
 	(all? name_char? tail)
       | _ ->
 	false
@@ -2085,7 +2085,7 @@ XML qualifying spec
   %%  [9] [10] *[11] *[12] *[24] *[32] *[80] [K39]
   %%
   def quote_char? (char : UChar) : Boolean =
-    (char = UChar.double_quote) or
+    (char = UChar.double_quote) ||
     (char = UChar.apostrophe)
 
   type WhiteChar            = (UChar | white_char?)            %  [3]

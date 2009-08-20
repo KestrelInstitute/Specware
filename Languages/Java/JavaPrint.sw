@@ -201,9 +201,9 @@ Java qualifying spec
                List.map ppInterfDecl cb.interfs]))
 
   def isEmptyClsBody (cb : ClsBody) : Boolean =
-      List.null cb.staticInits & List.null cb.flds &
-      List.null cb.constrs & List.null cb.meths &
-      List.null cb.clss & List.null cb.interfs
+      List.null cb.staticInits && List.null cb.flds &&
+      List.null cb.constrs && List.null cb.meths &&
+      List.null cb.clss && List.null cb.interfs
 
 %%%% interface body
 
@@ -220,8 +220,8 @@ Java qualifying spec
                List.map ppInterfDecl ib.interfs]))
 
   def isEmptyInterfBody (ib : InterfBody) : Boolean =
-      List.null ib.flds & List.null ib.meths &
-      List.null ib.clss & List.null ib.interfs
+      List.null ib.flds && List.null ib.meths &&
+      List.null ib.clss && List.null ib.interfs
 
 %%%% Static initialization
 

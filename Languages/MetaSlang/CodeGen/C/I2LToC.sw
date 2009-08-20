@@ -136,7 +136,7 @@ I2LToC qualifying spec {
       | Some expr -> 
         let emptyblock = ([],[]) in
         let (cspc,block,cexpr) = c4InitializerExpression(ctxt,cspc,emptyblock,expr) in
-	if (block = emptyblock) & constExpr?(cspc,cexpr) then
+	if (block = emptyblock) && constExpr?(cspc,cexpr) then
 	  addVarDefn(cspc,(vname,ctype,cexpr))
 	else
 	  c4NonConstVarDef(ctxt,vname,ctype,cspc,block,cexpr)
@@ -228,7 +228,7 @@ I2LToC qualifying spec {
 	                       (fn((cspc,initstr,useful),(id,t)) -> 
 				let (cspc,initstr0,useful0) = structCheck(cspc,t,cons(id,ids)) in
 				let initstr = if initstr="" then initstr0 else initstr^","^initstr0 in
-				(cspc,initstr,useful or useful0)
+				(cspc,initstr,useful || useful0)
 			       )
 	                       (cspc,"",false) fields
 			     in
@@ -926,7 +926,7 @@ I2LToC qualifying spec {
     case expr of
       | Const _ -> true
       | Unary(_,e1) -> constExpr?(cspc,e1)
-      | Binary(_,e1,e2) -> (constExpr?(cspc,e1)) & (constExpr?(cspc,e2))
+      | Binary(_,e1,e2) -> (constExpr?(cspc,e1)) && (constExpr?(cspc,e2))
 % this isn't true in C:
 %      | Var (vname,vdecl) ->
 %        (case List.find (fn(id,_,_)->id=vname) cspc.varDefns of
@@ -936,7 +936,7 @@ I2LToC qualifying spec {
       | Var("TRUE",Int) -> true
       | Var("FALSE",Int) -> true
       | Field [] -> true
-      | Field (e::es) -> (constExpr?(cspc,e)) & (constExpr?(cspc,Field es))
+      | Field (e::es) -> (constExpr?(cspc,e)) && (constExpr?(cspc,Field es))
       | _ -> false
 
 
@@ -1216,7 +1216,7 @@ I2LToC qualifying spec {
 
   op qname2id: String * String -> String
   def qname2id(qualifier,id) =
-    let quali = if qualifier = UnQualified or qualifier = "" or qualifier = "#return#" 
+    let quali = if qualifier = UnQualified || qualifier = "" || qualifier = "#return#" 
 		  then "" else qualifier^"_" in
     cString (quali^id)
     %cString(id)

@@ -119,7 +119,7 @@ AnnSpecPrinter qualifying spec
  def isShortTuple (i, row) = 
    case row of
      | []           -> true
-     | (lbl, r) :: row -> lbl = Nat.toString i & isShortTuple (i + 1, row)
+     | (lbl, r) :: row -> lbl = Nat.toString i && isShortTuple (i + 1, row)
       
 
  def initialize (pp, printSort?) : PrContext = 
@@ -1012,13 +1012,13 @@ AnnSpecPrinter qualifying spec
    in
    let index1 = -(index + 1) in
    let defined? = definedOpInfo? info in
-   let button1 = (if markSubterm? context & ~ defined? then
+   let button1 = (if markSubterm? context && ~ defined? then
 		    PrettyPrint.buttonPretty (~(IntegerSet.member (context.indicesToDisable, index1)), 
 					      index1, string " ", false)
 		  else 
 		    string "")
    in
-   let button2 = (if markSubterm? context & ~ defined? then
+   let button2 = (if markSubterm? context && ~ defined? then
 		    PrettyPrint.buttonPretty (IntegerSet.member (context.sosIndicesToEnable, index1), 
 					      index1, string " ", true)
 		  else 
@@ -1052,7 +1052,7 @@ AnnSpecPrinter qualifying spec
        (1, blockFill (0, 
                       [(0, pp.Op)] ++ 
                        %(0, string " "),
-                       (if printOpWithDef? & tvs ~= []
+                       (if printOpWithDef? && tvs ~= []
                           then [(0, ppForallTyVars pp tvs), (0, string " ")]
                         else []) ++
                        [(0, ppOpNames ())]

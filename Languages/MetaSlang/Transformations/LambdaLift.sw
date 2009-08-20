@@ -351,7 +351,7 @@ def patternVars (pat:Pattern): List Var =
      let unitClosureOp = makeUnitClosureOp () in
      case term of
        | Apply (t1, t2, _) ->
-         if (t1 = closureOp) or (t1 = unitClosureOp) then 
+         if (t1 = closureOp) || (t1 = unitClosureOp) then 
 	   term
 	 else 
 	   mkApply (makeUnitClosureOp (), term)

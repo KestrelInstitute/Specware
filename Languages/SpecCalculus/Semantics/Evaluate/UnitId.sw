@@ -101,7 +101,7 @@ These are called only from evaluateUID.
       | [] -> raise (FileNotFound (position,relUID))
       | ((unitId,fileName)::rest) -> {
             test <- fileExistsAndReadable? fileName;
-            if test & ~(inSameFile?(unitId,currentUID)) then {
+            if test && ~(inSameFile?(unitId,currentUID)) then {
 	      saveUID <- getCurrentUID;
 	      saveLocalContext <- getLocalContext;
 	      setCurrentUID unitId;
@@ -415,7 +415,7 @@ aren't are removed from the environment.
 			       return (max(val, dVal))})
 	                     timeStamp 
 			     depUIDs;
-	       if timeStamp >= rVal & upToDateOrNotPresent?(unitId,rVal) then
+	       if timeStamp >= rVal && upToDateOrNotPresent?(unitId,rVal) then
 		 {setValidatedUID unitId;  % Remember that this unitId has been validated
 		  return rVal}
 	       else 
@@ -428,5 +428,5 @@ aren't are removed from the environment.
   def upToDateOrNotPresent?(unitId,timeStamp) =
     let fileName = (uidToFullPath unitId) ^ ".sw" in
     let writeTime = fileWriteTime fileName in
-    writeTime <= timeStamp or writeTime = nullFileWriteTime
+    writeTime <= timeStamp || writeTime = nullFileWriteTime
 endspec

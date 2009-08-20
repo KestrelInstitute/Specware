@@ -77,7 +77,7 @@ The conditions for a diagram expression to be valid include:
              | Morph morph ->
                 if edgeInDiagram? dgm edgeId then
                   if (domNode = Sketch.eval (src (shape dgm)) edgeId)
-                   & (codNode = Sketch.eval (target (shape dgm)) edgeId) then
+                   && (codNode = Sketch.eval (target (shape dgm)) edgeId) then
                     if (morph = edgeLabel dgm edgeId) then
                       return (dgm, max (timeStamp, termTime), listUnion (depUIDs, termDeps))
                     else

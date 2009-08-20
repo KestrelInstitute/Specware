@@ -156,7 +156,7 @@ hash suffix is ignored.
    %% More efficient
    let tildaPath? = (hd path = "~") in
    let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-			        [] (if tildaPath? or device? then tl path else path))
+			        [] (if tildaPath? || device? then tl path else path))
    in if tildaPath?
 	then "~" ^ mainPath
 	else if device?
@@ -201,7 +201,7 @@ This is like the above but accommodates the suffix as well.
    let device? = deviceString? (hd path) in
    let tildaPath? = (hd path = "~") in
    let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-                                [] (if tildaPath? or device? then tl path else path))
+                                [] (if tildaPath? || device? then tl path else path))
    in
    let fileName =
      if tildaPath? then

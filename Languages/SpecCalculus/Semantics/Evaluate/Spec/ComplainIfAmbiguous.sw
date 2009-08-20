@@ -48,7 +48,7 @@ SpecCalc qualifying spec
                            []
 			   spc.ops
    in
-   if ambiguous_sorts = [] & bad_fixity_ops = [] & ambiguous_ops = [] then
+   if ambiguous_sorts = [] && bad_fixity_ops = [] && ambiguous_ops = [] then
      (Some spc, None)
    else
      let sort_msg = 

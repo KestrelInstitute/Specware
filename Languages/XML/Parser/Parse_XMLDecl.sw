@@ -63,7 +63,7 @@ XML qualifying spec
 	 %% [KWFC: XML Decl]
 	 if well_formed_xml_decl? tag then
 	   return (Some tag, tail)
-	 else if (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml")))) then
+	 else if (~ ((tag.prefix = (ustring "?")) && (tag.name = (ustring "xml")))) then
 	   return (None, start)
          else
 	   %% Tag starts with '<?xml', but isn't a legal xml decl.  Find out why.
@@ -201,7 +201,7 @@ XML qualifying spec
 	 %% [KWFC: Text Decl]
 	 if well_formed_text_decl? tag then
 	   return (Some tag, tail)
-	 else if (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml")))) then
+	 else if (~ ((tag.prefix = (ustring "?")) && (tag.name = (ustring "xml")))) then
 	   return (None, start)
          else
 	   %% Tag starts with '<?xml', but isn't a legal text decl.  Find out why.

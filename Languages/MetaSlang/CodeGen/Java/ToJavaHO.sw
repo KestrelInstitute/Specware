@@ -108,36 +108,36 @@ spec
 %               | _ -> fail("can't happen: srt in translateStandAloneOpToExpr is not an arrow sort: "^printSort(srt))
 %     in
      let Qualified(spcname,id) = qid in
-     if (id = "+" or id = "-" or id = "*" or id = "div" or id = "mod") &
-       (spcname = "Integer" or spcname = "Nat" or spcname = "PosNat")
+     if (id = "+" || id = "-" || id = "*" || id = "div" || id = "mod") &&
+       (spcname = "Integer" || spcname = "Nat" || spcname = "PosNat")
        then
 	 %v3:p44:r11
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int","int"],"int"),(["Integer","Integer"],"Integer"),k,l)
      else
-     if (id = "&&" || id = "&" || id = "||" || id = "or") &
+     if (id = "&&" || id = "&" || id = "||" || id = "or") &&
         (spcname = "Boolean")
        then
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standaloneM(mkReturnStmt(rexp),(["boolean","boolean"],"boolean"),(["Boolean","Boolean"],"Boolean"),k,l)
      else
-     if (id = "<" or id = "<=" or id = ">" or id = ">=") &
-       (spcname = "Integer" or spcname = "Nat" or spcname = "PosNat")
+     if (id = "<" || id = "<=" || id = ">" || id = ">=") &&
+       (spcname = "Integer" || spcname = "Nat" || spcname = "PosNat")
        then
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int","int"],"boolean"),(["Integer","Integer"],"Boolean"),k,l)
      else
-     if (id = "-") & (spcname = "IntegerAux")
+     if (id = "-") && (spcname = "IntegerAux")
        then
 	 let rexp = mkUnExp("-",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int"],"int"),(["Integer"],"Integer"),k,l)
      else	 
-     if (id = "~") & (spcname = "Integer") % deprecated
+     if (id = "~") && (spcname = "Integer") % deprecated
        then
 	 let rexp = mkUnExp("-",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int"],"int"),(["Integer"],"Integer"),k,l)
      else	 
-     if (id = "~") & (spcname = "Boolean")
+     if (id = "~") && (spcname = "Boolean")
        then
 	 let rexp = mkUnExp("~",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["boolean"],"boolean"),(["Boolean"],"Boolean"),k,l)

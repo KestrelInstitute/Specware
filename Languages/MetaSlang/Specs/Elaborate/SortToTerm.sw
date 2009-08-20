@@ -189,10 +189,10 @@ XML qualifying spec
 	  | Subsort   (t, pred, pos)  -> scan (table,t)
 	  | Base      (nm, srts, pos) -> (let already_seen? = 
 					      (foldl (fn (seen?,(old_srt, _)) -> 
-						      seen? or (case old_srt of
+						      seen? || (case old_srt of
 								  | Base (old_nm, _, _) -> 
 								    (nm = old_nm 
-								     or 
+								     || 
 								     %% Treat List.List as permanently seen,
 								     %% because it needs special treatment.
 								     %% In particular, it's recursive expansion 

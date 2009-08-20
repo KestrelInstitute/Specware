@@ -857,10 +857,10 @@ If we want the precedence to be optional:
    ;; "~" is treated specially: see semantics.lisp
    ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator,
    ;; so we don't make "~" a keyword (which would exclude the latter)
-   ((:tuple "&")   (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ;; ((:tuple "&")   (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "&&")  (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "\\_and")  (make-fun '(:|And|)    MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ;; ((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "||")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "\\_or")  (make-fun '(:|Or|)      MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "=>")  (make-fun '(:|Implies|)   MS::binaryBoolSort ':left-lcb ':right-lcb))

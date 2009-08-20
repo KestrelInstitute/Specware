@@ -268,15 +268,15 @@ I2L qualifying spec {
     mapExpression (fn(e) ->
 		   case e of
                      | Var(id1,id2) ->
-		       if (id1=old1)&(id2=old2) then Var(newvar) else e
+		       if (id1=old1)&&(id2=old2) then Var(newvar) else e
                      | VarRef(id1,id2) ->
-		       if (id1=old1)&(id2=old2) then VarRef(newvar) else e
+		       if (id1=old1)&&(id2=old2) then VarRef(newvar) else e
 		     | VarDeref(id1,id2) ->
-		       if (id1=old1)&(id2=old2) then VarDeref(newvar) else e
+		       if (id1=old1)&&(id2=old2) then VarDeref(newvar) else e
 		     | FunCall((id1,id2),p,x) ->
-		       if (id1=old1)&(id2=old2) then FunCall(newvar,p,x) else e
+		       if (id1=old1)&&(id2=old2) then FunCall(newvar,p,x) else e
 		     | FunCallDeref((id1,id2),p,x) ->
-		       if (id1=old1)&(id2=old2) then FunCallDeref(newvar,p,x) else e
+		       if (id1=old1)&&(id2=old2) then FunCallDeref(newvar,p,x) else e
 		     | _ -> e) expr
 		     
 
@@ -285,7 +285,7 @@ I2L qualifying spec {
     mapExpression (fn(e) ->
 		   case e of
                      | Var(id1,id2) ->
-		       if (id1=v1)&(id2=v2) then sexpr else e
+		       if (id1=v1)&&(id2=v2) then sexpr else e
 		     | _ -> e) expr
 
   % --------------------------------------------------------------------------------

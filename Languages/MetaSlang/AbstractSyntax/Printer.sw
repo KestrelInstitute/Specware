@@ -94,15 +94,15 @@ AnnTermPrinter qualifying spec {
   %% ========================================================================
 
   def ppAsciiId (Qualified (qualifier, id) : QualifiedId) = 
-   string (if qualifier = UnQualified  or
+   string (if qualifier = UnQualified  ||
               %% TODO:  What if there is an unqualified Nat as well as Nat.Nat ?
               %%        Perhaps that should be disallowed. (It is now).
-              qualifier = "Nat"        or 
-              qualifier = "String"     or
-              qualifier = "Integer"    or
-	      qualifier = "IntegerAux" or 
-              qualifier = "General"    or
-              qualifier = "Char"       or
+              qualifier = "Nat"        || 
+              qualifier = "String"     ||
+              qualifier = "Integer"    ||
+	      qualifier = "IntegerAux" || 
+              qualifier = "General"    ||
+              qualifier = "Char"       ||
               qualifier = "List" 
              then 
                id

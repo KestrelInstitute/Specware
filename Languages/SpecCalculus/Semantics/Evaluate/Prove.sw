@@ -217,7 +217,7 @@ SpecCalc qualifying spec
    let Qualified(pq, pid) = pn in
    if cq = UnQualified
      then pid = cid
-   else cq = pq & cid = pid
+   else cq = pq && cid = pid
 
  op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * String * 
                   Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean

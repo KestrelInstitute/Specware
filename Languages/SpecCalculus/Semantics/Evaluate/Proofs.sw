@@ -173,7 +173,7 @@ spec
    let props = allProperties usedSpc in
    let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
 			                  ~(member(propName, previousPropNames))
-			                  & ~(propType = Axiom)) props in
+			                  && ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name,
 				   prover_options, globalContext, swpath, fileUID))
      localProps
@@ -184,7 +184,7 @@ spec
    let props = allProperties usedSpc in
    let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
 			                  ~(member(propName, previousPropNames))
-			                  & ~(propType = Axiom)) props in
+			                  && ~(propType = Axiom)) props in
    map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
  % The difference between generateProofsInSpecLocal and generateLocalProofsInSpec is that generateProofsInSpecLocal is used by the
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.31  2008/09/14 14:27:14  mcdonald
+%% massive update to use reversed order of args for function passed to foldl
+%%
 %% Revision 1.30  2007/05/24 00:41:05  westfold
 %% Remove WFO spec move wfo to Functions
 %% Improve SNARK's handling of succ

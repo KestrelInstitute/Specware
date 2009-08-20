@@ -18,13 +18,13 @@ spec
 
   axiom connected is fa (z : EquivalenceClass)
                      fa (x : Element, y : Element)
-		     class_member(x,z) & class_member(y,z) => equiv(x,y)
+		     class_member(x,z) && class_member(y,z) => equiv(x,y)
 
   axiom disjoint is fa (z : QuotientSet) 
                     fa (x : EquivalenceClass, y : EquivalenceClass)
 		    fa (xx : Element, yy : Element)
-		    qset_member(x,z) & qset_member(y,z) & ~(x=y) =>
-		    class_member(xx,x) & class_member (yy,y) => ~(equiv(xx,yy))
+		    qset_member(x,z) && qset_member(y,z) && ~(x=y) =>
+		    class_member(xx,x) && class_member (yy,y) => ~(equiv(xx,yy))
 
 endspec
 
