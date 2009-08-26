@@ -61,7 +61,7 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
-		(require :sb-sprof)
+		; (require :sb-sprof)
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
