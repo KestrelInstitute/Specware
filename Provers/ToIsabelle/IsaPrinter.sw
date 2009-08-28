@@ -2293,8 +2293,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                     | RecordPat(("1",_)::_,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
                       prBreak 2 [prSpace,
                                  prPostSep 2 blockFill prSpace
-                                   (map (\_lambda p \_rightarrow enclose?(embed? EmbedPat pat,
-                                                          ppPattern c p wildstr))
+                                   (map (\_lambda p \_rightarrow enclose?(case p of
+                                                        | EmbedPat(_, Some _, _, _)-> true
+                                                        | AliasPat _ -> true
+                                                        | _ -> false,
+                                                        ppPattern c p wildstr))
                                     (patternToList pat))]
                     | WildPat (pty,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
                       let tys = productSorts(getSpec c, pty) in
