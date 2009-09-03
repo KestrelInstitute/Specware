@@ -66,9 +66,9 @@
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
-	    `(unless (find-package "SPECWARE") 
-	       (defpackage "SPECWARE" (:use "CL")))
-	    `(set (intern "*USING-SLIME-INTERFACE?*" "SPECWARE") t)
+	    `(unless (find-package "Specware") 
+	       (defpackage "Specware" (:use "CL")))
+	    `(set (intern "*USING-SLIME-INTERFACE?*" "Specware") t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
 ;;; based on slime-repl-return
@@ -256,7 +256,7 @@ If NEWLINE is true then add a newline at the end of the input."
     ;;(delete-other-windows)
     (while (not (ignore-errors (slime-connect "localhost" slime-port)))
       (sleep-for 0.2))
-    (slime-eval-async '(setq specware::*using-slime-interface?* t))))
+    (slime-eval-async '(setq Specware::*using-slime-interface?* t))))
 
 (defvar specware-listener-p nil)
 
@@ -371,7 +371,7 @@ to end end."
 (defun slime-repl-update-banner ()
   (let* ((banner (format "%s %s on %s %s"
                          sw:system-name
-			 (sw:eval-in-lisp "(if (boundp '*Specware-version*) *Specware-version* \"\")")
+			 (sw:eval-in-lisp "(if (boundp '*Specware-Version*) *Specware-Version* \"\")")
                          (slime-lisp-implementation-type)
 			 (slime-lisp-implementation-version)
                          ;(slime-connection-port (slime-connection))

@@ -41,7 +41,7 @@
 (defvar sw:*current-specware-process* nil)
 
 ;;;(defun sw:eval-in-lisp (string)
-;;;  (fi:eval-in-lisp (format "(emacs::make-process '%s)" string)))
+;;;  (fi:eval-in-lisp (format "(Emacs::make-process '%s)" string)))
 
 
 (defun send-message-to-lisp (string)

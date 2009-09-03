@@ -512,12 +512,12 @@
 
 (defun return-string-from-buffer ()
   (interactive)
-  (send-preemptive-message-to-lisp (format "(emacs::parseTerm %S)" (buffer-string)))
+  (send-preemptive-message-to-lisp (format "(Emacs::parseTerm %S)" (buffer-string)))
   (delete-frame))
 
 (defun cancel-string-from-buffer ()
   (interactive)
-  (send-preemptive-message-to-lisp "(emacs::parseTerm \"\")")
+  (send-preemptive-message-to-lisp "(Emacs::parseTerm \"\")")
   (delete-frame))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -556,12 +556,12 @@
  
 (defun return-choice-from-buffer (choice event) 
   (interactive) 
-  (send-preemptive-message-to-lisp (format "(emacs::choiceItem %S)" choice)) 
+  (send-preemptive-message-to-lisp (format "(Emacs::choiceItem %S)" choice)) 
   (delete-frame (event-frame event))) 
  
 (defun cancel-choice-from-buffer (event) 
   (interactive "e") 
-  (send-preemptive-message-to-lisp "(emacs::choiceItem -1)") 
+  (send-preemptive-message-to-lisp "(Emacs::choiceItem -1)") 
   (delete-frame (event-frame event))) 
 
 (defvar *numbered-choices*)
@@ -607,14 +607,14 @@
 				  (message "%s set of support"
 					   (if value "Adding to" "Removing from"))
 				  (send-message-to-lisp
-				   (format "(emacs::toggleSosIndex %s %s)" thm-number value))))
+				   (format "(Emacs::toggleSosIndex %s %s)" thm-number value))))
 			    (lambda(widget &rest ignore)
 			      (let ((value (widget-value widget))
 				    (thm-number (widget-get widget 'thm-number)))
 				(message "%s property"
 					 (if value "Enabling" "Disabling"))
 				(send-message-to-lisp
-				 (format "(emacs::toggleIndex %s %s)" thm-number value)))))
+				 (format "(Emacs::toggleIndex %s %s)" thm-number value)))))
 			  :value enabled)))
     (widget-put w 'thm-number thm-number)
     w))

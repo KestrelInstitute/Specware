@@ -1306,7 +1306,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (let ((rawpath (or (sw:eval-in-lisp "(cl-user::get-swpath)") ""))
 	(delim (if (eq window-system 'mswindows) ?\; ?:))
 	(result ())
-	(specware4 (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
+	(specware4 (sw:eval-in-lisp "(Specware::getenv \"SPECWARE4\")"))
 	pos)
     (when (member rawpath '(nil NIL))		; SWPATH not set -- be agnostic about case
       (setq rawpath specware4)
@@ -1427,7 +1427,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		'(t T))
 	(sw:eval-in-lisp-no-value
 	   "(let (*redefinition-warnings*)
-              (specware::compile-and-load-lisp-file %S))"
+              (Specware::compile-and-load-lisp-file %S))"
 	   temp-file-name)
       (message "Specware Processing Failed!"))))
 
@@ -2085,9 +2085,9 @@ uniquely and concretely describes their application.")
     (sit-for 1 t))
   (simulate-input-expression
    (if non-rec
-       (format "(specware-test::run-test-directories %S)"
+       (format "(Specware-Test::run-test-directories %S)"
 	       default-directory)
-     (format "(specware-test::run-test-directories-rec %S)"
+     (format "(Specware-Test::run-test-directories-rec %S)"
 	     default-directory))))
 
 ;;; For Gnu Emacs. This will be already defined in xemacs

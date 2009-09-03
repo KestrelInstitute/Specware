@@ -140,9 +140,9 @@
 			sw:common-lisp-image-file))
       (wait-for-prompt 0.1)
       (sw:eval-in-lisp-no-value
-       (format "(cl:namestring (specware::change-directory %S))" sw:common-lisp-directory))
+       (format "(cl:namestring (Specware::change-directory %S))" sw:common-lisp-directory))
       (let ((init-form (or (getenv "SPECWARE_INIT_FORM")
-			   "(swshell::specware-shell nil)")))
+			   "(SWShell::specware-shell nil)")))
 	(goto-char (point-max))
 	(if (eq lisp-emacs-interface-type 'slime)
 	    (unless (member init-form '(nil "" "NIL"))
@@ -338,8 +338,8 @@ sLisp Heap Image File: ")
 
 (defun exit-form ()
   (if (eq lisp-emacs-interface-type 'slime)
-      "(specware::exit-when-done)"
-    "(specware::exit)"))
+      "(Specware::exit-when-done)"
+    "(Specware::exit)"))
 
 ;(defun exit-lisp ()
 ;  (if (eq lisp-emacs-interface-type 'slime)
@@ -421,15 +421,15 @@ sLisp Heap Image File: ")
        (format "(cl:load %S)"
                (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
       (eval-in-lisp-in-order
-       (format "(specware::setenv \"SWPATH\" %S)"
+       (format "(Specware::setenv \"SWPATH\" %S)"
                (concat (sw::normalize-filename *specware4-dir)
                        (if *windows-system-p* ";" ":")
                        slash-dir)))
       (eval-in-lisp-in-order
-       (format "(specware::setenv \"SPECWARE4\" %S)"
+       (format "(Specware::setenv \"SPECWARE4\" %S)"
                (sw::normalize-filename *specware4-dir)))
       (eval-in-lisp-in-order
-       (format "(cl:namestring (specware::change-directory %S))" build-dir))
+       (format "(cl:namestring (Specware::change-directory %S))" build-dir))
       (eval-in-lisp-in-order "(cl:time (cl:load \"Specware4.lisp\"))")
       (continue-form-when-ready
        ;; continue-form-when-ready kills the sublisp process, 
@@ -473,17 +473,17 @@ sLisp Heap Image File: ")
    (format "(cl:load %S)"
 	   (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities." *fasl-extension*)))
   (sit-for 3)
-  (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
+  (eval-in-lisp-in-order (format "(Specware::setenv \"SWPATH\" %S)"
 				    (concat (sw::normalize-filename *specware4-dir)
 					    (if *windows-system-p* ";" ":")
 					    slash-dir)))
-  (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
+  (eval-in-lisp-in-order (format "(Specware::setenv \"SPECWARE4\" %S)"
 				    (sw::normalize-filename *specware4-dir)))
   (eval-in-lisp-in-order (format "(cl:load %S)"
 				 (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
   (eval-in-lisp-in-order (format "(cl:load %S)"
 				 (concat *specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
-  (eval-in-lisp-in-order (format "(cl:namestring (specware::change-directory %S))" 
+  (eval-in-lisp-in-order (format "(cl:namestring (Specware::change-directory %S))" 
 				 build-dir))
   (eval-in-lisp-in-order "(cl-user::set-gc-parameters-for-build nil)")
   (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
@@ -547,18 +547,18 @@ sLisp Heap Image File: ")
     (eval-in-lisp-in-order
      (format "(cl:load %S)"
 	     (concat *specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
-    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
+    (eval-in-lisp-in-order (format "(Specware::setenv \"SWPATH\" %S)"
 				   (concat (sw::normalize-filename *specware4-dir)
 					   (if *windows-system-p* ";" ":")
 					   slash-dir)))
-    (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
+    (eval-in-lisp-in-order (format "(Specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename *specware4-dir)))
         
     (when (file-exists-p specware4-lisp)
       (copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
     (when (file-exists-p specware4-base-lisp)
       (copy-file specware4-base-lisp specware4-lisp t))
-    (eval-in-lisp-in-order (format "(cl:namestring (specware::change-directory %S))" dir))
+    (eval-in-lisp-in-order (format "(cl:namestring (Specware::change-directory %S))" dir))
     (eval-in-lisp-in-order "(cl:load \"Specware4.lisp\")")
     (continue-form-when-ready
      ;; continue-form-when-ready kills the sublisp process, 
@@ -711,10 +711,10 @@ sLisp Heap Image File: ")
     (run-specware4 *specware4-dir)
     (sit-for 0.1)
     (eval-in-lisp-in-order
-     (format "(cl:namestring (specware::change-directory %S))" *specware4-dir))
-;    (eval-in-lisp-in-order (format "(specware::setenv \"SWPATH\" %S)"
+     (format "(cl:namestring (Specware::change-directory %S))" *specware4-dir))
+;    (eval-in-lisp-in-order (format "(Specware::setenv \"SWPATH\" %S)"
 ;				   (concat (sw::normalize-filename *specware4-dir))))
-    (eval-in-lisp-in-order (format "(specware::setenv \"SPECWARE4\" %S)"
+    (eval-in-lisp-in-order (format "(Specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename *specware4-dir)))
     (eval-in-lisp-in-order "(progn #+allegro(sys::set-stack-cushion 10000000)
                                    #-allegro())")

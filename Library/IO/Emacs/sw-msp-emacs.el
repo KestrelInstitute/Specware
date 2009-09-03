@@ -186,7 +186,7 @@ Arguments are:
 		  (progn
 		    (setq *selecting-mspe-object?* nil)
 		    (send-preemptive-message-to-lisp
-		     (format "(emacs::mspe-object-selected %d)" obj-num)))))))))
+		     (format "(Emacs::mspe-object-selected %d)" obj-num)))))))))
 
 
 (defun sw-erase-buffer (buf)

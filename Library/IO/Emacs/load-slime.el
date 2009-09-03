@@ -119,4 +119,4 @@ See list-motion-handlers for more details."
 ;; a hack to simplify writing scripts (e.g. for testing) 
 ;; that run lisp under emacs and then exit
 (defun sw:kill-emacs-and-then-lisp ()
-  (simulate-input-expression "(emacs::kill-emacs-and-then-lisp)"))
+  (simulate-input-expression "(Emacs::kill-emacs-and-then-lisp)"))
