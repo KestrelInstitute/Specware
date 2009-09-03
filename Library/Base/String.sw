@@ -2,8 +2,8 @@ String qualifying spec
 
 import Character, List
 
-(* A string is a finite sequence of characters (of type Char). Thus, we define
-type String by isomorphism with lists of characters. *)
+(* A string is a finite sequence of characters (of type Char). Thus, we define type
+   String by isomorphism with lists of characters. *)
 
 type String.String  % qualifier required for internal parsing reasons
 
