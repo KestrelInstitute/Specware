@@ -164,8 +164,8 @@ theorem FSet__e_ast__stp_Obligation_subtype:
        (FSet__fromFSet__stp P__a s1 
           <*> FSet__fromFSet__stp P__b s2)\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp
-      (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
-      (RSet (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+      (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
+      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
           (FSet__fromFSet__stp P__a s1 
              <*> FSet__fromFSet__stp P__b s2))"
    sorry
@@ -367,7 +367,7 @@ defs FSet__foldable_p_def:
           Set__foldable_p(c, f, FSet__fromFSet s))"
 theorem FSet__fold__stp_Obligation_subtype: 
   "\<lbrakk>FSet__FSet_P P__a s; 
-    Fun_PD (\<lambda> (ignore1, (x1::'a)). P__a x1) (f::'b \<times> 'a \<Rightarrow> 'b); 
+    Fun_PD (\<lambda> (ignore1, (x_2::'a)). P__a x_2) (f::'b \<times> 'a \<Rightarrow> 'b); 
     FSet__foldable_p__stp(P__a, TRUE)((c::'b), f, s); 
     Set__finite_p__stp P__a (FSet__fromFSet__stp P__a s)\<rbrakk> \<Longrightarrow> 
    Set__foldable_p__stp(P__a, TRUE)(c, f, FSet__fromFSet__stp P__a s)"

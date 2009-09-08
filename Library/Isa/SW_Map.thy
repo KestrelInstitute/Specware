@@ -21,7 +21,7 @@ defs MapAC__undefinedAt_def:
   "(m undefinedAt x) \<equiv> (x \<notin> Relation__domain m)"
 theorem MapAC__e_at__stp_Obligation_the: 
   "\<lbrakk>Relation__functional_p__stp(TRUE, P__b) (m::('a \<times> 'b) set); 
-    Set_P (\<lambda> (ignore1, (x1::'b)). P__b x1) m; 
+    Set_P (\<lambda> (ignore1, (x_2::'b)). P__b x_2) m; 
     MapAC__definedAt__stp P__b((m:: ('a, 'b)Relation__Relation), (x::'a))\<rbrakk> \<Longrightarrow> 
    \<exists>!(y::'b). P__b y \<and> (x, y) \<in> m"
    sorry
@@ -53,7 +53,7 @@ defs e_at_at_m_def:
   "(m @@_m x) \<equiv> (if m definedAt x then Some (m @_m x) else None)"
 theorem MapAC__map_result_in_range__stp: 
   "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m; 
     P__a (x::'a); 
     MapAC__definedAt__stp P__b(m, x)\<rbrakk> \<Longrightarrow> 
    m @_m x \<in> Relation__range__stp P__a m"
@@ -64,12 +64,12 @@ theorem MapAC__map_result_in_range:
    sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_the: 
   "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m2::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m2; 
     Relation__functional_p__stp(P__a, P__b) m1; 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m1\<rbrakk> \<Longrightarrow> 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m1\<rbrakk> \<Longrightarrow> 
    \<exists>!(m::('a \<times> 'b) set). 
      Relation__functional_p__stp(P__a, P__b) m 
-       \<and> (Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m 
+       \<and> (Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m 
         \<and> (RSet P__a (Relation__domain__stp P__b m) 
              = RSet P__a
                   (Relation__domain__stp P__b m1 
@@ -84,11 +84,11 @@ theorem MapAC__e_lt_lt_lt__stp_Obligation_the:
    sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p__stp((P__a::'a \<Rightarrow> bool), P__b) (m2::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m2; 
     Relation__functional_p__stp(P__a, P__b) (m1::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m1; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m1; 
     Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m; 
     P__a (x::'a); 
     RSet P__a (Relation__domain__stp P__b m) 
       = RSet P__a
@@ -100,11 +100,11 @@ theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype:
    sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype0: 
   "\<lbrakk>Relation__functional_p__stp((P__a::'a \<Rightarrow> bool), P__b) (m2::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m2; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m2; 
     Relation__functional_p__stp(P__a, P__b) (m1::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m1; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m1; 
     Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m; 
     P__a (x::'a); 
     RSet P__a
        (Relation__domain__stp P__b (m:: ('a, 'b)Relation__Relation)) 
@@ -128,7 +128,7 @@ defs MapAC__e_lt_lt_lt__stp_def:
             (THE (m::('a \<times> 'b) set). 
             (Relation__functional_p__stp(P__a, P__b) m 
                \<and> Set_P
-                    (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m) 
+                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m) 
               \<and> (RSet P__a (Relation__domain__stp P__b m) 
                    = RSet P__a
                         (Relation__domain__stp P__b m1 
@@ -191,13 +191,14 @@ defs MapAC__e_lt_lt_lt_def:
                             m1 @_m x))))"
 theorem MapAC__update__stp_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p__stp(P__a, P__b) (m::('a \<times> 'b) set); 
-    Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) m; 
+    Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m; 
     P__a x; 
     P__b y; 
     Set_P (\<lambda> ((xp0::'a), (xp1::'b)). P__a xp0 \<and> P__b xp1)
        (Set__single(x, y))\<rbrakk> \<Longrightarrow> 
    Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1) (Set__single(x, y)))"
+      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
+          (Set__single(x, y)))"
    sorry
 consts MapAC__update__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)Relation__Relation \<Rightarrow> 
@@ -211,7 +212,7 @@ defs MapAC__update__stp_def:
                 MapAC__e_lt_lt_lt__stp(P__a, P__b)
                   (m, 
                    RFun
-                      (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+                      (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                       (Set__single(x, y))))"
 theorem MapAC__update_Obligation_subtype: 
   "Relation__functional_p (Set__single(x, y))"
@@ -239,7 +240,8 @@ defs MapAC__agree_p__stp_def:
           \<lambda> ((m1:: ('a, 'b)Relation__Relation), 
              (m2:: ('a, 'b)Relation__Relation)). 
             Relation__functional_p__stp(P__a, P__b)
-               (RFun (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)
+               (RFun
+                   (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                    (m1 \<union> m2)))"
 consts MapAC__agree_p :: " ('a, 'b)Relation__Map \<times>  ('a, 'b)Relation__Map \<Rightarrow> 
                           bool"
@@ -261,9 +263,10 @@ defs MapAC__fromFunction_def:
 theorem MapAC__toFunction__stp_Obligation_subtype: 
   "Function__bijective_p__stp
      (Fun_P(P__a, P__b), 
-      Relation__total_p__stp(P__a, P__b) 
-        &&& (Relation__functional_p__stp(P__a, P__b) 
-           &&& Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1)))
+      (Relation__total_p__stp(P__a, P__b) 
+         &&& Relation__functional_p__stp(P__a, P__b)) 
+        &&& Set_P
+               (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2))
       MapAC__fromFunction"
    sorry
 consts MapAC__toFunction__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
@@ -291,7 +294,8 @@ theorem MapAC__toPartialFun__stp_Obligation_subtype:
   "Function__bijective_p__stp
      (Fun_P(P__a, Option__Option_P P__b), 
       Relation__functional_p__stp(P__a, P__b) 
-        &&& Set_P (\<lambda> ((x0::'a), (x1::'b)). P__a x0 \<and> P__b x1))
+        &&& Set_P
+               (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2))
       MapAC__fromPartialFun"
    sorry
 consts MapAC__toPartialFun__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 

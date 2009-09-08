@@ -53,13 +53,15 @@ defs Order__linearOrder_p_def:
 types 'a Order__LinearOrder = "'a EndoRelation__EndoRelation"
 theorem Order__orderSubsumption__stp: 
   "Set__e_lt_eq__stp
-      (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+      (Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2))
      (Order__linearOrder_p__stp P__a, Order__weakOrder_p__stp P__a) 
      \<and> (Set__e_lt_eq__stp
-           (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+           (Set_P
+               (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2))
           (Order__weakOrder_p__stp P__a, Order__partialOrder_p__stp P__a) 
       \<and> Set__e_lt_eq__stp
-           (Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+           (Set_P
+               (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2))
           (Order__partialOrder_p__stp P__a, Order__preOrder_p__stp P__a))"
    sorry
 theorem Order__orderSubsumption: 
@@ -128,11 +130,12 @@ defs Order__strictify_def:
 theorem Order__unstrictify__stp_Obligation_subtype: 
   "Function__bijective_p__stp
      (EndoRelation__reflexive_p__stp P__a 
-        &&& Set_P (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1), 
+        &&& Set_P
+               (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2), 
       EndoRelation__irreflexive_p__stp P__a 
         &&& Set_P
-               (\<lambda> ((x0_1::'a), (x1_1::'a)). P__a x0_1 \<and> P__a x1_1))
-      Order__strictify"
+               (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
+                  P__a x_1_1 \<and> P__a x_2_1)) Order__strictify"
    sorry
 consts Order__unstrictify__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                    'a EndoRelation__EndoRelation \<Rightarrow> 
@@ -142,7 +145,7 @@ defs Order__unstrictify__stp_def:
      \<equiv> Function__inverse__stp
           (EndoRelation__reflexive_p__stp P__a 
              &&& Set_P
-                    (\<lambda> ((x0::'a), (x1::'a)). P__a x0 \<and> P__a x1))
+                    (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2))
           Order__strictify"
 theorem Order__unstrictify_Obligation_subtype: 
   "Function__bijective_p__stp
