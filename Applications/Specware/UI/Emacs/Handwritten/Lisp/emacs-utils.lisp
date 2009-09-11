@@ -27,8 +27,8 @@ Notes:
   (finish-output)
   (when *use-emacs-interface?*
     (if (and (fboundp 'swank::eval-string-in-emacs)
-	     (find-package "SPECWARE")
-	     (let ((x (find-symbol "*USING-SLIME-INTERFACE?*" "SPECWARE")))
+	     (find-package :Specware)
+	     (let ((x (find-symbol "*USING-SLIME-INTERFACE?*" :Specware)))
 	       (and x (symbol-value x))))
 	(funcall 'swank::eval-string-in-emacs string t)
       #+allegro

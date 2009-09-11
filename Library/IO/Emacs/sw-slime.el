@@ -66,9 +66,9 @@
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
 	       (load ,loader :verbose t))
-	    `(unless (find-package "Specware") 
-	       (defpackage "Specware" (:use "CL")))
-	    `(set (intern "*USING-SLIME-INTERFACE?*" "Specware") t)
+	    `(unless (find-package :Specware) 
+	       (defpackage :Specware (:use "CL")))
+	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
             `(swank:start-server ,port-filename :external-format ,encoding))))
 
 ;;; based on slime-repl-return
