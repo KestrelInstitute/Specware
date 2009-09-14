@@ -525,7 +525,9 @@
   ;; use find-symbol hack to avoid sbcl complaints about eval-in-emacs
   ;; not being defined at compile-time
   ;; (also avoids need to have swank package available yet)
-  (let ((e-in-e (find-symbol "EVAL-IN-EMACS" "SWANK")))
+  (let ((e-in-e (find-symbol #+case-sensitive "eval-in-emacs"
+                             #-case-sensitive "EVAL-IN-EMACS"
+                             :swank)))
     (wait "Commands in progress"
 	  #'(lambda () (<= (funcall e-in-e
 				    '(length (slime-rex-continuations)))

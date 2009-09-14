@@ -5,14 +5,14 @@
 ;; The functions here are referenced in code produced by 
 ;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
-(defpackage "SPECCALC")
-(defpackage :SLANG-BUILT-IN)
-(IN-PACKAGE :SLANG-BUILT-IN)
+(defpackage "SpecCalc")
+(defpackage :Slang-Built-In)
+(in-package :Slang-Built-In)
 
 ;; defvar specwareWizard? here (as opposed to def in Monad.sw) 
 ;; to avoid having CMUCL treat it as a constant, in which case
 ;; code under the false branch would be optimized away!
-(defvar SPECCALC::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
+(defvar SpecCalc::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
 
 (defparameter quotient-tag
   (list :|Quotient|))
