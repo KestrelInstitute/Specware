@@ -1496,6 +1496,12 @@ Utilities qualifying spec
       then None
       else Some exp_ty
 
+  op unfoldBase0 (spc: Spec) (ty: Sort): Sort =
+    let exp_ty = unfoldBaseOne(spc, ty) in
+    if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
+      then ty
+      else exp_ty
+
  op existsInFullType? (spc: Spec) (pred?: Sort -> Boolean) (ty: Sort): Boolean =
    pred? ty ||
    (case ty of
@@ -1669,7 +1675,7 @@ Utilities qualifying spec
      let def cst(rty1, rty2, ty1, ty2) =
        if equalType?(rty1, rty2) then ty1
        else
-       case raiseSubtypes(rty1, rty2, spc) of
+       case (rty1, rty2) of  %raiseSubtypes(rty1, rty2, spc) of
          | (rrty1, rrty2) ->
        % let _ = writeLine("lifted: "^printSort rrty1^"\n"^printSort rrty2) in
        case (rrty1, rrty2) of
@@ -1763,6 +1769,7 @@ Utilities qualifying spec
            [] rpredss
 
   op composeConjPreds(preds: List MS.Term, spc: Spec): MS.Term =
+    let preds = removeDuplicateTerms preds in
     case preds of
       | [pred] -> etaReduce pred
       | pred1::rpreds ->
@@ -1792,18 +1799,27 @@ Utilities qualifying spec
       | Base(qid, _, _) -> qid in? dontRaiseTypes
       | _ -> false
 
+  op namedTypesRaised?: Bool = true
+
+  op raiseSubtypes(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
+    % let _ = writeLine("\nrst: "^printSort ty1^" <> "^printSort ty2) in
+    let (r_ty1, r_ty2) =  raiseSubtypes1(ty1, ty2, spc) in
+  %  let uf_rty1 = unfoldBase0 spc rty1 in
+%    let uf_rty2 = unfoldBase0 spc rty2 in
+%    let r_ty1 = if embed? Subsort uf_rty1 then uf_rty1 else rty1 in
+%    let r_ty2 = if embed? Subsort uf_rty2 then uf_rty2 else rty2 in
+     % let _ = writeLine("rtd: "^printSort r_ty1^" <> "^printSort r_ty2^"\n") in
+    (r_ty1, r_ty2)      
+
   %% In most cases the raising of ty1 and ty2 is independent, but if both have Nat in the same places
   %% then we want to avoid expanding it
-  op raiseSubtypes(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
+  op raiseSubtypes1(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
   %% Bring subtypes to the top-level
     % let _ = writeLine("rts< "^printSort ty1^" <> "^printSort ty2) in
     let
-        def tryRaiseFromArgs(qid, args1, args2, a) =
-          let (args1, args2) =
-               if args2 = [] then (args1, map (fn _ -> boolSort) args1) % any sort other than Nat should do!
-                 else unzip(map (fn (tyi1, tyi2) -> raiseSubtypes(tyi1, tyi2, spc)) (zip(args1, args2)))
-          in
-          if exists (fn tyi1 -> embed? Subsort tyi1) args1
+        def tryRaiseFromArgs(ty, qid, args, a) =
+          % let _ = writeLine("trfa: "^printSort(Base(qid, args, a))) in
+          if exists (embed? Subsort) args
             then
             let Qualified(q,id) = qid in
             let pred_name = id^"_P" in
@@ -1814,110 +1830,139 @@ Utilities qualifying spec
                                       case subtypeComps(spc, tyi) of
                                         | Some pr -> pr
                                         | None -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
-                                   args1
+                                   args
                  in
                  let (bare_args, arg_preds) = unzip arg_comps in
                  let bare_ty = Base(qid, bare_args, a) in
                  let arg_preds_lst = decomposeListConjPred arg_preds in
                  let preds = map (fn arg_preds ->
-                                    mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
-                                                                              bare_args),
-                                                                  mkArrow(bare_ty, boolSort))),
+                                    mkAppl(mkOp(pred_qid,
+                                                mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
+                                                                    bare_args),
+                                                        mkArrow(bare_ty, boolSort))),
                                            arg_preds))
                                arg_preds_lst
                  in
+                 % let _ = writeLine("--> "^printSort(mkSubtypePreds(bare_ty, preds, a, spc))) in
                  Some(mkSubtypePreds(bare_ty, preds, a, spc))
                | None -> None)
           else None
 
+        def raiseBase ty =
+          % let _ = writeLine("rb: "^printSort ty) in
+          case unfoldBase0 spc ty of
+            | Subsort(_, pred, a) -> Subsort(ty, pred, a)
+            | _ -> ty          
+
+        def maybeComposeSubtypes(ty, pr1, a) =
+          % let _ = writeLine("mcs: "^printSort ty^" | "^printTerm pr1) in
+          case ty of
+            | Subsort(s_ty, pr2, _) -> composeSubtypes(s_ty, pr2, pr1, a, spc)
+            | _ -> Subsort(ty, pr1, a)
+
+        def maybeComposeWithRaisedBase ty =
+          % let _ = writeLine("mcrwb: "^printSort ty) in
+          case ty of
+            | Subsort(s_ty, pr1, a) ->
+              maybeComposeSubtypes(raiseBase s_ty, pr1, a)
+            | _ -> raiseBase ty
+
         def tryRaiseFields(flds1, flds2, a) =
-          if exists (fn ((_,tyi1), (_,tyi2)) -> ~(treatAsAtomicType? tyi1 && equalType?(tyi1, tyi2))
-                                             && subtype?(spc, tyi1))
-             (zip(flds1, flds2))
-          then let (bare_flds, arg_fld_vars, pred,_) =
-                foldl (fn ((bare_flds, arg_fld_vars, pred, i),(id,tyi1)) ->
-                         case subtypeComps(spc, tyi1) of
-                           | Some(t,p) -> let v = ("xp"^toString i, t)  in
-                                          (bare_flds ++ [(id,t)],
-                                           arg_fld_vars ++ [(id,mkVarPat v)],
-                                           mkAnd(pred, mkApply(p, mkVar v)),
-                                           i+1)
-                           | None -> (bare_flds ++ [(id,tyi1)],
-                                      arg_fld_vars ++ [(id,mkWildPat tyi1)],
-                                      pred,
-                                      i+1))
-                  ([],[],trueTerm,0) flds1
-               in
-               let r_ty = Subsort(Product(bare_flds,a), mkLambda(mkRecordPat arg_fld_vars, pred), a) in
-               % let _ = writeLine("()>: "^printSort r_ty) in
-               Some(r_ty)
-          else None
+          let def addField(id, l_ty, (n_flds, arg_fld_vars, pred, i)) =
+                case l_ty of
+                  | Subsort(t, p, _) ->
+                    let v = ("xf"^toString i, t) in
+                    (n_flds ++ [(id,t)],
+                     arg_fld_vars ++ [(id, mkVarPat v)],
+                     mkAnd(pred, mkApply(p, mkVar v)),
+                     i+1)
+                  | _ -> (n_flds ++ [(id, l_ty)],
+                          arg_fld_vars ++ [(id, mkWildPat l_ty)],
+                          pred,
+                          i+1)
+              def mkNonTrivSubsort(n_flds, arg_fld_vars, pred) =
+                let prod = Product(n_flds, a) in
+                if trueTerm? pred then prod
+                  else Subsort(prod, mkLambda(mkRecordPat arg_fld_vars, pred), a)
+          in
+          let ((n_flds1, arg_fld_vars1, pred1, _), (n_flds2, arg_fld_vars2, pred2, _)) =
+              foldl (fn ((info1, info2), ((id1, tyi1), (id2, tyi2))) ->
+                     let (r_tyi1, r_tyi2) = raiseSubtypes1(tyi1, tyi2, spc) in
+                  %   let _ = writeLine("Raising field "^id1^", "^id2^"\n("^
+%                                       printSort tyi1^", "^printSort tyi2^")\nto\n("^
+%                                       printSort r_tyi1^", "^printSort r_tyi2^")\n") in
+                     (addField(id1, r_tyi1, info1),
+                      addField(id2, r_tyi2, info2)))
+                (([],[],trueTerm,0), ([],[],trueTerm,0)) (zip(flds1, flds2))
+          in
+          (mkNonTrivSubsort(n_flds1, arg_fld_vars1, pred1),
+           mkNonTrivSubsort(n_flds2, arg_fld_vars2, pred2))
     in
     let (ty1, ty2) = 
     case (ty1, ty2) of
       | (Base(qid1, [], _), Base(qid2, [], _)) | qid1 in? dontRaiseTypes && qid2 = qid1 ->
         (ty1, ty2)
       | (Base(qid1, args1, a1), Base(qid2, args2, a2)) | qid1 = qid2 && length args1 = length args2  ->
-        let (args1, args2) = unzip(map (fn (tyi1, tyi2) -> raiseSubtypes(tyi1, tyi2, spc)) (zip(args1, args2))) in
-        (case (tryRaiseFromArgs(qid1, args1, args2, a1), tryRaiseFromArgs(qid2, args2, args1, a2)) of
-           | (Some st1, Some st2) -> raiseSubtypes(st1, st2, spc)
-           | (Some st1, None)     -> raiseSubtypes(st1, ty2, spc)
-           | (None,     Some st2) -> raiseSubtypes(ty1, st2, spc)
+        let Qualified(q,id) = qid1 in
+        let pred_name = id^"_P" in
+        let (args1, args2) = unzip(map (fn (tyi1, tyi2) -> raiseSubtypes1(tyi1, tyi2, spc)) (zip(args1, args2))) in
+        if (exists (embed? Subsort) args1
+              || exists (embed? Subsort) args2)
+          && embed? None (AnnSpec.findTheOp(spc, Qualified(q, pred_name)))
+          then raiseSubtypes1(unfoldBase0 spc ty1, unfoldBase0 spc ty2, spc)
+        else
+        (case (tryRaiseFromArgs(ty1, qid1, args1, a1),
+               tryRaiseFromArgs(ty2, qid2, args2, a2)) of
+           | (Some st1, Some st2) ->
+             (maybeComposeWithRaisedBase st1, maybeComposeWithRaisedBase st2)
+           | (Some st1, None)     -> raiseSubtypes1(maybeComposeWithRaisedBase st1, ty2, spc)
+           | (None,     Some st2) -> raiseSubtypes1(ty1, maybeComposeWithRaisedBase st2, spc)
            | (None, None) ->
-             (case (tryUnfoldBase spc ty1, tryUnfoldBase spc ty2) of
+             (if namedTypesRaised?
+              then (raiseBase ty1, raiseBase ty2)
+              else
+                case (tryUnfoldBase spc ty1, tryUnfoldBase spc ty2) of
                 | (None, None)                 -> (ty1, ty2)
-                | (Some exp_ty1, None)         -> raiseSubtypes(exp_ty1,     ty2, spc)
-                | (None, Some exp_ty2)         -> raiseSubtypes(ty1,     exp_ty2, spc)
-                | (Some exp_ty1, Some exp_ty2) -> raiseSubtypes(exp_ty1, exp_ty2, spc)))
+                | (Some exp_ty1, None)         ->
+                   raiseSubtypes1(exp_ty1,ty2, spc)
+                | (None, Some exp_ty2)         ->
+                   raiseSubtypes1(ty1, exp_ty2, spc)
+                | (Some exp_ty1, Some exp_ty2) ->
+                   raiseSubtypes1(exp_ty1, exp_ty2, spc)))
       | (Base(qid1, _, _), Base _) ->
         %% If one is a subtype of the other then unfold it first
         (if subtypeOf?(ty2, qid1, spc)
           then case tryUnfoldBase spc ty2 of
-                 | Some exp_ty2 -> raiseSubtypes(ty1, exp_ty2, spc)
+                 | Some exp_ty2 -> raiseSubtypes1(ty1, exp_ty2, spc)
                  | None -> (ty1, ty2)   % Shouldn't happen
           else case tryUnfoldBase spc ty1 of
-                 | Some exp_ty1 -> raiseSubtypes(exp_ty1, ty2, spc)
+                 | Some exp_ty1 -> raiseSubtypes1(exp_ty1, ty2, spc)
                  | None -> (raiseSubtype(ty1, spc), raiseSubtype(ty2, spc)))
       | (Subsort(s_ty1, p1, a1), Subsort(s_ty2, p2, a2)) ->
-        (case raiseSubtypes(s_ty1, s_ty2, spc) of
-           | (Subsort(sss_ty1, pr1, _), Subsort(sss_ty2, pr2, _)) ->
-             (composeSubtypes(sss_ty1, pr1, p1, a1, spc),
-              composeSubtypes(sss_ty2, pr2, p2, a2, spc))
-           | (Subsort(sss_ty1, pr1, _), nty2) ->
-             (composeSubtypes(sss_ty1, pr1, p1, a1, spc),
-              Subsort(nty2, p2, a2))
-           | (nty1, Subsort(sss_ty2, pr2, _)) ->
-             (Subsort(nty1, p1, a1),
-              composeSubtypes(sss_ty2, pr2, p2, a2, spc))
-           | (nty1, nty2) -> (Subsort(nty1, p1, a1), Subsort(nty2, p2, a2)))
+        let (rty1, rty2) = raiseSubtypes1(s_ty1, s_ty2, spc) in
+        (maybeComposeSubtypes(rty1, p1, a1), maybeComposeSubtypes(rty2, p2, a2))
       | (Subsort(s_ty1, p1, a1), _) ->
-        (case raiseSubtypes(s_ty1, ty2, spc) of
-           | (Subsort(sss_ty1, pr1, _), nty2) -> (composeSubtypes(sss_ty1, pr1, p1, a1, spc), nty2)
-           | (nty1, nty2) -> (Subsort(nty1, p1, a1), nty2))
+        let (rty1, rty2) = raiseSubtypes1(s_ty1, ty2, spc) in
+        (maybeComposeSubtypes(rty1, p1, a1), rty2)
       | (_, Subsort(s_ty2, p2, a2)) ->
-        (case raiseSubtypes(ty1, s_ty2, spc) of
-           | (nty1, Subsort(sss_ty2, pr2, _)) -> (nty1,composeSubtypes(sss_ty2, pr2, p2, a2, spc))
-           | (nty1, nty2) -> (nty1, Subsort(nty2, p2, a2)))
+        let (rty1, rty2) = raiseSubtypes1(ty1, s_ty2, spc) in
+        (rty1, maybeComposeSubtypes(rty2, p2, a2))
       | (_, Base(qid2, args2, a)) | qid2 nin? dontRaiseTypes ->
-        (case tryRaiseFromArgs(qid2, args2, [], a) of
-           | Some st2 -> raiseSubtypes(ty1, st2, spc)
+        (case tryRaiseFromArgs(ty2, qid2, args2, a) of
+           | Some st2 -> raiseSubtypes1(ty1, st2, spc)
            | None ->
          case tryUnfoldBase spc ty2 of
-           | Some exp_ty2 -> raiseSubtypes(ty1, exp_ty2, spc)
+           | Some exp_ty2 -> raiseSubtypes1(ty1, exp_ty2, spc)
            | None -> (raiseSubtype(ty1, spc), ty2))
       | (Base(qid1, args1, a), _) | qid1 nin? dontRaiseTypes ->
-        (case tryRaiseFromArgs(qid1, args1, [], a) of
-           | Some st1 -> raiseSubtypes(st1, ty2, spc)
+        (case tryRaiseFromArgs(ty1, qid1, args1, a) of   % Better way to handle this?
+           | Some st1 -> raiseSubtypes1(st1, ty2, spc)
            | None ->
          case tryUnfoldBase spc ty1 of
-           | Some exp_ty1 -> raiseSubtypes(exp_ty1, ty2, spc)
+           | Some exp_ty1 -> raiseSubtypes1(exp_ty1, ty2, spc)
            | None -> (ty1, raiseSubtype(ty2, spc)))
       | (Product(flds1, a1), Product(flds2, a2)) ->
-        (case (tryRaiseFields(flds1, flds2, a1), tryRaiseFields(flds2, flds1, a2)) of
-           | (Some st1, Some st2) -> raiseSubtypes(st1, st2, spc)
-           | (Some st1, None)     -> raiseSubtypes(st1, ty2, spc)
-           | (None,     Some st2) -> raiseSubtypes(ty1, st2, spc)
-           | (None, None) -> (ty1, ty2))
+        tryRaiseFields(flds1, flds2, a1)
  %     | Arrow(dom, rng ,a) ->
 %        (case raiseSubtype(dom,spc) of
 %           | Subsort(d,d_p,_) ->
@@ -1964,11 +2009,18 @@ Utilities qualifying spec
              | None ->
                (case tryUnfoldBase spc ty of
                   | None -> ty
-                  | Some exp_ty -> raiseSubtype(exp_ty, spc)))
+                  | Some exp_ty ->
+                    let raise_ty = if namedTypesRaised? then exp_ty else raiseSubtype(exp_ty, spc) in
+                    if embed? Subsort raise_ty
+                      then raise_ty else ty))
         else
           (case tryUnfoldBase spc ty of
              | None -> ty
-             | Some exp_ty -> raiseSubtype(exp_ty, spc))
+             | Some exp_ty ->
+               if namedTypesRaised?
+                 then (if embed? Subsort exp_ty
+                         then exp_ty else ty)
+               else raiseSubtype(exp_ty, spc))
       | Subsort(s_ty, p, a) ->
         (case raiseSubtype(s_ty, spc) of
            | Subsort(sss_ty, pr, _) ->
