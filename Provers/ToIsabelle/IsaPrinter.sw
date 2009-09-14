@@ -76,6 +76,12 @@ IsaTermPrinter qualifying spec
  def prNum n = prString(toString n)
 
  def prString s = string s
+
+ op prSymString(s: String): Pretty =
+   if testSubseqEqual?("\\<", s, 0, 0)
+     then lengthString(1, s)
+     else prString s
+
  %def prBreak =
  %def prNewline =
  op  prConcat: List Pretty \_rightarrow Pretty
@@ -550,17 +556,22 @@ IsaTermPrinter qualifying spec
                 else spc
     in
     let spc = addSubtypePredicateLifters spc in
+    % let _ = printSpecWithSortsToTerminal spc in
+    let spc = normalizeNewTypes spc in
+    let spc = raiseNamedTypes spc in
     let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
     in
-    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
+    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     let spc = addRefineObligations spc in
+% let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc)
 	       else spc
     in
+% let _ = writeLine("1:\n"^printSpec spc) in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
@@ -1560,15 +1571,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op addExplicitTyping_n1(c: Context, lhs: List MS.Term, rhs: MS.Term): List MS.Term * MS.Term =
    if addExplicitTyping? then
-     let fvs = removeDuplicates(foldl (\_lambda (vs,t) \_rightarrow
-                                       freeVars t ++ vs)
-                                  (freeVars rhs) lhs)
+     let fvs = removeDuplicateVars(foldl (\_lambda (vs,t) \_rightarrow freeVars t ++ vs)
+                                     (freeVars rhs) lhs)
      in
-     %let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
+     % let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
      let vs = foldl (\_lambda (vs,t) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
-     %let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
+     % let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
      let vs = filterConstrainedVars(c,rhs,vs) in
-     %let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
+     % let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
 
      let (lhs,vs) = foldl (\_lambda ((lhs,vs),st) \_rightarrow
                             let (st,vs) = addExplicitTypingForVars(st,vs) in
@@ -1580,7 +1590,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    else (lhs,rhs)
 
  %% Ops that are not polymorphic in Specware but are mapped to polymorphic ops in Isabelle
- op isabelleOverloadedOps: List String = ["**"]
+ op isabelleOverloadedOps: List String = ["**", "modF", "divF"]
 
  op filterConstrainedVars(c: Context, t: MS.Term, vs: List Var): List Var =
    let def removeArgs(vs,args) =
@@ -1925,7 +1935,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           %% Reversed curried op, not infix
           let Some(isa_id,_,_,reversed,_) = specialOpInfo c qid in
           enclose?(parentTerm ~= Top,
-                   prBreak 2 [prString isa_id,
+                   prBreak 2 [prSymString isa_id,
                               prSpace,
                               ppTermEncloseComplex? c Nonfix term2,
                               prSpace,
@@ -1988,7 +1998,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                         ppTerm c Top term2,
                                         prSpace],
                                        [prString "in x ",
-                                        prString infix_str,
+                                        prSymString infix_str,
                                         prString " y"]])
 %                let spc = getSpec c in
 %                ppTerm c parentTerm
@@ -2031,9 +2041,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                        case term2 of
                          | Record _ \_rightarrow ppTerm c Top term2
-                         | _ \_rightarrow
-                           let encl? = \_not(isSimpleTerm? term2) in
-                           prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
+                         | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
    case term of
@@ -2235,12 +2243,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    let (assmpts, concl) = parsePropertyTerm c explicit_universals term in
    let (assmpts, concl) = addExplicitTyping_n1(c, assmpts, concl) in
    if assmpts = [] then ppTerm c Top concl
-     else prBreak 0 [prConcat [lengthString(1, "\\<lbrakk>"),
+     else prLinear 0 [prConcat [lengthString(1, "\\<lbrakk>"),
                                 prPostSep 0 blockLinear (prString "; ")
                                   (map (ppTerm c Top) assmpts),
-                                lengthString(2, "\\<rbrakk>")],
-                     lengthString(5, " \\<Longrightarrow> "),
-                     ppTerm c Top concl]
+                                lengthString(2, "\\<rbrakk>"),
+                               lengthString(5, " \\<Longrightarrow> ")],
+                      ppTerm c Top concl]
 
  op  parsePropertyTerm: Context \_rightarrow List String \_rightarrow MS.Term \_rightarrow List MS.Term \_times MS.Term
  def parsePropertyTerm c explicit_universals term =
@@ -2430,7 +2438,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | Some infix_str \_rightarrow
             enclose?(parentTerm ~= Top,
                      prConcat [lengthString(11, "\\<lambda> (x,y). x "),
-                               prString infix_str,
+                               prSymString infix_str,
                                prString " y"])
           | None \_rightarrow
         if (qid = Qualified("IntegerAux","-") || qid = Qualified("Integer","~"))
@@ -2449,7 +2457,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       | Some(dom, _) ->
                         let new_v = ("cv0", dom) in
                         ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun,ty), mkVar new_v)))
-                      | _ -> prString isa_id)
+                      | _ -> prSymString isa_id)
               else prString isa_id
           | _ -> ppOpQualifiedId c qid)
      | Project id \_rightarrow
@@ -2496,7 +2504,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
-     | Some(s,_,_,_,_) \_rightarrow prString s
+     | Some(s,_,_,_,_) \_rightarrow prSymString s
      | None \_rightarrow ppQualifiedId qid
 
  %% May only need ops that can be unary
@@ -2662,8 +2670,8 @@ def termFixity c term =
            (case specialOpInfo c id of
               | Some(isa_id,fix,curried,reversed,_) \_rightarrow
                 (case fix of
-                   | Some f \_rightarrow (Some(prString isa_id), Infix f, curried, reversed)
-                   | None \_rightarrow   (Some(prString isa_id), Nonfix, curried, reversed))
+                   | Some f \_rightarrow (Some(prSymString isa_id), Infix f, curried, reversed)
+                   | None \_rightarrow   (Some(prSymString isa_id), Nonfix, curried, reversed))
               | None \_rightarrow
                 case fixity of
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
