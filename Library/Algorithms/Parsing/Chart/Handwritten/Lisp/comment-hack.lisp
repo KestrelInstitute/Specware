@@ -2,11 +2,11 @@
 
 (in-package :Parser4)
 
-(defun COMMENT-BLANK-LINES (&optional (n 1))
+(defun comment-blank-lines (&optional (n 1))
   ;; No ";;;" prefix, just a blank line...
   (format t "~&~V%" n))
 
-(defun COMMENT (format-string &rest format-args)
+(defun comment (format-string &rest format-args)
   (let* ((str (apply #'format nil format-string format-args))
 	 (old-i 0)
 	 (n (length str)))
@@ -18,7 +18,7 @@
     (when (< old-i n)
       (one-line-comment (subseq str old-i n)))))
 
-(defun ONE-LINE-COMMENT (str)
+(defun one-line-comment (str)
   ;;  main comment routine uses this for each line to be output
   (format t "~&;;; ~A~&" str)
   (force-output t))

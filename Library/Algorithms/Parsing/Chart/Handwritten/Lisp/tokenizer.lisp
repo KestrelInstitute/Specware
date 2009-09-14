@@ -6,7 +6,7 @@
 
 (defun ctp-arg-test (arg value example)
   (when (null value)
-    (warn "CREATE-TOKENIZER-PARAMETERS missing keyword arg  ~S, e.g. ~A"
+    (warn "create-tokenizer-parameters missing keyword arg  ~S, e.g. ~A"
 	  arg
 	  example)))
 
