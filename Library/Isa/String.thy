@@ -218,7 +218,8 @@ consts Nat__natConvertible :: "string \<Rightarrow> bool"
 defs Nat__natConvertible_def: 
   "Nat__natConvertible s \<equiv> (\<exists>(x::nat). Nat__natToString x = s)"
 theorem Nat__stringToNat_Obligation_the: 
-  "\<lbrakk>Nat__natConvertible s\<rbrakk> \<Longrightarrow> \<exists>!(x::nat). Nat__natToString x = s"
+  "\<lbrakk>Nat__natConvertible s\<rbrakk> \<Longrightarrow> 
+   \<exists>!(x::nat). Nat__natToString x = s"
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
   apply (cut_tac xs=s and

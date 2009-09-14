@@ -22,7 +22,8 @@ theorem Integer__infinity:
   done
 theorem Integer__induction: 
   "\<lbrakk>(p::int \<Rightarrow> bool) 0; 
-    \<forall>(i::int). p i \<longrightarrow> p (succ i) \<and> p (pred i)\<rbrakk> \<Longrightarrow> p i"
+    \<forall>(i::int). p i \<longrightarrow> p (succ i) \<and> p (pred i)\<rbrakk> \<Longrightarrow> 
+   p i"
    apply(cases i)
  apply(rule_tac k="0" in int_ge_induct,simp_all)
  apply(rule_tac k="0" in int_le_induct,simp_all)
@@ -101,13 +102,14 @@ theorem Integer__induction_pos_neg:
     \<forall>(i::int). 
       \<not> (Integer__negative_p i) \<and> p i \<longrightarrow> p (succ i); 
     \<forall>(i::int). 
-      \<not> (Integer__positive_p i) \<and> p i \<longrightarrow> p (pred i)\<rbrakk> \<Longrightarrow> p (i::int)"
+      \<not> (Integer__positive_p i) \<and> p i \<longrightarrow> p (pred i)\<rbrakk> \<Longrightarrow> 
+   p (i::int)"
    apply(simp, cases i)
  apply(rule_tac k="0" in int_ge_induct, simp_all)
  apply(rule_tac k="0" in int_le_induct, simp_all)
   done
 theorem IntegerAux__e_dsh_Obligation_the: 
-  "\<exists>!(minus::int \<Rightarrow> int). 
+  "\<exists>!(minus:: (int, int)Function__Bijection). 
      bij minus 
        \<and> (minus 0 = 0 
         \<and> ((\<forall>(i::int). 
@@ -133,7 +135,7 @@ theorem IntegerAux__e_dsh_subtype_constr:
   done
 theorem IntegerAux__e_dsh__def: 
   "(\<lambda> (i::int). - i) 
-     = (THE (minus::int \<Rightarrow> int). 
+     = (THE (minus:: (int, int)Function__Bijection). 
        bij minus 
          \<and> (minus 0 = 0 
           \<and> ((\<forall>(i::int). 
@@ -226,7 +228,8 @@ theorem Integer__induction_naturals_Obligation_subtype:
   "\<lbrakk>(p::nat \<Rightarrow> bool) 0; p (n_1::nat)\<rbrakk> \<Longrightarrow> n_1 + 1 \<ge> 0"
   by auto
 theorem Integer__induction_naturals: 
-  "\<lbrakk>(p::nat \<Rightarrow> bool) 0; \<forall>(n::nat). p n \<longrightarrow> p (n + 1)\<rbrakk> \<Longrightarrow> p (n::nat)"
+  "\<lbrakk>(p::nat \<Rightarrow> bool) 0; \<forall>(n::nat). p n \<longrightarrow> p (n + 1)\<rbrakk> \<Longrightarrow> 
+   p (n::nat)"
   apply(rule nat_induct, auto)
   done
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
@@ -239,7 +242,7 @@ theorem Nat__succ__def:
   "Suc n = nat (succ (int n))"
   by auto
 theorem Nat__pred_Obligation_subtype: 
-  "\<lbrakk>(n::nat) > 0\<rbrakk> \<Longrightarrow> pred (int n) \<ge> 0"
+  "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> pred (int n) \<ge> 0"
   by auto
 consts Nat__pred :: "Nat__PosNat \<Rightarrow> nat"
 defs Nat__pred_def: "Nat__pred n \<equiv> nat (pred (int n))"
@@ -342,8 +345,7 @@ theorem Integer__gcd_of_not_both_zero:
      \<and> (int (igcd(x, y)) zdvd x 
       \<and> (int (igcd(x, y)) zdvd y 
        \<and> (\<forall>(w::int). 
-            w zdvd x \<and> w zdvd y 
-              \<longrightarrow> int (igcd(x, y)) \<ge> w)))"
+            w zdvd x \<and> w zdvd y \<longrightarrow> int (igcd(x, y)) \<ge> w)))"
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
   apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)
   apply(rule classical, auto simp add: zgcd_def gcd_zero)+
@@ -352,19 +354,19 @@ theorem Integer__gcd_of_zero_zero_is_zero:
   "(igcd(0, 0)) = 0"
   by auto
 theorem Integer__lcm_smallest_abs_multiple: 
-  "\<lbrakk>(w::int) \<noteq> 0; w multipleOf x; w multipleOf y\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>w \<noteq> 0; w multipleOf x; w multipleOf y\<rbrakk> \<Longrightarrow> 
    (ilcm(x, y)) \<le> zabs w"
   apply(subgoal_tac "int (ilcm (x, y)) \<le> abs w", simp_all (no_asm_simp))
   apply(rule zdvd_imp_le)
   apply(auto simp add:zlcm_least zdvd_abs2)
   done
 theorem Integer__e_fsl_Obligation_the: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> \<exists>!(k::int). i = j * k"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> \<exists>!(k::int). i = j * k"
    apply(rule_tac a="i div j"in ex1I)
  apply(auto simp add: dvd_def)
   done
 theorem Integer__e_fsl__def: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> 
    i div j = (THE (k::int). i = j * k)"
    by (rule the1I2, rule Integer__e_fsl_Obligation_the, auto)
 
@@ -399,7 +401,7 @@ theorem Integer__divT_unique_pos:
 done
 
 theorem Integer__divT_Obligation_the: 
-  "\<lbrakk>(j::int) \<noteq> 0; \<not> (zabs i < zabs j)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; \<not> (zabs i < zabs j)\<rbrakk> \<Longrightarrow> 
    \<exists>!(q::int). 
      sign q = sign i * sign j 
        \<and> (int (zabs i) - int (zabs j) 
@@ -421,10 +423,10 @@ theorem Integer__divT_Obligation_the:
  apply (auto)
   done
 theorem Integer__divT__def: 
-  "\<lbrakk>(j::int) \<noteq> 0; zabs i < zabs j\<rbrakk> \<Longrightarrow> i divT j = 0"
+  "\<lbrakk>j \<noteq> 0; zabs i < zabs j\<rbrakk> \<Longrightarrow> i divT j = 0"
   by auto
 theorem Integer__divT__def1: 
-  "\<lbrakk>(j::int) \<noteq> 0; \<not> (zabs i < zabs j)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; \<not> (zabs i < zabs j)\<rbrakk> \<Longrightarrow> 
    i divT j 
      = (THE (q::int). 
        sign q = sign i * sign j 
@@ -438,148 +440,151 @@ apply(simp del: zero_less_abs_iff
            add: divT_def abs_mult divT_abs [symmetric] div_bounds div_signs)
   done
 theorem Integer__modT__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modT j = i - j * (i divT j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modT j = i - j * (i divT j)"
   apply (simp add: modT_alt_def)
   done
 theorem Integer__exact_divT: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divT j = i div j"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divT j = i div j"
   apply (simp add: divides_iff_modT_0 modT_alt_def)
   done
 theorem Integer__divT_is_largest_in_abs: 
-  "\<lbrakk>(j::int) \<noteq> 0; zabs ((k::int) * j) \<le> zabs i\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; zabs ((k::int) * j) \<le> zabs i\<rbrakk> \<Longrightarrow> 
    zabs k \<le> zabs (i divT j)"
   apply (simp add: nat_le_eq_zle,
          simp add: divT_abs [symmetric] divT_pos div_is_largest_pos)
   done
 theorem Integer__divT_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__divT_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divT - j = - (i divT j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i divT - j = - (i divT j)"
   apply(simp add: divT_def)
   done
 theorem Integer__divT_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divT j = - (i divT j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> - i divT j = - (i divT j)"
   apply(simp add: divT_def)
   done
 theorem Integer__divides_iff_modT_0: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modT j = 0)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modT j = 0)"
   apply(auto simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
   done
 theorem Integer__modT_less_than_divisor_in_abs: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modT j) < zabs j"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modT j) < zabs j"
   apply(simp add: modT_def abs_mult, cases "i=0", auto)
   done
 theorem Integer__modT_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__modT_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modT - j = i modT j"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modT - j = i modT j"
   apply(simp add: modT_def)
   done
 theorem Integer__modT_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i modT j = - (i modT j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> - i modT j = - (i modT j)"
   apply(simp add: modT_def)
   done
 theorem Integer__sign_of_non_zero_modT: 
-  "\<lbrakk>(j::int) \<noteq> 0; i modT j \<noteq> 0\<rbrakk> \<Longrightarrow> sign (i modT j) = sign i"
+  "\<lbrakk>j \<noteq> 0; i modT j \<noteq> 0\<rbrakk> \<Longrightarrow> 
+   sign (i modT j) = sign i"
    apply(auto simp add: modT_def less_le)
   done
 theorem Integer__divF__def: 
-  "\<lbrakk>(j::int) \<noteq> 0; i modT j = 0 \<or> sign i = sign j\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; i modT j = 0 \<or> sign i = sign j\<rbrakk> \<Longrightarrow> 
    i div j = i divT j"
   apply(auto simp add: divides_iff_modT_0 [symmetric] 
                       divT_is_div_if_dvd divT_is_div_if_eqsign)
   done
 theorem Integer__divF__def1: 
-  "\<lbrakk>(j::int) \<noteq> 0; 
-    \<not> (i modT j = 0 \<or> sign i = sign j)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; \<not> (i modT j = 0 \<or> sign i = sign j)\<rbrakk> \<Longrightarrow> 
    i div j = i divT j - 1"
   apply(simp add: divides_iff_modT_0 [symmetric] divT_vs_div_else)
   done
 theorem Integer__modF__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod j = i - j * (i div j)"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+   (i::int) mod j = i - j * (i div j)"
   apply(cut_tac a=i and b=j and k=0 in zdiv_zmod_equality, arith)
   done
 theorem Integer__exact_divF: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i div j = i div j"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i div j = i div j"
   by auto
 theorem Integer__divF_is_largest: 
-  "\<lbrakk>(j::int) \<noteq> 0; 
-    (k::int) * int (zabs j) \<le> i * sign j\<rbrakk> \<Longrightarrow> k \<le> i div j"
+  "\<lbrakk>j \<noteq> 0; 
+    (k::int) * int (zabs j) \<le> (i::int) * sign j\<rbrakk> \<Longrightarrow> 
+   k \<le> i div j"
   apply(simp add: abs_if sign_def div_is_largest_pos div_is_largest_neg
            split: split_if_asm)
   done
 theorem Integer__divF_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__divF_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i div - j 
      = - (i div j) - (if j zdvd i then 0 else 1)"
   apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus2_eq_if)
   done
 theorem Integer__divF_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i div j 
      = - (i div j) - (if j zdvd i then 0 else 1)"
   apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus1_eq_if)
   done
 theorem Integer__divides_iff_modF_0: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i mod j = 0)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i mod j = 0)"
   apply(simp add: zdvd_iff_zmod_eq_0)
   done
 theorem Integer__modF_less_than_divisor_in_abs: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i mod j) < zabs j"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+   zabs ((i::int) mod j) < zabs j"
   apply(auto simp add: abs_if not_less)
   apply(cut_tac a=i and b=j in pos_mod_sign, auto)
   apply(cut_tac a=i and b=j in neg_mod_sign, auto)
   done
 theorem Integer__modF_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__modF_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i mod - j 
      = i mod j - j * (if j zdvd i then 0 else 1)"
   apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus2_eq_if)
   done
 theorem Integer__modF_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i mod j 
      = - (i mod j) + j * (if j zdvd i then 0 else 1)"
   apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus1_eq_if)
   done
 theorem Integer__sign_of_non_zero_modF: 
-  "\<lbrakk>(j::int) \<noteq> 0; i mod j \<noteq> 0\<rbrakk> \<Longrightarrow> sign (i mod j) = sign j"
+  "\<lbrakk>j \<noteq> 0; (i::int) mod j \<noteq> 0\<rbrakk> \<Longrightarrow> 
+   sign (i mod j) = sign j"
    apply(cases "j < 0", auto simp add: sign_def not_less neq_le_trans)
   done
 theorem Integer__divC__def: 
-  "\<lbrakk>(j::int) \<noteq> 0; i modT j = 0 \<or> sign i \<noteq> sign j\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; i modT j = 0 \<or> sign i \<noteq> sign j\<rbrakk> \<Longrightarrow> 
    i divC j = i divT j"
    apply (simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_dvd)
  apply (auto simp add: divT_vs_div_else)
   done
 theorem Integer__divC__def1: 
-  "\<lbrakk>(j::int) \<noteq> 0; 
-    \<not> (i modT j = 0 \<or> sign i \<noteq> sign j)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; \<not> (i modT j = 0 \<or> sign i \<noteq> sign j)\<rbrakk> \<Longrightarrow> 
    i divC j = i divT j + 1"
    apply(simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_eqsign)
   done
 theorem Integer__modC__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modC j = i - j * (i divC j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modC j = i - j * (i divC j)"
    apply(simp add: modC_def)
   done
 theorem Integer__exact_divC: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divC j = i div j"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divC j = i div j"
   by (simp add: divC_def)
 theorem Integer__divC_is_smallest: 
-  "\<lbrakk>(j::int) \<noteq> 0; 
-    (k::int) * int (zabs j) \<ge> i * sign j\<rbrakk> \<Longrightarrow> k \<ge> i divC j"
+  "\<lbrakk>j \<noteq> 0; (k::int) * int (zabs j) \<ge> i * sign j\<rbrakk> \<Longrightarrow> 
+   k \<ge> i divC j"
   apply (auto simp add: neq_iff divC_is_smallest_pos divC_is_smallest_neg)
   done
 theorem Integer__divC_divF_relation: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    if j zdvd i then 
      i divC j = i div j
    else 
@@ -587,27 +592,27 @@ theorem Integer__divC_divF_relation:
    apply(simp add: divC_def)
   done
 theorem Integer__divC_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__divC_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i divC - j 
      = - (i divC j) + (if j zdvd i then 0 else 1)"
    apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: zdvd_iff_zmod_eq_0)
   done
 theorem Integer__divC_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i divC j 
      = - (i divC j) + (if j zdvd i then 0 else 1)"
    apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: zdvd_iff_zmod_eq_0)
   done
 theorem Integer__divides_iff_modC_0: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modC j = 0)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modC j = 0)"
    apply(auto simp add: modC_def divC_def 
                       zdvd_iff_zmod_eq_0 ring_simps div_bounds_neq)
   done
 theorem Integer__modC_less_than_divisor_in_abs: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modC j) < zabs j"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modC j) < zabs j"
    apply (auto simp add: modC_def divC_def zdvd_iff_zmod_eq_0)
  apply (cases "j>0", auto simp add: ring_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
@@ -616,28 +621,28 @@ theorem Integer__modC_less_than_divisor_in_abs:
         simp add: div_via_mod pos_mod_sign less_le)
   done
 theorem Integer__modC_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__modC_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i modC - j 
      = i modC j + j * (if j zdvd i then 0 else 1)"
    apply(auto simp add: modC_def Integer__divC_of_negated_divisor ring_simps)
   done
 theorem Integer__modC_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i modC j 
      = - (i modC j) - j * (if j zdvd i then 0 else 1)"
    apply(auto simp add: modC_def Integer__divC_of_negated_dividend ring_simps)
   done
 theorem Integer__sign_of_non_zero_modC: 
-  "\<lbrakk>(j::int) \<noteq> 0; i modC j \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0; i modC j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    sign (i modC j) = - (sign j)"
    apply (simp add: Integer__divides_iff_modC_0 [symmetric],
         auto simp add: modC_def divC_def ring_simps neq_iff div_bounds)
   done
 theorem Integer__divR_Obligation_the: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    \<exists>!(q::int). 
      2 
        * zabs (int (zabs i) - int (zabs (q * j))) 
@@ -650,7 +655,7 @@ theorem Integer__divR_Obligation_the:
  apply (auto simp add: divR_def_lemmas)
   done
 theorem Integer__divR__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i divR j 
      = (THE (q::int). 
        2 
@@ -664,26 +669,26 @@ theorem Integer__divR__def:
          auto simp add: divR_def_aux1 [symmetric] divR_def_lemmas)
   done
 theorem Integer__modR__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modR j = i - j * (i divR j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modR j = i - j * (i divR j)"
   apply (simp add: modR_def)
   done
 theorem Integer__exact_divR: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divR j = i div j"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divR j = i div j"
    apply(simp add: divides_iff_modR_0 modR_def)
   done
 theorem Integer__divR_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__divR_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)"
   apply (simp add: divR_zminus2)
   done
 theorem Integer__divR_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
    apply (simp add: divR_zminus1)
   done
 theorem Integer__divides_iff_modR_0: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modR j = 0)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modR j = 0)"
   apply (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
          simp_all add: dvd_if_div_eq  zdvd_iff_zmod_eq_0 div_via_mod)
   done
@@ -691,10 +696,9 @@ consts Integer__euclidianDivision_p :: "int \<times> Integer__Int0 \<times> int 
 defs Integer__euclidianDivision_p_def: 
   "Integer__euclidianDivision_p
      \<equiv> (\<lambda> ((i::int), (j::Integer__Int0), (q::int), (r::int)). 
-          i = j * q + r 
-            \<and> (0 \<le> r \<and> r < int (zabs j)))"
+          i = j * q + r \<and> (0 \<le> r \<and> r < int (zabs j)))"
 theorem Integer__euclideanDivision: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    \<exists>!(qr::int \<times> int). Integer__euclidianDivision_p(i, j, fst qr, snd qr)"
    apply (simp add: Integer__euclidianDivision_p_def, 
         rule_tac a="(i divE j, i modE j)" in ex1I)
@@ -702,12 +706,12 @@ theorem Integer__euclideanDivision:
         auto simp add: modE_alt_def divE_def div_abs_unique)
   done
 theorem Integer__divE_Obligation_the: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    \<exists>!(q::int). \<exists>(r::int). Integer__euclidianDivision_p(i, j, q, r)"
   apply (drule Integer__euclideanDivision, auto)
   done
 theorem Integer__divE__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i divE j 
      = (THE (q::int). 
        \<exists>(r::int). Integer__euclidianDivision_p(i, j, q, r))"
@@ -719,12 +723,12 @@ theorem Integer__divE__def:
         auto simp add: modE_alt_def divE_def div_abs_unique)
   done
 theorem Integer__modE_Obligation_the: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    \<exists>!(r::int). \<exists>(q::int). Integer__euclidianDivision_p(i, j, q, r)"
   apply (drule Integer__euclideanDivision, auto)
   done
 theorem Integer__modE__def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i modE j 
      = (THE (r::int). 
        \<exists>(q::int). Integer__euclidianDivision_p(i, j, q, r))"
@@ -736,18 +740,18 @@ theorem Integer__modE__def:
         auto simp add: modE_alt_def divE_def div_abs_unique)
   done
 theorem Integer__exact_divE: 
-  "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divE j = i div j"
+  "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> i divE j = i div j"
   apply (simp add: divides_iff_modE_0 modE_alt_def)
   done
 theorem Integer__divE_of_negated_divisor_Obligation_subtype: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - (j::Integer__Int0) \<noteq> 0"
+  "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> - j \<noteq> 0"
   by auto
 theorem Integer__divE_of_negated_divisor: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divE - j = - (i divE j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i divE - j = - (i divE j)"
   apply (simp add: divE_def)
   done
 theorem Integer__divE_of_negated_dividend: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i divE j 
      = - (i divE j) 
          - sign j * (if j zdvd i then 0 else 1)"
@@ -755,54 +759,54 @@ theorem Integer__divE_of_negated_dividend:
          auto simp add: zmod_zminus2_eq_if zdvd_iff_zmod_eq_0)
   done
 theorem Integer__modE_alt_def: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modE j = i - j * (i divE j)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modE j = i - j * (i divE j)"
    apply (simp add: divE_def modE_def sign_def mod_via_div)
   done
 theorem Integer__divides_iff_modE_0: 
-  "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modE j = 0)"
+  "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modE j = 0)"
    apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
   done
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divT_on_naturals: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> 
    int i divE int j = int i divT int j"
   apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
   done
 theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__divE_equals_divF_on_naturals: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> 
    int i divE int j = int i div int j"
   apply (simp add: divE_def sign_def int_mult [symmetric])
   done
 theorem Integer__div_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__div_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> int i divE int j \<ge> 0"
   apply (simp add: div_signs)
   done
 theorem Integer__div__def: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> i div j = nat (int i divE int j)"
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> i div j = nat (int i divE int j)"
   apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
   done
 theorem Integer__mod_Obligation_subtype: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> (j::Nat__PosNat) \<noteq> 0"
+  "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"
   by auto
 theorem Integer__mod_Obligation_subtype0: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> int i modE int j \<ge> 0"
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> int i modE int j \<ge> 0"
   by auto
 theorem Integer__mod__def: 
-  "\<lbrakk>(j::nat) > 0\<rbrakk> \<Longrightarrow> i mod j = nat (int i modE int j)"
+  "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> i mod j = nat (int i modE int j)"
   by (auto simp add: nat_eq_iff2 zmod_int)
 theorem Integer__min__def: 
   "\<lbrakk>(i::int) < (j::int)\<rbrakk> \<Longrightarrow> (min i j) = i"

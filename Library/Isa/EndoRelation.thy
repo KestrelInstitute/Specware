@@ -31,8 +31,7 @@ consts EndoRelation__symmetric_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
 defs EndoRelation__symmetric_p__stp_def: 
   "EndoRelation__symmetric_p__stp P__a r
      \<equiv> (\<forall>(x::'a) (y::'a). 
-          P__a x \<and> (P__a y \<and> (x, y) \<in> r) 
-            \<longrightarrow> (y, x) \<in> r)"
+          P__a x \<and> (P__a y \<and> (x, y) \<in> r) \<longrightarrow> (y, x) \<in> r)"
 consts EndoRelation__symmetric_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__symmetric_p_def: 
   "EndoRelation__symmetric_p r
@@ -49,8 +48,7 @@ defs EndoRelation__antisymmetric_p__stp_def:
 consts EndoRelation__antisymmetric_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__antisymmetric_p_def: 
   "EndoRelation__antisymmetric_p r
-     \<equiv> (\<forall>(x::'a) (y::'a). 
-          (x, y) \<in> r \<and> (y, x) \<in> r \<longrightarrow> x = y)"
+     \<equiv> (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<and> (y, x) \<in> r \<longrightarrow> x = y)"
 types 'a EndoRelation__AntisymmetricRelation = "'a EndoRelation__EndoRelation"
 consts EndoRelation__asymmetric_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                            'a EndoRelation__EndoRelation \<Rightarrow> bool"
@@ -69,8 +67,7 @@ consts EndoRelation__transitive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
 defs EndoRelation__transitive_p__stp_def: 
   "EndoRelation__transitive_p__stp P__a r
      \<equiv> (\<forall>(x::'a) (y::'a) (z::'a). 
-          P__a x 
-            \<and> (P__a y \<and> (P__a z \<and> ((x, y) \<in> r \<and> (y, z) \<in> r))) 
+          P__a x \<and> (P__a y \<and> (P__a z \<and> ((x, y) \<in> r \<and> (y, z) \<in> r))) 
             \<longrightarrow> (x, z) \<in> r)"
 consts EndoRelation__transitive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__transitive_p_def: 
@@ -85,8 +82,7 @@ defs EndoRelation__negativeTransitive_p__stp_def:
   "EndoRelation__negativeTransitive_p__stp P__a r
      \<equiv> (\<forall>(x::'a) (y::'a) (z::'a). 
           P__a x 
-            \<and> (P__a y 
-             \<and> (P__a z \<and> ((x, y) \<in> - r \<and> (y, z) \<in> - r))) 
+            \<and> (P__a y \<and> (P__a z \<and> ((x, y) \<in> - r \<and> (y, z) \<in> - r))) 
             \<longrightarrow> (x, z) \<in> - r)"
 consts EndoRelation__negativeTransitive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> 
                                               bool"
@@ -106,8 +102,7 @@ defs EndoRelation__trichotomous_p__stp_def:
           P__a x \<and> P__a y 
             \<longrightarrow> (x, y) \<in> r \<and> ((y, x) \<in> - r \<and> x \<noteq> y) 
                   \<or> ((x, y) \<in> - r \<and> ((y, x) \<in> r \<and> x \<noteq> y) 
-                   \<or> (x, y) \<in> - r 
-                       \<and> ((y, x) \<in> - r \<and> x = y)))"
+                   \<or> (x, y) \<in> - r \<and> ((y, x) \<in> - r \<and> x = y)))"
 consts EndoRelation__trichotomous_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__trichotomous_p_def: 
   "EndoRelation__trichotomous_p r
@@ -123,13 +118,12 @@ defs EndoRelation__equivalence_p__stp_def:
   "EndoRelation__equivalence_p__stp P__a
      \<equiv> (EndoRelation__reflexive_p__stp P__a 
           \<inter> (EndoRelation__symmetric_p__stp P__a 
-                      \<inter> EndoRelation__transitive_p__stp P__a))"
+               \<inter> EndoRelation__transitive_p__stp P__a))"
 consts EndoRelation__equivalence_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__equivalence_p_def: 
   "EndoRelation__equivalence_p
      \<equiv> (EndoRelation__reflexive_p 
-          \<inter> (EndoRelation__symmetric_p 
-                      \<inter> EndoRelation__transitive_p))"
+          \<inter> (EndoRelation__symmetric_p \<inter> EndoRelation__transitive_p))"
 types 'a EndoRelation__Equivalence = "'a EndoRelation__EndoRelation"
 consts EndoRelation__partialEquivalence_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                    'a EndoRelation__EndoRelation
@@ -172,20 +166,19 @@ theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype:
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (\<lambda> (rc::('a \<times> 'a) set). 
          Set__e_lt_eq__stp
-            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)
-           ((r::'a EndoRelation__EndoRelation), rc) 
+            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
            \<and> EndoRelation__reflexive_p__stp P__a rc)"
    sorry
 theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype0: 
-  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2) (r::('a \<times> 'a) set); 
+  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
+       (r::'a EndoRelation__EndoRelation); 
     Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
               Set__e_lt_eq__stp
                  (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
-                    P__a x_1_1 \<and> P__a x_2_1)
-                ((r::'a EndoRelation__EndoRelation), rc) 
+                    P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
                 \<and> EndoRelation__reflexive_p__stp P__a rc))\<rbrakk> \<Longrightarrow> 
    EndoRelation__reflexive_p__stp P__a
       (Set__min__stp
@@ -233,20 +226,19 @@ theorem EndoRelation__symmetricClosure__stp_Obligation_subtype:
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (\<lambda> (rc::('a \<times> 'a) set). 
          Set__e_lt_eq__stp
-            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)
-           ((r::'a EndoRelation__EndoRelation), rc) 
+            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
            \<and> EndoRelation__symmetric_p__stp P__a rc)"
    sorry
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype0: 
-  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2) (r::('a \<times> 'a) set); 
+  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
+       (r::'a EndoRelation__EndoRelation); 
     Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
               Set__e_lt_eq__stp
                  (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
-                    P__a x_1_1 \<and> P__a x_2_1)
-                ((r::'a EndoRelation__EndoRelation), rc) 
+                    P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
                 \<and> EndoRelation__symmetric_p__stp P__a rc))\<rbrakk> \<Longrightarrow> 
    EndoRelation__symmetric_p__stp P__a
       (Set__min__stp
@@ -294,20 +286,19 @@ theorem EndoRelation__transitiveClosure__stp_Obligation_subtype:
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (\<lambda> (rc::('a \<times> 'a) set). 
          Set__e_lt_eq__stp
-            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)
-           ((r::'a EndoRelation__EndoRelation), rc) 
+            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
            \<and> EndoRelation__transitive_p__stp P__a rc)"
    sorry
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype0: 
-  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2) (r::('a \<times> 'a) set); 
+  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
+       (r::'a EndoRelation__EndoRelation); 
     Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
               Set__e_lt_eq__stp
                  (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
-                    P__a x_1_1 \<and> P__a x_2_1)
-                ((r::'a EndoRelation__EndoRelation), rc) 
+                    P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
                 \<and> EndoRelation__transitive_p__stp P__a rc))\<rbrakk> \<Longrightarrow> 
    EndoRelation__transitive_p__stp P__a
       (Set__min__stp
@@ -356,20 +347,19 @@ theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype:
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (\<lambda> (rc::('a \<times> 'a) set). 
          Set__e_lt_eq__stp
-            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)
-           ((r::'a EndoRelation__EndoRelation), rc) 
+            (\<lambda> ((x_1_1::'a), (x_2_1::'a)). P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
            \<and> EndoRelation__equivalence_p__stp P__a rc)"
    sorry
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype0: 
-  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2) (r::('a \<times> 'a) set); 
+  "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
+       (r::'a EndoRelation__EndoRelation); 
     Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
               Set__e_lt_eq__stp
                  (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
-                    P__a x_1_1 \<and> P__a x_2_1)
-                ((r::'a EndoRelation__EndoRelation), rc) 
+                    P__a x_1_1 \<and> P__a x_2_1)(r, rc) 
                 \<and> EndoRelation__equivalence_p__stp P__a rc))\<rbrakk> \<Longrightarrow> 
    EndoRelation__equivalence_p__stp P__a
       (Set__min__stp

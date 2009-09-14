@@ -35,7 +35,8 @@ where
  | "Option__compare comp_v(Some zzz_4, None) = Greater"
  | "Option__compare comp_v(None, None) = Equal"
 theorem Option__mapOption_subtype_constr: 
-  "\<lbrakk>Fun_PR P__b f\<rbrakk> \<Longrightarrow> Option__Option_P P__b (option_map f xx)"
+  "\<lbrakk>Fun_PR P__b f\<rbrakk> \<Longrightarrow> 
+   Option__Option_P P__b (option_map f xx)"
   by (cases xx, auto)
 theorem Option__mapOption__def: 
   "option_map f None = None"

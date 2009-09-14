@@ -13,8 +13,7 @@ defs Set__Set_P__stp_def:
   "Set__Set_P__stp P__a Pa s
      \<equiv> (\<forall>(x::'a). P__a x \<and> \<not> (Pa x) \<longrightarrow> x \<notin> s)"
 theorem Set__Set_P__def: 
-  "Set_P Pa s 
-     = (\<forall>(x::'a). \<not> (Pa x) \<longrightarrow> x \<notin> s)"
+  "Set_P Pa s = (\<forall>(x::'a). \<not> (Pa x) \<longrightarrow> x \<notin> s)"
   by (simp add: Set_P_def)
 consts Set__e_lt_eq__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_lt_eq__stp_def: 
@@ -22,8 +21,7 @@ defs Set__e_lt_eq__stp_def:
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). 
           \<forall>(x::'a). P__a x \<and> x \<in> s1 \<longrightarrow> x \<in> s2)"
 theorem Set__e_lt_eq__def: 
-  "((s1::'a set) \<subseteq> (s2::'a set)) 
-     = (\<forall>(x::'a). x \<in> s1 \<longrightarrow> x \<in> s2)"
+  "((s1::'a set) \<subseteq> (s2::'a set)) = (\<forall>(x::'a). x \<in> s1 \<longrightarrow> x \<in> s2)"
   by auto
 consts Set__e_lt__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_lt__stp_def: 
@@ -31,8 +29,7 @@ defs Set__e_lt__stp_def:
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). 
           Set__e_lt_eq__stp P__a(s1, s2) \<and> s1 \<noteq> s2)"
 theorem Set__e_lt__def: 
-  "((s1::'a set) \<subset> (s2::'a set)) 
-     = (s1 \<subseteq> s2 \<and> s1 \<noteq> s2)"
+  "((s1::'a set) \<subset> (s2::'a set)) = (s1 \<subseteq> s2 \<and> s1 \<noteq> s2)"
   by auto
 consts Set__e_gt_eq__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_gt_eq__stp_def: 
@@ -62,8 +59,7 @@ theorem Set__e_fsl_fsl_bsl_bsl__def:
      = (\<forall>(s::'a set). s \<in> ss \<longrightarrow> x \<in> s)"
   by auto
 theorem Set__e_bsl_bsl_fsl_fsl__def: 
-  "((x::'a) \<in> \<Union> ss) 
-     = (\<exists>(s::'a set). s \<in> ss \<and> x \<in> s)"
+  "((x::'a) \<in> \<Union> ss) = (\<exists>(s::'a set). s \<in> ss \<and> x \<in> s)"
   by auto
 consts Set__e_eq_eq_gt :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a set"	(infixr "==>" 63)
 defs Set__e_eq_eq_gt_def: 
@@ -145,11 +141,10 @@ consts Set__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Ri
 defs Set__theMember__stp_def: 
   "Set__theMember__stp P__a s \<equiv> (THE (x::'a). P__a x \<and> x \<in> s)"
 theorem Set__theMember_Obligation_the: 
-  "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> (s::'a Set__SingletonSet)"
+  "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
 consts Set__theMember :: "'a Set__SingletonSet \<Rightarrow> 'a"
-defs Set__theMember_def: 
-  "Set__theMember s \<equiv> (THE (x::'a). x \<in> s)"
+defs Set__theMember_def: "Set__theMember s \<equiv> (THE (x::'a). x \<in> s)"
 theorem Set__e_lt_bar__def: 
   "(insert x s) = s \<union> Set__single x"
   by auto
@@ -258,12 +253,13 @@ apply(erule disjE)
   apply(rule_tac x="i" in exI, simp)+
   done
 theorem Set__finite_insert: 
-  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> finite (insert (x::'a) (s::'a Set__FiniteSet))"
+  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> finite (insert (x::'a) s)"
   by auto
 theorem Set__induction__stp_Obligation_subtype: 
   "\<lbrakk>Set__finite_p__stp P__a (s::'a set); 
     Set_P P__a s; 
-    Set_P P__a {}\<rbrakk> \<Longrightarrow> Set__finite_p__stp P__a (RSet P__a {})"
+    Set_P P__a {}\<rbrakk> \<Longrightarrow> 
+   Set__finite_p__stp P__a (RSet P__a {})"
   by (simp add: Set__finite_p__stp_def)
 theorem Set__induction__stp_Obligation_subtype0: 
   "\<lbrakk>Fun_PD (Set__finite_p__stp P__a &&& Set_P P__a) (p::'a set \<Rightarrow> bool); 
@@ -285,7 +281,8 @@ theorem Set__induction__stp:
     \<forall>(s::'a set) (x::'a). 
       Set__finite_p__stp P__a s 
         \<and> (Set_P P__a s \<and> (P__a x \<and> p s)) 
-        \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> p s"
+        \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> 
+   p s"
   proof -
  txt {* We define a local predicate @{term "atMostOfSize s n"} saying when a set
  @{term s} has at most size @{term n}: all the elements of @{term s} are covered
@@ -603,16 +600,18 @@ theorem Set__induction_Obligation_subtype:
   by auto
 theorem Set__induction_Obligation_subtype0: 
   "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
-    finite (s_1::'a set); 
+    finite (s_1::'a Set__FiniteSet); 
     p {}; 
-    p (s_1::'a Set__FiniteSet)\<rbrakk> \<Longrightarrow> finite (insert (x::'a) s_1)"
+    p s_1\<rbrakk> \<Longrightarrow> 
+   finite (insert (x::'a) s_1)"
   by auto
 theorem Set__induction: 
   "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
-    finite (s::'a set); 
+    finite (s::'a Set__FiniteSet); 
     p {}; 
-    \<forall>(s::'a set) (x::'a). 
-      finite s \<and> p s \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> p (s::'a Set__FiniteSet)"
+    \<forall>(s::'a Set__FiniteSet) (x::'a). 
+      finite s \<and> p s \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> 
+   p s"
    sorry
 theorem Set__size__stp_Obligation_the: 
   "\<exists>!(size__v::'a set \<Rightarrow> nat). 
@@ -628,7 +627,8 @@ apply(simp)
 apply(intro conjI allI impI)
 sorry
 theorem Set__size__stp_Obligation_subtype: 
-  "\<lbrakk>Set_P P__a {}\<rbrakk> \<Longrightarrow> Set__finite_p__stp P__a (RSet P__a {})"
+  "\<lbrakk>Set_P P__a {}\<rbrakk> \<Longrightarrow> 
+   Set__finite_p__stp P__a (RSet P__a {})"
   by (simp add: Set__finite_p__stp_def)
 theorem Set__size__stp_Obligation_subtype0: 
   "\<lbrakk>Fun_PD (Set__finite_p__stp P__a &&& Set_P P__a) (size__v::'a set \<Rightarrow> nat); 
@@ -663,7 +663,7 @@ theorem Set__size_Obligation_the:
   "\<exists>!(size__v::'a Set__FiniteSet \<Rightarrow> nat). 
      Fun_PD finite size__v 
        \<and> (size__v {} = 0 
-        \<and> (\<forall>(s::'a set) (x::'a). 
+        \<and> (\<forall>(s::'a Set__FiniteSet) (x::'a). 
              finite s 
                \<longrightarrow> size__v (insert x s) 
                      = 1 + size__v (s less x)))"
@@ -673,13 +673,15 @@ theorem Set__size_Obligation_subtype:
   by auto
 theorem Set__size_Obligation_subtype0: 
   "\<lbrakk>Fun_PD finite (size__v::'a Set__FiniteSet \<Rightarrow> nat); 
-    finite (s::'a set); 
-    size__v {} = 0\<rbrakk> \<Longrightarrow> finite (insert (x::'a) (s::'a Set__FiniteSet))"
+    finite (s::'a Set__FiniteSet); 
+    size__v {} = 0\<rbrakk> \<Longrightarrow> 
+   finite (insert (x::'a) s)"
   by auto
 theorem Set__size_Obligation_subtype1: 
   "\<lbrakk>Fun_PD finite (size__v::'a Set__FiniteSet \<Rightarrow> nat); 
-    finite (s::'a set); 
-    size__v {} = 0\<rbrakk> \<Longrightarrow> finite ((s::'a Set__FiniteSet) less (x::'a))"
+    finite (s::'a Set__FiniteSet); 
+    size__v {} = 0\<rbrakk> \<Longrightarrow> 
+   finite (s less (x::'a))"
   by auto
 consts Set__size :: "'a Set__FiniteSet \<Rightarrow> nat"
 defs Set__size_def: 
@@ -687,7 +689,7 @@ defs Set__size_def:
      \<equiv> (THE (size__v::'a Set__FiniteSet \<Rightarrow> nat). 
        Fun_PD finite size__v 
          \<and> (size__v {} = 0 
-          \<and> (\<forall>(s::'a set) (x::'a). 
+          \<and> (\<forall>(s::'a Set__FiniteSet) (x::'a). 
                finite s 
                  \<longrightarrow> size__v (insert x s) 
                        = 1 + size__v (s less x))))"
@@ -750,6 +752,7 @@ theorem Set__fold__stp_Obligation_subtype0:
   "\<lbrakk>P__b (c::'b); 
     Fun_P(\<lambda> ((x_1::'b), (x_2::'a)). P__b x_1 \<and> P__a x_2, P__b)
        (f::'b \<times> 'a \<Rightarrow> 'b); 
+    Set_P P__a {}; 
     Set__finite_p__stp P__a (RSet P__a {})\<rbrakk> \<Longrightarrow> 
    Set__foldable_p__stp(P__a, P__b)(c, f, RFun P__a {})"
    sorry
@@ -846,8 +849,10 @@ theorem Set__fold__stp_Obligation_subtype4:
         \<longrightarrow> fold__v(c, f, {}) = c; 
     Set__foldable_p__stp(P__a, P__b)
       (c_1, f_1, RFun P__a (insert x s)); 
-    Set__finite_p__stp P__a (RSet P__a (s less x))\<rbrakk> \<Longrightarrow> 
-   Set__foldable_p__stp(P__a, P__b)(c_1, f_1, RFun P__a (s less x))"
+    xf2_4 = s less x; 
+    Set_P P__a xf2_4; 
+    Set__finite_p__stp P__a (RSet P__a xf2_4)\<rbrakk> \<Longrightarrow> 
+   Set__foldable_p__stp(P__a, P__b)(c_1, f_1, RFun P__a xf2_4)"
    sorry
 consts Set__fold__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                           'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b"
@@ -888,7 +893,7 @@ theorem Set__fold_Obligation_the:
         (Set__foldable_p 
            &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3)) fold__v 
        \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c) 
-        \<and> (\<forall>(c_1::'b) (f_1::'b \<times> 'a \<Rightarrow> 'b) (s::'a set) (x::'a). 
+        \<and> (\<forall>(c_1::'b) (f_1::'b \<times> 'a \<Rightarrow> 'b) (s::'a Set__FiniteSet) (x::'a). 
              finite s \<and> Set__foldable_p(c_1, f_1, insert x s) 
                \<longrightarrow> fold__v(c_1, f_1, insert x s) 
                      = f_1(fold__v(c_1, f_1, s less x), x)))"
@@ -904,18 +909,18 @@ theorem Set__fold_Obligation_subtype1:
        (Set__foldable_p 
           &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
-    finite (s::'a set); 
+    finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c\<rbrakk> \<Longrightarrow> 
-   finite (insert (x::'a) (s::'a Set__FiniteSet))"
+   finite (insert (x::'a) s)"
   by auto
 theorem Set__fold_Obligation_subtype2: 
   "\<lbrakk>Fun_PD
        (Set__foldable_p 
           &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
-    finite (s::'a set); 
+    finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
-    Set__foldable_p(c_1, f_1, insert (x::'a) (s::'a Set__FiniteSet))\<rbrakk> \<Longrightarrow> 
+    Set__foldable_p(c_1, f_1, insert (x::'a) s)\<rbrakk> \<Longrightarrow> 
    finite (insert x s)"
   by auto
 theorem Set__fold_Obligation_subtype3: 
@@ -923,9 +928,9 @@ theorem Set__fold_Obligation_subtype3:
        (Set__foldable_p 
           &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
-    finite (s::'a set); 
+    finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
-    Set__foldable_p(c_1, f_1, insert (x::'a) (s::'a Set__FiniteSet))\<rbrakk> \<Longrightarrow> 
+    Set__foldable_p(c_1, f_1, insert (x::'a) s)\<rbrakk> \<Longrightarrow> 
    finite (s less x)"
   by auto
 theorem Set__fold_Obligation_subtype4: 
@@ -933,10 +938,11 @@ theorem Set__fold_Obligation_subtype4:
        (Set__foldable_p 
           &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
-    finite (s::'a set); 
+    finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
-    Set__foldable_p(c_1, f_1, insert (x::'a) (s::'a Set__FiniteSet)); 
-    finite (s less x)\<rbrakk> \<Longrightarrow> Set__foldable_p(c_1, f_1, s less x)"
+    Set__foldable_p(c_1, f_1, insert (x::'a) s); 
+    finite (s less x)\<rbrakk> \<Longrightarrow> 
+   Set__foldable_p(c_1, f_1, s less x)"
   by auto
 consts Set__fold :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b"
 defs Set__fold_def: 
@@ -946,7 +952,7 @@ defs Set__fold_def:
           (Set__foldable_p 
              &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3)) fold__v 
          \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c) 
-          \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a set) (x::'a). 
+          \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a Set__FiniteSet) (x::'a). 
                finite s \<and> Set__foldable_p(c, f, insert x s) 
                  \<longrightarrow> fold__v(c, f, insert x s) 
                        = f(fold__v(c, f, s less x), x))))"
@@ -963,7 +969,7 @@ defs Set__powerf__stp_def:
   "Set__powerf__stp P__a s
      \<equiv> (Set__power__stp P__a s \<inter> Set__finite_p__stp P__a)"
 theorem Set__powerf_Obligation_subtype: 
-  "Set_P (\<lambda> (xz::'a \<Rightarrow> bool). finite xz) (Pow s)"
+  "Set_P finite (Pow s)"
    sorry
 consts Set__powerf :: "'a set \<Rightarrow> 'a Set__FiniteSet set"
 defs Set__powerf_def: "Set__powerf s \<equiv> (Pow s \<inter> finite)"
@@ -1009,8 +1015,7 @@ defs Set__isMinIn__stp_def:
 consts isMinIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMinIn'_s" 60)
 defs isMinIn_s_def: 
   "((s::'a set) isMinIn_s (ss::'a set set))
-     \<equiv> (s \<in> ss 
-          \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s \<subseteq> s1))"
+     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s \<subseteq> s1))"
 consts Set__hasMin_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> bool"
 defs Set__hasMin_p__stp_def: 
   "Set__hasMin_p__stp P__a ss
@@ -1047,8 +1052,7 @@ defs Set__isMaxIn__stp_def:
 consts isMaxIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMaxIn'_s" 60)
 defs isMaxIn_s_def: 
   "((s::'a set) isMaxIn_s (ss::'a set set))
-     \<equiv> (s \<in> ss 
-          \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s1 \<subseteq> s))"
+     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s1 \<subseteq> s))"
 consts Set__hasMax_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> bool"
 defs Set__hasMax_p__stp_def: 
   "Set__hasMax_p__stp P__a ss

@@ -28,8 +28,7 @@ consts Relation__applys__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
                                   ('a, 'b)Relation__Relation \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Relation__applys__stp_def: 
   "Relation__applys__stp P__a r xS
-     \<equiv> (\<lambda> (y::'b). 
-          \<exists>(x::'a). P__a x \<and> (x \<in> xS \<and> (x, y) \<in> r))"
+     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). P__a x \<and> (x \<in> xS \<and> (x, y) \<in> r))"
 consts Relation__applys :: " ('a, 'b)Relation__Relation \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Relation__applys_def: 
   "Relation__applys r xS
@@ -39,8 +38,7 @@ consts Relation__applyis__stp :: "('b \<Rightarrow> bool) \<Rightarrow>
                                   'b set \<Rightarrow> 'a set"
 defs Relation__applyis__stp_def: 
   "Relation__applyis__stp P__b r yS
-     \<equiv> (\<lambda> (x::'a). 
-          \<exists>(y::'b). P__b y \<and> (y \<in> yS \<and> (x, y) \<in> r))"
+     \<equiv> (\<lambda> (x::'a). \<exists>(y::'b). P__b y \<and> (y \<in> yS \<and> (x, y) \<in> r))"
 consts Relation__applyis :: " ('a, 'b)Relation__Relation \<Rightarrow> 'b set \<Rightarrow> 'a set"
 defs Relation__applyis_def: 
   "Relation__applyis r yS
@@ -122,13 +120,12 @@ defs Relation__functional_p__stp_def:
               P__a x 
                 \<longrightarrow> Relation__apply r x 
                       \<in> Set__single_p__stp P__b 
-                              \<union> Set__empty_p__stp P__b)"
+                          \<union> Set__empty_p__stp P__b)"
 consts Relation__functional_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__functional_p_def: 
   "Relation__functional_p r
      \<equiv> (\<forall>(x::'a). 
-          Relation__apply r x 
-            \<in> Set__single_p \<union> Set__empty_p)"
+          Relation__apply r x \<in> Set__single_p \<union> Set__empty_p)"
 types  ('a,'b)Relation__Map = " ('a, 'b)Relation__Relation"
 consts Relation__injective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                        ('a, 'b)Relation__Relation \<Rightarrow> bool"
@@ -140,13 +137,12 @@ defs Relation__injective_p__stp_def:
               P__b y 
                 \<longrightarrow> Relation__applyi r y 
                       \<in> Set__single_p__stp P__a 
-                              \<union> Set__empty_p__stp P__a)"
+                          \<union> Set__empty_p__stp P__a)"
 consts Relation__injective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__injective_p_def: 
   "Relation__injective_p r
      \<equiv> (\<forall>(y::'b). 
-          Relation__applyi r y 
-            \<in> Set__single_p \<union> Set__empty_p)"
+          Relation__applyi r y \<in> Set__single_p \<union> Set__empty_p)"
 types  ('a,'b)Relation__InjectiveRelation = " ('a, 'b)Relation__Relation"
 consts Relation__bijective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                        ('a, 'b)Relation__Relation \<Rightarrow> bool"
@@ -155,16 +151,14 @@ defs Relation__bijective_p__stp_def:
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           Relation__total_p__stp(P__a, P__b) 
             \<inter> (Relation__surjective_p__stp(P__a, P__b) 
-                        \<inter> (Relation__functional_p__stp(P__a, P__b) 
-                                    \<inter> Relation__injective_p__stp
-                                               (P__a, P__b))))"
+                 \<inter> (Relation__functional_p__stp(P__a, P__b) 
+                      \<inter> Relation__injective_p__stp(P__a, P__b))))"
 consts Relation__bijective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__bijective_p_def: 
   "Relation__bijective_p
      \<equiv> (Relation__total_p 
           \<inter> (Relation__surjective_p 
-                      \<inter> (Relation__functional_p 
-                                  \<inter> Relation__injective_p)))"
+               \<inter> (Relation__functional_p \<inter> Relation__injective_p)))"
 types  ('a,'b)Relation__BijectiveRelation = " ('a, 'b)Relation__Relation"
 consts Relation__totalOn_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                     'a set \<Rightarrow> 
@@ -202,17 +196,15 @@ defs Relation__bijectiveOn_p__stp_def:
             \<lambda> (s_cqt::'b set). 
               Relation__totalOn_p__stp(P__a, P__b) s 
                 \<inter> (Relation__surjectiveOn_p__stp(P__a, P__b) s_cqt 
-                            \<inter> (Relation__functional_p__stp(P__a, P__b) 
-                                        \<inter> Relation__injective_p__stp
-                                                   (P__a, P__b))))"
+                     \<inter> (Relation__functional_p__stp(P__a, P__b) 
+                          \<inter> Relation__injective_p__stp(P__a, P__b))))"
 consts Relation__bijectiveOn_p :: "'a set \<Rightarrow> 
                                    'b set \<Rightarrow>  ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__bijectiveOn_p_def: 
   "Relation__bijectiveOn_p s s_cqt
      \<equiv> (Relation__totalOn_p s 
           \<inter> (Relation__surjectiveOn_p s_cqt 
-                      \<inter> (Relation__functional_p 
-                                  \<inter> Relation__injective_p)))"
+               \<inter> (Relation__functional_p \<inter> Relation__injective_p)))"
 types  ('a,'b)Relation__FiniteRelation = " ('a, 'b)Relation__Relation"
 types  ('a,'b)Relation__InfiniteRelation = " ('a, 'b)Relation__Relation"
 types  ('a,'b)Relation__CountableRelation = " ('a, 'b)Relation__Relation"

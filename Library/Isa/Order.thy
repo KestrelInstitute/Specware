@@ -29,13 +29,13 @@ defs Order__weakOrder_p__stp_def:
   "Order__weakOrder_p__stp P__a
      \<equiv> (EndoRelation__reflexive_p__stp P__a 
           \<inter> (EndoRelation__antisymmetric_p__stp P__a 
-                      \<inter> EndoRelation__negativeTransitive_p__stp P__a))"
+               \<inter> EndoRelation__negativeTransitive_p__stp P__a))"
 consts Order__weakOrder_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs Order__weakOrder_p_def: 
   "Order__weakOrder_p
      \<equiv> (EndoRelation__reflexive_p 
           \<inter> (EndoRelation__antisymmetric_p 
-                      \<inter> EndoRelation__negativeTransitive_p))"
+               \<inter> EndoRelation__negativeTransitive_p))"
 types 'a Order__WeakOrder = "'a EndoRelation__EndoRelation"
 consts Order__linearOrder_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                      'a EndoRelation__EndoRelation \<Rightarrow> bool"

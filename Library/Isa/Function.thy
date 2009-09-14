@@ -116,8 +116,7 @@ defs Function__inverse__stp_def:
   "Function__inverse__stp P__a f
      \<equiv> (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
 theorem Function__inverse_Obligation_the: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> 
-   \<exists>!(x::'a). (f:: ('a, 'b)Function__Bijection) x = (y::'b)"
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). f x = (y::'b)"
   apply(auto simp add: bij_def surj_def inj_on_def)
   apply(drule spec, erule exE, drule sym, auto)
   done
@@ -260,7 +259,8 @@ theorem Function__inverse_comp:
 theorem Function__f_inverse_apply__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) f; 
     Fun_P(P__a, P__b) f; 
-    P__b x\<rbrakk> \<Longrightarrow> f (Function__inverse__stp P__a f x) = x"
+    P__b x\<rbrakk> \<Longrightarrow> 
+   f (Function__inverse__stp P__a f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
   done
 theorem Function__f_inverse_apply: 
@@ -283,7 +283,8 @@ theorem Function__fxy_implies_inverse__stp:
     Fun_P(P__a, P__b) f; 
     P__a (x::'a); 
     P__b y; 
-    f x = y\<rbrakk> \<Longrightarrow> x = Function__inverse__stp P__a f y"
+    f x = y\<rbrakk> \<Longrightarrow> 
+   x = Function__inverse__stp P__a f y"
   proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
  assume PF: "Fun_P(P__a, P__b) f"
@@ -310,7 +311,7 @@ theorem Function__fxy_implies_inverse__stp:
  with INV_THE show ?thesis by auto
 qed
 theorem Function__fxy_implies_inverse: 
-  "\<lbrakk>bij (f::'a \<Rightarrow> 'b); f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
+  "\<lbrakk>bij f; f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
   proof -
  assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
  assume FXY: "f x = y"
