@@ -68,7 +68,7 @@
 	    )
 
 ;; The following defines functions such as:
-;;;   specware::getenv
+;;;   Specware::getenv
 ;;    compile-and-load-lisp-file
 ;;    load-lisp-file
 ;;    make-system
@@ -90,7 +90,7 @@
     (load utils)
     (compile-and-load-lisp-file utils)))
 
-(defparameter Specware4 (substitute #\/ #\\ (specware::getenv "SPECWARE4")))
+(defparameter Specware4 (substitute #\/ #\\ (Specware::getenv "SPECWARE4")))
 
 (if (null Specware::Specware4)
     (warn "SPECWARE4 environment var not set")
@@ -297,11 +297,11 @@
 ;(Specware::initializeSpecware-0)
 
 #+sbcl
-(defvar *sbcl-home* (specware::getenv "SBCL_HOME"))
+(defvar *sbcl-home* (Specware::getenv "SBCL_HOME"))
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
-		    (specware::setenv "SBCL_HOME" *sbcl-home*)
+		    (Specware::setenv "SBCL_HOME" *sbcl-home*)
 		    )
        sb-ext:*init-hooks*)
 
@@ -328,7 +328,7 @@
 (when *using-slime-interface?*
   `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
      (format nil "~a/Library/IO/Emacs/slime/" 
-	     (specware::getenv "SPECWARE4")))
+	     (Specware::getenv "SPECWARE4")))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
     (load loader :verbose t))
   )
@@ -345,7 +345,9 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (funcall (intern "EVAL-IN-EMACS" "EMACS")
+      (funcall (intern #+case-sensitive "eval-in-emacs"
+                       #-case-sensitive "EVAL-IN-EMACS"
+                       :Emacs)
 	       "(delete-continuation)"))
     val)
   )

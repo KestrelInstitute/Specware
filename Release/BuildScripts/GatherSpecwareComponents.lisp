@@ -81,7 +81,7 @@
 ;;; ================================================================================
 
 ;;; Get version information from canonical source...
-(let ((specware4 (specware::getenv "SPECWARE4")))
+(let ((specware4 (Specware::getenv "SPECWARE4")))
   (if (equal specware4 nil)
       (error "in GatherSpecwareComponents.lisp:  SPECWARE4 environment variable not set")
     (let ((specware-dir
@@ -842,7 +842,7 @@
 				     (merge-pathnames source-generic-dir    "StartSpecwareShell.lisp")
 				     ))))
 
-    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+    (dolist (file files-to-load) (Specware::compile-file-if-needed file))
 
     ;; Installation Scripts
     
@@ -907,7 +907,7 @@
                           (merge-pathnames source-generic-dir  "StartSpecwareShell.lisp")
                           ))))
 
-    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+    (dolist (file files-to-load) (Specware::compile-file-if-needed file))
 
     ;; Installation Scripts
     
@@ -972,7 +972,7 @@
 					   (merge-pathnames source-generic-dir         "StartSpecwareShell.lisp")))
 	 )
 
-    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+    (dolist (file files-to-load) (Specware::compile-file-if-needed file))
 
     ;; Installation Scripts
 
@@ -1077,7 +1077,7 @@
 				     (merge-pathnames source-generic-dir      "StartSpecwareShell.lisp")
 				     ))))
 
-    (dolist (file files-to-load) (specware::compile-file-if-needed file))
+    (dolist (file files-to-load) (Specware::compile-file-if-needed file))
 
     ;; Installation Scripts
     

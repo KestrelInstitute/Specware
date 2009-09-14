@@ -5,7 +5,7 @@
 ;;; a Specware distribution
 
 ;;; Get version information from canonical source...
-(let ((specware4 (specware::getenv "SPECWARE4")))
+(let ((specware4 (Specware::getenv "SPECWARE4")))
   (if (equal specware4 nil)
       (error "in BuildSpecwarePreamble.lisp:  SPECWARE4 environment variable not set")
     (let ((specware-dir
@@ -50,7 +50,7 @@
 ;;;will probably be copied into a Patches folder in the installation
 ;;;directory.  Old patch files will not be removed or overwritten.
 
-(defparameter *Specware-dir*  (format nil "~A/" (specware::getenv "SPECWARE4")))
+(defparameter *Specware-dir*  (format nil "~A/" (Specware::getenv "SPECWARE4")))
 
 (defun in-specware-dir (file) 
   (concatenate 'string *Specware-dir* file))
@@ -75,7 +75,7 @@
   (or (ignore-errors
        (let* ((file-name (pathname-name path))
 	      (major-version-len (length cl-user::*Specware-Major-Version-String*)))
-	 (if (and (string-equal (pathname-type path) specware::*fasl-type*)
+	 (if (and (string-equal (pathname-type path) Specware::*fasl-type*)
 		  (string-equal file-name "patch-" :end1 6)
 		  (string-equal file-name cl-user::*Specware-Major-Version-String*
 				:start1 6 :end1 (+ major-version-len 6))
