@@ -799,11 +799,12 @@ spec
 
  op includesPredLifter?(spc: Spec): Boolean = embed? Some (findTheOp(spc, Qualified("List", "List_P")))
 
- op maybeRaiseSubtypes(ty1: Sort, ty2: Sort, gamma: Gamma, spc: Spec): Sort * Sort =
+ op maybeRaiseSubtypes(ty1: Sort, ty2: Sort, gamma: Gamma): Sort * Sort =
    %% Temporary backward compatibility until we add these functions at type-check time rather
    %% than just in the Isabelle translator
    if lifting? gamma then
        % let _ = writeLine("Lift tau: "^printSort ty1^"\nLift sigma: "^printSort ty2) in
+       let spc = gamma.3 in
        let (n_ty1, n_ty2) = raiseSubtypes(ty1, ty2, spc) in
        (if equalType?(n_ty1, ty1) then ty1
          else % let _ = writeLine("Lift tau: "^printSort ty1^" --> "^printSort n_ty1) in
@@ -822,8 +823,11 @@ spec
      else (ty1, ty2)
 
  def <=	(tcc, gamma, M, tau, sigma) = 
-   (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma); 
-    subtypeRec([], tcc, gamma, M, tau, sigma))
+   (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma);
+    if equivType? gamma.3 (tau, sigma) then tcc
+    else
+    let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
+    subtypeRec([], tcc, gamma, M, tau0, sigma0))
 
  def subtypeRec(pairs, tcc, gamma, M, tau, sigma) =
    let spc = gamma.3 in
@@ -837,17 +841,16 @@ spec
 %       	        printSort sigma)
 %      in
    let pairs  = Cons((tau, sigma), pairs) in 
-   let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma, spc) in
-   let tau1   = if lifting? gamma then tau0   else unfoldBeforeCoProduct(spc, tau0)   in
-   let sigma1 = if lifting? gamma then sigma0 else unfoldBeforeCoProduct(spc, sigma0) in
-%    let _ = writeLine("tau0: "^printSort tau0^", "^"tau1: "^printSort tau1^", "^
-%                      "\nsig0: "^printSort sigma0^", "^"sig1: "^printSort sigma1) in
+   let tau1   = if lifting? gamma then tau   else unfoldBeforeCoProduct(spc, tau)   in
+   let sigma1 = if lifting? gamma then sigma else unfoldBeforeCoProduct(spc, sigma) in
+%    let _ = writeLine("tau0: "^printSort tau^", "^"tau1: "^printSort tau1^", "^
+%                      "\nsig0: "^printSort sigma^", "^"sig1: "^printSort sigma1) in
    if equalType?(tau1, sigma1)
       then tcc
    else
    case tau1 
      of Subsort(tau2, pred, _) -> 
-	%  let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
+	% let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
         let preds = decomposeConjPred pred in
         let gamma = foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma)) gamma preds in
         subtypeRec(pairs, tcc, gamma, M, tau2, sigma1)
