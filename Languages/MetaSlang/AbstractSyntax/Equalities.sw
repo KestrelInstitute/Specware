@@ -490,7 +490,7 @@ MetaSlang qualifying spec
      | [t]   -> [t]
      | t1::r -> let nr = removeDuplicateTerms r in
                 if termIn?(t1, nr) then nr
-                  else t1::r
+                  else t1::nr
 
  def MetaSlang.maybeAndSort (srts, pos) =
    let non_dup_sorts =
