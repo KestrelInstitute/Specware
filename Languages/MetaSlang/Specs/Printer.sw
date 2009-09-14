@@ -227,6 +227,7 @@ AnnSpecPrinter qualifying spec
 	 | Fun (Bool true, _, _) -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
+                                        let context = context << {printSort = true} in
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
 		       (3, ppTerm context ([2, i] ++ path, Top) trm)])
