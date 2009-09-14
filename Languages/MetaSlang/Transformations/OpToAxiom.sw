@@ -47,6 +47,8 @@ Prover qualifying spec
               simpleBody? arg
             | _ -> false)
 
+  op unfoldSizeThreshold: Nat = 16
+
   op maybeUnfoldSubTypePred(spc: Spec, predFn: MS.Term): MS.Term =
     case predFn of
       | Fun(Op(qid,_),ty,_) ->
@@ -55,7 +57,8 @@ Prover qualifying spec
            | Some opinfo ->
              (let (tvs,ty1,defn) = unpackFirstOpDef opinfo in
                 case defn of
-                  | Lambda([(VarPat _, _, bod)],_) | simpleBody? bod ->
+                  | Lambda([(VarPat _, _, bod)],_)
+                      | simpleBody? bod && termSize bod < unfoldSizeThreshold ->
                     (case typeMatch(ty1,inferType(spc,defn),spc,true) of
                        | Some subst ->  % Should match!
                          instantiateTyVarsInTerm(defn, subst)
