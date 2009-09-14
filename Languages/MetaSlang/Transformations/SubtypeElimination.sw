@@ -739,10 +739,10 @@ SpecNorm qualifying spec
     spc
 
   op typePred(spc: Spec, ty: Sort, tm: MS.Term): MS.Term =
-    % let _ = writeLine("tp: "^printTerm tm^": "^printSort ty) in
+     let _ = writeLine("tp: "^printTerm tm^": "^printSort ty) in
     case raiseSubtypeFn(ty, spc) of
       | Subsort(_, pred, _) ->
-        % let _ = writeLine("tpp: "^printTerm pred) in
+         let _ = writeLine("tpp: "^printTerm pred) in
         let pred = maybeUnfoldSubTypePred(spc, pred) in
         (case pred of
            | Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _) | varRecordPattern? pat ->
