@@ -328,134 +328,140 @@ SpecNorm qualifying spec
     %% Like raiseSubtype, but doesn't look inside Nat (because it should already have
     %% been expanded) The two functions should be merged
     %% Also assumes that the definitions of named types have been raised already
-    % let _ = writeLine("rstf: "^printSort ty) in
-    case ty of
-      | Base(qid, args, a) | qid nin? dontRaiseTypes ->
-        let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
-        if exists (fn tyi -> embed? Subsort tyi) args
-          then
-          let Qualified(q,id) = qid in
-          let pred_name = id^"_P" in
-          let pred_qid = Qualified(q, pred_name) in
-          (case AnnSpec.findTheOp(spc, pred_qid) of
-             | Some _ ->
-               let arg_comps = map (fn tyi ->
-                                    case tyi of
-                                      | Subsort(styi, pr, _) -> (styi, pr)
-                                      | _ -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
-                                 args
-               in
-               let (bare_args, arg_preds) = unzip arg_comps in
-               let bare_ty = Base(qid, bare_args, a) in
-               let arg_preds_lst =  decomposeListConjPred arg_preds in
-               let preds = map (fn arg_preds ->
-                                  mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
-                                                                            bare_args),
-                                                                mkArrow(bare_ty, boolSort))),
-                                         arg_preds))
-                             arg_preds_lst
-               in
-               mkSubtypePreds(bare_ty, preds, a, spc)
-             | None ->
-               (case tryUnfoldBase spc ty of
-                  | None -> ty
-                  | Some exp_ty ->
-                    let raise_ty = raiseSubtypeFn(exp_ty, spc) in
-                    if embed? Subsort raise_ty
-                      then raise_ty else ty))
-        else
-          (case tryUnfoldBase spc ty of
-             | None -> ty
-             | Some exp_ty ->
-               if embed? Subsort exp_ty
-                 then exp_ty else ty)
-      | Subsort(s_ty, p, a) ->
-        (case raiseSubtypeFn(s_ty, spc) of
-           | Subsort(sss_ty, pr, _) ->
-             % let _ = writeLine("rsf ss: "^printSort s_ty^"\n"^printSort sss_ty^" | "^printTerm pr) in
-             composeSubtypes(sss_ty, p, pr, a, spc)
-           | _ -> ty)
-      | Product(flds, a) ->
-        let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
-        if exists (fn (_,tyi) -> embed? Subsort tyi) flds
-          then let (bare_flds, arg_id_vars, pred,_) =
-                foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
-                         case tyi of
-                           | Subsort(t,p,_) -> let v = ("x_"^id, t)  in
-                                               (bare_flds ++ [(id,t)],
-                                                arg_id_vars ++ [(id, mkVarPat v)],
-                                                Utilities.mkAnd(pred, mkApply(p, mkVar v)),
-                                                i+1)
-                           | _ -> (bare_flds ++ [(id,tyi)],
-                                   arg_id_vars ++ [(id, mkWildPat tyi)],
-                                   pred,
-                                   i+1))
-                  ([],[],trueTerm,0) flds
-               in
-               Subsort(Product(bare_flds,a),
-                       mkLambda(mkRecordPat arg_id_vars, pred), a)
-          else ty
-      | Arrow(dom, rng ,a) ->
-        (case mkSubtypeFnPredicate(raiseSubtypeFn(dom,spc), raiseSubtypeFn(rng,spc), ty) of
-           | Some pred -> Subsort(ty, pred, a)
-           | None -> ty)
-      | _ -> ty
+    % let _ = writeLine("rstf< "^printSort ty) in
+    let result =
+        case ty of
+          | Base(qid, args, a) | qid nin? dontRaiseTypes ->
+            let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
+            if exists (fn tyi -> embed? Subsort tyi) args
+              then
+              let Qualified(q,id) = qid in
+              let pred_name = id^"_P" in
+              let pred_qid = Qualified(q, pred_name) in
+              (case AnnSpec.findTheOp(spc, pred_qid) of
+                 | Some _ ->
+                   let arg_comps = map (fn tyi ->
+                                        case tyi of
+                                          | Subsort(styi, pr, _) -> (styi, pr)
+                                          | _ -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
+                                     args
+                   in
+                   let (bare_args, arg_preds) = unzip arg_comps in
+                   let bare_ty = Base(qid, bare_args, a) in
+                   let arg_preds_lst =  decomposeListConjPred arg_preds in
+                   let preds = map (fn arg_preds ->
+                                      mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
+                                                                                bare_args),
+                                                                    mkArrow(bare_ty, boolSort))),
+                                             arg_preds))
+                                 arg_preds_lst
+                   in
+                   mkSubtypePreds(bare_ty, preds, a, spc)
+                 | None ->   % Need to unfold to get predicate lifter function
+               case tryUnfoldBase spc ty of
+                 | Some exp_ty -> mergeRaisedBase(ty, raiseSubtypeFn(exp_ty, spc), spc)
+                 | None -> raiseBase spc ty)
+            else raiseBase spc ty
+          | Subsort(s_ty, p, a) ->
+            (case raiseSubtypeFn(s_ty, spc) of
+               | Subsort(sss_ty, pr, _) ->
+                 % let _ = writeLine("rsf ss: "^printSort s_ty^"\n"^printSort sss_ty^" | "^printTerm pr) in
+                 composeSubtypes(sss_ty, p, pr, a, spc)
+               | _ -> ty)
+          | Product(flds, a) ->
+            let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
+            if exists (fn (_,tyi) -> embed? Subsort tyi) flds
+              then let (bare_flds, arg_id_vars, pred,_) =
+                    foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
+                             case tyi of
+                               | Subsort(t,p,_) -> let v = ("x_"^id, t)  in
+                                                   (bare_flds ++ [(id,t)],
+                                                    arg_id_vars ++ [(id, mkVarPat v)],
+                                                    Utilities.mkAnd(pred, mkApply(p, mkVar v)),
+                                                    i+1)
+                               | _ -> (bare_flds ++ [(id,tyi)],
+                                       arg_id_vars ++ [(id, mkWildPat tyi)],
+                                       pred,
+                                       i+1))
+                      ([],[],trueTerm,0) flds
+                   in
+                   Subsort(Product(bare_flds,a),
+                           mkLambda(mkRecordPat arg_id_vars, pred), a)
+              else ty
+          | Arrow(dom, rng ,a) ->
+            (case mkSubtypeFnPredicate(raiseSubtypeFn(dom,spc), raiseSubtypeFn(rng,spc), ty) of
+               | Some pred -> Subsort(ty, pred, a)
+               | None -> ty)
+          | _ -> ty
+     in
+     % let _ = writeLine("rstf> "^printSort result) in
+     result
  
   op raiseNamedTypes(spc: Spec): Spec =
-    let def raiseSortDefs(elts: SpecElements, spc: Spec)
-              : SpecElements * Spec =
-          foldl (fn ((elts, spc), el) ->
-                   case el of
-                     | Import(s_tm, i_sp, s_elts, a) ->
-                       let (s_elts, spc) = raiseSortDefs(s_elts, spc) in
-                       (Import(s_tm, i_sp, reverse s_elts, a)::elts, spc)
-                     | SortDef(qid, a) ->
-                       (case AnnSpec.findTheSort(spc, qid) of
-                        | Some  {names, dfn} ->
-                          let (tvs, ty) = unpackSort dfn in
-                          (case raiseSubtypeFn(ty, spc) of
-                           | r_ty as Subsort(sup_ty, pred, a1) ->
-                             % let _ = writeLine("rnt: "^printQualifiedId qid^"\n"^
-                             %                   printSort ty^"\n-->\n"^printTerm pred) in
-                             let Qualified(q, ty_name) = qid in
-                             if termSize pred < Prover.unfoldSizeThreshold
-                               then let sup_ty = if equalType?(ty, r_ty) then sup_ty
-                                                 else case ty of
-                                                        | Subsort(s_ty, _, _) -> s_ty
-                                                        | _ -> ty
-                                    in
-                                    let sortinfo = {names = names,
-                                                    dfn = maybePiSort(tvs, Subsort(sup_ty, pred, a1))}
-                                    in
-                                    let spc = spc << {sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)} in
-                                    (el::elts, spc)
-                             else
-                             let pred_nm = ty_name^"_subsort_pred" in
-                             let pred_id = Qualified(q, pred_nm) in
-                             let pred_ty = mkArrow(ty, boolSort) in
-                             let pred_tm = mkOp(pred_id, pred_ty) in
-                             let pred_el = Op(pred_id, true, a) in
-                             let opinfo = {names = [pred_id],
-                                           fixity = Nonfix,
-                                           dfn = maybePiTerm(tvs,
-                                                             SortedTerm(pred, pred_ty, a1)),
-                                           fullyQualified? = false}
-                             in
-                             let sortinfo = {names = names,
-                                             dfn = maybePiSort(tvs, Subsort(ty, pred_tm, a1))}
-                             in
-                             let spc = spc << {ops   = insertAQualifierMap(spc.ops,  q,pred_nm,opinfo),
-                                               sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)}
-                             in
-                             %% This is in reverse order of what is legal for Specware but works in Isabelle
-                             %% as the type does not refer to the predicate
-                             (pred_el::el::elts, spc)
-                           | _ -> (el::elts, spc))
-                        | None -> (el::elts, spc))
-                     | _ -> (el::elts, spc))
-            ([], spc) elts
+    let def raiseSortDefs(elts: SpecElements, spc: Spec, sbst: TermSubst)
+              : SpecElements * Spec * TermSubst =
+          foldl (fn ((elts, spc, sbst), el) ->
+                 case el of
+                 | Import(s_tm, i_sp, s_elts, a) ->
+                   let (s_elts, spc, sbst) = raiseSortDefs(s_elts, spc, sbst) in
+                   (Import(s_tm, i_sp, reverse s_elts, a)::elts, spc, sbst)
+                 | SortDef(qid, a) ->
+                   (case AnnSpec.findTheSort(spc, qid) of
+                    | Some  {names, dfn} ->
+                      let (tvs, ty) = unpackSort dfn in
+                      % let _ = writeLine(printQualifiedId qid) in
+                      (case raiseSubtypeFn(ty, spc) of
+                       | r_ty as Subsort(sup_ty, pred, a1) ->
+                         % let _ = writeLine("rnt: "^printQualifiedId qid^"\n"^
+                         %                   printSort ty^"\n-->\n"^printTerm pred) in
+                         let Qualified(q, ty_name) = qid in
+                         let pred = termSubst(pred, sbst) in
+                         if termSize pred < Prover.unfoldSizeThreshold
+                           then let sup_ty = if equalType?(ty, r_ty) then sup_ty
+                                             else case ty of
+                                                    | Subsort(s_ty, _, _) -> s_ty
+                                                    | _ -> ty
+                                in
+                                let sortinfo = {names = names,
+                                                dfn = maybePiSort(tvs, Subsort(sup_ty, pred, a1))}
+                                in
+                                let spc = spc << {sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)} in
+                                (el::elts, spc, sbst)
+                         else
+                         let base_ty = mkBase(qid, map mkTyVar tvs) in
+                         let pred_nm = ty_name^"__subsort_pred" in
+                         let pred_id = Qualified(q, pred_nm) in
+                         let pred_ty = mkArrow(ty, boolSort) in
+                         let pred_tm = mkOp(pred_id, pred_ty) in
+                         let pred_el = Op(pred_id, true, a) in
+                         let pred =
+                             case pred of
+                             | Lambda([(RecordPat((id1,_)::_, _), _,_)], _) | false ->
+                               let param = ("rec1", base_ty) in
+                               mkLambda(mkVarPat param, mkApply(pred, mkVar param))
+                             | _ -> pred
+                         in
+                         let opinfo = {names = [pred_id],
+                                       fixity = Nonfix,
+                                       dfn = maybePiTerm(tvs,
+                                                         SortedTerm(pred, pred_ty, a1)),
+                                       fullyQualified? = false}
+                         in
+                         let sortinfo = {names = names,
+                                         dfn = maybePiSort(tvs, Subsort(ty, pred_tm, a1))}
+                         in
+                         let spc = spc << {ops   = insertAQualifierMap(spc.ops,  q,pred_nm,opinfo),
+                                           sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)}
+                         in
+                         %% This is in reverse order of what is legal for Specware but works in Isabelle
+                         %% as the type does not refer to the predicate
+                         (pred_el::el::elts, spc, (pred, pred_tm)::sbst)
+                       | _ -> (el::elts, spc, sbst))
+                    | None -> (el::elts, spc, sbst))
+                 | _ -> (el::elts, spc, sbst))
+            ([], spc, sbst) elts
     in
-    let (r_elts, spc) = raiseSortDefs(spc.elements, spc) in
+    let (r_elts, spc, _) = raiseSortDefs(spc.elements, spc, []) in
     let spc = spc << {elements = reverse r_elts} in
     % let _ = writeLine("raiseNamedTypes:\n"^printSpec spc) in
     spc
