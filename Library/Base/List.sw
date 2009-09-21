@@ -5118,7 +5118,7 @@ proof Isa isoList_subtype_constr
   apply (rule_tac x="xa#x" in exI, auto)  
 end-proof
 
-proof Isa isoList_subtype_constr1
+proof Isa isoList_subtype_constr2
   apply (auto simp add: bij_ON_def List__isoList_def)
   (*** prove injectivity **)
   apply (thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
@@ -5137,7 +5137,7 @@ proof Isa isoList_subtype_constr1
   apply (rule_tac x="xa # x" in bexI, auto  simp add: list_all_iff mem_def)
 end-proof
 
-proof Isa isoList_subtype_constr2
+proof Isa isoList_subtype_constr1
   by (auto simp add: List__isoList_def list_all_iff)
 end-proof
 
