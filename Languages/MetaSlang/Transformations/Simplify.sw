@@ -391,6 +391,7 @@ spec
                                    invertSubst(bod, [bnd])))
                            (cjs, bod) bind_cjs
         in
+        let cjs = simplifyConjuncts cjs in
         let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
         let simpVs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
                                     || ~(knownNonEmpty?(v.2, spc)))
@@ -415,6 +416,18 @@ spec
         map (fn ((_,lhs_e),(_,rhs_e)) -> mkEquality(inferType(spc,lhs_e),lhs_e,rhs_e))
 	  (zip(lhs_flds,rhs_flds))
       | _ -> [cj]
+
+  op simplifyConjuncts(cjs: Terms): Terms =
+    map (fn cj ->
+           case cj of
+             | Apply(Fun(Implies, _, _),
+                     Record([("1", lhs), ("2", rhs)],_),_) ->
+               let lhs_cjs = getConjuncts lhs in
+               let lhs_cjs1 = filter (fn t -> ~(termIn?(t, cjs))) lhs_cjs in
+               if length lhs_cjs1 = length lhs_cjs then cj
+                 else mkSimpImplies(mkSimpConj lhs_cjs1, rhs)
+             | _ -> cj)
+      cjs
 
   op  varNamesSet: List Var * List MS.Term -> StringSet.Set
   def varNamesSet(vs,tms) =
@@ -563,7 +576,7 @@ spec
 
  op traceSimplify?: Boolean = false
 
- def simplify spc term =
+ op simplify (spc: Spec) (term: MS.Term): MS.Term =
    let simp_term = mapSubTerms(simplifyOne spc) term in
    let trace? = traceSimplify? && ~(equalTerm?(simp_term, term)) in
    let _ = if trace? then toScreen("Before:\n" ^ printTerm term ^ "\n") else () in
