@@ -68,9 +68,6 @@ spec
   op renameTerms    : Context -> Terms -> Terms
   op renamePatterns : Context -> Patterns -> Patterns
 
-  sort Terms    = List Term
-  sort Patterns = List Pattern
-
   def renameTerms c terms =
     List.map (renameTerm c) terms
 
