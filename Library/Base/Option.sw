@@ -61,7 +61,7 @@ proof Isa isoOption_subtype_constr
  apply (rule_tac x="Some x" in exI, auto)  
 end-proof
 
-proof Isa isoOption_subtype_constr1
+proof Isa isoOption_subtype_constr2
  apply(simp add: bij_ON_def Option__isoOption_def, auto) 
  (** first subgoal **)
  apply(simp add: inj_on_def option_map_def, auto)
@@ -77,7 +77,7 @@ proof Isa isoOption_subtype_constr1
  apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
 end-proof
 
-proof Isa Option__isoOption_subtype_constr2
+proof Isa Option__isoOption_subtype_constr1
   apply(simp add: Option__isoOption_def, auto)
   apply (rule_tac P="x = None" in case_split_thm, auto)
 end-proof
