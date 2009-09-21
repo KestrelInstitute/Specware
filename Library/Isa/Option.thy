@@ -67,6 +67,14 @@ theorem Option__isoOption_subtype_constr:
 theorem Option__isoOption_subtype_constr1: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
     Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
+   Fun_P(Option__Option_P P__a, Option__Option_P P__b)
+      (RFun (Option__Option_P P__a) (Option__isoOption iso_elem))"
+  apply(simp add: Option__isoOption_def, auto)
+  apply (rule_tac P="x = None" in case_split_thm, auto)
+  done
+theorem Option__isoOption_subtype_constr2: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
+    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
    Function__bijective_p__stp
      (Option__Option_P P__a, Option__Option_P P__b)
       (Option__isoOption iso_elem)"
@@ -83,13 +91,5 @@ theorem Option__isoOption_subtype_constr1:
  (** subgoal 2.2 needs some guidance   **)
  apply (drule_tac x = "ya" in  bspec, auto simp add: mem_def)
  apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
-  done
-theorem Option__isoOption_subtype_constr2: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
-    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
-   Fun_P(Option__Option_P P__a, Option__Option_P P__b)
-      (RFun (Option__Option_P P__a) (Option__isoOption iso_elem))"
-  apply(simp add: Option__isoOption_def, auto)
-  apply (rule_tac P="x = None" in case_split_thm, auto)
   done
 end

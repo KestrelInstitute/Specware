@@ -143,10 +143,8 @@ consts Order__unstrictify__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
 defs Order__unstrictify__stp_def: 
   "Order__unstrictify__stp P__a
      \<equiv> Function__inverse__stp
-          (EndoRelation__reflexive_p__stp P__a 
-             &&& Set_P
-                    (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2))
-          Order__strictify"
+          (Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2) 
+             &&& EndoRelation__reflexive_p__stp P__a) Order__strictify"
 theorem Order__unstrictify_Obligation_subtype: 
   "Function__bijective_p__stp
      (EndoRelation__reflexive_p, EndoRelation__irreflexive_p) Order__strictify"

@@ -96,7 +96,7 @@ theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype:
               \<union> Relation__domain__stp P__b m2); 
     x \<in> Relation__domain__stp P__b m; 
     Set_P
-       (\<lambda> ((xf0_9::'a), (xf1_9::'b)). P__a xf0_9 \<and> P__b xf1_9) m\<rbrakk> \<Longrightarrow> 
+       (\<lambda> ((xf0_5::'a), (xf1_5::'b)). P__a xf0_5 \<and> P__b xf1_5) m\<rbrakk> \<Longrightarrow> 
    MapAC__definedAt__stp P__b(m, x)"
    sorry
 theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype0: 
@@ -115,7 +115,7 @@ theorem MapAC__e_lt_lt_lt__stp_Obligation_subtype0:
     x \<in> Relation__domain__stp P__b m; 
     \<not> (MapAC__definedAt__stp P__b(m2, x)); 
     Set_P
-       (\<lambda> ((xf0_17::'a), (xf1_17::'b)). P__a xf0_17 \<and> P__b xf1_17) m1\<rbrakk> \<Longrightarrow> 
+       (\<lambda> ((xf0_9::'a), (xf1_9::'b)). P__a xf0_9 \<and> P__b xf1_9) m1\<rbrakk> \<Longrightarrow> 
    MapAC__definedAt__stp P__b(m1, x)"
    sorry
 consts MapAC__e_lt_lt_lt__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 

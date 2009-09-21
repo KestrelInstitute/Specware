@@ -10,12 +10,13 @@ axioms FSet__toFSet_subtype_constr1:
   "Function__bijective_p__stp(Set__finite_p__stp P__a, TRUE) FSet__toFSet"
 axioms FSet__toFSet_subtype_constr2: 
   "Fun_PD (Set__finite_p__stp P__a)
-      (RFun (Set__finite_p__stp P__a &&& Set_P P__a) FSet__toFSet)"
+      (RFun (Set__finite_p__stp P__a &&& Set_P P__a)
+          (RFun (Set_P P__a &&& Set__finite_p__stp P__a) FSet__toFSet))"
 consts FSet__fromFSet__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a set"
 defs FSet__fromFSet__stp_def: 
   "FSet__fromFSet__stp P__a
      \<equiv> Function__inverse__stp
-          (Set__finite_p__stp P__a &&& Set_P P__a) FSet__toFSet"
+          (Set_P P__a &&& Set__finite_p__stp P__a) FSet__toFSet"
 consts FSet__fromFSet :: "'a FSet__FSet \<Rightarrow> 'a Set__FiniteSet"
 defs FSet__fromFSet_def: 
   "FSet__fromFSet \<equiv> Function__inverse__stp finite FSet__toFSet"
@@ -521,8 +522,8 @@ consts List__toSet :: "'a list \<Rightarrow> 'a FSet__FSet"
 defs List__toSet_def: 
   "List__toSet l \<equiv> FSet__toFSet (\<lambda> (x::'a). x mem l)"
 theorem List__e_fsl_fsl_bsl_bsl__stp_Obligation_subtype: 
-  "\<lbrakk>List__nonEmpty_p ls; 
-    list_all (FSet__FSet_P P__a) ls; 
+  "\<lbrakk>list_all (FSet__FSet_P P__a) ls; 
+    List__nonEmpty_p ls; 
     FSet__FSet_P (FSet__FSet_P P__a)
        (List__toSet__stp (FSet__FSet_P P__a) ls)\<rbrakk> \<Longrightarrow> 
    FSet__nonEmpty_p__stp (FSet__FSet_P P__a)

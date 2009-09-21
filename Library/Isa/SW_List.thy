@@ -1121,7 +1121,8 @@ theorem List__head_Obligation_subtype0:
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> List__ofLength_p 1 (take 1 l)"
   by (cases l, auto)
 theorem List__head_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> P__a (hd l)"
+  "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
+   P__a (hd l)"
    by (auto simp add: list_all_length hd_conv_nth)
 theorem List__head__def: 
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> hd l = List__theElement (take 1 l)"
@@ -1133,7 +1134,8 @@ theorem List__last_Obligation_subtype0:
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> List__ofLength_p 1 (List__suffix(l, 1))"
   by (cases l, auto simp add: List__length_suffix)
 theorem List__last_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> P__a (last l)"
+  "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
+   P__a (last l)"
    by (auto simp add: list_all_length last_conv_nth)
 theorem List__last__def: 
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> 
@@ -1179,7 +1181,7 @@ theorem List__tail_Obligation_subtype:
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> 1 \<le> length l"
   by (cases l, auto)
 theorem List__tail_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
    list_all P__a (tl l)"
    by (auto simp add: list_all_length nth_tl)
 theorem List__tail__def: 
@@ -1189,7 +1191,7 @@ theorem List__butLast_Obligation_subtype:
   "\<lbrakk>l \<noteq> []\<rbrakk> \<Longrightarrow> 1 \<le> length l"
   by (cases l, auto)
 theorem List__butLast_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
    list_all P__a (butlast l)"
    by (auto simp add: list_all_iff, drule bspec, rule in_set_butlastD, auto)
 theorem List__butLast__def: 
@@ -1486,10 +1488,10 @@ theorem List__e_bar_gt_subtype_constr:
   "x # l \<noteq> []"
   by (auto simp add: Let_def split_def)
 theorem List__e_bar_gt_subtype_constr1: 
-  "\<lbrakk>P__a x; list_all P__a l\<rbrakk> \<Longrightarrow> List__nonEmpty_p (x # l)"
+  "\<lbrakk>P__a x; list_all P__a l\<rbrakk> \<Longrightarrow> list_all P__a (x # l)"
   by auto
 theorem List__e_bar_gt_subtype_constr2: 
-  "\<lbrakk>P__a x; list_all P__a l\<rbrakk> \<Longrightarrow> list_all P__a (x # l)"
+  "\<lbrakk>P__a x; list_all P__a l\<rbrakk> \<Longrightarrow> List__nonEmpty_p (x # l)"
   by auto
 theorem List__e_bar_gt__def: 
   "x # l = [x] @ l"
@@ -1500,11 +1502,11 @@ theorem List__e_lt_bar_subtype_constr:
   "l <| x \<noteq> []"
   by (auto simp add: List__e_lt_bar_def)
 theorem List__e_lt_bar_subtype_constr1: 
-  "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l; P__a x\<rbrakk> \<Longrightarrow> 
-   List__nonEmpty_p (l <| x)"
+  "\<lbrakk>list_all P__a l; P__a x\<rbrakk> \<Longrightarrow> list_all P__a (l <| x)"
   by (auto simp add: List__e_lt_bar_def)
 theorem List__e_lt_bar_subtype_constr2: 
-  "\<lbrakk>list_all P__a l; P__a x\<rbrakk> \<Longrightarrow> list_all P__a (l <| x)"
+  "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) l; P__a x\<rbrakk> \<Longrightarrow> 
+   List__nonEmpty_p (l <| x)"
   by (auto simp add: List__e_lt_bar_def)
 theorem List__update__stp_Obligation_subtype: 
   "\<lbrakk>P__a x; list_all P__a l; (i::nat) < length l\<rbrakk> \<Longrightarrow> 
@@ -2993,7 +2995,7 @@ defs List__rotateLeft_def:
           let n = n mod length l in 
           (drop n l) @ (take n l))"
 theorem List__rotateLeft_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
    list_all P__a (List__rotateLeft(l, n))"
   by (simp add: Let_def List__rotateLeft_def list_all_length nth_append)
 theorem List__rotateRight_Obligation_subtype: 
@@ -3012,7 +3014,7 @@ defs List__rotateRight_def:
           let n = n mod length l in 
           List__suffix(l, n) @ List__removeSuffix(l, n))"
 theorem List__rotateRight_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p l; list_all P__a l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l; List__nonEmpty_p l\<rbrakk> \<Longrightarrow> 
    list_all P__a (List__rotateRight(l, n))"
   apply (auto simp add: Let_def List__rotateRight_def)
   apply (rule List__suffix_subtype_constr, auto)
@@ -5354,6 +5356,12 @@ theorem List__isoList_subtype_constr:
 theorem List__isoList_subtype_constr1: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
     Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
+   Fun_P(list_all P__a, list_all P__b)
+      (RFun (list_all P__a) (List__isoList iso_elem))"
+  by (auto simp add: List__isoList_def list_all_iff)
+theorem List__isoList_subtype_constr2: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
+    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
    Function__bijective_p__stp(list_all P__a, list_all P__b)
       (List__isoList iso_elem)"
   apply (auto simp add: bij_ON_def List__isoList_def)
@@ -5373,12 +5381,6 @@ theorem List__isoList_subtype_constr1:
   apply (erule bexE)
   apply (rule_tac x="xa # x" in bexI, auto  simp add: list_all_iff mem_def)
   done
-theorem List__isoList_subtype_constr2: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
-    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
-   Fun_P(list_all P__a, list_all P__b)
-      (RFun (list_all P__a) (List__isoList iso_elem))"
-  by (auto simp add: List__isoList_def list_all_iff)
 theorem List__nil_subtype_constr: 
   "list_all P__a []"
   by auto
@@ -5403,14 +5405,14 @@ theorem List__null__def:
   "null = null"
   by auto
 theorem List__hd_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p d__x; list_all P__a d__x\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all (P__a::'a \<Rightarrow> bool) d__x; List__nonEmpty_p d__x\<rbrakk> \<Longrightarrow> 
    P__a (hd d__x)"
   by (simp add: list_all_iff)
 theorem List__hd__def: 
   "RFun List__nonEmpty_p hd = RFun List__nonEmpty_p hd"
   by auto
 theorem List__tl_subtype_constr: 
-  "\<lbrakk>List__nonEmpty_p d__x; list_all P__a d__x\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a d__x; List__nonEmpty_p d__x\<rbrakk> \<Longrightarrow> 
    list_all P__a (tl d__x)"
   apply (auto simp add: list_all_iff, erule bspec)
   apply (rule_tac t="d__x" and s="hd d__x # tl d__x" in subst, simp)

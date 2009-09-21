@@ -891,7 +891,8 @@ theorem Set__fold_Obligation_the:
   "\<exists>!(fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b). 
      Fun_PD
         (Set__foldable_p 
-           &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3)) fold__v 
+           &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
+        fold__v 
        \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c) 
         \<and> (\<forall>(c_1::'b) (f_1::'b \<times> 'a \<Rightarrow> 'b) (s::'a Set__FiniteSet) (x::'a). 
              finite s \<and> Set__foldable_p(c_1, f_1, insert x s) 
@@ -907,7 +908,7 @@ theorem Set__fold_Obligation_subtype0:
 theorem Set__fold_Obligation_subtype1: 
   "\<lbrakk>Fun_PD
        (Set__foldable_p 
-          &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
+          &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
     finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c\<rbrakk> \<Longrightarrow> 
@@ -916,7 +917,7 @@ theorem Set__fold_Obligation_subtype1:
 theorem Set__fold_Obligation_subtype2: 
   "\<lbrakk>Fun_PD
        (Set__foldable_p 
-          &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
+          &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
     finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
@@ -926,7 +927,7 @@ theorem Set__fold_Obligation_subtype2:
 theorem Set__fold_Obligation_subtype3: 
   "\<lbrakk>Fun_PD
        (Set__foldable_p 
-          &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
+          &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
     finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
@@ -936,7 +937,7 @@ theorem Set__fold_Obligation_subtype3:
 theorem Set__fold_Obligation_subtype4: 
   "\<lbrakk>Fun_PD
        (Set__foldable_p 
-          &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3))
+          &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
        (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b); 
     finite (s::'a Set__FiniteSet); 
     \<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c; 
@@ -950,7 +951,8 @@ defs Set__fold_def:
      \<equiv> (THE (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b). 
        Fun_PD
           (Set__foldable_p 
-             &&& (\<lambda> (ignore1, ignore2, (x_3::'a set)). finite x_3)) fold__v 
+             &&& (\<lambda> (ignore1, ignore2, (x_3::'a Set__FiniteSet)). finite x_3))
+          fold__v 
          \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). fold__v(c, f, {}) = c) 
           \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a Set__FiniteSet) (x::'a). 
                finite s \<and> Set__foldable_p(c, f, insert x s) 
