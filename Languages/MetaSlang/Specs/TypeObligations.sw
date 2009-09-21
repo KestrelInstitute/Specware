@@ -164,6 +164,24 @@ spec
             id, id)
      tm
 
+ op simplifyObligUnfoldSubsortPredicates?: Bool = true
+ op simplifyUnfoldSubsortPredicates (spc: Spec) (tm: MS.Term): MS.Term =
+   let tm1 = mapTerm (fn t ->
+                      case t of
+                        | Fun(Op(Qualified(_, nm), _), _, _)
+                            | testSubseqEqual?("_subsort_pred", nm, 0, length nm - 13) ->
+                          (case unfoldOpRef(t, spc) of
+                           | Some ut -> ut
+                           | None    -> t)
+                        | _ -> t,
+                      id, id)
+               tm
+   in
+   % let _ = writeLine("souf: "^printTerm tm^"\n  --> "^printTerm tm1) in
+   let r_tm = simplify spc tm1 in
+   % let _ = writeLine("  --> "^printTerm r_tm) in
+   r_tm
+
  op simplifyOblig (spc: Spec) (oblig: MS.Term) (bare_oblig: MS.Term): MS.Term =
    let _ = if traceObligationSimplify? then writeLine("Obligation: "^printTerm oblig) else () in
    if simplifyObligations?
@@ -176,8 +194,13 @@ spec
        let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
                     else simplify spc oblig2
        in
+       let oblig4 = %if simplifyObligUnfoldSubsortPredicates?
+%                     then simplifyUnfoldSubsortPredicates spc oblig3
+%                     else
+                       oblig3
+       in
        let _ = if traceObligationSimplify? then writeLine("Simplifies to\n"^printTerm oblig3) else () in
-       oblig3
+       if trueTerm? oblig4 then oblig4 else oblig3
    else oblig
 
  def addFailure((tcc, claimNames), (_, _, _, _, name as Qualified(qid, id), _, _, _), description) = 
@@ -827,6 +850,23 @@ spec
     if equivType? gamma.3 (tau, sigma) then tcc
     else
     let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
+    if lifting? gamma then
+      let gamma =
+          case tau0 of
+          | Subsort(_, pred, _) -> 
+            % let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
+            let preds = decomposeConjPred pred in
+            foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma)) gamma preds
+          | _ -> gamma
+      in
+      case sigma0 of
+      | Subsort(_, pred, _) ->
+	% let _ = writeLine("Verifying "^printTerm pred^" for "^printTerm M) in
+        let preds = decomposeConjPred pred in
+        foldl (fn (tcc, pred) -> addCondition(tcc, gamma, mkLetOrApply(pred, M, gamma), "_subtype"))
+          tcc preds
+      | _ -> tcc      
+    else
     subtypeRec([], tcc, gamma, M, tau0, sigma0))
 
  def subtypeRec(pairs, tcc, gamma, M, tau, sigma) =
@@ -994,6 +1034,9 @@ spec
    if refine_num = 0 then qid
      else Qualified(q,nm^"__"^toString refine_num)
 
+ op dontGenerateObligations?(q: String, id: String): Boolean =
+   false %endsIn?(id, "__subsort_pred")
+
  op dontUnfoldTypes: List QualifiedId = [Qualified("Nat", "Nat")]
 
  def checkSpec (spc, omitDefSubtypeConstrs?) = 
@@ -1013,7 +1056,8 @@ spec
    let (tccs, claimNames) =
        foldr (fn (el, (tccs, claimNames)) ->
                 case el of
-                 | Op (qid as Qualified(q, id), true, pos) -> % true means decl includes def
+                 | Op (qid as Qualified(q, id), true, pos)  % true means decl includes def
+                     | ~(dontGenerateObligations?(q, id)) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo ->
                         let (new_tccs, claimNames) = 
