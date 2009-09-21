@@ -14,29 +14,29 @@ PosSpecToSpec qualifying spec
           def subsort? (ty1', ty2') = 
             let ty1' = unfoldBase(spc, ty1') in
             let ty2' = unfoldBase(spc, ty2') in
-            %let _ = writeLine("subsort?("^printSort ty1'^", "^printSort ty2'^")") in
+            % let _ = writeLine("subsort?("^printSort ty1'^", "^printSort ty2'^")") in
             let result = equalType?(ty1', ty2')
                        || (case ty1'
                             of Subsort (s1', _, _) -> subsort? (s1', ty2')
                              | _ -> false)
             in
-            %let _ = writeLine("  = "^toString result) in
+            % let _ = writeLine("  = "^toString result) in
             result
           def commonAnc (s1', s2') =
-            %let _ = writeLine("commonAnc("^printSort s1'^", "^printSort s2'^")") in
+            % let _ = writeLine("commonAnc("^printSort s1'^", "^printSort s2'^")") in
             let result = if subsort? (s1', s2') then s2' else
                          if subsort? (s2', s1') then s1' else
-                         case s1'
+                         case unfoldBase(spc, s1')
                            of Subsort (ss1', _, _) -> commonAnc (ss1', s2')
                             | _ -> s2'                        % Shouldn't happen
             in
-            %let _ = writeLine("  = "^printSort result) in
+            % let _ = writeLine("  = "^printSort result) in
             result
         in
         let (s1', s2') = (inferType (spc,e1), inferType (spc,e2)) in
         let elTy = if subsort? (s1', elTy1) && subsort? (s2', elTy1)
                      then elTy1 else commonAnc (s1', s2') in
-        %let _ = writeLine("correctEqualityType: ="^printTerm eq_args^": "^printSort elTy) in
+        % let _ = writeLine("correctEqualityType: ="^printTerm eq_args^": "^printSort elTy) in
         let fn_tm = Fun (eq_or_neq, Arrow (Product([("1", elTy), ("2", elTy)], pos2), boolSort, pos2), pos1) in
         Apply(fn_tm, eq_args, pos1)
       | _ -> Apply(Fun(eq_or_neq, ty, pos1), eq_args, pos1)
