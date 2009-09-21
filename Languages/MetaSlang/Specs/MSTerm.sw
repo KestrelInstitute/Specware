@@ -5,20 +5,23 @@ MS qualifying spec
 
  op AnnSpecPrinter.printSort : [a] ASort a -> String  % see Printer.sw for def
 
- sort StandardAnnotation = Position
+ type StandardAnnotation = Position
 
- sort Term         = ATerm           StandardAnnotation
- sort Var          = AVar            StandardAnnotation
- sort Match        = AMatch          StandardAnnotation
- sort Sort         = ASort           StandardAnnotation
- sort Pattern      = APattern        StandardAnnotation
- sort Fun          = AFun            StandardAnnotation
+ type Term         = ATerm           StandardAnnotation
+ type Terms        = List Term
+ type Var          = AVar            StandardAnnotation
+ type Match        = AMatch          StandardAnnotation
+ type Sort         = ASort           StandardAnnotation
+ type Sorts        = List Sort
+ type Pattern      = APattern        StandardAnnotation
+ type Patterns     = List Pattern
+ type Fun          = AFun            StandardAnnotation
 
- sort Fields       = AFields         StandardAnnotation
- sort Field        = AField          StandardAnnotation
+ type Fields       = AFields         StandardAnnotation
+ type Field        = AField          StandardAnnotation
 
- sort MetaTyVar       = AMetaTyVar      StandardAnnotation
- sort MetaTyVars      = AMetaTyVars     StandardAnnotation
+ type MetaTyVar       = AMetaTyVar      StandardAnnotation
+ type MetaTyVars      = AMetaTyVars     StandardAnnotation
 
 
  op mkTyVar        : String                       -> Sort
