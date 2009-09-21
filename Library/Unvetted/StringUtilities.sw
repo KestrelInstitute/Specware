@@ -96,6 +96,12 @@ String qualifying spec
     in 
       loop 0
 
+  op endsIn?(s: String, pat: String): Boolean =
+    let len_pat = length pat in
+    let len_s   = length   s in
+    len_s >= len_pat
+      && testSubseqEqual?(pat, s, 0, len_s - len_pat)
+
   op  searchPred : String * (Char -> Boolean) -> Option Nat
   def searchPred (s, pred) =
     let sz = length s in
