@@ -41,7 +41,8 @@
     :sw "/UserDoc/tutorial/example/MatchingProofs#p2A"
     :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching_Oblig"
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2A"
-              (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
+              (:optional 
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Char"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Compare"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Functions"

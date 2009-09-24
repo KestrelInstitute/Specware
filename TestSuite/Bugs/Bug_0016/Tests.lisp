@@ -6,7 +6,8 @@
   :path "/loser/loser/loser"
   :output '((:alternatives 
 	     "Warning: Directory does not exist: /loser/loser/loser"
-	     "Warning: Directory does not exist: /loser/loser/loser/")
+	     "Warning: Directory does not exist: /loser/loser/loser/"
+	     "WARNING: Directory does not exist: /loser/loser/loser/")
 	    "Keeping old path:"
 	    (:alternatives 
 	     "/:$SPECWARE/"
@@ -16,6 +17,7 @@
 	     "$SPECWARE/:/"
 	     "$SPECWARE/"
 	     "/:./:$SPECWARE/"
+             "./:/:$SPECWARE/"
 	     )))
 
  )

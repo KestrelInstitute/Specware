@@ -22,7 +22,9 @@
 	    ";;; Elaborating spec at $TESTDIR/BadMorphisms#X"
 	    ";;; Elaborating spec at $TESTDIR/BadMorphisms#Y"
 	    "Error in morphism: Inconsistent op def mapping for f +-> g"
-	    "The domain op     f has a definition: (fn n -> n + n)"
+            (:alternatives
+             "The domain op     f has a definition: (fn n -> n + n)"
+             "The domain op     f has a definition: (fn n : Nat -> n + n)")
 	    "but translates to g, which does not."
 	    " found in $TESTDIR/BadMorphisms.sw"
 	    "27.24-27.24"

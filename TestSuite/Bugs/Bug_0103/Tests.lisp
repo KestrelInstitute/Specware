@@ -10,11 +10,16 @@
 	    "spec  "
 	    (:optional " import /Library/Base/WFO")
 	    " "
-	    " op  f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
+            " op f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
 	    " "
 	    " conjecture f_Obligation_exhaustive is [a] "
 	    "    fa(D : {(l, i) : (List(a) * Nat) | i < length l}) embed?(Cons)(D.1)"
 	    " "
+            " conjecture f_Obligation_uniqueness is [a] "
+            "    ex1(f : {(l, i) : (List(a) * Nat) | i < length l} -> a) "
+            "     fa(tl : List(a), hd : a, i : Nat) "
+            "      f(Cons(hd, tl), i) = (if i = 0 then hd else f(Cons(hd, tl), i))"
+            " "
 	    " def f (hd :: tl, i) = if i = 0 then hd else f(Cons(hd, tl), i)"
 	    "endspec"
 	    (:optional "")
@@ -38,7 +43,7 @@
 	    (:optional "creating directory: $TESTDIR/Snark/NeedWFO/")
 	    "    Expanded spec file: $TESTDIR/Snark/NeedWFO/P.sw"
 	    "    Snark Log file: $TESTDIR/Snark/NeedWFO/P.log"
-	    "P: Conjecture f_Obligation_exhaustive in O is *"
+            "P: Conjecture f_Obligation_exhaustive in O is proved using Snark in * seconds."
 	    (:optional "")
 	    (:optional "")
 	    ))

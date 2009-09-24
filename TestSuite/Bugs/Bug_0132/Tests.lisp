@@ -35,11 +35,15 @@
 	    " op  f : Nat -> Nat"
             ""
 	    " conjecture f_Obligation_subtype is "
-	    "    fa(n : Nat) uniquelySatisfied?((fn m -> m = n))"
+            (:alternatives
+             "    fa(n : Nat) uniquelySatisfied?((fn m -> m = n))"
+             "    fa(n : Nat) uniquelySatisfied?((fn m : Nat -> m = n))")
 	    " "
-	    " def f n = The((fn m -> m = n))"
+            (:alternatives 
+             " def f n = The((fn m -> m = n))"
+             " def f n = The((fn m : Nat -> m = n))")
             "endspec"
 	    ""
 	    ""))
+)
 
- )

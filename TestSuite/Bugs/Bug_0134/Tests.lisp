@@ -58,18 +58,22 @@
 	    "                => fold(s with x, c_1, f_1) "
 	    "                   = f_1(fold(s wout x, c_1, f_1), x)))))"
             ""
+	    " conjecture fold_Obligation_subtype1 is [a, b] "
+            "   fa(fold : ((FSet(a) * b * (b * a -> b)) | foldable?) -> b, s : FSet(a), "
+            "      x : a, c_1 : b, f_1 : b * a -> b) "
+            "    (fa(c : b, f : b * a -> b) fold(empty, c, f) = c) "
+            "    && foldable?(s with x, c_1, f_1) => foldable?(s wout x, c_1, f_1)"
+	    ""
 	    " conjecture fold_Obligation_subtype0 is [a, b] "
 	    "    fa(c : b, f : b * a -> b) foldable?(empty, c, f)"
             ""
-	    " conjecture fold_Obligation_subtype1 is [a, b] "
-	    "    fa(fold : ((FSet(a) * b * (b * a -> b)) | foldable?) -> b, s : FSet(a), "
-	    "       x : a, c_1 : b, f_1 : b * a -> b) "
-	    "     (fa(c : b, f : b * a -> b) fold(empty, c, f) = c) "
-	    "     && foldable?(s with x, c_1, f_1) => foldable?(s wout x, c_1, f_1)"
-	    " "
 	    " def fold = "
 	    "   The"
-	    "     ((fn fold -> "
+            (:alternaticves
+             "     ((fn fold -> "
+             ("    ((fn fold : "
+              "         ((FSet(a) * b * (b * a -> b)) | "
+              "         foldable? : FSet(a) * b * (b * a -> b) -> Boolean) -> b -> "))
 	    "          (fa(c : b, f : b * a -> b) fold(empty, c, f) = c) "
 	    "          && (fa(s : FSet(a), x : a, c : b, f : b * a -> b) "
 	    "               (foldable?(s with x, c, f) "
@@ -77,5 +81,5 @@
             "endspec"
 	    ""
 	    ""))
-
  )
+
