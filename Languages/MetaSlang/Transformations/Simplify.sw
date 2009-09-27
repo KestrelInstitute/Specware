@@ -300,7 +300,9 @@ spec
               let other_preds = delete lam preds in
               let Some arg_tm = patternToTerm pat in
               mkLambda(pat, mkConj(bod::map (fn pred -> simplifiedApply(pred, arg_tm, spc)) other_preds))
-            | _ -> composeConjPreds(preds, spc))
+            | _ ->
+              let result = composeConjPreds(preds, spc) in
+              result)
        | IfThenElse(t1,t2,t3,a) ->
          (case t1 of
             | Fun(Bool true, _,_) -> t2
