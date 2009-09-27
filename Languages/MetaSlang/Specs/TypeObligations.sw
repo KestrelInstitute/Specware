@@ -389,7 +389,8 @@ spec
            | Choose     qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f, s, _)?
            | Restrict   -> tcc 
            | Relax      -> tcc 
-           | Op(id, fx)  -> tcc 
+           | Op(id, fx)  -> tcc
+           | RecordMerge -> tcc
            | Project n  -> tcc
            | Embed(n, b) -> tcc
            | Embedded n -> tcc
