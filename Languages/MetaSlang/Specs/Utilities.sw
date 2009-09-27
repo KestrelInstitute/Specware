@@ -1684,7 +1684,7 @@ Utilities qualifying spec
        else
        case (rty1, rty2) of  %raiseSubtypes(rty1, rty2, spc) of
          | (rrty1, rrty2) ->
-       % let _ = writeLine("lifted: "^printSort rrty1^"\n"^printSort rrty2) in
+       % let _ = writeLine("cst: "^printSort rrty1^"\n"^printSort rrty2) in
        case (rrty1, rrty2) of
          | (Subsort(sty1, p1, _), Subsort(sty2, p2, _)) ->
            if equalTerm?(p1, p2) then ty1
@@ -1698,13 +1698,13 @@ Utilities qualifying spec
            Base(qid1, comm_args, a)
          | (Base(qid1, _, a), ty2) | subtypeOf?(ty2, qid1, spc) -> ty1
          | (ty1, Base(qid2, _, a)) | subtypeOf?(ty1, qid2, spc) -> ty2
-         | (Base _, _) ->
+         | (Base(Qualified(_,id),_,_), _) ->
            (case tryUnfoldBase spc rrty1 of
-            | Some uf_ty1 -> cst(uf_ty1, ty2, ty1, ty2)
+            | Some uf_ty1 -> cst(uf_ty1, rrty2, ty1, ty2)
             | None -> rrty1)
-         | (_, Base _) ->
+         | (_, Base(Qualified(_,id),_,_)) ->
            (case tryUnfoldBase spc rrty2 of
-            | Some uf_ty2 -> cst(ty1, uf_ty2, ty1, ty2)
+            | Some uf_ty2 -> cst(rrty1, uf_ty2, ty1, ty2)
             | None -> rrty2)
          | (Product(flds1, a), Product(flds2, _)) ->
            if length flds1 ~= length flds2 then ty1 % Shouldn't happen
@@ -1780,7 +1780,9 @@ Utilities qualifying spec
     case preds of
       | [pred] -> etaReduce pred
       | pred1::rpreds ->
-        let pred_ty = foldl (fn (pred_ty, predi) -> commonSuperType(pred_ty, inferType(spc, predi), spc))
+        let pred_ty = foldl (fn (pred_ty, predi) ->
+                               let pred_tyi = inferType(spc, predi) in
+                               commonSuperType(pred_ty, pred_tyi, spc))
                         (inferType(spc, pred1)) rpreds
         in
         let op_exp = mkInfixOp(Qualified("Bool", "&&&"),
