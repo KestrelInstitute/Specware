@@ -399,6 +399,7 @@ spec
            | Char     c -> tcc
            | String   s -> tcc
            | Bool     b -> tcc
+           | _          -> tcc
         )
 %%
 %% This checks that pattern matching is exhaustive.
