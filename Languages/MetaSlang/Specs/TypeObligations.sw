@@ -378,28 +378,28 @@ spec
 % special treatment.
 %
         (case f of
-           | Not        -> tcc 
-           | And        -> tcc 
-           | Or         -> tcc 
-           | Implies    -> tcc 
-           | Iff        -> tcc 
-           | Equals     -> tcc 
-           | NotEquals  -> tcc 
-           | Quotient   qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f, s, _)?
-           | Choose     qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f, s, _)?
-           | Restrict   -> tcc 
-           | Relax      -> tcc 
+           | Not         -> tcc 
+           | And         -> tcc 
+           | Or          -> tcc 
+           | Implies     -> tcc 
+           | Iff         -> tcc 
+           | Equals      -> tcc 
+           | NotEquals   -> tcc 
+           | Quotient qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f, s, _)?
+           | Choose   qid -> tcc  % TODO: anything? (or is this subsumed by treatment of s in Fun(f, s, _)?
+           | Restrict    -> tcc 
+           | Relax       -> tcc 
            | Op(id, fx)  -> tcc
            | RecordMerge -> tcc
-           | Project n  -> tcc
+           | Project n   -> tcc
            | Embed(n, b) -> tcc
-           | Embedded n -> tcc
-           | Select   n -> tcc
-           | Nat      i -> tcc 
-           | Char     c -> tcc
-           | String   s -> tcc
-           | Bool     b -> tcc
-           | _          -> tcc
+           | Embedded  n -> tcc
+           | Select    n -> tcc
+           | Nat       i -> tcc 
+           | Char      c -> tcc
+           | String    s -> tcc
+           | Bool      b -> tcc
+           | _           -> tcc
         )
 %%
 %% This checks that pattern matching is exhaustive.
@@ -607,7 +607,7 @@ spec
 
  def returnPatternRec(pairs, gamma, M, tau, sigma) =
      let spc = gamma.3 in
-     if equivType? spc (tau, sigma) ||
+     if equalType? (tau, sigma) ||     % equivType? spc
 	exists (fn p -> p = (tau, sigma)) pairs
 	then (gamma, M)
      else
@@ -849,7 +849,7 @@ spec
 
  def <=	(tcc, gamma, M, tau, sigma) = 
    (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma);
-    if equivType? gamma.3 (tau, sigma) then tcc
+    if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
     let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
     if lifting? gamma then

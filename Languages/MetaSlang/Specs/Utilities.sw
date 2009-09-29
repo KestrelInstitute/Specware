@@ -2228,7 +2228,7 @@ Utilities qualifying spec
                    | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
                    | None -> Some(Cons((id1,srt2),pairs)))
               | _ ->
-            if equivType? spc (srt1,srt2) then Some pairs
+            if equalType? (srt1,srt2) then Some pairs  % equivType? spc
             else
             case (srt1,srt2) of
               | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
