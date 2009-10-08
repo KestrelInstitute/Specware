@@ -568,7 +568,7 @@ IsaTermPrinter qualifying spec
     let spc = addRefineObligations spc in
 % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
-               then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc)
+               then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc, c.thy_name)
 	       else spc
     in
 % let _ = writeLine("1:\n"^printSpec spc) in

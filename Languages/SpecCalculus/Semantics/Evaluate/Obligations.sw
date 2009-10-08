@@ -141,9 +141,10 @@ SpecCalc qualifying spec
     mapTerm (translateTerm, translateSort, id) tm
 
   op specObligations : Spec * SCTerm -> Spec % Result was Env Spec, but can there be errors, etc.?
-  def specObligations (spc, _(*spcTerm*)) = 
+  def specObligations (spc, spcTerm) = 
     %% So far only does type conditions (for subsorts
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
-    makeTypeCheckObligationSpec (spc, false)
+    let pos = positionOf spcTerm in
+    makeTypeCheckObligationSpec (spc, false, positionSource pos)
 endspec

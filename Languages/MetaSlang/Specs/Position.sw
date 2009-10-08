@@ -55,6 +55,13 @@ Position qualifying spec {
     | Internal msg -> ""
     | _ -> printAll position
 
+ op positionSource(pos: Position): String =
+   case pos of
+    | Internal msg -> msg
+    | String (string, _, _) -> string
+    | File (filename, _, _) -> filename
+
+
  % ------------------------------------------------------------------------
 
  def chooseNonZeroPos (p1: Position, p2: Position) : Position =
