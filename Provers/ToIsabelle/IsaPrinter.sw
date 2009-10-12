@@ -231,7 +231,7 @@ IsaTermPrinter qualifying spec
       | Some loc_nm \_rightarrow (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path, uidToIsaName uid, "")
 
-  op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun", 
+  op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun", "option", 
                                          "lattices", "orderings", "sat", "relation", "record",
                                          "gcd", "datatype", "recdef", "hilbert_choice"]
   op thyName(spname: String): String =
@@ -870,7 +870,7 @@ IsaTermPrinter qualifying spec
                                           "next", "instance", "and", "open"]
  op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
-    "False", "Not", "sub", "sup", "Sigma", "map"]
+    "False", "Not", "sub", "sup", "Sigma", "map", "dom"]
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
