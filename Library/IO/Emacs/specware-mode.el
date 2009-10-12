@@ -2155,6 +2155,11 @@ With an argument, it doesn't convert imports."
 
 (sw:add-specware-to-isabelle-path)
 
+(defun sw:specware-mode-folding ()
+  (folding-add-to-marks-list 'specware-mode "%{{{" "%}}}" nil t))
+
+(add-hook 'folding-load-hook 'sw:specware-mode-folding)
+
 ;(add-hook 'proof-activate-scripting-hook 'sw:add-specware-to-isabelle-path t)
 
 ;;; & do the user's customisation
