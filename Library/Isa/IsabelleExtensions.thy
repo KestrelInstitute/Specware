@@ -498,7 +498,9 @@ lemma zdvd_mult_cancel:           "\<lbrakk>0<(m::int); 0\<le>n\<rbrakk> \<Longr
 
 lemma zdvd_zmult_eq:    (******** don't add this to simp - Isabelle hangs **********)
                      "\<lbrakk>j \<noteq> (0\<Colon>int); k \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd k*i = (j dvd (k * (i mod j)))"
-  by (cut_tac a=k and b=i and c=j in zmod_zmult1_eq, simp add: zdvd_iff_zmod_eq_0)
+  by (metis diff_0_right dvd_triv_left
+            number_of_is_id zdvd_iff_zmod_eq_0_number_of
+            zmod_zmult1_eq zmult_div_cancel)
 
 lemma even_suc_imp_not_even:      "(2 dvd ((a::int) + 1)) = (\<not>(2 dvd a))"  
   by arith
@@ -514,9 +516,9 @@ lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<
 (******************* DIV / MOD *********************************************)
 
 lemma div_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (rule quorem_div, auto simp add:quorem_def)
+  by (rule_tac r=r in divmod_rel_div, auto intro!: divmod_relI)
 lemma div_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (rule quorem_div, auto simp add:quorem_def)
+  by (rule_tac r=r in divmod_rel_div, auto intro!: divmod_relI)
 lemma div_pos_unique1:            "\<lbrakk>a = b*q - r; (0::int)<r; r<b\<rbrakk> \<Longrightarrow> a div b = q - 1"
   by (cut_tac a="b*q - r" and b=b and q="q - 1" and r="b - r" in div_pos_unique,
       auto, simp add: ring_simps)
@@ -525,9 +527,9 @@ lemma div_neg_unique1:            "\<lbrakk>a = b*q - r; (0::int)>r; r>b\<rbrakk
       auto, simp add: ring_simps)
 
 lemma mod_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (rule quorem_mod, auto simp add:quorem_def)
+  by (rule_tac r=r in divmod_rel_mod, auto intro!: divmod_relI)
 lemma mod_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (rule quorem_mod, auto simp add:quorem_def)
+  by (rule_tac r=r in divmod_rel_mod, auto intro!: divmod_relI)
 
 lemma mod_div_eq:                 "(a::int) = b * (a div b) + (a mod b)"
   by (simp add:  zmod_zdiv_equality)
@@ -544,7 +546,7 @@ lemma dvd_if_div_eq:              "\<lbrakk>(a::int) = b * (a div b) \<rbrakk> \
 (********** a lemma missing in IntDiv.thy *********************)
 
 lemma div_neg_pos_trivial: "\<lbrakk>a < (0::int);  0 \<le> a+b\<rbrakk> \<Longrightarrow> a div b = -1"
-  by (rule quorem_div, auto simp add: quorem_def)
+  by (auto intro!: divmod_rel_div divmod_relI)
 
 lemmas div_trivial = div_pos_pos_trivial div_neg_neg_trivial
                      div_pos_neg_trivial div_neg_pos_trivial 
@@ -559,12 +561,12 @@ lemma div_pos_pos_less:          "\<lbrakk>(0::int) < b; b \<le> a\<rbrakk> \<Lo
 lemma div_pos_neg_le:            "\<lbrakk>(0::int) < b; a \<le> 0\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
   by(cut_tac a=a and a'=0 and b=b in zdiv_mono1, auto)   
 lemma div_pos_neg_less:          "\<lbrakk>(0::int) < b; a < 0\<rbrakk> \<Longrightarrow>  a div b < 0"
-  by(cut_tac a=a and a'="-1" and b=b in zdiv_mono1, auto simp add: zdiv_minus1)
+  by(metis Pls_def pos_imp_zdiv_neg_iff)
 
 lemma div_neg_pos_le:            "\<lbrakk>b < (0::int); 0 \<le> a\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
   by(cut_tac a=0 and a'=a and b=b in zdiv_mono1_neg, auto)   
 lemma div_neg_pos_less:          "\<lbrakk>b < (0::int); 0 < a\<rbrakk> \<Longrightarrow>  a div b < 0"
-  by(cut_tac a="1" and a'=a and b=b in zdiv_mono1_neg, auto simp add: div_def divAlg_def)
+  by(metis Pls_def neg_imp_zdiv_neg_iff)
 lemma div_neg_neg_le:            "\<lbrakk>b < (0::int); a \<le> 0\<rbrakk> \<Longrightarrow>  0 \<le> a div b"
   by(cut_tac a=a and a'=0 and b=b in zdiv_mono1_neg, auto)   
 lemma div_neg_neg_less:          "\<lbrakk>b < (0::int); a \<le> b\<rbrakk> \<Longrightarrow>  0 < a div b"
@@ -657,22 +659,22 @@ lemma mod_bound [simp]: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow>
 ******************************************************************************)
 
 lemma zdiv_zminus1_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> (-a) div b = - (a div b)"
-   by (simp add: zdiv_zminus1_eq_if zdvd_iff_zmod_eq_0)
+   by (metis dvd_imp_mod_0 zdiv_zminus2 zdiv_zminus2_eq_if)
 lemma zdiv_zminus1_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> (-a) div b = -(a div b) - 1"
-   by (simp add: zdiv_zminus1_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zdiv_zminus1_eq_if dvd_eq_mod_eq_0)
 lemma zdiv_zminus2_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> a div (-b) = - (a div b)"
-   by (simp add: zdiv_zminus2_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zdiv_zminus2_eq_if dvd_eq_mod_eq_0)
 lemma zdiv_zminus2_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> a div (-b) = -(a div b) - 1"
-   by (simp add: zdiv_zminus2_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zdiv_zminus2_eq_if dvd_eq_mod_eq_0)
 
 lemma zmod_zminus1_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> (-a) mod b = 0"
-   by (simp add: zmod_zminus1_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zmod_zminus1_eq_if dvd_eq_mod_eq_0)
 lemma zmod_zminus1_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> (-a) mod b = b -(a mod b)"
-   by (simp add: zmod_zminus1_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zmod_zminus1_eq_if dvd_eq_mod_eq_0)
 lemma zmod_zminus2_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> a mod (-b) = 0"
-   by (simp add: zmod_zminus2_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
 lemma zmod_zminus2_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> a mod (-b) = (a mod b) - b"
-   by (simp add: zmod_zminus2_eq_if zdvd_iff_zmod_eq_0)
+   by (simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
 
 lemma abs_div_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
                         \<Longrightarrow> \<bar>-a div b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar> 
@@ -787,6 +789,7 @@ lemma div_abs_unique:
    apply(auto simp add: neq_iff div_pos_unique le_less)
    apply(cut_tac a="(b*(q - 1) + r+b)" and b=b and q="q - 1" and r="r+b" 
          in div_neg_unique, auto simp add: zdiv_zminus2_eq_if ring_simps)
+   apply (subgoal_tac "q = -1", auto)
 done		      		   
  		
 lemma abs_mod:                   "\<lbrakk>j \<noteq> (0\<Colon>int)\<rbrakk> \<Longrightarrow> \<bar>i mod j\<bar> = \<bar>\<bar>i\<bar> - \<bar>(i div j) * j\<bar>\<bar>"
@@ -826,10 +829,17 @@ done
 * Definition and lemmas copied from NumberTheory/IntPrimes.thy
 *				   
 *************************************************************)
-				   
+
 definition zgcd :: "int * int \<Rightarrow> int" 
-  where  "zgcd = (\<lambda>(x,y). int (gcd (nat \<bar>x\<bar>, nat \<bar>y\<bar>)))"
-				   
+  where  "zgcd = (\<lambda>(x,y). int (gcd (nat \<bar>x\<bar>) (nat \<bar>y\<bar>)))"
+
+(** JRM: In Isabelle2009 zgcd is now defined in theory GCD.
+ **      Keeping the above definition since user theories may
+ **      depend on it.
+ **)
+lemma zgcd_specware_def:         "zgcd (x,y) = GCD.zgcd x y"
+  by (auto simp add: zgcd_def GCD.zgcd_def)
+
 lemma zgcd_0 [simp]:             "zgcd (m, 0) = \<bar>m\<bar>"
   by (simp add: zgcd_def abs_if)
 lemma zgcd_0_left [simp]:        "zgcd (0, m) = \<bar>m\<bar>"
@@ -858,8 +868,8 @@ lemma zgcd_zmult_distrib2_abs:   "zgcd (k*m, k*n) = \<bar>k\<bar> * zgcd(m,n)"
   by (simp add: abs_if zgcd_zmult_distrib2)
 
 lemma zrelprime_zdvd_zmult_aux:  "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> 0 \<le> m \<Longrightarrow> k dvd m"
-  by (metis abs_of_nonneg zdvd_triv_right zgcd_greatest_iff 
-            zgcd_zmult_distrib2_abs zmult_1_right)
+  by (auto intro: zrelprime_dvd_mult
+           simp add: zgcd_specware_def zgcd_commute)
 
 lemma zrelprime_zdvd_zmult:      "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> k dvd m"
   apply (case_tac "0 \<le> m", blast intro: zrelprime_zdvd_zmult_aux)
@@ -887,16 +897,16 @@ lemma zlcm_geq_zero:              "0 \<le> zlcm(x,y)"
   by (auto simp add: zlcm_def)
 
 lemma zlcm_dvd1 [iff]:            "m dvd zlcm (m,n)"
-  apply(auto simp add: zlcm_def zdvd_abs2)
+  apply(auto simp add: zlcm_def)
   apply(insert zgcd_zdvd2 [of "m" "n"])
-  apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zmult1_eq )
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zmult1_eq )
 done
 
 lemma zlcm_dvd2 [iff]:            "n dvd zlcm (m, n)"
-  apply(auto simp add: zlcm_def zdvd_abs2)
+  apply(auto simp add: zlcm_def)
   apply(insert zgcd_zdvd1 [of "m" "n"])
   apply(rule_tac t="m*n" and s="n*m" in subst)
-  apply(auto simp add: zdvd_iff_zmod_eq_0 zdiv_zmult1_eq )
+  apply(auto simp add: dvd_eq_mod_eq_0 zdiv_zmult1_eq )
 done
 
 (***********************************************************************
@@ -904,7 +914,7 @@ done
 ***********************************************************************)
 
 lemma zlcm_least :                "\<lbrakk>x dvd w; y dvd w\<rbrakk> \<Longrightarrow> zlcm(x,y) dvd w"
-  apply(case_tac "w=0", auto simp add: zlcm_def zdvd_abs1)
+  apply(case_tac "w=0", auto simp add: zlcm_def)
   apply(erule dvdE, erule dvdE)
   apply(insert zgcd_zdvd1 [of "x" "y"], erule dvdE)
   apply(insert zgcd_zdvd2 [of "x" "y"], erule dvdE)
@@ -947,7 +957,7 @@ done
 (******** modified version with natural numbers as results *******)
 
 definition igcd :: "int * int \<Rightarrow> nat" 
-where                             "igcd = (\<lambda>(x,y). gcd (zabs x, zabs y))"
+where                             "igcd = (\<lambda>(x,y). gcd (zabs x) (zabs y))"
 
 lemma igcd_to_zgcd [simp]:        "int (igcd (m,n)) = zgcd(m,n)"
   by(simp add: zgcd_def igcd_def)
@@ -1095,7 +1105,7 @@ lemma divE_exa:  "   14 divE  (5::int) =  2  &  14 modE  (5::int) =  4
 (********************************** divT **************************************)
 
 lemma divT_is_div_if_dvd:         "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i divT j = i div j"
-  by (auto simp add: divT_def zdiv_abs1_if_dvd zdvd_abs1 zdiv_abs2_if_dvd zdvd_abs2,
+  by (auto simp add: divT_def zdiv_abs1_if_dvd zdiv_abs2_if_dvd,
       simp add:sign_def split: split_if_asm)
 lemma divT_is_div_if_eqsign:      "\<lbrakk>(j::int) \<noteq> 0; sign i = sign j\<rbrakk> \<Longrightarrow> i divT j = i div j"
   by (auto simp add: divT_def abs_if not_less_iff_gr_or_eq)
@@ -1111,7 +1121,7 @@ lemma modT_pos:                   "\<lbrakk>(0::int) \<le> j; 0 \<le> i\<rbrakk>
   by (simp add: sign_def modT_def)
 
 lemma modT_0_equals_mod_0:        "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> (i modT j = 0) = (i mod j = 0)"
-  by (auto simp add: modT_def zdvd_iff_zmod_eq_0  [symmetric] zdvd_abs1  zdvd_abs2)
+  by (auto simp add: modT_def dvd_eq_mod_eq_0  [symmetric])
 
 lemma modT_alt_def:               "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i modT j = i - j * (i divT j)"
   by (simp add: divT_def modT_def,
@@ -1126,7 +1136,7 @@ lemma divT_pos_abs_trivial:        "\<lbrakk>(0::int) < a; a < \<bar>b\<bar>\<rb
   by simp
 
 lemma divides_iff_modT_0:         "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd i = (i modT j = 0)"
-  by (simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
+  by (simp add: modT_0_equals_mod_0 dvd_eq_mod_eq_0)
 lemma exact_divT:                 "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i = j * (i divT j)"
   by (simp add: divides_iff_modT_0 modT_alt_def)
 
@@ -1262,14 +1272,14 @@ lemma divR_def_aux1: "\<lbrakk>b \<noteq> (0\<Colon>int)\<rbrakk> \<Longrightarr
   ***************************************************************************)
   apply(auto)
   (** 1 **)
-  apply(simp add: zdvd_iff_zmod_eq_0)
+  apply(simp add: dvd_eq_mod_eq_0)
   (** 2 **)  
   apply (cut_tac k=2 and i=a and j=b in zdvd_zmult_eq, simp, simp, cases "b>0", auto)
   (** 3 **)
   apply (cut_tac k=2 and i=a and j=b in zdvd_zmult_eq, simp_all, thin_tac "b dvd 2 * a")
   apply (subgoal_tac "(a mod b) \<noteq> 0")
   defer
-  apply (simp add: zdvd_iff_zmod_eq_0)
+  apply (simp add: dvd_eq_mod_eq_0)
   apply (cases "b>0", auto simp add: dvd_def not_less_iff_gr_or_eq)
   (** 3a - b>0 **)
   apply (subgoal_tac "b*0 < b*k \<and> b*k < b*2", clarify)
@@ -1564,25 +1574,25 @@ lemmas divR_def_lemmas =  divR_aux1 divR_aux2 divR_aux3
 
 lemma divides_iff_modR_0:      "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd i = (i modR j = 0)"
   by (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
-      simp_all add: dvd_if_div_eq  zdvd_iff_zmod_eq_0 div_via_mod)
+      simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
 
 lemma modR_0_equals_mod_0:     "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> (i modR j = 0) =  (i mod j = 0)"
-  by (simp add: divides_iff_modR_0 zdvd_iff_zmod_eq_0 [symmetric])
+  by (simp add: divides_iff_modR_0 dvd_eq_mod_eq_0 [symmetric])
 
 lemma exact_divR:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i = j * (i divR j)"
   by (simp add: divides_iff_modR_0 modR_def)
 
 lemma divR_zminus1:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
-  by (auto simp add: divR_def,
+by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus1  zdiv_zminus1_eq_if split: split_if_asm,
-      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_zminus_iff,
-      simp_all add : even_suc_imp_not_even)
+      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_minus_iff,
+      simp_all add : even_suc_imp_not_even) 
 
 lemma divR_zminus2:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)" 
-  by (auto simp add: divR_def,
+by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus2  zdiv_zminus2_eq_if split: split_if_asm,
-      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_zminus_iff,
-      simp_all add : even_suc_imp_not_even)
+      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_minus_iff,
+      simp_all add : even_suc_imp_not_even) 
 
 (*************************** divE **************************************)
 
@@ -1597,7 +1607,7 @@ lemma modE_alt_def:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrigh
   by (simp add: divE_def modE_def sign_def mod_via_div)
 
 lemma divides_iff_modE_0:      "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd i = (i modE j = 0)"
-  by (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
+  by (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
 
 lemma exact_divE:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \<Longrightarrow> i = j * (i divE j)"
   by (simp add: divides_iff_modE_0 modE_alt_def)
@@ -1613,7 +1623,7 @@ lemma modE_bound: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i mod
       simp add: abs_via_sign ring_simps)
 
 
-(******************** a simple fact about lists ********************)
+(******************** a few simple facts about lists **********************)
 
 lemma nth_tl: "Suc i < length xs \<Longrightarrow> tl xs ! i = xs ! Suc i"
 proof -
@@ -1624,7 +1634,26 @@ proof -
  finally show ?thesis .
 qed
 
-(******************** a simple fact about sets ********************)
+lemma length_1_hd_conv:
+"(length xs = 1) = (xs = [hd xs])"
+  by (auto simp add: length_Suc_conv )
+
+lemma length_1_nth_conv:
+"(length xs = 1) = (xs = [xs!0])"
+  by (auto simp add: length_Suc_conv)
+
+theorem list_all_set_tl: 
+  "\<lbrakk>\<forall>x\<in>set l. P x\<rbrakk> 
+  \<Longrightarrow> \<forall>x\<in>set (tl l). P x"
+  by (rule ballI, erule bspec, induct l, auto)
+
+theorem list_last_conv:
+"\<lbrakk>length xs = Suc l\<rbrakk> 
+  \<Longrightarrow> xs = butlast xs @ [xs!l]"
+ by (cut_tac xs=xs in append_butlast_last_id, auto,
+     cut_tac xs=xs in last_conv_nth, auto)
+
+(******************** a simple fact about sets ***************************)
 
 theorem permutation_set:
   "\<forall>i\<in>S. i < card S \<Longrightarrow> \<forall>i< card S. i\<in>S"

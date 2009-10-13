@@ -313,15 +313,15 @@ proof Isa list_subtype_constr2
          thin_tac "x definedOnInitialSegmentOfLength xa",  rule nat_induct)
   (********* Base case *********)
   apply (auto simp del: List__list.simps, simp, auto simp del: List__list.simps)
-  apply (rule_tac P="z 0 = None" in case_split_thm, simp del: List__list.simps)
+  apply (rule_tac P="z 0 = None" in case_split, simp del: List__list.simps)
   apply (simp only:  List__definedOnInitialSegmentOfLength_def,
          auto simp del: List__list.simps)
   (********** Step Case ********)
   apply (simp (no_asm_simp))
   apply (auto simp del: List__list.simps)
-  apply (rule_tac P="z 0 = None" in case_split_thm, auto simp del: List__list.simps)
+  apply (rule_tac P="z 0 = None" in case_split, auto simp del: List__list.simps)
   apply (drule_tac x=0 in spec, auto simp del: List__list.simps)
-  apply (drule_tac x="(\_lambdai. z (Suc i))"  in spec, auto simp del: List__list.simps)
+  apply (drule_tac x="(\_lambdai. z (Suc i))" in spec, auto simp del: List__list.simps)
   apply (erule notE)
   apply (simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
@@ -1249,72 +1249,13 @@ proof Isa butLast_Obligation_subtype
 end-proof
 
 proof Isa butLast__def
-proof -
- def x \<equiv> "last l"
- def bl \<equiv> "butlast l"
- assume "l \<noteq> []"
- with x_def bl_def have decomp_l: "l = bl @ [x]" by auto
- hence len1: "length (bl @ [x]) = length bl + 1" by auto
- have "List__removeSuffix (bl @ [x], 1) = bl"
- proof -
-  def f \<equiv> "\<lambda>j. if j < length (bl @ [x]) - Suc 0
-                then Some ((bl @ [x]) ! (0 + j)) else None"
-  def g \<equiv> "\<lambda>j. if j < length bl
-                              then Some (bl ! (0 + j)) else None"
-  hence g_iseg: "\<exists>n. g definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  have "f = g"
-  proof
-   fix j
-   show "f j = g j"
-   proof (cases "j < length bl")
-    assume "j < length bl"
-    with List.nth_append
-     have "(bl @ [x]) ! j = bl ! j" by (auto simp add: List.nth_append)
-    hence X: "(bl @ [x]) ! (0 + j) = bl ! (0 + j)" by auto
-    with len1 have "j < length (bl @ [x]) - Suc 0" by auto
-    with `j < length bl` X
-     have "(if j < length (bl @ [x]) - Suc 0
-            then Some ((bl @ [x]) ! (0 + j)) else None) =
-           (if j < length bl then Some (bl ! (0 + j)) else None)"
-      by auto
-    with f_def g_def show ?thesis by auto
-   next
-    assume "\<not> j < length bl"
-    with len1 have "\<not> j < length (bl @ [x]) - Suc 0" by auto
-    with `\<not> j < length bl`
-     have "(if j < length (bl @ [x]) - Suc 0
-            then Some ((bl @ [x]) ! (0 + j)) else None) =
-           (if j < length bl then Some (bl ! (0 + j)) else None)"
-      by auto
-    with f_def g_def show ?thesis by auto
-   qed
-  qed
-  have "List__removeSuffix (bl @ [x], 1) =
-        List__subFromLong (bl @ [x], 0, length (bl @ [x]) - 1)"
-   by (auto simp add: List__removeSuffix_def List__prefix__def)
-  also with f_def have "\<dots> = List__list f"
-   by (auto simp add: List__subFromLong_def del: List__list.simps)
-  also with `f = g` have "\<dots> = List__list g" by auto
-  also with g_def g_iseg have "\<dots> = List__subFromLong (bl, 0, length bl)"
-   by (auto simp add: List__subFromLong_def)
-  also with List__subFromLong_whole have "\<dots> = bl" by auto
-  finally show ?thesis .
- qed
- with bl_def decomp_l show ?thesis by auto
-qed
+ by (simp add: List__removeSuffix_def butlast_conv_take)
 end-proof
 
 theorem length_butLast is [a]
   fa (l: List1 a) length (butLast l) = length l - 1
 proof Isa [simp]
-proof -
- assume  ASM: "l \<noteq> []"
- with List.append_butlast_last_id have "l = butlast l @ [last l]" by auto
- with ASM have "length l = length (butlast l) + 1"
-  by (auto simp add: List.length_butlast)
- thus ?thesis by auto
-qed
+ by (simp add: length_greater_0_conv [symmetric] less_eq_Suc_le)
 end-proof
 
 theorem length_butLast_order is [a]
@@ -1331,206 +1272,16 @@ op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
   suffix (l, length l2) = l2
 
 proof Isa e_pls_pls_Obligation_the
-proof
- def l \<equiv> "l1 @ l2"
- hence lenl: "length l = length l1 + length l2"
-  by (auto simp add: List.length_append)
- from l_def have prel: "take (length l1) l = l1" by auto
- have sufl: "List__suffix(l, length l2) = l2"
- proof -
-  def f \<equiv> "\<lambda>j. if j < length l2
-                   then Some (l ! (length l - length l2 + j)) else None"
-  def g \<equiv> "\<lambda>j. if j < length l2
-                   then Some (l2 ! (0 + j)) else None"
-  have "f = g"
-  proof
-   fix j
-   show "f j = g j"
-   proof (cases "j < length l2")
-    assume "j < length l2"
-    with l_def lenl have "l ! (length l - length l2 + j) = l2 ! j"
-     by (auto simp add: List.nth_append)
-    hence "(if j < length l2 then
-            Some (l ! (length l - length l2 + j)) else None) =
-           (if j < length l2 then Some (l2 ! (0 + j)) else None)"
-     by auto
-    with f_def g_def show ?thesis by auto
-   next
-    assume "\<not> j < length l2"
-    hence "(if j < length l2 then
-            Some (l ! (length l - length l2 + j)) else None) =
-           (if j < length l2 then Some (l2 ! (0 + j)) else None)"
-     by auto
-    with f_def g_def show ?thesis by auto
-   qed
-  qed
-  from f_def have "List__suffix (l, length l2) = List__list f"
-   by (auto simp add: List__suffix_def List__subFromLong_def
-                 del: List__list.simps)
-  also with `f = g` have "\<dots> = List__list g" by auto
-  also with g_def have "\<dots> = List__subFromLong (l2, 0, length l2)"
-   by (auto simp add: List__subFromLong_def del: List__list.simps)
-  also have "\<dots> = l2" by (auto simp add: List__subFromLong_whole)
-  finally show ?thesis .
- qed
- from lenl prel sufl
-  show "length l = length l1 + length l2 \<and>
-        take (length l1) l = l1 \<and>
-        List__suffix(l, length l2) = l2"
-   by auto
-next
- fix l::"'a list"
- assume "length l = length l1 + length l2 \<and>
-         take (length l1) l = l1 \<and>
-         List__suffix (l, length l2) = l2"
- hence lenl: "length l = length l1 + length l2"
-   and prel: "take (length l1) l = (l1::'a list)"
-   and sufl: "List__suffix (l, length l2) = (l2::'a list)"
-  by auto
- show "l = l1 @ l2"
- proof (rule List.nth_equalityI)
-  from lenl show "length l = length (l1 @ l2)"
-   by (auto simp add: List.length_append)
- next
-  show "\<forall>i < length l. l ! i = (l1 @ l2) ! i"
-  proof
-   fix i
-   show "i < length l \<longrightarrow> l ! i = (l1 @ l2) ! i"
-   proof
-    assume "i < length l"
-    show "l ! i = (l1 @ l2) ! i"
-    proof (cases "i < length l1")
-     def f \<equiv> "\<lambda>j. if j < length l1
-                                 then Some (l ! (0 + j)) else None"
-     def h \<equiv> "\<lambda>j. l ! (0 + j)"
-     from f_def h_def
-      have f_h: "f = (\<lambda>j. if j < length l1 then Some (h j) else None)"
-       by (auto simp add: ext)
-     assume "i < length l1"
-     hence "(l1 @ l2) ! i = l1 ! i" by (auto simp add: List.nth_append)
-     also with prel have "\<dots> = (take (length l1) l) ! i" by auto
-     also with f_def lenl have "\<dots> = (List__list f) ! i"
-      by (auto simp add: List__prefix__def List__subFromLong_def
-                    del: List__list.simps)
-     also with f_h
-      have "\<dots> = (List__list
-                   (\<lambda>j. if j < length l1
-                                then Some (h j) else None)) ! i"
-       by auto
-     also have "\<dots> = (List__tabulate (length l1, h) ! i)"
-       by (auto simp add: List__tabulate_def del: List__list.simps)
-     also with `i < length l1` have "\<dots> = h i"
-      by (auto simp add: List__element_of_tabulate)
-     also with h_def have "\<dots> = l ! i" by auto
-     finally show ?thesis ..
-    next
-     def f \<equiv> "\<lambda>j. if j < length l2
-                  then Some (l ! (length l - length l2 + j)) else None"
-     def h \<equiv> "\<lambda>j. l ! (length l - length l2 + j)"
-     from f_def h_def
-      have f_h: "f = (\<lambda>j. if j < length l2 then Some (h j) else None)"
-       by (auto simp add: ext)
-     assume ASM: "\<not> i < length l1"
-     with `i < length l` lenl have "i - length l1 < length l2" by arith
-     from ASM have "(l1 @ l2) ! i = l2 ! (i - length l1)"
-      by (auto simp add: List.nth_append)
-     also with sufl
-      have "\<dots> = (List__suffix (l, length l2)) ! (i - length l1)"
-       by auto
-     also with f_def
-      have "\<dots> = (List__list f) ! (i - length l1)"
-       by (auto simp add: List__suffix_def List__subFromLong_def
-                     del: List__list.simps)
-     also with f_h
-      have "\<dots> = (List__list
-                   (\<lambda>j. if j < length l2 then Some (h j) else None)) !
-                 (i - length l1)"
-       by auto
-     also have "\<dots> = (List__tabulate (length l2, h) ! (i - length l1))"
-       by (auto simp add: List__tabulate_def del: List__list.simps)
-     also with `i - length l1 < length l2` have "\<dots> = h (i - length l1)"
-      by (auto simp add: List__element_of_tabulate)
-     also with h_def
-      have "\<dots> = l ! (length l - length l2 + (i - length l1))"
-       by auto
-     also with ASM have "\<dots> = l ! (length l - length l2 + i - length l1)"
-      by auto
-     also with lenl
-      have "\<dots> = l ! (length l - (length l1 + length l2) + i)"
-       by auto
-     also with lenl have "\<dots> = l ! i" by auto
-     finally show ?thesis ..
-    qed
-   qed
-  qed
- qed
-qed
+  apply (rule_tac a="l1@l2" in ex1I, auto)
+  apply (cut_tac l="l1@l2" and n="length l1" in List__removePrefix__def, simp_all)
+  apply (cut_tac xs=l1 and ys=l2 and zs=x in append_eq_conv_conj)
+  apply (simp add: List__removePrefix__def)
 end-proof
 
 proof Isa e_pls_pls__def
-proof -
- def P \<equiv> "(\<lambda>l. length l = length l1 + length l2 \<and>
-                take (length l1) l = l1 \<and>
-                List__suffix (l, length l2) = l2)
-          :: 'a list \<Rightarrow> bool"
- have sat: "P (l1 @ l2)"
- proof (unfold P_def)
-  def l \<equiv> "l1 @ l2"
-  hence lenl: "length l = length l1 + length l2"
-   by (auto simp add: List.length_append)
-  from l_def have prel: "take (length l1) l = l1" by auto
-  have sufl: "List__suffix(l, length l2) = l2"
-  proof -
-   def f \<equiv> "\<lambda>j. if j < length l2
-                    then Some (l ! (length l - length l2 + j)) else None"
-   def g \<equiv> "\<lambda>j. if j < length l2
-                    then Some (l2 ! (0 + j)) else None"
-   have "f = g"
-   proof
-    fix j
-    show "f j = g j"
-    proof (cases "j < length l2")
-     assume "j < length l2"
-     with l_def lenl have "l ! (length l - length l2 + j) = l2 ! j"
-      by (auto simp add: List.nth_append)
-     hence "(if j < length l2 then
-             Some (l ! (length l - length l2 + j)) else None) =
-            (if j < length l2 then Some (l2 ! (0 + j)) else None)"
-      by auto
-     with f_def g_def show ?thesis by auto
-    next
-     assume "\<not> j < length l2"
-     hence "(if j < length l2 then
-             Some (l ! (length l - length l2 + j)) else None) =
-            (if j < length l2 then Some (l2 ! (0 + j)) else None)"
-      by auto
-     with f_def g_def show ?thesis by auto
-    qed
-   qed
-   from f_def have "List__suffix (l, length l2) = List__list f"
-    by (auto simp add: List__suffix_def List__subFromLong_def
-                  del: List__list.simps)
-   also with `f = g` have "\<dots> = List__list g" by auto
-   also with g_def have "\<dots> = List__subFromLong (l2, 0, length l2)"
-    by (auto simp add: List__subFromLong_def del: List__list.simps)
-   also have "\<dots> = l2" by (auto simp add: List__subFromLong_whole)
-   finally show ?thesis .
-  qed
-  from lenl prel sufl
-   show "length l = length l1 + length l2 \<and>
-         take (length l1) l = l1 \<and>
-         List__suffix(l, length l2) = l2"
-    by auto
- qed
- have ex1: "\<exists>!l. P l"
-  by (auto simp add: P_def List__e_pls_pls_Obligation_the)
- hence sat': "P (THE l. P l)" by (rule theI')
- from ex1
-  have "\<And> x y. \<lbrakk> P x ; P y \<rbrakk> \<Longrightarrow> x = y"
-   by auto
- with sat sat' have "l1 @ l2 = (THE l. P l)" by auto
- with P_def show ?thesis by auto
-qed
+ apply (rule the1I2, rule List__e_pls_pls_Obligation_the)
+ apply (cut_tac xs=l1 and ys=l2 and zs=l in append_eq_conv_conj)
+ apply (simp add: List__removePrefix__def)
 end-proof
 
 % prepend/append element (note that |> and <| point into list):

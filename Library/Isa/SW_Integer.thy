@@ -358,7 +358,7 @@ theorem Integer__lcm_smallest_abs_multiple:
    (ilcm(x, y)) \<le> zabs w"
   apply(subgoal_tac "int (ilcm (x, y)) \<le> abs w", simp_all (no_asm_simp))
   apply(rule zdvd_imp_le)
-  apply(auto simp add:zlcm_least zdvd_abs2)
+  apply(auto simp add:zlcm_least)
   done
 theorem Integer__e_fsl_Obligation_the: 
   "\<lbrakk>j \<noteq> 0; j zdvd i\<rbrakk> \<Longrightarrow> \<exists>!(k::int). i = j * k"
@@ -466,7 +466,7 @@ theorem Integer__divT_of_negated_dividend:
   done
 theorem Integer__divides_iff_modT_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modT j = 0)"
-  apply(auto simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
+  apply(auto simp add: modT_0_equals_mod_0 dvd_eq_mod_eq_0)
   done
 theorem Integer__modT_less_than_divisor_in_abs: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modT j) < zabs j"
@@ -521,17 +521,17 @@ theorem Integer__divF_of_negated_divisor:
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i div - j 
      = - (i div j) - (if j zdvd i then 0 else 1)"
-  apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus2_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus2_eq_if)
   done
 theorem Integer__divF_of_negated_dividend: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i div j 
      = - (i div j) - (if j zdvd i then 0 else 1)"
-  apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus1_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus1_eq_if)
   done
 theorem Integer__divides_iff_modF_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i mod j = 0)"
-  apply(simp add: zdvd_iff_zmod_eq_0)
+  apply(simp add: dvd_eq_mod_eq_0)
   done
 theorem Integer__modF_less_than_divisor_in_abs: 
   "\<lbrakk>(j::Integer__Int0) \<noteq> 0\<rbrakk> \<Longrightarrow> 
@@ -547,13 +547,13 @@ theorem Integer__modF_of_negated_divisor:
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i mod - j 
      = i mod j - j * (if j zdvd i then 0 else 1)"
-  apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus2_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus2_eq_if)
   done
 theorem Integer__modF_of_negated_dividend: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i mod j 
      = - (i mod j) + j * (if j zdvd i then 0 else 1)"
-  apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus1_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus1_eq_if)
   done
 theorem Integer__sign_of_non_zero_modF: 
   "\<lbrakk>j \<noteq> 0; (i::int) mod j \<noteq> 0\<rbrakk> \<Longrightarrow> 
@@ -598,22 +598,22 @@ theorem Integer__divC_of_negated_divisor:
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i divC - j 
      = - (i divC j) + (if j zdvd i then 0 else 1)"
-   apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: zdvd_iff_zmod_eq_0)
+   apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: dvd_eq_mod_eq_0)
   done
 theorem Integer__divC_of_negated_dividend: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i divC j 
      = - (i divC j) + (if j zdvd i then 0 else 1)"
-   apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: zdvd_iff_zmod_eq_0)
+   apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: dvd_eq_mod_eq_0)
   done
 theorem Integer__divides_iff_modC_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modC j = 0)"
    apply(auto simp add: modC_def divC_def 
-                      zdvd_iff_zmod_eq_0 ring_simps div_bounds_neq)
+                      dvd_eq_mod_eq_0 ring_simps div_bounds_neq)
   done
 theorem Integer__modC_less_than_divisor_in_abs: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modC j) < zabs j"
-   apply (auto simp add: modC_def divC_def zdvd_iff_zmod_eq_0)
+   apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
  apply (cases "j>0", auto simp add: ring_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
         simp add: div_via_mod pos_mod_sign less_le)
@@ -690,7 +690,7 @@ theorem Integer__divR_of_negated_dividend:
 theorem Integer__divides_iff_modR_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modR j = 0)"
   apply (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
-         simp_all add: dvd_if_div_eq  zdvd_iff_zmod_eq_0 div_via_mod)
+         simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
   done
 consts Integer__euclidianDivision_p :: "int \<times> Integer__Int0 \<times> int \<times> int \<Rightarrow> bool"
 defs Integer__euclidianDivision_p_def: 
@@ -756,7 +756,7 @@ theorem Integer__divE_of_negated_dividend:
      = - (i divE j) 
          - sign j * (if j zdvd i then 0 else 1)"
   apply (auto simp add: divE_def abs_if zdiv_zminus1_eq_if,
-         auto simp add: zmod_zminus2_eq_if zdvd_iff_zmod_eq_0)
+         auto simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
   done
 theorem Integer__modE_alt_def: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> i modE j = i - j * (i divE j)"
@@ -764,7 +764,7 @@ theorem Integer__modE_alt_def:
   done
 theorem Integer__divides_iff_modE_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modE j = 0)"
-   apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
+   apply (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
   done
 theorem Integer__divE_equals_divT_on_naturals_Obligation_subtype: 
   "\<lbrakk>(j::Nat__PosNat) > 0\<rbrakk> \<Longrightarrow> j \<noteq> 0"

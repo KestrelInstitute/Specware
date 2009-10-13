@@ -231,16 +231,32 @@ end-proof
 
 op [a] forall? (p: a -> Bool) (s: FSet a) : Bool = fromFSet s <= p
 
+proof Isa forall_p__stp_Obligation_subtype
+ sorry
+end-proof
+
 op [a] exists? (p: a -> Bool) (s: FSet a) : Bool =
   nonEmpty? (fromFSet s /\ p)
 
+proof Isa exists_p__stp_Obligation_subtype
+ sorry
+end-proof
+
 op [a] exists1? (p: a -> Bool) (s: FSet a) : Bool =
   single? (fromFSet s /\ p)
+
+proof Isa exists1_p__stp_Obligation_subtype
+ sorry
+end-proof
 
 op [a] filter (p: a -> Bool) (s: FSet a) : FSet a =
   toFSet (fromFSet s /\ p)
 
 proof Isa filter__stp_Obligation_subtype
+ sorry
+end-proof
+
+proof Isa filter__stp_Obligation_subtype0
  sorry
 end-proof
 

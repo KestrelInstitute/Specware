@@ -339,6 +339,10 @@ proof Isa restrictDomain__stp_Obligation_subtype0
  sorry
 end-proof
 
+proof Isa restrictDomain__stp_Obligation_subtype1
+ sorry
+end-proof
+
 proof Isa restrictDomain_Obligation_subtype
  sorry
 end-proof
@@ -356,6 +360,10 @@ proof Isa restrictRange__stp_Obligation_subtype
 end-proof
 
 proof Isa restrictRange__stp_Obligation_subtype0
+ sorry
+end-proof
+
+proof Isa restrictRange__stp_Obligation_subtype1
  sorry
 end-proof
 

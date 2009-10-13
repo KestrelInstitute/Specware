@@ -579,7 +579,7 @@ theorem Set__induction__stp:
           `Set_P P__a s0`
           `p s0`
      have "p (insert x s0)" by auto
-     with s0_def have "insert x s0 = s" by auto
+     with s0_def have "insert x s0 = s" sorry (* by auto *)
      with `p (insert x s0)` show "p s" by auto
     qed
    qed

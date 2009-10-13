@@ -413,7 +413,7 @@ theorem lcm_smallest_abs_multiple is
 proof Isa
   apply(subgoal_tac "int (ilcm (x, y)) \_le abs w", simp_all (no_asm_simp))
   apply(rule zdvd_imp_le)
-  apply(auto simp add:zlcm_least zdvd_abs2)
+  apply(auto simp add:zlcm_least)
 end-proof
 
 % exact division of integers:
@@ -575,7 +575,7 @@ end-proof
 theorem divides_iff_modT_0 is
   fa (i:Int, j:Int0) j divides i <=> i modT j = 0
 proof Isa
-  apply(auto simp add: modT_0_equals_mod_0 zdvd_iff_zmod_eq_0)
+  apply(auto simp add: modT_0_equals_mod_0 dvd_eq_mod_eq_0)
 end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
@@ -675,14 +675,14 @@ theorem divF_of_negated_divisor is
   fa (i:Int, j:Int0) i divF -j = - (i divF j)
                                  - (if j divides i then 0 else 1)
 proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus2_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus2_eq_if)
 end-proof
 
 theorem divF_of_negated_dividend is
   fa (i:Int, j:Int0) -i divF j = - (i divF j)
                                  - (if j divides i then 0 else 1)
 proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0 zdiv_zminus1_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus1_eq_if)
 end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
@@ -690,7 +690,7 @@ end-proof
 theorem divides_iff_modF_0 is
   fa (i:Int, j:Int0) j divides i <=> i modF j = 0
 proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0)
+  apply(simp add: dvd_eq_mod_eq_0)
 end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
@@ -709,7 +709,7 @@ theorem modF_of_negated_divisor is
   fa (i:Int, j:Int0) i modF -j = i modF j
                                  - j * (if j divides i then 0 else 1)
 proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus2_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus2_eq_if)
 end-proof
 
 (* Negating the dividend negates the remainder and increases it by the divisor
@@ -719,7 +719,7 @@ theorem modF_of_negated_dividend is
   fa (i:Int, j:Int0) -i modF j = - (i modF j)
                                  + j * (if j divides i then 0 else 1)
 proof Isa
-  apply(simp add: zdvd_iff_zmod_eq_0 zmod_zminus1_eq_if)
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus1_eq_if)
 end-proof
 
 (* If non-zero, the sign of the remainder coincides with the divisor's. *)
@@ -808,14 +808,14 @@ theorem divC_of_negated_divisor is
   fa (i:Int, j:Int0) i divC -j = - (i divC j)
                                  + (if j divides i then 0 else 1)
 proof Isa
- apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: zdvd_iff_zmod_eq_0)
+ apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: dvd_eq_mod_eq_0)
 end-proof
 
 theorem divC_of_negated_dividend is
   fa (i:Int, j:Int0) -i divC j = - (i divC j)
                                  + (if j divides i then 0 else 1)
 proof Isa
- apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: zdvd_iff_zmod_eq_0)
+ apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: dvd_eq_mod_eq_0)
 end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
@@ -824,7 +824,7 @@ theorem divides_iff_modC_0 is
   fa (i:Int, j:Int0) j divides i <=> i modC j = 0
 proof Isa
  apply(auto simp add: modC_def divC_def 
-                      zdvd_iff_zmod_eq_0 ring_simps div_bounds_neq)
+                      dvd_eq_mod_eq_0 ring_simps div_bounds_neq)
 end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
@@ -832,7 +832,7 @@ end-proof
 theorem modC_less_than_divisor_in_abs is
   fa (i:Int, j:Int0) abs (i modC j) < abs j
 proof Isa
- apply (auto simp add: modC_def divC_def zdvd_iff_zmod_eq_0)
+ apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
  apply (cases "j>0", auto simp add: ring_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
         simp add: div_via_mod pos_mod_sign less_le)
@@ -959,7 +959,7 @@ theorem divides_iff_modR_0 is
   fa (i:Int, j:Int0) j divides i <=> i modR j = 0
 proof Isa
   apply (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
-         simp_all add: dvd_if_div_eq  zdvd_iff_zmod_eq_0 div_via_mod)
+         simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
 end-proof
 
 (* Boute's paper (mentioned earlier) proposes yet another version of integer
@@ -1051,7 +1051,7 @@ theorem divE_of_negated_dividend is
                                  - sign j * (if j divides i then 0 else 1)
 proof Isa
   apply (auto simp add: divE_def abs_if zdiv_zminus1_eq_if,
-         auto simp add: zmod_zminus2_eq_if zdvd_iff_zmod_eq_0)
+         auto simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
 end-proof
 
 (* The following usual property can be taken as an alternative definition of op
@@ -1068,7 +1068,7 @@ end-proof
 theorem divides_iff_modE_0 is
   fa (i:Int, j:Int0) j divides i <=> i modE j = 0
 proof Isa
-   apply (simp add: modE_def divE_def zdvd_iff_zmod_eq_0 [symmetric] zdvd_abs1)
+   apply (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
 end-proof
 
 (* Division on natural numbers is typically defined to be euclidean, which (for

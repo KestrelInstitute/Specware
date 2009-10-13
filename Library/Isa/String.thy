@@ -179,7 +179,7 @@ recdef Nat__natToString "measure size"
             @ Nat__digitToString (x mod 10))"
 
 
-lemma Nat__natToString_small [simp]: 
+lemma Nat__natToString_small: 
 "\<lbrakk>x < 10\<rbrakk>
  \<Longrightarrow> Nat__natToString x = Nat__digitToString x"
   by simp
@@ -201,7 +201,8 @@ lemma Nat__natToString_no_sign [simp]:
              and P="\<lambda>x. \<forall>s.
                        (Nat__natToString x = CHR ''-'' # s) = False" 
              and a="x" in measure_induct, auto)
-  apply (subgoal_tac "x<10 \<or> 10\<le>x", erule disjE, auto)
+  apply (subgoal_tac "x<10 \<or> 10\<le>x", erule disjE)
+  apply (auto simp add: Nat__natToString_small)
   apply (cut_tac x="x" in Nat__digitToString_singleton, simp, simp)
   apply (simp add: Nat__natToString_large)
   apply (drule_tac x="x div 10" in spec, drule mp, simp,
@@ -229,32 +230,33 @@ theorem Nat__stringToNat_Obligation_the:
          in rev_induct, auto,
          thin_tac "Nat__natToString xa = Nat__natToString x")
   apply (drule_tac x="z div 10" in spec, drule_tac x="y div 10" in spec)
-  apply (cut_tac x=z in  Nat__natToString.simps, 
-         cut_tac x=y in  Nat__natToString.simps, 
-         simp split: split_if_asm, simp_all add: not_less)
+  (**** splitting with the simplifier loops, I'll do it manually ************)
+  apply (case_tac "z<10")
+    defer apply (case_tac "y<10") prefer 3 apply (case_tac "y<10")
+  apply (simp_all only: not_less Nat__natToString_small Nat__natToString_large)
+  (** 1 **) 
+  apply (simp)
+  (** 2 **) 
   apply (cut_tac x="y mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
                                        simp add: mod_less_divisor,
          cut_tac x="z" in Nat__digitToString_singleton, simp,
          erule exE, erule exE, simp)
+  (** 3 **) 
   apply (cut_tac x="z mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
                                        simp add: mod_less_divisor,
          cut_tac x="y" in Nat__digitToString_singleton, simp,
          erule exE, erule exE, simp)
+  (** 4 **)
   apply (cut_tac x="z mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
                                        simp add: mod_less_divisor,
          cut_tac x="y mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
                                        simp add: mod_less_divisor,
          erule exE, erule exE, simp)
-  apply (thin_tac "Nat__natToString z = xs @ [xb]", thin_tac "10 \<le> z",
-         thin_tac "Nat__natToString y = xs @ [xb]", thin_tac "10 \<le> y",
-         thin_tac "aa = xb",
-         thin_tac "Nat__natToString (z div 10) = xs \<and> a = xb")
   apply (subgoal_tac "(y mod 10) = (z mod 10)", auto) 
   apply (rule_tac s="10 * (y div 10) + (y mod 10)" in ssubst)
   apply (rule_tac s="10 * (z div 10) + (z mod 10)" in ssubst)
   apply (simp, rule sym, rule mod_div_equality2, rule sym,
          rule mod_div_equality2)
-  (*** there should be an easier way ***)
   done
 consts Nat__stringToNat :: "string \<Rightarrow> nat"
 defs Nat__stringToNat_def: 

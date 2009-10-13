@@ -259,33 +259,33 @@ defs FMap__applyis_def:
      \<equiv> FSet__toFSet
           (Relation__applyis (FMap__fromFMap m) (FSet__fromFSet yS))"
 theorem FMap__id__stp_Obligation_subtype: 
-  "\<lbrakk>FSet__FSet_P P__a dom\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FSet__FSet_P P__a dom1\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (RSet (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom)))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1)))"
    sorry
 theorem FMap__id__stp_Obligation_subtype0: 
-  "\<lbrakk>FSet__FSet_P P__a dom\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FSet__FSet_P P__a dom1\<rbrakk> \<Longrightarrow> 
    Relation__functional_p__stp(P__a, P__a)
       (RFun (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom)))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1)))"
    sorry
 consts FMap__id__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id__stp_def: 
-  "FMap__id__stp P__a dom
+  "FMap__id__stp P__a dom1
      \<equiv> FMap__toFMap
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1))"
 theorem FMap__id_Obligation_subtype: 
-  "finite (EndoRelation__idOver (FSet__fromFSet dom))"
+  "finite (EndoRelation__idOver (FSet__fromFSet dom1))"
    sorry
 theorem FMap__id_Obligation_subtype0: 
-  "Relation__functional_p (EndoRelation__idOver (FSet__fromFSet dom))"
+  "Relation__functional_p (EndoRelation__idOver (FSet__fromFSet dom1))"
    sorry
 consts FMap__id :: "'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id_def: 
-  "FMap__id dom
-     \<equiv> FMap__toFMap (EndoRelation__idOver (FSet__fromFSet dom))"
+  "FMap__id dom1
+     \<equiv> FMap__toFMap (EndoRelation__idOver (FSet__fromFSet dom1))"
 theorem FMap__e_cl_gt__stp_Obligation_subtype: 
   "\<lbrakk>FMap__FMap_P(P__b, P__c) m2; 
     FMap__FMap_P(P__a, P__b) m1; 
