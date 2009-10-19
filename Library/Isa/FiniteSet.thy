@@ -454,6 +454,9 @@ defs FSet__e_bsl_bsl_fsl_fsl_def:
   "FSet__e_bsl_bsl_fsl_fsl ss
      \<equiv> FSet__toFSet
           (\<Union> (Set__map FSet__fromFSet (FSet__fromFSet ss)))"
+theorem FSet__forall_p__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
+   sorry
 consts FSet__forall_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                ('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__forall_p__stp_def: 
@@ -462,6 +465,9 @@ defs FSet__forall_p__stp_def:
 consts FSet__forall_p :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__forall_p_def: 
   "FSet__forall_p p s \<equiv> (FSet__fromFSet s \<subseteq> p)"
+theorem FSet__exists_p__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
+   sorry
 consts FSet__exists_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                ('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__exists_p__stp_def: 
@@ -471,6 +477,9 @@ defs FSet__exists_p__stp_def:
 consts FSet__exists_p :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__exists_p_def: 
   "FSet__exists_p p s \<equiv> Set__nonEmpty_p (FSet__fromFSet s \<inter> p)"
+theorem FSet__exists1_p__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
+   sorry
 consts FSet__exists1_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                 ('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 defs FSet__exists1_p__stp_def: 
@@ -481,6 +490,9 @@ consts FSet__exists1_p :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \
 defs FSet__exists1_p_def: 
   "FSet__exists1_p p s \<equiv> Set__single_p (FSet__fromFSet s \<inter> p)"
 theorem FSet__filter__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
+   sorry
+theorem FSet__filter__stp_Obligation_subtype0: 
   "\<lbrakk>Fun_PD P__a (p::'a \<Rightarrow> bool); 
     FSet__FSet_P P__a s; 
     Set_P P__a (FSet__fromFSet__stp P__a s \<inter> p)\<rbrakk> \<Longrightarrow> 

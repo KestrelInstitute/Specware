@@ -172,7 +172,8 @@ theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype:
 theorem EndoRelation__reflexiveClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
        (r::'a EndoRelation__EndoRelation); 
-    Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
+    Set_P
+       (\<lambda> ((xf0_1::'a), (xf1_1::'a)). P__a xf0_1 \<and> P__a xf1_1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
@@ -232,7 +233,8 @@ theorem EndoRelation__symmetricClosure__stp_Obligation_subtype:
 theorem EndoRelation__symmetricClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
        (r::'a EndoRelation__EndoRelation); 
-    Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
+    Set_P
+       (\<lambda> ((xf0_1::'a), (xf1_1::'a)). P__a xf0_1 \<and> P__a xf1_1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
@@ -292,7 +294,8 @@ theorem EndoRelation__transitiveClosure__stp_Obligation_subtype:
 theorem EndoRelation__transitiveClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
        (r::'a EndoRelation__EndoRelation); 
-    Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
+    Set_P
+       (\<lambda> ((xf0_1::'a), (xf1_1::'a)). P__a xf0_1 \<and> P__a xf1_1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 
@@ -353,7 +356,8 @@ theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype:
 theorem EndoRelation__equivalenceClosure__stp_Obligation_subtype0: 
   "\<lbrakk>Set_P (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
        (r::'a EndoRelation__EndoRelation); 
-    Set_P (\<lambda> ((xp0::'a), (xp1::'a)). P__a xp0 \<and> P__a xp1)
+    Set_P
+       (\<lambda> ((xf0_1::'a), (xf1_1::'a)). P__a xf0_1 \<and> P__a xf1_1)
        (Set__min__stp
            (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
            (\<lambda> (rc::('a \<times> 'a) set). 

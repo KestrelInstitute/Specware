@@ -259,33 +259,33 @@ defs FMap__applyis_def:
      \<equiv> FSet__toFSet
           (Relation__applyis (FMap__fromFMap m) (FSet__fromFSet yS))"
 theorem FMap__id__stp_Obligation_subtype: 
-  "\<lbrakk>FSet__FSet_P P__a dom1\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FSet__FSet_P P__a dom__v\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp
       (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
       (RSet (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1)))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom__v)))"
    sorry
 theorem FMap__id__stp_Obligation_subtype0: 
-  "\<lbrakk>FSet__FSet_P P__a dom1\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FSet__FSet_P P__a dom__v\<rbrakk> \<Longrightarrow> 
    Relation__functional_p__stp(P__a, P__a)
       (RFun (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1)))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom__v)))"
    sorry
 consts FMap__id__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id__stp_def: 
-  "FMap__id__stp P__a dom1
+  "FMap__id__stp P__a dom_v
      \<equiv> FMap__toFMap
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom1))"
+          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom_v))"
 theorem FMap__id_Obligation_subtype: 
-  "finite (EndoRelation__idOver (FSet__fromFSet dom1))"
+  "finite (EndoRelation__idOver (FSet__fromFSet dom__v))"
    sorry
 theorem FMap__id_Obligation_subtype0: 
-  "Relation__functional_p (EndoRelation__idOver (FSet__fromFSet dom1))"
+  "Relation__functional_p (EndoRelation__idOver (FSet__fromFSet dom__v))"
    sorry
 consts FMap__id :: "'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id_def: 
-  "FMap__id dom1
-     \<equiv> FMap__toFMap (EndoRelation__idOver (FSet__fromFSet dom1))"
+  "FMap__id dom_v
+     \<equiv> FMap__toFMap (EndoRelation__idOver (FSet__fromFSet dom_v))"
 theorem FMap__e_cl_gt__stp_Obligation_subtype: 
   "\<lbrakk>FMap__FMap_P(P__b, P__c) m2; 
     FMap__FMap_P(P__a, P__b) m1; 
@@ -848,6 +848,9 @@ consts FMap__filter :: "('a \<times> 'b \<Rightarrow> bool) \<Rightarrow>
 defs FMap__filter_def: 
   "FMap__filter p m \<equiv> FMap__toFMap (FMap__fromFMap m \<inter> p)"
 theorem FMap__restrictDomain__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
+   sorry
+theorem FMap__restrictDomain__stp_Obligation_subtype0: 
   "\<lbrakk>Fun_PD P__a (p::'a \<Rightarrow> bool); 
     FMap__FMap_P(P__a, P__b) m; 
     Set_P
@@ -858,7 +861,7 @@ theorem FMap__restrictDomain__stp_Obligation_subtype:
       (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
           (FMap__fromFMap__stp(P__a, P__b) m restrictDomain p))"
    sorry
-theorem FMap__restrictDomain__stp_Obligation_subtype0: 
+theorem FMap__restrictDomain__stp_Obligation_subtype1: 
   "\<lbrakk>Fun_PD P__a (p::'a \<Rightarrow> bool); 
     FMap__FMap_P(P__a, P__b) m; 
     Set_P
@@ -890,6 +893,9 @@ defs restrictDomain_fm_def:
   "(m restrictDomain_fm (p::'a \<Rightarrow> bool))
      \<equiv> FMap__toFMap (FMap__fromFMap m restrictDomain p)"
 theorem FMap__restrictRange__stp_Obligation_subtype: 
+  "\<lbrakk>Fun_PD P__b p\<rbrakk> \<Longrightarrow> Set_P P__b p"
+   sorry
+theorem FMap__restrictRange__stp_Obligation_subtype0: 
   "\<lbrakk>Fun_PD P__b (p::'b \<Rightarrow> bool); 
     FMap__FMap_P(P__a, P__b) m; 
     Set_P
@@ -900,7 +906,7 @@ theorem FMap__restrictRange__stp_Obligation_subtype:
       (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
           (FMap__fromFMap__stp(P__a, P__b) m restrictRange p))"
    sorry
-theorem FMap__restrictRange__stp_Obligation_subtype0: 
+theorem FMap__restrictRange__stp_Obligation_subtype1: 
   "\<lbrakk>Fun_PD P__b (p::'b \<Rightarrow> bool); 
     FMap__FMap_P(P__a, P__b) m; 
     Set_P

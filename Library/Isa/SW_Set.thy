@@ -579,7 +579,7 @@ theorem Set__induction__stp:
           `Set_P P__a s0`
           `p s0`
      have "p (insert x s0)" by auto
-     with s0_def have "insert x s0 = s" sorry (* by auto *)
+     with s0_def `x \<in> s` have "insert x s0 = s" by auto
      with `p (insert x s0)` show "p s" by auto
     qed
    qed
@@ -849,10 +849,10 @@ theorem Set__fold__stp_Obligation_subtype4:
         \<longrightarrow> fold__v(c, f, {}) = c; 
     Set__foldable_p__stp(P__a, P__b)
       (c_1, f_1, RFun P__a (insert x s)); 
-    xf2_4 = s less x; 
-    Set_P P__a xf2_4; 
-    Set__finite_p__stp P__a (RSet P__a xf2_4)\<rbrakk> \<Longrightarrow> 
-   Set__foldable_p__stp(P__a, P__b)(c_1, f_1, RFun P__a xf2_4)"
+    xf2_2 = s less x; 
+    Set_P P__a xf2_2; 
+    Set__finite_p__stp P__a (RSet P__a xf2_2)\<rbrakk> \<Longrightarrow> 
+   Set__foldable_p__stp(P__a, P__b)(c_1, f_1, RFun P__a xf2_2)"
    sorry
 consts Set__fold__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                           'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b"
