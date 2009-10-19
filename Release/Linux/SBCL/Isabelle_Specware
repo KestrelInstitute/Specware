@@ -27,4 +27,4 @@ PATH=$OLD_PATH
 
 XEMACS_SPECWARE="$HERE"/XEmacs_Specware
 
-isabelle-interface -p $XEMACS_SPECWARE $* 
+isabelle emacs -p $XEMACS_SPECWARE $* 

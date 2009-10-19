@@ -14,4 +14,4 @@ if [ ! -x "${XEMACS_SPECWARE}" ]; then
   fi
 fi
 
-isabelle-interface -p $XEMACS_SPECWARE $* 
+isabelle emacs -p $XEMACS_SPECWARE $* 
