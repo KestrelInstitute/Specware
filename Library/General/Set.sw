@@ -40,6 +40,13 @@ op [a] in? (x:a, s: Set a) infixl 20 : Bool = s x
 
 op [a] nin? (x:a, s: Set a) infixl 20 : Bool = ~(x in? s)
 
+% Lifting a predicate from elements to regularized sets
+op [a] Set_P (Pa: a -> Bool) (s: Set a): Bool =
+  fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
+proof Isa
+  by (simp add: Set_P_def)
+end-proof
+
 % (strict) sub/superset:
 
 op [a] <= (s1: Set a, s2: Set a) infixl 20 : Bool =
@@ -421,9 +428,8 @@ end-proof
 theorem finite_insert is [a]
   fa (s: FiniteSet a, x: a)
     finite? (s <| x)
-proof Isa Set__finite_insert__stp
-by(simp only: Set__finite_insert__stp_sans
-   Set_Fun_PD_Set_P Set__RSet_insert_simp)
+proof Isa finite_insert__stp
+by (auto simp only: Set__finite_insert__stp_sans Set_Set_P_Fun_PD Set__RSet_insert_simp)
 end-proof
 proof Isa Set__finite_insert
 by auto
@@ -455,7 +461,7 @@ next
  from `Set_P P__a A` have "Fun_PD P__a A" by (rule Set_Set_P_Fun_PD)
  from `Set__finite_p__stp P__a A` this `P__a a`
  have "Set__finite_p__stp P__a (RSet P__a (insert a A))" 
- by (rule Set__finite_insert__stp)
+ by (simp only: Set__finite_insert__stp Set_Fun_PD_Set_P)
  from `Set_P P__a A` `P__a a` this 
  show "Set__finite_p__stp P__a (insert a A)" by (simp only: Set__RSet_insert_simp)
 qed
@@ -465,11 +471,11 @@ lemma Set__finite_equiv_finite_stp:
 proof
  assume "Set_P (P__a::'a\_Rightarrow bool) (s::'a set)"
         "Set__finite_p__stp P__a s"
- show "finite s" by(rule Set__finite_p_stp_imp_finite) 
+ thus "finite s" by(simp add: Set__finite_p_stp_imp_finite) 
 next 
  assume "Set_P (P__a::'a\_Rightarrow bool) (s::'a set)"
         "finite s"
- show "Set__finite_p__stp P__a s" by(rule Set__finite_p_imp_finite_stp) 
+ thus "Set__finite_p__stp P__a s" by(simp add: Set__finite_p_imp_finite_stp) 
 qed 
 theorem Set__finite_less__stp_sans:
   "\_lbrakk Set__finite_p__stp P__a (s::'a \_Rightarrow bool); 
@@ -480,11 +486,11 @@ proof (rule_tac s="s less x" in Set__finite_p_imp_finite_stp)
  assume "Set__finite_p__stp P__a (s::'a \_Rightarrow bool)" 
         "Fun_PD P__a s"
         "P__a (x::'a)"
- from this have "finite s" by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
- from this show "finite (s less x)" by(auto simp:less_def)
+ then have "finite s" by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
+ thus "finite (s less x)" by(auto simp:less_def)
 next
  assume "Fun_PD P__a s" 
- from this show "Set_P P__a (SW_Set.less s x)" 
+ thus "Set_P P__a (SW_Set.less s x)" 
  by(simp only:Set_Fun_PD_Set_P Set__SetP_less)
 qed
 lemma Set__finite_less__stp:
@@ -529,26 +535,26 @@ proof Isa induction__stp_Obligation_subtype0
 end-proof
 
 proof Isa induction__stp
-proof -
+  proof -
  assume 
- "Fun_PD (Set__finite_p__stp (P__a::'a\_Rightarrowbool) &&& Fun_PD P__a) (p::'a set \_Rightarrow bool)"
+ "Fun_PD (Set__finite_p__stp (P__a::'a\_Rightarrowbool) &&& Set_P P__a) (p::'a set \_Rightarrow bool)"
  "Set__finite_p__stp P__a (s::'a set)"
- "Fun_PD P__a s" " p {}" and
+ "Set_P P__a s" " p {}" and
  HI:" \_forall(s::'a \_Rightarrow bool) (x::'a). 
       Set__finite_p__stp P__a s 
-        \_and (Fun_PD P__a s \_and (P__a x \_and p (s::'a set))) 
+        \_and (Set_P P__a s \_and (P__a x \_and p (s::'a set))) 
         \_longrightarrow p (insert x s)"
  thus "p s"
  proof(induct_tac s rule:finite_induct_stp)
-  assume "Set__finite_p__stp P__a s" "Fun_PD P__a s"
-  from this show "finite s" 
+  assume "Set__finite_p__stp P__a s" "Set_P P__a s"
+  thus "finite s" 
   by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
  next
-  assume "p {}" show "p {}" .
+  assume "p {}" thus "p {}" .
  next
   fix A::"'a set" and a::"'a"
   from HI have "Set__finite_p__stp P__a A 
-        \_and (Fun_PD P__a A \_and (P__a a \_and p A))  
+        \_and (Set_P P__a A \_and (P__a a \_and p A))  
         \_longrightarrow p (insert a A)" by auto
  moreover 
   assume asump:"finite A \_and Set_P P__a A \_and P__a a \_and p A"
@@ -559,8 +565,8 @@ proof -
  ultimately show "p (insert a A)" using asump 
   by (auto)
  next
-  from `Fun_PD P__a s` show "Set_P P__a s" 
-  by(simp only:Set_Fun_PD_Set_P)
+  from `Set_P P__a s` show "Set_P P__a s" 
+  by(simp)
  qed
 qed
 end-proof
@@ -612,7 +618,7 @@ by (auto simp only: Set__finite_insert__stp)
 end-proof
 
 proof Isa size__stp_Obligation_subtype1
-by (auto simp only: Set__finite_less__stp)
+by (simp only: Set__finite_less__stp Set_Set_P_Fun_PD)
 end-proof
 
 proof Isa size__stp_Obligation_the
