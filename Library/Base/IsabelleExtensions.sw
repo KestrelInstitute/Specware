@@ -112,6 +112,16 @@ lemma sat_eq_the:
 by auto
 
 
+(******************************************************************************
+ *  There exists a unique member of a singleton set.
+ ******************************************************************************)
+
+lemma unique_singleton:
+  "(\<exists>x. P = {x}) = (\<exists>!x. P x)"
+  by (simp add:  expand_set_eq singleton_iff,
+      auto simp add: mem_def) 
+
+
 (*************************************************************
 * Isabelle's foldl and foldr functions slightly differ from
 * Metaslang's foldl and foldr ops because (1) their function
