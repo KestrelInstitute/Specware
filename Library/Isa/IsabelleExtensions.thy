@@ -51,6 +51,12 @@ lemma mem_reverse:   "x\<in>P \<Longrightarrow> P x"
 lemma univ_true:     "(\<lambda>x. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
 
+(*** stronger control over unfolding "a \<in> S" ***)
+ 
+lemma mem_lambda_int:
+  "a \<in> (\<lambda>(i::int). P i) = P a"
+ by (simp add: mem_def)
+  
 
 (******************************************************************************
  *  A bit more logic 
@@ -72,6 +78,11 @@ proof -
  hence "P (SOME x. P x)" by (rule someI_ex)
  with EX1 show ?thesis by (rule the1_equality)
 qed
+
+lemma unique_singleton:
+  "(\<exists>x. P = {x}) = (\<exists>!x. P x)"
+  by (simp add:  expand_set_eq singleton_iff,
+      auto simp add: mem_def)
 
 
 (*************************************************************
@@ -97,16 +108,6 @@ by (auto simp: theI')
 lemma sat_eq_the:
 "\<lbrakk> \<exists>!x. P x ; y = (THE x. P x) ; P z\<rbrakk> \<Longrightarrow> y = z"
 by auto
-
-
-(******************************************************************************
- *  There exists a unique member of a singleton set.
- ******************************************************************************)
-
-lemma unique_singleton:
-  "(\<exists>x. P = {x}) = (\<exists>!x. P x)"
-  by (simp add:  expand_set_eq singleton_iff,
-      auto simp add: mem_def) 
 
 
 (*************************************************************
@@ -515,7 +516,7 @@ lemma zdvd_zmult_eq:    (******** don't add this to simp - Isabelle hangs ******
 lemma even_suc_imp_not_even:      "(2 dvd ((a::int) + 1)) = (\<not>(2 dvd a))"  
   by arith
 
-lemma even_imp_suc_not_even:      "\<not>(2 dvd ((a::int) + 1)) = (2 dvd a)"  
+lemma even_imp_suc_not_even:      "(\<not>(2 dvd ((a::int) + 1))) = (2 dvd a)"  
   by arith
 
 lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<le> x\<rbrakk> \<Longrightarrow> y < x"
