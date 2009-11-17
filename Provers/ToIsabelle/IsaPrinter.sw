@@ -2046,39 +2046,56 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    in
    case term of
      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) \_rightarrow
-       let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
-             enclose?(encl?,
-                      prLinearCat (if same? then -2 else 2)
-                        [[ppTerm c f1 t1, prSpace],
-                         [oper, prSpace, ppTerm c f2 t2]])
-       in
-       let fx = termFixity c trm1 in
-       % let _ = writeLine("parentTerm: "^anyToString parentTerm) in
-       % let _ = writeLine(printTerm trm1 ^ " " ^printTerm trm2 ^ "\n" ^ anyToString fx) in
-       let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
-       (case (parentTerm, fx) of
-          | (_, (None, Nonfix, false, _)) \_rightarrow
-            prApply (trm1, mkTuple[t1,t2])
-          | (_, (Some pr_op, Nonfix, curried?, _)) \_rightarrow
-            if ~curried?
-              then enclose?(parentTerm ~= Top,
-                            prConcat[pr_op,
-                                     enclose?(true, prLinearCat 0 [[ppTerm c Top t1, prString ", "],
-                                                                   [ppTerm c Top t2]])])
-            else
-            enclose?(parentTerm ~= Top,
-                     prLinearCat 2 [[pr_op,prSpace],
-                                    [ppTermEncloseComplex? c Nonfix t1, prSpace,
-                                     ppTermEncloseComplex? c Nonfix t2]])
-          | (Nonfix, (Some pr_op, Infix (a, p), _, _)) \_rightarrow
-            prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
-          | (Top,    (Some pr_op, Infix (a, p), _, _)) \_rightarrow
-            prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
-          | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) \_rightarrow
-            if p1 = p2
-              then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
-                            a1=a2, t1, pr_op, t2)
-              else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2))
+       (case (trm1, t2) of
+        | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
+          let spc = getSpec c in
+          let rec_ty = range(spc, ty) in
+          enclose?(parentTerm ~= Top,
+                   prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
+                              let def ppField (x,y) =
+                                     prConcat [prString (case rec_ty of
+                                                           | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
+                                                           | _ -> mkFieldName x),
+                                               prString " := ",
+                                               ppTerm c Top y]
+                              in
+                              prConcat [lengthString(1, "\\<lparr>"),
+                                        prPostSep 0 blockLinear (prString ", ") (map ppField fields),
+                                        lengthString(1, "\\<rparr>")]])
+        | _ ->
+        let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
+              enclose?(encl?,
+                       prLinearCat (if same? then -2 else 2)
+                         [[ppTerm c f1 t1, prSpace],
+                          [oper, prSpace, ppTerm c f2 t2]])
+        in
+        let fx = termFixity c trm1 in
+        % let _ = writeLine("parentTerm: "^anyToString parentTerm) in
+        % let _ = writeLine(printTerm trm1 ^ " " ^printTerm trm2 ^ "\n" ^ anyToString fx) in
+        let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
+        (case (parentTerm, fx) of
+           | (_, (None, Nonfix, false, _)) \_rightarrow
+             prApply (trm1, mkTuple[t1,t2])
+           | (_, (Some pr_op, Nonfix, curried?, _)) \_rightarrow
+             if ~curried?
+               then enclose?(parentTerm ~= Top,
+                             prConcat[pr_op,
+                                      enclose?(true, prLinearCat 0 [[ppTerm c Top t1, prString ", "],
+                                                                    [ppTerm c Top t2]])])
+             else
+             enclose?(parentTerm ~= Top,
+                      prLinearCat 2 [[pr_op,prSpace],
+                                     [ppTermEncloseComplex? c Nonfix t1, prSpace,
+                                      ppTermEncloseComplex? c Nonfix t2]])
+           | (Nonfix, (Some pr_op, Infix (a, p), _, _)) \_rightarrow
+             prInfix (Infix (Left, p), Infix (Right, p), true, false, t1, pr_op, t2)
+           | (Top,    (Some pr_op, Infix (a, p), _, _)) \_rightarrow
+             prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
+           | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) \_rightarrow
+             if p1 = p2
+               then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
+                             a1=a2, t1, pr_op, t2)
+               else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
        enclose?(case parentTerm of
                   | Infix(_,prec) \_rightarrow prec > 18
@@ -2684,7 +2701,7 @@ def termFixity c term =
          | Not            \_rightarrow (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false, false) % ?
          | Equals         -> (Some(prString "="), Infix (Left, 20), true, false) % was 10 ??
          | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true, false)
-         | RecordMerge    -> (Some(prString ">>"), Infix (Left, 25), true, false)
+         | RecordMerge    -> (Some(prString "<<"), Infix (Left, 25), true, false)
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
 
