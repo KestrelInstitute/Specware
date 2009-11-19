@@ -2049,11 +2049,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        (case (trm1, t2) of
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
           let spc = getSpec c in
-          let rec_ty = range(spc, ty) in
+          let recd_ty = range(spc, ty) in
+          let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+          let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
                    prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
                               let def ppField (x,y) =
-                                     prConcat [prString (case rec_ty of
+                                     prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
                                                            | _ -> mkFieldName x),
                                                prString " := ",
@@ -2114,10 +2116,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       prString ")"]
           | _ \_rightarrow
             let spc = getSpec c in
-            let rec_ty = inferType(spc, term) in
-            let rec_ty = normalizeType (spc, c.typeNameInfo, false) rec_ty in
+            let recd_ty = inferType(spc, term) in
+            let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+            let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
             let def ppField (x,y) =
-                  prConcat [prString (case rec_ty of
+                  prConcat [prString (case recd_ty of
                                       | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
                                       | _ -> mkFieldName x),
                             prString " = ",
