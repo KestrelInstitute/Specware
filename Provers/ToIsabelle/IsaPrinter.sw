@@ -870,7 +870,7 @@ IsaTermPrinter qualifying spec
                                           "next", "instance", "and", "open"]
  op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
-    "False", "Not", "sub", "sup", "Sigma", "map", "dom", "field", "fields"]
+    "False", "Not", "sub", "sup", "Sigma", "map", "dom", "field", "fields", "acc"]
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
@@ -878,8 +878,8 @@ IsaTermPrinter qualifying spec
     Qualified("Compare", "Comparison")]
 
  op ppConstructor(c_nm: String, qid: QualifiedId): Pretty =
-   prString(if qid in? directConstructorTypes then c_nm
-              else qidToIsaString qid^"__"^c_nm)
+   prString(if qid in? directConstructorTypes then ppIdStr c_nm
+              else qidToIsaString qid^"__"^ppIdStr c_nm)
 
  op ppConstructorTyped(c_nm: String, ty: Sort, spc: Spec): Pretty =
    case unfoldToBaseNamedType(spc, ty) of
@@ -894,9 +894,9 @@ IsaTermPrinter qualifying spec
        prConcat [prString "\"", ppQualifiedId qid, prString "\""]
      | _ \_rightarrow  ppQualifiedId qid
 
- op mkFieldName(nm: String): String = nm ^ "__fld"
+ op mkFieldName(nm: String): String = ppIdStr nm ^ "__fld"
  op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String =
-   qidToIsaString qid^"__"^nm
+   qidToIsaString qid^"__"^ppIdStr nm
 
  op ppToplevelName(nm: String): Pretty =
    if member(nm, isabelleReservedWords)
