@@ -449,8 +449,10 @@ spec
 	     in
 	       capture?)
     in
+    % let _ = writeLine("pv:"^foldl (fn (s,(nm,_)::_) -> s^" "^nm) "" pattern_vars) in
+    % let _ = writeLine("args:"^foldl (fn (s,tm) -> s^" "^printTerm tm) "" remainingArgs) in
     if possible_capture? then
-      %% Note: This is a rare occurence.  It seems to happen once(!) in the Forges PSL
+      %% Note: This is a rare occurrence.  It seems to happen once(!) in the Forges PSL
       %% sources, and never in Specware, Accord, Planware, JFlaws, JavaCard, ...
       let 
         def find_unused_id index =
@@ -470,6 +472,8 @@ spec
       in
       let revisedParams = (map (fn v -> VarPat v) temp_vars) ++ remainingParams               in
       let revisedArgs   = remainingArgs                      ++ map (fn v -> Var v) temp_vars in
+      % let _ = writeLine("r_pars:"^foldl (fn (s,pt) -> s^" "^printPattern pt) "" revisedParams) in
+      % let _ = writeLine("r_args:"^foldl (fn (s,tm) -> s^" "^printTerm tm) "" revisedArgs) in
       (revisedParams, revisedArgs)
     else	
       (remainingParams, remainingArgs)
@@ -675,7 +679,7 @@ spec
       | (p1::pr, a1::ar) ->
         let (newbod, sbst) = makeLet(pr, ar, body, sbst) in
         (case (p1, a1) of
-         | (VarPat(v,_), Var _) -> (newbod, (v, a1)::sbst)
+         | (VarPat(v,_), Var _) | false -> (newbod, (v, a1)::sbst) % Causes problems with var capture
          | _ -> (mkLet([(p1, a1)], newbod), sbst))
       | _ -> (body, sbst)
 
