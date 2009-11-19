@@ -491,8 +491,7 @@ Utilities qualifying spec
  
  op substitute2(M: MS.Term, sub: VarSubst, freeNames: StringSet.Set): MS.Term = 
    % let _ = String.writeLine "Map is " in
-   % let _ = List.app (fn ((v,_),tm) -> 
-   %		       String.writeLine (v^" |-> "^MetaSlangPrint.printTerm tm)) sub in	
+   % let _ = List.app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sub in	
    let
        def subst(M:MS.Term):MS.Term = 
          case M
