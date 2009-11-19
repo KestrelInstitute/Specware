@@ -870,7 +870,7 @@ IsaTermPrinter qualifying spec
                                           "next", "instance", "and", "open"]
  op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
-    "False", "Not", "sub", "sup", "Sigma", "map", "dom"]
+    "False", "Not", "sub", "sup", "Sigma", "map", "dom", "field", "fields"]
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
