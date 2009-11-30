@@ -1214,6 +1214,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   let aliases = [mainId] in
   if decl? && def? && targetFunctionDefs?
       %% The following conditions are temporary!!
+      %% Don't want f(x,y) = ... to be a fun because this would be added as a rewrite
       && (some?(findParenAnnotation opt_prag)
            || none?(findMeasureAnnotation opt_prag)
               && (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
