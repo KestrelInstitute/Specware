@@ -18,6 +18,9 @@ type Predicate a = a -> Bool
 
 type Set a = Predicate a
 
+%%% Generate stp versions of finite_insert and induction in case they are useful later
+proof Isa -stp-theorems end-proof
+
 (*** Lemmas About Set_P RSet and Fun_PD ***)
 proof Isa -verbatim
 lemma Set_Set_P_converse:
