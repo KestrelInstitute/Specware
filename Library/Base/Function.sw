@@ -2,7 +2,7 @@ Function qualifying spec
 
 import Boolean
 
-proof Isa -subtype_constrs -free-theorems end-proof
+proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
 
 (* Functions are built-in in Metaslang (A -> B is the type of all functions from
 type A to type B). This spec introduces some operations on functions and some

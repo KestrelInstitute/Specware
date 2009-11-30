@@ -2,7 +2,7 @@ Char qualifying spec
 
 import Integer
 
-proof Isa -subtype_constrs -free-theorems end-proof
+proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
 
 (* We consider the 8-bit characters occupying decimal positions 0 to 255 in the
 ISO-8859-1 code table (the first 128 characters of that code table are the ASCII

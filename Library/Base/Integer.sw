@@ -2,7 +2,7 @@ Integer qualifying spec
 
 import Compare, Function
 
-proof Isa -subtype_constrs -free-theorems end-proof
+proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
 
 (* We introduce integers via a Peano-like axiomatization.
 

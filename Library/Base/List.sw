@@ -2,7 +2,7 @@ List qualifying spec
 
 import Option, Integer
 
-proof Isa -subtype_constrs -free-theorems end-proof
+proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
 
 % inductive definition of lists:
 
