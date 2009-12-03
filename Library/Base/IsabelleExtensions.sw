@@ -1247,7 +1247,7 @@ lemma divT_abs:                   "\<lbrakk>b \<noteq> (0::int)\<rbrakk> \<Longr
 lemma modT_abs:                   "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> \<Longrightarrow> \<bar>a\<bar> modT \<bar>b\<bar> = \<bar>a modT b\<bar>"
   by (simp add: modT_def abs_mult)
 
-theorem divT_is_largest_abs:   "\<lbrakk>(j::int) \<noteq> 0; \<bar>k * j\<bar> \<le> \<bar>i\<bar>\<rbrakk> \<Longrightarrow> \<bar>k\<bar> \<le> \<bar>i divT j\<bar>"
+lemma divT_is_largest_abs:   "\<lbrakk>(j::int) \<noteq> 0; \<bar>k * j\<bar> \<le> \<bar>i\<bar>\<rbrakk> \<Longrightarrow> \<bar>k\<bar> \<le> \<bar>i divT j\<bar>"
   by (simp add: divT_abs [symmetric] divT_pos div_is_largest_pos) 
 
 
@@ -1666,12 +1666,12 @@ lemma length_1_nth_conv:
 "(length xs = 1) = (xs = [xs!0])"
   by (auto simp add: length_Suc_conv)
 
-theorem list_all_set_tl: 
+lemma list_all_set_tl: 
   "\<lbrakk>\<forall>x\<in>set l. P x\<rbrakk> 
   \<Longrightarrow> \<forall>x\<in>set (tl l). P x"
   by (rule ballI, erule bspec, induct l, auto)
 
-theorem list_last_conv:
+lemma list_last_conv:
 "\<lbrakk>length xs = Suc l\<rbrakk> 
   \<Longrightarrow> xs = butlast xs @ [xs!l]"
  by (cut_tac xs=xs in append_butlast_last_id, auto,
@@ -1679,7 +1679,7 @@ theorem list_last_conv:
 
 (******************** a simple fact about sets ***************************)
 
-theorem permutation_set:
+lemma permutation_set:
   "\<forall>i\<in>S. i < card S \<Longrightarrow> \<forall>i< card S. i\<in>S"
   apply (subgoal_tac "S \<subseteq> {..<card S}")
   apply (rule ccontr, auto)
