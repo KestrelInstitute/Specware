@@ -775,7 +775,6 @@ end-proof
 
 proof Isa Thy_Morphism Set
   type Set.Set -> set (id,id)
-  Set.collect -> Collect
   Set.Set_P -> Set_P
   Set.in? -> \<in> Left 20
   Set.nin? -> \<notin> Left 20
