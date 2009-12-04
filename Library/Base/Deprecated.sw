@@ -149,6 +149,42 @@ op [a] List.app (f: a -> ()) (l: List a) : () =
      | []     -> ()
      | hd::tl -> (f hd; app f tl)
 
+op String.sub : {(s,n) : String * Nat | n < length s} -> Char = (@)
+
+op String.substring : {(s,i,j) : String * Nat * Nat |
+                      i <= j && j <= length s} -> String = subFromTo
+
+op String.concat : String * String -> String = (++)
+
+op String.^ infixl 25 : String * String -> String = (++)
+
+op String.all : (Char -> Bool) -> String -> Bool = forall?
+
+op String.exists : (Char -> Bool) -> String -> Bool = exists?
+
+op String.concatList : List String -> String = flatten
+proof Isa 
+   apply (rule ext, simp add: String__flatten_def id_def)
+end-proof
+
+op String.toScreen (s:String) : () = ()
+
+op String.writeLine (s:String) : () = ()
+
+% Since lt and leq are not being mapped to predefined Isabelle ops
+% it is better for the translation to specify them with arguments.
+op lt  (s1:String, s2:String) infixl 20 : Bool = (s1 <  s2)
+op leq (s1:String, s2:String) infixl 20 : Bool = (s1 <= s2)
+
+op Boolean.toString : Bool -> String = Boolean.show
+
+op Nat.toString : Nat -> String = Nat.show
+
+op Integer.toString : Integer -> String = Integer.show
+
+op Char.toString : Char -> String = Char.show
+
+
 proof Isa Thy_Morphism
   List.nil -> []
   List.cons -> # Right 23
@@ -162,6 +198,12 @@ proof Isa Thy_Morphism
   List.member ->  mem Left 22
   List.exists -> list_ex  
   List.all ->  list_all
+  String.concat     -> @ Left 25
+  String.^          -> @ Left 25
+  String.exists     -> list_ex
+  String.all        -> list_all
+  String.sub        -> ! Left 40
+  String.concatList -> concat
 end-proof
 
 endspec

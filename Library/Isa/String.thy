@@ -324,42 +324,4 @@ where
  | "List__show sep ([hd_v]) = hd_v"
  | "List__show sep (Cons hd_v tl_v) 
       = (hd_v @ sep) @ List__show sep tl_v"
-theorem String__sub__def: 
-  "RFun (\<lambda> ((s::string), (n::nat)). n < length s) (\<lambda> (x,y). x ! y) 
-     = RFun (\<lambda> ((s::string), (n::nat)). n < length s) (\<lambda> (x,y). x ! y)"
-  by auto
-consts String__substring :: "string \<times> nat \<times> nat \<Rightarrow> string"
-defs String__substring_def: "String__substring \<equiv> String__subFromTo"
-theorem String__concat__def: 
-  "(\<lambda> (x,y). x @ y) = (\<lambda> (x,y). x @ y)"
-  by auto
-theorem String__e_crt__def: 
-  "(\<lambda> (x,y). x @ y) = (\<lambda> (x,y). x @ y)"
-  by auto
-theorem String__all__def: 
-  "list_all = list_all"
-  by auto
-theorem String__exists__def: 
-  "list_ex = list_ex"
-  by auto
-theorem String__concatList__def: 
-  "concat = String__flatten"
-   apply (rule ext, simp add: String__flatten_def id_def)
-  done
-consts String__toScreen :: "string \<Rightarrow> unit"
-defs String__toScreen_def: "String__toScreen s \<equiv> ()"
-consts String__writeLine :: "string \<Rightarrow> unit"
-defs String__writeLine_def: "String__writeLine s \<equiv> ()"
-consts String__lt :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "lt" 60)
-defs String__lt_def: "(s1 lt s2) \<equiv> (s1 <_s s2)"
-consts String__leq :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "leq" 60)
-defs String__leq_def: "(s1 leq s2) \<equiv> (s1 <=_s s2)"
-consts Boolean__toString :: "bool \<Rightarrow> string"
-defs Boolean__toString_def: "Boolean__toString \<equiv> Boolean__show"
-consts Nat__toString :: "nat \<Rightarrow> string"
-defs Nat__toString_def: "Nat__toString \<equiv> Nat__show"
-consts Integer__toString :: "int \<Rightarrow> string"
-defs Integer__toString_def: "Integer__toString \<equiv> Integer__show"
-consts Char__toString :: "char \<Rightarrow> string"
-defs Char__toString_def: "Char__toString \<equiv> Char__show"
 end

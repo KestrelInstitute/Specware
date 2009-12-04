@@ -312,45 +312,6 @@ proof Isa show_Obligation_exhaustive
   by (cases l, auto)
 end-proof
 
-% deprecated:
-
-op sub : {(s,n) : String * Nat | n < length s} -> Char = (@)
-
-op substring : {(s,i,j) : String * Nat * Nat |
-                i <= j && j <= length s} -> String = subFromTo
-
-op concat : String * String -> String = (++)
-
-op ^ infixl 25 : String * String -> String = (++)
-
-op all : (Char -> Bool) -> String -> Bool = forall?
-
-op exists : (Char -> Bool) -> String -> Bool = exists?
-
-op concatList : List String -> String = flatten
-proof Isa 
-   apply (rule ext, simp add: String__flatten_def id_def)
-end-proof
-
-op toScreen (s:String) : () = ()
-
-op writeLine (s:String) : () = ()
-
-% Since lt and leq are not being mapped to predefined Isabelle ops
-% it is better for the translation to specify them with arguments.
-
-op lt (s1:String, s2:String) infixl 20 : Bool = (s1 <  s2)
-
-op leq (s1:String, s2:String) infixl 20 : Bool = (s1 <=  s2)
-
-op Boolean.toString : Bool -> String = Boolean.show
-
-op Nat.toString : Nat -> String = Nat.show
-
-op Integer.toString : Integer -> String = Integer.show
-
-op Char.toString : Char -> String = Char.show
-
 % mapping to Isabelle:
 
 proof Isa ThyMorphism
@@ -358,17 +319,11 @@ proof Isa ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.concat     -> @ Left 25
   String.++         -> @ Left 25
-  String.^          -> @ Left 25
   String.map        -> map
   String.exists?    -> list_ex
-  String.exists     -> list_ex
   String.forall?    -> list_all
-  String.all        -> list_all
   String.@          -> ! Left 40
-  String.sub        -> ! Left 40
-  String.concatList -> concat
 end-proof
 
 endspec
