@@ -87,14 +87,6 @@ op [a] //\\ (ss: Set (Set a)) : Set a =
 op [a] \\// (ss: Set (Set a)) : Set a =
   fn x:a -> (ex(s) s in? ss && x in? s)
 
-% lift `=>' and `<=>' to sets:
-
-op [a] ==> (s1: Set a, s2: Set a) infixr 23 : Set a =
-  fn x:a -> x in? s1 => x in? s2
-
-op [a] <==> (s1: Set a, s2: Set a) infixr 22 : Set a =
-  fn x:a -> x in? s1 <=> x in? s2
-
 % difference:
 
 op [a] -- (s1: Set a, s2: Set a) infixl 25 : Set a =
