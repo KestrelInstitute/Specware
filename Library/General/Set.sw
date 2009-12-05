@@ -182,13 +182,6 @@ lemma Set__full_stp_apply:
 by (auto simp add:Set__full_p__stp_def)
 end-proof
 
-% sets with at least 1 missing element:
-
-op [a] nonFull? (s: Set a) : Bool = (s ~= full)
-proof Isa [simp] end-proof
-
-type NonFullSet a = (Set a | nonFull?)
-
 % sets with exactly one element:
 
 op [a] single(*ton*) (x:a) : Set a = fn y:a -> y = x
