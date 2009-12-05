@@ -136,7 +136,7 @@ end-proof
 
 op [a] nonEmpty? (s: Set a) : Bool = (s ~= empty)
 
-type NonEmptySet a = (Set a | nonEmpty?)
+type Set1 a = (Set a | nonEmpty?)
 
 proof Isa -verbatim
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
