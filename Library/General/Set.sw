@@ -39,12 +39,12 @@ end-proof
 
 % membership:
 
-op [a] in? (x:a, s: Set a) infixl 20 : Bool = s x
+op [a] in? (x:a, s:Set a) infixl 20 : Bool = s x
 
-op [a] nin? (x:a, s: Set a) infixl 20 : Bool = ~(x in? s)
+op [a] nin? (x:a, s:Set a) infixl 20 : Bool = ~(x in? s)
 
 % Lifting a predicate from elements to regularized sets
-op [a] Set_P (Pa: a -> Bool) (s: Set a): Bool =
+op [a] Set_P (Pa: a -> Bool) (s:Set a): Bool =
   fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
 proof Isa
   by (simp add: Set_P_def)
@@ -52,14 +52,14 @@ end-proof
 
 % (strict) sub/superset:
 
-op [a] <= (s1: Set a, s2: Set a) infixl 20 : Bool =
+op [a] <= (s1:Set a, s2:Set a) infixl 20 : Bool =
   fa(x) x in? s1 => x in? s2
 
-op [a] < (s1: Set a, s2: Set a) infixl 20 : Bool = (s1 <= s2 && s1 ~= s2)
+op [a] < (s1:Set a, s2:Set a) infixl 20 : Bool = (s1 <= s2 && s1 ~= s2)
 
-op [a] >= (s1: Set a, s2: Set a) infixl 20 : Bool = (s2 <= s1)
+op [a] >= (s1:Set a, s2:Set a) infixl 20 : Bool = (s2 <= s1)
 
-op [a] > (s1: Set a, s2: Set a) infixl 20 : Bool = (s2 < s1)
+op [a] > (s1:Set a, s2:Set a) infixl 20 : Bool = (s2 < s1)
 
 proof Isa -verbatim
 lemma Set_Set_P_subsets_equiv:
@@ -71,36 +71,36 @@ end-proof
 
 % complement, intersection, and union (lift `~', `&&', and `||' to sets):
 
-op [a] ~~ (s: Set a) : Set a = fn x:a -> x nin? s
+op [a] ~~ (s:Set a) : Set a = fn x:a -> x nin? s
 
-op [a] /\ (s1: Set a, s2: Set a) infixr 25 : Set a =
+op [a] /\ (s1:Set a, s2:Set a) infixr 25 : Set a =
   fn x:a -> x in? s1 && x in? s2
 
-op [a] \/ (s1: Set a, s2: Set a) infixr 24 : Set a =
+op [a] \/ (s1:Set a, s2:Set a) infixr 24 : Set a =
   fn x:a -> x in? s1 || x in? s2
 
 % intersection/union of all sets in a set:
 
-op [a] //\\ (ss: Set (Set a)) : Set a =
+op [a] //\\ (ss:Set (Set a)) : Set a =
   fn x:a -> (fa(s) s in? ss => x in? s)
 
-op [a] \\// (ss: Set (Set a)) : Set a =
+op [a] \\// (ss:Set (Set a)) : Set a =
   fn x:a -> (ex(s) s in? ss && x in? s)
 
 % difference:
 
-op [a] -- (s1: Set a, s2: Set a) infixl 25 : Set a =
+op [a] -- (s1:Set a, s2:Set a) infixl 25 : Set a =
   fn x:a -> x in? s1 && x nin? s2
 
 % cartesian product:
 
-op [a,b] * (s1: Set a, s2: Set b) infixl 27 : Set (a * b) =
+op [a,b] * (s1:Set a, s2:Set b) infixl 27 : Set (a * b) =
   fn (x:a,y:b) -> x in? s1 && y in? s2
 
 % powerset:
 
-op [a] power (s: Set a) : Set (Set a) =
-  fn sub: Set a -> sub <= s
+op [a] power (s:Set a) : Set (Set a) =
+  fn sub:Set a -> sub <= s
 
 % set with no elements (lift `false' to sets):
 
@@ -109,7 +109,7 @@ proof Isa
   by (auto simp add: mem_def)
 end-proof
 
-op [a] empty? (s: Set a) : Bool = (s = empty)
+op [a] empty? (s:Set a) : Bool = (s = empty)
 proof Isa [simp] end-proof
 proof Isa empty_p__stp [simp] end-proof
 
@@ -134,7 +134,7 @@ end-proof
 
 % sets with at least 1 element:
 
-op [a] nonEmpty? (s: Set a) : Bool = (s ~= empty)
+op [a] nonEmpty? (s:Set a) : Bool = (s ~= empty)
 
 type Set1 a = (Set a | nonEmpty?)
 
@@ -170,7 +170,7 @@ proof Isa
   by (auto simp add: mem_def)
 end-proof
 
-op [a] full? (s: Set a) : Bool = (s = full)
+op [a] full? (s:Set a) : Bool = (s = full)
 proof Isa [simp] end-proof
 
 proof Isa -verbatim
@@ -184,12 +184,12 @@ end-proof
 
 % sets with exactly one element:
 
-op [a] single(*ton*) (x:a) : Set a = fn y:a -> y = x
+op [a] single(*ton*) (x:a) :Set a = fn y:a -> y = x
 
 op [a] single? (s:Set a) : Bool = (ex(x:a) s = single x)
 proof Isa [simp] end-proof
 
-op [a] onlyMemberOf (x:a, s: Set a) infixl 20 : Bool =
+op [a] onlyMemberOf (x:a, s:Set a) infixl 20 : Bool =
   single? s && x in? s
 proof Isa [simp] end-proof
 
@@ -228,7 +228,7 @@ end-proof
 
 % add member to set (triangle points towards set):
 
-op [a] <| (s: Set a, x:a) infixl 25 : Set a = s \/ single x
+op [a] <| (s:Set a, x:a) infixl 25 : Set a = s \/ single x
 
 proof Isa -verbatim
 lemma Set__RSet_insert_simp[simp]:  
@@ -258,7 +258,7 @@ end-proof
 
 % remove member from set:
 
-op [a] - (s: Set a, x:a) infixl 25 : Set a = s -- single x
+op [a] - (s:Set a, x:a) infixl 25 : Set a = s -- single x
 proof Isa -> less [simp] end-proof
 
 proof Isa -verbatim
@@ -287,15 +287,15 @@ end-proof
 
 % map (partial) function over set:
 
-op [a,b] map (f: a -> b) (s: Set a) : Set b =
+op [a,b] map (f: a -> b) (s:Set a) : Set b =
   fn y:b -> (ex(x:a) x in? s && y = f x)
 
-op [a,b] mapPartial (f: a -> Option b) (s: Set a) : Set b =
+op [a,b] mapPartial (f: a -> Option b) (s:Set a) : Set b =
   fn y:b -> (ex(x:a) x in? s && Some y = f x)
 
 % inversely map function over set:
 
-op [a,b] imap (f: a -> b) (s: Set b) : Set a = fn x:a -> f x in? s
+op [a,b] imap (f: a -> b) (s:Set b) : Set a = fn x:a -> f x in? s
 
 (* A function f from a to b generates a Set b, namely the set of all
 y:b such that y = f x for some x:a. *)
@@ -318,7 +318,7 @@ end-proof
 
 % finite sets:
 
-op [a] finite? (s: Set a) : Bool =
+op [a] finite? (s:Set a) : Bool =
   % this disjunct ensures that the definition is correct in case a is empty;
   % if a is empty, Nat -> a is empty and the disjunct below (ex ...) is false,
   % but of course the empty set over empty a is finite (note that there is
@@ -620,7 +620,7 @@ proof Isa size_Obligation_the
  sorry
 end-proof
 
-op [a] hasSize (s: Set a, n:Nat) infixl 20 : Bool =
+op [a] hasSize (s:Set a, n:Nat) infixl 20 : Bool =
   finite? s && size s = n
 
 (* In order to fold over a finite set, we need the folding function to be
@@ -685,7 +685,7 @@ end-proof
 
 % finite powerset:
 
-op [a] powerf (s: Set a) : Set (FiniteSet a) = power s /\ finite?
+op [a] powerf (s:Set a) : Set (FiniteSet a) = power s /\ finite?
 
 proof Isa powerf__stp_Obligation_subtype
  sorry
@@ -705,7 +705,7 @@ op infinite? : [a] Set a -> Bool = ~~ finite?
 
 type InfiniteSet a = (Set a | infinite?)
 
-op [a] countable? (s: Set a) : Bool =
+op [a] countable? (s:Set a) : Bool =
   infinite? s &&
   % there is a surjective function from Nat to {x:a | x in? s}
   % (the latter is a "pseudo-type" because of the free variable `s'):
@@ -720,11 +720,11 @@ type UncountableSet a = (Set a | uncountable?)
 
 % minimum/maximum set:
 
-op [a] isMinIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
+op [a] isMinIn (s:Set a, ss:Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s <= s1)
 proof Isa -> isMinIn_s end-proof
 
-op [a] hasMin? (ss: Set (Set a)) : Bool = (ex(s) s isMinIn ss)
+op [a] hasMin? (ss:Set (Set a)) : Bool = (ex(s) s isMinIn ss)
 
 type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
@@ -738,11 +738,11 @@ proof Isa  Set__min_Obligation_the
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
 end-proof
 
-op [a] isMaxIn (s: Set a, ss: Set (Set a)) infixl 20 : Bool =
+op [a] isMaxIn (s:Set a, ss:Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s >= s1)
 proof Isa -> isMaxIn_s end-proof
 
-op [a] hasMax? (ss: Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
+op [a] hasMax? (ss:Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
 
 type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
