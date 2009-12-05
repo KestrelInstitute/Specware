@@ -219,9 +219,9 @@ lemma Set_single_stp_single:
 by (auto simp:Set__single_p__stp_def Set__single_p_def)
 end-proof
 
-type SingletonSet a = (Set a | single?)
+type Singleton a = (Set a | single?)
 
-op [a] theMember (s: SingletonSet a) : a = the(x:a) x in? s
+op [a] theMember (s:Singleton a) : a = the(x:a) x in? s
 proof Isa theMember__stp_Obligation_the
   apply(auto simp add: Set__single_p__stp_def)
 end-proof
