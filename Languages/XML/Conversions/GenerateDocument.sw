@@ -6,6 +6,7 @@ XML qualifying spec
   import ../Utilities/XML_Unicode
   import Make_XML_Things
   import Magic
+  import /Library/Legacy/Utilities/System
 
   def convert_ms_name_to_xml_name (ms_name : String) : UString =
     %% coordinate with convert_xml_name_to_ms_name in InternalizeAux.sw

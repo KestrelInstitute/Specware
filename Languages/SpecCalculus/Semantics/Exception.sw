@@ -31,6 +31,7 @@ enters something bad. A \Op{ParserError} is raised when the file parser fails.
 \begin{spec}
 SpecCalc qualifying spec
   import /Library/Structures/Data/Monad/Exception
+  import /Library/Legacy/Utilities/System
 
   %% avoid importing Printer, because it defines monadic 
   %% stuff that causes conflicts when this spec is imported by 
@@ -45,7 +46,7 @@ SpecCalc qualifying spec
   op showRelativeUID : RelativeUID -> String
   op showUID : UnitId -> String
 
-  sort Monad.Exception =
+  type Monad.Exception =
     | Fail                String 
     | FileNotFound        Position * RelativeUID
     | UIDNotFound         Position * RelativeUID

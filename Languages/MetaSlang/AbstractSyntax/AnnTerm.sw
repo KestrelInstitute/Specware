@@ -1,5 +1,6 @@
 MetaSlang qualifying spec
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
+ import /Library/Legacy/Utilities/System
  import /Library/Legacy/DataStructures/ListPair
 
  op AnnSpecPrinter.printTerm  : [a] ATerm       a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)

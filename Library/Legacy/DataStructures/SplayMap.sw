@@ -4,7 +4,7 @@ Aadapted from SML/NJ
 
 \begin{spec}
 SplayMap qualifying spec {
-  import /Library/Base
+  import /Library/Legacy/Utilities/System
   import /Library/Legacy/Utilities/State
   import SplayTree
 

@@ -6,10 +6,11 @@ XML qualifying spec
 
   import XML_Exceptions
   import ../XML_Sig     % For Name, Content
+  import /Library/Legacy/Utilities/System
 
-  sort Env a = State -> (Result a) * State
+  type Env a = State -> (Result a) * State
 
-  sort Result a =
+  type Result a =
     | Ok        a
     | Exception XML_Exception
 
@@ -18,7 +19,7 @@ XML qualifying spec
   %%  for the "<-" and ";" in forms such as { y <- f x ; z <- g y ; return z }
   %%  ================================================================================
 
-  %op monadBind : fa (a,b) (Env a) * (a -> Env b) -> Env b
+  %op monadBind : [a,b] (Env a) * (a -> Env b) -> Env b
   def monadBind (f, g) =
     fn state ->
       case (f state) of
@@ -40,7 +41,7 @@ XML qualifying spec
         %%  because lhs is Env a and rhs is Env b
 	| (Exception except, newState) -> (Exception except, newState)
 
-  %op monadSeq : fa (a,b) (Env a) * (Env b) -> Env b
+  %op monadSeq : [a,b] (Env a) * (Env b) -> Env b
   def monadSeq (f, g) = monadBind (f, (fn _ -> g))
 
   %% ================================================================================
@@ -48,7 +49,7 @@ XML qualifying spec
   %%  so that processing can resume normally after the catch.
   %% ================================================================================
 
-   op catch : fa (a) Env a -> (XML_Exception -> Env a) -> Env a
+   op catch : [a] Env a -> (XML_Exception -> Env a) -> Env a
   def catch f handler =
     fn state ->
       (case (f state) of
@@ -73,13 +74,13 @@ XML qualifying spec
 
   %% Normal control flow -- proceed to next application
 
-  %op return : fa (a) a -> Env a
+  %op return : [a] a -> Env a
   def return x = fn state -> (Ok x, state)
 
    op when : Boolean -> Env () -> Env ()
   def when p command = if p then (fn s -> (command s)) else return ()
 
-   op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
+   op foldM : [a,b] (a -> b -> Env a) -> a -> List b -> Env a
   def foldM f a l =
     case l of
       | [] -> return a
@@ -87,7 +88,7 @@ XML qualifying spec
             y <- f a x;
             foldM f y xs
           }
-   op mapM : fa (a,b) (a -> Env b) -> (List a) -> Env (List b)
+   op mapM : [a,b] (a -> Env b) -> (List a) -> Env (List b)
   def mapM f l =
     case l of
       | [] -> return []
@@ -199,7 +200,7 @@ XML qualifying spec
 		())
      in
        (Ok (),
-	{exceptions = cons (except, state.exceptions),
+	{exceptions = Cons (except, state.exceptions),
 	 messages   = state.messages,
 	 utext      = state.utext,
 	 ge_defs    = state.ge_defs,
@@ -209,7 +210,7 @@ XML qualifying spec
   %% --------------------------------------------------------------------------------
   %%  Exception handling -- do not process following applications
 
-   op raise_now : fa (a) XML_Exception -> Env a
+   op raise_now : [a] XML_Exception -> Env a
   def raise_now except = fn state ->
     let _ =
       if  Wizard_Fail_Hard? then
@@ -221,8 +222,8 @@ XML qualifying spec
 
   %% --------------------------------------------------------------------------------
 
-  def            error (x : XML_Exception) : Env () = raise_later x
-  def fa(a) hard_error (x : XML_Exception) : Env a  = raise_now   x
+  def         error (x : XML_Exception) : Env () = raise_later x
+  def[a] hard_error (x : XML_Exception) : Env a  = raise_now   x
 
   %% --------------------------------------------------------------------------------
 

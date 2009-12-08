@@ -4,6 +4,7 @@
 Map qualifying
 spec
   import Simple
+  import /Library/Legacy/Utilities/System
 
   sort Map (key,a) = List (key * a)
 

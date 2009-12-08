@@ -2,6 +2,7 @@ JGen qualifying spec
 
 import /Languages/MetaSlang/Specs/Position
 import /Library/Legacy/Utilities/IO % for gotoFilePosition
+import /Library/Legacy/Utilities/System
 
 type Pos = Position.Position
 
@@ -67,4 +68,4 @@ op  warn: Position * String -> String
 def warn(pos,msg) =
   "*** Warning: "^msg^" ["^(Position.print pos)^"]"
 
-end-spec
+endspec
