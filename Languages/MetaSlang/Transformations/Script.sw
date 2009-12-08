@@ -390,7 +390,7 @@ spec
     case makeMove(term, mv,  top_term) of
       | Some new_term -> makeMoves(new_term, rem_mvs, top_term)
       | None -> (warn("Move failed at: "^ (foldr (fn (m,res) -> moveString m ^ " " ^ res) "" mvs));
-                 none)
+                 None)
 
   op maxRewrites: Nat = 900
 
