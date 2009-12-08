@@ -1,4 +1,4 @@
-\section{Operations in the State Monad}
+(* Operations in the State Monad
 
 We define here a family of functions for allocating, reading and writing
 global and local variables.
@@ -12,10 +12,9 @@ context and then access it in another.  However, provided one does not
 do such things, the local operations are safe.
 
 See below for further notes regarding the safety of these operations.
+*)
 
-\begin{spec}
-let
-  MonadicStateInternal = spec
+MonadicStateInternal = spec
     sort VarRef a = | VarRef a
 
     op newGlobalVar : fa (a) String * a -> Boolean
@@ -25,8 +24,8 @@ let
     op newVar : fa (a) a -> VarRef a
     op writeVar : fa (a) VarRef a * a -> VarRef a
   endspec
-\end{spec}
 
+(*
 Below is the definition of the state monad. Some sorts and ops remain
 abstract.  This implementation remains unsafe for both global and local
 variables.
@@ -107,18 +106,18 @@ mutable map.
 \item Refine \op{Monad.run} to save and restore the global
 variables to the Lisp context (and perhaps even the filesystem).
 \end{itemize}
-
-\begin{spec}
-in Monad qualifying spec
+*)
+State = Monad qualifying spec
   import MonadicStateInternal qualifying MonadicStateInternal
   import Exception
+  import /Library/Legacy/Utilities/System
 
   op redefinedGlobalVariable : String -> Exception
   op undefinedGlobalVariable : String -> Exception
 
-  sort State  % This remains abstract.
+  type State  % This remains abstract.
 
-  op renewGlobalVar : fa (a) String * a -> Monad ()
+  op renewGlobalVar : [a] String * a -> Monad ()
   def renewGlobalVar (name,value) =
     return
       (if MonadicStateInternal.newGlobalVar (name,value) then
@@ -126,7 +125,7 @@ in Monad qualifying spec
       else
         ())
 
-  op newGlobalVar : fa (a) String * a -> Monad ()
+  op newGlobalVar : [a] String * a -> Monad ()
   def newGlobalVar (name,value) =
     return (
       if MonadicStateInternal.newGlobalVar (name,value) then
@@ -135,27 +134,27 @@ in Monad qualifying spec
         ())
       % raise (redefinedGlobalVariable name)
     
-  op writeGlobalVar : fa (a) String * a -> Monad ()
+  op writeGlobalVar : [a] String * a -> Monad ()
   def writeGlobalVar (name,value) =
     if MonadicStateInternal.writeGlobalVar (name, value) then
       return ()
     else
       raise (undefinedGlobalVariable name)
 
-  op readGlobalVar : fa (a) String -> Monad a
+  op readGlobalVar : [a] String -> Monad a
   def readGlobalVar name = 
     return
       (case MonadicStateInternal.readGlobalVar name of
         | Some value -> value
         | None -> fail ("Undefined global variable: " ++ name))
 
-  op newVar : fa (a) a -> Monad (VarRef a)
+  op newVar : [a] a -> Monad (VarRef a)
   def newVar value = return (MonadicStateInternal.newVar value)
 
-  op readVar : fa (a) VarRef a -> Monad a
+  op readVar : [a] VarRef a -> Monad a
   def readVar ref = return (let (VarRef value) = ref in value)
 
-  op writeVar : fa (a) VarRef a * a -> Monad ()
+  op writeVar : [a] VarRef a * a -> Monad ()
   def writeVar (varRef,value) = 
     return (let _ = MonadicStateInternal.writeVar (varRef,value) in ())
 endspec

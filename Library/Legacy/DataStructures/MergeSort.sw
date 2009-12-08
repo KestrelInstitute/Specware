@@ -8,9 +8,11 @@ taken from ...
 
 MergeSort qualifying spec
 
-  op sortGT     : fa(a) (a * a -> Boolean) -> List a -> List a
-  op uniqueSort : fa(a) (a * a -> Comparison) -> List a -> List a
-  op sorted     : fa(a) (a * a -> Boolean) -> List a -> Boolean
+ import /Library/Legacy/Utilities/System
+
+  op sortGT     : [a] (a * a -> Boolean) -> List a -> List a
+  op uniqueSort : [a] (a * a -> Comparison) -> List a -> List a
+  op sorted     : [a] (a * a -> Boolean) -> List a -> Boolean
 
   def sortGT cmpGT ls =
     case ls of
@@ -30,13 +32,13 @@ MergeSort qualifying spec
            case ls of
              | [l] -> ls
              | l1::l2::rls ->
-                if k rem 2 = 1 then ls 
+                if k mod 2 = 1 then ls 
                 else
                   mergepairs (Cons (merge (l1,l2),rls), k div 2)
              | _ -> System.fail "Impossible: mergepairs" in
          let def nextrun(run,xs) =
            case xs of
-             | [] -> (List.rev run,[])
+             | [] -> (reverse run,[])
              | x::xs ->
                  if cmpGT(x, hd run) then
                    nextrun (Cons (x,run),xs)
@@ -44,7 +46,7 @@ MergeSort qualifying spec
                    (rev run,Cons (x,xs)) in
          let def samsorting (xs,ls,k) = 
            case xs of
-             | [] -> List.hd (mergepairs (ls,0))
+             | [] -> head (mergepairs (ls,0))
              | x::xs -> 
                 let (run,tail) = nextrun ([x],xs) in 
                 samsorting (tail, mergepairs (Cons (run,ls),k + 1), k + 1)
@@ -70,13 +72,13 @@ MergeSort qualifying spec
       case ls of
         | [l] -> ls
         | l1::l2::rls ->
-            if k rem 2 = 1 then ls 
+            if k modT 2 = 1 then ls 
             else
               mergepairs(Cons(merge(l1,l2),rls), k div 2)
         | _ -> System.fail "Impossible: mergepairs" in
     let def nextrun(run,xs) =
       case xs of
-        | [] -> (List.rev run,[])
+        | [] -> (reverse run,[])
         | x::xs -> 
             (case cmpfn(x, hd run) of
               | Greater -> nextrun(Cons(x,run),xs)
@@ -84,7 +86,7 @@ MergeSort qualifying spec
               | _       -> (rev run,Cons(x,xs))) in
     let def samsorting(xs,ls,k) = 
       case xs of
-        | [] -> List.hd(mergepairs(ls,0))
+        | [] -> head(mergepairs(ls,0))
         | x::xs -> 
             let (run,tail) = nextrun([x],xs) in 
             samsorting(tail, mergepairs(Cons(run,ls),k + 1), k + 1)
