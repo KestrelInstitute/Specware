@@ -61,6 +61,7 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
+                (require 'sb-cltl2)
 		; (require :sb-sprof)
                 ))
 
@@ -168,7 +169,7 @@
     "Library/Base/Handwritten/Lisp/Integer.lisp"
 ;    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Character.lisp"
-    "Library/Base/Handwritten/Lisp/System.lisp"
+    "Library/Legacy/Utilities/Handwritten/Lisp/System.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
     "Library/Unvetted/Handwritten/Lisp/Double.lisp"
     "Library/Unvetted/Handwritten/Lisp/Complex.lisp"
