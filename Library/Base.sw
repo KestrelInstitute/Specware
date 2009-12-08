@@ -12,7 +12,7 @@ spec
 
 import Base/Empty
 import Base/String
-import Base/System
-import Base/Deprecated
+%% import Base/System   % Moved to /Legacy/Utilities/Primitive/System
+%%% import Base/Deprecated % Moved to /Legacy/Deprecated
 
 endspec
