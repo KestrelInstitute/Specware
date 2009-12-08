@@ -48,7 +48,7 @@
 		   ;"Base/Handwritten/Lisp/Nat"
 		   "Base/Handwritten/Lisp/Character"
 		   "Base/Handwritten/Lisp/String"
-		   "Base/Handwritten/Lisp/System"
+		   "Legacy/Utilities/Handwritten/Lisp/System"
 		   "IO/Primitive/Handwritten/Lisp/IO"
 		   "Legacy/Utilities/Handwritten/Lisp/State"
 		   "Legacy/Utilities/Handwritten/Lisp/IO"
