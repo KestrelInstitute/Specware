@@ -146,7 +146,7 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
    let (revised_decls, found_class?) = 
        foldl (fn ((decls, found_class?), cd as (lm, (cId, sc, si), cb)) ->
 	      if cId = srtId then
-		let new_fields = if member (fldDecl, cb.flds) then cb.flds else cons(fldDecl, cb.flds) in
+		let new_fields = if fldDecl in? cb.flds then cb.flds else fldDecl::cb.flds in
 		let newCb = setFlds(cb, new_fields) in
 		([(lm, (cId, sc, si), newCb)] ++ decls, true)
 	      else 
@@ -156,12 +156,12 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
    in
    let new_decls = 
        if found_class? then 
-	 rev revised_decls
+	 reverse revised_decls
        else 
 	 let cb       = Java.emptyClsBody in
-	 let newCb    = setFlds(cb, cons(fldDecl, cb.flds)) in
+	 let newCb    = setFlds(cb, fldDecl::cb.flds) in
 	 let new_decl = ([], (srtId, None, []), newCb) in
-	 old_decls ++ [new_decl] % old_decls = rev revised_decls
+	 old_decls ++ [new_decl] % old_decls = reverse revised_decls
    in
      putClsDecls new_decls
     }
@@ -175,7 +175,7 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
    let (revised_decls, found_class?) = 
        foldl (fn ((decls, found_class?), cd as (lm, (cId, sc, si), cb)) ->
 	      if cId = srtId then
-		let new_methods = if member (methDecl, cb.meths) then cb.meths else cons(methDecl, cb.meths) in
+		let new_methods = if methDecl in? cb.meths then cb.meths else methDecl::cb.meths in
 		let newCb = setMethods(cb, new_methods) in
 		([(lm, (cId, sc, si), newCb)] ++ decls, true)
 	      else 
@@ -185,10 +185,10 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
    in
    let new_decls = 
        if found_class? then 
-	 rev revised_decls
+	 reverse revised_decls
        else 
 	 let cb       = Java.emptyClsBody in
-	 let newCb    = setMethods(cb, cons(methDecl, cb.meths)) in
+	 let newCb    = setMethods(cb, methDecl::cb.meths) in
 	 let new_decl = ([], (srtId, None, []), newCb) in
 	 old_decls ++ [new_decl] % old_decls = rev revised_decls
    in
@@ -213,7 +213,7 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
    %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
    %% let _ = writeLine("\n;;; Finding class assignment for op " ^ opId ^ ": " ^ printSort srt) in
 
-   if all (fn (srt) -> notAUserType?(spc,srt)) dom_sorts then
+   if forall? (fn (srt) -> notAUserType?(spc,srt)) dom_sorts then
      %% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
      if notAUserType? (spc, rng) then
        %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
@@ -228,7 +228,7 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
        %% As given here, without the call to baseTypeAlias, this is equivalent to:
        %%  case ut (spc, srt) of ...
        %% We present it this way for clarity and for consistency with translateApplyToExprM
-       case utlist_internal (fn srt -> userType? (spc, srt) (* && ~(baseTypeAlias? (spc, srt)) *) ) (concat (dom_sorts, [rng])) of
+       case utlist_internal (fn srt -> userType? (spc, srt) (* && ~(baseTypeAlias? (spc, srt)) *) ) (dom_sorts ++ [rng]) of
 	 | Some usrt ->
 	   {
 	    classId <- srtIdM usrt;
@@ -364,7 +364,7 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
    (vars, body) <- return(srtTermDelta_internal(srt,trm,true));
-   split <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
+   split <- return(splitAtLeftmost (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
    case split of
      | Some(vars1,varh,vars2) ->
        (case parseCoProductCase spc body of
@@ -383,7 +383,7 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, 
   {
    spc <- getEnvSpec;
    rngId <- srtIdM rng;
-   Some (vars1, varh, vars2) <- return(splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
+   Some (vars1, varh, vars2) <- return(splitAtLeftmost (fn(v as (id, srt)) -> userType?(spc,srt)) vars);
    defaultMethodDecl <- mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars1++vars2,opt_other);
    fpars <- varsToFormalParamsM (vars1++vars2);
    methodDecl <- return(([], Some (tt(rngId)), opId, fpars , []), None);
@@ -420,7 +420,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
    rngId <- srtIdM rng;
    spc <- getEnvSpec;
-   case splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars of
+   case splitAtLeftmost (fn(v as (id, srt)) -> userType?(spc,srt)) vars of
      | Some (vars1, varh, vars2) ->
        let (vh, _) = varh in
        {
@@ -596,8 +596,8 @@ def addArgsToTcx(tcx, args) =
    addArgRec(tcx, args, 1)
   
 
-%  foldr (fn((cons, Some (Product (args, _))), newClsDecls) -> addSumMethDeclToClsDecls(srthId, cons, args, newClsDecls) |
-%	 ((cons, None), newClsDecls) -> addSumMethDeclToClsDecls(srthId, cons, [], newClsDecls)) clsDecls summands
+%  foldr (fn((cons, Some (Product (args, _))), newClsDecls) -> addSumMethDeclToClsDecls(srthId, Cons, args, newClsDecls) |
+%	 ((Cons, None), newClsDecls) -> addSumMethDeclToClsDecls(srthId, Cons, [], newClsDecls)) clsDecls summands
 %  clsDecls
 
 
@@ -691,8 +691,8 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                              | RecordPat(fields,b) -> 
                                foldl (fn(varterms,(_,p)) ->
                                         case p of
-                                          | VarPat((id,srt),b) -> concat(varterms,[Some(Var((id,srt),b))])
-                                          | _ -> concat(varterms,[None])) 
+                                          | VarPat((id,srt),b) -> varterms ++ [Some(Var((id,srt),b))]
+                                          | _ -> varterms ++ [None]) 
                                      []
                                      fields
                              | _ -> 
@@ -710,7 +710,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                                  body 
                                  zip
                        in
-                         Lambda (cons((p,cond,body),match), b)
+                         Lambda (Cons((p,cond,body),match), b)
                      | _ -> trm
          in
            let srt = Arrow(domsrt,srtRange(opsrt),b) in
@@ -919,7 +919,7 @@ def printTransformedSpec? = false
 
 op printOpNms(spc: Spec): String =
   let ops = opsAsList spc in
-  "("^toString(length ops)^")"^foldl (fn (s,o) -> s^" "^o.2) "" ops
+  "("^show(length ops)^")"^foldl (fn (s,o) -> s^" "^o.2) "" ops
 
 op etaExpandDefs(spc: Spec): Spec =
   setOps (spc, 

@@ -97,8 +97,8 @@ Specware qualifying spec
   def reportErrorToJava (file, line, col, msg) =
     let _ = toScreen ("call to reportErrorToJava, but java connection not initialized: ") in
     let _ = toScreen (" File:   " ^ file)              in
-    let _ = toScreen (" Line:   " ^ Nat.toString line) in  
-    let _ = toScreen (" Column: " ^ Nat.toString col)  in
+    let _ = toScreen (" Line:   " ^ Nat.show line) in  
+    let _ = toScreen (" Column: " ^ Nat.show col)  in
     let _ = toScreen (" Msg:    " ^ msg)               in
     ()
 

@@ -4,7 +4,7 @@
 OscarAbsSyn qualifying spec
   import Types
 
-  sort SpecCalc.OtherTerm a =
+  type SpecCalc.OtherTerm a =
     | Specialize MS.Term * SpecCalc.Term a
     | Inline String * SpecCalc.Term a
     | OscarDecls List (OscarSpecElem a)

@@ -26,28 +26,28 @@ SpecCalc qualifying spec
 		        let _ = writeLine ("Internal confusion: Sort    but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
-			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
+			(if  qid in? sorts then sorts else sorts ++ [qid], ops))
 		 | SortDef (qid,_) -> 
 		   (case findAllSorts (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: SortDef but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
-			(if member (qid, sorts) then sorts else sorts ++ [qid], ops))
+			(if  qid in? sorts then sorts else sorts ++ [qid], ops))
 		 | Op (qid,def?,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ ->
-			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
+			(sorts, if  qid in? ops then ops else ops ++ [qid]))
 		 | OpDef (qid,_,_) -> 
 		   (case findAllOps (should_be_empty_spec, qid) of
 		      | [] -> 
 		        let _ = writeLine ("Internal confusion: OpDef   but no info for " ^ printQualifiedId qid) in
 			(sorts, ops)
 		      | _ -> 
-			(sorts, if member (qid, ops) then ops else ops ++ [qid]))
+			(sorts, if  qid in? ops then ops else ops ++ [qid]))
 		 | Import (_, _, elts,_) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
 		 | _ -> (sorts, ops))
 	      (sorts, ops)
@@ -271,7 +271,7 @@ SpecCalc qualifying spec
     ^
     " in substitution term "
 
-  op  printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
+  op  printNamesInAQualifierMap : [a] AQualifierMap a -> String
   def printNamesInAQualifierMap qmap =
     foldriAQualifierMap (fn (qualifier, id, _, str) ->
 			 let qid = printQualifierDotId (qualifier, id) in

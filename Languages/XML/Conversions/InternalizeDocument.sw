@@ -119,7 +119,7 @@ XML qualifying spec
 			 %% but we have cast all of them to that generic type.
 			 %% Thus we must be very careful what we do with magic_value:
 			 %% operations such as cons/hd/tl/rev are ok.
-			 | Some field_value  -> Some (cons (field_value, magic_values))
+			 | Some field_value  -> Some (field_value :: magic_values)
 			 | None -> None)
 	        (Some [])
 		field_sds
@@ -129,7 +129,7 @@ XML qualifying spec
 	    %%% let _ = toScreen ((level_str level) ^ "Found product\n") in
 	    %% magicMakeProduct restructures the implementation of magic_values from a list to a product 
 	    %% See casting note at start of file.
-	    Some (Magic.magicMakeProduct (rev magic_values))
+	    Some (Magic.magicMakeProduct (reverse magic_values))
 	  | _ -> None
 
 
@@ -186,12 +186,12 @@ XML qualifying spec
     : Option X =
     let element_name = element.stag.name in
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element_name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
-    case (find (fn sd_option -> 
-		(case element_type_attribute element of
-		   | Some str -> sd_option.1 = str
-		   | _ -> false)
-		||
-		ms_name_matches_xml_name? (sd_option.1, element_name))
+    case (findLeftmost (fn sd_option -> 
+                          (case element_type_attribute element of
+                             | Some str -> sd_option.1 = str
+                             | _ -> false)
+                         ||
+                           ms_name_matches_xml_name? (sd_option.1, element_name))
 	       sd_options)
       of
        | Some (_, Some matching_sd_option) -> 
@@ -234,7 +234,7 @@ XML qualifying spec
       | ("String",  "String")  -> internalize_PossibleElement_as_String  (element)
       | ("Char",    "Char")    -> internalize_PossibleElement_as_Char    (element)
       | ("List",    "List")    -> internalize_PossibleElement_as_List    (element, args,    table)
-      | ("Option" , "Option")  -> internalize_PossibleElement_as_Option  (element, hd args, table)
+      | ("Option" , "Option")  -> internalize_PossibleElement_as_Option  (element, head args, table)
       | _                      -> internalize_PossibleElement_ad_hoc     (element, base_sd (* , qid, args, table, *))
 
   op [X] internalize_PossibleElement_as_Boolean (element : PossibleElement)
@@ -305,21 +305,21 @@ XML qualifying spec
                                               table   : SortDescriptorExpansionTable)
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as List for " ^ (print_SortDescriptor list_sd) ^ "\n") in
-    let element_sd = hd args in
-    let data = rev (foldl (fn (result, (possible_chardata,item)) ->
+    let element_sd = head args in
+    let data = reverse (foldl (fn (result, (possible_chardata,item)) ->
 			   %%% let _ = toScreen ((level_str level) ^ "Seeking next list element: " ^ (print_SortDescriptor element_sd) ^ "\n") in
 			   case item of
 			     | Element element ->
 			       (case aux_internalize_Element (element, element_sd, table) of
 				  | Some datum -> 
 				    %%% let _ = toScreen ((level_str level) ^ "Found list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
-				    cons (datum, result)
+				    datum:: result
 				  | _ -> 
 				    let _ = toScreen ("\nWarning: failure looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ) in
 				    result)
 			     | _ -> 
 			       case possible_chardata of
-				 | Some ustr -> cons (trim_whitespace (string ustr), result)
+				 | Some ustr -> trim_whitespace (string ustr) :: result
 				 | _ -> 
 				   %%% let _ = toScreen ((level_str level) ^ "While looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^ "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n") in
 				   result)
@@ -392,12 +392,12 @@ XML qualifying spec
                                                 table        : SortDescriptorExpansionTable)
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
-    case (find (fn sd_option -> 
-		(case etag_type_attribute etag of
-		   | Some str -> sd_option.1 = str
-		   | _ -> false)
-		   ||
-		   ms_name_matches_xml_name? (sd_option.1, etag.name))
+    case (findLeftmost (fn sd_option -> 
+                          (case etag_type_attribute etag of
+                             | Some str -> sd_option.1 = str
+                             | _ -> false)
+                         ||
+                           ms_name_matches_xml_name? (sd_option.1, etag.name))
 	       sd_options)
        of 
         | Some (_, Some matching_sd_option) -> 
@@ -424,7 +424,7 @@ XML qualifying spec
       | ("String",  "String")  -> Some (magicCastFromString  "")
       | ("Char",    "Char")    -> None
       | ("List",    "List")    -> Some (magicCastFromList    [])
-      | ("Option" , "Option")  -> internalize_EmptyElemTag_as_Option (etag, hd args, table)
+      | ("Option" , "Option")  -> internalize_EmptyElemTag_as_Option (etag, head args, table)
       | _                      -> internalize_EmptyElemTag_ad_hoc    (etag, base_sd (* , qid, args, table, *))
 
   %% TODO: Implement this
@@ -477,7 +477,7 @@ XML qualifying spec
 	Some (magicCastFromAE {attributes = attributes,
 			       elements   = ()})
 
-  op Magic.magicCastFromAE       : fa (E,X)  {attributes : Attributes, elements : E} -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromAE       : [E,X]  {attributes : Attributes, elements : E} -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
 
   %% op internalize_EmptyElemTag_Attributes    : EmptyElemTag    * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Attributes

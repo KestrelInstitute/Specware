@@ -114,7 +114,7 @@ SpecCalc qualifying spec
        let (new_vars, vars_changed?, vars_op_names, captures) = 
            foldl (fn ((new_vars, vars_changed?, all_op_names, captures), (id, srt)) -> 
 		  let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
-		  let new_captures = (if member (id, tm_op_names) then
+		  let new_captures = (if id in? tm_op_names then
 					captures ++ [id]
 				      else
 					captures) 
@@ -150,7 +150,7 @@ SpecCalc qualifying spec
 		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
 		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
 		  let new_captures = (foldl (fn (captures, (id,_)) ->
-					     if member (id, body_op_names) then
+					     if id in? body_op_names then
 					       captures ++ [id]
 					     else
 					       captures)
@@ -183,7 +183,7 @@ SpecCalc qualifying spec
        let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
        let (new_decls, decls_changed?, decls_op_names, captures) =
            foldl (fn ((new_decls, decls_changed?, decls_op_names, captures), ((id, srt), tm)) ->
-		  let new_captures = (if member (id, body_op_names) then
+		  let new_captures = (if id in? body_op_names then
 					captures ++ [id]
 				      else
 					captures)
@@ -243,7 +243,7 @@ SpecCalc qualifying spec
 		  let (new_cond, cond_changed?, cond_op_names) = deconflictTermRec cond in
 		  let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
 		  let captures = foldl (fn (captures, (id,_)) ->
-					if member (id, body_op_names) then
+					if id in? body_op_names then
 					  captures ++ [id]
 					else
 					  captures)
@@ -281,7 +281,7 @@ SpecCalc qualifying spec
      | The (var as (id, srt), tm, a) ->
        let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
        let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
-       let capture? = member (id, tm_op_names) in
+       let capture? = id in? tm_op_names in
        let changed? = srt_changed? || tm_changed? in
        let new_term = 
            if changed? then

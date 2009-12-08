@@ -27,15 +27,15 @@ XML qualifying spec
   %%           metaslang, e.g. DescribeSort S, mapping a sort to a normal term
   %%           describing that sort, to make the extra arg apparent.
   %%
-  op readXMLFile          : fa (X) Filename -> X         % Tricky -- see Support.lisp
-  op parseXML             : fa (X) String  -> X          % Tricky -- see Support.lisp
-  op parseUnicodeXML      : fa (X) UString -> X          % Tricky -- see Support.lisp
-  op internalize_Document : fa (X) Document -> Option X  % Tricky -- see Support.lisp
-  op internalize_Element  : fa (X) Element -> Option X   % Tricky -- see Support.lisp
+  op readXMLFile          : [X] Filename -> X         % Tricky -- see Support.lisp
+  op parseXML             : [X] String  -> X          % Tricky -- see Support.lisp
+  op parseUnicodeXML      : [X] UString -> X          % Tricky -- see Support.lisp
+  op internalize_Document : [X] Document -> Option X  % Tricky -- see Support.lisp
+  op internalize_Element  : [X] Element -> Option X   % Tricky -- see Support.lisp
 
-  op writeXMLFile         : fa (X) X * Filename -> ()    % Tricky -- see Support.lisp
-  op printXML             : fa (X) X -> String           % Tricky -- see Support.lisp
-  op printUnicodeXML      : fa (X) X -> UString          % Tricky -- see Support.lisp
+  op writeXMLFile         : [X] X * Filename -> ()    % Tricky -- see Support.lisp
+  op printXML             : [X] X -> String           % Tricky -- see Support.lisp
+  op printUnicodeXML      : [X] X -> UString          % Tricky -- see Support.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INPUT

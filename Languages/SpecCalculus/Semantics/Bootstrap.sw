@@ -328,8 +328,8 @@ Specware qualifying spec
 
   op  removeSWsuffix : String -> String
   def removeSWsuffix path =
-    case (rev (explode path)) of
-      | #w :: #s :: #. :: rest -> implode (rev rest)
+    case (reverse (explode path)) of
+      | #w :: #s :: #. :: rest -> implode (reverse rest)
       | _ -> path
 
   %% Maybe this belongs in Evaluate/Generate.sw and applied to
@@ -350,7 +350,7 @@ Specware qualifying spec
                       | #\\ -> Some false
                       | _   -> result)
                None
-               (rev (explode path))
+               (reverse (explode path))
      of
       | Some true -> path
       | _         -> path ^ suffix

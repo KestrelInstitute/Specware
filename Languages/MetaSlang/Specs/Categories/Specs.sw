@@ -17,7 +17,7 @@ spec {
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
   import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
 
-  sort Morphism
+  type Morphism
   op dom : Morphism -> Spec
   op cod : Morphism -> Spec
   op compose : Morphism -> Morphism -> Morphism

@@ -62,7 +62,7 @@ spec
     in
     let
       def stringPrefix(s,size) =
-	if (length s) < size then s else substring(s,0,size)
+	if (length s) < size then s else subFromTo(s,0,size)
     in
     let
       def check4StaticOrNew (classid, opid, allargs) =
@@ -355,7 +355,7 @@ spec
 		%%           for sorts and ops, even if there are references to them
 		%%           in terms throughout the spec.
 
-		if member (qid, defined_ops) || definedOp? (spc, qid) then  % even declaredOp? can be false here!
+		if  qid in? defined_ops || definedOp? (spc, qid) then  % even declaredOp? can be false here!
 		  % let _ = writeLine ("    Normal declared op in: " ^ myPrintTerm term) in
 		  % let _ = writeLine ("    ------------") in
 		  return None

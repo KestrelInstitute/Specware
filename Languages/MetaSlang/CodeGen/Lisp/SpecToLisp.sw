@@ -53,20 +53,20 @@ SpecToLisp qualifying spec
 			     [Lisp.string id, 
 			      Lisp.string "CL"]))
     && 
-    (~(member (id, notReallyLispStrings))))
+    id nin? notReallyLispStrings)
 
  op  lispPackage? : String -> Boolean
  def lispPackage? id =
    let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
    Lisp.uncell pkg
    && 
-   List.member (Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "PACKAGE-NAME"), [pkg])), 
-		lispPackages)
+    Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "PACKAGE-NAME"), [pkg])) 
+      in? lispPackages
 
- op  ith : fa (a) Nat * String * List (String * a) -> Nat
+ op  ith : [a] Nat * String * List (String * a) -> Nat
  def ith (n, id, ids) = 
    case ids of
-     | [] -> System.fail ("No such index " String.++ id)
+     | [] -> System.fail ("No such index " ^ id)
      | (id2, _) :: ids -> 
        if id = id2 then
 	 n 
@@ -175,14 +175,14 @@ SpecToLisp qualifying spec
                         | #`  -> "\\`"
                         | #'  -> "\\'"
 			| #\\ -> "\\\\" 
-			| ch  -> Char.toString ch)
+			| ch  -> Char.show ch)
                       id
    in
    let upper_ID = String.map toUpperCase id in
    let ID = if generateCaseSensitiveLisp? then id else upper_ID in
-   if isLispString upper_ID || sub (id, 0) = #! then
+   if isLispString upper_ID || id@0 = #! then
        "|!" ^ id ^ "|"
-     else if exists (fn ch -> ch = #:) (explode id) then
+     else if exists? (fn ch -> ch = #:) (explode id) then
        "|"  ^ id ^ "|"
      else 
        lookupSpecId (id, upper_ID, pkg)
@@ -239,7 +239,7 @@ SpecToLisp qualifying spec
 
  op  naryName : QualifiedId * Nat * String -> String
  def naryName (Qualified (q, id), n, dpn) =
-   printPackageId (Qualified (q, id ^ "-" ^ (Nat.toString n)), 
+   printPackageId (Qualified (q, id ^ "-" ^ (Nat.show n)), 
 		   dpn)
 
  def mkLUnaryFnRef (id : String, arity, vars) =
@@ -308,7 +308,7 @@ SpecToLisp qualifying spec
 	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
      | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
- op  mkLTermOp : fa (a) Spec * String * StringSet.Set * (Fun * Sort * a) * Option (MS.Term) -> LispTerm
+ op  mkLTermOp : [a] Spec * String * StringSet.Set * (Fun * Sort * a) * Option (MS.Term) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
    case termOp of
      | (Project id, srt, _) -> 
@@ -617,7 +617,7 @@ SpecToLisp qualifying spec
 	   else 
 	     None
 
-	 | Apply (t1, t2, _) -> aux (t1, i+1, cons (t2, args))
+	 | Apply (t1, t2, _) -> aux (t1, i+1, t2::args)
 
 	 | _ -> None
 
@@ -664,7 +664,7 @@ SpecToLisp qualifying spec
 	       case decls of
 		 | [] -> (names, terms)
 		 | (name, term) :: decls -> 
-		   unfold (decls, cons (name, names), cons (term, terms))
+		   unfold (decls,name::names, term::terms)
                     
 	   in
 	   let (names, terms) = unfold (decls, [], []) in
@@ -693,7 +693,7 @@ SpecToLisp qualifying spec
 	   %% let _ = writeLine ("Block " ^ printTerm term) in 
 	   let terms = flattenFailWith t in
 	   let terms = List.map (fn term -> blockAtom (sp, dpn, vars, term)) terms in
-	   mkLApply (mkLOp "block", cons (Const (Boolean false), terms))
+	   mkLApply (mkLOp "block", Cons (Const (Boolean false), terms))
 
 	 %% Forced tuples are translated to tuples by translating the argument to mkLTuple recursively
 
@@ -811,7 +811,7 @@ SpecToLisp qualifying spec
                  ([], true)
                  chars
        in
-         rev chars
+         reverse chars
    in
      implode (compress (explode s, true))
 
@@ -835,7 +835,7 @@ SpecToLisp qualifying spec
 	   %% Never do a real subsitution within a lambda body, but if there are no 
 	   %% occurences, return count of 0 to trigger vacuous
 	   %% subsitution that allows us to drop unused arg.
-	   if member (x, vars) || countOccurrence2 (x, 0, [body]) = 0 then
+	   if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
 	     countOccurrence2 (x, count, terms)		% Captured
 	   else 
 	     2 (* give up because may be called more than once *)
@@ -843,13 +843,13 @@ SpecToLisp qualifying spec
 	 | Letrec (vars, terms1, body) -> 
 	   %% Was: 2 (* give up *)
 	   %% Similar to Lambda case
-	   if member (x, vars) || countOccurrence2 (x, 0, [body]) = 0 then
-	     countOccurrence2 (x, count, cons (body, terms1 ++ terms))
+	   if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
+	     countOccurrence2 (x, count, body::terms1 ++ terms)
 	   else 
 	     2
 
 	 | Let (vars, terms1, body) -> 
-	   countOccurrence2 (x, count, cons (body, terms1 ++ terms))
+	   countOccurrence2 (x, count, body::terms1 ++ terms)
 
 	 | If     (t1, t2, t3) -> countOccurrence2 (x, count, [t1, t2, t3] ++ terms)
 	 | IfThen (t1, t2)     -> countOccurrence2 (x, count, [t1, t2]     ++ terms)
@@ -883,23 +883,23 @@ SpecToLisp qualifying spec
  op  rename2 : String * (Strings * List (LispTerm) * Strings * LispTerm) -> Strings * List (LispTerm) * Strings * LispTerm
 
  def rename (v, (vars, names, body)) = 
-   if exists (fn n -> n = v) names then
+   if exists? (fn n -> n = v) names then
      let n = newName (v, names) in
      let body = substitute (v, mkLVar n) body in
-     ((cons (n, vars))  : Strings, 
-      (cons (n, names)) : Strings, 
+     (n::vars, 
+      n::names, 
       body)
    else 
-     (cons (v, vars), names, body)
+     (v::vars, names, body)
 
  def rename2 (v, (vars, terms, names, body)) = 
-   if exists (fn n -> n = v) names then
+   if exists? (fn n -> n = v) names then
      let n = newName (v, names) in 
      let body  = substitute (v, (mkLVar n) : LispTerm) body  in 
      let terms = List.map (substitute (v, mkLVar n)) terms  in
-     (cons (n, vars), terms, cons (n, names), body)
+     (n::vars, terms, n::names, body)
    else 
-     (cons (v, vars), terms, names,           body)
+     (v::vars, terms,    names, body)
 
  op  substitute : (String * LispTerm) -> LispTerm -> LispTerm
  def substitute (x, arg) body = 
@@ -926,7 +926,7 @@ SpecToLisp qualifying spec
 		List.map (substitute (x, arg)) terms)
 
        | Lambda (vars, decls, body) -> 
-	 if exists (fn v -> x = v) vars then
+	 if exists? (fn v -> x = v) vars then
 	   mkLLambda (vars, decls, body) 
 	 else
            let names = getNames arg in
@@ -941,7 +941,7 @@ SpecToLisp qualifying spec
        | Var y -> if x = y then arg else mkLVar y
 
        | Let (vars, terms, body) -> 
-	 if exists (fn v -> x = v) vars then
+	 if exists? (fn v -> x = v) vars then
 	   mkLLet (vars, 
 		   List.map (substitute (x, arg)) terms, 
 		   body)
@@ -955,7 +955,7 @@ SpecToLisp qualifying spec
 		     substitute (x, arg) body)
            
        | Letrec (vars, terms, body) -> 
-	 if exists (fn v -> x = v) vars then
+	 if exists? (fn v -> x = v) vars then
 	   mkLLetRec (vars, terms, body)
 	 else 
            let names = getNames (arg) in
@@ -996,18 +996,18 @@ SpecToLisp qualifying spec
      | Const  _ -> true
      | Op     _ -> true
      | Lambda _ -> true
-     | Apply (Op "cdr",    terms) -> all pure terms % Selector from data type constructors.
-     | Apply (Op "car",    terms) -> all pure terms % Selector from tuple.
-     | Apply (Op "svref",  terms) -> all pure terms % Projection from record
-     | Apply (Op "vector", terms) -> all pure terms % Tuple formation
-     | Apply (Op "cons",   terms) -> all pure terms % Tuple formation
+     | Apply (Op "cdr",    terms) -> forall? pure terms % Selector from data type constructors.
+     | Apply (Op "car",    terms) -> forall? pure terms % Selector from tuple.
+     | Apply (Op "svref",  terms) -> forall? pure terms % Projection from record
+     | Apply (Op "vector", terms) -> forall? pure terms % Tuple formation
+     | Apply (Op "cons",   terms) -> forall? pure terms % Tuple formation
      | _ -> false
       
   
  def pV? var_name =
    case explode var_name of
-     | #p :: #V :: digits -> all isNum digits % lexer gets upset if no space between "::#"
-     | #a :: #p :: #V :: digits -> all isNum digits
+     | #p :: #V :: digits -> forall? isNum digits % lexer gets upset if no space between "::#"
+     | #a :: #p :: #V :: digits -> forall? isNum digits
      | _ -> false
 
  def reduceTerm (term : LispTerm) = 
@@ -1043,19 +1043,19 @@ SpecToLisp qualifying spec
 			   &&
 			   %% not already in an ignore declaration?
 			   %% (can happen if there are multiple passes through reduceTerm)
-			   ~(exists (fn decl ->
+			   ~(exists? (fn decl ->
 				     case decl of
 				       | Ignore ignored_names ->
-					 exists (fn ignored_name -> var_name = ignored_name) 
+					 exists? (fn ignored_name -> var_name = ignored_name) 
 					        ignored_names
 				       | _ -> false)
 			            decls) 
 			   &&
 			   %% duplications among the vars probably shouldn't happen, 
 			   %% but it doesn't hurt to double-check
-			   ~(member (var_name, unused_vars)))
+			   var_name nin? unused_vars)
 		       then 
-			 cons (var_name, unused_vars)
+			  var_name::unused_vars
 		       else 
 			 unused_vars)
 	              []      
@@ -1064,7 +1064,7 @@ SpecToLisp qualifying spec
        let augmented_decls = 
            (case unused_and_unignored_pv_vars of
 	      | [] -> decls
-	      | _  -> cons (Ignore unused_and_unignored_pv_vars, decls))
+	      | _  -> Ignore unused_and_unignored_pv_vars :: decls)
        in
 	 mkLLambda (vars, augmented_decls, reduced_body)
 
@@ -1081,7 +1081,7 @@ SpecToLisp qualifying spec
        % This prevents capture in sequential substitution.
        % ?? Example please...
        %
-       let terms = cons (body, args) in
+       let terms = body::args in
        let xNumArgs = 
            List.map (fn (x, arg) ->
 		     if simpleTerm arg then
@@ -1120,13 +1120,13 @@ SpecToLisp qualifying spec
 		     args, 
 		     mkLSeq [arg, body])
 	          else
-		    (cons (x, xs), 
-		     cons (arg, args), 
+		    (x::xs, 
+                     arg::args, 
 		     body)) 
 	         ([], [], body) 
 		 xNumArgs
        in
-	 mkLLet (rev xs, rev args, body)
+	 mkLLet (reverse xs, reverse args, body)
 
      | Letrec (vars, terms, body) -> 
        mkLLetRec (vars, List.map reduceTerm terms, reduceTerm body)
@@ -1151,7 +1151,7 @@ SpecToLisp qualifying spec
      | _ -> false
 
  def genNNames n = 
-   tabulate (n, fn i -> "x" ^ (Nat.toString i))
+   tabulate (n, fn i -> "x" ^ (Nat.show i))
 
  def nTupleDerefs (n, vr) = 
    if n = 2 then 
@@ -1193,7 +1193,7 @@ SpecToLisp qualifying spec
 				 params ++ formals, 
 				 let_binds)
 		| _ -> 
-		  let newParam = "!x" ^ (Nat.toString i) in
+		  let newParam = "!x" ^ (Nat.show i) in
 		  auxUnCurryDef (body, 
 				 i+1, 
 				 params ++ [newParam], 
@@ -1244,7 +1244,7 @@ SpecToLisp qualifying spec
        if i > n then 
 	 mkLApply (mkLOp name, args)
        else 
-	 let vn = "x" ^ (Nat.toString i) in
+	 let vn = "x" ^ (Nat.show i) in
 	 reduceTerm (mkLLambda ([vn], 
 				[], 
 				auxRec (i+1, args ++ [mkLVar vn])))
@@ -1258,7 +1258,7 @@ SpecToLisp qualifying spec
        if i > n then 
 	 reduceTerm (mkLLambda (args, [], bod))
        else 
-	 let vn = "x" ^ (Nat.toString i) in
+	 let vn = "x" ^ (Nat.show i) in
 	 auxRec (i + 1, 
 		 args ++ [vn], 
 		 mkLApply (bod, [mkLVar vn]))
@@ -1387,7 +1387,7 @@ SpecToLisp qualifying spec
    %% mkLTerm incorporates non_constructive_format_msg into certain calls to error
    app (fn (uname, tm) ->
 	if calls_specific_error? tm non_constructive_format_msg
-            && ~(member (uname, SuppressGeneratedDefuns))
+            && uname nin? SuppressGeneratedDefuns
           then System.warn ("Non-constructive def for " ^ uname)
 	else
 	  ())
@@ -1399,13 +1399,13 @@ SpecToLisp qualifying spec
       def aux tm =
 	case tm of
 	  | Apply  (Op "cl:error", msg :: _) -> msg = format_str
-	  | Apply  (tm, tms)       -> aux tm || exists aux tms
+	  | Apply  (tm, tms)       -> aux tm || exists? aux tms
 	  | Lambda (_,   _,   tm)  -> aux tm
 	  | If     (tm1, tm2, tm3) -> aux tm1 || aux tm2 || aux tm3
 	  | IfThen (tm1, tm2)      -> aux tm1 || aux tm2
-	  | Let    (_, tms, tm)    -> exists aux tms || aux tm
-	  | Letrec (_, tms, tm)    -> exists aux tms || aux tm
-	  | Seq    tms             -> exists aux tms
+	  | Let    (_, tms, tm)    -> exists? aux tms || aux tm
+	  | Letrec (_, tms, tm)    -> exists? aux tms || aux tm
+	  | Seq    tms             -> exists? aux tms
 	  | _                      -> false
    in
      aux tm

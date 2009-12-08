@@ -33,7 +33,7 @@ in the places they are used at present, no such paths are expected.
     let absoluteString =
       case (explode str) of
         | #/ :: _ -> str
-        | c :: #: :: r -> (Char.toString(toUpperCase c)) ^ ":" ^ (implode r)
+        | c :: #: :: r -> (Char.show(toUpperCase c)) ^ ":" ^ (implode r)
         | _ -> (getCurrentDirectory ()) ^ "/" ^ str
     in
     let relPath = splitStringAt(absoluteString,"/") in
@@ -65,7 +65,7 @@ is not valid. A path without an element preceeding the '#' is invalid.
     let charList : List Char = explode str in
     let pathElems : List (List Char) = splitAtChar #/ charList in
     let def validElem charList =
-      when (member (##,charList))
+      when (## in? charList)
         (raise (SyntaxError "Unit identifier path element contains # symbol")) in
     {
       when (pathElems = [])
@@ -129,7 +129,7 @@ a fixpoint is reached since there may be sequences of "..".
   op  addDevice?: List String -> List String
   def addDevice? path =
     if msWindowsSystem?
-      then (if ~(path = []) && deviceString? (hd path)
+      then (if ~(path = []) && deviceString? (head path)
 	     then path
 	     else Cons("C:",path))
       else path
@@ -140,11 +140,11 @@ hash suffix is ignored.
 *)
   op  uidToFullPath : UnitId -> String
   def uidToFullPath {path,hashSuffix=_} =
-   let device? = deviceString? (hd path) in
-   let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-			        [] (if device? then tl path else path))
+   let device? = deviceString? (head path) in
+   let mainPath = flatten (foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+                             [] (if device? then tail path else path))
    in if device?
-	then (hd path) ^ mainPath
+	then (head path) ^ mainPath
 	else mainPath
 
 
@@ -152,15 +152,15 @@ hash suffix is ignored.
   def uidToPath {path,hashSuffix=_} =
     %foldr (fn (elem,path) -> "/" ^ elem ^ path) "" path
    let path = abbreviatedPath path in
-   let device? = deviceString? (hd path) in
+   let device? = deviceString? (head path) in
    %% More efficient
-   let tildaPath? = (hd path = "~") in
-   let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-			        [] (if tildaPath? || device? then tl path else path))
+   let tildaPath? = (head path = "~") in
+   let mainPath = flatten (foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+                             [] (if tildaPath? || device? then tail path else path))
    in if tildaPath?
 	then "~" ^ mainPath
 	else if device?
-	then (hd path) ^ mainPath
+	then (head path) ^ mainPath
 	else mainPath
 
   op  abbreviatedPath: List String -> List String
@@ -198,16 +198,16 @@ This is like the above but accommodates the suffix as well.
  %op  SpecCalc.uidToString : UnitId -> String % already declared in /Languages/SpecCalculus/Semantics/Exception.sw
   def SpecCalc.uidToString {path,hashSuffix} =
    let path = abbreviatedPath path in
-   let device? = deviceString? (hd path) in
-   let tildaPath? = (hd path = "~") in
-   let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-                                [] (if tildaPath? || device? then tl path else path))
+   let device? = deviceString? (head path) in
+   let tildaPath? = (head path = "~") in
+   let mainPath = flatten (foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+                             [] (if tildaPath? || device? then tail path else path))
    in
    let fileName =
      if tildaPath? then
         "~" ^ mainPath
      else if device?
-     then (hd path) ^ mainPath
+     then (head path) ^ mainPath
      else mainPath
    in
    case hashSuffix of
@@ -226,9 +226,9 @@ This is like the above but accommodates the suffix as well.
        (let filename = case path of
 			 | []    -> "" % ???
 			 | _ -> 
-	                   concatList (tl (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
-					         [] 
-						 path))
+	                   flatten (tail (foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+                                          [] 
+                                          path))
 	in
         case hashSuffix of
 	  | None        -> filename
@@ -256,7 +256,7 @@ Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Pri
       def addUpLinks (base,target) =
 	case base of
 	  | []      -> target
-	  | _::tail -> cons("..", addUpLinks (tail, target))
+	  | _::tail -> Cons("..", addUpLinks (tail, target))
 
       def removeCommonPrefix (base,target) =
         case (base,target) of
@@ -309,7 +309,7 @@ The next function will go away.
 This takes a prefix from the list while the given predicate holds. It
 doesn't belong here.
 *)
-  op  takeWhile : fa (a) (a -> Boolean) -> List a -> (List a) * (List a)
+  op  takeWhile : [a] (a -> Boolean) -> List a -> (List a) * (List a)
   def takeWhile pred l =
     case l of
       | [] -> ([],[])
@@ -339,7 +339,7 @@ The next two functions will disappear.
       | x::[] -> return x
       | _::rest -> lastElem rest
 
-  op  removeLast: fa (a) List a -> Env (List a)
+  op  removeLast: [a] List a -> Env (List a)
   def removeLast elems =
     case elems of
       | [] -> error "removeLast: encountered empty list"
@@ -349,13 +349,13 @@ The next two functions will disappear.
           return (Cons (x,suffix))
         }
 
-  op  first : fa (a) List a -> Env a
+  op  first : [a] List a -> Env a
   def first elems =
     case elems of
       | [] -> error "first: encountered empty list"
       | x::_ -> return x
 
-  op  last : fa (a) List a -> Env a
+  op  last : [a] List a -> Env a
   def last elems =
     case elems of
       | [] -> error "last: encountered empty list"
@@ -438,7 +438,7 @@ emacs interface functions.
     case evalPartial globalContext unitId of
       | Some(Spec spc,_,depUIDs,_) ->
         findDefiningUIDforOp (opId, spc, unitId,
-			      filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
+			      filter (fn uid -> uid nin? seenUIDs) depUIDs,
 			      globalContext, Cons(unitId,seenUIDs), rec?)
       | _ -> ([],seenUIDs)
 
@@ -550,7 +550,7 @@ emacs interface functions.
     case evalPartial globalContext unitId of
       | Some (Spec spc, _, depUIDs,_) ->
         findDefiningUIDforSort (sortId, spc, unitId,
-				filter (fn uid -> ~(member(uid,seenUIDs))) depUIDs,
+				filter (fn uid -> uid nin? seenUIDs) depUIDs,
 				globalContext, Cons(unitId, seenUIDs), rec?)
       | _ -> ([],seenUIDs)
 

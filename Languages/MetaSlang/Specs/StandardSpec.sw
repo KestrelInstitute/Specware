@@ -34,7 +34,7 @@ StandardSpec qualifying spec
  def emptyOpMap    = emptyASortMap
  def emptyElements = emptyAElements
 
- sort MetaTyVarsContext = {map     : Ref (NatMap.Map String),
+ type MetaTyVarsContext = {map     : Ref (NatMap.Map String),
                            counter : Ref Nat}
   
  def initializeMetaTyVars() : MetaTyVarsContext =
@@ -52,7 +52,7 @@ StandardSpec qualifying spec
              (case parity
                 of 0 -> "a" | 1 -> "b" | 2 -> "c" | 3 -> "d" | 4 -> "e")
          in  
-         let suffix = if increment = 0 then "" else Nat.toString increment in
+         let suffix = if increment = 0 then "" else show increment in
          let name = prefix ^ suffix in name 
  def mapImage (m, vars) = 
      List.map (fn d -> case StringMap.find (m, d) of Some v -> v) vars
@@ -62,14 +62,14 @@ StandardSpec qualifying spec
 
  op abstractSort : (String -> TyVar) * List String * MS.Sort -> TyVars * MS.Sort
  def abstractSort (fresh, tyVars, srt) = 
-  if null tyVars then ([], srt) else
+  if empty? tyVars then ([], srt) else
   let (m, doSort) = makeTyVarMap (fresh, tyVars) in
   let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
   (mapImage (m, tyVars), srt)
 
  op newAbstractSort : (String -> TyVar) * List String * MS.Sort -> MS.Sort
  def newAbstractSort (fresh, tyVars, srt) = 
-  if null tyVars then 
+  if empty? tyVars then 
     srt
   else
     let (m, doSort) = makeTyVarMap (fresh, tyVars) in
@@ -94,7 +94,7 @@ StandardSpec qualifying spec
  %% It is important that the order of the type variables is preserved
  %% as this function is used to abstract sort in recursive sort defintions.
  %% For example, if 
- %% sort ListPair(a,b) = | Nil | Cons a * b * ListPair(a,b)
+ %% type ListPair(a,b) = | Nil | Cons a * b * ListPair(a,b)
  %% is defined, then abstractSort is used to return the pair:
  %% ( (a,b), | Nil | Cons a * b * ListPair(a,b) )
  %%

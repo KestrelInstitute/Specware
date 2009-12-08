@@ -1,6 +1,6 @@
 IntAsBitString = 
 BitString qualifying spec
-   sort BitString
+   type BitString
    op Zero : BitString (* const *)
    op One : BitString (* const *)
    op isZero  : BitString -> Boolean

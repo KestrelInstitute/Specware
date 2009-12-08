@@ -90,7 +90,7 @@ def letWildPatToSeq spc =
 	| Let ([(WildPat _, t1)], t2, b) -> 
 	  lettoseq (Seq ([t1,t2], b))
 	| Seq ((Seq (terms0, _))::terms, b) ->
-	  lettoseq (Seq (concat (terms0, terms), b))
+	  lettoseq (Seq (terms0 ++ terms, b))
 	| _ -> t
   in
   let sortid = (fn s -> s) in
@@ -101,14 +101,14 @@ def letWildPatToSeq spc =
 op unfoldSortAliases: Spec -> Spec
 def unfoldSortAliases spc =
   let srts = sortsAsList spc in
-  case find (fn (_, _, info) -> 
-	     case sortInfoDefs info of
-	       | srt :: _ -> 
-	         (case sortInnerSort srt of
-		    | Base (_, _, _) -> true
-		    | Boolean _ -> true
-		    | _ -> false)
-	       | _ -> false)
+  case findLeftmost (fn (_, _, info) -> 
+                       case sortInfoDefs info of
+                         | srt :: _ -> 
+                           (case sortInnerSort srt of
+                              | Base (_, _, _) -> true
+                              | Boolean _ -> true
+                              | _ -> false)
+                         | _ -> false)
             srts 
    of
     | None -> spc
@@ -182,11 +182,11 @@ def findMatchingUserTypeOption (spc, srtdef) =
     | _ ->
       let srts = sortsAsList spc in
       let srtPos = sortAnn srtdef in
-      let foundSrt = find (fn (q, id, info) ->
-			   case sortInfoDefs info of
-			     | [srt] -> 
-			       equalType? (srtdef, sortInnerSort srt) %% also reasonable:  equivType? spc (srtdef, sortInnerSort srt) 
-			     |_ -> false)
+      let foundSrt = findLeftmost (fn (q, id, info) ->
+                                     case sortInfoDefs info of
+                                       | [srt] -> 
+                                         equalType? (srtdef, sortInnerSort srt) %% also reasonable:  equivType? spc (srtdef, sortInnerSort srt) 
+                                       |_ -> false)
                           srts 
       in
 	case foundSrt of
@@ -231,13 +231,13 @@ def foldRecordSorts spc =
   let
     def foldRecordSorts0 (spc, visited) =
       let srts = sortsAsList spc in
-      case find (fn (q, i, info) -> 
-		 case sortInfoDefs info of
-		   | dfn :: _ -> 
-		     (case sortInnerSort dfn of
-			| Product _ -> ~(member (Qualified (q, i), visited))
-			| _ -> false)
-		   | _ -> false)
+      case findLeftmost (fn (q, i, info) -> 
+                           case sortInfoDefs info of
+                             | dfn :: _ -> 
+                               (case sortInnerSort dfn of
+                                  | Product _ -> Qualified (q, i) nin? visited
+                                  | _ -> false)
+                             | _ -> false)
 	        srts 
 	of
 	| None -> spc
@@ -254,7 +254,7 @@ def foldRecordSorts spc =
 			      srts
 	  in
 	  let spc = setSorts (spc, insertAQualifierMap (sortmap, q0, id0, info)) in
-	  foldRecordSorts0 (spc, cons (qid0, visited))
+	  foldRecordSorts0 (spc, qid0 :: visited)
   in
     foldRecordSorts0 (spc, [])
 
@@ -313,7 +313,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		   let (tvs, srt) = unpackSort def0 in
 		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 		   let ndef = maybePiSort (tvs, srt) in
-		   let defs = concat (defs, [ndef]) in
+		   let defs = defs ++ [ndef] in
 		   %let minfo = concat (minfo, minfo0) in
 		   (defs, minfo)) 
 		  ([]:List Sort, minfo) 
@@ -333,7 +333,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 		   let (trm, minfo) = p2mTerm (spc, modifyConstructors?, trm, minfo) in
 		   let ndef = maybePiTerm (tvs, SortedTerm (trm, srt, termAnn def0)) in
-		   let defs = concat (defs, [ndef]) in
+		   let defs = defs ++ [ndef] in
 		   %let minfo = concat (minfo, minfo0) in
 		   (defs, minfo)) 
 		  ([], minfo) 
@@ -371,7 +371,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		     | _ ->
 		       let infos = findAllOps (spc, qid) in
 		       fail ("Cannot find " ^ printQualifiedId qid ^ 
-			     "but could find " ^ (foldl (fn (s,info) -> s ++ " " ++ printAliases info.names) "" infos) ^
+			     "but could find " ^ (foldl (fn (s,info) -> s ^ " " ^ printAliases info.names) "" infos) ^
 			     "\nin spec\n" ^ printSpec spc))
 		 | OpDef (qid,_,_) ->
 		   let Some opinfo = findTheOp(spc,qid) in
@@ -386,12 +386,12 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		   incorporateMinfo(r_elts,[nprop],new_minfo,minfo,ops,srts)
 		 | Import(s_tm,i_sp,elts,pos) ->
 		   let (i_elts,minfo,ops,srts) = modElts(elts,minfo,ops,srts) in
-		   (Cons(Import(s_tm,i_sp,rev i_elts,pos),r_elts),minfo,ops,srts)
+		   (Cons(Import(s_tm,i_sp,reverse i_elts,pos),r_elts),minfo,ops,srts)
 		 | _ -> (Cons(el,r_elts), minfo,ops,srts))
           ([],minfo,ops,srts) elts
   in
   let (elts, minfo, ops, srts) = modElts(spc.elements,emptyMonoInfo,spc.ops,spc.sorts) in
-  let elts = rev elts in
+  let elts = reverse elts in
   let srts = foldl (fn (map, info) -> 
 		    let Qualified (q, id) = primarySortName info in
 		    insertAQualifierMap (map, q, id, info))
@@ -456,7 +456,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 	let new_srt =  Base (qid0, new_args, b) in
 	(new_srt, minfo) 
       else
-      if exists (fn (TyVar _) -> true | s -> false) insttv then (srt, minfo) else
+      if exists? (fn (TyVar _) -> true | s -> false) insttv then (srt, minfo) else
       let suffix = getSortNameSuffix insttv in
       let qid = Qualified (q, id^suffix) in
       %let _ = writeLine ("instantiated Sort: "^printQualifiedId qid) in
@@ -479,7 +479,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 		    if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
 		      let tvsubst = zip (tvs, insttv) in
 		      %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		      let names = cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
+		      let names = Cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
 		      let sinfo = {names = names, 
 				   dfn   = Any noPos} 
 		      in
@@ -490,7 +490,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 		  | (_::_, _) ->
 		    let tvsubst = zip (tvs, insttv) in
 		    %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		    let names = cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
+		    let names = Cons (qid, (filter (fn qid1 -> qid1 ~= qid0) names)) in 
 		    let srtdef = applyTyVarSubst2Sort (srtdef, tvsubst) in
 		    let srtdef = (if modifyConstructors? then
 				    addSortSuffixToConstructors (srtdef, suffix)
@@ -522,7 +522,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
     | Product (fields, b) ->
       let (fields, minfo) = foldl (fn ((fields, minfo),(id, srt)) ->
 				  let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-				  (concat (fields, [(id, srt)]), minfo))
+				  (fields ++ [(id, srt)], minfo))
                                   ([], minfo) fields
       in
       (Product (fields, b), minfo)
@@ -534,7 +534,7 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 							    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 							    (Some srt, minfo))
 				  in
-				  (concat (fields, [(id, optsrt)]), minfo))
+				  (fields ++ [(id, optsrt)], minfo))
                                   ([], minfo) fields
       in
       (CoProduct (fields, b), minfo)
@@ -558,7 +558,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
     | Bind (binder, varlist, t, b) ->
       let (varlist, minfo) = foldl (fn ((varlist, minfo),(id, srt)) ->
 				   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-				   (concat (varlist, [(id, srt)]), minfo))
+				   (varlist ++ [(id, srt)], minfo))
                                   ([], minfo) varlist
       in
       let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
@@ -566,7 +566,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
     | Record (fields, b) ->
       let (fields, minfo) = foldl (fn ((fields, minfo),(id, t)) ->
 				   let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-				   (concat (fields, [(id, t)]), minfo))
+				   (fields ++ [(id, t)], minfo))
                             ([], minfo) fields
       in
       (Record (fields, b), minfo)
@@ -574,7 +574,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
       let (patTerms, minfo) = foldl (fn ((patTerms, minfo),(pat, t)) ->
 				    let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
 				    let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-				    (concat (patTerms, [(pat, t)]), minfo))
+				    (patTerms ++ [(pat, t)], minfo))
                              ([], minfo) patTerms
       in
       let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
@@ -583,7 +583,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
       let (varTerms, minfo) = foldl (fn ((varTerms, minfo),((id, srt), t)) ->
 				    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 				    let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-				    (concat (varTerms, [((id, srt), t)]), minfo))
+				    (varTerms ++ [((id, srt), t)], minfo))
                              ([], minfo) varTerms
       in
       let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
@@ -599,7 +599,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
 				    let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
 				    let (t1, minfo) = p2mTerm (spc, modifyConstructors?, t1, minfo) in
 				    let (t2, minfo) = p2mTerm (spc, modifyConstructors?, t2, minfo) in
-				    (concat (match, [(pat, t1, t2)]), minfo))
+				    (match ++ [(pat, t1, t2)], minfo))
                              ([], minfo) match
       in
       (Lambda (match, b), minfo)
@@ -611,7 +611,7 @@ def p2mTerm (spc, modifyConstructors?, term, minfo) =
     | Seq (terms, b) ->
       let (terms, minfo) = foldl (fn ((terms, minfo),t) ->
 				  let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-				  (concat (terms, [t]), minfo))
+				  (terms ++ [t], minfo))
                              ([], minfo) terms
       in
       (Seq (terms, b), minfo)
@@ -628,7 +628,7 @@ def p2mPattern (spc, modifyConstructors?, pat, minfo) =
       %% Given "| Foo List (Nat)", we might convert to "| Foo_Nat List_Nat"
       let id = (case srt of
 		  | Base (_, insttv as _::_, _) ->
-		    if exists (fn (TyVar _) -> true | s -> false) insttv then 
+		    if exists? (fn (TyVar _) -> true | s -> false) insttv then 
 		      id 
 		    else if modifyConstructors? then 
 		      id^ (getSortNameSuffix insttv)
@@ -660,7 +660,7 @@ def p2mPattern (spc, modifyConstructors?, pat, minfo) =
       let (fields, minfo) = 
           foldl (fn ((fields, minfo), (id, pat)) ->
 		 let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
-		 (concat (fields, [(id, pat)]), minfo))
+		 (fields ++ [(id, pat)], minfo))
 	        ([], minfo) 
 		fields
       in
@@ -692,7 +692,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
-	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
+	  if exists? (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
 	  let id2 = id ^ (getSortNameSuffix insttv) in
 	  let fun = Embed (if modifyConstructors? then id2 else id, b?) in
 	  (fun, srt1, minfo)
@@ -710,7 +710,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
       (case cpsrt of
 	| Base (sqid, insttv as _::_, _) ->
           %% constructor Cons could become Cons_Nat for List (Nat), etc.
-	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
+	  if exists? (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
 	  let id2 = id ^ (getSortNameSuffix insttv) in
 	  let fun = Embedded (if modifyConstructors? then id2 else id) in
 	  %let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id2, srt1))) in
@@ -732,7 +732,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 	      else
 		let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
 		let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
-		let names = cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
+		let names = Cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
 		%let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
 		%let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
 		let nfun = Op (nqid, fix) in
@@ -766,7 +766,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 		else
 		  let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
 		  let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
-		  let names = cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
+		  let names = Cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
 		  %let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
 		  %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
 		  let nfun = Op (nqid, fix) in
@@ -847,27 +847,27 @@ def addOpInfo2SortOpInfos (nqid, opinfo, minfo) =
 %          | (_, _, _, []) -> writeLine ("no definition term!")
 %          | _ -> ()
 %  in
-  case find (fn info -> member (nqid, info.names)) ops of
+  case findLeftmost (fn info -> nqid in? info.names) ops of
     | Some _ -> minfo
-    | None -> {ops = cons (opinfo, ops), sorts = minfo.sorts}
+    | None -> {ops = Cons (opinfo, ops), sorts = minfo.sorts}
 
 op exchangeOpInfoInSortOpInfos: QualifiedId * OpInfo * SortOpInfos -> SortOpInfos
 def exchangeOpInfoInSortOpInfos (nqid, opinfo, minfo) =
   let ops = minfo.ops in
-  let ops = filter (fn info -> ~ (member (nqid, info.names))) ops in
-  {ops = cons (opinfo, ops), sorts = minfo.sorts}
+  let ops = filter (fn info -> nqid nin? info.names) ops in
+  {ops = Cons (opinfo, ops), sorts = minfo.sorts}
 
 op monoInfosContainOp?: QualifiedId * SortOpInfos -> Boolean
 def monoInfosContainOp? (nqid, minfo) =
   let ops = minfo.ops in
-  case find (fn info -> member (nqid, info.names)) ops of
+  case findLeftmost (fn info -> nqid in? info.names) ops of
     | Some _ -> true
     | None -> false
 
 op monoInfosContainSort?: QualifiedId * SortOpInfos -> Boolean
 def monoInfosContainSort? (nqid, minfo) =
   let srts = minfo.sorts in
-  case find (fn info -> member (nqid, info.names)) srts of
+  case findLeftmost (fn info -> nqid in? info.names) srts of
     | Some _ -> true
     | None -> false
 
@@ -877,14 +877,14 @@ def addSortInfo2SortOpInfos (nqid, sinfo, minfo) =
     minfo 
   else
     {ops   = minfo.ops, 
-     sorts = cons (sinfo, minfo.sorts)}
+     sorts = Cons (sinfo, minfo.sorts)}
 
 op exchangeSortInfoInSortOpInfos: QualifiedId * SortInfo * SortOpInfos -> SortOpInfos
 def exchangeSortInfoInSortOpInfos (nqid, sinfo, minfo) =
   let sorts = minfo.sorts in
-  let sorts = filter (fn info -> ~ (member (nqid, info.names))) sorts in
+  let sorts = filter (fn info -> nqid nin? info.names) sorts in
   {ops   = minfo.ops, 
-   sorts = cons (sinfo, sorts)}
+   sorts = Cons (sinfo, sorts)}
 
 op applyTyVarSubst2Term: MS.Term * TyVarSubst -> MS.Term
 def applyTyVarSubst2Term (trm, subst) =
@@ -1118,7 +1118,7 @@ def addSortConstructorsToSpecInternal (spc, forSnark?) =
   foldriAQualifierMap
    (fn (q, id, sortinfo, (spc, opnames)) ->
      let (spc, opnames0) = addSortConstructorsFromSort (spc, forSnark?, Qualified (q, id), sortinfo) in
-    (spc, concat (opnames, opnames0)))
+    (spc, opnames ++ opnames0))
    (spc, []) 
     spc.sorts
 
@@ -1162,7 +1162,7 @@ def addSortConstructorsFromSort (spc, forSnark?, qid, info) =
 				   fullyQualified? = false}
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
-		     let opnames = cons (opqid, opnames) in
+		     let opnames = Cons (opqid, opnames) in
 		     (setOps (spc, newops), opnames))
 	            (spc, []) 
 		    fields)
@@ -1183,13 +1183,13 @@ def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
   Qualified (q, "embed"^sep^consid)
 
 % this is used to distinguish "real" product from "record-products"
- op productfieldsAreNumbered: fa (a) List (String * a) -> Boolean
+ op productfieldsAreNumbered: [a] List (String * a) -> Boolean
 def productfieldsAreNumbered (fields) =
   let
     def fieldsAreNumbered0 (i, fields) =
       case fields of
 	| [] -> true
-	| (id, _)::fields -> id = Nat.toString (i) && fieldsAreNumbered0 (i+1, fields)
+	| (id, _)::fields -> id = Nat.show (i) && fieldsAreNumbered0 (i+1, fields)
   in
   fieldsAreNumbered0 (1, fields)
 
@@ -1257,7 +1257,7 @@ def addProductSortConstructorsToSpec spc =
   foldriAQualifierMap
    (fn (q, id, sortinfo, (spc, opnames)) ->
      let (spc, opnames0) = addProductSortConstructorsFromSort (spc, Qualified (q, id), sortinfo) in
-    (spc, concat (opnames, opnames0)))
+    (spc, opnames ++ opnames0))
    (spc, []) 
     spc.sorts
 
@@ -1311,7 +1311,7 @@ def addProductAccessorsToSpec spc =
   foldriAQualifierMap
    (fn (q, id, sortinfo, (spc, opnames)) ->
      let (spc, opnames0) = addProductAccessorsFromSort (spc, Qualified (q, id), sortinfo) in
-    (spc, concat (opnames, opnames0)))
+    (spc, opnames ++ opnames0))
    (spc, []) 
     spc.sorts
 
@@ -1346,7 +1346,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
 				   fullyQualified? = false}
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
-		     let opnames = cons (opqid, opnames) in
+		     let opnames = Cons (opqid, opnames) in
 		     (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, noPos), SortDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
 	            (spc, [])
 		    fields)
@@ -1506,7 +1506,7 @@ def conformOpDeclsTerm (spc, srt, term, _) =
 		 (case pat of
 		   | VarPat ((id, _), _) -> Some[id]
 		   | RecordPat (plist, _) -> 
-		     if all (fn | (_, VarPat _) -> true | (_, _) -> false) plist then
+		     if forall? (fn | (_, VarPat _) -> true | (_, _) -> false) plist then
 		       Some (List.map (fn (_, VarPat ((id, _), _)) -> id) plist)
 		     else
 		       None
@@ -1747,7 +1747,7 @@ def addEqOpsFromSort (spc, qid, info) =
 			    in
 			    let ymatch = [(ypat, mkTrue (), eqFsrt), (WildPat (osrt, b), mkTrue (), mkFalse ())] in
 			    let caseTerm = Apply (Lambda (ymatch, b), vary, b) in
-			    cons ((xpat, mkTrue (), caseTerm), match))
+			    Cons ((xpat, mkTrue (), caseTerm), match))
 		           []
 			   fields
 		 in
@@ -1767,7 +1767,7 @@ def findTheSort = findTheOpSort AnnSpec.findTheSort AnnSpec.findAllSorts
 op findTheOp: Spec * QualifiedId -> Option (OpInfo)
 def findTheOp = findTheOpSort AnnSpec.findTheOp AnnSpec.findAllOps
 
-op findTheOpSort: fa (a) (Spec * QualifiedId -> Option (a)) -> (Spec * QualifiedId -> List (a)) -> Spec * QualifiedId -> Option (a)
+op findTheOpSort: [a] (Spec * QualifiedId -> Option (a)) -> (Spec * QualifiedId -> List (a)) -> Spec * QualifiedId -> Option (a)
 def findTheOpSort origFindThe origFindAll (spc, qid as Qualified (q, id)) =
   let res1 = origFindThe (spc, qid) in
   case res1 of

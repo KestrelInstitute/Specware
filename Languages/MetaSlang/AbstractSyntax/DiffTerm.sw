@@ -264,10 +264,10 @@ AnnSpec qualifying spec
    %%
    %% diffs would be [Terms (x,3)], and we would consider the the overall terms to mismatch.
    %% 
-   exists (fn pair -> 
+   exists? (fn pair -> 
              case pair of
                | TermVars (v1,v2) ->
-                 (exists (fn diff -> 
+                 (exists? (fn diff -> 
                             case diff of 
                               | Terms (Var (x,_), _) | x = v1 -> true
                               | Terms (_, Var (y,_)) | y = v2 -> true
@@ -400,10 +400,10 @@ AnnSpec qualifying spec
      def back_translate_vars trm =
        case trm of
          | Var (v, pos) ->
-           (case (find (fn equiv -> 
-                          case equiv of
-                            | TermVars (_,y) -> y.1 = v.1
-                            | _ -> false)
+           (case (findLeftmost (fn equiv -> 
+                                  case equiv of
+                                    | TermVars (_,y) -> y.1 = v.1
+                                    | _ -> false)
                     equivs)
               of
               | Some (TermVars (x,_)) -> Var(x,noPos)
@@ -413,10 +413,10 @@ AnnSpec qualifying spec
      def back_translate_tyvars typ =
        case typ of
          | TyVar (tv, pos) ->
-           (case (find (fn equiv -> 
-                          case equiv of
-                            | TypeVars (_,y) -> y = tv
-                            | _ -> false)
+           (case (findLeftmost (fn equiv -> 
+                                  case equiv of
+                                    | TypeVars (_,y) -> y = tv
+                                    | _ -> false)
                     equivs)
               of
               | Some (TypeVars (x,_)) -> TyVar(x,noPos)
@@ -438,10 +438,10 @@ AnnSpec qualifying spec
    %% See note above for local_var_mismatch?
    %% The analogous situation holds for type vars.
    %%
-   exists (fn pair -> 
+   exists? (fn pair -> 
              case pair of
                | TypeVars (tv1,tv2) ->
-                 (exists (fn diff -> 
+                 (exists? (fn diff -> 
                             case diff of 
                               | Types (TyVar (x,_), _) | x = tv1 -> true
                               | Types (_, TyVar (y,_)) | y = tv2 -> true

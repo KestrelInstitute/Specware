@@ -130,7 +130,7 @@ XML qualifying spec
   %% We provide a special sort for Valid_XML_Document, but not ValidDTD, ValidElement, etc.
   %% The assumption is that a valid xml document is recursively composed of valid components.
 
-  sort Valid_XML_Document = (XML_Document | valid_xml_document?)
+  type Valid_XML_Document = (XML_Document | valid_xml_document?)
 
   %%
   %%  [K1] *[1] -- [KVC: Valid DTD]

@@ -88,7 +88,7 @@ spec
 		    else
 		      return (tcx1,[locvdecl])
 		   };
-	      return (concat(block0,locvdecl),tcx2)
+	      return (block0 ++ locvdecl,tcx2)
 	     }) ([],tcx) freeVars;
       (s,_,_) <- termToExpressionRetM(tcx0,body,1,1,false);
       parNames <- return(mkParamsFromPattern pat);
@@ -150,7 +150,7 @@ spec
 	apran <- tt_idM rng;
 	atdom <- mapSortColM(srtIdM,dom);
 	atran <- srtIdM rng;
-	if all (fn(srt) -> notAUserType?(spc,srt)) dom then
+	if forall? (fn(srt) -> notAUserType?(spc,srt)) dom then
 	  if notAUserType?(spc,rng) then
 	     case ut(spc,srt) of
 	       | Some s -> % v3:p46:r4: no user toplevel user type found, but user type nested in some of the args
@@ -172,11 +172,11 @@ spec
        else
 	 % found a user type in the domain:
 	 % v3:p46:r2
-	 let split = splitList(fn(srt) -> userType?(spc,srt)) dom in
+	 let split = splitAtLeftmost(fn(srt) -> userType?(spc,srt)) dom in
 	 case split of
 	   | Some(vars1,varh,vars2) ->
 	     let h = length(vars1)+1 in
-	     let argh = "arg"^Integer.toString(h) in
+	     let argh = "arg"^Integer.show(h) in
 	     let rexp = mkMethInv(argh,id,mkNArgsExpr(dom,Some h)) in
 	     standaloneM(mkReturnStmt(rexp),(apdom,apran),(atdom,atran),k,l)
 	   | None -> 
@@ -188,9 +188,9 @@ op standaloneM: JavaStmt * (List String * String) * (List String * String) * Nat
 def standaloneM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   let argNameBase = "arg" in
   let (parNames,_) = foldl (fn((argnames,nmb),argType) -> 
-		    let argname = argNameBase^Integer.toString(nmb) in
-		    (concat(argnames,[argname]),nmb+1))
-                   ([],1) apdom
+                              let argname = argNameBase^Integer.show(nmb) in
+                              (argnames ++ [argname],nmb+1))
+                       ([],1) apdom
   in
   standaloneWithParNamesM(s,applySig,arrowTypeSig,parNames,k,l)
 
@@ -239,7 +239,7 @@ def standAloneFromSortWithParNamesM(s,srt,parNames,k,l) =
    standaloneWithParNamesM(s,(apdom,apran),(atdom,atran),parNames,k,l)
   }
 
-op mkNArgs: fa(T,E) (String -> E) -> List T * Option Nat -> List E
+op mkNArgs: [T,E] (String -> E) -> List T * Option Nat -> List E
 def mkNArgs trans (l,omit) =
   let
     def mkNArgs0(l,n) =
@@ -247,18 +247,18 @@ def mkNArgs trans (l,omit) =
 	| [] -> []
 	| _::l ->
 	  let omit? = case omit of Some m -> m = n | _ -> false in 
-	  let argid = "arg" ^ Integer.toString(n) in
+	  let argid = "arg" ^ Integer.show(n) in
 	  let argn = trans(argid) in
 	  let rlist = mkNArgs0(l,n+1) in
-	  if omit? then rlist else  cons(argn,rlist)
+	  if omit? then rlist else argn::rlist
   in
     mkNArgs0(l,1)
 
-op mkNArgsExpr: fa(T) List T * Option Nat -> List JavaExpr
+op mkNArgsExpr: [T] List T * Option Nat -> List JavaExpr
 def mkNArgsExpr(l,omit) = (mkNArgs mkVarJavaExpr)(l,omit)
 
 
-op mkNArgsId: fa(T) List T * Option Nat -> List Id
+op mkNArgsId: [T] List T * Option Nat -> List Id
 def mkNArgsId(l,omit) = (mkNArgs (fn(x)->x))(l,omit)
 
 endspec

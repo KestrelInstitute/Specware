@@ -117,7 +117,7 @@ Prover qualifying spec
    let varId = srtId^"_Rec_Var" in
    let varTerm = mkVar(varId, srt) in
    let projArgs = map (fn (field) -> mkProjectTerm(spc,  name, srt, field, varTerm)) fields in
-   let argsSrt = mapWithIndex (fn (i, (_,fSrt)) -> (toString(i), fSrt)) fields in
+   let argsSrt = mapWithIndex (fn (i, (_,fSrt)) -> (show(i), fSrt)) fields in
    let opqid as Qualified(opq,opid) = getRecordConstructorOpName(name) in
    let dom = Product(argsSrt, b) in
    let opsrt = Arrow(dom,srt,b) in

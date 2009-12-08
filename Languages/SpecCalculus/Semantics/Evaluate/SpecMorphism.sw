@@ -69,8 +69,8 @@ coherence conditions of the morphism elements.
       return sm
      }
 
-  sort MorphismMap = AQualifierMap QualifiedId
-  sort MorphismMaps = MorphismMap  * MorphismMap 
+  type MorphismMap = AQualifierMap QualifiedId
+  type MorphismMaps = MorphismMap  * MorphismMap 
 
 %%  op  convertMorphismMapToRenamings : MorphismMaps -> Renamings
 %%  def convertMorphismMapToRenamings morphism_maps =
@@ -353,7 +353,7 @@ Should we check to see if qid is in cod_map??
                    %% fix bug 127 by accepting unique candidates
                    return (update new_map (Qualified (q,id)) qid)
                  | qids ->
-                   let msg = "No unique mapping for " ^ kind ^ " " ^ id ^ " -- found " ^ toString (length qids) ^ " candidates: " ^ printAliases qids in
+                   let msg = "No unique mapping for " ^ kind ^ " " ^ id ^ " -- found " ^ show (length qids) ^ " candidates: " ^ printAliases qids in
                    raise (MorphError (noPos, msg))
 
     in

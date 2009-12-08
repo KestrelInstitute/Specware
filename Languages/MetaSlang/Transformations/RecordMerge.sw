@@ -14,7 +14,7 @@ spec
 	     (case (productOpt(spc,rng),productOpt(spc,inferType(spc,t2))) of
 		| (Some resultFields,Some t2Fields) ->
 		  let rawResult = Record(map (fn (field,_) ->
-					      (field,if exists (fn (f,_) -> f=field) t2Fields
+					      (field,if exists? (fn (f,_) -> f=field) t2Fields
 						       then fieldAcessTerm(t2,field,spc)
 						     else fieldAcessTerm(t1,field,spc)))
 					 resultFields,

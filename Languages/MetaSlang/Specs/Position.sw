@@ -30,10 +30,10 @@ Position qualifying spec {
   case position of
     | Internal msg -> msg
     | String (string, left, right) ->
-       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       let printPos = fn (line,column,byte) -> (Nat.show line)^"."^(Nat.show column) in
        printPos left ^ "-" ^ printPos right ^ " in " ^ string
     | File (filename, left, right) ->
-       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       let printPos = fn (line,column,byte) -> (show line)^"."^(show column) in
        printPos left ^ "-" ^ printPos right
 
 % temporary hack .. some places need the filename and some places don't
@@ -43,10 +43,10 @@ Position qualifying spec {
   case position of
     | Internal msg -> msg
     | String (string, left, right) ->
-       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       let printPos = fn (line,column,byte) -> (show line)^"."^(show column) in
        printPos left ^ "-" ^ printPos right ^ " in [" ^ string ^ "]"
     | File (filename, left, right) ->
-       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       let printPos = fn (line,column,byte) -> (show line)^"."^(show column) in
        (*"in " ^*) filename ^ "\n" ^  printPos left ^ "-" ^ printPos right 
 
  op  printIfExternal : Position -> String

@@ -116,7 +116,7 @@ The stack is accessed and modified using the operations
  def freshBoundVar (context:Context,srt) = 
      let num = ! context.counter in
      (context.counter := num + 1;
-      ("x%"^toString num,srt))
+      ("x%"^show num,srt))
 
  op flexRef?(t: MS.Term): Boolean =
    case t of
@@ -133,7 +133,7 @@ The stack is accessed and modified using the operations
 	  Some n
 	| _ -> None
  op  hasFlexHead? : MS.Term -> Option Nat
- def hasFlexHead?(term) = isFlexVar?(hd(headForm term))
+ def hasFlexHead?(term) = isFlexVar?(head(headForm term))
 
 (*
 \subsection{Term normalization}
@@ -174,7 +174,7 @@ beta contraction.
 	      | M as Fun(Project l,_,_) -> 
 	        (case dereferenceR S N
 		   of Record(fields, _) -> 
-		      (case find (fn (l2,_) -> l = l2) fields
+		      (case findLeftmost (fn (l2,_) -> l = l2) fields
 		         of Some(_,trm) -> trm
 			  | None -> System.fail ("Label "^l^" not found"))
 		    | N -> Apply(M,N,a))
@@ -214,7 +214,7 @@ beta contraction.
                         of None -> Apply(M,N,noPos)
                          | Some (sub,M) -> derefAll (substitute(M,sub)))
                  | Apply(M as Fun(Project l,_,_),Record(fields, _),_) -> 
-                   (case find (fn (l2,_) -> l = l2) fields
+                   (case findLeftmost (fn (l2,_) -> l = l2) fields
                       of Some(_,trm) -> trm
                        | None -> System.fail ("Label "^l^" not found"))
                  | _ -> term)
@@ -524,8 +524,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                  | Ms as 
                    ((Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_), Arrow(_,s,_),_),
                               Fun(Nat n,_,_),_))::terms) ->
-                   if occursProper n N || (exists (fn v -> ~(inVars?(v,context.boundVars))
-                                                     && ~(exists (fn t -> inVars?(v,freeVars t)) Ms))
+                   if occursProper n N || (exists? (fn v -> ~(inVars?(v,context.boundVars))
+                                                     && ~(exists? (fn t -> inVars?(v,freeVars t)) Ms))
                                              (freeVars N))
                      then [] 
                    else
@@ -544,7 +544,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                    
                    %% Special case of imitation where other cases are equivalent
                    if closedTermV(N,context.boundVars)
-                     && ~(exists (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
+                     && ~(exists? (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
                      && noReferencesTo?(N,terms)
                      then 
                      let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
@@ -683,7 +683,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                             | Some(stack,M,N) ->
                               writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N)
                              )
-                  else (writeLine("MatchPairs: "^toString(length result)^" results.");
+                  else (writeLine("MatchPairs: "^show(length result)^" results.");
                         if length result > 0 then
                           ((case next stack0 of
                               | Some(stack,M,N) -> 
@@ -820,7 +820,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
   Constants and bound variables are matched using {\tt matchBase}.
 \begin{spec}
 
-  op matchBase : fa(a) Context * a * Sort * a * Sort * Stack * SubstC * MS.Term-> List SubstC
+  op matchBase : [a] Context * a * Sort * a * Sort * Stack * SubstC * MS.Term-> List SubstC
   def matchBase (context,x,srt1,y,srt2,stack,subst,N) =
     % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
       if x = y
@@ -942,7 +942,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | None -> occurs n M
 
   op occurs : Nat -> MS.Term -> Boolean
-  op occursP : fa(a) Nat -> a * MS.Term -> Boolean
+  op occursP : [a] Nat -> a * MS.Term -> Boolean
   def occursP n (_,M) = occurs n M
   def occurs n term = 
       case term
@@ -953,19 +953,19 @@ skolemization transforms a proper matching problem into an inproper one.
 	      of Some m -> n = m
 	       | None -> occurs n M || occurs n N)
 	 | Record(fields, _) -> 
-	   exists (occursP n) fields
+	   exists? (occursP n) fields
 	 | Lambda(rules, _) -> 
-	   exists (fn (_,cond,body) -> 
+	   exists? (fn (_,cond,body) -> 
 			occurs n cond || occurs n body) rules
-	 | Seq(Ms, _) -> exists (occurs n) Ms
+	 | Seq(Ms, _) -> exists? (occurs n) Ms
 	 | IfThenElse(M1,M2,M3,_) -> 
 	   occurs n M1 || occurs n M2 || occurs n M3
 	 | The (var,M,_) -> occurs n M
 	 | Bind(_,vars,M,_) -> occurs n M
 	 | Let(decls,M,_) -> 
-	   occurs n M || exists (occursP n) decls
+	   occurs n M || exists? (occursP n) decls
 	 | LetRec(decls,M,_) ->
-	   occurs n M || exists (occursP n) decls
+	   occurs n M || exists? (occursP n) decls
 \end{spec}
 
 \subsection{Closed terms}
@@ -1000,17 +1000,17 @@ skolemization transforms a proper matching problem into an inproper one.
 
   def closedTermV(term,bound) = 
       case term
-        of Var(v, _) -> exists (fn w -> v = w) bound	        
+        of Var(v, _) -> exists? (fn w -> v = w) bound	        
 	 | Fun _ -> true
 	 | Apply(M,N,_) -> closedTermV(M,bound) && closedTermV(N,bound)
 	 | Record(fields, _) -> 
-	   all (fn (_,M) -> closedTermV(M,bound)) fields
+	   forall? (fn (_,M) -> closedTermV(M,bound)) fields
 	 | Lambda(rules, _) -> 
-	   all (fn (pat,cond,body) -> 
+	   forall? (fn (pat,cond,body) -> 
 			let bound = patternVars(pat) ++ bound in
 			(closedTermV(cond,bound) && 
 			 closedTermV(body,bound))) rules
-	 | Seq(Ms, _) -> all (fn M -> closedTermV(M,bound)) Ms
+	 | Seq(Ms, _) -> forall? (fn M -> closedTermV(M,bound)) Ms
 	 | IfThenElse(M1,M2,M3,_) -> 
 	   closedTermV(M1,bound) && 
 	   closedTermV(M2,bound) && 
@@ -1018,7 +1018,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | Bind(_,vars,M,_) -> closedTermV(M,vars ++ bound)
 	 | The (var,M,_) -> closedTermV (M,Cons(var, bound))
 	 | Let(decls,M,_) -> 
-	   all (fn (_,M) -> closedTermV(M,bound)) decls 
+	   forall? (fn (_,M) -> closedTermV(M,bound)) decls 
 	   && 
 	   (let bound = foldr 
 		(fn ((pat,_),bound) -> patternVars pat ++ bound) 
@@ -1028,7 +1028,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	 | LetRec(decls,M,_) ->
 	   let bound = (map (fn (v,_) -> v) decls) ++ bound in
 	   closedTermV(M,bound) && 
-	   (all (fn (_,M) -> closedTermV(M,bound)) decls) 
+	   (forall? (fn (_,M) -> closedTermV(M,bound)) decls) 
 
  op noReferencesTo?(tm: MS.Term, tms: List MS.Term): Boolean =
    ~(existsSubTerm (fn t -> termIn?(t,tms)) tm)
@@ -1043,7 +1043,7 @@ skolemization transforms a proper matching problem into an inproper one.
     | NotUnify  Sort * Sort 
     | Unify     SubstC 
 
-  op  unifyL : fa(a) SubstC * Sort * Sort * List(a) * List(a) * List (Sort * Sort) * Option MS.Term *
+  op  unifyL : [a] SubstC * Sort * Sort * List(a) * List(a) * List (Sort * Sort) * Option MS.Term *
                   (SubstC * a * a * a * List(Sort * Sort) * Option MS.Term -> List Unification)
                   ->  List Unification
   def unifyL(subst,srt1,srt2,l1,l2,equals,optTerm,unify): List Unification = 
@@ -1060,11 +1060,11 @@ skolemization transforms a proper matching problem into an inproper one.
   op  occursRec : SubstC * String * Sort -> Boolean
   def occursRec (subst,v,srt) = 
       case srt 
-        of Base(_,srts,_) -> exists (fn s -> occursRec(subst,v,s)) srts
+        of Base(_,srts,_) -> exists? (fn s -> occursRec(subst,v,s)) srts
  	 | Arrow(s1,s2,_) -> occursRec(subst,v,s1) || occursRec(subst,v,s2)
-	 | Product(fields, _) -> exists (fn (_,s) -> occursRec(subst,v,s)) fields
+	 | Product(fields, _) -> exists? (fn (_,s) -> occursRec(subst,v,s)) fields
 	 | CoProduct(fields, _) -> 
-	   exists (fn(_,None)-> false | (_,Some s)-> occursRec(subst,v,s)) fields
+	   exists? (fn(_,None)-> false | (_,Some s)-> occursRec(subst,v,s)) fields
 	 | TyVar(w, _) -> 
 	   (case StringMap.find(subst.1,w)
 	      of Some s -> occursRec (subst,v,s)
@@ -1132,7 +1132,7 @@ skolemization transforms a proper matching problem into an inproper one.
                    | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
                  unify(subst,ty1,ty2,srt1_orig,equals,optTerm)
 	       | (bsrt1 as Base(id1,ts1,_), bsrt2 as Base(id2,ts2,_)) -> 
-		 if exists (fn p -> p = (bsrt1,bsrt2)) equals
+		 if exists? (fn p -> p = (bsrt1,bsrt2)) equals
 		    then [Unify subst]
 		 else 
 		 if id1 = id2 
@@ -1295,7 +1295,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
        writeLine "";
        NatMap.appi
 	(fn (i,trm) -> 
-	     writeLine(Nat.toString i^" |-> "^ printTerm trm^" "))
+	     writeLine(Nat.show i^" |-> "^ printTerm trm^" "))
 	termSubst;
        writeLine "";
        if condns = [] then ()

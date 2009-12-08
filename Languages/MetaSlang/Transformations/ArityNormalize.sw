@@ -96,7 +96,7 @@ ArityNormalize qualifying spec
      case term
        of Apply _ -> None
         | Var((id,_),_) -> 
-          (case find (fn (id2,r) -> id = id2) gamma
+          (case findLeftmost (fn (id2,r) -> id = id2) gamma
              of Some (w,r) -> r
               | None -> None)
         | Fun(Not,      srt,_) -> sortArity(sp,srt)
@@ -148,7 +148,7 @@ ArityNormalize qualifying spec
                         foldr 
                          (fn((fieldName,srt),(names,usedNames)) ->
                             let (newName,usedNames) = freshName("v"^fieldName,usedNames) in
-                            (cons((newName,fieldName,srt),names),usedNames))
+                            (Cons((newName,fieldName,srt),names),usedNames))
                           ([],usedNames) fields
                  in
                  let (x,usedNames) = freshName("x",usedNames) in
@@ -183,14 +183,14 @@ ArityNormalize qualifying spec
  def insertPattern(pat:Pattern,result as (usedNames,gamma:Gamma)) = 
      case pat
        of VarPat((v as (id,srt)),_) -> 
-          (StringSet.add(usedNames,id),(cons((id,None),gamma)):Gamma)
+          (StringSet.add(usedNames,id),(id,None) :: gamma)
         | RecordPat(fields,_) -> 
           foldr (fn ((_,p),result) -> insertPattern(p,result)) 
 	    result fields
 
  def insertVars(vars,(usedNames,gamma)) =
      foldr (fn (v as (id,srt),(usedNames,gamma)) -> 
-	     (StringSet.add(usedNames,id),(cons((id,None),gamma))))
+	     (StringSet.add(usedNames,id),(id,None) :: gamma))
        (usedNames,gamma) 
        vars
 
@@ -239,9 +239,9 @@ ArityNormalize qualifying spec
  def simpleAbstraction(rules:Match) = 
      case rules
        of [(RecordPat(fields,_),cond,_)] -> 
-	  isTrue cond && all (fn(_,p)-> simplePattern p) fields
+	  isTrue cond && forall? (fn(_,p)-> simplePattern p) fields
         | [(RestrictedPat(RecordPat(fields,_),_,_),cond,_)] -> 
-	  isTrue cond && all (fn(_,p)-> simplePattern p) fields
+	  isTrue cond && forall? (fn(_,p)-> simplePattern p) fields
         | [(pat,cond,_)] -> simplePattern pat && isTrue cond
 	| _ -> false
 
@@ -337,7 +337,7 @@ ArityNormalize qualifying spec
               (fn((pat,t1),(decls,usedNames,gamma)) ->
                   let t2 = normalizeArity(sp,gamma,usedNames,t1)                 in
                   let (usedNames,gamma) = insertPattern(pat,(usedNames,gamma))   in
-                  (cons((pat,t2),decls),usedNames,gamma)) 
+                  (Cons((pat,t2),decls),usedNames,gamma)) 
                         ([],usedNames,gamma)
                              decls 
           in
@@ -349,7 +349,7 @@ ArityNormalize qualifying spec
                 (fn((v,term),(usedNames,gamma)) ->
                    let (id,_) = v                                                in
                    let usedNames = StringSet.add(usedNames,id)                   in
-                   let gamma = cons((id,termArity(sp,gamma,term)),gamma)         in
+                   let gamma = Cons((id,termArity(sp,gamma,term)),gamma)         in
                    (usedNames,gamma))
                            (usedNames,gamma)
                                 decls

@@ -40,7 +40,7 @@ AnnSpec qualifying spec
 
 			   case elt_1 of
 			     | Property(_, pn, _, _, _) ->
-			       let remove? = member(pn, spec2PropNames) in
+			       let remove? = pn in? spec2PropNames in
 			       ~remove?
 			     | _ -> ~(existsSpecElement? (fn elt_2 -> sameSpecElement? (spec2, elt_2, spec1, elt_1))
 				                         spec2.elements))
@@ -61,8 +61,8 @@ AnnSpec qualifying spec
    let newElements =
        filter (fn el ->
 	       case el of
-		 | Property(_, pn, _, _, _) -> ~(member (pn, spec2PropNames))
-		 | _ -> ~(member(el, spec2.elements)))
+		 | Property(_, pn, _, _, _) -> pn nin? spec2PropNames
+		 | _ -> el nin? spec2.elements)
 	      spec1.elements
    in
    spec1 << {elements = newElements}

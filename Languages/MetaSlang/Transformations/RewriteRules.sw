@@ -59,7 +59,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 % tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
-                           let a = "'a%"^Nat.toString num in
+                           let a = "'a%"^Nat.show num in
                            (context.counter := num + 1;
                             StringMap.insert(tyVMap,name,a)))
 	            StringMap.empty tyVars
@@ -90,7 +90,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
-		      | None -> System.fail (toString n^" not found"))
+		      | None -> System.fail (show n^" not found"))
 		| None -> term
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doSort, id) trm
@@ -211,7 +211,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	  let
 	     def loop(new,old,vars,S):PatternToTermOut = 
 	         case new
-                   of [] -> Some(Record(rev old,a),vars,S)
+                   of [] -> Some(Record(reverse old,a),vars,S)
 	            | (l,p)::new -> 
 	         case patternToTerm(context,p,vars,S)
 	           of None -> None
@@ -237,7 +237,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	  (case patternToTerm(context,p,vars,S) 
              of None -> None
 	      | Some(trm,vars,S) -> 
-	        Some(trm,vars,cons((v,trm),S)))
+	        Some(trm,vars,(v,trm)::S))
 	| AliasPat _ -> None %% Not supported
 	   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,7 +301,7 @@ is rewritten to
 	 | None -> 
       case term
         of Apply(M,N,_) -> isFlexibleTerm(M)
-	 | Record(fields, _) -> all (fn (_,M) -> isFlexibleTerm M) fields
+	 | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
 	 | _ -> false
 
   def deleteFlexTail(term:MS.Term) = 
@@ -453,10 +453,10 @@ op simpleRwTerm?(t: MS.Term): Boolean =
  op printRule({name,tyVars,freeVars,condition,lhs,rhs}:RewriteRule): () = 
      ( writeLine ("Rewrite rule ------- "^name^" -------");
        app (fn tv -> toScreen(tv^" ")) tyVars;
-       if null tyVars then () else writeLine "";
-       app (fn (n,srt) -> toScreen(toString n^" : " ^ printSort srt^" "))
+       if empty? tyVars then () else writeLine "";
+       app (fn (n,srt) -> toScreen(show n^" : " ^ printSort srt^" "))
          freeVars;
-       if null freeVars then () else String.writeLine "";
+       if empty? freeVars then () else writeLine "";
        (case condition 
           of Some c -> (writeLine(printTerm c)) 
            | None -> ());
@@ -474,7 +474,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
       let 
 	  def doVar(x,srt) = 
 	      if String.length(x) >= 2 && 
-		 String.sub(x,1) = #%
+		 x@1 = #%
 		 then 
 	      (case StringMap.find(! env,x)
 		 of Some y -> (y,srt)

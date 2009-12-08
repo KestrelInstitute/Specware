@@ -299,12 +299,12 @@ MetaSlang qualifying spec
 
   op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
  def getField (m, id) =
-   case find (fn (id1,_) -> id = id1) m of
+   case findLeftmost (fn (id1,_) -> id = id1) m of
      | None      -> None
      | Some(_,t) -> Some t
 
  op [a] getTermField(l:  List (Id * ASort a), id: Id): Option(ASort a) =
-   case find (fn (id1,_) -> id = id1) l of
+   case findLeftmost (fn (id1,_) -> id = id1) l of
      | None      -> None
      | Some(_,s) -> Some s
 
@@ -447,7 +447,7 @@ MetaSlang qualifying spec
    case t of
      | Any _        -> true
      | Pi(_, tm, _) -> anySort? tm
-     | And(tms, _)  -> all anySort? tms
+     | And(tms, _)  -> forall? anySort? tms
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -467,7 +467,7 @@ MetaSlang qualifying spec
      | Any _                 -> true
      | Pi(_, tm, _)          -> anyTerm? tm
      | SortedTerm(tm, _, _)  -> anyTerm? tm
-     | And(tms, _)           -> all anyTerm? tms
+     | And(tms, _)           -> forall? anyTerm? tms
      | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
      | _ -> false
 
@@ -550,7 +550,7 @@ MetaSlang qualifying spec
    let tms = innerTerms tm in
    let len = length tms in
    if i < len then tms@(len - i - 1)
-     else fail("Less than "^toString i^" refined terms")
+     else fail("Less than "^show i^" refined terms")
 
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
    let (tvs, ty, tm) = unpackTerm t in
@@ -559,7 +559,7 @@ MetaSlang qualifying spec
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
    let tms = innerTerms full_tm in
    let len = length tms in
-   if i >= len then fail("Less than "^toString i^" refined terms")
+   if i >= len then fail("Less than "^show i^" refined terms")
    else
    let (pref, _, post) = splitAt(tms, len - i - 1) in
    maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
@@ -829,19 +829,19 @@ MetaSlang qualifying spec
      def mapSLst (tsp, sort_map, srts) =
        case srts of
 	 | [] -> []
-	 | ssrt::rsrts -> cons(mapRec  (tsp, sort_map, ssrt),
+	 | ssrt::rsrts -> Cons(mapRec  (tsp, sort_map, ssrt),
 			       mapSLst (tsp, sort_map, rsrts))
 
      def mapSRowOpt (tsp, sort_map, row) =
        case row of
 	 | [] -> []
-	 | (id,optsrt)::rrow -> cons ((id, mapRecOpt (tsp, sort_map, optsrt)),
+	 | (id,optsrt)::rrow -> Cons ((id, mapRecOpt (tsp, sort_map, optsrt)),
 				      mapSRowOpt (tsp, sort_map, rrow))
 
      def mapSRow (tsp, sort_map, row) =
        case row of
 	 | [] -> []
-	 | (id,ssrt)::rrow -> cons ((id, mapRec (tsp, sort_map, ssrt)),
+	 | (id,ssrt)::rrow -> Cons ((id, mapRec (tsp, sort_map, ssrt)),
 				    mapSRow (tsp, sort_map, rrow))
 
      def mapRecOpt (tsp, sort_map, opt_sort) =
@@ -1070,41 +1070,41 @@ MetaSlang qualifying spec
 
       | Apply       (M, N,     _) -> existsSubTerm pred? M || existsSubTerm pred? N
 
-      | ApplyN      (Ms,       _) -> exists (existsSubTerm pred?) Ms
+      | ApplyN      (Ms,       _) -> exists? (existsSubTerm pred?) Ms
 
-      | Record      (fields,   _) -> exists (fn (_,M) -> existsSubTerm pred? M) fields
+      | Record      (fields,   _) -> exists? (fn (_,M) -> existsSubTerm pred? M) fields
 
       | Bind        (_,_,M,    _) -> existsSubTerm pred? M
 
       | The         (_,M,      _) -> existsSubTerm pred? M
 
       | Let         (decls, M, _) -> existsSubTerm pred? M ||
-                                     exists (fn (_,M) -> existsSubTerm pred? M) decls
+                                     exists? (fn (_,M) -> existsSubTerm pred? M) decls
 
       | LetRec      (decls, M, _) -> existsSubTerm pred? M ||
-				     exists (fn (_,M) -> existsSubTerm pred? M) decls
+				     exists? (fn (_,M) -> existsSubTerm pred? M) decls
 
       | Var         _             -> false
 				     
       | Fun         _             -> false
 
-      | Lambda      (rules,    _) -> exists (fn (p, c, M) ->
-					     existsSubTermPat pred? p ||
-					     existsSubTerm pred? c ||
-					     existsSubTerm pred? M)
+      | Lambda      (rules,    _) -> exists? (fn (p, c, M) ->
+                                                existsSubTermPat pred? p ||
+                                                existsSubTerm pred? c ||
+                                                existsSubTerm pred? M)
                                             rules
 
       | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M ||
 			  	     existsSubTerm pred? N ||
 				     existsSubTerm pred? P
 
-      | Seq         (Ms,       _) -> exists (existsSubTerm pred?) Ms
+      | Seq         (Ms,       _) -> exists? (existsSubTerm pred?) Ms
 
       | SortedTerm  (M, srt,   _) -> existsSubTerm pred? M
 
       | Pi          (tvs, t,   _) -> existsSubTerm pred? t
 
-      | And         (tms,      _) -> exists (existsSubTerm pred?) tms
+      | And         (tms,      _) -> exists? (existsSubTerm pred?) tms
 
       | Any                    _  -> false
       )				    
@@ -1123,7 +1123,7 @@ MetaSlang qualifying spec
        existsPattern? pred? p1 || existsPattern? pred? p2
      | EmbedPat(id, Some pat,_,_) -> existsPattern? pred? pat
      | RecordPat(fields,_) ->
-       exists (fn (_,p)-> existsPattern? pred? p) fields
+       exists? (fn (_,p)-> existsPattern? pred? p) fields
      | QuotientPat  (pat,_,_) -> existsPattern? pred? pat
      | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
      | SortedPat    (pat,_,_) -> existsPattern? pred? pat
@@ -1133,15 +1133,15 @@ MetaSlang qualifying spec
    pred? ty ||
    (case ty of
       | Arrow(x,y,_) -> existsInType? pred? x || existsInType? pred? y
-      | Product(prs,_) -> exists (fn (_,f_ty) -> existsInType? pred? f_ty) prs
-      | CoProduct(prs,_)  -> exists (fn (_,o_f_ty) ->
+      | Product(prs,_) -> exists? (fn (_,f_ty) -> existsInType? pred? f_ty) prs
+      | CoProduct(prs,_)  -> exists? (fn (_,o_f_ty) ->
                                        case o_f_ty of
                                          | Some f_ty -> existsInType? pred? f_ty
                                          | None -> false)
                                prs
       | Quotient(x,_,_) -> existsInType? pred? x
       | Subsort(x,_,_) -> existsInType? pred? x
-      | And(tys,_) -> exists (existsInType? pred?) tys
+      | And(tys,_) -> exists? (existsInType? pred?) tys
       | _ -> false)
 
 
@@ -1303,7 +1303,7 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- sort ReplaceSort a = (ATerm    a -> Option (ATerm    a)) *
+ type ReplaceSort a = (ATerm    a -> Option (ATerm    a)) *
                       (ASort    a -> Option (ASort    a)) *
                       (APattern a -> Option (APattern a))
 

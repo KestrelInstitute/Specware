@@ -16,7 +16,7 @@ StringUtilities qualifying spec
     let
       def loop (counter:Nat, name) = 
 	if StringSet.member (names, name) then
-	  loop(counter + 1, name0 ^ (Nat.toString counter))
+	  loop(counter + 1, name0 ^ (Nat.show counter))
 	else 
 	  name
     in
@@ -28,20 +28,20 @@ StringUtilities qualifying spec
     let chars = String.explode string in
     let
       def consChars (chars, strings) = 
-        if null chars then
+        if empty? chars then
 	  strings
 	else 
-	  cons (String.implode(rev chars), strings)
+	  Cons (String.implode(reverse chars), strings)
     in
     let 
       def loop (chars, token_chars, strings) = 
         case chars of
-	  | [] -> rev (consChars (token_chars, strings))
+	  | [] -> reverse (consChars (token_chars, strings))
 	  | ch::chars -> 
 	    if break? ch then
 	      loop (chars, [], consChars (token_chars, strings))
 	    else 
-	      loop (chars, cons(ch, token_chars), strings)
+	      loop (chars, Cons(ch, token_chars), strings)
     in
       loop (chars, [], [])
 endspec

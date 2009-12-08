@@ -95,8 +95,8 @@ XML qualifying spec
 		    tail)
 	  else
 	    {
-	     (content, tail) <- parse_Content (tail, cons (open_tag, pending_open_tags));
-	     (etag,    tail) <- parse_ETag    (tail, cons (open_tag, pending_open_tags));
+	     (content, tail) <- parse_Content (tail, open_tag :: pending_open_tags);
+	     (etag,    tail) <- parse_ETag    (tail, open_tag :: pending_open_tags);
 	     return ((Full {stag    = open_tag,
 			    content = content,
 			    etag    = etag}),
@@ -175,7 +175,7 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   def parse_ETag (start : UChars, pending_open_tags : List (STag)) : Required ETag =
-    let stag = hd pending_open_tags in
+    let stag = head pending_open_tags in
     let name = string stag.name     in
     { (possible_tag, tail) <- parse_Option_ElementTag start;
       case possible_tag of
@@ -255,7 +255,7 @@ XML qualifying spec
 		 | _ ->
 		   parse_items (scout,
 				[],
-				cons ((Some (pending_chars ++ char_data), item),
+				Cons ((Some (pending_chars ++ char_data), item),
 				      rev_items)))
 	    | _ ->
 	      %% Note:  The valdidator will expand reference items later, which
@@ -267,7 +267,7 @@ XML qualifying spec
 	      %%         with the mild restriction that any resulting adjacent
 	      %%         CharData's are merged, to maintain the Content structure.
 	      %%         (Or we could allow Content to have adjacent CharData's.)
-	      return ({items   = rev rev_items,
+	      return ({items   = reverse rev_items,
 		       trailer = Some (pending_chars ++ char_data)},
 		      tail)
 	     }

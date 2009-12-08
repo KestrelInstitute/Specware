@@ -4,9 +4,9 @@
 WadlerLindig qualifying spec
   import /Library/Base
 
-  sort Pretty = Doc
+  type Pretty = Doc
 
-  sort Doc =
+  type Doc =
     | DocNil
     | DocCons (Doc * Doc)
     | DocText String
@@ -41,7 +41,7 @@ WadlerLindig qualifying spec
   op ppGroup : Doc -> Doc
   def ppGroup d = DocGroup d
   
-  sort SDoc =
+  type SDoc =
     | SNil
     | SText (String * SDoc)
     | SLine (Integer * SDoc)   (* newline + spaces *)
@@ -88,7 +88,7 @@ WadlerLindig qualifying spec
        | (i,Break,DocBreak _) :: z -> true % impossible 
        | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
   
-  sort BreakMode =
+  type BreakMode =
     | Flat
     | Break
   

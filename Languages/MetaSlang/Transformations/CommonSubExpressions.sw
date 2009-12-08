@@ -167,7 +167,7 @@ spec
                ([(p0,c0,b0)],names,tms0,[],termsUnion(tms0,ptms0))
                r_matches
         in
-        let new_t = Lambda(rev new_binds,a) in
+        let new_t = Lambda(reverse new_binds,a) in
         maybeAbstract(new_t, b_ces, names, bindable?,
                       %% When do you want to abstract lambdas?
                       %% Cons(new_t, b_single_tms)

@@ -418,13 +418,13 @@ XML qualifying spec
 	   | Some internal_subset ->
 	     (case internal_subset.decls of
 	        | Some dtd_decls ->
-	          (case (find (fn decl ->
-			       case decl of
-				 | Entity entity_decl ->
-				   (name = (case entity_decl of
-					      | GE ge_decl -> ge_decl.name
-					      | PE pe_decl -> pe_decl.name))
-				 | _ -> false)
+	          (case (findLeftmost (fn decl ->
+                                         case decl of
+                                           | Entity entity_decl ->
+                                             (name = (case entity_decl of
+                                                        | GE ge_decl -> ge_decl.name
+                                                        | PE pe_decl -> pe_decl.name))
+                                           | _ -> false)
 			      dtd_decls.decls)
 		     of Some (Entity decl) -> Some decl
 		      | _ -> None)
@@ -436,13 +436,13 @@ XML qualifying spec
 	| _ ->
   	  case dtd.external of
 	    | Some external_subset ->
-	      (case (find (fn decl ->
-			   case decl of
-			     | Entity entity_decl ->
-			       (name = (case entity_decl of
-					  | GE ge_decl -> ge_decl.name
-					  | PE pe_decl -> pe_decl.name))
-			     | _ -> false)
+	      (case (findLeftmost (fn decl ->
+                                     case decl of
+                                       | Entity entity_decl ->
+                                         (name = (case entity_decl of
+                                                    | GE ge_decl -> ge_decl.name
+                                                    | PE pe_decl -> pe_decl.name))
+                                       | _ -> false)
 		          external_subset.decls)
 		 of Some (Entity decl) -> Some decl
 		  | _ -> None)
@@ -1457,9 +1457,9 @@ XML qualifying spec
   type STag = ((ElementTag | well_formed_start_tag?) | unique_attributes?)
 
   def well_formed_start_tag? tag =
-    (null tag.prefix)          &&
+    (empty? tag.prefix)          &&
     (~ (xml_prefix? tag.name)) &&
-    (null tag.postfix)
+    (empty? tag.postfix)
 
   def xml_prefix? name =
     case name of
@@ -1476,10 +1476,10 @@ XML qualifying spec
   def unique_attributes? tag =
     let (all_unique?, _) = (foldl (fn ((all_unique?, names), attr) ->
 				   if all_unique? then
-				     if member (attr.name, names) then
+				     if  attr.name in? names then
 				       (false, [])
 				     else
-				       (true, cons (attr.name, names))
+				       (true, attr.name :: names)
 				   else
 				     (false, []))
 			          (true, [])
@@ -1502,8 +1502,8 @@ XML qualifying spec
   def well_formed_end_tag? tag =
     (tag.prefix = [47])        &&
     (~ (xml_prefix? tag.name)) &&
-    (null tag.attributes)      &&
-    (null tag.postfix)
+    (empty? tag.attributes)      &&
+    (empty? tag.postfix)
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K34]  content       ::=  (CharData? content_item)* CharData?
@@ -1540,7 +1540,7 @@ XML qualifying spec
   type EmptyElemTag = ((ElementTag | well_formed_empty_tag?) | unique_attributes?)
 
   def well_formed_empty_tag? tag =
-    (null tag.prefix)          &&
+    (empty? tag.prefix)          &&
     (~ (xml_prefix? tag.name)) &&
     (tag.postfix = [47])          (* '/' *)
 
@@ -1722,7 +1722,7 @@ XML qualifying spec
 
   type QuotedText = (BoundedText | quoted_text?)
 
-  def quoted_text? btext = ~ (member (btext.qchar, btext.text))
+  def quoted_text? btext = btext.qchar nin? btext.text
 
   type BoundedText = {qchar : QuoteChar,
 		      text  : UString}

@@ -106,7 +106,7 @@ XML qualifying spec
         def probe (tail, rev_markups) =
 	  case tail of
 
-            | [] -> return (rev rev_markups, [])
+            | [] -> return (reverse rev_markups, [])
 
 	    %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect
 
@@ -114,49 +114,49 @@ XML qualifying spec
 	      %% '<!ELEMENT'
 	      {
 	       (decl, tail) <- parse_ElementDecl tail;
-	       probe (tail, cons (Element decl, rev_markups))
+	       probe (tail, Element decl :: rev_markups)
 	      }
 
 	    | 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail ->
 	      %% '<!ATTLIST'
 	      {
 	       (decl, tail) <- parse_AttlistDecl tail;
-	       probe (tail, cons (Attributes decl, rev_markups))
+	       probe (tail, Attributes decl :: rev_markups)
 	      }
 
 	    | 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail ->
 	      %% '<!ENTITY'
 	      {
 	       (decl, tail) <- parse_EntityDecl (tail, false);
-	       probe (tail, cons (Entity decl, rev_markups))
+	       probe (tail, Entity decl :: rev_markups)
 	      }
 
 	    | 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail ->
 	      %% '<!NOTATATION'
 	      {
 	       (decl, tail) <- parse_NotationDecl tail;
-	       probe (tail, cons (Notation decl, rev_markups))
+	       probe (tail, Notation decl :: rev_markups)
 	      }
 
 	    | 60 :: 63 :: tail ->
 	      %% '<?'
 	      {
 	       (decl, tail) <- parse_PI tail;
-	       probe (tail, cons (PI decl, rev_markups))
+	       probe (tail, PI decl :: rev_markups)
 	      }
 
 	    | 60 :: 33 :: 45 :: 45 :: tail ->
 	      %% '<!--'
 	      {
 	       (comment, tail) <- parse_Comment tail;
-	       probe (tail, cons (Comment comment, rev_markups))
+	       probe (tail, Comment comment :: rev_markups)
 	      }
 
 	    | 37 :: tail ->
 	      %% '%'
 	      {
 	       (ref, tail) <- parse_PEReference tail;
-	       probe (tail, cons (PEReference ref, rev_markups))
+	       probe (tail, PEReference ref :: rev_markups)
 	      }
 
 	    | 60 :: 33 :: 91 :: tail ->
@@ -168,13 +168,13 @@ XML qualifying spec
 		   %% "INCLUDE"
 		   {
 		    (include, tail) <- parse_IncludeSect (tail, w1);
-		    probe (tail, cons (Include include, rev_markups))
+		    probe (tail, Include include :: rev_markups)
 		    }
 		 | 73 :: 71 :: 78 :: 79 :: 82 :: 69 :: tail ->
 		   %% "IGNORE"
 		   {
 		    (ignore, tail) <- parse_IgnoreSect (tail, w1);
-		    probe (tail, cons (Ignore ignore, rev_markups))
+		    probe (tail, Ignore ignore :: rev_markups)
 		    }
 	         | _ ->
 	           hard_error {kind        = Syntax,
@@ -192,7 +192,7 @@ XML qualifying spec
 	      if white_char? char then
 		{
 		 (w1, tail) <- parse_WhiteSpace tail;
-		 probe (tail, cons (WhiteSpace w1, rev_markups))
+		 probe (tail, WhiteSpace w1 :: rev_markups)
 		}
 	      else
 		hard_error {kind        = Syntax,
@@ -318,12 +318,12 @@ XML qualifying spec
 	  case tail of
 	    | 93 :: 93 :: 62 :: _ ->
 	      %% "]]>"
-              return (rev rev_ignore, tail)
+              return (reverse rev_ignore, tail)
 	    | 60 :: 33 :: 91 :: _ ->
 	      %% "<!["
-              return (rev rev_ignore, tail)
+              return (reverse rev_ignore, tail)
 	    | char :: tail ->
-	      parse_ignore (tail, cons (char, rev_ignore))
+	      parse_ignore (tail, char::rev_ignore)
 	    | _ ->
 	      hard_error {kind        = EOF,
 			  requirement = "ignoreSectContents  ::=  Ignore ('<![' ignoreSectContents ']]>' Ignore)*",
@@ -339,12 +339,12 @@ XML qualifying spec
 	  {
 	   (i_s_c,  tail) <- parse_IgnoreSectContents tail;
 	   (ignore, tail) <- parse_ignore             (tail, []);
-	   let rev_contents = cons ((i_s_c, ignore), rev_contents) in
+	   let rev_contents = Cons ((i_s_c, ignore), rev_contents) in
 	   case tail of
 	     | 93 :: 93 :: 62 :: tail ->
 	       %% "]]>"
 	       return ({prefix   = prefix,
-			contents = rev rev_contents},
+			contents = reverse rev_contents},
 		       tail)
 	     | 60 :: 33 :: 91 :: tail ->
 	       %% "<!["

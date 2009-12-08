@@ -74,15 +74,15 @@ Prover qualifying spec
     let res = filter (fn t -> case t of Fun(Bool true,_,_) -> false | _ -> true) res in
     res
 
-  op generalCrossProduct: fa (a, b, c) (List (List a)) * (List(a) -> List (b)) * (a * b -> b) * (b -> c) -> List c
-  def fa(a, b, c) generalCrossProduct(listOfList, initialFun, interimFun, finalFun) =
+  op generalCrossProduct: [a, b, c] (List (List a)) * (List(a) -> List (b)) * (a * b -> b) * (b -> c) -> List c
+  def [a, b, c] generalCrossProduct(listOfList, initialFun, interimFun, finalFun) =
     let def recurseDownOldCrossList(elem:a, crossList:List(b)) =
           case crossList of
 	    | Nil -> []
 	    | hdCrossList::tlCrossList ->
 	      let newHdCrossElem:b = interimFun(elem, hdCrossList:b) in
 	      let newTlCrossList = recurseDownOldCrossList(elem, tlCrossList) in
-	      cons(newHdCrossElem, newTlCrossList) in
+	      newHdCrossElem :: newTlCrossList in
     let def addCrossProduct(list:List(a), crossList) =
           case list of
 	    | Nil -> []
@@ -135,7 +135,7 @@ Prover qualifying spec
       let def interimFun(condTerm:CondTerm, condCrossTerm:(List(MS.Var) * MS.Term * List(MS.Term))) =
             let (vars, cond, term) = condTerm in
 	    let (dnVars, dnCond, dnTerms) = condCrossTerm in
-	    (vars++dnVars, Utilities.mkAnd(cond, dnCond), cons(term, dnTerms)) in
+	    (vars++dnVars, Utilities.mkAnd(cond, dnCond), term :: dnTerms) in
       let def finalFun(condCrossTerms) =
             let (varsDone, condDone, termsDone) = condCrossTerms in
 	    let finalTerm = leafFunction termsDone in
@@ -211,7 +211,7 @@ def removePatternCase(spc, term) =
 	    let tlCondTerms = recurseDownBodyCondTerms(hdCaseVars, caseCond, tlBodyCTs) in
 	    let newCondTerm = (hdCaseVars++hdBodyVars, Utilities.mkAnd(hdBodyCond, caseCond), hdBody):CondTerm in
 	    %let _ = writeLine("hdBody = "^printTerm(hdBody)) in
-	    cons(newCondTerm, tlCondTerms) in
+	    newCondTerm :: tlCondTerms in
   let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:List(Var), caseCTs, bodyCTs, negPrevCases) =
         case caseCTs of
 	  | Nil -> []
@@ -268,7 +268,7 @@ def removePatternCase(spc, term) =
           case argCases of
 	    | Nil -> [funCase]
 	    | [argCase] -> [mkLeafCase(funCase, argCase)]
-	    | hdArgCase::restArgCases -> cons(mkLeafCase(funCase, hdArgCase), generateCasesArg(funCase, restArgCases)) in
+	    | hdArgCase::restArgCases -> Cons(mkLeafCase(funCase, hdArgCase), generateCasesArg(funCase, restArgCases)) in
     let def generateCasesFun(funCases, argCases) =
           case funCases of
 	    | [funCase] -> generateCasesArg(funCase, argCases)
@@ -367,7 +367,7 @@ def removePatternCase(spc, term) =
 			    mkApply(mkEmbed1(id, Arrow(domSort,srt,b)), argTerm))
 		         argTerms
 
-  op crossProduct: fa(a, b) List a * List b -> List (a*b)
+  op crossProduct: [a, b] List a * List b -> List (a*b)
   def crossProduct(l1, l2) =
     case l1 of
       | Nil -> []
@@ -375,13 +375,13 @@ def removePatternCase(spc, term) =
                     let hdRes = map (fn (e2) -> (hd1, e2)) l2 in
 		    hdRes++tlRes
 
-  op crossProductList: fa(a) List(List a) -> List(List a)
-  def fa(a) crossProductList(ll) =
+  op crossProductList: [a] List(List a) -> List(List a)
+  def [a] crossProductList(ll) =
     let def crossProductTwoList(l1:(List a), l2) =
           case l1 of
 	    | Nil -> []
 	    | hd1::tl1 -> let tlRes = crossProductTwoList(tl1, l2) in
-                          let hdRes = map (fn (e2) -> cons(hd1,e2)) l2 in
+                          let hdRes = map (fn (e2) -> hd1 :: e2) l2 in
 			    hdRes++tlRes in
     case ll of
       | [last] -> map (fn (e) -> [e]) last
@@ -401,7 +401,7 @@ def removePatternCase(spc, term) =
         let tlRes = idPatternListToListListIdTerm(tlIdPatList) in
 	let patTerms = patternToTerms(hdPat) in
 	let hdListIdTerm = idTermListToListIdTerm(hdId, patTerms) in
-	cons(hdListIdTerm, tlRes)
+	hdListIdTerm :: tlRes
   
   op recordPatternToTerms: Pattern -> List MS.Term
   def recordPatternToTerms(pat as RecordPat(fieldPats:List(Id*Pattern), b)) =
@@ -471,7 +471,7 @@ def removePatternCase(spc, term) =
 	    | (hdVars, hdCond, hdTerm)::tlBranchCondTerms ->
 	      let tlRes = recurseDownBranchCondTerms(branchVars, branchCond, tlBranchCondTerms) in
 	      let hdRes = (branchVars++hdVars, Utilities.mkAnd(branchCond, hdCond), hdTerm) in
-	      cons(hdRes, tlRes) in
+	      hdRes :: tlRes in
     let def recurseDownCondCondTerms(condCondTerms, thenCondTerms, elseCondTerms) =
           case condCondTerms of
 	    | Nil -> []

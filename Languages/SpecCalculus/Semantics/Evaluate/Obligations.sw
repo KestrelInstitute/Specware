@@ -90,7 +90,7 @@ SpecCalc qualifying spec
   def defToConjecture (spc, q, id, term) =
     let opName = Qualified (q, id) in
     let srt = termSortEnv(spc,term) in
-    let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
+    let initialFmla = head (unLambdaDef(spc, srt, opName, term)) in
     let liftedFmlas = removePatternTop(spc, initialFmla) in
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
     map (fn(fmla) -> mkConjecture(Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas

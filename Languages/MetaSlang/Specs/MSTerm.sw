@@ -45,7 +45,7 @@ MS qualifying spec
       let def loop (n, sorts) = 
 	   case sorts  of
 	      | []         -> []
-	      | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
+	      | srt::sorts -> Cons((show n, srt), loop(n + 1, sorts))
       in
 	Product(loop(1,sorts), noPos)
 
@@ -170,13 +170,13 @@ MS qualifying spec
 
  op mkTuple : List Term -> Term
 
- op tagTuple : fa(A) List A -> List (Id * A)
+ op tagTuple : [A] List A -> List (Id * A)
 
  def tagTuple (labels) = 
   let def loop (i,labels) = 
        case labels of
           | []          -> []
-          | label::tail -> cons((Nat.toString i,label),loop(i + 1,tail))
+          | label::tail -> Cons((show i,label),loop(i + 1,tail))
   in
   loop(1,labels)
 
@@ -185,7 +185,7 @@ MS qualifying spec
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
 
- op  termToList: fa(a) ATerm a -> List(ATerm a)
+ op  termToList: [a] ATerm a -> List(ATerm a)
  def termToList t =
     case t of
       | Record (fields,_) ->
@@ -194,15 +194,15 @@ MS qualifying spec
 	 else [t]
       | _ -> [t]
 
- op  tupleFields?: fa(a) List (Id * a) -> Boolean
+ op  tupleFields?: [a] List (Id * a) -> Boolean
  def tupleFields? fields =
    (foldl (fn (i,(id,_)) ->
 	   if i < 0 then i
-	     else if id = Nat.toString i then i + 1 else -1)
+	     else if id = show i then i + 1 else -1)
       1 fields)
    > 0
 
- op  findField: fa(a) Id * List(Id * a) -> a
+ op  findField: [a] Id * List(Id * a) -> a
  def findField(id,fields) = 
    case fields
      of [] -> System.fail ("Field identifier "^id^" was not found")
@@ -263,7 +263,7 @@ MS qualifying spec
    let super_sort = termSort(term) in
    case super_sort of
     | Product (fields, _) -> 
-      (case find (fn (id2, _) -> id = id2) fields of
+      (case findLeftmost (fn (id2, _) -> id = id2) fields of
         | Some (_,sub_sort) -> 
           mkApply (mkProject (id, super_sort, sub_sort),term)
         | _ -> System.fail ("Projection index " ^ id ^ " not found in product " ^ printSort super_sort))
@@ -274,7 +274,7 @@ MS qualifying spec
    let srt = termSort term in
    case srt
      of CoProduct(fields,_) -> 
-        (case find (fn (id2,_) -> id = id2) fields
+        (case findLeftmost (fn (id2,_) -> id = id2) fields
            of Some (_,Some fieldSort) ->
               mkApply(mkSelect (id, srt, fieldSort), term)
             | _ -> System.fail "Selection index not found in product")
@@ -305,7 +305,7 @@ MS qualifying spec
  op mkRestrictedPat : Pattern * Term             -> Pattern
  op mkSortedPat     : Pattern * Sort             -> Pattern
 
- op patternToList: fa(a) APattern a -> List(APattern a)
+ op patternToList: [a] APattern a -> List(APattern a)
 
  def mkAliasPat      (p1, p2)     = AliasPat      (p1, p2,        noPos)
  def mkVarPat        v            = VarPat        (v,             noPos)

@@ -6,7 +6,7 @@ spec
     (translate (translate /Library/Legacy/DataStructures/Monadic/SplayMap
      by {Monad._ +-> SpecCalc._})
      by {SpecCalc.Monad +-> SpecCalc.Env})
- sort AQualifierMap b  = StringMap (StringMap b)    
+ type AQualifierMap b  = StringMap (StringMap b)    
  def foldriAQualifierMap      = StringMap.foldriDouble  % f ini qm
  def emptyAQualifierMap       = StringMap.empty         % 
  def findAQualifierMap        = StringMap.find2         % (m, x, y)

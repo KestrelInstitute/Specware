@@ -9,7 +9,7 @@ SpecNorm qualifying spec
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
                   | None \_rightarrow s
-                  | Some n \_rightarrow substring(s, 0, n)
+                  | Some n \_rightarrow subFromTo(s, 0, n)
     in
     case removeEmpty(splitStringAt(line1, " ")) of
      | "Isa"::str::rst | length str > 1 && str@0 = #- && str@1 ~= #> ->
@@ -45,13 +45,13 @@ SpecNorm qualifying spec
   op subtypeC?(spc: Spec, ty: Sort, coercions: TypeCoercionTable): Bool =
     case ty of
      | Subsort _ -> true
-     | Base(qid, _, _) | exists (fn tb \_rightarrow qid = tb.subtype) coercions -> false
+     | Base(qid, _, _) | exists? (fn tb \_rightarrow qid = tb.subtype) coercions -> false
      | Product(flds, _) ->
-       exists (fn (_,tyi) -> subtypeC?(spc, tyi, coercions)) flds
+       exists? (fn (_,tyi) -> subtypeC?(spc, tyi, coercions)) flds
      | Arrow(dom, rng, _) ->
        subtypeC?(spc, dom, coercions) || subtypeC?(spc, rng, coercions)
      | Base(_, ty_args, _) ->
-       exists (fn tyi -> subtypeC?(spc, tyi, coercions)) ty_args
+       exists? (fn tyi -> subtypeC?(spc, tyi, coercions)) ty_args
        || (let exp_ty =  unfoldBaseOne(spc, ty) in
            if ty = exp_ty then false
             else subtypeC?(spc, exp_ty, coercions))
@@ -74,13 +74,16 @@ SpecNorm qualifying spec
                case typeMatch(ty1, ty, spc, false) of
                  | None -> t
                  | Some tvsubst ->
-               let tvsubst = filter (fn (tv,_) -> member(tv, used_tvs)) tvsubst in
+               let tvsubst = filter (fn (tv,_) -> tv in? used_tvs) tvsubst in
                % let _ = (writeLine "Subst";
                %          app (fn (tv, ty) -> writeLine(tv^": "^printSort ty)) tvsubst) in
-               if exists (fn (_, s_ty) -> subtypeC?(spc, s_ty, coercions)) tvsubst
+               if exists? (fn (_, s_ty) -> subtypeC?(spc, s_ty, coercions)) tvsubst
                  then let (predArgs, predTypes) =
                           unzip
-                            (map (fn tv -> let Some(_, s_ty) = find (fn (tvi,_) -> tv = tvi) tvsubst in
+                            (map (fn tv -> let Some(_, s_ty) = findLeftmost
+                                                                (fn (tvi,_) -> tv = tvi)
+                                                                tvsubst
+                                           in
                                            let s_ty1 = raiseSubtypeFn(s_ty, spc) in
                                            % let _ = if equalType?(s_ty1, s_ty) then ()
                                            %         else writeLine("pct: "^printSort s_ty^" --> "^printSort s_ty1)
@@ -349,7 +352,7 @@ SpecNorm qualifying spec
         case ty of
           | Base(qid, args, a) | qid nin? dontRaiseTypes ->
             let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
-            if exists (fn tyi -> embed? Subsort tyi) args
+            if exists? (fn tyi -> embed? Subsort tyi) args
               then
               let Qualified(q,id) = qid in
               let pred_name = id^"_P" in
@@ -386,7 +389,7 @@ SpecNorm qualifying spec
                | _ -> ty)
           | Product(flds, a) ->
             let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
-            if exists (fn (_,tyi) -> embed? Subsort tyi) flds
+            if exists? (fn (_,tyi) -> embed? Subsort tyi) flds
               then let (bare_flds, arg_id_vars, pred,_) =
                     foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
                              case tyi of
@@ -508,7 +511,7 @@ SpecNorm qualifying spec
 
   op refToHo_eqfns(f: Fun, qids: List QualifiedId): Bool =
     case f of
-      | Op(qid,_) -> member(qid, qids)
+      | Op(qid,_) -> qid in? qids
       | _ -> false
 
   op hoTypesIn(spc: Spec) (ty: Sort): List Sort =
@@ -527,9 +530,9 @@ SpecNorm qualifying spec
 
   op hasArgTypeIn?(spc: Spec) (tys: List Sort) (a_ty: Sort): Bool =
     case unfoldBeforeCoProduct(spc, a_ty) of
-      | Product(flds,_)   -> exists (fn (_,tyi) -> hasArgTypeIn? spc tys tyi) flds
+      | Product(flds,_)   -> exists? (fn (_,tyi) -> hasArgTypeIn? spc tys tyi) flds
       | Subsort(s_ty,_,_) -> hasArgTypeIn? spc tys s_ty
-      | _ -> member(a_ty, tys)
+      | _ -> a_ty in? tys
 
   op hasFunTypeIn?(spc: Spec) (tys: List Sort)(f_ty: Sort): Bool =
     case arrowOpt(spc, f_ty) of
@@ -544,7 +547,7 @@ SpecNorm qualifying spec
     let def iterate1(qids,initial?) =
           foldOpInfos
             (fn (info, qids) ->
-               if member(primaryOpName info, qids) then qids
+               if primaryOpName info in? qids then qids
                else
                let (tvs,ty,defn) = unpackFirstOpDef info in
                let ho_fn_types = hoFunTypes spc ty in
@@ -777,7 +780,7 @@ SpecNorm qualifying spec
       | 0 -> "d__x"
       | 1 -> "d__y"
       | 2 -> "d__z"
-      | _ -> "d__"^toString i
+      | _ -> "d__"^show i
 
   op tryUnpackLambda(tm: Option MS.Term): Option(Pattern * MS.Term) =
     case tm of
@@ -904,7 +907,7 @@ SpecNorm qualifying spec
     let spc = spc << {sorts = mapSortInfos
                                 (fn info \_rightarrow
                                  let qid = primarySortName info in
-                                 if (exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions)
+                                 if (exists? (\_lambda tb \_rightarrow tb.subtype = qid) coercions)
                                    && embed? Subsort (firstSortDef info)
                                    then info << {dfn = And([],noPos)}
                                    else info)
@@ -955,7 +958,7 @@ SpecNorm qualifying spec
                                     Property(if def? then Theorem else Axiom, 
                                              mkQualifiedId
                                                (q, id^"_subtype_constr"
-                                                  ^(if i = 0 then "" else toString i)), 
+                                                  ^(if i = 0 then "" else show i)), 
                                              [], fm, a))
                                  (tabulate (length fms, fn i -> (i, fms@i)))
                     in
@@ -1006,13 +1009,13 @@ SpecNorm qualifying spec
     let def aux(ty, i: Nat) =
           case ty of
             | TyVar(tv,a) ->
-              let nm = "x"^toString i in
+              let nm = "x"^show i in
               (mkVarPat(nm, ty), mkApply(mkVar("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)),
                                          mkVar(nm, ty)))
             | Base(qid, a_tys, a) | a_tys ~= [] ->
               (case hoSubtypePredicateForType(qid, a_tys, ty, spc) of
                  | Some pred ->
-                   let nm = "x"^toString i in
+                   let nm = "x"^show i in
                    (mkVarPat(nm, ty),
                     mkApply(pred, mkVar(nm, ty)))
                  | None ->
@@ -1025,7 +1028,7 @@ SpecNorm qualifying spec
                                             (Cons((id,pat), pats), Cons(pred, preds), i+1))
                                        ([], [], i*10) prs
               in
-              (RecordPat(rev pats, a), foldl Utilities.mkAnd trueTerm preds)
+              (RecordPat(reverse pats, a), foldl Utilities.mkAnd trueTerm preds)
             | _ -> (mkWildPat(ty), trueTerm)
     in
     aux(ty, 0)
@@ -1044,7 +1047,7 @@ SpecNorm qualifying spec
             then (Cons(el, n_elts), spc)
           else
           let pred_name = id^"_P" in
-          % let _ = writeLine("making "^pred_name^" with "^toString def?) in
+          % let _ = writeLine("making "^pred_name^" with "^show def?) in
           let pred_qid = Qualified(q, pred_name) in
           (case AnnSpec.findTheOp(spc, pred_qid) of
              | Some _ -> (Cons(el, n_elts), spc) % already exists. Should check type is correct!
@@ -1066,7 +1069,7 @@ SpecNorm qualifying spec
                    | SortDef sd -> addPredDecl(sd, el, n_elts, op_map)
                    | Import(s_tm, i_sp, i_elts, a) ->
                      let (r_elts, op_map) = addPredDeclss(i_elts, op_map) in
-                     (Cons(Import(s_tm, i_sp, rev r_elts, a), n_elts), op_map)
+                     (Cons(Import(s_tm, i_sp, reverse r_elts, a), n_elts), op_map)
                    |  _ -> (Cons(el, n_elts), op_map))
             ([], op_map) elts
         def addPredDef((ty_qid as Qualified(q,id), a), spc) =
@@ -1120,7 +1123,7 @@ SpecNorm qualifying spec
              | None -> spc
     in
     let (new_elts, spc) = addPredDeclss (spc.elements, spc) in
-    let spc = spc << {elements = rev new_elts} in
+    let spc = spc << {elements = reverse new_elts} in
     let spc = foldlSpecElements
                 (fn (spc, el) ->
                  case el of

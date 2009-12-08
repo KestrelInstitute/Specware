@@ -47,13 +47,13 @@ defining term.
     command : Command a
   }
 
-  op formalArgs : fa(a) ProcInfo a -> List (AVar a)
+  op formalArgs : [a] ProcInfo a -> List (AVar a)
   def formalArgs procInfo = procInfo.formalArgs
 
-  op returnSort : fa(a) ProcInfo a -> ASort a
+  op returnSort : [a] ProcInfo a -> ASort a
   def returnSort procInfo = procInfo.returnSort
 
-  op command : fa(a) ProcInfo a -> Command a
+  op command : [a] ProcInfo a -> Command a
   def command procInfo = procInfo.command
 \end{spec}
 

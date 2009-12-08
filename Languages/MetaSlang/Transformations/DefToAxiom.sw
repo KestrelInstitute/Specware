@@ -184,7 +184,7 @@ Prover qualifying spec
         foldl (fn (props, dfn) ->
 	       let (tvs, srt, term) = unpackFirstTerm dfn in
 	       let pos = termAnn term in
-	       let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
+	       let initialFmla = head (unLambdaDef (spc, srt, qid, term)) in
 	       %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
 	       %let unTupleAxioms = map (fn fmla -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
 	       let unTupleAxioms = [] in

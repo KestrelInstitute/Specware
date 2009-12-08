@@ -6,7 +6,7 @@ snark qualifying spec {
 %  import /Languages/MetaSlang/CodeGen/Lisp/Lisp
 %  import /Languages/MetaSlang/Specs/StandardSpec
   
-  sort SnarkSpec =
+  type SnarkSpec =
     {
      name: String,
      sortDecls: List LispCell,
@@ -350,7 +350,7 @@ snark qualifying spec {
 	    | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
       let defs = sortInfoDefs info in
-      let builtinSort = find builtinSort? defs in
+      let builtinSort = findLeftmost builtinSort? defs in
         (case builtinSort of
 	  | Some srt -> builtinSnarkSort srt
 	  | _ -> case defs of
@@ -384,7 +384,7 @@ snark qualifying spec {
   op substringp: String * String -> Boolean
   def substringp(s1, s2) =
     length(s1) <= length(s2) &&
-    substring(s2, 0, length(s1)) = s1
+    subFromTo(s2, 0, length(s1)) = s1
 
   op snarkFunctionNoCurryDecl: Spec * String * Sort * Nat -> LispCell
 
@@ -399,7 +399,7 @@ snark qualifying spec {
 	  | Some fields -> 
 	    if substringp("project", name) || substringp("embed", name) then
 	      %let _ = if true || name = "remove" then debug("found it 1") else () in
-	      if fields = nil then
+	      if fields = [] then
 		Lisp.list[declare_constant,
 			  Lisp.quote(Lisp.symbol("SNARK", name)),
 			  Lisp.symbol("KEYWORD","SORT"), Lisp.quote(snarkBaseSort(spc, rng, true))]

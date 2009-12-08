@@ -125,10 +125,10 @@ def addClsDecl decl =
 op  maybeAddClsDecl : State * ClsDecl -> State
 def maybeAddClsDecl (state, decl) =
   let old_decls = state.clsDecls in
-  if member (decl, old_decls) then
+  if decl in? old_decls then
     state
   else
-    case find (fn old_decl -> old_decl.2.1 = decl.2.1) old_decls of
+    case findLeftmost (fn old_decl -> old_decl.2.1 = decl.2.1) old_decls of
       | Some old_decl ->
         % This can happen in two cases -- 
         % We might be revising names, e.g. "BitString" => "int", in which case the old and
@@ -173,7 +173,7 @@ def maybeAddClsDecl (state, decl) =
    %% Unfortunately, the location of the names to compare is different for 
    %% each list, so this is verbose:
    let new_fields = foldl (fn (fields, a) ->
-			   if exists (fn b -> b.3.1 = a.3.1) body_b.flds then
+			   if exists? (fn b -> b.3.1 = a.3.1) body_b.flds then
 			     fields
 			   else
 			     [a] ++ fields)
@@ -181,7 +181,7 @@ def maybeAddClsDecl (state, decl) =
 			  body_a.flds
    in
    let new_methods = foldl (fn (methods, a) ->
-			    if exists (fn b -> b.1.3 = a.1.3) body_b.meths then
+			    if exists? (fn b -> b.1.3 = a.1.3) body_b.meths then
 			      methods
 			    else
 			      [a] ++ methods)
@@ -189,7 +189,7 @@ def maybeAddClsDecl (state, decl) =
 			   body_a.meths
    in
    let new_constrs = foldl (fn (constrs, a) ->
-			    if exists (fn b -> b.2 = a.2) body_b.constrs then
+			    if exists? (fn b -> b.2 = a.2) body_b.constrs then
 			      constrs
 			    else
 			      [a] ++ constrs)
@@ -424,7 +424,7 @@ def getCresCounter =
 %%  for the "<-" and ";" in forms such as { y <- f x ; z <- g y ; return z }
 %%  ================================================================================
 
-op monadBind : fa (a,b) (JGenEnv a) * (a -> JGenEnv b) -> JGenEnv b
+op monadBind : [a,b] (JGenEnv a) * (a -> JGenEnv b) -> JGenEnv b
 def monadBind (f, g1) =
     fn state ->
       case (f state) of
@@ -446,7 +446,7 @@ def monadBind (f, g1) =
         %%  because lhs is JGenEnv a and rhs is JGenEnv b
 	| (Exception except, newState) -> (Exception except, newState)
 
-op monadSeq : fa (a,b) (JGenEnv a) * (JGenEnv b) -> JGenEnv b
+op monadSeq : [a,b] (JGenEnv a) * (JGenEnv b) -> JGenEnv b
 def monadSeq (f, g2) =   % monadBind (f, (fn _ -> g2))
     %% Unfolded is more efficient
     fn state ->
@@ -459,7 +459,7 @@ def monadSeq (f, g2) =   % monadBind (f, (fn _ -> g2))
 %%  so that processing can resume normally after the catch.
 %% ================================================================================
 
-op catch : fa (a) JGenEnv a -> (JGenException -> JGenEnv a) -> JGenEnv a
+op catch : [a] JGenEnv a -> (JGenException -> JGenEnv a) -> JGenEnv a
 def catch f handler =
     fn state ->
       (case (f state) of
@@ -473,7 +473,7 @@ def catch f handler =
         | (Exception x, newState) -> handler x newState)
 
 % tries a list of things and calls the handler only if all have failed
-op catchL : fa(a) List(JGenEnv a) -> (JGenException -> JGenEnv a) -> JGenEnv a
+op catchL : [a] List(JGenEnv a) -> (JGenException -> JGenEnv a) -> JGenEnv a
 def catchL flist handler =
   case flist of
     | [f] -> catch f handler
@@ -481,7 +481,7 @@ def catchL flist handler =
 
 % transform an exception an Option parameter, useful for
 % try-catch situations
-op try : fa (a) JGenEnv a -> JGenEnv (Option a)
+op try : [a] JGenEnv a -> JGenEnv (Option a)
 def try f =
   fn state ->
   (case (f state) of
@@ -491,13 +491,13 @@ def try f =
 
 %% Normal control flow -- proceed to next application
 
-op return : fa (a) a -> JGenEnv a
+op return : [a] a -> JGenEnv a
 def return x = fn state -> (Ok x, state)
 
 op when : Boolean -> JGenEnv () -> JGenEnv ()
 def when p command = if p then (fn s -> (command s)) else return ()
 
-op foldM : fa (a,b) (a -> b -> JGenEnv a) -> a -> List b -> JGenEnv a
+op foldM : [a,b] (a -> b -> JGenEnv a) -> a -> List b -> JGenEnv a
 def foldM f a l =
     case l of
       | [] -> return a
@@ -511,7 +511,7 @@ def foldM f a l =
  * whereby the state of the previous execution is not lost (as it is
  * in mapM
  *)
-op seqM : fa(a,b) (a -> JGenEnv b) -> List a -> JGenEnv ()
+op seqM : [a,b] (a -> JGenEnv b) -> List a -> JGenEnv ()
 def seqM f l =
   case l of
     | [] -> return ()
@@ -520,7 +520,7 @@ def seqM f l =
 		seqM f xs
 	       }
 
-op mapM : fa (a,b) (a -> JGenEnv b) -> (List a) -> JGenEnv (List b)
+op mapM : [a,b] (a -> JGenEnv b) -> (List a) -> JGenEnv (List b)
 def mapM f l =
     case l of
       | [] -> return []
@@ -530,7 +530,7 @@ def mapM f l =
             return (Cons (xNew,xsNew))
           }
 
-op appM : fa(a) (a -> JGenEnv ()) -> (List a) -> JGenEnv ()
+op appM : [a] (a -> JGenEnv ()) -> (List a) -> JGenEnv ()
 def appM f l =
   case l of
     | [] -> return ()
@@ -539,7 +539,7 @@ def appM f l =
 		appM f xs
 	       }
 
-op mapOptionM: fa(a,b) (a -> JGenEnv b) -> Option a -> JGenEnv (Option b)
+op mapOptionM: [a,b] (a -> JGenEnv b) -> Option a -> JGenEnv (Option b)
 def mapOptionM f x =
   case x of
     | None -> return None
@@ -565,7 +565,7 @@ def ifM check f =
 %% --------------------------------------------------------------------------------
 %%  Exception handling -- do not process following applications
 
-op raise : fa(a) JGenException -> JGenEnv a
+op raise : [a] JGenException -> JGenEnv a
 def raise except = 
   fn state -> 
   let _ = if specwareWizard? then
@@ -612,7 +612,7 @@ def vprintln s =
   }
 
 op printI: Integer -> JGenEnv ()
-def printI n = print (Integer.toString n)
+def printI n = print (Integer.show n)
 
 op debug?: Boolean
 def debug? = true
@@ -621,8 +621,8 @@ op dbg: String -> JGenEnv ()
 def dbg s = if debug? then println s else return ()
 
 %This runs a monadic program and lifts the result out of the monad.
-%op run : fa (a) JGenEnv a -> a
-op run : fa (a) JGenEnv a -> State -> a
+%op run : [a] JGenEnv a -> a
+op run : [a] JGenEnv a -> State -> a
 def run f s = 
   case f s of
     | (Ok x, _) -> x
@@ -633,7 +633,7 @@ def run f s =
 %% --------------------------------------------------------------------------------
 %% handler op that shows the exception and returns a default value
 (*
-op showAndContinue: fa(a) a -> JGenException  -> JGenEnv a
+op showAndContinue: [a] a -> JGenException  -> JGenEnv a
 def showAndContinue defaultvalue except =
   {
    println ("*** Error: "^(errToString except));

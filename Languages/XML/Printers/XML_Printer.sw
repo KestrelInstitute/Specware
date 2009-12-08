@@ -1496,7 +1496,7 @@ XML qualifying spec
   def print_QuotedText qtext = print_BoundedText qtext
 
   def print_BoundedText {qchar, text} =
-    cons (qchar, (text ^ (cons (qchar, []))))
+    qchar :: (text ^ (qchar :: []))
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          References                                                                          %%%
@@ -1561,8 +1561,8 @@ XML qualifying spec
 
   def print_CharRef  {style, char} =
     case style of
-      | Decimal -> (ustring "&#")  ^ (ustring (Nat.toString char)) ^ (ustring ";")
-      | Hex     -> (ustring "&#x") ^ (ustring (toHex        char)) ^ (ustring ";")
+      | Decimal -> (ustring "&#")  ^ (ustring (Nat.show char)) ^ (ustring ";")
+      | Hex     -> (ustring "&#x") ^ (ustring (toHex    char)) ^ (ustring ";")
 
   %% -------------------------------------------------------------------------------------------------
   %%  [67]  Reference    ::=  EntityRef | CharRef

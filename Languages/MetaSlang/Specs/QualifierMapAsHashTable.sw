@@ -2,7 +2,7 @@ AnnSpec qualifying
 spec
  import QualifierMap
  import /Library/Structures/Data/Maps/SimpleAsHarray
- sort AQualifierMap b  = Map(String * String,b)   
+ type AQualifierMap b  = Map(String * String,b)   
  def foldriAQualifierMap f ini qm =
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
  def emptyAQualifierMap  = Map.emptyMap         % 
@@ -24,7 +24,7 @@ spec
       [] m
 
  %% Temporary to get stuff working
- op foldL: fa(a,b) (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
+ op foldL: [a,b] (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
  def foldL f e l =
    case l of
      | [] -> return e

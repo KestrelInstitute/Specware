@@ -145,7 +145,7 @@ PrList qualifying spec
     flatten(Cons(hd, tl)) = concat(hd, flatten(tl))
 
 (* TODO
-  def fa(a) locationOf(subl,supl) =
+  def [a] locationOf(subl,supl) =
     let def checkPrefix (subl : List a, supl : List a) : Option(List a) =
             % checks if subl is prefix of supl and if so
             % returns what remains of supl after subl

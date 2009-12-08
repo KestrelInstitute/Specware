@@ -9,7 +9,7 @@ SpecCalc qualifying spec {
   import ../../SpecCalculus/AbstractSyntax/Printer
   import Other % was Types
 
-  % op SpecCalc.ppOtherTerm : fa (a) SpecCalc.OtherTerm a -> Doc
+  % op SpecCalc.ppOtherTerm : [a] SpecCalc.OtherTerm a -> Doc
   def SpecCalc.ppOtherTerm scTerm =
     case scTerm of
       | Inline (name,scTerm) ->
@@ -28,7 +28,7 @@ SpecCalc qualifying spec {
            ]
     | OscarDecls decls -> ppOscarSpecTerm decls
 
-  op ppOscarSpecTerm : fa (a) List (OscarSpecElem a) -> Doc
+  op ppOscarSpecTerm : [a] List (OscarSpecElem a) -> Doc
   def ppOscarSpecTerm pSpecElems =
           ppConcat [
             ppString "psl {",
@@ -39,10 +39,10 @@ SpecCalc qualifying spec {
             ppString "}"
           ]
 
-  op ppCommands : fa(a) List (Command a) -> Pretty
+  op ppCommands : [a] List (Command a) -> Pretty
   def ppCommands cmds = ppSep (ppAppend (ppString ";") ppNewline) (map ppCommand cmds)
 
-  op ppCommand : fa(a) Command a -> Pretty
+  op ppCommand : [a] Command a -> Pretty
   def ppCommand (cmd,_) =
     case cmd of
       | If alts ->
@@ -108,7 +108,7 @@ SpecCalc qualifying spec {
       | Break -> ppString "break"
       | Continue -> ppString "continue"
 
-  op ppCases : fa(a) List (Case a) -> Pretty
+  op ppCases : [a] List (Case a) -> Pretty
   def ppCases cases =
     let def ppCase ((vars,pat,guard2,cmd),_) =
       ppConcat [
@@ -124,7 +124,7 @@ SpecCalc qualifying spec {
       ppSep (ppAppend ppNewline (ppString "| ")) (map ppCase cases)
     ]
 
-  op ppAlts : fa(a) List (Alternative a) -> Pretty
+  op ppAlts : [a] List (Alternative a) -> Pretty
   def ppAlts alts = 
     let def ppAlt ((guard2,cmd),_) =
       ppConcat [
@@ -137,7 +137,7 @@ SpecCalc qualifying spec {
       ppSep (ppAppend ppNewline (ppString "| ")) (map ppAlt alts)
     ]
 
-  op ppOscarSpecElem : fa(a) OscarSpecElem a -> Pretty
+  op ppOscarSpecElem : [a] OscarSpecElem a -> Pretty
   def ppOscarSpecElem (decl,_) = 
     case decl of
       | Sort (names,(tvs,[(_,typ)])) -> 
@@ -162,7 +162,7 @@ SpecCalc qualifying spec {
             ppProcInfo procInfo
           ]
 
-  op AbsSynClaim.pp : fa (a) Claim a -> Pretty
+  op AbsSynClaim.pp : [a] Claim a -> Pretty
   def AbsSynClaim.pp (claimType, qid, tyVars,term) =
     ppConcat [
       pp claimType,
@@ -198,10 +198,10 @@ SpecCalc qualifying spec {
               ^ (anyToString any)
               ^ "'")
 
-  op ppOscarSpecElems : fa(a) List (OscarSpecElem a) -> Pretty
+  op ppOscarSpecElems : [a] List (OscarSpecElem a) -> Pretty
   def ppOscarSpecElems decls = ppSep ppNewline (map ppOscarSpecElem decls)
 
-  op ppProcInfo : fa (a) ProcInfo a -> Pretty
+  op ppProcInfo : [a] ProcInfo a -> Pretty
   def ppProcInfo procInfo =
     ppConcat [
       ppString "(",

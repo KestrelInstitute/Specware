@@ -164,8 +164,8 @@ spec
 	 | Some filename -> filename
     in
     let len = length(filename) in
-    let basename = if substring(filename,len-2,len) = ".c" 
-		     then substring(filename,0,len-2)
+    let basename = if subFromTo(filename,len-2,len) = ".c" 
+		     then subFromTo(filename,0,len-2)
 		   else filename
     in
     let _ = writeLine(";; writing generated code to "^basename^".[ch]...") in

@@ -9,9 +9,9 @@ separate from the pure (monadic) operations.
 IO qualifying spec
   import /Library/Base
 
-  sort Filename = String
-  sort Time     = Nat          % Not a fixnum
-  sort Byte     = {x : Nat | 0 <= x &&  x < 256} 
+  type Filename = String
+  type Time     = Nat          % Not a fixnum
+  type Byte     = {x : Nat | 0 <= x &&  x < 256} 
 
   op getCurrentDirectory   : () -> Filename
   op fileExistsAndReadable : Filename -> Boolean

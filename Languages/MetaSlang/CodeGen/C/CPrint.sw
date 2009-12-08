@@ -45,9 +45,9 @@ CPrint qualifying spec {
 
   def ppConst (v : CVal) : Pretty =
     case v
-      of Char   c           -> strings ["'", Char.toString c, "'"]
-       | Int    (b, n)      -> strings [if b then "" else "-", Nat.toString n]
-%       | Float  (b, n1, n2) -> strings [if b then "" else "-", Nat.toString n1, ".", Nat.toString n2]
+      of Char   c           -> strings ["'", Char.show c, "'"]
+       | Int    (b, n)      -> strings [if b then "" else "-", Nat.show n]
+%       | Float  (b, n1, n2) -> strings [if b then "" else "-", Nat.show n1, ".", Nat.show n2]
        | Float  f           -> string f
        | String s           -> strings ["\"", ppQuoteString(s), "\""]
        | _ -> System.fail "Unexpected const to print"
@@ -56,11 +56,11 @@ CPrint qualifying spec {
     let def ppQuoteCharList(clist: List Char) =
 	      case clist
 		of [] -> []
-                 | #\" :: clist -> List.concat([#\\,#\"],ppQuoteCharList(clist))
+                 | #\" :: clist -> [#\\,#\"] ++ ppQuoteCharList(clist)
                  %% following fixes bug 162:
                  %% C code generation should print newlines within strings as "\n"
-                 | #\n :: clist -> List.concat([#\\,#n],ppQuoteCharList(clist)) 
-		 | c :: clist -> List.cons(c,ppQuoteCharList(clist))
+                 | #\n :: clist -> [#\\,#n] ++ ppQuoteCharList(clist) 
+		 | c :: clist -> c::ppQuoteCharList(clist)
     in
     String.implode(ppQuoteCharList(String.explode(s)))
 
@@ -220,7 +220,7 @@ CPrint qualifying spec {
     prettysAll (List.map ppStmt ss)
 
   def ppInclude (s : String) : Pretty =
-    let s = (if msWindowsSystem? && member (hd (explode s), [#\\, #/]) then
+    let s = (if msWindowsSystem? && head (explode s) in? [#\\, #/] then
 	       (currentDeviceAsString ()) ^ s
 	     else
 	       s)
@@ -349,7 +349,7 @@ CPrint qualifying spec {
 	     (0, PrettyPrint.newline ())])
 
   def ppPlainBlock (vds : CVarDecls1, ss : CStmts) : Pretty =
-    if   (null vds)
+    if   (empty? vds)
     then (ppStmts ss)
     else prettysAll [ppVarDecls1 vds, (*emptyPretty (),*) ppStmts ss]
 
@@ -390,7 +390,7 @@ CPrint qualifying spec {
     prettysAll [ppExp e, emptyPretty (), emptyPretty ()]
 
   def section (title : String, ps : Prettys) : Prettys =
-    if List.null ps 
+    if empty? ps 
     then [] 
 
     else
@@ -510,7 +510,7 @@ CPrint qualifying spec {
        | name :: names ->
          (case findTypeDefn (name, defns)
             of None   -> findTypeDefns (names, defns)
-             | Some d -> List.cons (d, findTypeDefns (names, defns)))
+             | Some d ->  d :: findTypeDefns (names, defns))
 
   op expand : String * CTypeDefns -> List String
 
@@ -547,7 +547,7 @@ CPrint qualifying spec {
   op  findTypeDefn : String * CTypeDefns -> Option CTypeDefn
 
   def findTypeDefn (x, defns) =
-    List.find (fn (y, _) -> x = y) defns
+    findLeftmost (fn (y, _) -> x = y) defns
 
   op cId: String -> String
   def cId(id) =

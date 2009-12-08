@@ -28,7 +28,7 @@ and then qualify the resulting spec if the spec was given a name.
  def SpecCalc.evaluateSpec spec_elements position = {
     unitId <- getCurrentUID;
     unitStr <- return (uidToString unitId);
-    when (~(member(unitStr,noElaboratingMessageFiles)))
+    when (unitStr nin? noElaboratingMessageFiles)
        (print (";;; Elaborating spec at " ^ unitStr ^ "\n"));
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <-
@@ -79,12 +79,12 @@ axioms, etc.
 		   | _ -> raise (Fail ("Import not a spec")))
 		  })
               val               
-              (rev terms) % just so result shows in same order as read
+              (reverse terms) % just so result shows in same order as read
       | _ -> return val
 
   op  anyImports?: List (SpecElem Position) -> Boolean
   def anyImports? specElems =
-    exists (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
+    exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
   op evaluateSpecElem : ASpec Position
                           -> SpecElem Position

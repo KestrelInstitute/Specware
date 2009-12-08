@@ -2,7 +2,7 @@ AnnSpec qualifying
 spec
  import QualifierMap
  import /Library/Structures/Data/Maps/SimpleAsAlist
- sort AQualifierMap b  = Map(String * String,b)   
+ type AQualifierMap b  = Map(String * String,b)   
  def foldriAQualifierMap f ini qm =
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
  def emptyAQualifierMap  = emptyMap         % 

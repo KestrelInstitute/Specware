@@ -161,8 +161,8 @@ These are called only from evaluateUID.
         path1 = path2
       | _ -> false
 
-  op  lastElt: fa(a) List a -> Option a
-  def lastElt l = if l = [] then None else Some(nth(l,length l - 1))
+  op  lastElt: [a] List a -> Option a
+  def lastElt l = if l = [] then None else Some(l@(length l - 1))
 
 (*
 The following converts a relative UnitId into a list of candidate canonical
@@ -226,8 +226,8 @@ it easy to experiment with different UnitId path resolution strategies..
 	       shadow_paths
          }
 
-  sort UIDPath  = List String
-  sort UIDPaths = List UIDPath
+  type UIDPath  = List String
+  type UIDPaths = List UIDPath
 
   %% this is set by norm-unitid-str in toplevel.lisp
   %% It allows a command-line spec to be put into a temporary file but have
@@ -279,7 +279,7 @@ it easy to experiment with different UnitId path resolution strategies..
 	       case opt_suffix of
 		 | Some _ -> opt_suffix
 		 | _ -> 
-		   case locationOf (shadow_path, uid_path) of
+		   case leftmostPositionOfSublistAndFollowing (shadow_path, uid_path) of
 		     | Some (_, suffix) -> Some suffix
 		     | _ -> None)
 	      None
@@ -373,9 +373,9 @@ handled correctly.
   def checkForMultipleDefs decls =
     case foldl (fn (result as (seenNames,duplicate?), (name,term)) ->
 	        case duplicate? of
-		 | None -> if member(name,seenNames)
+		 | None -> if name in? seenNames
 		            then (seenNames,Some(name,term))
-			    else (cons(name,seenNames),None)
+			    else (Cons(name,seenNames),None)
                  | _ -> result)
            ([],None) decls
       of (_,Some(name,(_,pos))) ->
@@ -400,7 +400,7 @@ aren't are removed from the environment.
      case optValue of
        | None -> return futureTimeStamp   % Not in cache
        | Some (_,timeStamp,depUIDs,_) ->
-         if member (unitId, depUIDs) then
+         if unitId in? depUIDs then
 	   raise (CircularDefinition unitId)
 	 else      
 	   {

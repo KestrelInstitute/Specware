@@ -106,7 +106,7 @@ def varsToFormalParamsM vars =
   foldM (fn fps -> fn v ->
 	 {
 	  fp0 <- varToFormalParamM v;
-	  return(concat(fps,[fp0]))
+	  return(fps ++ [fp0])
 	 }) [] vars
 
 op varToFormalParamM: Var -> JGenEnv FormPar
@@ -131,7 +131,7 @@ def fieldToFldDecl(fieldProj, fieldType) =
  *)
 op getFieldName: Id -> Id
 def getFieldName(id) =
-  let firstchar = sub(id,0) in
+  let firstchar = id@0 in
   let fieldName = if isNum firstchar then "field_"^id else id in
   fieldName
   
@@ -222,7 +222,7 @@ op isFinalVar?: Id -> Boolean
 def isFinalVar?(id) =
   let l = length(finalVarPrefix) in
   if length(id) > l then
-      substring(id,0,l) = finalVarPrefix
+      subFromTo(id,0,l) = finalVarPrefix
   else
       false
 
@@ -364,7 +364,7 @@ def srtId_internalM(srt,addIds?) =
     | Base (Qualified (q, id), tvs, _) -> 
       {
        sep <- getSep;
-       id <- if length(tvs)>0 && (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
+       id <- if length(tvs)>0 && (forall? (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
                 foldM (fn s -> fn srt ->
 		       {
 			id0 <- srtIdM srt;
@@ -383,7 +383,7 @@ def srtId_internalM(srt,addIds?) =
 			  str0 <- srtIdM fsrt;
 			  str <- return (str ^ (if str = "" then "" else sep^"_"^sep) ^ str0);
 			  str <- return (if addIds? then str^sep^id else str);
-			  let types = concat(types,[tt_v2(str0)]) in
+			  let types = types ++ [tt_v2(str0)] in
 			  return (types,str)
 			 }) ([],"") fields;
        if addIds? then addProductSortToEnv srt else return ();
@@ -398,7 +398,7 @@ def srtId_internalM(srt,addIds?) =
 			| None -> return "";
 	      str <- return (str ^ (if str = "" then "" else sep^"_"^sep) ^ str0);
 	      str <- return (if addIds? then str^sep^id else str);
-	      let types = concat(types,[tt_v2(str0)]) in
+	      let types = types ++ [tt_v2(str0)] in
 	      return (types,str)
 	     }) ([],"") fields
     | Arrow(dsrt,rsrt,_) ->
@@ -407,8 +407,8 @@ def srtId_internalM(srt,addIds?) =
        (dtypes,dsrtid) <- srtId_internalM(dsrt,false);
        (_,rsrtid) <- srtId_internalM(rsrt,addIds?);
        (pars,_) <- return (foldl (fn((pars,nmb),ty) -> 
-				  let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
-				  (concat(pars,[fpar]),nmb+1)
+				  let fpar = (false,ty,("arg"^Integer.show(nmb),0)) in
+				  (pars ++ [fpar],nmb+1)
 				 ) ([],1) dtypes);
        methHdr <- return ([],Some(tt_v2(rsrtid)),"apply",pars,[]);
        id <- return(dsrtid^sep^"To"^sep^rsrtid);
@@ -452,7 +452,7 @@ def mkArrowSrtId(domidlist,ranid) =
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
   let (fields,_) = foldl (fn((fields,n),id) -> 
 			  let field = (natToString(n),Base(mkUnQualifiedId(id),[],p):Sort) in 
-			  (concat(fields,[field]),n+1))
+			  (fields ++ [field],n+1))
                    ([],1) domidlist
   in
   let dom = Product(fields,p) in
@@ -477,7 +477,7 @@ def mkJavaString(s) =
   let s = foldl (fn
 		 | (s,#\") -> s^"\\\""
 		 | (s,#\n) -> s^"\\n"
-                 | (s,c) -> s^(toString c)
+                 | (s,c) -> s^(show c)
 		) "" chars
   in
   CondExp (Un (Prim (String (s))), None)
@@ -688,7 +688,7 @@ def mkAsrtExpr(spc,vars,dompreds) =
 					    let b = sortAnn(srt) in
 					    let t = Var((id,srt),b) in
 					    let nstr = natToString(n) in
-					    (concat(fields,[(nstr,t)]),n+1)) ([],1) vars
+					    (fields ++ [(nstr,t)],n+1)) ([],1) vars
 		    in
 		    [Record(fields,noPos)]
 	     else
@@ -767,8 +767,8 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
   let body = [Stmt bodyStmt] in
 %  let (pars,_) = foldl (fn((types,nmb),argType) -> 
 %		    let type = getJavaTypeFromTypeId(argType) in
-%		    let argname = argNameBase^Integer.toString(nmb) in
-%		    (concat(types,[(false,type,(argname,0))]),nmb+1))
+%		    let argname = argNameBase^Integer.show(nmb) in
+%		    (types ++ [(false,type,(argname,0))],nmb+1))
 %                   ([],1) argTypeNames
 %  in
   let pars = map (fn(parType,parName) -> (false,getJavaTypeFromTypeId(parType),(parName,0))) 
@@ -783,8 +783,8 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
 op mkMethDecl: Id * List Id * Id * Id * JavaStmt -> MethDecl
 def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
   let (parNames,_) = foldl (fn((argnames,nmb),argType) -> 
-		    let argname = argNameBase^Integer.toString(nmb) in
-		    (concat(argnames,[argname]),nmb+1))
+		    let argname = argNameBase^Integer.show(nmb) in
+		    (argnames ++ [argname],nmb+1))
                    ([],1) argTypeNames
   in
   mkMethDeclWithParNames(methodName,argTypeNames,retTypeName,parNames,bodyStmt)
@@ -828,7 +828,7 @@ def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl)  =
 op mkArrowClassDecl: Id * MethDecl -> ClsDecl
 def mkArrowClassDecl(id,methDecl) =
   let (methHdr as (mmods,mretype,mid,mpars,mthrows),_) = methDecl in
-  let absApplyMethDecl = ((cons(Abstract,mmods),mretype,mid,mpars,mthrows),None) in
+  let absApplyMethDecl = ((Abstract::mmods,mretype,mid,mpars,mthrows),None) in
   % construct the equality method that does nothing but throwing an exception:
   let eqPars = [(false,(Name ([],id),0),("arg",0))] in
   let eqHdr = ([],Some(Basic JBool,0),"equals",eqPars,[]) in
@@ -882,11 +882,11 @@ def mkParamsFromPattern(pat) =
 	| pat0::patl ->
 	  (let id = case pat0 of
 	              | VarPat((id,_),_) -> id
-	              | WildPat _ -> "arg"^Integer.toString(n)
+	              | WildPat _ -> "arg"^Integer.show(n)
 		      | _ -> (issueUnsupportedError(patAnn(pat0),errmsg_unsupported(pat));"??")
 	   in
 	   let ids = patlist(patl,n+1) in
-	   cons(id,ids)
+	   id::ids
 	  )
   in
   case pat of
@@ -907,8 +907,8 @@ def mkPublic(cidecl) =
 
 op ensureMod : List Mod * Mod -> List Mod
 def ensureMod(mods,mod) =
-  if member(mod,mods) then mods
-  else cons(mod,mods)
+  if mod in? mods then mods
+  else mod::mods
 
 op makeConstructorsAndMethodsPublic: JSpec * List Id -> JSpec
 def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
@@ -918,7 +918,7 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 			       (ensureMod(mods,Public),id,fpars,throws,block)) constrs
 	    in
 	    let meths = map (fn((mods,rettype,id,fpars,throws),body) ->
-			     let (fpars,body) = (if id = "main" && (member (Public, mods) || member (id, publicOps)) then
+			     let (fpars,body) = (if id = "main" && (Public in? mods || id in? publicOps) then
 						   %% publicOps is temp hack, still needed by Prism
 						   let new_fpars = [(false, (Name ([], "String"), 1), ("args", 0))] in
 						   let old = PrettyPrint.toString (format (0, ppFormPars fpars)) in
@@ -929,7 +929,7 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 						 else 
 						   (fpars,body))
 			      in
-			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
+			      let mods = if id in? publicOps then ensureMod(mods,Public) else mods in
 			      ((mods,rettype,id,fpars,throws),body)) meths
 	    in
 	    ClsDecl(mods,hdr,{handwritten=handwritten,
@@ -939,7 +939,7 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 			      interfs=interfs})
 	  | InterfDecl(mods,hdr,body as {flds,meths,clss,interfs}) ->
 	    let meths = map (fn(mods,rettype,id,fpars,throws) ->
-			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
+			      let mods = if id in? publicOps then ensureMod(mods,Public) else mods in
 			      (mods,rettype,id,fpars,throws)) meths
 	    in
 	    InterfDecl(mods,hdr,{flds=flds,
@@ -1035,12 +1035,12 @@ def findMatchingUserTypeM srt =
 	 let srts = sortsAsList spc in
 	 let srtPos = sortAnn ssrt in
 	 let foundSrt = 
-	     find (fn (_, _, info) ->
-		   if definedSortInfo? info then
-		     let srt = firstSortDefInnerSort info in
-		     equivType? spc (ssrt, srt)
-		   else
-		     false)
+	     findLeftmost (fn (_, _, info) ->
+                             if definedSortInfo? info then
+                               let srt = firstSortDefInnerSort info in
+                               equivType? spc (ssrt, srt)
+                             else
+                               false)
 	          srts 
 	 in
 	   case foundSrt of
@@ -1110,7 +1110,7 @@ def insertRestricts(spc,dom,args) =
 	| (srt::dom,arg::args) ->
 	  (let newarg = insertRestrict(srt,arg) in
 	   case insertRestrictsRec(dom,args) of
-	     | Some args -> Some (cons(newarg,args))
+	     | Some args -> Some (newarg::args)
 	     | None -> None)
 	| _ -> None % avoid failing
   in
@@ -1121,13 +1121,13 @@ def insertRestricts(spc,dom,args) =
 (**
  * this is used to distinguish "real" product from "record-products"
  *)
-op fieldsAreNumbered: fa(a) List(String * a) -> Boolean
+op fieldsAreNumbered: [a] List(String * a) -> Boolean
 def fieldsAreNumbered(fields) =
   let
     def fieldsAreNumbered0(i,fields) =
       case fields of
 	| [] -> true
-	| (id,_)::fields -> id = Nat.toString(i) && fieldsAreNumbered0(i+1,fields)
+	| (id,_)::fields -> id = Nat.show(i) && fieldsAreNumbered0(i+1,fields)
   in
   fieldsAreNumbered0(1,fields)
 
@@ -1139,7 +1139,7 @@ def fieldsAreNumbered(fields) =
 op getMissingConstructorIds: Sort * List(Id * MS.Term) -> List Id
 def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
   let missingsummands = filter (fn(constrId,_) -> 
-				case find (fn(id,_) -> id = constrId) cases of
+				case findLeftmost (fn(id,_) -> id = constrId) cases of
 				  | Some _ -> false
 				  | None -> true) summands
   in
@@ -1166,7 +1166,7 @@ def addProductSortToEnv srt =
   {
    spc <- getEnvSpec;
    productSorts <- getProductSorts;
-   if exists (fn(psrt) -> equivType? spc (srt,psrt)) productSorts then
+   if exists? (fn(psrt) -> equivType? spc (srt,psrt)) productSorts then
      return ()
    else
      addProductSort srt
@@ -1178,10 +1178,10 @@ def packageNameToPath(s) =
 
 op packageNameToJavaName: String -> JavaName
 def packageNameToJavaName(s) =
-  let l = rev(splitStringAt(s, ".")) in
+  let l = reverse(splitStringAt(s, ".")) in
   case l of
     | [] -> ([],"")
-    | l::path -> (rev(path),l)
+    | l::path -> (reverse(path),l)
 
 
 
@@ -1198,7 +1198,7 @@ def mapJavaIdent sep id =
 		  | (#-,id) -> "_"^id
 		  | (#',id) -> sep^"Prime"^id % maybe "_Prime" ^ id ?
                   | (#@,id) -> sep^"AT"^id
-		  | (c,id) -> Char.toString(c)^id) "" idarray
+		  | (c,id) -> Char.show(c)^id) "" idarray
   in
     id
   %if javaKeyword? id then id^"_" else id
@@ -1252,7 +1252,7 @@ def JGen.changeTimeVars bstmt =
     | LocVarDecl(isFinal,(Basic JInt,0),((id,n),optvarinit),[]) ->
       let l = length id in
       if l < 4 then bstmt else
-      let suf = substring(id,l-4,l) in
+      let suf = subFromTo(id,l-4,l) in
       if suf = "time" || suf = "Time" then
 	let _ = writeLine(";; checking int "^id^"...") in
 	LocVarDecl(isFinal,(Basic Long,0),((id,n),optvarinit),[])

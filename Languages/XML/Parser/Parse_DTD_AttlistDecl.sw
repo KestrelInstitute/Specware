@@ -92,7 +92,7 @@ XML qualifying spec
 	  (possible_att_def, tail) <- parse_AttDef tail;
 	  case possible_att_def of
 	    | Some att_def ->
-	      probe (tail, cons (att_def, rev_att_defs))
+	      probe (tail,  att_def::rev_att_defs)
 	    | _ ->
 	      {
 	       (w2, tail) <- parse_WhiteSpace tail;
@@ -101,7 +101,7 @@ XML qualifying spec
 		   %% '>'
 		   return ({w1   = w1,
 			    name = name,
-			    defs = rev rev_att_defs,
+			    defs = reverse rev_att_defs,
 			    w2   = w2},
 			   tail)
 		 | char :: _ ->
@@ -116,7 +116,7 @@ XML qualifying spec
 			   so_we       = "pretend interpolated '>' was seen"};
 		    return ({w1   = w1,
 			     name = name,
-			     defs = rev rev_att_defs,
+			     defs = reverse rev_att_defs,
 			     w2   = w2},
 			    tail)
 		    }
@@ -279,7 +279,7 @@ XML qualifying spec
 		   {
 		    (w4,   tail) <- parse_WhiteSpace tail;
 		    (name, tail) <- parse_Name       tail;
-		    probe (tail, cons ((w3, w4, name), rev_names))
+		    probe (tail, Cons ((w3, w4, name), rev_names))
 		   }
 
 		 | 41 :: tail ->
@@ -287,7 +287,7 @@ XML qualifying spec
 		   return (Notation {w1     = w1,
 				     w2     = w2,
 				     first  = first,
-				     others = rev rev_names,
+				     others = reverse rev_names,
 				     w3     = w3},
 			   tail)
 
@@ -361,14 +361,14 @@ XML qualifying spec
 	      {
 	       (w3,   tail) <- parse_WhiteSpace tail;
 	       (name, tail) <- parse_Name       tail;
-	       probe (tail, cons ((w2, w3, name), rev_names))
+	       probe (tail, Cons ((w2, w3, name), rev_names))
 	      }
 
 	    | 41 :: tail ->
               %% close-paren
 	      return (Enumeration {w1     = w1,
 				   first  = first,
-				   others = rev rev_names,
+				   others = reverse rev_names,
 				   w2     = w2},
 		      tail)
 

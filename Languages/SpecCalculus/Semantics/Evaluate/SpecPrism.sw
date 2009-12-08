@@ -16,7 +16,7 @@ spec
 	      case s of
 		| Random  -> " randomly"
 		| Generative -> " generatively"
-		| Nth n ->      " selecting " ^ (toString n))
+		| Nth n ->      " selecting " ^ (show n))
 	   ^ "\n");
     (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
     sm_valueinfos                      <- mapM evaluateTermInfo smTerms;

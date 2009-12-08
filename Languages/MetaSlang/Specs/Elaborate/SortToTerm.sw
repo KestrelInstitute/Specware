@@ -41,12 +41,12 @@ XML qualifying spec
 	 let (_, reversed_args : List (Id * MS.Term)) =
 	 (foldl (fn ((n : Nat, args : List (Id * MS.Term)), arg : MS.Term) ->
 		 (n + 1,
-		  cons ((Nat.toString n, arg),
+		  Cons ((Nat.show n, arg),
 			args)))
 	        (1, [])
 		args)
 	 in
-	   Record (rev reversed_args, pos)
+	   Record (reverse reversed_args, pos)
 	   
        def mkapp (qualifier, id, arg : MS.Term) =
 	 ApplyN ([Fun (TwoNames (qualifier, id, Nonfix), 
@@ -89,7 +89,7 @@ XML qualifying spec
 												   convert srt]),
 										  result]))
 							        mynil
-								(rev fields)))
+								(reverse fields)))
 	   
 	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortDescriptor",
 							 (foldl (fn (result,(id, opt_srt)) ->
@@ -106,7 +106,7 @@ XML qualifying spec
 																 convert srt)]),
 										  result]))
 							        mynil
-								(rev fields)))
+								(reverse fields)))
 	   
 
            %% TODO:  (I think...)
@@ -134,7 +134,7 @@ XML qualifying spec
 									   mkapp ("List", "cons-2", 
 										  mkrecord [convert srt, result]))
 								          mynil
-									  (rev srts))])
+									  (reverse srts))])
 	   
 	   | Boolean _ -> mkapp ("XML", "MakeBooleanSortDescriptor-0", mkrecord [])
 	   | TyVar      (tv,                _) -> tag "<Some TyVar>"
@@ -168,7 +168,7 @@ XML qualifying spec
 	  %%  let _ = toScreen ("\n-----------------------------\n") in
 	  table
 	else 
-	  let new_table = cons ((srt, expansion), table) in
+	  let new_table = Cons ((srt, expansion), table) in
 	  %%  let _ = toScreen ("\n *** ADDED *** \n") in
 	  %%  let _ = toScreen ("\n-----------------------------\n") in
 	  scan (new_table, expansion)
@@ -236,7 +236,7 @@ XML qualifying spec
 	    case defs of
 	      | [] ->
 	        let main_qid = primarySortName info in
-		let (tvs, _) = unpackSort (hd decls) in
+		let (tvs, _) = unpackSort (head decls) in
 	        let l1 = length tvs in
 		let l2 = length ts  in
 		((if l1 ~= l2 then
@@ -248,11 +248,11 @@ XML qualifying spec
 		    %% This normalizes all references to be via the same name.
 		    Base (main_qid, ts, pos))
 	      | _ ->
-   	        let possible_base_def = find (fn srt_def ->
-					      let (_, srt) = unpackSort srt_def in
-					      case srt of
-						| Base _ -> true
-						| _      -> false)
+   	        let possible_base_def = findLeftmost (fn srt_def ->
+                                                        let (_, srt) = unpackSort srt_def in
+                                                        case srt of
+                                                          | Base _ -> true
+                                                          | _      -> false)
 	                                     defs
 		in
 		  case possible_base_def of
@@ -260,7 +260,7 @@ XML qualifying spec
 		      %% unfoldSortRec would recur here.  We don't.
 		      instantiateScheme (env, pos, ts, srt)
 		    | _ ->
-		      instantiateScheme (env, pos, ts, (hd defs)))
+		      instantiateScheme (env, pos, ts, (head defs)))
 	 | [] -> 
 	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
 	    unlinked_sort))

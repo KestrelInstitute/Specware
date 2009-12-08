@@ -53,15 +53,15 @@ spec
 
  op printPath: List Key -> ()
  def printPath path = 
-     (app (fn i -> String.toScreen(Integer.toString i^" ")) path;
-      String.writeLine "")
+     (app (fn i -> toScreen(Integer.show i^" ")) path;
+      writeLine "")
 
  def getApplys(M: MS.Term,Ms) = 
      case M
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
-	  (cons(M,Ms),true)
-	| Apply(M,M2,_) -> getApplys(M,cons(M2,Ms))
-	| _ -> (cons(M,Ms),false)
+	  (M::Ms,true)
+	| Apply(M,M2,_) -> getApplys(M,M2::Ms)
+	| _ -> (M::Ms,false)
 
 
  def getFunIndex = 
@@ -93,7 +93,7 @@ spec
       | _ -> 0
 
  def subterms = 
-     fn [Record(fields,_)] | length fields > 1 && (hd fields).1 = "1" ->
+     fn [Record(fields,_)] | length fields > 1 && (head fields).1 = "1" ->
               map (fn (_,M) -> M) fields
       | Ms -> Ms 
 
@@ -114,7 +114,7 @@ spec
 			     genPathSymPairs(prefix ++ [indexT,i],t) ++
 			     getRec(i + 1,ts)
 		in
-		    List.cons((prefix ++ [indexT]),getRec(1,Ms))
+		    (prefix ++ [indexT] :: getRec(1,Ms))
 		
 	    def addOne(index,path) = 
 		TermDiscNet.addForPath(index,path,id)

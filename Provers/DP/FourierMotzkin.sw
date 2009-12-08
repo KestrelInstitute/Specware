@@ -157,7 +157,7 @@ FM qualifying spec
   
   op hdTerm: Poly -> Term
   def hdTerm(p) =
-    hd(p)
+    head(p)
 
   op hdCoefOpt: Poly -> Option Coef
   def hdCoefOpt(p) =
@@ -537,9 +537,9 @@ FM qualifying spec
   % Otherwise FMRefute? returns a counterexample in the form
   % of a set of equalities
   def FMRefute?(ineqSet) =
-    if member(contradictIneqGt, ineqSet) ||
-      member(contradictIneqGtEq, ineqSet) ||
-      member(contradictIneqGtZero, ineqSet)      
+    if contradictIneqGt in? ineqSet ||
+      contradictIneqGtEq in? ineqSet ||
+      contradictIneqGtZero in? ineqSet      
       then None
     else 
     let ineqSet = sortIneqSet(ineqSet) in
@@ -549,9 +549,9 @@ FM qualifying spec
     %let _ = writeIneqs(ineqSet) in
     %let _ = writeLine("FM: output:") in
     %let _ = writeIneqs(completeIneqs) in
-    if member(contradictIneqGt, completeIneqs) ||
-      member(contradictIneqGtEq, completeIneqs) ||
-      member(contradictIneqGtZero, completeIneqs)      
+    if contradictIneqGt in? completeIneqs ||
+       contradictIneqGtEq in? completeIneqs ||
+       contradictIneqGtZero in? completeIneqs      
       then None
     else
       let counter = generateCounterExample(completeIneqs) in
@@ -561,15 +561,15 @@ FM qualifying spec
 
   op generateCounterExample: IneqSet -> IneqSet
   def generateCounterExample(ineqSet) =
-    let ineqSet = rev(ineqSet) in % we will traverse from fewer to more variables.
+    let ineqSet = reverse(ineqSet) in % we will traverse from fewer to more variables.
     generateCounterExampleInt(ineqSet)
 
   op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
     %let _ = writeLine("spl2") in
-    case splitList p l of
+    case splitAtLeftmost p l of
       | None -> (l, [])
-      | Some (l1, e, l2) -> (l1, cons(e, l2))
+      | Some (l1, e, l2) -> (l1, e:: l2)
 
   op generateCounterExampleInt: IneqSet -> IneqSet
   def generateCounterExampleInt(ineqSet) =
@@ -578,7 +578,7 @@ FM qualifying spec
 		 case optVar of
 		   | None -> false
 		   | Some _ -> true), ineqSet) in
-    if null ineqSet then [] else
+    if empty? ineqSet then [] else
     let hdVar = hdVar ineqSet in
     let (hdVarIneqs, restIneqs) =
     splitList2 ((fn (ineq) -> let optVar = ineq.hdVarOpt(ineq) in
@@ -589,7 +589,7 @@ FM qualifying spec
     let lb = lowerBound(hdVar, hdVarIneqs) in
     let restIneqs = map (substitute hdVar lb) ineqSet in
     let restResult = generateCounterExampleInt(restIneqs) in
-    cons(mkIneq(Eq, mkPoly2(mkMonom(toCoef 1, hdVar), mkConstantPoly(-lb))), restResult)
+    Cons(mkIneq(Eq, mkPoly2(mkMonom(toCoef 1, hdVar), mkConstantPoly(-lb))), restResult)
 
   op substitute: Var -> Coef -> Ineq -> Ineq
   def substitute var val ineq =
@@ -615,9 +615,9 @@ FM qualifying spec
         ineq.lowerBound(ineq)
       | [] ->
 	let gteqs = filter gteq? ineqs in
-	if null gteqs then toCoef 0 else
+	if empty? gteqs then toCoef 0 else
 	let lbs = map ineq.lowerBound gteqs in
-	let lb = foldl max (hd(lbs)) (tl(lbs)) in
+	let lb = foldl max (head(lbs)) (tail(lbs)) in
 	lb
 
   op ineq.lowerBound: Ineq -> Coef
@@ -711,11 +711,11 @@ FM qualifying spec
   op processIneq0: Var * IneqSet -> IneqSet * IneqSet
   def processIneq0(var, ineqSet) =
     let (possibleChains, nonChains) =
-        case  splitList (fn (ineq) -> 
-			 let optVar = ineq.hdVarOpt(ineq) in
-			 case optVar of
-			   | Some _ -> ~(ineq.hdVar(ineq) = var)
-			   | _ -> true ) 
+        case splitAtLeftmost (fn (ineq) -> 
+                                let optVar = ineq.hdVarOpt(ineq) in
+                                case optVar of
+                                  | Some _ -> ~(ineq.hdVar(ineq) = var)
+                                  | _ -> true ) 
 	                ineqSet 
           of
 	   | None -> (ineqSet, [])

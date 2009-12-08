@@ -22,19 +22,19 @@ Lots of proof obligations. Needs thought.
     }
 \end{spec}
 
-%%   sort DiagElem a = (DiagElem_ a) * a
-%%   sort DiagElem_ a =
+%%   type DiagElem a = (DiagElem_ a) * a
+%%   type DiagElem_ a =
 %%     | Node NodeId * (Term a)
 %%     | Edge EdgeId * NodeId * NodeId * (Term a)
-%%   sort NodeId = Name
-%%   sort EdgeId = Name
+%%   type NodeId = Name
+%%   type EdgeId = Name
 
 This fixes the types for representing the vertices and edges in the
 shape of diagrams. We use ppString, but really should be ppNodeId.
 
 \begin{spec}
-  sort Vertex.Elem = NodeId
-  sort Edge.Elem = EdgeId
+  type Vertex.Elem = NodeId
+  type Edge.Elem = EdgeId
   def Vertex.ppElem = ppString
   def Edge.ppElem = ppString
 

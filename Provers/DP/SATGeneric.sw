@@ -3,6 +3,7 @@ SAT qualifying spec
   import SATSig
   import SATDPSig
   import /Library/Legacy/DataStructures/ListUtilities
+  import /Library/Legacy/Utilities/System
 
 (*
   type Formula
@@ -81,7 +82,7 @@ SAT qualifying spec
      if isImplies?(conc) then
        let ant = antecedent(conc) in
        let conseq = consequent(conc) in
-       let hyps = cons(ant, hyps) in
+       let hyps = Cons(ant, hyps) in
        let conc = conseq in
        proveFMProb(hyps, conc)
      else if isOr?(conc) then
@@ -136,7 +137,7 @@ SAT qualifying spec
 
   op flattenAndSplitHypsInt: Formulas -> List DPTerms
   def flattenAndSplitHypsInt(hyps) =
-    if null(hyps) then [[]]
+    if empty?(hyps) then [[]]
     else
       let hyp::rest = hyps in
       if isTrue? hyp then flattenAndSplitHypsInt(rest)
@@ -144,11 +145,11 @@ SAT qualifying spec
       else if isOr? hyp then
 	let t1 = disjunct1(hyp) in
 	let t2 = disjunct2(hyp) in
-	flattenAndSplitHypsInt(cons(t1, rest)) ++ flattenAndSplitHypsInt(cons(t2, rest))
+	flattenAndSplitHypsInt(Cons(t1, rest)) ++ flattenAndSplitHypsInt(Cons(t2, rest))
       else if isImplies? hyp then
 	let t1 = antecedent(hyp) in
 	let t2 = consequent(hyp) in
-	flattenAndSplitHypsInt(cons(mkDisjunction(negate(t1), t2), rest))
+	flattenAndSplitHypsInt(Cons(mkDisjunction(negate(t1), t2), rest))
       else if isAnd? hyp then
 	let t1 = conjunct1(hyp) in
 	let t2 = conjunct2(hyp) in
@@ -164,7 +165,7 @@ SAT qualifying spec
 	let t2 = conjunct2(negArg(hyp)) in
 	flattenAndSplitHypsInt(Cons(mkDisjunction(negate(t1), negate(t2)), rest))
       else if isNot? hyp && isDecidable?(negArg(hyp)) then
-	map (fn (hyps) -> cons(negate(negArg(hyp)), hyps)) (flattenAndSplitHypsInt(rest))
+	map (fn (hyps) -> Cons(negate(negArg(hyp)), hyps)) (flattenAndSplitHypsInt(rest))
       else if isXor? hyp then
 	let t1 = xorT1(hyp) in
 	let t2 = xorT2(hyp) in
@@ -188,7 +189,7 @@ SAT qualifying spec
 	let ltIneq = mkLtEq(lhs, rhs) in
 	flattenAndSplitHypsInt([gtIneq, ltIneq]++rest) *)
       else if isDecidable?(hyp) then
-	map (fn (hyps) -> cons(hyp, hyps)) (flattenAndSplitHypsInt(rest))
+	map (fn (hyps) -> Cons(hyp, hyps)) (flattenAndSplitHypsInt(rest))
       else
 	%let _ = writeLine("~%*** Warning: Ignoring hypothesis "^print(hyp)) in
 	flattenAndSplitHypsInt(rest)

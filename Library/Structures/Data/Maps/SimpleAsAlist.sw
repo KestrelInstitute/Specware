@@ -44,14 +44,14 @@ spec
 	       else memb(key,tl) 
     in
     case memb(x,map) of
-      | [] -> cons((x,y),map)
+      | [] -> Cons((x,y),map)
       | l ->
         let def addBeforeTail(m,l,newpr) =
-	      if m = l then cons(newpr,tl l)
+	      if m = l then Cons(newpr,tail l)
 		else
 		  case m of
 		    | [] -> [newpr]		% Can't happen
-		    | p::r -> cons(p,addBeforeTail(r,l,newpr))
+		    | p::r -> Cons(p,addBeforeTail(r,l,newpr))
 	in addBeforeTail(map,l,(x,y))
 % Adds at end which is not generally desirable as it means copying whole map if not already there
 %    case map of

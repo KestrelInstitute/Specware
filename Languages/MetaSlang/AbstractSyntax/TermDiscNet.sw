@@ -61,7 +61,7 @@ spec
 
   def findForPath(dNet, p) =
       let (node,rest) = follow (p,dNet) in
-      if null rest 
+      if empty? rest 
 	   then Some(node)
       else None
 
@@ -93,7 +93,7 @@ spec
        | ((set,next),(k::rest),element) -> 
 	 case getNext(next,k)  
            of None -> 
-	      System.fail (Nat.toString element ^" Could not be removed")
+	      System.fail (Nat.show element ^" Could not be removed")
 	    | Some n ->
 	      let newNode = removeForPath(n,rest,element) in
   	      (* Map.insert should replace the old entry with the new one *)

@@ -37,12 +37,12 @@ Utilities qualifying spec
 	  let
 	     def loop(new,old) = 
 	         case new
-                   of [] -> Some(Record(rev old,a))
+                   of [] -> Some(Record(reverse old,a))
 	            | (l,p)::new -> 
 	         case patternToTerm(p)
 	           of None -> None
 	            | Some(trm) -> 
-	              loop(new,List.cons((l,trm),old))
+	              loop(new,Cons((l,trm),old))
           in
           loop(fields,[])
         | NatPat(i, _) -> Some(mkNat i)
@@ -76,7 +76,7 @@ Utilities qualifying spec
 	  let
 	     def loop(new,old,old_conds) = 
 	         case new
-                   of [] -> (Some(Record(rev old,a)),old_conds)
+                   of [] -> (Some(Record(reverse old,a)),old_conds)
 	            | (l,p)::new -> 
 	         case patternToTermPlusConds(p)
 	           of (None,conds) -> (None,old_conds++conds)
@@ -114,31 +114,31 @@ Utilities qualifying spec
    case term of
      | Var(w,_)               -> v = w
      | Apply(M1,M2,_)         -> isFree(v,M1) || isFree(v,M2)
-     | Record(fields,_)       -> exists (fn (_,M) -> isFree(v,M)) fields
+     | Record(fields,_)       -> exists? (fn (_,M) -> isFree(v,M)) fields
      | Fun _                  -> false
-     | Lambda(rules,_)        -> exists (fn (pat,cond,body) -> 
+     | Lambda(rules,_)        -> exists? (fn (pat,cond,body) -> 
 					  ~(isPatBound(v,pat)) 
 					  && 
 					  (isFree(v,cond) || isFree(v,body)))
                                          rules
-     | Let(decls,M,_)         -> exists (fn (_,M) -> isFree(v,M)) decls
+     | Let(decls,M,_)         -> exists? (fn (_,M) -> isFree(v,M)) decls
 			  	  ||
-				  (all (fn (p,_) -> ~(isPatBound(v,p))) decls
+				  (forall? (fn (p,_) -> ~(isPatBound(v,p))) decls
 				   &&
 				   isFree(v,M))
-     | LetRec(decls,M,_)      -> all (fn (w,_) -> ~(v = w)) decls 
+     | LetRec(decls,M,_)      -> forall? (fn (w,_) -> ~(v = w)) decls 
 				  && 
-				  (exists (fn (_,M) -> isFree(v,M)) decls
+				  (exists? (fn (_,M) -> isFree(v,M)) decls
 				   || 
 				   isFree(v,M)) 
-     | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
+     | Bind(b,vars,M,_)       -> forall? (fn w -> ~(v = w)) vars 
 			          && isFree(v,M)
      | The(w,M,_)             -> ~(v = w) && isFree(v,M)
      | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) || 
 			          isFree(v,t2) || 
 				  isFree(v,t3)
      | SortedTerm(t,_,_)      -> isFree(v,t)
-     | Seq(tms,_)             -> exists (fn t -> isFree(v,t)) tms
+     | Seq(tms,_)             -> exists? (fn t -> isFree(v,t)) tms
 
  op isPatBound : Var * Pattern -> Boolean
  def isPatBound (v,pat) = 
@@ -146,14 +146,14 @@ Utilities qualifying spec
      | AliasPat(p1,p2,_)      -> isPatBound(v,p1) || isPatBound(v,p2)
      | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
      | VarPat(w,_)            -> v = w
-     | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
+     | RecordPat(fields,_)    -> exists? (fn (_,p) -> isPatBound(v,p)) fields
      | QuotientPat(p,_,_)     -> isPatBound(v,p)
      | RestrictedPat(p,_,_)   -> isPatBound(v,p)
      | _ -> false
 
  op replace : MS.Term * List (MS.Term * MS.Term) -> MS.Term
  def replace(M,sub) = 
-   if null sub then 
+   if empty? sub then 
      M 
    else 
      let freeNames = 
@@ -215,14 +215,14 @@ Utilities qualifying spec
 
 	def repRule (pat,cond,term) = 
 	  let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	  if null sub then
+	  if empty? sub then
 	    (pat, cond, term) 
 	  else
 	    (pat, replace2(cond,sub,freeNames), replace2(term,sub,freeNames)) 
 
 	def repLet ((pat,trm),(decls,freeNames,sub)) = 
 	  let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	  (cons((pat,trm),decls),freeNames,sub)
+	  (Cons((pat,trm),decls),freeNames,sub)
    in
      rep(M)
 
@@ -233,13 +233,13 @@ Utilities qualifying spec
  def repBoundVars(vars,sub,freeNames) = 
    foldr (fn(v,(vars,sub,freeNames)) -> 
 	  let (v,sub,freeNames) = repBoundVar(v,sub,freeNames) in
-	  (cons(v,vars),sub,freeNames))
+	  (Cons(v,vars),sub,freeNames))
          ([],sub,freeNames) vars
 	
  def repBoundVar((id,s),sub,freeNames) = 
    if StringSet.member(freeNames,id) then
      let id2 = StringUtilities.freshName(id,freeNames) in
-     let sub2 = cons((mkVar(id,s),mkVar(id2,s)),sub) in
+     let sub2 = Cons((mkVar(id,s),mkVar(id2,s)),sub) in
      ((id2,s),sub2,freeNames)
    else
      ((id,s),sub,freeNames)
@@ -253,7 +253,7 @@ Utilities qualifying spec
 	let (fields,sub,freeNames) = 
 	    foldr (fn ((id,p),(fields,sub,freeNames)) -> 
 		   let (p,sub,freeNames) = repPattern(p,sub,freeNames) in
-		   (cons((id,p),fields),sub,freeNames))
+		   (Cons((id,p),fields),sub,freeNames))
 	          ([],sub,freeNames) fields
 	in
 	  (RecordPat(fields,a),sub,freeNames)
@@ -280,7 +280,7 @@ Utilities qualifying spec
    removeDuplicateVars vars
 
   op inVars?(v: Var, vs: List Var): Boolean =
-    exists (fn v1 -> equalVar?(v,v1)) vs
+    exists? (fn v1 -> equalVar?(v,v1)) vs
 
   op hasRefTo?(t: MS.Term, vs: List Var): Boolean =
     existsSubTerm (fn t \_rightarrow case t of
@@ -302,7 +302,7 @@ Utilities qualifying spec
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
  def insertVar (new_var, vars) = 
-   if (exists (fn v -> v.1 = new_var.1) vars) then
+   if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
      Cons (new_var, vars)
@@ -389,7 +389,7 @@ Utilities qualifying spec
    case pat
      of VarPat(v,_)-> [pat]
       | RecordPat(fields,_) ->
-	if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
+	if forall? (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
 	  then map (fn (_,vpat) -> vpat) fields
 	  else []
       | _ -> []
@@ -480,7 +480,7 @@ Utilities qualifying spec
    subst(srt) 
 
  def substitute(M,sub) = 
-   if null sub then M else
+   if empty? sub then M else
    let M_names = StringSet.fromList(varNames(freeVars M)) in
    let freeNames = foldr (fn ((v,trm),vs) -> 
                             StringSet.union (StringSet.fromList(varNames(freeVars trm)),
@@ -552,7 +552,7 @@ Utilities qualifying spec
 
 	def substRule (pat,cond,term) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	  if null sub then
+	  if empty? sub then
 	    (pat, cond, term) 
 	  else
 	    (pat,
@@ -561,7 +561,7 @@ Utilities qualifying spec
 
 	def substLet ((pat,trm),(decls,freeNames,sub)) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	  (cons((pat,trm),decls),
+	  (Cons((pat,trm),decls),
 	   freeNames,
 	   sub)
    in
@@ -601,7 +601,7 @@ Utilities qualifying spec
 	    List.foldr 
               (fn ((id,p),(fields,sub,freeNames)) -> 
 	       let (p,sub,freeNames) = substPattern(p,sub,freeNames) in
-	       (cons((id,p),fields),sub,freeNames))
+	       (Cons((id,p),fields),sub,freeNames))
 	      ([],sub,freeNames) fields
 	in
 	(RecordPat(fields,a),sub,freeNames)
@@ -638,8 +638,8 @@ Utilities qualifying spec
 	     (case arg
 		of (Var(w,_)) -> if v = w 
                                  then assignments else
-                		 cons((mkVarPat v,arg),assignments)
-		 | _ -> cons((mkVarPat v,arg),assignments)))
+                		 Cons((mkVarPat v,arg),assignments)
+		 | _ -> Cons((mkVarPat v,arg),assignments)))
 	    [] (fields,fields2) 
 
 
@@ -921,7 +921,7 @@ Utilities qualifying spec
  op  mkSimpConj: List MS.Term -> MS.Term
  def mkSimpConj(cjs) =
   let cjs = foldl (fn (cjs, cj) -> if termIn?(cj, cjs) then cjs else cj::cjs) [] cjs in
-  case rev cjs
+  case reverse cjs
     of []     -> mkTrue()
      | [x]    -> x
      | x::rcs -> mkAnd (x, mkConj rcs)
@@ -1069,7 +1069,7 @@ Utilities qualifying spec
     case t of
       | Lambda _ -> true
       | Fun _    -> true
-      | Record(fields,_) -> all (fn (_,stm) -> constantTerm? stm) fields
+      | Record(fields,_) -> forall? (fn (_,stm) -> constantTerm? stm) fields
       | _        -> false
 
   op [a] containsOpRef?(term: ATerm a): Boolean =
@@ -1087,7 +1087,7 @@ Utilities qualifying spec
   op opsInTerm(tm: MS.Term): List QualifiedId =
     foldTerm (fn opids -> fn t ->
                 case t of
-                  | Fun(Op(qid,_),_,_) | ~(member(qid,opids)) ->
+                  | Fun(Op(qid,_),_,_) | qid nin? opids ->
                     Cons(qid, opids)
                   | _ -> opids,
               fn result -> fn _ -> result,
@@ -1207,7 +1207,7 @@ Utilities qualifying spec
   def knownSideEffectFreeFn? f =
     case f of
       | Op(Qualified(qid),_) ->
-        member(qid,knownSideEffectFreeQIds)
+        qid in? knownSideEffectFreeQIds
           || qid.2 in? knownSideEffectFreeFns
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
@@ -1216,7 +1216,7 @@ Utilities qualifying spec
  def sideEffectFree(term) = 
      case term
        of Var _ -> true
-	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
+	| Record(fields,_) -> forall? (fn(_,t)-> sideEffectFree t) fields
 	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f && sideEffectFree t
 	| Fun _ -> true
 	| IfThenElse(t1,t2,t3,_) -> 
@@ -1258,7 +1258,7 @@ Utilities qualifying spec
       | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (- i), natSort,aa))
       | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
       | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
-      | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (toString i), stringSort,aa))
+      | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (show i), stringSort,aa))
       | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natSort,aa))
 
       | ("length",Fun (String s,_,aa)) -> Some(Fun (Nat(length s),natSort,aa))
@@ -1313,8 +1313,8 @@ Utilities qualifying spec
       | "divE" -> evalBinaryNotZero(nat divE,natVals,fields,natSort)
 
       %% string operations
-      | "concat" -> evalBinary(str concat,stringVals,fields,stringSort)
-      | "++"  -> evalBinary(str ++,stringVals,fields,stringSort)
+      | "concat" -> evalBinary(str ^,stringVals,fields,stringSort)
+      | "++"  -> evalBinary(str ^,stringVals,fields,stringSort)
       | "^"   -> evalBinary(str ^,stringVals,fields,stringSort)
       | "substring" ->
 	(case fields
@@ -1323,12 +1323,12 @@ Utilities qualifying spec
 	      let iv = natVal i in
 	      let jv = natVal j in
 	      if iv <= jv && jv <= length sv
-		then Some(Fun(String(substring(sv,iv,jv)),
+		then Some(Fun(String(subFromTo(sv,iv,jv)),
 			      stringSort,noPos))
 		else None
 	    | _ -> None)
-      | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
-      | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort)
+      | "leq" -> evalBinary(bool <=,stringVals,fields,boolSort)
+      | "lt"  -> evalBinary(bool <,stringVals,fields,boolSort)
 
       | _ -> None
 
@@ -1345,10 +1345,10 @@ Utilities qualifying spec
  def tryEvalOne spc term =
    case term
      of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
-        (if member(spName,evalSpecNames)
+        (if spName in? evalSpecNames
 	 then (case arg
 		 of Record(fields, _) ->
-		    (if all (fn (_,tm) -> evalConstant?(tm)) fields
+		    (if forall? (fn (_,tm) -> evalConstant?(tm)) fields
 		      then attemptEvaln(spName,opName,fields)
 		      else None)
 		   | _ -> (if evalConstant?(arg)
@@ -1407,7 +1407,7 @@ Utilities qualifying spec
  def disjointMatches = 
      fn [] -> true
       | (pat1,_,_)::matches -> 
-         List.all 
+         forall? 
            (fn(pat2,_,_) -> disjointPatterns(pat1,pat2)) 
              matches 
         && disjointMatches matches
@@ -1436,7 +1436,7 @@ Utilities qualifying spec
        | _ -> false
       )
 
- op substSort : fa(a) List (Id * ASort a) * ASort a -> ASort a
+ op substSort : [a] List (Id * ASort a) * ASort a -> ASort a
  def substSort (S, srt) =
   let def find (name, S, a) =  
        case S 
@@ -1509,15 +1509,15 @@ Utilities qualifying spec
            | None -> false
            | Some uf_ty -> existsInFullType? spc pred? uf_ty)
       | Arrow(x,y,_) -> existsInFullType? spc pred? x || existsInFullType? spc pred? y
-      | Product(prs,_) -> exists (fn (_,f_ty) -> existsInFullType? spc pred? f_ty) prs
-      | CoProduct(prs,_)  -> exists (fn (_,o_f_ty) ->
+      | Product(prs,_) -> exists? (fn (_,f_ty) -> existsInFullType? spc pred? f_ty) prs
+      | CoProduct(prs,_)  -> exists? (fn (_,o_f_ty) ->
                                        case o_f_ty of
                                          | Some f_ty -> existsInFullType? spc pred? f_ty
                                          | None -> false)
                                prs
       | Quotient(x,_,_) -> existsInFullType? spc pred? x
       | Subsort(x,_,_) -> existsInFullType? spc pred? x
-      | And(tys,_) -> exists (existsInFullType? spc pred?) tys
+      | And(tys,_) -> exists? (existsInFullType? spc pred?) tys
       | _ -> false)
 
  op stripSubsorts (sp: Spec, srt: Sort): Sort = 
@@ -1729,7 +1729,7 @@ Utilities qualifying spec
      case tm of
        | Var _ -> true
        | Record(fields, _) ->
-         all (fn (_, fld_tm) -> varRecordTerm? fld_tm) fields
+         forall? (fn (_, fld_tm) -> varRecordTerm? fld_tm) fields
        | _ -> false
 
    op varRecordPattern?(pat: Pattern): Boolean =
@@ -1737,7 +1737,7 @@ Utilities qualifying spec
      case pat of
        | VarPat _ -> true
        | RecordPat(fields, _) ->
-         all (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
+         forall? (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
        | _ -> false
 
    op simpleLambda?(tm: MS.Term): Boolean =
@@ -1751,7 +1751,7 @@ Utilities qualifying spec
      case pred of
        | Lambda([(VarPat(v,_), Fun(Bool True, _, _), conj as Apply(Fun(And,_,_), _, _))], _) ->
          let conjs = getConjuncts conj in
-         if all (fn conj -> case conj of
+         if forall? (fn conj -> case conj of
                               | Apply(_, Var(vi,_), _) -> v = vi
                               | _ -> false)
               conjs
@@ -1830,7 +1830,7 @@ Utilities qualifying spec
       tms
 
   op termSubst1 (sbst: TermSubst) (s_tm: MS.Term): MS.Term =
-    case find (fn (t1,_) -> equalTerm?(t1, s_tm)) sbst of
+    case findLeftmost (fn (t1,_) -> equalTerm?(t1, s_tm)) sbst of
       | Some (_,t2) -> t2
       | None -> s_tm
 
@@ -1888,10 +1888,10 @@ Utilities qualifying spec
 %                                      ^printTerm(Simplify.simplify spc p2))
 %                | _ -> ()
 %        in
-        let all_p1s = p1s ++ uf_p1s in
+        let forall?_p1s = p1s ++ uf_p1s in
         % let p2 = Simplify.simplify spc p2 in
         let p2s = decomposeConjPred p2 in
-        let f_p2s = filter (fn p2i -> ~(equivTermIn? spc (p2i, all_p1s))) p2s in
+        let f_p2s = filter (fn p2i -> ~(equivTermIn? spc (p2i, forall?_p1s))) p2s in
         (ty1, mkSubtypePreds(sty2, f_p2s, a2, spc))
       | _ -> (ty1, ty2)
 
@@ -1924,7 +1924,7 @@ Utilities qualifying spec
     let uf2? = ~(uf2? => typeIn?(ty2, real_as2)) in
     % let _ = writeLine("rts< ("^toString uf1?^","^toString uf2?^") "^printSort ty1^" <> "^printSort ty2) in
     let def existsSubsortArg?(args, uf?, real_as) =
-          exists (fn ty -> embed? Subsort ty && (uf? => typeIn?(ty, real_as))) args
+          exists? (fn ty -> embed? Subsort ty && (uf? => typeIn?(ty, real_as))) args
         def tryRaiseFromArgs(ty, qid, args, uf?, real_as, a) =
           % let _ = writeLine("trfa: "^printSort(Base(qid, args, a))) in
           if existsSubsortArg?(args, uf?, real_as)
@@ -1967,7 +1967,7 @@ Utilities qualifying spec
           let def addField(id, l_ty, (n_flds, arg_fld_vars, pred, i)) =
                 case l_ty of
                   | Subsort(t, p, _) ->
-                    let v = ("xf"^toString i, t) in
+                    let v = ("xf"^show i, t) in
                     (n_flds ++ [(id,t)],
                      arg_fld_vars ++ [(id, mkVarPat v)],
                      mkAnd(pred, mkApply(p, mkVar v)),
@@ -2124,7 +2124,7 @@ Utilities qualifying spec
       | Base(qid, [], _) | qid in? dontRaiseTypes -> ty
       | Base(qid, args, a) ->
         let args = map (fn tyi -> raiseSubtype(tyi, spc)) args in
-        if exists (embed? Subsort) args
+        if exists? (embed? Subsort) args
           then
           let Qualified(q,id) = qid in
           let pred_name = id^"_P" in
@@ -2168,11 +2168,11 @@ Utilities qualifying spec
              composeSubtypes(sss_ty, p, pr, a, spc)
            | _ -> ty)
       | Product(flds, a) ->
-        if exists (fn (_,tyi) -> subtype?(spc, tyi)) flds
+        if exists? (fn (_,tyi) -> subtype?(spc, tyi)) flds
           then let (bare_flds, arg_fld_vars, pred,_) =
                 foldl (fn ((bare_flds, arg_fld_vars, pred, i),(id,tyi)) ->
                          case subtypeComps(spc, tyi) of
-                           | Some(t,p) -> let v = ("xp"^toString i, t)  in
+                           | Some(t,p) -> let v = ("xp"^show i, t)  in
                                           (bare_flds ++ [(id,t)],
                                            arg_fld_vars ++ [(id,mkVarPat v)],
                                            mkAnd(pred, mkApply(p, mkVar v)),
@@ -2202,7 +2202,7 @@ Utilities qualifying spec
   def instantiateTyVars(s,tyVarSubst) =
     case s of
       | TyVar (name, _) ->
-	(case find (fn (nm,_) -> nm = name) tyVarSubst of
+	(case findLeftmost (fn (nm,_) -> nm = name) tyVarSubst of
 	   | Some(_,ss) -> ss
 	   | _ -> s)
       | _ -> s
@@ -2223,7 +2223,7 @@ Utilities qualifying spec
         let result =
             case (srt1,srt2) of
               | (TyVar(id1,_), srt2) -> 
-                (case (find (fn (id,_) -> id = id1) pairs) of
+                (case (findLeftmost (fn (id,_) -> id = id1) pairs) of
                    | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
                    | None -> Some(Cons((id1,srt2),pairs)))
               | _ ->
@@ -2324,8 +2324,8 @@ Utilities qualifying spec
   op newName (name: String, names: List String): String = 
     let
       def loop i =
-        let n = name ^ (toString i) in
-        if exists (fn m -> n = m) names then
+        let n = name ^ (show i) in
+        if exists? (fn m -> n = m) names then
           loop (i + 1)
         else 
           n
@@ -2355,7 +2355,7 @@ Utilities qualifying spec
   op knownNonEmpty?(ty: Sort, spc: Spec): Boolean =
     case ty of
       | Base(qid,tvs,_) ->
-        member(qid, knownNonEmptyBaseTypes)
+        qid in? knownNonEmptyBaseTypes
           || tvs ~= []                  % Not completely safe
           || (let Some info = findTheSort(spc, qid) in
               knownNonEmpty?(info.dfn, spc))

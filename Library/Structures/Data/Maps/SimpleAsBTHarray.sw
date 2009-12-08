@@ -2,32 +2,32 @@ BTHMap qualifying
 spec
   import Simple
 
-  op MapBTHashtable.BTH_empty_map : fa(key,a) Map (key,a)
-  op MapBTHashtable.BTH_numItems : fa(a,key) Map (key,a) -> Nat
+  op MapBTHashtable.BTH_empty_map : [key,a] Map (key,a)
+  op MapBTHashtable.BTH_numItems : [a,key] Map (key,a) -> Nat
 
-  op MapBTHashtable.BTH_apply : fa(key,a) Map(key,a) * key -> Option a
-  op MapBTHashtable.BTH_eval  : fa(key,a) Map(key,a) * key -> a
+  op MapBTHashtable.BTH_apply : [key,a] Map(key,a) * key -> Option a
+  op MapBTHashtable.BTH_eval  : [key,a] Map(key,a) * key -> a
 
-  op MapBTHashtable.BTH_update : fa (key,a) Map (key,a) * key * a -> Map (key,a)
-  op MapBTHashtable.BTH_remove : fa (a,key) Map (key,a) * key -> Map (key,a)
-  op MapBTHashtable.BTH_inDomain? : fa(key,a) Map (key,a) * key -> Boolean
-  op MapBTHashtable.BTH_mapi : fa(key,a,b) (key * a -> b) * Map (key,a) -> Map (key,b)
-  op MapBTHashtable.BTH_map  : fa(key,a,b) (a -> b) * Map (key,a) -> Map (key,b)
+  op MapBTHashtable.BTH_update : [key,a] Map (key,a) * key * a -> Map (key,a)
+  op MapBTHashtable.BTH_remove : [a,key] Map (key,a) * key -> Map (key,a)
+  op MapBTHashtable.BTH_inDomain? : [key,a] Map (key,a) * key -> Boolean
+  op MapBTHashtable.BTH_mapi : [key,a,b] (key * a -> b) * Map (key,a) -> Map (key,b)
+  op MapBTHashtable.BTH_map  : [key,a,b] (a -> b) * Map (key,a) -> Map (key,b)
 
-  op MapBTHashtable.BTH_mapPartial  : fa(key,a,b) (a -> Option b) * Map (key,a)
+  op MapBTHashtable.BTH_mapPartial  : [key,a,b] (a -> Option b) * Map (key,a)
                                              -> Map (key,b)
-  op MapBTHashtable.BTH_mapiPartial : fa(key,a,b) (key * a -> Option b) * Map (key,a)
+  op MapBTHashtable.BTH_mapiPartial : [key,a,b] (key * a -> Option b) * Map (key,a)
                                              -> Map (key,b)
 
 
-  op MapBTHashtable.BTH_app   : fa(key,a) (a -> ()) * Map (key,a) -> ()
-  op MapBTHashtable.BTH_appi  : fa(key,a) (key * a -> ()) * Map (key,a) -> ()
+  op MapBTHashtable.BTH_app   : [key,a] (a -> ()) * Map (key,a) -> ()
+  op MapBTHashtable.BTH_appi  : [key,a] (key * a -> ()) * Map (key,a) -> ()
 
-  op MapBTHashtable.BTH_foldi : fa(Dom,Cod,a) (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
+  op MapBTHashtable.BTH_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
 
-  op MapBTHashtable.BTH_imageToList : fa(key,a) Map (key,a) -> List a
-  op MapBTHashtable.BTH_mapToList : fa(key,a) Map (key,a) -> List (key * a)
-  op MapBTHashtable.BTH_domainToList : fa(key,a) Map (key,a) -> List key
+  op MapBTHashtable.BTH_imageToList : [key,a] Map (key,a) -> List a
+  op MapBTHashtable.BTH_mapToList : [key,a] Map (key,a) -> List (key * a)
+  op MapBTHashtable.BTH_domainToList : [key,a] Map (key,a) -> List key
 
   def emptyMap = MapBTHashtable.BTH_empty_map
   def numItems = MapBTHashtable.BTH_numItems

@@ -8,6 +8,7 @@ for the usual Wadler Lindig version.
 
 WadlerLindig qualifying spec
   import /Library/Legacy/Utilities/IO
+  import /Library/Legacy/Utilities/System
 
   type Doc =
     | DocNil
@@ -100,7 +101,7 @@ WadlerLindig qualifying spec
   op ppGroup : Doc -> Doc
   def ppGroup d = DocGroup d
   
-  sort SDoc =
+  type SDoc =
     | SNil
     | SText (String * SDoc)
     | SLine (Integer * SDoc)   (* newline + spaces *)
@@ -117,7 +118,7 @@ WadlerLindig qualifying spec
     IO.withOutputToString
        (fn stream ->
 	app (fn s -> IO.format1 (stream, "~A", s))
-	  (rev strings))
+	  (reverse strings))
 
   op ppAppend : Doc -> Doc -> Doc
   def ppAppend p1 p2 = ppCons p1 p2

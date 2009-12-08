@@ -216,7 +216,7 @@ op recordFieldsToTerms: List (Id * Term) -> List Term
 def recordFieldsToTerms(fields) : List Term =
   case fields of 
     | [] -> []
-    | (id,term)::fields -> cons(term, recordFieldsToTerms(fields))
+    | (id,term)::fields -> Cons(term, recordFieldsToTerms(fields))
 
 op applyArgsToTerms: Term -> List Term
 
@@ -384,8 +384,8 @@ def srtTermDelta_internal(srt, term, fail?) =
   let opRng = srtRange(srt) in
   let
     def arityMismatchError(pat,args1,term,args2) = 
-      "unsupported: pattern "^printPattern(pat)^" has "^Integer.toString(args1)^" args, but "
-      ^printTerm(term)^" has "^Integer.toString(args2)^" args."
+      "unsupported: pattern "^printPattern(pat)^" has "^Integer.show(args1)^" args, but "
+      ^printTerm(term)^" has "^Integer.show(args2)^" args."
   in
   case term of
     | Lambda ([(pat, cond, body)],_) ->
@@ -481,11 +481,11 @@ def liftCaseCase(oper, term, k) =
   let freeVars = uniqueSort (fn ((id1, _), (id2, _)) -> compare(id1, id2)) freeVarsCases in
   let freeVarsSorts = map (fn(id, srt) -> srt) freeVars in
   let newOp = mkNewOp(oper, k) in
-  let newOpSrt = withAnnS(mkArrow(mkProduct(cons(caseTermSort, freeVarsSorts)), ttermSort),b) in
+  let newOpSrt = withAnnS(mkArrow(mkProduct(Cons(caseTermSort, freeVarsSorts)), ttermSort),b) in
   let newVar = mkNewVar(oper, k, caseTermSort) in
   let newOpTerm = withAnnT(mkApply(Lambda (newCases, b), mkVar(newVar)),b) in
-  let newOpDef = (newOp, cons(caseTermSort,freeVarsSorts), ttermSort, cons(newVar, freeVars), newOpTerm) in
-  let newTerm = withAnnT(mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)),b) in
+  let newOpDef = (newOp, Cons(caseTermSort,freeVarsSorts), ttermSort, Cons(newVar, freeVars), newOpTerm) in
+  let newTerm = withAnnT(mkApplication(mkOp(newOp, newOpSrt), Cons(newCaseTerm, map mkVar freeVars)),b) in
   (newTerm, finalK, newOds1++newOds2++[newOpDef])
   
 op liftCases: Op * List Term * Nat -> List Term * Nat * List OpDef
@@ -496,12 +496,12 @@ def liftCases(oper, terms, k) =
     | term::terms ->
     let (newTerm, newK, newOds) = liftCase(oper, term, k) in
     let (restTerms, restK, restOds) = liftCases(oper, terms, newK) in
-    (cons(newTerm, restTerms), restK, newOds++restOds)
+    (Cons(newTerm, restTerms), restK, newOds++restOds)
 
 op lift: Spec * Op * (List Var * Term) -> Term * List OpDef
 
 def lift(spc,oper, (formals, body)) =
-  let firstUserVar = find (fn(v) -> userVar?(spc,v)) formals in
+  let firstUserVar = findLeftmost (fn(v) -> userVar?(spc,v)) formals in
   case firstUserVar of
     | Some firstUserVar ->
     if caseTerm?(body)
@@ -537,7 +537,7 @@ def liftPattern spc =
 			 let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
 			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
 			 let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
-			 cons (origOpNewDef, newOds++result)
+			 Cons (origOpNewDef, newOds++result)
 		       | _ -> result)
 		    []
 		    spc.ops 

@@ -51,11 +51,11 @@ XML qualifying spec
               case tail of
 		| char :: scout ->
 		  (if name_char? char then
-		     aux (scout, cons (char, name_chars))
+		     aux (scout,  char::name_chars)
 		   else
-		     return (cons (first_char, rev name_chars), tail))
+		     return (first_char :: reverse name_chars, tail))
 		| _ ->
-		  return (cons (first_char, rev name_chars), [])
+		  return (first_char :: reverse name_chars, [])
 	 in
 	   aux (tail, [])
 	   }
@@ -105,11 +105,11 @@ XML qualifying spec
               case tail of
 		| char :: scout ->
 		  (if name_char? char then
-		     aux (scout, cons (char, name_chars))
+		     aux (scout, char::name_chars)
 		   else
-		     return (cons (first_char, rev name_chars), tail))
+		     return (first_char :: reverse name_chars, tail))
 		| _ ->
-		  return (cons (first_char, rev name_chars), [])
+		  return (first_char :: reverse name_chars, [])
 	 in
 	   aux (tail, [])
 	   }

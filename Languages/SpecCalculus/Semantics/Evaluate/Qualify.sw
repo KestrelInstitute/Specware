@@ -109,7 +109,7 @@ SpecCalc qualifying spec
           def qualify_sortinfo (q, _, info, sorts) =
 	    let revised_q = if q = UnQualified then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
-	    let new_names = rev (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
+	    let new_names = reverse (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
 	    return (mergeSortInfo spc sorts new_info)
 	in
@@ -118,9 +118,9 @@ SpecCalc qualifying spec
       def qualify_ops ops =
         let 
           def qualify_opinfo (q, id, info, ops) =
-	    let revised_q = if q = UnQualified && ~ (member (id, immune_ids)) then new_q else q in
+	    let revised_q = if q = UnQualified && id nin? immune_ids then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
-	    let new_names = rev (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
+	    let new_names = reverse (removeDuplicates (List.map (qualifyOpId revised_q immune_ids) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
 	    return (mergeOpInfo spc ops new_info)
 	in
@@ -136,10 +136,10 @@ SpecCalc qualifying spec
                              (case pos of
                                 | Internal msg -> msg
                                 | String (string, left, right) ->
-                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+                                  let printPos = fn (line,column,byte) -> (Nat.show line)^"."^(Nat.show column) in
                                   printPos left ^ "-" ^ printPos right ^ " in \n;;;          [" ^ string ^ "]"
                                 | File (filename, left, right) ->
-                                  let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+                                  let printPos = fn (line,column,byte) -> (Nat.show line)^"."^(Nat.show column) in
                                   printPos left ^ "-" ^ printPos right ^ " in \n;;;          " ^ filename)
                              ^ "\n")
           in
@@ -197,7 +197,7 @@ SpecCalc qualifying spec
       | _ -> el
 
   def qualifyOpId new_q immune_ids (qid as Qualified (q, id)) =
-    if q = UnQualified && ~ (member (id, immune_ids)) then
+    if q = UnQualified && id nin? immune_ids then
       Qualified (new_q, id)
     else 
       qid

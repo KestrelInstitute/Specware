@@ -146,7 +146,7 @@ State = Monad qualifying spec
     return
       (case MonadicStateInternal.readGlobalVar name of
         | Some value -> value
-        | None -> fail ("Undefined global variable: " ++ name))
+        | None -> fail ("Undefined global variable: " ^ name))
 
   op newVar : [a] a -> Monad (VarRef a)
   def newVar value = return (MonadicStateInternal.newVar value)

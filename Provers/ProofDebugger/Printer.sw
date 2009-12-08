@@ -18,8 +18,8 @@ spec
   def printSeq printElem separator seq =
     if empty? seq then ""
     else if ofLength? 1 seq then printElem (theElement seq)
-    else printElem (head seq) ++ separator
-      ++ printSeq printElem separator (tail seq)
+    else printElem (head seq) ^ separator
+      ^ printSeq printElem separator (tail seq)
 
   % synonym, for uniformity with the other ops in this spec:
   op printInteger : Integer -> String
@@ -63,7 +63,7 @@ spec
   op printVariable : Variable -> String
   def printVariable = fn
     | user v -> printUserVariable v
-    | abbr i -> "V[" ++ printInteger i ++ "]"  % e.g. abbr 3 -> V[3]
+    | abbr i -> "V[" ^ printInteger i ^ "]"  % e.g. abbr 3 -> V[3]
 
   op printType       : Type       -> String  % defined below
   op printExpression : Expression -> String  % defined below
@@ -74,32 +74,32 @@ spec
   op printTypeInstance : TypeName * Types -> String
   def printTypeInstance (tn,tS) =
     if empty? tS then printTypeName tn  % avoid "[]" if no type arguments
-                 else printTypeName tn ++ "[" ++ printTypes tS ++ "]"
+                 else printTypeName tn ^ "[" ^ printTypes tS ^ "]"
 
   op printArrowType : Type * Type -> String
   def printArrowType (t1,t2) =
-    "(" ++ printType t1 ++ " -> " ++ printType t2 ++ ")"
+    "(" ^ printType t1 ^ " -> " ^ printType t2 ^ ")"
 
   op printRecordTypeComponent : Field * Type -> String
   def printRecordTypeComponent (f,t) =
-    printField f ++ ":" ++ printType t
+    printField f ^ ":" ^ printType t
 
   op printRecordType : Fields * Types -> String
   def printRecordType (fS,tS) =
     let n:Nat = min (length fS, length tS) in
     let fS = prefix (fS, n) in
     let tS = prefix (tS, n) in
-    "{" ++ printSeq printRecordTypeComponent ", " (zip(fS,tS)) ++ "}" ++
+    "{" ^ printSeq printRecordTypeComponent ", " (zip(fS,tS)) ^ "}" ^
     % if there are extra fields or component types (if the record type is
     % not well-formed), append them to record type printout between "#":
     (if length fS <= n then ""
-     else "#" ++ printFields (removePrefix(fS,n)) ++ "#") ++
+     else "#" ^ printFields (removePrefix(fS,n)) ^ "#") ^
     (if length tS <= n then ""
-     else "#" ++ printTypes (removePrefix(tS,n)) ++ "#")
+     else "#" ^ printTypes (removePrefix(tS,n)) ^ "#")
 
   op printRestrictionType : Type * Expression -> String
   def printRestrictionType (t,r) =
-   "(" ++ printType t ++ " | " ++ printExpression r ++ ")"
+   "(" ^ printType t ^ " | " ^ printExpression r ^ ")"
 
   def printType = fn
     | BOOL         -> "Boolean"
@@ -112,34 +112,34 @@ spec
   op printOpInstance : Operation * Types -> String
   def printOpInstance (o,tS) =
     if empty? tS then printOperation o  % avoid "[]" if no type arguments
-                 else printOperation o ++ "[" ++ printTypes tS ++ "]"
+                 else printOperation o ^ "[" ^ printTypes tS ^ "]"
 
   op printApplication : Expression * Expression -> String
   def printApplication (e1,e2) =
-    printExpression e1 ++ " " ++ printExpression e2
+    printExpression e1 ^ " " ^ printExpression e2
 
   op printAbstraction : Variable * Type * Expression -> String
   def printAbstraction (v,t,e) =
-   "(fn (" ++ printVariable v ++ ":" ++ printType t ++ ") -> "
-   ++ printExpression e ++ ")"
+   "(fn (" ^ printVariable v ^ ":" ^ printType t ^ ") -> "
+   ^ printExpression e ^ ")"
 
   op printEquality : Expression * Expression -> String
   def printEquality (e1,e2) =
-    "(" ++ printExpression e1 ++ " = " ++ printExpression e2 ++ ")"
+    "(" ^ printExpression e1 ^ " = " ^ printExpression e2 ^ ")"
 
   op printConditional : Expression * Expression * Expression -> String
   def printConditional (e0,e1,e2) =
-    "if (" ++ printExpression e0 ++ ") then ("
-           ++ printExpression e1 ++ ") else ("
-           ++ printExpression e2 ++ ")"
+    "if (" ^ printExpression e0 ^ ") then ("
+           ^ printExpression e1 ^ ") else ("
+           ^ printExpression e2 ^ ")"
 
   op printDescriptor : Type -> String
   def printDescriptor t =
-    "the[" ++ printType t ++ "]"
+    "the[" ^ printType t ^ "]"
 
   op printProjector : Type * Field -> String
   def printProjector (t,f) =
-    "project[" ++ printType t ++ "," ++ printField f ++ "]"
+    "project[" ^ printType t ^ "," ^ printField f ^ "]"
 
   def printExpression = fn
     | VAR v       -> printVariable v
@@ -153,30 +153,30 @@ spec
 
   op printTypeDeclaration : TypeName * Integer -> String
   def printTypeDeclaration (tn,n) =
-    "type " ++ printTypeName tn ++ ":" ++ printInteger n ++ newline
+    "type " ^ printTypeName tn ^ ":" ^ printInteger n ^ newline
 
   op printOpDeclaration : Operation * TypeVariables * Type -> String
   def printOpDeclaration (o,tvS,t) =
-    "op " ++ printOperation o ++ " : {" ++ printTypeVariables tvS ++
-    "} " ++ printType t ++ newline
+    "op " ^ printOperation o ^ " : {" ^ printTypeVariables tvS ^
+    "} " ^ printType t ^ newline
 
   op printAxiom : AxiomName * TypeVariables * Expression -> String
   def printAxiom (an,tvS,e) =
-    "axiom " ++ printAxiomName an ++ " is {" ++ printTypeVariables tvS ++
-    "} " ++ printExpression e ++ newline
+    "axiom " ^ printAxiomName an ^ " is {" ^ printTypeVariables tvS ^
+    "} " ^ printExpression e ^ newline
 
   op printLemma : LemmaName * TypeVariables * Expression -> String
   def printLemma (ln,tvS,e) =
-    "axiom " ++ printLemmaName ln ++ " is {" ++ printTypeVariables tvS ++
-    "} " ++ printExpression e ++ newline
+    "axiom " ^ printLemmaName ln ^ " is {" ^ printTypeVariables tvS ^
+    "} " ^ printExpression e ^ newline
 
   op printTypeVarDeclaration : TypeVariable -> String
   def printTypeVarDeclaration tv =
-    "var " ++ printTypeVariable tv ++ newline
+    "var " ^ printTypeVariable tv ^ newline
 
   op printVarDeclaration : Variable * Type -> String
   def printVarDeclaration (v,t) =
-    "var " ++ printVariable v ++ " : " ++ printType t ++ newline
+    "var " ^ printVariable v ^ " : " ^ printType t ^ newline
 
   op printContextElement : ContextElement -> String
   def printContextElement = fn
@@ -190,42 +190,42 @@ spec
 
   op printContext : Context -> String
   def printContext cx =
-    "[#" ++ newline ++ foldl (++) "" (map printContextElement cx) ++
-    "#]" ++ newline
+    "[#" ^ newline ^ foldl (^) "" (map printContextElement cx) ^
+    "#]" ^ newline
     % context consists of one line for each element, between "[#" and "#]"
 
   op printContexts : Contexts -> String
   def printContexts = printSeq printContext ""
 
   op turnStyle : String
-  def turnStyle = " |---" ++ newline  % in its own line
+  def turnStyle = " |---" ^ newline  % in its own line
 
   op printWellFormedContext : Context -> String
   def printWellFormedContext cx =
-    turnStyle ++ printContext cx ++ " : CONTEXT" ++ newline
+    turnStyle ^ printContext cx ^ " : CONTEXT" ^ newline
 
   op printWellFormedSpec : Context -> String
   def printWellFormedSpec cx =
-    turnStyle ++ printContext cx ++ " : SPEC" ++ newline
+    turnStyle ^ printContext cx ^ " : SPEC" ^ newline
 
   op printWellFormedType : Context * Type -> String
   def printWellFormedType (cx,t) =
-    printContext cx ++ turnStyle ++ printType t ++ " : TYPE" ++ newline
+    printContext cx ^ turnStyle ^ printType t ^ " : TYPE" ^ newline
 
   op printSubType : Context * Type * Expression * Type -> String
   def printSubType (cx,t1,r,t2) =
-    printContext cx ++ turnStyle ++
-    printType t1 ++ " <[" ++ printExpression r ++ "] " ++ printType t2 ++ newline
+    printContext cx ^ turnStyle ^
+    printType t1 ^ " <[" ^ printExpression r ^ "] " ^ printType t2 ^ newline
 
   op printWellTypedExpr : Context * Expression * Type -> String
   def printWellTypedExpr (cx,e,t) =
-    printContext cx ++ turnStyle ++
-    printExpression e ++ " : " ++ printType t ++ newline
+    printContext cx ^ turnStyle ^
+    printExpression e ^ " : " ^ printType t ^ newline
 
   op printTheorem : Context * Expression -> String
   def printTheorem (cx,e) =
-    printContext cx ++ turnStyle ++
-    printExpression e ++ newline
+    printContext cx ^ turnStyle ^
+    printExpression e ^ newline
 
   % API public
   op printJudgement : Judgement -> String
@@ -241,161 +241,161 @@ spec
   op printFailure : Failure -> String
   def printFailure = fn
     | badPermutation prm ->
-      "bad permutation: " ++ printIntegers prm ++ newline
+      "bad permutation: " ^ printIntegers prm ^ newline
     | wrongPermutationLength prm ->
-      "wrong permutation length: " ++ printIntegers prm ++ newline
+      "wrong permutation length: " ^ printIntegers prm ^ newline
     | fieldNotFound (f, fS, tS) ->
-      "field " ++ printField f ++
-      " not found in " ++ printRecordType(fS,tS) ++ newline
+      "field " ^ printField f ^
+      " not found in " ^ printRecordType(fS,tS) ^ newline
     | typeNotDeclared (cx, tn) ->
-      "type " ++ printTypeName tn ++
-      " not declared in" ++ newline ++ printContext cx
+      "type " ^ printTypeName tn ^
+      " not declared in" ^ newline ^ printContext cx
     | opNotDeclared (cx, o) ->
-      "op " ++ printOperation o ++
-      " not declared in" ++ newline ++ printContext cx
+      "op " ^ printOperation o ^
+      " not declared in" ^ newline ^ printContext cx
     | axiomNotDeclared (cx, an) ->
-      "axiom " ++ printAxiomName an ++
-      " not declared in" ++ newline ++ printContext cx
+      "axiom " ^ printAxiomName an ^
+      " not declared in" ^ newline ^ printContext cx
     | lemmaNotDeclared (cx, ln) ->
-      "lemma " ++ printLemmaName ln ++
-      " not declared in" ++ newline ++ printContext cx
+      "lemma " ^ printLemmaName ln ^
+      " not declared in" ^ newline ^ printContext cx
     | typeVarNotDeclared (cx, tv) ->
-      "type variable " ++ printTypeVariable tv ++
-      " not declared in" ++ newline ++ printContext cx
+      "type variable " ^ printTypeVariable tv ^
+      " not declared in" ^ newline ^ printContext cx
     | varNotDeclared (cx, v) ->
-      "variable " ++ printVariable v ++
-      " not declared in" ++ newline ++ printContext cx
+      "variable " ^ printVariable v ^
+      " not declared in" ^ newline ^ printContext cx
     | typeAlreadyDeclared (cx, tn) ->
-      "type " ++ printTypeName tn ++
-      " already declared in" ++ newline ++ printContext cx
+      "type " ^ printTypeName tn ^
+      " already declared in" ^ newline ^ printContext cx
     | opAlreadyDeclared (cx, o) ->
-      "op " ++ printOperation o ++
-      " already declared in" ++ newline ++ printContext cx
+      "op " ^ printOperation o ^
+      " already declared in" ^ newline ^ printContext cx
     | axiomAlreadyDeclared (cx, an) ->
-      "axiom " ++ printAxiomName an ++
-      " already declared in" ++ newline ++ printContext cx
+      "axiom " ^ printAxiomName an ^
+      " already declared in" ^ newline ^ printContext cx
     | lemmaAlreadyDeclared (cx, ln) ->
-      "lemma " ++ printLemmaName ln ++
-      " already declared in" ++ newline ++ printContext cx
+      "lemma " ^ printLemmaName ln ^
+      " already declared in" ^ newline ^ printContext cx
     | typeVarAlreadyDeclared (cx, tv) ->
-      "type variable " ++ printTypeVariable tv ++
-      " already declared in" ++ newline ++ printContext cx
+      "type variable " ^ printTypeVariable tv ^
+      " already declared in" ^ newline ^ printContext cx
     | varAlreadyDeclared (cx, v) ->
-      "variable " ++ printVariable v ++
-      " already declared in" ++ newline ++ printContext cx
+      "variable " ^ printVariable v ^
+      " already declared in" ^ newline ^ printContext cx
     | typeVarInSpec cx ->
-      "spec contains type variable:" ++ newline ++ printContext cx
+      "spec contains type variable:" ^ newline ^ printContext cx
     | varInSpec cx ->
-      "spec contains variable:" ++ newline ++ printContext cx
+      "spec contains variable:" ^ newline ^ printContext cx
     | negativeTypeArity (tn, i) ->
-      "type " ++ printTypeName tn ++ " has negative arity " ++
-      printInteger i ++ newline
+      "type " ^ printTypeName tn ^ " has negative arity " ^
+      printInteger i ^ newline
     | wrongTypeArity (tn, rightArity, wrongArity) ->
-      "type " ++ printTypeName tn ++ " has arity " ++
-      printInteger wrongArity ++ " instead of " ++
-      printInteger rightArity ++ newline
+      "type " ^ printTypeName tn ^ " has arity " ^
+      printInteger wrongArity ^ " instead of " ^
+      printInteger rightArity ^ newline
     | badTypeSubstitution (tvS, tS) ->
-      "bad type substitution: " ++ printTypeVariables tvS ++ " <- " ++
-      printTypes tS ++ newline
+      "bad type substitution: " ^ printTypeVariables tvS ^ " <- " ^
+      printTypes tS ^ newline
     | badSubstitution (v, e) ->
-      "bad substitution: " ++ printVariable v ++ " <- " ++
-      printExpression e ++ newline
+      "bad substitution: " ^ printVariable v ^ " <- " ^
+      printExpression e ^ newline
     | notWFContext jdg ->
-      "judgement is not well-formed context:" ++ newline ++
+      "judgement is not well-formed context:" ^ newline ^
       printJudgement jdg
     | notWFType jdg ->
-      "judgement is not well-formed type:" ++ newline ++
+      "judgement is not well-formed type:" ^ newline ^
       printJudgement jdg
     | notSubtype jdg ->
-      "judgement is not subtype:" ++ newline ++
+      "judgement is not subtype:" ^ newline ^
       printJudgement jdg
     | notWTExpr jdg ->
-      "judgement is not well-typed expression:" ++ newline ++
+      "judgement is not well-typed expression:" ^ newline ^
       printJudgement jdg
     | notTheorem jdg ->
-      "judgement is not theorem:" ++ newline ++
+      "judgement is not theorem:" ^ newline ^
       printJudgement jdg
     | notBoolean t ->
-      "not boolean type: " ++ printType t ++ newline
+      "not boolean type: " ^ printType t ^ newline
     | notTypeInstance t ->
-      "not type instance: " ++ printType t ++ newline
+      "not type instance: " ^ printType t ^ newline
     | notArrowType t ->
-      "not arrow type: " ++ printType t ++ newline
+      "not arrow type: " ^ printType t ^ newline
     | notRecordType t ->
-      "not record type: " ++ printType t ++ newline
+      "not record type: " ^ printType t ^ newline
     | notRestrictionType t ->
-      "not restriction type: " ++ printType t ++ newline
+      "not restriction type: " ^ printType t ^ newline
     | notOpInstance e ->
-      "not op instance: " ++ printExpression e ++ newline
+      "not op instance: " ^ printExpression e ^ newline
     | notApplication e ->
-      "not application: " ++ printExpression e ++ newline
+      "not application: " ^ printExpression e ^ newline
     | notAbstraction e ->
-      "not abstraction: " ++ printExpression e ++ newline
+      "not abstraction: " ^ printExpression e ^ newline
     | notEquality e ->
-      "not equality: " ++ printExpression e ++ newline
+      "not equality: " ^ printExpression e ^ newline
     | notConditional e ->
-      "not conditional: " ++ printExpression e ++ newline
+      "not conditional: " ^ printExpression e ^ newline
     | notDescriptor e ->
-      "not descriptor: " ++ printExpression e ++ newline
+      "not descriptor: " ^ printExpression e ^ newline
     | notProjector e ->
-      "not projector: " ++ printExpression e ++ newline
+      "not projector: " ^ printExpression e ^ newline
     | notForall e ->
-      "not universal quantifier: " ++ printExpression e ++ newline
+      "not universal quantifier: " ^ printExpression e ^ newline
     | notExists1 e ->
-      "not unique existential quantifier: " ++ printExpression e ++ newline
+      "not unique existential quantifier: " ^ printExpression e ^ newline
     | badRecordType (fS, tS) ->
-      "bad record type: " ++ printRecordType (fS, tS) ++ newline
+      "bad record type: " ^ printRecordType (fS, tS) ^ newline
     | badRestrictionType (t, r) ->
-      "bad restriction type: " ++ printRestrictionType (t, r) ++ newline 
+      "bad restriction type: " ^ printRestrictionType (t, r) ^ newline 
     | wrongContext (rightCx, wrongCx) ->
-      "found context" ++ newline ++ printContext wrongCx ++
-      "instead of" ++ newline ++ printContext rightCx
+      "found context" ^ newline ^ printContext wrongCx ^
+      "instead of" ^ newline ^ printContext rightCx
     | notEqualContexts cxS ->
-      "not all equal contexts:" ++ newline ++ printContexts cxS
+      "not all equal contexts:" ^ newline ^ printContexts cxS
     | notPrefixContext (cx1, cx2) ->
-      "context" ++ newline ++ printContext cx1 ++
-      "is not a prefix of" ++ newline ++ printContext cx2 ++ newline
+      "context" ^ newline ^ printContext cx1 ^
+      "is not a prefix of" ^ newline ^ printContext cx2 ^ newline
     | notAllTypeVarDecls cx ->
-      "not all type variables:" ++ newline ++ printContext cx
+      "not all type variables:" ^ newline ^ printContext cx
     | contextNotEndingInVar cx ->
-      "context does not end with variable:" ++ newline ++ printContext cx
+      "context does not end with variable:" ^ newline ^ printContext cx
     | contextNotEndingInAxiom cx ->
-      "context does not end with axiom:" ++ newline ++ printContext cx
+      "context does not end with axiom:" ^ newline ^ printContext cx
     | wrongType (rightT, wrongT) ->
-      "found type " ++ printType wrongT ++
-      " instead of " ++ printType rightT ++ newline
+      "found type " ^ printType wrongT ^
+      " instead of " ^ printType rightT ^ newline
     | wrongLeftSubtype (rightT, wrongT) ->
-      "found subtype " ++ printType wrongT ++
-      " instead of " ++ printType rightT ++ newline
+      "found subtype " ^ printType wrongT ^
+      " instead of " ^ printType rightT ^ newline
     | wrongLeftSubtypes (rightTS, wrongTS) ->
-      "found subtypes " ++ printTypes wrongTS ++
-      " instead of " ++ printTypes rightTS ++ newline
+      "found subtypes " ^ printTypes wrongTS ^
+      " instead of " ^ printTypes rightTS ^ newline
     | wrongRightSubtype (rightT, wrongT) ->
-      "found supertype " ++ printType wrongT ++
-      " instead of " ++ printType rightT ++ newline
+      "found supertype " ^ printType wrongT ^
+      " instead of " ^ printType rightT ^ newline
     | wrongFields (rightFS, wrongFS) ->
-      "found fields " ++ printFields wrongFS ++
-      " instead of " ++ printFields rightFS ++ newline
+      "found fields " ^ printFields wrongFS ^
+      " instead of " ^ printFields rightFS ^ newline
     | wrongExpression (rightE, wrongE) ->
-      "found expression " ++ printExpression wrongE ++
-      " instead of " ++ printExpression rightE ++ newline
+      "found expression " ^ printExpression wrongE ^
+      " instead of " ^ printExpression rightE ^ newline
     | wrongTheorem (rightE, wrongE) ->
-      "found theorem " ++ printExpression wrongE ++
-      " instead of " ++ printExpression rightE ++ newline
+      "found theorem " ^ printExpression wrongE ^
+      " instead of " ^ printExpression rightE ^ newline
     | wrongLeftExpression (rightE, wrongE) ->
-      "found left-hand expression " ++ printExpression wrongE ++
-      " instead of " ++ printExpression rightE ++ newline
+      "found left-hand expression " ^ printExpression wrongE ^
+      " instead of " ^ printExpression rightE ^ newline
     | wrongLastAxiom (rightE, wrongE) ->
-      "found last axiom " ++ printExpression wrongE ++
-      " instead of " ++ printExpression rightE ++ newline
+      "found last axiom " ^ printExpression wrongE ^
+      " instead of " ^ printExpression rightE ^ newline
     | nonMonomorphicAxiom celem ->
-      "not monomorphic axiom:" ++ printContextElement celem
+      "not monomorphic axiom:" ^ printContextElement celem
     | nonDistinctFields fS ->
-      "fields are not distinct: " ++ printFields fS ++ newline
+      "fields are not distinct: " ^ printFields fS ^ newline
     | nonDistinctVariables (v1, v2) ->
-      "variables " ++ printVariable v1 ++ " and " ++
-      printVariable v2 ++ " are not distinct" ++ newline
+      "variables " ^ printVariable v1 ^ " and " ^
+      printVariable v2 ^ " are not distinct" ^ newline
     | wrongNumberOfProofs ->
-      "wrong number of proofs" ++ newline
+      "wrong number of proofs" ^ newline
 
 endspec

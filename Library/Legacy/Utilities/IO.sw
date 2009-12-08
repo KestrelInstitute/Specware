@@ -1,50 +1,49 @@
-\section{IO Primitives}
+(* IO Primitives
 
 These are based upon Common Lisp IO primitives.
+*)
 
-\begin{spec}
-IO qualifying spec {
-  import /Library/Base
+IO qualifying spec
 
-  sort Stream
-  sort FileString = String
-  sort Format     = String
-  % sort Line       = String
+  type Stream
+  type FileString = String
+  type Format     = String
+  % type Line       = String
 
   op terminal : Stream
   op string   : Stream
 
-  op withOpenFileForRead   : fa(A) FileString * (Stream -> A) -> A
-  op withOpenFileForWrite  : fa(A) FileString * (Stream -> A) -> A
-  op withOpenFileForAppend : fa(A) FileString * (Stream -> A) -> A
+  op withOpenFileForRead   : [A] FileString * (Stream -> A) -> A
+  op withOpenFileForWrite  : [A] FileString * (Stream -> A) -> A
+  op withOpenFileForAppend : [A] FileString * (Stream -> A) -> A
 
-  op withOutputToString : fa(A) (Stream -> A) -> String
+  op withOutputToString : [A] (Stream -> A) -> String
 
 
   op deleteFile      : String -> ()
   op fileExists?     : String -> Boolean
 
-  op format1         : fa (a)     Stream * Format * a         -> ()
-  op format2         : fa (a,b)   Stream * Format * a * b     -> ()
-  op format3         : fa (a,b,c) Stream * Format * a * b * c -> ()
+  op format1         : [a]     Stream * Format * a         -> ()
+  op format2         : [a,b]   Stream * Format * a * b     -> ()
+  op format3         : [a,b,c] Stream * Format * a * b * c -> ()
 
-  op formatTerminal1 : fa (a)     Format * a         -> ()
-  op formatTerminal2 : fa (a,b)   Format * a * b     -> ()
-  op formatTerminal3 : fa (a,b,c) Format * a * b * c -> ()
+  op formatTerminal1 : [a]     Format * a         -> ()
+  op formatTerminal2 : [a,b]   Format * a * b     -> ()
+  op formatTerminal3 : [a,b,c] Format * a * b * c -> ()
 
-  op formatString1   : fa (a)     Format * a         -> String
-  op formatString2   : fa (a,b)   Format * a * b     -> String
-  op formatString3   : fa (a,b,c) Format * a * b * c -> String
+  op formatString1   : [a]     Format * a         -> String
+  op formatString2   : [a,b]   Format * a * b     -> String
+  op formatString3   : [a,b,c] Format * a * b * c -> String
 
-  op readLines       : fa(A) FileString * (String * A -> A) * A -> A
+  op readLines       : [A] FileString * (String * A -> A) * A -> A
 
   % Write the lines to an indicated file
   % until the argument function returns NONE
 
   op writeLines : FileString * (() -> Option String) -> ()
 
-  op read  : fa (a) Stream -> Option a
-  op write : fa (a) Stream * a -> ()
+  op read  : [a] Stream -> Option a
+  op write : [a] Stream * a -> ()
 
   %% True iff both files exist and the first is older.
   %% Application:
@@ -71,5 +70,4 @@ IO qualifying spec {
 
   op chooseMenu: List String -> Integer
   %% No defs here -- see ...
-}
-\end{spec}
+endspec

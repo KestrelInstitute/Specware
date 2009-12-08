@@ -52,7 +52,7 @@ op renameVarMatch: (Pattern * Term * Term) * Var * Var -> Pattern * Term * Term
 
 def renameVarMatch((pat, cond, patBody), oldV, newV) =
   let boundVars = patVars(pat) in
-  let def newBody(patBody) = if exists (fn (variable) -> equalVar?(variable, oldV)) boundVars
+  let def newBody(patBody) = if exists? (fn (variable) -> equalVar?(variable, oldV)) boundVars
 			       then patBody
 			     else renameVar(patBody, oldV, newV) in
   let newCaseBody = newBody(patBody) in
@@ -102,7 +102,7 @@ def distinctVar(term, ids) =
     | SortedTerm(t,_,_) -> distinctVar(t,ids)
     | Seq(terms,b) -> foldl (fn((Seq(terms,b),ids0),term) ->
 			     let (t,ids) = distinctVar(term,ids0) in
-			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
+			     (Seq(terms ++ [t],b),ids)) (Seq([],b),ids) terms
 
 %    | Bind _ -> distinctVarBind(term, ids)
 %    | The  _ -> distinctVarThe (term, ids)
@@ -184,7 +184,7 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
     let (vId, vSrt) = v in
     let (newLetTerm, newIds) = distinctVar(letTerm, ids) in
     %let _ = writeLine(";;      let variable found: "^vId^", newIds=["^(foldl (fn(s,id) -> if s = "" then id else s^","^id) "" newIds)^"]") in
-    if member(vId, newIds)
+    if vId in? newIds
       then distinctVarLetNewVar(v, newLetTerm, letBody, newIds)
     else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
     | _ -> (term,ids)
@@ -192,7 +192,7 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
 def distinctVarLetNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   let newId = findNewId(vId, ids) in
   %let _ = writeLine(";;      newId: "^newId) in
-  let newIds = cons(vId, ids) in
+  let newIds = Cons(vId, ids) in
   let newVar = (newId, vSrt) in
   let renamedLetBody = renameVar(letBody, variable, newVar) in
   let (newLetBody, finalIds) = distinctVar(renamedLetBody, newIds) in
@@ -203,7 +203,7 @@ def distinctVarLetNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
 
 
 def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
-  let newIds = cons(vId, ids) in
+  let newIds = Cons(vId, ids) in
   let (newLetBody, finalIds) = distinctVar(letBody, newIds) in
   let res = (mkLet([(mkVarPat(variable), letTerm)], newLetBody)) in
   (withAnnT(res,termAnn(letTerm)),finalIds)
@@ -225,7 +225,7 @@ op findNewId: Id * List Id -> Id
 
 def findNewId(vId, ids) =
   let def findNewIdRec(id, ids, num) =
-     if member(id, ids) then findNewIdRec(mkNewId(id, num), ids, num+1) else id in
+     if id in? ids then findNewIdRec(mkNewId(id, num), ids, num+1) else id in
   findNewIdRec(mkNewId(vId, 1), ids, 2)
 
 op mkNewId: Id * Nat -> Id

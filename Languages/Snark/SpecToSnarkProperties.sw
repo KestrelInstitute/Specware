@@ -21,7 +21,7 @@ snark qualifying spec
   
   op LISP.PPRINT: LispCell -> LispCell
 
-  sort Context = 
+  type Context = 
       {
        counter  : Ref Nat
       }
@@ -115,7 +115,7 @@ snark qualifying spec
 		   Lisp.symbol ("SNARK", "LOGICAL")
          in
 	 let defs = sortInfoDefs info in
-	 let builtinSort = find builtinSort? defs in
+	 let builtinSort = findLeftmost builtinSort? defs in
 	 case builtinSort of
 	   | Some srt -> builtinSnarkSort srt
 	   | _ -> 
@@ -192,7 +192,7 @@ snark qualifying spec
 
   def snarkBndVar(sp, var, globalVars) =
     let (name, srt) = var in
-      if exists (fn (gname, _) -> name = gname) globalVars
+      if exists? (fn (gname, _) -> name = gname) globalVars
 	then
 	  Lisp.list[snarkVar(var),
 		    Lisp.symbol("KEYWORD","SORT"),
@@ -335,7 +335,7 @@ snark qualifying spec
     case fmla of
       | Bind(bndr, bndVars, term, a) ->
         if bndr = Exists1
-	  then mkSnarkFmla(context, sp, dpn, vars, globalVars, expandExists1(hd bndVars,term,a))
+	  then mkSnarkFmla(context, sp, dpn, vars, globalVars, expandExists1(head bndVars,term,a))
 	else
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
 	let newVars = map(fn (var, srt) -> specId(var,""))
@@ -449,12 +449,12 @@ snark qualifying spec
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
       | Project (id) -> %let _ = if id = "local" then debug("project_local") else () in
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
-	  if isNum (sub(id,0))
+	  if isNum (id@0)
 	    then
 	      if id = "1" then Lisp.cons(Lisp.symbol("CL","CAR"),Lisp.list snarkArgs)
 	      else 
 	      Lisp.cons(Lisp.symbol("CL","NTH"),
-			Lisp.list [hd snarkArgs, Lisp.nat((stringToNat id) - 1)])
+			Lisp.list [head snarkArgs, Lisp.nat((stringToNat id) - 1)])
 	  else
 	  let prodSrt = termSort(arg) in
 	  let userProdSrt = findMatchingUserTypeOption(sp, prodSrt) in
@@ -530,7 +530,7 @@ snark qualifying spec
   def mkNewSnarkOp(context) =
     let num = State.! context.counter + 1 in
       (context.counter State.:= num;
-       Lisp.symbol("SNARK", ("sApply" ++ (Nat.toString num)))
+       Lisp.symbol("SNARK", ("sApply" ^ (Nat.show num)))
       )
 
 %  op lispFmla: Spec * String * MS.Term -> LispTerm

@@ -111,7 +111,7 @@ CUtils qualifying spec {
   op addFn: CSpec * CFnDecl -> CSpec
   def addFn(cspc,X as (fname,_,_)) =
     %let _ = writeLine("adding fndecl for "^fname^"...") in
-    if member (fname, SWC_Common_Macros) then
+    if  fname in? SWC_Common_Macros then
       cspc
     else
     {
@@ -265,7 +265,7 @@ CUtils qualifying spec {
   def getStructDefns(cspc) =
     List.foldl (fn(structs,su) ->
 		case su of
-		  | Struct X -> concat(structs,[X])
+		  | Struct X -> structs ++ [X]
 		  | _ -> structs
 		 ) [] cspc.structUnionTypeDefns
 
@@ -273,7 +273,7 @@ CUtils qualifying spec {
   def getUnionDefns(cspc) =
     List.foldl (fn(unions,su) ->
 		case su of
-		  | Union X -> concat(unions,[X])
+		  | Union X -> unions ++ [X]
 		  | _ -> unions
 		 ) [] cspc.structUnionTypeDefns
 
@@ -281,7 +281,7 @@ CUtils qualifying spec {
   def getTypeDefns(cspc) =
     List.foldl (fn(typedefns,su) ->
 		case su of
-		  | TypeDefn X -> concat(typedefns,[X])
+		  | TypeDefn X -> typedefns ++ [X]
 		  | _ -> typedefns
 		 ) [] cspc.structUnionTypeDefns
 
@@ -308,7 +308,7 @@ CUtils qualifying spec {
     let structs = getStructDefns(cspc) in
     let xstructs = getStructDefns(xcspc) in
     let (cspc,struct) = 
-      case List.find (fn(sname0,sfields0) -> sfields = sfields0) (structs++xstructs) of
+      case findLeftmost (fn(sname0,sfields0) -> sfields = sfields0) (structs++xstructs) of
         | Some (sname,_) -> (cspc,Struct sname)
         | None -> let cspc = addStructDefn(cspc,(sname,sfields)) in
                   let struct = Struct sname in
@@ -327,7 +327,7 @@ CUtils qualifying spec {
   def addNewUnionDefn(cspc,xcspc,(sname,sfields)) =
     let unions = getUnionDefns(cspc) in
     let xunions = getUnionDefns(xcspc) in
-    case List.find (fn(sname0,sfields0) -> sfields = sfields0) (unions++xunions) of
+    case findLeftmost (fn(sname0,sfields0) -> sfields = sfields0) (unions++xunions) of
       | Some (sname,_) -> (cspc,Union sname)
       | None -> let cspc = addUnionDefn(cspc,(sname,sfields)) in
                 (cspc,Union sname)
@@ -338,7 +338,7 @@ CUtils qualifying spec {
   op addStmts: CStmt * CStmts -> CStmt
   def addStmts(stmt1,stmts2) =
     case stmt1 of
-      | Block(decls,stmts) -> Block(decls,List.concat(stmts,stmts2))
+      | Block(decls,stmts) -> Block(decls,stmts ++ stmts2)
       | _ -> Block([],[stmt1]++stmts2)
 
   % --------------------------------------------------------------------------------
@@ -346,7 +346,7 @@ CUtils qualifying spec {
   op prependDecl: CVarDecl1 * CStmt -> CStmt
   def prependDecl(decl,stmt) =
     case stmt of
-      | Block(decls,stmts) -> Block(cons(decl,decls),stmts)
+      | Block(decls,stmts) -> Block(decl::decls,stmts)
       | _ -> Block([decl],[stmt])
 
   % --------------------------------------------------------------------------------
@@ -359,21 +359,21 @@ CUtils qualifying spec {
 
   % --------------------------------------------------------------------------------
 
-  op memberEq: fa(a) (a * a -> Boolean) -> a * List a -> Boolean
+  op memberEq: [a] (a * a -> Boolean) -> a * List a -> Boolean
   def memberEq eq (elem,l) =
     case l of 
       | [] -> false
       | x::l -> if eq(x,elem) then true else memberEq eq (elem,l)
 
-  op concatnew: fa(X) (X * X -> Boolean) -> List(X) * List(X) -> List(X)
+  op concatnew: [X] (X * X -> Boolean) -> List(X) * List(X) -> List(X)
   def concatnew eq (l1,l2) =
     List.foldl (fn(res,elem) -> if memberEq eq (elem,res) then
 				  res
 				else 
-				  concat(res,[elem]))
+				  res ++ [elem])
     l1 l2
 
-  op concatnewEq: fa(X) List X * List X -> List X
+  op concatnewEq: [X] List X * List X -> List X
   def concatnewEq = concatnew (fn(x,y) -> x=y)
 
   op mergeCSpecs: List CSpec -> CSpec
@@ -399,7 +399,7 @@ CUtils qualifying spec {
 	  fnDefns = concatnew (fn((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns,cspc2.fnDefns)
 	 }
       in
-      mergeCSpecs(cons(cspc,cspcs))
+      mergeCSpecs(cspc::cspcs)
 
   op printCType: CType -> String
   def printCType(t) =
@@ -421,7 +421,7 @@ CUtils qualifying spec {
     in
     let txt = PrettyPrint.format(80,pr) in
     case X of
-      | File -> (String.writeLine("C-File: "^fname);
+      | File -> (writeLine("C-File: "^fname);
 		 PrettyPrint.toFile(fname,txt);"")
       | Terminal -> (PrettyPrint.toTerminal(txt);"")
       | String -> PrettyPrint.toString(txt)
@@ -513,7 +513,7 @@ CUtils qualifying spec {
     let def substGlyph(carray) =
        case carray of
           | [#'] -> [] % special case: last character is a single quote
-	  | c::carray0  -> concat(substGlyphChar(c),substGlyph(carray0))
+	  | c::carray0  -> substGlyphChar(c) ++ substGlyph(carray0)
 	  | []         -> []
     in
       String.implode(substGlyph(String.explode(id)))
@@ -525,7 +525,7 @@ CUtils qualifying spec {
        | _  -> c
 
   def isCKeyword s =
-    member (s, cKeywords)
+     s in? cKeywords
 
   def cKeywords =
     ["auto",     "break",  "case",     "char",    "const",    "continue",
@@ -704,11 +704,11 @@ CUtils qualifying spec {
                (fn(suts,sut) ->
 		case sut of
 		  | TypeDefn (tname,Ptr(Void)) ->
-		    (case List.find (fn|TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
+		    (case findLeftmost (fn|TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
 		       | Some _ -> suts
-		       | _ -> concat(suts,[sut])
+		       | _ -> suts ++ [sut]
 		      )
-		  | _ -> concat(suts,[sut])
+		  | _ -> suts ++ [sut]
 		 ) [] suts
     in
     setStructUnionTypeDefns(cspc,suts)
@@ -743,9 +743,9 @@ CUtils qualifying spec {
   op findStructUnionTypeDefn: CSpec * CType -> Option CStructUnionTypeDefn
   def findStructUnionTypeDefn(cspc,typ) =
     case typ of
-      | Base n -> List.find (fn|(TypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | Struct n -> List.find (fn|(Struct (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | Union n -> List.find (fn|(Union (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | Base n -> findLeftmost (fn|(TypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | Struct n -> findLeftmost (fn|(Struct (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | Union n -> findLeftmost (fn|(Union (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
       | _ -> 
         %let _ = writeLine("definition for type "^(printCType typ)^" not found.") in
         None
@@ -757,7 +757,7 @@ CUtils qualifying spec {
     %List.member(t2,deps1)
     let deps2 = structUnionTypeDefnDepends(cspc,sut2) in
     let t1 = structUnionTypeDefnToType(sut1) in
-    ~(List.member(t1,deps2))
+    t1 nin? deps2
 
   op sortStructUnionTypeDefns: CSpec -> CSpec
   def sortStructUnionTypeDefns(cspc) =
@@ -784,23 +784,23 @@ CUtils qualifying spec {
   op getSubTypes: CType -> CTypes
   def getSubTypes(t) =
     case t of
-      | Fn(tys,ty) -> List.foldl (fn(res,t) -> concat(res,getSubTypes(t))) (getSubTypes(ty)) tys
+      | Fn(tys,ty) -> List.foldl (fn(res,t) -> res ++ getSubTypes(t)) (getSubTypes(ty)) tys
       | _ -> []
 
   op typeDepends: CSpec * CType * CTypes -> CTypes
   def typeDepends(cspc,_,types) =
     let
       def typeDepends0(t,deps) =
-	if List.member(t,deps) then deps
+	if t in? deps then deps
 	else
 	  case findStructUnionTypeDefn(cspc,t) of
-	  | Some (TypeDefn(n,t1)) -> typeDepends0(t1,cons(Base n,deps))
+	  | Some (TypeDefn(n,t1)) -> typeDepends0(t1,Base n :: deps)
 	  | Some (Struct (s,fields)) ->
-	    let deps = cons(Struct s,deps) in
+	    let deps = Struct s :: deps in
 	    let types = List.map (fn(_,t)->t) fields in
 	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
 	  | Some (Union (u,fields)) ->
-	    let deps = cons(Union u,deps) in
+	    let deps = Union u :: deps in
 	    let types = List.map (fn(_,t)->t) fields in
 	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
 	  | _ -> deps
@@ -818,12 +818,12 @@ CUtils qualifying spec {
       let
         def processStructUnion(cspc:CSpec,sut:CStructUnionTypeDefn) is
 	  let suts = cspc.structUnionTypeDefns in
-	  if ~(List.member(sut,suts)) then cspc else
+	  if sut nin? suts then cspc else
 	  case sut of
 	    | TypeDefn _ -> cspc
 	    | Struct (id,fields) ->
 	      %let _ = String.writeLine("checking struct \""^id^"\"...") in
-	      (case List.find (fn(sut) ->
+	      (case findLeftmost (fn(sut) ->
 			       case sut of
 				 | Struct (id0,fields0) ->
 				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
@@ -847,7 +847,7 @@ CUtils qualifying spec {
 		  )
 	    | Union (id,fields) ->
 	      %let _ = String.writeLine("checking union \""^id^"\"...") in
-	      (case List.find (fn(sut) ->
+	      (case findLeftmost (fn(sut) ->
 			       case sut of
 				 | Union (id0,fields0) ->
 				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
@@ -887,7 +887,7 @@ CUtils qualifying spec {
     mapType (fn(t) ->
 	     case t of
 	       | Base tid -> %let _ = writeLine("base type "^tid^" found in unfoldType...") in
-	                     (case List.find 
+	                     (case findLeftmost 
 				    (fn(sut) ->
 				     case sut of
 				       | TypeDefn (tid0,_) -> 
@@ -930,13 +930,13 @@ CUtils qualifying spec {
 %varDefns
 %fnDefns
 
-  op mkUnique: fa(X) List(X) -> List(X)
+  op mkUnique: [X] List(X) -> List(X)
   def mkUnique(l) =
     List.foldr
-    (fn(e,l) -> if List.member(e,l) then l else cons(e,l)) [] l
+    (fn(e,l) -> if e in? l then l else e::l) [] l
 
 
-  op qsort: fa(X) (X*X->Boolean) -> List(X) -> List(X)
+  op qsort: [X] (X*X->Boolean) -> List(X) -> List(X)
   def qsort gt l =
     let
       def split(x,l) =
@@ -945,8 +945,8 @@ CUtils qualifying spec {
 	  | y::l -> 
             let (l1,l2) = split(x,l) in
 	    if gt(y,x) 
-	      then (l1,cons(y,l2))
-	    else (cons(y,l1),l2)
+	      then (l1,y::l2)
+	    else (y::l1,l2)
     in
     case l of
       | [] -> []
@@ -955,7 +955,7 @@ CUtils qualifying spec {
         let (l1,l2) = split(x,l) in
 	let l1 = qsort gt l1 in
 	let l2 = qsort gt l2 in
-	concat(l1,cons(x,l2))
+	l1 ++ (x::l2)
 
 
   % --------------------------------------------------------------------------------
@@ -971,7 +971,7 @@ CUtils qualifying spec {
   op freeVarsExp: List String * CExp -> List String
   def freeVarsExp(fvs,exp) =
     case exp of
-      | Var(v,_) -> if member(v,fvs) then fvs else cons(v,fvs)
+      | Var(v,_) -> if v in? fvs then fvs else v::fvs
       | Apply(e1,exps) -> List.foldl (fn(fvs0,exp) -> freeVarsExp(fvs0,exp)) (freeVarsExp(fvs,e1)) exps
       | Unary(_,exp) -> freeVarsExp(fvs,exp)
       | Binary(_,e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
@@ -1019,8 +1019,8 @@ CUtils qualifying spec {
 	            | None -> fvs
 	in
 	let fvs1 = freeVarsBlock(fvs,(decls,stmts),rec?) in
-	let fvs1 = List.filter (fn(v0) -> v0 ~= v && ~(member(v0,fvs0))) fvs1 in
-	concat(fvs0,fvs1)
+	let fvs1 = List.filter (fn(v0) -> v0 ~= v && v0 nin? fvs0) fvs1 in
+	fvs0 ++ fvs1
 
   op freeVars: CBlock -> List String
   def freeVars(b) = freeVarsBlock([],b,true)
@@ -1043,7 +1043,7 @@ CUtils qualifying spec {
   def countInnerBlocksWithFreeVar(v,stmts) =
     let
       def fvnum(fvs) =
-	if member(v,fvs) then 1 else 0
+	if v in? fvs then 1 else 0
     in
     let
       def fvnumStmts(n0,stmts) =
@@ -1073,24 +1073,24 @@ CUtils qualifying spec {
 	  | [] -> ([],false)
 	  | stmt::stmts ->
 	    let fvs = freeVarsStmt([],stmt,true) in
-	    if member(v,fvs) then 
+	    if v in? fvs then 
 	      let stmt = prependDecl(decl,stmt) in
 	      let stmt = case stmt of
 			   | Block b -> let b = findBlockForDecls(b) in Block b
 	                   | _ -> stmt
 	      in
-	      (cons(stmt,stmts),true)
+	      (stmt::stmts,true)
 	    else
 	      let (stmts,added?) = moveDeclStmts(stmts) in
-	      (cons(stmt,stmts),added?)
+	      (stmt::stmts,added?)
     in
     case stmts of
       | [] -> [] % should not happen
       | stmt::stmts ->
         let (stmt,added?) =
 	   case stmt of
-	     | Block (b as (decls,stmts)) -> if member(v,freeVarsBlock([],b,true)) then
-	                                     let b = (cons(decl,decls),stmts) in 
+	     | Block (b as (decls,stmts)) -> if v in? freeVarsBlock([],b,true) then
+	                                     let b = (decl::decls,stmts) in 
 					     let b = findBlockForDecls(b) in
 	                                     (Block b,true) else (stmt,false)
 	     | If(e,s1,s2) -> let ([s1,s2],added?) = moveDeclStmts([s1,s2]) in (If(e,s1,s2),added?)
@@ -1100,10 +1100,10 @@ CUtils qualifying spec {
 	     | _ -> (stmt,false)
 	in
 	if added? then
-	  cons(stmt,stmts)
+	  stmt::stmts
 	else
 	  let stmts = moveDeclToInnerBlock(decl,stmts) in
-	  cons(stmt,stmts)
+	  stmt::stmts
 
 
   op findBlockForDecls: CBlock -> CBlock
@@ -1118,10 +1118,10 @@ CUtils qualifying spec {
     let
       def dontMoveDecl() =
 	let (decls,stmts) = findBlockForDecls(b) in
-	(cons(decl,decls),stmts)
+	(decl::decls,stmts)
     in
     let fvtl = freeVarsToplevel(b) in
-    if member(v,fvtl) then
+    if v in? fvtl then
       dontMoveDecl()
     else
       let cnt = countInnerBlocksWithFreeVar(v,stmts) in
@@ -1144,7 +1144,7 @@ CUtils qualifying spec {
   def splitCSpec(cspc) = 
     let
       def filterFnDefn isHdr (fndefn as (fname,_,_,_)) =
-	isHdr = exists (fn(c) -> c = #_) fname
+	isHdr = exists? (fn(c) -> c = #_) fname
       %def filterFnDecl isHdr (fndecl as (fname,_,_)) =
 	%isHdr = exists (fn(c) -> c = #$) fname
     in
@@ -1182,9 +1182,9 @@ CUtils qualifying spec {
   op deleteUnusedTypes: CSpec -> CSpec
   def deleteUnusedTypes(cspc) =
     let usedtypes = usedCTypes(cspc) in
-    let suts = filter (fn(TypeDefn(n,_)) -> List.member(Base n,usedtypes)
-		       | (Struct(n,_)) -> List.member(Struct n,usedtypes)
-		       | (Union(n,_)) -> List.member(Union n,usedtypes))
+    let suts = filter (fn(TypeDefn(n,_)) -> Base n in? usedtypes
+		       | (Struct(n,_)) -> Struct n in? usedtypes
+		       | (Union(n,_)) ->   Union n in? usedtypes)
                cspc.structUnionTypeDefns
     in
     setStructUnionTypeDefns(cspc,suts)
@@ -1207,13 +1207,13 @@ CUtils qualifying spec {
   op usedCTypesFnDefn: CFnDefn -> List CType
   def usedCTypesFnDefn(_,vdecls,rtype,stmt) =
     let types = flatten (map usedCTypesVarDecl vdecls) in
-    let types = cons(rtype,types) in
+    let types = rtype::types in
     let types = (usedCTypeStmt stmt)++types in
     types
 
   op usedCTypesFnDecl: CFnDecl -> List CType
   def usedCTypesFnDecl(_,ptypes,rtype) =
-    cons(rtype,ptypes)
+    rtype::ptypes
 
   op usedCTypesVarDefn: CVarDefn -> List CType
   def usedCTypesVarDefn(_,t,_) = [t]
@@ -1231,7 +1231,7 @@ CUtils qualifying spec {
         let types = flatten (map usedCTypesVarDecl1 vdecls1) in
 	let types = (flatten (map usedCTypeStmt stmts))++types in
 	types
-      | If(_,s1,s2) -> concat(usedCTypeStmt(s1),usedCTypeStmt(s2))
+      | If(_,s1,s2) -> usedCTypeStmt(s1) ++ usedCTypeStmt(s2)
       | While(_,s) -> usedCTypeStmt(s)
       | IfThen(_,s) -> usedCTypeStmt(s)
       | Switch(_,stmts) -> flatten (map usedCTypeStmt stmts)
@@ -1255,12 +1255,12 @@ CUtils qualifying spec {
 	| Struct _ -> usedTypes4SUT(t)
 	| Union _ -> usedTypes4SUT(t)
 	| ArrayWithSize(_,t) -> [t]
-	| Fn(types,typ) -> cons(typ,types)
+	| Fn(types,typ) -> typ::types
 	| _ -> []
     in
-    let newtypes = filter (fn(t) -> ~(member(t,visited))) newtypes in
+    let newtypes = filter (fn(t) -> t nin? visited) newtypes in
     let visited = visited ++ newtypes in
-    cons(t,flatten (map (usedCTypesType cspc visited) newtypes))
+    t :: flatten (map (usedCTypesType cspc visited) newtypes)
 
   % --------------------------------------------------------------------------------
 

@@ -28,29 +28,29 @@ spec
  %%                 Temporary hacks
  %% ================================================================================
 
- sort PropertyMap = List Property % TODO: convert   once properties are in qualified map
- sort MorphismPropMap          % TODO: make real once properties are in qualified map
+ type PropertyMap = List Property % TODO: convert   once properties are in qualified map
+ type MorphismPropMap          % TODO: make real once properties are in qualified map
 
  %% ================================================================================
  %%                 Local structures
  %% ================================================================================
 
- %%  vqid's provide unique labels of items (of a given type such as sort or op) 
+ %%  vqid's provide unique labels of items (of a given type such as type or op) 
  %%   within specs across entire diagram
 
- sort VQid                  = Vertex.Elem * QualifiedId
- sort QuotientClass         = List VQid
- sort CompressedQuotientSet = List {
+ type VQid                  = Vertex.Elem * QualifiedId
+ type QuotientClass         = List VQid
+ type CompressedQuotientSet = List {
                                     original : QuotientClass,  % The original elements found by quotient set algorithm.
 	 	                    final    : QuotientClass   % If some element belongs to a dominating vertex, 
 							       % then it will be the only final element, 
                                                                % otherwise all original elements will be final elements.
                                     }
- sort VertexRanking         = List Vertex.Elem
+ type VertexRanking         = List Vertex.Elem
 
- sort VQidSortMap   = PolyMap.Map (VQid, SortInfo)
- sort VQidOpMap     = PolyMap.Map (VQid, OpInfo)
- sort VQidPropMap   = PolyMap.Map (VQid, Property) 
+ type VQidSortMap   = PolyMap.Map (VQid, SortInfo)
+ type VQidOpMap     = PolyMap.Map (VQid, OpInfo)
+ type VQidPropMap   = PolyMap.Map (VQid, Property) 
 
  %% ----
 
@@ -104,12 +104,12 @@ spec
   let 
      def extract_sorts (spc : Spec) =
        foldriAQualifierMap (fn (qualifier, id, info, sorts) ->
-			    cons ((qualifier, id, info), sorts))
+			    Cons ((qualifier, id, info), sorts))
                            [] 
 			   spc.sorts    
      def extract_ops (spc : Spec) =
        foldriAQualifierMap (fn (qualifier, id, info, ops) ->
-			    cons ((qualifier, id, info), ops))
+			    Cons ((qualifier, id, info), ops))
                            [] 
 			   spc.ops
 
@@ -117,7 +117,7 @@ spec
        let base_sorts = base_spec.sorts in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_sorts) ->
 			    case findAQualifierMap (base_sorts, qualifier, id) of
-			      | None -> cons ((qualifier, id, info), non_base_sorts) 
+			      | None -> Cons ((qualifier, id, info), non_base_sorts) 
 			      | _    -> non_base_sorts)
                            [] 
 			   spc.sorts    
@@ -125,7 +125,7 @@ spec
        let base_ops = base_spec.ops in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_ops) ->
 			    case findAQualifierMap (base_ops, qualifier, id) of
-			      | None -> cons ((qualifier, id, info), non_base_ops)
+			      | None -> Cons ((qualifier, id, info), non_base_ops)
 			      | _    -> non_base_ops)
                            []    
 			   spc.ops    
@@ -272,7 +272,7 @@ spec
 		                  []
 				  false) 
 	   in
-           cons (translated_spec, translated_specs))
+           translated_spec :: translated_specs)
          []
          dg
   in
@@ -464,17 +464,17 @@ spec
 				    %% let _ = writeLine("revising " ^ printQualifiedId default_apex_qid ^ " to " ^ printQualifiedId revised_apex_qid) in
 				    (revised_apex_qid, aliases)
 			  in
-			  let new_aliases = if member (apex_qid, aliases) then 
+			  let new_aliases = if apex_qid in? aliases then 
                                               aliases
                                             else 
-					      cons (apex_qid, aliases) 
+					      apex_qid :: aliases 
 			  in
 			  let updated_map = update local_map vqid apex_qid in
 			  (new_aliases, updated_map))
 		         ([], PolyMap.emptyMap)
 		         class.original
 	       in 
-	       let boolean? = member (Boolean_Boolean, aliases) in
+	       let boolean? = Boolean_Boolean in? aliases in
 	       List.foldl (fn (vqid_to_apex_qid_and_aliases_map, vqid) ->
 			   update vqid_to_apex_qid_and_aliases_map 
 			          vqid 
@@ -530,7 +530,7 @@ spec
 		     %% Enter a qualifier just once.
 		     %% Since the expected number of qualifiers is small (e.g. 2),
 		     %% don't try to be too smart here.
-		     if List.member (qualifier, prior_qualifiers) then
+		     if qualifier in? prior_qualifiers then
 		       id_to_qualifiers
 		     else
 		       update id_to_qualifiers id (Cons (qualifier, prior_qualifiers)))
@@ -549,7 +549,7 @@ spec
 			     else
 			       (SpecCalc.vertexName vertex)^"_"^old_qualifier)
 	in
-	if member (new_qualifier, qualifiers_to_avoid) then
+	if new_qualifier in? qualifiers_to_avoid then
 	  revised new_qualifier
 	else
 	  new_qualifier
@@ -572,7 +572,7 @@ spec
  %%     disambiguating rules provide an explicit target.
  %% ================================================================================
 
- op makeVertexToRenamingRulesMap : fa (info) SpecDiagram                                            -> 
+ op makeVertexToRenamingRulesMap : [info] SpecDiagram                                            -> 
                                               PolyMap.Map(VQid, QualifiedId * Aliases)              -> 
                 			      (Spec -> List (Qualifier * Id * info))                -> 
                 			      (QualifiedId * QualifiedId * Aliases -> RenamingRule) ->
@@ -673,7 +673,7 @@ spec
 	   | Some sortinfo -> primarySortName sortinfo
 	   | _ -> qid
        def addIfNew(el,newElts) =
-	 if exists (fn e ->
+	 if exists? (fn e ->
                       case (e, el) of
                         | (Op  (qid1,d1,_), Op  (qid2,d2,_)) -> qid1 = qid2 && d1 = d2
                         | (OpDef(qid1,refine1?,_), OpDef  (qid2,refine2?,_)) -> qid1 = qid2 && refine1? = refine2?
@@ -694,7 +694,7 @@ spec
 			  | _ -> Cons(el,newElts))
 		   [] spc.elements
    in
-   spc << {elements = rev newElts}
+   spc << {elements = reverse newElts}
 
  
  %% ================================================================================
@@ -741,7 +741,7 @@ spec
  def showVQidToQidAliasesMap vqid_to_qid_and_aliases_map =
    toScreen ("\nVQid => [ QualifiedId ] Aliases\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn vqid -> fn (qid, aliases) ->
-					     cons (ppConcat [ppVQid vqid,
+					     Cons (ppConcat [ppVQid vqid,
 							     ppString " => [ ",
 							     ppQid qid,
 							     ppString " ] ",
@@ -771,9 +771,9 @@ spec
  def showQidToClassIndices qid_to_class_indices =
    toScreen ("\nQualifiedId => <Number of Classes>:\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn qid -> fn class_indices ->
-					     cons (ppConcat [ppQid qid,
+					     Cons (ppConcat [ppQid qid,
 							     ppString (" => " ^
-								       (Nat.toString (length class_indices))
+								       (Nat.show (length class_indices))
 								       ^ " classes\n")],
 						   result))
 				            []
@@ -783,7 +783,7 @@ spec
  def showIdToQualifiers id_to_qualifiers =
    toScreen ("\nId => Qualifiers:\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn id -> fn qualifiers ->
-					     cons (ppConcat [ppString (id ^ " => "),
+					     Cons (ppConcat [ppString (id ^ " => "),
 							     (ppSep (ppString ", ") (map ppString qualifiers)),
 							     ppString "\n"],
 						   result))

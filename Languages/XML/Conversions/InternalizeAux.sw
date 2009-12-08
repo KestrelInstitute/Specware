@@ -11,13 +11,13 @@ XML qualifying spec
   def convert_xml_name_to_ms_name (xml_name : UString) : String =
     %% coordinate with convert_ms_name_to_xml_name in GenerateDocument.sw
     %% they should be converses
-    let reversed_xml_name = rev xml_name in
+    let reversed_xml_name = reverse xml_name in
     %% "?" is not allowed in an xml name, and "-" is not allowed in a ms name,
     %% so we convert xml "foo-p" to ms "foo?" 
     let adjusted_xml_name =
         case reversed_xml_name of
 	  | 112 :: 45 (* p - *) :: tail ->
-	    rev (cons (63 (* ? *), tail))
+	    reverse (Cons (63 (* ? *), tail))
 	  | _ -> 
 	    xml_name
     in
@@ -35,7 +35,7 @@ XML qualifying spec
 	   | #\n :: tail -> trim tail
 	   | _ -> chars
     in
-      implode (rev (trim (rev (trim chars))))
+      implode (reverse (trim (reverse (trim chars))))
 
   %% need to sanitize and strip quotes off of string that contains a string
   %% " \"abcd\" "  => 'abcd'
@@ -51,7 +51,7 @@ XML qualifying spec
 	   | #"  :: tail -> tail             % silliness with emacs: #"
 	   | _ -> chars
     in
-      implode (rev (trim (rev (trim chars))))
+      implode (reverse (trim (reverse (trim chars))))
 
   def element_type_attribute (element : PossibleElement) : Option String =
     foldl (fn (result, attribute : ElementAttribute) ->
@@ -88,19 +88,19 @@ XML qualifying spec
   def level_str (n) =
     let def aux j =
          if j >= n then 
-	   "[" ^ (Nat.toString n) ^ "] "
+	   "[" ^ (Nat.show n) ^ "] "
 	 else 
 	   "  " ^ (aux (j + 1))
     in
       "\n" ^ (aux 0)
 
-  op read_ad_hoc_string : fa (X) SortDescriptor * Content -> X
+  op read_ad_hoc_string : [X] SortDescriptor * Content -> X
 
-  sort ID             = String
-  sort Attributes     = List Attribute
-  sort Attribute      = AttributeName * AttributeValue
-  sort AttributeName  = String
-  sort AttributeValue = | ID         ID
+  type ID             = String
+  type Attributes     = List Attribute
+  type Attribute      = AttributeName * AttributeValue
+  type AttributeName  = String
+  type AttributeValue = | ID         ID
                         | IDREF      ID
                         | IDREFS     (List ID)
                         | ENTITY     Name

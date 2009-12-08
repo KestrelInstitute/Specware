@@ -18,85 +18,85 @@ SplayMap qualifying spec {
 
   %% Create an empty Map, given an order function
 
-  op  empty : fa(key,a) (key * key -> Comparison) -> Map(key,a)
+  op  empty : [key,a] (key * key -> Comparison) -> Map(key,a)
 
   %% insert (map, key, rangeElement)
   %%    returns a map' which behaves as map on all elements but, "key", where
   %%    "key" is now mapped to "rangeElement"
 
-  op  insert : fa(key,a) Map(key,a) * key * a -> Map(key,a)
+  op  insert : [key,a] Map(key,a) * key * a -> Map(key,a)
 
   %% find (map, key)
   %%     returns the range element that "key" maps to if there is any
 
-  op find : fa(key,a) Map(key,a) * key -> Option a
+  op find : [key,a] Map(key,a) * key -> Option a
 
   %% Remove an item. 
 
-  op remove : fa(a,key) Map(key,a) * key -> Map(key,a)
+  op remove : [a,key] Map(key,a) * key -> Map(key,a)
 
   %% Return the number of items in the table 
 
-  op numItems       : fa(a,key) Map(key,a) -> Nat
+  op numItems       : [a,key] Map(key,a) -> Nat
 
   %% List elements in the range in order of appearance (with duplications)
 
-  op listItems      : fa(key,a) Map(key,a) -> List a
+  op listItems      : [key,a] Map(key,a) -> List a
 
 
   %% List key/range pairs in order of appearance.
 
-  op listItemsi     : fa(key,a) Map(key,a) -> List(key*a)
-  op listDomain     : fa(key,a) Map(key,a) -> List(key)
-  op inDomain       : fa(key,a) Map(key,a) * key -> Boolean
+  op listItemsi     : [key,a] Map(key,a) -> List(key*a)
+  op listDomain     : [key,a] Map(key,a) -> List(key)
+  op inDomain       : [key,a] Map(key,a) * key -> Boolean
 
   %% Apply a function to the entries of the map
 
-  op appi           : fa(key,a)   (key * a -> ()) -> Map(key,a) -> ()
-  op app            : fa(key,a)   (a -> ()) -> Map(key,a) -> ()
-  op mapi           : fa(key,a,b) (key*a -> b) -> Map(key,a) -> Map(key,b)
-  op map            : fa(key,a,b) (a -> b) -> Map(key,a) -> Map(key,b)
-  op foldri         : fa(key,a,b)  (key * a * b -> b) -> b -> Map(key,a) -> b
-  op foldriDouble   : fa(key1,key2,a,b) (key1 * key2 * a * b -> b) -> b -> Map (key1, Map (key2, a)) -> b
-  op foldr          : fa(key,a,b) (a * b -> b) -> b -> Map(key,a) -> b
-  op foldli         : fa(key,a,b) (key * a * b -> b) -> b -> Map(key,a) -> b
-  op foldl          : fa(key,a,b) (a * b -> b) -> b -> Map(key,a) -> b
-  op compose        : fa(dom,med,rng) Map(dom,med) * Map(med,rng) -> Map(dom,rng)
-  op unionWith      : fa(key,a)   (a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
-  op unionWithi     : fa(key,a)   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
-  op intersectWith  : fa(key,a)   (a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
-  op intersectWithi : fa(key,a)   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
-  op filter         : fa(key,a)   (a -> Boolean) -> Map(key,a) -> Map(key,a)          
-  op filteri        : fa(key,a)   (key * a -> Boolean) -> Map(key,a) -> Map(key,a)          
-  op mapPartial     : fa(key,a,b) (a -> Option(b)) -> Map(key,a) -> Map(key,b)
-  op compare        : fa(a,key)   (a * a -> Comparison) -> (Map(key,a) * Map(key,a)) -> Comparison
-  op toList         : fa (a,b)    Map (a, b) -> List (a * b)
-  op fromList       : fa (a,b)    (a * a -> Comparison) -> List (a * b) -> Map (a, b)
+  op appi           : [key,a]   (key * a -> ()) -> Map(key,a) -> ()
+  op app            : [key,a]   (a -> ()) -> Map(key,a) -> ()
+  op mapi           : [key,a,b] (key*a -> b) -> Map(key,a) -> Map(key,b)
+  op map            : [key,a,b] (a -> b) -> Map(key,a) -> Map(key,b)
+  op foldri         : [key,a,b]  (key * a * b -> b) -> b -> Map(key,a) -> b
+  op foldriDouble   : [key1,key2,a,b] (key1 * key2 * a * b -> b) -> b -> Map (key1, Map (key2, a)) -> b
+  op foldr          : [key,a,b] (a * b -> b) -> b -> Map(key,a) -> b
+  op foldli         : [key,a,b] (key * a * b -> b) -> b -> Map(key,a) -> b
+  op foldl          : [key,a,b] (a * b -> b) -> b -> Map(key,a) -> b
+  op compose        : [dom,med,rng] Map(dom,med) * Map(med,rng) -> Map(dom,rng)
+  op unionWith      : [key,a]   (a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
+  op unionWithi     : [key,a]   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
+  op intersectWith  : [key,a]   (a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
+  op intersectWithi : [key,a]   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
+  op filter         : [key,a]   (a -> Boolean) -> Map(key,a) -> Map(key,a)          
+  op filteri        : [key,a]   (key * a -> Boolean) -> Map(key,a) -> Map(key,a)          
+  op mapPartial     : [key,a,b] (a -> Option(b)) -> Map(key,a) -> Map(key,b)
+  op compare        : [a,key]   (a * a -> Comparison) -> (Map(key,a) * Map(key,a)) -> Comparison
+  op toList         : [a,b]    Map (a, b) -> List (a * b)
+  op fromList       : [a,b]    (a * a -> Comparison) -> List (a * b) -> Map (a, b)
 
-  op applyi         : fa(a) (a -> ()) -> Splay(a) -> ()
+  op applyi         : [a] (a -> ()) -> Splay(a) -> ()
     
-  op subset?        : fa (a,b) Map (a,b) * Map (a,b) -> Boolean
+  op subset?        : [a,b] Map (a,b) * Map (a,b) -> Boolean
 
-  op all            : fa (a,b) (a * b -> Boolean) -> Map (a,b) -> Boolean
-  op exists         : fa (a,b) (a * b -> Boolean) -> Map (a,b) -> Boolean
+  op all            : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
+  op exists         : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
 
-  op listItemsf     : fa(a,b) (a -> b) * Splay(a) * List(b) -> List b
-  op api            : fa(key,a,b) (key*a -> b) -> Splay(key*a) -> Splay(key*b)
-  op ap             : fa(key,a,b) (a -> b) -> Splay(key*a) -> Splay(key*b)
-  op foldriAp       : fa(key,a,b)  (key * a * b -> b) -> Splay(key * a) * b -> b 
-  op foldrAp        : fa(key,a,b)  (a * b -> b) -> Splay(key * a) * b -> b 
-  op foldliAp       : fa(key,a,b)  (key * a * b -> b) -> Splay(key * a) * b -> b 
-  op foldlAp        : fa(key,a,b)  (a * b -> b) -> Splay(key * a) * b -> b 
+  op listItemsf     : [a,b] (a -> b) * Splay(a) * List(b) -> List b
+  op api            : [key,a,b] (key*a -> b) -> Splay(key*a) -> Splay(key*b)
+  op ap             : [key,a,b] (a -> b) -> Splay(key*a) -> Splay(key*b)
+  op foldriAp       : [key,a,b]  (key * a * b -> b) -> Splay(key * a) * b -> b 
+  op foldrAp        : [key,a,b]  (a * b -> b) -> Splay(key * a) * b -> b 
+  op foldliAp       : [key,a,b]  (key * a * b -> b) -> Splay(key * a) * b -> b 
+  op foldlAp        : [key,a,b]  (a * b -> b) -> Splay(key * a) * b -> b 
 
-  op apply          : fa(key,a) (a -> ()) -> Splay(key*a) -> ()
-  op mapPartiali    : fa(key,a,b) (key * a -> Option(b)) -> Map(key,a) -> Map(key,b)
-  op next           : fa(a) List(Splay(a)) -> Splay(a) * List(Splay(a))
-  op left           : fa(a) Splay(a) * List(Splay(a)) -> List(Splay(a))  
-  op compOf         : fa(key,a) Map(key,a) -> (key * key -> Comparison)
+  op apply          : [key,a] (a -> ()) -> Splay(key*a) -> ()
+  op mapPartiali    : [key,a,b] (key * a -> Option(b)) -> Map(key,a) -> Map(key,b)
+  op next           : [a] List(Splay(a)) -> Splay(a) * List(Splay(a))
+  op left           : [a] Splay(a) * List(Splay(a)) -> List(Splay(a))  
+  op compOf         : [key,a] Map(key,a) -> (key * key -> Comparison)
 
   %% ========================================================================
 
-  % def fa(a) f(x:a)  = x : a(b)
+  % def [a] f(x:a)  = x : a(b)
 
   def empty = EMPTY
 
@@ -187,7 +187,7 @@ SplayMap qualifying spec {
     case sp of
       | SplayNil -> l
       | SplayObj{value,left,right} -> 
-          listItemsf(f,left,cons(f value,listItemsf(f,right,l)))
+          listItemsf(f,left,Cons(f value,listItemsf(f,right,l)))
 
 
   def listItems map = 
@@ -447,7 +447,7 @@ SplayMap qualifying spec {
   def left (sp,rest) = 
      case sp of
        | SplayNil -> rest
-       | SplayObj {left = l,right,value} -> left (l, cons(sp,rest))
+       | SplayObj {left = l,right,value} -> left (l, Cons(sp,rest))
 
   def compare cmpRng (map1,map2) = 
     case (map1,map2) of

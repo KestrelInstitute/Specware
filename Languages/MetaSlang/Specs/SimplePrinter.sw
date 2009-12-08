@@ -27,7 +27,7 @@ SpecCalc qualifying spec
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppASort qId = ppASortInfo (lookupSort qId)
      def ppComment str = 
-       if exists (fn chr -> chr = #\n) str then
+       if exists? (fn chr -> chr = #\n) str then
 	 ppConcat [ppString "(*", ppString str, ppString "*)"]
        else
 	 ppString (";; " ^ str)	
@@ -63,7 +63,7 @@ SpecCalc qualifying spec
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppASort qId = ppASortInfo (lookupSort qId)
      def ppComment str = 
-       if exists (fn chr -> chr = #\n) str then
+       if exists? (fn chr -> chr = #\n) str then
 	 ppConcat [ppString "(*", ppString str, ppString "*)"]
        else
 	 ppString (";; " ^ str)	
@@ -87,7 +87,7 @@ SpecCalc qualifying spec
 
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
-  op ppASortInfo : fa (a) ASortInfo a -> Pretty
+  op ppASortInfo : [a] ASortInfo a -> Pretty
  def ppASortInfo info =
    let ppNames =
        case info.names of
@@ -217,7 +217,7 @@ SpecCalc qualifying spec
      ppConcat (ppWarnings ++ ppDecls ++ [ppNewline] ++ ppDefs)
 
  %% other than from here, called from /Languages/SpecCalculus/AbstractSyntax/Printer.sw
-  op ppAProperty : fa (a) AProperty a -> Pretty
+  op ppAProperty : [a] AProperty a -> Pretty
  def ppAProperty (propType, name, tvs, term, _) =
    ppConcat [
      ppPropertyType propType,

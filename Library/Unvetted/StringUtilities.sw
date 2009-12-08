@@ -17,7 +17,7 @@ String qualifying spec
       else ssw
     in
     let def addChar(c : Char, ssw as (ss: List NonEmptyString, w : String)) =
-      if c = #\s then flushW ssw else (ss, toString c ^ w)
+      if c = #\s then flushW ssw else (ss, show c ^ w)
     in
     project 1 o flushW o foldr addChar ([], "") o explode
 
@@ -71,13 +71,13 @@ String qualifying spec
 		     | None \_rightarrow 0
     in
     if close_pos >= fin_pos || close_pos <= open_pos then None
-      else Some(substring(s,open_pos, close_pos + 1))
+      else Some(subFromTo(s,open_pos, close_pos + 1))
 
   op  replaceString: String * String * String -> String
   def replaceString(s,pat,rep) =
     case search(pat,s) of
       | None -> s
-      | Some i -> substring(s,0,i) ^ rep ^ replaceString(substring(s,i + length pat,length s),pat,rep)
+      | Some i -> subFromTo(s,0,i) ^ rep ^ replaceString(subFromTo(s,i + length pat,length s),pat,rep)
 
   op  testSubseqEqual? : String * String * Int * Int -> Boolean
   %% True if s1 from s1@i1 to end is the same as s2@i2 to s2@(i2+(length s1)-i1)
@@ -90,7 +90,7 @@ String qualifying spec
 	if i1 + i >= sz1 then 
 	  true
 	else 
-	  sub (s1, i1 + i) = sub (s2, i2 + i) 
+	  s1@(i1 + i) = s2@(i2 + i) 
 	  && 
 	  loop (i + 1)
     in 
@@ -109,7 +109,7 @@ String qualifying spec
       def loop i =
 	if i >= sz then 
 	  None
-	else if pred (sub(s,i)) then
+	else if pred (s@i) then
 	  Some i
 	else 
 	  loop (i + 1)
@@ -123,9 +123,9 @@ String qualifying spec
    let len_sep = length sep in
    let def splitFrom(i,last_match_end) =
         if i + len_sep > len_s
-	  then [substring(s,last_match_end,len_s)]
+	  then [subFromTo(s,last_match_end,len_s)]
 	else if testSubseqEqual? (sep, s, 0, i)
-	  then Cons(substring(s,last_match_end,i),
+	  then Cons(subFromTo(s,last_match_end,i),
 		    splitFrom(i+len_sep,i+len_sep))	  
 	else 
 	  splitFrom(i + 1,last_match_end)
@@ -143,10 +143,10 @@ String qualifying spec
   op  removeInitialWhiteSpace: String -> String
   def removeInitialWhiteSpace s =
     case searchPred(s,fn c -> ~(whiteSpaceChar? c)) of
-      | Some i -> substring(s,i,length s)
+      | Some i -> subFromTo(s,i,length s)
       | None -> s
 
   op  whiteSpaceChar?: Char -> Boolean
-  def whiteSpaceChar? c = member(c,[#\s,#\t,#\n])
+  def whiteSpaceChar? c = c in? [#\s,#\t,#\n]
 
 endspec

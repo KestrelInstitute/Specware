@@ -15,7 +15,7 @@
  *  - highligthable Ascii
  *)
 
-AnnTermPrinter qualifying spec {
+AnnTermPrinter qualifying spec
   import AnnTerm
   import /Library/PrettyPrinter/BjornerEspinosa
   import /Library/Legacy/DataStructures/ListUtilities
@@ -25,7 +25,7 @@ AnnTermPrinter qualifying spec {
   %% ========================================================================
 
   %% Dispatchable pretty printers.
-  sort ATermPrinter = 
+  type ATermPrinter = 
    {
     ppOpId             : QualifiedId -> Pretty,
     ppPOpId            : QualifiedId -> Pretty,
@@ -87,9 +87,9 @@ AnnTermPrinter qualifying spec {
 
   %% ========================================================================
 
-  op ppList : fa(T) (T -> Pretty) -> (Pretty * Pretty * Pretty) -> List T -> Pretty
+  op ppList : [T] (T -> Pretty) -> (Pretty * Pretty * Pretty) -> List T -> Pretty
 
-  op ppListPath : fa(T) List Nat -> (List Nat  * T -> Pretty) -> (Pretty * Pretty * Pretty) -> List T -> Pretty
+  op ppListPath : [T] List Nat -> (List Nat  * T -> Pretty) -> (Pretty * Pretty * Pretty) -> List T -> Pretty
 
   %% ========================================================================
 
@@ -240,11 +240,11 @@ AnnTermPrinter qualifying spec {
 
 
   def latexString s =
-   if Char.isAlphaNum(String.sub(s,0)) then
+   if Char.isAlphaNum(s@0) then
      string s
    else 
      % Ad hoc treatment for LaTeX
-     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> toString ch) s in
+     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> show ch) s in
      %   if String.sub(s,0) = #^
      %   then lengthString (2,"{\\tt ++}")
      %   else
@@ -381,7 +381,7 @@ AnnTermPrinter qualifying spec {
     ppSort               = pdfIdDecl (spc,"Type"),
     ppFormulaDesc      = fn s -> (counter State.:= (State.! counter) + 1;
                                   prettysNone [lengthString (0,
-                                                             "\\pdfdest num "^(Nat.toString (State.! counter))^
+                                                             "\\pdfdest num "^(Nat.show (State.! counter))^
                                                              " fitbh%"^newlineString()),
                                                lengthString (String.length s, "{\\tt "^s^"}" )
                                               ]),
@@ -441,7 +441,7 @@ AnnTermPrinter qualifying spec {
    let def nameNumber s =
         case StringMap.find (State.! nameMap, s) of
          | None -> let n = State.! counter in
-                   let ns = Nat.toString n in
+                   let ns = Nat.show n in
                    (nameMap State.:= StringMap.insert (State.! nameMap, s, ns);
                     counter State.:= n + 1; 
                     ns)
@@ -542,6 +542,7 @@ AnnTermPrinter qualifying spec {
      left,
      prettysLinear (
        addSeparator sep 
-         (mapWithIndex (fn (i, x) -> f (cons (i, path), x)) ps)),
+         (mapWithIndex (fn (i, x) -> f (Cons (i, path), x)) ps)),
      right]
-}
+endspec
+

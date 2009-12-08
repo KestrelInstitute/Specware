@@ -62,9 +62,9 @@
        ("let A = id ( true , false ) in (compare A) = Greater" :swe "let A = id ( true , false ) in (compare A) = Greater" :value '(:|Bool| . T))
        ("(compare ( true , true )) = Equal" :swe "(compare ( true , true )) = Equal" :value '(:|Bool| . T))
        ("let A = id ( true , true ) in (compare A) = Equal" :swe "let A = id ( true , true ) in (compare A) = Equal" :value '(:|Bool| . T))
-       ;; Boolean [120]:  op toString : Boolean -> String  ;; deprecated
-       ("(toString ( true )) = \"true\"" :swe "(toString ( true )) = \"true\"" :value '(:|Bool| . T))
-       ("(toString ( false )) = \"false\"" :swe "(toString ( false )) = \"false\"" :value '(:|Bool| . T))
+       ;; Boolean [120]:  op show : Boolean -> String  ;; deprecated
+       ("(show ( true )) = \"true\"" :swe "(show ( true )) = \"true\"" :value '(:|Bool| . T))
+       ("(show ( false )) = \"false\"" :swe "(show ( false )) = \"false\"" :value '(:|Bool| . T))
        ;; Boolean [129]:  op show : Boolean -> String
        ("(show ( true )) = \"true\"" :swe "(show ( true )) = \"true\"" :value '(:|Bool| . T))
        ("(show ( false )) = \"false\"" :swe "(show ( false )) = \"false\"" :value '(:|Bool| . T))
@@ -130,8 +130,8 @@
        ("let A = id ( #4 , #4 ) in (compare A) = Equal" :swe "let A = id ( #4 , #4 ) in (compare A) = Equal" :value '(:|Bool| . T))
        ("(compare ( #5 , #4 )) = Greater" :swe "(compare ( #5 , #4 )) = Greater" :value '(:|Bool| . T))
        ("let A = id ( #5 , #4 ) in (compare A) = Greater" :swe "let A = id ( #5 , #4 ) in (compare A) = Greater" :value '(:|Bool| . T))
-       ;; Char [123]:  op toString    : Char -> String     ;; deprecated
-       ("(toString ( #A )) = \"A\"" :swe "(toString ( #A )) = \"A\"" :value '(:|Bool| . T))
+       ;; Char [123]:  op show    : Char -> String     ;; deprecated
+       ("(show ( #A )) = \"A\"" :swe "(show ( #A )) = \"A\"" :value '(:|Bool| . T))
        ;; Char [135]:  op show    : Char -> String
        ("(show ( #A )) = \"A\"" :swe "(show ( #A )) = \"A\"" :value '(:|Bool| . T))
 
@@ -171,7 +171,7 @@
        ;; Functions [ 30]:  op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
 
        ;; Integer [ 31]:  op ~             : Integer -> Integer
-       ("(Integer.~ ( 3 )) = 0-3" :swe "(Integer.~ ( 3 )) = 0-3" :value '(:|Bool| . T))
+       ("(- ( 3 )) = 0-3" :swe "(- ( 3 )) = 0-3" :value '(:|Bool| . T))
        ;; Integer [ 32]:  op +   infixl 25 : Integer * Integer -> Integer
        ("(+ ( 3 , 4 )) = 7" :swe "(+ ( 3 , 4 )) = 7" :value '(:|Bool| . T))
        ("let A = id ( 3 , 4 ) in (+ A) = 7" :swe "let A = id ( 3 , 4 ) in (+ A) = 7" :value '(:|Bool| . T))
@@ -184,9 +184,9 @@
        ;; Integer [ 35]:  op div infixl 26 : Integer * NZInteger -> Integer
        ("(div ( 27 , 10 )) = 2" :swe "(div ( 27 , 10 )) = 2" :value '(:|Bool| . T))
        ("let A = id ( 27 , 10 ) in (div A) = 2" :swe "let A = id ( 27 , 10 ) in (div A) = 2" :value '(:|Bool| . T))
-       ;; Integer [ 36]:  op rem infixl 26 : Integer * NZInteger -> Integer
-       ("(rem ( 27 , 10 )) = 7" :swe "(rem ( 27 , 10 )) = 7" :value '(:|Bool| . T))
-       ("let A = id ( 27 , 10 ) in (rem A) = 7" :swe "let A = id ( 27 , 10 ) in (rem A) = 7" :value '(:|Bool| . T))
+       ;; Integer [ 36]:  op mod infixl 26 : Integer * NZInteger -> Integer
+       ("(mod ( 27 , 10 )) = 7" :swe "(mod ( 27 , 10 )) = 7" :value '(:|Bool| . T))
+       ("let A = id ( 27 , 10 ) in (mod A) = 7" :swe "let A = id ( 27 , 10 ) in (mod A) = 7" :value '(:|Bool| . T))
        ;; Integer [ 37]:  op <   infixl 20 : Integer * Integer -> Boolean
        ("(< ( 3 , 4 )) = true" :swe "(< ( 3 , 4 )) = true" :value '(:|Bool| . T))
        ("let A = id ( 3 , 4 ) in (< A) = true" :swe "let A = id ( 3 , 4 ) in (< A) = true" :value '(:|Bool| . T))
@@ -208,7 +208,7 @@
        ("(>= ( 3 , 4 )) = false" :swe "(>= ( 3 , 4 )) = false" :value '(:|Bool| . T))
        ("let A = id ( 3 , 4 ) in (>= A) = false" :swe "let A = id ( 3 , 4 ) in (>= A) = false" :value '(:|Bool| . T))
        ;; Integer [ 41]:  op abs          : Integer -> Integer
-       ("(abs ( Integer.~ 3 )) = 3" :swe "(abs ( Integer.~ 3 )) = 3" :value '(:|Bool| . T))
+       ("(abs ( - 3 )) = 3" :swe "(abs ( - 3 )) = 3" :value '(:|Bool| . T))
        ("(abs ( 3 )) = 3" :swe "(abs ( 3 )) = 3" :value '(:|Bool| . T))
        ;; Integer [ 42]:  op min          : Integer * Integer -> Integer
        ("(min ( 3 , 4 )) = 3" :swe "(min ( 3 , 4 )) = 3" :value '(:|Bool| . T))
@@ -223,8 +223,8 @@
        ("let A = id ( 4 , 4 ) in (compare A) = Equal" :swe "let A = id ( 4 , 4 ) in (compare A) = Equal" :value '(:|Bool| . T))
        ("(compare ( 5 , 4 )) = Greater" :swe "(compare ( 5 , 4 )) = Greater" :value '(:|Bool| . T))
        ("let A = id ( 5 , 4 ) in (compare A) = Greater" :swe "let A = id ( 5 , 4 ) in (compare A) = Greater" :value '(:|Bool| . T))
-       ;; Integer [121]:  op toString : Integer -> String  ;; deprecated
-       ("(toString ( 123 )) = \"123\"" :swe "(toString ( 123 )) = \"123\"" :value '(:|Bool| . T))
+       ;; Integer [121]:  op show : Integer -> String  ;; deprecated
+       ("(show ( 123 )) = \"123\"" :swe "(show ( 123 )) = \"123\"" :value '(:|Bool| . T))
        ;; Integer [132]:  op show : Integer -> String
        ("(Integer.show ( 123 )) = \"123\"" :swe "(Integer.show ( 123 )) = \"123\"" :value '(:|Bool| . T))
        ;; Integer [124]:  op intToString    : Integer -> String
@@ -237,28 +237,28 @@
        ("(intConvertible ( \"123.00\" )) = false" :swe "(intConvertible ( \"123.00\" )) = false" :value '(:|Bool| . T))
        ;; Integer [125]:  op stringToInt    : (String | intConvertible) -> Integer
        ("(stringToInt ( \"123\" )) = 123" :swe "(stringToInt ( \"123\" )) = 123" :value '(:|Bool| . T))
-       ("(stringToInt ( \"-123\" )) = Integer.~ 123" :swe "(stringToInt ( \"-123\" )) = Integer.~ 123" :value '(:|Bool| . T))
-       ;; List [ 49]:  op nil             : fa(a)   List a
+       ("(stringToInt ( \"-123\" )) = - 123" :swe "(stringToInt ( \"-123\" )) = - 123" :value '(:|Bool| . T))
+       ;; List [ 49]:  op empty             : fa(a)   List a
 
-       ("(nil) = []" :swe "(nil) = []" :value '(:|Bool| . T))
-       ;; List [ 50]:  op cons            : fa(a)   a * List a -> List a
-       ("(cons ( 3 , [4] )) = [3,4]" :swe "(cons ( 3 , [4] )) = [3,4]" :value '(:|Bool| . T))
-       ("let A = id ( 3 , [4] ) in (cons A) = [3,4]" :swe "let A = id ( 3 , [4] ) in (cons A) = [3,4]" :value '(:|Bool| . T))
-       ;; List [ 51]:  op insert          : fa(a)   a * List a -> List a
-       ("(insert ( 3 , [4] )) = [3,4]" :swe "(insert ( 3 , [4] )) = [3,4]" :value '(:|Bool| . T))
-       ("let A = id ( 3 , [4] ) in (insert A) = [3,4]" :swe "let A = id ( 3 , [4] ) in (insert A) = [3,4]" :value '(:|Bool| . T))
+       ("(empty) = []" :swe "(empty) = []" :value '(:|Bool| . T))
+       ;; List [ 50]:  op Cons            : fa(a)   a * List a -> List a
+       ("(Cons ( 3 , [4] )) = [3,4]" :swe "(Cons ( 3 , [4] )) = [3,4]" :value '(:|Bool| . T))
+       ("let A = id ( 3 , [4] ) in (Cons A) = [3,4]" :swe "let A = id ( 3 , [4] ) in (Cons A) = [3,4]" :value '(:|Bool| . T))
+       ;; List [ 51]:  op |>          : fa(a)   a * List a -> List a
+       ("( 3 |> [4] ) = [3,4]" :swe "( 3 |> [4] ) = [3,4]" :value '(:|Bool| . T))
+       ("let A = id ( 3 , [4] ) in (|> A) = [3,4]" :swe "let A = id ( 3 , [4] ) in (|> A) = [3,4]" :value '(:|Bool| . T))
        ;; List [ 52]:  op length          : fa(a)   List a -> Nat
        ("(length ( [3,4] )) = 2" :swe "(length ( [3,4] )) = 2" :value '(:|Bool| . T))
-       ;; List [ 53]:  op null            : fa(a)   List a -> Boolean
-       ("(null ( nil )) = true" :swe "(null ( nil )) = true" :value '(:|Bool| . T))
-       ("(null ( [3] )) = false" :swe "(null ( [3] )) = false" :value '(:|Bool| . T))
-       ;; List [ 54]:  op hd              : fa(a)   {l : List a | ~(null l)} -> a
-       ("(hd ( [3,4] )) = 3" :swe "(hd ( [3,4] )) = 3" :value '(:|Bool| . T))
-       ;; List [ 55]:  op tl              : fa(a)   {l : List a | ~(null l)} -> List a
-       ("(tl ( [3,4] )) = [4]" :swe "(tl ( [3,4] )) = [4]" :value '(:|Bool| . T))
-       ;; List [ 56]:  op concat          : fa(a)   List a * List a -> List a
-       ("(concat ( [3] , [4] )) = [3,4]" :swe "(concat ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
-       ("let A = id ( [3] , [4] ) in (concat A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (concat A) = [3,4]" :value '(:|Bool| . T))
+       ;; List [ 53]:  op empty?            : fa(a)   List a -> Boolean
+       ("(empty? ( empty )) = true" :swe "(empty? ( empty )) = true" :value '(:|Bool| . T))
+       ("(empty? ( [3] )) = false" :swe "(empty? ( [3] )) = false" :value '(:|Bool| . T))
+       ;; List [ 54]:  op head              : fa(a)   {l : List a | ~(empty? l)} -> a
+       ("(head ( [3,4] )) = 3" :swe "(head ( [3,4] )) = 3" :value '(:|Bool| . T))
+       ;; List [ 55]:  op tail              : fa(a)   {l : List a | ~(empty? l)} -> List a
+       ("(tail ( [3,4] )) = [4]" :swe "(tail ( [3,4] )) = [4]" :value '(:|Bool| . T))
+       ;; List [ 56]:  op ++          : fa(a)   List a * List a -> List a
+       ("(++ ( [3] , [4] )) = [3,4]" :swe "(++ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
+       ("let A = id ( [3] , [4] ) in (++ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (++ A) = [3,4]" :value '(:|Bool| . T))
        ;; List [ 57]:  op ++ infixl 11    : fa(a)   List a * List a -> List a
        ("(++ ( [3] , [4] )) = [3,4]" :swe "(++ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
        ("let A = id ( [3] , [4] ) in (++ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (++ A) = [3,4]" :value '(:|Bool| . T))
@@ -266,20 +266,20 @@
 ;;       ;; List [ 58]:  op @  infixl 11    : fa(a)   List a * List a -> List a
 ;;       ("(@ ( [3] , [4] )) = [3,4]" :swe "(@ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
 ;;       ("let A = id ( [3] , [4] ) in (@ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (@ A) = [3,4]" :value '(:|Bool| . T))
-       ;; List [ 59]:  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
-       ("(nth ( [3,4,5] , 1 )) = 4" :swe "(nth ( [3,4,5] , 1 )) = 4" :value '(:|Bool| . T))
-       ("let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :swe "let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :value '(:|Bool| . T))
-       ;; List [ 60]:  op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} -> List a
-       ("(nthTail ( [3,4,5] , 2 )) = [5]" :swe "(nthTail ( [3,4,5] , 2 )) = [5]" :value '(:|Bool| . T))
-       ("let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]" :swe "let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]" :value '(:|Bool| . T))
-       ;; List [ 61]:  op member          : fa(a)   a * List a -> Boolean
-       ("(member ( 4 , [3,5,7] )) = false" :swe "(member ( 4 , [3,5,7] )) = false" :value '(:|Bool| . T))
-       ("let A = id ( 4 , [3,5,7] ) in (member A) = false" :swe "let A = id ( 4 , [3,5,7] ) in (member A) = false" :value '(:|Bool| . T))
-       ("(member ( 5 , [3,5,7] )) = true" :swe "(member ( 5 , [3,5,7] )) = true" :value '(:|Bool| . T))
-       ("let A = id ( 5 , [3,5,7] ) in (member A) = true" :swe "let A = id ( 5 , [3,5,7] ) in (member A) = true" :value '(:|Bool| . T))
-       ;; List [ 62]:  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j && j <= length l} -> List a
-       ("(sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :swe "(sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :value '(:|Bool| . T))
-       ("let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]" :swe "let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]" :value '(:|Bool| . T))
+       ;; List [ 59]:  op @             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
+       ("( [3,4,5] @ 1 ) = 4" :swe "( [3,4,5] @ 1 ) = 4" :value '(:|Bool| . T))
+       ("let A = id ( [3,4,5] , 1 ) in (@ A) = 4" :swe "let A = id ( [3,4,5] , 1 ) in (@ A) = 4" :value '(:|Bool| . T))
+       ;; List [ 60]:  op removePrefix         : fa(a)   {(l,i) : List a * Nat | i < length l} -> List a
+       ("(removePrefix ( [3,4,5] , 2 )) = [5]" :swe "(removePrefix ( [3,4,5] , 2 )) = [5]" :value '(:|Bool| . T))
+       ("let A = id ( [3,4,5] , 2 ) in (removePrefix A) = [5]" :swe "let A = id ( [3,4,5] , 2 ) in (removePrefix A) = [5]" :value '(:|Bool| . T))
+       ;; List [ 61]:  op in?          : fa(a)   a * List a -> Boolean
+       ("( 4 in? [3,5,7] ) = false" :swe "( 4 in? [3,5,7] ) = false" :value '(:|Bool| . T))
+       ("let A = id ( 4 , [3,5,7] ) in (in? A) = false" :swe "let A = id ( 4 , [3,5,7] ) in (in? A) = false" :value '(:|Bool| . T))
+       ("(in? ( 5 , [3,5,7] )) = true" :swe "(in? ( 5 , [3,5,7] )) = true" :value '(:|Bool| . T))
+       ("let A = id ( 5 , [3,5,7] ) in (in? A) = true" :swe "let A = id ( 5 , [3,5,7] ) in (in? A) = true" :value '(:|Bool| . T))
+       ;; List [ 62]:  op subFromTo         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j && j <= length l} -> List a
+       ("(subFromTo ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :swe "(subFromTo ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :value '(:|Bool| . T))
+       ("let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (subFromTo A) = [4,1]" :swe "let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (subFromTo A) = [4,1]" :value '(:|Bool| . T))
        ;; List [ 63]:  op map             : fa(a,b) (a -> b) -> List a -> List b
        ("(map ( succ ) ( [3,4,5] )) = [4,5,6]" :swe "(map ( succ ) ( [3,4,5] )) = [4,5,6]" :value '(:|Bool| . T))
        ("let F = map ( succ ) in (F ( [3,4,5] )) = [4,5,6]" :swe "let F = map ( succ ) in (F ( [3,4,5] )) = [4,5,6]" :value '(:|Bool| . T))
@@ -287,63 +287,64 @@
        ("(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]" :swe "(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]" :value '(:|Bool| . T))
        ("let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]" :swe "let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]" :value '(:|Bool| . T))
        ;; List [ 65]:  op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b
-       ("(foldl ( fn(n,m)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :swe "(foldl ( fn(n,m)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
-       ("let F = foldl ( fn(n,m)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :swe "let F = foldl ( fn(n,m)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
+       ("(foldl ( fn(n,m)->(m)mod(n) ) ( 20 ) ( [77,47] )) = 13" :swe "(foldl ( fn(n,m)->(m)mod(n) ) ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
+       ("let F = foldl ( fn(n,m)->(m)mod(n) ) in (F ( 20 ) ( [77,47] )) = 13" :swe "let F = foldl ( fn(n,m)->(m)mod(n) ) in (F ( 20 ) ( [77,47] )) = 13" :value '(:|Bool| . T))
        ;; List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
-       ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13" :swe "(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))
-       ("let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13" :swe "let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))
-       ;; List [ 67]:  op exists          : fa(a)   (a -> Boolean) -> List a -> Boolean
-       ("(exists ( posNat? ) ( [] )) = false" :swe "(exists ( posNat? ) ( [] )) = false" :value '(:|Bool| . T))
-       ("let F = exists ( posNat? ) in (F ( [] )) = false" :swe "let F = exists ( posNat? ) in (F ( [] )) = false" :value '(:|Bool| . T))
-       ("(exists ( posNat? ) ( [0,0,0] )) = false" :swe "(exists ( posNat? ) ( [0,0,0] )) = false" :value '(:|Bool| . T))
-       ("let F = exists ( posNat? ) in (F ( [0,0,0] )) = false" :swe "let F = exists ( posNat? ) in (F ( [0,0,0] )) = false" :value '(:|Bool| . T))
-       ("(exists ( posNat? ) ( [0,1,0] )) = true" :swe "(exists ( posNat? ) ( [0,1,0] )) = true" :value '(:|Bool| . T))
-       ("let F = exists ( posNat? ) in (F ( [0,1,0] )) = true" :swe "let F = exists ( posNat? ) in (F ( [0,1,0] )) = true" :value '(:|Bool| . T))
-       ;; List [ 68]:  op all             : fa(a)   (a -> Boolean) -> List a -> Boolean
-       ("(all ( posNat? ) ( [] )) = true" :swe "(all ( posNat? ) ( [] )) = true" :value '(:|Bool| . T))
-       ("let F = all ( posNat? ) in (F ( [] )) = true" :swe "let F = all ( posNat? ) in (F ( [] )) = true" :value '(:|Bool| . T))
-       ("(all ( posNat? ) ( [1,1,1] )) = true" :swe "(all ( posNat? ) ( [1,1,1] )) = true" :value '(:|Bool| . T))
-       ("let F = all ( posNat? ) in (F ( [1,1,1] )) = true" :swe "let F = all ( posNat? ) in (F ( [1,1,1] )) = true" :value '(:|Bool| . T))
-       ("(all ( posNat? ) ( [1,0,1] )) = false" :swe "(all ( posNat? ) ( [1,0,1] )) = false" :value '(:|Bool| . T))
-       ("let F = all ( posNat? ) in (F ( [1,0,1] )) = false" :swe "let F = all ( posNat? ) in (F ( [1,0,1] )) = false" :value '(:|Bool| . T))
+       ("(foldr ( fn(m,n)->(m)mod(n) ) ( 77 ) ( [27,91] )) = 13" :swe "(foldr ( fn(m,n)->(m)mod(n) ) ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))
+       ("let F = foldr ( fn(m,n)->(m)mod(n) ) in (F ( 77 ) ( [27,91] )) = 13" :swe "let F = foldr ( fn(m,n)->(m)mod(n) ) in (F ( 77 ) ( [27,91] )) = 13" :value '(:|Bool| . T))
+       ;; List [ 67]:  op exists?          : fa(a)   (a -> Boolean) -> List a -> Boolean
+       ("(exists? ( posNat? ) ( [] )) = false" :swe "(exists? ( posNat? ) ( [] )) = false" :value '(:|Bool| . T))
+       ("let F = exists? ( posNat? ) in (F ( [] )) = false" :swe "let F = exists? ( posNat? ) in (F ( [] )) = false" :value '(:|Bool| . T))
+       ("(exists? ( posNat? ) ( [0,0,0] )) = false" :swe "(exists? ( posNat? ) ( [0,0,0] )) = false" :value '(:|Bool| . T))
+       ("let F = exists? ( posNat? ) in (F ( [0,0,0] )) = false" :swe "let F = exists? ( posNat? ) in (F ( [0,0,0] )) = false" :value '(:|Bool| . T))
+       ("(exists? ( posNat? ) ( [0,1,0] )) = true" :swe "(exists? ( posNat? ) ( [0,1,0] )) = true" :value '(:|Bool| . T))
+       ("let F = exists? ( posNat? ) in (F ( [0,1,0] )) = true" :swe "let F = exists? ( posNat? ) in (F ( [0,1,0] )) = true" :value '(:|Bool| . T))
+       ;; List [ 68]:  op forall?            : fa(a)   (a -> Boolean) -> List a -> Boolean
+       ("(forall?( posNat? ) ( [] )) = true" :swe "(forall?( posNat? ) ( [] )) = true" :value '(:|Bool| . T))
+       ("let F = forall?( posNat? ) in (F ( [] )) = true" :swe "let F = forall?( posNat? ) in (F ( [] )) = true" :value '(:|Bool| . T))
+       ("(forall?( posNat? ) ( [1,1,1] )) = true" :swe "(forall?( posNat? ) ( [1,1,1] )) = true" :value '(:|Bool| . T))
+       ("let F = forall?( posNat? ) in (F ( [1,1,1] )) = true" :swe "let F = forall?( posNat? ) in (F ( [1,1,1] )) = true" :value '(:|Bool| . T))
+       ("(forall?( posNat? ) ( [1,0,1] )) = false" :swe "(forall?( posNat? ) ( [1,0,1] )) = false" :value '(:|Bool| . T))
+       ("let F = forall?( posNat? ) in (F ( [1,0,1] )) = false" :swe "let F = forall?( posNat? ) in (F ( [1,0,1] )) = false" :value '(:|Bool| . T))
        ;; List [ 69]:  op filter          : fa(a)   (a -> Boolean) -> List a -> List a
        ("(filter ( posNat? ) ( [5,0,2] )) = [5,2]" :swe "(filter ( posNat? ) ( [5,0,2] )) = [5,2]" :value '(:|Bool| . T))
        ("let F = filter ( posNat? ) in (F ( [5,0,2] )) = [5,2]" :swe "let F = filter ( posNat? ) in (F ( [5,0,2] )) = [5,2]" :value '(:|Bool| . T))
        ;; List [ 70]:  op diff            : fa(a)   List a * List a -> List a
        ("(diff ( [3,1,4,1,5,9] , [5,9,2,1] )) = [3,4]" :swe "(diff ( [3,1,4,1,5,9] , [5,9,2,1] )) = [3,4]" :value '(:|Bool| . T))
        ("let A = id ( [3,1,4,1,5,9] , [5,9,2,1] ) in (diff A) = [3,4]" :swe "let A = id ( [3,1,4,1,5,9] , [5,9,2,1] ) in (diff A) = [3,4]" :value '(:|Bool| . T))
-       ;; List [ 71]:  op rev             : fa(a)   List a -> List a
-       ("(rev ( [1,2,3] )) = [3,2,1]" :swe "(rev ( [1,2,3] )) = [3,2,1]" :value '(:|Bool| . T))
+       ;; List [ 71]:  op reverse             : fa(a)   List a -> List a
+       ("(reverse ( [1,2,3] )) = [3,2,1]" :swe "(reverse ( [1,2,3] )) = [3,2,1]" :value '(:|Bool| . T))
+;; No longer in Base
        ;; List [ 72]:  op rev2            : fa(a)   List a * List a -> List a
-       ("(rev2 ( [1,2,3] , [4,5,6] )) = [3,2,1,4,5,6]" :swe "(rev2 ( [1,2,3] , [4,5,6] )) = [3,2,1,4,5,6]" :value '(:|Bool| . T))
-       ("let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]" :swe "let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]" :value '(:|Bool| . T))
+;       ("(rev2 ( [1,2,3] , [4,5,6] )) = [3,2,1,4,5,6]" :swe "(rev2 ( [1,2,3] , [4,5,6] )) = [3,2,1,4,5,6]" :value '(:|Bool| . T))
+;       ("let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]" :swe "let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]" :value '(:|Bool| . T))
        ;; List [ 73]:  op flatten         : fa(a)   List(List a) -> List a
        ("(flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]" :swe "(flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]" :value '(:|Bool| . T))
-       ;; List [ 74]:  op find            : fa(a)   (a -> Boolean) -> List a -> Option(a)
-       ("(find ( posNat? ) ( [0,0,0] )) = None" :swe "(find ( posNat? ) ( [0,0,0] )) = None" :value '(:|Bool| . T))
-       ("let F = find ( posNat? ) in (F ( [0,0,0] )) = None" :swe "let F = find ( posNat? ) in (F ( [0,0,0] )) = None" :value '(:|Bool| . T))
-       ("(find ( posNat? ) ( [0,1,0] )) = Some(1)" :swe "(find ( posNat? ) ( [0,1,0] )) = Some(1)" :value '(:|Bool| . T))
-       ("let F = find ( posNat? ) in (F ( [0,1,0] )) = Some(1)" :swe "let F = find ( posNat? ) in (F ( [0,1,0] )) = Some(1)" :value '(:|Bool| . T))
+       ;; List [ 74]:  op findLeftmost            : fa(a)   (a -> Boolean) -> List a -> Option(a)
+       ("(findLeftmost ( posNat? ) ( [0,0,0] )) = None" :swe "(findLeftmost ( posNat? ) ( [0,0,0] )) = None" :value '(:|Bool| . T))
+       ("let F = findLeftmost ( posNat? ) in (F ( [0,0,0] )) = None" :swe "let F = findLeftmost ( posNat? ) in (F ( [0,0,0] )) = None" :value '(:|Bool| . T))
+       ("(findLeftmost ( posNat? ) ( [0,1,0] )) = Some(1)" :swe "(findLeftmost ( posNat? ) ( [0,1,0] )) = Some(1)" :value '(:|Bool| . T))
+       ("let F = findLeftmost ( posNat? ) in (F ( [0,1,0] )) = Some(1)" :swe "let F = findLeftmost ( posNat? ) in (F ( [0,1,0] )) = Some(1)" :value '(:|Bool| . T))
        ;; List [ 75]:  op tabulate        : fa(a)   Nat * (Nat -> a) -> List a
        ("(tabulate ( 3 , succ )) = [1,2,3]" :swe "(tabulate ( 3 , succ )) = [1,2,3]" :value '(:|Bool| . T))
        ("let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]" :swe "let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]" :value '(:|Bool| . T))
-       ;; List [ 76]:  op firstUpTo       : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
-       ("(firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "(firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . T))
-       ("let F = firstUpTo ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "let F = firstUpTo ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . T))
-       ("(firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None" :swe "(firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
-       ("let F = firstUpTo ( null ) in (F ( [[1],[2,3],[4]] )) = None" :swe "let F = firstUpTo ( null ) in (F ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
-       ;; List [ 78]:  op splitList       : fa(a)  (a -> Boolean) -> List a -> Option(List a * a * List a)
-       ("(splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :swe "(splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :value '(:|Bool| . T))
-       ("let F = splitList ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :swe "let F = splitList ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :value '(:|Bool| . T))
-       ("(splitList ( null ) ( [[1],[2,3],[4]] )) = None" :swe "(splitList ( null ) ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
-       ("let F = splitList ( null ) in (F ( [[1],[2,3],[4]] )) = None" :swe "let F = splitList ( null ) in (F ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
-       ;; List [ 80]:  op locationOf      : fa(a)  List a * List a -> Option(Nat * List a)
-       ("(locationOf ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5])" :swe "(locationOf ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5])" :value '(:|Bool| . T))
-       ("let A = id ( [] , [3,1,4,1,5] ) in (locationOf A) = Some(0,[3,1,4,1,5])" :swe "let A = id ( [] , [3,1,4,1,5] ) in (locationOf A) = Some(0,[3,1,4,1,5])" :value '(:|Bool| . T))
-       ("(locationOf ( [1,4] , [3,1,4,1,5] )) = Some(1,[1,5])" :swe "(locationOf ( [1,4] , [3,1,4,1,5] )) = Some(1,[1,5])" :value '(:|Bool| . T))
-       ("let A = id ( [1,4] , [3,1,4,1,5] ) in (locationOf A) = Some(1,[1,5])" :swe "let A = id ( [1,4] , [3,1,4,1,5] ) in (locationOf A) = Some(1,[1,5])" :value '(:|Bool| . T))
-       ("(locationOf ( [1,3] , [3,1,4,1,5] )) = None" :swe "(locationOf ( [1,3] , [3,1,4,1,5] )) = None" :value '(:|Bool| . T))
-       ("let A = id ( [1,3] , [3,1,4,1,5] ) in (locationOf A) = None" :swe "let A = id ( [1,3] , [3,1,4,1,5] ) in (locationOf A) = None" :value '(:|Bool| . T))
+       ;; List [ 76]:  op findLeftmostAndPreceding       : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
+       ("(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "(findLeftmostAndPreceding ( empty ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . T))
+       ("let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "let F = findLeftmostAndPreceding ( empty ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . T))
+       ("(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[4]] )) = None" :swe "(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
+       ("let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :swe "let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
+       ;; List [ 78]:  op splitAtLeftmost       : fa(a)  (a -> Boolean) -> List a -> Option(List a * a * List a)
+       ("(splitAtLeftmost ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :swe "(splitAtLeftmost ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :value '(:|Bool| . T))
+       ("let F = splitAtLeftmost ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :swe "let F = splitAtLeftmost ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])" :value '(:|Bool| . T))
+       ("(splitAtLeftmost ( empty? ) ( [[1],[2,3],[4]] )) = None" :swe "(splitAtLeftmost ( empty? ) ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
+       ("let F = splitAtLeftmost ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :swe "let F = splitAtLeftmost ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . T))
+       ;; List [ 80]:  op leftmostPositionOfSublistAndFollowing      : fa(a)  List a * List a -> Option(Nat * List a)
+       ("(leftmostPositionOfSublistAndFollowing ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5])" :swe "(leftmostPositionOfSublistAndFollowing ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5])" :value '(:|Bool| . T))
+       ("let A = id ( [] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = Some(0,[3,1,4,1,5])" :swe "let A = id ( [] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = Some(0,[3,1,4,1,5])" :value '(:|Bool| . T))
+       ("(leftmostPositionOfSublistAndFollowing ( [1,4] , [3,1,4,1,5] )) = Some(1,[1,5])" :swe "(leftmostPositionOfSublistAndFollowing ( [1,4] , [3,1,4,1,5] )) = Some(1,[1,5])" :value '(:|Bool| . T))
+       ("let A = id ( [1,4] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = Some(1,[1,5])" :swe "let A = id ( [1,4] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = Some(1,[1,5])" :value '(:|Bool| . T))
+       ("(leftmostPositionOfSublistAndFollowing ( [1,3] , [3,1,4,1,5] )) = None" :swe "(leftmostPositionOfSublistAndFollowing ( [1,3] , [3,1,4,1,5] )) = None" :value '(:|Bool| . T))
+       ("let A = id ( [1,3] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = None" :swe "let A = id ( [1,3] , [3,1,4,1,5] ) in (leftmostPositionOfSublistAndFollowing A) = None" :value '(:|Bool| . T))
        ;; List [ 81]:  op compare         : fa(a)  (a * a -> Comparison) -> List a * List a -> Comparison
        ("(compare ( Integer.compare ) ( [] , [1] )) = Less" :swe "(compare ( Integer.compare ) ( [] , [1] )) = Less" :value '(:|Bool| . T))
        ("let F = compare ( Integer.compare ) in (F ( [] , [1] )) = Less" :swe "let F = compare ( Integer.compare ) in (F ( [] , [1] )) = Less" :value '(:|Bool| . T))
@@ -371,18 +372,19 @@
        ;; Nat [ 89]:  op posNat? : Nat -> Boolean
        ("(posNat? ( 0 )) = false" :swe "(posNat? ( 0 )) = false" :value '(:|Bool| . T))
        ("(posNat? ( 1 )) = true" :swe "(posNat? ( 1 )) = true" :value '(:|Bool| . T))
-       ;; Nat [122]:  op toString     : Nat -> String      ;; deprecated
-       ("(toString ( 123 )) = \"123\"" :swe "(toString ( 123 )) = \"123\"" :value '(:|Bool| . T))
+       ;; Nat [122]:  op show     : Nat -> String      ;; deprecated
+       ("(show ( 123 )) = \"123\"" :swe "(show ( 123 )) = \"123\"" :value '(:|Bool| . T))
        ;; Nat [133]:  op show     : Nat -> String
        ("(Nat.show ( 123 )) = \"123\"" :swe "(Nat.show ( 123 )) = \"123\"" :value '(:|Bool| . T))
        ;; Nat [126]:  op natToString  : Nat -> String
        ("(natToString ( 123 )) = \"123\"" :swe "(natToString ( 123 )) = \"123\"" :value '(:|Bool| . T))
-       ;; Nat [127]:  op stringToNat  : {s : String | length s > 0 && all isNum (explode s)} -> Nat
+       ;; Nat [127]:  op stringToNat  : {s : String | length s > 0 && forall?isNum (explode s)} -> Nat
 
+       ;; some and none are obsolete
        ;; Option [ 94]:  op some      : fa(a) a -> Option a
-       ("(some ( 1 )) = Some(1)" :swe "(some ( 1 )) = Some(1)" :value '(:|Bool| . T))
+       ;("(some ( 1 )) = Some(1)" :swe "(some ( 1 )) = Some(1)" :value '(:|Bool| . T))
        ;; Option [ 95]:  op none      : fa(a) Option a
-       ("(none) = None" :swe "(none) = None" :value '(:|Bool| . T))
+       ;("(none) = None" :swe "(none) = None" :value '(:|Bool| . T))
        ;; Option [ 96]:  op some?     : fa(a) Option a -> Boolean
        ("(some? ( None )) = false" :swe "(some? ( None )) = false" :value '(:|Bool| . T))
        ("(some? ( Some(1) )) = true" :swe "(some? ( Some(1) )) = true" :value '(:|Bool| . T))
@@ -422,37 +424,38 @@
        ;; String [103]:  op length        : String -> Nat
        ("(length ( \"\" )) = 0" :swe "(length ( \"\" )) = 0" :value '(:|Bool| . T))
        ("(length ( \"abc\" )) = 3" :swe "(length ( \"abc\" )) = 3" :value '(:|Bool| . T))
+;; concat is obsolete
        ;; String [104]:  op concat        : String * String -> String
-       ("(concat ( \"now\" , \"here\" )) = \"nowhere\"" :swe "(concat ( \"now\" , \"here\" )) = \"nowhere\"" :value '(:|Bool| . T))
-       ("let A = id ( \"now\" , \"here\" ) in (concat A) = \"nowhere\"" :swe "let A = id ( \"now\" , \"here\" ) in (concat A) = \"nowhere\"" :value '(:|Bool| . T))
-       ;; String [105]:  op ++ infixl 11  : String * String -> String
-       ("(++ ( \"now\" , \"here\" )) = \"nowhere\"" :swe "(++ ( \"now\" , \"here\" )) = \"nowhere\"" :value '(:|Bool| . T))
-       ("let A = id ( \"now\" , \"here\" ) in (++ A) = \"nowhere\"" :swe "let A = id ( \"now\" , \"here\" ) in (++ A) = \"nowhere\"" :value '(:|Bool| . T))
+;       ("(concat ( \"now\" , \"here\" )) = \"nowhere\"" :swe "(concat ( \"now\" , \"here\" )) = \"nowhere\"" :value '(:|Bool| . T))
+;       ("let A = id ( \"now\" , \"here\" ) in (concat A) = \"nowhere\"" :swe "let A = id ( \"now\" , \"here\" ) in (concat A) = \"nowhere\"" :value '(:|Bool| . T))
+       ;; String [105]:  op ^ infixl 11  : String * String -> String
+       ("(^ ( \"now\" , \"here\" )) = \"nowhere\"" :swe "(^ ( \"now\" , \"here\" )) = \"nowhere\"" :value '(:|Bool| . T))
+       ("let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"" :swe "let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"" :value '(:|Bool| . T))
        ;; String [106]:  op ^  infixl 11  : String * String -> String
        ("(^ ( \"now\" , \"here\" )) = \"nowhere\"" :swe "(^ ( \"now\" , \"here\" )) = \"nowhere\"" :value '(:|Bool| . T))
        ("let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"" :swe "let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"" :value '(:|Bool| . T))
        ;; String [107]:  op map           : (Char -> Char) -> String -> String
-       ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( \"terra\" )) = \"green\"" :swe "(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( \"terra\" )) = \"green\"" :value '(:|Bool| . T))
-       ("let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) in (F ( \"terra\" )) = \"green\"" :swe "let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) in (F ( \"terra\" )) = \"green\"" :value '(:|Bool| . T))
-       ;; String [108]:  op exists        : (Char -> Boolean) -> String -> Boolean
-       ("(exists ( isNum ) ( \"\" )) = false" :swe "(exists ( isNum ) ( \"\" )) = false" :value '(:|Bool| . T))
-       ("let F = exists ( isNum ) in (F ( \"\" )) = false" :swe "let F = exists ( isNum ) in (F ( \"\" )) = false" :value '(:|Bool| . T))
-       ("(exists ( isNum ) ( \"c3po\" )) = true" :swe "(exists ( isNum ) ( \"c3po\" )) = true" :value '(:|Bool| . T))
-       ("let F = exists ( isNum ) in (F ( \"c3po\" )) = true" :swe "let F = exists ( isNum ) in (F ( \"c3po\" )) = true" :value '(:|Bool| . T))
-       ;; String [109]:  op all           : (Char -> Boolean) -> String -> Boolean
-       ("(all ( isAlpha ) ( \"\" )) = true" :swe "(all ( isAlpha ) ( \"\" )) = true" :value '(:|Bool| . T))
-       ("let F = all ( isAlpha ) in (F ( \"\" )) = true" :swe "let F = all ( isAlpha ) in (F ( \"\" )) = true" :value '(:|Bool| . T))
-       ("(all ( isAlpha ) ( \"c3po\" )) = false" :swe "(all ( isAlpha ) ( \"c3po\" )) = false" :value '(:|Bool| . T))
-       ("let F = all ( isAlpha ) in (F ( \"c3po\" )) = false" :swe "let F = all ( isAlpha ) in (F ( \"c3po\" )) = false" :value '(:|Bool| . T))
-       ;; String [110]:  op sub           : {(s,n) : String * Nat | n < length s} -> Char
-       ("(sub ( \"afn\" , 1 )) = #f" :swe "(sub ( \"afn\" , 1 )) = #f" :value '(:|Bool| . T))
-       ("let A = id ( \"afn\" , 1 ) in (sub A) = #f" :swe "let A = id ( \"afn\" , 1 ) in (sub A) = #f" :value '(:|Bool| . T))
-       ;; String [111]:  op substring     : {(s,i,j) : String * Nat * Nat | i < j && j <= length s} ->
-       ("(substring ( \"twitchy\" , 2, 6 )) = \"itch\"" :swe "(substring ( \"twitchy\" , 2, 6 )) = \"itch\"" :value '(:|Bool| . T))
-       ("let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :swe "let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :value '(:|Bool| . T))
-       ;; String [112]:  op concatList    : List String -> String
-       ("(concatList ( [] )) = \"\"" :swe "(concatList ( [] )) = \"\"" :value '(:|Bool| . T))
-       ("(concatList ( [\"now\",\"here\"] )) = \"nowhere\"" :swe "(concatList ( [\"now\",\"here\"] )) = \"nowhere\"" :value '(:|Bool| . T))
+       ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) ( \"terra\" )) = \"green\"" :swe "(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) ( \"terra\" )) = \"green\"" :value '(:|Bool| . T))
+       ("let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) in (F ( \"terra\" )) = \"green\"" :swe "let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) in (F ( \"terra\" )) = \"green\"" :value '(:|Bool| . T))
+       ;; String [108]:  op exists?        : (Char -> Boolean) -> String -> Boolean
+       ("(exists? ( isNum ) ( \"\" )) = false" :swe "(exists? ( isNum ) ( \"\" )) = false" :value '(:|Bool| . T))
+       ("let F = exists? ( isNum ) in (F ( \"\" )) = false" :swe "let F = exists? ( isNum ) in (F ( \"\" )) = false" :value '(:|Bool| . T))
+       ("(exists? ( isNum ) ( \"c3po\" )) = true" :swe "(exists? ( isNum ) ( \"c3po\" )) = true" :value '(:|Bool| . T))
+       ("let F = exists? ( isNum ) in (F ( \"c3po\" )) = true" :swe "let F = exists? ( isNum ) in (F ( \"c3po\" )) = true" :value '(:|Bool| . T))
+       ;; String [109]:  op forall?          : (Char -> Boolean) -> String -> Boolean
+       ("(forall?( isAlpha ) ( \"\" )) = true" :swe "(forall?( isAlpha ) ( \"\" )) = true" :value '(:|Bool| . T))
+       ("let F = forall?( isAlpha ) in (F ( \"\" )) = true" :swe "let F = forall?( isAlpha ) in (F ( \"\" )) = true" :value '(:|Bool| . T))
+       ("(forall?( isAlpha ) ( \"c3po\" )) = false" :swe "(forall?( isAlpha ) ( \"c3po\" )) = false" :value '(:|Bool| . T))
+       ("let F = forall?( isAlpha ) in (F ( \"c3po\" )) = false" :swe "let F = forall?( isAlpha ) in (F ( \"c3po\" )) = false" :value '(:|Bool| . T))
+       ;; String [110]:  op @          : {(s,n) : String * Nat | n < length s} -> Char
+       ("( \"afn\" @ 1 ) = #f" :swe "( \"afn\" @ 1 ) = #f" :value '(:|Bool| . T))
+       ("let A = id ( \"afn\" , 1 ) in (@ A) = #f" :swe "let A = id ( \"afn\" , 1 ) in (@ A) = #f" :value '(:|Bool| . T))
+       ;; String [111]:  op subFromTo     : {(s,i,j) : String * Nat * Nat | i < j && j <= length s} ->
+       ("(subFromTo ( \"twitchy\" , 2, 6 )) = \"itch\"" :swe "(subFromTo ( \"twitchy\" , 2, 6 )) = \"itch\"" :value '(:|Bool| . T))
+       ("let A = id ( \"twitchy\" , 2, 6 ) in (subFromTo A) = \"itch\"" :swe "let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :value '(:|Bool| . T))
+       ;; String [112]:  op flatten    : List String -> String
+       ("(flatten ( [] )) = \"\"" :swe "(flatten ( [] )) = \"\"" :value '(:|Bool| . T))
+       ("(flatten ( [\"now\",\"here\"] )) = \"nowhere\"" :swe "(flatten ( [\"now\",\"here\"] )) = \"nowhere\"" :value '(:|Bool| . T))
        ;; String [113]:  op translate     : (Char -> String) -> String -> String
        ("(translate ( fn(c)->implode[c,c] ) ( \"2B\" )) = \"22BB\"" :swe "(translate ( fn(c)->implode[c,c] ) ( \"2B\" )) = \"22BB\"" :value '(:|Bool| . T))
        ("let F = translate ( fn(c)->implode[c,c] ) in (F ( \"2B\" )) = \"22BB\"" :swe "let F = translate ( fn(c)->implode[c,c] ) in (F ( \"2B\" )) = \"22BB\"" :value '(:|Bool| . T))

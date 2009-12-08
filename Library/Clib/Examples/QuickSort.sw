@@ -1,7 +1,7 @@
 % QuickSort = 
 spec
 
-  op partitionList: fa(a) (a * a -> Boolean) * a * List(a) -> List(a) * List(a)
+  op partitionList: [a] (a * a -> Boolean) * a * List(a) -> List(a) * List(a)
   def partitionList(cmp,x,l) =
     case l of
       Nil -> (Nil,Nil)
@@ -14,7 +14,7 @@ spec
 	else
 	  (l1,Cons(hd,l2))
 
-  op sortList : fa (a) (a * a -> Boolean) * List a -> List a
+  op sortList : [a] (a * a -> Boolean) * List a -> List a
   def sortList(cmp,l) =
     case l of
         Nil -> Nil

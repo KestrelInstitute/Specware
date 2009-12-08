@@ -20,10 +20,10 @@ SpecCalc qualifying spec
                foldl (fn (combined_decls, new_decl) ->
 		      %% For now, use equalType?, as opposed to equivType? -- 
 	              %% will do that compression later in compressDefs when full context is available
-		      if exists (fn old_decl -> equalType? (new_decl, old_decl)) combined_decls then
+		      if exists? (fn old_decl -> equalType? (new_decl, old_decl)) combined_decls then
 			combined_decls
 		      else
-			cons (new_decl, combined_decls))
+			new_decl :: combined_decls)
 	             old_decls
 		     new_decls
 	   in
@@ -31,10 +31,10 @@ SpecCalc qualifying spec
                foldl (fn (combined_defs, new_def) ->
 		      %% For now, use equalType?, as opposed to equivType? -- 
 	              %% will do that compression later in compressDefs when full context is available
-		      if exists (fn old_def -> equalType? (new_def, old_def)) combined_defs then
+		      if exists? (fn old_def -> equalType? (new_def, old_def)) combined_defs then
 			combined_defs
 		      else
-			cons (new_def, combined_defs))
+			new_def :: combined_defs)
 	             old_defs
 		     new_defs
 	   in
@@ -73,19 +73,19 @@ SpecCalc qualifying spec
 	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
 	     let combined_decls =
 	         foldl (fn (combined_decls, new_decl) ->
-			if exists (fn old_decl -> equivTerm? spc (new_decl, old_decl)) combined_decls then
+			if exists? (fn old_decl -> equivTerm? spc (new_decl, old_decl)) combined_decls then
 			  combined_decls
 			else
-			  cons (new_decl, combined_decls))
+			  new_decl :: combined_decls)
 		       old_decls
 		       new_decls
 	     in
 	     let combined_defs =
 	         foldl (fn (combined_defs, new_def) ->
-			if exists (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
+			if exists? (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
 			  combined_defs
 			else
-			  cons (new_def, combined_defs))
+			  new_def :: combined_defs)
 		       old_defs
 		       new_defs
 	     in

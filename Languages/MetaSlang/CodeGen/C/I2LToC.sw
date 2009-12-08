@@ -198,7 +198,7 @@ I2LToC qualifying spec {
 			     (fn((cspc,block,stmts),stadcode) -> 
 			      let (cspc,block,stadstmts) = 
 			             c4StadCode(ctxt,cspc,block,stadsbody,returnstmt,stadcode) in
-			      let stmts = concat(stmts,stadstmts) in
+			      let stmts = stmts++stadstmts in
 			      (cspc,block,stmts)
 			     ) (cspc,([],[]),[]) stadsbody
 			   in
@@ -226,7 +226,7 @@ I2LToC qualifying spec {
 	  | Struct fields -> let (cspc,initstr,initstrIsUseful) =
 	                       List.foldl
 	                       (fn((cspc,initstr,useful),(id,t)) -> 
-				let (cspc,initstr0,useful0) = structCheck(cspc,t,cons(id,ids)) in
+				let (cspc,initstr0,useful0) = structCheck(cspc,t,id::ids) in
 				let initstr = if initstr="" then initstr0 else initstr^","^initstr0 in
 				(cspc,initstr,useful || useful0)
 			       )
@@ -265,7 +265,7 @@ I2LToC qualifying spec {
     let (cspc,paramctypes) = c4Types(ctxt,cspc,paramtypes) in
     case getRestrictedNatList(paramtypes) of
       | Some ns ->
-	let nstrs = List.map Nat.toString ns in
+	let nstrs = List.map Nat.show ns in
 	let (cspc,rtype) = c4Type(ctxt,cspc,returntype) in
 	let arraytype = List.foldl (fn(arraytype,nstr) ->
 				    ArrayWithSize(nstr,arraytype))
@@ -295,7 +295,7 @@ I2LToC qualifying spec {
 	    | [] -> Some []
 	    | (RestrictedNat n)::types ->
 	      (case getRestrictedNatList0(types) of
-		 | Some ns -> Some (cons(n,ns))
+		 | Some ns -> Some (n::ns)
 		 | None -> None
 		)
 	    | _ -> None
@@ -322,7 +322,7 @@ I2LToC qualifying spec {
 	    let (cspc,ctype) = c4Type(ctxt,cspc,itype) in
 	    let ctype = if ctype = Void then Int else ctype in % no void fields allowed
 	    let (cspc,sfields) = structUnionFields(cspc,fields) in
-	    (cspc,List.cons((fname,ctype),sfields))
+	    (cspc,Cons((fname,ctype),sfields))
 
       def addFieldNamesToTupleTypes(types) =
 	let fieldnames = getFieldNamesForTuple(types) in
@@ -359,7 +359,7 @@ I2LToC qualifying spec {
 
 %      | FunOrMap([RestrictedNat n],typ) ->
 %	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
-%	let nstr = Nat.toString(n) in
+%	let nstr = Nat.show(n) in
 %	(cspc,ArrayWithSize(nstr,ctype))
 
       | FunOrMap(types,rtype) ->
@@ -380,7 +380,7 @@ I2LToC qualifying spec {
         let (cspc,ctype) = c4Type(ctxt,cspc,ltype) in
 	let deflen = length(cspc.defines) in
 	let constName = genName(cspc,"MAX",deflen) in
-	let cspc = addDefine(cspc,constName^" "^Nat.toString(n)) in
+	let cspc = addDefine(cspc,constName^" "^Nat.show(n)) in
 	let arraytype = ArrayWithSize(constName,ctype) in
 	let structname = genName(cspc,"BoundList",length(getStructDefns(cspc))) in
 	let sfields = [("length",Int),("data",arraytype)] in
@@ -396,7 +396,7 @@ I2LToC qualifying spec {
   def c4Types(ctxt,cspc,types) =
     List.foldl (fn((cspc,ctypes),t) ->
 		let (cspc,ct) = c4Type(ctxt,cspc,t) in
-		(cspc,List.concat(ctypes,[ct])))
+		(cspc,ctypes++[ct]))
     (cspc,[]) types
 
   op c4PrimitiveType: CgContext * String -> CType
@@ -497,7 +497,7 @@ I2LToC qualifying spec {
 	let letvardecl1 = (id,ctype,optinit) in
 	%let letvardecl1 = (id,ctype,Some idcexpr) in
 	let letsetexpr = getSetExpr(ctxt,Var(letvardecl),idcexpr) in
-	let block = (List.concat(decls,[letvardecl1]),stmts) in
+	let block = (decls++[letvardecl1],stmts) in
 	let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
 	(cspc,block,Comma(letsetexpr,cexpr))
 
@@ -538,7 +538,7 @@ I2LToC qualifying spec {
 	let consfun = getConstructorOpNameFromQName(typename,consid) in
 	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	%let varPrefix = getVarPrefix("_Vc",ctype) in
-	%let xname = varPrefix^(Nat.toString(length(decls))) in
+	%let xname = varPrefix^(Nat.show(length(decls))) in
 	%let decl = (xname,ctype) in
 	let (cspc,block as (decls,stmt),constrCallExpr) =
 	  let fnid = getConstructorOpNameFromQName(typename,consid) in
@@ -547,7 +547,7 @@ I2LToC qualifying spec {
 		     (cspc,block,Apply(Fn(fndecl),[]))
              | _::_ -> let (cspc,ctypes) = foldl (fn((cspc,ctypes),(_,ty)) -> 
 						  let (cspc,ctype) = c4Type(ctxt,cspc,ty) in
-						  (cspc,concat(ctypes,[ctype]))
+						  (cspc,ctypes++[ctype])
 						 ) (cspc,[]) exprs in
 		       let (cspc,block,cexprs) = c4Expressions(ctxt,cspc,block,exprs) in
 		       let fndecl = (fnid,ctypes,ctype) in
@@ -555,7 +555,7 @@ I2LToC qualifying spec {
 	    )
 	in
 	%let decl1 = (xname,ctype,optinit) in
-	%let decls = concat(decls,[decl1]) in
+	%let decls = decls++[decl1] in
 	%let block = (decls,stmts) in
 	%let res = Var decl in
 	(cspc,block,constrCallExpr)
@@ -570,7 +570,7 @@ I2LToC qualifying spec {
 	%let _ = (System.print("type: ");System.print(typ);String.writeLine("")) in
 	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	let varPrefix = getVarPrefix("_Vc",ctype) in
-	let xname = varPrefix^(Nat.toString(length(decls))) in
+	let xname = varPrefix^(Nat.show(length(decls))) in
 	let decl = (xname,ctype) in
 	%let optinit = if ctxt.useRefTypes then getMallocApply(cspc,ctype) else None in
 	let optinit = getMallocApply(cspc,ctype) in
@@ -586,7 +586,7 @@ I2LToC qualifying spec {
 	         [Exp(getSetExpr(ctxt,sref,cexpr))]
 	    )
 	in
-	let block = (concat(decls,[decl1]),concat(stmts,selassign ++ altassign)) in
+	let block = (decls++[decl1],stmts ++ selassign ++ altassign) in
 	let res = Var decl in
 	(cspc,block,res)
 
@@ -599,7 +599,7 @@ I2LToC qualifying spec {
 	     case cexpr0 of
 	       | Var(decl) -> ((decls,stmts),decl,false)
 	       | _ ->
-	           let disname = "_dis_"^(Nat.toString(length(decls))) in
+	           let disname = "_dis_"^(Nat.show(length(decls))) in
 		   let (cspc,distype) = c4Type(ctxt,cspc,type0) in
 		   let disdecl = (disname,distype) in
 		   let disdecl0 = (disname,distype,None) in
@@ -612,7 +612,7 @@ I2LToC qualifying spec {
 	let (cspc,xtype) = c4Type(ctxt,cspc,typ) in
 	let xtype = if xtype = Void then Int else xtype in
 	let varPrefix = getVarPrefix("_Vd_",xtype) in
-	let xname = varPrefix^(Nat.toString(length(decls))) in
+	let xname = varPrefix^(Nat.show(length(decls))) in
 	let xdecl = (xname,xtype,None) in
 	let funname4errmsg = case ctxt.currentFunName of Some id -> "(\"function '"^id^"'\")" | _ -> "(\"unknown function\")" in
 	let errorCaseExpr = Comma(Var("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg,Int),Var(xname,xtype)) in
@@ -631,7 +631,7 @@ I2LToC qualifying spec {
 	      let condition = casecond(selstr) in
 	      % insert the variables:
 	      let (cspc,block,cexpr) =
-	      case List.find (fn | None -> false | _ -> true) vlist of
+	      case findLeftmost (fn | None -> false | _ -> true) vlist of
 		| None -> 
 		let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
 		(cspc,block,cexpr) % varlist contains only wildcards
@@ -667,7 +667,7 @@ I2LToC qualifying spec {
 		     % by corresponding StructRefs into the record.
 		     let (cspc,idtype) = c4Type(ctxt,cspc,typ) in
 		     let varPrefix = getVarPrefix("_Va",idtype) in
-		     let id = varPrefix^(Nat.toString(length(decls))) in
+		     let id = varPrefix^(Nat.show(length(decls))) in
 		     let structref = if ctxt.useRefTypes then Unary(Contents,cexpr0) else cexpr0 in
 		     let valexp = StructRef(StructRef(structref,"alt"),selstr) in
 		     let decl = (id,idtype) in
@@ -772,14 +772,14 @@ I2LToC qualifying spec {
   def c4Expressions(ctxt,cspc,block,exprs) =
     List.foldl (fn((cspc,block,cexprs),expr) ->
 		let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
-		(cspc,block,concat(cexprs,[cexpr])))
+		(cspc,block,cexprs++[cexpr]))
     (cspc,block,[]) exprs
 
   op c4InitializerExpressions: CgContext * CSpec * CBlock * Expressions -> CSpec * CBlock * CExps
   def c4InitializerExpressions(ctxt,cspc,block,exprs) =
     List.foldl (fn((cspc,block,cexprs),expr) ->
 		let (cspc,block,cexpr) = c4InitializerExpression(ctxt,cspc,block,expr) in
-		(cspc,block,concat(cexprs,[cexpr])))
+		(cspc,block,cexprs++[cexpr]))
     (cspc,block,[]) exprs
 
   % --------------------------------------------------------------------------------
@@ -800,7 +800,7 @@ I2LToC qualifying spec {
     %let (cspc,ftypes) = c4Types(ctxt,cspc,types) in
     let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
     let varPrefix = getVarPrefix("_Vb",ctype) in
-    let xname = varPrefix^(Nat.toString(length(decls))) in
+    let xname = varPrefix^(Nat.show(length(decls))) in
     let ctype = if ctype = Void then Int else ctype in
     let decl = (xname,ctype) in
     let optinit = if ctxt.useRefTypes then getMallocApply(cspc,ctype) else None in
@@ -813,7 +813,7 @@ I2LToC qualifying spec {
 			Exp (getSetExpr(ctxt,fieldref,fexpr))
 		       ) (zip(fieldnames,fexprs))
     in
-    let block = (List.concat(decls,[decl1]),List.concat(stmts,assignstmts)) in
+    let block = (decls++[decl1],stmts++assignstmts) in
     let res = Var decl in
     (cspc,block,res)
 
@@ -929,7 +929,7 @@ I2LToC qualifying spec {
       | Binary(_,e1,e2) -> (constExpr?(cspc,e1)) && (constExpr?(cspc,e2))
 % this isn't true in C:
 %      | Var (vname,vdecl) ->
-%        (case List.find (fn(id,_,_)->id=vname) cspc.varDefns of
+%        (case findLeftmost (fn(id,_,_)->id=vname) cspc.varDefns of
 %	  | Some (_,_,exp) -> constExpr?(cspc,exp)
 %	  | _ -> false
 %	  )
@@ -956,7 +956,7 @@ I2LToC qualifying spec {
        List.foldl
        (fn((cspc,block,stmts),stp) ->
 	let (cspc,block,stpstmts) = c4StepCode(ctxt,cspc,block,allstads,returnstmt,stp) in
-	(cspc,block,concat(stmts,stpstmts))
+	(cspc,block,stmts++stpstmts)
        ) (cspc,block,[]) stadcode.steps
     in
     let lblstmt = if stadcode.showLabel then [Label stadcode.label] else [] in
@@ -969,7 +969,7 @@ I2LToC qualifying spec {
     %List.foldl 
     %                               (fn((cspc,block,rulestmts),rule) -> 
     %				    let (cspc,block,rule1stmts) = c4StepRule(ctxt,cspc,block,rule) in
-    %				    (cspc,block,concat(rulestmts,rule1stmts))
+    %				    (cspc,block,rulestmts++rule1stmts)
     %				   ) (cspc,block,[]) rules
     %in
     (cspc,block,rules_stmts)
@@ -1018,7 +1018,7 @@ I2LToC qualifying spec {
 	let (cspc,block,updatestmts) =
 	    List.foldl (fn((cspc,block,updatestmts),update) ->
 			let (cspc,block,stmts) = c4StepRule(ctxt,cspc,block,None,Update update) in
-			(cspc,block,concat(updatestmts,stmts))
+			(cspc,block,updatestmts++stmts)
 		       ) (cspc,block,[]) updates
 	in
 	(cspc,block,declstmts++updatestmts++gotostmts)
@@ -1027,14 +1027,14 @@ I2LToC qualifying spec {
   % --------------------------------------------------------------------------------
 
 
-  op getFieldNamesForTuple: fa(X) List(X) -> List(String)
+  op getFieldNamesForTuple: [X] List(X) -> List(String)
   def getFieldNamesForTuple(l) =
     let
       def getFieldNamesForTuple0(l,n) =
 	case l of
           | [] -> []
-          | _::l -> List.cons("field"^Nat.toString(n),
-			      getFieldNamesForTuple0(l,n+1))
+          | _::l -> Cons("field"^Nat.show(n),
+                         getFieldNamesForTuple0(l,n+1))
     in
     getFieldNamesForTuple0(l,0)
 
@@ -1075,10 +1075,10 @@ I2LToC qualifying spec {
   def substVarIfDeclared(ctxt,id,decls,expr) =
     let
       def isDeclared(id) =
-	case List.find (fn(vname,_,_) -> vname = id) decls of
+	case findLeftmost (fn(vname,_,_) -> vname = id) decls of
 	  | Some _ -> true
 	  | None ->
-	    case List.find (fn(vname,_) -> vname = id) ctxt.currentFunParams of
+	    case findLeftmost (fn(vname,_) -> vname = id) ctxt.currentFunParams of
 	      | Some _ -> true
 	      | None -> false
     in
@@ -1101,7 +1101,7 @@ I2LToC qualifying spec {
 	  | [] -> expr
 	  | None::vlist -> subst(vlist,expr,n+1)
 	  | (Some v)::vlist ->
-	    let field = "field"^(Nat.toString(n)) in
+	    let field = "field"^(Nat.show(n)) in
 	    let structexpr = if ctxt.useRefTypes then Unary(Contents,structexpr) else structexpr in
 	    let expr = substVarInExp(expr,v,StructRef(structexpr,field)) in
 	    subst(vlist,expr,n+1)
@@ -1128,7 +1128,7 @@ I2LToC qualifying spec {
         let (cspc,block as (decls,stmts),cexpr) = mergeBlockIntoExpr(cspc,(decls,stmts),cexpr) in
 	let (cexpr,stmts) = (case stmt of
                                | Exp(e) -> (Comma(e,cexpr),stmts)
-		               | _ -> (cexpr,cons(stmt,stmts))
+		               | _ -> (cexpr,stmt::stmts)
 			    )
 	in
 	(cspc,(decls,stmts),cexpr)
@@ -1142,16 +1142,16 @@ I2LToC qualifying spec {
 	case exp of
 	  | Binary(Set,e0,Comma(e1,e2)) ->
 	                    let (stmts,e1) = commaExprToStmts0(stmts,e1) in
-			    let stmts = concat(stmts,[Exp(e1)]) in
+			    let stmts = stmts++[Exp(e1)] in
 			    let (stmts,e2) = commaExprToStmts0(stmts,e2) in
 			    commaExprToStmts0(stmts,Binary(Set,e0,e2))
 			    
 %	  | Comma(Binary(Set,e0,e1),e2) ->
 %	                    let (stmts,e1) = commaExprToStmts0(stmts,e1) in
-%			    let stmts = concat(stmts,[Exp(Binary(Set,e0,e1)):CStmt]) in
+%			    let stmts = stmts++[Exp(Binary(Set,e0,e1)):CStmt] in
 %			    commaExprToStmts0(stmts,e2)
 	  | Comma(e1,e2) -> let (stmts,e1) = commaExprToStmts0(stmts,e1) in
-			    let stmts = List.concat(stmts,[(Exp e1):CStmt]) in
+			    let stmts = stmts++[(Exp e1):CStmt] in
 	                    commaExprToStmts0(stmts,e2)
 	  | _ -> (stmts,exp)
     in
@@ -1172,13 +1172,13 @@ I2LToC qualifying spec {
         let elseStmts = conditionalExprToStmts(ctxt,elseExp,e2sFun) in
 	if isReturn then
 	  let ifStmt = IfThen(condExp,Block([],thenStmts)) in
-	  List.concat(stmts,List.cons(ifStmt,elseStmts))
+	  stmts++(ifStmt::elseStmts)
 	else
 	  let ifStmt = If(condExp,Block([],thenStmts),Block([],elseStmts)) in
-	  List.concat(stmts,[ifStmt])
+	  stmts++[ifStmt]
       | _ ->
 	let finalStmt = e2sFun(exp) in
-	List.concat(stmts,[finalStmt])
+	stmts++[finalStmt]
 
   % --------------------------------------------------------------------------------
 
@@ -1192,7 +1192,7 @@ I2LToC qualifying spec {
 
   op genName: CSpec * String * Nat -> String
   def genName(cspc,prefix,suffixn) =
-    cString(cspc.name^prefix^(Nat.toString(suffixn)))
+    cString(cspc.name^prefix^(Nat.show(suffixn)))
 
   % --------------------------------------------------------------------------------
 
@@ -1200,15 +1200,15 @@ I2LToC qualifying spec {
   def getMapName(f) = "_map_"^f
 
   op getParamName: Nat -> String
-  def getParamName(n) = "index"^(Nat.toString(n))
+  def getParamName(n) = "index"^(Nat.show(n))
 
-  op getNumberListOfSameSize: fa(X) List(X) -> List(Nat)
+  op getNumberListOfSameSize: [X] List(X) -> List(Nat)
   def getNumberListOfSameSize(l) =
     let
       def getNumberList(l,n) =
 	case l of
           | [] -> []
-	  | _::l -> cons(n,getNumberList(l,n+1))
+	  | _::l -> n :: getNumberList(l,n+1)
     in
     getNumberList(l,0)
 
@@ -1231,22 +1231,22 @@ I2LToC qualifying spec {
 
 
 
-  op getLastElem: fa(X) List(X) -> List(X) * X
+  op getLastElem: [X] List(X) -> List(X) * X
   def getLastElem(l) =
     case l of
       | [e] -> ([],e)
       | e::l -> 
       let (pref,last) = getLastElem(l) in
-      (cons(e,pref),last)
+      (e::pref,last)
 
   % --------------------------------------------------------------------------------
 
   op getProjectionFieldName: String -> String
   def getProjectionFieldName(p) =
     let pchars = String.explode(p) in
-    if List.all isNum pchars then
+    if forall? isNum pchars then
       let num = stringToNat(p) in
-      "field"^(Nat.toString(num-1))
+      "field"^(Nat.show(num-1))
     else
       p
 

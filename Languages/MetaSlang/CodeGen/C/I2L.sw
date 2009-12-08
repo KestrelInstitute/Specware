@@ -11,13 +11,13 @@ I2L qualifying spec {
 
   import CUtils % for qsort
 
-  sort ImpUnit = {
+  type ImpUnit = {
 		  name             : String,
 		  includes         : List (ImpUnit),
 		  decls            : ImpUnitDecls
 		 }
 
-  sort ImpUnitDecls = { 
+  type ImpUnitDecls = { 
 		       typedefs         : TypeDefinitions,
 		       opdecls          : Declarations,
 		       funDecls         : FunDeclarations,
@@ -26,14 +26,14 @@ I2L qualifying spec {
 		       mapDecls         : FunDeclarations
 		      }
 
-  sort ImpUnits = List ImpUnit
+  type ImpUnits = List ImpUnit
 
-  sort TypeName = String * String
+  type TypeName = String * String
 
-  sort TypeDefinition = TypeName * Type
-  sort TypeDefinitions = List TypeDefinition
+  type TypeDefinition = TypeName * Type
+  type TypeDefinitions = List TypeDefinition
 
-  sort Type = | Primitive     String
+  type Type = | Primitive     String
               | RestrictedNat Nat
               | Struct        StructFields
               | Union         UnionFields
@@ -46,39 +46,39 @@ I2L qualifying spec {
               | Void
               | Any
 
-  sort Types = List Type
+  type Types = List Type
 
-  sort StructField = String * Type
-  sort StructFields = List StructField
+  type StructField = String * Type
+  type StructFields = List StructField
 
-  sort UnionField = String * Type  % constructor * type
-  sort UnionFields = List UnionField
+  type UnionField = String * Type  % constructor * type
+  type UnionFields = List UnionField
 
-  sort OpName = String * String
+  type OpName = String * String
 
-  sort Declaration = OpName * Type * Option(Expression)
-  sort Declarations = List Declaration
+  type Declaration = OpName * Type * Option(Expression)
+  type Declarations = List Declaration
 
-  sort ParameterDeclaration = String * Type
-  sort ParameterDeclarations = List ParameterDeclaration
+  type ParameterDeclaration = String * Type
+  type ParameterDeclarations = List ParameterDeclaration
 
-  sort FunDefinition = {
+  type FunDefinition = {
 			decl : FunDeclaration,
 			body : FunBody
 		       }
-  sort FunDefinitions = List FunDefinition
+  type FunDefinitions = List FunDefinition
 
-  sort FunDeclaration = {
+  type FunDeclaration = {
 			 name       : OpName,
 			 params     : ParameterDeclarations,
 			 returntype : Type
 			}
 
-  sort FunBody = | Stads StadsFunBody  % state-based
+  type FunBody = | Stads StadsFunBody  % state-based
                  | Exp   Expression    % functional
 
-  sort StadsFunBody = List(StadCode)
-  sort StadCode = {
+  type StadsFunBody = List(StadCode)
+  type StadCode = {
 		   isInitial     : Boolean,
 		   showLabel     : Boolean,
 		   decls         : ImpUnit,
@@ -86,11 +86,11 @@ I2L qualifying spec {
 		   steps         : StepsCode
 		  }
 
-  sort FunDeclarations = List FunDeclaration
+  type FunDeclarations = List FunDeclaration
 
-  sort Expression = Expr * Type
+  type Expression = Expr * Type
 
-  sort Expr =  | Str            String
+  type Expr =  | Str            String
               | Int            Integer
               | Float          String
               | Char           Char
@@ -114,18 +114,18 @@ I2L qualifying spec {
               | Project        (Expression * String)
 
   % a variable reference consists of a unit name and an identifier name
-  sort VarName = String * String
+  type VarName = String * String
 
   % a UnionCase is used to test a given expression, which must have a
   % union type, which alternative of the union it represents.
 
-  sort UnionCase = 
+  type UnionCase = 
      | ConstrCase (Option(String) * Option(Type) * List(Option String) * Expression)
      | NatCase (Nat * Expression)
      | CharCase (Char * Expression)
 
-  sort StructExprField = String * Expression
-  sort StructExprFields = List StructExprField
+  type StructExprField = String * Expression
+  type StructExprFields = List StructExprField
 
   % a case is given by the constructor string, e.g. "Cons" or "Nil", the list of variable names
   % representing the arguments to the constructor (which can be omitted, in case they 
@@ -135,7 +135,7 @@ I2L qualifying spec {
   % matches everything; as a consequence, all cases following the one
   % with the wildcard constructor are not reachable.
 
-  sort BuiltinExpression = | Equals              (Expression * Expression)
+  type BuiltinExpression = | Equals              (Expression * Expression)
                            | StrEquals           (Expression * Expression)
                            | IntPlus             (Expression * Expression)
                            | IntMinus            (Expression * Expression)
@@ -166,29 +166,29 @@ I2L qualifying spec {
                            | BoolEquiv           (Expression * Expression)
 
 
-  sort Expressions = List Expression
+  type Expressions = List Expression
 
   % These are the rules that can occur in the body of a transformation step.
   % An UpdateBlock contains a list of assignments together with local declaration
   % that are needed to realize the parallel update semantics
   % e.g. for updates x:=y,y:=x we have to introduce a auxiliary variable z to store
-  % the value of one of x or y, e.g. int z:=x;x:=y;y:=z (assuming x,y of sort Nat)
+  % the value of one of x or y, e.g. int z:=x;x:=y;y:=z (assuming x,y of type Nat)
 
-  sort Rule =  | Skip
+  type Rule =  | Skip
               | UpdateBlock (Declarations * Updates)
               | Cond        (Expression * Rule)
               | Update      Update
               | ProcCall    (String * Expressions)
 
-  sort Rules = List Rule
+  type Rules = List Rule
 
-  sort Update = Option(Expression) * Expression
-  sort Updates = List Update
+  type Update = Option(Expression) * Expression
+  type Updates = List Update
 
   % a step consists of rules and a next state label.
   % the rules are supposed to be executed in parallel
-  sort StepCode = Rule * String
-  sort StepsCode = List StepCode
+  type StepCode = Rule * String
+  type StepsCode = List StepCode
 
   % API ------------------------------------------------
 
@@ -210,18 +210,18 @@ I2L qualifying spec {
 		     }
       | iu1::iu2::iulst -> let iu = {
 				     name=name,
-				     includes = concat(iu1.includes,iu2.includes),
+				     includes = iu1.includes ++ iu2.includes,
 				     decls = {
-					      typedefs = concat(iu1.decls.typedefs,iu2.decls.typedefs),
-					      opdecls = concat(iu1.decls.opdecls,iu2.decls.opdecls),
-					      funDecls = concat(iu1.decls.funDecls,iu2.decls.funDecls),
-					      funDefns = concat(iu1.decls.funDefns,iu2.decls.funDefns),
-					      varDecls = concat(iu1.decls.varDecls,iu2.decls.varDecls),
-					      mapDecls = concat(iu1.decls.mapDecls,iu2.decls.mapDecls)
+					      typedefs = iu1.decls.typedefs ++ iu2.decls.typedefs,
+					      opdecls  = iu1.decls.opdecls ++ iu2.decls.opdecls,
+					      funDecls = iu1.decls.funDecls ++ iu2.decls.funDecls,
+					      funDefns = iu1.decls.funDefns ++ iu2.decls.funDefns,
+					      varDecls = iu1.decls.varDecls ++ iu2.decls.varDecls,
+					      mapDecls = iu1.decls.mapDecls ++ iu2.decls.mapDecls
 					     }
 				  }
 			 in
-			 mergeImpUnit(name,cons(iu,iulst))
+			 mergeImpUnit(name,iu::iulst)
 
   op addInclude: ImpUnit * ImpUnit -> ImpUnit
   def addInclude(iu,includedImpUnit) =
@@ -240,7 +240,7 @@ I2L qualifying spec {
 	      typedefs = iu.decls.typedefs,
 	      opdecls = iu.decls.opdecls,
 	      funDecls = iu.decls.funDecls,
-	      funDefns = concat(iu.decls.funDefns,[fdefn]),
+	      funDefns = iu.decls.funDefns ++ [fdefn],
 	      varDecls = iu.decls.varDecls,
 	      mapDecls = iu.decls.mapDecls
 	     }
@@ -298,7 +298,7 @@ I2L qualifying spec {
   def typeDefnMustFollow iu (td1 as (tname1 as (_,id1),_),td2 as (tname2 as (_,id2),_)) =
     let deps1 = typeDefinitionDepends(iu,td1) in
     let deps2 = typeDefinitionDepends(iu,td2) in
-    let res = (List.member(tname2,deps1)) in
+    let res = tname2 in? deps1 in
     %let _ = if res then String.writeLine(id1^" must follow "^id2) else
     %                    String.writeLine(id1^" does not depend on "^id2)
     %in
@@ -321,9 +321,9 @@ I2L qualifying spec {
 					^"\""^id1^"\"")
 			  else ()
 			  in
-	                  if List.member(tname,deps) then deps
+	                  if tname in? deps then deps
 			  else
-			    let deps = cons(tname,deps) in
+			    let deps = tname::deps in
 			    (case findTypeDefn(iu,tname) of
 			       | Some t -> typeDepends0(iu,t,deps)
 			       | None -> deps
@@ -341,7 +341,7 @@ I2L qualifying spec {
 
   op findTypeDefn: ImpUnit * TypeName -> Option Type
   def findTypeDefn(iu,tname) =
-    case List.find (fn(tname0,_) -> tname0 = tname) iu.decls.typedefs of
+    case findLeftmost (fn(tname0,_) -> tname0 = tname) iu.decls.typedefs of
       | Some (_,t) -> Some t
       | None -> None
   
@@ -436,7 +436,7 @@ I2L qualifying spec {
    
   op findStadCode: List(StadCode) * String -> Option(StadCode)
   def findStadCode(allstads,stadname) =
-    List.find (fn(stadcode) -> stadcode.label = stadname) allstads
+    findLeftmost (fn(stadcode) -> stadcode.label = stadname) allstads
 
   op stadIsInitial: List(StadCode) * String -> Boolean
   def stadIsInitial(allstads,stadname) =
@@ -459,9 +459,9 @@ I2L qualifying spec {
 	  | Some stc -> let targets = List.map (fn(_,trg) -> trg) stc.steps in
 	                List.foldl
 			  (fn(visited,stadname) ->
-			   if List.member(stadname,visited) then visited
+			   if stadname in? visited then visited
 			   else
-			     reachableStads0(stadname,cons(stadname,visited))
+			     reachableStads0(stadname,stadname::visited)
 			    )
 			  visited targets
     in

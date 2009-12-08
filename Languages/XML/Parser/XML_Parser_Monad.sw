@@ -60,7 +60,7 @@ XML qualifying spec
 	%% In exceptional cases, the handler might be a no-op,
 	%% might generate an 'Ok' value with associatd state,
         %% or might return a completely new exception.
-        | (Exception x, newState) -> handler x {exceptions = cons (x, newState.exceptions),
+        | (Exception x, newState) -> handler x {exceptions =  x::newState.exceptions,
 						messages   = newState.messages,
 						utext      = newState.utext,
 						ge_defs    = newState.ge_defs,

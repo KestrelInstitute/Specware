@@ -4,7 +4,7 @@ XML qualifying spec
   import ../Utilities/XML_Unicode
   import EntityMaps
 
-  sort State = {exceptions : List XML_Exception, % for deferred processing
+  type State = {exceptions : List XML_Exception, % for deferred processing
 		messages   : List String,
 		utext      : UString,
 		ge_defs    : GE_Map,
@@ -19,14 +19,14 @@ XML qualifying spec
      pe_defs    = empty_map,
      context    = default_processing_environment}
 
-  sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
+  type Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
 
   def default_processing_environment : Processing_Environment =
     {tracing? = Trace_XML_Parser?}
 
   def Trace_XML_Parser? : Boolean = false
 
-  sort XML_Exception = {kind        : XML_Exception_Type,
+  type XML_Exception = {kind        : XML_Exception_Type,
 			requirement : String,
 			start       : UChars,
 			tail        : UChars,
@@ -35,7 +35,7 @@ XML qualifying spec
 			but         : String,
 			so_we       : String}
 
-  sort XML_Exception_Type = | EOF
+  type XML_Exception_Type = | EOF
                             | Syntax
                             | WFC
                             | VC
@@ -48,12 +48,12 @@ XML qualifying spec
       | exceptions ->
         "\nXML Errors:\n" ^
 	(foldl (fn (result, exception) -> result ^ (print_one_XML_Exception (exception, state.utext)))
-	  "" (rev exceptions)) ^
+	  "" (reverse exceptions)) ^
 	"\n\n"
 
   def print_one_XML_Exception (x : XML_Exception, utext : UChars) : String =
     let (line, column, byte) = location_of (x.start, utext) in
-    let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
+    let location = (Nat.show line) ^ ":" ^ (Nat.show column) ^ " (byte " ^ (Nat.show byte) ^ ")" in
 
       "\n At " ^ location
     ^ "\n " ^ (case x.kind of
@@ -107,11 +107,11 @@ XML qualifying spec
     let
       def aux (start, rev_chars) =
 	if start = tail then
-	  rev rev_chars
+	  reverse rev_chars
 	else
 	  case start of
-	    | [] -> rev rev_chars
-	    | x :: y -> aux (y, cons (x, rev_chars))
+	    | [] -> reverse rev_chars
+	    | x :: y -> aux (y,  x::rev_chars)
     in
       aux (start, [])
 
@@ -119,15 +119,15 @@ XML qualifying spec
     let
       def aux (tail, i, rev_chars) =
 	if i >= n then
-	  rev rev_chars
+	  reverse rev_chars
 	else
 	  case tail of
-	    | [] -> rev rev_chars
-	    | x :: tail -> aux (tail, i + 1, cons (x, rev_chars))
+	    | [] -> reverse rev_chars
+	    | x :: tail -> aux (tail, i + 1,  x::rev_chars)
     in
       aux (start, 0, [])
 
   def describe_char char =
-    "'" ^ (string [char]) ^ "' (= #x" ^ (toHex char) ^ "; = #" ^ (Nat.toString char) ^ ";)"
+    "'" ^ (string [char]) ^ "' (= #x" ^ (toHex char) ^ "; = #" ^ (Nat.show char) ^ ";)"
 
 endspec

@@ -208,12 +208,12 @@ XML qualifying spec
 		  (w3, tail) <- parse_WhiteSpace tail;
 		  (cp, tail) <- parse_CP         tail;
 		  (w4, tail) <- parse_WhiteSpace tail;
-		  let rev_alternatives = cons ((w3, cp, w4), rev_alternatives) in
+		  let rev_alternatives = Cons ((w3, cp, w4), rev_alternatives) in
 		  case tail of
 
 		    | 41 :: tail ->
                       %% ')'
-		      return (Choice {alternatives = rev rev_alternatives},
+		      return (Choice {alternatives = reverse rev_alternatives},
 			      tail)
 
 		    | 124 :: tail ->
@@ -241,12 +241,12 @@ XML qualifying spec
 		  (w3, tail) <- parse_WhiteSpace tail;
 		  (cp, tail) <- parse_CP         tail;
 		  (w4, tail) <- parse_WhiteSpace tail;
-		  let rev_items = cons ((w3, cp, w4), rev_items) in
+		  let rev_items = Cons ((w3, cp, w4), rev_items) in
 		  case tail of
 
 		    | 41 :: tail ->
                       %% ')'
-		      return (Seq {items = rev rev_items},
+		      return (Seq {items = reverse rev_items},
 			      tail)
 		    | 44 :: tail ->
 		      %% ','
@@ -354,13 +354,13 @@ XML qualifying spec
 			    {
 			     (w4,   tail) <- parse_WhiteSpace tail;
 			     (name, tail) <- parse_Name        tail;
-			     probe (tail, cons ((w3, w4, name), rev_names))
+			     probe (tail, Cons ((w3, w4, name), rev_names))
 			    }
 
 			  | 41 :: 42 :: tail ->
                             %% ')*'
 			    return (Some {w1    = w1,
-					  names = rev rev_names,
+					  names = reverse rev_names,
 					  w2    = w2},
 				    tail)
 
@@ -376,7 +376,7 @@ XML qualifying spec
 				    but         = (describe_char char) ^ "was seen instead",
 				    so_we       = "pretend interpolated ')*' was seen"};
 			     return (Some {w1    = w1,
-					   names = rev rev_names,
+					   names = reverse rev_names,
 					   w2    = w2},
 				     (case tail of
 					| 41 :: tail -> tail  % skip past close paren

@@ -146,7 +146,7 @@ SpecCalc qualifying spec
 				     if other_new_qid = this_new_qid then
 				       let other_dom_qid = Qualified (other_dom_q, other_dom_id) in
 				       let Some this_info = findAQualifierMap (sorts, this_dom_q, this_dom_id) in
-				       if member (other_dom_qid, this_info.names) then
+				       if other_dom_qid in? this_info.names then
 					 %% ok to map aliases to same new name
 					 collisions
 				       else
@@ -185,7 +185,7 @@ SpecCalc qualifying spec
 				     if other_new_qid = this_new_qid then
 				       let other_dom_qid = Qualified (other_dom_q, other_dom_id) in
 				       let Some this_info = findAQualifierMap (ops, this_dom_q, this_dom_id) in
-				       if member (other_dom_qid, this_info.names) then
+				       if other_dom_qid in? this_info.names then
 					 %% ok to map aliases to same new name
 					 collisions
 				       else
@@ -231,7 +231,7 @@ SpecCalc qualifying spec
 				      return ()
 				    | None ->
 				      %% new_q.new_id refers to a pre-existing type, and is not being renamed away
-				      if member (Qualified(dom_q,dom_id), prior_info.names) then
+				      if Qualified(dom_q, dom_id) in? prior_info.names then
 					%% but it's an alias of dom_q.dom_id, so we're just collapsing aliases to the same name
 					return () 
 				      else
@@ -258,7 +258,7 @@ SpecCalc qualifying spec
 				      return ()
 				    | None ->
 				      %% new_q, new_id refers to a pre-existing op, and is not being renamed away
-				      if member (Qualified(dom_q,dom_id), prior_info.names) then
+				      if Qualified(dom_q,dom_id) in? prior_info.names then
 					%% but it's an alias of dom_q.dom_id, so we're just collapsing aliases to the same name
 					return ()
 				      else
@@ -497,7 +497,7 @@ SpecCalc qualifying spec
 					    rule_pos));
 	     return (op_translator, sort_translator)
 	    }
-	  else if member (dom_qid, immune_op_names) then
+	  else if dom_qid in? immune_op_names then
 	    return (op_translator, sort_translator)
 	  else 
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
@@ -522,10 +522,10 @@ SpecCalc qualifying spec
 	  else
 	    %% Find a sort or an op, and proceed as above
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
-	    let dom_ops   = if member (dom_qid, immune_op_names) then [] else findAllOps (dom_spec, dom_qid) in
+	    let dom_ops   = if dom_qid in? immune_op_names then [] else findAllOps (dom_spec, dom_qid) in
 	    case (dom_types, dom_ops) of
 	      | ([], []) -> {
-			     if member (dom_qid, immune_op_names) && ~ (null (findAllOps (dom_spec, dom_qid))) then
+			     if dom_qid in? immune_op_names && ~ (empty? (findAllOps (dom_spec, dom_qid))) then
 			       raise_later (TranslationError ("Source op "^(explicitPrintQualifiedId dom_qid) ^ " is immune to translation", 
 							      rule_pos))
 			     else
@@ -611,7 +611,7 @@ SpecCalc qualifying spec
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
 				   foldM (fn new_qids -> fn new_qid ->
-					  if member (new_qid, new_qids) then
+					  if new_qid in? new_qids then
 					    return new_qids
 					  else 
 					    return (Cons (new_qid, new_qids)))
@@ -619,8 +619,8 @@ SpecCalc qualifying spec
 					 (translateQualifiedIdToAliases sort_translator old_qid))
 	                          [] 
 				  info.names;
-	       new_names <- return (rev new_names);
-	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
+	       new_names <- return (reverse new_names);
+	       if unqualified_Boolean in? new_names || Boolean_Boolean in? new_names then
 		 return sorts
 	       else
 		 let new_info = info << {names = new_names} in
@@ -639,7 +639,7 @@ SpecCalc qualifying spec
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
 				   foldM (fn new_qids -> fn new_qid ->
-					  if member (new_qid, new_qids) then
+					  if new_qid in? new_qids then
 					    return new_qids
 					  else 
 					    return (Cons (new_qid, new_qids)))
@@ -647,7 +647,7 @@ SpecCalc qualifying spec
 					 (translateQualifiedIdToAliases op_translator old_qid))
 	                          [] 
 				  info.names;
-	       new_names <- return (rev new_names);
+	       new_names <- return (reverse new_names);
 	       let new_info = info << {names = new_names} in
 	       return (mergeOpInfo spc ops new_info)
 	      }
@@ -751,7 +751,7 @@ SpecCalc qualifying spec
 		  (case rules of
 		     | [] -> sp_tm
 		     | _ -> 
-		       let renaming = (rev rules, pos) in
+		       let renaming = (reverse rules, pos) in
 		       (Translate (sp_tm, renaming), pos))
               | _ -> sp_tm
 	in

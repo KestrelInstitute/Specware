@@ -13,7 +13,7 @@ Ineq qualifying spec
 
   op distinct: [a] List a -> Boolean
   axiom CompPredDistinct is distinct([Gt, Lt, GtEq, LtEq, Eq, Neq])
-  axiom CompPredExhaust is fa (x: CompPred) member(x, [Gt, Lt, GtEq, LtEq, Eq, Neq])
+  axiom CompPredExhaust is fa (x: CompPred) x in? [Gt, Lt, GtEq, LtEq, Eq, Neq]
 
   type Ineq
 

@@ -5,9 +5,9 @@ Unicode qualifying spec
 
   sort Unicode.UString = List Unicode.UChar
 
-  def Unicode.null? = List.null
-  def Unicode.all?  = List.all
-  def Unicode.in?   = List.member
+  def Unicode.null? = List.empty?
+  def Unicode.all?  = List.forall?
+  def Unicode.in?   = List.in?
 
   def Unicode.ustring (s : String) : UString =
     map uchar (explode s)

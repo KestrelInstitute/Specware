@@ -337,7 +337,7 @@ SpecCalc qualifying spec
      | Op      (aliases, fixity, refine?, dfn) ->
        myppAOpInfo(aliases, fixity, refine?, dfn)
      | Claim   (pr, nm, tvs, b)       -> ppAProperty   (pr,nm,tvs,b,a)
-     | Comment str                    -> if exists (fn char -> char = #\n) str then
+     | Comment str                    -> if exists? (fn char -> char = #\n) str then
                                            ppConcat [ppString " (* ",
 						     ppString str,
 						     ppString " *) "]
@@ -395,7 +395,7 @@ SpecCalc qualifying spec
 		  ppConcat [ppString (case associativity of
 					| Left  -> " infixl "
 					| Right -> " infixr "),
-			    ppString (toString precedence)]
+			    ppString (show precedence)]
 		| _ -> ppNil),
 	     ppString " : ",
 	     (case tvs of

@@ -114,7 +114,7 @@ spec
      let _ = app (fn decl -> 
 		(toScreen (printDecl decl);
  		 toScreen "; "))
-		(rev decls)
+		(reverse decls)
      in
      let _ = writeLine "" in
      ()
@@ -127,7 +127,7 @@ spec
 
  op freshName : Gamma * String -> String
 
- op  ?? infixl 9 : fa(a, b) a * b -> a * b
+ op  ?? infixl 9 : [a, b] a * b -> a * b
  def ??(x) = x
 
 
@@ -274,7 +274,7 @@ spec
 		   (Cons((id, nv), vs), ngamma))
               ([], gamma) prs
        in
-       (mkRecord(rev vsprs), rgamma)
+       (mkRecord(reverse vsprs), rgamma)
      | _ -> freshVar(name0, sigma1, gamma)
 
 % check type well formedness as well...
@@ -447,7 +447,7 @@ spec
    case pat of
      | WildPat _ -> true
      | VarPat _  -> true
-     | RecordPat(prs, _) -> all (fn (_,p) -> unconditionalPattern? p) prs
+     | RecordPat(prs, _) -> forall? (fn (_,p) -> unconditionalPattern? p) prs
      | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
      | _ -> false
 
@@ -476,11 +476,11 @@ spec
            | None ->
           if booleanType?(spc, ty)
            then length pats = 2
-               && exists (fn p -> case p of
+               && exists? (fn p -> case p of
                                    | BoolPat(true, _) -> true
                                    | _ -> false)
                     pats
-               && exists (fn p -> case p of
+               && exists? (fn p -> case p of
                                    | BoolPat(false, _) -> true
                                    | _ -> false)
                     pats
@@ -562,7 +562,7 @@ spec
 			               Some v
 				     | _ -> None)
 
-              (sublist(decls_new, 0, length decls_new - length decls_old))
+              (subFromTo(decls_new, 0, length decls_new - length decls_old))
    in
    negateTerm(mkSimpBind(Exists, vs, c))
 
@@ -614,7 +614,7 @@ spec
  def returnPatternRec(pairs, gamma, M, tau, sigma) =
      let spc = gamma.3 in
      if equalType? (tau, sigma) ||     % equivType? spc
-	exists (fn p -> p = (tau, sigma)) pairs
+	exists? (fn p -> p = (tau, sigma)) pairs
 	then (gamma, M)
      else
      let pairs  = Cons((tau, sigma), pairs) 	in 
@@ -880,7 +880,7 @@ spec
  def subtypeRec(pairs, tcc, gamma, M, tau, sigma) =
    let spc = gamma.3 in
    if equivType? spc (tau, sigma) || 
-      exists (fn p -> p = (tau, sigma)) pairs
+      exists? (fn p -> p = (tau, sigma)) pairs
       then tcc
    else
 %      let _ = writeLine
@@ -1001,7 +1001,7 @@ spec
    let name = nameFromTerm r in
    let qual = qualifierFromTerm r in
    let domty = domain(spc, inferType(spc, r)) in
-   let elty = hd(productSorts(spc, domty)) in
+   let elty = head(productSorts(spc, domty)) in
    let tyVars = freeTyVars elty in
    let x = ("x", elty) in
    let y = ("y", elty) in
@@ -1040,7 +1040,7 @@ spec
 
  op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
    if refine_num = 0 then qid
-     else Qualified(q,nm^"__"^toString refine_num)
+     else Qualified(q,nm^"__"^show refine_num)
 
  op dontGenerateObligations?(q: String, id: String): Boolean =
    false %endsIn?(id, "__subsort_pred")
@@ -1105,7 +1105,7 @@ spec
                          in
                          if new_tccs = [] then (el::tccs, claimNames)
                          else
-                         let new_tccs = rev new_tccs in
+                         let new_tccs = reverse new_tccs in
                          let op_ref_new_tccs = filter (fn Property(_, _, _, fm, _) ->
                                                          containsRefToOp?(fm, qid))
                                                  new_tccs
@@ -1162,7 +1162,7 @@ spec
                                               fn s ->
                                               case s of
                                                 | Quotient(_, r, _) ->
-                                                  if exists (fn rx -> equivTerm? spc (r, rx))
+                                                  if exists? (fn rx -> equivTerm? spc (r, rx))
                                                        (!quotientRelations) then ()
                                                   else 
                                                   let _ = (quotientRelations := Cons(r, !quotientRelations)) in 
@@ -1194,12 +1194,12 @@ spec
                        (([], claimNames), gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
                           |- fm ?? boolSort
                    in
-                   (rev new_tccs ++ (el::tccs), claimNames)
+                   (reverse new_tccs ++ (el::tccs), claimNames)
                  | _ -> (el::tccs, claimNames))
          tcc spc.elements
      in
      let _ = if reportTrivialObligationCount?
-              then writeLine(spc_name^" has "^toString(!triv_count_ref)^" obligations proved by simplification.")
+              then writeLine(spc_name^" has "^show(!triv_count_ref)^" obligations proved by simplification.")
               else ()
      in
      (tccs, claimNames)

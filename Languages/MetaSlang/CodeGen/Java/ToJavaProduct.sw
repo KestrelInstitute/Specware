@@ -13,7 +13,7 @@ def mkProdConstrDecl(id,fields) =
 			 fieldType <- findMatchingUserTypeM fieldType;
 			 fieldTypeId <- srtIdM fieldType;
 			 let fpar = fieldToFormalParam(fieldProj, fieldTypeId) in
-			 return (concat(fpars,[fpar]))
+			 return (fpars ++ [fpar])
 			}) [] fields;
    fieldProjs <- return(map (fn(fieldProj, _) -> fieldProj) fields);
    let prodConstrBody = mkProdConstBody(fieldProjs) in
@@ -30,7 +30,7 @@ def mkProdConstBody(fieldProjs) =
     let argName = ([], fldProj) in
     let assn = mkNameAssn(thisName, argName) in
     let restAssns = mkProdConstBody(fieldProjs) in
-    cons(assn, restAssns)
+    assn::restAssns
 
 op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
@@ -44,7 +44,7 @@ def productToClsDecls(id, srtDef as Product (fields, _)) =
 			      fieldType <- findMatchingUserTypeM fieldType;
 			      fieldTypeId <- srtIdM fieldType;
 			      let decl = fieldToFldDecl(fieldProj, fieldTypeId) in
-			      return (concat(decls,[decl]))
+			      return (decls ++ [decl])
 			     }) [] fields;
    equalityConjunction <- mkEqualityBodyForProduct fields;
    prodMethodDecl <- return(mkEqualityMethDecl id);

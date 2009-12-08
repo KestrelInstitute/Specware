@@ -16,10 +16,10 @@ spec
      : Option(Boolean * TypeCoercionInfo) =
     % let _ = writeLine(printSort gen_ty^" -~-> "^printSort ctxt_ty) in
     let result =
-          case find (fn tb \_rightarrow subtypeOf?(gen_ty,tb.subtype,spc) \_and \_not(subtypeOf?(ctxt_ty,tb.subtype,spc))) coercions of
+          case findLeftmost (fn tb \_rightarrow subtypeOf?(gen_ty,tb.subtype,spc) \_and \_not(subtypeOf?(ctxt_ty,tb.subtype,spc))) coercions of
             | Some tb \_rightarrow Some(true, tb)
             | None \_rightarrow
-          case find (fn tb \_rightarrow subtypeOf?(ctxt_ty,tb.subtype,spc) \_and \_not(subtypeOf?(gen_ty,tb.subtype,spc))) coercions of
+          case findLeftmost (fn tb \_rightarrow subtypeOf?(ctxt_ty,tb.subtype,spc) \_and \_not(subtypeOf?(gen_ty,tb.subtype,spc))) coercions of
             | Some tb \_rightarrow Some(false, tb)
             | None \_rightarrow None
     in
@@ -27,7 +27,7 @@ spec
     result
 
   op opaqueType?(ty: Sort, coercions: TypeCoercionTable, spc: Spec): Boolean =
-    exists (fn tb \_rightarrow subtypeOf?(ty,tb.subtype,spc)) coercions
+    exists? (fn tb \_rightarrow subtypeOf?(ty,tb.subtype,spc)) coercions
 
   op idFn?(t: MS.Term): Boolean =
     case t of
@@ -36,7 +36,7 @@ spec
 
   op patTermVarsForProduct(fields: List(Id * Sort)): MS.Pattern * MS.Term =
     let (pats,tms,_) = foldr (fn ((fld_i,p_ty), (pats,tms,i)) ->
-                                let v = ("x_"^toString i, p_ty) in
+                                let v = ("x_"^show i, p_ty) in
                                 (Cons((fld_i, mkVarPat v), pats),
                                  Cons((fld_i, mkVar    v),  tms),
                                  i-1))
@@ -97,7 +97,7 @@ spec
             | _ ->
           case (productOpt(spc,ty), productOpt(spc,rm_ty)) of
             | (Some fields, Some rm_fields)
-                | exists (fn ((_,p_ty),(_,rm_p_ty)) ->
+                | exists? (fn ((_,p_ty),(_,rm_p_ty)) ->
                             some?(needsCoercion?(p_ty,rm_p_ty,coercions,spc)))
                     (if length fields = length rm_fields
                        then zip(fields,rm_fields)
@@ -114,7 +114,7 @@ spec
 	case tm of
 	  | Apply (t1, t2, a) \_rightarrow
 	    let fn_ty = inferType(spc,t1) in
-            (case find (fn tb \_rightarrow subtypeOf?(fn_ty,tb.subtype,spc)) coercions of
+            (case findLeftmost (fn tb \_rightarrow subtypeOf?(fn_ty,tb.subtype,spc)) coercions of
                | Some tb | tb.subtype = Qualified("Set","Set")->
                  (case subtypeOf(fn_ty, tb.subtype, spc) of
                     | Some(Base(_,[p],_)) ->
@@ -167,7 +167,7 @@ spec
             % let _ = writeLine("lift?: " ^ printTerm tm ^ " with qual: "^qual) in
             (case checkCoercions x of
                | Some(tb,coerce_fn)
-                   | member(idn,tb.overloadedOps)
+                   | idn in? tb.overloadedOps
                      \_or %% Special case for minus (probably not worth generalizing)
                        %% minus on nats is equal to minus on integers if we know result is a nat
                      (qual = "Integer" \_and idn = "-" %\_and coerce_fn = int
@@ -196,7 +196,7 @@ spec
       def checkCoercions tm =
         % let _ = writeLine("cc: "^printTerm tm) in
         let result = (checkCoercions1 tm).2 in
-        % let _ = writeLine("is "^toString (some? result)) in
+        % let _ = writeLine("is "^show (some? result)) in
         result
       def checkCoercions1 tm =
         case tm of
@@ -204,7 +204,7 @@ spec
             foldl (\_lambda (result, (_,_,x)) \_rightarrow checkCoercions2(result,x))
               (true, None) match
           | Apply(f,_,_) \_rightarrow
-            (case find (fn tb \_rightarrow f = tb.coerceToSuper \_or f = tb.coerceToSub) coercions of
+            (case findLeftmost (fn tb \_rightarrow f = tb.coerceToSuper \_or f = tb.coerceToSub) coercions of
                | Some tb \_rightarrow (true, Some(tb,f))
                | None \_rightarrow (false,None))
           | Record(row, _) \_rightarrow
@@ -292,7 +292,7 @@ spec
 
   op directlyImplementedSubsort?(ty: Sort, coercions: TypeCoercionTable): Boolean =
     case ty of
-      | Base(qid,_,_) \_rightarrow exists (\_lambda tb \_rightarrow tb.subtype = qid) coercions
+      | Base(qid,_,_) \_rightarrow exists? (\_lambda tb \_rightarrow tb.subtype = qid) coercions
       | _ -> false
 
 endspec

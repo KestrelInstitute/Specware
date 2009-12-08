@@ -227,17 +227,18 @@ SpecCalc qualifying spec
    let props             = allProperties spc        in
    let baseHypothesis    = allProperties baseSpc    in
    % let rewriteHypothesis = allProperties rewriteSpc in
-   let props_upto_conjecture = firstUpTo (fn (pType, pName, _, _, _) -> 
-                                            member (pType, [Conjecture,Theorem]) && 
-                                            claimNameMatch (claimName, pName))
-                                         props
+   let props_upto_conjecture = findLeftmostAndPreceding
+                                 (fn (pType, pName, _, _, _) -> 
+                                     pType in? [Conjecture,Theorem] && 
+                                    claimNameMatch (claimName, pName))
+                                 props
    in
      case props_upto_conjecture of
        | None -> 
          %% could not find conjecture foo
-         if exists (fn (pType, pName, _, _, _) -> 
+         if exists? (fn (pType, pName, _, _, _) -> 
                       pType = Axiom && claimNameMatch (claimName, pName)) 
-                   props 
+                    props 
            then
              %% but could find axiom foo
              let _ = toScreen ("\n;;; For " 
@@ -277,7 +278,7 @@ SpecCalc qualifying spec
       | All -> validHypothesis
       | Explicit possibilities -> 
 	let hypothesis = filter (fn (_, propertyName, _, _, _) ->
-				  member(propertyName, (possibilities)))
+				  propertyName in? possibilities)
 			   validHypothesis
 	in
 	  hypothesis
@@ -289,7 +290,7 @@ SpecCalc qualifying spec
       | All -> []
       | Explicit possibilities -> 
          let missingHypothesis = filter (fn (claimName:ClaimName) ->
-					  ~(exists(fn (_, propName:ClaimName,_,_,_) ->
+					  ~(exists?(fn (_, propName:ClaimName,_,_,_) ->
 						    claimNameMatch(claimName, propName))
 					      actualHypothesis))
 				   possibilities

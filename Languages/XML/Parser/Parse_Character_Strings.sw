@@ -47,13 +47,13 @@ XML qualifying spec
 
 	   | char :: scout ->
 	     if white_char? char then
-	       probe (scout, cons (char, rev_whitespace))
+	       probe (scout, char::rev_whitespace)
 	     else
-	       return (rev rev_whitespace,
+	       return (reverse rev_whitespace,
 		       tail)
 
 	   | _ ->
-	     return (rev rev_whitespace,
+	     return (reverse rev_whitespace,
 		     tail)
 
     in
@@ -70,18 +70,18 @@ XML qualifying spec
 
 	   | 93 :: 93 :: 62 :: _ ->
 	     %% ']]>'
-	     (rev rev_char_data, tail)
+	     (reverse rev_char_data, tail)
 
 	   | char :: scout ->
 	     if char_data_char? char then
 	       %% note that char_data_char? is false for 60 ('<') and 38 ('&')
-	       probe (scout, cons (char, rev_char_data))
+	       probe (scout, char::rev_char_data)
 	     else
-	       (rev rev_char_data,
+	       (reverse rev_char_data,
 		tail)
 
 	   | _ ->
-	     (rev rev_char_data,
+	     (reverse rev_char_data,
 	      tail)
     in
       probe (start, [])
@@ -93,29 +93,29 @@ XML qualifying spec
   def parse_Comment (start : UChars) : Required Comment	=
     %% assumes we're past initial '<!--'
     let
-       def probe (tail, rev_comment) =
-	 case tail of
+       def probe (tl, rev_comment) =
+	 case tl of
 
 	   | 45 :: 45 :: scout ->
 	     %% '--'
 	     (case scout of
 
-		| 62 :: tail ->
+		| 62 :: tl ->
 		  %% '-->'
-		  return (rev rev_comment,
-			  tail)
+		  return (reverse rev_comment,
+			  tl)
 
 		| _ ->
 		  {
 		   error {kind        = Syntax,
 			  requirement = "'--' may not appear in a comment.",
 			  start       = start,
-			  tail        = tail,
+			  tail        = tl,
 			  peek        = 10,
 			  we_expected = [("'>'",   "remainder of '-->', to end comment")],
 			  but         = "'--' appears inside a comment",
 			  so_we       = "leave the bogus '--' in the comment"};
-		   probe (tl tail, cons (45, cons (45, rev_comment)))
+		   probe (tail tl, 45::45::rev_comment)
 		   })
 
 	   | [] ->
@@ -128,8 +128,8 @@ XML qualifying spec
 			 but         = "EOF occurred first",
 			 so_we       = "fail immediately"}
 
-	   | char :: tail ->
-	     probe (tail, cons (char, rev_comment))
+	   | char :: tl ->
+	     probe (tl, char::rev_comment)
 
     in
       probe (start, [])
@@ -149,7 +149,7 @@ XML qualifying spec
 
 	   | 93 :: 93 :: 62 :: tail ->
 	     %% ']]>'
-	     return ({cdata = rev rev_comment},
+	     return ({cdata = reverse rev_comment},
 		     tail)
 
 	   | [] ->
@@ -163,7 +163,7 @@ XML qualifying spec
 			 so_we       = "fail immediately"}
 
 	   | char :: tail ->
-	     probe (tail, cons (char, rev_comment))
+	     probe (tail, char::rev_comment)
     in
       probe (start, [])
 

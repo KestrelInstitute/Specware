@@ -68,7 +68,7 @@ Utilities qualifying spec
   op metafySort : Sort -> MetaSortScheme
  def metafySort srt =
    let (tvs, srt) = unpackSort srt in
-   if null tvs then
+   if empty? tvs then
      ([],srt)
    else
      let mtvar_position = Internal "metafySort" in
@@ -91,7 +91,7 @@ Utilities qualifying spec
 
  op metafyBaseType(qid: QualifiedId, ty: Sort, pos: Position): Sort * Sort =
    let (tvs, srt) = unpackSort ty in
-   if null tvs then
+   if empty? tvs then
      (Base(qid,[],pos),srt)
    else
    let mtvar_position = pos in          % Internal "metafySort"
@@ -137,8 +137,8 @@ Utilities qualifying spec
    case (s1, s2) of
     | (CoProduct (row1, _), CoProduct (row2, _)) ->
       length row1 = length row2
-      && all (fn (id1, cs1) ->
-	      exists (fn (id2, cs2) -> id1 = id2 && cs1 = cs2) row2)
+      && forall? (fn (id1, cs1) ->
+                    exists? (fn (id2, cs2) -> id1 = id2 && cs1 = cs2) row2)
              row1
     | _ -> false
 
@@ -156,7 +156,7 @@ Utilities qualifying spec
        case StringMap.find (constrMap, id) of
 	 | None -> StringMap.insert (constrMap, id, [(qid, cp_srt)])
 	 | Some srt_prs ->
-	   if exists (fn (o_qid,o_srt) -> qid = o_qid) srt_prs then
+	   if exists? (fn (o_qid,o_srt) -> qid = o_qid) srt_prs then
 	     constrMap
 	   else 
 	     StringMap.insert (constrMap, id,  (qid, cp_srt) :: srt_prs)
@@ -197,8 +197,8 @@ Utilities qualifying spec
 	    File (file_2, left_2, right_2)) ->
 	   if file_1 = file_2 && left_1.1 = left_2.1 then
 	     % If messages are on same line then prefer unidentified name error
-	     let unid1 = exists (fn str -> some? (search (str,msg_1))) priorityErrorStrings in
-	     let unid2 = exists (fn str -> some? (search (str,msg_2))) priorityErrorStrings in 
+	     let unid1 = exists? (fn str -> some? (search (str,msg_1))) priorityErrorStrings in
+	     let unid2 = exists? (fn str -> some? (search (str,msg_2))) priorityErrorStrings in 
 	     case (unid1,unid2) of
 	       | (false, false) -> compare1 (em1,em2)
 	       | (true,  false) -> Less
@@ -438,16 +438,16 @@ Utilities qualifying spec
            
       Let for instance:
 
-      sort T[x] = A + T[x]
-      sort S = A + S
+      type T[x] = A + T[x]
+      type S = A + S
 
       then T[A] unifies with S
       because (T[A],S) is inserted to the list "pairs" in the
       first recursive invocation of the unification and 
       prevents further recursive calls.
 
-      sort S = A + (A + S)
-      sort T = A+T
+      type S = A + (A + S)
+      type T = A+T
 
       These also unify.
 
@@ -576,11 +576,11 @@ Utilities qualifying spec
 	     Unify pairs)
 
 	| (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
-	  if exists (fn (p1, p2) -> 
-		     %% p = (srt1, srt2) 
-		     %% need predicate that chases metavar links
-		     equalType? (p1, srt1) &&
-		     equalType? (p2, srt2))
+	  if exists? (fn (p1, p2) -> 
+                        %% p = (srt1, srt2) 
+                        %% need predicate that chases metavar links
+                        equalType? (p1, srt1) &&
+                        equalType? (p2, srt2))
 	            pairs 
 	    then
 	      Unify pairs
@@ -594,7 +594,7 @@ Utilities qualifying spec
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
 		     withAnnS (s2x, pos2), 
-		     cons ((s1, s2), pairs), 
+		     Cons ((s1, s2), pairs), 
 		     ignoreSubsorts?)
 
 	% TODO: alpha equivalence...
@@ -670,7 +670,7 @@ Utilities qualifying spec
        case srt of
 	 | MetaTyVar (tv, pos) -> 
 	   (case unlinkSort srt of
-	      | MetaTyVar (tv, _) -> (vars := cons (tv, ! vars); srt)
+	      | MetaTyVar (tv, _) -> (vars := Cons (tv, ! vars); srt)
 	      | s -> mapSort (fn x -> x, vr, fn x -> x) (withAnnS (s, pos)))
 	 | _ -> srt
    in
@@ -696,29 +696,29 @@ Utilities qualifying spec
      %% sjw 3/404 It seems safe to ignore the predicates and it fixes bug 82
      | Quotient  (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
      | Subsort   (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
-     | Base      (_, srts, _) -> exists (fn s -> occurs (mtv, s)) srts
+     | Base      (_, srts, _) -> exists? (fn s -> occurs (mtv, s)) srts
      | Boolean             _  -> false
      | TyVar               _  -> false 
      | MetaTyVar           _  -> (case unlinkSort srt of
 				    | MetaTyVar (mtv1, _) -> mtv = mtv1 
 				    | t -> occurs (mtv, t))
-     | And       (srts,    _) -> exists (fn s -> occurs (mtv, s)) srts
+     | And       (srts,    _) -> exists? (fn s -> occurs (mtv, s)) srts
      | Any                  _ -> false
 
  def occursT (mtv, pred) =
    case pred of
-     | ApplyN     (ms,            _) -> exists (fn M -> occursT (mtv, M)) ms
-     | Record     (fields,        _) -> exists (fn (_, M) -> occursT (mtv, M)) fields
-     | Bind       (_, vars, body, _) -> exists (fn (_, s) -> occurs (mtv, s)) vars || occursT (mtv, body)
+     | ApplyN     (ms,            _) -> exists? (fn M -> occursT (mtv, M)) ms
+     | Record     (fields,        _) -> exists? (fn (_, M) -> occursT (mtv, M)) fields
+     | Bind       (_, vars, body, _) -> exists? (fn (_, s) -> occurs (mtv, s)) vars || occursT (mtv, body)
      | The        ((_,s), body,   _) -> occurs (mtv, s) || occursT (mtv, body)
      | IfThenElse (M, N, P,       _) -> occursT (mtv, M) || occursT (mtv, N) || occursT (mtv, P)
      | Var        ((_, s),        _) -> occurs (mtv, s)
      | Fun        (_, s,          _) -> occurs (mtv, s)
-     | Seq        (ms,            _) -> exists (fn M -> occursT (mtv, M)) ms
-     | Let        (decls, body,   _) -> occursT (mtv, body) || exists (fn (p, M) -> occursT (mtv, M)) decls
-     | LetRec     (decls, body,   _) -> occursT (mtv, body) || exists (fn (p, M) -> occursT (mtv, M)) decls
-     | Lambda     (rules,         _) -> exists (fn (p, c, M) -> occursT (mtv, M)) rules
-     | And        (tms,           _) -> exists (fn t -> occursT (mtv, t)) tms
+     | Seq        (ms,            _) -> exists? (fn M -> occursT (mtv, M)) ms
+     | Let        (decls, body,   _) -> occursT (mtv, body) || exists? (fn (p, M) -> occursT (mtv, M)) decls
+     | LetRec     (decls, body,   _) -> occursT (mtv, body) || exists? (fn (p, M) -> occursT (mtv, M)) decls
+     | Lambda     (rules,         _) -> exists? (fn (p, c, M) -> occursT (mtv, M)) rules
+     | And        (tms,           _) -> exists? (fn t -> occursT (mtv, t)) tms
      | _  -> false
 
  op break(s: String): () = ()
@@ -727,7 +727,7 @@ Utilities qualifying spec
   op linkMetaTyVar : MS.MetaTyVar -> MS.Sort -> ()
  def linkMetaTyVar (mtv : MS.MetaTyVar) tm = 
    let cell = ! mtv in
-   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.toString cell.uniqueId^" with "^printSort tm) else ();
+   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.show cell.uniqueId^" with "^printSort tm) else ();
     if embed? CoProduct tm then break("copr") else ();
     mtv := cell << {link = Some tm})
 

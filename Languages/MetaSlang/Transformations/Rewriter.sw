@@ -40,7 +40,7 @@ MetaSlangRewriter qualifying spec
      mapEach 
        (fn (first,rule,rest) -> 
           let substs = applyRewrite(context,rule,subst,term) in
-          if null substs
+          if empty? substs
 	    then emptyList
           else
             let rule1 = freshRule (context,rule) in
@@ -94,7 +94,7 @@ MetaSlangRewriter qualifying spec
                            (butLast new_results ++ [ri], ti, si, rulei)
                          else (new_results ++ [ri], ti, si, rulei)
                      else (new_results ++ [ri], ti, si, rulei))
-            ([hd results], t1, s1, rule1) (tl results)).1
+            ([head results], t1, s1, rule1) (tail results)).1
    in
    %let _ = if length new_results < length results then writeLine(toString (length new_results)) else () in
    if length new_results < length results
@@ -175,7 +175,7 @@ MetaSlangRewriter qualifying spec
  op baseSpecTerm?(term: MS.Term): Boolean =
    ~(existsSubTerm (fn t -> case t of
                               | Fun(Op(Qualified(qual,_),_),_,_) ->
-                                ~(member(qual,evalQualifiers))
+                                qual nin? evalQualifiers
                               | _ -> false)
        term)
 
@@ -226,11 +226,11 @@ MetaSlangRewriter qualifying spec
               let term_ty = inferType(spc, term) in
                 (equivType? spc (tm_ty, term_ty)
                    || equivType? spc (stripSubsorts (spc, tm_ty), term_ty))
-              && all (fn (i1,t1) ->
-                       case t1 of
-                         | Apply(Fun(Project i2,_,_), t, _) ->
-                           i1 = i2 && equalTerm?(t, tm)
-                         | _ -> false)
+              && forall? (fn (i1,t1) ->
+                            case t1 of
+                              | Apply(Fun(Project i2,_,_), t, _) ->
+                                i1 = i2 && equalTerm?(t, tm)
+                              | _ -> false)
                   r_flds)
          -> unit (tm, (subst,ssRule "RecordId",boundVars,demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
@@ -364,7 +364,7 @@ MetaSlangRewriter qualifying spec
  op removeLocalFlexVars(subst: SubstC, del_flexvarnums: List Nat): SubstC =
    let (sortSubst,termSubst,typeConds) = subst in
    let new_termsubst = NatMap.foldri (fn (i,v,result) ->
-                                        if i >= persistentFlexVarStartNum && ~(member(i,del_flexvarnums))
+                                        if i >= persistentFlexVarStartNum && i nin? del_flexvarnums
                                           then NatMap.insert(result,i,v)
                                         else result)
                          NatMap.empty termSubst
@@ -380,7 +380,7 @@ MetaSlangRewriter qualifying spec
    %let (sortSubst,termSubst,typeConds) = subst in
    let unBoundRefs = foldSubTerms (fn (t,result)  ->
                                     case isFlexVar? t of
-                                      | Some n | ~(member(n,result)) -> Cons(n,result)
+                                      | Some n | n nin? result -> n::result
                                       | _ -> result)
                        [] condn
    in
@@ -651,7 +651,7 @@ MetaSlangRewriter qualifying spec
  op traceRule(context:Context,rule:RewriteRule): () = 
      % if context.trace then
      if traceRewriting > 0 then 
-	let depth = toString(! context.traceDepth) in
+	let depth = show(! context.traceDepth) in
 	(toScreen (PrettyPrint.blanks (! context.traceIndent));
 	 writeLine("=  { "^depth^": "^ rule.name^" }"))
      else ()
@@ -670,21 +670,21 @@ MetaSlangRewriter qualifying spec
 	       of Fun(top,srt,_) -> true
 	        | Var((id,srt), _)  -> true
 	        | Let(decls,bdy,_) -> 
-	          all (fn (_,M) -> loop M) decls && loop bdy
+	          forall? (fn (_,M) -> loop M) decls && loop bdy
 	        | LetRec(decls,bdy,_) -> 
-	          all (fn (_,M) -> loop M) decls && loop bdy
+	          forall? (fn (_,M) -> loop M) decls && loop bdy
 	        | Record(row, _) -> 
-	          all (fn (_,M) -> loop M) row
+	          forall? (fn (_,M) -> loop M) row
 	        | IfThenElse(t1,t2,t3,_) -> loop t1 && loop t2 && loop t3
 	        | Lambda(match,_) -> 
-	          all  (fn (_,_,M) -> loop M) match
+	          forall?  (fn (_,_,M) -> loop M) match
                 | The(var,trm,_) -> loop trm
                 | Bind(bnd,vars,trm,_) -> loop trm
 	        | Apply(t1,t2,_) -> 
 	          (case isFlexVar?(term) 
 		     of Some n -> NatMap.inDomain(S,n) 
 		      | None -> loop t1 && loop t2)
-	        | Seq(terms,_) -> all loop terms
+	        | Seq(terms,_) -> forall? loop terms
      in
      loop term
 
@@ -756,7 +756,7 @@ MetaSlangRewriter qualifying spec
 	    let res = if traceRewriting > 0 then
                         (context.traceIndent := traceIndent + 3;
                          toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
-                         writeLine (toString(! context.traceDepth)^" : "^rule.name);
+                         writeLine (show(! context.traceDepth)^" : "^rule.name);
                          %              printSubst subst;
                          context.traceDepth := 0;
                          rewritesToTrue(rules,cond,boundVars,subst,history,backChain))
@@ -788,7 +788,7 @@ MetaSlangRewriter qualifying spec
 		   boundVars,term0,rules)     
 	in
 	if historyRepetition(history)
-	    then unit (tl history)
+	    then unit (tail history)
 	else
 	% let rews = (rewrite(Innermost,unconditional) >>= 
 	let rews = (rewrite(Outermost,rules0) >>= 
@@ -874,7 +874,7 @@ Discussion
 	      (unboxed (standard-code-for-f x-unboxed)))))
 * Implement the boxification as a Spec to Spec transformation that allows
       to reuse one code generator.
-        sort Box a = | Boxed Term | UnBoxed a
+        type Box a = | Boxed Term | UnBoxed a
         op  boxifySpec : Spec -> Spec
         op  boxifyTerm : Term -> Term
         op  boxifySort : Sort -> Sort

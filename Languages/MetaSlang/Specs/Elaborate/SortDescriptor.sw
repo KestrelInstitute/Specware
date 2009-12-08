@@ -8,13 +8,13 @@ XML qualifying spec
   %%  must be available to the application.
   %% In particular, avoid importing any internals of specware itself.
 
-  sort IdDescriptor   = String
-  sort QIdDescriptor  = String * String
-  sort TermDescriptor = String
+  type IdDescriptor   = String
+  type QIdDescriptor  = String * String
+  type TermDescriptor = String
 
   %% A term of type SortDescriptor will be accessible at runtime as the reflection of a sort
   %% that was otherwise only present at compile-time.
-  sort SortDescriptor = | Arrow        SortDescriptor * SortDescriptor
+  type SortDescriptor = | Arrow        SortDescriptor * SortDescriptor
                         | Product      List (IdDescriptor * SortDescriptor)
                         | CoProduct    List (IdDescriptor * Option SortDescriptor)
                         | Quotient     SortDescriptor * TermDescriptor              
@@ -35,12 +35,12 @@ XML qualifying spec
 
   %% Does this belong here (for use by apps) or elsewhere (for use by just Specware itself) ?
 
-  sort SortDescriptorExpansionTable = List (SortDescriptor * SortDescriptor)
+  type SortDescriptorExpansionTable = List (SortDescriptor * SortDescriptor)
 
   def expand_SortDescriptor (sd : SortDescriptor, table : SortDescriptorExpansionTable) =
    let
       def aux sd =
-	let possible_entry = find (fn (x,_) -> x = sd) table in
+	let possible_entry = findLeftmost (fn (x,_) -> x = sd) table in
 	case possible_entry of
 	  | None -> sd
 	  | Some (_, expansion) ->

@@ -15,7 +15,26 @@
 (defun anyToString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
 
 ;;; op print    : fa(a) a -> a
-(defun |!print| (x) (print x) (force-output))
+(defun |!print| (x) (print x) (force-output) x)
+
+(defun toScreen (x)
+ ;; Note: (format t ...) goes to *standard-output*
+ ;;    but (princ ... t) goes to *terminal-io*
+ ;; Confusing, but that's the standard...
+ ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
+ (declare (type cl:simple-string x))
+ (princ x *standard-output*)
+ (force-output *standard-output*))
+
+(defun writeLine (x)
+ ;; Note: (format t ...) goes to *standard-output*
+ ;;    but (princ ... t) goes to *terminal-io*
+ ;; Confusing, but that's the standard...
+ ;; We want *standard-output* so it can be redirected (e.g., by the test suite)
+ (declare (type cl:simple-string x))
+ (princ x *standard-output*)
+ (terpri *standard-output*)
+ (force-output *standard-output*))
 
 ;;; op warn     : fa(a) String -> a
 (defun |!warn| (s) (warn "~a" s))

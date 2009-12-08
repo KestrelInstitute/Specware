@@ -18,17 +18,17 @@ XML qualifying spec
 				55 + digit))
 		        digits)
 	 else
-	   aux (n, cons (digit, digits))
+	   aux (n,  digit::digits)
     in
       aux (n, [])
 
   type NE_List a = (List a | non_null?)
 
-  op [a] non_null? (xx : List a): Bool = ~ (List.null xx)
+  op [a] non_null? (xx : List a): Bool = ~ (empty? xx)
 
   op sublist? : [a] List a * List a -> Boolean 
   def sublist? (aa, bb) =
-    case locationOf (aa, bb) of 
+    case leftmostPositionOfSublistAndFollowing (aa, bb) of 
       | None -> false
       | _    -> true
 

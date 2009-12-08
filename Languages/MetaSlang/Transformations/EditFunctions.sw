@@ -24,8 +24,8 @@ spec
                                 case termAnn t of 
                                   | File(file_nm,(line,col,byte),_) \_rightarrow
                                     let loc = (file_nm,(line,col)) in
-                                    if member(loc,result) then result
-                                      else Cons(loc, result)
+                                    if loc in? result then result
+                                      else loc::result
                                   | _ \_rightarrow result
                               else result
                               | _ \_rightarrow result)
@@ -107,15 +107,15 @@ spec
               foldl (\_lambda ((next,top),u1) \_rightarrow
                      let importers =
                          foldMap (fn importers -> fn u_par -> fn (val,_,depUIDs,_) \_rightarrow
-                                  if member(u1,depUIDs) \_and (case val of Spec _ \_rightarrow true | _ \_rightarrow false)
-                                    then Cons(u_par,importers)
+                                  if u1 in? depUIDs \_and (case val of Spec _ \_rightarrow true | _ \_rightarrow false)
+                                    then u_par::importers
                                     else importers)
                            [] globalContext
                      in
                      if importers = []
-                       then (next,Cons(u1,top))
+                       then (next,u1::top)
                        else
-                       let new_importers = filter (\_lambda u \_rightarrow \_not(member(u,seen))) importers in
+                       let new_importers = filter (\_lambda u \_rightarrow u nin? seen) importers in
                        (new_importers++next,top))
                 ([],top) current
           in searchUp(next,next++seen,top)
@@ -130,7 +130,7 @@ spec
     % let _ = toScreen(anyToString unitId1 ^ "\n") in
     foldMap (fn result -> fn unitId -> fn (val,_,depUIDs,_) ->
              %let _ = toScreen(anyToString depUIDs ^ "\n") in
-	     if member(unitId1,depUIDs)
+	     if unitId1 in? depUIDs
                then case val of
                       | Spec spc \_rightarrow
                         (let result1 = foldl (fn (result,el) \_rightarrow

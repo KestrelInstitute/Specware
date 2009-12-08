@@ -52,7 +52,7 @@ SpecCalc qualifying spec
 			     | Some path -> translate (fn ch ->	  % \ to / for windows
 						       case ch of
 							| #\\ -> "/"
-							| _ -> toString ch)
+							| _ -> show ch)
 			                      path
 			     | None -> "")
 		          ^"/Library/SpecwareRuntime.lisp\")\n\n"

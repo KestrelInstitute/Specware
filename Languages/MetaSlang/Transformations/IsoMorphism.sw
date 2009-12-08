@@ -224,8 +224,8 @@ spec
                      case ty of
                        | Base(s_qid,_,_) ->
                          typeInIsoInfoList(s_qid, iso_info)
-                           || (~(member(s_qid, seen))
-                                  && dependsOnIsoInfo?(s_qid, iso_info, spc, seen))
+                           || (s_qid nin? seen
+                                && dependsOnIsoInfo?(s_qid, iso_info, spc, seen))
                        | _ -> false)
        def_ty
 
@@ -566,11 +566,11 @@ spec
                | (Arrow(x1, y1,  _), Arrow(x2, y2,  _)) ->
                  opacityPreserved?(x1, x2) && opacityPreserved?(y1, y2)
                | (Product(xs1, _), Product(xs2, _)) ->
-                 all (fn ((_, x1), (_, x2)) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
+                 forall? (fn ((_, x1), (_, x2)) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
                | (Subsort(x1, t1,  _), Subsort(x2, t2,  _)) ->
                  equalTerm?(t1, t2) && opacityPreserved?(x1, x2)
                | (Base(q1, xs1, _), Base(q2, xs2, _)) | q1 = q2 ->
-                 all (fn (x1, x2) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
+                 forall? (fn (x1, x2) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
                | (Base(q1, xs1, _), Base(q2, xs2, _)) | q2 nin? base_src_QIds ->
                  (case tryUnfoldBase spc u_ty of
                   | Some u_ty1 -> opacityPreserved?(d_ty, u_ty1)
@@ -610,21 +610,21 @@ spec
                 cto?(t1, mkArrow(dom, d_ty)) && cto?(t2, dom))
            | Record (row, _) ->
              let srts = map (project 2) (product (spc, d_ty)) in
-             all (fn (f_ty, (_, tmi)) -> cto?(tmi, f_ty))
+             forall? (fn (f_ty, (_, tmi)) -> cto?(tmi, f_ty))
                (zip(srts, row))
            | Bind (_, _, bod, _) -> cto?(bod, boolSort)
            | The  (var,  bod, _) -> cto?(bod, boolSort)
            | Let (decls, bdy, _) ->
              cto?(bdy, d_ty)
-               && all (fn (pat, trm) -> cto?(trm, patternSort pat))
+               && forall? (fn (pat, trm) -> cto?(trm, patternSort pat))
                     decls
            | LetRec (decls, bdy, _) ->
              cto?(bdy, d_ty)
-               && all (fn ((_, lr_ty), trm) -> cto?(trm, lr_ty))
+               && forall? (fn ((_, lr_ty), trm) -> cto?(trm, lr_ty))
                     decls
            | Lambda (match, _) ->
              let ran = range(spc, d_ty) in
-             all (fn (pat, condn, bod) ->
+             forall? (fn (pat, condn, bod) ->
                     cto?(condn, boolSort) && cto?(bod, ran))
                match
            | IfThenElse (t1, t2, t3, _) ->
@@ -633,7 +633,7 @@ spec
              let pre_trms = butLast terms in
              let lst_trm  =    last terms in
              cto?(lst_trm, d_ty)
-               && all (fn trm -> cto?(trm, mkProduct [])) pre_trms
+               && forall? (fn trm -> cto?(trm, mkProduct [])) pre_trms
            | SortedTerm (trm, srt, _) -> cto?(trm, srt)
            | _ -> true)
     in
@@ -676,7 +676,7 @@ spec
        if anyTerm? dfn then result
        else
        let op_ty_pr = isoType (spc, iso_info, iso_fn_info) false op_ty in
-       if member(qid,ign_qids) \_or equivType? spc (op_ty_pr,op_ty)
+       if qid in? ign_qids \_or equivType? spc (op_ty_pr,op_ty)
          then result
         else
           let qid_pr = makePrimedOpQid(qid, spc) in
@@ -732,7 +732,7 @@ spec
   def Isomorphism.makeIsoMorphism(spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                   extra_rules: List RuleSpec)
       : Spec =
-    if exists (fn (iso_qid, osi_qid) ->
+    if exists? (fn (iso_qid, osi_qid) ->
                none?(findOpInfo(spc,iso_qid)) || none?(findOpInfo(spc,osi_qid)))
          iso_qid_prs
        then spc
@@ -743,7 +743,7 @@ spec
                                 in (iso_info, osi_info))
                           iso_qid_prs
     in  %% Check compatibility of iso and osi
-    if exists (fn ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
+    if exists? (fn ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
                 if ~(length tvs = length inv_tvs
                        && equivType? spc (src_ty,inv_trg_ty)
                        && equivType? spc (trg_ty,inv_src_ty))
@@ -774,8 +774,8 @@ spec
     let qidPrMap = makePrimedOps(spc, iso_info, iso_fn_info) in
     let new_defs = makePrimedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap) in
     let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
-                     let qid  = hd opinfo.names in
-                     let qid_pr = hd opinfo_pr.names in
+                     let qid  = head opinfo.names in
+                     let qid_pr = head opinfo_pr.names in
                      let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
                      let spc = setOpInfo(spc,qid,opinfo) in
                      let spc = setOpInfo(spc,qid_pr,opinfo_pr) in
@@ -783,24 +783,24 @@ spec
                 spc new_defs
     in    
     let recursive_ops = recursiveOps spc in
-    let rewrite_old = map (fn (opinfo,_) -> Rewrite(hd opinfo.names)) new_defs in
-    let unfold_old  = map (fn (opinfo,_) -> Unfold (hd opinfo.names)) new_defs in
+    let rewrite_old = map (fn (opinfo,_) -> Rewrite(head opinfo.names)) new_defs in
+    let unfold_old  = map (fn (opinfo,_) -> Unfold (head opinfo.names)) new_defs in
     let iso_osi_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
     let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
-                                    if member(osi_qid, recursive_ops)
+                                    if osi_qid in? recursive_ops
                                       || ~(definedOp?(spc, osi_qid))
                                       then None
                                       else Some(Unfold osi_qid))
                         iso_info
     in
     let iso_intro_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
-                                          if member(iso_qid, recursive_ops) then None
+                                          if iso_qid in? recursive_ops then None
                                           else Some(Unfold iso_qid))
                               prime_type_iso_info
     in
     % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
     let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
-                                    if member(iso_qid, recursive_ops) then None
+                                    if iso_qid in? recursive_ops then None
                                       else Some(Unfold iso_qid))
                         iso_info
     in
@@ -829,7 +829,7 @@ spec
     let simp_ops
        = mapOpInfos
            (fn (opinfo) ->
-              if exists (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs
+              if exists? (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs
                 then opinfo
               else
               let _ = if existsSubTerm (fn t -> case t of
@@ -841,7 +841,7 @@ spec
                       else ()
               in
               let (tvs, ty, dfn) = unpackFirstTerm opinfo.dfn in
-              let qid as Qualified(q, id) = hd opinfo.names in
+              let qid as Qualified(q, id) = head opinfo.names in
               let ((simp_dfn,_),_) =
                   if simplifyIsomorphism?
                     && existsSubTerm (fn t -> let ty = inferType(spc, t) in

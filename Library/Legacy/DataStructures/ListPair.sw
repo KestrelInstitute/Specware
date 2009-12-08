@@ -1,16 +1,15 @@
 % Why is this called ListPair?
 
-ListPair qualifying spec {
-  import /Library/Base
+ListPair qualifying spec
 
-%  op zip    : fa (a,b) List a *  List b -> List (a * b)
-%  op unzip  : fa (a,b) List (a * b) -> List a *  List b
-  op map    : fa (a,b,c) (a * b -> c) -> List a * List b -> List c
-  op all    : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
-  op exists : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
-  op foldr  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
-  op foldl  : fa (a,b,c) (c * a * b -> c) -> c -> List a * List b -> c 
-  op app    : fa (a,b) (a * b -> ()) -> List a * List b -> ()
+%  op zip    : [a,b] List a *  List b -> List (a * b)
+%  op unzip  : [a,b] List (a * b) -> List a *  List b
+  op map    : [a,b,c] (a * b -> c) -> List a * List b -> List c
+  op all    : [a,b] (a * b -> Boolean) -> List a * List b -> Boolean
+  op exists : [a,b] (a * b -> Boolean) -> List a * List b -> Boolean
+  op foldr  : [a,b,c] (a * b * c -> c) -> c -> List a * List b -> c 
+  op foldl  : [a,b,c] (c * a * b -> c) -> c -> List a * List b -> c 
+  op app    : [a,b] (a * b -> ()) -> List a * List b -> ()
 
 %  def zip (l,r) = 
 %    case (l,r) of
@@ -54,4 +53,5 @@ ListPair qualifying spec {
     case (l,r) of
       | (l1::l2,r1::r2) -> (f (l1,r1); app f (l2,r2))
       | _ -> ()
-}
+endspec
+

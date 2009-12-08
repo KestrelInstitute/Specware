@@ -3,11 +3,9 @@
 These are based upon Common Lisp primitives.
 
 \begin{spec}
-Lisp qualifying spec {
+Lisp qualifying spec
 
-  import /Library/Base
-
-  sort LispCell
+  type LispCell
 
   op nat          : Nat                       -> LispCell
   op char         : Char                      -> LispCell
@@ -28,11 +26,11 @@ Lisp qualifying spec {
   op apply        : LispCell * List LispCell  -> LispCell
   op eval         : LispCell                  -> LispCell
 
-  op cell         : fa(A) A                   -> LispCell
-  op uncell       : fa(A) LispCell            -> A
+  op cell         : [A] A                   -> LispCell
+  op uncell       : [A] LispCell            -> A
 
   op null         : LispCell -> Boolean
 
   %% No defs here -- see ...
-}
+endspec
 \end{spec}

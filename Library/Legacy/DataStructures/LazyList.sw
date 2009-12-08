@@ -29,7 +29,7 @@ spec
 
  def toList = 
      fn Nil -> []
-      | Cons(hd,tl) -> List.cons(hd,toList(tl()))
+      | Cons(hd,tl) -> hd :: toList(tl())
 
  def unit a = Cons(a,fn () -> Nil)
 

@@ -42,7 +42,7 @@ Prover qualifying spec
     simpleTerm bod
       || (case bod of
             | Record(fields,_) ->
-              all (fn (_,t) -> simpleTerm t) fields
+              forall? (fn (_,t) -> simpleTerm t) fields
             | Apply(Fun(f,_,_),arg,_) ->
               simpleBody? arg
             | _ -> false)

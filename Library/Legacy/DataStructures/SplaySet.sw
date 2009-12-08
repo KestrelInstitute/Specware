@@ -161,7 +161,7 @@ SplaySet qualifying spec {
     case sp of
       | SplayNil -> l
       | SplayObj{value,left,right} -> 
-            listItemsApp (left, cons(value,listItemsApp (right,l)))
+            listItemsApp (left, Cons(value,listItemsApp (right,l)))
 
   def listItems set =
     case set of
@@ -218,7 +218,7 @@ SplaySet qualifying spec {
   def left (sp,rest) =
     case sp of
       | SplayNil -> rest
-      | (t as SplayObj vl) -> left(vl.left, cons(t,rest))
+      | (t as SplayObj vl) -> left(vl.left, Cons(t,rest))
 
   def cmp(comp,t1,t2) = 
     case (next t1,next t2) of

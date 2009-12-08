@@ -248,7 +248,7 @@ XML qualifying spec
 		  %% ']'
 		  {
 		   (w1, tail) <- parse_WhiteSpace tail;
-		   return (Some {decls = rev rev_markups,
+		   return (Some {decls = reverse rev_markups,
 				 w1    = w1},
 			   tail)
 		   }
@@ -259,42 +259,42 @@ XML qualifying spec
                   %% '<!ELEMENT'
 		  {
 		   (decl, tail) <- parse_ElementDecl tail;
-		   probe (tail, cons (Element decl, rev_markups))
+		   probe (tail, Element decl :: rev_markups)
 		  }
 
 		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail ->
                   %% '<!ATTLIST'
 		  {
 		   (decl, tail) <- parse_AttlistDecl tail;
-		   probe (tail, cons (Attributes decl, rev_markups))
+		   probe (tail, Attributes decl :: rev_markups)
 		  }
 
 		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail ->
                   %% '<!ENTITY'
 		  {
 		   (decl, tail) <- parse_EntityDecl (tail, false);
-		   probe (tail, cons (Entity decl, rev_markups))
+		   probe (tail, Entity decl :: rev_markups)
 		  }
 
 		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail ->
                   %% '<!NOTATATION'
 		  {
 		   (decl, tail) <- parse_NotationDecl tail;
-		   probe (tail, cons (Notation decl, rev_markups))
+		   probe (tail, Notation decl :: rev_markups)
 		  }
 
 		| 60 :: 63 :: tail ->
                   %% '<?'
 		  {
 		   (decl, tail) <- parse_PI tail;
-		   probe (tail, cons (PI decl, rev_markups))
+		   probe (tail, PI decl :: rev_markups)
 		  }
 
 		| 60 :: 45 :: 45 :: tail ->
                   %% '<--'
 		  {
 		   (comment, tail) <- parse_Comment tail;
-		   probe (tail, cons (Comment comment, rev_markups))
+		   probe (tail, Comment comment :: rev_markups)
 		  }
 
                 %% [28a] DeclSep      ::=  PEReference | S
@@ -303,14 +303,14 @@ XML qualifying spec
                   %% '%'
 		  {
 		   (ref, tail) <- parse_PEReference tail;
-		   probe (tail, cons (PEReference ref, rev_markups))
+		   probe (tail, PEReference ref :: rev_markups)
 		  }
 
 		| char :: _ ->
 		  if white_char? char then
 		    {
 		     (w1, scout) <- parse_WhiteSpace tail;
-		     probe (tail, cons (WhiteSpace w1, rev_markups))
+		     probe (tail, WhiteSpace w1 :: rev_markups)
 		    }
 		  else
 		    hard_error {kind        = Syntax,

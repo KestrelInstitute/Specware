@@ -19,9 +19,9 @@ SpecsToI2L qualifying spec {
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
 
-  sort Term = MS.Term
+  type Term = MS.Term
 
-  sort CgContext = {
+  type CgContext = {
 		    specname       : String, % not (yet) used
 		    isToplevel     : Boolean, % not used
 		    useRefTypes    : Boolean, % always true
@@ -59,8 +59,8 @@ SpecsToI2L qualifying spec {
       | None -> true
       | Some (qid as Qualified(q,id)) -> %~(member(qid,ctxt.constrOps))
         %let _ = writeLine("useConstrCalls, id="^id) in
-        let expl = concat(String.explode q, String.explode id) in
-	let (indl,_) = List.foldl (fn((indl,n),c) -> if c = #_ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
+        let expl = String.explode q ++ String.explode id in
+	let (indl,_) = List.foldl (fn((indl,n),c) -> if c = #_ then (n::indl,n+1) else (indl,n+1)) ([],0) expl in
 	%% indl records positions of _'s in name
 	case indl of
 	  | n :: m :: _ -> 
@@ -91,7 +91,7 @@ SpecsToI2L qualifying spec {
 			   if filter(Qualified(qid,name)) then
 			     %let _ = writeLine("adding "^(printQualifiedId(Qualified(qid,name)))) in
 			     let trOp = opinfo2declOrDefn(ctxt,spc,Qualified(qid,name),opinfo,None) in
-			     List.concat(l1,[trOp])
+			     l1++[trOp]
 			   else
 			     %let _ = writeLine("skipping "^(printQualifiedId(Qualified(qid,name)))) in
 			     l1
@@ -122,24 +122,24 @@ SpecsToI2L qualifying spec {
 	                           (fn(qid,name,sortinfo,l2) ->
 				    if filter(Qualified(qid,name)) then
 				      (case sortinfo2typedef(ctxt,spc,Qualified(qid,name),sortinfo) of
-					 | Some typedef -> concat(l2,[typedef])
+					 | Some typedef -> l2++[typedef]
 					 | None -> l2)
 				    else 
 				      %let _ = writeLine("skipping "^(printQualifiedId(Qualified(qid,name)))) in
 				      l2
 					)
 			           [] spc.sorts,
-			opdecls  = List.foldl (fn | (l3,OpDecl d) -> concat(l3,[d]) | (l4,_) -> l4)
+			opdecls  = List.foldl (fn | (l3,OpDecl d) -> l3++[d] | (l4,_) -> l4)
 	                           [] transformedOps,
-			funDecls = List.foldl (fn | (l5,FunDecl d) -> concat(l5,[d])
-					          | (l6,FunDefn{decl=d,body=_}) -> concat(l6,[d])
+			funDecls = List.foldl (fn | (l5,FunDecl d) -> l5++[d]
+					          | (l6,FunDefn{decl=d,body=_}) -> l6++[d]
 		                                  | (l7,_) -> l7)
 	                           [] transformedOps,
-			funDefns = List.foldl (fn | (l8,FunDefn d) -> concat(l8,[d]) | (l9,_) -> l9)
+			funDefns = List.foldl (fn | (l8,FunDefn d) -> l8++[d] | (l9,_) -> l9)
 	                           [] transformedOps,
-			varDecls = List.foldl (fn | (l10,VarDecl d) -> concat(l10,[d]) | (l11,_) -> l11)
+			varDecls = List.foldl (fn | (l10,VarDecl d) -> l10++[d] | (l11,_) -> l11)
 	                           [] transformedOps,
-			mapDecls = List.foldl (fn | (l12,MapDecl d) -> concat(l12,[d]) | (l13,_) -> l13)
+			mapDecls = List.foldl (fn | (l12,MapDecl d) -> l12++[d] | (l13,_) -> l13)
 	                           [] transformedOps
 		      }
 	      }
@@ -272,12 +272,12 @@ SpecsToI2L qualifying spec {
       | Product(fields,_) ->
 	  if fieldsAreNumbered(fields) then
 	    let types = List.map (fn(_,srt) -> sort2type(unsetToplevel ctxt,spc,tvs,srt)) fields in
-	    if types = nil then Void else Tuple(types)
+	    if types = [] then Void else Tuple(types)
 	  else
 	    let structfields = List.map 
 	                       (fn(id,srt) -> (id,sort2type(unsetToplevel ctxt,spc,tvs,srt))) fields
 	    in
-	    if structfields = nil then Void else Struct(structfields)
+	    if structfields = [] then Void else Struct(structfields)
 
       % ----------------------------------------------------------------------
 
@@ -443,13 +443,13 @@ SpecsToI2L qualifying spec {
 
 
   % this is used to distinguish "real" product from "record-products"
-  op fieldsAreNumbered: fa(a) List(String * a) -> Boolean
+  op fieldsAreNumbered: [a] List(String * a) -> Boolean
   def fieldsAreNumbered(fields) =
     let
       def fieldsAreNumbered0(i,fields) =
 	case fields of
           | [] -> true
-	  | (id,_)::fields -> id = Nat.toString(i) && fieldsAreNumbered0(i+1,fields)
+	  | (id,_)::fields -> id = Nat.show(i) && fieldsAreNumbered0(i+1,fields)
     in
     fieldsAreNumbered0(1,fields)
 
@@ -538,7 +538,7 @@ SpecsToI2L qualifying spec {
         (case pat of
 	   | VarPat _ -> t
 	   | RecordPat(plist,_) -> 
-	     if all (fn | (_,VarPat _) -> true | _ -> false) plist then t
+	     if forall? (fn | (_,VarPat _) -> true | _ -> false) plist then t
 	     else
 	       %let _ = writeLine("unsupported pattern in operator definition: "^(printPattern pat)) in
 	       let ty = inferType(spc,t) in
@@ -638,7 +638,7 @@ SpecsToI2L qualifying spec {
 	 let
 	   def getProjectionList(t,projids) =
 	     case t of
-	       | Apply(Fun(Project(id),_,_),t2,_) -> getProjectionList(t2,cons(id,projids))
+	       | Apply(Fun(Project(id),_,_),t2,_) -> getProjectionList(t2,id::projids)
 	       | _ -> (projids,t)
 	 in
 	 let args = getArgs t2 in
@@ -1050,7 +1050,7 @@ SpecsToI2L qualifying spec {
 	    let srt = stripSubsorts(spc,srt) in
 	    case srt of
 	      | CoProduct (fields,_) ->
-	        (case List.find (fn(id0,_) -> id0 = id) fields of
+	        (case findLeftmost (fn(id0,_) -> id0 = id) fields of
 		   | Some(_,optsort) -> (case optsort of
 					   | Some srt -> Some(sort2type(unsetToplevel ctxt,spc,[],srt))
 					   | None -> None
@@ -1117,7 +1117,7 @@ SpecsToI2L qualifying spec {
 	let expr = term2expression(ctxt,spc,term) in
 	Some(UnionCaseExpr(expr,unioncases))
         )
-      | _ -> (String.writeLine(mkInOpStr(ctxt)^"fail in simpleCoProductCase (wrong term format)");
+      | _ -> (writeLine(mkInOpStr(ctxt)^"fail in simpleCoProductCase (wrong term format)");
 	      None)
 
 

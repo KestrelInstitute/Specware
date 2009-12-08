@@ -2,7 +2,7 @@ AnnSpec qualifying
 spec
  import QualifierMap
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
- sort AQualifierMap b  = STHMap.Map(String * String,b)   
+ type AQualifierMap b  = STHMap.Map(String * String,b)   
  def foldriAQualifierMap f ini qm =
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
  def emptyAQualifierMap  = STHMap.emptyMap       % 
@@ -25,11 +25,11 @@ spec
 				 else cons(id,ids))
       [] m
 
-  op SpecCalc.return : fa (a) a -> SpecCalc.Env a
-  op SpecCalc.monadBind : fa (a,b) (SpecCalc.Env a) * (a -> SpecCalc.Env b) -> SpecCalc.Env b
+  op SpecCalc.return : [a] a -> SpecCalc.Env a
+  op SpecCalc.monadBind : [a,b] (SpecCalc.Env a) * (a -> SpecCalc.Env b) -> SpecCalc.Env b
 
  %% Temporary to get stuff working
- op foldL: fa(a,b) (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
+ op foldL: [a,b] (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
  def foldL f e l =
    case l of
      | [] -> return e

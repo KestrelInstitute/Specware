@@ -64,11 +64,11 @@ XML qualifying spec
 
 	  | 63 :: 62 :: tail ->
 	    %% '?>'
-	    return (rev rev_result,
+	    return (reverse rev_result,
 		    tail)
 
 	  | char :: tail ->
-	    probe (tail, cons (char, rev_result))
+	    probe (tail, char::rev_result)
 
 	  | _ ->
 	    hard_error {kind        = EOF,

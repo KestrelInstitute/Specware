@@ -72,7 +72,7 @@ PosSpecToSpec qualifying spec
                correctMapType(m, l, ty, spc, fx, a)
 	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
 	     | ApplyN (t1::t2::terms,pos) -> 
-	       convertPTerm (ApplyN([t1,ApplyN(cons(t2,terms),pos)],pos))
+	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
 	     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
 	     | _ -> term
      def convertPSort ty =
@@ -137,7 +137,7 @@ PosSpecToSpec qualifying spec
            case term of
 	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
 	     | ApplyN (t1::t2::terms,pos) -> 
-	       convertPTerm (ApplyN([t1,ApplyN(cons(t2,terms),pos)],pos))
+	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
 	     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
 	     | _ -> term
      def convertPSort ty =

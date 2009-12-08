@@ -3,7 +3,7 @@ spec
  import ../AbstractSyntax/DeMod
  import RewriteRules
 
- sort DemodRewriteRules  = 
+ type DemodRewriteRules  = 
       {unconditional : Demod RewriteRule,
        conditional   : Demod RewriteRule} 
 
@@ -57,7 +57,7 @@ spec
 		        conditional = addDemodRules(listRules rules1.conditional,
 						    rules2.conditional)}
 	in
-	mergeDemodRules(List.cons(rules1,rules))
+	mergeDemodRules(rules1::rules)
 
 
 endspec

@@ -483,6 +483,6 @@ SpecCalc qualifying spec
  op  deviceString?: String -> Boolean
  def deviceString? s =
    let len = length s in
-   len > 1 && sub(s,len - 1) = #:
+   len > 1 && s@(len - 1) = #:
 
 endspec

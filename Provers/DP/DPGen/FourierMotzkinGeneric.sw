@@ -211,7 +211,7 @@ FM qualifying spec
     if debugFM then toScreen content else ()
   *)
 
-  op printList: fa (a) (a -> String) -> List a -> String -> String
+  op printList: [a] (a -> String) -> List a -> String -> String
   def printList printElem l sep =
     foldl (fn (s,elem) -> s^(if s = "" then "" else sep)^(printElem elem))
     ""
@@ -239,8 +239,9 @@ FM qualifying spec
       {
        ineqSetS <- return (sortIneqSet(ineqSetN));
        ineqSetI <- integerPreProcess(ineqSetS);
+       ineqSetI <- return (filterSubsumed ineqSetI);
        _ <- return(if debugFM then toScreen("FM: INTEGER:\n"^printIneqSet(ineqSetI)) else ());
-       completeIneqs <- fourierMotzkin(ineqSetI);
+       completeIneqs <- fourierMotzkin(filterSubsumed ineqSetI);
        _ <- return(if debugFM then toScreen("FM: output:\n"^printIneqSet(completeIneqs)) else ());
        posP <- getProof(completeIneqs);
        case posP of
@@ -286,6 +287,7 @@ FM qualifying spec
       result
 
   op filterSubsumed(ineqSet: IneqSet): IneqSet =
+    %% Assumes that ineqSet is sorted
     rev(foldl (fn (ineqSet, ineq) ->
                %if ineq = trueIneq then ineqSet
 %               else
@@ -397,22 +399,24 @@ FM qualifying spec
 	     else Coef.zero
 	  else Coef.zero % If it is not of the above forms then lb is unconstrained
 
+  op tightenNeqBounds(neq: Ineq, ineqSet: IneqSet): Ineq.M IneqSet =
+    mapSeq (tightenWithNeqInteger neq) ineqSet
+
+  op tightenAllNeqBounds(neqs: IneqSet, ineqSet: IneqSet): Ineq.M IneqSet =
+    case neqs of
+      | [] -> return ineqSet
+      | hdNeq::restNeqs ->
+        if isTrue?(hdNeq)
+          then tightenAllNeqBounds(restNeqs, ineqSet)
+        else
+          {
+           tightenedIneqs <- tightenNeqBounds(hdNeq, ineqSet);
+           tightenAllNeqBounds(restNeqs, tightenedIneqs)
+           } 
+
   op integerPreProcess: IneqSet -> Ineq.M IneqSet
   def integerPreProcess(ineqSet) =
     let neqs = neqs(ineqSet) in
-    let def tightenNeqBounds(neq, ineqSet) =
-         (mapSeq (tightenWithNeqInteger neq) ineqSet) in
-    let def tightenAllNeqBounds(neqs, ineqSet) =
-          case neqs of
-	    | [] -> return ineqSet
-	    | hdNeq::restNeqs ->
-	    if isTrue?(hdNeq)
-	      then tightenAllNeqBounds(restNeqs, ineqSet)
-	    else
-	      {
-	      tightenedIneqs <- tightenNeqBounds(hdNeq, ineqSet);
-	      tightenAllNeqBounds(restNeqs, tightenedIneqs)
-	       } in
     {
     ineqSetT <- mapSeq tightenGTInteger ineqSet;
     tightenAllNeqBounds(neqs, ineqSetT)

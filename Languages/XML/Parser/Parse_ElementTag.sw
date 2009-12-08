@@ -89,10 +89,10 @@ XML qualifying spec
 	  (possible_attribute, scout) <- parse_ElementAttribute tail;
 	  case possible_attribute of
 	    | None ->
-	      return (rev rev_attrs,
+	      return (reverse rev_attrs,
 		      tail)
 	    | Some attr ->
-	      probe (scout, cons (attr, rev_attrs))
+	      probe (scout, attr::rev_attrs)
 	     }
     in
       probe (start, [])

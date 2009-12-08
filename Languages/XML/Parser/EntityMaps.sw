@@ -4,8 +4,8 @@ spec
 
  %% Simple-minded alist -- could get fancier if speed is any kind of problem
 
- sort GE_Map = List (Name * Content)
- sort PE_Map = List (Name * UChars)
+ type GE_Map = List (Name * Content)
+ type PE_Map = List (Name * UChars)
 
  def GE.empty_map : GE_Map = []
  def PE.empty_map : PE_Map = []
@@ -17,13 +17,13 @@ spec
    %% prior values take precedence
    case eval (map, name) of
      | Some _ -> map
-     | None   -> cons ((name, content), map)
+     | None   -> (name, content) :: map
 
  def PE.update (map, name, uchars) =
    %% prior values take precedence
    case eval (map, name) of
      | Some _ -> map
-     | None   -> cons ((name, uchars), map)
+     | None   -> (name, uchars) :: map
 
  op GE.eval : GE_Map * Name -> Option Content
  op PE.eval : PE_Map * Name -> Option UChars

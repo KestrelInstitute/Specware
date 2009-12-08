@@ -129,7 +129,7 @@ SpecCalc qualifying spec
      ^ (if (length errs) <= numberOfTypeErrorsToPrint then
 	   ""
 	 else 
-	   "...  (" ^ Nat.toString(length errs - numberOfTypeErrorsToPrint) ^ " additional type errors)")
+	   "...  (" ^ Nat.show(length errs - numberOfTypeErrorsToPrint) ^ " additional type errors)")
 
   op printExceptions : List Monad.Exception -> String
   def printExceptions exceptions =
@@ -159,21 +159,21 @@ SpecCalc qualifying spec
 		  in
 		    (msg, Some filename))
       in
-	(foldl print_exception ("",None) (firstN (rev exceptions, numberOfExceptionsToPrint))).1
+	(foldl print_exception ("",None) (firstN (reverse exceptions, numberOfExceptionsToPrint))).1
 	^ 
 	(if (length exceptions) <= numberOfExceptionsToPrint then
 	   ""
 	 else 
-	   "...  (" ^ Nat.toString(length exceptions - numberOfExceptionsToPrint) ^ " additional exceptions)")
+	   "...  (" ^ Nat.show(length exceptions - numberOfExceptionsToPrint) ^ " additional exceptions)")
 
 
-  op  firstN: fa(a) List a * Nat -> List a
+  op  firstN: [a] List a * Nat -> List a
   def firstN(l,n) =
     if n = 0 then []
     else
     case l of
       | [] -> []
-      | x::r -> cons(x,firstN(r,n-1))
+      | x::r -> Cons(x,firstN(r,n-1))
 
 endspec
 \end{spec}

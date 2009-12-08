@@ -4,8 +4,8 @@ XML qualifying spec
   import ../Utilities/XML_Unicode
   import ../XML_Sig
 
-  sort Possible X = Env (Option X * UChars)
-  sort Required X = Env (       X * UChars)
+  type Possible X = Env (Option X * UChars)
+  type Required X = Env (       X * UChars)
 
 
 endspec

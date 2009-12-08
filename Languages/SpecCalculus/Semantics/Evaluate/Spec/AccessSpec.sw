@@ -25,7 +25,7 @@ def getStringAttributesFromSpec spc =
 	ops
 
 
- sort AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
+ type AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
 
  (**
   * reads an "option" spec and returns the value of the given operator using the AttrValue sort
@@ -37,7 +37,7 @@ def getStringAttributesFromSpec spc =
      def extractList (t, list) =
        case t of
 	 | Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
-	   extractList (t, concat (list, [elem]))
+	   extractList (t, list ++ [elem])
 	 | _ -> list
    in
    let
@@ -81,7 +81,7 @@ def getStringAttributesFromSpec spc =
  def sortIdIsDefinedInSpec? (spc, id) =
    %%TODO: fix this -- hideously inefficient, and dubious semantics
    let srts = sortsAsList spc in
-   case find (fn (_, id0, _) -> id0 = id) srts of
+   case findLeftmost (fn (_, id0, _) -> id0 = id) srts of
      | Some (_,_,info) -> definedSortInfo? info
      | _ -> false 
 
@@ -89,7 +89,7 @@ def getStringAttributesFromSpec spc =
  def opIdIsDefinedInSpec?(spc,id) =
    %%TODO: fix this -- hideously inefficient, and dubious semantics
    let ops = opsAsList spc in
-   case find (fn (_, id0, _) -> id0 = id) ops of
+   case findLeftmost (fn (_, id0, _) -> id0 = id) ops of
      | Some (_,_,info) -> definedOpInfo? info
      | _ -> false
 
@@ -113,12 +113,12 @@ def getStringAttributesFromSpec spc =
  op getDeclaredQualifiedIds: Spec -> List QualifiedId
  def getDeclaredQualifiedIds spc =
    let qids = foldriAQualifierMap
-                (fn (q, id, _, qids) -> cons (Qualified (q, id), qids))
+                (fn (q, id, _, qids) -> Cons (Qualified (q, id), qids))
 	        [] 
 	        spc.sorts
    in
    let qids = foldriAQualifierMap
-                (fn (q, id, _, qids) -> cons (Qualified (q, id), qids))
+                (fn (q, id, _, qids) -> Cons (Qualified (q, id), qids))
 		qids 
 		spc.ops
    in
@@ -146,20 +146,20 @@ def getStringAttributesFromSpec spc =
 			 "System"      % TODO: basic ??
 			]
 
-  def basicQualifier? q = member (q, basicQualifiers)
+  def basicQualifier? q = q in? basicQualifiers
   (* def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers) *)
 
   def basicQualifiedId? qid =
     let (basic_sort_names, basic_op_names) = getBaseNames() in
-    member (qid, basic_sort_names) || 
-    member (qid, basic_op_names)
+    qid in? basic_sort_names || 
+    qid in? basic_op_names
 
   def basicSortName? qid =
     let (basic_sort_names, _) = getBaseNames () in
-    member (qid, basic_sort_names)
+    qid in? basic_sort_names
 
   def basicOpName? qid =
     let (_, basic_op_names) = getBaseNames () in
-    member (qid, basic_op_names)
+    qid in? basic_op_names
 
 endspec

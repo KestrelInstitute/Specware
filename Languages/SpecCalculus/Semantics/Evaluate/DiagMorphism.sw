@@ -19,7 +19,7 @@ SpecCalc qualifying spec {
 			  ^ "Cod diagram  = \n" 
 			  ^ showValue codValue 
 			  ^ "\n"
-			  ^ (Nat.toString (List.length morphRules)) 
+			  ^ (Nat.show (List.length morphRules)) 
 			  ^ " diagram-morphism rules \n"))
     }
 }

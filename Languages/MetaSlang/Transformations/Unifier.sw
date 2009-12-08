@@ -1,8 +1,8 @@
 Unifier qualifying
 spec
  import /Languages/MetaSlang/Specs/StandardSpec
- sort Subst = List (Var * MS.Term)
- sort Vars = List Var
+ type Subst = List (Var * MS.Term)
+ type Vars = List Var
 
  op empty: Subst
  def empty = []
@@ -21,7 +21,7 @@ spec
  def unify (t1, t2, vs) =
    unifyRec(t1, t2, empty, vs)
 
- op unifyList: fa(a) List a * List a * Subst * Vars
+ op unifyList: [a] List a * List a * Subst * Vars
                      * (a * a * Subst * Vars -> Option Subst)
                    -> Option Subst
  def unifyList(t1s, t2s, sb, vs, subFn) =

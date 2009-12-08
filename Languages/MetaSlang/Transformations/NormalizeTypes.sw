@@ -21,7 +21,7 @@ NormTypes qualifying spec
   op normalizeType (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort), checkTop?: Boolean) (ty: Sort): Sort =
     % let _ = writeLine("nt: "^printSort ty) in
     if replaceableType? ty
-      \_and \_not (checkTop? && exists (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
+      \_and \_not (checkTop? && exists? (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
      then
        case foldl (\_lambda (result,(qid,tvs,top_ty)) \_rightarrow
                    case result of
@@ -33,12 +33,12 @@ NormTypes qualifying spec
 			    % let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
                             %                     ^"\ntyvar_sbst:\n"^(anyToString tyvar_sbst)
                             %                     ^"\n tvs:\n"^(anyToString tvs)) in
-                            Some(qid,tvs,tyvar_sbst)
+                            Some(qid, tvs, tyvar_sbst)
                           | None \_rightarrow None)
                      | _ \_rightarrow result)
               None typeNameInfo of
-         | Some (qid,tvs,tyvar_sbst) | length tvs = length tyvar_sbst \_rightarrow
-           Base(qid,map (\_lambda tv \_rightarrow case find (\_lambda (tv1,_) \_rightarrow tv = tv1) tyvar_sbst of
+         | Some (qid, tvs, tyvar_sbst) | length tvs = length tyvar_sbst \_rightarrow
+           Base(qid,map (\_lambda tv \_rightarrow case findLeftmost (\_lambda (tv1,_) \_rightarrow tv = tv1) tyvar_sbst of
                                    | Some(_,ty_i) \_rightarrow ty_i)
                       tvs,
                  sortAnn ty)

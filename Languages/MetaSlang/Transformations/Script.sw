@@ -110,7 +110,7 @@ spec
    writeLine(scriptToString scr)
 
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
- op mkSteps(steps: List Script): Script = if length steps = 1 then hd steps else Steps steps
+ op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
  op mkSimplify(steps: List RuleSpec): Script = Simplify(steps)
  op mkApply(rules: List RuleSpec): Script = Apply rules
  op mkSimpStandard(): Script = SimpStandard
@@ -282,7 +282,7 @@ spec
     if term = top then None
       else
         let children = immediateSubTerms top in
-        if member(term,children) then Some top
+        if term in? children then Some top
           else foldl (fn (result,c) ->
                         if some? result then result
                           else parentTerm(term,c))
@@ -456,7 +456,7 @@ spec
           (spc,tracing?) steps
       | At(locs, scr) \_rightarrow
         let _ = if tracing? then
-                   writeLine("-- { at"^concatList(map (fn (Def qid) -> " "^printQualifiedId qid) locs)
+                   writeLine("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs)
                               ^" }")
                 else ()
         in

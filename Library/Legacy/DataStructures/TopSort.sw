@@ -49,5 +49,5 @@ TopSort qualifying spec
   def inorderL(t,ls) = 
       case t
         of Leaf -> ls
-         | Node(a,l,r) -> inorderL(l,List.cons(a,inorderL(r,ls)))
+         | Node(a,l,r) -> inorderL(l,Cons(a,inorderL(r,ls)))
 endspec

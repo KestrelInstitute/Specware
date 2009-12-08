@@ -114,12 +114,12 @@ AnnSpecPrinter qualifying spec
 
  %% ========================================================================
 
- def toString = PrettyPrint.toString
+% def toString = PrettyPrint.toString
 
  def isShortTuple (i, row) = 
    case row of
      | []           -> true
-     | (lbl, r) :: row -> lbl = Nat.toString i && isShortTuple (i + 1, row)
+     | (lbl, r) :: row -> lbl = Nat.show i && isShortTuple (i + 1, row)
       
 
  def initialize (pp, printSort?) : PrContext = 
@@ -171,10 +171,10 @@ AnnSpecPrinter qualifying spec
    : Pretty = 
    case termOp of
      | Op          (idInfo, _) -> pp.ppOpId (idInfo)
-     | Bool        b           -> pp.fromString (Boolean.toString b)
-     | Nat         n           -> pp.fromString (Nat.toString n)
+     | Bool        b           -> pp.fromString (Boolean.show b)
+     | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^s^"\"")              % "abc"
-     | Char        c           -> pp.fromString ("#" ^ (Char.toString c))  % #A
+     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % #A
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
@@ -752,7 +752,7 @@ AnnSpecPrinter qualifying spec
  def [a] TyVarString (mtv: AMetaTyVar a) : String =
    let {link, uniqueId, name} = State.! mtv in
    case link of
-    | None -> "mtv%"^name^"%"^ (Nat.toString uniqueId)
+    | None -> "mtv%"^name^"%"^ (Nat.show uniqueId)
     | Some srt -> printSort srt
 
   %% More elaborate version
@@ -760,7 +760,7 @@ AnnSpecPrinter qualifying spec
   %       case link
   %         of None  -> ""
   %          | Some srt -> "["^printSort srt^"]"
-  %     in "mtv%"^Nat.toString uniqueId^linkr
+  %     in "mtv%"^Nat.show uniqueId^linkr
 
  def enclose (enclosed, pretty) = 
    if enclosed then
@@ -772,10 +772,10 @@ AnnSpecPrinter qualifying spec
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
-     | BoolPat   (b, _) -> string (Boolean.toString b)
-     | NatPat    (n, _) -> string (Nat.toString     n)
+     | BoolPat   (b, _) -> string (Boolean.show b)
+     | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
-     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.toString c))   % #A
+     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))   % #A
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
 	 blockFill (0, 
@@ -972,7 +972,7 @@ AnnSpecPrinter qualifying spec
 			(0, pp.ppFormulaDesc (" "^ (if q = UnQualified then "" else q^".")^id)), 
 			(0, string " "), 
 			(0, pp.Is), 
-                        (0, if null tyVars then string "" else string " "), 
+                        (0, if empty? tyVars then string "" else string " "), 
 			(0, ppForallTyVars pp tyVars), 
 			(0, string " "), 
 			(3, ppTerm context ([index, propertyIndex], Top) term)]))
@@ -1038,8 +1038,8 @@ AnnSpecPrinter qualifying spec
            [(0, case info.fixity of
                   | Nonfix         -> string ""
                   | Unspecified    -> string ""
-                  | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
-                  | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+                  | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                  | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
             (0, string " :"), 
             (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                (0, string " "), 
@@ -1066,8 +1066,8 @@ AnnSpecPrinter qualifying spec
                              [(0, case info.fixity of
                                     | Nonfix         -> string ""
                                     | Unspecified    -> string ""
-                                    | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
-                                    | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+                                    | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                                    | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
                               (0, string " :"), 
                               (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                                  (0, string " "), 
@@ -1079,10 +1079,10 @@ AnnSpecPrinter qualifying spec
                          [(0, case info.fixity of
                                 | Nonfix         -> string ""
                                 | Unspecified    -> string ""
-                                | Infix (Left, i)  -> string (" infixl "^Nat.toString i)
-                                | Infix (Right, i) -> string (" infixr "^Nat.toString i)), 
+                                | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                                | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
                           (0, string " :"), 
-                          (0, blockNone (0, [(0, if null tvs then string "" else string " "),
+                          (0, blockNone (0, [(0, if empty? tvs then string "" else string " "),
                                              (0, ppForallTyVars pp tvs), 
                                              (0, string " "), 
                                              (3, ppSort context ([index, opIndex], Top) srt)]))
@@ -1136,12 +1136,12 @@ AnnSpecPrinter qualifying spec
 	    %% Precede with new line only if both op and def 
 	    [(0, string " ")]   %(if blankLine? then [(0, string " ")] else [])
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
 	else
 	  if n <= 1 then
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let decls = 
        %% make sure an "op ..." form is printed, to establish the type of the op
@@ -1206,12 +1206,12 @@ AnnSpecPrinter qualifying spec
 	  if n <= 1 then
 	    []
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
 	else
 	  if n <= 1 then
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let ppDecls = if printDef? then [] else map ppDecl decls in
    let ppDefs  = if printDef? then map ppDef  defs else []  in
@@ -1298,7 +1298,7 @@ AnnSpecPrinter qualifying spec
 	 | Import (im_sp_tm,im_sp,im_elements,_) ->
 	   (case import_directions of
 	     | NotSpec ign_specs ->
-	       if member(im_sp,ign_specs) then result
+	       if im_sp in? ign_specs then result
 	       else (index,
 		     Cons((1, blockFill (0,
 					 [(0, context.pp.Import), 
@@ -1350,7 +1350,7 @@ AnnSpecPrinter qualifying spec
 	    (0, string " ") :: Cons(ppProperty context (index, prop),ppResult))
 	 | Comment (str,_) ->
 	   (index+1,
-	    if exists (fn char -> char = #\n) str then
+	    if exists? (fn char -> char = #\n) str then
 	      [(0, string " (* "),
 	       (2, string str),
 	       (0, string " *) ")]
@@ -1414,7 +1414,7 @@ AnnSpecPrinter qualifying spec
 	 | Import (im_sp_tm,im_sp,im_elements,_) ->
 	   (case import_directions of
 	     | NotSpec ign_specs ->
-	       if member(im_sp,ign_specs) then result
+	       if im_sp in? ign_specs then result
 	       else (index,
 		     Cons((1, prettysFill [context.pp.Import, 
 					   %% TODO: indenting this way isn't quite right,
@@ -1469,7 +1469,7 @@ AnnSpecPrinter qualifying spec
 	    Cons(ppProperty context (index, prop),ppResult))
 	 | Comment (str,_) ->
 	   (index+1,
-	    if exists (fn char -> char = #\n) str then
+	    if exists? (fn char -> char = #\n) str then
 	      [(0, string " (* "),
 	       (2, string str),
 	       (0, string " *) ")]
@@ -1504,7 +1504,7 @@ AnnSpecPrinter qualifying spec
 
   op indentString : String -> String -> String
  def indentString prefix s =
-   let newline_char = hd (explode newline) in
+   let newline_char = head (explode newline) in
    let prefix = explode prefix in
    let s = foldl (fn (s, char) ->
 		  if char = newline_char then
@@ -1514,7 +1514,7 @@ AnnSpecPrinter qualifying spec
                  []  
 		 (explode s)
    in
-     implode (rev s)
+     implode (reverse s)
 
  def specToPrettyVerbose spc = 
    ppSpecAll (initialize (asciiPrinter, false)) spc
@@ -1553,11 +1553,11 @@ AnnSpecPrinter qualifying spec
 
  def printSpecFlatToTerminal spc =
    (toTerminal (format (80, specToPrettyFlat spc)); 
-    String.writeLine "")
+    writeLine "")
    
  def printSpecToTerminal spc =
    (toTerminal (format (80, specToPretty spc)); 
-    String.writeLine "")
+    writeLine "")
    
  def printSpecToFile (fileName, spc) = 
    toFile (fileName, format (90, specToPretty spc))
@@ -1639,14 +1639,14 @@ AnnSpecPrinter qualifying spec
 	      case el of
 		| Property(pt, qid, tvs, _, _) ->
 	          (counter + 1, 
-		   Cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
+		   Cons (string ("  \\pdfoutline goto num "^ Nat.show counter^
 				 "  {"^ printQualifiedId qid ^ "}"), 
 			 list))
 		| _ -> result)
              (1, []) 
 	     spc.elements
    in
-   let properties = rev properties    in
+   let properties = reverse properties    in
    let sortCount  = length sorts      in
    let opCount    = length ops        in
    let pCount     = length properties in
@@ -1656,11 +1656,11 @@ AnnSpecPrinter qualifying spec
 		   positive? pCount        
    in
      prettysAll ([string ("\\pdfoutline goto name {Spec:"^"???"^"} count -"^
-			 Nat.toString menuCount^"  {"^"???"^"}")]
+			 Nat.show menuCount^"  {"^"???"^"}")]
 		++
 		(if sortCount > 0 then
 		   [string ("\\pdfoutline goto name {Spec:"^"???"^
-			    "} count -"^Nat.toString sortCount^
+			    "} count -"^Nat.show sortCount^
 			    " {Sorts}")]
 		 else 
 		   [])
@@ -1669,7 +1669,7 @@ AnnSpecPrinter qualifying spec
 		++
 		(if opCount > 0 then
 		   [string ("\\pdfoutline goto name {Spec:"^"???"^"} count -"^
-			    Nat.toString opCount^
+			    Nat.show opCount^
 			    " {Ops}")]
 		 else 
 		   [])
@@ -1678,7 +1678,7 @@ AnnSpecPrinter qualifying spec
 		++
 		(if pCount > 0 then
 		   [string ("\\pdfoutline goto name {Spec:"^"???"^"} count-"^
-			    Nat.toString pCount^" {Properties}")]
+			    Nat.show pCount^" {Properties}")]
 		 else
 		   [])
 		++

@@ -219,7 +219,7 @@ spec
     % let _ = toScreen ("\n:Patinds [" ^ (Nat.toString (List.length patinds)) ^ "]= " ^ (anyToString patinds) ^ "\n") in
     % let _ = toScreen ("\n:HOARgs  [" ^ (Nat.toString (List.length HOArgs))  ^ "]= " ^ (anyToString HOArgs)  ^ "\n") in
     Some(params, body, srt,
-	 filter (fn i -> nth(HOArgs, i)) patinds,
+	 filter (fn i -> HOArgs@i) patinds,
 	 curried?,
 	 recursiveOp?(qid, use_map, 8))
 
@@ -242,8 +242,8 @@ spec
   op  hoParamsSame?: List Pattern * List Term * List Boolean -> Boolean
   def hoParamsSame?(params, args, HOArgs) =
     length params >= length args
-      && all (fn i -> if nth(HOArgs, i)
-	              then patternMatchesTerm?(nth(params, i), nth(args, i))
+      && forall? (fn i -> if HOArgs@i
+	              then patternMatchesTerm?(params@i, args@i)
 		      else true)
           (tabulate(length args, id))
 
@@ -252,7 +252,7 @@ spec
     case (p, t) of
       | (VarPat((vp, _), _), Var((v, _), _)) -> v = vp
       | (RecordPat(pfields, _), Record(tfields, _)) ->
-        all (fn (id, pi) -> patternMatchesTerm?(pi, lookupId(id, tfields))) pfields
+        forall? (fn (id, pi) -> patternMatchesTerm?(pi, lookupId(id, tfields))) pfields
       | _ -> false
     
 (*
@@ -283,14 +283,14 @@ spec
 	      case productOpt(spc, dom) of
 		| None -> false
 		| Some fields ->
-		  exists (fn (_, s) -> arrow? (spc, s)) fields)
+		  exists? (fn (_, s) -> arrow? (spc, s)) fields)
 
   op  hoSort?: Spec * Sort -> Boolean
   def hoSort? (spc, srt) =
     case stripSubsorts(spc, srt) of
       | Arrow _ -> true
       | Product(fields, _) ->
-        exists (fn(_, s) -> hoSort?(spc, s)) fields
+        exists? (fn(_, s) -> hoSort?(spc, s)) fields
       | _ -> false
 
   op unfoldSizeThreshold: Nat = 40
@@ -327,7 +327,7 @@ spec
 	       | Some (vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 		 if ~curried?
 		      && length(termList a) > foldr max 0 fnIndices
-		      && exists (fn i -> exploitableTerm?(getTupleArg(a, i), unfoldMap))
+		      && exists? (fn i -> exploitableTerm?(getTupleArg(a, i), unfoldMap))
 		          fnIndices
 		  then makeUnfoldedTerm
 		         (outer_qid, t, f, termToList a, inferType(spc, t),
@@ -346,7 +346,7 @@ spec
 			 | None -> t
 			 | Some(vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 			   if curried? && (length args = length vs)
-			     && exists (fn i -> exploitableTerm?(nth(args, i), unfoldMap))
+			     && exists? (fn i -> exploitableTerm?(args@i, unfoldMap))
 			         fnIndices
 			    then makeUnfoldedTerm(outer_qid, t, f, args, inferType(spc, t),
 						  sortMatch(defsrt, srt, spc),
@@ -363,18 +363,18 @@ spec
                       -> Term
   def makeUnfoldedTerm(outer_qid, orig_tm, _(* f *), args, resultSort, tyVarSbst, vs, defbody, fnIndices,
 		       recursive?, qid, nm, unfoldMap, simplifyTerm, curried?, spc) =
-    let replaceIndices = filter (fn i -> constantTerm?(nth(args, i))
-				        && member(i, fnIndices))
+    let replaceIndices = filter (fn i -> constantTerm?(args@i)
+				        && i in? fnIndices)
                            (tabulate (length args, id))
     in
-    let vSubst = foldl (fn (r, i) -> r ++ matchPairs(nth(vs, i), nth(args, i)))
+    let vSubst = foldl (fn (r, i) -> r ++ matchPairs(vs@i, args@i))
                    [] replaceIndices
     in
-    let remainingIndices =  filter (fn i -> ~(member(i, replaceIndices)))
+    let remainingIndices =  filter (fn i -> i nin? replaceIndices)
                               (tabulate (length args, id))
     in
-    let remainingParams = map (fn i -> nth(  vs, i)) remainingIndices in
-    let remainingArgs   = map (fn i -> nth(args, i)) remainingIndices in
+    let remainingParams = map (fn i ->   vs@i) remainingIndices in
+    let remainingArgs   = map (fn i -> args@i) remainingIndices in
     if recursive?
       then makeRecursiveLocalDef(outer_qid, qid, nm, defbody, resultSort, tyVarSbst,
 				 remainingParams, remainingArgs, remainingIndices,
@@ -395,7 +395,7 @@ spec
 %        let _ = if outer_qid = Qualified("Stitch","stitchMethod")
 %                   then writeLine("uf:\n"^printTerm transNewTm^"\n\n") else () in
       if transNewTm = newTm && sizeTerm newTm > sizeTerm orig_tm
-           && ~(exists (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst)
+           && ~(exists? (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst)
         then orig_tm
         else transNewTm
 
@@ -412,7 +412,7 @@ spec
 	      | (VarPat ((param_id, _), _), Var ((arg_id, _), _)) -> 
 	        param_id = arg_id
 	      | (RecordPat (p_fields, _), Record (a_fields, _)) ->
-	        all (fn (p, a) -> similar? (p, a)) 
+	        forall? (fn (p, a) -> similar? (p, a)) 
 		    (zip ((map (fn field -> field.2) p_fields),
 			  (map (fn field -> field.2) a_fields)))
 	      | _ -> false
@@ -424,16 +424,16 @@ spec
     let pattern_vars  : List (List Var) = map patVars  remainingParams in
     let arg_free_vars : List (List Var) = map freeVars remainingArgs   in
     let possible_capture? =
-        case rev pattern_vars of
+        case reverse pattern_vars of
 	  | [] -> false
 	  | _ :: outer_pattern_vars ->
 	    (let (capture?, _) =
 	     foldl (fn ((capture?, outer_pattern_vars_list), arg_vars) ->
 		    if capture? then
 		      (true, [])
-		    else if exists (fn av -> 
-				    exists (fn outer_pat_vars -> 
-					    exists (fn pv -> av.1 = pv.1) 
+		    else if exists? (fn av -> 
+				    exists? (fn outer_pat_vars -> 
+					    exists? (fn pv -> av.1 = pv.1) 
 					           outer_pat_vars)
 				           outer_pattern_vars_list)
 		                   arg_vars 
@@ -445,7 +445,7 @@ spec
 			 | [] -> []
 			 | _ :: outer_list -> outer_list))
 	           (false, outer_pattern_vars)
-		   (rev arg_free_vars)
+		   (reverse arg_free_vars)
 	     in
 	       capture?)
     in
@@ -456,8 +456,8 @@ spec
       %% sources, and never in Specware, Accord, Planware, JFlaws, JavaCard, ...
       let 
         def find_unused_id index =
-	  let new_id = "temp-" ^ (toString index) ^ "-" in
-	  if idReferenced? (new_id, defbody) || (exists (fn arg -> idReferenced? (new_id, arg)) args) then
+	  let new_id = "temp-" ^ (show index) ^ "-" in
+	  if idReferenced? (new_id, defbody) || (exists? (fn arg -> idReferenced? (new_id, arg)) args) then
 	    find_unused_id (index + 1)
 	  else
 	    (index + 1, new_id)
@@ -485,7 +485,7 @@ spec
   op  locallyUniqueName: Id * Term -> Id
   def locallyUniqueName(baseName, t) =
     let def aux (baseName, t, i) =
-          let indName = baseName^"-"^(Nat.toString i) in
+          let indName = baseName^"-"^(Nat.show i) in
 	  if idReferenced?(indName, t)
 	    then aux(baseName, t, i+1)
 	    else indName
@@ -511,7 +511,7 @@ spec
     in
     let localFnName = locallyUniqueName(prefix^"_"^nm^"--local",
 					%% Just to give context of var names to avoid
-					mkTuple(cons(defbody, remainingArgs)))
+					mkTuple(defbody :: remainingArgs))
     in
     let newArgTerm = mkTuple remainingArgs in
     let instantiatedFnSort = mkArrow(termSort newArgTerm, resultSort) in
@@ -521,13 +521,13 @@ spec
 	    | Apply(Fun(Op(nqid, _), _, _), arg, a) | qid = nqid && List.length(termToList arg) = numargs ->
 	      let args = termToList arg in
 	      Apply(mkVar localFn,
-		    mkTuple(map (fn i -> nth(args, i)) remainingIndices),
+		    mkTuple(map (fn i -> args@i) remainingIndices),
 		    a)
             | Apply _ | curried? ->
               (case getCurryArgs t of
                | Some(Fun(Op(nqid, _), _, _), args) | qid = nqid && length args = numargs ->
                  mkApply(mkVar localFn,
-                         mkTuple(map (fn i -> nth(args, i)) remainingIndices))
+                         mkTuple(map (fn i -> args@i) remainingIndices))
                | _ -> t)
 	    | _ -> t
     in
@@ -553,9 +553,9 @@ spec
    let def match(srt1, srt2, pairs) =
         case (srt1, srt2) of
 	  | (TyVar(id1, _), srt2) -> 
-	    if some?(find (fn (id, _) -> id = id1) pairs)
+	    if some?(findLeftmost (fn (id, _) -> id = id1) pairs)
 	      then pairs
-	      else cons((id1, srt2), pairs)
+	      else (id1, srt2) :: pairs
 	  | (Arrow(t1, t2, _), Arrow(s1, s2, _)) -> 
 	    match(t2, s2, match(t1, s1, pairs))
 	  | (Product(r1, _), Product(r2, _)) -> 
@@ -588,7 +588,7 @@ spec
 	  | _ -> pairs
   in match(s1, s2, [])
 
-  op matchL: fa(a) List a * List a * TyVarSubst * (a * a * TyVarSubst -> TyVarSubst)
+  op matchL: [a] List a * List a * TyVarSubst * (a * a * TyVarSubst -> TyVarSubst)
                  -> TyVarSubst
   def matchL(l1, l2, pairs, matchElt) =
     case (l1, l2)
@@ -636,14 +636,14 @@ spec
 		    (case argSort of
 		      | Product(fields, _) ->
 		        let vars = (foldl (fn ((result, i), (label, srt)) ->
-					    (result ++ [(label, ("xxx-"^Nat.toString i, srt))],
+					    (result ++ [(label, ("xxx-"^Nat.show i, srt))],
 					     i+1))
 				      ([], 0) fields).1
 			in mkLambda(mkRecordPat(map (fn(l, v) -> (l, mkVarPat(v))) vars),
 				    mkApply(defn,
 					    mkRecord(map (fn (l, v) -> (l, mkVar(v))) vars))))
 		  else 
-		  let nv = ("yyy-"^Nat.toString argNum, argSort) in
+		  let nv = ("yyy-"^Nat.show argNum, argSort) in
 		  mkLambda(mkVarPat(nv), aux(mkApply(defn, mkVar(nv)), rSorts, argNum+1))
     in aux(defn, curryArgSorts, 0)
 
@@ -664,7 +664,7 @@ spec
   op  getTupleArg: Term * Nat -> Term
   def getTupleArg(t, i) =
     case t of
-      | Record (tms, _) -> (nth(tms, i)).2
+      | Record (tms, _) -> (tms@i).2
       | tm -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
   op  termList: Term -> List Term
@@ -700,7 +700,7 @@ spec
 
   op  lookupId: Id *  List (Id * Term)  -> Term  
   def lookupId(id, fields) =
-    case find (fn (id1, t1) -> id = id1) fields of
+    case findLeftmost (fn (id1, t1) -> id = id1) fields of
       | Some (_, t) -> t
       | _ -> fail "lookupId: Shouldn't happen"
 

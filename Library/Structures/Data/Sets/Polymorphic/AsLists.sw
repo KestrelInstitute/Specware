@@ -6,7 +6,7 @@ spec
   import ../Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort Set a = List a
+  type Set a = List a
 
   def empty? s = ([] = s)
 
@@ -16,7 +16,7 @@ spec
       | h::t -> (h = x) || (member? t x)
 
   def subset? s1 s2 =
-    all (fn e1 -> member? s2 e1) s1
+    forall? (fn e1 -> member? s2 e1) s1
 
   def empty = []
 

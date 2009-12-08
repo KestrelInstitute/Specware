@@ -44,7 +44,7 @@ IsaTermPrinter qualifying spec
                  | _ \_rightarrow (result, None))
 	    | Some (trans_string, import_strings) \_rightarrow
               %% Only use import_strings from top-level specs as others will be imported
-              let import_strings = if member(el,spc.elements) then import_strings else [] in
+              let import_strings = if el in? spc.elements then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
 	      (parseMorphMap(trans_string,result), None))
        | OpDef (qid,_,_) \_rightarrow (result,Some qid)
@@ -58,12 +58,12 @@ IsaTermPrinter qualifying spec
    case search("\n",prag) of
      | None \_rightarrow None
      | Some n \_rightarrow
-   let line1 = substring(prag,0,n) in
+   let line1 = subFromTo(prag,0,n) in
    case removeEmpty(splitStringAt(line1," ")) of
-     | "Isa"::thyMorphStr::r | member(thyMorphStr,
+     | "Isa"::thyMorphStr::r | thyMorphStr in?
 				      ["ThyMorphism","Thy_Morphism",
-				       "TheoryMorphism","Theory_Morphism"]) \_rightarrow
-       Some(substring(prag,n,length prag), r)
+				       "TheoryMorphism","Theory_Morphism"] \_rightarrow
+       Some(subFromTo(prag,n,length prag), r)
      | _ \_rightarrow None
 
  op processRhsOp (rhs: String): String * Option(Associativity * Nat) * Boolean * Boolean =
@@ -72,21 +72,21 @@ IsaTermPrinter qualifying spec
      | [isaSym] \_rightarrow (isaSym, None, false, false)
      | isaSym :: r \_rightarrow
        (case r of
-          | "curried"::rst \_rightarrow (isaSym, None, true, member("reversed",rst))
-          | "reversed"::rst \_rightarrow (isaSym, None, member("curried",rst), true)
+          | "curried"::rst \_rightarrow (isaSym, None, true, "reversed" in? rst)
+          | "reversed"::rst \_rightarrow (isaSym, None, "curried" in? rst, true)
           | "Left"::ns::rst \_rightarrow (isaSym, Some(Left,stringToNat ns),
-                                true, member("reversed",rst))
+                                true, "reversed" in? rst)
           | "Right"::ns::rst \_rightarrow (isaSym, Some(Right,stringToNat ns),
-                                 true, member("reversed",rst)))
+                                 true, "reversed" in? rst))
 
   op findRenaming(prag_str: String)
      : Option (String * Option(Associativity * Nat) * Boolean * Boolean) =
-    let end_pos = case searchPred(prag_str, fn c -> member(c, [#\n, #", #[])) of   % #]
+    let end_pos = case searchPred(prag_str, fn c -> c in? [#\n, #", #[]) of   % #]
 		    | Some n \_rightarrow n
 		    | None \_rightarrow length prag_str
     in
     case searchBetween("->", prag_str, 0, end_pos) of
-      | Some n \_rightarrow Some(processRhsOp(substring(prag_str, n+2,end_pos))) 
+      | Some n \_rightarrow Some(processRhsOp(subFromTo(prag_str, n+2,end_pos))) 
       | _ \_rightarrow None
 
  %%% Basic string parsing function
@@ -104,8 +104,8 @@ IsaTermPrinter qualifying spec
 	   | _ \_rightarrow result
        def processLhs lhs =
 	 let lhs = removeInitialWhiteSpace lhs in
-	 let type? = length lhs > 5 && member(substring(lhs,0,5), ["type ","Type "]) in
-	 let lhs = if type? then substring(lhs,5,length lhs) else lhs in
+	 let type? = length lhs > 5 && subFromTo(lhs,0,5) in? ["type ","Type "] in
+	 let lhs = if type? then subFromTo(lhs,5,length lhs) else lhs in
          let lhs = removeWhiteSpace lhs in
 	 (type?,
 	  case splitStringAt(lhs,".") of
@@ -124,9 +124,9 @@ IsaTermPrinter qualifying spec
 	   | None \_rightarrow let _ = warn("Missing right parenthesis.") in
 	             (rhs, None, [])
 	   | Some rpos \_rightarrow
-	     (substring(rhs,0,lpos),
-	      Some(substring(rhs,lpos+1,commapos),
-		   substring(rhs,commapos+1,rpos)),
+	     (subFromTo(rhs,0,lpos),
+	      Some(subFromTo(rhs,lpos+1,commapos),
+		   subFromTo(rhs,commapos+1,rpos)),
               parseOverloadedOps(rhs))
        def processLine(lhs,rhs,result) =
 	 let (type?,qid) = processLhs lhs in
@@ -147,6 +147,6 @@ IsaTermPrinter qualifying spec
       | Some rpos \_rightarrow
     if rpos < lpos then []
     else
-    splitStringAt(removeWhiteSpace(substring(str,lpos+1,rpos)), ",")
+    splitStringAt(removeWhiteSpace(subFromTo(str,lpos+1,rpos)), ",")
    
 endspec

@@ -112,7 +112,7 @@ AnnSpec qualifying spec
                                []
                                all_diffs
     in
-      null filtered_diffs)
+      empty? filtered_diffs)
 
    %% op  old_equivTerm? : Spec -> MS.Term * MS.Term -> Boolean
    %% def old_equivTerm? spc (t1, t2) =
@@ -271,37 +271,37 @@ AnnSpec qualifying spec
        ||
        (let env = initialEnv (spc, "internal") in
         let diffs = diffType [] (x, y) in
-        all (fn diff ->
-             %% Coproducts are the only reasonable way to get 
-             %% recursively defined sorts, so we shouldn't need
-             %% an occurence check to avoid infinite expansions,
-             %% but someone might present us with pathological
-             %% types such as T = T * T, or T = T | p.
-             %% So we start with an occurrence check...
-             case diff of
-               | Types (x,y) ->	
-                 if exists (fn old_diff ->
-                              case old_diff of
-                                | Types (old_x, old_y) ->
-                                  equalType? (x, old_x) && equalType? (y, old_y)
-                                | _ -> false)
-                           prior_diffs
-                   then
-                     %% let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
-                     %% let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
-                     false
-                 else if equalType? (x, y) then 
-                   true
-                 else
-                   let x2 = expandType (env, x) in
-                   let y2 = expandType (env, y) in
-                   %% treat A and A|p as non-equivalent
-                   if equalType? (x, x2) && equalType? (y, y2) then 
-                     false
-                   else 
-                     equivType? spc (x2, y2) ||
-                     aux x2 y2 (prior_diffs ++ diffs)
-               | _ -> false)
+        forall? (fn diff ->
+                   %% Coproducts are the only reasonable way to get 
+                   %% recursively defined sorts, so we shouldn't need
+                   %% an occurence check to avoid infinite expansions,
+                   %% but someone might present us with pathological
+                   %% types such as T = T * T, or T = T | p.
+                   %% So we start with an occurrence check...
+                   case diff of
+                     | Types (x,y) ->	
+                       if exists? (fn old_diff ->
+                                    case old_diff of
+                                      | Types (old_x, old_y) ->
+                                        equalType? (x, old_x) && equalType? (y, old_y)
+                                      | _ -> false)
+                         prior_diffs
+                         then
+                           %% let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
+                           %% let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
+                           false
+                       else if equalType? (x, y) then 
+                         true
+                            else
+                              let x2 = expandType (env, x) in
+                              let y2 = expandType (env, y) in
+                              %% treat A and A|p as non-equivalent
+                              if equalType? (x, x2) && equalType? (y, y2) then 
+                                false
+                              else 
+                                equivType? spc (x2, y2) ||
+                                aux x2 y2 (prior_diffs ++ diffs)
+                                      | _ -> false)
              diffs)
    in
      aux x y []
@@ -344,19 +344,19 @@ AnnSpec qualifying spec
      | Some (equivs, diffs) -> 
        %% for now at least, any discrepency in patterns 
        %% only if they bind the same vars
-       (all (fn diff -> 
-             case diff of 
-               | Types      (t1, t2) -> equivType? spc (t1, t2)
-               | Terms      (t1, t2) -> equivTerm? spc (t1, t2)
-               | MetaTyVars _ -> false) % TODO: ??
+       (forall? (fn diff -> 
+                   case diff of 
+                     | Types      (t1, t2) -> equivType? spc (t1, t2)
+                     | Terms      (t1, t2) -> equivTerm? spc (t1, t2)
+                     | MetaTyVars _ -> false) % TODO: ??
 	    diffs)
        &&
        %% for now at least, patterns are considered equivalent
        %% only if they bind the same vars
-       (all (fn equiv ->
-	     case equiv of
-               | TypeVars (v1, v2) -> v1 = v2  
-               | TermVars (v1, v2) -> equivVar? spc (v1, v2))
+       (forall? (fn equiv ->
+                   case equiv of
+                     | TypeVars (v1, v2) -> v1 = v2  
+                     | TermVars (v1, v2) -> equivVar? spc (v1, v2))
             equivs)
      | _ -> false	
 
@@ -420,6 +420,6 @@ AnnSpec qualifying spec
    (equivType? spc (s1, s2))
 
  op equivTermIn? (spc: Spec) (t1: MS.Term, tms: List MS.Term): Boolean =
-   exists (fn t2 -> equivTerm? spc (t1,t2)) tms
+   exists? (fn t2 -> equivTerm? spc (t1,t2)) tms
 
 end-spec

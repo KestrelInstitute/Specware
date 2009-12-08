@@ -301,7 +301,7 @@ MetaSlang qualifying spec
 
  op equalTyVarSets?(tyVars1: TyVars, tyVars2: TyVars): Boolean =
    length tyVars1 = length tyVars2
-     && all (fn tyV1 -> tyV1 in? tyVars2) tyVars1
+     && forall? (fn tyV1 -> tyV1 in? tyVars2) tyVars1
 
  def equalTermStruct? (t1, t2) =
    case (t1, t2) of
@@ -470,7 +470,7 @@ MetaSlang qualifying spec
 
   %% List Term set operations
   op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Boolean =
-    exists (fn t2 -> equalTerm?(t1,t2)) tms
+    exists? (fn t2 -> equalTerm?(t1,t2)) tms
 
   op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
     filter(fn t1 -> ~(termIn?(t1, tms2))) tms1
@@ -482,7 +482,7 @@ MetaSlang qualifying spec
     filter(fn t1 -> termIn?(t1, tms2)) tms1
 
   op [a] typeIn?(t1: ASort a, tms: List (ASort a)): Boolean =
-    exists (fn t2 -> equalType?(t1,t2)) tms
+    exists? (fn t2 -> equalType?(t1,t2)) tms
 
  op [a] removeDuplicateTerms(tms: List (ATerm a)): List (ATerm a) =
    case tms of
@@ -495,7 +495,7 @@ MetaSlang qualifying spec
  def MetaSlang.maybeAndSort (srts, pos) =
    let non_dup_sorts =
        foldl (fn (pending_srts, srt) ->
-                if exists (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
+                if exists? (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
                   pending_srts
                 else
                   pending_srts ++ [srt])
@@ -520,7 +520,7 @@ MetaSlang qualifying spec
 %              else
                 case termInnerTerm tm of
                   | Any _ ->
-                    if exists (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then
+                    if exists? (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then
                       pending_tms
                     else
                       pending_tms ++ [tm]

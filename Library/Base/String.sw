@@ -28,7 +28,7 @@ op @ (s:String, i:Nat | i < length s) infixl 30 : Char = (explode s) @ i
 op subFromTo (s:String, i:Nat, j:Nat | i <= j && j <= length s) : String =
   implode (subFromTo (explode s, i, j))
 
-op ++ (s1:String, s2:String) infixl 25 : String =
+op ^ (s1:String, s2:String) infixl 25 : String =
   implode ((explode s1) ++ (explode s2))
 
 op forall? (p: Char -> Bool) (s: String) : Bool =
@@ -159,7 +159,7 @@ end-proof
 
 op Nat.natToString (x:Nat) : String =
   if x < 10 then digitToString x
-  else natToString (x div 10) ++ digitToString (x mod 10)
+  else natToString (x div 10) ^ digitToString (x mod 10)
 
 % --------------------------------------------------------------------------------
 proof Isa -verbatim
@@ -252,7 +252,7 @@ end-proof
 
 op Integer.intToString (x:Integer) : String =
   if x >= 0 then        natToString   x
-            else "-" ++ natToString (-x)
+            else "-" ^ natToString (-x)
 
 op Integer.show : Integer -> String = intToString
 
@@ -298,7 +298,7 @@ op Compare.show : Comparison -> String = fn
 
 op [a] Option.show (shw: a -> String) : Option a -> String = fn
   | None   -> "None"
-  | Some x -> "(Some " ++ (shw x) ++ ")"
+  | Some x -> "(Some " ^ (shw x) ^ ")"
 
 % convert list of strings to string, using given separator:
 
@@ -306,7 +306,7 @@ op List.show (sep:String) (l: List String) : String =
   case l of
      | []     -> ""
      | hd::[] -> hd
-     | hd::tl -> hd ++ sep ++ (List.show sep tl)
+     | hd::tl -> hd ^ sep ^ (List.show sep tl)
 
 proof Isa show_Obligation_exhaustive
   by (cases l, auto)
@@ -319,7 +319,7 @@ proof Isa ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.++         -> @ Left 25
+  String.^         -> @ Left 25
   String.map        -> map
   String.exists?    -> list_ex
   String.forall?    -> list_all

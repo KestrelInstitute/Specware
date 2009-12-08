@@ -6,7 +6,7 @@ SpecCalc qualifying spec
   import AnnTerm
   import /Library/PrettyPrinter/WadlerLindig
 
-  op isSimpleTerm? : fa (a) ATerm a -> Boolean
+  op isSimpleTerm? : [a] ATerm a -> Boolean
   def isSimpleTerm? trm =
     case trm of
       | Var _ -> true
@@ -15,7 +15,7 @@ SpecCalc qualifying spec
 
   def ppGrConcat x = ppGroup (ppConcat x)
 
-  op ppATerm : fa (a) ATerm a -> Pretty
+  op ppATerm : [a] ATerm a -> Pretty
   def ppATerm term =
     case isFiniteList term of
         Some terms ->
@@ -251,10 +251,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Exists -> ppString "ex"
       | Exists1 -> ppString "ex1"
 
-  op ppAVarWithoutSort : fa (a) AVar a -> Pretty
+  op ppAVarWithoutSort : [a] AVar a -> Pretty
   def ppAVarWithoutSort (id, _(* srt *)) = ppString id
 
-  op ppAVar : fa (a) AVar a -> Pretty
+  op ppAVar : [a] AVar a -> Pretty
   def ppAVar (id,srt) =
     ppConcat [
       ppString id,
@@ -262,7 +262,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       ppASort srt
     ]
 
-  op ppAMatch : fa (a) AMatch a -> Pretty
+  op ppAMatch : [a] AMatch a -> Pretty
   def ppAMatch cases =
     let def ppCase (pattern,_,term) =
        ppGrConcat [
@@ -274,7 +274,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
     in
       ppGroup (ppSep ppNewline (map ppCase cases))
 
-  op ppAPattern : fa (a) APattern a -> Pretty
+  op ppAPattern : [a] APattern a -> Pretty
   def ppAPattern pattern = 
     case pattern of
       | AliasPat (pat1,pat2,_) -> 
@@ -316,8 +316,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | WildPat (srt,_) -> ppString "_"
       | StringPat (str,_) -> ppString ("\"" ^ str ^ "\"")
       | BoolPat (b,_) -> ppBoolean b
-      | CharPat (chr,_) -> ppString (Char.toString chr)
-      | NatPat (int,_) -> ppString (Nat.toString int)      
+      | CharPat (chr,_) -> ppString (Char.show chr)
+      | NatPat (int,_) -> ppString (Nat.show int)      
       | QuotientPat (pat,qid,_) -> 
           ppGrConcat [ppString ("(quotient[" ^ toString qid ^ "] "),
                       ppAPattern pat,
@@ -364,7 +364,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | true -> ppString "true"
       | false -> ppString "false"
 
-  op ppAFun : fa (a) AFun a -> Pretty
+  op ppAFun : [a] AFun a -> Pretty
   def ppAFun fun =
     case fun of
       | Not           -> ppString "~"
@@ -415,8 +415,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString "select ",
             ppString id
           ]
-      | Nat n -> ppString (Nat.toString n)
-      | Char chr -> ppString (Char.toString chr)
+      | Nat n -> ppString (Nat.show n)
+      | Char chr -> ppString (Char.show chr)
       | String str -> ppString ("\"" ^ str ^ "\"")
       | Bool b -> ppBoolean b
       | OneName (id,fxty) -> ppString id
@@ -427,7 +427,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId (Qualified (qualifier,id)) =
-    if (qualifier = UnQualified) || (member (qualifier,omittedQualifiers)) then
+    if (qualifier = UnQualified) || (qualifier in? omittedQualifiers) then
       ppString id
     else
       ppString (qualifier ^ "." ^ id)
@@ -437,11 +437,11 @@ infix with brackets. And similarly when we see an \verb+Equals+.
     case fix of
       | Infix (Left,  n) -> ppConcat [
 				      ppString "infixl ",
-				      ppString (Nat.toString n)
+				      ppString (Nat.show n)
 				     ]
       | Infix (Right, n) -> ppConcat [
 				      ppString "infixr ",
-				      ppString (Nat.toString n)
+				      ppString (Nat.show n)
 				     ]
       | Nonfix           -> ppNil % ppString "Nonfix"
       | Unspecified      -> ppNil % ppString "Unspecified"
@@ -452,14 +452,14 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
-  op isSimpleSort? : fa (a) ASort a -> Boolean
+  op isSimpleSort? : [a] ASort a -> Boolean
   def isSimpleSort? srt =
     case srt of
       | Base _ -> true
       | Boolean _ -> true
       | _ -> false
 
-  op ppASort : fa (a) ASort a -> Pretty
+  op ppASort : [a] ASort a -> Pretty
   def ppASort srt =
     case srt of
       | Arrow (srt1,srt2,_) ->
@@ -555,7 +555,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | TyVar (tyVar,_) -> ppString tyVar
       | MetaTyVar (tyVar,_) -> 
          let ({link, uniqueId, name}) = ! tyVar in
-             ppString (name ^ (Nat.toString uniqueId))
+             ppString (name ^ (Nat.show uniqueId))
 
       | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
 

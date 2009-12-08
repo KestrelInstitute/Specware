@@ -129,7 +129,7 @@ spec
    let
       def elimTuple(zId,srt,fields,body) =
         let (zId,body) =
-            if member(zId,boundVarNamesIn body)
+            if zId in? boundVarNamesIn body
               then
                 let new_zid = zId^"__sb" in  % Avoid variable capture!
                 (new_zid, substitute(body,[((zId,srt), mkVar(new_zid,srt))]))
@@ -144,7 +144,7 @@ spec
         let varFields = 
             case productOpt(spc,srt)
               of Some fields -> map mkField fields 
-               | _ -> fail ("Product sort expected for let bound variable. Found "^printSort srt)
+               | _ -> fail ("Product type expected for let bound variable. Found "^printSort srt)
         in
         let allFields = zip(fields,varFields) in
         let
@@ -295,7 +295,7 @@ spec
                      simplifiedApply(pred2, arg_tm, spc)]
        | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, a) ->
          let preds = decomposeConjPred term in
-         (case find simpleLambda? preds of
+         (case findLeftmost simpleLambda? preds of
             | Some (lam as Lambda ([(pat, _, bod)], _)) ->
               let other_preds = delete lam preds in
               let Some arg_tm = patternToTerm pat in
@@ -337,10 +337,10 @@ spec
       | Some(new_vs, new_cjs, new_bod) ->
         simplifyForall spc (vs++new_vs, cjs++new_cjs, new_bod)
       | _ ->
-    case find (fn cj ->
-                case cj of
-                  | Let([(VarPat ((vn,_),_),e)], _, _) -> true
-                  | _ -> false)
+    case findLeftmost (fn cj ->
+                         case cj of
+                           | Let([(VarPat ((vn,_),_),e)], _, _) -> true
+                           | _ -> false)
            cjs of
       | Some(cj as Let([(VarPat (v as (vn, ty),_),e)], let_body, _)) ->
         %% turn let bound var in conjunct to a universally quantified var
@@ -354,17 +354,17 @@ spec
         in
         simplifyForall spc (new_v::vs, new_cjs, bod)
       | _ ->
-    case find (fn cj ->
-	        case bindEquality (cj,vs) of
-		 | None -> false
-		 | Some(v,e) ->
-		   simpleOrConstrTerm? e
-                     || (let num_refs = foldl (fn (r,cji) -> r + countVarRefs(cji,v))
-                                         (countVarRefs(bod,v)) cjs
-                         in
-                         num_refs - 1 = 1 % This one and the one we want to replace
-                           || embed? Record e
-                             && num_refs - 1 = countDeReferencesIn(v, Cons(bod, cjs))))
+    case findLeftmost (fn cj ->
+                         case bindEquality (cj,vs) of
+                           | None -> false
+                           | Some(v,e) ->
+                             simpleOrConstrTerm? e
+                           || (let num_refs = foldl (fn (r,cji) -> r + countVarRefs(cji,v))
+                                 (countVarRefs(bod,v)) cjs
+                               in
+                                 num_refs - 1 = 1 % This one and the one we want to replace
+                                                               || embed? Record e
+                                                                  && num_refs - 1 = countDeReferencesIn(v, Cons(bod, cjs))))
            cjs
       of Some cj ->
 	 (case bindEquality (cj,vs) of
@@ -395,7 +395,7 @@ spec
         in
         let cjs = simplifyConjuncts cjs in
         let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
-        let simpVs = filter (fn v -> (exists (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
+        let simpVs = filter (fn v -> (exists? (fn cj -> isFree(v,cj)) ([bod] ++ simplCJs))
                                     || ~(knownNonEmpty?(v.2, spc)))
                        vs
         in
@@ -497,7 +497,7 @@ spec
 
   op  simplifyExists: Spec -> List Var * List MS.Term -> MS.Term
   def simplifyExists spc (vs, cjs) =
-    let vs = filter (fn v -> (exists (fn cj -> isFree(v, cj)) cjs)
+    let vs = filter (fn v -> (exists? (fn cj -> isFree(v, cj)) cjs)
                             || ~(knownNonEmpty?(v.2,  spc)))
                vs
     in
@@ -509,16 +509,16 @@ spec
 
   op simplifyRecordBind(spc: Spec, pats: List (Id * Pattern), acts: List (Id * MS.Term), body: MS.Term)
      : Option MS.Term =
-    if all (fn(_,VarPat _) -> true | (_,WildPat _) -> true | _ -> false) pats 
-      then (if all (fn(_,Var _) -> true | _ -> false) acts
+    if forall? (fn(_,VarPat _) -> true | (_,WildPat _) -> true | _ -> false) pats 
+      then (if forall? (fn(_,Var _) -> true | _ -> false) acts
               then Some(substitute(body,makeSubstFromRecord(pats,acts)))
               else
               %% Sequentializing binds: rename to avoid variable capture
               let (binds,sbst,_)
                  = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
-                            if member(v.1,fvs)
-                              then let nv = (v.1 ^ "__" ^ (Nat.toString (length binds)),v.2) in
+                            if v.1 in? fvs
+                              then let nv = (v.1 ^ "__" ^ (Nat.show (length binds)),v.2) in
                                 (Cons((VarPat(nv,a),val),binds),
                                  Cons((v,Var(nv,a)),sbst),
                                  new_fvs)
@@ -565,7 +565,7 @@ spec
   def simpleTerm?(term) = 
     case term of 
       | Record(fields,_) ->
-        all (fn (_,t) -> simpleTerm t) fields
+        forall? (fn (_,t) -> simpleTerm t) fields
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
@@ -573,7 +573,7 @@ spec
    simpleTerm? term
      || (case term of
            | Apply(Fun(Embed _,_,_), arg, _) ->
-             all simpleOrConstrTerm? (termToList arg)
+             forall? simpleOrConstrTerm? (termToList arg)
            | _ -> false)
 
  op traceSimplify?: Boolean = false

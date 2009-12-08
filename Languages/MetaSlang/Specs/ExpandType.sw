@@ -26,7 +26,7 @@ Utilities qualifying spec
    let 
      def expansion_error (env, msg, pos) =
        let errors = env.errors in
-       errors := cons ((msg, pos), ! errors)
+       errors := Cons ((msg, pos), ! errors)
 
      def unlink_type t =
        case t of
@@ -57,7 +57,7 @@ Utilities qualifying spec
 
      def metafy_type typ =
        let (tvs, typ) = unpackSort typ in
-       if null tvs then
+       if empty? tvs then
          ([],typ)
        else
          let mtvar_position = Internal "metafySort" in
@@ -116,7 +116,7 @@ Utilities qualifying spec
 					 | _  -> true)
 	                              defs
 	       in
-               if null true_defs then
+               if empty? true_defs then
                  unlinked_type
                else
                  let base_defs = filter (fn typ ->

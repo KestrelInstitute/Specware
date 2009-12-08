@@ -157,13 +157,13 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
       %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
       %% let _ = writeLine("\n;;; Finding class assignment for invocation of " ^ printTerm opTerm ^ " : " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
 
-      if all (fn (srt) -> notAUserType? (spc, srt)) dom_sorts then
+      if forall? (fn (srt) -> notAUserType? (spc, srt)) dom_sorts then
 	%% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
 	if notAUserType? (spc, rng) then
 	  %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
 	  %% the following call to utlist_internal should be consistent with ut, which calls userType? but not baseTypeAlias?
 	  %% See the comments there about the effects of calling baseTypeAlias? 
-	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (concat (dom_sorts, [rng])) of
+	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (dom_sorts ++ [rng]) of
 	    | Some usrt ->
 	      {
 	       classId <- srtIdM usrt;
@@ -313,7 +313,7 @@ def translateEqualsToExprM(tcx, argsTerm, k, l) =
   {
    spc <- getEnvSpec;
    (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
-   sid <- srtIdM(inferTypeFoldRecords(spc,hd(args)));
+   sid <- srtIdM(inferTypeFoldRecords(spc,head(args)));
    return (newBlock, mkJavaEq(jE1, jE2, sid), newK, newL)
   }
 
@@ -323,7 +323,7 @@ def translateNotEqualsToExprM(tcx, argsTerm, k, l) =
   {
    spc <- getEnvSpec;
    (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
-   sid <- srtIdM(inferTypeFoldRecords(spc,hd(args)));
+   sid <- srtIdM(inferTypeFoldRecords(spc,head(args)));
    return (newBlock, mkJavaNotEq(jE1, jE2, sid), newK, newL)
   }
 
@@ -423,7 +423,7 @@ def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l, isField?) =
 	    else
 	      return (newBlock,mkUnExp(opId,javaArgs), newK, newL)
 	else
-	  let topJArg = nth(javaArgs, h) in
+	  let topJArg = javaArgs@h in
 	  let resJArgs = deleteNth(h, javaArgs) in
 	    if isField? && (length resJArgs = 0) then
 	      return (newBlock,mkFieldAccess(topJArg,opId), newK, newL)
@@ -545,7 +545,7 @@ def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?) =
 	    return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
 	   };
     cres <- return(mkCres l);
-    cresSrt <- srtIdM(inferTypeFoldRecords(spc,(hd cases).2));
+    cresSrt <- srtIdM(inferTypeFoldRecords(spc,(head cases).2));
     cresDecl <- return(mkVarDecl(cres,cresSrt));
     (casesSwitches, finalK, finalL)
       <- translateCaseCasesToSwitchesM(tcx, case_term_Type, caseTermJExpr, cres, cases, opt_other, k0, l0, l);
@@ -561,8 +561,8 @@ def getVarsPattern(pat) =
       foldr (fn((id,irpat),(vids,ok?)) ->
 	     let (patvars,ok0?) =
 	           case  irpat of
-		     | VarPat((vid,_),_) -> (cons(vid,vids),true)
-		     | WildPat _ -> (cons("%",vids),true)
+		     | VarPat((vid,_),_) -> (vid::vids,true)
+		     | WildPat _ -> ("%"::vids,true)
 		     | _ -> (vids,false)
 	     in
 	     (patvars,ok0? && ok?))
@@ -605,7 +605,7 @@ def translateCaseCasesToSwitchesM(tcx, coSrt, caseExpr, cres, cases, opt_other, 
 	    {
 	     (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
 	     (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL);
-	     return (List.cons(hdSwitch, restSwitch), restK, restL)
+	     return (hdSwitch::restSwitch, restK, restL)
 	    }
     in
       translateCasesToSwitchesRec(cases, k0, l0)
@@ -698,7 +698,7 @@ def translateTermsToExpressionsM(tcx, terms, k, l) =
       {
        (newBody, jTerm, newK, newL) <- termToExpressionM(tcx, term, k, l);
        (restBody, restJTerms, restK, restL) <- translateTermsToExpressionsM(tcx, terms, newK, newL);
-       return (newBody++restBody, cons(jTerm, restJTerms), restK, restL)
+       return (newBody++restBody, jTerm::restJTerms, restK, restL)
       }
 
 op  remove_returns : JavaBlock -> JavaBlock
@@ -904,7 +904,7 @@ def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, bre
 	     {
 	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
 	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL);
-	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	      return (hdSwitch::restSwitch, restK, restL)
 	     }
   in
     translateCasesToSwitchesRec(cases, k0, l0)
@@ -995,7 +995,7 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
 	     {
 	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
 	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL);
-	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	      return (hdSwitch::restSwitch, restK, restL)
 	     }
    in
      translateCasesToSwitchesRec(cases, k0, l0)
@@ -1084,7 +1084,7 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
 	  {
 	   (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
 	   (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL);
-	   return(List.cons(hdSwitch, restSwitch), restK, restL)
+	   return(hdSwitch::restSwitch, restK, restL)
 	  }
    in
      translateCasesToSwitchesRec(cases, k0, l0)
@@ -1172,7 +1172,7 @@ def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, coSrt, caseExpr, cases, opt
 	     {
 	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
 	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL);
-	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	      return (hdSwitch::restSwitch, restK, restL)
 	     }
    in
      translateCasesToSwitchesRec(cases, k0, l0)
@@ -1190,7 +1190,7 @@ def translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l) =
 	  {
 	   (si,ei,ki,li) <- termToExpressionM(tcx,t,k,l);
 	   let block = concatBlock(block,si) in
-	   let exprs = concat(exprs,[ei]) in
+	   let exprs = exprs ++ [ei] in
 	   doArgs(terms,ki,li,block,exprs)
 	  }
   in
@@ -1204,6 +1204,6 @@ def translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l) =
 
 op concatBlock: JavaBlock * JavaBlock -> JavaBlock
 def concatBlock(b1,b2) =
-  concat(b1,b2)
+  b1 ++ b2
 
 endspec

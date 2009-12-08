@@ -131,7 +131,7 @@ RemoveCurrying qualifying spec
       case term of
 	| Fun _ -> Some (term, args)
 	| Var _ -> Some (term, args)
-	| Apply (t1, t2,_) -> aux (t1, i + 1, cons (t2, args))
+	| Apply (t1, t2,_) -> aux (t1, i + 1,  t2::args)
 	| _ -> None
     in 
       aux (t, 0, [])
@@ -146,8 +146,8 @@ RemoveCurrying qualifying spec
 	    then mkApply(convertFun(f,curryShape,spc),
 			 mkTuple(map unCurryTermRec args))
 	  else
-	    let newVars = mkNewVars(nthTail(curryArgSorts(spc,fsrt),
-					    length args),
+	    let newVars = mkNewVars(removePrefix(curryArgSorts(spc,fsrt),
+                                                 length args),
 				    map (fn (id,_) -> id) (freeVars f),
 				    spc)
 	    in
@@ -299,10 +299,10 @@ RemoveCurrying qualifying spec
           case srts of
 	    | [] -> []
 	    | srt::rSrts ->
-	      if List.member(hd pool,usedNames)
-		then findUnused(srts,usedNames,tl pool)
-		else cons((hd pool,(unCurrySort(srt,spc)).2),
-			  findUnused(rSrts,usedNames,tl pool))
+	      if head pool in? usedNames
+		then findUnused(srts,usedNames,tail pool)
+		else Cons((head pool,(unCurrySort(srt,spc)).2),
+			  findUnused(rSrts,usedNames,tail pool))
     in findUnused(srts,usedNames,varNamePool)
 
   op  convertFun: MS.Term * Nat * Spec -> MS.Term

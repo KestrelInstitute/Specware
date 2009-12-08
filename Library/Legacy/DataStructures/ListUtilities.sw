@@ -3,37 +3,37 @@ ListUtilities qualifying spec {
 
   % Ad hoc utility for removing duplicate elements in list
 
-  op removeDuplicates  : fa(T) List T -> List T
-  op ListUtilities.insert            : fa(T) T * List T -> List T
-  op listUnion         : fa(T) List T * List T -> List T
-  op delete            : fa(T) T * List T -> List T
+  op removeDuplicates  : [T] List T -> List T
+  op ListUtilities.insert: [T] T * List T -> List T
+  op listUnion         : [T] List T * List T -> List T
+  op delete            : [T] T * List T -> List T
   op enumerate         : Nat * Nat -> List Nat
-  op index             : fa(T) List T * T -> Nat
+  op index             : [T] List T * T -> Nat
 
-  op collectDuplicates : fa(T) List T * (T * T -> Boolean) -> List T
-  op split             : fa(T) (T -> Boolean) * List T -> (List T * List T)
-  op take              : fa(T) Nat * List T -> List T
-  op drop              : fa(T) Nat * List T -> List T
-  op deleteNth         : fa(a) Nat * List a -> List a
-  op replaceNth        : fa(a) Nat * List a * a -> List a
+  op collectDuplicates : [T] List T * (T * T -> Boolean) -> List T
+  op split             : [T] (T -> Boolean) * List T -> (List T * List T)
+  op take              : [T] Nat * List T -> List T
+  op drop              : [T] Nat * List T -> List T
+  op deleteNth         : [a] Nat * List a -> List a
+  op replaceNth        : [a] Nat * List a * a -> List a
 
-  op flatMap           : fa(a,b) (a -> List b) -> List a -> List b
+  op flatMap           : [a,b] (a -> List b) -> List a -> List b
 
-  op findOption        : fa(a,b) (a -> Option b) -> List a -> Option b
-  op findOptionIndex   : fa(a,b) (a * Nat -> Option b) -> List a -> Option (Nat * b)
-  op findIndex         : fa(a)   (a -> Boolean) -> List a -> Option(Nat * a)
+  op findOption        : [a,b] (a -> Option b) -> List a -> Option b
+  op findOptionIndex   : [a,b] (a * Nat -> Option b) -> List a -> Option (Nat * b)
+  op findIndex         : [a]   (a -> Boolean) -> List a -> Option(Nat * a)
 
-  op mapWithIndexRec   : fa(a,b) (Nat * a -> b) * List a * Nat -> List b
-  op mapWithIndex      : fa(a,b) (Nat * a -> b) -> List a -> List b
+  op mapWithIndexRec   : [a,b] (Nat * a -> b) * List a * Nat -> List b
+  op mapWithIndex      : [a,b] (Nat * a -> b) -> List a -> List b
 
-  op subset?           : fa (a) List a * List a -> Boolean
+  op subset?           : [a] List a * List a -> Boolean
 
-  op mapCross          : fa (a,b,c) (a * b -> c) -> List a * List b -> List c
+  op mapCross          : [a,b,c] (a * b -> c) -> List a * List b -> List c
 
-  op mapi              : fa (a,b) (Nat * a -> b)  -> List a -> List b
-  op appi              : fa (a)   (Nat * a -> ()) -> List a -> ()
+  op mapi              : [a,b] (Nat * a -> b)  -> List a -> List b
+  op appi              : [a]   (Nat * a -> ()) -> List a -> ()
 
-  op tailListList: fa (a) List a * List a -> Option (List a)
+  op tailListList: [a] List a * List a -> Option (List a)
 
   def ListUtilities.insert (e, l) = 
     case l of
@@ -70,7 +70,7 @@ ListUtilities qualifying spec {
     let
       def splitAux(l,trues,falses) = 
         case l of
-          | [] -> (List.rev trues,List.rev falses)
+          | [] -> (reverse trues,reverse falses)
           | elem::elems -> 
              if test elem then
                splitAux(elems,Cons(elem,trues),falses)
@@ -84,7 +84,7 @@ ListUtilities qualifying spec {
       | [] -> []
       | elem::l -> 
           let (elems,rest) = split(fn e -> eqTest(elem,e),l) in
-          if List.null elems then
+          if empty? elems then
             collectDuplicates(rest,eqTest)
           else
             Cons(elem,collectDuplicates(rest,eqTest))        
@@ -127,17 +127,17 @@ ListUtilities qualifying spec {
 
   def deleteNth(n,ls) = 
     if n = 0 then
-      tl ls
+      tail ls
     else 
-      Cons (hd ls,
-            deleteNth (n - 1, tl ls))
+      Cons (head ls,
+            deleteNth (n - 1, tail ls))
 
   def replaceNth(n,ls,elem) = 
     if n = 0 then
-      Cons(elem,tl ls)
+      Cons(elem,tail ls)
     else 
-      Cons (hd ls,
-            replaceNth (n - 1, tl ls, elem))
+      Cons (head ls,
+            replaceNth (n - 1, tail ls, elem))
 
   def flatMap f =
     let def loop l =
@@ -147,7 +147,7 @@ ListUtilities qualifying spec {
     in
       loop
 
-  op  findOptionIndexRec : fa(a,b) (a * Nat -> Option b) * List a * Nat -> Option (Nat * b)
+  op  findOptionIndexRec : [a,b] (a * Nat -> Option b) * List a * Nat -> Option (Nat * b)
 
   def findOptionIndexRec(f,xs,i) = 
     case xs of
@@ -178,11 +178,11 @@ ListUtilities qualifying spec {
   def mapWithIndexRec(f,ls,i) = 
     case ls of
       | [] -> []
-      | x::xs -> List.cons(f(i,x),mapWithIndexRec(f,xs,i + 1))
+      | x::xs -> Cons(f(i,x),mapWithIndexRec(f,xs,i + 1))
 
   def mapWithIndex f l = mapWithIndexRec(f,l,0)
 
-  def subset? (l1, l2) = List.all (fn x1 -> member (x1, l2)) l1
+  def subset? (l1, l2) = forall? (fn x1 -> x1 in? l2) l1
 
   def mapCross f (l1, l2) = flatMap (fn a -> List.map (fn b -> f (a, b)) l2) l1
 
@@ -190,7 +190,7 @@ ListUtilities qualifying spec {
     let def loop (i, xs) =
       case xs of
         | [] -> []
-        | x :: xs -> List.cons (f (i, x), loop (i + 1, xs))
+        | x :: xs -> Cons (f (i, x), loop (i + 1, xs))
     in
       loop (0, xs)
 
@@ -215,12 +215,12 @@ ListUtilities qualifying spec {
    **)
  
   def tailListList(l1, l2) =
-    if null(l2)
+    if empty?(l2)
       then Some l1
     else
-      let l1Head = sublist(l1, 0, length(l2)) in
+      let l1Head = subFromTo(l1, 0, length(l2)) in
       if l1Head = l2 
-	then Some (nthTail(l1, length(l2)))
+	then Some (removePrefix(l1, length(l2)))
       else None
 
 }

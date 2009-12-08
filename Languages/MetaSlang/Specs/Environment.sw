@@ -98,7 +98,7 @@ spec
          if srt = srt0 then
              srt
          else
-          unfoldStripSort1 (sp, srt, List.cons(srt0,vsrts), verbose)
+          unfoldStripSort1 (sp, srt, Cons(srt0,vsrts), verbose)
        | Boolean _ -> srt
        | TyVar (tv, a) -> srt
      
@@ -211,7 +211,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
  def mkProjectTerm (sp, id, term) = 
   let srt = inferType (sp, term) in
   let fields = product (sp, srt) in
-    (case List.find (fn (id2, s)-> id = id2) fields
+    (case findLeftmost (fn (id2, s)-> id = id2) fields
        of Some (_, s) -> 
           mkApply(Fun (Project id, mkArrow(srt,s), noPos),
                   term)
@@ -220,7 +220,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
  def mkSelectTerm (sp, id, term) = 
   let srt    = inferType (sp, term) in
   let fields = coproduct (sp, srt)  in
-  case List.find (fn (id2, s)-> id = id2) fields
+  case findLeftmost (fn (id2, s)-> id = id2) fields
     of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), noPos),
                                    term)
      | _ -> System.fail "Selection index not found in product"
@@ -374,11 +374,11 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
       | [] -> mainTerm
       | rvterms ->
 	let (_,vbinds) =
-	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^toString i,inferType(spc,t))]))
+	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^show i,inferType(spc,t))]))
 	        (0,[]) rvterms
 	in
 	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
-	      mapTerm ((fn t -> case find (fn (tm,_,_) -> t = tm) vbinds of
+	      mapTerm ((fn t -> case findLeftmost (fn (tm,_,_) -> t = tm) vbinds of
 				| Some(_,v,s) -> mkVar(v,s)
 				| None -> t),
 			id,id)
@@ -398,7 +398,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
     let super_sort = termSort(term) in
     case productOpt(spc,super_sort) of
      | Some (fields) -> 
-       (case find (fn (id2, _) -> id = id2) fields of
+       (case findLeftmost (fn (id2, _) -> id = id2) fields of
 	 | Some (_,sub_sort) -> 
 	   mkApply (mkProject (id, super_sort, sub_sort),term)
 	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
@@ -468,7 +468,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      let (nameList,names) =  
              foldr (fn (_,(nameList,names)) -> 
                 let (name1,names) = freshName(name0,names) in
-                (cons(name1,nameList),names))
+                (Cons(name1,nameList),names))
                 ([],names) xs
      in
      (nameList,names)

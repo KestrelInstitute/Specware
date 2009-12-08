@@ -40,10 +40,10 @@ MergeSort qualifying spec
            case xs of
              | [] -> (reverse run,[])
              | x::xs ->
-                 if cmpGT(x, hd run) then
+                 if cmpGT(x, head run) then
                    nextrun (Cons (x,run),xs)
                  else
-                   (rev run,Cons (x,xs)) in
+                   (reverse run,Cons (x,xs)) in
          let def samsorting (xs,ls,k) = 
            case xs of
              | [] -> head (mergepairs (ls,0))
@@ -59,8 +59,8 @@ MergeSort qualifying spec
     let
       def merge_r(xs,ys,r) = 
       case (xs,ys) of
-        | ([],ys) -> rev r ++ ys
-        | (xs,[]) -> rev r ++ xs
+        | ([],ys) -> reverse r ++ ys
+        | (xs,[]) -> reverse r ++ xs
         | (x::rxs,y::rys) ->
             (case cmpfn (x,y) of
               | Greater -> merge_r(xs,rys,y::r)
@@ -80,10 +80,10 @@ MergeSort qualifying spec
       case xs of
         | [] -> (reverse run,[])
         | x::xs -> 
-            (case cmpfn(x, hd run) of
+            (case cmpfn(x, head run) of
               | Greater -> nextrun(Cons(x,run),xs)
               | Equal   -> nextrun(run,xs)
-              | _       -> (rev run,Cons(x,xs))) in
+              | _       -> (reverse run,Cons(x,xs))) in
     let def samsorting(xs,ls,k) = 
       case xs of
         | [] -> head(mergepairs(ls,0))

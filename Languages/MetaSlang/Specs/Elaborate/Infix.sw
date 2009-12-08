@@ -5,7 +5,7 @@
 Infix qualifying spec 
  import Utilities
 
- sort FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
+ type FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
                     | Nonfix  MS.Term
 
  op resolveInfixes : Option LocalEnv * (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
@@ -40,8 +40,8 @@ Infix qualifying spec
 	   | [] -> []
 	   | [t] -> [t]
 	   | (Nonfix t)::(Nonfix t2)::tags -> 
-		  applyPrefixes(cons(Nonfix(ApplyN([t,t2],pos)),tags))
-	   | t::tags -> cons (t,applyPrefixes tags)
+		  applyPrefixes(Cons(Nonfix(ApplyN([t,t2],pos)),tags))
+	   | t::tags -> Cons (t,applyPrefixes tags)
    in
    let tagged = map tagTermWithInfixInfo terms in
    let tagged = applyPrefixes tagged in
@@ -62,7 +62,7 @@ Infix qualifying spec
 	     %% Just return the existing list, and a subsequent re-scan will 
 	     %%  see the prior infix operator as the first, and the first one 
 	     %%  here as the second, which will be handled below.
-	     cons(Nonfix(t1),cons(Infix(infix1,(a1,delta1)),rest))
+	     Cons(Nonfix(t1),Cons(Infix(infix1,(a1,delta1)),rest))
 	   else
 	     %% The first infix operator here (infix1) binds tighter than the 
 	     %%  prior infix operator.
@@ -92,7 +92,7 @@ Infix qualifying spec
 			 [Nonfix(t1)]))
 
 	 | (Nonfix _)::(Nonfix _)::_ ->
-	      (local_error ("Unreduced nonfix"); [hd terms])
+	      (local_error ("Unreduced nonfix"); [head terms])
   in
    let def scanrec(tagged) = 
 	 case scan(0,tagged) of

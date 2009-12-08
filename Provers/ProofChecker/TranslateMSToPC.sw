@@ -650,11 +650,11 @@ Translate qualifying spec
 %%% Change to produce user vars (as strings)
   }
 
-  op mapListToFSeq : fa(a,b) (a -> b) -> List a -> List b
+  op mapListToFSeq : [a,b] (a -> b) -> List a -> List b
   def mapListToFSeq f list = foldl (fn (fSeq,x) -> (f x) |> fSeq) empty list
 
   op MSToPCTranslateMonad.mapListToFSeq :
-     fa(a,b) (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (List b)
+     [a,b] (a -> SpecCalc.Env b) -> List a -> SpecCalc.Env (List b)
   def MSToPCTranslateMonad.mapListToFSeq f list =
     case list of
       | [] -> return empty
@@ -665,7 +665,7 @@ Translate qualifying spec
         }
 
   op MSToPCTranslateMonad.mapQualifierMapToFSeq :
-    fa(a,b) (Qualifier * Id * a -> SpecCalc.Env b)
+    [a,b] (Qualifier * Id * a -> SpecCalc.Env b)
          -> AQualifierMap a
          -> SpecCalc.Env (List b)
   def MSToPCTranslateMonad.mapQualifierMapToFSeq f qMap =

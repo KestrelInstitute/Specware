@@ -45,9 +45,9 @@ spec
  def qualifiers m =
    STHMap.foldi (fn(_,im,quals) ->
 		 Map.foldi (fn (qname,_,quals) ->
-			    if member(qname,quals)
+			    if qname in? quals
 			      then quals
-			      else cons(qname,quals))
+			      else Cons(qname,quals))
 		   quals im)
       [] m
  def qualifierIds m = STHMap.domainToList m

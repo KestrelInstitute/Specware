@@ -8,13 +8,13 @@ spec
 
   %% Environment
 
-  sort Environment = Ref (StringMap(String))
-  sort Term = MS.Term
+  type Environment = Ref (StringMap(String))
+  type Term = MS.Term
 
   op emptyEnv : () -> Environment
   op insertEnv : Environment -> (String * String) -> ()
   op lookupEnv : Environment -> String -> Option (String)
-  op savingEnv : fa(a) Environment -> (() -> a) -> a
+  op savingEnv : [a] Environment -> (() -> a) -> a
 
   def emptyEnv () =
     Ref (StringMap.empty)
@@ -32,13 +32,13 @@ spec
     a
 
   %% Contexts
-  sort Context = NameSupply.NameSupply * Environment
+  type Context = NameSupply.NameSupply * Environment
 
   op emptyContext : () -> Context
   op fresh  : Context -> String -> String
   op lookup : Context -> String -> Option (String)
   op emptyEnvContext : Context -> Context
-  op savingEnvContext : fa(a) Context -> (() -> a) -> a
+  op savingEnvContext : [a] Context -> (() -> a) -> a
 
   def emptyContext () =
     (NameSupply.empty (), emptyEnv ())

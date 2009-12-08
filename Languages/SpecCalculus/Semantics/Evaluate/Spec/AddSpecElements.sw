@@ -19,18 +19,18 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  let new_names = rev (removeDuplicates new_names) in % don't let duplicate names get into a sortinfo!
-  let primaryName = hd new_names in
+  let new_names = reverse (removeDuplicates new_names) in % don't let duplicate names get into a sortinfo!
+  let primaryName = head new_names in
   let new_info = {names = new_names, 
 		  dfn   = new_dfn}
   in
   let old_infos = foldl (fn (old_infos,new_name) ->
                          case findTheSort (old_spec, new_name) of
                            | Some info -> 
-                             if exists (fn old_info -> info = old_info) old_infos then
+                             if exists? (fn old_info -> info = old_info) old_infos then
                                old_infos
                              else
-                               cons (info, old_infos)
+                               Cons (info, old_infos)
                            | _ -> old_infos)
                         []
                         new_names
@@ -102,7 +102,7 @@ SpecCalc qualifying spec
                 then SortDef (primaryName, pos)
               else Sort (primaryName, pos)
      in
-     let sp = if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
+     let sp = if exists? (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
               else if old_infos = [] || addOnly?
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
@@ -112,7 +112,7 @@ SpecCalc qualifying spec
                                          | _                                  -> eli::elts)
                                  [] sp.elements
                    in
-                   if member(el, elts)
+                   if el in? elts
                      then setElements(sp, elts)
                    else addElementBeforeOrAtEnd(sp, el, opt_next_el)
      in
@@ -130,8 +130,8 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  let new_names = rev (removeDuplicates new_names) in % don't let duplicate names get into an opinfo!
-  let primaryName = hd new_names in
+  let new_names = reverse (removeDuplicates new_names) in % don't let duplicate names get into an opinfo!
+  let primaryName = head new_names in
   let new_info = {names  = new_names, 
 		  fixity = new_fixity, 
 		  dfn    = new_dfn,
@@ -140,7 +140,7 @@ SpecCalc qualifying spec
   let old_infos = foldl (fn (old_infos, new_name) ->
                          case findTheOp (old_spec, new_name) of
                            | Some info -> 
-                             if exists (fn old_info -> info = old_info) old_infos then
+                             if exists? (fn old_info -> info = old_info) old_infos then
                                old_infos
                              else
                                info :: old_infos
@@ -260,7 +260,7 @@ SpecCalc qualifying spec
                | _::_ | addOnly? -> OpDef (primaryName, 0, pos)
                | _ -> Op (primaryName, definedTerm? new_dfn, pos)
     in
-    let sp = if exists (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
+    let sp = if exists? (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
               else if old_infos = [] || addOnly? || refine?
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
@@ -270,14 +270,14 @@ SpecCalc qualifying spec
                                          | _                                  -> eli::elts)
                                  [] sp.elements
                    in
-                   if member(el, elts)
+                   if el in? elts
                      then setElements(sp, elts)
                    else addElementBeforeOrAtEnd(sp, el, opt_next_el)
     in
     %% If replacing then add proof obligation that old defn is a theorem
     let sp = if old_infos = [] || addOnly? then sp
              else
-             let dfn = (hd old_infos).dfn in
+             let dfn = (head old_infos).dfn in
              let (tvs, ty, term) = unpackFirstTerm dfn in
              if anyTerm? term
                then sp
@@ -289,7 +289,7 @@ SpecCalc qualifying spec
              let (_,thms) = foldl (fn((i,result), fmla) ->
                                      (i + 1,
                                       result ++ [mkConjecture(Qualified (q, nm^"__r_def"^(if i = 0 then ""
-                                                                                            else toString i)),
+                                                                                            else show i)),
                                                               tvs, fmla)]))
                               (0,[]) liftedFmlas
              in

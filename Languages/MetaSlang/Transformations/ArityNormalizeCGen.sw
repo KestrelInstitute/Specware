@@ -74,8 +74,8 @@ ArityNormalizeCGen qualifying spec {
 % a record (possibly subsetted)
 
 
- sort UsedNames = StringSet.Set
- sort Gamma 	= List(String * Option(Sort * Nat))
+ type UsedNames = StringSet.Set
+ type Gamma 	= List(String * Option(Sort * Nat))
 
  op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
@@ -113,7 +113,7 @@ ArityNormalizeCGen qualifying spec {
 	%let _ = writeLine(" None)") in
 	None
  
- op isShortTuple : fa(A) Nat * List(Id * A) -> Boolean
+ op isShortTuple : [A] Nat * List(Id * A) -> Boolean
  def isShortTuple(i,row) = 
      case row
        of [] -> true

@@ -262,7 +262,7 @@ TypeChecker qualifying spec
 		    %%       so if some candidate has given_sort_qid as an exact alias, then that
 		    %%       candidate will be first in the list (see comments for findAllSorts),
 		    %%       in which case choose it.
-		    if ((null other_infos) || exists (fn alias -> alias = given_sort_qid) info.names) then
+		    if ((empty? other_infos) || exists? (fn alias -> alias = given_sort_qid) info.names) then
 		      let (tvs, srt) = unpackFirstSortDef info in
 		      if length tvs ~= length instance_sorts then
 			let found_sort_str =
@@ -461,7 +461,7 @@ TypeChecker qualifying spec
    let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
   % let _ = writeLine("chk: "^printTerm elaborated_tm^"\n"^anyToString elaborated_tm) in
    let new_tvs =
-       if null tvs then
+       if empty? tvs then
 	 tvs_used
        else if equalTyVarSets?(tvs_used, tvs) then
 	 tvs  (* Probably correct ;-*)
@@ -647,7 +647,7 @@ TypeChecker qualifying spec
 	    | Arrow (dom, _, _) -> 
 	      (case isCoproduct (env, dom) of
 		 | Some fields -> 
-		   if exists (fn (id2, _) -> id = id2) fields then
+		   if exists? (fn (id2, _) -> id = id2) fields then
 		     ()
 		   else
 		     error (env, 
@@ -799,7 +799,7 @@ TypeChecker qualifying spec
 	    in             
 	    let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
 	    let (pat, env) = elaboratePattern (env, pat, alpha) in
-	    (cons ((pat, bdy), decls), env)
+	    (Cons ((pat, bdy), decls), env)
 	in         
 	let (decls, env) = foldr doDeclaration ([], env) decls in
 	let body = single_pass_elaborate_term (env, body, term_sort) in 
@@ -884,12 +884,12 @@ TypeChecker qualifying spec
 	let (vars, env) = 
 	    foldl (fn ((vars, env), (id, srt)) ->
 		   let srt = checkSort (env, srt) in
-		   (cons ((id, srt), vars), 
+		   (Cons ((id, srt), vars), 
 		    addVariable (env, id, srt)))
 	          ([], env) 
 		  vars 
 	in
-        let vars = rev vars in
+        let vars = reverse vars in
 	Bind (bind, vars, single_pass_elaborate_term (env, term, term_sort), pos)
 
       | SortedTerm (term, srt, _) ->
@@ -906,7 +906,7 @@ TypeChecker qualifying spec
 	      | (t::ts) -> 
 	        let alpha = freshMetaTyVar ("Seq", pos) in
 		let t = single_pass_elaborate_term (env, t, alpha) in
-		cons (t, elab ts)
+		Cons (t, elab ts)
 	in
 	  Seq (elab terms, pos)
 
@@ -1015,7 +1015,7 @@ TypeChecker qualifying spec
       | term -> (%System.print term;
 		 term)
 
-  def cantuse inbuilt = "Can't use inbuilt operator '"++inbuilt++"' as an expression -- use '("++inbuilt++")' instead."
+  def cantuse inbuilt = "Can't use inbuilt operator '"^inbuilt^"' as an expression -- use '("^inbuilt^")' instead."
 
   def single_pass_elaborate_term_head (env, t1, ty, trm) =
     case t1 of
@@ -1124,7 +1124,7 @@ TypeChecker qualifying spec
   def sortCognizantOperator? (f1 : MS.Fun) : Boolean = 
     case f1 of
       | TwoNames (id1, id2, _) ->
-        member ((id1, id2), sortCognizantOperators)
+        (id1, id2) in? sortCognizantOperators
       | _ -> false
 
 
@@ -1399,7 +1399,7 @@ TypeChecker qualifying spec
         let (v_srt, c_srt) = metafyBaseType (qid, srt_info, termAnn trm) in
 	let id_srt = case c_srt of
 		       | CoProduct (fields, pos) ->
-	                 (case find (fn (id2, _) -> id = id2) fields of
+	                 (case findLeftmost (fn (id2, _) -> id = id2) fields of
 			    | Some (_, Some dom_srt) -> Arrow (dom_srt, v_srt, pos)
 			    | _ -> v_srt)
 		       | _ -> v_srt
@@ -1511,7 +1511,7 @@ TypeChecker qualifying spec
     let sort1 = checkSort (env, sort1) in
     let 
       def addSeenVar(id, seenVars, env, pos) =
-	if member(id,seenVars) then
+	if id in? seenVars then
 	  (error (env, "Variable "^id^" repeated in pattern.", pos);
 	   (env,seenVars))
 	else 
@@ -1619,10 +1619,10 @@ TypeChecker qualifying spec
 	let (r, env, seenVars) = 
 	    foldl (fn ((row, env, seenVars), ((id, srt), (_, p))) ->
 		   let (p, env, seenVars) = elaboratePatternRec (env, p, srt, seenVars) in
-		   (cons ((id, p), row), env, seenVars))
+		   (Cons ((id, p), row), env, seenVars))
 	      ([], env, seenVars) r
 	in
-          (RecordPat (rev r, pos), env, seenVars)
+          (RecordPat (reverse r, pos), env, seenVars)
 
       | QuotientPat (pat, qid, pos) ->
 	let v = freshMetaTyVar ("QuotientPat", pos) in
@@ -1670,7 +1670,7 @@ TypeChecker qualifying spec
     else
       let oneHundredSpaces = "                                                                                                    " in
       if n < 100 then
-	substring (oneHundredSpaces, 0, n)
+	subFromTo (oneHundredSpaces, 0, n)
       else
 	oneHundredSpaces ^ blankString (n - 100)
 
@@ -1679,7 +1679,7 @@ TypeChecker qualifying spec
       | [] -> ""
       | [line] -> line
       | line :: lines -> 
-        line ^ Char.toString (Char.chr 10) ^ "          " ^ (newLines lines)
+        line ^ Char.show (Char.chr 10) ^ "          " ^ (newLines lines)
      
   %% ---- called inside OPS : PASS 2  -----
 

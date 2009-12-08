@@ -16,7 +16,7 @@ spec
   import ../Specs/Utilities
 
   op knownNonEmptyType?(qid: QualifiedId, spc: Spec): Boolean =
-    member(qid, knownNonEmptyBaseTypes)
+    qid in? knownNonEmptyBaseTypes
       || (let Some info = findTheSort(spc, qid) in
           let (tvs, dfn) = unpackFirstSortDef info in
           ~(tvs = [] && embed? Any dfn)

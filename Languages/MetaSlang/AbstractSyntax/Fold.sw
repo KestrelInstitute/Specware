@@ -7,9 +7,9 @@ spec
  type Fold (a,b) = a -> b -> a
  type TSP_Folds (a,b) = Fold (a,ATerm b) * Fold (a,ASort b) * Fold (a,APattern b)
 
- op foldTerm    : fa(a,b) TSP_Folds (a,b) -> a -> ATerm b -> a
- op foldSort    : fa(a,b) TSP_Folds (a,b) -> a -> ASort b -> a
- op foldPattern : fa(a,b) TSP_Folds (a,b) -> a -> APattern b -> a
+ op foldTerm    : [a,b] TSP_Folds (a,b) -> a -> ATerm b -> a
+ op foldSort    : [a,b] TSP_Folds (a,b) -> a -> ASort b -> a
+ op foldPattern : [a,b] TSP_Folds (a,b) -> a -> APattern b -> a
 
  def foldTerm (tsp_folds as (termFold,_,_)) acc term = 
    let foldOfChildren = 

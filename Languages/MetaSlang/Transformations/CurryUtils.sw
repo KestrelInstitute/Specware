@@ -16,14 +16,14 @@ CurryUtils qualifying spec
   def curryArgSorts(sp,srt) =
     let srt = sortInnerSort srt in % might not be needed, but ...
     case arrowOpt(sp,srt)
-      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
+      of Some (dom,rng) -> Cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
        | _ -> []
 
-  op foldrPred: fa(a) (a -> Boolean * a) -> Boolean -> List a -> (Boolean * List a)
+  op foldrPred: [a] (a -> Boolean * a) -> Boolean -> List a -> (Boolean * List a)
   def foldrPred f i l =
     List.foldr (fn (x,(changed?,result)) ->
 	   let (nchanged?,nx) = f x in
-	   (changed? || nchanged?,cons(nx,result)))
+	   (changed? || nchanged?,Cons(nx,result)))
       (i,[])
       l
 

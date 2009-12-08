@@ -11,17 +11,17 @@ MSToFM qualifying spec
   import /Languages/MetaSlang/Transformations/OpToAxiom
 
 
-  sort BoolBinOp =
+  type BoolBinOp =
     | And
     | Or
     | Xor
     | Implies
     | Equiv
 
-  sort BoolUnOp =
+  type BoolUnOp =
     | Not
 
-  sort FMTerm =
+  type FMTerm =
     | Poly FM.Poly
     | Ineq FM.Ineq
     | IfThenElse FMTerm * FMTerm * FMTerm
@@ -51,11 +51,11 @@ MSToFM qualifying spec
   op fmFalse: FMTerm
   def fmFalse = LitBool (false)
   
-  sort TransMap = FMMap.Map(MS.Term, FMTerm)
+  type TransMap = FMMap.Map(MS.Term, FMTerm)
 
-  sort RevTransMap = FMMap.Map(FMTerm, MS.Term)
+  type RevTransMap = FMMap.Map(FMTerm, MS.Term)
 
-  sort Context = {map: TransMap,
+  type Context = {map: TransMap,
 		  revMap: RevTransMap,
 		  varCounter: Nat}
 
@@ -93,7 +93,7 @@ MSToFM qualifying spec
   def proveFMProb(hyps, conc) =
     case conc of
       | BoolBinOp (Implies, fmTerm1, fmTerm2) ->
-      let hyps = cons(fmTerm1, hyps) in
+      let hyps = fmTerm1 :: hyps in
       let conc = fmTerm2 in
       proveFMProb(hyps, conc)
 
@@ -126,7 +126,7 @@ MSToFM qualifying spec
 	                 | LitBool true -> [falseIneq]
 			 | Ineq conc -> [negateIneq(conc)]
                          | _ -> [] in
-	all (fn (hyps) -> FMRefuteTop?(negConcs++hyps)) hypsDisjunct
+	forall? (fn (hyps) -> FMRefuteTop?(negConcs++hyps)) hypsDisjunct
 
   op FMRefuteTop?: List Ineq -> Boolean
   def FMRefuteTop?(ineqSet) =
@@ -138,12 +138,12 @@ MSToFM qualifying spec
       | [] -> [[]]
       | (LitBool true)::rest -> flattenAndSplitHyps(rest)
       | (LitBool false)::rest -> [[falseIneq]]
-      | (BoolBinOp (Or, t1, t2))::rest -> flattenAndSplitHyps(cons(t1, rest)) ++ flattenAndSplitHyps(cons(t2, rest))
-      | (BoolBinOp (Implies, t1, t2))::rest -> flattenAndSplitHyps(cons(BoolBinOp(Or, fmNot(t1), t2), rest))
+      | (BoolBinOp (Or, t1, t2))::rest -> flattenAndSplitHyps(t1 :: rest) ++ flattenAndSplitHyps(t2 :: rest)
+      | (BoolBinOp (Implies, t1, t2))::rest -> flattenAndSplitHyps(Cons(BoolBinOp(Or, fmNot(t1), t2), rest))
       | (BoolBinOp (And, t1, t2))::rest -> flattenAndSplitHyps([t1, t2]++rest)
       | (BoolUnOp (Not, (BoolBinOp (Or, t1, t2))))::rest ->
         flattenAndSplitHyps(Cons(BoolBinOp (And, fmNot(t1), fmNot(t2)), rest))
-      | (BoolUnOp (Not, Ineq (ineq)))::rest -> map (fn (hyps) -> cons(negateIneq(ineq), hyps)) (flattenAndSplitHyps(rest))
+      | (BoolUnOp (Not, Ineq (ineq)))::rest -> map (fn (hyps) -> Cons(negateIneq(ineq), hyps)) (flattenAndSplitHyps(rest))
       | (BoolBinOp(Xor, fmTerm1, fmTerm2))::rest ->
 	let imp1 = BoolBinOp (Implies, fmTerm1, fmNot(fmTerm2)) in
 	let imp2 = BoolBinOp (Implies, fmNot(fmTerm1), fmTerm2) in
@@ -160,7 +160,7 @@ MSToFM qualifying spec
       | (Ineq (ineq))::rest -> 
 	if trueIneq? (ineq)
 	  then flattenAndSplitHyps(rest)
-	else map (fn (hyps) -> cons(ineq, hyps)) (flattenAndSplitHyps(rest))
+	else map (fn (hyps) -> ineq :: hyps) (flattenAndSplitHyps(rest))
       | _::rest -> flattenAndSplitHyps(rest)
 
 (*  op flattenHyps: List FMTerm -> List FM.Ineq

@@ -15,7 +15,7 @@ Java qualifying spec
 
   % concatList is in spec StringUtilities
   def concatList (sl : List String) : String = 
-      List.foldr String.concat "" sl
+      List.foldr (^) "" sl
 
   % qualName (["aa","bb","cc"],"dd") = "aa.bb.cc.dd"
   def qualName (ids : List Ident, id : Ident) : String =
@@ -24,7 +24,7 @@ Java qualifying spec
                      else if y = "" then x
                      else concatList [x,".",y])
         ""
-        (List.concat (ids, [id]))
+        (ids ++ [id])
 
   % addPrettys ([p1,p2,p3],q) = [p1,q,p2,q,p3]
   def addPrettys (ps : Prettys, p : Pretty) : Prettys = 
@@ -32,21 +32,18 @@ Java qualifying spec
            [] -> ps
          | q::[] -> ps
          | q1::(q2::ps1) -> 
-             List.cons 
-               (q1, 
-                (List.cons 
-                   (p, addPrettys (List.cons (q2,ps1), p))))
+           q1::p::(addPrettys (q2::ps1, p))
  
   def addEmpty (ps : Prettys) : Prettys =
         if ps = [] then []
-        else List.cons (emptyPretty (), ps)
+        else emptyPretty () :: ps
 
   def addEmptys (ps : Prettys) : Prettys =
       addPrettys (ps, emptyPretty ())
 
   def addCommentLine (comment : String, ps : Prettys) : Prettys =
         if comment = "" then ps
-        else List.cons (toPretty comment, ps)
+        else toPretty comment :: ps
 
   def emptyBrackets (n : Integer) : Pretty =
       if n <= 0 then emptyPretty () 
@@ -101,7 +98,7 @@ Java qualifying spec
   def ppClsDecl (ms : List Mod, ch : ClsHeader, cb : ClsBody) 
                                                   : Pretty =
       prettysAll
-         (List.cons
+         (Cons
             (prettysNone [ppMods ms,
                           ppClsHeader ch, 
                           toPretty " ",
@@ -118,7 +115,7 @@ Java qualifying spec
   def ppInterfDecl (ms : List Mod, ih : InterfHeader, 
                     ib : InterfBody) : Pretty =
       prettysAll
-         (List.cons
+         (Cons
             (prettysNone [ppMods ms,
                           ppInterfHeader ih,
                           toPretty " ",
@@ -201,9 +198,9 @@ Java qualifying spec
                List.map ppInterfDecl cb.interfs]))
 
   def isEmptyClsBody (cb : ClsBody) : Boolean =
-      List.null cb.staticInits && List.null cb.flds &&
-      List.null cb.constrs && List.null cb.meths &&
-      List.null cb.clss && List.null cb.interfs
+      empty? cb.staticInits && empty? cb.flds &&
+      empty? cb.constrs && empty? cb.meths &&
+      empty? cb.clss && empty? cb.interfs
 
 %%%% interface body
 
@@ -220,8 +217,8 @@ Java qualifying spec
                List.map ppInterfDecl ib.interfs]))
 
   def isEmptyInterfBody (ib : InterfBody) : Boolean =
-      List.null ib.flds && List.null ib.meths &&
-      List.null ib.clss && List.null ib.interfs
+      empty? ib.flds && empty? ib.meths &&
+      empty? ib.clss && empty? ib.interfs
 
 %%%% Static initialization
 
@@ -425,7 +422,7 @@ Java qualifying spec
 
       | Labeled (id,st) ->
           prettysNone 
-            [toPretty (String.concat (id," : ")), ppStmt st]
+            [toPretty (id^" : "), ppStmt st]
       | If (e,st,None) -> 
 	prettysAll [
 		    prettysNone 
@@ -554,14 +551,14 @@ Java qualifying spec
             [toPretty "break",
              case opid of
                None -> emptyPretty ()
-             | Some id -> toPretty (String.concat (" ",id)),
+             | Some id -> toPretty (" "^id),
              toPretty ";"]
       | Continue opid ->
           prettysNone
             [toPretty "continue",
              case opid of
                None -> emptyPretty ()
-             | Some id -> toPretty (String.concat (" ",id)),
+             | Some id -> toPretty (" "^id),
              toPretty ";"]
       | Expr e -> prettysNone [ppExpr e, toPretty ";"] 
       | Empty -> toPretty ";"
@@ -576,7 +573,7 @@ Java qualifying spec
               LocVarDecl lvd -> ppLocVarDecl lvd
             | StmtExprs (e,es)  -> 
                 prettysLinear 
-                  (addPrettys (List.map ppExpr (List.cons (e,es)),
+                  (addPrettys (List.map ppExpr (e::es),
                               toPretty ",")))
 
 %%%% optional for-update 
@@ -586,7 +583,7 @@ Java qualifying spec
         None    -> emptyPretty ()
       | Some (e,es) -> 
               prettysLinear 
-                (addPrettys (List.map ppExpr (List.cons (e,es)), 
+                (addPrettys (List.map ppExpr (e::es), 
                              toPretty ","))
 
 %%%% switch block
@@ -666,13 +663,13 @@ Java qualifying spec
                   toPretty ".",
                   toPretty id]
       | ViaSuper id   
-            -> toPretty (String.concat ("super.",id))
+            -> toPretty ("super."^id)
       | ViaCls (nm,id)
             -> prettysNone 
                  [ppName nm,
 		  % seems to be a cut/paste error:
                   % toPretty (String.concat (".super.",id))] 
-                  toPretty (String.concat (".",id))] 
+                  toPretty ("."^id)] 
 
 %%%% array access
 
@@ -769,13 +766,13 @@ Java qualifying spec
   def ppPrim (pm : Prim) : Pretty =
       case pm of 
         Name nm         -> ppName nm
-      | IntL i          -> toPretty (Integer.toString i)
+      | IntL i          -> toPretty (Integer.show i)
       | Float (i1,i2)   -> prettysNone
-                             [toPretty (Integer.toString i1),
+                             [toPretty (Integer.show i1),
                               toPretty ".",
-                              toPretty (Integer.toString i2)]
-      | Bool b          -> toPretty (Boolean.toString b)
-      | Char c          -> toPretty ("'"^(Char.toString c)^"'")
+                              toPretty (Integer.show i2)]
+      | Bool b          -> toPretty (Boolean.show b)
+      | Char c          -> toPretty ("'"^(Char.show c)^"'")
       | String s        -> toPretty (concatList ["\"",s,"\""])
       | Null            -> toPretty "null"
       | ClsInst opt     -> prettysNone [case opt of

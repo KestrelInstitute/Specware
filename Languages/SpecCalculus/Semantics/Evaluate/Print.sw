@@ -21,16 +21,16 @@ SpecCalc qualifying spec {
  %  /Languages/SpecCalculus/AbstractSyntax/Printer.sw
 
  % from Environment.sw :
- % sort ValueInfo = Value * TimeStamp * UnitId_Dependency
- % sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
- % sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
- % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
+ % type ValueInfo = Value * TimeStamp * UnitId_Dependency
+ % type GlobalContext = PolyMap.Map (UnitId, ValueInfo)
+ % type LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
+ % type State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
  % These may be used in various places throughout this file:
  %  uidToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
  %  relativeUID_ToString produces (parseable?)  UnitId's that are relativized to the currentUID, using ".." to ascend, e.g. "foo" or "../../foo"
        
- sort ReverseContext = PolyMap.Map (Value, RelativeUID)
+ type ReverseContext = PolyMap.Map (Value, RelativeUID)
 
  def printSpecExpanded? = false
 
@@ -261,7 +261,7 @@ SpecCalc qualifying spec {
    in
    let isolated_vertices =  
        fold (fn isolated_vertices -> fn vertice ->
-	     if member (vertice, linked_vertices) then
+	     if  vertice in? linked_vertices then
 	       isolated_vertices
 	     else
 	       Cons (vertice, isolated_vertices))
@@ -346,7 +346,7 @@ SpecCalc qualifying spec {
  (* Tentative *)
  def printPrism base_spec reverse_context sp = 
    let prefix =
-       let sm = hd sp.sms in
+       let sm = head sp.sms in
        case sm.sm_tm of
 	| Some (SpecMorph (dom_tm, cod_tm, _, _), _) ->
 	  (ppGroup 

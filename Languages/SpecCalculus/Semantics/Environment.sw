@@ -63,7 +63,7 @@ UnitId_Dependency.
 	      ppString "]",
 	      ppNewline,
 	      ppString "[Timestamp: ",
-              ppString (Nat.toString timeStamp),
+              ppString (Nat.show timeStamp),
 	      ppString "]",
 	      ppNewline,
 	      ppString "[Dependencies: "]
@@ -162,14 +162,14 @@ UnitId_Dependency.
   def setBaseNames base_spec =
     let base_sort_names = 
         foldriAQualifierMap (fn (q, id, _, names) ->
-			     cons (Qualified(q, id), names))
+			     Cons (Qualified(q, id), names))
 	                    [mkQualifiedId("Boolean", "Boolean"),
 			     mkUnQualifiedId "Boolean"] 
 			    base_spec.sorts
     in
     let base_op_names = 
         foldriAQualifierMap (fn (q, id, _, names) ->
-			     cons (Qualified(q, id), names))
+			     Cons (Qualified(q, id), names))
 	                    [] 
 			    base_spec.ops
     in			    
@@ -312,13 +312,13 @@ while there is a transition from names with "UnitId" to "UnitId".
   op validatedUnitId? : UnitId -> Env Boolean
   def validatedUnitId? unitId = {
       validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
-      return (member(unitId,validatedUnitIds))
+      return (unitId in? validatedUnitIds)
     }
 
   op setValidatedUnitId : UnitId -> Env ()
   def setValidatedUnitId unitId = {
       validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
-      writeGlobalVar ("ValidatedUnitIds", cons(unitId,validatedUnitIds))
+      writeGlobalVar ("ValidatedUnitIds", Cons(unitId,validatedUnitIds))
     }
 
   % retrieves a fresh natural number (used for variable name generation in proof checker)
@@ -358,11 +358,11 @@ while there is a transition from names with "UnitId" to "UnitId".
         let n = pc.n + 1 in
 	if n < pc.max then
 	  %% normal case
-	  Some (cons (pc << {n = n}, pcs))
+	  Some (Cons (pc << {n = n}, pcs))
 	else
 	  %% "carry" case
 	  case incrPrismChoices pcs of
-	    | Some pcs -> Some (cons (pc << {n = 0}, pcs))
+	    | Some pcs -> Some (Cons (pc << {n = 0}, pcs))
 	    | None -> None
 
 (*

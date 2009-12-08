@@ -220,7 +220,7 @@ def patternVars (pat:Pattern): List Var =
        else 
 	 Cons (hd, diffVs (tl, l2))
 
- op  memberPred: fa(a) a * List a * (a * a -> Boolean) -> Boolean
+ op  memberPred: [a] a * List a * (a * a -> Boolean) -> Boolean
  def memberPred (x, l, p) =
    case l of
      | []     -> false
@@ -268,7 +268,7 @@ def patternVars (pat:Pattern): List Var =
      let oVars = foldl (fn (result, p) ->
 			let newV = case p of
 				     | VarPat (v, _) -> v
-				     | _ -> ("Xv-"^ (Nat.toString (length result)), 
+				     | _ -> ("Xv-"^ (Nat.show (length result)), 
 					     patternSort p)
 			in 
 			  result ++ [newV])
@@ -373,7 +373,7 @@ def patternVars (pat:Pattern): List Var =
            foldl (fn ((infos, match), (p, t1, trm2 as (t2, vars, _))) -> 
 		  %let (infos1, t1) = lambdaLiftTerm (env, (t1, [])) in
 		  let (infos2, t2) = lambdaLiftTerm (env, trm2) in
-		  let match = concat (match, [(p, t1, t2)]) in
+		  let match =  match ++ [(p, t1, t2)] in
 		  let infos = infos++infos2 in
 		  (infos, match))
 	         ([], []) 
@@ -437,10 +437,10 @@ Given let definition:
                                         vars)
                in
 	       let env  = insertOper (oper, env) in
-	       (cons (oper, opers ++ opers2), env, decls)
+	       (oper::opers ++ opers2, env, decls)
 	     | _ ->
 	       let (opers2, term) = lambdaLiftTerm (env, term) in
-	       (opers ++ opers2, env, cons ((pat, term), decls))
+	       (opers ++ opers2, env, Cons ((pat, term), decls))
        in
        let (opers1, env, decls) = List.foldr liftDecl ([], env, []) decls in
        let (opers2, body) = lambdaLiftTerm (env, body) in
@@ -504,7 +504,7 @@ in
        let opName = env.opName in
        let (free, bound) = 
            List.foldr (fn ((v, (_, vars, _)), (free, bound)) ->
-		       (vars ++ free, cons (v, bound)))
+		       (vars ++ free, v::bound))
 	              ([], []) 
 		      decls 
        in
@@ -534,7 +534,7 @@ in
 				    termSortEnv (getSpecEnv (env), body), 
 				    freeVars)
 	   in
-	     cons (oper, opers ++ opers2)
+	      oper::opers ++ opers2
        in
        let opers1 = List.foldr liftDecl [] tmpOpers in
 
@@ -576,7 +576,7 @@ in
        else
 	 let num = !(env.counter) in
 	 let _ = env.counter := num + 1 in
-	 let name = env.opName ^ "__internal_" ^ (Nat.toString num) in
+	 let name = env.opName ^ "__internal_" ^ (Nat.show num) in
 
 	 %let _ = String.writeLine ("  new oper: "^name) in
 
@@ -591,7 +591,7 @@ in
 
 	 % MA: make sure that liftInfo.closure is really a closure
 	 let liftInfoClosure = ensureClosure (liftInfo.closure) in
-	 (cons (liftInfo, opers), 
+	 (liftInfo::opers, 
 	  liftInfoClosure)
 
      | Lambda (match as ((pat, cond, body)::_)) ->
@@ -617,7 +617,7 @@ in
        let
 	 def liftRec (t, (opers, terms)) = 
 	   let (opers2, t) = lambdaLiftTerm (env, t) in
-	   (opers ++ opers2, cons (t, terms))
+	   (opers ++ opers2, t::terms)
        in
        let (opers, terms) = List.foldr liftRec ([], []) terms in
        (opers, 
@@ -675,7 +675,7 @@ in
        let
 	 def liftRec ((id, t), (opers, fields)) = 
 	   let (opers2, t) = lambdaLiftTerm (env, t) in
-	   (opers ++ opers2, cons ((id, t), fields))
+	   (opers ++ opers2, Cons ((id, t), fields))
        in
        let (opers, fields) = List.foldr liftRec ([], []) fields in
        (opers, (Record (fields, pos)))
@@ -694,7 +694,7 @@ in
  op  makeNewVars: List Sort -> List Var
  def makeNewVars srts =
    foldl (fn (result, s) ->
-	  Cons (("llp-"^Nat.toString (length result), s), result))
+	  Cons (("llp-"^Nat.show (length result), s), result))
          [] 
 	 srts
 
@@ -707,7 +707,7 @@ in
 (*
  spec TranslationBuiltIn = 
 
-   sort Any[T] = T
+   type Any[T] = T
 
  end-spec
 *)
@@ -773,19 +773,19 @@ def toAny     = Term `TranslationBasic.toAny`
      let closureArg = mkApply (fromAny (), mkVar closureVar) in
      let closureVarPat = mkVarPat (closureVar) in
      let newPattern =
-	 if null freeVars then
+	 if empty? freeVars then
 	   pattern
 	 else 
 	   case pattern of
 	     | (VarPat _) -> (RecordPat ([("1", pattern), ("2", closureVarPat)], noPos))
 	     | (RecordPat (fields, _)) -> 
 	       (RecordPat (fields ++ 
-			   [(Nat.toString (1+ (length fields)), closureVarPat)], noPos))
+			   [(Nat.show (1+ (length fields)), closureVarPat)], noPos))
      in	
      let 
        def mkProject ((id, srt), n) = 
 	 (mkVarPat ((id, srt)), 
-	  mkApply ((Fun (Project (Nat.toString n), mkArrow (varSort, srt), noPos)), 
+	  mkApply ((Fun (Project (Nat.show n), mkArrow (varSort, srt), noPos)), 
 		   closureArg))
      in
      let newBody = 
@@ -795,7 +795,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	   | _ -> 
 	     let (decls, n) = 
 	         List.foldl (fn ((decls, n), v) ->
-			     (cons (mkProject (v, n), decls), n + 1)) 
+			     (Cons (mkProject (v, n), decls), n + 1)) 
 		            ([], 1) 
 		            freeVars
 	     in
@@ -866,7 +866,7 @@ def toAny     = Term `TranslationBasic.toAny`
          % let _ = writeLine(printTerm term) in
 	 case term of 
 	   | Lambda ([(pat, cond, term)], a) ->
-	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^toString refine_num) in
+	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     let term = Lambda ([(pat, cond, term)], a) in
@@ -878,10 +878,10 @@ def toAny     = Term `TranslationBasic.toAny`
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
 	     in
-	       insertOpers (rev opers, q, r_elts, r_ops)
+	       insertOpers (reverse opers, q, r_elts, r_ops)
 
 	   | _ ->
-	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^toString refine_num) in
+	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
@@ -891,7 +891,7 @@ def toAny     = Term `TranslationBasic.toAny`
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
 	     in
-	       insertOpers (rev opers, q, r_elts, r_ops)
+	       insertOpers (reverse opers, q, r_elts, r_ops)
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), r_elts, r_ops) =
        let env = mkEnv (qname, name) in
@@ -901,7 +901,7 @@ def toAny     = Term `TranslationBasic.toAny`
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term, noPos) in
        let r_elts = Cons(Property newProp,r_elts) in
-       insertOpers (rev opers, qname, r_elts, r_ops)
+       insertOpers (reverse opers, qname, r_elts, r_ops)
 
      def liftElts(elts,result) =
        foldr
@@ -930,7 +930,7 @@ def toAny     = Term `TranslationBasic.toAny`
    % let _ = printSpecFlatToTerminal new_spc in
    new_spc
 
-% op  addNewOp : fa (a) QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
+% op  addNewOp : [a] QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
 % def addNewOp (name as Qualified (q, id), fixity, dfn, spc) =
 %   let info = {names = [name],
 %	       fixity = fixity, 

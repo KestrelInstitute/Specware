@@ -137,7 +137,7 @@ ListADT qualifying spec {
 
   op  sortDefs: Definitions -> Definitions
   def sortDefs(defs) = 
-      let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
+      let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 <= nm1) defs in
       let defMap = 
 	  List.foldl (fn(map, (name,term))-> STHMap.update(map,name,(name,term)))
 	  STHMap.emptyMap defs
@@ -181,8 +181,8 @@ ListADT qualifying spec {
       of Const v ->
         (case (v : Val)
           of Boolean b      -> string (if b then "t" else "nil")
-           | Nat     n      -> string (Nat.toString n)
-           | Char    c      -> strings ["#\\", Char.toString c]
+           | Nat     n      -> string (Nat.show n)
+           | Char    c      -> strings ["#\\", Char.show c]
            | String  s      -> string s
            | Symbol  (p, s) -> strings ["'", p, "::", s]
 	   | Cell cell      -> strings ["'", anyToString cell]
@@ -207,7 +207,7 @@ ListADT qualifying spec {
 			      [prettysNone [ppTerm t, string ")"]]))])
        | Apply (Op "list", [Const(Parameter v)]) ->
 	 % (list :foo) -> '(:foo)   optimization for nullary constructors
-	 if sub(v,0) = #:
+	 if v@0 = #:
 	   then strings ["'(", v, ")"]
 	   else strings ["(list ", v, ")"]
        | Apply (Op s, ts) ->
@@ -268,7 +268,7 @@ ListADT qualifying spec {
   op warnAboutSuppressingDefuns?: Boolean = false
 
   def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
-    if member (s, SpecToLisp.SuppressGeneratedDefuns) then
+    if  s in? SpecToLisp.SuppressGeneratedDefuns then
       let comment = ";;; Suppressing generated def for " ^ s in
       let _ = if warnAboutSuppressingDefuns?
                 then toScreen(comment ^ "\n")
@@ -325,7 +325,7 @@ ListADT qualifying spec {
 	 streamWriter(stream,";;; Lisp spec\n\n");
 	 app (fn pkgName -> streamWriter (stream,
 					  "(defpackage :" ^ pkgName ^ ")\n"))
-	  (sortGT (fn (x,y) -> y leq x) spc.extraPackages);
+	  (sortGT (fn (x,y) -> y <= x) spc.extraPackages);
 	streamWriter(stream,"\n(defpackage :" ^ name ^ ")");
 	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
@@ -416,7 +416,7 @@ def mkLLambda(args,decls,body):LispTerm =
 def mkLApply(f,terms) = Apply(f,terms)
 def mkLIf(t1,t2,t3) = If(t1,t2,t3)
 def mkLLet(vars,terms,term) = 
-    if null vars then term else Let(vars,terms,term)
+    if empty? vars then term else Let(vars,terms,term)
 def mkLLetRec(vars,terms,term) = Letrec(vars,terms,term)
 op mkLSeq(terms: List LispTerm): LispTerm = Seq(terms)
 
@@ -433,18 +433,18 @@ def mkLString s =
     Const(String (IO.formatString1("~S",s)))
 
 def oldMkLString s = 
-    translate (fn #" -> "\\\"" | #\\ -> "\\\\" | ch -> Char.toString ch) s 
+    translate (fn #" -> "\\\"" | #\\ -> "\\\\" | ch -> Char.show ch) s 
 
 def mkLIntern s = Const(Parameter(":|" ^ s ^ "|"))
 
 
 
-op mkDefinition: fa(A) String * String * A -> (String * Definition)
+op mkDefinition: [A] String * String * A -> (String * Definition)
 def mkDefinition(modulename,name,lispterm) =
   let t = Const(Cell (Lisp.cell lispterm)) in
   (modulename,(name,t))
 
-op mkDefinitionWithOp: fa(A) String * String * String * A -> (String * Definition)
+op mkDefinitionWithOp: [A] String * String * String * A -> (String * Definition)
 def mkDefinitionWithOp(modulename,name,opname,lispterm) =
   let t = mkLApply(mkLOp opname,[Const(Cell (Lisp.cell lispterm))]) in
   (modulename,(name,t))
@@ -460,7 +460,7 @@ def addDefinition(modulename,defn,lspc) =
    extraPackages = lspc.extraPackages,
    ops = lspc.ops,
    axioms = lspc.axioms,
-   opDefns = List.cons(defn,lspc.opDefns)
+   opDefns = defn::lspc.opDefns
   }
   else lspc
 

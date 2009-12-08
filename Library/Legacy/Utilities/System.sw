@@ -10,6 +10,9 @@ System qualifying spec
   %% Renamed from toString to avoid ambiguity with monomorphic toStrings
   op anyToString : [a] a -> String
   op print    : [a] a -> a
+  op toScreen (s:String) : ()
+  op writeLine (s:String) : ()
+
 
   op warn     : [a] String -> a
   op time     : [a] a -> a
@@ -61,4 +64,11 @@ System qualifying spec
 
   op garbageCollect : Bool -> ()
   op hackMemory     : ()      -> ()
+
+
+op [a] List.app (f: a -> ()) (l: List a) : () =
+  case l of
+     | []     -> ()
+     | hd::tl -> (f hd; app f tl)
+
 endspec

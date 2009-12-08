@@ -12,12 +12,12 @@ XML qualifying spec
     %% coordinate with convert_xml_name_to_ms_name in InternalizeAux.sw
     %% they should be converses
     let tentative_xml_name = ustring ms_name in
-    let reversed_xml_name = rev tentative_xml_name in
+    let reversed_xml_name = reverse tentative_xml_name in
     %% "?" is not allowed in an xml name, and "-" is not allowed in a ms name,
     %% so we convert ms "foo?" to xml "foo-p"
     case reversed_xml_name of
       | 63 (* ? *) :: tail ->
-        rev (cons (112 (* p *), cons (45 (* - *), tail)))
+        reverse (Cons (112 (* p *), Cons (45 (* - *), tail)))
       | _ -> 
 	tentative_xml_name
 
@@ -26,12 +26,12 @@ XML qualifying spec
       | [] -> []
       | 38 :: tail (* & *) -> (* &apos; *)
         %      &         a         p         o	       s        ;
-        cons (38,  cons(97, cons(112, cons(111, cons(115, cons(59, quote_special_chars tail))))))
+        38 :: 97 :: 112 :: 111 :: 115 :: 59 :: quote_special_chars tail
       | 60 :: tail (* < *) -> (* &lt; *)
         %      &          l         t        ;			
-        cons (38,  cons(108, cons(116, cons(59, quote_special_chars tail))))
-      | char:: tail ->
-        cons (char,  quote_special_chars tail)
+        38 :: 108 :: 116 :: 59 :: quote_special_chars tail
+      | char :: tail ->
+        char :: quote_special_chars tail
 
 
   def indentation_chardata (vspacing, indent) : UChars =
@@ -41,10 +41,10 @@ XML qualifying spec
     if n <= 0 then
       []
     else
-      cons (char, repeat_char (char, n - 1))
+      char :: repeat_char (char, n - 1)
 
-  def fa (X) generate_Document (datum : X,
-				table as (main_entry as (main_sort, _) :: _) : SortDescriptorExpansionTable)
+  def [X] generate_Document (datum : X,
+                             table as (main_entry as (main_sort, _) :: _) : SortDescriptorExpansionTable)
     : Document =
     let Base ((qualifier, main_id), _) = main_sort in
     let dtd = {internal = None,
@@ -93,13 +93,13 @@ XML qualifying spec
     in
       ustring (aux sd)
 
-  def fa (X) generate_Element (name     : String,
-			       datum    : X,
-			       sd       : SortDescriptor,
-			       table    : SortDescriptorExpansionTable,
-			       vspacing : Nat,
-			       indent   : Nat,
-			       show_type? : Boolean)
+  def [X] generate_Element (name     : String,
+                            datum    : X,
+                            sd       : SortDescriptor,
+                            table    : SortDescriptorExpansionTable,
+                            vspacing : Nat,
+                            indent   : Nat,
+                            show_type? : Boolean)
     : Element =
     let pattern   = expand_SortDescriptor (sd, table) in
     let uname     = convert_ms_name_to_xml_name name in
@@ -128,11 +128,11 @@ XML qualifying spec
 	      content = content,
 	      etag    = etag}
 
-  def fa (X) generate_content (datum      : X,
-			       sd_pattern : SortDescriptor,
-			       table      : SortDescriptorExpansionTable,
-			       vspacing   : Nat,
-			       indent     : Nat)
+  def [X] generate_content (datum      : X,
+                            sd_pattern : SortDescriptor,
+                            table      : SortDescriptorExpansionTable,
+                            vspacing   : Nat,
+                            indent     : Nat)
     : Option Content =
     case sd_pattern of
       | Product sd_fields ->
@@ -145,13 +145,13 @@ XML qualifying spec
 	    case (datum_elements, sd_fields) of
 
 	      | ([], []) ->
-	        Some {items   = rev new_items,
+	        Some {items   = reverse new_items,
 		      trailer = Some (indentation_chardata (vspacing, indent - 2))}
 
 	      | (datum_element :: datum_elements, (sd_field_name, sd_field_pattern) :: sd_fields) ->
 	         aux (datum_elements,
 		      sd_fields,
-		      cons ((Some (indentation_chardata (vspacing, indent)),
+		      Cons ((Some (indentation_chardata (vspacing, indent)),
 			     Element (generate_Element (sd_field_name,
 							datum_element,
 							sd_field_pattern,
@@ -165,7 +165,7 @@ XML qualifying spec
 
       | CoProduct sd_options ->
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
-	let possible_sd_entry = find (fn (x,_) -> constructor_name = x) sd_options in
+	let possible_sd_entry = findLeftmost (fn (x,_) -> constructor_name = x) sd_options in
 	(case possible_sd_entry of
 	  | None -> (fail ("Should never happen!"); None)
 	  | Some (sd_constructor_name, possible_sd_sub_pattern) ->
@@ -210,22 +210,22 @@ XML qualifying spec
 
 	  | ("Integer", "Integer") ->
 	    let n = Magic.magicCastToInteger datum in
-	    indent_ustring (ustring (Integer.toString n))
+	    indent_ustring (ustring (Integer.show n))
 
 	  | ("List",    "List") ->
 	    (let [element_sd] = args in
 	     let expanded_element_sd = expand_SortDescriptor(element_sd, table) in
 	     let items = Magic.magicCastToList datum in
-	     Some {items = rev (foldl (fn (items, item) ->
-				       cons (generate_Content_Item (item,
-								    element_sd,
-								    expanded_element_sd,
-								    table,
-								    1, % vspacing,
-								    indent),
-					     items))
-				     []
-				     items),
+	     Some {items = reverse (foldl (fn (items, item) ->
+                                             Cons (generate_Content_Item (item,
+                                                                          element_sd,
+                                                                          expanded_element_sd,
+                                                                          table,
+                                                                          1, % vspacing,
+                                                                          indent),
+                                                   items))
+                                      []
+                                      items),
 		   trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))})
 	  | ("Boolean", "Boolean") ->
 	    let bool = Magic.magicCastToBoolean datum in
@@ -233,7 +233,7 @@ XML qualifying spec
 
 	  | ("Char",    "Char") ->
 	    let char = Magic.magicCastToChar datum in
-	    indent_ustring (ustring ("&#" ^ (Nat.toString (ord char)) ^";"))
+	    indent_ustring (ustring ("&#" ^ (Nat.show (ord char)) ^";"))
 
 	  | ("Option" , "Option") ->
 	    (let [sub_sd] = args in
@@ -254,14 +254,14 @@ XML qualifying spec
       | _ ->
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
 
-  op write_ad_hoc_string : fa (X) SortDescriptor * X -> String
+  op write_ad_hoc_string : [X] SortDescriptor * X -> String
 
-  def fa (X) generate_Content_Item (datum      : X,
-				    sd         : SortDescriptor,
-				    sd_pattern : SortDescriptor,
-				    table      : SortDescriptorExpansionTable,
-				    vspacing   : Nat,
-				    indent     : Nat)
+  def [X] generate_Content_Item (datum      : X,
+                                 sd         : SortDescriptor,
+                                 sd_pattern : SortDescriptor,
+                                 table      : SortDescriptorExpansionTable,
+                                 vspacing   : Nat,
+                                 indent     : Nat)
     : Option CharData * Content_Item =
     case sd_pattern of
       | Product sd_fields ->
@@ -282,7 +282,7 @@ XML qualifying spec
 
       | CoProduct sd_options ->
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
-	let possible_sd_entry = find (fn (x,_) -> constructor_name = x) sd_options in
+	let possible_sd_entry = findLeftmost (fn (x,_) -> constructor_name = x) sd_options in
         (case possible_sd_entry of
 	  | None -> (fail ("Should never happen!");
 		     (Some (indentation_chardata (vspacing, indent)),
@@ -332,7 +332,7 @@ XML qualifying spec
 
 	  | ("Integer", "Integer") ->
 	    let n = Magic.magicCastToInteger datum in
-	    indent_text_item (vspacing, indent, ustring (Integer.toString n))
+	    indent_text_item (vspacing, indent, ustring (Integer.show n))
 
 	  | ("Boolean", "Boolean") ->
 	    let bool = Magic.magicCastToBoolean datum in
@@ -340,7 +340,7 @@ XML qualifying spec
 
 	  | ("Char",    "Char") ->
 	    let char = Magic.magicCastToChar datum in
-	    indent_text_item (vspacing, indent, ustring ("&#" ^ (Nat.toString (ord char)) ^";"))
+	    indent_text_item (vspacing, indent, ustring ("&#" ^ (Nat.show (ord char)) ^";"))
 
 	  | ("List",    "List") ->
 	    (Some (indentation_chardata (vspacing, indent)),

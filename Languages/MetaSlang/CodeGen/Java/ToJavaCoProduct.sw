@@ -29,7 +29,7 @@ def mkEqualityBodyForSum(fields) =
 op sumTypeToClsDecl: Id * List FldDecl * List MethDecl -> ClsDecl
 def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
   let sumEqMethod = mkAbstractEqualityMethDecl(id) in
-  ([Abstract], (id, None, []), setFlds(setMethods(Java.emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)), fldDecls))
+  ([Abstract], (id, None, []), setFlds(setMethods(Java.emptyClsBody, sumEqMethod::sumConstructorMethDecls), fldDecls))
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =
@@ -48,13 +48,13 @@ op fieldsToFldDecls: List (Id * Sort) -> JGenEnv (List FldDecl)
 def fieldsToFldDecls(args) =
   fieldsToX (fn(fieldProj,fieldType) -> fieldToFldDecl(mkArgProj(fieldProj), fieldType)) args
 
-op fieldsToX: fa(A) (Id * Id -> A) -> List (Id * Sort) -> JGenEnv (List A)
+op fieldsToX: [A] (Id * Id -> A) -> List (Id * Sort) -> JGenEnv (List A)
 def fieldsToX fun (args) =
   foldM (fn fpars -> fn(fieldProj,srt) ->
 	 {
 	  fieldType <- srtIdM srt;
 	  fpar <- return(fun(fieldProj, fieldType));
-	  let fpars = concat(fpars,[fpar]) in
+	  let fpars = fpars ++ [fpar] in
 	  return fpars
 	 }) [] args
 
@@ -69,7 +69,7 @@ def sumToConsMethodDecl(id, c, args) =
 op mkSumConstructBody: Id * Nat -> JavaBlock
 def mkSumConstructBody(id, n) =
   let def mkArgs(k) = if k = n then [CondExp(Un(Prim(Name ([], mkArgProj(natToString(k))))), None)]
-                               else cons(CondExp(Un(Prim(Name ([], mkArgProj(natToString(k))))), None),
+                               else Cons(CondExp(Un(Prim(Name ([], mkArgProj(natToString(k))))), None),
 					 mkArgs(k+1)) in
   let args = if n = 0 then [] else mkArgs(1) in
   [Stmt (Return (Some (CondExp(Un (Prim (NewClsInst (ForCls (([], id), args, None)))), None))))]
@@ -127,7 +127,7 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
 	    let varDeclId = (mkTagCId(cons), 0):VarDeclId in
 	    let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
 	    let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
-	    List.cons(fldDecl, mkTagCFieldDeclsFromSummands(rest, sumNum+1)))
+	    fldDecl :: mkTagCFieldDeclsFromSummands(rest, sumNum+1))
    in
    let tagCFieldDecls = mkTagCFieldDeclsFromSummands(summands, 1) in
    {
@@ -138,7 +138,7 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
 					   | (cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args)
 					   | (cons, Some (srt)) -> sumToConsMethodDecl(id, cons, [("1", srt)])
 					   | (cons, None) -> sumToConsMethodDecl(id, cons, []);
-				       return (concat(summands,[summand]))
+				       return (summands ++ [summand])
 				      }) [] summands;
     sumTypeClsDecl <- return(sumTypeToClsDecl(id, [tagFieldDecl]++tagCFieldDecls, sumConstructorMethDecls));
     sumClsDecls <- mapM (fn summand ->
@@ -155,7 +155,7 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
 %  let col1 = foldl (fn((_,col0),col) -> concatCollected(col0,col)) nothingCollected sumClsDeclsCols in
 %  let col = concatCollected(col0,col1) in
   %(cons(sumTypeClsDecl, sumClsDecls),col)
-   addClsDecls(cons(sumTypeClsDecl, sumClsDecls))
+   addClsDecls(sumTypeClsDecl::sumClsDecls)
  }
 
 endspec

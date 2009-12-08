@@ -42,6 +42,7 @@ or a file.
 PrettyPrint qualifying spec {
 
   import /Library/Legacy/Utilities/IO
+  import /Library/Legacy/Utilities/System
   import /Library/Legacy/DataStructures/StringUtilities
 
   %% ========================================================================
@@ -214,19 +215,19 @@ PrettyPrint qualifying spec {
 %      | _ -> String.concat (" ", blanks (n - 1))
     
 
-  def newlineString () : String = Char.toString (Char.chr 10)
+  def newlineString () : String = Char.show (Char.chr 10)
 
   def newlineAndBlanks (n : Nat) : String = 
      (newlineString () ^ blanks (n))
 
   def latexBlanks(n : Nat) : String = 
       if n = 0 then "" else
-      "\\SWspace{" ^ Nat.toString (6 * n) ^ "}"
+      "\\SWspace{" ^ Nat.show (6 * n) ^ "}"
 
   def latexNewlineAndBlanks(n : Nat) : String = 
       "\\\\[0.3em]" ^ newlineString() ^ latexBlanks(n)
 
-  op  toStream : fa(a) Text * 
+  op  toStream : [a] Text * 
                      ((Nat * String) * a  -> a) * a * 
                      (Nat * a -> a) -> a
 
@@ -257,7 +258,7 @@ PrettyPrint qualifying spec {
   %% Shouldn't need two versions, but some calls would need to be rewritten to
   %% to handle the order reversal
   def toStreamT (text, cont, base, newlineIndent) = 
-      case rev text
+      case reverse text
 	of [] -> base
 	 | (_, strings) :: rest ->	% Indentation of first line ignored!
 	   let _ = foldr cont () strings in
@@ -332,31 +333,31 @@ PrettyPrint qualifying spec {
    op markPretty : Nat * Pretty -> Pretty
    def markPretty(uniqueId,p) = 
        prettysNone ([lengthString(0,"%("),
-                     lengthString(0,Nat.toString uniqueId),
+                     lengthString(0,Nat.show uniqueId),
                      p,
                      lengthString(0,"%)")])
 
    op markLines : Nat * Lines -> Lines
    def markLines(uniqueId,p) = 
        [(0,lengthString(0,"%(")),
-        (0,lengthString(0,Nat.toString uniqueId))] ++
+        (0,lengthString(0,Nat.show uniqueId))] ++
         p
         ++
         [(0,lengthString(0,"%)"))]
 
-    def printInt(i:Integer) = toString i
+    def printInt(i:Integer) = show i
 
    op buttonPretty : Boolean * Integer * Pretty * Boolean -> Pretty
    def buttonPretty(enabled,number,p,sos?) = 
-       let string = toString enabled^":"^printInt number^":"^toString sos? in
+       let string = show enabled^":"^printInt number^":"^show sos? in
        prettysNone ([lengthString(0,"%["),lengthString(0,string),p])
 
 
    op shift : String * Nat * PathStack -> PathStack
-   def shift (id,pos1,stack) = List.cons((id,pos1,0,false,[]),stack)
+   def shift (id,pos1,stack) = Cons((id,pos1,0,false,[]),stack)
 
    def insertElem (elem,(id,pos1,pos2,closed,elems)) = 
-       (id,pos1,pos2,closed,List.cons(elem,elems))
+       (id,pos1,pos2,closed,Cons(elem,elems))
 
    % Make the top-most element of the stack a child of the 
    % second to top-most element, unless the second to top-most
@@ -368,8 +369,8 @@ PrettyPrint qualifying spec {
             let elem = (id1,pos1,pos2,true,elems1) in
             let (_,_,_,closed,_) = elem2 in
             if ~closed
-                then List.cons(insertElem(elem,elem2),stack)
-            else List.cons(elem,List.cons(elem2,stack))
+                then Cons(insertElem(elem,elem2),stack)
+            else Cons(elem,Cons(elem2,stack))
           | [(id,pos1,_,_,elems)] -> [(id,pos1,pos2,true,elems)]
           | _ -> stack
 
@@ -431,7 +432,7 @@ PrettyPrint qualifying spec {
                       axiom? = false,
                       readId? = false,
                       string = string^
-                               (String.translate (fn #" -> "\\\\\\\"" | ch -> Char.toString ch) s)})
+                               (String.translate (fn #" -> "\\\\\\\"" | ch -> Char.show ch) s)})
        in
        let {charPos,stack,readId?,axiom?,string} =
                   toStream (text,
@@ -509,10 +510,10 @@ PrettyPrint qualifying spec {
 
    def treeToString((id,startPos,endPos,_(* closed *),subtrees):PathTree) = 
        "(" ^ id ^
-       " " ^ Nat.toString startPos ^
+       " " ^ Nat.show startPos ^
        treesToString(subtrees) ^
        " " ^ id ^
-       " " ^ Nat.toString endPos ^ ")"
+       " " ^ Nat.show endPos ^ ")"
    def treesToString(trees) = 
        case trees 
          of [] -> ""
@@ -568,7 +569,7 @@ PrettyPrint qualifying spec {
   %%%% Utility functions
 
   def prettysBlock block ps =
-      block (0, List.map (fn p -> (0, p)) ps)
+      block (0, map (fn p -> (0, p)) ps)
 
   def prettysNone ps = 
       prettysBlock blockNone ps
@@ -595,14 +596,14 @@ PrettyPrint qualifying spec {
   op  strings : List(String) -> Pretty
 
   def strings ss =
-      prettysNone (List.map string ss)
+      prettysNone (map string ss)
 
   def addSeparator (sep : Pretty) (ps : Prettys) : Prettys =
     case ps
       of []  -> []
        | [p] -> [p]
        | p :: ps -> 
-         List.cons(prettysNone [p, sep], addSeparator sep ps)
+         Cons(prettysNone [p, sep], addSeparator sep ps)
     
 
   op prettysBlockDelim
@@ -632,7 +633,7 @@ PrettyPrint qualifying spec {
                  List T -> Pretty
 
   def ppList f (left, sep, right) ts =
-    prettysLinearDelim (left, sep, right) (List.map f ts)
+    prettysLinearDelim (left, sep, right) (map f ts)
 
   (*
 
@@ -647,8 +648,8 @@ PrettyPrint qualifying spec {
          | Cons(e,es) -> 
            blockLinear(0,
            [(0,string left),
-            (0,ppfun e)] List.++
-           (List.foldr (fn (e,l) ->
+            (0,ppfun e)] ++
+           (foldr (fn (e,l) ->
                  Cons((0,string sep),
                  Cons((1,ppfun e),l)))
                  [(0,string right)]

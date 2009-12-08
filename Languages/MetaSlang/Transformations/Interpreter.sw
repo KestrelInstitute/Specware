@@ -31,7 +31,7 @@ spec
       | (Bool b1, Bool b2) -> b1 = b2
       | (RecordVal sb1, RecordVal sb2) ->
         length sb1 = length sb2
-          && all (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2)) (zip(sb1,sb2))
+          && forall? (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2)) (zip(sb1,sb2))
       | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> id1 = id2 && equalValue?(v1,v2)
       | (Constant(id1,_), Constant(id2,_)) -> id1 = id2
       | (Unevaluated(t1),Unevaluated(t2)) -> equalTerm?(t1,t2)
@@ -94,7 +94,7 @@ spec
 	  let _ = toScreen ": " in
 	  ()
 	| _ ->
-	  let _ = toScreen ((toString depth)^"< ") in
+	  let _ = toScreen ((show depth)^"< ") in
 	  let _ = printTermToTerminal t in
 	  let _ = toScreen newline in
 	  ()
@@ -110,7 +110,7 @@ spec
 	  ()
 	| _ ->
 	  let _ = toScreen (blanks depth) in
-	  let _ = toScreen ((toString depth)^"> ") in
+	  let _ = toScreen ((show depth)^"> ") in
 	  let _ = printValue (val,false) in
 	  let _ = toScreen newline in
 	  ()
@@ -141,7 +141,7 @@ spec
 	      | Unevaluated nP -> Unevaluated (IfThenElse(nP,M,N,a))
 	      | _ -> Unevaluated t)
 	  | Lambda(match,_) -> Closure(match,sb)
-	  | Seq(tms,_) -> nth (map (fn s -> evalRec(s,sb,spc,depth+1)) tms, (length tms) - 1)
+	  | Seq(tms,_) -> (map (fn s -> evalRec(s,sb,spc,depth+1)) tms) @ (length tms - 1)
 	  | Let(decls, body, a) ->
 	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1))) decls in
 	     case foldl (fn (ssb,(pat,e)) ->
@@ -156,7 +156,7 @@ spec
 	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,newsb,spc,depth+1),newsb,sb)
 		| None -> Unevaluated (Let(map (fn (pat,e) -> (pat,valueToTerm e)) rdecls, body, a)))
 	  | LetRec(decls, body, _) ->
-	    let ids = rev(map (fn ((v,_),_) -> v) decls) in
+	    let ids = reverse(map (fn ((v,_),_) -> v) decls) in
 	    (case foldl (fn (ssb,((v,_),e)) ->
 			 case ssb of
 			   | Some nsb ->
@@ -170,7 +170,7 @@ spec
 	       of Some sb ->
 		  (case evalRec(body,sb,spc,depth+1) of
 		     | Unevaluated t1 ->
-		       if exists (fn (id,_) -> member(id,ids)) (freeVars t)
+		       if exists? (fn (id,_) -> id in? ids) (freeVars t)
 		        then Unevaluated(mkLetRec(decls,t1))
 			else Unevaluated t1
 		     | v -> v)
@@ -220,7 +220,7 @@ spec
   op  nonStrict?: MS.Term -> Boolean
   def nonStrict? t =
     case t of
-      | Fun(f,_,_)  -> member(f,[And,Or,Implies])
+      | Fun(f,_,_)  -> f in?[And,Or,Implies]
       | _ -> false
 
   op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat -> Value
@@ -273,10 +273,10 @@ spec
     case ft of
       | Fun(Embed(id,true),ty,_) -> Constructor(id,a,ty)
       | Fun(Op(Qualified(spName,opName),_),_,_) ->
-        (if member(spName,evalQualifiers)
+        (if spName in? evalQualifiers
 	  then (case a
 		  of RecordVal(fields) ->
-		     (if (all (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Boolean"
+		     (if (forall? (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Boolean"
 		       then attemptEvaln(spName,opName,fields,ft)
 		       else Unevaluated(mkApply(ft,valueToTerm a)))
 		    | _ -> (if evalConstant? a
@@ -415,7 +415,7 @@ spec
   def extendLetRecSubst(dynSb,storedSb,letrecIds) =
     if letrecEnv?(dynSb,storedSb,letrecIds)
       then dynSb
-      else extendLetRecSubst(tl dynSb,storedSb,letrecIds)
+      else extendLetRecSubst(tail dynSb,storedSb,letrecIds)
 
   def letrecEnv?(dynSb,storedSb,letrecIds) =
           case (dynSb,letrecIds) of
@@ -529,7 +529,7 @@ spec
       else
       let fvs = freeVars t in
       let usedSb = foldl (fn (rsb,(id1,v)) ->
-			  case find (fn (id2,_) -> id1 = id2) fvs of
+			  case findLeftmost (fn (id2,_) -> id1 = id2) fvs of
 			    | Some vr -> Cons((vr,v),rsb)
 			    | None -> rsb)
 		     [] localSb
@@ -541,7 +541,7 @@ spec
   op  ldiff: [a] List a * List a -> List a
   def ldiff(l1,l2) =
     if l1 = l2 || l1 = [] then []
-      else Cons(hd l1,ldiff(tl l1,l2))
+      else Cons(head l1,ldiff(tail l1,l2))
       
 
   %% Evaluation of constant terms
@@ -568,7 +568,7 @@ spec
      Qualified("Char","isAscii")
      ]
   op avoidExpanding? (qid : QualifiedId) : Boolean =
-    member(qid, builtInQids)
+    qid in? builtInQids
 
   op  valConstant?: Value -> Boolean
   def valConstant? v =
@@ -606,12 +606,12 @@ spec
        | ("~", Bool b)        -> Bool (~b)
        | ("positive?", Int i) -> Bool (i >= 0)
        | ("pred", Int i)      -> Int (pred i)
-       | ("toString", Int i)  -> String (toString i)
-       | ("toString", Bool b) -> String (toString b)
-       | ("toString", Char c) -> String (toString c)
-       | ("show", Int i)      -> String (toString i)
-       | ("show", Bool b)     -> String (toString b)
-       | ("show", Char c)     -> String (toString c)
+       | ("toString", Int i)  -> String (show i)
+       | ("toString", Bool b) -> String (show b)
+       | ("toString", Char c) -> String (show c)
+       | ("show", Int i)      -> String (show i)
+       | ("show", Bool b)     -> String (show b)
+       | ("show", Char c)     -> String (show c)
        | ("isucc",Int i)      -> Int (isucc i)
        | ("succ",Int i)       -> Int (isucc i)
        | ("ipred",Int i)      -> Int (ipred i)
@@ -634,7 +634,7 @@ spec
 
        | ("implode",arg)      ->
          if metaList? arg
-	   then String(foldr (fn(Char c,rs) -> (toString c)^rs) "" (metaListToList arg))
+	   then String(foldr (fn(Char c,rs) -> (show c)^rs) "" (metaListToList arg))
 	   else default()
 
        | ("isUpperCase",Char c) -> Bool(isUpperCase c)
@@ -657,9 +657,9 @@ spec
        | ("garbageCollect",Bool b) -> let _ = garbageCollect b in RecordVal []
        | ("trueFilename",String s) -> String(trueFilename s)
 
-       | ("anyToString", Int i)      -> String (toString i)
-       | ("anyToString", Bool b)     -> String (toString b)
-       | ("anyToString", Char c)     -> String (toString c)
+       | ("anyToString", Int i)      -> String (show i)
+       | ("anyToString", Bool b)     -> String (show b)
+       | ("anyToString", Char c)     -> String (show c)
        | ("anyToString", arg)     -> String (anyToString arg)
        %% Missing System. time, msWindowsSystem?, hackMemory
 
@@ -718,8 +718,8 @@ spec
 		    else Int(divR(x,y))
 
        %% string operations
-       | "concat" -> String(concat(stringVals fields))
-       | "++"  -> String(++(stringVals fields))
+       | "concat" -> String(^(stringVals fields))
+       | "++"  -> String(^(stringVals fields))
        | "^"   -> String(^(stringVals fields))
        | "substring" ->
 	 (case fields of
@@ -728,14 +728,14 @@ spec
 	      let iv = intVal i in
 	      let jv = intVal j in
 	      if iv <= jv && jv <= length sv
-		then String(substring(stringVal s,intVal i,intVal j))
+		then String(subFromTo(stringVal s,intVal i,intVal j))
 		else default()
 	    | _ -> default())
-       | "leq" -> Bool(leq(stringVals fields))
-       | "lt"  -> Bool(lt( stringVals fields))
+       | "leq" -> Bool(<=(stringVals fields))
+       | "lt"  -> Bool(<( stringVals fields))
        | "sub" -> let (s,i) = stringIntVals fields in
 	          if i >= 0 && i < length s
-		    then Char(sub(s,i))
+		    then Char(s@i)
 		    else default()
 
     % %% Boolean operations are non-strict
@@ -825,8 +825,8 @@ spec
   op  ppValue: PrContext -> Value -> Pretty
   def ppValue context v =
     case v of
-      | Int         n  -> string (toString n)
-      | Char        c  -> string ("#"^toString c)
+      | Int         n  -> string (show n)
+      | Char        c  -> string ("#"^show c)
       | String      s  -> string ("\"" ^ s ^ "\"")
       | Bool        b  -> string (if b then "true" else "false")
       | RecordVal   rm ->
@@ -922,7 +922,7 @@ spec
       | Unevaluated_  -> false
       | Closure _ -> false
       | RecClosure _ -> false
-      | RecordVal rm -> all (fn (_,x) -> fullyReduced? x) rm
+      | RecordVal rm -> forall? (fn (_,x) -> fullyReduced? x) rm
       | Constructor(_,arg,_) -> fullyReduced? arg
       | QuotientVal (f,arg,srt_qid) -> fullyReduced? arg
       | ChooseClosure (arg,srt,srt_id) -> fullyReduced? arg

@@ -29,6 +29,7 @@ consistency with specs StateMonads and ExceptionMonads.
 
 
 SStateExceptionMonad qualifying spec
+  import /Library/Legacy/Deprecated
 
   type Result (exc, a) =
     | RETURN a

@@ -94,15 +94,15 @@ XML qualifying spec
     let
        def probe (tail, rev_miscs) =
 	 case tail of
-	   | [] -> return (rev rev_miscs, [])
+	   | [] -> return (reverse rev_miscs, [])
 	   | _ ->
 	     {
 	      (possible_misc, scout) <- parse_Misc tail;
 	      case possible_misc of
 		| Some misc ->
-		  probe (scout, cons (misc, rev_miscs))
+		  probe (scout, misc::rev_miscs)
 		| _ ->
-		  return (rev rev_miscs, tail)
+		  return (reverse rev_miscs, tail)
 	      }
     in
       probe (start, [])

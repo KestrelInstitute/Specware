@@ -42,18 +42,18 @@ AnnSpec qualifying spec
 		  if (% given {A,B,C} = B
 		      % drop that definition
 		      % note: equalType?, not equivType?, because we don't want to drop true defs
-		      (exists (fn new_def -> equalType? (old_def, new_def)) xxx_defs) 
+		      (exists? (fn new_def -> equalType? (old_def, new_def)) xxx_defs) 
 		      ||
 		      % asuming Nats = List Nat,
 		      % given {A,B,C} = List Nat
 		      %   and {A,B,C} = Nats       
 		      % keep just one version
-		      (exists (fn new_def -> equivType? spc (old_def, new_def)) new_defs)) 
+		      (exists? (fn new_def -> equivType? spc (old_def, new_def)) new_defs)) 
 		    then
 		      new_defs
 		  else
 		    %% just cons here -- let maybeAndSort remove redundant Any's
-		    cons (old_def, new_defs)) 
+		    Cons (old_def, new_defs)) 
 	         []
 		 old_defs
        in
@@ -87,25 +87,25 @@ AnnSpec qualifying spec
        let new_decls =
            foldl (fn (new_decls,old_decl) ->
 		  let old_sort = termSort old_decl in
-		  if exists (fn new_decl -> 
+		  if exists? (fn new_decl -> 
 			     let new_sort = termSort new_decl in
 			     equivType? spc (old_sort, new_sort))
 		            new_decls 
 		    then
 		      new_decls
 		  else
-		    cons (SortedTerm (Any noPos, old_sort, noPos),
+		    Cons (SortedTerm (Any noPos, old_sort, noPos),
 			  new_decls))
 	         []
 		 (old_decls ++ old_defs)
        in
        let new_defs =
            foldl (fn (new_defs,old_def) ->
-		  if exists (fn new_def -> equivTerm? spc (old_def, new_def)) new_defs then
+		  if exists? (fn new_def -> equivTerm? spc (old_def, new_def)) new_defs then
 		    new_defs
 		  else
 		    %% just cons here -- let maybeAndTerm remove redundant Any's
-		    cons (old_def, new_defs))
+		    Cons (old_def, new_defs))
 	         []
 		 old_defs
        in
@@ -124,7 +124,7 @@ AnnSpec qualifying spec
    %% TODO: use equivTerm? to compare axiom/thorem/conjecture bodies
    %% TODO: consider recursive version -- but perhaps some philosophical concens wrt pruning among imported elements
    foldl (fn (prior_elts,elt) ->
-	  if member (elt, prior_elts) then
+	  if elt in? prior_elts then
 	    prior_elts
 	  else
 	    prior_elts ++ [elt])

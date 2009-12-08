@@ -76,8 +76,8 @@ AnnSpec qualifying spec
  op  primaryOpName   : [b] AOpInfo   b -> OpName
  op  propertyName    : [b] AProperty b -> PropertyName
 
- def primarySortName info = hd info.names
- def primaryOpName   info = hd info.names
+ def primarySortName info = head info.names
+ def primaryOpName   info = head info.names
  def propertyName    p    = p.2
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,7 +91,7 @@ AnnSpec qualifying spec
    case srt of
      | Any _           -> false
      | Pi  (_, srt, _) -> definedSort? srt
-     | And (srts,   _) -> exists definedSort? srts
+     | And (srts,   _) -> exists? definedSort? srts
      | _               -> true
 
  op  definedOpInfo? : [b] AOpInfo b -> Boolean
@@ -105,7 +105,7 @@ AnnSpec qualifying spec
      | Lambda     ([(_,_,body)],  _) -> definedTerm? body   % e.g., "op foo (n : Nat) : Nat" will see internal "fn n -> any" as undefined
      | SortedTerm (tm, _,         _) -> definedTerm? tm
      | Pi         (_, tm,         _) -> definedTerm? tm
-     | And        (tms,           _) -> exists definedTerm? tms
+     | And        (tms,           _) -> exists? definedTerm? tms
      | _                             -> true
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -210,7 +210,7 @@ AnnSpec qualifying spec
      | _ -> sortTyVars (firstSortDef info)
 
  def firstSortDefInnerSort info =
-   sortInnerSort (hd (sortInfoDefs info)) % fail if no decl but no def
+   sortInnerSort (head (sortInfoDefs info)) % fail if no decl but no def
 
  %%% Qualification flag
  op qualifiedSpec?  : [a] ASpec a -> Boolean
@@ -257,7 +257,7 @@ AnnSpec qualifying spec
      | tm            -> termSort tm
 
  def firstOpDefInnerTerm info =
-   termInnerTerm (hd (opInfoDefs info)) % fail if decl but no def
+   termInnerTerm (head (opInfoDefs info)) % fail if decl but no def
 
  %%% Support for multiple defs
 
@@ -544,7 +544,7 @@ AnnSpec qualifying spec
 	   | el::r_els ->
 	     (case el of
 	       | Import (s_tm, i_sp, s_els, a) ->
-		 (case find (fn (s, _) -> i_sp = s) imports of
+		 (case findLeftmost (fn (s, _) -> i_sp = s) imports of
 		    | Some (_, prior_s_els) ->
 		      %% Even though i_sp is a duplicate, tricky_els might be non-empty.
  		      %% Imported elements can be updated even when the imported spec
@@ -614,7 +614,7 @@ AnnSpec qualifying spec
 
  def sortsAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
-			cons ((q, id, info), new_list))
+			Cons ((q, id, info), new_list))
                        []
 		       spc.sorts
 
@@ -624,7 +624,7 @@ AnnSpec qualifying spec
 			%% so just consider the entry corresponding to the primary alias
 			let Qualified (primary_q, primary_id) = primarySortName info in
 			if q = primary_q && id = primary_id then
-			  cons (info, new_list)
+			  Cons (info, new_list)
 			else
 			  new_list)
                        []
@@ -632,7 +632,7 @@ AnnSpec qualifying spec
 
  def opsAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
-			cons ((q, id, info), new_list))
+			Cons ((q, id, info), new_list))
                        []
 		       spc.ops
 
@@ -642,7 +642,7 @@ AnnSpec qualifying spec
 			%% so just consider the entry corresponding to the primary alias
 			let Qualified (primary_q, primary_id) = primaryOpName info in
 			if q = primary_q && id = primary_id then
-			  cons (info, new_list)
+			  Cons (info, new_list)
 			else
 			  new_list)
                        []
@@ -660,11 +660,11 @@ AnnSpec qualifying spec
  def emptyPropertyNames = []
 
  op  memberNames : QualifiedId * List QualifiedId -> Boolean
- def memberNames (qid, qids) = member (qid, qids)
+ def memberNames (qid, qids) = qid in? qids
 
  op  memberQualifiedId : Qualifier * Id * List QualifiedId -> Boolean
  def memberQualifiedId (q, id, qids) =
-   exists (fn (Qualified (qq, ii)) -> q = qq && id = ii) qids
+   exists? (fn (Qualified (qq, ii)) -> q = qq && id = ii) qids
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec Consructors
@@ -782,7 +782,7 @@ AnnSpec qualifying spec
    spc << {elements = let elts = spc.elements in
 	              let i = case findIndex (fn el -> equalSpecElement?(el, old_element)) elts of
                                 | Some(i,_) ->
-                                  if i+1 < length elts && conjecture?(nth(elts, i+1))
+                                  if i+1 < length elts && conjecture?(elts@(i+1))
                                     then i+2
                                     else i+1
                                 | None -> length elts
@@ -791,19 +791,19 @@ AnnSpec qualifying spec
 
 
  def someSortAliasIsLocal? (aliases, spc) =
-   exists (fn el ->
-	   case el of
-	     | Sort (qid,_)    -> member (qid, aliases)
-	     | SortDef (qid,_) -> member (qid, aliases)
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Sort (qid,_)    -> qid in? aliases
+                | SortDef (qid,_) -> qid in? aliases
+                | _ -> false)
           spc.elements
 
  def someOpAliasIsLocal? (aliases, spc) =
-   exists (fn el ->
-	   case el of
-	     | Op    (qid,_,_) -> member (qid, aliases)
-	     | OpDef (qid,_,_) -> member (qid, aliases)
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Op    (qid,_,_) -> qid in? aliases
+                | OpDef (qid,_,_) -> qid in? aliases
+                | _ -> false)
           spc.elements
 
  def getQIdIfOp el =
@@ -813,26 +813,26 @@ AnnSpec qualifying spec
      | _ -> None
 
  def localSort? (qid, spc) = 
-   exists (fn el ->
-	   case el of
-	     | Sort    (qid1,_) -> qid = qid1
-	     | SortDef (qid1,_) -> qid = qid1
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Sort    (qid1,_) -> qid = qid1
+                | SortDef (qid1,_) -> qid = qid1
+                | _ -> false)
           spc.elements
 
  def localOp? (qid, spc) = 
-   exists (fn el ->
-	   case el of
-	     | Op    (qid1,_,_) -> qid = qid1
-	     | OpDef (qid1,_,_) -> qid = qid1
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Op    (qid1,_,_) -> qid = qid1
+                | OpDef (qid1,_,_) -> qid = qid1
+                | _ -> false)
           spc.elements
 
  def localProperty? (qid, spc) = 
-   exists (fn el ->
-	   case el of
-	     | Property (_, qid1, _, _, _) -> qid = qid1
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Property (_, qid1, _, _, _) -> qid = qid1
+                | _ -> false)
           spc.elements
 
  def localSorts spc =
@@ -868,19 +868,19 @@ AnnSpec qualifying spec
 		     spc.elements
 
  def hasLocalSort? spc =
-   exists (fn el ->
-	   case el of
-	     | Sort _    -> true
-	     | SortDef _ -> true
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Sort _    -> true
+                | SortDef _ -> true
+                | _ -> false)
           spc.elements
 
  def hasLocalOp? spc =
-   exists (fn el ->
-	   case el of
-	     | Op _    -> true
-	     | OpDef _ -> true
-	     | _ -> false)
+   exists? (fn el ->
+              case el of
+                | Op _    -> true
+                | OpDef _ -> true
+                | _ -> false)
           spc.elements
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -919,7 +919,7 @@ AnnSpec qualifying spec
    if q = UnQualified then
      %% various other routines assume that any
      %% unqualified answer will be listed first
-     found ++ filter (fn info -> ~(member (info, found)))
+     found ++ filter (fn info -> info nin? found)
                      (wildFindUnQualified (spc.sorts, id))
    else
      found
@@ -932,7 +932,7 @@ AnnSpec qualifying spec
    if q = UnQualified then
      %% various other routines assume that any
      %% unqualified answer will be listed first
-     found ++ filter (fn info -> ~(member (info, found)))
+     found ++ filter (fn info -> info nin? found)
                      (wildFindUnQualified (spc.ops, id))
    else
      found

@@ -10,7 +10,7 @@ spec
   %import State  	% ../utilities/state.sl
   import /Library/Legacy/DataStructures/StringMapSplay
 
-  sort NameSupply = Ref (StringMap (Nat))
+  type NameSupply = Ref (StringMap (Nat))
 
   op empty : () -> NameSupply
   op fresh : NameSupply -> String -> String
@@ -25,7 +25,7 @@ spec
 	   | Some n -> n in
     (ns State.:= StringMap.insert (! ns, prefix, n + 1);
      if n = 0 then prefix
-       else prefix ^ "_" ^ toString n)
+       else prefix ^ "_" ^ show n)
 
 endspec
 

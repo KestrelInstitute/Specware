@@ -13,9 +13,9 @@ the recursion.
 
 \begin{spec}
 spec
- sort SpecCalc.Term a
+ type SpecCalc.Term a
 
- op SpecCalc.showTerm : fa (a) SpecCalc.Term a -> String
+ op SpecCalc.showTerm : [a] SpecCalc.Term a -> String
 
  op sameSCTerm? : [a] SpecCalc.Term a * SpecCalc.Term a -> Boolean
 

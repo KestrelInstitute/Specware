@@ -44,8 +44,7 @@ XML qualifying spec
 	      (ref, tail) <- parse_Reference tail;
 	      probe (tail,
 		     [],
-		     cons (Ref ref,
-			   rev_items),
+		      Ref ref :: rev_items,
 		     qchar)
 	     }
 	   | 37 :: tail ->
@@ -54,22 +53,20 @@ XML qualifying spec
 	      (ref, tail) <- parse_PEReference tail;
 	      probe (tail,
 		     [],
-		     cons (PERef ref,
-			   rev_items),
+		      PERef ref :: rev_items,
 		     qchar)}
 
 	   | char :: tail ->
 	     if char = qchar then
 	       return ({qchar = qchar,
 			items = (case rev_char_data of
-				   | [] -> rev rev_items
+				   | [] -> reverse rev_items
 				   | _ ->
-				     rev (cons (NonRef (rev rev_char_data),
-						rev_items)))},
+				     reverse (NonRef (reverse rev_char_data) :: rev_items))},
 		       tail)
 	     else
 	       probe (tail,
-		      cons (char, rev_char_data),
+                      char::rev_char_data,
 		      rev_items,
 		      qchar)
 
@@ -144,8 +141,7 @@ XML qualifying spec
 		     so_we       = "pretend '<' is a normal character"};
 	      probe (tail,
 		     [60],
-		     cons (NonRef (rev rev_char_data),
-			   rev_items),
+                     NonRef (reverse rev_char_data) :: rev_items,
 		     qchar)
 	     }
 
@@ -156,18 +152,16 @@ XML qualifying spec
 	      (ref, tail) <- parse_Reference tail;
 	      probe (tail,
 		     [],
-		     cons (Ref ref,
-			   rev_items),
+                     Ref ref :: rev_items,
 		     qchar)
 	     }
 
 	   | char :: tail ->
 	     if char = qchar then
 	       let items = (case rev_char_data of
-			      | [] -> rev rev_items
+			      | [] -> reverse rev_items
 			      | _ ->
-			        rev (cons (NonRef (rev rev_char_data),
-					   rev_items))) 
+			        reverse (NonRef (reverse rev_char_data) :: rev_items)) 
 	       in
 		 return ({qchar = qchar,
 			  items = items,
@@ -175,7 +169,7 @@ XML qualifying spec
 			 tail)
 	     else
 	       probe (tail,
-		      cons (char, rev_char_data),
+                      char::rev_char_data,
 		      rev_items,
 		      qchar)
 
@@ -280,11 +274,11 @@ XML qualifying spec
 	   | char :: tail ->
 	     if char = qchar then
 	       return ({qchar = qchar,
-			text  = rev rev_text},
+			text  = reverse rev_text},
 		       tail)
 	     else
 	       probe (tail,
-		      cons (char, rev_text),
+                      char:: rev_text,
 		      qchar)
 
 	   | _ ->

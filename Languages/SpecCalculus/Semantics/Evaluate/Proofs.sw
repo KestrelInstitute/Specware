@@ -4,7 +4,7 @@ spec
  import UnitId
  import Obligations
 
- sort SCDecl = SpecCalc.Decl Position
+ type SCDecl = SpecCalc.Decl Position
  
  op generateProof: Spec * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
  def generateProof (spc, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
@@ -87,7 +87,7 @@ spec
  op baseUnitIdSCTerm?: SCTerm -> Boolean
  def baseUnitIdSCTerm?(scTerm) =
    case scTerm of
-     | (UnitId ( UnitId_Relative (uid)), _) -> let path = uid.path in hd(path) = "Base"
+     | (UnitId ( UnitId_Relative (uid)), _) -> let path = uid.path in head(path) = "Base"
      | _ -> false
 
  op unionProofDecls: List SCDecl * List SCDecl -> List SCDecl
@@ -172,7 +172,7 @@ spec
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = allProperties usedSpc in
    let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
-			                  ~(member(propName, previousPropNames))
+			                 propName nin? previousPropNames
 			                  && ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name,
 				   prover_options, globalContext, swpath, fileUID))
@@ -183,7 +183,7 @@ spec
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = allProperties usedSpc in
    let localProps = filter (fn (prop) -> let (propType, propName, _, _, _) = prop in 
-			                  ~(member(propName, previousPropNames))
+			                 propName nin? previousPropNames
 			                  && ~(propType = Axiom)) props in
    map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.32  2009/08/20 01:21:02  westfold
+%% && ||
+%%
 %% Revision 1.31  2008/09/14 14:27:14  mcdonald
 %% massive update to use reversed order of args for function passed to foldl
 %%

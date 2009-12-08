@@ -41,7 +41,7 @@ InterpreterBase = refine InterpreterBase0 by {
 	  | #7 -> 7
 	  | #8 -> 8
 	  | #9 -> 9 in
-	  let def stringToNatAux (chars : {chars : List Char | all isNum chars},
+	  let def stringToNatAux (chars : {chars : List Char | forall? isNum chars},
 				  res : Nat) : Nat =
 	        case chars of
 		  | []     -> res

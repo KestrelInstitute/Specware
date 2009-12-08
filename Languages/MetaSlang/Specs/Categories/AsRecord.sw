@@ -26,11 +26,11 @@ SpecCalc qualifying spec {
  import /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
  import /Languages/SpecCalculus/AbstractSyntax/Types
 
- sort QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
- sort MorphismSortMap = QualifiedIdMap
- sort MorphismOpMap   = QualifiedIdMap
+ type QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
+ type MorphismSortMap = QualifiedIdMap
+ type MorphismOpMap   = QualifiedIdMap
 
-  sort Morphism = {
+  type Morphism = {
     dom     : Spec,
     cod     : Spec,
     sortMap : MorphismSortMap,
