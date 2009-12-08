@@ -231,7 +231,8 @@ IsaTermPrinter qualifying spec
       | Some loc_nm \_rightarrow (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path, uidToIsaName uid, "")
 
-  op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun", "option", 
+  op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun",
+                                         "option", "string",
                                          "lattices", "orderings", "sat", "relation", "record",
                                          "gcd", "datatype", "recdef", "hilbert_choice"]
   op thyName(spname: String): String =
