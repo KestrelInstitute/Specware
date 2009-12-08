@@ -41,7 +41,7 @@
       (format nil ".~a" main-dir-str))))
 
 ;; The same function with the same name, but in a different package is
-;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
+;; defined in Specware4/Library/Legacy/Utilities/Handwritten/Lisp/System.lisp
 (defun ensure-final-slash (dirname)
   (if (member (elt dirname (- (length dirname) 1))
 	      '(#\/ #\\))
@@ -298,7 +298,7 @@
 	       )))
 
 ;; The same function with the same name, but in a different package is
-;; defined in Specware4/Library/Base/Handwritten/Lisp/System.lisp
+;; defined in Specware4/Library/Legacy/Utilities/Handwritten/Lisp/System.lisp
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (substitute #\/ #\\

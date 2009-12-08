@@ -1069,7 +1069,7 @@
 
 ;; When the following boolean is true, then the System.debug function will
 ;; take the user into the Lisp debugger.
-;; already declared in ~/Work/Generic/Specware4/Library/Base/Handwritten/Lisp/System.lisp :
+;; already declared in ~/Work/Generic/Specware4/Library/Legacy/Utilities/Handwritten/Lisp/System.lisp :
 ;; (defvar System-spec::specwareDebug? nil)
 (defun swdbg (&optional (b nil b?))
   (if b? 

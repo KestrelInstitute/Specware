@@ -95,7 +95,7 @@
 ;    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Character.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
-    "Library/Base/Handwritten/Lisp/System.lisp"
+    "Library/Legacy/Utilities/Handwritten/Lisp/System.lisp"
     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
