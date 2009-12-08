@@ -1309,8 +1309,8 @@ Utilities qualifying spec
 			    sortFromField(fields,natSort))
       | "max" -> evalBinary(nat max,natVals,fields,
 			    sortFromField(fields,natSort))
-      | "rem" -> evalBinaryNotZero(nat rem,natVals,fields,natSort)
-      | "div" -> evalBinaryNotZero(nat div,natVals,fields,natSort)
+      | "modT" -> evalBinaryNotZero(nat modT,natVals,fields,natSort)
+      | "divE" -> evalBinaryNotZero(nat divE,natVals,fields,natSort)
 
       %% string operations
       | "concat" -> evalBinary(str concat,stringVals,fields,stringSort)
