@@ -69,6 +69,8 @@ SpecCalc qualifying spec
     | UndefinedGlobalVar  String
     | CollectedExceptions List Monad.Exception
     | Warning             Position * String
+    | Escape  % Control flow mechanism - see IsoMorphism.sw
+
 
   op uidToString          : UnitId      -> String  % defined in Evaluate/UnitId/Utilities.sw
   op relativeUID_ToString : RelativeUID -> String  % defined in Evaluate/UnitId/Utilities.sw

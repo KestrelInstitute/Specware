@@ -2,6 +2,7 @@ Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions
   import /Library/PrettyPrinter/WadlerLindig
+  import /Languages/SpecCalculus/Semantics/Monad
 
   op [a] dummy: a
 
@@ -34,7 +35,8 @@ spec
     | Trace Boolean
     | Print
 
- op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * List RuleSpec \_rightarrow Spec
+ op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * List RuleSpec -> SpecCalc.Env Spec
+ op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
@@ -396,45 +398,49 @@ spec
 
   %% term is the current focus and should  be a sub-term of the top-level term top_term
   op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term, tracing?: Boolean)
-     : (MS.Term * MS.Term) * Boolean =
+     : SpecCalc.Env ((MS.Term * MS.Term) * Boolean) =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda (((term,top_term),tracing?), s) \_rightarrow
-               interpretTerm(spc,s,term,top_term,tracing?))
-          ((term,top_term), tracing?) steps
-      | Print -> let _ = writeLine(printTerm term) in ((term,top_term), tracing?)
-      | Trace on_or_off ->
-        let _ = if on_or_off && ~tracing?
-                 then writeLine("-- Tracing on\n"^printTerm term)
-                 else if ~on_or_off && tracing?
-                 then writeLine("-- Tracing off\n")
-                 else ()
-        in
-        ((term,top_term), on_or_off)
-      | _ ->
-    let _ = if tracing? then writeLine("--"^scriptToString script) else () in
-    let (term,top_term) =
-        case script of
-          | Move mvmts -> (case makeMoves(term, mvmts, top_term) of
-                             | Some new_term -> new_term
-                             | None -> term,
-                            top_term)
-          | SimpStandard \_rightarrow replaceSubTerm(simplify spc term, term, top_term)
-          | PartialEval \_rightarrow
-            replaceSubTerm(evalFullyReducibleSubTerms(term, spc), term, top_term)
-          | AbstractCommonExpressions \_rightarrow
-            replaceSubTerm(abstractCommonSubExpressions(term, spc), term, top_term)
-          | Simplify(rules) \_rightarrow
-            let context = makeContext spc in
-            let rules = makeRules (context, spc, rules) in
-            replaceSubTerm(rewrite(term,context,rules,maxRewrites), term, top_term)
-          | Apply(rules) \_rightarrow
-            let context = makeContext spc in
-            let rules = makeRules (context, spc, rules) in
-            replaceSubTerm(rewrite(term,context,rules,1), term, top_term)
-    in
-    let _ = if tracing? then writeLine(printTerm term) else () in
-    ((term,top_term), tracing?)
+          foldM (\_lambda ((term,top_term),tracing?) -> fn s \_rightarrow
+               interpretTerm (spc,s,term,top_term,tracing?))
+            ((term,top_term), tracing?) steps
+      | Print -> {
+          print (printTerm term ^ "\n");
+          return ((term,top_term), tracing?)
+        }
+      | Trace on_or_off -> {
+          when (on_or_off && ~tracing?)
+            (print ("-- Tracing on\n" ^ printTerm term ^ "\n"));
+          when (~on_or_off && tracing?)
+            (print "-- Tracing off\n");
+          return ((term,top_term), on_or_off)
+        }
+      | _ -> {
+          when tracing?
+            (print ("--" ^ scriptToString script ^ "\n"));
+          (term,top_term) <- return
+              (case script of
+                | Move mvmts -> (case makeMoves(term, mvmts, top_term) of
+                                   | Some new_term -> new_term
+                                   | None -> term,
+                                  top_term)
+                | SimpStandard \_rightarrow replaceSubTerm(simplify spc term, term, top_term)
+                | PartialEval \_rightarrow
+                  replaceSubTerm(evalFullyReducibleSubTerms(term, spc), term, top_term)
+                | AbstractCommonExpressions \_rightarrow
+                  replaceSubTerm(abstractCommonSubExpressions(term, spc), term, top_term)
+                | Simplify(rules) \_rightarrow
+                  let context = makeContext spc in
+                  let rules = makeRules (context, spc, rules) in
+                  replaceSubTerm(rewrite(term,context,rules,maxRewrites), term, top_term)
+                | Apply(rules) \_rightarrow
+                  let context = makeContext spc in
+                  let rules = makeRules (context, spc, rules) in
+                  replaceSubTerm(rewrite(term,context,rules,1), term, top_term));
+          when tracing? 
+            (print (printTerm term ^ "\n"));
+          return ((term,top_term), tracing?)
+        }
 
   op setOpInfo(spc: Spec, qid: QualifiedId, opinfo: OpInfo): Spec =
     let Qualified(q,id) = qid in
@@ -448,40 +454,46 @@ spec
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
 
-  op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): Spec * Boolean =
+  op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): SpecCalc.Env (Spec * Boolean) =
     case script of
       | Steps steps \_rightarrow
-        foldl (\_lambda ((spc,tracing?), stp) \_rightarrow
+          foldM (\_lambda (spc,tracing?) -> fn stp \_rightarrow
                interpretSpec(spc,stp,tracing?))
-          (spc,tracing?) steps
-      | At(locs, scr) \_rightarrow
-        let _ = if tracing? then
-                   writeLine("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs)
-                              ^" }")
-                else ()
-        in
-        foldl (fn ((spc,tracing?), Def qid) \_rightarrow
-               case findAllOps(spc,qid) of
-                 | [] \_rightarrow (warn("Can't find op "^anyToString qid);
-                            (spc,tracing?))
-                 | [opinfo] \_rightarrow
-                   let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
-                   let _ = if tracing? then writeLine(printTerm tm) else () in
-                   let ((_,newtm),tracing?) = interpretTerm(spc, scr, tm, tm, tracing?) in
-                   let newdfn = maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)) in
-                   (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
-                 | opinfos -> (warn("Ambiguous op "^anyToString qid);
-                               (spc,tracing?)))
-          (spc,tracing?) locs
-      | IsoMorphism(iso_osi_prs, rls) \_rightarrow
-        (time(makeIsoMorphism(spc, iso_osi_prs, rls)), tracing?)
-      | Trace on_or_off -> (spc,on_or_off)
-        
+            (spc,tracing?) steps
+      | At (locs, scr) \_rightarrow {
+          when tracing? 
+            (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
+          foldM (fn (spc,tracing?) -> fn Def qid \_rightarrow
+                 case findAllOps(spc,qid) of
+                   | [] \_rightarrow {
+                       print ("Can't find op " ^ anyToString qid ^ "\n");
+                       return (spc,tracing?)
+                     }
+                   | [opinfo] \_rightarrow {
+                       (tvs, srt, tm) <- return (unpackFirstTerm opinfo.dfn); 
+                       when tracing? 
+                         (print ((printTerm tm) ^ "\n")); 
+                       ((_,newtm),tracing?) <- interpretTerm (spc, scr, tm, tm, tracing?); 
+                       newdfn <- return (maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)));
+                       return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
+                     }
+                   | opinfos -> {
+                       print ("Ambiguous op " ^ anyToString qid ^ "\n");
+                       return (spc,tracing?)
+                     })
+            (spc,tracing?) locs
+        }
+      | IsoMorphism(iso_osi_prs, rls) \_rightarrow {
+          result <- makeIsoMorphism(spc, iso_osi_prs, Some "XXX", rls);
+          return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
+          return (result,tracing?)
+        }
+        % (time(makeIsoMorphism(spc, iso_osi_prs, rls)), tracing?)
+      | Trace on_or_off -> return (spc,on_or_off)
 
-  op interpret(spc: Spec, script: Script): Spec =
-    % let _ = printScript script in
-    let (result,_) = interpretSpec(spc, script, false) in
+  op Env.interpret (spc: Spec, script: Script) : SpecCalc.Env Spec = {
+   (result,_) <- interpretSpec(spc, script, false); 
     % let _ = writeLine(printSpec result) in
-    result
-
+    return result
+  }
 endspec
