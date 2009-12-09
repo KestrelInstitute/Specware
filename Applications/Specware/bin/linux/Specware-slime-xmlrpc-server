@@ -102,6 +102,6 @@ xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
        -eval "(run-specware4)" &
 
 #"$LISP" -I "$LISP_HEAP_IMAGE" -e "(progn \
-#(setq emacs::*use-emacs-interface?* nil) \
+#(setq Emacs::*use-emacs-interface?* nil) \
 #(Specware::initializeSpecware-0) \
 #(start-xml-rpc-server ${XMLRPC_SERVERPORT}))"

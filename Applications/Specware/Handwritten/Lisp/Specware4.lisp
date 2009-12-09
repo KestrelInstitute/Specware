@@ -6,6 +6,8 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
+(push :case-sensitive *features*)
+
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :invert))
@@ -117,6 +119,7 @@
    (declare (ignore condition))
    (muffle-warning))
 
+#+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :upcase))
 
@@ -396,7 +399,9 @@
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
-      (funcall (intern "EVAL-IN-EMACS" "EMACS")
+      (funcall (intern #+case-sensitive "eval-in-emacs"
+                       #-case-sensitive "EVAL-IN-EMACS"
+                       :Emacs)
 	       "(delete-continuation)"))
     val)
   )

@@ -107,7 +107,7 @@ fi
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
 EVAL="(progn "
-EVAL="${EVAL}(setq emacs::*use-emacs-interface?* nil) "
+EVAL="${EVAL}(setq Emacs::*use-emacs-interface?* nil) "
 EVAL="${EVAL}(Specware::initializeSpecware-0) "
 if [ ! -z "${LOAD_LISP_FILE}" ] ; then
     EVAL="${EVAL} (specware::compile-and-load-lisp-file \"${LOAD_LISP_FILE}\") "

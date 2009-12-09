@@ -6,8 +6,17 @@
 ;;; Among other things, this file is referenced by generate-application in
 ;;; BuildDistribution_ACL.lisp
 
+
+(push :case-sensitive *features*)
+
+#+case-sensitive
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :invert))
+
 (defpackage :SpecToLisp)
-(defpackage :Specware (:use :cl))   ; Most systems default to this but not sbcl until patch loaded below
+(defpackage :Specware (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
+  #+case-sensitive
+  (:nicknames :specware))
 (in-package :Specware)
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
@@ -53,7 +62,7 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
-		;(require :sb-sprof)
+		; (require :sb-sprof)
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
@@ -81,8 +90,7 @@
 			 (ccl::getenv varname))
 	 #+lispworks (hcl::getenv varname) ;?
 	 #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-	 #+sbcl      (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
-			 (sb-ext:posix-getenv  varname))
+	 #+sbcl      (sb-ext:posix-getenv  varname)
 	 #+gcl       (si:getenv varname)
 	 #+clisp     (ext:getenv varname)
 	 ))
@@ -119,6 +127,11 @@
    (declare (ignore condition))
    (muffle-warning))
 
+
+#+case-sensitive
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :upcase))
+
 (handler-bind ((warning #'ignore-warning))
   (load (make-pathname
          :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
@@ -129,6 +142,10 @@
   (cl-user::make-or-load-snark-system))
 (format t "~%Finished loading Snark.")
 (finish-output t)
+
+#+case-sensitive
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (readtable-case *readtable*) :invert))
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
@@ -208,7 +225,7 @@
 
 
 (defpackage :Prover)
-(defvar prover::wildCounter 0) ; to suppress annoying compiler warning
+(defvar Prover::wildCounter 0) ; to suppress annoying compiler warning
 
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state
@@ -286,6 +303,17 @@
 
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
+
+
+(defun set-readtable-invert ()
+  (setf (readtable-case *readtable*) :invert))
+
+#+case-sensitive
+(push  'set-readtable-invert 
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-ext:*init-hooks*)
 
 ;;; Load base in correct location at startup
 (push  'Specware::initializeSpecware-0 

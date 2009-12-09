@@ -84,4 +84,4 @@ fi
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
-"$LISP" -M "$LISP_HEAP_IMAGE" -x "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"
+"$LISP" -M "$LISP_HEAP_IMAGE" -x "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (exit))"

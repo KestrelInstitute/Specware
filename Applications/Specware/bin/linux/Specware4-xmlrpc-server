@@ -81,7 +81,7 @@ BIN_DIR=$SPECWARE_BIN
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4."$IMAGE_EXTENSION"
 
 EVAL="(progn "
-EVAL="${EVAL}(setq emacs::*use-emacs-interface?* nil) "
+EVAL="${EVAL}(setq Emacs::*use-emacs-interface?* nil) "
 EVAL="${EVAL}(Specware::initializeSpecware-0) "
 EVAL="${EVAL}(start-xml-rpc-server ${XMLRPC_SERVERPORT}) "
 if [ ! -z "${LOAD_LISP_FILE}" ] ; then
@@ -94,6 +94,6 @@ EVAL="${EVAL})"
 "$LISP" -I "$LISP_HEAP_IMAGE" -e "${EVAL}"
 
 #"$LISP" -I "$LISP_HEAP_IMAGE" -e "(progn \
-#(setq emacs::*use-emacs-interface?* nil) \
+#(setq Emacs::*use-emacs-interface?* nil) \
 #(Specware::initializeSpecware-0) \
 #(start-xml-rpc-server ${XMLRPC_SERVERPORT}))"

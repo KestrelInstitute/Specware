@@ -26,4 +26,4 @@ PATH=$OLD_PATH
 
 ########################################################################
 
-"$LISP_EXECUTABLE" --dynamic-space-size 1600 --eval "(progn (setq emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (SB-UNIX:UNIX-EXIT 0))"
+"$LISP_EXECUTABLE" --dynamic-space-size 1600 --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (sb-unix:unix-exit 0))"
