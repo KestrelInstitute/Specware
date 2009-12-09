@@ -5,6 +5,10 @@
 
 (defvar System-Spec::proverUseBase? t)
 
+(defvar caseSensitiveSubstrate?
+  #+case-sensitive t
+  #-case-sensitive nil)
+
  ;;; op fail     : fa(a) String -> a
 (defun fail (s) (break "~a" s))
 

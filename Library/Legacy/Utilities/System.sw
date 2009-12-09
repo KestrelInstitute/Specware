@@ -1,5 +1,7 @@
 System qualifying spec 
 
+  op caseSensitiveSubstrate?: Boolean
+
   op fail     : [a] String -> a
 
   %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
@@ -66,9 +68,8 @@ System qualifying spec
   op hackMemory     : ()      -> ()
 
 
-op [a] List.app (f: a -> ()) (l: List a) : () =
-  case l of
-     | []     -> ()
-     | hd::tl -> (f hd; app f tl)
-
+  op [a] List.app (f: a -> ()) (l: List a) : () =
+    case l of
+       | []     -> ()
+       | hd::tl -> (f hd; app f tl)
 endspec
