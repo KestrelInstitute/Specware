@@ -250,9 +250,9 @@
 			(cl-user::sw-help argstr) ; refers to *transform-help-strings*
 			))
 	   (at                 (at-command (parse-qid argstr)))
-	   ((move m)           (move-command (string-spec::split argstr)))
+	   ((move m)           (move-command (String-Spec::split argstr)))
 	   ((f l n p w a s r)  (move-command (cons (string-downcase (string command))
-						   (string-spec::split argstr))))
+						   (String-Spec::split argstr))))
 	   ((simplify simp s)  (simplify-command argstr)    )
 	   ;((apply a)       (cl-user::ls     (or argstr "")))
 	   ((fold f)           (apply-command argstr 'Script::mkFold))
