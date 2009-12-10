@@ -25,8 +25,8 @@ spec
        | Spec spc ->
          {
           (steps, _) <- makeScript transfm_steps;
-          tr_spc <- return (interpret(spc, Steps steps));
-	  return (Spec tr_spc, spec_timestamp, spec_dep_UIDs)
+          tr_spc1 <- interpret(spc, Steps steps);
+	  return (Spec tr_spc1, spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TypeCheck (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
