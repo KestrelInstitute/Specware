@@ -1224,7 +1224,7 @@ theorem List__e_pls_pls_Obligation_subtype0:
    length l2 \<le> length l"
   by auto
 theorem List__e_pls_pls_subtype_constr: 
-  "\<lbrakk>list_all P__a (l1::'a list); list_all P__a l2\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l1; list_all P__a l2\<rbrakk> \<Longrightarrow> 
    list_all P__a (l1 @ l2)"
   by auto
 theorem List__e_pls_pls__def: 
@@ -2686,7 +2686,7 @@ theorem List__length_equiExtendRight_2 [simp]:
      = (max (length l1) (length l2))"
   by (auto simp: List__equiExtendRight_def)
 theorem List__shiftLeft_Obligation_subtype: 
-  "n \<le> length ((l::'a list) @ (replicate n x))"
+  "n \<le> length (l @ (replicate n x))"
   by auto
 consts List__shiftLeft :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftLeft_def: 
@@ -2698,7 +2698,7 @@ theorem List__shiftLeft_subtype_constr:
    list_all P__a (List__shiftLeft(l, x, n))"
   by (simp add: List__shiftLeft_def list_all_length nth_append)
 theorem List__shiftRight_Obligation_subtype: 
-  "n \<le> length ((replicate n x) @ (l::'a list))"
+  "n \<le> length ((replicate n x) @ l)"
   by auto
 consts List__shiftRight :: "'a list \<times> 'a \<times> nat \<Rightarrow> 'a list"
 defs List__shiftRight_def: 

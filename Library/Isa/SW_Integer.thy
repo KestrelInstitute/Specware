@@ -348,7 +348,8 @@ theorem Integer__gcd_of_not_both_zero:
             w zdvd x \<and> w zdvd y \<longrightarrow> int (igcd(x, y)) \<ge> w)))"
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
   apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)
-  apply(rule classical, auto simp add: zgcd_def gcd_zero)+
+  apply(metis abs_ge_self abs_ge_zero abs_minus_cancel gcd_pos_int minus_le_iff
+              neg_equal_zero zgcd_0 zgcd_specware_def zle_antisym zless_le)+
   done
 theorem Integer__gcd_of_zero_zero_is_zero: 
   "(igcd(0, 0)) = 0"

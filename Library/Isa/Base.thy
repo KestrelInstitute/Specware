@@ -1,5 +1,5 @@
 theory Base
-imports Empty String
+imports Empty SW_String
 begin
 
 end

@@ -244,7 +244,7 @@ constdefs
   (* This is the equivalent to the current Function__bijective_p_stp *)
 
   inv_on :: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'a)"        (*inverse on subtype    *)
-  "inv_on  \<equiv> Inv"
+  "inv_on  \<equiv> inv_into"
 (********************************************************************************)
 
 lemma defined_on_simp_set: 
@@ -262,9 +262,7 @@ lemma defined_on_UNIV [simp]:
 
 lemma inv_on_mem:
    "\<lbrakk>y \<in> f ` A\<rbrakk>  \<Longrightarrow> inv_on A f y \<in> A"
-   apply(auto simp add: inv_on_def Inv_def image_def Collect_def mem_def)
-   apply(rule_tac a="x" in someI2, auto)
-done
+   by (metis inv_into_into inv_on_def)
 
 lemma defined_on_inv:
    "\<lbrakk>defined_on f A B; surj_on f A B\<rbrakk>  \<Longrightarrow> defined_on (inv_on A f) B A"
@@ -275,14 +273,14 @@ done
 
 lemma inv_on_f_f [simp]: 
   "\<lbrakk>inj_on f A; x \<in> A\<rbrakk> \<Longrightarrow>  inv_on A f (f x) = x"
-  by (simp add: inv_on_def Inv_f_f)
+  by (metis inv_into_f_f inv_on_def)
 
 lemma f_inv_on_f [simp]: 
   "\<lbrakk>y \<in> f`A\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
-  by (simp add: inv_on_def  f_Inv_f)
+  by (metis inv_on_def f_inv_into_f)
 
 lemma inv_on_f_eq: "\<lbrakk>inj_on f A; f x = y; x \<in> A\<rbrakk>  \<Longrightarrow> x = inv_on A f y"
-  by(simp add: inv_on_def Inv_f_eq)
+  by (metis inv_on_def inv_on_f_f)
 
 lemma surj_on_f_inv_on_f [simp]: 
   "\<lbrakk>surj_on f A B; y\<in>B\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
@@ -502,7 +500,7 @@ lemma zdvd_is_dvd [simp]:          "i zdvd j = (i dvd j)"
   by (simp add: zdvd_def)  
 
 lemma dvd_antisym:                "\<lbrakk>0 \<le> (n::int); 0 \<le> m; m dvd n; n dvd m\<rbrakk> \<Longrightarrow>  m = n"
-  by (auto simp add: le_less, erule zdvd_anti_sym, auto)
+  by (metis abs_of_nonneg zdvd_antisym_abs)
 
 lemma zdvd_mult_cancel:           "\<lbrakk>0<(m::int); 0\<le>n\<rbrakk> \<Longrightarrow> (n*m dvd m) = (n = 1)"
   by (auto simp add: le_less)
@@ -527,9 +525,9 @@ lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<
 (******************* DIV / MOD *********************************************)
 
 lemma div_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (rule_tac r=r in divmod_rel_div, auto intro!: divmod_relI)
+  by (metis class_semiring.semiring_rules(24) div_mult_self2 div_pos_pos_trivial monoid_add_class.add_0_right order_le_less_trans order_less_irrefl)
 lemma div_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (rule_tac r=r in divmod_rel_div, auto intro!: divmod_relI)
+  by (metis class_semiring.add_c div_mult_self2 div_neg_neg_trivial monoid_add_class.add_0_right order_less_irrefl order_less_le_trans)
 lemma div_pos_unique1:            "\<lbrakk>a = b*q - r; (0::int)<r; r<b\<rbrakk> \<Longrightarrow> a div b = q - 1"
   by (cut_tac a="b*q - r" and b=b and q="q - 1" and r="b - r" in div_pos_unique,
       auto, simp add: ring_simps)
@@ -538,9 +536,9 @@ lemma div_neg_unique1:            "\<lbrakk>a = b*q - r; (0::int)>r; r>b\<rbrakk
       auto, simp add: ring_simps)
 
 lemma mod_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (rule_tac r=r in divmod_rel_mod, auto intro!: divmod_relI)
+  by (metis class_semiring.add_c mod_mult_self2 mod_pos_pos_trivial)
 lemma mod_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (rule_tac r=r in divmod_rel_mod, auto intro!: divmod_relI)
+  by (metis class_semiring.add_c mod_mult_self2 mod_neg_neg_trivial)
 
 lemma mod_div_eq:                 "(a::int) = b * (a div b) + (a mod b)"
   by (simp add:  zmod_zdiv_equality)
@@ -554,10 +552,10 @@ lemma div_eq_if_dvd:              "\<lbrakk>b dvd (a::int)\<rbrakk> \<Longrighta
 lemma dvd_if_div_eq:              "\<lbrakk>(a::int) = b * (a div b) \<rbrakk> \<Longrightarrow> b dvd a"
   by (auto simp add: dvd_def)
 
-(********** a lemma missing in IntDiv.thy *********************)
+(********** a lemma missing in Divides.thy *********************)
 
 lemma div_neg_pos_trivial: "\<lbrakk>a < (0::int);  0 \<le> a+b\<rbrakk> \<Longrightarrow> a div b = -1"
-  by (auto intro!: divmod_rel_div divmod_relI)
+  by (auto intro!: divmod_int_rel_div divmod_int_relI)
 
 lemmas div_trivial = div_pos_pos_trivial div_neg_neg_trivial
                      div_pos_neg_trivial div_neg_pos_trivial 
@@ -848,8 +846,8 @@ definition zgcd :: "int * int \<Rightarrow> int"
  **      Keeping the above definition since user theories may
  **      depend on it.
  **)
-lemma zgcd_specware_def:         "zgcd (x,y) = GCD.zgcd x y"
-  by (auto simp add: zgcd_def GCD.zgcd_def)
+lemma zgcd_specware_def:         "zgcd (x,y) = gcd x y"
+  by (auto simp add: zgcd_def gcd_int_def)
 
 lemma zgcd_0 [simp]:             "zgcd (m, 0) = \<bar>m\<bar>"
   by (simp add: zgcd_def abs_if)
@@ -866,9 +864,9 @@ lemma zgcd_greatest_iff:         "k dvd zgcd(m,n) = (k dvd m \<and> k dvd n)"
   by (simp add: zgcd_def abs_if int_dvd_iff dvd_int_iff nat_dvd_iff)
 
 lemma zgcd_zmult_distrib2:       "0 \<le> k \<Longrightarrow> k * zgcd(m,n) = zgcd(k*m,k*n)"
-  by (simp del: minus_mult_right [symmetric]
-      add: minus_mult_right nat_mult_distrib zgcd_def abs_if
-           mult_less_0_iff gcd_mult_distrib2 [symmetric] zmult_int [symmetric])
+  by (metis abs_gcd_int abs_mult abs_mult_pos class_semiring.semiring_rules(7)
+            gcd_mult_distrib_int zgcd_specware_def)
+
 
 lemma zgcd_zminus [simp]:        "zgcd(-m,n) = zgcd (m,n)"
   by (simp add: zgcd_def)
@@ -879,8 +877,8 @@ lemma zgcd_zmult_distrib2_abs:   "zgcd (k*m, k*n) = \<bar>k\<bar> * zgcd(m,n)"
   by (simp add: abs_if zgcd_zmult_distrib2)
 
 lemma zrelprime_zdvd_zmult_aux:  "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> 0 \<le> m \<Longrightarrow> k dvd m"
-  by (auto intro: zrelprime_dvd_mult
-           simp add: zgcd_specware_def zgcd_commute)
+  by (metis coprime_dvd_mult_int gcd_commute_int zgcd_specware_def)
+
 
 lemma zrelprime_zdvd_zmult:      "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<Longrightarrow> k dvd m"
   apply (case_tac "0 \<le> m", blast intro: zrelprime_zdvd_zmult_aux)
