@@ -82,12 +82,6 @@ theorem Set__e_fsl_fsl_bsl_bsl__def:
 theorem Set__e_bsl_bsl_fsl_fsl__def: 
   "((x::'a) \<in> \<Union> ss) = (\<exists>(s::'a set). s \<in> ss \<and> x \<in> s)"
   by auto
-consts Set__e_eq_eq_gt :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a set"	(infixr "==>" 63)
-defs Set__e_eq_eq_gt_def: 
-  "(s1 ==> s2) \<equiv> (\<lambda> (x::'a). x \<in> s1 \<longrightarrow> x \<in> s2)"
-consts Set__e_lt_eq_eq_gt :: "'a set \<Rightarrow> 'a set \<Rightarrow> 'a set"	(infixr "<==>" 62)
-defs Set__e_lt_eq_eq_gt_def: 
-  "(s1 <==> s2) \<equiv> (\<lambda> (x::'a). (x \<in> s1) = (x \<in> s2))"
 theorem Set__e_dsh_dsh__def: 
   "((x::'a) \<in> s1 - s2) = (x \<in> s1 \<and> x \<notin> s2)"
   by auto
@@ -133,7 +127,7 @@ defs Set__nonEmpty_p__stp_def:
   "Set__nonEmpty_p__stp P__a s \<equiv> (s \<noteq> RSet P__a {})"
 consts Set__nonEmpty_p :: "'a set \<Rightarrow> bool"
 defs Set__nonEmpty_p_def: "Set__nonEmpty_p s \<equiv> (s \<noteq> {})"
-types 'a Set__NonEmptySet = "'a set"
+types 'a Set__Set1 = "'a set"
 
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
 "Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
@@ -174,12 +168,6 @@ lemma Set__full_stp_apply:
 "\<lbrakk>P__a x; Set__full_p__stp P__a s\<rbrakk> \<Longrightarrow> x \<in> s"  
 by (auto simp add:Set__full_p__stp_def)
 
-consts Set__nonFull_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
-defs Set__nonFull_p__stp_def: 
-  "Set__nonFull_p__stp P__a s \<equiv> (s \<noteq> RSet P__a UNIV)"
-consts Set__nonFull_p :: "'a set \<Rightarrow> bool"
-defs Set__nonFull_p_def [simp]: "Set__nonFull_p s \<equiv> (s \<noteq> UNIV)"
-types 'a Set__NonFullSet = "'a set"
 consts Set__single :: "'a \<Rightarrow> 'a set"
 defs Set__single_def: "Set__single x \<equiv> (\<lambda> (y::'a). y = x)"
 consts Set__single_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
@@ -222,7 +210,7 @@ lemma Set_single_stp_single:
 "\<lbrakk>x \<in> s; Set__single_p__stp P__a s\<rbrakk> \<Longrightarrow> Set__single_p s"
 by (auto simp:Set__single_p__stp_def Set__single_p_def)
 
-types 'a Set__SingletonSet = "'a set"
+types 'a Set__Singleton = "'a set"
 theorem Set__theMember__stp_Obligation_the: 
   "\<lbrakk>Set__single_p__stp P__a s; Set_P P__a s\<rbrakk> \<Longrightarrow> 
    \<exists>!(x::'a). P__a x \<and> x \<in> s"
@@ -234,7 +222,7 @@ defs Set__theMember__stp_def:
 theorem Set__theMember_Obligation_the: 
   "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
-consts Set__theMember :: "'a Set__SingletonSet \<Rightarrow> 'a"
+consts Set__theMember :: "'a Set__Singleton \<Rightarrow> 'a"
 defs Set__theMember_def: "Set__theMember s \<equiv> (THE (x::'a). x \<in> s)"
 theorem Set__e_lt_bar__def: 
   "(insert x s) = s \<union> Set__single x"

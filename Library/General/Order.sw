@@ -2,6 +2,9 @@ Order qualifying spec
 
 import EndoRelation
 
+%%% Generate stp version of orderSubsumption in case it is useful later
+proof Isa -stp-theorems end-proof
+
 % various kinds of orders:
 
 op preOrder? : [a] EndoRelation a -> Bool = reflexive? /\ transitive?

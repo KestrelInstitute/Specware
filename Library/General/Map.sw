@@ -2,6 +2,9 @@
 
 import Relation
 
+%%% Generate stp version of map_result_in_range in case it is useful later
+proof Isa -stp-theorems end-proof
+
 % recall that spec `Relations' defines type `Map(a,b)'
 
 % map (not) defined at element:
