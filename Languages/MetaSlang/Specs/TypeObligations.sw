@@ -13,8 +13,8 @@ spec
  %type SpecElement  = QualifiedId * TyVars * MS.Term 
  type TypeCheckConditions = SpecElements * StringSet.Set
 
- op makeTypeCheckObligationSpec: Spec * Boolean * String -> Spec
- op checkSpec : Spec * Boolean * String -> TypeCheckConditions
+ op makeTypeCheckObligationSpec: Spec * Bool * (String * String -> Bool) * String -> Spec
+ op checkSpec : Spec * Bool * (String * String -> Bool) * String -> TypeCheckConditions
 
  op simplifyObligations?: Bool = true
  op simplifyFalseObligations?: Bool = false
@@ -39,7 +39,7 @@ spec
    | Let List (Pattern * MS.Term)
 
  type Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * QualifiedId
-                * Option Sort * NameSupply * Boolean * Ref Nat
+                * Option Sort * NameSupply * Bool * Ref Nat
 
  op  insert       : Var * Gamma -> Gamma
  op  assertCond   : MS.Term * Gamma -> Gamma
@@ -140,14 +140,14 @@ spec
 
  def getSpec (_, _, e, _, _, _, _, _, _) = e
 
- op lifting?((_, _, _, _, _, _, _, lift?, _): Gamma): Boolean = lift?
+ op lifting?((_, _, _, _, _, _, _, lift?, _): Gamma): Bool = lift?
 
  def unfoldBase((_, _, spc, _, _, _, _, _, _), tau) = 
      Utilities.unfoldBase(spc, tau)
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
- op notTypePredTerm? (spc: Spec, vs: Vars) (t: MS.Term): Boolean =
+ op notTypePredTerm? (spc: Spec, vs: Vars) (t: MS.Term): Bool =
    case t of
      | Apply(p, Var(v as (_,ty), _), _) ->
        ~(inVars?(v, vs) && subtypePred?(ty, p, spc))
@@ -435,7 +435,7 @@ spec
         let tcc   = (tcc, gamma) |- Seq(Ms, noPos) ?? tau	in
         tcc
 
- op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Boolean)
+ op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Bool)
  def nonStrictAppl(rator, args) =
    case (rator, args) of
      | (Fun(And,     _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p && q  -- can assume  p in q
@@ -443,7 +443,7 @@ spec
      | (Fun(Implies, _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p => q -- can assume  p in q
      | _ -> None
 
- op unconditionalPattern?(pat: Pattern): Boolean =
+ op unconditionalPattern?(pat: Pattern): Bool =
    case pat of
      | WildPat _ -> true
      | VarPat _  -> true
@@ -451,7 +451,7 @@ spec
      | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
      | _ -> false
 
- op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Boolean =
+ op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Bool =
    unconditionalPattern?(last pats)
      || (case (pats, subtypeComps(spc, ty)) of
            | ([RestrictedPat(pat, ty_tm,_)], Some(_, pat_pred)) -> 
@@ -531,7 +531,7 @@ spec
      | Some(Var((nm, _), _)) -> nm
      | _ -> freshName(gamma, default)
 
- op  checkRule: Sort * Sort * Option MS.Term * Boolean
+ op  checkRule: Sort * Sort * Option MS.Term * Bool
                -> (TypeCheckConditions * Gamma) * (Pattern * MS.Term * MS.Term)  
                -> TypeCheckConditions * Gamma
  def checkRule(dom, rng, optArg, casesDisjoint?) ((tcc, gamma), (pat, cond, body)) = 
@@ -828,7 +828,7 @@ spec
 	      | _ -> Let(decls, trm, noPos))
 	| _ -> trm
 
- op includesPredLifter?(spc: Spec): Boolean = embed? Some (findTheOp(spc, Qualified("List", "List_P")))
+ op includesPredLifter?(spc: Spec): Bool = embed? Some (findTheOp(spc, Qualified("List", "List_P")))
 
  op maybeRaiseSubtypes(ty1: Sort, ty2: Sort, gamma: Gamma): Sort * Sort =
    %% Temporary backward compatibility until we add these functions at type-check time rather
@@ -966,7 +966,7 @@ spec
                              %let gamma2 = insert((x, s2), gamma) in
                              let tcc = subtypeRec(pairs, tcc, gamma1,
                                                   mkVar(x, s1), s1, s2) in
-                             %% Don't think this is necessary e.g. List Nat < List Integer
+                             %% Don't think this is necessary e.g. List Nat < List Int
                              %let tcc = subtypeRec(pairs, tcc, gamma2,
                              %		    mkVar(x, s2), s2, s1) in
                              tcc)
@@ -1042,12 +1042,12 @@ spec
    if refine_num = 0 then qid
      else Qualified(q,nm^"__"^show refine_num)
 
- op dontGenerateObligations?(q: String, id: String): Boolean =
-   false %endsIn?(id, "__subsort_pred")
+% op dontGenerateObligations?(q: String, id: String): Bool =
+%   false %endsIn?(id, "__subsort_pred")
 
  op dontUnfoldTypes: List QualifiedId = [Qualified("Nat", "Nat")]
 
- def checkSpec (spc, omitDefSubtypeConstrs?, spc_name) = 
+ def checkSpec (spc, omitDefSubtypeConstrs?, ignoreOpFn?, spc_name) = 
    %let localOps = spc.importInfo.localOps in
    let names = foldl (fn (m, el) ->
 		      case el of
@@ -1068,7 +1068,7 @@ spec
        foldr (fn (el, (tccs, claimNames)) ->
                 case el of
                  | Op (qid as Qualified(q, id), true, pos)  % true means decl includes def
-                     | ~(dontGenerateObligations?(q, id)) ->
+                     | ~(ignoreOpFn?(q, id)) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo ->
                         let (new_tccs, claimNames) = 
@@ -1116,9 +1116,9 @@ spec
                            then let prag::tccs = tccs  in
                                 (indep_new_tccs ++ [el, prag] ++ op_ref_new_tccs ++ tccs, claimNames)
                            else (indep_new_tccs ++ [el]       ++ op_ref_new_tccs ++ tccs, claimNames))
-                 | OpDef (qid, refine_num, _) ->
+                 | OpDef (qid as Qualified(q, id), refine_num, _) ->
                    (case findTheOp(spc, qid) of
-                      | Some opinfo ->
+                      | Some opinfo | ~(ignoreOpFn?(q, id)) ->
                         foldr (fn (dfn, tcc) ->
                                let (tvs, tau, term) = unpackTerm dfn in
                                let term = refinedTerm(term, refine_num) in
@@ -1209,9 +1209,9 @@ spec
 %					       hashSuffix = None}),
 %		    noPos)
 
- def makeTypeCheckObligationSpec (spc, omitDefSubtypeConstrs?, spc_name) =
+ def makeTypeCheckObligationSpec (spc, omitDefSubtypeConstrs?, ignoreOpFn?, spc_name) =
    % let _ = writeLine(printSpec spc) in
-   let (new_elements, _) = checkSpec (spc, omitDefSubtypeConstrs?, spc_name) in
+   let (new_elements, _) = checkSpec (spc, omitDefSubtypeConstrs?, ignoreOpFn?, spc_name) in
    let spc = spc << {elements = new_elements} in
    % let _ = writeLine(printSpec spc) in
    spc
