@@ -23,6 +23,8 @@ SpecNorm qualifying spec
   op noMakeSubtypeConstrTheoremsString: String = "-no-subtype_constrs"
   op makeFreeTheoremsString: String      = "-free-theorems"
   op noMakeFreeTheoremsString: String = "-no-free-theorems"
+  op subtypePredicateOpsObligationsString: String      = "-stp-op-obligations"
+  op noSubtypePredicateOpsObligationsString: String = "-no-stp-op-obligations"
   op makeSubtypePredicateTheoremsString: String =      "-stp-theorems"
   op noMakeSubtypePredicateTheoremsString: String = "-no-stp-theorems"
   op makeStpTheoremsDefault?: Boolean = false
