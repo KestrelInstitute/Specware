@@ -22,10 +22,6 @@ op [a,b] @@ (m: Map(a,b), x:a) infixl 30 : Option b =
   if m definedAt x then Some (m @ x) else None
 proof Isa -> @@_m end-proof
 
-proof Isa e_at__stp_Obligation_the
- sorry
-end-proof
-proof Isa -> @@_m end-proof
 
 proof Isa e_at_Obligation_the
  sorry
@@ -51,18 +47,6 @@ op [a,b] <<< (m1: Map(a,b), m2: Map(a,b)) infixl 25 : Map(a,b) = the(m)
 
 op [a,b] update (m: Map(a,b)) (x:a) (y:b) : Map(a,b) = m <<< single (x, y)
 
-proof Isa e_lt_lt_lt__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa e_lt_lt_lt__stp_Obligation_subtype0
- sorry
-end-proof
-
-proof Isa e_lt_lt_lt__stp_Obligation_the
- sorry
-end-proof
-
 proof Isa e_lt_lt_lt_Obligation_subtype
  sorry
 end-proof
@@ -76,10 +60,6 @@ proof Isa e_lt_lt_lt_Obligation_the
 end-proof
 
 proof Isa e_lt_lt_lt_subtype_constr
- sorry
-end-proof
-
-proof Isa update__stp_Obligation_subtype
  sorry
 end-proof
 
@@ -149,10 +129,6 @@ proof Isa fromFunction_Obligation_subtype0
  sorry
 end-proof
 
-proof Isa toFunction__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa toFunction_Obligation_subtype
  sorry
 end-proof
@@ -165,10 +141,6 @@ op [a,b] fromPartialFun (f: a -> Option b) : Map(a,b) =
 op toPartialFun : [a,b] Map(a,b) -> (a -> Option b) = inverse fromPartialFun
 
 proof Isa fromPartialFun_Obligation_subtype
- sorry
-end-proof
-
-proof Isa toPartialFun__stp_Obligation_subtype
  sorry
 end-proof
 

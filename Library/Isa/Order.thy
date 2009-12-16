@@ -127,16 +127,6 @@ consts Order__strictify :: "'a EndoRelation__ReflexiveRelation \<Rightarrow>
                             'a EndoRelation__IrreflexiveRelation"
 defs Order__strictify_def: 
   "Order__strictify r \<equiv> (r - EndoRelation__id)"
-theorem Order__unstrictify__stp_Obligation_subtype: 
-  "Function__bijective_p__stp
-     (EndoRelation__reflexive_p__stp P__a 
-        &&& Set_P
-               (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2), 
-      EndoRelation__irreflexive_p__stp P__a 
-        &&& Set_P
-               (\<lambda> ((x_1_1::'a), (x_2_1::'a)). 
-                  P__a x_1_1 \<and> P__a x_2_1)) Order__strictify"
-   sorry
 consts Order__unstrictify__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                    'a EndoRelation__EndoRelation \<Rightarrow> 
                                    'a EndoRelation__EndoRelation"

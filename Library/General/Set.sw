@@ -222,9 +222,6 @@ end-proof
 type Singleton a = (Set a | single?)
 
 op [a] theMember (s:Singleton a) : a = the(x:a) x in? s
-proof Isa theMember__stp_Obligation_the
-  apply(auto simp add: Set__single_p__stp_def)
-end-proof
 
 % add member to set (triangle points towards set):
 
@@ -597,25 +594,6 @@ op size : [a] FiniteSet a -> Nat = the(size)
   (size empty = 0) &&
   (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
 
-proof Isa size__stp_Obligation_subtype
-by (simp add: Set__finite_p__stp_def)
-end-proof
-
-proof Isa size__stp_Obligation_subtype0
-by (auto simp only: Set__finite_insert__stp)
-end-proof
-
-proof Isa size__stp_Obligation_subtype1
-by (simp only: Set__finite_less__stp Set_Set_P_Fun_PD)
-end-proof
-
-proof Isa size__stp_Obligation_the
-apply(rule_tac a="RFun (Fun_PD P__a) card" in ex1I)
-apply(simp)
-apply(intro conjI allI impI)
-sorry
-end-proof
-
 proof Isa size_Obligation_the
  sorry
 end-proof
@@ -643,38 +621,6 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
-proof Isa fold__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype0
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype1
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype2
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype3
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype4
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype5
- sorry
-end-proof
-
-proof Isa fold__stp_Obligation_subtype6
- sorry
-end-proof
-
 proof Isa fold__stp_Obligation_the
  sorry
 end-proof
@@ -689,10 +635,6 @@ op [a] powerf (s:Set a) : Set (FiniteSet a) = power s /\ finite?
 
 proof Isa powerf__stp_Obligation_subtype
  sorry
-end-proof
-
-proof Isa powerf__stp_Obligation_subtype0
- by (simp add: Set_P_def mem_def)
 end-proof
 
 proof Isa powerf_Obligation_subtype
@@ -730,10 +672,6 @@ type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
 op [a] min (ss: SetOfSetsWithMin a) : Set a = the(s) s isMinIn ss
 
-proof Isa min__stp_Obligation_the
- sorry
-end-proof
-
 proof Isa  Set__min_Obligation_the
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
 end-proof
@@ -747,10 +685,6 @@ op [a] hasMax? (ss:Set (Set a)) : Bool = (ex(s) s isMaxIn ss)
 type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
-
-proof Isa max__stp_Obligation_the
- sorry
-end-proof
 
 proof Isa  Set__max_Obligation_the
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)

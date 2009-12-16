@@ -59,15 +59,6 @@ defs FMap__maps_p__stp_def:
 consts FMap__maps_p :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b \<Rightarrow> bool"
 defs FMap__maps_p_def: 
   "FMap__maps_p m x y \<equiv> ((x, y) \<in> FMap__fromFMap m)"
-theorem FMap__domain__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    Set_P P__a
-       (Relation__domain__stp P__b (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp P__a
-      (RSet P__a
-          (Relation__domain__stp P__b
-              (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
 consts FMap__domain__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 'a FSet__FSet"
 defs FMap__domain__stp_def: 
@@ -84,14 +75,6 @@ consts FMap__domain :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a FSet__FSet"
 defs FMap__domain_def: 
   "FMap__domain m
      \<equiv> FSet__toFSet (Relation__domain (FMap__fromFMap m))"
-theorem FMap__range__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    Set_P P__b
-       (Relation__range__stp P__a (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp P__b
-      (RSet P__b
-          (Relation__range__stp P__a (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
 consts FMap__range__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                              ('a, 'b)FMap__FMap \<Rightarrow> 'b FSet__FSet"
 defs FMap__range__stp_def: 
@@ -130,18 +113,6 @@ defs FMap__undefinedAt__stp_def:
 consts undefinedAt_fm :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> bool"	(infixl "undefinedAt'_fm" 60)
 defs undefinedAt_fm_def: 
   "(m undefinedAt_fm (x::'a)) \<equiv> (FMap__fromFMap m undefinedAt x)"
-theorem FMap__e_at__stp_Obligation_subtype: 
-  "\<lbrakk>P__a (x::'a); 
-    FMap__FMap_P(P__a, P__b) m; 
-    FMap__definedAt__stp(P__a, P__b)(m, x); 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'b)). P__a xf0_2 \<and> P__b xf1_2)
-       (FMap__fromFMap__stp(P__a, P__b) m); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   MapAC__definedAt__stp P__b(FMap__fromFMap__stp(P__a, P__b) m, x)"
-   sorry
 consts FMap__e_at__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                             ('a, 'b)FMap__FMap \<times> 'a \<Rightarrow> 'b"
 defs FMap__e_at__stp_def: 
@@ -167,15 +138,6 @@ defs FMap__e_at_at__stp_def:
 consts e_at_at_fm :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b option"	(infixl "@@'_fm" 70)
 defs e_at_at_fm_def: 
   "(m @@_fm (x::'a)) \<equiv> (FMap__fromFMap m @@_m x)"
-theorem FMap__applyi__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    P__b y; 
-    Set_P P__a
-       (Relation__applyi (FMap__fromFMap__stp(P__a, P__b) m) y)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp P__a
-      (RSet P__a
-          (Relation__applyi (FMap__fromFMap__stp(P__a, P__b) m) y))"
-   sorry
 consts FMap__applyi__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 'b \<Rightarrow> 'a FSet__FSet"
 defs FMap__applyi__stp_def: 
@@ -192,18 +154,6 @@ consts FMap__applyi :: " ('a, 'b)FMap__FMap \<Rightarrow> 'b \<Rightarrow> 'a FS
 defs FMap__applyi_def: 
   "FMap__applyi m y
      \<equiv> FSet__toFSet (Relation__applyi (FMap__fromFMap m) y)"
-theorem FMap__applys__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    FSet__FSet_P P__a xS; 
-    Set_P P__b
-       (Relation__applys__stp P__a (FMap__fromFMap__stp(P__a, P__b) m)
-           (FSet__fromFSet__stp P__a xS))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp P__b
-      (RSet P__b
-          (Relation__applys__stp P__a
-              (FMap__fromFMap__stp(P__a, P__b) m)
-              (FSet__fromFSet__stp P__a xS)))"
-   sorry
 consts FMap__applys__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 
                              'a FSet__FSet \<Rightarrow> 'b FSet__FSet"
@@ -225,18 +175,6 @@ defs FMap__applys_def:
   "FMap__applys m xS
      \<equiv> FSet__toFSet
           (Relation__applys (FMap__fromFMap m) (FSet__fromFSet xS))"
-theorem FMap__applyis__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    FSet__FSet_P P__b yS; 
-    Set_P P__a
-       (Relation__applyis__stp P__b (FMap__fromFMap__stp(P__a, P__b) m)
-           (FSet__fromFSet__stp P__b yS))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp P__a
-      (RSet P__a
-          (Relation__applyis__stp P__b
-              (FMap__fromFMap__stp(P__a, P__b) m)
-              (FSet__fromFSet__stp P__b yS)))"
-   sorry
 consts FMap__applyis__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow> 
                               'b FSet__FSet \<Rightarrow> 'a FSet__FSet"
@@ -258,19 +196,6 @@ defs FMap__applyis_def:
   "FMap__applyis m yS
      \<equiv> FSet__toFSet
           (Relation__applyis (FMap__fromFMap m) (FSet__fromFSet yS))"
-theorem FMap__id__stp_Obligation_subtype: 
-  "\<lbrakk>FSet__FSet_P P__a dom__v\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom__v)))"
-   sorry
-theorem FMap__id__stp_Obligation_subtype0: 
-  "\<lbrakk>FSet__FSet_P P__a dom__v\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__a)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'a)). P__a x_1 \<and> P__a x_2)
-          (EndoRelation__idOver (FSet__fromFSet__stp P__a dom__v)))"
-   sorry
 consts FMap__id__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id__stp_def: 
   "FMap__id__stp P__a dom_v
@@ -286,35 +211,6 @@ consts FMap__id :: "'a FSet__FSet \<Rightarrow>  ('a, 'a)FMap__FMap"
 defs FMap__id_def: 
   "FMap__id dom_v
      \<equiv> FMap__toFMap (EndoRelation__idOver (FSet__fromFSet dom_v))"
-theorem FMap__e_cl_gt__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__b, P__c) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'c)). P__a xf0_2 \<and> P__c xf1_2)
-       (Relation__e_cl_gt__stp P__b
-          (FMap__fromFMap__stp(P__a, P__b) m1, 
-           FMap__fromFMap__stp(P__b, P__c) m2))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_2::'a), (x_2_2::'c)). P__a x_1_2 \<and> P__c x_2_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'c)). P__a x_1 \<and> P__c x_2)
-          (Relation__e_cl_gt__stp P__b
-             (FMap__fromFMap__stp(P__a, P__b) m1, 
-              FMap__fromFMap__stp(P__b, P__c) m2)))"
-   sorry
-theorem FMap__e_cl_gt__stp_Obligation_subtype0: 
-  "\<lbrakk>FMap__FMap_P(P__b, P__c) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'c)). P__a xf0_2 \<and> P__c xf1_2)
-       (Relation__e_cl_gt__stp P__b
-          (FMap__fromFMap__stp(P__a, P__b) m1, 
-           FMap__fromFMap__stp(P__b, P__c) m2))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__c)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'c)). P__a x_1 \<and> P__c x_2)
-          (Relation__e_cl_gt__stp P__b
-             (FMap__fromFMap__stp(P__a, P__b) m1, 
-              FMap__fromFMap__stp(P__b, P__c) m2)))"
-   sorry
 consts FMap__e_cl_gt__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<times> ('c \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<times>  ('b, 'c)FMap__FMap \<Rightarrow> 
                                ('a, 'c)FMap__FMap"
@@ -337,35 +233,6 @@ consts e_cl_gt_fm :: " ('a, 'b)FMap__FMap \<Rightarrow>
 defs e_cl_gt_fm_def: 
   "(m1 :>_fm m2)
      \<equiv> FMap__toFMap (FMap__fromFMap m1 :> FMap__fromFMap m2)"
-theorem FMap__o__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__b, P__c) m1; 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'c)). P__a xf0_2 \<and> P__c xf1_2)
-       (Relation__o__stp P__b
-          (FMap__fromFMap__stp(P__b, P__c) m1, 
-           FMap__fromFMap__stp(P__a, P__b) m2))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_2::'a), (x_2_2::'c)). P__a x_1_2 \<and> P__c x_2_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'c)). P__a x_1 \<and> P__c x_2)
-          (Relation__o__stp P__b
-             (FMap__fromFMap__stp(P__b, P__c) m1, 
-              FMap__fromFMap__stp(P__a, P__b) m2)))"
-   sorry
-theorem FMap__o__stp_Obligation_subtype0: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__b, P__c) m1; 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'c)). P__a xf0_2 \<and> P__c xf1_2)
-       (Relation__o__stp P__b
-          (FMap__fromFMap__stp(P__b, P__c) m1, 
-           FMap__fromFMap__stp(P__a, P__b) m2))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__c)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'c)). P__a x_1 \<and> P__c x_2)
-          (Relation__o__stp P__b
-             (FMap__fromFMap__stp(P__b, P__c) m1, 
-              FMap__fromFMap__stp(P__a, P__b) m2)))"
-   sorry
 consts FMap__o__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<times> ('c \<Rightarrow> bool) \<Rightarrow> 
                          ('b, 'c)FMap__FMap \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 
                          ('a, 'c)FMap__FMap"
@@ -485,36 +352,6 @@ consts FMap__nonEmpty_p :: " ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__nonEmpty_p_def: 
   "FMap__nonEmpty_p m \<equiv> Set__nonEmpty_p (FMap__fromFMap m)"
 types  ('a,'b)FMap__NonEmptyFMap = " ('a, 'b)FMap__FMap"
-theorem FMap__e_lt_lt_lt__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    Set_P
-       (\<lambda> ((xf0_2::'a), (xf1_2::'b)). P__a xf0_2 \<and> P__b xf1_2)
-       (MapAC__e_lt_lt_lt__stp(P__a, P__b)
-          (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (FMap__fromFMap__stp(P__a, P__b) m1), 
-           RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (FMap__fromFMap__stp(P__a, P__b) m2))); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (MapAC__e_lt_lt_lt__stp(P__a, P__b)
-              (RFun
-                  (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                  (FMap__fromFMap__stp(P__a, P__b) m1), 
-               RFun
-                  (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                  (FMap__fromFMap__stp(P__a, P__b) m2))))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_2::'a), (x_2_2::'b)). P__a x_1_2 \<and> P__b x_2_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (MapAC__e_lt_lt_lt__stp(P__a, P__b)
-             (RFun
-                 (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                 (FMap__fromFMap__stp(P__a, P__b) m1), 
-              RFun
-                 (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                 (FMap__fromFMap__stp(P__a, P__b) m2))))"
-   sorry
 consts FMap__e_lt_lt_lt__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                   ('a, 'b)FMap__FMap \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 
                                   ('a, 'b)FMap__FMap"
@@ -539,29 +376,6 @@ consts e_lt_lt_lt_fm :: " ('a, 'b)FMap__FMap \<Rightarrow>
 defs e_lt_lt_lt_fm_def: 
   "(m1 <<<_fm m2)
      \<equiv> FMap__toFMap (FMap__fromFMap m1 <<< FMap__fromFMap m2)"
-theorem FMap__update__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m; 
-    P__a x; 
-    P__b y; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (MapAC__update__stp(P__a, P__b)
-           (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-               (FMap__fromFMap__stp(P__a, P__b) m)) x y); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (MapAC__update__stp(P__a, P__b)
-               (RFun
-                   (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                   (FMap__fromFMap__stp(P__a, P__b) m)) x y))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (MapAC__update__stp(P__a, P__b)
-              (RFun
-                  (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-                  (FMap__fromFMap__stp(P__a, P__b) m)) x y))"
-   sorry
 consts FMap__update__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow> 
                              'a \<Rightarrow> 'b \<Rightarrow>  ('a, 'b)FMap__FMap"
@@ -586,23 +400,6 @@ consts FMap__update :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b \<
 defs FMap__update_def: 
   "FMap__update m x y
      \<equiv> FMap__toFMap (MapAC__update (FMap__fromFMap m) x y)"
-theorem FMap__e_dsh_dsh__stp_Obligation_subtype: 
-  "\<lbrakk>FSet__FSet_P P__a xS; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m 
-          --_m FSet__fromFSet__stp P__a xS); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (FMap__fromFMap__stp(P__a, P__b) m 
-              --_m FSet__fromFSet__stp P__a xS))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m 
-             --_m FSet__fromFSet__stp P__a xS))"
-   sorry
 consts FMap__e_dsh_dsh__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                  ('a, 'b)FMap__FMap \<times> 'a FSet__FSet \<Rightarrow> 
                                  ('a, 'b)FMap__FMap"
@@ -622,20 +419,6 @@ consts e_dsh_dsh_fm :: " ('a, 'b)FMap__FMap \<Rightarrow>
 defs e_dsh_dsh_fm_def: 
   "(m --_fm xS)
      \<equiv> FMap__toFMap (FMap__fromFMap m --_m FSet__fromFSet xS)"
-theorem FMap__e_dsh__stp_Obligation_subtype: 
-  "\<lbrakk>P__a (x::'a); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m mless x); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (FMap__fromFMap__stp(P__a, P__b) m mless x))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m mless x))"
-   sorry
 consts FMap__e_dsh__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                              ('a, 'b)FMap__FMap \<times> 'a \<Rightarrow>  ('a, 'b)FMap__FMap"
 defs FMap__e_dsh__stp_def: 
@@ -668,31 +451,6 @@ defs FMap__agree_p_def:
   "FMap__agree_p
      \<equiv> (\<lambda> ((m1:: ('a, 'b)FMap__FMap), (m2:: ('a, 'b)FMap__FMap)). 
           MapAC__agree_p(FMap__fromFMap m1, FMap__fromFMap m2))"
-theorem FMap__e_fsl_bsl__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    FMap__agree_p__stp(P__a, P__b)(m1, m2); 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m1 
-          \<inter> FMap__fromFMap__stp(P__a, P__b) m2)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_2::'a), (x_2_2::'b)). P__a x_1_2 \<and> P__b x_2_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m1 
-             \<inter> FMap__fromFMap__stp(P__a, P__b) m2))"
-   sorry
-theorem FMap__e_fsl_bsl__stp_Obligation_subtype0: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    FMap__agree_p__stp(P__a, P__b)(m1, m2); 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m1 
-          \<inter> FMap__fromFMap__stp(P__a, P__b) m2)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m1 
-             \<inter> FMap__fromFMap__stp(P__a, P__b) m2))"
-   sorry
 consts FMap__e_fsl_bsl__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                  ('a, 'b)FMap__FMap \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 
                                  ('a, 'b)FMap__FMap"
@@ -716,31 +474,6 @@ consts e_fsl_bsl_fm :: " ('a, 'b)FMap__FMap \<Rightarrow>
 defs e_fsl_bsl_fm_def: 
   "(m1 /\\_fm m2)
      \<equiv> FMap__toFMap (FMap__fromFMap m1 \<inter> FMap__fromFMap m2)"
-theorem FMap__e_bsl_fsl__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    FMap__agree_p__stp(P__a, P__b)(m1, m2); 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m1 
-          \<union> FMap__fromFMap__stp(P__a, P__b) m2)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_2::'a), (x_2_2::'b)). P__a x_1_2 \<and> P__b x_2_2)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m1 
-             \<union> FMap__fromFMap__stp(P__a, P__b) m2))"
-   sorry
-theorem FMap__e_bsl_fsl__stp_Obligation_subtype0: 
-  "\<lbrakk>FMap__FMap_P(P__a, P__b) m2; 
-    FMap__FMap_P(P__a, P__b) m1; 
-    FMap__agree_p__stp(P__a, P__b)(m1, m2); 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m1 
-          \<union> FMap__fromFMap__stp(P__a, P__b) m2)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m1 
-             \<union> FMap__fromFMap__stp(P__a, P__b) m2))"
-   sorry
 consts FMap__e_bsl_fsl__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                  ('a, 'b)FMap__FMap \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 
                                  ('a, 'b)FMap__FMap"
@@ -807,27 +540,6 @@ defs FMap__exists1_p__stp_def:
 consts FMap__exists1_p :: "('a \<times> 'b \<Rightarrow> bool) \<Rightarrow>  ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__exists1_p_def: 
   "FMap__exists1_p p m \<equiv> Set__single_p (FMap__fromFMap m \<inter> p)"
-theorem FMap__filter__stp_Obligation_subtype: 
-  "\<lbrakk>Fun_PD (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-       (p::'a \<times> 'b \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m \<inter> p)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m \<inter> p))"
-   sorry
-theorem FMap__filter__stp_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-       (p::'a \<times> 'b \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1)
-       (FMap__fromFMap__stp(P__a, P__b) m \<inter> p)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m \<inter> p))"
-   sorry
 consts FMap__filter__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                              ('a \<times> 'b \<Rightarrow> bool) \<Rightarrow> 
                               ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'b)FMap__FMap"
@@ -847,30 +559,6 @@ consts FMap__filter :: "('a \<times> 'b \<Rightarrow> bool) \<Rightarrow>
                          ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'b)FMap__FMap"
 defs FMap__filter_def: 
   "FMap__filter p m \<equiv> FMap__toFMap (FMap__fromFMap m \<inter> p)"
-theorem FMap__restrictDomain__stp_Obligation_subtype: 
-  "\<lbrakk>Fun_PD P__a p\<rbrakk> \<Longrightarrow> Set_P P__a p"
-   sorry
-theorem FMap__restrictDomain__stp_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD P__a (p::'a \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m restrictDomain p)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m restrictDomain p))"
-   sorry
-theorem FMap__restrictDomain__stp_Obligation_subtype1: 
-  "\<lbrakk>Fun_PD P__a (p::'a \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m restrictDomain p)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m restrictDomain p))"
-   sorry
 consts FMap__restrictDomain__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                       ('a, 'b)FMap__FMap \<times> ('a \<Rightarrow> bool) \<Rightarrow> 
                                       ('a, 'b)FMap__FMap"
@@ -892,30 +580,6 @@ consts restrictDomain_fm :: " ('a, 'b)FMap__FMap \<Rightarrow>
 defs restrictDomain_fm_def: 
   "(m restrictDomain_fm (p::'a \<Rightarrow> bool))
      \<equiv> FMap__toFMap (FMap__fromFMap m restrictDomain p)"
-theorem FMap__restrictRange__stp_Obligation_subtype: 
-  "\<lbrakk>Fun_PD P__b p\<rbrakk> \<Longrightarrow> Set_P P__b p"
-   sorry
-theorem FMap__restrictRange__stp_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD P__b (p::'b \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m restrictRange p)\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m restrictRange p))"
-   sorry
-theorem FMap__restrictRange__stp_Obligation_subtype1: 
-  "\<lbrakk>Fun_PD P__b (p::'b \<Rightarrow> bool); 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'a), (xf1_1::'b)). P__a xf0_1 \<and> P__b xf1_1)
-       (FMap__fromFMap__stp(P__a, P__b) m restrictRange p)\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, P__b)
-      (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m restrictRange p))"
-   sorry
 consts FMap__restrictRange__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                      ('a, 'b)FMap__FMap \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                      ('a, 'b)FMap__FMap"
@@ -961,21 +625,6 @@ consts FMap__single_p :: " ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__single_p_def: 
   "FMap__single_p m \<equiv> Set__single_p (FMap__fromFMap m)"
 types  ('a,'b)FMap__SingletonFMap = " ('a, 'b)FMap__FMap"
-theorem FMap__thePair__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__single_p__stp(P__a, P__b) m; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set__finite_p__stp
-       (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-       (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (FMap__fromFMap__stp(P__a, P__b) m)); 
-    Relation__functional_p__stp(P__a, P__b)
-       (RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__single_p__stp
-      (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-      (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-          (FMap__fromFMap__stp(P__a, P__b) m))"
-   sorry
 consts FMap__thePair__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow> 'a \<times> 'b"
 defs FMap__thePair__stp_def: 
@@ -1022,23 +671,6 @@ defs FMap__foldable_p_def:
   "FMap__foldable_p
      \<equiv> (\<lambda> ((c::'c), (f::'c \<times> ('a \<times> 'b) \<Rightarrow> 'c), (m:: ('a, 'b)FMap__FMap)). 
           Set__foldable_p(c, f, FMap__fromFMap m))"
-theorem FMap__fold__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__FMap_P((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool))
-       (m:: ('a, 'b)FMap__FMap); 
-    Fun_PD
-       (\<lambda> (ignore1, (x_2::'a \<times> 'b)). P__a (fst x_2) \<and> P__b (snd x_2))
-       (f::'c \<times> ('a \<times> 'b) \<Rightarrow> 'c); 
-    FMap__foldable_p__stp(P__a, P__b, TRUE)((c::'c), f, m); 
-    xf2 = FMap__fromFMap__stp(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), (xf1::'b)). P__a xf0 \<and> P__b xf1) xf2; 
-    Set__finite_p__stp
-       (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1)
-       (RSet (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) xf2)\<rbrakk> \<Longrightarrow> 
-   Set__foldable_p__stp
-     (\<lambda> ((x_1_2::'a), (x_2_2::'b)). P__a x_1_2 \<and> P__b x_2_2, TRUE)
-     (c, f, 
-      RFun (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) xf2)"
-   sorry
 consts FMap__fold__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                            'c \<times> ('c \<times> ('a \<times> 'b) \<Rightarrow> 'c) \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 
                            'c"
@@ -1070,37 +702,6 @@ consts FMap__injective_p :: " ('a, 'b)FMap__FMap \<Rightarrow> bool"
 defs FMap__injective_p_def: 
   "FMap__injective_p m \<equiv> Relation__injective_p (FMap__fromFMap m)"
 types  ('a,'b)FMap__InjectiveFMap = " ('a, 'b)FMap__FMap"
-theorem FMap__inverse__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__injective_p__stp(P__a, P__b) m; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'b), (xf1_1::'a)). P__b xf0_1 \<and> P__a xf1_1)
-       (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp
-      (\<lambda> ((x_1_1::'b), (x_2_1::'a)). P__b x_1_1 \<and> P__a x_2_1)
-      (RSet (\<lambda> ((x_1::'b), (x_2::'a)). P__b x_1 \<and> P__a x_2)
-          (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
-theorem FMap__inverse__stp_Obligation_subtype0: 
-  "\<lbrakk>FMap__injective_p__stp(P__a, P__b) m; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P
-       (\<lambda> ((xf0_1::'b), (xf1_1::'a)). P__b xf0_1 \<and> P__a xf1_1)
-       (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__b, P__a)
-      (RFun (\<lambda> ((x_1::'b), (x_2::'a)). P__b x_1 \<and> P__a x_2)
-          (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
-theorem FMap__inverse__stp_Obligation_subtype1: 
-  "\<lbrakk>FMap__injective_p__stp(P__a, P__b) m; 
-    FMap__FMap_P(P__a, P__b) m; 
-    FMap__FMap_P(P__b, P__a)
-       (FMap__toFMap
-           (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))\<rbrakk> \<Longrightarrow> 
-   FMap__injective_p__stp(P__b, P__a)
-      (FMap__toFMap
-          (Relation__inverse (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
 consts FMap__inverse__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow>  ('b, 'a)FMap__FMap"
 defs FMap__inverse__stp_def: 
@@ -1131,36 +732,6 @@ consts FMap__map__fLiftedToPairs :: "'a \<times> 'b \<times> ('b \<Rightarrow> '
 defs FMap__map__fLiftedToPairs_def: 
   "FMap__map__fLiftedToPairs
      \<equiv> (\<lambda> ((x::'a), (y::'b), (f::'b \<Rightarrow> 'c)). (x, f y))"
-theorem FMap__map__stp_Obligation_subtype: 
-  "\<lbrakk>Fun_PD P__b f; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), ignore2). P__a xf0)
-       (Set__map__stp
-           (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (\<lambda> ((x::'a), (y::'b)). FMap__map__fLiftedToPairs(x, y, f))
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp (\<lambda> ((x_1_1::'a), ignore2). P__a x_1_1)
-      (RSet (\<lambda> ((x_1::'a), ignore2). P__a x_1)
-          (Set__map__stp
-              (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (\<lambda> ((x::'a), (y::'b)). FMap__map__fLiftedToPairs(x, y, f))
-              (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
-theorem FMap__map__stp_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD P__b f; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), ignore2). P__a xf0)
-       (Set__map__stp
-           (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (\<lambda> ((x::'a), (y::'b)). FMap__map__fLiftedToPairs(x, y, f))
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, TRUE)
-      (RFun (\<lambda> ((x_1::'a), ignore2). P__a x_1)
-          (Set__map__stp
-              (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (\<lambda> ((x::'a), (y::'b)). FMap__map__fLiftedToPairs(x, y, f))
-              (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
 consts FMap__map__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                           ('b \<Rightarrow> 'c) \<Rightarrow> 
                            ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'c)FMap__FMap"
@@ -1199,40 +770,6 @@ consts FMap__mapWithDomain__fLiftedToPairs :: "'a \<times> 'b \<times> ('a \<tim
 defs FMap__mapWithDomain__fLiftedToPairs_def: 
   "FMap__mapWithDomain__fLiftedToPairs
      \<equiv> (\<lambda> ((x::'a), (y::'b), (f::'a \<times> 'b \<Rightarrow> 'c)). (x, f(x, y)))"
-theorem FMap__mapWithDomain__stp_Obligation_subtype: 
-  "\<lbrakk>Fun_PD (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) f; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), ignore2). P__a xf0)
-       (Set__map__stp
-           (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (\<lambda> ((x::'a), (y::'b)). 
-              FMap__mapWithDomain__fLiftedToPairs(x, y, f))
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Set__finite_p__stp (\<lambda> ((x_1_1::'a), ignore2). P__a x_1_1)
-      (RSet (\<lambda> ((x_1::'a), ignore2). P__a x_1)
-          (Set__map__stp
-              (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (\<lambda> ((x::'a), (y::'b)). 
-                 FMap__mapWithDomain__fLiftedToPairs(x, y, f))
-              (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
-theorem FMap__mapWithDomain__stp_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) f; 
-    FMap__FMap_P(P__a, P__b) m; 
-    Set_P (\<lambda> ((xf0::'a), ignore2). P__a xf0)
-       (Set__map__stp
-           (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-           (\<lambda> ((x::'a), (y::'b)). 
-              FMap__mapWithDomain__fLiftedToPairs(x, y, f))
-           (FMap__fromFMap__stp(P__a, P__b) m))\<rbrakk> \<Longrightarrow> 
-   Relation__functional_p__stp(P__a, TRUE)
-      (RFun (\<lambda> ((x_1::'a), ignore2). P__a x_1)
-          (Set__map__stp
-              (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
-              (\<lambda> ((x::'a), (y::'b)). 
-                 FMap__mapWithDomain__fLiftedToPairs(x, y, f))
-              (FMap__fromFMap__stp(P__a, P__b) m)))"
-   sorry
 consts FMap__mapWithDomain__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                     ('a \<times> 'b \<Rightarrow> 'c) \<Rightarrow> 
                                      ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'c)FMap__FMap"
@@ -1292,14 +829,6 @@ defs FMap__fromFSet__stp_def:
 consts FMap__fromFSet :: "('a \<times> 'b) FSet__FSet \<Rightarrow>  ('a, 'b)FMap__FMap"
 defs FMap__fromFSet_def: 
   "FMap__fromFSet s \<equiv> FMap__toFMap (FSet__fromFSet s)"
-theorem FMap__e_fsl_fsl_bsl_bsl__stp_Obligation_subtype: 
-  "\<lbrakk>FMap__nonEmpty_p__stp(P__a, FSet__FSet_P P__b) setValuedMap; 
-    FMap__FMap_P(P__a, FSet__FSet_P P__b) setValuedMap; 
-    FSet__FSet_P (FSet__FSet_P P__b)
-       (FMap__range__stp(P__a, FSet__FSet_P P__b) setValuedMap)\<rbrakk> \<Longrightarrow> 
-   FSet__nonEmpty_p__stp (FSet__FSet_P P__b)
-      (FMap__range__stp(P__a, FSet__FSet_P P__b) setValuedMap)"
-   sorry
 consts FMap__e_fsl_fsl_bsl_bsl__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                          ('a, 'b FSet__FSet)FMap__FMap \<Rightarrow> 
                                         'b FSet__FSet"

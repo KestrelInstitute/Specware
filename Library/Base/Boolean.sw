@@ -29,6 +29,9 @@ proof Isa [simp] end-proof
 op [a] TRUE: a -> Bool = fn x:a -> true
 proof Isa [simp] end-proof
 
+op [a] FALSE: a -> Bool = fn x:a -> false
+proof Isa [simp] end-proof
+
 % Isabelle mapping:
 
 proof Isa ThyMorphism

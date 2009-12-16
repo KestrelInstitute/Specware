@@ -13,4 +13,6 @@ defs Bool__e_bar_bar_bar_def [simp]:
 theorem Bool__TRUE__def [simp]: 
   "TRUE x = True"
   by auto
+consts Bool__FALSE :: "'a \<Rightarrow> bool"
+defs Bool__FALSE_def [simp]: "Bool__FALSE \<equiv> (\<lambda> (x::'a). False)"
 end

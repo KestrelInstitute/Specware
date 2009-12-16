@@ -2,7 +2,7 @@ Function qualifying spec
 
 import Boolean
 
-proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
+proof Isa -subtype_constrs -free-theorems -stp-theorems -stp-op-obligations end-proof
 
 (* Functions are built-in in Metaslang (A -> B is the type of all functions from
 type A to type B). This spec introduces some operations on functions and some
@@ -183,44 +183,10 @@ proof -
 qed
 end-proof
 
-proof Isa inverse__stp_Obligation_subtype
-  apply(simp only: Function__bijective_p__stp_simp univ_true TRUE_def)
-  apply(subgoal_tac "(\_lambday. THE x. P__a x \_and f x = y) = inv_on P__a f",
-        simp)
-  apply(simp add: bij_ON_imp_bij_ON_inv)
-  apply(auto simp add: bij_ON_def, 
-        thin_tac
-          "\_forallx0. \_not P__a x0 \_longrightarrow f x0 = regular_val")
-  apply(rule ext)
-  apply(rule the_equality, auto)
-  apply(simp add: surj_on_def Bex_def)
-  apply(drule_tac x="y" in spec, auto simp add: mem_def)
-end-proof
-
 proof Isa inverse__stp_Obligation_the
   apply(auto simp add:
           bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)
-end-proof
-
-proof Isa inverse__stp_subtype_constr
-  by (simp only: Function__inverse__stp_def Function__inverse__stp_Obligation_subtype)
-end-proof
-
-proof Isa inverse__stp_subtype_constr1
-  apply (simp only: Function__inverse__stp_def Fun_PR.simps)
-  apply(rule allI)
-  apply(rule the1I2)
-  apply(rule Function__inverse__stp_Obligation_the)
-  apply(auto)
-end-proof
-
-proof Isa inverse_Obligation_subtype
-  apply(subgoal_tac "( \_lambday. THE x. f x = y) = inv f")
-  apply(auto simp add: bij_def)
-  apply(erule surj_imp_inj_inv)
-  apply(erule inj_imp_surj_inv)
-  apply(rule ext, rule the_equality, auto simp add: surj_f_inv_f)
 end-proof
 
 proof Isa inverse_Obligation_the

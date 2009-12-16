@@ -86,14 +86,6 @@ op [a] transitiveClosure (r: EndoRelation a) : TransitiveRelation a =
 op [a] equivalenceClosure (r: EndoRelation a) : Equivalence a =
   min (fn rc -> r <= rc && equivalence? rc)
 
-proof Isa reflexiveClosure__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa reflexiveClosure__stp_Obligation_subtype0
- sorry
-end-proof
-
 proof Isa reflexiveClosure_Obligation_subtype
  sorry
 end-proof
@@ -103,14 +95,6 @@ proof Isa reflexiveClosure_Obligation_subtype0
 end-proof
 
 proof Isa reflexiveClosure_subtype_constr
- sorry
-end-proof
-
-proof Isa symmetricClosure__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa symmetricClosure__stp_Obligation_subtype0
  sorry
 end-proof
 
@@ -126,14 +110,6 @@ proof Isa symmetricClosure_subtype_constr
  sorry
 end-proof
 
-proof Isa transitiveClosure__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa transitiveClosure__stp_Obligation_subtype0
- sorry
-end-proof
-
 proof Isa transitiveClosure_Obligation_subtype
  sorry
 end-proof
@@ -143,14 +119,6 @@ proof Isa transitiveClosure_Obligation_subtype0
 end-proof
 
 proof Isa transitiveClosure_subtype_constr
- sorry
-end-proof
-
-proof Isa equivalenceClosure__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa equivalenceClosure__stp_Obligation_subtype0
  sorry
 end-proof
 

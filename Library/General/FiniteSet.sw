@@ -57,20 +57,12 @@ proof Isa -> >_fset? end-proof
 op [a] /\ (s1: FSet a, s2: FSet a) infixr 25 : FSet a =
   toFSet (fromFSet s1 /\ fromFSet s2)
 
-proof Isa e_fsl_bsl__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_fsl_bsl_Obligation_subtype
  sorry
 end-proof
 
 op [a] \/ (s1: FSet a, s2: FSet a) infixr 24 : FSet a =
   toFSet (fromFSet s1 \/ fromFSet s2)
-
-proof Isa e_bsl_fsl__stp_Obligation_subtype
- sorry
-end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype
  sorry
@@ -80,10 +72,6 @@ op [a] -- (s1: FSet a, s2: FSet a) infixl 25 : FSet a =
   toFSet (fromFSet s1 -- fromFSet s2)
 proof Isa -> --_fs end-proof
 
-proof Isa e_dsh_dsh__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_dsh_dsh_Obligation_subtype
  sorry
 end-proof
@@ -92,20 +80,12 @@ op [a,b] * (s1: FSet a, s2: FSet b) infixl 27 : FSet (a * b) =
   toFSet (fromFSet s1 * fromFSet s2)
 proof Isa -> *_fset? end-proof
 
-proof Isa e_ast__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_ast_Obligation_subtype
  sorry
 end-proof
 
 op [a] power (s: FSet a) : FSet (FSet a) =
   toFSet (map toFSet (power (fromFSet s)))
-
-proof Isa power__stp_Obligation_subtype
- sorry
-end-proof
 
 proof Isa power_Obligation_subtype
  sorry
@@ -143,14 +123,6 @@ op [a] theMember (s: SingletonFSet a) : a = theMember (fromFSet s)
 op [a] <| (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s <| x)
 proof Isa -> with_fs [simp] end-proof
 
-proof Isa theMember__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa e_lt_bar__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_lt_bar_Obligation_subtype
  sorry
 end-proof
@@ -158,19 +130,11 @@ end-proof
 op [a] - (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s - x)
 proof Isa -> -_fset? end-proof
 
-proof Isa e_dsh__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_dsh_Obligation_subtype
  sorry
 end-proof
 
 op [a,b] map (f: a -> b) (s: FSet a) : FSet b = toFSet (map f (fromFSet s))
-
-proof Isa map__stp_Obligation_subtype
- sorry
-end-proof
 
 proof Isa map_Obligation_subtype
  sorry
@@ -178,10 +142,6 @@ end-proof
 
 op [a,b] FSet.mapPartial (f: a -> Option b) (s: FSet a) : FSet b =
   toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
-
-proof Isa mapPartial__stp_Obligation_subtype
- sorry
-end-proof
 
 proof Isa mapPartial_Obligation_subtype
  sorry
@@ -195,10 +155,6 @@ op [a,b] foldable? (c: b, f: b * a -> b, s: FSet a) : Bool =
 op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
   fold (c, f, fromFSet s)
 
-proof Isa fold__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa fold_Obligation_subtype
  sorry
 end-proof
@@ -210,10 +166,6 @@ op powerf : [a] FSet a -> FSet (FSet a) = power
 op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
   toFSet (//\\ (map fromFSet (fromFSet ss)))
 
-proof Isa e_fsl_fsl_bsl_bsl__stp_Obligation_subtype0
- sorry
-end-proof
-
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype0
  sorry
 end-proof
@@ -221,44 +173,20 @@ end-proof
 op [a] \\// (ss: FSet (FSet a)) : FSet a =
   toFSet (\\// (map fromFSet (fromFSet ss)))
 
-proof Isa e_bsl_bsl_fsl_fsl__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa e_bsl_bsl_fsl_fsl_Obligation_subtype
  sorry
 end-proof
 
 op [a] forall? (p: a -> Bool) (s: FSet a) : Bool = fromFSet s <= p
 
-proof Isa forall_p__stp_Obligation_subtype
- sorry
-end-proof
-
 op [a] exists? (p: a -> Bool) (s: FSet a) : Bool =
   nonEmpty? (fromFSet s /\ p)
-
-proof Isa exists_p__stp_Obligation_subtype
- sorry
-end-proof
 
 op [a] exists1? (p: a -> Bool) (s: FSet a) : Bool =
   single? (fromFSet s /\ p)
 
-proof Isa exists1_p__stp_Obligation_subtype
- sorry
-end-proof
-
 op [a] filter (p: a -> Bool) (s: FSet a) : FSet a =
   toFSet (fromFSet s /\ p)
-
-proof Isa filter__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa filter__stp_Obligation_subtype0
- sorry
-end-proof
 
 proof Isa filter_Obligation_subtype
  sorry
@@ -268,14 +196,6 @@ end-proof
 
 op [a] List.toSet (l: List a) : FSet a = toFSet (fn x -> x in? l)
 
-proof Isa List__toSet__stp_Obligation_subtype
- sorry
-end-proof
-
-proof Isa List__toSet__stp_Obligation_subtype0
- sorry
-end-proof
-
 proof Isa List__toSet_Obligation_subtype
  sorry
 end-proof
@@ -283,10 +203,6 @@ end-proof
 % intersection of all sets contained in a list:
 
 op [a] List.//\\ (ls: List1 (FSet a)) : FSet a = //\\ (toSet ls)
-
-proof Isa e_fsl_fsl_bsl_bsl__stp_Obligation_subtype
- sorry
-end-proof
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
  sorry

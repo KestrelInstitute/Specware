@@ -88,10 +88,6 @@ end-proof
 op unstrictify : [a] IrreflexiveRelation a -> ReflexiveRelation a =
   inverse strictify
 
-proof Isa unstrictify__stp_Obligation_subtype
- sorry
-end-proof
-
 proof Isa unstrictify_Obligation_subtype
  sorry
 end-proof
