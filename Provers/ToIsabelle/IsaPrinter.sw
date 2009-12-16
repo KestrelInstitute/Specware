@@ -529,6 +529,31 @@ IsaTermPrinter qualifying spec
     in
     initial_make_subtype_constr_pragma?
 
+  op generateObligsForSTPFuns?(spc: Spec): Boolean =
+    let (initial_make_stp_obligs_pragma?, _) =
+        foldl (fn (r as (initial_make_stp_obligs_pragma?, done?), el) ->
+               if done? then r
+               else
+               case el of
+                 | Pragma("proof", prag_str, "end-proof", _) \_rightarrow
+                   (case controlPragmaString prag_str of
+                      | Some strs \_rightarrow
+                        if subtypePredicateOpsObligationsString in? strs
+                          then (true, false)
+                          else if noSubtypePredicateOpsObligationsString in? strs
+                          then (false, true)
+                          else r
+                      | None -> r)
+                 | Op _ -> (initial_make_stp_obligs_pragma?, true)
+                 | _ -> r)
+          (false, false)
+          spc.elements
+    in
+    initial_make_stp_obligs_pragma?
+
+  op STPFunName?(qual: String, nm: String): Bool =
+    endsIn?(nm, "__stp")
+
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
@@ -569,7 +594,11 @@ IsaTermPrinter qualifying spec
     let spc = addRefineObligations spc in
 % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
-               then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc, c.thy_name)
+               then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
+                                                if generateObligsForSTPFuns? spc
+                                                  then FALSE
+                                                  else STPFunName?,
+                                                c.thy_name)
 	       else spc
     in
 % let _ = writeLine("1:\n"^printSpec spc) in
