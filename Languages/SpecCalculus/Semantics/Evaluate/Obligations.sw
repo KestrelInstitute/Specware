@@ -146,5 +146,5 @@ SpecCalc qualifying spec
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
     let pos = positionOf spcTerm in
-    makeTypeCheckObligationSpec (spc, false, positionSource pos)
+    makeTypeCheckObligationSpec (spc, false, FALSE, positionSource pos)
 endspec
