@@ -22,43 +22,43 @@ theorem Set__in_p__def:
 theorem Set__nin_p__def: 
   "(x \<notin> s) = (\<not> (x \<in> s))"
   by auto
+theorem Set__Set_P__def: 
+  "Set_P Pa s = (\<forall>(x::'a). \<not> (Pa x) \<longrightarrow> x \<notin> s)"
+  by (simp add: Set_P_def)
 consts Set__Set_P__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__Set_P__stp_def: 
   "Set__Set_P__stp P__a Pa s
      \<equiv> (\<forall>(x::'a). P__a x \<and> \<not> (Pa x) \<longrightarrow> x \<notin> s)"
-theorem Set__Set_P__def: 
-  "Set_P Pa s = (\<forall>(x::'a). \<not> (Pa x) \<longrightarrow> x \<notin> s)"
-  by (simp add: Set_P_def)
+theorem Set__e_lt_eq__def: 
+  "((s1::'a set) \<subseteq> (s2::'a set)) = (\<forall>(x::'a). x \<in> s1 \<longrightarrow> x \<in> s2)"
+  by auto
 consts Set__e_lt_eq__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_lt_eq__stp_def: 
   "Set__e_lt_eq__stp P__a
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). 
           \<forall>(x::'a). P__a x \<and> x \<in> s1 \<longrightarrow> x \<in> s2)"
-theorem Set__e_lt_eq__def: 
-  "((s1::'a set) \<subseteq> (s2::'a set)) = (\<forall>(x::'a). x \<in> s1 \<longrightarrow> x \<in> s2)"
+theorem Set__e_lt__def: 
+  "((s1::'a set) \<subset> (s2::'a set)) = (s1 \<subseteq> s2 \<and> s1 \<noteq> s2)"
   by auto
 consts Set__e_lt__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_lt__stp_def: 
   "Set__e_lt__stp P__a
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). 
           Set__e_lt_eq__stp P__a(s1, s2) \<and> s1 \<noteq> s2)"
-theorem Set__e_lt__def: 
-  "((s1::'a set) \<subset> (s2::'a set)) = (s1 \<subseteq> s2 \<and> s1 \<noteq> s2)"
+theorem Set__e_gt_eq__def: 
+  "((s2::'a set) \<subseteq> (s1::'a set)) = (s2 \<subseteq> s1)"
   by auto
 consts Set__e_gt_eq__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_gt_eq__stp_def: 
   "Set__e_gt_eq__stp P__a
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). Set__e_lt_eq__stp P__a(s2, s1))"
-theorem Set__e_gt_eq__def: 
-  "((s2::'a set) \<subseteq> (s1::'a set)) = (s2 \<subseteq> s1)"
+theorem Set__e_gt__def: 
+  "((s2::'a set) \<subset> (s1::'a set)) = (s2 \<subset> s1)"
   by auto
 consts Set__e_gt__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set \<Rightarrow> bool"
 defs Set__e_gt__stp_def: 
   "Set__e_gt__stp P__a
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). Set__e_lt__stp P__a(s2, s1))"
-theorem Set__e_gt__def: 
-  "((s2::'a set) \<subset> (s1::'a set)) = (s2 \<subset> s1)"
-  by auto
 
 lemma Set_Set_P_subsets_equiv:
 "Set_P P__a A \<Longrightarrow> 
@@ -89,21 +89,21 @@ theorem Set__e_ast__def:
   "(((x::'a), (y::'b)) \<in> (s1::'a set) <*> (s2::'b set)) 
      = (x \<in> s1 \<and> y \<in> s2)"
   by auto
+theorem Set__power__def: 
+  "((sub__v::'a set) \<in> Pow s) = (sub__v \<subseteq> s)"
+  by auto
 consts Set__power__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set set"
 defs Set__power__stp_def: 
   "Set__power__stp P__a s
      \<equiv> (\<lambda> (sub__v::'a set). Set__e_lt_eq__stp P__a(sub__v, s))"
-theorem Set__power__def: 
-  "((sub__v::'a set) \<in> Pow s) = (sub__v \<subseteq> s)"
-  by auto
 theorem Set__empty__def: 
   "{} = (\<lambda> ignore. False)"
   by (auto simp add: mem_def)
+consts Set__empty_p :: "'a set \<Rightarrow> bool"
+defs Set__empty_p_def [simp]: "Set__empty_p s \<equiv> (s = {})"
 consts Set__empty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__empty_p__stp_def [simp]: 
   "Set__empty_p__stp P__a s \<equiv> (s = RSet P__a {})"
-consts Set__empty_p :: "'a set \<Rightarrow> bool"
-defs Set__empty_p_def [simp]: "Set__empty_p s \<equiv> (s = {})"
 
 lemma Set_empty_apply[simp]:
 "{} x = False"
@@ -122,11 +122,11 @@ lemma Set_empty_p_equiv_empty_p_stp:
 by (auto simp add:Set__empty_p__stp_def Set__empty_p_def 
                   Set__empty__def mem_def)
 
+consts Set__nonEmpty_p :: "'a set \<Rightarrow> bool"
+defs Set__nonEmpty_p_def: "Set__nonEmpty_p s \<equiv> (s \<noteq> {})"
 consts Set__nonEmpty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__nonEmpty_p__stp_def: 
   "Set__nonEmpty_p__stp P__a s \<equiv> (s \<noteq> RSet P__a {})"
-consts Set__nonEmpty_p :: "'a set \<Rightarrow> bool"
-defs Set__nonEmpty_p_def: "Set__nonEmpty_p s \<equiv> (s \<noteq> {})"
 types 'a Set__Set1 = "'a set"
 
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
@@ -155,11 +155,11 @@ qed
 theorem Set__full__def: 
   "UNIV = (\<lambda> ignore. True)"
   by (auto simp add: mem_def)
+consts Set__full_p :: "'a set \<Rightarrow> bool"
+defs Set__full_p_def [simp]: "Set__full_p s \<equiv> (s = UNIV)"
 consts Set__full_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__full_p__stp_def: 
   "Set__full_p__stp P__a s \<equiv> (s = RSet P__a UNIV)"
-consts Set__full_p :: "'a set \<Rightarrow> bool"
-defs Set__full_p_def [simp]: "Set__full_p s \<equiv> (s = UNIV)"
 
 lemma Set__full_apply[simp]:
 "UNIV x = True"
@@ -170,21 +170,21 @@ by (auto simp add:Set__full_p__stp_def)
 
 consts Set__single :: "'a \<Rightarrow> 'a set"
 defs Set__single_def: "Set__single x \<equiv> (\<lambda> (y::'a). y = x)"
+consts Set__single_p :: "'a set \<Rightarrow> bool"
+defs Set__single_p_def [simp]: 
+  "Set__single_p s \<equiv> (\<exists>(x::'a). s = Set__single x)"
 consts Set__single_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__single_p__stp_def: 
   "Set__single_p__stp P__a s
      \<equiv> (\<exists>(x::'a). P__a x \<and> s = RSet P__a (Set__single x))"
-consts Set__single_p :: "'a set \<Rightarrow> bool"
-defs Set__single_p_def [simp]: 
-  "Set__single_p s \<equiv> (\<exists>(x::'a). s = Set__single x)"
+consts Set__onlyMemberOf :: "'a \<Rightarrow> 'a set \<Rightarrow> bool"	(infixl "onlyMemberOf" 60)
+defs Set__onlyMemberOf_def [simp]: 
+  "(x onlyMemberOf s) \<equiv> (Set__single_p s \<and> x \<in> s)"
 consts Set__onlyMemberOf__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a \<times> 'a set \<Rightarrow> bool"
 defs Set__onlyMemberOf__stp_def: 
   "Set__onlyMemberOf__stp P__a
      \<equiv> (\<lambda> ((x::'a), (s::'a set)). 
           Set__single_p__stp P__a s \<and> x \<in> s)"
-consts Set__onlyMemberOf :: "'a \<Rightarrow> 'a set \<Rightarrow> bool"	(infixl "onlyMemberOf" 60)
-defs Set__onlyMemberOf_def [simp]: 
-  "(x onlyMemberOf s) \<equiv> (Set__single_p s \<and> x \<in> s)"
 
 lemma Set_single_simp [simp]:
 "Set__single x = {x}"
@@ -211,14 +211,14 @@ lemma Set_single_stp_single:
 by (auto simp:Set__single_p__stp_def Set__single_p_def)
 
 types 'a Set__Singleton = "'a set"
-consts Set__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a"
-defs Set__theMember__stp_def: 
-  "Set__theMember__stp P__a s \<equiv> (THE (x::'a). P__a x \<and> x \<in> s)"
 theorem Set__theMember_Obligation_the: 
   "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
 consts Set__theMember :: "'a Set__Singleton \<Rightarrow> 'a"
 defs Set__theMember_def: "Set__theMember s \<equiv> (THE (x::'a). x \<in> s)"
+consts Set__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a"
+defs Set__theMember__stp_def: 
+  "Set__theMember__stp P__a s \<equiv> (THE (x::'a). P__a x \<and> x \<in> s)"
 theorem Set__e_lt_bar__def: 
   "(insert x s) = s \<union> Set__single x"
   by auto
@@ -272,33 +272,33 @@ proof(rule Set_Set_P_Fun_PD)
  by (rule_tac s=s and P__a=P__a in Set__SetP_less)
 qed
 
-consts Set__map__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> 'b set"
-defs Set__map__stp_def: 
-  "Set__map__stp P__a f s
-     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). P__a x \<and> (x \<in> s \<and> y = f x))"
 consts Set__map :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Set__map_def: 
   "Set__map f s
      \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). x \<in> s \<and> y = f x)"
+consts Set__map__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> 'b set"
+defs Set__map__stp_def: 
+  "Set__map__stp P__a f s
+     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). P__a x \<and> (x \<in> s \<and> y = f x))"
+consts Set__mapPartial :: "('a \<Rightarrow> 'b option) \<Rightarrow> 'a set \<Rightarrow> 'b set"
+defs Set__mapPartial_def: 
+  "Set__mapPartial f s
+     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). x \<in> s \<and> Some y = f x)"
 consts Set__mapPartial__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                 ('a \<Rightarrow> 'b option) \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Set__mapPartial__stp_def: 
   "Set__mapPartial__stp P__a f s
      \<equiv> (\<lambda> (y::'b). 
           \<exists>(x::'a). P__a x \<and> (x \<in> s \<and> Some y = f x))"
-consts Set__mapPartial :: "('a \<Rightarrow> 'b option) \<Rightarrow> 'a set \<Rightarrow> 'b set"
-defs Set__mapPartial_def: 
-  "Set__mapPartial f s
-     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). x \<in> s \<and> Some y = f x)"
 consts Set__imap :: "('a \<Rightarrow> 'b) \<Rightarrow> 'b set \<Rightarrow> 'a set"
 defs Set__imap_def: 
   "Set__imap f s \<equiv> (\<lambda> (x::'a). f x \<in> s)"
-consts Set__setGeneratedBy__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b set"
-defs Set__setGeneratedBy__stp_def: 
-  "Set__setGeneratedBy__stp P__a f \<equiv> Set__map__stp P__a f UNIV"
 consts Set__setGeneratedBy :: "('a \<Rightarrow> 'b) \<Rightarrow> 'b set"
 defs Set__setGeneratedBy_def: 
   "Set__setGeneratedBy f \<equiv> Set__map f UNIV"
+consts Set__setGeneratedBy__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b set"
+defs Set__setGeneratedBy__stp_def: 
+  "Set__setGeneratedBy__stp P__a f \<equiv> Set__map__stp P__a f UNIV"
 
 lemma finite_nat_seg:
 "finite (s::'a set) \<Longrightarrow> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
@@ -310,16 +310,6 @@ lemma nat_seq_finite:
  \<Longrightarrow> finite s"
 by(elim exE, rule nat_seg_image_imp_finite, auto)
 
-consts Set__finite_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
-defs Set__finite_p__stp_def: 
-  "Set__finite_p__stp P__a s
-     \<equiv> (Set__empty_p__stp P__a s 
-          \<or> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-               Fun_PR P__a f 
-                 \<and> (\<forall>(x::'a). 
-                      P__a x 
-                        \<longrightarrow> (x \<in> s) 
-                              = (\<exists>(i::nat). i < n \<and> f i = x))))"
 theorem Set__finite_p__def: 
   "finite s 
      = (Set__empty_p s 
@@ -343,6 +333,16 @@ next
   thus ?thesis by(rule nat_seq_finite)
  qed
 qed
+consts Set__finite_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
+defs Set__finite_p__stp_def: 
+  "Set__finite_p__stp P__a s
+     \<equiv> (Set__empty_p__stp P__a s 
+          \<or> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+               Fun_PR P__a f 
+                 \<and> (\<forall>(x::'a). 
+                      P__a x 
+                        \<longrightarrow> (x \<in> s) 
+                              = (\<exists>(i::nat). i < n \<and> f i = x))))"
 
 lemma finite_stp_nat_seg:
 "Set__finite_p__stp (P__a::'a\<Rightarrow> bool) (s::'a set) \<Longrightarrow>
@@ -401,15 +401,15 @@ thus "Set__finite_p__stp P__a (insert x s)"
  by(rule_tac x="i" in exI, simp)+
 qed 
 
+theorem Set__finite_insert: 
+  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> finite (insert (x::'a) s)"
+  by auto
 theorem Set__finite_insert__stp: 
   "\<lbrakk>Set__finite_p__stp P__a (s::'a set); 
     Set_P P__a s; 
     P__a (x::'a)\<rbrakk> \<Longrightarrow> 
    Set__finite_p__stp P__a (RSet P__a (insert x s))"
   by (auto simp only: Set__finite_insert__stp_sans Set_Set_P_Fun_PD Set__RSet_insert_simp)
-theorem Set__finite_insert: 
-  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> finite (insert (x::'a) s)"
-  by auto
 
 lemma Set__finite_p_stp_imp_finite:
 "\<lbrakk> Set__finite_p__stp (P__a::'a\<Rightarrow> bool) (s::'a set); Set_P P__a s\<rbrakk>
@@ -493,6 +493,41 @@ lemma finite_induct_stp[rule_format]:
   apply (simp add:Set_P_Set_P_insert2)
 done
 
+theorem Set__induction_Obligation_subtype: 
+  "finite {}"
+  by auto
+theorem Set__induction_Obligation_subtype0: 
+  "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
+    finite (s_1::'a Set__FiniteSet); 
+    p {}; 
+    p s_1\<rbrakk> \<Longrightarrow> 
+   finite (insert (x::'a) s_1)"
+  by auto
+theorem Set__induction: 
+  "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
+    finite (s::'a Set__FiniteSet); 
+    p {}; 
+    \<forall>(s::'a Set__FiniteSet) (x::'a). 
+      finite s \<and> p s \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> 
+   p s"
+  proof - (* induct_tac s rule:finite_induct, auto *)
+ assume ASM: "Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool)"
+             "finite (s::'a set)"   "p {}" 
+             "\<forall>(s::'a set) (x::'a). finite s \<and> p s \<longrightarrow> p (insert x s)"
+ thus "p (s::'a Set__FiniteSet)"
+ proof (induct_tac s rule:finite_induct)
+  assume "finite s" thus "finite s" by assumption
+ next
+  assume "p {}" thus "p {}" by assumption
+ next    
+  fix x F 
+  assume "finite F" "x \<notin> F" "p F"
+  from ASM obtain s y where "s = s" and "x = x" 
+                        and "finite s \<and> p s \<longrightarrow> p (insert x s)"
+  by auto
+  from this ASM `finite F` `p F` show "p(insert x F)" by blast
+ qed
+qed
 theorem Set__induction__stp_Obligation_subtype: 
   "\<lbrakk>Set__finite_p__stp P__a (s::'a set); 
     Set_P P__a s; 
@@ -555,41 +590,6 @@ theorem Set__induction__stp:
   by(simp)
  qed
 qed
-theorem Set__induction_Obligation_subtype: 
-  "finite {}"
-  by auto
-theorem Set__induction_Obligation_subtype0: 
-  "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
-    finite (s_1::'a Set__FiniteSet); 
-    p {}; 
-    p s_1\<rbrakk> \<Longrightarrow> 
-   finite (insert (x::'a) s_1)"
-  by auto
-theorem Set__induction: 
-  "\<lbrakk>Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool); 
-    finite (s::'a Set__FiniteSet); 
-    p {}; 
-    \<forall>(s::'a Set__FiniteSet) (x::'a). 
-      finite s \<and> p s \<longrightarrow> p (insert x s)\<rbrakk> \<Longrightarrow> 
-   p s"
-  proof - (* induct_tac s rule:finite_induct, auto *)
- assume ASM: "Fun_PD finite (p::'a Set__FiniteSet \<Rightarrow> bool)"
-             "finite (s::'a set)"   "p {}" 
-             "\<forall>(s::'a set) (x::'a). finite s \<and> p s \<longrightarrow> p (insert x s)"
- thus "p (s::'a Set__FiniteSet)"
- proof (induct_tac s rule:finite_induct)
-  assume "finite s" thus "finite s" by assumption
- next
-  assume "p {}" thus "p {}" by assumption
- next    
-  fix x F 
-  assume "finite F" "x \<notin> F" "p F"
-  from ASM obtain s y where "s = s" and "x = x" 
-                        and "finite s \<and> p s \<longrightarrow> p (insert x s)"
-  by auto
-  from this ASM `finite F` `p F` show "p(insert x F)" by blast
- qed
-qed
 
 fun SIZ::"('a\<Rightarrow>bool) \<Rightarrow> ('a set) \<Rightarrow> nat"
 where 
@@ -601,17 +601,6 @@ lemma SIZ_CARD[rule_format]:
   \<Longrightarrow> SIZ p s = card s" 
 by simp
 
-consts Set__size__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> nat"
-defs Set__size__stp_def: 
-  "Set__size__stp P__a
-     \<equiv> (THE (size__v::'a set \<Rightarrow> nat). 
-       Fun_PD (Set__finite_p__stp P__a &&& Set_P P__a) size__v 
-         \<and> (size__v {} = 0 
-          \<and> (\<forall>(s::'a set) (x::'a). 
-               Set__finite_p__stp P__a s 
-                 \<and> (Set_P P__a s \<and> P__a x) 
-                 \<longrightarrow> size__v (insert x s) 
-                       = 1 + size__v (s less x))))"
 theorem Set__size_Obligation_the: 
   "\<exists>!(size__v::'a Set__FiniteSet \<Rightarrow> nat). 
      Fun_PD finite size__v 
@@ -646,15 +635,33 @@ defs Set__size_def:
                finite s 
                  \<longrightarrow> size__v (insert x s) 
                        = 1 + size__v (s less x))))"
+consts Set__size__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> nat"
+defs Set__size__stp_def: 
+  "Set__size__stp P__a
+     \<equiv> (THE (size__v::'a set \<Rightarrow> nat). 
+       Fun_PD (Set__finite_p__stp P__a &&& Set_P P__a) size__v 
+         \<and> (size__v {} = 0 
+          \<and> (\<forall>(s::'a set) (x::'a). 
+               Set__finite_p__stp P__a s 
+                 \<and> (Set_P P__a s \<and> P__a x) 
+                 \<longrightarrow> size__v (insert x s) 
+                       = 1 + size__v (s less x))))"
+consts Set__hasSize :: "'a set \<Rightarrow> nat \<Rightarrow> bool"	(infixl "hasSize" 60)
+defs Set__hasSize_def: 
+  "(s hasSize n) \<equiv> (finite s \<and> Set__size s = n)"
 consts Set__hasSize__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> nat \<Rightarrow> bool"
 defs Set__hasSize__stp_def: 
   "Set__hasSize__stp P__a
      \<equiv> (\<lambda> ((s::'a set), (n::nat)). 
           Set__finite_p__stp P__a s 
             \<and> Set__size__stp P__a s = n)"
-consts Set__hasSize :: "'a set \<Rightarrow> nat \<Rightarrow> bool"	(infixl "hasSize" 60)
-defs Set__hasSize_def: 
-  "(s hasSize n) \<equiv> (finite s \<and> Set__size s = n)"
+consts Set__foldable_p :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> bool"
+defs Set__foldable_p_def [simp]: 
+  "Set__foldable_p
+     \<equiv> (\<lambda> ((c::'b), (f::'b \<times> 'a \<Rightarrow> 'b), (s::'a Set__FiniteSet)). 
+          \<forall>(x::'a) (y::'a) (z::'b). 
+            x \<in> s \<and> y \<in> s 
+              \<longrightarrow> f(f(z, x), y) = f(f(z, y), x))"
 consts Set__foldable_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                 'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> bool"
 defs Set__foldable_p__stp_def: 
@@ -664,46 +671,6 @@ defs Set__foldable_p__stp_def:
             \<forall>(x::'a) (y::'a) (z::'b). 
               P__a x \<and> (P__a y \<and> (P__b z \<and> (x \<in> s \<and> y \<in> s))) 
                 \<longrightarrow> f(f(z, x), y) = f(f(z, y), x))"
-consts Set__foldable_p :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> bool"
-defs Set__foldable_p_def [simp]: 
-  "Set__foldable_p
-     \<equiv> (\<lambda> ((c::'b), (f::'b \<times> 'a \<Rightarrow> 'b), (s::'a Set__FiniteSet)). 
-          \<forall>(x::'a) (y::'a) (z::'b). 
-            x \<in> s \<and> y \<in> s 
-              \<longrightarrow> f(f(z, x), y) = f(f(z, y), x))"
-consts Set__fold__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
-                          'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b"
-defs Set__fold__stp_def: 
-  "Set__fold__stp
-     \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
-          (THE (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b). 
-          Fun_P
-            (\<lambda> ((x_1::'b), (x_2::'b \<times> 'a \<Rightarrow> 'b), (x_3::'a set)). 
-               ((P__b x_1 
-                   \<and> Fun_P
-                       (\<lambda> ((x_1::'b), (x_2::'a)). 
-                          P__b x_1 \<and> P__a x_2, P__b) x_2) 
-                  \<and> (Set__finite_p__stp P__a x_3 \<and> Set_P P__a x_3)) 
-                 \<and> Set__foldable_p__stp(P__a, P__b)(x_1, x_2, x_3), P__b)
-             fold__v 
-            \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). 
-                  P__b c 
-                    \<and> Fun_P
-                        (\<lambda> ((x_1::'b), (x_2::'a)). 
-                           P__b x_1 \<and> P__a x_2, P__b) f 
-                    \<longrightarrow> fold__v(c, f, {}) = c) 
-             \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a set) (x::'a). 
-                  P__b c 
-                    \<and> (Fun_P
-                         (\<lambda> ((x_1::'b), (x_2::'a)). 
-                            P__b x_1 \<and> P__a x_2, P__b) f 
-                     \<and> (Set__finite_p__stp P__a s 
-                      \<and> (Set_P P__a s 
-                       \<and> (P__a x 
-                        \<and> Set__foldable_p__stp(P__a, P__b)
-                            (c, f, RFun P__a (insert x s)))))) 
-                    \<longrightarrow> fold__v(c, f, insert x s) 
-                          = f(fold__v(c, f, s less x), x)))))"
 theorem Set__fold_Obligation_the: 
   "\<exists>!(fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b). 
      Fun_PD
@@ -775,21 +742,60 @@ defs Set__fold_def:
                finite s \<and> Set__foldable_p(c, f, insert x s) 
                  \<longrightarrow> fold__v(c, f, insert x s) 
                        = f(fold__v(c, f, s less x), x))))"
-consts Set__powerf__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set set"
-defs Set__powerf__stp_def: 
-  "Set__powerf__stp P__a s
-     \<equiv> (Set__power__stp P__a s \<inter> Set__finite_p__stp P__a)"
+consts Set__fold__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
+                          'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b"
+defs Set__fold__stp_def: 
+  "Set__fold__stp
+     \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
+          (THE (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b). 
+          Fun_P
+            (\<lambda> ((x_1::'b), (x_2::'b \<times> 'a \<Rightarrow> 'b), (x_3::'a set)). 
+               ((P__b x_1 
+                   \<and> Fun_P
+                       (\<lambda> ((x_1::'b), (x_2::'a)). 
+                          P__b x_1 \<and> P__a x_2, P__b) x_2) 
+                  \<and> (Set__finite_p__stp P__a x_3 \<and> Set_P P__a x_3)) 
+                 \<and> Set__foldable_p__stp(P__a, P__b)(x_1, x_2, x_3), P__b)
+             fold__v 
+            \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). 
+                  P__b c 
+                    \<and> Fun_P
+                        (\<lambda> ((x_1::'b), (x_2::'a)). 
+                           P__b x_1 \<and> P__a x_2, P__b) f 
+                    \<longrightarrow> fold__v(c, f, {}) = c) 
+             \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a set) (x::'a). 
+                  P__b c 
+                    \<and> (Fun_P
+                         (\<lambda> ((x_1::'b), (x_2::'a)). 
+                            P__b x_1 \<and> P__a x_2, P__b) f 
+                     \<and> (Set__finite_p__stp P__a s 
+                      \<and> (Set_P P__a s 
+                       \<and> (P__a x 
+                        \<and> Set__foldable_p__stp(P__a, P__b)
+                            (c, f, RFun P__a (insert x s)))))) 
+                    \<longrightarrow> fold__v(c, f, insert x s) 
+                          = f(fold__v(c, f, s less x), x)))))"
 theorem Set__powerf_Obligation_subtype: 
   "Set_P finite (Pow s)"
    sorry
 consts Set__powerf :: "'a set \<Rightarrow> 'a Set__FiniteSet set"
 defs Set__powerf_def: "Set__powerf s \<equiv> (Pow s \<inter> finite)"
+consts Set__powerf__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set set"
+defs Set__powerf__stp_def: 
+  "Set__powerf__stp P__a s
+     \<equiv> (Set__power__stp P__a s \<inter> Set__finite_p__stp P__a)"
+consts Set__infinite_p :: "'a set \<Rightarrow> bool"
+defs Set__infinite_p_def: "Set__infinite_p \<equiv> - finite"
 consts Set__infinite_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__infinite_p__stp_def: 
   "Set__infinite_p__stp P__a \<equiv> - (Set__finite_p__stp P__a)"
-consts Set__infinite_p :: "'a set \<Rightarrow> bool"
-defs Set__infinite_p_def: "Set__infinite_p \<equiv> - finite"
 types 'a Set__InfiniteSet = "'a set"
+consts Set__countable_p :: "'a set \<Rightarrow> bool"
+defs Set__countable_p_def: 
+  "Set__countable_p s
+     \<equiv> (Set__infinite_p s 
+          \<and> (\<exists>(f::nat \<Rightarrow> 'a). 
+               \<forall>(x::'a). x \<in> s \<longrightarrow> (\<exists>(i::nat). f i = x)))"
 consts Set__countable_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__countable_p__stp_def: 
   "Set__countable_p__stp P__a s
@@ -799,22 +805,20 @@ defs Set__countable_p__stp_def:
                  \<and> (\<forall>(x::'a). 
                       P__a x \<and> x \<in> s 
                         \<longrightarrow> (\<exists>(i::nat). f i = x))))"
-consts Set__countable_p :: "'a set \<Rightarrow> bool"
-defs Set__countable_p_def: 
-  "Set__countable_p s
-     \<equiv> (Set__infinite_p s 
-          \<and> (\<exists>(f::nat \<Rightarrow> 'a). 
-               \<forall>(x::'a). x \<in> s \<longrightarrow> (\<exists>(i::nat). f i = x)))"
 types 'a Set__CountableSet = "'a set"
+consts Set__uncountable_p :: "'a set \<Rightarrow> bool"
+defs Set__uncountable_p_def: 
+  "Set__uncountable_p \<equiv> (Set__infinite_p \<inter> - Set__countable_p)"
 consts Set__uncountable_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__uncountable_p__stp_def: 
   "Set__uncountable_p__stp P__a
      \<equiv> (Set__infinite_p__stp P__a 
           \<inter> - (Set__countable_p__stp P__a))"
-consts Set__uncountable_p :: "'a set \<Rightarrow> bool"
-defs Set__uncountable_p_def: 
-  "Set__uncountable_p \<equiv> (Set__infinite_p \<inter> - Set__countable_p)"
 types 'a Set__UncountableSet = "'a set"
+consts isMinIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMinIn'_s" 60)
+defs isMinIn_s_def: 
+  "((s::'a set) isMinIn_s (ss::'a set set))
+     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s \<subseteq> s1))"
 consts Set__isMinIn__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set set \<Rightarrow> bool"
 defs Set__isMinIn__stp_def: 
   "Set__isMinIn__stp P__a
@@ -823,30 +827,30 @@ defs Set__isMinIn__stp_def:
             \<and> (\<forall>(s1::'a set). 
                  Set_P P__a s1 \<and> s1 \<in> ss 
                    \<longrightarrow> Set__e_lt_eq__stp P__a(s, s1)))"
-consts isMinIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMinIn'_s" 60)
-defs isMinIn_s_def: 
-  "((s::'a set) isMinIn_s (ss::'a set set))
-     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s \<subseteq> s1))"
+consts Set__hasMin_p :: "'a set set \<Rightarrow> bool"
+defs Set__hasMin_p_def: 
+  "Set__hasMin_p ss \<equiv> (\<exists>(s::'a set). s isMinIn_s ss)"
 consts Set__hasMin_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> bool"
 defs Set__hasMin_p__stp_def: 
   "Set__hasMin_p__stp P__a ss
      \<equiv> (\<exists>(s::'a set). 
           Set_P P__a s \<and> Set__isMinIn__stp P__a(s, ss))"
-consts Set__hasMin_p :: "'a set set \<Rightarrow> bool"
-defs Set__hasMin_p_def: 
-  "Set__hasMin_p ss \<equiv> (\<exists>(s::'a set). s isMinIn_s ss)"
 types 'a Set__SetOfSetsWithMin = "'a set set"
-consts Set__min__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
-defs Set__min__stp_def: 
-  "Set__min__stp P__a ss
-     \<equiv> (THE (s::'a set). 
-       Set_P P__a s \<and> Set__isMinIn__stp P__a(s, ss))"
 theorem Set__min_Obligation_the: 
   "\<lbrakk>Set__hasMin_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMinIn_s ss"
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
   done
 consts Set__min :: "'a Set__SetOfSetsWithMin \<Rightarrow> 'a set"
 defs Set__min_def: "Set__min ss \<equiv> (THE (s::'a set). s isMinIn_s ss)"
+consts Set__min__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
+defs Set__min__stp_def: 
+  "Set__min__stp P__a ss
+     \<equiv> (THE (s::'a set). 
+       Set_P P__a s \<and> Set__isMinIn__stp P__a(s, ss))"
+consts isMaxIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMaxIn'_s" 60)
+defs isMaxIn_s_def: 
+  "((s::'a set) isMaxIn_s (ss::'a set set))
+     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s1 \<subseteq> s))"
 consts Set__isMaxIn__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> 'a set set \<Rightarrow> bool"
 defs Set__isMaxIn__stp_def: 
   "Set__isMaxIn__stp P__a
@@ -855,28 +859,24 @@ defs Set__isMaxIn__stp_def:
             \<and> (\<forall>(s1::'a set). 
                  Set_P P__a s1 \<and> s1 \<in> ss 
                    \<longrightarrow> Set__e_gt_eq__stp P__a(s, s1)))"
-consts isMaxIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMaxIn'_s" 60)
-defs isMaxIn_s_def: 
-  "((s::'a set) isMaxIn_s (ss::'a set set))
-     \<equiv> (s \<in> ss \<and> (\<forall>(s1::'a set). s1 \<in> ss \<longrightarrow> s1 \<subseteq> s))"
+consts Set__hasMax_p :: "'a set set \<Rightarrow> bool"
+defs Set__hasMax_p_def: 
+  "Set__hasMax_p ss \<equiv> (\<exists>(s::'a set). s isMaxIn_s ss)"
 consts Set__hasMax_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> bool"
 defs Set__hasMax_p__stp_def: 
   "Set__hasMax_p__stp P__a ss
      \<equiv> (\<exists>(s::'a set). 
           Set_P P__a s \<and> Set__isMaxIn__stp P__a(s, ss))"
-consts Set__hasMax_p :: "'a set set \<Rightarrow> bool"
-defs Set__hasMax_p_def: 
-  "Set__hasMax_p ss \<equiv> (\<exists>(s::'a set). s isMaxIn_s ss)"
 types 'a Set__SetOfSetsWithMax = "'a set set"
-consts Set__max__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
-defs Set__max__stp_def: 
-  "Set__max__stp P__a ss
-     \<equiv> (THE (s::'a set). 
-       Set_P P__a s \<and> Set__isMaxIn__stp P__a(s, ss))"
 theorem Set__max_Obligation_the: 
   "\<lbrakk>Set__hasMax_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMaxIn_s ss"
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)
   done
 consts Set__max :: "'a Set__SetOfSetsWithMax \<Rightarrow> 'a set"
 defs Set__max_def: "Set__max ss \<equiv> (THE (s::'a set). s isMaxIn_s ss)"
+consts Set__max__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
+defs Set__max__stp_def: 
+  "Set__max__stp P__a ss
+     \<equiv> (THE (s::'a set). 
+       Set_P P__a s \<and> Set__isMaxIn__stp P__a(s, ss))"
 end

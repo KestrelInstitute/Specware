@@ -13,6 +13,9 @@ theorem Function__o_subtype_constr:
 theorem Function__o__def: 
   "(g o f) x = g (f x)"
   by auto
+theorem Function__identity: 
+  "id o f = f \<and> f o id = f"
+  by auto
 theorem Function__identity__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    RFun P__a (id o f) = f 
@@ -20,17 +23,14 @@ theorem Function__identity__stp:
   apply(auto)
   apply(rule ext, simp)+
   done
-theorem Function__identity: 
-  "id o f = f \<and> f o id = f"
-  by auto
+theorem Function__associativity: 
+  "(h o g) o f = h o (g o f)"
+  apply(simp add: o_assoc)
+  done
 theorem Function__associativity__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    RFun P__a ((h o g) o f) = RFun P__a (h o (g o f))"
   apply(rule ext, simp)
-  done
-theorem Function__associativity: 
-  "(h o g) o f = h o (g o f)"
-  apply(simp add: o_assoc)
   done
 theorem Function__e_cl_gt_subtype_constr: 
   "\<lbrakk>Fun_PR P__c g\<rbrakk> \<Longrightarrow> P__c ((g o f) d__y)"
@@ -38,22 +38,26 @@ theorem Function__e_cl_gt_subtype_constr:
 theorem Function__e_cl_gt__def: 
   "g o f = g o f"
   by auto
+theorem Function__injective_p__def: 
+  "inj f 
+     = (\<forall>(x1::'a) (x2::'a). f x1 = f x2 \<longrightarrow> x1 = x2)"
+  apply(simp add: inj_on_def)
+  done
 consts Function__injective_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 defs Function__injective_p__stp_def: 
   "Function__injective_p__stp P__a f
      \<equiv> (\<forall>(x1::'a) (x2::'a). 
           P__a x1 \<and> P__a x2 
             \<longrightarrow> (f x1 = f x2 \<longrightarrow> x1 = x2))"
-theorem Function__injective_p__def: 
-  "inj f 
-     = (\<forall>(x1::'a) (x2::'a). f x1 = f x2 \<longrightarrow> x1 = x2)"
-  apply(simp add: inj_on_def)
-  done
 
 lemma Function__injective_p__stp_simp [simp]:
   "Function__injective_p__stp P f = (inj_on f P)"
   by (auto simp add: Function__injective_p__stp_def inj_on_def mem_def)
 
+theorem Function__surjective_p__def: 
+  "surj f = (\<forall>(y::'b). \<exists>(x::'a). f x = y)"
+  apply(simp add: surj_def eq_commute)
+  done
 consts Function__surjective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                        ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 defs Function__surjective_p__stp_def: 
@@ -63,16 +67,16 @@ defs Function__surjective_p__stp_def:
             \<forall>(y::'b). 
               P__b y 
                 \<longrightarrow> (\<exists>(x::'a). P__a x \<and> f x = y))"
-theorem Function__surjective_p__def: 
-  "surj f = (\<forall>(y::'b). \<exists>(x::'a). f x = y)"
-  apply(simp add: surj_def eq_commute)
-  done
 
 lemma Function__surjective_p__stp_simp[simp]:
   "Function__surjective_p__stp (A,B) f = surj_on f A B"
   by (auto simp add: Function__surjective_p__stp_def
                      Ball_def Bex_def mem_def surj_on_def)
 
+theorem Function__bijective_p__def: 
+  "bij f = (inj f \<and> surj f)"
+  apply(simp add: bij_def)
+  done
 consts Function__bijective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                       ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 defs Function__bijective_p__stp_def: 
@@ -81,10 +85,6 @@ defs Function__bijective_p__stp_def:
           \<lambda> (f::'a \<Rightarrow> 'b). 
             Function__injective_p__stp P__a f 
               \<and> Function__surjective_p__stp(P__a, P__b) f)"
-theorem Function__bijective_p__def: 
-  "bij f = (inj f \<and> surj f)"
-  apply(simp add: bij_def)
-  done
 
 lemma Function__bijective_p__stp_simp[simp]:
   "Function__bijective_p__stp (A,B) f = bij_ON f A B"
@@ -104,17 +104,6 @@ lemma Function__bij_inv_stp:
 types  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
 types  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
-theorem Function__inverse__stp_Obligation_the: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
-   \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
-  apply(auto simp add:
-          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
-  apply(rotate_tac -1, drule_tac x="y" in spec, auto)
-  done
-consts Function__inverse__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b \<Rightarrow> 'a"
-defs Function__inverse__stp_def: 
-  "Function__inverse__stp P__a f
-     \<equiv> (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
 theorem Function__inverse_Obligation_the: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). f x = (y::'b)"
   apply(auto simp add: bij_def surj_def inj_on_def)
@@ -131,6 +120,17 @@ theorem Function__inverse__def:
   apply(rule sym, rule the_equality)
   apply(auto simp add: bij_def surj_f_inv_f)
   done
+theorem Function__inverse__stp_Obligation_the: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
+   \<exists>!(x::'a). P__a x \<and> f x = (y::'b)"
+  apply(auto simp add:
+          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+  apply(rotate_tac -1, drule_tac x="y" in spec, auto)
+  done
+consts Function__inverse__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b \<Rightarrow> 'a"
+defs Function__inverse__stp_def: 
+  "Function__inverse__stp P__a f
+     \<equiv> (\<lambda> (y::'b). (THE (x::'a). P__a x \<and> f x = y))"
 
 lemma Function__inverse__stp_alt:
   "\<lbrakk>inj_on f A; y \<in> f`A\<rbrakk> \<Longrightarrow>
@@ -241,6 +241,10 @@ proof (auto simp add: Function__bijective_p__stp_def Function__inverse__stp_def)
   by (rule THE_SOME)
 qed
 
+theorem Function__inverse_comp: 
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> f o inv f = id \<and> inv f o f = id"
+  apply(simp add: bij_def surj_iff inj_iff)
+  done
 theorem Function__inverse_comp__stp [simp]: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
     Fun_P(P__a, P__b) f\<rbrakk> \<Longrightarrow> 
@@ -252,9 +256,9 @@ theorem Function__inverse_comp__stp [simp]:
   apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
   apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
   done
-theorem Function__inverse_comp: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> f o inv f = id \<and> inv f o f = id"
-  apply(simp add: bij_def surj_iff inj_iff)
+theorem Function__f_inverse_apply: 
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> f (inv f x) = x"
+  apply(simp add: bij_def surj_f_inv_f)
   done
 theorem Function__f_inverse_apply__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) f; 
@@ -263,9 +267,9 @@ theorem Function__f_inverse_apply__stp:
    f (Function__inverse__stp P__a f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
   done
-theorem Function__f_inverse_apply: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> f (inv f x) = x"
-  apply(simp add: bij_def surj_f_inv_f)
+theorem Function__inverse_f_apply: 
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> inv f (f (x::'a)) = x"
+  apply(simp add: bij_def inv_f_f)
   done
 theorem Function__inverse_f_apply__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; 
@@ -274,10 +278,20 @@ theorem Function__inverse_f_apply__stp:
    Function__inverse__stp P__a f (f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
   done
-theorem Function__inverse_f_apply: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> inv f (f (x::'a)) = x"
-  apply(simp add: bij_def inv_f_f)
-  done
+theorem Function__fxy_implies_inverse: 
+  "\<lbrakk>bij f; f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
+  proof -
+ assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
+ assume FXY: "f x = y"
+ have INV_SOME: "inv f y = (SOME x. f x = y)" by (auto simp add: inv_def)
+ from FXY have "\<exists>x. f x = y" by auto
+ hence "f (SOME x. f x = y) = y" by (rule someI_ex)
+ with FXY have EQF: "f x = f (SOME x. f x = y)" by auto
+ from BIJ have "\<And>x'. f x = f x' \<Longrightarrow> x = x'"
+  by (auto simp add: bij_def inj_on_def)
+ with EQF have "x = (SOME x. f x = y)" by auto
+ with INV_SOME show "x = inv f y" by auto
+qed
 theorem Function__fxy_implies_inverse__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) f; 
     Fun_P(P__a, P__b) f; 
@@ -310,26 +324,12 @@ theorem Function__fxy_implies_inverse__stp:
  with X have "(THE x. P__a x \<and> f x = y) = x" by (rule the_equality)
  with INV_THE show ?thesis by auto
 qed
-theorem Function__fxy_implies_inverse: 
-  "\<lbrakk>bij f; f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
-  proof -
- assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
- assume FXY: "f x = y"
- have INV_SOME: "inv f y = (SOME x. f x = y)" by (auto simp add: inv_def)
- from FXY have "\<exists>x. f x = y" by auto
- hence "f (SOME x. f x = y) = y" by (rule someI_ex)
- with FXY have EQF: "f x = f (SOME x. f x = y)" by auto
- from BIJ have "\<And>x'. f x = f x' \<Longrightarrow> x = x'"
-  by (auto simp add: bij_def inj_on_def)
- with EQF have "x = (SOME x. f x = y)" by auto
- with INV_SOME show "x = inv f y" by auto
-qed
+theorem Function__eta: 
+  "(\<lambda> (x::'a). (f::'a \<Rightarrow> 'b) x) = f"
+  by auto
 theorem Function__eta__stp: 
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    (\<lambda> (x::'a). if P__a x then f x else regular_val) = f"
   apply(rule ext, simp)
   done
-theorem Function__eta: 
-  "(\<lambda> (x::'a). (f::'a \<Rightarrow> 'b) x) = f"
-  by auto
 end

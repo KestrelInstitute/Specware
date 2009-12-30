@@ -16,8 +16,49 @@ SpecNorm qualifying spec
        Some(str::rst)
      | _ \_rightarrow None
 
-  op controlPragma?(s: String): Boolean =
-    embed? Some (controlPragmaString s)
+ type Pragma = String * String * String * Position
+
+ op controlPragma?(s: String): Boolean =
+   embed? Some (controlPragmaString s)
+
+ op  stripSpaces(s: String): String =
+   let len = length s in
+   case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow i)) of
+     | Some firstNonSpace \_rightarrow 
+       (case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow len-i-1)) of
+         | Some lastNonSpace \_rightarrow
+           subFromTo(s,firstNonSpace,lastNonSpace+1)
+         | _ \_rightarrow s)
+     | _ \_rightarrow s
+
+  op  isaPragma?(s: String): Boolean =
+    let s = stripSpaces s in
+    let len = length s in
+    len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
+	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")
+    \_or (len > 13 \_and subFromTo(s, 0, 14) = "Simplification")
+
+  op namedPragma?(p: Pragma): Boolean =
+    let (_,s,_,_) = p in
+    let line1 = case search("\n", s) of
+                  | None \_rightarrow s
+                  | Some n \_rightarrow subFromTo(s, 0, n)
+    in
+    case removeEmpty(splitStringAt(line1, " ")) of
+     | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
+       ~(name? = "fa"
+           \_or name?@0 in? [#(,#[,#\\,#",#-])  % #" #]
+     | _ \_rightarrow false
+
+  op unnamedPragma?(p: Pragma): Boolean =
+    ~(namedPragma? p || controlPragma? p.2)
+
+  op verbatimIdString: String = "-verbatim"
+
+  op verbatimPragma?(s: String): Boolean =
+    case controlPragmaString s of
+      | Some(str::_) \_rightarrow str = verbatimIdString
+      | _ \_rightarrow false
 
   op makeSubtypeConstrTheoremsString: String   =    "-subtype_constrs"
   op noMakeSubtypeConstrTheoremsString: String = "-no-subtype_constrs"
@@ -186,71 +227,91 @@ SpecNorm qualifying spec
     % let _ = writeLine("opt_tv_map: "^anyToString opt_tv_map) in
     (opt_tv_map, rel_tm)
 
+  op insertElPreservingNextPragma(el: SpecElement, new_el: SpecElement, next_elts: SpecElements)
+       : SpecElements =
+    case next_elts of
+      | (prg_el as Pragma prg) :: next_elts1 | unnamedPragma? prg->
+        [el, prg_el, new_el] ++ next_elts1
+      | _ -> [el, new_el] ++ next_elts
+
   op addRelativizedOps(spc: Spec, coercions: TypeCoercionTable): Spec * PolyOpTable =
     let ho_eqfns = findHOEqualityFuns spc in
-    let def relativizeElts(elts, top?, op_map, tb) =
-          foldl (fn ((new_elts, make_stp_thms?, op_map, tb), el) ->
-                 case el of
-                   | Import(s_tm, i_sp, im_elts, a) ->
-                     let (im_elts, _, op_map, tb) = relativizeElts(im_elts, false, op_map, tb) in
-                     (new_elts ++ [Import(s_tm, i_sp, im_elts, a)], make_stp_thms?, op_map, tb)
-                   | Pragma("proof", prag_str, "end-proof", _) \_rightarrow
-                     let make_stp_thms? =
-                          case controlPragmaString prag_str of
-                            | Some strs \_rightarrow
-                              if makeSubtypePredicateTheoremsString in? strs
-                                then true
-                              else if noMakeSubtypePredicateTheoremsString in? strs
-                                then false
-                              else make_stp_thms?
-                            | None -> make_stp_thms?
-                     in
-                     (new_elts ++ [el], make_stp_thms?, op_map, tb)
-                   | Op(qid as Qualified(q,id), _, a) ->
-                     % let _ = writeLine("Trying "^printQualifiedId qid) in
-                     (case AnnSpec.findTheOp(spc, qid) of
-                      | Some opinfo ->
-                        let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-                        % let dfn = refinedTerm(dfn, 0) in
-                        (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc, coercions) of
-                         | ([],_) -> (new_elts ++ [el], make_stp_thms?, op_map, tb)
-                         | (tv_map,_) ->
-                           let new_id = makeStpName id in
-                           let new_tb = insertAQualifierMap(tb, q, id,
-                                                            (Qualified(q,new_id),
-                                                             map (fn (tv,_) -> tv) tv_map))
-                           in
-                           let rel_ty_tm = substTyVarsWithSubtypes (tv_map, SortedTerm(dfn,ty,noPos)) in
-                           let SortedTerm(rel_dfn,ty,_) = rel_ty_tm in
-                           let rel_tm = mkLambda(mkTuplePat(map (fn (_,Var v) -> VarPat v) tv_map),
-                                                 rel_dfn)
-                           in
-                           let new_ty = mkArrow(mkProduct(map (fn (_,Var((_,ty),_)) -> ty) tv_map), ty) in
-                           let new_opinfo = {names = [Qualified(q,new_id)],
-                                             dfn = Pi(tvs, SortedTerm(rel_tm, new_ty, noPos), noPos),
-                                             fixity = Nonfix,
-                                             fullyQualified? = opinfo.fullyQualified?}
-                           in
-                           let new_op_map = insertAQualifierMap(op_map,q,new_id,new_opinfo) in
-                           let new_el = Op(Qualified(q,new_id), true, a) in
-                           (new_elts ++ [new_el, el], make_stp_thms?, new_op_map, new_tb))
-                      | _ -> (new_elts ++ [el], make_stp_thms?, op_map, tb))
-                   | Property(knd, qid as Qualified(q,id), tvs, bod, a)
-                       | make_stp_thms? && tvs ~= [] && knd ~= Conjecture ->
-                     % let _ = writeLine("Trying "^printQualifiedId qid^": "^printTerm bod) in
-                     (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc, coercions) of
-                        | ([],_) -> (new_elts ++ [el], make_stp_thms?, op_map, tb)
-                        | (tv_map,_) ->
-                          let new_id = id ^ "__stp" in
-                          let rel_bod = substTyVarsWithSubtypes (tv_map, bod) in
-                          let new_bod = Bind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, rel_bod, a) in
-                          let new_prop = Property(knd, Qualified(q,new_id), tvs, new_bod, a)in
-                          (new_elts ++ [new_prop, el], make_stp_thms?, op_map, tb))
-                   | _ -> (new_elts ++ [el], make_stp_thms?, op_map, tb))
-             ([], makeStpTheoremsDefault?, op_map, tb)
-             elts
+    let def relativizeElts(elts, top?, make_stp_thms?, op_map, tb) =
+          case elts of
+            | [] -> ([], op_map, tb)
+            | el :: r_elts ->
+          case el of
+            | Import(s_tm, i_sp, im_elts, a) ->
+              let (im_elts, op_map, tb) = relativizeElts(im_elts, false, makeStpTheoremsDefault?,
+                                                            op_map, tb) in
+              let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+              (Import(s_tm, i_sp, im_elts, a) :: new_elts, op_map, tb)
+            | Pragma("proof", prag_str, "end-proof", _) \_rightarrow
+              let make_stp_thms? =
+                   case controlPragmaString prag_str of
+                     | Some strs \_rightarrow
+                       if makeSubtypePredicateTheoremsString in? strs
+                         then true
+                       else if noMakeSubtypePredicateTheoremsString in? strs
+                         then false
+                       else make_stp_thms?
+                     | None -> make_stp_thms?
+              in
+              let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+              (el :: new_elts, op_map, tb)
+            | Op(qid as Qualified(q,id), _, a) ->
+              % let _ = writeLine("Trying "^printQualifiedId qid) in
+              (case AnnSpec.findTheOp(spc, qid) of
+               | Some opinfo ->
+                 let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+                 % let dfn = refinedTerm(dfn, 0) in
+                 (case tryRelativizeTerm(tvs, dfn, tb, ty, ho_eqfns, spc, coercions) of
+                  | ([],_) ->
+                    let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+                    (el :: new_elts, op_map, tb)
+                  | (tv_map,_) ->
+                    let new_id = makeStpName id in
+                    let new_tb = insertAQualifierMap(tb, q, id,
+                                                     (Qualified(q,new_id),
+                                                      map (fn (tv,_) -> tv) tv_map))
+                    in
+                    let rel_ty_tm = substTyVarsWithSubtypes (tv_map, SortedTerm(dfn,ty,noPos)) in
+                    let SortedTerm(rel_dfn,ty,_) = rel_ty_tm in
+                    let rel_tm = mkLambda(mkTuplePat(map (fn (_,Var v) -> VarPat v) tv_map),
+                                          rel_dfn)
+                    in
+                    let new_ty = mkArrow(mkProduct(map (fn (_,Var((_,ty),_)) -> ty) tv_map), ty) in
+                    let new_opinfo = {names = [Qualified(q,new_id)],
+                                      dfn = Pi(tvs, SortedTerm(rel_tm, new_ty, noPos), noPos),
+                                      fixity = Nonfix,
+                                      fullyQualified? = opinfo.fullyQualified?}
+                    in
+                    let new_op_map = insertAQualifierMap(op_map,q,new_id,new_opinfo) in
+                    let new_el = Op(Qualified(q,new_id), true, a) in
+                    let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?,
+                                                                new_op_map, new_tb) in
+                    (insertElPreservingNextPragma(el, new_el, new_elts), op_map, tb))
+               | _ ->
+                 let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+                 (el :: new_elts, op_map, tb))
+            | Property(knd, qid as Qualified(q,id), tvs, bod, a)
+                | make_stp_thms? && tvs ~= [] && knd ~= Conjecture ->
+              let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+              % let _ = writeLine("Trying "^printQualifiedId qid^": "^printTerm bod) in
+              (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc, coercions) of
+                 | ([],_) -> (el :: new_elts, op_map, tb)
+                 | (tv_map,_) ->
+                   let new_id = id ^ "__stp" in
+                   let rel_bod = substTyVarsWithSubtypes (tv_map, bod) in
+                   let new_bod = Bind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, rel_bod, a) in
+                   let new_prop = Property(knd, Qualified(q,new_id), tvs, new_bod, a)in
+                   (insertElPreservingNextPragma(el, new_prop, new_elts), op_map, tb))
+            | _ ->
+              let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
+              (el :: new_elts, op_map, tb)
     in
-    let (new_elts, _, new_op_map, tb) = relativizeElts(spc.elements, false, spc.ops, emptyAQualifierMap) in
+    let (new_elts, new_op_map, tb) = relativizeElts(spc.elements, false, makeStpTheoremsDefault?,
+                                                    spc.ops, emptyAQualifierMap) in
     let spc = spc << {elements = new_elts, ops = new_op_map} in
     (spc, tb)
 

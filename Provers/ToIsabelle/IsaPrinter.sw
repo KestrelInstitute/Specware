@@ -41,8 +41,6 @@ IsaTermPrinter qualifying spec
                  source_of_thy_morphism?: Boolean,
                  typeNameInfo: List(QualifiedId * TyVars * Sort)}
 
- type Pragma = String * String * String * Position
-
  op  specialOpInfo: Context \_rightarrow QualifiedId \_rightarrow Option OpTransInfo
  def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
 
@@ -631,42 +629,12 @@ IsaTermPrinter qualifying spec
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true
 
-  op  isaPragma?: String \_rightarrow Boolean
-  def isaPragma? s =
-    let s = stripSpaces s in
-    let len = length s in
-    len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
-	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")
-    \_or (len > 13 \_and subFromTo(s, 0, 14) = "Simplification")
-
-  op namedPragma?(p: Pragma): Boolean =
-    let (_,s,_,_) = p in
-    let line1 = case search("\n", s) of
-                  | None \_rightarrow s
-                  | Some n \_rightarrow subFromTo(s, 0, n)
-    in
-    case removeEmpty(splitStringAt(line1, " ")) of
-     | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
-       ~(name? = "fa"
-           \_or name?@0 in? [#(,#[,#\\,#",#-])  % #" #]
-     | _ \_rightarrow false
-
-  op unnamedPragma?(p: Pragma): Boolean =
-    ~(namedPragma? p || controlPragma? p.2)
-
-  op verbatimIdString: String = "-verbatim"
-
-  op verbatimPragma?(s: String): Boolean =
-    case controlPragmaString s of
-      | Some(str::_) \_rightarrow str = verbatimIdString
-      | _ \_rightarrow false
-
   %% Originally was just supertype but generalized to also be a named type
   op getSuperTypeOp(ty: Sort): QualifiedId =
     case ty of
       | Base(superty,_,_) \_rightarrow superty
       | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
-      | _ \_rightarrow fail("Not a Subsort and not a named type")
+      | _ \_rightarrow fail("Not a Subtype and not a named type")
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
@@ -2859,17 +2827,6 @@ def isSimplePattern? trm =
      | Record(prs as (("1",_)::_),_) \_rightarrow
        forall? (\_lambda (_,p) \_rightarrow varOrTupleTerm? p) prs
      | _ \_rightarrow false
-
- op  stripSpaces: String \_rightarrow String
- def stripSpaces s =
-   let len = length s in
-   case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow i)) of
-     | Some firstNonSpace \_rightarrow 
-       (case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow len-i-1)) of
-         | Some lastNonSpace \_rightarrow
-           subFromTo(s,firstNonSpace,lastNonSpace+1)
-         | _ \_rightarrow s)
-     | _ \_rightarrow s
 
  op overloadedConstructors(spc: Spec): List String =
    (foldSortInfos
