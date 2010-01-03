@@ -149,6 +149,13 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 	 else [srt1]
      | _ -> [srt1]
 
+ op recordTypes(sp: Spec, ty1: Sort): List Sort =
+   let ty = unfoldBase(sp, ty1) in
+   case stripSubsorts (sp, ty)
+    of Product (fields, _) ->
+       map (fn (_,x) -> x) fields
+     | _ -> [ty1]
+
  def coproduct (sp : Spec, srt : Sort) = 
   case stripSubsorts (sp, srt) of
     | CoProduct (fields, _) -> fields
