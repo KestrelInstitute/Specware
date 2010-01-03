@@ -50,6 +50,25 @@ WadlerLindig qualifying spec
     else
       ""
 
+  op fits(doc: Doc, rest: Doc, len: Nat): Bool =
+    if len < 0 then false
+    else
+    case doc of
+      | DocGroup d -> false
+      | DocText s -> fits(rest, DocNil, len - length s)
+      | DocNewline -> true
+      | DocBreak s -> true
+      | DocIndent (newIndent,doc) -> false
+      | DocNest (n,innerDoc) -> false
+      | DocCons (l,r) -> fits(l, DocCons (r, rest), len)
+      | DocNil ->
+    case rest of
+      | DocCons (l, r) -> fits(l, r, len)
+      | DocNil -> true
+      | _ -> fits(rest, DocNil, len)
+
+  op lineLength: Nat = 90
+
   % The following is a tail recursive version of the function "layout" defined above.
   % The functions spaces and aux would normally be defined within the scope of the "layout"
   % function, but doing so generates Lisp code that the ACL compiler fails to detect as
@@ -59,9 +78,13 @@ WadlerLindig qualifying spec
   def layout doc rest column indent stream =
     case doc of
       | DocGroup d -> layout d rest column indent stream
-      | DocText s -> layout rest DocNil (column + (length s)) indent (Cons (s, stream))
-      | DocNewline -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
-      | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
+      | DocText s  -> layout rest DocNil (column + (length s)) indent (s :: stream)
+      | DocNewline -> layout rest DocNil indent indent
+                        (spaces indent :: "\n" :: stream)
+      | DocBreak s ->
+        if fits(DocText s, rest, lineLength - column)
+          then layout rest DocNil column indent (s :: stream)
+        else layout rest DocNil indent indent (spaces indent :: "\n" :: stream)
       | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
       | DocNest (n,innerDoc) ->
           layout innerDoc (DocIndent (indent, rest)) column (column + n) stream
@@ -93,7 +116,7 @@ WadlerLindig qualifying spec
   def ppNest i x = DocNest (i,x)
   
   op ppBreak : Doc
-  def ppBreak = DocBreak " "
+  def ppBreak = DocBreak ""
   
   op ppBreakWith : String -> Doc
   def breakWith s = DocBreak s
