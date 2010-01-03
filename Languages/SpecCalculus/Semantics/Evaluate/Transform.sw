@@ -34,7 +34,7 @@ spec
   op makeQID(itm: TransformExpr): SpecCalc.Env QualifiedId =
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))
-      | Name(n,_) -> return (mkUnQualifiedId n)
+      | Name(n,_)   -> return (Qualified(wildQualifier,n))
       | _ -> raise (TypeCheck (posOf itm, "Name expected."))
 
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
