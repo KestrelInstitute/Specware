@@ -40,9 +40,11 @@ spec
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
+ op wildQualifier: String = "*"
+
  op ppQid(Qualified(q,nm): QualifiedId): WadlerLindig.Pretty =
    if q = UnQualified then ppString nm
-     else ppConcat[ppString q, ppString nm]
+     else ppConcat[ppString q, ppString ".", ppString nm]
 
  op ppLoc(loc: Location): WadlerLindig.Pretty =
    case loc of
@@ -82,7 +84,11 @@ spec
       | Simplify rules ->
         if rules = [] then ppString "simplify"
           else
-            ppConcat [ppString "simplify (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
+            ppConcat [ppString "simplify ",
+                      ppNest 1 (ppConcat [ppString "(",
+                                          ppSep (ppConcat [ppString ", ", ppBreak])
+                                            (map ppRuleSpec rules),
+                                          ppString ")"])]
       | Apply [rl] -> ppRuleSpec rl
       | Apply rules ->
         ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
@@ -150,7 +156,7 @@ spec
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
-   if cq = UnQualified
+   if cq = wildQualifier
      then pid = cid
    else cq = pq && cid = pid
 
@@ -160,20 +166,29 @@ spec
             [])
       else rls
 
+  op findMatchingOps (spc: Spec, Qualified (q, id): QualifiedId): List OpInfo =
+   if q = wildQualifier
+     then wildFindUnQualified (spc.ops, id)
+     else case findAQualifierMap (spc.ops, q, id) of
+            | Some info -> [info]
+            | None      -> []
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q,nm)) \_rightarrow
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, true))
+                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow
+                                                   defRule(context, q, nm, info, true))
                                               info.names))
-                              (findAllOps(spc,qid))))
+                              (findMatchingOps(spc,qid))))
       | Rewrite(qid as Qualified(q,nm)) \_rightarrow   % Like Unfold but only most specific rules
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow defRule(context, q, nm, info, false))
+                                   flatten (map (fn (Qualified(q,nm)) \_rightarrow
+                                                   defRule(context, q, nm, info, false))
                                               info.names))
-                              (findAllOps(spc,qid))))
+                              (findMatchingOps(spc,qid))))
       | Fold(qid) \_rightarrow
         map (\_lambda rl \_rightarrow rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, Unfold(qid)))
@@ -446,6 +461,7 @@ spec
     let Qualified(q,id) = qid in
     spc << {ops = insertAQualifierMap(spc.ops,q,id,opinfo)}
 
+(* Unused
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
     case findAllOps(spc,qid) of
       | [] \_rightarrow (warn("No defined op with that name."); None)
@@ -453,6 +469,7 @@ spec
         let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
+*)
 
   op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): SpecCalc.Env (Spec * Boolean) =
     case script of
@@ -464,7 +481,7 @@ spec
           when tracing? 
             (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
           foldM (fn (spc,tracing?) -> fn Def qid \_rightarrow
-                 case findAllOps(spc,qid) of
+                 case findMatchingOps(spc,qid) of
                    | [] \_rightarrow {
                        print ("Can't find op " ^ anyToString qid ^ "\n");
                        return (spc,tracing?)
@@ -485,7 +502,7 @@ spec
         }
       | IsoMorphism(iso_osi_prs, rls) \_rightarrow {
           result <- makeIsoMorphism(spc, iso_osi_prs, Some "XXX", rls);
-          return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
+          % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
           return (result,tracing?)
         }
         % (time(makeIsoMorphism(spc, iso_osi_prs, rls)), tracing?)

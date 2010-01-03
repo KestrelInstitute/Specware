@@ -317,7 +317,7 @@ spec
   % referencing that op together with the type variables and source and
   % target types for the op.
   op findOpInfo(spc: Spec, qid: QualifiedId): Option(IsoInfo) =
-    case findAllOps(spc,qid) of
+    case findMatchingOps(spc,qid) of
       | [] \_rightarrow (warn("No op with name: " ^ printQualifiedId qid);
                          None)
       | [opinfo] \_rightarrow
@@ -633,7 +633,7 @@ spec
 
   %{{{  findOpInfo
   op Env.findOpInfo (spc:Spec) (qid:QualifiedId) : SpecCalc.Env IsoInfo =
-    case findAllOps (spc,qid) of
+    case findMatchingOps (spc,qid) of
       | [] -> escape ("No op with name: " ^ toString qid ^ "\n")
       | [opinfo] -> {
           (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn); 
@@ -934,11 +934,11 @@ spec
       opinfo_1 is a reference to qid' (via the isomorphisms) and opinfo_2
       is opinfo in the new type.  ### LE not sure I understand opinfo_2? *)
       def makeDerivedOpDefs(spc:           Spec,
-                          iso_info:      IsoInfoList,
-                          iso_fn_info:   IsoFnInfo,
-                          base_src_QIds: List QualifiedId,
-                          src_QIds:      List QualifiedId,
-                          qidPrMap:      QualifiedIdMap)
+                            iso_info:      IsoInfoList,
+                            iso_fn_info:   IsoFnInfo,
+                            base_src_QIds: List QualifiedId,
+                            src_QIds:      List QualifiedId,
+                            qidPrMap:      QualifiedIdMap)
          : SpecCalc.Env (List (OpInfo * OpInfo)) =
         foldOverQualifierMap
           (fn (q, nm, qid_pr, result) ->
@@ -953,19 +953,19 @@ spec
                else
                  isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
              if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then {
-               print ("\nmpo: " ^ printQualifiedId qid_pr ^ " opaque!");
+               print ("\nmdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
                prim_dfn <- return (primeTermsTypes(dfn, qidPrMap, iso_info)); 
-               print (printTermWithSorts dfn ^ "\n" ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn)
+               print (printTermWithSorts dfn ^ "\n" ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n")
              }
              else
-               print ("mpo: "^printQualifiedId qid_pr^" not opaque\n");
-             % let _ = if nm = "inverse" then writeLine("mpo: "^printTermWithSorts dfn_pr) else () in
+               print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
+             % let _ = if nm = "inverse" then writeLine("mdod: "^printTermWithSorts dfn_pr) else () in
              qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
              id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
              new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
              % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
              return ((info << {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
-              info << {names = [qid_pr],
+                      info << {names = [qid_pr],
                       dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
              ::result)
           }) [] qidPrMap
@@ -996,9 +996,7 @@ spec
                         if ty = uf_ty then
                           return (identityFn ty)
                         else
-                          isoTypeFn (spc, iso_info, iso_fn_info) uf_ty
-                     | xx -> escape ("isoTyFn: Base: None: " ^ anyToString xx ^ "\n"))
-               | xx -> escape ("isoTyFn: Base: " ^ anyToString xx ^ "\n"))
+                          isoTypeFn (spc, iso_info, iso_fn_info) uf_ty))
           %}}}
           %{{{  Arrow
           | Arrow(dom,ran,_) -> {
@@ -1376,7 +1374,7 @@ spec
                       % But first we must recursively transform the body of the new op
                       opsDone <- return (Cons ((qual,id,ty),opsDone));
                       info <- Env.findTheOp spc (mkQualifiedId (qual,id));
-                      (defTypeVars,defnType,defnTerm) <- return (unpackTerm info.dfn);
+                      (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
                       monoDefn <- case typeMatch(defnType, ctxtType, spc, false) of
                          | None -> {
                              print ("defnType: " ^ printSort defnType ^ "\n");
@@ -1415,7 +1413,9 @@ spec
             %}}}
             %{{{  Record (pairs,pos)
             | Record (pairs, pos) -> {
-                types <- return (productSorts(spc,ctxtType));
+                types <- return (recordTypes(spc,ctxtType));
+                when (length types ~= length pairs)
+                  (print("zip3err:\n"^printTerm trm^ " :\n"^ printSort ctxtType));
                 triples <- 
                   let
                     def zip3 trms typs =
@@ -1642,6 +1642,7 @@ spec
     (* Rewriting is performed on individual ops rather than on the entire spec. *)
 
     print "rewriting ... \n";
+    print (scriptToString main_script); 
     simp_ops
        <- Env.mapOpInfos
            (fn opinfo ->
@@ -1658,10 +1659,11 @@ spec
                 (qid as Qualified(q, id)) <- return (head opinfo.names);
                 ((simp_dfn,_),_) <-
                   if simplifyIsomorphism? then {
+                    % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
                     b <- existsSubTerm (fn t -> let ty = inferType(spc, t) in {
                        isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
                        return (equalType?(ty, isoTy))}) dfn;
-                    if b && (simplifyUnPrimed? || none?(findTheOp(spc, makeDerivedQId qid))) then {
+                    if (simplifyUnPrimed? || some?(findTheOp(spc, makeDerivedQId qid))) then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
                       interpretTerm(spc, main_script, dfn, dfn, false)
