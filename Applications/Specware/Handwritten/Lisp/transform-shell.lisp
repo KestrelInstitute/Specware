@@ -149,11 +149,13 @@
 	     (loop for x in *transform-commands* thereis (functionp x)))
     (let ((prev-result (previous-multi-command nil)))
       (when prev-result
-	(setq *transform-spec* (car (Script::interpretSpec-3 *transform-spec* prev-result nil)))
+	(setq *transform-spec* (cadar (funcall (Script::interpretSpec-3 *transform-spec*
+                                                                        prev-result nil)
+                                               nil)))
 	(push prev-result *transform-commands*)))))
 
 (defun parse-qid (qid-str)
-  (let* ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhitesPace qid-str) "."))
+  (let* ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) "."))
 	 (len (length syms)))
     (if (= len 1)
 	(MetaSlang::mkUnQualifiedId (first syms))
@@ -164,10 +166,13 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let ((new-term (car (Script::interpretTerm-5 *transform-spec* command
-						    (car *transform-term*)
-						    (cdr *transform-term*)
-						    nil))))
+      (let* (;(dum (format t "~a\~%~a~%" (car *transform-term*) (cdr *transform-term*)))
+             (result (Script::interpretTerm-5 *transform-spec* command
+                                              (car *transform-term*)
+                                              (cdr *transform-term*)
+                                              nil))
+             (result (funcall result nil))
+             (new-term (cadar result)))
 	(if (MetaSlang::equalTerm?-2 (car *transform-term*) (car new-term))
 	    (format t "No effect!")
 	    (progn 
@@ -266,8 +271,8 @@
 
 	   (pc                 (print-current-term nil))
 	   (pcv                (print-current-term t))
-	   ((undo back)        (undo-command (and argstr (String-Spec::removeWhitesPace argstr)) nil))
-	   (redo               (redo-command (and argstr (String-Spec::removeWhitesPace argstr))))
+	   ((undo back)        (undo-command (and argstr (String-Spec::removeWhiteSpace argstr)) nil))
+	   (redo               (redo-command (and argstr (String-Spec::removeWhiteSpace argstr))))
 	   ((trace-rewrites trr) (setq MetaSlangRewriter::traceRewriting 2)
 	                         (format t "Rewrite tracing turned on.")
 	                         (values))
