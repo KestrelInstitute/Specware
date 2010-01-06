@@ -362,7 +362,9 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\'      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\_      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\-      "w"     specware-mode-syntax-table)
-  (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table))
+  (modify-syntax-entry ?\?      "w"     specware-mode-syntax-table)
+  (modify-syntax-entry ?\«      "."     specware-mode-syntax-table)
+  (modify-syntax-entry ?\»      "."     specware-mode-syntax-table))
 
 
 (require 'regexp-opt)
