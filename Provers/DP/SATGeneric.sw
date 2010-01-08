@@ -176,9 +176,13 @@ SAT qualifying spec
 	let cond = condition(hyp) in
 	let t1 = thenTerm(hyp) in
 	let t2 = elseTerm(hyp) in
-	let imp1 = mkImplies(cond, t1) in
+(*	let imp1 = mkImplies(cond, t1) in
 	let imp2 = mkImplies(negate(cond), t2) in
 	flattenAndSplitHypsInt(Cons(mkConjunction(imp1, imp2), rest))
+*)
+        let dis1 = mkConjunction(cond, t1) in
+        let dis2 = mkConjunction(negate cond, t2) in
+        flattenAndSplitHypsInt(Cons(mkDisjunction(dis1, dis2), rest))
 (*      The following transformation should be done at the level above this
         or the level below this.
         At this level the details of the atomic formulae are abstracted away.
