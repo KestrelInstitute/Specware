@@ -319,7 +319,7 @@ proof Isa ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.^         -> @ Left 25
+  String.^          -> @ Left 25
   String.map        -> map
   String.exists?    -> list_ex
   String.forall?    -> list_all
