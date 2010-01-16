@@ -733,13 +733,13 @@ Estimated total monitoring overhead: 0.88 seconds
 )
 
 ;;; Lucid, Allegro, and Macintosh Common Lisp
-#+(OR :lcl3.0 :lcl4.0 :excl :mcl :Genera) 
+#+(or :lcl3.0 :lcl4.0 :excl :mcl :genera) 
 (defun REQUIRED-ARGUMENTS (name)
   (let* ((function (symbol-function name))
          (args #+:excl(excl::arglist function)
                #+:mcl(ccl:arglist function)
 	       #+Genera(scl:arglist function)
-               #-(or :excl :mcl :Genera)(arglist function))
+               #-(OR :excl :mcl :Genera)(arglist function))
          (pos (position-if #'(lambda (x)
                                (and (symbolp x)
                                     (let ((name (symbol-name x)))
