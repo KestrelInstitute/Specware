@@ -59,7 +59,7 @@ AnnSpecPrinter qualifying spec
 
  op printTyVars                  : TyVars            -> String 
 %op printSort                    : [a] ASort       a -> String 
- op printPattern                 : [a] APattern    a -> String
+%op printPattern                 : [a] APattern    a -> String
  op printSortScheme              : [a] ASortScheme a -> String 
  op printTermScheme              : [a] ATermScheme a -> String 
  op printTermWithSorts           : [a] ATerm       a -> String
@@ -230,7 +230,7 @@ AnnSpecPrinter qualifying spec
                                         let context = context << {printSort = true} in
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
-		       (3, ppTerm context ([2, i] ++ path, Top) trm)])
+		       (2, ppTerm context ([2, i] ++ path, Top) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -240,7 +240,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (3, ppTerm context ([3, i] ++ path, Top) trm)])
+		       (2, ppTerm context ([3, i] ++ path, Top) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
@@ -354,7 +354,7 @@ AnnSpecPrinter qualifying spec
 	      blockFill (0, 
 			 [(0, printOp (context, pp, top, srt, a)), 
 			  (0, string " : "), 
-			  (0, ppSort context ([0] ++ path, Top) srt)])
+			  (2, ppSort context ([0] ++ path, Top) srt)])
 	    else 
 	      printOp (context, pp, top, srt, a)
 	  | Var ((id, srt), _) -> 
@@ -585,9 +585,9 @@ AnnSpecPrinter qualifying spec
 	      | MetaTyVar _ ->  
 	        ppTerm context ([0] ++ path, Top) t
 	      | _ ->
-	        prettysNone [ppTerm context ([0]++ path, Top) t, 
-			     string ":", string " ", 
-			     ppSort context ([1]++ path, Top) s])
+	        prettysFill [ppTerm context ([0]++ path, Top) t, 
+			     prettysNone[string ":", string " ", 
+                                         ppSort context ([1]++ path, Top) s]])
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -781,7 +781,7 @@ AnnSpecPrinter qualifying spec
 	 blockFill (0, 
 		    [(0, pp.fromString id), 
 		     (0, string " : "), 
-		     (0, ppSort context ([0] ++ path, Top : ParentSort) srt)])
+		     (2, ppSort context ([0] ++ path, Top : ParentSort) srt)])
        else 
 	 pp.fromString id
      | EmbedPat  ("Nil", None, Base (Qualified ("List",      "List"), [_], _), _) -> string "[]"
@@ -875,10 +875,12 @@ AnnSpecPrinter qualifying spec
 	     enclose (enclosed, 
 		      blockFill (0, 
 				 [(0, ppPattern context ([0]++ path, true) pat), 
-				  (0, pp.Bar), 
-				  (0, ppTerm context ([1]++ path, Top) term)])) %)
+				  (1, blockNone (0, [(0, pp.Bar), 
+                                                     (0,
+                                                      let context = context << {printSort = false} in
+                                                      ppTerm context ([1]++ path, Top) term)]))])) %)
 
-     | _ -> System.fail "Uncovered case for pattern"
+     | _ -> System.fail "Uncovered2 case for pattern"
       
 
  def printTyVars tvs =
@@ -922,7 +924,7 @@ AnnSpecPrinter qualifying spec
 				                  ([], Top) 
 						  scheme))
 
- def printPattern pat = 
+ def AnnSpecPrinter.printPattern pat = 
    PrettyPrint.toString (format (80, ppPattern (initialize (asciiPrinter, false))
 			                       ([], true) 
 					       pat))
@@ -1029,71 +1031,77 @@ AnnSpecPrinter qualifying spec
      def ppDeclWithArgs (tvs, srt, tm) =
        case (tm, srt) of
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
-           [(0, string " ("), 
-            (0, ppPattern context ([index, opIndex], true) (SortedPat (pat, dom, apos))),
-            (0, string ")")]
+           [(4, blockNone (0, [(0, string " ("), 
+                               (0, ppPattern context ([index, opIndex], true)
+                                     (SortedPat (pat, dom, apos))),
+                               (0, string ")")]))]
            ++
            ppDeclWithArgs (tvs, rng, body)
          | _ ->
-           [(0, case info.fixity of
-                  | Nonfix         -> string ""
-                  | Unspecified    -> string ""
-                  | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                  | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
-            (0, string " :"), 
-            (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
-                               (0, string " "), 
-                               (3, ppSort context ([index, opIndex], Top) srt)])),
-            (0, string " ")]
+           (case info.fixity of
+              | Nonfix           -> []
+              | Unspecified      -> []
+              | Infix (Left, i)  -> [(4, string (" infixl "^Nat.show i))]
+              | Infix (Right, i) -> [(4, string (" infixr "^Nat.show i))])
+           ++
+            [(4, blockNone (0, [(0, string " :"), 
+                                (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
+                                                     (0, string " "), 
+                                                   (4, ppSort context ([index, opIndex], Top) srt)])),
+                                (0, string " ")]))]
            ++
            ppDefAux ([index, defIndex], tm)
 
      def ppDecl tm =
        let (tvs, srt, tm) = unpackTerm tm in
-       (1, blockFill (0, 
-                      [(0, pp.Op)] ++ 
+       (1, blockLinear
+             (0, 
+              [(0, blockFill
+                    (0, [(0, pp.Op)] ++ 
                        %(0, string " "),
                        (if printOpWithDef? && tvs ~= []
-                          then [(0, ppForallTyVars pp tvs), (0, string " ")]
+                   then [(0, ppForallTyVars pp tvs), (0, string " ")]
                         else []) ++
-                       [(0, ppOpNames ())]
-                      ++
-                      (if printOpWithDef? then
-                         case (tm, srt) of
-                           | (Lambda _, Arrow _) ->
-                             ppDeclWithArgs (tvs, srt, tm)
-                           | _ ->
-                             [(0, case info.fixity of
-                                    | Nonfix         -> string ""
-                                    | Unspecified    -> string ""
-                                    | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                                    | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
-                              (0, string " :"), 
-                              (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
-                                                 (0, string " "), 
-                                                 (3, ppSort context ([index, opIndex], Top) srt)])),
-                              (0, string " ")]
-                             ++
-                             ppDefAux ([index, defIndex], tm)
-                       else
-                         [(0, case info.fixity of
-                                | Nonfix         -> string ""
-                                | Unspecified    -> string ""
-                                | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                                | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
-                          (0, string " :"), 
-                          (0, blockNone (0, [(0, if empty? tvs then string "" else string " "),
-                                             (0, ppForallTyVars pp tvs), 
-                                             (0, string " "), 
-                                             (3, ppSort context ([index, opIndex], Top) srt)]))
-                          ])))
+                       [(0, ppOpNames ())]))]
+                ++
+                (if printOpWithDef? then
+                   case (tm, srt) of
+                     | (Lambda _, Arrow _) ->
+                       ppDeclWithArgs (tvs, srt, tm)
+                     | _ ->
+                       [(0, blockFill(0, [(0, case info.fixity of
+                                                | Nonfix         -> string ""
+                                                | Unspecified    -> string ""
+                                                | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                                                | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
+                                          (0, string " :"), 
+                                          (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
+                                                               (0, string " "), 
+                                                             (4, ppSort context
+                                                                   ([index, opIndex], Top) srt)])),
+                                          (0, string " ")]))]
+                       ++
+                       ppDefAux ([index, defIndex], tm)
+                 else
+                   [(0, blockFill
+                          (0, [(0, case info.fixity of
+                                     | Nonfix         -> string ""
+                                     | Unspecified    -> string ""
+                                     | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                                     | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
+                               (0, string " :"), 
+                               (0, blockNone (0, [(0, if empty? tvs then string "" else string " "),
+                                                  (0, ppForallTyVars pp tvs), 
+                                                  (0, string " "), 
+                                                  (4, ppSort context ([index, opIndex], Top) srt)]))
+                               ]))])))
        
      def ppDefAux (path, term) = 
        case term of
 	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
 	   let pat  = ppPattern context ([0, 0] ++ path, false) pat in 
 	   let body = ppDefAux ([2, 0] ++ path, body) in
-	   let prettys = [(0, pat), (0, string " ")] ++ body in
+	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
 	   if markSubterm? context then
 	     let num = State.! context.markNumber in
 	     let table = State.! context.markTable in
@@ -1103,9 +1111,9 @@ AnnSpecPrinter qualifying spec
 	   else 
 	     prettys
 	 | _ -> 
-	     [(0, pp.DefEquals), 
-	      (0, string " "), 
-	      (2, ppTerm context (path, Top) term)]
+           [(2, blockNone (1, [(0, pp.DefEquals), 
+                               (0, string " "), 
+                               (2, ppTerm context (path, Top) term)]))]
 	     
      def ppDef tm =
        let (tvs, opt_srt, _) = unpackTerm tm in
