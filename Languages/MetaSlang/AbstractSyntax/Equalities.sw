@@ -41,7 +41,10 @@ MetaSlang qualifying spec
      | (Some x1, Some y1) -> eqFn (x1, y1)
      | _ -> false
 
+ op traceEqualTerm?: Bool = false
+
  def equalTerm? (t1, t2) =
+   let _ = if traceEqualTerm? then writeLine(printTerm t1^" =?= "^printTerm t2) else () in
    case (t1, t2) of
 
      | (Apply      (x1, y1,      _),
@@ -118,6 +121,7 @@ MetaSlang qualifying spec
      | _ -> false
 
  def equalType? (s1, s2) =
+   let _ = if traceEqualTerm? then writeLine(printSort s1^" =?= "^printSort s2) else () in
    case (s1,s2) of
 
      | (Arrow     (x1, y1,  _),
@@ -207,6 +211,7 @@ MetaSlang qualifying spec
      | _ -> false
 
  def equalPattern? (p1, p2) =
+   let _ = if traceEqualTerm? then writeLine(printPattern p1^" =?= "^printPattern p2) else () in
    case (p1, p2) of
 
      | (AliasPat    (x1, y1,      _),
