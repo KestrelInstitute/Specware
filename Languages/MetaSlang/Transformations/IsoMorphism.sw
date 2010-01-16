@@ -280,13 +280,13 @@ spec
    foldM
      (fn newMap -> fn id -> 
        let qualMap = STHMap.eval (ops,id) in
-         foldM (fn newQualMap -> fn q ->
+         foldM (fn newMap -> fn q ->
            let info = Map.eval (qualMap,q) in
              if primaryOpName? (q, id, info) then {
                %% When access is via a primary alias, update the info and
                %% record that (identical) new value for all the aliases.
                new_info <- f info; 
-               return (List.foldl (fn (newMap, Qualified (q, id)) ->
+               return (foldl (fn (newMap, Qualified (q, id)) ->
                    insertAQualifierMap (newMap, q, id, new_info)) newMap info.names)
              }
              else
@@ -474,15 +474,15 @@ spec
           % let _ = writeLine("oP?: "^printSort d_ty^" =?= "^printSort u_ty) in
           equalType?(d_ty, u_ty)
             ||
-          (
-           let result =
+          (let result =
              case (d_ty, u_ty) of
                | (Arrow(x1, y1,  _), Arrow(x2, y2,  _)) ->
                  opacityPreserved?(x1, x2) && opacityPreserved?(y1, y2)
                | (Product(xs1, _), Product(xs2, _)) ->
                  forall? (fn ((_, x1), (_, x2)) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
                | (Subsort(x1, t1,  _), Subsort(x2, t2,  _)) ->
-                 equalTerm?(t1, t2) && opacityPreserved?(x1, x2)
+                 % equalTerm?(t1, t2) &&
+                 opacityPreserved?(x1, x2)
                | (Base(q1, xs1, _), Base(q2, xs2, _)) | q1 = q2 ->
                  forall? (fn (x1, x2) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
                | (Base(q1, xs1, _), Base(q2, xs2, _)) | q2 nin? base_src_QIds ->
@@ -646,7 +646,8 @@ spec
       | _ -> escape  ("Ambiguous op name: " ^ toString qid ^ "\n")
   %}}}
 
-  op traceIsomorphismGenerator?: Boolean = true
+  op traceIsomorphismGenerator?: Boolean = false
+  op traceMono?: Bool = false
   op simplifyIsomorphism?: Boolean = true
   %% Temporary until we have slicing
   op simplifyUnPrimed?: Boolean = false
@@ -872,7 +873,8 @@ spec
              else
                let (tvs,ty) = unpackFirstSortDef info in {
                  %% Use init_spec because priming algorithm assumes primed types haven't been added yet
-                 ty' <- isoType (init_spc, iso_info, iso_fn_info) true ty; 
+                 ty' <- isoType (init_spc, iso_info, iso_fn_info) true ty;
+                 % print("type "^printQualifiedId qid^" = "^printSort ty^"\n--> "^printSort ty'^"\n");
                  if equalType? (ty,ty') then
                    return result
                  else {
@@ -955,11 +957,12 @@ spec
              if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then {
                print ("\nmdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
                prim_dfn <- return (primeTermsTypes(dfn, qidPrMap, iso_info)); 
-               print (printTermWithSorts dfn ^ "\n" ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n")
+               when (nm = "andd") (print (printTermWithSorts dfn ^ "\n"
+                                            ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
              }
              else
-               print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
-             % let _ = if nm = "inverse" then writeLine("mdod: "^printTermWithSorts dfn_pr) else () in
+               {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
+                when (nm = "andd") (print(printTermWithSorts dfn^"\n"))};
              qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
              id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
              new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
@@ -1293,16 +1296,17 @@ spec
         %}}}
         %{{{  doTerm
         def doTerm accum trm ctxtType = {
-          print ("doTerm:  " ^ printTerm trm ^ "\n");
-          print ("  dnType=" ^ printSort ctxtType ^ "\n");
+          when traceMono? (print ("doTerm:  " ^ printTerm trm ^ "\n"));
+          when traceMono? (print ("  dnType=" ^ printSort ctxtType ^ "\n"));
           case trm of
             %{{{  Fun (Op (qid, fxty), ty, pos)
             | Fun (Op(qid, fxty), ty, pos) ->
                 let
                   %{{{  monoInstance
                   def monoInstance dnType upType =
-                   (writeLine ("mono dnType=" ^ printSort dnType);
-                    writeLine ("     upType=" ^ printSort upType);
+                   (if traceMono? then (writeLine ("mono dnType=" ^ printSort dnType);
+                                        writeLine ("     upType=" ^ printSort upType))
+                      else ();
                     case (dnType,upType) of
                       | (Base (dnQid,dnTypes,_), _) ->
                           if (dnQid in? src_QIds) && (dnTypes = []) then
@@ -1326,6 +1330,8 @@ spec
                               | ((_,Some dnType), (_,Some upType)) -> monoInstance dnType upType
                               | _ -> fail ("doTerm: monoInstance: coproduct\n")) (zip (dnPairs,upPairs))
                       | (Subsort (dnType,_,_),Subsort (upType,_,_)) -> monoInstance dnType upType
+                      | (Subsort (dnType,_,_),                   _) -> monoInstance dnType upType
+                      | (                   _,Subsort (upType,_,_)) -> monoInstance dnType upType
                       | (Quotient (dnType,_,_),Quotient (upType,_,_)) -> monoInstance dnType upType
                       | (TyVar _, _) -> false
                       | (_, TyVar _) -> false
@@ -1375,17 +1381,17 @@ spec
                       opsDone <- return (Cons ((qual,id,ty),opsDone));
                       info <- Env.findTheOp spc (mkQualifiedId (qual,id));
                       (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
-                      monoDefn <- case typeMatch(defnType, ctxtType, spc, false) of
+                      monoDefn <- case typeMatch(defnType, ty, spc, true) of
                          | None -> {
                              print ("defnType: " ^ printSort defnType ^ "\n");
-                             print ("ctxtType: " ^ printSort ctxtType ^ "\n");
+                             print ("upType: " ^ printSort ty ^ "\n");
                              escape "makeIsoMorphism: typeMatch failed\n"
                            }
                          | Some subst -> return (instantiateTyVarsInTerm(defnTerm, subst));
                       ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
                       newDefnTerm <- return (SortedTerm (defnTerm, ctxtType,noPos));
                       spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
-                      print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ (printTerm newDefnTerm) ^ "\n");
+                      print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
                       return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
                       %}}}
                     }
@@ -1400,12 +1406,12 @@ spec
             %{{{  Apply
             | Apply (M, N, pos) -> {
                 (dom,cod) <- return (arrow(spc,inferType(spc, M)));
-                print ("doTerm: Apply: inferType M gives:\n");
-                print ("  dom=" ^ printSort dom ^ "\n");
-                print ("  cod=" ^ printSort cod ^ "\n");
-                print ("doTerm: Apply: inferType N gives:\n");
+                when traceMono? {print ("doTerm: Apply: inferType M gives:\n");
+                                 print ("  dom=" ^ printSort dom ^ "\n");
+                                 print ("  cod=" ^ printSort cod ^ "\n");
+                                 print ("doTerm: Apply: inferType N gives:\n")};
                 dom <- return (inferType(spc, N));
-                print ("  dom=" ^ printSort dom ^ "\n");
+                when traceMono? (print ("  dom=" ^ printSort dom ^ "\n"));
                 (accum,M) <- doTerm accum M (mkArrow(dom,ctxtType));   % ### LE range ctxtType and cod should agree
                 (accum,N) <- doTerm accum N dom;
                 return (accum, Apply (M, N, pos))
@@ -1496,8 +1502,8 @@ spec
             %}}}
             %{{{  Var
             | Var ((id,typ),pos) -> {
-                print ("doTerm: Var: id=" ^ id ^ "\n");
-                print ("  typ=" ^ printSort typ ^ "\n");
+                when traceMono? (print ("doTerm: Var: id=" ^ id ^ "\n"));
+                when traceMono? (print ("  typ=" ^ printSort typ ^ "\n"));
                 return (accum,trm)
               }
             %}}}
@@ -1542,7 +1548,8 @@ spec
     %}}}
 
     print "adding definitions\n";
-    %{{{  Add definitions for newly introduced iso fns - why is this separate? 
+    %{{{  Add definitions for newly introduced iso fns - why is this separate?
+
     spc <-
       foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
         spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref;
@@ -1680,7 +1687,7 @@ spec
                     (printDef (spc, qid));
                   new_dfn <- return (maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos))); 
                   when traceIsomorphismGenerator? {
-                     print (printQualifiedId qid ^ ":");
+                     print ("\n" ^ printQualifiedId qid ^ ":");
                      print (printTerm simp_dfn ^ "\n")
                   };
                   return (opinfo \_guillemotleft {dfn = new_dfn})
