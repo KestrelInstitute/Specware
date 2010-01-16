@@ -406,8 +406,11 @@ SpecCalc qualifying spec
                         | _ -> false)
                spc.elements
        def body_refs op_id =
-         let Some info = findTheOp(spc, op_id) in
-         refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
+         case findTheOp(spc, op_id) of
+           | Some info -> refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
+           | None -> (writeLine("Warning! Missing op  in adjustElementOrder: "
+                                  ^printQualifiedId op_id);
+                      [])
        def element_refs el =
          case el of
            | Op(op_id, _, _)    -> body_refs op_id
