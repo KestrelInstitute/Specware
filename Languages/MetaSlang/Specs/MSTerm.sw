@@ -3,8 +3,6 @@ MS qualifying spec
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
  import Position
 
- op AnnSpecPrinter.printSort : [a] ASort a -> String  % see Printer.sw for def
-
  type StandardAnnotation = Position
 
  type Term         = ATerm           StandardAnnotation
