@@ -461,7 +461,7 @@ spec
     let Qualified(q,id) = qid in
     spc << {ops = insertAQualifierMap(spc.ops,q,id,opinfo)}
 
-(* Unused
+%%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
     case findAllOps(spc,qid) of
       | [] \_rightarrow (warn("No defined op with that name."); None)
@@ -469,7 +469,6 @@ spec
         let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
-*)
 
   op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): SpecCalc.Env (Spec * Boolean) =
     case script of
@@ -481,7 +480,7 @@ spec
           when tracing? 
             (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
           foldM (fn (spc,tracing?) -> fn Def qid \_rightarrow
-                 case findMatchingOps(spc,qid) of
+                 case findAllOps(spc,qid) of
                    | [] \_rightarrow {
                        print ("Can't find op " ^ anyToString qid ^ "\n");
                        return (spc,tracing?)
