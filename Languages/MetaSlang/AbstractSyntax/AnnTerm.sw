@@ -3,7 +3,9 @@ MetaSlang qualifying spec
  import /Library/Legacy/Utilities/System
  import /Library/Legacy/DataStructures/ListPair
 
- op AnnSpecPrinter.printTerm  : [a] ATerm       a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
+ op AnnSpecPrinter.printTerm   : [a] ATerm    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
+ op AnnSpecPrinter.printSort   : [a] ASort    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
+ op AnnSpecPrinter.printPattern: [a] APattern a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId
