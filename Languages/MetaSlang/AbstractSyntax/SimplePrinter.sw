@@ -319,7 +319,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | CharPat (chr,_) -> ppString (Char.show chr)
       | NatPat (int,_) -> ppString (Nat.show int)      
       | QuotientPat (pat,qid,_) -> 
-          ppGrConcat [ppString ("(quotient[" ^ toString qid ^ "] "),
+          ppGrConcat [ppString ("(quotient[" ^ show qid ^ "] "),
                       ppAPattern pat,
                       ppString ")"]
       | RestrictedPat (pat,term,_) -> 

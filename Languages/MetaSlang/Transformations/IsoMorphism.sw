@@ -593,7 +593,7 @@ spec
   op Env.findTheOp : Spec -> QualifiedId -> SpecCalc.Env OpInfo
   def Env.findTheOp spc qid =
     case findTheOp (spc, qid) of
-      | None -> escape ("applyIso: " ^ (toString qid) ^ " not found\n")
+      | None -> escape ("applyIso: " ^ show qid ^ " not found\n")
       | Some opInfo -> return opInfo
 
   % This should be moved to the specware monad.
@@ -634,16 +634,16 @@ spec
   %{{{  findOpInfo
   op Env.findOpInfo (spc:Spec) (qid:QualifiedId) : SpecCalc.Env IsoInfo =
     case findMatchingOps (spc,qid) of
-      | [] -> escape ("No op with name: " ^ toString qid ^ "\n")
+      | [] -> escape ("No op with name: " ^ show qid ^ "\n")
       | [opinfo] -> {
           (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn); 
           qid <- return (primaryOpName opinfo); 
           qid_ref <- return (mkInfixOp(qid, opinfo.fixity, ty));
           case arrowOpt(spc, ty) of
-            | None -> escape (toString qid ^ " is not a function!\n")
+            | None -> escape (show qid ^ " is not a function!\n")
             | Some (src_ty, trg_ty) -> return (qid_ref, tvs, src_ty, trg_ty)
          }
-      | _ -> escape  ("Ambiguous op name: " ^ toString qid ^ "\n")
+      | _ -> escape  ("Ambiguous op name: " ^ show qid ^ "\n")
   %}}}
 
   op traceIsomorphismGenerator?: Boolean = false

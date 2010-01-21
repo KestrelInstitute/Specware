@@ -498,8 +498,8 @@ SpecToLisp qualifying spec
                                               [equiv])
                      | Some term -> mkLApply (mkLOp "Slang-Built-In::quotient-1-1", 
                                               [equiv, mkLTerm (sp, dpn, vars, term)]))
-                | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
-          | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
+                | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
+          | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
      | (Choose qid, srt, _) ->  
        (case findAllSorts (sp, qid) of
           | [info] ->
@@ -511,8 +511,8 @@ SpecToLisp qualifying spec
                                               [])
                      | Some term -> mkLApply (mkLOp "Slang-Built-In::choose-1", 
                                               [mkLTerm (sp, dpn, vars, term)]))
-                | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name a quotient type, saw: " ^ anyToString x))
-          | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ toString qid ^ " to name one quotient type, but saw: " ^ anyToString x))
+                | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
+          | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
      (*
       *  Restrict and relax are implemented as identities
       *)

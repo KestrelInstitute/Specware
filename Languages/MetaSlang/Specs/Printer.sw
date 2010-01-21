@@ -179,10 +179,10 @@ AnnSpecPrinter qualifying spec
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
      | Embedded    s           -> pp.fromString ("embed?("^s^")")
-     | Quotient    qid         -> pp.fromString ("quotient[" ^ toString qid ^ "] ")
-     | Choose      qid         -> pp.fromString ("choose["   ^ toString qid ^ "] ")
-     | PQuotient   qid         -> pp.fromString ("quotient[" ^ toString qid ^ "] ")
-     | PChoose     qid         -> pp.fromString ("choose["   ^ toString qid ^ "] ")
+     | Quotient    qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
+     | Choose      qid         -> pp.fromString ("choose["   ^ show qid ^ "] ")
+     | PQuotient   qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
+     | PChoose     qid         -> pp.fromString ("choose["   ^ show qid ^ "] ")
      | Not                     -> pp.Not
      | And                     -> pp.And
      | Or                      -> pp.Or
@@ -841,7 +841,7 @@ AnnSpecPrinter qualifying spec
      | QuotientPat (pat, qid, _) -> 
        enclose (enclosed, 
 		blockFill (0, 
-			   [(0, string ("quotient[" ^ toString qid ^ "] ")),
+			   [(0, string ("quotient[" ^ show qid ^ "] ")),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
      | RestrictedPat (pat, term, _) ->

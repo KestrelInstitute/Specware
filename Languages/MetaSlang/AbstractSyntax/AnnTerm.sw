@@ -71,8 +71,8 @@ MetaSlang qualifying spec
    else
      q ^ "." ^ id
 
-  op QualifiedId.toString : QualifiedId -> String
- def QualifiedId.toString = printQualifiedId
+  op QualifiedId.show : QualifiedId -> String
+ def QualifiedId.show = printQualifiedId
 
  %% This is useful for most normal messages, where you want to be terse:
   op printQualifiedId : QualifiedId -> String

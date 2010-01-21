@@ -240,7 +240,7 @@ spec
      let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
      let def doTerm (count, trm) =
-           %let _ = writeLine("doTerm "^toString count) in
+           %let _ = writeLine("doTerm "^show count) in
            let lazy = rewriteRecursive (context,freeVars trm,rules,trm,maxDepth) in
            case lazy of
              | Nil -> trm

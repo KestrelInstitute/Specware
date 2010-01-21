@@ -744,7 +744,7 @@ SpecNorm qualifying spec
 
   op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let rm_ty = inferType(spc,t) in
-    % let _ = writeLine("reg: "^toString equal_testable?^"\n"^printTerm t) in
+    % let _ = writeLine("reg: "^show equal_testable?^"\n"^printTerm t) in
     let t = if equal_testable? && ~eagerRegularization? && ~(embed? And t)
               then regularizeIfPFun(t, ty, rm_ty, spc)
             else t

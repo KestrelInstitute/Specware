@@ -697,13 +697,13 @@ TypeChecker qualifying spec
                    Fun (PChoose qid, srt, pos))
 
                 | _ ->
-                  let ss = toString qid in
+                  let ss = show qid in
                   (error (env, 
                           "In choose[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                           pos);
                    Fun (PChoose qid, srt, pos)))
            | _ ->
-             let ss = toString qid in
+             let ss = show qid in
              (error (env, 
                      "In choose[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                      pos);
@@ -729,13 +729,13 @@ TypeChecker qualifying spec
                    %% now srt = term_sort = lifting_arrow
                    Fun (PQuotient qid, srt, pos))
                 | _ ->
-                  let ss = toString qid in
+                  let ss = show qid in
                   (error (env, 
                           "In quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                           pos);
                    Fun (PQuotient qid, srt, pos)))
            | _ ->
-             let ss = toString qid in
+             let ss = show qid in
              (error (env, 
                      "In quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                      pos);
@@ -1635,14 +1635,14 @@ TypeChecker qualifying spec
                   %% TODO: More checking needed here?
                   (QuotientPat (pat, qid, pos), env, seenVars)
                 | _ ->
-                  let ss = toString qid in
+                  let ss = show qid in
                   (error (env, 
                           "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                           pos);
                    (QuotientPat (pat, qid, pos), env, seenVars)))
 
            | _ ->
-             let ss = toString qid in
+             let ss = show qid in
              (error (env, 
                      "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                      pos);
