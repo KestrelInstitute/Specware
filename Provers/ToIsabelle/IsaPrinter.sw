@@ -2360,7 +2360,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | CharPat (chr,_) \_rightarrow prString (Char.show chr)
      | NatPat (int,_) \_rightarrow prString (Nat.show int)      
      | QuotientPat (pat,qid,_) \_rightarrow 
-       prBreak 0 [prString ("(quotient[" ^ toString qid ^ "] "),
+       prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
                   ppPattern c pat wildstr,
                   prString ")"]
      | RestrictedPat (pat,term,_) \_rightarrow 
