@@ -568,7 +568,7 @@
 	    (load (make-pathname :type "lisp" :defaults tmp-cl))
 	    (if *swe-return-value?* swe::tmp
 	      ;; Print result:
-	      (let ((*package* (find-package "SW-User")))
+	      (let ((*package* (find-package :SW-User)))
 		(cond ((boundp 'swe::tmp)
 		       (if *swe-print-as-slang?*
 			   (format t "~%Value is ~%~/Specware::pprint-dt/~%"
