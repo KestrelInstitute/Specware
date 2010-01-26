@@ -556,10 +556,7 @@ Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
            Lisp.quote(Lisp.symbol("SNARK","+"))]),
 Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
            Lisp.quote(Lisp.symbol("SNARK","embed__Cons")),
-           Lisp.quote(Lisp.nat(1))]),
-Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
-           Lisp.quote(Lisp.symbol("SNARK","List.cons")),
-           Lisp.quote(Lisp.symbol("SNARK","embed__Cons"))])])
+           Lisp.quote(Lisp.nat(1))])])
 
    Lisp.++ (Lisp.list snarkHypothesis)
    Lisp.++ (Lisp.list [snarkConjecture])
