@@ -450,7 +450,7 @@ SpecCalc qualifying spec
 						 Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							    Lisp.nil(),snarkEvalForm]])]) in
    let runTime = snarkRunTime() in
-   let proved = ":PROOF-FOUND" = anyToString(result) in
+   let proved = anyToString(result) = (if caseSensitiveSubstrate? then ":proof-found" else ":PROOF-FOUND") in
    let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) in
      proved
 
