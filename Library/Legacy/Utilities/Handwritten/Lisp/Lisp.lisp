@@ -10,7 +10,7 @@
 (defun symbol-2  (pkg name) (intern name (find-package pkg)))
 (defun |!symbol|  (x) (intern (car x) (find-package (cdr x))))
 (defun |!string|   (s) s)
-(defun lispstring (s) (string s))
+(defun LispString (s) (string s))
 ;(defun toString (s) (format nil "~A" s))
 (defun |!nat|   (n) n)
 (defun |!char|  (c) c)
