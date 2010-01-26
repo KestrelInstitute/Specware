@@ -329,8 +329,8 @@
        ("(tabulate ( 3 , succ )) = [1,2,3]" :swe "(tabulate ( 3 , succ )) = [1,2,3]" :value '(:|Bool| . t))
        ("let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]" :swe "let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]" :value '(:|Bool| . t))
        ;; List [ 76]:  op findLeftmostAndPreceding       : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
-       ("(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "(findLeftmostAndPreceding ( empty ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . t))
-       ("let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "let F = findLeftmostAndPreceding ( empty ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . t))
+       ("(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . t))
+       ("let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :swe "let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])" :value '(:|Bool| . t))
        ("(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[4]] )) = None" :swe "(findLeftmostAndPreceding ( empty? ) ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . t))
        ("let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :swe "let F = findLeftmostAndPreceding ( empty? ) in (F ( [[1],[2,3],[4]] )) = None" :value '(:|Bool| . t))
        ;; List [ 78]:  op splitAtLeftmost       : fa(a)  (a -> Boolean) -> List a -> Option(List a * a * List a)
@@ -452,7 +452,7 @@
        ("let A = id ( \"afn\" , 1 ) in (@ A) = #f" :swe "let A = id ( \"afn\" , 1 ) in (@ A) = #f" :value '(:|Bool| . t))
        ;; String [111]:  op subFromTo     : {(s,i,j) : String * Nat * Nat | i < j && j <= length s} ->
        ("(subFromTo ( \"twitchy\" , 2, 6 )) = \"itch\"" :swe "(subFromTo ( \"twitchy\" , 2, 6 )) = \"itch\"" :value '(:|Bool| . t))
-       ("let A = id ( \"twitchy\" , 2, 6 ) in (subFromTo A) = \"itch\"" :swe "let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :value '(:|Bool| . t))
+       ("let A = id ( \"twitchy\" , 2, 6 ) in (subFromTo A) = \"itch\"" :swe "let A = id ( \"twitchy\" , 2, 6 ) in (subFromTo A) = \"itch\"" :value '(:|Bool| . t))
        ;; String [112]:  op flatten    : List String -> String
        ("(flatten ( [] )) = \"\"" :swe "(flatten ( [] )) = \"\"" :value '(:|Bool| . t))
        ("(flatten ( [\"now\",\"here\"] )) = \"nowhere\"" :swe "(flatten ( [\"now\",\"here\"] )) = \"nowhere\"" :value '(:|Bool| . t))
