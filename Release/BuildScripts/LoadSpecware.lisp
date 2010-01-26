@@ -7,7 +7,7 @@
 ;;; BuildDistribution_ACL.lisp
 
 
-(push :case-sensitive *features*)
+;(push :case-sensitive *features*)
 
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
