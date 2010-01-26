@@ -49,8 +49,7 @@
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Integer"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
-               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
-               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
+               ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String")
 	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.log"
 	      "p2A: Conjecture word_matches_at?_Obligation_subtype in MatchingObligations#WordMatching_Oblig is Proved! *"

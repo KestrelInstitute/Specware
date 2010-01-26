@@ -29,15 +29,15 @@ Test = spec
       map match2string
           (find_matches(string2message mstr, map string2word wstrs))
 
- def implode l = foldl (fn (s,c) -> s ^ toString c) "" l
+ def implode l = foldl (fn (s,c) -> s ^ show c) "" l
  def explode s =
    if s = "" then []
-     else sub(s,0) :: explode(substring(s,1,length s))
+     else s@0 :: explode(subFromTo(s,1,length s))
 
 endspec
 
 Data = spec
-  import Test
+  import Test, /Library/Legacy/Utilities/System
   op msg: MessageString = "**V*ALN**EC*E*S"
   op words: List WordString =
     ["CERAMIC", "CHESS", "DECREE", "FOOTMAN",
@@ -48,7 +48,7 @@ Data = spec
   def main(): () =
     let results = test_find_matches(msg,words) in
     app (fn {position,word} ->
-           writeLine("Word "^word^" matches at "^ toString position))
+           writeLine("Word "^word^" matches at "^ show position))
       results
     
 endspec
