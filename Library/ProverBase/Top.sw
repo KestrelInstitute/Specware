@@ -7,5 +7,5 @@ spec
 %  import Nat
   import Option
   import String
-  import System
+%  import System
 endspec

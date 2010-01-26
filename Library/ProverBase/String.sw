@@ -20,13 +20,7 @@ PrString qualifying spec
 
   axiom concat_def is
     fa (s1 : String, s2 : String)
-       concat(s1,s2) = implode(List.concat(explode s1,explode s2))
-
-  axiom concat2_def is
-    fa (s1 : String, s2 : String) (s1 ++ s2) = concat(s1,s2)
-
-  axiom concat3_def is
-    fa (s1 : String, s2 : String) (s1 ^ s2) = concat(s1,s2)
+       s1^s2 = implode(List.++(explode s1,explode s2))
 
   axiom map_def is
     fa (f : Char -> Char, s : String)
@@ -34,31 +28,31 @@ PrString qualifying spec
 
   axiom exists_def is
     fa (p : Char -> Boolean, s : String)
-       exists p s = List.exists p (explode s)
+       exists? p s = List.exists? p (explode s)
 
   axiom all_def is
     fa (p : Char -> Boolean, s : String)
-       all p s = List.all p (explode s)
+       forall? p s = List.forall? p (explode s)
 
   axiom sub_def is
     fa (s : String, n : Nat) n < length s =>
-       sub(s,n) = nth(explode s,n)
+       @(s,n) = @(explode s,n)
 
-  axiom substring_def is
+  axiom subFromTo_def is
     fa (s : String, i : Nat, j : Nat)
       i <= j && j <= length s 
       =>
-      substring(s,i,j) = implode(sublist(explode s,i,j))
+      subFromTo(s,i,j) = implode(subFromTo(explode s,i,j))
 
-  axiom concatList_def is
+  axiom flatten_def is
     fa (ss : List String)
-       concatList ss = (case ss of
+       flatten ss = (case ss of
                            | []     -> ""
-                           | s::ss1 -> s ^ (concatList ss1))
+                           | s::ss1 -> s ^ (flatten ss1))
 
   axiom translate_def is
     fa (subst : Char -> String, s : String)
-       translate subst s = concatList(map subst (explode s))
+       translate subst s = flatten(map subst (explode s))
 
   axiom lt_def is
     fa (s1 : String, s2 : String) s1 < s2 <=> compare(s1,s2) = Less
@@ -68,12 +62,6 @@ PrString qualifying spec
 
   axiom newline_def is
     newline = "\n"
-
-  theorem toScreen_def is
-    fa (s : String) toScreen s = ()
-
-  theorem writeLine_def is
-    fa (s : String) writeLine s = ()
 
   axiom greater_equal_def is
     fa (x: String, y: String) >= (x,y) = (y <= x)
@@ -92,10 +80,10 @@ PrString qualifying spec
 
   % ops with different qualifiers:
 (*
-  op Boolean.toString : Boolean -> String  % deprecated
-  op Integer.toString : Integer -> String  % deprecated
-  op Nat.toString     : Nat -> String      % deprecated
-  op Char.toString    : Char -> String     % deprecated
+  op Boolean.show : Boolean -> String  % deprecated
+  op Integer.show : Integer -> String  % deprecated
+  op Nat.show     : Nat -> String      % deprecated
+  op Char.show    : Char -> String     % deprecated
 
   op Integer.intToString : Integer -> String
   op Integer.stringToInt : (String | Integer.intConvertible) -> Integer
@@ -113,16 +101,16 @@ PrString qualifying spec
   op List.show              : String -> List String -> String
   op Char.show              : Char -> String
 *)
-  axiom boolean_toString_def is
-    fa (x : Boolean) Boolean.toString x = (if x then "true" else "false")
+  axiom boolean_show_def is
+    fa (x : Boolean) Boolean.show x = (if x then "true" else "false")
 
-  axiom int_toString_def is
-    fa (x : Integer) Integer.toString x =
-                     (if x >= 0 then Nat.toString x
-                                else "-" ^ Nat.toString(- x))
+  axiom int_show_def is
+    fa (x : Integer) Integer.show x =
+                     (if x >= 0 then Nat.show x
+                                else "-" ^ Nat.show(- x))
 
-  axiom nat_toString_def is
-    fa (x : Nat) Nat.toString x =
+  axiom nat_show_def is
+    fa (x : Nat) Nat.show x =
                  (let def digitToString (d : {d : Nat | d < 10}) : String =
                           case d of
                              | 0 -> "0"
@@ -135,28 +123,28 @@ PrString qualifying spec
                              | 7 -> "7"
                              | 8 -> "8"
                              | 9 -> "9" in
-                  let def toStringAux (x : Nat, res : String) : String =
+                  let def showAux (x : Nat, res : String) : String =
                           if x < 10 then (digitToString x) ^ res
-                                    else toStringAux
+                                    else showAux
                                           (x div 10,
                                            digitToString(x mod 10) ^ res) in
-                  toStringAux(x,""))
+                  showAux(x,""))
 
-  axiom char_toString_def is
-    fa (c : Char) Char.toString c = implode [c]
+  axiom char_show_def is
+    fa (c : Char) Char.show c = implode [c]
 
   axiom intToString_def is
-    intToString = Integer.toString
+    intToString = Integer.show
 
   axiom stringToInt_def is
     fa (s : String) intConvertible s =>
        stringToInt s = (let firstchar::_ = explode s in
                         if firstchar = #-
-                        then -(stringToNat(substring(s,1,length s)))
+                        then -(stringToNat(subFromTo(s,1,length s)))
                         else stringToNat s)
 
   axiom natToString_def is
-    natToString = Nat.toString
+    natToString = Nat.show
 
   axiom stringToNat_def is
     fa (s : String) natConvertible s =>
@@ -173,7 +161,7 @@ PrString qualifying spec
                    | #7 -> 7
                    | #8 -> 8
                    | #9 -> 9 in
-        let def stringToNatAux (chars : {chars : List Char | all isNum chars},
+        let def stringToNatAux (chars : {chars : List Char | forall? isNum chars},
                                 res : Nat) : Nat =
                 case chars of
                    | []     -> res
@@ -181,7 +169,7 @@ PrString qualifying spec
                                 (tl, res * 10 + charToDigit hd) in
         stringToNatAux(explode s, 0))
 
-  axiom show is fa (b: Boolean) Boolean.show b = Boolean.toString b
+  axiom show is fa (b: Boolean) Boolean.show b = Boolean.show b
 
   axiom compare_show_def1 is
     fa (cmp) cmp = Greater => Compare.show cmp = "Greater"
@@ -201,19 +189,19 @@ PrString qualifying spec
   axiom intConvertible_def is
     fa (s) Integer.intConvertible s =
     (let cs = explode s in
-      (exists isNum cs) &&
-      ((all isNum cs) || (hd cs = #- && all isNum (tl cs))))
+      (exists? isNum cs) &&
+      ((forall? isNum cs) || (head cs = #- && forall? isNum (tail cs))))
 
   axiom integer_show_def is
-    fa(i) Integer.show i = Integer.toString i
+    fa(i) Integer.show i = Integer.show i
 
   axiom natConvertible_def is
     fa(s) Nat.natConvertible s =
     (let cs = explode s in
-      (exists isNum cs) && (all isNum cs))
+      (exists? isNum cs) && (forall? isNum cs))
 
   axiom nat_show_def is
-    fa (n) Nat.show n = Nat.toString n
+    fa (n) Nat.show n = Nat.show n
 
   axiom list_show_def is
     fa(l, sep)  List.show sep l =
@@ -223,6 +211,6 @@ PrString qualifying spec
        | hd::tl -> hd ^ sep ^ (List.show sep tl))
 
   axiom char_show_def is
-    fa(c) Char.show c = Char.toString c
+    fa(c) Char.show c = Char.show c
 
 endspec

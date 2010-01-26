@@ -15,10 +15,6 @@ PrFunctions qualifying spec
   axiom inverse_def is [a,b]
     fa (f : Bijection(a,b))  (inverse f) o f = id  &&  f o (inverse f) = id
 
-  axiom wfo_def is
-    fa(pred)
-    wfo pred = (fa(p) (ex(y) p y) => (ex(y) (p y && (fa(x) p x => ~(pred(x, y))))))
-
 (* Waldinger's experimental axioms to help Snark prove termination
 
   op projection1 : [a, b] (a * a -> Boolean) -> ((a * b) * (a * b) ->     Boolean)
