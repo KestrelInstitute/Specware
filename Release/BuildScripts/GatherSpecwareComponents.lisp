@@ -6,7 +6,7 @@
 	       (:use :cl)
 	       (:export :load-swank :*source-directory* :*fasl-directory*))
 
-(defvar *VERBOSE* nil)
+(defvar *verbose* nil)
 (defvar *test?* nil)
 (defvar *copy-elc-files?* nil)
 
@@ -24,8 +24,8 @@
 ;;;   Mac       SBCL      
 ;;; --------------------------------------------------------------------------------
 
-(let ((selected-os   (list #+Linux 'Linux #+(Or Mac Darwin) 'Mac #+(Or Mswindows Win32) 'MSWindows))
-      (selected-lisp (list #+CMU 'CMU #+SBCL 'SBCL #+Allegro 'Allegro #+OpenMCL 'OpenMCL)))
+(let ((selected-os   (list #+linux 'Linux #+(or mac darwin) 'Mac #+(or Mswindows Win32) 'MSWindows))
+      (selected-lisp (list #+cmu 'CMU #+sbcl 'SBCL #+Allegro 'Allegro #+OpenMCL 'OpenMCL)))
   (unless (= (length selected-os) 1)
     (error "Need exactly one OS selected, but have: ~S" selected-os))
   (unless (= (length selected-lisp) 1)
@@ -36,8 +36,8 @@
 	  (car selected-os)))
 
 (defvar *fasl-type*
-  #+CMU     "x86f"
-  #+SBCL    "sfsl"
+  #+cmu     "x86f"
+  #+sbcl    "sfsl"
   #+Allegro "fasl" 
   #+OpenMCL "???")
 
@@ -55,9 +55,11 @@
     (delete-file file)))
 
 ;; sigh -- miserable hack so we can read an emacs file without choking
-(defpackage "SW")
+(defpackage :sw)
 (eval-when (compile eval load)
-  (export (list (intern "SPECWARE-EMACS-FILES" "SW")) "SW"))
+  (export (list (intern "SPECWARE-EMACS-FILES"
+                        :sw))
+          :sw))
 
 ;;; See ../README for a description of the tree of components this code assembles.
 
@@ -83,7 +85,7 @@
 ;;; Get version information from canonical source...
 (let ((specware4 (Specware::getenv "SPECWARE4")))
   (if (equal specware4 nil)
-      (error "in GatherSpecwareComponents.lisp:  SPECWARE4 environment variable not set")
+      (error "in GatherSpecwareComponents.lisp: SPECWARE4 environment variable not set")
     (let ((specware-dir
 	   (let ((dir (substitute #\/ #\\ specware4)))
 	     (if (eq (schar dir (1- (length dir))) #\/)
@@ -152,9 +154,9 @@
 (defun prepare_Specware_Lib (specware-dir release-dir)
   (print-major "Specware_Lib")
   (prepare_Specware_Lib_Generic specware-dir release-dir)
-  #+Linux     (prepare_Specware_Lib_Linux   specware-dir release-dir)
-  #+(Or Mac Darwin) (prepare_Specware_Lib_Mac     specware-dir release-dir)
-  #+(Or Mswindows Win32) (prepare_Specware_Lib_Windows specware-dir release-dir)
+  #+linux     (prepare_Specware_Lib_Linux   specware-dir release-dir)
+  #+(or mac darwin) (prepare_Specware_Lib_Mac     specware-dir release-dir)
+  #+(or Mswindows Win32) (prepare_Specware_Lib_Windows specware-dir release-dir)
   )
 
 (defun prepare_Specware_Lib_Generic (specware-dir release-dir)
@@ -235,7 +237,7 @@
 	     (rename-file temp-file target-file)))
       )))
 
-#+Linux     
+#+linux     
 (defun prepare_Specware_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Linux")
@@ -255,7 +257,7 @@
 		       (merge-pathnames linux-dir   name_and_type)))))
     ))
 
-#+(Or Mac Darwin)
+#+(or mac darwin)
 (defun prepare_Specware_Lib_Mac   (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Mac")
@@ -275,7 +277,7 @@
 		       (merge-pathnames mac-dir     name_and_type)))))
     ))
 
-#+(Or Mswindows Win32)
+#+(or Mswindows Win32)
 (defun prepare_Specware_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir))
   (print-minor "Specware_Lib" "Windows")
@@ -309,9 +311,9 @@
 (defun prepare_XEmacs_Lib (specware-dir release-dir)
   (print-major "XEmacs_Lib")
   (prepare_XEmacs_Lib_Generic specware-dir release-dir)
-  #+Linux     (prepare_XEmacs_Lib_Linux   specware-dir release-dir)
-  #+(Or Mac Darwin) (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
-  #+(Or Mswindows Win32) (prepare_XEmacs_Lib_Windows specware-dir release-dir)
+  #+linux     (prepare_XEmacs_Lib_Linux   specware-dir release-dir)
+  #+(or mac darwin) (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
+  #+(or Mswindows Win32) (prepare_XEmacs_Lib_Windows specware-dir release-dir)
   )
 
 (defun prepare_XEmacs_Lib_Generic (specware-dir release-dir)
@@ -341,7 +343,7 @@
 				     "compile.el"
 				     "hideshow.el"
 				     "hideshow.elc"
-                                     #-(Or Mswindows Win32)
+                                     #-(or Mswindows Win32)
                                      "augment-load-path.el"
 				     "specware_logo.xpm")
 				   x-files
@@ -386,8 +388,8 @@
 			     "load-openmcl.elc"
 			     "sw-slime.elc" 
 			     ))
-         (distribution::*ignored-types*
-          (if *copy-elc-files?* distribution::*ignored-types* (cons "elc" distribution::*ignored-types*)))
+         (Distribution::*ignored-types*
+          (if *copy-elc-files?* Distribution::*ignored-types* (cons "elc" Distribution::*ignored-types*)))
 	 ;;
 	 (all-files        (append generic-files slime-files ilisp-files xeli-files openmcl-files ignored-files))
 	 (all-dirs         (append generic-dirs  slime-dirs  ilisp-dirs  xeli-dirs  openmcl-dirs  ignored-dirs))
@@ -458,7 +460,7 @@
       )
 
     ;; Ilisp
-    #-SBCL
+    #-sbcl
     (let ((ilisp-dir        (ensure-subdir-exists component-dir "ilisp")))
 
       (dolist (dir ilisp-dirs)
@@ -478,9 +480,9 @@
              (specware-xeli-dir (extend-directory source-dir "xeli"))
 	     (source-xeli-dir   (if (null (generic-directory specware-xeli-dir))
 				    ;; the 6.2 version of xeli is buggy, so use 7.0 version even with 6.2 lisp
-				    #+Linux     "/usr/local/acl/acl70/xeli/" ; 6.2 version is buggy
+				    #+linux     "/usr/local/acl/acl70/xeli/" ; 6.2 version is buggy
 				    #+MSWindows "C:\\Program Files\\acl70\\xeli\\" ; 6.2 version is buggy
-				    #-(or Linux MSWindows) "[no idea where xeli lives on non-Linux, non-Windows OS]"
+				    #-(or linux MSWindows) "[no idea where xeli lives on non-Linux, non-Windows OS]"
 				    specware-xeli-dir)))
 	#-MSWindows 
 	(format t "~&;;; Ignoring non-Windows sources for xeli at ~A~%" source-xeli-dir)
@@ -512,19 +514,19 @@
 
     ))
 
-#+Linux     
+#+linux     
 (defun prepare_XEmacs_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "XEmacs_Lib" "Linux")
   )
 
-#+(Or Mac Darwin)
+#+(or mac darwin)
 (defun prepare_XEmacs_Lib_Mac     (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "XEmacs_Lib" "Mac")
   )
 
-#+(Or Mswindows Win32)
+#+(or Mswindows Win32)
 (defun prepare_XEmacs_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "XEmacs_Lib" "Windows")
@@ -537,24 +539,24 @@
 (defun prepare_C_Lib (specware-dir release-dir)
   (print-major "C_Lib")
   (prepare_C_Lib_Generic specware-dir release-dir)
-  #+Linux     (prepare_C_Lib_Linux   specware-dir release-dir)
-  #+(Or Mac Darwin) (prepare_C_Lib_Mac     specware-dir release-dir)
-  #+(Or Mswindows Win32) (prepare_C_Lib_Windows specware-dir release-dir)
+  #+linux     (prepare_C_Lib_Linux   specware-dir release-dir)
+  #+(or mac darwin) (prepare_C_Lib_Mac     specware-dir release-dir)
+  #+(or Mswindows Win32) (prepare_C_Lib_Windows specware-dir release-dir)
   )
 
-#+Linux
+#+linux
 (defun prepare_C_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "C_Lib" "Linux")
   )
 
-#+(Or Mac Darwin)
+#+(or mac darwin)
 (defun prepare_C_Lib_Mac     (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "C_Lib" "Mac")
   )
 
-#+(Or Mswindows Win32)
+#+(or Mswindows Win32)
 (defun prepare_C_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
   (print-minor "C_Lib" "Windows")
@@ -713,9 +715,9 @@
   (print-major "Specware")
   (let ((lisp-utilities-dir (truename (ensure-subdirs-exist distribution-dir "Lisp_Utilities"))))
     (prepare_Specware_Generic specware-dir release-dir)
-    #+Linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
-    #+(Or Mac Darwin) (prepare_Specware_Mac specware-dir release-dir lisp-utilities-dir)
-    #+(Or Mswindows Win32) (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
+    #+linux     (prepare_Specware_Linux   specware-dir release-dir lisp-utilities-dir)
+    #+(or mac darwin) (prepare_Specware_Mac specware-dir release-dir lisp-utilities-dir)
+    #+(or Mswindows Win32) (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
     ))
 
 (defun prepare_Specware_Generic (specware-dir release-dir)
@@ -793,7 +795,7 @@
 	(delete-file (make-pathname :name "test" :type "lisp":defaults simple3))))
     ))
 
-#+Linux
+#+linux
 (defun prepare_Specware_Linux (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Linux")
@@ -801,9 +803,9 @@
 	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
 	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
 	 (source-linux-dir        (ensure-subdirs-exist source-dir "Release" "Linux"))
-	 #+CMUCL
+	 #+cmucl
 	 (source-linux-cmucl-dir  (ensure-subdirs-exist source-dir "Release" "Linux" "CMUCL"))
-	 #+SBCL
+	 #+sbcl
 	 (source-linux-sbcl-dir   (ensure-subdirs-exist source-dir "Release" "Linux" "SBCL"))
 	 ;;
 	 (target-dir              (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Linux")))
@@ -818,7 +820,7 @@
 
 	 ;; a list of files put on the distribution directory
 	 (files-to-copy           (append
-				    #+CMUCL
+				    #+cmucl
 				    (list (merge-pathnames source-linux-cmucl-dir "Specware")
 					  (merge-pathnames source-linux-cmucl-dir "SpecwareShell")
 					  (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
@@ -826,7 +828,7 @@
 					  (merge-pathnames source-linux-cmucl-dir "Isabelle_Specware")
 					  (merge-pathnames source-linux-cmucl-dir "XEmacs_Specware")
 					  )
-				    #+SBCL 
+				    #+sbcl 
 				    (list (merge-pathnames source-linux-sbcl-dir "Specware")
 					  (merge-pathnames source-linux-sbcl-dir "SpecwareShell")
 					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
@@ -847,11 +849,11 @@
     ;; Installation Scripts
     
     ;; Executables/Images
-    (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
-				   #+CMUCL (format nil "~A.cmuimage" cl-user::*Specware-Name*)
+    (generate-new-lisp-application #+cmucl "/usr/share/cmulisp/bin/lisp" 
+				   #+cmucl (format nil "~A.cmuimage" cl-user::*Specware-Name*)
 
-				   #+SBCL  "/usr/local/bin/sbcl"
-				   #+SBCL  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
+				   #+sbcl  "/usr/local/bin/sbcl"
+				   #+sbcl  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
 
 				   target-dir
 				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
@@ -863,7 +865,7 @@
     (prepare_patch_dir source-dir target-dir)
     ))
 
-#+(Or Mac Darwin)
+#+(or mac darwin)
 (defun prepare_Specware_Mac (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Mac")
@@ -871,9 +873,9 @@
 	 (source-buildscripts-dir (ensure-subdirs-exist source-dir "Release" "BuildScripts"))
 	 (source-generic-dir      (ensure-subdirs-exist source-dir "Release" "Generic"))
 	 (source-mac-dir          (ensure-subdirs-exist source-dir "Release" "Mac"))
-	 #+CMUCL
+	 #+cmucl
 	 (source-mac-cmucl-dir    (ensure-subdirs-exist source-dir "Release" "Mac" "CMUCL"))
-	 #+SBCL
+	 #+sbcl
 	 (source-mac-sbcl-dir     (ensure-subdirs-exist source-dir "Release" "Mac" "sbcl"))
 	 ;;
 	 (target-dir              (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Mac")))
@@ -888,7 +890,7 @@
 
 	 ;; a list of files put on the distribution directory
 	 (files-to-copy (append
-                         #+CMUCL
+                         #+cmucl
                          (list (merge-pathnames source-mac-cmucl-dir "Specware")
                                (merge-pathnames source-mac-cmucl-dir "SpecwareShell")
                                (merge-pathnames source-mac-cmucl-dir "Find_CMUCL")
@@ -896,7 +898,7 @@
                                (merge-pathnames source-mac-cmucl-dir "Isabelle_Specware")
                                (merge-pathnames source-mac-cmucl-dir "XEmacs_Specware")
                                )
-                         #+SBCL 
+                         #+sbcl 
                          (list (merge-pathnames source-mac-sbcl-dir "Specware.terminal")
                                (merge-pathnames source-mac-sbcl-dir "SpecwareShell.sh")
                                ; (merge-pathnames source-mac-sbcl-dir "Find_Specware_App_SBCL")
@@ -912,11 +914,11 @@
     ;; Installation Scripts
     
     ;; Executables/Images
-    (generate-new-lisp-application #+CMUCL "/usr/share/cmulisp/bin/lisp" 
-				   #+CMUCL (format nil "~A.cmuimage" cl-user::*Specware-Name*)
+    (generate-new-lisp-application #+cmucl "/usr/share/cmulisp/bin/lisp" 
+				   #+cmucl (format nil "~A.cmuimage" cl-user::*Specware-Name*)
 
-				   #+SBCL  "/usr/local/bin/sbcl"
-				   #+SBCL  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
+				   #+sbcl  "/usr/local/bin/sbcl"
+				   #+sbcl  (format nil "~A.sbclexe" cl-user::*Specware-Name*)
 
 				   target-dir
 				   (mapcar #'(lambda (f) (make-pathname :defaults f :type *fasl-type*)) files-to-load)
@@ -924,10 +926,10 @@
 				   t
 				   :executable? t)
 
-    #+SBCL
+    #+sbcl
     (copy-dist-directory (extend-directory source-mac-sbcl-dir "Specware.app")
                          (extend-directory release-dir         "Specware.app"))
-    #+SBCL
+    #+sbcl
     (copy-dist-directory (extend-directory source-mac-sbcl-dir "Isabelle_Specware.app")
                          (extend-directory release-dir         "Isabelle_Specware.app"))
 
@@ -936,7 +938,7 @@
     )
   )
 
-#+(And Allegro (Or Mswindows Win32))
+#+(and Allegro (Or Mswindows Win32))
 (defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Windows")
@@ -1036,7 +1038,7 @@
     ))
 
 
-#+(And SBCL (Or Mswindows Win32))
+#+(and sbcl (or Mswindows Win32))
 (defun prepare_Specware_Windows (specware-dir release-dir lisp-utilities-dir)
   (declare (special cl-user::*Specware-Name*))
   (print-minor "Specware" "Windows")
@@ -1059,7 +1061,7 @@
 
 	 ;; a list of files put on the distribution directory
 	 (files-to-copy           (append
-				    #+SBCL 
+				    #+sbcl 
 				    (list (merge-pathnames source-windows-sbcl-dir "Specware.cmd")
 					  (merge-pathnames source-windows-sbcl-dir "SpecwareShell.cmd")
 					  (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL.cmd")
@@ -1120,19 +1122,19 @@
   (let ((source-patch-dir (extend-directory source-dir "Release" "Windows" "Patches"))
 	(target-patch-dir (extend-directory target-dir "Patches"))
 	(lisp
-	 #+CMU       "CMUCL"
-	 #+SBCL      "SBCL"
+	 #+cmu       "CMUCL"
+	 #+sbcl      "SBCL"
 	 #+Allegro   "Allegro"
 	 #+OpenMCL   "OpenMCL")
 	(fasl 
-	 #+CMU       "x86f"
-	 #+SBCL      "sfsl"
+	 #+cmu       "x86f"
+	 #+sbcl      "sfsl"
 	 #+Allegro   "fasl" 
 	 #+OpenMCL   "????")
 	(os 
-	 #+Linux     "Linux"
-	 #+(Or Mswindows Win32) "Windows" 
-	 #+(Or Mac Darwin)      "Mac OSX"))
+	 #+linux     "Linux"
+	 #+(or Mswindows Win32) "Windows" 
+	 #+(or mac darwin)      "Mac OSX"))
 
     (format t "~&~%;;;   Preparing ~A patches for ~A under ~A...~%" fasl lisp os)
     (when *verbose*

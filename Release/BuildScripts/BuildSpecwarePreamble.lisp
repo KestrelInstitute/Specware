@@ -19,7 +19,7 @@
 	    (load version-file)
 	  (error "in BuildSpecwarePreamble.lisp:  Cannot find ~A" version-file))))))
 
-(push ':SPECWARE-DISTRIBUTION *features*) ; used by parser
+(push ':specware-distribution *features*) ; used by parser
 
 ;;; Normally autoloaded, but we want to preload them for a stand-alone world
 #+(and allegro mswindows)
@@ -36,7 +36,7 @@
 ;;; normal definition of compile-file-if-needed
 ;;; But if there is no compiler, then we should avoid attempting
 ;;; to call it.
-#-(or COMPILER NEW-COMPILER)
+#-(or compiler new-compiler)
 (defun compile-file-if-needed (file) file)
 
 ;;; Override normal definition because of an apparent Allegro bug in
@@ -56,19 +56,19 @@
   (concatenate 'string *Specware-dir* file))
 
 (defun patch-directory ()
-  (declare (special *specware-dir*))
-  (if (equal *specware-dir* nil)
+  (declare (special *Specware-dir*))
+  (if (equal *Specware-dir* nil)
       (warn "patch-directory: SPECWARE4 environment variable not set")
     (in-specware-dir "Patches/")))
 
-#+SBCL (setq sb-fasl:*fasl-file-type* "sfsl") ; default is "fasl", which conflicts with Allegro
+#+sbcl (setq sb-fasl:*fasl-file-type* "sfsl") ; default is "fasl", which conflicts with Allegro
 
 (defvar *fasl-type*
-  #+CMU     "x86f"
-  #+SBCL    sb-fasl:*fasl-file-type*
+  #+cmu     "x86f"
+  #+sbcl    sb-fasl:*fasl-file-type*
   #+Allegro "fasl" 
   #+OpenMCL "???"
-  #-(or CMU SBCL Allegro OpenMCL) "unknown-fasl")
+  #-(or cmu sbcl Allegro OpenMCL) "unknown-fasl")
 
 (defun patch-number (path)
   (declare (special cl-user::*Specware-Major-Version-String*))

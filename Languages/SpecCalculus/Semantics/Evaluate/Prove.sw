@@ -348,11 +348,11 @@ SpecCalc qualifying spec
     let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" in "^specName^provedString^proverString^timeString) in
       proved
 
- op MES.PRINT_TOTAL_RUN_TIME: () -> LispCell
+ op mes.print_total_run_time: () -> LispCell
 
  op snarkRunTime: () -> String
  def snarkRunTime() =
-   let rt = MES.PRINT_TOTAL_RUN_TIME() in
+   let rt = mes.print_total_run_time() in
    LispString(rt)
 
  op printSnarkClocks: () -> LispCell

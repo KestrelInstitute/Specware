@@ -32,8 +32,9 @@
 	      ))
 
    ("Tutorial: prwb" 
-    :swprb T
-    :output '((:optional "T") 
+    :swprb t
+    :output '((:optional "T")
+              (:optional "t")
 	      (:optional "")
 	      (:optional "")
 	      ))
@@ -222,7 +223,7 @@
 	   {position=8,word=\"DECREE\"},
 	   {position=10,word=\"CHESS\"}]"
     :swe-spec "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-    :value '(:|Bool| . T))
+    :value '(:|Bool| . t))
 
    )
   )
