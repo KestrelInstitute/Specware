@@ -18,7 +18,7 @@ spec
 
  op simplifyObligations?: Bool = true
  op simplifyFalseObligations?: Bool = false
- op removeExcessAssumnptions?: Bool = true
+ op removeExcessAssumptions?: Bool = true
  %% These two should be false for Isabelle conversion
  op generateTerminationConditions? : Bool = true
  op generateExhaustivityConditions?: Bool = true
@@ -148,9 +148,9 @@ spec
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
- op traceRemoveExcessAssumnptions?: Bool = false
+ op traceRemoveExcessAssumptions?: Bool = false
 
- op removeExcessAssumnptions (t: MS.Term): MS.Term =
+ op removeExcessAssumptions (t: MS.Term): MS.Term =
    let (vs, cjs, bod) = forallComponents t in
    let def findDepCjs(lvs, cjs, dep_cjs) =
          let n_dep_cjs = filter (fn cj -> hasRefTo?(cj, lvs)) cjs in
@@ -163,7 +163,7 @@ spec
    let (r_vs, r_cjs) = findDepCjs(freeVars bod, cjs, []) in
    if length vs ~= length r_vs || length cjs ~= length r_cjs
      then let new_t = mkSimpBind(Forall, r_vs, mkSimpImplies(mkSimpConj r_cjs, bod)) in
-          let _ = if traceRemoveExcessAssumnptions?
+          let _ = if traceRemoveExcessAssumptions?
                     then writeLine(printTerm t^"\n --->\n"^printTerm new_t) else ()
           in
           new_t
@@ -266,7 +266,7 @@ spec
        | Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _) | trueTerm? t2 || equalTerm?(t1, t2) ->
          None
        | claim ->
-         let claim = if removeExcessAssumnptions? then removeExcessAssumnptions claim else claim in
+         let claim = if removeExcessAssumptions? then removeExcessAssumptions claim else claim in
          Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag, claimNames)), tvs, claim)
 
  def addCondition(tcc as (tccs, claimNames), gamma, term, id_tag) =
