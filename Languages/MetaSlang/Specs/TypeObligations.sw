@@ -18,6 +18,7 @@ spec
 
  op simplifyObligations?: Bool = true
  op simplifyFalseObligations?: Bool = false
+ op removeExcessAssumnptions?: Bool = true
  %% These two should be false for Isabelle conversion
  op generateTerminationConditions? : Bool = true
  op generateExhaustivityConditions?: Bool = true
@@ -147,6 +148,27 @@ spec
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
+ op traceRemoveExcessAssumnptions?: Bool = false
+
+ op removeExcessAssumnptions (t: MS.Term): MS.Term =
+   let (vs, cjs, bod) = forallComponents t in
+   let def findDepCjs(lvs, cjs, dep_cjs) =
+         let n_dep_cjs = filter (fn cj -> hasRefTo?(cj, lvs)) cjs in
+         let n_lvs = foldl (fn (lvs, cj) -> insertVars(freeVars cj, lvs)) lvs n_dep_cjs in
+         let n_dep_cjs = n_dep_cjs ++ dep_cjs in
+         if length n_lvs = length lvs
+           then (lvs, n_dep_cjs)
+           else findDepCjs(n_lvs, filter (fn cj -> ~(termIn?(cj, n_dep_cjs))) cjs, n_dep_cjs)
+   in
+   let (r_vs, r_cjs) = findDepCjs(freeVars bod, cjs, []) in
+   if length vs ~= length r_vs || length cjs ~= length r_cjs
+     then let new_t = mkSimpBind(Forall, r_vs, mkSimpImplies(mkSimpConj r_cjs, bod)) in
+          let _ = if traceRemoveExcessAssumnptions?
+                    then writeLine(printTerm t^"\n --->\n"^printTerm new_t) else ()
+          in
+          new_t
+     else t
+
  op notTypePredTerm? (spc: Spec, vs: Vars) (t: MS.Term): Bool =
    case t of
      | Apply(p, Var(v as (_,ty), _), _) ->
@@ -187,24 +209,26 @@ spec
 
  op simplifyOblig (spc: Spec) (oblig: MS.Term) (bare_oblig: MS.Term): MS.Term =
    let _ = if traceObligationSimplify? then writeLine("Obligation: "^printTerm oblig) else () in
-   if simplifyObligations?
-     then
-       if ~simplifyFalseObligations? && falseTerm?(simplify spc bare_oblig)
-         then oblig
-       else
-       let oblig1 = simplify spc oblig in
-       let oblig2 = removeRedundantTypePredicates spc oblig1 in
-       let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
-                    else simplify spc oblig2
-       in
-       let oblig4 = %if simplifyObligUnfoldSubsortPredicates?
-%                     then simplifyUnfoldSubsortPredicates spc oblig3
-%                     else
-                       oblig3
-       in
-       let _ = if traceObligationSimplify? then writeLine("Simplifies to\n"^printTerm oblig3) else () in
-       if trueTerm? oblig4 then oblig4 else oblig3
-   else oblig
+   let oblig1 = if simplifyObligations?
+                 then
+                   if ~simplifyFalseObligations? && falseTerm?(simplify spc bare_oblig)
+                     then oblig
+                   else
+                   let oblig1 = simplify spc oblig in
+                   let oblig2 = removeRedundantTypePredicates spc oblig1 in
+                   let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
+                                else simplify spc oblig2
+                   in
+                   let oblig4 = %if simplifyObligUnfoldSubsortPredicates?
+            %                     then simplifyUnfoldSubsortPredicates spc oblig3
+            %                     else
+                                   oblig3
+                   in
+                   let _ = if traceObligationSimplify? then writeLine("Simplifies to\n"^printTerm oblig3) else () in
+                   if trueTerm? oblig4 then oblig4 else oblig3
+               else oblig
+   in
+   oblig1
 
  def addFailure((tcc, claimNames), (_, _, _, _, name as Qualified(qid, id), _, _, _, _), description) = 
      let descName = id^" :"^description in
@@ -241,7 +265,9 @@ spec
        %% issue here
        | Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _) | trueTerm? t2 || equalTerm?(t1, t2) ->
          None
-       | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag, claimNames)), tvs, claim)
+       | claim ->
+         let claim = if removeExcessAssumnptions? then removeExcessAssumnptions claim else claim in
+         Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag, claimNames)), tvs, claim)
 
  def addCondition(tcc as (tccs, claimNames), gamma, term, id_tag) =
    case makeVerificationCondition(gamma, term, id_tag, claimNames) of
