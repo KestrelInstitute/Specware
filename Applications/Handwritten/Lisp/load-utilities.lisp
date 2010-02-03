@@ -1,13 +1,18 @@
-
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
 #+mcl
 (setq ccl:*make-package-use-defaults* '("CL"))
 
 (defpackage :Specware (:use :cl))
+(defpackage :System-Spec)
+
 (in-package :Specware)
 
 (terpri) ; purely cosmetic
+
+(defvar cygwin? nil)
+(defvar System-Spec::msWindowsSystem? #+(or win32 mswindows) t
+                                      #-(or win32 mswindows) nil)
 
 #+allegro(setq excl:*global-gc-behavior* '(10 2.0))
 
@@ -40,6 +45,35 @@
 	main-dir-str
       (format nil ".~a" main-dir-str))))
 
+(defun convert-pathname-to-cygwin (dir-str)
+  (multiple-value-bind (dev dir)
+      (parse-device-directory dir-str)
+    (let ((dir (substitute #\/ #\\ dir))) 
+      (if (and (> (length dir) 8) (string= dir "/cygwin/" :end1 8))
+          (subseq dir 7)
+          (concatenate 'string "/cygdrive/" (string-downcase dev) dir)))))
+
+(defun to-cygwin-name (pname)
+  (if cygwin?
+      (convert-pathname-to-cygwin pname)
+      pname))
+
+(defun convert-pathname-from-cygwin (dir-str)
+  (if (and (> (length dir-str) 10) (string= dir-str "/cygdrive/" :end1 10))
+      (let* ((rem-dir (subseq dir-str 10))
+             (i (position #\/ rem-dir)))
+        (if i
+            (concatenate 'string (subseq rem-dir 0 i) ":/" (subseq rem-dir (+ i 1)))
+            rem-dir))
+      (if (and (> (length dir-str) 6) (string= dir-str "/home/" :end1 6))
+          (concatenate 'string "C:/cygwin" dir-str)
+          dir-str)))
+
+(defun from-cygwin-name (pname)
+  (if cygwin?
+      (convert-pathname-from-cygwin pname)
+      pname))
+
 ;; The same function with the same name, but in a different package is
 ;; defined in Specware4/Library/Legacy/Utilities/Handwritten/Lisp/System.lisp
 (defun ensure-final-slash (dirname)
@@ -60,7 +94,7 @@
 	 #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
 	 #+clisp     (ext:default-directory)
 	 )
-	(str-dir (if (pathnamep dir)
+         (str-dir (if (pathnamep dir)
 		     (pathname-directory-string dir)
 		     dir)))
     (ensure-final-slash str-dir)))
@@ -107,7 +141,8 @@
 
 (defun dir-to-path (directory &optional default-dir)
   (if (pathnamep directory) directory
-    (multiple-value-bind (dev dir)
+    (let ((directory (from-cygwin-name directory)))
+      (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
       (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
 	  (setq dir (cons #+gcl :root #-gcl :absolute (split-dir-components dir)))
@@ -115,7 +150,7 @@
 			       (pathname-directory (or default-dir (current-directory)))
 			       (split-dir-components directory))))
       (make-pathname :directory dir
-		     :device (or dev (and default-dir (pathname-device default-dir)))))))
+		     :device (or dev (and default-dir (pathname-device default-dir))))))))
 
 (defvar *tdir*)
 (defvar *tdirp*)
@@ -261,13 +296,13 @@
 ;; )
 
 (defun compile-and-load-lisp-file (file)
-   (let ((filep (make-pathname :defaults file :type "lisp")))
-     ;(format t "C: ~a~%" filep)
-     ;(compile-file filep)
-     ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
-     (compile-file-if-needed filep)
-     ;; scripts depend upon the following returning true iff successful
-     (load (make-pathname :defaults filep :type *fasl-type*))))
+  (let ((filep (make-pathname :defaults (from-cygwin-name file) :type "lisp")))
+    ;;(format t "C: ~a~%" filep)
+    ;;(compile-file filep)
+    ;;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
+    (compile-file-if-needed filep)
+    ;; scripts depend upon the following returning true iff successful
+    (load (make-pathname :defaults filep :type *fasl-type*))))
 
 (defun load-lisp-file (file &rest ignore)
   (declare (ignore ignore))
@@ -302,16 +337,14 @@
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (substitute #\/ #\\
-	       #+(or win32 winnt mswindows)
-	       (or (getenv "TEMP") (getenv "TMP")
-		   #+allegro
-		   (namestring (SYSTEM:temporary-directory)))
-	       #+(and (not unix) Lispworks) (namestring SYSTEM::*TEMP-DIRECTORY*)
-	       #+(and (not win32) unix) "/tmp/"
-	       )))
+               (if System-Spec::msWindowsSystem?
+                   (or (getenv "TEMP") (getenv "TMP")
+                       #+allegro
+                       (namestring (SYSTEM:temporary-directory)))
+                   "/tmp/"))))
 
 (defun setTemporaryDirectory ()
-  (setq temporaryDirectory (substitute #\/ #\\ (temporaryDirectory-0))))
+  (setq temporaryDirectory (temporaryDirectory-0)))
 
 (defun run-program (command-str)
   #+(and allegro unix)
@@ -336,7 +369,8 @@
   #+allegro (sys:copy-file source target :preserve-time t)
   #+mcl     (ccl:copy-file source target :if-exists :supersede)
   #+cmu     (ext:run-program    "cp"      (list (namestring source) (namestring target)))
-  #+sbcl    (sb-ext:run-program #-win32 "/bin/cp"  #+win32 "c:\\cygwin\\bin\\cp.exe"
+  #+sbcl    (sb-ext:run-program (if System-Spec::msWindowsSystem?
+                                    "c:\\cygwin\\bin\\cp.exe"  "/bin/cp")
                                 (list (namestring source) (namestring target)))
   #-(or allegro cmu sbcl mcl)
   ;; use unsigned-byte to avoid problems reading x-symbol chars
@@ -466,7 +500,8 @@
     (if contents?
 	(progn
 	  #+mcl  (ccl:run-program    "rm"      (list "-R" dirstr))
-	  #+sbcl (sb-ext:run-program #-win32 "/bin/rm" #+win32 "c:/cygwin/bin/rm.exe"
+	  #+sbcl (sb-ext:run-program (if System-Spec::msWindowsSystem?
+                                         "c:/cygwin/bin/rm.exe" "/bin/rm")
                                      (list "-R" dirstr))
 	  #-(or mcl sbcl)
 	  (loop for dir-item in (sw-directory dirpath)
@@ -475,7 +510,8 @@
 		 (delete-file dir-item))))
       (progn
 	#+mcl  (ccl:run-program    "rmdir"      (list dirstr))
-	#+sbcl (sb-ext:run-program #-win32 "/bin/rmdir" #+win32 "c:/cygwin/bin/rmdir.exe"
+	#+sbcl (sb-ext:run-program (if System-Spec::msWindowsSystem?
+                                       "c:/cygwin/bin/rmdir.exe" "/bin/rmdir")
                                    (list dirstr))
 	#+cmu  (unix:unix-rmdir dirstr)
 	#+gcl  (lisp:system (format nil "rmdir ~a" dirstr))

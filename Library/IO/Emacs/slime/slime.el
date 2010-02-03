@@ -1446,7 +1446,8 @@ The rules for selecting the arguments are rather complicated:
     ;; E.g. intel mac 21.4 (patch 15)
     (let* ((process (slime-net-connect host
                                        (if *windows-system-p*
-                                           port (format "%S" port))
+                                           port port ;(format "%S" port)
+                                           )
                                        coding-system))
            (slime-dispatching-connection process))
       (slime-setup-connection process))))
@@ -1620,8 +1621,9 @@ Return the created process."
 (defun slime-swank-port-file ()
   "Filename where the SWANK server writes its TCP port number."
   (concat (file-name-as-directory
-           (cond ((fboundp 'temp-directory) (temp-directory))
-                 ((boundp 'temporary-file-directory) temporary-file-directory)
+           ;; cases below switched for cygwin capatibility
+           (cond ((boundp 'temporary-file-directory) temporary-file-directory)
+                 ((fboundp 'temp-directory) (temp-directory))
                  (t "/tmp/")))
           (format "slime.%S" (emacs-pid))))
 

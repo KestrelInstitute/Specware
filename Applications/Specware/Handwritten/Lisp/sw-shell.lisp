@@ -302,10 +302,10 @@
 			(cl-user::sw-help argstr) ; refers to cl-user::*sw-help-strings*
 			))
 	   (cd        (if (null argstr)
-			  (princ (namestring (Specware::current-directory)))
+			  (princ (Specware::current-directory))
 			  (Specware::cd argstr))
 		      (values))
-	   (pwd       (princ (namestring (Specware::current-directory))) (values))
+	   (pwd       (princ (Specware::current-directory)) (values))
 	   ((dir ls)       (cl-user::ls     (or argstr "")))
 	   (dirr      (cl-user::dirr   (or argstr "")))
 	   (path      (cl-user::swpath argstr))

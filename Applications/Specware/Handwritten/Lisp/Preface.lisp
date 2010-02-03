@@ -1,6 +1,7 @@
 (in-package :cl-user)
 (defpackage :Specware)
 (defpackage :Emacs)
+(defpackage :System-Spec)
 
 ;; The following is in ./Languages/SpecCalculus/Semantics/Evaluate/Make.sw:
 ;;
@@ -87,7 +88,7 @@
   (if (equal dir "")
       (setq dir (home-dir))
     (setq dir (subst-home dir)))
-  (let ((new-dir (Specware::current-directory))
+  (let ((new-dir (Specware::from-cygwin-name (Specware::current-directory)))
 	(error? nil))
     (loop while (and (not error?) (> (length dir) 1) (equal (subseq dir 0 2) ".."))
       do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
@@ -110,7 +111,7 @@
 	    (Emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
                                                (cons default-directory nil))"
 					  (Specware::ensure-final-slash newdir)))))))
-    (princ (namestring (Specware::current-directory)))
+    (princ (Specware::current-directory))
     (values)))
 
 (defun under-ilisp? ()
@@ -118,7 +119,7 @@
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
 (defun home-dir ()
-  (Specware::getenv #+(or mswindows win32) "HOMEPATH" #-(or mswindows win32) "HOME"))
+  (Specware::getenv (if System-Spec::msWindowsSystem? "HOMEPATH" "HOME")))
     
 ;;; Normalization utilities
 
@@ -128,14 +129,14 @@
     (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
       (setq path (concatenate 'string (home-dir) (subseq path 1))))
     (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
-    (when #+(or mswindows win32) t #-(or mswindows win32) nil
-	  (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
+    (when System-Spec::msWindowsSystem?
+      (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
   path)
 
 (defun string-subst (str source target)
   (let (pos)
-    (loop while (setq pos (search source str :test #+(or mswindows win32) #'string-equal
-				                   #-(or mswindows win32) #'string=))
+    (loop while (setq pos (search source str :test (if System-Spec::msWindowsSystem?
+                                                       #'string-equal #'string=)))
 	  do (setq str (concatenate 'string
 			 (subseq str 0 pos)
 			 target

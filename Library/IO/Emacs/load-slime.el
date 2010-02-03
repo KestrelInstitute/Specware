@@ -6,6 +6,8 @@
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* *specware*)
 
+(defvar cygwin? (string= "/cygdrive/" (subseq *specware* 0 10)))
+
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
 (defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95

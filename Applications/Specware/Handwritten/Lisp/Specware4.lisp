@@ -203,7 +203,7 @@
 (defpackage :MetaSlang)
 (defpackage :TypeChecker)
 (defpackage :PrettyPrint)
-
+(defpackage :System-Spec)
 
 #||
 #+allegro
@@ -365,6 +365,21 @@
       #+cmu     ext:*after-save-initializations*
       #+mcl     ccl:*lisp-startup-functions*
       #+sbcl    sb-ext:*init-hooks*)
+
+(defun check-for-cygwin ()
+  (when System-Spec::msWindowsSystem?
+    (let ((n-specware4 (Specware::getenv "SPECWARE4")))
+      (when (string= "/cygdrive/" (subseq n-specware4 0 10))
+        ;(setq Specware4 n-specware4)
+        ;(setq *Specware4* n-specware4)
+        (setq cygwin? t)
+        (Specware::setenv "SPECWARE4" (Specware::from-cygwin-name n-specware4))))))
+
+(push 'check-for-cygwin
+       #+allegro cl-user::*restart-actions*
+       #+cmu     ext:*after-save-initializations*
+       #+mcl     ccl:*lisp-startup-functions*
+       #+sbcl    sb-ext:*init-hooks*)
 
 (defvar *using-slime-interface?* t)
 (when *using-slime-interface?*

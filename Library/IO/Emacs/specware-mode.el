@@ -1294,9 +1294,41 @@ STRING should be given if the last search was by `string-match' on STRING."
   (defun replace-in-string (str regexp rep)
     (replace-regexp-in-string regexp rep str)))
 
+(defun convert-pathname-to-cygwin (str)
+  (let ((found-index (position ?: str)))
+    (if (null found-index)
+        str
+      (let* ((dev (subseq str 0 found-index))
+             (dir (subseq str (1+ found-index)))
+             (dir (replace-in-string dir "\\\\" "/"))) 
+        (if (and (> (length dir) 8) (string= "/cygwin/" (subseq dir 0 8)))
+            (subseq dir 7)
+          (concatenate 'string "/cygdrive/" (downcase dev) dir))))))
+
+(defun to-cygwin-name (pname)
+  (if cygwin?
+      (convert-pathname-to-cygwin pname)
+      pname))
+
+(defun convert-pathname-from-cygwin (dir-str)
+  (if (and (> (length dir-str) 10) (string= "/cygdrive/" (substring dir-str 0 10)))
+      (let* ((rem-dir (subseq dir-str 10))
+             (i (position ?/ rem-dir)))
+        (if (null i)
+            rem-dir
+            (concat (subseq rem-dir 0 i) ":/" (subseq rem-dir (+ i 1)))))
+      (if (and (> (length dir-str) 6) (string= "/home/" (subseq dir-str 0 6)))
+          (concat "C:/cygwin" dir-str)dir-str)))
+
+(defun from-cygwin-name (pname)
+  (if cygwin?
+      (convert-pathname-from-cygwin pname)
+      pname))
+
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
   (setq filename (replace-in-string filename "Program Files" "Progra~1"))
+  (setq filename (from-cygwin-name filename))
   (when (and (> (length filename) 2)
 	     (equal (position ?: filename) 1)
 	     (not (equal (elt filename 0) (upcase (elt filename 0)))))
@@ -1306,7 +1338,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun get-swpath ()
   (let ((rawpath (or (sw:eval-in-lisp "(cl-user::get-swpath)") ""))
-	(delim (if (eq window-system 'mswindows) ?\; ?:))
+	(delim (if (or (eq window-system 'mswindows) cygwin?) ?\; ?:))
 	(result ())
 	(specware4 (sw:eval-in-lisp "(Specware::getenv \"SPECWARE4\")"))
 	pos)
@@ -1365,7 +1397,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		 (lisp-or-specware-command
 		  ":swpath " "path "
 		  (if (member oldpath '(nil NIL)) "" oldpath)
-		  (if (eq window-system 'mswindows) ";" ":")
+		  (if (or (eq window-system 'mswindows) cygwin?) ";" ":")
 		  (car head-dir-uid))
 		 (sleep-for 0.1)	; Just to avoid confusing output
 		 (return (cdr head-dir-uid))))))
@@ -2118,7 +2150,7 @@ With an argument, it doesn't convert imports."
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
         (sw:add-specware-to-isabelle-path)
-        (find-file-other-window thy-file)
+        (find-file-other-window (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 
@@ -2143,7 +2175,7 @@ With an argument, it doesn't convert imports."
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
         (sw:add-specware-to-isabelle-path)
-        (find-file-other-window thy-file)
+        (find-file-other-window (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 

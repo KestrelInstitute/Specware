@@ -95,7 +95,8 @@
       (setq *saved-swpath* swpath))
     (Specware::setenv "SWPATH"
 		      (if swpath
-			  (format nil #-(or mswindows win32) "~A:~A" #+(or mswindows win32) "~A;~A"
+			  (format nil (if System-Spec::msWindowsSystem?
+                                          "~A;~A" "~A:~A")
 				  dir swpath)
 			dir))))
 
@@ -460,7 +461,8 @@
 			   (subseq saved-swpath 0
 				   ;; if position returns nil we get the whole
 				   ;; thing which is correct
-				   (position #+(or mswindows win32) #\; #-(or mswindows win32) #\:
+				   (position (if System-Spec::msWindowsSystem?
+                                                 #\; #\:)
 					     saved-swpath))
 			 "")
 		     (Specware::current-directory)))
@@ -516,7 +518,7 @@
 	 (TypeChecker::complainAboutImplicitPolymorphicOps? nil)
 	 (old-swpath (or (Specware::getenv "SWPATH") ""))
 	 (new-swpath (format nil
-			     #-(or mswindows win32) "~A:~A:~A" #+(or mswindows win32) "~A;~A;~A"
+			     (if System-Spec::msWindowsSystem? "~A;~A;~A" "~A:~A:~A")
 			     tmp-dir *current-swe-spec-dir* old-swpath))
 	 (Emacs::*goto-file-position-store?* t)
 	 (Emacs::*goto-file-position-stored* nil)
@@ -1114,15 +1116,16 @@
 (defun normalize-path (path add-specware4-dir?)
   (let* ((path-dirs (mapcar #'(lambda (nm)
 				(Specware::ensure-final-slash (subst-home nm)))
-			    (Specware::split-components path '(#+(or mswindows win32) #\; #-(or mswindows win32) #\:))))
+			    (Specware::split-components path
+                                                        (if System-Spec::msWindowsSystem?
+                                                            '(#\;) '(#\:)))))
 	 (specware4-dir (substitute #\/ #\\ (Specware::ensure-final-slash (Specware::getenv "SPECWARE4"))))
 	 (path-dirs-c-sw (if (and add-specware4-dir?
 				  (not (member specware4-dir path-dirs :test 'string-equal)))
 			     (nconc path-dirs (list specware4-dir))
 			   path-dirs)))
     (format nil
-	    #+(or mswindows win32)"~{~a~^;~}"
-	    #-(or mswindows win32)"~{~a~^:~}"
+	    (if System-Spec::msWindowsSystem? "~{~a~^;~}" "~{~a~^:~}")
 	    path-dirs-c-sw)))
 
 (defun get-swpath ()

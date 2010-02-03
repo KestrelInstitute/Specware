@@ -1671,7 +1671,7 @@ See `x-symbol-latin9-cset' and `x-symbol-init-cset'.")
 See `x-symbol-xsymb0-cset' and `x-symbol-init-cset'.")
 
 (defvar x-symbol-xsymb1-fonts
-  '("-xsymb-xsymb1%s-medium-r-normal--%d-%d0-75-75-p-*-xsymb-xsymb1"
+  '("-xsymb-xsymb1%s-medium-r-normal--%d-*-75-75-p-*-xsymb-xsymb1"
     "-apple-isaxsym-medium-r-normal--%d-%d0-75-75-p-*-xsymb-xsymb1")
   "Fonts with registry/encoding \"xsymb-xsymb1\".
 See `x-symbol-xsymb1-cset' and `x-symbol-init-cset'.")

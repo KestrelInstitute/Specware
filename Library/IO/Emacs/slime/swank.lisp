@@ -485,6 +485,11 @@ if the file doesn't exist; otherwise the first line of the file."
   (funcall (connection.serve-requests connection) connection))
 
 (defun announce-server-port (file port)
+  (when (find-package :Specware)
+    ;; for compatibility with cygwin
+    (let ((from-cyg (find-symbol (string :from-cygwin-name) :Specware)))
+      (when (fboundp from-cyg)
+        (setq file (funcall from-cyg file)))))
   (with-open-file (s file
                      :direction :output
                      :if-exists :error
