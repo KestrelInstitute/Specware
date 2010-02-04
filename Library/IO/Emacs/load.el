@@ -10,6 +10,8 @@
 (defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
 					       ms-windows)))
 
+(defvar cygwin? (string= "/cygdrive/" (subseq *specware* 0 10)))
+
 ;; This sets the emacs to lisp interface to be the one supplied by franz
 ;; The alternative supported is ilisp which is enabled by setting this
 ;; variable to 'ilisp

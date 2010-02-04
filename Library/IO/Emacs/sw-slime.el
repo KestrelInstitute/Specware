@@ -202,6 +202,7 @@ If NEWLINE is true then add a newline at the end of the input."
   "Major mode for Specware Shell."
   (interactive)
   (kill-all-local-variables)
+  (specware-mode-variables)
   (setq major-mode 'specware-listener-mode)
   (set (make-local-variable 'specware-listener-p) t)
   (use-local-map specware-listener-mode-map)

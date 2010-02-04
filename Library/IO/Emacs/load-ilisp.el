@@ -12,6 +12,8 @@
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
+(defvar cygwin? (string= "/cygdrive/" (subseq *specware* 0 10)))
+
 (push (concat *specware-emacs* "ilisp/")
       load-path)
 
