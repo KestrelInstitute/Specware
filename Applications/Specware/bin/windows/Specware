@@ -61,8 +61,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/windows
 
 
 if [ -z "$SWPATH" ]; then
-  SWPATH="C:/cygwin;/"
-  export SWPATH
+  export SWPATH="$SPECWARE4;C:/cygwin;/"
 fi
 
 
