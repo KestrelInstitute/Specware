@@ -61,7 +61,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/windows
 # Ensure SWPATH is set
 
 if [ -z "$SWPATH" ]; then
-  export SWPATH="$SPECWARE4;C:/cygwin;/"
+  export SWPATH="C:/cygwin;/"
 fi
 
 # Try to find lisp executable:
