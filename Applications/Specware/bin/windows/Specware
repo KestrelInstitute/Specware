@@ -25,7 +25,6 @@ if [ ! -d "$SPECWARE4" ]; then
 fi
 
 # Ensure SPECWARE4 is set to full pathname:
-
 case "$SPECWARE" in
     /*) : ok;;
     *)  SPECWARE="`pwd`/$SPECWARE";;
@@ -34,21 +33,18 @@ esac
 echo "\$SPECWARE4=$SPECWARE4"
 
 # Test whether SPECWARE4 has been set
-
 if [ -z "$SPECWARE4" ]; then
     echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
     exit 1
 fi
 
 # Test whether SPECWARE4 is a directory
-
 if [ ! -d "$SPECWARE4" ]; then
    echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
    exit 1
 fi
 
 # Ensure SPECWARE4 is set to full pathname:
-
 case "$SPECWARE" in
     /*) : ok;;
     *)  SPECWARE="`pwd`/$SPECWARE";;
