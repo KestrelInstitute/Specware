@@ -22,7 +22,7 @@
 ;;; exists and is readable. Otherwise, it returns false.
 (defun fileExistsAndReadable (x)
   (handler-case
-      (progn (close (open x :direction :input)) t)
+      (progn (close (open (Specware::from-cygwin-name x) :direction :input)) t)
     (file-error (condition) 
       (declare (ignore condition))
       nil)
@@ -37,6 +37,7 @@
   ;; bignum (i.e., not a lisp fixnum, not a C int)
   ;; Bigger than 536870911 = 2^29 - 1 = most-positive-fixnum
   ;; Bigger than 2147483648 = 2^31 = biggest 32-bit int 
+  (setq file (Specware::from-cygwin-name file))
   (or #+allegro(excl::filesys-write-date file)    ; faster?
       ;;
       ;; The allegro hack above returns nil for names such as "~/foo.sw"

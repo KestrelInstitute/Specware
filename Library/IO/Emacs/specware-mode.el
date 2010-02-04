@@ -1316,7 +1316,7 @@ STRING should be given if the last search was by `string-match' on STRING."
              (i (position ?/ rem-dir)))
         (if (null i)
             rem-dir
-            (concat (subseq rem-dir 0 i) ":/" (subseq rem-dir (+ i 1)))))
+            (concat (upcase (subseq rem-dir 0 i)) ":/" (subseq rem-dir (+ i 1)))))
       (if (and (> (length dir-str) 6) (string= "/home/" (subseq dir-str 0 6)))
           (concat "C:/cygwin" dir-str)dir-str)))
 
