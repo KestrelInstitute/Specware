@@ -42,7 +42,7 @@
 (require (if (featurep 'mule) 'x-symbol-mule 'x-symbol-nomule))
 (eval-when-compile (require 'x-symbol-macs))
 (eval-when-compile (require 'cl))
-(eval-when-compile (require 'ccl))
+;(eval-when-compile (require 'ccl))
 
 (eval-when-compile
   (defvar font-lock-extra-managed-props) ; font-lock of Emacs-21.4
