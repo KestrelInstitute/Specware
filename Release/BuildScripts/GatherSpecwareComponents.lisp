@@ -1063,19 +1063,29 @@
 	 (files-to-copy           (append
 				    #+sbcl 
 				    (list (merge-pathnames source-windows-sbcl-dir "Specware.cmd")
+                                          ;; cygwin version of each file
+                                          (merge-pathnames source-windows-sbcl-dir "Specware")
 					  (merge-pathnames source-windows-sbcl-dir "SpecwareShell.cmd")
+					  (merge-pathnames source-windows-sbcl-dir "SpecwareShell")
 					  (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL.cmd")
+                                          (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL")
                                           (merge-pathnames source-windows-sbcl-dir "start-in-xemacs-slime.cmd")
                                           (merge-pathnames source-windows-sbcl-dir "Find_SPECWARE4.cmd")
-					  ;; (merge-pathnames source-windows-sbcl-dir "Isabelle_Specware")
-					  ;; (merge-pathnames source-windows-sbcl-dir "XEmacs_Specware")
+					  (merge-pathnames source-windows-sbcl-dir "Isabelle_Specware")
+					  (merge-pathnames source-windows-sbcl-dir "XEmacs_Specware")
 					  )
 				    (list
 				    ; (merge-pathnames source-windows-dir      "install_gnome_desktop_icons_specware")
+                                     (merge-pathnames source-windows-dir "Find_SPECWARE4")
 				     (merge-pathnames source-windows-dir      "Find_XEMACS.cmd")
+                                     (merge-pathnames source-windows-dir      "Find_XEMACS")
 				    ;
 				     (merge-pathnames source-windows-dir      "Update_Path.cmd")
+                                     (merge-pathnames source-windows-dir      "Update_Path")
 				     (merge-pathnames source-windows-dir      "Update_SWPATH.cmd")
+                                     (merge-pathnames source-windows-dir      "Update_SWPATH")
+                                     ;; For starting x11 from cygwin adding current dir to PATH
+                                     (merge-pathnames source-windows-dir      "StartXWin.cmd")
 				     (merge-pathnames source-generic-dir      "StartSpecwareShell.lisp")
 				     ))))
 

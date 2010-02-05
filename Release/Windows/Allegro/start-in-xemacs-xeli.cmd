@@ -18,8 +18,6 @@ rem so the calls to Find_xxx will succeed.
 rem The proper alternative is probably to parse %CMDCMDLINE%,
 rem but that is dreadful to contemplate.
 
-if exist Specware-4-2-5 ( cd Specware-4-2-5 )
-
 call Find_XEMACS
 call Find_SPECWARE4
 call Update_Path

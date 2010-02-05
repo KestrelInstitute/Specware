@@ -1,7 +1,8 @@
 #!/bin/sh
+(shopt -s igncr) 2>/dev/null && shopt -s igncr;  # Ignore cr's
 
-# To get SPECWARE4, go up one directory level and then back down to Specware4.
-# If we are connected to Accord or some other sibling, we'll get to 
+# to get specware4, go up one directory level and then back down to specware4.
+# if we are connected to Accord or some other sibling, we'll get to 
 # the right place, and if we are already connected to Specware4, 
 # this will just be some wasted motion.
 
