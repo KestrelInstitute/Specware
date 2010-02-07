@@ -27,7 +27,7 @@
 
 PACKAGE = x-symbol
 
-EMACS   = emacs
+EMACS   = xemacs
 EFLAG   = -q --no-site-file --batch
 PREFIX  = /usr/local
 LISPDIR = $(PREFIX)/share/emacs/site-lisp/$(PACKAGE)
