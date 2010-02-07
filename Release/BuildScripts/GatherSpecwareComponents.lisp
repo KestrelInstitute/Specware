@@ -343,7 +343,6 @@
 				     "compile.el"
 				     "hideshow.el"
 				     "hideshow.elc"
-                                     #-(or Mswindows Win32)
                                      "augment-load-path.el"
 				     "specware_logo.xpm")
 				   x-files
