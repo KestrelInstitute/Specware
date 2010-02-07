@@ -20,8 +20,7 @@
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
-(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 3) (safety 1)
-                   #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 3) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -124,10 +123,6 @@
   (setf (readtable-case *readtable*) :upcase))
 
 (handler-bind ((warning #'ignore-warning))
-  (let ((foo (and (find-package "SNARK") (find-symbol "*HASH-DOLLAR-READTABLE*" "SNARK"))))
-    ;; fix problem with #$ when snark is reloaded...
-    (when foo
-      (set foo nil)))
   (load (make-pathname
          :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
          :type     "lisp")))
