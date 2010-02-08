@@ -1,9 +1,9 @@
-(defpackage :System-Spec)
+(defpackage :System-Spec (:use :cl))
 (in-package :System-Spec)
 
-(defvar System-Spec::specwareDebug? nil)
+(defvar specwareDebug? nil)
 
-(defvar System-Spec::proverUseBase? t)
+(defvar proverUseBase? t)
 
 (defvar caseSensitiveSubstrate?
   #+case-sensitive t
