@@ -11,19 +11,19 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
 # Use the directory of this file as the default value of SPECWARE4
 # Note: $0 may refer to Specware or SpecwareShell script invoking this...
 
-INVOKED_HERE=`dirname $0`
-cd $INVOKED_HERE
-HERE=`pwd`
-PATH=$OLD_PATH
+INVOKED_HERE=`dirname "$0"`
+cd "$INVOKED_HERE"
+HERE="`pwd`"
+PATH="$OLD_PATH"
 
 ########################################################################
 
-. $HERE/Find_SPECWARE4
+. "$HERE/Find_SPECWARE4"
 #. $HERE/Find_SBCL
-. $HERE/Update_Path
-. $HERE/Update_SWPATH
-. $HERE/Find_Specware_App_SBCL
-. $HERE/Find_XEMACS
+. "$HERE/Update_Path"
+. "$HERE/Update_SWPATH"
+. "$HERE/Find_Specware_App_SBCL"
+. "$HERE/Find_XEMACS"
 
 ########################################################################
 

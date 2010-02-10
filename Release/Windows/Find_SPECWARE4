@@ -25,7 +25,7 @@ else
    echo "Revising SPECWARE4"
 fi
 
-SPECWARE4=$NEW_SPECWARE4
+SPECWARE4="$NEW_SPECWARE4"
 
 # Test whether SPECWARE4 is a directory
 

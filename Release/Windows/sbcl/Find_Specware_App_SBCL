@@ -3,9 +3,9 @@
 
 # Note: $0 may refer to a Specware or SpecwareShell script invoking this...
 
-INVOKED_HERE=`dirname $0`
-cd $INVOKED_HERE
-HERE=`pwd`
+INVOKED_HERE=`dirname "$0"`
+cd "$INVOKED_HERE"
+HERE="`pwd`"
 SPECWARE4="$HERE"
 
 #########################################################################
