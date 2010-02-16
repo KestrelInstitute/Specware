@@ -313,10 +313,13 @@ spec
         let sigma1 = inferType(spc, N1) 		           in
         (case N1 of 
            | Lambda(rules, _) ->
-             let tcc  = (tcc, gamma) |- N2 ?? domain(spc, sigma1)  in
-             let tau2 = range(spc, sigma1) 		    	   in
-             let tcc  = <= (tcc, gamma, M, tau2, tau) 		   in
-             checkLambda(tcc, gamma, rules, sigma1, Some N2)
+             let dom_sig = domain(spc, sigma1) in
+             let tcc  = (tcc, gamma) |- N2 ?? dom_sig  in
+             %% Following is at best redundant, at worst assumes better inferType
+             % let tau2 = range(spc, sigma1) in
+             % let tcc  = <= (tcc, gamma, M, tau2, tau) in
+             let lam_tau = mkArrow(dom_sig, tau) in
+             checkLambda(tcc, gamma, rules, lam_tau, Some N2)
            | Fun(Restrict, s, _) ->
              let (dom, ran) = arrow(spc, s)			   in
              let tcc  = (tcc, gamma) |- N2 ?? ran		   in
