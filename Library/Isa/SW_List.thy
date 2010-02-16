@@ -70,9 +70,7 @@ theorem List__list_Obligation_subtype:
    ..
 qed
 theorem List__list_Obligation_subtype0: 
-  "\<lbrakk>\<exists>(n::nat). (f::'a List__ListFunction) definedOnInitialSegmentOfLength n; 
-    f 0 = Some x\<rbrakk> \<Longrightarrow> 
-   (i::nat) + 1 \<ge> 0"
+  "(i::nat) + 1 \<ge> 0"
   by auto
 function List__list :: "'a List__ListFunction \<Rightarrow> 'a list"
 where

@@ -161,10 +161,10 @@ lemma Nat__digitToString_injective [simp]:
 done
 
 theorem Nat__natToString_Obligation_subtype: 
-  "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
+  "Nat__posNat_p 10"
   by auto
 theorem Nat__natToString_Obligation_subtype0: 
-  "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> Nat__posNat_p 10"
+  "Nat__posNat_p 10"
   by auto
 theorem Nat__natToString_Obligation_subtype1: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> x mod 10 < 10"
