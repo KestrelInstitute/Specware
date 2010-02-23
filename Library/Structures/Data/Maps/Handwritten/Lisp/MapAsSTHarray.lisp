@@ -126,9 +126,11 @@
 
 (defun map-as-undo-harray--map-through-pairs (fn m)
   (let* ((m (map-as-undo-harray-assure-current m))
-         (tbl (map-as-undo-harray--harray m))
-         (*maphash-htables* (cons tbl *maphash-htables*)))
-    (maphash fn (map-as-undo-harray--harray m))))
+         (tbl (map-as-undo-harray--harray m)))
+    (setq *maphash-htables* (cons tbl *maphash-htables*))
+    (maphash fn (map-as-undo-harray--harray m))
+    (setq *maphash-htables* (remove tbl *maphash-htables* :count 1))
+    ))
 
 
 ;;; The Hash Table interface functions
@@ -277,12 +279,13 @@
        (setf (get 'mapi-2 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
 
 (defun STH_foldi-3 (fn result m)
-  (map-as-undo-harray--map-through-pairs
+  (let ((*foldi-vector* (vector nil nil nil)))
+    (map-as-undo-harray--map-through-pairs
      #'(lambda (key val)
 	 (let ((args (foldi-vector key val result)))
 	   (declare (dynamic-extent args))
 	   (setq result (funcall fn args))))
-     m)
+     m))
   result)
 
 (defun STH_imageToList (m) 

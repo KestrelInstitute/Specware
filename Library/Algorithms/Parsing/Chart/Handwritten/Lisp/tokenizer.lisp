@@ -442,7 +442,8 @@
 	 (hex-char-1      )
 	 (hex-char-code-1 )
 	 (hex-char-2      )
-	 (hex-char-code-2 ))
+	 (hex-char-code-2 )
+         (*extended-comment-state* (make-extended-comment-state)))
 
     (macrolet ((local-warn (prefix line column byte msg &rest args)
 			   `(warn "At line ~3D:~2D  ~?" 
