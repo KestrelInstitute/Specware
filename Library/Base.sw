@@ -12,7 +12,5 @@ spec
 
 import Base/Empty
 import Base/String
-%% import Base/System   % Moved to /Legacy/Utilities/System
-%%% import Base/Deprecated % Moved to /Legacy/Deprecated
 
 endspec
