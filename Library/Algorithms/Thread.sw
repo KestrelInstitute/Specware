@@ -1,5 +1,6 @@
 Thread qualifying
 spec
+  import /Library/Legacy/Utilities/System
   type Thread a
 
   op [a] makeThread(f: () -> a): Thread a
@@ -20,9 +21,10 @@ spec
   op [a] withMutex(mx: Mutex) (body: a): a
 
   %% Higher-level Utilities
-
-  op [a,b] mapT (f: a -> b) (l: List a) : List b =
+  op [a,b] mapT (f: a -> b) (l: List a) : List b
+(* Can't define in Specware because fn () -> .. actually generates a lambds with one arg
     let threads = List.map (fn x -> makeThread(fn () -> f x)) l in
     List.map joinThread threads    
+*)
 
 endspec

@@ -28,3 +28,15 @@
 (defmacro withMutex-1-1 (mx body)
   #+sb-thread `(sb-thread:with-mutex (,mx) ,body)
   #-sb-thread `,body)
+
+(defun Thread::mapT-1-1 (f l) 
+  (let ((threads 
+         (List-Spec::map-1-1 
+          #'(lambda (x) 
+             (Thread::makeThread 
+              #'(lambda () (funcall f x)))) 
+          l))) 
+    (List-Spec::map-1-1 #'Thread::joinThread threads)))
+
+(defun Thread::mapT (x1) #'(lambda (x2) (Thread::mapT-1-1 x1 x2)))
+
