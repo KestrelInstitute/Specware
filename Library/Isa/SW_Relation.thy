@@ -2,17 +2,17 @@ theory SW_Relation
 imports SW_Set
 begin
 types  ('a,'b)Relation__Relation = "('a \<times> 'b) set"
-consts Relation__domain :: " ('a, 'b)Relation__Relation \<Rightarrow> 'a set"
-defs Relation__domain_def: 
-  "Relation__domain r \<equiv> (\<lambda> (x::'a). \<exists>(y::'b). (x, y) \<in> r)"
+theorem Relation__domain__def: 
+  "((x::'a) \<in> Domain r) = (\<exists>(y::'b). (x, y) \<in> r)"
+  by (simp add: Domain_def)
 consts Relation__domain__stp :: "('b \<Rightarrow> bool) \<Rightarrow> 
                                   ('a, 'b)Relation__Relation \<Rightarrow> 'a set"
 defs Relation__domain__stp_def: 
   "Relation__domain__stp P__b r
      \<equiv> (\<lambda> (x::'a). \<exists>(y::'b). P__b y \<and> (x, y) \<in> r)"
-consts Relation__range :: " ('a, 'b)Relation__Relation \<Rightarrow> 'b set"
-defs Relation__range_def: 
-  "Relation__range r \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). (x, y) \<in> r)"
+theorem Relation__range__def: 
+  "((y::'b) \<in> Range r) = (\<exists>(x::'a). (x, y) \<in> r)"
+  by (simp add: Range_def Domain_def converse_def)
 consts Relation__range__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                  ('a, 'b)Relation__Relation \<Rightarrow> 'b set"
 defs Relation__range__stp_def: 
@@ -24,10 +24,10 @@ defs Relation__apply_def:
 consts Relation__applyi :: " ('a, 'b)Relation__Relation \<Rightarrow> 'b \<Rightarrow> 'a set"
 defs Relation__applyi_def: 
   "Relation__applyi r y \<equiv> (\<lambda> (x::'a). (x, y) \<in> r)"
-consts Relation__applys :: " ('a, 'b)Relation__Relation \<Rightarrow> 'a set \<Rightarrow> 'b set"
-defs Relation__applys_def: 
-  "Relation__applys r xS
-     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). x \<in> xS \<and> (x, y) \<in> r)"
+theorem Relation__applys__def: 
+  "((y::'b) \<in> Image r xS) 
+     = (\<exists>(x::'a). x \<in> xS \<and> (x, y) \<in> r)"
+  by (simp add: Image_def Bex_def)
 consts Relation__applys__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                   ('a, 'b)Relation__Relation \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Relation__applys__stp_def: 
@@ -43,13 +43,10 @@ consts Relation__applyis__stp :: "('b \<Rightarrow> bool) \<Rightarrow>
 defs Relation__applyis__stp_def: 
   "Relation__applyis__stp P__b r yS
      \<equiv> (\<lambda> (x::'a). \<exists>(y::'b). P__b y \<and> (y \<in> yS \<and> (x, y) \<in> r))"
-consts Relation__e_cl_gt :: " ('a, 'b)Relation__Relation \<Rightarrow> 
-                              ('b, 'c)Relation__Relation \<Rightarrow> 
-                              ('a, 'c)Relation__Relation"	(infixl ":>" 64)
-defs Relation__e_cl_gt_def: 
-  "((r1:: ('a, 'b)Relation__Relation) :> (r2:: ('b, 'c)Relation__Relation))
-     \<equiv> (\<lambda> ((x::'a), (z::'c)). 
-          \<exists>(y::'b). (x, y) \<in> r1 \<and> (y, z) \<in> r2)"
+theorem Relation__e_cl_gt__def: 
+  "(((x::'a), (z::'c)) \<in> r1 O r2) 
+     = (\<exists>(y::'b). (x, y) \<in> r1 \<and> (y, z) \<in> r2)"
+  by auto
 consts Relation__e_cl_gt__stp :: "('b \<Rightarrow> bool) \<Rightarrow> 
                                    ('a, 'b)Relation__Relation
                                      \<times>  ('b, 'c)Relation__Relation \<Rightarrow> 
@@ -63,7 +60,7 @@ consts o_R :: " ('b, 'c)Relation__Relation \<Rightarrow>
                 ('a, 'b)Relation__Relation \<Rightarrow>  ('a, 'c)Relation__Relation"	(infixl "o'_R" 64)
 defs o_R_def: 
   "((r1:: ('b, 'c)Relation__Relation) o_R (r2:: ('a, 'b)Relation__Relation))
-     \<equiv> (r2 :> r1)"
+     \<equiv> (r2 O r1)"
 consts Relation__o__stp :: "('b \<Rightarrow> bool) \<Rightarrow> 
                              ('b, 'c)Relation__Relation
                                \<times>  ('a, 'b)Relation__Relation \<Rightarrow> 
@@ -72,10 +69,9 @@ defs Relation__o__stp_def:
   "Relation__o__stp P__b
      \<equiv> (\<lambda> ((r1:: ('b, 'c)Relation__Relation), (r2:: ('a, 'b)Relation__Relation)). 
           Relation__e_cl_gt__stp P__b(r2, r1))"
-consts Relation__inverse :: " ('a, 'b)Relation__Relation \<Rightarrow> 
-                              ('b, 'a)Relation__Relation"
-defs Relation__inverse_def: 
-  "Relation__inverse r \<equiv> (\<lambda> ((y::'b), (x::'a)). (x, y) \<in> r)"
+theorem Relation__inverse__def: 
+  "(((y::'b), (x::'a)) \<in> converse r) = ((x, y) \<in> r)"
+  by (simp add: converse_def)
 consts Relation__restrictDomain :: " ('a, 'b)Relation__Relation \<Rightarrow> 
                                     'a set \<Rightarrow>  ('a, 'b)Relation__Relation"	(infixl "restrictDomain" 65)
 defs Relation__restrictDomain_def: 
@@ -88,7 +84,7 @@ defs Relation__restrictRange_def:
      \<equiv> (\<lambda> ((x::'a), (y::'b)). (x, y) \<in> r \<and> y \<in> yS)"
 consts Relation__total_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__total_p_def: 
-  "Relation__total_p r \<equiv> (Relation__domain r = UNIV)"
+  "Relation__total_p r \<equiv> (Domain r = UNIV)"
 consts Relation__total_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                    ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__total_p__stp_def: 
@@ -100,7 +96,7 @@ defs Relation__total_p__stp_def:
 types  ('a,'b)Relation__TotalRelation = " ('a, 'b)Relation__Relation"
 consts Relation__surjective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__surjective_p_def: 
-  "Relation__surjective_p r \<equiv> (Relation__range r = UNIV)"
+  "Relation__surjective_p r \<equiv> (Range r = UNIV)"
 consts Relation__surjective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                         ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__surjective_p__stp_def: 
@@ -162,7 +158,7 @@ defs Relation__bijective_p__stp_def:
 types  ('a,'b)Relation__BijectiveRelation = " ('a, 'b)Relation__Relation"
 consts Relation__totalOn_p :: "'a set \<Rightarrow>  ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__totalOn_p_def: 
-  "Relation__totalOn_p s r \<equiv> (Relation__domain r = s)"
+  "Relation__totalOn_p s r \<equiv> (Domain r = s)"
 consts Relation__totalOn_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                     'a set \<Rightarrow> 
                                      ('a, 'b)Relation__Relation \<Rightarrow> bool"
@@ -175,7 +171,7 @@ defs Relation__totalOn_p__stp_def:
 consts Relation__surjectiveOn_p :: "'b set \<Rightarrow> 
                                      ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__surjectiveOn_p_def: 
-  "Relation__surjectiveOn_p s r \<equiv> (Relation__range r = s)"
+  "Relation__surjectiveOn_p s r \<equiv> (Range r = s)"
 consts Relation__surjectiveOn_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                          'b set \<Rightarrow> 
                                           ('a, 'b)Relation__Relation \<Rightarrow> bool"

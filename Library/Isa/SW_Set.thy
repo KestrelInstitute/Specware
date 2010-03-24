@@ -6,6 +6,9 @@ types 'a Set__Predicate = "'a \<Rightarrow> bool"
 lemma Set_Set_P_converse:
 "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
 by (auto simp add: Set_P_def mem_def)
+lemma Set_P_unfold:
+"Set_P P A = (\<forall> x \<in> A . P x)"
+  by (auto simp add: Set_P_def mem_def)  
 lemma Set_Fun_PD_Set_P:
 "Fun_PD P A \<Longrightarrow> Set_P P A"
 by (auto simp add: Set_P_def mem_def)
@@ -214,8 +217,9 @@ types 'a Set__Singleton = "'a set"
 theorem Set__theMember_Obligation_the: 
   "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
-consts Set__theMember :: "'a Set__Singleton \<Rightarrow> 'a"
-defs Set__theMember_def: "Set__theMember s \<equiv> (THE (x::'a). x \<in> s)"
+theorem Set__theMember__def: 
+  "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> contents s = (THE (x::'a). x \<in> s)"
+  by auto
 consts Set__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a"
 defs Set__theMember__stp_def: 
   "Set__theMember__stp P__a s \<equiv> (THE (x::'a). P__a x \<and> x \<in> s)"
@@ -272,10 +276,10 @@ proof(rule Set_Set_P_Fun_PD)
  by (rule_tac s=s and P__a=P__a in Set__SetP_less)
 qed
 
-consts Set__map :: "('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> 'b set"
-defs Set__map_def: 
-  "Set__map f s
-     \<equiv> (\<lambda> (y::'b). \<exists>(x::'a). x \<in> s \<and> y = f x)"
+theorem Set__map__def: 
+  "((y::'b) \<in> image f s) 
+     = (\<exists>(x::'a). x \<in> s \<and> y = f x)"
+  by auto
 consts Set__map__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a set \<Rightarrow> 'b set"
 defs Set__map__stp_def: 
   "Set__map__stp P__a f s
@@ -295,7 +299,7 @@ defs Set__imap_def:
   "Set__imap f s \<equiv> (\<lambda> (x::'a). f x \<in> s)"
 consts Set__setGeneratedBy :: "('a \<Rightarrow> 'b) \<Rightarrow> 'b set"
 defs Set__setGeneratedBy_def: 
-  "Set__setGeneratedBy f \<equiv> Set__map f UNIV"
+  "Set__setGeneratedBy f \<equiv> image f UNIV"
 consts Set__setGeneratedBy__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'b set"
 defs Set__setGeneratedBy__stp_def: 
   "Set__setGeneratedBy__stp P__a f \<equiv> Set__map__stp P__a f UNIV"
@@ -370,12 +374,6 @@ next
           P__a x \<longrightarrow>
           (x \<in> s) = (\<exists> i<n. f i = x)" by auto
 qed
-(* lemma nat_seq_finite_stp:
-"\<lbrakk> Set_P P__a (s::'a set); 
-   (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-     \<forall>(x::'a). (x \<in> (s::'a set)) = (\<exists>(i::nat). i < n \<and> f i = x))\<rbrakk> 
- \<Longrightarrow> Set__finite_p__stp P__a s"
- sorry *)
 
 types 'a Set__FiniteSet = "'a set"
 
@@ -493,6 +491,17 @@ lemma finite_induct_stp[rule_format]:
   apply (simp add:Set_P_Set_P_insert2)
 done
 
+
+theorem Set__Finite_to_list:
+  "\<lbrakk>Set__finite_p__stp P S; Set_P P S; Set__nonEmpty_p__stp P S\<rbrakk>
+     \<Longrightarrow> \<exists>l. (l \<noteq> [] \<and> S = set l \<and> list_all P l)"
+   apply (simp add: Set_P_def Set__finite_p__stp_def 
+                    Set__nonEmpty_p__stp_def Set__empty_p__stp_def
+                    list_all_iff, 
+          clarify)
+   apply (rule_tac x="map f [0..<n]" in exI, auto)
+done
+
 theorem Set__induction_Obligation_subtype: 
   "finite {}"
   by auto
@@ -605,7 +614,16 @@ theorem Set__size_Obligation_the:
              finite s 
                \<longrightarrow> size__v (insert x s) 
                      = 1 + size__v (s less x)))"
-   sorry
+   apply (rule_tac a="RFun finite card" in ex1I, auto)
+ apply (frule_tac x=x in card_insert_if, auto,
+        drule_tac x=x in card_Suc_Diff1, auto)
+ apply (rule ext, auto) 
+ apply (thin_tac "\<forall>xa. \<not> finite xa \<longrightarrow> x xa = regular_val",
+        induct_tac xa rule: finite_induct)
+ apply (simp, simp only: card_empty) 
+ apply (drule_tac x=F in spec, drule mp, simp)
+ apply (drule_tac x=xb in spec, simp)
+  done
 theorem Set__size_Obligation_subtype: 
   "finite {}"
   by auto
@@ -615,16 +633,29 @@ theorem Set__size_Obligation_subtype0:
 theorem Set__size_Obligation_subtype1: 
   "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> finite (s less (x::'a))"
   by auto
-consts Set__size :: "'a Set__FiniteSet \<Rightarrow> nat"
-defs Set__size_def: 
-  "Set__size
-     \<equiv> (THE (size__v::'a Set__FiniteSet \<Rightarrow> nat). 
-       Fun_PD finite size__v 
-         \<and> (size__v {} = 0 
-          \<and> (\<forall>(s::'a Set__FiniteSet) (x::'a). 
-               finite s 
-                 \<longrightarrow> size__v (insert x s) 
-                       = 1 + size__v (s less x))))"
+theorem Set__size__def: 
+  "RFun finite card 
+     = RFun finite
+          ((THE (size__v::'a Set__FiniteSet \<Rightarrow> nat). 
+           Fun_PD finite size__v 
+             \<and> (size__v {} = 0 
+              \<and> (\<forall>(s::'a Set__FiniteSet) (x::'a). 
+                   finite s 
+                     \<longrightarrow> size__v (insert x s) 
+                           = 1 + size__v (s less x)))))"
+  apply (simp, rule ext, auto)
+  apply (rule_tac P="\<lambda>size__v. (\<forall>x. \<not> finite x \<longrightarrow> size__v x = regular_val) \<and>
+            size__v {} = 0 \<and>
+            (\<forall>s. finite s \<longrightarrow> (\<forall>x. size__v (insert x s) = Suc (size__v (s - {x}))))" 
+         in the1I2,
+         cut_tac Set__size_Obligation_the, simp)
+  apply (clarify, 
+         thin_tac "\<forall>x. \<not> finite x \<longrightarrow> xa x = regular_val")
+  apply (induct_tac x rule: finite_induct)
+  apply (simp, simp only: card_empty) 
+  apply (drule_tac x=F in spec, drule mp, simp)
+  apply (drule_tac x=xb in spec, simp)
+  done
 consts Set__size__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> nat"
 defs Set__size__stp_def: 
   "Set__size__stp P__a
@@ -638,7 +669,7 @@ defs Set__size__stp_def:
                        = 1 + size__v (s less x))))"
 consts Set__hasSize :: "'a set \<Rightarrow> nat \<Rightarrow> bool"	(infixl "hasSize" 60)
 defs Set__hasSize_def: 
-  "(s hasSize n) \<equiv> (finite s \<and> Set__size s = n)"
+  "(s hasSize n) \<equiv> (finite s \<and> card s = n)"
 consts Set__hasSize__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<times> nat \<Rightarrow> bool"
 defs Set__hasSize__stp_def: 
   "Set__hasSize__stp P__a
@@ -661,6 +692,149 @@ defs Set__foldable_p__stp_def:
             \<forall>(x::'a) (y::'a) (z::'b). 
               P__a x \<and> (P__a y \<and> (P__b z \<and> (x \<in> s \<and> y \<in> s))) 
                 \<longrightarrow> f(f(z, x), y) = f(f(z, y), x))"
+
+
+(*******************************************************************************
+* The following lemmas are similar to lemmas in Finite_Set.thy that have been
+* proven in the context
+*
+*     "fun_left_comm f \<equiv> \<forall>x y z. f x (f y z) = f y (f x z)"
+*
+* We need to reprove them in the weakened context
+*
+*     "\<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
+*
+* For this purpose we need to temporarily revive two rules that have been deleted
+* from the set of rules at the end of Finite_Set.thy 
+*******************************************************************************)
+
+declare
+  empty_fold_graphE  [elim!]
+  fold_graph.intros [intro!]
+
+consts fun_left_comm_on :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> ('a set) \<Rightarrow> bool"
+defs  fun_left_comm_on_def: 
+  "fun_left_comm_on f A 
+     \<equiv> \<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
+
+lemma fold_graph_determ_aux:
+  "fun_left_comm_on f A  \<Longrightarrow> A = h`{i::nat. i<n} \<Longrightarrow> inj_on h {i. i<n}
+   \<Longrightarrow> fold_graph f z A x \<Longrightarrow> fold_graph f z A x'
+   \<Longrightarrow> x' = x"
+proof (induct n arbitrary: A x x' h rule: less_induct)
+  case (less n)
+  have IH: "\<And>m h A x x'. m < n \<Longrightarrow> fun_left_comm_on f A  \<Longrightarrow>  A = h ` {i. i<m}
+      \<Longrightarrow> inj_on h {i. i<m} \<Longrightarrow> fold_graph f z A x
+      \<Longrightarrow> fold_graph f z A x' \<Longrightarrow> x' = x" by fact
+  have  Afuncom: " fun_left_comm_on f A"
+    and Afoldx: "fold_graph f z A x" and Afoldx': "fold_graph f z A x'"
+    and A: "A = h`{i. i<n}" and injh: "inj_on h {i. i<n}" by fact+
+  have FunLeftComm_fA: "fun_left_comm_on f A" by fact
+  show ?case
+  proof (rule fold_graph.cases [OF Afoldx])
+    assume "A = {}" and "x = z"
+    with Afoldx' show "x' = x" by auto
+  next 
+    fix B b u
+    assume  AbB:"A = insert b B" and x: "x = f b u"
+      and notinB: "b \<notin> B" and Bu: "fold_graph f z B u"
+    show "x'=x" 
+    proof (rule fold_graph.cases [OF Afoldx'])
+      assume "A = {}" and "x' = z"
+      with AbB show "x' = x" by blast
+    next
+      fix C c v
+      assume AcC: "A = insert c C" and x': "x' = f c v"
+        and notinC: "c \<notin> C" and Cv: "fold_graph f z C v"
+      from A AbB have Beq: "insert b B = h`{i. i<n}" by simp
+      from insert_inj_onE [OF Beq notinB injh]
+      obtain hB mB where inj_onB: "inj_on hB {i. i < mB}" 
+        and Beq: "B = hB ` {i. i < mB}" and lessB: "mB < n" by auto 
+      from Afuncom AbB have Bfuncom: "fun_left_comm_on f B" 
+         by (simp add: fun_left_comm_on_def)
+      from A AcC have Ceq: "insert c C = h`{i. i<n}" by simp
+      from insert_inj_onE [OF Ceq notinC injh]
+      obtain hC mC where inj_onC: "inj_on hC {i. i < mC}"
+        and Ceq: "C = hC ` {i. i < mC}" and lessC: "mC < n" by auto 
+      from Afuncom AcC have Cfuncom: "fun_left_comm_on f C" 
+         by (simp add: fun_left_comm_on_def)
+      show "x'=x"
+      proof cases
+        assume "b=c"
+        then moreover have "B = C" using AbB AcC notinB notinC by auto
+        ultimately show ?thesis  
+                   using Bu Cv x x' IH [OF lessC Cfuncom Ceq inj_onC] 
+          by auto  
+      next
+        assume diff: "b \<noteq> c"
+        let ?D = "B - {c}"
+        have B: "B = insert c ?D" and C: "C = insert b ?D"
+          using AbB AcC notinB notinC diff by(blast elim!:equalityE)+
+        have "finite A" by(rule fold_graph_imp_finite [OF Afoldx])
+        with AbB have "finite ?D" by simp
+        then obtain d where Dfoldd: "fold_graph f z ?D d"
+          using finite_imp_fold_graph by iprover
+        moreover have cinB: "c \<in> B" using B by auto
+        ultimately have "fold_graph f z B (f c d)" by(rule Diff1_fold_graph)
+        hence "f c d = u"  by (rule IH [OF lessB Bfuncom Beq inj_onB Bu])  
+        moreover have "f b d = v"
+        proof (rule IH[OF lessC Cfuncom Ceq inj_onC Cv]) 
+          show "fold_graph f z C (f b d)" using C notinB Dfoldd by fastsimp
+        qed 
+        ultimately show ?thesis 
+          using Afuncom AbB AcC x x'  by (auto simp add: fun_left_comm_on_def)
+      qed
+    qed
+  qed
+qed
+
+lemma fold_graph_determ:
+  "\<lbrakk>fun_left_comm_on f A; fold_graph f z A x; fold_graph f z A y\<rbrakk> \<Longrightarrow> y = x"
+apply (frule fold_graph_imp_finite [THEN finite_imp_nat_seg_image_inj_on])
+apply (erule exE, erule exE, erule conjE)
+apply (drule fold_graph_determ_aux, auto)
+done
+
+lemma fold_equality:
+  "\<lbrakk>fun_left_comm_on f A; fold_graph f z A y\<rbrakk> \<Longrightarrow> fold f z A = y"
+by (unfold fold_def) (blast intro: fold_graph_determ)
+
+lemma fold_insert_aux: 
+ "\<lbrakk>fun_left_comm_on f (insert x A); x \<notin> A\<rbrakk>
+  \<Longrightarrow> fold_graph f z (insert x A) v = (\<exists>y. fold_graph f z A y \<and> v = f x y)"
+apply auto
+apply (rule_tac A1=A and f1=f and z1=z in finite_imp_fold_graph [THEN exE])
+apply (fastsimp dest: fold_graph_imp_finite)
+apply (rule_tac x=xa in exI, auto)
+apply (drule fold_graph.insertI, auto)
+apply (thin_tac "fold_graph f z A xa")
+apply (cut_tac x=v and y="f x xa" in fold_graph_determ)
+apply auto
+done
+
+lemma fold_insert:
+  "\<lbrakk>finite A; x \<notin> A; fun_left_comm_on f (insert x A)\<rbrakk>
+   \<Longrightarrow> fold f z (insert x A) = f x (fold f z A)"
+apply (simp add: fold_def fold_insert_aux)
+apply (subgoal_tac "fun_left_comm_on f A")
+apply (rule the_equality)
+apply (auto intro: finite_imp_fold_graph
+        cong add: conj_cong simp add: fold_def[symmetric] fold_equality)
+apply (simp add: fun_left_comm_on_def)
+done
+
+
+lemma fold_insert_remove:
+ "\<lbrakk>finite A; fun_left_comm_on f (insert x A)\<rbrakk> 
+  \<Longrightarrow>  fold f z (insert x A) = f x (fold f z (A - {x}))"
+  by (cut_tac A="A - {x}" and x=x in fold_insert, auto)
+
+declare
+  empty_fold_graphE [rule del]  fold_graph.intros [rule del]
+
+(******************************************************************************)
+
+
 theorem Set__fold_Obligation_the: 
   "\<exists>!(fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b). 
      Fun_PD
@@ -672,7 +846,18 @@ theorem Set__fold_Obligation_the:
              finite s \<and> Set__foldable_p(c_1, f_1, insert x s) 
                \<longrightarrow> fold__v(c_1, f_1, insert x s) 
                      = f_1(fold__v(c_1, f_1, s less x), x)))"
-   sorry
+  apply (rule_tac a="(\<lambda>(c,f,s). if finite s \<and> Set__foldable_p (c,f,s)
+                                   then fold (\<lambda>x y. f (y,x)) c s 
+                                   else regular_val)" in ex1I, auto)
+  apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
+         simp add:fun_left_comm_on_def, auto)
+  apply (rule ext, simp only: split_paired_all)
+  apply (case_tac "finite b")
+  apply (induct_tac b rule: finite_induct, simp_all)
+  apply (auto simp only: Set__empty__def [symmetric] fold_empty)
+  apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
+         in fold_insert, simp_all add: fun_left_comm_on_def)
+  done
 theorem Set__fold_Obligation_subtype: 
   "finite {}"
   by auto
@@ -744,15 +929,16 @@ defs Set__fold__stp_def:
                             (c, f, RFun P__a (insert x s)))))) 
                     \<longrightarrow> fold__v(c, f, insert x s) 
                           = f(fold__v(c, f, s less x), x)))))"
-theorem Set__powerf_Obligation_subtype: 
-  "Set_P finite (Pow s)"
-   sorry
 consts Set__powerf :: "'a set \<Rightarrow> 'a Set__FiniteSet set"
-defs Set__powerf_def: "Set__powerf s \<equiv> (Pow s \<inter> finite)"
+defs Set__powerf_def: 
+  "Set__powerf s
+     \<equiv> (\<lambda> (sub__v::'a set). sub__v \<in> Pow s \<and> finite sub__v)"
 consts Set__powerf__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a set set"
 defs Set__powerf__stp_def: 
   "Set__powerf__stp P__a s
-     \<equiv> (Set__power__stp P__a s \<inter> Set__finite_p__stp P__a)"
+     \<equiv> (\<lambda> (sub__v::'a set). 
+          sub__v \<in> Set__power__stp P__a s 
+            \<and> Set__finite_p__stp P__a sub__v)"
 consts Set__infinite_p :: "'a set \<Rightarrow> bool"
 defs Set__infinite_p_def: "Set__infinite_p \<equiv> - finite"
 consts Set__infinite_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
@@ -809,8 +995,13 @@ theorem Set__min_Obligation_the:
   "\<lbrakk>Set__hasMin_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMinIn_s ss"
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
   done
-consts Set__min :: "'a Set__SetOfSetsWithMin \<Rightarrow> 'a set"
-defs Set__min_def: "Set__min ss \<equiv> (THE (s::'a set). s isMinIn_s ss)"
+theorem Set__min__def: 
+  "\<lbrakk>Set__hasMin_p ss\<rbrakk> \<Longrightarrow> 
+   Inter ss = (THE (s::'a set). s isMinIn_s ss)"
+  apply (rule_tac P = "\<lambda>s. s isMinIn_s ss" in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (auto simp add: isMinIn_s_def)
+  done
 consts Set__min__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
 defs Set__min__stp_def: 
   "Set__min__stp P__a ss
@@ -841,8 +1032,13 @@ theorem Set__max_Obligation_the:
   "\<lbrakk>Set__hasMax_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMaxIn_s ss"
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)
   done
-consts Set__max :: "'a Set__SetOfSetsWithMax \<Rightarrow> 'a set"
-defs Set__max_def: "Set__max ss \<equiv> (THE (s::'a set). s isMaxIn_s ss)"
+theorem Set__max__def: 
+  "\<lbrakk>Set__hasMax_p ss\<rbrakk> \<Longrightarrow> 
+   Union ss = (THE (s::'a set). s isMaxIn_s ss)"
+  apply (rule_tac P = "\<lambda>s. s isMaxIn_s ss" in the1I2)
+  apply (erule Set__max_Obligation_the)
+  apply (auto simp add: isMaxIn_s_def)
+  done
 consts Set__max__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set set \<Rightarrow> 'a set"
 defs Set__max__stp_def: 
   "Set__max__stp P__a ss

@@ -2,23 +2,24 @@ theory EndoRelation
 imports SW_Relation
 begin
 types 'a EndoRelation__EndoRelation = " ('a, 'a)Relation__Relation"
-consts EndoRelation__id :: "'a EndoRelation__EndoRelation"
-defs EndoRelation__id_def: 
-  "EndoRelation__id \<equiv> (\<lambda> ((xxx::'a), (yyy::'a)). xxx = yyy)"
-consts EndoRelation__idOver :: "'a set \<Rightarrow> 'a EndoRelation__EndoRelation"
-defs EndoRelation__idOver_def: "EndoRelation__idOver s \<equiv> (s <*> s)"
-consts EndoRelation__reflexive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__reflexive_p_def: 
-  "EndoRelation__reflexive_p r \<equiv> (\<forall>(x::'a). (x, x) \<in> r)"
+theorem EndoRelation__id__def: 
+  "(((xxx::'a), (yyy::'a)) \<in> Id) = (xxx = yyy)"
+  by auto
+theorem EndoRelation__idOver__def: 
+  "(((x::'a), (y::'a)) \<in> Id_on s) = (x \<in> s \<and> x = y)"
+  by auto
+theorem EndoRelation__reflexive_p__def: 
+  "refl r = (\<forall>(x::'a). (x, x) \<in> r)"
+  by (simp add: refl_on_def)
 consts EndoRelation__reflexive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                           'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__reflexive_p__stp_def: 
   "EndoRelation__reflexive_p__stp P__a r
      \<equiv> (\<forall>(x::'a). P__a x \<longrightarrow> (x, x) \<in> r)"
 types 'a EndoRelation__ReflexiveRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__irreflexive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__irreflexive_p_def: 
-  "EndoRelation__irreflexive_p r \<equiv> (\<forall>(x::'a). (x, x) \<in> - r)"
+theorem EndoRelation__irreflexive_p__def: 
+  "irrefl r = (\<forall>(x::'a). (x, x) \<in> - r)"
+  by (simp add: irrefl_def)
 consts EndoRelation__irreflexive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                             'a EndoRelation__EndoRelation \<Rightarrow> 
                                             bool"
@@ -26,10 +27,9 @@ defs EndoRelation__irreflexive_p__stp_def:
   "EndoRelation__irreflexive_p__stp P__a r
      \<equiv> (\<forall>(x::'a). P__a x \<longrightarrow> (x, x) \<in> - r)"
 types 'a EndoRelation__IrreflexiveRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__symmetric_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__symmetric_p_def: 
-  "EndoRelation__symmetric_p r
-     \<equiv> (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<longrightarrow> (y, x) \<in> r)"
+theorem EndoRelation__symmetric_p__def: 
+  "sym r = (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<longrightarrow> (y, x) \<in> r)"
+  by (simp add: sym_def)
 consts EndoRelation__symmetric_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                           'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__symmetric_p__stp_def: 
@@ -37,10 +37,10 @@ defs EndoRelation__symmetric_p__stp_def:
      \<equiv> (\<forall>(x::'a) (y::'a). 
           P__a x \<and> (P__a y \<and> (x, y) \<in> r) \<longrightarrow> (y, x) \<in> r)"
 types 'a EndoRelation__SymmetricRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__antisymmetric_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__antisymmetric_p_def: 
-  "EndoRelation__antisymmetric_p r
-     \<equiv> (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<and> (y, x) \<in> r \<longrightarrow> x = y)"
+theorem EndoRelation__antisymmetric_p__def: 
+  "antisym r 
+     = (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<and> (y, x) \<in> r \<longrightarrow> x = y)"
+  by (auto simp add: antisym_def)
 consts EndoRelation__antisymmetric_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                               'a EndoRelation__EndoRelation \<Rightarrow> 
                                               bool"
@@ -50,10 +50,10 @@ defs EndoRelation__antisymmetric_p__stp_def:
           P__a x \<and> (P__a y \<and> ((x, y) \<in> r \<and> (y, x) \<in> r)) 
             \<longrightarrow> x = y)"
 types 'a EndoRelation__AntisymmetricRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__asymmetric_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__asymmetric_p_def: 
-  "EndoRelation__asymmetric_p r
-     \<equiv> (\<forall>(x::'a) (y::'a). \<not> ((x, y) \<in> r \<and> (y, x) \<in> r))"
+theorem EndoRelation__asymmetric_p__def: 
+  "asym r 
+     = (\<forall>(x::'a) (y::'a). \<not> ((x, y) \<in> r \<and> (y, x) \<in> r))"
+  by (auto simp add: asym_def)
 consts EndoRelation__asymmetric_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                            'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__asymmetric_p__stp_def: 
@@ -62,11 +62,11 @@ defs EndoRelation__asymmetric_p__stp_def:
           P__a x \<and> P__a y 
             \<longrightarrow> \<not> ((x, y) \<in> r \<and> (y, x) \<in> r))"
 types 'a EndoRelation__AsymmetricRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__transitive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__transitive_p_def: 
-  "EndoRelation__transitive_p r
-     \<equiv> (\<forall>(x::'a) (y::'a) (z::'a). 
+theorem EndoRelation__transitive_p__def: 
+  "trans r 
+     = (\<forall>(x::'a) (y::'a) (z::'a). 
           (x, y) \<in> r \<and> (y, z) \<in> r \<longrightarrow> (x, z) \<in> r)"
+  by (auto simp add: trans_def)
 consts EndoRelation__transitive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                            'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__transitive_p__stp_def: 
@@ -111,11 +111,9 @@ defs EndoRelation__trichotomous_p__stp_def:
                   \<or> ((x, y) \<in> - r \<and> ((y, x) \<in> r \<and> x \<noteq> y) 
                    \<or> (x, y) \<in> - r \<and> ((y, x) \<in> - r \<and> x = y)))"
 types 'a EndoRelation__TrichotomousRelation = "'a EndoRelation__EndoRelation"
-consts EndoRelation__equivalence_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__equivalence_p_def: 
-  "EndoRelation__equivalence_p
-     \<equiv> (EndoRelation__reflexive_p 
-          \<inter> (EndoRelation__symmetric_p \<inter> EndoRelation__transitive_p))"
+theorem EndoRelation__equivalence_p__def: 
+  "equivalence = refl \<inter> (sym \<inter> trans)"
+  by (auto simp add: equiv_def mem_def)
 consts EndoRelation__equivalence_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                             'a EndoRelation__EndoRelation \<Rightarrow> 
                                             bool"
@@ -128,8 +126,7 @@ types 'a EndoRelation__Equivalence = "'a EndoRelation__EndoRelation"
 consts EndoRelation__partialEquivalence_p :: "'a EndoRelation__EndoRelation \<Rightarrow> 
                                               bool"
 defs EndoRelation__partialEquivalence_p_def: 
-  "EndoRelation__partialEquivalence_p
-     \<equiv> (EndoRelation__symmetric_p \<inter> EndoRelation__transitive_p)"
+  "EndoRelation__partialEquivalence_p \<equiv> (sym \<inter> trans)"
 consts EndoRelation__partialEquivalence_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                    'a EndoRelation__EndoRelation
                                                     \<Rightarrow> bool"
@@ -138,14 +135,21 @@ defs EndoRelation__partialEquivalence_p__stp_def:
      \<equiv> (EndoRelation__symmetric_p__stp P__a 
           \<inter> EndoRelation__transitive_p__stp P__a)"
 types 'a EndoRelation__PartialEquivalence = "'a EndoRelation__EndoRelation"
-consts EndoRelation__wellFounded_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
-defs EndoRelation__wellFounded_p_def: 
-  "EndoRelation__wellFounded_p r
-     \<equiv> (\<forall>(p::'a \<Rightarrow> bool). 
+theorem EndoRelation__wellFounded_p__def: 
+  "wf r 
+     = (\<forall>(p::'a \<Rightarrow> bool). 
           (\<exists>(y::'a). p y) 
             \<longrightarrow> (\<exists>(y::'a). 
                    p y 
                      \<and> (\<forall>(x::'a). p x \<longrightarrow> \<not> ((x, y) \<in> r))))"
+  apply (simp add: wf_eq_minimal mem_def Bex_def, safe)
+  apply (drule_tac x=p in spec, drule mp)
+  apply (rule_tac x=y in exI, simp)
+  apply (clarsimp, rule_tac x=x in exI, clarsimp)
+  apply (drule_tac x=Q in spec, drule mp)
+  apply (rule_tac x=x in exI, simp)
+  apply (clarsimp, rule_tac x=y in exI, clarsimp)
+  done
 consts EndoRelation__wellFounded_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                             'a EndoRelation__EndoRelation \<Rightarrow> 
                                             bool"
@@ -163,23 +167,30 @@ types 'a EndoRelation__WellFoundedRelation = "'a EndoRelation__EndoRelation"
 theorem EndoRelation__reflexiveClosure_Obligation_subtype: 
   "Set__hasMin_p
       (\<lambda> (rc::('a \<times> 'a) set). 
-         (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-           \<and> EndoRelation__reflexive_p rc)"
-   sorry
+         (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> refl rc)"
+  apply (simp add: Set__hasMin_p_def isMinIn_s_def refl_on_def mem_def)
+  apply (rule_tac x="r^=" in  exI, auto)
+  apply (erule notE, rule_tac x="(x,x)" in mem_reverse, simp add: pair_in_Id_conv)
+  apply (drule spec, auto simp add: mem_def)
+  done
 theorem EndoRelation__reflexiveClosure_Obligation_subtype0: 
-  "EndoRelation__reflexive_p
-      (Set__min
+  "refl
+      (Inter
           (\<lambda> (rc::('a \<times> 'a) set). 
-             (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-               \<and> EndoRelation__reflexive_p rc))"
-   sorry
-consts EndoRelation__reflexiveClosure :: "'a EndoRelation__EndoRelation \<Rightarrow> 
-                                          'a EndoRelation__ReflexiveRelation"
-defs EndoRelation__reflexiveClosure_def: 
-  "EndoRelation__reflexiveClosure r
-     \<equiv> Set__min
-          (\<lambda> (rc::('a \<times> 'a) set). 
-             r \<subseteq> rc \<and> EndoRelation__reflexive_p rc)"
+             (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> refl rc))"
+  by (auto simp add: refl_on_def mem_def Inter_def)
+theorem EndoRelation__reflexiveClosure__def: 
+  "reflcl r 
+     = Inter (\<lambda> (rc::('a \<times> 'a) set). r \<subseteq> rc \<and> refl rc)"
+  apply (cut_tac r=r in EndoRelation__reflexiveClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac
+         P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> refl rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def mem_def, clarify)
+  apply (drule_tac x="r^=" in spec, auto simp add: refl_on_def)
+  done
 consts EndoRelation__reflexiveClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                'a EndoRelation__EndoRelation \<Rightarrow> 
                                                'a EndoRelation__EndoRelation"
@@ -194,23 +205,39 @@ defs EndoRelation__reflexiveClosure__stp_def:
 theorem EndoRelation__symmetricClosure_Obligation_subtype: 
   "Set__hasMin_p
       (\<lambda> (rc::('a \<times> 'a) set). 
-         (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-           \<and> EndoRelation__symmetric_p rc)"
-   sorry
+         (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> sym rc)"
+  apply (simp add: Set__hasMin_p_def isMinIn_s_def sym_def mem_def)
+  apply (rule_tac x="r^s" in  exI, auto simp add: mem_def)
+  apply (erule notE, rule_tac x="(y,x)" in mem_reverse, 
+         rule converseI, simp add: mem_def)
+  apply (rule_tac x="(y,x)" in mem_reverse, 
+         rule converseD, simp add: mem_def)
+  done
 theorem EndoRelation__symmetricClosure_Obligation_subtype0: 
-  "EndoRelation__symmetric_p
-      (Set__min
+  "sym
+      (Inter
           (\<lambda> (rc::('a \<times> 'a) set). 
-             (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-               \<and> EndoRelation__symmetric_p rc))"
-   sorry
-consts EndoRelation__symmetricClosure :: "'a EndoRelation__EndoRelation \<Rightarrow> 
-                                          'a EndoRelation__SymmetricRelation"
-defs EndoRelation__symmetricClosure_def: 
-  "EndoRelation__symmetricClosure r
-     \<equiv> Set__min
-          (\<lambda> (rc::('a \<times> 'a) set). 
-             r \<subseteq> rc \<and> EndoRelation__symmetric_p rc)"
+             (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> sym rc))"
+  apply (cut_tac r=r in EndoRelation__symmetricClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac 
+         P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> sym rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def mem_def)
+  done
+theorem EndoRelation__symmetricClosure__def: 
+  "symcl r 
+     = Inter (\<lambda> (rc::('a \<times> 'a) set). r \<subseteq> rc \<and> sym rc)"
+  apply (cut_tac r=r in EndoRelation__symmetricClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac
+         P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> sym rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def mem_def, clarify)
+  apply (drule_tac x="r^s" in spec, auto simp add: sym_def)
+  done
 consts EndoRelation__symmetricClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                'a EndoRelation__EndoRelation \<Rightarrow> 
                                                'a EndoRelation__EndoRelation"
@@ -225,23 +252,40 @@ defs EndoRelation__symmetricClosure__stp_def:
 theorem EndoRelation__transitiveClosure_Obligation_subtype: 
   "Set__hasMin_p
       (\<lambda> (rc::('a \<times> 'a) set). 
-         (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-           \<and> EndoRelation__transitive_p rc)"
-   sorry
+         (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> trans rc)"
+  apply (simp add: Set__hasMin_p_def isMinIn_s_def mem_def)
+  apply (rule_tac x="r^+" in  exI, auto)
+  apply (rule_tac r=r and a=a and b=b and P="\<lambda>y. (a,y) \<in> s1" 
+         in trancl_induct)
+  apply (auto, erule_tac b=y in  transD, auto)
+  done
 theorem EndoRelation__transitiveClosure_Obligation_subtype0: 
-  "EndoRelation__transitive_p
-      (Set__min
+  "trans
+      (Inter
           (\<lambda> (rc::('a \<times> 'a) set). 
-             (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-               \<and> EndoRelation__transitive_p rc))"
-   sorry
-consts EndoRelation__transitiveClosure :: "'a EndoRelation__EndoRelation \<Rightarrow> 
-                                           'a EndoRelation__TransitiveRelation"
-defs EndoRelation__transitiveClosure_def: 
-  "EndoRelation__transitiveClosure r
-     \<equiv> Set__min
-          (\<lambda> (rc::('a \<times> 'a) set). 
-             r \<subseteq> rc \<and> EndoRelation__transitive_p rc)"
+             (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> trans rc))"
+  apply (cut_tac r=r in EndoRelation__transitiveClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac
+         P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> trans rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def mem_def)
+  done
+theorem EndoRelation__transitiveClosure__def: 
+  "trancl r 
+     = Inter (\<lambda> (rc::('a \<times> 'a) set). r \<subseteq> rc \<and> trans rc)"
+  apply (cut_tac r=r in EndoRelation__transitiveClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac
+         P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> trans rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def mem_def, clarify)
+  apply (drule_tac x="r^+" in spec, drule mp, auto)
+  apply (rule_tac r=r and a=a and b=b in trancl_induct)
+  apply (auto, erule_tac b=y in  transD, auto)
+  done
 consts EndoRelation__transitiveClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                 'a EndoRelation__EndoRelation
                                                  \<Rightarrow> 
@@ -257,23 +301,43 @@ defs EndoRelation__transitiveClosure__stp_def:
 theorem EndoRelation__equivalenceClosure_Obligation_subtype: 
   "Set__hasMin_p
       (\<lambda> (rc::('a \<times> 'a) set). 
-         (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-           \<and> EndoRelation__equivalence_p rc)"
-   sorry
+         (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> equivalence rc)"
+   apply (simp add: Set__hasMin_p_def isMinIn_s_def equiv_def mem_def)
+   apply (rule_tac x="r^\<equiv>" in  exI,
+          auto simp add: refl_rtrancl trans_rtrancl sym_rtrancl sym_symcl)
+   apply (rule_tac r="r^s" and a=a and b=b and P="\<lambda>y. (a,y) \<in> s1" 
+         in rtrancl_induct)
+   apply (simp_all add: refl_on_def sym_def, erule_tac b=y in  transD, auto)
+  done
 theorem EndoRelation__equivalenceClosure_Obligation_subtype0: 
-  "EndoRelation__equivalence_p
-      (Set__min
+  "equivalence
+      (Inter
           (\<lambda> (rc::('a \<times> 'a) set). 
              (r::'a EndoRelation__EndoRelation) \<subseteq> rc 
-               \<and> EndoRelation__equivalence_p rc))"
-   sorry
-consts EndoRelation__equivalenceClosure :: "'a EndoRelation__EndoRelation \<Rightarrow> 
-                                            'a EndoRelation__Equivalence"
-defs EndoRelation__equivalenceClosure_def: 
-  "EndoRelation__equivalenceClosure r
-     \<equiv> Set__min
-          (\<lambda> (rc::('a \<times> 'a) set). 
-             r \<subseteq> rc \<and> EndoRelation__equivalence_p rc)"
+               \<and> equivalence rc))"
+   apply (cut_tac r=r in EndoRelation__equivalenceClosure_Obligation_subtype)
+ apply (simp add: Set__min__def)
+ apply (rule_tac 
+      P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> equivalence rc)" 
+        in the1I2)
+ apply (erule Set__min_Obligation_the)
+ apply (simp add: isMinIn_s_def mem_def univ_true)
+  done
+theorem EndoRelation__equivalenceClosure__def: 
+  "equivcl r 
+     = Inter (\<lambda> (rc::('a \<times> 'a) set). r \<subseteq> rc \<and> equivalence rc)"
+  apply (cut_tac r=r in EndoRelation__equivalenceClosure_Obligation_subtype)
+  apply (simp add: Set__min__def)
+  apply (rule_tac
+       P="\<lambda>s. s isMinIn_s (\<lambda>rc. r \<subseteq> rc \<and> equivalence rc)" 
+         in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (simp add: isMinIn_s_def  equiv_def mem_def, clarify)
+  apply (drule_tac x="r^\<equiv>" in spec, drule mp,
+          auto simp add: refl_rtrancl trans_rtrancl sym_rtrancl sym_symcl)
+  apply (rule_tac r="r^s" and a=a and b=b in rtrancl_induct)
+  apply (simp_all add: refl_on_def sym_def, erule_tac b=y in  transD, auto)
+  done
 consts EndoRelation__equivalenceClosure__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                                  'a EndoRelation__EndoRelation
                                                   \<Rightarrow> 

@@ -10,7 +10,15 @@ type Relation(a,b) = Set (a * b)
 
 op [a,b] domain (r: Relation(a,b)) : Set a = fn x:a -> (ex(y:b) r(x,y))
 
+proof Isa domain__def
+  by (simp add: Domain_def)
+end-proof
+
 op [a,b] range (r: Relation(a,b)) : Set b = fn y:b -> (ex(x:a) r(x,y))
+
+proof Isa range__def
+  by (simp add: Range_def Domain_def converse_def)
+end-proof
 
 % range/domain values related to domain/range value (set):
 
@@ -20,6 +28,10 @@ op [a,b] applyi (r: Relation(a,b)) (y:b) : Set a = fn x:a -> r(x,y)
 
 op [a,b] applys (r: Relation(a,b)) (xS: Set a) : Set b =
   fn y:b -> (ex(x:a) x in? xS && r(x,y))
+
+proof Isa applys__def
+  by (simp add: Image_def Bex_def)
+end-proof
 
 op [a,b] applyis (r: Relation(a,b)) (yS: Set b) : Set a =
   fn x:a -> (ex(y:b) y in? yS && r(x,y))
@@ -32,10 +44,15 @@ op [a,b,c] :> (r1: Relation(a,b), r2: Relation(b,c)) infixl 24
 op [a,b,c] o (r1: Relation(b,c), r2: Relation(a,b)) infixl 24
              : Relation(a,c) = r2 :> r1
 proof Isa -> o_R end-proof
+% proof Isa [simp] end-proof
 
 % inverse:
 
 op [a,b] inverse (r: Relation(a,b)) : Relation(b,a) = fn (y,x) -> r(x,y)
+
+proof Isa inverse__def
+  by (simp add: converse_def)
+end-proof
 
 % remove pairs whose domain/range value is not in argument set:
 
@@ -95,5 +112,27 @@ type      FiniteRelation(a,b) = (Relation(a,b) | finite?)
 type    InfiniteRelation(a,b) = (Relation(a,b) | infinite?)
 type   CountableRelation(a,b) = (Relation(a,b) | countable?)
 type UncountableRelation(a,b) = (Relation(a,b) | uncountable?)
+
+proof Isa Thy_Morphism 
+  Relation.domain -> Domain 
+  Relation.range  -> Range
+  Relation.applys -> Image
+  Relation.:> -> O Left 24
+  Relation.inverse -> converse
+%%  Relation.apply -> 
+%%  Relation.applyi -> 
+%%  Relation.applyis -> 
+%%  Relation.o ->  
+%%  Relation.restrictDomain -> 
+%%  Relation.restrictRange -> 
+%%  Relation.total? -> 
+%%  Relation.surjective? -> 
+%%  Relation.functional? -> 
+%%  Relation.injective? -> 
+%%  Relation.bijective? -> 
+%%  Relation.totalOn? -> 
+%%  Relation.surjectiveOn? -> 
+%%  Relation.bijectiveOn? -> 
+end-proof
 
 endspec

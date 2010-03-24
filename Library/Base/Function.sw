@@ -194,6 +194,31 @@ proof Isa inverse_Obligation_the
   apply(drule spec, erule exE, drule sym, auto)
 end-proof
 
+
+proof Isa -verbatim
+lemma Function__inverse__stp_eq:
+  "\_lbrakk\_exists!x. P x \_and f x = y; g = Function__inverse__stp P f\_rbrakk 
+    \_Longrightarrow P (g y) \_and f (g y) = y "
+  by (simp add: Function__inverse__stp_def, rule the1I2, simp_all)
+end-proof
+
+proof Isa -verbatim
+lemma Function__inverse__stp_eq_props:
+  "\_lbrakkbij_ON f P Q; Function__inverse__stp P f = g; Q y\_rbrakk 
+     \_Longrightarrow P (g y) \_and f (g y) = y "  
+  apply (cut_tac f=f and g=g and P=P and y=y in Function__inverse__stp_eq)
+  apply(auto simp add:
+          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+done
+end-proof
+
+proof Isa -verbatim
+lemma Function__inverse__stp_eq_props_true:
+  "\_lbrakkbij_ON f P TRUE; Function__inverse__stp P f = g\_rbrakk 
+     \_Longrightarrow P (g y) \_and f (g y) = y "  
+  by (simp add: Function__inverse__stp_eq_props)
+end-proof
+
 proof Isa inverse_subtype_constr
   apply(auto simp add: bij_def)
   apply(erule surj_imp_inj_inv)

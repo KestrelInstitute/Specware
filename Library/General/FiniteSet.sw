@@ -26,9 +26,34 @@ op toFSet : [a] Bijection (FiniteSet a, FSet a)
 
 op fromFSet : [a] FSet a -> FiniteSet a = inverse toFSet
 
-proof Isa fromFSet_subtype_constr
- sorry
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+lemma FSet__fromFSet_alt_def:
+  "FSet__fromFSet = inv_on finite FSet__toFSet"
+ apply (cut_tac  FSet__toFSet_subtype_constr)
+ apply (simp add: FSet__fromFSet_def univ_true bij_ON_UNIV_bij_on)
+ apply (erule   Function__inverse__stp_simp)
+done
+lemma FSet__fromFSet_alt_bij: 
+  "bij_on  FSet__fromFSet UNIV finite"
+ apply (cut_tac  FSet__toFSet_subtype_constr)
+ apply (simp add: FSet__fromFSet_alt_def univ_true bij_ON_UNIV_bij_on)
+ apply (erule bij_on_imp_bij_on_inv)
+done
+lemma FSet__fromFSet_finite:
+  "finite (FSet__fromFSet s)"
+  apply (cut_tac FSet__fromFSet_alt_bij)
+  apply (auto simp add: bij_on_def defined_on_simp_set mem_def)
+done
+lemma FSet__fromFSet_f_f:
+  "finite s \<Longrightarrow>  FSet__fromFSet (FSet__toFSet s) = s"
+   apply (simp add: FSet__fromFSet_alt_def)
+   apply (rule inv_on_f_f)
+   apply (cut_tac FSet__toFSet_subtype_constr,
+          auto simp add: bij_ON_def mem_def)
+done
 end-proof
+% ------------------------------------------------------------------------------
 
 % operations and subtypes (see spec `Set'):
 
@@ -58,14 +83,14 @@ op [a] /\ (s1: FSet a, s2: FSet a) infixr 25 : FSet a =
   toFSet (fromFSet s1 /\ fromFSet s2)
 
 proof Isa e_fsl_bsl_Obligation_subtype
- sorry
+ by (rule finite_Int, simp add: FSet__fromFSet_finite)
 end-proof
 
 op [a] \/ (s1: FSet a, s2: FSet a) infixr 24 : FSet a =
   toFSet (fromFSet s1 \/ fromFSet s2)
 
 proof Isa e_bsl_fsl_Obligation_subtype
- sorry
+  by (simp add: finite_Un FSet__fromFSet_finite)
 end-proof
 
 op [a] -- (s1: FSet a, s2: FSet a) infixl 25 : FSet a =
@@ -73,7 +98,7 @@ op [a] -- (s1: FSet a, s2: FSet a) infixl 25 : FSet a =
 proof Isa -> --_fs end-proof
 
 proof Isa e_dsh_dsh_Obligation_subtype
- sorry
+ by (rule finite_Diff, simp add: FSet__fromFSet_finite)
 end-proof
 
 op [a,b] * (s1: FSet a, s2: FSet b) infixl 27 : FSet (a * b) =
@@ -81,22 +106,18 @@ op [a,b] * (s1: FSet a, s2: FSet b) infixl 27 : FSet (a * b) =
 proof Isa -> *_fset? end-proof
 
 proof Isa e_ast_Obligation_subtype
- sorry
+ by (rule finite_cartesian_product, simp_all add: FSet__fromFSet_finite)
 end-proof
 
 op [a] power (s: FSet a) : FSet (FSet a) =
   toFSet (map toFSet (power (fromFSet s)))
 
 proof Isa power_Obligation_subtype
- sorry
+  by (simp add: FSet__fromFSet_finite finite_Pow_iff)
 end-proof
 
 op empty : [a] FSet a = toFSet empty
 proof Isa -> empty_fset_p end-proof
-
-proof Isa empty_subtype_constr
- sorry
-end-proof
 
 op [a] empty? (s: FSet a) : Bool = empty? (fromFSet s)
 
@@ -105,10 +126,6 @@ op [a] nonEmpty? (s: FSet a) : Bool = nonEmpty? (fromFSet s)
 type NonEmptyFSet a = (FSet a | nonEmpty?)
 
 op [a] single (x:a) : FSet a = toFSet (single x)
-
-proof Isa single_subtype_constr
- sorry
-end-proof
 
 op [a] single? (s: FSet a) : Bool = single? (fromFSet s)
 
@@ -124,27 +141,30 @@ op [a] <| (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s <| x)
 proof Isa -> with_fs [simp] end-proof
 
 proof Isa e_lt_bar_Obligation_subtype
- sorry
+ by (simp add: FSet__fromFSet_finite)
 end-proof
 
 op [a] - (s: FSet a, x:a) infixl 25 : FSet a = toFSet (fromFSet s - x)
 proof Isa -> -_fset? end-proof
 
 proof Isa e_dsh_Obligation_subtype
- sorry
+ by (simp add: FSet__fromFSet_finite)
 end-proof
 
 op [a,b] map (f: a -> b) (s: FSet a) : FSet b = toFSet (map f (fromFSet s))
 
 proof Isa map_Obligation_subtype
- sorry
+  by (simp add: FSet__fromFSet_finite)
 end-proof
 
 op [a,b] FSet.mapPartial (f: a -> Option b) (s: FSet a) : FSet b =
   toFSet (Set.mapPartial f (fromFSet s):FiniteSet(b))
 
 proof Isa mapPartial_Obligation_subtype
- sorry
+  apply (cut_tac  s=s and f=f in FSet__map_Obligation_subtype)
+  apply (rule_tac f=Some in finite_imageD)
+  apply (auto simp add: Set__mapPartial_def image_def Collect_def Bex_def)
+  apply (rule finite_subset, auto simp add: mem_def)
 end-proof
 
 op [a] size (s: FSet a) : Nat = size (fromFSet s)
@@ -156,7 +176,7 @@ op [a,b] fold (c: b, f: b * a -> b, s: FSet a | foldable?(c,f,s)) : b =
   fold (c, f, fromFSet s)
 
 proof Isa fold_Obligation_subtype
- sorry
+ by (simp add: FSet__foldable_p_def)
 end-proof
 
 op powerf : [a] FSet a -> FSet (FSet a) = power
@@ -166,15 +186,17 @@ op powerf : [a] FSet a -> FSet (FSet a) = power
 op [a] //\\ (ss: NonEmptyFSet (FSet a)) : FSet a =
   toFSet (//\\ (map fromFSet (fromFSet ss)))
 
-proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype0
- sorry
+proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype0  
+  by (rule finite_Inter, 
+      auto simp add: Set__nonEmpty_p_def ex_in_conv [symmetric] 
+                     FSet__fromFSet_finite)
 end-proof
 
 op [a] \\// (ss: FSet (FSet a)) : FSet a =
   toFSet (\\// (map fromFSet (fromFSet ss)))
 
-proof Isa e_bsl_bsl_fsl_fsl_Obligation_subtype
- sorry
+proof Isa e_bsl_bsl_fsl_fsl_Obligation_subtype  
+ by (rule finite_Union, auto simp add: image_iff FSet__fromFSet_finite)
 end-proof
 
 op [a] forall? (p: a -> Bool) (s: FSet a) : Bool = fromFSet s <= p
@@ -189,7 +211,7 @@ op [a] filter (p: a -> Bool) (s: FSet a) : FSet a =
   toFSet (fromFSet s /\ p)
 
 proof Isa filter_Obligation_subtype
- sorry
+ by (rule finite_Int, simp add: FSet__fromFSet_finite)
 end-proof
 
 % convert list to set:
@@ -197,7 +219,7 @@ end-proof
 op [a] List.toSet (l: List a) : FSet a = toFSet (fn x -> x in? l)
 
 proof Isa List__toSet_Obligation_subtype
- sorry
+ by (simp add: mem_iff mem_def finite_set)
 end-proof
 
 % intersection of all sets contained in a list:
@@ -205,7 +227,12 @@ end-proof
 op [a] List.//\\ (ls: List1 (FSet a)) : FSet a = //\\ (toSet ls)
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
- sorry
+  apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
+                  mem_iff mem_def FSet__fromFSet_def)
+  apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
+  apply (frule_tac y="FSet__toFSet (set ls)" in  Function__inverse__stp_apply,
+         auto simp add: bij_ON_def)
+  apply (drule_tac x="set ls" in inv_on_f_f, auto simp add: mem_def)
 end-proof
 
 

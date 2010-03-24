@@ -26,6 +26,9 @@ proof Isa -verbatim
 lemma Set_Set_P_converse:
 "Set_P P A \_Longrightarrow (\_forall x \_in A . P x)"
 by (auto simp add: Set_P_def mem_def)
+lemma Set_P_unfold:
+"Set_P P A = (\_forall x \_in A . P x)"
+  by (auto simp add: Set_P_def mem_def)  
 lemma Set_Fun_PD_Set_P:
 "Fun_PD P A \_Longrightarrow Set_P P A"
 by (auto simp add: Set_P_def mem_def)
@@ -375,12 +378,6 @@ next
           P__a x \_longrightarrow
           (x \_in s) = (\_exists i<n. f i = x)" by auto
 qed
-(* lemma nat_seq_finite_stp:
-"\_lbrakk Set_P P__a (s::'a set); 
-   (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-     \_forall(x::'a). (x \_in (s::'a set)) = (\_exists(i::nat). i < n \_and f i = x))\_rbrakk 
- \_Longrightarrow Set__finite_p__stp P__a s"
- sorry *)
 end-proof
 
 type FiniteSet a = (Set a | finite?)
@@ -505,6 +502,19 @@ lemma finite_induct_stp[rule_format]:
 done
 end-proof
 
+% -------------------------------------------------------
+proof Isa -verbatim
+theorem Set__Finite_to_list:
+  "\<lbrakk>Set__finite_p__stp P S; Set_P P S; Set__nonEmpty_p__stp P S\<rbrakk>
+     \<Longrightarrow> \<exists>l. (l \<noteq> [] \<and> S = set l \<and> list_all P l)"
+   apply (simp add: Set_P_def Set__finite_p__stp_def 
+                    Set__nonEmpty_p__stp_def Set__empty_p__stp_def
+                    list_all_iff, 
+          clarify)
+   apply (rule_tac x="map f [0..<n]" in exI, auto)
+done
+end-proof
+% -------------------------------------------------------
 
 theorem induction is [a]
   fa (p: FiniteSet a -> Bool)
@@ -595,7 +605,30 @@ op size : [a] FiniteSet a -> Nat = the(size)
   (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
 
 proof Isa size_Obligation_the
- sorry
+ apply (rule_tac a="RFun finite card" in ex1I, auto)
+ apply (frule_tac x=x in card_insert_if, auto,
+        drule_tac x=x in card_Suc_Diff1, auto)
+ apply (rule ext, auto) 
+ apply (thin_tac "\<forall>xa. \<not> finite xa \<longrightarrow> x xa = regular_val",
+        induct_tac xa rule: finite_induct)
+ apply (simp, simp only: card_empty) 
+ apply (drule_tac x=F in spec, drule mp, simp)
+ apply (drule_tac x=xb in spec, simp)
+end-proof
+
+proof Isa size__def
+  apply (simp, rule ext, auto)
+  apply (rule_tac P="\<lambda>size__v. (\<forall>x. \<not> finite x \<longrightarrow> size__v x = regular_val) \<and>
+            size__v {} = 0 \<and>
+            (\<forall>s. finite s \<longrightarrow> (\<forall>x. size__v (insert x s) = Suc (size__v (s - {x}))))" 
+         in the1I2,
+         cut_tac Set__size_Obligation_the, simp)
+  apply (clarify, 
+         thin_tac "\<forall>x. \<not> finite x \<longrightarrow> xa x = regular_val")
+  apply (induct_tac x rule: finite_induct)
+  apply (simp, simp only: card_empty) 
+  apply (drule_tac x=F in spec, drule mp, simp)
+  apply (drule_tac x=xb in spec, simp)
 end-proof
 
 op [a] hasSize (s:Set a, n:Nat) infixl 20 : Bool =
@@ -614,6 +647,152 @@ op [a,b] foldable? (c:b, f: b * a -> b, s: FiniteSet a) : Bool =
   (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
 proof Isa [simp] end-proof
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+(*******************************************************************************
+* The following lemmas are similar to lemmas in Finite_Set.thy that have been
+* proven in the context
+*
+*     "fun_left_comm f \<equiv> \<forall>x y z. f x (f y z) = f y (f x z)"
+*
+* We need to reprove them in the weakened context
+*
+*     "\<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
+*
+* For this purpose we need to temporarily revive two rules that have been deleted
+* from the set of rules at the end of Finite_Set.thy 
+*******************************************************************************)
+
+declare
+  empty_fold_graphE  [elim!]
+  fold_graph.intros [intro!]
+
+consts fun_left_comm_on :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> ('a set) \<Rightarrow> bool"
+defs  fun_left_comm_on_def: 
+  "fun_left_comm_on f A 
+     \<equiv> \<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
+
+lemma fold_graph_determ_aux:
+  "fun_left_comm_on f A  \<Longrightarrow> A = h`{i::nat. i<n} \<Longrightarrow> inj_on h {i. i<n}
+   \<Longrightarrow> fold_graph f z A x \<Longrightarrow> fold_graph f z A x'
+   \<Longrightarrow> x' = x"
+proof (induct n arbitrary: A x x' h rule: less_induct)
+  case (less n)
+  have IH: "\<And>m h A x x'. m < n \<Longrightarrow> fun_left_comm_on f A  \<Longrightarrow>  A = h ` {i. i<m}
+      \<Longrightarrow> inj_on h {i. i<m} \<Longrightarrow> fold_graph f z A x
+      \<Longrightarrow> fold_graph f z A x' \<Longrightarrow> x' = x" by fact
+  have  Afuncom: " fun_left_comm_on f A"
+    and Afoldx: "fold_graph f z A x" and Afoldx': "fold_graph f z A x'"
+    and A: "A = h`{i. i<n}" and injh: "inj_on h {i. i<n}" by fact+
+  have FunLeftComm_fA: "fun_left_comm_on f A" by fact
+  show ?case
+  proof (rule fold_graph.cases [OF Afoldx])
+    assume "A = {}" and "x = z"
+    with Afoldx' show "x' = x" by auto
+  next 
+    fix B b u
+    assume  AbB:"A = insert b B" and x: "x = f b u"
+      and notinB: "b \<notin> B" and Bu: "fold_graph f z B u"
+    show "x'=x" 
+    proof (rule fold_graph.cases [OF Afoldx'])
+      assume "A = {}" and "x' = z"
+      with AbB show "x' = x" by blast
+    next
+      fix C c v
+      assume AcC: "A = insert c C" and x': "x' = f c v"
+        and notinC: "c \<notin> C" and Cv: "fold_graph f z C v"
+      from A AbB have Beq: "insert b B = h`{i. i<n}" by simp
+      from insert_inj_onE [OF Beq notinB injh]
+      obtain hB mB where inj_onB: "inj_on hB {i. i < mB}" 
+        and Beq: "B = hB ` {i. i < mB}" and lessB: "mB < n" by auto 
+      from Afuncom AbB have Bfuncom: "fun_left_comm_on f B" 
+         by (simp add: fun_left_comm_on_def)
+      from A AcC have Ceq: "insert c C = h`{i. i<n}" by simp
+      from insert_inj_onE [OF Ceq notinC injh]
+      obtain hC mC where inj_onC: "inj_on hC {i. i < mC}"
+        and Ceq: "C = hC ` {i. i < mC}" and lessC: "mC < n" by auto 
+      from Afuncom AcC have Cfuncom: "fun_left_comm_on f C" 
+         by (simp add: fun_left_comm_on_def)
+      show "x'=x"
+      proof cases
+        assume "b=c"
+        then moreover have "B = C" using AbB AcC notinB notinC by auto
+        ultimately show ?thesis  
+                   using Bu Cv x x' IH [OF lessC Cfuncom Ceq inj_onC] 
+          by auto  
+      next
+        assume diff: "b \<noteq> c"
+        let ?D = "B - {c}"
+        have B: "B = insert c ?D" and C: "C = insert b ?D"
+          using AbB AcC notinB notinC diff by(blast elim!:equalityE)+
+        have "finite A" by(rule fold_graph_imp_finite [OF Afoldx])
+        with AbB have "finite ?D" by simp
+        then obtain d where Dfoldd: "fold_graph f z ?D d"
+          using finite_imp_fold_graph by iprover
+        moreover have cinB: "c \<in> B" using B by auto
+        ultimately have "fold_graph f z B (f c d)" by(rule Diff1_fold_graph)
+        hence "f c d = u"  by (rule IH [OF lessB Bfuncom Beq inj_onB Bu])  
+        moreover have "f b d = v"
+        proof (rule IH[OF lessC Cfuncom Ceq inj_onC Cv]) 
+          show "fold_graph f z C (f b d)" using C notinB Dfoldd by fastsimp
+        qed 
+        ultimately show ?thesis 
+          using Afuncom AbB AcC x x'  by (auto simp add: fun_left_comm_on_def)
+      qed
+    qed
+  qed
+qed
+
+lemma fold_graph_determ:
+  "\<lbrakk>fun_left_comm_on f A; fold_graph f z A x; fold_graph f z A y\<rbrakk> \<Longrightarrow> y = x"
+apply (frule fold_graph_imp_finite [THEN finite_imp_nat_seg_image_inj_on])
+apply (erule exE, erule exE, erule conjE)
+apply (drule fold_graph_determ_aux, auto)
+done
+
+lemma fold_equality:
+  "\<lbrakk>fun_left_comm_on f A; fold_graph f z A y\<rbrakk> \<Longrightarrow> fold f z A = y"
+by (unfold fold_def) (blast intro: fold_graph_determ)
+
+lemma fold_insert_aux: 
+ "\<lbrakk>fun_left_comm_on f (insert x A); x \<notin> A\<rbrakk>
+  \<Longrightarrow> fold_graph f z (insert x A) v = (\<exists>y. fold_graph f z A y \<and> v = f x y)"
+apply auto
+apply (rule_tac A1=A and f1=f and z1=z in finite_imp_fold_graph [THEN exE])
+apply (fastsimp dest: fold_graph_imp_finite)
+apply (rule_tac x=xa in exI, auto)
+apply (drule fold_graph.insertI, auto)
+apply (thin_tac "fold_graph f z A xa")
+apply (cut_tac x=v and y="f x xa" in fold_graph_determ)
+apply auto
+done
+
+lemma fold_insert:
+  "\<lbrakk>finite A; x \<notin> A; fun_left_comm_on f (insert x A)\<rbrakk>
+   \<Longrightarrow> fold f z (insert x A) = f x (fold f z A)"
+apply (simp add: fold_def fold_insert_aux)
+apply (subgoal_tac "fun_left_comm_on f A")
+apply (rule the_equality)
+apply (auto intro: finite_imp_fold_graph
+        cong add: conj_cong simp add: fold_def[symmetric] fold_equality)
+apply (simp add: fun_left_comm_on_def)
+done
+
+
+lemma fold_insert_remove:
+ "\<lbrakk>finite A; fun_left_comm_on f (insert x A)\<rbrakk> 
+  \<Longrightarrow>  fold f z (insert x A) = f x (fold f z (A - {x}))"
+  by (cut_tac A="A - {x}" and x=x in fold_insert, auto)
+
+declare
+  empty_fold_graphE [rule del]  fold_graph.intros [rule del]
+
+(******************************************************************************)
+
+end-proof
+% ------------------------------------------------------------------------------
+
 op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
   the(fold)
     (fa (c: b, f: b * a -> b) fold (c, f, empty) = c) &&
@@ -621,25 +800,28 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
-proof Isa fold__stp_Obligation_the
- sorry
+proof Isa fold_Obligation_the
+  apply (rule_tac a="(\<lambda>(c,f,s). if finite s \<and> Set__foldable_p (c,f,s)
+                                   then fold (\<lambda>x y. f (y,x)) c s 
+                                   else regular_val)" in ex1I, auto)
+  apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
+         simp add:fun_left_comm_on_def, auto)
+  apply (rule ext, simp only: split_paired_all)
+  apply (case_tac "finite b")
+  apply (induct_tac b rule: finite_induct, simp_all)
+  apply (auto simp only: Set__empty__def [symmetric] fold_empty)
+  apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
+         in fold_insert, simp_all add: fun_left_comm_on_def)
 end-proof
 
-proof Isa fold_Obligation_the
- sorry
-end-proof
 
 % finite powerset:
 
-op [a] powerf (s:Set a) : Set (FiniteSet a) = power s /\ finite?
+%% op [a] powerf (s:Set a) : Set (FiniteSet a) = (power s /\ finite?)
 
-proof Isa powerf__stp_Obligation_subtype
- sorry
-end-proof
+op [a] powerf (s:Set a) : Set (FiniteSet a) = 
+  fn sub:Set a -> (sub in? power s) && finite? sub
 
-proof Isa powerf_Obligation_subtype
- sorry
-end-proof
 
 % infinite, countable, and uncountable cardinality:
 
@@ -676,6 +858,12 @@ proof Isa  Set__min_Obligation_the
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
 end-proof
 
+proof Isa  Set__min__def
+  apply (rule_tac P = "\<lambda>s. s isMinIn_s ss" in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (auto simp add: isMinIn_s_def)
+end-proof
+
 op [a] isMaxIn (s:Set a, ss:Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s >= s1)
 proof Isa -> isMaxIn_s end-proof
@@ -690,9 +878,15 @@ proof Isa  Set__max_Obligation_the
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)
 end-proof
 
+proof Isa  Set__max__def
+  apply (rule_tac P = "\<lambda>s. s isMaxIn_s ss" in the1I2)
+  apply (erule Set__max_Obligation_the)
+  apply (auto simp add: isMaxIn_s_def)
+end-proof
+
 % mapping to Isabelle:
 
-proof Isa Thy_Morphism Set
+proof Isa Thy_Morphism Set 
   type Set.Set -> set (id,id)
   Set.Set_P -> Set_P
   Set.in? -> \<in> Left 20
@@ -709,10 +903,15 @@ proof Isa Thy_Morphism Set
   Set.\\// -> \<Union>
   Set.-- -> - Left 25
   Set.* -> <*> Left 27
+  Set.map   -> image
   Set.power -> Pow
   Set.empty -> {}
   Set.full  -> UNIV
   Set.finite? -> finite
+  Set.size -> card
+  Set.theMember -> contents
+  Set.min -> Inter
+  Set.max -> Union
 end-proof
 
 endspec

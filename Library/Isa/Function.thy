@@ -209,6 +209,27 @@ proof -
 qed
 
 
+lemma Function__inverse__stp_eq:
+  "\<lbrakk>\<exists>!x. P x \<and> f x = y; g = Function__inverse__stp P f\<rbrakk> 
+    \<Longrightarrow> P (g y) \<and> f (g y) = y "
+  by (simp add: Function__inverse__stp_def, rule the1I2, simp_all)
+
+
+lemma Function__inverse__stp_eq_props:
+  "\<lbrakk>bij_ON f P Q; Function__inverse__stp P f = g; Q y\<rbrakk> 
+     \<Longrightarrow> P (g y) \<and> f (g y) = y "  
+  apply (cut_tac f=f and g=g and P=P and y=y in Function__inverse__stp_eq)
+  apply(auto simp add:
+          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+done
+
+
+lemma Function__inverse__stp_eq_props_true:
+  "\<lbrakk>bij_ON f P TRUE; Function__inverse__stp P f = g\<rbrakk> 
+     \<Longrightarrow> P (g y) \<and> f (g y) = y "  
+  by (simp add: Function__inverse__stp_eq_props)
+
+
 lemma inverse_SOME:
  "\<lbrakk> Function__bijective_p__stp (domP,codP) f ; codP y \<rbrakk>
   \<Longrightarrow>

@@ -1,11 +1,13 @@
 theory IsabelleExtensions
-imports Char_nat GCD List Hilbert_Choice Recdef Datatype
+imports Char_nat GCD List Hilbert_Choice Recdef Datatype Permutation 
+        "~~/src/HOL/Number_Theory/Primes"
 begin
 
 
 (*************************************************************
  * Define simple projections 
  *************************************************************)
+
 consts 
   second  :: "'a * 'b * 'c \<Rightarrow> 'b"
   thirdl  :: "'a * 'b * 'c \<Rightarrow> 'c"
@@ -58,6 +60,10 @@ lemma mem_lambda_int:
  by (simp add: mem_def)
   
 
+theorem singleton_set [simp]:
+  "{z} x = (x = z)"
+ by (cut_tac singleton_iff, auto simp add: mem_def)
+
 (******************************************************************************
  *  A bit more logic 
  ******************************************************************************)
@@ -65,6 +71,17 @@ lemma mem_lambda_int:
 lemma disj_serial: "(P \<or> Q) \<Longrightarrow>  (P \<or> (\<not>P \<and> Q))"
     by blast
 
+lemma conj_all: "\<lbrakk>P x; \<forall>x. P x  \<longrightarrow> Q x\<rbrakk> \<Longrightarrow> Q x" 
+  by (drule spec, auto)
+
+lemma conj_imp: "((P \<longrightarrow> Q) \<and> P) = (P \<and> Q)" 
+  by blast
+
+lemma conj_cong_simp:  "((P \<and> Q) = (P \<and> Q')) = (P \<longrightarrow> Q = Q')"
+ by auto
+
+lemma conj_cong_simp2:  "((P \<and> Q) = (Q' \<and> P)) = (P \<longrightarrow> Q = Q')"
+ by auto
 (*************************************************************
 * If a predicate has a unique solution, the definite and
 * indefinite description operators coincide.
@@ -259,6 +276,14 @@ lemma defined_on_UNIV [simp]:
   "defined_on f A UNIV"
   by (simp add: defined_on_def image_def)
 
+
+
+lemma inv_on_unique:
+  "\<lbrakk>bij_on f P UNIV\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P x \<and> f x = (y::'b)"
+  apply(auto simp add:
+        bij_on_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+  apply(rotate_tac -1, drule_tac x="y" in spec, auto)
+done
 
 lemma inv_on_mem:
    "\<lbrakk>y \<in> f ` A\<rbrakk>  \<Longrightarrow> inv_on A f y \<in> A"
@@ -552,6 +577,11 @@ lemma div_eq_if_dvd:              "\<lbrakk>b dvd (a::int)\<rbrakk> \<Longrighta
 lemma dvd_if_div_eq:              "\<lbrakk>(a::int) = b * (a div b) \<rbrakk> \<Longrightarrow> b dvd a"
   by (auto simp add: dvd_def)
 
+
+lemma div_mod_split:
+   "\<lbrakk>(r::nat) < n\<rbrakk>  \<Longrightarrow> (x = r + q * n) = (x mod n = r \<and>   q = x div n)"
+by auto  
+
 (********** a lemma missing in Divides.thy *********************)
 
 lemma div_neg_pos_trivial: "\<lbrakk>a < (0::int);  0 \<le> a+b\<rbrakk> \<Longrightarrow> a div b = -1"
@@ -707,19 +737,40 @@ lemma abs_mod_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
 (**************** div vs. mult-cancellation ***********************)
 lemma div_is_largest_pos: "\<lbrakk>0 < (j::int); k * j \<le> i\<rbrakk> \<Longrightarrow>  k \<le> i div j"
   by (rule_tac i="i mod j" and j=j in mult_le_bounds_pos, auto)
+
 lemma div_is_largest_neg: "\<lbrakk>(j::int) < 0; i \<le> k * j\<rbrakk> \<Longrightarrow>  k \<le> i div j"
   by (rule_tac i="i mod j" and j=j in mult_le_bounds_neg, auto)
 
 lemma div_exact_le_pos:         "\<lbrakk>0 < (j::int); j dvd i\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (j * k \<le> i)"
   by (auto simp add: div_is_largest_pos ring_simps, 
       drule_tac c=j in  mult_left_mono, auto simp add: div_eq_if_dvd)
+
 lemma div_exact_le_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (i \<le> j * k)"
   by(cut_tac i="-i" and j="-j" and k=k in div_exact_le_pos, auto)
+
 lemma div_exact_ge_pos:         "\<lbrakk>0 < (j::int); j dvd i\<rbrakk> \<Longrightarrow> (k \<ge> i div j) = (j * k \<ge> i)"
   by (cut_tac i="-i" and j="j" and k="-k" in div_exact_le_pos,
         auto simp add: neg_le_iff_le zdiv_zminus1_if_dvd)  
+
 lemma div_exact_ge_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longrightarrow> (k \<ge> i div j) = (i \<ge> j * k)"
   by(cut_tac i="-i" and j="-j" and k=k in div_exact_ge_pos, auto)
+
+lemma div_le_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (j * k \<le> i)"
+  apply (auto simp add: div_is_largest_pos ring_simps)
+  apply (drule_tac c=j in  mult_left_mono, simp)
+  apply (erule_tac  order_trans, simp add: zmult_div_cancel pos_mod_sign)
+done
+
+lemma div_gt_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k > i div j) = (j * k > i)"
+  by (auto simp add: div_le_pos not_le [symmetric])
+
+lemma div_gt_pos_nat:     "\<lbrakk>0 < (j::nat); k > i div j \<rbrakk> \<Longrightarrow> j * k > i"
+ by (cut_tac j="int j" and i="int i"  and k="int k" in div_gt_pos, 
+     simp_all add: zdiv_int [symmetric] zmult_int)
+
+lemma div_gt_pos_nat2:     "\<lbrakk>0 < (j::nat);  j * k > i\<rbrakk> \<Longrightarrow> k > i div j"
+ by (cut_tac j="int j" and i="int i"  and k="int k" in div_gt_pos, 
+     simp_all add: zdiv_int [symmetric] zmult_int)
 
 (**************** Operations + * abs ***********************)
 
@@ -1651,6 +1702,10 @@ lemma length_1_nth_conv:
 "(length xs = 1) = (xs = [xs!0])"
   by (auto simp add: length_Suc_conv)
 
+lemma length_Suc_conv2:
+"(length xs = Suc n) = (\<exists>y ys. xs = ys @ [y] \<and> length ys = n)"
+by (induct_tac xs rule: rev_induct, auto)
+
 lemma list_all_set_tl: 
   "\<lbrakk>\<forall>x\<in>set l. P x\<rbrakk> 
   \<Longrightarrow> \<forall>x\<in>set (tl l). P x"
@@ -1662,6 +1717,303 @@ lemma list_last_conv:
  by (cut_tac xs=xs in append_butlast_last_id, auto,
      cut_tac xs=xs in last_conv_nth, auto)
 
+theorem listall_butlast:
+ "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> list_all P (butlast l)"
+ by (auto simp add: list_all_iff, drule bspec, auto simp add: in_set_butlastD)
+
+theorem distinct_butlast:
+ "\<lbrakk>distinct l\<rbrakk> \<Longrightarrow> distinct (butlast l)"
+ by (induct l, auto simp add: in_set_butlastD)
+
+theorem nth_butlast:
+ "\<lbrakk>i < length l - 1\<rbrakk> \<Longrightarrow> butlast l ! i = l ! i"
+ by (induct l rule: rev_induct, auto simp add: nth_append)
+
+
+(******************************* Lists of numbers *******************)
+theorem foldl_mul_assoc:
+  "foldl op * (a*b) (l::nat list) = a * (foldl op * b l)"
+ by (induct l arbitrary: b, simp_all add: mult_assoc)
+
+theorem foldl_mul_assoc1:
+  "foldl op * a (l::nat list) = a * (foldl op * 1 l)"
+ by (cut_tac b=1 in  foldl_mul_assoc, simp)
+
+theorem foldl_nat_mul_assoc:
+  "\<lbrakk>0 \<le> a\<rbrakk> \<Longrightarrow> 
+    \<forall>b. foldl (\<lambda>y x. y * nat x) (nat (a*b)) (l::int list) 
+    = (nat a) * (foldl (\<lambda>y x. y * nat x) (nat b) l)"
+ by (induct l, auto simp add: mult_assoc nat_mult_distrib,
+     drule_tac x="int (nat b * nat aa)" in spec, simp)
+
+theorem foldl_nat_mul_assoc1:
+  "foldl (\<lambda>y x. y * nat x) a (l::int list) = a * (foldl (\<lambda>y x. y * nat x) 1 l)"
+ by (cut_tac a="int a" and l=l in  foldl_nat_mul_assoc, simp, 
+     drule_tac x=1 in spec, simp)
+
+(*************************************************************
+*		      		   
+* Isabelle 2009-1 has moved prod, nondec, primel, and the unique 
+* factorization theorem to Old_NumberTheory/Factorization.thy, 
+* which generates conflicts with the new Number_theory
+* 
+* Below is a copy of all relevant definitions and lemmas from
+* Factorization
+*				   
+*************************************************************)
+
+subsection {* Definitions *}
+
+definition
+  primel :: "nat list => bool" where
+  "primel xs = (\<forall>p \<in> set xs. prime p)"
+
+consts
+  nondec :: "nat list => bool "
+  prod :: "nat list => nat"
+  oinsert :: "nat => nat list => nat list"
+  sort :: "nat list => nat list"
+
+primrec
+  "nondec [] = True"
+  "nondec (x # xs) = (case xs of [] => True | y # ys => x \<le> y \<and> nondec xs)"
+
+primrec
+  "prod [] = Suc 0"
+  "prod (x # xs) = x * prod xs"
+
+primrec
+  "oinsert x [] = [x]"
+  "oinsert x (y # ys) = (if x \<le> y then x # y # ys else y # oinsert x ys)"
+
+primrec
+  "sort [] = []"
+  "sort (x # xs) = oinsert x (sort xs)"
+
+subsection {* Alternative Definitions *}
+
+lemmas prime_def = prime_nat_def 
+
+lemma primes_iff:
+  "list_all prime  = primel" 
+ by (simp add: expand_fun_eq list_all_iff primel_def)
+
+
+lemma prod_as_foldl:
+  "foldl op * (Suc 0) = prod"
+ apply (auto simp add: expand_fun_eq)
+ apply (induct_tac x, simp_all)
+ apply (cut_tac l=list in foldl_mul_assoc1, auto)
+done
+
+theorem factors_dvd_prod:
+  "x \<in> set factors  \<Longrightarrow> x dvd (prod factors)"
+ by (induct factors, auto)
+
+theorem prod_positive:  
+  "\<lbrakk>\<forall>x\<in>set l. 0<x\<rbrakk>  \<Longrightarrow> 0 < prod l"
+  by (induct l, auto)
+
+theorem factors_of_odd:
+  "\<lbrakk>n > 0; prod factors = n \<rbrakk> 
+    \<Longrightarrow> odd n = (list_all odd factors)"
+  by (induct factors arbitrary: n, auto)
+
+subsection {* Arithmetic *}
+
+lemma one_less_m: "(m::nat) \<noteq> m * k ==> m \<noteq> Suc 0 ==> Suc 0 < m"
+  by (cases m, auto)
+
+lemma one_less_k: "(m::nat) \<noteq> m * k ==> Suc 0 < m * k ==> Suc 0 < k"
+  by (cases k, auto)
+
+lemma mult_left_cancel: "(0::nat) < k ==> k * n = k * m ==> n = m"
+  by auto
+
+lemma mn_eq_m_one: "(0::nat) < m ==> m * n = m ==> n = Suc 0"
+  by (cases n, auto)
+
+lemma prod_mn_less_k:
+  "(0::nat) < n ==> 0 < k ==> Suc 0 < m ==> m * n = k ==> n < k"
+  by (induct m, auto)
+
+subsection {* Prime list and product *}
+
+lemma prod_append: "prod (xs @ ys) = prod xs * prod ys"
+  by (induct xs, simp_all add: mult_assoc)
+
+lemma prod_xy_prod:
+  "prod (x # xs) = prod (y # ys) ==> x * prod xs = y * prod ys"
+  by auto
+
+lemma primel_append: "primel (xs @ ys) = (primel xs \<and> primel ys)"
+  by (unfold primel_def, auto)
+
+lemma prime_primel: "prime n ==> primel [n] \<and> prod [n] = n"
+  by (unfold primel_def, auto)
+
+lemma prime_nd_one: "prime p ==> \<not> p dvd Suc 0"
+  by (unfold prime_def dvd_def, auto)
+
+lemma hd_dvd_prod: "prod (x # xs) = prod ys ==> x dvd (prod ys)" 
+  by (metis dvd_mult_left dvd_refl prod.simps(2))
+
+lemma primel_tl: "primel (x # xs) ==> primel xs"
+  by (unfold primel_def, auto)
+
+lemma primel_hd_tl: "(primel (x # xs)) = (prime x \<and> primel xs)"
+  by (unfold primel_def, auto)
+
+lemma primes_eq: "prime (p::nat) ==> prime q ==> p dvd q ==> p = q"
+  by (unfold prime_def, auto)
+
+lemma primel_one_empty: "primel xs ==> prod xs = Suc 0 ==> xs = []"
+  by (cases xs, simp_all add: primel_def prime_def)
+
+lemma prime_g_one: "prime p ==> Suc 0 < p"
+  by (unfold prime_def, auto)
+
+lemma prime_g_zero: "prime (p::nat) ==> 0 < p"
+  by (unfold prime_def, auto)
+
+lemma primel_nempty_g_one:
+  "primel xs \<Longrightarrow> xs \<noteq> [] \<Longrightarrow> Suc 0 < prod xs"
+  by (induct xs, simp, fastsimp simp: primel_def prime_def elim: one_less_mult)
+
+lemma primel_prod_gz: "primel xs ==> 0 < prod xs"
+  by (induct xs, auto simp: primel_def prime_def)
+
+subsection {* Sorting *}
+
+lemma nondec_oinsert: "nondec xs \<Longrightarrow> nondec (oinsert x xs)"
+  by (induct xs, simp,
+      case_tac xs, simp_all cong del: list.weak_case_cong)
+
+lemma nondec_sort: "nondec (sort xs)"
+  by (induct xs, simp_all, erule nondec_oinsert)
+
+lemma x_less_y_oinsert: "x \<le> y ==> l = y # ys ==> x # l = oinsert x l"
+  by simp_all
+
+lemma nondec_sort_eq [rule_format]: "nondec xs \<longrightarrow> xs = sort xs"
+  apply (induct xs, safe, simp_all)
+  apply (case_tac xs, simp_all)
+  apply (case_tac xs, simp, 
+         rule_tac y = aa and ys = list in x_less_y_oinsert, simp_all)
+  done
+
+lemma oinsert_x_y: "oinsert x (oinsert y l) = oinsert y (oinsert x l)"
+  by (induct l, auto)
+
+subsection {* Permutation *}
+
+lemma perm_primel [rule_format]: "xs <~~> ys ==> primel xs --> primel ys"
+  apply (unfold primel_def, induct set: perm)
+  apply (simp, simp, simp (no_asm), blast, blast)
+  done
+
+lemma perm_prod: "xs <~~> ys ==> prod xs = prod ys"
+  by (induct set: perm, simp_all add: mult_ac)
+
+lemma perm_subst_oinsert: "xs <~~> ys ==> oinsert a xs <~~> oinsert a ys"
+  by (induct set: perm, auto)
+
+lemma perm_oinsert: "x # xs <~~> oinsert x xs"
+  by (induct xs, auto)
+
+lemma perm_sort: "xs <~~> sort xs"
+  by (induct xs, auto intro: perm_oinsert elim: perm_subst_oinsert)
+
+lemma perm_sort_eq: "xs <~~> ys ==> sort xs = sort ys"
+  by (induct set: perm, simp_all add: oinsert_x_y)
+
+subsection {* Existence of a unique prime factorization*}
+
+lemma ex_nondec_lemma:
+  "primel xs ==> \<exists>ys. primel ys \<and> nondec ys \<and> prod ys = prod xs"
+  by (blast intro: nondec_sort perm_prod perm_primel perm_sort perm_sym)
+
+lemma not_prime_ex_mk:
+  "Suc 0 < n \<and> \<not> prime n ==>
+    \<exists>m k. Suc 0 < m \<and> Suc 0 < k \<and> m < n \<and> k < n \<and> n = m * k"
+  by (unfold prime_def dvd_def,
+      auto intro: n_less_m_mult_n n_less_n_mult_m one_less_m one_less_k)
+
+lemma split_primel:
+  "primel xs \<Longrightarrow> primel ys \<Longrightarrow> \<exists>l. primel l \<and> prod l = prod xs * prod ys"
+  by (rule exI, safe, rule_tac [2] prod_append, simp add: primel_append)
+
+
+lemma factor_exists [rule_format]: 
+  "Suc 0 < n --> (\<exists>l. primel l \<and> prod l = n)"
+  apply (induct n rule: nat_less_induct, rule impI, case_tac "prime n")
+  apply (rule exI, erule prime_primel)
+  apply (cut_tac n = n in not_prime_ex_mk, auto intro!: split_primel)
+  done
+
+lemma nondec_factor_exists: 
+  "Suc 0 < n ==> \<exists>l. primel l \<and> nondec l \<and> prod l = n"
+  by (erule factor_exists [THEN exE], blast intro!: ex_nondec_lemma)
+
+lemma prime_dvd_mult_list [rule_format]:
+    "prime p ==> p dvd (prod xs) --> (\<exists>m. m:set xs \<and> p dvd m)"
+  by (induct xs, force simp add: prime_def, force dest: prime_dvd_mult_nat)
+
+lemma hd_xs_dvd_prod:
+  "primel (x # xs) ==> primel ys ==> prod (x # xs) = prod ys
+    ==> \<exists>m. m \<in> set ys \<and> x dvd m"
+  by (rule prime_dvd_mult_list, simp add: primel_hd_tl, erule hd_dvd_prod)
+
+lemma prime_dvd_eq: 
+  "primel (x # xs) ==> primel ys ==> m \<in> set ys ==> x dvd m ==> x = m"
+  by (rule primes_eq, auto simp add: primel_def primel_hd_tl)
+
+lemma hd_xs_eq_prod:
+  "primel (x # xs) ==> primel ys ==> prod (x # xs) = prod ys ==> x \<in> set ys"
+  by (frule hd_xs_dvd_prod, auto, drule prime_dvd_eq, auto)
+
+lemma perm_primel_ex:
+  "primel (x # xs) ==>
+    primel ys ==> prod (x # xs) = prod ys ==> \<exists>l. ys <~~> (x # l)"
+  by (rule exI, rule perm_remove, erule hd_xs_eq_prod, simp_all)
+
+lemma primel_prod_less:
+  "primel (x # xs) ==>
+    primel ys ==> prod (x # xs) = prod ys ==> prod xs < prod ys"
+  by (metis less_asym linorder_neqE_nat mult_less_cancel2 nat_0_less_mult_iff
+      nat_less_le nat_mult_1 prime_def primel_hd_tl primel_prod_gz prod.simps(2))
+
+lemma prod_one_empty: "primel xs ==> p * prod xs = p ==> prime p ==> xs = []"
+  by (auto intro: primel_one_empty simp add: prime_def)
+
+lemma uniq_ex_aux:
+  "\<forall>m. m < prod ys --> (\<forall>xs ys. primel xs \<and> primel ys \<and>
+      prod xs = prod ys \<and> prod xs = m --> xs <~~> ys) ==>
+    primel list ==> primel x ==> prod list = prod x ==> prod x < prod ys
+    ==> x <~~> list"
+  by simp
+
+lemma factor_unique [rule_format]:
+  "\<forall>xs ys. primel xs \<and> primel ys \<and> prod xs = prod ys \<and> prod xs = n
+    --> xs <~~> ys"
+  apply (induct n rule: nat_less_induct, safe)
+  apply (case_tac xs, force intro: primel_one_empty)
+  apply (rule perm_primel_ex [THEN exE], simp_all)
+  apply (rule perm.trans [THEN perm_sym], assumption)
+  apply (rule perm.Cons, case_tac "x = []")
+  apply (metis perm_prod perm_refl prime_primel primel_hd_tl primel_tl prod_one_empty)
+  apply (metis nat_0_less_mult_iff nat_mult_eq_cancel1 perm_primel perm_prod 
+               primel_prod_gz primel_prod_less primel_tl prod.simps(2))
+  done
+
+lemma perm_nondec_unique:
+    "xs <~~> ys ==> nondec xs ==> nondec ys ==> xs = ys"
+  by (metis nondec_sort_eq perm_sort_eq)
+
+theorem unique_prime_factorization [rule_format]:
+    "\<forall>n. Suc 0 < n --> (\<exists>!l. primel l \<and> nondec l \<and> prod l = n)"
+  by (metis factor_unique nondec_factor_exists perm_nondec_unique)
+
 (******************** a simple fact about sets ***************************)
 
 lemma permutation_set:
@@ -1672,5 +2024,27 @@ lemma permutation_set:
   apply (drule psubsetI, simp)
   apply (cut_tac A=S and B="{..<card S}" in psubset_card_mono, auto)
 done
+
+(**************************** a few insights about relations **************)
+
+definition
+  asym :: "('a * 'a) set => bool" where -- {* symmetry predicate *}
+  "asym r == \<forall>x y. (x,y) \<in> r \<longrightarrow> (y,x) \<notin> r"
+
+abbreviation
+  equivalence :: "('a * 'a) set => bool" where -- {* equivalence over a type *}
+  "equivalence == equiv UNIV"
+
+abbreviation
+  symcl :: "('a \<times> 'a) set => ('a \<times> 'a) set"  ("(_^s)" [1000] 999) where
+  "r^s == r \<union> r^-1"
+
+lemma sym_symcl: "sym (r^s)"
+  by (simp add: sym_Un_converse)
+
+abbreviation
+  equivcl :: "('a \<times> 'a) set => ('a \<times> 'a) set"  ("(_^\<equiv>)" [1000] 999) where
+  "r^\<equiv> == (r^s)^*"
+
 
 end

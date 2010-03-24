@@ -1160,4 +1160,59 @@ proof Isa Thy_Morphism Presburger
  Nat.succ         -> Suc
 end-proof
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+(******** Logarithm on natural numbers ("log" is defined on real numbers) ********)
+
+theorem ld_Obligation_the:
+  "\<lbrakk>(base::nat) \<ge> 2\<rbrakk> \<Longrightarrow> \<exists>!ld. x < base ^ ld \<and> (\<forall>y. x < base ^ y \<longrightarrow> ld \<le> y)"
+ apply (induct x)
+ apply (rule_tac a=0 in ex1I, simp, clarify, drule_tac x=0 in spec, simp_all)
+ apply (erule ex1E, clarify)
+ apply (case_tac "Suc x < base ^ld ", simp)
+ (* case Suc x < base ^ ld *)
+ apply (rule_tac a=ld in ex1I, simp)
+ apply (drule_tac x=xa in spec, erule mp, clarsimp)
+ apply (drule_tac x=y  in spec, drule mp, simp)
+ apply (drule_tac x=ld  in spec, drule mp, simp_all)
+ (* case Suc x \<ge> base ^ ld *)
+ apply (rule_tac a="Suc ld" in ex1I, safe, simp_all add: not_less)
+ (***** tedious monotonicity ***)
+ apply (drule_tac Suc_leI, drule_tac k=base and i="Suc x" in mult_le_mono2,
+        rule_tac y="base * Suc x" in less_le_trans,
+        cut_tac i=1 and j=base and k="Suc x" in mult_less_mono1, simp_all)
+ apply (drule_tac x="base ^ld" and z="base ^y" and y="Suc x" in le_less_trans,
+        simp_all add: power_less_imp_less_exp)
+ apply (rotate_tac -1, drule_tac x="Suc ld" in spec, drule mp, simp)
+ apply (drule_tac Suc_leI, drule_tac k=base and i="Suc x" in mult_le_mono2,
+        rule_tac y="base * Suc x" in less_le_trans,
+        cut_tac i=1 and j=base and k="Suc x" in mult_less_mono1, simp_all)
+ apply (drule_tac x="base ^ld" and z="base ^xa" and y="Suc x" in le_less_trans,
+        simp_all add: power_less_imp_less_exp)
+done
+
+consts ld :: "nat \<times> Nat__PosNat \<Rightarrow> nat"
+defs ld_def: "ld \<equiv> (\<lambda> ((x::nat), (base::Nat__PosNat)). Least (\<lambda>n. x< base ^ n))"
+
+theorem ld_positive:
+  "\<lbrakk>2 \<le> base; 0 < x\<rbrakk> \<Longrightarrow> 0 < ld (x, base)"
+  by (simp add: ld_def Least_def, rule the1I2, 
+      erule ld_Obligation_the, rule classical, auto)
+
+theorem ld_mono:
+  "\<lbrakk>2 \<le> base\<rbrakk> \<Longrightarrow> x < base ^ ld (x, base)"
+ by (simp add: ld_def Least_def, rule the1I2,  erule ld_Obligation_the, auto)
+
+theorem ld_mono2:
+  "\<lbrakk>2 \<le> base; 0 < x\<rbrakk> \<Longrightarrow> x \<ge> base ^ (ld (x, base) - 1)"
+ apply (frule_tac x=x in ld_positive, simp)
+ apply (rotate_tac -1, erule rev_mp)
+ apply (simp add: ld_def Least_def, rule the1I2,  erule ld_Obligation_the, clarify)
+ apply (rule classical, simp add: not_le)
+ apply (drule_tac x="xa - 1" in spec, drule mp, simp, arith)
+done
+
+end-proof
+% ------------------------------------------------------------------------------
+
 endspec
