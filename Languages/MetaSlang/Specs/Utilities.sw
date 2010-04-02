@@ -301,19 +301,21 @@ Utilities qualifying spec
      | [] -> []
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- def insertVar (new_var, vars) = 
+ op insertVar (new_var: Var, vars: Vars): Vars = 
    if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
      Cons (new_var, vars)
 
- def deleteVar (var_to_remove, vars) = 
+ op deleteVar (var_to_remove: Var, vars: Vars): Vars = 
    List.filter (fn v -> v.1 ~= var_to_remove.1) vars
 
- def insertVars (vars_to_add,    original_vars) = foldl (fn (vars, new_var)       -> insertVar(new_var,       vars)) original_vars vars_to_add
- def deleteVars (vars_to_remove, original_vars) = foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
+ op insertVars (vars_to_add: Vars, original_vars: Vars): Vars =
+   foldl (fn (vars, new_var)       -> insertVar(new_var,       vars)) original_vars vars_to_add
+ op deleteVars (vars_to_remove: Vars, original_vars: Vars): Vars =
+   foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
- def freeVarsRec (M : MS.Term) =   
+ op freeVarsRec (M : MS.Term): Vars =   
    case M of
      | Var    (v,      _) -> [v]
 
