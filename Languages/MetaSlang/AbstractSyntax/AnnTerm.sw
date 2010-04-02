@@ -1148,7 +1148,6 @@ MetaSlang qualifying spec
 
 
  %% folds function over all the subterms in top-down order
- %% Other orders such as evaluation order would be useful
   op foldSubTerms : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
  def foldSubTerms f val term =
    let newVal = f (term, val) in
