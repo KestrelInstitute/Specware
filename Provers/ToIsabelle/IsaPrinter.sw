@@ -1555,14 +1555,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    if addExplicitTyping? then
      let fvs = freeVars lhs ++ freeVars rhs in
      %let _ = toScreen("d fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
-     let vs = filterConstrainedVars(c,lhs,fvs) in
+     let vs = filterConstrainedVars(c, lhs, fvs) in
      %let _ = toScreen("d inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
-     let vs = filterConstrainedVars(c,rhs,vs) in
+     let vs = filterConstrainedVars(c, rhs, vs) in
      %let _ = toScreen("d remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
-     let (lhs,vs) = addExplicitTypingForVars(lhs,vs) in
-     let (rhs,vs) = addExplicitTypingForVars(rhs,vs) in
-     (lhs,rhs)
-   else (lhs,rhs)
+     let (lhs, vs) = addExplicitTypingForVars(lhs, vs) in
+     let (rhs, vs) = addExplicitTypingForVars(rhs, vs) in
+     (lhs, rhs)
+   else (lhs, rhs)
 
  op addExplicitTyping(t: MS.Term): MS.Term =
    if addExplicitTyping? then
@@ -1574,11 +1574,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      let fvs = removeDuplicateVars(foldl (\_lambda (vs,t) \_rightarrow freeVars t ++ vs)
                                      (freeVars rhs) lhs)
      in
-     % let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n") in
-     let vs = foldl (\_lambda (vs,t) \_rightarrow filterConstrainedVars(c,t,fvs)) fvs lhs in
-     % let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n") in
+     % let _ = toScreen("fvs: "^anyToString (map (fn (x,_) \_rightarrow x) fvs)^"\n\n") in
+     let vs = foldl (\_lambda (vs,t) \_rightarrow filterConstrainedVars(c,t,vs)) fvs lhs in
+     % let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
      let vs = filterConstrainedVars(c,rhs,vs) in
-     % let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n") in
+     % let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) \_rightarrow x) vs)^"\n\n\n") in
 
      let (lhs,vs) = foldl (\_lambda ((lhs,vs),st) \_rightarrow
                             let (st,vs) = addExplicitTypingForVars(st,vs) in
@@ -1592,16 +1592,20 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  %% Ops that are not polymorphic in Specware but are mapped to polymorphic ops in Isabelle
  op isabelleOverloadedOps: List String = ["**", "modF", "divF"]
 
- op filterConstrainedVars(c: Context, t: MS.Term, vs: List Var): List Var =
-   let def removeArgs(vs,args) =
+ op filterConstrainedVars(c: Context, t: MS.Term, vs: Vars): Vars =
+   let def removeArgs(vs: Vars, args: Terms, bound_vars: Vars): Vars =
+         % let _ = writeLine("removeArgs: "^anyToString (map (fn (x,_) \_rightarrow x) bound_vars)) in
+         % let _ = app (fn t -> writeLine (printTerm t)) args in
          let v_args = mapPartial (\_lambda t \_rightarrow
                                     case t of
-                                      | Var (v,_) | v in? vs \_rightarrow
+                                      | Var (v,_) | inVars?(v, vs)
+                                                   && ~(hasVarNameConflict?(t, bound_vars)) \_rightarrow
                                         Some v
                                       | _ \_rightarrow None)
                          args
-         in diff(vs,v_args)
-       def filterKnown(vs,id,f,args) =
+         in deleteVars(v_args, vs)
+       def filterKnown(vs: Vars, id: String, f: MS.Term, args: Terms, bound_vs: Vars): Vars =
+         % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x,_) \_rightarrow x) vs)) in
          if id = "natural?" \_or id in? isabelleOverloadedOps 
             \_or exists? (\_lambda ci \_rightarrow id in? ci.overloadedOps)
                 c.coercions
@@ -1611,74 +1615,118 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             \_or (length(wildFindUnQualified((getSpec c).ops, id)) = 1
                   %% The following is only necessary for base specs
                   && length(wildFindUnQualified((getBaseSpec()).ops, id)) <= 1)
-           then removeArgs(vs,args)
+           then removeArgs(vs,args,bound_vs)
            else vs
 %         case wildFindUnQualified((getSpec c).ops, id) of
 %              | [opinfo] \_rightarrow
 %                (case unpackFirstOpDef opinfo of
 %                   | (tvs, _, _) \_rightarrow     % Could polymorphic operator sometimes be a problem??
-%                     removeArgs(vs,args)
+%                     removeArgs(vs,args,bound_vs)
 %                   | _ \_rightarrow vs)
 %              | _ \_rightarrow vs
+      def fCV(st, vs: Vars, bound_vs: Vars): Vars =
+        % let _ = writeLine("fCV: "^printTerm st^"\n"^anyToString (map (fn (x,_) \_rightarrow x) vs)) in
+        let vs = case st of
+                   | Apply(f as Fun(Op(Qualified(q,id),_),_,_),arg,_) \_rightarrow
+                     filterKnown(vs, id, f, termList arg, bound_vs)
+                   | Apply(Fun(Embed(id,_),_,_),arg,_) \_rightarrow
+                     if id in? c.overloadedConstructors
+                       then vs
+                       else removeArgs(vs, termList arg, bound_vs)
+                   | Apply(Var(v,_), arg, _) | ~(inVars?(v, vs)) ->
+                     removeArgs(vs, termList arg, bound_vs)
+                   | _ \_rightarrow
+                 case CurryUtils.getCurryArgs st of
+                   | Some(f as Fun(Op(Qualified(q,id),_),_,_),args) \_rightarrow
+                     filterKnown(vs, id, f, args, bound_vs)
+                   | _ \_rightarrow vs
+        in
+        % let _ = writeLine("fCV 1: "^anyToString (map (fn (x,_) \_rightarrow x) vs)) in
+        let def fCVBV(vs: Vars, st: MS.Term): Vars = fCV(st, vs, bound_vs)
+            def fCVsBV(vs: Vars, tms: Terms): Vars = foldl fCVBV vs tms
+        in
+        case st of
+          | Apply     (M, N, _)     -> fCVBV(fCVBV(vs, M), N)
+          | Record    (fields, _)   -> foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs fields
+          | Bind      (_,vars,M, _) -> fCV(M, vs, insertVars(vars, bound_vs))
+          | The       (var,M, _)    -> fCV(M, vs, insertVar(var, bound_vs))
+          | Let       (decls, N, _) -> let vs = foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs decls in
+                                       let bound_vs = foldl (fn (bound_vs,(pat,_)) ->
+                                                               insertVars(patVars pat, bound_vs))
+                                                          bound_vs decls
+                                       in
+                                       fCV(N, vs, bound_vs)
+          | LetRec    (decls, N, _) -> let vs = foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs decls in
+                                       let bound_vs = foldl (fn (bound_vs, (var,_)) ->
+                                                               insertVar(var, bound_vs))
+                                                          bound_vs decls
+                                       in
+                                       fCV(N, vs, bound_vs)
+          | Lambda    (rules,    _) -> foldl (fn (vs,(p, _, M)) ->
+                                              fCV(M, vs, insertVars(patVars p, bound_vs)))
+                                         vs rules
+          | IfThenElse(P, M, N,  _) -> fCVBV(fCVBV(fCVBV(vs, P), M), N)
+          | Seq       (Ms,       _) -> fCVsBV(vs, Ms)
+          | SortedTerm(M,   _,   _) -> fCVBV(vs, M)
+          | Pi        (_,   M,   _) -> fCVBV(vs, M)
+          | And       (tms, _)      -> fCVsBV(vs, tms)
+          | _ -> vs
    in
-   foldSubTerms
-     (\_lambda (st,vs) \_rightarrow
-      case st of
-        | Apply(f as Fun(Op(Qualified(q,id),_),_,_),arg,_) \_rightarrow
-          filterKnown(vs, id, f, termList arg)
-        | Apply(Fun(Embed(id,_),_,_),arg,_) \_rightarrow
-          if id in? c.overloadedConstructors
-            then vs
-            else removeArgs(vs,termList arg)
-        | _ \_rightarrow
-      case CurryUtils.getCurryArgs st of
-        | Some(f as Fun(Op(Qualified(q,id),_),_,_),args) \_rightarrow
-          filterKnown(vs, id, f, args)
-        | _ \_rightarrow vs)
-     vs t
+   fCV(t, vs, [])
 
  %% Adds explicit typing for first reference of variable
- op addExplicitTypingForVars(t: MS.Term, vs: List Var): MS.Term * List Var =
-   case t of
-     | Var(v1 as (_,ty),pos) | v1 in? vs \_rightarrow
-       (SortedTerm(t,ty,pos), List.filter (\_lambda v2 \_rightarrow \_not (v1 = v2)) vs)
-     | Apply(t1,t2,a) \_rightarrow
-       let (t1,vs) = addExplicitTypingForVars(t1,vs) in
-       let (t2,vs) = addExplicitTypingForVars(t2,vs) in
-       (Apply(t1,t2,a),vs)
-     | Record(prs,a) \_rightarrow
-       let (prs,vs) = foldl (\_lambda ((prs,vs),(id,st)) \_rightarrow
-                            let (st,vs) = addExplicitTypingForVars(st,vs) in
-                            (Cons((id,st),prs), vs))
-                       ([],vs) prs
-       in
-       (Record(reverse prs,a),vs)
-     | Bind(bdr,lvs,st,a) \_rightarrow
-       let (st,vs) = addExplicitTypingForVars(st,vs) in
-       (Bind(bdr,lvs,st,a),vs)
-     | The(v,st,a) \_rightarrow
-       let (st,vs) = addExplicitTypingForVars(st,vs) in
-       (The(v,st,a),vs)
-     | Let(bds,st,a) \_rightarrow                % Should really look in bds
-       let (st,vs) = addExplicitTypingForVars(st,vs) in
-       (Let(bds,st,a),vs)
-     | LetRec(bds,st,a) \_rightarrow
-       let (st,vs) = addExplicitTypingForVars(st,vs) in
-       (LetRec(bds,st,a),vs)
-     | IfThenElse(t1,t2,t3,a) \_rightarrow
-       let (t1,vs) = addExplicitTypingForVars(t1,vs) in
-       let (t2,vs) = addExplicitTypingForVars(t2,vs) in
-       let (t3,vs) = addExplicitTypingForVars(t3,vs) in
-       (IfThenElse(t1,t2,t3,a),vs)
-     | Lambda(cases,a) ->
-       let (cases,vs) = foldl (fn ((result,vs),(p,c,t)) ->
-                                 let (t,vs) = addExplicitTypingForVars(t,vs) in
-                                 (result ++ [(p,c,t)], vs))
-                          ([],vs) cases
-       in
-       (Lambda(cases,a), vs)
-      %% Probably should put other cases
-     | _ \_rightarrow (t,vs)
+ op addExplicitTypingForVars(t: MS.Term, vs: Vars): MS.Term * Vars =
+   let def addExpl(t: MS.Term, vs: Vars, bound_vs: Vars): MS.Term * Vars =
+         case t of
+           | Var(v1 as (_,ty),pos) | inVars?(v1, vs) && ~(hasVarNameConflict?(t, bound_vs)) \_rightarrow
+             (SortedTerm(t,ty,pos), filter (\_lambda v2 \_rightarrow \_not (equalVar?(v1, v2))) vs)
+           | Apply(t1,t2,a) \_rightarrow
+             let (t1,vs) = addExpl(t1,vs,bound_vs) in
+             let (t2,vs) = addExpl(t2,vs,bound_vs) in
+             (Apply(t1,t2,a),vs)
+           | Record(prs,a) \_rightarrow
+             let (prs,vs) = foldl (\_lambda ((prs,vs),(id,st)) \_rightarrow
+                                  let (st,vs) = addExpl(st,vs,bound_vs) in
+                                  (Cons((id,st),prs), vs))
+                             ([],vs) prs
+             in
+             (Record(reverse prs,a),vs)
+           | Bind(bdr,lvs,st,a) \_rightarrow
+             let (st,vs) = addExpl(st,vs,insertVars(lvs, bound_vs)) in
+             (Bind(bdr,lvs,st,a),vs)
+           | The(v,st,a) \_rightarrow
+             let (st,vs) = addExpl(st,vs,insertVar(v, bound_vs)) in
+             (The(v,st,a),vs)
+           | Let(bds,st,a) \_rightarrow                % Should really look in bds
+             let bound_vs = foldl (fn (bound_vs,(pat,_)) ->
+                                     insertVars(patVars pat, bound_vs))
+                              bound_vs bds
+             in
+             let (st,vs) = addExpl(st,vs,bound_vs) in
+             (Let(bds,st,a),vs)
+           | LetRec(bds,st,a) \_rightarrow
+             let bound_vs = foldl (fn (bound_vs, (var,_)) ->
+                                     insertVar(var, bound_vs))
+                              bound_vs bds
+             in
+             let (st,vs) = addExpl(st,vs,bound_vs) in
+             (LetRec(bds,st,a),vs)
+           | IfThenElse(t1,t2,t3,a) \_rightarrow
+             let (t1,vs) = addExpl(t1,vs,bound_vs) in
+             let (t2,vs) = addExpl(t2,vs,bound_vs) in
+             let (t3,vs) = addExpl(t3,vs,bound_vs) in
+             (IfThenElse(t1,t2,t3,a),vs)
+           | Lambda(cases,a) ->
+             let (cases,vs) = foldl (fn ((result,vs),(p,c,t)) ->
+                                       let (t,vs) = addExpl(t,vs,insertVars(patVars p, bound_vs)) in
+                                       (result ++ [(p,c,t)], vs))
+                                ([],vs) cases
+             in
+             (Lambda(cases,a), vs)
+            %% Probably should put other cases
+           | _ \_rightarrow (t,vs)
+    in
+    addExpl(t, vs, [])
 
  %op addExplicitTypingForNumbers(tm: MS.Term): MS.Term =
 
