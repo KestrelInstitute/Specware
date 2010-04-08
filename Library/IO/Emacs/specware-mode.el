@@ -507,7 +507,7 @@ Variables controlling the indentation
 
 Seek help (\\[describe-variable]) on individual variables to get current settings.
 
-sw:indent-level (default 4)
+sw:indent-level (default 2)
     The indentation of a block of code.
 
 sw:pipe-indent (default -2)
@@ -912,10 +912,10 @@ If anyone has a good algorithm for this..."
              (t
               (if sw:paren-lookback    ; Look for open parenthesis ?
                   (if follows-comma
-		      (sw:get-paren-indent)
+		      (sw:get-paren-indent indent t)
 		    (max 
 		     indent		; (if (looking-at "[])}]") (1- indent) indent)
-		     (sw:get-paren-indent)))
+		     (sw:get-paren-indent indent nil)))
                 indent))))))))))
 
 (defun sw:previous-line-ends-in-comma ()
@@ -978,7 +978,7 @@ If anyone has a good algorithm for this..."
     (end-of-line n)
     (point)))
 
-(defun sw:get-paren-indent ()
+(defun sw:get-paren-indent (indent after-comma)
   (save-excursion
     (let ((levelpar 0)                  ; Level of "()"
           (levelcurl 0)                 ; Level of "{}"
@@ -1001,14 +1001,21 @@ If anyone has a good algorithm for this..."
 		   (goto-char origpoint)
 		   (looking-at "[])}]")))
 	    (1+ (current-column))
-	  (if (save-excursion
-		(forward-char 1)
-		(and t ;(looking-at sw:indent-starters-reg)
-		     (not (looking-at "\n"))
-		     (progn (goto-char origpoint)
-			    (not (sw:previous-line-ends-in-comma)))))
-	      (1+ (+ (current-column) sw:indent-level))
-	    (1+ (current-column))))))))
+	  (if (and after-comma
+                   (save-excursion (forward-char 1)
+                                   (skip-chars-forward "\t ")
+                                   (or (looking-at "\n")
+                                       (looking-at "(*")
+                                       (looking-at comment-start))))
+              indent
+            (if (save-excursion
+                  (forward-char 1)
+                  (and t                ;(looking-at sw:indent-starters-reg)
+                       (not (looking-at "\n"))
+                       (progn (goto-char origpoint)
+                              (not (sw:previous-line-ends-in-comma)))))
+                (1+ (+ (current-column) sw:indent-level))
+              (1+ (current-column)))))))))
 
 (defun sw:inside-comment-or-string-p ()
   (let ((start (point)))
