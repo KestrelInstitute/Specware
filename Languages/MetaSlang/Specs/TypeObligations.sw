@@ -43,7 +43,7 @@ spec
                 * Option Sort * NameSupply * Bool * Ref Nat
 
  op  insert       : Var * Gamma -> Gamma
- op  assertCond   : MS.Term * Gamma -> Gamma
+ op  assertCond   : MS.Term * Gamma * String -> Gamma
  op  insertLet    : List (Pattern * MS.Term) * Gamma -> Gamma
  op  insertLetRec : List (Var * MS.Term) * Gamma -> Gamma
 
@@ -82,10 +82,13 @@ spec
        
      | _ -> mkApply(fntm, arg)
 
- def assertCond(cond, gamma as (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) = 
+ op traceAssert?: Bool = false
+ def assertCond(cond, gamma as (ds, tvs, spc, qid, name, ty, names, lift?, trivs), kind) = 
    case cond of
      | Fun((Bool true, _, _)) -> gamma
-     | _ -> (Cons(Cond cond, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
+     | _ ->
+       let _ = if traceAssert? then writeLine("Asserting("^ kind ^") "^printTerm cond) else () in 
+       (Cons(Cond cond, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
  def insert((x, srt), gamma as (ds, tvs, spc, qid, name, ty, names, lift?, trivs))  = 
      let ds = Cons(Var(x, srt), ds) in
      let i = case StringMap.find (!names, x)
@@ -330,7 +333,7 @@ spec
          case nonStrictAppl(N1, N2) of
            | Some (p1, p2, polarity) ->
              let tcc   = (tcc, gamma)   |- p1 ?? boolSort 	   in
-             let gamma1 = assertCond(if polarity then p1 else negateTerm p1, gamma) in
+             let gamma1 = assertCond(if polarity then p1 else negateTerm p1, gamma, "nonStrict") in
              let tcc   = (tcc, gamma1) |- p2 ?? boolSort           in
              let tcc   = <= (tcc, gamma, M, boolSort, tau) 	   in
              tcc
@@ -375,7 +378,7 @@ spec
                     let ngamma = assertCond(mkEquality(inferType(getSpec gamma, trm),
                                                        trm,
                                                        tp),
-                                            ngamma)
+                                            ngamma, "let-pattern")
                     in
                     let spc = getSpec gamma 				   in
                     let tcc = (tcc, gamma) |- trm ?? sigma1               in
@@ -451,9 +454,9 @@ spec
 
       | IfThenElse(t1, t2, t3, _) -> 
         let tcc1   = (tcc, gamma)   |- t1 ?? boolSort 		in
-        let gamma1 = assertCond(t1, gamma) 			in
+        let gamma1 = assertCond(t1, gamma, "if-true") 			in
         let tcc2   = (tcc1, gamma1) |- t2 ?? tau 		in
-        let gamma2 = assertCond(negateTerm t1, gamma) 		in
+        let gamma2 = assertCond(negateTerm t1, gamma, "if-false") 		in
         let tcc3   = (tcc2, gamma2) |- t3 ?? tau 		in
         tcc3
       | Seq([], _)    -> tcc
@@ -569,18 +572,19 @@ spec
         = case optArg of
 	    | Some arg ->
 	      let condn = mkEquality(inferType(getSpec gamma, arg), arg, tp) in
-	      let gamma0 = assertCond(condn, gamma0) in
+	      let gamma0 = assertCond(condn, gamma0, "case") in
 	      (condn, gamma0)
 	    | _ -> (mkTrue(), gamma0)
      in
      let tcc = (tcc, gamma1) |- cond ?? boolSort 	  in
-     let gamma2 = assertCond(cond, gamma1)		  in
+     let gamma2 = assertCond(cond, gamma1, "case-condn")		  in
      let tcc = (tcc, gamma2) |- body ?? rng 		  in
      let tcc = addQuotientCondition(tcc, gamma, pat, body, optArg) in
      let nextGamma =
          if casesDisjoint? || trueTerm? condn
 	   then gamma
-	   else assertCond(negateExistTerm(condn, gamma2, gamma), gamma)
+	   else
+             assertCond(negateExistTerm(condn, gamma2, gamma), gamma, "not-case")
      in
      (tcc, nextGamma)
 
@@ -654,12 +658,12 @@ spec
      else
      case tau1 
        of Subsort(tau2, pred, _) -> 
-	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma) in
+	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype1") in
           returnPatternRec(pairs, gamma, M, tau2, sigma1)
 	| _ -> 
      case sigma1 
        of Subsort(sigma2, pred, _) -> 
-	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma) in
+	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype2") in
 	  returnPatternRec(pairs, gamma, M, tau1, sigma2)
 	| _ -> (gamma, M)
 
@@ -669,7 +673,7 @@ spec
      of AliasPat(p1, p2, _) -> 
 	let (gamma, t1) = bindPattern(gamma, p1, tau) in
 	let (gamma, t2) = bindPattern(gamma, p2, tau) in
-	let gamma = assertCond(mkEquality(tau, t1, t2), gamma) in
+	let gamma = assertCond(mkEquality(tau, t1, t2), gamma, "alias") in
 	(gamma, t1)
       | VarPat(v as (_, srt), _) -> 
 	let gamma1 = insert(v, gamma) in
@@ -713,7 +717,7 @@ spec
        (gamma, mkApply(mkFun(Quotient qid, mkArrow(tau1, tau)), trm))
      | RestrictedPat(p, pred, _) 	-> 
        let (gamma, trm) = bindPattern(gamma, p, tau) in
-       let gamma = assertCond(pred, gamma) in
+       let gamma = assertCond(pred, gamma, "restrict-pat") in
        (gamma, trm)
 
 %% Well-foundedness condition
@@ -891,9 +895,8 @@ spec
       let gamma =
           case tau0 of
           | Subsort(_, pred, _) -> 
-            % let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
             let preds = decomposeConjPred pred in
-            foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma)) gamma preds
+            foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma, "subtype")) gamma preds
           | _ -> gamma
       in
       case sigma0 of
@@ -929,7 +932,8 @@ spec
      of Subsort(tau2, pred, _) -> 
 	% let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
         let preds = decomposeConjPred pred in
-        let gamma = foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma)) gamma preds in
+        let gamma = foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma, "subtypeR"))
+                      gamma preds in
         subtypeRec(pairs, tcc, gamma, M, tau2, sigma1)
       | _ -> 
    case sigma1 
@@ -972,7 +976,7 @@ spec
                     of (Some t1, Some t2) -> 
                        let gamma = assertCond(mkApply(mkFun(Embedded id, mkArrow(sigma, boolSort)),
                                                       M),
-                                              gamma) in
+                                              gamma, "coprod") in
                        subtypeRec(pairs, tcc, gamma,
                                   mkApply(mkFun(Select id, mkArrow(sigma, t1)), M),
                                   t1, t2)
@@ -1194,11 +1198,9 @@ spec
                                                   if exists? (fn rx -> equivTerm? spc (r, rx))
                                                        (!quotientRelations) then ()
                                                   else 
-                                                  let _ = (quotientRelations := Cons(r, !quotientRelations)) in 
-                                                  ()
+                                                  quotientRelations := r :: !quotientRelations
                                                 | Subsort(ss, p, _) ->
-                                                  let _ = (subtypePreds := Cons((tvs, p, mkArrow(ss, boolSort)), !subtypePreds)) in 
-                                                  ()
+                                                  subtypePreds := (tvs, p, mkArrow(ss, boolSort)) :: !subtypePreds
                                                 | _ -> (),
                                               fn _ -> ())
                                        srt)
