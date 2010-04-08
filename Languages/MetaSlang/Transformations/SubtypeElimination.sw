@@ -513,7 +513,7 @@ SpecNorm qualifying spec
                          let base_ty = mkBase(qid, map mkTyVar tvs) in
                          let pred_nm = ty_name^"__subsort_pred" in
                          let pred_id = Qualified(q, pred_nm) in
-                         let pred_ty = mkArrow(ty, boolSort) in
+                         let pred_ty = mkArrow(sup_ty, boolSort) in
                          let pred_tm = mkOp(pred_id, pred_ty) in
                          let pred_el = Op(pred_id, true, a) in
                          let pred =
@@ -530,7 +530,7 @@ SpecNorm qualifying spec
                                        fullyQualified? = false}
                          in
                          let sortinfo = {names = names,
-                                         dfn = maybePiSort(tvs, Subsort(ty, pred_tm, a1))}
+                                         dfn = maybePiSort(tvs, Subsort(sup_ty, pred_tm, a1))}
                          in
                          let spc = spc << {ops   = insertAQualifierMap(spc.ops,  q,pred_nm,opinfo),
                                            sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)}
