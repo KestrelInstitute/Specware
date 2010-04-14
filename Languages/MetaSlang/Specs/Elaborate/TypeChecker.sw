@@ -84,6 +84,24 @@ TypeChecker qualifying spec
     in
     let 
 
+      def elaborate_local_op_sorts (ops, env) =
+	mapOpInfos (fn info ->
+		    if someOpAliasIsLocal? (info.names, given_spec) then
+		      let def elaborate_srt dfn =
+		            let pos = termAnn dfn in
+			    let (tvs, srt, tm) = unpackTerm dfn in
+			    let _ = checkTyVars (env, tvs, pos) in
+			    let srt = checkSort (env, srt) in
+			    maybePiTerm (tvs, SortedTerm (tm, srt, pos))
+		      in
+			let new_defs = map elaborate_srt (opInfoAllDefs info) in
+			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
+			let new_info = info << {dfn = new_dfn} in
+			new_info
+		    else
+		      info)
+	  ops
+
       def elaborate_local_sorts (sorts, env) =
 	if ~(hasLocalSort? given_spec) then sorts
 	else
@@ -102,24 +120,6 @@ TypeChecker qualifying spec
 		      else 
 			info)
 	             sorts 
-
-      def elaborate_local_op_sorts (ops, env) =
-	mapOpInfos (fn info ->
-		    if someOpAliasIsLocal? (info.names, given_spec) then
-		      let def elaborate_srt dfn =
-		            let pos = termAnn dfn in
-			    let (tvs, srt, tm) = unpackTerm dfn in
-			    let _ = checkTyVars (env, tvs, pos) in
-			    let srt = checkSort (env, srt) in
-			    maybePiTerm (tvs, SortedTerm (tm, srt, pos))
-		      in
-			let new_defs = map elaborate_srt (opInfoAllDefs info) in
-			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
-			let new_info = info << {dfn = new_dfn} in
-			new_info
-		    else
-		      info)
-	  ops
 
       def elaborate_local_ops (ops, env, poly?) =
 	foldl (fn (ops,el) ->
@@ -184,12 +184,12 @@ TypeChecker qualifying spec
     %% Add constructors to environment
     let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
 
+    %% Elaborate sorts of ops
+    let elaborated_ops_0 = elaborate_local_op_sorts (given_ops,env_with_constrs) in
+
     %% Elaborate sorts
     let elaborated_sorts = elaborate_local_sorts (given_sorts, env_with_constrs) in
     let env_with_elaborated_sorts = setEnvSorts (env_with_constrs, elaborated_sorts) in
-
-    %% Elaborate sorts of ops
-    let elaborated_ops_0 = elaborate_local_op_sorts (given_ops,env_with_elaborated_sorts) in
 
     %% Elaborate ops (do polymorphic definitions first)
     let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0, env_with_elaborated_sorts, true)  in
