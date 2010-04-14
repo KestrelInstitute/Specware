@@ -254,16 +254,9 @@ rely on the overloading?
             xsNew <- mapM f xs;
             return (Cons (xNew,xsNew))
           }
-\end{spec}
-
-\begin{spec}
-%   op getCurrentDirectory : Env String
-%   def getCurrentDirectory = return currentDirectory
 
   op fileExistsAndReadable? : String -> Env Boolean
   def fileExistsAndReadable? fileName = return (fileExistsAndReadable fileName)
-\end{spec}
 
-\begin{spec}
 endspec
 \end{spec}
