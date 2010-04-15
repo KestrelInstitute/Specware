@@ -909,6 +909,11 @@ AnnSpecPrinter qualifying spec
 				             ([], Top : ParentSort) 
 					     srt))
 
+ op [a] printSortWithSorts(srt: ASort a): String =
+   toString (format (80, ppSort (initialize (asciiPrinter, true))
+                           ([], Top : ParentSort) 
+                           srt))
+
  def printSortToTerminal srt = 
    toTerminal (format (80, ppSort (initialize (uiPrinter(), false))
 		                  ([], Top : ParentSort) 
