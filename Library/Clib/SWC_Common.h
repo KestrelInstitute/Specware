@@ -82,12 +82,32 @@ char* String_append(char *s1, char *s2) {
 #define String_Caret String_append
 #define Caret String_Caret
 
-#define writeLine String_writeLine
-#define String_toScreen String_writeLine
-void String_writeLine(char *s) {
+#define writeLine System_writeLine
+#define String_toScreen System_writeLine
+void System_writeLine(char *s) {
   printf("%s\n",s);
 }
 
+
+#define show Integer_show
+#define Nat_show Integer_show
+char* Integer_show(int n) {
+  char buf[12];
+  char *res;
+  sprintf(buf,"%d",n);
+  res = swc_malloc(strlen(buf)+1);
+  strcpy(res,buf);
+  return res;
+}
+char* Boolean_show(int n) {
+  char *res = swc_malloc(sizeof(char)*6);
+  if (n) {
+    strcpy(res,"true");
+  } else {
+    strcpy(res,"false");
+  }
+  return res;
+}
 
 #define toString Integer_toString
 #define Nat_toString Integer_toString
