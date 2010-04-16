@@ -1096,7 +1096,10 @@ NIL if streams are not globally redirected.")
 (defun read-form (string)
   (with-standard-io-syntax
     (let ((*package* *swank-io-package*))
-      #+case-sensitive (setf (readtable-case *readtable*) :invert)
+      #+case-sensitive
+      (unless (eq (readtable-case *readtable*) :invert)
+        (setq *readtable* (copy-readtable *readtable*))
+        (setf (readtable-case *readtable*) :invert))
       (read-from-string string))))
 
 (defvar *slime-features* nil
