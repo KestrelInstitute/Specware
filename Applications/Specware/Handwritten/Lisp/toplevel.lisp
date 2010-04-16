@@ -917,7 +917,7 @@
 ;; returns the name of the cfile from the given unitid
 ;; by substituting #' with underscores
 (defun getCFileNameFromUnitid (unitId)
-  (cl:substitute #\_  #\# (string unitid))
+  (cl:substitute #\_  #\# (string unitId))
   )
 
 ;; --------------------------------------------------------------------------------
