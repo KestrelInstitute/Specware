@@ -667,12 +667,6 @@ spec
       | Record (tms, _) -> (tms@i).2
       | tm -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
-  op  termList: Term -> List Term
-  def termList t =
-    case t of
-      | Record(fields, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields
-      | _ -> [t]
-
   op  makeLet: List Pattern * List Term * Term * VarSubst -> Term * VarSubst
   def makeLet(params, args, body, sbst) =
     case (params, args) of

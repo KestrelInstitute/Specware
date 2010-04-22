@@ -356,5 +356,10 @@ MS qualifying spec
    let branch  = (pattern, mkTrue(), ApplyN([f,arg],pos)) in
    Lambda ([branch], pos)
 
+  op  termList: Term -> List Term
+  def termList t =
+    case t of
+      | Record(fields, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields
+      | _ -> [t]
 
 endspec
