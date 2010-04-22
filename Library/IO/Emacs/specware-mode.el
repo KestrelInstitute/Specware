@@ -281,6 +281,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cf"  'sw:ignore-matches)
 
   (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
+  (define-key map "\C-c\C-h" 'sw:convert-spec-to-haskell)
 
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
@@ -2195,6 +2196,29 @@ With an argument, it doesn't convert imports."
 	     (getenv "SPECWARE4")))))
 
 (sw:add-specware-to-isabelle-path)
+
+;;; Haskell generation
+(defun sw:convert-spec-to-haskell (non-recursive?)
+  "Converts Spec to Isabelle/HOL theory.
+With an argument, it doesn't convert imports."
+  (interactive "P")
+  (save-buffer)
+  (let* ((filename (sw:containing-specware-unit-id t))
+	 (thy-file (sw:eval-in-lisp
+		    (format
+		     "(Haskell::printUIDtoThyFile-2 %S %s)"
+		     filename
+		     (if non-recursive? "nil" "t"))))
+	 (revert-without-query (cons ".*.thy" revert-without-query))
+	 (display-warning-suppressed-classes (cons 'warning
+						   display-warning-suppressed-classes)))
+    (if (string-match "Error: Unknown UID" thy-file)
+        (error "Error processing spec %s" filename)
+      (let ((buf (find-file-noselect thy-file t)))
+        (kill-buffer buf)		; Because of x-symbol problems if it already exists
+        (find-file-other-window (to-cygwin-name thy-file))
+        (when (fboundp 'proof-unregister-buffer-file-name)
+          (proof-unregister-buffer-file-name t))))))
 
 (defun sw:specware-mode-folding ()
   (folding-add-to-marks-list 'specware-mode "%{{{" "%}}}" nil t))
