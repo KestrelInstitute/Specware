@@ -439,7 +439,7 @@ Haskell qualifying spec
     in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
-    prLinesCat 0 [[prString "imports ", ppImports c spc.elements],
+    prLinesCat 0 [[prString "import ", ppImports c spc.elements],
 		  [ppSpecElements c spc (filter elementFilter spc.elements)]]
 
   op  elementFilter: SpecElement \_rightarrow Boolean
@@ -744,13 +744,9 @@ Haskell qualifying spec
    % let _ = writeLine("returned: "^anyToString result) in
    result
 
- op haskellReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
-                                          "recdef", "primrec", "consts", "class", "primitive",
-                                          "next", "instance", "and", "open"]
- op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
-   ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
-    "False", "Not", "sub", "sup", "Sigma", "map", "dom", "field", "fields", "acc", "id",
-    "max", "mem"]
+ op haskellReservedWords: List String = ["class", "data", "deriving", "do", "import", "instance", "module",
+                                         "newtype", "type", "where"]
+ op disallowedVarNames: List String = []        % \_dots Don't know how to get all of them
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
@@ -800,7 +796,7 @@ Haskell qualifying spec
                                 | _ \_rightarrow ppType c CoProduct false ty]
               in
               prBreakCat 2
-                [[prString "datatype ",
+                [[prString "data ",
                   ppTyVars tvs,
                   ppIdInfo aliases],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
@@ -836,18 +832,7 @@ Haskell qualifying spec
 		        (map (\_lambda tv \_rightarrow prConcat[prString "'", prString tv]) tvs),
 		      prString ")"]
 
- op precNumFudge: Nat = 40
-
- op expandNatToSucc(tm: MS.Term): MS.Term =
-   case tm of
-     | Fun(Nat i, _, _) | i ~= 0 && i < 10 ->
-       let def expandNat i =
-            if i = 0 then mkNat 0
-              else mkApply(mkOp(Qualified("Nat", "succ"), mkArrow(natSort, natSort)),
-                           expandNat(i - 1))
-       in
-       expandNat i              
-     | _ -> tm
+ op precNumFudge: Nat = 0
 
  op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
  def defToFunCases c op_tm bod =
@@ -867,7 +852,6 @@ Haskell qualifying spec
             then foldl (\_lambda (cases, (pati, _, bodi)) \_rightarrow
                         case patToTerm(pati, "",  c) of
                           | Some pati_tm \_rightarrow
-                            let pati_tm = expandNatToSucc pati_tm in
                             let sbst = [(v, pati_tm)] in
                             let s_bodi = if hasVarNameConflict?(pati_tm, [v]) then bodi
                                           else substitute(bodi, sbst)
@@ -1013,7 +997,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                          prString (show (prec + precNumFudge)),
                          prString ")"]
                       | _ \_rightarrow []),
-                [prString " ", prSep (-2) blockAll (prString " ") pp_cases]])
+                [prString " ", prSep (0) blockAll (prString " ") pp_cases]])
  
 op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
@@ -1458,9 +1442,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                  | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
                    Some(mainId qid)
                  | _ -> None)
-           | And       \_rightarrow Some "\\<and>"
-           | Or        \_rightarrow Some "\\<or>"
-           | Implies   \_rightarrow Some "\\<longrightarrow>"
+           | And       \_rightarrow Some "&&"
+           | Or        \_rightarrow Some "||"
+           | Implies   \_rightarrow Some "=>"
            | Iff       \_rightarrow Some "="
            | Equals    \_rightarrow Some "="
            | NotEquals \_rightarrow Some "\\<noteq>"
@@ -1698,7 +1682,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         lengthString(1, "\\<rparr>")])
      | The (var,term,_) \_rightarrow
        prBreak 0 [prString "(THE ",
-                  ppVarWithSort c var,
+                  ppVar c var,
                   prString ". ",
                   ppTerm c Top term,
                   prString ")"]
@@ -1707,7 +1691,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   | Infix(_,prec) \_rightarrow true  % prec > 18
                   | _ \_rightarrow false,
                 prBreakCat 2 [[ppBinder binder,
-                               prConcat(addSeparator prSpace (map (ppVarWithSort c) vars)),
+                               prConcat(addSeparator prSpace (map (ppVar c) vars)),
                                prString ". "],
                               [ppTerm c Top term]])
      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
@@ -1812,14 +1796,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def ppVarWithoutSort (id, _(* ty *)) =
    ppVarStr id
 
- op ppVarWithSort (c: Context) ((id, ty): Var): Pretty =
-   ppVarStr id
-
  op  ppVar : Context \_rightarrow Var \_rightarrow Pretty
  def ppVar c (id, ty) =
-   prConcat [ppVarStr id,
-             prString ":",
-             ppType c Top true ty]
+   ppVarStr id
+%   prConcat [ppVarStr id,
+%             prString ":",
+%             ppType c Top true ty]
 
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
