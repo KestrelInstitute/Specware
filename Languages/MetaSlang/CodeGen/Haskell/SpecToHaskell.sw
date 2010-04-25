@@ -792,8 +792,8 @@ Haskell qualifying spec
                               case ty of
                                 | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
                                   prConcat(addSeparator prSpace
-                                             (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct false c_ty) fields))
-                                | _ \_rightarrow ppType c CoProduct false ty]
+                                             (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
+                                | _ \_rightarrow ppType c CoProduct ty]
               in
               prBreakCat 2
                 [[prString "data ",
@@ -808,7 +808,7 @@ Haskell qualifying spec
 		  prString " = "]] ++
 		(map (\_lambda (fldname, fldty) \_rightarrow
 		      [ppToplevelName (mkNamedRecordFieldName(mainId, fldname)),
-                       prString " :: ", ppType c Top false fldty])
+                       prString " :: ", ppType c Top fldty])
 		 fields))
 	   | _ \_rightarrow
 	     prBreakCat 2
@@ -816,7 +816,7 @@ Haskell qualifying spec
 		 ppTyVars tvs,
 		 ppIdInfo aliases,
 		 prString " = "],
-		[ppType c Top true ty]]
+		[ppType c Top ty]]
      else prBreakCat 2
 	    [[prString "typedecl ",
 	      ppTyVars tvs,
@@ -833,6 +833,11 @@ Haskell qualifying spec
 		      prString ")"]
 
  op precNumFudge: Nat = 0
+
+ op mkIncTerm(t: MS.Term): MS.Term =
+   mkApply(mkOp(Qualified("Integer","+"),
+                mkArrow(mkProduct [natSort, natSort], natSort)),
+           mkTuple[t,mkNat 1])
 
  op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
  def defToFunCases c op_tm bod =
@@ -911,14 +916,8 @@ Haskell qualifying spec
                       then_cl, else_cl, _)
              | natSort? s \_and inVars?(v, freeVars hd) \_rightarrow
            let cases1 = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)])) in
-           let cases2 = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
-                                                            mkArrow(natSort, natSort)),
-                                                       vr))]),
-                            simpSubstitute(getSpec c, else_cl,
-                                           [(v,mkApply(mkOp(Qualified("Integer","+"),
-                                                            mkArrow(mkProduct [natSort, natSort],
-                                                                    natSort)),
-                                                       mkTuple[vr,mkNat 1]))]))
+           let cases2 = aux(substitute(hd, [(v, mkIncTerm vr)]),
+                            simpSubstitute(getSpec c, else_cl, [(v, mkIncTerm vr)]))
            in
            cases1 ++ cases2
          | _ \_rightarrow [(hd,bod)]
@@ -982,22 +981,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                         ppTerm c Top (mkEquality(Any noPos,lhs,rhs)))
                    cases
   in
-  prLinesCat 0 ([[ppIdInfo aliases, prString " :: ",
-                 (case fixity of
-                    | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
-                    | _ \_rightarrow ppType c Top true ty)]
-                ++ (case fixity of
-                      | Infix(assoc,prec) \_rightarrow
-                        [prString "\t(",
-                         case assoc of
-                           | Left  \_rightarrow prString "infixl "
-                           | Right \_rightarrow prString "infixr ",
-                         ppInfixDefId (mainId),
-                         prString " ",
-                         prString (show (prec + precNumFudge)),
-                         prString ")"]
-                      | _ \_rightarrow []),
-                [prString " ", prSep (0) blockAll (prString " ") pp_cases]])
+  prSep (0) blockAll (prString " ") pp_cases
  
 op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
@@ -1030,17 +1014,15 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                  prString " :: ",
                  (case fixity of
                     | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
-                    | _ \_rightarrow ppType c Top true ty)]
+                    | _ \_rightarrow ppType c Top ty)]
              ++ (case fixity of
                    | Infix(assoc,prec) \_rightarrow
-                     [prString "\t(",
-                      case assoc of
+                     [case assoc of
                         | Left  \_rightarrow prString "infixl "
                         | Right \_rightarrow prString "infixr ",
                       ppInfixDefId (mainId),
                       prString " ",
-                      prString (show (prec + precNumFudge)),
-                      prString ")"]
+                      prString (show (prec + precNumFudge))]
                    | _ \_rightarrow [])]
            else []
   in
@@ -1349,75 +1331,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            then subFromTo(s,2,len)
            else s
 
- op  explicitUniversals: Option Pragma \_rightarrow List String
- def explicitUniversals prf =
-   case prf of
-     | None \_rightarrow []
-     | Some (_,prag_str,_,_) \_rightarrow
-   let end_pos = case search("\n",prag_str) of
-                   | Some n \_rightarrow n
-                   | None \_rightarrow length prag_str
-   in
-   let end_fa_pos = case search(" fa ",prag_str) of
-                      | Some n \_rightarrow n+4
-                      | None \_rightarrow
-                    case search(" \\<forall>",prag_str) of
-                      | Some n \_rightarrow n+9
-                      | None \_rightarrow 
-                    case search(" \\_forall",prag_str) of
-                      | Some n \_rightarrow n+9
-                      | None \_rightarrow length prag_str
-   in
-   let end_vars_pos = case search(".",prag_str) of
-                      | Some n \_rightarrow n
-                      | None \_rightarrow 0
-   in
-   if end_fa_pos >= end_pos || end_vars_pos <= end_fa_pos then []
-     else removeEmpty(splitStringAt(subFromTo(prag_str,end_fa_pos,end_vars_pos)," "))
-
  op endOfFirstLine(s: String): Nat =
    case search("\n",s) of
      | Some n \_rightarrow n
      | None \_rightarrow length s
 
- op  findBracketAnnotation: Option Pragma \_rightarrow Option String
- def findBracketAnnotation prf =
-   case prf of
-     | None \_rightarrow None
-     | Some (_,prag_str,_,_) \_rightarrow
-   let end_pos =  endOfFirstLine prag_str in
-   findStringBetween(prag_str, "[", "]", 0, endOfFirstLine prag_str)
-
- op findParenAnnotation(prf: Option Pragma): Option String =
-   case prf of
-     | None \_rightarrow None
-     | Some (_,prag_str,_,_) \_rightarrow
-   let end_pos =  endOfFirstLine prag_str in
-   if some?(searchBetween("\"", prag_str, 0, end_pos))
-     then None
-   else findStringBetween(prag_str, "(", ")", 0, end_pos)
-
-
- op  findMeasureAnnotation: Option Pragma \_rightarrow Option String
- def findMeasureAnnotation prf =
-   case prf of
-     | None \_rightarrow None
-     | Some (_,prag_str,_,_) \_rightarrow
-   let end_pos = endOfFirstLine prag_str in
-   case findStringBetween(prag_str, "\"", "\"", 0, end_pos) of
-     | Some str \_rightarrow Some(replaceString(str, "\\_lambda", "\\<lambda>"))
-     | None \_rightarrow None
-
-
- op  ppPropertyType : PropertyType \_rightarrow Pretty
- def ppPropertyType propType =
-   case propType of
-     | Axiom \_rightarrow prString "axioms"
-     | Theorem \_rightarrow prString "theorem"
-     | Conjecture \_rightarrow prString "theorem"
-     | any \_rightarrow fail ("No match in ppPropertyType with: '"
-                      ^ (anyToString any)
-                      ^ "'")
 
  %% --------------------------------------------------------------------------------
  %% Terms
@@ -1445,9 +1363,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            | And       \_rightarrow Some "&&"
            | Or        \_rightarrow Some "||"
            | Implies   \_rightarrow Some "=>"
-           | Iff       \_rightarrow Some "="
-           | Equals    \_rightarrow Some "="
-           | NotEquals \_rightarrow Some "\\<noteq>"
+           | Iff       \_rightarrow Some "=="
+           | Equals    \_rightarrow Some "=="
+           | NotEquals \_rightarrow Some "=~="
            | _ -> None
    in
    % let _ = writeLine("is "^anyToString result) in
@@ -1612,9 +1530,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                                prString " := ",
                                                ppTerm c Top y]
                               in
-                              prConcat [lengthString(1, "\\<lparr>"),
+                              prConcat [prString "{",
                                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
-                                        lengthString(1, "\\<rparr>")]])
+                                        prString "}"]])
         | _ ->
         let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
               enclose?(encl?,
@@ -1677,16 +1595,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             prString " = ",
                             ppTerm c Top y]
             in
-              prConcat [lengthString(1, "\\<lparr>"),
+              prConcat [prString "{",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
-                        lengthString(1, "\\<rparr>")])
-     | The (var,term,_) \_rightarrow
+                        prString "}"])
+     | The (var,term,_) \_rightarrow  %% Not exec!!
        prBreak 0 [prString "(THE ",
                   ppVar c var,
                   prString ". ",
                   ppTerm c Top term,
                   prString ")"]
-     | Bind (binder,vars,term,_) \_rightarrow
+     | Bind (binder,vars,term,_) \_rightarrow  %% Not exec!!
        enclose?(case parentTerm of
                   | Infix(_,prec) \_rightarrow true  % prec > 18
                   | _ \_rightarrow false,
@@ -1730,7 +1648,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %        prString "TRUE"                 % \_lambdax. True
      | Lambda ([(pattern,_,term)],_) \_rightarrow
        enclose?(parentTerm \_noteq Top,
-                prBreakCat 2 [[lengthString(2, "\\<lambda> "),
+                prBreakCat 2 [[prString "\\",
                                  ppPattern c pattern (Some ""),
                                prString ". "],
                               [ppTerm c Top term]])
@@ -1747,7 +1665,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        %prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
        ppTerm c parentTerm (last terms)
      | SortedTerm (tm, ty, _) \_rightarrow
-       enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
+       enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top ty]])
      | mystery \_rightarrow fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
  op unfoldToBaseNamedType(spc: Spec, ty: Sort): Sort =
@@ -1784,9 +1702,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppBinder : Binder \_rightarrow Pretty
  def ppBinder binder =
    case binder of
-     | Forall \_rightarrow lengthString(1, "\\<forall>")
-     | Exists \_rightarrow lengthString(1, "\\<exists>")
-     | Exists1 \_rightarrow lengthString(2, "\\<exists>!")
+     | Forall \_rightarrow prString "fa"
+     | Exists \_rightarrow prString "ex"
+     | Exists1 \_rightarrow prString "ex1"
 
  op ppVarStr(nm: String): Pretty =
    if nm in? disallowedVarNames then prString(nm^"__v")
@@ -1801,13 +1719,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    ppVarStr id
 %   prConcat [ppVarStr id,
 %             prString ":",
-%             ppType c Top true ty]
+%             ppType c Top ty]
 
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term) =
          prBreakCat 0 [[ppPattern c pattern None,
-                        lengthString(3, " \\<Rightarrow> ")],
+                        prString " -> "],
                        [ppTerm c Top term]]
    in
      (prSep (-3) blockAll (prString " | ") (map ppCase cases))
@@ -1947,13 +1865,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppFun : Context \_rightarrow ParentTerm \_rightarrow Fun \_rightarrow Sort \_rightarrow Pretty
  def ppFun c parentTerm fun ty =
    case fun of
-     | Not       \_rightarrow lengthString(1, "\\<not>")
-     | And       \_rightarrow lengthString(1, "\\<and>")
-     | Or        \_rightarrow lengthString(1, "\\<or>")
-     | Implies   \_rightarrow lengthString(3, "\\<longrightarrow>")
-     | Iff       \_rightarrow prString "="
-     | Equals    \_rightarrow prString "="
-     | NotEquals \_rightarrow lengthString(1, "\\<noteq>")
+     | Not       \_rightarrow prString "~"
+     | And       \_rightarrow prString "&&"
+     | Or        \_rightarrow prString "||"
+     | Implies   \_rightarrow prString "==>"
+     | Iff       \_rightarrow prString "=="
+     | Equals    \_rightarrow prString "=="
+     | NotEquals \_rightarrow prString "=~="
      | Quotient  _ \_rightarrow prString "quotient"
      | PQuotient _ \_rightarrow prString "quotient"
      | Choose    _ \_rightarrow prString "choose"
@@ -1966,7 +1884,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        (case infixFun? c fun of
           | Some infix_str \_rightarrow
             enclose?(parentTerm ~= Top,
-                     prConcat [lengthString(11, "\\<lambda> (x,y). x "),
+                     prConcat [lengthString(11, "\\(x,y). x "),
                                prString infix_str,
                                prString " y"])
           | None \_rightarrow
@@ -2091,12 +2009,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Some(dom, rng) \_rightarrow
        (case productSorts(getSpec c,dom) of
          | [arg1_ty,arg2_ty] \_rightarrow
-           ppType c Top true (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
-         | _ \_rightarrow ppType c Top true ty)
-     | _ \_rightarrow ppType c Top true ty
+           ppType c Top (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
+         | _ \_rightarrow ppType c Top ty)
+     | _ \_rightarrow ppType c Top ty
 
- op  ppType : Context \_rightarrow ParentSort \_rightarrow Boolean \_rightarrow Sort \_rightarrow Pretty
- def ppType c parent in_quotes? ty =
+ op  ppType : Context \_rightarrow ParentSort \_rightarrow Sort \_rightarrow Pretty
+ def ppType c parent ty =
    case ty of
      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
       %% CoProduct only at top level
@@ -2118,19 +2036,19 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %                    | Subsort \_rightarrow true
 %                    | _ \_rightarrow false,
 %                  prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
-     | Boolean _ \_rightarrow prString "bool"  
-     | TyVar (tyVar,_) \_rightarrow prConcat[prString "'",prString tyVar]
+     | Boolean _ \_rightarrow prString "Bool"  
+     | TyVar (tyVar,_) \_rightarrow prString tyVar
      | MetaTyVar (tyVar,_) \_rightarrow 
        let ({link, uniqueId, name}) = ! tyVar in
        prString (name ^ (Nat.show uniqueId))
 
      | Base (qid,[ty],_) \_rightarrow
-       prBreak 0 [ppType c Apply in_quotes? ty,
+       prBreak 0 [ppType c Apply ty,
                   prSpace,
                   ppTypeQualifiedId c qid]
      | Base (qid,tys,_) \_rightarrow
        prBreak 0 [prString " (",
-                  prPostSep 0 blockFill (prString ", ") (map (ppType c Top in_quotes?) tys),
+                  prPostSep 0 blockFill (prString ", ") (map (ppType c Top) tys),
                   prString ")",
                   ppTypeQualifiedId c qid]      | Arrow (ty1,ty2,_) \_rightarrow
        enclose?(case parent of
@@ -2139,42 +2057,37 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   | Subsort -> true
                   | Apply \_rightarrow true
                   | _ -> false,
-                prBreak 0[ppType c ArrowLeft in_quotes? ty1,
-                          lengthString(4, " \\<Rightarrow> "),
-                          ppType c ArrowRight in_quotes? ty2])
+                prBreak 0[ppType c ArrowLeft ty1,
+                          prString " -> ",
+                          ppType c ArrowRight ty2])
      | Product (fields,_) \_rightarrow
        (case fields of
           | [] \_rightarrow prString "unit"
           | ("1",_)::_ \_rightarrow
-            let def ppField (_,y) = ppType c Product in_quotes? y in
+            let def ppField (_,y) = ppType c Product y in
             enclose?(case parent of
                        | Product -> true
                        | Subsort -> true
                        | Apply \_rightarrow true
                        | _ -> false,
-                     prSep 2 blockFill (lengthString(3, " \\<times> "))
+                     prSep 2 blockFill (prString ", ")
                        (map ppField fields))
           | _ \_rightarrow
             let def ppField (x,y) =
             prLinearCat 2 [[prString (mkFieldName x),
                             prString " :: "],
-                           [ppType c Top in_quotes? y]]
+                           [ppType c Top  y]]
             in
-              prBreak 2 [lengthString(1, "\\<lparr>"),
+              prBreak 2 [prString "{",
                          prPostSep 0 blockLinear(prString ", ") (map ppField fields),
-                         lengthString(1, "\\<rparr>")])
+                         prString "}"])
      | Quotient (ty,term,_) \_rightarrow
          prBreak 0 [prString "(",
-                    ppType c Top in_quotes? ty,
+                    ppType c Top ty,
                     prString " \\ ",
                     ppTerm c Top term,
                     prString ")"]
-     | Subsort (ty,term,_) \_rightarrow
-         prBreak 0 [prString "(",
-                    ppType c Top in_quotes? ty,
-                    prString " | ",
-                    ppTerm c Top term,
-                    prString ")"]
+     | Subsort (ty,_,_) \_rightarrow ppType c parent ty
 
      | mystery \_rightarrow fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
@@ -2203,14 +2116,14 @@ def termFixity c term =
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
                   | Nonfix \_rightarrow (None, Nonfix, false, false)
                   | _ -> (Some(ppInfixId id), fixity, true, false))
-         | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true, false)
-         | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true, false)
-         | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true, false) 
-         | Iff            -> (Some(prString "="), Infix (Left, 20), true, false)
-         | Not            -> (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false, false) % ?
-         | Equals         -> (Some(prString "="), Infix (Left, 20), true, false) % was 10 ??
-         | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true, false)
-         | RecordMerge    -> (Some(prString "<<"), Infix (Left, 25), true, false)
+         | And            -> (Some(prString "&&"),Infix (Right, 15),true, false)
+         | Or             -> (Some(prString "||"), Infix (Right, 14),true, false)
+         | Implies        -> (Some(prString "==>"), Infix (Right, 13), true, false) 
+         | Iff            -> (Some(prString "=="), Infix (Left, 20), true, false)
+         | Not            -> (Some(prString "~"), Infix (Left, 18), false, false) % ???
+         | Equals         -> (Some(prString "=="), Infix (Left, 20), true, false) % was 10 ??
+         | NotEquals      -> (Some(prString "=~="), Infix (Left, 20), true, false) % ???
+         % | RecordMerge    -> (None, Infix (Left, 25), true, false)  % ???
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
 
