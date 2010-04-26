@@ -978,10 +978,10 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
   let op_tm = mkFun (Op (mainId, fixity), ty) in
   let cases = defToFunCases c op_tm dfn in
   let pp_cases = map (fn (lhs, rhs) ->
-                        ppTerm c Top (mkEquality(Any noPos,lhs,rhs)))
+                        prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]])
                    cases
   in
-  prSep (0) blockAll (prString " ") pp_cases
+  prLines (0) pp_cases
  
 op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
@@ -1028,7 +1028,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   in
   let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
   let def_list = if def? then [[ppFunctionDef c aliases term ty opt_prag fixity]] else []
-  in prLinesCat 0 (decl_list ++ def_list)
+  in prLinesCat 0 ([[]] ++ decl_list ++ def_list)
 
  op ensureNotCurried(lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
    case lhs of
@@ -1735,8 +1735,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    case pattern of
      | AliasPat (pat1, pat2, _) \_rightarrow 
        prBreak 0 [ppPattern c pat1 wildstr,
-                  prString " as ",
-                  ppPattern c pat2 wildstr]
+                  prString "@",
+                  enclose?(true, ppPattern c pat2 wildstr)]
      | VarPat (v, _) \_rightarrow ppVarWithoutSort v
      | EmbedPat (constr, pat, ty, _) \_rightarrow
        prBreak 0 [ppConstructorTyped (constr, ty, getSpec c),
