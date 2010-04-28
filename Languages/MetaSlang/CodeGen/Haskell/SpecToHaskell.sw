@@ -805,8 +805,8 @@ Haskell qualifying spec
               in
               prBreakCat 2
                 [[prString "data ",
-                  ppTyVars tvs,
-                  ppIdInfo aliases],
+                  ppIdInfo aliases,
+                  ppTyVars tvs],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
 	   | Product (fields,_) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
 	     prConcat
@@ -825,13 +825,13 @@ Haskell qualifying spec
                 prString "}"]
 	   | _ \_rightarrow
 	     prBreakCat 2
-	       [[prString "types ",
+	       [[prString "type ",
 		 ppTyVars tvs,
 		 ppIdInfo aliases,
 		 prString " = "],
 		[ppType c Top ty]]
-     else prBreakCat 2
-	    [[prString "typedecl ",
+     else prBreakCat 2                  % ??? Error (not executable)
+	    [[prString "type ",
 	      ppTyVars tvs,
 	      ppIdInfo aliases]]
 
@@ -839,11 +839,10 @@ Haskell qualifying spec
  def ppTyVars tvs =
    case tvs of
      | [] \_rightarrow prEmpty
-     | [tv] \_rightarrow prConcat [prString "'", prString tv, prSpace]
-     | _ \_rightarrow prConcat [prString " (",
-		      prPostSep 0 blockFill (prString ",")
-		        (map (\_lambda tv \_rightarrow prConcat[prString "'", prString tv]) tvs),
-		      prString ")"]
+     | [tv] \_rightarrow prConcat [prSpace, prString tv]
+     | _ \_rightarrow prConcat [prSpace,
+                      prPostSep 0 blockFill prSpace
+		        (map prString tvs)]
 
  op precNumFudge: Nat = 0
 
@@ -2063,14 +2062,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        prString (name ^ (Nat.show uniqueId))
 
      | Base (qid,[ty],_) \_rightarrow
-       prBreak 0 [ppType c Apply ty,
+       prBreak 0 [ppTypeQualifiedId c qid,
                   prSpace,
-                  ppTypeQualifiedId c qid]
+                  ppType c Apply ty]
      | Base (qid,tys,_) \_rightarrow
-       prBreak 0 [prString " (",
-                  prPostSep 0 blockFill (prString ", ") (map (ppType c Top) tys),
-                  prString ")",
-                  ppTypeQualifiedId c qid]      | Arrow (ty1,ty2,_) \_rightarrow
+       prBreak 0 [ppTypeQualifiedId c qid,
+                  prSpace,
+                  prPostSep 0 blockFill (prString " ") (map (ppType c Top) tys)]
+     | Arrow (ty1,ty2,_) \_rightarrow
        enclose?(case parent of
                   | Product -> true
                   | ArrowLeft -> true
@@ -2082,14 +2081,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                           ppType c ArrowRight ty2])
      | Product (fields,_) \_rightarrow
        (case fields of
-          | [] \_rightarrow prString "unit"
+          | [] \_rightarrow prString "()"
           | ("1",_)::_ \_rightarrow
             let def ppField (_,y) = ppType c Product y in
-            enclose?(case parent of
-                       | Product -> true
-                       | Subsort -> true
-                       | Apply \_rightarrow true
-                       | _ -> false,
+            enclose?(true,
                      prSep 2 blockFill (prString ", ")
                        (map ppField fields))
           | _ \_rightarrow
