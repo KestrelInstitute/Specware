@@ -54,7 +54,7 @@ Haskell qualifying spec
 
  type SpecTerm = SpecCalc.SpecTerm StandardAnnotation
  type Term = SpecCalc.Term StandardAnnotation
- type SpecElem = SpecCalc.SpecElem StandardAnnotation
+% type SpecElem = SpecCalc.SpecElem StandardAnnotation
  type Decl = SpecCalc.Decl StandardAnnotation
 
  op  prNum: Integer \_rightarrow Pretty
@@ -767,12 +767,20 @@ Haskell qualifying spec
    let qid = head qids in
    ppQualifiedId qid
 
+ op upCase1(nm: String): String =
+   if nm = "" then ""
+     else show(toUpperCase(nm@0)) ^ subFromTo(nm, 1, length nm)
+
+ op downCase1(nm: String): String =
+   if nm = "" then ""
+     else show(toLowerCase(nm@0)) ^ subFromTo(nm, 1, length nm)
+
+ op printTypeQid(qid: QualifiedId): Pretty =
+   string(upCase1(qidToHaskellString qid))
+
  op mkFieldName(nm: String): String = ppIdStr nm ^ "__fld"
  op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String =
-   qidToHaskellString qid^"__"^ppIdStr nm
-
- op ppToplevelName(nm: String): Pretty =
-   prString nm
+   downCase1(qidToHaskellString qid)^"__"^ppIdStr nm
 
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
@@ -801,15 +809,20 @@ Haskell qualifying spec
                   ppIdInfo aliases],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
 	   | Product (fields,_) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
-	     prLinesCat 2
-	       ([[prString "record ",
-		  ppTyVars tvs,
-		  ppIdInfo aliases,
-		  prString " = "]] ++
-		(map (\_lambda (fldname, fldty) \_rightarrow
-		      [ppToplevelName (mkNamedRecordFieldName(mainId, fldname)),
-                       prString " :: ", ppType c Top fldty])
-		 fields))
+	     prConcat
+	       [prString "data ",
+                ppTyVars tvs,
+                ppIdInfo aliases,
+                prString " = ",
+                ppIdInfo aliases,
+                prString " {",
+                prPostSep 0 blockLinear (prString ", ")
+                  (map (\_lambda (fldname, fldty) \_rightarrow
+                          prConcat [prString (mkNamedRecordFieldName(mainId, fldname)),
+                                    prString " :: ",
+                                    ppType c Top fldty])
+                     fields),
+                prString "}"]
 	   | _ \_rightarrow
 	     prBreakCat 2
 	       [[prString "types ",
@@ -1365,7 +1378,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            | Implies   \_rightarrow Some "=>"
            | Iff       \_rightarrow Some "=="
            | Equals    \_rightarrow Some "=="
-           | NotEquals \_rightarrow Some "=~="
+           | NotEquals \_rightarrow Some "/="
            | _ -> None
    in
    % let _ = writeLine("is "^anyToString result) in
@@ -1527,7 +1540,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                      prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
                                                            | _ -> mkFieldName x),
-                                               prString " := ",
+                                               prString " = ",
                                                ppTerm c Top y]
                               in
                               prConcat [prString "{",
@@ -1588,14 +1601,21 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             let recd_ty = inferType(spc, term) in
             let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
             let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
+            let record_type_qid = case recd_ty of
+                                  | Base(qid, _, _) -> Some qid
+                                  | _ -> None
+            in
             let def ppField (x,y) =
-                  prConcat [prString (case recd_ty of
-                                      | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
-                                      | _ -> mkFieldName x),
+                  prConcat [prString (case record_type_qid of
+                                      | Some(qid) -> mkNamedRecordFieldName(qid, x)
+                                      | None -> mkFieldName x),
                             prString " = ",
                             ppTerm c Top y]
             in
-              prConcat [prString "{",
+            case record_type_qid of
+            | Some qid ->
+              prConcat [printTypeQid qid, 
+                        prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"])
      | The (var,term,_) \_rightarrow  %% Not exec!!
@@ -1871,7 +1891,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Implies   \_rightarrow prString "==>"
      | Iff       \_rightarrow prString "=="
      | Equals    \_rightarrow prString "=="
-     | NotEquals \_rightarrow prString "=~="
+     | NotEquals \_rightarrow prString "/="
      | Quotient  _ \_rightarrow prString "quotient"
      | PQuotient _ \_rightarrow prString "quotient"
      | Choose    _ \_rightarrow prString "choose"
@@ -2122,7 +2142,7 @@ def termFixity c term =
          | Iff            -> (Some(prString "=="), Infix (Left, 20), true, false)
          | Not            -> (Some(prString "~"), Infix (Left, 18), false, false) % ???
          | Equals         -> (Some(prString "=="), Infix (Left, 20), true, false) % was 10 ??
-         | NotEquals      -> (Some(prString "=~="), Infix (Left, 20), true, false) % ???
+         | NotEquals      -> (Some(prString "/="), Infix (Left, 20), true, false) % ???
          % | RecordMerge    -> (None, Infix (Left, 25), true, false)  % ???
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
