@@ -1006,7 +1006,7 @@ If anyone has a good algorithm for this..."
                    (save-excursion (forward-char 1)
                                    (skip-chars-forward "\t ")
                                    (or (looking-at "\n")
-                                       (looking-at "(*")
+                                       (looking-at "(\\*")
                                        (looking-at comment-start))))
               indent
             (if (save-excursion
