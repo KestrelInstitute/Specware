@@ -522,9 +522,9 @@ spec
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term
                 -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
-   let dom = domain(getSpec gamma, tau) 			 in
-   let rng = range(getSpec gamma, tau)  		 	 in
-   let casesDisjoint? = disjointMatches rules            in
+   let dom = domain(getSpec gamma, tau) in
+   let rng = range (getSpec gamma, tau) in
+   let casesDisjoint? = disjointMatches rules in
    let (tcc, _) = foldl (checkRule(dom, rng, optArg, casesDisjoint?)) (tcc, gamma) rules  in
    let exhaustive? = exhaustivePatterns?(map (project 1) rules, dom, getSpec gamma) in
    % let _ = writeLine("\nExh "^toString exhaustive?^": "^printSort dom) in
