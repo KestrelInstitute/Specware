@@ -411,7 +411,7 @@ Haskell qualifying spec
                                               | _ \_rightarrow false)
                                      spc.elements
     in
-    let trans_table = thyMorphismMaps spc in
+    let trans_table = thyMorphismMaps spc "Haskell" in
     let c = c << {spec? = Some spc,
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
@@ -1616,7 +1616,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
               prConcat [printTypeQid qid, 
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
-                        prString "}"])
+                        prString "}"]
+            | None ->
+              let _ = writeLine("ppTerm can't determine name of record:\n"^printSort recd_ty) in
+              prString "{Can't determine name of record!}")
      | The (var,term,_) \_rightarrow  %% Not exec!!
        prBreak 0 [prString "(THE ",
                   ppVar c var,
@@ -1669,7 +1672,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        enclose?(parentTerm \_noteq Top,
                 prBreakCat 2 [[prString "\\",
                                  ppPattern c pattern (Some ""),
-                               prString ". "],
+                               prString " -> "],
                               [ppTerm c Top term]])
      | Lambda (match,_) \_rightarrow ppMatch c match
      | IfThenElse (pred,term1,term2,_) \_rightarrow 
@@ -1789,14 +1792,28 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      prPostSep 0 blockFill (prString ", ") (map ppField fields),
                      prString ")"]
          | _ \_rightarrow
+           let spc = getSpec c in
+           let recd_ty = patternSort pattern in
+           let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
+           let record_type_qid = case recd_ty of
+                                 | Base(qid, _, _) -> Some qid
+                                 | _ -> None
+           in
            let def ppField (x,pat) =
-                 prConcat [prString (mkFieldName x),
+                 prConcat [prString (case record_type_qid of
+                                      | Some(qid) -> mkNamedRecordFieldName(qid, x)
+                                      | None -> mkFieldName x),
                            prString "=",
                            ppPattern c pat (extendWild wildstr x)]
            in
-           prConcat [prString "{",
-                     prPostSep 0 blockLinear (prString ", ") (map ppField fields),
-                     prString "}"])
+           case record_type_qid of
+            | Some qid ->
+              prConcat [printTypeQid qid, 
+                        prString " {",
+                        prPostSep 0 blockLinear (prString ", ") (map ppField fields),
+                        prString "}"]
+            | None -> prString "{Only handle top-level records!}")
      | WildPat (ty,_) \_rightarrow
        (case wildstr of
           | Some str \_rightarrow prString("ignore"^str)
