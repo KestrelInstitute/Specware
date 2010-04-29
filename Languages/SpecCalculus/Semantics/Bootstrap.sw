@@ -441,8 +441,8 @@ Specware qualifying spec
  
    %% Ensure everything is clean at beginning of command processing
 
-  op  cleanEnv : SpecCalc.Env ()
-  def cleanEnv =
+  % op  Specware.cleanEnv : SpecCalc.Env ()
+  def Specware.cleanEnv =
     {
      resetGlobals;
      ensureBase;
@@ -458,8 +458,8 @@ Specware qualifying spec
 	| Some _ -> return ())
     }
 
-  op  runSpecCommand : [a] SpecCalc.Env a -> a
-  def runSpecCommand f =
+  % op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
+  def Specware.runSpecCommand f =
     let val = run f in
     %% CommandInProgress? is used to detect (by cleanupGlobalContext currently) whether command aborted
     let _ = MonadicStateInternal.writeGlobalVar ("CommandInProgress?", false) in
