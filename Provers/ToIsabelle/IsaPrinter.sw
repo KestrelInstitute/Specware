@@ -375,20 +375,7 @@ IsaTermPrinter qualifying spec
   %% --------------------------------------------------------------------------------
   %% Specs
   %% --------------------------------------------------------------------------------
-(*  
-  op  printSpec: Spec \_rightarrow ()
-  def printSpec spc =
-    let thy_nm = case uidStringPairForValue (Spec spc) of
-                   | Some (thy_nm, _, hash_nm) \_rightarrow thy_nm ^ hash_nm
-                   | _ \_rightarrow ""
-    in
-    toTerminal(format(80, ppSpec {printTypes? = true,
-				  recursive? = false,
-				  thy_name = thy_nm,
-				  spec? = Some spc,
-				  trans_table = thyMorphismMaps spc}
-		            spc))
-*)
+
 
   %% Convert definitions of ops mapped by thy morphism to theorems
   op thyMorphismDefsToTheorems (c: Context) (spc: Spec): Spec =
@@ -560,12 +547,12 @@ IsaTermPrinter qualifying spec
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
                                               | Pragma("proof", prag_str, "end-proof", _)
-                                                  | some?(isaThyMorphismPragma prag_str)
+                                                  | some?(thyMorphismPragma prag_str "Isa")
                                                   \_rightarrow true
                                               | _ \_rightarrow false)
                                      spc.elements
     in
-    let trans_table = thyMorphismMaps spc in
+    let trans_table = thyMorphismMaps spc "Isa" in
     let c = c << {spec? = Some spc,
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
@@ -624,7 +611,7 @@ IsaTermPrinter qualifying spec
     case elt of
       | Import _ \_rightarrow false
       | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str
-                                                && isaThyMorphismPragma prag_str = None \_rightarrow
+                                                && thyMorphismPragma prag_str "Isa" = None \_rightarrow
         true
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true

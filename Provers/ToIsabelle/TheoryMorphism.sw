@@ -21,13 +21,12 @@ IsaTermPrinter qualifying spec
  op  emptyTranslationTable: TransInfo
  def emptyTranslationTable = {op_map=[], type_map=[], thy_imports=[]}
 
- op  thyMorphismMaps: Spec \_rightarrow TransInfo
- def thyMorphismMaps spc =
+ def thyMorphismMaps (spc: Spec) (kind: String): TransInfo =
    (foldlSpecElements
      (fn ((result, prev_id),el) \_rightarrow
       case el of
        | Pragma("proof",prag_str,"end-proof",_) \_rightarrow
-         (case isaThyMorphismPragma prag_str of
+         (case thyMorphismPragma prag_str kind of
 	    | None \_rightarrow 
               (case (prev_id, findRenaming prag_str) of
                  | (Some qid, Some (trans_id, fix, curried?, reversed?)) \_rightarrow
@@ -53,16 +52,15 @@ IsaTermPrinter qualifying spec
      (emptyTranslationTable, None)
      spc.elements).1
 
- op  isaThyMorphismPragma: String \_rightarrow Option(String * List String)
- def isaThyMorphismPragma prag =
+  op thyMorphismPragma (prag: String) (kind: String): Option(String * List String) =
    case search("\n",prag) of
      | None \_rightarrow None
      | Some n \_rightarrow
    let line1 = subFromTo(prag,0,n) in
    case removeEmpty(splitStringAt(line1," ")) of
-     | "Isa"::thyMorphStr::r | thyMorphStr in?
-				      ["ThyMorphism","Thy_Morphism",
-				       "TheoryMorphism","Theory_Morphism"] \_rightarrow
+     | hd::thyMorphStr::r | hd = kind && thyMorphStr in?
+				           ["ThyMorphism","Thy_Morphism",
+                                            "TheoryMorphism","Theory_Morphism"] \_rightarrow
        Some(subFromTo(prag,n,length prag), r)
      | _ \_rightarrow None
 
