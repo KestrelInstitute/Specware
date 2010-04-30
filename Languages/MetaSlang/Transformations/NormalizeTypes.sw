@@ -27,7 +27,7 @@ NormTypes qualifying spec
                    case result of
                      | None \_rightarrow
                        % let _ = writeLine("qid: "^printQualifiedId qid^"\n"^"nt: "^printSort ty^" =~= "^printSort top_ty) in
-                       (case typeMatch(top_ty,ty,spc,false) of
+                       (case typeMatch(top_ty,ty,spc,true) of
                           | Some tyvar_sbst \_rightarrow
                             if checkTop? && ty = top_ty then None else
 			    % let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
