@@ -89,4 +89,9 @@ proof Isa Thy_Morphism
  Option.mapOption \_rightarrow Option.map
 end-proof
 
+proof Haskell Thy_Morphism
+ type Option.Option \_rightarrow Maybe
+ Option.mapOption \_rightarrow mapMaybe
+end-proof
+
 endspec

@@ -326,4 +326,16 @@ proof Isa ThyMorphism
   String.@          -> ! Left 40
 end-proof
 
+proof Haskell ThyMorphism
+  type String.String -> String
+  String.explode    -> id
+  String.implode    -> id
+  String.length     -> length
+  String.^          -> ++ Left 25
+  String.map        -> map
+  String.exists?    -> list_ex
+  String.forall?    -> list_all
+  String.@          -> ! Left 40
+end-proof
+
 endspec

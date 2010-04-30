@@ -4925,6 +4925,41 @@ proof Isa Thy_Morphism List
   List.noRepetitions? -> distinct
 end-proof
 
+proof Haskell Thy_Morphism 
+  type List.List      -> []
+  List.List_P         -> list_all
+  List.length         -> length
+  List.@              -> !!           Left  35
+  List.empty          -> []
+  List.empty?         -> null
+  List.in?            -> `elem`       Left  22
+  List.nin?           -> `notElem`    Left  22
+  List.prefix         -> take         curried  reversed
+  List.removePrefix   -> drop         curried  reversed
+  List.head           -> head
+  List.last           -> last
+  List.tail           -> tail
+  List.butLast        -> init
+  List.++             -> ++           Left  25
+  List.|>             -> :            Right 23
+  List.update         -> list_update  curried
+  List.forall?        -> all
+  List.exists?        -> any
+  List.filter         -> filter
+  List.foldl          -> foldl'
+  List.foldr          -> foldr'
+  List.zip            -> zip          curried
+  List.unzip          -> unzip
+  List.zip3           -> zip3          curried
+  List.unzip3         -> unzip3
+  List.map            -> map
+  List.mapPartial     -> filtermap
+  List.reverse        -> reverse
+  List.repeat         -> replicate    curried  reversed
+  List.flatten        -> concat
+  List.noRepetitions? -> distinct
+end-proof
+
 % ------------------------------------------------------------------------------
 % Here are a few useful properties about concepts specified in this theory
 % that we will need later. 

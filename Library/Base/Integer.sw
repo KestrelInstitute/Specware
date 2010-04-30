@@ -1160,6 +1160,27 @@ proof Isa Thy_Morphism Presburger
  Nat.succ         -> Suc
 end-proof
 
+proof Haskell Thy_Morphism
+ type Integer.Int -> Int
+ type Integer.Integer -> Int
+ type Nat.Nat     -> Int
+ Integer.zero     -> 0
+ Integer.one      -> 1
+ Integer.ipred    -> pred
+ Integer.isucc    -> succ
+ IntegerAux.-     -> -
+ Integer.+        -> +     Left 25
+ Integer.-        -> -     Left 25
+ Integer.*        -> *     Left 27
+ Integer.<=       -> <=    Left 20
+ Integer.<        -> <     Left 20
+ Integer.>=       -> >=    Left 20
+ Integer.>        -> >     Left 20
+ Integer.sign     -> sign
+ Integer.abs      -> abs
+ Integer./        -> div   Left 27
+end-proof
+
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 (******** Logarithm on natural numbers ("log" is defined on real numbers) ********)

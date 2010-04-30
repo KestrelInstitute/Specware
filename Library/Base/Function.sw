@@ -356,4 +356,15 @@ proof Isa ThyMorphism
   Function.inverse     -> inv
 end-proof
 
+proof Haskell ThyMorphism
+  Function.id          -> id
+  Function.o           -> . Left 24
+  Function.:>          -> . Left 24 reversed
+  Function.injective?  -> inj
+  Function.surjective? -> surj
+  Function.bijective?  -> bij
+  Function.inverse     -> inv
+end-proof
+
+
 endspec

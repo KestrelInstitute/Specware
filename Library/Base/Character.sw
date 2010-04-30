@@ -109,4 +109,10 @@ proof Isa Thy_Morphism Char_nat
   Char.ord       -> nat_of_char
 end-proof
 
+proof Haskell Thy_Morphism
+  type Char.Char -> Char
+  Char.chr       -> intToDigit
+  Char.ord       -> digitToInt
+end-proof
+
 endspec
