@@ -1521,7 +1521,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | _ ->                 
             prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
                        case term2 of
-                         | Record _ \_rightarrow ppTerm c Top term2
+                         | Record (("1",_)::_,_) \_rightarrow ppTerm c Top term2
                          | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
@@ -1760,6 +1760,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   prString "@",
                   enclose?(true, ppPattern c pat2 wildstr)]
      | VarPat (v, _) \_rightarrow ppVarWithoutSort v
+     | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)],_)), _, _) ->
+       prBreak 2 [ppPattern c hd wildstr, prSpace, prConcat[prString ": ", ppPattern c tl wildstr]]
      | EmbedPat (constr, pat, ty, _) \_rightarrow
        prBreak 0 [ppConstructorTyped (constr, ty, getSpec c),
                   case pat of
@@ -1947,6 +1949,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("tp",dom), mkApply(mkFun(fun,ty), mkVar("tp",dom))))
      | RecordMerge \_rightarrow prString "<<"
+     | Embed ("Nil", false) \_rightarrow prString "[]"
      | Embed (id,b) \_rightarrow
        (let spc = getSpec c in
         case arrowOpt(spc,ty) of
@@ -2078,6 +2081,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        let ({link, uniqueId, name}) = ! tyVar in
        prString (name ^ (Nat.show uniqueId))
 
+     | Base (Qualified("List", "List"),[ty],_) \_rightarrow
+       prConcat [prString "[",
+                 ppType c Top ty,
+                 prString "]"]
+
      | Base (qid,[ty],_) \_rightarrow
        prBreak 0 [ppTypeQualifiedId c qid,
                   prSpace,
@@ -2155,6 +2163,7 @@ def termFixity c term =
          | Not            -> (Some(prString "~"), Infix (Left, 18), false, false) % ???
          | Equals         -> (Some(prString "=="), Infix (Left, 20), true, false) % was 10 ??
          | NotEquals      -> (Some(prString "/="), Infix (Left, 20), true, false) % ???
+         | Embed("Cons", true) -> (Some(prString ":"), Infix (Right, 30), true, false)
          % | RecordMerge    -> (None, Infix (Left, 25), true, false)  % ???
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
