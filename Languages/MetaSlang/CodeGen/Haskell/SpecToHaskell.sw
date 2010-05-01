@@ -765,7 +765,15 @@ Haskell qualifying spec
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
  def ppIdInfo qids =
    let qid = head qids in
-   ppQualifiedId qid
+   ppOpQualifiedId0 qid
+
+op ppTypeIdInfo(qids: List QualifiedId): Pretty =
+  let qid = head qids in
+   ppTyQualifiedId qid
+
+op ppOpIdInfo(qids: List QualifiedId): Pretty =
+  let qid = head qids in
+   ppOpQualifiedId0 qid
 
  op upCase1(nm: String): String =
    if nm = "" then ""
@@ -789,6 +797,9 @@ Haskell qualifying spec
      | Some _ \_rightarrow prEmpty
      | None \_rightarrow
    let (tvs, ty) = unpackSort dfn in
+   if unfoldSubtypes? && embed? Base (stripSubsorts(getSpec c, ty))
+     then prEmpty
+   else
    if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
      then case ty of
 	   | CoProduct(taggedSorts,_) \_rightarrow
@@ -805,16 +816,16 @@ Haskell qualifying spec
               in
               prBreakCat 2
                 [[prString "data ",
-                  ppIdInfo aliases,
+                  ppTypeIdInfo aliases,
                   ppTyVars tvs],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
 	   | Product (fields,_) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
 	     prConcat
 	       [prString "data ",
                 ppTyVars tvs,
-                ppIdInfo aliases,
+                ppTypeIdInfo aliases,
                 prString " = ",
-                ppIdInfo aliases,
+                ppTypeIdInfo aliases,
                 prString " {",
                 prPostSep 0 blockLinear (prString ", ")
                   (map (\_lambda (fldname, fldty) \_rightarrow
@@ -827,13 +838,13 @@ Haskell qualifying spec
 	     prBreakCat 2
 	       [[prString "type ",
 		 ppTyVars tvs,
-		 ppIdInfo aliases,
+		 ppTypeIdInfo aliases,
 		 prString " = "],
 		[ppType c Top ty]]
      else prBreakCat 2                  % ??? Error (not executable)
 	    [[prString "type ",
 	      ppTyVars tvs,
-	      ppIdInfo aliases]]
+	      ppTypeIdInfo aliases]]
 
  op  ppTyVars : TyVars \_rightarrow Pretty
  def ppTyVars tvs =
@@ -1022,23 +1033,23 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   let aliases = [mainId] in
   let decl_list = 
         if decl?
-          then [[ppIdInfo aliases,
+          then [[ppOpIdInfo aliases,
                  prString " :: ",
                  (case fixity of
                     | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
-                    | _ \_rightarrow ppType c Top ty)]
+                    | _ \_rightarrow ppType c Top ty)]]
              ++ (case fixity of
                    | Infix(assoc,prec) \_rightarrow
-                     [case assoc of
+                     [[case assoc of
                         | Left  \_rightarrow prString "infixl "
                         | Right \_rightarrow prString "infixr ",
-                      ppInfixDefId (mainId),
-                      prString " ",
-                      prString (show (prec + precNumFudge))]
-                   | _ \_rightarrow [])]
+                       prString (show (prec + precNumFudge)),
+                       prSpace,
+                       ppInfixDefId (mainId)]]
+                   | _ \_rightarrow [])
            else []
   in
-  let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
+  % let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
   let def_list = if def? then [[ppFunctionDef c aliases term ty opt_prag fixity]] else []
   in prLinesCat 0 ([[]] ++ decl_list ++ def_list)
 
@@ -1366,11 +1377,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      | None -> None)
                 | _ ->
                if embed? Infix fx?
-                 then Some(mainId qid)
+                 then Some(makeOperator qid)
                else
                case AnnSpec.findTheOp(spc,qid) of
                  | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
-                   Some(mainId qid)
+                   let main_id = mainId qid in
+                   Some(makeOperator qid)
                  | _ -> None)
            | And       \_rightarrow Some "&&"
            | Or        \_rightarrow Some "||"
@@ -1382,6 +1394,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    in
    % let _ = writeLine("is "^anyToString result) in
    result
+
+ op makeOperator(qid: QualifiedId): String =
+   let main_id = mainId qid in
+   if identifier? main_id
+     then "`"^downCase1 main_id^"`"
+     else main_id
+
+ op identifier?(s: String): Boolean =
+   s ~= "" && isAlpha(s@0   )
 
  op infixOp? (c: Context) (t: MS.Term): Option String =
    case t of
@@ -1984,14 +2005,17 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    else
      ppIdStr qualifier ^ "__" ^ ppIdStr id
 
- op ppQualifiedId (qid: QualifiedId): Pretty =
-   prString(qidToHaskellString qid)
+ op ppTyQualifiedId (qid: QualifiedId): Pretty =
+   prString(upCase1(qidToHaskellString qid))
+
+ op ppOpQualifiedId0 (qid: QualifiedId): Pretty =
+   prString(downCase1(qidToHaskellString qid))
 
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
      | Some(s,_,_,_,_) \_rightarrow prString s
-     | None \_rightarrow ppQualifiedId qid
+     | None \_rightarrow ppOpQualifiedId0 qid
 
  %% May only need ops that can be unary
  op overloadedHaskellOps: List String = ["+","-","^","abs","min","max"]
@@ -2017,7 +2041,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %      | Qualified("Char","Char") \_rightarrow prString "char"
 %      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
 %      | Qualified("Integer","Integer") \_rightarrow prString "int"
-     | _ \_rightarrow ppQualifiedId qid
+     | _ \_rightarrow ppTyQualifiedId qid
 
 
  op  ppFixity : Fixity \_rightarrow Pretty
@@ -2052,9 +2076,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
          | _ \_rightarrow ppType c Top ty)
      | _ \_rightarrow ppType c Top ty
 
+ op unfoldSubtypes?: Bool = true
+
  op  ppType : Context \_rightarrow ParentSort \_rightarrow Sort \_rightarrow Pretty
  def ppType c parent ty =
    case ty of
+     | Base _ | unfoldSubtypes? && unfoldToBaseNamedType(getSpec c, ty) ~= ty ->
+       ppType c parent (unfoldToBaseNamedType(getSpec c, ty))
      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
       %% CoProduct only at top level
 %     | CoProduct (taggedSorts,_) \_rightarrow 
@@ -2184,8 +2212,7 @@ op ppTermEncloseComplex? (c: Context) (parentTerm: ParentTerm) (term: MS.Term): 
 
 def prSpace = prString " "
 
-op  ppInfixId: QualifiedId \_rightarrow Pretty
-def ppInfixId(Qualified(_,main_id)) = prString (infixId main_id)
+def ppInfixId(qid: QualifiedId): Pretty = prString (makeOperator qid)
 
 op infixId(id: String): String =
   let idarray = explode(id) in
