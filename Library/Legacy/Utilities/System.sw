@@ -67,9 +67,12 @@ System qualifying spec
   op garbageCollect : Bool -> ()
   op hackMemory     : ()      -> ()
 
+  op [a] withoutInterrupts(body: a): a
+  op [a] allowWithInterrupts(body: a): a
 
   op [a] List.app (f: a -> ()) (l: List a) : () =
     case l of
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
+
 endspec
