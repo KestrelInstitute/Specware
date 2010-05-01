@@ -1150,10 +1150,6 @@ proof Isa Thy_Morphism Presburger
  Integer.modC     -> modC  Left 27
  Integer.modR     -> modR  Left 27
  Integer.modE     -> modE  Left 27
- Integer.div      -> div   Left 27
- Integer.mod      -> mod   Left 27
- Integer.min      -> min           curried
- Integer.max      -> max           curried
  Integer.divides  -> zdvd  Left 27 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
@@ -1172,13 +1168,18 @@ proof Haskell Thy_Morphism
  Integer.+        -> +     Left 25
  Integer.-        -> -     Left 25
  Integer.*        -> *     Left 27
+ Integer.**       -> ^     Left 37
  Integer.<=       -> <=    Left 20
  Integer.<        -> <     Left 20
  Integer.>=       -> >=    Left 20
  Integer.>        -> >     Left 20
+ Integer./        -> `div` Left 27
  Integer.sign     -> sign
  Integer.abs      -> abs
- Integer./        -> div   Left 27
+ Integer.div      -> `div` Left 27
+ Integer.mod      -> `mod` Left 27
+ Integer.min      -> `min` Left 27
+ Integer.max      -> `max` Left 27
 end-proof
 
 % ------------------------------------------------------------------------------
