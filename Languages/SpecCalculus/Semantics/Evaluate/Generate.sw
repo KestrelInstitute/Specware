@@ -8,6 +8,7 @@ SpecCalc qualifying spec
   import C
   %import /Languages/MetaSlang/CodeGen/C/ToC
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
+  import /Languages/MetaSlang/CodeGen/Haskell/SpecToHaskell
 
   def SpecCalc.evaluateGenerate (language, sub_term as (term,position), optFile) pos = {
         (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo sub_term;
