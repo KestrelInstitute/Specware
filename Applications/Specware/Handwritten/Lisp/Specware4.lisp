@@ -182,6 +182,7 @@
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
+    "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     "Provers/DP/Handwritten/Lisp/Rational.lisp"
