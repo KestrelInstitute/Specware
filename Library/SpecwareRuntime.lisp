@@ -53,7 +53,8 @@
 		   "Legacy/Utilities/Handwritten/Lisp/State"
 		   "Legacy/Utilities/Handwritten/Lisp/IO"
 		   "Legacy/Utilities/Handwritten/Lisp/Lisp"
-		   "Structures/Data/Monad/Handwritten/Lisp/State")
+		   "Structures/Data/Monad/Handwritten/Lisp/State"
+                   "Algorithms/Handwritten/Lisp/Thread")
   do (compile-and-load-lisp-file (format nil "~a/Library/~a" *specware4* fil)))
 
 (provide "SpecwareRuntime")
