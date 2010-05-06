@@ -855,7 +855,12 @@ op ppOpIdInfo(qids: List QualifiedId): Pretty =
                       prPostSep 0 blockFill prSpace
 		        (map prString tvs)]
 
- op precNumFudge: Nat = 0
+ %%% Steps for ops       =>  ||  &&   =  ::   +   *  **,  ? apply
+ op precNumSteps: List Nat = [13, 14, 15, 20, 23, 25, 27, 30, 35, 1000]
+ op convertPrecNum(sw_prec_num: Nat): Nat =
+   case leftmostPositionSuchThat (precNumSteps, fn step -> sw_prec_num < step) of
+     | Some i -> i 
+     | None -> 10
 
  op mkIncTerm(t: MS.Term): MS.Term =
    mkApply(mkOp(Qualified("Integer","+"),
@@ -1015,14 +1020,14 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   let mainId = head aliases in
   % let _ = writeLine("Processing "^printQualifiedId mainId) in
   let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
-  let (no_def?, mainId, fixity) =
+  let (specialOpInfo?, no_def?, mainId, fixity) =
       case specialOpInfo c mainId of
         | Some (haskell_id, infix?, _, _, no_def?) \_rightarrow
-          (no_def?, mkUnQualifiedId(haskell_id),
+          (true, no_def?, mkUnQualifiedId(haskell_id),
            case infix? of
              | Some pr -> Infix pr
              | None -> fixity)
-        | _ \_rightarrow (false, mainId, fixity)
+        | _ \_rightarrow (false, false, mainId, fixity)
   in
   if no_def?
     then prEmpty
@@ -1041,11 +1046,12 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
              ++ (case fixity of
                    | Infix(assoc,prec) \_rightarrow
                      [[case assoc of
-                        | Left  \_rightarrow prString "infixl "
-                        | Right \_rightarrow prString "infixr ",
-                       prString (show (prec + precNumFudge)),
+                        | Left     \_rightarrow prString "infixl "
+                        | Right    \_rightarrow prString "infixr "
+                        | NotAssoc \_rightarrow prString "infix ",
+                       prString (show (if specialOpInfo? then prec else convertPrecNum prec)),
                        prSpace,
-                       ppInfixDefId (mainId)]]
+                       ppInfixId (mainId)]]
                    | _ \_rightarrow [])
            else []
   in
@@ -1373,7 +1379,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                case specialOpInfo c qid of
                 | Some(haskell_id, infix?, _, _, _) \_rightarrow
                   (case infix? of
-                     | Some fx -> Some haskell_id
+                     | Some fx -> Some(makeOpName haskell_id)
                      | None -> None)
                 | _ ->
                if embed? Infix fx?
@@ -1395,14 +1401,17 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    % let _ = writeLine("is "^anyToString result) in
    result
 
+ op makeOpName(nm: String): String =
+   "`"^downCase1 nm^"`"
+
  op makeOperator(qid: QualifiedId): String =
    let main_id = mainId qid in
    if identifier? main_id
-     then "`"^downCase1 main_id^"`"
+     then makeOpName main_id
      else main_id
 
  op identifier?(s: String): Boolean =
-   s ~= "" && isAlpha(s@0   )
+   s ~= "" && isAlpha(s@0)
 
  op infixOp? (c: Context) (t: MS.Term): Option String =
    case t of
@@ -1539,11 +1548,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      let new_v = ("cv", dom) in
                      ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                    | None -> fail("Can't reverse term: "^printTerm term))
-          | _ ->                 
-            prBreak 2 [ppTerm c (Infix(Left,1000)) term1,
-                       case term2 of
-                         | Record (("1",_)::_,_) \_rightarrow ppTerm c Top term2
-                         | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
+              | _ ->                 
+                prBreak 2 [ppTerm c (Infix(Left,10)) term1,
+                           case term2 of
+                             | Record (("1",_)::_,_) \_rightarrow ppTerm c Top term2
+                             | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
    case term of
@@ -1555,7 +1564,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
-                   prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
+                   prBreak 2 [ppTerm c (Infix(Left,10)) t1,
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
@@ -1598,7 +1607,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) \_rightarrow
              if p1 = p2
                then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
-                             a1=a2, t1, pr_op, t2)
+                             a1=a2 && a1 ~= NotAssoc, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
        enclose?(case parentTerm of
@@ -1924,7 +1933,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppFun : Context \_rightarrow ParentTerm \_rightarrow Fun \_rightarrow Sort \_rightarrow Pretty
  def ppFun c parentTerm fun ty =
    case fun of
-     | Not       \_rightarrow prString "~"
+     | Not       \_rightarrow prString "not"
      | And       \_rightarrow prString "&&"
      | Or        \_rightarrow prString "||"
      | Implies   \_rightarrow prString "==>"
@@ -1948,7 +1957,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                prString " y"])
           | None \_rightarrow
         if (qid = Qualified("IntegerAux","-") || qid = Qualified("Integer","~"))
-          && parentTerm ~= Infix(Left,1000)   % Only true if an application
+          && parentTerm ~= Infix(Left,10)   % Only true if an application
           then let vt = ("i",integerSort) in
                ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun,ty), mkVar vt)))
         else
@@ -1999,7 +2008,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString(Qualified (qualifier,id): QualifiedId): String =
-   if qualifier = UnQualified \_or qualifier in? omittedQualifiers then
+   if qualifier = UnQualified \_or qualifier in? omittedQualifiers || true then
      if id in? disallowedVarNames then id ^ "__c"
        else ppIdStr id
    else
@@ -2043,21 +2052,6 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %      | Qualified("Integer","Integer") \_rightarrow prString "int"
      | _ \_rightarrow ppTyQualifiedId qid
 
-
- op  ppFixity : Fixity \_rightarrow Pretty
- def ppFixity fix =
-   case fix of
-     | Infix (Left,  n) \_rightarrow prConcat [prString "infixl ",
-                                     prString (show n)]
-     | Infix (Right, n) \_rightarrow prConcat [prString "infixr ",
-                                     prString (show n)]
-     | Nonfix           \_rightarrow prEmpty % prString "Nonfix"
-     | Unspecified      \_rightarrow prEmpty % prString "Unspecified"
-     | Error fixities   \_rightarrow prConcat [prString "conflicting fixities: [",
-                                     prPostSep 0 blockFill (prString ",")
-                                       (map ppFixity fixities),
-                                     prString "]"]
-     | mystery \_rightarrow fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
  op  isSimpleSort? : Sort \_rightarrow Boolean
  def isSimpleSort? ty =
@@ -2177,21 +2171,21 @@ def termFixity c term =
            (case specialOpInfo c id of
               | Some(haskell_id,fix,curried,reversed,_) \_rightarrow
                 (case fix of
-                   | Some f \_rightarrow (Some(prString haskell_id), Infix f, curried, reversed)
+                   | Some f \_rightarrow (Some(prString(makeOpName haskell_id)), Infix f, curried, reversed)
                    | None \_rightarrow   (Some(prString haskell_id), Nonfix, curried, reversed))
               | None \_rightarrow
                 case fixity of
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
                   | Nonfix \_rightarrow (None, Nonfix, false, false)
-                  | _ -> (Some(ppInfixId id), fixity, true, false))
-         | And            -> (Some(prString "&&"),Infix (Right, 15),true, false)
-         | Or             -> (Some(prString "||"), Infix (Right, 14),true, false)
-         | Implies        -> (Some(prString "==>"), Infix (Right, 13), true, false) 
-         | Iff            -> (Some(prString "=="), Infix (Left, 20), true, false)
-         | Not            -> (Some(prString "~"), Infix (Left, 18), false, false) % ???
-         | Equals         -> (Some(prString "=="), Infix (Left, 20), true, false) % was 10 ??
-         | NotEquals      -> (Some(prString "/="), Infix (Left, 20), true, false) % ???
-         | Embed("Cons", true) -> (Some(prString ":"), Infix (Right, 30), true, false)
+                  | Infix(assoc, precnum) -> (Some(ppInfixId id), Infix(assoc, convertPrecNum precnum), true, false))
+         | And            -> (Some(prString "&&"), Infix (Right, 3),true, false)
+         | Or             -> (Some(prString "||"), Infix (Right, 2),true, false)
+         | Implies        -> (Some(prString "==>"), Infix (Right, 1), true, false) 
+         | Iff            -> (Some(prString "=="), Infix (NotAssoc, 4), true, false)
+         | Not            -> (Some(prString "~"), Nonfix, false, false) % ???
+         | Equals         -> (Some(prString "=="), Infix (NotAssoc, 4), true, false) % was 10 ??
+         | NotEquals      -> (Some(prString "/="), Infix (NotAssoc, 4), true, false) % ???
+         | Embed("Cons", true) -> (Some(prString ":"), Infix (Right, 5), true, false)
          % | RecordMerge    -> (None, Infix (Left, 25), true, false)  % ???
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
@@ -2240,25 +2234,6 @@ def ppIdStr id =
         (if id = "" then "e" else id) ^ s
   in
   let id = foldl (\_lambda(id,#?) -> att(id, "_p")
-                  | (id,#=) -> att(id, "_eq")
-                  | (id,#<) -> att(id, "_lt")
-                  | (id,#>) -> att(id, "_gt")
-                  | (id,#~) -> att(id, "_tld")
-                  | (id,#/) -> att(id, "_fsl")
-                  | (id,#\\) -> att(id, "_bsl")
-                  | (id,#-) -> att(id, "_dsh")
-                  | (id,#*) -> att(id, "_ast")
-                  | (id,#+) -> att(id, "_pls")
-                  | (id,#|) -> att(id, "_bar")
-                  | (id,#!) -> att(id, "_excl")
-                  | (id,#@) -> att(id, "_at")
-                  | (id,##) -> att(id, "_hsh")
-                  | (id,#$) -> att(id, "_dolr")
-                  | (id,#^) -> att(id, "_crt")
-                  | (id,#&) -> att(id, "_amp")
-                  | (id,#') -> att(id, "_cqt")
-                  | (id,#`) -> att(id, "_oqt")
-                  | (id,#:) -> att(id, "_cl")
                   | (id,c) -> id ^ show c) "" idarray
   in id
 
