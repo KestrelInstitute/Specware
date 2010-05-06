@@ -248,7 +248,8 @@ MetaSlang qualifying spec
                       %% raising of errors at inopportune times.
                       | Error (List Fixity) 
 
- type Associativity = | Left | Right
+ %% Currently Specware doesn't allow "NotAssoc" but is there for Haskell translation compatibility
+ type Associativity = | Left | Right | NotAssoc
  type Precedence    = Nat
 
  type AMetaTyVar      b = Ref ({link     : Option (ASort b),
