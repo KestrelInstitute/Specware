@@ -546,8 +546,8 @@ IsaTermPrinter qualifying spec
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
-                                              | Pragma("proof", prag_str, "end-proof", _)
-                                                  | some?(thyMorphismPragma prag_str "Isa")
+                                              | Pragma("proof", prag_str, "end-proof", pos)
+                                                  | some?(thyMorphismPragma prag_str "Isa" pos)
                                                   \_rightarrow true
                                               | _ \_rightarrow false)
                                      spc.elements
@@ -610,8 +610,8 @@ IsaTermPrinter qualifying spec
   def elementFilter elt =
     case elt of
       | Import _ \_rightarrow false
-      | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str
-                                                && thyMorphismPragma prag_str "Isa" = None \_rightarrow
+      | Pragma("proof", prag_str, "end-proof", pos) | isaPragma? prag_str
+                                                && thyMorphismPragma prag_str "Isa" pos = None \_rightarrow
         true
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true

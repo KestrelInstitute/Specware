@@ -25,10 +25,10 @@ IsaTermPrinter qualifying spec
    (foldlSpecElements
      (fn ((result, prev_id),el) \_rightarrow
       case el of
-       | Pragma("proof",prag_str,"end-proof",_) \_rightarrow
-         (case thyMorphismPragma prag_str kind of
+       | Pragma("proof" ,prag_str, "end-proof", pos) \_rightarrow
+         (case thyMorphismPragma prag_str kind pos of
 	    | None \_rightarrow 
-              (case (prev_id, findRenaming prag_str) of
+              (case (prev_id, findRenaming prag_str kind pos) of
                  | (Some qid, Some (trans_id, fix, curried?, reversed?)) \_rightarrow
                    let (fix, curried?) =
                        if some? fix then (fix, true)
@@ -45,14 +45,14 @@ IsaTermPrinter qualifying spec
               %% Only use import_strings from top-level specs as others will be imported
               let import_strings = if el in? spc.elements then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
-	      (parseMorphMap(trans_string,result), None))
+	      (parseMorphMap(trans_string, result, kind, pos), None))
        | OpDef (qid,_,_) \_rightarrow (result,Some qid)
        | Op    (qid,_,_) \_rightarrow (result,Some qid)
        | _               \_rightarrow (result,None))
      (emptyTranslationTable, None)
      spc.elements).1
 
-  op thyMorphismPragma (prag: String) (kind: String): Option(String * List String) =
+  op thyMorphismPragma (prag: String) (kind: String) (pos: Position): Option(String * List String) =
    case search("\n",prag) of
      | None \_rightarrow None
      | Some n \_rightarrow
@@ -64,7 +64,20 @@ IsaTermPrinter qualifying spec
        Some(subFromTo(prag,n,length prag), r)
      | _ \_rightarrow None
 
- op processRhsOp (rhs: String): String * Option(Associativity * Nat) * Boolean * Boolean =
+ op toPrecNum(precnum_str: String, kind: String, pos: Position): Nat =
+   if natConvertible precnum_str
+     then let precnum = stringToInt precnum_str in
+          if precnum >= 0
+               && (if kind = "Haskell"
+                   then precnum <= 10
+                   else true)
+          then precnum
+          else (warn(precnum_str^": Illegal precedence number for "^kind);
+                precnum)
+     else (warn(precnum_str^": Not a number!");
+           -999)
+
+ op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(Associativity * Nat) * Boolean * Boolean =
    case removeEmpty(splitStringAt(rhs," ")) of
      | [] \_rightarrow (" ", None, false, false)
      | [isaSym] \_rightarrow (isaSym, None, false, false)
@@ -72,24 +85,25 @@ IsaTermPrinter qualifying spec
        (case r of
           | "curried"::rst \_rightarrow (isaSym, None, true, "reversed" in? rst)
           | "reversed"::rst \_rightarrow (isaSym, None, "curried" in? rst, true)
-          | "Left"::ns::rst \_rightarrow (isaSym, Some(Left,stringToNat ns),
+          | "Left"::ns::rst \_rightarrow (isaSym, Some(Left, toPrecNum(ns, kind, pos)),
                                 true, "reversed" in? rst)
-          | "Right"::ns::rst \_rightarrow (isaSym, Some(Right,stringToNat ns),
+          | "Right"::ns::rst \_rightarrow (isaSym, Some(Right, toPrecNum(ns, kind, pos)),
+                                 true, "reversed" in? rst)
+          | "Infix"::ns::rst \_rightarrow (isaSym, Some(NotAssoc, toPrecNum(ns, kind, pos)),
                                  true, "reversed" in? rst))
 
-  op findRenaming(prag_str: String)
+  op findRenaming(prag_str: String) (kind: String) (pos: Position)
      : Option (String * Option(Associativity * Nat) * Boolean * Boolean) =
     let end_pos = case searchPred(prag_str, fn c -> c in? [#\n, #", #[]) of   % #]
 		    | Some n \_rightarrow n
 		    | None \_rightarrow length prag_str
     in
     case searchBetween("->", prag_str, 0, end_pos) of
-      | Some n \_rightarrow Some(processRhsOp(subFromTo(prag_str, n+2,end_pos))) 
+      | Some n \_rightarrow Some(processRhsOp (subFromTo(prag_str, n+2,end_pos)) kind pos)
       | _ \_rightarrow None
 
  %%% Basic string parsing function
- op  parseMorphMap: String * TransInfo \_rightarrow TransInfo
- def parseMorphMap (morph_str,result) =
+ op parseMorphMap (morph_str: String, result: TransInfo, kind: String, pos: Position): TransInfo =
    let lines = splitStringAt(morph_str,"\n") in
    let def parseLine (result,s) =
          case splitStringAt(s,"\\_rightarrow") of
@@ -131,7 +145,7 @@ IsaTermPrinter qualifying spec
 	 if type?
 	   then let (isaSym,coercions,overloadedOps) = processRhsType rhs in
 	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps))}
-	   else let (isaSym,fixity,curried,reversed) = processRhsOp rhs in
+	   else let (isaSym,fixity,curried,reversed) = processRhsOp rhs kind pos in
 	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried,reversed,true))}
    in	     
    foldl parseLine result lines
