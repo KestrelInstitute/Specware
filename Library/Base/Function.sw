@@ -358,8 +358,8 @@ end-proof
 
 proof Haskell ThyMorphism
   Function.id          -> id
-  Function.o           -> . Left 24
-  Function.:>          -> . Left 24 reversed
+  Function.o           -> . Right 9
+  Function.:>          -> . Right 9 reversed
   Function.injective?  -> inj
   Function.surjective? -> surj
   Function.bijective?  -> bij

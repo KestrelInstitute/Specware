@@ -331,11 +331,11 @@ proof Haskell ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.^          -> ++ Left 25
+  String.^          -> ++ Right  5
   String.map        -> map
   String.exists?    -> list_ex
   String.forall?    -> list_all
-  String.@          -> ! Left 40
+  String.@          -> !  Left   9
 end-proof
 
 endspec

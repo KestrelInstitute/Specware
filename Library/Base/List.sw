@@ -4929,19 +4929,19 @@ proof Haskell Thy_Morphism
   type List.List      -> []
   List.List_P         -> list_all
   List.length         -> length
-  List.@              -> !!           Left  35
+  List.@              -> !!           Left  9
   List.empty          -> []
   List.empty?         -> null
-  List.in?            -> `elem`       Left  22
-  List.nin?           -> `notElem`    Left  22
+  List.in?            -> elem       Infix 4
+  List.nin?           -> notElem    Infix 4
   List.prefix         -> take         curried  reversed
   List.removePrefix   -> drop         curried  reversed
   List.head           -> head
   List.last           -> last
   List.tail           -> tail
   List.butLast        -> init
-  List.++             -> ++           Left  25
-  List.|>             -> :            Right 23
+  List.++             -> ++           Right 5
+  List.|>             -> :            Right 5
   List.update         -> list_update  curried
   List.forall?        -> all
   List.exists?        -> any

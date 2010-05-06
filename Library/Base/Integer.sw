@@ -1165,21 +1165,21 @@ proof Haskell Thy_Morphism
  Integer.ipred    -> pred
  Integer.isucc    -> succ
  IntegerAux.-     -> -
- Integer.+        -> +     Left 25
- Integer.-        -> -     Left 25
- Integer.*        -> *     Left 27
- Integer.**       -> ^     Left 37
- Integer.<=       -> <=    Left 20
- Integer.<        -> <     Left 20
- Integer.>=       -> >=    Left 20
- Integer.>        -> >     Left 20
- Integer./        -> `div` Left 27
+ Integer.+        -> +     Left  6
+ Integer.-        -> -     Left  6
+ Integer.*        -> *     Left  7
+ Integer.**       -> ^     Left  8
+ Integer.<=       -> <=    Infix 4
+ Integer.<        -> <     Infix 4
+ Integer.>=       -> >=    Infix 4
+ Integer.>        -> >     Infix 4
+ Integer./        -> /     Left  7
  Integer.sign     -> sign
  Integer.abs      -> abs
- Integer.div      -> `div` Left 27
- Integer.mod      -> `mod` Left 27
- Integer.min      -> `min` Left 27
- Integer.max      -> `max` Left 27
+ Integer.div      -> div   Left  7
+ Integer.mod      -> mod   Left  7
+ Integer.min      -> min   Left  7
+ Integer.max      -> max   Left  7
 end-proof
 
 % ------------------------------------------------------------------------------
