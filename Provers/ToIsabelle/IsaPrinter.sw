@@ -952,7 +952,9 @@ IsaTermPrinter qualifying spec
 		        (map (\_lambda tv \_rightarrow prConcat[prString "'", prString tv]) tvs),
 		      prString ")"]
 
- op precNumFudge: Nat = 40
+ op convertPrecNum(sw_prec_num: Nat): Nat =
+   sw_prec_num + 40
+
 
  op expandNatToSucc(tm: MS.Term): MS.Term =
    case tm of
@@ -1135,7 +1137,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                 | Right \_rightarrow prString "infixr \"",
                               ppInfixDefId (mainId),
                               prString "\" ",
-                              prString (show (prec + precNumFudge)),
+                              prString (show (convertPrecNum prec)),
                               prString ")"]
                            | _ \_rightarrow []),
                      [prString "where"],
@@ -1276,10 +1278,10 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                                                                 then "\"measure size\""
                                                               else "\"{}\"")]],
                              [prBreakCat 2 [[prString "\"",
-                                             ppTerm c (Infix(Left,100)) lhs],
+                                             ppTerm c (Infix(Left,200)) lhs],
                                             [prString " = ",
                                              %% Note sure what precedence number it should be
-                                             ppTerm c (Infix(Left,100)) rhs,
+                                             ppTerm c (Infix(Left,200)) rhs,
                                              prString "\""]]]]
          else
            let (lhs,rhs) = if tuple? then addExplicitTyping2(c,op_tm,body)
@@ -1291,9 +1293,9 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                             | None \_rightarrow prEmpty,
                           prString ": "],
                          [prBreakCat 2 [[prString "\"",
-                                         ppTerm c (Infix(Left,100)) lhs],
+                                         ppTerm c (Infix(Left,200)) lhs],
                                         [lengthString(3," \\<equiv> "),
-                                         ppTerm c (Infix(Right,100)) rhs,
+                                         ppTerm c (Infix(Right,200)) rhs,
                                          prString "\""]]]]
      | (cases,false) \_rightarrow
        prBreak 2 [prString "primrec ",
@@ -2135,7 +2137,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
        enclose?(case parentTerm of
-                  | Infix(_,prec) \_rightarrow prec > 18
+                  | Infix(_,prec) \_rightarrow prec > 58
                   | _ \_rightarrow false,
                 prApply (term1,term2))
      | Apply (term1,term2,_) \_rightarrow prApply (term1,term2)
@@ -2731,15 +2733,16 @@ def termFixity c term =
                 case fixity of
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
                   | Nonfix \_rightarrow (None, Nonfix, false, false)
-                  | _ -> (Some(ppInfixId id), fixity, true, false))
-         | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 15),true, false)
-         | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 14),true, false)
-         | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 13), true, false) 
-         | Iff            -> (Some(prString "="), Infix (Left, 20), true, false)
-         | Not            \_rightarrow (Some(lengthString(1, "\\<not>")), Infix (Left, 18), false, false) % ?
-         | Equals         -> (Some(prString "="), Infix (Left, 20), true, false) % was 10 ??
-         | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 20), true, false)
-         | RecordMerge    -> (Some(prString "<<"), Infix (Left, 25), true, false)
+                  | Infix(assoc, precnum) -> (Some(ppInfixId id), Infix(assoc, convertPrecNum precnum),
+                                              true, false))
+         | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 35),true, false)
+         | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 30),true, false)
+         | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 25), true, false) 
+         | Iff            -> (Some(prString "="), Infix (Left, 50), true, false)
+         | Not            -> (Some(lengthString(1, "\\<not>")), Infix (Left, 40), false, false) % ?
+         | Equals         -> (Some(prString "="), Infix (Left, 50), true, false) % was 10 ??
+         | NotEquals      -> (Some(lengthString(1, "\\<noteq>")), Infix (Left, 50), true, false)
+         | RecordMerge    -> (Some(prString "<<"), Infix (Left, 65), true, false)
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
 
