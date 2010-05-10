@@ -348,8 +348,8 @@ end-proof
 
 proof Isa ThyMorphism
   Function.id          -> id
-  Function.o           -> o Left 24
-  Function.:>          -> o Left 24 reversed
+  Function.o           -> o Left 55
+  Function.:>          -> o Left 55 reversed
   Function.injective?  -> inj
   Function.surjective? -> surj
   Function.bijective?  -> bij

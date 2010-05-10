@@ -319,11 +319,11 @@ proof Isa ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.^          -> @ Left 25
+  String.^          -> @ Left 65
   String.map        -> map
   String.exists?    -> list_ex
   String.forall?    -> list_all
-  String.@          -> ! Left 40
+  String.@          -> ! Left 100
 end-proof
 
 proof Haskell ThyMorphism

@@ -4898,18 +4898,18 @@ proof Isa Thy_Morphism List
   type List.List      -> list
   List.List_P         -> list_all
   List.length         -> length
-  List.@              -> !            Left  35
+  List.@              -> !            Left  100
   List.empty          -> []
   List.empty?         -> null
-  List.in?            -> mem          Left  22
+  List.in?            -> mem          Left  55
   List.prefix         -> take         curried  reversed
   List.removePrefix   -> drop         curried  reversed
   List.head           -> hd
   List.last           -> last
   List.tail           -> tl
   List.butLast        -> butlast
-  List.++             -> @            Left  25
-  List.|>             -> #            Right 23
+  List.++             -> @            Left  65
+  List.|>             -> #            Right 65
   List.update         -> list_update  curried
   List.forall?        -> list_all
   List.exists?        -> list_ex

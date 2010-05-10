@@ -1130,27 +1130,29 @@ proof Isa Thy_Morphism Presburger
  Integer.ipred    -> pred
  Integer.isucc    -> succ
  IntegerAux.-     -> -
- Integer.+        -> +     Left 25
- Integer.-        -> -     Left 25
- Integer.*        -> *     Left 27
- Integer.<=       -> \<le> Left 20
- Integer.<        -> <     Left 20
- Integer.>=       -> \<ge> Left 20
- Integer.>        -> >     Left 20
+ Integer.+        -> +     Left 65
+ Integer.-        -> -     Left 65
+ Integer.*        -> *     Left 70
+ Integer.<=       -> \<le> Left 50
+ Integer.<        -> <     Left 50
+ Integer.>=       -> \<ge> Left 50
+ Integer.>        -> >     Left 50
  Integer.sign     -> sign
  Integer.abs      -> zabs
- Integer./        -> div   Left 27
- Integer.divT     -> divT  Left 27
- Integer.divF     -> div   Left 27
- Integer.divC     -> divC  Left 27
- Integer.divR     -> divR  Left 27
- Integer.divE     -> divE  Left 27
- Integer.modT     -> modT  Left 27
- Integer.modF     -> mod   Left 27
- Integer.modC     -> modC  Left 27
- Integer.modR     -> modR  Left 27
- Integer.modE     -> modE  Left 27
- Integer.divides  -> zdvd  Left 27 
+ Integer./        -> div   Left 70
+ Integer.divT     -> divT  Left 70
+ Integer.divF     -> div   Left 70
+ Integer.divC     -> divC  Left 70
+ Integer.divR     -> divR  Left 70
+ Integer.divE     -> divE  Left 70
+ Integer.div      -> divE  Left 70
+ Integer.modT     -> modT  Left 70
+ Integer.modF     -> mod   Left 70
+ Integer.modC     -> modC  Left 70
+ Integer.modR     -> modR  Left 70
+ Integer.modE     -> modE  Left 70
+ Integer.mod      -> modE  Left 70
+ Integer.divides  -> zdvd  Left 70 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
  Nat.succ         -> Suc
