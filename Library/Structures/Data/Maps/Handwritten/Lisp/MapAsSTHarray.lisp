@@ -70,6 +70,16 @@
   (cons ':|Some| val))
 
 (defvar *maphash-htables* nil)
+#+sb-thread
+(defvar *maphash-htables-mutex* (sb-thread:make-mutex :name "*maphash-htables*"))
+
+(defun set-*maphash-htables* (val-fn)
+  #+sb-thread
+  (sb-thread:with-mutex (*maphash-htables-mutex*)
+    (setq *maphash-htables* (funcall val-fn *maphash-htables*)))
+  #-sb-thread
+  (setq *maphash-htables* (funcall val-fn *maphash-htables*)))
+
 (defvar *break-on-non-single-threaded-updates?* nil)
 
 ;;; (setq MapSTHashtable::*break-on-non-single-threaded-updates?* t)
@@ -127,9 +137,9 @@
 (defun map-as-undo-harray--map-through-pairs (fn m)
   (let* ((m (map-as-undo-harray-assure-current m))
          (tbl (map-as-undo-harray--harray m)))
-    (setq *maphash-htables* (cons tbl *maphash-htables*))
+    (set-*maphash-htables* #'(lambda (mht) (cons tbl mht)))
     (maphash fn (map-as-undo-harray--harray m))
-    (setq *maphash-htables* (remove tbl *maphash-htables* :count 1))
+    (set-*maphash-htables* #'(lambda (mht) (remove tbl mht :count 1)))
     ))
 
 
