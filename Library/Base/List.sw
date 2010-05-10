@@ -4958,6 +4958,7 @@ proof Haskell Thy_Morphism
   List.repeat         -> replicate    curried  reversed
   List.flatten        -> concat
   List.noRepetitions? -> distinct
+  List.compare \_rightarrow compare curried
 end-proof
 
 % ------------------------------------------------------------------------------

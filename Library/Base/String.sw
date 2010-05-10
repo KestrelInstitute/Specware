@@ -336,6 +336,7 @@ proof Haskell ThyMorphism
   String.exists?    -> list_ex
   String.forall?    -> list_all
   String.@          -> !  Left   9
+  String.compare \_rightarrow compare curried
 end-proof
 
 endspec

@@ -113,6 +113,7 @@ proof Haskell Thy_Morphism
   type Char.Char -> Char
   Char.chr       -> intToDigit
   Char.ord       -> digitToInt
+  Char.compare \_rightarrow compare curried
 end-proof
 
 endspec
