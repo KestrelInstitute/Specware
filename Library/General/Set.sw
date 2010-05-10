@@ -889,20 +889,20 @@ end-proof
 proof Isa Thy_Morphism Set 
   type Set.Set -> set (id,id)
   Set.Set_P -> Set_P
-  Set.in? -> \<in> Left 20
-  Set.nin? -> \<notin> Left 20
-  Set.<= -> \<subseteq> Left 20
-  Set.< -> \<subset> Left 20
-  Set.>= -> \<subseteq> Left 20 reversed
-  Set.> -> \<subset> Left 20 reversed
+  Set.in? -> \<in> Left 50
+  Set.nin? -> \<notin> Left 50
+  Set.<= -> \<subseteq> Left 50
+  Set.< -> \<subset> Left 50
+  Set.>= -> \<subseteq> Left 50 reversed
+  Set.> -> \<subset> Left 50 reversed
   Set.<| -> insert curried reversed
   Set.~~ -> -
-  Set./\ -> \<inter> Left 25
+  Set./\ -> \<inter> Left 70
   Set.//\\ -> \<Inter>
-  Set.\/ -> \<union> Left 24 
+  Set.\/ -> \<union> Left 65 
   Set.\\// -> \<Union>
-  Set.-- -> - Left 25
-  Set.* -> <*> Left 27
+  Set.-- -> - Left 65
+  Set.* -> <*> Left 67
   Set.map   -> image
   Set.power -> Pow
   Set.empty -> {}

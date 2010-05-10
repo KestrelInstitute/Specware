@@ -117,7 +117,7 @@ proof Isa Thy_Morphism
   Relation.domain -> Domain 
   Relation.range  -> Range
   Relation.applys -> Image
-  Relation.:> -> O Left 24
+  Relation.:> -> O Left 75
   Relation.inverse -> converse
 %%  Relation.apply -> 
 %%  Relation.applyi -> 
