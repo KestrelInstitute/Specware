@@ -953,7 +953,7 @@ IsaTermPrinter qualifying spec
 		      prString ")"]
 
  op convertPrecNum(sw_prec_num: Nat): Nat =
-   sw_prec_num + 40
+   sw_prec_num + 40                     % Right for +
 
 
  op expandNatToSucc(tm: MS.Term): MS.Term =
@@ -1161,7 +1161,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                 | Right \_rightarrow prString "infixr \"",
                               ppInfixDefId (mainId),
                               prString "\" ",
-                              prString (show (prec + precNumFudge)),
+                              prString (show (convertPrecNum prec)),
                               prString ")"]
                            | _ \_rightarrow []),
                      [prString "where"],
@@ -1239,7 +1239,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                         | Right \_rightarrow prString "infixr \"",
                       ppInfixDefId (mainId),
                       prString "\" ",
-                      prString (show (prec + precNumFudge)),
+                      prString (show (convertPrecNum prec)),
                       prString ")"]
                    | _ \_rightarrow [])]
            else []
