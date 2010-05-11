@@ -60,17 +60,17 @@
 (require 'edmacro) ; for read-kbd-macro (i.e., backqoute)
 
 (require 'slime)
+
+(let* ((libfile (locate-library "slime")))
+  ;; Is it byte-compiled?
+  (when (or (not (eq (elt (locate-library "slime")
+			  (- (length (locate-library "slime")) 1))
+		     ?c))
+	    (slime-bytecode-stale-p))
+  (slime-recompile-bytecode)
+  (load-library "slime")))
+
 (slime-setup '(slime-repl))
-
-;(let* ((libfile (locate-library "slime")))
-;  ;; Is it byte-compiled?
-;  (when (or (not (eq (elt (locate-library "slime")
-;			  (- (length (locate-library "slime")) 1))
-;		     ?c))
-;	    (slime-bytecode-stale-p))
-;  (slime-recompile-bytecode)
-;  (load-library "slime")))
-
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
