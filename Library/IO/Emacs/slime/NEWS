@@ -1,4 +1,75 @@
-* SLIME News                  -*- outline -*-
+* SLIME News                                         -*- outline -*-
+
+* 3.0 (not released yet)
+
+** REPL no longer loaded by default
+SLIME has a REPL which communicates exclusively over SLIME's socket.
+This REPL is no longer loaded by default.  The default REPL is now the
+one by the Lisp implementation in the *inferior-lisp* buffer.  The
+simplest way to enable the old REPL is:
+
+  (slime-setup '(slime-repl))
+
+** Precise source tracking in Clozure CL
+Recent versions of the CCL compiler support source-location tracking.
+This makes the sldb-show-source command much more useful and M-. works
+better too.
+
+** Environment variables for Lisp process
+slime-lisp-implementations can be used to specify a list of strings to
+augment the process environment of the Lisp process.  E.g.:
+
+    (sbcl-cvs
+     ("/home/me/sbcl-cvs/src/runtime/sbcl"
+      "--core" "/home/me/sbcl-cvs/output/sbcl.core")
+     :env ("SBCL_HOME=/home/me/sbcl-cvs/contrib/"))
+
+** Removed Features
+Some of the more esoteric features, like presentations or fuzzy
+completion, are no longer enabled by default.  A new directory
+"contrib/" contains the code for these packages.  To use them, you
+must make some changes to your ~/.emacs.  For details see, section
+"Contributed Packages" in the manual.
+
+** Stepper
+Juho Snellman implemented stepping commands for SBCL.
+
+** Completions
+SLIME can now complete keywords and character names (like #\newline).
+
+* 2.0 (April 2006)
+
+** In-place macro expansion
+Marco Baringer wrote a new minor mode to incrementally expand macros.
+
+** Improved arglist display
+SLIME now recognizes `make-instance' calls and displays the correct
+arglist if the classname is present.  Similarly, for `defmethod' forms
+SLIME displays the arguments of the generic function.
+
+** Persistent REPL history
+SLIME now saves the command history from REPL buffers in a file and
+reloads it for newly created REPL buffers.
+
+** Scieneer Common Lisp
+Douglas Crosher added support for Scieneer Common Lisp.
+
+** SBCL
+Various improvements to make SLIME work well with current SBCL versions.
+
+** Corman Common Lisp
+Espen Wiborg added support for Corman Common Lisp.
+
+** Presentations
+A new feature which associates objects in Lisp with their textual
+represetation in Emacs.  The text is clickable and operations on the
+associated object can be invoked from a pop-up menu.
+
+** Security
+SLIME has now a simple authentication mechanism: if the file
+~/.slime-secret exists we verify that Emacs and Lisp can access it.
+Since both parties have access to the same file system, we assume that
+we can trust each other.
 
 * 1.2 (March 2005)
 

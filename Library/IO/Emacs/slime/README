@@ -20,6 +20,13 @@ Quick setup instructions
   Make sure your `inferior-lisp-program' is set to a compatible
   version of Lisp.
 
+  The function `slime-setup' can also load additional, contributed
+  packages ("contribs"). The most-often used package is
+  slime-fancy.el, which primarily installs a popular set of other
+  contributed packages. It includes a better REPL, and many more nice
+  features. To load it, change the bare (slime-setup) form above to
+  (slime-setup '(slime-fancy)).
+
   Use `M-x' slime to fire up and connect to an inferior Lisp.
   SLIME will now automatically be available in your Lisp source
   buffers.
@@ -27,10 +34,8 @@ Quick setup instructions
 Licence.
 ----------------------------------------
 
-  SLIME is free software. The source files are licensed separately for
-  maximum compatibility with their host environment, for example
-  slime.el is GPL and swank-cmucl.lisp is public domain. See the
-  source files for more details.
+  SLIME is free software. All files, unless explicitly stated
+  otherwise, are public domain.
 
 Contact.
 ----------------------------------------

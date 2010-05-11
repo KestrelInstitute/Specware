@@ -1,4 +1,5 @@
 (require 'slime)
+(require 'slime-repl)
 
 ;;; Based on slime-repl-mode
 (defvar specware-listener-mode-map)
@@ -62,14 +63,17 @@
                     slime-backend
                   (concat slime-path slime-backend)))
         (encoding (slime-coding-system-cl-name coding-system)))
-    (format "%S\n%S\n%S\n%S\n\n"
+    (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
-	       (load ,loader :verbose t))
+	       (load ,(slime-to-lisp-filename (expand-file-name loader)) :verbose t))
 	    `(unless (find-package :Specware) 
 	       (defpackage :Specware (:use "CL")))
 	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
-            `(swank:start-server ,port-filename :external-format ,encoding))))
+            `(funcall (read-from-string "swank-loader:init"))
+            `(funcall (read-from-string "swank:start-server")
+                        ,(slime-to-lisp-filename port-filename)
+                        :coding-system ,encoding))))
 
 ;;; based on slime-repl-return
 (defun sw-return (&optional end-of-input)
@@ -81,7 +85,6 @@ With prefix argument send the input even if the parenthesis are not
 balanced."
   (interactive "P")
   (slime-check-connected)
-  (assert (<= (point) slime-repl-input-end-mark))
   (cond (end-of-input
          (sw-send-input))
         (slime-repl-read-mode ; bad style?
@@ -90,14 +93,8 @@ balanced."
               (< (point) slime-repl-input-start-mark))
          (slime-repl-grab-old-input end-of-input)
          (slime-repl-recenter-if-needed))
-        ((and (car (slime-presentation-around-or-before-point (point)))
-                   (< (point) slime-repl-input-start-mark))
-         (slime-repl-grab-old-output end-of-input)
-         (slime-repl-recenter-if-needed))
-        ((slime-input-complete-p slime-repl-input-start-mark
-                                 (ecase slime-repl-return-behaviour
-                                   (:send-only-if-after-complete (min (point) slime-repl-input-end-mark))
-                                   (:send-if-complete slime-repl-input-end-mark)))
+        ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+        ((slime-input-complete-p slime-repl-input-start-mark (point-max))
          (sw-send-input t))
         (t 
          (slime-repl-newline-and-indent)
@@ -112,14 +109,16 @@ balanced."
 (defun sw-send-input (&optional newline)
   "Goto to the end of the input and send the current input.
 If NEWLINE is true then add a newline at the end of the input."
-  (when (< (point) slime-repl-input-start-mark)
+  (unless (slime-repl-in-input-area-p)
     (error "No input at point."))
-  (goto-char slime-repl-input-end-mark)
+  (goto-char (point-max))
   (let ((end (point))) ; end of input, without the newline
+    (slime-repl-add-to-input-history 
+     (buffer-substring slime-repl-input-start-mark end))
     (when newline 
       (insert "\n")
       (slime-repl-show-maximum-output))
-    (let ((inhibit-read-only t))
+    (let ((inhibit-modification-hooks t))
       (add-text-properties slime-repl-input-start-mark 
                            (point)
                            `(slime-repl-old-input
@@ -130,16 +129,12 @@ If NEWLINE is true then add a newline at the end of the input."
       (when sw:input-read-only
         (overlay-put overlay 'read-only t))
       (overlay-put overlay 'face 'slime-repl-input-face)))
-  (slime-repl-add-to-input-history 
-   (buffer-substring slime-repl-input-start-mark
-                     slime-repl-input-end-mark)) 
-
   (let* ((input (slime-repl-current-input))
 	 (input (if sw:use-x-symbol
 		    (x-symbol-encode-string input (current-buffer))
 		  input))
 	 (input (sw-input-to-command input)))
-    (goto-char slime-repl-input-end-mark)
+    (goto-char (point-max))
     (slime-mark-input-start)
     (slime-mark-output-start)
     (if (eq input :exit)
@@ -202,7 +197,6 @@ If NEWLINE is true then add a newline at the end of the input."
   "Major mode for Specware Shell."
   (interactive)
   (kill-all-local-variables)
-  (specware-mode-variables)
   (setq major-mode 'specware-listener-mode)
   (set (make-local-variable 'specware-listener-p) t)
   (use-local-map specware-listener-mode-map)
@@ -220,29 +214,33 @@ If NEWLINE is true then add a newline at the end of the input."
   (add-hook 'kill-buffer-hook 'slime-repl-safe-save-merged-history nil t)
   (add-hook 'kill-emacs-hook 'slime-repl-save-all-histories)
   (slime-setup-command-hooks)
-  (when slime-use-autodoc-mode 
+  (when (and (boundp 'slime-use-autodoc-mode) slime-use-autodoc-mode)
     (slime-autodoc-mode 1))
   (setq default-directory (concat *specware* "/"))
   (run-hooks 'slime-repl-mode-hook)
   (run-hooks 'specware-listener-mode-hook))
 
 ;;; Redefining slime functions and variables
-(defun* slime-start (&key (program inferior-lisp-program) program-args 
+(defun* slime-start (&key (program inferior-lisp-program) program-args
+                          directory
                           (coding-system slime-net-coding-system)
                           (init 'slime-cond-init-command)
                           name
-                          (buffer "*inferior-lisp*"))
+                          (buffer "*inferior-lisp*")
+                          init-function
+                          env)
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
       (slime-allegro-windows program program-args)
     (let ((args (list :program program :program-args program-args :buffer buffer 
-		      :coding-system coding-system :init init :name name)))
+                      :coding-system coding-system :init init :name name
+                      :init-function init-function :env env)))
       (slime-check-coding-system coding-system)
-      (when (or (not (slime-bytecode-stale-p))
-		(slime-urge-bytecode-recompile))
-	(let ((proc (slime-maybe-start-lisp program program-args buffer)))
-	  (slime-inferior-connect proc args)
-	  (pop-to-buffer (process-buffer proc))))))
-  )
+      (when (slime-bytecode-stale-p)
+        (slime-urge-bytecode-recompile))
+      (let ((proc (slime-maybe-start-lisp program program-args env
+                                          directory buffer)))
+        (slime-inferior-connect proc args)
+        (pop-to-buffer (process-buffer proc))))))
 
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))
@@ -277,9 +275,7 @@ If NEWLINE is true then add a newline at the end of the input."
 		    (setq slime-buffer-connection connection)
 		    (slime-reset-repl-markers)
 		    (unless noprompt 
-		      (slime-repl-insert-prompt '(;:suppress-output
-						  )
-						0))
+		      (slime-repl-insert-prompt))
 		    (current-buffer))))))))
 
 (defun sw-slime-repl-buffer (&optional create connection)
@@ -292,69 +288,53 @@ If NEWLINE is true then add a newline at the end of the input."
 (defvar *sw-after-prompt-forms* nil)
 (defvar *sw-slime-prompt* "* ")
 
-(defun slime-repl-insert-prompt (result &optional time)
+(defun slime-repl-insert-prompt ()
   "Goto to point max, insert RESULT and the prompt.
 Set slime-output-end to start of the inserted text slime-input-start
 to end end."
   (if (not specware-listener-p)
-      (funcall old-slime-repl-insert-prompt result time)  
+      (funcall old-slime-repl-insert-prompt)  
     (progn
-      (goto-char (point-max))
-      (let ((start (point)))
-	(unless (bolp) (insert "\n"))
-	(slime-repl-insert-result result)
-	(let ((prompt-start (point))
-	      (prompt (format *sw-slime-prompt*)))
-	  (slime-propertize-region
-	      '(face slime-repl-prompt-face read-only t intangible t
-		     slime-repl-prompt t
-		     ;; emacs stuff
-		     rear-nonsticky (slime-repl-prompt read-only face intangible)
-		     ;; xemacs stuff
-		     start-open t end-open t)
-	    (insert prompt))
-	  ;; FIXME: we could also set beginning-of-defun-function
-	  (setq defun-prompt-regexp (concat "^" prompt))
-	  (set-marker slime-output-end start)
-	  (set-marker slime-repl-prompt-start-mark prompt-start)
-	  (slime-mark-input-start)
-	  (while (not (null *sw-after-prompt-forms*))
+      (goto-char slime-repl-input-start-mark)
+  (slime-save-marker slime-output-start
+    (slime-save-marker slime-output-end
+      (unless (bolp) (insert-before-markers "\n"))
+      (let ((prompt-start (point)))
+        (slime-propertize-region
+            '(face slime-repl-prompt-face read-only t intangible t
+                   slime-repl-prompt t
+                   ;; emacs stuff
+                   rear-nonsticky (slime-repl-prompt read-only face intangible)
+                   ;; xemacs stuff
+                   start-open t end-open t)
+          (insert-before-markers *sw-slime-prompt*))
+        (set-marker slime-repl-prompt-start-mark prompt-start)
+        (while (not (null *sw-after-prompt-forms*))
 	    (eval (pop *sw-after-prompt-forms*)))
-	  (let ((time (or time 0.2)))
-	    (cond ((zerop time)
-		   (slime-repl-move-output-mark-before-prompt (current-buffer)))
-		  (t 
-		   (run-at-time time nil 'slime-repl-move-output-mark-before-prompt
-				(current-buffer)))))))
-      (slime-repl-show-maximum-output))))
+        prompt-start))))))
 
 
 
-;;; Mods to slime.el
-(defun slime-write-string (string)
+;;; Mods to slime.el and slime-repl.el
+(defun slime-repl-emit (string)
+  ;; insert the string STRING in the output buffer
   (with-current-buffer (slime-output-buffer)
-    (slime-with-output-end-mark
-     (slime-propertize-region '(face slime-repl-output-face)
-       (let ((start (point)))
-	  (insert string)
-	  (when sw:use-x-symbol
-	    (x-symbol-decode-region start (point)))))
-     (when (and (= (point) slime-repl-prompt-start-mark)
-                (not (bolp)))
-       (insert "\n")
-       (set-marker slime-output-end (1- (point)))))))
-
-(defun slime-repl-show-maximum-output (&optional force)
-  "Put the end of the buffer at the bottom of the window."
-  ;; Don't know about this assert
-  ;;(assert (eobp))
-  (let ((win (get-buffer-window (current-buffer))))
-    (when (and win (or force (not (pos-visible-in-window-p))))
-      (save-selected-window
-        (save-excursion
-          (select-window win)
-          (goto-char (point-max))
-          (recenter -1))))))
+    (save-excursion
+      (goto-char slime-output-end)
+      (slime-save-marker slime-output-start
+        (slime-propertize-region '(face slime-repl-output-face 
+                                        rear-nonsticky (face))
+          (insert-before-markers string)
+          (when sw:use-x-symbol
+	    (x-symbol-decode-region slime-output-start (point)))
+          (when (and (= (point) slime-repl-prompt-start-mark)
+                     (not (bolp)))
+            (insert-before-markers "\n")
+            (set-marker slime-output-end (1- (point)))))))
+    (when slime-repl-popup-on-output
+      (setq slime-repl-popup-on-output nil)
+      (display-buffer (current-buffer)))
+    (slime-repl-show-maximum-output)))
 
 
 (defface slime-repl-output-face
@@ -369,7 +349,9 @@ to end end."
 
 (defvar sw:system-name "Specware")
 
-(defun slime-repl-update-banner ()
+;; Mod to use new slime-repl-update-banner hooks?
+(setq slime-repl-banner-function 'sw-slime-repl-insert-banner)
+(defun sw-slime-repl-insert-banner ()
   (let* ((banner (format "%s %s on %s %s"
                          sw:system-name
 			 (sw:eval-in-lisp "(if (boundp '*Specware-Version*) *Specware-Version* \"\")")
@@ -377,25 +359,8 @@ to end end."
 			 (slime-lisp-implementation-version)
                          ;(slime-connection-port (slime-connection))
                          ;(slime-pid)
-			 ))
-         ;; Emacs21 has the fancy persistent header-line.
-         (use-header-p (and slime-header-line-p
-                            (boundp 'header-line-format)))
-         ;; and dancing text
-         (animantep (and (fboundp 'animate-string)
-                         slime-startup-animation
-                         (zerop (buffer-size)))))
-    (when use-header-p
-      (setq header-line-format banner))
-    (when animantep
-      (pop-to-buffer (current-buffer))
-      (funcall 'animate-string
-	       (format "; SLIME %s" (or (slime-changelog-date) 
-					"- ChangeLog file not found"))
-	       0 0))
-    (setq default-directory (concat *specware* "/"))
-    (slime-repl-insert-prompt (cond (use-header-p `(:suppress-output))
-                                    (t `(:values (,(concat "; " banner))))))))
+			 )))
+    (insert banner)))
 
 (defun slime-check-connected ()
   "Signal an error if we are not connected to Lisp."
@@ -403,82 +368,6 @@ to end end."
     (error "Not connected. Use `%s' to start Specware."
 	   ;; sjw: was slime
            (substitute-command-keys "\\[run-specware4]"))))
-
-(defun slime-dispatch-event (event &optional process)
-  (let ((slime-dispatching-connection (or process (slime-connection))))
-    (destructure-case event
-      ((:write-string output)
-       (slime-write-string output))
-      ((:presentation-start id)
-       (slime-mark-presentation-start id))
-      ((:presentation-end id)
-       (slime-mark-presentation-end id))
-      ;;
-      ((:emacs-rex form package thread continuation)
-       (slime-set-state "|eval...")
-       (when (and (slime-use-sigint-for-interrupt) (slime-busy-p))
-         (message "; pipelined request... %S" form))
-       (let ((id (incf (slime-continuation-counter))))
-         (push (cons id continuation) (slime-rex-continuations))
-         (slime-send `(:emacs-rex ,form ,package ,thread ,id))))
-      ((:return value id)
-       (let ((rec (assq id (slime-rex-continuations))))
-         (cond (rec (setf (slime-rex-continuations)
-                          (remove rec (slime-rex-continuations)))
-                    (when (null (slime-rex-continuations))
-                      (slime-set-state ""))
-                    (funcall (cdr rec) value))
-               (t
-                (error "Unexpected reply: %S %S" id value)))))
-      ((:debug-activate thread level)
-       (assert thread)
-       (sldb-activate thread level))
-      ((:debug thread level condition restarts frames conts)
-       (assert thread)
-       (sldb-setup thread level condition restarts frames conts))
-      ((:debug-return thread level stepping)
-       (assert thread)
-       (sldb-exit thread level stepping))
-      ((:emacs-interrupt thread)
-       (cond ((slime-use-sigint-for-interrupt) (slime-send-sigint))
-             (t (slime-send `(:emacs-interrupt ,thread)))))
-      ((:read-string thread tag)
-       (assert thread)
-       (slime-repl-read-string thread tag))
-      ((:y-or-n-p thread tag question)
-       (slime-y-or-n-p thread tag question))
-      ((:read-aborted thread tag)
-       (assert thread)
-       (slime-repl-abort-read thread tag))
-      ((:emacs-return-string thread tag string)
-       (slime-send `(:emacs-return-string ,thread ,tag ,string)))
-      ;;
-      ((:new-package package prompt-string)
-       (setf (slime-lisp-package) package)
-       (setf (slime-lisp-package-prompt-string) prompt-string))
-      ((:new-features features)
-       (setf (slime-lisp-features) features))
-      ((:indentation-update info)
-       (slime-handle-indentation-update info))
-      ((:open-dedicated-output-stream port)
-       (slime-open-stream-to-lisp port))
-      ((:eval-no-wait form-string)
-       (slime-check-eval-in-emacs-enabled)
-       ;(message form-string)
-       (eval (read form-string))
-       ;(apply (intern fun) args) : sjw: was this a bug?
-       )
-      ((:eval thread tag form-string)
-       (slime-eval-for-lisp thread tag form-string))
-      ((:emacs-return thread tag value)
-       (slime-send `(:emacs-return ,thread ,tag ,value)))
-      ((:ed what)
-       (slime-ed what))
-      ((:background-message message)
-       (slime-background-message "%s" message))
-      ((:debug-condition thread message)
-       (assert thread)
-       (message "%s" message)))))
 
 (defun slime-maybe-complete-as-filename ()
   "If point is at a string starting with \", complete it as filename.

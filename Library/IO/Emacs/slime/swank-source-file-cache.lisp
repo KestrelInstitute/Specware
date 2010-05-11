@@ -42,7 +42,9 @@ Maps from truename to source-cache-entry structure.")
   "Load a file into the cache when the user modifies its buffer.
 This is a win if the user then saves the file and tries to M-. into it."
   (unless (source-cached-p filename)
-    (ignore-errors (source-cache-get filename (file-write-date filename)))))
+    (ignore-errors
+      (source-cache-get filename (file-write-date filename))))
+  nil)
 
 (defun get-source-code (filename code-date)
   "Return the source code for FILENAME as written on DATE in a string.
@@ -75,7 +77,10 @@ Return NIL if the right version cannot be found."
 
 (defun read-file (filename)
   "Return the entire contents of FILENAME as a string."
-  (with-open-file (s filename :direction :input)
+  (with-open-file (s filename :direction :input
+		     :external-format (or (guess-external-format filename)
+					  (find-external-format "latin-1")
+					  :default))
     (let ((string (make-string (file-length s))))
       (read-sequence string s)
       string)))
@@ -93,12 +98,16 @@ text search.")
 If POSITION is given, set the STREAM's file position first."
   (when position
     (file-position stream position))
-  #+SBCL (skip-comments-and-whitespace stream)
+  #+sbcl (skip-comments-and-whitespace stream)
   (read-upto-n-chars stream *source-snippet-size*))
+
+(defun read-snippet-from-string (string &optional position)
+  (with-input-from-string (s string)
+    (read-snippet s position)))
 
 (defun skip-comments-and-whitespace (stream)
   (case (peek-char nil stream)
-    ((#\Space #\Tab #\Newline #\Linefeed)
+    ((#\Space #\Tab #\Newline #\Linefeed #\Page)
      (read-char stream)
      (skip-comments-and-whitespace stream))
     (#\;

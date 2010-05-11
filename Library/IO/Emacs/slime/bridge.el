@@ -185,9 +185,9 @@ handler executed without error."
        (message "bridge-handler \"%s\" failed %s (see bridge-last-failure)"
 		handler err)
        (setq bridge-last-failure
-	     (` ((funcall '(, handler) '(, proc) (, string))
-		 "Caused: "
-		 (, err))))))
+             `((funcall ',handler ',proc ,string)
+               "Caused: "
+               ,err))))
     (not failed)))
 
 ;;;%Handlers
@@ -420,7 +420,7 @@ encountered before the bridge-end-regexp, the bridge will be cancelled."
 	    (error "%s does not have a process" 
 		   (buffer-name (current-buffer)))))
       (run-hooks 'bridge-hook)
-      (message "Slime: Process bridge is installed")))
+      (message "Process bridge is installed")))
 	      
 ;;;
 (defun reset-bridge ()

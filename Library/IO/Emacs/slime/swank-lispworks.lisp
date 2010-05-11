@@ -15,12 +15,32 @@
   (import-from :stream *gray-stream-symbols* :swank-backend))
 
 (import-swank-mop-symbols :clos '(:slot-definition-documentation
+                                  :slot-boundp-using-class
+                                  :slot-value-using-class
+                                  :slot-makunbound-using-class
                                   :eql-specializer
                                   :eql-specializer-object
                                   :compute-applicable-methods-using-classes))
 
 (defun swank-mop:slot-definition-documentation (slot)
   (documentation slot t))
+
+(defun swank-mop:slot-boundp-using-class (class object slotd)
+  (clos:slot-boundp-using-class class object
+                                (clos:slot-definition-name slotd)))
+
+(defun swank-mop:slot-value-using-class (class object slotd)
+  (clos:slot-value-using-class class object
+                               (clos:slot-definition-name slotd)))
+
+(defun (setf swank-mop:slot-value-using-class) (value class object slotd)
+  (setf (clos:slot-value-using-class class object
+                                     (clos:slot-definition-name slotd))
+        value))
+
+(defun swank-mop:slot-makunbound-using-class (class object slotd)
+  (clos:slot-makunbound-using-class class object
+                                    (clos:slot-definition-name slotd)))
 
 (defun swank-mop:compute-applicable-methods-using-classes (gf classes)
   (clos::compute-applicable-methods-from-classes gf classes))
@@ -32,9 +52,15 @@
 (defun swank-mop:eql-specializer-object (eql-spec)
   (second eql-spec))
 
-(when (fboundp 'dspec::define-dspec-alias)
-  (dspec::define-dspec-alias defimplementation (name args &rest body)
-    `(defmethod ,name ,args ,@body)))
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (defvar *original-defimplementation* (macro-function 'defimplementation))
+  (defmacro defimplementation (&whole whole name args &body body 
+                               &environment env)
+    (declare (ignore args body))
+    `(progn
+       (dspec:record-definition '(defun ,name) (dspec:location)
+                                :check-redefinition-p nil)
+       ,(funcall *original-defimplementation* whole env))))
 
 ;;; TCP server
 
@@ -67,24 +93,56 @@
 
 (defimplementation accept-connection (socket 
                                       &key external-format buffering timeout)
-  (declare (ignore buffering timeout))
-  (assert (member external-format '(nil :iso-latin-1-unix)))
+  (declare (ignore buffering))
   (let* ((fd (comm::get-fd-from-socket socket)))
     (assert (/= fd -1))
-    (make-instance 'comm:socket-stream :socket fd :direction :io 
-                   :element-type 'base-char)))
+    (assert (valid-external-format-p external-format))
+    (cond ((member (first external-format) '(:latin-1 :ascii))
+           (make-instance 'comm:socket-stream
+                          :socket fd
+                          :direction :io
+                          :read-timeout timeout
+                          :element-type 'base-char))
+          (t
+           (make-flexi-stream 
+            (make-instance 'comm:socket-stream
+                           :socket fd
+                           :direction :io
+                           :read-timeout timeout
+                           :element-type '(unsigned-byte 8))
+            external-format)))))
 
-(defun find-external-format (coding-system &optional default)
-  (case coding-system
-    (:iso-latin-1-unix '(:latin-1 :eol-style :lf))
-    (:utf-8-unix '(:utf-8 :eol-style :lf))
-    (t default)))
+(defun make-flexi-stream (stream external-format)
+  (unless (member :flexi-streams *features*)
+    (error "Cannot use external format ~A without having installed flexi-streams in the inferior-lisp."
+           external-format))
+  (funcall (read-from-string "FLEXI-STREAMS:MAKE-FLEXI-STREAM")
+           stream
+           :external-format
+           (apply (read-from-string "FLEXI-STREAMS:MAKE-EXTERNAL-FORMAT")
+                  external-format)))
 
-(defun set-sigint-handler ()
-  ;; Set SIGINT handler on Swank request handler thread.
-  #-win32
-  (sys::set-signal-handler +sigint+ 
-                           (make-sigint-handler mp:*current-process*)))
+;;; Coding Systems
+
+(defun valid-external-format-p (external-format)
+  (member external-format *external-format-to-coding-system*
+          :test #'equal :key #'car))
+
+(defvar *external-format-to-coding-system*
+  '(((:latin-1 :eol-style :lf) 
+     "latin-1-unix" "iso-latin-1-unix" "iso-8859-1-unix")
+    ((:latin-1) 
+     "latin-1" "iso-latin-1" "iso-8859-1")
+    ((:utf-8) "utf-8")
+    ((:utf-8 :eol-style :lf) "utf-8-unix")
+    ((:euc-jp) "euc-jp")
+    ((:euc-jp :eol-style :lf) "euc-jp-unix")
+    ((:ascii) "us-ascii")
+    ((:ascii :eol-style :lf) "us-ascii-unix")))
+
+(defimplementation find-external-format (coding-system)
+  (car (rassoc-if (lambda (x) (member coding-system x :test #'equal))
+                  *external-format-to-coding-system*)))
 
 ;;; Unix signals
 
@@ -97,9 +155,20 @@
     (declare (ignore args))
     (mp:process-interrupt process #'sigint-handler)))
 
-(defimplementation call-without-interrupts (fn)
-  (lw:without-interrupts (funcall fn)))
-  
+(defun set-sigint-handler ()
+  ;; Set SIGINT handler on Swank request handler thread.
+  #-win32
+  (sys::set-signal-handler +sigint+ 
+                           (make-sigint-handler mp:*current-process*)))
+
+#-win32 
+(defimplementation install-sigint-handler (handler)
+  (sys::set-signal-handler +sigint+
+                           (let ((self mp:*current-process*))
+                             (lambda (&rest args)
+                               (declare (ignore args))
+                               (mp:process-interrupt self handler)))))
+
 (defimplementation getpid ()
   #+win32 (win32:get-current-process-id)
   #-win32 (system::getpid))
@@ -112,13 +181,34 @@
 
 ;;;; Documentation
 
+(defun map-list (function list)
+  "Map over proper and not proper lists."
+  (loop for (car . cdr) on list
+        collect (funcall function car) into result
+        when (null cdr) return result
+        when (atom cdr) return (nconc result (funcall function cdr))))
+
+(defun replace-strings-with-symbols (tree)
+  (map-list
+   (lambda (x)
+     (typecase x
+       (list
+        (replace-strings-with-symbols x))
+       (symbol
+        x)
+       (string
+        (intern x))
+       (t
+        (intern (write-to-string x)))))
+   tree))
+               
 (defimplementation arglist (symbol-or-function)
   (let ((arglist (lw:function-lambda-list symbol-or-function)))
     (etypecase arglist
       ((member :dont-know) 
        :not-available)
       (list
-       arglist))))
+       (replace-strings-with-symbols arglist)))))
 
 (defimplementation function-name (function)
   (nth-value 2 (function-lambda-expression function)))
@@ -137,7 +227,7 @@ Return NIL if the symbol is unbound."
                (let ((pos (position #\newline string)))
                  (if (null pos) string (subseq string 0 pos))))
              (doc (kind &optional (sym symbol))
-               (let ((string (documentation sym kind)))
+               (let ((string (or (documentation sym kind))))
                  (if string 
                      (first-line string)
                      :not-documented)))
@@ -173,10 +263,9 @@ Return NIL if the symbol is unbound."
 
 (defun describe-function (symbol)
   (cond ((fboundp symbol)
-         (format t "~%(~A~{ ~A~})~%~%~:[(not documented)~;~:*~A~]~%"
-                 (string-downcase symbol)
-                 (mapcar #'string-upcase 
-                         (lispworks:function-lambda-list symbol))
+         (format t "(~A ~/pprint-fill/)~%~%~:[(not documented)~;~:*~A~]~%"
+                 symbol
+                 (lispworks:function-lambda-list symbol)
                  (documentation symbol 'function))
          (describe (fdefinition symbol)))
         (t (format t "~S is not fbound" symbol))))
@@ -201,18 +290,27 @@ Return NIL if the symbol is unbound."
                  :io-bindings io-bindings
                  :debugger-hoook hook))
 
-(defmethod env-internals:environment-display-notifier
+(defmethod env-internals:environment-display-notifier 
     ((env slime-env) &key restarts condition)
-  (declare (ignore restarts))
-  (funcall (slot-value env 'debugger-hook) condition *debugger-hook*))
+  (declare (ignore restarts condition))
+  (funcall (swank-sym :swank-debugger-hook) condition *debugger-hook*)
+  ;;  nil
+  )
 
 (defmethod env-internals:environment-display-debugger ((env slime-env))
   *debug-io*)
+
+(defmethod env-internals:confirm-p ((e slime-env) &optional msg &rest args)
+  (apply (swank-sym :y-or-n-p-in-emacs) msg args))
 
 (defimplementation call-with-debugger-hook (hook fun)
   (let ((*debugger-hook* hook))
     (env:with-environment ((slime-env hook '()))
       (funcall fun))))
+
+(defimplementation install-debugger-globally (function)
+  (setq *debugger-hook* function)
+  (setf (env:environment) (slime-env function '())))
 
 (defvar *sldb-top-frame*)
 
@@ -226,7 +324,6 @@ Return NIL if the symbol is unbound."
         ((dbg::binding-frame-p frame) dbg:*print-binding-frames*)
         ((dbg::handler-frame-p frame) dbg:*print-handler-frames*)
         ((dbg::restart-frame-p frame) dbg:*print-restart-frames*)
-        ((dbg::open-frame-p frame) dbg:*print-open-frames*)
         (t nil)))
 
 (defun nth-next-frame (frame n)
@@ -303,11 +400,7 @@ Return NIL if the symbol is unbound."
       (declare (ignore _n _s _l))
       value)))
 
-(defimplementation frame-catch-tags (index)
-  (declare (ignore index))
-  nil)
-
-(defimplementation frame-source-location-for-emacs (frame)
+(defimplementation frame-source-location (frame)
   (let ((frame (nth-frame frame))
         (callee (if (plusp frame) (nth-frame (1- frame)))))
     (if (dbg::call-frame-p frame)
@@ -330,6 +423,12 @@ Return NIL if the symbol is unbound."
 (defimplementation restart-frame (frame-number)
   (let ((frame (nth-frame frame-number)))
     (dbg::restart-frame frame :same-args t)))
+
+(defimplementation disassemble-frame (frame-number)
+  (let* ((frame (nth-frame frame-number)))
+    (when (dbg::call-frame-p frame)
+      (let ((function (dbg::get-call-frame-function frame)))
+        (disassemble function)))))
 
 ;;; Definition finding
 
@@ -358,17 +457,21 @@ Return NIL if the symbol is unbound."
   (lw:rebinding (location)
     `(let ((compiler::*error-database* '()))
        (with-compilation-unit ,options
-         ,@body
-         (signal-error-data-base compiler::*error-database* ,location)
-         (signal-undefined-functions compiler::*unknown-functions* ,location)))))
+         (multiple-value-prog1 (progn ,@body)
+           (signal-error-data-base compiler::*error-database* 
+                                   ,location)
+           (signal-undefined-functions compiler::*unknown-functions* 
+                                       ,location))))))
 
-(defimplementation swank-compile-file (filename load-p 
-                                       &optional external-format)
-  (with-swank-compilation-unit (filename)
-    (let ((ef (if external-format 
-                  (find-external-format external-format) 
-                  :default)))
-      (compile-file filename :load load-p :external-format ef))))
+(defimplementation swank-compile-file (input-file output-file
+                                       load-p external-format
+                                       &key policy)
+  (declare (ignore policy))
+  (with-swank-compilation-unit (input-file)
+    (compile-file input-file 
+                  :output-file output-file
+                  :load load-p 
+                  :external-format external-format)))
 
 (defvar *within-call-with-compilation-hooks* nil
   "Whether COMPILE-FILE was called from within CALL-WITH-COMPILATION-HOOKS.")
@@ -401,7 +504,7 @@ Return NIL if the symbol is unbound."
   (loop for (filename . defs) in database do
 	(loop for (dspec . conditions) in defs do
 	      (dolist (c conditions) 
-		(funcall fn filename dspec c)))))
+		(funcall fn filename dspec (if (consp c) (car c) c))))))
 
 (defun lispworks-severity (condition)
   (cond ((not condition) :warning)
@@ -418,25 +521,34 @@ Return NIL if the symbol is unbound."
 		  :location location
 		  :original-condition condition)))
 
+(defvar *temp-file-format* '(:utf-8 :eol-style :lf))
+
 (defun compile-from-temp-file (string filename)
   (unwind-protect
        (progn
-	 (with-open-file (s filename :direction :output :if-exists :supersede)
+	 (with-open-file (s filename :direction :output
+                                     :if-exists :supersede
+                                     :external-format *temp-file-format*)
+
 	   (write-string string s)
 	   (finish-output s))
-	 (let ((binary-filename (compile-file filename :load t)))
+         (multiple-value-bind (binary-filename warnings? failure?)
+             (compile-file filename :load t
+                           :external-format *temp-file-format*)
+           (declare (ignore warnings?))
            (when binary-filename
-             (delete-file binary-filename))))
+             (delete-file binary-filename))
+           (not failure?)))
     (delete-file filename)))
 
-(defun dspec-buffer-position (dspec offset)
+(defun dspec-function-name-position (dspec fallback)
   (etypecase dspec
     (cons (let ((name (dspec:dspec-primary-name dspec)))
             (typecase name
               ((or symbol string) 
                (list :function-name (string name)))
-              (t (list :position offset)))))
-    (null (list :position offset))
+              (t fallback))))
+    (null fallback)
     (symbol (list :function-name (string dspec)))))
 
 (defmacro with-fairly-standard-io-syntax (&body body)
@@ -450,10 +562,17 @@ Return NIL if the symbol is unbound."
               (*readtable* ,readtable))
           ,@body)))))
 
+(defun skip-comments (stream)
+  (let ((pos0 (file-position stream)))
+    (cond ((equal (ignore-errors (list (read-delimited-list #\( stream)))
+                  '(()))
+           (file-position stream (1- (file-position stream))))
+          (t (file-position stream pos0)))))
+
 #-(or lispworks4.1 lispworks4.2) ; no dspec:parse-form-dspec prior to 4.3
 (defun dspec-stream-position (stream dspec)
   (with-fairly-standard-io-syntax
-    (loop (let* ((pos (file-position stream))
+    (loop (let* ((pos (progn (skip-comments stream) (file-position stream)))
                  (form (read stream nil '#1=#:eof)))
             (when (eq form '#1#)
               (return nil))
@@ -478,13 +597,17 @@ Return NIL if the symbol is unbound."
               (check-dspec form))))))
 
 (defun dspec-file-position (file dspec)
-  (with-open-file (stream file)
-    (let ((pos 
-           #-(or lispworks4.1 lispworks4.2)
-           (dspec-stream-position stream dspec)))
-      (if pos
-          (list :position (1+ pos) t)
-          (dspec-buffer-position dspec 1)))))
+  (let* ((*compile-file-pathname* (pathname file))
+         (*compile-file-truename* (truename *compile-file-pathname*))
+         (*load-pathname* *compile-file-pathname*)
+         (*load-truename* *compile-file-truename*))
+    (with-open-file (stream file)
+      (let ((pos 
+             #-(or lispworks4.1 lispworks4.2)
+             (dspec-stream-position stream dspec)))
+        (if pos
+            (list :position (1+ pos))
+            (dspec-function-name-position dspec `(:position 1)))))))
 
 (defun emacs-buffer-location-p (location)
   (and (consp location)
@@ -506,7 +629,7 @@ Return NIL if the symbol is unbound."
      (destructuring-bind (_ buffer offset string) location
        (declare (ignore _ string))
        (make-location `(:buffer ,buffer)
-                      (dspec-buffer-position dspec offset)
+                      (dspec-function-name-position dspec `(:offset ,offset 0))
                       hints)))))
 
 (defun make-dspec-progenitor-location (dspec location)
@@ -531,22 +654,10 @@ Return NIL if the symbol is unbound."
 (defun unmangle-unfun (symbol)
   "Converts symbols like 'SETF::|\"CL-USER\" \"GET\"| to
 function names like \(SETF GET)."
-  (or (and (eq (symbol-package symbol)
-               (load-time-value (find-package :setf)))
-           (let ((slime-nregex::*regex-groupings* 0)
-                 (slime-nregex::*regex-groups* (make-array 10))
-                 (symbol-name (symbol-name symbol)))
-             (and (funcall (load-time-value
-                             (compile nil (slime-nregex:regex-compile "^\"(.+)\" \"(.+)\"$")))
-                           symbol-name)
-                  (list 'setf
-                        (intern (apply #'subseq symbol-name
-                                       (aref slime-nregex::*regex-groups* 2))
-                                (find-package
-                                 (apply #'subseq symbol-name
-                                        (aref slime-nregex::*regex-groups* 1))))))))
-      symbol))
-
+  (cond ((sys::setf-symbol-p symbol)
+         (sys::setf-pair-from-underlying-name symbol))
+        (t symbol)))
+                    
 (defun signal-undefined-functions (htab &optional filename)
   (maphash (lambda (unfun dspecs)
 	     (dolist (dspec dspecs)
@@ -559,8 +670,9 @@ function names like \(SETF GET)."
 		nil)))
 	   htab))
 
-(defimplementation swank-compile-string (string &key buffer position directory)
-  (declare (ignore directory))
+(defimplementation swank-compile-string (string &key buffer position filename
+                                         policy)
+  (declare (ignore filename policy))
   (assert buffer)
   (assert position)
   (let* ((location (list :emacs-buffer buffer position string))
@@ -625,36 +737,27 @@ function names like \(SETF GET)."
           append (frob-locs dspec (dspec:dspec-definition-locations dspec)))))
 
 ;;; Inspector
-(defclass lispworks-inspector (inspector)
-  ())
 
-(defimplementation make-default-inspector ()
-  (make-instance 'lispworks-inspector))
-
-(defmethod inspect-for-emacs ((o t) (inspector lispworks-inspector))
-  (declare (ignore inspector))
+(defmethod emacs-inspect ((o t))
   (lispworks-inspect o))
 
-(defmethod inspect-for-emacs ((o function) 
-                              (inspector lispworks-inspector))
-  (declare (ignore inspector))
+(defmethod emacs-inspect ((o function))
   (lispworks-inspect o))
 
 ;; FIXME: slot-boundp-using-class in LW works with names so we can't
 ;; use our method in swank.lisp.
-(defmethod inspect-for-emacs ((o standard-object) 
-                              (inspector lispworks-inspector))
-  (declare (ignore inspector))
+(defmethod emacs-inspect ((o standard-object))
   (lispworks-inspect o))
 
 (defun lispworks-inspect (o)
   (multiple-value-bind (names values _getter _setter type)
       (lw:get-inspector-values o nil)
     (declare (ignore _getter _setter))
-    (values "A value."
             (append 
              (label-value-line "Type" type)
-             (mapcan #'label-value-line names values)))))
+             (loop for name in names
+                   for value in values
+                   append (label-value-line name value)))))
 
 ;;; Miscellaneous
 
@@ -684,15 +787,15 @@ function names like \(SETF GET)."
 
 ;;; Multithreading
 
-(defimplementation initialize-multiprocessing ()
-  (mp:initialize-multiprocessing))
+(defimplementation initialize-multiprocessing (continuation)
+  (cond ((not mp::*multiprocessing*)
+         (push (list "Initialize SLIME" '() continuation) 
+               mp:*initial-processes*)
+         (mp:initialize-multiprocessing))
+        (t (funcall continuation))))
 
 (defimplementation spawn (fn &key name)
-  (let ((mp:*process-initial-bindings* 
-         (remove (find-package :cl) 
-                 mp:*process-initial-bindings*
-                 :key (lambda (x) (symbol-package (car x))))))
-    (mp:process-run-function name () fn)))
+  (mp:process-run-function name () fn))
 
 (defvar *id-lock* (mp:make-lock))
 (defvar *thread-id-counter* 0)
@@ -736,44 +839,58 @@ function names like \(SETF GET)."
 (defimplementation thread-alive-p (thread)
   (mp:process-alive-p thread))
 
+(defstruct (mailbox (:conc-name mailbox.)) 
+  (mutex (mp:make-lock :name "thread mailbox"))
+  (queue '() :type list))
+
 (defvar *mailbox-lock* (mp:make-lock))
 
 (defun mailbox (thread)
   (mp:with-lock (*mailbox-lock*)
     (or (getf (mp:process-plist thread) 'mailbox)
         (setf (getf (mp:process-plist thread) 'mailbox)
-              (mp:make-mailbox)))))
+              (make-mailbox)))))
 
-(defimplementation receive ()
-  (mp:mailbox-read (mailbox mp:*current-process*)))
+(defimplementation receive-if (test &optional timeout)
+  (let* ((mbox (mailbox mp:*current-process*))
+         (lock (mailbox.mutex mbox)))
+    (assert (or (not timeout) (eq timeout t)))
+    (loop
+     (check-slime-interrupts)
+     (mp:with-lock (lock "receive-if/try")
+       (let* ((q (mailbox.queue mbox))
+              (tail (member-if test q)))
+         (when tail
+           (setf (mailbox.queue mbox) (nconc (ldiff q tail) (cdr tail)))
+           (return (car tail)))))
+     (when (eq timeout t) (return (values nil t)))
+     (mp:process-wait-with-timeout 
+      "receive-if" 0.3 (lambda () (some test (mailbox.queue mbox)))))))
 
-(defimplementation send (thread object)
-  (mp:mailbox-send (mailbox thread) object))
+(defimplementation send (thread message)
+  (let ((mbox (mailbox thread)))
+    (mp:with-lock ((mailbox.mutex mbox))
+      (setf (mailbox.queue mbox)
+            (nconc (mailbox.queue mbox) (list message))))))
+
+(defimplementation set-default-initial-binding (var form)
+  (setq mp:*process-initial-bindings* 
+        (acons var `(eval (quote ,form))
+               mp:*process-initial-bindings* )))
+
+(defimplementation thread-attributes (thread)
+  (list :priority (mp:process-priority thread)
+        :idle (mp:process-idle-time thread)))
 
 ;;; Some intergration with the lispworks environment
 
 (defun swank-sym (name) (find-symbol (string name) :swank))
-
-(defimplementation emacs-connected ()
-  (when (eq (eval (swank-sym :*communication-style*))
-            nil)
-    (set-sigint-handler))
-  ;; pop up the slime debugger by default
-  (let ((lw:*handle-warn-on-redefinition* :warn))
-    (defmethod env-internals:environment-display-notifier 
-        (env &key restarts condition)
-      (declare (ignore restarts))
-      (funcall (swank-sym :swank-debugger-hook) condition *debugger-hook*))
-    (defmethod env-internals:environment-display-debugger (env)
-      *debug-io*)))
-
-(defimplementation make-stream-interactive (stream)
-  (unless (find-method #'stream:stream-soft-force-output nil `((eql ,stream))
-                       nil)
-    (let ((lw:*handle-warn-on-redefinition* :warn))
-      (defmethod stream:stream-soft-force-output  ((o (eql stream)))
-        (force-output o)))))
-
-(defmethod env-internals:confirm-p ((e slime-env) &optional msg &rest args)
-  (apply (swank-sym :y-or-n-p-in-emacs) msg args))
       
+
+;;;; Weak hashtables
+
+(defimplementation make-weak-key-hash-table (&rest args)
+  (apply #'make-hash-table :weak-kind :key args))
+
+(defimplementation make-weak-value-hash-table (&rest args)
+  (apply #'make-hash-table :weak-kind :value args))

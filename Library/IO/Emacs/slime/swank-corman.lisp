@@ -176,7 +176,8 @@
     (funcall fn)))
 
 (defimplementation compute-backtrace (start end)
-  (subseq *stack-trace* start (min end (length *stack-trace*))))
+  (loop for f in (subseq *stack-trace* start (min end (length *stack-trace*)))
+	collect f))
 
 (defimplementation print-frame (frame stream)
   (format stream "~S" frame))
@@ -202,16 +203,12 @@
     (let ((cl::*compiler-environment* (get-frame-debug-info frame)))
       (eval form))))
 
-(defimplementation frame-catch-tags (index)
-  (declare (ignore index))
-  nil)
-
 (defimplementation frame-var-value (frame-number var)
   (let ((vars (frame-variables (elt *frame-trace* frame-number))))
     (when vars
       (second (elt vars var)))))
 
-(defimplementation frame-source-location-for-emacs (frame-number)
+(defimplementation frame-source-location (frame-number)
   (fspec-location (frame-function (elt *frame-trace* frame-number))))
 
 (defun break (&optional (format-control "Break") &rest format-arguments)
@@ -239,10 +236,8 @@
 
 (defimplementation accept-connection (socket
 				      &key external-format buffering timeout)
-  (declare (ignore buffering timeout))
-  (ecase (or external-format :iso-latin-1-unix)
-    (:iso-latin-1-unix 
-     (sockets:make-socket-stream (sockets:accept-socket socket)))))
+  (declare (ignore buffering timeout external-format))
+  (sockets:make-socket-stream (sockets:accept-socket socket)))
 
 ;;; Misc
 
@@ -357,7 +352,7 @@
                                    (cond (*buffer-name*
                                           (make-location
                                            (list :buffer *buffer-name*)
-                                           (list :position *buffer-position*)))
+                                           (list :offset *buffer-position* 0)))
                                          (*compile-filename*
                                           (make-location
                                            (list :file *compile-filename*)
@@ -366,34 +361,33 @@
                                           (list :error "No location"))))))))
     (funcall fn)))
 
-(defimplementation swank-compile-file (*compile-filename* load-p
-				       &optional external-format)
-  (declare (ignore external-format))
+(defimplementation swank-compile-file (input-file output-file 
+				       load-p external-format
+                                       &key policy)
+  (declare (ignore external-format policy))
   (with-compilation-hooks ()
-    (let ((*buffer-name* nil))
-      (compile-file *compile-filename*)
-      (when load-p
-        (load (compile-file-pathname *compile-filename*))))))
+    (let ((*buffer-name* nil)
+	  (*compile-filename* input-file))
+      (multiple-value-bind (output-file warnings? failure?)
+	  (compile-file input-file :output-file output-file)
+	(values output-file warnings?
+		(or failure? (and load-p (load output-file))))))))
 
-(defimplementation swank-compile-string (string &key buffer position directory)
-  (declare (ignore directory))
+(defimplementation swank-compile-string (string &key buffer position filename
+					 policy)
+  (declare (ignore filename policy))
   (with-compilation-hooks ()
     (let ((*buffer-name* buffer)
           (*buffer-position* position)
           (*buffer-string* string))
       (funcall (compile nil (read-from-string
-                             (format nil "(~S () ~A)" 'lambda string)))))))
+                             (format nil "(~S () ~A)" 'lambda string))))
+      t)))
 
 ;;;; Inspecting
 
 ;; Hack to make swank.lisp load, at least
 (defclass file-stream ())
-
-(defclass corman-inspector (inspector)
-  ())
-
-(defimplementation make-default-inspector ()
-  (make-instance 'corman-inspector))
 
 (defun comma-separated (list &optional (callback (lambda (v)
                                                    `(:value ,v))))
@@ -401,10 +395,7 @@
               collect (funcall callback e)
               collect ", ")))
 
-(defmethod inspect-for-emacs ((class standard-class)
-                              (inspector corman-inspector))
-  (declare (ignore inspector))
-  (values "A class."
+(defmethod emacs-inspect ((class standard-class))
           `("Name: " (:value ,(class-name class))
             (:newline)
             "Super classes: "
@@ -438,13 +429,11 @@
                                          (lambda (class)
                                            `(:value ,class ,(princ-to-string (class-name class)))))
                   '("#<N/A (class not finalized)>"))
-            (:newline))))
+            (:newline)))
 
-(defmethod inspect-for-emacs ((slot cons) (inspector corman-inspector))
+(defmethod emacs-inspect ((slot cons))
   ;; Inspects slot definitions
-  (declare (ignore corman-inspector))
   (if (eq (car slot) :name)
-      (values "A slot." 
               `("Name: " (:value ,(swank-mop:slot-definition-name slot))
                          (:newline)
                          ,@(when (swank-mop:slot-definition-documentation slot)
@@ -456,15 +445,14 @@
                                              `(:value ,(swank-mop:slot-definition-initform slot))
                                              "#<unspecified>") (:newline)
                                              "Init function: " (:value ,(swank-mop:slot-definition-initfunction slot))
-                                             (:newline)))
+                                             (:newline))
       (call-next-method)))
   
-(defmethod inspect-for-emacs ((pathname pathnames::pathname-internal)
-                              inspector)
-  (declare (ignore inspector))
-  (values (if (wild-pathname-p pathname)
+(defmethod emacs-inspect ((pathname pathnames::pathname-internal))
+  (list*  (if (wild-pathname-p pathname)
               "A wild pathname."
               "A pathname.")
+	  '(:newline)
           (append (label-value-line*
                    ("Namestring" (namestring pathname))
                    ("Host"       (pathname-host pathname))
@@ -477,13 +465,11 @@
                               (not (probe-file pathname)))
                     (label-value-line "Truename" (truename pathname))))))
 
-(defmethod inspect-for-emacs ((o t) (inspector corman-inspector))
+(defmethod emacs-inspect ((o t))
   (cond ((cl::structurep o) (inspect-structure o))
 	(t (call-next-method))))
 
 (defun inspect-structure (o)
-  (values 
-   (format nil "~A is a structure" o)
    (let* ((template (cl::uref o 1))
 	  (num-slots (cl::struct-template-num-slots template)))
      (cond ((symbolp template)
@@ -492,7 +478,7 @@
 	   (t
 	    (loop for i below num-slots
 		  append (label-value-line (elt template (+ 6 (* i 5)))
-					   (cl::uref o (+ 2 i)))))))))
+					   (cl::uref o (+ 2 i))))))))
 
 
 ;;; Threads

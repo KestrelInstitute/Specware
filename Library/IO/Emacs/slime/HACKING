@@ -16,6 +16,17 @@ The Lisp code is organised into these files:
     The top-level server program, built from the other components.
     Uses swank-backend.lisp as an interface to the actual backends.
 
+  slime.el: 
+    The Superior Lisp Inferior Mode for Emacs, i.e. the Emacs frontend
+    that the user actually interacts with and that connects to the
+    SWANK server to send expressions to, and retrieve information from
+    the running Common Lisp system.
+    
+  contrib/*.lisp:
+    Lisp related code for add-ons to SLIME that are maintained by
+    their respective authors. Consult contrib/README for more
+    information.
+
 * ChangeLog
 
 For each change we make an entry in the ChangeLog file. This is
@@ -28,12 +39,13 @@ ChangeLog diffs are automatically sent to the slime-devel mailing list
 each day as a sort of digest summary of the slime-cvs list.
 
 There are good tips on writing ChangeLog entries in the GNU Coding Standards:
-  http://www.gnu.org/prep/standards_40.html#SEC40
+  http://www.gnu.org/prep/standards/html_node/Style-of-Change-Logs.html#Style-of-Change-Logs
 
 For information about Emacs's ChangeLog support see the `Change Log'
 and `Change Logs and VC' nodes of the Emacs manual:
-  http://www.gnu.org/software/emacs/manual/html_node/emacs_333.html#SEC333
-  http://www.gnu.org/software/emacs/manual/html_node/emacs_156.html#SEC156
+  http://www.gnu.org/software/emacs/manual/html_node/emacs/Change-Log.html#Change-Log
+  http://www.gnu.org/software/emacs/manual/html_node/emacs/Change-Logs-and-VC.html#Change-Logs-and-VC
+
 
 * Sending Patches
 
@@ -120,14 +132,27 @@ Emacs you can press `C-x n p' to narrow to this page, and then later
 * Coding style
 
 We like the fact that each function in SLIME will fit on a single
-screen, and would like to preserve this property! Beyond that we're
-not dogmatic :-)
+screen (80x20), and would like to preserve this property! Beyond that
+we're not dogmatic :-)
 
 In early discussions we all made happy noises about the advice in
 Norvig and Pitman's _Tutorial on Good Lisp Programming Style_:
   http://www.norvig.com/luv-slides.ps
 
+For Emacs Lisp, we try to follow the _Tips and Conventions_ in
+Appendix D of the GNU Emacs Lisp Reference Manual (see Info file
+`elisp', node `Tips').  
+
+We use Emacs conventions for docstrings: the first line should be a
+complete sentence to make the output of `apropos' look good.  We also
+use imperative verbs.
+
+The biggest problem with SLIME's code base is feature creep.  Keep in
+mind that the Right Thing isn't always the Smart Thing.  If you can't
+find an elegant solution to a problem then you're probably solving the
+wrong problem.  It's often a good idea to simplify the problem and to
+ignore rarely needed cases.
+
 Remember that to rewrite a program better is the sincerest form of
 code appreciation. When you can see a way to rewrite a part of SLIME
 better, please do so!
-
