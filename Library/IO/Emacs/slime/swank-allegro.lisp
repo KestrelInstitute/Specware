@@ -762,7 +762,7 @@
 
 (defimplementation thread-attributes (thread)
   (list :priority (mp:process-priority thread)
-        :times-resumed (mp:process-times-resumed thread)))
+        :times-resumed (mp::process-times-resumed thread)))
 
 (defimplementation make-lock (&key name)
   (mp:make-process-lock :name name))
