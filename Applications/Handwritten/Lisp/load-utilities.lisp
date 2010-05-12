@@ -193,7 +193,7 @@
   #+sbcl      sb-ext:*posix-argv*               ;; sbcl --noinform --end-runtime-options  --no-userinit --end-toplevel-options x y z   =>   ("sbcl" "x" "y" "z")
                                                 ;; sbcl x y z      =>   ("sbcl" "x" "y" "z")
                                                 ;; sbcl -- x y z   =>   ("sbcl" "--" "x" "y" "z")
-  #-allegro #-sbcl '()
+  #-(or allegro sbcl) '()
   )
 
 (defun user-command-line-arguments ()
