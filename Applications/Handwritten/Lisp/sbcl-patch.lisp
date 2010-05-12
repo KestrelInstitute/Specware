@@ -11,6 +11,20 @@
   (defparameter *default-package-use-list* '("CL")))
 
 (sb-ext:without-package-locks
+
+(if #+case-sensitive (find-symbol "use-list-packages" "sb-impl")
+    #-case-sensitive (find-symbol "USE-LIST-PACKAGES" "SB-IMPL")
+(defun use-list-packages (package package-designators)
+  (cond ((listp package-designators)
+         (mapcar #'find-undeleted-package-or-lose package-designators))
+        (package
+         ;; :default for an existing package means preserve the
+         ;; existing use list
+         (package-use-list package))
+        (t
+         ;; :default for a new package is the *default-package-use-list*
+         '#.*default-package-use-list*)))
+
 (defun %defpackage (name nicknames size shadows shadowing-imports
                     use imports interns exports implement lock doc-string
                     source-location)
@@ -96,6 +110,7 @@
     ;; Handle documentation.
     (setf (package-doc-string package) doc-string)
     package))
+)
 
 #-sb-xc-host
 (defun %defun (name def doc inline-lambda source-location)
