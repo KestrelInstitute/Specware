@@ -746,20 +746,28 @@ Haskell qualifying spec
 
  op haskellReservedWords: List String = ["class", "data", "deriving", "do", "import", "instance", "module",
                                          "newtype", "type", "where"]
- op disallowedVarNames: List String = []        % \_dots Don't know how to get all of them
+ op disallowedVarNames: List String = []        % !!!
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
     Qualified("List", "List"),
     Qualified("Compare", "Comparison")]
 
- op ppConstructor(c_nm: String, qid: QualifiedId): Pretty =
-   prString(if qid in? directConstructorTypes then ppIdStr c_nm
-              else qidToHaskellString qid^"__"^ppIdStr c_nm)
+ op constructorTranslation(c_nm: String, c: Context): Option String =
+   case specialOpInfo c (mkUnQualifiedId c_nm) of
+     | Some(tr_nm, None, false, false, true) | isUpperCase(tr_nm@0) ->
+       Some tr_nm
+     | _ -> None
 
- op ppConstructorTyped(c_nm: String, ty: Sort, spc: Spec): Pretty =
-   case unfoldToBaseNamedType(spc, ty) of
-     | Base(qid, _, _) -> ppConstructor(c_nm, qid)
+ op ppConstructor(c_nm: String, qid: QualifiedId, c: Context): Pretty =
+   case constructorTranslation(c_nm, c) of
+     | Some tr_c_nm -> prString tr_c_nm
+     | None -> prString(if qid in? directConstructorTypes then ppIdStr c_nm
+                         else qidToHaskellString qid^"__"^ppIdStr c_nm)
+
+ op ppConstructorTyped(c_nm: String, ty: Sort, c: Context): Pretty =
+   case unfoldToBaseNamedType(getSpec c, ty) of
+     | Base(qid, _, _) -> ppConstructor(c_nm, qid, c)
      | _ -> fail("Couldn't find coproduct type of constructor "^c_nm)
 
  op  ppIdInfo : List QualifiedId \_rightarrow Pretty
@@ -805,9 +813,9 @@ op ppOpIdInfo(qids: List QualifiedId): Pretty =
 	   | CoProduct(taggedSorts,_) \_rightarrow
              (let def ppTaggedSort (id,optTy) =
                 case optTy of
-                  | None \_rightarrow ppConstructor(id, mainId)
+                  | None \_rightarrow ppConstructor(id, mainId, c)
                   | Some ty \_rightarrow
-                    prConcat [ppConstructor(id, mainId), prSpace,
+                    prConcat [ppConstructor(id, mainId, c), prSpace,
                               case ty of
                                 | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
                                   prConcat(addSeparator prSpace
@@ -1455,23 +1463,23 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                               ppTermEncloseComplex? c Nonfix t1])
         | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) \_rightarrow
           let spc = getSpec c in
-          let constr_ty = range(spc,ty) in
-          if multiArgConstructor?(constr_id,constr_ty,spc) then
+          let constr_ty = range(spc, ty) in
+          if multiArgConstructor?(constr_id, constr_ty, spc) then
           %% Treat as curried
-             prBreak 2 [ppConstructorTyped(constr_id, constr_ty, spc),
+             prBreak 2 [ppConstructorTyped(constr_id, constr_ty, c),
                         prSpace,
                         prPostSep 2 blockFill prSpace
                           (map (ppTermEncloseComplex? c Nonfix)
                              (MS.termToList term2))]
-          else prConcat [ppConstructorTyped(constr_id, constr_ty, spc),
+          else prConcat [ppConstructorTyped(constr_id, constr_ty, c),
                          prSpace,
                          ppTerm c Nonfix term2]
         | (Lambda (match, _),_) \_rightarrow
           enclose?(parentTerm \_noteq Top,
-                   prBreakCat 0 [[prString "case ",
-                                  ppTerm c Top term2],
-                                 [prString " of ",
-                                 ppMatch c match]])
+                   prBreakCat 2 [[prString "case ",
+                                  ppTerm c Top term2,
+                                  prString " of "],
+                                 [ppMatch c match]])
         | (Fun (Project p, ty1, _), _) \_rightarrow
           let pid = projectorFun(p,ty1,getSpec c) in
           prConcat [prString pid,
@@ -1775,12 +1783,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
-   let def ppCase (pattern, _, term) =
+   let def ppCase (pattern, _, term): Pretty =
          prBreakCat 0 [[ppPattern c pattern None,
                         prString " -> "],
                        [ppTerm c Top term]]
    in
-     (prSep (-3) blockAll (prString " | ") (map ppCase cases))
+   prLinear 0 (map ppCase cases)
 
  op  ppPattern : Context \_rightarrow Pattern \_rightarrow Option String \_rightarrow Pretty
  def ppPattern c pattern wildstr = 
@@ -1793,7 +1801,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)],_)), _, _) ->
        prBreak 2 [ppPattern c hd wildstr, prSpace, prConcat[prString ": ", ppPattern c tl wildstr]]
      | EmbedPat (constr, pat, ty, _) \_rightarrow
-       prBreak 0 [ppConstructorTyped (constr, ty, getSpec c),
+       prBreak 0 [ppConstructorTyped (constr, ty, c),
                   case pat of
                     | None \_rightarrow prEmpty
                     | Some pat \_rightarrow
@@ -1988,9 +1996,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                then
                  case productOpt(spc,dom) of
                  | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
-                 | None -> ppConstructorTyped(id, rng, getSpec c)
-               else ppConstructorTyped(id, rng, getSpec c))
-          | None \_rightarrow ppConstructorTyped(id, ty, getSpec c))
+                 | None -> ppConstructorTyped(id, rng, c)
+               else ppConstructorTyped(id, rng, c))
+          | None \_rightarrow ppConstructorTyped(id, ty, c))
      | Embedded id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
