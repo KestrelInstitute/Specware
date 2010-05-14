@@ -20,7 +20,7 @@ Haskell qualifying spec
  type Pragma = String * String * String * Position
 
  type Context = {recursive?: Boolean,
-                 thy_name: String,
+                 spec_name: String,
 		 spec?: Option Spec,
                  currentUID: Option UnitId,
 		 trans_table: TransInfo,
@@ -37,12 +37,12 @@ Haskell qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {recursive?=_, thy_name=_, spec? = Some spc,
+ def getSpec {recursive?=_, spec_name=_, spec? = Some spc,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
               newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
- def getCurrentUID {recursive?=_, thy_name=_, spec?=_, currentUID = Some uid,
+ def getCurrentUID {recursive?=_, spec_name=_, spec?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
                     source_of_thy_morphism?=_, typeNameInfo=_} =
    uid
@@ -322,7 +322,7 @@ Haskell qualifying spec
                              | _ \_rightarrow ("", None)
     in
     let main_pp_val = ppValue {recursive? = recursive?,
-			       thy_name = case opt_nm of
+			       spec_name = case opt_nm of
                                             | Some nm \_rightarrow nm
                                             | None \_rightarrow thy_nm,
 			       spec? = None,
@@ -439,7 +439,8 @@ Haskell qualifying spec
     in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
-    prLinesCat 0 [[prString "import ", ppImports c spc.elements],
+    prLinesCat 0 [[prString "module ", prString c.spec_name, prString " where"],
+                  [prString "import ", ppImports c spc.elements],
 		  [ppSpecElements c spc (filter elementFilter spc.elements)]]
 
   op  elementFilter: SpecElement \_rightarrow Boolean
@@ -1410,13 +1411,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    result
 
  op makeOpName(nm: String): String =
-   "`"^downCase1 nm^"`"
+   if identifier? nm
+     then "`"^downCase1 nm^"`"
+     else nm
 
  op makeOperator(qid: QualifiedId): String =
    let main_id = mainId qid in
-   if identifier? main_id
-     then makeOpName main_id
-     else main_id
+   makeOpName main_id
 
  op identifier?(s: String): Boolean =
    s ~= "" && isAlpha(s@0)
