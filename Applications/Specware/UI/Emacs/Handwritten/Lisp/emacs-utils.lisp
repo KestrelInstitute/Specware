@@ -30,13 +30,13 @@ Notes:
 	     (find-package :Specware)
 	     (let ((x (find-symbol "*USING-SLIME-INTERFACE?*" :Specware)))
 	       (and x (symbol-value x))))
-	(funcall 'swank::eval-string-in-emacs string t)
+      (funcall 'swank::eval-string-in-emacs string)
       #+allegro
       (if (cl-user::under-ilisp?)
-	  (progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
-	(when lep::*connection*
-	  (lep::eval-in-emacs string)))
-      #-allegro (format t "~a" string))))
+          (progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
+          (when lep::*connection*
+            (lep::eval-in-emacs string)))
+        #-allegro (format t "~a" string))))
 
 (defun eval-with-emacs (string)
   (when *use-emacs-interface?*
