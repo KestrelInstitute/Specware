@@ -22,6 +22,7 @@ Haskell qualifying spec
  type Context = {recursive?: Boolean,
                  spec_name: String,
 		 spec?: Option Spec,
+                 expl_qualifiers: List String,
                  currentUID: Option UnitId,
 		 trans_table: TransInfo,
                  coercions: TypeCoercionTable,
@@ -37,12 +38,12 @@ Haskell qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {recursive?=_, spec_name=_, spec? = Some spc,
+ def getSpec {recursive?=_, spec_name=_, spec? = Some spc, expl_qualifiers=_,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
               newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
- def getCurrentUID {recursive?=_, spec_name=_, spec?=_, currentUID = Some uid,
+ def getCurrentUID {recursive?=_, spec_name=_, spec?=_, expl_qualifiers=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
                     source_of_thy_morphism?=_, typeNameInfo=_} =
    uid
@@ -176,13 +177,14 @@ Haskell qualifying spec
 
   op  ensureValuePrinted: Context \_rightarrow Value \_rightarrow String
   def ensureValuePrinted c val =
-    case uidStringPairForValue val of
+    case uidStringPairTermForValue val of
       | None \_rightarrow "Unknown"
-      | Some ((thy_nm, fil_nm, hash_ext),uid) \_rightarrow
+      | Some ((thy_nm, fil_nm, hash_ext), uid, _) \_rightarrow
         printValueIfNeeded(c, val, thy_nm, fil_nm, hash_ext, uid)
 
   op printValueIfNeeded
-       (c: Context, val: Value, thy_nm: String, fil_nm: String, hash_ext: String, uid: UnitId): String =
+       (c: Context, val: Value, thy_nm: String, fil_nm: String, hash_ext: String, uid: UnitId)
+       : String =
     let thy_fil_nm = fil_nm ^ hash_ext ^ ".hs" in
     let sw_fil_nm = fil_nm ^ ".sw" in
     let _ = if fileOlder?(sw_fil_nm, thy_fil_nm)
@@ -193,37 +195,34 @@ Haskell qualifying spec
 
   op  uidNamesForValue: Value \_rightarrow Option (String * String * UnitId)
   def uidNamesForValue val =
-    case uidStringPairForValue val of
+    case uidStringPairTermForValue val of
       | None \_rightarrow None
-      | Some((thynm, filnm, hash), uid) \_rightarrow Some(thynm ^ hash, filnm ^ hash, uid)
+      | Some((thynm, filnm, hash), uid, _) \_rightarrow Some(thynm ^ hash, filnm ^ hash, uid)
 
-  op  uidStringPairForValue: Value \_rightarrow Option ((String \_times String \_times String) \_times UnitId)
-  def uidStringPairForValue val =
+  op  uidStringPairTermForValue: Value \_rightarrow Option ((String \_times String \_times String) \_times UnitId \_times Term)
+  def uidStringPairTermForValue val =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None \_rightarrow None
       | Some global_context \_rightarrow
-    case findUnitIdForUnit(val, global_context) of
+    case findUnitIdTermForUnit(val, global_context) of
       | None \_rightarrow None
-      | Some uid \_rightarrow Some (unitIdToHaskellString uid, uid)
+      | Some (uid, sc_tm) \_rightarrow Some (unitIdToHaskellString uid, uid, sc_tm)
 
   op unitIdToHaskellString(uid: UnitId): (String \_times String \_times String) =
     case uid.hashSuffix of
       | Some loc_nm \_rightarrow (last uid.path, uidToHaskellName uid, "_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path, uidToHaskellName uid, "")
 
-  op haskellLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun",
-                                         "option", "string",
-                                         "lattices", "orderings", "sat", "relation", "record",
-                                         "gcd", "datatype", "recdef", "hilbert_choice"]
+  op haskellLibrarySpecNames: List String = []
   op thyName(spname: String): String =
-    if (map toLowerCase spname) in? haskellLibrarySpecNames
+    if spname in? haskellLibrarySpecNames
       then "SW_"^spname
       else spname
 
   op uidStringPairForValueOrTerm
        (c: Context, val: Value, sc_tm: Term)
        : Option((String \_times String \_times String) \_times Value \_times UnitId) =
-    case uidStringPairForValue val of
+    case uidStringPairTermForValue val of
       | None \_rightarrow
         (case uidStringPairForTerm(c, sc_tm) of
            | None \_rightarrow None
@@ -233,7 +232,7 @@ Haskell qualifying spec
            | Some real_val \_rightarrow
              Some((thyName thynm, sw_file, thyName thy_file ^ ".hs"),
                   val, uid))
-      | Some((thynm, filnm, hash), uid) \_rightarrow
+      | Some((thynm, filnm, hash), uid, _) \_rightarrow
         Some((thyName(thynm ^ hash),
               uidToFullPath uid ^ ".sw",
               thyName(filnm ^ hash) ^ ".hs"),
@@ -315,17 +314,24 @@ Haskell qualifying spec
       | Some val \_rightarrow toTerminal(showValue (val, recursive?, findUnitIdForUnitInCache val, None))
       | _ \_rightarrow toScreen "<Unknown UID>"
 
+  op findSpecQualifier(sc_tm: Term): Option String =
+    case sc_tm of
+      | (Qualify(_, qual), _) -> Some qual
+      | _ -> None
+
   op  showValue : Value \_times Boolean \_times Option UnitId \_times Option String \_rightarrow Text
   def showValue (value, recursive?, uid, opt_nm) =
-    let (thy_nm, val_uid) = case uidStringPairForValue value of
-                             | Some ((thy_nm, _, hash_nm), uid) \_rightarrow (thy_nm ^ hash_nm, Some uid)
-                             | _ \_rightarrow ("", None)
+    let (thy_nm, val_uid) =
+        case uidStringPairTermForValue value of
+          | Some ((thy_nm, _, hash_nm), uid, _) \_rightarrow (thy_nm ^ hash_nm, Some uid)
+          | _ \_rightarrow ("", None)
     in
     let main_pp_val = ppValue {recursive? = recursive?,
 			       spec_name = case opt_nm of
                                             | Some nm \_rightarrow nm
                                             | None \_rightarrow thy_nm,
 			       spec? = None,
+                               expl_qualifiers = [],
                                currentUID = case uid of
                                               | None \_rightarrow val_uid
                                               | _ \_rightarrow uid,
@@ -437,7 +443,10 @@ Haskell qualifying spec
                 then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
                 else spc
     in
-    let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
+    let c = c << {typeNameInfo = topLevelTypes spc,
+                  spec? = Some spc,
+                  expl_qualifiers = []}
+    in
     % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 [[prString "module ", prString c.spec_name, prString " where"],
                   [prString "import ", ppImports c spc.elements],
@@ -520,9 +529,17 @@ Haskell qualifying spec
 		    else toFile(thy_fil_nm,
                                 showValue(val, c.recursive?, Some uid, Some thy_nm))
 		  else ()
-	in prString (case thy_nm of
-		       | "Base" \_rightarrow "Base"
-		       | _ \_rightarrow thy_nm)
+	in
+        case thy_nm of
+          | "Base" \_rightarrow prString "Base"
+          | _ \_rightarrow
+        case uidStringPairTermForValue val of
+          | Some (_, _, sc_tm) | some?(findSpecQualifier sc_tm) ->
+            let Some qualifier = findSpecQualifier sc_tm in
+            prConcat ([prString "qualified ", prString thy_nm]
+                        ++ (if qualifier = thy_nm then []
+                            else [prString " as ", prString qualifier]))
+          | _ -> prString thy_nm
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
