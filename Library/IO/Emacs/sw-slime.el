@@ -296,24 +296,33 @@ to end end."
       (funcall old-slime-repl-insert-prompt)  
     (progn
       (goto-char slime-repl-input-start-mark)
-  (slime-save-marker slime-output-start
-    (slime-save-marker slime-output-end
-      (unless (bolp) (insert-before-markers "\n"))
-      (let ((prompt-start (point)))
-        (slime-propertize-region
-            '(face slime-repl-prompt-face read-only t intangible t
-                   slime-repl-prompt t
-                   ;; emacs stuff
-                   rear-nonsticky (slime-repl-prompt read-only face intangible)
-                   ;; xemacs stuff
-                   start-open t end-open t)
-          (insert-before-markers *sw-slime-prompt*))
-        (set-marker slime-repl-prompt-start-mark prompt-start)
-        (while (not (null *sw-after-prompt-forms*))
-	    (eval (pop *sw-after-prompt-forms*)))
-        prompt-start))))))
+      (slime-save-marker slime-output-start
+        (slime-save-marker slime-output-end
+          (unless (bolp) (insert-before-markers "\n"))
+          (let ((prompt-start (point)))
+            (slime-propertize-region
+                '(face slime-repl-prompt-face read-only t intangible t
+                       slime-repl-prompt t
+                       ;; emacs stuff
+                       rear-nonsticky (slime-repl-prompt read-only face intangible)
+                       ;; xemacs stuff
+                       start-open t end-open t)
+              (insert-before-markers *sw-slime-prompt*))
+            (set-marker slime-repl-prompt-start-mark prompt-start)
+            prompt-start))))))
 
-
+(defun slime-repl-show-maximum-output ()
+  "Put the end of the buffer at the bottom of the window."
+  (when (eobp)
+    (let ((win (if (eq (window-buffer) (current-buffer))
+                   (selected-window)
+                   (get-buffer-window (current-buffer) t))))
+      (when win
+        (with-selected-window win
+          (set-window-point win (point-max)) 
+          (recenter -1)
+          (while (not (null *sw-after-prompt-forms*))
+            (eval (pop *sw-after-prompt-forms*))))))))
 
 ;;; Mods to slime.el and slime-repl.el
 (defun slime-repl-emit (string)
