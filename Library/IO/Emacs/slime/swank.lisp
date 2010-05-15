@@ -1870,6 +1870,21 @@ converted to lower case."
 	       ((:ok value) value)
 	       ((:abort) (abort))))))))
 
+;;; sjw
+(defun eval-string-in-emacs (form-str &optional nowait)
+  "Eval FORM in Emacs."
+  (cond (nowait 
+         (send-to-emacs `(:eval-no-wait ,form-str)))
+        (t
+         (force-output)
+         (let ((tag (make-tag)))
+	   (send-to-emacs `(:eval ,(current-thread-id) ,tag 
+				  ,form-str))
+	   (let ((value (caddr (wait-for-event `(:emacs-return ,tag result)))))
+	     (destructure-case value
+	       ((:ok value) value)
+	       ((:abort) (abort))))))))
+
 (defvar *swank-wire-protocol-version* nil
   "The version of the swank/slime communication protocol.")
 
