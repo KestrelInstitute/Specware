@@ -22,7 +22,7 @@
       load-path)
 
 ;; Need in XEmacs version 21.5 for x-symbol
-(when (featurep 'mule)
+(when (and (featurep 'mule) (fboundp 'define-specifier-tag))
   (define-specifier-tag 'mule-fonts))
 
 (push (concat *specware-emacs* "x-symbol/")
