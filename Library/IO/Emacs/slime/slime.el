@@ -1175,7 +1175,12 @@ DIRECTORY change to this directory before starting the process.
   (let ((coding-system (or coding-system slime-net-coding-system)))
     (slime-check-coding-system coding-system)
     (message "Connecting to Swank on port %S.." port)
-    (let* ((process (slime-net-connect host port coding-system))
+    (let* ((port 
+            ;; deal with apparent bug in some xemacs versions
+            ;; that seem unprepared for ports as numbers
+            ;; e.g. 21.4.15
+            (if *windows-system-p* port (format "%S" port)))
+           (process (slime-net-connect host port coding-system))
            (slime-dispatching-connection process))
       (slime-setup-connection process))))
 
