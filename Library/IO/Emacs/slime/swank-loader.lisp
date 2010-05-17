@@ -253,11 +253,15 @@ If LOAD is true, load the fasl file."
 (defun setup ()
   (load-site-init-file *source-directory*)
   (load-user-init-file)
-  (when (#-clisp probe-file
-         #+clisp ext:probe-directory        
-         (contrib-dir *source-directory*))
-    (eval `(pushnew 'compile-contribs ,(q "swank::*after-init-hook*"))))
-  (funcall (q "swank::init")))
+  (let ((x (find-symbol "*AFTER-INIT-HOOK*" "SWANK"))
+        (y (find-symbol "INIT" "SWANK")))
+    (when (#-clisp probe-file
+                   #+clisp ext:probe-directory        
+                   (contrib-dir *source-directory*))
+      (when (symbol-value x)
+        (eval `(pushnew 'compile-contribs ,(q "swank::*after-init-hook*")))))
+    (when(symbol-function y)
+      (funcall (q "swank::init")))))
 
 (defun init (&key delete reload load-contribs (setup t))
   "Load SWANK and initialize some global variables.
@@ -272,10 +276,13 @@ global variabes in SWANK."
          (load-swank))
         (t 
          (warn "Not reloading SWANK.  Package already exists.")))
+  (let ((x (find-symbol "*AFTER-INIT-HOOK*" "SWANK")))
   (when load-contribs
     (compile-contribs :load t))
   (when setup
-    (setup)))
+    (setup))))
+
+         
 
 (defun dump-image (filename)
   (init :setup nil)
