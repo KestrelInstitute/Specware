@@ -41,7 +41,6 @@ end-proof
 
 proof Haskell ThyMorphism
   type Bool.Bool -> Bool
-  Bool.TRUE -> TRUE
 end-proof
 
 endspec
