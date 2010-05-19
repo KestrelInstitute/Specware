@@ -22,7 +22,7 @@ Haskell qualifying spec
  type Context = {recursive?: Boolean,
                  spec_name: String,
 		 spec?: Option Spec,
-                 expl_qualifiers: List String,
+                 qualifier?: Option String,
                  currentUID: Option UnitId,
 		 trans_table: TransInfo,
                  coercions: TypeCoercionTable,
@@ -38,12 +38,12 @@ Haskell qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {recursive?=_, spec_name=_, spec? = Some spc, expl_qualifiers=_,
+ def getSpec {recursive?=_, spec_name=_, spec? = Some spc, qualifier?=_,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
               newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
- def getCurrentUID {recursive?=_, spec_name=_, spec?=_, expl_qualifiers=_, currentUID = Some uid,
+ def getCurrentUID {recursive?=_, spec_name=_, spec?=_, qualifier?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
                     source_of_thy_morphism?=_, typeNameInfo=_} =
    uid
@@ -319,19 +319,21 @@ Haskell qualifying spec
       | (Qualify(_, qual), _) -> Some qual
       | _ -> None
 
+  op dummySpecCalcTerm: Term = (Spec [], noPos)
+
   op  showValue : Value \_times Boolean \_times Option UnitId \_times Option String \_rightarrow Text
   def showValue (value, recursive?, uid, opt_nm) =
-    let (thy_nm, val_uid) =
+    let (thy_nm, val_uid, sc_tm) =
         case uidStringPairTermForValue value of
-          | Some ((thy_nm, _, hash_nm), uid, _) \_rightarrow (thy_nm ^ hash_nm, Some uid)
-          | _ \_rightarrow ("", None)
+          | Some ((thy_nm, _, hash_nm), uid, sc_tm) \_rightarrow (thy_nm ^ hash_nm, Some uid, sc_tm)
+          | _ \_rightarrow ("", None, dummySpecCalcTerm)
     in
     let main_pp_val = ppValue {recursive? = recursive?,
 			       spec_name = case opt_nm of
                                             | Some nm \_rightarrow nm
                                             | None \_rightarrow thy_nm,
 			       spec? = None,
-                               expl_qualifiers = [],
+                               qualifier? = findSpecQualifier sc_tm,
                                currentUID = case uid of
                                               | None \_rightarrow val_uid
                                               | _ \_rightarrow uid,
@@ -444,8 +446,7 @@ Haskell qualifying spec
                 else spc
     in
     let c = c << {typeNameInfo = topLevelTypes spc,
-                  spec? = Some spc,
-                  expl_qualifiers = []}
+                  spec? = Some spc}
     in
     % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 [[prString "module ", prString c.spec_name, prString " where"],
@@ -722,20 +723,21 @@ Haskell qualifying spec
      | _ \_rightarrow None
 
 
- op findPragmaNamed(elts: SpecElements, qid as (Qualified(q, nm)): QualifiedId, opt_prag: Option Pragma)
+ op findPragmaNamed
+      (elts: SpecElements, qid as (Qualified(q, nm)): QualifiedId, opt_prag: Option Pragma, c: Context)
      : Option Pragma =
    % let _ = writeLine("findPragmaNamed: "^printQualifiedId qid^" opt_prag: "^anyToString opt_prag) in
    case findPragmaNamed1(elts, q^"__"^nm) of
      | Some p \_rightarrow Some p
      | None \_rightarrow
-   case findPragmaNamed1(elts, qidToHaskellString qid) of   % Allow Haskell name
+   case findPragmaNamed1(elts, qidToHaskellString c qid false) of   % Allow Haskell name
      | Some p \_rightarrow Some p
      | None \_rightarrow
    %% Try without qualifier
    case findPragmaNamed1(elts, nm) of
      | Some p \_rightarrow Some p
      | None \_rightarrow                          % Allow Haskell name
-   case findPragmaNamed1(elts, ppIdStr nm) of
+   case findPragmaNamed1(elts, ppIdStr nm false) of
      | Some p \_rightarrow Some p
      | None \_rightarrow opt_prag                  
 
@@ -780,26 +782,25 @@ Haskell qualifying spec
  op ppConstructor(c_nm: String, qid: QualifiedId, c: Context): Pretty =
    case constructorTranslation(c_nm, c) of
      | Some tr_c_nm -> prString tr_c_nm
-     | None -> prString(if qid in? directConstructorTypes then ppIdStr c_nm
-                         else qidToHaskellString qid^"__"^ppIdStr c_nm)
+     | None -> prString(if qid in? directConstructorTypes then ppIdStr c_nm true
+                         else qidToHaskellString c qid true ^ "__" ^ c_nm)
 
  op ppConstructorTyped(c_nm: String, ty: Sort, c: Context): Pretty =
    case unfoldToBaseNamedType(getSpec c, ty) of
      | Base(qid, _, _) -> ppConstructor(c_nm, qid, c)
      | _ -> fail("Couldn't find coproduct type of constructor "^c_nm)
 
- op  ppIdInfo : List QualifiedId \_rightarrow Pretty
- def ppIdInfo qids =
+ op ppIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    let qid = head qids in
-   ppOpQualifiedId0 qid
+   ppOpQualifiedId0 c qid
 
-op ppTypeIdInfo(qids: List QualifiedId): Pretty =
+op ppTypeIdInfo (c: Context) (qids: List QualifiedId): Pretty =
   let qid = head qids in
-   ppTyQualifiedId qid
+   ppTyQualifiedId c qid
 
-op ppOpIdInfo(qids: List QualifiedId): Pretty =
+op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
   let qid = head qids in
-   ppOpQualifiedId0 qid
+   ppOpQualifiedId0 c qid
 
  op upCase1(nm: String): String =
    if nm = "" then ""
@@ -809,12 +810,12 @@ op ppOpIdInfo(qids: List QualifiedId): Pretty =
    if nm = "" then ""
      else show(toLowerCase(nm@0)) ^ subFromTo(nm, 1, length nm)
 
- op printTypeQid(qid: QualifiedId): Pretty =
-   string(upCase1(qidToHaskellString qid))
+ op printTypeQid (c: Context) (qid: QualifiedId): Pretty =
+   prString(qidToHaskellString c qid true)
 
- op mkFieldName(nm: String): String = ppIdStr nm ^ "__fld"
- op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String =
-   downCase1(qidToHaskellString qid)^"__"^ppIdStr nm
+ op mkFieldName(nm: String): String = ppIdStr nm false ^ "__fld"
+ op mkNamedRecordFieldName (c: Context) (qid: QualifiedId, nm: String): String =
+   (qidToHaskellString c qid false)^"__"^nm
 
  op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
@@ -842,35 +843,35 @@ op ppOpIdInfo(qids: List QualifiedId): Pretty =
               in
               prBreakCat 2
                 [[prString "data ",
-                  ppTypeIdInfo aliases,
+                  ppTypeIdInfo c aliases,
                   ppTyVars tvs],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
 	   | Product (fields,_) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
 	     prConcat
 	       [prString "data ",
                 ppTyVars tvs,
-                ppTypeIdInfo aliases,
+                ppTypeIdInfo c aliases,
                 prString " = ",
-                ppTypeIdInfo aliases,
+                ppTypeIdInfo c aliases,
                 prString " {",
                 prPostSep 0 blockLinear (prString ", ")
                   (map (\_lambda (fldname, fldty) \_rightarrow
-                          prConcat [prString (mkNamedRecordFieldName(mainId, fldname)),
+                          prConcat [prString (mkNamedRecordFieldName c (mainId, fldname)),
                                     prString " :: ",
                                     ppType c Top fldty])
                      fields),
                 prString "}"]
-	   | _ \_rightarrow
-	     prBreakCat 2
-	       [[prString "type ",
-		 ppTyVars tvs,
-		 ppTypeIdInfo aliases,
-		 prString " = "],
-		[ppType c Top ty]]
+	   | _ \_rightarrow prEmpty
+	    % prBreakCat 2
+%	       [[prString "type ",
+%		 ppTyVars tvs,
+%		 ppTypeIdInfo c aliases,
+%		 prString " = "],
+%		[ppType c Top ty]]
      else prBreakCat 2                  % ??? Error (not executable)
 	    [[prString "type ",
 	      ppTyVars tvs,
-	      ppTypeIdInfo aliases]]
+	      ppTypeIdInfo c aliases]]
 
  op  ppTyVars : TyVars \_rightarrow Pretty
  def ppTyVars tvs =
@@ -1045,7 +1046,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   let c = c << {newVarCount = Ref 0} in
   let mainId = head aliases in
   % let _ = writeLine("Processing "^printQualifiedId mainId) in
-  let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
+  let opt_prag = findPragmaNamed(elems, mainId, opt_prag, c) in
   let (specialOpInfo?, no_def?, mainId, fixity) =
       case specialOpInfo c mainId of
         | Some (haskell_id, infix?, _, _, no_def?) \_rightarrow
@@ -1064,7 +1065,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   let aliases = [mainId] in
   let decl_list = 
         if decl?
-          then [[ppOpIdInfo aliases,
+          then [[ppOpIdInfo c aliases,
                  prString " :: ",
                  (case fixity of
                     | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
@@ -1077,7 +1078,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                         | NotAssoc \_rightarrow prString "infix ",
                        prString (show (if specialOpInfo? then prec else convertPrecNum prec)),
                        prSpace,
-                       ppInfixId (mainId)]]
+                       ppInfixId c mainId]]
                    | _ \_rightarrow [])
            else []
   in
@@ -1409,12 +1410,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      | None -> None)
                 | _ ->
                if embed? Infix fx?
-                 then Some(makeOperator qid)
+                 then Some(makeOperator c qid)
                else
                case AnnSpec.findTheOp(spc,qid) of
                  | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
                    let main_id = mainId qid in
-                   Some(makeOperator qid)
+                   Some(makeOperator c qid)
                  | _ -> None)
            | And       \_rightarrow Some "&&"
            | Or        \_rightarrow Some "||"
@@ -1432,9 +1433,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      then "`"^downCase1 nm^"`"
      else nm
 
- op makeOperator(qid: QualifiedId): String =
-   let main_id = mainId qid in
-   makeOpName main_id
+ op makeOperator (c:Context) (qid as Qualified(_, id): QualifiedId): String =
+   let nm = qidToHaskellString c qid false in
+   if identifier? id
+     then "`"^nm^"`"
+     else nm
 
  op identifier?(s: String): Boolean =
    s ~= "" && isAlpha(s@0)
@@ -1499,7 +1502,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                   prString " of "],
                                  [ppMatch c match]])
         | (Fun (Project p, ty1, _), _) \_rightarrow
-          let pid = projectorFun(p,ty1,getSpec c) in
+          let pid = projectorFun(p, ty1, c) in
           prConcat [prString pid,
                     prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]
 %         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e \_longrightarrow 0 <= e
@@ -1593,7 +1596,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                    prBreak 2 [ppTerm c (Infix(Left,10)) t1,
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
-                                                           | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
+                                                           | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
                                                            | _ -> mkFieldName x),
                                                prString " = ",
                                                ppTerm c Top y]
@@ -1662,14 +1665,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             in
             let def ppField (x,y) =
                   prConcat [prString (case record_type_qid of
-                                      | Some(qid) -> mkNamedRecordFieldName(qid, x)
+                                      | Some(qid) -> mkNamedRecordFieldName c (qid, x)
                                       | None -> mkFieldName x),
                             prString " = ",
                             ppTerm c Top y]
             in
             case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid qid, 
+              prConcat [printTypeQid c qid, 
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
@@ -1686,10 +1689,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        enclose?(case parentTerm of
                   | Infix(_,prec) \_rightarrow true  % prec > 18
                   | _ \_rightarrow false,
-                prBreakCat 2 [[ppBinder binder,
-                               prConcat(addSeparator prSpace (map (ppVar c) vars)),
-                               prString ". "],
-                              [ppTerm c Top term]])
+                prString("error \"Trying to evaluate a"
+                           ^ (case binder of
+                              | Forall -> " univeral quanitification."
+                              | Exists -> "n existential quanitification."
+                              | Exists1 -> "n exist1 quanitification.")
+                           ^ "\""))
      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
        prApply(Lambda([(p, trueTerm ,bod)], a), t)
      | Let (decls,term,_) \_rightarrow
@@ -1756,8 +1761,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | _ -> ty)
      | _ -> ty
 
- op  projectorFun: String * Sort * Spec \_rightarrow String
- def projectorFun (p, s, spc) =
+ op  projectorFun: String * Sort * Context \_rightarrow String
+ def projectorFun (p, s, c) =
+   let spc = getSpec c in
    let (prod_ty, arity) = case sortArity(spc, s) of
                             | None \_rightarrow (s,1)
                             | Some pr \_rightarrow pr
@@ -1774,7 +1780,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
      | _ \_rightarrow
    case unfoldToBaseNamedType(spc, prod_ty) of
-     | Base(qid, _, _) -> mkNamedRecordFieldName(qid,p)
+     | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,p)
      | _ -> mkFieldName p
 
  op  ppBinder : Binder \_rightarrow Pretty
@@ -1786,7 +1792,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op ppVarStr(nm: String): Pretty =
    if nm in? disallowedVarNames then prString(nm^"__v")
-     else prString (ppIdStr nm)
+     else prString (ppIdStr nm false)
 
  op  ppVarWithoutSort : Var \_rightarrow Pretty
  def ppVarWithoutSort (id, _(* ty *)) =
@@ -1860,14 +1866,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            in
            let def ppField (x,pat) =
                  prConcat [prString (case record_type_qid of
-                                      | Some(qid) -> mkNamedRecordFieldName(qid, x)
+                                      | Some(qid) -> mkNamedRecordFieldName c (qid, x)
                                       | None -> mkFieldName x),
                            prString "=",
                            ppPattern c pat (extendWild wildstr x)]
            in
            case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid qid, 
+              prConcat [printTypeQid c qid, 
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
@@ -2033,24 +2039,24 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
- op qidToHaskellString(Qualified (qualifier,id): QualifiedId): String =
-   if qualifier = UnQualified \_or qualifier in? omittedQualifiers || true then
+ op qidToHaskellString (c: Context) (Qualified (qualifier,id): QualifiedId) (upper?: Bool): String =
+   if qualifier = UnQualified \_or qualifier in? omittedQualifiers  \_or Some qualifier = c.qualifier? then
      if id in? disallowedVarNames then id ^ "__c"
-       else ppIdStr id
+       else ppIdStr id upper?
    else
-     ppIdStr qualifier ^ "__" ^ ppIdStr id
+     ppIdStr qualifier true ^ "." ^ ppIdStr id upper?
 
- op ppTyQualifiedId (qid: QualifiedId): Pretty =
-   prString(upCase1(qidToHaskellString qid))
+ op ppTyQualifiedId (c: Context) (qid: QualifiedId): Pretty =
+   prString(qidToHaskellString c qid true)
 
- op ppOpQualifiedId0 (qid: QualifiedId): Pretty =
-   prString(downCase1(qidToHaskellString qid))
+ op ppOpQualifiedId0 (c: Context) (qid: QualifiedId): Pretty =
+   prString(qidToHaskellString c qid false)
 
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
      | Some(s,_,_,_,_) \_rightarrow prString s
-     | None \_rightarrow ppOpQualifiedId0 qid
+     | None \_rightarrow ppOpQualifiedId0 c qid
 
  %% May only need ops that can be unary
  op overloadedHaskellOps: List String = ["+","-","^","abs","min","max"]
@@ -2076,7 +2082,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %      | Qualified("Char","Char") \_rightarrow prString "char"
 %      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
 %      | Qualified("Integer","Integer") \_rightarrow prString "int"
-     | _ \_rightarrow ppTyQualifiedId qid
+     | _ \_rightarrow ppTyQualifiedId c qid
 
 
  op  isSimpleSort? : Sort \_rightarrow Boolean
@@ -2203,7 +2209,7 @@ def termFixity c term =
                 case fixity of
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
                   | Nonfix \_rightarrow (None, Nonfix, false, false)
-                  | Infix(assoc, precnum) -> (Some(ppInfixId id), Infix(assoc, convertPrecNum precnum), true, false))
+                  | Infix(assoc, precnum) -> (Some(ppInfixId c id), Infix(assoc, convertPrecNum precnum), true, false))
          | And            -> (Some(prString "&&"), Infix (Right, 3),true, false)
          | Or             -> (Some(prString "||"), Infix (Right, 2),true, false)
          | Implies        -> (Some(prString "==>"), Infix (Right, 1), true, false) 
@@ -2232,7 +2238,7 @@ op ppTermEncloseComplex? (c: Context) (parentTerm: ParentTerm) (term: MS.Term): 
 
 def prSpace = prString " "
 
-def ppInfixId(qid: QualifiedId): Pretty = prString (makeOperator qid)
+def ppInfixId (c: Context)(qid: QualifiedId): Pretty = prString (makeOperator c qid)
 
 op infixId(id: String): String =
   let idarray = explode(id) in
@@ -2253,15 +2259,16 @@ op infixDefId(id: String): String =
                   | (c,id) -> show(c)^id) "" idarray
   in id
 
-op  ppIdStr: String -> String
-def ppIdStr id =
-  let idarray = explode(id) in
-  let def att(id, s) =
-        (if id = "" then "e" else id) ^ s
-  in
-  let id = foldl (\_lambda(id,#?) -> att(id, "_p")
-                  | (id,c) -> id ^ show c) "" idarray
-  in id
+op  ppIdStr (id: String) (up?: Bool): String =
+  case explode(id) of
+    | [] -> "e"
+    | c0 :: r_chars ->
+      let chars = (if up? then toUpperCase c0 else toLowerCase c0) :: r_chars in
+      let def att(id, s) = (if id = "" then "e" else id) ^ s
+      in
+      let id = foldl (\_lambda(id,#?) -> att(id, "_p")
+                      | (id,c) -> id ^ show c) "" chars
+      in id
 
 op  isSimpleTerm? : MS.Term \_rightarrow Boolean
 def isSimpleTerm? trm =
