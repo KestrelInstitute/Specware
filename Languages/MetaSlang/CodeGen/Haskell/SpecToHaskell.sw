@@ -410,7 +410,9 @@ Haskell qualifying spec
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
-    let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
+    %% Get rid of non-haskell pragmas
+    let rel_elements = filter haskellElement? spc.elements in
+    let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
@@ -449,9 +451,16 @@ Haskell qualifying spec
                   spec? = Some spc}
     in
     % let _ = writeLine("n:\n"^printSpec spc) in
-    prLinesCat 0 [[prString "module ", prString c.spec_name, prString " where"],
-                  [prString "import ", ppImports c spc.elements],
-		  [ppSpecElements c spc (filter elementFilter spc.elements)]]
+    prLinesCat 0 ([[prString "module ", prString c.spec_name, prString " where"]]
+                  ++ (ppImports c spc.elements)
+		  ++ [[ppSpecElements c spc (filter elementFilter spc.elements)]])
+
+  op  haskellElement?: SpecElement \_rightarrow Boolean
+  def haskellElement? elt =
+    case elt of
+      | Pragma("proof", prag_str, "end-proof", _) | haskellPragma? prag_str \_rightarrow true
+      | Pragma _ \_rightarrow false
+      | _ \_rightarrow true
 
   op  elementFilter: SpecElement \_rightarrow Boolean
   def elementFilter elt =
@@ -495,18 +504,18 @@ Haskell qualifying spec
 
   def baseSpecName = "Empty"
 
-  op  ppImports: Context \_rightarrow SpecElements \_rightarrow Pretty
+  op  ppImports: Context \_rightarrow SpecElements \_rightarrow List(List Pretty)
   def ppImports c elems =
     let imports_from_thy_morphism = thyMorphismImports c in
     let explicit_imports =
         mapPartial (\_lambda el \_rightarrow
 		     case el of
-		       | Import(imp_sc_tm, im_sp, _, _) \_rightarrow Some (ppImport c imp_sc_tm im_sp)
+		       | Import(imp_sc_tm, im_sp, _, _) \_rightarrow ppImport c imp_sc_tm im_sp
 		       | _ \_rightarrow None)
            elems
-    in case explicit_imports ++ imports_from_thy_morphism of
-      | [] \_rightarrow prString baseSpecName
-      | imports \_rightarrow prPostSep 0 blockFill prSpace imports
+    in
+    map (fn im -> [prConcat [prString "import ", im]])
+      (explicit_imports ++ imports_from_thy_morphism)
 
   op thyMorphismImports (c:Context): List Pretty =
     map prString c.trans_table.thy_imports
@@ -518,11 +527,14 @@ Haskell qualifying spec
       | (SortDef (type_id, _)) :: _ \_rightarrow Some type_id
       | _ :: r \_rightarrow firstTypeDef r
 
-  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Pretty
+  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Option Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
-      | None \_rightarrow prString "<UnknownSpec>"
+      | None \_rightarrow Some(prString "<UnknownSpec>")
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
+        case thy_nm of
+          | "IsabelleExtensions" \_rightarrow None
+          | _ \_rightarrow
         let _ = if c.recursive?
 	          then
 		    if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
@@ -532,15 +544,15 @@ Haskell qualifying spec
 		  else ()
 	in
         case thy_nm of
-          | "Base" \_rightarrow prString "Base"
+          | "Base" \_rightarrow Some(prString "SW_Base")
           | _ \_rightarrow
         case uidStringPairTermForValue val of
           | Some (_, _, sc_tm) | some?(findSpecQualifier sc_tm) ->
             let Some qualifier = findSpecQualifier sc_tm in
-            prConcat ([prString "qualified ", prString thy_nm]
-                        ++ (if qualifier = thy_nm then []
-                            else [prString " as ", prString qualifier]))
-          | _ -> prString thy_nm
+            Some(prConcat ([prString "qualified ", prString thy_nm]
+                             ++ (if qualifier = thy_nm then []
+                                 else [prString " as ", prString qualifier])))
+          | _ -> Some(prString thy_nm)
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
@@ -657,12 +669,11 @@ Haskell qualifying spec
    in
    subFromTo(s, 0, i+1) ^ "<" ^ subFromTo(s, i+2, j+1) ^ ">" ^ specwareToHaskellString(subFromTo(s, j+1, len))
 
-  op  haskellPragma?(s: String): Boolean =
+  op haskellPragma?(s: String): Boolean =
     let s = stripSpaces s in
     let len = length s in
-    len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
-	       pr_type = "Haskell" \_or pr_type = "haskell" \_or pr_type = "All")
-    \_or (len > 13 \_and subFromTo(s, 0, 14) = "Simplification")
+    len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
+	       pr_type = "Haskell" \_or pr_type = "haskell")
 
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
@@ -1679,13 +1690,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             | None ->
               let _ = writeLine("ppTerm can't determine name of record:\n"^printSort recd_ty) in
               prString "{Can't determine name of record!}")
-     | The (var,term,_) \_rightarrow  %% Not exec!!
-       prBreak 0 [prString "(THE ",
-                  ppVar c var,
-                  prString ". ",
-                  ppTerm c Top term,
-                  prString ")"]
-     | Bind (binder,vars,term,_) \_rightarrow  %% Not exec!!
+     | The (var,term,pos) \_rightarrow    %% Not exec!!
+       let _ = warn("Translating a non-executable expression at "^printAll pos) in
+       prString("error \"Trying to evaluate a \\\"the\\\" expression.\"")
+     | Bind (binder,vars,term,pos) \_rightarrow  %% Not exec!!
+       let _ = warn("Translating a non-executable expression at "^printAll pos) in
        enclose?(case parentTerm of
                   | Infix(_,prec) \_rightarrow true  % prec > 18
                   | _ \_rightarrow false,
@@ -2046,11 +2055,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    else
      ppIdStr qualifier true ^ "." ^ ppIdStr id upper?
 
- op ppTyQualifiedId (c: Context) (qid: QualifiedId): Pretty =
-   prString(qidToHaskellString c qid true)
+ op ppTyQualifiedId (c: Context) (qid as Qualified(_, id): QualifiedId): Pretty =
+   let nm = qidToHaskellString c qid true in
+   prString(nm)
 
- op ppOpQualifiedId0 (c: Context) (qid: QualifiedId): Pretty =
-   prString(qidToHaskellString c qid false)
+ op ppOpQualifiedId0 (c: Context) (qid as Qualified(_, id): QualifiedId): Pretty =
+   let nm = qidToHaskellString c qid false in
+   prString(if identifier? nm
+              then nm
+              else "("^nm^")")
 
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
