@@ -1164,9 +1164,7 @@ proof Haskell Thy_Morphism
  type Nat.Nat     -> Int
  Integer.zero     -> 0
  Integer.one      -> 1
- Integer.ipred    -> pred
- Integer.isucc    -> succ
- IntegerAux.-     -> -
+ IntegerAux.-     -> negate
  Integer.+        -> +     Left  6
  Integer.-        -> -     Left  6
  Integer.*        -> *     Left  7
