@@ -230,7 +230,7 @@ UnitId_Dependency.
        { gCtxt <- getGlobalContext;
 	 setGlobalContext (mapPartial (fn x as (val,_,_,_) ->
 				       case val of
-					 | InProcess -> None
+					 | InProcess mx -> (releaseMutex mx; None)
 					 | _ -> Some x)
 		           gCtxt)
        };

@@ -70,7 +70,7 @@ axioms, etc.
 		(value,iTS,depUIDs) <- evaluateTermInfo term;
 		(case coerceToSpec value of
 		   | Spec _ -> return (max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
-		   | InProcess -> 
+		   | InProcess _ -> 
 		     (case (valueOf term) of
 			| UnitId (UnitId_Relative   x) -> raise (CircularDefinition x)
 			| UnitId (SpecPath_Relative x) -> raise (CircularDefinition x)

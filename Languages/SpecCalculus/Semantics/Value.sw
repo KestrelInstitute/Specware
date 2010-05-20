@@ -3,6 +3,7 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/Specs/Categories/AsRecord  % Morphism
   import /Provers/Proof                                  % Proof
   import /Library/IO/Primitive/IO                        % Time
+  import /Library/Algorithms/Thread                      % Mutex
 
   type SpecCalc.ValueInfo     = Value * TimeStamp * UnitId_Dependency
   type SpecCalc.ValueTermInfo = Value * TimeStamp * UnitId_Dependency * SCTerm
@@ -18,7 +19,7 @@ SpecCalc qualifying spec
     | Diag        SpecDiagram       
     | Colimit     SpecInitialCocone 
     | Proof       Proof
-    | InProcess			  % Used for catching circular definitions
+    | InProcess	  Mutex		  % Used for catching circular definitions
     | UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
    %| DiagMorph
     | Other       OtherValue      % Used for extensions to Specware

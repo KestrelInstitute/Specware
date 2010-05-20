@@ -511,7 +511,7 @@ SpecCalc qualifying spec
       | Diag        spec_diagram  -> ppDiagram    spec_diagram
       | Colimit     spec_colimit  -> ppColimit    spec_colimit
       | Other       other_value   -> ppOtherValue other_value
-      | InProcess                 -> ppString "InProcess"
+      | InProcess   _             -> ppString "InProcess"
       | UnEvaluated _             -> ppString "some unevaluated term"
       | _                         -> ppString "<unrecognized value>"
 

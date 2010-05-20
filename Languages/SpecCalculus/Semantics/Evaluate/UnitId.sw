@@ -58,7 +58,7 @@ These are called only from evaluateUID.
 	   (case optValue of      
 	      | Some (value,timeStamp,_,_) ->
                 (case value of
-		   | InProcess -> raise (CircularDefinition unitId)
+		   | InProcess _ -> raise (CircularDefinition unitId)
 		   | _ ->
 		   {cacheTS <- validateCache unitId;
 		    if cacheTS <= timeStamp
@@ -67,7 +67,7 @@ These are called only from evaluateUID.
 			   | UnEvaluated term ->
 			     {saveUID <- getCurrentUID;
 			      setCurrentUID unitId;
-			      bindInGlobalContext unitId (InProcess,0,[],term);
+			      bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
 			      (value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
 			      setCurrentUID saveUID;
 			      let val = (value,max(timeStamp,rTimeStamp),depUIDs,term) in
@@ -117,7 +117,7 @@ These are called only from evaluateUID.
 		       -> (case value of
 			     | UnEvaluated term ->
 			       {setCurrentUID unitId;
-				bindInGlobalContext unitId (InProcess,0,[],term);
+				bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
 				(value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
 				let timeStamp = max(timeStamp,rTimeStamp) in
 				let val = (value,timeStamp,depUIDs,term) in
@@ -351,7 +351,7 @@ handled correctly.
 		  %%   exception when it cannot find the unitId.
 		  return []
 		| _ -> 
-		  { bindInGlobalContext unitId (InProcess,0,[],term);
+		  { bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
 		    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
 		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs, term);
 		    return []
