@@ -61,7 +61,7 @@ SpecCalc qualifying spec {
       | SpecPrism  sp    -> SpecCalc.print (printPrism  base_spec reverse_context sp)  % tentative
       | SpecInterp si    -> SpecCalc.print (printInterp base_spec reverse_context si)  % tentative
       | Other      other -> evaluateOtherPrint other (positionOf term)
-      | InProcess        -> SpecCalc.print "No value!");
+      | InProcess  _     -> SpecCalc.print "No value!");
    SpecCalc.print "\n";
    return (value, time_stamp, depUnitIds)
    }

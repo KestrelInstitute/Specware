@@ -262,14 +262,18 @@ end-proof
 
 op Nat.posNat? (n:Nat) : Bool = n > 0
 proof Isa [simp] end-proof
+proof Haskell -> posNatp end-proof
 
 type Nat.PosNat = (Nat | posNat?)
+proof Haskell -> PosNat end-proof
 
 % successor and predecessor restricted to natural numbers:
 
 op Nat.succ (n:Nat): Nat = isucc n
+proof Haskell -> succ end-proof
 
 op Nat.pred (n:PosNat) : Nat = ipred n
+proof Haskell -> pred end-proof
 
 % sign:
 
