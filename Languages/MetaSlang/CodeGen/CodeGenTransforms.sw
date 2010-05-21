@@ -1786,6 +1786,15 @@ op showSorts: Spec -> ()
 def showSorts spc =
   appSpec ((fn _ -> ()), (fn srt -> writeLine (printSort srt)), (fn _ -> ())) spc
 
+op [a] firstDef(dfn: ATerm a): ATerm a =
+  case dfn of
+  | And(d1::_, _) -> d1
+  | Pi(tvs, tm, pos) -> Pi(tvs, firstDef tm, pos)
+  | SortedTerm(tm, ty, pos) -> SortedTerm(firstDef tm, ty, pos)
+  | d -> d
+
+op [a] trimOldDefs(opinfo: AOpInfo a): AOpInfo a =
+  opinfo << {dfn = firstDef opinfo.dfn}
 
  %% To get an executable base
  op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
@@ -1804,17 +1813,19 @@ def showSorts spc =
                                | Op(qid as Qualified(q,id), true, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info -> 
-                                      (insertAQualifierMap(op_map, q, id, info),
-                                       if embed? Some (AnnSpec.findTheOp(spc, qid))
-                                         then elements ++ [el]
+                                      (insertAQualifierMap(op_map, q, id, trimOldDefs info),
+                                       if embed? None (AnnSpec.findTheOp(spc, qid))
+                                         then % let _ = writeLine(printQualifiedId qid) in
+                                              elements ++ [el]
                                          else elements)
                                     | _ -> (op_map, elements))
                                | OpDef(qid as Qualified(q,id), _, _) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info ->
-                                      (insertAQualifierMap(op_map, q, id, info),
-                                       if embed? Some (AnnSpec.findTheOp(spc, qid))
-                                         then elements ++ [el]
+                                      (insertAQualifierMap(op_map, q, id, trimOldDefs info),
+                                       if embed? None (AnnSpec.findTheOp(spc, qid))
+                                         then % let _ = writeLine(printQualifiedId qid) in
+                                              elements ++ [el]
                                          else elements)
                                     | _ -> (op_map, elements))
                                | _ -> (op_map, elements))
@@ -1822,6 +1833,7 @@ def showSorts spc =
          (spc.ops, spc.elements) baseExecutableSpecNames
    in
    spc << {ops = op_map, elements = elements}
+
 
  op substBaseSpecs(spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNames)
  op substBaseSpecsJ(spc: Spec): Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
