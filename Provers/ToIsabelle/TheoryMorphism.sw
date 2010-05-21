@@ -78,7 +78,19 @@ IsaTermPrinter qualifying spec
            -999)
 
  op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(Associativity * Nat) * Boolean * Boolean =
-   case removeEmpty(splitStringAt(rhs," ")) of
+   let def joinParens(strs, par_str) =
+         case strs of
+           | []       -> if par_str = "" then [] else [par_str]
+           | "%" :: _ -> if par_str = "" then [] else [par_str]
+           | "(" :: r_strs -> joinParens(r_strs, par_str^"(")
+           | ")" :: r_strs -> par_str^")" :: joinParens(r_strs, "")
+           | s :: r_strs ->
+             if par_str = "" then s :: joinParens(r_strs, par_str)
+               else joinParens(r_strs, par_str^s)
+   in
+   let rhs_strs = joinParens(splitStringAtChars(rhs, [# , #(, #), #%]), "") in
+   let rhs_strs = filter (fn s -> s ~= "" && s ~= " ") rhs_strs in
+   case rhs_strs of
      | [] \_rightarrow (" ", None, false, false)
      | [isaSym] \_rightarrow (isaSym, None, false, false)
      | isaSym :: r \_rightarrow
