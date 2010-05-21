@@ -132,6 +132,20 @@ String qualifying spec
    in
      splitFrom(0,0)
 
+  op splitStringAtChars(s: String, sep_chars: List Char): List String =
+    let def split(i, last_match, result) =
+          if i < 0 
+            then if last_match = 0 then result
+                  else subFromTo(s, 0, last_match) :: result
+          else if s@i in? sep_chars
+            then split(i - 1, i,
+                       show(s@i) :: (if i + 1 = last_match then result
+                                       else subFromTo(s, i + 1, last_match) :: result))
+            else split(i - 1, last_match, result)
+    in
+    let len = length s in
+    split(len - 1, len, [])
+
   op  removeEmpty: List String -> List String
   def removeEmpty l =
     filter (fn s -> s ~= "") l
