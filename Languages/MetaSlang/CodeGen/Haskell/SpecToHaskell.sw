@@ -1,7 +1,7 @@
 Haskell qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
- import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Provers/ToIsabelle/TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
  import /Library/PrettyPrinter/BjornerEspinosa
@@ -110,7 +110,7 @@ Haskell qualifying spec
 
   type GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String \_rightarrow Option a
-  op  Specware.evaluateUnitId: String \_rightarrow Option Value
+  %op  Specware.evaluateUnitId: String \_rightarrow Option Value
   %op  SpecCalc.findUnitIdForUnit: Value \_times GlobalContext \_rightarrow Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId \_rightarrow String
   op  Specware.cleanEnv : SpecCalc.Env ()
@@ -355,10 +355,6 @@ Haskell qualifying spec
   def ppValue c value =
     case value of
       | Spec spc \_rightarrow ppSpec c spc
-      | Morph morph \_rightarrow
-        let Some glob_ctxt = MonadicStateInternal.readGlobalVar "GlobalContext" in
-        let oblig_spec = morphismObligations(morph, glob_ctxt, noPos) in
-        ppSpec c oblig_spec
       | _ \_rightarrow prString "<Not a spec>"
  
   %% --------------------------------------------------------------------------------
@@ -407,10 +403,18 @@ Haskell qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
+  op nonExecBaseSpecs: List String = ["List", "String"]
+  op addExecutableDefs (spc: Spec, spec_name: String): Spec =
+    if spec_name in? nonExecBaseSpecs
+      then substBaseSpecs1(spc, filter (fn uid_str -> some? (search(spec_name, uid_str)))
+                                  baseExecutableSpecNames)
+      else spc
+
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
     %% Get rid of non-haskell pragmas
+    let spc = addExecutableDefs(spc, c.spec_name) in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
@@ -601,7 +605,6 @@ Haskell qualifying spec
       | OpDef(qid as Qualified(_,nm), refine_num, _) \_rightarrow
 	(case AnnSpec.findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} \_rightarrow
-             let names = map (refinedQID refine_num) names in
 	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing op: "
@@ -786,7 +789,7 @@ Haskell qualifying spec
 
  op constructorTranslation(c_nm: String, c: Context): Option String =
    case specialOpInfo c (mkUnQualifiedId c_nm) of
-     | Some(tr_nm, None, false, false, true) | isUpperCase(tr_nm@0) ->
+     | Some(tr_nm, None, false, false, true) | ~(isLowerCase(tr_nm@0)) ->
        Some tr_nm
      | _ -> None
 
@@ -1070,7 +1073,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   if no_def?
     then prEmpty
   else
-  let (tvs, ty, term) = if def? then unpackNthTerm(dfn, refine_num)
+  let (tvs, ty, term) = if def? then unpackFirstTerm(dfn)
                          else unpackTerm(dfn)
   in
   let aliases = [mainId] in
@@ -1112,19 +1115,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
       of EmbedPat(con,None,ty,a) \_rightarrow 
          Some(Fun(Embed(con,false),ty,a))
        | EmbedPat(con,Some p,ty,a) \_rightarrow 
-         (case p of
-            | WildPat(pty,a) | multiArgConstructor?(con,ty,getSpec c) \_rightarrow
-              let tys = productSorts(getSpec c, pty) in
-              let args = (foldr (fn (ty,(result,i)) ->
-                                   let cnt = c.newVarCount in
-                                   let _ = (cnt := !cnt + 1) in
-                                   let v = (if true then "zzz" else "zzz_"^ext)^show (!cnt) in
-                                   (Cons(Var((v,ty), a),result),i-1))
-                            ([], length tys) tys).1
-              in
-              Some (Apply(Fun(Embed(con,true),Arrow(pty,ty,a),a),mkTuple args,a))
-            | _ ->
-          case patToTerm(p, ext, c)
+         (case patToTerm(p, ext, c)
             of None \_rightarrow None
              | Some (trm) \_rightarrow 
                let ty1 = patternSort p in
@@ -1146,11 +1137,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        | StringPat(s, _) \_rightarrow Some(mkString s)
        | CharPat(c, _) \_rightarrow Some(mkChar c)
        | VarPat((v,ty), a) \_rightarrow Some(Var((v,ty), a))
-       | WildPat(ty,a) \_rightarrow
-         let cnt = c.newVarCount in
-         let _ = (cnt := !cnt + 1) in
-         let v = "zzz_"^show (!cnt) in
-         Some(Var((v,ty), a))
+       | WildPat(ty,a) \_rightarrow Some(Var(("_",ty), a))   % Not valid Specware but seems to work for our purposes here
        | QuotientPat(pat,cond,_)  \_rightarrow None %% Not implemented
        | RestrictedPat(pat,cond,_)  \_rightarrow
          patToTerm(pat,ext, c)		% cond ??
@@ -1488,7 +1475,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           %% Reversed curried op, not infix
           let Some(haskell_id,_,_,reversed,_) = specialOpInfo c qid in
           enclose?(parentTerm ~= Top,
-                   prBreak 2 [prString haskell_id,
+                   prBreak 2 [prString(makeIdentifier haskell_id),
                               prSpace,
                               ppTermEncloseComplex? c Nonfix term2,
                               prSpace,
@@ -1723,17 +1710,17 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             ppTerm c parentTerm term])
      | LetRec (decls,term,_) \_rightarrow
        let def ppDecl (v,term) =
-             prBreak 0 [%prString "def ",
+             prBreak 2 [%prString "def ",
                         ppVarWithoutSort v,
                         prString " = ",
                         ppTerm c Top term]
        in
        enclose?(infix? parentTerm,
-                prLinear 0 [prLinear 0
+                prLines 0 [prLines 2
                               [prString "let",
-                               prConcat[prLinear 0 (map ppDecl decls), prSpace],
-                               prString "in "],
-                            ppTerm c (if infix? parentTerm then Top else parentTerm) term])
+                               prConcat[prLinear 0 (map ppDecl decls), prSpace]],
+                           prString "in ",
+                           ppTerm c (if infix? parentTerm then Top else parentTerm) term])
      | Var (v,_) \_rightarrow ppVarWithoutSort v
      | Fun (fun,ty,_) \_rightarrow ppFun c parentTerm fun ty
 %      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
@@ -1817,11 +1804,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term): Pretty =
-         prBreakCat 0 [[ppPattern c pattern None,
+         prBreakCat 2 [[ppPattern c pattern None,
                         prString " -> "],
                        [ppTerm c Top term]]
    in
-   prLinear 0 (map ppCase cases)
+   prLines 0 (map ppCase cases)
 
  op  ppPattern : Context \_rightarrow Pattern \_rightarrow Option String \_rightarrow Pretty
  def ppPattern c pattern wildstr = 
@@ -1849,11 +1836,6 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                                         | _ -> false,
                                                         ppPattern c p wildstr))
                                     (patternToList pat))]
-                    | WildPat (pty,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
-                      let tys = productSorts(getSpec c, pty) in
-                      prConcat [prSpace,
-                                prPostSep 0 blockFill prSpace
-                                  (map (fn ty \_rightarrow ppPattern c (mkWildPat ty) wildstr) tys)]
                     | _ \_rightarrow prConcat [prSpace, enclose?(embed? EmbedPat pat,
                                                        ppPattern c pat wildstr)]]
      | RecordPat (fields,_) \_rightarrow
@@ -1887,13 +1869,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
             | None -> prString "{Only handle top-level records!}")
-     | WildPat (ty,_) \_rightarrow
-       (case wildstr of
-          | Some str \_rightarrow prString("ignore"^str)
-          | None \_rightarrow prString "_")
-     | StringPat (str,_) \_rightarrow prString ("''" ^ str ^ "''")
+     | WildPat (ty,_) \_rightarrow prString "_"
+     | StringPat (str,_) \_rightarrow prString ("\"" ^ str ^ "\"")
      | BoolPat (b,_) \_rightarrow ppBoolean b
-     | CharPat (chr,_) \_rightarrow prString (Char.show chr)
+     | CharPat (chr,_) \_rightarrow prString ("'"^Char.show chr^"'")
      | NatPat (int,_) \_rightarrow prString (Nat.show int)      
      | QuotientPat (pat,qid,_) \_rightarrow 
        prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
@@ -2013,8 +1992,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                       | Some(dom, _) ->
                         let new_v = ("cv0", dom) in
                         ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun,ty), mkVar new_v)))
-                      | _ -> prString haskell_id)
-              else prString haskell_id
+                      | _ -> prString(makeIdentifier haskell_id))
+              else prString(makeIdentifier haskell_id)
           | _ -> ppOpQualifiedId c qid)
      | Project id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
@@ -2037,10 +2016,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
      | Select id \_rightarrow prConcat [prString "select ", prString id] % obsolete?
      | Nat n \_rightarrow prString (Nat.show n)
-     | Char chr \_rightarrow prConcat [prString "CHR ''",
+     | Char chr \_rightarrow prConcat [prString "'",
                              prString (Char.show chr),
-                             prString "''"]
-     | String str \_rightarrow prString ("''" ^ str ^ "''")
+                             prString "'"]
+     | String str \_rightarrow prString ("\"" ^ str ^ "\"")
      | Bool b \_rightarrow ppBoolean b
      | OneName (id,fxty) \_rightarrow prString id
      | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
@@ -2059,11 +2038,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    let nm = qidToHaskellString c qid true in
    prString(nm)
 
+ op makeIdentifier(nm: String): String =
+   if identifier? nm
+     then nm
+   else "("^nm^")"
+
  op ppOpQualifiedId0 (c: Context) (qid as Qualified(_, id): QualifiedId): Pretty =
    let nm = qidToHaskellString c qid false in
-   prString(if identifier? nm
-              then nm
-              else "("^nm^")")
+   prString(makeIdentifier nm)
 
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
@@ -2217,7 +2199,7 @@ def termFixity c term =
               | Some(haskell_id,fix,curried,reversed,_) \_rightarrow
                 (case fix of
                    | Some f \_rightarrow (Some(prString(makeOpName haskell_id)), Infix f, curried, reversed)
-                   | None \_rightarrow   (Some(prString haskell_id), Nonfix, curried, reversed))
+                   | None \_rightarrow   (Some(prString(makeIdentifier haskell_id)), Nonfix, curried, reversed))
               | None \_rightarrow
                 case fixity of
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
@@ -2350,11 +2332,5 @@ def isSimplePattern? trm =
            | _ \_rightarrow result)
      ([],[])
      spc.sorts).2
-
-%% Duplicated!
- op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
-   if refine_num = 0 then qid
-     else Qualified(q,nm^"__"^show refine_num)
-
 
 endspec
