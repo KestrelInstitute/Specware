@@ -4280,6 +4280,7 @@ end-proof
 
 op [a] splitAt (l: List a, i:Nat | i < length l) : List a * a * List a =
   (prefix(l,i), l@i, removePrefix(l,i+1))
+proof Haskell -> splitAt3 end-proof       % Haskell has a splitAt that splits into two
 
 proof Isa splitAt_subtype_constr
   by (simp add: List__splitAt_def list_all_length)
@@ -4927,13 +4928,15 @@ end-proof
 
 proof Haskell Thy_Morphism 
   type List.List      -> []
+  Nil                 -> []
+  Cons                -> :            Right 5
   List.List_P         -> list_all
   List.length         -> length
   List.@              -> !!           Left  9
   List.empty          -> []
   List.empty?         -> null
-  List.in?            -> elem       Infix 4
-  List.nin?           -> notElem    Infix 4
+  List.in?            -> elem         Infix 4
+  List.nin?           -> notElem      Infix 4
   List.prefix         -> take         curried  reversed
   List.removePrefix   -> drop         curried  reversed
   List.head           -> head
@@ -4946,18 +4949,15 @@ proof Haskell Thy_Morphism
   List.forall?        -> all
   List.exists?        -> any
   List.filter         -> filter
-  List.foldl          -> foldl'
-  List.foldr          -> foldr'
   List.zip            -> zip          curried
   List.unzip          -> unzip
-  List.zip3           -> zip3          curried
+  List.zip3           -> zip3         curried
   List.unzip3         -> unzip3
   List.map            -> map
   List.mapPartial     -> filtermap
   List.reverse        -> reverse
   List.repeat         -> replicate    curried  reversed
   List.flatten        -> concat
-  List.noRepetitions? -> distinct
   List.compare \_rightarrow compare curried
 end-proof
 

@@ -95,7 +95,6 @@ proof Haskell Thy_Morphism
  Some \_rightarrow Just
  Option.some? \_rightarrow isJust
  Option.none? \_rightarrow isNothing 
- Option.mapOption \_rightarrow mapMaybe
  Option.compare \_rightarrow compare curried
 end-proof
 

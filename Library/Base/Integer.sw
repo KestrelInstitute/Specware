@@ -262,18 +262,14 @@ end-proof
 
 op Nat.posNat? (n:Nat) : Bool = n > 0
 proof Isa [simp] end-proof
-proof Haskell -> posNatp end-proof
 
 type Nat.PosNat = (Nat | posNat?)
-proof Haskell -> PosNat end-proof
 
 % successor and predecessor restricted to natural numbers:
 
 op Nat.succ (n:Nat): Nat = isucc n
-proof Haskell -> succ end-proof
 
 op Nat.pred (n:PosNat) : Nat = ipred n
-proof Haskell -> pred end-proof
 
 % sign:
 
@@ -1169,6 +1165,14 @@ proof Haskell Thy_Morphism
  Integer.zero     -> 0
  Integer.one      -> 1
  IntegerAux.-     -> negate
+ Integer.isucc    -> (+ 1)
+ Integer.ipred    -> (- 1)
+ Integer.zero?    -> (== 0)
+ Integer.positive? -> (> 0)
+ Integer.negative? -> (< 0)
+ Nat.succ         -> (+ 1)
+ Nat.pred         -> (- 1)
+ Nat.posNat?      -> (>= 0)
  Integer.+        -> +     Left  6
  Integer.-        -> -     Left  6
  Integer.*        -> *     Left  7
@@ -1177,11 +1181,15 @@ proof Haskell Thy_Morphism
  Integer.<        -> <     Infix 4
  Integer.>=       -> >=    Infix 4
  Integer.>        -> >     Infix 4
- Integer./        -> /     Left  7
- Integer.sign     -> sign
+ Integer./        -> div   Left  7
+ Integer.sign     -> signum
+ Integer.gcd      -> gcd
+ Integer.lcm      -> lcm
  Integer.abs      -> abs
- Integer.div      -> div   Left  7
- Integer.mod      -> mod   Left  7
+ Integer.divF     -> div   Left  7
+ Integer.divT     -> quot  Left  7
+ Integer.modF     -> mod   Left  7
+ Integer.modT     -> rem   Left  7
  Integer.min      -> min   Left  7
  Integer.max      -> max   Left  7
  Integer.compare \_rightarrow compare curried
