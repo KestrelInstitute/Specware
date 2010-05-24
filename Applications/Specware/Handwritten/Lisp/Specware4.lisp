@@ -6,17 +6,27 @@
 ;;; <Specware4>/Release/BuildScripts/LoadSpecware.lisp is a clone of this file
 ;;; that is used for distribution builds.
 
-;(push :case-sensitive *features*)
+(push :case-sensitive *features*)
 
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf (readtable-case *readtable*) :invert))
+  (defun set-readtable-invert ()
+    (setq *readtable* (copy-readtable *readtable*))
+    (setf (readtable-case *readtable*) :invert))
+  (set-readtable-invert))
 
 (defpackage :SpecToLisp)
 (defpackage :Specware (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
   #+case-sensitive
   (:nicknames :specware))
 (in-package :Specware)
+
+
+#+case-sensitive
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun set-readtable-invert ()
+    (setq *readtable* (copy-readtable *readtable*))
+    (setf (readtable-case *readtable*) :invert)))
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
@@ -118,24 +128,18 @@
    (declare (ignore condition))
    (muffle-warning))
 
-#+case-sensitive
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf (readtable-case *readtable*) :upcase))
+(let ((*readtable* (copy-readtable nil)))
+  (handler-bind ((warning #'ignore-warning))
+    (load (make-pathname
+           :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
+           :type     "lisp")))
 
-(handler-bind ((warning #'ignore-warning))
-  (load (make-pathname
-         :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
-         :type     "lisp")))
-
-(format t "Loading Snark.")
-(handler-bind ((warning #'ignore-warning))
-  (cl-user::make-or-load-snark-system))
-(format t "~%Finished loading Snark.")
-(finish-output t)
-
-#+case-sensitive
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf (readtable-case *readtable*) :invert))
+  (format t "Loading Snark.")
+  (handler-bind ((warning #'ignore-warning))
+    (cl-user::make-or-load-snark-system))
+  (format t "~%Finished loading Snark.")
+  (finish-output t)
+  )
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
@@ -302,9 +306,6 @@
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
 
-
-(defun set-readtable-invert ()
-  (setf (readtable-case *readtable*) :invert))
 
 #+case-sensitive
 (push  'set-readtable-invert 
