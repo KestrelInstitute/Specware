@@ -16,7 +16,7 @@
   (pushnew (concat *specware* "/Library/IO/Emacs/") data-directory-list)
   (pushnew (concat *specware* "/Library/IO/Emacs/x-symbol/") data-directory-list))
 
-(require 'x-symbol-hooks)
+(require 'x-symbol)
 
 
 (defvar x-symbol-specware-name "Specware Symbols")
