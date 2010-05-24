@@ -157,6 +157,7 @@
 	      "windows"
 	    (case system-type
 	      (darwin "linux")
+              (gnu/linux "linux")
 	      (t (symbol-name system-type))))))
 
 (defun wait-for-prompt (&optional timeout)
@@ -769,6 +770,7 @@ sLisp Heap Image File: ")
 			      "windows"
 			    (case system-type
 			      (darwin "linux")
+                              (gnu/linux "linux")
 			      (t (symbol-name system-type))))))
 	 (world-name (concat bin-dir "/PSL." *lisp-image-extension*)))
 
