@@ -12,8 +12,7 @@
 
 (sb-ext:without-package-locks
 
-(if #+case-sensitive (find-symbol "use-list-packages" "sb-impl")
-    #-case-sensitive (find-symbol "USE-LIST-PACKAGES" "SB-IMPL")
+(if (find-symbol "USE-LIST-PACKAGES" "SB-IMPL")
 (defun use-list-packages (package package-designators)
   (cond ((listp package-designators)
          (mapcar #'find-undeleted-package-or-lose package-designators))
