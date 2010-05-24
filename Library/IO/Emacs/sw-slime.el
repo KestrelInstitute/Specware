@@ -12,6 +12,7 @@
   (define-key m "\e."      'sw:meta-point)
   (define-key m "\C-cfc"   'sw:find-case-dispatch-on-type)
   (define-key m "\C-cfr"   'sw:find-op-references)
+  (define-key m "[return]"  'sw-return)
 					;(define-key m "\C-c\C-d" 'ild-abort)
   (easy-menu-define specware-interaction-buffer-menu
 		    m
@@ -21,6 +22,7 @@
 
 (slime-define-keys specware-listener-mode-map
   ("\C-m" 'sw-return)
+  ("[return]" 'sw-return)
  ; ("\C-j" 'slime-repl-newline-and-indent)
 ;  ("\C-\M-m" 'slime-repl-closing-return)
 ;  ([(control return)] 'slime-repl-closing-return)
@@ -99,6 +101,32 @@ balanced."
         (t 
          (slime-repl-newline-and-indent)
          (message "[input not complete]"))))
+
+(defun slime-repl-return (&optional end-of-input)
+  "Evaluate the current input string, or insert a newline.  
+Send the current input only if a whole expression has been entered,
+i.e. the parenthesis are matched. 
+
+With prefix argument send the input even if the parenthesis are not
+balanced."
+  (interactive "P")
+  (if (equal mode-name "SW")
+      (sw-return end-of-input)
+    (progn (slime-check-connected)
+           (cond (end-of-input
+                  (slime-repl-send-input))
+                 (slime-repl-read-mode  ; bad style?
+                  (slime-repl-send-input t))
+                 ((and (get-text-property (point) 'slime-repl-old-input)
+                       (< (point) slime-repl-input-start-mark))
+                  (slime-repl-grab-old-input end-of-input)
+                  (slime-repl-recenter-if-needed))
+                 ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+                 ((slime-input-complete-p slime-repl-input-start-mark (point-max))
+                  (slime-repl-send-input t))
+                 (t 
+                  (slime-repl-newline-and-indent)
+                  (message "[input not complete]"))))))
 
 (defcustom sw:input-read-only nil
   "If non-nil then make input read-only"
