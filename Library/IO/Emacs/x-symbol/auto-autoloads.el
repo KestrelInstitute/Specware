@@ -3,7 +3,7 @@
 
 ;;;### (autoloads nil "_pkg" "lisp/_pkg.el")
 
-(package-provide 'x-symbol :version 1.1 :author-version "4.5.1" :type 'regular)
+(if (fboundp 'package-provide) (package-provide 'x-symbol :version 4.51 :type 'regular))
 
 ;;;***
 
