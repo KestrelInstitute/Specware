@@ -16,7 +16,8 @@
   (pushnew (concat *specware* "/Library/IO/Emacs/") data-directory-list)
   (pushnew (concat *specware* "/Library/IO/Emacs/x-symbol/") data-directory-list))
 
-(require 'x-symbol)
+(unless (featurep 'x-symbol-autoloads)
+  (load "auto-autoloads"))
 
 
 (defvar x-symbol-specware-name "Specware Symbols")
@@ -478,8 +479,5 @@ variable `x-symbol-auto-coding-alist' for details."
   :group 'x-symbol-specware
   :group 'x-symbol-mode
   :type 'x-symbol-auto-coding)
-
-
-     
 
 (provide 'x-symbol-specware)
