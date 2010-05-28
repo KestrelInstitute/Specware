@@ -1145,13 +1145,15 @@ proof Isa Thy_Morphism Presburger
  Integer.divC     -> divC  Left 70
  Integer.divR     -> divR  Left 70
  Integer.divE     -> divE  Left 70
- Integer.div      -> divE  Left 70
+ Integer.div      -> div  Left 70
  Integer.modT     -> modT  Left 70
  Integer.modF     -> mod   Left 70
  Integer.modC     -> modC  Left 70
  Integer.modR     -> modR  Left 70
  Integer.modE     -> modE  Left 70
- Integer.mod      -> modE  Left 70
+ Integer.mod      -> mod  Left 70
+ Integer.min      -> min           curried
+ Integer.max      -> max           curried
  Integer.divides  -> zdvd  Left 70 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
@@ -1186,9 +1188,11 @@ proof Haskell Thy_Morphism
  Integer.gcd      -> gcd
  Integer.lcm      -> lcm
  Integer.abs      -> abs
+ Integer.div      -> div   Left  7
  Integer.divF     -> div   Left  7
  Integer.divT     -> quot  Left  7
  Integer.modF     -> mod   Left  7
+ Integer.mod      -> mod   Left  7
  Integer.modT     -> rem   Left  7
  Integer.min      -> min   Left  7
  Integer.max      -> max   Left  7
