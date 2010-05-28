@@ -425,7 +425,7 @@ Haskell qualifying spec
                                               | _ \_rightarrow false)
                                      spc.elements
     in
-    let trans_table = thyMorphismMaps spc "Haskell" in
+    let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     let c = c << {spec? = Some spc,
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
@@ -435,7 +435,7 @@ Haskell qualifying spec
                 then simplifyTopSpec spc
                 else spc
     in
-    let spc = normalizeNewTypes spc in
+    let spc = normalizeNewTypes(spc, false) in
     let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
@@ -903,6 +903,11 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
      | Some i -> i 
      | None -> 10
 
+ op convertFixity(fx: Fixity): Fixity =
+   case fx of
+     | Infix(assoc, prec) -> Infix(assoc, convertPrecNum prec)
+     | _ -> fx
+
  op mkIncTerm(t: MS.Term): MS.Term =
    mkApply(mkOp(Qualified("Integer","+"),
                 mkArrow(mkProduct [natSort, natSort], natSort)),
@@ -1068,7 +1073,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            case infix? of
              | Some pr -> Infix pr
              | None -> fixity)
-        | _ \_rightarrow (false, false, mainId, fixity)
+        | _ \_rightarrow (false, false, mainId, convertFixity fixity)
   in
   if no_def?
     then prEmpty
@@ -1090,7 +1095,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                         | Left     \_rightarrow prString "infixl "
                         | Right    \_rightarrow prString "infixr "
                         | NotAssoc \_rightarrow prString "infix ",
-                       prString (show (if specialOpInfo? then prec else convertPrecNum prec)),
+                       prString (show prec),
                        prSpace,
                        ppInfixId c mainId]]
                    | _ \_rightarrow [])
@@ -1588,7 +1593,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
           let spc = getSpec c in
           let recd_ty = range(spc, ty) in
-          let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+          let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
                    prBreak 2 [ppTerm c (Infix(Left,10)) t1,
@@ -1655,7 +1660,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | _ \_rightarrow
             let spc = getSpec c in
             let recd_ty = inferType(spc, term) in
-            let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+            let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
             let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
             let record_type_qid = case recd_ty of
                                   | Base(qid, _, _) -> Some qid
@@ -1849,7 +1854,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
          | _ \_rightarrow
            let spc = getSpec c in
            let recd_ty = patternSort pattern in
-           let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+           let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
            let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
            let record_type_qid = case recd_ty of
                                  | Base(qid, _, _) -> Some qid
