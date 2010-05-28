@@ -282,25 +282,25 @@ theorem Function__f_inverse_apply:
   apply(simp add: bij_def surj_f_inv_f)
   done
 theorem Function__f_inverse_apply__stp: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) f; 
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
     Fun_P(P__a, P__b) f; 
     P__b x\<rbrakk> \<Longrightarrow> 
    f (Function__inverse__stp P__a f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
   done
 theorem Function__inverse_f_apply: 
-  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> inv f (f (x::'a)) = x"
+  "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> inv f (f x) = x"
   apply(simp add: bij_def inv_f_f)
   done
 theorem Function__inverse_f_apply__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, TRUE) f; 
     Fun_PD P__a f; 
-    P__a (x::'a)\<rbrakk> \<Longrightarrow> 
+    P__a x\<rbrakk> \<Longrightarrow> 
    Function__inverse__stp P__a f (f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
   done
 theorem Function__fxy_implies_inverse: 
-  "\<lbrakk>bij f; f (x::'a) = y\<rbrakk> \<Longrightarrow> x = inv f y"
+  "\<lbrakk>bij f; f x = y\<rbrakk> \<Longrightarrow> x = inv f y"
   proof -
  assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
  assume FXY: "f x = y"
@@ -314,9 +314,9 @@ theorem Function__fxy_implies_inverse:
  with INV_SOME show "x = inv f y" by auto
 qed
 theorem Function__fxy_implies_inverse__stp: 
-  "\<lbrakk>Function__bijective_p__stp(P__a, (P__b::'b \<Rightarrow> bool)) f; 
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
     Fun_P(P__a, P__b) f; 
-    P__a (x::'a); 
+    P__a x; 
     P__b y; 
     f x = y\<rbrakk> \<Longrightarrow> 
    x = Function__inverse__stp P__a f y"

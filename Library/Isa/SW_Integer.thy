@@ -23,7 +23,7 @@ theorem Integer__infinity:
 theorem Integer__induction: 
   "\<lbrakk>(p::int \<Rightarrow> bool) 0; 
     \<forall>(i::int). p i \<longrightarrow> p (succ i) \<and> p (pred i)\<rbrakk> \<Longrightarrow> 
-   p i"
+   p (i::int)"
    apply(cases i)
  apply(rule_tac k="0" in int_ge_induct,simp_all)
  apply(rule_tac k="0" in int_le_induct,simp_all)

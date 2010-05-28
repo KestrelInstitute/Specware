@@ -1008,7 +1008,7 @@ theorem FMap__fromLists_Obligation_subtype0:
   apply (frule_tac xs=domList and i=ib and j=i in nth_eq_iff_index_eq, simp_all)
   done
 theorem FMap__fromLists_Obligation_subtype1: 
-  "\<lbrakk>distinct (domList::'a List__InjList); 
+  "\<lbrakk>distinct domList; 
     domList equiLong rngList; 
     (i::nat) < length domList; 
     domList ! i = (x::'a)\<rbrakk> \<Longrightarrow> 

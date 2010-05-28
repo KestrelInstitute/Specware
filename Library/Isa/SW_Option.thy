@@ -4,7 +4,7 @@ begin
 fun Option__Option_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option \<Rightarrow> bool"
 where
    "Option__Option_P P_a None = True"
- | "Option__Option_P P_a (Some x0) = (P_a::'a \<Rightarrow> bool) x0"
+ | "Option__Option_P P_a (Some x0) = P_a x0"
 consts Option__some_p :: "'a option \<Rightarrow> bool"
 defs Option__some_p_def [simp]: "Option__some_p x \<equiv> (x \<noteq> None)"
 consts Option__none_p :: "'a option \<Rightarrow> bool"

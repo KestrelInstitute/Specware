@@ -192,7 +192,7 @@ theorem MapAC__map_result_in_range:
 theorem MapAC__map_result_in_range__stp: 
   "\<lbrakk>Relation__functional_p__stp(P__a, P__b) m; 
     Set_P (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) m; 
-    P__a (x::'a); 
+    P__a x; 
     MapAC__definedAt__stp P__b(m, x)\<rbrakk> \<Longrightarrow> 
    m @_m x \<in> Relation__range__stp P__a m"
    apply (simp add: e_at_m_def)
@@ -241,8 +241,8 @@ theorem MapAC__e_lt_lt_lt_Obligation_the:
          simp add: DomainI)
   done
 theorem MapAC__e_lt_lt_lt_Obligation_subtype: 
-  "\<lbrakk>Relation__functional_p (m2:: ('a, 'b)Relation__Map); 
-    Relation__functional_p (m1:: ('a, 'b)Relation__Map); 
+  "\<lbrakk>Relation__functional_p m2; 
+    Relation__functional_p m1; 
     Relation__functional_p m; 
     Domain m = Domain m1 \<union> Domain m2; 
     x \<in> Domain m\<rbrakk> \<Longrightarrow> 
@@ -251,7 +251,7 @@ theorem MapAC__e_lt_lt_lt_Obligation_subtype:
 theorem MapAC__e_lt_lt_lt_Obligation_subtype0: 
   "\<lbrakk>Relation__functional_p m2; 
     Relation__functional_p m1; 
-    Relation__functional_p (m:: ('a, 'b)Relation__Map); 
+    Relation__functional_p m; 
     Domain m = Domain m1 \<union> Domain m2; 
     x \<in> Domain m; 
     \<not> (m2 definedAt x)\<rbrakk> \<Longrightarrow> 
