@@ -21,7 +21,7 @@ IsaTermPrinter qualifying spec
  op  emptyTranslationTable: TransInfo
  def emptyTranslationTable = {op_map=[], type_map=[], thy_imports=[]}
 
- def thyMorphismMaps (spc: Spec) (kind: String): TransInfo =
+ def thyMorphismMaps (spc: Spec) (kind: String) (convertPrecNum: Int -> Int): TransInfo =
    (foldlSpecElements
      (fn ((result, prev_id),el) \_rightarrow
       case el of
@@ -35,7 +35,7 @@ IsaTermPrinter qualifying spec
                        else
                          let Some {names=_, fixity, dfn=_, fullyQualified?=_} = findTheOp(spc,qid) in
                          case fixity of
-                           | Infix fx \_rightarrow (Some fx, true)
+                           | Infix (assoc, precnum) \_rightarrow (Some(assoc, convertPrecNum precnum), true)
                            | _ \_rightarrow (None, false)
                    in
                    (result << {op_map = update(result.op_map,qid,(trans_id,fix,curried?,reversed?,false))},

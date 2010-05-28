@@ -542,7 +542,8 @@ IsaTermPrinter qualifying spec
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
-    let spc = spc << {elements = normalizeSpecElements(spc.elements)} in
+    let rel_elements = filter isaElement? spc.elements in
+    let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
@@ -552,7 +553,7 @@ IsaTermPrinter qualifying spec
                                               | _ \_rightarrow false)
                                      spc.elements
     in
-    let trans_table = thyMorphismMaps spc "Isa" in
+    let trans_table = thyMorphismMaps spc "Isa" convertPrecNum in
     let c = c << {spec? = Some spc,
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
@@ -568,7 +569,7 @@ IsaTermPrinter qualifying spec
     in
     let spc = addSubtypePredicateLifters spc in
     % let _ = printSpecWithSortsToTerminal spc in
-    let spc = normalizeNewTypes spc in
+    let spc = normalizeNewTypes(spc, false) in
     let spc = raiseNamedTypes spc in
     let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
     let c = c << {coercions = coercions,
@@ -592,7 +593,7 @@ IsaTermPrinter qualifying spec
     let spc = removeSubTypes spc coercions stp_tbl in
     %% Second round of simplification could be avoided with smarter construction
     let spc = expandRecordPatterns spc in
-    let spc = normalizeNewTypes spc in
+    let spc = normalizeNewTypes(spc, true) in
     let spc = addCoercions coercions spc in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
@@ -605,6 +606,13 @@ IsaTermPrinter qualifying spec
 		  [prString "begin"],
 		  [ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [prString "end"]]
+
+  op  isaElement?: SpecElement \_rightarrow Boolean
+  def isaElement? elt =
+    case elt of
+      | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str \_rightarrow true
+      | Pragma _ \_rightarrow false
+      | _ \_rightarrow true
 
   op  elementFilter: SpecElement \_rightarrow Boolean
   def elementFilter elt =
@@ -956,6 +964,11 @@ IsaTermPrinter qualifying spec
    sw_prec_num + 40                     % Right for +
 
 
+ op convertFixity(fx: Fixity): Fixity =
+   case fx of
+     | Infix(assoc, prec) -> Infix(assoc, convertPrecNum prec)
+     | _ -> fx
+
  op expandNatToSucc(tm: MS.Term): MS.Term =
    case tm of
      | Fun(Nat i, _, _) | i ~= 0 && i < 10 ->
@@ -1137,7 +1150,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                 | Right \_rightarrow prString "infixr \"",
                               ppInfixDefId (mainId),
                               prString "\" ",
-                              prString (show (convertPrecNum prec)),
+                              prString (show prec),
                               prString ")"]
                            | _ \_rightarrow []),
                      [prString "where"],
@@ -1161,7 +1174,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                 | Right \_rightarrow prString "infixr \"",
                               ppInfixDefId (mainId),
                               prString "\" ",
-                              prString (show (convertPrecNum prec)),
+                              prString (show prec),
                               prString ")"]
                            | _ \_rightarrow []),
                      [prString "where"],
@@ -1191,7 +1204,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            case infix? of
              | Some pr -> Infix pr
              | None -> fixity)
-        | _ \_rightarrow (false, mainId, fixity)
+        | _ \_rightarrow (false, mainId, convertFixity fixity)
   in
   if no_def?
     then prEmpty
@@ -1239,7 +1252,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                         | Right \_rightarrow prString "infixr \"",
                       ppInfixDefId (mainId),
                       prString "\" ",
-                      prString (show (convertPrecNum prec)),
+                      prString (show prec),
                       prString ")"]
                    | _ \_rightarrow [])]
            else []
@@ -2087,7 +2100,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
           let spc = getSpec c in
           let recd_ty = range(spc, ty) in
-          let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+          let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
                    prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
@@ -2137,7 +2150,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
        enclose?(case parentTerm of
-                  | Infix(_,prec) \_rightarrow prec > 58
+                  | Infix(_,prec) \_rightarrow prec > 40
                   | _ \_rightarrow false,
                 prApply (term1,term2))
      | Apply (term1,term2,_) \_rightarrow prApply (term1,term2)
@@ -2154,7 +2167,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | _ \_rightarrow
             let spc = getSpec c in
             let recd_ty = inferType(spc, term) in
-            let recd_ty = normalizeType (spc, c.typeNameInfo, false) recd_ty in
+            let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
             let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
             let def ppField (x,y) =
                   prConcat [prString (case recd_ty of
