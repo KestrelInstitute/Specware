@@ -18,7 +18,10 @@ NormTypes qualifying spec
          else result)
       [] spc.sorts
 
-  op normalizeType (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort), checkTop?: Boolean) (ty: Sort): Sort =
+  op normalizeType
+       (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort), checkTop?: Boolean,
+        ign_subtypes?: Bool)
+       (ty: Sort): Sort =
     % let _ = writeLine("nt: "^printSort ty) in
     if replaceableType? ty
       \_and \_not (checkTop? && exists? (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
@@ -27,7 +30,7 @@ NormTypes qualifying spec
                    case result of
                      | None \_rightarrow
                        % let _ = writeLine("qid: "^printQualifiedId qid^"\n"^"nt: "^printSort ty^" =~= "^printSort top_ty) in
-                       (case typeMatch(top_ty,ty,spc,true) of
+                       (case typeMatch(top_ty,ty,spc,ign_subtypes?) of
                           | Some tyvar_sbst \_rightarrow
                             if checkTop? && ty = top_ty then None else
 			    % let _ = toScreen("top_ty:\n"^(anyToString top_ty)^"\nty:\n"^(anyToString ty)
@@ -47,9 +50,9 @@ NormTypes qualifying spec
      else ty
 
   %% Replaces type expressions by their named sorts
-  op normalizeTypes(spc: Spec): Spec =
+  op normalizeTypes(spc: Spec, ign_subtypes?: Bool): Spec =
     let typeNameInfo = topLevelTypes spc in
-    mapSpec (id,normalizeType(spc,typeNameInfo,true),id) spc
+    mapSpec (id, normalizeType(spc, typeNameInfo, true, ign_subtypes?), id) spc
  
   op normDef(qid as Qualified(q,id), map_fns, spc): Spec =
     case findTheOp(spc, qid) of
@@ -63,9 +66,9 @@ NormTypes qualifying spec
       | None \_rightarrow spc
 
   %% Normalize without normalizing imports
-  op normalizeNewTypes(spc: Spec): Spec =
+  op normalizeNewTypes(spc: Spec, ign_subtypes?: Bool): Spec =
     let typeNameInfo = topLevelTypes spc in
-    let map_fns = (id, normalizeType(spc,typeNameInfo,false),id) in
+    let map_fns = (id, normalizeType(spc, typeNameInfo, false, ign_subtypes?),id) in
     let spc = spc \_guillemotleft {elements = map (fn el ->
                                        case el of
                                          | Property (pt, nm, tvs, term, a) ->
