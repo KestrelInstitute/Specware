@@ -72,22 +72,22 @@ Haskell qualifying spec
  def prEmpty = prConcat []
 
  op  prBreak: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prBreak n l = blockFill(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
+ def prBreak n l = blockFill(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
 
  op  prLinear: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLinear n l = blockLinear(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
+ def prLinear n l = blockLinear(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
 
  op  prLines: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLines n l = blockAll(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
+ def prLines n l = blockAll(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
 
  op  prBreakCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prBreakCat n l = blockFill(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
+ def prBreakCat n l = blockFill(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
 
  op  prLinearCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinearCat n l = blockLinear(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
+ def prLinearCat n l = blockLinear(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
 
  op  prLinesCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinesCat n l = blockAll(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
+ def prLinesCat n l = blockAll(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
 
  op  prSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
  def prSep n blockFn sep l =
@@ -95,7 +95,7 @@ Haskell qualifying spec
      | [] \_rightarrow prEmpty
      | [p] \_rightarrow p
      | p::r \_rightarrow
-       blockFn(0, Cons((0,p), List.map (\_lambda x \_rightarrow (n, prConcat [sep, x])) r))
+       blockFn(0, Cons((0, p), List.map (\_lambda x \_rightarrow (n, prConcat [sep, x])) r))
 
  op  prPostSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
  def prPostSep n blockFn sep l =
@@ -368,7 +368,7 @@ Haskell qualifying spec
 
   op expandRecPatterns (spc: Spec) (pat: Pattern, condn: MS.Term, body: MS.Term): Pattern * MS.Term * MS.Term =
     case pat of
-      | RecordPat(pats as (id1,_)::_,_) | id1 ~= "1" && varOrRecordPattern? pat ->
+      | RecordPat(pats as (id1, _)::_, _) | id1 ~= "1" && varOrRecordPattern? pat ->
         let rec_v = ("record__v", patternSort pat) in
         let binds = makeSubstFromRecPats(pats, mkVar rec_v, spc) in
         let let_bod = foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds in
@@ -391,7 +391,7 @@ Haskell qualifying spec
 
   op maybeExpandRecordPattern(spc: Spec) (t: MS.Term): MS.Term =
     case t of
-      | Let([(pat as RecordPat(pats as (id1,_)::_,_), rec_tm)], body, _)
+      | Let([(pat as RecordPat(pats as (id1, _)::_, _), rec_tm)], body, _)
           | id1 ~= "1" && varOrRecordPattern? pat ->
         let binds = makeSubstFromRecPats(pats, rec_tm, spc) in
         foldr (fn (bnd, bod) -> maybeExpandRecordPattern spc (MS.mkLet([bnd], bod))) body binds
@@ -482,8 +482,8 @@ Haskell qualifying spec
 
   op getSuperTypeOp(ty: Sort): QualifiedId =
     case ty of
-      | Base(superty,_,_) \_rightarrow superty
-      | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
+      | Base(superty, _, _) \_rightarrow superty
+      | Subsort(sup, _, _) \_rightarrow getSuperTypeOp sup
       | _ \_rightarrow fail("Not a Subtype and not a named type")
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
@@ -602,7 +602,7 @@ Haskell qualifying spec
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef(qid as Qualified(_,nm), refine_num, _) \_rightarrow
+      | OpDef(qid as Qualified(_, nm), refine_num, _) \_rightarrow
 	(case AnnSpec.findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} \_rightarrow
 	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn
@@ -610,14 +610,14 @@ Haskell qualifying spec
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | Sort (qid,_) \_rightarrow
+      | Sort (qid, _) \_rightarrow
 	(case AnnSpec.findTheSort(spc, qid) of
 	   | Some {names, dfn} \_rightarrow ppTypeInfo c false (names, dfn)
 	   | _ \_rightarrow 
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | SortDef (qid,_) \_rightarrow
+      | SortDef (qid, _) \_rightarrow
 	(case AnnSpec.findTheSort(spc, qid) of
 	   | Some {names, dfn} \_rightarrow ppTypeInfo c true (names, dfn)
 	   | _ \_rightarrow 
@@ -631,7 +631,7 @@ Haskell qualifying spec
         in
         prLines 0 [prString verbatim_str]
 	   
-      | Comment (str,_) \_rightarrow
+      | Comment (str, _) \_rightarrow
 	prConcat [prString "{-",
 		  prString str,
 		  prString "-}"]
@@ -693,16 +693,16 @@ Haskell qualifying spec
 
  op  stripSpaces(s: String): String =
    let len = length s in
-   case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow i)) of
+   case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len, \_lambda i \_rightarrow i)) of
      | Some firstNonSpace \_rightarrow 
-       (case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow len-i-1)) of
+       (case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len, \_lambda i \_rightarrow len-i-1)) of
          | Some lastNonSpace \_rightarrow
-           subFromTo(s,firstNonSpace,lastNonSpace+1)
+           subFromTo(s, firstNonSpace, lastNonSpace+1)
          | _ \_rightarrow s)
      | _ \_rightarrow s
 
   op namedPragma?(p: Pragma): Boolean =
-    let (_,s,_,_) = p in
+    let (_, s, _, _) = p in
     let line1 = case search("\n", s) of
                   | None \_rightarrow s
                   | Some n \_rightarrow subFromTo(s, 0, n)
@@ -710,7 +710,7 @@ Haskell qualifying spec
     case removeEmpty(splitStringAt(line1, " ")) of
      | pragma_kind::name?::r | pragma_kind = "Haskell" \_or pragma_kind = "haskell" \_rightarrow
        ~(name? = "fa"
-           \_or name?@0 in? [#(,#[,#\\,#",#-])  % #" #]
+           \_or name?@0 in? [#(, #[, #\\, #", #-])  % #" #]
      | _ \_rightarrow false
 
   op unnamedPragma?(p: Pragma): Boolean =
@@ -725,15 +725,15 @@ Haskell qualifying spec
 
  op  haskellThyMorphismPragma: String \_rightarrow Option(String * List String)
  def haskellThyMorphismPragma prag =
-   case search("\n",prag) of
+   case search("\n", prag) of
      | None \_rightarrow None
      | Some n \_rightarrow
-   let line1 = subFromTo(prag,0,n) in
-   case removeEmpty(splitStringAt(line1," ")) of
+   let line1 = subFromTo(prag, 0, n) in
+   case removeEmpty(splitStringAt(line1, " ")) of
      | "Haskell"::thyMorphStr::r | thyMorphStr in?
-				      ["ThyMorphism","Thy_Morphism",
-				       "TheoryMorphism","Theory_Morphism"] \_rightarrow
-       Some(subFromTo(prag,n,length prag), r)
+				      ["ThyMorphism", "Thy_Morphism",
+				       "TheoryMorphism", "Theory_Morphism"] \_rightarrow
+       Some(subFromTo(prag, n, length prag), r)
      | _ \_rightarrow None
 
 
@@ -843,16 +843,16 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    else
    if full? \_and (case ty of Any _ \_rightarrow false | _ \_rightarrow true)
      then case ty of
-	   | CoProduct(taggedSorts,_) \_rightarrow
-             (let def ppTaggedSort (id,optTy) =
+	   | CoProduct(taggedSorts, _) \_rightarrow
+             (let def ppTaggedSort (id, optTy) =
                 case optTy of
                   | None \_rightarrow ppConstructor(id, mainId, c)
                   | Some ty \_rightarrow
                     prConcat [ppConstructor(id, mainId, c), prSpace,
                               case ty of
-                                | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+                                | Product(fields as ("1", _)::_, _) \_rightarrow	% Treat as curried
                                   prConcat(addSeparator prSpace
-                                             (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
+                                             (map (\_lambda (_, c_ty) \_rightarrow ppType c CoProduct c_ty) fields))
                                 | _ \_rightarrow ppType c CoProduct ty]
               in
               prBreakCat 2
@@ -860,7 +860,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                   ppTypeIdInfo c aliases,
                   ppTyVars tvs],
                  [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
-	   | Product (fields,_) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
+	   | Product (fields, _) | length fields > 0 && (head fields).1 ~= "1" \_rightarrow
 	     prConcat
 	       [prString "data ",
                 ppTyVars tvs,
@@ -896,7 +896,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                       prPostSep 0 blockFill prSpace
 		        (map prString tvs)]
 
- %%% Steps for ops       =>  ||  &&   =  ::   +   *  **,  ? apply
+ %%% Steps for ops       =>  ||  &&   =  ::   +   *  **, ? apply
  op precNumSteps: List Nat = [13, 14, 15, 20, 23, 25, 27, 30, 35, 1000]
  op convertPrecNum(sw_prec_num: Nat): Nat =
    case leftmostPositionSuchThat (precNumSteps, fn step -> sw_prec_num < step) of
@@ -909,49 +909,55 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
      | _ -> fx
 
  op mkIncTerm(t: MS.Term): MS.Term =
-   mkApply(mkOp(Qualified("Integer","+"),
+   mkApply(mkOp(Qualified("Integer", "+"),
                 mkArrow(mkProduct [natSort, natSort], natSort)),
-           mkTuple[t,mkNat 1])
+           mkTuple[t, mkNat 1])
 
- op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times MS.Term)
+ op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times Option MS.Term \_times MS.Term)
  def defToFunCases c op_tm bod =
    let
      def aux(hd, bod) =
        % let _ = writeLine("dtfc: "^printTerm hd^" = "^printTerm bod) in
        case bod of
-         | Lambda ([(VarPat (v as (nm,ty),_), _, term)], a) \_rightarrow
+         | Lambda ([(VarPat (v as (nm, ty), _), _, term)], a) \_rightarrow
            aux(Apply(hd, mkVar v, a), term)
          | Lambda ([(pattern, _, term)], a) \_rightarrow
            (case patToTerm (pattern, "",  c) of
               | Some pat_tm \_rightarrow
                 aux (Apply(hd, pat_tm, a), term)
-              | _ \_rightarrow [(hd, bod)])
-         | Apply (Lambda (pats,_), Var(v,_), _) \_rightarrow
+              | _ \_rightarrow [(hd, None, bod)])
+         | Apply (Lambda (pats, _), Var(v, _), _) \_rightarrow
            if exists? (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
             then foldl (\_lambda (cases, (pati, _, bodi)) \_rightarrow
+                        let (pati, condn?) = case pati of
+                                               | RestrictedPat(p, condn, _) -> (p, Some condn)
+                                               | _ -> (pati, None)
+                        in
                         case patToTerm(pati, "",  c) of
                           | Some pati_tm \_rightarrow
                             let sbst = [(v, pati_tm)] in
-                            let s_bodi = if hasVarNameConflict?(pati_tm, [v]) then bodi
-                                          else substitute(bodi, sbst)
+                            let (s_bodi, condn?) =
+                                if hasVarNameConflict?(pati_tm, [v]) then (bodi, condn?)
+                                else (substitute(bodi, sbst),
+                                      mapOption (fn condn -> substitute(condn, sbst)) condn?)
                             in
-                            let new_cases = aux_case(substitute(hd, sbst), s_bodi) in
+                            let new_cases = aux_case(substitute(hd, sbst), condn?, s_bodi) in
                             (cases ++ new_cases)
                           | _ \_rightarrow
-                            let new_cases = aux_case(hd, bodi) in
+                            let new_cases = aux_case(hd, condn?, bodi) in
                             (cases ++ new_cases))
                    [] pats
-            else [(hd, bod)]
-         | Apply (Lambda (pats,_), arg as Record(var_tms,_), _)
+            else [(hd, None, bod)]
+         | Apply (Lambda (pats, _), arg as Record(var_tms, _), _)
              | tupleFields? var_tms    % ??
-               &&  forall? (fn (_,t) \_rightarrow embed? Var t) var_tms
+               &&  forall? (fn (_, t) \_rightarrow embed? Var t) var_tms
 %                && (case hd of
-%                      | Apply(_,param,_) \_rightarrow equalTerm?(param,arg)
+%                      | Apply(_, param, _) \_rightarrow equalTerm?(param, arg)
 %                      | _ \_rightarrow false)
            \_rightarrow
            let def matchPat (p: Pattern, cnd, bod: MS.Term): Option(MS.Term * MS.Term) =
                  case p of
-                   | RecordPat(rpats,_) \_rightarrow
+                   | RecordPat(rpats, _) \_rightarrow
                      let sbst = mapPartial (fn ((_, v_tm as Var(v, _)), (_, p1)) \_rightarrow
                                               case p1 of
                                                 | WildPat _ \_rightarrow Some(v, v_tm)  % id
@@ -963,82 +969,85 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                      in
                      if length sbst ~= length rpats then None
                      else
-                     let bod_sbst = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sbst in
+                     let bod_sbst = filter (fn (v, tm) -> ~(hasVarNameConflict?(tm, [v]))) sbst in
                      Some(substitute(hd, sbst), substitute(bod, bod_sbst))
                    | VarPat(v, _) \_rightarrow Some(hd, substitute(bod, [(v, arg)]))
                    | WildPat _ \_rightarrow Some(hd, bod)
                    | AliasPat(VarPat(v, _), p2, _) \_rightarrow matchPat(p2, cnd, substitute(bod, [(v, arg)]))
-                   | RestrictedPat(rp,_,_) \_rightarrow matchPat(rp, cnd, bod)
+                   | RestrictedPat(rp, _, _) \_rightarrow matchPat(rp, cnd, bod)
                    | _ \_rightarrow None
            in
            let cases = mapPartial matchPat pats in
            if length cases = length pats
-             then foldl (fn (cases, (lhs,rhs)) -> cases ++ aux(lhs,rhs)) [] cases
-             else [(hd, bod)]
-         | Let([(pat, Var(v,_))], bod, a) | v in? freeVars hd \_rightarrow
+             then foldl (fn (cases, (lhs, rhs)) -> cases ++ aux(lhs, rhs)) [] cases
+             else [(hd, None, bod)]
+         | Let([(pat, Var(v, _))], bod, a) | v in? freeVars hd \_rightarrow
            (case patToTerm(pat, "",  c) of
               | Some pat_tm \_rightarrow
                 let s_bod = if hasVarNameConflict?(pat_tm, [v]) then bod
-                            else substitute(bod,[(v,pat_tm)])
+                            else substitute(bod, [(v, pat_tm)])
                 in
-                aux(substitute(hd, [(v,pat_tm)]), s_bod)
-              | None \_rightarrow [(hd, bod)])
-         | IfThenElse(Apply(Fun(Equals, _,_),
-                            Record([("1", vr as Var(v as (vn,s),_)),
-                                    ("2",zro as Fun(Nat 0,_,_))],_),
+                aux(substitute(hd, [(v, pat_tm)]), s_bod)
+              | None \_rightarrow [(hd, None, bod)])
+         | IfThenElse(Apply(Fun(Equals, _, _),
+                            Record([("1", vr as Var(v as (vn, s), _)),
+                                    ("2", zro as Fun(Nat 0, _, _))], _),
                             _),
                       then_cl, else_cl, _)
              | natSort? s \_and inVars?(v, freeVars hd) \_rightarrow
-           let cases1 = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)])) in
+           let cases1 = aux(substitute(hd, [(v, zro)]), substitute(then_cl, [(v, zro)])) in
            let cases2 = aux(substitute(hd, [(v, mkIncTerm vr)]),
                             simpSubstitute(getSpec c, else_cl, [(v, mkIncTerm vr)]))
            in
            cases1 ++ cases2
-         | _ \_rightarrow [(hd,bod)]
-     def aux_case(hd,bod: MS.Term) =
-       aux(hd,bod) 
-     def fix_vars(hd,bod) =
+         | _ \_rightarrow [(hd, None, bod)]
+     def aux_case(hd, condn?, bod: MS.Term) =
+       case condn? of
+         | None -> aux(hd, bod)
+         | Some _ -> [(hd, condn?, bod)]
+     def fix_vars(hd, condn?, bod) =
        case hd of
          | Fun(_, ty, _) ->
            (case arrowOpt(getSpec c, ty) of
-              | Some(dom,_) ->
+              | Some(dom, _) ->
                 let new_v = mkVar("x__a", dom) in
-                (mkApply(hd, new_v), mkApply(bod, new_v))
+                (mkApply(hd, new_v), condn?, mkApply(bod, new_v))
               %% Shouldn't happen?
-              | None -> (hd,bod))
+              | None -> (hd, condn?, bod))
          | _ ->
        let fvs = freeVars hd ++ freeVars bod in
-       let rename_fvs = filter (\_lambda (nm,_) \_rightarrow nm in? disallowedVarNames) fvs in
-       if rename_fvs = [] then (hd,bod)
-         else let sb = map (\_lambda (v as (nm,ty)) \_rightarrow (v,mkVar(nm^"_v",ty))) rename_fvs in
-              let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
-              (substitute(hd,sb), substitute(bod,bod_sb))
+       let rename_fvs = filter (\_lambda (nm, _) \_rightarrow nm in? disallowedVarNames) fvs in
+       if rename_fvs = [] then (hd, condn?, bod)
+         else let sb = map (\_lambda (v as (nm, ty)) \_rightarrow (v, mkVar(nm^"_v", ty))) rename_fvs in
+              let bod_sb = filter (fn (v, tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
+              (substitute(hd, sb), mapOption (fn condn -> substitute(condn, sb)) condn?,
+               substitute(bod, bod_sb))
    in
    case bod of
-     | Lambda ([(RestrictedPat(rpat,_,_),condn,tm)], a) \_rightarrow
+     | Lambda ([(RestrictedPat(rpat, _, _), condn, tm)], a) \_rightarrow
        defToFunCases c op_tm (Lambda ([(rpat, condn, tm)], a))
      | _ \_rightarrow
    let cases =
          case bod of
-           | Lambda ([(recd as (RecordPat (prs as (("1",_)::_),_)), _, tm)],a)
+           | Lambda ([(recd as (RecordPat (prs as (("1", _)::_), _)), _, tm)], a)
                | varOrTuplePattern? recd \_rightarrow
-             let Some arg = patToTerm(recd,"", c) in
+             let Some arg = patToTerm(recd, "", c) in
              let cases = aux(Apply(op_tm, arg, a), tm) in
              cases
            | _ \_rightarrow aux(op_tm, bod)
    in
-   % let _ = app (fn (x,y) -> writeLine(printTerm x^" -> "^printTerm y)) cases in
+   % let _ = app (fn (x, y) -> writeLine(printTerm x^" -> "^printTerm y)) cases in
    %let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
 
  op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Boolean =
    case opt_prag of
-     | Some(beg_str,mid_str,end_str,pos) \_rightarrow
+     | Some(beg_str, mid_str, end_str, pos) \_rightarrow
        let len = length mid_str in
-       (case search("\n",mid_str) of
+       (case search("\n", mid_str) of
           | None \_rightarrow ([], false)
           | Some n \_rightarrow
-            let prf_str = stripExcessWhiteSpace(subFromTo(mid_str,n+1,len)) in
+            let prf_str = stripExcessWhiteSpace(subFromTo(mid_str, n+1, len)) in
             ([[prString(specwareToHaskellString prf_str)]],
              proofEndsWithTerminator? prf_str))
      | _ \_rightarrow ([], false)
@@ -1051,8 +1060,13 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
   let mainId = head aliases in
   let op_tm = mkFun (Op (mainId, fixity), ty) in
   let cases = defToFunCases c op_tm dfn in
-  let pp_cases = map (fn (lhs, rhs) ->
-                        prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]])
+  let pp_cases = map (fn (lhs, condn?, rhs) ->
+                        case condn? of
+                        | None -> prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]]
+                        | Some condn ->
+                          prBreak 2 [prConcat[ppTerm c Top lhs, prSpace],
+                                     prBreakCat 1 [[prString "| ", ppTerm c Top condn], [prString " = ", ppTerm c Top rhs]]])
+  
                    cases
   in
   prLines (0) pp_cases
@@ -1090,7 +1104,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                     | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
                     | _ \_rightarrow ppType c Top ty)]]
              ++ (case fixity of
-                   | Infix(assoc,prec) \_rightarrow
+                   | Infix(assoc, prec) \_rightarrow
                      [[case assoc of
                         | Left     \_rightarrow prString "infixl "
                         | Right    \_rightarrow prString "infixr "
@@ -1117,36 +1131,36 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
 
 op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term = 
     case pat
-      of EmbedPat(con,None,ty,a) \_rightarrow 
-         Some(Fun(Embed(con,false),ty,a))
-       | EmbedPat(con,Some p,ty,a) \_rightarrow 
+      of EmbedPat(con, None, ty, a) \_rightarrow 
+         Some(Fun(Embed(con, false), ty, a))
+       | EmbedPat(con, Some p, ty, a) \_rightarrow 
          (case patToTerm(p, ext, c)
             of None \_rightarrow None
              | Some (trm) \_rightarrow 
                let ty1 = patternSort p in
-               Some (Apply(Fun(Embed(con,true),Arrow(ty1,ty,a),a),trm,a)))
-       | RecordPat(fields,a) \_rightarrow 
+               Some (Apply(Fun(Embed(con, true), Arrow(ty1, ty, a), a), trm, a)))
+       | RecordPat(fields, a) \_rightarrow 
          let
-            def loop(new,old,i) = 
+            def loop(new, old, i) = 
                 case new
-                  of [] \_rightarrow Some(Record(reverse old,a))
-                   | (l,p)::new \_rightarrow 
+                  of [] \_rightarrow Some(Record(reverse old, a))
+                   | (l, p)::new \_rightarrow 
                 case patToTerm(p, ext^(show i), c)
                   of None \_rightarrow None
                    | Some(trm) \_rightarrow 
-                     loop(new, Cons((l,trm),old), i+1)
+                     loop(new, Cons((l, trm), old), i+1)
          in
-         loop(fields,[], 0)
+         loop(fields, [], 0)
        | NatPat(i, _) \_rightarrow Some(mkNat i)
        | BoolPat(b, _) \_rightarrow Some(mkBool b)
        | StringPat(s, _) \_rightarrow Some(mkString s)
        | CharPat(c, _) \_rightarrow Some(mkChar c)
-       | VarPat((v,ty), a) \_rightarrow Some(Var((v,ty), a))
-       | WildPat(ty,a) \_rightarrow Some(Var(("_",ty), a))   % Not valid Specware but seems to work for our purposes here
-       | QuotientPat(pat,cond,_)  \_rightarrow None %% Not implemented
-       | RestrictedPat(pat,cond,_)  \_rightarrow
-         patToTerm(pat,ext, c)		% cond ??
-       | AliasPat(p1,p2,_) \_rightarrow 
+       | VarPat((v, ty), a) \_rightarrow Some(Var((v, ty), a))
+       | WildPat(ty, a) \_rightarrow Some(Var(("_", ty), a))   % Not valid Specware but seems to work for our purposes here
+       | QuotientPat(pat, cond, _)  \_rightarrow None %% Not implemented
+       | RestrictedPat(pat, cond, _)  \_rightarrow
+         patToTerm(pat, ext, c)		% cond ??
+       | AliasPat(p1, p2, _) \_rightarrow 
          (case patToTerm(p2, ext, c) 
             of None \_rightarrow patToTerm(p1, ext, c)
              | Some(trm) \_rightarrow Some trm)
@@ -1167,7 +1181,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
    equalTerm?(tm1, tm2)
      || (case (tm1, tm2) of
-           | (Apply(x1,_,_), Apply(x2,_,_)) \_rightarrow sameHead?(x1,x2)
+           | (Apply(x1, _, _), Apply(x2, _, _)) \_rightarrow sameHead?(x1, x2)
            | _ \_rightarrow false)
 
  op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
@@ -1178,12 +1192,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
    case (tm1, tm2) of
-     | (Apply(x1,y1,_), Apply(x2,y2,_)) \_rightarrow
-       nonPrimitiveArg?(y1,y2) || hasNonPrimitiveArg?(x1,x2)
+     | (Apply(x1, y1, _), Apply(x2, y2, _)) \_rightarrow
+       nonPrimitiveArg?(y1, y2) || hasNonPrimitiveArg?(x1, x2)
      | _ \_rightarrow false
 
  op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Boolean =
-   sameHead?(hd,tm) && hasNonPrimitiveArg?(hd,tm)
+   sameHead?(hd, tm) && hasNonPrimitiveArg?(hd, tm)
 
  %% Only concerned with curried calls
  op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Boolean =
@@ -1193,7 +1207,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    %% an explicit lambda will have beginning of variable close to beginning of lambda expr
    false   %usePosInfoForDefAnalysis?
      => (case (v_pos, lam_pos) of
-           | (File(_,(_,_,v_byte),_), File(_,(_,_,lam_byte),_)) ->
+           | (File(_, (_, _, v_byte), _), File(_, (_, _, lam_byte), _)) ->
              v_byte - lam_byte > 4
            | _ -> true)
 
@@ -1202,18 +1216,18 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op filterConstrainedVars(c: Context, t: MS.Term, vs: Vars): Vars =
    let def removeArgs(vs: Vars, args: Terms, bound_vars: Vars): Vars =
-         % let _ = writeLine("removeArgs: "^anyToString (map (fn (x,_) \_rightarrow x) bound_vars)) in
+         % let _ = writeLine("removeArgs: "^anyToString (map (fn (x, _) \_rightarrow x) bound_vars)) in
          % let _ = app (fn t -> writeLine (printTerm t)) args in
          let v_args = mapPartial (\_lambda t \_rightarrow
                                     case t of
-                                      | Var (v,_) | inVars?(v, vs)
+                                      | Var (v, _) | inVars?(v, vs)
                                                    && ~(hasVarNameConflict?(t, bound_vars)) \_rightarrow
                                         Some v
                                       | _ \_rightarrow None)
                          args
          in deleteVars(v_args, vs)
        def filterKnown(vs: Vars, id: String, f: MS.Term, args: Terms, bound_vs: Vars): Vars =
-         % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x,_) \_rightarrow x) vs)) in
+         % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x, _) \_rightarrow x) vs)) in
          if id = "natural?" \_or id in? haskellOverloadedOps 
             \_or exists? (\_lambda ci \_rightarrow id in? ci.overloadedOps)
                 c.coercions
@@ -1223,54 +1237,54 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             \_or (length(wildFindUnQualified((getSpec c).ops, id)) = 1
                   %% The following is only necessary for base specs
                   && length(wildFindUnQualified((getBaseSpec()).ops, id)) <= 1)
-           then removeArgs(vs,args,bound_vs)
+           then removeArgs(vs, args, bound_vs)
            else vs
 %         case wildFindUnQualified((getSpec c).ops, id) of
 %              | [opinfo] \_rightarrow
 %                (case unpackFirstOpDef opinfo of
 %                   | (tvs, _, _) \_rightarrow     % Could polymorphic operator sometimes be a problem??
-%                     removeArgs(vs,args,bound_vs)
+%                     removeArgs(vs, args, bound_vs)
 %                   | _ \_rightarrow vs)
 %              | _ \_rightarrow vs
       def fCV(st, vs: Vars, bound_vs: Vars): Vars =
-        % let _ = writeLine("fCV: "^printTerm st^"\n"^anyToString (map (fn (x,_) \_rightarrow x) vs)) in
+        % let _ = writeLine("fCV: "^printTerm st^"\n"^anyToString (map (fn (x, _) \_rightarrow x) vs)) in
         let vs = case st of
-                   | Apply(f as Fun(Op(Qualified(q,id),_),_,_),arg,_) \_rightarrow
+                   | Apply(f as Fun(Op(Qualified(q, id), _), _, _), arg, _) \_rightarrow
                      filterKnown(vs, id, f, termList arg, bound_vs)
-                   | Apply(Fun(Embed(id,_),_,_),arg,_) \_rightarrow
+                   | Apply(Fun(Embed(id, _), _, _), arg, _) \_rightarrow
                      if id in? c.overloadedConstructors
                        then vs
                        else removeArgs(vs, termList arg, bound_vs)
-                   | Apply(Var(v,_), arg, _) | ~(inVars?(v, vs)) ->
+                   | Apply(Var(v, _), arg, _) | ~(inVars?(v, vs)) ->
                      removeArgs(vs, termList arg, bound_vs)
                    | _ \_rightarrow
                  case CurryUtils.getCurryArgs st of
-                   | Some(f as Fun(Op(Qualified(q,id),_),_,_),args) \_rightarrow
+                   | Some(f as Fun(Op(Qualified(q, id), _), _, _), args) \_rightarrow
                      filterKnown(vs, id, f, args, bound_vs)
                    | _ \_rightarrow vs
         in
-        % let _ = writeLine("fCV 1: "^anyToString (map (fn (x,_) \_rightarrow x) vs)) in
+        % let _ = writeLine("fCV 1: "^anyToString (map (fn (x, _) \_rightarrow x) vs)) in
         let def fCVBV(vs: Vars, st: MS.Term): Vars = fCV(st, vs, bound_vs)
             def fCVsBV(vs: Vars, tms: Terms): Vars = foldl fCVBV vs tms
         in
         case st of
           | Apply     (M, N, _)     -> fCVBV(fCVBV(vs, M), N)
-          | Record    (fields, _)   -> foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs fields
-          | Bind      (_,vars,M, _) -> fCV(M, vs, insertVars(vars, bound_vs))
-          | The       (var,M, _)    -> fCV(M, vs, insertVar(var, bound_vs))
-          | Let       (decls, N, _) -> let vs = foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs decls in
-                                       let bound_vs = foldl (fn (bound_vs,(pat,_)) ->
+          | Record    (fields, _)   -> foldl (fn (vs, (_, M)) -> fCVBV(vs, M)) vs fields
+          | Bind      (_, vars, M, _) -> fCV(M, vs, insertVars(vars, bound_vs))
+          | The       (var, M, _)    -> fCV(M, vs, insertVar(var, bound_vs))
+          | Let       (decls, N, _) -> let vs = foldl (fn (vs, (_, M)) -> fCVBV(vs, M)) vs decls in
+                                       let bound_vs = foldl (fn (bound_vs, (pat, _)) ->
                                                                insertVars(patVars pat, bound_vs))
                                                           bound_vs decls
                                        in
                                        fCV(N, vs, bound_vs)
-          | LetRec    (decls, N, _) -> let vs = foldl (fn (vs,(_,M)) -> fCVBV(vs, M)) vs decls in
-                                       let bound_vs = foldl (fn (bound_vs, (var,_)) ->
+          | LetRec    (decls, N, _) -> let vs = foldl (fn (vs, (_, M)) -> fCVBV(vs, M)) vs decls in
+                                       let bound_vs = foldl (fn (bound_vs, (var, _)) ->
                                                                insertVar(var, bound_vs))
                                                           bound_vs decls
                                        in
                                        fCV(N, vs, bound_vs)
-          | Lambda    (rules,    _) -> foldl (fn (vs,(p, _, M)) ->
+          | Lambda    (rules,    _) -> foldl (fn (vs, (p, _, M)) ->
                                               fCV(M, vs, insertVars(patVars p, bound_vs)))
                                          vs rules
           | IfThenElse(P, M, N,  _) -> fCVBV(fCVBV(fCVBV(vs, P), M), N)
@@ -1286,53 +1300,53 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op addExplicitTypingForVars(t: MS.Term, vs: Vars): MS.Term * Vars =
    let def addExpl(t: MS.Term, vs: Vars, bound_vs: Vars): MS.Term * Vars =
          case t of
-           | Var(v1 as (_,ty),pos) | inVars?(v1, vs) && ~(hasVarNameConflict?(t, bound_vs)) \_rightarrow
-             (SortedTerm(t,ty,pos), filter (\_lambda v2 \_rightarrow \_not (equalVar?(v1, v2))) vs)
-           | Apply(t1,t2,a) \_rightarrow
-             let (t1,vs) = addExpl(t1,vs,bound_vs) in
-             let (t2,vs) = addExpl(t2,vs,bound_vs) in
-             (Apply(t1,t2,a),vs)
-           | Record(prs,a) \_rightarrow
-             let (prs,vs) = foldl (\_lambda ((prs,vs),(id,st)) \_rightarrow
-                                  let (st,vs) = addExpl(st,vs,bound_vs) in
-                                  (Cons((id,st),prs), vs))
-                             ([],vs) prs
+           | Var(v1 as (_, ty), pos) | inVars?(v1, vs) && ~(hasVarNameConflict?(t, bound_vs)) \_rightarrow
+             (SortedTerm(t, ty, pos), filter (\_lambda v2 \_rightarrow \_not (equalVar?(v1, v2))) vs)
+           | Apply(t1, t2, a) \_rightarrow
+             let (t1, vs) = addExpl(t1, vs, bound_vs) in
+             let (t2, vs) = addExpl(t2, vs, bound_vs) in
+             (Apply(t1, t2, a), vs)
+           | Record(prs, a) \_rightarrow
+             let (prs, vs) = foldl (\_lambda ((prs, vs), (id, st)) \_rightarrow
+                                  let (st, vs) = addExpl(st, vs, bound_vs) in
+                                  (Cons((id, st), prs), vs))
+                             ([], vs) prs
              in
-             (Record(reverse prs,a),vs)
-           | Bind(bdr,lvs,st,a) \_rightarrow
-             let (st,vs) = addExpl(st,vs,insertVars(lvs, bound_vs)) in
-             (Bind(bdr,lvs,st,a),vs)
-           | The(v,st,a) \_rightarrow
-             let (st,vs) = addExpl(st,vs,insertVar(v, bound_vs)) in
-             (The(v,st,a),vs)
-           | Let(bds,st,a) \_rightarrow                % Should really look in bds
-             let bound_vs = foldl (fn (bound_vs,(pat,_)) ->
+             (Record(reverse prs, a), vs)
+           | Bind(bdr, lvs, st, a) \_rightarrow
+             let (st, vs) = addExpl(st, vs, insertVars(lvs, bound_vs)) in
+             (Bind(bdr, lvs, st, a), vs)
+           | The(v, st, a) \_rightarrow
+             let (st, vs) = addExpl(st, vs, insertVar(v, bound_vs)) in
+             (The(v, st, a), vs)
+           | Let(bds, st, a) \_rightarrow                % Should really look in bds
+             let bound_vs = foldl (fn (bound_vs, (pat, _)) ->
                                      insertVars(patVars pat, bound_vs))
                               bound_vs bds
              in
-             let (st,vs) = addExpl(st,vs,bound_vs) in
-             (Let(bds,st,a),vs)
-           | LetRec(bds,st,a) \_rightarrow
-             let bound_vs = foldl (fn (bound_vs, (var,_)) ->
+             let (st, vs) = addExpl(st, vs, bound_vs) in
+             (Let(bds, st, a), vs)
+           | LetRec(bds, st, a) \_rightarrow
+             let bound_vs = foldl (fn (bound_vs, (var, _)) ->
                                      insertVar(var, bound_vs))
                               bound_vs bds
              in
-             let (st,vs) = addExpl(st,vs,bound_vs) in
-             (LetRec(bds,st,a),vs)
-           | IfThenElse(t1,t2,t3,a) \_rightarrow
-             let (t1,vs) = addExpl(t1,vs,bound_vs) in
-             let (t2,vs) = addExpl(t2,vs,bound_vs) in
-             let (t3,vs) = addExpl(t3,vs,bound_vs) in
-             (IfThenElse(t1,t2,t3,a),vs)
-           | Lambda(cases,a) ->
-             let (cases,vs) = foldl (fn ((result,vs),(p,c,t)) ->
-                                       let (t,vs) = addExpl(t,vs,insertVars(patVars p, bound_vs)) in
-                                       (result ++ [(p,c,t)], vs))
-                                ([],vs) cases
+             let (st, vs) = addExpl(st, vs, bound_vs) in
+             (LetRec(bds, st, a), vs)
+           | IfThenElse(t1, t2, t3, a) \_rightarrow
+             let (t1, vs) = addExpl(t1, vs, bound_vs) in
+             let (t2, vs) = addExpl(t2, vs, bound_vs) in
+             let (t3, vs) = addExpl(t3, vs, bound_vs) in
+             (IfThenElse(t1, t2, t3, a), vs)
+           | Lambda(cases, a) ->
+             let (cases, vs) = foldl (fn ((result, vs), (p, c, t)) ->
+                                       let (t, vs) = addExpl(t, vs, insertVars(patVars p, bound_vs)) in
+                                       (result ++ [(p, c, t)], vs))
+                                ([], vs) cases
              in
-             (Lambda(cases,a), vs)
+             (Lambda(cases, a), vs)
             %% Probably should put other cases
-           | _ \_rightarrow (t,vs)
+           | _ \_rightarrow (t, vs)
     in
     addExpl(t, vs, [])
 
@@ -1376,22 +1390,22 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op proofEndsWithTerminator?(prf: String): Boolean =
    let len = length prf in
-   testSubseqEqual?("done",prf,0,len-4)
-  \_or testSubseqEqual?("sorry",prf,0,len-5)
-  \_or testSubseqEqual?("qed",prf,0,len-3)
+   testSubseqEqual?("done", prf, 0, len-4)
+  \_or testSubseqEqual?("sorry", prf, 0, len-5)
+  \_or testSubseqEqual?("qed", prf, 0, len-3)
   \_or lastLineEnds prf
 
  op  stripExcessWhiteSpace: String \_rightarrow String
  def stripExcessWhiteSpace s =
    let len = length s in
-   if len > 0 \_and s@(len-1) in? [#\s,#\n]
-     then stripExcessWhiteSpace(subFromTo(s,0,len-1))
+   if len > 0 \_and s@(len-1) in? [#\s, #\n]
+     then stripExcessWhiteSpace(subFromTo(s, 0, len-1))
      else if len > 2 && s@0 = #\s && s@1 = #\s
-           then subFromTo(s,2,len)
+           then subFromTo(s, 2, len)
            else s
 
  op endOfFirstLine(s: String): Nat =
-   case search("\n",s) of
+   case search("\n", s) of
      | Some n \_rightarrow n
      | None \_rightarrow length s
 
@@ -1404,7 +1418,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    % let _ = writeLine("infixFun? of "^anyToString f) in
    let result =
          case f of
-           | Op(qid,fx?) ->
+           | Op(qid, fx?) ->
              (let spc = getSpec c in
                case specialOpInfo c qid of
                 | Some(haskell_id, infix?, _, _, _) \_rightarrow
@@ -1415,8 +1429,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                if embed? Infix fx?
                  then Some(makeOperator c qid)
                else
-               case AnnSpec.findTheOp(spc,qid) of
-                 | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
+               case AnnSpec.findTheOp(spc, qid) of
+                 | Some{names=_, fixity = Infix fx, dfn=_, fullyQualified?=_} ->
                    let main_id = mainId qid in
                    Some(makeOperator c qid)
                  | _ -> None)
@@ -1447,23 +1461,23 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op infixOp? (c: Context) (t: MS.Term): Option String =
    case t of
-     | Fun(f,_,_) -> infixFun? c f
+     | Fun(f, _, _) -> infixFun? c f
      | _ -> None
 
  op nonCaseMatch?(match: Match): Boolean =
    case match of
-     | (NatPat _,_,_)::_ -> true
-     | (CharPat _,_,_)::_ -> true
+     | (NatPat _, _, _)::_ -> true
+     | (CharPat _, _, _)::_ -> true
      | _ -> false
 
  op charMatch?(match: Match): Boolean =
    case match of
-     | (CharPat _,_,_)::_ -> true
+     | (CharPat _, _, _)::_ -> true
      | _ -> false
 
  op mkCoproductPat(ty: Sort, id: String, spc: Spec): Pattern =
-   let Some(_,opt_ty) = findLeftmost (fn (id1,_) -> id = id1) (coproduct(spc, ty)) in
-   mkEmbedPat(id,mapOption mkWildPat opt_ty,ty)
+   let Some(_, opt_ty) = findLeftmost (fn (id1, _) -> id = id1) (coproduct(spc, ty)) in
+   mkEmbedPat(id, mapOption mkWildPat opt_ty, ty)
 
  op  ppTerm : Context \_rightarrow ParentTerm \_rightarrow MS.Term \_rightarrow Pretty
  def ppTerm c parentTerm term =
@@ -1478,14 +1492,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
       case (term1, term2) of
         | (Apply(Fun(Op(qid, _), _, _), t1, _), _) | reversedNonfixOp? c qid ->
           %% Reversed curried op, not infix
-          let Some(haskell_id,_,_,reversed,_) = specialOpInfo c qid in
+          let Some(haskell_id, _, _, reversed, _) = specialOpInfo c qid in
           enclose?(parentTerm ~= Top,
                    prBreak 2 [prString(makeIdentifier haskell_id),
                               prSpace,
                               ppTermEncloseComplex? c Nonfix term2,
                               prSpace,
                               ppTermEncloseComplex? c Nonfix t1])
-        | (Fun(Embed(constr_id,_), ty, _), Record (("1",_)::_,_)) \_rightarrow
+        | (Fun(Embed(constr_id, _), ty, _), Record (("1", _)::_, _)) \_rightarrow
           let spc = getSpec c in
           let constr_ty = range(spc, ty) in
           if multiArgConstructor?(constr_id, constr_ty, spc) then
@@ -1498,46 +1512,46 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           else prConcat [ppConstructorTyped(constr_id, constr_ty, c),
                          prSpace,
                          ppTerm c Nonfix term2]
-        | (Lambda (match, _),_) \_rightarrow
+        | (Lambda (match, _), _) \_rightarrow
           enclose?(parentTerm \_noteq Top,
-                   prBreakCat 2 [[prString "case ",
-                                  ppTerm c Top term2,
-                                  prString " of "],
-                                 [ppMatch c match]])
+                   prLines 2 [prConcat[prString "case ",
+                                       ppTerm c Top term2,
+                                       prString " of "],
+                              ppMatch c match])
         | (Fun (Project p, ty1, _), _) \_rightarrow
           let pid = projectorFun(p, ty1, c) in
           prConcat [prString pid,
                     prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]
-%         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) \_rightarrow  % natural? e \_longrightarrow 0 <= e
+%         | (Fun (Op (Qualified("Nat", "natural?"), _), _, a), _) \_rightarrow  % natural? e \_longrightarrow 0 <= e
 %           let term2 = case term2 of
-%                         | Apply(Fun(Op(Qualified(q,"int"),_),_,_),x,_) | q = toHaskellQual \_rightarrow
+%                         | Apply(Fun(Op(Qualified(q, "int"), _), _, _), x, _) | q = toHaskellQual \_rightarrow
 %                           %% In this case it is known true, but leave it in for now for transparency
 %                           x
 %                         | _ \_rightarrow term2
 %           in
-%           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
+%           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer", "<="), Infix(Left, 20)), Any a, a),
 %                                       [mkNat 0, term2]))
-        | (Fun(Op(qid,Infix _),_,a), term2) \_rightarrow
+        | (Fun(Op(qid, Infix _), _, a), term2) \_rightarrow
           let spc = getSpec c in
           ppTerm c parentTerm
             (case productSorts(spc, inferType (spc, term2)) of
-               | [t1,t2] ->
-                 MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x",t1), MS.mkVarPat("y",t2)], term2)],
-                          mkAppl(term1, [mkVar("x",t1), mkVar("y",t2)]))
+               | [t1, t2] ->
+                 MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x", t1), MS.mkVarPat("y", t2)], term2)],
+                          mkAppl(term1, [mkVar("x", t1), mkVar("y", t2)]))
                | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
         %%  embed? foo x  -->  case x of foo _ -> true | _ -> false
-        | (Fun(Embedded id,ty,a), term2) \_rightarrow
+        | (Fun(Embedded id, ty, a), term2) \_rightarrow
           let spc = getSpec c in
           let term2_ty = inferType(spc, term2) in
-          let lam_tm = Lambda([(mkCoproductPat(term2_ty,id,spc),trueTerm,trueTerm),
-                               (mkWildPat term2_ty,trueTerm,falseTerm)], a)
+          let lam_tm = Lambda([(mkCoproductPat(term2_ty, id, spc), trueTerm, trueTerm),
+                               (mkWildPat term2_ty, trueTerm, falseTerm)], a)
           in
           prApply(lam_tm, term2)
         | _ \_rightarrow
           (case infixOp? c term1 of    % Infix ops are translated uniformly to curried ops
              | Some infix_str \_rightarrow
                enclose?(parentTerm ~= Top,
-                        prLinearCat 0 [[prString "let (x,y) = ",
+                        prLinearCat 0 [[prString "let (x, y) = ",
                                         ppTerm c Top term2,
                                         prSpace],
                                        [prString "in x ",
@@ -1546,13 +1560,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %                let spc = getSpec c in
 %                ppTerm c parentTerm
 %                  (case productSorts(spc, inferType (spc, term2)) of
-%                     | [t1,t2] ->
-%                       MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x",t1), MS.mkVarPat("y",t2)], term2)],
-%                                mkAppl(term1, [mkVar("x",t1), mkVar("y",t2)]))
+%                     | [t1, t2] ->
+%                       MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x", t1), MS.mkVarPat("y", t2)], term2)],
+%                                mkAppl(term1, [mkVar("x", t1), mkVar("y", t2)]))
 %                     | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
              | _ ->
            (case termFixity c term1 of
-              | (Some pp_id,_,true,reversed) ->  % op translated to curried
+              | (Some pp_id, _, true, reversed) ->  % op translated to curried
                 let terms2 = MS.termToList term2 in
                 let terms2 = if reversed then reverse terms2 else terms2 in
                 if length terms2 = 1
@@ -1573,7 +1587,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                            prSpace,
                            prPostSep 2 blockFill prSpace
                              (map (ppTermEncloseComplex? c Nonfix) terms2)]
-              | (Some pp_id,_,false,true) ->
+              | (Some pp_id, _, false, true) ->
                 (let spc = getSpec c in
                  case arrowOpt(spc, inferType(spc, term)) of
                    | Some(dom, _) ->
@@ -1581,25 +1595,25 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                      ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                    | None -> fail("Can't reverse term: "^printTerm term))
               | _ ->                 
-                prBreak 2 [ppTerm c (Infix(Left,10)) term1,
+                prBreak 2 [ppTerm c (Infix(Left, 10)) term1,
                            case term2 of
-                             | Record (("1",_)::_,_) \_rightarrow ppTerm c Top term2
+                             | Record (("1", _)::_, _) \_rightarrow ppTerm c Top term2
                              | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
    case term of
      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) \_rightarrow
        (case (trm1, t2) of
-        | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
+        | (Fun(RecordMerge, ty, _), Record (fields, _)) ->
           let spc = getSpec c in
           let recd_ty = range(spc, ty) in
           let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
-                   prBreak 2 [ppTerm c (Infix(Left,10)) t1,
-                              let def ppField (x,y) =
+                   prBreak 2 [ppTerm c (Infix(Left, 10)) t1,
+                              let def ppField (x, y) =
                                      prConcat [prString (case recd_ty of
-                                                           | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
+                                                           | Base(qid, _, _) -> mkNamedRecordFieldName c (qid, x)
                                                            | _ -> mkFieldName x),
                                                prString " = ",
                                                ppTerm c Top y]
@@ -1617,10 +1631,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         let fx = termFixity c trm1 in
         % let _ = writeLine("parentTerm: "^anyToString parentTerm) in
         % let _ = writeLine(printTerm trm1 ^ " " ^printTerm trm2 ^ "\n" ^ anyToString fx) in
-        let (t1,t2) = if fx.4 then (t2,t1) else (t1,t2) in   % Reverse args
+        let (t1, t2) = if fx.4 then (t2, t1) else (t1, t2) in   % Reverse args
         (case (parentTerm, fx) of
            | (_, (None, Nonfix, false, _)) \_rightarrow
-             prApply (trm1, mkTuple[t1,t2])
+             prApply (trm1, mkTuple[t1, t2])
            | (_, (Some pr_op, Nonfix, curried?, _)) \_rightarrow
              if ~curried?
                then enclose?(parentTerm ~= Top,
@@ -1629,7 +1643,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                                                     [ppTerm c Top t2]])])
              else
              enclose?(parentTerm ~= Top,
-                      prLinearCat 2 [[pr_op,prSpace],
+                      prLinearCat 2 [[pr_op, prSpace],
                                      [ppTermEncloseComplex? c Nonfix t1, prSpace,
                                       ppTermEncloseComplex? c Nonfix t2]])
            | (Nonfix, (Some pr_op, Infix (a, p), _, _)) \_rightarrow
@@ -1641,19 +1655,19 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
                              a1=a2 && a1 ~= NotAssoc, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
-     | Apply(term1 as Fun (Not, _, _),term2,_) \_rightarrow
+     | Apply(term1 as Fun (Not, _, _), term2, _) \_rightarrow
        enclose?(case parentTerm of
-                  | Infix(_,prec) \_rightarrow prec > 18
+                  | Infix(_, prec) \_rightarrow prec > 18
                   | _ \_rightarrow false,
-                prApply (term1,term2))
-     | Apply (term1,term2,_) \_rightarrow prApply (term1,term2)
+                prApply (term1, term2))
+     | Apply (term1, term2, _) \_rightarrow prApply (term1, term2)
      | ApplyN ([t1, t2], _) \_rightarrow prApply (t1, t2)
      | ApplyN (t1 :: t2 :: ts, a) \_rightarrow prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
-     | Record (fields,_) \_rightarrow
+     | Record (fields, _) \_rightarrow
        (case fields of
           | [] \_rightarrow prString "()"
-          | ("1",_) :: _ \_rightarrow
-            let def ppField (_,y) = ppTerm c Top y in
+          | ("1", _) :: _ \_rightarrow
+            let def ppField (_, y) = ppTerm c Top y in
             prConcat [prString "(",
                       prPostSep 0 blockFill (prString ", ") (map ppField fields),
                       prString ")"]
@@ -1666,7 +1680,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                   | Base(qid, _, _) -> Some qid
                                   | _ -> None
             in
-            let def ppField (x,y) =
+            let def ppField (x, y) =
                   prConcat [prString (case record_type_qid of
                                       | Some(qid) -> mkNamedRecordFieldName c (qid, x)
                                       | None -> mkFieldName x),
@@ -1675,20 +1689,20 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             in
             case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid c qid, 
+              prConcat [printTypeQid c qid,
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
             | None ->
               let _ = writeLine("ppTerm can't determine name of record:\n"^printSort recd_ty) in
               prString "{Can't determine name of record!}")
-     | The (var,term,pos) \_rightarrow    %% Not exec!!
+     | The (var, term, pos) \_rightarrow    %% Not exec!!
        let _ = warn("Translating a non-executable expression at "^printAll pos) in
        prString("error \"Trying to evaluate a \\\"the\\\" expression.\"")
-     | Bind (binder,vars,term,pos) \_rightarrow  %% Not exec!!
+     | Bind (binder, vars, term, pos) \_rightarrow  %% Not exec!!
        let _ = warn("Translating a non-executable expression at "^printAll pos) in
        enclose?(case parentTerm of
-                  | Infix(_,prec) \_rightarrow true  % prec > 18
+                  | Infix(_, prec) \_rightarrow true  % prec > 18
                   | _ \_rightarrow false,
                 prString("error \"Trying to evaluate a"
                            ^ (case binder of
@@ -1696,10 +1710,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                               | Exists -> "n existential quanitification."
                               | Exists1 -> "n exist1 quanitification.")
                            ^ "\""))
-     | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
-       prApply(Lambda([(p, trueTerm ,bod)], a), t)
-     | Let (decls,term,_) \_rightarrow
-       let def ppDecl (pattern,term) =
+     | Let ([(p, t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
+       prApply(Lambda([(p, trueTerm , bod)], a), t)
+     | Let (decls, term, _) \_rightarrow
+       let def ppDecl (pattern, term) =
              prBreakCat 2 [[ppPattern c pattern (Some ""),
                             prSpace],
                            [prString "= ",
@@ -1713,8 +1727,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                         prSpace],
                                prString "in "],
                             ppTerm c parentTerm term])
-     | LetRec (decls,term,_) \_rightarrow
-       let def ppDecl (v,term) =
+     | LetRec (decls, term, _) \_rightarrow
+       let def ppDecl (v, term) =
              prBreak 2 [%prString "def ",
                         ppVarWithoutSort v,
                         prString " = ",
@@ -1726,26 +1740,26 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                prConcat[prLinear 0 (map ppDecl decls), prSpace]],
                            prString "in ",
                            ppTerm c (if infix? parentTerm then Top else parentTerm) term])
-     | Var (v,_) \_rightarrow ppVarWithoutSort v
-     | Fun (fun,ty,_) \_rightarrow ppFun c parentTerm fun ty
+     | Var (v, _) \_rightarrow ppVarWithoutSort v
+     | Fun (fun, ty, _) \_rightarrow ppFun c parentTerm fun ty
 %      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
 %        prString "TRUE"                 % \_lambdax. True
-     | Lambda ([(pattern,_,term)],_) \_rightarrow
+     | Lambda ([(pattern, _, term)], _) \_rightarrow
        enclose?(parentTerm \_noteq Top,
                 prBreakCat 2 [[prString "\\",
                                  ppPattern c pattern (Some ""),
                                prString " -> "],
                               [ppTerm c Top term]])
-     | Lambda (match,_) \_rightarrow ppMatch c match
-     | IfThenElse (pred,term1,term2,_) \_rightarrow 
+     | Lambda (match, _) \_rightarrow ppMatch c match
+     | IfThenElse (pred, term1, term2, _) \_rightarrow 
        enclose?(infix? parentTerm,
-                blockLinear (0,[(0,prConcat [prString "if ",
+                blockLinear (0, [(0, prConcat [prString "if ",
                                              ppTerm c Top pred,
                                              prString " then "]),
-                                (2,ppTerm c Top term1),
-                                (-1,prString " else "),
-                                (2,ppTerm c Top term2)]))
-     | Seq (terms,_) \_rightarrow
+                                (2, ppTerm c Top term1),
+                                (-1, prString " else "),
+                                (2, ppTerm c Top term2)]))
+     | Seq (terms, _) \_rightarrow
        %prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
        ppTerm c parentTerm (last terms)
      | SortedTerm (tm, ty, _) \_rightarrow
@@ -1766,7 +1780,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def projectorFun (p, s, c) =
    let spc = getSpec c in
    let (prod_ty, arity) = case sortArity(spc, s) of
-                            | None \_rightarrow (s,1)
+                            | None \_rightarrow (s, 1)
                             | Some pr \_rightarrow pr
    in
    case p of
@@ -1781,7 +1795,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
      | _ \_rightarrow
    case unfoldToBaseNamedType(spc, prod_ty) of
-     | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,p)
+     | Base(qid, _, _) -> mkNamedRecordFieldName c (qid, p)
      | _ -> mkFieldName p
 
  op  ppBinder : Binder \_rightarrow Pretty
@@ -1809,7 +1823,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term): Pretty =
-         prBreakCat 2 [[ppPattern c pattern None,
+         prBreakCat 4 [[ppPattern c pattern None,
                         prString " -> "],
                        [ppTerm c Top term]]
    in
@@ -1823,7 +1837,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   prString "@",
                   enclose?(true, ppPattern c pat2 wildstr)]
      | VarPat (v, _) \_rightarrow ppVarWithoutSort v
-     | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)],_)), _, _) ->
+     | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)], _)), _, _) ->
        prBreak 2 [ppPattern c hd wildstr, prSpace, prConcat[prString ": ", ppPattern c tl wildstr]]
      | EmbedPat (constr, pat, ty, _) \_rightarrow
        prBreak 0 [ppConstructorTyped (constr, ty, c),
@@ -1832,7 +1846,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                     | Some pat \_rightarrow
                   case pat of
                     %% Print constructors with tuple args curried, unless polymorphic
-                    | RecordPat(("1",_)::_,_) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
+                    | RecordPat(("1", _)::_, _) | multiArgConstructor?(constr, ty, getSpec c) \_rightarrow
                       prBreak 2 [prSpace,
                                  prPostSep 2 blockFill prSpace
                                    (map (\_lambda p \_rightarrow enclose?(case p of
@@ -1843,11 +1857,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                     (patternToList pat))]
                     | _ \_rightarrow prConcat [prSpace, enclose?(embed? EmbedPat pat,
                                                        ppPattern c pat wildstr)]]
-     | RecordPat (fields,_) \_rightarrow
+     | RecordPat (fields, _) \_rightarrow
        (case fields of
          | [] \_rightarrow prString "()"
-         | ("1",_)::_ \_rightarrow
-           let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) in
+         | ("1", _)::_ \_rightarrow
+           let def ppField (idstr, pat) = ppPattern c pat (extendWild wildstr idstr) in
            prConcat [prString "(",
                      prPostSep 0 blockFill (prString ", ") (map ppField fields),
                      prString ")"]
@@ -1860,7 +1874,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                  | Base(qid, _, _) -> Some qid
                                  | _ -> None
            in
-           let def ppField (x,pat) =
+           let def ppField (x, pat) =
                  prConcat [prString (case record_type_qid of
                                       | Some(qid) -> mkNamedRecordFieldName c (qid, x)
                                       | None -> mkFieldName x),
@@ -1869,68 +1883,37 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            in
            case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid c qid, 
+              prConcat [printTypeQid c qid,
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
             | None -> prString "{Only handle top-level records!}")
-     | WildPat (ty,_) \_rightarrow prString "_"
-     | StringPat (str,_) \_rightarrow prString ("\"" ^ str ^ "\"")
-     | BoolPat (b,_) \_rightarrow ppBoolean b
-     | CharPat (chr,_) \_rightarrow prString ("'"^Char.show chr^"'")
-     | NatPat (int,_) \_rightarrow prString (Nat.show int)      
-     | QuotientPat (pat,qid,_) \_rightarrow 
+     | WildPat (ty, _) \_rightarrow prString "_"
+     | StringPat (str, _) \_rightarrow prString ("\"" ^ str ^ "\"")
+     | BoolPat (b, _) \_rightarrow ppBoolean b
+     | CharPat (chr, _) \_rightarrow prString ("'"^Char.show chr^"'")
+     | NatPat (int, _) \_rightarrow prString (Nat.show int)      
+     | QuotientPat (pat, qid, _) \_rightarrow 
        prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
                   ppPattern c pat wildstr,
                   prString ")"]
-     | RestrictedPat (pat,term,_) \_rightarrow 
-%        (case pat of
-%	   | RecordPat (fields,_) \_rightarrow
-%	     (case fields of
-%	       | [] \_rightarrow prBreak 0 [prString "() | ",ppTerm c term]
-%	       | ("1",_)::_ \_rightarrow
-%		   let def ppField (_,pat) = ppPattern c pat wildstr in
-%		   prConcat [
-%		     prString "(",
-%		     prSep (prString ",") (map ppField fields),
-%		     prString " | ",
-%		     ppTerm c term,
-%		     prString ")"
-%		   ]
-%	       | _ \_rightarrow
-%		   let def ppField (x,pat) =
-%		     prConcat [
-%		       prString x,
-%		       prString "=",
-%		       ppPattern c pat
-%		     ] in
-%		   prConcat [
-%		     prString "{",
-%		     prSep (prString ",") (map ppField fields),
-%		     prString " | ",
-%		     ppTerm c term,
-%		     prString "}"
-%		   ])
-%	       | _ \_rightarrow
-           prBreak 0 [ppPattern c pat wildstr
-%% Ignore restricted patterns for now (certainly for lambdas)
-%                       prString " | ",
-%                       ppTerm c Top term
-                      ] %)
-     | SortedPat (pat,ty,_) \_rightarrow ppPattern c pat wildstr
+     | RestrictedPat (pat, term, _) \_rightarrow 
+       prLines 2 [ppPattern c pat wildstr,
+                  prConcat[prString "| ", ppTerm c Top term]] 
+     | SortedPat (pat, ty, _) \_rightarrow ppPattern c pat wildstr
      | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
  op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
- def multiArgConstructor?(constrId,ty,spc) =
+ def multiArgConstructor?(constrId, ty, spc) =
    case ty of
-     | Base(qid,_,_) \_rightarrow
-       (let base_ty = sortDef(qid,spc) in
-        case coproductOpt(spc,base_ty) of
+     | Base(qid, _, _) \_rightarrow
+       (let base_ty = sortDef(qid, spc) in
+        case coproductOpt(spc, base_ty) of
           | None \_rightarrow false
           | Some fields \_rightarrow
-            exists? (\_lambda (id,opt_arg_ty) \_rightarrow
+            exists? (\_lambda (id, opt_arg_ty) \_rightarrow
                        case opt_arg_ty of
-                         | Some(Product(("1",_)::_, _)) \_rightarrow id = constrId
+                         | Some(Product(("1", _)::_, _)) \_rightarrow id = constrId
                          | _ \_rightarrow false)
               fields)
      | _ \_rightarrow false
@@ -1941,8 +1924,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
       | None \_rightarrow None
 
  op  sortDef: QualifiedId * Spec \_rightarrow Sort
- def sortDef(qid,spc) =
-   let Some info = AnnSpec.findTheSort(spc,qid) in
+ def sortDef(qid, spc) =
+   let Some info = AnnSpec.findTheSort(spc, qid) in
    firstSortDefInnerSort info
 
  op  ppBoolean : Boolean \_rightarrow Pretty
@@ -1952,7 +1935,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | false \_rightarrow prString "False"
 
  op etaRuleProduct(tm: MS.Term, fields: List(Id * Sort)): MS.Term =
-   let (pat,arg) = patTermVarsForProduct fields in
+   let (pat, arg) = patTermVarsForProduct fields in
    mkLambda(pat, mkApply(tm, arg))
 
  op  ppFun : Context \_rightarrow ParentTerm \_rightarrow Fun \_rightarrow Sort \_rightarrow Pretty
@@ -1971,54 +1954,54 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | PChoose   _ \_rightarrow prString "choose"
      | Restrict \_rightarrow prString "restrict"
      | Relax \_rightarrow prString "relax"
-     %| Op (qid,Nonfix) \_rightarrow ppOpQualifiedId c qid
-     %| Op (qid,Unspecified) \_rightarrow ppOpQualifiedId c qid
-     | Op (qid as Qualified(_,opstr),_) \_rightarrow
+     %| Op (qid, Nonfix) \_rightarrow ppOpQualifiedId c qid
+     %| Op (qid, Unspecified) \_rightarrow ppOpQualifiedId c qid
+     | Op (qid as Qualified(_, opstr), _) \_rightarrow
        (case infixFun? c fun of
           | Some infix_str \_rightarrow
             enclose?(parentTerm ~= Top,
-                     prConcat [lengthString(11, "\\(x,y). x "),
+                     prConcat [lengthString(11, "\\(x, y). x "),
                                prString infix_str,
                                prString " y"])
           | None \_rightarrow
-        if (qid = Qualified("IntegerAux","-") || qid = Qualified("Integer","~"))
-          && parentTerm ~= Infix(Left,10)   % Only true if an application
-          then let vt = ("i",integerSort) in
-               ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun,ty), mkVar vt)))
+        if (qid = Qualified("IntegerAux", "-") || qid = Qualified("Integer", "~"))
+          && parentTerm ~= Infix(Left, 10)   % Only true if an application
+          then let vt = ("i", integerSort) in
+               ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun, ty), mkVar vt)))
         else
         case specialOpInfo c qid of
           | Some(haskell_id, _, curry?, reversed?, _) \_rightarrow
             if curry? || reversed?
               then (let spc = getSpec c in
-                    case productOpt(spc,domain(spc,ty)) of
-                      | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
+                    case productOpt(spc, domain(spc, ty)) of
+                      | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun, ty), fields))
                       | None ->
                     case arrowOpt(spc, ty) of
                       | Some(dom, _) ->
                         let new_v = ("cv0", dom) in
-                        ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun,ty), mkVar new_v)))
+                        ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun, ty), mkVar new_v)))
                       | _ -> prString(makeIdentifier haskell_id))
               else prString(makeIdentifier haskell_id)
           | _ -> ppOpQualifiedId c qid)
      | Project id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
-       ppTerm c parentTerm (mkLambda(mkVarPat("tp",dom), mkApply(mkFun(fun,ty), mkVar("tp",dom))))
+       ppTerm c parentTerm (mkLambda(mkVarPat("tp", dom), mkApply(mkFun(fun, ty), mkVar("tp", dom))))
      | RecordMerge \_rightarrow prString "<<"
      | Embed ("Nil", false) \_rightarrow prString "[]"
-     | Embed (id,b) \_rightarrow
+     | Embed (id, b) \_rightarrow
        (let spc = getSpec c in
-        case arrowOpt(spc,ty) of
-          | Some(dom,rng) \_rightarrow
-            (if multiArgConstructor?(id,rng,spc)
+        case arrowOpt(spc, ty) of
+          | Some(dom, rng) \_rightarrow
+            (if multiArgConstructor?(id, rng, spc)
                then
-                 case productOpt(spc,dom) of
-                 | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
+                 case productOpt(spc, dom) of
+                 | Some fields \_rightarrow ppTerm c parentTerm (etaRuleProduct(mkFun(fun, ty), fields))
                  | None -> ppConstructorTyped(id, rng, c)
                else ppConstructorTyped(id, rng, c))
           | None \_rightarrow ppConstructorTyped(id, ty, c))
      | Embedded id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
-       ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
+       ppTerm c parentTerm (mkLambda(mkVarPat("cp", dom), mkApply(mkFun(fun, ty), mkVar("cp", dom))))
      | Select id \_rightarrow prConcat [prString "select ", prString id] % obsolete?
      | Nat n \_rightarrow prString (Nat.show n)
      | Char chr \_rightarrow prConcat [prString "'",
@@ -2026,13 +2009,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                              prString "'"]
      | String str \_rightarrow prString ("\"" ^ str ^ "\"")
      | Bool b \_rightarrow ppBoolean b
-     | OneName (id,fxty) \_rightarrow prString id
-     | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
+     | OneName (id, fxty) \_rightarrow prString id
+     | TwoNames (id1, id2, fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1, id2))
      | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
- op qidToHaskellString (c: Context) (Qualified (qualifier,id): QualifiedId) (upper?: Bool): String =
+ op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
    if qualifier = UnQualified \_or qualifier in? omittedQualifiers  \_or Some qualifier = c.qualifier? then
      if id in? disallowedVarNames then id ^ "__c"
        else ppIdStr id upper?
@@ -2055,33 +2038,33 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
-     | Some(s,_,_,_,_) \_rightarrow prString s
+     | Some(s, _, _, _, _) \_rightarrow prString s
      | None \_rightarrow ppOpQualifiedId0 c qid
 
  %% May only need ops that can be unary
- op overloadedHaskellOps: List String = ["+","-","^","abs","min","max"]
+ op overloadedHaskellOps: List String = ["+", "-", "^", "abs", "min", "max"]
 
  op overloadedHaskellOp? (c: Context) (f: MS.Term) : Boolean =
    case f of
-     | Fun(Op(qid,_),_,_) \_rightarrow
+     | Fun(Op(qid, _), _, _) \_rightarrow
        (case specialOpInfo c qid of
-          | Some(s,_,_,_,_) \_rightarrow s in? overloadedHaskellOps
+          | Some(s, _, _, _, _) \_rightarrow s in? overloadedHaskellOps
           | None \_rightarrow false)
      | _ \_rightarrow false
 
  op  ppTypeQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppTypeQualifiedId c qid =
    case specialTypeInfo c qid of
-     | Some(s,_,_) \_rightarrow prString s
+     | Some(s, _, _) \_rightarrow prString s
      | None \_rightarrow
    case qid of
 %% Table-driven now above
-%      | Qualified("Nat","Nat") \_rightarrow prString "nat"
-%      | Qualified("List","List") \_rightarrow prString "list"
-%      | Qualified("String","String") \_rightarrow prString "string"
-%      | Qualified("Char","Char") \_rightarrow prString "char"
-%      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
-%      | Qualified("Integer","Integer") \_rightarrow prString "int"
+%      | Qualified("Nat", "Nat") \_rightarrow prString "nat"
+%      | Qualified("List", "List") \_rightarrow prString "list"
+%      | Qualified("String", "String") \_rightarrow prString "string"
+%      | Qualified("Char", "Char") \_rightarrow prString "char"
+%      | Qualified("Boolean", "Boolean") \_rightarrow prString "bool"
+%      | Qualified("Integer", "Integer") \_rightarrow prString "int"
      | _ \_rightarrow ppTyQualifiedId c qid
 
 
@@ -2094,11 +2077,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op  ppInfixType : Context \_rightarrow Sort \_rightarrow Pretty
  def ppInfixType c ty =
-   case arrowOpt(getSpec c,ty) of
+   case arrowOpt(getSpec c, ty) of
      | Some(dom, rng) \_rightarrow
-       (case productSorts(getSpec c,dom) of
-         | [arg1_ty,arg2_ty] \_rightarrow
-           ppType c Top (mkArrow(arg1_ty, mkArrow(arg2_ty,rng)))
+       (case productSorts(getSpec c, dom) of
+         | [arg1_ty, arg2_ty] \_rightarrow
+           ppType c Top (mkArrow(arg1_ty, mkArrow(arg2_ty, rng)))
          | _ \_rightarrow ppType c Top ty)
      | _ \_rightarrow ppType c Top ty
 
@@ -2109,18 +2092,18 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    case ty of
      | Base _ | unfoldSubtypes? && unfoldToBaseNamedType(getSpec c, ty) ~= ty ->
        ppType c parent (unfoldToBaseNamedType(getSpec c, ty))
-     | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
+     | Base (qid, [], _) \_rightarrow ppTypeQualifiedId c qid
       %% CoProduct only at top level
-%     | CoProduct (taggedSorts,_) \_rightarrow 
-%       let def ppTaggedSort (id,optTy) =
+%     | CoProduct (taggedSorts, _) \_rightarrow 
+%       let def ppTaggedSort (id, optTy) =
 %       case optTy of
 %         | None \_rightarrow quoteIf(~in_quotes?, id, ppConstructor id)
 %         | Some ty \_rightarrow
 %           prConcat [quoteIf(~in_quotes?, id, ppConstructor id), prSpace,
 %                     case ty of
-%                       | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+%                       | Product(fields as ("1", _)::_, _) \_rightarrow	% Treat as curried
 %                         prConcat(addSeparator prSpace
-%                                    (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct in_quotes? c_ty) fields))
+%                                    (map (\_lambda (_, c_ty) \_rightarrow ppType c CoProduct in_quotes? c_ty) fields))
 %                       | _ \_rightarrow ppType c CoProduct in_quotes? ty]
 %       in
 %         enclose?(case parent of
@@ -2130,25 +2113,25 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %                    | _ \_rightarrow false,
 %                  prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts))
      | Boolean _ \_rightarrow prString "Bool"  
-     | TyVar (tyVar,_) \_rightarrow prString tyVar
-     | MetaTyVar (tyVar,_) \_rightarrow 
+     | TyVar (tyVar, _) \_rightarrow prString tyVar
+     | MetaTyVar (tyVar, _) \_rightarrow 
        let ({link, uniqueId, name}) = ! tyVar in
        prString (name ^ (Nat.show uniqueId))
 
-     | Base (Qualified("List", "List"),[ty],_) \_rightarrow
+     | Base (Qualified("List", "List"), [ty], _) \_rightarrow
        prConcat [prString "[",
                  ppType c Top ty,
                  prString "]"]
 
-     | Base (qid,[ty],_) \_rightarrow
+     | Base (qid, [ty], _) \_rightarrow
        prBreak 0 [ppTypeQualifiedId c qid,
                   prSpace,
                   ppType c Apply ty]
-     | Base (qid,tys,_) \_rightarrow
+     | Base (qid, tys, _) \_rightarrow
        prBreak 0 [ppTypeQualifiedId c qid,
                   prSpace,
                   prPostSep 0 blockFill (prString " ") (map (ppType c Top) tys)]
-     | Arrow (ty1,ty2,_) \_rightarrow
+     | Arrow (ty1, ty2, _) \_rightarrow
        enclose?(case parent of
                   | Product -> true
                   | ArrowLeft -> true
@@ -2158,16 +2141,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 prBreak 0[ppType c ArrowLeft ty1,
                           prString " -> ",
                           ppType c ArrowRight ty2])
-     | Product (fields,_) \_rightarrow
+     | Product (fields, _) \_rightarrow
        (case fields of
           | [] \_rightarrow prString "()"
-          | ("1",_)::_ \_rightarrow
-            let def ppField (_,y) = ppType c Product y in
+          | ("1", _)::_ \_rightarrow
+            let def ppField (_, y) = ppType c Product y in
             enclose?(true,
                      prSep 2 blockFill (prString ", ")
                        (map ppField fields))
           | _ \_rightarrow
-            let def ppField (x,y) =
+            let def ppField (x, y) =
             prLinearCat 2 [[prString (mkFieldName x),
                             prString " :: "],
                            [ppType c Top  y]]
@@ -2175,18 +2158,18 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
               prBreak 2 [prString "{",
                          prPostSep 0 blockLinear(prString ", ") (map ppField fields),
                          prString "}"])
-     | Quotient (ty,term,_) \_rightarrow
+     | Quotient (ty, term, _) \_rightarrow
          prBreak 0 [prString "(",
                     ppType c Top ty,
                     prString " \\ ",
                     ppTerm c Top term,
                     prString ")"]
-     | Subsort (ty,_,_) \_rightarrow ppType c parent ty
+     | Subsort (ty, _, _) \_rightarrow ppType c parent ty
 
      | mystery \_rightarrow fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
 op  ppLitString: String \_rightarrow Pretty
-def ppLitString id = prString(IO.formatString1("~S",id))
+def ppLitString id = prString(IO.formatString1("~S", id))
 
 op  infix?: ParentTerm \_rightarrow Boolean
 def infix? parentTerm =
@@ -2201,7 +2184,7 @@ def termFixity c term =
       (case termOp of
          | Op (id, fixity) ->
            (case specialOpInfo c id of
-              | Some(haskell_id,fix,curried,reversed,_) \_rightarrow
+              | Some(haskell_id, fix, curried, reversed, _) \_rightarrow
                 (case fix of
                    | Some f \_rightarrow (Some(prString(makeOpName haskell_id)), Infix f, curried, reversed)
                    | None \_rightarrow   (Some(prString(makeIdentifier haskell_id)), Nonfix, curried, reversed))
@@ -2210,8 +2193,8 @@ def termFixity c term =
                   | Unspecified \_rightarrow (None, Nonfix, false, false)
                   | Nonfix \_rightarrow (None, Nonfix, false, false)
                   | Infix(assoc, precnum) -> (Some(ppInfixId c id), Infix(assoc, convertPrecNum precnum), true, false))
-         | And            -> (Some(prString "&&"), Infix (Right, 3),true, false)
-         | Or             -> (Some(prString "||"), Infix (Right, 2),true, false)
+         | And            -> (Some(prString "&&"), Infix (Right, 3), true, false)
+         | Or             -> (Some(prString "||"), Infix (Right, 2), true, false)
          | Implies        -> (Some(prString "==>"), Infix (Right, 1), true, false) 
          | Iff            -> (Some(prString "=="), Infix (NotAssoc, 4), true, false)
          | Not            -> (Some(prString "~"), Nonfix, false, false) % ???
@@ -2224,11 +2207,11 @@ def termFixity c term =
 
 op reversedNonfixOp? (c: Context) (qid: QualifiedId): Boolean =
   case specialOpInfo c qid of
-    | Some(_ ,None,_,true,_) -> true
+    | Some(_ , None, _, true, _) -> true
     | _ -> false
 
 op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
-def enclose?(encl? ,pp) =
+def enclose?(encl? , pp) =
   if encl? then prConcat [prString "(", pp, prString ")"]
     else pp
 
@@ -2242,21 +2225,21 @@ def ppInfixId (c: Context)(qid: QualifiedId): Pretty = prString (makeOperator c 
 
 op infixId(id: String): String =
   let idarray = explode(id) in
-  let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
-                  | (c,id) -> show(c)^id) "" idarray
+  let id = foldr (\_lambda(#\\, id) -> "\\\\"^id   % backslashes must be escaped
+                  | (c, id) -> show(c)^id) "" idarray
   in id
 
 op  ppInfixDefId: QualifiedId \_rightarrow Pretty
-def ppInfixDefId(Qualified(_,main_id)) = prString (infixDefId main_id)
+def ppInfixDefId(Qualified(_, main_id)) = prString (infixDefId main_id)
 
 op infixDefId(id: String): String =
   let idarray = explode(id) in
-  let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
-                  | (#/,id) -> "'/"^id
-                  | (#(,id) -> "'("^id
-                  | (#),id) -> "')"^id
-                  | (#_,id) -> "'_"^id
-                  | (c,id) -> show(c)^id) "" idarray
+  let id = foldr (\_lambda(#\\, id) -> "\\\\"^id   % backslashes must be escaped
+                  | (#/, id) -> "'/"^id
+                  | (#(, id) -> "'("^id
+                  | (#), id) -> "')"^id
+                  | (#_, id) -> "'_"^id
+                  | (c, id) -> show(c)^id) "" idarray
   in id
 
 op  ppIdStr (id: String) (up?: Bool): String =
@@ -2266,14 +2249,14 @@ op  ppIdStr (id: String) (up?: Bool): String =
       let chars = (if up? then toUpperCase c0 else toLowerCase c0) :: r_chars in
       let def att(id, s) = (if id = "" then "e" else id) ^ s
       in
-      let id = foldl (\_lambda(id,#?) -> att(id, "_p")
-                      | (id,c) -> id ^ show c) "" chars
+      let id = foldl (\_lambda(id, #?) -> att(id, "_p")
+                      | (id, c) -> id ^ show c) "" chars
       in id
 
 op  isSimpleTerm? : MS.Term \_rightarrow Boolean
 def isSimpleTerm? trm =
   case trm of
-    | SortedTerm(t,_,_) \_rightarrow isSimpleTerm? t
+    | SortedTerm(t, _, _) \_rightarrow isSimpleTerm? t
     | Var _ \_rightarrow true
     | Fun _ \_rightarrow true
     | _ \_rightarrow false
@@ -2283,7 +2266,7 @@ def isSimplePattern? trm =
   case trm of
     | VarPat _ \_rightarrow true
     | WildPat _ \_rightarrow true
-    | EmbedPat(_,None,_,_) \_rightarrow true
+    | EmbedPat(_, None, _, _) \_rightarrow true
     | StringPat _ \_rightarrow true
     | BoolPat _ \_rightarrow true
     | CharPat _ \_rightarrow true
@@ -2294,9 +2277,9 @@ def isSimplePattern? trm =
  def varOrTuplePattern? p =
    case p of
      | VarPat _ \_rightarrow true
-     | RecordPat(prs,_) | tupleFields? prs \_rightarrow
-       forall? (\_lambda (_,p) \_rightarrow varOrTuplePattern? p) prs
-     | RestrictedPat(pat,cond,_) \_rightarrow varOrTuplePattern? pat
+     | RecordPat(prs, _) | tupleFields? prs \_rightarrow
+       forall? (\_lambda (_, p) \_rightarrow varOrTuplePattern? p) prs
+     | RestrictedPat(pat, cond, _) \_rightarrow varOrTuplePattern? pat
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
@@ -2304,38 +2287,38 @@ def isSimplePattern? trm =
  def varOrRecordPattern? p =
    case p of
      | VarPat _ \_rightarrow true
-     | RecordPat(prs,_) \_rightarrow
-       forall? (\_lambda (_,p) \_rightarrow varOrRecordPattern? p) prs
-     | RestrictedPat(pat,cond,_) \_rightarrow varOrRecordPattern? pat
+     | RecordPat(prs, _) \_rightarrow
+       forall? (\_lambda (_, p) \_rightarrow varOrRecordPattern? p) prs
+     | RestrictedPat(pat, cond, _) \_rightarrow varOrRecordPattern? pat
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
  op  simpleHead?: MS.Term \_rightarrow Boolean
  def simpleHead? t =
    case t of
-     | Apply(_,arg,_) \_rightarrow varOrTupleTerm? arg
+     | Apply(_, arg, _) \_rightarrow varOrTupleTerm? arg
      | _ -> false
 
  op  varOrTupleTerm?: MS.Term \_rightarrow Boolean
  def varOrTupleTerm? p =
    case p of
      | Var _ \_rightarrow true
-     | Record(prs as (("1",_)::_),_) \_rightarrow
-       forall? (\_lambda (_,p) \_rightarrow varOrTupleTerm? p) prs
+     | Record(prs as (("1", _)::_), _) \_rightarrow
+       forall? (\_lambda (_, p) \_rightarrow varOrTupleTerm? p) prs
      | _ \_rightarrow false
 
  op overloadedConstructors(spc: Spec): List String =
    (foldSortInfos
-      (\_lambda (info, result as (found,overloaded)) \_rightarrow
+      (\_lambda (info, result as (found, overloaded)) \_rightarrow
          case sortInnerSort(info.dfn) of
-           | CoProduct(prs,_) \_rightarrow
-             foldl (\_lambda ((found,overloaded),(id,_)) \_rightarrow
+           | CoProduct(prs, _) \_rightarrow
+             foldl (\_lambda ((found, overloaded), (id, _)) \_rightarrow
                       if id in? found
                         then (  found, id::overloaded)
                       else (id::found,     overloaded))
                result prs
            | _ \_rightarrow result)
-     ([],[])
+     ([], [])
      spc.sorts).2
 
 endspec
