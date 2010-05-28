@@ -28,7 +28,6 @@
 ;; \\[x-symbol-package-web]) and read the info (use \\[x-symbol-package-info]).
 
 (provide 'x-symbol-emacs)
-;; TODO: Emacs has `buffer-substring-no-properties'
 
 (unless (fboundp 'emacs-version>=)
 (defun emacs-version>= (major &optional minor patch)

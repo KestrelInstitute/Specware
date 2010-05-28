@@ -214,6 +214,9 @@ when character is presented in the grid."
 					   (- encoding 128)))
 			   face)))
 
+;; (format "#x%x" (+ (* 3 256) 147)) = 0x393
+;; (make-char 'mule-unicode-2500-33ff 147 3)
+
 (defun x-symbol-mule-init-charsym-syntax (charsyms)
   "Initialize the syntax for the characters represented by CHARSYMS.
 See `x-symbol-init-cset' and `x-symbol-group-syntax-alist'."
