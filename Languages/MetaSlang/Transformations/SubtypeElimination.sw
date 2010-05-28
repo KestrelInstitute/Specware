@@ -597,7 +597,7 @@ SpecNorm qualifying spec
       | Subsort(s_ty,_,_) -> hasArgTypeIn? spc tys s_ty
       | _ -> a_ty in? tys
 
-  op hasFunTypeIn?(spc: Spec) (tys: List Sort)(f_ty: Sort): Bool =
+  op hasFunTypeIn?(spc: Spec) (tys: List Sort) (f_ty: Sort): Bool =
     case arrowOpt(spc, f_ty) of
       | Some(dom, rng) ->
         hasArgTypeIn? spc tys dom
@@ -621,6 +621,7 @@ SpecNorm qualifying spec
                                                      || refToHo_eqfns(f, qids))
                                                     && hasFunTypeIn? spc ho_fn_types f_ty
                                                  -> true
+                                             % | Any _ -> true
                                              | _ -> false)
                      defn
                  then info.names ++ qids
@@ -635,20 +636,41 @@ SpecNorm qualifying spec
 
   op hoFun2s: List String = ["Fun_P", "Fun_PD", "Fun_PR"]
 
-  op possibleHoEqualTestableArg?(f: MS.Term, ho_eqfns: List QualifiedId): Bool =
+  op possibleEqTestableFun?(f: Fun, ho_eqfns: QualifiedIds): Bool =
     case f of
-      | Fun(f, _,_) ->
-        (case f of
-           | Equals -> true
-           | NotEquals -> true
-           | Embed _ -> true
-           | _ -> refToHo_eqfns(f, ho_eqfns))
+      | Equals -> true
+      | NotEquals -> true
+      | _ -> refToHo_eqfns(f, ho_eqfns)
+
+  op possibleEqTestableFunTerm?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MS.Term): Bool =
+    let result =
+    case tm of
+      | Fun(f, Product([("1", ty), ("2", _)], _), _) | f = Equals || f = NotEquals ->
+        some?(arrowOpt(spc, ty))
+      | Fun(f, _, _) -> refToHo_eqfns(f, ho_eqfns)
+      | Apply(Fun(Embed _, _, _), t, _) -> freeVars t ~= []
+      | _ -> false
+    in
+    % let _ = if result then writeLine(printTerm tm) else () in
+    result
+
+  op possibleEqTestableFunTermIn?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MS.Term): Bool =
+    let result =
+    existsSubTerm (possibleEqTestableFunTerm? (ho_eqfns, spc)) tm
+    in
+    % let _ = if result then writeLine(printTerm tm) else () in
+    result
+
+  op possibleHoEqualTestableArg?(f: MS.Term, ho_eqfns: List QualifiedId, spc: Spec): Bool =
+    case f of
+      | Fun(f, _, _) ->
+        possibleEqTestableFun?(f, ho_eqfns) || embed? Embed f
       | Apply(f, _, _) ->
-        possibleHoEqualTestableArg?(f, ho_eqfns)
+        possibleHoEqualTestableArg?(f, ho_eqfns, spc)
           || (case f of
-              | Fun(Op(Qualified(q, nm),_),_,_) ->
-                q = toIsaQual && nm in? hoFun2s
+              | Fun(Op(Qualified(q, nm),_),_,_) -> q = toIsaQual && nm in? hoFun2s
               | _ -> false)
+      | Lambda _ -> possibleEqTestableFunTermIn? (ho_eqfns, spc) f
       | _ -> false
 
   op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
@@ -753,7 +775,7 @@ SpecNorm qualifying spec
       | Apply(f, x, a) ->
         let (dom, rng) = arrow(spc, inferType(spc, f)) in
         Apply(regTerm(f, mkArrow(inferType(spc, x), ty), false, ho_eqfns, spc),
-              regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns), ho_eqfns, spc), a)
+              regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns, spc), ho_eqfns, spc), a)
       | Record(row, a) ->
         % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ty) in
         let srts = map (fn (_,x) -> x) (product (spc,ty)) in
@@ -764,7 +786,9 @@ SpecNorm qualifying spec
       | The(v, bod, a) ->
         The(v, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
       | Let(decls, bod, a) ->
-        Let (map (fn (pat,trm) \_rightarrow (pat, regTerm(trm, patternSort pat, equal_testable?, ho_eqfns, spc)))
+        Let (map (fn (pat,trm) \_rightarrow (pat, regTerm(trm, patternSort pat,
+                                                possibleEqTestableFunTermIn? (ho_eqfns, spc) bod,
+                                                ho_eqfns, spc)))
                decls,
              regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
       | LetRec(decls, bod, a) ->
