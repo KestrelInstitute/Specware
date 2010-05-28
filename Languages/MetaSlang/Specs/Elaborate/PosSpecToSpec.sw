@@ -126,7 +126,7 @@ PosSpecToSpec qualifying spec
                                       elements
                     }
   in
-  normalizeNewTypes spc
+  normalizeNewTypes(spc, false)
 
 
  op  convertPosTermToTerm : MS.Term -> MS.Term
