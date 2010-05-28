@@ -91,8 +91,8 @@ TypeChecker qualifying spec
 		            let pos = termAnn dfn in
 			    let (tvs, srt, tm) = unpackTerm dfn in
 			    let _ = checkTyVars (env, tvs, pos) in
-			    let srt = checkSort (env, srt) in
-			    maybePiTerm (tvs, SortedTerm (tm, srt, pos))
+			    let srt1 = checkSort (env, srt) in
+			    maybePiTerm (tvs, SortedTerm (tm, srt1, pos))
 		      in
 			let new_defs = map elaborate_srt (opInfoAllDefs info) in
 			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
@@ -133,9 +133,9 @@ TypeChecker qualifying spec
 			 let (tvs, srt, tm) = unpackTerm dfn in
 			 if poly? = (tvs ~= []) then
 			   let _ = checkTyVars (env, tvs, pos) in
-			   let srt = checkSort (env, srt) in
-			   let xx = single_pass_elaborate_term_top (env, tm, srt) in
-			   maybePiTerm (tvs, SortedTerm (xx, srt, pos))
+			   let srt1 = checkSort (env, srt) in
+			   let xx = single_pass_elaborate_term_top (env, tm, srt1) in
+			   maybePiTerm (tvs, SortedTerm (xx, srt1, pos))
 			 else 
 			   dfn
 		   in
