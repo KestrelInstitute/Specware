@@ -213,7 +213,9 @@ Haskell qualifying spec
       | Some loc_nm \_rightarrow (last uid.path, uidToHaskellName uid, "_" ^ loc_nm)
       | _ \_rightarrow           (last uid.path, uidToHaskellName uid, "")
 
-  op haskellLibrarySpecNames: List String = []
+  op haskellLibrarySpecNames: List String = ["List", "Char", "Prelude",  "Ratio", "Complex", "Numeric",
+                                             "Ix", "Array", "Maybe", "Monad", "Locale", "Time", "IO",
+                                             "Integer", "Ring", "String", "System"]
   op thyName(spname: String): String =
     if spname in? haskellLibrarySpecNames
       then "SW_"^spname
@@ -403,11 +405,10 @@ Haskell qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
-  op nonExecBaseSpecs: List String = ["List", "String"]
+  op nonExecBaseSpecs: List String = ["List", "String", "Integer"]
   op addExecutableDefs (spc: Spec, spec_name: String): Spec =
     if spec_name in? nonExecBaseSpecs
-      then substBaseSpecs1(spc, filter (fn uid_str -> some? (search(spec_name, uid_str)))
-                                  baseExecutableSpecNames)
+      then substBaseSpecs1(spc, ["/Library/Base/"^spec_name^"_Executable"])
       else spc
 
   op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
@@ -1074,7 +1075,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
 op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
                   \_rightarrow Pretty
-def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
+def ppOpInfo c decl? def? elems opt_prag aliases sw_fixity refine_num dfn =
   %% Doesn't handle multi aliases correctly
   let c = c << {newVarCount = Ref 0} in
   let mainId = head aliases in
@@ -1086,8 +1087,8 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
           (true, no_def?, mkUnQualifiedId(haskell_id),
            case infix? of
              | Some pr -> Infix pr
-             | None -> fixity)
-        | _ \_rightarrow (false, false, mainId, convertFixity fixity)
+             | None -> convertFixity sw_fixity)
+        | _ \_rightarrow (false, false, mainId, convertFixity sw_fixity)
   in
   if no_def?
     then prEmpty
@@ -1116,7 +1117,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            else []
   in
   % let infix? = case fixity of Infix _ \_rightarrow true | _ \_rightarrow false in
-  let def_list = if def? then [[ppFunctionDef c aliases term ty opt_prag fixity]] else []
+  let def_list = if def? then [[ppFunctionDef c aliases term ty opt_prag sw_fixity]] else []
   in prLinesCat 0 ([[]] ++ decl_list ++ def_list)
 
  op ensureNotCurried(lhs: MS.Term, rhs: MS.Term): MS.Term * MS.Term =
@@ -1889,7 +1890,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         prString "}"]
             | None -> prString "{Only handle top-level records!}")
      | WildPat (ty, _) \_rightarrow prString "_"
-     | StringPat (str, _) \_rightarrow prString ("\"" ^ str ^ "\"")
+     | StringPat (str, _) \_rightarrow prString ("\"" ^ normString str ^ "\"")
      | BoolPat (b, _) \_rightarrow ppBoolean b
      | CharPat (chr, _) \_rightarrow prString ("'"^Char.show chr^"'")
      | NatPat (int, _) \_rightarrow prString (Nat.show int)      
@@ -2007,11 +2008,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Char chr \_rightarrow prConcat [prString "'",
                              prString (Char.show chr),
                              prString "'"]
-     | String str \_rightarrow prString ("\"" ^ str ^ "\"")
+     | String str \_rightarrow prString ("\"" ^ normString str ^ "\"")
      | Bool b \_rightarrow ppBoolean b
      | OneName (id, fxty) \_rightarrow prString id
      | TwoNames (id1, id2, fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1, id2))
      | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
+
+ op normString(s: String): String =
+   %% eols have to be symbolic
+   replaceString(s, "\n", "\\n")
 
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
