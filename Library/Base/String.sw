@@ -336,7 +336,22 @@ proof Haskell ThyMorphism
   String.exists?    -> list_ex
   String.forall?    -> list_all
   String.@          -> !  Left   9
+  String.<=         -> <=    Infix 4
+  String.<          -> <     Infix 4
+  String.>=         -> >=    Infix 4
+  String.>          -> >     Infix 4
   String.compare \_rightarrow compare curried
+  Boolean.show      -> show
+  Nat.show          -> show
+  Integer.show      -> show
+  Char.show         -> show
+  Compare.show      -> show
+  Option.show       -> show
+  List.show         -> show
+  Nat.natToString   -> show
+  Nat.digitToString   -> show
+  Integer.intToString -> show
+  Nat.stringToNat   -> stringToInt
 end-proof
 
 endspec

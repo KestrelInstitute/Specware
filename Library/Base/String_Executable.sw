@@ -10,9 +10,15 @@ spec
    (exists? isNum cs) &&
    ((forall? isNum cs) || (head cs = #- && forall? isNum (tail cs)))
 
- refine def stringToInt (s:String | Integer.intConvertible s) : Integer =
-   let firstchar::_ = explode s in
-   if firstchar = #- then - (stringToNat (subFromTo (s,1,length s)))
-                     else    stringToNat s
+ op explodedStringToNat(l: List Char): Nat =
+   foldl (fn (result, dig) -> result * 10 + ord dig - 48) 0 l
 
+ refine def stringToInt (s:String | intConvertible s) : Integer =
+   let e_s = explode s in
+   let firstchar::r_s = e_s in
+   if firstchar = #- then - (explodedStringToNat r_s)
+                     else    explodedStringToNat e_s
+
+ refine def stringToNat (s:String | natConvertible s) : Integer =
+   explodedStringToNat(explode s)
 endspec
