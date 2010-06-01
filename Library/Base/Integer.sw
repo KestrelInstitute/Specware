@@ -1161,9 +1161,9 @@ proof Isa Thy_Morphism Presburger
 end-proof
 
 proof Haskell Thy_Morphism
- type Integer.Int -> Integer
- type Integer.Integer -> Integer
- type Nat.Nat     -> Integer
+ type Integer.Int -> Int
+ type Integer.Integer -> Int
+ type Nat.Nat     -> Int
  Integer.zero     -> 0
  Integer.one      -> 1
  IntegerAux.-     -> negate
