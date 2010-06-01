@@ -2,8 +2,9 @@
 ExecutableList = morphism Base/List -> Base/List_Executable {}
 % ExecutableStringList = Base/String_Executable[ExecutableList]
 ExecutableString = morphism Base/String -> Base/String_Executable {}
+ExecutableInteger = morphism Base/Integer -> Base/Integer_Executable {}
 
-InterpreterBase0 = Base[ExecutableString][ExecutableList]
+InterpreterBase0 = Base[ExecutableInteger][ExecutableString][ExecutableList]
 
 InterpreterBase = refine InterpreterBase0 by {
 
