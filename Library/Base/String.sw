@@ -206,9 +206,11 @@ op Nat.show : Nat -> String = natToString
 
 op Nat.natConvertible (s:String) : Bool =
   ex(x:Nat) natToString x = s
+proof Haskell -> natConvertible end-proof
 
 op Nat.stringToNat (s:String | natConvertible s) : Nat =
   the(x:Nat) natToString x = s
+proof Haskell -> stringToNat end-proof
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
@@ -253,6 +255,7 @@ end-proof
 op Integer.intToString (x:Integer) : String =
   if x >= 0 then        natToString   x
             else "-" ^ natToString (-x)
+proof Haskell -> intToString end-proof
 
 op Integer.show : Integer -> String = intToString
 
@@ -260,9 +263,11 @@ op Integer.show : Integer -> String = intToString
 
 op Integer.intConvertible (s:String) : Bool =
   ex(x:Integer) intToString x = s
+proof Haskell -> intConvertible end-proof
 
 op Integer.stringToInt (s:String | intConvertible s) : Integer =
   the(x:Integer) intToString x = s
+proof Haskell -> stringToInt end-proof
 proof Isa stringToInt_Obligation_the
   apply (simp add:Integer__intConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp)
@@ -340,7 +345,8 @@ proof Haskell ThyMorphism
   String.<          -> <     Infix 4
   String.>=         -> >=    Infix 4
   String.>          -> >     Infix 4
-  String.compare \_rightarrow compare curried
+  String.flatten    -> concat
+  String.compare    -> compare curried
   Boolean.show      -> show
   Nat.show          -> show
   Integer.show      -> show

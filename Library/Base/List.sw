@@ -1496,7 +1496,7 @@ op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> foldl f (f (base, hd)) tl
-proof Haskell -> sw_foldl end-proof
+proof Haskell -> List.sw_foldl end-proof
 
 proof Isa foldl_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldl' f b l)", simp)
@@ -4551,6 +4551,7 @@ end-proof
 
 op [a] delete (x:a) (l: List a) : List a =
   filter (fn y:a -> y ~= x) l
+proof Haskell -> delete_all end-proof
 
 proof Isa delete_subtype_constr
   by (simp add: List__delete_def list_all_iff)
@@ -4927,39 +4928,43 @@ proof Isa Thy_Morphism List
   List.noRepetitions? -> distinct
 end-proof
 
-proof Haskell Thy_Morphism 
-  type List.List      -> []
-  Nil                 -> []
-  Cons                -> :            Right 5
-  List.List_P         -> list_all
-  List.length         -> length
-  List.@              -> !!           Left  9
-  List.empty          -> []
-  List.empty?         -> null
-  List.in?            -> elem         Infix 4
-  List.nin?           -> notElem      Infix 4
-  List.prefix         -> take         curried  reversed
-  List.removePrefix   -> drop         curried  reversed
-  List.head           -> head
-  List.last           -> last
-  List.tail           -> tail
-  List.butLast        -> init
-  List.++             -> ++           Right 5
-  List.|>             -> :            Right 5
-  List.update         -> list_update  curried
-  List.forall?        -> all
-  List.exists?        -> any
-  List.filter         -> filter
-  List.zip            -> zip          curried
-  List.unzip          -> unzip
-  List.zip3           -> zip3         curried
-  List.unzip3         -> unzip3
-  List.map            -> map
-  List.mapPartial     -> filtermap
-  List.reverse        -> reverse
-  List.repeat         -> replicate    curried  reversed
-  List.flatten        -> concat
-  List.compare \_rightarrow compare curried
+proof Haskell Thy_Morphism  List
+  type List.List    -> []
+  Nil               -> []
+  Cons              -> :            Right 5
+  List.List_P       -> list_all
+  List.length       -> length
+  List.@            -> !!           Left  9
+  List.empty        -> []
+  List.empty?       -> null
+  List.in?          -> elem         Infix 4
+  List.nin?         -> notElem      Infix 4
+  List.prefix       -> take         curried  reversed
+  List.removePrefix -> drop         curried  reversed
+  List.head         -> head
+  List.last         -> last
+  List.tail         -> tail
+  List.butLast      -> init
+  List.++           -> ++           Right 5
+  List.|>           -> :            Right 5
+  List.update       -> list_update  curried
+  List.forall?      -> all
+  List.exists?      -> any
+  List.filter       -> filter
+  List.zip          -> zip          curried
+  List.unzip        -> unzip
+  List.zip3         -> zip3         curried
+  List.unzip3       -> unzip3
+  List.map          -> map
+  List.isoList          -> map
+  List.reverse      -> reverse
+  List.repeat       -> replicate    curried  reversed
+  List.flatten      -> concat
+  List.compare      -> compare curried
+  List.findLeftMost -> List.find
+  List.leftmostPositionSuchThat -> List.findIndex  curried  reversed
+  List.positionsSuchThat -> List.findIndices  curried  reversed
+  List.positionsOf  -> List.elemIndices  curried  reverse
 end-proof
 
 % ------------------------------------------------------------------------------

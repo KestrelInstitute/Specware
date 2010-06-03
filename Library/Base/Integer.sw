@@ -1145,13 +1145,13 @@ proof Isa Thy_Morphism Presburger
  Integer.divC     -> divC  Left 70
  Integer.divR     -> divR  Left 70
  Integer.divE     -> divE  Left 70
- Integer.div      -> div  Left 70
+ Integer.div      -> div   Left 70
  Integer.modT     -> modT  Left 70
  Integer.modF     -> mod   Left 70
  Integer.modC     -> modC  Left 70
  Integer.modR     -> modR  Left 70
  Integer.modE     -> modE  Left 70
- Integer.mod      -> mod  Left 70
+ Integer.mod      -> mod   Left 70
  Integer.min      -> min           curried
  Integer.max      -> max           curried
  Integer.divides  -> zdvd  Left 70 
