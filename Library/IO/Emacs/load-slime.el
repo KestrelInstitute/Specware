@@ -53,6 +53,7 @@
       )))
 (require 'advice)  ; for defadvice
 (require 'edmacro) ; for read-kbd-macro (i.e., backqoute)
+(require 'regexp-opt) ; for regexp-opt
 
 (require 'slime)
 
