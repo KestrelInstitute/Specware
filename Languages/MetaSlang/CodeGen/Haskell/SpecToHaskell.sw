@@ -29,7 +29,8 @@ Haskell qualifying spec
                  overloadedConstructors: List String,
                  newVarCount: Ref Nat,
                  source_of_thy_morphism?: Boolean,
-                 typeNameInfo: List(QualifiedId * TyVars * Sort)}
+                 typeNameInfo: List(QualifiedId * TyVars * Sort),
+                 polyEqualityFunInfo: AQualifierMap TyVars}
 
  op  specialOpInfo: Context \_rightarrow QualifiedId \_rightarrow Option OpTransInfo
  def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
@@ -40,12 +41,13 @@ Haskell qualifying spec
  op  getSpec: Context \_rightarrow Spec
  def getSpec {recursive?=_, spec_name=_, spec? = Some spc, qualifier?=_,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
-              newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
+              newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_}
+   = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
  def getCurrentUID {recursive?=_, spec_name=_, spec?=_, qualifier?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
-                    source_of_thy_morphism?=_, typeNameInfo=_} =
+                    source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_} =
    uid
 
 
@@ -232,10 +234,10 @@ Haskell qualifying spec
          case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
            | None \_rightarrow None
            | Some real_val \_rightarrow
-             Some((thyName thynm, sw_file, thyName thy_file ^ ".hs"),
+             Some((thynm, sw_file, thyName thy_file ^ ".hs"),
                   val, uid))
       | Some((thynm, filnm, hash), uid, _) \_rightarrow
-        Some((thyName(thynm ^ hash),
+        Some((thynm ^ hash,
               uidToFullPath uid ^ ".sw",
               thyName(filnm ^ hash) ^ ".hs"),
              val, uid)
@@ -344,7 +346,8 @@ Haskell qualifying spec
                                overloadedConstructors = [],
                                newVarCount = Ref 0,
                                source_of_thy_morphism? = false,
-                               typeNameInfo = []}
+                               typeNameInfo = [],
+                               polyEqualityFunInfo = emptyAQualifierMap}
 			value
     in
     format(80, main_pp_val)
@@ -415,9 +418,11 @@ Haskell qualifying spec
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
     %% Get rid of non-haskell pragmas
+    let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
     let rel_elements = filter haskellElement? spc.elements in
-    let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
+    let spc = spc << {elements = normalizeSpecElements(rel_elements)}
+    in
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
@@ -429,7 +434,8 @@ Haskell qualifying spec
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     let c = c << {spec? = Some spc,
                   trans_table = trans_table,
-                  source_of_thy_morphism? = source_of_thy_morphism?}
+                  source_of_thy_morphism? = source_of_thy_morphism?,
+                  polyEqualityFunInfo = polyEqualityAnalyze spc}
     in
     let spc = normalizeTopLevelLambdas spc in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
@@ -456,8 +462,15 @@ Haskell qualifying spec
                   spec? = Some spc}
     in
     % let _ = writeLine("n:\n"^printSpec spc) in
-    prLinesCat 0 ([[prString "module ", prString c.spec_name, prString " where"]]
-                  ++ (ppImports c spc.elements)
+    let (pp_imports, pp_exports) = ppImports c spc.elements in
+    let pr_thyname = prString(thyName c.spec_name) in
+    prLinesCat 0 ([[prString "module ", pr_thyname,
+                    prString " ( ",
+                    prSep 0 blockFill (prString ", ") (prConcat [prString "module ", pr_thyname]
+                                                         :: pp_exports),
+                    prString " )",
+                    prString " where"]]
+                  ++ pp_imports
 		  ++ [[ppSpecElements c spc (filter elementFilter spc.elements)]])
 
   op  haskellElement?: SpecElement \_rightarrow Boolean
@@ -509,7 +522,7 @@ Haskell qualifying spec
 
   def baseSpecName = "Empty"
 
-  op  ppImports: Context \_rightarrow SpecElements \_rightarrow List(List Pretty)
+  op  ppImports: Context \_rightarrow SpecElements \_rightarrow List(List Pretty) * List Pretty
   def ppImports c elems =
     let imports_from_thy_morphism = thyMorphismImports c in
     let explicit_imports =
@@ -519,8 +532,11 @@ Haskell qualifying spec
 		       | _ \_rightarrow None)
            elems
     in
-    map (fn im -> [prConcat [prString "import ", im]])
-      (explicit_imports ++ imports_from_thy_morphism)
+    let (explicit_imports1, explicit_imports_names) = unzip explicit_imports in
+    (map (fn im -> [prConcat [prString "import ", im]])
+      (explicit_imports1 ++ imports_from_thy_morphism),
+     map (fn im -> prConcat [prString "module ", im])
+      (explicit_imports_names ++ imports_from_thy_morphism))
 
   op thyMorphismImports (c:Context): List Pretty =
     map prString c.trans_table.thy_imports
@@ -532,12 +548,12 @@ Haskell qualifying spec
       | (SortDef (type_id, _)) :: _ \_rightarrow Some type_id
       | _ :: r \_rightarrow firstTypeDef r
 
-  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Option Pretty
+  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Option (Pretty * Pretty)
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
-      | None \_rightarrow Some(prString "<UnknownSpec>")
-      | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
-        case thy_nm of
+      | None \_rightarrow Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
+      | Some ((spc_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
+        case spc_nm of
           | "IsabelleExtensions" \_rightarrow None
           | _ \_rightarrow
         let _ = if c.recursive?
@@ -545,19 +561,21 @@ Haskell qualifying spec
 		    if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
 		      then ()
 		    else toFile(thy_fil_nm,
-                                showValue(val, c.recursive?, Some uid, Some thy_nm))
+                                showValue(val, c.recursive?, Some uid, Some spc_nm))
 		  else ()
 	in
-        case thy_nm of
-          | "Base" \_rightarrow Some(prString "SW_Base")
+        case spc_nm of
+          | "Base" \_rightarrow Some(prString "SW_Base", prString "SW_Base")
           | _ \_rightarrow
+        let thy_nm = thyName spc_nm in
         case uidStringPairTermForValue val of
           | Some (_, _, sc_tm) | some?(findSpecQualifier sc_tm) ->
             let Some qualifier = findSpecQualifier sc_tm in
             Some(prConcat ([prString "qualified ", prString thy_nm]
                              ++ (if qualifier = thy_nm then []
-                                 else [prString " as ", prString qualifier])))
-          | _ -> Some(prString thy_nm)
+                                 else [prString " as ", prString qualifier])),
+                 prString qualifier)
+          | _ -> Some(prString thy_nm, prString thy_nm)
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
@@ -807,7 +825,7 @@ Haskell qualifying spec
 
  op ppIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    let qid = head qids in
-   ppOpQualifiedId0 c qid
+   ppOpQualifiedId c qid
 
 op ppTypeIdInfo (c: Context) (qids: List QualifiedId): Pretty =
   let qid = head qids in
@@ -815,7 +833,7 @@ op ppTypeIdInfo (c: Context) (qids: List QualifiedId): Pretty =
 
 op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
   let qid = head qids in
-   ppOpQualifiedId0 c qid
+  ppOpQualifiedId c qid
 
  op upCase1(nm: String): String =
    if nm = "" then ""
@@ -1078,17 +1096,17 @@ op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow S
 def ppOpInfo c decl? def? elems opt_prag aliases sw_fixity refine_num dfn =
   %% Doesn't handle multi aliases correctly
   let c = c << {newVarCount = Ref 0} in
-  let mainId = head aliases in
+  let mainId0 = head aliases in
   % let _ = writeLine("Processing "^printQualifiedId mainId) in
-  let opt_prag = findPragmaNamed(elems, mainId, opt_prag, c) in
+  let opt_prag = findPragmaNamed(elems, mainId0, opt_prag, c) in
   let (specialOpInfo?, no_def?, mainId, fixity) =
-      case specialOpInfo c mainId of
+      case specialOpInfo c mainId0 of
         | Some (haskell_id, infix?, _, _, no_def?) \_rightarrow
-          (true, no_def?, mkUnQualifiedId(haskell_id),
+          (true, no_def?, stringToQId(haskell_id),
            case infix? of
              | Some pr -> Infix pr
              | None -> convertFixity sw_fixity)
-        | _ \_rightarrow (false, false, mainId, convertFixity sw_fixity)
+        | _ \_rightarrow (false, false, mainId0, convertFixity sw_fixity)
   in
   if no_def?
     then prEmpty
@@ -1101,6 +1119,16 @@ def ppOpInfo c decl? def? elems opt_prag aliases sw_fixity refine_num dfn =
         if decl?
           then [[ppOpIdInfo c aliases,
                  prString " :: ",
+                 (case getEqualityTyVars c mainId0 of
+                    | [] -> prEmpty
+                    | eq_tvs as (tv1 :: tvr) ->
+                      prConcat[if tvr = []
+                                 then prConcat [prString "Eq ", prString tv1]
+                                 else enclose?(true,
+                                               prSep 0 blockNone (prString ", ")
+                                                 (map (fn tv -> prConcat [prString "Eq ", prString tv])
+                                                    eq_tvs)),
+                               prString " => "]),
                  (case fixity of
                     | Infix(assoc, prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Haskell
                     | _ \_rightarrow ppType c Top ty)]]
@@ -1961,7 +1989,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        (case infixFun? c fun of
           | Some infix_str \_rightarrow
             enclose?(parentTerm ~= Top,
-                     prConcat [lengthString(11, "\\(x, y). x "),
+                     prConcat [lengthString(11, "\\(x, y) -> x "),
                                prString infix_str,
                                prString " y"])
           | None \_rightarrow
@@ -1982,7 +2010,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         let new_v = ("cv0", dom) in
                         ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun, ty), mkVar new_v)))
                       | _ -> prString(makeIdentifier haskell_id))
-              else prString(makeIdentifier haskell_id)
+              else ppOpQualifiedId c (stringToQId haskell_id)
           | _ -> ppOpQualifiedId c qid)
      | Project id \_rightarrow
        let (dom, _) = arrow(getSpec c, ty) in
@@ -2018,6 +2046,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    %% eols have to be symbolic
    replaceString(s, "\n", "\\n")
 
+ op stringToQId(s: String): QualifiedId =
+   case search(".", s) of
+     | Some i -> mkQualifiedId(subFromTo(s, 0, i), subFromTo(s, i+1, length s))
+     | None   -> mkUnQualifiedId s
+
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
@@ -2040,10 +2073,19 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    let nm = qidToHaskellString c qid false in
    prString(makeIdentifier nm)
 
+ op qualifiedBy?(s: String, q: String): Bool =
+   let len = length q in
+   testSubseqEqual?(q^".", s, 0, 0)
+
  op  ppOpQualifiedId : Context \_rightarrow QualifiedId \_rightarrow Pretty
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
-     | Some(s, _, _, _, _) \_rightarrow prString s
+     | Some(s, _, _, _, _) \_rightarrow
+       let _ = writeLine(" -> "^s) in
+       (case c.qualifier? of
+          | Some qual | qualifiedBy?(s, qual) ->
+            prString(subFromTo(s, length qual + 1, length s))
+          | _ -> prString s)
      | None \_rightarrow ppOpQualifiedId0 c qid
 
  %% May only need ops that can be unary
@@ -2325,5 +2367,51 @@ def isSimplePattern? trm =
            | _ \_rightarrow result)
      ([], [])
      spc.sorts).2
+
+op polyEqualityAnalyze(spc: Spec): AQualifierMap TyVars =
+  let def foundOp?(qmap, qid) =
+        let Qualified(q, id) = qid in
+        some?(findAQualifierMap(qmap, q, id))  
+      def iterate1(qmap,initial?) =
+        foldOpInfos
+          (fn (info, qmap) ->
+             let qid as Qualified(q, id) = primaryOpName info in
+             if foundOp?(qmap, qid) then qmap
+             else
+             let (tvs,_,defn) = unpackFirstOpDef info in
+             if tvs = []
+               then qmap   % not polymorphic
+             else 
+             foldSubTerms (fn (t, qmap) ->
+                           case t of
+                             | Fun(f, f_ty, _) ->
+                               let tvs = freeTyVars f_ty in
+                               if tvs ~= []
+                                  && (initial? && (f = Equals || f = NotEquals))
+                                      || (case f of
+                                            | Op(qid, _) -> foundOp?(qmap, qid)
+                                            | _ -> false)
+                               then 
+                                let old_val = case findAQualifierMap(qmap, q, id) of
+                                                | Some val -> val
+                                                | _ -> []
+                                in
+                                insertAQualifierMap(qmap, q, id, removeDuplicates(tvs ++ old_val))
+                              else qmap
+                           | _ -> qmap)
+                qmap defn)
+          qmap spc.ops
+      def iterateUntilNoChange qmap =
+        let new_qmap = iterate1(qmap, false) in
+        if new_qmap = qmap then qmap
+          else iterateUntilNoChange new_qmap
+  in
+  iterateUntilNoChange(iterate1(emptyAQualifierMap, true))
+
+op getEqualityTyVars (c: Context) (qid: QualifiedId): TyVars =
+  let Qualified(q, id) = qid in
+  case findAQualifierMap(c.polyEqualityFunInfo, q, id) of
+    | None -> []
+    | Some tvs -> tvs
 
 endspec
