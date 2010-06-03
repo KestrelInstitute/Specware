@@ -25,7 +25,7 @@ IsaTermPrinter qualifying spec
    (foldlSpecElements
      (fn ((result, prev_id),el) \_rightarrow
       case el of
-       | Pragma("proof" ,prag_str, "end-proof", pos) \_rightarrow
+       | Pragma("proof", prag_str, "end-proof", pos) \_rightarrow
          (case thyMorphismPragma prag_str kind pos of
 	    | None \_rightarrow 
               (case (prev_id, findRenaming prag_str kind pos) of
