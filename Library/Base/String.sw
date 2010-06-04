@@ -338,9 +338,9 @@ proof Haskell ThyMorphism
   String.length     -> length
   String.^          -> ++    Right  5
   String.map        -> map
-  String.exists?    -> list_ex
-  String.forall?    -> list_all
-  String.@          -> !     Left   9
+  String.exists?    -> any
+  String.forall?    -> all
+  String.@          -> !!    Left   9
   String.<=         -> <=    Infix 4
   String.<          -> <     Infix 4
   String.>=         -> >=    Infix 4
@@ -358,6 +358,7 @@ proof Haskell ThyMorphism
   Nat.digitToString   -> show
   Integer.intToString -> show
   Nat.stringToNat   -> stringToInt
+  String.subFromTo  -> List.subFromTo
 end-proof
 
 endspec

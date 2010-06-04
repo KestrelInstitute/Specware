@@ -111,16 +111,16 @@ end-proof
 
 proof Haskell Thy_Morphism Char
   type Char.Char -> Char
-  Char.chr       -> Char.intToDigit
-  Char.ord       -> Char.digitToInt
-  Char.isUpperCase -> Char.isUpper
-  Char.isLowerCase -> Char.isLower
-  Char.isAlpha   -> Char.isAlpha
-  Char.isNum     -> Char.isDigit
-  Char.isAscii   -> Char.isAscii
-  Char.isAlphaNum -> Char.isAlphaNum
-  Char.toUpperCase -> Char.toUpper
-  Char.toLowerCase -> Char.toLower
+  Char.chr       -> chr
+  Char.ord       -> ord
+  Char.isUpperCase -> isUpper
+  Char.isLowerCase -> isLower
+  Char.isAlpha   -> isAlpha
+  Char.isNum     -> isDigit
+  Char.isAscii   -> isAscii
+  Char.isAlphaNum -> isAlphaNum
+  Char.toUpperCase -> toUpper
+  Char.toLowerCase -> toLower
   Char.compare \_rightarrow compare curried
 end-proof
 

@@ -1496,7 +1496,7 @@ op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> foldl f (f (base, hd)) tl
-proof Haskell -> List.sw_foldl end-proof
+proof Haskell -> sw_foldl end-proof
 
 proof Isa foldl_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldl' f b l)", simp)
@@ -4961,10 +4961,10 @@ proof Haskell Thy_Morphism  List
   List.repeat       -> replicate    curried  reversed
   List.flatten      -> concat
   List.compare      -> compare curried
-  List.findLeftMost -> List.find
-  List.leftmostPositionSuchThat -> List.findIndex  curried  reversed
-  List.positionsSuchThat -> List.findIndices  curried  reversed
-  List.positionsOf  -> List.elemIndices  curried  reverse
+  List.findLeftMost -> find
+  List.leftmostPositionSuchThat -> findIndex  curried  reversed
+  List.positionsSuchThat -> findIndices  curried  reversed
+  List.positionsOf  -> elemIndices  curried  reverse
 end-proof
 
 % ------------------------------------------------------------------------------
