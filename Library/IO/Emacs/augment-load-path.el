@@ -14,4 +14,5 @@
 		"/usr/share/xemacs/xemacs-packages/lisp/vc/"
 		"/usr/share/xemacs/xemacs-packages/lisp/fsf-compat/"
 		"/usr/share/xemacs/xemacs-packages/lisp/ilisp/extra/"
+		"/usr/share/xemacs/xemacs-packages/lisp/debug/"
 		)))
