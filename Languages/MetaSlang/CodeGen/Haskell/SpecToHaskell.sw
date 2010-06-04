@@ -14,7 +14,7 @@ Haskell qualifying spec
  import /Languages/MetaSlang/Transformations/Simplify
  import /Languages/MetaSlang/Transformations/CurryUtils
 
- op simplify?: Boolean       = true
+ op simplify?: Boolean = false
 
  type Pretty = PrettyPrint.Pretty
  type Pragma = String * String * String * Position
@@ -217,10 +217,12 @@ Haskell qualifying spec
 
   op haskellLibrarySpecNames: List String = ["List", "Char", "Prelude",  "Ratio", "Complex", "Numeric",
                                              "Ix", "Array", "Maybe", "Monad", "Locale", "Time", "IO",
-                                             "Integer", "Ring", "String", "System"]
+                                             "Integer", "Ring", "String", "System", "Base"]
   op thyName(spname: String): String =
     if spname in? haskellLibrarySpecNames
       then "SW_"^spname
+    else if spname = "Character"
+      then "SW_Char"
       else spname
 
   op uidStringPairForValueOrTerm
@@ -320,7 +322,7 @@ Haskell qualifying spec
 
   op findSpecQualifier(sc_tm: Term): Option String =
     case sc_tm of
-      | (Qualify(_, qual), _) -> Some qual
+      | (Qualify(_, qual), _) -> Some (thyName qual)
       | _ -> None
 
   op dummySpecCalcTerm: Term = (Spec [], noPos)
@@ -418,7 +420,7 @@ Haskell qualifying spec
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
     %% Get rid of non-haskell pragmas
-    let _ = writeLine(c.spec_name) in
+    %% let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)}
@@ -569,7 +571,7 @@ Haskell qualifying spec
           | _ \_rightarrow
         let thy_nm = thyName spc_nm in
         case uidStringPairTermForValue val of
-          | Some (_, _, sc_tm) | some?(findSpecQualifier sc_tm) ->
+          | Some (_, _, sc_tm) | false && some?(findSpecQualifier sc_tm) ->  % ???
             let Some qualifier = findSpecQualifier sc_tm in
             Some(prConcat ([prString "qualified ", prString thy_nm]
                              ++ (if qualifier = thy_nm then []
@@ -2054,6 +2056,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
+   let qualifier = thyName qualifier in
    if qualifier = UnQualified \_or qualifier in? omittedQualifiers  \_or Some qualifier = c.qualifier? then
      if id in? disallowedVarNames then id ^ "__c"
        else ppIdStr id upper?
@@ -2081,7 +2084,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def ppOpQualifiedId c qid =
    case specialOpInfo c qid of
      | Some(s, _, _, _, _) \_rightarrow
-       let _ = writeLine(" -> "^s) in
+       % let _ = writeLine(" -> "^s) in
        (case c.qualifier? of
           | Some qual | qualifiedBy?(s, qual) ->
             prString(subFromTo(s, length qual + 1, length s))
