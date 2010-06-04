@@ -134,14 +134,19 @@ RC=$?
 
 echo " "
 xemacs=`which xemacs`
+echo "Done creating Specware4.$PROGRAM_EXTENSION from Specware4.$FASL_EXTENSION and misc support files."
 
 # generate .elc files for xemacs interface
 if [ $RC -eq 0 ]; then
+  echo "About to do quick run of xemacs to cause .elc files to be created"
   $xemacs -no-init-file \
 	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
 	-eval "(sw:load-specware-emacs-file \"hideshow\")" \
 	-eval "(sw:load-specware-emacs-file \"specware-mode\")" \
         -eval "(kill-emacs 0)"
+  echo "Done with quick run of xemacs"
+else
+   echo "Skipping run of xemacs because build failed code $RC ..."
 fi
 
 # --------------------------------------------------------------------------------
