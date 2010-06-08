@@ -14,6 +14,7 @@ Haskell qualifying spec
  import /Languages/MetaSlang/Transformations/Simplify
  import /Languages/MetaSlang/Transformations/CurryUtils
 
+ op useQualifiedNames?: Bool = false
  op simplify?: Boolean = false
 
  type Pretty = PrettyPrint.Pretty
@@ -571,7 +572,7 @@ Haskell qualifying spec
           | _ \_rightarrow
         let thy_nm = thyName spc_nm in
         case uidStringPairTermForValue val of
-          | Some (_, _, sc_tm) | false && some?(findSpecQualifier sc_tm) ->  % ???
+          | Some (_, _, sc_tm) | useQualifiedNames? && some?(findSpecQualifier sc_tm) ->  % ???
             let Some qualifier = findSpecQualifier sc_tm in
             Some(prConcat ([prString "qualified ", prString thy_nm]
                              ++ (if qualifier = thy_nm then []
@@ -1610,7 +1611,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                        | None ->
                      case arrowOpt(spc, inferType(spc, term)) of
                        | Some(dom, _) ->
-                         let new_v = ("cv", dom) in
+                         let new_v = ("cv1", dom) in
                          ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                        | None -> fail("Can't reverse term: "^printTerm term))
                 else
@@ -1622,7 +1623,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 (let spc = getSpec c in
                  case arrowOpt(spc, inferType(spc, term)) of
                    | Some(dom, _) ->
-                     let new_v = ("cv", dom) in
+                     let new_v = ("cv2", dom) in
                      ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                    | None -> fail("Can't reverse term: "^printTerm term))
               | _ ->                 
@@ -2056,12 +2057,17 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
-   let qualifier = thyName qualifier in
-   if qualifier = UnQualified \_or qualifier in? omittedQualifiers  \_or Some qualifier = c.qualifier? then
-     if id in? disallowedVarNames then id ^ "__c"
-       else ppIdStr id upper?
+   let qualifier = if useQualifiedNames? then thyName qualifier else qualifier in
+   if qualifier = UnQualified \_or qualifier in? omittedQualifiers
+        \_or (if useQualifiedNames?
+              then Some qualifier = c.qualifier?
+              else ~(identifier? id))
+     then if id in? disallowedVarNames then id ^ "__c"
+          else ppIdStr id upper?
    else
-     ppIdStr qualifier true ^ "." ^ ppIdStr id upper?
+     if useQualifiedNames?
+       then ppIdStr qualifier true ^ "." ^ ppIdStr id upper?
+       else ppIdStr (qualifier ^ "__" ^ id) upper?
 
  op ppTyQualifiedId (c: Context) (qid as Qualified(_, id): QualifiedId): Pretty =
    let nm = qidToHaskellString c qid true in
@@ -2085,10 +2091,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    case specialOpInfo c qid of
      | Some(s, _, _, _, _) \_rightarrow
        % let _ = writeLine(" -> "^s) in
-       (case c.qualifier? of
-          | Some qual | qualifiedBy?(s, qual) ->
-            prString(subFromTo(s, length qual + 1, length s))
-          | _ -> prString s)
+       ppOpQualifiedId0 c
+         (case splitStringAt(s, ".") of
+            | [s]    -> mkUnQualifiedId s
+            | [q,id] -> mkQualifiedId(q,id))
      | None \_rightarrow ppOpQualifiedId0 c qid
 
  %% May only need ops that can be unary
