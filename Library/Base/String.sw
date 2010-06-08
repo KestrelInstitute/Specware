@@ -347,13 +347,8 @@ proof Haskell ThyMorphism
   String.>          -> >     Infix 4
   String.flatten    -> concat
   String.compare    -> compare curried
-  Boolean.show      -> show
   Nat.show          -> show
   Integer.show      -> show
-  Char.show         -> show
-  Compare.show      -> show
-  Option.show       -> show
-  List.show         -> show
   Nat.natToString   -> show
   Nat.digitToString   -> show
   Integer.intToString -> show
