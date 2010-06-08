@@ -78,17 +78,19 @@ IsaTermPrinter qualifying spec
            -999)
 
  op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(Associativity * Nat) * Boolean * Boolean =
-   let def joinParens(strs, par_str) =
+   let def joinParens(strs, par_str, i) =
          case strs of
            | []       -> if par_str = "" then [] else [par_str]
            | "%" :: _ -> if par_str = "" then [] else [par_str]
-           | "(" :: r_strs -> joinParens(r_strs, par_str^"(")
-           | ")" :: r_strs -> par_str^")" :: joinParens(r_strs, "")
+           | "(" :: r_strs -> joinParens(r_strs, par_str^"(", i+1)
+           | ")" :: r_strs ->
+             if i = 1 then par_str^")" :: joinParens(r_strs, "", i-1)
+               else joinParens(r_strs, par_str^")", i-1)
            | s :: r_strs ->
-             if par_str = "" then s :: joinParens(r_strs, par_str)
-               else joinParens(r_strs, par_str^s)
+             if par_str = "" then s :: joinParens(r_strs, par_str, i)
+               else joinParens(r_strs, par_str^s, i)
    in
-   let rhs_strs = joinParens(splitStringAtChars(rhs, [# , #(, #), #%]), "") in
+   let rhs_strs = joinParens(splitStringAtChars(rhs, [# , #(, #), #%]), "", 0) in
    let rhs_strs = filter (fn s -> s ~= "" && s ~= " ") rhs_strs in
    case rhs_strs of
      | [] \_rightarrow (" ", None, false, false)
