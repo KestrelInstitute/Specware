@@ -1172,9 +1172,9 @@ proof Haskell Thy_Morphism
  Integer.zero?    -> (== 0)
  Integer.positive? -> (> 0)
  Integer.negative? -> (< 0)
- Nat.succ         -> (+ 1)
- Nat.pred         -> (- 1)
- Nat.posNat?      -> (>= 0)
+ Nat.succ         -> (1 +)
+ Nat.pred         -> (-1 +)
+ Nat.posNat?      -> (> 0)
  Integer.+        -> +     Left  6
  Integer.-        -> -     Left  6
  Integer.*        -> *     Left  7
