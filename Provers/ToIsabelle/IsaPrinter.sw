@@ -69,58 +69,10 @@ IsaTermPrinter qualifying spec
  type Decl = SpecCalc.Decl StandardAnnotation
 
  % def prGrConcat x = prGroup (prConcat x)
-
- op  prNum: Integer \_rightarrow Pretty
- def prNum n = prString(show n)
-
- def prString s = string s
-
  op prSymString(s: String): Pretty =
    if testSubseqEqual?("\\<", s, 0, 0)
      then lengthString(1, s)
      else prString s
-
- %def prBreak =
- %def prNewline =
- op  prConcat: List Pretty \_rightarrow Pretty
- def prConcat l = prettysNone l
-
- op  prEmpty: Pretty
- def prEmpty = prConcat []
-
- op  prBreak: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prBreak n l = blockFill(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
-
- op  prLinear: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLinear n l = blockLinear(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
-
- op  prLines: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLines n l = blockAll(0, (List.map (\_lambda x \_rightarrow (n,x)) l))
-
- op  prBreakCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prBreakCat n l = blockFill(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
-
- op  prLinearCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinearCat n l = blockLinear(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
-
- op  prLinesCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinesCat n l = blockAll(0, (map (\_lambda x \_rightarrow (n,prConcat x)) l))
-
- op  prSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
- def prSep n blockFn sep l =
-   case l of
-     | [] \_rightarrow prEmpty
-     | [p] \_rightarrow p
-     | p::r \_rightarrow
-       blockFn(0, Cons((0,p), List.map (\_lambda x \_rightarrow (n, prConcat [sep, x])) r))
-
- op  prPostSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
- def prPostSep n blockFn sep l =
-   case l of
-     | [] \_rightarrow prEmpty
-     | [p] \_rightarrow p
-     | _ \_rightarrow
-       blockFn(0, (List.map (\_lambda x \_rightarrow (n, prConcat [x, sep])) (butLast l)) ++ [(0, last l)])
 
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
