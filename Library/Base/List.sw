@@ -4960,7 +4960,6 @@ proof Haskell Thy_Morphism  List
   List.reverse      -> reverse
   List.repeat       -> replicate    curried  reversed
   List.flatten      -> concat
-  List.compare      -> compare curried
   List.findLeftMost -> find
   List.leftmostPositionSuchThat -> findIndex  curried  reversed
   List.positionsSuchThat -> findIndices  curried  reversed
