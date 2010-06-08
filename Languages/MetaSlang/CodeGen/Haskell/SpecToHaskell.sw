@@ -13,6 +13,7 @@ Haskell qualifying spec
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/Simplify
  import /Languages/MetaSlang/Transformations/CurryUtils
+ import /Languages/MetaSlang/Transformations/RenameBound
 
  op useQualifiedNames?: Bool = false
  op simplify?: Boolean = false
@@ -61,53 +62,7 @@ Haskell qualifying spec
 % type SpecElem = SpecCalc.SpecElem StandardAnnotation
  type Decl = SpecCalc.Decl StandardAnnotation
 
- op  prNum: Integer \_rightarrow Pretty
- def prNum n = prString(show n)
-
- def prString s = string s
-
- %def prBreak =
- %def prNewline =
- op  prConcat: List Pretty \_rightarrow Pretty
- def prConcat l = prettysNone l
-
- op  prEmpty: Pretty
- def prEmpty = prConcat []
-
- op  prBreak: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prBreak n l = blockFill(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
-
- op  prLinear: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLinear n l = blockLinear(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
-
- op  prLines: Nat \_rightarrow List Pretty \_rightarrow Pretty
- def prLines n l = blockAll(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
-
- op  prBreakCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prBreakCat n l = blockFill(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
-
- op  prLinearCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinearCat n l = blockLinear(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
-
- op  prLinesCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
- def prLinesCat n l = blockAll(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
-
- op  prSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
- def prSep n blockFn sep l =
-   case l of
-     | [] \_rightarrow prEmpty
-     | [p] \_rightarrow p
-     | p::r \_rightarrow
-       blockFn(0, Cons((0, p), List.map (\_lambda x \_rightarrow (n, prConcat [sep, x])) r))
-
- op  prPostSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
- def prPostSep n blockFn sep l =
-   case l of
-     | [] \_rightarrow prEmpty
-     | [p] \_rightarrow p
-     | _ \_rightarrow
-       blockFn(0, (List.map (\_lambda x \_rightarrow (n, prConcat [x, sep])) (butLast l)) ++ [(0, last l)])
-
+  
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
 
@@ -1117,6 +1072,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases sw_fixity refine_num dfn =
   let (tvs, ty, term) = if def? then unpackFirstTerm(dfn)
                          else unpackTerm(dfn)
   in
+  let term = renameTerm (emptyContext()) term in
   let aliases = [mainId] in
   let decl_list = 
         if decl?
@@ -1468,7 +1424,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                  | _ -> None)
            | And       \_rightarrow Some "&&"
            | Or        \_rightarrow Some "||"
-           | Implies   \_rightarrow Some "=>"
+%%           | Implies   \_rightarrow Some "=>"
            | Iff       \_rightarrow Some "=="
            | Equals    \_rightarrow Some "=="
            | NotEquals \_rightarrow Some "/="
@@ -1571,6 +1527,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                  MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x", t1), MS.mkVarPat("y", t2)], term2)],
                           mkAppl(term1, [mkVar("x", t1), mkVar("y", t2)]))
                | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
+        | (Fun(Implies, _, a), term2) ->
+          let spc = getSpec c in
+          ppTerm c parentTerm
+            (case productSorts(spc, inferType (spc, term2)) of
+               | [t1, t2] ->
+                 MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x", t1), MS.mkVarPat("y", t2)], term2)],
+                          mkAppl(term1, [mkVar("x", t1), mkVar("y", t2)]))
+               | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
         %%  embed? foo x  -->  case x of foo _ -> true | _ -> false
         | (Fun(Embedded id, ty, a), term2) \_rightarrow
           let spc = getSpec c in
@@ -1605,12 +1569,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   then
                     (let spc = getSpec c in
                      case productOpt(spc, inferType(spc, term2)) of
-                       | Some fields ->
+                       | Some fields ->      % op is not curried
                          let (rec_pat, rec_tm) = patTermVarsForProduct fields in
                          ppTerm c parentTerm (MS.mkLet([(rec_pat, term2)], mkApply(term1, rec_tm)))
                        | None ->
                      case arrowOpt(spc, inferType(spc, term)) of
-                       | Some(dom, _) ->
+                       | Some(dom, _) ->     % op is curried
+                         % let _ = break("c->c: "^printTerm term) in
                          let new_v = ("cv1", dom) in
                          ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(term, mkVar new_v)))
                        | None -> fail("Can't reverse term: "^printTerm term))
@@ -1633,6 +1598,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                              | _ \_rightarrow prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]))
 
    in
+   % let term = if embed? Let term then renameTerm (empty(), emptyEnv()) term else term in
    case term of
      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) \_rightarrow
        (case (trm1, t2) of
@@ -1653,6 +1619,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                               prConcat [prString "{",
                                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                                         prString "}"]])
+        | (Fun(Implies, _, _), _) ->
+          ppTerm c parentTerm (MS.mkOr(MS.mkNot t1, t2))
         | _ ->
         let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
               enclose?(encl?,
@@ -1744,7 +1712,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                            ^ "\""))
      | Let ([(p, t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
        prApply(Lambda([(p, trueTerm , bod)], a), t)
-     | Let (decls, term, _) \_rightarrow
+     | Let (decls, body_term, _) \_rightarrow
        let def ppDecl (pattern, term) =
              prBreakCat 2 [[ppPattern c pattern (Some ""),
                             prSpace],
@@ -1758,7 +1726,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                                       (map ppDecl decls)),
                                         prSpace],
                                prString "in "],
-                            ppTerm c parentTerm term])
+                            ppTerm c parentTerm body_term])
      | LetRec (decls, term, _) \_rightarrow
        let def ppDecl (v, term) =
              prBreak 2 [%prString "def ",
@@ -2251,7 +2219,7 @@ def termFixity c term =
                   | Infix(assoc, precnum) -> (Some(ppInfixId c id), Infix(assoc, convertPrecNum precnum), true, false))
          | And            -> (Some(prString "&&"), Infix (Right, 3), true, false)
          | Or             -> (Some(prString "||"), Infix (Right, 2), true, false)
-         | Implies        -> (Some(prString "==>"), Infix (Right, 1), true, false) 
+%%         | Implies        -> (Some(prString "==>"), Infix (Right, 1), true, false) 
          | Iff            -> (Some(prString "=="), Infix (NotAssoc, 4), true, false)
          | Not            -> (Some(prString "~"), Nonfix, false, false) % ???
          | Equals         -> (Some(prString "=="), Infix (NotAssoc, 4), true, false) % was 10 ??
