@@ -1086,7 +1086,7 @@ Utilities qualifying spec
                              | _ -> false)
       term
 
-  op opsInTerm(tm: MS.Term): List QualifiedId =
+  op opsInTerm(tm: MS.Term): QualifiedIds =
     foldTerm (fn opids -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? opids ->
@@ -1096,7 +1096,7 @@ Utilities qualifying spec
               fn result -> fn _ -> result)
       [] tm
 
-  op opsInType(ty: Sort): List QualifiedId =
+  op opsInType(ty: Sort): QualifiedIds =
     foldSort (fn result -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? result -> qid::result
@@ -1106,7 +1106,7 @@ Utilities qualifying spec
 
       [] ty
 
-  op typesInTerm(tm: MS.Term): List QualifiedId =
+  op typesInTerm(tm: MS.Term): QualifiedIds =
     foldTerm (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of
@@ -1116,7 +1116,7 @@ Utilities qualifying spec
 
       [] tm
 
-  op typesInType(ty: Sort): List QualifiedId =
+  op typesInType(ty: Sort): QualifiedIds =
     foldSort (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of
@@ -1126,6 +1126,15 @@ Utilities qualifying spec
 
       [] ty
 
+  op opsInOpDefFor(op_id: QualifiedId, spc: Spec): QualifiedIds =
+    case findTheOp(spc, op_id) of
+      | Some info -> opsInTerm info.dfn
+      | None -> []
+
+  op typesInTypeDefFor(ty_id: QualifiedId, spc: Spec): QualifiedIds =
+    case findTheSort(spc, ty_id) of
+      | Some info -> typesInType info.dfn
+      | None -> []
 
 
   op  lambda?: [a] ATerm a -> Boolean
@@ -1903,7 +1912,7 @@ Utilities qualifying spec
         writeLine(printSort sty^" | "^printTermWithSorts p)
       | _ -> writeLine(printSort ty)
 
-  op dontRaiseTypes: List QualifiedId = [Qualified("Nat", "Nat")]
+  op dontRaiseTypes: QualifiedIds = [Qualified("Nat", "Nat")]
   op treatAsAtomicType?(ty: Sort): Boolean =
     case ty of
       | Base(qid, _, _) -> qid in? dontRaiseTypes
@@ -2334,7 +2343,7 @@ Utilities qualifying spec
     in
       loop 1
 
-  op knownNonEmptyBaseTypes: List QualifiedId =
+  op knownNonEmptyBaseTypes: QualifiedIds =
     [Qualified("Integer", "Integer"), Qualified("Nat","Nat"), Qualified("Char","Char"),
      Qualified("String", "String"), Qualified("List","List"), Qualified("Option","Option")]
 
