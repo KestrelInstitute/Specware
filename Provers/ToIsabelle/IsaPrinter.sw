@@ -564,6 +564,7 @@ IsaTermPrinter qualifying spec
     case elt of
       | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str \_rightarrow true
       | Pragma _ \_rightarrow false
+      | Comment _ -> false
       | _ \_rightarrow true
 
   op  elementFilter: SpecElement \_rightarrow Boolean
@@ -647,7 +648,7 @@ IsaTermPrinter qualifying spec
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
     let
-      %op  ppSpecElementsAux: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow List Pretty
+      %op  ppSpecElementsAux: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Prettys
       def aux c spc r_elems =
 	case r_elems of
 	  | [] \_rightarrow []
@@ -660,6 +661,21 @@ IsaTermPrinter qualifying spec
 %	  | (Property prop) :: (Pragma prag) :: rst \_rightarrow
 %	    Cons(ppProperty c prop "" (Some prag),
 %		 aux c spc rst)
+          
+          | (el as Op(qid, true, _)) :: rst | defHasForwardRef?(qid, rst, spc) \_rightarrow
+            let (op_qids, pre_els, mrec_els, m_rst) = findMutuallyRecursiveElts(qid, rst, spc) in
+            if pre_els = []
+              then ppMutuallyRecursiveOpElts c op_qids (el :: mrec_els) elems
+                     :: (aux c spc m_rst)
+              else  %% After printing pre_els, this will redo analysis, but this is cheap
+                aux c spc (pre_els ++ (el :: mrec_els) ++ m_rst)
+          | (el as Property(_, _, _, term, _)) :: rst | hasForwardRef?(term, rst) \_rightarrow
+            let new_els = moveAfterOp(el, rst) in
+            aux c spc new_els
+          | (el as Sort (qid,_)) :: rst | hasForwardCoProductTypeRef?(qid, rst, spc) ->
+            let (mrec_els, m_rst) = findMutuallyRecursiveCoProductElts(qid, rst, spc) in
+            ppMutuallyRecursiveCoProductElts c (el :: mrec_els)
+              ++ aux c spc m_rst
 	  | el :: (rst as (Pragma prag) :: _) | unnamedPragma? prag \_rightarrow
 	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
 	    let prettyr = aux c spc rst in
@@ -675,8 +691,204 @@ IsaTermPrinter qualifying spec
     in
     prLines 0 (aux c spc elems)
 
-  op  normalizeSpecElements: SpecElements \_rightarrow SpecElements
-  def normalizeSpecElements elts =
+  op hasOpDef?(qids: QualifiedIds, els: SpecElements) : Bool =
+    if qids = [] then false
+    else
+    exists? (fn el -> case el of
+                        | Op(qid, true, _) -> qid in? qids
+                        | _ -> false)
+      els
+
+  op defHasForwardRef?(qid: QualifiedId, els: SpecElements, spc: Spec) : Bool =
+    hasOpDef?(opsInOpDefFor(qid, spc), els)
+
+  op hasForwardRef?(tm: MS.Term, els: SpecElements): Bool =
+    hasOpDef?(opsInTerm tm, els)
+
+  op moveAfterOp(move_el: SpecElement, els: SpecElements): SpecElements =
+    case els of
+      | [] -> [move_el]                      % Shouldn't happen!
+      | (op_el as Op _):: r_els -> op_el :: move_el :: r_els
+      | el :: r_els -> el :: moveAfterOp(move_el, r_els)
+
+
+  op findMutuallyRecursiveElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
+       : QualifiedIds * SpecElements * SpecElements * SpecElements =
+    let op_refs = qid0 :: opsInOpDefFor(qid0, spc) in
+    let def findMutuallyRecursiveOps(els, op_refs, mr_els, pending_prag_els) =
+          case els of
+            | [] -> orderElts(mr_els, pending_prag_els)
+            | el :: r_els ->
+          case el of
+            | Op(qid, true, _) ->
+              let new_op_refs = opsInOpDefFor(qid, spc) ++ op_refs in
+              if qid in? op_refs
+                then
+                  findMutuallyRecursiveOps(r_els, new_op_refs,
+                                              mr_els ++ pending_prag_els ++ [el], [])
+                else
+                  findMutuallyRecursiveOps(r_els, new_op_refs,
+                                              mr_els, pending_prag_els ++ [el])
+            | _ ->
+          if (case el of
+                | Pragma _ -> true
+                | Property _ -> true
+                | Comment _ -> true
+                | _ -> false)
+            then findMutuallyRecursiveOps(r_els, op_refs, mr_els,
+                                          pending_prag_els ++ [el])
+            else orderElts(mr_els, pending_prag_els ++ els)
+        def orderElts(mr_els, els) =
+          let (mr_els, els) = case els of
+                                | (el as (Pragma prag)) :: rm_rst | unnamedPragma? prag \_rightarrow
+                                  (mr_els ++ [el], rm_rst)
+                                | _ -> (mr_els, els)
+          in
+          let op_qids = mapPartial (fn el -> case el of
+                                   | Op(qid, _, _) -> Some qid
+                                   | _ -> None)
+                mr_els
+          in
+          extractProperties(mr_els, qid0 :: op_qids, [], [], els)
+        def extractProperties(els, op_qids, pre_els, mr_els, post_els) =
+          %% Split properties and assoc pragmas with els into
+          case els of
+            | [] -> (op_qids, pre_els, mr_els, post_els)
+            | (el as Property(_, _, _, term, _)) :: r_els ->
+              let (unnamedPragEls, r_els) =
+                  case r_els of
+                    | (prag_el as Pragma prag) :: rr_els | unnamedPragma? prag ->
+                      ([prag_el], rr_els)
+                    | _ -> ([], r_els)
+              in
+              if exists? (fn qid -> qid in? op_qids) (opsInTerm term)
+                then extractProperties(r_els, op_qids, pre_els, mr_els, el :: unnamedPragEls ++ post_els)
+                else extractProperties(r_els, op_qids, pre_els ++ (el :: unnamedPragEls), mr_els, post_els)
+           | el :: r_els ->
+             extractProperties(r_els, op_qids, pre_els, mr_els ++ [el], post_els)
+    in
+    findMutuallyRecursiveOps(els, op_refs, [], [])
+
+
+  op hasForwardCoProductTypeRef?(qid: QualifiedId, els: SpecElements, spc: Spec) : Bool =
+    let type_refs = typesInTypeDefFor(qid, spc) in
+    if type_refs = [] then false
+    else
+    exists? (fn el -> case el of
+                        | Sort(qid, _) -> qid in? type_refs
+                        | _ -> false)
+      els
+        
+  op findMutuallyRecursiveCoProductElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
+       : SpecElements * SpecElements =
+    let type_refs = typesInTypeDefFor(qid0, spc) in
+    let def findMutuallyRecursiveTypes(els, type_refs, mr_els, pending_prag_els) =
+          case els of
+            | [] -> (mr_els, pending_prag_els)
+            | el :: r_els ->
+          case el of
+            | Sort(qid, _) ->
+              if qid in? type_refs
+                then let new_type_refs = typesInTypeDefFor(qid, spc) in
+                     findMutuallyRecursiveTypes(r_els, type_refs ++ new_type_refs,
+                                                mr_els ++ pending_prag_els ++ [el], [])
+                else (mr_els, pending_prag_els ++ r_els)
+            | Pragma _ -> findMutuallyRecursiveTypes(r_els, type_refs, mr_els,
+                                                     pending_prag_els ++ [el])
+            | _ -> (mr_els, pending_prag_els ++ els)
+    in
+    findMutuallyRecursiveTypes(els, type_refs, [], [])
+
+
+  op ppMutuallyRecursiveOpElts (c: Context) (op_qids: QualifiedIds) (els: SpecElements) (all_els: SpecElements)
+       : Pretty =
+    let spc = getSpec c in
+    let c = c << {newVarCount = Ref 0} in
+    let op_qid_infos = map (fn op_qid ->
+                              let Some{names=_, fixity, dfn, fullyQualified?=_} = AnnSpec.findTheOp(spc, op_qid) in
+                              let (_, ty, term) = unpackNthTerm(dfn, 0) in
+                              case specialOpInfo c op_qid of
+                                | Some (isa_id, infix?, _, _, no_def?) \_rightarrow
+                                  (mkUnQualifiedId(isa_id), ty, term,
+                                   case infix? of
+                                     | Some pr -> Infix pr
+                                     | None -> fixity)
+                                | _ \_rightarrow (op_qid, ty, term, convertFixity fixity))
+                         op_qids
+    in
+    let opt_prag_el = findLeftmost (fn el -> case el of
+                                          | Pragma prag -> unnamedPragma? prag
+                                          | _ -> false)
+                        els
+    in
+    let opt_prag = case opt_prag_el of
+                   | Some(Pragma prag) -> Some prag
+                   | _ -> None
+    in
+    let opt_prag = findPragmaNamed(els, head op_qids, opt_prag) in   % head ???
+    let pp_cases =
+        flatten (map (fn (op_qid, ty, dfn, fixity) ->
+                        let op_tm = mkFun (Op (op_qid, fixity), ty) in
+                        let cases = defToFunCases c op_tm dfn in
+                        map (fn (lhs, rhs) ->
+                               let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
+                               prConcat[prString "\"",
+                                        ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
+                                        prString "\""])
+                          cases)
+                  op_qid_infos)
+    in
+    let def fn_decl_pp_lines (prefix, op_qid_infos) =
+          case op_qid_infos of
+            | [] -> []
+            | (op_qid, ty, dfn, fixity) :: rst ->
+              let this_def =
+                    [prString prefix,
+                     ppIdInfo [op_qid],
+                     prString " :: \"",
+                     (case fixity of
+                        | Infix(assoc,prec) \_rightarrow ppInfixType c ty   % Infix operators are curried in Isa
+                        | _ \_rightarrow ppType c Top true ty),
+                     prString "\""]
+                     ++ (case fixity of
+                           | Infix(assoc,prec) \_rightarrow
+                             [prString "\t(",
+                              case assoc of
+                                | Left  \_rightarrow prString "infixl \""
+                                | Right \_rightarrow prString "infixr \"",
+                              ppInfixDefId (op_qid),
+                              prString "\" ",
+                              prString (show prec),
+                              prString ")"]
+                           | _ \_rightarrow [])
+              in
+              this_def :: fn_decl_pp_lines("and ", rst)
+    in
+    case findParenAnnotation opt_prag of
+      | None \_rightarrow
+        prLinesCat 0 (fn_decl_pp_lines ("fun ", op_qid_infos)
+                      ++
+                      [[prString "where"],
+                       [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]])
+      | Some patt_control_str \_rightarrow
+        let (prf_pp, includes_prf_terminator?) = processOptPrag opt_prag in
+        prLinesCat 0 (fn_decl_pp_lines ("function ", op_qid_infos)
+                      ++
+                      [[prString "where"],
+                       [prString "   ", prSep (-2) blockAll (prString "| ") pp_cases]]
+                    ++ prf_pp
+                    ++ (if prf_pp = []
+                         then [[prString defaultFunctionProof]]
+                             ++ (if prfEndsWithTerminator? defaultFunctionProof then []
+                                   else [[prString "done", prEmpty]])
+                         else (if includes_prf_terminator?
+                                 then []
+                                 else [[prString "done", prEmpty]])))
+
+  op ppMutuallyRecursiveCoProductElts (c: Context) (els: SpecElements): Prettys =
+    []
+
+  op normalizeSpecElements (elts: SpecElements): SpecElements =
     case elts of
       | [] \_rightarrow []
       | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _)) :: rst | qid1 = qid2 \_rightarrow
@@ -721,7 +933,7 @@ IsaTermPrinter qualifying spec
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | Property prop \_rightarrow ppProperty c prop "" elems opt_prag
-      | Pragma("proof", mid_str, "end-proof", pos) | verbatimPragma? mid_str \_rightarrow
+      | Pragma("proof", mid_str, "end-proof", pos) | verbatimPragma? mid_str ->
         let verbatim_str = case search("\n", mid_str) of
                              | None \_rightarrow ""
                              | Some n \_rightarrow specwareToIsaString(subFromTo(mid_str, n, length mid_str))
@@ -1068,7 +1280,7 @@ IsaTermPrinter qualifying spec
           | Some n \_rightarrow
             let prf_str = stripExcessWhiteSpace(subFromTo(mid_str,n+1,len)) in
             ([[prString(specwareToIsaString prf_str)]],
-             proofEndsWithTerminator? prf_str))
+             prfEndsWithTerminator? prf_str))
      | _ \_rightarrow ([], false)
 
 op defaultFunctionProof: String =
@@ -1134,7 +1346,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                   ++ prf_pp
                   ++ (if prf_pp = []
                        then [[prString defaultFunctionProof]]
-                           ++ (if proofEndsWithTerminator? defaultFunctionProof then []
+                           ++ (if prfEndsWithTerminator? defaultFunctionProof then []
                                  else [[prString "done", prEmpty]])
                        else (if includes_prf_terminator?
                                then []
@@ -1720,7 +1932,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
              | Axiom \_rightarrow []
              | _ \_rightarrow (if prf_pp = []
                        then [[prString defaultProof]]
-                           ++ (if proofEndsWithTerminator? defaultProof then []
+                           ++ (if prfEndsWithTerminator? defaultProof then []
                                  else [[prString "done",prEmpty]])
                        else (if includes_prf_terminator?
                                then []
@@ -1762,7 +1974,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 && (whiteSpaceChar?(prf@(n+2))
                       || prf@(n+2) = #()
 
- op proofEndsWithTerminator?(prf: String): Boolean =
+ op prfEndsWithTerminator?(prf: String): Boolean =
    let len = length prf in
    testSubseqEqual?("done",prf,0,len-4)
   \_or testSubseqEqual?("sorry",prf,0,len-5)
@@ -2761,7 +2973,7 @@ def ppIdStr id =
                   | (id,#>) -> att(id, "_gt")
                   | (id,#~) -> att(id, "_tld")
                   | (id,#/) -> att(id, "_fsl")
-                  | (id,#\\) -> att(id, "_bsl")
+                  | (id,#\\ ) -> att(id, "_bsl")
                   | (id,#-) -> att(id, "_dsh")
                   | (id,#*) -> att(id, "_ast")
                   | (id,#+) -> att(id, "_pls")
