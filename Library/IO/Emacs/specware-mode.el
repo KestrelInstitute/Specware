@@ -355,10 +355,11 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table)
   (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
   (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
+  (modify-syntax-entry ?\#      "\\   " specware-mode-syntax-table)
   (modify-syntax-entry ?        " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\t      " "     specware-mode-syntax-table)
-  (modify-syntax-entry ?\%      "<   "     specware-mode-syntax-table)
-  (modify-syntax-entry ?\n      ">   "     specware-mode-syntax-table)
+  (modify-syntax-entry ?\%      "<   "  specware-mode-syntax-table)
+  (modify-syntax-entry ?\n      ">   "   specware-mode-syntax-table)
   (modify-syntax-entry ?\f      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\'      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\_      "w"     specware-mode-syntax-table)
@@ -2219,6 +2220,16 @@ With an argument, it doesn't convert imports."
         (find-file-other-window (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
+
+;; License display and acceptance
+(defun display-license-and-accept (license-file)
+  (save-window-excursion
+    (view-file license-file)
+    (let ((last-non-menu-event nil)  ; gnu emacs
+          (force-dialog-box-use t)   ; xemacs
+          )
+      (yes-or-no-p "Agree to license? "))))
+  
 
 (defun sw:specware-mode-folding ()
   (folding-add-to-marks-list 'specware-mode "%{{{" "%}}}" nil t))
