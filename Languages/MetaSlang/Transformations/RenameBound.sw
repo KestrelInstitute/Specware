@@ -170,6 +170,8 @@ spec
 
        | Seq (terms, a) ->
          Seq (renameTerms c terms, a)
+       
+       | _ -> term
 
   def renamePattern c p =
     case p
