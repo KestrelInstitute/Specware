@@ -73,8 +73,6 @@ SpecNorm qualifying spec
   %% Polymorphic ops have versions that have a predicate for each polymorphic variable
   type PolyOpTable = AQualifierMap(QualifiedId * List TyVar)
 
-  op mkTruePred(ty: Sort): MS.Term =
-    mkOp(Qualified("Bool","TRUE"), mkArrow(ty, boolSort))
     % mkLambda(mkWildPat ty, trueTerm)
 
   op substTyVarsWithSubtypes(tv_map: List(TyVar * MS.Term), tm: MS.Term): MS.Term =
@@ -160,13 +158,32 @@ SpecNorm qualifying spec
     in
     (doTerm, doType, id)
 
+  op domSubtypePred(ty: Sort, spc: Spec): List MS.Term =
+    case arrowOpt(spc, ty) of
+      | None -> []
+      | Some(dom_ty, _) ->
+    let r_dom_ty = raiseSubtypeFn(dom_ty, spc) in
+    case r_dom_ty of
+      | Subsort(dom_ty, domPred, _) ->
+        [mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
+                      mkArrow(mkArrow(dom_ty, boolSort),
+                              mkArrow(ty, boolSort))),
+                 domPred)]
+      | _ -> []
+
   op typePredTerm(ty0: Sort, tm: MS.Term, spc: Spec): MS.Term =
     let ty = raiseSubtypeFn(ty0, spc) in
-    case ty of
-      | Subsort(_, pred, _) ->
-        let pred = maybeUnfoldSubTypePred(spc, pred) in
+    let preds1 = case ty of
+                 | Subsort(_, pred, _) ->
+                   [maybeUnfoldSubTypePred(spc, pred)]
+                 | _ -> []
+    in
+    let preds2 = domSubtypePred(ty, spc) in
+    case preds1 ++ preds2 of
+      | [] -> trueTerm
+      | preds ->
+        let pred = composeConjPreds(preds, spc) in
         simplifiedApply(pred, tm, spc)
-      | _ -> trueTerm
 
   op maybeRelativize?(t: MS.Term, tb: PolyOpTable): Bool =
     if eagerRegularization? then true
@@ -348,11 +365,12 @@ SpecNorm qualifying spec
                           mkArrow(mkArrow(dom_ty, boolSort),
                                   mkArrow(f_ty, boolSort))),
                      domPred))
-      | (Subsort(dom_ty, domPred, _), _) ->
-        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
-                          mkArrow(mkArrow(dom_ty, boolSort),
-                                  mkArrow(f_ty, boolSort))),
-                     domPred))
+       %% Not used because of lazy regulization
+%      | (Subsort(dom_ty, domPred, _), _) ->
+%        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
+%                          mkArrow(mkArrow(dom_ty, boolSort),
+%                                  mkArrow(f_ty, boolSort))),
+%                     domPred))
       | (_, Subsort(ran_ty, ranPred, _)) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PR"),
                           mkArrow(mkArrow(ran_ty, boolSort),
