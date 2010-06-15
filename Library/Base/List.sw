@@ -598,7 +598,7 @@ proof (induct l)
   from List__list_subtype_constr
   have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
    by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list"
+  have FPL: "Fun_P (domP, codP) List__list \_and Fun_PD domP List__list"
    by (auto simp add: domP_def codP_def)
   have LI: "List__list_1 [] = Function__inverse__stp domP List__list []"
    by (auto simp add: List__list_1_def domP_def)
@@ -621,7 +621,7 @@ proof (induct l)
   from List__list_subtype_constr
   have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
    by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list"
+  have FPL: "Fun_P (domP, codP) List__list \_and Fun_PD domP List__list"
    by (auto simp add: domP_def codP_def)
   have LI: "List__list_1 (x # l) =
             Function__inverse__stp domP List__list (x # l)"
@@ -1409,9 +1409,10 @@ case (Cons h l)
       by (auto simp add: List__list_1_def)
     from Pa_def Pb_def List__list_subtype_constr
      have BIJ: "Function__bijective_p__stp (Pa, Pb) List__list" by auto
-    from Pa_def Pb_def have REG: "Fun_P (Pa, Pb) List__list" by auto
+    from Pa_def Pb_def have ST: "Fun_P (Pa, Pb) List__list" by auto
+    from Pa_def have REG: "Fun_PD Pa List__list" by auto
     from Pb_def have "Pb l" by auto
-    with BIJ REG
+    with BIJ ST REG
      have "List__list (Function__inverse__stp Pa List__list l) = l"
       by (rule Function__f_inverse_apply__stp)
     with INV have "List__list (List__list_1 l) = l" by auto
@@ -4875,7 +4876,7 @@ end-proof
 proof Isa isoList_subtype_constr2
   apply (auto simp add: bij_ON_def List__isoList_def)
   (*** prove injectivity **)
-  apply (thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
+  apply (thin_tac "\<forall>x. ?P x", thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
          simp add: inj_on_def)
   apply (rule ballI)
   apply (rotate_tac 1, erule rev_mp, induct_tac x, simp, clarify)
@@ -4883,7 +4884,7 @@ proof Isa isoList_subtype_constr2
   apply (drule_tac x="tl y" in bspec, auto simp add: mem_def list_all_iff)
   (*** prove surjectivity **)
   apply (thin_tac "inj_on ?f ?A", auto simp add: surj_on_def)
-  apply (rotate_tac 2, erule rev_mp, induct_tac y)
+  apply (rotate_tac 3, erule rev_mp, induct_tac y)
   apply (simp add: list_all_iff mem_def)
   apply (simp add: mem_def, auto simp add: list_all_iff)
   apply (drule_tac x=a in bspec, simp add: mem_def)

@@ -223,7 +223,8 @@ lemma Set_P_RSet:
 
 fun Fun_P :: "(('a \_Rightarrow bool) * ('b \_Rightarrow bool)) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
-  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)) \_and (\_not(Pa x) \_longrightarrow f x = regular_val))"
+  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)))"
+(* was  "Fun_P (Pa, Pb) f = (\_forallx . (Pa x \_longrightarrow Pb(f x)) \_and (\_not(Pa x) \_longrightarrow f x = regular_val))" *)
 
 fun Fun_PD :: "('a \_Rightarrow bool) \_Rightarrow ('a \_Rightarrow 'b) \_Rightarrow bool"
 where
