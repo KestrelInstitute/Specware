@@ -66,7 +66,8 @@ theorem Option__isoOption_subtype_constr:
   done
 theorem Option__isoOption_subtype_constr1: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
-    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
+    Fun_P(P__a, P__b) iso_elem; 
+    Fun_PD P__a iso_elem\<rbrakk> \<Longrightarrow> 
    Fun_P(Option__Option_P P__a, Option__Option_P P__b)
       (RFun (Option__Option_P P__a) (Option__isoOption iso_elem))"
   apply(simp add: Option__isoOption_def, auto)
@@ -74,7 +75,8 @@ theorem Option__isoOption_subtype_constr1:
   done
 theorem Option__isoOption_subtype_constr2: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
-    Fun_P(P__a, P__b) iso_elem\<rbrakk> \<Longrightarrow> 
+    Fun_P(P__a, P__b) iso_elem; 
+    Fun_PD P__a iso_elem\<rbrakk> \<Longrightarrow> 
    Function__bijective_p__stp
      (Option__Option_P P__a, Option__Option_P P__b)
       (Option__isoOption iso_elem)"

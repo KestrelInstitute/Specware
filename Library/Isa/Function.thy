@@ -268,7 +268,8 @@ theorem Function__inverse_comp:
   done
 theorem Function__inverse_comp__stp [simp]: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
-    Fun_P(P__a, P__b) f\<rbrakk> \<Longrightarrow> 
+    Fun_P(P__a, P__b) f; 
+    Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    RFun P__b (f o Function__inverse__stp P__a f) 
      = RFun P__b id 
      \<and> RFun P__a (Function__inverse__stp P__a f o f) 
@@ -284,6 +285,7 @@ theorem Function__f_inverse_apply:
 theorem Function__f_inverse_apply__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
     Fun_P(P__a, P__b) f; 
+    Fun_PD P__a f; 
     P__b x\<rbrakk> \<Longrightarrow> 
    f (Function__inverse__stp P__a f x) = x"
   apply(auto simp add: mem_def bij_ON_def)
@@ -316,6 +318,7 @@ qed
 theorem Function__fxy_implies_inverse__stp: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
     Fun_P(P__a, P__b) f; 
+    Fun_PD P__a f; 
     P__a x; 
     P__b y; 
     f x = y\<rbrakk> \<Longrightarrow> 

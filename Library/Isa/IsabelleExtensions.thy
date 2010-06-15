@@ -211,7 +211,8 @@ lemma Set_P_RSet:
 
 fun Fun_P :: "(('a \<Rightarrow> bool) * ('b \<Rightarrow> bool)) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where
-  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)) \<and> (\<not>(Pa x) \<longrightarrow> f x = regular_val))"
+  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)))"
+(* was  "Fun_P (Pa, Pb) f = (\<forall>x . (Pa x \<longrightarrow> Pb(f x)) \<and> (\<not>(Pa x) \<longrightarrow> f x = regular_val))" *)
 
 fun Fun_PD :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where

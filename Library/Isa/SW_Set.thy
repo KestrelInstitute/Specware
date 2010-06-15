@@ -895,31 +895,47 @@ defs Set__fold__stp_def:
   "Set__fold__stp
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           (THE (fold__v::'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a set \<Rightarrow> 'b). 
-          Fun_P
-            (\<lambda> ((x_1::'b), (x_2::'b \<times> 'a \<Rightarrow> 'b), (x_3::'a set)). 
-               ((P__b x_1 
-                   \<and> Fun_P
-                       (\<lambda> ((x_1::'b), (x_2::'a)). 
-                          P__b x_1 \<and> P__a x_2, P__b) x_2) 
-                  \<and> (Set__finite_p__stp P__a x_3 \<and> Set_P P__a x_3)) 
-                 \<and> Set__foldable_p__stp(P__a, P__b)(x_1, x_2, x_3), P__b)
-             fold__v 
-            \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). 
-                  P__b c 
+          (Fun_P
+             (\<lambda> ((x_1::'b), (x_2::'b \<times> 'a \<Rightarrow> 'b), (x_3::'a set)). 
+                ((P__b x_1 
                     \<and> Fun_P
                         (\<lambda> ((x_1::'b), (x_2::'a)). 
-                           P__b x_1 \<and> P__a x_2, P__b) f 
+                           P__b x_1 \<and> P__a x_2, P__b) x_2) 
+                   \<and> (Set__finite_p__stp P__a x_3 \<and> Set_P P__a x_3)) 
+                  \<and> Set__foldable_p__stp(P__a, P__b)(x_1, x_2, x_3), P__b)
+              fold__v 
+             \<and> Fun_PD
+                  (\<lambda> ((x_1::'b), (x_2::'b \<times> 'a \<Rightarrow> 'b), (x_3::'a set)). 
+                     ((P__b x_1 
+                         \<and> Fun_P
+                             (\<lambda> ((x_1::'b), (x_2::'a)). 
+                                P__b x_1 \<and> P__a x_2, P__b) x_2) 
+                        \<and> (Set__finite_p__stp P__a x_3 
+                         \<and> Set_P P__a x_3)) 
+                       \<and> Set__foldable_p__stp(P__a, P__b)(x_1, x_2, x_3))
+                  fold__v) 
+            \<and> ((\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b). 
+                  P__b c 
+                    \<and> (Fun_P
+                         (\<lambda> ((x_1::'b), (x_2::'a)). 
+                            P__b x_1 \<and> P__a x_2, P__b) f 
+                     \<and> Fun_PD
+                          (\<lambda> ((x_1::'b), (x_2::'a)). 
+                             P__b x_1 \<and> P__a x_2) f) 
                     \<longrightarrow> fold__v(c, f, {}) = c) 
              \<and> (\<forall>(c::'b) (f::'b \<times> 'a \<Rightarrow> 'b) (s::'a set) (x::'a). 
                   P__b c 
                     \<and> (Fun_P
                          (\<lambda> ((x_1::'b), (x_2::'a)). 
                             P__b x_1 \<and> P__a x_2, P__b) f 
-                     \<and> (Set__finite_p__stp P__a s 
-                      \<and> (Set_P P__a s 
-                       \<and> (P__a x 
-                        \<and> Set__foldable_p__stp(P__a, P__b)
-                            (c, f, RFun P__a (insert x s)))))) 
+                     \<and> (Fun_PD
+                           (\<lambda> ((x_1::'b), (x_2::'a)). 
+                              P__b x_1 \<and> P__a x_2) f 
+                      \<and> (Set__finite_p__stp P__a s 
+                       \<and> (Set_P P__a s 
+                        \<and> (P__a x 
+                         \<and> Set__foldable_p__stp(P__a, P__b)
+                             (c, f, RFun P__a (insert x s))))))) 
                     \<longrightarrow> fold__v(c, f, insert x s) 
                           = f(fold__v(c, f, s less x), x)))))"
 consts Set__powerf :: "'a set \<Rightarrow> 'a Set__FiniteSet set"

@@ -13,24 +13,6 @@ axioms FMap__toFMap_subtype_constr1:
      (Set__finite_p__stp
          (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) 
         &&& Relation__functional_p__stp(P__a, P__b), TRUE) FMap__toFMap"
-axioms FMap__toFMap_subtype_constr2: 
-  "Fun_PD
-      (Set__finite_p__stp
-          (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) 
-         &&& Relation__functional_p__stp(P__a, P__b))
-      (RFun
-          ((Set__finite_p__stp
-               (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) 
-              &&& Relation__functional_p__stp(P__a, P__b)) 
-             &&& Set_P
-                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2))
-          (RFun
-              ((Set_P
-                   (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) 
-                  &&& Set__finite_p__stp
-                         (\<lambda> ((x_1::'a), (x_2::'b)). 
-                            P__a x_1 \<and> P__b x_2)) 
-                 &&& Relation__functional_p__stp(P__a, P__b)) FMap__toFMap))"
 consts FMap__fromFMap :: " ('a, 'b)FMap__FMap \<Rightarrow>  ('a, 'b)MapAC__FiniteMap"
 defs FMap__fromFMap_def: 
   "FMap__fromFMap
