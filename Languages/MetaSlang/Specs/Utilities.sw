@@ -1785,8 +1785,18 @@ Utilities qualifying spec
                    ++ predss)
            [] rpredss
 
+  op TruePred?(pred: MS.Term): Bool =
+    case pred of
+      | Fun(Op(Qualified("Bool","TRUE"), _), _, _) -> true
+      | _ -> false
+
+  op mkTruePred(ty: Sort): MS.Term =
+    mkOp(Qualified("Bool","TRUE"), mkArrow(ty, boolSort))
+
   op composeConjPreds(preds: List MS.Term, spc: Spec): MS.Term =
     let preds = removeDuplicateTerms preds in
+    let preds = filter (~~~ TruePred?) preds
+    in
     case preds of
       | [pred] -> etaReduce pred
       | pred1::rpreds ->
