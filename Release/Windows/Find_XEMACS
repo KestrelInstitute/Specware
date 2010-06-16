@@ -19,7 +19,7 @@ if [ ! -x "$XEMACS" ]; then
    echo "Failed to $act, $XEMACS is not executable" 2>&1
    exit 1
 fi
-PATH=$OLD_PATH
+PATH="$OLD_PATH"
 
 export XEMACS
 

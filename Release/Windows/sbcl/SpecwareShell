@@ -19,7 +19,6 @@ PATH="$OLD_PATH"
 ########################################################################
 
 . "$HERE/Find_SPECWARE4"
-#. $HERE/Find_SBCL
 . "$HERE/Update_Path"
 . "$HERE/Update_SWPATH"
 . "$HERE/Find_Specware_App_SBCL"
