@@ -852,6 +852,18 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                                     ppType c Top fldty])
                      fields),
                 prString "}"]
+           | Quotient(qty, equiv_rel, _) ->
+             let pp_name = ppTyQualifiedId c mainId in
+             let pp_tyvars = ppTyVars tvs in
+             let pp_constr = prConcat [prString "Make", pp_name] in
+             prLinesCat 0 [[],
+                           [prString "newtype ", pp_name, pp_tyvars, prString " = ", pp_constr, prSpace, ppType c Top qty],
+                           [],
+                           [prString "instance "]
+                             ++ (if tvs = [] then [] else [prString "Eq", pp_tyvars, prString " => "])
+                             ++ [prString "Eq (", pp_name, pp_tyvars, prString ") where"],
+                           [prString "  ", pp_constr, prString " x == ", pp_constr, prString " y = ",
+                            ppTerm c Top equiv_rel, prString"(x, y)"]]
 	   | _ \_rightarrow prEmpty
 	    % prBreakCat 2
 %	       [[prString "type ",
@@ -977,6 +989,16 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                             simpSubstitute(getSpec c, else_cl, [(v, mkIncTerm vr)]))
            in
            cases1 ++ cases2
+         | Apply(Apply(Fun(Choose qid, ty, _),
+                       Lambda ([(pat, _, bod)], _), _),
+                 Var(v, _), _) | v in? freeVars hd ->
+           (case patToTerm(pat, "",  c) of
+              | Some pat_tm \_rightarrow
+                let s_bod = if hasVarNameConflict?(pat_tm, [v]) then bod
+                            else substitute(bod, [(v, pat_tm)])
+                in
+                aux(substitute(hd, [(v, mkQuotient(pat_tm, qid, natSort))]), s_bod)    % !!! Natsort is wrong but no one cares(?)
+              | None \_rightarrow [(hd, None, bod)])           
          | _ \_rightarrow [(hd, None, bod)]
      def aux_case(hd, condn?, bod: MS.Term) =
        case condn? of
@@ -1145,7 +1167,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        | CharPat(c, _) \_rightarrow Some(mkChar c)
        | VarPat((v, ty), a) \_rightarrow Some(Var((v, ty), a))
        | WildPat(ty, a) \_rightarrow Some(Var(("_", ty), a))   % Not valid Specware but seems to work for our purposes here
-       | QuotientPat(pat, cond, _)  \_rightarrow None %% Not implemented
+       | QuotientPat(qpat, qid, pos)  \_rightarrow
+         (case patToTerm(qpat, ext, c) of
+            | None -> None
+            | Some tm -> Some(mkQuotient(tm, qid, natSort)))    % !!! Natsort is wrong but no one cares(?)
        | RestrictedPat(pat, cond, _)  \_rightarrow
          patToTerm(pat, ext, c)		% cond ??
        | AliasPat(p1, p2, _) \_rightarrow 
@@ -1487,6 +1512,17 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                               ppTermEncloseComplex? c Nonfix term2,
                               prSpace,
                               ppTermEncloseComplex? c Nonfix t1])
+        | (Apply(Fun(Choose qid, _, _), Lambda ([(p, _, bod)], _), _), _) ->
+          enclose?(infix? parentTerm,
+                   prLinear 0 [prLinear 0
+                                 [prConcat[prString "let ",
+                                           prLinear 0 [prConcat [prString "Make", ppTyQualifiedId c qid, prSpace,
+                                                                 ppPattern c p,
+                                                                 prString " = "],
+                                                       ppTerm c Nonfix term2],
+                                           prSpace],
+                                  prString "in "],
+                               ppTerm c parentTerm bod])
         | (Fun(Embed(constr_id, _), ty, _), Record (("1", _)::_, _)) \_rightarrow
           let spc = getSpec c in
           let constr_ty = range(spc, ty) in
@@ -1714,10 +1750,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        prApply(Lambda([(p, trueTerm , bod)], a), t)
      | Let (decls, body_term, _) \_rightarrow
        let def ppDecl (pattern, term) =
-             prBreakCat 2 [[ppPattern c pattern (Some ""),
-                            prSpace],
-                           [prString "= ",
-                            ppTerm c Top term]]
+             prBreakCat 2 [[ppPattern c pattern, prSpace],
+                           [prString "= ", ppTerm c Top term]]
        in
        enclose?(infix? parentTerm,
                 prLinear 0 [prLinear 0
@@ -1746,8 +1780,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %        prString "TRUE"                 % \_lambdax. True
      | Lambda ([(pattern, _, term)], _) \_rightarrow
        enclose?(parentTerm \_noteq Top,
-                prBreakCat 2 [[prString "\\",
-                                 ppPattern c pattern (Some ""),
+                prBreakCat 2 [[prString "\\", enclose?(embed? QuotientPat pattern, ppPattern c pattern),
                                prString " -> "],
                               [ppTerm c Top term]])
      | Lambda (match, _) \_rightarrow ppMatch c match
@@ -1823,22 +1856,21 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppMatch : Context \_rightarrow Match \_rightarrow Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term): Pretty =
-         prBreakCat 4 [[ppPattern c pattern None,
-                        prString " -> "],
+         prBreakCat 4 [[ppPattern c pattern, prString " -> "],
                        [ppTerm c Top term]]
    in
    prLines 0 (map ppCase cases)
 
- op  ppPattern : Context \_rightarrow Pattern \_rightarrow Option String \_rightarrow Pretty
- def ppPattern c pattern wildstr = 
+ op  ppPattern : Context \_rightarrow Pattern \_rightarrow Pretty
+ def ppPattern c pattern = 
    case pattern of
      | AliasPat (pat1, pat2, _) \_rightarrow 
-       prBreak 0 [ppPattern c pat1 wildstr,
+       prBreak 0 [ppPattern c pat1,
                   prString "@",
-                  enclose?(true, ppPattern c pat2 wildstr)]
+                  enclose?(true, ppPattern c pat2)]
      | VarPat (v, _) \_rightarrow ppVarWithoutSort v
      | EmbedPat ("Cons", Some(RecordPat ([("1", hd), ("2", tl)], _)), _, _) ->
-       prBreak 2 [ppPattern c hd wildstr, prSpace, prConcat[prString ": ", ppPattern c tl wildstr]]
+       prBreak 2 [ppPattern c hd, prSpace, prConcat[prString ": ", ppPattern c tl]]
      | EmbedPat (constr, pat, ty, _) \_rightarrow
        prBreak 0 [ppConstructorTyped (constr, ty, c),
                   case pat of
@@ -1853,15 +1885,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                                         | EmbedPat(_, Some _, _, _)-> true
                                                         | AliasPat _ -> true
                                                         | _ -> false,
-                                                        ppPattern c p wildstr))
+                                                        ppPattern c p))
                                     (patternToList pat))]
                     | _ \_rightarrow prConcat [prSpace, enclose?(embed? EmbedPat pat,
-                                                       ppPattern c pat wildstr)]]
+                                                       ppPattern c pat)]]
      | RecordPat (fields, _) \_rightarrow
        (case fields of
          | [] \_rightarrow prString "()"
          | ("1", _)::_ \_rightarrow
-           let def ppField (idstr, pat) = ppPattern c pat (extendWild wildstr idstr) in
+           let def ppField (idstr, pat) = ppPattern c pat in
            prConcat [prString "(",
                      prPostSep 0 blockFill (prString ", ") (map ppField fields),
                      prString ")"]
@@ -1879,7 +1911,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                       | Some(qid) -> mkNamedRecordFieldName c (qid, x)
                                       | None -> mkFieldName x),
                            prString "=",
-                           ppPattern c pat (extendWild wildstr x)]
+                           ppPattern c pat]
            in
            case record_type_qid of
             | Some qid ->
@@ -1894,13 +1926,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | CharPat (chr, _) \_rightarrow prString ("'"^Char.show chr^"'")
      | NatPat (int, _) \_rightarrow prString (Nat.show int)      
      | QuotientPat (pat, qid, _) \_rightarrow 
-       prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
-                  ppPattern c pat wildstr,
-                  prString ")"]
+       prBreak 0 [prConcat [prString "Make", ppTyQualifiedId c qid, prSpace],
+                  ppPattern c pat]
      | RestrictedPat (pat, term, _) \_rightarrow 
-       prLines 2 [ppPattern c pat wildstr,
+       prLines 2 [ppPattern c pat,
                   prConcat[prString "| ", ppTerm c Top term]] 
-     | SortedPat (pat, ty, _) \_rightarrow ppPattern c pat wildstr
+     | SortedPat (pat, ty, _) \_rightarrow ppPattern c pat
      | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
  op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
@@ -1917,11 +1948,6 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                          | _ \_rightarrow false)
               fields)
      | _ \_rightarrow false
-
- op  extendWild (wildstr: Option String) (str: String): Option String =
-    case wildstr of
-      | Some s \_rightarrow Some (s^str)
-      | None \_rightarrow None
 
  op  sortDef: QualifiedId * Spec \_rightarrow Sort
  def sortDef(qid, spc) =
@@ -1948,7 +1974,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Iff       \_rightarrow prString "=="
      | Equals    \_rightarrow prString "=="
      | NotEquals \_rightarrow prString "/="
-     | Quotient  _ \_rightarrow prString "quotient"
+     | Quotient  qid \_rightarrow prConcat [prString "Make", ppTyQualifiedId c qid]
      | PQuotient _ \_rightarrow prString "quotient"
      | Choose    _ \_rightarrow prString "choose"
      | PChoose   _ \_rightarrow prString "choose"
