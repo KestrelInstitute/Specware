@@ -672,7 +672,7 @@ IsaTermPrinter qualifying spec
           | (el as Property(_, _, _, term, _)) :: rst | hasForwardRef?(term, rst) \_rightarrow
             let new_els = moveAfterOp(el, rst) in
             aux c spc new_els
-          | (el as Sort (qid,_)) :: rst | hasForwardCoProductTypeRef?(qid, rst, spc) ->
+          | (el as SortDef (qid,_)) :: rst | hasForwardCoProductTypeRef?(qid, rst, spc) ->
             let (mrec_els, m_rst) = findMutuallyRecursiveCoProductElts(qid, rst, spc) in
             ppMutuallyRecursiveCoProductElts c (el :: mrec_els)
               ++ aux c spc m_rst
@@ -721,14 +721,14 @@ IsaTermPrinter qualifying spec
             | el :: r_els ->
           case el of
             | Op(qid, true, _) ->
-              let new_op_refs = opsInOpDefFor(qid, spc) ++ op_refs in
               if qid in? op_refs
                 then
+                  let new_op_refs = opsInOpDefFor(qid, spc) ++ op_refs in
                   findMutuallyRecursiveOps(r_els, new_op_refs,
-                                              mr_els ++ pending_prag_els ++ [el], [])
+                                           mr_els ++ pending_prag_els ++ [el], [])
                 else
-                  findMutuallyRecursiveOps(r_els, new_op_refs,
-                                              mr_els, pending_prag_els ++ [el])
+                  findMutuallyRecursiveOps(r_els, op_refs,
+                                           mr_els, pending_prag_els ++ [el])
             | _ ->
           if (case el of
                 | Pragma _ -> true
@@ -768,37 +768,6 @@ IsaTermPrinter qualifying spec
              extractProperties(r_els, op_qids, pre_els, mr_els ++ [el], post_els)
     in
     findMutuallyRecursiveOps(els, op_refs, [], [])
-
-
-  op hasForwardCoProductTypeRef?(qid: QualifiedId, els: SpecElements, spc: Spec) : Bool =
-    let type_refs = typesInTypeDefFor(qid, spc) in
-    if type_refs = [] then false
-    else
-    exists? (fn el -> case el of
-                        | Sort(qid, _) -> qid in? type_refs
-                        | _ -> false)
-      els
-        
-  op findMutuallyRecursiveCoProductElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
-       : SpecElements * SpecElements =
-    let type_refs = typesInTypeDefFor(qid0, spc) in
-    let def findMutuallyRecursiveTypes(els, type_refs, mr_els, pending_prag_els) =
-          case els of
-            | [] -> (mr_els, pending_prag_els)
-            | el :: r_els ->
-          case el of
-            | Sort(qid, _) ->
-              if qid in? type_refs
-                then let new_type_refs = typesInTypeDefFor(qid, spc) in
-                     findMutuallyRecursiveTypes(r_els, type_refs ++ new_type_refs,
-                                                mr_els ++ pending_prag_els ++ [el], [])
-                else (mr_els, pending_prag_els ++ r_els)
-            | Pragma _ -> findMutuallyRecursiveTypes(r_els, type_refs, mr_els,
-                                                     pending_prag_els ++ [el])
-            | _ -> (mr_els, pending_prag_els ++ els)
-    in
-    findMutuallyRecursiveTypes(els, type_refs, [], [])
-
 
   op ppMutuallyRecursiveOpElts (c: Context) (op_qids: QualifiedIds) (els: SpecElements) (all_els: SpecElements)
        : Pretty =
@@ -885,8 +854,70 @@ IsaTermPrinter qualifying spec
                                  then []
                                  else [[prString "done", prEmpty]])))
 
+
+  op hasForwardCoProductTypeRef?(qid: QualifiedId, els: SpecElements, spc: Spec) : Bool =
+    let type_refs = typesInTypeDefFor(qid, spc) in
+    if type_refs = [] then false
+    else
+    exists? (fn el -> case el of
+                        | SortDef(qid, _) -> qid in? type_refs
+                        | _ -> false)
+      els
+        
+  op findMutuallyRecursiveCoProductElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
+       : SpecElements * SpecElements =
+    let type_refs = typesInTypeDefFor(qid0, spc) in
+    let def findMutuallyRecursiveTypes(els, type_refs, mr_els, pending_prag_els) =
+          case els of
+            | [] -> (mr_els, pending_prag_els)
+            | el :: r_els ->
+          case el of
+            | SortDef(qid, _) ->
+              if qid in? type_refs
+                then let new_type_refs = typesInTypeDefFor(qid, spc) in
+                     findMutuallyRecursiveTypes(r_els, type_refs ++ new_type_refs,
+                                                mr_els ++ [el], pending_prag_els)
+                else (mr_els, pending_prag_els ++ r_els)
+            | _ -> findMutuallyRecursiveTypes(r_els, type_refs, mr_els,
+                                              pending_prag_els ++ [el])
+    in
+    findMutuallyRecursiveTypes(els, type_refs, [], [])
+
   op ppMutuallyRecursiveCoProductElts (c: Context) (els: SpecElements): Prettys =
-    []
+    let spc = getSpec c in
+    let def ppMRC (els, header) =
+          case els of
+          | [] -> []
+          | (SortDef(mainId, _)) :: r_els ->
+          case specialTypeInfo c mainId of
+          | Some _ \_rightarrow []
+          | None \_rightarrow
+          let Some {names, dfn} = AnnSpec.findTheSort(spc, mainId) in
+          let (tvs, ty) = unpackSort dfn in
+          (case ty of
+            | CoProduct(taggedSorts,_) \_rightarrow
+             (let def ppTaggedSort (id,optTy) =
+                    case optTy of
+                      | None \_rightarrow ppConstructor(id, mainId)
+                      | Some ty \_rightarrow
+                        prConcat [ppConstructor(id, mainId), prSpace,
+                                  case ty of
+                                    | Product(fields as ("1",_)::_,_) \_rightarrow	% Treat as curried
+                                      prConcat(addSeparator prSpace
+                                                 (map (\_lambda (_,c_ty) \_rightarrow ppType c CoProduct false c_ty) fields))
+                                    | _ \_rightarrow ppType c CoProduct false ty]
+              in
+              prBreakCat 2
+                [[prString header,
+                  ppTyVars tvs,
+                  ppIdInfo [mainId]],
+                 [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
+            | _ -> (warn("Recursive type "^printQualifiedId mainId^" not a coproduct:\n"^printSort ty);
+                    prEmpty))
+            :: ppMRC(r_els, "and ")
+     in
+     ppMRC(els, "datatype ")
+          
 
   op normalizeSpecElements (elts: SpecElements): SpecElements =
     case elts of
