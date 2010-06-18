@@ -2223,23 +2223,31 @@ With an argument, it doesn't convert imports."
 
 ;; License display and acceptance
 (defvar sw:license-accepted nil)
+(defvar *license-frame*)
 
 (defun display-license-and-accept (license-file)
   (setq sw:license-accepted nil)
-  (find-file-other-frame license-file)
+  (unless (and (boundp '*license-frame*) *license-frame* (frame-live-p *license-frame*))
+    (setq *license-frame* (make-frame '((name . "Specware License")
+                                        (minibuffer . nil)
+                                        (menu-bar-lines . 0)
+                                        (left . 100)
+                                        (top . 10)
+                                        (width . 75)
+                                        (height . 75)))))
+  (select-frame *license-frame*)
+  (view-file license-file)
+  (make-frame-visible *license-frame*)
   (if (fboundp 'make-dialog-box)
       ;; xemacs
       (make-dialog-box 
        'general
-       :parent (selected-frame)
+       :parent *license-frame*
        :title "Accept License? "
        :autosize t
        :spec (make-glyph
               `[layout 
                 :orientation horizontal 
-                                        ;:vertically-justify top 
-                                        ;:horizontally-justify center 
-                                        ;:border [string :data "Agree to license"]
                 :items 
                 ([button :width 10 :descriptor "Accept"
                          :face gui-button-face
@@ -2248,7 +2256,12 @@ With an argument, it doesn't convert imports."
                            (setq sw:license-accepted t)
                            (sw:eval-in-lisp "(Specware::license-accepted)")
                            (delete-frame 
-                            (event-channel event)))]
+                            (event-channel event))
+                           (make-frame-invisible *license-frame*)
+                           (sw:switch-to-lisp)
+                           (let ((sp-frame (car (frames-of-buffer *specware-buffer-name*))))
+                             (when sp-frame
+                               (raise-frame sp-frame))))]
                  [button :width 10 :descriptor "Reject"
                          :face gui-button-face
                          :callback-ex

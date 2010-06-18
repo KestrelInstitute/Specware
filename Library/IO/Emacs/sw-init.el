@@ -138,7 +138,8 @@
 			sw:common-lisp-image-arguments
 			sw:common-lisp-host
 			sw:common-lisp-image-file))
-      (wait-for-prompt 0.1)
+      (sleep-for 2)
+      (wait-for-prompt 0.5)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (Specware::change-directory %S))" sw:common-lisp-directory))
       (let ((init-form (or (getenv "SPECWARE_INIT_FORM")
