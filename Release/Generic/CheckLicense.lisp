@@ -11,7 +11,8 @@
 (defun display-license-and-accept ()
   (let ((license-text-file (format nil "~a/~a" *Specware4* *license-text-file*)))
     (if Emacs::*use-emacs-interface?*
-        (progn (Emacs::eval-in-emacs (format nil "(display-license-and-accept ~s)" license-text-file)))
+        (progn (Emacs::eval-in-emacs (format nil "(display-license-and-accept ~s)" license-text-file))
+               nil)
         (progn
           (format t "Opening ~a~%" license-text-file)
           (and (ignore-errors
@@ -23,6 +24,9 @@
                  t)
                (yes-or-no-p "Do you agree to this license?"))))))
 
+(defvar *home-file-name*)
+(defvar *specware-file-name*)
+(defvar *license-file*)
 
 (defun check-license ()
   (unless *license-accepted?*
@@ -35,32 +39,35 @@
            (license-val (ignore-errors
                           (with-open-file (s license-file :direction :input)
                             (read s)))))
+      (setq *home-file-name* home-file-name)
+      (setq *specware-file-name* specware-file-name)
+      (setq *license-file* license-file)
       (if (and license-val
                (not (eq :|Less|
-                        (car (List-Spec::compare-1-1 #'Integer-Spec::compare (cons license-val *version-sexpr*))))))
+                        (car (List-Spec::compare-1-1 #'Integer-Spec::compare
+                                                     (cons license-val *version-sexpr*))))))
           (setq *license-accepted?* t)
           (if (display-license-and-accept)
-              (progn;; License accepted. Write license file
-                (setq *license-accepted?* t)
-                (unless (and license-file
-                             (ignore-errors
-                               (with-open-file (s license-file :direction :output :if-exists :supersede)
-                                 (print *version-sexpr* s))))
-                  (unless (ignore-errors
-                            (with-open-file (s home-file-name
-                                               :direction :output :if-exists :supersede)
-                              (print *version-sexpr* s)))
-                    (unless (ignore-errors
-                              (with-open-file (s specware-file-name
-                                                 :direction :output :if-exists :supersede)
-                                (print *version-sexpr* s)))
-                      (warn "Unable to write license acceptance file!")))))
-              (if Emacs::*use-emacs-interface?*
-                  (setq *license-accepted?* nil)   ; Asynchronous
+              (license-accepted)
+            (if Emacs::*use-emacs-interface?*
+                (setq *license-accepted?* nil) ; Asynchronous
                 (progn (format t "License not accepted. Exiting...")
                        (setq *license-accepted?* nil)
-                       (Specware::exit)
-                       )))))))
+                       (Specware::exit))))))))
 
 (defun license-accepted ()
-  (setq *license-accepted?* t))
+  (setq *license-accepted?* t)
+  ;; write license file
+  (unless (and *license-file*
+               (ignore-errors
+                 (with-open-file (s *license-file* :direction :output :if-exists :supersede)
+                   (print *version-sexpr* s))))
+    (unless (ignore-errors
+              (with-open-file (s *home-file-name*
+                                 :direction :output :if-exists :supersede)
+                (print *version-sexpr* s)))
+      (unless (ignore-errors
+                (with-open-file (s *specware-file-name*
+                                   :direction :output :if-exists :supersede)
+                  (print *version-sexpr* s)))
+        (warn "Unable to write license acceptance file!")))))
