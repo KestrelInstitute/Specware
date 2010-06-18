@@ -90,24 +90,20 @@ With prefix argument send the input even if the parenthesis are not
 balanced."
   (interactive "P")
   (slime-check-connected)
-  (if (null sw:license-accepted)
-      (progn (beep)
-             (message "Need to accept license to use Specware!")
-             (display-license-and-accept (concat (getenv "SPECWARE4") "/SpecwareLicense.txt")))
-    (cond (end-of-input
-           (sw-send-input))
-          (slime-repl-read-mode         ; bad style?
-           (sw-send-input t))
-          ((and (get-text-property (point) 'slime-repl-old-input)
-                (< (point) slime-repl-input-start-mark))
-           (slime-repl-grab-old-input end-of-input)
-           (slime-repl-recenter-if-needed))
-          ((run-hook-with-args-until-success 'slime-repl-return-hooks))
-          ((slime-input-complete-p slime-repl-input-start-mark (point-max))
-           (sw-send-input t))
-          (t 
-           (slime-repl-newline-and-indent)
-           (message "[input not complete]")))))
+  (cond (end-of-input
+         (sw-send-input))
+        (slime-repl-read-mode           ; bad style?
+         (sw-send-input t))
+        ((and (get-text-property (point) 'slime-repl-old-input)
+              (< (point) slime-repl-input-start-mark))
+         (slime-repl-grab-old-input end-of-input)
+         (slime-repl-recenter-if-needed))
+        ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+        ((slime-input-complete-p slime-repl-input-start-mark (point-max))
+         (sw-send-input t))
+        (t 
+         (slime-repl-newline-and-indent)
+         (message "[input not complete]"))))
 
 (defun slime-repl-return (&optional end-of-input)
   "Evaluate the current input string, or insert a newline.  
@@ -174,7 +170,11 @@ If NEWLINE is true then add a newline at the end of the input."
     (slime-mark-output-start)
     (if (eq input :exit)
 	(slime-quit-specware)
-      (slime-repl-send-string input))))
+      (if (null sw:license-accepted)
+          (progn (beep)
+                 (message "Need to accept license to use Specware!")
+                 (display-license-and-accept (concat (getenv "SPECWARE4") "/SpecwareLicense.txt")))
+        (slime-repl-send-string input)))))
 
 
 (defun slime-quit-specware (&optional keep-buffers)
