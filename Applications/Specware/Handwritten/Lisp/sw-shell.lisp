@@ -251,6 +251,7 @@
   (specware-shell nil))
 
 (defun specware-shell (exiting-lisp?)
+  (Specware::check-license)
   (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
 
 (defvar *sw-shell-pkg* (find-package :SWShell))
