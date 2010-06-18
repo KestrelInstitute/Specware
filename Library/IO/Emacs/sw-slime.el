@@ -4,6 +4,9 @@
 ;;; Based on slime-repl-mode
 (defvar specware-listener-mode-map)
 
+;;; This shouldn't be necessary
+(defvar buffer-file-coding-system nil)
+
 (setq specware-listener-mode-map (make-sparse-keymap))
 (set-keymap-parent specware-listener-mode-map slime-repl-mode-map)
 
@@ -87,20 +90,24 @@ With prefix argument send the input even if the parenthesis are not
 balanced."
   (interactive "P")
   (slime-check-connected)
-  (cond (end-of-input
-         (sw-send-input))
-        (slime-repl-read-mode ; bad style?
-         (sw-send-input t))
-        ((and (get-text-property (point) 'slime-repl-old-input)
-              (< (point) slime-repl-input-start-mark))
-         (slime-repl-grab-old-input end-of-input)
-         (slime-repl-recenter-if-needed))
-        ((run-hook-with-args-until-success 'slime-repl-return-hooks))
-        ((slime-input-complete-p slime-repl-input-start-mark (point-max))
-         (sw-send-input t))
-        (t 
-         (slime-repl-newline-and-indent)
-         (message "[input not complete]"))))
+  (if (null sw:license-accepted)
+      (progn (beep)
+             (message "Need to accept license to use Specware!")
+             (display-license-and-accept (concat (getenv "SPECWARE4") "/SpecwareLicense.txt")))
+    (cond (end-of-input
+           (sw-send-input))
+          (slime-repl-read-mode         ; bad style?
+           (sw-send-input t))
+          ((and (get-text-property (point) 'slime-repl-old-input)
+                (< (point) slime-repl-input-start-mark))
+           (slime-repl-grab-old-input end-of-input)
+           (slime-repl-recenter-if-needed))
+          ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+          ((slime-input-complete-p slime-repl-input-start-mark (point-max))
+           (sw-send-input t))
+          (t 
+           (slime-repl-newline-and-indent)
+           (message "[input not complete]")))))
 
 (defun slime-repl-return (&optional end-of-input)
   "Evaluate the current input string, or insert a newline.  
@@ -257,6 +264,7 @@ If NEWLINE is true then add a newline at the end of the input."
                           (buffer "*inferior-lisp*")
                           init-function
                           env)
+  (setq sw:license-displayed-p nil)
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
       (slime-allegro-windows program program-args)
     (let ((args (list :program program :program-args program-args :buffer buffer 
@@ -316,6 +324,8 @@ If NEWLINE is true then add a newline at the end of the input."
 (defvar *sw-after-prompt-forms* nil)
 (defvar *sw-slime-prompt* "* ")
 
+(defvar sw:license-displayed-p nil)
+
 (defun slime-repl-insert-prompt ()
   "Goto to point max, insert RESULT and the prompt.
 Set slime-output-end to start of the inserted text slime-input-start
@@ -337,6 +347,9 @@ to end end."
                        start-open t end-open t)
               (insert-before-markers *sw-slime-prompt*))
             (set-marker slime-repl-prompt-start-mark prompt-start)
+            (unless sw:license-displayed-p
+              (sw:eval-in-lisp-no-value "(Specware::check-license)")
+              (setq sw:license-displayed-p t))
             prompt-start))))))
 
 (defun slime-repl-show-maximum-output ()

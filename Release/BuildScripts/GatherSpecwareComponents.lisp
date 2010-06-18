@@ -728,6 +728,8 @@
     ;; License file (InstallShield looks for this)
     (copy-dist-file (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults generic-dir)
 		    (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults target-dir))
+    (copy-dist-file (make-pathname :name "SpecwareClickThruLicenseForm" :type "txt" :defaults generic-dir)
+		    (make-pathname :name "SpecwareLicense" :type "txt" :defaults target-dir))
 
     ;; Icons
     #-darwin

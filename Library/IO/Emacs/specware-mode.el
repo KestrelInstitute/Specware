@@ -2222,14 +2222,48 @@ With an argument, it doesn't convert imports."
           (proof-unregister-buffer-file-name t))))))
 
 ;; License display and acceptance
+(defvar sw:license-accepted nil)
+
 (defun display-license-and-accept (license-file)
-  (save-window-excursion
-    (view-file license-file)
-    (let ((last-non-menu-event nil)  ; gnu emacs
-          (force-dialog-box-use t)   ; xemacs
+  (setq sw:license-accepted nil)
+  (find-file-other-frame license-file)
+  (if (fboundp 'make-dialog-box)
+      ;; xemacs
+      (make-dialog-box 
+       'general
+       :parent (selected-frame)
+       :title "Accept License? "
+       :autosize t
+       :spec (make-glyph
+              `[layout 
+                :orientation horizontal 
+                                        ;:vertically-justify top 
+                                        ;:horizontally-justify center 
+                                        ;:border [string :data "Agree to license"]
+                :items 
+                ([button :width 10 :descriptor "Accept"
+                         :face gui-button-face
+                         :callback-ex
+                         (lambda (image-instance event)
+                           (setq sw:license-accepted t)
+                           (sw:eval-in-lisp "(Specware::license-accepted)")
+                           (delete-frame 
+                            (event-channel event)))]
+                 [button :width 10 :descriptor "Reject"
+                         :face gui-button-face
+                         :callback-ex
+                         (lambda (image-instance event)
+                           (sw:exit-lisp)                             
+                           (delete-frame 
+                            (event-channel event)))])])
+       :properties `(height ,(widget-logical-to-character-height 12)
+                            width ,(widget-logical-to-character-width 39)))
+    ;; Gnu Emacs
+    (let ((last-non-menu-event nil)     ; gnu emacs
+          (force-dialog-box-use t)      ; xemacs
           )
-      (yes-or-no-p "Agree to license? "))))
-  
+      (setq sw:license-accepted (yes-or-no-p "Accept License? "))))
+  sw:license-accepted)
 
 (defun sw:specware-mode-folding ()
   (folding-add-to-marks-list 'specware-mode "%{{{" "%}}}" nil t))
