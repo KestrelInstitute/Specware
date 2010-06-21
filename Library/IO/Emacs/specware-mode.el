@@ -2239,7 +2239,7 @@ With an argument, it doesn't convert imports."
   (view-file license-file)
   (make-frame-visible *license-frame*)
   (if (fboundp 'make-dialog-box)
-      ;; xemacs
+      ;; xemacs -- non-modal
       (make-dialog-box 
        'general
        :parent *license-frame*
@@ -2275,7 +2275,10 @@ With an argument, it doesn't convert imports."
     (let ((last-non-menu-event nil)     ; gnu emacs
           (force-dialog-box-use t)      ; xemacs
           )
-      (setq sw:license-accepted (yes-or-no-p "Accept License? "))))
+      (setq sw:license-accepted (yes-or-no-p "Accept License? "))
+      (if sw:license-accepted
+          (make-frame-invisible *license-frame*)
+        (sw:exit-lisp))))
   sw:license-accepted)
 
 (defun sw:specware-mode-folding ()
