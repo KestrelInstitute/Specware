@@ -11,8 +11,7 @@
 (defun display-license-and-accept ()
   (let ((license-text-file (format nil "~a/~a" *Specware4* *license-text-file*)))
     (if Emacs::*use-emacs-interface?*
-        (progn (Emacs::eval-in-emacs (format nil "(display-license-and-accept ~s)" license-text-file))
-               nil)
+        (Emacs::eval-in-emacs (format nil "(display-license-and-accept ~s)" license-text-file))
         (progn
           (format t "Opening ~a~%" license-text-file)
           (and (ignore-errors
