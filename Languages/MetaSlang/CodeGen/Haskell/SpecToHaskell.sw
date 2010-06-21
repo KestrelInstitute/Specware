@@ -478,8 +478,6 @@ Haskell qualifying spec
                     val))
       [] trans_info.type_map
 
-  def baseSpecName = "Empty"
-
   op  ppImports: Context \_rightarrow SpecElements \_rightarrow List(List Pretty) * List Pretty
   def ppImports c elems =
     let imports_from_thy_morphism = thyMorphismImports c in
@@ -661,7 +659,7 @@ Haskell qualifying spec
                   | Some n \_rightarrow subFromTo(s, 0, n)
     in
     case removeEmpty(splitStringAt(line1, " ")) of
-     | "Isa"::str::rst | length str > 1 && str@0 = #- && str@1 ~= #> ->
+     | "Haskell"::str::rst | length str > 1 && str@0 = #- && str@1 ~= #> ->
        Some(str::rst)
      | _ \_rightarrow None
 
