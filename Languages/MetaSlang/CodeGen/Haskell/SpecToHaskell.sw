@@ -1807,6 +1807,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | _ -> ty)
      | _ -> ty
 
+ op projectorNames: List String = ["fst", "snd", "third", "fourth", "fifth", "sixth", "seventh",
+                                   "eighth", "ninth", "tenth"]
+
  op  projectorFun: String * Sort * Context \_rightarrow String
  def projectorFun (p, s, c) =
    let spc = getSpec c in
@@ -1814,20 +1817,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             | None \_rightarrow (s, 1)
                             | Some pr \_rightarrow pr
    in
-   case p of
-     | "1" \_rightarrow "fst"
-     | "2" \_rightarrow (if arity = 2 then "snd" else "second")
-     | "3" \_rightarrow (if arity = 3 then "thirdl" else "third")
-     | "4" \_rightarrow (if arity = 4 then "fourthl" else "fourth")
-     | "5" \_rightarrow (if arity = 5 then "fifthl" else "fifth")
-     | "6" \_rightarrow (if arity = 6 then "sixthl" else "sixth")
-     | "7" \_rightarrow (if arity = 7 then "seventhl" else "seventh")
-     | "8" \_rightarrow (if arity = 8 then "eighthl" else "eighth")
-     | "9" \_rightarrow (if arity = 9 then "ninethl" else "nineth")
-     | _ \_rightarrow
-   case unfoldToBaseNamedType(spc, prod_ty) of
-     | Base(qid, _, _) -> mkNamedRecordFieldName c (qid, p)
-     | _ -> mkFieldName p
+   case (p, arity) of
+     | ("1", 2) \_rightarrow "fst"
+     | ("2", 2) \_rightarrow "snd"
+     | _ ->
+   if length p > 1 && p ~= "10"
+     then (warn("Can't dereference tuples longer than size 10: use pattern matching (or records");
+           "tooLargeTupleDereferencer")
+   else
+   let projectorNum = stringToNat p - 1 in
+   projectorNames@projectorNum^"_of_"^show arity
 
  op  ppBinder : Binder \_rightarrow Pretty
  def ppBinder binder =
