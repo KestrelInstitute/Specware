@@ -32,6 +32,7 @@ IsaTermPrinter qualifying spec
  type Context = {printTypes?: Boolean,
 		 recursive?: Boolean,
                  thy_name: String,
+                 anon_thy_count: Ref Nat,
 		 spec?: Option Spec,
                  currentUID: Option UnitId,
 		 trans_table: TransInfo,
@@ -48,12 +49,13 @@ IsaTermPrinter qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {printTypes?=_, recursive?=_, thy_name=_, spec? = Some spc,
+ def getSpec {printTypes?=_, recursive?=_, thy_name=_, anon_thy_count=_, spec? = Some spc,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
               newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
- def getCurrentUID {printTypes?=_, recursive?=_, thy_name=_, spec?=_, currentUID = Some uid,
+ def getCurrentUID {printTypes?=_, recursive?=_, thy_name=_, anon_thy_count=_,
+                    spec?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
                     source_of_thy_morphism?=_, typeNameInfo=_} =
    uid
@@ -296,7 +298,8 @@ IsaTermPrinter qualifying spec
 			       thy_name = case opt_nm of
                                             | Some nm \_rightarrow nm
                                             | None \_rightarrow thy_nm,
-			       spec? = None,
+			       anon_thy_count = Ref 0,
+                               spec? = None,
                                currentUID = case uid of
                                               | None \_rightarrow val_uid
                                               | _ \_rightarrow uid,
@@ -632,18 +635,29 @@ IsaTermPrinter qualifying spec
   op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
-      | None \_rightarrow prString "<UnknownSpec>"
+      | None \_rightarrow
+        let thy_ext = show(!c.anon_thy_count) in
+        let thy_nm = c.thy_name ^ thy_ext in
+        let thy_fil_nm = "/tmp/??.thy" in
+        (writeLine("ppI0: "^thy_nm^" "^uidToFullPath(getCurrentUID c));
+         c.anon_thy_count := !c.anon_thy_count + 1;
+         if c.recursive?
+           then toFile(thy_fil_nm,
+                       showValue(Spec spc, c.recursive?, c.currentUID, Some thy_nm))
+           else ();
+         prString thy_nm)
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
-        let _ = if c.recursive?
-	          then
-		    if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
-		      then ()
-		    else toFile(thy_fil_nm,
-                                showValue(val, c.recursive?, Some uid, Some thy_nm))
-		  else ()
-	in prString (case thy_nm of
-		       | "Base" \_rightarrow "Base"
-		       | _ \_rightarrow thy_nm)
+        (writeLine("ppI: "^thy_nm^" "^sw_fil_nm^" "^thy_fil_nm);
+         if c.recursive?
+           then
+             if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
+               then ()
+             else toFile(thy_fil_nm,
+                         showValue(val, c.recursive?, Some uid, Some thy_nm))
+           else ();
+	 prString (case thy_nm of
+                     | "Base" \_rightarrow "Base"
+                     | _ \_rightarrow thy_nm))
 
   op  ppSpecElements: Context \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Pretty
   def ppSpecElements c spc elems =
