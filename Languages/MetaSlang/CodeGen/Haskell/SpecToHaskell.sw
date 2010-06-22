@@ -1541,9 +1541,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                        prString " of "],
                               ppMatch c match])
         | (Fun (Project p, ty1, _), _) \_rightarrow
-          let pid = projectorFun(p, ty1, c) in
-          prConcat [prString pid,
-                    prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]
+          ppProjection(p, ty1, term2, parentTerm, c)
+
 %         | (Fun (Op (Qualified("Nat", "natural?"), _), _, a), _) \_rightarrow  % natural? e \_longrightarrow 0 <= e
 %           let term2 = case term2 of
 %                         | Apply(Fun(Op(Qualified(q, "int"), _), _, _), x, _) | q = toHaskellQual \_rightarrow
@@ -1807,26 +1806,42 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | _ -> ty)
      | _ -> ty
 
- op projectorNames: List String = ["fst", "snd", "third", "fourth", "fifth", "sixth", "seventh",
-                                   "eighth", "ninth", "tenth"]
+ %op projectorNames: List String = ["fst", "snd", "third", "fourth", "fifth", "sixth", "seventh",
+ %                                  "eighth", "ninth", "tenth"]
 
- op  projectorFun: String * Sort * Context \_rightarrow String
- def projectorFun (p, s, c) =
+ op ppProjection (p: String, s: Sort, t2: MS.Term, parentTerm: ParentTerm, c: Context): Pretty =
    let spc = getSpec c in
-   let (prod_ty, arity) = case sortArity(spc, s) of
-                            | None \_rightarrow (s, 1)
-                            | Some pr \_rightarrow pr
-   in
-   case (p, arity) of
-     | ("1", 2) \_rightarrow "fst"
-     | ("2", 2) \_rightarrow "snd"
-     | _ ->
-   if length p > 1 && p ~= "10"
-     then (warn("Can't dereference tuples longer than size 10: use pattern matching (or records");
-           "tooLargeTupleDereferencer")
+   case arrowOpt(spc, s) of
+     | Some(dom, _) ->
+   if isAlpha(p@0)
+     then let recd_ty = unfoldToBaseNamedType(spc, dom) in
+          prConcat[prString(case recd_ty of
+                              | Base(qid, _, _) -> mkNamedRecordFieldName c (qid, p)
+                              | _ -> mkFieldName p),
+                   prSpace,
+                   ppTermEncloseComplex? c Nonfix t2]
    else
-   let projectorNum = stringToNat p - 1 in
-   projectorNames@projectorNum^"_of_"^show arity
+   case productOpt(spc, dom) of
+     | Some fields ->
+   if length fields = 2 && (p = "1" || p = "2")
+     then prConcat[prString(if p ="1" then "fst " else "snd "),
+                   ppTermEncloseComplex? c Nonfix t2]
+   else
+   let Some (_, field_ty) = findLeftmost (fn (fld_name, _) -> fld_name = p) fields in
+   let result_var = ("px", field_ty) in
+   let rec_pats = map (fn (fld_name, fld_ty) ->
+                         (fld_name, if fld_name = p then mkVarPat result_var
+                                      else mkWildPat fld_ty))
+                    fields
+   in
+   let pat_match_project = mkLet([(mkRecordPat rec_pats, t2)], mkVar result_var) in
+   ppTerm c parentTerm pat_match_project
+%    if length p > 1 && p ~= "10"
+%      then (warn("Can't dereference tuples longer than size 10: use pattern matching (or records");
+%            "tooLargeTupleDereferencer")
+%    else
+%    let projectorNum = stringToNat p - 1 in
+%    projectorNames@projectorNum^"_of_"^show arity
 
  op  ppBinder : Binder \_rightarrow Pretty
  def ppBinder binder =
@@ -2263,7 +2278,7 @@ def enclose?(encl? , pp) =
     else pp
 
 op ppTermEncloseComplex? (c: Context) (parentTerm: ParentTerm) (term: MS.Term): Pretty =
-  let encl? = \_not(isSimpleTerm? term) in
+  let encl? = \_not(isSimpleTerm? term || embed? Record term) in
   enclose?(encl?, ppTerm c (if encl? then Top else parentTerm) term)
 
 def prSpace = prString " "
