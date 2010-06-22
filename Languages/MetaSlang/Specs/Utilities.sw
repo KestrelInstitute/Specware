@@ -1561,6 +1561,11 @@ Utilities qualifying spec
     of Product (fields, _) -> Some fields
      | _ -> None
 
+ op fieldTypes (sp : Spec, srt : Sort): List Sort =
+   case stripSubsorts (sp, unfoldBase (sp,srt))
+    of Product (fields, _) -> map (fn (_, ty) -> ty) fields
+     | _ -> [srt]
+
  op tupleType? (sp : Spec, srt : Sort): Boolean =
    case productOpt(sp, srt) of
      | Some(("1",_)::_) -> true
