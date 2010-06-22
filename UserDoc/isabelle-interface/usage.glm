@@ -158,21 +158,28 @@ A translation table for &Specware; types and ops is introduced by a
 
 [[
 ||  proof Isa Thy_Morphism Presburger
+||    type Integer.Int -> int
 ||    type Integer.Integer -> int
-||    type Integer.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]
-||    Integer.+    -> +  Left 25
-||    Integer.-    -> -  Left 25
-||    IntegerAux.- -> -
-||    Integer.*    -> *  Left 27
-||    Integer.div  -> *  Left 27
-||    Integer.rem  -> *  Left 27
-||    Integer.<=   -> \<quote>\\</quote><le>  Left 20
-||    Integer.<    -> <  Left 20
-||    Integer.>=   -> \<quote>\\</quote><ge>  Left 20
-||    Integer.>    -> >  Left 20
-||    Integer.min  -> min curried
-||    Integer.max -> max curried
-||   end-proof
+||    type Nat.Nat     -> nat (int,nat) [+,*,div,rem,mod,<=,<,>=,>,abs,min,max]
+||    Integer.zero     -> 0
+||    Integer.one      -> 1
+||    Integer.ipred    -> pred
+||    Integer.isucc    -> succ
+||    IntegerAux.-     -> -
+||    Integer.+        -> +     Left 65
+||    Integer.-        -> -     Left 65
+||    Integer.*        -> *     Left 70
+||    Integer.<=       -> \<le> Left 50
+||    Integer.<        -> <     Left 50
+||    Integer.>=       -> \<ge> Left 50
+||    Integer.>        -> >     Left 50
+||    Integer.sign     -> sign
+||    Integer./        -> div   Left 70
+||    Integer.div      -> div   Left 70
+||    Integer.mod      -> mod   Left 70
+||    Integer.min      -> min           curried
+||    Integer.max      -> max           curried
+||  end-proof
 ]]
 </para>
 
@@ -196,7 +203,7 @@ followed by [[->]] and the &Isabelle; constant name. If the Isabelle
 constant is an infix operator, then it should be followed by [[Left]]
 or [[Right]] depending on whether it is left or right associative and
 a precedence number. Note that the precedence number is relative to
-&Specware;'s precedence ranking, not &Isabelle;'s. Also, an uncurried
+&Isabelle;'s precedence ranking, not &Specware;'s. Also, an uncurried
 &Specware; op can be mapped to a curried &Isabelle; constant by putting
 [[curried]] after the &Isabelle; name, and a binary op can be
 mapped with the arguments reversed by appending [[reversed]] to the
