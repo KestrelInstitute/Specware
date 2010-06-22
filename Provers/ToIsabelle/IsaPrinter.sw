@@ -1069,7 +1069,7 @@ IsaTermPrinter qualifying spec
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
                                           "recdef", "primrec", "consts", "class", "primitive",
-                                          "next", "instance", "and", "open"]
+                                          "next", "instance", "and", "open", "extract"]
  op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
    ["hd", "tl", "comp", "fold", "map", "o", "size", "mod", "exp", "snd", "O", "OO", "True",
     "False", "Not", "sub", "sup", "Sigma", "map", "dom", "field", "fields", "acc", "id",
