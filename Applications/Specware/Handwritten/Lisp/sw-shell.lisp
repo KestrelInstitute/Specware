@@ -29,7 +29,9 @@
     ("oblig"     . "[unit term] Abbreviation for show obligations ...")
     ("gen-obligations" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
     ("gen-obligs" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
-
+    ("gen-haskell" . "[unit term] Generate Haskell code for unit.")
+    ("gen-h" . "[unit term] Generate Haskell code theory for unit.")
+    
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
@@ -339,6 +341,16 @@
 	      (unless (null uid)
 		(setq cl-user::*last-unit-Id-_loaded* uid)
 		(IsaTermPrinter::printUIDtoThyFile-2 uid t))))
+           ((gen-haskell gen-h)
+	    (let ((uid (if (not (null argstr))
+			   argstr
+			   (if (not (null cl-user::*last-unit-Id-_loaded*))
+			       cl-user::*last-unit-Id-_loaded*
+			       (progn (format t "No previous unit processed~%")
+				      nil)))))
+	      (unless (null uid)
+		(setq cl-user::*last-unit-Id-_loaded* uid)
+		(Haskell::printUIDtoThyFile-2 uid t))))
 	   (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
 	   (proofcheck (cl-user::swpc argstr))
 	   (pc        (cl-user::swpc argstr))
