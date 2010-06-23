@@ -647,7 +647,7 @@ IsaTermPrinter qualifying spec
            else ();
          prString thy_nm)
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
-        (writeLine("ppI: "^thy_nm^" "^sw_fil_nm^" "^thy_fil_nm);
+        (%writeLine("ppI: "^thy_nm^" "^sw_fil_nm^" "^thy_fil_nm);
          if c.recursive?
            then
              if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
