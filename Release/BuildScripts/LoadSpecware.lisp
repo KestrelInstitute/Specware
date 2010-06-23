@@ -373,7 +373,8 @@
      (format nil "~a/Library/IO/Emacs/slime/" 
 	     (Specware::getenv "SPECWARE4")))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
-    (load loader :verbose t))
+    (load loader :verbose t)
+    (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t))
   )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
