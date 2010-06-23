@@ -4946,7 +4946,7 @@ proof Haskell Thy_Morphism  List
   List.last         -> last
   List.tail         -> tail
   List.butLast      -> init
-  List.++           -> ++           Right 5
+  List.++           -> ++           Left 5
   List.|>           -> :            Right 5
   List.update       -> list_update  curried
   List.forall?      -> all
