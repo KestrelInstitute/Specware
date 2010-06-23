@@ -336,7 +336,7 @@ proof Haskell ThyMorphism
   String.explode    -> id
   String.implode    -> id
   String.length     -> length
-  String.^          -> ++    Right  5
+  String.^          -> ++    Left  5
   String.map        -> map
   String.exists?    -> any
   String.forall?    -> all
