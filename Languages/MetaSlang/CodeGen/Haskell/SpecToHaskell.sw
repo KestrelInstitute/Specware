@@ -384,7 +384,7 @@ Haskell qualifying spec
     let spc = adjustElementOrder spc in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
-                                              | Pragma("proof", prag_str, "end-proof", _)
+                                              | Pragma("#translate", prag_str, "#end", _)
                                                   \_rightarrow true
                                               | _ \_rightarrow false)
                                      spc.elements
@@ -434,7 +434,7 @@ Haskell qualifying spec
   op  haskellElement?: SpecElement \_rightarrow Boolean
   def haskellElement? elt =
     case elt of
-      | Pragma("proof", prag_str, "end-proof", _) | haskellPragma? prag_str \_rightarrow true
+      | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str \_rightarrow true
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true
 
@@ -442,7 +442,7 @@ Haskell qualifying spec
   def elementFilter elt =
     case elt of
       | Import _ \_rightarrow false
-      | Pragma("proof", prag_str, "end-proof", _) | haskellPragma? prag_str
+      | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str
                                                 && haskellThyMorphismPragma prag_str = None \_rightarrow
         true
       | Pragma _ \_rightarrow false
@@ -599,7 +599,7 @@ Haskell qualifying spec
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | Pragma("proof", mid_str, "end-proof", pos) | verbatimPragma? mid_str \_rightarrow
+      | Pragma("#translate", mid_str, "#end", pos) | verbatimPragma? mid_str \_rightarrow
         let verbatim_str = case search("\n", mid_str) of
                              | None \_rightarrow ""
                              | Some n \_rightarrow specwareToHaskellString(subFromTo(mid_str, n, length mid_str))
@@ -738,7 +738,7 @@ Haskell qualifying spec
           | [] \_rightarrow None
           | el::rst \_rightarrow
             (case el of
-               | Pragma(p_bod as ("proof", prag_str, "end-proof", _)) \_rightarrow
+               | Pragma(p_bod as ("#translate", prag_str, "#end", _)) \_rightarrow
                  (let line1 = case search("\n", prag_str) of
                                 | None \_rightarrow prag_str
                                 | Some n \_rightarrow subFromTo(prag_str, 0, n)
@@ -1663,7 +1663,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         in
         let fx = termFixity c trm1 in
         % let _ = writeLine("parentTerm: "^anyToString parentTerm) in
-        % let _ = writeLine(printTerm trm1 ^ " " ^printTerm trm2 ^ "\n" ^ anyToString fx) in
+        % let _ = writeLine(printTerm trm1 ^ " " ^printTerm trm2 ^ "\n" ^ anyToString fx^"\n") in
         let (t1, t2) = if fx.4 then (t2, t1) else (t1, t2) in   % Reverse args
         (case (parentTerm, fx) of
            | (_, (None, Nonfix, false, _)) \_rightarrow
@@ -1685,8 +1685,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
              prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) \_rightarrow
              if p1 = p2
-               then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
-                             a1=a2 && a1 ~= NotAssoc, t1, pr_op, t2)
+               then prInfix (Infix (Left, p2), Infix (Right, p2),
+                             a1 ~= a2 || a1 = NotAssoc,
+                             a1 = a2 && a1 ~= NotAssoc, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _), term2, _) \_rightarrow
        enclose?(case parentTerm of
@@ -1760,8 +1761,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             ppTerm c parentTerm body_term])
      | LetRec (decls, term, _) \_rightarrow
        let def ppDecl (v, term) =
-             prBreak 2 [%prString "def ",
-                        ppVarWithoutSort v,
+             prBreak 2 [ppVarWithoutSort v,
                         prString " = ",
                         ppTerm c Top term]
        in
@@ -1777,7 +1777,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %        prString "TRUE"                 % \_lambdax. True
      | Lambda ([(pattern, _, term)], _) \_rightarrow
        enclose?(parentTerm \_noteq Top,
-                prBreakCat 2 [[prString "\\", enclose?(embed? QuotientPat pattern, ppPattern c pattern),
+                prBreakCat 2 [[prString "\\", enclose?(complexPattern? pattern, ppPattern c pattern),
                                prString " -> "],
                               [ppTerm c Top term]])
      | Lambda (match, _) \_rightarrow ppMatch c match
@@ -1945,6 +1945,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                   prConcat[prString "| ", ppTerm c Top term]] 
      | SortedPat (pat, ty, _) \_rightarrow ppPattern c pat
      | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
+
+ %% Need parens around them
+ op complexPattern?(p: Pattern): Bool =
+   case p of
+     | QuotientPat _ -> true
+     | EmbedPat(_, Some _, _, _) -> true
+     | AliasPat _ -> true
+     | RecordPat((fld1, _)::_, _) -> fld1 ~= "1"
+     | _ -> false
 
  op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
  def multiArgConstructor?(constrId, ty, spc) =
