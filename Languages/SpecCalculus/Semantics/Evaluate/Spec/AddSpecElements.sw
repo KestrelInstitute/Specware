@@ -66,13 +66,17 @@ SpecCalc qualifying spec
               | (false,  true) ->
                 %%  Old: Sort S (A,B)
                 %%  New: Sort S (X,Y) = T(X,Y)
-		let new_info = {names = combined_names, 
-				dfn   = new_dfn}
-		in
-                return (foldl (fn (new_sorts, name as Qualified (q, id)) ->
-                               insertAQualifierMap (new_sorts, q, id, new_info))
-                              old_spec.sorts
-                              combined_names)
+%% Now disallowed
+%		let new_info = {names = combined_names, 
+%				dfn   = new_dfn}
+%		in
+%                return (foldl (fn (new_sorts, name as Qualified (q, id)) ->
+%                               insertAQualifierMap (new_sorts, q, id, new_info))
+%                              old_spec.sorts
+%                              combined_names)
+                raise (SpecError (pos, 
+                                  "Type "^(printAliases new_names)^" has been redeclared"
+                                  ^ "\n(Type refinement is no longer allowed -- use spec substitution)" ))
               | (true, false) ->
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B)
