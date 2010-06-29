@@ -134,6 +134,7 @@
       "end-while"
       "end-with"
       "end-proof"
+      "end-translate"
       "espec"
       "espec-refinement"
       "final"

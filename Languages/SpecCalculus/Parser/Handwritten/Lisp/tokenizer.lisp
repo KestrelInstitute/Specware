@@ -43,7 +43,8 @@
 				  ("\\end{spec}"   "\\begin{spec}" nil t)
 				  )
    ;;
-   :pragma-delimiters           '(("proof" "end-proof" nil nil)) 
+   :pragma-delimiters           '(("proof" "end-proof" nil nil)
+                                  ("#translate" "#end" nil nil)) 
 					; First nil:  Not recusive, to avoid problems when the word "proof" appears 
 					;             inside an extended comment.
 					; Second nil: Not ok to terminate with eof -- that's a hack for the latex stuff.

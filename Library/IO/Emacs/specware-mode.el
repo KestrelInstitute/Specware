@@ -420,13 +420,13 @@ other hooks, such as major mode hooks, can do the job."
   (sw:load-specware-emacs-file "hideshow")
   (setq hs-allow-nesting t)
   (add-to-list 'hs-special-modes-alist
-	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\>\\|"
+	       `(specware-mode ,(concat "\\(\\s(\\|\\s-*proof\\|#translate\\>\\|"
 					sw:definition-intro-sexp
 					"\\|"
 					sw:basic-unit-intro-regexp
 					"\\|%{{{"
 					"\\)")
-                               "\\(\\s)\\|\\<end-proof\\|\\<end-?spec\\|%}}}\\)"
+                               "\\(\\s)\\|\\<end-proof|\\<#end\\|\\<end-?spec\\|%}}}\\)"
 			       nil
 			       sw:forward-exp
 			       sw:adjust-begin
@@ -434,41 +434,43 @@ other hooks, such as major mode hooks, can do the job."
 
 (defun sw:forward-exp (n)
   (interactive "p")
-  (if (looking-at "\\s-*proof\\>")
+  (if (looking-at "#translate\\>")
+      (sw:re-search-forward "#end")
+    (if (looking-at "\\s-*proof\\>")
       (sw:re-search-forward " end-proof\\>")
-    (if (looking-at sw:basic-unit-intro-regexp)
-	(progn (forward-char 1)
-	       (if (sw:re-search-forward sw:basic-unit-intro-regexp)
-		   (progn (beginning-of-line))
-		 (goto-char (point-max)))
-	       (forward-comment -100))	; Go backward until non-comment found
-      (if (looking-at "\\<def\\>")
-	  (let ((beg-indentation (1+ (current-column)))	; 1+ just in case user indent by 1
-		(found-end nil))
-	    (while (not found-end)
-	      (end-of-line)
-	      (if (sw:re-search-forward sw:def-ending-sexp)
-		  (progn (forward-sexp -1)
-			 (if (<= (current-column) beg-indentation)
-			     (setq found-end t)))
-		(if (sw:re-search-forward sw:basic-unit-intro-regexp)
-		    (progn (beginning-of-line)
-			   (setq found-end t))
-		  (goto-char (point-max)))))
-	    (forward-comment -100))
-	(if (looking-at sw:definition-intro-sexp) ; other than def
-	    (progn (end-of-line)
-		   (if (or (sw:re-search-forward sw:definition-ending-sexp)
-			   (sw:re-search-forward sw:basic-unit-intro-regexp))
-		       (progn (beginning-of-line))
-		     (goto-char (point-max)))
-		   (forward-comment -100)) ; Go backward until non-comment found
-	  (if (looking-at hs-marker-begin-regexp)
-	      (sw:scan-matching-patterns "%{{{" "\\(%{{{\\|%}}}\\)")
-	    (if (looking-at "(\\*")
-		(sw:scan-matching-patterns "(\\*" "\\((\\*\\|\\*)\\)")
-	      (let ((parse-sexp-ignore-comments t))
-		(forward-sexp n)))))))))
+      (if (looking-at sw:basic-unit-intro-regexp)
+          (progn (forward-char 1)
+                 (if (sw:re-search-forward sw:basic-unit-intro-regexp)
+                     (progn (beginning-of-line))
+                   (goto-char (point-max)))
+                 (forward-comment -100)) ; Go backward until non-comment found
+        (if (looking-at "\\<def\\>")
+            (let ((beg-indentation (1+ (current-column))) ; 1+ just in case user indent by 1
+                  (found-end nil))
+              (while (not found-end)
+                (end-of-line)
+                (if (sw:re-search-forward sw:def-ending-sexp)
+                    (progn (forward-sexp -1)
+                           (if (<= (current-column) beg-indentation)
+                               (setq found-end t)))
+                  (if (sw:re-search-forward sw:basic-unit-intro-regexp)
+                      (progn (beginning-of-line)
+                             (setq found-end t))
+                    (goto-char (point-max)))))
+              (forward-comment -100))
+          (if (looking-at sw:definition-intro-sexp) ; other than def
+              (progn (end-of-line)
+                     (if (or (sw:re-search-forward sw:definition-ending-sexp)
+                             (sw:re-search-forward sw:basic-unit-intro-regexp))
+                         (progn (beginning-of-line))
+                       (goto-char (point-max)))
+                     (forward-comment -100)) ; Go backward until non-comment found
+            (if (looking-at hs-marker-begin-regexp)
+                (sw:scan-matching-patterns "%{{{" "\\(%{{{\\|%}}}\\)")
+              (if (looking-at "(\\*")
+                  (sw:scan-matching-patterns "(\\*" "\\((\\*\\|\\*)\\)")
+                (let ((parse-sexp-ignore-comments t))
+                  (forward-sexp n))))))))))
 
 (defun sw:scan-matching-patterns (beg beg-end)
   (let ((beg-marker (re-search-forward beg nil t)))
