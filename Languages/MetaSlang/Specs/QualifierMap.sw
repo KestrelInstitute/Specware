@@ -1,8 +1,14 @@
+AQualifierMapType =
 spec
+ type AQualifierMap b
+endspec  
+
+QualifierMap =
+spec
+ import AQualifierMapType
  type MetaSlang.Id        = String
  type MetaSlang.Ids       = List Id
  type MetaSlang.Qualifier = Id
- type AQualifierMap b
  %type SpecCalc.Monad a
  type SpecCalc.Env a
  %% From /Languages/SpecCalculus/Semantics/Environment

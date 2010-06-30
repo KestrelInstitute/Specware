@@ -2,8 +2,14 @@
 A stripped down version of Polymorphic.
 *)
 
+Map =
 spec
   type Map (key,a)
+endspec
+
+Simple =
+spec
+  import Map
 
   op emptyMap : fa(key,a) Map (key,a)
 

@@ -1,13 +1,18 @@
+AQualifierMapType =
+spec
+ import /Library/Structures/Data/Maps/SimpleAsSTHarray
+ import /Library/Structures/Data/Maps/SimpleAsAlist
+ type AQualifierMap b  = STHMap.Map(String,Map.Map(String,b))   
+endspec
+
+QualifierMapAsSTHTable2 =
 AnnSpec qualifying
 %%% Curry on second element string so that wildFindUnQualified is fast
 %%% Top map is hash table.  Second level is alist.
 
 spec
- import QualifierMap
- import /Library/Structures/Data/Maps/SimpleAsSTHarray
- import /Library/Structures/Data/Maps/SimpleAsAlist
+ import QualifierMap[morphism QualifierMap#AQualifierMapType -> AQualifierMapType {}]
 
- type AQualifierMap b  = STHMap.Map(String,Map.Map(String,b))   
  def foldriAQualifierMap f ini qm =
    foldi (fn(id,im,r) -> foldi(fn (q,v,r) -> f(q,id,v,r)) r im) ini qm
  def emptyAQualifierMap  = emptyMap       % 

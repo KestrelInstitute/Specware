@@ -1,12 +1,15 @@
-\section{Simple Polymorphic Maps as Lists}
+(* Simple Polymorphic Maps as Lists *)
 
-\begin{spec}
+MapList =
+spec
+  type Map (key,a) = List (key * a)
+endspec
+
+SimpleAsAlist =
 Map qualifying
 spec
-  import Simple
+  import Simple[morphism Simple#Map -> MapList {}]
   import /Library/Legacy/Utilities/System
-
-  sort Map (key,a) = List (key * a)
 
   % op emptyMap : fa(key,a) Map (key,a)
   def emptyMap = Nil
@@ -73,13 +76,11 @@ spec
            else
              Cons((u,v),remove (y, x))
 
-\end{spec}
-
+(*
 The next constructs the list elements from the range of the map
 in ``order of appearance'' (with duplications). Order of appearance is 
 meaningless unless an implementation is assumed.
-
-\begin{spec}
+*)
   % op imageToList : fa(key,a) Map (key,a) -> List a
   def imageToList map =
     foldi (fn (_, value, values) -> Cons (value, values))
@@ -154,4 +155,4 @@ meaningless unless an implementation is assumed.
   % op all : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
   % op exists : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
 endspec
-\end{spec}
+
