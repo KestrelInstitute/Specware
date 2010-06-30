@@ -573,7 +573,7 @@ IsaTermPrinter qualifying spec
   op  elementFilter: SpecElement \_rightarrow Boolean
   def elementFilter elt =
     case elt of
-      | Import _ \_rightarrow false
+      %| Import _ \_rightarrow false
       | Pragma("proof", prag_str, "end-proof", pos) | isaPragma? prag_str
                                                 && thyMorphismPragma prag_str "Isa" pos = None \_rightarrow
         true
@@ -970,7 +970,16 @@ IsaTermPrinter qualifying spec
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
-      | SortDef (qid,_) \_rightarrow
+      | SortDef (qid, pos) \_rightarrow
+        if existsSpecElement? (fn el ->
+                                 case el of
+                                   | Sort (qid1,_) -> qid1 = qid
+                                     %| SortDef (qid1, pos1) -> qid1 = qid && pos ~= pos1
+                                   | _ -> false)
+             elems
+          then (warn("Redefinition of type "^printQualifiedId qid^" at "^printAll pos);
+                prString("<Illegal type redefinition of "^printQualifiedId qid^">"))
+        else 
 	(case AnnSpec.findTheSort(spc, qid) of
 	   | Some {names, dfn} \_rightarrow ppTypeInfo c true (names, dfn)
 	   | _ \_rightarrow 
