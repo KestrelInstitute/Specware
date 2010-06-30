@@ -21,11 +21,15 @@ IsaTermPrinter qualifying spec
  op  emptyTranslationTable: TransInfo
  def emptyTranslationTable = {op_map=[], type_map=[], thy_imports=[]}
 
+ op translatePragmaBrackets?(begp: String, endp: String): Bool =
+   (begp = "proof" && endp = "end-proof")
+ || (begp = "#translate" && endp = "#end")
+
  def thyMorphismMaps (spc: Spec) (kind: String) (convertPrecNum: Int -> Int): TransInfo =
    (foldlSpecElements
      (fn ((result, prev_id),el) \_rightarrow
       case el of
-       | Pragma("proof", prag_str, "end-proof", pos) \_rightarrow
+       | Pragma(begp, prag_str, endp, pos) |  translatePragmaBrackets?(begp, endp) \_rightarrow
          (case thyMorphismPragma prag_str kind pos of
 	    | None \_rightarrow 
               (case (prev_id, findRenaming prag_str kind pos) of
