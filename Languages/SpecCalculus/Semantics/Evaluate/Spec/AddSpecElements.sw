@@ -66,6 +66,7 @@ SpecCalc qualifying spec
               | (false,  true) ->
                 %%  Old: Sort S (A,B)
                 %%  New: Sort S (X,Y) = T(X,Y)
+                let _ = warn("Type "^(printAliases new_names)^" has been redeclared (Use spec substitution)") in
 		let new_info = {names = combined_names, 
 				dfn   = new_dfn}
 		in
