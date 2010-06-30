@@ -109,7 +109,7 @@ proof Isa Thy_Morphism Char_nat
   Char.ord       -> nat_of_char
 end-proof
 
-proof Haskell Thy_Morphism Char
+#translate Haskell Thy_Morphism Char
   type Char.Char -> Char
   Char.chr       -> chr
   Char.ord       -> ord
@@ -122,6 +122,6 @@ proof Haskell Thy_Morphism Char
   Char.toUpperCase -> toUpper
   Char.toLowerCase -> toLower
   Char.compare \_rightarrow compare curried
-end-proof
+#end
 
 endspec

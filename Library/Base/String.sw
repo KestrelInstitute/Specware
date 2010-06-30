@@ -206,11 +206,11 @@ op Nat.show : Nat -> String = natToString
 
 op Nat.natConvertible (s:String) : Bool =
   ex(x:Nat) natToString x = s
-proof Haskell -> natConvertible end-proof
+#translate Haskell -> natConvertible #end
 
 op Nat.stringToNat (s:String | natConvertible s) : Nat =
   the(x:Nat) natToString x = s
-proof Haskell -> stringToNat end-proof
+#translate Haskell -> stringToNat #end
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
@@ -255,7 +255,7 @@ end-proof
 op Integer.intToString (x:Integer) : String =
   if x >= 0 then        natToString   x
             else "-" ^ natToString (-x)
-proof Haskell -> intToString end-proof
+#translate Haskell -> intToString #end
 
 op Integer.show : Integer -> String = intToString
 
@@ -267,7 +267,7 @@ proof Haskell -> intConvertible end-proof
 
 op Integer.stringToInt (s:String | intConvertible s) : Integer =
   the(x:Integer) intToString x = s
-proof Haskell -> stringToInt end-proof
+#translate Haskell -> stringToInt #end
 proof Isa stringToInt_Obligation_the
   apply (simp add:Integer__intConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp)
@@ -331,7 +331,7 @@ proof Isa ThyMorphism
   String.@          -> ! Left 100
 end-proof
 
-proof Haskell ThyMorphism
+#translate Haskell ThyMorphism
   type String.String -> String
   String.explode    -> id
   String.implode    -> id
@@ -354,6 +354,6 @@ proof Haskell ThyMorphism
   Integer.intToString -> show
   Nat.stringToNat   -> stringToInt
   String.subFromTo  -> List.subFromTo
-end-proof
+#end
 
 endspec

@@ -356,11 +356,11 @@ proof Isa ThyMorphism
   Function.inverse     -> inv
 end-proof
 
-proof Haskell ThyMorphism
+#translate Haskell ThyMorphism
   Function.id          -> id
   Function.o           -> . Right 9
   Function.:>          -> . Right 9 reversed
-end-proof
+#end
 
 
 endspec

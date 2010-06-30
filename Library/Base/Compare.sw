@@ -28,13 +28,13 @@ op Bool.compare (x:Bool, y:Bool) : Comparison =
   else if (x = true) then Greater
   else  (* x = false *)   Less
 
-proof Haskell Thy_Morphism
+#translate Haskell Thy_Morphism
  type Compare.Comparison \_rightarrow Ordering
  Less \_rightarrow LT
  Equal \_rightarrow EQ
  Greater \_rightarrow GT
  Compare.compare \_rightarrow compare curried
  Bool.compare    \_rightarrow compare curried
-end-proof
+#end
 
 endspec

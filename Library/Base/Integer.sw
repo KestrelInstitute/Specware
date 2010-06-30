@@ -1160,7 +1160,7 @@ proof Isa Thy_Morphism Presburger
  Nat.succ         -> Suc
 end-proof
 
-proof Haskell Thy_Morphism
+#translate Haskell Thy_Morphism
  type Integer.Int -> Int
  type Integer.Integer -> Int
  type Nat.Nat     -> Int
@@ -1197,7 +1197,7 @@ proof Haskell Thy_Morphism
  Integer.min      -> min   Left  7
  Integer.max      -> max   Left  7
  Integer.compare \_rightarrow compare curried
-end-proof
+#end
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim

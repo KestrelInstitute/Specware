@@ -1497,7 +1497,7 @@ op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> foldl f (f (base, hd)) tl
-proof Haskell -> sw_foldl end-proof
+#translate Haskell -> sw_foldl #end
 
 proof Isa foldl_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldl' f b l)", simp)
@@ -1508,7 +1508,7 @@ op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> f (hd, foldr f base tl)
-proof Haskell -> sw_foldr end-proof
+#translate Haskell -> sw_foldr #end
 
 proof Isa foldr_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldr' f b l)", simp)
@@ -4282,7 +4282,7 @@ end-proof
 
 op [a] splitAt (l: List a, i:Nat | i < length l) : List a * a * List a =
   (prefix(l,i), l@i, removePrefix(l,i+1))
-proof Haskell -> splitAt3 end-proof       % Haskell has a splitAt that splits into two
+#translate Haskell -> splitAt3 #end       % Haskell has a splitAt that splits into two
 
 proof Isa splitAt_subtype_constr
   by (simp add: List__splitAt_def list_all_length)
@@ -4552,7 +4552,7 @@ end-proof
 
 op [a] delete (x:a) (l: List a) : List a =
   filter (fn y:a -> y ~= x) l
-proof Haskell -> delete_all end-proof
+#translate Haskell -> delete_all #end
 
 proof Isa delete_subtype_constr
   by (simp add: List__delete_def list_all_iff)
@@ -4929,7 +4929,7 @@ proof Isa Thy_Morphism List
   List.noRepetitions? -> distinct
 end-proof
 
-proof Haskell Thy_Morphism  List
+#translate Haskell Thy_Morphism  List
   type List.List    -> []
   Nil               -> []
   Cons              -> :            Right 5
@@ -4965,7 +4965,7 @@ proof Haskell Thy_Morphism  List
   List.leftmostPositionSuchThat -> findIndex  curried  reversed
   List.positionsSuchThat -> findIndices  curried  reversed
   List.positionsOf  -> elemIndices  curried  reverse
-end-proof
+#end
 
 % ------------------------------------------------------------------------------
 % Here are a few useful properties about concepts specified in this theory
