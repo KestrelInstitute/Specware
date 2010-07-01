@@ -25,7 +25,7 @@
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY Isabelle "<productname>Isabelle</productname>">
  <!ENTITY IsabelleHOL "<productname>Isabelle/HOL</productname>">
- <!ENTITY V "4.1">
+ <!ENTITY V "4.2">
  <!ENTITY SpecwareV "&Specware; &V;">
  <!ENTITY SShell "&Specware; Shell">
  <!ENTITY Metaslang "Metaslang">
@@ -40,11 +40,11 @@
 
 <bookinfo>
   <copyright>
-     <year>2006-2009</year>
+     <year>2006-2010</year>
      <holder>Kestrel Development Corporation</holder>
   </copyright>
   <copyright>
-     <year>2006-2009</year>
+     <year>2006-2010</year>
      <holder>Kestrel Technology LLC</holder>
   </copyright>
 

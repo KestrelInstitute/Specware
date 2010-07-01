@@ -17,7 +17,7 @@ DB2PDF= ../bin/db2pdf -E9999
 
 PDFDBK= debug.dbk defining.dbk emacs.dbk generatedlisp.dbk \
   install.dbk model.dbk shell.dbk prove.dbk start.dbk \
-  javacodegen.dbk ccodegen.dbk
+  javacodegen.dbk ccodegen.dbk haskellcodegen.dbk
 
 $(SUM).pdf: Makefile $(SUM).dbk $(PDFDBK)
 	@if test -r $(SUM).pdf; \
@@ -94,6 +94,12 @@ ccodegen.dbk: Makefile $(GLM2DBK) ccodegen.glm
 	 fi
 	$(GLM2DBK) -pdf ccodegen.glm > ccodegen.dbk
 
+haskellcodegen.dbk: Makefile $(GLM2DBK) haskellcodegen.glm
+	@if test -r haskellcodegen.dbk; \
+	 then /bin/mv -f haskellcodegen.dbk haskellcodegen.dbk.old; \
+	 fi
+	$(GLM2DBK) -pdf haskellcodegen.glm > haskellcodegen.dbk
+
 HTMDIR= $(SUM).htm-dir
 
 htm: $(HTMDIR)
@@ -108,7 +114,7 @@ ADJUSTFONTHTML= bin/adjustFontHTML
 
 HTMDBK= debug-htm.dbk defining-htm.dbk emacs-htm.dbk generatedlisp-htm.dbk \
   install-htm.dbk model-htm.dbk shell-htm.dbk prove-htm.dbk start-htm.dbk \
-  javacodegen-htm.dbk ccodegen-htm.dbk
+  javacodegen-htm.dbk ccodegen-htm.dbk haskellcodegen-htm.dbk
 
 $(HTMDIR): Makefile $(SUM)-htm.dbk $(HTMDBK) $(ADJUSTFONTHTML)
 	($(DB2HTML) $(SUM)-htm.dbk 2>&1) | grep -v 'is not a function name'
@@ -192,6 +198,12 @@ ccodegen-htm.dbk: Makefile $(GLM2DBK) ccodegen.glm
 	 then /bin/mv -f ccodegen-htm.dbk ccodegen-htm.dbk.old; \
 	 fi
 	$(GLM2DBK) -htm ccodegen.glm > ccodegen-htm.dbk
+
+haskellcodegen-htm.dbk: Makefile $(GLM2DBK) haskellcodegen.glm
+	@if test -r haskellcodegen-htm.dbk; \
+	 then /bin/mv -f haskellcodegen-htm.dbk haskellcodegen-htm.dbk.old; \
+	 fi
+	$(GLM2DBK) -htm haskellcodegen.glm > haskellcodegen-htm.dbk
 
 clean:
 	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \

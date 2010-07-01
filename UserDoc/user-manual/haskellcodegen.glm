@@ -1,0 +1,138 @@
+<section id="haskellcodegen">
+<title>Generating Haskell Code</title>
+
+<para> As an experimental feature, Specware provides the capability
+of generating Haskell code from constructive &Metaslang;
+specs. Currently all of the basic language is supported except for
+unnamed records. There is currently no support for translating to
+Haskell's monads.
+</para>
+
+<para>
+The Haskell code
+generator can either be called from the &SShell; or using the emacs interface.
+</para>
+
+<para>
+The shell command has the form:
+[[
+||    gen-haskell $spec-term$
+]]
+where the result of elaborating the spec term gives the spec to be
+translated into Haskell. Inside the emacs interface it is simpler to
+use the [[C-c C-h]] command ([[sw:convert-spec-to-haskell]]) which has
+the same effect but also visits the generated Haskell file. For a
+single file spec, the generated Haskell file has the same name as the
+Specware file with extension "hs" instead of "sw" and is put in the
+"Haskell" subdirectory of the diretory containing the spec. A
+spec in a multi-spec file also has the local name of the spec appended to the
+file name. Haskell code is generated for any imported specs if
+necessary. The Haskell code for the Base library is pre-generated and
+stored in the directory <"%SPECWARE4%\Library\Haskell">, so this
+directory must be on your &Haskell; system's load path in order to
+process the generated &Haskell; files. The Base library and its
+translation into &Haskell; provides good examples of the &Haskell;
+generator and how to control it using the pragmas documented below.
+</para>
+
+<section>
+<title>Translation of Specware Names</title>
+
+<para> &Specware; unqualified type and op names are translated as is,
+excepted that the first letter is down- or upper-cased respectively as
+necessary to comply with Haskell's case rules. Qualified names have
+the qualifier appended at the beginning of the name, separated from
+the primary name by two underbar characters, changing the first-letter
+case if necessary. For example, the type [[A.B]] is translated to
+[[A__B]] and the op [[A.b]] is translated to [[a__b]]. However, the
+user may provide a pragma to override this default translation of an
+op. The pragma must occur immediately after the op definition. It has
+the form
+[[
+|| #translate Haskell -> desiredName #end
+]]
+where [[desiredName]] is the name you want to appear in the Haskell
+translation.
+</para>
+
+</section>
+
+<section>
+<title>Translation Tables</title>
+
+<para> You can connect a &Specware; spec with an existing &Haskell;
+module by providing a translation table within the spec.
+
+<para>
+A translation table for &Specware; types and ops is introduced by a
+  line beginning [[#translate Haskell Thy_Morphism]] followed optionally by a
+  &Haskell; module  (which will be imported into the translated
+  spec), and terminated by the string [[#end]]. Each line gives
+  the translation of a type or op. For example, for the &Specware;
+  List spec we have:
+
+[[
+||    #translate Haskell Thy_Morphism  List
+||      type List.List    -> []
+||      Nil               -> []
+||      Cons              -> :            Right 5
+||      List.List_P       -> list_all
+||      List.length       -> length
+||      List.@            -> !!           Left  9
+||      List.empty        -> []
+||      List.empty?       -> null
+||      List.in?          -> elem         Infix 4
+||      List.nin?         -> notElem      Infix 4
+||      List.prefix       -> take         curried  reversed
+||      List.removePrefix -> drop         curried  reversed
+||      List.head         -> head
+||      List.last         -> last
+||      List.tail         -> tail
+||      List.butLast      -> init
+||      List.++           -> ++           Left 5
+||      List.|>           -> :            Right 5
+||      List.update       -> list_update  curried
+||      List.forall?      -> all
+||      List.exists?      -> any
+||      List.filter       -> filter
+||      List.zip          -> zip          curried
+||      List.unzip        -> unzip
+||      List.zip3         -> zip3         curried
+||      List.unzip3       -> unzip3
+||      List.map          -> map
+||      List.isoList          -> map
+||      List.reverse      -> reverse
+||      List.repeat       -> replicate    curried  reversed
+||      List.flatten      -> concat
+||      List.findLeftMost -> find
+||      List.leftmostPositionSuchThat -> findIndex  curried  reversed
+||      List.positionsSuchThat -> findIndices  curried  reversed
+||      List.positionsOf  -> elemIndices  curried  reverse
+||    #end
+]]
+</para>
+
+<para>
+A type translation begins with the word [[type]] followed by the
+  fully-qualified &Specware; name, [[->]] and the &Haskell;
+  name. Note that by default, sub-types are represented by their
+  super-type.
+</para>
+
+<para> An op translation begins with the fully-qualified &Specware; name,
+followed by [[->]] and the &Haskell; constant name. If the &Haskell;
+constant is an infix operator, then it should be followed by [[Left]]
+or [[Right]] depending on whether it is left or right associative and
+a precedence number. Note that the precedence number is relative to
+&Haskell;'s precedence ranking, not &Specware;'s. Also, an uncurried
+&Specware; op can be mapped to a curried &Haskell; constant by putting
+[[curried]] after the &Haskell; name, and a binary op can be
+mapped with the arguments reversed by appending [[reversed]] to the
+line.
+</para>
+
+</section>
+
+
+
+</section>

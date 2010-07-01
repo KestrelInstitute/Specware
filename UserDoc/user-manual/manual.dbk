@@ -30,12 +30,14 @@
  <!ENTITY emacs SYSTEM "emacs.dbk">
  <!ENTITY javacodegen SYSTEM "javacodegen.dbk">
  <!ENTITY ccodegen SYSTEM "ccodegen.dbk">
+ <!ENTITY haskellcodegen SYSTEM "haskellcodegen.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.2">
  <!ENTITY SpecwareV "&Specware; &V;">
  <!ENTITY SShell "&Specware; Shell">
  <!ENTITY Metaslang "Metaslang">
+ <!ENTITY Haskell "<productname>Haskell</productname>">
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
  <!ENTITY amp "&#38;">
@@ -47,11 +49,11 @@
 
 <bookinfo>
   <copyright>
-     <year>2001-2009</year>
+     <year>2001-2010</year>
      <holder>Kestrel Development Corporation</holder>
   </copyright>
   <copyright>
-     <year>2001-2009</year>
+     <year>2001-2010</year>
      <holder>Kestrel Technology LLC</holder>
   </copyright>
 

@@ -4,7 +4,7 @@
  <!ENTITY iso SYSTEM "iso.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
- <!ENTITY V "4.X">
+ <!ENTITY V "4.2">
  <!ENTITY SpecwareV "&Specware; &V;">
  <!ENTITY SShell "&Specware; Shell">
  <!ENTITY XShell "Transformation Shell">
@@ -20,7 +20,7 @@
 
 <bookinfo>
   <copyright>
-     <year>2007-2009</year>
+     <year>2007-2010</year>
      <holder>Kestrel Development Corporation</holder>
   </copyright>
 

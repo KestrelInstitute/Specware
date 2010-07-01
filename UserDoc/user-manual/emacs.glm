@@ -122,6 +122,12 @@ them are available in the &Specware menu in the menubar.
            compiles and loads them).</entry>
       </row>
       <row>
+	<entry colname="key">&nbsp; [[C-c C-h]]</entry>
+        <entry colname="name">&nbsp; [[sw:convert-spec-to-haskell]]</entry>
+	<entry colname="descr">&nbsp; Generates Haskell code for
+            current spec.</entry>
+      </row>
+      <row>
 	<entry colname="key">&nbsp; [[C-c !]]</entry>
         <entry colname="name">&nbsp; [[cd-current-directory]]</entry>
 	<entry colname="descr">&nbsp; Does a :cd in the *Specware Shell* 

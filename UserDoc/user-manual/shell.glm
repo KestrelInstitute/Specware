@@ -849,6 +849,8 @@ added to the spec.
 
 &ccodegen; <!-- section on C code generation -->
 
+&haskellcodegen; <!-- section on Haskell code generation -->
+
 <section id=auxlisp>
 <title>Auxiliary Commands for Lisp</title>
 

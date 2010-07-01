@@ -2,10 +2,11 @@
 <title>Concepts</title>
 
 <para>
-This is an experimental release of a &Specware; interface
+This document describes a &Specware; interface
      that allows the use of &IsabelleHOL; to discharge proof
      obligations that arise in developing &Specware;
-     specifications. The interface is essentially just an emacs
+     specifications. The interface is essentially just a Specware
+     Shell command and an Emacs
      command that converts a &Specware; spec to an &Isabelle; theory,
      along with extensions in the &Specware syntax to allow &Isabelle;
      proof scripts to be embedded in &Specware; specs, and to allow
@@ -21,7 +22,9 @@ This is an experimental release of a &Specware; interface
 
 <para>
 We assume the user is familiar with &IsabelleHOL;. See the tutorial at
-<ulink url="http://isabelle.in.tum.de/documentation.html">http://isabelle.in.tum.de/documentation.html</ulink>.
+<ulink
+url="http://isabelle.in.tum.de/documentation.html">http://isabelle.in.tum.de/documentation.html</ulink>.
+The current version of the Isabelle translator works with Isabelle2009-1.
 An example Specware spec with Isabelle proofs is given in 
 <"Examples/IsabelleInterface/BoolEx.sw">. This spec corresponds to the
 Isabelle theory in section 2.2.4 of the &IsabelleHOL; tutorial.
