@@ -77,7 +77,9 @@
 	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
             `(funcall (read-from-string "swank-loader:init"))
             `(funcall (read-from-string "swank:start-server")
-                        ,(slime-to-lisp-filename port-filename)
+                        ,(slime-to-lisp-filename
+                          (if cygwin? (concat "/cygwin" port-filename)
+                            port-filename))
                         :coding-system ,encoding))))
 
 ;;; based on slime-repl-return
