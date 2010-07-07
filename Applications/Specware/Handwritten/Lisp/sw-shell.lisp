@@ -2,6 +2,7 @@
 (defpackage :Prover)
 (defpackage :IsaTermPrinter)
 (defpackage :Refs)
+(defpackage :Haskell)
 (defpackage :SWShell)
 (in-package :SWShell)
 
