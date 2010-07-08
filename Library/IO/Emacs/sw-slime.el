@@ -173,6 +173,10 @@ If NEWLINE is true then add a newline at the end of the input."
     (if (eq input :exit)
 	(slime-quit-specware)
       (if (and (null sw:license-accepted)
+               (if (equal sw:system-name "Specware")
+                   t
+                 (progn (setq sw:license-accepted t)
+                        nil))
                (null (setq sw:license-accepted (sw:eval-in-lisp "Specware::*license-accepted?*"))))
           (progn (beep)
                  (message "Need to accept license to use Specware!")
@@ -351,7 +355,8 @@ to end end."
               (insert-before-markers *sw-slime-prompt*))
             (set-marker slime-repl-prompt-start-mark prompt-start)
             (unless sw:license-displayed-p
-              (sw:eval-in-lisp-no-value "(Specware::check-license)")
+              (when (equal sw:system-name "Specware")
+                (sw:eval-in-lisp-no-value "(Specware::check-license)"))
               (setq sw:license-displayed-p t))
             prompt-start))))))
 
