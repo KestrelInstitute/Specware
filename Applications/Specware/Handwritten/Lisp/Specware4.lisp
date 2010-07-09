@@ -99,7 +99,7 @@
   (load utils)
   (compile-and-load-lisp-file utils))
 
-(defparameter Specware4 (substitute #\/ #\\ (Specware::getenv "SPECWARE4")))
+(defparameter Specware4 (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
 
 (if (null Specware::Specware4)
     (warn "SPECWARE4 environment var not set")

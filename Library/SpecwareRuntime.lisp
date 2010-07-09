@@ -21,7 +21,7 @@
     #+clisp     (ext:getenv varname)
     ))
 
-(defvar *specware4* (Specware::getenv "SPECWARE4"))
+(defvar *specware4* (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
 
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
