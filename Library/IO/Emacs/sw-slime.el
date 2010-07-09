@@ -300,6 +300,27 @@ If NEWLINE is true then add a newline at the end of the input."
       (sleep-for 0.2))
     (slime-eval-async '(setq Specware::*using-slime-interface?* t))))
 
+(defun slime-connect (host port &optional coding-system)
+  "Connect to a running Swank server. Return the connection."
+  (interactive (list (read-from-minibuffer "Host: " slime-lisp-host)
+                     (read-from-minibuffer "Port: " (format "%d" slime-port)
+                                           nil t)))
+  (when (and (interactive-p) slime-net-processes
+             (y-or-n-p "Close old connections first? "))
+    (slime-disconnect-all))
+  (message "Connecting to Swank on port %S.." port)
+  (let ((coding-system (or coding-system slime-net-coding-system)))
+    (slime-check-coding-system coding-system)
+    (message "Connecting to Swank on port %S.." port)
+    (let* ((port 
+            ;; deal with apparent bug in some xemacs versions
+            ;; that seem unprepared for ports as numbers
+            ;; e.g. 21.4.15
+            (if (or *windows-system-p* cygwin?) port (format "%S" port)))
+           (process (slime-net-connect host port coding-system))
+           (slime-dispatching-connection process))
+      (slime-setup-connection process))))
+
 (defvar specware-listener-p nil)
 
 (defvar old-slime-output-buffer (symbol-function 'slime-output-buffer))

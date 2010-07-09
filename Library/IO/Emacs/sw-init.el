@@ -674,6 +674,8 @@ sLisp Heap Image File: ")
     (when (and (not continuation?) (sbcl-running-in-build-buffer))
       (specware-build-command "(cl-user::quit)"))
     (specware-build-command "cd %s" build-dir)
+    (when *windows-system-p*
+      (specware-build-command "cd %s" (shell-filename build-dir)))
     (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
     (sit-for 2)
     (specware-build-command "(cl:load %S)"
