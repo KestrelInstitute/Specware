@@ -777,7 +777,7 @@ Haskell qualifying spec
  op ppConstructorTyped(c_nm: String, ty: Sort, c: Context): Pretty =
    case unfoldToBaseNamedType(getSpec c, ty) of
      | Base(qid, _, _) -> ppConstructor(c_nm, qid, c)
-     | _ -> fail("Couldn't find coproduct type of constructor "^c_nm)
+     | _ -> fail("Couldn't find coproduct type of constructor "^c_nm^": \n"^printSort ty)
 
  op ppIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    let qid = head qids in
@@ -1804,6 +1804,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | Some (uf_ty as Base _) -> unfoldToBaseNamedType(spc, uf_ty)
         | Some (Subsort(sup_ty, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
         | _ -> ty)
+     | Subsort(sup_ty, _, _) -> unfoldToBaseNamedType(spc, sup_ty)
      | _ -> ty
 
  %op projectorNames: List String = ["fst", "snd", "third", "fourth", "fifth", "sixth", "seventh",
