@@ -31,7 +31,7 @@ spec
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
-    | IsoMorphism(List(QualifiedId \_times QualifiedId) \_times List RuleSpec)
+    | IsoMorphism(List(QualifiedId \_times QualifiedId) \_times List RuleSpec \_times Option Qualifier)
     | Trace Boolean
     | Print
 
@@ -95,7 +95,7 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | IsoMorphism(iso_qid_prs, rls) \_rightarrow
+      | IsoMorphism(iso_qid_prs, rls, opt_qual) \_rightarrow
         ppConcat[ppString "isomorphism (",
                  ppSep(ppString ", ") (map (fn (iso,osi) ->
                                               ppConcat[ppString "(",
@@ -480,27 +480,24 @@ spec
           when tracing? 
             (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
           foldM (fn (spc,tracing?) -> fn Def qid \_rightarrow
-                 case findAllOps(spc,qid) of
+                 case findMatchingOps(spc,qid) of
                    | [] \_rightarrow {
                        print ("Can't find op " ^ anyToString qid ^ "\n");
                        return (spc,tracing?)
                      }
-                   | [opinfo] \_rightarrow {
-                       (tvs, srt, tm) <- return (unpackFirstTerm opinfo.dfn); 
-                       when tracing? 
-                         (print ((printTerm tm) ^ "\n")); 
-                       ((_,newtm),tracing?) <- interpretTerm (spc, scr, tm, tm, tracing?); 
-                       newdfn <- return (maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)));
-                       return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
-                     }
-                   | opinfos -> {
-                       print ("Ambiguous op " ^ anyToString qid ^ "\n");
-                       return (spc,tracing?)
-                     })
-            (spc,tracing?) locs
-        }
-      | IsoMorphism(iso_osi_prs, rls) \_rightarrow {
-          result <- makeIsoMorphism(spc, iso_osi_prs, Some "XXX", rls);
+                   | opinfos ->
+                     foldM  (fn (spc,tracing?) -> fn opinfo \_rightarrow  {
+                             (tvs, srt, tm) <- return (unpackFirstTerm opinfo.dfn); 
+                             when tracing? 
+                               (print ((printTerm tm) ^ "\n")); 
+                             ((_,newtm),tracing?) <- interpretTerm (spc, scr, tm, tm, tracing?); 
+                             newdfn <- return (maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)));
+                             return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
+                             })
+                       (spc,tracing?) opinfos)
+            (spc,tracing?) locs }
+      | IsoMorphism(iso_osi_prs, rls, opt_qual) \_rightarrow {
+          result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
           % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
           return (result,tracing?)
         }

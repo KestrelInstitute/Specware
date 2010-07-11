@@ -137,10 +137,17 @@ spec
                | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
-                  return (Cons(IsoMorphism(iso_prs, srls), top_result), [])}
+                  return (Cons(IsoMorphism(iso_prs, srls, None), top_result), [])}
+               | Apply(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
+                 {iso_prs <- extractIsos iso_tms;
+                  srls <- mapM makeRuleRef rls;
+                  return (Cons(IsoMorphism(iso_prs, srls, Some qual), top_result), [])}
                | Apply(Name("isomorphism",_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (Cons(IsoMorphism(iso_prs, []), top_result), [])}
+                  return (Cons(IsoMorphism(iso_prs, [], None), top_result), [])}
+               | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
+                 {iso_prs <- extractIsos iso_tms;
+                  return (Cons(IsoMorphism(iso_prs, [], Some qual), top_result), [])}
                | Item("at", loc, _) ->
                  {qid <-  makeQID loc;
                   return (Cons(At([Def qid], Steps sub_result),

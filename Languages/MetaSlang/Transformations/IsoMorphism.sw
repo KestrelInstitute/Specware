@@ -653,7 +653,7 @@ spec
   op simplifyUnPrimed?: Boolean = false
 
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
-                                  newOptQual : Option String, extra_rules: List RuleSpec)
+                                   newOptQual : Option String, extra_rules: List RuleSpec)
       : SpecCalc.Env Spec =
     let
       %{{{  newQId
