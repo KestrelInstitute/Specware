@@ -422,12 +422,13 @@ Haskell qualifying spec
     % let _ = writeLine("n:\n"^printSpec spc) in
     let (pp_imports, pp_exports) = ppImports c spc.elements in
     let pr_thyname = prString(thyName c.spec_name) in
-    prLinesCat 0 ([[prString "module ", pr_thyname,
-                    prString " ( ",
-                    prSep 0 blockFill (prString ", ") (prConcat [prString "module ", pr_thyname]
-                                                         :: pp_exports),
-                    prString " )",
-                    prString " where"]]
+    prLinesCat 0 (ppHeaderPragmas spc.elements
+                  ++ [[prString "module ", pr_thyname,
+                       prString " ( ",
+                       prSep 0 blockFill (prString ", ") (prConcat [prString "module ", pr_thyname]
+                                                            :: pp_exports),
+                       prString " )",
+                       prString " where"]]
                   ++ pp_imports
 		  ++ [[ppSpecElements c spc (filter elementFilter spc.elements)]])
 
@@ -676,27 +677,49 @@ Haskell qualifying spec
          | _ \_rightarrow s)
      | _ \_rightarrow s
 
-  op namedPragma?(p: Pragma): Boolean =
-    let (_, s, _, _) = p in
-    let line1 = case search("\n", s) of
-                  | None \_rightarrow s
-                  | Some n \_rightarrow subFromTo(s, 0, n)
-    in
-    case removeEmpty(splitStringAt(line1, " ")) of
-     | pragma_kind::name?::r | pragma_kind = "Haskell" \_or pragma_kind = "haskell" \_rightarrow
-       ~(name? = "fa"
-           \_or name?@0 in? [#(, #[, #\\, #", #-])  % #" #]
+ op namedPragma?(p: Pragma): Boolean =
+   let (_, s, _, _) = p in
+   let line1 = case search("\n", s) of
+                 | None \_rightarrow s
+                 | Some n \_rightarrow subFromTo(s, 0, n)
+   in
+   case removeEmpty(splitStringAt(line1, " ")) of
+    | pragma_kind::name?::r | pragma_kind = "Haskell" \_or pragma_kind = "haskell" \_rightarrow
+      ~(name? = "fa"
+          \_or name?@0 in? [#(, #[, #\\, #", #-])  % #" #]
+    | _ \_rightarrow false
+
+ op unnamedPragma?(p: Pragma): Boolean =
+   ~(namedPragma? p || controlPragma? p.2)
+
+ op verbatimIdString: String = "-verbatim"
+
+ op verbatimPragma?(s: String): Boolean =
+   case controlPragmaString s of
+     | Some(str::_) \_rightarrow str = verbatimIdString
      | _ \_rightarrow false
 
-  op unnamedPragma?(p: Pragma): Boolean =
-    ~(namedPragma? p || controlPragma? p.2)
+ op headerIdString: String = "-header"
 
-  op verbatimIdString: String = "-verbatim"
+ op headerPragma?(s: String): Boolean =
+   case controlPragmaString s of
+     | Some(str::_) \_rightarrow str = headerIdString
+     | _ \_rightarrow false
 
-  op verbatimPragma?(s: String): Boolean =
-    case controlPragmaString s of
-      | Some(str::_) \_rightarrow str = verbatimIdString
-      | _ \_rightarrow false
+ op ppHeaderPragmas (els: SpecElements): List Prettys =
+   mapPartial (fn el ->
+               case el of
+                 | Pragma("#translate", prag_str, "#end", _) | headerPragma? prag_str ->
+                   let header_str =
+                       case search("\n", prag_str) of
+                         | None \_rightarrow ""
+                         | Some n \_rightarrow specwareToHaskellString(subFromTo(prag_str, n+1, length prag_str))
+                   in
+                   Some [prString header_str]
+                 | _ -> None)
+     els
+                              
+
 
  op  haskellThyMorphismPragma: String \_rightarrow Option(String * List String)
  def haskellThyMorphismPragma prag =
@@ -1803,6 +1826,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        (case tryUnfoldBase spc ty of
         | Some (uf_ty as Base _) -> unfoldToBaseNamedType(spc, uf_ty)
         | Some (Subsort(sup_ty, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
+        | Some (uf_ty) | embed? Arrow uf_ty -> uf_ty
         | _ -> ty)
      | Subsort(sup_ty, _, _) -> unfoldToBaseNamedType(spc, sup_ty)
      | _ -> ty
