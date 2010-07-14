@@ -1,5 +1,4 @@
 String qualifying spec
-
 import Character, List
 
 (* A string is a finite sequence of characters (of type Char). Thus, we define type
@@ -330,6 +329,10 @@ proof Isa ThyMorphism
   String.forall?    -> list_all
   String.@          -> ! Left 100
 end-proof
+
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
 
 #translate Haskell ThyMorphism
   type String.String -> String

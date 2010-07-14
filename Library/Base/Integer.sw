@@ -1160,6 +1160,10 @@ proof Isa Thy_Morphism Presburger
  Nat.succ         -> Suc
 end-proof
 
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
+
 #translate Haskell Thy_Morphism
  type Integer.Int -> Int
  type Integer.Integer -> Int

@@ -91,6 +91,10 @@ proof Isa Thy_Morphism
  Option.mapOption \_rightarrow Option.map
 end-proof
 
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
+
 proof Haskell Thy_Morphism Maybe
  type Option.Option \_rightarrow Maybe
  None \_rightarrow Nothing

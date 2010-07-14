@@ -4929,6 +4929,10 @@ proof Isa Thy_Morphism List
   List.noRepetitions? -> distinct
 end-proof
 
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
+
 #translate Haskell Thy_Morphism  List
   type List.List    -> []
   Nil               -> []
