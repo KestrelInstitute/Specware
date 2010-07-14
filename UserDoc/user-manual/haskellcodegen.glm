@@ -20,7 +20,7 @@ The shell command has the form:
 ]]
 where the result of elaborating the spec term gives the spec to be
 translated into Haskell. Inside the emacs interface it is simpler to
-use the [[C-c C-h]] command ([[sw:convert-spec-to-haskell]]) which has
+use the [[C-c h]] command ([[sw:convert-spec-to-haskell]]) which has
 the same effect but also visits the generated Haskell file. For a
 single file spec, the generated Haskell file has the same name as the
 Specware file with extension "hs" instead of "sw" and is put in the
