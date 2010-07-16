@@ -2223,6 +2223,11 @@ With an argument, it doesn't convert imports."
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 
+(let ((path (format (if (eq window-system 'mswindows) "-i.;%s/Library/Haskell" "-i.:%s/Library/Haskell")
+                    (getenv "SPECWARE4"))))
+  (unless (member path haskell-ghci-program-args)
+    (push path haskell-ghci-program-args)))
+
 ;; License display and acceptance
 (defvar sw:license-accepted nil)
 (defvar *license-frame*)
