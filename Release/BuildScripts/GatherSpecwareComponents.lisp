@@ -181,8 +181,8 @@
     (copy-dist-directory (extend-directory source-dir    "ProverBase")
 			 (extend-directory component-dir "ProverBase"))
 
-    (copy-dist-directory (extend-directory source-dir    "Isa")
-			 (extend-directory component-dir "Isa"))
+    (copy-dist-directory (extend-directory source-dir    "Haskell")
+			 (extend-directory component-dir "Haskell"))
     
     (copy-dist-directory (extend-directory source-dir    "General")
 			 (extend-directory component-dir "General"))
@@ -333,6 +333,7 @@
 	 ;;
 	 (generic-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "Generic")))
 	 (slime-dir        (if *test?* component-dir (ensure-subdir-exists component-dir "slime")))
+         (haskell-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "haskell-mode")))
 	 (openmcl-dir      (if *test?* component-dir (ensure-subdir-exists component-dir "OpenMCL")))
 	 ;;
 	 (generic-dirs     '("x-symbol"))
@@ -368,6 +369,8 @@
 			     "load-slime.lisp" 
 			     "sw-slime.el" 
 			     ))
+         ;;
+         (haskell-dirs     '("haskell-mode"))
 	 ;;
 	 (xeli-dirs        '("xeli"))
 	 (xeli-files	   '("load.el"))
@@ -390,8 +393,10 @@
          (Distribution::*ignored-types*
           (if *copy-elc-files?* Distribution::*ignored-types* (cons "elc" Distribution::*ignored-types*)))
 	 ;;
-	 (all-files        (append generic-files slime-files ilisp-files xeli-files openmcl-files ignored-files))
-	 (all-dirs         (append generic-dirs  slime-dirs  ilisp-dirs  xeli-dirs  openmcl-dirs  ignored-dirs))
+	 (all-files        (append generic-files slime-files ilisp-files xeli-files
+                                   openmcl-files ignored-files))
+	 (all-dirs         (append generic-dirs  slime-dirs  haskell-dirs ilisp-dirs  xeli-dirs
+                                   openmcl-dirs  ignored-dirs))
 	 )
 
 
@@ -456,6 +461,10 @@
 			(merge-pathnames slime-dir                        source-file))
 	(copy-dist-file (merge-pathnames swank-loader::*fasl-directory*   fasl-file)
 			(merge-pathnames slime-dir                        fasl-file)))
+
+      (dolist (dir haskell-dirs)
+	(copy-dist-directory (extend-directory source-dir dir)
+			     (extend-directory haskell-dir  dir)))
       )
 
     ;; Ilisp
