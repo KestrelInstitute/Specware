@@ -21,11 +21,11 @@
 (push (concat *specware-emacs* "slime/")
       load-path)
 
-(push (concat *specware-emacs* "haskell/")
+(push (concat *specware-emacs* "haskell-mode/")
       load-path)
 
 (unless (featurep 'haskell-mode-autoloads)
-  (load (concat *specware-emacs* "haskell/auto-autoloads")))
+  (load (concat *specware-emacs* "haskell-mode/auto-autoloads")))
 
 ;; Need in XEmacs version 21.5 for x-symbol
 (when (and (featurep 'mule) (fboundp 'define-specifier-tag))
