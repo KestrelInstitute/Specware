@@ -27,6 +27,8 @@
 (unless (featurep 'haskell-mode-autoloads)
   (load (concat *specware-emacs* "haskell-mode/auto-autoloads")))
 
+(add-hook 'haskell-mode-hook 'turn-on-haskell-ghci)
+
 ;; Need in XEmacs version 21.5 for x-symbol
 (when (and (featurep 'mule) (fboundp 'define-specifier-tag))
   (define-specifier-tag 'mule-fonts))
