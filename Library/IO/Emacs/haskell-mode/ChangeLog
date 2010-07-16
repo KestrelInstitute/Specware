@@ -1,0 +1,87 @@
+2004-06-16  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.07 released.
+
+2004-05-14  Jerry James  <james@xemacs.org>
+
+	* Sync with upstream 1.45.
+
+2003-10-31  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.06 released.
+
+2003-03-09  Ben Wing  <ben@xemacs.org>
+
+	* Makefile:
+	Delete explicit compile:: and binkit: rules.
+	Don't add custom-load.elc to the list of generated elc's.
+
+2003-01-13  Rendhalver [Peter Brown]  <rendhalver@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.05 released.
+
+2003-01-08  Ville Skyttä  <scop@xemacs.org>
+
+	* Sync with upstream 1.44.
+
+2003-01-06  Ville Skyttä  <scop@xemacs.org>
+
+	* haskell-mode.el: Make auto-mode-alist modifications autoload-only.
+
+2002-11-29  Ben Wing  <ben@xemacs.org>
+
+	* .cvsignore: Remove files now handled automatically by CVS.
+	* Makefile: Use `compile' instead of hard-coded `all'.
+
+2002-10-20  Ville Skyttä  <scop@xemacs.org>
+
+	* Makefile (MAINTAINER): Change to XEmacs Development Team.
+	* haskell-mode.el: Update my mail address.
+	* haskell-doc.el: Ditto.
+
+2002-10-15  Ville Skyttä  <scop@xemacs.org>
+
+	* Makefile (srckit): Remove.
+
+2002-05-09  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.04 released.
+
+2002-05-07  Ville Skyttä  <scop@xemacs.org>
+
+	* Makefile (PRELOADS): Cleanup, remove ./'s.
+
+2002-05-07  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.03 released.
+
+2002-05-04  Stephen J. Turnbull  <stephen@xemacs.org>
+
+       * Makefile (REQUIRES): Add edit-utils.
+
+2002-04-30  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.02 released.
+
+2002-04-26  Ville Skyttä  <scop@xemacs.org>
+
+	* Makefile (MAINTAINER): C'est moi.
+	* haskell-mode.el (haskell-version): The correct version is 1.43.
+
+2002-04-24  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.01 released.
+
+2002-04-24  Ville Skyttä  <scop@xemacs.org>
+
+	* Sync with upstream version 1.43 (no functional changes).
+
+2002-04-24  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (HTML_FILES): Remove.
+	(HTML_DEP): Ditto.
+	(DATA_FILES): Move *.html from above to here.
+
+2002-04-23  Ville Skyttä  <scop@xemacs.org>
+
+	* XEmacs package created.

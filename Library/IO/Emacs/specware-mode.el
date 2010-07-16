@@ -8,7 +8,7 @@
 ;; be Specware source, so put their buffers into specware-mode automatically
 
 ;;; (setq auto-mode-alist
-;;;       (cons '("\\.sl$" . specware-mode) auto-mode-alist))
+;;;       (cons '("\\.sw$" . specware-mode) auto-mode-alist))
 
 ;; Here's an example of setting things up in the sw:specware-mode-hook:
 
