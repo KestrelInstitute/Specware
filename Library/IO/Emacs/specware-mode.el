@@ -2225,6 +2225,8 @@ With an argument, it doesn't convert imports."
 
 (let ((path (format (if (eq window-system 'mswindows) "-i.;%s/Library/Haskell" "-i.:%s/Library/Haskell")
                     (getenv "SPECWARE4"))))
+  (unless (boundp 'haskell-ghci-program-args)
+    (setq haskell-ghci-program-args nil))
   (unless (member path haskell-ghci-program-args)
     (push path haskell-ghci-program-args)))
 
