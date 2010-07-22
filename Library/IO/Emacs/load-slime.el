@@ -25,9 +25,7 @@
       load-path)
 
 (unless (featurep 'haskell-mode-autoloads)
-  (load (concat *specware-emacs* "haskell-mode/auto-autoloads")))
-
-(add-hook 'haskell-mode-hook 'turn-on-haskell-ghci)
+  (load (concat *specware-emacs* "haskell-mode/haskell-site-file")))
 
 ;; Need in XEmacs version 21.5 for x-symbol
 (when (and (featurep 'mule) (fboundp 'define-specifier-tag))

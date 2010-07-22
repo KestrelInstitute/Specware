@@ -2228,7 +2228,10 @@ With an argument, it doesn't convert imports."
   (unless (boundp 'haskell-ghci-program-args)
     (setq haskell-ghci-program-args nil))
   (unless (member path haskell-ghci-program-args)
-    (push path haskell-ghci-program-args)))
+    (push path haskell-ghci-program-args))
+  ;; New interface
+  (unless nil; (boundp 'haskell-program-name)
+    (setq haskell-program-name (concat "ghci " path))))
 
 ;; License display and acceptance
 (defvar sw:license-accepted nil)
