@@ -136,33 +136,8 @@ and `unicode'."
               ;; code assumes that such ambiguity doesn't happen :-(
               (cons "forall" (make-char 'japanese-jisx0208 34 79))))
    ;; Or a unicode font.
-   (and (fboundp 'decode-char)
-	(memq haskell-font-lock-symbols '(t unicode))
-	(list (cons "not" (decode-char 'ucs 172))
-              (cons "->" (decode-char 'ucs 8594))
-	      (cons "<-" (decode-char 'ucs 8592))
-	      (cons "=>" (decode-char 'ucs 8658))
-              (cons "()" (decode-char 'ucs #X2205))
-              (cons "==" (decode-char 'ucs #X2261))
-              (cons "/=" (decode-char 'ucs #X2262))
-              (cons ">=" (decode-char 'ucs #X2265))
-              (cons "<=" (decode-char 'ucs #X2264))
-              (cons "!!" (decode-char 'ucs #X203C))
-              (cons "&&" (decode-char 'ucs #X2227))
-              (cons "||" (decode-char 'ucs #X2228))
-              (cons "sqrt" (decode-char 'ucs #X221A))
-              (cons "undefined" (decode-char 'ucs #X22A5))
-              (cons "pi" (decode-char 'ucs #X3C0))
-              (cons "~>" (decode-char 'ucs 8669)) ;; Omega language
-              ;; (cons "~>" (decode-char 'ucs 8605)) ;; less desirable
-              (cons "-<" (decode-char 'ucs 8610)) ;; Paterson's arrow syntax
-              ;; (cons "-<" (decode-char 'ucs 10521)) ;; nicer but uncommon
-	      (cons "::" (decode-char 'ucs 8759))
-	      (list "." (decode-char 'ucs 8728) ; (decode-char 'ucs 9675)
-                    ;; Need a predicate here to distinguish the . used by
-                    ;; forall <foo> . <bar>.
-                    'haskell-font-lock-dot-is-not-composition)
-              (cons "forall" (decode-char 'ucs 8704)))))
+   ;; Causes problems in old xemacs
+ )
   "Alist mapping Haskell symbols to chars.
 Each element has the form (STRING . CHAR) or (STRING CHAR PREDICATE).
 STRING is the Haskell symbol.
