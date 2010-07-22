@@ -162,7 +162,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
     case 0
      hence "\<forall>i. f1 i = None"
       by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-     with `f1 definedOnInitialSegmentOfLength n1` have "List__list f1 = []"
+     with `f1 definedOnInitialSegmentOfLength 0` have "List__list f1 = []"
       by (auto simp add: List__list.simps)
      with `List__list f1 = List__list f2` have "List__list f2 = []" by auto
      have "f2 0 = None"
@@ -193,7 +193,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
      hence "\<exists>x. f1 0 = Some x"
       by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      then obtain x where "f1 0 = Some x" by auto
-     with `f1 definedOnInitialSegmentOfLength n1`
+     with `f1 definedOnInitialSegmentOfLength Suc n`
      have "List__list f1 = x # List__list (\<lambda>i. f1 (i + 1))" by auto
      with `List__list f1 = List__list f2`
      have "List__list f2 = x # List__list (\<lambda>i. f1 (i + 1))" by auto
@@ -218,8 +218,7 @@ proof (auto simp add: Function__bijective_p__stp_def)
       and "List__list (\<lambda>i. f1 (i + 1)) =
            List__list (\<lambda>i. f2 (i + 1))"
       by auto
-     from `Suc n = n1`
-          `f1 definedOnInitialSegmentOfLength n1`
+     from `f1 definedOnInitialSegmentOfLength Suc n`
      have "(\<lambda>i. f1 (i + 1)) definedOnInitialSegmentOfLength n"
       by (auto simp add: List__definedOnInitialSegmentOfLength_def)
      from `f2 definedOnInitialSegmentOfLength n2`

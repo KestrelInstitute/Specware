@@ -712,6 +712,50 @@ defs  fun_left_comm_on_def:
   "fun_left_comm_on f A 
      \<equiv> \<forall>x y z. x\<in>A \<and> y\<in>A  \<longrightarrow>  f x (f y z) = f y (f x z)"
 
+(* Next 3 removed from Isabelle2009-2 Finite_Set.thy 
+   Ideally we should update our proof to be similar to the new ones in that theory *)
+lemma image_less_Suc: "h ` {i. i < Suc m} = insert (h m) (h ` {i. i < m})"
+  by (auto simp add: less_Suc_eq) 
+
+lemma insert_image_inj_on_eq:
+     "[|insert (h m) A = h ` {i. i < Suc m}; h m \<notin> A; 
+        inj_on h {i. i < Suc m}|] 
+      ==> A = h ` {i. i < m}"
+apply (auto simp add: image_less_Suc inj_on_def)
+apply (blast intro: less_trans) 
+done
+
+lemma insert_inj_onE:
+  assumes aA: "insert a A = h`{i::nat. i<n}" and anot: "a \<notin> A" 
+      and inj_on: "inj_on h {i::nat. i<n}"
+  shows "\<exists>hm m. inj_on hm {i::nat. i<m} & A = hm ` {i. i<m} & m < n"
+proof (cases n)
+  case 0 thus ?thesis using aA by auto
+next
+  case (Suc m)
+  have nSuc: "n = Suc m" by fact
+  have mlessn: "m<n" by (simp add: nSuc)
+  from aA obtain k where hkeq: "h k = a" and klessn: "k<n" by (blast elim!: equalityE)
+  let ?hm = "Fun.swap k m h"
+  have inj_hm: "inj_on ?hm {i. i < n}" using klessn mlessn 
+    by (simp add: inj_on_swap_iff inj_on)
+  show ?thesis
+  proof (intro exI conjI)
+    show "inj_on ?hm {i. i < m}" using inj_hm
+      by (auto simp add: nSuc less_Suc_eq intro: subset_inj_on)
+    show "m<n" by (rule mlessn)
+    show "A = ?hm ` {i. i < m}" 
+    proof (rule insert_image_inj_on_eq)
+      show "inj_on (Fun.swap k m h) {i. i < Suc m}" using inj_hm nSuc by simp
+      show "?hm m \<notin> A" by (simp add: swap_def hkeq anot) 
+      show "insert (?hm m) A = ?hm ` {i. i < Suc m}"
+        using aA hkeq nSuc klessn
+        by (auto simp add: swap_def image_less_Suc fun_upd_image 
+                           less_Suc_eq inj_on_image_set_diff [OF inj_on])
+    qed
+  qed
+qed
+
 lemma fold_graph_determ_aux:
   "fun_left_comm_on f A  \<Longrightarrow> A = h`{i::nat. i<n} \<Longrightarrow> inj_on h {i. i<n}
    \<Longrightarrow> fold_graph f z A x \<Longrightarrow> fold_graph f z A x'

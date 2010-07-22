@@ -347,10 +347,8 @@ theorem Integer__gcd_of_not_both_zero:
        \<and> (\<forall>(w::int). 
             w zdvd x \<and> w zdvd y \<longrightarrow> int (igcd(x, y)) \<ge> w)))"
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
-  apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)
-  apply(metis abs_ge_self abs_ge_zero abs_minus_cancel gcd_pos_int minus_le_iff
-              neg_equal_zero zgcd_0 zgcd_specware_def zle_antisym zless_le)+
-  done
+apply (metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
+by (metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd int_eq_0_conv zgcd_specware_def)
 theorem Integer__gcd_of_zero_zero_is_zero: 
   "(igcd(0, 0)) = 0"
   by auto
@@ -415,12 +413,12 @@ theorem Integer__divT_Obligation_the:
  apply(rule_tac a="q * sign (i*j)" in ex1I, 
        simp_all add: abs_mult abs_idempotent)
  apply(rule_tac t=q and s="x * (sign i * sign j)" in subst, clarify)
- defer apply (simp add: ring_simps mult_sign_self)
+ defer apply (simp add: algebra_simps mult_sign_self)
  apply (drule_tac x="x * (sign i * sign j)" in spec, erule mp)
  apply (subgoal_tac "i \<noteq> 0")
  apply (simp add: abs_mul,
         simp only: sign_pos_iff [symmetric],
-        simp add: ring_simps mult_sign_self)
+        simp add: algebra_simps mult_sign_self)
  apply (auto)
   done
 theorem Integer__divT__def: 
@@ -610,12 +608,12 @@ theorem Integer__divC_of_negated_dividend:
 theorem Integer__divides_iff_modC_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modC j = 0)"
    apply(auto simp add: modC_def divC_def 
-                      dvd_eq_mod_eq_0 ring_simps div_bounds_neq)
+                      dvd_eq_mod_eq_0 algebra_simps div_bounds_neq)
   done
 theorem Integer__modC_less_than_divisor_in_abs: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> zabs (i modC j) < zabs j"
    apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
- apply (cases "j>0", auto simp add: ring_simps not_less_iff_gr_or_eq)
+ apply (cases "j>0", auto simp add: algebra_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
         simp add: div_via_mod pos_mod_sign less_le)
  apply (frule_tac i=i in div_neg_up_bound2, 
@@ -628,19 +626,19 @@ theorem Integer__modC_of_negated_divisor:
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    i modC - j 
      = i modC j + j * (if j zdvd i then 0 else 1)"
-   apply(auto simp add: modC_def Integer__divC_of_negated_divisor ring_simps)
+   apply(auto simp add: modC_def Integer__divC_of_negated_divisor algebra_simps)
   done
 theorem Integer__modC_of_negated_dividend: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    - i modC j 
      = - (i modC j) - j * (if j zdvd i then 0 else 1)"
-   apply(auto simp add: modC_def Integer__divC_of_negated_dividend ring_simps)
+   apply(auto simp add: modC_def Integer__divC_of_negated_dividend algebra_simps)
   done
 theorem Integer__sign_of_non_zero_modC: 
   "\<lbrakk>j \<noteq> 0; i modC j \<noteq> 0\<rbrakk> \<Longrightarrow> 
    sign (i modC j) = - (sign j)"
    apply (simp add: Integer__divides_iff_modC_0 [symmetric],
-        auto simp add: modC_def divC_def ring_simps neq_iff div_bounds)
+        auto simp add: modC_def divC_def algebra_simps neq_iff div_bounds)
   done
 theorem Integer__divR_Obligation_the: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> 
@@ -690,7 +688,7 @@ theorem Integer__divR_of_negated_dividend:
   done
 theorem Integer__divides_iff_modR_0: 
   "\<lbrakk>j \<noteq> 0\<rbrakk> \<Longrightarrow> j zdvd i = (i modR j = 0)"
-  apply (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
+  apply (auto simp add: modR_def divR_def algebra_simps div_eq_if_dvd, 
          simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
   done
 consts Integer__euclidianDivision_p :: "int \<times> Integer__Int0 \<times> int \<times> int \<Rightarrow> bool"

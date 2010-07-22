@@ -397,9 +397,9 @@ theorem gcd_of_not_both_zero is
     (fa(w:Int) w divides x && w divides y => gcd(x,y) >= w)
 proof Isa
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
-  apply(rule zdvd_imp_le, auto simp add: zgcd_greatest_iff)
-  apply(metis abs_ge_self abs_ge_zero abs_minus_cancel gcd_pos_int minus_le_iff
-              neg_equal_zero zgcd_0 zgcd_specware_def zle_antisym zless_le)+
+  apply(metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
+  apply(metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd
+              int_eq_0_conv zgcd_specware_def)
 end-proof
 
 theorem gcd_of_zero_zero_is_zero is
@@ -499,12 +499,12 @@ proof Isa divT_Obligation_the
  apply(rule_tac a="q * sign (i*j)" in ex1I, 
        simp_all add: abs_mult abs_idempotent)
  apply(rule_tac t=q and s="x * (sign i * sign j)" in subst, clarify)
- defer apply (simp add: ring_simps mult_sign_self)
+ defer apply (simp add: algebra_simps mult_sign_self)
  apply (drule_tac x="x * (sign i * sign j)" in spec, erule mp)
  apply (subgoal_tac "i \<noteq> 0")
  apply (simp add: abs_mul,
         simp only: sign_pos_iff [symmetric],
-        simp add: ring_simps mult_sign_self)
+        simp add: algebra_simps mult_sign_self)
  apply (auto)
 end-proof
 proof Isa divT__def1
@@ -825,7 +825,7 @@ theorem divides_iff_modC_0 is
   fa (i:Int, j:Int0) j divides i <=> i modC j = 0
 proof Isa
  apply(auto simp add: modC_def divC_def 
-                      dvd_eq_mod_eq_0 ring_simps div_bounds_neq)
+                      dvd_eq_mod_eq_0 algebra_simps div_bounds_neq)
 end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
@@ -834,7 +834,7 @@ theorem modC_less_than_divisor_in_abs is
   fa (i:Int, j:Int0) abs (i modC j) < abs j
 proof Isa
  apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
- apply (cases "j>0", auto simp add: ring_simps not_less_iff_gr_or_eq)
+ apply (cases "j>0", auto simp add: algebra_simps not_less_iff_gr_or_eq)
  apply (frule_tac i=i in div_pos_low_bound2, 
         simp add: div_via_mod pos_mod_sign less_le)
  apply (frule_tac i=i in div_neg_up_bound2, 
@@ -847,7 +847,7 @@ theorem modC_of_negated_divisor is
   fa (i:Int, j:Int0) i modC -j = i modC j
                                  + j * (if j divides i then 0 else 1)
 proof Isa
- apply(auto simp add: modC_def Integer__divC_of_negated_divisor ring_simps)
+ apply(auto simp add: modC_def Integer__divC_of_negated_divisor algebra_simps)
 end-proof
 
 (* Negating the dividend negates the remainder and decreases it by the divisor
@@ -857,7 +857,7 @@ theorem modC_of_negated_dividend is
   fa (i:Int, j:Int0) -i modC j = - (i modC j)
                                  - j * (if j divides i then 0 else 1)
 proof Isa
- apply(auto simp add: modC_def Integer__divC_of_negated_dividend ring_simps)
+ apply(auto simp add: modC_def Integer__divC_of_negated_dividend algebra_simps)
 end-proof
 
 (* If non-zero, the sign of the reminder is the opposite of the divisor's. *)
@@ -866,7 +866,7 @@ theorem sign_of_non_zero_modC is
   fa (i:Int, j:Int0) (i modC j) ~= 0 => sign (i modC j) = - sign j
 proof Isa
  apply (simp add: Integer__divides_iff_modC_0 [symmetric],
-        auto simp add: modC_def divC_def ring_simps neq_iff div_bounds)
+        auto simp add: modC_def divC_def algebra_simps neq_iff div_bounds)
 end-proof
 
 (* Yet another possible way to define integer division is by rounding (hence the
@@ -959,7 +959,7 @@ end-proof
 theorem divides_iff_modR_0 is
   fa (i:Int, j:Int0) j divides i <=> i modR j = 0
 proof Isa
-  apply (auto simp add: modR_def divR_def ring_simps div_eq_if_dvd, 
+  apply (auto simp add: modR_def divR_def algebra_simps div_eq_if_dvd, 
          simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
 end-proof
 
