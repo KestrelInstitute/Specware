@@ -65,7 +65,7 @@
         (if i
             (concatenate 'string (string-upcase (subseq rem-dir 0 i)) ":/" (subseq rem-dir (+ i 1)))
             rem-dir))
-      (if (and (> (length dir-str) 6) (string= dir-str "/home/" :end1 6))
+      (if (and cygwin? (> (length dir-str) 6) (string= dir-str "/home/" :end1 6))
           (concatenate 'string "C:/cygwin" dir-str)
           dir-str)))
 
