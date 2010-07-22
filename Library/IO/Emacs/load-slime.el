@@ -24,7 +24,7 @@
 (push (concat *specware-emacs* "haskell-mode/")
       load-path)
 
-(unless (featurep 'haskell-mode-autoloads)
+(unless (fboundp 'haskell-mode)
   (load (concat *specware-emacs* "haskell-mode/haskell-site-file")))
 
 ;; Need in XEmacs version 21.5 for x-symbol
