@@ -334,7 +334,7 @@ If prefix arg \\[universal-argument] is given, just reload the previous file."
          proc (if reload ":reload"
                 (concat ":load \""
                         ;; Espace the backslashes that may occur in file names.
-                        (replace-regexp-in-string "[\\\"]" "\\\\\&" file)
+                        (replace-regexp-in-string "[\\\"]" "\\\\\\&" file)
                         "\"")))
 	;; Move the parsing-end marker *after* sending the command so
 	;; that it doesn't point just to the insertion point.
