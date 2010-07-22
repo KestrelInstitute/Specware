@@ -1,23 +1,22 @@
-;; haskell-hugs.el --- simplistic interaction mode with a
+;;; haskell-hugs.el --- simplistic interaction mode with a
+
+;; Copyright 2004, 2005, 2006, 2007  Free Software Foundation, Inc.
+;; Copyright 1998, 1999  Guy Lapalme
+
 ;; Hugs interpreter for Haskell developped by 
 ;;    The University of Nottingham and Yale University, 1994-1997.
 ;;    Web: http://www.haskell.org/hugs.
 ;; In standard Emacs terminology, this would be called
 ;;    inferior-hugs-mode
-;;    
-;; Copyright 1999 Guy Lapalme
-
-;; Author:1998, 1999 Guy Lapalme <lapalme@iro.umontreal.ca>
 
 ;; Keywords: Hugs inferior mode, Hugs interaction mode
-;; Version: 1.1
-;; URL: http://www.iro.umontreal.ca/~lapalme/Hugs-interaction.html
+;; URL: http://cvs.haskell.org/cgi-bin/cvsweb.cgi/fptools/CONTRIB/haskell-modes/emacs/haskell-hugs.el?rev=HEAD
 
-;;; This file is not part of GNU Emacs.
+;; This file is not part of GNU Emacs.
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 
 ;; This file is distributed in the hope that it will be useful,
@@ -38,7 +37,7 @@
 ;; To send a Haskell buffer to another buffer running a Hugs interpreter
 ;; The functions are adapted from  the Hugs Mode developed by
 ;;         Chris Van Humbeeck <chris.vanhumbeeck@cs.kuleuven.ac.be>
-;; which can be obtained at:
+;; which used to be available at:
 ;; http://www-i2.informatik.rwth-aachen.de/Forschung/FP/Haskell/hugs-mode.el
 ;;
 ;; Installation:
@@ -47,7 +46,7 @@
 ;;        Moss&Thorn <http://www.haskell.org/haskell-mode>
 ;; add this to .emacs:
 ;;
-;;    (add-hook haskell-mode-hook 'turn-on-haskell-hugs)
+;;    (add-hook 'haskell-mode-hook 'turn-on-haskell-hugs)
 ;;
 ;; Customisation:
 ;;       The name of the hugs interpreter is in variable
@@ -88,25 +87,19 @@ Maps the followind commands in the haskell keymap.
        to send the :reload command to Hugs without saving the buffer.
      \\[haskell-hugs-show-hugs-buffer]
        to show the Hugs buffer and go to it."
-  (interactive)
   (local-set-key "\C-c\C-s" 'haskell-hugs-start-process)
   (local-set-key "\C-c\C-l" 'haskell-hugs-load-file)
   (local-set-key "\C-c\C-r" 'haskell-hugs-reload-file)
-  (local-set-key "\C-c\C-b" 'haskell-hugs-show-hugs-buffer)
-  )
+  (local-set-key "\C-c\C-b" 'haskell-hugs-show-hugs-buffer))
 
 (defun turn-off-haskell-hugs ()
   "Turn off Haskell interaction mode with a Hugs interpreter within a buffer."
-  (interactive)
   (local-unset-key  "\C-c\C-s")
   (local-unset-key  "\C-c\C-l")
   (local-unset-key  "\C-c\C-r")
-  (local-unset-key  "\C-c\C-b")
-  )
+  (local-unset-key  "\C-c\C-b"))
 
-(defvar haskell-hugs-mode-map nil)
-
-(defun haskell-hugs-mode ()
+(define-derived-mode haskell-hugs-mode comint-mode "Haskell Hugs"
 ;; called by haskell-hugs-start-process,
 ;; itself called by haskell-hugs-load-file
 ;; only when the file is loaded the first time
@@ -131,15 +124,6 @@ imitating normal Unix input editing.
 subjob if any.
 \\[comint-stop-subjob] stops, likewise.
  \\[comint-quit-subjob] sends quit signal."
-  (interactive)
-  (comint-mode)
-  (setq major-mode 'haskell-hugs-mode)
-  (setq mode-name "Haskell Hugs")
-  (if haskell-hugs-mode-map
-      nil
-    (setq haskell-hugs-mode-map (copy-keymap comint-mode-map))
-    )
-  (use-local-map haskell-hugs-mode-map)
   )
 
 ;; Hugs-interface
@@ -152,9 +136,6 @@ subjob if any.
 
 (defvar haskell-hugs-process-buffer nil
   "*Buffer used for communication with Hugs subprocess for current buffer.")
-
-(defvar haskell-hugs-last-loaded-file nil
-  "The last file loaded into the Hugs process.")
 
 (defcustom haskell-hugs-program-name "hugs"
   "*The name of the command to start the Hugs interpreter."
@@ -171,6 +152,8 @@ subjob if any.
 
 (defvar haskell-hugs-send-end nil
   "Position of the end of the last send command.")
+
+(defalias 'run-hugs 'haskell-hugs-start-process)
 
 (defun haskell-hugs-start-process (arg)
   "Start a Hugs process and invokes `haskell-hugs-hook' if not nil.
@@ -190,11 +173,11 @@ Prompts for a list of args if called with an argument."
   ;; Select Hugs buffer temporarily
   (set-buffer haskell-hugs-process-buffer)
   (haskell-hugs-mode)
-  (make-variable-buffer-local 'shell-cd-regexp)
+  (make-local-variable 'shell-cd-regexp)
   (make-local-variable 'shell-dirtrackp)
   (setq shell-cd-regexp         ":cd")
   (setq shell-dirtrackp         t)
-  (setq comint-input-sentinel   'shell-directory-tracker)
+  (add-hook 'comint-input-filter-functions 'shell-directory-tracker nil 'local)
                                 ; ? or  module name in Hugs 1.4
   (setq comint-prompt-regexp  "^\? \\|^[A-Z][_a-zA-Z0-9\.]*> ")
     ;; comint's history syntax conflicts with Hugs syntax, eg. !!
@@ -205,10 +188,11 @@ Prompts for a list of args if called with an argument."
 
 (defun haskell-hugs-wait-for-output ()
   "Wait until output arrives and go to the last input."
-  (while (progn			
+  (while (progn
 	   (goto-char comint-last-input-end)
-	   (not (re-search-forward comint-prompt-regexp nil t)))
-    (accept-process-output haskell-hugs-process)))
+	   (and
+	    (not (re-search-forward comint-prompt-regexp nil t))
+	    (accept-process-output haskell-hugs-process)))))
 
 (defun haskell-hugs-send (&rest string)
   "Send `haskell-hugs-process' the arguments (one or more strings).
@@ -230,40 +214,36 @@ loaded: as a new file (\":load \") or as a reload (\":reload \").
 If the second argument CD is non-nil, change the Haskell-Hugs process to the
 current buffer's directory before loading the file.
 
-If the variable \"haskell-hugs-command\" is set then its value will be sent to
+If the variable `haskell-hugs-command' is set then its value will be sent to
 the Hugs process after the load command.  This can be used for a
 top-level expression to evaluate."
-  (let (file)
-    (hack-local-variables);; In case they've changed
-    (save-buffer)
-    (if (string-equal load-command ":load ")
-        (progn
-          (setq file (buffer-file-name))
-          (setq haskell-hugs-last-loaded-file file))
-      (setq file ""))
-    (let ((dir (expand-file-name default-directory))
-          (cmd (and (boundp 'haskell-hugs-command)
-                    haskell-hugs-command
-                    (if (stringp haskell-hugs-command)
-                        haskell-hugs-command
-                      (symbol-name haskell-hugs-command)))))
-      (if (and haskell-hugs-process-buffer
-               (eq (process-status haskell-hugs-process) 'run))
-	  ;; Ensure the Hugs buffer is selected.
-	  (set-buffer haskell-hugs-process-buffer)
-        ;; Start Haskell-Hugs process.
-        (haskell-hugs-start-process nil))
+  (hack-local-variables) ;; In case they've changed
+  (save-buffer)
+  (let ((file (if (string-equal load-command ":load ")
+		  (concat "\"" buffer-file-name "\"")
+		""))
+	(dir (expand-file-name default-directory))
+	(cmd (and (boundp 'haskell-hugs-command)
+		  haskell-hugs-command
+		  (if (stringp haskell-hugs-command)
+		      haskell-hugs-command
+		    (symbol-name haskell-hugs-command)))))
+    (if (and haskell-hugs-process-buffer
+	     (eq (process-status haskell-hugs-process) 'run))
+	;; Ensure the Hugs buffer is selected.
+	(set-buffer haskell-hugs-process-buffer)
+      ;; Start Haskell-Hugs process.
+      (haskell-hugs-start-process nil))
  
-      (if cd (haskell-hugs-send (concat ":cd " dir)))
-      ;; Wait until output arrives and go to the last input.
-      (haskell-hugs-wait-for-output)
-      (haskell-hugs-send load-command file)
-      ;; Error message search starts from last load command.
-      (setq haskell-hugs-load-end (marker-position comint-last-input-end))
-      (if cmd (haskell-hugs-send cmd))
-      ;; Wait until output arrives and go to the last input.
-      (haskell-hugs-wait-for-output)))
-  )
+    (if cd (haskell-hugs-send (concat ":cd " dir)))
+    ;; Wait until output arrives and go to the last input.
+    (haskell-hugs-wait-for-output)
+    (haskell-hugs-send load-command file)
+    ;; Error message search starts from last load command.
+    (setq haskell-hugs-load-end (marker-position comint-last-input-end))
+    (if cmd (haskell-hugs-send cmd))
+    ;; Wait until output arrives and go to the last input.
+    (haskell-hugs-wait-for-output)))
 
 (defun haskell-hugs-load-file (cd)
   "Save a hugs buffer file and load its file.
@@ -329,3 +309,8 @@ error line otherwise show the Hugs buffer."
       (haskell-hugs-start-process nil))
   (pop-to-buffer  haskell-hugs-process-buffer)
   )
+
+(provide 'haskell-hugs)
+
+;; arch-tag: c2a621e9-d743-4361-a459-983fbf1d4589
+;;; haskell-hugs.el ends here
