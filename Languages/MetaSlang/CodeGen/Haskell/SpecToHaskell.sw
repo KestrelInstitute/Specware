@@ -1486,7 +1486,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op makeOperator (c:Context) (qid as Qualified(_, id): QualifiedId): String =
    let nm = qidToHaskellString c qid false in
-   if identifier? id
+   if identifier? nm
      then "`"^nm^"`"
      else nm
 
@@ -2342,10 +2342,14 @@ op  ppIdStr (id: String) (up?: Bool): String =
   case explode(id) of
     | [] -> "e"
     | c0 :: r_chars ->
+      if c0 = #- && r_chars ~= []
+        then ppIdStr ("dash" ^ implode r_chars) up?
+      else
       let chars = (if up? then toUpperCase c0 else toLowerCase c0) :: r_chars in
       let def att(id, s) = (if id = "" then "e" else id) ^ s
       in
       let id = foldl (\_lambda(id, #?) -> att(id, "_p")
+                      | (id, #-) | r_chars ~= [] -> id ^ "dash"
                       | (id, c) -> id ^ show c) "" chars
       in id
 
