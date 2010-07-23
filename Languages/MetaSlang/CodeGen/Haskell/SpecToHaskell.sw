@@ -2339,17 +2339,14 @@ op infixDefId(id: String): String =
   in id
 
 op  ppIdStr (id: String) (up?: Bool): String =
+  let id = replaceString(id, "--", "-^-^") in
   case explode(id) of
     | [] -> "e"
     | c0 :: r_chars ->
-      if c0 = #- && r_chars ~= []
-        then ppIdStr ("dash" ^ implode r_chars) up?
-      else
       let chars = (if up? then toUpperCase c0 else toLowerCase c0) :: r_chars in
       let def att(id, s) = (if id = "" then "e" else id) ^ s
       in
       let id = foldl (\_lambda(id, #?) -> att(id, "_p")
-                      | (id, #-) | r_chars ~= [] -> id ^ "dash"
                       | (id, c) -> id ^ show c) "" chars
       in id
 
