@@ -1,3 +1,5 @@
+    ("gen-haskell" . "[unit term] Generate Haskell code for unit.")
+    ("gen-h" . "[unit term] Generate Haskell code theory for unit.")
 (defpackage :TypeObligations)
 (defpackage :Prover)
 (defpackage :IsaTermPrinter)
@@ -32,6 +34,8 @@
     ("gen-obligs" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
     ("gen-haskell" . "[unit term] Generate Haskell code for unit.")
     ("gen-h" . "[unit term] Generate Haskell code theory for unit.")
+    ("gen-haskell-top" . "[unit term] Generate Haskell code for unit slicing imports.")
+    ("gen-ht" . "[unit term] Generate Haskell code theory for unit slicing imports.")
     
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
@@ -351,7 +355,17 @@
 				      nil)))))
 	      (unless (null uid)
 		(setq cl-user::*last-unit-Id-_loaded* uid)
-		(Haskell::printUIDtoThyFile-2 uid t))))
+		(Haskell::printUIDtoThyFile-2 uid nil t))))
+           ((gen-haskell-top gen-ht)
+	    (let ((uid (if (not (null argstr))
+			   argstr
+			   (if (not (null cl-user::*last-unit-Id-_loaded*))
+			       cl-user::*last-unit-Id-_loaded*
+			       (progn (format t "No previous unit processed~%")
+				      nil)))))
+	      (unless (null uid)
+		(setq cl-user::*last-unit-Id-_loaded* uid)
+		(Haskell::printUIDtoThyFile-2 uid t t))))
 	   (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
 	   (proofcheck (cl-user::swpc argstr))
 	   (pc        (cl-user::swpc argstr))
