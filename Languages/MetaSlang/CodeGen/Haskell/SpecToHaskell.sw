@@ -14,6 +14,7 @@ Haskell qualifying spec
  import /Languages/MetaSlang/Transformations/Simplify
  import /Languages/MetaSlang/Transformations/CurryUtils
  import /Languages/MetaSlang/Transformations/RenameBound
+ import /Languages/MetaSlang/Transformations/SliceSpec
 
  op useQualifiedNames?: Bool = false
  op simplify?: Boolean = false
@@ -21,7 +22,9 @@ Haskell qualifying spec
  type Pretty = PrettyPrint.Pretty
  type Pragma = String * String * String * Position
 
- type Context = {recursive?: Boolean,
+ type Context = {recursive?: Bool,
+                 top_spec?: Bool,
+                 slicing?: Bool,
                  spec_name: String,
 		 spec?: Option Spec,
                  qualifier?: Option String,
@@ -30,7 +33,7 @@ Haskell qualifying spec
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
                  newVarCount: Ref Nat,
-                 source_of_thy_morphism?: Boolean,
+                 source_of_thy_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * Sort),
                  polyEqualityFunInfo: AQualifierMap TyVars}
 
@@ -41,13 +44,13 @@ Haskell qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context \_rightarrow Spec
- def getSpec {recursive?=_, spec_name=_, spec? = Some spc, qualifier?=_,
+ def getSpec {recursive?=_, top_spec?=_, slicing?=_, spec_name=_, spec? = Some spc, qualifier?=_,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
               newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_}
    = spc
 
  op  getCurrentUID: Context \_rightarrow UnitId
- def getCurrentUID {recursive?=_, spec_name=_, spec?=_, qualifier?=_, currentUID = Some uid,
+ def getCurrentUID {recursive?=_, top_spec?=_, slicing?=_, spec_name=_, spec?=_, qualifier?=_, currentUID = Some uid,
                     trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
                     source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_} =
    uid
@@ -88,8 +91,8 @@ Haskell qualifying spec
 	else mainPath
 
 
-  op  printUIDtoThyFile: String \_times Boolean \_rightarrow String
-  def printUIDtoThyFile (uid_str, recursive?) =
+  op  printUIDtoThyFile: String \_times Bool \_times Bool \_rightarrow String
+  def printUIDtoThyFile (uid_str, slicing?, recursive?) =
     case Specware.evaluateUnitId uid_str of
       | Some val \_rightarrow
         (case uidNamesForValue val of
@@ -97,7 +100,7 @@ Haskell qualifying spec
 	   | Some (thy_nm, uidstr, uid) \_rightarrow
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
-	     let _ = toFile(fil_nm, showValue(val, recursive?, Some uid, Some thy_nm)) in
+	     let _ = toFile(fil_nm, showValue(val, true, slicing?, recursive?, Some uid, Some thy_nm, None)) in
 	     fil_nm)
       | _ \_rightarrow "Error: Unknown UID " ^ uid_str
 
@@ -132,24 +135,6 @@ Haskell qualifying spec
     if fileExists? fil_nm
       then deleteFile fil_nm
       else ()
-
-  op  ensureValuePrinted: Context \_rightarrow Value \_rightarrow String
-  def ensureValuePrinted c val =
-    case uidStringPairTermForValue val of
-      | None \_rightarrow "Unknown"
-      | Some ((thy_nm, fil_nm, hash_ext), uid, _) \_rightarrow
-        printValueIfNeeded(c, val, thy_nm, fil_nm, hash_ext, uid)
-
-  op printValueIfNeeded
-       (c: Context, val: Value, thy_nm: String, fil_nm: String, hash_ext: String, uid: UnitId)
-       : String =
-    let thy_fil_nm = fil_nm ^ hash_ext ^ ".hs" in
-    let sw_fil_nm = fil_nm ^ ".sw" in
-    let _ = if fileOlder?(sw_fil_nm, thy_fil_nm)
-              then ()
-            else toFile(thy_fil_nm,
-                        showValue(val, c.recursive?, Some uid, Some (thy_nm ^ hash_ext)))
-    in thy_nm
 
   op  uidNamesForValue: Value \_rightarrow Option (String * String * UnitId)
   def uidNamesForValue val =
@@ -270,12 +255,6 @@ Haskell qualifying spec
       | Some global_context \_rightarrow
         findUnitIdForUnit(val, global_context)
   
-  op  printUID : String \_times Boolean \_rightarrow ()
-  def printUID (uid, recursive?) =
-    case evaluateUnitId uid of
-      | Some val \_rightarrow toTerminal(showValue (val, recursive?, findUnitIdForUnitInCache val, None))
-      | _ \_rightarrow toScreen "<Unknown UID>"
-
   op findSpecQualifier(sc_tm: Term): Option String =
     case sc_tm of
       | (Qualify(_, qual), _) -> Some (thyName qual)
@@ -283,14 +262,16 @@ Haskell qualifying spec
 
   op dummySpecCalcTerm: Term = (Spec [], noPos)
 
-  op  showValue : Value \_times Boolean \_times Option UnitId \_times Option String \_rightarrow Text
-  def showValue (value, recursive?, uid, opt_nm) =
+  op  showValue : Value * Bool * Bool * Bool * Option UnitId * Option String * Option SpecElements -> Text
+  def showValue (value, top_spec?, slicing?, recursive?, uid, opt_nm, opt_els) =
     let (thy_nm, val_uid, sc_tm) =
         case uidStringPairTermForValue value of
           | Some ((thy_nm, _, hash_nm), uid, sc_tm) \_rightarrow (thy_nm ^ hash_nm, Some uid, sc_tm)
           | _ \_rightarrow ("", None, dummySpecCalcTerm)
     in
     let main_pp_val = ppValue {recursive? = recursive?,
+                               top_spec? = top_spec?,
+                               slicing? = slicing?,
 			       spec_name = case opt_nm of
                                             | Some nm \_rightarrow nm
                                             | None \_rightarrow thy_nm,
@@ -307,6 +288,7 @@ Haskell qualifying spec
                                typeNameInfo = [],
                                polyEqualityFunInfo = emptyAQualifierMap}
 			value
+                        opt_els
     in
     format(80, main_pp_val)
 
@@ -314,10 +296,12 @@ Haskell qualifying spec
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position \_rightarrow Spec
   %% --------------------------------------------------------------------------------
 
-  op  ppValue : Context \_rightarrow Value \_rightarrow Pretty
-  def ppValue c value =
+  op  ppValue : Context \_rightarrow Value \_rightarrow Option SpecElements \_rightarrow Pretty
+  def ppValue c value opt_els =
     case value of
-      | Spec spc \_rightarrow ppSpec c spc
+      | Spec spc \_rightarrow ppSpec c (case opt_els of
+                                          | Some els | c.slicing? -> spc << {elements = els}
+                                          | _ -> spc)
       | _ \_rightarrow prString "<Not a spec>"
  
   %% --------------------------------------------------------------------------------
@@ -366,18 +350,33 @@ Haskell qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
+  op topLevelOps(spc: Spec): QualifiedIds =
+    mapPartial (fn el ->
+                  case el of
+                    | Op(qid, _, _) -> Some qid
+                    | _ -> None)
+     spc.elements
+
+  op topLevelTypes(spc: Spec): QualifiedIds =
+    mapPartial (fn el ->
+                  case el of
+                    | Sort(qid, _) -> Some qid
+                    | SortDef(qid, _) -> Some qid
+                    | _ -> None)
+     spc.elements
+
   op nonExecBaseSpecs: List String = ["List", "String", "Integer"]
   op addExecutableDefs (spc: Spec, spec_name: String): Spec =
     if spec_name in? nonExecBaseSpecs
       then substBaseSpecs1(spc, ["/Library/Base/"^spec_name^"_Executable"])
       else spc
 
-  op  ppSpec: Context \_rightarrow Spec \_rightarrow Pretty
-  def ppSpec c spc =
+  op ppSpec (c: Context) (spc: Spec): Pretty =
     % let _ = writeLine("0:\n"^printSpec spc) in
     %% Get rid of non-haskell pragmas
     %% let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
+    let spc = if c.slicing? && c.top_spec? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)}
     in
@@ -432,14 +431,14 @@ Haskell qualifying spec
                   ++ pp_imports
 		  ++ [[ppSpecElements c spc (filter elementFilter spc.elements)]])
 
-  op  haskellElement?: SpecElement \_rightarrow Boolean
+  op  haskellElement?: SpecElement \_rightarrow Bool
   def haskellElement? elt =
     case elt of
       | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str \_rightarrow true
       | Pragma _ \_rightarrow false
       | _ \_rightarrow true
 
-  op  elementFilter: SpecElement \_rightarrow Boolean
+  op  elementFilter: SpecElement \_rightarrow Bool
   def elementFilter elt =
     case elt of
       | Import _ \_rightarrow false
@@ -485,7 +484,7 @@ Haskell qualifying spec
     let explicit_imports =
         mapPartial (\_lambda el \_rightarrow
 		     case el of
-		       | Import(imp_sc_tm, im_sp, _, _) \_rightarrow ppImport c imp_sc_tm im_sp
+		       | Import(imp_sc_tm, im_sp, red_els, _) \_rightarrow ppImport c imp_sc_tm im_sp red_els
 		       | _ \_rightarrow None)
            elems
     in
@@ -505,8 +504,8 @@ Haskell qualifying spec
       | (SortDef (type_id, _)) :: _ \_rightarrow Some type_id
       | _ :: r \_rightarrow firstTypeDef r
 
-  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow Option (Pretty * Pretty)
-  def ppImport c sc_tm spc =
+  op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Option (Pretty * Pretty)
+  def ppImport c sc_tm spc red_els =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None \_rightarrow Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
       | Some ((spc_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
@@ -515,10 +514,10 @@ Haskell qualifying spec
           | _ \_rightarrow
         let _ = if c.recursive?
 	          then
-		    if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
+		    if (fileOlder?(sw_fil_nm, thy_fil_nm) && ~c.slicing?) || spc = getBaseSpec()
 		      then ()
 		    else toFile(thy_fil_nm,
-                                showValue(val, c.recursive?, Some uid, Some spc_nm))
+                                showValue(val, false, c.slicing?, c.recursive?, Some uid, Some spc_nm, Some red_els))
 		  else ()
 	in
         case spc_nm of
@@ -648,7 +647,7 @@ Haskell qualifying spec
    in
    subFromTo(s, 0, i+1) ^ "<" ^ subFromTo(s, i+2, j+1) ^ ">" ^ specwareToHaskellString(subFromTo(s, j+1, len))
 
-  op haskellPragma?(s: String): Boolean =
+  op haskellPragma?(s: String): Bool =
     let s = stripSpaces s in
     let len = length s in
     len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
@@ -664,7 +663,7 @@ Haskell qualifying spec
        Some(str::rst)
      | _ \_rightarrow None
 
- op controlPragma?(s: String): Boolean =
+ op controlPragma?(s: String): Bool =
    embed? Some (controlPragmaString s)
 
  op  stripSpaces(s: String): String =
@@ -677,7 +676,7 @@ Haskell qualifying spec
          | _ \_rightarrow s)
      | _ \_rightarrow s
 
- op namedPragma?(p: Pragma): Boolean =
+ op namedPragma?(p: Pragma): Bool =
    let (_, s, _, _) = p in
    let line1 = case search("\n", s) of
                  | None \_rightarrow s
@@ -689,19 +688,19 @@ Haskell qualifying spec
           \_or name?@0 in? [#(, #[, #\\, #", #-])  % #" #]
     | _ \_rightarrow false
 
- op unnamedPragma?(p: Pragma): Boolean =
+ op unnamedPragma?(p: Pragma): Bool =
    ~(namedPragma? p || controlPragma? p.2)
 
  op verbatimIdString: String = "-verbatim"
 
- op verbatimPragma?(s: String): Boolean =
+ op verbatimPragma?(s: String): Bool =
    case controlPragmaString s of
      | Some(str::_) \_rightarrow str = verbatimIdString
      | _ \_rightarrow false
 
  op headerIdString: String = "-header"
 
- op headerPragma?(s: String): Boolean =
+ op headerPragma?(s: String): Bool =
    case controlPragmaString s of
      | Some(str::_) \_rightarrow str = headerIdString
      | _ \_rightarrow false
@@ -829,7 +828,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
  op mkNamedRecordFieldName (c: Context) (qid: QualifiedId, nm: String): String =
    (qidToHaskellString c qid false)^"__"^nm
 
- op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
+ op  ppTypeInfo : Context \_rightarrow Bool \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
    let mainId = head aliases in
    case specialTypeInfo c mainId of
@@ -1060,7 +1059,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    %let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
 
- op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Boolean =
+ op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Bool =
    case opt_prag of
      | Some(beg_str, mid_str, end_str, pos) \_rightarrow
        let len = length mid_str in
@@ -1091,7 +1090,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
   in
   prLines (0) pp_cases
  
-op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
+op  ppOpInfo :  Context \_rightarrow Bool \_rightarrow Bool \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
                   \_rightarrow Pretty
 def ppOpInfo c decl? def? elems opt_prag aliases sw_fixity refine_num dfn =
@@ -1199,12 +1198,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             of None \_rightarrow patToTerm(p1, ext, c)
              | Some(trm) \_rightarrow Some trm)
 
- op constructorTerm?(tm: MS.Term): Boolean =
+ op constructorTerm?(tm: MS.Term): Bool =
    case tm of
      | Fun(Embed _, _, _) \_rightarrow true
      | _ \_rightarrow false
 
- op primitiveArg?(tm: MS.Term): Boolean =
+ op primitiveArg?(tm: MS.Term): Bool =
    case tm of
      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
        forall? (embed? Var) (MS.termToList arg)
@@ -1212,32 +1211,32 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Var _ \_rightarrow true
      | _ \_rightarrow false
 
- op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op sameHead?(tm1: MS.Term, tm2: MS.Term): Bool =
    equalTerm?(tm1, tm2)
      || (case (tm1, tm2) of
            | (Apply(x1, _, _), Apply(x2, _, _)) \_rightarrow sameHead?(x1, x2)
            | _ \_rightarrow false)
 
- op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Bool =
    case tm1 of
      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
        ~(termIn?(tm2, MS.termToList arg))
      | _ \_rightarrow false
 
- op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Bool =
    case (tm1, tm2) of
      | (Apply(x1, y1, _), Apply(x2, y2, _)) \_rightarrow
        nonPrimitiveArg?(y1, y2) || hasNonPrimitiveArg?(x1, x2)
      | _ \_rightarrow false
 
- op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Boolean =
+ op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Bool =
    sameHead?(hd, tm) && hasNonPrimitiveArg?(hd, tm)
 
  %% Only concerned with curried calls
- op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Boolean =
+ op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Bool =
    existsSubTerm (nonPrimitiveCall? hd) bod
 
- op patternLambda?(v_pos: Position, lam_pos: Position): Boolean =
+ op patternLambda?(v_pos: Position, lam_pos: Position): Bool =
    %% an explicit lambda will have beginning of variable close to beginning of lambda expr
    false   %usePosInfoForDefAnalysis?
      => (case (v_pos, lam_pos) of
@@ -1404,7 +1403,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    in
    skip_back(pos, 0, false)
 
- op lastLineEnds(prf: String): Boolean =
+ op lastLineEnds(prf: String): Bool =
    let len_prf = length prf in
    case backwardsSExpr(prf, len_prf-1) of
      | None -> false
@@ -1422,7 +1421,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 && (whiteSpaceChar?(prf@(n+2))
                       || prf@(n+2) = #()
 
- op proofEndsWithTerminator?(prf: String): Boolean =
+ op proofEndsWithTerminator?(prf: String): Bool =
    let len = length prf in
    testSubseqEqual?("done", prf, 0, len-4)
   \_or testSubseqEqual?("sorry", prf, 0, len-5)
@@ -1490,7 +1489,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      then "`"^nm^"`"
      else nm
 
- op identifier?(s: String): Boolean =
+ op identifier?(s: String): Bool =
    s ~= "" && isAlpha(s@0)
 
  op infixOp? (c: Context) (t: MS.Term): Option String =
@@ -1498,13 +1497,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Fun(f, _, _) -> infixFun? c f
      | _ -> None
 
- op nonCaseMatch?(match: Match): Boolean =
+ op nonCaseMatch?(match: Match): Bool =
    case match of
      | (NatPat _, _, _)::_ -> true
      | (CharPat _, _, _)::_ -> true
      | _ -> false
 
- op charMatch?(match: Match): Boolean =
+ op charMatch?(match: Match): Bool =
    case match of
      | (CharPat _, _, _)::_ -> true
      | _ -> false
@@ -1959,7 +1958,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             | None -> prString "{Only handle top-level records!}")
      | WildPat (ty, _) \_rightarrow prString "_"
      | StringPat (str, _) \_rightarrow prString ("\"" ^ normString str ^ "\"")
-     | BoolPat (b, _) \_rightarrow ppBoolean b
+     | BoolPat (b, _) \_rightarrow ppBool b
      | CharPat (chr, _) \_rightarrow prString ("'"^Char.show chr^"'")
      | NatPat (int, _) \_rightarrow prString (Nat.show int)      
      | QuotientPat (pat, qid, _) \_rightarrow 
@@ -1980,7 +1979,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | RecordPat((fld1, _)::_, _) -> fld1 ~= "1"
      | _ -> false
 
- op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
+ op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Bool
  def multiArgConstructor?(constrId, ty, spc) =
    case ty of
      | Base(qid, _, _) \_rightarrow
@@ -2000,8 +1999,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    let Some info = AnnSpec.findTheSort(spc, qid) in
    firstSortDefInnerSort info
 
- op  ppBoolean : Boolean \_rightarrow Pretty
- def ppBoolean b =
+ op  ppBool : Bool \_rightarrow Pretty
+ def ppBool b =
    case b of
      | true \_rightarrow prString "True"
      | false \_rightarrow prString "False"
@@ -2080,7 +2079,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                              prString (Char.show chr),
                              prString "'"]
      | String str \_rightarrow prString ("\"" ^ normString str ^ "\"")
-     | Bool b \_rightarrow ppBoolean b
+     | Bool b \_rightarrow ppBool b
      | OneName (id, fxty) \_rightarrow prString id
      | TwoNames (id1, id2, fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1, id2))
      | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
@@ -2140,7 +2139,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  %% May only need ops that can be unary
  op overloadedHaskellOps: List String = ["+", "-", "^", "abs", "min", "max"]
 
- op overloadedHaskellOp? (c: Context) (f: MS.Term) : Boolean =
+ op overloadedHaskellOp? (c: Context) (f: MS.Term) : Bool =
    case f of
      | Fun(Op(qid, _), _, _) \_rightarrow
        (case specialOpInfo c qid of
@@ -2164,7 +2163,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | _ \_rightarrow ppTyQualifiedId c qid
 
 
- op  isSimpleSort? : Sort \_rightarrow Boolean
+ op  isSimpleSort? : Sort \_rightarrow Bool
  def isSimpleSort? ty =
    case ty of
      | Base _ \_rightarrow true
@@ -2267,13 +2266,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 op  ppLitString: String \_rightarrow Pretty
 def ppLitString id = prString(IO.formatString1("~S", id))
 
-op  infix?: ParentTerm \_rightarrow Boolean
+op  infix?: ParentTerm \_rightarrow Bool
 def infix? parentTerm =
   case parentTerm of
     | Infix _ \_rightarrow true
     | _ \_rightarrow false
 
-op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean * Boolean
+op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Bool * Bool
 def termFixity c term = 
   case term of
     | Fun (termOp, _, _) -> 
@@ -2301,12 +2300,12 @@ def termFixity c term =
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
 
-op reversedNonfixOp? (c: Context) (qid: QualifiedId): Boolean =
+op reversedNonfixOp? (c: Context) (qid: QualifiedId): Bool =
   case specialOpInfo c qid of
     | Some(_ , None, _, true, _) -> true
     | _ -> false
 
-op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
+op  enclose?: Bool \_times Pretty \_rightarrow Pretty
 def enclose?(encl? , pp) =
   if encl? then prConcat [prString "(", pp, prString ")"]
     else pp
@@ -2350,7 +2349,7 @@ op  ppIdStr (id: String) (up?: Bool): String =
                       | (id, c) -> id ^ show c) "" chars
       in id
 
-op  isSimpleTerm? : MS.Term \_rightarrow Boolean
+op  isSimpleTerm? : MS.Term \_rightarrow Bool
 def isSimpleTerm? trm =
   case trm of
     | SortedTerm(t, _, _) \_rightarrow isSimpleTerm? t
@@ -2358,7 +2357,7 @@ def isSimpleTerm? trm =
     | Fun _ \_rightarrow true
     | _ \_rightarrow false
 
-op  isSimplePattern? : Pattern \_rightarrow Boolean
+op  isSimplePattern? : Pattern \_rightarrow Bool
 def isSimplePattern? trm =
   case trm of
     | VarPat _ \_rightarrow true
@@ -2370,7 +2369,7 @@ def isSimplePattern? trm =
     | NatPat _ \_rightarrow true
     | _ \_rightarrow false
 
- op  varOrTuplePattern?: Pattern \_rightarrow Boolean
+ op  varOrTuplePattern?: Pattern \_rightarrow Bool
  def varOrTuplePattern? p =
    case p of
      | VarPat _ \_rightarrow true
@@ -2380,7 +2379,7 @@ def isSimplePattern? trm =
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
- op  varOrRecordPattern?: Pattern \_rightarrow Boolean
+ op  varOrRecordPattern?: Pattern \_rightarrow Bool
  def varOrRecordPattern? p =
    case p of
      | VarPat _ \_rightarrow true
@@ -2390,13 +2389,13 @@ def isSimplePattern? trm =
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
- op  simpleHead?: MS.Term \_rightarrow Boolean
+ op  simpleHead?: MS.Term \_rightarrow Bool
  def simpleHead? t =
    case t of
      | Apply(_, arg, _) \_rightarrow varOrTupleTerm? arg
      | _ -> false
 
- op  varOrTupleTerm?: MS.Term \_rightarrow Boolean
+ op  varOrTupleTerm?: MS.Term \_rightarrow Bool
  def varOrTupleTerm? p =
    case p of
      | Var _ \_rightarrow true
