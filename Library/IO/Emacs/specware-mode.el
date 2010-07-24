@@ -282,6 +282,7 @@ accepted in lieu of prompting."
 
   (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
   (define-key map "\C-ch"    'sw:convert-spec-to-haskell)
+  (define-key map "\C-ct"    'sw:convert-top-spec-to-haskell)
 
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
@@ -2201,7 +2202,13 @@ With an argument, it doesn't convert imports."
 (sw:add-specware-to-isabelle-path)
 
 ;;; Haskell generation
-(defun sw:convert-spec-to-haskell (non-recursive?)
+(defun sw:convert-top-spec-to-haskell (non-recursive?)
+  "Converts Spec to Isabelle/HOL theory.
+With an argument, it doesn't convert imports."
+  (interactive "P")
+  (sw:convert-spec-to-haskell non-recursive? t))
+
+(defun sw:convert-spec-to-haskell (non-recursive? &optional thinning?)
   "Converts Spec to Isabelle/HOL theory.
 With an argument, it doesn't convert imports."
   (interactive "P")
@@ -2209,8 +2216,9 @@ With an argument, it doesn't convert imports."
   (let* ((filename (sw:containing-specware-unit-id t))
 	 (thy-file (sw:eval-in-lisp
 		    (format
-		     "(Haskell::printUIDtoThyFile-2 %S %s)"
+		     "(Haskell::printUIDtoThyFile-3 %S %s %s)"
 		     filename
+                     (if thinning? "t" "nil")
 		     (if non-recursive? "nil" "t"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
