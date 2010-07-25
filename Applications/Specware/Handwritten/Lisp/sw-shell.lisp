@@ -1,5 +1,3 @@
-    ("gen-haskell" . "[unit term] Generate Haskell code for unit.")
-    ("gen-h" . "[unit term] Generate Haskell code theory for unit.")
 (defpackage :TypeObligations)
 (defpackage :Prover)
 (defpackage :IsaTermPrinter)
