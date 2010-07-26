@@ -17,11 +17,10 @@ list__lengthOfListFunction f = error "Trying to evaluate a \"the\" expression."
 list__list :: (Int -> Maybe a) -> [a]
 list__list f = 
   let
-    loop = 
-      \i -> 
-        case f i of 
-          Nothing -> []
-          Just x -> x : loop (i + 1) 
+    loop i = 
+      case f i of 
+        Nothing -> []
+        Just x -> x : loop (i + 1) 
   in 
   loop 0
 
@@ -37,12 +36,8 @@ list__list_1 l i = l @@ i
 list__tabulate :: (Int, (Int -> a)) -> [a]
 list__tabulate(n, f) = 
   let
-    loop = 
-      \(i, result) -> 
-        if i == 0 then 
-          result
-        else 
-          let i_1 = i - 1 in loop(i_1, f i_1 : result) 
+    loop(0, result) = result
+    loop(i + 1, result) = loop(i, f i : result) 
   in 
   loop(n, [])
 
@@ -84,11 +79,8 @@ list__exists1_p p (hd : tl) =
 list__foralli_p :: ((Int, a) -> Bool) -> [a] -> Bool
 list__foralli_p p l = 
   let
-    loop = 
-      \(l_1, i) -> 
-        case l_1 of 
-          [] -> True
-          hd : tl -> p(i, hd) && loop(tl, i + 1) 
+    loop([], i) = True
+    loop(hd : tl, i) = p(i, hd) && loop(tl, i + 1) 
   in 
   loop(l, 0)
 
@@ -218,12 +210,9 @@ list__increasingNats_p (x : y : tl) =
 list__rightmostPositionSuchThat :: ([a], (a -> Bool)) -> Maybe Int
 list__rightmostPositionSuchThat(l, p) = 
   let
-    loop = 
-      \(l_1, i, result) -> 
-        case l_1 of 
-          [] -> result
-          hd : tl -> 
-              loop(tl, i + 1, if p hd then Just i else result) 
+    loop([], i, result) = result
+    loop(hd : tl, i, result) = 
+      loop(tl, i + 1, if p hd then Just i else result) 
   in 
   loop(l, 0, Nothing)
 
@@ -244,15 +233,14 @@ list__sublistAt_p(subl, i, supl) = list__prefixOf_p(subl, drop i supl)
 list__positionsOfSublist :: Eq a => ([a], [a]) -> [Int]
 list__positionsOfSublist(subl, supl) = 
   let
-    loop = 
-      \(supl', i) -> 
-        case supl' of 
-          [] -> if null subl then [i] else []
-          _ : tl -> 
-              if list__prefixOf_p(subl, supl') then 
-                i : loop(tl, i + 1)
-              else 
-                loop(tl, i + 1) 
+    loop(supl', i) = 
+      case supl' of 
+        [] -> if null subl then [i] else []
+        _ : tl -> 
+            if list__prefixOf_p(subl, supl') then 
+              i : loop(tl, i + 1)
+            else 
+              loop(tl, i + 1) 
   in 
   loop(supl, 0)
 
@@ -260,15 +248,14 @@ list__leftmostPositionOfSublistAndFollowing :: Eq a => ([a], [a]) ->
                                                        Maybe (Int, [a])
 list__leftmostPositionOfSublistAndFollowing(subl, supl) = 
   let
-    loop = 
-      \(supl', i) -> 
-        case supl' of 
-          [] -> if null subl then Just (i, []) else Nothing
-          _ : tl -> 
-              if list__prefixOf_p(subl, supl') then 
-                Just (i, drop (length subl) supl')
-              else 
-                loop(tl, i + 1) 
+    loop(supl', i) = 
+      case supl' of 
+        [] -> if null subl then Just (i, []) else Nothing
+        _ : tl -> 
+            if list__prefixOf_p(subl, supl') then 
+              Just (i, drop (length subl) supl')
+            else 
+              loop(tl, i + 1) 
   in 
   loop(supl, 0)
 
@@ -276,15 +263,14 @@ list__rightmostPositionOfSublistAndPreceding :: Eq a => ([a], [a]) ->
                                                         Maybe (Int, [a])
 list__rightmostPositionOfSublistAndPreceding(subl, supl) = 
   let
-    loop = 
-      \(supl', i, lastPosFound) -> 
-        case supl' of 
-          [] -> if null subl then Just i else lastPosFound
-          _ : tl -> 
-              if list__prefixOf_p(subl, supl') then 
-                loop(tl, i + 1, Just i)
-              else 
-                loop(tl, i + 1, lastPosFound) 
+    loop(supl', i, lastPosFound) = 
+      case supl' of 
+        [] -> if null subl then Just i else lastPosFound
+        _ : tl -> 
+            if list__prefixOf_p(subl, supl') then 
+              loop(tl, i + 1, Just i)
+            else 
+              loop(tl, i + 1, lastPosFound) 
   in 
   case loop(supl, 0, Nothing) of 
     Just i_1 -> Just (i_1, take i_1 supl)
@@ -313,15 +299,9 @@ list__findLeftmost p (hd : tl) =
 list__findRightmost :: (a -> Bool) -> [a] -> Maybe a
 list__findRightmost p l = 
   let
-    loop = 
-      \(l_1, result) -> 
-        case l_1 of 
-          [] -> result
-          hd : tl -> 
-              if p hd then 
-                loop(tl, Just hd)
-              else 
-                loop(tl, result) 
+    loop([], result) = result
+    loop(hd : tl, result) = 
+      if p hd then loop(tl, Just hd) else loop(tl, result) 
   in 
   loop(l, Nothing)
 
@@ -381,17 +361,14 @@ list__permutationOf :: Eq a => [a] -> [a] -> Bool
 infixl 4 `list__permutationOf`
 l1 `list__permutationOf` l2 = 
   let
-    deleteOne = 
-      \(x, l) -> 
-        case l of 
-          [] -> Nothing
-          hd : tl -> 
-              if hd == x then 
-                Just tl
-              else 
-                case deleteOne(x, tl) of 
-                  Just l_1 -> Just (hd : l_1)
-                  Nothing -> Nothing 
+    deleteOne(x, []) = Nothing
+    deleteOne(x, hd : tl) = 
+      if hd == x then 
+        Just tl
+      else 
+        case deleteOne(x, tl) of 
+          Just l_1 -> Just (hd : l_1)
+          Nothing -> Nothing 
   in 
   case l1 of 
     [] -> null l2

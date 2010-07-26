@@ -937,25 +937,32 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
               | _ \_rightarrow [(hd, None, bod)])
          | Apply (Lambda (pats, _), Var(v, _), _) \_rightarrow
            if exists? (\_lambda v1 \_rightarrow v = v1) (freeVars hd)
-            then foldl (\_lambda (cases, (pati, _, bodi)) \_rightarrow
-                        let (pati, condn?) = case pati of
-                                               | RestrictedPat(p, condn, _) -> (p, Some condn)
-                                               | _ -> (pati, None)
-                        in
-                        case patToTerm(pati, "",  c) of
-                          | Some pati_tm \_rightarrow
-                            let sbst = [(v, pati_tm)] in
-                            let (s_bodi, condn?) =
-                                if hasVarNameConflict?(pati_tm, [v]) then (bodi, condn?)
-                                else (substitute(bodi, sbst),
-                                      mapOption (fn condn -> substitute(condn, sbst)) condn?)
+            then let cases =
+                     foldl (\_lambda (cases, (pati, _, bodi)) \_rightarrow
+                            let (pati, condn?) = case pati of
+                                                   | RestrictedPat(p, condn, _) -> (p, Some condn)
+                                                   | _ -> (pati, None)
                             in
-                            let new_cases = aux_case(substitute(hd, sbst), condn?, s_bodi) in
-                            (cases ++ new_cases)
-                          | _ \_rightarrow
-                            let new_cases = aux_case(hd, condn?, bodi) in
-                            (cases ++ new_cases))
-                   [] pats
+                            case patToTerm(pati, "",  c) of
+                              | Some pati_tm \_rightarrow
+                                let sbst = [(v, pati_tm)] in
+                                let (s_bodi, condn?) =
+                                    if hasVarNameConflict?(pati_tm, [v]) then (bodi, condn?)
+                                    else (substitute(bodi, sbst),
+                                          mapOption (fn condn -> substitute(condn, sbst)) condn?)
+                                in
+                                let new_cases = aux_case(substitute(hd, sbst), condn?, s_bodi) in
+                                (cases ++ new_cases)
+                              | _ \_rightarrow
+                                let new_cases = aux_case(hd, condn?, bodi) in
+                                (cases ++ new_cases))
+                       [] pats
+                 in
+                 if exists? (fn (_, _, bodi) ->
+                               existsSubTerm unkownPatternVar? bodi)
+                     cases
+                   then [(hd, None, bod)]
+                   else cases
             else [(hd, None, bod)]
          | Apply (Lambda (pats, _), arg as Record(var_tms, _), _)
              | tupleFields? var_tms    % ??
@@ -1074,11 +1081,8 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
 op defaultFunctionProof: String =
    "by pat_completeness auto\ntermination by lexicographic_order"
 
-op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_prag: Option Pragma) (fixity: Fixity)
-    : Pretty =
-  let mainId = head aliases in
-  let op_tm = mkFun (Op (mainId, fixity), ty) in
-  let cases = defToFunCases c op_tm dfn in
+op ppLambdaDef (c: Context) (hd: MS.Term) (dfn: MS.Term): Pretty =
+  let cases = defToFunCases c hd dfn in
   let pp_cases = map (fn (lhs, condn?, rhs) ->
                         case condn? of
                         | None -> prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]]
@@ -1089,6 +1093,13 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                    cases
   in
   prLines (0) pp_cases
+
+
+op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_prag: Option Pragma) (fixity: Fixity)
+    : Pretty =
+  let mainId = head aliases in
+  let op_tm = mkFun (Op (mainId, fixity), ty) in
+  ppLambdaDef c op_tm dfn
  
 op  ppOpInfo :  Context \_rightarrow Bool \_rightarrow Bool \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
@@ -1186,7 +1197,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        | StringPat(s, _) \_rightarrow Some(mkString s)
        | CharPat(c, _) \_rightarrow Some(mkChar c)
        | VarPat((v, ty), a) \_rightarrow Some(Var((v, ty), a))
-       | WildPat(ty, a) \_rightarrow Some(Var(("_", ty), a))   % Not valid Specware but seems to work for our purposes here
+         %% Not valid Specware but seems to work for our purposes here except we need to check this doesn't end up
+         %% on rhs of a definition
+       | WildPat(ty, a) \_rightarrow Some(Var(("_", ty), a))   
        | QuotientPat(qpat, qid, pos)  \_rightarrow
          (case patToTerm(qpat, ext, c) of
             | None -> None
@@ -1197,6 +1210,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
          (case patToTerm(p2, ext, c) 
             of None \_rightarrow patToTerm(p1, ext, c)
              | Some(trm) \_rightarrow Some trm)
+
+ op unkownPatternVar?(t: MS.Term): Bool =
+   case t of
+     | Var(("_", _), _) -> true
+     | _ -> false
 
  op constructorTerm?(tm: MS.Term): Bool =
    case tm of
@@ -1783,9 +1801,11 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                             ppTerm c parentTerm body_term])
      | LetRec (decls, term, _) \_rightarrow
        let def ppDecl (v, term) =
-             prBreak 2 [ppVarWithoutSort v,
-                        prString " = ",
-                        ppTerm c Top term]
+             let v_ref = mkVar v in
+             ppLambdaDef c v_ref term
+%             prBreak 2 [ppVarWithoutSort v,
+%                        prString " = ",
+%                        ppTerm c Top term]
        in
        enclose?(infix? parentTerm,
                 prLines 0 [prLines 2
