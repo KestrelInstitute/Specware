@@ -89,7 +89,7 @@ op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore
           newtypeids ty
 
       def iterateDeps(new_ops, new_types, op_set, type_set) =
-        let _ = writeLine("nts: "^anyToString new_ops) in
+        %let _ = writeLine("nts: "^anyToString new_ops) in
         if new_ops = [] && new_types = [] then (op_set, type_set)
         else
         let op_set = addList(op_set, new_ops) in
