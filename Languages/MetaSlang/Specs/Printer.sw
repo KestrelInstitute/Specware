@@ -230,7 +230,7 @@ AnnSpecPrinter qualifying spec
                                         let context = context << {printSort = true} in
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
-		       (2, ppTerm context ([2, i] ++ path, Top) trm)])
+		       (2, ppTerm context ([2, i] ++ path, Nonfix) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -240,7 +240,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (2, ppTerm context ([3, i] ++ path, Top) trm)])
+		       (2, ppTerm context ([3, i] ++ path, Nonfix) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
@@ -275,11 +275,11 @@ AnnSpecPrinter qualifying spec
 	 | (Lambda (rules as (_ :: _), _), _) ->
 	   % Print lambda abstraction as
 	   % case pattern matching
-           blockAll (0, 
-		     [(0, prettysNone [pp.LP, pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
-		      (3, prettysNone 
-		       [printLambda (context, [0] ++ path, pp.Of, rules), 
-			pp.RP])])
+           enclose(embed? Top parentTerm, pp,
+                   blockAll (0, 
+                             [(0, prettysNone [pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
+                              (1, prettysNone 
+                                 [printLambda (context, [0] ++ path, pp.Of, rules)])]))
 	   % Print tuple projection using
 	   % dot notation.
 	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
@@ -405,7 +405,7 @@ AnnSpecPrinter qualifying spec
 	    in
 	      enclose(case parentTerm of
 			| Infix _ -> false   % Add parens if inside infix expression
-			| _ -> true,
+			| _ -> true, pp,
 		      blockAll (0, 
 				[(0, blockLinear (0, 
 						  [(0, blockLinear (0, ppDs (0, 4, pp.Let, decls))), 
@@ -440,7 +440,7 @@ AnnSpecPrinter qualifying spec
             in
               enclose(case parentTerm of
 			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true,
+			| _ -> true, pp,
 		      blockAll (0, 
 			[(0, blockNone (0, 
 				      [(0, pp.Let), 
@@ -466,7 +466,7 @@ AnnSpecPrinter qualifying spec
 	  | IfThenElse (t1, t2, t3, _) -> 
 	    enclose(case parentTerm of
 			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true,
+			| _ -> true, pp,
 		    blockLinear (0, 
 		       [(0, prettys [pp.If, ppTerm context ([0]++ path, Top) t1]), 
 			(0, blockFill (0, 
@@ -477,13 +477,10 @@ AnnSpecPrinter qualifying spec
 				       [(0, pp.Else), 
 					(0, ppTerm context ([2]++ path, Top) t3)]))]))
 	  | Lambda (match, _) -> 
-	    prettysNone [pp.LP, 
-			 printLambda (context, path, pp.Lambda, match), 
-			 pp.RP]
+	    enclose(embed? Top parentTerm, pp,
+                    printLambda (context, path, pp.Lambda, match))
           | The ((id,srt),body,_) ->
-	    enclose(case parentTerm of
-		      | Top -> true
-		      | _ -> false,
+	    enclose(embed? Top parentTerm, pp,
 		    blockFill (0, [
 			  (0, prettysNone 
 			   [pp.The,
@@ -509,7 +506,7 @@ AnnSpecPrinter qualifying spec
 	    in
 	      enclose(case parentTerm of
 			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true,
+			| _ -> true, pp,
 		      blockFill (0, [
 			    (0, prettysNone 
 			     [b, pp.LP, 
@@ -677,15 +674,15 @@ AnnSpecPrinter qualifying spec
 		    (3, prettysNone [ppSort context ([1]++ path, ArrowRight : ParentSort) rng, 
 				     right])])
 
-    | Subsort (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) -> 
-      blockFill (0, 
-		 [(0, pp.LCurly), 
-		  (0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
-		  (0, string " : "), 
-		  (0, ppSort    context ([0]       ++ path, Subsort) s), 
-		  (0, pp.Bar), 
-		  (0, ppTerm    context ([2, 0, 1] ++ path, Top) t), 
-		  (0, pp.RCurly)])
+    | Subsort (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) ->
+      prettysNone [pp.LCurly,
+                   blockFill (0, 
+                              [(0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
+                               (0, string " : "), 
+                               (0, ppSort    context ([0]       ++ path, Subsort) s), 
+                               (0, pp.Bar), 
+                               (0, ppTerm    context ([2, 0, 1] ++ path, Top) t)]),
+                   pp.RCurly]
     | Subsort (s, t, _) -> 
       blockFill (0, 
 		 [(0, pp.LP), 
@@ -762,11 +759,11 @@ AnnSpecPrinter qualifying spec
   %          | Some srt -> "["^printSort srt^"]"
   %     in "mtv%"^Nat.show uniqueId^linkr
 
- def enclose (enclosed, pretty) = 
+ def enclose (enclosed, pp, pretty) = 
    if enclosed then
      pretty 
    else
-     prettysNone [string "(", pretty, string ")"]
+     prettysNone [pp.LP, pretty, pp.RP]
         
  def ppPattern context (path, enclosed) pattern = 
    let pp : ATermPrinter = context.pp in
@@ -805,7 +802,7 @@ AnnSpecPrinter qualifying spec
      | EmbedPat ("Cons", 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_(* Qualified ("List", "List") *), [_], _), _) -> 
-       enclose (enclosed, 
+       enclose (enclosed, pp, 
 		prettysFill [ppPattern context ([0]++ path, false) p1, 
 			     string " :: ", 
 			     ppPattern context ([1]++ path, false) p2])
@@ -817,7 +814,7 @@ AnnSpecPrinter qualifying spec
  %                        string " :: ", 
  %                        ppPattern context ([1]++ path, false) p2])
      | EmbedPat (id, Some pat, _(* srt *), _) -> 
-       enclose (enclosed, 
+       enclose (enclosed, pp,
 		prettysFill (Cons (pp.fromString id, 
 				   if singletonPattern pat then
 				     [string " ", 
@@ -827,19 +824,19 @@ AnnSpecPrinter qualifying spec
 				      ppPattern context ([0]++ path, true) pat, 
 				      pp.RP])))
      | SortedPat (pat, srt, _) -> 
-       enclose (enclosed, 
+       enclose (enclosed, pp,
 		blockFill (0, 
 			   [(0, ppPattern context ([0]++ path, false) pat), 
 			    (0, string  " : "), 
 			    (0, ppSort context ([1]++ path, Top : ParentSort) srt)]))
      | AliasPat (pat1, pat2, _) -> 
-       enclose (enclosed, 
+       enclose (enclosed, pp,
 		blockFill (0, 
 			   [(0, ppPattern context ([0]++ path, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, false) pat2)]))
      | QuotientPat (pat, qid, _) -> 
-       enclose (enclosed, 
+       enclose (enclosed, pp,
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),
 			    (0, ppPattern context ([0]++ path, false) pat)]))
@@ -872,7 +869,7 @@ AnnSpecPrinter qualifying spec
 %	      in
 %		ppListPathPlus path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
 %	   | _ ->
-	     enclose (enclosed, 
+	     enclose (enclosed, pp,
 		      blockFill (0, 
 				 [(0, ppPattern context ([0]++ path, true) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
@@ -1059,7 +1056,7 @@ AnnSpecPrinter qualifying spec
 
      def ppDecl tm =
        let (tvs, srt, tm) = unpackTerm tm in
-       (1, blockLinear
+       (1, blockFill
              (0, 
               [(0, blockFill
                     (0, [(0, pp.Op)] ++ 
@@ -1103,18 +1100,18 @@ AnnSpecPrinter qualifying spec
        
      def ppDefAux (path, term) = 
        case term of
-	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
-	   let pat  = ppPattern context ([0, 0] ++ path, false) pat in 
-	   let body = ppDefAux ([2, 0] ++ path, body) in
-	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
-	   if markSubterm? context then
-	     let num = State.! context.markNumber in
-	     let table = State.! context.markTable in
-	     (context.markTable State.:= NatMap.insert (table, num, path);
-	      context.markNumber State.:= num + 1;
-	      PrettyPrint.markLines (num, prettys))
-	   else 
-	     prettys
+% 	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
+% 	   let pat  = ppPattern context ([0, 0] ++ path, false) pat in 
+% 	   let body = ppDefAux ([2, 0] ++ path, body) in
+% 	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
+% 	   if markSubterm? context then
+% 	     let num = State.! context.markNumber in
+% 	     let table = State.! context.markTable in
+% 	     (context.markTable State.:= NatMap.insert (table, num, path);
+% 	      context.markNumber State.:= num + 1;
+% 	      PrettyPrint.markLines (num, prettys))
+% 	   else 
+% 	     prettys
 	 | _ -> 
            [(2, blockNone (1, [(0, pp.DefEquals), 
                                (0, string " "), 
