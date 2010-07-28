@@ -12,4 +12,8 @@ occurs inside `e'. *)
 
 op assert : {b : Bool | b} -> ()
 
+#translate Haskell ThyMorphism
+  Assert.assert  -> (\_ -> ())
+#end
+
 endspec 
