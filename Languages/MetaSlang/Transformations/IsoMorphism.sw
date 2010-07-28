@@ -1155,12 +1155,6 @@ spec
         ppNewline
       ]));
 
-    (* there are two strategies for creating new names - use the provided
-    qualifier or 'primed' names. The following should be replaced with
-    a function for generating a new name according to whether the qualifier
-    is provided as an argument - or dispense with primed names. *)
-    newQual <- return "XXX";
-
     %{{{  handle special case of monomorphic references to polymorphic functions 
     spc <-
       let
@@ -1339,8 +1333,9 @@ spec
                       | (_, MetaTyVar _) -> false
                       | (Boolean _,_) -> false
                       | (_,Boolean _) -> false
-                      | _ -> ((writeLine ("doTerm: monoInstance:\n  dnType=" ^ printSort dnType
-                                ^ "\n  upType=" ^ printSort upType)); false))
+                      | _ -> (%writeLine ("doTerm: monoInstance:\n  dnType=" ^ printSort dnType
+                              %             ^ "\n  upType=" ^ printSort upType);
+                              false))
                   %}}}
                 in
                   if monoInstance ctxtType ty then {
@@ -1516,7 +1511,7 @@ spec
             % ### LE we are folding over ops - but don't need to do the aliases.
             % ### LE Should we also 'doType typ' in the following.
             % ### LE This doesn't handle aliases properly
-            print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
+            % print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
             (typVars,typ,trm) <- return (unpackFirstTerm opInfo.dfn);  
             ((spc,opsDone),trm) <- doTerm (spc,opsDone) trm typ ;
             dfn <- return (maybePiTerm(typVars, SortedTerm (trm, typ, noPos))); 
@@ -1531,9 +1526,11 @@ spec
             return (spc << {sorts = sorts},opsDone)
           }
         %}}}
-        def matchingQualifier (qual,_) = return (qual = newQual)
+        def matchingQualifier (qual,_) = return (case newOptQual of
+                                                   | Some newQual -> qual = newQual
+                                                   | None -> false)
       in {
-          print ("applyIso: Qualifier=" ^ newQual ^"\n");
+          %print ("applyIso: Qualifier=" ^ newQual ^"\n");
           %{{{  Fail if new qualifier conflicts with those in use
           % b1 <- existsQMap matchingQualifier spc.ops;
           % b2 <- existsQMap matchingQualifier spc.sorts;
