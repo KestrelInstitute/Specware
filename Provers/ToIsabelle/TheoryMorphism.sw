@@ -120,18 +120,21 @@ IsaTermPrinter qualifying spec
       | Some n \_rightarrow Some(processRhsOp (subFromTo(prag_str, n+2,end_pos)) kind pos)
       | _ \_rightarrow None
 
+op splitAtStr(s: String, pat: String): Option(String * String) =
+  case search(pat, s) of
+    | Some i \_rightarrow Some(subFromTo(s,0,i),subFromTo(s,i + length pat, length s))
+    | None \_rightarrow None
+
  %%% Basic string parsing function
  op parseMorphMap (morph_str: String, result: TransInfo, kind: String, pos: Position): TransInfo =
    let lines = splitStringAt(morph_str,"\n") in
    let def parseLine (result,s) =
-         case splitStringAt(s,"\\_rightarrow") of
-	   | [lhs,rhs] \_rightarrow
-	     processLine(lhs,rhs,result)
-	   | [_] \_rightarrow
-	     (case splitStringAt(s,"->") of
-	       | [lhs,rhs] \_rightarrow processLine(lhs,rhs,result)
-	       | _ \_rightarrow result)
-	   | _ \_rightarrow result
+         case splitAtStr(s, "\\_rightarrow") of
+	   | Some (lhs, rhs) \_rightarrow processLine(lhs, rhs, result)
+	   | None \_rightarrow
+         case splitAtStr(s, "->") of
+           | Some (lhs, rhs)  \_rightarrow processLine(lhs, rhs, result)
+           | None \_rightarrow result
        def processLhs lhs =
 	 let lhs = removeInitialWhiteSpace lhs in
 	 let type? = length lhs > 5 && subFromTo(lhs,0,5) in? ["type ","Type "] in
