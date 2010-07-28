@@ -2133,7 +2133,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    prString(nm)
 
  op makeIdentifier(nm: String): String =
-   if identifier? nm
+   if identifier? nm || nm@0 = #(
      then nm
    else "("^nm^")"
 
@@ -2357,17 +2357,54 @@ op infixDefId(id: String): String =
                   | (c, id) -> show(c)^id) "" idarray
   in id
 
-op  ppIdStr (id: String) (up?: Bool): String =
+op ppIdStr (id: String) (up?: Bool): String =
   let id = replaceString(id, "--", "-^-^") in
   case explode(id) of
     | [] -> "e"
     | c0 :: r_chars ->
+      if c0 = #( then id
+      else
       let chars = (if up? then toUpperCase c0 else toLowerCase c0) :: r_chars in
+      let chars = if mixedIdStr?(r_chars, c0) then alphaize chars else chars in
       let def att(id, s) = (if id = "" then "e" else id) ^ s
       in
       let id = foldl (\_lambda(id, #?) -> att(id, "_p")
                       | (id, c) -> id ^ show c) "" chars
       in id
+
+op haskellIdChar0?(c: Char): Bool = isAlphaNum c || c = #_
+op haskellIdChar? (c: Char): Bool = isAlphaNum c || c = #_ || c = #'
+
+op mixedIdStr?(chrs: List Char, ch1: Char): Bool =
+  if haskellIdChar0? ch1
+    then ~(forall? haskellIdChar? chrs)
+    else exists? haskellIdChar? chrs
+
+op alphaize(chrs: List Char): List Char =
+  let def att(id, s) =
+        (if id = [] then [#e] else id) ++ explode s
+  in
+  foldl (fn (id,#?) -> att(id, "_p")
+          | (id,#=) -> att(id, "_eq")
+          | (id,#<) -> att(id, "_lt")
+          | (id,#>) -> att(id, "_gt")
+          | (id,#~) -> att(id, "_tld")
+          | (id,#/) -> att(id, "_fsl")
+          | (id,#\\ ) -> att(id, "_bsl")
+          | (id,#-) -> att(id, "_dsh")
+          | (id,#*) -> att(id, "_ast")
+          | (id,#+) -> att(id, "_pls")
+          | (id,#|) -> att(id, "_bar")
+          | (id,#!) -> att(id, "_excl")
+          | (id,#@) -> att(id, "_at")
+          | (id,##) -> att(id, "_hsh")
+          | (id,#$) -> att(id, "_dolr")
+          | (id,#^) -> att(id, "_crt")
+          | (id,#&) -> att(id, "_amp")
+          | (id,#`) -> att(id, "_oqt")
+          | (id,#:) -> att(id, "_cl")
+          | (id,c) -> id ++ [c]) 
+    [] chrs
 
 op  isSimpleTerm? : MS.Term \_rightarrow Bool
 def isSimpleTerm? trm =
