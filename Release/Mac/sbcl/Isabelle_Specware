@@ -7,4 +7,6 @@ SCRIPTDIR=`/usr/bin/dirname $0`/../../..
 XEMACS_SPECWARE="$SCRIPTDIR"/XEmacs_Specware
 cd "$SCRIPTDIR"
 
+PATH=/Applications/Isabelle2009-2.app/Isabelle/bin:$PATH
+
 isabelle emacs -p $XEMACS_SPECWARE $* 
