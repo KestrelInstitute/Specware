@@ -5,21 +5,18 @@ THE Specware SYSTEM.  READ IT CAREFULLY.  BY SELECTING "I ACCEPT", YOU
 AGREE TO BE BOUND BY THIS AGREEMENT. YOU ARE NOT PERMITTED TO USE THE
 SOFTWARE UNLESS YOU AGREE.
 
-SOFTWARE LICENSE AGREEMENT (Specware -- "ACADEMIC LICENSE")
+SOFTWARE LICENSE AGREEMENT (Specware -- "ACADEMIC & RESEARCH LICENSE")
 
 LICENSE GRANT.  Kestrel hereby grants to Licensee a non-exclusive,
 non-transferable license to use Specware (the "Software") in object
-code form only on a single designated CPU solely for Licensee's
-noncommercial educational, research and development purposes.
-Licensee may not use the Software in a network or a multi-user system
-in which more than one user uses or has access to the program at any
-one time.  Any attempt to transfer any of the rights, duties or
-obligations hereunder is void.  Licensee may not use the Software for
-other purposes, and may not copy, modify, transfer, rent, lease, loan,
-resell for profit, or distribute the Software, or any copy thereof, in
-whole or in part, or permit any third party to gain access to the
-Software or any part thereof, except for making a single copy for
-backup or archival purposes, provided that Licensee reproduces all
+code form only solely for Licensee's noncommercial educational,
+research and development purposes.  Any attempt to transfer any of the
+rights, duties or obligations hereunder is void.  Licensee may not use
+the Software for other purposes, and may not copy, modify, transfer,
+rent, lease, loan, sell, or distribute the Software, or any copy
+thereof, in whole or in part, or permit any third party to gain access
+to the Software or any part thereof, except for making a single copy
+for backup or archival purposes, provided that Licensee reproduces all
 copyright and other proprietary notices that are on or included with
 the original copy of the Software.  Any use for other than
 noncommercial educational, research and development purposes, of works
@@ -28,7 +25,7 @@ this Agreement and shall require a separately negotiated Commercial
 License from Kestrel.
 
 OWNERSHIP AND PROPRIETARY RIGHTS NOTICES.  The Software is proprietary
-to Kestrel and its licensors, and all right, title and interest in the
+to Kestrel and its licensors, and all rights, title and interest in the
 Software will at all times remain the property of Kestrel and its
 licensors, irrespective of the ownership of the media, if any, on
 which any copies of the Software are recorded.  Licensee may not
@@ -102,8 +99,8 @@ or licensors shall have no obligation to provide any support or
 maintenance services to Licensee.  Kestrel may, but is not obliged to,
 provide newer releases of the Software, which then shall be included
 in the definition of "Software" hereunder. Kestrel requests that its
-Academic Licensees, as a matter of courtesy, provide a copy to Kestrel
-of publications arising from research using the Software.
+Academic & Research Licensees, as a matter of courtesy, provide a copy
+to Kestrel of publications arising from research using the Software.
 
 GENERAL.  This Agreement shall be governed by the laws of the State of
 California and the United States of America, without regard to choice
