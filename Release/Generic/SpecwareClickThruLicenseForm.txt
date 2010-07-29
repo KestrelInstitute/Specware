@@ -9,14 +9,14 @@ SOFTWARE LICENSE AGREEMENT (Specware -- "ACADEMIC & RESEARCH LICENSE")
 
 LICENSE GRANT.  Kestrel hereby grants to Licensee a non-exclusive,
 non-transferable license to use Specware (the "Software") in object
-code form only solely for Licensee's noncommercial educational,
-research and development purposes.  Any attempt to transfer any of the
-rights, duties or obligations hereunder is void.  Licensee may not use
-the Software for other purposes, and may not copy, modify, transfer,
-rent, lease, loan, sell, or distribute the Software, or any copy
-thereof, in whole or in part, or permit any third party to gain access
-to the Software or any part thereof, except for making a single copy
-for backup or archival purposes, provided that Licensee reproduces all
+code form solely for Licensee's noncommercial educational, research
+and development purposes.  Any attempt to transfer any of the rights,
+duties or obligations hereunder is void.  Licensee may not use the
+Software for other purposes, and may not copy, modify, transfer, rent,
+lease, loan, sell, or distribute the Software, or any copy thereof, in
+whole or in part, or permit any third party to gain access to the
+Software or any part thereof, except for making a single copy for
+backup or archival purposes, provided that Licensee reproduces all
 copyright and other proprietary notices that are on or included with
 the original copy of the Software.  Any use for other than
 noncommercial educational, research and development purposes, of works
