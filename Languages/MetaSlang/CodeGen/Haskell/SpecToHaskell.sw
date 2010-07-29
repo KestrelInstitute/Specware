@@ -175,7 +175,9 @@ Haskell qualifying spec
            | None \_rightarrow None
            | Some((thynm, sw_file, thy_file), uid) \_rightarrow
          case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
-           | None \_rightarrow None
+           | None \_rightarrow
+             (writeLine("sc_tm not evaluated:\n"^anyToString sc_tm);
+              None)
            | Some real_val \_rightarrow
              Some((thynm, sw_file, thyName thy_file ^ ".hs"),
                   val, uid))
@@ -194,17 +196,26 @@ Haskell qualifying spec
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
              Some((thynm^sb_id, sw_file, thy_file^sb_id),
                   uid))
-
       | (UnitId relId, pos) \_rightarrow
         (case evaluateRelUIDWrtUnitId(relId, pos, getCurrentUID c) of
-          | None \_rightarrow None
+          | None \_rightarrow
+            (writeLine("reluid not found:\n"^anyToString sc_tm);
+             None)
           | Some(val, uid) \_rightarrow
             let (thynm, filnm, hash) = unitIdToHaskellString uid in
             Some((thynm ^ hash,
                   uidToFullPath uid ^ ".sw",
                   filnm ^ hash),
                  uid))
-      | _ \_rightarrow None
+      | (Qualify(spc_tm, qual), pos) \_rightarrow
+        (case uidStringPairForTerm(c, spc_tm) of
+           | None \_rightarrow None
+           | Some((thynm, sw_file, thy_file), uid) \_rightarrow
+             Some((thynm^"_"^qual, sw_file, thy_file^"_"^qual),
+                  uid))
+      | _ \_rightarrow
+        (writeLine("sc_tm not handled:\n"^anyToString sc_tm);
+         None)
 
   op scTermShortName(sc_tm: Term): String =
     case sc_tm of
@@ -507,7 +518,9 @@ Haskell qualifying spec
   op  ppImport: Context \_rightarrow Term \_rightarrow Spec \_rightarrow SpecElements \_rightarrow Option (Pretty * Pretty)
   def ppImport c sc_tm spc red_els =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
-      | None \_rightarrow Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
+      | None \_rightarrow
+         let _ = writeLine("Unknown:\n"^anyToString sc_tm) in
+        Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
       | Some ((spc_nm, sw_fil_nm, thy_fil_nm), val, uid) \_rightarrow
         case spc_nm of
           | "IsabelleExtensions" \_rightarrow None
@@ -918,8 +931,9 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
      | _ -> fx
 
  op mkIncTerm(t: MS.Term): MS.Term =
-   mkApply(mkOp(Qualified("Integer", "+"),
-                mkArrow(mkProduct [natSort, natSort], natSort)),
+   mkApply(mkInfixOp(Qualified("Integer", "+"),
+                     Infix(Left, 25),
+                     mkArrow(mkProduct [natSort, natSort], natSort)),
            mkTuple[t, mkNat 1])
 
  op  defToFunCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow List(MS.Term \_times Option MS.Term \_times MS.Term)
@@ -1085,7 +1099,9 @@ op ppLambdaDef (c: Context) (hd: MS.Term) (dfn: MS.Term): Pretty =
   let cases = defToFunCases c hd dfn in
   let pp_cases = map (fn (lhs, condn?, rhs) ->
                         case condn? of
-                        | None -> prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]]
+                        | None ->
+                          % let _ = writeLine(printTerm lhs^" = "^printTerm rhs) in
+                          prBreakCat 2 [[ppTerm c Top lhs, string " = "], [ppTerm c Top rhs]]
                         | Some condn ->
                           prBreak 2 [prConcat[ppTerm c Top lhs, prSpace],
                                      prBreakCat 1 [[prString "| ", ppTerm c Top condn], [prString " = ", ppTerm c Top rhs]]])
@@ -1619,6 +1635,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | _ \_rightarrow
           (case infixOp? c term1 of    % Infix ops are translated uniformly to curried ops
              | Some infix_str \_rightarrow
+               % let _ = writeLine("letize:\n"^printTerm term) in
                enclose?(parentTerm ~= Top,
                         prLinearCat 0 [[prString "let (x, y) = ",
                                         ppTerm c Top term2,
@@ -1802,6 +1819,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | LetRec (decls, term, _) \_rightarrow
        let def ppDecl (v, term) =
              let v_ref = mkVar v in
+             % let _ = writeLine("letrec: "^printTerm v_ref^" =\n"^printTerm term) in
              ppLambdaDef c v_ref term
 %             prBreak 2 [ppVarWithoutSort v,
 %                        prString " = ",
