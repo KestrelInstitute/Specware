@@ -83,6 +83,12 @@ SpecCalc qualifying spec
 			                          clashing_sort_names clashing_op_names))
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  op liftSpecTerm(tm: SCTerm, par: SCTerm): SCTerm =
+    case (tm, par) of
+      | ((UnitId(UnitId_Relative{path = [rel_name], hashSuffix = None}), pos),
+         (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some _}), _)) ->
+        (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some rel_name}), pos)
+      | _ -> tm
 
   op  auxApplySpecMorphismSubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
   def auxApplySpecMorphismSubstitution sm spc sm_tm pos =
@@ -115,8 +121,8 @@ SpecCalc qualifying spec
 				 %% Given an obscure sm_tm (e.g. a UnitId), see if it contains a term used 
 				 %% to construct it, in which case deconstruct that as above.
 				 case sm.sm_tm of
-				   | Some (SpecMorph (_,cod_spec_tm,_,_),_) -> 
-				     cod_spec_tm
+				   | Some (SpecMorph (_,cod_spec_tm,_,_),_) ->
+                                     liftSpecTerm(cod_spec_tm, sm_tm)
 				   | Some (Quote (Morph sm, ts, uids), pos) ->  
 				     (Quote (Spec sm.cod, ts, uids), pos)
 				   | _ -> 
