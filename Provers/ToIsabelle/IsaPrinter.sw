@@ -808,7 +808,13 @@ IsaTermPrinter qualifying spec
                    | Some(Pragma prag) -> Some prag
                    | _ -> None
     in
-    let opt_prag = findPragmaNamed(els, head op_qids, opt_prag) in   % head ???
+    let opt_prag = findPragmaNamed(all_els, head op_qids, opt_prag) in
+    let opt_prag = foldl (fn (opt_prag, op_qid) ->
+                            case opt_prag of
+                              | None -> findPragmaNamed(all_els, op_qid, opt_prag)
+                              | _ -> opt_prag)
+                     opt_prag (tail op_qids)
+    in
     let pp_cases =
         flatten (map (fn (op_qid, ty, dfn, fixity) ->
                         let op_tm = mkFun (Op (op_qid, fixity), ty) in
@@ -1436,18 +1442,19 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
       %% Don't want f(x,y) = ... to be a fun because this would be added as a rewrite
       && (some?(findParenAnnotation opt_prag)
            || none?(findMeasureAnnotation opt_prag)
-              && (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
-                    | [(lhs, rhs)] ->
-                      (case lhs of
-                       | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
-                       | _ ->
-                       case fixity of
-                       | Infix _ \_rightarrow
-                         (foldSubTerms (fn (tm, count) -> if embed? Record tm then count + 1 else count)
-                            0 lhs)
-                          > 1
-                       | _ \_rightarrow false)
-                    | _ -> true))
+               && (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
+                     | [(lhs, rhs)] ->
+                       (case lhs of
+                        | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
+                        | _ ->
+                        case fixity of
+                        | Infix _ \_rightarrow
+                          (foldSubTerms (fn (tm, count) -> if embed? Record tm then count + 1 else count)
+                             0 lhs)
+                           > 1
+                        | _ \_rightarrow false)
+                     | _ -> true)
+              )
 
     then
       ppFunctionDef c aliases term ty opt_prag fixity
