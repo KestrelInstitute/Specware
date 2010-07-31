@@ -353,7 +353,7 @@
 				      nil)))))
 	      (unless (null uid)
 		(setq cl-user::*last-unit-Id-_loaded* uid)
-		(Haskell::printUIDtoThyFile-2 uid nil t))))
+		(Haskell::printUIDtoThyFile-3 uid nil t))))
            ((gen-haskell-top gen-ht)
 	    (let ((uid (if (not (null argstr))
 			   argstr
@@ -363,7 +363,7 @@
 				      nil)))))
 	      (unless (null uid)
 		(setq cl-user::*last-unit-Id-_loaded* uid)
-		(Haskell::printUIDtoThyFile-2 uid t t))))
+		(Haskell::printUIDtoThyFile-3 uid t t))))
 	   (prove     (cl-user::sw (concatenate 'string "prove " argstr)) (values))
 	   (proofcheck (cl-user::swpc argstr))
 	   (pc        (cl-user::swpc argstr))
