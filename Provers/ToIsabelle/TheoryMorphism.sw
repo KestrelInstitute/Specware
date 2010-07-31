@@ -64,8 +64,9 @@ IsaTermPrinter qualifying spec
    case removeEmpty(splitStringAt(line1," ")) of
      | hd::thyMorphStr::r | hd = kind && thyMorphStr in?
 				           ["ThyMorphism","Thy_Morphism",
-                                            "TheoryMorphism","Theory_Morphism"] \_rightarrow
-       Some(subFromTo(prag,n,length prag), r)
+                                            "TheoryMorphism","Theory_Morphism",
+                                            "-instance"] \_rightarrow
+       Some(subFromTo(prag,n,length prag), if thyMorphStr = "-instance" then [] else r)
      | _ \_rightarrow None
 
  op toPrecNum(precnum_str: String, kind: String, pos: Position): Nat =
