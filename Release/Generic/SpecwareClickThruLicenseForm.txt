@@ -1,13 +1,13 @@
-IMPORTANT.  THIS IS A LEGALLY BINDING AGREEMENT BETWEEN KESTREL
-INSTITUTE ("KESTREL") AND YOU ("LICENSEE").  IT IS THE COMPLETE AND
-EXCLUSIVE STATEMENT OF THE TERMS AND CONDITIONS REGARDING YOUR USE OF
-THE Specware SYSTEM.  READ IT CAREFULLY.  BY SELECTING "I ACCEPT", YOU
-AGREE TO BE BOUND BY THIS AGREEMENT. YOU ARE NOT PERMITTED TO USE THE
-SOFTWARE UNLESS YOU AGREE.
+IMPORTANT.  This is a legally binding agreement between Kestrel
+Institute ("Kestrel") and you ("Licensee").  It is the complete and
+exclusive statement of the terms and conditions regarding your use of
+the Specware system.  Read it carefully.  By selecting "I Accept", you
+agree to be bound by this agreement. you are not permitted to use the
+Software unless you agree.
 
-SOFTWARE LICENSE AGREEMENT (Specware -- "ACADEMIC & RESEARCH LICENSE")
+Software License Agreement (Specware -- "Academic & Research License")
 
-LICENSE GRANT.  Kestrel hereby grants to Licensee a non-exclusive,
+License Grant.  Kestrel hereby grants to Licensee a non-exclusive,
 non-transferable license to use Specware (the "Software") in object
 code form solely for Licensee's noncommercial educational, research
 and development purposes.  Any attempt to transfer any of the rights,
@@ -24,9 +24,9 @@ created with, using or based on the Software, is not permitted under
 this Agreement and shall require a separately negotiated Commercial
 License from Kestrel.
 
-OWNERSHIP AND PROPRIETARY RIGHTS NOTICES.  The Software is proprietary
-to Kestrel and its licensors, and all rights, title and interest in the
-Software will at all times remain the property of Kestrel and its
+Ownership and Proprietary Rights Notices.  The Software is proprietary
+to Kestrel and its licensors, and all rights, title and interest in
+the Software will at all times remain the property of Kestrel and its
 licensors, irrespective of the ownership of the media, if any, on
 which any copies of the Software are recorded.  Licensee may not
 reverse engineer, disassemble, decompile, or translate the Software,
@@ -38,37 +38,29 @@ in any and all copies of the Software.  Any publication by or on
 behalf of Licensee which refers to the Software shall state that the
 Software was created by Kestrel.
 
-DISCLAIMER OF WARRANTY.  THE SOFTWARE IS EXPERIMENTAL IN NATURE AND IS
-PROVIDED "AS IS" WITH NO WARRANTY, EXPRESS OR IMPLIED, INCLUDING ANY
-IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, AND NON INFRINGEMENT. LICENSEE ASSUMES THE ENTIRE RISK
-ARISING OUT OF USE OF THE SOFTWARE.  NO ORAL OR WRITTEN INFORMATION OR
-ADVICE GIVEN BY KESTREL, ITS LICENSORS, EMPLOYEES OR AGENTS SHALL
-CREATE OR INCREASE THE SCOPE OF ANY WARRANTIES.
+Disclaimer of Warranty.  The Software is experimental in nature and is
+provided "as is" with no warranty, express or implied, including any
+implied warranties of merchantability, fitness for a particular
+purpose, and non infringement. Licensee assumes the entire risk
+arising out of use of the Software.  No oral or written information or
+advice given by Kestrel, its licensors, employees or agents shall
+create or increase the scope of any warranties.
 
-LIMITATION OF LIABILITY.  IN NO EVENT SHALL KESTREL OR ANY OF ITS
-SUPPLIERS OR LICENSORS OR ANY SUPPLIERS OR LICENSORS OF ANY OF ITS
-SUPPLIERS OR LICENSORS BE LIABLE TO LICENSEE OR TO ANY THIRD PARTY FOR
-ANY DAMAGES OF ANY KIND (INCLUDING, WITHOUT LIMITATION, LOST PROFITS,
-LOST DATA, INTERRUPTION OF BUSINESS, OR OTHER GENERAL, SPECIAL,
-DIRECT, INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES), WHETHER IN
-CONTRACT, TORT (INCLUDING NEGLIGENCE) OR OTHERWISE, ARISING OUT OF
-THIS LICENSE OR THE USE OF OR INABILITY TO USE THE SOFTWARE OR ANY
-DATA SUPPLIED THEREWITH, EVEN IF KESTREL OR ITS LICENSORS HAVE BEEN
-ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+Limitation of Liability.  In no event shall Kestrel or any of its
+suppliers or licensors or any suppliers or licensors of any of its
+suppliers or licensors be liable to Licensee or to any third party for
+any damages of any kind (including, without limitation, lost profits,
+lost data, interruption of business, or other general, special,
+direct, indirect, incidental or consequential damages), whether in
+contract, tort (including negligence) or otherwise, arising out of
+this license or the use of or inability to use the Software or any
+data supplied therewith, even if Kestrel or its licensors have been
+advised of the possibility of such damages.
 
-U.S. GOVERNMENT RESTRICTED RIGHTS.  The Software is provided with
-RESTRICTED RIGHTS.  Kestrel hereby acknowledges that the Software and
-related documentation are `commercial computer software' provided in
-accordance with FAR 12.212 and DFARS 227.7202 and are, therefore,
-subject to Contractor's standard licensing terms therefor.  Use,
-duplication, or disclosure by the U.S. Government is subject to
-restrictions as set forth in this license agreement and as provided in
-DFARS 227.7202-1(a) and 227.7202-3(a) (1995), DFARS
-252.227-7013(c)(1)(ii) (Oct 1988), FAR 12.212(a)(1995), FAR 52.227-19
-(June 1987), or FAR 52.227-14 (ALT III) (June 1987), as applicable.
+U.S. Government Unlimited Rights. The Software is provided with
+Unlimited Government Rights.
 
-TERM AND TERMINATION.  This Agreement will be effective immediately,
+Term and Termination.  This Agreement will be effective immediately,
 and shall continue until terminated as set forth herein.  Kestrel may
 terminate this Agreement immediately at any time upon written notice
 to Licensee if Licensee breaches any term of this Agreement.  Licensee
@@ -79,7 +71,7 @@ and return all copies of the Software to Kestrel. Termination of this
 Agreement will not limit either party from pursuing any other remedies
 available to it, including but not limited to injunctive relief.
 
-EXPORT LAW.  The Software is subject to U.S. export control laws and
+Export Law.  The Software is subject to U.S. export control laws and
 may be subject to export and re-export restrictions and regulations of
 the Department of Commerce or other United States agency or authority
 as well as export or import regulations in other countries.  Licensee
@@ -92,7 +84,7 @@ Iraq, Libya, North Korea, Sudan or Syria, or a party that is listed in
 the U.S. Table of Denial Orders or the U.S. Treasury Department's list
 of Specially Designated Nationals.
 
-FEE WAIVER AND ABSENCE OF SUPPORT OBLIGATIONS.  Provided that Licensee
+Fee Waiver and Absence of Support Obligations.  Provided that Licensee
 complies with the terms of this Agreement, Kestrel shall waive the
 license fees for the use of the Software.  Kestrel and its suppliers
 or licensors shall have no obligation to provide any support or
@@ -102,7 +94,7 @@ in the definition of "Software" hereunder. Kestrel requests that its
 Academic & Research Licensees, as a matter of courtesy, provide a copy
 to Kestrel of publications arising from research using the Software.
 
-GENERAL.  This Agreement shall be governed by the laws of the State of
+General.  This Agreement shall be governed by the laws of the State of
 California and the United States of America, without regard to choice
 of law principles.  Each party agrees to comply with all applicable
 laws, rules and regulations in connection with its activities under
