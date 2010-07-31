@@ -15,24 +15,24 @@ See below for further notes regarding the safety of these operations.
 *)
 
 MonadicStateInternal = spec
-    sort VarRef a = | VarRef a
+    type VarRef a = | VarRef a
 
-    op newGlobalVar : fa (a) String * a -> Boolean
-    op readGlobalVar : fa (a) String -> Option a
-    op writeGlobalVar : fa (a) String * a -> Boolean
+    op newGlobalVar : [a] String * a -> Boolean
+    op readGlobalVar : [a] String -> Option a
+    op writeGlobalVar : [a] String * a -> Boolean
 
-    op newVar : fa (a) a -> VarRef a
-    op writeVar : fa (a) VarRef a * a -> VarRef a
+    op newVar : [a] a -> VarRef a
+    op writeVar : [a] VarRef a * a -> VarRef a
   endspec
 
 (*
-Below is the definition of the state monad. Some sorts and ops remain
+Below is the definition of the state monad. Some types and ops remain
 abstract.  This implementation remains unsafe for both global and local
 variables.
 
 Local variables are implemented using a cons cell when the tail of the
 cell is the value if the variable.  The cell itself is considered a
-\Sort{VarRef}. Writing to the variable means replacing the tail.
+\Type{VarRef}. Writing to the variable means replacing the tail.
 
 The problem with local variables is that, even if the user is reponsible
 and uses only the monadic operations to access the variable, there is
@@ -46,13 +46,13 @@ The better way to implement local state would be as follows:
 of an abstract spec.
 \item Include in the abstract spec the function
 \begin{verbatim}
-    op Monad.run : fa (a) Env a -> a
+    op Monad.run : [a] Env a -> a
 \end{verbatim}
 for running something inside the state monad.
-\item In the refined spec, include a sort \Sort{State} and define the monad
-sort to be something like \Sort{Monad a = State -> (Result a) * State}.
-Here \Sort{Result a} is for accommodating exceptions.
-\item Refine \Sort{State} to be (or include) a side-effecting map or array and a counter.
+\item In the refined spec, include a type \Type{State} and define the monad
+type to be something like \Type{Monad a = State -> (Result a) * State}.
+Here \Type{Result a} is for accommodating exceptions.
+\item Refine \Type{State} to be (or include) a side-effecting map or array and a counter.
 \item Refine \Op{newVar} to use the counter to fill in the next position
 in the map with the given value and increment the counter. The old
 counter value is returned \emph{plus the map} as the variable reference. Now
@@ -82,16 +82,16 @@ with a value of one type and read the variable into a different type.
 
 One way to remedy this is as follows:
 \begin{itemize}
-\item Define a sort \Sort{GlobalVar} to have a constructor for each global
+\item Define a type \Type{GlobalVar} to have a constructor for each global
 variable: eg
 \begin{verbatim}
-  sort AllGlobals = | V1 (Option S1)
+  type AllGlobals = | V1 (Option S1)
                     | V2 (Option S2)
                     | ...
-  sort GlobalVar s = Option s -> AllGlobals
+  type GlobalVar s = Option s -> AllGlobals
 \end{verbatim}
 where each \Op{V1} is a variable name.
-\item Refine \Sort{State} (discussed above) to include a mutable map
+\item Refine \Type{State} (discussed above) to include a mutable map
 where for each $i$, \Op{Vi None} maps to \Op{Vi x} where $x$ is the
 value of the variable.
 \item Define operators with the same name (or approx the same name)
@@ -107,6 +107,7 @@ mutable map.
 variables to the Lisp context (and perhaps even the filesystem).
 \end{itemize}
 *)
+
 State = Monad qualifying spec
   import MonadicStateInternal qualifying MonadicStateInternal
   import Exception
@@ -158,4 +159,4 @@ State = Monad qualifying spec
   def writeVar (varRef,value) = 
     return (let _ = MonadicStateInternal.writeVar (varRef,value) in ())
 endspec
-\end{spec}
+

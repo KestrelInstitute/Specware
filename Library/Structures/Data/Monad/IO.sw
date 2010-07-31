@@ -1,5 +1,5 @@
 IO qualifying spec
-  import /Library/Structures/Data/Monad/Exception
+  import Exception
   import ImpureIO
 
   op fileError : (Option Nat * String * String) -> Exception
@@ -58,4 +58,24 @@ IO qualifying spec
   def flushStream strm =
     case ImpureIO.flushStream strm of
       | Ok _ -> return ()
+
+#translate Haskell Thy_Morphism IO
+  type IO.Monad -> IO
+  type IO.Stream -> Handle
+  type IO.FilePath -> FilePath
+  type ImpureIO.OpenMode -> IOMode
+  IO.fileError -> IOError
+  IO.eof -> userError
+  IO.openFile -> openFile
+  IO.closeFile -> hClose
+  IO.readChar -> hGetChar
+  IO.readString -> hGetLine
+  IO.readLine -> hGetLine
+  IO.readContents -> hGetContents
+  IO.atEOF? -> hIsEOF
+  IO.writeLine -> hPutStrLn
+  IO.writeString -> hPutStr
+  IO.flushStream -> hClose
+#end
+
 endspec
