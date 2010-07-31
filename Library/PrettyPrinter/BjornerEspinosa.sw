@@ -74,50 +74,50 @@ PrettyPrint qualifying spec
 
   %% More convenient API funs
 
-  op  prNum: Integer \_rightarrow Pretty
+  op  prNum: Integer -> Pretty
   def prNum n = prString(show n)
 
   def prString s = string s
 
-  op  prConcat: List Pretty \_rightarrow Pretty
+  op  prConcat: List Pretty -> Pretty
   def prConcat l = prettysNone l
 
   op  prEmpty: Pretty
   def prEmpty = prConcat []
 
-  op  prBreak: Nat \_rightarrow List Pretty \_rightarrow Pretty
-  def prBreak n l = blockFill(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
+  op  prBreak: Nat -> List Pretty -> Pretty
+  def prBreak n l = blockFill(0, (map (fn x -> (n, x)) l))
 
-  op  prLinear: Nat \_rightarrow List Pretty \_rightarrow Pretty
-  def prLinear n l = blockLinear(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
+  op  prLinear: Nat -> List Pretty -> Pretty
+  def prLinear n l = blockLinear(0, (map (fn x -> (n, x)) l))
 
-  op  prLines: Nat \_rightarrow List Pretty \_rightarrow Pretty
-  def prLines n l = blockAll(0, (List.map (\_lambda x \_rightarrow (n, x)) l))
+  op  prLines: Nat -> List Pretty -> Pretty
+  def prLines n l = blockAll(0, (map (fn x -> (n, x)) l))
 
-  op  prBreakCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
-  def prBreakCat n l = blockFill(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
+  op  prBreakCat: Nat -> List (List Pretty) -> Pretty
+  def prBreakCat n l = blockFill(0, (map (fn x -> (n, prConcat x)) l))
 
-  op  prLinearCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
-  def prLinearCat n l = blockLinear(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
+  op  prLinearCat: Nat -> List (List Pretty) -> Pretty
+  def prLinearCat n l = blockLinear(0, (map (fn x -> (n, prConcat x)) l))
 
-  op  prLinesCat: Nat \_rightarrow List (List Pretty) \_rightarrow Pretty
-  def prLinesCat n l = blockAll(0, (map (\_lambda x \_rightarrow (n, prConcat x)) l))
+  op  prLinesCat: Nat -> List (List Pretty) -> Pretty
+  def prLinesCat n l = blockAll(0, (map (fn x -> (n, prConcat x)) l))
 
-  op  prSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
+  op  prSep: Nat -> (Nat * Lines -> Pretty) -> Pretty -> List Pretty -> Pretty
   def prSep n blockFn sep l =
     case l of
-      | [] \_rightarrow prEmpty
-      | [p] \_rightarrow p
-      | p::r \_rightarrow
-        blockFn(0, Cons((0, p), List.map (\_lambda x \_rightarrow (n, prConcat [sep, x])) r))
+      | [] -> prEmpty
+      | [p] -> p
+      | p::r ->
+        blockFn(0, Cons((0, p), map (fn x -> (n, prConcat [sep, x])) r))
 
-  op  prPostSep: Nat \_rightarrow (Nat * Lines \_rightarrow Pretty) \_rightarrow Pretty \_rightarrow List Pretty \_rightarrow Pretty
+  op  prPostSep: Nat -> (Nat * Lines -> Pretty) -> Pretty -> List Pretty -> Pretty
   def prPostSep n blockFn sep l =
     case l of
-      | [] \_rightarrow prEmpty
-      | [p] \_rightarrow p
-      | _ \_rightarrow
-        blockFn(0, (List.map (\_lambda x \_rightarrow (n, prConcat [x, sep])) (butLast l)) ++ [(0, last l)])
+      | [] -> prEmpty
+      | [p] -> p
+      | _ ->
+        blockFn(0, (map (fn x -> (n, prConcat [x, sep])) (butLast l)) ++ [(0, last l)])
 
 
   %% ========================================================================
@@ -127,9 +127,9 @@ PrettyPrint qualifying spec
 
   %% Text is stored backwards: right to left, bottom to top.
 
-  def emptyText () : Text = []
+  op emptyText () : Text = []
 
-  def extend (length : Nat, string : String, text : Text) : Text = 
+  op extend (length : Nat, string : String, text : Text) : Text = 
       case text
         of [] -> [(0, [(length,string)])]
          | Cons ((indent, strings), text) ->
@@ -138,22 +138,22 @@ PrettyPrint qualifying spec
 
   %% Length of last line in text.
 
-  def lengthStrings (strings : NatStrings) : Nat =
+  op lengthStrings (strings : NatStrings) : Nat =
     foldl (fn (n, (l,s)) -> n + l) 0 strings
 
-  def lengthLast (t : Text) : Nat =
+  op lengthLast (t : Text) : Nat =
     case t
       of [] -> 0 
        | (indent, strings):: _ -> indent + lengthStrings strings
     
 
-  def blankLines (n : Nat, text : Text) : Text =
+  op blankLines (n : Nat, text : Text) : Text =
     if n <= 0 then
       text
     else
       Cons ((0, []), blankLines (n - 1, text))
 
-  def addBreak (indent : Nat, newlines : Nat, text : Text) : Text =
+  op addBreak (indent : Nat, newlines : Nat, text : Text) : Text =
       Cons ((indent, []), blankLines (newlines, text))
 
  
@@ -162,25 +162,25 @@ PrettyPrint qualifying spec
   %% Width is the width of the pretty when placed entirely on a single
   %% line.
 
-  def pretty (width : Nat, format : (Nat * Text -> Text)) : Pretty =
+  op pretty (width : Nat, format : (Nat * Text -> Text)) : Pretty =
     (width, format)
 
-  def widthPretty (p : Pretty) : Nat =
+  op widthPretty (p : Pretty) : Nat =
     case p of (width, _) -> width 
 
-  def formatPretty (columns : Nat, p : Pretty, text : Text) : Text =
+  op formatPretty (columns : Nat, p : Pretty, text : Text) : Text =
     case p of (_, format) -> format (columns, text) 
 
-  def format (columns : Nat, p : Pretty) : Text =
+  op format (columns : Nat, p : Pretty) : Text =
     formatPretty (columns, p, emptyText ())
 
   op widthLine : Line -> Nat
   def widthLine (indent, pretty) = indent + widthPretty (pretty)
 
-  def widthLines (lines : Lines) : Nat = 
+  op widthLines (lines : Lines) : Nat = 
       foldr (fn (line, num) -> widthLine line + num) 0 lines
 
-  def formatLines
+  op formatLines
       (columns : Nat,
        lines : Lines,
        text  : Text,
@@ -199,7 +199,7 @@ PrettyPrint qualifying spec
       formatRestLines (lines, formatPretty (columns, pretty, text))
   
 
-  def fits? (columns : Nat, width : Nat, text : Text) : Boolean =
+  op fits? (columns : Nat, width : Nat, text : Text) : Boolean =
      lengthLast text + width <= columns
 
   def lengthString(l,s) = 
@@ -208,7 +208,7 @@ PrettyPrint qualifying spec
 
   def string s = lengthString(String.length s,s)
 
-  def blockAll (newlines : Nat, lines : Lines) : Pretty =
+  op blockAll (newlines : Nat, lines : Lines) : Pretty =
     pretty
     (widthLines lines,
      fn (columns : Nat, text : Text) ->
@@ -220,7 +220,7 @@ PrettyPrint qualifying spec
           (columns, pretty,
            addBreak (start + indent, newlines, text))))
 
-  def blockNone (_ (* newlines *) : Nat, lines : Lines) : Pretty =
+  op blockNone (_ (* newlines *) : Nat, lines : Lines) : Pretty =
     pretty
     (widthLines lines,
      fn (columns : Nat, text : Text) ->
@@ -229,7 +229,7 @@ PrettyPrint qualifying spec
         fn (indent : Nat, pretty : Pretty, text : Text) ->
           formatPretty (columns, pretty, text)))
 
-  def blockFill (newlines : Nat, lines : Lines) : Pretty =
+  op blockFill (newlines : Nat, lines : Lines) : Pretty =
     pretty
     (widthLines lines,
      fn (columns : Nat, text : Text) ->
@@ -240,10 +240,11 @@ PrettyPrint qualifying spec
           formatPretty
           (columns, pretty,
            if fits? (columns, widthPretty pretty, text)
+                || lengthLast text - start - indent  < 2     % Don't break unless it gains more than 1 character
            then text
            else addBreak (start + indent, newlines, text))))
 
-  def blockLinear (newlines : Nat, lines : Lines) : Pretty =
+  op blockLinear (newlines : Nat, lines : Lines) : Pretty =
     let width = widthLines lines in
     pretty
     (width,
@@ -262,16 +263,16 @@ PrettyPrint qualifying spec
 %      | _ -> String.concat (" ", blanks (n - 1))
     
 
-  def newlineString () : String = Char.show (Char.chr 10)
+  op newlineString () : String = Char.show (Char.chr 10)
 
-  def newlineAndBlanks (n : Nat) : String = 
+  op newlineAndBlanks (n : Nat) : String = 
      (newlineString () ^ blanks (n))
 
-  def latexBlanks(n : Nat) : String = 
+  op latexBlanks(n : Nat) : String = 
       if n = 0 then "" else
       "\\SWspace{" ^ Nat.show (6 * n) ^ "}"
 
-  def latexNewlineAndBlanks(n : Nat) : String = 
+  op latexNewlineAndBlanks(n : Nat) : String = 
       "\\\\[0.3em]" ^ newlineString() ^ latexBlanks(n)
 
   op  toStream : [a] Text * 
@@ -320,7 +321,7 @@ PrettyPrint qualifying spec
 		      rest
 	   in cont ((0,blanks 0), base)
 
-   def toString (text : Text) : String =
+   op toString (text : Text) : String =
        IO.withOutputToString
          (fn stream ->
             toStreamT (text,
@@ -334,7 +335,7 @@ PrettyPrint qualifying spec
 %                 "",
 %                 fn (n,s) -> s ^ newlineAndBlanks n)
 
-   def toLatexString (text : Text) : String = 
+   op toLatexString (text : Text) : String = 
        IO.withOutputToString
          (fn stream ->
             toStreamT (text,
@@ -347,7 +348,7 @@ PrettyPrint qualifying spec
 %                 "",
 %                 fn (n,s) -> s ^ latexNewlineAndBlanks n)
 
-   def toTerminal (text : Text) : () = 
+   op toTerminal (text : Text) : () = 
        toStreamT (text, 
 		  fn ((_,s), ()) -> toScreen s, 
 		  (),
@@ -392,7 +393,7 @@ PrettyPrint qualifying spec
         ++
         [(0,lengthString(0,"%)"))]
 
-    def printInt(i:Integer) = show i
+    op printInt(i:Integer): String = show i
 
    op buttonPretty : Boolean * Integer * Pretty * Boolean -> Pretty
    def buttonPretty(enabled,number,p,sos?) = 
@@ -422,7 +423,7 @@ PrettyPrint qualifying spec
           | _ -> stack
 
 
-   def toStringWithPathIndexing (text : Text) : String = 
+   op toStringWithPathIndexing (text : Text) : String = 
        let
            def appendString(length,s,{charPos,stack,readId?,axiom?,string}) = 
                if readId?
@@ -498,7 +499,7 @@ PrettyPrint qualifying spec
        "(insert-mouse-sensitive-spec \"(progn (let ((pt (point))) (widget-insert \\\""^string^" \\\") (goto-char pt)) "^ tree^ ")\")"
 
 
-   def toFileWithPathIndexing (fileName : String, text : Text) : PathStack = 
+   op toFileWithPathIndexing (fileName : String, text : Text) : PathStack = 
        let
            def appendString(stream,length,s,{charPos,stack,axiom?,readId?}) = 
                if readId?
@@ -568,7 +569,7 @@ PrettyPrint qualifying spec
 
           
 
-   def toPathFiles(fileName : String,pathFileName: String, text : Text) : () = 
+   op toPathFiles(fileName : String,pathFileName: String, text : Text) : () = 
        let trees = toFileWithPathIndexing(fileName,text) in
        let 
            def writeFun stream = 
@@ -577,7 +578,7 @@ PrettyPrint qualifying spec
        let _ = IO.withOpenFileForWrite (pathFileName, writeFun) in
        ()      
 
-   def appendFileWithNewline (fileName : String, text : Text, newlineIndent : Nat -> String) : () =
+   op appendFileWithNewline (fileName : String, text : Text, newlineIndent : Nat -> String) : () =
        let def writeFun stream =
             toStreamT (text,
 		       fn ((_,string), ()) -> streamWriter(stream,string),
@@ -586,16 +587,16 @@ PrettyPrint qualifying spec
        let _ = IO.withOpenFileForAppend (fileName, writeFun) in
        ()
 
-  def toFile (fileName : String, text : Text) : () =
+  op toFile (fileName : String, text : Text) : () =
       toFileWithNewline(fileName,text,newlineAndBlanks)
 
-  def toLatexFile(fileName : String, text : Text) : () =
+  op toLatexFile(fileName : String, text : Text) : () =
       toFileWithNewline(fileName,text,latexNewlineAndBlanks)
 
-  def appendFile (fileName : String, text : Text) : () =
+  op appendFile (fileName : String, text : Text) : () =
       appendFileWithNewline(fileName,text,newlineAndBlanks)
 
-  def appendLatexFile(fileName : String, text : Text) : () =
+  op appendLatexFile(fileName : String, text : Text) : () =
       appendFileWithNewline(fileName,text,latexNewlineAndBlanks)
  
       
@@ -604,7 +605,7 @@ PrettyPrint qualifying spec
 
   type Style = | None | All | Linear | Fill 
 
-  def block (style : Style, newlines : Nat, lines : Lines) : Pretty =
+  op block (style : Style, newlines : Nat, lines : Lines) : Pretty =
     case style
       of None   -> blockNone   (newlines, lines)
        | All    -> blockAll    (newlines, lines)
@@ -645,7 +646,7 @@ PrettyPrint qualifying spec
   def strings ss =
       prettysNone (map string ss)
 
-  def addSeparator (sep : Pretty) (ps : Prettys) : Prettys =
+  op addSeparator (sep : Pretty) (ps : Prettys) : Prettys =
     case ps
       of []  -> []
        | [p] -> [p]
