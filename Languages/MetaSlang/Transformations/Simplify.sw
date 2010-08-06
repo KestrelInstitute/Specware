@@ -95,7 +95,7 @@ spec
           if sideEffectFree(e) then body else term
 	| _ -> term
 
-  op noInterveningSideEffectsBefore?: MS.Term * (MS.Term -> Boolean) -> Boolean 
+  op noInterveningSideEffectsBefore?: MS.Term * (MS.Term -> Bool) -> Bool 
   def noInterveningSideEffectsBefore?(tm,p) =
     %% examine terms in execution order until either p is true or a possibly side-effection
     %% term is encountered
@@ -211,6 +211,9 @@ spec
        %% let y = x in f y  --> f x
        | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
 	 substitute(body,[(v,wVar)])
+       %% case e of pat => bod   --> let pat = e in bod
+       | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
+         simplifyOne spc (Let([(pat, t)], body, pos))
        %% Normalize simple lambda application to let
        | Apply(Lambda([(VarPat vp,_,body)],_),t,pos) ->
 	 simplifyOne spc (Let([(VarPat vp,t)],body,pos))
@@ -559,9 +562,12 @@ spec
       pats
 
   def simplifiedApply(t1,t2,spc) =
-    simplifyOne spc (mkApply(t1,t2))
+    % let _ = writeLine("simp apply: "^printTerm t1^" ("^printTerm t2^")") in
+    let result = simplifyOne spc (mkApply(t1,t2)) in
+    % let _ = writeLine(" --> "^printTerm result) in
+    result
 
-  op  simpleTerm?: MS.Term -> Boolean
+  op  simpleTerm?: MS.Term -> Bool
   def simpleTerm?(term) = 
     case term of 
       | Record(fields,_) ->
@@ -569,14 +575,14 @@ spec
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
- op simpleOrConstrTerm?(term: MS.Term): Boolean =
+ op simpleOrConstrTerm?(term: MS.Term): Bool =
    simpleTerm? term
      || (case term of
            | Apply(Fun(Embed _,_,_), arg, _) ->
              forall? simpleOrConstrTerm? (termToList arg)
            | _ -> false)
 
- op traceSimplify?: Boolean = false
+ op traceSimplify?: Bool = false
 
  op simplify (spc: Spec) (term: MS.Term): MS.Term =
    let simp_term = mapSubTerms(simplifyOne spc) term in
