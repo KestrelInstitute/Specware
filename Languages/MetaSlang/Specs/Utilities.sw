@@ -1021,6 +1021,27 @@ Utilities qualifying spec
      %let _ = writeLine("Conds: "^foldl (fn (s,t) -> s ^" "^printTerm t) "" condns) in
      result
 
+ op traceRemoveExcessAssumptions?: Bool = false
+
+ op removeExcessAssumptions (t: MS.Term): MS.Term =
+   let (vs, cjs, bod) = forallComponents t in
+   let def findDepCjs(lvs, cjs, dep_cjs) =
+         let n_dep_cjs = filter (fn cj -> hasRefTo?(cj, lvs)) cjs in
+         let n_lvs = foldl (fn (lvs, cj) -> insertVars(freeVars cj, lvs)) lvs n_dep_cjs in
+         let n_dep_cjs = n_dep_cjs ++ dep_cjs in
+         if length n_lvs = length lvs
+           then (lvs, n_dep_cjs)
+           else findDepCjs(n_lvs, filter (fn cj -> ~(termIn?(cj, n_dep_cjs))) cjs, n_dep_cjs)
+   in
+   let (r_vs, r_cjs) = findDepCjs(freeVars bod, cjs, []) in
+   if length vs ~= length r_vs || length cjs ~= length r_cjs
+     then let new_t = mkSimpBind(Forall, r_vs, mkSimpImplies(mkSimpConj r_cjs, bod)) in
+          let _ = if traceRemoveExcessAssumptions?
+                    then writeLine(printTerm t^"\n --->\n"^printTerm new_t) else ()
+          in
+          new_t
+     else t
+
   %% Given an existential quantification return list of quantified variables and conjuncts
   op  existsComponents: MS.Term -> List Var * List MS.Term
   def existsComponents t =
