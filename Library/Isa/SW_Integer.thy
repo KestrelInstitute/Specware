@@ -347,8 +347,10 @@ theorem Integer__gcd_of_not_both_zero:
        \<and> (\<forall>(w::int). 
             w zdvd x \<and> w zdvd y \<longrightarrow> int (igcd(x, y)) \<ge> w)))"
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
-apply (metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
-by (metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd int_eq_0_conv zgcd_specware_def)
+  apply(metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
+  apply(metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd
+              int_eq_0_conv zgcd_specware_def)
+  done
 theorem Integer__gcd_of_zero_zero_is_zero: 
   "(igcd(0, 0)) = 0"
   by auto
