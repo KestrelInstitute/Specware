@@ -409,7 +409,7 @@
   ;;  7 optional-def 
   ;;  8 l 
   ;;  9 r
-  (make-op-elem 1 2 3 4 5 6 7 :unspecified ':left-lcb ':right-lcb))
+  (make-op-elem 1 2 3 4 5 6 7 :unspecified :unspecified ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
@@ -457,8 +457,9 @@ If we want the precedence to be optional:
           (1 :QUALIFIABLE-OP-NAMES)
           (6 :FORMAL-PARAMETERS)
           (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
-          "="
-          (7 :EXPRESSION))
+          (:anyof
+           (:tuple "=" (7 :EXPRESSION))
+           (:tuple "by" "{" (9 (:repeat* :TRANSFORM-EXPR ",")) "}")))
   ;; args to make-op-elem are: 
   ;;  1 qualifiable-op-names 
   ;;  2 optional-fixity 
@@ -469,7 +470,7 @@ If we want the precedence to be optional:
   ;;  7 optional-def 
   ;;  8 l 
   ;;  9 r
-  (make-op-elem 1 :unspecified 3 4 5 6 7 8 ':left-lcb ':right-lcb))
+  (make-op-elem 1 :unspecified 3 4 5 6 7 8 9 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
   (:repeat* :FORMAL-PARAMETER))

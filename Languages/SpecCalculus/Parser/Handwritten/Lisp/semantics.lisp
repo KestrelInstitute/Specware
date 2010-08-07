@@ -136,7 +136,7 @@
 	 (cons :|SpecPath_Relative|
 	       (cons
 		(cond ((eq optional-fragment-id :unspecified)
-		       (cons :|None| nil))
+		       '(:|None|))
 		      (t
 		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
@@ -147,7 +147,7 @@
 	 (cons :|UnitId_Relative|
 	       (cons
 		(cond ((eq optional-fragment-id :unspecified)
-		       (cons :|None| nil))
+		       '(:|None|))
 		      (t
 		       (cons :|Some| optional-fragment-id)))
 		sc-unit-id-path))))
@@ -272,6 +272,7 @@
 		     optional-params 
 		     optional-def
                      optional-refine
+                     optional-transform-expr
 		     l r)
   (let* ((names  (remove-duplicates qualifiable-op-names :test 'equal :from-end t))
 	 (fixity (if (equal  optional-fixity :unspecified) 
@@ -292,10 +293,12 @@
 		     (freshMetaTypeVar l r)
 		     (cdr (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type))))
 	 ;; ---------------------------------------------------------------
-	 (dfn                (if (equal optional-def :unspecified)
-				 (cons :|Any| pos)
-				 optional-def))
-         (refine?            (not (eq optional-refine :unspecified)))
+	 (refine?            (not (eq optional-refine :unspecified)))
+         (dfn                (if (and refine? (not (eq optional-transform-expr :unspecified)))
+                                 (make-transform-term optional-transform-expr pos)
+                               (if (equal optional-def :unspecified)
+                                   (cons :|Any| pos)
+                                   optional-def)))
 	 (typed-term         (make-sorted-term dfn typ l r))
 	 (typed-term         (if (equal optional-params :unspecified)
 				  typed-term 
@@ -387,7 +390,7 @@ If we want the precedence to be optional:
   (declare (ignore l r))
   (cons constructor
         (if (eq :unspecified optional-slack-sort)
-            (cons :|None| nil)
+            '(:|None|)
             (cons :|Some| optional-slack-sort))))
 
 ;;; ------------------------------------------------------------------------
@@ -621,6 +624,10 @@ If we want the precedence to be optional:
   (cons :|SortedTerm|
         (vector tight-expression sort
                 (make-pos l r))))
+
+(defun make-transform-term (transform-expression pos)
+  (cons :|Transform|
+        (cons transform-expression pos)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   APPLICATION
