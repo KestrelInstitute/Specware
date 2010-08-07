@@ -79,15 +79,7 @@ SpecCalc qualifying spec
  type PCClaimName  = | WellFormed | Claim QualifiedId
  type ClaimName  = QualifiedId
 
-  type TransformExpr =
-    | Name String * Position
-    | Number Nat * Position
-    | Str String * Position
-    | Qual String * String * Position
-    | Item String * TransformExpr * Position       % e.g. unfold map
-    | Tuple List TransformExpr * Position
-    | ApplyOptions TransformExpr * List TransformExpr * Position
-    | Apply TransformExpr * List TransformExpr * Position
+ type TransformExpr = ATransformExpr Position
 
  %% In a basic Specware image, OtherTerm is unspecified, but in an extension
  %% such as PSL or Planware, it might be refined to an application-specific 
