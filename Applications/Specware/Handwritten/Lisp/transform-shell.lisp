@@ -154,11 +154,15 @@
                                                nil)))
 	(push prev-result *transform-commands*)))))
 
-(defun parse-qid (qid-str)
+(defun parse-qid (qid-str op?)
   (let* ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) "."))
 	 (len (length syms)))
     (if (= len 1)
-	(MetaSlang::mkUnQualifiedId (first syms))
+	(let ((uq_qid (MetaSlang::mkUnQualifiedId (first syms))))
+          (if (if op? (Script::findMatchingOps-2 *transform-spec* uq_qid)
+                  (Script::matchingTheorems?-2 *transform-spec* uq_qid))
+              uq_qid
+              (MetaSlang::mkQualifiedId-2 Script::wildQualifier (first syms))))
 	(if (= len 2)
 	    (MetaSlang::mkQualifiedId-2 (first syms) (second syms))
 	    nil))))
@@ -221,8 +225,12 @@
       (interpret-command (Script::mkMove move-comms)))
     (values)))
 
-(defun apply-command (qid constr-fn)
-  (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid))))))
+(defun apply-command (qid constr-fn op?)
+  (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid op?))))))
+
+(defvar *op-commands* '(fold f unfold uf rewrite rw))
+(defun op-command? (com)
+  (member com *op-commands*))
 
 (defun simplify-command (argstr)
   (let* ((words (and argstr
@@ -231,7 +239,7 @@
 		      collect (funcall (Script::ruleConstructor (first tl))
 				       (if (null (cdr tl))
 					   nil
-					   (parse-qid (second tl)))))))
+					   (parse-qid (second tl) (op-command? (first tl))))))))
     (interpret-command (Script::mkSimplify rules))))
 
 (defun finish-transform-session ()
@@ -254,17 +262,17 @@
 			     *transform-help-strings*))
 			(cl-user::sw-help argstr) ; refers to *transform-help-strings*
 			))
-	   (at                 (at-command (parse-qid argstr)))
+	   (at                 (at-command (parse-qid argstr t)))
 	   ((move m)           (move-command (String-Spec::split argstr)))
 	   ((f l n p w a s r)  (move-command (cons (string-downcase (string command))
 						   (String-Spec::split argstr))))
 	   ((simplify simp s)  (simplify-command argstr)    )
 	   ;((apply a)       (cl-user::ls     (or argstr "")))
-	   ((fold f)           (apply-command argstr 'Script::mkFold))
-	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold))
-           ((rewrite rw)       (apply-command argstr 'Script::mkRewrite))
-	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight))
-	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft))
+	   ((fold f)           (apply-command argstr 'Script::mkFold t))
+	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold t))
+           ((rewrite rw)       (apply-command argstr 'Script::mkRewrite t))
+	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight nil))
+	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft nil))
 	   ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
 	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
 	   ((partial-eval pe)  (interpret-command (Script::mkPartialEval-0)))
