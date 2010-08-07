@@ -1,6 +1,5 @@
-\subsection{Evalution of a Spec form in the Spec Calculus}
+(* Evalution of a Spec form in the Spec Calculus *)
 
-\begin{spec}
 SpecCalc qualifying spec
 
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
@@ -15,13 +14,14 @@ SpecCalc qualifying spec
   import Spec/AddSpecElements
   import Spec/MergeSpecs
   import Spec/ComplainIfAmbiguous
-\end{spec}
+  import Transform
 
+(*
 To evaluate a spec we deposit the declarations in a new spec
 (evaluating any import terms along the way), elaborate the spec
 and then qualify the resulting spec if the spec was given a name.
+*)
 
-\begin{spec}
  op  noElaboratingMessageFiles: List String
  def noElaboratingMessageFiles = []
 
@@ -40,15 +40,14 @@ and then qualify the resulting spec if the spec was given a name.
 	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
+    transformed_spec <- applyOpRefinements compressed_spec;
 %    full_spec <- explicateHiddenAxiomsM compressed_spec;
-    return (Spec (removeDuplicateImports compressed_spec),TS,depUIDs)
+    return (Spec (removeDuplicateImports transformed_spec),TS,depUIDs)
   }
-\end{spec}
-
+(*
 We first evaluate the imports and then the locally declared ops, sorts
 axioms, etc.
-
-\begin{spec}
+*)
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
                            -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
   def evaluateSpecElems starting_spec specElems = {
@@ -141,12 +140,10 @@ axioms, etc.
 			 ops   = new_ops})
     }
 
-\end{spec}
-
+(*
 The following wraps the existing \verb+elaborateSpec+ in a monad until
 such time as the current one can made monadic.
-
-\begin{spec}
+*)
  op elaborateSpecM : Spec -> SpecCalc.Env Spec
  def elaborateSpecM spc =
    { unitId      <- getCurrentUID;
@@ -155,11 +152,35 @@ such time as the current one can made monadic.
        | Spec spc    -> return spc
        | Errors msgs -> raise (TypeCheckErrors msgs)
    }
-\end{spec}
 
-\begin{spec}
   op explicateHiddenAxiomsM: Spec -> SpecCalc.Env Spec
   def explicateHiddenAxiomsM spc =
     return spc % (explicateHiddenAxioms spc)
+
+  op applyOpRefinements(spc: Spec): SpecCalc.Env Spec =
+    foldM (fn spc -> fn elem ->
+              case elem of
+                | OpDef(qid, refine_num, _) ->
+                  % let _ = writeLine("aor0: "^printQualifiedId qid^show refine_num) in
+                  (case AnnSpec.findTheOp(spc, qid) of
+                   | None -> return spc
+                   | Some opinfo ->
+                   case unpackNthOpDef(opinfo, refine_num) of
+                   | (tvs, ty, dfn) ->
+                     (case transformSteps? dfn of
+                      | None -> return spc
+                      | Some refine_steps ->
+                      let all_defs = innerTerms opinfo.dfn in
+                      let (_, _, full_tm) = unpackTerm(opinfo.dfn) in
+                      let prev_tm = refinedTerm(full_tm, refine_num - 1) in
+                      {(_, steps) <- makeScript refine_steps;
+                       % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
+                       ((_, tr_term), _) <- interpretTerm(spc, Steps steps, prev_tm, prev_tm, true);
+                       new_dfn <- return (maybePiTerm(tvs, SortedTerm (replaceNthTerm(full_tm, refine_num, tr_term),
+                                                                       ty, termAnn opinfo.dfn)));
+                       return (setOpInfo(spc,qid,opinfo << {dfn = new_dfn}))})
+                   | _ -> return spc)
+                | _ -> return spc)
+       spc spc.elements
+     
 endspec
-\end{spec}
