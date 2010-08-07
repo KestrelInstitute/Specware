@@ -1,8 +1,7 @@
-\section{Specware 4 Toplevel Specification}
+(* Specware 4 Toplevel Specification *)
 
-This constructs Specware and refines various abstract sorts.
+%%% This constructs Specware and refines various abstract sorts.
 
-\begin{spec}
 spec 
   import /Languages/SpecCalculus/Semantics/Specware
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
@@ -31,4 +30,3 @@ spec
   import NatTrans qualifying /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
 
 endspec
-\end{spec}
