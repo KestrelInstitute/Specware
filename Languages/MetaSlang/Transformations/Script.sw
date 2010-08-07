@@ -160,6 +160,10 @@ spec
      then pid = cid
    else cq = pq && cid = pid
 
+  op matchingTheorems? (spc: Spec, qid: QualifiedId): Bool =
+    exists? (\_lambda r \_rightarrow claimNameMatch(qid, r.2))
+      (allProperties spc)
+
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
     if rls = []
       then (warn(kind ^ printQualifiedId qid ^ " not found!");
@@ -414,6 +418,7 @@ spec
   %% term is the current focus and should  be a sub-term of the top-level term top_term
   op interpretTerm(spc: Spec, script: Script, term: MS.Term, top_term: MS.Term, tracing?: Boolean)
      : SpecCalc.Env ((MS.Term * MS.Term) * Boolean) =
+    % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
       | Steps steps \_rightarrow
           foldM (\_lambda ((term,top_term),tracing?) -> fn s \_rightarrow
@@ -492,7 +497,8 @@ spec
                                (print ((printTerm tm) ^ "\n")); 
                              ((_,newtm),tracing?) <- interpretTerm (spc, scr, tm, tm, tracing?); 
                              newdfn <- return (maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)));
-                             return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}),tracing?)
+                             new_spc <- return(setOpInfo(spc,qid,opinfo << {dfn = newdfn}));
+                             return (new_spc, tracing?)
                              })
                        (spc,tracing?) opinfos)
             (spc,tracing?) locs }
