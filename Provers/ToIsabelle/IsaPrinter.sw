@@ -18,19 +18,19 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/LambdaLift
 % import /Languages/MetaSlang/Transformations/ArityNormalize
 
- op addObligations?: Boolean = true
- op lambdaLift?: Boolean     = true
- op simplify?: Boolean       = true
- op usePosInfoForDefAnalysis?: Boolean = true
- op printQuantifiersWithType?: Boolean = true
+ op addObligations?: Bool = true
+ op lambdaLift?: Bool     = true
+ op simplify?: Bool       = true
+ op usePosInfoForDefAnalysis?: Bool = true
+ op printQuantifiersWithType?: Bool = true
  op defaultProof: String = "by auto"
- op addExplicitTyping?: Boolean = true
- op targetFunctionDefs?: Boolean = true
+ op addExplicitTyping?: Bool = true
+ op targetFunctionDefs?: Bool = true
 
  type Pretty = PrettyPrint.Pretty
 
- type Context = {printTypes?: Boolean,
-		 recursive?: Boolean,
+ type Context = {printTypes?: Bool,
+		 recursive?: Bool,
                  thy_name: String,
                  anon_thy_count: Ref Nat,
 		 spec?: Option Spec,
@@ -39,7 +39,7 @@ IsaTermPrinter qualifying spec
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
                  newVarCount: Ref Nat,
-                 source_of_thy_morphism?: Boolean,
+                 source_of_thy_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * Sort)}
 
  op  specialOpInfo: Context \_rightarrow QualifiedId \_rightarrow Option OpTransInfo
@@ -101,7 +101,7 @@ IsaTermPrinter qualifying spec
 	else mainPath
 
 
-  op  printUIDtoThyFile: String \_times Boolean \_rightarrow String
+  op  printUIDtoThyFile: String \_times Bool \_rightarrow String
   def printUIDtoThyFile (uid_str, recursive?) =
     case Specware.evaluateUnitId uid_str of
       | Some val \_rightarrow
@@ -281,13 +281,13 @@ IsaTermPrinter qualifying spec
       | Some global_context \_rightarrow
         findUnitIdForUnit(val, global_context)
   
-  op  printUID : String \_times Boolean \_rightarrow ()
+  op  printUID : String \_times Bool \_rightarrow ()
   def printUID (uid, recursive?) =
     case evaluateUnitId uid of
       | Some val \_rightarrow toTerminal(showValue (val, recursive?, findUnitIdForUnitInCache val, None))
       | _ \_rightarrow toScreen "<Unknown UID>"
 
-  op  showValue : Value \_times Boolean \_times Option UnitId \_times Option String \_rightarrow Text
+  op  showValue : Value \_times Bool \_times Option UnitId \_times Option String \_rightarrow Text
   def showValue (value, recursive?, uid, opt_nm) =
     let (thy_nm, val_uid) = case uidStringPairForValue value of
                              | Some ((thy_nm, _, hash_nm), uid) \_rightarrow (thy_nm ^ hash_nm, Some uid)
@@ -447,7 +447,7 @@ IsaTermPrinter qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
-  op generateAllSubtypeConstrs?(spc: Spec): Boolean =
+  op generateAllSubtypeConstrs?(spc: Spec): Bool =
     let (initial_make_subtype_constr_pragma?, _) =
         foldl (fn (r as (initial_make_subtype_constr_pragma?, done?), el) ->
                if done? then r
@@ -469,7 +469,7 @@ IsaTermPrinter qualifying spec
     in
     initial_make_subtype_constr_pragma?
 
-  op generateObligsForSTPFuns?(spc: Spec): Boolean =
+  op generateObligsForSTPFuns?(spc: Spec): Bool =
     let (initial_make_stp_obligs_pragma?, _) =
         foldl (fn (r as (initial_make_stp_obligs_pragma?, done?), el) ->
                if done? then r
@@ -562,7 +562,7 @@ IsaTermPrinter qualifying spec
 		  [ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [prString "end"]]
 
-  op  isaElement?: SpecElement \_rightarrow Boolean
+  op  isaElement?: SpecElement \_rightarrow Bool
   def isaElement? elt =
     case elt of
       | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str \_rightarrow true
@@ -570,7 +570,7 @@ IsaTermPrinter qualifying spec
       | Comment _ -> false
       | _ \_rightarrow true
 
-  op  elementFilter: SpecElement \_rightarrow Boolean
+  op  elementFilter: SpecElement \_rightarrow Bool
   def elementFilter elt =
     case elt of
       %| Import _ \_rightarrow false
@@ -1121,12 +1121,12 @@ IsaTermPrinter qualifying spec
      then prConcat [prString "\"", prString nm, prString "\""]
      else prString nm
 
- op quoteIf(quote?: Boolean, nm: String, pr: Pretty): Pretty =
+ op quoteIf(quote?: Bool, nm: String, pr: Pretty): Pretty =
    if quote? && nm in? isabelleReservedWords then prConcat [prString "\"", pr, prString "\""]
    else pr
 
    
- op  ppTypeInfo : Context \_rightarrow Boolean \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
+ op  ppTypeInfo : Context \_rightarrow Bool \_rightarrow List QualifiedId \_times Sort \_rightarrow Pretty
  def ppTypeInfo c full? (aliases, dfn) =
    let mainId = head aliases in
    case specialTypeInfo c mainId of
@@ -1331,7 +1331,7 @@ IsaTermPrinter qualifying spec
    %let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
 
- op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Boolean =
+ op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Bool =
    case opt_prag of
      | Some(beg_str,mid_str,end_str,pos) \_rightarrow
        let len = length mid_str in
@@ -1412,7 +1412,7 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MS.Term) (ty: Sort) (opt_
                                then []
                                else [[prString "done",prEmpty]])))
 
-op  ppOpInfo :  Context \_rightarrow Boolean \_rightarrow Boolean \_rightarrow SpecElements \_rightarrow Option Pragma
+op  ppOpInfo :  Context \_rightarrow Bool \_rightarrow Bool \_rightarrow SpecElements \_rightarrow Option Pragma
                   \_rightarrow Aliases \_rightarrow Fixity \_rightarrow Nat \_rightarrow MS.Term
                   \_rightarrow Pretty
 def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
@@ -1614,12 +1614,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             of None \_rightarrow patToTerm(p1, ext, c)
              | Some(trm) \_rightarrow Some trm)
 
- op constructorTerm?(tm: MS.Term): Boolean =
+ op constructorTerm?(tm: MS.Term): Bool =
    case tm of
      | Fun(Embed _, _, _) \_rightarrow true
      | _ \_rightarrow false
 
- op primitiveArg?(tm: MS.Term): Boolean =
+ op primitiveArg?(tm: MS.Term): Bool =
    case tm of
      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
        forall? (embed? Var) (MS.termToList arg)
@@ -1627,32 +1627,32 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Var _ \_rightarrow true
      | _ \_rightarrow false
 
- op sameHead?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op sameHead?(tm1: MS.Term, tm2: MS.Term): Bool =
    equalTerm?(tm1, tm2)
      || (case (tm1, tm2) of
            | (Apply(x1,_,_), Apply(x2,_,_)) \_rightarrow sameHead?(x1,x2)
            | _ \_rightarrow false)
 
- op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op nonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Bool =
    case tm1 of
      | Apply(Fun(Embed _, _, _), arg, _) \_rightarrow
        ~(termIn?(tm2, MS.termToList arg))
      | _ \_rightarrow false
 
- op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Boolean =
+ op hasNonPrimitiveArg?(tm1: MS.Term, tm2: MS.Term): Bool =
    case (tm1, tm2) of
      | (Apply(x1,y1,_), Apply(x2,y2,_)) \_rightarrow
        nonPrimitiveArg?(y1,y2) || hasNonPrimitiveArg?(x1,x2)
      | _ \_rightarrow false
 
- op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Boolean =
+ op nonPrimitiveCall? (hd: MS.Term) (tm: MS.Term): Bool =
    sameHead?(hd,tm) && hasNonPrimitiveArg?(hd,tm)
 
  %% Only concerned with curried calls
- op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Boolean =
+ op recursiveCallsNotPrimitive?(hd: MS.Term, bod: MS.Term): Bool =
    existsSubTerm (nonPrimitiveCall? hd) bod
 
- op patternLambda?(v_pos: Position, lam_pos: Position): Boolean =
+ op patternLambda?(v_pos: Position, lam_pos: Position): Bool =
    %% an explicit lambda will have beginning of variable close to beginning of lambda expr
    usePosInfoForDefAnalysis?
      => (case (v_pos, lam_pos) of
@@ -1660,7 +1660,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
              v_byte - lam_byte > 4
            | _ -> true)
 
- op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Boolean \_rightarrow List(MS.Term \_times MS.Term) \_times Boolean
+ op  defToCases: Context \_rightarrow MS.Term \_rightarrow MS.Term \_rightarrow Bool \_rightarrow List(MS.Term \_times MS.Term) \_times Bool
  def defToCases c op_tm bod infix? =
    let
      def aux(hd, bod, tuple?) =
@@ -2017,7 +2017,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    in
    skip_back(pos, 0, false)
 
- op lastLineEnds(prf: String): Boolean =
+ op lastLineEnds(prf: String): Bool =
    let len_prf = length prf in
    case backwardsSExpr(prf, len_prf-1) of
      | None -> false
@@ -2035,7 +2035,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 && (whiteSpaceChar?(prf@(n+2))
                       || prf@(n+2) = #()
 
- op prfEndsWithTerminator?(prf: String): Boolean =
+ op prfEndsWithTerminator?(prf: String): Bool =
    let len = length prf in
    testSubseqEqual?("done",prf,0,len-4)
   \_or testSubseqEqual?("sorry",prf,0,len-5)
@@ -2160,13 +2160,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Fun(f,_,_) -> infixFun? c f
      | _ -> None
 
- op nonCaseMatch?(match: Match): Boolean =
+ op nonCaseMatch?(match: Match): Bool =
    case match of
      | (NatPat _,_,_)::_ -> true
      | (CharPat _,_,_)::_ -> true
      | _ -> false
 
- op charMatch?(match: Match): Boolean =
+ op charMatch?(match: Match): Bool =
    case match of
      | (CharPat _,_,_)::_ -> true
      | _ -> false
@@ -2631,7 +2631,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | Some str \_rightarrow prString("ignore"^str)
           | None \_rightarrow prString "_")
      | StringPat (str,_) \_rightarrow prString ("''" ^ str ^ "''")
-     | BoolPat (b,_) \_rightarrow ppBoolean b
+     | BoolPat (b,_) \_rightarrow ppBool b
      | CharPat (chr,_) \_rightarrow prString (Char.show chr)
      | NatPat (int,_) \_rightarrow prString (Nat.show int)      
      | QuotientPat (pat,qid,_) \_rightarrow 
@@ -2675,7 +2675,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | SortedPat (pat,ty,_) \_rightarrow ppPattern c pat wildstr
      | mystery \_rightarrow fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
- op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Boolean
+ op  multiArgConstructor?: Id * Sort * Spec \_rightarrow Bool
  def multiArgConstructor?(constrId,ty,spc) =
    case ty of
      | Base(qid,_,_) \_rightarrow
@@ -2700,8 +2700,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    let Some info = AnnSpec.findTheSort(spc,qid) in
    firstSortDefInnerSort info
 
- op  ppBoolean : Boolean \_rightarrow Pretty
- def ppBoolean b =
+ op  ppBool : Bool \_rightarrow Pretty
+ def ppBool b =
    case b of
      | true \_rightarrow prString "True"
      | false \_rightarrow prString "False"
@@ -2779,7 +2779,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                              prString (Char.show chr),
                              prString "''"]
      | String str \_rightarrow prString ("''" ^ str ^ "''")
-     | Bool b \_rightarrow ppBoolean b
+     | Bool b \_rightarrow ppBool b
      | OneName (id,fxty) \_rightarrow prString id
      | TwoNames (id1,id2,fxty) \_rightarrow ppOpQualifiedId c (Qualified (id1,id2))
      | mystery \_rightarrow fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
@@ -2805,7 +2805,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  %% May only need ops that can be unary
  op overloadedIsabelleOps: List String = ["+","-","^","abs","min","max"]
 
- op overloadedIsabelleOp? (c: Context) (f: MS.Term) : Boolean =
+ op overloadedIsabelleOp? (c: Context) (f: MS.Term) : Bool =
    case f of
      | Fun(Op(qid,_),_,_) \_rightarrow
        (case specialOpInfo c qid of
@@ -2824,7 +2824,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 %      | Qualified("List","List") \_rightarrow prString "list"
 %      | Qualified("String","String") \_rightarrow prString "string"
 %      | Qualified("Char","Char") \_rightarrow prString "char"
-%      | Qualified("Boolean","Boolean") \_rightarrow prString "bool"
+%      | Qualified("Bool","Bool") \_rightarrow prString "bool"
 %      | Qualified("Integer","Integer") \_rightarrow prString "int"
      | _ \_rightarrow ppQualifiedId qid
 
@@ -2844,7 +2844,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                      prString "]"]
      | mystery \_rightarrow fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
- op  isSimpleSort? : Sort \_rightarrow Boolean
+ op  isSimpleSort? : Sort \_rightarrow Bool
  def isSimpleSort? ty =
    case ty of
      | Base _ \_rightarrow true
@@ -2861,7 +2861,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
          | _ \_rightarrow ppType c Top true ty)
      | _ \_rightarrow ppType c Top true ty
 
- op  ppType : Context \_rightarrow ParentSort \_rightarrow Boolean \_rightarrow Sort \_rightarrow Pretty
+ op  ppType : Context \_rightarrow ParentSort \_rightarrow Bool \_rightarrow Sort \_rightarrow Pretty
  def ppType c parent in_quotes? ty =
    case ty of
      | Base (qid,[],_) \_rightarrow ppTypeQualifiedId c qid
@@ -2950,13 +2950,13 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 op  ppLitString: String \_rightarrow Pretty
 def ppLitString id = prString(IO.formatString1("~S",id))
 
-op  infix?: ParentTerm \_rightarrow Boolean
+op  infix?: ParentTerm \_rightarrow Bool
 def infix? parentTerm =
   case parentTerm of
     | Infix _ \_rightarrow true
     | _ \_rightarrow false
 
-op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Boolean * Boolean
+op  termFixity: Context \_rightarrow MS.Term \_rightarrow Option Pretty * Fixity * Bool * Bool
 def termFixity c term = 
   case term of
     | Fun (termOp, _, _) -> 
@@ -2984,12 +2984,12 @@ def termFixity c term =
          | _              -> (None, Nonfix, false, false))
     | _ -> (None, Nonfix, false, false)
 
-op reversedNonfixOp? (c: Context) (qid: QualifiedId): Boolean =
+op reversedNonfixOp? (c: Context) (qid: QualifiedId): Bool =
   case specialOpInfo c qid of
     | Some(_ ,None,_,true,_) -> true
     | _ -> false
 
-op  enclose?: Boolean \_times Pretty \_rightarrow Pretty
+op  enclose?: Bool \_times Pretty \_rightarrow Pretty
 def enclose?(encl? ,pp) =
   if encl? then prConcat [prString "(", pp, prString ")"]
     else pp
@@ -3051,7 +3051,7 @@ def ppIdStr id =
                   | (id,c) -> id ^ show c) "" idarray
   in id
 
-op  isSimpleTerm? : MS.Term \_rightarrow Boolean
+op  isSimpleTerm? : MS.Term \_rightarrow Bool
 def isSimpleTerm? trm =
   case trm of
     | SortedTerm(t,_,_) \_rightarrow isSimpleTerm? t
@@ -3059,7 +3059,7 @@ def isSimpleTerm? trm =
     | Fun _ \_rightarrow true
     | _ \_rightarrow false
 
-op  isSimplePattern? : Pattern \_rightarrow Boolean
+op  isSimplePattern? : Pattern \_rightarrow Bool
 def isSimplePattern? trm =
   case trm of
     | VarPat _ \_rightarrow true
@@ -3071,7 +3071,7 @@ def isSimplePattern? trm =
     | NatPat _ \_rightarrow true
     | _ \_rightarrow false
 
- op  varOrTuplePattern?: Pattern \_rightarrow Boolean
+ op  varOrTuplePattern?: Pattern \_rightarrow Bool
  def varOrTuplePattern? p =
    case p of
      | VarPat _ \_rightarrow true
@@ -3081,7 +3081,7 @@ def isSimplePattern? trm =
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
- op  varOrRecordPattern?: Pattern \_rightarrow Boolean
+ op  varOrRecordPattern?: Pattern \_rightarrow Bool
  def varOrRecordPattern? p =
    case p of
      | VarPat _ \_rightarrow true
@@ -3091,13 +3091,13 @@ def isSimplePattern? trm =
      | WildPat _ \_rightarrow true
      | _ \_rightarrow false
 
- op  simpleHead?: MS.Term \_rightarrow Boolean
+ op  simpleHead?: MS.Term \_rightarrow Bool
  def simpleHead? t =
    case t of
      | Apply(_,arg,_) \_rightarrow varOrTupleTerm? arg
      | _ -> false
 
- op  varOrTupleTerm?: MS.Term \_rightarrow Boolean
+ op  varOrTupleTerm?: MS.Term \_rightarrow Bool
  def varOrTupleTerm? p =
    case p of
      | Var _ \_rightarrow true
