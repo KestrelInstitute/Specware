@@ -163,6 +163,7 @@ MetaSlang qualifying spec
   | IfThenElse   ATerm b * ATerm b * ATerm b             * b
   | Seq          List (ATerm b)                          * b
   | SortedTerm   ATerm b * ASort b                       * b
+  | Transform    List(ATransformExpr b)                  * b  % For specifying refinement by script
   | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
   | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
                                                               % We might want to record a quotient of consistent terms plus a list of inconsistent pairs,
@@ -259,6 +260,16 @@ MetaSlang qualifying spec
  type AMetaTyVars     b = List (AMetaTyVar b)
  type AMetaSortScheme b = AMetaTyVars b * ASort b
 
+ type ATransformExpr a =
+    | Name String * a
+    | Number Nat * a
+    | Str String * a
+    | Qual String * String * a
+    | Item String * ATransformExpr a * a       % e.g. unfold map
+    | Tuple List (ATransformExpr a) * a
+    | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a
+    | Apply ATransformExpr a * List (ATransformExpr a) * a
+
  %%% Predicates
  op product?: [a] ASort a -> Boolean
  def product? s =
@@ -331,6 +342,7 @@ MetaSlang qualifying spec
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
      | SortedTerm (_,_,   a) -> a
+     | Transform  (_,     a) -> a
      | Pi         (_,_,   a) -> a
      | And        (_,     a) -> a
      | Any                a  -> a
@@ -351,6 +363,7 @@ MetaSlang qualifying spec
      | IfThenElse (t1,t2,t3, b) -> if a = b then tm else IfThenElse (t1, t2, t3, a)
      | Seq        (l,        b) -> if a = b then tm else Seq        (l,          a)
      | SortedTerm (t,s,      b) -> if a = b then tm else SortedTerm (t, s,       a)
+     | Transform  (t,        b) -> if a = b then tm else Transform  (t,          a)
      | Pi         (tvs, t,   b) -> if a = b then tm else Pi         (tvs, t,     a)
      | And        (l,        b) -> if a = b then tm else And        (l,          a)
      | Any                   b  -> if a = b then tm else Any                     a
@@ -473,6 +486,16 @@ MetaSlang qualifying spec
      | And(tms, _)           -> forall? anyTerm? tms
      | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
      | _ -> false
+
+ op [a] transformSteps?(t: ATerm a): Option(List(ATransformExpr a)) =
+   case t of
+     | Transform(steps, _)   -> Some steps
+     | Any _                 -> None
+     | Pi(_, tm, _)          -> transformSteps? tm
+     | SortedTerm(tm, _, _)  -> transformSteps? tm
+     | And(tms, _)           -> None
+     | Lambda([(_,_,tm)], _) -> transformSteps? tm     % Arguments given but no body
+     | _ -> None
 
  def unpackTerm t =
    let (tvs, tm) = 
@@ -742,7 +765,7 @@ MetaSlang qualifying spec
 
          | And (tms, a)    -> maybeAndTerm (map mapRec tms, a)
 
-         | Any _           -> term
+         | _           -> term
 
      def mapRec term =
        %% apply map to leaves, then apply map to result
@@ -1047,7 +1070,7 @@ MetaSlang qualifying spec
 
          | And (tms, a)    -> maybeAndTerm (map mapT tms, a)
 
-         | Any  _ -> term
+         | _ -> term
 			     
      def mapRec term =
        %% apply map to leaves, then apply map to result
@@ -1109,7 +1132,7 @@ MetaSlang qualifying spec
 
       | And         (tms,      _) -> exists? (existsSubTerm pred?) tms
 
-      | Any                    _  -> false
+      | _  -> false
       )				    
 
  op  existsSubTermPat : [b] (ATerm b -> Boolean) -> APattern b -> Boolean
@@ -1194,7 +1217,7 @@ MetaSlang qualifying spec
 
      | And       (tm1::tms, _) -> foldSubTerms f newVal tm1
 
-     | Any                  _  -> newVal
+     | _  -> newVal
 
  op  foldSubTermsPat : [b,r] (ATerm b * r -> r) -> r -> APattern b -> r
  def foldSubTermsPat f val pat =
@@ -1272,7 +1295,7 @@ MetaSlang qualifying spec
 
         %| And       (tms,    _) -> foldl (fn (val,tms) -> foldSubTermsEvalOrder f val tm) val tms % really want join/meet of fold results
 
-         | Any                _  -> val
+         | _  -> val
 
    in
      case term of
@@ -1560,7 +1583,7 @@ MetaSlang qualifying spec
 
 	 | And        (tms,          _) -> app appRec tms
 
-	 | Any                       _  -> ()
+	 | _  -> ()
 
      def appRec term = 
        %% Post-node traversal: leaves first

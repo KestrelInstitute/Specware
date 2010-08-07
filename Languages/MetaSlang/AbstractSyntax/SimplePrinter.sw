@@ -242,6 +242,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppSep (ppString "; ") (map ppATerm terms)
 	  | SortedTerm (tm,srt,_) ->
 	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
+          | Transform (trs, _) ->
+            ppTransformExprs trs
           | mystery -> fail ("No match in ppATerm with: '" ^ (anyToString mystery) ^ "'"))
 
   op ppBinder : Binder -> Pretty
@@ -558,5 +560,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
              ppString (name ^ (Nat.show uniqueId))
 
       | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
+
+ op [a] ppTransformExprs(tre: List(ATransformExpr a)): Pretty
 
 endspec

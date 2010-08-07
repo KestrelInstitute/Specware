@@ -357,7 +357,7 @@ Utilities qualifying spec
      | Pi (_, tm, _) -> freeVarsRec tm
      
      | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
-     | Any _ -> []
+     | _ -> []
 
  op  freeVarsList : [a] List(a * MS.Term) -> Vars
  def freeVarsList tms = 

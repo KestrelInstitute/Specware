@@ -46,7 +46,7 @@ spec
          foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
        | Pi(_, trm, _) -> foldTerm tsp_folds acc trm
        | And(trms, _) -> foldl (fn (acc, trm) -> foldTerm tsp_folds acc trm) acc trms
-       | Any _ -> acc
+       | _ -> acc
    in
      termFold foldOfChildren term
 

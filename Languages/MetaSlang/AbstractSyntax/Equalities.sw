@@ -18,6 +18,7 @@ MetaSlang qualifying spec
  op equalPattern?       : [a,b] APattern a * APattern b -> Boolean
  op equalFun?           : [a,b] AFun     a * AFun     b -> Boolean
  op equalVar?           : [a,b] AVar     a * AVar     b -> Boolean
+ op equalTransform?     : [a,b] ATransformExpr a * ATransformExpr b -> Boolean
 
  %% term equality ignoring sorts
  op equalTermStruct?    : [a,b] ATerm    a * ATerm    b -> Boolean
@@ -107,6 +108,9 @@ MetaSlang qualifying spec
 
      | (SortedTerm (x1, s1,      _),
         SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
+
+     | (Transform  (t1s,         _),
+        Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
 
      | (Pi         (tvs1, tm1,   _), 
         Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
@@ -308,6 +312,23 @@ MetaSlang qualifying spec
    length tyVars1 = length tyVars2
      && forall? (fn tyV1 -> tyV1 in? tyVars2) tyVars1
 
+ def equalTransform?(t1, t2) =
+   case (t1, t2) of
+     | (Name(s1, _), Name(s2, _)) -> s1 = s2
+     | (Number(n1, _), Number(n2, _)) -> n1 = n2
+     | (Str(s1, _), Str(s2, _)) -> s1 = s2
+     | (Qual(s1, t1, _), Qual(s2, t2, _)) -> s1 = s2 && t1 = t2
+     | (Item(s1, t1, _), Item(s2, t2, _)) -> s1 = s2 && equalTransform?(t1, t2)
+     | (Tuple(l1, _), Tuple(l2, _)) -> equalTransformList?(l1, l2)
+     | (ApplyOptions(t1, l1, _), ApplyOptions(t2, l2, _)) ->
+       equalTransform?(t1, t2) && equalTransformList?(l1, l2) 
+     | (Apply(t1, l1, _), Apply(t2, l2, _)) ->
+       equalTransform?(t1, t2) && equalTransformList?(l1, l2)
+     | _ -> false
+
+ op [a,b] equalTransformList?(t1s: List(ATransformExpr a) , t2s: List(ATransformExpr b)): Bool =
+   length t1s = length t2s && forall? equalTransform? (zip(t1s, t2s))
+
  def equalTermStruct? (t1, t2) =
    case (t1, t2) of
 
@@ -371,6 +392,9 @@ MetaSlang qualifying spec
 
      | (SortedTerm (x1, s1,      _),
         SortedTerm (x2, s2,      _)) -> equalTermStruct? (x1, x2)
+
+     | (Transform  (t1s,         _),
+        Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
 
      | (Pi         (tvs1, t1,    _), 
         Pi         (tvs2, t2,    _)) -> tvs1 = tvs2 && equalTermStruct? (t1, t2) % TODO: handle alpha equivalence

@@ -585,6 +585,7 @@ AnnSpecPrinter qualifying spec
 	        prettysFill [ppTerm context ([0]++ path, Top) t, 
 			     prettysNone[string ":", string " ", 
                                          ppSort context ([1]++ path, Top) s]])
+          | Transform (ts, _) -> ppTransformExprs ts
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -1761,4 +1762,7 @@ AnnSpecPrinter qualifying spec
          ++ menues
          ++ [string "\\pdfcatalog{ /PageMode /UseOutlines }", 
              string "\\end{document}"])))
+
+ op [a] ppTransformExprs(tre: List(ATransformExpr a)): Pretty
+
 endspec
