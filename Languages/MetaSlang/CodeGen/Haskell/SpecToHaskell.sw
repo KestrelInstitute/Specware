@@ -591,7 +591,7 @@ Haskell qualifying spec
                                 | Some n -> subFromTo(prag_str, 0, n)
                   in
                   case removeEmpty(splitStringAt(line1, " ")) of
-                    | pragma_kind::"-instance"::type_str::_
+                    | pragma_kind :: "-instance" :: _ :: type_str :: _
                       | (pragma_kind = "Haskell" \_or pragma_kind = "haskell") && type_str = qid_str ->
                       Some prag_str
                     | _ -> findPragmaInstance(qid_str, rst))
@@ -613,7 +613,7 @@ Haskell qualifying spec
    let line1 = subFromTo(prag,0,n) in
    let def_lines = splitStringAt(subFromTo(prag,n,length prag), "\n") in
    case removeEmpty(splitStringAt(line1," ")) of
-     | _ :: _ :: _ :: class_nm :: _ ->
+     | _ :: _ :: class_nm :: _ ->
        let instance_prs = mapPartial (fn line ->
                                       case splitStringAt(removeWhiteSpace line, "->") of
                                         | sw_str :: haskell_str :: _ ->
