@@ -230,7 +230,7 @@ AnnSpecPrinter qualifying spec
                                         let context = context << {printSort = true} in
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
-		       (2, ppTerm context ([2, i] ++ path, Nonfix) trm)])
+		       (3, ppTerm context ([2, i] ++ path, Nonfix) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -240,7 +240,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (2, ppTerm context ([3, i] ++ path, Nonfix) trm)])
+		       (3, ppTerm context ([3, i] ++ path, Nonfix) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
