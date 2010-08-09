@@ -57,8 +57,7 @@ Haskell qualifying spec
 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
- type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct
-                   | Quotient | Subsort | Apply
+ type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort | Apply
 
  type SpecTerm = SpecCalc.SpecTerm StandardAnnotation
  type Term = SpecCalc.Term StandardAnnotation
@@ -587,13 +586,10 @@ Haskell qualifying spec
           | el::rst ->
             (case el of
                | Pragma("#translate", prag_str, "#end", _) ->
-                 let _ = writeLine("fpi: "^prag_str) in
-
                  (let line1 = case search("\n", prag_str) of
                                 | None -> prag_str
                                 | Some n -> subFromTo(prag_str, 0, n)
                   in
-                    let _ = writeLine("fpi: "^line1) in
                   case removeEmpty(splitStringAt(line1, " ")) of
                     | pragma_kind::"-instance"::type_str::_
                       | (pragma_kind = "Haskell" \_or pragma_kind = "haskell") && type_str = qid_str ->
@@ -604,6 +600,9 @@ Haskell qualifying spec
    % let _ = writeLine("returned: "^anyToString result) in
    result
 
+  op newtypeConstructorName (c: Context) (qid: QualifiedId): String =
+    "Make"^qidToHaskellString c qid true
+
   op findTypeClassInfo (qid: QualifiedId) (elems: SpecElements): Option TypeClassInfo =
     case findPragmaInstance(printQualifiedId qid, elems) of
       | None -> None
@@ -611,7 +610,6 @@ Haskell qualifying spec
     case search("\n",prag) of
      | None -> None
      | Some n ->
-   let _ = writeLine("ftci: "^prag) in
    let line1 = subFromTo(prag,0,n) in
    let def_lines = splitStringAt(subFromTo(prag,n,length prag), "\n") in
    case removeEmpty(splitStringAt(line1," ")) of
@@ -631,6 +629,59 @@ Haskell qualifying spec
              instance_ops = instance_prs}
      | _ -> None
 
+  op addCoercionsForNewtype(dfn: MS.Term, type_qid: QualifiedId, newtypeConstructorNmID: String, spc: Spec): MS.Term =
+    let def addCoercion(tm, d_ty) =
+          let u_ty = inferType(spc, tm) in
+          % let _ = writeLine(printTerm tm^":\n"^printSort u_ty ^"\n-> " ^ printSort d_ty^"\n\n") in
+          let new_tm =
+              case tm of
+                | Apply (t1, t2, pos) ->
+                  let fn_ty = inferType(spc, t1) in
+                  % let _ = writeLine("acfn dom: "^printSort fn_ty) in
+                  (case arrowOpt(spc, fn_ty) of
+                   | None -> tm
+                   | Some(dom, _) ->
+                     Apply(addCoercion(t1, mkArrow(dom, d_ty)), addCoercion(t2, dom), pos))
+                | Record (row, pos) ->
+                  let srts = map (project 2) (product (spc, d_ty)) in
+                  Record(map (fn (f_ty, (id, tmi)) -> (id, addCoercion(tmi, f_ty)))
+                           (zip(srts, row)), pos)
+                | Bind (bdr, vs, bod, pos) -> Bind (bdr, vs, addCoercion(bod, boolSort), pos)
+                | The  (var,  bod, pos) -> The  (var, addCoercion(bod, boolSort), pos)
+                | Let (decls, bdy, pos) ->
+                  Let (map (fn (pat, trm) -> (pat, addCoercion(trm, patternSort pat))) decls,
+                       addCoercion(bdy, d_ty),
+                       pos) 
+                | LetRec (decls, bdy, pos) ->
+                  LetRec (map (fn ((pat, lr_ty), trm) -> ((pat, lr_ty), addCoercion(trm, lr_ty))) decls,
+                          addCoercion(bdy, d_ty),
+                          pos)
+                | Lambda (match, pos) ->
+                  let ran = range(spc, d_ty) in
+                  Lambda (map (fn (pat, condn, bod) ->
+                                 (pat, addCoercion(condn, boolSort), addCoercion(bod, ran)))
+                            match, pos)
+                | IfThenElse (t1, t2, t3, pos) ->
+                  IfThenElse(addCoercion(t1, boolSort), addCoercion(t2, d_ty), addCoercion(t3, d_ty), pos)
+                | Seq (terms, pos) ->
+                  let pre_trms = butLast terms in
+                  let lst_trm  =    last terms in
+                  Seq (map (fn trm -> addCoercion(trm, mkProduct [])) pre_trms ++ [addCoercion(lst_trm, d_ty)], pos) 
+                | SortedTerm (trm, srt, pos) -> SortedTerm(addCoercion(trm, srt), srt, pos)
+                | _ -> tm
+          in
+          case (d_ty, u_ty) of
+            | (Base(d_qid, _, _), _) | d_qid = type_qid && ~(embed? Base u_ty) ->
+              mkApply(mkEmbed1(newtypeConstructorNmID, mkArrow(u_ty, d_ty)), new_tm)
+            | (_, Base(u_qid, _, _)) | u_qid = type_qid && ~(embed? Base d_ty) ->
+              let x = ("x", d_ty) in
+              mkLet([(mkEmbedPat(newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
+            | _ -> new_tm
+    in
+    let (tvs, ty, term) = unpackFirstTerm(dfn) in
+    let new_term = addCoercion(term, ty) in
+    maybePiTerm(tvs, SortedTerm(new_term, ty, noPos))
+    
   op  ppSpecElement: Context -> Spec -> SpecElement -> Option Pragma
                     -> SpecElements -> Pretty
   def ppSpecElement c spc elem opt_prag elems =
@@ -856,6 +907,10 @@ Haskell qualifying spec
        Some tr_nm
      | _ -> None
 
+ op addConstructorTranslation(c: Context, c_nm: String, c_tg: String): Context =
+   let tbl = c.trans_table in
+   c << {trans_table = tbl << {op_map = update(tbl.op_map, mkUnQualifiedId c_nm, (c_tg, None, false, false, true))}}
+
  op ppConstructor(c_nm: String, qid: QualifiedId, c: Context): Pretty =
    case constructorTranslation(c_nm, c) of
      | Some tr_c_nm -> prString tr_c_nm
@@ -952,11 +1007,19 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                                 [prString "  ", pp_constr, prString " x == ", pp_constr, prString " y = ",
                                  ppTerm c Top equiv_rel, prString"(x, y)"]]
                 | Subsort(s_ty, _, _) -> ppTyDef s_ty
-                | _ -> prBreak 2 [prString "type ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = ", ppType c Top ty]
+                | _ ->
+              case tc_info of
+                | Some{type_qid, class_id, instance_ops} ->
+                  let constructor_nm = newtypeConstructorName c mainId in
+                  prBreakCat 2 [[prString "newtype ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = "],
+                                [prString constructor_nm, prSpace, ppType c Apply ty]]
+                | None -> prBreak 2 [prString "type ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = ", ppType c Top ty]
           in
           let pp_def = ppTyDef ty in
           case tc_info of
             | Some{type_qid, class_id, instance_ops} ->
+              let constructor_nm = newtypeConstructorName c type_qid in
+              let c = addConstructorTranslation(c, constructor_nm, constructor_nm) in
               prLinesCat 0 ([[],
                              [pp_def],
                              [],
@@ -970,6 +1033,10 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                                                          prString "<Undefined Op>"
                                                        | Some {names, fixity, dfn, fullyQualified?=_} ->
                                                          let c = c << {newVarCount = Ref 0} in
+                                                         let dfn = addCoercionsForNewtype(dfn, type_qid,
+                                                                                          constructor_nm,
+                                                                                          getSpec c)
+                                                         in
                                                          let (tvs, ty, term) = unpackFirstTerm(dfn) in
                                                          let term = renameTerm (emptyContext()) term in
                                                          ppFunctionDef c  [qid] term ty None fixity)
@@ -1926,7 +1993,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                        0, [(0, prLinearCat 0 [[prString "if ", ppTerm c Top pred],
                                                     [prString " then "]]),
                                  (2, ppTerm c Top term1),
-                                 (-1, prString " else "),
+                                 (0, prString " else "),
                                  (2, ppTerm c Top term2)]))
      | Seq (terms, _) ->
        %prPostSep 0 blockLinear (prString "; ") (map (ppTerm c Top) terms)
