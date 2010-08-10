@@ -585,7 +585,7 @@ AnnSpecPrinter qualifying spec
 	        prettysFill [ppTerm context ([0]++ path, Top) t, 
 			     prettysNone[string ":", string " ", 
                                          ppSort context ([1]++ path, Top) s]])
-          | Transform (ts, _) -> ppTransformExprs ts
+          | Transform (ts, _) -> ppTransformExprs context.pp ts
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -1763,6 +1763,20 @@ AnnSpecPrinter qualifying spec
          ++ [string "\\pdfcatalog{ /PageMode /UseOutlines }", 
              string "\\end{document}"])))
 
- op [a] ppTransformExprs(tre: List(ATransformExpr a)): Pretty
+ op [a] ppTransformExprs (pp: ATermPrinter) (tres: List(ATransformExpr a)): Pretty =
+  ppList (ppTransformExpr pp) ("{", ", ", "}") tres
+
+ op [a] ppTransformExpr (pp: ATermPrinter) (tre: ATransformExpr a): Pretty =
+   case tre of
+    | Name(id, _) -> pp.ppOp id
+    | Number(i, _) -> pp.fromString (show i)
+    | Str(str, _) -> pp.fromString ("\""^str^"\"")
+    | Qual(q, id, _) -> pp.ppOpId(Qualified(q, id))
+    | Item(nm, tre1, _) -> prettysNone[pp.ppOp nm, string " ", ppTransformExpr pp tre1]
+    | Tuple(tres, _) -> ppList (ppTransformExpr pp) ("(", ", ", ")") tres
+    | ApplyOptions(tre1, tres, _) -> prettysNone[ppTransformExpr pp tre1,
+                                                 ppList (ppTransformExpr pp) ("[", ", ", "]") tres]
+    | Apply(tre1, tres, _) -> prettysNone[ppTransformExpr pp tre1,
+                                          ppList (ppTransformExpr pp) ("(", ", ", ")") tres]
 
 endspec
