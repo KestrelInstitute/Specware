@@ -5,6 +5,7 @@ SpecNorm qualifying spec
   op eagerRegularization?: Bool = false
   op regularizeSets?: Bool = true
   op regularizeBoolToFalse?: Bool = false    % Can do this effectively in IsabelleExtensions
+  op removeExcessAssumptions?: Bool = true
 
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
@@ -1060,6 +1061,7 @@ SpecNorm qualifying spec
                     % let _ = writeLine (" --> "^printTerm s_fm) in
                     let fms = separateRhsConjuncts spc s_fm in
                     let thms = map (fn (i, fm) ->
+                                    let fm = if removeExcessAssumptions? then removeExcessAssumptions fm else fm in
                                     Property(if def? then Theorem else Axiom, 
                                              mkQualifiedId
                                                (q, id^"_subtype_constr"
