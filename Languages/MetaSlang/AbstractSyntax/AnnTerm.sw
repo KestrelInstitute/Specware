@@ -556,7 +556,10 @@ MetaSlang qualifying spec
  def termInnerTerm tm =
    case tm of
      | Pi (_, tm, _) -> termInnerTerm tm
-     | And (tm::_,_) -> termInnerTerm tm  % fail ("termInnerTerm: Trying to extract inner term from an And of terms.")
+     | And (tm::r,pos) ->
+       if embed? Transform tm
+         then termInnerTerm(And(r, pos))
+         else termInnerTerm tm
      | SortedTerm (tm, _, _) -> termInnerTerm tm
      | _                     -> tm
 
