@@ -177,6 +177,15 @@ spec
             | Some info -> [info]
             | None      -> []
 
+  op trivialMatchTerm?(tm: MS.Term): Bool =
+    %% Not certain about hasFlexHead?
+    some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
+
+  op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
+    if trivialMatchTerm? rl.rhs
+      then None
+      else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q,nm)) \_rightarrow
@@ -194,7 +203,7 @@ spec
                                               info.names))
                               (findMatchingOps(spc,qid))))
       | Fold(qid) \_rightarrow
-        map (\_lambda rl \_rightarrow rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+        mapPartial reverseRuleIfNonTrivial
           (makeRule(context, spc, Unfold(qid)))
       | LeftToRight(qid) \_rightarrow
         warnIfNone(qid, "Rule-shaped theorem ",
