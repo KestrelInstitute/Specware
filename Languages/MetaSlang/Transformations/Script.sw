@@ -477,7 +477,7 @@ spec
 
 %%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
-    case findAllOps(spc,qid) of
+    case findMatchingOps(spc,qid) of
       | [] \_rightarrow (warn("No defined op with that name."); None)
       | [opinfo] \_rightarrow
         let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in

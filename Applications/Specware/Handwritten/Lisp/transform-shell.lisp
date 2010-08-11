@@ -162,7 +162,13 @@
           (if (if op? (Script::findMatchingOps-2 *transform-spec* uq_qid)
                   (Script::matchingTheorems?-2 *transform-spec* uq_qid))
               uq_qid
-              (MetaSlang::mkQualifiedId-2 Script::wildQualifier (first syms))))
+              (let ((wild_qid (MetaSlang::mkQualifiedId-2 Script::wildQualifier (first syms))))
+                (if op?
+                    (let ((wild_ops (Script::findMatchingOps-2 *transform-spec*  wild_qid)))
+                      (if (eql (length wild_ops) 1)
+                          (AnnSpec::primaryOpName (first wild_ops))
+                        wild_qid))
+                  wild_qid))))
 	(if (= len 2)
 	    (MetaSlang::mkQualifiedId-2 (first syms) (second syms))
 	    nil))))
