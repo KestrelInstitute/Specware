@@ -1661,7 +1661,7 @@ spec
                 };
                 (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
                 (qid as Qualified(q, id)) <- return (head opinfo.names);
-                ((simp_dfn,_),_) <-
+                (simp_dfn,_) <-
                   if simplifyIsomorphism? then {
                     % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
                     b <- existsSubTerm (fn t -> let ty = inferType(spc, t) in {
@@ -1670,13 +1670,13 @@ spec
                     if (simplifyUnPrimed? || some?(findTheOp(spc, makeDerivedQId qid))) then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
-                      interpretTerm(spc, main_script, dfn, dfn, false)
+                      interpretTerm(spc, main_script, dfn, false)
                     }
                     else
-                      return ((dfn, dfn), false)
+                      return (dfn, false)
                   }
                   else
-                    return ((dfn, dfn), false);
+                    return (dfn, false);
                 if equalTerm?(dfn, simp_dfn) then
                   return opinfo
                 else {

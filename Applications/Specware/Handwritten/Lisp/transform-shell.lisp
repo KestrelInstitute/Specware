@@ -5,6 +5,7 @@
 (defpackage :Script)
 (defpackage :MetaSlangRewriter)
 (defpackage :Specware)
+(defpackage :PathTerm)
 (defpackage :SWShell)
 (in-package :SWShell)
 
@@ -70,8 +71,8 @@
   (if (null *transform-term*)
       (princ "No term chosen")
       (princ (if with-types?
-		 (AnnSpecPrinter::printTermWithSorts (car *transform-term*))
-		 (AnnSpecPrinter::printTerm (car *transform-term*)))))
+		 (AnnSpecPrinter::printTermWithSorts (PathTerm::fromPathTerm *transform-term*))
+		 (AnnSpecPrinter::printTerm (PathTerm::fromPathTerm *transform-term*)))))
   (values))
 
 (defun undo-command (argstr quiet?)
@@ -176,14 +177,12 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let* (;(dum (format t "~a\~%~a~%" (car *transform-term*) (cdr *transform-term*)))
-             (result (Script::interpretTerm-5 *transform-spec* command
-                                              (car *transform-term*)
-                                              (cdr *transform-term*)
-                                              nil))
+      (let* ((result (Script::interpretPathTerm-4 *transform-spec* command
+                                                  *transform-term*
+                                                  nil))
              (result (funcall result nil))
              (new-term (cadar result)))
-	(if (MetaSlang::equalTerm?-2 (car *transform-term*) (car new-term))
+	(if (MetaSlang::equalTerm?-2 (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
 	    (format t "No effect!")
 	    (progn 
 	      (push-state `(interpret-command ,command))
@@ -204,7 +203,7 @@
 	()
 	(progn
 	  (push-state `(at-command ,qid))
-	  (setq *transform-term* (cons new-term new-term))
+	  (setq *transform-term* (PathTerm::toPathTerm new-term))
 	  (push #'(lambda (future-steps)
 		    (if (null future-steps)
 			nil
