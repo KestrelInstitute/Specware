@@ -283,14 +283,14 @@ Utilities qualifying spec
     exists? (fn v1 -> equalVar?(v,v1)) vs
 
   op hasRefTo?(t: MS.Term, vs: List Var): Boolean =
-    existsSubTerm (fn t \_rightarrow case t of
+    existsSubTerm (fn t -> case t of
                              | Var(v,_) -> inVars?(v, vs)
                              | _ -> false)
       t
 
  op hasVarNameConflict?(tm: MS.Term, vs: List Var): Boolean =
    let names = map (project 1) vs in
-   existsSubTerm (fn t \_rightarrow case t of
+   existsSubTerm (fn t -> case t of
                             | Var((nm,_),_) -> nm in? names
                             | _ -> false)
      tm
@@ -1645,7 +1645,7 @@ Utilities qualifying spec
 
   op subtypeOf(ty: Sort, qid: QualifiedId, spc: Spec): Option Sort =
     case ty of
-      | Base(qid1,srts,_) \_rightarrow
+      | Base(qid1,srts,_) ->
         if qid1 = qid then Some ty
           else
 	 (case findTheSort (spc, qid1) of
@@ -1658,16 +1658,16 @@ Utilities qualifying spec
               else
                 None)
       | Subsort(t1,_,_) -> subtypeOf(t1,qid,spc)
-      | _ \_rightarrow None
+      | _ -> None
 
-  op  subtypeOf?: Sort * QualifiedId * Spec \_rightarrow Boolean
+  op  subtypeOf?: Sort * QualifiedId * Spec -> Boolean
   def subtypeOf?(ty,qid,spc) =
     % let _ = toScreen(printQualifiedId qid^" <:? "^printSort ty^"\n") in
     let result =
     case ty of
-      | Base(qid1,srts,_) \_rightarrow
+      | Base(qid1,srts,_) ->
         qid1 = qid
-	 \_or (case findTheSort (spc, qid1) of
+	 || (case findTheSort (spc, qid1) of
 	      | None -> false
 	      | Some info ->
 		if definedSortInfo? info then
@@ -1677,7 +1677,7 @@ Utilities qualifying spec
 		else
 		  false)
       | Subsort(t1,_,_) -> subtypeOf?(t1,qid,spc)
-      | _ \_rightarrow false
+      | _ -> false
     in
     % let _ = writeLine("= "^ (if result then "true" else "false")) in
     result
@@ -1695,23 +1695,21 @@ Utilities qualifying spec
        | None -> false
 
    op possiblySubtypeOf?(ty1: Sort, ty2: Sort, spc: Spec): Boolean =
+     % let _ = writeLine(printSort ty1^" <=? "^printSort ty2) in
      equalType?(ty1, ty2)
        || (case ty1 of
-             | Base(qid1, srts, _) \_rightarrow
-               (case ty2 of
-                  | Base(qid2, _, _) -> qid1 = qid2
-                  | _ -> false)
-               \_or (case findTheSort (spc, qid1) of
-                     | None -> false
-                     | Some info ->
-                       if definedSortInfo? info then
-                         let (tvs, srt) = unpackFirstSortDef info in
-                         let ssrt = substSort (zip (tvs, srts), srt) in
-                         possiblySubtypeOf?(ssrt, ty2, spc)
-                       else
-                         false)
+             | Base(qid1, srts, _) ->
+               (case findTheSort (spc, qid1) of
+                  | None -> false
+                  | Some info ->
+                    if definedSortInfo? info then
+                      let (tvs, srt) = unpackFirstSortDef info in
+                      let ssrt = substSort (zip (tvs, srts), srt) in
+                      possiblySubtypeOf?(ssrt, ty2, spc)
+                    else
+                      false)
              | Subsort(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
-             | _ \_rightarrow false)
+             | _ -> false)
 
    op commonSuperType(ty1: Sort, ty2: Sort, spc: Spec): Sort =
      %% Experimental version

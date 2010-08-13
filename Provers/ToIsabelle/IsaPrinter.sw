@@ -581,11 +581,10 @@ IsaTermPrinter qualifying spec
       | _ \_rightarrow true
 
   %% Originally was just supertype but generalized to also be a named type
-  op getSuperTypeOp(ty: Sort): QualifiedId =
+  op getSuperType(ty: Sort): Sort =
     case ty of
-      | Base(superty,_,_) \_rightarrow superty
-      | Subsort(sup,_,_) \_rightarrow getSuperTypeOp sup
-      | _ \_rightarrow fail("Not a Subtype and not a named type")
+      | Subsort(sup,_,_) \_rightarrow sup
+      | _ \_rightarrow ty
 
   op  makeCoercionTable: TransInfo * Spec \_rightarrow TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
@@ -594,14 +593,14 @@ IsaTermPrinter qualifying spec
                  | None \_rightarrow val
                  | Some(toSuper, toSub) \_rightarrow
 	       let srtDef = sortDef(subty, spc) in
-               let superty = getSuperTypeOp srtDef in
+               let superty = getSuperType srtDef in
                Cons({subtype = subty,
                      supertype = superty,
                      coerceToSuper = mkOp(Qualified(toIsaQual, toSuper),
                                           mkArrow(mkBase(subty, []),
-                                                  mkBase(superty, []))),
+                                                  superty)),
                      coerceToSub   = mkOp(Qualified(toIsaQual, toSub),
-                                          mkArrow(mkBase(superty, []),
+                                          mkArrow(superty,
                                                   mkBase(subty, []))),
                      overloadedOps = overloadedOps},
                     val))

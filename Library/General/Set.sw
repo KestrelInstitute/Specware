@@ -14,9 +14,7 @@ executable (because equality is undecidable). Sets as defined here are useful
 for specification purposes, not for execution. Finite sets as defined in spec
 `FiniteSet' can instead be refined to be executable. *)
 
-type Predicate a = a -> Bool
-
-type Set a = Predicate a
+type Set a = a -> Bool
 
 %%% Generate stp versions of finite_insert and induction in case they are useful later
 proof Isa -stp-theorems end-proof

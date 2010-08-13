@@ -6,7 +6,7 @@ spec
   import /Languages/MetaSlang/Specs/Environment
 
   type TypeCoercionInfo = {subtype: QualifiedId,
-			   supertype: QualifiedId,
+			   supertype: MS.Sort,
 			   coerceToSuper: MS.Term,
 			   coerceToSub: MS.Term,
                            overloadedOps: List String}
@@ -178,9 +178,12 @@ spec
                     | _ ->
                   let new_x = removeCoercions(x,coerce_fn,true) in
                   let new_tm = Apply(f,new_x,a) in
-                  (if subtypeOf?(ty,tb.supertype,spc) % This needs to be modified to not use .supertype!!
-                    then Apply(coerce_fn,new_tm,a)
-                    else new_tm))
+                  % let _ = writeLine("\nty: "^printSort ty^"\ntarget: "^printSort target_ty) in
+                  (if possiblySubtypeOf?(ty, tb.supertype, spc)
+                    then % let _ = writeLine("Added: "^printTerm (Apply(coerce_fn,new_tm,a))) in
+                         Apply(coerce_fn,new_tm,a)
+                    else % let _ = writeLine("None: "^printTerm new_tm) in
+                         new_tm))
                | _ \_rightarrow tm)
           | Apply(f as Fun(overloaded_op,_,_),x,a)
               | overloaded_op = Equals \_or overloaded_op = NotEquals \_rightarrow
