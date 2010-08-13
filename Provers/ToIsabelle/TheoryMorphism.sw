@@ -63,7 +63,7 @@ IsaTermPrinter qualifying spec
    let line1 = subFromTo(prag,0,n) in
    case removeEmpty(splitStringAt(line1," ")) of
      | hd::thyMorphStr::r | hd = kind && thyMorphStr in?
-				           ["ThyMorphism","Thy_Morphism",
+				           ["ThyMorphism","Thy_Morphism", "-morphism",
                                             "TheoryMorphism","Theory_Morphism",
                                             "-instance"] \_rightarrow
        Some(subFromTo(prag,n,length prag), if thyMorphStr = "-instance" then [] else r)
