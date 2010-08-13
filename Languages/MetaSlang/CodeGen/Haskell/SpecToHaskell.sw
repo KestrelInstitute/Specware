@@ -1,3 +1,4 @@
+
 Haskell qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
@@ -845,7 +846,7 @@ Haskell qualifying spec
    let line1 = subFromTo(prag, 0, n) in
    case removeEmpty(splitStringAt(line1, " ")) of
      | "Haskell"::thyMorphStr::r | thyMorphStr in?
-				      ["ThyMorphism", "Thy_Morphism",
+				      ["ThyMorphism", "Thy_Morphism",  "-morphism",
 				       "TheoryMorphism", "Theory_Morphism"] ->
        Some(subFromTo(prag, n, length prag), r)
      | _ -> None
