@@ -282,7 +282,7 @@ accepted in lieu of prompting."
 
   (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
   (define-key map "\C-ch"    'sw:convert-spec-to-haskell)
-  (define-key map "\C-ct"    'sw:convert-top-spec-to-haskell)
+  (define-key map "\C-cH"    'sw:convert-top-spec-to-haskell)
 
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
