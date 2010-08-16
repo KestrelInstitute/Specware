@@ -215,6 +215,12 @@ Haskell qualifying spec
            | Some((haskellnm, sw_file, haskell_file), uid) ->
              Some((haskellnm^"_"^qual, sw_file, haskell_file^"_"^qual),
                   uid))
+      | (Translate(spc_tm, _), pos) ->
+        (case uidStringPairForTerm(c, spc_tm) of
+           | None -> None
+           | Some((thynm, sw_file, thy_file), uid) ->
+             Some((thynm^"_translated", sw_file, thy_file^"_translated"),
+                  uid))
       | _ ->
         (writeLine("sc_tm not handled:\n"^anyToString sc_tm);
          None)
