@@ -25,6 +25,7 @@ Haskell qualifying spec
 
  type Context = {recursive?: Bool,
                  top_spec?: Bool,
+                 top_spec: Spec,
                  slicing?: Bool,
                  spec_name: String,
 		 spec?: Option Spec,
@@ -34,7 +35,7 @@ Haskell qualifying spec
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
                  newVarCount: Ref Nat,
-                 source_of_thy_morphism?: Bool,
+                 source_of_haskell_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * Sort),
                  polyEqualityFunInfo: AQualifierMap TyVars}
 
@@ -45,15 +46,15 @@ Haskell qualifying spec
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
  op  getSpec: Context -> Spec
- def getSpec {recursive?=_, top_spec?=_, slicing?=_, spec_name=_, spec? = Some spc, qualifier?=_,
+ def getSpec {recursive?=_, top_spec?=_, top_spec=_, slicing?=_, spec_name=_, spec? = Some spc, qualifier?=_,
               currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
-              newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_}
+              newVarCount=_, source_of_haskell_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_}
    = spc
 
  op  getCurrentUID: Context -> UnitId
- def getCurrentUID {recursive?=_, top_spec?=_, slicing?=_, spec_name=_, spec?=_, qualifier?=_, currentUID = Some uid,
-                    trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
-                    source_of_thy_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_} =
+ def getCurrentUID {recursive?=_, top_spec?=_, top_spec=_, slicing?=_, spec_name=_, spec?=_, qualifier?=_,
+                    currentUID = Some uid, trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
+                    source_of_haskell_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_} =
    uid
 
 
@@ -84,35 +85,36 @@ Haskell qualifying spec
    let main_name = last path in
    let path_dir = butLast path in 
    let mainPath = flatten (foldr (fn (elem, result) -> "/"::elem::result)
-			        ["/Haskell/", thyName main_name]
+			        ["/Haskell/", haskellName main_name]
 				(if device? then tail path_dir else path_dir))
    in if device?
 	then (head path) ^ mainPath
 	else mainPath
 
 
-  op  printUIDtoThyFile: String \_times Bool \_times Bool -> String
-  def printUIDtoThyFile (uid_str, slicing?, recursive?) =
+  op  printUIDtoHaskellFile: String \_times Bool \_times Bool -> String
+  def printUIDtoHaskellFile (uid_str, slicing?, recursive?) =
     case Specware.evaluateUnitId uid_str of
-      | Some val ->
+      | Some(val as Spec spc) ->
         (case uidNamesForValue val of
 	   | None -> "Error: Can't get UID string from value"
-	   | Some (thy_nm, uidstr, uid) ->
+	   | Some (haskell_nm, uidstr, uid) ->
+             let _ = deleteHaskellFilesForVal val in
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
-	     let _ = toFile(fil_nm, showValue(val, true, slicing?, recursive?, Some uid, Some thy_nm, None)) in
+	     let _ = toFile(fil_nm, showValue(val, true, spc, slicing?, recursive?, Some uid, Some haskell_nm, None)) in
 	     fil_nm)
       | _ -> "Error: Unknown UID " ^ uid_str
 
-  op  deleteThyFilesForUID: String -> ()
-  def deleteThyFilesForUID uidstr =
+  op  deleteHaskellFilesForUID: String -> ()
+  def deleteHaskellFilesForUID uidstr =
     case evaluateUnitId uidstr of
       | Some val ->
-        deleteThyFilesForVal val
+        deleteHaskellFilesForVal val
       | _ -> ()
 
-  op  deleteThyFilesForVal: Value -> ()
-  def deleteThyFilesForVal val =
+  op  deleteHaskellFilesForVal: Value -> ()
+  def deleteHaskellFilesForVal val =
     case uidNamesForValue val of
       | None -> ()
       | Some (_, uidstr, uid) ->
@@ -125,10 +127,10 @@ Haskell qualifying spec
 	  | Spec spc ->
 	    app (fn elem -> case elem of
 		              | Import(sc_tm, im_sp, _, _) ->
-		                deleteThyFilesForVal (Spec im_sp)
+		                deleteHaskellFilesForVal (Spec im_sp)
 			      | _ -> ())
 	      spc.elements
-          | Morph morph -> deleteThyFilesForVal (Spec morph.dom)
+          | Morph morph -> deleteHaskellFilesForVal (Spec morph.dom)
 
   op  ensureFileDeleted: String -> ()
   def ensureFileDeleted fil_nm =
@@ -140,7 +142,7 @@ Haskell qualifying spec
   def uidNamesForValue val =
     case uidStringPairTermForValue val of
       | None -> None
-      | Some((thynm, filnm, hash), uid, _) -> Some(thynm ^ hash, filnm ^ hash, uid)
+      | Some((haskellnm, filnm, hash), uid, _) -> Some(haskellnm ^ hash, filnm ^ hash, uid)
 
   op  uidStringPairTermForValue: Value -> Option ((String \_times String \_times String) \_times UnitId \_times Term)
   def uidStringPairTermForValue val =
@@ -159,7 +161,7 @@ Haskell qualifying spec
   op haskellLibrarySpecNames: List String = ["List", "Char", "Prelude",  "Ratio", "Complex", "Numeric",
                                              "Ix", "Array", "Maybe", "Monad", "Locale", "Time", "IO",
                                              "Integer", "Ring", "String", "System", "Base"]
-  op thyName(spname: String): String =
+  op haskellName(spname: String): String =
     if spname in? haskellLibrarySpecNames
       then "SW_"^spname
     else if spname = "Character"
@@ -173,18 +175,18 @@ Haskell qualifying spec
       | None ->
         (case uidStringPairForTerm(c, sc_tm) of
            | None -> None
-           | Some((thynm, sw_file, thy_file), uid) ->
+           | Some((haskellnm, sw_file, haskell_file), uid) ->
          case evaluateTermWrtUnitId(sc_tm, getCurrentUID c) of
            | None ->
              (writeLine("sc_tm not evaluated:\n"^anyToString sc_tm);
               None)
            | Some real_val ->
-             Some((thynm, sw_file, thyName thy_file ^ ".hs"),
+             Some((haskellnm, sw_file, haskellName haskell_file ^ ".hs"),
                   val, uid))
-      | Some((thynm, filnm, hash), uid, _) ->
-        Some((thynm ^ hash,
+      | Some((haskellnm, filnm, hash), uid, _) ->
+        Some((haskellnm ^ hash,
               uidToFullPath uid ^ ".sw",
-              thyName(filnm ^ hash) ^ ".hs"),
+              haskellName(filnm ^ hash) ^ ".hs"),
              val, uid)
 
   op uidStringPairForTerm(c: Context, sc_tm: Term): Option((String \_times String \_times String) \_times UnitId) =
@@ -192,9 +194,9 @@ Haskell qualifying spec
       | (Subst(spc_tm, morph_tm), pos) ->
         (case uidStringPairForTerm(c, spc_tm) of
            | None -> None
-           | Some((thynm, sw_file, thy_file), uid) ->
+           | Some((haskellnm, sw_file, haskell_file), uid) ->
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
-             Some((thynm^sb_id, sw_file, thy_file^sb_id),
+             Some((haskellnm^sb_id, sw_file, haskell_file^sb_id),
                   uid))
       | (UnitId relId, pos) ->
         (case evaluateRelUIDWrtUnitId(relId, pos, getCurrentUID c) of
@@ -202,16 +204,16 @@ Haskell qualifying spec
             (writeLine("reluid not found:\n"^anyToString sc_tm);
              None)
           | Some(val, uid) ->
-            let (thynm, filnm, hash) = unitIdToHaskellString uid in
-            Some((thynm ^ hash,
+            let (haskellnm, filnm, hash) = unitIdToHaskellString uid in
+            Some((haskellnm ^ hash,
                   uidToFullPath uid ^ ".sw",
                   filnm ^ hash),
                  uid))
       | (Qualify(spc_tm, qual), pos) ->
         (case uidStringPairForTerm(c, spc_tm) of
            | None -> None
-           | Some((thynm, sw_file, thy_file), uid) ->
-             Some((thynm^"_"^qual, sw_file, thy_file^"_"^qual),
+           | Some((haskellnm, sw_file, haskell_file), uid) ->
+             Some((haskellnm^"_"^qual, sw_file, haskell_file^"_"^qual),
                   uid))
       | _ ->
         (writeLine("sc_tm not handled:\n"^anyToString sc_tm);
@@ -268,24 +270,25 @@ Haskell qualifying spec
   
   op findSpecQualifier(sc_tm: Term): Option String =
     case sc_tm of
-      | (Qualify(_, qual), _) -> Some (thyName qual)
+      | (Qualify(_, qual), _) -> Some (haskellName qual)
       | _ -> None
 
   op dummySpecCalcTerm: Term = (Spec [], noPos)
 
-  op  showValue : Value * Bool * Bool * Bool * Option UnitId * Option String * Option SpecElements -> Text
-  def showValue (value, top_spec?, slicing?, recursive?, uid, opt_nm, opt_els) =
-    let (thy_nm, val_uid, sc_tm) =
+  op  showValue : Value * Bool * Spec * Bool * Bool * Option UnitId * Option String * Option SpecElements -> Text
+  def showValue (value, top_spec?, top_spec, slicing?, recursive?, uid, opt_nm, opt_els) =
+    let (haskell_nm, val_uid, sc_tm) =
         case uidStringPairTermForValue value of
-          | Some ((thy_nm, _, hash_nm), uid, sc_tm) -> (thy_nm ^ hash_nm, Some uid, sc_tm)
+          | Some ((haskell_nm, _, hash_nm), uid, sc_tm) -> (haskell_nm ^ hash_nm, Some uid, sc_tm)
           | _ -> ("", None, dummySpecCalcTerm)
     in
     let main_pp_val = ppValue {recursive? = recursive?,
                                top_spec? = top_spec?,
+                               top_spec = top_spec, 
                                slicing? = slicing?,
 			       spec_name = case opt_nm of
                                             | Some nm -> nm
-                                            | None -> thy_nm,
+                                            | None -> haskell_nm,
 			       spec? = None,
                                qualifier? = findSpecQualifier sc_tm,
                                currentUID = case uid of
@@ -295,7 +298,7 @@ Haskell qualifying spec
                                coercions = [],
                                overloadedConstructors = [],
                                newVarCount = Ref 0,
-                               source_of_thy_morphism? = false,
+                               source_of_haskell_morphism? = false,
                                typeNameInfo = [],
                                polyEqualityFunInfo = emptyAQualifierMap}
 			value
@@ -311,10 +314,28 @@ Haskell qualifying spec
   def ppValue c value opt_els =
     case value of
       | Spec spc -> ppSpec c (case opt_els of
-                                          | Some els | c.slicing? -> spc << {elements = els}
-                                          | _ -> spc)
+                                | Some els | c.slicing? -> spc << {elements = mergeRealImports(spc.elements, els)}
+                                | _ -> spc)
       | _ -> prString "<Not a spec>"
  
+  op mergeRealImports(full_els: SpecElements, reduced_els: SpecElements): List SpecElement =
+    %% Spec elaboration removes duplicate imports in the import tree. We need them for Haskell generation
+    %% so that sub-module can be compiled
+    let imports_to_restore =
+        filter (fn f_el ->
+                case f_el of
+                  | Import(f_sc_tm, im_sp, _, _) ->
+                    ~(exists? (fn r_el ->
+                               case r_el of
+                                 | Import(r_sc_tm, im_sp, _, _) -> f_sc_tm = r_sc_tm
+                                 | _ -> false)
+                        reduced_els)
+                 | _ -> false)
+          full_els
+    in
+    imports_to_restore ++ reduced_els
+                                   
+
   %% --------------------------------------------------------------------------------
   %% Specs
   %% --------------------------------------------------------------------------------
@@ -388,11 +409,12 @@ Haskell qualifying spec
     %% let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
     let spc = if c.slicing? && c.top_spec? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
+    % let _ = writeLine("Sliced:\n"^printSpec spc^"\n") in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)}
     in
     let spc = adjustElementOrder spc in
-    let source_of_thy_morphism? = exists? (fn el ->
+    let source_of_haskell_morphism? = exists? (fn el ->
                                             case el of
                                               | Pragma("#translate", prag_str, "#end", _)
                                                   -> true
@@ -401,8 +423,9 @@ Haskell qualifying spec
     in
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     let c = c << {spec? = Some spc,
+                  top_spec = if c.top_spec? then spc else c.top_spec,
                   trans_table = trans_table,
-                  source_of_thy_morphism? = source_of_thy_morphism?,
+                  source_of_haskell_morphism? = source_of_haskell_morphism?,
                   polyEqualityFunInfo = polyEqualityAnalyze spc}
     in
     let spc = normalizeTopLevelLambdas spc in
@@ -431,12 +454,13 @@ Haskell qualifying spec
     in
     % let _ = writeLine("n:\n"^printSpec spc) in
     let (pp_imports, pp_exports) = ppImports c spc.elements in
-    let pr_thyname = prString(thyName c.spec_name) in
+    let pr_haskellname = prString(haskellName c.spec_name) in
     prLinesCat 0 (ppHeaderPragmas spc.elements
-                  ++ [[prString "module ", pr_thyname,
+                  ++ [[prString "module ", pr_haskellname,
                        prString " ( ",
-                       prSep 0 blockFill (prString ", ") (prConcat [prString "module ", pr_thyname]
-                                                            :: pp_exports),
+                       prSep 0 blockFill (prString ", ")
+                         (if c.slicing? && ~(c.top_spec?) then pp_exports
+                            else prConcat [prString "module ", pr_haskellname] :: pp_exports),
                        prString " )",
                        prString " where"]]
                   ++ pp_imports
@@ -454,7 +478,7 @@ Haskell qualifying spec
     case elt of
       | Import _ -> false
       | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str
-                                                && haskellThyMorphismPragma prag_str = None ->
+                                                && haskellMorphismPragma prag_str = None ->
         true
       | Pragma _ -> false
       | _ -> true
@@ -463,11 +487,11 @@ Haskell qualifying spec
   %% For internal use. Choose unparseable name
   def toHaskellQual = "ToHaskell-Internal"
 
-  op getSuperTypeOp(ty: Sort): QualifiedId =
+ %% Originally was just supertype but generalized to also be a named type
+  op getSuperType(ty: Sort): Sort =
     case ty of
-      | Base(superty, _, _) -> superty
-      | Subsort(sup, _, _) -> getSuperTypeOp sup
-      | _ -> fail("Not a Subtype and not a named type")
+      | Subsort(sup,_,_) \_rightarrow sup
+      | _ \_rightarrow ty
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
@@ -476,22 +500,49 @@ Haskell qualifying spec
                  | None -> val
                  | Some(toSuper, toSub) ->
 	       let srtDef = sortDef(subty, spc) in
-               let superty = getSuperTypeOp srtDef in
+               let superty = getSuperType srtDef in
                Cons({subtype = subty,
                      supertype = superty,
                      coerceToSuper = mkOp(Qualified(toHaskellQual, toSuper),
-                                          mkArrow(mkBase(subty, []),
-                                                  mkBase(superty, []))),
+                                          mkArrow(mkBase(subty, []), superty)),
                      coerceToSub   = mkOp(Qualified(toHaskellQual, toSub),
-                                          mkArrow(mkBase(superty, []),
-                                                  mkBase(subty, []))),
+                                          mkArrow(superty, mkBase(subty, []))),
                      overloadedOps = overloadedOps},
                     val))
       [] trans_info.type_map
 
+  op exportedOps (spc: Spec, top_spec: Spec): QualifiedIds =
+    % let _ = writeLine("Export from\n"^printSpec spc) in
+    let op_tbl = spc.ops in
+    let base_op_tbl = (getBaseSpec()).ops in
+    %% Map through all ops in top spec that aren't in spc, and collect ops used
+    %% that are in spc
+    if spc = top_spec then []
+    else
+    let exported_ops =
+        foldriAQualifierMap  (fn (q, id, info, exported_ops) ->
+                                if primaryOpName? (q, id, info)
+                                     && none?(findAQualifierMap (op_tbl, q, id))
+                                  then
+                                    % let _ = writeLine("Checking def of "^id) in
+                                    foldSubTerms (fn (tm, exported_ops) ->
+                                                  case tm of
+                                                    | Fun(Op(qid as Qualified(q, id), _), _, _)
+                                                        | none?(findAQualifierMap (base_op_tbl, q, id))
+                                                            && some?(findAQualifierMap (op_tbl, q, id))
+                                                            && qid nin? exported_ops ->
+                                                      qid :: exported_ops
+                                                    | _ -> exported_ops)
+                                      exported_ops info.dfn
+                                else exported_ops)
+          [] top_spec.ops
+    in
+    % let _ = writeLine(anyToString exported_ops) in
+    exported_ops
+
   op  ppImports: Context -> SpecElements -> List(List Pretty) * List Pretty
   def ppImports c elems =
-    let imports_from_thy_morphism = thyMorphismImports c in
+    let imports_from_haskell_morphism = haskellMorphismImports c in
     let explicit_imports =
         mapPartial (fn el ->
 		     case el of
@@ -500,12 +551,18 @@ Haskell qualifying spec
            elems
     in
     let (explicit_imports1, explicit_imports_names) = unzip explicit_imports in
-    (map (fn im -> [prConcat [prString "import ", im]])
-      (explicit_imports1 ++ imports_from_thy_morphism),
-     map (fn im -> prConcat [prString "module ", im])
-      (explicit_imports_names ++ imports_from_thy_morphism))
+    let ppImports = map (fn im -> [prConcat [prString "import ", im]])
+                      (explicit_imports1 ++ imports_from_haskell_morphism)
+    in
+    let ppExports =
+        if c.slicing? && ~(c.top_spec?)
+          then map (fn qid -> prConcat [ppOpQualifiedId c qid, prSpace]) (exportedOps (getSpec c, c.top_spec))
+          else map (fn im -> prConcat [prString "module ", im])
+                 (explicit_imports_names ++ imports_from_haskell_morphism)
+    in
+    (ppImports, ppExports)
 
-  op thyMorphismImports (c:Context): List Pretty =
+  op haskellMorphismImports (c:Context): List Pretty =
     map prString c.trans_table.thy_imports
 
   op firstTypeDef (elems:SpecElements): Option QualifiedId =
@@ -519,32 +576,33 @@ Haskell qualifying spec
   def ppImport c sc_tm spc red_els =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None ->
-         let _ = writeLine("Unknown:\n"^anyToString sc_tm) in
+        let _ = writeLine("Unknown:\n"^anyToString sc_tm) in
         Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
-      | Some ((spc_nm, sw_fil_nm, thy_fil_nm), val, uid) ->
+      | Some ((spc_nm, sw_fil_nm, haskell_fil_nm), val, uid) ->
         case spc_nm of
           | "IsabelleExtensions" -> None
           | _ ->
         let _ = if c.recursive?
 	          then
-		    if (fileOlder?(sw_fil_nm, thy_fil_nm) && ~c.slicing?) || spc = getBaseSpec()
+		    if fileOlder?(sw_fil_nm, haskell_fil_nm) || spc = getBaseSpec()
 		      then ()
-		    else toFile(thy_fil_nm,
-                                showValue(val, false, c.slicing?, c.recursive?, Some uid, Some spc_nm, Some red_els))
+		    else toFile(haskell_fil_nm,
+                                showValue(val, false, c.top_spec, c.slicing?, c.recursive?,
+                                          Some uid, Some spc_nm, Some red_els))
 		  else ()
 	in
         case spc_nm of
           | "Base" -> Some(prString "SW_Base", prString "SW_Base")
           | _ ->
-        let thy_nm = thyName spc_nm in
+        let haskell_nm = haskellName spc_nm in
         case uidStringPairTermForValue val of
           | Some (_, _, sc_tm) | useQualifiedNames? && some?(findSpecQualifier sc_tm) ->  % ???
             let Some qualifier = findSpecQualifier sc_tm in
-            Some(prConcat ([prString "qualified ", prString thy_nm]
-                             ++ (if qualifier = thy_nm then []
+            Some(prConcat ([prString "qualified ", prString haskell_nm]
+                             ++ (if qualifier = haskell_nm then []
                                  else [prString " as ", prString qualifier])),
                  prString qualifier)
-          | _ -> Some(prString thy_nm, prString thy_nm)
+          | _ -> Some(prString haskell_nm, prString haskell_nm)
 
   op  ppSpecElements: Context -> Spec -> SpecElements -> Pretty
   def ppSpecElements c spc elems =
@@ -838,14 +896,14 @@ Haskell qualifying spec
                  | _ -> None)
      els
                               
- op  haskellThyMorphismPragma: String -> Option(String * List String)
- def haskellThyMorphismPragma prag =
+ op  haskellMorphismPragma: String -> Option(String * List String)
+ def haskellMorphismPragma prag =
    case search("\n", prag) of
      | None -> None
      | Some n ->
    let line1 = subFromTo(prag, 0, n) in
    case removeEmpty(splitStringAt(line1, " ")) of
-     | "Haskell"::thyMorphStr::r | thyMorphStr in?
+     | "Haskell"::haskellMorphStr::r | haskellMorphStr in?
 				      ["ThyMorphism", "Thy_Morphism",  "-morphism",
 				       "TheoryMorphism", "Theory_Morphism"] ->
        Some(subFromTo(prag, n, length prag), r)
@@ -2308,7 +2366,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
-   let qualifier = if useQualifiedNames? then thyName qualifier else qualifier in
+   let qualifier = if useQualifiedNames? then haskellName qualifier else qualifier in
    if qualifier = UnQualified \_or qualifier in? omittedQualifiers
         \_or (if useQualifiedNames?
               then Some qualifier = c.qualifier?
