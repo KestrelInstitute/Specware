@@ -2208,7 +2208,7 @@ With an argument, it doesn't convert imports."
   (interactive "P")
   (sw:convert-spec-to-haskell non-recursive? t))
 
-(defun sw:convert-spec-to-haskell (non-recursive? &optional thinning?)
+(defun sw:convert-spec-to-haskell (non-recursive? &optional slicing?)
   "Converts Spec to Isabelle/HOL theory.
 With an argument, it doesn't convert imports."
   (interactive "P")
@@ -2216,9 +2216,9 @@ With an argument, it doesn't convert imports."
   (let* ((filename (sw:containing-specware-unit-id t))
 	 (thy-file (sw:eval-in-lisp
 		    (format
-		     "(Haskell::printUIDtoThyFile-3 %S %s %s)"
+		     "(Haskell::printUIDtoHaskellFile-3 %S %s %s)"
 		     filename
-                     (if thinning? "t" "nil")
+                     (if slicing? "t" "nil")
 		     (if non-recursive? "nil" "t"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
