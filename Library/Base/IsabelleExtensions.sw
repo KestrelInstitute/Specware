@@ -929,7 +929,7 @@ lemma zgcd_greatest_iff:         "k dvd zgcd(m,n) = (k dvd m \_and k dvd n)"
 
 lemma zgcd_zmult_distrib2:       "0 \_le k \_Longrightarrow k * zgcd(m,n) = zgcd(k*m,k*n)"
   by (metis abs_gcd_int abs_mult abs_mult_pos comm_semiring_1_class.normalizing_semiring_rules(7)
-          gcd_mult_distrib_int zgcd_specware_def)
+            gcd_mult_distrib_int zgcd_specware_def)
 
 lemma zgcd_zminus [simp]:        "zgcd(-m,n) = zgcd (m,n)"
   by (simp add: zgcd_def)
