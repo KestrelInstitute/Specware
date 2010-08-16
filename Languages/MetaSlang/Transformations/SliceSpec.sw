@@ -124,7 +124,7 @@ op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore
     in
     let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
     let spc = scrubSpec(spc, op_set, type_set, base_spec) in
-    let _ = printSpec spc in
+    % let _ = printSpec spc in
     spc
 
 endspec
