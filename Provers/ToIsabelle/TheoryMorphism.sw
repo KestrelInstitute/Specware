@@ -121,10 +121,15 @@ IsaTermPrinter qualifying spec
       | Some n \_rightarrow Some(processRhsOp (subFromTo(prag_str, n+2,end_pos)) kind pos)
       | _ \_rightarrow None
 
-op splitAtStr(s: String, pat: String): Option(String * String) =
+ op splitAtStr(s: String, pat: String): Option(String * String) =
   case search(pat, s) of
     | Some i \_rightarrow Some(subFromTo(s,0,i),subFromTo(s,i + length pat, length s))
     | None \_rightarrow None
+
+ op parseQualifiedId(s: String): QualifiedId =
+   case splitStringAt(s,".") of
+     | [qual,id] \_rightarrow Qualified(qual,id)
+     | _ \_rightarrow Qualified(UnQualified, s)
 
  %%% Basic string parsing function
  op parseMorphMap (morph_str: String, result: TransInfo, kind: String, pos: Position): TransInfo =
@@ -141,10 +146,7 @@ op splitAtStr(s: String, pat: String): Option(String * String) =
 	 let type? = length lhs > 5 && subFromTo(lhs,0,5) in? ["type ","Type "] in
 	 let lhs = if type? then subFromTo(lhs,5,length lhs) else lhs in
          let lhs = removeWhiteSpace lhs in
-	 (type?,
-	  case splitStringAt(lhs,".") of
-	    | [qual,id] \_rightarrow Qualified(qual,id)
-	    | _ \_rightarrow Qualified(UnQualified,lhs))
+	 (type?, parseQualifiedId lhs)
        def processRhsType rhs =
 	 let rhs = removeWhiteSpace rhs in
 	 case search("(",rhs) of
