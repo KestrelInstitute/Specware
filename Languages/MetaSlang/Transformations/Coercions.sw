@@ -65,7 +65,7 @@ spec
 	      | Lambda _ \_rightarrow
                 (case rangeOpt(spc,rm_ty) of   % Don't delay set
                    | Some r_ty | equalType?(r_ty, boolSort) \_rightarrow false
-                   | _ -> true)
+                   | _ -> false)
 	      | Let _ \_rightarrow true
               | Apply(Lambda _, _, _) \_rightarrow true
 	      | LetRec _ \_rightarrow true
