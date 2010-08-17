@@ -363,22 +363,40 @@ AnnSpec qualifying spec
 
  op  mapOpInfos : [b] (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b
  def mapOpInfos opinfo_map ops =
+   let new_ops =
+       mapiAQualifierMap
+         (fn (q, id, info)->
+          if primaryOpName? (q, id, info)
+            then opinfo_map info
+            else info)
+         ops
+   in
    foldriAQualifierMap
-     (fn (q, id, info, new_map) ->
-      if primaryOpName? (q, id, info) then
-	%% When access is via a primary alias, update the info and
-	%% ecord that (identical) new value for all the aliases.
-	let new_info = opinfo_map info in
-	foldl (fn (new_map, Qualified (q, id)) ->
-	       insertAQualifierMap (new_map, q, id, new_info))
-	      new_map
-	      info.names
-      else
-	%% For the non-primary aliases, do nothing,
-	%% since they are handled derivatively above.
-	new_map)
-     emptyAQualifierMap
+     (fn (q, id, info, new_ops)->
+        if primaryOpName? (q, id, info)
+          then new_ops
+        else let Qualified (qq, ii) = primaryOpName info in
+             let Some new_info = findAQualifierMap(new_ops, qq, ii) in
+             insertAQualifierMap (new_ops, q, id, new_info))
+     new_ops
      ops
+
+%   foldriAQualifierMap
+%     (fn (q, id, info, new_map) ->
+%      if primaryOpName? (q, id, info) then
+%	%% When access is via a primary alias, update the info and
+%	%% ecord that (identical) new value for all the aliases.
+%	let new_info = opinfo_map info in
+%	foldl (fn (new_map, Qualified (q, id)) ->
+%	       insertAQualifierMap (new_map, q, id, new_info))
+%	      new_map
+%	      info.names
+%      else
+%	%% For the non-primary aliases, do nothing,
+%	%% since they are handled derivatively above.
+%	new_map)
+%     emptyAQualifierMap
+%     ops
 
  op  filterSortMap : [b] (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b
  def filterSortMap keep? sorts =
