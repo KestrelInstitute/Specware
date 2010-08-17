@@ -5170,6 +5170,15 @@ theorem List__e_at_at__stp_nth:
  "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
  by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
 
+
+
+(***********************************************************************
+ * From now on List__list should not be unfolded automatically  
+ * because this may cause the simplifier to loop 
+ ***********************************************************************)
+
+declare List__list.simps [simp del]
+
 end-proof
 % ------------------------------------------------------------------------------
 
