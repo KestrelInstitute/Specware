@@ -77,9 +77,9 @@ defs Char__toUpperCase_def [simp]:
   "Char__toUpperCase c
      \<equiv> (if Char__isLowerCase c then 
           char_of_nat
-             (nat
-                 ((int (nat_of_char c) - int (nat_of_char CHR ''a'')) 
-                    + int (nat_of_char CHR ''A'')))
+             (nat ((int (nat_of_char c) 
+                  - int (nat_of_char CHR ''a'')) 
+                     + int (nat_of_char CHR ''A'')))
         else 
           c)"
 theorem Char__toLowerCase_Obligation_subtype: 
@@ -101,9 +101,9 @@ defs Char__toLowerCase_def [simp]:
   "Char__toLowerCase c
      \<equiv> (if Char__isUpperCase c then 
           char_of_nat
-             (nat
-                 ((int (nat_of_char c) - int (nat_of_char CHR ''A'')) 
-                    + int (nat_of_char CHR ''a'')))
+             (nat ((int (nat_of_char c) 
+                  - int (nat_of_char CHR ''A'')) 
+                     + int (nat_of_char CHR ''a'')))
         else 
           c)"
 consts Char__compare :: "char \<times> char \<Rightarrow> Compare__Comparison"

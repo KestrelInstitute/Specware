@@ -89,14 +89,10 @@ where
        (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))) 
       = ''7''"
  | "Nat__digitToString
-       (Suc
-           (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0)))))))) 
+       (Suc (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0)))))))) 
       = ''8''"
  | "Nat__digitToString
-       (Suc
-           (Suc
-               (Suc
-                   (Suc (Suc (Suc (Suc (Suc (Suc 0))))))))) 
+       (Suc (Suc (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))))) 
       = ''9''"
 
 lemma Nat__digitToString_singleton:
