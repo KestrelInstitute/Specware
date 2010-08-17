@@ -1,4 +1,3 @@
-
 Haskell qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
@@ -22,6 +21,10 @@ Haskell qualifying spec
 
  type Pretty = PrettyPrint.Pretty
  type Pragma = String * String * String * Position
+
+ type TypeClassInfo = {type_qid: QualifiedId,
+                       class_id: String,
+                       instance_ops: List(QualifiedId * String)}
 
  type Context = {recursive?: Bool,
                  top_spec?: Bool,
@@ -417,8 +420,7 @@ Haskell qualifying spec
     let spc = if c.slicing? && c.top_spec? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
     % let _ = writeLine("Sliced:\n"^printSpec spc^"\n") in
     let rel_elements = filter haskellElement? spc.elements in
-    let spc = spc << {elements = normalizeSpecElements(rel_elements)}
-    in
+    let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
     let source_of_haskell_morphism? = exists? (fn el ->
                                             case el of
@@ -440,7 +442,9 @@ Haskell qualifying spec
                 else spc
     in
     let spc = normalizeNewTypes(spc, false) in
-    let coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
+    let morphism_coercions = makeCoercionTable(trans_table, spc) in   % before removeSubTypes!
+    let (typeclass_coercions, c) = coercionsFromTypeClassPragmas c spc in
+    let coercions = typeclass_coercions ++ morphism_coercions in
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
     in
@@ -640,10 +644,6 @@ Haskell qualifying spec
         Cons(Op(qid1, true, a), normalizeSpecElements rst)
       | x::rst -> x :: normalizeSpecElements rst
 
-  type TypeClassInfo = {type_qid: QualifiedId,
-                        class_id: String,
-                        instance_ops: List(QualifiedId * String)}
-
  def findPragmaInstance(qid_str: String, elts: SpecElements): Option String =
    let result =
          case elts of
@@ -668,33 +668,74 @@ Haskell qualifying spec
   op newtypeConstructorName (c: Context) (qid: QualifiedId): String =
     "Make"^qidToHaskellString c qid true
 
+ op extractTypeClassIn(prag): Option TypeClassInfo =
+    case search("\n",prag) of
+      | None -> None
+      | Some n ->
+    let line1 = subFromTo(prag,0,n) in
+    let def_lines = splitStringAt(subFromTo(prag,n,length prag), "\n") in
+    case removeEmpty(splitStringAt(line1," ")) of
+      | _ :: _ :: class_nm :: qid_str :: _ ->
+        let instance_prs = mapPartial (fn line ->
+                                       case splitStringAt(removeWhiteSpace line, "->") of
+                                         | sw_str :: haskell_str :: _ ->
+                                           Some(case splitStringAt(sw_str, ".") of
+                                                  | [q,id] -> Qualified(q,id)
+                                                  | _ -> mkUnQualifiedId sw_str,
+                                                haskell_str)
+                                         | _ -> None)
+                             def_lines
+        in
+        Some {type_qid = parseQualifiedId qid_str,
+              class_id = class_nm,
+              instance_ops = instance_prs}
+      | _ -> None
+
+  op coercionsFromTypeClassPragmas (c: Context) (spc: Spec): TypeCoercionTable * Context =
+    foldlSpecElements (fn ((tct, c), el) ->
+                         case el of
+                           | Pragma("#translate", prag_str, "#end", _) ->
+                             (let line1 = case search("\n", prag_str) of
+                                | None -> prag_str
+                                | Some n -> subFromTo(prag_str, 0, n)
+                              in
+                              case removeEmpty(splitStringAt(line1, " ")) of
+                                | pragma_kind :: "-instance" :: _ :: _ :: _
+                                    | (pragma_kind = "Haskell" \_or pragma_kind = "haskell") ->
+                                  (case extractTypeClassIn prag_str of
+                                   | Some {type_qid,
+                                           class_id,
+                                           instance_ops} ->
+                                     (case AnnSpec.findTheSort(spc, type_qid) of
+                                        | Some info ->
+                                          let (ty_vars, superty) = unpackSort info.dfn in
+                                          let subty = mkBase(type_qid, map mkTyVar ty_vars) in
+                                          let constructor_nm = newtypeConstructorName c type_qid in
+                                          let c = addConstructorTranslation(c, constructor_nm, constructor_nm) in
+                                          let coerce_info = {subtype = type_qid,
+                                                             supertype = superty,
+                                                             coerceToSuper =
+                                                               let x = ("x", superty) in
+                                                               mkLambda(mkEmbedPat(constructor_nm, Some(mkVarPat x), subty), mkVar x),
+                                                             coerceToSub   = mkEmbed1(constructor_nm,
+                                                                                      mkArrow(superty, subty)),
+                                                             overloadedOps = []}
+                                          in
+                                          (coerce_info :: tct, c)
+                                        | None -> (warn("Instance pragma ignored for undefined type: "^printQualifiedId type_qid);
+                                                   (tct, c)))
+                                   | None -> (tct, c))
+                                | _ -> (tct, c))
+                           | _ -> (tct, c))
+      ([], c) spc.elements
+
+
   op findTypeClassInfo (qid: QualifiedId) (elems: SpecElements): Option TypeClassInfo =
     case findPragmaInstance(printQualifiedId qid, elems) of
       | None -> None
-      | Some prag ->
-    case search("\n",prag) of
-     | None -> None
-     | Some n ->
-   let line1 = subFromTo(prag,0,n) in
-   let def_lines = splitStringAt(subFromTo(prag,n,length prag), "\n") in
-   case removeEmpty(splitStringAt(line1," ")) of
-     | _ :: _ :: class_nm :: _ ->
-       let instance_prs = mapPartial (fn line ->
-                                      case splitStringAt(removeWhiteSpace line, "->") of
-                                        | sw_str :: haskell_str :: _ ->
-                                          Some(case splitStringAt(sw_str, ".") of
-                                                 | [q,id] -> Qualified(q,id)
-                                                 | _ -> mkUnQualifiedId sw_str,
-                                               haskell_str)
-                                        | _ -> None)
-                            def_lines
-       in
-       Some {type_qid = qid,
-             class_id = class_nm,
-             instance_ops = instance_prs}
-     | _ -> None
-
-  op addCoercionsForNewtype(dfn: MS.Term, type_qid: QualifiedId, newtypeConstructorNmID: String, spc: Spec): MS.Term =
+      | Some prag -> extractTypeClassIn prag
+ 
+  op addCoercionsForNewtype(dfn: MS.Term, type_qid_constrs: List(QualifiedId * String), spc: Spec): MS.Term =
     let def addCoercion(tm, d_ty) =
           let u_ty = inferType(spc, tm) in
           % let _ = writeLine(printTerm tm^":\n"^printSort u_ty ^"\n-> " ^ printSort d_ty^"\n\n") in
@@ -736,9 +777,11 @@ Haskell qualifying spec
                 | _ -> tm
           in
           case (d_ty, u_ty) of
-            | (Base(d_qid, _, _), _) | d_qid = type_qid && ~(embed? Base u_ty) ->
+            | (Base(d_qid, _, _), _) | exists? (fn (qid, _) -> qid = d_qid) type_qid_constrs && ~(embed? Base u_ty) ->
+              let Some(_, newtypeConstructorNmID) = findLeftmost (fn (qid, _) -> qid = d_qid) type_qid_constrs in
               mkApply(mkEmbed1(newtypeConstructorNmID, mkArrow(u_ty, d_ty)), new_tm)
-            | (_, Base(u_qid, _, _)) | u_qid = type_qid && ~(embed? Base d_ty) ->
+            | (_, Base(u_qid, _, _)) | exists? (fn (qid, _) -> qid = u_qid) type_qid_constrs && ~(embed? Base d_ty) ->
+              let Some(_, newtypeConstructorNmID) = findLeftmost (fn (qid, _) -> qid = u_qid) type_qid_constrs in
               let x = ("x", d_ty) in
               mkLet([(mkEmbedPat(newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
             | _ -> new_tm
@@ -1084,7 +1127,6 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
           case tc_info of
             | Some{type_qid, class_id, instance_ops} ->
               let constructor_nm = newtypeConstructorName c type_qid in
-              let c = addConstructorTranslation(c, constructor_nm, constructor_nm) in
               prLinesCat 0 ([[],
                              [pp_def],
                              [],
@@ -1098,10 +1140,6 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                                                          prString "<Undefined Op>"
                                                        | Some {names, fixity, dfn, fullyQualified?=_} ->
                                                          let c = c << {newVarCount = Ref 0} in
-                                                         let dfn = addCoercionsForNewtype(dfn, type_qid,
-                                                                                          constructor_nm,
-                                                                                          getSpec c)
-                                                         in
                                                          let (tvs, ty, term) = unpackFirstTerm(dfn) in
                                                          let term = renameTerm (emptyContext()) term in
                                                          ppFunctionDef c  [qid] term ty None fixity)
