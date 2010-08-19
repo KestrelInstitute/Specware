@@ -356,6 +356,8 @@ proof Isa ThyMorphism
   Function.inverse     -> inv
 end-proof
 
+% mapping to Haskell:
+
 #translate Haskell ThyMorphism
   Function.id          -> id
   Function.o           -> . Right 9

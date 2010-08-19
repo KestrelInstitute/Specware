@@ -39,6 +39,8 @@ proof Isa ThyMorphism
   Bool.TRUE -> TRUE
 end-proof
 
+% Haskell mapping:
+
 #translate Haskell ThyMorphism
   type Bool.Bool -> Bool
 #end
