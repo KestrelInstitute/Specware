@@ -52,7 +52,7 @@ SpecNorm qualifying spec
      | _ \_rightarrow false
 
   op unnamedPragma?(p: Pragma): Boolean =
-    ~(namedPragma? p || controlPragma? p.2)
+    ~(namedPragma? p || controlPragma? p.2) || controlPragmaString p.2 = Some ["-typedef"]
 
   op verbatimIdString: String = "-verbatim"
 
@@ -87,7 +87,7 @@ SpecNorm qualifying spec
   op subtypeC?(spc: Spec, ty: Sort, coercions: TypeCoercionTable): Bool =
     case ty of
      | Subsort _ -> true
-     | Base(qid, _, _) | exists? (fn tb \_rightarrow qid = tb.subtype) coercions -> false
+     | Base(qid, _, _) | opaqueTypeQId? coercions qid -> false
      | Product(flds, _) ->
        exists? (fn (_,tyi) -> subtypeC?(spc, tyi, coercions)) flds
      | Arrow(dom, rng, _) ->
@@ -1009,16 +1009,7 @@ SpecNorm qualifying spec
 
   op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow PolyOpTable \_rightarrow Spec
   def removeSubTypes spc coercions stp_tbl =
-    %% Remove subsort definition for directly-implemented subtypes
-    let spc = spc << {sorts = mapSortInfos
-                                (fn info \_rightarrow
-                                 let qid = primarySortName info in
-                                 if (exists? (\_lambda tb \_rightarrow tb.subtype = qid) coercions)
-                                   && embed? Subsort (firstSortDef info)
-                                   then info << {dfn = And([],noPos)}
-                                   else info)
-                                spc.sorts}
-    in
+    %% Remove subsort definition for directly-implemented subtypes after saving defs
     let ho_eqfns = findHOEqualityFuns spc in
     %% Add subtype assertions from op declarations
     let def makeSubtypeConstrThms(elts, new_elts, subtypeConstrThms?, freeThms?) =
@@ -1085,12 +1076,15 @@ SpecNorm qualifying spec
     let spc = mapSpec (relativizeQuantifiers spc, id, id) spc in
     %let _ = writeLine(printSpec spc) in
     %% Replace subtypes by supertypes
-    mapSpec (id,fn s \_rightarrow
-		   case s of
-		     | Subsort(supTy,_,_) \_rightarrow supTy
-		     | _ \_rightarrow s,
-             id)
-      spc
+    let spc = mapSpec (id,fn s \_rightarrow
+                         case s of
+                           | Subsort(supTy,_,_) \_rightarrow supTy
+                           | _ \_rightarrow s,
+                       id)
+                spc
+    in
+    % let _ = writeLine(printSpec spc) in
+    spc
 
   op removeSubtypesInTerm (spc: Spec) (t: MS.Term): MS.Term =
     let t = mapTerm(relativizeQuantifiers spc, id, id) t in
@@ -1143,32 +1137,34 @@ SpecNorm qualifying spec
   %% For named type T a create HO predicate T_P that takes a subtype on a and produces subtype on T a
   op addSubtypePredicateLifters(spc: Spec): Spec =
     let def addPredDecl((qid as Qualified(q,id),a), el, n_elts, spc) =
-          let Some info = AnnSpec.findTheSort(spc, qid) in
-          let (tvs,ty_def) = unpackFirstSortDef info in
-          if tvs = [] || (case ty_def of
-                            | Any _ -> false
-                            | CoProduct _ -> false
-                            | Product _ -> false
-                            | Quotient _ -> true % ?
-                            | _ -> true)
-            then (Cons(el, n_elts), spc)
-          else
-          let pred_name = id^"_P" in
-          % let _ = writeLine("making "^pred_name^" with "^show def?) in
-          let pred_qid = Qualified(q, pred_name) in
-          (case AnnSpec.findTheOp(spc, pred_qid) of
-             | Some _ -> (Cons(el, n_elts), spc) % already exists. Should check type is correct!
-             | None ->
-           let param_ty = Base(qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
-           let pred_ty = Arrow(mkProduct(map (fn tv -> Arrow(TyVar(tv, a), boolSort, a)) tvs),
-                               Arrow(param_ty, boolSort, a), a)
-           in
-           let x_dfn = Pi(tvs, SortedTerm(Any a, pred_ty, a), a) in
-           let op_map = insertAQualifierMap(spc.ops, q, pred_name,
-                                            {names = [pred_qid], dfn = x_dfn,
-                                             fixity = Nonfix, fullyQualified? = false})
-           in
-           ([Op(pred_qid, ~(embed? Any ty_def), a), el] ++ n_elts, spc << {ops = op_map}))
+          case AnnSpec.findTheSort(spc, qid) of
+            | Some info | definedSortInfo? info ->
+              let (tvs,ty_def) = unpackFirstSortDef info in
+              if tvs = [] || (case ty_def of
+                                | Any _ -> false
+                                | CoProduct _ -> false
+                                | Product _ -> false
+                                | Quotient _ -> true % ?
+                                | _ -> true)
+                then (el :: n_elts, spc)
+              else
+              let pred_name = id^"_P" in
+              % let _ = writeLine("making "^pred_name^" with "^show def?) in
+              let pred_qid = Qualified(q, pred_name) in
+              (case AnnSpec.findTheOp(spc, pred_qid) of
+                 | Some _ -> (Cons(el, n_elts), spc) % already exists. Should check type is correct!
+                 | None ->
+               let param_ty = Base(qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
+               let pred_ty = Arrow(mkProduct(map (fn tv -> Arrow(TyVar(tv, a), boolSort, a)) tvs),
+                                   Arrow(param_ty, boolSort, a), a)
+               in
+               let x_dfn = Pi(tvs, SortedTerm(Any a, pred_ty, a), a) in
+               let op_map = insertAQualifierMap(spc.ops, q, pred_name,
+                                                {names = [pred_qid], dfn = x_dfn,
+                                                 fixity = Nonfix, fullyQualified? = false})
+               in
+               ([Op(pred_qid, ~(embed? Any ty_def), a), el] ++ n_elts, spc << {ops = op_map}))
+            | _ -> (el :: n_elts, spc)
         def addPredDeclss (elts, op_map) =
           foldl (fn ((n_elts, op_map),el) ->
                  case el of
@@ -1180,54 +1176,56 @@ SpecNorm qualifying spec
                    |  _ -> (Cons(el, n_elts), op_map))
             ([], op_map) elts
         def addPredDef((ty_qid as Qualified(q,id), a), spc) =
-          let Some info = AnnSpec.findTheSort(spc, ty_qid) in
-          let (tvs, ty_def) = unpackFirstSortDef info in
-          if tvs = [] || (case ty_def of
-                            | Any _ -> false
-                            | CoProduct _ -> false
-                            | Product _ -> false
-                            | Quotient _ -> true % ?
-                            | _ -> true)
-            then spc
-          else
-          let pred_name = id^"_P" in
-          let pred_qid = Qualified(q, pred_name) in
-          case AnnSpec.findTheOp(spc, pred_qid) of
-             | Some info ->
-               let (tvs, pred_ty, _) = unpackFirstOpDef info in
-               let param_ty = Base(ty_qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
-               let dfn = case ty_def of
-                           | CoProduct(constrs,_) ->
-                             mkLambda(mkTuplePat(map (fn tv ->
-                                                        mkVarPat("P_"^tv,
-                                                                 Arrow(TyVar(tv, a),
-                                                                       boolSort, a)))
-                                                   tvs),
-                                      mkLambda
-                                        (mkVarPat("x__c", param_ty),
-                                         mkApply(Lambda
-                                                   (map (fn (id,o_ty) ->
-                                                           case o_ty of
-                                                             | None ->
-                                                               (EmbedPat(id, None, param_ty, a),
-                                                                trueTerm, trueTerm)
-                                                             | Some ty ->
-                                                               let (p, p_t) = typePattern(ty, spc) in
-                                                               (EmbedPat(id, Some p, param_ty, a), 
-                                                                trueTerm, p_t))
-                                                      constrs, a),
-                                                 mkVar("x__c", param_ty))))
-                           | Product _ ->
-                             let (p,p_t) = typePattern(ty_def, spc) in
-                             mkLambda(mkTuplePat(map (fn tv -> mkVarPat("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)))
-                                                   tvs),
-                                      mkLambda(p, p_t))
-                           | _ -> Any a
-               in
-               let x_dfn = Pi(tvs, SortedTerm(dfn, pred_ty, a), a) in
-               let ops = insertAQualifierMap(spc.ops, q, pred_name, info << {dfn = x_dfn}) in
-               spc << {ops = ops}
-             | None -> spc
+          case AnnSpec.findTheSort(spc, ty_qid) of
+            | Some info | definedSortInfo? info ->
+              let (tvs, ty_def) = unpackFirstSortDef info in
+              (if tvs = [] || (case ty_def of
+                                | Any _ -> false
+                                | CoProduct _ -> false
+                                | Product _ -> false
+                                | Quotient _ -> true % ?
+                                | _ -> true)
+                then spc
+              else
+              let pred_name = id^"_P" in
+              let pred_qid = Qualified(q, pred_name) in
+              case AnnSpec.findTheOp(spc, pred_qid) of
+                 | Some info ->
+                   let (tvs, pred_ty, _) = unpackFirstOpDef info in
+                   let param_ty = Base(ty_qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
+                   let dfn = case ty_def of
+                               | CoProduct(constrs,_) ->
+                                 mkLambda(mkTuplePat(map (fn tv ->
+                                                            mkVarPat("P_"^tv,
+                                                                     Arrow(TyVar(tv, a),
+                                                                           boolSort, a)))
+                                                       tvs),
+                                          mkLambda
+                                            (mkVarPat("x__c", param_ty),
+                                             mkApply(Lambda
+                                                       (map (fn (id,o_ty) ->
+                                                               case o_ty of
+                                                                 | None ->
+                                                                   (EmbedPat(id, None, param_ty, a),
+                                                                    trueTerm, trueTerm)
+                                                                 | Some ty ->
+                                                                   let (p, p_t) = typePattern(ty, spc) in
+                                                                   (EmbedPat(id, Some p, param_ty, a), 
+                                                                    trueTerm, p_t))
+                                                          constrs, a),
+                                                     mkVar("x__c", param_ty))))
+                               | Product _ ->
+                                 let (p,p_t) = typePattern(ty_def, spc) in
+                                 mkLambda(mkTuplePat(map (fn tv -> mkVarPat("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)))
+                                                       tvs),
+                                          mkLambda(p, p_t))
+                               | _ -> Any a
+                   in
+                   let x_dfn = Pi(tvs, SortedTerm(dfn, pred_ty, a), a) in
+                   let ops = insertAQualifierMap(spc.ops, q, pred_name, info << {dfn = x_dfn}) in
+                   spc << {ops = ops}
+                 | None -> spc)
+            | _ -> spc
     in
     let (new_elts, spc) = addPredDeclss (spc.elements, spc) in
     let spc = spc << {elements = reverse new_elts} in
