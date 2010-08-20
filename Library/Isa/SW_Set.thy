@@ -1,7 +1,6 @@
 theory SW_Set
 imports Base Set
 begin
-types 'a Set__Predicate = "'a \<Rightarrow> bool"
 
 lemma Set_Set_P_converse:
 "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
