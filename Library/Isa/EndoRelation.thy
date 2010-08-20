@@ -214,10 +214,9 @@ theorem EndoRelation__symmetricClosure_Obligation_subtype:
          rule converseD, simp add: mem_def)
   done
 theorem EndoRelation__symmetricClosure_Obligation_subtype0: 
-  "sym
-      (Inter
-          (\<lambda> (rc::('a \<times> 'a) set). 
-             (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> sym rc))"
+  "sym (Inter
+           (\<lambda> (rc::('a \<times> 'a) set). 
+              (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> sym rc))"
   apply (cut_tac r=r in EndoRelation__symmetricClosure_Obligation_subtype)
   apply (simp add: Set__min__def)
   apply (rule_tac 
