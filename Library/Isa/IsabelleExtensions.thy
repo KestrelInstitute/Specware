@@ -262,6 +262,7 @@ definition  bij_ON  :: "['a \<Rightarrow> 'b, 'a set, 'b set] \<Rightarrow> bool
 
 definition  inv_on :: "'a set \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> ('b \<Rightarrow> 'a)" where (*inverse on subtype *)
   "inv_on  \<equiv> inv_into"
+
 (********************************************************************************)
 
 lemma defined_on_simp_set: 
@@ -551,9 +552,8 @@ lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<
 
 lemma div_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a div b = q"
   by (metis div_mult_self2 div_pos_pos_trivial not_less zadd_0_right zadd_commute)
-
 lemma div_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a div b = q"
-by (metis div_mult_self2 div_neg_neg_trivial not_less zadd_0_right zadd_commute)
+  by (metis div_mult_self2 div_neg_neg_trivial not_less zadd_0_right zadd_commute)
 lemma div_pos_unique1:            "\<lbrakk>a = b*q - r; (0::int)<r; r<b\<rbrakk> \<Longrightarrow> a div b = q - 1"
   by (cut_tac a="b*q - r" and b=b and q="q - 1" and r="b - r" in div_pos_unique,
       auto, simp add: algebra_simps)
@@ -562,9 +562,9 @@ lemma div_neg_unique1:            "\<lbrakk>a = b*q - r; (0::int)>r; r>b\<rbrakk
       auto, simp add: algebra_simps)
 
 lemma mod_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a mod b = r"
-by (metis mod_mult_self2 mod_pos_pos_trivial zadd_commute)
+  by (metis mod_mult_self2 mod_pos_pos_trivial zadd_commute)
 lemma mod_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a mod b = r"
-by (metis mod_mult_self2 mod_neg_neg_trivial zadd_commute)
+  by (metis mod_mult_self2 mod_neg_neg_trivial zadd_commute)
 
 lemma mod_div_eq:                 "(a::int) = b * (a div b) + (a mod b)"
   by (simp add:  zmod_zdiv_equality)
@@ -916,7 +916,8 @@ lemma zgcd_greatest_iff:         "k dvd zgcd(m,n) = (k dvd m \<and> k dvd n)"
   by (simp add: zgcd_def abs_if int_dvd_iff dvd_int_iff nat_dvd_iff)
 
 lemma zgcd_zmult_distrib2:       "0 \<le> k \<Longrightarrow> k * zgcd(m,n) = zgcd(k*m,k*n)"
-by (metis abs_gcd_int abs_mult abs_mult_pos comm_semiring_1_class.normalizing_semiring_rules(7) gcd_mult_distrib_int zgcd_specware_def)
+  by (metis abs_gcd_int abs_mult abs_mult_pos comm_semiring_1_class.normalizing_semiring_rules(7)
+            gcd_mult_distrib_int zgcd_specware_def)
 
 lemma zgcd_zminus [simp]:        "zgcd(-m,n) = zgcd (m,n)"
   by (simp add: zgcd_def)
@@ -1053,8 +1054,6 @@ lemma ilcm_to_zlcm [simp]:        "int (ilcm (m,n)) = zlcm(m,n)"
 * which allows me to use existing Isabelle theorems about div/mod also for
 * the other concepts
 ********************************************************************************)
-
-
 
 definition divT :: "int \<Rightarrow> int \<Rightarrow> int"   (infixl "divT" 70)   where
    "a divT b \<equiv> (\<bar>a\<bar> div \<bar>b\<bar>) * (sign (a*b))"

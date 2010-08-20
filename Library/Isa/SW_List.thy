@@ -2556,7 +2556,12 @@ theorem List__equiExtendLeft_subtype_constr:
   apply (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
   done
 theorem List__equiExtendLeft_subtype_constr1: 
-  "\<lbrakk>list_all P__a l1; list_all P__b l2; P__a x1; P__b x2\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l1; 
+    list_all P__b l2; 
+    P__a x1; 
+    P__b x2; 
+    ((x_1::'a list), (x_2::'b list)) 
+      = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
    let (x, y) = List__equiExtendLeft(l1, l2, x1, x2) in x equiLong y"
   by (simp only: List__equiExtendLeft_subtype_constr)
 theorem List__equiExtendLeft_subtype_constr2: 
@@ -2600,7 +2605,12 @@ theorem List__equiExtendRight_subtype_constr:
   apply (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
   done
 theorem List__equiExtendRight_subtype_constr1: 
-  "\<lbrakk>list_all P__a l1; list_all P__b l2; P__a x1; P__b x2\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l1; 
+    list_all P__b l2; 
+    P__a x1; 
+    P__b x2; 
+    ((x_1::'a list), (x_2::'b list)) 
+      = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
    let (x, y) = List__equiExtendRight(l1, l2, x1, x2) in 
    x equiLong y"
   by (simp only: List__equiExtendRight_subtype_constr)
@@ -5305,10 +5315,11 @@ theorem List__e_at_at__stp_nth:
  by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
 
 
-(*************************************************************
+
+(***********************************************************************
  * From now on List__list should not be unfolded automatically  
  * because this may cause the simplifier to loop 
- *************************************************************)
+ ***********************************************************************)
 
 declare List__list.simps [simp del]
 
