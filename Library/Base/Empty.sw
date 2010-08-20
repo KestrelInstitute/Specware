@@ -11,4 +11,6 @@ effectively starts as a clean slate, without the base specs. *)
 
 spec
 
+proof Isa ThyMorphism Main
+end-proof
 endspec
