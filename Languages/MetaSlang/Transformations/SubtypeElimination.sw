@@ -5,7 +5,7 @@ SpecNorm qualifying spec
   op eagerRegularization?: Bool = false
   op regularizeSets?: Bool = true
   op regularizeBoolToFalse?: Bool = false    % Can do this effectively in IsabelleExtensions
-  op removeExcessAssumptions?: Bool = true
+  op removeExcessAssumptions?: Bool = false
 
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
