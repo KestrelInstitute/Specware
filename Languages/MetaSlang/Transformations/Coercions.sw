@@ -479,4 +479,18 @@ spec
       | Base(qid, _, _) -> opaqueTypeQId? coercions qid
       | _ -> false
 
+  op convertApplyToIn?(spc: Spec) (tm0: MS.Term): MS.Term =
+    mapTerm (fn tm -> case tm of
+                        | Apply (t1, t2, a) ->
+                          let fn_ty = inferType(spc, t1) in
+                          % let _ = writeLine("in??: "^printTerm tm^": "^printSort fn_ty) in
+                          (case subtypeOf(fn_ty, Qualified("Set", "Set"), spc) of
+                             | Some(Base(_, [p], _)) ->
+                               Apply(mkInfixOp(Qualified("Set", "in?"), Infix(Left, 20),
+                                               mkArrow(mkProduct[p, fn_ty], boolSort)),
+                                     mkTuple[t2, t1], a)
+                             | _ -> tm)
+                        | _ -> tm,
+             id, id)
+      tm0
 endspec
