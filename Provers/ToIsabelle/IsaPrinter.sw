@@ -345,13 +345,13 @@ IsaTermPrinter qualifying spec
                    let initialFmla = defToTheorem(getSpec c, ty, qid, term) in
                    let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
                    % let _ = app (fn fmla -> writeLine("def_thm1: "^printTerm fmla)) liftedFmlas in
-                   let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
+                   let simplifiedLiftedFmlas = map (fn fmla -> simplify spc (convertApplyToIn? spc fmla)) liftedFmlas in
                    let (_,thms) = foldl (fn((i, result), fmla) ->
                                            (i + 1,
                                             result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
                                                                                               else show i)),
                                                                     tvs, fmla)]))
-                                    (0, []) liftedFmlas
+                                    (0, []) simplifiedLiftedFmlas
                    in
                    el::thms
                  | _ -> [el])
