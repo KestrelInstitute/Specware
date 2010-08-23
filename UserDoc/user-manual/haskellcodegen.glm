@@ -14,12 +14,22 @@ generator can either be called from the &SShell; or using the emacs interface.
 </para>
 
 <para>
-The shell command has the form:
+There are two shell commands for generating Haskell, one that creates
+modules that export everything and one that creates modules that only
+export what is needed by the given spec, with unneeded ops
+omitted. The latter is useful when applied to the top-level spec of
+interest. The former is useful when you want code for lower-level
+specs that may be usedin different contexts.
+</para>
+
+<para>
+The first shell command that exports all imports is
 [[
 ||    gen-haskell $spec-term$
 ]]
 where the result of elaborating the spec term gives the spec to be
-translated into Haskell. Inside the emacs interface it is simpler to
+translated into Haskell. The [[gen-haskell]] command can be
+abbreviated to [[gen-h]]. Inside the emacs interface it is simpler to
 use the [[C-c h]] command ([[sw:convert-spec-to-haskell]]) which has
 the same effect but also visits the generated Haskell file. For a
 single file spec, the generated Haskell file has the same name as the
@@ -34,6 +44,23 @@ process the generated &Haskell; files. The Base library and its
 translation into &Haskell; provides good examples of the &Haskell;
 generator and how to control it using the pragmas documented below.
 </para>
+
+<para>
+The second shell command for use with top-level specs is
+[[
+||    gen-haskell-top $spec-term$
+]]
+where the result of elaborating the spec term gives the spec to be
+translated into Haskell. The [[gen-haskell]] command can be
+abbreviated to [[gen-ht]]. Inside the emacs interface it is simpler to
+use the [[C-c H]] command ([[sw:convert-top-spec-to-haskell]]) which has
+the same effect but also visits the generated Haskell file. The names
+of the generated Haskell modules are the same as that for the
+[[gen-haskell]] command, but the files generated for specs in
+different directories are put in sub-directories of the top-level
+Haskell directory.
+</para>
+
 
 <section>
 <title>Translation of Specware Names</title>
@@ -61,18 +88,18 @@ translation.
 <title>Translation Tables</title>
 
 <para> You can connect a &Specware; spec with an existing &Haskell;
-module by providing a translation table within the spec.
+module by providing a [[-morphism]] translation table within the spec.
 
 <para>
 A translation table for &Specware; types and ops is introduced by a
-  line beginning [[#translate Haskell Thy_Morphism]] followed optionally by a
+  line beginning [[#translate Haskell -morphism]] followed optionally by a
   &Haskell; module  (which will be imported into the translated
   spec), and terminated by the string [[#end]]. Each line gives
   the translation of a type or op. For example, for the &Specware;
   List spec we have:
 
 [[
-||    #translate Haskell Thy_Morphism  List
+||    #translate Haskell -morphism  List
 ||      type List.List    -> []
 ||      Nil               -> []
 ||      Cons              -> :            Right 5
@@ -130,9 +157,34 @@ a precedence number. Note that the precedence number is relative to
 mapped with the arguments reversed by appending [[reversed]] to the
 line.
 </para>
-
 </section>
 
+
+<section>
+<title>Translation To Type Class Instances</title>
+
+A Specware type can be translated to be an instance of a Haskell
+type class by including within the spec an [[-instance]] pragma. The
+name of the typeclass to instantiate comes immediately after the
+[[-instance]] specifier, followed by the name of the Specware type. On
+subsequent lines are translations of Specware ops to the functions of
+the type class in the same syntax as for translation tables above. For
+example, a monad defined in Specware can be specified to be translated
+to an instance of the Haskell monad typeclass using the pragma
+[[
+|| #translate Haskell -instance Monad Env
+||   monadBind -> >>=  Left 1
+||   return -> return
+|| #end
+]]
+
+Note that if there are any ops to be translated to Haskell functions
+in a type class where you want to use the Haskell definition rather
+than the Specware definition, then you should use a [[-morphism]]
+pragma instead of an [[-instance]] pragma. In particular, to translate
+to an existing Haskell monad, you use a [[-morphism]] pragma.
+
+</section>
 
 
 </section>
