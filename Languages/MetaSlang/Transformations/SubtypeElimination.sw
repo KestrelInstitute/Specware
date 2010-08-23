@@ -9,13 +9,13 @@ SpecNorm qualifying spec
 
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
-                  | None \_rightarrow s
-                  | Some n \_rightarrow subFromTo(s, 0, n)
+                  | None -> s
+                  | Some n -> subFromTo(s, 0, n)
     in
     case removeEmpty(splitStringAt(line1, " ")) of
      | "Isa"::str::rst | length str > 1 && str@0 = #- && str@1 ~= #> ->
        Some(str::rst)
-     | _ \_rightarrow None
+     | _ -> None
 
  type Pragma = String * String * String * Position
 
@@ -24,13 +24,13 @@ SpecNorm qualifying spec
 
  op  stripSpaces(s: String): String =
    let len = length s in
-   case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow i)) of
-     | Some firstNonSpace \_rightarrow 
-       (case findLeftmost (\_lambda i \_rightarrow s@i \_noteq #  ) (tabulate(len,\_lambda i \_rightarrow len-i-1)) of
-         | Some lastNonSpace \_rightarrow
+   case findLeftmost (\_lambda i -> s@i \_noteq #  ) (tabulate(len,\_lambda i -> i)) of
+     | Some firstNonSpace -> 
+       (case findLeftmost (\_lambda i -> s@i \_noteq #  ) (tabulate(len,\_lambda i -> len-i-1)) of
+         | Some lastNonSpace ->
            subFromTo(s,firstNonSpace,lastNonSpace+1)
-         | _ \_rightarrow s)
-     | _ \_rightarrow s
+         | _ -> s)
+     | _ -> s
 
   op  isaPragma?(s: String): Boolean =
     let s = stripSpaces s in
@@ -42,14 +42,14 @@ SpecNorm qualifying spec
   op namedPragma?(p: Pragma): Boolean =
     let (_,s,_,_) = p in
     let line1 = case search("\n", s) of
-                  | None \_rightarrow s
-                  | Some n \_rightarrow subFromTo(s, 0, n)
+                  | None -> s
+                  | Some n -> subFromTo(s, 0, n)
     in
     case removeEmpty(splitStringAt(line1, " ")) of
-     | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" \_rightarrow
+     | pragma_kind::name?::r | pragma_kind = "Isa" \_or pragma_kind = "isa" ->
        ~(name? = "fa"
            \_or name?@0 in? [#(,#[,#\\,#",#-])  % #" #]
-     | _ \_rightarrow false
+     | _ -> false
 
   op unnamedPragma?(p: Pragma): Boolean =
     ~(namedPragma? p || controlPragma? p.2) || controlPragmaString p.2 = Some ["-typedef"]
@@ -58,8 +58,8 @@ SpecNorm qualifying spec
 
   op verbatimPragma?(s: String): Boolean =
     case controlPragmaString s of
-      | Some(str::_) \_rightarrow str = verbatimIdString
-      | _ \_rightarrow false
+      | Some(str::_) -> str = verbatimIdString
+      | _ -> false
 
   op makeSubtypeConstrTheoremsString: String   =    "-subtype_constrs"
   op noMakeSubtypeConstrTheoremsString: String = "-no-subtype_constrs"
@@ -264,10 +264,10 @@ SpecNorm qualifying spec
                                                             op_map, tb) in
               let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
               (Import(s_tm, i_sp, im_elts, a) :: new_elts, op_map, tb)
-            | Pragma("proof", prag_str, "end-proof", _) \_rightarrow
+            | Pragma("proof", prag_str, "end-proof", _) ->
               let make_stp_thms? =
                    case controlPragmaString prag_str of
-                     | Some strs \_rightarrow
+                     | Some strs ->
                        if makeSubtypePredicateTheoremsString in? strs
                          then true
                        else if noMakeSubtypePredicateTheoremsString in? strs
@@ -333,7 +333,7 @@ SpecNorm qualifying spec
     let spc = spc << {elements = new_elts, ops = new_op_map} in
     (spc, tb)
 
-  op  addSubtypePredicateParams: Spec \_rightarrow TypeCoercionTable \_rightarrow Spec * PolyOpTable
+  op  addSubtypePredicateParams: Spec -> TypeCoercionTable -> Spec * PolyOpTable
   def addSubtypePredicateParams spc coercions =
     % let _ = writeLine(printSpec spc) in
     let (spc, stp_tbl) = addRelativizedOps(spc, coercions) in
@@ -569,7 +569,7 @@ SpecNorm qualifying spec
 
   op relativizeQuantifiers(spc: Spec) (t: MS.Term): MS.Term =
     case t of
-      | Bind(bndr,bndVars,bod,a) \_rightarrow
+      | Bind(bndr,bndVars,bod,a) ->
         let (bndVars,bndVarsPred) =
             foldr (fn ((vn,ty), (bndVars,res)) ->
                      % let _ = writeLine("relQ: "^printSort ty0^" ---> "^printSort ty) in
@@ -585,11 +585,11 @@ SpecNorm qualifying spec
                         | Exists1 -> Utilities.mkAnd(bndVarsPred, bod)
         in
         Bind(bndr,bndVars,new_bod,a)
-      | The(theVar as (vn,ty),bod,a) \_rightarrow
+      | The(theVar as (vn,ty),bod,a) ->
         let theVarPred = typePredTerm(ty, mkVar(vn,ty), spc) in
         let new_bod = Utilities.mkAnd(theVarPred, bod) in
         The((vn,ty),new_bod,a)
-      | _ \_rightarrow t
+      | _ -> t
 
   op refToHo_eqfns(f: Fun, qids: List QualifiedId): Bool =
     case f of
@@ -798,24 +798,24 @@ SpecNorm qualifying spec
       | Record(row, a) ->
         % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ty) in
         let srts = map (fn (_,x) -> x) (product (spc,ty)) in
-        Record(map (fn ((idi,tmi), tyi) \_rightarrow (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
+        Record(map (fn ((idi,tmi), tyi) -> (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
                  (zip(row,srts)), a) 
       | Bind(b, vs, bod, a) ->
         Bind(b, vs, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
       | The(v, bod, a) ->
         The(v, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
       | Let(decls, bod, a) ->
-        Let (map (fn (pat,trm) \_rightarrow (pat, regTerm(trm, patternSort pat,
+        Let (map (fn (pat,trm) -> (pat, regTerm(trm, patternSort pat,
                                                 possibleEqTestableFunTermIn? (ho_eqfns, spc) bod,
                                                 ho_eqfns, spc)))
                decls,
              regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
       | LetRec(decls, bod, a) ->
-        LetRec (map (fn ((id,srt), trm) \_rightarrow ((id,srt), regTerm(trm, srt, false, ho_eqfns, spc))) decls,
+        LetRec (map (fn ((id,srt), trm) -> ((id,srt), regTerm(trm, srt, false, ho_eqfns, spc))) decls,
                 regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
       | Lambda(match, a) ->
         let lam_tm = 
-            Lambda (map (fn (pat,condn,trm) \_rightarrow
+            Lambda (map (fn (pat,condn,trm) ->
                            (pat, regTerm(condn, boolSort, false, ho_eqfns, spc),
                             regTerm(trm, range(spc,ty), false, ho_eqfns, spc))) % ?
                       match,
@@ -840,30 +840,30 @@ SpecNorm qualifying spec
     % let _ = writeLine(anyToString ho_eqfns) in
     % let _ = writeLine(printSpec spc) in
     let spc =
-        spc << {ops = foldl (fn (ops,el) \_rightarrow
+        spc << {ops = foldl (fn (ops,el) ->
                              case el of
-                               | Op (qid as Qualified(q,id), true, _) \_rightarrow
+                               | Op (qid as Qualified(q,id), true, _) ->
                                  %% true means decl includes def
                                  (case AnnSpec.findTheOp(spc,qid) of
-                                   | Some info \_rightarrow
+                                   | Some info ->
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = regTermTop(info, ho_eqfns, spc)})
-                                   | None \_rightarrow ops)
-                               | OpDef (qid as Qualified(q,id), _, _) \_rightarrow
+                                   | None -> ops)
+                               | OpDef (qid as Qualified(q,id), _, _) ->
                                  (case AnnSpec.findTheOp(spc,qid) of
-                                   | Some info \_rightarrow
+                                   | Some info ->
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = regTermTop(info, ho_eqfns, spc)})
-                                   | None \_rightarrow ops)
-                               | _ \_rightarrow ops)
+                                   | None -> ops)
+                               | _ -> ops)
                         spc.ops
                         spc.elements,
-                %% mapOpInfos (fn info \_rightarrow info << {dfn = mapTermTop info}) spc.ops,
-                elements = map (fn el \_rightarrow
+                %% mapOpInfos (fn info -> info << {dfn = mapTermTop info}) spc.ops,
+                elements = map (fn el ->
                                   case el of
-                                    | Property(pt, nm, tvs, term,a) \_rightarrow
+                                    | Property(pt, nm, tvs, term,a) ->
                                       Property(pt, nm, tvs, regTerm(term, boolSort, false, ho_eqfns, spc),a)
-                                    | _ \_rightarrow el)
+                                    | _ -> el)
                              spc.elements}
     in
     % let _ = writeLine(printSpec spc) in
@@ -1007,7 +1007,7 @@ SpecNorm qualifying spec
       | _ -> [tm]
 
 
-  op  removeSubTypes: Spec \_rightarrow TypeCoercionTable \_rightarrow PolyOpTable \_rightarrow Spec
+  op  removeSubTypes: Spec -> TypeCoercionTable -> PolyOpTable -> Spec
   def removeSubTypes spc coercions stp_tbl =
     %% Remove subsort definition for directly-implemented subtypes after saving defs
     let ho_eqfns = findHOEqualityFuns spc in
@@ -1015,9 +1015,9 @@ SpecNorm qualifying spec
     let def makeSubtypeConstrThms(elts, new_elts, subtypeConstrThms?, freeThms?) =
               case elts of
                | [] -> reverse new_elts
-               | (el as Pragma("proof", prag_str, "end-proof", _)) :: r_elts \_rightarrow
+               | (el as Pragma("proof", prag_str, "end-proof", _)) :: r_elts ->
                  (case controlPragmaString prag_str of
-                  | Some strs \_rightarrow
+                  | Some strs ->
                     let subtypeConstrThms? =
                         if makeSubtypeConstrTheoremsString in? strs
                           then true
@@ -1033,9 +1033,9 @@ SpecNorm qualifying spec
                           else freeThms?
                     in
                     makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
-                  | None \_rightarrow makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?))
+                  | None -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?))
                | (el as Op(qid as (Qualified(q,id)), def?, a)) :: r_elts
-                   | (subtypeConstrThms? || ~def?) && ~(stpFun? id) \_rightarrow
+                   | (subtypeConstrThms? || ~def?) && ~(stpFun? id) ->
                  let Some info = AnnSpec.findTheOp(spc,qid) in
                  let (tvs, ty, defn) = unpackFirstOpDef info in
                  % let _ = writeLine ("\nstc: "^id^": "^printSort ty) in
@@ -1047,8 +1047,8 @@ SpecNorm qualifying spec
                  % let _ = writeLine (printTerm subTypeFmla) in
                  % ?? let liftedFmlas = removePatternTop(spc, subTypeFmla) in
                  (case simplify spc subTypeFmla of
-                  | Fun(Bool true,_,_) \_rightarrow makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
-                  | s_fm \_rightarrow
+                  | Fun(Bool true,_,_) -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
+                  | s_fm ->
                     % let _ = writeLine (" --> "^printTerm s_fm) in
                     let fms = separateRhsConjuncts spc s_fm in
                     let thms = map (fn (i, fm) ->
@@ -1065,7 +1065,7 @@ SpecNorm qualifying spec
                       | (p as Pragma _) :: rr_elts ->
                         makeSubtypeConstrThms(rr_elts, thms ++ [p, el] ++ new_elts, subtypeConstrThms?, freeThms?)
                       | _ -> makeSubtypeConstrThms(r_elts, thms ++ (el :: new_elts), subtypeConstrThms?, freeThms?))
-                 | el :: r_elts \_rightarrow makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
+                 | el :: r_elts -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
     in
     let spc = spc << {elements = makeSubtypeConstrThms(spc.elements, [], false, false)} in
 
@@ -1076,10 +1076,10 @@ SpecNorm qualifying spec
     let spc = mapSpec (relativizeQuantifiers spc, id, id) spc in
     %let _ = writeLine(printSpec spc) in
     %% Replace subtypes by supertypes
-    let spc = mapSpec (id,fn s \_rightarrow
+    let spc = mapSpec (id,fn s ->
                          case s of
-                           | Subsort(supTy,_,_) \_rightarrow supTy
-                           | _ \_rightarrow s,
+                           | Subsort(supTy,_,_) -> supTy
+                           | _ -> s,
                        id)
                 spc
     in
@@ -1088,10 +1088,9 @@ SpecNorm qualifying spec
 
   op removeSubtypesInTerm (spc: Spec) (t: MS.Term): MS.Term =
     let t = mapTerm(relativizeQuantifiers spc, id, id) t in
-    mapTerm (id,fn s \_rightarrow
-		   case s of
-		     | Subsort(supTy,_,_) \_rightarrow supTy
-		     | _ \_rightarrow s,
+    mapTerm (id,fn s -> case s of
+		          | Subsort(supTy,_,_) -> supTy
+                          | _ -> s,
              id)
       t
 
@@ -1138,7 +1137,8 @@ SpecNorm qualifying spec
   op addSubtypePredicateLifters(spc: Spec): Spec =
     let def addPredDecl((qid as Qualified(q,id),a), el, n_elts, spc) =
           case AnnSpec.findTheSort(spc, qid) of
-            | Some info | definedSortInfo? info ->
+            | Some info % ? | definedSortInfo? info
+              ->
               let (tvs,ty_def) = unpackFirstSortDef info in
               if tvs = [] || (case ty_def of
                                 | Any _ -> false
@@ -1149,7 +1149,7 @@ SpecNorm qualifying spec
                 then (el :: n_elts, spc)
               else
               let pred_name = id^"_P" in
-              % let _ = writeLine("making "^pred_name^" with "^show def?) in
+              % let _ = writeLine("making "^pred_name) in
               let pred_qid = Qualified(q, pred_name) in
               (case AnnSpec.findTheOp(spc, pred_qid) of
                  | Some _ -> (Cons(el, n_elts), spc) % already exists. Should check type is correct!
