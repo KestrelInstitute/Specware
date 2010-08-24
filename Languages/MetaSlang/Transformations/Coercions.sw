@@ -55,6 +55,7 @@ spec
       def mapTermTop info =
         % let _ = writeLine("\n") in
 	let (tvs, ty, tm) = unpackFirstOpDef info in
+        let tm = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
 	let result = mapTerm(tm, ty) in
         if equalTerm?(result, tm)
           then maybePiTerm(tvs, SortedTerm(tm, ty, termAnn tm)) 
@@ -183,6 +184,10 @@ spec
         case ty of
           | Subsort(ss, pred, a) -> Subsort(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
+      def coerceRestrictedPats pat =
+        case pat of
+          | RestrictedPat(pat, pred, a) -> RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
+          | _ -> pat
     in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc =
@@ -271,6 +276,7 @@ spec
     let def mapTermTop info =
         % let _ = writeLine("\n") in
 	let (tvs, ty, tm) = unpackFirstOpDef info in
+        let tm = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
 	let result = mapTerm(tm, ty) in
         if equalTerm?(result, tm)
           then maybePiTerm(tvs, SortedTerm(tm, ty, termAnn tm)) 
@@ -284,7 +290,15 @@ spec
        def maybeCancelCoercions(f, x, tm) =
          case x of
            | Apply(f1, x1, _) | equalTerm?(f, f1) -> x1
-           | _ -> if overloadedTerm? x then x else tm
+           | Apply(f1 as Fun(Op(Qualified("Integer", "-"), _), _, _),
+                   Record([("1", t1), ("2", t2)], _), _) ->
+             let nt1 = maybeCancelCoercions(f, t1, t1) in
+             let nt2 = maybeCancelCoercions(f, t2, t2) in
+             if ~(equalTerm?(t1, nt1)) && ~(equalTerm?(t2, nt2))
+               then mkAppl(f1, [nt1, nt2])
+               else tm
+           | Fun(Nat i, _, _) -> mkNat i
+           | _ -> tm
        def liftCoercion (tm, rm_ty, target_ty) =
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort rm_ty ^" -> "^ printSort target_ty ^"\n ") in
         case tm of
@@ -296,15 +310,13 @@ spec
                | None ->
              case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSub))
                      coercions of
-               | Some tb -> maybeCancelCoercions(tb.coerceToSuper, x, tm)
+               | Some tb ->
+                 let result = maybeCancelCoercions(tb.coerceToSuper, x, tm) in
+                 % let _ = writeLine("lift: "^printTerm tm^"\n -->  "^printTerm result) in
+                 result
                | None ->
              case checkCoercions (x, coercions) of
-               | Some(tb, coerce_fn)
-                   | idn in? tb.overloadedOps
-                     \_or %% Special case for minus (probably not worth generalizing)
-                       %% minus on nats is equal to minus on integers if we know result is a nat
-                     (qual = "Integer" \_and idn = "-" %\_and coerce_fn = int
-                        \_and subtypeOf?(target_ty, Qualified("Nat", "Nat"), spc))
+               | Some(tb, coerce_fn) | idn in? tb.overloadedOps
                  ->
                  (case x of
                     | Let(m, b, a1) -> Let(m, liftCoercion(Apply(f, b, a), rm_ty, target_ty), a1)
@@ -372,6 +384,10 @@ spec
         case ty of
           | Subsort(ss, pred, a) -> Subsort(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
+      def coerceRestrictedPats pat =
+        case pat of
+          | RestrictedPat(pat, pred, a) -> RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
+          | _ -> pat
     in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc =
