@@ -1,3 +1,6 @@
+(* Replaces types by their named types. This wouldn't be necessary if everything (esp. typechecker) only
+   expanded a type when necessary *)
+
 NormTypes qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
