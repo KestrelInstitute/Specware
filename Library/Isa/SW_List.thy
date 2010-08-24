@@ -964,8 +964,8 @@ theorem List__subFromTo_Obligation_subtype:
   "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> int j - int i \<ge> 0"
   by auto
 theorem List__subFromTo_Obligation_subtype0: 
-  "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 
-   int i + (int j - int i) \<le> int (length l)"
+  "\<lbrakk>(i::nat) \<le> (j::nat); j \<le> length l\<rbrakk> \<Longrightarrow> 
+   i + (j - i) \<le> length l"
   by auto
 consts List__subFromTo :: "'a list \<times> nat \<times> nat \<Rightarrow> 'a list"
 defs List__subFromTo_def: 
@@ -1024,8 +1024,7 @@ theorem List__suffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__suffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   (int (length l) - int n) + int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> (length l - n) + n \<le> length l"
   by auto
 consts List__suffix :: "'a list \<times> nat \<Rightarrow> 'a list"
 defs List__suffix_def: 
@@ -1040,8 +1039,7 @@ theorem List__removePrefix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removePrefix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   int (length l) - int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> length l - n \<le> length l"
   by auto
 theorem List__removePrefix_subtype_constr: 
   "\<lbrakk>list_all P__a l; n \<le> length l\<rbrakk> \<Longrightarrow> 
@@ -1084,8 +1082,7 @@ theorem List__removeSuffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removeSuffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   int (length l) - int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> length l - n \<le> length l"
   by auto
 consts List__removeSuffix :: "'a list \<times> nat \<Rightarrow> 'a list"
 defs List__removeSuffix_def: 
@@ -2383,7 +2380,7 @@ theorem List__reverse_Obligation_subtype:
   "\<exists>(n::nat). 
      (\<lambda> (i::nat). 
         if i < length l then 
-          Some (l ! nat ((int (length l) - int i) - 1))
+          Some (l ! ((length l - i) - 1))
         else 
           None) 
        definedOnInitialSegmentOfLength n"
@@ -2392,8 +2389,7 @@ theorem List__reverse_Obligation_subtype0:
   "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> (int (length l) - int i) - 1 \<ge> 0"
   by auto
 theorem List__reverse_Obligation_subtype1: 
-  "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> 
-   (int (length l) - int i) - 1 < int (length l)"
+  "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> (length l - i) - 1 < length l"
   by auto
 theorem List__reverse_subtype_constr: 
   "\<lbrakk>list_all P__a l\<rbrakk> \<Longrightarrow> list_all P__a (rev l)"
@@ -2403,7 +2399,7 @@ theorem List__reverse__def:
      = List__list
           (\<lambda> (i::nat). 
              if i < length l then 
-               Some (l ! nat ((int (length l) - int i) - 1))
+               Some (l ! ((length l - i) - 1))
              else 
                None)"
   proof (induct l)

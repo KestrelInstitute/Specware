@@ -5,14 +5,10 @@ fun Option__Option_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option \<Right
 where
    "Option__Option_P P_a None = True"
  | "Option__Option_P P_a (Some x0) = P_a x0"
-fun Option__some_p :: "'a option \<Rightarrow> bool"
-where
-   "Option__some_p None = False"
- | "Option__some_p zzz_2 = True"
-fun Option__none_p :: "'a option \<Rightarrow> bool"
-where
-   "Option__none_p None = True"
- | "Option__none_p zzz_2 = False"
+consts Option__some_p :: "'a option \<Rightarrow> bool"
+defs Option__some_p_def [simp]: "Option__some_p x \<equiv> (x \<noteq> None)"
+consts Option__none_p :: "'a option \<Rightarrow> bool"
+defs Option__none_p_def [simp]: "Option__none_p x \<equiv> (x = None)"
 theorem Option__compare_Obligation_exhaustive: 
   "\<lbrakk>(pV1::'a option) = fst (D::'a option \<times> 'a option); 
     (pV2::'a option) = snd D\<rbrakk> \<Longrightarrow> 
