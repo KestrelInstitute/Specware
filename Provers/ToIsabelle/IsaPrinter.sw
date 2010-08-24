@@ -494,6 +494,11 @@ IsaTermPrinter qualifying spec
   op STPFunName?(qual: String, nm: String): Bool =
     endsIn?(nm, "__stp")
 
+(* ppSpec - key dependencies wrt subtype handling
+addSubtypePredicateLifters doesn't depend on anything (?)
+addCoercions & raiseNamedTypes before makeTypeCheckObligationSpec
+*)
+
   op  ppSpec: Context -> Spec -> Pretty
   def ppSpec c spc =
     % let _ = writeLine("0:\n"^printSpec spc) in
@@ -513,6 +518,7 @@ IsaTermPrinter qualifying spec
                   trans_table = trans_table,
                   source_of_thy_morphism? = source_of_thy_morphism?}
     in
+    let spc = addSubtypePredicateLifters spc in
     let spc = normalizeTopLevelLambdas spc in
     let spc = if lambdaLift?
                then lambdaLift(spc, false)
@@ -529,14 +535,13 @@ IsaTermPrinter qualifying spec
                   overloadedConstructors = overloadedConstructors spc}
     in
     % let _ = printSpecWithSortsToTerminal spc in
-    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     let spc = addRefineObligations spc in
-    let spc = addCoercions coercions spc in
-    let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
-    let spc = addSubtypePredicateLifters spc in
-    % let _ = printSpecWithSortsToTerminal spc in
     let spc = normalizeNewTypes(spc, false) in
     let spc = raiseNamedTypes spc in
+    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
+    let spc = addCoercions coercions spc in
+    let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
+    % let _ = printSpecWithSortsToTerminal spc in
 % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
