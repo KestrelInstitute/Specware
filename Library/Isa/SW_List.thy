@@ -964,8 +964,8 @@ theorem List__subFromTo_Obligation_subtype:
   "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> int j - int i \<ge> 0"
   by auto
 theorem List__subFromTo_Obligation_subtype0: 
-  "\<lbrakk>i \<le> j; j \<le> length l\<rbrakk> \<Longrightarrow> 
-   int i + (int j - int i) \<le> int (length l)"
+  "\<lbrakk>(i::nat) \<le> (j::nat); j \<le> length l\<rbrakk> \<Longrightarrow> 
+   i + (j - i) \<le> length l"
   by auto
 consts List__subFromTo :: "'a list \<times> nat \<times> nat \<Rightarrow> 'a list"
 defs List__subFromTo_def: 
@@ -1024,8 +1024,7 @@ theorem List__suffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__suffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   (int (length l) - int n) + int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> (length l - n) + n \<le> length l"
   by auto
 consts List__suffix :: "'a list \<times> nat \<Rightarrow> 'a list"
 defs List__suffix_def: 
@@ -1040,8 +1039,7 @@ theorem List__removePrefix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removePrefix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   int (length l) - int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> length l - n \<le> length l"
   by auto
 theorem List__removePrefix_subtype_constr: 
   "\<lbrakk>list_all P__a l; n \<le> length l\<rbrakk> \<Longrightarrow> 
@@ -1084,8 +1082,7 @@ theorem List__removeSuffix_Obligation_subtype:
   "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> int (length l) - int n \<ge> 0"
   by auto
 theorem List__removeSuffix_Obligation_subtype0: 
-  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow> 
-   int (length l) - int n \<le> int (length l)"
+  "\<lbrakk>(n::nat) \<le> length l\<rbrakk> \<Longrightarrow> length l - n \<le> length l"
   by auto
 consts List__removeSuffix :: "'a list \<times> nat \<Rightarrow> 'a list"
 defs List__removeSuffix_def: 
@@ -2383,7 +2380,7 @@ theorem List__reverse_Obligation_subtype:
   "\<exists>(n::nat). 
      (\<lambda> (i::nat). 
         if i < length l then 
-          Some (l ! nat ((int (length l) - int i) - 1))
+          Some (l ! ((length l - i) - 1))
         else 
           None) 
        definedOnInitialSegmentOfLength n"
@@ -2392,8 +2389,7 @@ theorem List__reverse_Obligation_subtype0:
   "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> (int (length l) - int i) - 1 \<ge> 0"
   by auto
 theorem List__reverse_Obligation_subtype1: 
-  "\<lbrakk>i < length l\<rbrakk> \<Longrightarrow> 
-   (int (length l) - int i) - 1 < int (length l)"
+  "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> (length l - i) - 1 < length l"
   by auto
 theorem List__reverse_subtype_constr: 
   "\<lbrakk>list_all P__a l\<rbrakk> \<Longrightarrow> list_all P__a (rev l)"
@@ -2403,13 +2399,13 @@ theorem List__reverse__def:
      = List__list
           (\<lambda> (i::nat). 
              if i < length l then 
-               Some (l ! nat ((int (length l) - int i) - 1))
+               Some (l ! ((length l - i) - 1))
              else 
                None)"
   proof (induct l)
 case Nil
  def f \<equiv> "(\<lambda>i. if i < length []
-                then Some ([] ! nat (int (length []) - int i - 1)) else None)
+                then Some ([] ! ((length l - i) - 1)) else None)
           :: nat \<Rightarrow> 'a option"
  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
   by (auto simp: List__definedOnInitialSegmentOfLength_def)
@@ -2419,10 +2415,10 @@ next
 case (Cons h t)
  have "rev (h # t) = rev t @ [h]" by auto
  def f \<equiv> "\<lambda>i. if i < length (h # t)
-              then Some ((h # t) ! nat (int (length (h # t)) - int i - 1))
+              then Some ((h # t) ! (length (h # t) - i - 1))
               else None"
  def ft \<equiv> "\<lambda>i. if i < length t
-                then Some (t ! nat (int (length t) - int i - 1))
+                then Some (t ! (length t - i - 1))
                 else None"
  def n \<equiv> "length t"
  with f_def have f_suc_n: "f definedOnInitialSegmentOfLength (Suc n)"
@@ -2431,8 +2427,8 @@ case (Cons h t)
  proof -
   fix i
   assume "i < n"
-  hence "nat (int n - int i) = Suc (nat (int n - int i - 1))" by arith
-  thus "f i = ft i" by (auto simp: f_def ft_def nth_Cons_Suc n_def)
+  hence "(n - i) = Suc (n - i - 1)" by arith
+  thus "f i = ft i" by (auto simp: f_def ft_def n_def)
  qed
  have "\<And>i. i \<ge> n \<Longrightarrow> ft i = None"
   by (auto simp: ft_def n_def)
@@ -2556,7 +2552,12 @@ theorem List__equiExtendLeft_subtype_constr:
   apply (cases "length l1 < length l2", auto simp: List__equiExtendLeft_def)
   done
 theorem List__equiExtendLeft_subtype_constr1: 
-  "\<lbrakk>list_all P__a l1; list_all P__b l2; P__a x1; P__b x2\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l1; 
+    list_all P__b l2; 
+    P__a x1; 
+    P__b x2; 
+    ((x_1::'a list), (x_2::'b list)) 
+      = List__equiExtendLeft(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
    let (x, y) = List__equiExtendLeft(l1, l2, x1, x2) in x equiLong y"
   by (simp only: List__equiExtendLeft_subtype_constr)
 theorem List__equiExtendLeft_subtype_constr2: 
@@ -2600,7 +2601,12 @@ theorem List__equiExtendRight_subtype_constr:
   apply (cases "length l1 < length l2", auto simp: List__equiExtendRight_def)
   done
 theorem List__equiExtendRight_subtype_constr1: 
-  "\<lbrakk>list_all P__a l1; list_all P__b l2; P__a x1; P__b x2\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>list_all P__a l1; 
+    list_all P__b l2; 
+    P__a x1; 
+    P__b x2; 
+    ((x_1::'a list), (x_2::'b list)) 
+      = List__equiExtendRight(l1, l2, x1, x2)\<rbrakk> \<Longrightarrow> 
    let (x, y) = List__equiExtendRight(l1, l2, x1, x2) in 
    x equiLong y"
   by (simp only: List__equiExtendRight_subtype_constr)
@@ -5303,6 +5309,15 @@ theorem List__e_at_at__stp_nth2:
 theorem List__e_at_at__stp_nth:
  "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
  by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
+
+
+
+(***********************************************************************
+ * From now on List__list should not be unfolded automatically  
+ * because this may cause the simplifier to loop 
+ ***********************************************************************)
+
+declare List__list.simps [simp del]
 
 
 end
