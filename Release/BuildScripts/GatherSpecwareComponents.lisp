@@ -181,6 +181,9 @@
     (copy-dist-directory (extend-directory source-dir    "ProverBase")
 			 (extend-directory component-dir "ProverBase"))
 
+    (copy-dist-directory (extend-directory source-dir    "Isa")
+			 (extend-directory component-dir "Isa"))
+    
     (copy-dist-directory (extend-directory source-dir    "Haskell")
 			 (extend-directory component-dir "Haskell"))
     
