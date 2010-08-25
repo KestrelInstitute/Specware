@@ -65,7 +65,7 @@ export SWPATH=/
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/acl80/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp /Applications/acl70/alisp; do
+   for L in /usr/local/acl80/alisp /Applications/acl70/alisp usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
