@@ -2344,7 +2344,7 @@ proof Isa reverse__def
 proof (induct l)
 case Nil
  def f \<equiv> "(\<lambda>i. if i < length []
-                then Some ([] ! nat (int (length []) - int i - 1)) else None)
+                then Some ([] ! ((length l - i) - 1)) else None)
           :: nat \<Rightarrow> 'a option"
  hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
   by (auto simp: List__definedOnInitialSegmentOfLength_def)
@@ -2354,10 +2354,10 @@ next
 case (Cons h t)
  have "rev (h # t) = rev t @ [h]" by auto
  def f \<equiv> "\<lambda>i. if i < length (h # t)
-              then Some ((h # t) ! nat (int (length (h # t)) - int i - 1))
+              then Some ((h # t) ! (length (h # t) - i - 1))
               else None"
  def ft \<equiv> "\<lambda>i. if i < length t
-                then Some (t ! nat (int (length t) - int i - 1))
+                then Some (t ! (length t - i - 1))
                 else None"
  def n \<equiv> "length t"
  with f_def have f_suc_n: "f definedOnInitialSegmentOfLength (Suc n)"
@@ -2366,8 +2366,8 @@ case (Cons h t)
  proof -
   fix i
   assume "i < n"
-  hence "nat (int n - int i) = Suc (nat (int n - int i - 1))" by arith
-  thus "f i = ft i" by (auto simp: f_def ft_def nth_Cons_Suc n_def)
+  hence "(n - i) = Suc (n - i - 1)" by arith
+  thus "f i = ft i" by (auto simp: f_def ft_def n_def)
  qed
  have "\<And>i. i \<ge> n \<Longrightarrow> ft i = None"
   by (auto simp: ft_def n_def)
