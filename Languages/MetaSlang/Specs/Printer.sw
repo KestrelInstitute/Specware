@@ -1063,7 +1063,7 @@ AnnSpecPrinter qualifying spec
                     (0, [(0, pp.Op)] ++ 
                        %(0, string " "),
                        (if printOpWithDef? && tvs ~= []
-                   then [(0, ppForallTyVars pp tvs), (0, string " ")]
+                          then [(0, ppForallTyVars pp tvs), (0, string " ")]
                         else []) ++
                        [(0, ppOpNames ())]))]
                 ++
