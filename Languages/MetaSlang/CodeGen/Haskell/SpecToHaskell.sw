@@ -102,7 +102,7 @@ Haskell qualifying spec
         (case uidNamesForValue val of
 	   | None -> "Error: Can't get UID string from value"
 	   | Some (haskell_nm, uidstr, uid) ->
-             let _ = deleteHaskellFilesForVal val in
+             let _ = if slicing? then deleteHaskellFilesForVal val else () in
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
 	     let _ = toFile(fil_nm, showValue(val, true, spc, slicing?, recursive?, Some uid, Some haskell_nm, None)) in
@@ -115,7 +115,6 @@ Haskell qualifying spec
       | Some val ->
         deleteHaskellFilesForVal val
       | _ -> ()
-
   op  deleteHaskellFilesForVal: Value -> ()
   def deleteHaskellFilesForVal val =
     case uidNamesForValue val of
@@ -1121,7 +1120,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                   let constructor_nm = newtypeConstructorName c mainId in
                   prBreakCat 2 [[prString "newtype ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = "],
                                 [prString constructor_nm, prSpace, ppType c Apply ty]]
-                | None -> prBreak 2 [prString "type ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = ", ppType c Top ty]
+                | None -> prEmpty  % prBreak 2 [prString "type ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = ", ppType c Top ty]
           in
           let pp_def = ppTyDef ty in
           case tc_info of
@@ -2768,6 +2767,8 @@ def isSimplePattern? trm =
      ([], [])
      spc.sorts).2
 
+op notReallyEqualityOps: QualifiedIds = [Qualified("Option", "some?"), Qualified("Option", "none?")]
+
 op polyEqualityAnalyze(spc: Spec): AQualifierMap TyVars =
   let def foundOp?(qmap, qid) =
         let Qualified(q, id) = qid in
@@ -2776,7 +2777,7 @@ op polyEqualityAnalyze(spc: Spec): AQualifierMap TyVars =
         foldOpInfos
           (fn (info, qmap) ->
              let qid as Qualified(q, id) = primaryOpName info in
-             if foundOp?(qmap, qid) then qmap
+             if foundOp?(qmap, qid) || qid in? notReallyEqualityOps then qmap
              else
              let (tvs,_,defn) = unpackFirstOpDef info in
              if tvs = []
