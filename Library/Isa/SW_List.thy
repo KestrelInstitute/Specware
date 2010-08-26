@@ -486,8 +486,7 @@ case (Suc n)
   by (unfold List__lengthOfListFunction_def, rule theI')
  with prems have "f definedOnInitialSegmentOfLength (Suc n)" by auto
  then obtain x where "f 0 = Some x"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                     Option__some_p_def)
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with prems have "List__list f = Cons x (List__list (\<lambda>i. f (i + 1)))"
   by auto
  from `f definedOnInitialSegmentOfLength (Suc n)`
