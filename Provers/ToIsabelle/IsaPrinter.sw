@@ -497,10 +497,10 @@ IsaTermPrinter qualifying spec
 (* ppSpec - key dependencies wrt subtype handling
 addSubtypePredicateLifters doesn't depend on anything (?)
 addCoercions & raiseNamedTypes before makeTypeCheckObligationSpec
+addCoercions before raiseNamedTypes
 *)
 
-  op  ppSpec: Context -> Spec -> Pretty
-  def ppSpec c spc =
+  op  ppSpec (c: Context) (spc: Spec): Pretty =
     % let _ = writeLine("0:\n"^printSpec spc) in
     let rel_elements = filter isaElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
@@ -537,10 +537,10 @@ addCoercions & raiseNamedTypes before makeTypeCheckObligationSpec
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addRefineObligations spc in
     let spc = normalizeNewTypes(spc, false) in
-    let spc = raiseNamedTypes spc in
-    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
+    let spc = raiseNamedTypes spc in
+    let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = printSpecWithSortsToTerminal spc in
 % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
