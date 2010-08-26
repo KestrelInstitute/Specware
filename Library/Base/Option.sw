@@ -10,12 +10,10 @@ type Option a = | None | Some a
 
 % synonyms of embedding tests ("embed? Some" and "embed? None"):
 
-op [a] some? (x: Option a) : Bool =
-  case x of None -> false | _ -> true
+op [a] some? (x: Option a) : Bool = (x ~= None)
 proof Isa [simp] end-proof  % always expand definition in Isabelle proof
 
-op [a] none? (x: Option a) : Bool =
-  case x of None -> true | _ -> false
+op [a] none? (x: Option a) : Bool = (x = None)
 proof Isa [simp] end-proof  % always expand definition in Isabelle proof
 
 (* Given a comparison function over type a, type Option a can be linearly
