@@ -93,12 +93,12 @@ end-proof
 {-# OPTIONS -fno-warn-duplicate-exports #-}
 #end
 
-proof Haskell Thy_Morphism Maybe
+#translate Haskell -morphism Maybe
  type Option.Option \_rightarrow Maybe
  None \_rightarrow Nothing
  Some \_rightarrow Just
  Option.some? \_rightarrow isJust
  Option.none? \_rightarrow isNothing 
-end-proof
+#end
 
 endspec
