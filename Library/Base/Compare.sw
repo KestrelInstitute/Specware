@@ -28,7 +28,7 @@ op Bool.compare (x:Bool, y:Bool) : Comparison =
   else if (x = true) then Greater
   else  (* x = false *)   Less
 
-#translate Haskell Thy_Morphism
+#translate Haskell -morphism
  type Compare.Comparison \_rightarrow Ordering
  Less \_rightarrow LT
  Equal \_rightarrow EQ
