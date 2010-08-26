@@ -157,14 +157,14 @@ list__equiExtendLeft :: ([a], [b], a, b) -> ([a], [b])
 list__equiExtendLeft(l1, l2, x1, x2) = 
   if length l1 < length l2 then 
     (list__extendLeft(l1, x1, length l2), l2)
-  else 
+   else 
     (l1, list__extendLeft(l2, x2, length l1))
 
 list__equiExtendRight :: ([a], [b], a, b) -> ([a], [b])
 list__equiExtendRight(l1, l2, x1, x2) = 
   if length l1 < length l2 then 
     (list__extendRight(l1, x1, length l2), l2)
-  else 
+   else 
     (l1, list__extendRight(l2, x2, length l1))
 
 list__shiftLeft :: ([a], a, Int) -> [a]
@@ -193,7 +193,7 @@ list__unflatten :: ([a], Int) -> [[a]]
 list__unflatten(l, n) = 
   if null l then 
     []
-  else 
+   else 
     (take n l) : list__unflatten(drop n l, n)
 
 list__noRepetitions_p :: Eq a => [a] -> Bool
@@ -239,7 +239,7 @@ list__positionsOfSublist(subl, supl) =
         _ : tl -> 
             if list__prefixOf_p(subl, supl') then 
               i : loop(tl, i + 1)
-            else 
+             else 
               loop(tl, i + 1) 
   in 
   loop(supl, 0)
@@ -254,7 +254,7 @@ list__leftmostPositionOfSublistAndFollowing(subl, supl) =
         _ : tl -> 
             if list__prefixOf_p(subl, supl') then 
               Just (i, drop (length subl) supl')
-            else 
+             else 
               loop(tl, i + 1) 
   in 
   loop(supl, 0)
@@ -269,7 +269,7 @@ list__rightmostPositionOfSublistAndPreceding(subl, supl) =
         _ : tl -> 
             if list__prefixOf_p(subl, supl') then 
               loop(tl, i + 1, Just i)
-            else 
+             else 
               loop(tl, i + 1, lastPosFound) 
   in 
   case loop(supl, 0, Nothing) of 
@@ -322,7 +322,7 @@ delete_all x [] = []
 delete_all x (hd : tl) = 
   if x == hd then 
     delete_all x tl
-  else 
+   else 
     hd : delete_all x tl
 
 list__diff :: Eq a => ([a], [a]) -> [a]
@@ -330,14 +330,14 @@ list__diff([], l2) = []
 list__diff(hd : tl, l2) = 
   if hd `elem` l2 then 
     list__diff(tl, l2)
-  else 
+   else 
     hd : list__diff(tl, l2)
 
 list__longestCommonPrefix :: Eq a => ([a], [a]) -> [a]
 list__longestCommonPrefix(hd1 : tl1, hd2 : tl2) = 
   if hd1 == hd2 then 
     hd1 : list__longestCommonPrefix(tl1, tl2)
-  else 
+   else 
     []
 list__longestCommonPrefix(l1, l2) = []
 
@@ -365,7 +365,7 @@ l1 `list__permutationOf` l2 =
     deleteOne(x, hd : tl) = 
       if hd == x then 
         Just tl
-      else 
+       else 
         case deleteOne(x, tl) of 
           Just l_1 -> Just (hd : l_1)
           Nothing -> Nothing 

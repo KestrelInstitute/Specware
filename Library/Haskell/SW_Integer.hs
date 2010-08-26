@@ -17,7 +17,7 @@ infixl 6 `integer__divC`
 i `integer__divC` j = 
   if i `rem` j == 0 || signum i /= signum j then 
     i `quot` j
-  else 
+   else 
     i `quot` j + 1
 
 integer__modC :: Int -> Int -> Int
@@ -33,7 +33,7 @@ infixl 6 `integer__divR`
 i `integer__divR` j = 
   if 2 * abs (i `mod` j) < abs j then 
     i `div` j
-  else 
+   else 
     i `div` j + 1
 
 integer__modR :: Int -> Int -> Int

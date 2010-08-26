@@ -35,7 +35,7 @@ stringToInt s =
     firstchar : r_s -> 
         if firstchar == '-' then 
           negate (explodedStringToNat r_s)
-        else 
+         else 
           explodedStringToNat e_s
 
 char__show :: Char -> String
