@@ -11,13 +11,13 @@ spec
   import Simple[morphism Simple#Map -> MapList {}]
   import /Library/Legacy/Utilities/System
 
-  % op emptyMap : fa(key,a) Map (key,a)
+  % op emptyMap : [key,a] Map (key,a)
   def emptyMap = Nil
 
   % The following function will disappear when the library is restructured
   % with separate directories for total and partial maps.
 
-  % op evalPartial : fa(key,a) Map(key,a) -> key -> Option a
+  % op evalPartial : [key,a] Map(key,a) -> key -> Option a
   def apply (map, x) = 
     case map of
         [] -> None
@@ -27,7 +27,7 @@ spec
            else
              apply (tl, x)
 
-  % op eval : fa(key,a) Map(key,a) -> key -> a
+  % op eval : [key,a] Map(key,a) -> key -> a
   def eval (map, x) = 
     case map of
         [] -> fail "inside eval"   % shame shame
@@ -37,7 +37,7 @@ spec
            else
              eval (tl, x)
 
-  % op update : fa (key,a) Map (key,a) -> key -> a -> Map (key,a)
+  % op update : [key,a] Map (key,a) -> key -> a -> Map (key,a)
   def update (map, x, y) =
     let def memb(key,m) =
           case m of
@@ -81,20 +81,20 @@ The next constructs the list elements from the range of the map
 in ``order of appearance'' (with duplications). Order of appearance is 
 meaningless unless an implementation is assumed.
 *)
-  % op imageToList : fa(key,a) Map (key,a) -> List a
+  % op imageToList : [key,a] Map (key,a) -> List a
   def imageToList map =
     foldi (fn (_, value, values) -> Cons (value, values))
       [] map      
 
-  % op mapToList : fa(key,a) Map (key,a) -> List (key * a)
+  % op mapToList : [key,a] Map (key,a) -> List (key * a)
   def mapToList l = l
 
-  % op domainToList : fa(key,a) Map (key,a) -> List key
+  % op domainToList : [key,a] Map (key,a) -> List key
   def domainToList map = 
     foldi (fn (value, _, values) -> Cons (value, values))
       [] map      
 
-  % op inDomain? : fa(key,a) Map (key,a) -> key -> Boolean
+  % op inDomain? : [key,a] Map (key,a) -> key -> Boolean
   def inDomain? (map, key) =
     case map of
         [] -> false
@@ -103,25 +103,25 @@ meaningless unless an implementation is assumed.
   % op numItems : fa(a,key) Map (key,a) -> Nat
   def numItems = length
 
-  % op map : fa(key,a,b) (a -> b) -> Map (key,a) -> Map (key,b)
+  % op map : [key,a,b] (a -> b) -> Map (key,a) -> Map (key,b)
   def map f m =
     case m of
         [] -> []
       | (x,y)::tl -> Cons ((x,f y), (map f tl))
 
-  % op mapi : fa(key,a,b) (key * a -> b) -> Map (key,a) -> Map (key,b)
+  % op mapi : [key,a,b] (key * a -> b) -> Map (key,a) -> Map (key,b)
   def mapi f m =
     case m of
         [] -> []
       | (x,y)::tl -> Cons ((x,f(x,y)), (mapi f tl))
 
-  % op app : fa(key,a,b) (a -> ()) -> Map (key,a) -> ()
+  % op app : [key,a,b] (a -> ()) -> Map (key,a) -> ()
   def app f map =
     case map of
         [] -> ()
       | (x,y)::tl -> let _ = f y in app f tl
 
-  % op appi : fa(key,a,b) (key * a -> ()) -> Map (key,a) -> ()
+  % op appi : [key,a,b] (key * a -> ()) -> Map (key,a) -> ()
   def appi f map =
     case map of
         [] -> ()
@@ -150,9 +150,5 @@ meaningless unless an implementation is assumed.
     in
       foldi g emptyMap m
 
-  % op fromList : fa (a,b) List (a * b) -> Map (a, b)
-  % op subset? : fa (a,b) Map (a,b) -> Map (a,b) -> Boolean
-  % op all : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
-  % op exists : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
 endspec
 
