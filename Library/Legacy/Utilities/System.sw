@@ -75,4 +75,8 @@ System qualifying spec
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
 
+#translate Isa -morphism
+System.fail -> error
+#end
+
 endspec
