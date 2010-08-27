@@ -100,7 +100,7 @@ Haskell qualifying spec
              let top_dirs = rootDirectoriesForSpec(spc, uid) in
              let _ = writeLine "Directories:" in
              let _ = app (fn dir -> writeLine(anyToString dir)) top_dirs in
-             let _ = if slicing? then deleteHaskellFilesForVal val else () in
+             let _ = if slicing? then deleteHaskellFilesForSpec spc else () in
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
 	     let _ = toFile(fil_nm, showValue(val, true, spc, slicing?, recursive?, uid, Some haskell_nm, None)) in
@@ -117,54 +117,53 @@ Haskell qualifying spec
     subFromTo(uid.path, 0, length uid.path - 1)
 
   op rootDirectoriesForSpec(spc: Spec, uid: UnitId): List Directory =
-     let def addUIDfor(spc: Spec, sc_tm: Term, currentUID: UnitId, red_els: SpecElements, dirs: List Directory): List Directory =
-           if spc = getBaseSpec() then dirs
-           else
-           case uidStringPairForValueOrTerm(currentUID, Spec spc, sc_tm) of
-             | None -> dirs
-             | Some(_, _, uid) -> findDirsInImports(red_els, uid, addDir(uid, dirs))
-         def findDirsInImports(els: SpecElements, currentUID: UnitId, dirs: List Directory): List Directory =
-           List.foldl (fn (dirs, el) ->
-                  case el of
-                  | Import(imp_sc_tm, im_sp, red_els, _) ->
-                    addUIDfor(im_sp, imp_sc_tm, currentUID, red_els, dirs)
-                  | _ -> dirs)
-             dirs els
-         def addDir(uid, dirs) =
-           let uid_dir = uidDirectory uid in
-           if exists? (subDirectory? uid_dir) dirs
-             then dirs
-             else uid_dir :: dirs           
-     in
-     case uidStringPairTermForValue(Spec spc) of
-       | None -> []
-       | Some(_, uid, _) ->
-         findDirsInImports(spc.elements, uid, [uidDirectory uid])
+    let base_spec = getBaseSpec() in
+    let def addUIDfor(spc: Spec, sc_tm: Term, currentUID: UnitId, red_els: SpecElements, dirs: List Directory): List Directory =
+          if spc = base_spec then dirs
+          else
+          case uidForValueOrTerm(currentUID, Spec spc, sc_tm) of
+            | None -> dirs
+            | Some(uid, _) -> findDirsInImports(red_els, uid, addDir(uid, dirs))
+        def findDirsInImports(els: SpecElements, currentUID: UnitId, dirs: List Directory): List Directory =
+          List.foldl (fn (dirs, el) ->
+                 case el of
+                 | Import(imp_sc_tm, im_sp, red_els, _) ->
+                   addUIDfor(im_sp, imp_sc_tm, currentUID, red_els, dirs)
+                 | _ -> dirs)
+            dirs els
+        def addDir(uid, dirs) =
+          let uid_dir = uidDirectory uid in
+          if exists? (subDirectory? uid_dir) dirs
+            then dirs
+            else uid_dir :: dirs           
+    in
+    case uidStringPairTermForValue(Spec spc) of
+      | None -> []
+      | Some(_, uid, _) ->
+        findDirsInImports(spc.elements, uid, [uidDirectory uid])
 
-  op  deleteHaskellFilesForUID: String -> ()
-  def deleteHaskellFilesForUID uidstr =
-    case evaluateUnitId uidstr of
-      | Some val ->
-        deleteHaskellFilesForVal val
-      | _ -> ()
-  op  deleteHaskellFilesForVal: Value -> ()
-  def deleteHaskellFilesForVal val =
-    case uidNamesForValue val of
+  op deleteHaskellFilesForSpec (spc: Spec): () =
+    let base_spec = getBaseSpec() in
+    let def delUIDfor(spc: Spec, sc_tm: Term, currentUID: UnitId, red_els: SpecElements): () =
+          if spc = base_spec then ()
+          else
+          case uidForValueOrTerm(currentUID, Spec spc, sc_tm) of
+            | None -> ()
+            | Some(uid, filnm) -> delHaskellFilesFromImports(red_els, filnm, uid)
+        def delHaskellFilesFromImports(els: SpecElements, fil_nm, currentUID: UnitId): () =
+          let _ = writeLine("Deleting "^fil_nm) in
+          let _ = ensureFileDeleted(fil_nm) in
+          List.app (fn el ->
+                      case el of
+                        | Import(imp_sc_tm, im_sp, red_els, _) ->
+                          delUIDfor(im_sp, imp_sc_tm, currentUID, red_els)
+                        | _ -> ())
+            els
+    in
+    case uidStringPairTermForValue(Spec spc) of
       | None -> ()
-      | Some (_, uidstr, uid) ->
-        if val = Spec(getBaseSpec())
-          then ()
-        else
-        let fil_nm = uidstr ^ ".hs" in
-	let _ = ensureFileDeleted fil_nm in
-	case val of
-	  | Spec spc ->
-	    app (fn elem -> case elem of
-		              | Import(sc_tm, im_sp, _, _) ->
-		                deleteHaskellFilesForVal (Spec im_sp)
-			      | _ -> ())
-	      spc.elements
-          | Morph morph -> deleteHaskellFilesForVal (Spec morph.dom)
+      | Some((_, filnm, hash), uid, _) ->
+        delHaskellFilesFromImports(spc.elements, filnm ^ hash ^ ".hs", uid)
 
   op  ensureFileDeleted: String -> ()
   def ensureFileDeleted fil_nm =
@@ -201,6 +200,14 @@ Haskell qualifying spec
     else if spname = "Character"
       then "SW_Char"
       else spname
+
+  op uidForValueOrTerm(currentUID: UnitId, val: Value, sc_tm: Term) : Option(UnitId * String) =
+    case uidStringPairTermForValue val of
+      | None ->
+        (case uidStringPairForTerm(currentUID, sc_tm) of
+           | None -> None
+           | Some((_, _, haskell_file), uid) -> Some(uid, haskell_file ^ ".hs"))
+      | Some((haskellnm, filnm, hash), uid, _) -> Some(uid, haskellName(filnm ^ hash) ^ ".hs")
 
   op uidStringPairForValueOrTerm
        (currentUID: UnitId, val: Value, sc_tm: Term)
@@ -294,6 +301,7 @@ Haskell qualifying spec
       def handler _ (* except *) =
         return None
     in
+    let _ = writeLine("evaluateTermWrtUnitId") in
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
 		val  <- evaluateTerm sc_tm;
