@@ -541,8 +541,9 @@ addCoercions before raiseNamedTypes
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
-    % let _ = printSpecWithSortsToTerminal spc in
-% let _ = writeLine("0:\n"^printSpec spc) in
+ % let _ = printSpecWithSortsToTerminal spc in
+    let spc = exploitOverloading coercions spc in
+ % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
@@ -551,9 +552,9 @@ addCoercions before raiseNamedTypes
                                                 c.thy_name)
 	       else spc
     in
+    let spc = exploitOverloading coercions spc in
 % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
-    let spc = exploitOverloading coercions spc in
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
     %% Second round of simplification could be avoided with smarter construction
