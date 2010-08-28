@@ -4223,7 +4223,7 @@ proof Isa rightmostPositionOfSublistAndPreceding_subtype_constr
                      Let_def list_all_length)
 end-proof
 
-proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype1
+proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype0
 proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
  hence "POSs =
