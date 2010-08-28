@@ -291,6 +291,11 @@ spec
                Record([("1", x), ("2", Fun(Nat 0, _, _))], _), _)
            | subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
          trueTerm
+       %% Isabelle specific: int x >= 0
+       | Apply(Fun(Op(Qualified("Integer", ">="),_),_,_),
+               Record([("1", Apply(Fun(Op(Qualified("ToIsa-Internal", "int"),_),_,_), _, _)),
+                       ("2", Fun(Nat 0, _, _))], _), _) ->
+         trueTerm
        | Apply(Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_),
                      Record([("1", pred1), ("2", pred2)],_), _),
                arg_tm, _) | termSize arg_tm < 40 ->
@@ -306,6 +311,8 @@ spec
             | _ ->
               let result = composeConjPreds(preds, spc) in
               result)
+       | Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
+         -> x
        | IfThenElse(t1,t2,t3,a) ->
          (case t1 of
             | Fun(Bool true, _,_) -> t2
