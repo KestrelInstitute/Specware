@@ -51,18 +51,16 @@ spec
     (mkRecordPat pats, mkRecord tms)
 
   op  addCoercions (coercions: TypeCoercionTable) (spc: Spec): Spec =
-    let
-      def mapTermTop info =
-        % let _ = writeLine("\n") in
-	let (tvs, ty, tm) = unpackFirstOpDef info in
-        let tm = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
-	let result = mapTerm(tm, ty) in
-        if equalTerm?(result, tm)
-          then maybePiTerm(tvs, SortedTerm(tm, ty, termAnn tm)) 
-        else
-        % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
-        maybePiTerm(tvs, SortedTerm(result, ty, termAnn tm)) 
-	
+    let def mapTermTop (info, refine_num) =
+	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
+        let tm = refinedTerm(full_term, refine_num) in
+        let tm1 = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
+	let result = mapTerm(tm1, ty) in
+        let full_term =  if equalTerm?(result, tm) then full_term
+                           else replaceNthTerm(full_term, refine_num, result)
+        in
+        maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+
       def mapTerm(tm, ty) =
 	let rm_ty = inferType(spc, tm) in
 	let delayCoercion? =
@@ -186,7 +184,8 @@ spec
           | _ -> ty
       def coerceRestrictedPats pat =
         case pat of
-          | RestrictedPat(pat, pred, a) -> RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
+          | RestrictedPat(pat, pred, a) ->
+            RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> pat
     in
     % let _ = printSpecWithSortsToTerminal spc in
@@ -195,16 +194,16 @@ spec
                              case el of
                                | Op (qid as Qualified(q, id), true, _) ->
                                  %% true means decl includes def
-                                 (case AnnSpec.findTheOp(spc, qid) of
+                                 (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = mapTermTop info})
+                                                          info << {dfn = mapTermTop (info, 0)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q, id), _, _) ->
-                                 (case AnnSpec.findTheOp(spc, qid) of
+                               | OpDef (qid as Qualified(q, id), refine_num, _) ->
+                                 (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = mapTermTop info})
+                                                          info << {dfn = mapTermTop (info, refine_num)})
                                    | None -> ops)
                                | _ -> ops)
                         spc.ops
@@ -273,16 +272,16 @@ spec
      result
 
   op exploitOverloading  (coercions: TypeCoercionTable) (spc: Spec): Spec =
-    let def mapTermTop info =
-        % let _ = writeLine("\n") in
-	let (tvs, ty, tm) = unpackFirstOpDef info in
-        let tm = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
-	let result = mapTerm(tm, ty) in
-        if equalTerm?(result, tm)
-          then maybePiTerm(tvs, SortedTerm(tm, ty, termAnn tm)) 
-        else
-        % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
-        maybePiTerm(tvs, SortedTerm(result, ty, termAnn tm)) 
+    let def mapTermTop (info, refine_num) =
+	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
+        let tm = refinedTerm(full_term, refine_num) in
+        let tm1 = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
+	let result = mapTerm(tm1, ty) in
+        let full_term =  if equalTerm?(result, tm) then full_term
+                           else replaceNthTerm(full_term, refine_num, result)
+        in
+        maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+
        def mapTerm(tm, target_ty) =
           let rm_ty = inferType(spc, tm) in
           let tm = mapSubTerms(tm, target_ty) in
@@ -290,19 +289,24 @@ spec
        def maybeCancelCoercions(f, x, tm) =
          case x of
            | Apply(f1, x1, _) | equalTerm?(f, f1) -> x1
-           | Apply(f1 as Fun(Op(Qualified("Integer", "-"), _), _, _),
+           | Apply(Fun(Op(Qualified("Integer", "-"), fx), _, _),
                    Record([("1", t1), ("2", t2)], _), _) ->
              let nt1 = maybeCancelCoercions(f, t1, t1) in
              let nt2 = maybeCancelCoercions(f, t2, t2) in
+             let f_type = inferType(spc, f) in
+             %% The id call means we get the correct obligation but it disappears in the final translation
              if ~(equalTerm?(t1, nt1)) && ~(equalTerm?(t2, nt2))
-               then mkAppl(f1, [nt1, nt2])
+               then mkApply(mkOp(Qualified("Function", "id"), mkArrow(range(spc, f_type), natSort)),
+                            mkAppl(mkInfixOp(Qualified("Integer", "-"), fx,
+                                             mkArrow(mkProduct[natSort, natSort], intSort)),
+                                   [nt1, nt2]))
                else tm
            | Fun(Nat i, _, _) -> mkNat i
            | _ -> tm
        def liftCoercion (tm, rm_ty, target_ty) =
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort rm_ty ^" -> "^ printSort target_ty ^"\n ") in
         case tm of
-          | Apply(f as Fun(Op(Qualified(qual, idn), _), _, _), x, a) ->
+          | Apply(f as Fun(Op(Qualified(qual, idn), fx), f_ty, _), x, a) ->
             % let _ = writeLine("lift?: " ^ printTerm tm ^ " with qual: "^qual) in
             (case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSuper))
                      coercions of
@@ -322,7 +326,12 @@ spec
                     | Let(m, b, a1) -> Let(m, liftCoercion(Apply(f, b, a), rm_ty, target_ty), a1)
                     | _ ->
                   let new_x = removeCoercions(x, coerce_fn, true, coercions) in
-                  let new_tm = Apply(f, new_x, a) in
+                  let dom_ty = inferType(spc, new_x) in
+                  let ran_ty = getCoercedRange(f_ty, tb, coerce_fn) in
+                  let new_tm = Apply(mkInfixOp(Qualified(qual, idn), fx,
+                                               mkArrow(dom_ty, ran_ty)),
+                                     new_x, a)
+                  in
                   % let _ = writeLine("\nrm_ty: "^printSort rm_ty^"\ntarget: "^printSort target_ty) in
                   (if possiblySubtypeOf?(rm_ty, tb.supertype, spc)
                     then % let _ = writeLine("Added: "^printTerm (Apply(coerce_fn, new_tm, a))) in
@@ -332,15 +341,22 @@ spec
                | _ -> tm)
           | Apply(f as Fun(overloaded_op, _, _), x, a)
               | overloaded_op = Equals \_or overloaded_op = NotEquals ->
-            (case checkCoercions (x, coercions) of
-               | Some(tb, coerce_fn) ->
-                 (case x of
-                    | Let(m, b, a1) -> Let(m, liftCoercion(Apply(f, b, a), rm_ty, target_ty), a1)
-                    | _ ->
-                  let new_x = removeCoercions(x, coerce_fn, true, coercions) in
-                  Apply(f, new_x, a))
-               | _ -> tm)
+                (case checkCoercions (x, coercions) of
+                   | Some(tb, coerce_fn) ->
+                     (case x of
+                        | Let(m, b, a1) -> Let(m, liftCoercion(Apply(f, b, a), rm_ty, target_ty), a1)
+                        | _ ->
+                          let new_x = removeCoercions(x, coerce_fn, true, coercions) in
+                          Apply(f, new_x, a))
+                   | _ -> tm)
           | _ -> tm
+       def getCoercedRange(f_ty, tb, coerce_fn) =
+         let old_range = range(spc, f_ty) in
+         let coerce_fn_ty = inferType(spc, coerce_fn) in
+         % let _ = writeLine("gcr: "^printSort f_ty^" "^printSort coerce_fn_ty) in
+         if possiblySubtypeOf?(old_range, stripSubsorts(spc, range(spc, coerce_fn_ty)), spc)
+           then stripSubsorts(spc, domain(spc, coerce_fn_ty))
+           else old_range
        def mapSubTerms(tm, ty) =
         % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printSort ty) in
 	case tm of
@@ -395,16 +411,16 @@ spec
                              case el of
                                | Op (qid as Qualified(q, id), true, _) ->
                                  %% true means decl includes def
-                                 (case AnnSpec.findTheOp(spc, qid) of
+                                 (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = mapTermTop info})
+                                                          info << {dfn = mapTermTop (info, 0)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q, id), _, _) ->
-                                 (case AnnSpec.findTheOp(spc, qid) of
+                               | OpDef (qid as Qualified(q, id), refine_num, _) ->
+                                 (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = mapTermTop info})
+                                                          info << {dfn = mapTermTop (info, refine_num)})
                                    | None -> ops)
                                | _ -> ops)
                         spc.ops
