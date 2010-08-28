@@ -58,6 +58,7 @@ MS qualifying spec
 
  def boolSort       = Boolean noPos
  def integerSort    = mkBase  (Qualified("Integer", "Integer"), []) 
+ def intSort    = mkBase  (Qualified("Integer", "Integer"), []) 
  def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
