@@ -1299,7 +1299,11 @@ STRING should be given if the last search was by `string-match' on STRING."
     (let* ((file-uid (sw::file-to-specware-unit-id buffer-file-name relativise))
 	   (match (sw:re-search-backward sw:basic-unit-intro-regexp)))
       (if match
-	  (concat file-uid "#" (match-string-no-properties 1))
+	  (let ((match_str (match-string-no-properties 1)))
+            (concat file-uid "#" (if (fboundp 'substring-no-properties)
+                                     ;; Gnu Emacs stupidity
+                                     (substring-no-properties match_str)
+                                   match_str)))
 	file-uid))))
 
 (when (and (not (featurep 'xemacs)) (not (fboundp 'replace-in-string)))
