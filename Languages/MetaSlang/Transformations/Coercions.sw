@@ -271,7 +271,7 @@ spec
      % let _ = writeLine("= "^printTerm result) in
      result
 
-  op exploitOverloading  (coercions: TypeCoercionTable) (spc: Spec): Spec =
+  op exploitOverloading  (coercions: TypeCoercionTable) (doMinus?: Bool) (spc: Spec): Spec =
     let def mapTermTop (info, refine_num) =
 	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
         let tm = refinedTerm(full_term, refine_num) in
@@ -290,7 +290,8 @@ spec
          case x of
            | Apply(f1, x1, _) | equalTerm?(f, f1) -> x1
            | Apply(Fun(Op(Qualified("Integer", "-"), fx), _, _),
-                   Record([("1", t1), ("2", t2)], _), _) ->
+                   Record([("1", t1), ("2", t2)], _), _)
+               | doMinus? ->
              let nt1 = maybeCancelCoercions(f, t1, t1) in
              let nt2 = maybeCancelCoercions(f, t2, t2) in
              let f_type = inferType(spc, f) in
