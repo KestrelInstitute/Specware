@@ -69,9 +69,6 @@ theorem List__list_Obligation_subtype:
    "\<exists>n_1. (\<lambda>i. f (i + 1)) definedOnInitialSegmentOfLength n_1"
    ..
 qed
-theorem List__list_Obligation_subtype0: 
-  "(i::nat) + 1 \<ge> 0"
-  by auto
 function List__list :: "'a List__ListFunction \<Rightarrow> 'a list"
 where
    "List__list f 
@@ -460,9 +457,6 @@ theorem List__length__def:
 theorem List__length__def1: 
   "length (Cons Wild__Var_0 tl__v) = 1 + length tl__v"
   by auto
-theorem List__length_Obligation_subtype: 
-  "1 + length tl__v \<ge> 0"
-  by auto
 theorem List__length_is_length_of_list_function: 
   "\<lbrakk>\<exists>(n::nat). f definedOnInitialSegmentOfLength n\<rbrakk> \<Longrightarrow> 
    List__lengthOfListFunction f = length (List__list f)"
@@ -841,10 +835,6 @@ theorem List__subFromLong_Obligation_subtype:
        definedOnInitialSegmentOfLength n_1"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 theorem List__subFromLong_Obligation_subtype0: 
-  "\<lbrakk>(i::nat) + (n::nat) \<le> length l; (j::nat) < n\<rbrakk> \<Longrightarrow> 
-   i + j \<ge> 0"
-  by auto
-theorem List__subFromLong_Obligation_subtype1: 
   "\<lbrakk>(i::nat) + (n::nat) \<le> length l; (j::nat) < n\<rbrakk> \<Longrightarrow> 
    i + j < length l"
   by auto
@@ -3061,9 +3051,6 @@ theorem List__increasingNats_p_Obligation_subtype:
    i < length nats"
   by auto
 theorem List__increasingNats_p_Obligation_subtype0: 
-  "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> i + 1 \<ge> 0"
-  by auto
-theorem List__increasingNats_p_Obligation_subtype1: 
   "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> 
    i + 1 < length nats"
   by auto
@@ -4322,12 +4309,6 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0:
   "\<lbrakk>distinct POSs; 
     List__positionsOfSublist(subl, supl) = POSs; 
     \<not> (null POSs)\<rbrakk> \<Longrightarrow> 
-   hd POSs + length subl \<ge> 0"
-  by auto
-theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype1: 
-  "\<lbrakk>distinct POSs; 
-    List__positionsOfSublist(subl, supl) = POSs; 
-    \<not> (null POSs)\<rbrakk> \<Longrightarrow> 
    hd POSs + length subl \<le> length supl"
   proof -
  assume "List__positionsOfSublist (subl, supl) = POSs"
@@ -4423,9 +4404,6 @@ theorem List__splitAt_Obligation_subtype:
   "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i \<le> length l"
   by auto
 theorem List__splitAt_Obligation_subtype0: 
-  "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i + 1 \<ge> 0"
-  by auto
-theorem List__splitAt_Obligation_subtype1: 
   "\<lbrakk>(i::nat) < length l\<rbrakk> \<Longrightarrow> i + 1 \<le> length l"
   by auto
 consts List__splitAt :: "'a list \<times> nat \<Rightarrow> 'a list \<times> 'a \<times> 'a list"

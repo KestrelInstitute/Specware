@@ -224,9 +224,6 @@ theorem Integer__e_gt_eq__def:
 theorem Integer__e_lt_eq_and__gt_eq_are_converses: 
   "((i::int) \<le> (j::int)) = (j \<ge> i)"
   by auto
-theorem Integer__induction_naturals_Obligation_subtype: 
-  "\<lbrakk>(p::nat \<Rightarrow> bool) 0; p (n_1::nat)\<rbrakk> \<Longrightarrow> n_1 + 1 \<ge> 0"
-  by auto
 theorem Integer__induction_naturals: 
   "\<lbrakk>(p::nat \<Rightarrow> bool) 0; \<forall>(n::nat). p n \<longrightarrow> p (n + 1)\<rbrakk> \<Longrightarrow> 
    p (n::nat)"
