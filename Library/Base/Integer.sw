@@ -1124,7 +1124,7 @@ type Integer = Int
 proof Isa Thy_Morphism Presburger
  type Integer.Int -> int
  type Integer.Integer -> int
- type Nat.Nat     -> nat (int,nat) [+,*,div,rem,mod,<=,<,>=,>,abs,min,max]
+ type Nat.Nat     -> nat (int,nat) [+,*,/,div,divF,rem,modF,<=,<,>=,>,abs,min,max]
  Integer.zero     -> 0
  Integer.one      -> 1
  Integer.ipred    -> pred
