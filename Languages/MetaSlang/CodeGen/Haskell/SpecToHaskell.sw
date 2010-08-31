@@ -49,11 +49,8 @@ Haskell qualifying spec
  op  specialTypeInfo: Context -> QualifiedId -> Option TypeTransInfo
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
- op  getSpec: Context -> Spec
- def getSpec {recursive?=_, top_spec?=_, top_spec=_, top_uid=_, slicing?=_, spec_name=_, spec? = Some spc, qualifier?=_,
-              currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
-              newVarCount=_, source_of_haskell_morphism?=_, typeNameInfo=_, polyEqualityFunInfo=_}
-   = spc
+ op getSpec(c: Context): Spec =
+   let Some spc = c.spec? in spc
 
  op getCurrentUID(c: Context): UnitId = c.currentUID
 
@@ -77,18 +74,41 @@ Haskell qualifying spec
   op  Specware.cleanEnv : SpecCalc.Env ()
   op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
 
-
-  op  uidToHaskellName : UnitId -> String
-  def uidToHaskellName {path, hashSuffix=_} =
-   let device? = deviceString? (head path) in
-   let main_name = last path in
+  op uidToHaskellNames ({path, hashSuffix=_}: UnitId, slicing?: Bool,
+                       {path=top_path, hashSuffix=_}: UnitId): String * String =
+   let device? = deviceString? (if slicing? then head top_path else head path) in
+   let main_name = haskellName(last path) in
    let path_dir = butLast path in 
-   let mainPath = flatten (foldr (fn (elem, result) -> "/"::elem::result)
-			        ["/Haskell/", haskellName main_name]
-				(if device? then tail path_dir else path_dir))
-   in if device?
-	then (head path) ^ mainPath
-	else mainPath
+   let (full_name, main_path) =
+       if slicing?
+         then let top_path_dir = butLast top_path in 
+              let common_par = longestCommonPrefix(path_dir, top_path_dir) in
+              let unique_path_dir = removePrefix(path_dir, length common_par) in
+              let top_haskell_dir =
+                  foldr (fn (elem, result) -> "/"::elem::result)
+                    ["/Haskell/"]
+                    (if device? then tail top_path_dir else top_path_dir)
+              in
+              let up_to_unique_dir = top_haskell_dir
+                                    ++ tabulate(length top_path_dir - length common_par,
+                                                fn _ -> "dot__dot/")
+              in
+              (flatten(tabulate(length top_path_dir - length common_par,
+                                fn _ -> "dot__dot.")
+                         ++ foldr (fn (elem, result) -> elem::"."::result)
+                              [main_name] unique_path_dir),
+               flatten (up_to_unique_dir
+                         ++ foldr (fn (elem, result) -> elem::"/"::result)
+                              [main_name, ".hs"] unique_path_dir))
+         else (main_name,
+               flatten (foldr (fn (elem, result) -> "/"::elem::result)
+                         ["/Haskell/", main_name, ".hs"]
+                         (if device? then tail path_dir else path_dir)))
+   in
+   (full_name,
+    if device?
+      then (if slicing? then head top_path else head path) ^ main_path
+    else main_path)
 
 
   op  printUIDtoHaskellFile: String * Bool * Bool -> String
@@ -196,9 +216,12 @@ Haskell qualifying spec
 
   op unitIdToHaskellString(uid: UnitId, slicing?: Bool, top_uid: UnitId)
        : (String * String * String * String) =
+    let (import_name, file_name) = uidToHaskellNames(uid, slicing?, top_uid) in
     case uid.hashSuffix of
-      | Some loc_nm -> (last uid.path, "", uidToHaskellName uid, "_" ^ loc_nm)
-      | _ ->           (last uid.path, "", uidToHaskellName uid, "")
+      | Some loc_nm -> (last uid.path, import_name, file_name,
+                        "_" ^ loc_nm)
+      | _ ->           (last uid.path, import_name, file_name,
+                        "")
 
   op haskellLibrarySpecNames: List String = ["List", "Char", "Prelude",  "Ratio", "Complex", "Numeric",
                                              "Ix", "Array", "Maybe", "Monad", "Locale", "Time", "IO",
