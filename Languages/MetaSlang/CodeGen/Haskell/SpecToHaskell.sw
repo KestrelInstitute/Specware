@@ -99,10 +99,10 @@ Haskell qualifying spec
                               [main_name] unique_path_dir),
                flatten (up_to_unique_dir
                          ++ foldr (fn (elem, result) -> elem::"/"::result)
-                              [main_name, ".hs"] unique_path_dir))
+                              [main_name] unique_path_dir))
          else (main_name,
                flatten (foldr (fn (elem, result) -> "/"::elem::result)
-                         ["/Haskell/", main_name, ".hs"]
+                         ["/Haskell/", main_name]
                          (if device? then tail path_dir else path_dir)))
    in
    (full_name,
@@ -110,6 +110,13 @@ Haskell qualifying spec
       then (if slicing? then head top_path else head path) ^ main_path
     else main_path)
 
+ op unitIdToHaskellString(uid: UnitId, slicing?: Bool, top_uid: UnitId)
+       : (String * String * String * String) =
+    let (import_name, file_name) = uidToHaskellNames(uid, slicing?, top_uid) in
+    % let _ = writeLine("uiths import: "^import_name^" file_name: "^file_name) in
+    case uid.hashSuffix of
+      | Some loc_nm -> (last uid.path, import_name, file_name, "_" ^ loc_nm)
+      | _ ->           (last uid.path, import_name, file_name, "")
 
   op  printUIDtoHaskellFile: String * Bool * Bool -> String
   def printUIDtoHaskellFile (uid_str, slicing?, recursive?) =
@@ -117,14 +124,15 @@ Haskell qualifying spec
       | Some(val as Spec spc) ->
         (case uidNamesForValue(val, slicing?) of
 	   | None -> "Error: Can't get UID string from value"
-	   | Some (haskell_nm, uidstr, haskell_module_name, uid) ->
+	   | Some (haskell_nm, haskell_module_name, uidstr, uid) ->
+             % let _ = writeLine("pruid hmn: "^haskell_module_name^" uidstr: "^uidstr) in
              %let top_dirs = rootDirectoriesForSpec(spc, uid) in
-             let _ = writeLine "Directories:" in
+             %let _ = writeLine "Directories:" in
              %let _ = app (fn dir -> writeLine(anyToString dir)) top_dirs in
              %let _ = if slicing? then deleteHaskellFilesForSpec spc else () in
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
-	     let _ = toFile(fil_nm, showValue(val, true, spc, uid, slicing?, recursive?, uid, Some haskell_nm, None)) in
+	     let _ = toFile(fil_nm, showValue(val, true, spc, uid, slicing?, recursive?, uid, Some haskell_module_name, None)) in
 	     fil_nm)
       | _ -> "Error: Unknown UID " ^ uid_str
 
@@ -199,8 +207,9 @@ Haskell qualifying spec
   def uidNamesForValue (val: Value, slicing?: Bool): Option (String * String * String * UnitId) =
     case uidStringPairTermForValue(val, slicing?, None) of
       | None -> None
-      | Some((haskellnm, filnm, haskell_module_name, hash), uid, _) ->
-        Some(haskellnm ^ hash, filnm ^ hash, haskell_module_name, uid)
+      | Some((haskellnm, haskell_module_name, filnm, hash), uid, _) ->
+        % let _ = writeLine("unfrv haskellnm: "^haskellnm^" filnm: "^filnm^" mn: "^haskell_module_name) in
+        Some(haskellnm ^ hash, haskell_module_name ^ hash, filnm ^ hash, uid)
 
   op uidStringPairTermForValue (val: Value, slicing?: Bool, top_uid?: Option UnitId)
        : Option ((String * String * String * String) * UnitId * Term) =
@@ -213,15 +222,6 @@ Haskell qualifying spec
                                                                         | Some top_uid -> top_uid
                                                                         | None -> uid),
                                    uid, sc_tm)
-
-  op unitIdToHaskellString(uid: UnitId, slicing?: Bool, top_uid: UnitId)
-       : (String * String * String * String) =
-    let (import_name, file_name) = uidToHaskellNames(uid, slicing?, top_uid) in
-    case uid.hashSuffix of
-      | Some loc_nm -> (last uid.path, import_name, file_name,
-                        "_" ^ loc_nm)
-      | _ ->           (last uid.path, import_name, file_name,
-                        "")
 
   op haskellLibrarySpecNames: List String = ["List", "Char", "Prelude",  "Ratio", "Complex", "Numeric",
                                              "Ix", "Array", "Maybe", "Monad", "Locale", "Time", "IO",
@@ -258,10 +258,10 @@ Haskell qualifying spec
            | Some real_val ->
              Some((haskellnm, sw_file, haskell_module_name, haskellName haskell_file ^ ".hs"),
                   val, uid))
-      | Some((haskellnm, filnm, haskell_module_name, hash), uid, _) ->
+      | Some((haskellnm, haskell_module_name, filnm, hash), uid, _) ->
         Some((haskellnm ^ hash,
               uidToFullPath uid ^ ".sw",
-              haskell_module_name,
+              haskell_module_name ^ hash,
               haskellName(filnm ^ hash) ^ ".hs"),
              val, uid)
 
@@ -273,7 +273,7 @@ Haskell qualifying spec
            | None -> None
            | Some((haskellnm, sw_file, haskell_module_name, haskell_file), uid) ->
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
-             Some((haskellnm^sb_id, sw_file, haskell_module_name, haskell_file^sb_id),
+             Some((haskellnm^sb_id, sw_file, haskell_module_name^sb_id, haskell_file^sb_id),
                   uid))
       | (UnitId relId, pos) ->
         (case evaluateRelUIDWrtUnitId(relId, pos, currentUID) of
@@ -284,20 +284,20 @@ Haskell qualifying spec
             let (haskellnm, haskell_module_name, filnm, hash) = unitIdToHaskellString(uid, slicing?, top_uid) in
             Some((haskellnm ^ hash,
                   uidToFullPath uid ^ ".sw",
-                  haskell_module_name,
+                  haskell_module_name ^ hash,
                   filnm ^ hash),
                  uid))
       | (Qualify(spc_tm, qual), pos) ->
         (case uidStringPairForTerm(currentUID, spc_tm, slicing?, top_uid) of
            | None -> None
            | Some((haskellnm, sw_file, haskell_module_name, haskell_file), uid) ->
-             Some((haskellnm^"_"^qual, sw_file, haskell_module_name, haskell_file^"_"^qual),
+             Some((haskellnm^"_"^qual, sw_file, haskell_module_name^"_"^qual, haskell_file^"_"^qual),
                   uid))
       | (Translate(spc_tm, _), pos) ->
         (case uidStringPairForTerm(currentUID, spc_tm, slicing?, top_uid) of
            | None -> None
            | Some((thynm, sw_file, haskell_module_name, thy_file), uid) ->
-             Some((thynm^"_translated", sw_file, haskell_module_name, thy_file^"_translated"),
+             Some((thynm^"_translated", sw_file, haskell_module_name^"_translated", thy_file^"_translated"),
                   uid))
       | _ ->
         (writeLine("sc_tm not handled:\n"^anyToString sc_tm);
@@ -338,7 +338,7 @@ Haskell qualifying spec
       def handler _ (* except *) =
         return None
     in
-    let _ = writeLine("evaluateTermWrtUnitId") in
+    % let _ = writeLine("evaluateTermWrtUnitId") in
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
 		val  <- evaluateTerm sc_tm;
@@ -364,8 +364,8 @@ Haskell qualifying spec
   def showValue (value, top_spec?, top_spec, top_uid, slicing?, recursive?, uid, opt_nm, opt_els) =
     case uidStringPairTermForValue(value, slicing?, Some top_uid) of
       | None -> emptyText()
-      | Some ((haskell_nm, _, haskell_module_name, hash_nm), val_uid, sc_tm) ->
-    let haskell_nm = haskell_nm ^ hash_nm in
+      | Some ((haskell_nm, haskell_module_name, _, hash_nm), val_uid, sc_tm) ->
+    let haskell_nm = haskell_module_name ^ hash_nm in
     let main_pp_val = ppValue {recursive? = recursive?,
                                top_spec? = top_spec?,
                                top_spec = top_spec,
@@ -663,6 +663,7 @@ Haskell qualifying spec
         let _ = writeLine("Unknown:\n"^anyToString sc_tm) in
         Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
       | Some ((spc_nm, sw_fil_nm, haskell_module_name, haskell_fil_nm), val, uid) ->
+        % let _ = writeLine("ppI spc_nm: "^spc_nm^" hmn: "^haskell_module_name) in
         case spc_nm of
           | "IsabelleExtensions" -> None
           | _ ->
@@ -672,13 +673,13 @@ Haskell qualifying spec
 		      then ()
 		    else toFile(haskell_fil_nm,
                                 showValue(val, false, c.top_spec, c.top_uid, c.slicing?, c.recursive?,
-                                          uid, Some spc_nm, Some red_els))
+                                          uid, Some haskell_module_name, Some red_els))
 		  else ()
 	in
         case spc_nm of
           | "Base" -> Some(prString "SW_Base", prString "SW_Base")
           | _ ->
-        let haskell_nm = haskellName spc_nm in
+        let haskell_nm = haskellName haskell_module_name in
         case uidStringPairTermForValue(val, c.slicing?, Some c.top_uid) of
           | Some (_, _, sc_tm) | useQualifiedNames? && some?(findSpecQualifier sc_tm) ->  % ???
             let Some qualifier = findSpecQualifier sc_tm in
