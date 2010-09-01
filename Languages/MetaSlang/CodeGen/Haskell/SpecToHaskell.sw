@@ -91,10 +91,10 @@ Haskell qualifying spec
               in
               let up_to_unique_dir = top_haskell_dir
                                     ++ tabulate(length top_path_dir - length common_par,
-                                                fn _ -> "dot__dot/")
+                                                fn _ -> "Par__dir/")
               in
               (flatten(tabulate(length top_path_dir - length common_par,
-                                fn _ -> "dot__dot.")
+                                fn _ -> "Par__dir.")
                          ++ foldr (fn (elem, result) -> elem::"."::result)
                               [main_name] unique_path_dir),
                flatten (up_to_unique_dir
@@ -129,7 +129,7 @@ Haskell qualifying spec
              %let top_dirs = rootDirectoriesForSpec(spc, uid) in
              %let _ = writeLine "Directories:" in
              %let _ = app (fn dir -> writeLine(anyToString dir)) top_dirs in
-             %let _ = if slicing? then deleteHaskellFilesForSpec spc else () in
+             let _ = if slicing? then deleteHaskellFilesForSpec(spc, slicing?, uid) else () in
 	     let fil_nm = uidstr ^ ".hs" in
 	     let _ = ensureDirectoriesExist fil_nm in
 	     let _ = toFile(fil_nm, showValue(val, true, spc, uid, slicing?, recursive?, uid, Some haskell_module_name, None)) in
@@ -173,17 +173,16 @@ Haskell qualifying spec
         findDirsInImports(spc.elements, uid, [uidDirectory uid])
 *)
 
-(*
-  op deleteHaskellFilesForSpec (spc: Spec): () =
+  op deleteHaskellFilesForSpec (spc: Spec, slicing?: Bool, top_uid: UnitId): () =
     let base_spec = getBaseSpec() in
     let def delUIDfor(spc: Spec, sc_tm: Term, currentUID: UnitId, red_els: SpecElements): () =
           if spc = base_spec then ()
           else
-          case uidForValueOrTerm(currentUID, Spec spc, sc_tm) of
+          case uidForValueOrTerm(currentUID, Spec spc, sc_tm, slicing?, top_uid) of
             | None -> ()
             | Some(uid, filnm) -> delHaskellFilesFromImports(red_els, filnm, uid)
         def delHaskellFilesFromImports(els: SpecElements, fil_nm, currentUID: UnitId): () =
-          let _ = writeLine("Deleting "^fil_nm) in
+          %let _ = if fileExists? fil_nm then writeLine("Deleting "^fil_nm) else () in
           let _ = ensureFileDeleted(fil_nm) in
           List.app (fn el ->
                       case el of
@@ -192,11 +191,10 @@ Haskell qualifying spec
                         | _ -> ())
             els
     in
-    case uidStringPairTermForValue(Spec spc) of
+    case uidStringPairTermForValue(Spec spc, slicing?, Some top_uid) of
       | None -> ()
-      | Some((_, filnm, hash), uid, _) ->
+      | Some((_, _, filnm, hash), uid, _) ->
         delHaskellFilesFromImports(spc.elements, filnm ^ hash ^ ".hs", uid)
-*)
 
   op  ensureFileDeleted: String -> ()
   def ensureFileDeleted fil_nm =
@@ -233,15 +231,13 @@ Haskell qualifying spec
       then "SW_Char"
       else spname
 
-(*
-  op uidForValueOrTerm(currentUID: UnitId, val: Value, sc_tm: Term) : Option(UnitId * String) =
-    case uidStringPairTermForValue val of
+  op uidForValueOrTerm(currentUID: UnitId, val: Value, sc_tm: Term, slicing?: Bool, top_uid: UnitId) : Option(UnitId * String) =
+    case uidStringPairTermForValue (val, slicing?, Some top_uid) of
       | None ->
-        (case uidStringPairForTerm(currentUID, sc_tm) of
+        (case uidStringPairForTerm(currentUID, sc_tm, slicing?, top_uid) of
            | None -> None
-           | Some((_, _, haskell_file), uid) -> Some(uid, haskell_file ^ ".hs"))
-      | Some((haskellnm, filnm, hash), uid, _) -> Some(uid, haskellName(filnm ^ hash) ^ ".hs")
-*)
+           | Some((_, _, _, haskell_file), uid) -> Some(uid, haskell_file ^ ".hs"))
+      | Some((_, _, filnm, hash), uid, _) -> Some(uid, haskellName(filnm ^ hash) ^ ".hs")
 
   op uidStringPairForValueOrTerm
        (currentUID: UnitId, val: Value, sc_tm: Term, slicing?: Bool, top_uid: UnitId)
@@ -362,10 +358,14 @@ Haskell qualifying spec
 
   op  showValue : Value * Bool * Spec * UnitId * Bool * Bool * UnitId * Option String * Option SpecElements -> Text
   def showValue (value, top_spec?, top_spec, top_uid, slicing?, recursive?, uid, opt_nm, opt_els) =
-    case uidStringPairTermForValue(value, slicing?, Some top_uid) of
-      | None -> emptyText()
-      | Some ((haskell_nm, haskell_module_name, _, hash_nm), val_uid, sc_tm) ->
-    let haskell_nm = haskell_module_name ^ hash_nm in
+    let (haskell_nm, qualifier?) =
+        case uidStringPairTermForValue(value, slicing?, Some top_uid) of
+          | None -> (case opt_nm of
+                     | Some haskell_module_name -> (haskell_module_name, None)
+                     | None -> ("<Unknown spec>", None))
+          | Some ((_, haskell_module_name, _, hash_nm), val_uid, sc_tm) ->
+            (haskell_module_name, findSpecQualifier sc_tm)
+    in
     let main_pp_val = ppValue {recursive? = recursive?,
                                top_spec? = top_spec?,
                                top_spec = top_spec,
@@ -375,7 +375,7 @@ Haskell qualifying spec
                                             | Some nm -> nm
                                             | None -> haskell_nm,
 			       spec? = None,
-                               qualifier? = findSpecQualifier sc_tm,
+                               qualifier? = qualifier?,
                                currentUID = uid,
 			       trans_table = emptyTranslationTable,
                                coercions = [],
@@ -396,8 +396,11 @@ Haskell qualifying spec
   op  ppValue : Context -> Value -> Option SpecElements -> Pretty
   def ppValue c value opt_els =
     case value of
-      | Spec spc -> ppSpec c (case opt_els of
-                                | Some els | c.slicing? -> spc << {elements = mergeRealImports(spc.elements, els)}
+      | Spec spc -> % let _ = writeLine(printSpec spc) in
+        ppSpec c (case opt_els of
+                                | Some els | c.slicing? ->
+                                  % let _ = writeLine(printSpec(spc << {elements = mergeRealImports(spc.elements, els)})) in
+                                  spc << {elements = mergeRealImports(spc.elements, els)}
                                 | _ -> spc)
       | _ -> prString "<Not a spec>"
  
@@ -671,9 +674,10 @@ Haskell qualifying spec
 	          then
 		    if fileOlder?(sw_fil_nm, haskell_fil_nm) || spc = getBaseSpec()
 		      then ()
-		    else toFile(haskell_fil_nm,
-                                showValue(val, false, c.top_spec, c.top_uid, c.slicing?, c.recursive?,
-                                          uid, Some haskell_module_name, Some red_els))
+		    else
+                      toFile(haskell_fil_nm,
+                             showValue(val, false, c.top_spec, c.top_uid, c.slicing?, c.recursive?,
+                                       uid, Some haskell_module_name, Some red_els))
 		  else ()
 	in
         case spc_nm of
@@ -1228,8 +1232,8 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
 %		 prString " = "],
 %		[ppType c Top ty]]
      else prBreakCat 2                  % ??? Error (not executable)
-	    [[prString "type ",
-	      ppTyVars tvs,
+	    [[prString "type",
+	      ppTyVars tvs, prSpace,
 	      ppTypeIdInfo c aliases]]
 
  op  ppTyVars : TyVars -> Pretty
