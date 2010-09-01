@@ -1119,8 +1119,8 @@ The handler will use qeuery to ask the use if the error should be ingored."
 
 ;;;;; REPL Read Mode
 
-(define-key slime-repl-mode-map
-  (string slime-repl-shortcut-dispatch-char) 'slime-handle-repl-shortcut)
+;(define-key slime-repl-mode-map
+;  (string slime-repl-shortcut-dispatch-char) 'slime-handle-repl-shortcut)
 
 (define-minor-mode slime-repl-read-mode 
   "Mode the read input from Emacs
