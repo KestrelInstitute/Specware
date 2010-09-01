@@ -53,13 +53,33 @@ The second shell command for use with top-level specs is
 where the result of elaborating the spec term gives the spec to be
 translated into Haskell. The [[gen-haskell]] command can be
 abbreviated to [[gen-ht]]. Inside the emacs interface it is simpler to
-use the [[C-c H]] command ([[sw:convert-top-spec-to-haskell]]) which has
-the same effect but also visits the generated Haskell file. The names
-of the generated Haskell modules are the same as that for the
+use the [[C-c H]] command ([[sw:convert-top-spec-to-haskell]]) which
+has the same effect but also visits the generated Haskell file. 
+</para>
+
+<para>
+The names of the generated Haskell modules are the same as that for the
 [[gen-haskell]] command, but the files generated for specs in
 different directories are put in sub-directories of the top-level
-Haskell directory.
+Haskell directory. For specs in sub-directories of the top-level spec,
+the generated module files are in the corresponding sub-directory of
+the top-level Haskell directory. For example, given the command
+[[gen-haskell-top /A/B/C/Main.sw]], the top-level module is stored in
+file [[/A/B/C/Haskell/Main.hs]] and if this spec imports (possibly
+indirectly) the spec [[/A/B/C/D/E/F.sw]] the corresponding module is
+generated as [[/A/B/C/Haskell/D/E/F.hs]].
 </para>
+
+<para> For specs in parent or sibling directories of the top-level
+spec, a sub-directory called "Par__i" is created in the top-level
+Haskell directory representing the common parent directory
+where i is the number of directory levels that the parent directory is
+above that containing the top-level spec, and sub-directories created
+below that corresponding to the path of the sibling spec. In the example for
+[[gen-haskell-top /A/B/C/Main.sw]], if this spec imports spec
+[[/A/W/X/Y.sw]] the corresponding module is generated as 
+[[/A/B/C/Haskell/Par__2/W/X/Y.hs]].
+ </para>
 
 
 <section>
