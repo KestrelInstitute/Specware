@@ -731,6 +731,7 @@
     #+(or Mswindows Win32) (prepare_Specware_Windows specware-dir release-dir lisp-utilities-dir)
     ))
 
+(defvar cl-user::*government-rights?* nil)
 (defun prepare_Specware_Generic (specware-dir release-dir)
   (print-minor "Specware" "generic")
   (let* ((source-dir  (ensure-subdirs-exist specware-dir))
@@ -738,9 +739,15 @@
 	 (target-dir  (if *test?* release-dir (ensure-subdirs-exist release-dir "Specware" "Generic"))))
 
     ;; License file (InstallShield looks for this)
-    (copy-dist-file (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults generic-dir)
+    (copy-dist-file (make-pathname :name (if cl-user::*government-rights?*
+                                             "SpecwareClickThruLicenseGov"
+                                             "SpecwareClickThruLicense")
+                                   :type "txt" :defaults generic-dir)
 		    (make-pathname :name "SpecwareClickThruLicense" :type "txt" :defaults target-dir))
-    (copy-dist-file (make-pathname :name "SpecwareClickThruLicenseForm" :type "txt" :defaults generic-dir)
+    (copy-dist-file (make-pathname :name (if cl-user::*government-rights?*
+                                             "SpecwareClickThruLicenseGovForm"
+                                             "SpecwareClickThruLicenseForm")
+                                   :type "txt" :defaults generic-dir)
 		    (make-pathname :name "SpecwareLicense" :type "txt" :defaults target-dir))
 
     ;; Icons
