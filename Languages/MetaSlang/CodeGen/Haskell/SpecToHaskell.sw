@@ -471,6 +471,7 @@ Haskell qualifying spec
     mapPartial (fn el ->
                   case el of
                     | Op(qid, _, _) -> Some qid
+                    | OpDef(qid, _, _) -> Some qid
                     | _ -> None)
      spc.elements
 
