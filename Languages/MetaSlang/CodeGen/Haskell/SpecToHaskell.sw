@@ -1555,7 +1555,14 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        | AliasPat(p1, p2, _) -> 
          (case patToTerm(p2, ext, c) 
             of None -> patToTerm(p1, ext, c)
-             | Some(trm) -> Some trm)
+             | Some(trm2) ->
+          case patToTerm(p1, ext, c) of
+             | None -> Some trm2
+             | Some trm1 ->
+               let ty = inferType(getSpec c, trm1) in
+               Some(mkApply(mkInfixOp(mkUnQualifiedId "@", Infix(Left, 50),
+                                      mkArrow(mkProduct[ty, ty], ty)),
+                            mkTuple[trm1, trm2])))
 
  op unkownPatternVar?(t: MS.Term): Bool =
    case t of
@@ -2355,7 +2362,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | WildPat (ty, _) -> prString "_"
      | StringPat (str, _) -> prString ("\"" ^ normString str ^ "\"")
      | BoolPat (b, _) -> ppBool b
-     | CharPat (chr, _) -> prString ("'"^Char.show chr^"'")
+     | CharPat (chr, _) -> prString ("'"^(cShow chr)^"'")
      | NatPat (int, _) -> prString (Nat.show int)      
      | QuotientPat (pat, qid, _) -> 
        prBreak 0 [prConcat [prString "Make", ppTyQualifiedId c qid, prSpace],
@@ -2472,13 +2479,19 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | Select id -> prConcat [prString "select ", prString id] % obsolete?
      | Nat n -> prString (Nat.show n)
      | Char chr -> prConcat [prString "'",
-                             prString (Char.show chr),
+                             prString (cShow chr),
                              prString "'"]
      | String str -> prString ("\"" ^ normString str ^ "\"")
      | Bool b -> ppBool b
      | OneName (id, fxty) -> prString id
      | TwoNames (id1, id2, fxty) -> ppOpQualifiedId c (Qualified (id1, id2))
      | mystery -> fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
+
+ op cShow(chr: Char): String =
+   case chr of
+      | #\n -> "\\n"
+      | #\t -> "\\t"
+      | _ -> show chr
 
  op normString(s: String): String =
    %% eols have to be symbolic
