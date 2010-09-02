@@ -41,9 +41,7 @@ supplied therewith, even if Kestrel or its licensors have been advised
 of the possibility of such damages.
 
 Term and Termination.  This Agreement will be effective immediately,
-and shall continue until terminated as set forth herein.  Kestrel may
-terminate this Agreement immediately at any time upon written notice
-to Licensee if Licensee breaches any term of this Agreement.  Licensee
+and shall continue until terminated as set forth herein. Licensee
 may terminate this Agreement by written notice to Kestrel if Licensee
 no longer wishes to make use of Specware.  Upon termination of this
 Agreement, Licensee will immediately cease using Specware, and delete
