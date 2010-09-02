@@ -251,7 +251,7 @@ Haskell qualifying spec
               None)
            | Some real_val ->
              Some((haskellnm, sw_file, haskell_module_name, haskellName haskell_file ^ ".hs"),
-                  val, uid))
+                  real_val, uid))
       | Some((haskellnm, haskell_module_name, filnm, hash), uid, _) ->
         Some((haskellnm ^ hash,
               uidToFullPath uid ^ ".sw",
@@ -336,6 +336,7 @@ Haskell qualifying spec
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
 		val  <- evaluateTerm sc_tm;
+                % print ("evalTerm:\n"^(case val of Spec spc -> printSpecFlat (subtractSpec spc (getBaseSpec())) | _ -> "")^"\n" );
 		return (Some val)} 
     in
       runSpecCommand (catch prog handler)
@@ -657,6 +658,8 @@ Haskell qualifying spec
       | (SortDef (type_id, _)) :: _ -> Some type_id
       | _ :: r -> firstTypeDef r
 
+  op AnnSpec.subtractSpec: Spec -> Spec -> Spec
+
   op  ppImport: Context -> Term -> Spec -> SpecElements -> Option (Pretty * Pretty)
   def ppImport c sc_tm spc red_els =
     case uidStringPairForValueOrTerm(getCurrentUID c, Spec spc, sc_tm, c.slicing?, c.top_uid) of
@@ -665,6 +668,7 @@ Haskell qualifying spec
         Some(prString "<UnknownSpec>", prString "<UnknownSpec>")
       | Some ((spc_nm, sw_fil_nm, haskell_module_name, haskell_fil_nm), val, uid) ->
         % let _ = writeLine("ppI spc_nm: "^spc_nm^" hmn: "^haskell_module_name) in
+        % let _ = case val of Spec spc -> writeLine(printSpecFlat (subtractSpec spc (getBaseSpec()))) | _ -> () in
         case spc_nm of
           | "IsabelleExtensions" -> None
           | _ ->
@@ -2575,6 +2579,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op  ppType : Context -> ParentSort -> Sort -> Pretty
  def ppType c parent ty =
+   % let _ = writeLine("ppType: "^printSort ty^" --> "^printSort(unfoldToBaseNamedType(getSpec c, ty))) in
    case ty of
      | Base(qid, _, _) | unfoldSubtypes? && none?(specialTypeInfo c qid ) && unfoldToBaseNamedType(getSpec c, ty) ~= ty ->
        ppType c parent (unfoldToBaseNamedType(getSpec c, ty))
