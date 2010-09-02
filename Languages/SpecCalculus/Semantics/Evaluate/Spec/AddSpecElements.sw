@@ -413,7 +413,7 @@ SpecCalc qualifying spec
        def body_refs op_id =
          case findTheOp(spc, op_id) of
            | Some info -> refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
-           | None -> (writeLine("Warning! Missing op  in adjustElementOrder: "
+           | None -> (writeLine("Warning! Missing op in adjustElementOrder: "
                                   ^printQualifiedId op_id);
                       [])
        def element_refs el =
@@ -422,10 +422,15 @@ SpecCalc qualifying spec
            | OpDef(op_id, _, _) -> body_refs op_id
            | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
            | SortDef(ty_id, _) ->
-             let Some info = findTheSort(spc, ty_id) in
-             %% make sure types are early until have better circularity resolution mechanism
-             refsToElements([],    % opsInType info.dfn, 
-                            typesInType info.dfn)
+             (case findTheSort(spc, ty_id) of
+               | Some info ->
+                 %% make sure types are early until have better circularity resolution mechanism
+                 refsToElements([],    % opsInType info.dfn, 
+                                typesInType info.dfn)
+               | _ -> (writeLine("Warning! Missing type in adjustElementOrder: "
+                                  ^printQualifiedId ty_id);
+                      []))
+
            | _ -> []
    in
    setElements(spc, topSort(EQUAL, element_refs, spc.elements))
