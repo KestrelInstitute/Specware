@@ -1010,7 +1010,8 @@ addCoercions before raiseNamedTypes
     let opaque_type_map = foldSortInfos
                                  (fn (info, opt_map) ->
                                   let qid = primarySortName info in
-                                  if opaqueTypeQId? coercions qid && embed? Subsort (firstSortDef info)
+                                  % let _ = writeLine("rdo: "^printQualifiedId qid^" = "^printSort(unpackFirstSortDef info).2) in
+                                  if opaqueTypeQId? coercions qid && embed? Subsort (unpackFirstSortDef info).2
                                    then (qid, info.dfn) :: opt_map
                                    else opt_map)
                                 [] spc.sorts
@@ -1224,6 +1225,7 @@ addCoercions before raiseNamedTypes
      | Some _ -> prEmpty
      | None ->
    let (tvs, ty) = unpackSort dfn in
+   % let _ = writeLine("type "^printQualifiedId mainId^" = "^printSort ty^"\n"^anyToString opt_prag) in
    if full? \_and ~(embed? Any ty)
      then case ty of
 	   | CoProduct(taggedSorts,_) ->
@@ -1255,7 +1257,14 @@ addCoercions before raiseNamedTypes
 		 fields))
            | Subsort(superty, pred, _) | some? opt_prag ->
              let  (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
-             prLinesCat 2 ([[prString "typedef ", ppIdInfo aliases, prString " = \"", ppTerm c Top pred, prString "\""]]
+             prLinesCat 2 ([[prString "typedef ", ppTyVars tvs, ppIdInfo aliases, prString " = \"",
+                             if tvs = [] then ppTerm c Top pred
+                               else
+                                 let spc = getSpec c in
+                                 let pred_dom_ty = domain(spc, inferType(spc, pred)) in
+                                 prConcat [prString "{x :: ", ppType c Top true pred_dom_ty,
+                                           prString ". ", ppTerm c Top pred, prString " x}"],
+                             prString "\""]]
                            ++ prf_pp
                            ++ (if prf_pp = []
                                  then [[prString defaultProof]]
