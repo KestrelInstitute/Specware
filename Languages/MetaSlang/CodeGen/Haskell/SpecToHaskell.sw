@@ -89,12 +89,10 @@ Haskell qualifying spec
                     ["/Haskell/"]
                     (if device? then tail top_path_dir else top_path_dir)
               in
-              let up_to_unique_dir = top_haskell_dir
-                                    ++ tabulate(length top_path_dir - length common_par,
-                                                fn _ -> "Par__dir/")
-              in
-              (flatten(tabulate(length top_path_dir - length common_par,
-                                fn _ -> "Par__dir.")
+              let par_num = length top_path_dir - length common_par in
+              let par_dir = "Par__"^show(par_num) in
+              let up_to_unique_dir = top_haskell_dir ++ (if par_num = 0 then [] else [par_dir^"/"]) in
+              (flatten((if par_num = 0 then [] else[par_dir^"."])
                          ++ foldr (fn (elem, result) -> elem::"."::result)
                               [main_name] unique_path_dir),
                flatten (up_to_unique_dir
