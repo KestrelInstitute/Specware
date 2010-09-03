@@ -70,15 +70,21 @@ spec
      | Lambda ([(RecordPat([("1", VarPat(v1 as (vn1, srt1), _)), ("2", VarPat(v2 as (vn2, srt2), _))], _),
 		 Fun(Bool true, _, _), bod)], _)
        ->
-       if (embed? Record arg) && countVarRefs(bod, v1) <= 1 && countVarRefs(bod, v2) <= 1 
+       % let _ = writeLine("mkLet: "^printTerm arg^"\n"^printTerm bod) in
+       if (embed? Record arg)
+         && ((countVarRefs(bod, v1) <= 1 && countVarRefs(bod, v2) <= 1)
+             || (simpleTerm? arg && termSize arg <= termSubstSizeLimit)) 
 	 then 
 	   let Record([("1", arg1), ("2", arg2)], _) = arg in
            substitute(bod, [(v1, arg1), (v2, arg2)])
          else
-	   mkBind(Forall, [v1, v2], mkSimpImplies(mkEquality(mkProduct[srt1, srt2],
-                                                             mkTuple[mkVar v1, mkVar v2],
-                                                             arg),
-                                                  bod))
+           let v1' = (vn1^"__1", srt1) in
+           let v2' = (vn2^"__1", srt2) in
+           let sb = [(v1, mkVar v1'), (v2, mkVar v2')] in
+	   mkBind(Forall, [v1', v2'], mkSimpImplies(mkEquality(mkProduct[srt1, srt2],
+                                                               mkTuple[mkVar v1', mkVar v2'],
+                                                               arg),
+                                                  substitute(bod, sb)))
        
      | _ -> mkApply(fntm, arg)
 
@@ -235,7 +241,7 @@ spec
      % let _ = writeLine(printTerm term) in
      % let _ = app (fn d -> writeLine(printDecl d)) decls in
      let cterm = foldl insert term decls in
-     % let _ = writeLine("Simplifying "^printTerm term^"\nto\n"^printTerm(simplify spc cterm)) in
+     % let _ = writeLine("Simplifying "^printTerm cterm^"\nto\n"^printTerm(simplify spc cterm)) in
      case simplifyOblig spc cterm term of
        | Fun(Bool true, _, _) ->
          (triv_count_ref := !triv_count_ref + 1;
@@ -343,6 +349,7 @@ spec
         let tcc = <= (tcc, gamma, M, boolSort, tau)    in
         tcc
       | The(v as (_, srt), body, _) ->
+        % let _ = writeLine("The_oblig:\n"^printTerm(mkBind(Exists1, [v], body))) in
         let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         let gamma = insert (v, gamma) in
         let tcc = (tcc, gamma) |- body ?? boolSort  in
@@ -639,7 +646,8 @@ spec
        of Subsort(tau2, pred, _) -> 
 	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype1") in
           returnPatternRec(pairs, gamma, M, tau2, sigma1)
-	| _ -> 
+	| _ ->
+     % let _ = writeLine("returnPattern:\n"^printSort sigma1) in
      case sigma1 
        of Subsort(sigma2, pred, _) -> 
 	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype2") in
