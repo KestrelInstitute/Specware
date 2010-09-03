@@ -77,7 +77,7 @@ Haskell qualifying spec
   op uidToHaskellNames ({path, hashSuffix=_}: UnitId, slicing?: Bool,
                        {path=top_path, hashSuffix=_}: UnitId): String * String =
    let device? = deviceString? (if slicing? then head top_path else head path) in
-   let main_name = haskellName(last path) in
+   let main_name = last path in
    let path_dir = butLast path in 
    let (full_name, main_path) =
        if slicing?
@@ -94,13 +94,13 @@ Haskell qualifying spec
               let up_to_unique_dir = top_haskell_dir ++ (if par_num = 0 then [] else [par_dir^"/"]) in
               (flatten((if par_num = 0 then [] else[par_dir^"."])
                          ++ foldr (fn (elem, result) -> elem::"."::result)
-                              [main_name] unique_path_dir),
+                              [haskellName main_name] unique_path_dir),
                flatten (up_to_unique_dir
                          ++ foldr (fn (elem, result) -> elem::"/"::result)
-                              [main_name] unique_path_dir))
+                              [haskellName main_name] unique_path_dir))
          else (main_name,
                flatten (foldr (fn (elem, result) -> "/"::elem::result)
-                         ["/Haskell/", main_name]
+                         ["/Haskell/", haskellName main_name]
                          (if device? then tail path_dir else path_dir)))
    in
    (full_name,
