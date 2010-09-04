@@ -83,7 +83,7 @@ spec
 	case needsCoercion?(ty, rm_ty, coercions, spc) of
           | Some(toSuper?, tb) ->
             (case tm of
-              | Fun(Nat i, _, a) -> Fun(Nat i, ty, a)
+              | Fun(Nat i, _, a) | equalType?(tb.supertype, intSort) -> Fun(Nat i, ty, a)
               | _ -> if toSuper? then coerceToSuper(n_tm, tb) else coerceToSub(n_tm, tb))
           | None ->
         if simpleTerm n_tm then         % Var or Op
@@ -241,7 +241,8 @@ spec
            (true, None) row)
       | Let(_, x, _) -> checkCoercions1(x, coercions)
       | IfThenElse(_, x, y, _) -> checkCoercions2(checkCoercions1(x, coercions), y, coercions)
-      | _ -> (overloadedTerm? tm, None)
+      | Fun(Nat _, _, _)  -> (true, None)
+      | _ -> (false, None)
 
   op checkCoercions2(result: Bool * Option(TypeCoercionInfo * MS.Term), tm: MS.Term, coercions: TypeCoercionTable)
        : Bool * Option(TypeCoercionInfo * MS.Term) =
@@ -286,14 +287,15 @@ spec
           let rm_ty = inferType(spc, tm) in
           let tm = mapSubTerms(tm, target_ty) in
           liftCoercion (tm, rm_ty, target_ty)
-       def maybeCancelCoercions(f, x, tm) =
+       def maybeCancelCoercions(f, x, tm, subtype) =
+         % let _ = writeLine("mce "^printQualifiedId subtype^": "^printTerm tm) in
          case x of
            | Apply(f1, x1, _) | equalTerm?(f, f1) -> x1
            | Apply(Fun(Op(Qualified("Integer", "-"), fx), _, _),
                    Record([("1", t1), ("2", t2)], _), _)
                | doMinus? ->
-             let nt1 = maybeCancelCoercions(f, t1, t1) in
-             let nt2 = maybeCancelCoercions(f, t2, t2) in
+             let nt1 = maybeCancelCoercions(f, t1, t1, subtype) in
+             let nt2 = maybeCancelCoercions(f, t2, t2, subtype) in
              let f_type = inferType(spc, f) in
              %% The id call means we get the correct obligation but it disappears in the final translation
              if ~(equalTerm?(t1, nt1)) && ~(equalTerm?(t2, nt2))
@@ -302,21 +304,21 @@ spec
                                              mkArrow(mkProduct[natSort, natSort], intSort)),
                                    [nt1, nt2]))
                else tm
-           | Fun(Nat i, _, _) -> mkNat i
+           | Fun(Nat i, _, _) | subtype = Qualified("Nat", "Nat") -> mkNat i
            | _ -> tm
        def liftCoercion (tm, rm_ty, target_ty) =
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort rm_ty ^" -> "^ printSort target_ty ^"\n ") in
         case tm of
           | Apply(f as Fun(Op(Qualified(qual, idn), fx), f_ty, _), x, a) ->
-            % let _ = writeLine("lift?: " ^ printTerm tm ^ " with qual: "^qual) in
+            % let _ = writeLine("lift?: " ^ printTerm tm) in
             (case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSuper))
                      coercions of
-               | Some tb -> maybeCancelCoercions(tb.coerceToSub, x, tm)
+               | Some tb -> maybeCancelCoercions(tb.coerceToSub, x, tm, tb.subtype)
                | None ->
              case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSub))
                      coercions of
                | Some tb ->
-                 let result = maybeCancelCoercions(tb.coerceToSuper, x, tm) in
+                 let result = maybeCancelCoercions(tb.coerceToSuper, x, tm, tb.subtype) in
                  % let _ = writeLine("lift: "^printTerm tm^"\n -->  "^printTerm result) in
                  result
                | None ->
@@ -504,7 +506,7 @@ spec
   op  overloadedTerm?: MS.Term -> Boolean
   def overloadedTerm? tm =
     case tm of
-      | Fun(Nat _, _, _) -> true
+      %| Fun(Nat _, _, _) -> true
       | _ -> false
 
   op directlyImplementedSubsort?(ty: Sort, coercions: TypeCoercionTable): Boolean =
