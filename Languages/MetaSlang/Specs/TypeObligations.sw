@@ -508,40 +508,71 @@ spec
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term
                 -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
-   let dom = domain(getSpec gamma, tau) in
-   let rng = range (getSpec gamma, tau) in
+   let spc = getSpec gamma in
+   let dom = domain(spc, tau) in
+   let rng = range (spc, tau) in
    let casesDisjoint? = disjointMatches rules in
    let (tcc, _) = foldl (checkRule(dom, rng, optArg, casesDisjoint?)) (tcc, gamma) rules  in
-   let exhaustive? = exhaustivePatterns?(map (project 1) rules, dom, getSpec gamma) in
-   % let _ = writeLine("\nExh "^toString exhaustive?^": "^printSort dom) in
+   let exhaustive? = exhaustivePatterns?(map (project 1) rules, dom, spc) in
+   % let _ = writeLine("\nExh "^show exhaustive?^": "^printSort dom) in
    % let _ = app (fn (p,_,_) -> writeLine(printPattern p)) rules in
    if exhaustive? then tcc
    else
-   let rules = map (fn(p, c, b) -> ([p], c, mkTrue())) rules in
-   let x = case optArg of
-              | Some(Var (v,_)) -> v
-              | _ -> (freshName(gamma, "D"), dom)
+   let arg = case optArg of
+               | Some arg -> arg
+               | None -> mkVar(freshName(gamma, "D"), dom)
    in
-   let vs = [mkVar x] in
-   let (_, _, spc, _, Qualified(_, name), _, _, _, _) = gamma in
-   let context = {counter    = Ref 0,
-		  spc        = spc,
-		  funName    = name,
-		  errorIndex = Ref 0,
-		  term       = None}
+   let rule_terms_conds = map (fn(p, c, _) ->
+                               let (o_tm, conds) = patternToTermPlusConds p in
+                               (o_tm, if trueTerm? c then conds else c::conds))
+                            rules
    in
-   let trm = match(context, vs, rules, mkFalse(), mkFalse()) in
-   % let _ = writeLine("exh0?: "^printTerm trm^"\n"^printTerm (simplifyMatch trm)) in
-   (case simplifyMatch(trm)
-      of Fun(Bool true, _, _) -> tcc
-       | trm -> if generateExhaustivityConditions?
-	          then % let _ = writeLine("exh1?: "^printTerm trm) in
-                       let frm = case optArg of
-                                   | Some(Var (v,_)) -> trm
-                                   | _ -> mkBind(Forall, [x], trm)
-                       in
-                       addCondition(tcc, gamma, frm, "_exhaustive")
-                 else tcc)
+   let disjs = map (fn (o_tm, conds) ->
+                      case o_tm of
+                        | Some tm -> mkConj(mkEquality(dom, arg, tm) :: conds)
+                        | None -> falseTerm)
+                 rule_terms_conds
+   in
+   let disj_tm = mkOrs disjs in
+   % let _ = writeLine("exh0?: "^printTerm disj_tm) in
+   let vs = freeVars arg in
+   case simplify spc disj_tm of
+     | Fun(Bool true, _, _) -> tcc
+     | trm -> if generateExhaustivityConditions?
+                then % let _ = writeLine("exh1?: "^printTerm trm) in
+                  let frm = case optArg of
+                              | Some(Var (v,_)) -> trm
+                              | _ -> mkBind(Forall, vs, trm)
+                  in
+                  addCondition(tcc, gamma, frm, "_exhaustive")
+              else tcc
+
+
+%   let rules = map (fn(p, c, b) -> ([p], c, mkTrue())) rules in
+%    let x = case optArg of
+%               | Some(Var (v,_)) -> v
+%               | _ -> (freshName(gamma, "D"), dom)
+%    in
+%    let vs = [mkVar x] in
+%    let (_, _, spc, _, Qualified(_, name), _, _, _, _) = gamma in
+%    let context = {counter    = Ref 0,
+% 		  spc        = spc,
+% 		  funName    = name,
+% 		  errorIndex = Ref 0,
+% 		  term       = None}
+%    in
+%    let trm = match(context, vs, rules, mkFalse(), mkFalse()) in
+%     let _ = writeLine("exh0?: "^printTerm trm^"\n"^printTerm (simplifyMatch trm)) in
+%    (case simplifyMatch(trm)
+%       of Fun(Bool true, _, _) -> tcc
+%        | trm -> if generateExhaustivityConditions?
+% 	          then % let _ = writeLine("exh1?: "^printTerm trm) in
+%                        let frm = case optArg of
+%                                    | Some(Var (v,_)) -> trm
+%                                    | _ -> mkBind(Forall, [x], trm)
+%                        in
+%                        addCondition(tcc, gamma, frm, "_exhaustive")
+%                  else tcc)
 
  op  useNameFrom: Gamma * Option MS.Term * String -> String
  def useNameFrom(gamma, optTm, default) =
