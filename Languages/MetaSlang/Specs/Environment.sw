@@ -481,11 +481,10 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      (nameList,names)
 
 
- op normalizeLambda(term: MS.Term, usedNames: StringSet.Set, spc: Spec): MS.Term =
+ op normalizeLambda(term: MS.Term, dom: Sort, ran: Sort, usedNames: StringSet.Set, spc: Spec): MS.Term =
    case term of
      | Lambda((pat1,_,_)::(_::_),_) ->
-       (let dom = patternSort pat1 in
-        case productOpt(spc, dom) of
+       (case productOpt(spc, dom) of
           | None ->
             let (name,_) = freshName("xx",usedNames) in
             let x = (name, dom) in
@@ -500,7 +499,11 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
                                  StringSet.add(usedNames, vn))
                           usedNames (patVars pat)
         in
-        Lambda([(pat, cnd, normalizeLambda(bod, usedNames, spc))], pos)
+        let bod = case arrowOpt(spc, ran) of
+                    | None -> bod
+                    | Some(dom1, ran1) -> normalizeLambda(bod, dom1, ran1, usedNames, spc)
+        in
+        Lambda([(pat, cnd, bod)], pos)
       | _ -> term
 
  op normalizeTopLevelLambdas(spc: Spec): Spec =
@@ -512,7 +515,10 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
                              map (fn dfn ->
                                     let pos = termAnn dfn in
                                     let (tvs, srt, term) = unpackTerm dfn in
-                                    let tm = normalizeLambda(term, empty, spc) in
+                                    case arrowOpt(spc, srt) of
+                                      | None -> dfn
+                                      | Some(dom, ran) ->
+                                    let tm = normalizeLambda(term, dom, ran, empty, spc) in
                                     maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
                                old_defs
                          in
