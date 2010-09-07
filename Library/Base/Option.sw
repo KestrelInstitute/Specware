@@ -27,10 +27,6 @@ op [a] compare (comp: a * a -> Comparison) (o1: Option a, o2: Option a): Compari
     | (Some _,None)   -> Greater
     | (None,  None)   -> Equal
 
-proof Isa compare_Obligation_exhaustive
-  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
-end-proof
-
 % lift function to also map extra element:
 
 op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
