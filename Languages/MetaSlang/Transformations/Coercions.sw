@@ -83,7 +83,7 @@ spec
 	case needsCoercion?(ty, rm_ty, coercions, spc) of
           | Some(toSuper?, tb) ->
             (case tm of
-              | Fun(Nat i, _, a) | equalType?(tb.supertype, intSort) -> Fun(Nat i, ty, a)
+              | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
               | _ -> if toSuper? then coerceToSuper(n_tm, tb) else coerceToSub(n_tm, tb))
           | None ->
         if simpleTerm n_tm then         % Var or Op
@@ -294,11 +294,13 @@ spec
            | Apply(Fun(Op(Qualified("Integer", "-"), fx), _, _),
                    Record([("1", t1), ("2", t2)], _), _)
                | doMinus? ->
+             % let _ = writeLine("minus"^printQualifiedId subtype^": "^printTerm x) in
              let nt1 = maybeCancelCoercions(f, t1, t1, subtype) in
              let nt2 = maybeCancelCoercions(f, t2, t2, subtype) in
+             % let _ = writeLine(printTerm nt1^" - "^printTerm nt2) in
              let f_type = inferType(spc, f) in
              %% The id call means we get the correct obligation but it disappears in the final translation
-             if ~(equalTerm?(t1, nt1)) && ~(equalTerm?(t2, nt2))
+             if t1 ~= nt1 && t2 ~= nt2
                then mkApply(mkOp(Qualified("Function", "id"), mkArrow(range(spc, f_type), natSort)),
                             mkAppl(mkInfixOp(Qualified("Integer", "-"), fx,
                                              mkArrow(mkProduct[natSort, natSort], intSort)),
@@ -445,7 +447,8 @@ spec
               mapTerm(tm, inferType(spc, tm))
         def mapTerm(tm, target_ty) =
           case tm of
-            | Fun(Nat i, _, a) -> Fun(Nat i, target_ty, a) 
+            | Fun(Nat i, _, a) ->
+              Fun(Nat i, target_ty, a) 
             | _ ->
           mapSubTerms(tm, target_ty)
           
@@ -506,7 +509,7 @@ spec
   op  overloadedTerm?: MS.Term -> Boolean
   def overloadedTerm? tm =
     case tm of
-      %| Fun(Nat _, _, _) -> true
+      | Fun(Nat _, _, _) -> true
       | _ -> false
 
   op directlyImplementedSubsort?(ty: Sort, coercions: TypeCoercionTable): Boolean =
