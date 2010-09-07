@@ -4844,7 +4844,7 @@ op [a] compare
      | (_,       []      ) -> Greater
 
 proof Isa compare_Obligation_exhaustive
-  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
+  by (cases l1, auto, cases l2, auto)
 end-proof
 
 % lift isomorphism to lists, element-wise:
