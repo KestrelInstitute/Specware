@@ -5025,18 +5025,13 @@ defs List__permutationOf_def:
           List__permutation_p prm 
             \<and> (prm equiLong l1 \<and> List__permute(l1, prm) = l2))"
 theorem List__compare_Obligation_exhaustive: 
-  "\<lbrakk>(pV1::'a list) = fst (D::'a list \<times> 'a list); 
-    (pV2::'a list) = snd D\<rbrakk> \<Longrightarrow> 
-   (if case pV1 of Cons _ _ \<Rightarrow> True
-                 | _ \<Rightarrow> False then 
-      case pV2 of Cons _ _ \<Rightarrow> True
-                | _ \<Rightarrow> False
-    else 
-      case pV1 of Nil \<Rightarrow> True
-                | _ \<Rightarrow> False) 
-     \<or> (case pV2 of Nil \<Rightarrow> True
-                  | _ \<Rightarrow> False)"
-  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
+  "(\<exists>(hd1::'a) (tl1::'a list) (hd2::'a) (tl2::'a list). 
+      ((l1::'a list), (l2::'a list)) 
+        = (Cons hd1 tl1, Cons hd2 tl2)) 
+     \<or> ((l1, l2) = ([], []) 
+      \<or> ((\<exists>(zz__0::'a list). (l1, l2) = ([], zz__0)) 
+       \<or> (\<exists>(zz__0::'a list). (l1, l2) = (zz__0, []))))"
+  by (cases l1, auto, cases l2, auto)
 fun List__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                       'a list \<times> 'a list \<Rightarrow> Compare__Comparison"
 where

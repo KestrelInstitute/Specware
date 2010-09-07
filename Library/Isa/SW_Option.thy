@@ -10,22 +10,12 @@ defs Option__some_p_def [simp]: "Option__some_p x \<equiv> (x \<noteq> None)"
 consts Option__none_p :: "'a option \<Rightarrow> bool"
 defs Option__none_p_def [simp]: "Option__none_p x \<equiv> (x = None)"
 theorem Option__compare_Obligation_exhaustive: 
-  "\<lbrakk>(pV1::'a option) = fst (D::'a option \<times> 'a option); 
-    (pV2::'a option) = snd D\<rbrakk> \<Longrightarrow> 
-   if case pV1 of Some _ \<Rightarrow> True
-                | _ \<Rightarrow> False then 
-     (case pV2 of Some _ \<Rightarrow> True
-                | _ \<Rightarrow> False) 
-       \<or> (case pV2 of None \<Rightarrow> True
-                    | _ \<Rightarrow> False)
-   else 
-     (case pV1 of None \<Rightarrow> True
-                | _ \<Rightarrow> False) 
-       \<and> ((case pV2 of Some _ \<Rightarrow> True
-                     | _ \<Rightarrow> False) 
-            \<or> (case pV2 of None \<Rightarrow> True
-                         | _ \<Rightarrow> False))"
-  by (cases D, cases pV1, cases pV2, auto, cases pV2, auto)
+  "(\<exists>(x::'a) (y::'a). 
+      ((o1::'a option), (o2::'a option)) = (Some x, Some y)) 
+     \<or> ((\<exists>(zz__0::'a). (o1, o2) = (None, Some zz__0)) 
+      \<or> ((\<exists>(zz__0::'a). (o1, o2) = (Some zz__0, None)) 
+       \<or> (o1, o2) = (None, None)))"
+  by auto
 fun Option__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                         'a option \<times> 'a option \<Rightarrow> Compare__Comparison"
 where

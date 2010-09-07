@@ -68,10 +68,10 @@ defs Boolean__show_def:
   "Boolean__show x \<equiv> (if x then ''true'' else ''false'')"
 theorem Nat__digitToString_Obligation_exhaustive: 
   "\<lbrakk>(d::nat) < 10\<rbrakk> \<Longrightarrow> 
-   0 = d 
-     \<or> (1 = d 
-      \<or> (2 = d 
-       \<or> (3 = d \<or> (4 = d \<or> (5 = d \<or> (6 = d \<or> (7 = d \<or> (8 = d \<or> 9 = d))))))))"
+   d = 0 
+     \<or> (d = 1 
+      \<or> (d = 2 
+       \<or> (d = 3 \<or> (d = 4 \<or> (d = 5 \<or> (d = 6 \<or> (d = 7 \<or> (d = 8 \<or> d = 9))))))))"
   by auto
 fun Nat__digitToString :: "nat \<Rightarrow> string"
 where
@@ -309,10 +309,9 @@ where
    "Option__show shw None = ''None''"
  | "Option__show shw (Some x) = (''(Some '' @ shw x) @ '')''"
 theorem List__show_Obligation_exhaustive: 
-  "(case (l::string list) of Nil \<Rightarrow> True
-                           | _ \<Rightarrow> False) 
-     \<or> (case l of Cons _ _ \<Rightarrow> True
-                | _ \<Rightarrow> False)"
+  "(l::string list) = [] 
+     \<or> ((\<exists>(hd__v::string). l = [hd__v]) 
+      \<or> (\<exists>(hd_1::string) (tl__v::string list). l = Cons hd_1 tl__v))"
   by (cases l, auto)
 fun List__show :: "string \<Rightarrow> string list \<Rightarrow> string"
 where
