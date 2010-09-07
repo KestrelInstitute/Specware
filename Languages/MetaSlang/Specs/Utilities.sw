@@ -60,57 +60,50 @@ Utilities qualifying spec
 %	      | Some(trm) -> 
 %	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
-	 
- op  patternToTermPlusConds : Pattern -> (Option MS.Term * List MS.Term)
- def patternToTermPlusConds(pat) = 
-     case pat
-       of EmbedPat(con,None,srt,a) -> 
-          (Some(Fun(Embed(con,false),srt,a)),[])
-        | EmbedPat(con,Some p,srt,a) -> 
-          (case patternToTermPlusConds p
-             of (None,conds) -> (None,conds)
-	      | (Some trm,conds) -> 
-		let srt1 = patternSort p in
-		(Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)),conds))
-        | RecordPat(fields,a) -> 
-	  let
-	     def loop(new,old,old_conds) = 
-	         case new
-                   of [] -> (Some(Record(reverse old,a)),old_conds)
-	            | (l,p)::new -> 
-	         case patternToTermPlusConds(p)
-	           of (None,conds) -> (None,old_conds++conds)
-	            | (Some trm,conds) -> 
-	              loop(new,Cons((l,trm),old),old_conds++conds)
-          in
-          loop(fields,[],[])
-        | NatPat(i, _) -> (Some(mkNat i),[])
-        | BoolPat(b, _) -> (Some(mkBool b),[])
-        | StringPat(s, _) -> (Some(mkString s),[])
-        | CharPat(c, _) -> (Some(mkChar c),[])
-        | VarPat((v,srt), a) -> (Some(Var((v,srt), a)),[])
-        | WildPat(srt,_) -> (None,[])
-        | QuotientPat(pat,qid,_)  -> 
-	  (case patternToTermPlusConds pat of
-             | (None,   conds) -> (None,conds)
-             | (Some t, conds) -> (Some(mkQuotient(t,qid,termSort t)), conds))
-        | RestrictedPat(pat,cond,_)  ->
-	  let (p,conds) = patternToTermPlusConds pat in (p,Cons(cond,conds))
-	| AliasPat(p1,p2,_) -> 
-	  (case patternToTermPlusConds(p2) 
-             of (None,conds2) ->
-	        let (ot1,conds1) = patternToTermPlusConds p1 in
-		(ot1,conds1++conds2)
-	      | (Some t2,conds2) -> 
-		(case patternToTermPlusConds p1 of
-		   | (None,conds1) ->
-		     (Some t2,conds1++conds2)
-		   | (Some t1,conds1) ->
-		     (Some t2,[mkEquality(termSort t1,t1,t2)]++conds1++conds2)))
 
+ op  patternToTermPlusExConds(pat: Pattern): MS.Term * List MS.Term * List Var =
+   let wild_num = Ref 0 in
+   let def patToTPV pat =
+         case pat
+           of EmbedPat(con, None, srt, a) -> 
+              (Fun(Embed(con, false), srt, a), [], [])
+            | EmbedPat(con, Some p, srt, a) -> 
+              let (trm, conds, vs) = patToTPV p in
+              let srt1 = patternSort p in
+              (Apply(Fun(Embed(con, true), Arrow(srt1, srt, a), a), trm, a), conds, vs)
+            | RecordPat(fields, a) -> 
+              let
+                 def loop(new, old, old_conds, old_vs) = 
+                     case new
+                       of [] -> (Record(reverse old, a), old_conds, old_vs)
+                        | (l, p)::new -> 
+                     let (trm, conds, vs) = patToTPV p in
+                     loop(new, (l, trm)::old, old_conds++conds, old_vs++vs)
+              in
+              loop(fields, [], [], [])
+            | NatPat(i, _) -> (mkNat i, [], [])
+            | BoolPat(b, _) -> (mkBool b, [], [])
+            | StringPat(s, _) -> (mkString s, [], [])
+            | CharPat(c, _) -> (mkChar c, [], [])
+            | VarPat(v, a) -> (Var(v, a), [], [v])
+            | WildPat(srt, _) ->
+              let gen_var = ("zz__" ^ show(!wild_num), srt) in
+              (wild_num := !wild_num + 1;
+               (mkVar gen_var, [], [gen_var]))
+            | QuotientPat(pat, qid, _)  -> 
+              let (t, conds, vs) = patToTPV pat in
+              (mkQuotient(t, qid, termSort t), conds, vs)
+            | RestrictedPat(pat, cond, _)  ->
+              let (p, conds, vs) = patToTPV pat in (p, cond::conds, vs)
+            | AliasPat(p1, p2, _) -> 
+              let (t2, conds2, vs2) = patToTPV p2 in
+              let (t1, conds1, vs1) = patToTPV p1 in
+              (t2, [mkEquality(termSort t1, t1, t2)]++conds1++conds2, vs1++vs2)
+   in
+   patToTPV pat
 
  op isFree : Var * MS.Term -> Boolean
- def isFree (v,term) = 
+ def isFree (v, term) = 
    case term of
      | Var(w,_)               -> v = w
      | Apply(M1,M2,_)         -> isFree(v,M1) || isFree(v,M2)
@@ -1001,7 +994,7 @@ Utilities qualifying spec
   %% Given a universal quantification return list of quantified variables, conditions and rhs
   op  forallComponents: MS.Term -> List Var * List MS.Term * MS.Term
   def forallComponents t =
-    %let _ = writeLine("forallComponents:\n"^printTerm t) in
+    % let _ = writeLine("forallComponents:\n"^printTerm t) in
     let def aux(t, sbst, freeNames) =
           case t of
             | Bind(Forall, vs, bod, _) ->
@@ -1017,8 +1010,8 @@ Utilities qualifying spec
      in
      let freeNames = StringSet.fromList(varNames(freeVars t)) in
      let result as (vs, condns, bod) = aux(t, [], freeNames) in
-     %let _ = writeLine("Vars: "^ anyToString(map (fn (x,_) -> x) vs)) in
-     %let _ = writeLine("Conds: "^foldl (fn (s,t) -> s ^" "^printTerm t) "" condns) in
+     % let _ = writeLine("Vars: "^ anyToString(map (fn (x,_) -> x) vs)) in
+     % let _ = writeLine("Conds: "^foldl (fn (s,t) -> s ^" "^printTerm t) "" condns) in
      result
 
  op traceRemoveExcessAssumptions?: Bool = false

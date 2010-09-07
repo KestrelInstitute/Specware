@@ -522,16 +522,16 @@ spec
                | Some arg -> arg
                | None -> mkVar(freshName(gamma, "D"), dom)
    in
-   let rule_terms_conds = map (fn(p, c, _) ->
-                               let (o_tm, conds) = patternToTermPlusConds p in
-                               (o_tm, if trueTerm? c then conds else c::conds))
-                            rules
-   in
-   let disjs = map (fn (o_tm, conds) ->
-                      case o_tm of
-                        | Some tm -> mkConj(mkEquality(dom, arg, tm) :: conds)
-                        | None -> falseTerm)
-                 rule_terms_conds
+   let disjs = map (fn(p, c, _) ->
+                      let (tm, conds, vs) = patternToTermPlusExConds p in
+                      let conds = if trueTerm? c then conds
+                                  else
+                                    c::conds
+                      in
+                      let condn = mkConj(mkEquality(dom, arg, tm) :: conds) in
+                      if vs = [] then condn
+                        else mkBind(Exists, vs, condn))
+                rules
    in
    let disj_tm = mkOrs disjs in
    % let _ = writeLine("exh0?: "^printTerm disj_tm) in
@@ -638,16 +638,13 @@ spec
 	   let v1 = Var(v1n, vpos) in
 	   let v2n = (vn^"__2", base_type) in % was type of v, but should be base type of Q
 	   let v2 = Var(v2n, vpos) in
-	   let (o_tm, conds) = patternToTermPlusConds pat in
-	   let mainCond = case o_tm of
-	                    | None -> []
-	                    | Some tm -> [mkEquality(termSort arg, arg, tm)]
-	   in
+	   let (tm, conds, vs) = patternToTermPlusExConds pat in
+	   let mainCond = [mkEquality(termSort arg, arg, tm)] in
 	   let all_conds = mainCond ++ conds in
 	   let v1Conds = map (fn c -> substitute(c, [(v, v1)])) all_conds in
 	   let v2Conds = map (fn c -> substitute(c, [(v, v2)])) all_conds in
-                      let body_type = termSort body in
-	   let quotCond = mkBind(Forall, [v1n, v2n],
+           let body_type = termSort body in
+	   let quotCond = mkBind(Forall, [v1n, v2n]++vs,
 				 mkSimpImplies(mkConj(v1Conds ++ v2Conds),
                                                mkEquality(body_type, % was type of v, but should be type of body
                                                           substitute(body, [(v, v1)]),
@@ -792,9 +789,9 @@ spec
      else
      let fn_var = (fn_nm, op_ty) in
      let fn_var_tm = mkVar fn_var in
-     let (equality, conds) = mkCondEqualityFromLambdaDef (spc, fn_var_tm, body) in
+     let (equality, conds, faVars) = mkCondEqualityFromLambdaDef (spc, fn_var_tm, body) in
      let cond_equality = mkSimpImplies(mkSimpConj conds,equality) in
-     let faVars        = delete fn_var (freeVars cond_equality) in
+     % let faVars        = delete fn_var (freeVars cond_equality) in
      let cond_equality = mapTerm(fn t -> case t of
                                      | Fun(Op(qid,_), _,_) | qid = op_qid -> fn_var_tm
                                      | _ -> t,

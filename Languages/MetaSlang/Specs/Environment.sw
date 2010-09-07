@@ -441,23 +441,21 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      | Some (TyVar _, _) -> true
      | _                -> false
 
- op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term * List MS.Term =
+ op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term * List MS.Term * List Var =
    case rhs_tm of
      | Lambda ([(pat, _, body)], _) ->
-       (case patternToTermPlusConds(pat) of
-          | (Some arg_tm, conds) ->
-            let (eql, r_conds) = mkCondEqualityFromLambdaDef(spc, mkApply(lhs_tm, arg_tm), body) in
-            (eql, conds ++ r_conds)
-          | (None, conds) -> (mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm), conds))
-     | _ -> (mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm), [])
+       let (arg_tm, conds, vs) = patternToTermPlusExConds(pat) in
+       let (eql, r_conds, r_vs) = mkCondEqualityFromLambdaDef(spc, mkApply(lhs_tm, arg_tm), body) in
+       (eql, conds ++ r_conds, vs ++ r_vs)
+     | _ -> (mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm), [], [])
 
  op defToTheorem(spc: Spec, ty: Sort, name: QualifiedId, term: MS.Term): MS.Term =
-    let (new_equality, conds) = mkCondEqualityFromLambdaDef (spc, mkOp(name, ty), term) in
+    let (new_equality, conds, faVars) = mkCondEqualityFromLambdaDef (spc, mkOp(name, ty), term) in
     % let _ = writeLine("new_eq: "^printTerm new_equality) in
     let cond_equality = mkSimpImplies(mkSimpConj conds, new_equality) in
-    let faVars       = freeVars cond_equality in
+    let faVars        = freeVars cond_equality in
     let cond_equality = mkBind (Forall, faVars, cond_equality) in
-    let eqltyWithPos = withAnnT (cond_equality, termAnn term) in
+    let eqltyWithPos  = withAnnT (cond_equality, termAnn term) in
     eqltyWithPos
 
 (*
