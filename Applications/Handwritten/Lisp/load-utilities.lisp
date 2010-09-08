@@ -325,9 +325,10 @@
   (ensure-final-slash
    (substitute #\/ #\\
                #+(or win32 winnt mswindows)
-               (or (getenv "TEMP") (getenv "TMP")
-                   #+allegro
-                   (namestring (SYSTEM:temporary-directory)))
+               (if cygwin? "/tmp/"
+                   (or (getenv "TEMP") (getenv "TMP")
+                       #+allegro
+                       (namestring (SYSTEM:temporary-directory))))
                #+(and (not unix) Lispworks) (namestring System::*temp-directory*)
                #+(and (not win32) unix) "/tmp/"
                )))
@@ -337,7 +338,7 @@
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (substitute #\/ #\\
-               (if System-Spec::msWindowsSystem?
+               (if (and System-Spec::msWindowsSystem? (not cygwin?))
                    (or (getenv "TEMP") (getenv "TMP")
                        #+allegro
                        (namestring (SYSTEM:temporary-directory)))
