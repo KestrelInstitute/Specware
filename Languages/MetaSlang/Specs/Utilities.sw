@@ -939,14 +939,14 @@ Utilities qualifying spec
    case t1 of
      | Fun(Bool true,_,_)  -> t2
      | Fun(Bool false,_,_) -> mkTrue() % was mkFalse() !!
-     | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
-       mkSimpImplies(mkAnd(t1,p1), q1)
      | _ -> 
        case t2 of
         % We can't optimize (x => true) to true, as one might expect from logic.
         % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
          | Fun(Bool true,_,_) | sideEffectFree t1 -> mkTrue() 
 	 | Fun(Bool false,_,_) -> mkNot t1
+         | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
+           mkSimpImplies(mkAnd(t1,p1), q1)
 	 | _ -> mkImplies (t1,t2)
 
  op  mkSimpIff: MS.Term * MS.Term -> MS.Term
