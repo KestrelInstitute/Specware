@@ -71,7 +71,8 @@ spec
 		 Fun(Bool true, _, _), bod)], _)
        ->
        % let _ = writeLine("mkLet: "^printTerm arg^"\n"^printTerm bod) in
-       if (embed? Record arg)
+       let result = 
+       if embed? Record arg
          && ((countVarRefs(bod, v1) <= 1 && countVarRefs(bod, v2) <= 1)
              || (simpleTerm? arg && termSize arg <= termSubstSizeLimit)) 
 	 then 
@@ -85,7 +86,9 @@ spec
                                                                mkTuple[mkVar v1', mkVar v2'],
                                                                arg),
                                                   substitute(bod, sb)))
-       
+       in
+       % let _ = writeLine(" =\n"^printTerm result) in
+       result
      | _ -> mkApply(fntm, arg)
 
  op traceAssert?: Bool = false

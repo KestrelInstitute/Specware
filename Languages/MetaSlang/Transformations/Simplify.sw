@@ -191,7 +191,8 @@ spec
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
-     % let _ = if traceSimplify? then writeLine("s1: "^printTerm term) else () in
+     % let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
+     let result =
      case tryEvalOne spc term of
        | Some cterm -> cterm
        | _ ->
@@ -327,6 +328,10 @@ spec
      let term = removeUnnecessaryVariable spc term in
      let term = tupleInstantiate spc term in
      term
+    in
+    % let _ = if traceSimplify? && ~ (equalTerm?(term, result))
+    %           then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
+    result
 
   op countDeReferencesIn(v: Var, tms: List MS.Term): Nat =
     foldl (fn (i,t) ->
