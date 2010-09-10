@@ -1,3 +1,4 @@
+
 (* Implements transform command *)
 SpecCalc qualifying
 spec
@@ -12,6 +13,7 @@ spec
       | Qual(_,_,p) -> p
       | Item(_,_,p) -> p
       | Tuple(_,p) -> p
+      | Record(_,p) -> p
       | Apply(_,_,p) -> p
       | ApplyOptions(_,_,p) -> p
 
@@ -31,23 +33,33 @@ spec
        | _  -> raise (TypeCheck (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
 
-  op makeQID(itm: TransformExpr): SpecCalc.Env QualifiedId =
+  op extractQId(itm: TransformExpr): SpecCalc.Env QualifiedId =
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))
       | Name(n,_)   -> return (mkUnQualifiedId(n))
       | _ -> raise (TypeCheck (posOf itm, "Name expected."))
 
+  op extractNat(itm: TransformExpr): SpecCalc.Env Nat =
+    case itm of
+      | Number(n,_) -> return n
+      | _ -> raise (TypeCheck (posOf itm, "Number expected."))
+
+  op extractName(itm: TransformExpr): SpecCalc.Env String =
+    case itm of
+      | Name(n,_) -> return n
+      | _ -> raise (TypeCheck (posOf itm, "Name expected."))
+
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
     case trans of
-      | Item("lr",thm,_) -> {qid <- makeQID thm;
+      | Item("lr",thm,_) -> {qid <- extractQId thm;
                              return (LeftToRight qid)}
-      | Item("rl",thm,_) -> {qid <- makeQID thm;
+      | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (RightToLeft qid)}
-      | Item("fold",opid,_) -> {qid <- makeQID opid;
+      | Item("fold",opid,_) -> {qid <- extractQId opid;
                                 return (Fold qid)}
-      | Item("unfold",opid,_) -> {qid <- makeQID opid;
+      | Item("unfold",opid,_) -> {qid <- extractQId opid;
                                   return (Unfold qid)}
-      | Item("rewrite",opid,_) -> {qid <- makeQID opid;
+      | Item("rewrite",opid,_) -> {qid <- extractQId opid;
                                    return (Rewrite qid)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
 
@@ -92,13 +104,13 @@ spec
       | Name("partial-eval",_) -> return PartialEval
       | Name("AbstractCommonExprs",_) -> return AbstractCommonExpressions
       | Name("AbstractCommonSubExprs",_) -> return AbstractCommonExpressions
-      | Item("lr",thm,_) -> {qid <- makeQID thm;
+      | Item("lr",thm,_) -> {qid <- extractQId thm;
                              return (Apply([LeftToRight qid]))}
-      | Item("rl",thm,_) -> {qid <- makeQID thm;
+      | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (Apply([RightToLeft qid]))}
-      | Item("fold",opid,_) -> {qid <- makeQID opid;
+      | Item("fold",opid,_) -> {qid <- extractQId opid;
                                 return (Apply([Fold qid]))}
-      | Item("unfold",opid,_) -> {qid <- makeQID opid;
+      | Item("unfold",opid,_) -> {qid <- extractQId opid;
                                   return (Apply([Unfold qid]))}
       | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
                                              return (Move moves)}
@@ -114,8 +126,8 @@ spec
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
       | Tuple ([iso,osi], _) ->
-        {iso_qid <- makeQID iso;
-         osi_qid <- makeQID osi;
+        {iso_qid <- extractQId iso;
+         osi_qid <- extractQId osi;
          return (iso_qid, osi_qid)}
       | _ -> raise (TypeCheck (posOf iso_tm, "Parenthesis expected"))
  
@@ -125,11 +137,57 @@ spec
       | (Tuple _) :: _ ->
         mapM extractIsoFromTuple iso_tms
       | [iso,osi] ->
-        {iso_qid <- makeQID iso;
-         osi_qid <- makeQID osi;
+        {iso_qid <- extractQId iso;
+         osi_qid <- extractQId osi;
          return [(iso_qid, osi_qid)]}
       | tm :: _ -> raise (TypeCheck (posOf tm, "Illegal isomorphism reference."))
-        
+
+  op findField(fld_name: String, val_prs: List(String * TransformExpr), pos: Position): SpecCalc.Env TransformExpr =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> return val
+      | None -> raise (TypeCheck (pos, "Missing field in addParameter: "^fld_name))
+
+  op findQId(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env QualifiedId =
+    {fld_val <- findField(fld_name, val_prs, pos);
+     extractQId fld_val}
+  
+  op findNat(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env Nat =
+    {fld_val <- findField(fld_name, val_prs, pos);
+     extractNat fld_val}
+
+  op findName(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env String =
+    {fld_val <- findField(fld_name, val_prs, pos);
+     extractName fld_val}
+
+  op findOptNat(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env(Option Nat) =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> {o_nat <- extractNat val;
+                         return(Some o_nat)}
+      | None -> return None
+
+  op findOptName(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env(Option String) =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> {o_nat <- extractName val;
+                         return(Some o_nat)}
+      | None -> return None
+
+  op findNatDefault(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position), default: Nat): SpecCalc.Env Nat =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> {o_nat <- extractNat val;
+                         return(o_nat)}
+      | None -> return default
+      
+  op getAddParameterFields(val_prs: List(String * TransformExpr) * Position)
+       : SpecCalc.Env(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedId * QualifiedId * Option Qualifier) =
+    {fun <- findQId("function", val_prs);
+     pos <- findNatDefault("parameter_position", val_prs, 99);
+     o_return_pos <- findOptNat("return_position", val_prs);
+     name <- findName("parameter_name", val_prs);
+     ty <- findQId("parameter_type", val_prs);
+     within <- findQId("top_function", val_prs);
+     val <- findQId("initial_value", val_prs);
+     o_qual <- findOptName("qualifier", val_prs);
+     return(fun, pos, o_return_pos, name, ty, within, val, o_qual)}
 
   op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
     foldrM (fn (top_result, sub_result) -> fn te ->
@@ -148,13 +206,16 @@ spec
                | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
                   return (Cons(IsoMorphism(iso_prs, [], Some qual), top_result), [])}
+               | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
+                 {fields <- getAddParameterFields rec_val_prs;
+                  return(AddParameter fields :: top_result, [])}
                | Item("at", loc, _) ->
-                 {qid <-  makeQID loc;
+                 {qid <-  extractQId loc;
                   return (Cons(At([Def qid], Steps sub_result),
                                top_result),
                           [])}
                | Apply(Name("at",_), locs,_) ->
-                 {qids <- mapM makeQID locs;
+                 {qids <- mapM extractQId locs;
                   return (Cons(At(map Def qids, Steps sub_result),
                                top_result),
                           [])}
