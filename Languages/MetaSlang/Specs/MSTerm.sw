@@ -103,6 +103,7 @@ MS qualifying spec
      | [t2] -> mkApply(t1, t2)
      | trm::rest -> mkAppl(t1, tms)
  def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              termAnn(t1))
+ op mkSortedTerm(tm: Term, ty: Sort): Term = SortedTerm(tm, ty, termAnn tm)
 
  %% Fun's
 
