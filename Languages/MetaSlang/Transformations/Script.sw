@@ -1,6 +1,6 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, CommonSubExpressions
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -25,7 +25,7 @@ spec
     | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String
 
   type Script =
-    | At (List Location \_times Script)
+    | At (List Location * Script)
     | Move (List Movement)
     | Steps List Script
     | Simplify (List RuleSpec)
@@ -33,12 +33,20 @@ spec
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
-    | IsoMorphism(List(QualifiedId \_times QualifiedId) \_times List RuleSpec \_times Option Qualifier)
+    | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
+      %%      function, position, return_position, name, type,         within,       value,        qualifier
+    | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedId * QualifiedId * Option Qualifier)
     | Trace Boolean
     | Print
 
  op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * List RuleSpec -> SpecCalc.Env Spec
  op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
+
+ op addParameter(spc: Spec, fun: QualifiedId, pos: Nat, o_return_pos: Option Nat, name: Id, ty: QualifiedId,
+                 within: QualifiedId, val: QualifiedId, o_qual: Option Qualifier): SpecCalc.Env Spec =
+   let _ = printScript(AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual)) in
+   %% Place holder
+   return spc
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
@@ -74,9 +82,9 @@ spec
 
  op ppScript(scr: Script): WadlerLindig.Pretty =
     case scr of
-      | Steps steps \_rightarrow
+      | Steps steps ->
         ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
-      | At(locs, scr) \_rightarrow
+      | At(locs, scr) ->
         ppIndent(ppConcat [ppString "at ", ppSep (ppString ", ") (map ppLoc locs), ppString ", ",
                            ppNewline,
                            ppScript scr])
@@ -97,7 +105,7 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | IsoMorphism(iso_qid_prs, rls, opt_qual) \_rightarrow
+      | IsoMorphism(iso_qid_prs, rls, opt_qual) ->
         ppConcat[ppString "isomorphism (",
                  ppSep(ppString ", ") (map (fn (iso, osi) ->
                                               ppConcat[ppString "(",
@@ -108,6 +116,24 @@ spec
                  ppString "), (",
                  ppSep(ppString ", ") (map ppRuleSpec rls),
                  ppString ")"]
+      | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) ->
+        ppConcat[ppString "addParameter {",
+                 ppNest 0 (ppSep(ppConcat[ppString ",", ppNewline])
+                             ([ppConcat[ppString "function: ", ppQid fun]]
+                              ++ (if pos = 99 then []
+                                    else [ppConcat[ppString "parameter_position: ", ppString(show pos)]])
+                              ++ (case o_return_pos of
+                                    | Some return_pos -> [ppConcat[ppString "return_position: ", ppString(show return_pos)]]
+                                    | None -> [])
+                              ++ [ppConcat[ppString "parameter_name: ", ppString name],
+                                  ppConcat[ppString "parameter_type: ", ppQid ty],
+                                  ppConcat[ppString "top_function: ", ppQid within],
+                                  ppConcat[ppString "default_value: ", ppQid val]]
+                              ++ (case o_qual of
+                                    | Some qual -> [ppConcat[ppString "qualifier: ", ppString qual]]
+                                    | None -> []))),
+                 ppString "}"]
+
       | Trace on_or_off ->
         ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
       | Print -> ppString "print"
@@ -139,22 +165,22 @@ spec
 
  op ruleConstructor(id: String): QualifiedId -> RuleSpec =
    case id of
-     | "fold" \_rightarrow mkFold
-     | "f" \_rightarrow mkFold
-     | "unfold" \_rightarrow mkUnfold
-     | "uf" \_rightarrow mkUnfold
-     | "rewrite" \_rightarrow mkRewrite
-     | "rw" \_rightarrow mkRewrite
-     | "lr" \_rightarrow mkLeftToRight
-     | "lefttoright" \_rightarrow mkLeftToRight
-     | "left-to-right" \_rightarrow mkLeftToRight
-     | "rl" \_rightarrow mkRightToLeft
-     | "righttoleft" \_rightarrow mkRightToLeft
-     | "right-to-left" \_rightarrow mkRightToLeft
-     | "alldefs" \_rightarrow mkAllDefs
+     | "fold" -> mkFold
+     | "f" -> mkFold
+     | "unfold" -> mkUnfold
+     | "uf" -> mkUnfold
+     | "rewrite" -> mkRewrite
+     | "rw" -> mkRewrite
+     | "lr" -> mkLeftToRight
+     | "lefttoright" -> mkLeftToRight
+     | "left-to-right" -> mkLeftToRight
+     | "rl" -> mkRightToLeft
+     | "righttoleft" -> mkRightToLeft
+     | "right-to-left" -> mkRightToLeft
+     | "alldefs" -> mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
- op  claimNameMatch: QualifiedId \_times QualifiedId -> Boolean
+ op  claimNameMatch: QualifiedId * QualifiedId -> Boolean
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
@@ -163,7 +189,7 @@ spec
    else cq = pq && cid = pid
 
   op matchingTheorems? (spc: Spec, qid: QualifiedId): Bool =
-    exists? (\_lambda r \_rightarrow claimNameMatch(qid, r.2))
+    exists? (\_lambda r -> claimNameMatch(qid, r.2))
       (allProperties spc)
 
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
@@ -175,8 +201,8 @@ spec
 %%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
   op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
     case findMatchingOps(spc, qid) of
-      | [] \_rightarrow (warn("No defined op with that name."); None)
-      | [opinfo] \_rightarrow
+      | [] -> (warn("No defined op with that name."); None)
+      | [opinfo] ->
         let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
@@ -199,34 +225,34 @@ spec
 
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
-      | Unfold(qid as Qualified(q, nm)) \_rightarrow
+      | Unfold(qid as Qualified(q, nm)) ->
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q, nm)) \_rightarrow
+                                   flatten (map (fn (Qualified(q, nm)) ->
                                                    defRule(context, q, nm, info, true))
                                               info.names))
                               (findMatchingOps(spc, qid))))
-      | Rewrite(qid as Qualified(q, nm)) \_rightarrow   % Like Unfold but only most specific rules
+      | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q, nm)) \_rightarrow
+                                   flatten (map (fn (Qualified(q, nm)) ->
                                                    defRule(context, q, nm, info, false))
                                               info.names))
                               (findMatchingOps(spc, qid))))
-      | Fold(qid) \_rightarrow
+      | Fold(qid) ->
         mapPartial reverseRuleIfNonTrivial
           (makeRule(context, spc, Unfold(qid)))
-      | LeftToRight(qid) \_rightarrow
+      | LeftToRight(qid) ->
         warnIfNone(qid, "Rule-shaped theorem ",
-                   foldr (\_lambda (p, r) \_rightarrow
+                   foldr (\_lambda (p, r) ->
                             if claimNameMatch(qid, p.2)
                               then (axiomRules context p) ++ r
                             else r)
                      [] (allProperties spc))
-      | RightToLeft(qid) \_rightarrow
-        map (\_lambda rl \_rightarrow rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+      | RightToLeft(qid) ->
+        map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
-      | AllDefs \_rightarrow
+      | AllDefs ->
         foldriAQualifierMap
           (\_lambda (q, id, opinfo, val) ->
              (defRule (context, q, id, opinfo, false)) ++ val)
@@ -283,7 +309,7 @@ spec
      result
 
   op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
-    foldr (\_lambda (rl, rules) \_rightarrow makeRule(context, spc, rl) ++ rules) [] rules
+    foldr (\_lambda (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
 
 
   op [a] funString(f: AFun a): Option String =
@@ -353,8 +379,8 @@ spec
      : SpecCalc.Env (PathTerm * Boolean) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
-      | Steps steps \_rightarrow
-          foldM (\_lambda (path_term, tracing?) -> fn s \_rightarrow
+      | Steps steps ->
+          foldM (\_lambda (path_term, tracing?) -> fn s ->
                interpretPathTerm (spc, s, path_term, tracing?))
             (path_term, tracing?) steps
       | Print -> {
@@ -376,16 +402,16 @@ spec
                 | Move mvmts -> (case makeMoves(path_term, mvmts) of
                                    | Some new_path_term -> new_path_term
                                    | None -> path_term)
-                | SimpStandard \_rightarrow replaceSubTerm(simplify spc (fromPathTerm path_term), path_term)
-                | PartialEval \_rightarrow
+                | SimpStandard -> replaceSubTerm(simplify spc (fromPathTerm path_term), path_term)
+                | PartialEval ->
                   replaceSubTerm(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term)
-                | AbstractCommonExpressions \_rightarrow
+                | AbstractCommonExpressions ->
                   replaceSubTerm(abstractCommonSubExpressions(fromPathTerm path_term, spc), path_term)
-                | Simplify(rules) \_rightarrow
+                | Simplify(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, maxRewrites), path_term)
-                | Apply(rules) \_rightarrow
+                | Apply(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term));
@@ -394,10 +420,36 @@ spec
           return (path_term, tracing?)
         }
 
-   op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, tracing?: Boolean)
-     : SpecCalc.Env (MS.Term * Boolean) =
-     {(new_path_term, tracing?) <- interpretPathTerm(spc, script, toPathTerm def_term, tracing?);
-     return(fromPathTerm new_path_term, tracing?)}
+  op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, tracing?: Boolean)
+    : SpecCalc.Env (MS.Term * Boolean) =
+    {(new_path_term, tracing?) <- interpretPathTerm(spc, script, toPathTerm def_term, tracing?);
+    return(fromPathTerm new_path_term, tracing?)}
+
+  op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
+    case findTheOp(spc, qid) of
+      | Some _ -> return qid
+      | None ->
+    if q = UnQualified
+      then
+      case wildFindUnQualified (spc.ops, id) of
+        | [opinfo] -> return(primaryOpName opinfo)
+        | [] -> raise(Fail("Undefined op in "^id_str^" of addParameter "^printQualifiedId qid))
+        | _  -> raise(Fail("Ambiguous op in "^id_str^" of addParameter "^printQualifiedId qid))
+    else
+    raise(Fail("Undefined op in "^id_str^" of addParameter "^printQualifiedId qid))
+
+  op checkType(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
+    case findTheSort(spc, qid) of
+      | Some _ -> return qid
+      | None -> 
+    if q = UnQualified
+      then
+      case wildFindUnQualified (spc.sorts, id) of
+        | [info] -> return(primarySortName info)
+        | [] -> raise(Fail("Undefined type in "^id_str^" of addParameter "^printQualifiedId qid))
+        | _  -> raise(Fail("Ambiguous type in "^id_str^" of addParameter "^printQualifiedId qid))
+    else
+    raise(Fail("Undefined type in "^id_str^" of addParameter "^printQualifiedId qid))
 
   op setOpInfo(spc: Spec, qid: QualifiedId, opinfo: OpInfo): Spec =
     let Qualified(q, id) = qid in
@@ -405,21 +457,21 @@ spec
 
   op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): SpecCalc.Env (Spec * Boolean) =
     case script of
-      | Steps steps \_rightarrow
-          foldM (\_lambda (spc, tracing?) -> fn stp \_rightarrow
+      | Steps steps ->
+          foldM (\_lambda (spc, tracing?) -> fn stp ->
                interpretSpec(spc, stp, tracing?))
             (spc, tracing?) steps
-      | At (locs, scr) \_rightarrow {
+      | At (locs, scr) -> {
           when tracing? 
             (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
-          foldM (fn (spc, tracing?) -> fn Def qid \_rightarrow
+          foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findMatchingOps(spc, qid) of
-                   | [] \_rightarrow {
+                   | [] -> {
                        print ("Can't find op " ^ anyToString qid ^ "\n");
                        return (spc, tracing?)
                      }
                    | opinfos ->
-                     foldM  (fn (spc, tracing?) -> fn opinfo \_rightarrow  {
+                     foldM  (fn (spc, tracing?) -> fn opinfo ->  {
                              (tvs, srt, tm) <- return (unpackFirstTerm opinfo.dfn); 
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
@@ -430,12 +482,18 @@ spec
                              })
                        (spc, tracing?) opinfos)
             (spc, tracing?) locs }
-      | IsoMorphism(iso_osi_prs, rls, opt_qual) \_rightarrow {
-          result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
+      | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {
+        result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
+        % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
+        return (result, tracing?)}
+      | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) -> {
+        fun <- checkOp(spc, fun, "function");
+        ty <- checkType(spc, ty, "parameter-type");
+        within <- checkOp(spc, within, "top-function");
+        val <- checkOp(spc, val, "initial_value");
+        result <- return(addParameter(spc, fun, pos, o_return_pos, name, ty, within, val, o_qual));
           % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
-          return (result, tracing?)
-        }
-        % (time(makeIsoMorphism(spc, iso_osi_prs, rls)), tracing?)
+        return (result, tracing?) }
       | Trace on_or_off -> return (spc, on_or_off)
 
   op Env.interpret (spc: Spec, script: Script) : SpecCalc.Env Spec = {
