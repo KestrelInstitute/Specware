@@ -454,16 +454,18 @@ SpecCalc qualifying spec
  def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
  def mkOther       (other,                     pos) = (Other       other,                       pos)
 
- def mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
- def mkTransformNumber(n: Nat, pos: Position)                      : TransformExpr = Number(n, pos)
- def mkTransformString(s: String, pos: Position)                   : TransformExpr = Str(s, pos)
- def mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
- def mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
- def mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
+ op mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
+ op mkTransformNumber(n: Nat, pos: Position)                      : TransformExpr = Number(n, pos)
+ op mkTransformString(s: String, pos: Position)                   : TransformExpr = Str(s, pos)
+ op mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
+ op mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
+ op mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
    = Apply(head, args, pos)
- def mkTransformApplyOptions(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
+ op mkTransformApplyOptions(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr
    = ApplyOptions(head, args, pos)
- def mkTransformTuple(itms: List TransformExpr, pos: Position): TransformExpr = Tuple(itms, pos)
+ op mkTransformTuple(itms: List TransformExpr, pos: Position): TransformExpr = Tuple(itms, pos)
+ op mkRecord(fld_val_prs: List(String * TransformExpr), pos: Position): TransformExpr
+   = Record(fld_val_prs, pos)
 
  op  hasHashSuffix?: RelativeUID -> Boolean
  def hasHashSuffix? unitId =
