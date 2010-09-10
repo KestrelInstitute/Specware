@@ -267,6 +267,7 @@ MetaSlang qualifying spec
     | Qual String * String * a
     | Item String * ATransformExpr a * a       % e.g. unfold map
     | Tuple List (ATransformExpr a) * a
+    | Record List(String * ATransformExpr a) * a
     | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a
     | Apply ATransformExpr a * List (ATransformExpr a) * a
 
