@@ -268,7 +268,10 @@ spec
 %         lam
        %% Quantification simplification
        %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
-       | Bind(Forall,_,_,_) -> simplifyForall spc (forallComponents term)
+       | Bind(Forall,_,_,_) ->
+         let result = simplifyForall spc (forallComponents term) in
+         % let _ = writeLine("\nSFA0:\n"^printTerm term^"\n --->\n"^printTerm result) in
+         result
        | Bind(Exists,_,_,_) -> simplifyExists spc (existsComponents term)
        | Bind(Exists1,_,_,_) -> simplifyExists1(exists1Components term)
        | Apply(Fun(Project i,_,_),Record(m,_),_) ->
