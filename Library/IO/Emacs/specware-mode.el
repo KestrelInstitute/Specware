@@ -1948,7 +1948,7 @@ parameter_name: ,
 parameter_type: ,
 top_function: ,
 initial_value: ,
-qualifier: }}")
+qualifier: }")
 
 (defun sw:insert-addParameter-template ()
   (interactive)
