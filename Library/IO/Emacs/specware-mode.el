@@ -206,6 +206,7 @@ accepted in lieu of prompting."
        (mark t)]
       ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark t)]
       ["Find Unbalanced Parenthesis" (sw:find-unbalanced-parenthesis) t]
+      ["Insert addParameter Template" (sw:insert-addParameter-template) t]
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
       "-----"
       ("Options"
@@ -1938,6 +1939,26 @@ STRING should be given if the last search was by `string-match' on STRING."
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
 
 (defvar *sw-after-prompt-forms* nil)
+
+(defvar sw:addParameter-template
+  "addParameter {function: ,
+parameter_position: ,
+return_position: ,
+parameter_name: ,
+parameter_type: ,
+top_function: ,
+initial_value: ,
+qualifier: }}")
+
+(defun sw:insert-addParameter-template ()
+  (interactive)
+  (let ((start_pt (point)))
+    (insert sw:addParameter-template)
+    (goto-char start_pt)
+    (forward-word)
+    (sw:indent-sexp 1)
+    (forward-word)
+    (forward-char 2)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; For use by error reporting routines
