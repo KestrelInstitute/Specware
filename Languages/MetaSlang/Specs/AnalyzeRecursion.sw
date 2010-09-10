@@ -4,6 +4,18 @@ import Utilities
 
 type RefMap = AQualifierMap (QualifiedIds)
 
+op addToRefMap(m: RefMap, Qualified(q_u, id_u): QualifiedId, qid1 : QualifiedId): RefMap =
+  case findAQualifierMap(m, q_u, id_u) of
+    | None -> insertAQualifierMap(m, q_u, id_u, [qid1])
+    | Some qids | qid1 nin? qids ->
+      insertAQualifierMap(m, q_u, id_u, qid1::qids)
+    | _ -> m
+
+op applyRefMap(m: RefMap, Qualified(q, id): QualifiedId): QualifiedIds =
+  case findAQualifierMap(m,q,id) of
+    | Some ids -> ids
+    | None -> []
+
 op iterateRefMap(cm: RefMap, count: Nat): RefMap =
 %     let _ = appiAQualifierMap (fn (q,id,v) ->
 %                                  writeLine (q^"."^id^": "
@@ -78,23 +90,16 @@ op recursiveOp?(qid: QualifiedId, uses_map: RefMap, max_depth: Nat): Boolean =
 op invertRefMap(calls_map: RefMap): RefMap =
   foldriAQualifierMap (fn (q, id, calls, used_by) ->
                         let qid = Qualified(q, id) in
-                        foldl (fn (used_by, Qualified(q_u, id_u)) ->
-                               case findAQualifierMap(used_by, q_u, id_u) of
-                                 | None -> insertAQualifierMap(used_by, q_u, id_u, [qid])
-                                 | Some qids | qid nin? qids ->
-                                   insertAQualifierMap(used_by, q_u, id_u, qid::qids)
-                                 | _ -> used_by)
+                        foldl (fn (used_by, used_qid) ->
+                                 addToRefMap(used_by, used_qid, qid))
                           used_by calls)
     emptyAQualifierMap calls_map                            
 
 op findNext(new: QualifiedIds, m: RefMap, all: QualifiedIds): QualifiedIds =
-  foldl (fn (next, Qualified(q, id)) ->
-           case findAQualifierMap(m, q, id) of
-             | Some qids ->
-               (filter (fn nqid -> nqid nin? next && nqid nin? all)
-                  qids)
-               ++ next
-             | None -> next)
+  foldl (fn (next, qid) ->
+           filter (fn nqid -> nqid nin? next && nqid nin? all)
+             (applyRefMap(m, qid))
+           ++ next)
     [] new
 
 op transRefMapApply(m: RefMap, qid: QualifiedId): QualifiedIds =
