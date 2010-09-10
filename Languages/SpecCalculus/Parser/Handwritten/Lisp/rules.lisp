@@ -1659,7 +1659,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-EXPR ()
   (:anyof
-   ((:tuple (1 :NAT-LITERAL))      (make-transform-number 1   ':left-lcb ':right-lcb))
+   ((:tuple (1 :NUMBER))           (make-transform-number 1   ':left-lcb ':right-lcb))
    ((:tuple (1 :STRING))           (make-transform-string 1   ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME))               (make-transform-name 1   ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) "." (2 :NAME)) (make-transform-qual 1 2 ':left-lcb ':right-lcb))
@@ -1669,13 +1669,20 @@ If we want the precedence to be optional:
     (make-transform-apply 1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :TRANSFORM-EXPR)
 	    "[" (2 (:repeat* :TRANSFORM-EXPR-ARG ",")) "]")
-    (make-transform-apply-options 1 2 ':left-lcb ':right-lcb))))
+    (make-transform-apply-options 1 2 ':left-lcb ':right-lcb))
+   ((:tuple (1 :TRANSFORM-EXPR)
+	    "{" (2 (:repeat* :TRANSFORM-RECORD-PAIR ",")) "}")
+    (make-transform-apply-record 1 2 ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
   (:anyof
    ((:tuple (1 :TRANSFORM-EXPR))                 1)
    ((:tuple "(" (1 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")
     (make-transform-tuple 1 ':left-lcb ':right-lcb))))
+
+(define-sw-parser-rule :TRANSFORM-RECORD-PAIR ()
+  (:tuple (1 :NAME) ":" (2 :TRANSFORM-EXPR))
+  (cons 1 2))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

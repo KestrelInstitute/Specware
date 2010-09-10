@@ -1075,6 +1075,10 @@ If we want the precedence to be optional:
 (defun make-transform-tuple (transforms l r)
   (SpecCalc::mkTransformTuple-2 transforms (make-pos l r)))
 
+(defun make-transform-apply-record (trans1 record-pairs l r)
+  (let ((pos (make-pos l r)))
+    (SpecCalc::mkTransformApply-3 trans1 (list (SpecCalc::mkRecord-2 record-pairs pos)) pos)))
+
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH
 ;;; ========================================================================
