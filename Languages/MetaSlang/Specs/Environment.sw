@@ -469,7 +469,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      let name1 = StringUtilities.freshName(name0,names) in
      (name1,StringSet.add(names,name1))
 
- def freshNames(name0,xs,names) =
+ op [a] freshNames(name0: String, xs: List a, names: UsedNames): List String * UsedNames =
      let (nameList,names) =  
              foldr (fn (_,(nameList,names)) -> 
                 let (name1,names) = freshName(name0,names) in
