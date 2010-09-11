@@ -230,7 +230,7 @@ AnnSpecPrinter qualifying spec
                                         let context = context << {printSort = true} in
 					ppPattern context ([0, i] ++ path, true) pat,
 					pp.Arrow]),
-		       (3, ppTerm context ([2, i] ++ path, Nonfix) trm)])
+		       (2, ppTerm context ([2, i] ++ path, Nonfix) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -240,7 +240,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (3, ppTerm context ([3, i] ++ path, Nonfix) trm)])
+		       (2, ppTerm context ([3, i] ++ path, Nonfix) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
@@ -320,27 +320,28 @@ AnnSpecPrinter qualifying spec
 			  string ").", 
 			  pp.fromString p]
 	 | _ -> 
-	   blockFill (0, 
-		      [(0, ppTerm context ([0] ++ path, Nonfix) t1), 
-		       (2, blockNone (0, 
-				      (case t2 of
-					 | Record (row, _) ->
-					   if isShortTuple (1, row) then
-					     %% We want the application to be mouse-sensitive not
-					     %% just the argument list--otherwise there is no way to
-					     %% select the application which is what you normally want
-					     [(0, ppTerm1 context ([1] ++ path, Top) t2)]
-					   else 
-					     [(0, ppTerm context ([1] ++ path, Top) t2)]
-					 | Var _ -> 
-					   [(0, string " "), 
-					    (0, ppTerm context ([1] ++ path, Top) t2)
-					    (*, (0, string " ")*)
-					    ]
-					 | _ -> 
-					   [(0, pp.LP), 
-					    (0, ppTerm context ([1] ++ path, Top) t2), 
-					    (0, pp.RP)])))])
+	   blockLinear (0, 
+                        [(0, prettysNone([ppTerm context ([0] ++ path, Nonfix) t1]
+                                         ++ (if embed? Var t2 then [string " "] else []))), 
+                         (2, blockNone (0, 
+                                        (case t2 of
+                                           | Record (row, _) ->
+                                             if isShortTuple (1, row) then
+                                               %% We want the application to be mouse-sensitive not
+                                               %% just the argument list--otherwise there is no way to
+                                               %% select the application which is what you normally want
+                                               [(0, ppTerm1 context ([1] ++ path, Top) t2)]
+                                             else 
+                                               [(0, ppTerm context ([1] ++ path, Top) t2)]
+                                           | Var _ -> 
+                                             [% (0, string " "), 
+                                              (0, ppTerm context ([1] ++ path, Top) t2)
+                                              (*, (0, string " ")*)
+                                              ]
+                                           | _ -> 
+                                             [(0, pp.LP), 
+                                              (0, ppTerm context ([1] ++ path, Top) t2), 
+                                              (0, pp.RP)])))])
    in
    case isFiniteList term of
      | Some terms -> 
@@ -789,7 +790,8 @@ AnnSpecPrinter qualifying spec
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
 	                           (fn (path, (id, pat)) -> ppPattern context (path, true) pat) 
-				   (pp.LP, pp.Comma, pp.RP) 
+				   (if enclosed then (pp.LP, pp.Comma, pp.RP)
+                                    else (pp.Empty, pp.Comma, pp.Empty)) 
 				   row
        else
 	 let 
@@ -872,7 +874,7 @@ AnnSpecPrinter qualifying spec
 %	   | _ ->
 	     enclose (enclosed, pp,
 		      blockFill (0, 
-				 [(0, ppPattern context ([0]++ path, true) pat), 
+				 [(0, ppPattern context ([0]++ path, false) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
                                                      (0,
                                                       let context = context << {printSort = false} in
@@ -1035,8 +1037,9 @@ AnnSpecPrinter qualifying spec
        case (tm, srt) of
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
            [(4, blockNone (0, [(0, string " ("), 
-                               (0, ppPattern context ([index, opIndex], true)
-                                     (SortedPat (pat, dom, apos))),
+                               (0, ppPattern (context << {printSort = true})
+                                     ([index, opIndex], false)
+                                     pat  (* (SortedPat (pat, dom, apos)) *) ),
                                (0, string ")")]))]
            ++
            ppDeclWithArgs (tvs, rng, body)
