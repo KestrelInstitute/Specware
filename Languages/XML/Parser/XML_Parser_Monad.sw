@@ -229,4 +229,16 @@ XML qualifying spec
 
   def Wizard_Fail_Hard? : Boolean = false
 
+#translate Haskell -instance Monad XML.Env
+  XML.monadBind -> >>=  Left 1
+  XML.return -> return
+#end
+
+#translate Haskell -morphism Monad
+  XML.monadSeq  -> >>   Left 1
+  XML.mapM -> mapM
+  XML.foldM -> foldM
+  XML.when -> when
+#end
+
 endspec
