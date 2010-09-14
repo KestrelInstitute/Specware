@@ -21,8 +21,8 @@ explodedStringToNat :: [Char] -> Int
 explodedStringToNat l = 
   sw_foldl (\(result, dig) -> result * 10 + ord dig - 48) 0 l
 
-integer__intConvertible :: String -> Bool
-integer__intConvertible s = 
+intConvertible :: String -> Bool
+intConvertible s = 
   let cs = id s in 
   any isDigit cs 
     && (all isDigit cs 
