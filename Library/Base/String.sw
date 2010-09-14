@@ -262,7 +262,7 @@ op Integer.show : Integer -> String = intToString
 
 op Integer.intConvertible (s:String) : Bool =
   ex(x:Integer) intToString x = s
-proof Haskell -> intConvertible end-proof
+#translate Haskell -> intConvertible #end
 
 op Integer.stringToInt (s:String | intConvertible s) : Integer =
   the(x:Integer) intToString x = s
