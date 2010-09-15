@@ -497,7 +497,7 @@ Haskell qualifying spec
     %% let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
     let spc = if c.slicing? && c.top_spec? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
-    % let _ = writeLine("Sliced:\n"^printSpec spc^"\n") in
+    % let _ = writeLine("Sliced:\n"^printSpecFlat(subtractSpec spc (getBaseSpec()))^"\n") in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
@@ -554,13 +554,6 @@ Haskell qualifying spec
                        prString " where"]]
                   ++ pp_imports
 		  ++ [[ppSpecElements c spc (filter elementFilter spc.elements)]])
-
-  op  haskellElement?: SpecElement -> Bool
-  def haskellElement? elt =
-    case elt of
-      | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str -> true
-      | Pragma _ -> false
-      | _ -> true
 
   op  elementFilter: SpecElement -> Bool
   def elementFilter elt =
@@ -635,7 +628,8 @@ Haskell qualifying spec
     let explicit_imports =
         mapPartial (fn el ->
 		     case el of
-		       | Import(imp_sc_tm, im_sp, red_els, _) -> ppImport c imp_sc_tm im_sp red_els
+		       | Import(imp_sc_tm, im_sp, red_els, _) | red_els ~= [] ->
+                         ppImport c imp_sc_tm im_sp red_els
 		       | _ -> None)
            elems
     in
@@ -665,8 +659,6 @@ Haskell qualifying spec
       | (Sort (type_id, _)) :: _ -> Some type_id
       | (SortDef (type_id, _)) :: _ -> Some type_id
       | _ :: r -> firstTypeDef r
-
-  op AnnSpec.subtractSpec: Spec -> Spec -> Spec
 
   op  ppImport: Context -> Term -> Spec -> SpecElements -> Option (Pretty * Pretty)
   def ppImport c sc_tm spc red_els =
@@ -963,12 +955,6 @@ Haskell qualifying spec
    in
    subFromTo(s, 0, i+1) ^ "<" ^ subFromTo(s, i+2, j+1) ^ ">" ^ specwareToHaskellString(subFromTo(s, j+1, len))
 
-  op haskellPragma?(s: String): Bool =
-    let s = stripSpaces s in
-    let len = length s in
-    len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
-	       pr_type = "Haskell" \_or pr_type = "haskell")
-
   op controlPragmaString(s: String): Option(List String) =
     let line1 = case search("\n", s) of
                   | None -> s
@@ -981,16 +967,6 @@ Haskell qualifying spec
 
  op controlPragma?(s: String): Bool =
    embed? Some (controlPragmaString s)
-
- op  stripSpaces(s: String): String =
-   let len = length s in
-   case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> i)) of
-     | Some firstNonSpace -> 
-       (case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> len-i-1)) of
-         | Some lastNonSpace ->
-           subFromTo(s, firstNonSpace, lastNonSpace+1)
-         | _ -> s)
-     | _ -> s
 
  op namedPragma?(p: Pragma): Bool =
    let (_, s, _, _) = p in
