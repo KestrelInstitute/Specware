@@ -2082,7 +2082,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
        case findBracketAnnotation(opt_prag) of
          | Some str -> prConcat [prSpace, prString (specwareToIsaString str)]
          | _ ->
-           let comm = stripSpaces comm in
+           let comm = stripOuterSpaces comm in
            let len = length comm in
            if len > 13 \_and subFromTo(comm,0,14) = "Simplification"
              then prString " [simp]"

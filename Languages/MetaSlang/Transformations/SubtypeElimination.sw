@@ -22,18 +22,8 @@ SpecNorm qualifying spec
  op controlPragma?(s: String): Boolean =
    embed? Some (controlPragmaString s)
 
- op  stripSpaces(s: String): String =
-   let len = length s in
-   case findLeftmost (\_lambda i -> s@i \_noteq #  ) (tabulate(len,\_lambda i -> i)) of
-     | Some firstNonSpace -> 
-       (case findLeftmost (\_lambda i -> s@i \_noteq #  ) (tabulate(len,\_lambda i -> len-i-1)) of
-         | Some lastNonSpace ->
-           subFromTo(s,firstNonSpace,lastNonSpace+1)
-         | _ -> s)
-     | _ -> s
-
   op  isaPragma?(s: String): Boolean =
-    let s = stripSpaces s in
+    let s = stripOuterSpaces s in
     let len = length s in
     len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
 	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")

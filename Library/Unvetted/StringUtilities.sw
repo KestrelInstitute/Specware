@@ -163,4 +163,15 @@ String qualifying spec
   op  whiteSpaceChar?: Char -> Boolean
   def whiteSpaceChar? c = c in? [#\s,#\t,#\n]
 
+
+op  stripOuterSpaces(s: String): String =
+  let len = length s in
+  case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> i)) of
+    | Some firstNonSpace -> 
+      (case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> len-i-1)) of
+        | Some lastNonSpace ->
+          subFromTo(s, firstNonSpace, lastNonSpace+1)
+        | _ -> s)
+    | _ -> s
+
 endspec
