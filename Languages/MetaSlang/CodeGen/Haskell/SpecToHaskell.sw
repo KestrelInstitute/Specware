@@ -245,6 +245,7 @@ Haskell qualifying spec
         (case uidStringPairForTerm(currentUID, sc_tm, slicing?, top_uid) of
            | None -> None
            | Some((haskellnm, sw_file, haskell_module_name, haskell_file), uid) ->
+         % let _ = writeLine("uidStringPairForValueOrTerm0: "^haskellnm^" "^haskell_module_name) in
          case evaluateTermWrtUnitId(sc_tm, currentUID) of
            | None ->
              (writeLine("sc_tm not evaluated:\n"^anyToString sc_tm);
@@ -253,6 +254,7 @@ Haskell qualifying spec
              Some((haskellnm, sw_file, haskell_module_name, haskellName haskell_file ^ ".hs"),
                   real_val, uid))
       | Some((haskellnm, haskell_module_name, filnm, hash), uid, _) ->
+        % let _ = writeLine("uidStringPairForValueOrTerm1: "^haskellnm^" "^haskell_module_name) in
         Some((haskellnm ^ hash,
               uidToFullPath uid ^ ".sw",
               haskell_module_name ^ hash,
@@ -643,7 +645,12 @@ Haskell qualifying spec
     in
     let ppExports =
         if c.slicing? && ~(c.top_spec?)
-          then map (fn qid -> prConcat [ppOpQualifiedId c qid, prSpace]) (exportedOps (getSpec c, c.top_spec))
+          then mapPartial (fn qid ->
+                             let str = opQualifiedIdString c qid in
+                             if exists? whiteSpaceChar? str
+                               then None
+                             else Some(prConcat [ppOpQualifiedId c qid, prSpace]))
+                 (exportedOps (getSpec c, c.top_spec))
           else map (fn im -> prConcat [prString "module ", im])
                  (explicit_imports_names ++ imports_from_haskell_morphism)
     in
@@ -2526,24 +2533,28 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      then nm
    else "("^nm^")"
 
+ op opQualifiedId0String(c: Context) (qid: QualifiedId): String =
+   makeIdentifier(qidToHaskellString c qid false)
+
  op ppOpQualifiedId0 (c: Context) (qid as Qualified(_, id): QualifiedId): Pretty =
-   let nm = qidToHaskellString c qid false in
-   prString(makeIdentifier nm)
+   prString(opQualifiedId0String c qid)
 
  op qualifiedBy?(s: String, q: String): Bool =
    let len = length q in
    testSubseqEqual?(q^".", s, 0, 0)
 
- op  ppOpQualifiedId : Context -> QualifiedId -> Pretty
- def ppOpQualifiedId c qid =
+ op opQualifiedIdString(c: Context) (qid: QualifiedId): String =
    case specialOpInfo c qid of
      | Some(s, _, _, _, _) ->
        % let _ = writeLine(" -> "^s) in
-       ppOpQualifiedId0 c
+       opQualifiedId0String c
          (case splitStringAt(s, ".") of
             | [s]    -> mkUnQualifiedId s
             | [q,id] -> mkQualifiedId(q,id))
-     | None -> ppOpQualifiedId0 c qid
+     | None -> opQualifiedId0String c qid
+
+ op ppOpQualifiedId (c: Context) (qid: QualifiedId): Pretty =
+   prString(opQualifiedIdString c qid)
 
  %% May only need ops that can be unary
  op overloadedHaskellOps: List String = ["+", "-", "^", "abs", "min", "max"]
@@ -2751,6 +2762,7 @@ op ppIdStr (id: String) (up?: Bool): String =
   let id = replaceString(id, "--", "-^-^") in
   case explode(id) of
     | [] -> "e"
+    | [#@] -> ppIdStr "at__1" up?
     | c0 :: r_chars ->
       if c0 = #( then id
       else
