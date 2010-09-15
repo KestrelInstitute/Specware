@@ -18,6 +18,18 @@ op <| (s: QualifierSet, Qualified(x, y): QualifiedId) infixl 25 : QualifierSet =
 op addList(s: QualifierSet, l: QualifiedIds): QualifierSet =
   foldl (<|) s l
 
+op  haskellElement?(el: SpecElement): Bool =
+   case el of
+     | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str -> true
+     | Pragma _ -> false
+     | _ -> true
+
+op haskellPragma?(s: String): Bool =
+  let s = stripOuterSpaces s in
+  let len = length s in
+  len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
+             pr_type = "Haskell" \_or pr_type = "haskell")
+
 op [a] sliceAQualifierMap(m: AQualifierMap a, s: QualifierSet, pred: QualifiedId -> Bool): AQualifierMap a =
   mapiPartialAQualifierMap (fn (q, id, v) ->
                               let qid = Qualified(q, id) in
@@ -38,12 +50,18 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
               (opsInTerm formula)
               && forall? (fn qid -> qid in? type_set || some?(findTheSort(base_spec, qid)))
                    (typesInTerm formula)
-          | _ -> true
+ %          | Import(tm, im_spc, im_elts, _) ->
+%             exists? (fn im_el -> if element_filter im_el
+%                                    then % let _ = writeLine("filter accepts:\n"^ anyToString tm) in
+%                                         true
+%                                    else false) im_elts
+          | _ -> haskellElement? el
   in
   spc <<
     {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> some?(findTheSort(base_spec, qid))),
      ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> some?(findTheOp(base_spec, qid))),
-     elements = filterSpecElements element_filter spc.elements}
+     elements = filterSpecElements element_filter spc.elements
+     }
 
 op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): Spec =
   let base_spec = SpecCalc.getBaseSpec() in
@@ -124,7 +142,11 @@ op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore
     in
     let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
     let spc = scrubSpec(spc, op_set, type_set, base_spec) in
+    % let _ = writeLine(printSpecFlat (subtractSpec spc (getBaseSpec()))) in
     % let _ = printSpec spc in
     spc
+
+%% Just for debugging
+op AnnSpec.subtractSpec: Spec -> Spec -> Spec
 
 endspec
