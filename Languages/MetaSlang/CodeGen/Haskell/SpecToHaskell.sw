@@ -623,13 +623,35 @@ Haskell qualifying spec
     % let _ = writeLine(anyToString exported_ops) in
     exported_ops
 
+  op realElement?(c: Context) (el: SpecElement): Bool =
+    %% Used to avoid printing empty modules
+    %% Can ignore translated ops and types and non-verbatim pragmas
+    case el of
+      | Op (qid, _, _) ->
+        (case specialOpInfo c qid of
+           | Some (_, _, _, _, no_def?) -> ~no_def?
+           | _ -> true)
+      | OpDef (qid, _, _) ->
+        (case specialOpInfo c qid of
+           | Some (_, _, _, _, no_def?) -> ~no_def?
+           | _ -> true)
+      | Import(imp_sc_tm, im_sp, red_els, _) ->
+         % let _ = writeLine("real?: "^show (im_sp ~= (getBaseSpec()))^" "^anyToString imp_sc_tm) in
+        im_sp ~= (getBaseSpec()) && exists? (realElement? c) red_els
+      | Pragma("#translate", mid_str, "#end", pos) -> verbatimPragma? mid_str
+      | Pragma _ -> false
+      | Sort _ -> false
+      | SortDef (qid, _) -> none?(specialTypeInfo c qid)
+      | Property _ -> false
+      | _ -> true
+
   op  ppImports: Context -> SpecElements -> List(List Pretty) * List Pretty
   def ppImports c elems =
     let imports_from_haskell_morphism = haskellMorphismImports c in
     let explicit_imports =
         mapPartial (fn el ->
 		     case el of
-		       | Import(imp_sc_tm, im_sp, red_els, _) | red_els ~= [] ->
+		       | Import(imp_sc_tm, im_sp, red_els, _) | ~c.slicing? || exists? (realElement? c) red_els ->
                          ppImport c imp_sc_tm im_sp red_els
 		       | _ -> None)
            elems
