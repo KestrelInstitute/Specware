@@ -496,8 +496,10 @@ Haskell qualifying spec
     %% Get rid of non-haskell pragmas
     %% let _ = writeLine(c.spec_name) in
     let spc = addExecutableDefs(spc, c.spec_name) in
+    let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
+    % let _ = writeLine("0:\n"^printSpecFlat( spc)^"\n") in
     let spc = if c.slicing? && c.top_spec? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
-    % let _ = writeLine("Sliced:\n"^printSpecFlat(subtractSpec spc (getBaseSpec()))^"\n") in
+    % let _ = writeLine("Sliced:\n"^printSpecFlat( spc)^"\n") in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
@@ -508,7 +510,6 @@ Haskell qualifying spec
                                               | _ -> false)
                                      spc.elements
     in
-    let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     let c = c << {spec? = Some spc,
                   top_spec = if c.top_spec? then spc else c.top_spec,
                   trans_table = trans_table,
@@ -635,7 +636,8 @@ Haskell qualifying spec
     in
     let (explicit_imports1, explicit_imports_names) = unzip explicit_imports in
     let ppImports = map (fn im -> [prConcat [prString "import ", im]])
-                      (explicit_imports1 ++ imports_from_haskell_morphism)
+                      (explicit_imports1 ++ imports_from_haskell_morphism ++ (if ~c.slicing? || prString "SW_Base" in? explicit_imports1
+                                                                              then [] else [prString "SW_Base"]))
     in
     let ppExports =
         if c.slicing? && ~(c.top_spec?)
@@ -1152,7 +1154,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                        ppTypeIdInfo c aliases,
                        ppTyVars tvs],
                       [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
-                | Product (fields, _) | length fields > 0 && (head fields).1 ~= "1" ->
+                | Product (fields, _) | length fields > 0 ->
                   prConcat
                     [prString "data ",
                      ppTyVars tvs,
