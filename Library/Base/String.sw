@@ -209,7 +209,6 @@ op Nat.natConvertible (s:String) : Bool =
 
 op Nat.stringToNat (s:String | natConvertible s) : Nat =
   the(x:Nat) natToString x = s
-#translate Haskell -> stringToNat #end
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
@@ -355,6 +354,7 @@ end-proof
   Nat.natToString   -> show
   Nat.digitToString   -> show
   Integer.intToString -> show
+  Nat.stringToNat   -> stringToInt
   String.subFromTo  -> List.subFromTo
 #end
 
