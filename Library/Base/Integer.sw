@@ -1164,7 +1164,7 @@ end-proof
 {-# OPTIONS -fno-warn-duplicate-exports #-}
 #end
 
-#translate Haskell Thy_Morphism
+#translate Haskell -morphism
  type Integer.Int -> Int
  type Integer.Integer -> Int
  type Nat.Nat     -> Int

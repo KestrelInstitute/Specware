@@ -4931,7 +4931,7 @@ end-proof
 {-# OPTIONS -fno-warn-duplicate-exports #-}
 #end
 
-#translate Haskell Thy_Morphism  List
+#translate Haskell -morphism  List
   type List.List    -> []
   Nil               -> []
   Cons              -> :            Right 5

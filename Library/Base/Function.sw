@@ -358,7 +358,7 @@ end-proof
 
 % mapping to Haskell:
 
-#translate Haskell ThyMorphism
+#translate Haskell -morphism
   Function.id          -> id
   Function.o           -> . Right 9
   Function.:>          -> . Right 9 reversed

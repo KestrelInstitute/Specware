@@ -32,6 +32,7 @@ op [a] compare (comp: a * a -> Comparison) (o1: Option a, o2: Option a): Compari
 op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
   | None   -> None
   | Some x -> Some (f x)
+#translate Haskell --> mapOption #end
 
 proof Isa mapOption_subtype_constr
   by (cases xx, auto)

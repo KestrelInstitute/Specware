@@ -3,7 +3,7 @@ Bool qualifying spec
 (* Make sure that the extensions to standard Isabelle are loaded (this is done
 solely for verification purposes). *)
 
-import IsabelleExtensions
+%import IsabelleExtensions
 
 (* Specware has a built-in type Boolean, which will be renamed to Bool at some
 point in the future. Meanwhile, we introduce Bool as a synonym for Boolean, in
@@ -41,7 +41,7 @@ end-proof
 
 % Haskell mapping:
 
-#translate Haskell ThyMorphism
+#translate Haskell -morphism
   type Bool.Bool -> Bool
 #end
 

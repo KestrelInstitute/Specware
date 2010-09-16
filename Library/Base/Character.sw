@@ -109,7 +109,7 @@ proof Isa Thy_Morphism Char_nat
   Char.ord       -> nat_of_char
 end-proof
 
-#translate Haskell Thy_Morphism Char
+#translate Haskell -morphism Char
   type Char.Char -> Char
   Char.chr       -> chr
   Char.ord       -> ord

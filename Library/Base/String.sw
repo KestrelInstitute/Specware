@@ -334,7 +334,7 @@ end-proof
 {-# OPTIONS -fno-warn-duplicate-exports #-}
 #end
 
-#translate Haskell ThyMorphism
+#translate Haskell -morphism
   type String.String -> String
   String.explode    -> id
   String.implode    -> id
@@ -355,7 +355,6 @@ end-proof
   Nat.natToString   -> show
   Nat.digitToString   -> show
   Integer.intToString -> show
-  Nat.stringToNat   -> stringToInt
   String.subFromTo  -> List.subFromTo
 #end
 
