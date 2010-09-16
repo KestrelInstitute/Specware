@@ -77,6 +77,11 @@ System qualifying spec
 
 #translate Haskell -morphism
 System.fail -> error
+System.warn -> error
+System.print -> error
+System.toScreen -> error
+System.writeLine -> error
+System.anyToString -> error
 #end
 
 endspec
