@@ -11,9 +11,9 @@ option__compare comp(Nothing, Just _) = LT
 option__compare comp(Just _, Nothing) = GT
 option__compare comp(Nothing, Nothing) = EQ
 
-option__mapOption :: (a -> b) -> Maybe a -> Maybe b
-option__mapOption f Nothing = Nothing
-option__mapOption f (Just x) = Just (f x)
+mapOption :: (a -> b) -> Maybe a -> Maybe b
+mapOption f Nothing = Nothing
+mapOption f (Just x) = Just (f x)
 
 option__isoOption :: (a -> b) -> Maybe a -> Maybe b
-option__isoOption iso_elem = option__mapOption iso_elem
+option__isoOption iso_elem = mapOption iso_elem
