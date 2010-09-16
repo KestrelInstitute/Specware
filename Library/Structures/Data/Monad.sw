@@ -33,7 +33,7 @@ sequencing operator but that might preclude one from refining it.
       {f; g} = {_ <- f; g}
    (* monadSeq (f, g) = monadBind (f, fn _ -> g) *)
 
-#translate Haskell ThyMorphism Monad
+#translate Haskell -morphism
   type Monad.Monad -> Monad
   Monad.monadBind  -> >>=
   Monad.return     -> return
