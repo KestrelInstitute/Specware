@@ -19,10 +19,10 @@ IO qualifying spec
   def IO.return x = fn state -> (Ok x, state)
 
   op print : String -> IO ()
-  def print str = return (toScreen str)
+  def print str = fn state -> (Ok (toScreen str), state)
 
   op writeLine : String -> IO ()
-  def writeLine str = return (writeLine str)
+  def writeLine str = fn state -> (Ok (writeLine str), state)
 
   op error : [a] String -> IO a
   def error str = fn () -> (Exception str, ())
@@ -44,10 +44,10 @@ IO qualifying spec
 
 
   op when : Boolean -> IO () -> IO ()
-  def when p command = if p then (fn s -> (command s)) else return ()
+  def when p command = if p then command else return ()
 
   op unless : Boolean -> IO () -> IO ()
-  def unless p command = if ~p then (fn s -> (command s)) else return ()
+  def unless p command = if ~p then command else return ()
 
   op mapM : [a,b] (a -> IO b) -> (List a) -> IO (List b)
   def mapM f l =
@@ -68,7 +68,7 @@ IO qualifying spec
             foldM f y xs
           }
 
-#translate Haskell -morphism
+#translate Haskell -morphism Monad
   type IO.IO -> IO
   IO.monadBind -> >>=
   IO.return -> return
