@@ -56,7 +56,7 @@ spec
 
 %%% --------------------
   op  eval: MS.Term * Spec -> Value
-  def eval(t,spc) = evalRec(t,emptySubst,spc,0)
+  def eval(t,spc) = evalRec(t,emptySubst,spc,0,traceEval?)
 
   op evalFullyReducibleSubTerms(t: MS.Term,spc: Spec): MS.Term =
     mapSubTerms (fn st ->
@@ -82,11 +82,13 @@ spec
       | Fun _ -> false
       | Lambda _ -> false
       | Record (("1", _)::_,_) -> false
+      | Apply(Lambda _, _, _) -> false
+      | Apply(Fun(Embed(nm,_),_,_), _, _) -> false
       | _ -> true
 
-  op  preTrace: MS.Term * Nat -> ()
-  def preTrace(t,depth) =
-    if traceEval? && traceable? t then
+  op  preTrace: MS.Term * Nat * Bool -> ()
+  def preTrace(t,depth,trace?) =
+    if traceEval? && trace? && traceable? t then
       let _ = toScreen (blanks depth) in
       case t of
 	| Var _ ->
@@ -100,9 +102,9 @@ spec
 	  ()
     else ()
     
-  op  postTrace: MS.Term * Value * Nat -> ()
-  def postTrace(t,val,depth) =
-    if traceEval? && traceable? t then
+  op  postTrace: MS.Term * Value * Nat * Bool -> ()
+  def postTrace(t,val,depth,trace?) =
+    if traceEval? && trace? && traceable? t then
       case t of
 	| Var _ ->
 	  let _ = printValue (val,false) in
@@ -116,9 +118,19 @@ spec
 	  ()
     else ()
 
-  op  evalRec: MS.Term * Subst * Spec * Nat -> Value
-  def evalRec(t,sb,spc,depth) =
-    let _ = preTrace(t,depth) in
+  op traceWithinFns: List String = []
+  op noTraceWithinFns: List String = []
+  
+  op fnMember?(f: MS.Term, fns: List String): Bool =
+    fns ~= [] &&
+    (case f of
+      | Fun(Op(qid as Qualified(spName,opName),_),_,_) ->
+        opName in? fns || printQualifiedId qid in? fns
+      | _ -> false)
+
+  op  evalRec: MS.Term * Subst * Spec * Nat * Bool -> Value
+  def evalRec(t,sb,spc,depth,trace?) =
+    let _ = preTrace(t,depth,trace?) in
     let depth = if traceable? t then depth else depth -1 in
     let val = 
 	case t of
@@ -126,34 +138,38 @@ spec
 	    (case lookup(sb,v) of
 	      | Some e -> e
 	      | None -> Unevaluated t)
-	  | Fun(fun,ty,_) -> evalFun(fun,t,ty,sb,spc,depth)
-	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> timeEvalRec(y,sb,spc,depth+1)
+	  | Fun(fun,ty,_) -> evalFun(fun,t,ty,sb,spc,depth,trace?)
+	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> timeEvalRec(y,sb,spc,depth+1,trace?)
 	  | Apply(x,y,_) ->
 	    if nonStrict? x
-	      then evalApplyNonStrict(x,y,sb,spc,depth)
-	      else evalApply(evalRec(x,sb,spc,depth+1),evalRec(y,sb,spc,depth+1),sb,spc,depth)
+	      then evalApplyNonStrict(x,y,sb,spc,depth,trace?)
+	      else
+                let trace_fn? = if trace? then ~(fnMember?(x, noTraceWithinFns))
+                                 else fnMember?(x, traceWithinFns)
+                in
+                evalApply(evalRec(x,sb,spc,depth+1,trace?),evalRec(y,sb,spc,depth+1,trace?),sb,spc,depth,trace_fn?)
 	  | Record(fields,a) ->
-	    RecordVal(map (fn(lbl,e) -> (lbl,evalRec(e,sb,spc,depth+1))) fields)
+	    RecordVal(map (fn(lbl,e) -> (lbl,evalRec(e,sb,spc,depth+1,trace?))) fields)
 	  | IfThenElse(P,M,N,a) ->
-	    (case evalRec(P,sb,spc,depth+1) of
-	      | Bool true  -> evalRec(M,sb,spc,depth+1)
-	      | Bool false -> evalRec(N,sb,spc,depth+1)
+	    (case evalRec(P,sb,spc,depth+1,trace?) of
+	      | Bool true  -> evalRec(M,sb,spc,depth+1,trace?)
+	      | Bool false -> evalRec(N,sb,spc,depth+1,trace?)
 	      | Unevaluated nP -> Unevaluated (IfThenElse(nP,M,N,a))
 	      | _ -> Unevaluated t)
 	  | Lambda(match,_) -> Closure(match,sb)
-	  | Seq(tms,_) -> (map (fn s -> evalRec(s,sb,spc,depth+1)) tms) @ (length tms - 1)
+	  | Seq(tms,_) -> (map (fn s -> evalRec(s,sb,spc,depth+1,trace?)) tms) @ (length tms - 1)
 	  | Let(decls, body, a) ->
-	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1))) decls in
+	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1,trace?))) decls in
 	     case foldl (fn (ssb,(pat,e)) ->
 			  case ssb of
 			    | Some sbr ->
 			      %% The e are evaluated in the outer environment (sb not sbr)
-			      (case patternMatch(pat,e,sbr,spc,depth) of
+			      (case patternMatch(pat,e,sbr,spc,depth,trace?) of
 				 | Match S -> Some S
 				 | _ -> None)
 			    | None -> None)
 		   (Some sb) rdecls
-	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,newsb,spc,depth+1),newsb,sb)
+	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,newsb,spc,depth+1,trace?),newsb,sb)
 		| None -> Unevaluated (Let(map (fn (pat,e) -> (pat,valueToTerm e)) rdecls, body, a)))
 	  | LetRec(decls, body, _) ->
 	    let ids = reverse(map (fn ((v,_),_) -> v) decls) in
@@ -161,14 +177,14 @@ spec
 			 case ssb of
 			   | Some nsb ->
 			     Some(addToSubst(nsb,v,
-					     case evalRec(e,sb,spc,depth+1) of
+					     case evalRec(e,sb,spc,depth+1,trace?) of
 					       | Closure(m,sbc) ->
 						 RecClosure(m,sb,ids)
 					       | v -> v))
 			   | None -> ssb)
 		   (Some sb) decls
 	       of Some sb ->
-		  (case evalRec(body,sb,spc,depth+1) of
+		  (case evalRec(body,sb,spc,depth+1,trace?) of
 		     | Unevaluated t1 ->
 		       if exists? (fn (id,_) -> id in? ids) (freeVars t)
 		        then Unevaluated(mkLetRec(decls,t1))
@@ -179,7 +195,7 @@ spec
 	  % ? | Bind()
 	  | _ -> Unevaluated t
     in
-    let _ = postTrace(t,val,depth) in
+    let _ = postTrace(t,val,depth,trace?) in
     val
 
   %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
@@ -190,8 +206,8 @@ spec
       | None -> findTheOp (spc, qid)
       | v -> v
   
-  op  evalFun: Fun * MS.Term * MS.Sort * Subst * Spec * Nat -> Value
-  def evalFun(fun,t,ty,sb,spc,depth) =
+  op  evalFun: Fun * MS.Term * MS.Sort * Subst * Spec * Nat * Bool -> Value
+  def evalFun(fun,t,ty,sb,spc,depth,trace?) =
     case fun of
       | Op (qid, _) ->
         (case findTheOpInterp (spc, qid) of
@@ -201,7 +217,7 @@ spec
 		let tm = firstOpDefInnerTerm info in
                 if existsSubTerm (embed? The) tm
                   then Unevaluated t
-                else evalRec (tm, sb, spc, depth+1)
+                else evalRec (tm, sb, spc, depth+1,trace?)
 	      else
 		case qid of 
 		  | Qualified ("Integer", "zero") -> Int 0
@@ -223,42 +239,42 @@ spec
       | Fun(f,_,_)  -> f in?[And,Or,Implies]
       | _ -> false
 
-  op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat -> Value
-  def evalApplyNonStrict(ft,at,sb,spc,depth) =
+  op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat * Bool -> Value
+  def evalApplyNonStrict(ft,at,sb,spc,depth,trace?) =
     case at of
       | Record([("1",at1),("2",at2)],_) ->
-        (case evalRec(at1,sb,spc,depth+1) of
+        (case evalRec(at1,sb,spc,depth+1,trace?) of
 	   | Bool b? ->
 	     (case ft of
 	       | Fun(And,_,_) ->
-	         if b? then evalRec(at2,sb,spc,depth+1)
+	         if b? then evalRec(at2,sb,spc,depth+1,trace?)
 		  else Bool false
 	       | Fun(Or,_,_) ->
 		 if b? then Bool true
-		  else evalRec(at2,sb,spc,depth+1)
+		  else evalRec(at2,sb,spc,depth+1,trace?)
 	       | Fun(Implies,_,_) ->
-		 if b? then evalRec(at2,sb,spc,depth+1)
+		 if b? then evalRec(at2,sb,spc,depth+1,trace?)
 		  else Bool true)
 	   | Unevaluated r_at1 ->
 	     Unevaluated(mkApply(ft,mkTuple([r_at1,at2]))))
-      | _ -> evalApplySpecial(ft,evalRec(at,sb,spc,depth+1),sb,spc,depth)
+      | _ -> evalApplySpecial(ft,evalRec(at,sb,spc,depth+1,trace?),sb,spc,depth,trace?)
 	   
-  op  evalApply: Value * Value * Subst * Spec * Nat -> Value
-  def evalApply(f,a,sb,spc,depth) =
+  op  evalApply: Value * Value * Subst * Spec * Nat * Bool -> Value
+  def evalApply(f,a,sb,spc,depth,trace?) =
     case f of
       | Closure(match,csb) ->
-        (case patternMatchRules(match,a,csb,spc,depth) of
+        (case patternMatchRules(match,a,csb,spc,depth,trace?) of
 	  | Some v -> maybeMkLetOrSubst(v,csb,sb)
 	  | None -> Unevaluated(mkSimpApply(valueToTerm f,valueToTerm a)))
       | RecClosure(match,csb,ids) ->
-        (case patternMatchRules(match,a,extendLetRecSubst(sb,csb,ids),spc,depth) of
+        (case patternMatchRules(match,a,extendLetRecSubst(sb,csb,ids),spc,depth,trace?) of
 	  | Some v -> maybeMkLetOrSubst(v,csb,sb)
 	  | None -> Unevaluated(mkSimpApply(valueToTerm f,valueToTerm a)))
       | ChooseClosure(cl,_,_) ->
 	(case a of
-	  | QuotientVal(_,v,_) -> evalApply(cl,v,sb,spc,depth)
+	  | QuotientVal(_,v,_) -> evalApply(cl,v,sb,spc,depth,trace?)
 	  | _ -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
-      | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth)
+      | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth,trace?)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
 
   op  mkSimpApply: MS.Term * MS.Term -> MS.Term
@@ -267,8 +283,8 @@ spec
       | Lambda([(p,_,bod)],_) -> mkLet([(p,x)],bod)
       | _ -> mkApply(f,x)
 
-  op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat -> Value
-  def evalApplySpecial(ft,a,sb,spc,depth) =
+  op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat * Bool -> Value
+  def evalApplySpecial(ft,a,sb,spc,depth,trace?) =
     let def default() = Unevaluated(mkApply(ft,valueToTerm a)) in
     case ft of
       | Fun(Embed(id,true),ty,_) -> Constructor(id,a,ty)
@@ -345,11 +361,11 @@ spec
 		| _ -> default())
 	   | _ -> default())
       | Fun(Equals,_,_) ->
-	(case checkEquality(a,sb,spc,depth) of
+	(case checkEquality(a,sb,spc,depth,trace?) of
 	  | Some b -> Bool b
 	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
       | Fun(NotEquals,_,_) ->
-	(case checkEquality(a,sb,spc,depth) of
+	(case checkEquality(a,sb,spc,depth,trace?) of
 	  | Some b -> Bool (~ b)
 	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
       | Fun(RecordMerge,_,_) ->
@@ -359,7 +375,7 @@ spec
 	  | _ -> default()) 
       | Fun(Quotient srt_id,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
-	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a,srt_id)
+	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1,trace?),a,srt_id)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
       %% Handled at n
       | Fun(Choose srt_id,srt,_) -> ChooseClosure(a,srt,srt_id)
@@ -378,11 +394,11 @@ spec
       %| Fun(Select id,srt,_) ->
       | _ -> Unevaluated(mkApply(ft,valueToTerm a))
 
-  op  checkEquality: Value * Subst * Spec * Nat -> Option Boolean
-  def checkEquality(a,sb,spc,depth) =
+  op  checkEquality: Value * Subst * Spec * Nat * Bool -> Option Boolean
+  def checkEquality(a,sb,spc,depth,trace?) =
     case a of
       | RecordVal [("1",QuotientVal(equivfn,a1,_)),("2",QuotientVal(_,a2,_))] ->
-        (case evalApply(equivfn,RecordVal[("1",a1),("2",a2)],sb,spc,depth) of
+        (case evalApply(equivfn,RecordVal[("1",a1),("2",a2)],sb,spc,depth,false) of
 	   | Bool b -> Some b
 	   | _ -> None)
       | RecordVal [("1",a1),("2",a2)] ->
@@ -426,26 +442,26 @@ spec
  %% Adapted from HigherOrderMatching 
  type MatchResult = | Match Subst | NoMatch | DontKnow
 
- op  patternMatchRules : Match * Value * Subst * Spec * Nat -> Option Value
- def patternMatchRules(rules,N,sb,spc,depth) = 
+ op  patternMatchRules : Match * Value * Subst * Spec * Nat * Bool -> Option Value
+ def patternMatchRules(rules,N,sb,spc,depth,trace?) = 
      case rules 
        of [] -> None
         | (pat,Fun(Bool true,_,_),body)::rules -> 
-	  (case patternMatch(pat,N,sb,spc,depth)
-	     of Match S -> Some(maybeMkLetOrSubst(evalRec(body,S,spc,depth+1),S,sb))
-	      | NoMatch -> patternMatchRules(rules,N,sb,spc,depth)
+	  (case patternMatch(pat,N,sb,spc,depth,trace?)
+	     of Match S -> Some(maybeMkLetOrSubst(evalRec(body,S,spc,depth+1,trace?),S,sb))
+	      | NoMatch -> patternMatchRules(rules,N,sb,spc,depth,trace?)
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- op  patternMatch : Pattern * Value * Subst * Spec * Nat -> MatchResult 
+ op  patternMatch : Pattern * Value * Subst * Spec * Nat * Bool -> MatchResult 
 
- def patternMatch(pat,N,S,spc,depth) = 
+ def patternMatch(pat,N,S,spc,depth,trace?) = 
      case pat
        of VarPat((x,_), _) -> Match(addToSubst(S,x,N))
 	| WildPat _ -> Match S
 	| AliasPat(p1,p2,_) ->
-	  (case patternMatch(p1,N,S,spc,depth) of
-	     | Match S1 -> patternMatch(p2,N,S1,spc,depth)
+	  (case patternMatch(p1,N,S,spc,depth,trace?) of
+	     | Match S1 -> patternMatch(p2,N,S1,spc,depth,trace?)
 	     | result -> result)
 	| RecordPat(fields, _) ->
 	  (case N of
@@ -455,7 +471,7 @@ spec
 			| Match S ->
 			  (case lookup(valFields,lbl) of
 			     | None -> DontKnow
-			     | Some v -> patternMatch(rpat,v,S,spc,depth))
+			     | Some v -> patternMatch(rpat,v,S,spc,depth,trace?))
 			| _ -> result)
 	         (Match S) fields
 	     | _ -> DontKnow)
@@ -468,19 +484,19 @@ spec
 	  (case N of 
 	     | Constructor(lbl2,N2,_) -> 
 	       if lbl = lbl2 
-		  then patternMatch(p,N2,S,spc,depth)
+		  then patternMatch(p,N2,S,spc,depth,trace?)
 	       else NoMatch
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
         | QuotientPat(pat,_,_) ->
 	  (case N of
-	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,spc,depth)
+	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,spc,depth,trace?)
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
         | RestrictedPat(pat,pred,_) ->
-	  (case patternMatch(pat,N,S,spc,depth) of
+	  (case patternMatch(pat,N,S,spc,depth,trace?) of
 	     | Match S1 ->
-	       (case evalRec(pred,S1,spc,depth+1) of
+	       (case evalRec(pred,S1,spc,depth+1,trace?) of
 		 | Bool true  -> Match S1
 		 | Bool false -> NoMatch
 		 | _ -> DontKnow)
@@ -791,9 +807,9 @@ spec
 
   %% Separate function rather than in-line because in Allegro time compile with a closure
   %% which gets created on each call even if not needed
-  op  timeEvalRec:  MS.Term * Subst * Spec * Nat -> Value
-  def timeEvalRec(t,sb,spc,depth) =
-    time(evalRec(t,sb,spc,depth))
+  op  timeEvalRec:  MS.Term * Subst * Spec * Nat * Bool -> Value
+  def timeEvalRec(t,sb,spc,depth,trace?) =
+    time(evalRec(t,sb,spc,depth,trace?))
 
   op  metaListToList: (Value | metaList?) -> List Value
   def metaListToList v =
