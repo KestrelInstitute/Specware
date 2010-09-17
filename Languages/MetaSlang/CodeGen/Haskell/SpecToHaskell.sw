@@ -1176,6 +1176,12 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                        ppTypeIdInfo c aliases,
                        ppTyVars tvs],
                       [prString " = ", prSep (-2) blockAll (prString "| ") (map ppTaggedSort taggedSorts)]])
+                | Product (("1", _)::_, _) ->
+                  prConcat [prString "type ",
+                            ppTyVars tvs,
+                            ppTypeIdInfo c aliases,
+                            prString " = ",
+                            ppType c Top ty]
                 | Product (fields, _) | length fields > 0 ->
                   prConcat
                     [prString "data ",
