@@ -18,6 +18,8 @@
 
 ;(loop for x in '(mule mule-autoloads mule-base-autoloads) do (setq features (remove x features)))
 
+(push *specware-emacs* load-path)
+
 (push (concat *specware-emacs* "slime/")
       load-path)
 
