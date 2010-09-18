@@ -43,11 +43,16 @@ Haskell qualifying spec
                  typeNameInfo: List(QualifiedId * TyVars * Sort),
                  polyEqualityFunInfo: AQualifierMap TyVars}
 
- op  specialOpInfo: Context -> QualifiedId -> Option OpTransInfo
- def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
+ op specialOpInfo (c: Context) (qid: QualifiedId): Option OpTransInfo =
+   apply(c.trans_table.op_map, qid)
 
- op  specialTypeInfo: Context -> QualifiedId -> Option TypeTransInfo
- def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
+ op specialTypeInfo (c: Context) (qid: QualifiedId): Option TypeTransInfo =
+   apply(c.trans_table.type_map, qid)
+
+ op mappedType?(c: Context) (qid: QualifiedId): Bool =
+   case specialTypeInfo c qid of
+     | Some(_,_,_,no_def?) -> no_def?
+     | None -> false
 
  op getSpec(c: Context): Spec =
    let Some spc = c.spec? in spc
@@ -578,7 +583,7 @@ Haskell qualifying spec
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
-    Map.foldi (fn (subty, (super_id, opt_coerc, overloadedOps), val) ->
+    Map.foldi (fn (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
                case opt_coerc of
                  | None -> val
                  | Some(toSuper, toSub) ->
@@ -641,7 +646,7 @@ Haskell qualifying spec
       | Pragma("#translate", mid_str, "#end", pos) -> verbatimPragma? mid_str
       | Pragma _ -> false
       | Sort _ -> false
-      | SortDef (qid, _) -> none?(specialTypeInfo c qid)
+      | SortDef (qid, _) -> ~(mappedType? c qid)
       | Property _ -> false
       | _ -> true
 
@@ -658,7 +663,7 @@ Haskell qualifying spec
     in
     let (explicit_imports1, explicit_imports_names) = unzip explicit_imports in
     let ppImports = map (fn im -> [prConcat [prString "import ", im]])
-                      (explicit_imports1 ++ imports_from_haskell_morphism ++ (if ~c.slicing? || prString "SW_Base" in? explicit_imports1
+                      (explicit_imports1 ++ imports_from_haskell_morphism ++ (if prString "SW_Base" in? explicit_imports1
                                                                               then [] else [prString "SW_Base"]))
     in
     let ppExports =
@@ -1112,7 +1117,7 @@ Haskell qualifying spec
    case constructorTranslation(c_nm, c) of
      | Some tr_c_nm -> prString tr_c_nm
      | None -> prString(if qid in? directConstructorTypes then ppIdStr c_nm true
-                         else qidToHaskellString c qid true ^ "__" ^ c_nm)
+                         else (typeQualifiedIdStr c qid true) ^ "__" ^ c_nm)
 
  op ppConstructorTyped(c_nm: String, ty: Sort, c: Context): Pretty =
    case unfoldToBaseNamedType(getSpec c, ty) of
@@ -1139,23 +1144,31 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
    if nm = "" then ""
      else show(toLowerCase(nm@0)) ^ subFromTo(nm, 1, length nm)
 
- op printTypeQid (c: Context) (qid: QualifiedId): Pretty =
-   prString(qidToHaskellString c qid true)
+ op  ensureCase(s: String) (up_case?: Bool): String =
+    if up_case? then upCase1 s else downCase1 s
+
+% op printTypeQid (c: Context) (qid: QualifiedId): Pretty =
+%   prString(qidToHaskellString c qid true)
 
  op mkFieldName(nm: String): String = ppIdStr nm false ^ "__fld"
  op mkNamedRecordFieldName (c: Context) (qid: QualifiedId, nm: String): String =
-   (qidToHaskellString c qid false)^"__"^nm
+   (typeQualifiedIdStr c qid false)^"__"^nm
 
  op  ppTypeInfo : Context -> Bool -> List QualifiedId * Sort -> Option TypeClassInfo -> Pretty
  def ppTypeInfo c full? (aliases, dfn) tc_info =
    let mainId = head aliases in
-   case specialTypeInfo c mainId of
-     | Some _ -> prEmpty
-     | None ->
+   let (mainId, no_def?) =
+       case specialTypeInfo c mainId of
+         | Some(haskell_id, _, _, no_def?) -> (stringToQId haskell_id, no_def?)
+         | None -> (mainId, false)
+   in
+   if no_def? then prEmpty
+   else
    let (tvs, ty) = unpackSort dfn in
    if unfoldSubtypes? && embed? Base (stripSubsorts(getSpec c, ty))
      then prEmpty
    else
+   let aliases = [mainId] in
    if full? \_and (case ty of Any _ -> false | _ -> true)
      then let def ppTyDef ty =
               case ty of
@@ -2131,7 +2144,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             in
             case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid c qid,
+              prConcat [ppTypeQualifiedId c qid,
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
@@ -2367,7 +2380,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
            in
            case record_type_qid of
             | Some qid ->
-              prConcat [printTypeQid c qid,
+              prConcat [ppTypeQualifiedId c qid,
                         prString " {",
                         prPostSep 0 blockLinear (prString ", ") (map ppField fields),
                         prString "}"]
@@ -2510,11 +2523,6 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    %% eols have to be symbolic
    replaceString(s, "\n", "\\n")
 
- op stringToQId(s: String): QualifiedId =
-   case search(".", s) of
-     | Some i -> mkQualifiedId(subFromTo(s, 0, i), subFromTo(s, i+1, length s))
-     | None   -> mkUnQualifiedId s
-
  def omittedQualifiers = [toHaskellQual]  % "IntegerAux" "Option" ...?
 
  op qidToHaskellString (c: Context) (Qualified (qualifier, id): QualifiedId) (upper?: Bool): String =
@@ -2573,21 +2581,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | None -> false)
      | _ -> false
 
+ op typeQualifiedIdStr (c: Context) (qid: QualifiedId) (up_case?: Bool): String =
+   case specialTypeInfo c qid of
+     | Some(s, _, _, _) -> ensureCase s up_case?
+     | None -> qidToHaskellString c qid up_case?
+
  op  ppTypeQualifiedId : Context -> QualifiedId -> Pretty
  def ppTypeQualifiedId c qid =
    case specialTypeInfo c qid of
-     | Some(s, _, _) -> prString s
-     | None ->
-   case qid of
-%% Table-driven now above
-%      | Qualified("Nat", "Nat") -> prString "nat"
-%      | Qualified("List", "List") -> prString "list"
-%      | Qualified("String", "String") -> prString "string"
-%      | Qualified("Char", "Char") -> prString "char"
-%      | Qualified("Boolean", "Boolean") -> prString "bool"
-%      | Qualified("Integer", "Integer") -> prString "int"
-     | _ -> ppTyQualifiedId c qid
-
+     | Some(s, _, _, _) -> prString s
+     | None -> ppTyQualifiedId c qid
 
  op  isSimpleSort? : Sort -> Bool
  def isSimpleSort? ty =
@@ -2612,7 +2615,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  def ppType c parent ty =
    % let _ = writeLine("ppType: "^printSort ty^" --> "^printSort(unfoldToBaseNamedType(getSpec c, ty))) in
    case ty of
-     | Base(qid, _, _) | unfoldSubtypes? && none?(specialTypeInfo c qid ) && unfoldToBaseNamedType(getSpec c, ty) ~= ty ->
+     | Base(qid, _, _) | unfoldSubtypes? && ~(mappedType? c qid) && unfoldToBaseNamedType(getSpec c, ty) ~= ty ->
        ppType c parent (unfoldToBaseNamedType(getSpec c, ty))
      | Base (qid, [], _) -> ppTypeQualifiedId c qid
       %% CoProduct only at top level
