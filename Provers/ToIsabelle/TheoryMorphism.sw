@@ -5,9 +5,9 @@ IsaTermPrinter qualifying spec
  import /Library/Unvetted/StringUtilities
  import /Library/Structures/Data/Maps/SimpleAsAlist
                  (* op       infix info                    curried   reversed  include_def? *)
- type OpTransInfo = String * Option(Associativity * Nat) * Boolean * Boolean * Boolean
+ type OpTransInfo = String * Option(Associativity * Nat) * Bool * Bool * Bool
                    (* type     coercion fns              Overloaded ops *)
- type TypeTransInfo = String * Option(String * String) * List String
+ type TypeTransInfo = String * Option(String * String) * List String * Bool
 
  type OpMap   = Map.Map (QualifiedId, OpTransInfo)
  type TypeMap = Map.Map (QualifiedId, TypeTransInfo)
@@ -33,7 +33,10 @@ IsaTermPrinter qualifying spec
          (case thyMorphismPragma prag_str kind pos of
 	    | None \_rightarrow 
               (case (prev_id, findRenaming prag_str kind pos) of
-                 | (Some qid, Some (trans_id, fix, curried?, reversed?)) \_rightarrow
+                 | (Some(qid, type?), Some (trans_id, fix, curried?, reversed?)) \_rightarrow
+                   if type? then (result << {type_map = update(result.type_map, qid, (trans_id, None, [], false))},
+                                  None)
+                   else
                    let (fix, curried?) =
                        if some? fix then (fix, true)
                        else
@@ -50,8 +53,10 @@ IsaTermPrinter qualifying spec
               let import_strings = if el in? spc.elements then import_strings else [] in
 	      let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
 	      (parseMorphMap(trans_string, result, kind, pos), None))
-       | OpDef (qid,_,_) \_rightarrow (result,Some qid)
-       | Op    (qid,_,_) \_rightarrow (result,Some qid)
+       | OpDef (qid,_,_) \_rightarrow (result,Some(qid, false))
+       | Op    (qid,_,_) \_rightarrow (result,Some(qid, false))
+       | SortDef(qid,_)  \_rightarrow (result,Some(qid, true))
+       | Sort  (qid,_)   \_rightarrow (result,Some(qid, true))
        | _               \_rightarrow (result,None))
      (emptyTranslationTable, None)
      spc.elements).1
@@ -82,7 +87,7 @@ IsaTermPrinter qualifying spec
      else (warn(precnum_str^": Not a number!");
            -999)
 
- op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(Associativity * Nat) * Boolean * Boolean =
+ op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(Associativity * Nat) * Bool * Bool =
    let def joinParens(strs, par_str, i) =
          case strs of
            | []       -> if par_str = "" then [] else [par_str]
@@ -112,7 +117,7 @@ IsaTermPrinter qualifying spec
                                  true, "reversed" in? rst))
 
   op findRenaming(prag_str: String) (kind: String) (pos: Position)
-     : Option (String * Option(Associativity * Nat) * Boolean * Boolean) =
+     : Option (String * Option(Associativity * Nat) * Bool * Bool) =
     let end_pos = case searchPred(prag_str, fn c -> c in? [#\n, #", #[]) of   % #]
 		    | Some n \_rightarrow n
 		    | None \_rightarrow length prag_str
@@ -168,7 +173,7 @@ IsaTermPrinter qualifying spec
 	 let (type?,qid) = processLhs lhs in
 	 if type?
 	   then let (isaSym,coercions,overloadedOps) = processRhsType rhs in
-	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps))}
+	        result << {type_map = update(result.type_map,qid,(isaSym,coercions,overloadedOps, true))}
 	   else let (isaSym,fixity,curried,reversed) = processRhsOp rhs kind pos in
 	        result << {op_map = update(result.op_map,qid,(isaSym,fixity,curried,reversed,true))}
    in	     
@@ -185,4 +190,9 @@ IsaTermPrinter qualifying spec
     else
     splitStringAt(removeWhiteSpace(subFromTo(str,lpos+1,rpos)), ",")
    
+ op stringToQId(s: String): QualifiedId =
+   case search(".", s) of
+     | Some i -> mkQualifiedId(subFromTo(s, 0, i), subFromTo(s, i+1, length s))
+     | None   -> mkUnQualifiedId s
+
 endspec

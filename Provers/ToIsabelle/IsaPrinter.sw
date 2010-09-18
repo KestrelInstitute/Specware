@@ -599,7 +599,7 @@ addCoercions before raiseNamedTypes
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
-    Map.foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps), val) ->
+    Map.foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
                case opt_coerc of
                  | None -> val
                  | Some(toSuper, toSub) ->
@@ -1204,8 +1204,8 @@ addCoercions before raiseNamedTypes
      | _ ->  ppQualifiedId qid
 
  op mkFieldName(nm: String): String = ppIdStr nm ^ "__fld"
- op mkNamedRecordFieldName(qid: QualifiedId, nm: String): String =
-   qidToIsaString qid^"__"^ppIdStr nm
+ op mkNamedRecordFieldName (c: Context)(qid: QualifiedId, nm: String): String =
+   (typeQualifiedIdStr c qid)^"__"^ppIdStr nm
 
  op ppToplevelName(nm: String): Pretty =
    if nm in? isabelleReservedWords
@@ -1221,9 +1221,14 @@ addCoercions before raiseNamedTypes
  def ppTypeInfo c full? (aliases, dfn) opt_prag elems =
    let mainId = head aliases in
    let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
-   case specialTypeInfo c mainId of
-     | Some _ -> prEmpty
-     | None ->
+   let (mainId, no_def?) =
+       case specialTypeInfo c mainId of
+         | Some(isa_id, _, _, no_def?) -> (stringToQId isa_id, no_def?)
+         | None -> (mainId, false)
+   in
+   if no_def? then prEmpty
+   else
+   let aliases = [mainId] in
    let (tvs, ty) = unpackSort dfn in
    % let _ = writeLine("type "^printQualifiedId mainId^" = "^printSort ty^"\n"^anyToString opt_prag) in
    if full? \_and ~(embed? Any ty)
@@ -1252,7 +1257,7 @@ addCoercions before raiseNamedTypes
 		  ppIdInfo aliases,
 		  prString " = "]] ++
 		(map (\_lambda (fldname, fldty) ->
-		      [ppToplevelName (mkNamedRecordFieldName(mainId, fldname)),
+		      [ppToplevelName (mkNamedRecordFieldName c (mainId, fldname)),
                        prString " :: ", ppType c Top false fldty])
 		 fields))
            | Subsort(superty, pred, _) | some? opt_prag ->
@@ -2348,7 +2353,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                                         [prString " of ",
                                          ppMatch c match]])
         | (Fun (Project p, ty1, _), _) ->
-          let pid = projectorFun(p,ty1,getSpec c) in
+          let pid = projectorFun(c,p,ty1,getSpec c) in
           prConcat [prString pid,
                     prConcat [prSpace, ppTermEncloseComplex? c Nonfix term2]]
 %         | (Fun (Op (Qualified("Nat","natural?"),_), _,a),_) ->  % natural? e \_longrightarrow 0 <= e
@@ -2442,7 +2447,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                    prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
-                                                           | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
+                                                           | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
                                                            | _ -> mkFieldName x),
                                                prString " := ",
                                                ppTerm c Top y]
@@ -2507,7 +2512,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
             let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
             let def ppField (x,y) =
                   prConcat [prString (case recd_ty of
-                                      | Base(qid, _, _) -> mkNamedRecordFieldName(qid,x)
+                                      | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
                                       | _ -> mkFieldName x),
                             prString " = ",
                             ppTerm c Top y]
@@ -2596,8 +2601,8 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
         | _ -> ty)
      | _ -> ty
 
- op  projectorFun: String * Sort * Spec -> String
- def projectorFun (p, s, spc) =
+ op  projectorFun: Context * String * Sort * Spec -> String
+ def projectorFun (c, p, s, spc) =
    let (prod_ty, arity) = case sortArity(spc, s) of
                             | None -> (s,1)
                             | Some pr -> pr
@@ -2614,7 +2619,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | "9" -> (if arity = 9 then "ninethl" else "nineth")
      | _ ->
    case unfoldToBaseNamedType(spc, prod_ty) of
-     | Base(qid, _, _) -> mkNamedRecordFieldName(qid,p)
+     | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,p)
      | _ -> mkFieldName p
 
  op  ppBinder : Binder -> Pretty
@@ -2924,21 +2929,16 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | None -> false)
      | _ -> false
 
+op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
+   case specialTypeInfo c qid of
+     | Some(s, _, _, _) -> s
+     | None -> qidToIsaString qid
+
  op  ppTypeQualifiedId : Context -> QualifiedId -> Pretty
  def ppTypeQualifiedId c qid =
    case specialTypeInfo c qid of
-     | Some(s,_,_) -> prString s
-     | None ->
-   case qid of
-%% Table-driven now above
-%      | Qualified("Nat","Nat") -> prString "nat"
-%      | Qualified("List","List") -> prString "list"
-%      | Qualified("String","String") -> prString "string"
-%      | Qualified("Char","Char") -> prString "char"
-%      | Qualified("Bool","Bool") -> prString "bool"
-%      | Qualified("Integer","Integer") -> prString "int"
-     | _ -> ppQualifiedId qid
-
+     | Some(s,_,_,_) -> prString s
+     | None -> ppQualifiedId qid
 
  op  ppFixity : Fixity -> Pretty
  def ppFixity fix =
