@@ -1094,8 +1094,8 @@ Haskell qualifying spec
    % let _ = writeLine("returned: "^anyToString result) in
    result
 
- op haskellReservedWords: List String = ["class", "data", "deriving", "do", "import", "instance", "module",
-                                         "newtype", "type", "where"]
+ op haskellReservedWords: List String = ["class", "data", "deriving", "do", "import",
+                                         "instance", "module", "newtype", "type", "where"]
  op disallowedVarNames: List String = []        % !!!
 
  op directConstructorTypes: List QualifiedId =
@@ -1111,7 +1111,8 @@ Haskell qualifying spec
 
  op addConstructorTranslation(c: Context, c_nm: String, c_tg: String): Context =
    let tbl = c.trans_table in
-   c << {trans_table = tbl << {op_map = update(tbl.op_map, mkUnQualifiedId c_nm, (c_tg, None, false, false, true))}}
+   c << {trans_table = tbl << {op_map = update(tbl.op_map, mkUnQualifiedId c_nm,
+                                               (c_tg, None, false, false, true))}}
 
  op ppConstructor(c_nm: String, qid: QualifiedId, c: Context): Pretty =
    case constructorTranslation(c_nm, c) of
