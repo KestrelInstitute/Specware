@@ -1,7 +1,7 @@
 IsaTermPrinter qualifying spec
 
  %import /Languages/SpecCalculus/Semantics/Bootstrap
- import TheoryMorphism
+ import /Languages/MetaSlang/Transformations/TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
  %import /Languages/MetaSlang/Specs/Utilities
  %import /Library/PrettyPrinter/WadlerLindig
@@ -997,9 +997,13 @@ addCoercions before raiseNamedTypes
                                     then (warn("Can't find type for typedef pragma.");
                                           (tct, type_qid))
                                     else (mkTypeCoercionEntryForTypeDef spc type_qid tct, dummy_qid)
-                                | [pragma_kind, nm, "-typedef"] ->
-                                  let Qualified(q, _) = type_qid in 
-                                  let type_qid = Qualified(q, nm) in
+                                | pragma_kind :: nm :: rst | validName? nm && "-typedef" in? rst ->
+                                  let type_qid = case parseQualifiedId nm of
+                                                   | Qualified(UnQualified, nm) ->
+                                                     let Qualified(q, _) = type_qid in
+                                                     Qualified(q, nm)
+                                                   | qid -> qid                                                     
+                                  in
                                   (mkTypeCoercionEntryForTypeDef spc type_qid tct, dummy_qid)
                                 | _ -> (tct, type_qid))
                            | SortDef(qid, _) -> (tct, qid)
@@ -1142,13 +1146,15 @@ addCoercions before raiseNamedTypes
    case findPragmaNamed1(elts, qidToIsaString qid) of   % Allow Isabelle name
      | Some p -> Some p
      | None ->
-   %% Try without qualifier
+   case findPragmaNamed1(elts, printQualifiedId qid) of   % Allow Specware qualified name
+     | Some p -> Some p
+     | None ->   %% Try without qualifier
    case findPragmaNamed1(elts, nm) of
      | Some p -> Some p
      | None ->                          % Allow Isabelle name
    case findPragmaNamed1(elts, ppIdStr nm) of
      | Some p -> Some p
-     | None -> opt_prag                  
+     | None -> opt_prag
 
  op  findPragmaNamed1: SpecElements * String -> Option Pragma
  def findPragmaNamed1(elts, nm) =
