@@ -47,8 +47,8 @@ consts Function__injective_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> ('a 
 defs Function__injective_p__stp_def: 
   "Function__injective_p__stp P__a f
      \<equiv> (\<forall>(x1::'a) (x2::'a). 
-          P__a x1 \<and> P__a x2 
-            \<longrightarrow> (f x1 = f x2 \<longrightarrow> x1 = x2))"
+          (P__a x1 \<and> P__a x2) \<and> f x1 = f x2 
+            \<longrightarrow> x1 = x2)"
 
 lemma Function__injective_p__stp_simp [simp]:
   "Function__injective_p__stp P f = (inj_on f P)"
