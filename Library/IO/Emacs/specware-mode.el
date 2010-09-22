@@ -357,7 +357,7 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table)
   (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
   (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
-  (modify-syntax-entry ?\#      "\\   " specware-mode-syntax-table)
+  (modify-syntax-entry ?\#      "/   " specware-mode-syntax-table)
   (modify-syntax-entry ?        " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\t      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\%      "<   "  specware-mode-syntax-table)
@@ -904,25 +904,22 @@ If anyone has a good algorithm for this..."
          (t
           (let ((follows-comma (sw:previous-line-ends-in-comma))
 		(indent (sw:get-indent)))
-            (cond
-             ((looking-at "|")
-              ;; Lets see if it is the follower of a function definition
-              (if (sw:find-matching-starter
+            (when (and (looking-at "|") (not (looking-at "||")))
+              (setq indent (if (sw:find-matching-starter
                    "\\bcase\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b")
                   (cond
                    ((looking-at "case\\b") (- (current-column) sw:pipe-indent))
                    ((looking-at "fn\\b") (1+ (current-column)))
                    ((looking-at "and\\b") (1+ (1+ (current-column))))
                    ((looking-at "handle\\b") (+ (current-column) 5)))
-                (+ indent sw:pipe-indent)))
-             (t
-              (if sw:paren-lookback    ; Look for open parenthesis ?
-                  (if follows-comma
-		      (sw:get-paren-indent indent t)
-		    (max 
-		     indent		; (if (looking-at "[])}]") (1- indent) indent)
-		     (sw:get-paren-indent indent nil)))
-                indent))))))))))
+                (+ indent sw:pipe-indent))))
+            (if sw:paren-lookback       ; Look for open parenthesis ?
+                (if follows-comma
+                    (sw:get-paren-indent indent t)
+                  (max 
+                   indent ; (if (looking-at "[])}]") (1- indent) indent)
+                   (sw:get-paren-indent indent nil)))
+              indent))))))))
 
 (defun sw:previous-line-ends-in-comma ()
   (save-excursion
@@ -962,9 +959,10 @@ If anyone has a good algorithm for this..."
         (let ((indent (current-column)))
           ;; ?? (skip-chars-forward "\t (")
           (cond
+           ((looking-at "in\\b") (current-column))
            ;; Started val/fun/structure...
            ((looking-at sw:indent-starters-reg)
-            (+ (current-column) sw:indent-level))
+            (+ indent sw:indent-level))
            ;; Indent after "->" pattern, but only if its not an fn _ ->
            ;; (890726)
            ((and nil (looking-at ".*->")) ; duplication?
@@ -986,42 +984,73 @@ If anyone has a good algorithm for this..."
 
 (defun sw:get-paren-indent (indent after-comma)
   (save-excursion
-    (let ((levelpar 0)                  ; Level of "()"
-          (levelcurl 0)                 ; Level of "{}"
-          (levelsqr 0)			; Level of "[]"
-	  (origpoint (save-excursion (point)))
-          (backpoint (max (- (point) sw:paren-lookback) (point-min))))
-      (catch 'loop
-        (while (and (/= levelpar 1) (/= levelsqr 1) (/= levelcurl 1))
-          (if (re-search-backward "[][{}()]" backpoint t)
-              (if (not (sw:inside-comment-or-string-p))
-                  (cond
-                   ((looking-at "(") (setq levelpar (1+ levelpar)))
-                   ((looking-at ")") (setq levelpar (1- levelpar)))
-                   ((looking-at "\\[") (setq levelsqr (1+ levelsqr)))
-                   ((looking-at "\\]") (setq levelsqr (1- levelsqr)))
-                   ((looking-at "{") (setq levelcurl (1+ levelcurl)))
-                   ((looking-at "}") (setq levelcurl (1- levelcurl)))))
-            (throw 'loop 0)))		; Exit with value 0
-	(if (and (save-excursion
+    (let ((origpoint (point))
+          (at-top-level nil))
+      (insert ")")
+      (condition-case ()
+          (backward-sexp 1)
+        (error (setq at-top-level t)))
+      (save-excursion (goto-char origpoint)
+                      (delete-char 1))
+      (if (and (save-excursion
 		   (goto-char origpoint)
 		   (looking-at "[])}]")))
 	    (1+ (current-column))
-	  (if (and after-comma
-                   (save-excursion (forward-char 1)
-                                   (skip-chars-forward "\t ")
-                                   (or (looking-at "\n")
-                                       (looking-at "(\\*")
-                                       (looking-at comment-start))))
-              indent
-            (if (save-excursion
-                  (forward-char 1)
-                  (and t                ;(looking-at sw:indent-starters-reg)
-                       (not (looking-at "\n"))
-                       (progn (goto-char origpoint)
-                              (not (sw:previous-line-ends-in-comma)))))
-                (1+ (+ (current-column) sw:indent-level))
-              (1+ (current-column)))))))))
+	  (if at-top-level 0
+            (if (and after-comma
+                     (save-excursion (forward-char 1)
+                                     (skip-chars-forward "\t ")
+                                     (or (looking-at "\n")
+                                         (looking-at "(\\*")
+                                         (looking-at comment-start))))
+                indent
+              (if (save-excursion
+                    (forward-char 1)
+                    (and t        ;(looking-at sw:indent-starters-reg)
+                         (not (looking-at "\n"))
+                         (progn (goto-char origpoint)
+                                (not (sw:previous-line-ends-in-comma)))))
+                  (1+ (+ (current-column) sw:indent-level))
+                (1+ (current-column)))))))))
+
+; (defun sw:get-paren-indent (indent after-comma)
+;   (save-excursion
+;     (let ((levelpar 0)                  ; Level of "()"
+;           (levelcurl 0)                 ; Level of "{}"
+;           (levelsqr 0)			; Level of "[]"
+; 	  (origpoint (save-excursion (point)))
+;           (backpoint (max (- (point) sw:paren-lookback) (point-min))))
+;       (catch 'loop
+;         (while (and (/= levelpar 1) (/= levelsqr 1) (/= levelcurl 1))
+;           (if (re-search-backward "[][{}()]" backpoint t)
+;               (if (not (sw:inside-comment-or-string-p))
+;                   (cond
+;                    ((looking-at "(") (setq levelpar (1+ levelpar)))
+;                    ((looking-at ")") (setq levelpar (1- levelpar)))
+;                    ((looking-at "\\[") (setq levelsqr (1+ levelsqr)))
+;                    ((looking-at "\\]") (setq levelsqr (1- levelsqr)))
+;                    ((looking-at "{") (setq levelcurl (1+ levelcurl)))
+;                    ((looking-at "}") (setq levelcurl (1- levelcurl)))))
+;             (throw 'loop 0)))		; Exit with value 0
+; 	(if (and (save-excursion
+; 		   (goto-char origpoint)
+; 		   (looking-at "[])}]")))
+; 	    (1+ (current-column))
+; 	  (if (and after-comma
+;                    (save-excursion (forward-char 1)
+;                                    (skip-chars-forward "\t ")
+;                                    (or (looking-at "\n")
+;                                        (looking-at "(\\*")
+;                                        (looking-at comment-start))))
+;               indent
+;             (if (save-excursion
+;                   (forward-char 1)
+;                   (and t                ;(looking-at sw:indent-starters-reg)
+;                        (not (looking-at "\n"))
+;                        (progn (goto-char origpoint)
+;                               (not (sw:previous-line-ends-in-comma)))))
+;                 (1+ (+ (current-column) sw:indent-level))
+;               (1+ (current-column)))))))))
 
 (defun sw:inside-comment-or-string-p ()
   (let ((start (point)))
