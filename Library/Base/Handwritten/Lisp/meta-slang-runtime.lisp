@@ -115,6 +115,8 @@
 ;;;      )
 ;;;     )
 
+(defvar *warn-about-questionable-equality?* nil)
+
 ;;; This is twice as fast as the version above...
 (defun slang-term-equals-2 (t1 t2)
   #+sbcl(declare (optimize speed))
@@ -186,10 +188,11 @@
          ;; print semi-informative error message, but avoid printing
          ;; what could be enormous structures...
          (progn 
-           (warn "In slang-term-equals, ill formed terms of types ~S and ~S are ~A~%" 
-                 (type-of t1)
-                 (type-of t2)
-                 (if (equal t1 t2) "LISP:EQUAL" "not LISP:EQUAL"))
+           (when *warn-about-questionable-equality?*
+             (warn "In slang-term-equals, ill formed terms of types ~S and ~S are ~A~%" 
+                   (type-of t1)
+                   (type-of t2)
+                   (if (equal t1 t2) "LISP:EQUAL" "not LISP:EQUAL")))
            ;; would it be better to just fail?
            (equal t1 t2))))))
 
