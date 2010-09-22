@@ -2,7 +2,7 @@ Haskell qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
- import /Provers/ToIsabelle/TheoryMorphism
+ import /Languages/MetaSlang/Transformations/TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
  import /Library/PrettyPrinter/BjornerEspinosa
  import /Library/Legacy/DataStructures/ListUtilities
@@ -650,6 +650,12 @@ Haskell qualifying spec
       | Property _ -> false
       | _ -> true
 
+  op numSpecElts? (spc: Spec): Nat =
+    foldlSpecElements (fn (sum, _) -> sum + 1)  0  spc.elements
+
+  op specInBase? (spc: Spec): Bool =
+    numSpecElts? spc <= numSpecElts?(getBaseSpec())
+
   op  ppImports: Context -> SpecElements -> List(List Pretty) * List Pretty
   def ppImports c elems =
     let imports_from_haskell_morphism = haskellMorphismImports c in
@@ -664,6 +670,7 @@ Haskell qualifying spec
     let (explicit_imports1, explicit_imports_names) = unzip explicit_imports in
     let ppImports = map (fn im -> [prConcat [prString "import ", im]])
                       (explicit_imports1 ++ imports_from_haskell_morphism ++ (if prString "SW_Base" in? explicit_imports1
+                                                                                   || specInBase?(getSpec c)
                                                                               then [] else [prString "SW_Base"]))
     in
     let ppExports =
