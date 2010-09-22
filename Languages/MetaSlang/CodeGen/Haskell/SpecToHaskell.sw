@@ -654,7 +654,11 @@ Haskell qualifying spec
     foldlSpecElements (fn (sum, _) -> sum + 1)  0  spc.elements
 
   op specInBase? (spc: Spec): Bool =
-    numSpecElts? spc <= numSpecElts?(getBaseSpec())
+    let base_size? = numSpecElts?(getBaseSpec()) in
+    ~(exists? (fn el -> case el of
+                        | Import(_, im_spc, _, _) -> numSpecElts? im_spc >= base_size?
+                        | _ -> false)
+        spc.elements)
 
   op  ppImports: Context -> SpecElements -> List(List Pretty) * List Pretty
   def ppImports c elems =
@@ -663,6 +667,7 @@ Haskell qualifying spec
         mapPartial (fn el ->
 		     case el of
 		       | Import(imp_sc_tm, im_sp, red_els, _) | ~c.slicing? || exists? (realElement? c) red_els ->
+                         % let _ = writeLine("imports: "^anyToString imp_sc_tm) in
                          ppImport c imp_sc_tm im_sp red_els
 		       | _ -> None)
            elems
