@@ -38,17 +38,19 @@
   ;; Bigger than 536870911 = 2^29 - 1 = most-positive-fixnum
   ;; Bigger than 2147483648 = 2^31 = biggest 32-bit int 
   (setq file (Specware::from-cygwin-name file))
-  (or #+allegro(excl::filesys-write-date file)    ; faster?
-      ;;
-      ;; The allegro hack above returns nil for names such as "~/foo.sw"
-      ;; The following should succeed where the above hack returns nil, 
-      ;; but maybe this is all that the standard file-write-date does:
-      ;;  (excl::filesys-write-date (namestring (truename  file))) 
-      ;;
-      ;; Call this when hack fails (or we're not running Allego CL) ...
-      (file-write-date file)
-      ;; If file doesn't exist then return a future time! 
-      ;; 3288592472 = "Thu Mar 18 01:54:32 PST 2004"
+  (if (probe-file file )
+      (or #+allegro(excl::filesys-write-date file) ; faster?
+          ;;
+          ;; The allegro hack above returns nil for names such as "~/foo.sw"
+          ;; The following should succeed where the above hack returns nil, 
+          ;; but maybe this is all that the standard file-write-date does:
+          ;;  (excl::filesys-write-date (namestring (truename  file))) 
+          ;;
+          ;; Call this when hack fails (or we're not running Allego CL) ...
+          (file-write-date file)
+          ;; If file doesn't exist then return a future time! 
+          ;; 3288592472 = "Thu Mar 18 01:54:32 PST 2004"
+          nullFileWriteTime)
       nullFileWriteTime))
 
 (defun currentTime-0 ()
