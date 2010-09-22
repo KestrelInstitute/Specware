@@ -132,6 +132,11 @@ String qualifying spec
    in
      splitFrom(0,0)
 
+op splitAtStr(s: String, pat: String): Option(String * String) =
+ case search(pat, s) of
+   | Some i -> Some(subFromTo(s,0,i),subFromTo(s,i + length pat, length s))
+   | None -> None
+
   op splitStringAtChars(s: String, sep_chars: List Char): List String =
     let def split(i, last_match, result) =
           if i < 0 
