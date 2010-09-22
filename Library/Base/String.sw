@@ -355,7 +355,7 @@ end-proof
   Nat.digitToString   -> show
   Integer.intToString -> show
   Nat.stringToNat   -> stringToInt
-  String.subFromTo  -> List.subFromTo
+  String.subFromTo  -> list__subFromTo
 #end
 
 endspec
