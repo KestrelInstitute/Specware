@@ -15,7 +15,7 @@
   (define-key m "\e."      'sw:meta-point)
   (define-key m "\C-cfc"   'sw:find-case-dispatch-on-type)
   (define-key m "\C-cfr"   'sw:find-op-references)
-  (define-key m "[return]"  'sw-return)
+  (define-key m [return]   'sw-return)
 					;(define-key m "\C-c\C-d" 'ild-abort)
   (easy-menu-define specware-interaction-buffer-menu
 		    m
@@ -25,7 +25,7 @@
 
 (slime-define-keys specware-listener-mode-map
   ("\C-m" 'sw-return)
-  ("[return]" 'sw-return)
+  ([return] 'sw-return)
  ; ("\C-j" 'slime-repl-newline-and-indent)
 ;  ("\C-\M-m" 'slime-repl-closing-return)
 ;  ([(control return)] 'slime-repl-closing-return)
