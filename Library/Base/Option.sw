@@ -11,10 +11,8 @@ type Option a = | None | Some a
 % synonyms of embedding tests ("embed? Some" and "embed? None"):
 
 op [a] some? (x: Option a) : Bool = (x ~= None)
-proof Isa [simp] end-proof  % always expand definition in Isabelle proof
 
 op [a] none? (x: Option a) : Bool = (x = None)
-proof Isa [simp] end-proof  % always expand definition in Isabelle proof
 
 (* Given a comparison function over type a, type Option a can be linearly
 ordered and compared by considering the extra element None to be smaller than
@@ -32,16 +30,20 @@ op [a] compare (comp: a * a -> Comparison) (o1: Option a, o2: Option a): Compari
 op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
   | None   -> None
   | Some x -> Some (f x)
-#translate Haskell -> mapOption #end
-
-proof Isa mapOption_subtype_constr
-  by (cases xx, auto)
-end-proof
 
 % lift isomorphism (i.e. bijection) to also map extra element:
 
 op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
   fn iso_elem -> mapOption iso_elem
+
+
+(* Isabelle pragmas *)
+proof Isa some? [simp] end-proof  % always expand definition in Isabelle proof
+proof Isa none? [simp] end-proof  % always expand definition in Isabelle proof
+
+proof Isa mapOption_subtype_constr
+  by (cases xx, auto)
+end-proof
 
 proof Isa isoOption_subtype_constr
  apply(simp add: Option__isoOption_def bij_def, auto)
@@ -86,9 +88,12 @@ proof Isa Thy_Morphism
  Option.mapOption \_rightarrow Option.map
 end-proof
 
+(* Haskell Pragmas *)
 #translate Haskell -header
 {-# OPTIONS -fno-warn-duplicate-exports #-}
 #end
+
+#translate Haskell mapOption -> mapOption #end
 
 #translate Haskell -morphism Maybe
  type Option.Option \_rightarrow Maybe
