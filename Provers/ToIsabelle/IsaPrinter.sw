@@ -557,6 +557,8 @@ addCoercions before raiseNamedTypes
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
+    let spc = addCoercions coercions spc in
+    let spc = exploitOverloading coercions true spc in
     %% Second round of simplification could be avoided with smarter construction
     let spc = expandRecordPatterns spc in
     let spc = normalizeNewTypes(spc, true) in
@@ -647,7 +649,7 @@ addCoercions before raiseNamedTypes
         let thy_ext = show(!c.anon_thy_count) in
         let thy_nm = c.thy_name ^ thy_ext in
         let thy_fil_nm = "/tmp/??.thy" in
-        (writeLine("ppI0: "^thy_nm^" "^uidToFullPath(getCurrentUID c));
+        (%writeLine("ppI0: "^thy_nm^" "^uidToFullPath(getCurrentUID c));
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
            then toFile(thy_fil_nm,
@@ -926,9 +928,9 @@ addCoercions before raiseNamedTypes
             | CoProduct(taggedSorts,_) ->
              (let def ppTaggedSort (id,optTy) =
                     case optTy of
-                      | None -> ppConstructor(id, mainId)
+                      | None -> ppConstructor(c, id, mainId)
                       | Some ty ->
-                        prConcat [ppConstructor(id, mainId), prSpace,
+                        prConcat [ppConstructor(c, id, mainId), prSpace,
                                   case ty of
                                     | Product(fields as ("1",_)::_,_) ->	% Treat as curried
                                       prConcat(addSeparator prSpace
@@ -1192,13 +1194,23 @@ addCoercions before raiseNamedTypes
     Qualified("List", "List"),
     Qualified("Compare", "Comparison")]
 
- op ppConstructor(c_nm: String, qid: QualifiedId): Pretty =
+op constructorTranslation(c_nm: String, c: Context): Option String =
+   case specialOpInfo c (mkUnQualifiedId c_nm) of
+     | Some(tr_nm, None, false, false, true) ->
+       Some tr_nm
+     | _ -> None
+
+
+ op ppConstructor(c: Context, c_nm: String, qid: QualifiedId): Pretty =
+   case constructorTranslation(c_nm, c) of
+     | Some tr_c_nm -> prString tr_c_nm
+     | None -> 
    prString(if qid in? directConstructorTypes then ppIdStr c_nm
               else qidToIsaString qid^"__"^ppIdStr c_nm)
 
- op ppConstructorTyped(c_nm: String, ty: Sort, spc: Spec): Pretty =
+ op ppConstructorTyped(c: Context, c_nm: String, ty: Sort, spc: Spec): Pretty =
    case unfoldToBaseNamedType(spc, ty) of
-     | Base(qid, _, _) -> ppConstructor(c_nm, qid)
+     | Base(qid, _, _) -> ppConstructor(c, c_nm, qid)
      | _ -> fail("Couldn't find coproduct type of constructor "^c_nm)
 
  op  ppIdInfo : List QualifiedId -> Pretty
@@ -1242,9 +1254,9 @@ addCoercions before raiseNamedTypes
 	   | CoProduct(taggedSorts,_) ->
              (let def ppTaggedSort (id,optTy) =
                 case optTy of
-                  | None -> ppConstructor(id, mainId)
+                  | None -> ppConstructor(c, id, mainId)
                   | Some ty ->
-                    prConcat [ppConstructor(id, mainId), prSpace,
+                    prConcat [ppConstructor(c, id, mainId), prSpace,
                               case ty of
                                 | Product(fields as ("1",_)::_,_) ->	% Treat as curried
                                   prConcat(addSeparator prSpace
@@ -1269,8 +1281,8 @@ addCoercions before raiseNamedTypes
            | Subsort(superty, pred, _) | some? opt_prag ->
              let  (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
              prLinesCat 2 ([[prString "typedef ", ppTyVars tvs, ppIdInfo aliases, prString " = \"",
-                             if tvs = [] then ppTerm c Top pred
-                               else
+                             %if tvs = [] then ppTerm c Top pred
+                             %  else
                                  let spc = getSpec c in
                                  let pred_dom_ty = domain(spc, inferType(spc, pred)) in
                                  prConcat [prString "{x :: ", ppType c Top true pred_dom_ty,
@@ -2342,12 +2354,12 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           let constr_ty = range(spc,ty) in
           if multiArgConstructor?(constr_id,constr_ty,spc) then
           %% Treat as curried
-             prBreak 2 [ppConstructorTyped(constr_id, constr_ty, spc),
+             prBreak 2 [ppConstructorTyped(c, constr_id, constr_ty, spc),
                         prSpace,
                         prPostSep 2 blockFill prSpace
                           (map (ppTermEncloseComplex? c Nonfix)
                              (MS.termToList term2))]
-          else prConcat [ppConstructorTyped(constr_id, constr_ty, spc),
+          else prConcat [ppConstructorTyped(c, constr_id, constr_ty, spc),
                          prSpace,
                          ppTerm c Nonfix term2]
         | (Lambda (match, _),_) ->
@@ -2709,7 +2721,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
      | VarPat (v, _) -> if c.printTypes? then ppVarWithSort c v
                         else ppVarWithoutSort v
      | EmbedPat (constr, pat, ty, _) ->
-       prBreak 0 [ppConstructorTyped (constr, ty, getSpec c),
+       prBreak 0 [ppConstructorTyped(c, constr, ty, getSpec c),
                   case pat of
                     | None -> prEmpty
                     | Some pat ->
@@ -2889,9 +2901,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                then
                  case productOpt(spc,dom) of
                  | Some fields -> ppTerm c parentTerm (etaRuleProduct(mkFun(fun,ty), fields))
-                 | None -> ppConstructorTyped(id, rng, getSpec c)
-               else ppConstructorTyped(id, rng, getSpec c))
-          | None -> ppConstructorTyped(id, ty, getSpec c))
+                 | None -> ppConstructorTyped(c, id, rng, getSpec c)
+               else ppConstructorTyped(c, id, rng, getSpec c))
+          | None -> ppConstructorTyped(c, id, ty, getSpec c))
      | Embedded id ->
        let (dom, _) = arrow(getSpec c, ty) in
        ppTerm c parentTerm (mkLambda(mkVarPat("cp",dom), mkApply(mkFun(fun,ty), mkVar("cp",dom))))
