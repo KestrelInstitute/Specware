@@ -43,8 +43,8 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
         case el of
           | Sort(qid, _)     -> qid in? type_set
           | SortDef(qid, _)  -> qid in? type_set
-          | Op(qid, _, _)    -> qid in? op_set
-          | OpDef(qid, _, _) -> qid in? op_set
+          | Op(qid, _, _)    -> qid in? op_set && numRefinedDefs qid = 1
+          | OpDef(qid, refine_num, _) -> qid in? op_set && numRefinedDefs qid = refine_num + 1
           | Property(_, _, _, formula, _) ->
             forall? (fn qid -> qid in? op_set || some?(findTheOp(base_spec, qid)))
               (opsInTerm formula)
@@ -56,6 +56,12 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
 %                                         true
 %                                    else false) im_elts
           | _ -> haskellElement? el
+      def numRefinedDefs qid =
+        case AnnSpec.findTheOp(spc, qid) of
+          | None -> 0
+          | Some opinfo ->
+        let (_, _, full_dfns) = unpackTerm opinfo.dfn in
+        length(innerTerms full_dfns)
   in
   spc <<
     {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> some?(findTheSort(base_spec, qid))),
