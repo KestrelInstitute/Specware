@@ -195,8 +195,8 @@ refine def [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
   if n = 0 then l
   else let _::tl = l in removePrefix (tl, n - 1)
 
-refine def [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
-  prefix (l, length l - n)
+%refine def [a] removeSuffix (l: List a, n:Nat | n <= length l) : List a =
+%  prefix (l, length l - n)
 
 refine def [a] head (l: List1 a) : a =
   let hd::_ = l in hd
