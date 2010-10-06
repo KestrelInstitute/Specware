@@ -1080,8 +1080,7 @@ Utilities qualifying spec
       | _     -> false
 
 
-  op  constantTerm?: [a] ATerm a -> Boolean
-  def constantTerm? t =
+  op [a] constantTerm? (t: ATerm a): Bool =
     case t of
       | Lambda _ -> true
       | Fun _    -> true
