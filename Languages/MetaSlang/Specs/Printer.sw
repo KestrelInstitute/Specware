@@ -593,7 +593,7 @@ AnnSpecPrinter qualifying spec
 	    prettysNone [pp1, string " ", pp2]     
 
           | Any _ -> string "<anyterm>"
-          | And (tms, _) -> prettysNone ([string "<AndTerms: "] 
+          | And (tms, _) -> let _ = debug("and") in prettysFill ([string "<AndTerms: "] 
 					 ++
 					 (foldl (fn (pps, tm) -> 
 						 pps ++
@@ -1038,7 +1038,7 @@ AnnSpecPrinter qualifying spec
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
            [(4, blockNone (0, [(0, string " ("), 
                                (0, ppPattern (context << {printSort = true})
-                                     ([index, opIndex], false)
+                                     ([index, opIndex], true)
                                      pat  (* (SortedPat (pat, dom, apos)) *) ),
                                (0, string ")")]))]
            ++
@@ -1059,7 +1059,7 @@ AnnSpecPrinter qualifying spec
            ppDefAux ([index, defIndex], tm)
 
      def ppDecl tm =
-       let (tvs, srt, tm) = unpackTerm tm in
+       let (tvs, srt, tm) = unpackFirstTerm tm in
        (1, blockFill
              (0, 
               [(0, blockFill
@@ -1121,9 +1121,9 @@ AnnSpecPrinter qualifying spec
                                (0, string " "), 
                                (2, ppTerm context (path, Top) term)]))]
 	     
-     def ppDef tm =
-       let (tvs, opt_srt, _) = unpackTerm tm in
-       let tm = refinedTerm(tm, refine_num) in
+     def ppDef tm0 =
+       let (tvs, opt_srt, tm) = unpackTerm(tm0) in
+       % let _ = writeLine("ppDef:\n"^anyToString tm) in
        let prettys = ppDefAux ([index, defIndex], tm) in
        (1, blockFill (0, 
 		      [(0, blockFill (0, 
@@ -1142,20 +1142,24 @@ AnnSpecPrinter qualifying spec
                       ++ prettys))
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
-   let warnings = 
-       (let m = length decls in
-	let n = length defs  in
-	if m <= 1 then
-	  if n <= 1 then
-	    %% Precede with new line only if both op and def 
-	    [(0, string " ")]   %(if blankLine? then [(0, string " ")] else [])
-	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
-	else
-	  if n <= 1 then
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
-	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
+%    let _ = writeLine "Decls:" in
+%    let _ = app (fn d -> writeLine(printTerm d)) decls in
+%    let _ = writeLine "Defs:" in
+%    let _ = app (fn d -> writeLine(printTerm d)) defs in
+   let warnings = []
+ %       (let m = length decls in
+% 	let n = length defs  in
+% 	if m <= 1 then
+% 	  if n <= 1 then
+% 	    %% Precede with new line only if both op and def 
+% 	    [(0, string " ")]   %(if blankLine? then [(0, string " ")] else [])
+% 	  else
+% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
+% 	else
+% 	  if n <= 1 then
+% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
+% 	  else
+% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let decls = 
        %% make sure an "op ..." form is printed, to establish the type of the op
@@ -1163,8 +1167,9 @@ AnnSpecPrinter qualifying spec
 	 | ([], dfn :: _) -> [dfn]
 	 | _ -> decls
    in
-   let ppDecls = if printOp?  then map ppDecl decls else [] in
-   let ppDefs  = if printDef? then map ppDef  defs  else [] in
+   let ppDecls = if printOp? then map ppDecl (if printOpWithDef? then defs else decls) else [] in
+   % let _ = writeLine("ppOpDeclAux: "^printAliases info.names^": "^show (length defs)^" - "^show refine_num) in
+   let ppDefs  = if printDef? then [ppDef (defs @ (max(0, length defs - refine_num - 1)))] else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
  op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
