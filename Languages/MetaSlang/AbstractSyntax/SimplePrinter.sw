@@ -46,6 +46,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppGrConcat [
                   ppString "(",
                   ppATerm left,
+                  ppBreak,
                   ppGroup (ppIndent (ppConcat [
                     ppString " ",
                     ppQualifiedId qid,
@@ -73,7 +74,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 		    if (isSimpleTerm? left) || (isSimpleTerm? right) then
 		      ppGroup (ppConcat [
 			ppString "(",
-			ppATerm left,
+			ppATerm left, ppBreak,
 			ppString infix_string,
 			ppString " ",
 			ppATerm right,
@@ -82,7 +83,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 		    else
 		      ppGrConcat [
 		        ppString "(",
-			ppATerm left,
+			ppATerm left, ppBreak,
 			ppGroup (ppIndent (ppConcat [
 			  ppString infix_string,
                           ppBreak,
@@ -244,6 +245,11 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
           | Transform (trs, _) ->
             ppTransformExprs trs
+          | And (tms, _) ->
+            ppGrConcat [ppString "<AndTerms", ppBreak, ppString "  ",
+                        ppNest 0 (ppSep ppBreak (map ppATerm tms)),
+                        ppString ">"]
+          | Any _ -> ppString "<anyterm>"
           | mystery -> fail ("No match in ppATerm with: '" ^ (anyToString mystery) ^ "'"))
 
   op ppBinder : Binder -> Pretty
