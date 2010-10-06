@@ -264,6 +264,13 @@ AnnSpec qualifying spec
  op [a] opDefInnerTerms(info: AOpInfo a): List(ATerm a) =
    innerTerms info.dfn
 
+ op [a] numRefinedDefs (spc: ASpec a) (qid: QualifiedId): Nat =
+   case findTheOp(spc, qid) of
+     | None -> 0
+     | Some opinfo ->
+   let (_, _, full_dfns) = unpackTerm opinfo.dfn in
+   length(innerTerms full_dfns)
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
