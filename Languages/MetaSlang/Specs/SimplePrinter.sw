@@ -169,7 +169,7 @@ SpecCalc qualifying spec
 			  ppType srt])
 
      def ppDef tm =
-       let (tvs, _, tm) = unpackTerm tm in
+       let (tvs, _, tm) = unpackFirstTerm tm in
        ppGroup (ppConcat [ppString " def ",
 			  case tvs of
 			    | [] -> ppNil
