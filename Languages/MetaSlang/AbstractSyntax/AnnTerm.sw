@@ -594,6 +594,18 @@ MetaSlang qualifying spec
    let (pref, _, post) = splitAt(tms, len - i - 1) in
    maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
 
+ op [a] andTerms (tms: List(ATerm a)): List(ATerm a) =
+   foldr (fn (tm, result) ->
+            case tm of
+              | And(s_tms, _) -> andTerms s_tms ++ result
+              | _ -> tm :: result)
+     [] tms
+
+ op [a] mkAnd(tms: List(ATerm a) | tms ~= []): ATerm a =
+   case tms of
+     | [t] -> t
+     | t::_ -> And(tms, termAnn t)
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Pattern components
