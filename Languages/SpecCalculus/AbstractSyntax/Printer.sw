@@ -410,7 +410,7 @@ SpecCalc qualifying spec
  def ppAOpDefs (aliases, defs, refine?) =
    let 
      def pp_def dfn =
-       let (tvs, srt, term) = unpackTerm dfn in
+       let (tvs, srt, term) = unpackFirstTerm dfn in
        ppConcat((if refine? then [ppString "refine "] else [])
              ++ [ppString "def ", 
 		 (case tvs of

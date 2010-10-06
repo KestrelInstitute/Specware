@@ -339,7 +339,7 @@ IsaTermPrinter qualifying spec
             | Some(_,_,_,_,true) ->
               (case AnnSpec.findTheOp(spc, qid) of
                  | Some {names=_, fixity=_, dfn, fullyQualified?=_} ->
-                   let (tvs, ty, term) = unpackTerm dfn in
+                   let (tvs, ty, term) = unpackFirstTerm dfn in
                    let Qualified(q, nm) = qid in
                    % let _ = writeLine("def_tm: "^printTerm term) in
                    let initialFmla = defToTheorem(getSpec c, ty, qid, term) in
@@ -498,6 +498,7 @@ IsaTermPrinter qualifying spec
 addSubtypePredicateLifters doesn't depend on anything (?)
 addCoercions & raiseNamedTypes before makeTypeCheckObligationSpec
 addCoercions before raiseNamedTypes
+removeSubTypes can introduce subtype conditions that require addCoercions
 *)
 
   op  ppSpec (c: Context) (spc: Spec): Pretty =
@@ -553,7 +554,7 @@ addCoercions before raiseNamedTypes
 	       else spc
     in
     let spc = exploitOverloading coercions true spc in
-% let _ = writeLine("1:\n"^printSpec spc) in
+ % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
