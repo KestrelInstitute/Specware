@@ -235,6 +235,7 @@ SpecCalc qualifying spec
                                 else new_tm
                   in
 		  let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
+                  % let _ = writeLine("addOP "^id":\n"^printTerm combined_dfn) in
 		  let combined_info = old_info << {names = combined_names, 
                                                    dfn   = combined_dfn,
                                                    fullyQualified? = false} 
