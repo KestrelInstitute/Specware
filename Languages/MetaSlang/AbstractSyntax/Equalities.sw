@@ -544,9 +544,6 @@ MetaSlang qualifying spec
  def MetaSlang.maybeAndTerm (tms, pos) =
    let non_dup_terms =
        foldl (fn (pending_tms, tm) ->
-           %   if exists (fn pending_tm -> equalTerm? (tm, pending_tm)) pending_tms then
-%                pending_tms
-%              else
                 case termInnerTerm tm of
                   | Any _ ->
                     if exists? (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then
@@ -563,11 +560,15 @@ MetaSlang qualifying spec
                     in
                     pending_tms ++ [tm])
              []
-	     tms
+	     (andTerms tms)
    in
-     case non_dup_terms of
-       | []   -> Any pos
-       | [tm] -> tm
-       | _    -> And (non_dup_terms, pos)
+   case non_dup_terms of
+     | []   -> Any pos
+     | [tm] -> tm
+     | (Pi(tvs, SortedTerm(Any _, ty, a1), a2)) :: r_tms ->
+       Pi(tvs, SortedTerm(mkAnd r_tms, ty, a1), a2) 
+     | (SortedTerm(Any _, ty, a1)) :: r_tms ->
+       SortedTerm(mkAnd r_tms, ty, a1)
+     | _    -> And (non_dup_terms, pos)
 
 end-spec
