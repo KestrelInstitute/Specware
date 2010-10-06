@@ -1495,7 +1495,7 @@ op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> foldl f (f (base, hd)) tl
-#translate Haskell -> sw_foldl #end
+#translate Haskell -> sw_foldl -strict #end
 
 proof Isa foldl_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldl' f b l)", simp)
@@ -1506,7 +1506,7 @@ op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> f (hd, foldr f base tl)
-#translate Haskell -> sw_foldr #end
+#translate Haskell -> sw_foldr -strict #end
 
 proof Isa foldr_subtype_constr
   apply (subgoal_tac "\<forall>b. P__b b \<longrightarrow>  P__b (foldr' f b l)", simp)
