@@ -4,8 +4,9 @@ ExecutableList = morphism Base/List -> Base/List_Executable {}
 ExecutableString = morphism Base/String -> Base/String_Executable {}
 ExecutableInteger = morphism Base/Integer -> Base/Integer_Executable {}
 
-InterpreterBase0 = Base[ExecutableInteger][ExecutableString][ExecutableList]
+InterpreterBase = Base[ExecutableInteger][ExecutableString][ExecutableList]
 
+(* The following almostduplicates def in String_Executable
 InterpreterBase = refine InterpreterBase0 by {
 
   (* The following def's have been commented out because they are now present in
@@ -50,4 +51,4 @@ InterpreterBase = refine InterpreterBase0 by {
 	  in
 	    stringToNatAux(explode s, 0))
 }
-
+*)
