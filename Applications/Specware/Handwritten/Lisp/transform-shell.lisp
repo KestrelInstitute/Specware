@@ -1,4 +1,5 @@
 (defpackage :Emacs)
+(defpackage :AnnSpec)
 (defpackage :AnnSpecPrinter)
 (defpackage :String-Spec)
 (defpackage :MetaSlang)
