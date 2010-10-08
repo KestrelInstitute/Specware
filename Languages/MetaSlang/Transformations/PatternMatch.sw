@@ -831,6 +831,7 @@ def eliminateTerm context term =
       | And(tm::r_tms, a) -> And(eliminateTerm context tm :: r_tms, a)
       | SortedTerm(tm, ty, a) ->
         SortedTerm(eliminateTerm context tm, eliminateSort context ty, a)
+      | tm -> tm
 
 
  op  simplifyPatternMatchResult: MS.Term -> Option MS.Term

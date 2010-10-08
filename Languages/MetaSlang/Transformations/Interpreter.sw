@@ -212,9 +212,10 @@ spec
       | Op (qid, _) ->
         (case findTheOpInterp (spc, qid) of
 	   | Some info ->
+             % let _ = writeLine("evalFun: "^printQualifiedId qid^"\n"^printTerm info.dfn) in
              %% Being suppressed is used here as a proxy for "has a non-constructive definition"
 	     (if definedOpInfo? info && ~(avoidExpanding? qid) then
-		let tm = firstOpDefInnerTerm info in
+		let (_,_,tm) = unpackFirstOpDef info in
                 if existsSubTerm (embed? The) tm
                   then Unevaluated t
                 else evalRec (tm, sb, spc, depth+1,trace?)

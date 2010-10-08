@@ -507,7 +507,7 @@ def removePatternCase(spc, term) =
 			    foldl
 			    (fn dfn ->
 			     let pos = termAnn dfn in
-			     let (tvs, srt, term) = unpackTerm dfn in
+			     let (tvs, srt, term) = unpackFirstTerm dfn in
 			     let usedNames = addLocalVars (term, usedNames) in
 			     let tm = 
 			     normalizeArityTopLevel (spc, [], usedNames,

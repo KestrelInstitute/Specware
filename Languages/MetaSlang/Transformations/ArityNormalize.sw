@@ -372,7 +372,7 @@ ArityNormalize qualifying spec
         | Var _ -> convertToArity1(sp,gamma,usedNames,term)
         | Fun _ -> convertToArity1(sp,gamma,usedNames,term)
         | And(tm::r_tms, a) -> And(normalizeArity(sp,gamma,usedNames,tm) :: r_tms, a)
-
+        | tm -> tm
 
   def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
       case termArity(sp,gamma,term)

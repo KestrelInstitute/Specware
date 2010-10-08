@@ -345,13 +345,13 @@ IsaTermPrinter qualifying spec
                    let initialFmla = defToTheorem(getSpec c, ty, qid, term) in
                    let liftedFmlas = removePatternTop(getSpec c, initialFmla) in
                    % let _ = app (fn fmla -> writeLine("def_thm1: "^printTerm fmla)) liftedFmlas in
-                   let simplifiedLiftedFmlas = map (fn fmla -> simplify spc (convertApplyToIn? spc fmla)) liftedFmlas in
+                   let liftedFmlas = map (convertApplyToIn? spc) liftedFmlas in
                    let (_,thms) = foldl (fn((i, result), fmla) ->
                                            (i + 1,
                                             result ++ [mkConjecture(Qualified (q, nm^"__def"^(if i = 0 then ""
                                                                                               else show i)),
                                                                     tvs, fmla)]))
-                                    (0, []) simplifiedLiftedFmlas
+                                    (0, []) liftedFmlas
                    in
                    el::thms
                  | _ -> [el])
@@ -542,9 +542,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
- % let _ = printSpecWithSortsToTerminal spc in
+    % let _ = printSpecWithSortsToTerminal spc in
     let spc = exploitOverloading coercions false spc in
- % let _ = writeLine("0:\n"^printSpec spc) in
+    % let _ = writeLine("0:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
@@ -553,8 +553,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                 c.thy_name)
 	       else spc
     in
-    let spc = exploitOverloading coercions true spc in
- % let _ = writeLine("1:\n"^printSpec spc) in
+    let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
+    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
@@ -2455,6 +2455,9 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
    in
    case term of
+     | Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran)) ->
+       %% Remnants of adding exploitOverloading
+       ppTerm c parentTerm x       
      | Apply (trm1, trm2 as (Record ([("1", t1), ("2", t2)], a)), _) ->
        (case (trm1, t2) of
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->

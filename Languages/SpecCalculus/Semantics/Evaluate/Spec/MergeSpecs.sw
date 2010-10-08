@@ -50,6 +50,7 @@ SpecCalc qualifying spec
          sorts
 	 merged_info.names  % new and old
 
+
  op  mergeOpInfo : Spec -> OpMap -> OpInfo -> OpMap
  def mergeOpInfo spc ops info =
    let
@@ -80,18 +81,22 @@ SpecCalc qualifying spec
 		       old_decls
 		       new_decls
 	     in
+             let (main_defs, less_defs) = if length new_defs > length old_defs then (new_defs, old_defs) else (old_defs, new_defs) in
 	     let combined_defs =
 	         foldl (fn (combined_defs, new_def) ->
 			if exists? (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
 			  combined_defs
 			else
 			  new_def :: combined_defs)
-		       old_defs
-		       new_defs
+		       less_defs
+		       main_defs
 	     in
 	     %% defer checks for duplicate defs until later, after the caller 
 	     %% has had a chance to call compressDefs   
 	     let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
+             %let _ = if false then ()
+             %  else writeLine("merge old: "^id^"\n"^printTerm(And(old_defs, noPos))^"\n with \n"^printTerm(And(new_defs, noPos))
+             %                 ^"\n to\n"^printTerm combined_dfn) in
 	     new_info << {names           = combined_names, 
 			  dfn             = combined_dfn,
 			  fullyQualified? = false}

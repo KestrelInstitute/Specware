@@ -502,6 +502,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
                     | Some(dom1, ran1) -> normalizeLambda(bod, dom1, ran1, usedNames, spc)
         in
         Lambda([(pat, cnd, bod)], pos)
+      | And(tm1::r_tms, a) -> And((normalizeLambda(tm1, dom, ran, usedNames, spc))::r_tms, a) 
       | _ -> term
 
  op normalizeTopLevelLambdas(spc: Spec): Spec =

@@ -290,6 +290,13 @@ MetaSlang qualifying spec
      | [] -> tm
      | _ -> Pi (tvs, tm, termAnn tm)
 
+op [a] maybePiSortedTerm(tvs: TyVars, o_ty: Option(ASort a), tm: ATerm a): ATerm a =
+  let s_tm = case o_ty of
+               | Some ty -> SortedTerm(tm, ty, termAnn tm)
+               | None -> tm
+  in
+  maybePiTerm(tvs, s_tm)
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -471,7 +478,7 @@ MetaSlang qualifying spec
  %%%                Term components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackTerm    : [b] ATerm b -> TyVars * ASort b * ATerm b
+ op unpackTerm    : [a] ATerm a -> TyVars * ASort a * ATerm a
  op termTyVars    : [b] ATerm b -> TyVars
  op termSort      : [b] ATerm b -> ASort b
  op termInnerTerm : [b] ATerm b -> ATerm b
@@ -498,21 +505,34 @@ MetaSlang qualifying spec
      | Lambda([(_,_,tm)], _) -> transformSteps? tm     % Arguments given but no body
      | _ -> None
 
- def unpackTerm t =
-   let (tvs, tm) = 
-       case t of
-	 | Pi (tvs, tm, _) -> (tvs, tm)
-         | And ([tm], _) -> ([], tm)
-	 | And (tms, _) ->
+ def [a] unpackTerm t =
+   let def unpack(t: ATerm a, tvs: TyVars, o_ty: Option(ASort a)): TyVars * (ASort a) * (ATerm a) =
+        case t of
+	 | Pi (tvs, tm, _) -> unpack(tm, tvs, o_ty)
+         | SortedTerm(tm, ty, _) -> (case ty of
+                                       | Pi(tvs, s_ty, _) -> unpack(tm, tvs, Some s_ty)
+                                       | _ -> unpack(tm, tvs, Some ty))
+         | And ([tm], _)   -> unpack(tm, tvs, o_ty)
+	 | And (tms, a) ->
            (let real_tms = filter (fn tm -> ~(anyTerm? tm)) tms in
               case real_tms of
-                | tm::_ -> ([], tm)
-                | _ -> fail ("unpackTerm: Trying to unpack an And of terms.\n"^printTerm t))
-	 | _ -> ([], t)
+                | [tm]  -> unpack(tm, tvs, o_ty)
+                | tm :: r_tms ->
+                  case o_ty of
+                    | Some ty -> (tvs, ty, And (real_tms, a))
+                    | None ->
+                  let (tvs, ty, u_tm) = unpack(tm, tvs, o_ty) in
+                  (tvs, ty,
+                   And (tm :: map termInnerTerm r_tms, a)))
+	 | _ -> (tvs,
+                 case o_ty of
+                   | Some ty -> ty
+                   | None -> termSort t,
+                 t)
    in
-   case tm of
-     | SortedTerm (tm, srt, _) -> (tvs, srt, tm) 
-     | _                       -> (tvs, termSort tm, tm)
+   let (tvs, ty, tm) = unpack(t, [], None) in
+   % let _ = if embed? And tm then writeLine("unpack:\n"^printTerm t^"\n"^printTerm tm) else () in
+   (tvs, ty, tm)
 
  def termTyVars tm =
    case tm of
@@ -525,7 +545,7 @@ MetaSlang qualifying spec
      | Apply      (t1,t2,   _) -> (case termSort t1 of
 				     | Arrow(dom,rng,_) -> rng
                                      | Subsort(Arrow(dom,rng,_),_,_) -> rng
-				     | _ -> System.fail ("Cannot extract sort of application "
+				     | _ -> System.fail ("Cannot extract sort of application:\n"
 							 ^ printTerm term))
      | ApplyN     ([t1,t2], _) -> (case termSort t1 of
 				     | Arrow(dom,rng,_) -> rng
@@ -579,8 +599,8 @@ MetaSlang qualifying spec
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
    let tms = innerTerms tm in
    let len = length tms in
-   if i < len then tms@(len - i - 1)
-     else fail("Less than "^show i^" refined terms")
+   if i >= 0 && i < len then tms@(len - i - 1)
+     else fail("Less than "^show i^" refined terms in\n"^printTerm tm)
 
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
    let (tvs, ty, tm) = unpackTerm t in
@@ -594,6 +614,7 @@ MetaSlang qualifying spec
    let (pref, _, post) = splitAt(tms, len - i - 1) in
    maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
 
+
  op [a] andTerms (tms: List(ATerm a)): List(ATerm a) =
    foldr (fn (tm, result) ->
             case tm of
@@ -606,6 +627,18 @@ MetaSlang qualifying spec
      | [t] -> t
      | t::_ -> And(tms, termAnn t)
 
+% op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Boolean
+
+ op [a] flattenAnds(tm: ATerm a): ATerm a =
+   let result =
+       case tm of
+         | And(tms, a) -> And(andTerms (map flattenAnds tms), a)
+         | Pi(tvs, tm, a) -> Pi(tvs, flattenAnds tm, a)
+         | SortedTerm(tm, ty, a) -> SortedTerm(flattenAnds tm, ty, a)
+         | _ -> tm
+   in
+   % let _ = writeLine("fla:\n"^printTerm tm^"\n -->"^printTerm result) in
+   result
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Pattern components

@@ -54,12 +54,20 @@ spec
     let def mapTermTop (info, refine_num) =
 	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
         let tm = refinedTerm(full_term, refine_num) in
-        let tm1 = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
+        % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
+        let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
+        let ty = MetaSlang.mapSort(id, mapType, id) ty in
 	let result = mapTerm(tm1, ty) in
         let full_term =  if equalTerm?(result, tm) then full_term
                            else replaceNthTerm(full_term, refine_num, result)
         in
         maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+
+      def mapType ty =
+        case ty of
+          | Subsort(s_ty, pred, a) ->
+            Subsort(s_ty, mapTerm(pred, mkArrow(s_ty, boolSort)), a)
+          | _ -> ty
 
       def mapTerm(tm, ty) =
 	let rm_ty = inferType(spc, tm) in
@@ -212,7 +220,9 @@ spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term, a) ->
-                                      Property(pt, nm, tvs, mapTerm(term, boolSort), a)
+                                      let term = mapTerm(term, boolSort) in
+                                      let term = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) term in
+                                      Property(pt, nm, tvs, term, a)
                                     | _ -> el)
                              spc.elements}
     in
@@ -272,29 +282,44 @@ spec
      % let _ = writeLine("= "^printTerm result) in
      result
 
+  op equalOpFn?(qid: QualifiedId, tm: MS.Term): Bool =
+    case tm of
+      | Fun(Op(qid2, _), _, _) -> qid = qid2
+      | _ -> false
+
   op exploitOverloading  (coercions: TypeCoercionTable) (doMinus?: Bool) (spc: Spec): Spec =
     let def mapTermTop (info, refine_num) =
 	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
         let tm = refinedTerm(full_term, refine_num) in
-        let tm1 = MetaSlang.mapTerm(id, id, coerceRestrictedPats) tm in
+        % let _ = writeLine("exploitOverloading\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
+        let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
+        let ty = MetaSlang.mapSort(id, mapType, id) ty in
 	let result = mapTerm(tm1, ty) in
         let full_term =  if equalTerm?(result, tm) then full_term
                            else replaceNthTerm(full_term, refine_num, result)
         in
+        % let _ = writeLine("\nresult:\n"^printTerm(SortedTerm(full_term, ty, termAnn full_term))) in
         maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+
+      def mapType ty =
+        case ty of
+          | Subsort(s_ty, pred, a) ->
+            Subsort(s_ty, mapTerm(pred, mkArrow(s_ty, boolSort)), a)
+          | _ -> ty
 
        def mapTerm(tm, target_ty) =
           let rm_ty = inferType(spc, tm) in
           let tm = mapSubTerms(tm, target_ty) in
           liftCoercion (tm, rm_ty, target_ty)
        def maybeCancelCoercions(f, x, tm, subtype) =
-         % let _ = writeLine("mce "^printQualifiedId subtype^": "^printTerm tm) in
+         % let _ = if doMinus? then writeLine("mce "^printQualifiedId subtype^": "^printTerm tm^"\n"^anyToString x) else () in
          case x of
            | Apply(f1, x1, _) | equalTerm?(f, f1) -> x1
+           | Apply(Fun(Op(qid, _), _, _), x1, _) | equalOpFn?(qid, f) -> x1
            | Apply(Fun(Op(Qualified("Integer", "-"), fx), _, _),
                    Record([("1", t1), ("2", t2)], _), _)
                | doMinus? ->
-             % let _ = writeLine("minus"^printQualifiedId subtype^": "^printTerm x) in
+             % let _ = writeLine("minus "^printQualifiedId subtype^": "^printTerm x) in
              let nt1 = maybeCancelCoercions(f, t1, t1, subtype) in
              let nt2 = maybeCancelCoercions(f, t2, t2, subtype) in
              % let _ = writeLine(printTerm nt1^" - "^printTerm nt2) in
@@ -311,13 +336,13 @@ spec
        def liftCoercion (tm, rm_ty, target_ty) =
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort rm_ty ^" -> "^ printSort target_ty ^"\n ") in
         case tm of
-          | Apply(f as Fun(Op(Qualified(qual, idn), fx), f_ty, _), x, a) ->
-            % let _ = writeLine("lift?: " ^ printTerm tm) in
-            (case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSuper))
+          | Apply(f as Fun(Op(qid as Qualified(qual, idn), fx), f_ty, _), x, a) ->
+            % let _ = writeLine("lift?: " ^ printTerm tm^"\n"^anyToString tm) in
+            (case findLeftmost (fn tb -> equalOpFn?(qid, tb.coerceToSuper))
                      coercions of
                | Some tb -> maybeCancelCoercions(tb.coerceToSub, x, tm, tb.subtype)
                | None ->
-             case findLeftmost (fn tb -> equalTerm?(f, tb.coerceToSub))
+             case findLeftmost (fn tb -> equalOpFn?(qid, tb.coerceToSub))
                      coercions of
                | Some tb ->
                  let result = maybeCancelCoercions(tb.coerceToSuper, x, tm, tb.subtype) in
@@ -401,7 +426,7 @@ spec
 	  | SortedTerm (trm, srt, a) ->
 	    SortedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
-      def coerceSubtypePreds ty =
+      def coerceSubtypePreds(ty: Sort): Sort =
         case ty of
           | Subsort(ss, pred, a) -> Subsort(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
@@ -434,11 +459,12 @@ spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term, a) ->
-                                      Property(pt, nm, tvs, mapTerm(term, boolSort), a)
+                                      let term = mapTerm(term, boolSort) in
+                                      let term = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) term in
+                                      Property(pt, nm, tvs, term, a)
                                     | _ -> el)
                              spc.elements}
     in
-    let spc = mapSpec (id, coerceSubtypePreds, id) spc in
     % let _ = writeLine(printSpec spc) in
     spc
 

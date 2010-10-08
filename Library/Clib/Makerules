@@ -6,7 +6,7 @@ CC = gcc
 LD = gcc
 
 # the directory for the Boehm garbage collector:
-GCDIR = $(SPECWARE4)/Library/Clib/gc6.6
+GCDIR = $(SPECWARE4)/Library/Clib/gc-7.2alpha2
 
 ifeq "$(USEGC)" "no"
   SWGC = -USWGC

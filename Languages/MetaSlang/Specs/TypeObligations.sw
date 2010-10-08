@@ -301,7 +301,7 @@ spec
    case M
      of Apply(N1, N2, _) ->
         let spc = getSpec gamma in
-        let sigma1 = inferType(spc, N1) 		           in
+        let sigma1 = inferType(spc, N1) in
         (case N1 of 
            | Lambda(rules, _) ->
              let dom_sig = domain(spc, sigma1) in
@@ -312,7 +312,7 @@ spec
              let lam_tau = mkArrow(dom_sig, tau) in
              checkLambda(tcc, gamma, rules, lam_tau, Some N2)
            | Fun(Restrict, s, _) ->
-             let (dom, ran) = arrow(spc, s)			   in
+             let (dom, ran) = arrow(spc, s) in
              let tcc  = (tcc, gamma) |- N2 ?? ran		   in
              let tcc  = <= (tcc, gamma, N2, ran, tau) 		   in
              tcc
@@ -347,9 +347,9 @@ spec
         tcc
 
       | Bind(binder, vars, body, _) -> 
-        let gamma = foldl (fn (x, y) -> insert(y, x))  gamma vars        in
+        let gamma = foldl (fn (x, y) -> insert(y, x))  gamma vars in
         let tcc = (tcc, gamma) |- body ?? boolSort  in
-        let tcc = <= (tcc, gamma, M, boolSort, tau)    in
+        let tcc = <= (tcc, gamma, M, boolSort, tau) in
         tcc
       | The(v as (_, srt), body, _) ->
         % let _ = writeLine("The_oblig:\n"^printTerm(mkBind(Exists1, [v], body))) in
@@ -908,6 +908,7 @@ spec
    (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
+    % let _ =  writeLine(printTerm M^ ": \n"^ printSort tau^"\n <= \n"^ printSort sigma) in
     let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
     if lifting? gamma then
       let gamma =

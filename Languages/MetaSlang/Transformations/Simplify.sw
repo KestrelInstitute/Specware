@@ -315,8 +315,8 @@ spec
             | _ ->
               let result = composeConjPreds(preds, spc) in
               result)
-       | Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
-         -> x
+       %| Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
+       %  -> x
        | IfThenElse(t1,t2,t3,a) ->
          (case t1 of
             | Fun(Bool true, _,_) -> t2

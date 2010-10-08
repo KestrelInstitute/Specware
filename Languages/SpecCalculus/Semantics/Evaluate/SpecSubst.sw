@@ -175,7 +175,7 @@ SpecCalc qualifying spec
                                     then spc << {elements = revise_elements spc.elements false}
                                     else spc, 
 				  revise_elements import_elts top?, pos)
-		 else el     % Import (tm, spc, [])
+		 else Import ((Subst (tm, sm_tm), noPos), spc, import_elts, pos)   %  el     % Import (tm, spc, [])
 	       | _ -> el)
 	    elements
     in

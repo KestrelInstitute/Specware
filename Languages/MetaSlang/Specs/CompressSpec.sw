@@ -110,7 +110,7 @@ AnnSpec qualifying spec
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn = maybeAndTerm (new_decls ++ new_defs, pos) in  % TODO: write and use version of maybeAndTerm that uses equivTerm?, not equalTerm?
+       let new_dfn = maybeAndTerm (new_decls ++ reverse new_defs, pos) in  % TODO: write and use version of maybeAndTerm that uses equivTerm?, not equalTerm?
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
 	          

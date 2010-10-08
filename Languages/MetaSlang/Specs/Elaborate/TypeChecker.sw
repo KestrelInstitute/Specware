@@ -540,7 +540,6 @@ TypeChecker qualifying spec
 
   def single_pass_elaborate_term (env, trm, term_sort) =
     case trm of
-
       | Fun (OneName (id, fixity), srt, pos) ->
         (let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
 	 %% resolve sort from environment
