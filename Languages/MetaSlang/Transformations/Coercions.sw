@@ -290,16 +290,16 @@ spec
   op exploitOverloading  (coercions: TypeCoercionTable) (doMinus?: Bool) (spc: Spec): Spec =
     let def mapTermTop (info, refine_num) =
 	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
-        let tm = refinedTerm(full_term, refine_num) in
+        let tm = if embed? Any full_term then full_term else refinedTerm(full_term, refine_num) in
         % let _ = writeLine("exploitOverloading\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
         let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-        let ty = MetaSlang.mapSort(id, mapType, id) ty in
+        let new_ty = MetaSlang.mapSort(id, mapType, id) ty in
 	let result = mapTerm(tm1, ty) in
         let full_term =  if equalTerm?(result, tm) then full_term
                            else replaceNthTerm(full_term, refine_num, result)
         in
-        % let _ = writeLine("\nresult:\n"^printTerm(SortedTerm(full_term, ty, termAnn full_term))) in
-        maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+        % let _ = writeLine("\nresult:\n"^printTerm(SortedTerm(full_term, new_ty, termAnn full_term))) in
+        maybePiTerm(tvs, SortedTerm(full_term, new_ty, termAnn full_term)) 
 
       def mapType ty =
         case ty of
@@ -439,7 +439,7 @@ spec
     let spc =
         spc << {ops = foldl (fn (ops, el) ->
                              case el of
-                               | Op (qid as Qualified(q, id), true, _) ->
+                               | Op (qid as Qualified(q, id), _, _) ->
                                  %% true means decl includes def
                                  (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
