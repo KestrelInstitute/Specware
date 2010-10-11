@@ -270,7 +270,8 @@ spec
 		                  (subtractSpec vertex_spec base_spec) % vertex_spec ?
 				  cocone_renaming 
 		                  []
-				  false) 
+				  false
+                                  None) 
 	   in
            translated_spec :: translated_specs)
          []

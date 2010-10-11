@@ -237,7 +237,7 @@ SpecCalc qualifying spec
 		   }
    in
    %% Note that auxTranslateSpec is not expected to raise any errors.
-     auxTranslateSpec spc translators None
+     auxTranslateSpec spc translators None None
     
   %% ======================================================================  
   %%  Error handling...

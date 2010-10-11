@@ -47,7 +47,7 @@ SpecCalc qualifying spec
      case coerceToSpec value of
        | Spec spc -> 
          {
-	  new_spec <- translateSpec true spc renaming [] false;
+	  new_spec <- translateSpec true spc renaming [] false (Some unitId);
 	  new_spec <- complainIfAmbiguous new_spec pos;
 	  raise_any_pending_exceptions;  % should never happen, but...
 	  return (Spec new_spec, ts, uids)
@@ -87,8 +87,8 @@ SpecCalc qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% translateSpec is used by Translate and Colimit
-  op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Boolean -> Env Spec
-  def translateSpec allow_exceptions? spc renaming immune_op_names allow_extra_rules? = 
+  op  translateSpec : Boolean -> Spec -> Renaming -> QualifiedIds -> Boolean -> Option UnitId -> Env Spec
+  def translateSpec allow_exceptions? spc renaming immune_op_names allow_extra_rules? currentUID? = 
     %%
     %% WARNING:  When allow_exceptions? is false, as when called from colimit,
     %% translateSpec (and the routines it calls) must not raise any errors,
@@ -123,7 +123,7 @@ SpecCalc qualifying spec
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %% Note that auxTranslateSpec is not expected to raise any errors.
-     spc <- auxTranslateSpec spc translators (Some renaming);
+     spc <- auxTranslateSpec spc translators currentUID? (Some renaming);
      return spc
     } 
 
@@ -588,8 +588,8 @@ SpecCalc qualifying spec
   %% In particular, if an operation such as translate wishes to signal errors in 
   %% some situations, those errors should be raised while Translators is being 
   %% created, not here.
-  op  auxTranslateSpec : Spec -> Translators -> Option Renaming -> SpecCalc.Env Spec
-  def auxTranslateSpec spc translators opt_renaming =
+  op  auxTranslateSpec : Spec -> Translators -> Option UnitId -> Option Renaming -> SpecCalc.Env Spec
+  def auxTranslateSpec spc translators currentUID? opt_renaming =
     let sort_translator = translators.sorts in
     let   op_translator = translators.ops   in
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
@@ -663,7 +663,7 @@ SpecCalc qualifying spec
     {
      new_sorts    <- translateSortInfos s.sorts;
      new_ops      <- translateOpInfos   s.ops;
-     new_elements <- return (translateSpecElements translators opt_renaming s.elements);
+     new_elements <- return (translateSpecElements translators opt_renaming s.elements currentUID?);
      new_spec     <- return {sorts     = new_sorts,
 			     ops       = new_ops,
 			     elements  = new_elements,
@@ -711,12 +711,12 @@ SpecCalc qualifying spec
 
   def translatePattern pat = pat
 
-  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> SpecElements
-  def translateSpecElements translators opt_renaming elements =
-    mapSpecElements (translateSpecElement translators opt_renaming) elements
+  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> SpecElements
+  def translateSpecElements translators opt_renaming elements currentUID? =
+    mapSpecElements (translateSpecElement translators opt_renaming currentUID?) elements
 
-  op  translateSpecElement : Translators -> Option Renaming -> SpecElement -> SpecElement
-  def translateSpecElement translators opt_renaming el =
+  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> SpecElement -> SpecElement
+  def translateSpecElement translators opt_renaming currentUID? el =
     case el of
       | Sort    (qid, a)       -> Sort    (translateQualifiedId translators.sorts qid, a) 
       | SortDef (qid, a)       -> SortDef (translateQualifiedId translators.sorts qid, a)
@@ -730,7 +730,7 @@ SpecCalc qualifying spec
 	%% applying this fn to each of the original imported elements. 
 	%% So we don't want to recur again here, but we do want to tweak 
 	%% the term:
-	let new_tm = 
+	let (new_tm, spc) = 
 	    case opt_renaming of
 	      | Some (rules, pos) ->
 	        let rules = foldl (fn (rules, rule) ->
@@ -741,22 +741,51 @@ SpecCalc qualifying spec
 					  | _ -> rules)
 				     | (Op ((dom_qid, _), _, _), _) ->
 				       (case findTheOp (spc, dom_qid) of
-					  | Some _ -> [rule] ++ rules
+					  | Some _ ->
+                                            % let _ = writeLine("translateSpecElement: "^printQualifiedId dom_qid) in
+                                            rule :: rules
 					  | _ -> rules)
+                                     | (Ambiguous (dom_qid, _, _), _) | findAllSorts(spc, dom_qid) = [] && findAllOps(spc, dom_qid) = [] ->
+                                       rules
 				     | _ -> 
 				       [rule] ++ rules)
 		                  []
 				  rules
 		in
 		  (case rules of
-		     | [] -> sp_tm
+		     | [] -> (sp_tm, spc)
 		     | _ -> 
 		       let renaming = (reverse rules, pos) in
-		       (Translate (sp_tm, renaming), pos))
-              | _ -> sp_tm
+                       let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
+                       % let _ = writeLine("trse: "^anyToString renaming^"\n"^anyToString sp_tm) in
+                       case currentUID? of
+                         | None -> (trans_spc_tm, spc)
+                         | Some currentUID ->
+                       case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
+                         | Some(Spec trans_spc) -> (trans_spc_tm, trans_spc)
+                         | None -> (trans_spc_tm, spc))
+              | _ -> (sp_tm, spc)
 	in
 	  Import (new_tm, spc, els, a)
       | _ -> el
+
+op  Specware.cleanEnv : SpecCalc.Env ()
+op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
+op  evaluateTermWrtUnitId(sc_tm: SpecCalc.Term Position, currentUID: UnitId): Option Value = 
+  let
+    %% Ignore exceptions
+    def handler except =
+      % let _ = writeLine("Exception: "^anyToString except) in
+      return None
+  in
+  % let _ = writeLine("evaluateTermWrtUnitId") in
+  let prog = {cleanEnv;
+              setCurrentUID currentUID;
+              val  <- evaluateTerm sc_tm;
+              % print ("evalTerm:\n"^(case val of Spec spc -> printSpecFlat (subtractSpec spc (getBaseSpec())) | _ -> "")^"\n" );
+              return (Some val)} 
+  in
+    runSpecCommand (catch prog handler)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
