@@ -337,7 +337,8 @@ Haskell qualifying spec
   op  evaluateTermWrtUnitId(sc_tm: Term, currentUID: UnitId): Option Value = 
     let
       %% Ignore exceptions
-      def handler _ (* except *) =
+      def handler except =
+        let _ = writeLine("Exception: "^anyToString except) in
         return None
     in
     % let _ = writeLine("evaluateTermWrtUnitId") in
@@ -556,7 +557,7 @@ Haskell qualifying spec
                   ++ [[prString "module ", pr_haskellname,
                        prString " ( ",
                        prSep 0 blockFill (prString ", ")
-                         (if c.slicing? && ~(c.top_spec?) then pp_exports
+                         (if c.slicing? && ~(c.top_spec?) && pp_exports ~= [] then pp_exports
                             else prConcat [prString "module ", pr_haskellname] :: pp_exports),
                        prString " )",
                        prString " where"]]
