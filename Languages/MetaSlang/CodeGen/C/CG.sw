@@ -134,6 +134,7 @@ spec
     spc
 
   def generateCSpec basespc spc =
+    let basespc = substBaseSpecs basespc in
     let spc = transformSpecForCodeGen basespc spc in
     generateCSpecFromTransformedSpec spc
 
