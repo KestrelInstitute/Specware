@@ -86,11 +86,12 @@ list__foralli_p p l =
 
 sw_foldl :: ((b, a) -> b) -> b -> [a] -> b
 sw_foldl f base [] = base
-sw_foldl f base (hd : tl) = sw_foldl f (f(base, hd)) tl
+sw_foldl f base (hd : tl) = (sw_foldl f $! f $! (base, hd)) $! tl
 
 sw_foldr :: ((a, b) -> b) -> b -> [a] -> b
 sw_foldr f base [] = base
-sw_foldr f base (hd : tl) = f(hd, sw_foldr f base tl)
+sw_foldr f base (hd : tl) = 
+  f $! (hd, (sw_foldr f $! base) $! tl)
 
 list__equiLong :: [a] -> [b] -> Bool
 infixl 4 `list__equiLong`
