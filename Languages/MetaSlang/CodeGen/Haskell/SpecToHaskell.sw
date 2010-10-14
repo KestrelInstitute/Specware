@@ -269,10 +269,12 @@ Haskell qualifying spec
 
   op uidStringPairForTerm(currentUID: UnitId, sc_tm: Term, slicing?: Bool, top_uid: UnitId)
        : Option((String * String * String * String) * UnitId) =
+    % let _ = writeLine("Evaluating sc_tm:\n"^anyToString sc_tm) in
     case sc_tm of
       | (Subst(spc_tm, morph_tm), pos) ->
         (case uidStringPairForTerm(currentUID, spc_tm, slicing?, top_uid) of
-           | None -> None
+           | None -> (writeLine("subst sc_tm not evaluated:\n"^anyToString spc_tm);
+                      None)
            | Some((haskellnm, sw_file, haskell_module_name, haskell_file), uid) ->
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
              Some((haskellnm^sb_id, sw_file, haskell_module_name^sb_id, haskell_file^sb_id),
@@ -283,6 +285,7 @@ Haskell qualifying spec
             (writeLine("reluid not found:\n"^anyToString sc_tm);
              None)
           | Some(val, uid) ->
+            % let _ = writeLine("Found RelUID:\n"^anyToString uid) in
             let (haskellnm, haskell_module_name, filnm, hash) = unitIdToHaskellString(uid, slicing?, top_uid) in
             Some((haskellnm ^ hash,
                   uidToFullPath uid ^ ".sw",
@@ -321,24 +324,27 @@ Haskell qualifying spec
       | {path, hashSuffix} -> last path
 
   op  evaluateRelUIDWrtUnitId(rel_uid: RelativeUID, pos: Position, currentUID: UnitId): Option (Value * UnitId) = 
+    % let _ = writeLine("Evaluating RelUID:\n"^anyToString rel_uid) in
     let
       %% Ignore exceptions
-      def handler _ (* except *) =
+      def handler except =
+        let _ = writeLine("Evaluation failed:\n"^anyToString except) in
         return None
     in
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
+                % print("evalRelUID: "^anyToString currentUID^"\n");
 		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid;
 		return (Some(val, uid))} 
     in
       runSpecCommand (catch prog handler)
 
-
   op  evaluateTermWrtUnitId(sc_tm: Term, currentUID: UnitId): Option Value = 
+    % let _ = writeLine("Evaluating term wrt UID:\n"^anyToString sc_tm) in
     let
-      %% Ignore exceptions
+      %% Ignore exceptions except for warning message
       def handler except =
-        let _ = writeLine("Exception: "^anyToString except) in
+        let _ = writeLine("Evaluation failed:\n"^anyToString except) in
         return None
     in
     % let _ = writeLine("evaluateTermWrtUnitId") in
@@ -425,6 +431,7 @@ Haskell qualifying spec
                                  | Import(r_sc_tm, im_sp, _, _) -> f_sc_tm = r_sc_tm
                                  | _ -> false)
                         reduced_els)
+                 | Pragma("#translate", prag_str, "#end", _) -> haskellPragma? prag_str
                  | _ -> false)
           full_els
     in
@@ -2264,7 +2271,10 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                 prBreakCat 2 [[prString "\\", enclose?(complexPattern? pattern, ppPattern c pattern),
                                prString " -> "],
                               [ppTerm c Top term]])
-     | Lambda (match, _) -> ppMatch c match
+     | Lambda (match, _) ->
+       let dom_ty = patternSort (head match).1 in
+       let x_v = ("x", dom_ty) in
+       ppTerm c parentTerm (mkLambda(mkVarPat x_v, mkApply(term, mkVar x_v)))
      | IfThenElse (pred, term1, term2, _) -> 
        enclose?(infix? parentTerm,
                 block (if monadBindTerm? term1 then All else Linear,
