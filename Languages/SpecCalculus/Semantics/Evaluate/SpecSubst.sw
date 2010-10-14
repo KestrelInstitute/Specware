@@ -131,8 +131,10 @@ SpecCalc qualifying spec
     in
     %% S - dom(M)
 
-    let residue = subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term) in
-    {
+    {spec_replacements <- findSubSpecReplacements(dom_spec, cod_spec);
+     spec_replacements <- return((dom_spec, sm_tm, cod_spec, cod_spec_term) :: spec_replacements);
+     residue <- return(subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term,
+                                                 spec_replacements));
      translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
@@ -146,36 +148,79 @@ SpecCalc qualifying spec
      return new_spec
      }
 
+  op findSubSpecReplacements(dom_spec: Spec, cod_spec: Spec): SpecCalc.Env(List(Spec * SCTerm * Spec * SCTerm)) =
+    let sub_morphisms =
+        foldlSpecElements (fn (result, el1) ->
+                           case el1 of
+                             | Import ((Subst (spc_tm, sm_tm), _), spc, _, _)
+%                                 | %% let _ = writeLine("foldl \n"^anyToString spc_tm^"\n"^printSpec spc) in
+%                                    ~(existsSpecElement? (fn el ->
+%                                                          case el of
+%                                                          | Import ((Subst (spc_tm1, sm_tm1), _), _, _, _) ->
+%                                                            let _ = writeLine("~ex \n"^anyToString spc_tm1) in
+%                                                            sameSCTerm?(spc_tm, spc_tm1) && sameSCTerm?(sm_tm, sm_tm1)
+%                                                          | _ -> false)
+%                                        dom_spec.elements)
+%                                    && existsSpecElement? (fn el ->
+%                                                           case el of
+%                                                           | Import (spc_tm1, spc1, _, _) ->
+%                                                             let _ =  writeLine("ex \n"^printSpec spc1)  in
+%                                                             spc = spc1
+%                                                           | _ -> false)
+%                                        dom_spec.elements
+                                 ->
+                               % let _ = writeLine("fssrs: "^anyToString sm_tm) in
+                               let new = sm_tm in
+                               if new in? result then result
+                                 else new :: result
+                             | _ -> result)
+           [] cod_spec.elements
+       in
+       mapM (fn sm_tm ->
+               {sm_info as (Morph sm, ts, uids) <- evaluateTermInfo sm_tm;
+                cod_spc <- return(SpecCalc.cod sm);
+                % print(printSpec cod_spc);
+                cod_value_info <- return(Spec(SpecCalc.cod sm), ts, uids);
+                return(SpecCalc.dom sm, (Quote sm_info, sm_tm.2), cod_spc, (Quote cod_value_info, sm_tm.2))})
+         sub_morphisms
+
   %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
   %% The same place as originals. 
   %% The top? parameter in these two functions is to ensure the substitution is done on
   %% the immediate imports so that the correct Subst terms can be constructed, but below that
   %% it is prpbably not necessary and would involve exponential work without caching
-  op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm -> Spec
-  def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, _(*dom_spec_term*), cod_spec, cod_spec_term) = 
-    %let import_dom_spec = Import (dom_spec_term, dom_spec, []) in    
+  op  subtractSpecLeavingStubs: Spec * SCTerm * Spec * SCTerm * Spec * SCTerm * List(Spec * SCTerm * Spec * SCTerm) -> Spec
+  def subtractSpecLeavingStubs (spc, sm_tm, dom_spec, _(*dom_spec_term*), cod_spec, cod_spec_term, spec_replacements) = 
+    %let import_dom_spec = Import (dom_spec_term, dom_spec, []) in
+    % let _ = app (fn (dom_spec, _, _,_) -> writeLine("sslss:\n"^printSpec dom_spec)) spec_replacements in
     let 
       def revise_elements elements top? =
+        % let _ = writeLine("r_e "^show top?^" "^show(length spec_replacements)) in
 	map (fn el ->
 	     case el of
 	       | Import (tm, spc, import_elts, pos) ->
-	         if %% sameSCTerm? (tm, dom_spec_term) ||
-		    spc = dom_spec then
-		   Import (cod_spec_term, cod_spec, [], pos)
-		 else if existsSpecElement? (fn el -> 
-					     case el of
-					       | Import (tm, spc, _, _) ->
-					         %% sameSCTerm? (tm, dom_spec_term)  ||
-						  spc = dom_spec 
-					       | _ -> false)
-		                            (if top? then spc.elements else import_elts)
-			then
-			  Import ((Subst (tm, sm_tm), noPos),
-				  if top?
-                                    then spc << {elements = revise_elements spc.elements false}
-                                    else spc, 
-				  revise_elements import_elts top?, pos)
-		 else Import (tm, spc, import_elts, pos)   %  el     % Import (tm, spc, [])
+                 % let _ = writeLine("r_e: "^show top?^anyToString tm) in
+                 (case findLeftmost (fn (dom_spec, sm_tm, cod_spec, cod_spec_term) -> spc = dom_spec) spec_replacements of
+                    | Some(dom_spec, sm_tm, cod_spec, cod_spec_term) -> Import (cod_spec_term, cod_spec, [], pos)
+                    | None ->
+                  case findLeftmost (fn (dom_spec, sm_tm, cod_spec, cod_spec_term) ->
+                                       existsSpecElement? (fn el -> 
+                                                             case el of
+                                                               | Import (tm, spc, _, _) ->
+                                                                 % let _ = writeLine("re: "^show(spc = dom_spec)^anyToString tm) in
+                                                                 %% sameSCTerm? (tm, dom_spec_term)  ||
+                                                                 spc = dom_spec 
+                                                               | _ -> false)
+		                         (if top? then spc.elements else import_elts))
+                         spec_replacements of
+                    | Some(dom_spec, sm_tm, cod_spec, cod_spec_term) ->
+                      % let _ = writeLine("sslss:\n"^anyToString(Subst (tm, sm_tm))) in
+                      Import ((Subst (tm, sm_tm), noPos),
+                              if top?
+                                then spc << {elements = revise_elements spc.elements false}
+                              else spc, 
+                              revise_elements import_elts top?, pos)
+                    | None -> Import (tm, spc, import_elts, pos))   %  el     % Import (tm, spc, [])
 	       | _ -> el)
 	    elements
     in
