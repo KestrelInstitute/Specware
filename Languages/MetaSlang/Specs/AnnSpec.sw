@@ -160,21 +160,37 @@ AnnSpec qualifying spec
  def opInfoDeclsAndDefs info =
    termDeclsAndDefs info.dfn
 
- op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
+op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
  def termDeclsAndDefs tm =
-   let
-     def segregate tms =
-       foldl (fn ((decls, defs), tm) ->
-	      if definedTerm? tm then
-		(decls, defs ++ [tm])
-	      else
-		(decls ++ [tm], defs))
-             ([], [])
-             tms
+   % let _ = writeLine("termDeclsAndDefs:\n"^printTerm tm) in
+   let a = termAnn tm in
+   let def segregate(tm, tvs, o_ty, tms) =
+         case tm of
+           | Pi (tvs, tm, _) -> segregate(tm, tvs, o_ty, tms)
+           | And (a_tms,_) -> foldl (fn ((tvs, o_ty, tms), tm) -> segregate(tm, tvs, o_ty, tms)) (tvs, o_ty, tms) a_tms
+           | SortedTerm (tm, ty, _) -> segregate(tm, tvs, Some ty, tms)
+           | Any _ -> (tvs, o_ty, tms)
+           | _ -> (tvs, o_ty, (maybePiSortedTerm(tvs, o_ty, tm)) :: tms)
    in
-     case tm of
-       | And (tms, _) -> segregate tms
-       | tm           -> segregate [tm]
+   case segregate(tm, [], None, []) of
+     | (tvs, Some ty, tms) -> ([maybePiTerm(tvs, SortedTerm(Any a, ty, a))], reverse tms)
+     | (tvs, None, tms)    -> ([maybePiTerm(tvs, Any a)], reverse tms)
+
+% op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
+%  def termDeclsAndDefs tm =
+%    let
+%      def segregate tms =
+%        foldl (fn ((decls, defs), tm) ->
+% 	      if definedTerm? tm then
+% 		(decls, defs ++ (andTerms [tm]))
+% 	      else
+% 		(decls ++ [tm], defs))
+%              ([], [])
+%              tms
+%    in
+%      case flattenAnds tm of
+%        | And (tms, _) -> segregate tms
+%        | tm           -> segregate [tm]
 
  op  termDefs : [b] ATerm b -> List (ATerm b)
  def termDefs tm =
@@ -241,7 +257,7 @@ AnnSpec qualifying spec
    first_def
 
  def unpackFirstOpDef info =
-   unpackTerm (firstOpDef info)
+   unpackFirstTerm (info.dfn)
 
  op [a] unpackNthOpDef(info: AOpInfo a, n: Nat): TyVars * ASort a * ATerm a =
    unpackNthTerm(info.dfn, n)
@@ -554,7 +570,7 @@ AnnSpec qualifying spec
 
  op  existsSpecElement?: (SpecElement -> Boolean) -> SpecElements -> Boolean
  def existsSpecElement? p els =
-   foldrSpecElements (fn (el, result) -> result || p el) false els
+   foldlSpecElements (fn (result, el) -> result || p el) false els
 
  %% Just removes duplicate imports although could also remove other duplicate elements
  %% but this would be more expensive and maybe not that helpful
