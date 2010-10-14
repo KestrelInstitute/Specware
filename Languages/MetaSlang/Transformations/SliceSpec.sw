@@ -30,6 +30,19 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
+ op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Spec -> SpecElements
+ def filterSpecNonBaseElements p elements base_spec =
+   mapPartial
+     (fn el ->
+      if ~(p el) then
+	None
+      else
+	Some(case el of
+	       | Import (s_tm, i_sp, elts, a) | i_sp ~= base_spec ->
+	         Import (s_tm, i_sp, filterSpecNonBaseElements p elts base_spec, a)
+	       | _ ->  el))
+     elements
+
 op [a] sliceAQualifierMap(m: AQualifierMap a, s: QualifierSet, pred: QualifiedId -> Bool): AQualifierMap a =
   mapiPartialAQualifierMap (fn (q, id, v) ->
                               let qid = Qualified(q, id) in
@@ -60,7 +73,7 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
   spc <<
     {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> some?(findTheSort(base_spec, qid))),
      ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> some?(findTheOp(base_spec, qid))),
-     elements = filterSpecElements element_filter spc.elements
+     elements = filterSpecNonBaseElements element_filter spc.elements base_spec
      }
 
 op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): Spec =
