@@ -21,4 +21,7 @@ spec
 
  refine def stringToNat (s:String | natConvertible s) : Integer =
    explodedStringToNat(explode s)
+
+ refine def explode (s:String) : List Char =
+   tabulate (length s, fn i -> s@i)
 endspec
