@@ -263,8 +263,14 @@ SpecsToI2L qualifying spec {
 				      sort2type(unsetToplevel ctxt,spc,tvs,srt)) fields in
 		let typ = sort2type(unsetToplevel ctxt,spc,tvs,srt2) in
 		FunOrMap(types,typ)
-	     | _ -> FunOrMap([sort2type(unsetToplevel ctxt,spc,tvs,srt1)],
-			     sort2type(unsetToplevel ctxt,spc,tvs,srt2))
+	     | _ -> 
+               let dom_type =
+                   case sort2type(unsetToplevel ctxt,spc,tvs,srt1) of
+                     | Tuple(types) -> types
+                     | typ -> [typ]
+               in
+               FunOrMap(dom_type, 
+                        sort2type(unsetToplevel ctxt,spc,tvs,srt2))
 	  )
 
       % ----------------------------------------------------------------------
@@ -486,6 +492,9 @@ SpecsToI2L qualifying spec {
 		 | VarPat((id,_),_) -> [substGlyphInIdent id]
 		 | RecordPat(plist,_) -> List.map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
 						      | _ -> System.fail(errmsg ctxt)) plist
+                 | RestrictedPat (VarPat((id,_),_),   _,_) -> [substGlyphInIdent id]
+                 | RestrictedPat (RecordPat(plist,_), _,_) -> List.map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
+                                                                           | _ -> System.fail(errmsg ctxt)) plist
 		 | _ -> System.fail (errmsg ctxt)
 		)
 	      in
@@ -814,8 +823,10 @@ SpecsToI2L qualifying spec {
     let usrt = stripSubsorts(spc,srt) in
     case usrt of
       | Boolean                            _  -> primEq()
+      | Base    (Qualified(_,"Bool"),   [],_) -> primEq()
       | Base    (Qualified(_,"Nat"),    [],_) -> primEq()
       | Base    (Qualified(_,"Integer"),[],_) -> primEq()
+      | Base    (Qualified(_,"Int"),    [],_) -> primEq()
       | Base    (Qualified(_,"Char"),   [],_) -> primEq()
      %| Base    (Qualified(_,"Float"),  [],_) -> primEq()
       | Base    (Qualified(_,"String"), [],_) -> Builtin(StrEquals(t2e t1,t2e t2))
