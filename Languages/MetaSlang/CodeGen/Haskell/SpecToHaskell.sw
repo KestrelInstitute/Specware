@@ -1956,7 +1956,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
 
  op strictFun?(tm: MS.Term): Bool =
    case tm of
-     | Fun(Op(Qualified(q, id), _), _, _) -> true
+     | Fun(Op(Qualified(q, id), _), _, _) -> id in? strictFuns
      | _ -> false
 
  op [a] hConstantTerm? (t: ATerm a): Bool =
