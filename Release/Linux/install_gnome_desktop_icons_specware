@@ -3,7 +3,7 @@
 # InstallShield puts icons in a directory that gnome might not look at,
 # so we copy to another (found by trial and error).
 
-DESKTOP_ENTRY="Specware 4.2.2.desktop"
+DESKTOP_ENTRY="Specware 4.2.10.desktop"
 
 if [ ! -f "$HOME/.gnome-desktop/$DESKTOP_ENTRY" ]; then
   if [ -f "$HOME/.gnome/apps/$DESKTOP_ENTRY" ]; then
