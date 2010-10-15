@@ -219,6 +219,18 @@ to an existing Haskell monad, you use a [[-morphism]] pragma.
 
 
 <section>
+<title>Connecting to Haskell IO Monad</title>
+
+<para> 
+The spec [[/Library/Base/BasicIO]] defines basic IO and exception
+operations on a monad and includes a morphism to Haskell's IO
+monad. The monad type [[IO.IO]] corresponds to Haskell IO monad
+type.
+</para>
+</section>
+
+
+<section>
 <title>Strictness Pragmas</title>
 
 <para> Both coprpoduct types and ops may have [[-strict]] in their associated
