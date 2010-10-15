@@ -198,6 +198,12 @@
 			 (merge-pathnames (ensure-subdir-exists component-dir "General")
                                           "Monad.sw"))
 
+    (copy-dist-file      (merge-pathnames (ensure-subdirs-exist source-dir "Structures" "Data" "Monad")
+                                          "BasicIO.sw")
+			 (merge-pathnames (ensure-subdir-exists component-dir "General")
+                                          "BasicIO.sw"))
+
+
     ;; When the user's Specware application starts, they need to load some 
     ;; handcoded definitions for a few primitive ops declared but not defined
     ;; in the Specware library.
