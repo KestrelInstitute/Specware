@@ -855,7 +855,7 @@ added to the spec.
 <title>Auxiliary Commands for Lisp</title>
 
 <para>
-When developing a &Specware; application you generate Lisp code for your
+When developing a &Specware; application you may generate Lisp code for your
 application, and then load and test it in the same image in which
 the &Specware; system is running. Then if you make a
 modification to a single spec you can use the [[lgen-lisp]] command

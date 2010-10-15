@@ -4,8 +4,7 @@
 <para> As an experimental feature, Specware provides the capability
 of generating Haskell code from constructive &Metaslang;
 specs. Currently all of the basic language is supported except for
-unnamed records. There is currently no support for translating to
-Haskell's monads.
+unnamed records.
 </para>
 
 <para>
@@ -19,11 +18,11 @@ modules that export everything and one that creates modules that only
 export what is needed by the given spec, with unneeded ops
 omitted. The latter is useful when applied to the top-level spec of
 interest. The former is useful when you want code for lower-level
-specs that may be usedin different contexts.
+specs that may be used in different contexts.
 </para>
 
 <para>
-The first shell command that exports all imports is
+The first shell command, that exports all imports, is
 [[
 ||    gen-haskell $spec-term$
 ]]
@@ -54,7 +53,8 @@ where the result of elaborating the spec term gives the spec to be
 translated into Haskell. The [[gen-haskell]] command can be
 abbreviated to [[gen-ht]]. Inside the emacs interface it is simpler to
 use the [[C-c H]] command ([[sw:convert-top-spec-to-haskell]]) which
-has the same effect but also visits the generated Haskell file. 
+has the same effect but also visits the generated Haskell file. This
+also generates modules for all imported spec.
 </para>
 
 <para>
@@ -93,13 +93,19 @@ the primary name by two underbar characters, changing the first-letter
 case if necessary. For example, the type [[A.B]] is translated to
 [[A__B]] and the op [[A.b]] is translated to [[a__b]]. However, the
 user may provide a pragma to override this default translation of an
-op. The pragma must occur immediately after the op definition. It has
+op. The pragma must occur immediately after the op definition if it is
+unnamed or anywhere if names. The unnamed version has
 the form
 [[
 || #translate Haskell -> desiredName #end
 ]]
 where [[desiredName]] is the name you want to appear in the Haskell
-translation.
+translation.  A named pragma has the actual op (or type) name
+occur after [[#translate Haskell]], so the pragma may occur anywhere
+in the file. E.g.
+[[
+|| #translate Haskell Qual.opName -> desiredName #end
+]]
 </para>
 
 </section>
@@ -109,11 +115,13 @@ translation.
 
 <para> You can connect a &Specware; spec with an existing &Haskell;
 module by providing a [[-morphism]] translation table within the spec.
+</para>
 
 <para>
 A translation table for &Specware; types and ops is introduced by a
-  line beginning [[#translate Haskell -morphism]] followed optionally by a
-  &Haskell; module  (which will be imported into the translated
+  line beginning [[#translate Haskell -morphism]] followed optionally
+by one or more
+  &Haskell; module names (which will be imported into the translated
   spec), and terminated by the string [[#end]]. Each line gives
   the translation of a type or op. For example, for the &Specware;
   List spec we have:
@@ -183,6 +191,7 @@ line.
 <section>
 <title>Translation To Type Class Instances</title>
 
+<para>
 A Specware type can be translated to be an instance of a Haskell
 type class by including within the spec an [[-instance]] pragma. The
 name of the typeclass to instantiate comes immediately after the
@@ -197,14 +206,79 @@ to an instance of the Haskell monad typeclass using the pragma
 ||   return -> return
 || #end
 ]]
+</para>
 
+<para>
 Note that if there are any ops to be translated to Haskell functions
 in a type class where you want to use the Haskell definition rather
 than the Specware definition, then you should use a [[-morphism]]
 pragma instead of an [[-instance]] pragma. In particular, to translate
 to an existing Haskell monad, you use a [[-morphism]] pragma.
+</para>
+</section>
+
+
+<section>
+<title>Strictness Pragmas</title>
+
+<para> Both coprpoduct types and ops may have [[-strict]] in their associated
+pragmas to cause the translator to generate strictness annotations in
+the resulting Haskell.
+</para>
+
+<para>
+For example, the type specification
+[[
+|| type Pair(a,b) = Pair(a * b)
+|| #translate Haskell -strict #end
+]]
+produces 
+[[
+|| data Pair a b = Pair__Pair !a !b
+]]
+I.e. the pragma causes the addition of [[!]] before all the
+constructor fields.
+</para>
+
+<para>
+In the case of an op definition, the [[-strict]] pragma causes the
+addition of [[$$!]] for all applications to force evaluation of
+function arguments before calling the function. For example,
+[[
+|| op ff(i: Int): Int = f(f i)
+|| #translate Haskell -strict #end
+]]
+produces 
+[[
+|| ff :: Int -> Int
+|| ff i = f $$! f $$! i
+]]
+</para>
+
+<para>
+Like other pragmas associated with particular types and ops, the
+pragma may be named rather than immediately following the type or op.
+</para>
 
 </section>
 
+
+<section>
+<title>Header Pragmas</title>
+
+<para>
+A [[-header]] pragma specifies text to go at the beginning of the
+generated Haskell module. For example, the pragma
+[[
+|| #translate Haskell -header
+|| {-# OPTIONS -fno-warn-duplicate-exports #-}
+|| #end
+]]
+
+will add the text [[{-# OPTIONS -fno-warn-duplicate-exports #-}]] at
+the beginning of the generated Haskell file.
+</para>
+
+</section>
 
 </section>

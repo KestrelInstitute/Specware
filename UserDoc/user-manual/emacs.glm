@@ -123,9 +123,15 @@ them are available in the &Specware menu in the menubar.
       </row>
       <row>
 	<entry colname="key">&nbsp; [[C-c h]]</entry>
-        <entry colname="name">&nbsp; [[sw:convert-spec-to-haskell]]</entry>
+        <entry colname="name">&nbsp; [[sw:convert-spec-to- haskell]]</entry>
 	<entry colname="descr">&nbsp; Generates Haskell code for
             current spec.</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c H]]</entry>
+        <entry colname="name">&nbsp; [[sw:convert-top-spec- to-haskell]]</entry>
+	<entry colname="descr">&nbsp; Generates Haskell code for
+            current spec as the top level.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[C-c !]]</entry>
@@ -340,13 +346,15 @@ on. For example, the &Specware symbol [[\_forall]] is displayed as
 <para> 
 There is experimental support for hiding bodies of specs, definitions
 and other multi-line constructs. The main command for hiding is
-[[Shift-Middle]], i.e., holding down the shift key and middle-clicking
+[[Shift-Middle-Click]], i.e., holding down the shift key and middle-clicking
 near the beginning of a multi-line construct. This will hide all but the first
 line of the construct and display a [[...]] at the end of the line to
 indicate that the body is hidden. Doing a shift-middle-click on this
 line will expand the body. Thus shift-middle-click acts as a hiding
 toggle.
+</para>
 
+<para> 
 There is a Hide/Show menu. The most useful commands it contains are
 [[Show All]] and [[Hide All]]. [[Show All]] removes all hiding in the file.
 [[Hide All]] hides the bodies of all top-level constructs. I.e.,
