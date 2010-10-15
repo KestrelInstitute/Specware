@@ -414,6 +414,7 @@ Haskell qualifying spec
       | Spec spc -> % let _ = writeLine(printSpec spc) in
         ppSpec c (case opt_els of
                                 | Some els | c.slicing? ->
+                                  % let _ = writeLine(printSpec(spc)^"\n to\n") in
                                   % let _ = writeLine(printSpec(spc << {elements = mergeRealImports(spc.elements, els)})) in
                                   spc << {elements = mergeRealImports(spc.elements, els)}
                                 | _ -> spc)
@@ -431,7 +432,8 @@ Haskell qualifying spec
                                  | Import(r_sc_tm, im_sp, _, _) -> f_sc_tm = r_sc_tm
                                  | _ -> false)
                         reduced_els)
-                 | Pragma("#translate", prag_str, "#end", _) -> haskellPragma? prag_str
+                 %% Shouldn't be removing pragmas that need to be added back
+                 % | Pragma("#translate", prag_str, "#end", _) -> haskellPragma? prag_str
                  | _ -> false)
           full_els
     in
@@ -544,7 +546,7 @@ Haskell qualifying spec
                   overloadedConstructors = overloadedConstructors spc}
     in
     % let _ = printSpecWithSortsToTerminal spc in
-% let _ = writeLine("1:\n"^printSpec spc) in
+    % let _ = writeLine("1:\n"^printSpec spc) in
 % ?    let spc = removeSubTypes spc coercions stp_tbl in
     %% Second round of simplification could be avoided with smarter construction
 % ?    let spc = expandRecordPatterns spc in
