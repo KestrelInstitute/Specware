@@ -68,6 +68,7 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
 %                                    then % let _ = writeLine("filter accepts:\n"^ anyToString tm) in
 %                                         true
 %                                    else false) im_elts
+          | Import _ -> true
           | _ -> haskellElement? el
   in
   spc <<
