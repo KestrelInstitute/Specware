@@ -641,6 +641,54 @@ Haskell qualifying spec
     % let _ = writeLine(anyToString exported_ops) in
     exported_ops
 
+  op exportableType? (c: Context) (qid as Qualified(q, id): QualifiedId) (o_defn: Option SortInfo): Bool =
+    let def exportable? ty =
+          case ty of
+            | Base _ -> false
+            | Pi(_, ty1, _)      -> exportable? ty1
+            | Subsort(ty1, _, _) -> exportable? ty1
+            | _ -> true
+    in
+    case o_defn of
+      | None -> false
+      | Some ty_info ->
+    ~(mappedType? c qid) && exportable? ty_info.dfn
+
+  op exportedTypes (c: Context) (spc: Spec, top_spec: Spec): QualifiedIds =
+    let op_tbl = spc.ops in
+    let type_tbl = spc.sorts in
+    let base_type_tbl = (getBaseSpec()).sorts in
+    %% Map through all ops in top spec that aren't in spc, and collect types used
+    %% that are in spc
+    if spc = top_spec then []
+    else
+    let def collectExportable(exported_types, ty) =
+          case ty of
+            | Base(qid as Qualified(q, id), _, _)
+                | none?(findAQualifierMap (base_type_tbl, q, id))
+                 && (let o_ty_def = findAQualifierMap (type_tbl, q, id) in
+                       exportableType? c qid o_ty_def)
+                 && qid nin? exported_types ->
+              qid :: exported_types
+            | _ -> exported_types
+    in
+    let exported_types = foldriAQualifierMap (fn  (q, id, info, exported_types) ->
+                                              if primaryOpName? (q, id, info)
+                                                && none?(findAQualifierMap (op_tbl, q, id))
+                                               then foldTypesInTerm collectExportable exported_types info.dfn
+                                               else exported_types)
+                           [] top_spec.ops
+    in
+    let exported_types = foldriAQualifierMap (fn  (q, id, info, exported_types) ->
+                                              if primarySortName? (q, id, info)
+                                                && none?(findAQualifierMap (type_tbl, q, id))
+                                               then foldTypesInType collectExportable exported_types info.dfn
+                                               else exported_types)
+                           exported_types top_spec.sorts
+    in
+    % let _ = writeLine(anyToString exported_types) in
+    exported_types
+
   op realElement?(c: Context) (el: SpecElement): Bool =
     %% Used to avoid printing empty modules
     %% Can ignore translated ops and types and non-verbatim pragmas
@@ -699,6 +747,13 @@ Haskell qualifying spec
                                then None
                              else Some(prConcat [ppOpQualifiedId c qid, prSpace]))
                  (exportedOps (getSpec c, c.top_spec))
+             ++ mapPartial (fn qid ->
+                             let str = opQualifiedIdString c qid in
+                             if exists? whiteSpaceChar? str
+                               then None
+                             else Some(prConcat [ppTyQualifiedId c qid, prString "(..) "]))
+                 (exportedTypes c (getSpec c, c.top_spec))
+
           else map (fn im -> prConcat [prString "module ", im])
                  (map prString explicit_imports_names ++ imports_from_haskell_morphism)
     in
@@ -1268,6 +1323,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
                                 [prString "  ", pp_constr, prString " x == ", pp_constr, prString " y = ",
                                  ppTerm c Top equiv_rel, prString"(x, y)"]]
                 | Subsort(s_ty, _, _) -> ppTyDef s_ty
+                | Arrow _ -> prBreak 2 [prString "type ", ppTyQualifiedId c mainId, ppTyVars tvs, prString " = ", ppType c Top ty]
                 | _ ->
               case tc_info of
                 | Some{type_qid, class_id, instance_ops} ->
