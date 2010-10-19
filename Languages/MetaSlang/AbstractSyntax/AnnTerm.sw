@@ -1371,6 +1371,20 @@ op [a] maybePiSortedTerm(tvs: TyVars, o_ty: Option(ASort a), tm: ATerm a): ATerm
      | SortedPat    (pat,_,_) -> foldSubPatterns f result pat
      | _ -> result
 
+op [b,r] foldTypesInTerm (f: r * ASort b -> r) (init: r) (tm: ATerm b): r =
+  let result = Ref init in
+  (mapTerm (id, fn s -> (result := f(!result, s); s), id) tm;
+   !result)
+
+op [b,r] foldTypesInType (f: r * ASort b -> r) (init: r) (tm: ASort b): r =
+  let result = Ref init in
+  (mapSort (id, fn s -> (result := f(!result, s); s), id) tm;
+   !result)
+
+op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r =
+  let result = Ref init in
+  (mapPattern (id, fn s -> (result := f(!result, s); s), id) tm;
+   !result)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
