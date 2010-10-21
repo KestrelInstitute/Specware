@@ -1210,7 +1210,19 @@ Haskell qualifying spec
  op haskellReservedWords: List String = ["class", "data", "default", "deriving", "do", "import",
                                          "infix", "infixr", "infixl",
                                          "instance", "module", "newtype", "type", "where"]
- op disallowedVarNames: List String = ["sum", "**"]        % !!!
+ op disallowedVarNames: List String = ["sum", "**", "map", "filter", "concat", "concatMap", "head", "last", "tail",
+                                       "init", "null", "length", "!!", "foldl", "foldl1", "scanl", "scanl1", "foldr", "foldr1",
+                                       "scanr", "scanr1", "iterate", "repeat", "replicate", "cycle", "take", "drop", "splitAt",
+                                       "takeWhile", "dropWhile", "span", "break", "lines", "words", "unlines", "unwords", "reverse",
+                                       "and", "or", "any", "all", "elem", "notElem", "lookup", "sum", "product",
+                                       "maximum", "minimum", "zip", "zip3", "zipWith", "zipWith3", "unzip", "unzip3",
+                                       "False", "True", "Nothing", "Just", "Left", "Right", "LT", "EQ", "GT", "atanh", "encodeFloat",
+                                       "exponent", "significand", "scaleFloat", "isNaN", "isInfinite", "isDenormalized",
+                                       "isIEEE", "isNegativeZero", "atan2", ">>=", ">>", "return", "fail", "fmap", "mapM",
+                                       "mapM_", "sequence", "sequence_", "=<<", "maybe", "either", "&&", "||", "not",
+                                       "otherwise", "subtract", "even", "odd", "gcd", "lcm", "fromIntegral",
+                                       "realToFrac", "fst", "snd", "curry", "uncurry", "id", "const", ".", "flip", "$", "until",
+                                       "asTypeOf", "error", "undefined", "seq"]
 
  op directConstructorTypes: List QualifiedId =
    [Qualified("Option", "Option"),
@@ -1269,7 +1281,7 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
  op mkNamedRecordFieldName (c: Context) (qid: QualifiedId, nm: String): String =
    (typeQualifiedIdStr c qid false)^"__"^(ppIdStr nm (isUpperCase (nm@0)))
 
- op derivingString: String = " deriving Eq"
+ op derivingString: String = " deriving (Eq, Show)"
 
  op ppTypeInfo (c: Context) (full?: Bool) (elems: SpecElements) (opt_prag: Option Pragma) (aliases: QualifiedIds, dfn: Sort)
       (tc_info: Option TypeClassInfo): Pretty =
@@ -1581,9 +1593,6 @@ op ppOpIdInfo (c: Context) (qids: List QualifiedId): Pretty =
             ([[prString(specwareToHaskellString prf_str)]],
              proofEndsWithTerminator? prf_str))
      | _ -> ([], false)
-
-op defaultFunctionProof: String =
-   "by pat_completeness auto\ntermination by lexicographic_order"
 
 op ppLambdaDef (c: Context) (strict?: Bool) (hd: MS.Term) (dfn: MS.Term): Pretty =
   let cases = defToFunCases c hd dfn in
@@ -2642,7 +2651,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                         let new_v = ("cv0", dom) in
                         ppTerm c parentTerm (mkLambda (mkVarPat new_v, mkApply(mkFun(fun, ty), mkVar new_v)))
                       | _ -> prString(makeIdentifier haskell_id))
-              else ppOpQualifiedId c (stringToQId haskell_id)
+              else ppOpHaskellId c haskell_id
           | _ -> ppOpQualifiedId c qid)
      | Project id ->
        let (dom, _) = arrow(getSpec c, ty) in
@@ -2722,11 +2731,15 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
    case specialOpInfo c qid of
      | Some(s, _, _, _, _) ->
        % let _ = writeLine(" -> "^s) in
-       opQualifiedId0String c
-         (case splitStringAt(s, ".") of
-            | [s]    -> mkUnQualifiedId s
-            | [q,id] -> mkQualifiedId(q,id))
+       (case splitStringAt(s, ".") of
+          | [s]    ->  s
+          | [q,id] -> opQualifiedId0String c (mkQualifiedId(q,id)))
      | None -> opQualifiedId0String c qid
+
+ op ppOpHaskellId (c: Context) (s: String): Pretty =
+   case splitStringAt(s, ".") of
+     | [s]    ->  prString s
+     | [q,id] -> ppOpQualifiedId c (mkQualifiedId(q,id))
 
  op ppOpQualifiedId (c: Context) (qid: QualifiedId): Pretty =
    prString(opQualifiedIdString c qid)
