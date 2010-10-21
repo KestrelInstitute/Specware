@@ -30,6 +30,7 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
+(* No longer needed
  op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Spec -> SpecElements
  def filterSpecNonBaseElements p elements base_spec =
    mapPartial
@@ -38,8 +39,10 @@ op haskellPragma?(s: String): Bool =
 	None
       else
 	Some(case el of
-	       | Import (s_tm, i_sp, elts, a) | i_sp ~= base_spec ->
-	         Import (s_tm, i_sp, filterSpecNonBaseElements p elts base_spec, a)
+	       | Import (s_tm, i_sp, elts, a) ->
+	         if i_sp ~= base_spec
+                   then Import (s_tm, i_sp, filterSpecNonBaseElements p elts base_spec, a)
+                   else el
 	       | _ ->  el))
      elements
 
@@ -76,8 +79,9 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
      ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> some?(findTheOp(base_spec, qid))),
      elements = filterSpecNonBaseElements element_filter spc.elements base_spec
      }
+*)
 
-op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): Spec =
+op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): QualifierSet * QualifierSet =
   let base_spec = SpecCalc.getBaseSpec() in
   let def newOpsInTerm(tm: MS.Term, newopids: QualifiedIds, op_set: QualifierSet): QualifiedIds =
         foldTerm (fn opids -> fn t ->
@@ -155,10 +159,7 @@ op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore
         iterateDeps(new_ops2, new_types2, op_set, type_set)
     in
     let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
-    let spc = scrubSpec(spc, op_set, type_set, base_spec) in
-    % let _ = writeLine(printSpecFlat (subtractSpec spc (getBaseSpec()))) in
-    % let _ = printSpec spc in
-    spc
+    (op_set, type_set)
 
 %% Just for debugging
 op AnnSpec.subtractSpec: Spec -> Spec -> Spec
