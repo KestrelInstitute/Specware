@@ -28,8 +28,8 @@
            "Integer-Spec::>-2"
            "Integer-Spec::|!>=|"
            "Integer-Spec::>=-2"
-           "Nat-Spec::succ"
-           "Nat-Spec::pred"
+           "Integer-Spec::succ"
+           "Integer-Spec::pred"
            "Integer-Spec::divides"
            "Integer-Spec::divides-2"
            "Integer-Spec::|!gcd|"
@@ -176,9 +176,9 @@
 (define-compiler-macro >=-2 (x y)
  `(>= (the-int ,x) (the-int ,y)))
 
-(defun Nat-Spec::succ (x) (+ x 1))
+(defun succ (x) (+ x 1))
 
-(defun Nat-Spec::pred (x) (- x 1))
+(defun pred (x) (- x 1))
 
 (defun divides (xy)
  (declare (cons xy))
