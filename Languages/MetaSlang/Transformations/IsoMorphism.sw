@@ -662,6 +662,11 @@ spec
           | None -> Qualified (qual, id ^ "'")
           | Some newQual -> Qualified (newQual,id)
 
+      def derivedQId? (Qualified (qual,id)) =
+         case newOptQual of
+          | None -> none?(findTheOp(spc, Qualified (qual, id ^ "'")))
+          | Some newQual -> newQual = qual
+
       def makeFreshQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
         let newQId = makeDerivedQId qid in
         case findTheOp(spc, newQId) of
@@ -1662,12 +1667,14 @@ spec
                 (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
                 (qid as Qualified(q, id)) <- return (head opinfo.names);
                 (simp_dfn,_) <-
-                  if simplifyIsomorphism? then {
-                    % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
-                    b <- existsSubTerm (fn t -> let ty = inferType(spc, t) in {
-                       isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
-                       return (equalType?(ty, isoTy))}) dfn;
-                    if (simplifyUnPrimed? || some?(findTheOp(spc, makeDerivedQId qid))) then {
+                  if simplifyIsomorphism? then
+                   { % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
+                    b <- existsSubTerm (fn t ->
+                                          let ty = inferType(spc, t) in
+                                          {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
+                                           return (equalType?(ty, isoTy))})
+                           dfn;
+                    if (simplifyUnPrimed? || derivedQId? qid) then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
                       interpretTerm(spc, main_script, dfn, false)
