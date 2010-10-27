@@ -1142,6 +1142,7 @@ AnnSpecPrinter qualifying spec
                       ++ prettys))
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
+   let the_def = defs @ (max(0, length defs - refine_num - 1)) in
 %    let _ = writeLine "Decls:" in
 %    let _ = app (fn d -> writeLine(printTerm d)) decls in
 %    let _ = writeLine "Defs:" in
@@ -1167,9 +1168,9 @@ AnnSpecPrinter qualifying spec
 	 | ([], dfn :: _) -> [dfn]
 	 | _ -> decls
    in
-   let ppDecls = if printOp? then map ppDecl (if printOpWithDef? then defs else decls) else [] in
+   let ppDecls = if printOp? then map ppDecl (if printOpWithDef? then  [the_def] else decls) else [] in
    % let _ = writeLine("ppOpDeclAux: "^printAliases info.names^": "^show (length defs)^" - "^show refine_num) in
-   let ppDefs  = if printDef? then [ppDef (defs @ (max(0, length defs - refine_num - 1)))] else [] in
+   let ppDefs  = if printDef? then [ppDef the_def] else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
  op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
