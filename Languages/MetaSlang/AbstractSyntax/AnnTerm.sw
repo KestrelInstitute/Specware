@@ -297,6 +297,14 @@ op [a] maybePiSortedTerm(tvs: TyVars, o_ty: Option(ASort a), tm: ATerm a): ATerm
   in
   maybePiTerm(tvs, s_tm)
 
+op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
+  let (main_tm, pos) = case tms of
+                         | [] -> (And(tms, sortAnn ty), sortAnn ty)
+                         | [tm] -> (tm, termAnn tm)
+                         | tms -> (And(tms, termAnn(head tms)), termAnn (head tms))
+  in
+  maybePiTerm(tvs, SortedTerm(main_tm, ty, pos))
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
