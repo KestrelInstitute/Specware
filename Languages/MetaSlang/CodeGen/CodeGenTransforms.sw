@@ -970,7 +970,7 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
   if isEmptySortOpInfos? minfo then 
     initSpec 
   else
-    %let _ = writeLine ("added sorts && ops: "^newline^printSortOpInfos (minfo)) in
+    % let _ = writeLine ("added sorts && ops: "^newline^printSortOpInfos (minfo)) in
     let (srts,elts) = foldr (fn (info, (map,elts)) ->
 			     let qid = primarySortName info in
 			     let Qualified (q, id) = qid in
@@ -1819,13 +1819,13 @@ op [a] trimOldDefs(opinfo: AOpInfo a): AOpInfo a =
                                               elements ++ [el]
                                          else elements)
                                     | _ -> (op_map, elements))
-                               | OpDef(qid as Qualified(q,id), _, _) ->
+                               | OpDef(qid as Qualified(q,id), _, a) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info ->
                                       (insertAQualifierMap(op_map, q, id, trimOldDefs info),
                                        if embed? None (AnnSpec.findTheOp(spc, qid))
                                          then % let _ = writeLine(printQualifiedId qid) in
-                                              elements ++ [el]
+                                              elements ++ [Op(qid, true, a)]
                                          else elements)
                                     | _ -> (op_map, elements))
                                | _ -> (op_map, elements))
