@@ -644,9 +644,9 @@ SpecNorm qualifying spec
       | Lambda _ -> possibleEqTestableFunTermIn? (ho_eqfns, spc) f
       | _ -> false
 
-  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
-    let (tvs,ty,tm) = unpackFirstOpDef info in
-    let tms = innerTerms tm in
+  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MS.Term =
+    let (tvs,ty,full_term) = unpackTerm info.dfn in
+    let tm = refinedTerm(full_term, refine_num) in
     let def reg1 tm =
          let recursive? = containsRefToOp?(tm, primaryOpName info) in
          let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
@@ -657,13 +657,13 @@ SpecNorm qualifying spec
          in
          result
     in
-    let tms = map reg1 tms in
-    let result = maybeAndTerm(tms, termAnn tm) in
+    let result = reg1 tm in
     if equalTerm?(result, tm)
-      then maybePiTerm(tvs, SortedTerm(tm,ty,termAnn tm)) 
+      then info.dfn 
     else
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
-    maybePiTerm(tvs, SortedTerm(result,ty,termAnn tm)) 
+    let full_result_tm = replaceNthTerm(full_term, refine_num, result) in
+    maybePiTerm(tvs, SortedTerm(full_result_tm,ty,termAnn tm)) 
 
   op regularizeIfPFun(tm: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
     % ty is expected type, rm_ty is provided types
@@ -799,13 +799,13 @@ SpecNorm qualifying spec
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = regTermTop(info, ho_eqfns, spc)})
+                                                          info << {dfn = regTermTop(info, ho_eqfns, 0, spc)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q,id), _, _) ->
+                               | OpDef (qid as Qualified(q,id), refine_num, _) ->
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
-                                                          info << {dfn = regTermTop(info, ho_eqfns, spc)})
+                                                          info << {dfn = regTermTop(info, ho_eqfns, refine_num, spc)})
                                    | None -> ops)
                                | _ -> ops)
                         spc.ops
@@ -1020,13 +1020,11 @@ SpecNorm qualifying spec
                  | el :: r_elts -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
     in
     let spc = spc << {elements = makeSubtypeConstrThms(spc.elements, [], false, false)} in
-
     %% Regularize functions that may be used in equality tests
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
     %let _ = writeLine(printSpec spc) in
     let spc = mapSpec (relativizeQuantifiers spc, id, id) spc in
-    %let _ = writeLine(printSpec spc) in
     %% Replace subtypes by supertypes
     let spc = mapSpec (id,fn s ->
                          case s of
