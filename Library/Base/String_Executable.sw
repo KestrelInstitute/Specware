@@ -26,5 +26,5 @@ spec
    tabulate (length s, fn i -> s@i)
 
  refine def implode(char_list) =
-   foldl (fn (s, c) -> s ++ show c) "" char_list      % Hopefully code generators will provide a more efficient version
+   foldl (fn (s, c) -> s ^ show c) "" char_list      % Hopefully code generators will provide a more efficient version
 endspec
