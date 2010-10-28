@@ -763,9 +763,10 @@ def toAny     = Term `TranslationBasic.toAny`
      in
      let pos = termAnn(body) in
      let new_term = withAnnT(mkLambda (newPattern, body), pos) in
+     let tvs = freeTyVars new_sort in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      dfn    = SortedTerm (new_term, new_sort, termAnn body),
+      dfn    = maybePiTerm(tvs, SortedTerm (new_term, new_sort, termAnn body)),
       fullyQualified? = false}
    else
      let varSort = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
@@ -871,7 +872,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     let term = Lambda ([(pat, cond, term)], a) in
              % let _ = writeLine(" -->\n"^printTerm term) in
-	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
+	     % let _ = writeLine ("addop "^id^":"^printSort srt) in
              let full_term = replaceNthTerm(full_term, refine_num, term) in
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
@@ -884,7 +885,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
-	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
+	     % let _ = writeLine ("addop "^id^":"^printSort srt) in
              let full_term = replaceNthTerm(full_term, refine_num, term) in
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
