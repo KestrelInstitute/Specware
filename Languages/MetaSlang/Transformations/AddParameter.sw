@@ -4,6 +4,11 @@ import ../Specs/AnalyzeRecursion
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 import ArityNormalize
 
+op addIsabelleProofs: Bool = true
+
+%% Defined in /Provers/ToIsabelle/IsaPrinter.sw
+op IsaTermPrinter.qidToIsaString(qid: QualifiedId): String
+
 op findOpsBetween(spc: Spec, top_fn: QualifiedId, fun: QualifiedId): QualifiedIds =
   let baseSpec = getBaseSpec() in
   let def iterateRefsTo(roots: QualifiedIds, found: QualifiedIds, ref_by_map: RefMap): RefMap =
@@ -35,6 +40,25 @@ op addNewOp(spc: Spec, info: OpInfo): Spec =
   let name as Qualified (q, id) = primaryOpName info in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, info),
           elements = spc.elements ++ [Op (name, true, noPos)]}
+  
+op addIsaScript(spc: Spec, prf_name: String, script: String): Spec =
+  let new_elt = Pragma("proof", " Isa "^prf_name^"\n  "^script^"\n ", "end-proof", noPos) in
+  appendElement(spc, new_elt)
+
+op simplifyProofScript (thm_names: List String): String =
+  if thm_names = []
+    then "apply(simp)"
+    else "apply(simp add:"
+        ^ (foldl (fn (s, nm) -> " "^nm^s) "" thm_names)
+        ^ ")"
+
+op addRefinedDef(spc: Spec, (info: OpInfo, refine_num: Nat)): Spec =
+  let name as Qualified (q, id) = primaryOpName info in
+  spc << {ops = insertAQualifierMap (spc.ops, q, id, info),
+          elements = spc.elements ++ [OpDef (name, refine_num, noPos)]}
+
+op oldNewTheoremName(Qualified(qid, nm): QualifiedId): QualifiedId =
+  Qualified(qid, nm^"_correctness")
 
 op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Option Nat, name: Id, param_ty_qid: QualifiedId,
                 top_fn: QualifiedId, init_val: QualifiedId, o_qual: Option Qualifier): Spec =
@@ -49,15 +73,33 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
         let (tvs, ty, dfn) = unpackFirstOpDef(info) in
         let new_ty = addParamType ty in
         let new_dfn = mapAddArg(dfn, param_tm) in
-        let new_dfn = addParam(new_dfn, param_tm) in
-        info << {names = [transformQId qid],
-                 dfn = maybePiTerm(tvs, mkSortedTerm(new_dfn, new_ty))}
+        let new_dfn = addParam(new_dfn, param_tm) in                                  
+        let new_qid = transformQId qid in
+        let thm = oldNewTheorem(qid, new_qid, tvs, ty, new_ty, dfn, new_dfn) in
+        (info << {names = [new_qid],
+                  dfn = maybePiTerm(tvs, mkSortedTerm(new_dfn, new_ty))},
+         thm)
+      def oldNewTheorem(old_qid, new_qid, tvs, old_ty, new_ty, old_dfn, new_dfn) =
+        let new_op_ref = mkOp(new_qid, new_ty) in
+        let old_op_ref = mkOp(old_qid, old_ty) in
+        let new_var_pat = case new_dfn of | Lambda([(pat, _, _)], _) -> pat in
+        let Some new_var_tm = patternToTerm new_var_pat in
+        let old_var_pat = case old_dfn of | Lambda([(pat, _, _)], _) -> pat in
+        let Some old_var_tm = patternToTerm old_var_pat in
+        let new_result_tm = extractResult(mkApply(new_op_ref, new_var_tm)) in
+        (Theorem, oldNewTheoremName new_qid,
+         tvs,
+         mkBind(Forall, patVars new_var_pat,
+                mkEquality(inferType(spc, new_result_tm), new_result_tm,
+                           mkApply(old_op_ref, old_var_tm))),
+         noPos)
        def makeTopDef qid =
         let Some info = findTheOp(spc, qid) in
-        let (tvs, ty, dfn) = unpackFirstOpDef(info) in
-        let new_dfn = mapAddArg(dfn, mkOp(init_val, param_ty)) in
-        info << {names = [transformQId qid],
-                 dfn = maybePiTerm(tvs, mkSortedTerm(new_dfn, ty))}
+        let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
+        let current_dfn :: old_dfns = innerTerms full_tm in
+        let new_dfn = mapAddArg(current_dfn, mkOp(init_val, param_ty)) in
+        (info << {dfn = piTypeAndTerm(tvs, ty, new_dfn :: current_dfn :: old_dfns)},
+         length old_dfns + 1)
       def mapAddArg(tm, add_tm) = mapTerm (addArg? add_tm, id, id) tm
       def addParamType ty =
         case arrowOpt(spc, ty) of
@@ -95,7 +137,7 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
                      let new_arg = extendTuple(new_tm, add_tm, param_pos) in
                      mkLet([(mkRecordPat id_pats, arg)],
                            mkApply(new_f, new_arg))
-                   | _ -> let new_arg = extendTuple(tm, add_tm, param_pos) in
+                   | _ -> let new_arg = extendTuple(arg, add_tm, param_pos) in
                           mkApply(new_f, new_arg))
             in
             extractResult new_tm
@@ -119,6 +161,7 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
         case o_return_pos of
           | None -> tm
           | Some return_pos ->
+        % let _ = writeLine("extractResult: "^printTerm tm) in
         let fld_tys = fieldTypes(spc, inferType(spc, tm)) in
         let (new_names, _) = freshNames("r", fld_tys, avoid_name) in
         let new_vs = zip(new_names, fld_tys) in
@@ -155,12 +198,37 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
          | None -> Qualified(q, id^"'")
   in
   % let _ = app (fn qid -> writeLine(printQualifiedId qid)) fns_to_change in
-  let spc = foldl (fn (spc, qid) -> addNewOp(spc, makeNewDef qid))
-              spc fns_to_change
+  let (spc, thm_names) = foldl (fn ((spc, thm_names), qid) ->
+                                let (new_info, old_new_thm) = makeNewDef qid in
+                                let thm_name = qidToIsaString old_new_thm.2 in
+                                let spc = addNewOp(spc, new_info) in
+                                let spc = addProperty(old_new_thm, spc) in
+                                let new_def_name = qidToIsaString(transformQId qid) ^ "_def" in
+                                let old_def_name = qidToIsaString(qid)              ^ "_def" in
+                                let spc = if addIsabelleProofs
+                                           then addIsaScript(spc, thm_name,
+                                                             simplifyProofScript (old_def_name :: new_def_name
+                                                                                    :: thm_names))
+                                           else spc
+                                in
+                                (spc, thm_name :: thm_names))
+                           (spc, []) fns_to_change
   in
-  let spc = addNewOp(spc, makeTopDef top_fn) in
+  let spc = addRefinedDef(spc, makeTopDef top_fn) in
   let spc = adjustElementOrder spc in
+  let spc = if addIsabelleProofs
+              then addIsaScript(spc, "",
+                                "apply(rule ext)\n  " ^
+                                  simplifyProofScript(refineDefNames(spc,top_fn) ++ thm_names))
+            else spc
+  in
   % let _ = writeLine(printSpec spc) in
   spc
 
+op refineDefNames(spc: Spec, qid: QualifiedId): List String =
+  let base_nm = qidToIsaString qid in
+  let num_defs = numRefinedDefs spc qid in
+  [base_nm ^ "__" ^ show(num_defs - 1) ^ "_def",
+  if num_defs = 2 then base_nm ^ "_def"
+    else base_nm ^ "__" ^ show(num_defs - 2) ^ "_def"]
 endspec
