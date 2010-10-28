@@ -1,6 +1,6 @@
 spec
 
-  sort Expr = | constant Integer
+  type Expr = | constant Integer
               | plus  Expr * Expr
               | times Expr * Expr
               | power Expr * Expr

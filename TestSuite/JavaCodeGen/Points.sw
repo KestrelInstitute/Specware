@@ -1,6 +1,6 @@
 spec
 
-  sort Point = {x : Integer,
+  type Point = {x : Integer,
                 y : Integer}
 
   op add : Point * Point -> Point
@@ -8,7 +8,7 @@ spec
                     y = p1.y + p2.y}
 
   op abs : Integer -> Integer
-  def abs(i) = if i < 0 then ~i else i
+  def abs(i) = if i < 0 then -i else i
 
   op square_distance : Point * Point -> Integer
   def square_distance(p1,p2) =
