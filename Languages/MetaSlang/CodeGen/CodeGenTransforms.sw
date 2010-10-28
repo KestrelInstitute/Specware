@@ -1821,12 +1821,9 @@ op [a] trimOldDefs(opinfo: AOpInfo a): AOpInfo a =
                                     | _ -> (op_map, elements))
                                | OpDef(qid as Qualified(q,id), _, a) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
-                                    | Some info ->
+                                    | Some info | some?(AnnSpec.findTheOp(spc, qid)) ->
                                       (insertAQualifierMap(op_map, q, id, trimOldDefs info),
-                                       if embed? None (AnnSpec.findTheOp(spc, qid))
-                                         then % let _ = writeLine(printQualifiedId qid) in
-                                              elements ++ [Op(qid, true, a)]
-                                         else elements)
+                                       elements)
                                     | _ -> (op_map, elements))
                                | _ -> (op_map, elements))
                       (op_map, elements) exec_spc.elements)
