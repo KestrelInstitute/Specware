@@ -397,16 +397,15 @@ Utilities qualifying spec
       if desired_key?(key) then Some value else lookup(desired_key?, alist_tail)
 
 
-
  op  freeTyVars: Sort -> TyVars
  def freeTyVars(srt) = 
    let vars = Ref [] in
    let def vr(srt) = 
          case srt of
-	   | TyVar(tv,_) -> (vars := Cons (tv,! vars); ())
+	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	   | MetaTyVar(tv,pos) -> 
 	     (case unlinkSort srt of
-	       | TyVar(tv,_) -> (vars := Cons (tv,! vars); ())
+	       | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	       | _ -> ())
 	   | _ -> ()
    in
