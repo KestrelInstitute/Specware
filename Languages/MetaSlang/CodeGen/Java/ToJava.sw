@@ -905,10 +905,12 @@ def builtinSortOp(qid) =
 	        i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
                 i="toLowerCase" || i="toString"))
   ||
-  (q="String" && (i="String" || i="writeLine" || i="toScreen" || i="concat" || i="++" ||
-                  i="^" || i="newline" || i="length" || i="substring" || i="@" || i="sub"))
+  (q="String" && (i="String" || i="concat" || i="++" || i="^" || i="newline" || i="length" ||
+                    i = "subFromTo" || i="substring" || i="@" || i="sub"))
+  ||
+  (q="System" && (i="writeLine" || i="toScreen"))
   || %% Non-constructive
-  (q="Function" && i in? ["inverse", "surjective?", "injective?", "bijective?", "Bijection"])
+  (q="Function" && i in? ["inverse", "surjective?", "injective?", "bijective?"])  % "Bijection" removed but transparent
   || (q = "List" && i in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength",
                            "list", "list_1", "ListFunction"])
   || (q = "Integer" && i in? ["positive?", "negative?"])
@@ -948,20 +950,19 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   let spc = normalizeTopLevelLambdas spc in
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
-  let _ = writeLine("ops0: "^printOpNms spc) in
+  % let _ = writeLine("ops0: "^printOpNms spc) in
   let spc = subtractSpec spc basespc in
-  let _ = writeLine("ops1: "^printOpNms spc) in
+  % let _ = writeLine("ops1: "^printOpNms spc) in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-  let _ = writeLine("ops2: "^printOpNms spc) in
+  % let _ = writeLine("ops2: "^printOpNms spc) in
   let spc = substBaseSpecsJ spc in
-  let _ = writeLine("ops3: "^printOpNms spc) in
+  % let _ = writeLine("ops3: "^printOpNms spc) in
   let spc = lambdaLift(spc,true) in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
 
   let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
-
   %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
 
   let spc = letWildPatToSeq spc in

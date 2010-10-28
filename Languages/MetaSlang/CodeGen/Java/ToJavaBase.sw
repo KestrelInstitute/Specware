@@ -505,7 +505,7 @@ def mkThisExpr() =
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
-    | "&&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0
+    | "&&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0 (??)
     | "or" -> CdOr
     | "&" -> And
     | "=" -> Eq
@@ -520,7 +520,9 @@ def mkBaseJavaBinOp(id) =
     | "*" -> Mul
     | "|" -> InclOr
     | "^" -> ExclOr
+    | "divF" -> Div
     | "div" -> Div
+    | "modT" -> Rem
     | "rem" -> Rem
     | "<<" -> LShft
     | ">>" -> RShft
@@ -535,8 +537,8 @@ def mkBaseJavaUnOp(id) =
 op javaBaseOp?: Id -> Boolean
 def javaBaseOp?(id) =
   case id of
-    | "&" -> true  % was "&&" but I think that's buggy in Specware 4.0
-    | "or" -> true
+    | "&&" -> true
+    | "||" -> true
     | "=" -> true
     | ">" -> true
     | "<" -> true
@@ -546,6 +548,8 @@ def javaBaseOp?(id) =
     | "-" -> true
     | "*" -> true
     | "div" -> true
+    | "divF" -> true
+    | "modT" -> true
     | "rem" -> true
     %%| "-" -> true
     | "~" -> true

@@ -204,14 +204,14 @@ spec
 	 return (Some (s, throwing_expr, k, l))
 	}
 
-      | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
+      | Apply(Fun(Op(Qualified("System","writeLine"),_),_,_),t,_) -> 
 	{
 	 (s,argexpr,k,l) <- termToExpressionM(tcx,t,k,l);
 	 let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
 	 return(Some (s,expr,k,l))
 	}
 
-      | Apply(Fun(Op(Qualified("String","toScreen"),_),_,_),t,_) -> 
+      | Apply(Fun(Op(Qualified("System","toScreen"),_),_,_),t,_) -> 
 	{
 	 (s,argexpr,k,l) <- termToExpressionM(tcx,t,k,l);
 	 let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
@@ -235,6 +235,16 @@ spec
 	 let opid = "length" in
 	 let expr = mkMethExprInv(argexpr,opid,[]) in
 	 return(Some (s,expr,k,l))
+	}
+
+      | Apply(Fun(Op(Qualified("String","subFromTo"),_),_,_),Record([(_,t1),(_,t2),(_,t3)],_),_) ->
+	{
+	 (s1,argexpr1,k,l) <- termToExpressionM(tcx,t1,k,l);
+	 (s2,argexpr2,k,l) <- termToExpressionM(tcx,t2,k,l);
+	 (s3,argexpr3,k,l) <- termToExpressionM(tcx,t3,k,l);
+	 let opid = "substring" in
+	 let expr = mkMethExprInv(argexpr1,opid,[argexpr2,argexpr3]) in
+	 return(Some (s1++s2++s3,expr,k,l))
 	}
 
       | Apply(Fun(Op(Qualified("String","substring"),_),_,_),Record([(_,t1),(_,t2),(_,t3)],_),_) ->
