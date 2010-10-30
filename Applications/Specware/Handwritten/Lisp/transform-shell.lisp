@@ -27,7 +27,7 @@
 				   ("cse" . "Abstract Common Sub-Expressions")
 				   ("pc"   . "Print current expression")
 				   ("proc" . "[unit-term} Restart transformation on processed spec")
-				   ("p" . "[unit-term} Restart transformation on processed spec")
+				   ("p" . "[unit-term] Restart transformation on processed spec")
 				   ("trace-rewrites" . "Print trace for individual rewrites")
 				   ("trr" . "Print trace for individual rewrites")
 				   ("untrace-rewrites" . "Turn off printing trace for individual rewrites")
