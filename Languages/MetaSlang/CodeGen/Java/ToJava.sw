@@ -607,7 +607,7 @@ def modifyClsDeclsFromOps =
    spc <- getEnvSpec;
    %clsDecls <- getClsDecls;
    opsAsList <- return (opsAsList spc);
-   println("ops: "^printOpNms spc);
+   % println("ops: "^printOpNms spc);
    create_field? <- getCreateFieldFun;
    foldM (fn _ -> fn(qualifier,id,opinfo) ->
 	  if create_field? opinfo.dfn then
