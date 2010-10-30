@@ -7,7 +7,7 @@
 
    Simplify all
      Distributive rules
-     fa(x': State') iso_qid(osi_qid x')) = x'
+     fa(x': State') iso_qid(osi_qid x') = x'
 
    Simplify
 *)
@@ -453,7 +453,7 @@ spec
   %{{{  checkTypeOpacity?
   (* The type checker annotates certain terms with a type. In particular
   a Fun term has a type associated with it. In the case of a Fun (Op
-  (f, ...) the type assigned is a (possibly polymorphic) instance of
+  (f, ...)) the type assigned is a (possibly polymorphic) instance of
   the declared type for f. In particular, if f is declared f : X ->
   Y where X is defined to be some type T, then the name X (rather than
   the unfolding to T) will be the type assigned in the Fun term.
@@ -911,7 +911,7 @@ spec
                        iso_info: IsoInfoList,
                        iso_fn_info: IsoFnInfo)
          : SpecCalc.Env QualifiedIdMap =
-        % ### LE is this so we ignore the ops in the the list of pairs of iso's?
+        % Ignore the ops in the the list of pairs of iso's?
         let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
                                 [iso_qid, osi_qid] ++ result)
                          [] iso_info
@@ -927,8 +927,9 @@ spec
              % ### LE - we are folding over ops. Is the equivType? test where we
              % establish whether the op depends on a type subject to an isomorphism?
              % is there overlap with the ignore list? 
-             if in?(qid,ign_qids) \_or equivType? spc (op_ty_pr,op_ty) then
-               return result
+             if qid in? ign_qids || equivType? spc (op_ty_pr,op_ty)
+                  || some?(findTheOp(spc, makeDerivedQId qid))
+               then return result
             else {
               qid_pr <- makeFreshQId spc qid;
               return (insertAQualifierMap(result, q, nm, qid_pr))
@@ -946,24 +947,26 @@ spec
                             base_src_QIds: List QualifiedId,
                             src_QIds:      List QualifiedId,
                             qidPrMap:      QualifiedIdMap)
-         : SpecCalc.Env (List (OpInfo * OpInfo)) =
+         : SpecCalc.Env (List (OpInfo * OpInfo) * QualifiedIds) =
         foldOverQualifierMap
-          (fn (q, nm, qid_pr, result) ->
+          (fn (q, nm, qid_pr, (result, nonOpaqueQIds)) ->
            let qid = Qualified(q,nm) in
            let Some info = findTheOp(spc, qid) in
            let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
              op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
              qid_pr <- makeFreshQId spc qid; 
-             dfn_pr <-
+             (dfn_pr, nonOpaqueQIds) <-
                if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then
-                 return (primeTermsTypes(dfn, qidPrMap, iso_info))
+                 return ((primeTermsTypes(dfn, qidPrMap, iso_info), nonOpaqueQIds))
                else
-                 isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
+                 {dfn_pr <- isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
+                  return(dfn_pr, qid_pr :: nonOpaqueQIds)};
              if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then {
-               print ("\nmdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
-               prim_dfn <- return (primeTermsTypes(dfn, qidPrMap, iso_info)); 
-               when (nm = "andd") (print (printTermWithSorts dfn ^ "\n"
-                                            ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
+               print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
+               when (nm = "andd")
+                 (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
+                  print (printTermWithSorts dfn ^ "\n"
+                           ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
              }
              else
                {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
@@ -975,8 +978,9 @@ spec
              return ((info << {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
                       info << {names = [qid_pr],
                       dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
-             ::result)
-          }) [] qidPrMap
+                       ::result,
+                     nonOpaqueQIds)
+          }) ([], []) qidPrMap
       %}}}
       %{{{  isoTypeFn 
       def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
@@ -1568,7 +1572,7 @@ spec
     print "make derived ops\n";
     %{{{  make derived ops
     (* For each operator "op f = t" whose type depends on one or more iso types
-    X_i <-> Y_i, construct a new operator "op f' = s' where 's' is expressed in terms
+    X_i <-> Y_i, construct a new operator op f' = s' where 's' is expressed in terms
     of types Y_i. Also replace "t" with a term "t'" expressed in terms of "f'".The
     latter is needed as the new definition of "f" will be used to generate a rewrite
     rule enabling references to "f" to be replaced by references to "f'" *)
@@ -1577,7 +1581,8 @@ spec
     %}}}
 
     print "make derived op definitions\n";
-    new_defs <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap); 
+    (new_defs, nonOpaqueQIds) <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap);
+    print(show(length nonOpaqueQIds)^" non opaque ops to transform.\n");
     let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
                      let qid  = head opinfo.names in
                      let qid_pr = head opinfo_pr.names in
@@ -1651,19 +1656,19 @@ spec
     (* Rewriting is performed on individual ops rather than on the entire spec. *)
 
     print "rewriting ... \n";
-    print (scriptToString main_script); 
+    print (scriptToString main_script^"\n"); 
     simp_ops
        <- Env.mapOpInfos
            (fn opinfo ->
               if exists? (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs then
                 return opinfo
               else {
-                when (existsSubTerm (fn t -> case t of
-                      | And(_::(_::_),_) -> true
-                      | _ -> false) opinfo.dfn) {
-                  print ("Multiple defs for " ^ printQualifiedId (head opinfo.names));
-                  escape (printTerm opinfo.dfn)
-                };
+%                 when (existsSubTerm (fn t -> case t of
+%                       | And(_::(_::_),_) -> true
+%                       | _ -> false) opinfo.dfn) {
+%                   print ("Multiple defs for " ^ printQualifiedId (head opinfo.names));
+%                   escape (printTerm opinfo.dfn)
+%                 };
                 (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
                 (qid as Qualified(q, id)) <- return (head opinfo.names);
                 (simp_dfn,_) <-
@@ -1674,7 +1679,7 @@ spec
                                           {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
                                            return (equalType?(ty, isoTy))})
                            dfn;
-                    if (simplifyUnPrimed? || derivedQId? qid) then {
+                    if (simplifyUnPrimed? || (derivedQId? qid && qid in? nonOpaqueQIds)) then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
                       interpretTerm(spc, main_script, dfn, false)
