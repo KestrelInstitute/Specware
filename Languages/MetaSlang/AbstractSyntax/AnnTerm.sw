@@ -608,7 +608,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
    let tms = innerTerms tm in
    let len = length tms in
    if i >= 0 && i < len then tms@(len - i - 1)
-     else fail("Less than "^show i^" refined terms in\n"^printTerm tm)
+     else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
    let (tvs, ty, tm) = unpackTerm t in
@@ -617,7 +617,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
    let tms = innerTerms full_tm in
    let len = length tms in
-   if i >= len then fail("Less than "^show i^" refined terms")
+   if i >= len then fail("Less than "^show (i+1)^" refined terms")
    else
    let (pref, _, post) = splitAt(tms, len - i - 1) in
    maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
