@@ -590,6 +590,11 @@ spec
     in
       foldOverQualifierMap f false qmap
 
+  op invertQualifiedIdMap(qid_map: QualifiedIdMap): AQualifierMap Bool =
+    foldriAQualifierMap (fn (q, id, Qualified(q', id'), result)  ->
+                            insertAQualifierMap(result, q', id', true))
+      emptyAQualifierMap qid_map
+
   op Env.findTheOp : Spec -> QualifiedId -> SpecCalc.Env OpInfo
   def Env.findTheOp spc qid =
     case findTheOp (spc, qid) of
@@ -651,6 +656,7 @@ spec
   op simplifyIsomorphism?: Boolean = true
   %% Temporary until we have slicing
   op simplifyUnPrimed?: Boolean = false
+  op opaqueSimplifyScript: Script = Simplify[]
 
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                    newOptQual : Option String, extra_rules: List RuleSpec)
@@ -908,8 +914,8 @@ spec
       % Construct a map from a qualified id to the primed qualified id for
       % a new primed op.
       def makeDerivedOps(spc: Spec,
-                       iso_info: IsoInfoList,
-                       iso_fn_info: IsoFnInfo)
+                         iso_info: IsoInfoList,
+                         iso_fn_info: IsoFnInfo)
          : SpecCalc.Env QualifiedIdMap =
         % Ignore the ops in the the list of pairs of iso's?
         let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
@@ -949,18 +955,18 @@ spec
                             qidPrMap:      QualifiedIdMap)
          : SpecCalc.Env (List (OpInfo * OpInfo) * QualifiedIds) =
         foldOverQualifierMap
-          (fn (q, nm, qid_pr, (result, nonOpaqueQIds)) ->
+          (fn (q, nm, qid_pr, (result, transformQIds)) ->
            let qid = Qualified(q,nm) in
            let Some info = findTheOp(spc, qid) in
            let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
              op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
              qid_pr <- makeFreshQId spc qid; 
-             (dfn_pr, nonOpaqueQIds) <-
+             (dfn_pr, transformQIds) <-
                if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then
-                 return ((primeTermsTypes(dfn, qidPrMap, iso_info), nonOpaqueQIds))
+                 return ((primeTermsTypes(dfn, qidPrMap, iso_info), transformQIds))
                else
                  {dfn_pr <- isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
-                  return(dfn_pr, qid_pr :: nonOpaqueQIds)};
+                  return(dfn_pr, qid_pr :: transformQIds)};
              if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then {
                print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
                when (nm = "andd")
@@ -979,7 +985,7 @@ spec
                       info << {names = [qid_pr],
                       dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
                        ::result,
-                     nonOpaqueQIds)
+                     transformQIds)
           }) ([], []) qidPrMap
       %}}}
       %{{{  isoTypeFn 
@@ -1579,10 +1585,11 @@ spec
     % ### LE why is this two passes?
     qidPrMap <- makeDerivedOps(spc, iso_info, iso_fn_info); 
     %}}}
+    qidPr_Set <- return(invertQualifiedIdMap qidPrMap);
 
     print "make derived op definitions\n";
-    (new_defs, nonOpaqueQIds) <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap);
-    print(show(length nonOpaqueQIds)^" non opaque ops to transform.\n");
+    (new_defs, transformQIds) <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap);
+    print(show(length transformQIds)^" non opaque ops to transform.\n");
     let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
                      let qid  = head opinfo.names in
                      let qid_pr = head opinfo_pr.names in
@@ -1632,6 +1639,7 @@ spec
               % ++ osi_unfolds
               ++ complex_iso_fn_unfolds
               ++ rewrite_old
+              ++ iso_osi_rewrites
               ++ extra_rules)
             ] ++
             [Simplify (gen_unfolds
@@ -1679,10 +1687,13 @@ spec
                                           {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
                                            return (equalType?(ty, isoTy))})
                            dfn;
-                    if (simplifyUnPrimed? || (derivedQId? qid && qid in? nonOpaqueQIds)) then {
+                    if (simplifyUnPrimed? || (derivedQId? qid && some?(findAQualifierMap(qidPr_Set, q,id)))) then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
-                      interpretTerm(spc, main_script, dfn, false)
+                      interpretTerm(spc, if qid in? transformQIds
+                                          then main_script
+                                          else opaqueSimplifyScript,
+                                    dfn, false)
                     }
                     else
                       return (dfn, false)
