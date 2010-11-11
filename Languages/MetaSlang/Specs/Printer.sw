@@ -1142,7 +1142,11 @@ AnnSpecPrinter qualifying spec
                       ++ prettys))
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
-   let the_def = defs @ (max(0, length defs - refine_num - 1)) in
+   % let _ = writeLine("ppDef: "^show(head info.names)^" "^show refine_num^" of "^show(length defs)^"\n"^printTerm info.dfn) in
+   let the_def = if printDef? || printOpWithDef?
+                  then defs @ (max(0, length defs - refine_num - 1))
+                  else Any(termAnn(head decls))
+   in
 %    let _ = writeLine "Decls:" in
 %    let _ = app (fn d -> writeLine(printTerm d)) decls in
 %    let _ = writeLine "Defs:" in
