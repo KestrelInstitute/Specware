@@ -1676,12 +1676,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
   (:anyof
-   ((:tuple (1 :TRANSFORM-EXPR))                 1)
+   ((:tuple (1 :TRANSFORM-EXPR)) 1)
    ((:tuple "(" (1 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")
     (make-transform-tuple 1 ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :TRANSFORM-RECORD-PAIR ()
-  (:tuple (1 :NAME) ":" (2 :TRANSFORM-EXPR))
+  (:tuple (1 :NAME) ":" (2 :TRANSFORM-EXPR-ARG))
   (cons 1 2))
 
 ;;; ========================================================================
