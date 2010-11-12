@@ -219,7 +219,7 @@ AnnSpecPrinter qualifying spec
      | Fun(Op(Qualified(_,opName),fx),s,a) -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
      | _ -> tm
 
- def printLambda (context, path, marker, match) = 
+ def printLambda (context, path, marker, match, enclose?) = 
    let pp : ATermPrinter = context.pp in
    let 
      def prRule marker (i, (pat, cond, trm)) = 
@@ -228,19 +228,19 @@ AnnSpecPrinter qualifying spec
 	   blockFill (0,
 		      [(0, prettysNone [marker,
                                         let context = context << {printSort = true} in
-					ppPattern context ([0, i] ++ path, true) pat,
+					ppPattern context ([0, i] ++ path, enclose?) pat,
 					pp.Arrow]),
-		       (2, ppTerm context ([2, i] ++ path, Nonfix) trm)])
+		       (3, ppTerm context ([2, i] ++ path, Top) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
-					ppPattern context ([0, i] ++ path, true) pat,
+					ppPattern context ([0, i] ++ path, enclose?) pat,
 					string " ",
 					pp.Where,
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (2, ppTerm context ([3, i] ++ path, Nonfix) trm)])
+		       (3, ppTerm context ([3, i] ++ path, Top) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
@@ -275,11 +275,11 @@ AnnSpecPrinter qualifying spec
 	 | (Lambda (rules as (_ :: _), _), _) ->
 	   % Print lambda abstraction as
 	   % case pattern matching
-           enclose(embed? Top parentTerm, pp,
+           enclose(~(embed? Top parentTerm), pp,
                    blockAll (0, 
                              [(0, prettysNone [pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
                               (1, prettysNone 
-                                 [printLambda (context, [0] ++ path, pp.Of, rules)])]))
+                                 [printLambda (context, [0] ++ path, pp.Of, rules, false)])]))
 	   % Print tuple projection using
 	   % dot notation.
 	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
@@ -373,9 +373,9 @@ AnnSpecPrinter qualifying spec
 		  | (VarPat _, Lambda ([(pat2, Fun (Bool true, _, _), body)], _)) ->
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, false) pat, 
+						       ppPattern context ([0, index]++ path, true) pat, 
 						       string " ", 
-						       ppPattern context ([0, 1, index]++ path, false) pat2, 
+						       ppPattern context ([0, 1, index]++ path, true) pat2, 
 						       string " ", 
 						       pp.Equals, 
 						       string " "]), 
@@ -387,7 +387,7 @@ AnnSpecPrinter qualifying spec
 		  | _ -> 
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, true) pat, 
+						       ppPattern context ([0, index]++ path, false) pat, 
 						       string " ", 
 						       pp.Equals, 
 						       string " "]), 
@@ -405,8 +405,8 @@ AnnSpecPrinter qualifying spec
 						 ppDs (index + 1, 5, pp.LetDeclsAnd, decls))
 	    in
 	      enclose(case parentTerm of
-			| Infix _ -> false   % Add parens if inside infix expression
-			| _ -> true, pp,
+			| Infix _ -> true   % Add parens if inside infix expression
+			| _ -> false, pp,
 		      blockAll (0, 
 				[(0, blockLinear (0, 
 						  [(0, blockLinear (0, ppDs (0, 4, pp.Let, decls))), 
@@ -421,7 +421,7 @@ AnnSpecPrinter qualifying spec
 				  [(0, prettysNone [pp.Def, 
 						    pp.fromString id, 
 						    string " ", 
-						    ppPattern context ([1, 0] ++ path, false)
+						    ppPattern context ([1, 0] ++ path, true)
                                                       (case srt of
                                                          | Arrow(dom,rng, apos) | printLocalDefSorts? ->
                                                            SortedPat(pat, dom, apos)
@@ -440,8 +440,8 @@ AnnSpecPrinter qualifying spec
 				  (4, ppTerm context (path, Top) trm)]))
             in
               enclose(case parentTerm of
-			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true, pp,
+			| Infix _ -> true % Add parens if inside an infix expr
+			| _ -> false, pp,
 		      blockAll (0, 
 			[(0, blockNone (0, 
 				      [(0, pp.Let), 
@@ -466,8 +466,8 @@ AnnSpecPrinter qualifying spec
 		AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly) row
 	  | IfThenElse (t1, t2, t3, _) -> 
 	    enclose(case parentTerm of
-			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true, pp,
+			| Infix _ -> true % Add parens if inside an infix expr
+			| _ -> false, pp,
 		    blockLinear (0, 
 		       [(0, prettys [pp.If, ppTerm context ([0]++ path, Top) t1]), 
 			(0, blockFill (0, 
@@ -478,10 +478,10 @@ AnnSpecPrinter qualifying spec
 				       [(0, pp.Else), 
 					(0, ppTerm context ([2]++ path, Top) t3)]))]))
 	  | Lambda (match, _) -> 
-	    enclose(embed? Top parentTerm, pp,
-                    printLambda (context, path, pp.Lambda, match))
+	    enclose(~(embed? Top parentTerm), pp,
+                    printLambda (context, path, pp.Lambda, match, true))
           | The ((id,srt),body,_) ->
-	    enclose(embed? Top parentTerm, pp,
+	    enclose(~(embed? Top parentTerm), pp,
 		    blockFill (0, [
 			  (0, prettysNone 
 			   [pp.The,
@@ -506,8 +506,8 @@ AnnSpecPrinter qualifying spec
 			  ppSort context ([index]++ path, Top) srt])
 	    in
 	      enclose(case parentTerm of
-			| Infix _ -> false % Add parens if inside an infix expr
-			| _ -> true, pp,
+			| Infix _ -> true % Add parens if inside an infix expr
+			| _ -> false, pp,
 		      blockFill (0, [
 			    (0, prettysNone 
 			     [b, pp.LP, 
@@ -677,15 +677,17 @@ AnnSpecPrinter qualifying spec
 				     right])])
 
     | Subsort (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) ->
+      let context = context << {printSort = false} in
       prettysNone [pp.LCurly,
                    blockFill (0, 
-                              [(0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
+                              [(0, ppPattern context ([0, 0, 1] ++ path, false) pat), 
                                (0, string " : "), 
                                (0, ppSort    context ([0]       ++ path, Subsort) s), 
                                (0, pp.Bar), 
                                (0, ppTerm    context ([2, 0, 1] ++ path, Top) t)]),
                    pp.RCurly]
     | Subsort (s, t, _) -> 
+      let context = context << {printSort = false} in
       blockFill (0, 
 		 [(0, pp.LP), 
 		  (0, ppSort context ([0] ++ path, Subsort) s), 
@@ -693,6 +695,7 @@ AnnSpecPrinter qualifying spec
 		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
     | Quotient (s, t, _) -> 
+      let context = context << {printSort = false} in
       blockFill (0, 
 		 [(0, pp.LP), 
 		  (0, ppSort context ([0] ++ path, Top) s), 
@@ -761,13 +764,13 @@ AnnSpecPrinter qualifying spec
   %          | Some srt -> "["^printSort srt^"]"
   %     in "mtv%"^Nat.show uniqueId^linkr
 
- def enclose (enclosed, pp, pretty) = 
-   if enclosed then
-     pretty 
-   else
+ def enclose (enclose?, pp, pretty) = 
+   if enclose? then
      prettysNone [pp.LP, pretty, pp.RP]
+   else
+     pretty 
         
- def ppPattern context (path, enclosed) pattern = 
+ def ppPattern context (path, enclose?) pattern = 
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
@@ -789,8 +792,8 @@ AnnSpecPrinter qualifying spec
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
-	                           (fn (path, (id, pat)) -> ppPattern context (path, true) pat) 
-				   (if enclosed then (pp.LP, pp.Comma, pp.RP)
+	                           (fn (path, (id, pat)) -> ppPattern context (path, false) pat) 
+				   (if enclose? then (pp.LP, pp.Comma, pp.RP)
                                     else (pp.Empty, pp.Comma, pp.Empty)) 
 				   row
        else
@@ -799,50 +802,50 @@ AnnSpecPrinter qualifying spec
 	     blockFill (0, 
 			[(0, prettysNone [pp.fromString id, string " ", pp.Equals, string " "]), 
 			 (2, 
-			  prettysFill [ppPattern context (path, true) pat])])
+			  prettysFill [ppPattern context (path, false) pat])])
 	 in
 	   AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
      | EmbedPat ("Cons", 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_(* Qualified ("List", "List") *), [_], _), _) -> 
-       enclose (enclosed, pp, 
+       enclose (enclose?, pp, 
 		prettysFill [ppPattern context ([0]++ path, false) p1, 
 			     string " :: ", 
 			     ppPattern context ([1]++ path, false) p2])
  %  | EmbedPat ("Cons", 
  %             Some (RecordPat ([("1", p1), ("2", p2)], _)), 
  %              PBase (_(* Qualified ("List", "List") *), [_], _), _) -> 
- %   enclose (enclosed, 
+ %   enclose (enclose?, 
  %           prettysFill [ppPattern context ([0]++ path, false) p1, 
  %                        string " :: ", 
  %                        ppPattern context ([1]++ path, false) p2])
      | EmbedPat (id, Some pat, _(* srt *), _) -> 
-       enclose (enclosed, pp,
+       enclose (enclose?, pp,
 		prettysFill (Cons (pp.fromString id, 
 				   if singletonPattern pat then
 				     [string " ", 
-				      ppPattern context ([0]++ path, false) pat]
+				      ppPattern context ([0]++ path, true) pat]
 				   else
 				     [pp.LP, 
-				      ppPattern context ([0]++ path, true) pat, 
+				      ppPattern context ([0]++ path, false) pat, 
 				      pp.RP])))
      | SortedPat (pat, srt, _) -> 
-       enclose (enclosed, pp,
+       enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, ppPattern context ([0]++ path, false) pat), 
+			   [(0, ppPattern context ([0]++ path, true) pat), 
 			    (0, string  " : "), 
 			    (0, ppSort context ([1]++ path, Top : ParentSort) srt)]))
      | AliasPat (pat1, pat2, _) -> 
-       enclose (enclosed, pp,
+       enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, ppPattern context ([0]++ path, false) pat1), 
+			   [(0, ppPattern context ([0]++ path, true) pat1), 
 			    (0, string  " as "), 
-			    (0, ppPattern context ([1]++ path, false) pat2)]))
+			    (0, ppPattern context ([1]++ path, true) pat2)]))
      | QuotientPat (pat, qid, _) -> 
-       enclose (enclosed, pp,
+       enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),
-			    (0, ppPattern context ([0]++ path, false) pat)]))
+			    (0, ppPattern context ([0]++ path, true) pat)]))
 
      | RestrictedPat (pat, term, _) ->
 %% Don't want restriction expression inside parentheses in normal case statement
@@ -872,7 +875,7 @@ AnnSpecPrinter qualifying spec
 %	      in
 %		ppListPathPlus path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
 %	   | _ ->
-	     enclose (enclosed, pp,
+	     enclose (enclose?, pp,
 		      blockFill (0, 
 				 [(0, ppPattern context ([0]++ path, false) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
@@ -931,7 +934,7 @@ AnnSpecPrinter qualifying spec
 
  def AnnSpecPrinter.printPattern pat = 
    PrettyPrint.toString (format (80, ppPattern (initialize (asciiPrinter, false))
-			                       ([], true) 
+			                       ([], false) 
 					       pat))
 
  def printTermWithSorts term = 
@@ -1038,7 +1041,7 @@ AnnSpecPrinter qualifying spec
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
            [(4, blockNone (0, [(0, string " ("), 
                                (0, ppPattern (context << {printSort = true})
-                                     ([index, opIndex], true)
+                                     ([index, opIndex], false)
                                      pat  (* (SortedPat (pat, dom, apos)) *) ),
                                (0, string ")")]))]
            ++
