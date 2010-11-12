@@ -287,6 +287,11 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
    let (_, _, full_dfns) = unpackTerm opinfo.dfn in
    length(innerTerms full_dfns)
 
+op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
+  case findTheOp(spc, qid) of
+    | None -> false
+    | Some info -> (unpackFirstOpDef info).1 ~= []
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
