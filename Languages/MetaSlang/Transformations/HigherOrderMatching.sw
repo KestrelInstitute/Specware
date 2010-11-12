@@ -442,7 +442,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
       | (Fun(f1,srt1,_),Fun(f2,srt2,_)) ->
         if f1 = Equals && f2 = Equals || f1 = NotEquals && f2 = NotEquals
           then matchPairs(context, subst, stack)
-        else matchBase(context,f1,srt1,f2,srt2,stack,subst,N)
+        else matchFuns(context,f1,srt1,f2,srt2,stack,subst,N)
       | (M, N as Fun(f2,srt2,_)) | evaluateConstantTerms?
                                 && ~(hasFlexRef? M)
                                 && ~(constantTerm? M)
@@ -826,6 +826,19 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
       if x = y
 	 then 
 	    foldr (fn (subst,r) -> matchPairs(context, subst,stack) ++ r)
+              [] (unifySorts(context,subst,srt1,srt2,Some N))
+      else []
+
+  op matchFuns : Context * Fun * Sort * Fun * Sort * Stack * SubstC * MS.Term-> List SubstC
+  def matchFuns (context,x,srt1,y,srt2,stack,subst,N) =
+    % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
+      if x = y
+	 then
+           case x of
+             | Op(qid, _) | ~(polymorphic? context.spc qid) ->
+               matchPairs(context, subst, stack)
+             | _ ->
+	    foldr (fn (subst,r) -> matchPairs(context, subst, stack) ++ r)
               [] (unifySorts(context,subst,srt1,srt2,Some N))
       else []
 
