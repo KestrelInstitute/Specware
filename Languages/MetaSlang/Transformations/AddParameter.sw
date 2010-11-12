@@ -9,7 +9,7 @@ op addIsabelleProofs: Bool = true
 %% Defined in /Provers/ToIsabelle/IsaPrinter.sw
 op IsaTermPrinter.qidToIsaString(qid: QualifiedId): String
 
-op findOpsBetween(spc: Spec, top_fn: QualifiedId, fun: QualifiedId): QualifiedIds =
+op findOpsBetween(spc: Spec, top_fns: QualifiedIds, fun: QualifiedId): QualifiedIds =
   let baseSpec = getBaseSpec() in
   let def iterateRefsTo(roots: QualifiedIds, found: QualifiedIds, ref_by_map: RefMap): RefMap =
         case roots of
@@ -32,8 +32,8 @@ op findOpsBetween(spc: Spec, top_fn: QualifiedId, fun: QualifiedId): QualifiedId
             let new_refs_by = filter (fn x -> x nin? found) (applyRefMap(ref_by_map, root)) in
             iterateRefsBy(new_refs_by ++ rest, new_refs_by ++ found, ref_by_map)
    in
-   %% Don't include top_fn in
-   let ref_by_map = iterateRefsTo([top_fn], [], emptyAQualifierMap) in
+   %% Don't include top_fns in
+   let ref_by_map = iterateRefsTo(top_fns, [], emptyAQualifierMap) in
    iterateRefsBy([fun], [fun], ref_by_map)
 
 op addNewOp(spc: Spec, info: OpInfo): Spec =
@@ -61,8 +61,8 @@ op oldNewTheoremName(Qualified(qid, nm): QualifiedId): QualifiedId =
   Qualified(qid, nm^"_correctness")
 
 op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Option Nat, name: Id, param_ty_qid: QualifiedId,
-                top_fn: QualifiedId, init_val: QualifiedId, o_qual: Option Qualifier): Spec =
-  let fns_to_change = findOpsBetween(spc, top_fn, fun) in
+                top_fns: QualifiedIds, init_val: QualifiedId, o_qual: Option Qualifier): Spec =
+  let fns_to_change = findOpsBetween(spc, top_fns, fun) in
   let param_ty = mkBase(param_ty_qid, []) in
   let param = (name, param_ty) in
   let param_tm = mkVar param in
@@ -214,12 +214,14 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
                                 (spc, thm_name :: thm_names))
                            (spc, []) fns_to_change
   in
-  let spc = addRefinedDef(spc, makeTopDef top_fn) in
+  let spc = foldl (fn (spc, top_fn) -> addRefinedDef(spc, makeTopDef top_fn)) spc top_fns in
   let spc = adjustElementOrder spc in
   let spc = if addIsabelleProofs
-              then addIsaScript(spc, "",
-                                "apply(rule ext)\n  " ^
-                                  simplifyProofScript(refineDefNames(spc,top_fn) ++ thm_names))
+              then
+                let refine_names = foldl (fn (refine_names, top_fn) -> refine_names ++ refineDefNames(spc,top_fn)) [] top_fns in
+                addIsaScript(spc, "",
+                             "apply(rule ext)\n  "
+                               ^ simplifyProofScript(refine_names ++ thm_names))
             else spc
   in
   % let _ = writeLine(printSpec spc) in

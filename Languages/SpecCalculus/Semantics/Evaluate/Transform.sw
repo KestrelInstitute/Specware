@@ -39,6 +39,13 @@ spec
       | Name(n,_)   -> return (mkUnQualifiedId(n))
       | _ -> raise (TypeCheck (posOf itm, "Name expected."))
 
+  op extractQIds(itm: TransformExpr): SpecCalc.Env QualifiedIds =
+    case itm of
+      | Qual(q,n,_) -> return [Qualified(q,n)]
+      | Name(n,_)   -> return [mkUnQualifiedId(n)]
+      | Tuple(nms, _) -> mapM extractQId nms
+      | _ -> raise (TypeCheck (posOf itm, "Names expected."))
+
   op extractNat(itm: TransformExpr): SpecCalc.Env Nat =
     case itm of
       | Number(n,_) -> return n
@@ -150,6 +157,11 @@ spec
   op findQId(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env QualifiedId =
     {fld_val <- findField(fld_name, val_prs, pos);
      extractQId fld_val}
+
+  op findQIds(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env QualifiedIds =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, fld_val) -> extractQIds fld_val
+      | None -> return []
   
   op findNat(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env Nat =
     {fld_val <- findField(fld_name, val_prs, pos);
@@ -178,13 +190,13 @@ spec
       | None -> return default
       
   op getAddParameterFields(val_prs: List(String * TransformExpr) * Position)
-       : SpecCalc.Env(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedId * QualifiedId * Option Qualifier) =
+       : SpecCalc.Env(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier) =
     {fun <- findQId("function", val_prs);
      pos <- findNatDefault("parameter_position", val_prs, 99);
      o_return_pos <- findOptNat("return_position", val_prs);
      name <- findName("parameter_name", val_prs);
      ty <- findQId("parameter_type", val_prs);
-     within <- findQId("top_function", val_prs);
+     within <- findQIds("top_function", val_prs);
      val <- findQId("initial_value", val_prs);
      o_qual <- findOptName("qualifier", val_prs);
      return(fun, pos, o_return_pos, name, ty, within, val, o_qual)}

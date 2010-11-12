@@ -35,7 +35,7 @@ spec
     | AbstractCommonExpressions
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
-    | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedId * QualifiedId * Option Qualifier)
+    | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | Trace Boolean
     | Print
 
@@ -43,7 +43,7 @@ spec
  op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
 
  op addParameter(spc: Spec, fun: QualifiedId, pos: Nat, o_return_pos: Option Nat, name: Id, ty: QualifiedId,
-                 within: QualifiedId, val: QualifiedId, o_qual: Option Qualifier): SpecCalc.Env Spec =
+                 within: QualifiedIds, val: QualifiedId, o_qual: Option Qualifier): SpecCalc.Env Spec =
    let _ = printScript(AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual)) in
    %% Place holder
    return spc
@@ -127,7 +127,13 @@ spec
                                     | None -> [])
                               ++ [ppConcat[ppString "parameter_name: ", ppString name],
                                   ppConcat[ppString "parameter_type: ", ppQid ty],
-                                  ppConcat[ppString "top_function: ", ppQid within],
+                                  case within of
+                                    | [] -> ppNil
+                                    | [within1] -> ppConcat[ppString "top_function: ", ppQid within1]
+                                    | _ -> ppConcat[ppString "top_function: ",
+                                                    ppConcat[ppString "(",
+                                                             ppSep(ppString ", ") (map ppQid within),
+                                                             ppString ")"]],
                                   ppConcat[ppString "default_value: ", ppQid val]]
                               ++ (case o_qual of
                                     | Some qual -> [ppConcat[ppString "qualifier: ", ppString qual]]
@@ -438,6 +444,11 @@ spec
     else
     raise(Fail("Undefined op in "^id_str^" of addParameter "^printQualifiedId qid))
 
+  op checkOps(spc: Spec, qids: QualifiedIds, id_str: String): SpecCalc.Env QualifiedIds =
+    foldM (fn result -> fn qid -> {rr_qid <- checkOp(spc, qid, id_str);
+                                   return (result ++ [rr_qid])})
+      [] qids
+
   op checkType(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheSort(spc, qid) of
       | Some _ -> return qid
@@ -489,7 +500,7 @@ spec
       | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) -> {
         fun <- checkOp(spc, fun, "function");
         ty <- checkType(spc, ty, "parameter-type");
-        within <- checkOp(spc, within, "top-function");
+        within <- checkOps(spc, within, "top-function");
         val <- checkOp(spc, val, "initial_value");
         result <- return(addParameter(spc, fun, pos, o_return_pos, name, ty, within, val, o_qual));
           % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
