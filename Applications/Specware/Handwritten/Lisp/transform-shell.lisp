@@ -213,6 +213,26 @@
 	  (print-current-term nil)))
     (values)))
 
+(defun find-theorem-def (qid)
+  (let ((result (Script::getTheoremBody-2 *transform-spec* qid)))
+    (cdr result)))
+
+(defun at-theorem-command (qid)
+  (finish-previous-multi-command)
+  (let ((new-term (find-theorem-def qid)))
+    (if (null new-term)
+	()
+	(progn
+	  (push-state `(at-theorem-command ,qid))
+	  (setq *transform-term* (PathTerm::toPathTerm new-term))
+	  (push #'(lambda (future-steps)
+		    (if (null future-steps)
+			nil
+			(Script::mkAtTheorem-2 qid future-steps)))
+		*transform-commands*)
+	  (print-current-term nil)))
+    (values)))
+
 (defparameter *move-alist* '(("f" :|First|) ("l" :|Last|) ("n" :|Next|) ("p" :|Prev|)
 			     ("w" :|Widen|) ("a" :|All|) ("t" :|All|)
 			     ("s" . :|Search|) ("r" . :|ReverseSearch|)))
@@ -269,6 +289,7 @@
 			(cl-user::sw-help argstr) ; refers to *transform-help-strings*
 			))
 	   (at                 (at-command (parse-qid argstr t)))
+           ((at-t at-theorem)  (at-theorem-command (parse-qid argstr nil)))
 	   ((move m)           (move-command (String-Spec::split argstr)))
 	   ((f l n p w a s r)  (move-command (cons (string-downcase (string command))
 						   (String-Spec::split argstr))))

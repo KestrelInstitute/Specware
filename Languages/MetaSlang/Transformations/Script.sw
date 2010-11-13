@@ -26,6 +26,7 @@ spec
 
   type Script =
     | At (List Location * Script)
+    | AtTheorem (List Location * Script)
     | Move (List Movement)
     | Steps List Script
     | Simplify (List RuleSpec)
@@ -86,6 +87,10 @@ spec
         ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
       | At(locs, scr) ->
         ppIndent(ppConcat [ppString "at ", ppSep (ppString ", ") (map ppLoc locs), ppString ", ",
+                           ppNewline,
+                           ppScript scr])
+      | AtTheorem(locs, scr) ->
+        ppIndent(ppConcat [ppString "at-theorem ", ppSep (ppString ", ") (map ppLoc locs), ppString ", ",
                            ppNewline,
                            ppScript scr])
       | Move mvmts -> ppConcat [ppString "move (",
@@ -152,6 +157,7 @@ spec
    writeLine(scriptToString scr)
 
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
+ op mkAtTheorem(qid: QualifiedId, steps: List Script): Script = AtTheorem([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
  op mkSimplify(steps: List RuleSpec): Script = Simplify(steps)
  op mkApply(rules: List RuleSpec): Script = Apply rules
@@ -212,6 +218,12 @@ spec
         let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
         Some tm
       | _ -> (warn("Ambiguous op name."); None)
+
+  op getTheoremBody(spc: Spec, qid: QualifiedId): Option MS.Term =
+    case findPropertiesNamed(spc, qid) of
+      | [] -> (warn("No Theorem with that name."); None)
+      | [(_, _, _, bod, _)] -> Some bod
+      | (_, _, _, bod, _) :: _ -> (warn("Ambiguous theorem name."); Some bod)
 
   op findMatchingOps (spc: Spec, Qualified (q, id): QualifiedId): List OpInfo =
    if q = wildQualifier
@@ -492,6 +504,29 @@ spec
                              return (new_spc, tracing?)
                              })
                        (spc, tracing?) opinfos)
+            (spc, tracing?) locs }
+      | AtTheorem (locs, scr) -> {
+          when tracing? 
+            (print ("-- { at-theorem"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
+          foldM (fn (spc, tracing?) -> fn Def qid ->
+                 case findPropertiesNamed(spc, qid) of
+                   | [] -> {
+                       print ("Can't find theorem " ^ anyToString qid ^ "\n");
+                       return (spc, tracing?)
+                     }
+                   | props ->
+                     foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  {
+                             when tracing? 
+                               (print ((printTerm tm) ^ "\n")); 
+                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, tracing?); 
+                             new_spc <- return(setElements(spc, mapSpecElements (fn el ->
+                                                                                 case el of
+                                                                                   | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->
+                                                                                     Property (kind, qid1, tvs, new_tm, pos))
+                                                                  spc.elements));
+                             return (new_spc, tracing?)
+                             })
+                       (spc, tracing?) props)
             (spc, tracing?) locs }
       | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {
         result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
