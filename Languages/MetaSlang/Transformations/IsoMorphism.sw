@@ -933,7 +933,11 @@ spec
              % ### LE - we are folding over ops. Is the equivType? test where we
              % establish whether the op depends on a type subject to an isomorphism?
              % is there overlap with the ignore list? 
-             if qid in? ign_qids || equivType? spc (op_ty_pr,op_ty)
+             if qid in? ign_qids
+                  || (equivType? spc (op_ty_pr,op_ty)
+                        && ~(existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
+                                                 | _ -> false)
+                               dfn))
                   || some?(findTheOp(spc, makeDerivedQId qid))
                then return result
             else {
