@@ -834,10 +834,10 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
     % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
       if x = y
 	 then
-           case x of
-             | Op(qid, _) | ~(polymorphic? context.spc qid) ->
-               matchPairs(context, subst, stack)
-             | _ ->
+            if similarType? context.spc (srt1,srt2)
+               then matchPairs(context, subst, stack)
+            else
+            % let _ = writeLine("matchFuns: "^anyToString x^"\n"^printSort srt1^"\n ~= \n"^printSort srt2) in
 	    foldr (fn (subst,r) -> matchPairs(context, subst, stack) ++ r)
               [] (unifySorts(context,subst,srt1,srt2,Some N))
       else []
