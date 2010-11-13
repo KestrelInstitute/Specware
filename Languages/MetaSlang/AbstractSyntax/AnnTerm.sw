@@ -1227,6 +1227,33 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
       | And(tys,_) -> exists? (existsInType? pred?) tys
       | _ -> false)
 
+op [a] existsTypeInPattern? (pred?: ASort a -> Boolean) (pat: APattern a): Boolean =
+  existsPattern? (fn p ->
+                  case p of
+                    | VarPat ((_, ty), _)    -> existsInType? pred? ty
+                    | WildPat(ty, _)         -> existsInType? pred? ty
+                    | EmbedPat (_, _, ty, _) -> existsInType? pred? ty
+                    | SortedPat(_, ty, _)    -> existsInType? pred? ty
+                    | _ -> false)
+    pat
+
+op [a] existsTypeInTerm? (pred?: ASort a -> Boolean) (tm: ATerm a): Boolean =
+  existsSubTerm (fn t ->
+                 case t of
+                   | Var((_, ty), _) -> existsInType? pred? ty
+                   | Fun(_, ty, _)   -> existsInType? pred? ty
+                   | Bind (_, vars, _, _) ->
+                     exists? (fn (_, ty) -> existsInType? pred? ty) vars
+                   | The ((_,ty), _, _) -> existsInType? pred? ty
+                   | Let (decls, bdy, a) ->
+                     exists? (fn (pat, _) -> existsTypeInPattern? pred? pat) decls
+                   | LetRec (decls, bdy, a) ->
+                     exists? (fn ((_, ty), _) -> existsInType? pred? ty) decls
+                   | Lambda (match, a) ->
+                     exists? (fn (pat, _, _) -> existsTypeInPattern? pred? pat) match
+                   | SortedTerm(_, ty, _) -> existsInType? pred? ty
+                   | _ -> false)
+    tm
 
  %% folds function over all the subterms in top-down order
   op foldSubTerms : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
