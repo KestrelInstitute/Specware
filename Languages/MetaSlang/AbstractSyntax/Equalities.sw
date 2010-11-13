@@ -125,94 +125,104 @@ MetaSlang qualifying spec
      | _ -> false
 
  def equalType? (s1, s2) =
-   let _ = if traceEqualTerm? then writeLine(printSort s1^" =?= "^printSort s2) else () in
-   case (s1,s2) of
+   equalTypeSubtype?(s1, s2, false)
+ 
+ op [a, b] equalTypeSubtype?(s1: ASort a, s2: ASort b, ignore_subtypes?: Bool): Bool =
+   let def equalType?(s1, s2) =
+         let _ = if traceEqualTerm? then writeLine(printSort s1^" =?= "^printSort s2) else () in
+         case (s1,s2) of
 
-     | (Arrow     (x1, y1,  _),
-        Arrow     (x2, y2,  _)) -> equalType? (x1, x2) && equalType? (y1, y2)
+           | (Arrow     (x1, y1,  _),
+              Arrow     (x2, y2,  _)) -> equalType? (x1, x2) && equalType? (y1, y2)
 
-     | (Product   (xs1,     _),
-        Product   (xs2,     _)) -> equalList? (xs1, xs2,
-                                               fn ((l1, x1), (l2, x2)) ->
-					       l1 = l2 &&
-					       equalType? (x1, x2))
+           | (Product   (xs1,     _),
+              Product   (xs2,     _)) -> equalList? (xs1, xs2,
+                                                     fn ((l1, x1), (l2, x2)) ->
+                                                     l1 = l2 &&
+                                                     equalType? (x1, x2))
 
-     | (CoProduct (xs1,     _),
-        CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
-                                               fn ((l1, x1), (l2, x2)) ->
-					       l1 = l2 &&
-					       equalOpt? (x1, x2, equalType?))
+           | (CoProduct (xs1,     _),
+              CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
+                                                     fn ((l1, x1), (l2, x2)) ->
+                                                     l1 = l2 &&
+                                                     equalOpt? (x1, x2, equalType?))
 
-     | (Quotient  (x1, t1,  _),
-        Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
+           | (Quotient  (x1, t1,  _),
+              Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
+             
+           | (Subsort   (x1, t1,  _), _) | ignore_subtypes? -> equalType?(x1, s2) 
 
-     | (Subsort   (x1, t1,  _),
-        Subsort   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
+           | (_,   Subsort (x2, t2,  _)) | ignore_subtypes? -> equalType?(s1, x2) 
 
-     | (Base      (q1, xs1, _),
-        Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
+           | (Subsort   (x1, t1,  _),
+              Subsort   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
-     | (Boolean _, Boolean _)   -> true
+           | (Base      (q1, xs1, _),
+              Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
 
-     | (TyVar     (v1,      _),
-        TyVar     (v2,      _)) -> v1 = v2
+           | (Boolean _, Boolean _)   -> true
 
-     | (MetaTyVar (mtv1,    _),
-        MetaTyVar (mtv2,    _)) ->
-       let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
-       let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
-       id1 = id2 ||
-       (case (link1,link2) of
-	  %% This case handles the situation where an
-	  %%  unlinked MetaTyVar is compared against itself.
-          | (Some ls1, Some ls2) -> equalType? (ls1, ls2)
-	  %% The following two cases handle situations where
-	  %%  MetaTyVar X is linked to unlinked MetaTyVar Y
-	  %%  and we are comparing X with Y (or Y with X).
-	  | (Some ls1, _)        -> equalType? (ls1, s2)
-	  | (_,        Some ls2) -> equalType? (s1,  ls2)
-	  | _ -> false)
+           | (TyVar     (v1,      _),
+              TyVar     (v2,      _)) -> v1 = v2
 
-     | (MetaTyVar (mtv1, _), _) ->
-       let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
-       (case link1 of
-	  | Some ls1 -> equalType? (ls1, s2)
-	  | _ -> false)
+           | (MetaTyVar (mtv1,    _),
+              MetaTyVar (mtv2,    _)) ->
+             let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
+             let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
+             id1 = id2 ||
+             (case (link1,link2) of
+                %% This case handles the situation where an
+                %%  unlinked MetaTyVar is compared against itself.
+                | (Some ls1, Some ls2) -> equalType? (ls1, ls2)
+                %% The following two cases handle situations where
+                %%  MetaTyVar X is linked to unlinked MetaTyVar Y
+                %%  and we are comparing X with Y (or Y with X).
+                | (Some ls1, _)        -> equalType? (ls1, s2)
+                | (_,        Some ls2) -> equalType? (s1,  ls2)
+                | _ -> false)
 
-     | (_, MetaTyVar (mtv2, _)) ->
-       let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
-       (case link2 of
-	  | Some ls2 -> equalType? (s1, ls2)
-	  | _ -> false)
+           | (MetaTyVar (mtv1, _), _) ->
+             let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
+             (case link1 of
+                | Some ls1 -> equalType? (ls1, s2)
+                | _ -> false)
 
-     | (Pi         (tvs1, s1,    _), 
-        Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
-					equalType? (s1, s2) % TODO: handle alpha equivalence
+           | (_, MetaTyVar (mtv2, _)) ->
+             let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
+             (case link2 of
+                | Some ls2 -> equalType? (s1, ls2)
+                | _ -> false)
 
-     | (And        (srts1,       _),  
-        And        (srts2,       _)) -> %% TODO: Handle reordering?
-					foldl (fn (eq?, s1, s2) ->  
-					       eq? && equalType? (s1, s2))
-					      true
-					      (srts1, srts2)
+           | (Pi         (tvs1, s1,    _), 
+              Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
+                                              equalType? (s1, s2) % TODO: handle alpha equivalence
 
-     %% The following two cases handle comparisons of "X" with "And (X, Y)"
-     %%  where X and Y are equivalent, but not equal, sorts.
-     %%
-     %% This can happen for the sort of the dfn field of an opinfo
-     %%  for some op that had both a decl and a def, which gave it two
-     %%  sorts that are equivalent, but not equal.
-     %%
-     %% This was noticed as a problem for subsitution, which calls subtractSpec and 
-     %% then complains if any sorts and ops from the dom spec of the morphism have
-     %% failed to find a match in the spec that morphism is being applied to.
+           | (And        (srts1,       _),  
+              And        (srts2,       _)) -> %% TODO: Handle reordering?
+                                              foldl (fn (eq?, s1, s2) ->  
+                                                     eq? && equalType? (s1, s2))
+                                                    true
+                                                    (srts1, srts2)
 
-     | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
-     | (_,  And (srts2, _)) -> foldl (fn (eq?, s2) -> eq? || equalType? (s1, s2)) false srts2
+           %% The following two cases handle comparisons of "X" with "And (X, Y)"
+           %%  where X and Y are equivalent, but not equal, sorts.
+           %%
+           %% This can happen for the sort of the dfn field of an opinfo
+           %%  for some op that had both a decl and a def, which gave it two
+           %%  sorts that are equivalent, but not equal.
+           %%
+           %% This was noticed as a problem for subsitution, which calls subtractSpec and 
+           %% then complains if any sorts and ops from the dom spec of the morphism have
+           %% failed to find a match in the spec that morphism is being applied to.
 
-     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+           | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
+           | (_,  And (srts2, _)) -> foldl (fn (eq?, s2) -> eq? || equalType? (s1, s2)) false srts2
 
-     | _ -> false
+           | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+
+           | _ -> false
+   in
+   equalType?(s1, s2)
 
  def equalPattern? (p1, p2) =
    let _ = if traceEqualTerm? then writeLine(printPattern p1^" =?= "^printPattern p2) else () in
