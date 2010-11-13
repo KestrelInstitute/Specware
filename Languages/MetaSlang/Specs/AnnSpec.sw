@@ -908,7 +908,15 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
  def allProperties spc =
    foldrSpecElements (fn (el, result) ->
 		      case el of
-		       | Property p -> Cons (p, result)
+		       | Property p -> p :: result
+		       | _ -> result)
+                     []
+		     spc.elements
+
+ op findPropertiesNamed(spc: Spec, qid: QualifiedId): List(Property) =
+   foldrSpecElements (fn (el, result) ->
+		      case el of
+		       | Property(p as (_, qid1, _, _, _)) | qid = qid1 -> p :: result
 		       | _ -> result)
                      []
 		     spc.elements
