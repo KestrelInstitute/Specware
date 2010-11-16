@@ -908,7 +908,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                 then let new_type_refs = typesInTypeDefFor(qid, spc) in
                      findMutuallyRecursiveTypes(r_els, type_refs ++ new_type_refs,
                                                 mr_els ++ [el], pending_prag_els)
-                else (mr_els, pending_prag_els ++ r_els)
+                else (mr_els, pending_prag_els ++ [el] ++ r_els)
             | _ -> findMutuallyRecursiveTypes(r_els, type_refs, mr_els,
                                               pending_prag_els ++ [el])
     in
