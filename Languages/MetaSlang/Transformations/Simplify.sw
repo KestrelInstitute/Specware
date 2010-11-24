@@ -197,6 +197,7 @@ spec
        | Some cterm -> cterm
        | _ ->
      case term of
+       | Let([], tm, _) -> tm
        | Let(all_decls as decl1::decl2::decls,body,_) ->
          let bndvars  = foldl (fn (pvs, (p, _)) -> patternVars p ++ pvs) [] all_decls in
          if exists? (fn (_, t) -> hasVarNameConflict?(t, bndvars)) all_decls
