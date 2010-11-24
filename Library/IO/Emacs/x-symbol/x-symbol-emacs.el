@@ -219,7 +219,7 @@ test."
 
 ;;; Extents ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(require 'lucid)
+;(require 'lucid)
 (unless (fboundp 'extent-property) (defalias 'extent-property 'overlay-get))
 (unless (fboundp 'map-extents) (defalias 'map-extents 'cl-map-overlays))
 (unless (fboundp 'set-extent-end-glyph)
