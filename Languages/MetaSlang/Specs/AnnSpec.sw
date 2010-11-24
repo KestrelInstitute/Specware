@@ -318,6 +318,27 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
    mapOpInfos (fn info -> info << {dfn = mapTerm tsp info.dfn})
               ops
 
+op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
+  let def mapOpDef(qid as Qualified(q, id), refine_num, ops) =
+        case findTheOp(spc, qid) of
+          | Some opinfo | primaryOpName?(q, id, opinfo) ->
+            let (tvs, ty, full_term) = unpackTerm (opinfo.dfn) in
+            let tm = refinedTerm(full_term, refine_num) in
+            let new_tm = MetaSlang.mapTerm tsp tm in
+            if equalTerm?(tm, new_tm) then ops
+            else
+              let full_term = replaceNthTerm(full_term, refine_num, new_tm) in
+              let new_dfn = maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) in
+              insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})                                       
+          | _ -> ops
+  in
+  spc << {ops = foldl (fn (ops, el) ->
+                       case el of
+                         | Op(qid, true, _) -> mapOpDef(qid, 0, ops)
+                         | OpDef(qid, refine_num, _) -> mapOpDef(qid, refine_num, ops)
+                         | _ -> ops)
+                  spc.ops spc.elements}
+
  %%% Only map over unqualified ops (for use in qualify)
  op  mapSpecUnqualified : TSP_Maps_St -> Spec -> Spec
  def mapSpecUnqualified tsp spc =
