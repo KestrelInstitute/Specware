@@ -16,6 +16,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
+ import /Languages/MetaSlang/Transformations/InstantiateHOFns
 % import /Languages/MetaSlang/Transformations/ArityNormalize
 
  op addObligations?: Bool = true
@@ -26,6 +27,7 @@ IsaTermPrinter qualifying spec
  op defaultProof: String = "by auto"
  op addExplicitTyping?: Bool = true
  op targetFunctionDefs?: Bool = true
+ op unfoldMonadBinds?: Bool = true
 
  type Pretty = PrettyPrint.Pretty
 
@@ -525,6 +527,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                then lambdaLift(spc, false)
 	       else spc
     in
+    let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
@@ -3251,4 +3254,36 @@ def isSimplePattern? trm =
            | _ -> result)
      ([],[])
      spc.sorts).2
+
+op unfoldMonadBinds(spc: Spec): Spec = 
+  let def unfold tm =
+        case tm of
+          | Apply(Fun(Op(Qualified(_, "monadBind"), _), _, _) , x, _) ->
+            (case tryUnfold(spc, tm) of
+               | Some new_tm ->
+                 % let _ = writeLine("monadBind to "^printTerm new_tm) in
+                 unfold new_tm
+               | None -> tm)
+          | Apply(Lambda(rules, _), t2, _) | length rules > 1 && ~(embed? Var t2)->
+            (let uf_t2 = case tryUnfold(spc, t2) of
+                           | None -> t2
+                           | Some uf_tm -> uf_tm
+             in
+             % let _ = writeLine("ufmb: "^printTerm t2^"\n"^printTerm uf_t2) in
+             case uf_t2 of
+               | IfThenElse(p, t_tm, f_tm, a) ->
+                 (case (patternMatchRulesToLet(rules, t_tm, spc), patternMatchRulesToLet(rules, f_tm, spc)) of
+                    | (Some exp_t_tm, Some exp_f_tm) -> IfThenElse(p, exp_t_tm, exp_f_tm, a)
+                    | _ -> tm)
+               | _ ->
+             case patternMatchRulesToLet(rules, uf_t2, spc) of
+               | Some exp_tm ->
+                 % let _ = writeLine("case to "^printTerm exp_tm) in
+                 exp_tm
+               | None -> tm)
+          | _ -> simplifyUnfoldCase spc tm
+  in
+  mapSpecLocalOps (unfold, id, id) spc
 endspec
+
+
