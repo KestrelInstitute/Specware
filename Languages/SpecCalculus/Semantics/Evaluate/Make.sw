@@ -45,7 +45,7 @@ spec
 	     | SpecPath_Relative uid -> 
 	       return uid;
     filename <- return ((uidToFullPath uid) ^ ".lisp");
-    evaluateLispCompile (spec_info, (UnitId rel_uid, noPos), Some filename)
+    evaluateLispCompile (spec_info, (UnitId rel_uid, noPos), Some filename, false)
    }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

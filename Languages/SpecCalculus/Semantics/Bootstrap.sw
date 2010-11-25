@@ -252,8 +252,8 @@ Specware qualifying spec
     in
       run (catch prog toplevelHandler) 
 
-  op  evaluateLispCompile_fromLisp : String * Option String -> Boolean
-  def evaluateLispCompile_fromLisp (path,targetFile) = 
+  op  evaluateLispCompile_fromLisp : String * Option String * Bool -> Bool
+  def evaluateLispCompile_fromLisp (path,targetFile,slicing?) = 
     let target =
       case targetFile of
         | None -> None
@@ -268,7 +268,7 @@ Specware qualifying spec
 					      startLineColumnByte, 
 					      endLineColumnByte path_body));
 		spcInfo    <- evaluateUID position unitId;
-		evaluateLispCompile (spcInfo, (UnitId unitId, position), target);
+		evaluateLispCompile (spcInfo, (UnitId unitId, position), target, slicing?);
 		return true
 	       }
     in

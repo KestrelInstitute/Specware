@@ -47,6 +47,10 @@
     ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
     ("gen-lisp"  . "[spec-term [filename]] Generates Lisp code for unit in filename.
                   With no argument uses last processed unit.")
+    ("gen-lisp-top"  . "[spec-term [filename]] Generates Lisp code for unit in filename slicing away defs not need by unit.
+                  With no argument uses last processed unit.")
+    ("gen-lt"    . "[spec-term [filename]] Generates Lisp code for unit in filename slicing away defs not need by unit.
+                  With no argument uses last processed unit.")
     ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates Lisp for local definitions of spec.")
     ("gen-java"  . "[spec-term [option-spec]] Generates Java code for unit in filename.
                   With no argument uses last processed unit.")
@@ -320,7 +324,8 @@
 	   (show      (cl-user::show   argstr) (values))
 	   (showx     (cl-user::showx  argstr) (values))
 	   (cinit     (cl-user::sw-init))
-	   (gen-lisp  (cl-user::swl    argstr) (values))
+	   ((gen-lisp gen-l)  (cl-user::swl argstr) (values))
+	   ((gen-lisp-top gen-lt)  (let ((cl-user::*slicing-lisp?* t)) (cl-user::swl argstr)) (values))
 	   (lgen-lisp (cl-user::swll   argstr) (values))
 	   (gen-c     (cl-user::swc    argstr) (values))
 	   (make      (if (null argstr) (cl-user::make) (cl-user::make argstr)))

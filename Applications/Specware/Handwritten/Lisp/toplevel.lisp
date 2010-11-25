@@ -304,14 +304,17 @@
 (top-level:alias ("showx" :case-sensitive :string) (&optional x)
   (showx x))
 
+(defvar *slicing-lisp?* nil)
+
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
   ;; scripts depend upon this returning true iff successful
   (setq x (norm-unitid-str x))
   (flet ((swl1 (x y)
-	   (let ((val (Specware::evaluateLispCompile_fromLisp-2 x
+	   (let ((val (Specware::evaluateLispCompile_fromLisp-3 x
 								(if y (cons :|Some| (subst-home y))
-								  '(:|None|)))))
+								  '(:|None|))
+                                                                *slicing-lisp?*)))
 	     (show-error-position Emacs::*goto-file-position-stored* 1)
 	     (maybe-restore-swpath)
 	     val)))

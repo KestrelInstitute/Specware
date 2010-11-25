@@ -186,6 +186,8 @@ accepted in lieu of prompting."
       ["Process Unit" sw:process-unit t]
       ["Generate Lisp" sw:generate-lisp t]
       ["Generate & Load Lisp" (sw:generate-lisp t) t]
+      ["Generate Sliced Lisp" sw:generate-sliced-lisp t]
+      ["Generate & Load Sliced Lisp" (sw:generate-sliced-lisp t) t]
       ["Generate Local Lisp"  sw:gcl-current-file t]
       ["Evaluate Region" sw:evaluate-region (mark t)]
       ["ctext Spec" sw:set-swe-spec t]
@@ -1461,6 +1463,19 @@ STRING should be given if the last search was by `string-match' on STRING."
 	 (filename (sw::file-to-specware-unit-id buf-name t))
 	 (dir default-directory))
     (lisp-or-specware-command ":swl " "gen-lisp " filename)
+    (when compile-and-load?
+      (sit-for 1 t)
+      (lisp-or-specware-command ":cl " "cl " dir "lisp/"
+				(substring buf-name (length dir) -3)
+				".lisp"))))
+
+(defun sw:generate-sliced-lisp (compile-and-load?)
+  (interactive "P")
+  (save-buffer)
+  (let* ((buf-name buffer-file-name)
+	 (filename (sw::file-to-specware-unit-id buf-name t))
+	 (dir default-directory))
+    (lisp-or-specware-command ":swl " "gen-lisp-top " filename)
     (when compile-and-load?
       (sit-for 1 t)
       (lisp-or-specware-command ":cl " "cl " dir "lisp/"

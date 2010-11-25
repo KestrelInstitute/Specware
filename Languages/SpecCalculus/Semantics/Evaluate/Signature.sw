@@ -20,7 +20,7 @@ SpecCalc qualifying spec {
   op evaluateSpecPrism        : SCTerm * List SCTerm * PrismModeTerm Position        -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateSpecInterp       : SCTerm * SCTerm * (SpecInterpRules Position)         -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateExtendMorph      : SCTerm                                                           -> SpecCalc.Env ValueInfo
-  op evaluateLispCompile      : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
+  op evaluateLispCompile      : ValueInfo * SCTerm * Option String * Bool                        -> SpecCalc.Env ValueInfo
   op evaluateLispCompileLocal : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
   op evaluateJavaGen          : ValueInfo * (SpecCalc.Term Position) * Option String             -> SpecCalc.Env ValueInfo
   op evaluateDiag             : List (DiagElem Position)                             -> Position -> SpecCalc.Env ValueInfo
@@ -102,6 +102,10 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.53  2008/05/21 11:52:31  mcdonald
+%% pass position argument down a level in some calls, to make things more regular
+%% and to simplify adding debugging messages
+%%
 %% Revision 1.52  2007/07/11 20:41:27  westfold
 %% Initial version of syntax for transform statement.
 %%

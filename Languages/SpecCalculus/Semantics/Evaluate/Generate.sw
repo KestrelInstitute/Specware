@@ -17,8 +17,7 @@ SpecCalc qualifying spec
         case cValue of
           | Spec spc -> 
               (case language of
-                 | "lisp" -> evaluateLispCompile
-                             ((cValue,timeStamp,depUIDs), sub_term,optFile)
+                 | "lisp" -> evaluateLispCompile((cValue,timeStamp,depUIDs), sub_term, optFile, false)
                  | "lisp_local" -> evaluateLispCompileLocal
                                   ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "snark" -> evaluateSnarkGen
@@ -59,7 +58,7 @@ SpecCalc qualifying spec
 		          ^"/Library/SpecwareRuntime.lisp\")\n\n"
 
   %% Need to add error detection code
-  def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName) =
+  def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName, slicing?) =
     case coerceToSpec value of
       | Spec spc ->
         {cUID <- SpecCalc.getUID cterm;
@@ -67,7 +66,7 @@ SpecCalc qualifying spec
          lispFileName <- UIDtoLispFile (cUID, optFileName);
          print (                          lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
-         let _ = toLispFile (spc, lispFileName, lispFilePreamble(), true) in
+         let _ = toLispFile (spc, lispFileName, lispFilePreamble(), true, slicing?) in
          return valueInfo}
       | _ -> raise (TypeCheck ((positionOf cterm),
                                "attempting to generate code from an object that is not a specification"))
