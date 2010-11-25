@@ -18,7 +18,7 @@ op <| (s: QualifierSet, Qualified(x, y): QualifiedId) infixl 25 : QualifierSet =
 op addList(s: QualifierSet, l: QualifiedIds): QualifierSet =
   foldl (<|) s l
 
-op  haskellElement?(el: SpecElement): Bool =
+op haskellElement?(el: SpecElement): Bool =
    case el of
      | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str -> true
      | Pragma _ -> false
@@ -30,7 +30,6 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
-(* No longer needed
  op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Spec -> SpecElements
  def filterSpecNonBaseElements p elements base_spec =
    mapPartial
@@ -79,9 +78,9 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
      ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> some?(findTheOp(base_spec, qid))),
      elements = filterSpecNonBaseElements element_filter spc.elements base_spec
      }
-*)
 
-op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): QualifierSet * QualifierSet =
+
+op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): QualifierSet * QualifierSet =
   let base_spec = SpecCalc.getBaseSpec() in
   let def newOpsInTerm(tm: MS.Term, newopids: QualifiedIds, op_set: QualifierSet): QualifiedIds =
         foldTerm (fn opids -> fn t ->
@@ -160,6 +159,11 @@ op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore
     in
     let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
     (op_set, type_set)
+
+op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): Spec =
+  let (op_set, type_set) = sliceSpecInfo(spc, root_ops, root_types, ignore_subtypes?) in
+  let sliced_spc = scrubSpec(spc, op_set, type_set, SpecCalc.getBaseSpec()) in
+  sliced_spc
 
 %% Just for debugging
 op AnnSpec.subtractSpec: Spec -> Spec -> Spec
