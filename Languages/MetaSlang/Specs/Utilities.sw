@@ -2504,4 +2504,21 @@ Utilities qualifying spec
         | (_, RestrictedPat(x2, t2, _)) -> matchPatterns(p1, x2)
         | _ -> None
 
+  op topLevelOps(spc: Spec): QualifiedIds =
+    mapPartial (fn el ->
+                  case el of
+                    | Op(qid, _, _) -> Some qid
+                    | OpDef(qid, _, _) -> Some qid
+                    | _ -> None)
+     spc.elements
+
+  op topLevelTypes(spc: Spec): QualifiedIds =
+    mapPartial (fn el ->
+                  case el of
+                    | Sort(qid, _) -> Some qid
+                    | SortDef(qid, _) -> Some qid
+                    | _ -> None)
+     spc.elements
+
+
 endspec
