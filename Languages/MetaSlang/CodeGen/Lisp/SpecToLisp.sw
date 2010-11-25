@@ -9,6 +9,7 @@ SpecToLisp qualifying spec
  import Lisp
  import ../CodeGenTransforms
  import Suppress
+ import /Languages/MetaSlang/Transformations/SliceSpec
 
  op lisp : Spec -> LispSpec
 
@@ -1411,11 +1412,11 @@ SpecToLisp qualifying spec
      aux tm
 
  op toLisp        : Spec -> LispSpec
- op toLispEnv     : Spec * Boolean -> LispSpec
- op toLispFile    : Spec * String * String * Boolean -> ()
- op toLispFileEnv : Spec * String * String * Boolean -> ()
+ op toLispEnv     : Spec * Bool * Bool -> LispSpec
+ op toLispFile    : Spec * String * String * Bool * Bool -> ()
+ op toLispFileEnv : Spec * String * String * Bool * Bool -> ()
 
- def toLisp spc = toLispEnv (spc, true)
+ def toLisp spc = toLispEnv (spc, true, false)
 
  op  instantiateHOFns? : Boolean
  def instantiateHOFns? = true
@@ -1428,9 +1429,9 @@ SpecToLisp qualifying spec
 
  op substBaseSpecs? : Boolean = true
 
- def toLispEnv (spc, complete?) =
+ def toLispEnv (spc, complete?, slicing?) =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
-   %% axioms are irrelevant for code generation
+   %% theorems are irrelevant for code generation
    let spc = setElements(spc,mapPartialSpecElements 
 			       (fn el ->
 				case el of
@@ -1438,11 +1439,12 @@ SpecToLisp qualifying spec
 			         | _ -> Some el)
 			       spc.elements)
    in
-   let spc = (if complete? && substBaseSpecs? then substBaseSpecs spc else spc) in
-   let spc = (if removeCurrying?   then removeCurrying   spc else spc) in
+   let spc = if complete? && substBaseSpecs? then substBaseSpecs spc else spc in
+   let spc = if slicing? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
+   let spc = if removeCurrying? then removeCurrying   spc else spc in
    let spc = normalizeTopLevelLambdas spc in
-   let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
-   let spc = (if lambdaLift?       then lambdaLift(spc,true) else spc) in
+   let spc = if instantiateHOFns? then	instantiateHOFns spc else spc in
+   let spc = if lambdaLift?       then lambdaLift(spc,true) else spc in
    let spc = translateMatch spc in
    let spc = translateRecordMergeInSpec spc in
    let spc = arityNormalize             spc in
@@ -1450,17 +1452,17 @@ SpecToLisp qualifying spec
    let lisp_spec = lisp spc in
    lisp_spec 
 
- def toLispFile (spc, file, preamble, complete?) =  
-   toLispFileEnv (spc, file, preamble, complete?) 
+ def toLispFile (spc, file, preamble, complete?, slicing?) =  
+   toLispFileEnv (spc, file, preamble, complete?, slicing?) 
 
- def toLispFileEnv (spc, file, preamble, complete?) =
+ def toLispFileEnv (spc, file, preamble, complete?, slicing?) =
    % let _ = writeLine ("Writing Lisp file " ^ file) in
-   let spc = toLispEnv (spc, complete?) in
+   let spc = toLispEnv (spc, complete?, slicing?) in
    ppSpecToFile (spc, file, preamble)
 
  op  toLispText : Spec -> Text
  def toLispText spc =
-   let lSpc = toLispEnv (spc, true) in
+   let lSpc = toLispEnv (spc, true, false) in
    let p = ppSpec lSpc in
    format (80, p)
       
@@ -1486,7 +1488,7 @@ SpecToLisp qualifying spec
 			         | _ -> None)
 			       spc.elements)
    in 
-     toLispFile (spc, file, preamble, false)
+     toLispFile (spc, file, preamble, false, false)
      
 
 (*

@@ -502,22 +502,6 @@ Haskell qualifying spec
     mapSpec (maybeExpandRecordPattern spc, id, id)
       spc
 
-  op topLevelOps(spc: Spec): QualifiedIds =
-    mapPartial (fn el ->
-                  case el of
-                    | Op(qid, _, _) -> Some qid
-                    | OpDef(qid, _, _) -> Some qid
-                    | _ -> None)
-     spc.elements
-
-  op topLevelTypes(spc: Spec): QualifiedIds =
-    mapPartial (fn el ->
-                  case el of
-                    | Sort(qid, _) -> Some qid
-                    | SortDef(qid, _) -> Some qid
-                    | _ -> None)
-     spc.elements
-
   op nonExecBaseSpecs: List String = ["List", "String", "Integer"]
   op addExecutableDefs (spc: Spec, spec_name: String): Spec =
     if spec_name in? nonExecBaseSpecs
@@ -532,7 +516,7 @@ Haskell qualifying spec
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     % let _ = writeLine("0a:\n"^printSpecFlat( spc)^"\n") in
     let c = if c.slicing? && c.top_spec?
-             then let (needed_ops, needed_types) = sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) in
+             then let (needed_ops, needed_types) = sliceSpecInfo(spc, topLevelOps spc, topLevelTypes spc, true) in
                   c << {needed_ops = needed_ops,
                         needed_types = needed_types}
              else c
