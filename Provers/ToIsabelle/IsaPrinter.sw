@@ -1289,8 +1289,14 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                              %  else
                                  let spc = getSpec c in
                                  let pred_dom_ty = domain(spc, inferType(spc, pred)) in
-                                 prConcat [prString "{x :: ", ppType c Top true pred_dom_ty,
-                                           prString ". ", ppTerm c Top pred, prString " x}"],
+                                 let (v_pp, pred) =
+                                     case pred of
+                                       | Lambda([(VarPat((x1,_),_), _, Apply(pred1, Var((x2, _), _), _))], _) | x1 = x2 ->
+                                         (prString x1, pred1)
+                                       | _ -> (prString "x", pred)
+                                 in
+                                 prConcat [prString "{", v_pp, prString ":: ", ppType c Top true pred_dom_ty,
+                                           prString ". ", ppTerm c Nonfix pred, prString " ", v_pp, prString "}"],
                              prString "\""]]
                            ++ prf_pp
                            ++ (if prf_pp = []
