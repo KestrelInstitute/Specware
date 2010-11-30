@@ -312,10 +312,15 @@ MetaSlangRewriter qualifying spec
  op useUnfoldLetStrategy?: Boolean = true
 
  op substFromBinds(binds: List(Pattern * MS.Term)): VarSubst =
-   mapPartial (fn (p, be) ->
-                 case p of
-                   | VarPat(v,_) -> Some (v,be)
-                   | _ -> None)
+   foldl (fn (sbst, (p, be)) ->
+                 case (p, be) of
+                   | (VarPat(v,_), _) -> (v, be) :: sbst
+                   | (RecordPat(pat_prs, _), Record(tm_prs, _)) ->
+                     substFromBinds(zip(map (project 2) pat_prs, map (project 2) tm_prs)) ++ sbst
+                   | (EmbedPat(id1, Some p, _, _), Apply(Fun(Embed(id2, true), _, _), tm, _)) | id1 = id2 ->
+                     substFromBinds([(p, tm)]) ++ sbst
+                   | _ -> sbst)
+     []
      binds
  
  op unFoldSimpleLet(binds: List(Pattern * MS.Term), M: MS.Term)
@@ -338,11 +343,22 @@ MetaSlangRewriter qualifying spec
         else
           let fvs = freeVars M1 in
           Let(filter (fn (p,_) ->
-                        case p of
-                          | VarPat(v,_) -> inVars?(v,fvs)
-                          | _ -> true)
+                        exists? (fn v -> inVars?(v,fvs)) (patVars p))
                 binds,
               M1, b)
+
+ op dropLet(tm: MS.Term): Option MS.Term =
+   case tm of
+     | Let([(pat, b_tm)], m, a) ->
+       (let pat_vs = patVars pat in
+        case b_tm of
+        | IfThenElse(p, q, r, a1) | ~(exists? (fn v -> v in? pat_vs) (freeVars p)) ->
+          Some(IfThenElse(p, Let([(pat, b_tm)], q, a), Let([(pat, b_tm)], r, a), a1))
+        | Apply(Lambda(cases, a1), p, a2) | ~(exists? (fn v -> v in? pat_vs) (freeVars p)) ->
+          let new_cases = map (fn (pi, ci, bi) -> (pi, ci, Let([(pat, bi)], m, a))) cases in
+          Some(Apply(Lambda(new_cases, a1), p, a2))
+        | _ -> None)
+     | _ -> None
 
  op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
  op persistentFlexVar?(t: MS.Term): Boolean =
