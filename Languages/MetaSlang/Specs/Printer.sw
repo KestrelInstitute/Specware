@@ -373,7 +373,7 @@ AnnSpecPrinter qualifying spec
 		  | (VarPat _, Lambda ([(pat2, Fun (Bool true, _, _), body)], _)) ->
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, true) pat, 
+						       ppPattern context ([0, index]++ path, false) pat, 
 						       string " ", 
 						       ppPattern context ([0, 1, index]++ path, true) pat2, 
 						       string " ", 
@@ -387,7 +387,7 @@ AnnSpecPrinter qualifying spec
 		  | _ -> 
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, false) pat, 
+						       ppPattern context ([0, index]++ path, true) pat, 
 						       string " ", 
 						       pp.Equals, 
 						       string " "]), 
@@ -755,7 +755,7 @@ AnnSpecPrinter qualifying spec
    let {link, uniqueId, name} = State.! mtv in
    case link of
     | None -> "mtv%"^name^"%"^ (Nat.show uniqueId)
-    | Some srt -> printSort srt
+    | Some srt -> "mtv%"^name^"%"^ (Nat.show uniqueId)^": "^printSort srt
 
   %% More elaborate version
   %     let linkr =
