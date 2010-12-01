@@ -68,6 +68,8 @@ spec
                                   return (Unfold qid)}
       | Item("rewrite",opid,_) -> {qid <- extractQId opid;
                                    return (Rewrite qid)}
+      | Item("apply",opid,_) -> {qid <- extractQId opid;
+                                 return (MetaRule qid)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
 
  op getSearchString(se: TransformExpr): SpecCalc.Env String =
