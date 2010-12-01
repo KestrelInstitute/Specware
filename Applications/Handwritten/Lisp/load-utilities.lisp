@@ -14,6 +14,10 @@
 (defvar System-Spec::msWindowsSystem? #+(or win32 mswindows) t
                                       #-(or win32 mswindows) nil)
 
+(defun fixCase (str)
+  #+case-sensitive str
+  #-case-sensitive (string-upcase str))
+
 #+allegro(setq excl:*global-gc-behavior* '(10 2.0))
 
 ;; The following flag disables the collection of xref information when a lisp
@@ -562,8 +566,7 @@
   ;; use find-symbol hack to avoid sbcl complaints about eval-in-emacs
   ;; not being defined at compile-time
   ;; (also avoids need to have swank package available yet)
-  (let ((e-in-e (find-symbol #+case-sensitive "eval-in-emacs"
-                             #-case-sensitive "EVAL-IN-EMACS"
+  (let ((e-in-e (find-symbol (fixCase "eval-in-emacs")
                              :swank)))
     (wait "Commands in progress"
           #'(lambda () (<= (funcall e-in-e
