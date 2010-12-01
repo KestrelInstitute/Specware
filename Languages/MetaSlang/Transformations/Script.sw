@@ -244,16 +244,16 @@ spec
       then None
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
-  op metaRuleFunction: String * String -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
+  op metaRuleFunction: String * String -> Spec -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
 
-  op makeMetaRule(qid as Qualified(q,id): QualifiedId): RewriteRule =
+  op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
     {name     = show qid,
      freeVars = [],
      tyVars = [],
      condition = None,
      lhs   = HigherOrderMatching.mkVar(1,TyVar("''a",noPos)),  % dummy
      rhs   = HigherOrderMatching.mkVar(2,TyVar("''a",noPos)),  % dummy
-     trans_fn = Some(metaRuleFunction(q, id))}
+     trans_fn = Some(metaRuleFunction(q, id) spc)}
 
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
@@ -284,7 +284,7 @@ spec
       | RightToLeft(qid) ->
         map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
-      | MetaRule qid -> [makeMetaRule qid]
+      | MetaRule qid -> [makeMetaRule spc qid]
       | AllDefs ->
         foldriAQualifierMap
           (\_lambda (q, id, opinfo, val) ->

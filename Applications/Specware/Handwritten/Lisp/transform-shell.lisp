@@ -261,10 +261,10 @@
 (defun apply-command (qid constr-fn kind?)
   (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid kind?))))))
 
-(defvar *op-commands* '(fold f unfold uf rewrite rw))
+(defvar *op-commands* '("fold" "f" "unfold" "uf" "rewrite" "rw"))
 (defun command-kind (com)
-  (if (member com *op-commands*) 'op
-      (if (eq com 'apply) 'fn 'theorem)))
+  (if (member com *op-commands* :test 'string-equal) 'op
+      (if (string-equal com "apply") 'fn 'theorem)))
 
 (defun simplify-command (argstr)
   (let* ((words (and argstr
