@@ -119,6 +119,7 @@ type APathTerm a = ATerm a * Path
 
   op [a] replaceSubTerm(new_tm: ATerm a, (top_term, path): APathTerm a): APathTerm a =
     let def repl(tm, path) =
+          % let _ = writeLine("rst: "^anyToString path^"\n"^printTerm tm) in
           case path of
             | [] -> new_tm
             | i :: r_path ->
@@ -160,6 +161,6 @@ type APathTerm a = ATerm a * Path
               And(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
             | _ -> tm
     in
-    (repl(top_term, path), path)
+    (repl(top_term, reverse path), path)
 
 endspec
