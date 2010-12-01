@@ -456,7 +456,7 @@ spec
   op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, tracing?: Boolean)
     : SpecCalc.Env (MS.Term * Boolean) =
     {(new_path_term, tracing?) <- interpretPathTerm(spc, script, toPathTerm def_term, tracing?);
-    return(fromPathTerm new_path_term, tracing?)}
+    return(new_path_term.1, tracing?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
