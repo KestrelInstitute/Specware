@@ -44,14 +44,14 @@ AnnSpecPrinter qualifying spec
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
 
  type PrContext = {
-		 pp                 : ATermPrinter,
-		 printSort          : Boolean,
-		 markSubterm        : Boolean,
-		 markNumber         : Ref Nat,
-		 markTable          : Ref (NatMap.Map (List Nat)),
-		 indicesToDisable   : IntegerSet.Set,
-		 sosIndicesToEnable : IntegerSet.Set
-                }
+                   pp                 : ATermPrinter,
+                   printSort          : Boolean,
+                   markSubterm        : Boolean,
+                   markNumber         : Ref Nat,
+                   markTable          : Ref (NatMap.Map (List Nat)),
+                   indicesToDisable   : IntegerSet.Set,
+                   sosIndicesToEnable : IntegerSet.Set
+                  }
  
  type IndexLines = Integer * Lines
 
@@ -222,15 +222,15 @@ AnnSpecPrinter qualifying spec
  def printLambda (context, path, marker, match, enclose?) = 
    let pp : ATermPrinter = context.pp in
    let 
-     def prRule marker (i, (pat, cond, trm)) = 
+     def prRule marker (i, (pat, cond, trm)) par = 
        case cond of
 	 | Fun (Bool true, _, _) -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
-                                        let context = context << {printSort = true} in
+                                        let context = context << {printSort = enclose?} in
 					ppPattern context ([0, i] ++ path, enclose?) pat,
 					pp.Arrow]),
-		       (3, ppTerm context ([2, i] ++ path, Top) trm)])
+		       (3, ppTerm context ([2, i] ++ path, par) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
@@ -240,13 +240,13 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
-		       (3, ppTerm context ([3, i] ++ path, Top) trm)])
+		       (3, ppTerm context ([3, i] ++ path, par) trm)])
    in
      prettysAll (case match of
 		   | [] -> []
 		   | rule :: rules -> 
-		     [prRule marker (0, rule)] ++
-		     (ListUtilities.mapWithIndex (fn (i, rule) -> prRule pp.Bar (i + 1, rule)) 
+		     [prRule marker (0, rule) (if rules = [] then Top else Nonfix)] ++
+		     (ListUtilities.mapWithIndex (fn (i, rule) -> prRule pp.Bar (i + 1, rule) Nonfix) 
 		                                 rules))
  
  def ppTermScheme context parent (tvs, term) = 
@@ -322,7 +322,15 @@ AnnSpecPrinter qualifying spec
 	 | _ -> 
 	   blockLinear (0, 
                         [(0, prettysNone([ppTerm context ([0] ++ path, Nonfix) t1]
-                                         ++ (if embed? Var t2 then [string " "] else []))), 
+                                           ++ (if embed? Var t2 || (case t1 of
+                                                                      | Fun(f, _, _) ->
+                                                                        (case f of
+                                                                           | Not -> false
+                                                                           | Op _ -> false
+                                                                           | Embed _ -> false
+                                                                           | _ -> true)
+                                                                      | _ -> true)
+                                                 then [string " "] else []))), 
                          (2, blockNone (0, 
                                         (case t2 of
                                            | Record (row, _) ->
@@ -335,7 +343,7 @@ AnnSpecPrinter qualifying spec
                                                [(0, ppTerm context ([1] ++ path, Top) t2)]
                                            | Var _ -> 
                                              [% (0, string " "), 
-                                              (0, ppTerm context ([1] ++ path, Top) t2)
+                                                (0, ppTerm context ([1] ++ path, Top) t2)
                                               (*, (0, string " ")*)
                                               ]
                                            | _ -> 
