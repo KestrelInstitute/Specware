@@ -60,6 +60,7 @@
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")
     ("cl"        . "[filename] Compile and load Lisp file filename.")
+    ("pa"        . "[pkgname] Sets the default lisp package.")
 ;;    ("bash"      . "[fn [args]] Applies fn to args in bash shell.
 ;;                  No spaces allowed in args.
 ;;                  With no argument, starts subordinate bash shell.")

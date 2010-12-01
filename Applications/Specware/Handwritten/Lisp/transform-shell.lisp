@@ -19,6 +19,7 @@
                                    ("rewrite" . "[op] does single rewrite using definition of op as a rewrite rule")
 				   ("lr" . "[thm] Applies theorem as a rewrite in left-to-right direction")
 				   ("rl" . "[thm] Applies theorem as a rewrite in right-to-left direction")
+                                   ("apply" . "[rule] Applies rule")
 				   ("simp-standard" . "Applies standard simplifier")
 				   ("ss" . "Applies standard simplifier")
 				   ("partial-eval" . "Evaluate closed sub-expressions")
@@ -156,16 +157,17 @@
                                                nil)))
 	(push prev-result *transform-commands*)))))
 
-(defun parse-qid (qid-str op?)
+(defun parse-qid (qid-str kind)
   (let* ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) "."))
 	 (len (length syms)))
     (if (= len 1)
 	(let ((uq_qid (MetaSlang::mkUnQualifiedId (first syms))))
-          (if (if op? (Script::findMatchingOps-2 *transform-spec* uq_qid)
-                  (Script::matchingTheorems?-2 *transform-spec* uq_qid))
+          (if (if (eq kind 'op) (Script::findMatchingOps-2 *transform-spec* uq_qid)
+                  (or (eq kind 'fn)
+                      (Script::matchingTheorems?-2 *transform-spec* uq_qid)))
               uq_qid
               (let ((wild_qid (MetaSlang::mkQualifiedId-2 Script::wildQualifier (first syms))))
-                (if op?
+                (if (eq kind 'op)
                     (let ((wild_ops (Script::findMatchingOps-2 *transform-spec*  wild_qid)))
                       (if (eql (length wild_ops) 1)
                           (AnnSpec::primaryOpName (first wild_ops))
@@ -174,6 +176,11 @@
 	(if (= len 2)
 	    (MetaSlang::mkQualifiedId-2 (first syms) (second syms))
 	    nil))))
+
+(defun Script::metaRuleFunction-2 (q id)
+  (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "MetaRule" q)))))
+    (if (fboundp f) f
+        (error "~a not a function" (MetaSlang::printQualifierDotId q id)))))
 
 (defun interpret-command (command)
   (if (null *transform-term*)
@@ -251,12 +258,13 @@
       (interpret-command (Script::mkMove move-comms)))
     (values)))
 
-(defun apply-command (qid constr-fn op?)
-  (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid op?))))))
+(defun apply-command (qid constr-fn kind?)
+  (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid kind?))))))
 
 (defvar *op-commands* '(fold f unfold uf rewrite rw))
-(defun op-command? (com)
-  (member com *op-commands*))
+(defun command-kind (com)
+  (if (member com *op-commands*) 'op
+      (if (eq com 'apply) 'fn 'theorem)))
 
 (defun simplify-command (argstr)
   (let* ((words (and argstr
@@ -265,7 +273,7 @@
 		      collect (funcall (Script::ruleConstructor (first tl))
 				       (if (null (cdr tl))
 					   nil
-					   (parse-qid (second tl) (op-command? (first tl))))))))
+					   (parse-qid (second tl) (command-kind (first tl))))))))
     (interpret-command (Script::mkSimplify rules))))
 
 (defun finish-transform-session ()
@@ -288,18 +296,18 @@
 			     *transform-help-strings*))
 			(cl-user::sw-help argstr) ; refers to *transform-help-strings*
 			))
-	   (at                 (at-command (parse-qid argstr t)))
-           ((at-t at-theorem)  (at-theorem-command (parse-qid argstr nil)))
+	   (at                 (at-command (parse-qid argstr 'op)))
+           ((at-t at-theorem)  (at-theorem-command (parse-qid argstr 'theorem)))
 	   ((move m)           (move-command (String-Spec::split argstr)))
 	   ((f l n p w a s r)  (move-command (cons (string-downcase (string command))
 						   (String-Spec::split argstr))))
-	   ((simplify simp s)  (simplify-command argstr)    )
-	   ;((apply a)       (cl-user::ls     (or argstr "")))
-	   ((fold f)           (apply-command argstr 'Script::mkFold t))
-	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold t))
-           ((rewrite rw)       (apply-command argstr 'Script::mkRewrite t))
-	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight nil))
-	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft nil))
+	   ((simplify simp s)  (simplify-command argstr))
+	   ((apply a)          (apply-command argstr 'Script::mkMetaRule 'fn))
+	   ((fold f)           (apply-command argstr 'Script::mkFold 'op))
+	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold 'op))
+           ((rewrite rw)       (apply-command argstr 'Script::mkRewrite 'op))
+	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight 'theorem))
+	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft 'theorem))
 	   ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
 	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
 	   ((partial-eval pe)  (interpret-command (Script::mkPartialEval-0)))
