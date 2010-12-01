@@ -118,9 +118,20 @@ MetaSlangRewriter qualifying spec
           let _ = if debugApplyRewrites? then
                    (%writeLine("boundVars: "^anyToString boundVars);
                     printRule rule;
-                    writeLine("Matching "^printTerm rule.lhs^" against\n"^printTerm term))
+                    if some? rule.trans_fn
+                      then writeLine("Applying to "^printTerm term)
+                    else writeLine("Matching "^printTerm rule.lhs^" against\n"^printTerm term))
                    else ()
           in
+          case rule.trans_fn of
+            | Some f ->
+              (case f term of
+               | Some new_term ->
+                 (if debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
+                    else ();
+                  unit(new_term, (subst, rule, boundVars, demod)))
+               | None -> Nil)
+            | None ->            
           let substs = applyRewrite(context,rule,subst,term) in
           let _ = if debugApplyRewrites? then
                     if substs = [] then writeLine("Match failed.\n")
@@ -152,7 +163,8 @@ MetaSlangRewriter qualifying spec
 	tyVars = [],
 	condition = None,
 	lhs   = mkVar(1,TyVar("''a",noPos)),
-	rhs   = mkVar(2,TyVar("''a",noPos))
+	rhs   = mkVar(2,TyVar("''a",noPos)),
+        trans_fn = None
      } 
 
 
@@ -163,7 +175,8 @@ MetaSlangRewriter qualifying spec
 	tyVars = [],
 	condition = None,
 	lhs   = mkVar(1,TyVar("''a",noPos)),
-	rhs   = mkVar(2,TyVar("''a",noPos))
+	rhs   = mkVar(2,TyVar("''a",noPos)),
+        trans_fn = None
      } 
 
  op ssRule(s: String): RewriteRule =
@@ -267,8 +280,6 @@ MetaSlangRewriter qualifying spec
      | Lambda _ -> true
      | _ -> false
 
-
-
   op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
     : Demod RewriteRule =
    case pat of
@@ -347,20 +358,7 @@ MetaSlangRewriter qualifying spec
                 binds,
               M1, b)
 
- op dropLet(tm: MS.Term): Option MS.Term =
-   case tm of
-     | Let([(pat, b_tm)], m, a) ->
-       (let pat_vs = patVars pat in
-        case b_tm of
-        | IfThenElse(p, q, r, a1) | ~(exists? (fn v -> v in? pat_vs) (freeVars p)) ->
-          Some(IfThenElse(p, Let([(pat, b_tm)], q, a), Let([(pat, b_tm)], r, a), a1))
-        | Apply(Lambda(cases, a1), p, a2) | ~(exists? (fn v -> v in? pat_vs) (freeVars p)) ->
-          let new_cases = map (fn (pi, ci, bi) -> (pi, ci, Let([(pat, bi)], m, a))) cases in
-          Some(Apply(Lambda(new_cases, a1), p, a2))
-        | _ -> None)
-     | _ -> None
-
- op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
+  op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
  op persistentFlexVar?(t: MS.Term): Boolean =
    case isFlexVar? t of
      | Some n -> n >= persistentFlexVarStartNum

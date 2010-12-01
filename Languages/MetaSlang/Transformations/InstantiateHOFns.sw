@@ -113,11 +113,12 @@ spec
   op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
     % let _ = writeLine("sufc: "^printTerm tm) in
     case tm of
-      | Apply(Lambda(rules, _), a, _) | length rules > 1->
+      | Apply(Lambda(rules, _), a, _) | length rules > 1 ->
         %% Unfold if function constructs term that matches one case
-        (case tryUnfold(spc, a) of
-           | None -> tm
-           | Some uf_tm ->
+        (let uf_tm = case tryUnfold(spc, a) of
+                        | None -> tm
+                        | Some uf_tm -> uf_tm
+         in
          % let _ = writeLine("succeeded: "^printTerm uf_tm) in
          case simplify spc uf_tm of
            | Let(binds, let_body, a) ->

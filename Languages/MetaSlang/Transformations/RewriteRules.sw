@@ -33,7 +33,8 @@ RewriteRules qualifying spec
 	rhs       : MS.Term, 
 	tyVars    : List String,
 	freeVars  : List (Nat * Sort),
-	condition : Option MS.Term
+	condition : Option MS.Term,
+        trans_fn   : Option(MS.Term -> Option MS.Term)
    } 
 
 %%
@@ -97,7 +98,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      in
 	(freshTerm, freshSort, varMap, tyVMap)
 
- def freshRule(context: Context, {name,lhs,rhs,condition,freeVars,tyVars}: RewriteRule)
+ def freshRule(context: Context, {name,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule = 
      let (freshTerm,freshSort,varMap,tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars) in
@@ -106,7 +107,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
 	freeVars = NatMap.listItems varMap,
-	tyVars = StringMap.listItems tyVMap
+	tyVars = StringMap.listItems tyVMap,
+        trans_fn = None
      }
 
 
@@ -123,7 +125,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	  rhs       = term,
 	  condition = None,
 	  freeVars  = [],	
-	  tyVars    = tvs}
+	  tyVars    = tvs,
+          trans_fn   = None}
      in
      let rules = deleteLambdaFromRule context includeAll? ([rule], if includeAll? then [rule] else []) in
      % let _ = app printRule rules in
@@ -204,7 +207,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
                 rhs  = body,
 		condition = addToCondition(rule.condition,cond),
 		freeVars = rule.freeVars ++ vars,
-		tyVars = rule.tyVars }
+		tyVars = rule.tyVars,
+                trans_fn = None}
           in
           deleteMatches(context, r_matches, opt_case_tm, rule, rule1::rules, old, includeAll?)
 
@@ -341,13 +345,13 @@ is rewritten to
       existsSubTerm (fn term -> lhs = term) rhs
 
   op  redirectRule : RewriteRule -> Option RewriteRule
-  def redirectRule (rule as {name,lhs,rhs,tyVars,freeVars,condition}) = 
+  def redirectRule (rule as {name,lhs,rhs,tyVars,freeVars,condition,trans_fn}) = 
       if diverging(lhs,rhs)
 	 then 
 	 if diverging(rhs,lhs)
 	     then None
 	 else Some {name = name,lhs = rhs,rhs = lhs,tyVars = tyVars,
-		    freeVars = freeVars,condition = condition}
+		    freeVars = freeVars,condition = condition, trans_fn = trans_fn}
       else Some rule
 
  %% If term is a qf binder then Introduce a number for each Var and return
@@ -424,17 +428,17 @@ op simpleRwTerm?(t: MS.Term): Boolean =
         [freshRule(context,
 		   {name      = desc,   condition = condition,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
-		    tyVars    = [],     freeVars  = freeVars})]
+		    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | lr? || constantTerm? e2 ->
        [freshRule(context,
                   {name      = desc,   condition = condition,
                    lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
-                   tyVars    = [],     freeVars  = freeVars})]
+                   tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
        [freshRule(context,
                   {name      = desc,   condition = condition,
                    lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
-                   tyVars    = [],     freeVars  = freeVars})]
+                   tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
        assertRulesRec(context,e1,desc^"-1",lr?,freeVars,subst,condition)
          ++ assertRulesRec(context,e2,desc^"-2",lr?,freeVars,subst,condition)
@@ -446,7 +450,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
          [freshRule(context,
                     {name      = desc,   condition = condition,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
-                     tyVars    = [],     freeVars  = freeVars})]
+                     tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
  op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule = 
 %      case pt
@@ -474,18 +478,20 @@ op simpleRwTerm?(t: MS.Term): Boolean =
 %   	          tyVars    = tyVars, freeVars  = freeVars}))
 % 	| None -> None
 
- op printRule({name,tyVars,freeVars,condition,lhs,rhs}:RewriteRule): () = 
+ op printRule({name,tyVars,freeVars,condition,lhs,rhs,trans_fn}:RewriteRule): () = 
      ( writeLine ("Rewrite rule ------- "^name^" -------");
-       app (fn tv -> toScreen(tv^" ")) tyVars;
-       if empty? tyVars then () else writeLine "";
-       app (fn (n,srt) -> toScreen(show n^" : " ^ printSort srt^" "))
-         freeVars;
-       if empty? freeVars then () else writeLine "";
-       (case condition 
-          of Some c -> (writeLine(printTerm c)) 
-           | None -> ());
-       writeLine ("Rewrite : "^printTerm lhs^ " ---> "^
-                    printTerm rhs)  
+       if some? trans_fn then ()
+       else
+       (app (fn tv -> toScreen(tv^" ")) tyVars;
+        if empty? tyVars then () else writeLine "";
+        app (fn (n,srt) -> toScreen(show n^" : " ^ printSort srt^" "))
+          freeVars;
+        if empty? freeVars then () else writeLine "";
+        (case condition 
+           of Some c -> (writeLine(printTerm c)) 
+            | None -> ());
+        writeLine ("Rewrite : "^printTerm lhs^ " ---> "^
+                     printTerm rhs))
      )	
 
   def renameBound(term) = 

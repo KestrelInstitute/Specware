@@ -1,6 +1,6 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -19,6 +19,7 @@ spec
     | Rewrite     QualifiedId
     | LeftToRight QualifiedId
     | RightToLeft QualifiedId
+    | MetaRule    QualifiedId
     | AllDefs
 
   type Movement =
@@ -68,6 +69,7 @@ spec
      | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
      | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
      | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
+     | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
      | AllDefs -> ppString "alldefs"
 
  op moveString(m: Movement): String =
@@ -172,8 +174,8 @@ spec
  op mkRewrite(qid: QualifiedId): RuleSpec = Rewrite qid
  op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
  op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
+ op mkMetaRule(qid: QualifiedId): RuleSpec = MetaRule qid
  op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
-
 
  op ruleConstructor(id: String): QualifiedId -> RuleSpec =
    case id of
@@ -189,6 +191,7 @@ spec
      | "rl" -> mkRightToLeft
      | "righttoleft" -> mkRightToLeft
      | "right-to-left" -> mkRightToLeft
+     | "apply" -> mkMetaRule
      | "alldefs" -> mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
@@ -241,6 +244,17 @@ spec
       then None
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
+  op metaRuleFunction: String * String -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
+
+  op makeMetaRule(qid as Qualified(q,id): QualifiedId): RewriteRule =
+    {name     = show qid,
+     freeVars = [],
+     tyVars = [],
+     condition = None,
+     lhs   = HigherOrderMatching.mkVar(1,TyVar("''a",noPos)),  % dummy
+     rhs   = HigherOrderMatching.mkVar(2,TyVar("''a",noPos)),  % dummy
+     trans_fn = Some(metaRuleFunction(q, id))}
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
@@ -270,6 +284,7 @@ spec
       | RightToLeft(qid) ->
         map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
+      | MetaRule qid -> [makeMetaRule qid]
       | AllDefs ->
         foldriAQualifierMap
           (\_lambda (q, id, opinfo, val) ->
