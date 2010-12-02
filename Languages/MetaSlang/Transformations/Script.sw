@@ -514,8 +514,8 @@ spec
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
                              (new_tm, tracing?) <- interpretTerm (spc, scr, tm, tracing?); 
-                             newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, srt, termAnn opinfo.dfn)));
-                             new_spc <- return(setOpInfo(spc, qid, opinfo << {dfn = newdfn}));
+                             % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, srt, termAnn opinfo.dfn)));
+                             new_spc <- return(addRefinedDef(spc, opinfo, new_tm));
                              return (new_spc, tracing?)
                              })
                        (spc, tracing?) opinfos)

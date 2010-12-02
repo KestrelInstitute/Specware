@@ -52,7 +52,7 @@ op simplifyProofScript (thm_names: List String): String =
         ^ (foldl (fn (s, nm) -> " "^nm^s) "" thm_names)
         ^ ")"
 
-op addRefinedDef(spc: Spec, (info: OpInfo, refine_num: Nat)): Spec =
+op addRefinedOpinfo(spc: Spec, (info: OpInfo, refine_num: Nat)): Spec =
   let name as Qualified (q, id) = primaryOpName info in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, info),
           elements = spc.elements ++ [OpDef (name, refine_num, noPos)]}
@@ -93,13 +93,11 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
                 mkEquality(inferType(spc, new_result_tm), new_result_tm,
                            mkApply(old_op_ref, old_var_tm))),
          noPos)
-       def makeTopDef qid =
+      def makeTopDef qid =
         let Some info = findTheOp(spc, qid) in
-        let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
-        let current_dfn :: old_dfns = innerTerms full_tm in
+        let (tvs, ty, current_dfn) = unpackFirstTerm(info.dfn) in
         let new_dfn = mapAddArg(current_dfn, mkOp(init_val, param_ty)) in
-        (info << {dfn = piTypeAndTerm(tvs, ty, new_dfn :: current_dfn :: old_dfns)},
-         length old_dfns + 1)
+        (info, new_dfn)
       def mapAddArg(tm, add_tm) = mapTerm (addArg? add_tm, id, id) tm
       def addParamType ty =
         case arrowOpt(spc, ty) of
@@ -214,7 +212,11 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
                                 (spc, thm_name :: thm_names))
                            (spc, []) fns_to_change
   in
-  let spc = foldl (fn (spc, top_fn) -> addRefinedDef(spc, makeTopDef top_fn)) spc top_fns in
+  let spc = foldl (fn (spc, top_fn) ->
+                     let (info, new_dfn) = makeTopDef top_fn in
+                     addRefinedDef(spc, info, new_dfn))
+              spc top_fns
+  in
   let spc = adjustElementOrder spc in
   let spc = if addIsabelleProofs
               then
