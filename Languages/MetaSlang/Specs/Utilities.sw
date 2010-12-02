@@ -586,7 +586,7 @@ Utilities qualifying spec
 		      else deleteVarFromSub (v, sub, (w,M)::sub2)
 
  def substPattern(pat,sub,freeNames) = 
-   case pat:Pattern
+   case pat
      of VarPat(v,a) ->
         let (v,sub,freeNames) = substBoundVar(v,sub,freeNames) in
 	(VarPat(v,a),sub,freeNames) 
@@ -616,6 +616,33 @@ Utilities qualifying spec
 	(RestrictedPat(pat,substitute2(trm,sub,freeNames),a),sub,freeNames)
       | _ -> 
 	(pat,sub,freeNames)
+
+type VarPatSubst = List (Var * Pattern)
+
+op substPat(pat: Pattern, sub: VarPatSubst): Pattern = 
+   case pat
+     of VarPat(v,a) ->
+        (case lookup(fn sv -> sv = v, sub) 
+           of None   -> (%writeLine "not found"; 
+                           pat) 
+            | Some N -> (%writeLine "found "; 
+                           N))
+      | RecordPat(fields,a) -> 
+	RecordPat(map (fn (id, p) -> (id, substPat(p,sub))) fields, a)
+      | EmbedPat(oper,Some pat,srt,a) -> 
+	let pat = substPat(pat,sub) in
+	EmbedPat(oper,Some pat,srt,a)
+      | AliasPat(p1,p2,a) ->
+	let p1 = substPat(p1,sub) in
+	let p2 = substPat(p2,sub) in
+	AliasPat(p1,p2,a)
+      | QuotientPat(pat,trm,a) -> 
+	let pat = substPat(pat,sub) in
+	QuotientPat(pat,trm,a)
+      | RestrictedPat(pat,trm,a) -> 
+	let pat = substPat(pat,sub) in 
+	RestrictedPat(pat,trm,a)        % trm ??
+      | _ -> pat
 
  def extractAssignment (variables, arguments) = 
    case (variables,arguments) 
