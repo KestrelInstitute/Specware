@@ -6,9 +6,6 @@ StandardSpec qualifying spec
  type SortMap      = ASortMap        StandardAnnotation
  type OpMap        = AOpMap          StandardAnnotation
 
- type SortInfo     = ASortInfo       StandardAnnotation 
- type OpInfo       = AOpInfo         StandardAnnotation
-
 % type Property     = AProperty       StandardAnnotation
 
  type Specs        = ASpecs          StandardAnnotation
