@@ -31,7 +31,7 @@ spec
     | Move (List Movement)
     | Steps List Script
     | Simplify (List RuleSpec)
-    | Apply (List RuleSpec)
+    | Simplify1 (List RuleSpec)
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
@@ -106,8 +106,8 @@ spec
                                           ppSep (ppConcat [ppString ", ", ppBreak])
                                             (map ppRuleSpec rules),
                                           ppString ")"])]
-      | Apply [rl] -> ppRuleSpec rl
-      | Apply rules ->
+      | Simplify1 [rl] -> ppRuleSpec rl
+      | Simplify1 rules ->
         ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
@@ -162,7 +162,7 @@ spec
  op mkAtTheorem(qid: QualifiedId, steps: List Script): Script = AtTheorem([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
  op mkSimplify(steps: List RuleSpec): Script = Simplify(steps)
- op mkApply(rules: List RuleSpec): Script = Apply rules
+ op mkSimplify1(rules: List RuleSpec): Script = Simplify1 rules
  op mkSimpStandard(): Script = SimpStandard
  op mkPartialEval (): Script = PartialEval
  op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
@@ -444,7 +444,7 @@ spec
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, maxRewrites), path_term)
-                | Apply(rules) ->
+                | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term));

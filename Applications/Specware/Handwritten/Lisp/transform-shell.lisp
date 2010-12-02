@@ -259,7 +259,7 @@
     (values)))
 
 (defun apply-command (qid constr-fn kind?)
-  (interpret-command (Script::mkApply (list (funcall constr-fn (parse-qid qid kind?))))))
+  (interpret-command (Script::mkSimplify1 (list (funcall constr-fn (parse-qid qid kind?))))))
 
 (defvar *op-commands* '("fold" "f" "unfold" "uf" "rewrite" "rw"))
 (defun command-kind (com)
