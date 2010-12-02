@@ -102,9 +102,9 @@ spec
       | Apply(Name("simplify",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify srls)}
-      | Apply(Name("apply",_), rls,_) ->
+      | Apply(Name("simplify1",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
-         return(Apply srls)}
+         return(Simplify1 srls)}
       | Name("simplify",_) -> return (Simplify [])
       | Name("Simplify",_) -> return (Simplify [])
       | Name("simpStandard",_) -> return SimpStandard
@@ -114,13 +114,17 @@ spec
       | Name("AbstractCommonExprs",_) -> return AbstractCommonExpressions
       | Name("AbstractCommonSubExprs",_) -> return AbstractCommonExpressions
       | Item("lr",thm,_) -> {qid <- extractQId thm;
-                             return (Apply([LeftToRight qid]))}
+                             return (Simplify1([LeftToRight qid]))}
       | Item("rl",thm,_) -> {qid <- extractQId thm;
-                             return (Apply([RightToLeft qid]))}
+                             return (Simplify1([RightToLeft qid]))}
       | Item("fold",opid,_) -> {qid <- extractQId opid;
-                                return (Apply([Fold qid]))}
+                                return (Simplify1([Fold qid]))}
       | Item("unfold",opid,_) -> {qid <- extractQId opid;
-                                  return (Apply([Unfold qid]))}
+                                  return (Simplify1([Unfold qid]))}
+      | Item("rewrite",opid,_) -> {qid <- extractQId opid;
+                                   return (Simplify1([Rewrite qid]))}
+      | Item("apply",opid,_) -> {qid <- extractQId opid;
+                                 return (Simplify1([MetaRule qid]))}
       | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
                                              return (Move moves)}
       | Item("trace", Name(on_or_off,_), pos) ->
