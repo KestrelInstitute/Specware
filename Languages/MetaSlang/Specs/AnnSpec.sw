@@ -18,6 +18,9 @@ AnnSpec qualifying spec
 
  type Spec = ASpec StandardAnnotation
 
+ type SortInfo     = ASortInfo       StandardAnnotation 
+ type OpInfo       = AOpInfo         StandardAnnotation
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ASpec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -291,6 +294,15 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
   case findTheOp(spc, qid) of
     | None -> false
     | Some info -> (unpackFirstOpDef info).1 ~= []
+
+op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
+  let qid as Qualified(q, id) = primaryOpName info in
+  let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
+  let curr_dfns = innerTerms full_tm in
+  let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfn :: curr_dfns) in
+  spc << {ops = insertAQualifierMap (spc.ops, q, id, info << {dfn = new_full_dfn}),
+          elements = spc.elements ++ [OpDef (qid, length curr_dfns + 1, noPos)]}
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
