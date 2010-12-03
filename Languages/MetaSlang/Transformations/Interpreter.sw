@@ -367,9 +367,11 @@ spec
 	  | None   ->
          case a of
            | RecordVal [("1", Constructor(id1, v1, s1)), ("2", Constructor(id2, v2, _))] ->
-             evalApplySpecial(Fun(Equals,mkArrow(mkProduct[s1, s1], boolSort),a1),
-                              RecordVal [("1", v1), ("2", v2)],
-                              sb, spc, depth, trace?)
+             if id1 = id2
+               then evalApplySpecial(Fun(Equals,mkArrow(mkProduct[s1, s1], boolSort),a1),
+                                     RecordVal [("1", v1), ("2", v2)],
+                                     sb, spc, depth, trace?)
+               else Bool false
            | _ -> default())
       | Fun(NotEquals,_,_) ->
 	(case checkEquality(a,sb,spc,depth,trace?) of
