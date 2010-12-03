@@ -160,6 +160,7 @@ MS qualifying spec
  def mkProject (id, super, sub) = mkFun (Project id, mkArrow (super, sub))
  def mkSelect (id, super, field) = mkFun (Project id, mkArrow (super, field))
  def mkEquals (srt) = mkFun (Equals, srt)
+ def mkNotEquals (srt) = mkFun (NotEquals, srt)
 
  def mkOp (qid, srt) = mkFun (Op (qid, Nonfix), srt)
  def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
@@ -245,6 +246,10 @@ MS qualifying spec
  def mkEquality (dom_sort, t1, t2) = 
      let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort) in
      mkApply(mkEquals srt, mkTuple [t1,t2])
+
+ op mkNotEquality (dom_sort: Sort, t1: Term, t2: Term): Term = 
+     let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort) in
+     mkApply(mkNotEquals srt, mkTuple [t1,t2])
 
  def mkRestriction {pred, term} = 
    let srt = termSort term in
