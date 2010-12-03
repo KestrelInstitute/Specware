@@ -115,15 +115,6 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
          else stripRangeSubsorts (sp, uf_srt, dontUnfoldQIds)
      | _ -> srt
    
- op booleanType?(spc: Spec, ty: Sort): Boolean =
-   case ty of
-     | Boolean _ -> true
-     | Base _ ->
-       (case tryUnfoldBase spc ty of
-          | Some uf_ty -> booleanType?(spc, uf_ty)
-          | None -> false)
-     | _ -> false
-
  op arrow : Spec * Sort -> Sort * Sort
 
  def arrow (sp : Spec, srt : Sort) = 
