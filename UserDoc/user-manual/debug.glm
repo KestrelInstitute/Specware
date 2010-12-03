@@ -18,6 +18,9 @@ they are doing.
 ||
 ||(untrace foo)
 ||  This will turn off any tracing on foo.
+||
+||(untrace)      
+||  Untrace all functions.
 ]]
 
 </section>
@@ -30,56 +33,22 @@ want to BREAK some functions you care about.
 </para>
 
 [[
-||(trace (foo :break-all t))  
+||(trace foo :break-all t)  
 ||
 ||  This will invoke the debugger each time foo is called,                   
 ||  and upon each exit from foo.
 ]]
 
 <para>
-Once you arrive in the debugger, the following commands are 
-most useful:
+Once you arrive in the debugger, you can use commands in the SLDB
+menu, and typing [[h]] will give a more comprehensive list of commands. 
+Note, if you are in a break at the return of a function you can see 
+the return value by evaluating sb-debug:*trace-values*.
 </para>
 
-[[
-|| :down <n>    Move to a deeper frame  <n> is optional
-|| :up <n>      Move to a higher frame  <n> is optional
-|| :zoom <n>    Display n frames        <n> is optional
-||
-|| :pri         Enter a dialog that lets you set printer 
-||              control variables.  For example, setting depth
-||              to 5 and length to 10 will let you see the
-||              top level structure of expressions, while 
-||              suppressing deep expressions and the tails of
-||              long expressions.  Note that you'll need to 
-||              specify values for many contexts, but just 
-||              hitting return leaves a value unchanged.  You
-||              will likely want to modify the trace, debugger,
-||              and current values.  
-||
-|| (pprint *)   Pretty print the expression for the current
-||              frame.  Note that this only works immediately
-||              after arriving at a frame, e.g. via :down 0
-||              if necessary.
-||
-|| :cont        Continue as if nothing happened.
-|| :restart     Resume execution at this frame.
-|| :reset       Return to Lisp top level.  (E.g., bail out
-||              to try again.)
-|| :exit        Exit from Lisp to operating system -- ends
-||              session.
-||
-|| :help        Online documentation.
-||
-|| (misc ...)   The debugger is is a read/eval/print loop, so
-||              arbitrary Lisp forms will be evaluated (in the
-||              current dynamic context).
-||
-|| (untrace foo)  Stop entering debugger when foo is called.
-||                Note that you may still enter the debugger
-||                for each exit from calls to foo already 
-||                recursively in progress.
-]]
+<para>
+SBCL's trace function is documented at <ulink url="http://www.sbcl.org/manual/#Function-Tracing">http://www.sbcl.org/manual/#Function-Tracing</ulink>.
+</para>
 
 </section>
 
@@ -96,18 +65,21 @@ information:
 ||(time (foo nil))  
 ||  This will report the time and space used by foo, e.g.:
 ||
-|| USER(1): (time (list 1 2 3))
-|| ; cpu time (non-gc) 0 msec user, 0 msec system
-|| ; cpu time (gc)     0 msec user, 0 msec system
-|| ; cpu time (total)  0 msec user, 0 msec system
-|| ; real time  231 msec
-|| ; space allocation:
-|| ;  6 cons cells, 0 symbols, 0 other bytes, 0 static bytes
+|| * (time (list 1 2 3))
+||Evaluation took:
+||  0.000 seconds of real time
+||  0.000006 seconds of total run time (0.000004 user, 0.000002 system)
+||  100.00% CPU
+||  2,481 processor cycles
+||  0 bytes consed
+||
 || (1 2 3)
 ]]
 
 <para>
-Note that [[L:time]] is transparent, i.e., it returns whatever its
+Note that the number of bytes consed has the granularity of full
+pages, hence the [[0 bytes consed]] in this small example.
+[[L:time]] is transparent, i.e., it returns whatever its
 argument would return, including multiple values, etc., so
 it is safe to intersperse it nearly anywhere.
 </para>
@@ -125,10 +97,9 @@ Technologies.
 <para>
 Finally, note that a useful trick in Lisp is to start your
 application, e.g. [[L:(foo nil)]], then at an appropriate time
-hit Cntrl-C.  This will interrupt your application and put
-your into the debugger.  From there you can enter the command
-[[L::zoom]] to see the top of the stack.  That can often be quite
-revealing.  
+type Cntrl-C twice.  This will interrupt your application and put
+your into the debugger where you can examine the state of the
+execution stack.
 </para>
 
 </section>
