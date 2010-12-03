@@ -464,50 +464,6 @@ spec
      | (Fun(Implies, _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p => q -- can assume  p in q
      | _ -> None
 
- op unconditionalPattern?(pat: Pattern): Bool =
-   case pat of
-     | WildPat _ -> true
-     | VarPat _  -> true
-     | RecordPat(prs, _) -> forall? (fn (_,p) -> unconditionalPattern? p) prs
-     | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
-     | _ -> false
-
- op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Bool =
-   unconditionalPattern?(last pats)
-     || (case (pats, subtypeComps(spc, ty)) of
-           | ([RestrictedPat(pat, ty_tm,_)], Some(_, pat_pred)) -> 
-             let ty_pred = mkLambda(pat, ty_tm) in
-             let equiv? = equivTerm? spc (ty_pred, pat_pred) in
-             % let _ = writeLine(printTerm ty_pred^(if equiv? then " == " else " =~= ")^printTerm pat_pred) in
-             equiv?
-           | None ->
-         case coproductOpt(spc, ty) of
-           | Some(id_prs) ->
-             length id_prs = length  pats
-               && forall? (fn (id_ty,_) ->
-                             exists? (fn p ->
-                                        case p of
-                                          | EmbedPat(id_p, None, _, _) ->
-                                            id_ty = id_p
-                                          | EmbedPat(id_p, Some p_s, _, _) ->
-                                            id_ty = id_p && unconditionalPattern? p_s
-                                          | _ -> false)
-                               pats)
-                    id_prs
-           | None ->
-          if booleanType?(spc, ty)
-           then length pats = 2
-               && exists? (fn p -> case p of
-                                   | BoolPat(true, _) -> true
-                                   | _ -> false)
-                    pats
-               && exists? (fn p -> case p of
-                                   | BoolPat(false, _) -> true
-                                   | _ -> false)
-                    pats
-           else false)        
-    
-
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term
                 -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
