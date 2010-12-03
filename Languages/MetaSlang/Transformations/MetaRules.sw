@@ -31,7 +31,7 @@ op matchPats(tm: MS.Term, pat: Pattern): VarPatSubst =
         [] (zip(tm_flds, pat_flds))
     | _ -> []
 
-op caseMerge  (spc: Spec) (tm: MS.Term): Option MS.Term =
+op caseMerge (spc: Spec) (tm: MS.Term): Option MS.Term =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let merge_cases = foldr (fn ((pi, ci, ti), new_cases) ->
@@ -50,6 +50,36 @@ op caseMerge  (spc: Spec) (tm: MS.Term): Option MS.Term =
       in
       if cases = merge_cases then None
         else Some(Apply(Lambda(merge_cases, a0), arg1, a1))
+    | _ -> None
+
+op constantCases(cases: Match): Bool =
+  case cases of
+    | [_] -> true
+    | (pi, c, ti) :: rst ->
+      ~(existsPattern? (fn p ->
+                      case p of
+                        | VarPat _ -> true
+                        | WildPat _ -> true
+                        | _ -> false)
+          pi)
+       && constantCases rst
+
+op caseToIf (spc: Spec) (tm: MS.Term): Option MS.Term =
+  case tm of
+    | Apply(Lambda(cases, a0), arg1, a1) ->
+      let arg1_ty = inferType (spc, arg1) in
+      if exhaustivePatterns?(map (project 1) cases, arg1_ty, spc) && constantCases cases
+        then
+          let def casesToNestedIf(cases) =
+                case cases of
+                  | [(_, _, tm)] -> tm
+                  | (pi, c, ti) :: rst ->
+                    let Some pti = patternToTerm pi in
+                    MS.mkIfThenElse(Utilities.mkAnd(mkEquality(arg1_ty, arg1, pti), c),
+                                    ti, casesToNestedIf rst)
+          in
+          Some(casesToNestedIf cases)
+        else None
     | _ -> None
 
 end-spec
