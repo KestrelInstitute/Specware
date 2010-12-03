@@ -1391,6 +1391,19 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | Some t1 -> t1
      | None    -> t
 
+ op reduceEqual(t1: MS.Term, t2: MS.Term, eq?: Bool, spc: Spec): Option(MS.Term) =
+   case (t1, t2) of
+     | (Apply(Fun(Embed(id1, true), _, _), st1, _), Apply(Fun(Embed(id2, true), _, _), st2, _)) ->
+       Some(if id1 = id2
+              then if eq? then mkEquality(inferType(spc, st1), st1, st2)
+                    else mkNotEquality(inferType(spc, st1), st1, st2)
+              else mkBool(~eq?))
+     | (Apply(Fun(Embed(_, true), _, _), st1, _), Fun(Embed(_, false), _, _)) ->
+       Some(mkBool(~eq?))
+     | (Fun(Embed(_, false), _, _), Apply(Fun(Embed(_, true), _, _), st1, _)) ->
+       Some(mkBool(~eq?))
+     | _ -> None
+
  op  tryEvalOne: Spec -> MS.Term -> Option MS.Term
  def tryEvalOne spc term =
    case term
@@ -1413,7 +1426,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool eq?)
              else None)
-        else None
+        else reduceEqual(N1,N2,true,spc)
       | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) && evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
@@ -1423,7 +1436,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                then Some(mkBool(~eq?))
            else
              None)
-        else None
+        else reduceEqual(N1,N2,false,spc)
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
 	(case arg of
            | Fun (Bool b,_,aa) -> Some(mkBool (~ b))
@@ -2547,5 +2560,65 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                     | _ -> None)
      spc.elements
 
+ op booleanType?(spc: Spec, ty: Sort): Boolean =
+   case ty of
+     | Boolean _ -> true
+     | Base _ ->
+       (case tryUnfoldBase spc ty of
+          | Some uf_ty -> booleanType?(spc, uf_ty)
+          | None -> false)
+     | _ -> false
 
+ op unconditionalPattern?(pat: Pattern): Bool =
+   case pat of
+     | WildPat _ -> true
+     | VarPat _  -> true
+     | RecordPat(prs, _) -> forall? (fn (_,p) -> unconditionalPattern? p) prs
+     | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
+     | _ -> false
+
+ op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Bool =
+   unconditionalPattern?(last pats)
+     || (case (pats, subtypeComps(spc, ty)) of
+           | ([RestrictedPat(pat, ty_tm,_)], Some(_, pat_pred)) -> 
+             let ty_pred = mkLambda(pat, ty_tm) in
+             let equiv? = equivTerm? spc (ty_pred, pat_pred) in
+             % let _ = writeLine(printTerm ty_pred^(if equiv? then " == " else " =~= ")^printTerm pat_pred) in
+             equiv?
+           | _ ->
+         case coproductOpt(spc, ty) of
+           | Some(id_prs) ->
+             forall? (fn (id_ty, o_id_arg_ty) ->
+                        exists? (fn p ->
+                                   case p of
+                                     | EmbedPat(id_p, None, _, _) ->
+                                       id_ty = id_p
+                                     | EmbedPat(id_p, Some p_s, _, _) ->
+                                       id_ty = id_p && unconditionalPattern? p_s
+                                     | _ -> false)
+                          pats
+                       || (case o_id_arg_ty of
+                             | None -> false
+                             | Some id_arg_ty ->
+                           exhaustivePatterns?(mapPartial (fn p ->
+                                                             case p of
+                                                               | EmbedPat(id_p, Some p_s, _, _) | id_ty = id_p ->
+                                                                 Some p_s
+                                                               | _ -> None)
+                                                 pats,
+                                               id_arg_ty, spc)))
+               id_prs
+           | None ->
+          if booleanType?(spc, ty)
+           then length pats = 2
+               && exists? (fn p -> case p of
+                                   | BoolPat(true, _) -> true
+                                   | _ -> false)
+                    pats
+               && exists? (fn p -> case p of
+                                   | BoolPat(false, _) -> true
+                                   | _ -> false)
+                    pats
+           else false)        
+    
 endspec
