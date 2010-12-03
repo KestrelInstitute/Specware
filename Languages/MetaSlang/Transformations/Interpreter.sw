@@ -286,7 +286,7 @@ spec
 
   op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat * Bool -> Value
   def evalApplySpecial(ft,a,sb,spc,depth,trace?) =
-    let def default() = Unevaluated(mkApply(ft,valueToTerm a)) in
+    let def default() = Unevaluated(mkApply(ft, valueToTerm a)) in
     case ft of
       | Fun(Embed(id,true),ty,_) -> Constructor(id,a,ty)
       | Fun(Op(Qualified(spName,opName),_),_,_) ->
@@ -295,11 +295,11 @@ spec
 		  of RecordVal(fields) ->
 		     (if (forall? (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Boolean"
 		       then attemptEvaln(spName,opName,fields,ft)
-		       else Unevaluated(mkApply(ft,valueToTerm a)))
+		       else default())
 		    | _ -> (if evalConstant? a
 			     then attemptEval1(opName,a,ft)
-			     else Unevaluated(mkApply(ft,valueToTerm a))))
-	   else Unevaluated(mkApply(ft,valueToTerm a)))
+			     else default()))
+	   else default())
       | Fun(Not,_,_) ->
 	(case a of
 	  | Bool x -> Bool(~ x)
@@ -361,14 +361,20 @@ spec
 		| [(_,Bool true),(_,ut)]  -> ut
 		| _ -> default())
 	   | _ -> default())
-      | Fun(Equals,_,_) ->
+      | Fun(Equals,_,a1) ->
 	(case checkEquality(a,sb,spc,depth,trace?) of
 	  | Some b -> Bool b
-	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
+	  | None   ->
+         case a of
+           | RecordVal [("1", Constructor(id1, v1, s1)), ("2", Constructor(id2, v2, _))] ->
+             evalApplySpecial(Fun(Equals,mkArrow(mkProduct[s1, s1], boolSort),a1),
+                              RecordVal [("1", v1), ("2", v2)],
+                              sb, spc, depth, trace?)
+           | _ -> default())
       | Fun(NotEquals,_,_) ->
 	(case checkEquality(a,sb,spc,depth,trace?) of
 	  | Some b -> Bool (~ b)
-	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
+	  | None   -> default())
       | Fun(RecordMerge,_,_) ->
 	(case a of
 	  | RecordVal[(_,RecordVal r1),(_,RecordVal r2)] ->
@@ -377,7 +383,7 @@ spec
       | Fun(Quotient srt_id,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
 	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1,trace?),a,srt_id)
-	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
+	  | _ -> default())
       %% Handled at n
       | Fun(Choose srt_id,srt,_) -> ChooseClosure(a,srt,srt_id)
       | Fun(Restrict,_,_) -> a		% Should optionally check restriction predicate
@@ -385,15 +391,15 @@ spec
       | Fun(Project id,_,_) ->
 	(case a of
 	  | RecordVal rm -> findField(id,rm)
-	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
+	  | _ -> default())
       | Fun(Embedded id,srt,_) ->
 	(case a of
 	  | Constructor(constr_id,_,_) -> Bool(id=constr_id)
 	  | Constant(constr_id,_) -> Bool(id=constr_id)
-	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
+	  | _ -> default())
 	
       %| Fun(Select id,srt,_) ->
-      | _ -> Unevaluated(mkApply(ft,valueToTerm a))
+      | _ -> default()
 
   op  checkEquality: Value * Subst * Spec * Nat * Bool -> Option Boolean
   def checkEquality(a,sb,spc,depth,trace?) =
@@ -571,6 +577,7 @@ spec
        | RecClosure _ -> false
        | Closure _ -> false
        | ChooseClosure _ -> false
+       | Constructor(_, v1, _) -> evalConstant? v1
        | _ -> true
 
   %% Only have to include those that have a definition you don't want to use (and doesn't include "the")
