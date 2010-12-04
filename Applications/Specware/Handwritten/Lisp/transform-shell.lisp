@@ -200,6 +200,27 @@
 	))
   (values))
 
+(defun Script::specTransformFunction-2 (q id)
+  (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
+    (if (fboundp f) f
+        (error "~a not a function" (MetaSlang::printQualifierDotId q id)))))
+
+(defun apply-spec-command (qid-str constr-fn kind)
+  (finish-previous-multi-command)
+  (let* ((qid (parse-qid qid-str kind))
+         (command (funcall constr-fn qid))
+         (result (Script::interpretSpec-3 *transform-spec* command nil))
+         (result (funcall result nil))
+         (new-spec (cadar result)))
+    (if (equal new-spec *transform-spec*)
+        (format t "No effect!")
+        (progn 
+          (push-state `(interpret-spec-command ,command))
+          (setq *transform-spec* new-spec)
+          (push command *transform-commands*)
+          (format t "~a" (AnnSpecPrinter::printSpec new-spec))))
+    ))
+
 (defun find-op-def (qid)
   (let ((result (Script::getOpDef-2 *transform-spec* qid)))
     (cdr result)))
@@ -303,6 +324,7 @@
 						   (String-Spec::split argstr))))
 	   ((simplify simp s)  (simplify-command argstr))
 	   ((apply a)          (apply-command argstr 'Script::mkMetaRule 'fn))
+	   ((applyToSpec a-s)  (apply-spec-command argstr 'Script::mkSpecTransform 'fn))
 	   ((fold f)           (apply-command argstr 'Script::mkFold 'op))
 	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold 'op))
            ((rewrite rw)       (apply-command argstr 'Script::mkRewrite 'op))

@@ -1,18 +1,19 @@
-AddChecks qualifying
+SpecTransform qualifying
 spec
-import Simplify
+import Simplify, SubtypeElimination
 
 op addSubtypeChecksOnResult?: Bool = true
 op addSubtypeChecksOnArgs?: Bool = true
 
 op addSubtypeChecks(spc: Spec): Spec =
   let base_spc = getBaseSpec() in
+  let spc = addSubtypePredicateLifters spc in
   let result_spc =
       setOps(spc,
              mapOpInfos
                (fn opinfo ->
                 let qid = head opinfo.names in
-                if some?(findTheOp(base_spc, qid))
+                if some?(AnnSpec.findTheOp(base_spc, qid))
                   then opinfo
                   else
                   let (tvs, ty, dfns) = unpackTerm opinfo.dfn in
@@ -96,7 +97,7 @@ op addSubtypeChecks(spc: Spec): Spec =
                   opinfo << {dfn = new_full_dfn})               
                spc.ops)
   in
-  let _ = writeLine(printSpec result_spc) in
+  % let _ = writeLine(printSpec result_spc) in
   result_spc
 
 end-spec

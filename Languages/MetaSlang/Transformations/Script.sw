@@ -35,6 +35,7 @@ spec
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
+    | SpecTransform QualifiedId
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
@@ -112,6 +113,7 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
+      | SpecTransform qid -> ppConcat [ppString "applyToSpec ", ppQid qid]
       | IsoMorphism(iso_qid_prs, rls, opt_qual) ->
         ppConcat[ppString "isomorphism (",
                  ppSep(ppString ", ") (map (fn (iso, osi) ->
@@ -167,6 +169,7 @@ spec
  op mkPartialEval (): Script = PartialEval
  op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
  op mkMove(l: List Movement): Script = Move l
+ op mkSpecTransform(qid: QualifiedId): Script = SpecTransform qid
 
  %% For convenience calling from lisp
  op mkFold(qid: QualifiedId): RuleSpec = Fold qid
@@ -244,6 +247,7 @@ spec
       then None
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
+  op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
   op metaRuleFunction: String * String -> Spec -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
 
   op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
@@ -547,6 +551,9 @@ spec
         result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
         % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
         return (result, tracing?)}
+      | SpecTransform(Qualified(q, id)) ->
+        {trans_fn <- return(specTransformFunction (q, id));
+         return (trans_fn spc, tracing?)}
       | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) -> {
         fun <- checkOp(spc, fun, "function");
         ty <- checkType(spc, ty, "parameter-type");
