@@ -1977,7 +1977,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         writeLine(printSort sty^" | "^printTermWithSorts p)
       | _ -> writeLine(printSort ty)
 
-  op dontRaiseTypes: QualifiedIds = [Qualified("Nat", "Nat")]
+  op dontRaiseTypes: QualifiedIds = []   % [Qualified("Nat", "Nat")]
   op treatAsAtomicType?(ty: Sort): Boolean =
     case ty of
       | Base(qid, _, _) -> qid in? dontRaiseTypes
