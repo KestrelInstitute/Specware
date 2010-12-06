@@ -63,10 +63,10 @@
   (let* ((newline1? (> (length com) 17) )
          (newline2? (position #\newline helpstr))
          (newline? (or newline1? newline2?)))
-    (when (and newline? (not prior-newline?))
+    (when (and nil newline? (not prior-newline?))
       (format t "~&~%"))
     (format t (if newline1? "~a~%~18T~a~%" "~&~17a ~a") com helpstr)
-    (when newline? 
+    (when nil ;newline? 
       (format t "~&~%"))
     newline?))
 
