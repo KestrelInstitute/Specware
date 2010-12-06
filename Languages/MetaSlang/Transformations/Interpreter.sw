@@ -212,7 +212,6 @@ spec
       | Op (qid, _) ->
         (case findTheOpInterp (spc, qid) of
 	   | Some info ->
-             % let _ = writeLine("evalFun: "^printQualifiedId qid^"\n"^printTerm info.dfn) in
              %% Being suppressed is used here as a proxy for "has a non-constructive definition"
 	     (if definedOpInfo? info && ~(avoidExpanding? qid) then
 		let (_,_,tm) = unpackFirstOpDef info in
@@ -585,6 +584,8 @@ spec
   %% Only have to include those that have a definition you don't want to use (and doesn't include "the")
   op builtInQids: List QualifiedId =
     [Qualified("String","explode"),
+     Qualified("String","implode"),
+     Qualified("String","^"),
      Qualified("Integer","ipred"),
      Qualified("Char","ord"),
      Qualified("Char","isUpperCase"),
