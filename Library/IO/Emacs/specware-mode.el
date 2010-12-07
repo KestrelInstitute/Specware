@@ -2219,6 +2219,7 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
+                            (Simplify::simplifyUsingSubtypes? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
 		     filename
@@ -2244,6 +2245,7 @@ With an argument, it doesn't convert imports."
 		    (format
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
+                            (Simplify::simplifyUsingSubtypes? t)
                             (Prover::treatNatSpecially? nil))
                         (IsaTermPrinter::deleteThyFilesForUID %S)
                         (IsaTermPrinter::printUIDtoThyFile-2 %S t))"
@@ -2272,13 +2274,13 @@ With an argument, it doesn't convert imports."
 
 ;;; Haskell generation
 (defun sw:convert-top-spec-to-haskell (non-recursive?)
-  "Converts Spec to Isabelle/HOL theory.
+    "Generates Haskell code for spec assuming spec is top-level.
 With an argument, it doesn't convert imports."
   (interactive "P")
   (sw:convert-spec-to-haskell non-recursive? t))
 
 (defun sw:convert-spec-to-haskell (non-recursive? &optional slicing?)
-  "Converts Spec to Isabelle/HOL theory.
+  "Generates Haskell code for spec.
 With an argument, it doesn't convert imports."
   (interactive "P")
   (save-buffer)
