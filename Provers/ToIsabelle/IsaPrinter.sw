@@ -83,7 +83,7 @@ IsaTermPrinter qualifying spec
 
   type GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
-  %op  Specware.evaluateUnitId: String -> Option Value
+  op  Specware.evaluateUnitId: String -> Option Value
   %op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
   %op  SpecCalc.uidToFullPath : UnitId -> String
   op  Specware.cleanEnv : SpecCalc.Env ()
@@ -339,7 +339,7 @@ IsaTermPrinter qualifying spec
     let def maybeAddTheoremForDef(qid, el) =
           case specialOpInfo c qid of
             | Some(_,_,_,_,true) ->
-              (case AnnSpec.findTheOp(spc, qid) of
+              (case findTheOp(spc, qid) of
                  | Some {names=_, fixity=_, dfn, fullyQualified?=_} ->
                    let (tvs, ty, term) = unpackFirstTerm dfn in
                    let Qualified(q, nm) = qid in
@@ -384,7 +384,7 @@ IsaTermPrinter qualifying spec
         foldr (fn (el, (elts, ops)) ->
                  case el of
                    | OpDef(qid as Qualified(q,id), refine_num, _) | refine_num > 0 ->
-                     let Some opinfo = AnnSpec.findTheOp(spc, qid) in
+                     let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
                      let (tvs, ty, full_dfn) = unpackTerm opinfo.dfn in
@@ -802,7 +802,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = getSpec c in
     let c = c << {newVarCount = Ref 0} in
     let op_qid_infos = map (fn op_qid ->
-                              let Some{names=_, fixity, dfn, fullyQualified?=_} = AnnSpec.findTheOp(spc, op_qid) in
+                              let Some{names=_, fixity, dfn, fullyQualified?=_} = findTheOp(spc, op_qid) in
                               let (_, ty, term) = unpackNthTerm(dfn, 0) in
                               case specialOpInfo c op_qid of
                                 | Some (isa_id, infix?, _, _, no_def?) ->
@@ -1053,7 +1053,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     case elem of
       | Import (_, im_sp, im_elements, _) -> prEmpty
       | Op (qid as Qualified(_, nm), def?, _) ->
-	(case AnnSpec.findTheOp(spc, qid) of
+	(case findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
 	     ppOpInfo c true def? elems opt_prag
                names fixity 0 dfn  % TODO: change  op_with_def?  to  def? -- no one looks at it??
@@ -1062,7 +1062,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
       | OpDef(qid as Qualified(_,nm), refine_num, _) ->
-	(case AnnSpec.findTheOp(spc, qid) of
+	(case findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
              let names = map (refinedQID refine_num) names in
 	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn
@@ -2284,7 +2284,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
                if embed? Infix fx?
                  then Some(mainId qid)
                else
-               case AnnSpec.findTheOp(spc,qid) of
+               case findTheOp(spc,qid) of
                  | Some{names=_,fixity = Infix fx, dfn=_,fullyQualified?=_} ->
                    Some(mainId qid)
                  | _ -> None)
