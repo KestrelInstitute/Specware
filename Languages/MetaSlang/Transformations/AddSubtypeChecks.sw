@@ -13,7 +13,7 @@ op addSubtypeChecks(spc: Spec): Spec =
              mapOpInfos
                (fn opinfo ->
                 let qid = head opinfo.names in
-                if some?(AnnSpec.findTheOp(base_spc, qid))
+                if some?(findTheOp(base_spc, qid))
                   then opinfo
                   else
                   let (tvs, ty, dfns) = unpackTerm opinfo.dfn in
@@ -23,7 +23,7 @@ op addSubtypeChecks(spc: Spec): Spec =
                   case arrowOpt(spc, ty)of
                     | None -> opinfo
                     | Some(dom, rng) ->
-                  let _ = writeLine("astcs: "^show qid^": "^printSort dom) in
+                  % let _ = writeLine("astcs: "^show qid^": "^printSort dom) in
                   let last_index = length(innerTerms dfns) - 1 in
                   let dfn = refinedTerm(dfns, last_index) in
                   let void_type =  mkProduct[] in
@@ -31,7 +31,7 @@ op addSubtypeChecks(spc: Spec): Spec =
                   let dfn_1 = 
                       case raiseSubtype(rng, spc) of
                         | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
-                          let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm dfn) in
+                          % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm dfn) in
                           let warn_tm = mkApply(mkOp(Qualified("System", "warn"),
                                                      mkArrow(stringSort, void_type)),
                                                 mkString("Subtype violation on result of "^show qid))
@@ -65,7 +65,7 @@ op addSubtypeChecks(spc: Spec): Spec =
                   let dfn_2 = 
                       case raiseSubtype(dom, spc) of
                         | Subsort(sup_ty, pred, _) | addSubtypeChecksOnArgs? ->
-                          let _ = writeLine("Checking "^printTerm pred^" in\n"^printTerm dfn) in
+                          % let _ = writeLine("Checking "^printTerm pred^" in\n"^printTerm dfn) in
                           let warn_tm = mkApply(mkOp(Qualified("System", "warn"),
                                                      mkArrow(stringSort, void_type)),
                                                 mkString("Subtype violation on arguments of "^show qid))
