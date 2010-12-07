@@ -193,7 +193,7 @@ MetaSlangRewriter qualifying spec
        term)
 
  op reduceTerm(term: MS.Term, spc: Spec): MS.Term =
-   if ~(constantTerm? term) && freeVarsRec term = []
+   if ~(constantTerm? term) && freeVarsRec term = [] && sideEffectFree term
      then let v = eval(term,spc) in
        if fullyReduced? v
          then valueToTerm v
