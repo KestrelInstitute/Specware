@@ -1,6 +1,6 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, addSubtypeChecks
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
