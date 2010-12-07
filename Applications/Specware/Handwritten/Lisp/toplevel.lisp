@@ -39,16 +39,15 @@
     ))
 
 (defun sw-help (&optional command)
-  (let ((prior-newline? nil))
-    (if command
-        (let ((pr (assoc command *sw-help-strings* :test 'equal)))
-          (if pr (print-command-doc (car pr) (cdr pr) nil)
-              (format t "No documentation for command.")))
-        (loop for (com . helpstr) in *sw-help-strings* do
-          (setq prior-newline? (print-command-doc com helpstr prior-newline?)))))
+  (if command
+      (let ((pr (assoc command *sw-help-strings* :test 'equal)))
+        (if pr (print-command-doc (car pr) (cdr pr) nil)
+            (format t "No documentation for command.")))
+      (loop for (com . helpstr) in *sw-help-strings* do
+            (print-command-doc com helpstr)))
   (values))
 
-(defun print-command-doc (com helpstr prior-newline?)
+(defun print-command-doc (com helpstr)
   (when (eq (elt helpstr 0) #\[)
     (let* ((counter 1)
            (n (dotimes (i (length helpstr))
@@ -60,15 +59,7 @@
       (unless (null n)
         (setq com (concatenate 'string com " " (subseq helpstr 0 (1+ n))))
         (setq helpstr (subseq helpstr (+ n 2))))))
-  (let* ((newline1? (> (length com) 17) )
-         (newline2? (position #\newline helpstr))
-         (newline? (or newline1? newline2?)))
-    (when (and nil newline? (not prior-newline?))
-      (format t "~&~%"))
-    (format t (if newline1? "~a~%~18T~a~%" "~&~17a ~a") com helpstr)
-    (when nil ;newline? 
-      (format t "~&~%"))
-    newline?))
+  (format t (if (> (length com) 17) "~a~%~18T~a~%" "~&~17a ~a~%") com helpstr))
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))

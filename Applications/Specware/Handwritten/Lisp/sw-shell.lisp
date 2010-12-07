@@ -1,5 +1,6 @@
 (defpackage :TypeObligations)
 (defpackage :Prover)
+(defpackage :Simplify)
 (defpackage :IsaTermPrinter)
 (defpackage :Refs)
 (defpackage :Haskell)
@@ -26,14 +27,14 @@
     ("cinit"     . "Clears Spec unit cache.")    
     ("show"      . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx"     . "[unit-term] Like `show' but shows all types and ops including imports.")
-    ("obligations" . "[unit term] Abbreviation for show obligations ...")
-    ("oblig"     . "[unit term] Abbreviation for show obligations ...")
-    ("gen-obligations" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
-    ("gen-obligs" . "[unit term] Generate Isabelle/HOL obligation theory for unit.")
-    ("gen-haskell" . "[unit term] Generate Haskell code for unit.")
-    ("gen-h" . "[unit term] Generate Haskell code theory for unit.")
-    ("gen-haskell-top" . "[unit term] Generate Haskell code for unit slicing imports.")
-    ("gen-ht" . "[unit term] Generate Haskell code theory for unit slicing imports.")
+    ("obligations" . "[unit-term] Abbreviation for show obligations ...")
+    ("oblig"     . "[unit-term] Abbreviation for show obligations ...")
+    ("gen-obligations" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
+    ("gen-obligs" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
+    ("gen-haskell" . "[unit-term] Generate Haskell code for unit.")
+    ("gen-h" . "[unit-term] Generate Haskell code theory for unit.")
+    ("gen-haskell-top" . "[unit-term] Generate Haskell code for unit slicing imports.")
+    ("gen-ht" . "[unit-term] Generate Haskell code theory for unit slicing imports.")
     
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
@@ -106,6 +107,7 @@
 (defvar *sw-shell-print-level* 8)
 (defvar *sw-shell-print-length* 16)
 (defvar *current-command-processor* 'process-sw-shell-command)
+(defvar *raw-command*)
 
 (defvar *current-command-processor* 'process-sw-shell-command)
 
@@ -150,19 +152,21 @@
 				 (catch #+allegro 'tpl::top-level-break-loop
 					#+mcl :toplevel 
 					#-(or allegro mcl) nil
-					(let ((form (read *standard-input* nil magic-eof-cookie)))
+					(let* ((form (command-read magic-eof-cookie))
+                                               (*raw-command* (intern (symbol-name form) sw-shell-pkg)))
 					  (when (symbolp form)
-					    (setq form (intern (symbol-name form) sw-shell-pkg)))
+                                            (setq form (intern (Specware::fixCase (symbol-name form)) sw-shell-pkg)))
 					  (cond ((member form '(quit exit))
 						 (setq exiting-lisp? t)
 						 (Specware::exit))
-						((eq form 'ok)
+						((member form '(OK |ok|))
 						 (return))
 						((not (eq form magic-eof-cookie))
-						 (let ((results
-							(multiple-value-list 
-							 (sw-shell-command *current-command-processor*
-									   form))))
+						 (let* ((*raw-command* )
+                                                        (results
+                                                         (multiple-value-list 
+                                                          (sw-shell-command *current-command-processor*
+                                                                            form))))
 						   (dolist (result results)
 						     (fresh-line)
 						     (prin1 result)))
@@ -182,6 +186,17 @@
       (set-specware-shell nil)
       (unless exiting-lisp?
 	(format t "~%~A~%" exit-message)))))
+
+(defvar *command-read-table* (copy-readtable))
+
+(setf (readtable-case *command-read-table*) :preserve)
+
+(defun command-read (magic-eof-cookie)
+  (let ((next-ch (peek-char t *standard-input* nil magic-eof-cookie)))
+    (if (alpha-char-p next-ch)
+        (let ((*readtable* *command-read-table*))
+          (read *standard-input* nil magic-eof-cookie))
+        (read *standard-input* nil magic-eof-cookie))))
 
 (defun sw-shell-command (sw-shell-command-processor command)
   (let ((ch (read-char-no-hang *standard-input* nil nil)))
@@ -277,12 +292,14 @@
   ;;  '(33   "33 33)"
   ;; But we can at least deal gracefully with whatever does reach here.
   (incf *commands-in-process*)
-  (let ((val (multiple-value-list
-	      (funcall *current-command-processor*
-		       (if (symbolp command)
-			   (intern (symbol-name command) *sw-shell-pkg*) 
-			   command)
-					argstr))))
+  (let* ((*raw-command* (intern (symbol-name command) *sw-shell-pkg*))
+         (command (intern (Specware::fixCase (symbol-name command)) *sw-shell-pkg*))
+         (val (multiple-value-list
+               (funcall *current-command-processor*
+                        (if (symbolp command)
+                            (intern (symbol-name command) *sw-shell-pkg*) 
+                            command)
+                        argstr))))
     (decf *commands-in-process*)
     (if (null val)
 	(swank::repl-suppress-output)
@@ -340,6 +357,7 @@
 	   ((gen-obligations gen-oblig gen-obligs)
 	    (let ((TypeObligations::generateTerminationConditions? nil)
 		  (TypeObligations::generateExhaustivityConditions? t)
+                  (Simplify::simplifyUsingSubtypes? t)
 		  (Prover::treatNatSpecially? nil)
 		  (uid (if (not (null argstr))
 			   argstr
@@ -460,7 +478,7 @@
 	   ;;
 	   (t 
 	    (format t "Unknown command `~a'. Type `help' to see available commands."
-		    (string-downcase command))
+		    *raw-command*)
 	    (values))))
 	((and (constantp command) (null argstr))
 	 (values command))

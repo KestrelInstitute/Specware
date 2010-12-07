@@ -7,10 +7,11 @@
 (defpackage :MetaSlangRewriter)
 (defpackage :Specware)
 (defpackage :PathTerm)
+(defpackage :SpecTransform)
 (defpackage :SWShell)
 (in-package :SWShell)
 
-(defvar *transform-help-strings* '(("at" . "[op] Focuses on definition of op")
+(defvar *transform-help-strings* '(("at" . "[op] Focuses on definition of op.")
 				   ("move" . "[f l n p w a s r] Focus on neighboring expressions (first last next previous widen all search reverse-search)")
 				   ("m" . "Abbreviation for move")
 				   ("simplify" . "[rules] Applies rewriting simplifier with supplied rules.")
@@ -27,7 +28,7 @@
 				   ("abstract-cse" . "Abstract Common Sub-Expressions")
 				   ("cse" . "Abstract Common Sub-Expressions")
 				   ("pc"   . "Print current expression")
-				   ("proc" . "[unit-term} Restart transformation on processed spec")
+				   ("proc" . "[unit-term] Restart transformation on processed spec")
 				   ("p" . "[unit-term] Restart transformation on processed spec")
 				   ("trace-rewrites" . "Print trace for individual rewrites")
 				   ("trr" . "Print trace for individual rewrites")
@@ -201,9 +202,18 @@
   (values))
 
 (defun Script::specTransformFunction-2 (q id)
-  (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
+  (let ((f (find-symbol (Specware::fixCase id)
+                        (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
     (if (fboundp f) f
-        (error "~a not a function" (MetaSlang::printQualifierDotId q id)))))
+        (error "~a not a function" (MetaSlang::printQualifierDotId-2 q id)))))
+
+(defun Script::specTransformFunction-1-1 (qid_pr spc)
+  (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) spc))
+
+(defun Script::specTransformFn?-2 (q id)
+  (let ((sym (find-symbol (Specware::fixCase id)
+                          (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
+    (fboundp sym)))
 
 (defun apply-spec-command (qid-str constr-fn kind)
   (finish-previous-multi-command)
@@ -219,7 +229,7 @@
           (setq *transform-spec* new-spec)
           (push command *transform-commands*)
           (format t "~a" (AnnSpecPrinter::printSpec new-spec))))
-    ))
+    (values)))
 
 (defun find-op-def (qid)
   (let ((result (Script::getOpDef-2 *transform-spec* qid)))
@@ -358,7 +368,9 @@
 			       (format t "Restarting Transformation Shell.")
 			       (redo-command "all")))))
 		      (values))
-	   (t (process-sw-shell-command command argstr))))
+	   (t (if (Script::specTransformFn?-2 MetaSlang::unQualified *raw-command*)
+                  (apply-spec-command (string *raw-command*) 'Script::mkSpecTransform 'fn)
+                  (process-sw-shell-command command argstr)))))
 	((and (constantp command) (null argstr))
 	 (values command))
 	(t
