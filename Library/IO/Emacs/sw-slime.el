@@ -68,6 +68,7 @@
                     slime-backend
                   (concat slime-path slime-backend)))
         (encoding (slime-coding-system-cl-name coding-system)))
+    (setq *sw-slime-prompt* "* ")
     (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
@@ -216,7 +217,7 @@ If NEWLINE is true then add a newline at the end of the input."
 	    ':exit
 	  (if (equal command "")
 	      command
-	    (format "(%s '%s %S)\n" sw:*shell-command-function* command argstr)))))))
+	    (format "(%s '|%s| %S)\n" sw:*shell-command-function* command argstr)))))))
 
 (defun strip-extra-whitespace (s)
   (let ((first-non-ws-pos (string-match "[^ \t\n]" s))
