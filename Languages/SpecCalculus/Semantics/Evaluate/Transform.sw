@@ -249,6 +249,10 @@ spec
                  return (top_result, Cons(Print, sub_result))
                | Item("applyToSpec",opid,_) -> {qid <- extractQId opid;
                                                 return (mkSpecTransform qid :: top_result, [])}
+               | Name _ -> {qid <- extractQId te;
+                            return (mkSpecTransform qid :: top_result, [])}
+               | Qual _ -> {qid <- extractQId te;
+                            return (mkSpecTransform qid :: top_result, [])}
                | _ ->
                  {sstep <- makeScript1 te;
                   return (top_result, Cons(sstep, sub_result))})
