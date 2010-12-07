@@ -1,6 +1,6 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, addSubtypeChecks
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -113,7 +113,7 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | SpecTransform qid -> ppConcat [ppString "applyToSpec ", ppQid qid]
+      | SpecTransform(qid as Qualified(q,id)) -> if q = "SpecTransform" then ppString id else ppQid qid
       | IsoMorphism(iso_qid_prs, rls, opt_qual) ->
         ppConcat[ppString "isomorphism (",
                  ppSep(ppString ", ") (map (fn (iso, osi) ->
@@ -249,6 +249,7 @@ spec
 
   op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
   op metaRuleFunction: String * String -> Spec -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
+  op specTransformFn?:  String * String -> Bool                                % defined in transform-shell.lisp
 
   op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
     {name     = show qid,
