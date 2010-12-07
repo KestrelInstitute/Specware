@@ -74,4 +74,33 @@ def getRecordConstructorOpName (qid as Qualified (q, id)) =
   let sep = "_" in
   Qualified (q, "mk_Record"^sep^id)
 
+
+(**
+ * looks in the spec for a user type matching the given sort; if a matching
+ * user type exists.
+ *)
+op findMatchingUserTypeOption: Spec * Sort -> Option Sort
+def findMatchingUserTypeOption (spc, srtdef) =
+  case srtdef of
+    | Base    _ -> Some srtdef
+    | Boolean _ -> Some srtdef
+    | Product ([],_) -> Some srtdef
+    | _ ->
+      let srts = sortsAsList spc in
+      let srtPos = sortAnn srtdef in
+      let foundSrt = findLeftmost (fn (q, id, info) ->
+                                     case sortInfoDefs info of
+                                       | [srt] -> 
+                                         equalType? (srtdef, sortInnerSort srt) %% also reasonable:  equivType? spc (srtdef, sortInnerSort srt) 
+                                       |_ -> false)
+                          srts 
+      in
+	case foundSrt of
+	  | Some (q, classId, _) -> 
+            %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort srtdef) in
+            Some (Base (mkUnQualifiedId (classId), [], srtPos))
+	  | None -> None
+	    %let _ = writeLine ("no matching user type found for "^printSort srtdef) in
+	    %srtdef
+
 end-spec
