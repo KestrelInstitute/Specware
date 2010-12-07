@@ -61,6 +61,7 @@
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
+            (setq sb-ext:*muffled-warnings* 'sb-int:package-at-variance)
 	    (setq sb-ext::*compile-print* nil)
 	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
