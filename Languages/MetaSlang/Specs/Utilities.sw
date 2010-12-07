@@ -2008,7 +2008,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
             let Qualified(q,id) = qid in
             let pred_name = id^"_P" in
             let pred_qid = Qualified(q, pred_name) in
-            (case AnnSpec.findTheOp(spc, pred_qid) of
+            (case findTheOp(spc, pred_qid) of
                | Some _ ->
                  let arg_comps = map (fn tyi ->
                                       case tyi of
@@ -2087,7 +2087,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         let args1 = rargs1 in %originalForInternals(zip(args1, rargs1), uf1?, real_as1) in
         let args2 = rargs2 in %originalForInternals(zip(args2, rargs2), uf2?, real_as2) in
         if (existsSubsortArg?(args1, uf1?, real_as1) || existsSubsortArg?(args2, uf2?, real_as2))
-          && embed? None (AnnSpec.findTheOp(spc, Qualified(q, pred_name)))
+          && embed? None (findTheOp(spc, Qualified(q, pred_name)))
           && embed? Some (tryUnfoldBase spc ty1r)
           then let (rty1, rty2) = raiseSubtypes1(unfoldBase0 spc ty1r, unfoldBase0 spc ty2r,
                                                  true, true,
@@ -2205,7 +2205,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
           let Qualified(q,id) = qid in
           let pred_name = id^"_P" in
           let pred_qid = Qualified(q, pred_name) in
-          (case AnnSpec.findTheOp(spc, pred_qid) of
+          (case findTheOp(spc, pred_qid) of
              | Some _ ->
                let arg_comps = map (fn tyi ->
                                       case tyi of
@@ -2578,7 +2578,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | _ -> false
 
  op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Bool =
-   unconditionalPattern?(last pats)
+   pats ~= []
+    && ( unconditionalPattern?(last pats)
      || (case (pats, subtypeComps(spc, ty)) of
            | ([RestrictedPat(pat, ty_tm,_)], Some(_, pat_pred)) -> 
              let ty_pred = mkLambda(pat, ty_tm) in
@@ -2619,6 +2620,6 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                    | BoolPat(false, _) -> true
                                    | _ -> false)
                     pats
-           else false)        
+           else false))
     
 endspec
