@@ -3,7 +3,7 @@ Prover qualifying spec
  import ProverPattern
  import OpToAxiom
  import Simplify
- import ../CodeGen/CodeGenTransforms
+ import ../CodeGen/CodeGenUtilities
 
   % sort Term = MS.Term
   op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
