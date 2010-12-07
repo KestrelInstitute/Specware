@@ -5,8 +5,7 @@
 
 CodeGenTransforms qualifying spec
 
-import /Languages/MetaSlang/Specs/StandardSpec
-import /Languages/MetaSlang/Transformations/InstantiateHOFns
+import CodeGenUtilities
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % addLocalOpName
 
@@ -169,33 +168,6 @@ def unfoldSortAliases spc =
       let spc = mapSpec (id, mapSrt, id) spc in
       unfoldSortAliases spc
 
-(**
- * looks in the spec for a user type matching the given sort; if a matching
- * user type exists.
- *)
-op findMatchingUserTypeOption: Spec * Sort -> Option Sort
-def findMatchingUserTypeOption (spc, srtdef) =
-  case srtdef of
-    | Base    _ -> Some srtdef
-    | Boolean _ -> Some srtdef
-    | Product ([],_) -> Some srtdef
-    | _ ->
-      let srts = sortsAsList spc in
-      let srtPos = sortAnn srtdef in
-      let foundSrt = findLeftmost (fn (q, id, info) ->
-                                     case sortInfoDefs info of
-                                       | [srt] -> 
-                                         equalType? (srtdef, sortInnerSort srt) %% also reasonable:  equivType? spc (srtdef, sortInnerSort srt) 
-                                       |_ -> false)
-                          srts 
-      in
-	case foundSrt of
-	  | Some (q, classId, _) -> 
-            %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort srtdef) in
-            Some (Base (mkUnQualifiedId (classId), [], srtPos))
-	  | None -> None
-	    %let _ = writeLine ("no matching user type found for "^printSort srtdef) in
-	    %srtdef
 
 (**
  * looks in the spec for a user type matching the given sort; if a matching
@@ -1182,68 +1154,6 @@ def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
   let sep = "__" in
   Qualified (q, "embed"^sep^consid)
 
-% this is used to distinguish "real" product from "record-products"
- op productfieldsAreNumbered: [a] List (String * a) -> Boolean
-def productfieldsAreNumbered (fields) =
-  let
-    def fieldsAreNumbered0 (i, fields) =
-      case fields of
-	| [] -> true
-	| (id, _)::fields -> id = Nat.show (i) && fieldsAreNumbered0 (i+1, fields)
-  in
-  fieldsAreNumbered0 (1, fields)
-
-
-op patternFromSort: Option Sort * Position -> Pattern
-def patternFromSort (optsrt, b) =
-  let
-    def mkVarPat (id, srt) =
-      VarPat ((id, srt), b)
-  in
-  case optsrt of
-    | None -> RecordPat ([], b)
-    | Some srt -> 
-      case srt of
-	| Product ([], _) -> RecordPat ([], b)
-	| Product (fields, _) ->
-	  if productfieldsAreNumbered fields then
-	    RecordPat (List.map (fn (id, srt) -> (id, mkVarPat ("x"^id, srt))) fields, b)
-	  else mkVarPat ("x", srt)
-	| _ -> mkVarPat ("x", srt)
-
-op argTermFromSort: Option Sort * MS.Term * Position -> MS.Term
-def argTermFromSort (optsrt, funterm, b) =
-  let
-    def mkVarTerm (id, srt) =
-      Var ((id, srt), b)
-  in
-  case optsrt of
-    | None -> funterm
-    | Some srt -> 
-      let term = 
-        case srt of
-	  | Product (fields, _) ->
-	    if productfieldsAreNumbered fields then
-	      Record (List.map (fn (id, srt) -> (id, mkVarTerm ("x"^id, srt))) fields, b)
-	    else mkVarTerm ("x", srt)
-	  | _ -> mkVarTerm ("x", srt)
-      in
-      Apply (funterm, term, b)
-
-op recordTermFromSort: Sort * Position -> MS.Term
-def recordTermFromSort (srt, b) =
-  let
-    def mkVarTerm (id, srt) =
-      Var ((id, srt), b)
-  in
-      let term = 
-        case srt of
-	  | Product (fields, _) ->
-	    if productfieldsAreNumbered fields then
-	      Record (List.map (fn (id, srt) -> (id, mkVarTerm ("x"^id, srt))) fields, b)
-	    else mkVarTerm ("x", srt)
-	  | _ -> mkVarTerm ("x", srt)
-      in term
 
  (**
  * adds for each product sort the Constructor op.
@@ -1260,11 +1170,6 @@ def addProductSortConstructorsToSpec spc =
     (spc, opnames ++ opnames0))
    (spc, []) 
     spc.sorts
-
-op getRecordConstructorOpName: QualifiedId  -> QualifiedId
-def getRecordConstructorOpName (qid as Qualified (q, id)) =
-  let sep = "_" in
-  Qualified (q, "mk_Record"^sep^id)
 
 
 op addProductSortConstructorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List (QualifiedId)
@@ -1352,10 +1257,6 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		    fields)
       | _ -> (spc, [])
 
- op getAccessorOpName: String * QualifiedId * String -> QualifiedId
-def getAccessorOpName (srtName, qid as Qualified (q, id), accid) =
-  let sep = "_" in
-  Qualified (q, "project"^sep^srtName^sep^accid)
 % --------------------------------------------------------------------------------
 
  (**
