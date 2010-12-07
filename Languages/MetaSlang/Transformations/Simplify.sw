@@ -59,6 +59,10 @@ spec
  import ../Specs/Environment
  import ../Specs/Utilities
 
+ op traceSimplify?: Bool = false
+ op simplifyUsingSubtypes?: Bool = false
+
+
  op  countVarRefs: MS.Term * Var -> Nat
  def countVarRefs(term,v) =
    let occ = Ref 0 : Ref Nat in
@@ -74,7 +78,7 @@ spec
 
  op  removeUnnecessaryVariable: Spec -> MS.Term -> MS.Term
  def removeUnnecessaryVariable spc term =
-     % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
+      let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(VarPat (v,_),e)],body,_) ->
 	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
@@ -124,7 +128,7 @@ spec
 % matching compilation such that all references to let (u,v) = z in .. are of the
 % form let u = project(1) z, v = project(2) z in ..
 %
- op  tupleInstantiate: Spec -> MS.Term -> MS.Term
+ op tupleInstantiate: Spec -> MS.Term -> MS.Term
  op tupleInstantiate (spc: Spec) (term:  MS.Term): MS.Term =
    let
       def elimTuple(zId,srt,fields,body) =
@@ -191,7 +195,7 @@ spec
 
  op  simplifyOne: Spec -> MS.Term -> MS.Term
  def simplifyOne spc term =
-     % let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
+      let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
      let result =
      case tryEvalOne spc term of
        | Some cterm -> cterm
@@ -258,7 +262,7 @@ spec
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
-       | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) ->
+       | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) | simplifyUsingSubtypes? ->
          mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
                      Arrow(mkProduct[integerSort,integerSort],boolSort,a),
                      a),
@@ -294,7 +298,7 @@ spec
        %% (x:Nat) >= 0 --> true
        | Apply(Fun(Op(Qualified("Integer",">="),_),_,_),
                Record([("1", x), ("2", Fun(Nat 0, _, _))], _), _)
-           | subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
+           | simplifyUsingSubtypes? && subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
          trueTerm
        %% Isabelle specific: int x >= 0
        | Apply(Fun(Op(Qualified("Integer", ">="),_),_,_),
@@ -333,8 +337,8 @@ spec
      let term = tupleInstantiate spc term in
      term
     in
-    % let _ = if traceSimplify? && ~ (equalTerm?(term, result))
-    %           then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
+     let _ = if traceSimplify? && ~ (equalTerm?(term, result))
+               then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
     result
 
   op countDeReferencesIn(v: Var, tms: List MS.Term): Nat =
@@ -597,8 +601,6 @@ spec
            | Apply(Fun(Embed _,_,_), arg, _) ->
              forall? simpleOrConstrTerm? (termToList arg)
            | _ -> false)
-
- op traceSimplify?: Bool = false
 
  op simplify (spc: Spec) (term: MS.Term): MS.Term =
    let simp_term = mapSubTerms(simplifyOne spc) term in
