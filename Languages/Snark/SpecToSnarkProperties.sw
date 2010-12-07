@@ -2,7 +2,7 @@ snark qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
-  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+  import /Languages/MetaSlang/CodeGen/CodeGenUtilities
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/MetaSlang/Transformations/OpToAxiom
   import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities

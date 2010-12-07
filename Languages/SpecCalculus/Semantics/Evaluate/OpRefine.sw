@@ -63,8 +63,8 @@ SpecCalc qualifying spec
           foldl (fn (new_elts, el) ->
                    case el of
                      | Import(_, im_spc, im_elts, _)
-                         | exists? (fn op_id -> some?(AnnSpec.findTheOp  (im_spc, op_id))) ops
-                          || exists? (fn ty_id -> some?(AnnSpec.findTheSort(im_spc, ty_id))) tys
+                         | exists? (fn op_id -> some?(findTheOp  (im_spc, op_id))) ops
+                          || exists? (fn ty_id -> some?(findTheSort(im_spc, ty_id))) tys
                         ->
                         maybeUnfoldImports im_elts ++ new_elts
                      | _ -> el::new_elts)

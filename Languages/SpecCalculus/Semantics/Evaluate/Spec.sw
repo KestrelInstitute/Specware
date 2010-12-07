@@ -162,7 +162,7 @@ such time as the current one can made monadic.
               case elem of
                 | OpDef(qid, refine_num, _) | refine_num > 0 ->
                   % let _ = writeLine("aor0: "^printQualifiedId qid^show refine_num) in
-                  (case AnnSpec.findTheOp(spc, qid) of
+                  (case findTheOp(spc, qid) of
                    | None -> return spc
                    | Some opinfo ->
                    let (tvs, ty, full_tm) = unpackTerm(opinfo.dfn) in

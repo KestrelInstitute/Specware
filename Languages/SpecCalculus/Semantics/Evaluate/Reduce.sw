@@ -28,7 +28,7 @@ SpecCalc qualifying spec
 	  newSpc <- addOp [tempOpName] Nonfix false newDef spc pos;
           elabSpc <- elaborateSpecM newSpc;
           elabTerm <-
-            case AnnSpec.findTheOp (elabSpc,tempOpName) of
+            case findTheOp (elabSpc,tempOpName) of
               | None -> raise (SpecError (pos, "Reduce lost its operator!"))
               | Some info -> 
 		let trm = firstOpDefInnerTerm info in
