@@ -1463,6 +1463,11 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         (case getField(m,i) of
            | Some fld -> Some fld
            | None -> None)
+        %% (x << {i = v}).j  -->  x.j  (x << {i = v}).i  -->  v
+      | Apply(proj_fn as Fun(Project i,_,_), Apply(Fun(RecordMerge, _, _), Record([(_,r1), (_,Record(m,_))], _),_),_) ->
+        (case getField(m,i) of
+           | Some fld -> Some fld
+           | None -> tryEvalOne spc (mkApply(proj_fn, r1)))
       | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, integerSort))
       | _ -> None
 
