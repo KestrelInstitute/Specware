@@ -516,7 +516,7 @@ Haskell qualifying spec
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     % let _ = writeLine("0a:\n"^printSpecFlat( spc)^"\n") in
     let c = if c.slicing? && c.top_spec?
-             then let (needed_ops, needed_types) = sliceSpecInfo(spc, topLevelOps spc, topLevelTypes spc, true) in
+             then let (needed_ops, needed_types) = sliceSpecInfo(spc, topLevelOps spc, topLevelTypes spc, true, false) in
                   c << {needed_ops = needed_ops,
                         needed_types = needed_types}
              else c

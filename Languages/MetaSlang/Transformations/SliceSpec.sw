@@ -30,8 +30,8 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
- op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Spec -> SpecElements
- def filterSpecNonBaseElements p elements base_spec =
+ op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Bool -> Spec -> SpecElements
+ def filterSpecNonBaseElements p elements sliceBase? base_spec =
    mapPartial
      (fn el ->
       if ~(p el) then
@@ -39,8 +39,8 @@ op haskellPragma?(s: String): Bool =
       else
 	Some(case el of
 	       | Import (s_tm, i_sp, elts, a) ->
-	         if i_sp ~= base_spec
-                   then Import (s_tm, i_sp, filterSpecNonBaseElements p elts base_spec, a)
+	         if (sliceBase? => i_sp ~= base_spec)
+                   then Import (s_tm, i_sp, filterSpecNonBaseElements p elts sliceBase? base_spec, a)
                    else el
 	       | _ ->  el))
      elements
@@ -53,7 +53,7 @@ op [a] sliceAQualifierMap(m: AQualifierMap a, s: QualifierSet, pred: QualifiedId
                               else None)
     m
 
-op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec: Spec): Spec =
+op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec: Spec, sliceBase?: Bool): Spec =
   let def element_filter el =
         case el of
           | Sort(qid, _)     -> qid in? type_set
@@ -61,9 +61,9 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
           | Op(qid, _, _)    -> qid in? op_set && numRefinedDefs spc qid = 1
           | OpDef(qid, refine_num, _) -> qid in? op_set && numRefinedDefs spc qid = refine_num + 1
           | Property(_, _, _, formula, _) ->
-            forall? (fn qid -> qid in? op_set || some?(findTheOp(base_spec, qid)))
+            forall? (fn qid -> qid in? op_set || (sliceBase? && some?(findTheOp(base_spec, qid))))
               (opsInTerm formula)
-              && forall? (fn qid -> qid in? type_set || some?(findTheSort(base_spec, qid)))
+              && forall? (fn qid -> qid in? type_set || (sliceBase? && some?(findTheSort(base_spec, qid))))
                    (typesInTerm formula)
  %          | Import(tm, im_spc, im_elts, _) ->
 %             exists? (fn im_el -> if element_filter im_el
@@ -74,19 +74,20 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
           | _ -> haskellElement? el
   in
   spc <<
-    {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> some?(findTheSort(base_spec, qid))),
-     ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> some?(findTheOp(base_spec, qid))),
-     elements = filterSpecNonBaseElements element_filter spc.elements base_spec
+    {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> sliceBase? && some?(findTheSort(base_spec, qid))),
+     ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> sliceBase? && some?(findTheOp(base_spec, qid))),
+     elements = filterSpecNonBaseElements element_filter spc.elements sliceBase? base_spec
      }
 
 
-op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): QualifierSet * QualifierSet =
+op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool, sliceBase?: Bool)
+     : QualifierSet * QualifierSet =
   let base_spec = SpecCalc.getBaseSpec() in
   let def newOpsInTerm(tm: MS.Term, newopids: QualifiedIds, op_set: QualifierSet): QualifiedIds =
         foldTerm (fn opids -> fn t ->
                     case t of
                       | Fun(Op(qid,_),_,_)
-                          | qid nin? opids && qid nin? op_set && none?(findTheOp(base_spec, qid)) ->
+                          | qid nin? opids && qid nin? op_set && (sliceBase? => none?(findTheOp(base_spec, qid))) ->
                         qid :: opids
                       | _ -> opids,
                   fn result -> fn _ -> result,
@@ -105,7 +106,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                   fn result -> fn t ->
                     case t of
                       | Base(qid,_,_)
-                          | qid nin? result && qid nin? type_set && none?(findTheSort(base_spec, qid)) ->
+                          | qid nin? result && qid nin? type_set && (sliceBase? => none?(findTheOp(base_spec, qid))) ->
                         qid :: result
                       | _ -> result,
                   fn result -> fn _ -> result)
@@ -116,7 +117,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                   fn result -> fn t ->
                     case t of
                       | Base(qid,_,_) 
-                          | qid nin? result && qid nin? type_set && none?(findTheSort(base_spec, qid)) ->
+                          | qid nin? result && qid nin? type_set && (sliceBase? => none?(findTheOp(base_spec, qid))) ->
                         qid :: result
                       | _ -> result,
                   fn result -> fn _ -> result)
@@ -160,9 +161,9 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
     let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
     (op_set, type_set)
 
-op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool): Spec =
-  let (op_set, type_set) = sliceSpecInfo(spc, root_ops, root_types, ignore_subtypes?) in
-  let sliced_spc = scrubSpec(spc, op_set, type_set, SpecCalc.getBaseSpec()) in
+op sliceSpec(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ignore_subtypes?: Bool, sliceBase?: Bool): Spec =
+  let (op_set, type_set) = sliceSpecInfo(spc, root_ops, root_types, ignore_subtypes?, sliceBase?) in
+  let sliced_spc = scrubSpec(spc, op_set, type_set, SpecCalc.getBaseSpec(), sliceBase?) in
   sliced_spc
 
 %% Just for debugging

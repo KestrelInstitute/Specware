@@ -1440,7 +1440,7 @@ SpecToLisp qualifying spec
 			       spc.elements)
    in
    let spc = if complete? && substBaseSpecs? then substBaseSpecs spc else spc in
-   let spc = if slicing? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true) else spc in
+   let spc = if slicing? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true, false) else spc in
    let spc = if removeCurrying? then removeCurrying   spc else spc in
    let spc = normalizeTopLevelLambdas spc in
    let spc = if instantiateHOFns? then	instantiateHOFns spc else spc in
