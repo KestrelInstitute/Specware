@@ -521,7 +521,15 @@ spec
              (case arrowOpt(spc, fn_ty) of
               | None -> false
               | Some(dom, _) ->
-                cto?(t1, mkArrow(dom, d_ty)) && cto?(t2, dom))
+                cto?(t1, mkArrow(dom, d_ty)) && cto?(t2, dom)
+                  && (case t1 of
+                      | Fun (RecordMerge, _, _) ->
+                        recordTy? u_ty
+                          && (case dom of
+                              | Product([("1", ty1), ("2", ty2)], _) ->
+                                recordTy? ty1 && recordTy? ty2
+                              | _ -> false)
+                      | _ -> true))
            | Record (row, _) ->
              let srts = map (project 2) (product (spc, d_ty)) in
              forall? (fn (f_ty, (_, tmi)) -> cto?(tmi, f_ty))
@@ -550,6 +558,10 @@ spec
                && forall? (fn trm -> cto?(trm, mkProduct [])) pre_trms
            | SortedTerm (trm, srt, _) -> cto?(trm, srt)
            | _ -> true)
+      def recordTy? ty =
+        case productOpt(spc, ty) of
+          | None -> false
+          | Some flds -> opacityPreserved?(ty, Product(flds, noPos))
     in
     cto?(tm, ty)
   %}}}
