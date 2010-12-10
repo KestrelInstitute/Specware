@@ -262,7 +262,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
-  (define-key map "\C-c\C-l" ' sw:gcl-current-file)
+  (define-key map "\C-c\C-l" 'sw:gcl-current-file)
   (define-key map "\C-c\C-e" 'sw:evaluate-region)
   (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
@@ -1460,7 +1460,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (interactive "P")
   (save-buffer)
   (let* ((buf-name buffer-file-name)
-	 (filename (sw::file-to-specware-unit-id buf-name t))
+	 (filename (sw:containing-specware-unit-id t))
 	 (dir default-directory))
     (lisp-or-specware-command ":swl " "gen-lisp " filename)
     (when compile-and-load?
@@ -1473,7 +1473,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (interactive "P")
   (save-buffer)
   (let* ((buf-name buffer-file-name)
-	 (filename (sw::file-to-specware-unit-id buf-name t))
+	 (filename (sw:containing-specware-unit-id t))
 	 (dir default-directory))
     (lisp-or-specware-command ":swl " "gen-lisp-top " filename)
     (when compile-and-load?
@@ -1512,8 +1512,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun sw:cl-unit (unitid)
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
-					   (sw::file-to-specware-unit-id
-					    buffer-file-name t))))
+					   (sw:containing-specware-unit-id t))))
   (save-buffer)
   (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
     (if (member (sw:eval-in-lisp
@@ -1606,7 +1605,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		 sym)))
       (let ((results (sw:eval-in-lisp (make-search-form qualifier sym)))
             (current (cons "Op" (if buffer-file-name
-                                    (sw::file-to-specware-unit-id buffer-file-name nil)
+                                    (sw:containing-specware-unit-id nil)
                                   ""))))
 	(message nil)
 	(setq results (if (member results '(nil NIL Error:))
