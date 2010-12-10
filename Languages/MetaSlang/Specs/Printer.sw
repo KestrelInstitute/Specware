@@ -758,12 +758,16 @@ AnnSpecPrinter qualifying spec
 
     | _ -> string ("ignoring mystery sort: " ^ (anyToString srt))
       
+ op showBoundMetaTyvarInfo?: Bool = false
 
  def [a] TyVarString (mtv: AMetaTyVar a) : String =
    let {link, uniqueId, name} = State.! mtv in
    case link of
     | None -> "mtv%"^name^"%"^ (Nat.show uniqueId)
-    | Some srt -> "mtv%"^name^"%"^ (Nat.show uniqueId)^": "^printSort srt
+    | Some srt -> (if showBoundMetaTyvarInfo?
+                     then "mtv%"^name^"%"^ (Nat.show uniqueId)^": "
+                     else "")
+                 ^ printSort srt
 
   %% More elaborate version
   %     let linkr =
