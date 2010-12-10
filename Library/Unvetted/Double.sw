@@ -6,17 +6,16 @@
 % Handwritten/Lisp is. 
 
 Double qualifying spec
-  import Pretty
+  %import /Library/PrettyPrinter/BjornerEspinosa
 
   type Double 
-  type Complex.Complex
 
   op Integer.toDouble : Integer -> Double
  
   op String.toDouble : String -> Double
-  op Double.toString : Double -> String
+  op show : Double -> String
 
-  op Double_.- : Double -> Double
+  op DoubleAux.- : Double -> Double
 
   op + infixl 25 : Double * Double -> Double
   op - infixl 25 : Double * Double -> Double
@@ -53,13 +52,14 @@ Double qualifying spec
   op asin : Double -> Double   % in radians
   op acos : Double -> Double   % in radians
   op atan : Double -> Double   % in radians
+  op DoubleAux.atan : Double * Double -> Double
 
-  op sqrt : Double -> Complex 
+%  op sqrt : Double -> Complex 
 
   op ceiling : Double -> Integer
   op floor : Double -> Integer
 
-  op pp : Double -> Pretty
-  def pp dbl = pp (toString dbl)
+  %op pp : Double -> Pretty
+  %def pp dbl = pp (show dbl)
 endspec
 

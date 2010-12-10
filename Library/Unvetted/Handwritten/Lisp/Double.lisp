@@ -1,6 +1,6 @@
 (defpackage :Specware)
 (defpackage :Double)
-(defpackage :Double_)
+(defpackage :DoubleAux)
 (defpackage :Complex)
 (defpackage :String-Spec)
 (defpackage :Integer-Spec)
@@ -40,15 +40,13 @@
 (defmacro the-double (x)
   `(the double-float ,x))
 
+(define-symbol-macro zero (Integer-Spec::toDouble 0))
+
 (defun -- (x) ; TODO: deprecate 
   (declare (double-float x))
   (the-double (- 0 x)))
 
-(defun Double_::|!-| (x)
-  (declare (double-float x))
-  (the-double (- 0 x)))
-
-(defun ~ (x) ; TODO: deprecate
+(defun DoubleAux::|!-| (x)
   (declare (double-float x))
   (the-double (- 0 x)))
 
@@ -158,7 +156,7 @@
   (declare (integer x))
   (the-double (coerce x 'double-float)))
 
-(defun toString (x) 
+(defun show (x) 
   (format nil "~s" x))
 
 (defun |!floor| (x)
@@ -194,6 +192,13 @@
 (defun |!atan| (x)
   (declare (double-float x))
   (the-double (atan x)))
+
+(defun DoubleAux::atan-2 (x y)
+  (declare (double-float x y))
+  (the-double (atan x y)))
+
+(defun DoubleAux::|!atan| (x)
+  (the-double (DoubleAux::atan-2 (car x) (cdr x))))
 
 (defun |!sqrt| (x)
   (declare (double-float x))

@@ -6,19 +6,19 @@
 % Handwritten/Lisp is.
 
 Complex qualifying spec
-  import Pretty
+%  import Pretty
   import Double
 
   op String.toComplex : String -> Complex
   op Integer.toComplex: Integer -> Complex
   op Double.toComplex: Double -> Complex
 
-  op Complex.toString : Complex -> String
+  op show : Complex -> String
 
   op Double.complex : Double * Double -> Complex
   op Integer.complex : Integer * Integer -> Complex
 
-  op Complex_.- : Complex -> Complex
+  op ComplexAux.- : Complex -> Complex
 
   op + infixl 25 : Complex * Complex -> Complex
   op - infixl 25 : Complex * Complex -> Complex
@@ -64,7 +64,7 @@ Complex qualifying spec
   op imag : Complex -> Double
   op real : Complex -> Double
 
-  op pp : Complex -> Pretty
-  def pp cmpx = pp (toString cmpx)
+%  op pp : Complex -> Pretty
+%  def pp cmpx = pp (toString cmpx)
 endspec
 

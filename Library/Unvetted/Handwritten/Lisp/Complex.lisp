@@ -1,5 +1,5 @@
 (defpackage :Complex-Spec)
-(defpackage :Complex_)
+(defpackage :ComplexAux)
 (in-package :Complex-Spec)
 
 
@@ -38,7 +38,7 @@
 (defmacro the-complex-int (x)
   `(the (complex integer) ,x))
 
-(defun Complex_::|!-| (x)
+(defun ComplexAux::|!-| (x)
   (declare (type (complex double-float) x))
   (the-complex (- 0 x)))
 
@@ -174,7 +174,7 @@
   (declare (double-float x))
   (the-complex (coerce x `(complex double-float))))
 
-(defun toString (x) 
+(defun show (x) 
   (format nil "~s" x))
 
 ;; (defun |!floor| (x)
