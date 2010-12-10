@@ -1,9 +1,8 @@
-\section{Substitution (Prototype)}
+(* Substitution (Prototype) *)
 
-Dialog about adding this feature is at end of file
+%% Dialog about adding this feature is at end of file
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import Signature
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                             % for uidToString, if used...
@@ -32,10 +31,9 @@ SpecCalc qualifying spec {
       | (_,        _) ->
            raise (TypeCheck (term_pos, "substitution is not a morphism, and is attempted on a non-spec"))
     }
+end-spec
 
-}
-\end{spec}
-
+(*
 From  AC :
 
  While the exact syntax still needs to be pinned down, in the end today 
@@ -229,5 +227,4 @@ From JLM
  pendantic to include "cod of", but programmers are used to adhering to
  pendantic rules.  Making it optional, with perhaps a style-guide, seems
  like a good compromise.
-}
-\end{spec}
+*)
