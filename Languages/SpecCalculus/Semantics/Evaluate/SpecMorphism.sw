@@ -1,7 +1,6 @@
-\subsection{Evalution of Spec Morphisms}
+(* Evalution of Spec Morphisms *)
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities    % for listUnion
   import /Languages/MetaSlang/Specs/Equivalences         % equivTerm? etc.
   import Signature 
@@ -9,12 +8,11 @@ SpecCalc qualifying spec {
   import UnitId/Utilities                                % for uidToString, if used...
   import Spec/AccessSpec
 
-\end{spec}
-
+(*
 For morphisms, evaluate the domain and codomain terms, and check
 coherence conditions of the morphism elements. 
+*)
 
-\begin{spec}
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules,pragmas) pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-morphism at " ^ (uidToString unitId) ^ "\n");
@@ -297,8 +295,8 @@ coherence conditions of the morphism elements.
       -> Option SCTerm
       -> Env Morphism
   def buildSpecMorphism domSpec codSpec (opMap,sortMap) pragmas opt_sm_tm = {
-      newOpMap   <- completeMorphismMap "op"   opMap   domSpec.ops   codSpec.ops;
       newSortMap <- completeMorphismMap "type" sortMap domSpec.sorts codSpec.sorts;
+      newOpMap   <- completeMorphismOpMap "op" opMap newSortMap domSpec.ops codSpec.ops codSpec;
       return {
           dom     = domSpec,
           cod     = codSpec,
@@ -308,8 +306,7 @@ coherence conditions of the morphism elements.
 	  sm_tm   = opt_sm_tm
         }
     }
-\end{spec}
-
+(*
 The first pass to creating a morphism doesn't mention the ops
 and sorts that ops and sorts with the same name. The function
 below completes the map.
@@ -320,14 +317,13 @@ allows us to omit the identity components.
 If we explicitly indicate a mapping, use that
 TODO: What if explicit map is to non-existant target?
 Should we check to see if qid is in cod_map??  
-
-\begin{spec}
-  op completeMorphismMap:
-    fa(a,b) String 
+*)
+  op completeMorphismMap: [a,b]
+       String 
          -> AQualifierMap QualifiedId
          -> AQualifierMap a
          -> AQualifierMap b
-         -> Env (PolyMap.Map (QualifiedId, QualifiedId))
+         -> Env (QualifiedIdMap)
 
   def completeMorphismMap kind trans_map dom_map cod_map =
     let def compl (q, id, _ (* val *), new_map) =
@@ -358,6 +354,53 @@ Should we check to see if qid is in cod_map??
 
     in
       foldOverQualifierMap compl emptyMap dom_map
+
+  op completeMorphismOpMap:
+       String 
+         -> AQualifierMap QualifiedId
+         -> MorphismSortMap
+         -> OpMap
+         -> OpMap
+         -> Spec
+         -> Env (MorphismOpMap)
+
+  def completeMorphismOpMap kind op_map type_map dom_map cod_map cod_spec =
+    let def compl (q, id, _ (* val *), new_map) =
+          case findAQualifierMap (op_map, q, id) of
+            | Some qid -> return (update new_map (Qualified (q,id)) qid) % explicit
+            | _ ->
+          %% Otherwise, if the identity map works, use that
+          case findAQualifierMap (cod_map, q, id) of
+            | Some _ -> return (update new_map (Qualified (q,id)) (Qualified (q,id))) % identity
+            | _ -> 
+          case wildFindUnQualified(cod_map, id) of
+            | [] ->
+              let msg = "No mapping for " ^ kind ^ " " ^ q ^ "." ^ id in
+              raise (MorphError (noPos, msg))
+            | [opinfo] ->
+              %% fix bug 127 by accepting unique candidates
+              return (update new_map (Qualified (q,id)) (primaryOpName opinfo))
+            | opinfos ->
+          let Some dom_info = findAQualifierMap(dom_map, q, id) in
+          let (_,dom_ty,_) = unpackTerm(dom_info.dfn) in
+          let mapped_dom_ty = translateSortViaSM(dom_ty, type_map, new_map) in
+          let consistent_opinfos = filter (opinfoConsistentType? mapped_dom_ty) opinfos in
+          case consistent_opinfos of
+            | [opinfo] -> return (update new_map (Qualified (q,id)) (primaryOpName opinfo))
+            | [] ->
+              let qids = map primaryOpName opinfos in
+              let msg = "No consistent mapping for " ^ kind ^ " " ^ id ^ " -- found " ^ show (length qids) ^ " candidates: " ^ printAliases qids in
+              raise (MorphError (noPos, msg))
+            | opinfos ->
+              let qids = map primaryOpName opinfos in
+              let msg = "No unique mapping for " ^ kind ^ " " ^ id ^ " -- found " ^ show (length qids) ^ " candidates: " ^ printAliases qids in
+              raise (MorphError (noPos, msg))
+        def opinfoConsistentType? mapped_dom_ty opinfo =
+          let (_,cod_ty,_) = unpackTerm(opinfo.dfn) in
+          equivType? cod_spec (mapped_dom_ty, cod_ty)
+    in
+      foldOverQualifierMap compl emptyMap dom_map
+
 
   op  verifySignatureMappings : Spec -> Spec -> Morphism -> Position -> Env ()
   def verifySignatureMappings dom_spec cod_spec sm pos =
@@ -479,6 +522,4 @@ Should we check to see if qid is in cod_map??
 	    | _ -> trm
     in 
     mapSort (translateTerm, translateSort, id) srt
-
-}
-\end{spec}
+end-spec
