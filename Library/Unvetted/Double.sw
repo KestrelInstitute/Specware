@@ -68,6 +68,7 @@ Double qualifying spec
   op DoubleAux.atan : Double * Double -> Double
 
 %  op sqrt : Double -> Complex 
+  op sqrt: NonNegativeDouble -> NonNegativeDouble
 
   op ceiling : Double -> Integer
   op floor : Double -> Integer
