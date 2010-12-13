@@ -23,11 +23,24 @@ Double qualifying spec
   op * infixl 27 : Double * Double -> Double
 
   op zero : Double
+  op Pi: Double
 
   type NonZeroDouble = {r : Double | r ~= zero}
+  op / infixl 26 : Double * NonZeroDouble -> Double
 
   op inv : NonZeroDouble -> NonZeroDouble
-  op / infixl 26 : Double * NonZeroDouble -> Double
+
+  op mod infixl 26: Double * NonZeroDouble -> Double
+
+  op DoubleInt.+ infixl 25 : Double * Int -> Double
+  op DoubleInt.- infixl 25 : Double * Int -> Double
+  op DoubleInt.* infixl 27 : Double * Int -> Double
+  op DoubleInt./ infixl 26 : Double * Int0 -> Double
+
+  op IntDouble.+ infixl 25 : Int * Double -> Double
+  op IntDouble.- infixl 25 : Int * Double -> Double
+  op IntDouble.* infixl 27 : Int * Double -> Double
+
 
   % comparisons:
 

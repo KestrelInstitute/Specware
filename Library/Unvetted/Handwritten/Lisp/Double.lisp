@@ -1,6 +1,8 @@
 (defpackage :Specware)
 (defpackage :Double)
 (defpackage :DoubleAux)
+(defpackage :DoubleInt)
+(defpackage :IntDouble)
 (defpackage :Complex)
 (defpackage :String-Spec)
 (defpackage :Integer-Spec)
@@ -42,6 +44,8 @@
 
 (define-symbol-macro zero (Integer-Spec::toDouble 0))
 
+(define-symbol-macro |!Pi| pi)
+
 (defun -- (x) ; TODO: deprecate 
   (declare (double-float x))
   (the-double (- 0 x)))
@@ -82,6 +86,87 @@
 (defun |!*| (xy)
   (declare (cons xy))
   (the-double (* (the-double (car xy)) (the-double (cdr xy)))))
+
+(defun mod-2 (x y)
+  (declare (double-float x y))
+  (the-double (rem x y)))
+
+(define-compiler-macro mod-2 (x y)
+  `(the-double (rem (the-double ,x) (the-double ,y))))
+
+(defun |!mod| (xy)
+  (declare (cons xy))
+  (the-double (rem (the-double (car xy)) (the-double (cdr xy)))))
+
+
+
+;;; Coerce second arg
+(defun DoubleInt::+-2 (x y)
+  (declare (double-float x))
+  (the-double (+ x (Integer-Spec::toDouble y))))
+
+(define-compiler-macro DoubleInt::+-2 (x y)
+  `(the-double (+ (the-double ,x) (Integer-Spec::toDouble ,y))))
+
+(defun DoubleInt::|!+| (xy)
+  (declare (cons xy))
+  (the-double (+ (the-double (car xy)) (Integer-Spec::toDouble (cdr xy)))))
+
+(defun DoubleInt::--2 (x y)
+  (declare (double-float x))
+  (the-double (- x (Integer-Spec::toDouble y))))
+
+(define-compiler-macro DoubleInt::--2 (x y)
+  `(the-double (- (the-double ,x) (Integer-Spec::toDouble ,y))))
+
+(defun DoubleInt::|!-| (xy)
+  (declare (cons xy))
+  (the-double (- (the-double (car xy)) (Integer-Spec::toDouble (cdr xy)))))
+
+(defun DoubleInt::*-2 (x y)
+  (declare (double-float x))
+  (the-double (* x (Integer-Spec::toDouble y))))
+
+(define-compiler-macro DoubleInt::*-2 (x y)
+  `(the-double (* (the-double ,x) (Integer-Spec::toDouble ,y))))
+
+(defun DoubleInt::|!*| (xy)
+  (declare (cons xy))
+  (the-double (* (the-double (car xy)) (Integer-Spec::toDouble (cdr xy)))))
+
+;;; Coerce first arg
+(defun IntDouble::+-2 (x y)
+  (declare (double-float y))
+  (the-double (+ (Integer-Spec::toDouble x) y)))
+
+(define-compiler-macro IntDouble::+-2 (x y)
+  `(the-double (+ (Integer-Spec::toDouble ,x) (the-double ,y))))
+
+(defun IntDouble::|!+| (xy)
+  (declare (cons xy))
+  (the-double (+ (Integer-Spec::toDouble (car xy)) (the-double (cdr xy)))))
+
+(defun IntDouble::--2 (x y)
+  (declare (double-float y))
+  (the-double (- (Integer-Spec::toDouble x) y)))
+
+(define-compiler-macro IntDouble::--2 (x y)
+  `(the-double (- (Integer-Spec::toDouble ,x) (the-double ,y))))
+
+(defun IntDouble::|!-| (xy)
+  (declare (cons xy))
+  (the-double (- (Integer-Spec::toDouble (car xy)) (the-double (cdr xy)))))
+
+(defun IntDouble::*-2 (x y)
+  (declare (double-float y))
+  (the-double (* (Integer-Spec::toDouble x) y)))
+
+(define-compiler-macro IntDouble::*-2 (x y)
+  `(the-double (* (Integer-Spec::toDouble ,x) (the-double ,y))))
+
+(defun IntDouble::|!*| (xy)
+  (declare (cons xy))
+  (the-double (* (Integer-Spec::toDouble (car xy)) (the-double (cdr xy)))))
 
 ;; CL::TRUNCATE returns an integer, making the following definitions 
 ;; for div-2 and div type-incorrect.
@@ -155,6 +240,9 @@
 (defun Integer-Spec::toDouble (x)
   (declare (integer x))
   (the-double (coerce x 'double-float)))
+
+(define-compiler-macro Integer-Spec::toDouble (x)
+  `(the-double (coerce ,x 'double-float)))
 
 (defun show (x) 
   (format nil "~s" x))
