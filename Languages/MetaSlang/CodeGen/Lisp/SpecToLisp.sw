@@ -1289,6 +1289,7 @@ SpecToLisp qualifying spec
      def mkLOpDef (q, id, info, defs) = % ???
        foldl (fn (defs, dfn) -> 
 	      let (tvs, srt, term) = unpackFirstTerm dfn in
+              % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in
 	      let term = lispTerm (spc, defPkgName, term) in
 	      let qid = Qualified (q, id) in
 	      let uName = unaryName (printPackageId (qid, defPkgName)) in
@@ -1372,7 +1373,9 @@ SpecToLisp qualifying spec
 	      in
 		defs ++ new_defs)
              defs
-	     (opInfoDefs info)
+	     (case opInfoDefs info of
+              | main_def :: _ -> [main_def]
+              | _ -> [])
    in
      let defs = foldriAQualifierMap mkLOpDef [] spc.ops in
      let _    = warn_about_non_constructive_defs defs   in
