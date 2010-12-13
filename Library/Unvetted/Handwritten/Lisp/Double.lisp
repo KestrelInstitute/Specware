@@ -87,6 +87,18 @@
   (declare (cons xy))
   (the-double (* (the-double (car xy)) (the-double (cdr xy)))))
 
+(defun /-2 (x y)
+  (declare (double-float x y))
+  (the-double (/ x y)))
+
+(define-compiler-macro /-2 (x y)
+  `(the-double (/ (the-double ,x) (the-double ,y))))
+
+(defun |!/| (xy)
+  (declare (cons xy))
+  (the-double (/ (the-double (car xy)) (the-double (cdr xy)))))
+
+
 (defun mod-2 (x y)
   (declare (double-float x y))
   (the-double (rem x y)))
@@ -133,6 +145,17 @@
 (defun DoubleInt::|!*| (xy)
   (declare (cons xy))
   (the-double (* (the-double (car xy)) (Integer-Spec::toDouble (cdr xy)))))
+
+(defun DoubleInt::/-2 (x y)
+  (declare (double-float x))
+  (the-double (/ x (Integer-Spec::toDouble y))))
+
+(define-compiler-macro DoubleInt::/-2 (x y)
+  `(the-double (/ (the-double ,x) (Integer-Spec::toDouble ,y))))
+
+(defun DoubleInt::|!/| (xy)
+  (declare (cons xy))
+  (the-double (/ (the-double (car xy)) (Integer-Spec::toDouble (cdr xy)))))
 
 ;;; Coerce first arg
 (defun IntDouble::+-2 (x y)
@@ -290,4 +313,4 @@
 
 (defun |!sqrt| (x)
   (declare (double-float x))
-  (the (complex double-float) (sqrt x)))
+  (sqrt x))
