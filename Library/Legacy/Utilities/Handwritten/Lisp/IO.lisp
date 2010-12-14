@@ -149,7 +149,7 @@
     (if (<= n *blanks-array-size*) (svref *blanks-array* (- n 1))
       (format nil "~vT" n))))
 
-(defpackage "Emacs")
+(defpackage :Emacs)
 (defun gotoFilePosition-3 (file line col)
   (Emacs::goto-file-position file line col))
 
@@ -164,6 +164,7 @@
 
 #-mcl
 (defun makeProcess (sym)
+  #-allegro #-Lispworks (declare (ignore sym))
   (let* 
       ((procNum Emacs::*procs*)
        (procName (format nil "Specware process : ~S" procNum)) 
