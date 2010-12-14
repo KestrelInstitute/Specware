@@ -359,6 +359,7 @@
 		  (TypeObligations::generateExhaustivityConditions? t)
                   (Simplify::simplifyUsingSubtypes? t)
 		  (Prover::treatNatSpecially? nil)
+                  (Utilities::namedTypesRaised? t)
 		  (uid (if (not (null argstr))
 			   argstr
 			   (if (not (null cl-user::*last-unit-Id-_loaded*))
