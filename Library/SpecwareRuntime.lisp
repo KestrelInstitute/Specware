@@ -1,3 +1,4 @@
+#+sbcl (require "SBCL_PATCH" "/Users/mcdonald/Work/Generic/Specware4/Applications/Handwritten/Lisp/sbcl-patch")
 (defpackage :Specware)
 (in-package :Specware)
 ;(in-package :cl-user) -- *specware4*, *fasl-type*, etc. are in Specware package!
@@ -15,13 +16,17 @@
     #+mcl       (ccl::getenv varname)
     #+lispworks (hcl::getenv varname)	;?
     #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-    #+sbcl      (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
-		    (sb-ext:posix-getenv  varname))
+    #+sbcl      (let ((x (find-symbol "*ENVIRONMENT-SHADOW*")))
+                  (or (and x
+                           (cdr (assoc (intern varname "KEYWORD") (symbol-value x))))
+                      (sb-ext:posix-getenv  varname)))
     #+gcl       (si:getenv varname)
     #+clisp     (ext:getenv varname)
     ))
 
-(defvar *specware4* (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
+(defvar *specware4* 
+  #-windows (getenv "SPECWARE4")
+  #+windows (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
 
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
@@ -30,11 +35,12 @@
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
     #+(or cmu mcl sbcl)
-    (when (> (file-write-date file)
-	     (or (file-write-date (make-pathname :defaults file
-						 :type *fasl-type*))
-		 0)) 
-      (compile-file file))))
+    (let* ((file-date (if (probe-file file) (file-write-date file) 0))
+           (fasl-type (symbol-value (find-symbol "*FASL-TYPE*" "SPECWARE")))
+           (fasl-file (make-pathname :defaults file :type fasl-type))
+           (fasl-date (if (probe-file fasl-file) (file-write-date file) 0)))
+      (when (> file-date fasl-date)
+        (compile-file file)))))
 
 (unless (fboundp 'compile-and-load-lisp-file)
   (defun compile-and-load-lisp-file (file)
