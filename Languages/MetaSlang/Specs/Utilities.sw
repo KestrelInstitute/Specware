@@ -1988,7 +1988,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Base(qid, _, _) -> qid in? dontRaiseTypes
       | _ -> false
 
-  op namedTypesRaised?: Bool = true
+  op namedTypesRaised?: Bool = false
 
   op raiseSubtypes(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
     % let _ = writeLine("\nrst: "^printSort ty1^" <> "^printSort ty2) in
