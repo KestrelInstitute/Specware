@@ -52,7 +52,10 @@
 
 (defun DoubleAux::|!-| (x)
   (declare (double-float x))
-  (the-double (- 0 x)))
+  (the-double (- x)))
+
+(define-compiler-macro DoubleAux::|!-| (x)
+  `(the-double (- (the-double ,x))))
 
 (defun +-2 (x y)
   (declare (double-float x y))
@@ -86,6 +89,9 @@
 (defun |!*| (xy)
   (declare (cons xy))
   (the-double (* (the-double (car xy)) (the-double (cdr xy)))))
+
+(define-compiler-macro Double::sq (x)
+  `(let ((x  (the-double ,x))) (the-double (* x x))))
 
 (defun /-2 (x y)
   (declare (double-float x y))

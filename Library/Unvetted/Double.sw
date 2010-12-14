@@ -22,6 +22,8 @@ Double qualifying spec
 
   op * infixl 27 : Double * Double -> Double
 
+  op sq(x: Double): Double = x * x
+
   op zero : Double
   op Pi: Double
 
