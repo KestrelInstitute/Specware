@@ -26,10 +26,10 @@ op [a] ||| (p1: a -> Bool, p2: a -> Bool) infixr 24 : a -> Bool =
   fn x:a -> p1 x || p2 x
 proof Isa [simp] end-proof
 
-op [a] TRUE: a -> Bool = fn x:a -> true
+op [a] TRUE: a -> Bool = fn _:a -> true
 proof Isa [simp] end-proof
 
-op [a] FALSE: a -> Bool = fn x:a -> false
+op [a] FALSE: a -> Bool = fn _:a -> false
 proof Isa [simp] end-proof
 
 % Isabelle mapping:
