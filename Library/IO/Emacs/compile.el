@@ -20,3 +20,4 @@
 
 (mapc 'sw:compile-and-load-specware-emacs-file sw:specware-emacs-files)
 
+(provide 'compile)
