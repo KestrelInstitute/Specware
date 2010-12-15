@@ -3,8 +3,8 @@
 
 ;;----------------------------
 
-(defpackage :emacs)
-(in-package :emacs)
+(defpackage :Emacs)
+(in-package :Emacs)
 
 (defun re::emacs-eval (string)
   #+allegro(lep::eval-in-emacs string)

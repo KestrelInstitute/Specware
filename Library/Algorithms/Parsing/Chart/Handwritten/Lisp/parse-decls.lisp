@@ -4,8 +4,7 @@
 
 ;;; ========================================
 
-
-(defpackage "PARSER4-RULES"  (:nicknames "PR4") (:use))
+(defpackage :Parser4-Rules (:nicknames :PR4) (:use))
 
 (defvar *verbose?* nil)
 

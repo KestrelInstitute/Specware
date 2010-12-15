@@ -97,7 +97,7 @@
 
     (format t "~%~% FINISHED")))
 
-(defpackage "SPECWARE")
+(defpackage :Specware)
 (defun Specware::reportErrorToJava-4 (file line col msg)
   (let* ((filepath (parse-namestring file))
 	 (name (pathname-name filepath))

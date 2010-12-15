@@ -1,4 +1,4 @@
-(defpackage "OscarAbsSyn")
+(defpackage :OscarAbsSyn)
 
 (define-sw-parser-rule :SC-TERM ()
   (:anyof

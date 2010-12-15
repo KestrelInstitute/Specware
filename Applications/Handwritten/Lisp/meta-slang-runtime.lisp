@@ -5,7 +5,7 @@
 ;; The functions here are referenced in code produced by 
 ;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
-(defpackage "SpecCalc")
+(defpackage :SpecCalc)
 (defpackage :Slang-Built-In)
 (in-package :Slang-Built-In)
 

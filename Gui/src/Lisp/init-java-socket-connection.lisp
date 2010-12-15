@@ -194,7 +194,7 @@
   (jstatic "setSWPath" "edu.kestrel.netbeans.lisp.LispProcessManager"
 	   (Specware::getenv "SWPATH")))
 
-(defpackage "SPECWARE")
+(defpackage :Specware)
 (defun Specware::reportErrorToJava-4 (file line col msg)
   (let* ((filepath (parse-namestring file))
 	 (name (pathname-name filepath))

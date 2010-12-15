@@ -439,7 +439,7 @@
 			      nil))
       (format t "No previous unit evaluated~%"))))
 
-(defpackage "SWE") ; for access to results
+(defpackage :SWE) ; for access to results
 
 (defvar *swe-use-interpreter?* t)   ; nil means used compiled lisp code
 (defvar *current-swe-spec*     nil) ; nil means no import

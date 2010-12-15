@@ -1,4 +1,4 @@
-(defpackage :Specware (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
+(defpackage :Specware (:use :cl))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package :Specware)
 
 (declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
@@ -113,10 +113,10 @@
      HandwrittenFiles
      )
 
-(defpackage "UTILITIES")
-(defpackage "MAP-SPEC")
-(defpackage "ANNSPEC")
-(defpackage "METASLANG")
+(defpackage :Utilities)
+(defpackage :Map-Spec)
+(defpackage :AnnSpec)
+(defpackage :MetaSlang)
 
 #||
 #+allegro

@@ -1,4 +1,4 @@
-(defpackage :Specware (:use "CL"))
+(defpackage :Specware (:use :cl))
 (in-package :Specware)
 
 ;;; This file is loaded before Specware4.lisp when generating

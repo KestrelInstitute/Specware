@@ -1,5 +1,5 @@
 ; for simplicity, use the same package that utilities.lisp uses
-(defpackage :Distribution (:use :common-lisp))
+(defpackage :Distribution (:use :cl))
 (in-package :Distribution)
 
 (cl:defpackage :swank-loader
@@ -55,11 +55,11 @@
     (delete-file file)))
 
 ;; sigh -- miserable hack so we can read an emacs file without choking
-(defpackage :sw)
+(defpackage :SW)
 (eval-when (compile eval load)
   (export (list (intern "SPECWARE-EMACS-FILES"
-                        :sw))
-          :sw))
+                        :SW))
+          :SW))
 
 ;;; See ../README for a description of the tree of components this code assembles.
 
@@ -442,7 +442,7 @@
 
       (load (merge-pathnames slime-source-dir "swank-loader.lisp"))
 
-      ;; (defpackage "SB-BSD-SOCKETS" (:use "COMMON-LISP"))
+      ;; (defpackage :SB-BSD-SOCKETS (:use :Common-Lisp))
       ;; ;; loading swank-backend will compile all the swank lisp files...
       ;; (load (merge-pathnames slime-source-dir "swank-backend.lisp"))
       ;; 

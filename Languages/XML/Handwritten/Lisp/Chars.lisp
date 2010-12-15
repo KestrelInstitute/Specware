@@ -1,5 +1,5 @@
-(defpackage :xml)
-(in-package :xml)
+(defpackage :XML)
+(in-package :XML)
 
 ;;;  %%  [2]  Char          ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
 ;;;  %%                          /* any Unicode character, excluding the surrogate blocks, FFFE, and FFFF. */
