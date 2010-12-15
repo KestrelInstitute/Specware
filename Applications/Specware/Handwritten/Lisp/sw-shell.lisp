@@ -1,3 +1,4 @@
+(defpackage :Utilities)
 (defpackage :TypeObligations)
 (defpackage :Prover)
 (defpackage :Simplify)
