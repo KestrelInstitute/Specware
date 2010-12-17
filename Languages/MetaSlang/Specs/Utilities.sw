@@ -1452,12 +1452,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	if booleanVal? N1 || booleanVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
-        if trueTerm? p then Some q
-          else if falseTerm? p then Some r
-          else if equivTerm? spc (q,r) && sideEffectFree p then Some q
-          else if trueTerm? q && falseTerm? r then Some p
-          else if falseTerm? q && trueTerm? r then Some (negateTerm p)
-          else None
+        let simp_if = mkIfThenElse(p,q,r) in
+        if equalTerm?(term, simp_if) then None else Some simp_if
         %% {id1 = v1, ..., idn = vn}.idi = vi
       | Apply(Fun(Project i,_,_),Record(m,_),_) ->
         (case getField(m,i) of
