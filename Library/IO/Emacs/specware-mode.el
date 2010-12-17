@@ -2219,7 +2219,8 @@ With an argument, it doesn't convert imports."
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
                             (Simplify::simplifyUsingSubtypes? t)
-                            (Prover::treatNatSpecially? nil))
+                            (Prover::treatNatSpecially? nil)
+                            (Utilities::namedTypesRaised? t))
                         (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
 		     filename
 		     (if non-recursive? "nil" "t"))))
@@ -2245,7 +2246,8 @@ With an argument, it doesn't convert imports."
 		     "(let ((TypeObligations::generateTerminationConditions? nil)
                             (TypeObligations::generateExhaustivityConditions? t)
                             (Simplify::simplifyUsingSubtypes? t)
-                            (Prover::treatNatSpecially? nil))
+                            (Prover::treatNatSpecially? nil)
+                            (Utilities::namedTypesRaised? t))
                         (IsaTermPrinter::deleteThyFilesForUID %S)
                         (IsaTermPrinter::printUIDtoThyFile-2 %S t))"
 		     filename filename)))
