@@ -6,8 +6,7 @@ match(lhs,rhs,flexTerms,context)
  [lhs, rhs] 	are the two terms to be matched
  [flexTerms] 	are terms denoting flexible variables.
  [context]	contains rewrite laws, theorems, and tracing information.
- [matchPairs]
- The main recursive matching loop.
+ [matchPairs]   The main recursive matching loop.
 *)
 
 HigherOrderMatching qualifying
@@ -249,8 +248,7 @@ beta contraction.
      foldl (fn (stack,(x,y)) -> insert(x,y,stack))	
         stack (pairs ++ hard_pairs)
 
-\end{spec}
-
+(*
 \subsection{The matcher}
 
 \newcommand{\inferenceRule}[2]{
@@ -333,14 +331,13 @@ Note: projections should in general be represented as
 record type.
 
 Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
-
-\begin{spec}
+*)
 
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
  op debugHOM: Ref Nat = Ref 0
  op evaluateConstantTerms?: Boolean = false     % For now until utility is proven
  op allowTrivialMatches?: Boolean = false       % Allow matches that don't use match terms
- op resultLimitHOM: Nat = 4
+ op resultLimitHOM: Nat = 8
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
@@ -546,7 +543,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                    if closedTermV(N,context.boundVars)
                      && ~(exists? (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
                      && noReferencesTo?(N,terms)
-                     then 
+                    then 
                      let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
                      let trm    = foldr bindPattern N pats 			  in
                      let subst  = updateSubst(subst,n,trm) in
@@ -635,7 +632,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                         else [])
                    in
                    if length rec_results  > resultLimitHOM
-                     then rec_results
+                     then
+                       (writeLine("Result limit exceeded... "^show(length rec_results)^"\n");
+                        % app printSubst rec_results;                       
+                        rec_results)
                    else
                    let proj_results =
                        rec_results
@@ -743,8 +743,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
         | _ -> System.fail "inferType: non-exhaustive match"
 
 
-\end{spec}
-{\tt matchPairs} should also handle "IfThenElse", "Let", "LetRec", "Seq", 
+(* {\tt matchPairs} should also handle "IfThenElse", "Let", "LetRec", "Seq", 
 possibly by using pre-cooking.
 
 \subsection{Projections}
@@ -773,8 +772,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 			& (N\;(F\; x_1\;...\; x_n)):\sigma_2 \simeq \tau 
 \end{array}
 \]
-
-\begin{spec}
+*)
 
   op projections : Context * SubstC * List MS.Term * List Var * Sort 
 				-> List (SubstC * MS.Term)
@@ -814,12 +812,10 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 
       terms
 
-\end{spec}
- \subsection{Recursive matching utilities}
+(* Recursive matching utilities
 
   Constants and bound variables are matched using {\tt matchBase}.
-\begin{spec}
-
+*)
   op matchBase : [a] Context * a * Sort * a * Sort * Stack * SubstC * MS.Term-> List SubstC
   def matchBase (context,x,srt1,y,srt2,stack,subst,N) =
     % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
@@ -940,14 +936,13 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
         | _ -> None
 
 
-\end{spec}
-
-\subsection{Occurs check}
+(*
+Occurs check.
 Our matching algorithm includes the occurs check, as there we do not require the 
 input to be a matching problem. In fact, in the glue code generation, proper 
 skolemization transforms a proper matching problem into an inproper one.
+*)
 
-\begin{spec}
   op occursProper : Nat -> MS.Term -> Boolean
   def occursProper n M = 
       case isFlexVar?(M)
@@ -979,21 +974,12 @@ skolemization transforms a proper matching problem into an inproper one.
 	   occurs n M || exists? (occursP n) decls
 	 | LetRec(decls,M,_) ->
 	   occurs n M || exists? (occursP n) decls
-\end{spec}
 
-\subsection{Closed terms}
-
-\begin{description}
-\item[{\tt closedTerm}]
- determines whether a term contains any 
-        free variables or not.
-\item[{\tt closedTermV}] detects existence of 
-       free variables not included in the
-        argument 
-\end{description}
-
-\begin{spec}
-
+(*
+Closed terms
+closedTerm  determines whether a term contains any free variables or not.
+closedTermV detects existence of free variables not included in the argument 
+*)
   op closedTerm : MS.Term -> Boolean
   op closedTermV : MS.Term * List Var -> Boolean
 
@@ -1208,7 +1194,7 @@ skolemization transforms a proper matching problem into an inproper one.
       foldr (fn (r1,r) ->
              case r1 of
                | NotUnify (s1,s2) -> 
-                 (if !debugHOM > 0 then (writeLine (printSort s1^" ! = "^printSort s2);
+                 (if !debugHOM > 0 then (writeLine (printSort s1^" ~= "^printSort s2);
                                          printSubst subst)
                   else ();
                   r)
@@ -1232,11 +1218,11 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
       | Let (decls,M,a) -> 
          let (pats,Ns) = unzip decls in
           Apply (Lambda([(mkTuplePat pats,trueTerm,M)], a),mkTuple Ns,a)
-%       | IfThenElse (M,N,P) -> 
-%          let srt = inferType(spc,N) in
-%          Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
-%                Arrow(mkProduct [boolSort,srt,srt],srt)),
-%                mkTuple [M,N,P])
+       % | IfThenElse (M,N,P,a) -> 
+       %    let srt = inferType(spc,N) in
+       %    Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
+       %              mkArrow(mkProduct [boolSort,srt,srt],srt), a),
+       %          mkTuple [M,N,P], a)
 %       | LetRec(decls,M,_) -> 
 %          System.fail "Replacement of LetRec by fix has not been implemented"
       | Seq (Ms,a) -> 
@@ -1266,9 +1252,10 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 	   Seq([N,M],a)
 	 | Apply(Lambda([(pat,Fun(Bool true,_,_),M)], _),N,a) -> 
 	   Let([(pat,N)],M,a)
-%	 | Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),
-%		     Nonfix),_),Record [(_,M),(_,N),(_,P)]) -> 
-%	   IfThenElse(M,N,P)
+	 % | Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),
+	 %             Nonfix),_,_),
+         %         Record([(_,M),(_,N),(_,P)], _), a) -> 
+	 %   IfThenElse(M,N,P, a)
 	 | term -> term 
 
   def deNormalizeSpec = 
