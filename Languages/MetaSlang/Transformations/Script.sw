@@ -520,9 +520,13 @@ spec
                                (print ((printTerm tm) ^ "\n")); 
                              (new_tm, tracing?) <- interpretTerm (spc, scr, tm, tracing?); 
                              % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, srt, termAnn opinfo.dfn)));
+                             if equalTerm?(new_tm, tm)
+                               then let _ = writeLine(show qid^" not modified.") in
+                                    return (spc, tracing?)
+                             else {
                              new_spc <- return(addRefinedDef(spc, opinfo, new_tm));
                              return (new_spc, tracing?)
-                             })
+                             }})
                        (spc, tracing?) opinfos)
             (spc, tracing?) locs }
       | AtTheorem (locs, scr) -> {

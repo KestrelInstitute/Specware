@@ -97,6 +97,10 @@ spec
            | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^search_type))}
       | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command."))
 
+  op commands: List String =
+    ["simplify", "Simplify", "simpStandard", "SimpStandard", "eval", "partial-eval", "AbstractCommonExprs",
+     "AbstractCommonSubExprs", "print"]
+
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
     case trans of
       | Apply(Name("simplify",_), rls,_) ->
@@ -213,29 +217,27 @@ spec
                | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
-                  return (Cons(IsoMorphism(iso_prs, srls, None), top_result), [])}
+                  return (IsoMorphism(iso_prs, srls, None) :: top_result, [])}
                | Apply(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
-                  return (Cons(IsoMorphism(iso_prs, srls, Some qual), top_result), [])}
+                  return (IsoMorphism(iso_prs, srls, Some qual) :: top_result, [])}
                | Apply(Name("isomorphism",_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (Cons(IsoMorphism(iso_prs, [], None), top_result), [])}
+                  return (IsoMorphism(iso_prs, [], None) :: top_result, [])}
                | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (Cons(IsoMorphism(iso_prs, [], Some qual), top_result), [])}
+                  return (IsoMorphism(iso_prs, [], Some qual) :: top_result, [])}
                | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
                  {fields <- getAddParameterFields rec_val_prs;
                   return(AddParameter fields :: top_result, [])}
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
-                  return (Cons(At([Def qid], Steps sub_result),
-                               top_result),
+                  return (At([Def qid], Steps sub_result) :: top_result,
                           [])}
                | Apply(Name("at",_), locs,_) ->
                  {qids <- mapM extractQId locs;
-                  return (Cons(At(map Def qids, Steps sub_result),
-                               top_result),
+                  return (At(map Def qids, Steps sub_result) :: top_result,
                           [])}
                | Item("trace", Str(on_or_off,_), pos) ->
                  {on? <- case on_or_off of
@@ -243,20 +245,21 @@ spec
                            | "off" -> return false
                            | _ -> raise(TypeCheck (pos, "Trace on or off?"));
                   return(if sub_result = []
-                          then (Cons(Trace on?, top_result), sub_result)
-                          else (top_result, Cons(Trace on?, sub_result)))}
+                          then (Trace on? :: top_result, sub_result)
+                          else (top_result, Trace on? :: sub_result))}
                | Str("print",_) ->
-                 return (top_result, Cons(Print, sub_result))
+                 return (top_result, Print :: sub_result)
                | Item("applyToSpec",opid,_) -> {qid <- extractQId opid;
                                                 return (mkSpecTransform qid :: top_result, [])}
-               | Name _ -> {qid <- extractQId te;
-                            return (mkSpecTransform qid :: top_result, [])}
+               | Name(nm, pos) | nm nin? commands ->
+                 {qid <- extractQId te;
+                  return (mkSpecTransform qid :: top_result, [])}
                | Qual _ -> {qid <- extractQId te;
                             return (mkSpecTransform qid :: top_result, [])}
                | _ ->
                  {sstep <- makeScript1 te;
-                  return (top_result, Cons(sstep, sub_result))})
-      ([],[]) trans_steps
+                  return (top_result, sstep :: sub_result)})
+      ([], []) trans_steps
              
 
 endspec
