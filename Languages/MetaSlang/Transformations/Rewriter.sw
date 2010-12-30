@@ -131,7 +131,7 @@ MetaSlangRewriter qualifying spec
                     else ();
                   unit(new_term, (subst, rule, boundVars, demod)))
                | None -> Nil)
-            | None ->            
+            | None ->
           let substs = applyRewrite(context,rule,subst,term) in
           let _ = if debugApplyRewrites? then
                     if substs = [] then writeLine("Match failed.\n")
