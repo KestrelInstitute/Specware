@@ -925,6 +925,7 @@ spec
       %% (search-forward-regexp specware-definition-regexp) (match-string 0) (match-string 2)
       % Construct a map from a qualified id to the primed qualified id for
       % a new primed op.
+      % Make map identity for ops whose type doesn't change but uses type internally
       def makeDerivedOps(spc: Spec,
                          iso_info: IsoInfoList,
                          iso_fn_info: IsoFnInfo)
@@ -945,13 +946,15 @@ spec
              % ### LE - we are folding over ops. Is the equivType? test where we
              % establish whether the op depends on a type subject to an isomorphism?
              % is there overlap with the ignore list? 
-             if qid in? ign_qids
-                  || (equivType? spc (op_ty_pr,op_ty)
-                        && ~(existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
-                                                 | _ -> false)
-                               dfn))
-                  || some?(findTheOp(spc, makeDerivedQId qid))
+             if qid in? ign_qids || some?(findTheOp(spc, makeDerivedQId qid))
                then return result
+             else if equivType? spc (op_ty_pr,op_ty)
+               then if existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
+                                                 | _ -> false)
+                         dfn
+                     then let _ = writeLine("refine "^show qid) in
+                          return (insertAQualifierMap(result, q, nm, qid))
+                     else return result
             else {
               qid_pr <- makeFreshQId spc qid;
               return (insertAQualifierMap(result, q, nm, qid_pr))
@@ -975,15 +978,16 @@ spec
            let qid = Qualified(q,nm) in
            let Some info = findTheOp(spc, qid) in
            let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
+             type_opaque_in_term? <- return(checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc));
              op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
-             qid_pr <- makeFreshQId spc qid; 
+             % qid_pr <- makeFreshQId spc qid;
              (dfn_pr, transformQIds) <-
-               if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then
+               if type_opaque_in_term? then
                  return ((primeTermsTypes(dfn, qidPrMap, iso_info), transformQIds))
                else
                  {dfn_pr <- isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
                   return(dfn_pr, qid_pr :: transformQIds)};
-             if checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc) then {
+             if type_opaque_in_term? then {
                print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
                when (nm = "andd")
                  (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
@@ -993,16 +997,23 @@ spec
              else
                {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
                 when (nm = "andd") (print(printTermWithSorts dfn^"\n"))};
+             if qid = qid_pr
+               then    % refine def instead of generating new one
+               return ((addRefinedDefToOpinfo(info, dfn_pr),
+                        info)
+                       :: result,
+                       transformQIds)   
+             else {
              qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
              id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
              new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
              % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
              return ((info << {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
                       info << {names = [qid_pr],
-                      dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
+                               dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
                        ::result,
                      transformQIds)
-          }) ([], []) qidPrMap
+          }}) ([], []) qidPrMap
       %}}}
       %{{{  isoTypeFn 
       def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
@@ -1609,12 +1620,20 @@ spec
     let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
                      let qid  = head opinfo.names in
                      let qid_pr = head opinfo_pr.names in
-                     let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
                      let spc = setOpInfo(spc,qid,opinfo) in
+                     if qid = qid_pr
+                       then   % Transformed
+                       let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, noPos)) in
+                       spc
+                     else
+                     let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
                      let spc = setOpInfo(spc,qid_pr,opinfo_pr) in
                      spc)
                 spc new_defs
-    in    
+    in
+    % let _ = writeLine(printSpec spc) in
+    %% Remove transformed defs
+    let new_defs = filter (fn (opinfo,opinfo_pr) -> head opinfo.names ~= head opinfo_pr.names) new_defs in
     let recursive_ops = recursiveOps spc in
     (* Now construct a script to remove the ops defined in terms of
     the old types, create references to the new ops and simplify (eg
@@ -1703,7 +1722,9 @@ spec
                                           {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
                                            return (equalType?(ty, isoTy))})
                            dfn;
-                    if (simplifyUnPrimed? || (derivedQId? qid && some?(findAQualifierMap(qidPr_Set, q,id)))) then {
+                    if (simplifyUnPrimed? || (derivedQId? qid && some?(findAQualifierMap(qidPr_Set, q, id)))
+                          || findAQualifierMap(qidPrMap, q, id) = Some(Qualified(q, id)))
+                      then {
                       when traceIsomorphismGenerator? 
                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
                       interpretTerm(spc, if qid in? transformQIds
