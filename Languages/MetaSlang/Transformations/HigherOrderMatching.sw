@@ -658,7 +658,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                       proj_results
                         ++ 
                         % 3. Imitation.
-                        (if closedTermV(N,context.boundVars)
+                        (if simpleTerm N && closedTermV(N,context.boundVars)
                            then 
                              let pats   = map (fn srt -> WildPat(srt,noPos)) termTypes in 
                              let trm    = foldr bindPattern N pats in
