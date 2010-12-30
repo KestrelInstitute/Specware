@@ -600,6 +600,8 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      | Any _ -> []
      | _                     -> [tm]
 
+ op [a] numTerms(tm: ATerm a): Nat = length(innerTerms tm)
+
  op [a] unpackFirstTerm(t: ATerm a): TyVars * ASort a * ATerm a =
    let (tvs, ty, tm) = unpackTerm t in
    (tvs, ty, termInnerTerm tm)
