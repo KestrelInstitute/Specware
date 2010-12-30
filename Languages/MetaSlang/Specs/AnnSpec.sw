@@ -288,6 +288,10 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
      | None -> 0
      | Some opinfo ->
    let (_, _, full_dfns) = unpackTerm opinfo.dfn in
+   let _ = if length(innerTerms full_dfns) = length(innerTerms opinfo.dfn)
+            then ()
+           else  writeLine("numRefinedDefs: innerTerms anomaly "^show qid^"\n"^printTerm opinfo.dfn)
+   in
    length(innerTerms full_dfns)
 
 op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
@@ -295,35 +299,40 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
     | None -> false
     | Some info -> (unpackFirstOpDef info).1 ~= []
 
-op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
+op addRefinedDefToOpinfo(info: OpInfo, new_dfn: MS.Term): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
   let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
   let curr_dfns = innerTerms full_tm in
   let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfn :: curr_dfns) in
-  spc << {ops = insertAQualifierMap (spc.ops, q, id, info << {dfn = new_full_dfn}),
-          elements = spc.elements ++ [OpDef (qid, length curr_dfns + 1, noPos)]}
+  info << {dfn = new_full_dfn}
+
+op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
+  let qid as Qualified(q, id) = primaryOpName info in
+  let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
+  spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
+          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn, noPos)]}
 
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                Recursive TSP map over Specs
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Sort, Pattern"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                Recursive TSP map over Specs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% "TSP" means "Term, Sort, Pattern"
 
- %%% Can't make mapSpec polymorphic because elements in imports have to be Standard
+%%% Can't make mapSpec polymorphic because elements in imports have to be Standard
 
- type TSP_Maps_St = TSP_Maps StandardAnnotation
- op  mapSpec : TSP_Maps_St -> Spec -> Spec
- def mapSpec tsp spc =
-   spc << {
-	   sorts        = mapSpecSorts      tsp spc.sorts,
-	   ops          = mapSpecOps        tsp spc.ops,
-	   elements     = mapSpecProperties tsp spc.elements
-	  }
+type TSP_Maps_St = TSP_Maps StandardAnnotation
+op  mapSpec : TSP_Maps_St -> Spec -> Spec
+def mapSpec tsp spc =
+  spc << {
+          sorts        = mapSpecSorts      tsp spc.sorts,
+          ops          = mapSpecOps        tsp spc.ops,
+          elements     = mapSpecProperties tsp spc.elements
+         }
 
- op  mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b
- def mapSpecSorts tsp sorts =
-   mapSortInfos (fn info -> info << {dfn = mapSort tsp info.dfn})
-                sorts
+op  mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b
+def mapSpecSorts tsp sorts =
+  mapSortInfos (fn info -> info << {dfn = mapSort tsp info.dfn})
+               sorts
 
  op  mapSpecOps : [b] TSP_Maps b -> AOpMap b -> AOpMap b
  def mapSpecOps tsp ops =
