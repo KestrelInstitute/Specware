@@ -494,6 +494,8 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	matchPairs (context,subst,insert(M,N,stack))
       | (IfThenElse(M1,M2,M3,_),IfThenElse(N1,N2,N3,_)) -> 
 	matchPairs(context,subst,insert(M1,N1,insert(M2,N2,insert(M3,N3,stack))))
+      | (Seq(tms1, _), Seq(tms2, _)) | length tms1 = length tms2 ->
+        matchPairs(context,subst, foldl (fn (stack, (M,N)) -> insert(M,N,stack)) stack (zip(tms1, tms2)))
       | (The ((id1,srt1),M,_),The ((id2,srt2),N,_)) -> 
         foldr (fn (subst,r) ->
                  let x = freshBoundVar(context,srt1) in
@@ -592,6 +594,11 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                          | [Bind(qf,vs,bod,a)] ->
                            let (bod1,bod_pr) = makeMatchForSubTerm(bod,vs) in
                            (true, Bind(qf,vs,bod1,a), [bod_pr])
+                         | [Let([(pat,bt)],bod,a)] ->
+                           let pvs = patternVars pat in
+                           let (bod1, bod_pr) = makeMatchForSubTerm (bod, pvs) in
+                           let (bt1, bt_pr) = makeMatchForSubTerm(bt, []) in
+                           (true, Let([(pat,bt1)],bod1,a), [bt_pr, bod_pr])                           
  %                   %% case expression
                          | [Lambda(matches,a), case_arg] ->
                            let (matches1, pairs) =
