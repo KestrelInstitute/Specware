@@ -46,6 +46,8 @@
 ;;; op time     : fa(a) a -> a
 (defmacro |!time| (x) (time x))
 
+(defun |!random| (n) (random n))
+
 ;;; #-Lispworks
 ;;; (defun getenv (x) (Specware::getenv x))
 

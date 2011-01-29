@@ -19,6 +19,8 @@ System qualifying spec
   op warn     : [a] String -> a
   op time     : [a] a -> a
 
+  op random: Nat -> Nat
+
 (*
   The following retrieves a UNIX / Windows environment variable. Other
   operators listed in this file have corresponding implementations in
