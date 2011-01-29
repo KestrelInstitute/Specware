@@ -1,6 +1,5 @@
 theory IsabelleExtensions
-imports Char_nat GCD List Hilbert_Choice Recdef Datatype Permutation 
-        "~~/src/HOL/Number_Theory/Primes"
+imports Main Char_nat Recdef Permutation "~~/src/HOL/Number_Theory/Primes"
 begin
 
 
