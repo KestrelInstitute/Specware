@@ -284,7 +284,7 @@ If NEWLINE is true then add a newline at the end of the input."
       (let ((proc (slime-maybe-start-lisp program program-args env
                                           directory buffer)))
         (slime-inferior-connect proc args)
-        (pop-to-buffer (process-buffer proc))))))
+        (slime-pop-to-buffer (process-buffer proc))))))
 
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))

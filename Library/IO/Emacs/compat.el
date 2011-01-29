@@ -348,9 +348,9 @@
     (interactive "P")
     (if (equal (buffer-name (current-buffer))
 	       sw:common-lisp-buffer-name)
-	(pop-to-buffer slime-last-buffer nil)
+	(slime-pop-to-buffer slime-last-buffer nil)
       (progn (setq slime-last-buffer (current-buffer))
-	     (pop-to-buffer sw:common-lisp-buffer-name nil)))
+	     (slime-pop-to-buffer sw:common-lisp-buffer-name nil)))
     (when eob-p
       (goto-char (point-max))))
 
