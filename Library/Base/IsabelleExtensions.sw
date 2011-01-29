@@ -11,7 +11,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 spec
  
-proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" Permutation Datatype Recdef Hilbert_Choice List GCD Char_nat
+proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" Permutation Recdef Char_nat Main
 end-proof
 
 proof Isa -verbatim
