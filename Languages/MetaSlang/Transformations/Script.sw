@@ -5,7 +5,7 @@ spec
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
 
-  op [a] dummy: a
+%  op [a] dummy: a
 
   type Context = RewriteRules.Context
   type PathTerm = APathTerm Position
@@ -39,17 +39,12 @@ spec
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
+    | addSemanticChecks(Bool * Bool * Bool)
     | Trace Boolean
     | Print
 
  op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * List RuleSpec -> SpecCalc.Env Spec
  op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
-
- op addParameter(spc: Spec, fun: QualifiedId, pos: Nat, o_return_pos: Option Nat, name: Id, ty: QualifiedId,
-                 within: QualifiedIds, val: QualifiedId, o_qual: Option Qualifier): SpecCalc.Env Spec =
-   let _ = printScript(AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual)) in
-   %% Place holder
-   return spc
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
