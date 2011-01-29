@@ -62,6 +62,7 @@ MS qualifying spec
  def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
+ op voidType: Sort = mkProduct[]
 
  op listCharType: Sort = mkBase(Qualified("List","List"),[charSort])
  op optionStringType: Sort = mkBase(Qualified("Option","Option"),[stringSort])
@@ -185,6 +186,8 @@ MS qualifying spec
   case terms of
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
+
+ op voidTerm: Term = mkTuple []
 
  op  termToList: [a] ATerm a -> List(ATerm a)
  def termToList t =
