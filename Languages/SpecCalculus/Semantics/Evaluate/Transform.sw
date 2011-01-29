@@ -56,6 +56,12 @@ spec
       | Name(n,_) -> return n
       | _ -> raise (TypeCheck (posOf itm, "Name expected."))
 
+ op extractBool(itm: TransformExpr): SpecCalc.Env Bool =
+    case itm of
+      | Name("true",_)  -> return true
+      | Name("false",_) -> return false
+      | _ -> raise (TypeCheck (posOf itm, "Boolena expected."))
+
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
     case trans of
       | Item("lr",thm,_) -> {qid <- extractQId thm;
@@ -199,6 +205,12 @@ spec
                          return(o_nat)}
       | None -> return default
       
+  op findBoolDefault(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position), default: Bool): SpecCalc.Env Bool =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> {o_bool <- extractBool val;
+                         return(o_bool)}
+      | None -> return default
+      
   op getAddParameterFields(val_prs: List(String * TransformExpr) * Position)
        : SpecCalc.Env(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier) =
     {fun <- findQId("function", val_prs);
@@ -210,6 +222,13 @@ spec
      val <- findQId("initial_value", val_prs);
      o_qual <- findOptName("qualifier", val_prs);
      return(fun, pos, o_return_pos, name, ty, within, val, o_qual)}
+
+  op getAddSemanticFields(val_prs: List(String * TransformExpr) * Position)
+       : SpecCalc.Env(Bool * Bool * Bool) =
+    {checkArgs <- findBoolDefault("checkArgs", val_prs, true);
+     checkResult <- findBoolDefault("checkResult", val_prs, true);
+     checkRefine <- findBoolDefault("checkRefine", val_prs, false);
+     return(checkArgs, checkResult, checkRefine)}
 
   op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
     foldrM (fn (top_result, sub_result) -> fn te ->
@@ -231,6 +250,9 @@ spec
                | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
                  {fields <- getAddParameterFields rec_val_prs;
                   return(AddParameter fields :: top_result, [])}
+               | Apply(Name("addSemanticChecks",_), [Record rec_val_prs], _) ->
+                 {fields <- getAddSemanticFields rec_val_prs;
+                  return(addSemanticChecks fields :: top_result, [])}
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
                   return (At([Def qid], Steps sub_result) :: top_result,
