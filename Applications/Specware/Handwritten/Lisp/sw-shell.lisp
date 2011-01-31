@@ -21,9 +21,9 @@
     ("dir"       . "List .sw files in current directory.")
     ("dirr"      . "List .sw files in current directory and recursively in subdirectories.")
     ("path"      . "[dirseq] Sets the current Specware path.
-                  With no argument, displays the current Specware path.")
+                        With no argument, displays the current Specware path.")
     ("proc"      . "[unit-term] Processes the unit. 
-                  With no argument, processes the last processed unit.")
+                        With no argument, processes the last processed unit.")
     ("p"         . "[unit-term] Abbreviation for proc.")
     ("cinit"     . "Clears Spec unit cache.")    
     ("show"      . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
@@ -39,25 +39,25 @@
     
     ("prove"     . "[proof arguments] Abbreviation for proc prove ...")
     ("punits"    . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
-                  them into filename.")
+                        them into filename.")
     ("lpunits"   . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
     ("transform" . "[unit-identifier] Enter transform shell for spec.")
     ("ctext"     . "[spec-term] Sets the current context for eval commands.
-                  With no arguments displays context.")
+                        With no arguments displays context.")
     ("eval"      . "[expression] Evaluates expression with respect to current context.")
     ("e"         . "[expression] Abbreviation for eval.")
     ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
     ("gen-lisp"  . "[spec-term [filename]] Generates Lisp code for unit in filename.
-                  With no argument uses last processed unit.")
+                        With no argument uses last processed unit.")
     ("gen-lisp-top"  . "[spec-term [filename]] Generates Lisp code for unit in filename slicing away defs not need by unit.
-                  With no argument uses last processed unit.")
+                        With no argument uses last processed unit.")
     ("gen-lt"    . "[spec-term [filename]] Generates Lisp code for unit in filename slicing away defs not need by unit.
-                  With no argument uses last processed unit.")
+                        With no argument uses last processed unit.")
     ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates Lisp for local definitions of spec.")
     ("gen-java"  . "[spec-term [option-spec]] Generates Java code for unit in filename.
-                  With no argument uses last processed unit.")
+                        With no argument uses last processed unit.")
     ("gen-c"     . "[spec-term [filename]] Generates C code for unit in filename.
-                  With no argument uses last processed unit.")
+                        With no argument uses last processed unit.")
     ("make"      . "[spec-term] Generate C code with makefile and call make on it.")
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")

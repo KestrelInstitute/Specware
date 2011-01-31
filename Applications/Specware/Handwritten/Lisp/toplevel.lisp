@@ -1,3 +1,4 @@
+
 (in-package :cl-user)
 (defpackage :SpecCalc)
 (defpackage :String-Spec)
@@ -59,7 +60,7 @@
       (unless (null n)
         (setq com (concatenate 'string com " " (subseq helpstr 0 (1+ n))))
         (setq helpstr (subseq helpstr (+ n 2))))))
-  (format t (if (> (length com) 17) "~a~%~18T~a~%" "~&~17a ~a~%") com helpstr))
+  (format t (if (> (length com) 23) "~a~%~24T~a~%" "~&~23a ~a~%") com helpstr))
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
