@@ -135,9 +135,11 @@ spec
      %% Generate Java files
      return (specToJava(baseSpec, spc0, Some option_spec, javaFileName));
 
+     here <- return (pwdAsString());
+
      %% Compile java files to class files, 
-     print (";;; Compiling java files: javac -sourcepath `pwd` " ^ version ^ "/java/Primitive.java");
-     return (run_cmd ("javac", ["-sourcepath", "`pwd` " ^ version ^ "/java/Primitive.java"]));
+     print (";;; Compiling java files: javac -sourcepath " ^ here ^ " " ^ version ^ "/java/Primitive.java");
+     return (run_cmd ("javac", ["-sourcepath", here, version ^ "/java/Primitive.java"]));
 
      %% Create script to invoke java interpreter on given class files
      script      <- return ("#!/bin/sh\n\ncd `/usr/bin/dirname $0`\n\njava -cp ../.. " ^ version ^ "/java/Primitive $*");
