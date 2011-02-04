@@ -24,33 +24,50 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
   let tm_1 =
       if checkResult? || checkRefine?
         then
+          let (param_pat, param_tm, condn, body) =
+              case tm of
+                | Lambda([(p, condn, body)], a) ->
+                  let Some p_tm = patternToTerm p in
+                  (p, p_tm, condn, body)
+                | _ ->
+                  let vn = ("x", result_sup_ty) in
+                  (mkVarPat vn, mkVar vn, trueTerm, mkApply(tm, mkVar vn))
+          in
           let result_vn = ("result", result_sup_ty) in
           let checkResult_tests =
               case raiseSubtype(rng, spc) of
                 | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
                   % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm tm) in
-                  let warn_fn = mkLambda(mkWildPat sup_ty,
+                  let warn_fn = mkLambda(mkWildPat result_sup_ty,
                                          mkString("Subtype violation on result of "^show qid))
                   in      
                   [mkCheckForm(mkVar result_vn, pred, warn_fn)]
                 | _ -> []
           in
-          let checkRefine_tests = []
+          let checkRefine_tests =
+              case findTheOp(spc, qid) of
+                | None -> []
+                | Some opinfo ->
+              let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
+              let dfns = innerTerms dfn in
+              if length dfns < 2 then []
+              else
+              let prev_dfn = dfns@1 in
+              let warn_fn = mkLambda(mkWildPat(mkProduct[dom, rng]),
+                                     mkString("Result does not match spec for "^show qid))
+              in
+              let arg_result_tm = mkTuple[param_tm, mkVar result_vn] in
+              let pred = mkLambda(mkTuplePat[param_pat, mkVarPat result_vn],
+                                  mkEquality(rng, mkVar result_vn, simplifiedApply(prev_dfn, param_tm, spc)))
+              in
+              [mkCheckForm(arg_result_tm, pred, warn_fn)]
           in
           let result_tests = checkResult_tests ++ checkRefine_tests in
           if result_tests = [] then tm
           else
           let check_result_Seq = mkSeq(result_tests ++ [mkVar result_vn]) in
-          case tm of
-            | Lambda([(p, condn, body)], a) ->
-              let Some p_tm = patternToTerm p in
-              let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
-              Lambda([(p, condn, new_body)], a)
-            | _ ->
-              let vn = ("x", result_sup_ty) in
-              let body = mkApply(tm, mkVar vn) in
-              let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
-              mkLambda(mkVarPat vn, new_body)
+          let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
+          Lambda([(param_pat, condn, new_body)], termAnn tm)
         else tm
   in
   let tm_2 =
