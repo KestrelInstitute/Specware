@@ -251,9 +251,8 @@ refine def [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
   in
   loop (l, 0)
 
-refine def [a] filter (p: a -> Bool) : List a -> List a = fn
-  | []     -> Nil
-  | hd::tl -> if p hd then Cons (hd, filter p tl) else filter p tl
+refine def [a] filter (p: a -> Bool) (l: List a): List a =
+  reverse (foldl (fn (result, x) -> if p x then x::result else result) [] l)
 
 refine def [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
   case (l1,l2) of
@@ -278,9 +277,8 @@ refine def unzip3 : [a,b,c] List (a * b * c) ->
   | (hd1,hd2,hd3)::tl -> let (tl1,tl2,tl3) = unzip3 tl in
                          (Cons(hd1,tl1), Cons(hd2,tl2), Cons(hd3,tl3))
 
-refine def [a,b] map (f: a -> b) : List a -> List b = fn
-  | []     -> Nil
-  | hd::tl -> Cons (f hd, map f tl)
+refine def [a,b] map (f: a -> b) (l: List a): List b =
+  reverse (foldl (fn (result, x) -> f x::result) [] l)
 
 refine def [a,b,c] map2 (f: a * b -> c)
                 (l1: List a, l2: List b | l1 equiLong l2) : List c =
