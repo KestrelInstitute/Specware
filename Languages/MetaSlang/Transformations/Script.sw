@@ -39,7 +39,7 @@ spec
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
-    | addSemanticChecks(Bool * Bool * Bool)
+    | AddSemanticChecks(Bool * Bool * Bool)
     | Trace Boolean
     | Print
 
@@ -78,6 +78,9 @@ spec
      | All -> "a"
      | Search s -> "s \"" ^ s ^ "\""
      | ReverseSearch s -> "r \"" ^ s ^ "\""
+
+ op ppBool(b: Bool): WadlerLindig.Pretty =
+   ppString(if b then "true" else "false")
 
  op ppScript(scr: Script): WadlerLindig.Pretty =
     case scr of
@@ -142,6 +145,13 @@ spec
                               ++ (case o_qual of
                                     | Some qual -> [ppConcat[ppString "qualifier: ", ppString qual]]
                                     | None -> []))),
+                 ppString "}"]
+
+      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
+        ppConcat[ppString "addSemanticChecks {",
+                 ppString "checkArgs?: ", ppBool checkArgs?, ppString ", ",
+                 ppString "checkResult?: ", ppBool checkResult?, ppString ", ",
+                 ppString "checkRefine?: ", ppBool checkRefine?,
                  ppString "}"]
 
       | Trace on_or_off ->
@@ -212,12 +222,12 @@ spec
       else rls
 
 %%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
-  op getOpDef(spc: Spec, qid: QualifiedId): Option MS.Term =
+  op getOpDef(spc: Spec, qid: QualifiedId): Option(MS.Term * Sort) =
     case findMatchingOps(spc, qid) of
       | [] -> (warn("No defined op with that name."); None)
       | [opinfo] ->
-        let (tvs, srt, tm) = unpackFirstTerm opinfo.dfn in
-        Some tm
+        let (tvs, ty, tm) = unpackFirstTerm opinfo.dfn in
+        Some(tm, ty)
       | _ -> (warn("Ambiguous op name."); None)
 
   op getTheoremBody(spc: Spec, qid: QualifiedId): Option MS.Term =
@@ -392,7 +402,9 @@ spec
       | Next -> moveToNext path_term
       | Prev -> moveToPrev path_term
       | Widen -> parentTerm path_term
-      | All -> Some(path_term.1, [])
+      | All -> Some(path_term.1, case path_term.1 of
+                                   | SortedTerm _ -> [0]
+                                   | _ -> [])
       | Search s -> searchNextSt(path_term, searchPred s)
       | ReverseSearch s -> searchPrevSt(path_term, searchPred s)
 
@@ -408,13 +420,13 @@ spec
   op maxRewrites: Nat = 900
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
-  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, tracing?: Boolean)
+  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Boolean)
      : SpecCalc.Env (PathTerm * Boolean) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
       | Steps steps ->
           foldM (\_lambda (path_term, tracing?) -> fn s ->
-               interpretPathTerm (spc, s, path_term, tracing?))
+               interpretPathTerm (spc, s, path_term, qid, tracing?))
             (path_term, tracing?) steps
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");
@@ -447,16 +459,26 @@ spec
                 | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
-                  replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term));
+                  replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term)
+                | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
+                  let spc = addSubtypePredicateLifters spc in   % Not best place for it
+                  (case path_term.1 of
+                   | SortedTerm(tm, ty, a) ->
+                     (SortedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?),
+                                 ty, a),
+                      [0])
+                   | tm -> (addSemanticChecksForTerm(tm, boolSort, qid, spc, checkArgs?, checkResult?, checkRefine?),
+                            [])));
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
           return (path_term, tracing?)
         }
 
-  op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, tracing?: Boolean)
+  op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, top_ty: Sort, qid: QualifiedId, tracing?: Boolean)
     : SpecCalc.Env (MS.Term * Boolean) =
-    {(new_path_term, tracing?) <- interpretPathTerm(spc, script, toPathTerm def_term, tracing?);
-    return(new_path_term.1, tracing?)}
+    {typed_path_term <- return(typedPathTerm(def_term, top_ty));
+     (new_path_term, tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
+     return(termFromTypedPathTerm new_path_term, tracing?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
@@ -510,11 +532,11 @@ spec
                      }
                    | opinfos ->
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
-                             (tvs, srt, tm) <- return (unpackFirstTerm opinfo.dfn); 
+                             (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn); 
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, tracing?); 
-                             % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, srt, termAnn opinfo.dfn)));
+                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?); 
+                             % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, ty, termAnn opinfo.dfn)));
                              if equalTerm?(new_tm, tm)
                                then let _ = writeLine(show qid^" not modified.") in
                                     return (spc, tracing?)
@@ -537,7 +559,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  {
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, tracing?); 
+                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, boolSort, qid1, tracing?); 
                              new_spc <- return(setElements(spc, mapSpecElements (fn el ->
                                                                                  case el of
                                                                                    | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->
@@ -562,6 +584,8 @@ spec
         result <- return(addParameter(spc, fun, pos, o_return_pos, name, ty, within, val, o_qual));
           % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
         return (result, tracing?) }
+      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
+        return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?), tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
 
   op Env.interpret (spc: Spec, script: Script) : SpecCalc.Env Spec = {
