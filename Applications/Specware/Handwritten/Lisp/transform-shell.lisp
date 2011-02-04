@@ -41,7 +41,8 @@
 
 (defvar *transform-spec*)
 (defvar *transform-specunit-Id*)
-(defvar *transform-term*)		; Actually a pair of current term and its parent
+(defvar *transform-term*)		; Actually a pair of root and path to current term
+(defvar *current-qid*)
 (defvar *transform-commands*)
 (defvar *undo-stack*)
 (defvar *redos*)
@@ -51,6 +52,7 @@
   (setq *transform-spec* spc)
   (setq *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*)
   (setq *transform-term* nil)
+  (setq *current-qid* nil)
   (setq *transform-commands* nil)
   (setq *undo-stack* nil)
   (setq *prompt* "** ")
@@ -59,7 +61,7 @@
 (defun push-state (command)
   (unless *redoing?*
     (setq *redos* nil))
-  (push (list *transform-term* *transform-commands* *transform-spec* command) *undo-stack*))
+  (push (list *transform-term* *transform-commands* *transform-spec* command *current-qid*) *undo-stack*))
 
 (defvar *print-undone-commands* t)
 
@@ -68,7 +70,8 @@
     (setq *transform-term* (first last-state))
     (setq *transform-commands* (second last-state))
     (setq *transform-spec* (third last-state))
-    (push (fourth last-state) *redos*)))
+    (push (fourth last-state) *redos*)
+    (setq *current-qid* (fifth last-state))))
 
 (defun print-current-term (with-types?)
   (if (null *transform-term*)
@@ -186,8 +189,9 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let* ((result (Script::interpretPathTerm-4 *transform-spec* command
+      (let* ((result (Script::interpretPathTerm-5 *transform-spec* command
                                                   *transform-term*
+                                                  *current-qid*
                                                   nil))
              (result (funcall result nil))
              (new-term (cadar result)))
@@ -242,7 +246,8 @@
 	()
 	(progn
 	  (push-state `(at-command ,qid))
-	  (setq *transform-term* (PathTerm::toPathTerm new-term))
+	  (setq *transform-term* (PathTerm::typedPathTerm new-term))
+          (setq *current-qid* qid)
 	  (push #'(lambda (future-steps)
 		    (if (null future-steps)
 			nil
