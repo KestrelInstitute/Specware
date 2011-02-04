@@ -1730,7 +1730,7 @@ spec
                       interpretTerm(spc, if qid in? transformQIds
                                           then main_script
                                           else opaqueSimplifyScript,
-                                    dfn, false)
+                                    dfn, ty, qid, false)
                     }
                     else
                       return (dfn, false)
