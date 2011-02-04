@@ -20,38 +20,37 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
   case arrowOpt(spc, top_ty) of
     | None -> tm
     | Some(dom, rng) ->
+  let result_sup_ty = stripSubsorts(spc, rng) in
   let tm_1 =
-      if checkResult?
+      if checkResult? || checkRefine?
         then
-          case raiseSubtype(rng, spc) of
-            | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
-              % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm tm) in
-              let warn_fn = mkLambda(mkWildPat sup_ty,
-                                     mkString("Subtype violation on result of "^show qid))
-              in      
-              let result_vn = ("result", sup_ty) in
-              let new_tm =
-                  case tm of
-                    | Lambda([(p, condn, body)], a) ->
-                      let Some p_tm = patternToTerm p in
-                      let new_body = mkLet([(mkVarPat result_vn, body)],
-                                           mkLet([(mkWildPat(voidType),
-                                                   mkCheckForm(mkVar result_vn, pred, warn_fn))],
-                                                 mkVar result_vn))
-                      in
-                      Lambda([(p, condn, new_body)], a)
-                    | _ ->
-                      let vn = ("x", sup_ty) in
-                      let body = mkApply(tm, mkVar vn) in
-                      let new_body = mkLet([(mkVarPat result_vn, body)],
-                                           mkLet([(mkWildPat(voidType),
-                                                   mkCheckForm(mkVar result_vn, pred, warn_fn))],
-                                                 mkVar result_vn))
-                      in
-                      mkLambda(mkVarPat vn, new_body)
-              in
-              new_tm
-            | _ -> tm
+          let result_vn = ("result", result_sup_ty) in
+          let checkResult_tests =
+              case raiseSubtype(rng, spc) of
+                | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
+                  % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm tm) in
+                  let warn_fn = mkLambda(mkWildPat sup_ty,
+                                         mkString("Subtype violation on result of "^show qid))
+                  in      
+                  [mkCheckForm(mkVar result_vn, pred, warn_fn)]
+                | _ -> []
+          in
+          let checkRefine_tests = []
+          in
+          let result_tests = checkResult_tests ++ checkRefine_tests in
+          if result_tests = [] then tm
+          else
+          let check_result_Seq = mkSeq(result_tests ++ [mkVar result_vn]) in
+          case tm of
+            | Lambda([(p, condn, body)], a) ->
+              let Some p_tm = patternToTerm p in
+              let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
+              Lambda([(p, condn, new_body)], a)
+            | _ ->
+              let vn = ("x", result_sup_ty) in
+              let body = mkApply(tm, mkVar vn) in
+              let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
+              mkLambda(mkVarPat vn, new_body)
         else tm
   in
   let tm_2 =
@@ -67,17 +66,11 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
                   case tm_1 of
                     | Lambda([(p, condn, body)], a) | some?(patternToTerm p) ->
                       let Some p_tm = patternToTerm p in
-                      let new_body = mkLet([(mkWildPat(voidType),
-                                             mkCheckForm(p_tm, pred, warn_fn))],
-                                           body)
-                      in
+                      let new_body = mkSeq[mkCheckForm(p_tm, pred, warn_fn), body] in
                       Lambda([(p, condn, new_body)], a)
                     | _ ->
                       let vn = ("x", sup_ty) in
-                      let new_body = mkLet([(mkWildPat(voidType),
-                                             mkCheckForm(mkVar vn, pred, warn_fn))],
-                                           mkApply(tm, mkVar vn))
-                      in
+                      let new_body = mkSeq[mkCheckForm(mkVar vn, pred, warn_fn), mkApply(tm, mkVar vn)] in
                       mkLambda(mkVarPat vn, new_body)
               in
               new_tm
