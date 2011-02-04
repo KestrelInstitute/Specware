@@ -26,8 +26,8 @@ spec
      case coercedSpecValue of
        | Spec spc ->
          {
-          (steps, _) <- makeScript transfm_steps;
-          tr_spc1 <- interpret(spc, Steps steps);
+          (steps, sub_steps) <- makeScript transfm_steps;
+          tr_spc1 <- interpret(spc, Steps(sub_steps ++ steps));
 	  return (Spec tr_spc1, spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TypeCheck (positionOf spec_tm, "Transform attempted on a non-spec"))
@@ -225,9 +225,9 @@ spec
 
   op getAddSemanticFields(val_prs: List(String * TransformExpr) * Position)
        : SpecCalc.Env(Bool * Bool * Bool) =
-    {checkArgs <- findBoolDefault("checkArgs", val_prs, true);
-     checkResult <- findBoolDefault("checkResult", val_prs, true);
-     checkRefine <- findBoolDefault("checkRefine", val_prs, false);
+    {checkArgs <- findBoolDefault("checkArgs?", val_prs, true);
+     checkResult <- findBoolDefault("checkResult?", val_prs, true);
+     checkRefine <- findBoolDefault("checkRefine?", val_prs, false);
      return(checkArgs, checkResult, checkRefine)}
 
   op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
@@ -236,23 +236,23 @@ spec
                | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, None) :: top_result, [])}
+                  return (IsoMorphism(iso_prs, srls, None) :: sub_result ++ top_result, [])}
                | Apply(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, Some qual) :: top_result, [])}
+                  return (IsoMorphism(iso_prs, srls, Some qual) :: sub_result ++ top_result, [])}
                | Apply(Name("isomorphism",_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], None) :: top_result, [])}
+                  return (IsoMorphism(iso_prs, [], None) :: sub_result ++ top_result, [])}
                | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], Some qual) :: top_result, [])}
+                  return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
                | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
                  {fields <- getAddParameterFields rec_val_prs;
-                  return(AddParameter fields :: top_result, [])}
+                  return(AddParameter fields :: sub_result ++ top_result, [])}
                | Apply(Name("addSemanticChecks",_), [Record rec_val_prs], _) ->
                  {fields <- getAddSemanticFields rec_val_prs;
-                  return(addSemanticChecks fields :: top_result, [])}
+                  return(top_result, AddSemanticChecks fields :: sub_result)}
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
                   return (At([Def qid], Steps sub_result) :: top_result,
@@ -272,12 +272,12 @@ spec
                | Str("print",_) ->
                  return (top_result, Print :: sub_result)
                | Item("applyToSpec",opid,_) -> {qid <- extractQId opid;
-                                                return (mkSpecTransform qid :: top_result, [])}
+                                                return (mkSpecTransform qid :: sub_result ++ top_result, [])}
                | Name(nm, pos) | nm nin? commands ->
                  {qid <- extractQId te;
-                  return (mkSpecTransform qid :: top_result, [])}
+                  return (mkSpecTransform qid :: sub_result ++ top_result, [])}
                | Qual _ -> {qid <- extractQId te;
-                            return (mkSpecTransform qid :: top_result, [])}
+                            return (mkSpecTransform qid :: sub_result ++ top_result, [])}
                | _ ->
                  {sstep <- makeScript1 te;
                   return (top_result, sstep :: sub_result)})
