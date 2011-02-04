@@ -1661,7 +1661,9 @@ If we want the precedence to be optional:
   (:anyof
    ((:tuple (1 :NUMBER))           (make-transform-number 1   ':left-lcb ':right-lcb))
    ((:tuple (1 :STRING))           (make-transform-string 1   ':left-lcb ':right-lcb))
-   ((:tuple (1 :NAME))               (make-transform-name 1   ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME))             (make-transform-name 1   ':left-lcb ':right-lcb))
+   ((:tuple "true")                (make-transform-boolean t   ':left-lcb ':right-lcb))
+   ((:tuple "false")               (make-transform-boolean nil ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) "." (2 :NAME)) (make-transform-qual 1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) (2 :TRANSFORM-EXPR)) (make-transform-item 1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :TRANSFORM-EXPR)

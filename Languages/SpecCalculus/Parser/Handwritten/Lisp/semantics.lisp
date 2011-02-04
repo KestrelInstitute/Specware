@@ -1054,6 +1054,9 @@ If we want the precedence to be optional:
 (defun make-transform-name (name l r)
   (SpecCalc::mkTransformName-2 name (make-pos l r)))
 
+(defun make-transform-boolean (bool l r)
+  (SpecCalc::mkTransformName-2 (if bool "true" "false") (make-pos l r)))
+
 (defun make-transform-number (num l r)
   (SpecCalc::mkTransformNumber-2 num (make-pos l r)))
 
