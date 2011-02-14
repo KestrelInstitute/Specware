@@ -35,6 +35,8 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
           in
           let result_vn = ("result", result_sup_ty) in
           let checkResult_tests =
+              if ~checkResult? then []
+              else
               case raiseSubtype(rng, spc) of
                 | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
                   % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm tm) in
@@ -45,6 +47,8 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
                 | _ -> []
           in
           let checkRefine_tests =
+              if ~checkRefine? then []
+              else
               case findTheOp(spc, qid) of
                 | None -> []
                 | Some opinfo ->
@@ -57,9 +61,9 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
                                      mkString("Result does not match spec for "^show qid))
               in
               let arg_result_tm = mkTuple[param_tm, mkVar result_vn] in
-              let pred = mkLambda(mkTuplePat[param_pat, mkVarPat result_vn],
-                                  mkEquality(rng, mkVar result_vn, simplifiedApply(prev_dfn, param_tm, spc)))
-              in
+              let equality = mkEquality(rng, mkVar result_vn, simplifiedApply(prev_dfn, param_tm, spc)) in
+              let comp_equality = ensureComputable spc equality in
+              let pred = mkLambda(mkTuplePat[param_pat, mkVarPat result_vn], comp_equality) in
               [mkCheckForm(arg_result_tm, pred, warn_fn)]
           in
           let result_tests = checkResult_tests ++ checkRefine_tests in
@@ -125,5 +129,25 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
   in
   % let _ = writeLine(printSpec result_spc) in
   result_spc
+
+op ensureComputable (spc: Spec) (t: MS.Term): MS.Term =
+  let t = simplify spc t in
+  let def weaken? polarity? t =
+        case t of
+          | Apply(Fun(Equals, _, _), Record([(_, t1), (_, The(v, bod, _))], _), _) | polarity? ->
+            simplify spc (substitute(bod, [(v, t1)]))
+          | Apply(t1, t2, a) -> Apply(weaken? polarity? t1, weaken? polarity? t2, a)
+          | Record(prs, a) -> Record(map (fn (id,ti) -> (id, weaken? polarity? ti)) prs, a)
+          | Bind(bdr, vs, bod, a) -> Bind(bdr, vs, weaken? polarity? bod, a)
+          | The(v, bod, a) -> The(v, weaken? polarity? bod, a)
+          | Let(binds, bod, a) -> Let(map (fn (pi,ti) -> (pi, weaken? polarity? ti)) binds, weaken? polarity? bod, a)
+          | LetRec(binds, bod, a) -> LetRec(map (fn (pi,ti) -> (pi, weaken? polarity? ti)) binds, weaken? polarity? bod, a)
+          | Lambda(match, a) -> Lambda(map (fn (pi,ci,ti) -> (pi, ci, weaken? polarity? ti)) match, a)
+          | IfThenElse(p, q, r, a) -> IfThenElse(weaken? polarity? p, weaken? polarity? q, weaken? polarity? r, a)
+          | Seq(tms, a) -> Seq(map (weaken? polarity?) tms, a)
+          | SortedTerm(t1, ty, a) -> SortedTerm(weaken? polarity? t1, ty, a)
+          | _ -> t
+  in
+  weaken? true t
 
 end-spec
