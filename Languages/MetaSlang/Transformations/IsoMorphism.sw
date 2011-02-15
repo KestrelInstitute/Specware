@@ -529,6 +529,8 @@ spec
                               | Product([("1", ty1), ("2", ty2)], _) ->
                                 recordTy? ty1 && recordTy? ty2
                               | _ -> false)
+                      | Fun (Project _, _, _) ->
+                        embed? Product (inferType(spc, t2))
                       | _ -> true))
            | Record (row, _) ->
              let srts = map (project 2) (product (spc, d_ty)) in
