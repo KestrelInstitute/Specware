@@ -206,7 +206,7 @@
 ;;; swxhash: Hash function for slang-term-equals (based on sbcl psxhash for equalp)
 (eval-when (compile load)
   (defconstant +max-hash-depthoid+ 5))
-(declaim (inline mix))
+(declaim (inline mix Specware::swxhash))
 (defun mix (x y)
   ;; FIXME: We wouldn't need the nasty (SAFETY 0) here if the compiler
   ;; were smarter about optimizing ASH. (Without the THE FIXNUM below,
@@ -258,6 +258,8 @@
     (number (number-swxhash key))
     (character (char-code key))
     (t (sxhash key))))
+
+(defun Specware::swxhash (key) (swxhash key))
 
 (defun array-swxhash (key depthoid)
   #+sbcl(declare (optimize speed))
