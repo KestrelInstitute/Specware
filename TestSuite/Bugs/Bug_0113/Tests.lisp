@@ -94,234 +94,234 @@
  ("Bug 0113 : Translate should be monic: Ok1: {X +-> Y, Y +-> Z}"
   :show   "Collision#Ok1"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok1"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Y"
-            ""
+            (:optional "")
 	    " type Z"
-	    " "
+	    (:optional " ")
 	    " op  f : Y"
-            ""
+            (:optional "")
 	    " op  g : Y"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " op  q : Z"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Z"
-            ""
+            (:optional "")
 	    " op  E.m : Z"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok2: {Y +-> Z, X +-> Y}"
   :show   "Collision#Ok2"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok2"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Y"
-            ""
+            (:optional "")
 	    " type Z"
-	    " "
+	    (:optional " ")
 	    " op  f : Y"
-            ""
+            (:optional "")
 	    " op  g : Y"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " op  q : Z"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Z"
-            ""
+            (:optional "")
 	    " op  E.m : Z"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok3: {X +-> Y, Y +-> X}"
   :show   "Collision#Ok3"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok3"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Y"
-            ""
+            (:optional "")
 	    " type X"
-	    " "
+	    (:optional " ")
 	    " op  f : Y"
-            ""
+            (:optional "")
 	    " op  g : Y"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : X"
-            ""
+            (:optional "")
 	    " op  E.m : X"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok4: {Y +-> X, X +-> Y}"
   :show   "Collision#Ok4"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok4"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Y"
-            ""
+            (:optional "")
 	    " type X"
-	    " "
+	    (:optional " ")
 	    " op  f : Y"
-            ""
+            (:optional "")
 	    " op  g : Y"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : X"
-            ""
+            (:optional "")
 	    " op  E.m : X"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok5: {p +-> q, q +-> r}"
   :show   "Collision#Ok5"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok5"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type X"
-            ""
+            (:optional "")
 	    " type Y"
-	    " "
+	    (:optional " ")
 	    " op  f : X"
-            ""
+            (:optional "")
 	    " op  g : X"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " op  r : Y"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Y"
-            ""
+            (:optional "")
 	    " op  E.m : Y"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok6: {q +-> r, p +-> q}"
   :show   "Collision#Ok6"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok6"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type X"
-            ""
+            (:optional "")
 	    " type Y"
-	    " "
+	    (:optional " ")
 	    " op  f : X"
-            ""
+            (:optional "")
 	    " op  g : X"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " op  r : Y"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Y"
-            ""
+            (:optional "")
 	    " op  E.m : Y"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok7: {p +-> q, q +-> p}"
   :show   "Collision#Ok7"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok7"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type X"
-            ""
+            (:optional "")
 	    " type Y"
-	    " "
+	    (:optional " ")
 	    " op  f : X"
-            ""
+            (:optional "")
 	    " op  g : X"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Y"
-            ""
+            (:optional "")
 	    " op  E.m : Y"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ("Bug 0113 : Translate should be monic: Ok8: {q +-> p, p +-> q}"
   :show   "Collision#Ok8"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok8"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type X"
-            ""
+            (:optional "")
 	    " type Y"
-	    " "
+	    (:optional " ")
 	    " op  f : X"
-            ""
+            (:optional "")
 	    " op  g : X"
-            ""
+            (:optional "")
 	    " op  q : X"
-            ""
+            (:optional "")
 	    " op  p : Y"
-            ""
+            (:optional "")
 	    " type A.T"
-            ""
+            (:optional "")
 	    " type B.T"
-	    " "
+	    (:optional " ")
 	    " op  D.m : Y"
-            ""
+            (:optional "")
 	    " op  E.m : Y"
 	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+	    (:optional "")))
 
  ;; translations of synonyms
 
@@ -334,9 +334,9 @@
 	    ";;; Elaborating spec at $TESTDIR/TypeColimits#S"
 	    ";;; Elaborating spec-morphism at $TESTDIR/TypeColimits#D"
 	    ";;; Elaborating spec at $TESTDIR/TypeColimits#T"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -345,16 +345,16 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XX_YY_ZZ"
   :show "TypeColimits#T_XX_YY_ZZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XX_YY_ZZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {XX, YY, ZZ}")
 	     (" type {XX, ZZ, YY}")
@@ -363,100 +363,100 @@
 	     (" type {ZZ, XX, YY}")
 	     (" type {ZZ, YY, XX}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY"
   :show "TypeColimits#T_XY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ"
   :show "TypeColimits#T_XZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YX"
   :show "TypeColimits#T_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YZ"
   :show "TypeColimits#T_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_ZX"
   :show "TypeColimits#T_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_ZY"
   :show "TypeColimits#T_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YX"
   :show "TypeColimits#T_XY_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -465,30 +465,30 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YZ"
   :show "TypeColimits#T_XY_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YP"
   :show "TypeColimits#T_XY_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y, Z}")
 	     (" type {P, Z, Y}")
@@ -497,96 +497,96 @@
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_ZX"
   :show "TypeColimits#T_XY_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_ZY"
   :show "TypeColimits#T_XY_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Y"
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_ZP"
   :show "TypeColimits#T_XY_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YX"
   :show "TypeColimits#T_XZ_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YZ"
   :show "TypeColimits#T_XZ_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type Z"
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YP"
   :show "TypeColimits#T_XZ_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_ZX"
   :show "TypeColimits#T_XZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -595,30 +595,30 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_ZY"
   :show "TypeColimits#T_XZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_ZP"
   :show "TypeColimits#T_XZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y, Z}")
 	     (" type {P, Z, Y}")
@@ -627,16 +627,16 @@
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YX"
   :show "TypeColimits#T_XP_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Z}")
 	     (" type {P, Z, X}")
@@ -645,44 +645,44 @@
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YZ"
   :show "TypeColimits#T_XP_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YP"
   :show "TypeColimits#T_XP_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ"
   :show "TypeColimits#T_XP_YQ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q, Z}")
 	     (" type {P, Z, Q}")
@@ -691,16 +691,16 @@
 	     (" type {Z, P, Q}")
 	     (" type {Z, Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_ZX"
   :show "TypeColimits#T_XP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Y}")
 	     (" type {P, Y, X}")
@@ -709,44 +709,44 @@
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_ZY"
   :show "TypeColimits#T_XP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_ZP"
   :show "TypeColimits#T_XP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives 
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_ZR"
   :show "TypeColimits#T_XP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, Y}")
 	     (" type {P, Y, R}")
@@ -755,70 +755,70 @@
 	     (" type {Y, P, R}")
 	     (" type {Y, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YX_ZX"
   :show "TypeColimits#T_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type X"
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YX_ZY"
   :show "TypeColimits#T_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YX_ZP"
   :show "TypeColimits#T_YX_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YZ_ZX"
   :show "TypeColimits#T_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives 
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YZ_ZY"
   :show "TypeColimits#T_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -827,16 +827,16 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YZ_ZP"
   :show "TypeColimits#T_YZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Z}")
 	     (" type {P, Z, X}")
@@ -845,30 +845,30 @@
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YP_ZX"
   :show "TypeColimits#T_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YP_ZY"
   :show "TypeColimits#T_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Y}")
 	     (" type {P, Y, X}")
@@ -877,30 +877,30 @@
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YP_ZP"
   :show "TypeColimits#T_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_YP_ZR"
   :show "TypeColimits#T_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, X}")
 	     (" type {P, X, R}")
@@ -909,44 +909,44 @@
 	     (" type {X, P, R}")
 	     (" type {X, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YX_ZX"
   :show "TypeColimits#T_XY_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, X}")
 	     (" type {X, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YX_ZY"
   :show "TypeColimits#T_XY_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YX_ZR"
   :show "TypeColimits#T_XY_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {R, X, Y}")
 	     (" type {R, Y, X}")
@@ -955,16 +955,16 @@
 	     (" type {Y, R, X}")
 	     (" type {Y, X, R}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YZ_ZX"
   :show "TypeColimits#T_XY_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -973,30 +973,30 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YZ_ZY"
   :show "TypeColimits#T_XY_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YZ_ZR"
   :show "TypeColimits#T_XY_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {R, Y, Z}")
 	     (" type {R, Z, Y}")
@@ -1005,16 +1005,16 @@
 	     (" type {Z, R, Y}")
 	     (" type {Z, Y, R}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YP_ZX"
   :show "TypeColimits#T_XY_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Y}")
 	     (" type {P, Y, X}")
@@ -1023,44 +1023,44 @@
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YP_ZY"
   :show "TypeColimits#T_XY_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YP_ZP"
   :show "TypeColimits#T_XY_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XY_YP_ZR"
   :show "TypeColimits#T_XY_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, Y}")
 	     (" type {P, Y, R}")
@@ -1069,30 +1069,30 @@
 	     (" type {Y, P, R}")
 	     (" type {Y, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YX_ZX"
   :show "TypeColimits#T_XZ_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YX_ZY"
   :show "TypeColimits#T_XZ_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Y, Z}")
 	     (" type {X, Z, Y}")
@@ -1101,16 +1101,16 @@
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YX_ZR"
   :show "TypeColimits#T_XZ_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {R, X, Z}")
 	     (" type {R, Z, X}")
@@ -1119,58 +1119,58 @@
 	     (" type {Z, R, X}")
 	     (" type {Z, X, R}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YZ_ZX"
   :show "TypeColimits#T_XZ_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YZ_ZY"
   :show "TypeColimits#T_XZ_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YZ_ZR"
   :show "TypeColimits#T_XZ_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {R, Z}")
 	     (" type {Z, R}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YP_ZX"
   :show "TypeColimits#T_XZ_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Z}")
 	     (" type {P, Z, X}")
@@ -1179,16 +1179,16 @@
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YP_ZY"
   :show "TypeColimits#T_XZ_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y, Z}")
 	     (" type {P, Z, Y}")
@@ -1197,30 +1197,30 @@
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YP_ZP"
   :show "TypeColimits#T_XZ_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XZ_YP_ZR"
   :show "TypeColimits#T_XZ_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, Z}")
 	     (" type {P, Z, R}")
@@ -1229,30 +1229,30 @@
 	     (" type {Z, P, R}")
 	     (" type {Z, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YX_ZX"
   :show "TypeColimits#T_XP_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YX_ZY"
   :show "TypeColimits#T_XP_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Y}")
 	     (" type {P, Y, X}")
@@ -1261,30 +1261,30 @@
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YX_ZP"
   :show "TypeColimits#T_XP_YX_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YX_ZR"
   :show "TypeColimits#T_XP_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, X}")
 	     (" type {P, X, R}")
@@ -1293,16 +1293,16 @@
 	     (" type {X, P, R}")
 	     (" type {X, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YZ_ZX"
   :show "TypeColimits#T_XP_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X, Z}")
 	     (" type {P, Z, X}")
@@ -1311,16 +1311,16 @@
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YZ_ZY"
   :show "TypeColimits#T_XP_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y, Z}")
 	     (" type {P, Z, Y}")
@@ -1329,30 +1329,30 @@
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YZ_ZP"
   :show "TypeColimits#T_XP_YZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YZ_ZR"
   :show "TypeColimits#T_XP_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R, Z}")
 	     (" type {P, Z, R}")
@@ -1361,70 +1361,70 @@
 	     (" type {Z, P, R}")
 	     (" type {Z, R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YP_ZX"
   :show "TypeColimits#T_XP_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YP_ZY"
   :show "TypeColimits#T_XP_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YP_ZP"
   :show "TypeColimits#T_XP_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    " type P"
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YP_ZR"
   :show "TypeColimits#T_XP_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, R}")
 	     (" type {R, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ_ZX"
   :show "TypeColimits#T_XP_YQ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZX"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q, X}")
 	     (" type {P, X, Q}")
@@ -1433,16 +1433,16 @@
 	     (" type {X, P, Q}")
 	     (" type {X, Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ_ZY"
   :show "TypeColimits#T_XP_YQ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZY"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q, Y}")
 	     (" type {P, Y, Q}")
@@ -1451,44 +1451,44 @@
 	     (" type {Y, P, Q}")
 	     (" type {Y, Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ_ZP"
   :show "TypeColimits#T_XP_YQ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZP"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q}")
 	     (" type {Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ_ZQ"
   :show "TypeColimits#T_XP_YQ_ZQ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZQ"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q}")
 	     (" type {Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  ("Bug 0113:  Translate should be monic: T_XP_YQ_ZR"
   :show "TypeColimits#T_XP_YQ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZR"
-	    ""
+	    (:optional "")
 	    "spec  "
-            ""
+            (:optional "")
 	    (:alternatives
 	     (" type {P, Q, R}")
 	     (" type {P, R, Q}")
@@ -1497,8 +1497,8 @@
 	     (" type {R, P, Q}")
 	     (" type {R, Q, P}"))
 	    "endspec"
-	    ""
-	    "")
+	    (:optional "")
+	    (:optional ""))
   )
 
  )
