@@ -5,9 +5,9 @@ Coef qualifying spec
   op one: Coef
   op minusOne: Coef
 
-  op equal: Coef * Coef -> Boolean
+  op equal: Coef * Coef -> Bool
 
-  op nonNegative?: Coef -> Boolean
+  op nonNegative?: Coef -> Bool
 
   type CoefAux.NonNegativeCoef = (Coef | nonNegative?)
 
@@ -15,10 +15,10 @@ Coef qualifying spec
   op +   infixl 25 : Coef * Coef -> Coef
   op -   infixl 25 : Coef * Coef -> Coef
   op *   infixl 27 : Coef * Coef -> Coef
-  op <=  infixl 20 : Coef * Coef -> Boolean
-  op <   infixl 20 : Coef * Coef -> Boolean
-  op >=  infixl 20 : Coef * Coef -> Boolean
-  op >   infixl 20 : Coef * Coef -> Boolean
+  op <=  infixl 20 : Coef * Coef -> Bool
+  op <   infixl 20 : Coef * Coef -> Bool
+  op >=  infixl 20 : Coef * Coef -> Bool
+  op >   infixl 20 : Coef * Coef -> Bool
   op abs           : Coef -> NonNegativeCoef
   op min           : Coef * Coef -> Coef
   op max           : Coef * Coef -> Coef
@@ -29,8 +29,8 @@ Coef qualifying spec
   op denominator   : Coef -> Coef
 
 
-  op floor         : Coef -> Integer
-  op ceiling       : Coef -> Integer
+  op floor         : Coef -> Int
+  op ceiling       : Coef -> Int
   op div infixl 26 : Coef * NonNegativeCoef -> Coef
   op rem infixl 26 : Coef * NonNegativeCoef -> Coef
 
@@ -43,7 +43,7 @@ Coef qualifying spec
 %  def lcm(i, j) =
 %    toCoef(lcm(ratToInt(i), ratToInt(j)))
 
-  op Integer.toInt: Coef -> Integer
-  op Integer.toCoef: Integer -> Coef
+  op Integer.toInt  : Coef -> Int
+  op Integer.toCoef : Int  -> Coef
 
 endspec

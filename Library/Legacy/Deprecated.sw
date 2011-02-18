@@ -10,7 +10,7 @@ op Option.none : [a]      Option a = embed None
 
 (*** Integer ***)
 
-type Integer.NonZeroInteger = Int0
+type Integer.NonZeroInt = Int0
 
 op Nat.natural? (i:Int) : Bool = i >= 0
 
@@ -28,9 +28,9 @@ proof Isa
 end-proof
 
 proof Isa Thy_Morphism
- type Integer.Integer -> int
- Integer.~            -> -
- Integer.rem          -> modT Left 22
+ type Integer.Int -> int
+ Integer.~        -> -
+ Integer.rem      -> modT Left 22
 end-proof
 
 (*** List ***)
@@ -180,7 +180,7 @@ op Boolean.toString : Bool -> String = Boolean.show
 
 op Nat.toString : Nat -> String = Nat.show
 
-op Integer.toString : Integer -> String = Integer.show
+op Integer.toString : Int -> String = Integer.show
 
 op Char.toString : Char -> String = Char.show
 

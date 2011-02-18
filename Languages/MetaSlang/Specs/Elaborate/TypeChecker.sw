@@ -1663,7 +1663,7 @@ TypeChecker qualifying spec
     else 
       error (env, msg, pos)
 
-  def blankString (n:Integer) =
+  def blankString (n:Int) =
     if n <= 0 then 
       "" 
     else

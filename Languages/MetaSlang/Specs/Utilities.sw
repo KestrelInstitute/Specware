@@ -102,7 +102,7 @@ Utilities qualifying spec
    in
    patToTPV pat
 
- op isFree : Var * MS.Term -> Boolean
+ op isFree : Var * MS.Term -> Bool
  def isFree (v, term) = 
    case term of
      | Var(w,_)               -> v = w
@@ -133,7 +133,7 @@ Utilities qualifying spec
      | SortedTerm(t,_,_)      -> isFree(v,t)
      | Seq(tms,_)             -> exists? (fn t -> isFree(v,t)) tms
 
- op isPatBound : Var * Pattern -> Boolean
+ op isPatBound : Var * Pattern -> Bool
  def isPatBound (v,pat) = 
    case pat of
      | AliasPat(p1,p2,_)      -> isPatBound(v,p1) || isPatBound(v,p2)
@@ -272,16 +272,16 @@ Utilities qualifying spec
    let vars = freeVarsRec(M) in
    removeDuplicateVars vars
 
-  op inVars?(v: Var, vs: List Var): Boolean =
+  op inVars?(v: Var, vs: List Var): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
 
-  op hasRefTo?(t: MS.Term, vs: List Var): Boolean =
+  op hasRefTo?(t: MS.Term, vs: List Var): Bool =
     existsSubTerm (fn t -> case t of
                              | Var(v,_) -> inVars?(v, vs)
                              | _ -> false)
       t
 
- op hasVarNameConflict?(tm: MS.Term, vs: List Var): Boolean =
+ op hasVarNameConflict?(tm: MS.Term, vs: List Var): Bool =
    let names = map (project 1) vs in
    existsSubTerm (fn t -> case t of
                             | Var((nm,_),_) -> nm in? names
@@ -389,7 +389,7 @@ Utilities qualifying spec
 	  else []
       | _ -> []
 
- op  lookup : [a,b] (a  -> Boolean) * List(a * b) -> Option b 
+ op  lookup : [a,b] (a  -> Bool) * List(a * b) -> Option b 
  def lookup (desired_key?, association_list) = 
    case association_list of
     | [] -> None
@@ -995,13 +995,13 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
            | _ -> mkLambda(pat, tm))
       | _ -> mkLambda(pat, tm)
 
- op  identityFn?: [a] ATerm a -> Boolean
+ op  identityFn?: [a] ATerm a -> Bool
  def identityFn? f =
    case f of
      | Lambda([(VarPat(x,_),_,Var(y,_))],_) -> x = y
      | _ -> false
 
- op [a] caseExpr?(t: ATerm a): Boolean =
+ op [a] caseExpr?(t: ATerm a): Bool =
    case t of
      | Apply(Lambda _, _, _) -> true
      | _ -> false
@@ -1099,7 +1099,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     let freeNames = StringSet.fromList(varNames(freeVars t)) in
     aux(t, [], freeNames)
 
-  op  varTerm?: [a] ATerm a -> Boolean
+  op  varTerm?: [a] ATerm a -> Bool
   def varTerm? t =
     case t of
       | Var _ -> true
@@ -1113,13 +1113,13 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Record(fields,_) -> forall? (fn (_,stm) -> constantTerm? stm) fields
       | _        -> false
 
-  op [a] containsOpRef?(term: ATerm a): Boolean =
+  op [a] containsOpRef?(term: ATerm a): Bool =
     existsSubTerm (fn t -> case t of
                              | Fun(Op _,_,_) -> true
                              | _ -> false)
       term
 
-  op [a] containsRefToOp?(term: ATerm a, qid: QualifiedId): Boolean =
+  op [a] containsRefToOp?(term: ATerm a, qid: QualifiedId): Bool =
     existsSubTerm (fn t -> case t of
                              | Fun(Op(qid1,_),_,_) -> qid = qid1
                              | _ -> false)
@@ -1176,7 +1176,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | None -> []
 
 
-  op  lambda?: [a] ATerm a -> Boolean
+  op  lambda?: [a] ATerm a -> Bool
   def lambda? t =
     case t of
       | Lambda _ -> true
@@ -1210,15 +1210,15 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
  op  stringVals: List(Id * MS.Term) -> List String
  def stringVals = map (fn (_,t) -> stringVal t)
 
- op  booleanVal?(t: MS.Term): Boolean =
+ op  boolVal?(t: MS.Term): Bool =
    case t of
      | Fun(Bool _,_,_) -> true
      | _ -> false
 
- op  booleanVal: MS.Term -> Boolean
- def booleanVal = fn (Fun(Bool s,_,_)) -> s
- op  booleanVals: List(Id * MS.Term) -> List Boolean
- def booleanVals = map (fn (_,t) -> booleanVal t)
+ op  boolVal: MS.Term -> Bool
+ def boolVal = fn (Fun(Bool s,_,_)) -> s
+ op  boolVals: List(Id * MS.Term) -> List Bool
+ def boolVals = map (fn (_,t) -> boolVal t)
 
 
  op  sortFromField: List(Id * MS.Term) * Sort -> Sort
@@ -1234,26 +1234,26 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
   op  knownSideEffectFreeQIds: List(Qualifier * Id)
   def knownSideEffectFreeQIds =
-    [("Integer", "~"),  % TODO: deprecate
-     ("IntegerAux","-"),
-     ("Integer","+"),
-     ("Integer","<"),
-     ("Integer",">"),
-     ("Integer","<="),
-     ("Integer",">="),
-     ("Integer","-"),
-     ("Integer","div"),
-     ("Integer","rem"),
-     ("Integer","abs"),
-     ("Integer","min"),
-     ("Integer","max"),
-     ("Integer","compare"),
-     ("List","length")]
+    [("Integer",    "~"),  % TODO: deprecate
+     ("IntegerAux", "-"),
+     ("Integer",    "+"),
+     ("Integer",    "<"),
+     ("Integer",    ">"),
+     ("Integer",    "<="),
+     ("Integer",    ">="),
+     ("Integer",    "-"),
+     ("Integer",    "div"),
+     ("Integer",    "rem"),
+     ("Integer",    "abs"),
+     ("Integer",    "min"),
+     ("Integer",    "max"),
+     ("Integer",    "compare"),
+     ("List",       "length")]
 
   op knownSideEffectFreeFns: List String =
     ["toString", "return"]
 
-  op  knownSideEffectFreeFn?: Fun -> Boolean
+  op  knownSideEffectFreeFn?: Fun -> Bool
   def knownSideEffectFreeFn? f =
     case f of
       | Op(Qualified(qid),_) ->
@@ -1262,7 +1262,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
       
- op  sideEffectFree: MS.Term -> Boolean
+ op  sideEffectFree: MS.Term -> Bool
  def sideEffectFree(term) = 
      case term
        of Var _ -> true
@@ -1293,14 +1293,14 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	  else Some(Fun(f(i,j),srt,noPos))
       | _ -> None
 
- op nat:  [a] (a -> Nat) -> a -> Fun
- op char: [a] (a -> Char) -> a -> Fun
+ op nat:  [a] (a -> Nat)    -> a -> Fun
+ op char: [a] (a -> Char)   -> a -> Fun
  op str:  [a] (a -> String) -> a -> Fun
- op bool: [a] (a -> Boolean) -> a -> Fun
- def nat f x  = Nat(f x)
- def char f x = Char(f x)
- def str f x = String(f x)
- def bool f x = Bool(f x)
+ op bool: [a] (a -> Bool)   -> a -> Fun
+ def nat  f x = Nat    (f x)
+ def char f x = Char   (f x)
+ def str  f x = String (f x)
+ def bool f x = Bool   (f x)
 
  op  attemptEval1: String * MS.Term -> Option MS.Term
  def attemptEval1(opName,arg) =
@@ -1422,7 +1422,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
 	if constantTerm?(N1) && constantTerm?(N2) then
-          (let eq? = equivTerm? spc (N1,N2) in % equalTerm? would reject 0:Nat = 0:Integer
+          (let eq? = equivTerm? spc (N1,N2) in % equalTerm? would reject 0:Nat = 0:Int
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool eq?)
              else None)
@@ -1431,7 +1431,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	if evalConstant?(N1) && evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
-          (let eq? = equivTerm? spc (N1,N2) in  % equalTerm? would reject 0:Nat = 0:Integer
+          (let eq? = equivTerm? spc (N1,N2) in  % equalTerm? would reject 0:Nat = 0:Int
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool(~eq?))
            else
@@ -1444,13 +1444,13 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
              Some(Apply(Fun(Equals,ty,a1),args,a2))
            | _ -> None)
       | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
-        if booleanVal? N1 || booleanVal? N2 then Some (mkAnd(N1,N2)) else None
+        if boolVal? N1 || boolVal? N2 then Some (mkAnd(N1,N2)) else None
       | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-        if booleanVal? N1 || booleanVal? N2 then Some (mkOr(N1,N2)) else None
+        if boolVal? N1 || boolVal? N2 then Some (mkOr(N1,N2)) else None
       | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
-        if booleanVal? N1 || (booleanVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2)) else None
+        if boolVal? N1 || (boolVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2)) else None
       | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	if booleanVal? N1 || booleanVal? N2 then Some (mkSimpIff(N1,N2)) else None
+	if boolVal? N1 || boolVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
         let simp_if = mkIfThenElse(p,q,r) in
         if equalTerm?(term, simp_if) then None else Some simp_if
@@ -1464,10 +1464,10 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         (case getField(m,i) of
            | Some fld -> Some fld
            | None -> tryEvalOne spc (mkApply(proj_fn, r1)))
-      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, integerSort))
+      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intSort))
       | _ -> None
 
- op  disjointMatches: Match -> Boolean
+ op  disjointMatches: Match -> Bool
  def disjointMatches = 
      fn [] -> true
       | (pat1,_,_)::matches -> 
@@ -1476,7 +1476,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
              matches 
         && disjointMatches matches
 
- op  disjointPatterns: Pattern * Pattern -> Boolean
+ op  disjointPatterns: Pattern * Pattern -> Bool
  def disjointPatterns = 
      (fn (EmbedPat(con1,Some p1,_,_):Pattern,
 	  EmbedPat(con2,Some p2,_,_):Pattern) -> 
@@ -1518,7 +1518,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
  def unfoldBase (sp, srt) =
    unfoldBaseV (sp, srt, true)
 
- op unfoldBaseV : Spec * Sort * Boolean -> Sort 
+ op unfoldBaseV : Spec * Sort * Bool -> Sort 
  def unfoldBaseV (sp, srt, verbose) = 
   case srt of
     | Base (qid, srts, a) ->
@@ -1565,7 +1565,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       then ty
       else exp_ty
 
- op existsInFullType? (spc: Spec) (pred?: Sort -> Boolean) (ty: Sort): Boolean =
+ op existsInFullType? (spc: Spec) (pred?: Sort -> Bool) (ty: Sort): Bool =
    pred? ty ||
    (case ty of
       | Base _ ->
@@ -1619,7 +1619,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     of Product (fields, _) -> map (fn (_, ty) -> ty) fields
      | _ -> [srt]
 
- op tupleType? (sp : Spec, srt : Sort): Boolean =
+ op tupleType? (sp : Spec, srt : Sort): Bool =
    case productOpt(sp, srt) of
      | Some(("1",_)::_) -> true
      | _ -> false
@@ -1659,7 +1659,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | And        (t1::_,                _) -> inferType (sp, t1)
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
- op subtype?(sp: Spec, srt: Sort): Boolean =
+ op subtype?(sp: Spec, srt: Sort): Bool =
    case srt of
      | Subsort _ -> true
      | _ ->
@@ -1692,7 +1692,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Subsort(t1,_,_) -> subtypeOf(t1,qid,spc)
       | _ -> None
 
-  op  subtypeOf?: Sort * QualifiedId * Spec -> Boolean
+  op  subtypeOf?: Sort * QualifiedId * Spec -> Bool
   def subtypeOf?(ty,qid,spc) =
     % let _ = toScreen(printQualifiedId qid^" <:? "^printSort ty^"\n") in
     let result =
@@ -1721,12 +1721,12 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                    | _ -> None)
        tys
  
-   op subtypePred?(ty: Sort, p: MS.Term, spc: Spec): Boolean =
+   op subtypePred?(ty: Sort, p: MS.Term, spc: Spec): Bool =
      case subtypeComps(spc, ty) of
        | Some(_, pt) -> equalTerm?(p, pt)
        | None -> false
 
-   op possiblySubtypeOf?(ty1: Sort, ty2: Sort, spc: Spec): Boolean =
+   op possiblySubtypeOf?(ty1: Sort, ty2: Sort, spc: Spec): Bool =
      % let _ = writeLine(printSort ty1^" <=? "^printSort ty2) in
      equalType?(ty1, ty2)
        || (case ty1 of
@@ -1791,7 +1791,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          lam
        | _ -> tm
 
-   op varRecordTerm?(tm: MS.Term): Boolean =
+   op varRecordTerm?(tm: MS.Term): Bool =
      %% Var or product
      case tm of
        | Var _ -> true
@@ -1799,7 +1799,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          forall? (fn (_, fld_tm) -> varRecordTerm? fld_tm) fields
        | _ -> false
 
-   op varRecordPattern?(pat: Pattern): Boolean =
+   op varRecordPattern?(pat: Pattern): Bool =
      %% Var or product
      case pat of
        | VarPat _ -> true
@@ -1807,7 +1807,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          forall? (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
        | _ -> false
 
-   op simpleLambda?(tm: MS.Term): Boolean =
+   op simpleLambda?(tm: MS.Term): Bool =
      %% One case, true pred & variable of product of variable pattern
      case tm of
        | Lambda([(pat, Fun(Bool True, _, _), _)], _) ->
@@ -1979,7 +1979,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | _ -> writeLine(printSort ty)
 
   op dontRaiseTypes: QualifiedIds = []   % [Qualified("Nat", "Nat")]
-  op treatAsAtomicType?(ty: Sort): Boolean =
+  op treatAsAtomicType?(ty: Sort): Bool =
     case ty of
       | Base(qid, _, _) -> qid in? dontRaiseTypes
       | _ -> false
@@ -2293,7 +2293,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
   op instantiateTyVarsInPattern(pat: Pattern, subst: TyVarSubst): Pattern =
     mapPattern (id, fn ty -> instantiateTyVars(ty,subst), id) pat
 
-  op  typeMatch: Sort * Sort * Spec * Boolean -> Option TyVarSubst
+  op  typeMatch: Sort * Sort * Spec * Bool -> Option TyVarSubst
   def typeMatch(s1,s2,spc,ign_subtypes?) =
    let def match(srt1: Sort, srt2: Sort, pairs: TyVarSubst): Option TyVarSubst =
         % let _ = writeLine(printSort srt1^" =?= "^ printSort srt2) in
@@ -2410,17 +2410,21 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       loop 1
 
   op knownNonEmptyBaseTypes: QualifiedIds =
-    [Qualified("Integer", "Integer"), Qualified("Nat","Nat"), Qualified("Char","Char"),
-     Qualified("String", "String"), Qualified("List","List"), Qualified("Option","Option")]
+    [Qualified("Integer", "Int"),   
+     Qualified("Nat",     "Nat"), 
+     Qualified("Char",    "Char"),
+     Qualified("String",  "String"), 
+     Qualified("List",    "List"), 
+     Qualified("Option",  "Option")]
 
-  op existsOpWithType?(ty: Sort, spc: Spec): Boolean =
+  op existsOpWithType?(ty: Sort, spc: Spec): Bool =
     foldriAQualifierMap
       (fn (q, id, info, result) ->
          result
         || (equalType?(firstOpDefInnerSort info, ty) ))
       false spc.ops
 
-  op existsTrueExistentialAxiomForType?(ty: Sort, spc: Spec): Boolean =
+  op existsTrueExistentialAxiomForType?(ty: Sort, spc: Spec): Bool =
     foldlSpecElements (fn (result,el) ->
                          result || (case el of
                                       | Property(Axiom, _, _,
@@ -2429,7 +2433,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                       | _ -> false))
       false spc.elements
 
-  op knownNonEmpty?(ty: Sort, spc: Spec): Boolean =
+  op knownNonEmpty?(ty: Sort, spc: Spec): Bool =
     case ty of
       | Base(qid,tvs,_) ->
         qid in? knownNonEmptyBaseTypes
@@ -2561,12 +2565,12 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                     | _ -> None)
      spc.elements
 
- op booleanType?(spc: Spec, ty: Sort): Boolean =
+ op boolType?(spc: Spec, ty: Sort): Bool =
    case ty of
      | Boolean _ -> true
      | Base _ ->
        (case tryUnfoldBase spc ty of
-          | Some uf_ty -> booleanType?(spc, uf_ty)
+          | Some uf_ty -> boolType?(spc, uf_ty)
           | None -> false)
      | _ -> false
 
@@ -2611,7 +2615,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                                id_arg_ty, spc)))
                id_prs
            | None ->
-          if booleanType?(spc, ty)
+          if boolType?(spc, ty)
            then length pats = 2
                && exists? (fn p -> case p of
                                    | BoolPat(true, _) -> true

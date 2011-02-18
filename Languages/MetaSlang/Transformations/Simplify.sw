@@ -264,7 +264,7 @@ spec
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
        | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) | simplifyUsingSubtypes? ->
          mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
-                     Arrow(mkProduct[integerSort,integerSort],boolSort,a),
+                     Arrow(mkProduct[intSort,intSort],boolSort,a),
                      a),
                  [e, mkNat 0]))
 %       %% Eta fn v -> case v of p -> e --> fn p -> e

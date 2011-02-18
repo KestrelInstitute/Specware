@@ -611,7 +611,7 @@ def vprintln s =
    else return ()
   }
 
-op printI: Integer -> JGenEnv ()
+op printI: Int -> JGenEnv ()
 def printI n = print (Integer.show n)
 
 op debug?: Boolean

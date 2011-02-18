@@ -162,10 +162,10 @@ XML qualifying spec
     case field_sd of % don't chase expansion, as that would expand list and option
       | Boolean -> 
         %%% let _ = toScreen ((level_str level) ^ "Using default value of false for Boolean\n") in
-	Some (magicCastFromBoolean false)
+	Some (magicCastFromBool false)
       | Base (("Nat", "Nat"),       []) -> 
 	%%% let _ = toScreen ((level_str level) ^ "Using default value of 0 for "     ^ (print_SortDescriptor field_sd) ^ "\n") in
-	Some (magicCastFromInteger 0)
+	Some (magicCastFromInt 0)
       | Base (("String", "String"), []) -> 
 	%%% let _ = toScreen ((level_str level) ^ "Using default value of \"\" for "  ^ (print_SortDescriptor field_sd) ^ "\n") in
 	Some (magicCastFromString "")
@@ -230,18 +230,18 @@ XML qualifying spec
                                                    table   : SortDescriptorExpansionTable)
     : Option X =
     case qid of
-      | ("Integer", "Integer") -> internalize_PossibleElement_as_Integer (element)
-      | ("String",  "String")  -> internalize_PossibleElement_as_String  (element)
-      | ("Char",    "Char")    -> internalize_PossibleElement_as_Char    (element)
-      | ("List",    "List")    -> internalize_PossibleElement_as_List    (element, args,    table)
-      | ("Option" , "Option")  -> internalize_PossibleElement_as_Option  (element, head args, table)
-      | _                      -> internalize_PossibleElement_ad_hoc     (element, base_sd (* , qid, args, table, *))
+      | ("Integer", "Int")    -> internalize_PossibleElement_as_Int    (element)
+      | ("String",  "String") -> internalize_PossibleElement_as_String (element)
+      | ("Char",    "Char")   -> internalize_PossibleElement_as_Char   (element)
+      | ("List",    "List")   -> internalize_PossibleElement_as_List   (element, args,    table)
+      | ("Option" , "Option") -> internalize_PossibleElement_as_Option (element, head args, table)
+      | _                     -> internalize_PossibleElement_ad_hoc    (element, base_sd (* , qid, args, table, *))
 
   op [X] internalize_PossibleElement_as_Boolean (element : PossibleElement)
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Boolean for " ^ (print_SortDescriptor boolean_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
-    Some (magicCastFromBoolean 
+    Some (magicCastFromBool 
 	  (case possible_datum of
 	     | Some char_data -> 
 	       (case string char_data of
@@ -252,11 +252,11 @@ XML qualifying spec
 	       false))
 
 
-  op [X] internalize_PossibleElement_as_Integer (element : PossibleElement)
+  op [X] internalize_PossibleElement_as_Int (element : PossibleElement)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Integer for " ^ (print_SortDescriptor integer_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Int for " ^ (print_SortDescriptor integer_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
-    Some (magicCastFromInteger 
+    Some (magicCastFromInt
 	  (case possible_datum of
 	     | Some char_data -> stringToInt (trim_whitespace (string char_data))
 	     | None -> 
@@ -367,7 +367,7 @@ XML qualifying spec
       | Product   field_sds    -> internalize_EmptyElemTag_as_product   (etag, sd, field_sds,    table) 
       | CoProduct optional_sds -> internalize_EmptyElemTag_as_coproduct (etag, sd, optional_sds, table)
       | Base      (qid, args)  -> internalize_EmptyElemTag_as_base_sort (etag, sd, qid, args,    table)
-      | Boolean                -> Some (magicCastFromBoolean false)
+      | Boolean                -> Some (magicCastFromBool false)
       | _ -> fail "unrecognized type"
 
 
@@ -420,12 +420,12 @@ XML qualifying spec
     : Option X =
     case qid of
       %% Todo: maybe extract some of these from attributes?
-      | ("Integer", "Integer") -> Some (magicCastFromInteger 0)
-      | ("String",  "String")  -> Some (magicCastFromString  "")
-      | ("Char",    "Char")    -> None
-      | ("List",    "List")    -> Some (magicCastFromList    [])
-      | ("Option" , "Option")  -> internalize_EmptyElemTag_as_Option (etag, head args, table)
-      | _                      -> internalize_EmptyElemTag_ad_hoc    (etag, base_sd (* , qid, args, table, *))
+      | ("Integer", "Int")    -> Some (magicCastFromInt    0)
+      | ("String",  "String") -> Some (magicCastFromString "")
+      | ("Char",    "Char")   -> None
+      | ("List",    "List")   -> Some (magicCastFromList    [])
+      | ("Option" , "Option") -> internalize_EmptyElemTag_as_Option (etag, head args, table)
+      | _                     -> internalize_EmptyElemTag_ad_hoc    (etag, base_sd (* , qid, args, table, *))
 
   %% TODO: Implement this
   op internalize_EmptyElemTag_ad_hoc : [X] EmptyElemTag * SortDescriptor (* * QIdDescriptor * (List SortDescriptor) * SortDescriptorExpansionTable *) -> Option X

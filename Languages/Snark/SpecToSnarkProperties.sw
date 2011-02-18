@@ -72,24 +72,25 @@ snark qualifying spec
   def snarkPBaseSort(spc, s:Sort, rng?):LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
 	          case s of
-		    %| Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    %| Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		   %| Base(Qualified("Nat",    "Nat"),   _,_) -> Lisp.symbol("SNARK","NUMBER")
+		   %| Base(Qualified("Nat",    "PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    | Base(Qualified("Integer","Int"),   _,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
-		    %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
+		   %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
 		      %let _ = if specwareDebug? then  writeLine("") else () in
 		     % res   %findPBuiltInSort(spc, Qualified(qual,id), rng?)
-		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
-                                                       else Lisp.symbol("SNARK",snarkSortId(id))
-		    | Subsort(supSrt, _, _) -> snarkPBaseSort(spc, supSrt, rng?)
+		    | Base(Qualified( _,id),_,_) -> if rng? then 
+                                                      Lisp.symbol("SNARK",snarkSortId(id))
+                                                    else 
+                                                      Lisp.symbol("SNARK",snarkSortId(id))
+		    | Subsort (supSrt, _, _) -> snarkPBaseSort(spc, supSrt, rng?)
 		    | Quotient(supSrt, _, _) -> snarkPBaseSort(spc, supSrt, rng?)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
-		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
-		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
-		    | _ -> Lisp.symbol("SNARK","TRUE")
+		    | Arrow   _ -> Lisp.symbol("SNARK","TRUE")
+		    | TyVar   _ -> Lisp.symbol("SNARK","TRUE")
+		    | _         -> Lisp.symbol("SNARK","TRUE")
 
   def findPBuiltInSort(spc, qid as Qualified(qual,id), rng?) =
     let optSrt = AnnSpec.findTheSort(spc, qid) in
@@ -98,15 +99,13 @@ snark qualifying spec
         (let
            def builtinSort? s =
 	     case s of 
-	       | Base (Qualified ("Nat",     "Nat"),     _, _) -> true
-	       | Base (Qualified ("Integer", "Integer"), _, _) -> true
+	       | Base (Qualified ("Nat",     "Nat"), _, _) -> true
 	       | Base (Qualified ("Integer", "Int"), _, _) -> true
 	       | Boolean _ -> true 
 	       | _ -> false 
 	   def builtinSnarkSort s =
 	     case s of 
-	       | Base (Qualified ("Nat",     "Nat"),     _, _) -> Lisp.symbol ("SNARK", "NUMBER")
-	       | Base (Qualified ("Integer", "Integer"), _, _) -> Lisp.symbol ("SNARK", "NUMBER")
+	       | Base (Qualified ("Nat",     "Nat"), _, _) -> Lisp.symbol ("SNARK", "NUMBER")
 	       | Base (Qualified ("Integer", "Int"), _, _) -> Lisp.symbol ("SNARK", "NUMBER")
 	       | Boolean _ -> 
 	         if rng? then 
@@ -132,8 +131,7 @@ snark qualifying spec
   def snarkPPBaseSort(_(* sp *):Spec, s:Sort, rng?):LispCell = 
     let res =
     case s of
-      | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-      | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+      | Base(Qualified("Nat",    "Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
 				      else Lisp.symbol("SNARK",snarkSortId(id))
@@ -215,22 +213,22 @@ snark qualifying spec
 
   def mkSnarkName(qual, id) =
     case (qual, id) of
-      | ("Nat",     "<=") -> "=<"
-      | ("Nat",     "~") -> "-"
-      | ("Nat", ">=") -> ">="
-      | ("Nat", "+") -> "+"
-      | ("Nat", "-") -> "-"
-      | ("Nat", "*") -> "*"
-      | ("Integer", "+") -> "+"
-      | ("Integer", "-") -> "-"
-      | ("Integer", "~") -> "-"
-      | ("Integer", "*") -> "*"
-      | ("Integer", "<=") -> "=<"
-      | ("Integer", "<") -> "<"
-      | ("Integer", ">=") -> ">="
-      | ("Integer", ">") -> ">"
+      | ("Nat",     "<=")   -> "=<"
+      | ("Nat",     "~")    -> "-"
+      | ("Nat",     ">=")   -> ">="
+      | ("Nat",     "+")    -> "+"
+      | ("Nat",     "-")    -> "-"
+      | ("Nat",     "*")    -> "*"
+      | ("Integer", "+")    -> "+"
+      | ("Integer", "-")    -> "-"
+      | ("Integer", "~")    -> "-"
+      | ("Integer", "*")    -> "*"
+      | ("Integer", "<=")   -> "=<"
+      | ("Integer", "<")    -> "<"
+      | ("Integer", ">=")   -> ">="
+      | ("Integer", ">")    -> ">"
       | ("Integer", "zero") -> "0"
-      | ("Integer", "one") -> "1"
+      | ("Integer", "one")  -> "1"
       | (_, "hoapply") ->  "HOAPPLY"
       | _ -> if qual = UnQualified
 	       then id

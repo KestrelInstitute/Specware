@@ -31,7 +31,7 @@ spec
     let sep = " " in
     case prf of
     | cxMT -> "(cxMT)"
-    | cxTdec(p,tn, i) -> "(cxTdec"^sep^printTypeName(tn)^sep^printInteger(i)^pSep^printProofAux(p, sn)^")"
+    | cxTdec(p,tn, i) -> "(cxTdec"^sep^printTypeName(tn)^sep^printInt(i)^pSep^printProofAux(p, sn)^")"
     | cxOdec(p, p2, oper) -> "(cxOdec"^sep^printOperation(oper)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxAx(p, p2, an) -> "(cxAx"^sep^printAxiomName(an)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
     | cxLem(p, p2, ln) -> "(cxLem"^sep^printLemmaName(ln)^pSep^printProofAux(p, sn)^pSep^printProofAux(p2, sn)^")"
@@ -50,7 +50,7 @@ spec
     | stRestr(p) -> "(stRestr"^pSep^printProofAux(p, sn)^")"
     | stRefl(p, v) -> "(stRefl"^sep^printVariable(v)^pSep^printProofAux(p, sn)^")"
     | stArr(p, p2, v, v2) -> "(stArr"^sep^printVariable(v)^sep^printVariable(v2)^pSep^printProofAux(p, sn)^")"
-    | stRec(p, ps, v, prm) -> "(stRec"^sep^printVariable(v)^pSep^printProofsAux(p |> ps, sn)^pSep^printIntegers(prm)^")"
+    | stRec(p, ps, v, prm) -> "(stRec"^sep^printVariable(v)^pSep^printProofsAux(p |> ps, sn)^pSep^printInts(prm)^")"
     % well-typed expressions:
     | exVar(p, v) -> "(exVar"^sep^printVariable(v)^pSep^printProofAux(p, sn)^")"
     | exOp(p, ps, oper) -> "(exOp"^sep^printOperation(oper)^pSep^printProofsAux(p |> ps, sn)^")"

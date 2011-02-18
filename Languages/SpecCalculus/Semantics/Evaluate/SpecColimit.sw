@@ -490,7 +490,7 @@ spec
 
  %% --------------------------------------------------------------------------------
 
- op  makeQidToClassIndicesMap : CompressedQuotientSet -> PolyMap.Map (QualifiedId, List Integer)
+ op  makeQidToClassIndicesMap : CompressedQuotientSet -> PolyMap.Map (QualifiedId, List Int)
  def makeQidToClassIndicesMap qset =
    let (qid_to_class_indices, _) = 
        %% QualifiedId => List EquivalentClass
@@ -768,7 +768,7 @@ spec
 
  %% --------------------------------------------------------------------------------
 
- op  showQidToClassIndices : PolyMap.Map (QualifiedId, List Integer) -> ()
+ op  showQidToClassIndices : PolyMap.Map (QualifiedId, List Int) -> ()
  def showQidToClassIndices qid_to_class_indices =
    toScreen ("\nQualifiedId => <Number of Classes>:\n\n"                  
 	     ^ (ppFormat (ppConcat (foldMap (fn result -> fn qid -> fn class_indices ->

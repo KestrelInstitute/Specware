@@ -2,7 +2,7 @@ FM qualifying spec
 
   import IneqSet
 
-  op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
+  op splitList2: [a] ((a -> Bool) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
     %let _ = writeLine("spl2") in
     case splitList p l of
@@ -50,7 +50,7 @@ FM qualifying spec
   op processIneq0: Var * IneqSet -> IneqSet * IneqSet
   def processIneq0(var, ineqSet) =
     let (possibleChains, nonChains) = splitPossibleChains(var, ineqSet) in
-    let possibleChains = integerPreProcess(possibleChains) in
+    let possibleChains = intPreProcess(possibleChains) in
     let newIneqs = processPossibleIneqs(possibleChains) in
     let newIneqSet = nonChains++newIneqs in
     let newIneqSet = sortIneqSet(newIneqSet) in
@@ -75,8 +75,8 @@ FM qualifying spec
       let newIneqs = processIneq1(ineq, ineqSet) in
       processPossibleIneqsAux(ineqSet, newIneqs++res)
 
-  op tightenWithNeqInteger: Ineq -> Ineq -> Ineq
-  def tightenWithNeqInteger neq ineq2 =
+  op tightenWithNeqInt: Ineq -> Ineq -> Ineq
+  def tightenWithNeqInt neq ineq2 =
     let poly1 = poly(neq) in
     let poly2 = poly(ineq2) in
     let comp2 = compPred(ineq2) in
@@ -105,13 +105,13 @@ FM qualifying spec
 	else ineq2
     else ineq2
 
-  op tightenGTInteger: Ineq -> Ineq
-  def tightenGTInteger (ineq) =
+  op tightenGTInt: Ineq -> Ineq
+  def tightenGTInt (ineq) =
     case compPredConstructor(compPred(ineq)) of
       | Gt -> mkNormIneq(GtEq, polyMinusOne(poly(ineq)))
       | _ -> ineq
 
-  op ineqsChainAbleP: Ineq * Ineq -> Boolean
+  op ineqsChainAbleP: Ineq * Ineq -> Bool
   def ineqsChainAbleP(ineq1, ineq2) =
     let poly1 = poly(ineq1) in
     let poly2 = poly(ineq2) in
@@ -163,8 +163,8 @@ FM qualifying spec
       then None
     else 
     let ineqSet = sortIneqSet(ineqSet) in
-    let ineqSet = integerPreProcess(ineqSet) in
-    %let _ = writeLine("FM: INTEGER:") in
+    let ineqSet = intPreProcess(ineqSet) in
+    %let _ = writeLine("FM: INT:") in
     %let _ = writeIneqs(ineqSet) in
     let completeIneqs = fourierMotzkin(ineqSet) in
     %let _ = writeLine("FM: output:") in
@@ -286,11 +286,11 @@ FM qualifying spec
     mkIneq(Eq, poly)
 *)
 
-  op integerPreProcess: IneqSet -> IneqSet
-  def integerPreProcess(ineqSet) =
+  op intPreProcess: IneqSet -> IneqSet
+  def intPreProcess(ineqSet) =
     let neqs = neqs(ineqSet) in
     let def tightenNeqBounds(neq, ineqSet) =
-         map (tightenWithNeqInteger neq) ineqSet in
+         map (tightenWithNeqInt neq) ineqSet in
     let def tightenAllNeqBounds(neqs, ineqSet) =
           case neqs of
 	    | [] -> ineqSet
@@ -300,7 +300,7 @@ FM qualifying spec
 	    else
 	      let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
 	      tightenAllNeqBounds(restNeqs, tightenedIneqs) in
-    let ineqSet = map tightenGTInteger ineqSet in
+    let ineqSet = map tightenGTInt ineqSet in
     tightenAllNeqBounds(neqs, ineqSet)
     
   
@@ -318,7 +318,7 @@ FM qualifying spec
 
   op listToTerm:  Lisp.LispCell -> Term
   def listToTerm(list) =
-    let coef:Integer = uncell(car(list)) in
+    let coef:Int = uncell(car(list)) in
     let var:String = uncell(cdr(list)) in
     if var = "Constant"
       then mkConstant(coef)

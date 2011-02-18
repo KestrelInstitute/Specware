@@ -9,8 +9,7 @@ The version implemented here is a (slightly? slower) functional variant.
 Note: This version also uses value (of type Element) itself as the key
 in MFSetMap, implemented as a PolyMap; as opposed to using keys such
 as integers in a more efficient map.  It's quite plausible that using
-Integer for the key and Integer * Element for the value would be
-faster.
+Int for the key and Int * Element for the value would be faster.
 
 This algorithm initializes the parent link for each node to None, and
 its rank to 0, and then revises the parent links in such a manner that

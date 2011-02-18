@@ -3,41 +3,41 @@ Rational qualifying spec
   type Rational
 
   op denominator : Rational -> Rational
-  op numerator : Rational -> Rational
+  op numerator   : Rational -> Rational
   
   op +   infixl 25 : Rational * Rational -> Rational
   op -   infixl 25 : Rational * Rational -> Rational
   op *   infixl 27 : Rational * Rational -> Rational
   op div infixl 26 : Rational * NonNegativeRational -> Rational
   op rem infixl 26 : Rational * NonNegativeRational -> Rational
-  op <=  infixl 20 : Rational * Rational -> Boolean
-  op <   infixl 20 : Rational * Rational -> Boolean
-  op >=  infixl 20 : Rational * Rational -> Boolean
-  op >   infixl 20 : Rational * Rational -> Boolean
+  op <=  infixl 20 : Rational * Rational -> Bool
+  op <   infixl 20 : Rational * Rational -> Bool
+  op >=  infixl 20 : Rational * Rational -> Bool
+  op >   infixl 20 : Rational * Rational -> Bool
   op abs           : Rational -> NonNegativeRational
   op min           : Rational * Rational -> Rational
   op max           : Rational * Rational -> Rational
   op compare       : Rational * Rational -> Comparison
-  op pred          : Nat -> Rational
-  op floor         : Rational -> Integer
-  op ceiling       : Rational -> Integer
+  op pred          : Nat      -> Rational
+  op floor         : Rational -> Int
+  op ceiling       : Rational -> Int
 
-  op intToRat: Integer -> Rational
-  op ratToInt : Rational -> Integer
+  op intToRat : Int      -> Rational
+  op ratToInt : Rational -> Int
 
   op RationalAux.- : Rational -> Rational
 
-  op equal: Rational * Rational -> Boolean
+  op equal: Rational * Rational -> Bool
   def equal(r1, r2) = (r1 = r2)
 
   op ratToString : Rational -> String
   op toString : Rational -> String
   def toString(x) = ratToString(x)
 
-%  op stringToRat : (String | Integer.intConvertible) -> Integer
+%  op stringToRat : (String | Integer.intConvertible) -> Int
 
-  op zero: Rational
-  op one: Rational
+  op zero : Rational
+  op one  : Rational
 
   def > (r1,r2) = r2 < r1
 
@@ -50,7 +50,7 @@ Rational qualifying spec
 
   % non-negative:
 
-  op nonNegative? : Rational -> Boolean
+  op nonNegative? : Rational -> Bool
   def nonNegative? r = r >= zero
 
   type NonNegativeRational = (Rational | nonNegative?)

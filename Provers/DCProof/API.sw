@@ -11,7 +11,7 @@ Prover qualifying spec
   type SequentFmlas = List SequentFmla
   type SequentFmla = {fmla: MS.Term, index: Int0, label: FmlaLabel, path: FmlaPath}
   type FmlaLabel = String
-  type FmlaPath = List Integer % A fmla path indicates the history of the fmla.
+  type FmlaPath = List Int % A fmla path indicates the history of the fmla.
     % e.g. If the fmla is the second conjuct of splitting the first proof goal,
     % the path would be 1.2
     % I'm not sure about all the details at this time, but am including it here
@@ -22,9 +22,9 @@ Prover qualifying spec
   op goalContent: Goal -> GoalContent
   axiom goalSequent is fa (goal:Goal) sequent(goal) = sequent(goalContent(goal))
 
-  op sequent.obviouslyTrue: Sequent -> Boolean
-  op goalContent.obviouslyTrue: GoalContent -> Boolean
-  op goal.obviouslyTrue: Goal -> Boolean
+  op sequent.obviouslyTrue: Sequent -> Bool
+  op goalContent.obviouslyTrue: GoalContent -> Bool
+  op goal.obviouslyTrue: Goal -> Bool
   axiom obviouslyTrueGoal is
     fa(g: Goal) obviouslyTrue g <=> obviouslyTrue(goalContent g)
   axiom obviouslyTrueGoalContent is
@@ -34,7 +34,7 @@ Prover qualifying spec
     fa(g: Goal) obviouslyTrue g <=> obviouslyTrue(sequent(g))
   
   op nextGoal: Goal -> Option Goal
-  op lastGoal?: Goal -> Boolean
+  op lastGoal?: Goal -> Bool
   def lastGoal(g) = nextGoal g = None
   op previousGoal: Goal -> Option Goal
   axiom prevLastGoal is fa (g: Goal) lastGoal?(g) => previousGoal(g) = None
@@ -45,9 +45,9 @@ Prover qualifying spec
   type proofTree = {g: Goal | parent g = None}
 
   type Leaf = {g: Goal | subGoals(g) = []}
-  op dischargedLeaf: Goal -> Boolean
+  op dischargedLeaf: Goal -> Bool
 
-  op discharged: Goal -> Boolean
+  op discharged: Goal -> Bool
   op discharge: Goal -> Goal
   axiom dischargedGoal is
     fa (g: Goal) subGoals(g) = [] && dischargedLeaf(g) ||
@@ -60,9 +60,9 @@ Prover qualifying spec
   op subGoalsPC: PCResult -> List GoalContent
   op effectPC: PCResult -> ProofEffect
 
-  op pcDischarges: ProofCommand * GoalContent -> Boolean
-  op pcUnchanges: ProofCommand * GoalContent -> Boolean
-  op pcModifies: ProofCommand * GoalContent -> Boolean
+  op pcDischarges: ProofCommand * GoalContent -> Bool
+  op pcUnchanges : ProofCommand * GoalContent -> Bool
+  op pcModifies  : ProofCommand * GoalContent -> Bool
 
   axiom dischargeProofCommand is
     fa (pc: ProofCommand, g: GoalContent) pcDischarges(pc, g) <=> subGoalsPC(pc g) = []

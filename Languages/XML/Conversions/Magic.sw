@@ -48,19 +48,19 @@ Magic qualifying spec
   %% is pleasing to Specware for further processing.
 
   %% MetaSlang => XML
-  op Magic.magicCastToBoolean    : [X]   X -> Boolean    % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastToInteger    : [X]   X -> Integer    % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastToString     : [X]   X -> String     % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastToChar       : [X]   X -> Char       % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastToList       : [X,Y] X -> List   Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastToOption     : [X,Y] X -> Option Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToBool     : [X]   X -> Bool       % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToInt      : [X]   X -> Int        % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToString   : [X]   X -> String     % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToChar     : [X]   X -> Char       % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToList     : [X,Y] X -> List   Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastToOption   : [X,Y] X -> Option Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
   %% XML => MetaSlang
-  op Magic.magicCastFromBoolean  : [X]   Boolean  -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastFromInteger  : [X]   Integer  -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastFromString   : [X]   String   -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastFromChar     : [X]   Char     -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastFromList     : [X,Y] List   Y -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
-  op Magic.magicCastFromOption   : [X,Y] Option Y -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromBool   : [X]   Bool     -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromInt    : [X]   Int      -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromString : [X]   String   -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromChar   : [X]   Char     -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromList   : [X,Y] List   Y -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+  op Magic.magicCastFromOption : [X,Y] Option Y -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
 endspec

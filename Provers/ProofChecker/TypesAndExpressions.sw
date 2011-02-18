@@ -20,11 +20,11 @@ spec
 
   type Field =
     | user UserField
-    | prod Integer
+    | prod Int
 
   type Variable =
     | user UserVariable
-    | abbr Integer
+    | abbr Int
 
   % useful definitions:
   type Operations    = List Operation
@@ -97,8 +97,8 @@ spec
   induction axiom on types and expressions. *)
 
   axiom induction_on_types_and_expressions is
-    fa (predT : Type       -> Boolean,
-        predE : Expression -> Boolean)
+    fa (predT : Type       -> Bool,
+        predE : Expression -> Bool)
   %%%%% induction base and step:
    (fa (tn  : TypeName,
         o   : Operation,

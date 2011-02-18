@@ -45,7 +45,7 @@ Java qualifying spec
         if comment = "" then ps
         else toPretty comment :: ps
 
-  def emptyBrackets (n : Integer) : Pretty =
+  def emptyBrackets (n : Int) : Pretty =
       if n <= 0 then emptyPretty () 
       else prettysNone [toPretty "[]", emptyBrackets(n - 1)]
 
@@ -263,7 +263,7 @@ Java qualifying spec
  
 %%%% variable identifier (in variable declaration)
 
-  def ppVarDeclId (id : Ident, n : Integer) : Pretty = 
+  def ppVarDeclId (id : Ident, n : Int) : Pretty = 
       prettysNone [toPretty id,emptyBrackets n]
 
 %%%% variable initliazer 
@@ -884,7 +884,7 @@ Java qualifying spec
             [ppName nm, toPretty".super.", toPretty id, ppArgs es]
 %%%% type
 
-  def ppType (btn : BasicOrName, n : Integer) : Pretty =
+  def ppType (btn : BasicOrName, n : Int) : Pretty =
       prettysNone [ppBasicOrName btn,
                    emptyBrackets n]
 

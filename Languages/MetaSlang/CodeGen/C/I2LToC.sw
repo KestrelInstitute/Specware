@@ -402,14 +402,12 @@ I2LToC qualifying spec {
   op c4PrimitiveType: CgContext * String -> CType
   def c4PrimitiveType(_ (* ctxt *), s) =
     case s of
-      | "Nat" -> Int
-      | "Int" -> Int
-      | "Integer" -> Int
-      | "Char" -> Char
+      | "Bool"   -> Int
+      | "Nat"    -> Int
+      | "Int"    -> Int
+      | "Char"   -> Char
       | "String" -> Ptr(Char)
-      | "Float" -> Float
-      | "Boolean" -> Int
-      | "Bool" -> Int
+      | "Float"  -> Float
       | _ -> System.fail("no such primitive type: \""^s^"\"")
 
 

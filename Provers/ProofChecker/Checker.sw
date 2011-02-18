@@ -14,14 +14,14 @@ spec
   failure provided as argument, otherwise return nothing. This op is
   essentially a shortcut for an if-then-else that can be composed via the
   monadic bind operator. *)
-  op ensure : Boolean -> Failure -> M ()
+  op ensure : Bool -> Failure -> M ()
   def ensure cond fail =
     if cond then OK () else let _ = (System.fail "ensure") in FAIL fail
 
   (* Check whether a finite sequence of integers is a permutation (see spec
   FiniteSequences in the Specware library). If it is, return it as a
   permutation, i.e. as a value of type List.Permutation. *)
-  op checkPermutation : List Integer -> M Permutation
+  op checkPermutation : List Int -> M Permutation
   def checkPermutation prm =
     % all integers must be non-negative:
     ensure (forall? (fn x -> x >= 0) prm) (badPermutation prm) >> (fn _ ->
@@ -34,10 +34,10 @@ spec
     OK prm1)))
 
   (* Check whether a type is the boolean type. *)
-  op checkBoolean : Type -> M ()
-  def checkBoolean = fn
+  op checkBool : Type -> M ()
+  def checkBool = fn
     | BOOL -> OK ()
-    | t -> FAIL (notBoolean t)
+    | t -> FAIL (notBool t)
 
   (* Check whether a type is a type instance. If it is, return its type name
   and argument types. *)
@@ -606,7 +606,7 @@ spec
   op checkWTProposition : Proof -> M (Context * Expression)
   def checkWTProposition prf =
     checkWTExpr prf >> (fn (cx, e, t) ->
-    checkBoolean t >> (fn _ ->
+    checkBool t >> (fn _ ->
     OK (cx, e)))
 
   (* Check proof of well-typed function (i.e. expression of arrow type),
@@ -622,7 +622,7 @@ spec
   op checkWTPredicate : Proof -> M (Context * Expression * Type)
   def checkWTPredicate prf =
     checkWTFunction prf >> (fn (cx, e, t, t1) ->
-    checkBoolean t1 >> (fn _ ->
+    checkBool t1 >> (fn _ ->
     OK (cx, e, t)))
 
   (* Check proof of well-typed proposition in the given context extended with

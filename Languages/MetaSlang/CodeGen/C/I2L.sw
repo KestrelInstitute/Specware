@@ -90,11 +90,11 @@ I2L qualifying spec {
 
   type Expression = Expr * Type
 
-  type Expr =  | Str            String
-              | Int            Integer
+  type Expr = | Str            String
+              | Int            Int
               | Float          String
               | Char           Char
-              | Bool           Boolean
+              | Bool           Bool
               | Var            VarName
               | VarDeref       VarName         
               | FunCall        (VarName * (*projections*) List(String) * Expressions)

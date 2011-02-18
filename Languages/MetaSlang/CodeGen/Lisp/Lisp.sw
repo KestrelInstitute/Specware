@@ -394,20 +394,20 @@ ListADT qualifying spec {
 % various utilities for constructing terms:
 %
 
-op  mkLVar : String -> LispTerm
-op  mkLOp : String -> LispTerm
-op  mkLLambda : Strings * LispDecls * LispTerm -> LispTerm
-op  mkLApply  : LispTerm * List(LispTerm) -> LispTerm
-op  mkLIf : LispTerm * LispTerm * LispTerm -> LispTerm
-op  mkLLet : Strings * List(LispTerm) * LispTerm -> LispTerm
-op  mkLLetRec : Strings * List(LispTerm) * LispTerm -> LispTerm
-op  mkLQuote : String -> LispTerm
-op  mkLNat : Nat -> LispTerm
-op  mkLInt : Integer -> LispTerm
-op  mkLChar : Char -> LispTerm
-op  mkLBool : Boolean -> LispTerm
-op  mkLString : String -> LispTerm
-op  mkLIntern : String -> LispTerm
+op  mkLVar    : String  -> LispTerm
+op  mkLOp     : String  -> LispTerm
+op  mkLQuote  : String  -> LispTerm
+op  mkLNat    : Nat     -> LispTerm
+op  mkLInt    : Int     -> LispTerm
+op  mkLChar   : Char    -> LispTerm
+op  mkLBool   : Boolean -> LispTerm
+op  mkLString : String  -> LispTerm
+op  mkLIntern : String  -> LispTerm
+op  mkLLambda : Strings  * LispDecls      * LispTerm -> LispTerm
+op  mkLIf     : LispTerm * LispTerm       * LispTerm -> LispTerm
+op  mkLLet    : Strings  * List(LispTerm) * LispTerm -> LispTerm
+op  mkLLetRec : Strings  * List(LispTerm) * LispTerm -> LispTerm
+op  mkLApply  : LispTerm * List(LispTerm)            -> LispTerm
 
 def mkLOp s = Op s
 def mkLVar s = Var s

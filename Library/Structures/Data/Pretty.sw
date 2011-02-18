@@ -41,10 +41,10 @@ WadlerLindig qualifying spec
   op Nat.pp : Nat -> Doc
   def Nat.pp n = pp (Nat.toString n)
 
-  op Integer.pp : Integer -> Doc
+  op Integer.pp : Int -> Doc
   def Integer.pp n = pp (Integer.toString n)
 
-  op Boolean.pp : Boolean -> Doc
+  op Boolean.pp : Bool -> Doc
   def Boolean.pp n = pp (Boolean.toString n)
 
   op Char.pp : Char -> Doc

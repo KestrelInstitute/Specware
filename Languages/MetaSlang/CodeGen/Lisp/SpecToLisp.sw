@@ -279,11 +279,11 @@ SpecToLisp qualifying spec
 	      "="
 	    else
 	      (case stripSubsorts (sp, s) of
-		 | Boolean                                    _  -> "eq"
-		 | Base (Qualified ("Nat",     "Nat"),     _, _) -> "="
-		 | Base (Qualified ("Integer", "Integer"), _, _) -> "="
-		 | Base (Qualified ("String",  "String"),  _, _) -> "string="
-		 | Base (Qualified ("Char",    "Char"),    _, _) -> "eq"
+		 | Boolean _                                    -> "eq"
+		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "="
+		 | Base (Qualified ("Integer", "Int"),    _, _) -> "="
+		 | Base (Qualified ("String",  "String"), _, _) -> "string="
+		 | Base (Qualified ("Char",    "Char"),   _, _) -> "eq"
 		 | _ -> "Slang-Built-In::slang-term-equals-2")
 	  | _ -> "Slang-Built-In::slang-term-equals-2")
      | _ -> "Slang-Built-In::slang-term-equals-2"
@@ -300,11 +300,11 @@ SpecToLisp qualifying spec
 	      "/="
 	    else
 	      (case stripSubsorts (sp, s) of
-		 | Boolean                                    _  -> "Slang-Built-In:boolean-term-not-equals-2"
-		 | Base (Qualified ("Nat",     "Nat"),     _, _) -> "/="
-		 | Base (Qualified ("Integer", "Integer"), _, _) -> "/="
-		 | Base (Qualified ("String",  "String"),  _, _) -> "Slang-Built-In:string-term-not-equals-2"  % careful! string/= won't work
-		 | Base (Qualified ("Char",    "Char"),    _, _) -> "char/="
+		 | Boolean _                                    -> "Slang-Built-In:boolean-term-not-equals-2"
+		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "/="
+		 | Base (Qualified ("Integer", "Int"),    _, _) -> "/="
+		 | Base (Qualified ("String",  "String"), _, _) -> "Slang-Built-In:string-term-not-equals-2"  % careful! string/= won't work
+		 | Base (Qualified ("Char",    "Char"),   _, _) -> "char/="
 		 | _ -> "Slang-Built-In::slang-term-not-equals-2")
 	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
      | _ -> "Slang-Built-In::slang-term-not-equals-2"

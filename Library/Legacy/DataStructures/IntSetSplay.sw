@@ -1,28 +1,28 @@
-IntegerSet qualifying spec {
+IntSet qualifying spec {
   import SplaySet
 
-  sort IntegerSet.Set = SplaySet.Set Integer
+  sort IntSet.Set = SplaySet.Set Int
 
-  op empty         : IntegerSet.Set
-  op difference    : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
-  op add           : IntegerSet.Set * Integer -> IntegerSet.Set
-  op addList       : IntegerSet.Set * List Integer -> IntegerSet.Set
-  op member        : IntegerSet.Set * Integer -> Boolean
-  op fromList      : List Integer -> IntegerSet.Set
-  op isEmpty       : IntegerSet.Set -> Boolean
-  op listItems     : IntegerSet.Set -> List Integer
-  op union         : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
-  op delete        : IntegerSet.Set * Integer -> IntegerSet.Set
-  op intersection  : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
-  op numItems      : IntegerSet.Set -> Nat
-  op map           : (Integer -> Integer) -> IntegerSet.Set -> IntegerSet.Set
-  op app           : (Integer -> ()) -> IntegerSet.Set -> ()
-  op foldr         : (Integer * IntegerSet.Set -> IntegerSet.Set) -> IntegerSet.Set -> IntegerSet.Set -> IntegerSet.Set
-  op foldl         : (Integer * IntegerSet.Set -> IntegerSet.Set) -> IntegerSet.Set -> IntegerSet.Set -> IntegerSet.Set
-  op filter        : (Integer -> Boolean) -> IntegerSet.Set -> IntegerSet.Set
-  op exists        : (Integer -> Boolean) -> IntegerSet.Set -> Boolean
-  op find          : (Integer -> Boolean) -> IntegerSet.Set -> Option Integer
-  op equal         : IntegerSet.Set * IntegerSet.Set -> Boolean
+  op empty         : IntSet.Set
+  op difference    : IntSet.Set * IntSet.Set -> IntSet.Set
+  op add           : IntSet.Set * Int -> IntSet.Set
+  op addList       : IntSet.Set * List Int -> IntSet.Set
+  op member        : IntSet.Set * Int -> Bool
+  op fromList      : List Int -> IntSet.Set
+  op isEmpty       : IntSet.Set -> Bool
+  op listItems     : IntSet.Set -> List Int
+  op union         : IntSet.Set * IntSet.Set -> IntSet.Set
+  op delete        : IntSet.Set * Int -> IntSet.Set
+  op intersection  : IntSet.Set * IntSet.Set -> IntSet.Set
+  op numItems      : IntSet.Set -> Nat
+  op map           : (Int -> Int) -> IntSet.Set -> IntSet.Set
+  op app           : (Int -> ()) -> IntSet.Set -> ()
+  op foldr         : (Int * IntSet.Set -> IntSet.Set) -> IntSet.Set -> IntSet.Set -> IntSet.Set
+  op foldl         : (Int * IntSet.Set -> IntSet.Set) -> IntSet.Set -> IntSet.Set -> IntSet.Set
+  op filter        : (Int -> Bool) -> IntSet.Set -> IntSet.Set
+  op exists        : (Int -> Bool) -> IntSet.Set -> Bool
+  op find          : (Int -> Bool) -> IntSet.Set -> Option Int
+  op equal         : IntSet.Set * IntSet.Set -> Bool
 
   def empty          = SplaySet.empty Integer.compare
   def difference     = SplaySet.difference

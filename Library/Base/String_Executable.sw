@@ -13,13 +13,13 @@ spec
  op explodedStringToNat(l: List Char): Nat =
    foldl (fn (result, dig) -> result * 10 + ord dig - 48) 0 l
 
- refine def stringToInt (s:String | intConvertible s) : Integer =
+ refine def stringToInt (s:String | intConvertible s) : Int =
    let e_s = explode s in
    let firstchar::r_s = e_s in
    if firstchar = #- then - (explodedStringToNat r_s)
                      else    explodedStringToNat e_s
 
- refine def stringToNat (s:String | natConvertible s) : Integer =
+ refine def stringToNat (s:String | natConvertible s) : Int =
    explodedStringToNat(explode s)
 
  refine def explode (s:String) : List Char =

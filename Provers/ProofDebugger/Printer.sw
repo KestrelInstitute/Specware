@@ -22,11 +22,11 @@ spec
       ^ printSeq printElem separator (tail seq)
 
   % synonym, for uniformity with the other ops in this spec:
-  op printInteger : Integer -> String
-  def printInteger = intToString
+  op printInt : Int -> String
+  def printInt = intToString
 
-  op printIntegers : List Integer -> String
-  def printIntegers = printSeq printInteger ","
+  op printInts : List Int -> String
+  def printInts = printSeq printInt ","
 
   op printTypeName : TypeName -> String
   def printTypeName = id
@@ -55,7 +55,7 @@ spec
   op printField : Field -> String
   def printField = fn
     | user f -> printUserField f
-    | prod i -> printInteger i
+    | prod i -> printInt i
 
   op printFields : Fields -> String
   def printFields = printSeq printField ","
@@ -63,7 +63,7 @@ spec
   op printVariable : Variable -> String
   def printVariable = fn
     | user v -> printUserVariable v
-    | abbr i -> "V[" ^ printInteger i ^ "]"  % e.g. abbr 3 -> V[3]
+    | abbr i -> "V[" ^ printInt i ^ "]"  % e.g. abbr 3 -> V[3]
 
   op printType       : Type       -> String  % defined below
   op printExpression : Expression -> String  % defined below
@@ -151,9 +151,9 @@ spec
     | IOTA t      -> printDescriptor t
     | PROJECT t_f -> printProjector t_f
 
-  op printTypeDeclaration : TypeName * Integer -> String
+  op printTypeDeclaration : TypeName * Int -> String
   def printTypeDeclaration (tn,n) =
-    "type " ^ printTypeName tn ^ ":" ^ printInteger n ^ newline
+    "type " ^ printTypeName tn ^ ":" ^ printInt n ^ newline
 
   op printOpDeclaration : Operation * TypeVariables * Type -> String
   def printOpDeclaration (o,tvS,t) =
@@ -241,9 +241,9 @@ spec
   op printFailure : Failure -> String
   def printFailure = fn
     | badPermutation prm ->
-      "bad permutation: " ^ printIntegers prm ^ newline
+      "bad permutation: " ^ printInts prm ^ newline
     | wrongPermutationLength prm ->
-      "wrong permutation length: " ^ printIntegers prm ^ newline
+      "wrong permutation length: " ^ printInts prm ^ newline
     | fieldNotFound (f, fS, tS) ->
       "field " ^ printField f ^
       " not found in " ^ printRecordType(fS,tS) ^ newline
@@ -289,11 +289,11 @@ spec
       "spec contains variable:" ^ newline ^ printContext cx
     | negativeTypeArity (tn, i) ->
       "type " ^ printTypeName tn ^ " has negative arity " ^
-      printInteger i ^ newline
+      printInt i ^ newline
     | wrongTypeArity (tn, rightArity, wrongArity) ->
       "type " ^ printTypeName tn ^ " has arity " ^
-      printInteger wrongArity ^ " instead of " ^
-      printInteger rightArity ^ newline
+      printInt wrongArity ^ " instead of " ^
+      printInt rightArity ^ newline
     | badTypeSubstitution (tvS, tS) ->
       "bad type substitution: " ^ printTypeVariables tvS ^ " <- " ^
       printTypes tS ^ newline
@@ -315,7 +315,7 @@ spec
     | notTheorem jdg ->
       "judgement is not theorem:" ^ newline ^
       printJudgement jdg
-    | notBoolean t ->
+    | notBool t ->
       "not boolean type: " ^ printType t ^ newline
     | notTypeInstance t ->
       "not type instance: " ^ printType t ^ newline

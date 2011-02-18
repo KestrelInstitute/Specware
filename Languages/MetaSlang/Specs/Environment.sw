@@ -173,10 +173,10 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
  %-   res
 
 
-% def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
-% def booleanSort : Sort = Boolean noPos
-% def SpecEnvironment.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
-% def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
+% def SpecEnvironment.stringSort : Sort = Base (Qualified ("String",  "String"), [], noPos)
+% def boolSort                   : Sort = Boolean noPos
+% def SpecEnvironment.charSort   : Sort = Base (Qualified ("Char",    "Char"),   [], noPos)
+% def intSort                    : Sort = Base (Qualified ("Integer", "Int"),    [], noPos)
 
 %% This is no different than MetaSlang.patternSort 
 % op SpecEnvironment.patternSort : Pattern -> Sort
@@ -190,9 +190,9 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 %                                      Product (fields, noPos)
 %   | WildPat     (srt,          _) -> srt
 %   | StringPat   _                 -> SpecEnvironment.stringSort
-%   | BoolPat     _                 -> booleanSort
+%   | BoolPat     _                 -> boolSort
 %   | CharPat     _                 -> SpecEnvironment.charSort
-%   | NatPat      _                 -> integerSort
+%   | NatPat      _                 -> intSort
 %   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
 
 

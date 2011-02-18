@@ -9,14 +9,14 @@ Complex qualifying spec
 %  import Pretty
   import Double
 
-  op String.toComplex : String -> Complex
-  op Integer.toComplex: Integer -> Complex
-  op Double.toComplex: Double -> Complex
+  op String.toComplex  : String -> Complex
+  op Integer.toComplex : Int    -> Complex
+  op Double.toComplex  : Double -> Complex
 
   op show : Complex -> String
 
-  op Double.complex : Double * Double -> Complex
-  op Integer.complex : Integer * Integer -> Complex
+  op Double.complex  : Double * Double -> Complex
+  op Integer.complex : Int    * Int    -> Complex
 
   op ComplexAux.- : Complex -> Complex
 
@@ -34,14 +34,14 @@ Complex qualifying spec
 
   % comparisons:
 
-  op < infixl 20 : Complex * Complex -> Boolean
-  op > infixl 20 : Complex * Complex -> Boolean
-  op <= infixl 20 : Complex * Complex -> Boolean
-  op >= infixl 20 : Complex * Complex -> Boolean
+  op <  infixl 20 : Complex * Complex -> Bool
+  op >  infixl 20 : Complex * Complex -> Bool
+  op <= infixl 20 : Complex * Complex -> Bool
+  op >= infixl 20 : Complex * Complex -> Bool
 
   % non-negative:
 
-  op nonNegative? : Complex -> Boolean
+  op nonNegative? : Complex -> Bool
   def nonNegative? r = r >= zero
 
   type NonNegativeComplex = (Complex | nonNegative?)
@@ -58,8 +58,8 @@ Complex qualifying spec
 
   op sqrt : Complex -> Complex 
 
-  op ceiling : Complex -> Integer
-  op floor : Complex -> Integer
+  op ceiling : Complex -> Int
+  op floor   : Complex -> Int
 
   op imag : Complex -> Double
   op real : Complex -> Double

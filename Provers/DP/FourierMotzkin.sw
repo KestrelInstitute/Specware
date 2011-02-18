@@ -19,10 +19,10 @@ FM qualifying spec
   op Rational.toCoef: Rational -> Coef
   def Rational.toCoef(r) = r
 
-  op Integer.toCoef: Integer -> Coef
+  op Integer.toCoef: Int -> Coef
   def Integer.toCoef(i) = intToRat(i)
 
-%  type Denom = Integer
+%  type Denom = Int
 
   type Term = 
     | Constant Coef
@@ -48,10 +48,10 @@ FM qualifying spec
   op zeroPoly: Poly
   def zeroPoly = []
 
-  op zeroPoly?: Poly -> Boolean
+  op zeroPoly?: Poly -> Bool
   def zeroPoly?(p) = p = zeroPoly
 
-  op constantPoly?: Poly -> Boolean
+  op constantPoly?: Poly -> Bool
   def constantPoly?(p) =
     case p of
       | [Constant _] -> true
@@ -63,7 +63,7 @@ FM qualifying spec
       then zeroPoly
     else mkPoly1(Constant(c))
 
-  op mkConstantIntPoly: Integer -> Poly
+  op mkConstantIntPoly: Int -> Poly
   def mkConstantIntPoly(i) =
     let c = toCoef(i) in
     mkConstantPoly(c)
@@ -101,7 +101,7 @@ FM qualifying spec
   op trueIneq: Ineq
   def trueIneq = trueIneqGtEq
 
-  op trueIneq?: Ineq -> Boolean
+  op trueIneq?: Ineq -> Bool
   def trueIneq?(ineq as (comp, poly)) =
     if constantPoly?(poly)
       then
@@ -115,13 +115,13 @@ FM qualifying spec
 	  | Neq -> c ~= zero
     else false
 
-  op equality?: Ineq -> Boolean
+  op equality?: Ineq -> Bool
   def equality?(ineq as (compPred, _)) =
     case compPred of
       | Eq -> true
       | _ -> false
 
-  op gteq?: Ineq -> Boolean
+  op gteq?: Ineq -> Bool
   def gteq?(ineq as (compPred, _)) =
     case compPred of
       | GtEq -> true
@@ -294,7 +294,7 @@ FM qualifying spec
 	   | Less -> Less
 	   | Greater -> Greater
 
-  op termGT: Term * Term -> Boolean
+  op termGT: Term * Term -> Bool
   def termGT(t1, t2) =
     let comp = compare(t1, t2) in
     case comp of
@@ -433,8 +433,8 @@ FM qualifying spec
 	Some newIneq
     else None
 
-  op tightenWithNeqInteger: Ineq -> Ineq -> Ineq
-  def tightenWithNeqInteger (neq as (Neq, poly1)) (ineq2 as (comp2, poly2)) =
+  op tightenWithNeqInt: Ineq -> Ineq -> Ineq
+  def tightenWithNeqInt (neq as (Neq, poly1)) (ineq2 as (comp2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
     let hdV1 = termVar(hdT1) in
@@ -460,13 +460,13 @@ FM qualifying spec
 	else ineq2
     else ineq2
 
-  op tightenGTInteger: Ineq -> Ineq
-  def tightenGTInteger (ineq as (comp, poly)) =
+  op tightenGTInt: Ineq -> Ineq
+  def tightenGTInt (ineq as (comp, poly)) =
     case comp of
       | Gt -> mkNormIneq(GtEq, polyMinusPoly(poly, mkPoly1(mkConstant(one))))
       | _ -> ineq
 
-  op ineqsChainAbleP: Ineq * Ineq -> Boolean
+  op ineqsChainAbleP: Ineq * Ineq -> Bool
   def ineqsChainAbleP(ineq1 as (compPred1, poly1), ineq2 as (compPred2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
@@ -543,7 +543,7 @@ FM qualifying spec
       then None
     else 
     let ineqSet = sortIneqSet(ineqSet) in
-    let ineqSet = integerPreProcess(ineqSet) in
+    let ineqSet = intPreProcess(ineqSet) in
     let completeIneqs = fourierMotzkin(ineqSet) in
     %let _ = writeLine("FM: input:") in
     %let _ = writeIneqs(ineqSet) in
@@ -564,7 +564,7 @@ FM qualifying spec
     let ineqSet = reverse(ineqSet) in % we will traverse from fewer to more variables.
     generateCounterExampleInt(ineqSet)
 
-  op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
+  op splitList2: [a] ((a -> Bool) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
     %let _ = writeLine("spl2") in
     case splitAtLeftmost p l of
@@ -668,12 +668,12 @@ FM qualifying spec
     mkIneq(Eq, poly)
 *)
 
-  op integerPreProcess: IneqSet -> IneqSet
-  def integerPreProcess(ineqSet) =
+  op intPreProcess: IneqSet -> IneqSet
+  def intPreProcess(ineqSet) =
     let neqs = filter (fn (Neq, _) -> true
 		        |_ -> false) ineqSet in
     let def tightenNeqBounds(neq, ineqSet) =
-         map (tightenWithNeqInteger neq) ineqSet in
+         map (tightenWithNeqInt neq) ineqSet in
     let def tightenAllNeqBounds(neqs, ineqSet) =
           case neqs of
 	    | [] -> ineqSet
@@ -683,7 +683,7 @@ FM qualifying spec
 	    else
 	      let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
 	      tightenAllNeqBounds(restNeqs, tightenedIneqs) in
-    let ineqSet = map tightenGTInteger ineqSet in
+    let ineqSet = map tightenGTInt ineqSet in
     tightenAllNeqBounds(neqs, ineqSet)
     
   
@@ -721,7 +721,7 @@ FM qualifying spec
 	   | None -> (ineqSet, [])
 	   | Some (possibleChains, firstNonChain, restNonChains) -> (possibleChains, [firstNonChain]++restNonChains) 
     in
-    let possibleChains = integerPreProcess(possibleChains) in
+    let possibleChains = intPreProcess(possibleChains) in
     let newIneqs = processPossibleIneqs(possibleChains) in
     let newIneqSet = newIneqs++nonChains in
     (possibleChains, sortIneqSet(newIneqSet))
@@ -795,7 +795,7 @@ FM qualifying spec
 
   op listToTerm:  Lisp.LispCell -> Term
   def listToTerm(list) =
-    let coef:Integer = uncell(car(list)) in
+    let coef:Int = uncell(car(list)) in
     let var:String = uncell(cdr(list)) in
     if var = "Constant"
       then mkConstant(coef)

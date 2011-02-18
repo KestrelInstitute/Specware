@@ -248,7 +248,7 @@ is suffices for now.
 
 The operator \verb+generateVarDefns+ takes a spec and generates the corresponding variable declarations for the operations. Current restrictions:
 \begin{itemize}
-\item operator may only have primitive sorts "Nat", "Integer", "Char", "String";
+\item operator may only have primitive sorts "Nat", "Int", "Char", "String";
 \item operators with arrow sorts are not allowed;
 \item sort definitions are ignored.
 \end{itemize}
@@ -316,7 +316,7 @@ regarded.
     case srt of
        |  Boolean _ -> Some Int
        |  Base (Imported("Nat","Nat"),[]) -> Some Int
-       |  Base (Imported("Integer","Integer"),[]) -> Some Int
+       |  Base (Imported("Integer","Int"),[]) -> Some Int
        |  Base (Imported("Char","Char"),[]) -> Some Char
        |  Base (Imported("String","String"),[]) -> Some (Ptr(Char))
        |  Base (Local(id),_) -> Some (Base(id))

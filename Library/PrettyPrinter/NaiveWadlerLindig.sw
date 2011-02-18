@@ -14,8 +14,8 @@ WadlerLindig qualifying spec
     | DocNil
     | DocCons (Doc * Doc)
     | DocText String
-    | DocNest (Integer * Doc)   % Offset relative to current column
-    | DocIndent (Integer * Doc) % Offset absolute (from left)
+    | DocNest   (Int * Doc)   % Offset relative to current column
+    | DocIndent (Int * Doc) % Offset absolute (from left)
     | DocNewline
     | DocBreak String
     | DocGroup Doc
@@ -23,7 +23,7 @@ WadlerLindig qualifying spec
 
 %   op layout : Doc -> Doc -> Nat -> Nat -> List String
 %   def layout doc rest column indent =
-%     let def replicate (cnt:Integer) str suffix =
+%     let def replicate (cnt:Int) str suffix =
 %       if cnt <= 0 then
 %         suffix
 %       else
@@ -112,7 +112,7 @@ WadlerLindig qualifying spec
   op ppString : String -> Doc
   def ppString s = DocText s
   
-  op ppNest : Integer -> Doc -> Doc
+  op ppNest : Int -> Doc -> Doc
   def ppNest i x = DocNest (i,x)
   
   op ppBreak : Doc
@@ -127,12 +127,12 @@ WadlerLindig qualifying spec
   type SDoc =
     | SNil
     | SText (String * SDoc)
-    | SLine (Integer * SDoc)   (* newline + spaces *)
+    | SLine (Int    * SDoc)   (* newline + spaces *)
   
   % def ppFormat doc = ppFormatWidth 80 doc
   def ppFormat doc = ppFormatWidth doc
 
-  % op ppFormatWidth : Integer -> Doc -> String
+  % op ppFormatWidth : Int -> Doc -> String
   op ppFormatWidth : Doc -> String
 
   def ppFormatWidth doc =

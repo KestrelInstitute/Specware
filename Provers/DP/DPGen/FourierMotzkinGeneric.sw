@@ -3,10 +3,10 @@ FM qualifying spec
   import IneqSet
   import ../DPCheck/InferenceRulesCheck
 
-  op debugFM: Boolean
+  op debugFM: Bool
   def debugFM = false
 
-  op splitList2: [a] ((a -> Boolean) * List a) -> (List a) * (List a)
+  op splitList2: [a] ((a -> Bool) * List a) -> (List a) * (List a)
   def splitList2 (p, l) =
     %let _ = writeLine("spl2") in
     case splitList p l of
@@ -60,7 +60,7 @@ FM qualifying spec
   def processIneq0(var, ineqSet) =
     {
     (possibleChains, nonChains) <- splitPossibleChains(var, ineqSet);
-    possibleChains <- integerPreProcess(possibleChains);
+    possibleChains <- intPreProcess(possibleChains);
     newIneqs <- processPossibleIneqs(possibleChains);
     newIneqSet <- return (nonChains++newIneqs);
     newIneqSet <- return (sortIneqSet(newIneqSet));
@@ -93,8 +93,8 @@ FM qualifying spec
       processPossibleIneqsAux(ineqSet, newIneqs++res)
        }
 
-  op tightenWithNeqInteger: Ineq -> Ineq -> Ineq.M Ineq
-  def tightenWithNeqInteger neq ineq2 =
+  op tightenWithNeqInt: Ineq -> Ineq -> Ineq.M Ineq
+  def tightenWithNeqInt neq ineq2 =
     let poly1 = poly(neq) in
     let poly2 = poly(ineq2) in
     let comp2 = compPred(ineq2) in
@@ -131,8 +131,8 @@ FM qualifying spec
 	else return ineq2
     else return ineq2
 
-  op tightenGTInteger: Ineq -> Ineq.M Ineq
-  def tightenGTInteger (ineq) =
+  op tightenGTInt: Ineq -> Ineq.M Ineq
+  def tightenGTInt(ineq) =
     case compPredConstructor(compPred(ineq)) of
       | Gt -> 
       {
@@ -144,7 +144,7 @@ FM qualifying spec
        }
       | _ -> return ineq
 
-  op ineqsChainAbleP: Ineq * Ineq -> Boolean
+  op ineqsChainAbleP: Ineq * Ineq -> Bool
   def ineqsChainAbleP(ineq1, ineq2) =
     let poly1 = poly(ineq1) in
     let poly2 = poly(ineq2) in
@@ -238,9 +238,9 @@ FM qualifying spec
        | None ->
       {
        ineqSetS <- return (sortIneqSet(ineqSetN));
-       ineqSetI <- integerPreProcess(ineqSetS);
+       ineqSetI <- intPreProcess(ineqSetS);
        ineqSetI <- return (filterSubsumed ineqSetI);
-       _ <- return(if debugFM then toScreen("FM: INTEGER:\n"^printIneqSet(ineqSetI)) else ());
+       _ <- return(if debugFM then toScreen("FM: INT:\n"^printIneqSet(ineqSetI)) else ());
        completeIneqs <- fourierMotzkin(filterSubsumed ineqSetI);
        _ <- return(if debugFM then toScreen("FM: output:\n"^printIneqSet(completeIneqs)) else ());
        posP <- getProof(completeIneqs);
@@ -400,7 +400,7 @@ FM qualifying spec
 	  else Coef.zero % If it is not of the above forms then lb is unconstrained
 
   op tightenNeqBounds(neq: Ineq, ineqSet: IneqSet): Ineq.M IneqSet =
-    mapSeq (tightenWithNeqInteger neq) ineqSet
+    mapSeq (tightenWithNeqInt neq) ineqSet
 
   op tightenAllNeqBounds(neqs: IneqSet, ineqSet: IneqSet): Ineq.M IneqSet =
     case neqs of
@@ -414,11 +414,11 @@ FM qualifying spec
            tightenAllNeqBounds(restNeqs, tightenedIneqs)
            } 
 
-  op integerPreProcess: IneqSet -> Ineq.M IneqSet
-  def integerPreProcess(ineqSet) =
+  op intPreProcess: IneqSet -> Ineq.M IneqSet
+  def intPreProcess(ineqSet) =
     let neqs = neqs(ineqSet) in
     {
-    ineqSetT <- mapSeq tightenGTInteger ineqSet;
+    ineqSetT <- mapSeq tightenGTInt ineqSet;
     tightenAllNeqBounds(neqs, ineqSetT)
      }
 

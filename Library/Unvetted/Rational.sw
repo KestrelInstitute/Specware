@@ -24,7 +24,7 @@ in Specware4/Provers/DP (see "NOTE" below).
 
 ISSUE:
 Here max : Set T -> T but Integer.max : T*T -> T for some T in
-  {Integer, Rational}.  This should be made uniform one way or
+  {Int, Rational}.  This should be made uniform one way or
   another!
 
 NOTE:
@@ -38,20 +38,19 @@ RationalNumber qualifying spec
 
   % construction:
 
-  type Ratio = Integer  % numerator
-             * PosNat   % denominator
+  type Ratio = Int * PosNat % numerator * denominator
 
-  op equiv? : Ratio * Ratio -> Boolean
+  op equiv? : Ratio * Ratio -> Bool
   def equiv? ((num1,den1), (num2,den2)) = (num1 * den2 = num2 * den1)
 
   type Rational = Ratio / equiv?
 
-  op rational : Integer * PosNat -> Rational
+  op rational : Int * PosNat -> Rational
   def rational = quotient[Rational]
 
   % embedding of integers:
 
-  op intToRat : Integer -> Rational
+  op intToRat : Int -> Rational
   def intToRat i = rational (i, 1)
 
   op zero : Rational
@@ -104,7 +103,7 @@ RationalNumber qualifying spec
 
   % comparisons:
 
-  op < infixl 20 : Rational * Rational -> Boolean
+  op < infixl 20 : Rational * Rational -> Bool
   def < (r1,r2) =
     choose[Rational] (fn(num1,den1) ->
     choose[Rational] (fn(num2,den2) ->
@@ -112,18 +111,18 @@ RationalNumber qualifying spec
     ) r2
     ) r1
 
-  op > infixl 20 : Rational * Rational -> Boolean
+  op > infixl 20 : Rational * Rational -> Bool
   def > (r1,r2) = r2 < r1
 
-  op <= infixl 20 : Rational * Rational -> Boolean
+  op <= infixl 20 : Rational * Rational -> Bool
   def <= (r1,r2) = r1 < r2 || r1 = r2
 
-  op >= infixl 20 : Rational * Rational -> Boolean
+  op >= infixl 20 : Rational * Rational -> Bool
   def >= (r1,r2) = r2 <= r1
 
   % non-negative:
 
-  op nonNegative? : Rational -> Boolean
+  op nonNegative? : Rational -> Bool
   def nonNegative? r = r >= zero
 
   type NonNegativeRational = (Rational | nonNegative?)
@@ -135,19 +134,19 @@ RationalNumber qualifying spec
 
   import /Library/General/Sets
 
-  op isMinIn infixl 20 : Rational * Set Rational -> Boolean
+  op isMinIn infixl 20 : Rational * Set Rational -> Bool
   def isMinIn (r, sr) = r in? sr && (fa(r1) r1 in? sr => r <= r1)
 
-  op hasMin? : Set Rational -> Boolean
+  op hasMin? : Set Rational -> Bool
   def hasMin? sr = (ex(r) r isMinIn sr)
 
   op min : (Set Rational | hasMin?) -> Rational
   def min sr = the(r) r isMinIn sr
 
-  op isMaxIn infixl 20 : Rational * Set Rational -> Boolean
+  op isMaxIn infixl 20 : Rational * Set Rational -> Bool
   def isMaxIn (r, sr) = r in? sr && (fa(r1) r1 in? sr => r >= r1)
 
-  op hasMax? : Set Rational -> Boolean
+  op hasMax? : Set Rational -> Bool
   def hasMax? sr = (ex(r) r isMaxIn sr)
 
   op max : (Set Rational | hasMax?) -> Rational
@@ -165,7 +164,7 @@ RationalNumber qualifying spec
     let def leastSuchThat p = fn d -> p d && (fa(d2) p d2 => d <= d2)
     in the(d:PosNat) leastSuchThat maybeDen d
 
-  op  numerator : Rational -> Integer
+  op  numerator : Rational -> Int
   def numerator r = the(n) r = rational(n, denominator r)
 
   op  toString : Rational -> String
@@ -211,16 +210,16 @@ RationalNumber qualifying spec
                sup (rangeCO (r1, r2)) = r2 &&
                sup (rangeOC (r1, r2)) = r2)
 
-  op allLess infixl 20 : Range * Range -> Boolean
+  op allLess infixl 20 : Range * Range -> Bool
   def allLess (rng1,rng2) = (fa(r1,r2) r1 in? rng1 && r2 in? rng2 => r1 < r2)
 
-  op allLessEq infixl 20 : Range * Range -> Boolean
+  op allLessEq infixl 20 : Range * Range -> Bool
   def allLessEq (rng1,rng2) = (fa(r1,r2) r1 in? rng1 && r2 in? rng2 => r1 <= r2)
 
-  op allGreater infixl 20 : Range * Range -> Boolean
+  op allGreater infixl 20 : Range * Range -> Bool
   def allGreater (rng1,rng2) = (fa(r1,r2) r1 in? rng1 && r2 in? rng2 => r1 > r2)
 
-  op allGreaterEq infixl 20 : Range * Range -> Boolean
+  op allGreaterEq infixl 20 : Range * Range -> Bool
   def allGreaterEq (rng1,rng2) = (fa(r1,r2) r1 in? rng1 && r2 in? rng2 => r1 >= r2)
 
   type ClosedRange = {rng : Range | inf rng in? rng && sup rng in? rng}

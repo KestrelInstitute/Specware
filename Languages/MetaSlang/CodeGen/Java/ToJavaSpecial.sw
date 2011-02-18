@@ -349,7 +349,7 @@ spec
 		  % let _ = writeLine ("    ------------") in
 		  return None) % see note above
 	   | _ -> 
-	     if builtinJavaBaseTypeId? q then 
+	     if builtinJavaBaseTypeQualifier? q then 
 	       % let _ = writeLine ("    Method within built-in base class: " ^ q ^ "." ^ id) in
 	       % let _ = writeLine ("    ------------") in
 	       return None 
@@ -444,22 +444,21 @@ spec
 
   op  builtinJavaBaseType?: Sort -> Boolean
   def builtinJavaBaseType? typ =
-    boolSort?    typ || % v3:p1 
-    integerSort? typ || % v3:p1 
-    natSort?     typ || % v3:p1 says NO  -- TODO: resolve this
-    stringSort?  typ || % v3:p1 says NO  -- TODO: resolve this
-    charSort?    typ    % v3:p1 
+    boolSort?   typ || % v3:p1 
+    intSort?    typ || % v3:p1 
+    natSort?    typ || % v3:p1 says NO  -- TODO: resolve this
+    stringSort? typ || % v3:p1 says NO  -- TODO: resolve this
+    charSort?   typ    % v3:p1 
 
-  op  builtinJavaBaseTypeId?: Id -> Boolean  
-  def builtinJavaBaseTypeId? id =
-  %% TODO: is this a complete set?  See basicQualifiers
-    id = "Boolean" || % v3:p1 
-    id = "Bool" || % v3:p1 
-    id = "Integer" || % v3:p1 
-    id = "Int" || % v3:p1 
-    id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
-    id = "String"  || % v3:p1 says NO  -- TODO: resolve this
-    id = "Char"       % v3:p1 
+  op  builtinJavaBaseTypeQualifier?: Qualifier -> Boolean  
+  def builtinJavaBaseTypeQualifier? q =
+    %% TODO: is this a complete set?  See basicQualifiers
+    %% v3:p1 
+    q in? ["Boolean", 
+           "Integer", 
+           "Nat",     % v3:p1 says NO  -- TODO: resolve this
+           "String",  % v3:p1 says NO  -- TODO: resolve this
+           "Char"]
 
  %op  JGen.getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
   def JGen.getPostSubstFun =

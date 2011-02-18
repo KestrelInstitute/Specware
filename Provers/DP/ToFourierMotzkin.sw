@@ -27,7 +27,7 @@ MSToFM qualifying spec
     | IfThenElse FMTerm * FMTerm * FMTerm
     | BoolBinOp BoolBinOp * FMTerm * FMTerm
     | BoolUnOp BoolUnOp * FMTerm
-    | LitBool Boolean
+    | LitBool Bool
     | UnSupported
 
   op zero: FMTerm
@@ -63,7 +63,7 @@ MSToFM qualifying spec
   def emptyToFMContext = {map = FMMap.emptyMap, revMap = FMMap.emptyMap, varCounter = 0}
 
 
-  op proveMSProb: Spec * List Property * Property -> Boolean
+  op proveMSProb: Spec * List Property * Property -> Bool
   def proveMSProb(spc, hyps, conc) =
     let context = emptyToFMContext in
     let (fmHyps, context) = toFMProperties(context, spc, hyps) in
@@ -71,7 +71,7 @@ MSToFM qualifying spec
     proveFMProb(fmHyps, fmConc)
 
 (*
-  op proveFMProb: List FMTerm * FMTerm -> Boolean
+  op proveFMProb: List FMTerm * FMTerm -> Bool
   def proveFMProb(hyps, conc) =
     case conc of
       | BoolBinOp (Implies, fmTerm1, fmTerm2) ->
@@ -89,7 +89,7 @@ MSToFM qualifying spec
 	FMRefute?(negConcs++hyps)
 *)
 
-  op proveFMProb: List FMTerm * FMTerm -> Boolean
+  op proveFMProb: List FMTerm * FMTerm -> Bool
   def proveFMProb(hyps, conc) =
     case conc of
       | BoolBinOp (Implies, fmTerm1, fmTerm2) ->
@@ -128,7 +128,7 @@ MSToFM qualifying spec
                          | _ -> [] in
 	forall? (fn (hyps) -> FMRefuteTop?(negConcs++hyps)) hypsDisjunct
 
-  op FMRefuteTop?: List Ineq -> Boolean
+  op FMRefuteTop?: List Ineq -> Bool
   def FMRefuteTop?(ineqSet) =
     FMRefute?(ineqSet) = None
 
@@ -177,7 +177,7 @@ MSToFM qualifying spec
 
   def fmBoolOps = ["&", "or", "~", "=>", "<=>"]
 
-  op fmInterp?: MS.Term -> Boolean
+  op fmInterp?: MS.Term -> Bool
   def fmInterp?(term) =
     case term of
       | Apply(Fun(f, srt, _), arg, _) ->
@@ -186,7 +186,7 @@ MSToFM qualifying spec
 	   | _ -> fmInterpFun?(f))
       | _ -> false
 
-  op fmInterpFun?: Fun -> Boolean
+  op fmInterpFun?: Fun -> Bool
   def fmInterpFun?(f) =
     case f of
       | Op (Qualified (q, id), _) ->
@@ -207,7 +207,7 @@ MSToFM qualifying spec
 	 | ("Integer", "*") -> true
 	 | ("Nat",     "+") -> true
 	 | ("Integer", "+") -> true
-	 | ("Nat",  "succ") -> true
+	 | ("Nat",    "succ") -> true
 	 | ("Integer","succ") -> true
 	 | ("Integer", "natural?") -> true
 	 | ("Nat", "natural?") -> true
@@ -226,33 +226,33 @@ MSToFM qualifying spec
     case f of
       | Op (Qualified (q, id), _) ->
       (case (q, id) of
-	 | ("Nat",     "<=") -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
-	 | ("Integer", "<=") -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
-	 | ("Nat",     "<") -> (fn ([a1, a2]) -> fmLt(a1, a2))
-	 | ("Integer", "<") -> (fn ([a1, a2]) -> fmLt(a1, a2))
-	 | ("Nat",     ">=") -> (fn ([a1, a2]) -> fmGtEq(a1, a2))
-	 | ("Integer", ">=") -> (fn ([a1, a2]) -> fmGtEq(a1, a2))
-	 | ("Nat",     ">") -> (fn ([a1, a2]) -> fmGt(a1, a2))
-	 | ("Integer", ">") -> (fn ([a1, a2]) -> fmGt(a1, a2))
-	 | ("Nat",     "~") -> (fn ([a]) -> fmUMinus(a))
-	 | ("Integer", "~") -> (fn ([a]) -> fmUMinus(a))
-	 | ("Nat",     "-") -> (fn ([a1, a2]) -> fmMinus(a1, a2))
-	 | ("Integer", "-") -> (fn ([a1, a2]) -> fmMinus(a1, a2))
-	 | ("Nat",     "+") -> (fn ([a1, a2]) -> fmPlus(a1, a2))
-	 | ("Integer", "+") -> (fn ([a1, a2]) -> fmPlus(a1, a2))
-	 | ("Nat",  "succ") -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
-	 | ("Integer","succ") -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
-	 | ("Nat",     "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
-	 | ("Integer", "*") -> (fn ([a1, a2]) -> fmTimes(a1, a2))
-	 | ("Integer", "natural?") -> (fn ([a]) -> fmNatural(a))
-	 | ("Nat", "natural?") -> (fn ([a]) -> fmNatural(a)))
-       | Not     -> (fn ([a]) -> fmNot(a))
-       | And     -> (fn ([a1, a2]) -> fmConjunct(a1, a2))
-       | Or      -> (fn ([a1, a2]) -> fmDisjunct(a1, a2))
-       | Implies -> (fn ([a1, a2]) -> fmImpl(a1, a2))
-       | Iff     -> (fn ([a1, a2]) -> fmEquiv(a1, a2))
-       | Equals  -> (fn ([a1, a2]) -> fmEquals(a1, a2))
-       | NotEquals  -> (fn ([a1, a2]) -> fmNotEquals(a1, a2))
+	 | ("Nat",     "<=")       -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
+	 | ("Integer", "<=")       -> (fn ([a1, a2]) -> fmLtEq(a1, a2))
+	 | ("Nat",     "<")        -> (fn ([a1, a2]) -> fmLt(a1, a2))
+	 | ("Integer", "<")        -> (fn ([a1, a2]) -> fmLt(a1, a2))
+	 | ("Nat",     ">=")       -> (fn ([a1, a2]) -> fmGtEq(a1, a2))
+	 | ("Integer", ">=")       -> (fn ([a1, a2]) -> fmGtEq(a1, a2))
+	 | ("Nat",     ">")        -> (fn ([a1, a2]) -> fmGt(a1, a2))
+	 | ("Integer", ">")        -> (fn ([a1, a2]) -> fmGt(a1, a2))
+	 | ("Nat",     "~")        -> (fn ([a])      -> fmUMinus(a))
+	 | ("Integer", "~")        -> (fn ([a])      -> fmUMinus(a))
+	 | ("Nat",     "-")        -> (fn ([a1, a2]) -> fmMinus(a1, a2))
+	 | ("Integer", "-")        -> (fn ([a1, a2]) -> fmMinus(a1, a2))
+	 | ("Nat",     "+")        -> (fn ([a1, a2]) -> fmPlus(a1, a2))
+	 | ("Integer", "+")        -> (fn ([a1, a2]) -> fmPlus(a1, a2))
+	 | ("Nat",     "succ")     -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
+	 | ("Integer", "succ")     -> (fn ([a1])     -> fmPlus(a1, Poly onePoly))
+	 | ("Nat",     "*")        -> (fn ([a1, a2]) -> fmTimes(a1, a2))
+	 | ("Integer", "*")        -> (fn ([a1, a2]) -> fmTimes(a1, a2))
+	 | ("Integer", "natural?") -> (fn ([a])      -> fmNatural(a))
+	 | ("Nat",     "natural?") -> (fn ([a])      -> fmNatural(a)))
+       | Not       -> (fn ([a])      -> fmNot(a))
+       | And       -> (fn ([a1, a2]) -> fmConjunct(a1, a2))
+       | Or        -> (fn ([a1, a2]) -> fmDisjunct(a1, a2))
+       | Implies   -> (fn ([a1, a2]) -> fmImpl(a1, a2))
+       | Iff       -> (fn ([a1, a2]) -> fmEquiv(a1, a2))
+       | Equals    -> (fn ([a1, a2]) -> fmEquals(a1, a2))
+       | NotEquals -> (fn ([a1, a2]) -> fmNotEquals(a1, a2))
 
   op fmNot: FMTerm -> FMTerm
   def fmNot(tm) =
@@ -514,21 +514,22 @@ MSToFM qualifying spec
   op mkAddition: MS.Term * MS.Term -> MS.Term
   def mkAddition(t1, t2) =
     let addOp = mkInfixOp(mkQualifiedId("Integer", "+"), Infix (Left, 25),
-			  mkArrow(mkProduct([integerSort, integerSort]), integerSort)) in
+			  mkArrow(mkProduct([intSort, intSort]), intSort)) in
     mkApplication(addOp, [t1, t2])
 
   op fromFMTermIneq: Spec * FM.Ineq * Context -> MS.Term
   def fromFMTermIneq(spc, ineq, context) =
     let def compToQid(comp) =
           case comp of
-	    | Gt -> mkQualifiedId("Integer",">")
-	    | Lt -> mkQualifiedId("Integer","<")
+	    | Gt   -> mkQualifiedId("Integer",">")
+	    | Lt   -> mkQualifiedId("Integer","<")
 	    | GtEq -> mkQualifiedId("Integer",">=")
 	    | LtEq -> mkQualifiedId("Integer","<=")
-	    | Eq -> mkQualifiedId("Integer","=")
-	    | Neq -> mkQualifiedId("Integer","~=") in
+	    | Eq   -> mkQualifiedId("Integer","=")
+	    | Neq  -> mkQualifiedId("Integer","~=")
+    in
     let def fromFMComp(comp) =
-          let srt = mkArrow(mkProduct([integerSort, integerSort]), boolSort) in
+          let srt = mkArrow(mkProduct([intSort, intSort]), boolSort) in
           mkInfixOp(compToQid(comp), Infix (Left, 20), srt) in
     let (comp, p) = ineq in
     let MSP = fromFMTermPoly(spc, p, context) in
@@ -556,7 +557,7 @@ op fromFMTermVar: FM.Var * Context -> MS.Term
   op mkMult: MS.Term * MS.Term -> MS.Term
   def mkMult(t1, t2) =
     let multOp = mkInfixOp(mkQualifiedId("Integer", "*"), Infix (Left, 27),
-			   mkArrow(mkProduct([integerSort, integerSort]), integerSort)) in
+			   mkArrow(mkProduct([intSort, intSort]), intSort)) in
     mkApplication(multOp, [t1, t2])
   
   op fromFMTermBoolBinOp: Spec * BoolBinOp * FMTerm * FMTerm * Context -> MS.Term

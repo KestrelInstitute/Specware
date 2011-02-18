@@ -28,7 +28,7 @@ def unSupported x =
   msg
 
 (**
- * a base type wrt. code generation are the builtin base types Boolean,Nat,Integer,Char,String
+ * a base type wrt. code generation are the builtin base types Bool,Nat,Int,Char,String
  * and also those types that do *not* have a definition in the spec, i.e. those which
  * are just declared.
  * TODO:  v3:p1 says base types are exactly Boolean, Int, Char  -- resolve this
@@ -38,7 +38,7 @@ def baseType? (spc, typ) =
   %let _ = writeLine("baseType? "^(printSort typ)^"...") in
   %% TODO: is this a complete set?  See basicQualifiers
   boolSort?    typ ||   % v3:p1 
-  integerSort? typ ||   % v3:p1 
+  intSort?     typ ||   % v3:p1 
   natSort?     typ ||   % v3:p1 says NO  -- TODO: resolve this
   stringSort?  typ ||   % v3:p1 says NO  -- TODO: resolve this
   charSort?    typ ||   % v3:p1 
@@ -49,7 +49,7 @@ def baseType? (spc, typ) =
  op builtinBaseType?: Sort -> Boolean
 def builtinBaseType? typ =
   boolSort?    typ || % v3:p1 
-  integerSort? typ || % v3:p1 
+  intSort?     typ || % v3:p1 
   natSort?     typ || % v3:p1 says NO  -- TODO: resolve this
   stringSort?  typ || % v3:p1 says NO  -- TODO: resolve this
   charSort?    typ    % v3:p1 
@@ -69,7 +69,8 @@ def baseTypeAlias? (spc, srt) =
 def builtinBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
   id = "Boolean" || % v3:p1 
-  id = "Integer" || % v3:p1 
+  id = "Bool"    || % v3:p1 
+  id = "Int"     || % v3:p1 
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
   id = "String"  || % v3:p1 says NO  -- TODO: resolve this
   id = "Char"       % v3:p1 
@@ -77,7 +78,8 @@ def builtinBaseTypeId? id =
  op baseTypeId?: Spec * Id -> Boolean
 def baseTypeId? (spc, id) =
   id = "Boolean" || % v3:p1 
-  id = "Integer" || % v3:p1 
+  id = "Bool"    || % v3:p1 
+  id = "Int"     || % v3:p1 
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
   id = "String"  || % v3:p1 says NO  -- TODO: resolve this
   id = "Char"    || % v3:p1 

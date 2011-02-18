@@ -171,12 +171,12 @@ SpecsToI2L qualifying spec {
     %let _ = String.writeLine(printSort(srt)^"-[unfold]->"^printSort(usrt)) in
     case usrt of
       % primitives ----------------------------------------------
-      | Boolean _  -> Primitive "Boolean"
+      | Boolean _                         -> Primitive "Boolean"
       | Base(Qualified(_,"Nat"),    [],_) -> Primitive "Nat"
-      | Base(Qualified(_,"Integer"),[],_) -> Primitive "Integer"
+      | Base(Qualified(_,"Int"),    [],_) -> Primitive "Integer"
       | Base(Qualified(_,"Char"),   [],_) -> Primitive "Char"
       | Base(Qualified(_,"String"), [],_) -> Primitive "String"
-     %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
+     %| Base(Qualified(_,"Float"),  [],_) -> Primitive "Float"
 
      % reference type
      %| Base(Qualified("ESpecPrimitives","Ref"),[srt],_) -> Ref(sort2type(ctxt,spc,tvs,srt))
@@ -224,7 +224,7 @@ SpecsToI2L qualifying spec {
 					  | _ -> System.fail(err))
 				     | _ -> System.fail(err)
 				   in
-				   let const = constantTermIntegerValue(spc,constantterm) in
+				   let const = constantTermIntValue(spc,constantterm) in
 				   if const<minconst then System.fail(err) else const
 			       in
 		               (case cmp of
@@ -314,8 +314,8 @@ SpecsToI2L qualifying spec {
 	       System.fail("sorry, code generation doesn't support the use of this sort:\n       "
 			   ^printSort(srt))
 
-  op constantTermIntegerValue : Spec * Term -> Integer
-  def constantTermIntegerValue(spc,t) =
+  op constantTermIntValue : Spec * Term -> Int
+  def constantTermIntValue(spc,t) =
     let def err() = (System.print(t);
              System.fail("cannot evaluate the constant value of term "^
 			 printTerm(t)))
@@ -325,7 +325,7 @@ SpecsToI2L qualifying spec {
       | Fun(Op(qid,_),_,_) -> 
       (case getOpDefinition(spc,qid) of
 	 | None -> err()
-	 | Some t -> constantTermIntegerValue(spc,t)
+	 | Some t -> constantTermIntValue(spc,t)
 	)
       | _ -> err()
 
@@ -433,7 +433,7 @@ SpecsToI2L qualifying spec {
 	      case srt of
 		| Boolean _ -> srt
 		| Base (Qualified ("Nat",     "Nat"),    [],      _) -> srt
-		| Base (Qualified ("Integer", "Integer"),[],      _) -> srt
+		| Base (Qualified ("Integer", "Int"),    [],      _) -> srt
 		| Base (Qualified ("Char",    "Char"),   [],      _) -> srt
 		| Base (Qualified ("String",  "String"), [],      _) -> srt
 		| Base (Qualified ("List",    "List"),   [psrt],  X) ->
@@ -825,7 +825,7 @@ SpecsToI2L qualifying spec {
       | Boolean                            _  -> primEq()
       | Base    (Qualified(_,"Bool"),   [],_) -> primEq()
       | Base    (Qualified(_,"Nat"),    [],_) -> primEq()
-      | Base    (Qualified(_,"Integer"),[],_) -> primEq()
+      | Base    (Qualified(_,"Int"),    [],_) -> primEq()
       | Base    (Qualified(_,"Int"),    [],_) -> primEq()
       | Base    (Qualified(_,"Char"),   [],_) -> primEq()
      %| Base    (Qualified(_,"Float"),  [],_) -> primEq()

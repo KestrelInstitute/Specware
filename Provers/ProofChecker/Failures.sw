@@ -9,8 +9,8 @@ spec
   proofs. This spec defines the possible failures. *)
 
   type Failure =
-    | badPermutation                   List Integer
-    | wrongPermutationLength           List Integer
+    | badPermutation                   List Int
+    | wrongPermutationLength           List Int
     | fieldNotFound                    Field * Fields * Types
     | typeNotDeclared                  Context * TypeName
     | opNotDeclared                    Context * Operation
@@ -26,7 +26,7 @@ spec
     | varAlreadyDeclared               Context * Variable
     | typeVarInSpec                    Context
     | varInSpec                        Context
-    | negativeTypeArity                TypeName * Integer
+    | negativeTypeArity                TypeName * Int
     | wrongTypeArity                   TypeName * Nat * Nat
     | badTypeSubstitution              TypeVariables * Types
     | badSubstitution                  Variable * Expression
@@ -35,7 +35,7 @@ spec
     | notSubtype                       Judgement
     | notWTExpr                        Judgement
     | notTheorem                       Judgement
-    | notBoolean                       Type
+    | notBool                          Type
     | notTypeInstance                  Type
     | notArrowType                     Type
     | notRecordType                    Type

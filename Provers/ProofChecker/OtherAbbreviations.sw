@@ -21,7 +21,7 @@ spec
   % API private
   op minDistinctAbbrVar : FSet Variable -> Variable
   def minDistinctAbbrVar vS =
-    abbr (minIn ( (fn(i:Integer) ->  % min of the set of all i:Integer such that
+    abbr (minIn ( (fn(i:Int) ->  % min of the set of all i:Int such that
       % i is a natural:
       i >= 0 &&
       % and i does not decorate any variable in vS:

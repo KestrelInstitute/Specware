@@ -10,9 +10,9 @@ Double qualifying spec
 
   type Double 
 
-  op Integer.toDouble : Integer -> Double
- 
-  op String.toDouble : String -> Double
+  op Integer.toDouble : Int    -> Double
+  op String.toDouble  : String -> Double
+
   op show : Double -> String
 
   op DoubleAux.- : Double -> Double
@@ -46,14 +46,14 @@ Double qualifying spec
 
   % comparisons:
 
-  op < infixl 20 : Double * Double -> Boolean
-  op > infixl 20 : Double * Double -> Boolean
-  op <= infixl 20 : Double * Double -> Boolean
-  op >= infixl 20 : Double * Double -> Boolean
+  op <  infixl 20 : Double * Double -> Bool
+  op >  infixl 20 : Double * Double -> Bool
+  op <= infixl 20 : Double * Double -> Bool
+  op >= infixl 20 : Double * Double -> Bool
 
   % non-negative:
 
-  op nonNegative? : Double -> Boolean
+  op nonNegative? : Double -> Bool
   def nonNegative? r = r >= zero
 
   type NonNegativeDouble = (Double | nonNegative?)
@@ -72,8 +72,8 @@ Double qualifying spec
 %  op sqrt : Double -> Complex 
   op sqrt: NonNegativeDouble -> NonNegativeDouble
 
-  op ceiling : Double -> Integer
-  op floor : Double -> Integer
+  op ceiling : Double -> Int
+  op floor   : Double -> Int
 
   %op pp : Double -> Pretty
   %def pp dbl = pp (show dbl)

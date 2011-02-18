@@ -21,7 +21,7 @@ IO qualifying spec
 
 
   op deleteFile      : String -> ()
-  op fileExists?     : String -> Boolean
+  op fileExists?     : String -> Bool
 
   op format1         : [a]     Stream * Format * a         -> ()
   op format2         : [a,b]   Stream * Format * a * b     -> ()
@@ -50,7 +50,7 @@ IO qualifying spec
   %%   fileOlder? ("foo.sl", "foo.lisp")
   %% means that we *don't* need to recompile.
  
-  op fileOlder? : FileString * FileString -> Boolean
+  op fileOlder? : FileString * FileString -> Bool
   op ensureDirectoriesExist : FileString -> ()
 
   %% Write Nat, Char, and String to terminal
@@ -68,6 +68,6 @@ IO qualifying spec
   op gotoFilePosition: FileString * Nat * Nat -> ()
   op emacsEval: String -> {}
 
-  op chooseMenu: List String -> Integer
+  op chooseMenu: List String -> Int
   %% No defs here -- see ...
 endspec

@@ -12,7 +12,7 @@ spec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
   import /Languages/MetaSlang/Specs/Printer
 
-  sort Index = Integer			% Acually Nat + -1
+  sort Index = Int			% Acually Nat + -1
 
   sort Stat =
     | Assign MS.Term
@@ -36,7 +36,7 @@ spec
 		   falseBranch : Index,
 		   cont        : Index }
     | Loop { condition : MS.Term,
-	     preTest?  : Boolean,
+	     preTest?  : Bool,
 	     body      : Index,
 %	     endLoop   : Index,
 	     cont      : Index }
@@ -100,7 +100,7 @@ spec
     in
       (DFS(topIndex,(1,[],g))).3
 
-  op descendantIndex?: Index * Index * Graph -> Boolean
+  op descendantIndex?: Index * Index * Graph -> Bool
   def descendantIndex?(i,j,g) = depthFirstIndex(i,g) < depthFirstIndex(j,g)
 
   op loopPredecessors: Index * Graph -> List Index

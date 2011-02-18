@@ -29,6 +29,7 @@ We call the successor function on integers "isucc" to distinguish it from the
 inverse of isucc "ipred", for symmetry. *)
 
 type Int
+type Integer = Int  % deprecated -- no longer used by Specware itself
 
 op zero : Int
 
@@ -1115,15 +1116,10 @@ op compare (i:Int, j:Int) : Comparison = if i < j then Less
                                     else if i > j then Greater
                                     else (* i = j *)   Equal
 
-% legacy, deprecated:
-
-type Integer = Int
-
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism Presburger
  type Integer.Int -> int
- type Integer.Integer -> int
  type Nat.Nat     -> nat (int,nat) [+,*,/,rem,mod,modF,<=,<,>=,>,abs,min,max]
  Integer.zero     -> 0
  Integer.one      -> 1
@@ -1166,7 +1162,6 @@ end-proof
 
 #translate Haskell -morphism
  type Integer.Int -> Int
- type Integer.Integer -> Int
  type Nat.Nat     -> Int
  Integer.zero     -> 0
  Integer.one      -> 1

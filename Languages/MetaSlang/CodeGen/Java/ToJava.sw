@@ -888,32 +888,22 @@ def JGen.printJavaFile(jfile as (filename,jspc)) =
 
 op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp(qid) =
-  let Qualified(q,i) = qid in
-  (q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
-  ||
-  (q="Integer" && (i="Integer" || i="Int" || i="Int0" || i="+" || i="-" || i="*" || i="div"
-                   || i="rem" || i="<" || i="<=" || i=">" || i=">=" || i="toString"
-                   || i="intToString" || i="show" || i="stringToInt"
-                   || i="positive?" || i="one" || i="zero" || i="isucc"))
-  ||
-  (q="IntegerAux" && i="-") % unary minus
-  ||
-  (q="Boolean" && (i="Boolean" || i="Bool" || i="true" || i="false" || i="~" || i="&" || i="or" ||
-		   i="=>" || i="<=>" || i="~="))
-  ||
-  (q="Char" && (i="Char" || i="chr" || i="ord" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
-	        i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" ||
-                i="toLowerCase" || i="toString"))
-  ||
-  (q="String" && (i="String" || i="concat" || i="++" || i="^" || i="newline" || i="length" ||
-                    i = "subFromTo" || i="substring" || i="@" || i="sub"))
-  ||
-  (q="System" && (i="writeLine" || i="toScreen"))
-  || %% Non-constructive
-  (q="Function" && i in? ["inverse", "surjective?", "injective?", "bijective?"])  % "Bijection" removed but transparent
-  || (q = "List" && i in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength",
-                           "list", "list_1", "ListFunction"])
-  || (q = "Integer" && i in? ["positive?", "negative?"])
+  let Qualified (q, id) = qid in
+  case q of
+    | "Nat"        -> id in? ["Nat", "PosNat", "toString", "natToString", "show", "stringToNat"]
+    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<", "<=", ">", ">=", "toString", "intToString", 
+                              "show", "stringToInt", "positive?", "one", "zero", "isucc", "positive?", "negative?"]
+    | "IntegerAux" -> id in? ["-"]  % unary minus
+    | "Boolean"    -> id in? ["Bool", "true", "false", "~", "&", "or", "=>", "<=>", "~="]
+    | "Char"       -> id in? ["Char", "chr", "ord", 
+                              "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
+                              "toUpperCase", "toLowerCase", "toString"]
+    | "String"     -> id in? ["String", "concat", "++", "^", "newline", "length", "subFromTo", "substring", "@", "sub"]
+    | "System"     -> id in? ["writeLine", "toScreen"]
+      %% Non-constructive
+    | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
+    | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
+    | _ -> false
 
 % --------------------------------------------------------------------------------
 def printOriginalSpec? = false

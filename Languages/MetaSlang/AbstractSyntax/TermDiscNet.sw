@@ -14,7 +14,7 @@ spec
 
 %% The labels that make up paths from root to nodes 
 
-  type Key = Integer
+  type Key = Int
   def compareKey : Key * Key -> Comparison = 
       Integer.compare
 
@@ -28,17 +28,17 @@ spec
   type KeyMap a = SplayMap.Map(Key,a)
   def  empty = SplayMap.empty compareKey
 
-  type DNode = IntegerSet.Set * KeyMap DNode
+  type DNode = IntSet.Set * KeyMap DNode
 
   def mkDnode cont = (cont,empty)
 
-  def EmptyDiscNet = mkDnode IntegerSet.empty
+  def EmptyDiscNet = mkDnode IntSet.empty
 
-  op contents(set: IntegerSet.Set, _:  KeyMap DNode): IntegerSet.Set = set
-  op nextList(_: IntegerSet.Set, next: KeyMap DNode): KeyMap DNode = next
+  op contents(set: IntSet.Set, _:  KeyMap DNode): IntSet.Set = set
+  op nextList(_: IntSet.Set, next: KeyMap DNode): KeyMap DNode = next
 
-  op allContents(set: IntegerSet.Set, next: KeyMap DNode): IntegerSet.Set =
-    foldl (fn (nd, result) -> IntegerSet.union(result,allContents nd)) set next
+  op allContents(set: IntSet.Set, next: KeyMap DNode): IntSet.Set =
+    foldl (fn (nd, result) -> IntSet.union(result,allContents nd)) set next
 
   op  getNext : KeyMap DNode * Key -> Option DNode
   def getNext = SplayMap.find
@@ -72,15 +72,15 @@ spec
 
    op extend : Disc_net * Key -> List Nat -> Disc_net % ?? guessing
   def extend ((set,next),element) = 
-      fn [] ->  (IntegerSet.add(set,element),next)
+      fn [] ->  (IntSet.add(set,element),next)
        | (a::rest) -> 
-         let newNode = extend ((mkDnode IntegerSet.empty),element) rest
+         let newNode = extend ((mkDnode IntSet.empty),element) rest
 	 in 
 	 (set,SplayMap.insert(next,a,newNode))
 	
 
   def addForPath = 
-      fn ((set,next),[],element) -> (IntegerSet.add(set,element),next)
+      fn ((set,next),[],element) -> (IntSet.add(set,element),next)
        | (dnode as (set,next), list as (k::rest), element) -> 
 	 case getNext(next,k) 
            of None -> extend (dnode,element) list
@@ -89,7 +89,7 @@ spec
 	      (set,SplayMap.insert(next,k,newNode))
 	
   def removeForPath = 
-      fn ((set,next),[],element) -> (IntegerSet.delete(set,element),next)
+      fn ((set,next),[],element) -> (IntSet.delete(set,element),next)
        | ((set,next),(k::rest),element) -> 
 	 case getNext(next,k)  
            of None -> 
@@ -105,7 +105,7 @@ spec
 
   op  mergeDiscNets: Disc_net * Disc_net -> Disc_net
   def mergeDiscNets((s1,m1),(s2,m2)) =
-    (IntegerSet.union(s1,s2),
+    (IntSet.union(s1,s2),
      foldri (fn (key,val,m) ->
 	      let newval =
 		  case find(m,key) of

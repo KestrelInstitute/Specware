@@ -12,7 +12,7 @@ spec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex delete
   import /Languages/MetaSlang/Specs/Printer
 
-  sort Index = Integer			% Acually Nat + -1
+  sort Index = Int			% Acually Nat + -1
 
   % term annotated with its environment spec
   sort EnvTerm = AnnSpec.Spec * MS.Term
@@ -39,7 +39,7 @@ spec
 		   falseBranch : Index,
 		   cont        : Index }
     | Loop { condition : EnvTerm,
-	     preTest?  : Boolean,
+	     preTest?  : Bool,
 	     body      : Index,
 %	     endLoop   : Index,
 	     cont      : Index }
@@ -51,7 +51,7 @@ spec
   sort Node = Index * NodeContent * List Index % predecessors
   sort Graph = List Node		% In some topological order
 
-  op  deletedNode?: Node -> Boolean
+  op  deletedNode?: Node -> Bool
   def deletedNode? nd =
     case nd of
       | (_,Deleted,_) -> true
@@ -174,7 +174,7 @@ spec
     in
       (DFS(topIndex,(1,[],g))).3
 
-  op descendantIndex?: Index * Index * Graph -> Boolean
+  op descendantIndex?: Index * Index * Graph -> Bool
   def descendantIndex?(i,j,g) = depthFirstIndex(i,g) < depthFirstIndex(j,g)
 
   %% Returns node that is lowest in graph
@@ -399,7 +399,7 @@ spec
 	     | _ -> g))
       (0,g) g).2
 
-  op  noOpNode?: Node -> Boolean
+  op  noOpNode?: Node -> Bool
   def noOpNode? (_,content,_) =
     case content of
       | Block{statements = [],next = _} -> true

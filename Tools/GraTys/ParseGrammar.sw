@@ -41,7 +41,7 @@ spec
      in
      project 1 o flushW o foldr addChar ([], "") o explode
 
-   op  Char.<= infixl 20 : Char * Char -> Boolean
+   op  Char.<= infixl 20 : Char * Char -> Bool
    def Char.<= = (~) o embed? Greater o compare
 
    op  altparse : Seq NonEmptyString -> Alternative
@@ -70,7 +70,7 @@ spec
      in
      project 1 o foldl addW ([], Notion "")
 
-   type NString = Integer * String
+   type NString = Int * String
 
    op  processLine : NString * FGONSA -> FGONSA
    def processLine((lino, line), fgonsa as {g?, n?, alts}) =
@@ -90,7 +90,7 @@ spec
      else inject_g?(KO("line `"++line++"' is improper"))
    
   (* The following function is a general list utility *)
-  op numberFrom : [a] Integer -> Seq a  -> Seq(Integer * a)
+  op numberFrom : [a] Int -> Seq a  -> Seq(Int * a)
   def numberFrom n x = case x of
      | Nil        -> Nil
      | Cons(a, y) -> Cons((n, a), numberFrom (n+1) y)

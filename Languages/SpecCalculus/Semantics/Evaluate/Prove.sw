@@ -211,7 +211,7 @@ SpecCalc qualifying spec
  def UIDtoProofName (unitId as {path,hashSuffix}) =
     hashSuffix
 
- op claimNameMatch: ClaimName * ClaimName -> Boolean
+ op claimNameMatch: ClaimName * ClaimName -> Bool
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
@@ -220,7 +220,7 @@ SpecCalc qualifying spec
    else cq = pq && cid = pid
 
  op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * String * 
-                  Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean
+                  Assertions * List LispCell * Bool * AnswerVar * String * Position -> SpecCalc.Env Bool
  def proveInSpec (proofName, claimName, spc, specName, baseSpc, % rewriteSpc,
                   proverName, assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = 
    let _ = debug("pinspec") in
@@ -304,7 +304,7 @@ SpecCalc qualifying spec
      | [p] -> printQualifiedId(p)
      | p :: ps -> printQualifiedId(p)^", "^printMissingHypothesis(ps)
 
- op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean * String-> Boolean
+ op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Bool * String-> Bool
  def displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) =
    let _ =
    case proofName of
@@ -363,7 +363,7 @@ SpecCalc qualifying spec
 						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							      Lisp.nil(),evalForm]])])
 
- op provedString: Boolean -> String
+ op provedString: Bool -> String
  def provedString(proved) =
    if proved
      then " is Proved!"
@@ -383,7 +383,7 @@ SpecCalc qualifying spec
    
  op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          % List Property * Spec *
-                         String * List LispCell * Boolean * AnswerVar * String -> Boolean
+                         String * List LispCell * Bool * AnswerVar * String -> Bool
 
  def proveWithHypothesis(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
                          % rewriteSpc,
@@ -406,7 +406,7 @@ SpecCalc qualifying spec
 
  op proveWithHypothesisSnark: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          % List Property * % Spec *
-                         String * List LispCell * Boolean * AnswerVar * String -> Boolean
+                         String * List LispCell * Bool * AnswerVar * String -> Bool
 
  def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
                               % rewriteSpc,
@@ -454,7 +454,7 @@ SpecCalc qualifying spec
    let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved, runTime) in
      proved
 
- op proveWithHypothesisFM: Option String * Property * Spec * Option String * String * Boolean -> Boolean
+ op proveWithHypothesisFM: Option String * Property * Spec * Option String * String * Bool -> Bool
 
  def proveWithHypothesisFM(proofName, claim, spc, specName, proverName, preProof?) =
    let _ = debug("preovWithHyp") in

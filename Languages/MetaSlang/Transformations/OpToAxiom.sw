@@ -25,9 +25,9 @@ Prover qualifying spec
      return (subtractSpec baseProverSpec baseSpec)
     }
 
-  op treatNatSpecially?: Boolean = true
+  op treatNatSpecially?: Bool = true
 
-  op simpleFun?(f: Fun): Boolean =
+  op simpleFun?(f: Fun): Bool =
     case f of
       | Not -> true
       | And -> true
@@ -38,7 +38,7 @@ Prover qualifying spec
       | NotEquals -> true
       | _ -> false
 
-  op simpleBody?(bod: MS.Term): Boolean =
+  op simpleBody?(bod: MS.Term): Bool =
     simpleTerm bod
       || (case bod of
             | Record(fields,_) ->

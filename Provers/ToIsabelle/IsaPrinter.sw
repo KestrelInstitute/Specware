@@ -2885,7 +2885,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
           | None ->
         if (qid = Qualified("IntegerAux","-") || qid = Qualified("Integer","~"))
           && parentTerm ~= Infix(Left,1000)   % Only true if an application
-          then let vt = ("i",integerSort) in
+          then let vt = ("i",intSort) in
                ppTerm c parentTerm (mkLambda(mkVarPat vt, mkApply(mkFun(fun,ty), mkVar vt)))
         else
         case specialOpInfo c qid of
@@ -2989,7 +2989,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
  op  isSimpleSort? : Sort -> Bool
  def isSimpleSort? ty =
    case ty of
-     | Base _ -> true
+     | Base    _ -> true
      | Boolean _ -> true
      | _ -> false
 

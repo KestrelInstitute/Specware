@@ -27,11 +27,11 @@ PrString qualifying spec
        map f s = implode(List.map f (explode s))
 
   axiom exists_def is
-    fa (p : Char -> Boolean, s : String)
+    fa (p : Char -> Bool, s : String)
        exists? p s = List.exists? p (explode s)
 
   axiom all_def is
-    fa (p : Char -> Boolean, s : String)
+    fa (p : Char -> Bool, s : String)
        forall? p s = List.forall? p (explode s)
 
   axiom sub_def is
@@ -80,32 +80,33 @@ PrString qualifying spec
 
   % ops with different qualifiers:
 (*
-  op Boolean.show : Boolean -> String  % deprecated
-  op Integer.show : Integer -> String  % deprecated
-  op Nat.show     : Nat -> String      % deprecated
-  op Char.show    : Char -> String     % deprecated
+  op Boolean.show : Bool -> String  % deprecated
+  op Integer.show : Int  -> String  % deprecated
+  op Nat.show     : Nat  -> String  % deprecated
+  op Char.show    : Char -> String  % deprecated
 
-  op Integer.intToString : Integer -> String
-  op Integer.stringToInt : (String | Integer.intConvertible) -> Integer
+  op Integer.intToString : Int -> String
+  op Integer.stringToInt : (String | Integer.intConvertible) -> Int
 
   op Nat.natToString  : Nat -> String
   op Nat.stringToNat  : (String | Nat.natConvertible) -> Nat
 
-  op Boolean.show           : Boolean -> String
-  op Compare.show           : Comparison -> String
   op Option.show            : [a] (a -> String) -> Option a -> String
-  op Integer.intConvertible : String -> Boolean
-  op Integer.show           : Integer -> String
-  op Nat.natConvertible     : String -> Boolean
-  op Nat.show               : Nat -> String
-  op List.show              : String -> List String -> String
-  op Char.show              : Char -> String
+  op List.show              : String -> List String         -> String
+
+  op Boolean.show           : Bool       -> String
+  op Compare.show           : Comparison -> String
+  op Char.show              : Char       -> String
+  op Integer.show           : Int        -> String
+  op Nat.show               : Nat        -> String
+  op Integer.intConvertible : String     -> Bool
+  op Nat.natConvertible     : String     -> Bool
 *)
   axiom boolean_show_def is
-    fa (x : Boolean) Boolean.show x = (if x then "true" else "false")
+    fa (x : Bool) Boolean.show x = (if x then "true" else "false")
 
   axiom int_show_def is
-    fa (x : Integer) Integer.show x =
+    fa (x : Int) Integer.show x =
                      (if x >= 0 then Nat.show x
                                 else "-" ^ Nat.show(- x))
 
@@ -169,7 +170,7 @@ PrString qualifying spec
                                 (tl, res * 10 + charToDigit hd) in
         stringToNatAux(explode s, 0))
 
-  axiom show is fa (b: Boolean) Boolean.show b = Boolean.show b
+  axiom show is fa (b: Bool) Boolean.show b = Boolean.show b
 
   axiom compare_show_def1 is
     fa (cmp) cmp = Greater => Compare.show cmp = "Greater"

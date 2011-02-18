@@ -14,56 +14,51 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % addLoca
 % --------------------------------------------------------------------------------
 
 op builtinSortOp: QualifiedId -> Boolean
-def builtinSortOp (Qualified (q, i)) =
-  %(q="Nat" && (i="Nat" || i="PosNat" || i="toString" || i="natToString" || i="show" || i="stringToNat"))
-  %||
-  ((q="Integer" || q="Nat" || q="PosNat") && (i="Integer" || i="Int0" || i="+" || i="-" || i="*" || i="div" || i="rem" || i="<=" || i="<" || i="~" ||
-		  i=">" || i=">=" || i="toString" || i="intToString" || i="show" || i="stringToInt"))
-  ||
-  (q="IntegerAux" && i="-") % unary minus
-  % || (q="Boolean" && (i="Boolean" || i="true" || i="false" || i="~" || i="&&" || i="||" || i="=>" || i="<=>" || i="~="))
-  ||
-  (q="Char" && (i="Char" || i="chr" || i="isUpperCase" || i="isLowerCase" || i="isAlpha" ||
-	       i="isNum" || i="isAlphaNum" || i="isAscii" || i="toUpperCase" || i="toLowerCase"))
-  ||
-  (q="String" && (i="String" || i="writeLine" || i="toScreen" || i="concat" || i="++" ||
-		 i="^" || i="newline" || i="length" || i="substring"))
+def builtinSortOp (Qualified (q, id)) =
+  case q of
+    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", 
+                              "toString", "intToString", "show",  "stringToInt"]
+    | "Nat"        -> id in? ["Nat"]
+    | "IntegerAux" -> id in? ["-"]  % unary minus
+    | "Char"       -> id in? ["Char", "chr", "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii",
+                              "toUpperCase", "toLowerCase"]
+    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring"]
+  % | "Boolean"    -> id in? ["Bool", "true","false","~","&&","||","=>","<=>","~="]
+    | _ -> false
 
 % --------------------------------------------------------------------------------
 (**
- * identifies the int sorts with the Integer types; this makes sense, if the base spec is not part of the
+ * identifies the int sorts with the Int types; this makes sense, if the base spec is not part of the
  * code generation and treated as builtin unit
  *)
+
+(** The following was inserted as a hack at the point indicated below to make PSL work:
+ *        % the following 6 lines actually do not belong here, they "repair" something that happens in PSL:
+ *        % the qualifier of base types get lost. Thats also the reason why in the above lines the qualifier
+ *        % is commented out
+ *	| Base (Qualified ("String", "String"), _,  b) -> srt
+ *	| Base (Qualified (s,        "String"), tv, b) -> Base (Qualified ("String", "String"), tv, b)
+ *	| Base (Qualified ("Char",   "Char"),   _,  b) -> srt
+ *	| Base (Qualified (s,        "Char"),   tv, b) -> Base (Qualified ("Char", "Char"), tv, b)
+ *	| Base (Qualified ("List",   "List"),   _,  b) -> srt
+ *	| Base (Qualified (s,        "List"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+ *	| Base (Qualified (s,       "List1"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+ *	| Base (Qualified (s,     "InjList"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+ *	| Base (Qualified (s, "Permutation"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+ *)
+
 op identifyIntSorts: Spec -> Spec
 def identifyIntSorts spc =
   let
     def identifyIntSort srt =
       case srt of
-	| Base (Qualified (_ (*"Nat"*),     "Nat"),       [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "PosNat"),    [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Integer"*), "NZInteger"), [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "int"),       [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "Int"),       [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-	| Base (Qualified (_ (*"Nat"*),     "Int0"),       [], b) ->
-          Base (Qualified ("Integer", "Integer"), [], b)
-%	| Base (Qualified (_ (*"Nat"*),     "long"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
-        % the following 6 lines actually do not belong here, they "repair" something that happens in PSL:
-        % the qualifier of base types get lost. Thats also the reason why in the above lines the qualifier
-        % is commented out
-	| Base (Qualified ("String", "String"), _,  b) -> srt
-	| Base (Qualified (s,        "String"), tv, b) -> Base (Qualified ("String", "String"), tv, b)
-	| Base (Qualified ("Char",   "Char"),   _,  b) -> srt
-	| Base (Qualified (s,        "Char"),   tv, b) -> Base (Qualified ("Char", "Char"), tv, b)
-	| Base (Qualified ("List",   "List"),   _,  b) -> srt
-	| Base (Qualified (s,        "List"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
-	| Base (Qualified (s,       "List1"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
-	| Base (Qualified (s,     "InjList"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
-	| Base (Qualified (s, "Permutation"),   tv, b) -> Base (Qualified ("List", "List"), tv, b)
+	| Base (Qualified ("Nat",     "Nat"),       [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+	| Base (Qualified ("Nat",     "PosNat"),    [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+	| Base (Qualified ("Integer", "NZInteger"), [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+	| Base (Qualified ("Integer", "Int"),       [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+	| Base (Qualified ("Integer", "Int0"),      [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+      %	| Base (Qualified ("??",      "long"),      [], b) -> Base (Qualified ("Integer", "Int"), [], b)
+      % ... There was a hack for PSL inserted here ... It also required commenting out the qualifiers in the cases above (ugh).
 	| _ -> srt
   in
   let termid = (fn t -> t) in
@@ -1561,11 +1556,11 @@ def addEqOpsFromSort (spc, qid, info) =
     let usrt = stripSubsorts (spc, srt) in
     case usrt of
       | Boolean _ -> spc
-      | Base (Qualified (_, "Nat"),     [], _) -> spc
-      | Base (Qualified (_, "Integer"), [], _) -> spc
-      | Base (Qualified (_, "Char"),    [], _) -> spc
-      | Base (Qualified (_, "String"),  [], _) -> spc
-     %| Base (Qualified (_, "Float"),   [], _) -> spc
+      | Base (Qualified ("Nat",       "Nat"),     [], _) -> spc
+      | Base (Qualified ("Integer",   "Int"),     [], _) -> spc
+      | Base (Qualified ("Character", "Char"),    [], _) -> spc
+      | Base (Qualified ("String",    "String"),  [], _) -> spc
+     %| Base (Qualified ("??",        "Float"),   [], _) -> spc
       | _ ->
         let b = sortAnn srt in
 	let osrt = Base (qid, map (fn tv -> TyVar (tv, b)) tvs, b) in

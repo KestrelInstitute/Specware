@@ -49,7 +49,7 @@ spec
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
- type Sym_entry = | Star | SymS Integer
+ type Sym_entry = | Star | SymS Int
 
  op printPath: List Key -> ()
  def printPath path = 
@@ -129,7 +129,7 @@ spec
 	  of Star -> p
 	   | SymS x  -> p ++ [x]
 
-    op  getTerms : TermDiscNet.Disc_net * List Integer * Sym_entry -> IntegerSet.Set
+    op  getTerms : TermDiscNet.Disc_net * List Int * Sym_entry -> IntSet.Set
 
     def getTerms(index,p,r) = 
 	case TermDiscNet.findForPath(index,makePath(p,r))
@@ -137,7 +137,7 @@ spec
             (case r of
                | Star -> allContents node
                | SymS _ -> contents node)
-	   | None -> IntegerSet.empty
+	   | None -> IntSet.empty
 
     def generalizations (index,term) = 
 	let
@@ -156,19 +156,19 @@ spec
 			else 
 			    getList(p ++ [indexT],1,subTerms)
 		in
-		    IntegerSet.union(set1,set2)
+		    IntSet.union(set1,set2)
 	    def getList(path,i,terms) = 
 		case terms
-		  of [] -> IntegerSet.empty
+		  of [] -> IntSet.empty
 		   | [term] -> get(path ++ [i],term)
 		   | term::terms -> 
 		     let set = get(path ++ [i],term) in
-		    if IntegerSet.isEmpty set 
+		    if IntSet.isEmpty set 
 			then set 
-		    else IntegerSet.intersection(set,getList(path,i + 1,terms))
+		    else IntSet.intersection(set,getList(path,i + 1,terms))
 	
 	in
-	    IntegerSet.listItems(get([],term))
+        IntSet.listItems(get([],term))
 	
 endspec (* structure TermIndex *)
 

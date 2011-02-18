@@ -200,7 +200,7 @@ XML qualifying spec
 			  trailer = Some (indentation_chardata (1 (* vspacing *), indent - 2))})
 
       | Boolean -> 	   
-	let bool = Magic.magicCastToBoolean datum in
+	let bool = Magic.magicCastToBool datum in
 	indent_ustring (ustring (if bool then "true" else "false"))
       | Base (qid, args) ->
 	(case qid of
@@ -208,8 +208,8 @@ XML qualifying spec
 	    let string : String = Magic.magicCastToString datum in
 	    indent_ustring (UString.double_quote ^ (quote_special_chars (ustring string)) ^ UString.double_quote)
 
-	  | ("Integer", "Integer") ->
-	    let n = Magic.magicCastToInteger datum in
+	  | ("Integer", "Int") ->
+	    let n = Magic.magicCastToInt datum in
 	    indent_ustring (ustring (Integer.show n))
 
 	  | ("List",    "List") ->
@@ -228,7 +228,7 @@ XML qualifying spec
                                       items),
 		   trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))})
 	  | ("Boolean", "Boolean") ->
-	    let bool = Magic.magicCastToBoolean datum in
+	    let bool = Magic.magicCastToBool datum in
 	    indent_ustring (ustring (if bool then "true" else "false"))
 
 	  | ("Char",    "Char") ->
@@ -321,7 +321,7 @@ XML qualifying spec
 						false))))
 
       | Boolean -> 	   
-	let bool = Magic.magicCastToBoolean datum in
+	let bool = Magic.magicCastToBool datum in
 	indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
 
       | Base (qid, args) ->
@@ -330,12 +330,16 @@ XML qualifying spec
 	    let string : String = Magic.magicCastToString datum in
 	    indent_text_item (vspacing, indent, quote_special_chars (ustring string))
 
-	  | ("Integer", "Integer") ->
-	    let n = Magic.magicCastToInteger datum in
+	  | ("Integer", "Int") ->
+	    let n = Magic.magicCastToInt datum in
 	    indent_text_item (vspacing, indent, ustring (Integer.show n))
 
 	  | ("Boolean", "Boolean") ->
-	    let bool = Magic.magicCastToBoolean datum in
+	    let bool = Magic.magicCastToBool datum in
+	    indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
+
+	  | ("Boolean", "Bool") ->
+	    let bool = Magic.magicCastToBool datum in
 	    indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
 
 	  | ("Char",    "Char") ->

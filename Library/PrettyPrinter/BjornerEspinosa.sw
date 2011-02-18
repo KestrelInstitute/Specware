@@ -74,7 +74,7 @@ PrettyPrint qualifying spec
 
   %% More convenient API funs
 
-  op  prNum: Integer -> Pretty
+  op  prNum: Int -> Pretty
   def prNum n = prString(show n)
 
   def prString s = string s
@@ -199,7 +199,7 @@ PrettyPrint qualifying spec
       formatRestLines (lines, formatPretty (columns, pretty, text))
   
 
-  op fits? (columns : Nat, width : Nat, text : Text) : Boolean =
+  op fits? (columns : Nat, width : Nat, text : Text) : Bool =
      lengthLast text + width <= columns
 
   def lengthString(l,s) = 
@@ -375,7 +375,7 @@ PrettyPrint qualifying spec
 % The structure of these are recorded in a PathStack
 % that is returned by the function call.
 %
-   type PathTree = String * Nat * Nat * Boolean * List PathTree
+   type PathTree = String * Nat * Nat * Bool * List PathTree
    type PathStack = List PathTree
 
    op markPretty : Nat * Pretty -> Pretty
@@ -393,9 +393,9 @@ PrettyPrint qualifying spec
         ++
         [(0,lengthString(0,"%)"))]
 
-    op printInt(i:Integer): String = show i
+    op printInt(i:Int): String = show i
 
-   op buttonPretty : Boolean * Integer * Pretty * Boolean -> Pretty
+   op buttonPretty : Bool * Int * Pretty * Bool -> Pretty
    def buttonPretty(enabled,number,p,sos?) = 
        let string = show enabled^":"^printInt number^":"^show sos? in
        prettysNone ([lengthString(0,"%["),lengthString(0,string),p])

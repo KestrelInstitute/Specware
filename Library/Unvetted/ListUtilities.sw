@@ -18,7 +18,7 @@ List qualifying spec
     | Cons(x, xs) -> Cons(x, (nub(filter(fn y -> y ~= x) xs)))
 
   % numberFrom n [p, q, r, ...] = [(n,p), (n+1,q), (n+2,r), ...]
-  op  numberFrom : [a] Integer -> List a  -> List(Integer * a)
+  op  numberFrom : [a] Int -> List a  -> List(Int * a)
   def numberFrom n x = case x of
      | Nil        -> Nil
      | Cons(a, y) -> Cons((n, a), numberFrom (n+1) y)

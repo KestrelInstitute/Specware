@@ -2,9 +2,9 @@ PrInteger qualifying spec
 
   import ../Base/Integer
 
-  type ProverNat = {i: Integer | i >= 0}
+  type ProverNat = {i: Int | i >= 0}
 
-  %type Integer.Integer  % qualifier required for internal parsing reasons
+  %type Integer.Int  % qualifier required for internal parsing reasons
 
   (* The following type definition defines the naturals to be a subtype of the
   integers. However, since the naturals have been axiomatized in spec Nat,
@@ -23,7 +23,7 @@ PrInteger qualifying spec
     -0 = 0
 
   theorem unary_minus_involution is
-    fa(i:Integer) -(-i) = i
+    fa(i:Int) -(-i) = i
 
   theorem commutative_plus is
     fa(x,y) x+y = y+x
@@ -34,82 +34,82 @@ PrInteger qualifying spec
 
 %%% RW's theory
   axiom plus_zero is
-   fa(x:Integer)
+   fa(x:Int)
     x + 0 = x
 
   conjecture number_minus_zero_thm is
-   fa(x:Integer)
+   fa(x:Int)
     x - 0 = x
 
   conjecture number_minus_number_zero_thm is
-   fa(x:Integer)
+   fa(x:Int)
     x - x = 0
 
 %  axiom plus_monotonic is
-%    fa(x:Integer, y:Nat)
+%    fa(x:Int, y:Nat)
 %     x <= x + y
    
 
   axiom minus_migration is
-    fa(x:Integer, y:Integer, z:Integer)
+    fa(x:Int, y:Int, z:Int)
      x - z + y = x + y - z
      
   axiom gt_implies_lte is
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
     y > x  <=> x + 1 <= y
 
   axiom lt_implies_lte is
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
     x < y  <=> x + 1 <= y
 
   axiom not_lte_implies_lte_plus_1 is
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
    ~(y <= x) => x + 1 <= y
 
   axiom gte_implies_lte is 
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
     y >= x  <=> x <= y
 
   axiom not_gt_is_lte is 
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
     ~(x > y) => x <= y
 
   axiom diff_gte_zero_is_lte is
-   fa(x:Integer, y:Integer)
+   fa(x:Int, y:Int)
     y - x >= 0  => x <= y
 
   
 
   axiom reduction is
-   fa(x:Integer,a:Integer, b:Integer)
+   fa(x:Int,a:Int, b:Int)
        x + a <= x + b
     => a <= b
 
   conjecture reduction_left_zero is
-   fa(x:Integer, b:Integer)
+   fa(x:Int, b:Int)
        x <= x + b
     => 0 <= b
 
   conjecture reduction_right_zero is
-   fa(x:Integer,a:Integer)
+   fa(x:Int,a:Int)
        x + a <= x
     => a <= 0
 
   conjecture integer_minus_zero is
-    fa(x:Integer) x - 0 = x
+    fa(x:Int) x - 0 = x
 
   conjecture minus_elimination is
-   fa(x:Integer, y:Integer, z:Integer)
+   fa(x:Int, y:Int, z:Int)
        (x - z <= y) =>  x <= y + z
 
   axiom chaining is
-   fa(x:Integer,a:Integer, b:Integer, c:Integer, d:Integer)
+   fa(x:Int,a:Int, b:Int, c:Int, d:Int)
           a <= b + x
         && c + x <= d 
      => a + c <= d + b
 
   conjecture chaining_left_zero is
-   fa(x:Integer,a:Integer, c:Integer, d:Integer)
+   fa(x:Int,a:Int, c:Int, d:Int)
      a <= x &&
      c + x <= d =>
      a + c <= d
@@ -125,7 +125,7 @@ PrInteger qualifying spec
     fa (n1:Nat, n2:Nat) Nat.succ n1 = Nat.succ n2 => n1 = n2
 
   axiom induction is
-    fa (p : Nat -> Boolean)
+    fa (p : Nat -> Bool)
       p zero &&
       (fa (n:Nat) p n => p (Nat.succ n)) =>
       (fa (n:Nat) p n)

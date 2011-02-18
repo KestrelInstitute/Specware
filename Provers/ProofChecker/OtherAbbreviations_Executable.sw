@@ -16,12 +16,12 @@ spec
 
   % convert set of abbreviation variables to the set of their indices
   % (i.e. remove the abbr constructor layer):
-  op indicesOfAbbrVars : (FSet Variable | forall? (embed? abbr)) -> FSet Integer
+  op indicesOfAbbrVars : (FSet Variable | forall? (embed? abbr)) -> FSet Int
   def indicesOfAbbrVars vars =
     % function to add the index of a variable to the current set of indices:
-    let def addIndex (indices      : FSet Integer,
+    let def addIndex (indices      : FSet Int,
                       varToProcess : (Variable | embed? abbr))
-                     : FSet Integer =
+                     : FSet Int =
           let abbr index = varToProcess in indices <| index
     in
     % starting with the empty set, collect all the variable indices:
@@ -29,7 +29,7 @@ spec
 
   % return minimum natural number not present in set of integers
   % (negative integers are obviously ignored):
-  op minNaturalNotIn : FSet Integer -> Nat
+  op minNaturalNotIn : FSet Int -> Nat
   def minNaturalNotIn iS =
     % auxiliary function to iterate through naturals until a suitable
     % one (i.e. that does not belong to iS) is found:
@@ -41,7 +41,7 @@ spec
   op minDistinctAbbrVar : FSet Variable -> Variable
   def minDistinctAbbrVar vS =
     let abbrVS : FSet Variable = filter (embed? abbr) vS in
-    let indices : FSet Integer = indicesOfAbbrVars abbrVS in
+    let indices : FSet Int = indicesOfAbbrVars abbrVS in
     abbr (minNaturalNotIn indices)
 
   % the following are copied verbatim from spec OtherAbbreviations:

@@ -26,20 +26,20 @@ ApproximateReal qualifying spec
   op -  infixl 25 : Real * Real -> Real
   op *  infixl 27 : Real * Real -> Real
   op /  infixl 26 : Real * NonZeroReal -> Real
-  op <= infixl 20 : Real * Real -> Boolean
-  op <  infixl 20 : Real * Real -> Boolean
-  op >= infixl 20 : Real * Real -> Boolean
-  op >  infixl 20 : Real * Real -> Boolean
+  op <= infixl 20 : Real * Real -> Bool
+  op <  infixl 20 : Real * Real -> Bool
+  op >= infixl 20 : Real * Real -> Bool
+  op >  infixl 20 : Real * Real -> Bool
   op Real_.-      : Real -> Real
   op abs          : Real -> NonNegativeReal
   op min          : Real * Real -> Real
   op max          : Real * Real -> Real
   op compare      : Real * Real -> Comparison
 
-  op intToReal: Integer -> Real
-  op floor: Real -> Integer
-  op round: Real -> Integer
-  op ceiling: Real -> Integer
+  op intToReal : Int  -> Real
+  op floor     : Real -> Int
+  op round     : Real -> Int
+  op ceiling   : Real -> Int
 
   op ratToReal: Rational -> Real
   op realToRat: Real -> Rational
@@ -60,18 +60,18 @@ ApproximateReal qualifying spec
   op zero: Real
   op one: Real
 
-  op  nonZero? : Real -> Boolean
+  op  nonZero? : Real -> Bool
   def nonZero? x = x ~= zero
 
   type NonZeroReal = (Real | nonZero?)
 
-  op  nonNegative? : Real -> Boolean
+  op  nonNegative? : Real -> Bool
   def nonNegative? x = x >= zero
 
   type NonNegativeReal = (Real | nonNegative?)
 
   % Cannot use "the" closestTo since two values may be equally close
-  op  closestTo infixl 0 : Real * Rational -> Boolean
+  op  closestTo infixl 0 : Real * Rational -> Bool
   def closestTo(x, r) = fa(x1 : Real)
                             abs(realToRat x - r) <= abs(realToRat x1 - r)
 
@@ -98,11 +98,11 @@ ApproximateReal qualifying spec
   def intToReal = ratToReal o intToRat
 
   axiom floorDef is
-    fa(i : Integer, x : Real)
+    fa(i : Int, x : Real)
       i <= floor x <=> intToRat i <= realToRat x
 
   axiom ceilingDef is
-    fa(i : Integer, x : Real)
+    fa(i : Int, x : Real)
       i >= ceiling x <=> intToRat i >= realToRat x
 
 endspec

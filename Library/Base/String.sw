@@ -250,21 +250,21 @@ end-proof
 
 % convert integers to strings:
 
-op Integer.intToString (x:Integer) : String =
+op Integer.intToString (x:Int) : String =
   if x >= 0 then        natToString   x
             else "-" ^ natToString (-x)
 #translate Haskell -> intToString #end
 
-op Integer.show : Integer -> String = intToString
+op Integer.show : Int -> String = intToString
 
 % convert strings to integers (if convertible):
 
 op Integer.intConvertible (s:String) : Bool =
-  ex(x:Integer) intToString x = s
+  ex(x:Int) intToString x = s
 #translate Haskell -> intConvertible #end
 
-op Integer.stringToInt (s:String | intConvertible s) : Integer =
-  the(x:Integer) intToString x = s
+op Integer.stringToInt (s:String | intConvertible s) : Int =
+  the(x:Int) intToString x = s
 #translate Haskell -> stringToInt #end
 proof Isa stringToInt_Obligation_the
   apply (simp add:Integer__intConvertible_def, erule exE)

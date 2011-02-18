@@ -365,9 +365,9 @@ spec
   op printFailure : Failure -> String
   def printFailure = fn
     | badPermutation prm ->
-      "bad permutation: " ^ printIntegers prm ^ newline
+      "bad permutation: " ^ printInts prm ^ newline
     | wrongPermutationLength prm ->
-      "wrong permutation length: " ^ printIntegers prm ^ newline
+      "wrong permutation length: " ^ printInts prm ^ newline
     | fieldNotFound (f, fS, tS) ->
       "field " ^ printField f ^
       " not found in " ^ printRecordType(fS,tS) ^ newline
@@ -413,11 +413,11 @@ spec
       "spec contains variable:" ^ newline ^ printContext cx
     | negativeTypeArity (tn, i) ->
       "type " ^ printTypeName tn ^ " has negative arity " ^
-      printInteger i ^ newline
+      printInt i ^ newline
     | wrongTypeArity (tn, rightArity, wrongArity) ->
       "type " ^ printTypeName tn ^ " has arity " ^
-      printInteger wrongArity ^ " instead of " ^
-      printInteger rightArity ^ newline
+      printInt wrongArity ^ " instead of " ^
+      printInt rightArity ^ newline
     | badTypeSubstitution (tvS, tS) ->
       "bad type substitution: " ^ printTypeVariables tvS ^ " <- " ^
       printTypes tS ^ newline
@@ -439,8 +439,8 @@ spec
     | notTheorem jdg ->
       "judgement is not theorem:" ^ newline ^
       printJudgement jdg
-    | notBoolean t ->
-      "not boolean type: " ^ printType t ^ newline
+    | notBool t ->
+      "not bool type: " ^ printType t ^ newline
     | notTypeInstance t ->
       "not type instance: " ^ printType t ^ newline
     | notArrowType t ->

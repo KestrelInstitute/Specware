@@ -59,8 +59,8 @@ sort MethDecl = MethHeader * Option JavaBlock
 
 sort VarDecl = VarDeclId * Option VarInit
 
-sort VarDeclId = Ident * Integer
-%% Integer is for # of dimensions, 0 indicating it is not an array
+sort VarDeclId = Ident * Int
+%% Int is for # of dimensions, 0 indicating it is not an array
 
 sort VarInit = 
   | Expr     JavaExpr
@@ -218,8 +218,8 @@ def postUnOpToString (o : PostUnOp) : String =
 sort Prim =
   | Name             JavaName
     %% 6 literals follow
-  | IntL             Integer
-  | Float            Integer * Integer
+  | IntL             Int
+  | Float            Int * Int
                           %% the second int should be a nat
   | Bool             Boolean
   | Char             Char
@@ -243,8 +243,8 @@ sort Prim =
   | ArrAcc           ArrAcc
 
 def mkNamePr (nm : JavaName) : Prim = Name nm
-def mkIntLPr (i : Integer) : Prim = IntL i
-def mkFloatPr (i : Integer, j : Integer)  : Prim = Float (i,j)
+def mkIntLPr (i : Int) : Prim = IntL i
+def mkFloatPr (i : Int, j : Int)  : Prim = Float (i,j)
 def mkBoolPr (b : Boolean) : Prim = Bool b
 def mkCharPr (c : Char) : Prim = Char c
 def mkStringPr (s : String) : Prim = String s
@@ -272,9 +272,9 @@ def mkForInnClsNCI (pm : Prim, id : Ident, args : List JavaExpr,
  
 sort NewArr =
     %% List JavaExpr is for the lenths of the first n dimensions. 
-    %% Integer is for the extra # of "[]"
-  | Arr           JavaName * List JavaExpr * Integer
-  | ArrWInit      JavaName * Integer * ArrInit
+    %% Int is for the extra # of "[]"
+  | Arr           JavaName * List JavaExpr * Int
+  | ArrWInit      JavaName * Int * ArrInit
 
 sort FldAcc =
   | ViaPrim       Prim * Ident
@@ -310,8 +310,8 @@ sort ArrAcc =
   | ViaNoNewArray  Prim * JavaExpr
 
 
-sort JavaType = BasicOrName * Integer
-%% Integer is for dimension, 0 means that it is not an array.
+sort JavaType = BasicOrName * Int
+%% Int is for dimension, 0 means that it is not an array.
 
 sort BasicOrName = | Basic Basic | Name JavaName 
 

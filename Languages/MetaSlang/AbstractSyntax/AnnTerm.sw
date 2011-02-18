@@ -36,7 +36,7 @@ MetaSlang qualifying spec
  def [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
  def [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
 
- op  unQualifiedId?: QualifiedId -> Boolean
+ op  unQualifiedId?: QualifiedId -> Bool
  def unQualifiedId? id =
    case id of
      | Qualified(UnQualified, _) -> true
@@ -201,7 +201,7 @@ MetaSlang qualifying spec
   | EmbedPat      Id * Option (APattern b) * ASort b  * b
   | RecordPat     List(Id * APattern b)               * b
   | WildPat       ASort b                             * b
-  | BoolPat       Boolean                             * b
+  | BoolPat       Bool                                * b
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
@@ -230,13 +230,13 @@ MetaSlang qualifying spec
   | Op             QualifiedId * Fixity
   | Project        Id
   | RecordMerge             % <<
-  | Embed          Id * Boolean
+  | Embed          Id * Bool
   | Embedded       Id
   | Select         Id
   | Nat            Nat
   | Char           Char
   | String         String
-  | Bool           Boolean
+  | Bool           Bool
   % hacks to avoid ambiguity during parse of A.B.C, etc.
   | OneName        Id * Fixity         % Before elaborateSpec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
@@ -272,7 +272,7 @@ MetaSlang qualifying spec
     | Apply ATransformExpr a * List (ATransformExpr a) * a
 
  %%% Predicates
- op product?: [a] ASort a -> Boolean
+ op product?: [a] ASort a -> Bool
  def product? s =
    case s of
      | Product _ -> true
@@ -442,7 +442,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      | Quotient  (ss,t,     b) -> if a = b then srt else Quotient  (ss,t,     a)
      | Subsort   (ss,t,     b) -> if a = b then srt else Subsort   (ss,t,     a)
      | Base      (qid,srts, b) -> if a = b then srt else Base      (qid,srts, a)
-     | Boolean              b  -> if a = b then srt else Boolean              a
+     | Boolean              b  -> if a = b then srt else Boolean a
      | TyVar     (tv,       b) -> if a = b then srt else TyVar     (tv,       a)
      | MetaTyVar (mtv,      b) -> if a = b then srt else MetaTyVar (mtv,      a)
      | Pi        (tvs, t,   b) -> if a = b then srt else Pi        (tvs, t,   a)
@@ -475,7 +475,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      | And _ -> srt % fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
      | _ -> srt
 
- op [a] anySort?(t: ASort a): Boolean =
+ op [a] anySort?(t: ASort a): Bool =
    case t of
      | Any _        -> true
      | Pi(_, tm, _) -> anySort? tm
@@ -494,7 +494,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
  op maybeAndSort  : [b] List (ASort b) * b -> ASort b % Defined in Equalities.sw
  op maybeAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
 
- op [a] anyTerm?(t: ATerm a): Boolean =
+ op [a] anyTerm?(t: ATerm a): Bool =
    case t of
      | Any _                 -> true
      | Pi(_, tm, _)          -> anyTerm? tm
@@ -637,7 +637,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      | [t] -> t
      | t::_ -> And(tms, termAnn t)
 
-% op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Boolean
+% op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Bool
 
  op [a] flattenAnds(tm: ATerm a): ATerm a =
    let result =
@@ -1148,7 +1148,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op existsSubTerm : [b] (ATerm b -> Boolean) -> ATerm b -> Boolean
+  op existsSubTerm : [b] (ATerm b -> Bool) -> ATerm b -> Bool
  def existsSubTerm pred? term =
    pred? term ||
    (case term of
@@ -1194,13 +1194,13 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
       | _  -> false
       )				    
 
- op  existsSubTermPat : [b] (ATerm b -> Boolean) -> APattern b -> Boolean
+ op  existsSubTermPat : [b] (ATerm b -> Bool) -> APattern b -> Bool
  def existsSubTermPat pred? pat =
    case pat of
      | RestrictedPat(_,t,_) -> existsSubTerm pred? t
      | _ -> false
 
- op  existsPattern? : [b] (APattern b -> Boolean) -> APattern b -> Boolean
+ op  existsPattern? : [b] (APattern b -> Bool) -> APattern b -> Bool
  def existsPattern? pred? pattern =
    pred? pattern ||
    (case pattern of
@@ -1214,7 +1214,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      | SortedPat    (pat,_,_) -> existsPattern? pred? pat
      | _ -> false)
 
- op [a] existsInType? (pred?: ASort a -> Boolean) (ty: ASort a): Boolean =
+ op [a] existsInType? (pred?: ASort a -> Bool) (ty: ASort a): Bool =
    pred? ty ||
    (case ty of
       | Arrow(x,y,_) -> existsInType? pred? x || existsInType? pred? y
@@ -1229,7 +1229,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
       | And(tys,_) -> exists? (existsInType? pred?) tys
       | _ -> false)
 
-op [a] existsTypeInPattern? (pred?: ASort a -> Boolean) (pat: APattern a): Boolean =
+op [a] existsTypeInPattern? (pred?: ASort a -> Bool) (pat: APattern a): Bool =
   existsPattern? (fn p ->
                   case p of
                     | VarPat ((_, ty), _)    -> existsInType? pred? ty
@@ -1239,7 +1239,7 @@ op [a] existsTypeInPattern? (pred?: ASort a -> Boolean) (pat: APattern a): Boole
                     | _ -> false)
     pat
 
-op [a] existsTypeInTerm? (pred?: ASort a -> Boolean) (tm: ATerm a): Boolean =
+op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
   existsSubTerm (fn t ->
                  case t of
                    | Var((_, ty), _) -> existsInType? pred? ty
@@ -1766,11 +1766,11 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
  %%%                Misc Base Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op boolSort?    : [b] ASort b -> Boolean
- op stringSort?  : [b] ASort b -> Boolean
- op natSort?     : [b] ASort b -> Boolean
- op integerSort? : [b] ASort b -> Boolean
- op charSort?    : [b] ASort b -> Boolean
+ op boolSort?    : [b] ASort b -> Bool
+ op stringSort?  : [b] ASort b -> Bool
+ op natSort?     : [b] ASort b -> Bool
+ op intSort?     : [b] ASort b -> Bool
+ op charSort?    : [b] ASort b -> Bool
 
  def boolSort? s =
    case s of
@@ -1792,9 +1792,9 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
      | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
      | _ -> false
 
- def integerSort? s =
+ def intSort? s =
    case s of
-     | Base (Qualified ("Integer",     "Integer"),     [], _) -> true
+     | Base (Qualified ("Integer", "Int"),     [], _) -> true
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

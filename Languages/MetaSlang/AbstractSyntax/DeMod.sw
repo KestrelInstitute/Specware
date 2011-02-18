@@ -61,7 +61,7 @@ spec
      
    op  incrementIndices: TermIndex.Index * Nat -> TermIndex.Index
    def incrementIndices((s,m),i) =
-     (IntegerSet.map (fn v -> v+i) s,
+     (IntSet.map (fn v -> v+i) s,
       foldri (fn (key,val,new_m) -> insert(new_m,key,incrementIndices(val,i)))
         TermDiscNet.empty m)
 

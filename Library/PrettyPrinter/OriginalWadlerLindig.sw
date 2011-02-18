@@ -10,7 +10,7 @@ WadlerLindig qualifying spec
     | DocNil
     | DocCons (Doc * Doc)
     | DocText String
-    | DocNest (Integer * Doc)
+    | DocNest (Int * Doc)
     | DocBreak String
     | DocGroup Doc
   
@@ -29,7 +29,7 @@ WadlerLindig qualifying spec
   op ppString : String -> Doc
   def ppString s = DocText s
   
-  op ppNest : Integer -> Doc -> Doc
+  op ppNest : Int -> Doc -> Doc
   def ppNest i x = DocNest (i,x)
   
   op ppBreak : Doc
@@ -44,11 +44,11 @@ WadlerLindig qualifying spec
   type SDoc =
     | SNil
     | SText (String * SDoc)
-    | SLine (Integer * SDoc)   (* newline + spaces *)
+    | SLine (Int * SDoc)   (* newline + spaces *)
   
   op ppLayout : SDoc -> String
   def ppLayout doc =
-    let def replicate (cnt:Integer) str =
+    let def replicate (cnt:Int) str =
       if cnt = 0 then
         [""]
       else
@@ -74,7 +74,7 @@ WadlerLindig qualifying spec
 %            in
 %              "\n" ++ (replicate indent " ") ++ (ppLayout d)
   
-  op ppFits : Integer -> List (Integer * BreakMode * Doc) -> Boolean
+  op ppFits : Int -> List (Int * BreakMode * Doc) -> Bool
   def ppFits w x =
     (w >= 0) &
     (case x of
@@ -92,7 +92,7 @@ WadlerLindig qualifying spec
     | Flat
     | Break
   
-  op ppBest : Integer -> Integer -> List (Integer * BreakMode * Doc) -> SDoc
+  op ppBest : Int -> Int -> List (Int * BreakMode * Doc) -> SDoc
   def ppBest w k x = 
     case x of
       | [] -> SNil
@@ -127,7 +127,7 @@ WadlerLindig qualifying spec
   % 
   % let doc = ifthen cond expr1 expr2
   
-  op ppFormatWidth : Integer -> Doc -> String
+  op ppFormatWidth : Int -> Doc -> String
 
   def ppFormatWidth w doc =
     ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])

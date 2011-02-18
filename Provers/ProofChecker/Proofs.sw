@@ -46,7 +46,7 @@ spec
   type Proof =
     % well-formed contexts:
     | cxMT
-    | cxTdec  Proof * TypeName * Integer
+    | cxTdec  Proof * TypeName * Int
     | cxOdec  Proof * Proof * Operation
     | cxAx    Proof * Proof * AxiomName
     | cxLem   Proof * Proof * LemmaName
@@ -65,7 +65,7 @@ spec
     | stRestr Proof
     | stRefl  Proof * Variable
     | stArr   Proof * Proof * Variable * Variable
-    | stRec   Proof * Proofs * Variable * List Integer
+    | stRec   Proof * Proofs * Variable * List Int
     % well-typed expressions:
     | exVar      Proof * Variable
     | exOp       Proof * Proofs * Operation
@@ -104,7 +104,7 @@ spec
   verbose) induction axiom on proofs. *)
 
   axiom induction_on_proofs is
-    fa (pred : Proof -> Boolean)
+    fa (pred : Proof -> Bool)
   %%%%% induction base and step:
    (fa (tn    : TypeName,
         o     : Operation,
@@ -116,8 +116,8 @@ spec
         fS    : Fields,
         an    : AxiomName,
         ln    : LemmaName,
-        n     : Integer,
-        iS    : List Integer,
+        n     : Int,
+        iS    : List Int,
         jdg   : Judgement,
         prf   : Proof,
         prf1  : Proof,
@@ -183,7 +183,7 @@ spec
   (* A proof is closed iff it does not use any assumption, i.e. it does not
   contain constructor assume. *)
 
-  op closedProof? : Proof -> Boolean
+  op closedProof? : Proof -> Bool
   def closedProof? = fn
     | cxMT                                  -> true
     | cxTdec       (prf, _, _)              -> closedProof? prf

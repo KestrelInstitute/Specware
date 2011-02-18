@@ -32,7 +32,7 @@ def baseSrtToJavaTypeM(srt) =
       if charSort?(srt)
 	then return(tt("Char"))
       else
-	if integerSort?(srt)
+	if intSort?(srt)
 	  then return(tt("Integer"))
 	else
 	  if natSort?(srt)
@@ -256,11 +256,11 @@ op tt_v2: Id -> JavaType
 def tt_v2(id) =
   case id of
     | "Boolean" -> (Basic (JBool), 0) % see tt_v3
-    | "Integer" -> (Basic (JInt), 0)
-    | "Int" -> (Basic (JInt), 0)
-    | "Nat" -> (Basic (JInt), 0)
-    | "Char" -> (Basic (Char), 0)
-    | "String" -> mkJavaObjectType("String")
+    | "Bool"    -> (Basic (JBool), 0) % see tt_v3
+    | "Int"     -> (Basic (JInt), 0)
+    | "Nat"     -> (Basic (JInt), 0)
+    | "Char"    -> (Basic (Char), 0)
+    | "String"  -> mkJavaObjectType("String")
     | _ -> (Name ([], id), 0)
 
 
@@ -463,7 +463,7 @@ op mkJavaObjectType: Id -> JavaType
 def mkJavaObjectType(id) =
   (Name ([],id),0)
 
-op mkJavaNumber: Integer -> JavaExpr
+op mkJavaNumber: Int -> JavaExpr
 def mkJavaNumber(i) =
   CondExp (Un (Prim (IntL (i))), None)
 
@@ -1085,8 +1085,8 @@ def insertRestricts(spc,dom,args) =
   let
     def castNatToInteger srt =
       case srt of
-        | Base(Qualified("Nat","Nat"),   [],b) -> Base(Qualified("Integer","Integer"),[],b)
-        | Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+        | Base(Qualified("Nat","Nat"),   [],b) -> Base(Qualified("Integer","Int"),[],b)
+        | Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Int"),[],b)
         | _ -> srt
 
     def insertRestrict(domsrt,argterm) =

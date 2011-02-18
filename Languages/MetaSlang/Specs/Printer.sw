@@ -49,11 +49,11 @@ AnnSpecPrinter qualifying spec
                    markSubterm        : Boolean,
                    markNumber         : Ref Nat,
                    markTable          : Ref (NatMap.Map (List Nat)),
-                   indicesToDisable   : IntegerSet.Set,
-                   sosIndicesToEnable : IntegerSet.Set
+                   indicesToDisable   : IntSet.Set,
+                   sosIndicesToEnable : IntSet.Set
                   }
  
- type IndexLines = Integer * Lines
+ type IndexLines = Int * Lines
 
  %% ========================================================================
 
@@ -103,8 +103,8 @@ AnnSpecPrinter qualifying spec
  op printSpecFlat                : [a] ASpec a -> String
 %op printSpecToTerminal          : [a] ASpec a -> ()
 %op printSpecToFile              : [a] String * ASpec a -> ()
- op printMarkedSpecToFile        : [a] String * String * IntegerSet.Set * IntegerSet.Set * ASpec a ->          NatMap.Map (List Nat)
- op printMarkedSpecToString      : [a]                   IntegerSet.Set * IntegerSet.Set * ASpec a -> String * NatMap.Map (List Nat)
+ op printMarkedSpecToFile        : [a] String * String * IntSet.Set * IntSet.Set * ASpec a ->          NatMap.Map (List Nat)
+ op printMarkedSpecToString      : [a]                   IntSet.Set * IntSet.Set * ASpec a -> String * NatMap.Map (List Nat)
 %op printSpecWithSortsToTerminal : [a] ASpec a -> ()
  op latexSpecToPretty            : [a] ASpec a -> Pretty
 %op latexSpec                    : [a] ASpec a -> String
@@ -128,8 +128,8 @@ AnnSpecPrinter qualifying spec
     markSubterm        = false,
     markNumber         = Ref 0,
     markTable          = Ref NatMap.empty,
-    indicesToDisable   = IntegerSet.empty,
-    sosIndicesToEnable = IntegerSet.empty}
+    indicesToDisable   = IntSet.empty,
+    sosIndicesToEnable = IntSet.empty}
  
  def initializeMark (pp, indicesToDisable, sosIndicesToEnable) : PrContext = 
    {pp                 = pp,
@@ -974,13 +974,13 @@ AnnSpecPrinter qualifying spec
  def ppProperty context (index, (pt, name as Qualified (q, id), tyVars, term, _)) = 
    let pp : ATermPrinter = context.pp in
    let button1 = (if markSubterm? context then
-		    PrettyPrint.buttonPretty (~(IntegerSet.member (context.indicesToDisable, index)), 
+		    PrettyPrint.buttonPretty (~(IntSet.member (context.indicesToDisable, index)), 
 					      index, string " ", false) 
 		  else 
 		    string "")
    in
    let button2 = (if markSubterm? context then
-                    PrettyPrint.buttonPretty (IntegerSet.member (context.sosIndicesToEnable, index), 
+                    PrettyPrint.buttonPretty (IntSet.member (context.sosIndicesToEnable, index), 
 					      index, string " ", true) 
 		  else 
 		    string "")
@@ -1036,13 +1036,13 @@ AnnSpecPrinter qualifying spec
    let index1 = -(index + 1) in
    let defined? = definedOpInfo? info in
    let button1 = (if markSubterm? context && ~ defined? then
-		    PrettyPrint.buttonPretty (~(IntegerSet.member (context.indicesToDisable, index1)), 
+		    PrettyPrint.buttonPretty (~(IntSet.member (context.indicesToDisable, index1)), 
 					      index1, string " ", false)
 		  else 
 		    string "")
    in
    let button2 = (if markSubterm? context && ~ defined? then
-		    PrettyPrint.buttonPretty (IntegerSet.member (context.sosIndicesToEnable, index1), 
+		    PrettyPrint.buttonPretty (IntSet.member (context.sosIndicesToEnable, index1), 
 					      index1, string " ", true)
 		  else 
 		    string "")

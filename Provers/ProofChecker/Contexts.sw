@@ -10,7 +10,7 @@ spec
   simpler and avoiding subtypes (as explained in README.txt). *)
 
   type ContextElement =
-    | typeDeclaration    TypeName * Integer
+    | typeDeclaration    TypeName * Int
     | opDeclaration      Operation * TypeVariables * Type
     | axioM              AxiomName * TypeVariables * Expression
     | lemma              LemmaName * TypeVariables * Expression

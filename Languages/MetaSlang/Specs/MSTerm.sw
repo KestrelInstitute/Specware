@@ -51,21 +51,21 @@ MS qualifying spec
 
  %% Sort terms for constant sorts:
 
- op boolSort        : Sort
- op natSort         : Sort
- op charSort        : Sort
- op stringSort      : Sort
+ op boolSort   : Sort
+ op intSort    : Sort
+ op natSort    : Sort
+ op charSort   : Sort
+ op stringSort : Sort
 
- def boolSort       = Boolean noPos
- def integerSort    = mkBase  (Qualified("Integer", "Integer"), []) 
- def intSort    = mkBase  (Qualified("Integer", "Integer"), []) 
- def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
- def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
- def stringSort     = mkBase  (Qualified("String",  "String"),  [])
- op voidType: Sort = mkProduct[]
+ def boolSort    = Boolean noPos
+ def intSort     = mkBase (Qualified("Integer", "Int"),    []) 
+ def natSort     = mkBase (Qualified("Nat",     "Nat"),    []) 
+ def charSort    = mkBase (Qualified("Char",    "Char"),   [])
+ def stringSort  = mkBase (Qualified("String",  "String"), [])
+ op voidType : Sort = mkProduct[]
 
- op listCharType: Sort = mkBase(Qualified("List","List"),[charSort])
- op optionStringType: Sort = mkBase(Qualified("Option","Option"),[stringSort])
+ op listCharType     : Sort = mkBase(Qualified("List",  "List"),  [charSort])
+ op optionStringType : Sort = mkBase(Qualified("Option","Option"),[stringSort])
 
 
  def unaryBoolSort  = mkArrow (boolSort, boolSort)
@@ -112,21 +112,20 @@ MS qualifying spec
 
  %% Fun's
 
- op mkTrue : () -> Term
- op mkFalse : () -> Term
-
- op mkInt : Integer -> Term
- op mkNat : Nat -> Term
- op mkChar : Char -> Term
- op mkBool : Boolean -> Term
+ op mkTrue   : ()     -> Term
+ op mkFalse  : ()     -> Term
+ op mkInt    : Int    -> Term
+ op mkNat    : Nat    -> Term
+ op mkChar   : Char   -> Term
+ op mkBool   : Bool   -> Term
  op mkString : String -> Term
 
- op mkRelax : Sort * Term -> Term
- op mkEmbed0 : FieldName * Sort -> Term
- op mkEmbed1 : FieldName * Sort -> Term
- op mkEmbedded : FieldName * Sort -> Term
- op mkOp : QualifiedId * Sort -> Term
- op mkInfixOp : QualifiedId * Fixity * Sort -> Term
+ op mkRelax    : Sort        * Term -> Term
+ op mkEmbed0   : FieldName   * Sort -> Term
+ op mkEmbed1   : FieldName   * Sort -> Term
+ op mkEmbedded : FieldName   * Sort -> Term
+ op mkOp       : QualifiedId * Sort -> Term
+ op mkInfixOp  : QualifiedId * Fixity * Sort -> Term
 
  def mkTrue  () = mkFun (Bool true,  boolSort)
  def mkFalse () = mkFun (Bool false, boolSort)
@@ -148,7 +147,7 @@ MS qualifying spec
 
  def mkInt i = if i >= 0
 		 then mkNat(i)
-	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(integerSort, natSort)), mkNat(-i))
+	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(intSort, natSort)), mkNat(-i))
  def mkNat n = mkFun (Nat n, natSort)
  def mkChar char = mkFun (Char char, charSort)
  def mkBool bool = mkFun (Bool bool, boolSort)
@@ -202,7 +201,7 @@ MS qualifying spec
 	 else [t]
       | _ -> [t]
 
- op  tupleFields?: [a] List (Id * a) -> Boolean
+ op  tupleFields?: [a] List (Id * a) -> Bool
  def tupleFields? fields =
    (foldl (fn (i,(id,_)) ->
 	   if i < 0 then i
@@ -309,7 +308,7 @@ MS qualifying spec
  op mkRecordPat     : List(Id * Pattern)         -> Pattern
  op mkTuplePat      : List Pattern               -> Pattern
  op mkWildPat       : Sort                       -> Pattern
- op mkBoolPat       : Boolean                    -> Pattern
+ op mkBoolPat       : Bool                       -> Pattern
  op mkNatPat        : Nat                        -> Pattern
  op mkStringPat     : String                     -> Pattern
  op mkCharPat       : Char                       -> Pattern

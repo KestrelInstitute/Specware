@@ -309,9 +309,8 @@ snark qualifying spec {
   def snarkBaseSort (spc, s:Sort, rng?) : LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
     case s of
-      %| Base (Qualified ("Nat",     "Nat"),     _,_) -> Lisp.symbol ("SNARK", "NUMBER")
-      %| Base (Qualified ("Nat",     "PosNat"),  _,_) -> Lisp.symbol ("SNARK", "NUMBER")
-      | Base (Qualified ("Integer", "Integer"), _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+     %| Base (Qualified ("Nat",     "Nat"),     _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+     %| Base (Qualified ("Nat",     "PosNat"),  _,_) -> Lisp.symbol ("SNARK", "NUMBER")
       | Base (Qualified ("Integer", "Int"), _,_) -> Lisp.symbol ("SNARK", "NUMBER")
       | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
      %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
@@ -337,16 +336,14 @@ snark qualifying spec {
       (let
         def builtinSort?(s) =
 	  case s of 
-	    | Base(Qualified("Nat","Nat"),_,_) -> true
-	    | Base(Qualified("Integer","Integer"),_,_) -> true
+	    | Base(Qualified("Nat",    "Nat"),_,_) -> true
 	    | Base(Qualified("Integer","Int"),_,_) -> true
 	    | Boolean _ -> true
             | _ -> false in
       let
 	def builtinSnarkSort(s) =
 	  case s of 
-	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+	    | Base(Qualified("Nat",    "Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Int"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
       let defs = sortInfoDefs info in

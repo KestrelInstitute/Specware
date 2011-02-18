@@ -10,10 +10,10 @@ spec
   type Subst = List (Id * Value)
 
   type Value =
-    | Int         Integer
+    | Int         Int
     | Char        Char
     | String      String
-    | Bool        Boolean
+    | Bool        Bool
     | RecordVal   Subst
     | Constructor Id * Value * MS.Sort
     | Constant    Id * MS.Sort
@@ -23,7 +23,7 @@ spec
     | RecClosure  Match * Subst * List Id
     | Unevaluated MS.Term
 
-  op equalValue?(v1: Value, v2: Value): Boolean =
+  op equalValue?(v1: Value, v2: Value): Bool =
     case (v1,v2) of
       | (Int n1, Int n2) -> n1 = n2
       | (Char ch1, Char ch2) -> ch1 = ch2
@@ -38,7 +38,7 @@ spec
       %% Should have special cases for QuotientVal ChooseClosure Closure RecClosure
       | _ -> v1 = v2
 
-  op  unevaluated?: Value -> Boolean
+  op  unevaluated?: Value -> Bool
   def unevaluated? x = embed? Unevaluated x
 
   op  emptySubst: Subst
@@ -72,10 +72,10 @@ spec
   op partialEval(t: MS.Term,spc: Spec): MS.Term =
     valueToTerm(eval(t,spc))
 
-  op  traceEval?: Boolean
+  op  traceEval?: Bool
   def traceEval? = false
 
-  op  traceable?: MS.Term -> Boolean
+  op  traceable?: MS.Term -> Bool
   def traceable? t =
     case t of
       %| Var _ -> false
@@ -233,7 +233,7 @@ spec
       | Embed (id, false) -> Constant(id,ty)
       | _ -> Unevaluated t
 
-  op  nonStrict?: MS.Term -> Boolean
+  op  nonStrict?: MS.Term -> Bool
   def nonStrict? t =
     case t of
       | Fun(f,_,_)  -> f in?[And,Or,Implies]
@@ -402,7 +402,7 @@ spec
       %| Fun(Select id,srt,_) ->
       | _ -> default()
 
-  op  checkEquality: Value * Subst * Spec * Nat * Bool -> Option Boolean
+  op  checkEquality: Value * Subst * Spec * Nat * Bool -> Option Bool
   def checkEquality(a,sb,spc,depth,trace?) =
     case a of
       | RecordVal [("1",QuotientVal(equivfn,a1,_)),("2",QuotientVal(_,a2,_))] ->
@@ -571,7 +571,7 @@ spec
   %% Evaluation of constant terms
   %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
   def evalQualifiers = ["Nat","Integer","IntegerAux","String","Char","System","Boolean"]
-  op  evalConstant?: Value -> Boolean
+  op  evalConstant?: Value -> Bool
   def evalConstant?(v) =
     case v
       of Unevaluated t -> embed? Fun t
@@ -594,18 +594,18 @@ spec
      Qualified("Char","isAlpha"),
      Qualified("Char","isAscii")
      ]
-  op avoidExpanding? (qid : QualifiedId) : Boolean =
+  op avoidExpanding? (qid : QualifiedId) : Bool =
     qid in? builtInQids
 
-  op  valConstant?: Value -> Boolean
+  op  valConstant?: Value -> Bool
   def valConstant? v =
     case v
       of Unevaluated _ -> false
        | _ -> true
 
-  op  intVal: Value -> Integer
+  op  intVal: Value -> Int
   def intVal = fn (Int i) -> i
-  op  intVals: List(Id * Value) -> Integer * Integer
+  op  intVals: List(Id * Value) -> Int * Int
   def intVals([(_,x),(_,y)]) = (intVal x,intVal y)
 
   op  charVal: Value -> Char
@@ -616,12 +616,12 @@ spec
   op  stringVals: List(Id * Value) -> String * String
   def stringVals([(_,x),(_,y)]) = (stringVal x,stringVal y)
 
-  op  booleanVal: Value -> Boolean
-  def booleanVal = fn (Bool s) -> s
-  op  booleanVals: List(Id * Value) -> Boolean * Boolean
-  def booleanVals([(_,x),(_,y)]) = (booleanVal x,booleanVal y)
+  op  boolVal: Value -> Bool
+  def boolVal = fn (Bool s) -> s
+  op  boolVals: List(Id * Value) -> Bool * Bool
+  def boolVals([(_,x),(_,y)]) = (boolVal x,boolVal y)
 
-  op  stringIntVals: List(Id * Value) -> String * Integer
+  op  stringIntVals: List(Id * Value) -> String * Int
   def stringIntVals([(_,x),(_,y)]) = (stringVal x,intVal y)
 
   op  attemptEval1: String * Value * MS.Term -> Value
@@ -828,7 +828,7 @@ spec
       | Constant ("Nil",_) -> []
       | Constructor("Cons",RecordVal[("1",x),("2",r)],_) -> Cons(x,metaListToList r)
 
-  op  metaList?: Value -> Boolean
+  op  metaList?: Value -> Bool
   def metaList? v =
     case v of
       | Constant("Nil",_) -> true
@@ -836,7 +836,7 @@ spec
       | _ -> false
 
 
-  op  printValue: Value * Boolean -> ()
+  op  printValue: Value * Bool -> ()
   def printValue (v,useXSymbol?) =
     PrettyPrint.toTerminal(format(80,ppValue (initialize(if useXSymbol?
 							   then XSymbolPrinter
@@ -944,7 +944,7 @@ spec
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
 
-  op fullyReduced?(v: Value): Boolean =
+  op fullyReduced?(v: Value): Bool =
     case v of
       | Unevaluated_  -> false
       | Closure _ -> false
