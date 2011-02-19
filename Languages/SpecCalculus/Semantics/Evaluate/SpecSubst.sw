@@ -13,7 +13,9 @@ SpecCalc qualifying spec
   def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
     if sm.dom = original_spec then return sm.cod else
     let sub_spec             = SpecCalc.dom sm                     in
-    let should_be_empty_spec = subtractSpec sub_spec original_spec in
+    let should_be_empty_spec = subtractSpec1 sub_spec original_spec true in
+    %let _ = writeLine("SS:\n"^printSpecFlat sub_spec) in
+    %let _ = writeLine("O:\n"^printSpecFlat original_spec) in
     let sorts_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
     let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
     let 
