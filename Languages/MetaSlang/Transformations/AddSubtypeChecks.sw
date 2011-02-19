@@ -130,12 +130,30 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
   % let _ = writeLine(printSpec result_spc) in
   result_spc
 
+op computableTerm? (t: MS.Term): Bool =
+  ~(existsSubTerm (fn st ->
+                     case st of
+                       | The _ -> true
+                       | Bind _ -> true
+                       | _ -> false)
+      t)
+
 op ensureComputable (spc: Spec) (t: MS.Term): MS.Term =
   let t = simplify spc t in
   let def weaken? polarity? t =
         case t of
+          %% t = the v. P v  -->  P t
           | Apply(Fun(Equals, _, _), Record([(_, t1), (_, The(v, bod, _))], _), _) | polarity? ->
             simplify spc (substitute(bod, [(v, t1)]))
+          | Apply(Fun(Equals, _, _), Record([(_, The(v, bod, _)), (_, t2)], _), _) | polarity? ->
+            simplify spc (substitute(bod, [(v, t2)]))
+          %% t = let x = y in z  -->  let x = y in t = z
+          | Apply(eq_fn as Fun(Equals, _, _), Record([("1", t1), ("2", let_tm as Let(binds, bod, a3))], a1), a2)
+              | ~(computableTerm? bod) && disjointVarNames?(boundVars let_tm, freeVars t1) ->
+            weaken? polarity? (Let(binds, Apply(eq_fn, Record([("1", t1), ("2", bod)], a1), a2), a3))
+          | Apply(eq_fn as Fun(Equals, _, _), Record([("1", let_tm as Let(binds, bod, a3)), ("2", t2)], a1), a2)
+              | ~(computableTerm? bod) && disjointVarNames?(boundVars let_tm, freeVars t2) ->
+            weaken? polarity? (Let(binds, Apply(eq_fn, Record([("1", bod), ("2", t2)], a1), a2), a3))
           | Apply(t1, t2, a) -> Apply(weaken? polarity? t1, weaken? polarity? t2, a)
           | Record(prs, a) -> Record(map (fn (id,ti) -> (id, weaken? polarity? ti)) prs, a)
           | Bind(bdr, vs, bod, a) -> Bind(bdr, vs, weaken? polarity? bod, a)
