@@ -288,6 +288,9 @@ Utilities qualifying spec
                             | _ -> false)
      tm
 
+ op disjointVarNames?(vs1: Vars, vs2: Vars): Bool =
+   forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
+
  op removeDuplicateVars: List Var -> List Var
  def removeDuplicateVars vars = 
    case vars of
