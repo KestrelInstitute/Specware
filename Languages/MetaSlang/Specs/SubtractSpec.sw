@@ -10,13 +10,28 @@ AnnSpec qualifying spec
  op subtractLocalSpecElements : Spec * Spec -> Spec 
  op subtractSpecProperties    : Spec * Spec -> Spec
 
- def subtractSpec x y =
+ def subtractSpec x y = subtractSpec1 x y false
+
+ op subtractSpec1 (x: Spec) (y: Spec) (poly?: Bool): Spec  =
+   %% If poly? is true remove an instance of  of a polymorphic type
    let elements = filterSpecElements (fn elt_x ->
 					(case elt_x of
 					   | Import (_, i_sp, _, _) -> ~(i_sp = y)
 					   | _ -> true)
 					&&
-					~(existsSpecElement? (fn elt_y -> sameSpecElement? (y, elt_y, x, elt_x))
+					~(existsSpecElement? (fn elt_y ->
+                                                                let same? = sameSpecElement? (y, elt_y, x, elt_x) in
+                                                                same? ||
+                                                                 (case (elt_x, elt_y)
+                                                                  of (Op (qid1,_, _), Op(qid2,_, _)) | qid1 = qid2 ->
+                                                                      % let Some info1 = findTheOp (x, qid1) in
+                                                                      % let Some info2 = findTheOp (y, qid2) in
+                                                                      % (writeLine(show qid1);
+                                                                      %  writeLine(anyToString info1.names^" =?= "^anyToString info2.names);
+                                                                      %  writeLine(anyToString info1.fixity^" =?= "^anyToString info2.fixity);
+                                                                      %  writeLine(printSort(termSort info1.dfn)^" =?= "^printSort(termSort info2.dfn));
+                                                                       poly?  %)
+                                                                  | _ -> false))
 					                     y.elements))
 	                               x.elements
    in
@@ -108,8 +123,10 @@ AnnSpec qualifying spec
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
-	     && equivType? s2 (termSort info1.dfn, 
-	termSort info2.dfn)
+	     && (equivType? s2 (termSort info1.dfn,
+                                termSort info2.dfn)
+                   || equivType? s1 (termSort info1.dfn, 
+                                     termSort info2.dfn))
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true
 		   | (_,                    Any _) -> true
