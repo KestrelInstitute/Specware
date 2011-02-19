@@ -1688,7 +1688,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (if (specware-file-name-p buffer-file-name)
       (format
        "(SpecCalc::findDefiningUID-3 '(:|Qualified| %S . %S) %S %s)"
-       qualifier sym (substring buffer-file-name 0 (- (length buffer-file-name) 3))
+       qualifier sym (sw:containing-specware-unit-id nil)
        *specware-context-str*)
     (format
      "(SpecCalc::searchForDefiningUID-2 '(:|Qualified| %S . %S) %s)"
@@ -1775,7 +1775,10 @@ STRING should be given if the last search was by `string-match' on STRING."
 	      (progn (forward-sexp -1)
 		     (while (looking-at "\\s'")
 		       (forward-char 1))
-		     (while (member (preceding-char) '(?. ?:))
+		     (while (member (preceding-char)
+                                    (if (eq major-mode 'specware-mode)
+                                        '(?.)
+                                      '(?. ?:)))
 		       (forward-sexp -1))
 		     (point))))
 	    (t
