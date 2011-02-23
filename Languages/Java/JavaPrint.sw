@@ -771,7 +771,7 @@ Java qualifying spec
                              [toPretty (Integer.show i1),
                               toPretty ".",
                               toPretty (Integer.show i2)]
-      | Bool b          -> toPretty (Boolean.show b)
+      | Bool b          -> toPretty (Bool.show b)
       | Char c          -> toPretty ("'"^(Char.show c)^"'")
       | String s        -> toPretty (concatList ["\"",s,"\""])
       | Null            -> toPretty "null"

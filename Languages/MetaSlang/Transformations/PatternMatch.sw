@@ -1048,7 +1048,7 @@ and const =
 def printConst(c:const) = 
     case c
       of NAT n -> show n
-       | BOOL b -> Boolean.show b
+       | BOOL b -> Bool.show b
        | CHAR ch -> Char.show ch
        | STRING s -> s
 

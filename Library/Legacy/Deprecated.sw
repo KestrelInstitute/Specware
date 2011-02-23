@@ -176,7 +176,7 @@ op String.lt (s1:String, s2:String) infixl 20 : Bool = (s1 <  s2)
 
 op String.leq (s1:String, s2:String) infixl 20 : Bool = (s1 <=  s2)
 
-op Boolean.toString : Bool -> String = Boolean.show
+op Bool.toString : Bool -> String = Bool.show
 
 op Nat.toString : Nat -> String = Nat.show
 

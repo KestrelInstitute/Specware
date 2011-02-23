@@ -80,7 +80,7 @@ PrString qualifying spec
 
   % ops with different qualifiers:
 (*
-  op Boolean.show : Bool -> String  % deprecated
+  op Bool.show : Bool -> String  % deprecated
   op Integer.show : Int  -> String  % deprecated
   op Nat.show     : Nat  -> String  % deprecated
   op Char.show    : Char -> String  % deprecated
@@ -94,7 +94,7 @@ PrString qualifying spec
   op Option.show            : [a] (a -> String) -> Option a -> String
   op List.show              : String -> List String         -> String
 
-  op Boolean.show           : Bool       -> String
+  op Bool.show              : Bool       -> String
   op Compare.show           : Comparison -> String
   op Char.show              : Char       -> String
   op Integer.show           : Int        -> String
@@ -103,7 +103,7 @@ PrString qualifying spec
   op Nat.natConvertible     : String     -> Bool
 *)
   axiom boolean_show_def is
-    fa (x : Bool) Boolean.show x = (if x then "true" else "false")
+    fa (x : Bool) Bool.show x = (if x then "true" else "false")
 
   axiom int_show_def is
     fa (x : Int) Integer.show x =
@@ -170,7 +170,7 @@ PrString qualifying spec
                                 (tl, res * 10 + charToDigit hd) in
         stringToNatAux(explode s, 0))
 
-  axiom show is fa (b: Bool) Boolean.show b = Boolean.show b
+  axiom show is fa (b: Bool) Bool.show b = Bool.show b
 
   axiom compare_show_def1 is
     fa (cmp) cmp = Greater => Compare.show cmp = "Greater"
