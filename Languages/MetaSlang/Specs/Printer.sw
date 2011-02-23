@@ -171,7 +171,7 @@ AnnSpecPrinter qualifying spec
    : Pretty = 
    case termOp of
      | Op          (idInfo, _) -> pp.ppOpId (idInfo)
-     | Bool        b           -> pp.fromString (Boolean.show b)
+     | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^s^"\"")              % "abc"
      | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % #A
@@ -786,7 +786,7 @@ AnnSpecPrinter qualifying spec
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
-     | BoolPat   (b, _) -> string (Boolean.show b)
+     | BoolPat   (b, _) -> string (Bool.show b)
      | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
      | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))   % #A
