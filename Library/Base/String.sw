@@ -70,9 +70,9 @@ proof Isa -> >=_s end-proof
 
 op newline : String = "\n"
 
-% convert booleans to strings:
+% convert Booleans to strings:
 
-op Boolean.show (x:Bool) : String = if x then "true" else "false"
+op Bool.show (x:Bool) : String = if x then "true" else "false"
 
 % convert naturals to strings:
 
