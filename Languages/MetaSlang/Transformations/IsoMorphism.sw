@@ -1394,8 +1394,10 @@ spec
                         else
                           if id = otherId then
                             if qual ~= otherQual then
-                              escape ("applyIso: disparately qualified functions subject to iso transformation: "
-                                ^ qual ^ "." ^ id ^ " and " ^ otherQual ^ "." ^ id ^ "\n")
+                              if some? newOptQual
+                                then escape ("applyIso: disparately qualified functions subject to iso transformation: "
+                                               ^ qual ^ "." ^ id ^ " and " ^ otherQual ^ "." ^ id ^ "\n")
+                                else return false
                             else
                               if ~(equivType? spc (maybePiSort(freeTyVars ty, ty),maybePiSort (freeTyVars otherTyp, otherTyp))) then {
                                 print "makeIsomorphism: two functions with common qualified id by disparate types subject to iso transformation\n";
