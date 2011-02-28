@@ -116,6 +116,8 @@
 ;;;     )
 
 (defvar *warn-about-questionable-equality?* nil)
+(defparameter sf-epsilon (* 10 single-float-epsilon))
+(defparameter df-epsilon (* 10 double-float-epsilon))
 
 ;;; This is twice as fast as the version above...
 (defun slang-term-equals-2 (t1 t2)
@@ -158,7 +160,8 @@
                         ;;   Cons cells are equal if their elements are equal too.
                         (slang-term-equals-2 (car t1) (car t2))
                         (slang-term-equals-2 (cdr t1) (cdr t2))))
-        (number    (=       t1 t2))    ; catches complex numbers, etc.
+        (fixnum (eql t1 t2))
+        (integer (= t1 t2))
         (character (eq      t1 t2))
         (hash-table
          ;; This can happen, for example, when comparing specs, which use maps from
@@ -183,6 +186,11 @@
         (pathname
          ;; As long as we might have hash-tables, maybe pathnames?
          (equal t1 t2))
+
+        (single-float (< (abs (- t1 t2)) sf-epsilon))
+        (double-float (< (abs (- t1 t2)) df-epsilon))
+        (number    (=       t1 t2))    ; catches complex numbers, etc.
+
         (t 
          ;; structures, etc. will end up here
          ;; print semi-informative error message, but avoid printing
