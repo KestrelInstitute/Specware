@@ -1,289 +1,106 @@
 
-CUtils qualifying spec {
+CUtils qualifying spec
+{
 
   import C
   import CPrint
   import /Languages/MetaSlang/Specs/Printer
 
-  op emptyCSpec: String -> CSpec
-  def emptyCSpec(name) =
+  op emptyCSpec (name : String) : CSpec =
     {
-     name = name,
-     includes = [],
-     defines = [],
-     constDefns = [],
-     vars = [],
-     fns = [],
-     axioms = [],
+     name                 = name,
+     includes             = [],
+     defines              = [],
+     constDefns           = [],
+     vars                 = [],
+     fns                  = [],
+     axioms               = [],
      structUnionTypeDefns = [],
-     varDefns = [],
-     fnDefns = []
-    }
-  op renameCSpec: CSpec * String -> CSpec
-  def renameCSpec(cspc,name) =
-    {
-     name = name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addInclude: CSpec * String -> CSpec
-  def addInclude(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes ++ [X],
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addDefine: CSpec * String -> CSpec
-  def addDefine(cspc,X) =
+     varDefns             = [],
+     fnDefns              = []}
+
+  op addDefine    (cspc : CSpec, X    : String) : CSpec =
     let defines = filter (fn(df) -> df ~= X) cspc.defines in
     let defines = defines ++ [X] in
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addConstDefn: CSpec * CVarDefn -> CSpec
-  def addConstDefn(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns ++ [X],
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addVar: CSpec * CVarDecl -> CSpec
-  def addVar(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars ++ [X],
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
+    cspc << {defines = defines}
+
+  op renameCSpec             (cspc : CSpec, X : String)                : CSpec = cspc << {name                 = X}                       
+  op addInclude              (cspc : CSpec, X : String)                : CSpec = cspc << {includes             = cspc.includes             ++ [X]}
+  op addConstDefn            (cspc : CSpec, X : CVarDefn)              : CSpec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
+  op addVar                  (cspc : CSpec, X : CVarDecl)              : CSpec = cspc << {vars                 = cspc.vars                 ++ [X]}
+  op addVarDefn              (cspc : CSpec, X : CVarDefn)              : CSpec = cspc << {varDefns             = cspc.varDefns             ++ [X]}
+  op addAxiom                (cspc : CSpec, X : CExp)                  : CSpec = cspc << {axioms               = cspc.axioms               ++ [X]}
+  op addStructDefn           (cspc : CSpec, X : CStructDefn)           : CSpec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [CStruct X]}
+  op addUnionDefn            (cspc : CSpec, X : CUnionDefn)            : CSpec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [CUnion  X]}
+  op setStructUnionTypeDefns (cspc : CSpec, X : CStructUnionTypeDefns) : CSpec = cspc << {structUnionTypeDefns = X}
 
   %% CMacros is a list of names of macros defined in SWC_Common.h
   %% E.g. "String_Less" expands to "strcmp", so we should avoid
   %% adding another declaration for strcmp.
-  op  SWC_Common_Macros : List String
-  def SWC_Common_Macros = ["String_PlusPlus",
-			   "String_Caret",
-			   "Caret",
-			   "writeLine",
-			   "String_toScreen",
-			   "toString",
-			   "Nat_toString",
-			   "Less",
-			   "Greater",
-			   "String_Less",
-			   "fail"]
+  op SWC_Common_Macros : List String =
+    ["String_PlusPlus",
+     "String_Caret",
+     "Caret",
+     "writeLine",
+     "String_toScreen",
+     "toString",
+     "Nat_toString",
+     "Less",
+     "Greater",
+     "String_Less",
+     "fail"]
 
-  op addFn: CSpec * CFnDecl -> CSpec
-  def addFn(cspc,X as (fname,_,_)) =
-    %let _ = writeLine("adding fndecl for "^fname^"...") in
-    if  fname in? SWC_Common_Macros then
+  op addFn (cspc : CSpec, X as (fname,_,_) : CFnDecl) : CSpec =
+    if fname in? SWC_Common_Macros then
       cspc
     else
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = (filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns) ++ [X],
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
+      let other_fns = filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns in
+      cspc << {fns = other_fns ++ [X]}
 
-  op delFn: CSpec * String -> CSpec
-  def delFn(cspc,fname) =
-    %let _ = writeLine("deleting fndecl for "^fname^"...") in
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
+  op delFn (cspc : CSpec, fname : String) : CSpec =
+    let other_fns = filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns in
+    cspc << {fns = other_fns}
 
+  op addTypeDefn (cspc : CSpec, X as (tname,_) : CTypeDefn) : CSpec =
+    let other_typedefs = filter (fn (CTypeDefn (tname0,_)) -> tname0 ~= tname | _ -> true) cspc.structUnionTypeDefns in
+    cspc << {structUnionTypeDefns = other_typedefs ++ [CTypeDefn X]}
 
-  op addAxiom: CSpec * CExp -> CSpec
-  def addAxiom(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms ++ [X],
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addTypeDefn: CSpec * CTypeDefn -> CSpec
-  def addTypeDefn(cspc,X as (tname,_)) =
-    %let _ = String.writeLine("adding type definition \""^tname^"\"...") in
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) cspc.structUnionTypeDefns) ++ [TypeDefn X],
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addStructDefn: CSpec * CStructDefn -> CSpec
-  def addStructDefn(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Struct X],
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addUnionDefn: CSpec * CUnionDefn -> CSpec
-  def addUnionDefn(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Union X],
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
-  op addVarDefn: CSpec * CVarDefn -> CSpec
-  def addVarDefn(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns ++ [X],
-     fnDefns = cspc.fnDefns
-    }
-  op addFnDefnAux: CSpec * CFnDefn * Boolean -> CSpec
-  def addFnDefnAux(cspc,fndefn as (fname,params,rtype,body),overwrite) =
-    %let _ = writeLine("adding function definition \""^fname^"\" overwrite="^(Boolean.toString(overwrite))) in
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     %% Following fixes bug 163: "C code generation needs all (or at least more) fn decls in .h file"
-     %% Even if the fn is getting a definition, we should produce a decl in the .h file.
-     %% Otherwise, if it is referenced before it is defined it may get the default type 
-     %% assignment (i.e., return value of int), which may conflict with the correct type.
-     fns = cspc.fns, % if overwrite then filter (fn(fname0,_,_) -> fname ~= fname0) cspc.fns else cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns,
-     fnDefns = (if overwrite 
-		  then (filter (fn(fname0,_,_,_) -> fname ~= fname0) cspc.fnDefns)
-		else cspc.fnDefns) ++ [fndefn]
-    }
+  op addFnDefnAux (cspc : CSpec, fndefn as (fname,params,rtype,body) : CFnDefn, overwrite? : Bool) : CSpec =
+    let other_defs = if overwrite? then
+                       filter (fn(fname0,_,_,_) -> fname ~= fname0) cspc.fnDefns
+                     else 
+                       cspc.fnDefns
+    in 
+    cspc << {fnDefns = other_defs ++ [fndefn]}
 
-  op addFnDefn: CSpec * CFnDefn -> CSpec
-  def addFnDefn(cspc,fndefn) =
-    addFnDefnAux(cspc,fndefn,true)
+  op addFnDefn          (cspc : CSpec, fndefn : CFnDefn) : CSpec = addFnDefnAux(cspc, fndefn, true)
+  op addFnDefnOverwrite (cspc : CSpec, fndefn : CFnDefn) : CSpec = addFnDefnAux(cspc, fndefn, true)
 
-  op addFnDefnOverwrite: CSpec * CFnDefn -> CSpec
-  def addFnDefnOverwrite(cspc,fndefn) =
-    addFnDefnAux(cspc,fndefn,true)
-
-  op setStructUnionTypeDefns: CSpec * CStructUnionTypeDefns -> CSpec
-  def setStructUnionTypeDefns(cspc,X) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars,
-     fns = cspc.fns,
-     axioms = cspc.axioms,
-     structUnionTypeDefns = X,
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
-    }
   % --------------------------------------------------------------------------------
 
-  op getStructDefns: CSpec -> CStructDefns
-  def getStructDefns(cspc) =
-    List.foldl (fn(structs,su) ->
-		case su of
-		  | Struct X -> structs ++ [X]
-		  | _ -> structs
-		 ) [] cspc.structUnionTypeDefns
+  op getStructDefns (cspc : CSpec) : CStructDefns =
+    foldl (fn (structs, su) ->
+             case su of
+               | CStruct X -> structs ++ [X]
+               | _ -> structs)
+          [] 
+          cspc.structUnionTypeDefns
 
-  op getUnionDefns: CSpec -> CUnionDefns
-  def getUnionDefns(cspc) =
-    List.foldl (fn(unions,su) ->
-		case su of
-		  | Union X -> unions ++ [X]
-		  | _ -> unions
-		 ) [] cspc.structUnionTypeDefns
+  op getUnionDefns (cspc : CSpec) : CUnionDefns =
+    foldl (fn (unions, su) ->
+             case su of
+               | CUnion X -> unions ++ [X]
+               | _ -> unions)
+          []
+          cspc.structUnionTypeDefns
 
-  op getTypeDefns: CSpec -> CTypeDefns
-  def getTypeDefns(cspc) =
-    List.foldl (fn(typedefns,su) ->
-		case su of
-		  | TypeDefn X -> typedefns ++ [X]
-		  | _ -> typedefns
-		 ) [] cspc.structUnionTypeDefns
+  op getTypeDefns (cspc : CSpec) : CTypeDefns =
+    foldl (fn (typedefns, su) ->
+             case su of
+               | CTypeDefn X -> typedefns ++ [X]
+               | _ -> typedefns)
+          []
+          cspc.structUnionTypeDefns
 
   % --------------------------------------------------------------------------------
 
@@ -291,11 +108,11 @@ CUtils qualifying spec {
    * adds a new type definition to cspc; definition in xcspc are
    * also searched (for incremental code generation)
    *)
-  op addNewTypeDefn: CSpec * CSpec * CTypeDefn -> CSpec * CType
-  def addNewTypeDefn(cspc,xcspc,tdef as (tname,typ)) =
-    case findTypeDefnInCSpecs([cspc,xcspc],typ) of
-      | Some s -> (cspc,Base s)
-      | None -> (addTypeDefn(cspc,tdef),Base tname)
+  op addNewTypeDefn (cspc : CSpec, xcspc : CSpec, tdef as (tname,typ) : CTypeDefn) 
+    : CSpec * CType =
+    case findTypeDefnInCSpecs ([cspc,xcspc], typ) of
+      | Some s -> (cspc,                   CBase s)
+      | None   -> (addTypeDefn(cspc,tdef), CBase tname)
 
   % --------------------------------------------------------------------------------
 
@@ -303,231 +120,243 @@ CUtils qualifying spec {
   % struct definition exists in the cspec that has the same fields
   % returns the struct definition that contains the same fields as
   % the input struct definition.
-  op addNewStructDefn: CSpec * CSpec * CStructDefn * Boolean -> CSpec * CType
-  def addNewStructDefn(cspc,xcspc,(sname,sfields),useRefTypes?) =
-    let structs = getStructDefns(cspc) in
-    let xstructs = getStructDefns(xcspc) in
+  op addNewStructDefn (cspc : CSpec, xcspc : CSpec, (sname,sfields) : CStructDefn, useRefTypes? : Bool) 
+    : CSpec * CType =
+    let structs  = getStructDefns cspc  in
+    let xstructs = getStructDefns xcspc in
     let (cspc,struct) = 
-      case findLeftmost (fn(sname0,sfields0) -> sfields = sfields0) (structs++xstructs) of
-        | Some (sname,_) -> (cspc,Struct sname)
-        | None -> let cspc = addStructDefn(cspc,(sname,sfields)) in
-                  let struct = Struct sname in
-                  (cspc,struct)
+        case findLeftmost (fn (sname0,sfields0) -> sfields = sfields0) (structs ++ xstructs) of
+
+          | Some (sname,_) -> 
+            (cspc,CStruct sname)
+
+          | None -> 
+            let cspc   = addStructDefn (cspc, (sname,sfields)) in
+            let struct = CStruct sname in
+            (cspc,struct)
     in
-    let typ = if useRefTypes? then Ptr(struct) else struct in
-    let typ =
-        case findTypeDefnInCSpecs([cspc,xcspc],typ) of
-	| Some s -> Base s
-	| None -> typ
+    let typ = if useRefTypes? then CPtr struct else struct in
+    let typ = case findTypeDefnInCSpecs ([cspc,xcspc], typ) of
+                | Some s -> CBase s
+                | None -> typ
     in
     (cspc,typ)
 
 
-  op addNewUnionDefn: CSpec * CSpec * CUnionDefn -> CSpec * CType
-  def addNewUnionDefn(cspc,xcspc,(sname,sfields)) =
-    let unions = getUnionDefns(cspc) in
-    let xunions = getUnionDefns(xcspc) in
-    case findLeftmost (fn(sname0,sfields0) -> sfields = sfields0) (unions++xunions) of
-      | Some (sname,_) -> (cspc,Union sname)
-      | None -> let cspc = addUnionDefn(cspc,(sname,sfields)) in
-                (cspc,Union sname)
+  op addNewUnionDefn (cspc : CSpec, xcspc : CSpec, (sname,sfields) : CUnionDefn)
+    : CSpec * CType =
+    let unions  = getUnionDefns cspc  in
+    let xunions = getUnionDefns xcspc in
+    case findLeftmost (fn (sname0,sfields0) -> sfields = sfields0) (unions ++ xunions) of
+
+      | Some (sname,_) -> 
+        (cspc, CUnion sname)
+
+      | _ ->
+        let cspc = addUnionDefn (cspc, (sname,sfields)) in
+        (cspc, CUnion sname)
 
 
   % --------------------------------------------------------------------------------
 
-  op addStmts: CStmt * CStmts -> CStmt
-  def addStmts(stmt1,stmts2) =
+  op addStmts (stmt1 : CStmt, stmts2 : CStmts) : CStmt =
     case stmt1 of
-      | Block(decls,stmts) -> Block(decls,stmts ++ stmts2)
-      | _ -> Block([],[stmt1]++stmts2)
+
+      | CBlock (decls, stmts) -> 
+        CBlock (decls, stmts ++ stmts2)
+
+      | _ -> 
+        CBlock ([],    [stmt1]++stmts2)
 
   % --------------------------------------------------------------------------------
 
-  op prependDecl: CVarDecl1 * CStmt -> CStmt
-  def prependDecl(decl,stmt) =
+  op prependDecl (decl : CVarDecl1, stmt : CStmt) : CStmt =
     case stmt of
-      | Block(decls,stmts) -> Block(decl::decls,stmts)
-      | _ -> Block([decl],[stmt])
+
+      | CBlock (decls,       stmts) -> 
+        CBlock (decl::decls, stmts)
+
+      | _ -> 
+        CBlock ([decl],      [stmt])
 
   % --------------------------------------------------------------------------------
 
-  op mkBlock: CStmt -> CBlock
-  def mkBlock(stmt) = 
+  op mkBlock (stmt : CStmt) : CBlock =
     case stmt of
-      | Block(decls,stmts) -> (decls,stmts)
-      | _ -> ([],[stmt])
+      | CBlock (decls, stmts) -> (decls, stmts)
+      | _ -> ([], [stmt])
 
   % --------------------------------------------------------------------------------
 
-  op memberEq: [a] (a * a -> Boolean) -> a * List a -> Boolean
-  def memberEq eq (elem,l) =
+  op [a] memberEq (eq : a * a -> Bool) (elem : a, l : List a) : Bool =
     case l of 
       | [] -> false
-      | x::l -> if eq(x,elem) then true else memberEq eq (elem,l)
+      | x::l -> eq (x, elem) || memberEq eq (elem,l)
 
-  op concatnew: [X] (X * X -> Boolean) -> List(X) * List(X) -> List(X)
-  def concatnew eq (l1,l2) =
-    List.foldl (fn(res,elem) -> if memberEq eq (elem,res) then
-				  res
-				else 
-				  res ++ [elem])
-    l1 l2
+  op [a] concatnew (eq : a * a -> Bool) (l1 : List a, l2 : List a) : List a =
+    foldl (fn (res,elem) -> 
+             if memberEq eq (elem,res) then
+               res
+             else 
+               res ++ [elem])
+           l1 
+           l2
 
-  op concatnewEq: [X] List X * List X -> List X
-  def concatnewEq = concatnew (fn(x,y) -> x=y)
+  op [a] concatnewEq : List a * List a -> List a = 
+    concatnew (fn (x,y) -> x=y)
 
-  op mergeCSpecs: List CSpec -> CSpec
-  def mergeCSpecs(cspcs) =
-    let _ = writeLine("merging cspecs...") in
+  op mergeCSpecs (cspcs : List CSpec) : CSpec =
     case cspcs of
-      | [] -> emptyCSpec ""
+      | []     -> emptyCSpec ""
       | [cspc] -> cspc
-      | cspc1::cspc2::cspcs ->
-      let cspc =
+      | cspc1 :: cspc2 :: cspcs ->
+        let cspc =
          {
-	  name = cspc1.name,
-	  includes = concatnewEq(cspc1.includes,cspc2.includes),
-	  defines = concatnewEq(cspc1.defines,cspc2.defines),
-	  constDefns = concatnewEq(cspc1.constDefns,cspc2.constDefns),
-	  vars = concatnew (fn((var1,_),(var2,_)) -> var1=var2) (cspc1.vars,cspc2.vars),
-	  fns = concatnew (fn((fname1,_,_),(fname2,_,_)) -> fname1=fname2) (cspc1.fns,cspc2.fns),
-	  axioms = concatnewEq(cspc1.axioms,cspc2.axioms),
-	  structUnionTypeDefns = %concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
-	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) res) ++ [x]
-		 | (x,res) -> res ++ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
-	  varDefns = concatnewEq(cspc1.varDefns,cspc2.varDefns),
-	  fnDefns = concatnew (fn((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns,cspc2.fnDefns)
-	 }
-      in
-      mergeCSpecs(cspc::cspcs)
+	  name                 = cspc1.name,
+	  includes             = concatnewEq (cspc1. includes,   cspc2.includes),
+	  defines              = concatnewEq (cspc1. defines,    cspc2.defines),
+	  constDefns           = concatnewEq (cspc1. constDefns, cspc2.constDefns),
+	  axioms               = concatnewEq (cspc1. axioms,     cspc2.axioms),
+	  varDefns             = concatnewEq (cspc1. varDefns,   cspc2.varDefns),
+	  vars                 = concatnew (fn ((var1,_),      (var2,_))       -> var1=var2)     (cspc1.vars,    cspc2.vars),
+	  fns                  = concatnew (fn ((fname1,_,_),  (fname2,_,_))   -> fname1=fname2) (cspc1.fns,     cspc2.fns),
+	  fnDefns              = concatnew (fn ((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns, cspc2.fnDefns),
+	  structUnionTypeDefns = foldr (fn | (x as CTypeDefn(tname,_),res) -> 
+                                             (filter (fn (CTypeDefn (tname0,_)) -> tname0 ~= tname | _ -> true) res) ++ [x]
+                                           | (x,res) -> 
+                                             res ++ [x])
+                                       cspc2.structUnionTypeDefns
+                                       cspc1.structUnionTypeDefns}
+        in
+        mergeCSpecs (cspc :: cspcs)
 
-  op printCType: CType -> String
-  def printCType(t) =
-    let pr = ppType(t,prettysNone[]) in
-    let txt = PrettyPrint.format(80,pr) in
-    PrettyPrint.toString(txt)
+  op printCType (t : CType) : String =
+    let pr  = ppType (t, prettysNone[]) in
+    let txt = format (80, pr) in
+    toString txt
 
-  op printCTypes: String -> List CType -> String
-  def printCTypes sep types =
-    (foldl (fn(s,t) -> s^sep^(printCType t)) "" types)
+  op printCTypes (sep : String) (types : List CType) : String =
+    foldl (fn (s,t) -> s ^ sep ^ printCType t) "" types
 
   type Destination = | File | Terminal | String
 
-  op printCSpecToX: CSpec * String * Boolean * Destination -> String
-  def printCSpecToX (cspc,fname,asHeader,X) =
-    let pr = if asHeader
-	     then CPrint.ppHeaderSpec(cspc)
-	     else CPrint.ppSpec(cspc)
+  op printCSpecToX (cspc : CSpec, fname : String, asHeader : Bool, X : Destination) : String =
+    let pr = if asHeader then
+               ppHeaderSpec cspc
+	     else 
+               ppSpec cspc
     in
-    let txt = PrettyPrint.format(80,pr) in
+    let txt = format (80, pr) in
     case X of
-      | File -> (writeLine("C-File: "^fname);
-		 PrettyPrint.toFile(fname,txt);"")
-      | Terminal -> (PrettyPrint.toTerminal(txt);"")
-      | String -> PrettyPrint.toString(txt)
+      | File     -> (writeLine("C-File: "^fname); toFile(fname,txt); "")
+      | Terminal -> (toTerminal txt; "")
+      | String   -> toString txt
 
-
-  op printCSpecToFile: CSpec * String -> ()
-  op printCSpecToTerminal: CSpec -> ()
-  op printCSpecToString: CSpec -> String
-
-  op printCSpecToFileEnv: CSpec * String -> SpecCalc.Env ()
-  def printCSpecToFileEnv(cspc,fname) = 
-    let _ = printCSpecToFile(cspc,fname) in
+  op printCSpecToFileEnv (cspc : CSpec, fname : String) : SpecCalc.Env () =
+    let _ = printCSpecToFile (cspc, fname) in
     return ()
 
-  def printCSpecToFile(cspc,fname) = 
+  op printCSpecToFile (cspc : CSpec, fname : String) : () =
     %let fname = getImplFilename(cspc.name) in
-    (printCSpecToX(cspc,fname,false,File);())
-  def printCSpecToTerminal(cspc) = (printCSpecToX(cspc,"",false,Terminal);())
-  def printCSpecToString(cspc) = printCSpecToX(cspc,"",false,String)
+    let _ = printCSpecToX (cspc, fname, false, File) in
+    ()
+
+  op printCSpecToTerminal (cspc : CSpec) : () = 
+    let _ = printCSpecToX (cspc, "", false, Terminal) in
+    ()
+
+  op printCSpecToString (cspc : CSpec) : String = 
+    printCSpecToX (cspc, "", false, String)
 
   def printCSpecAsHeaderToFile(cspc) = 
     let fname = getHeaderFilename(cspc.name) in
     (printCSpecToX(cspc,fname,true,File);())
-  def printCSpecAsHeaderToTerminal(cspc) = (printCSpecToX(cspc,"",true,Terminal);())
-  def printCSpecAsHeaderToString(cspc) = printCSpecToX(cspc,"",true,String)
-  
-  op getHeaderFilename: String -> String
-  def getHeaderFilename(fname) = fname ^ ".h"
 
-  op getImplFilename: String -> String
-  def getImplFilename(fname) = fname ^ ".c"
+  op printCSpecAsHeaderToTerminal (cspc : CSpec) : () = (printCSpecToX(cspc,"",true,Terminal);())
+
+  op printCSpecAsHeaderToString   (cspc : CSpec) : String = printCSpecToX(cspc,"",true,String)
+  
+  op getHeaderFilename (fname : String) : String = fname ^ ".h"
+  op getImplFilename   (fname : String) : String = fname ^ ".c"
 
   % --------------------------------------------------------------------------------
 
-  def cString (id : String) : String = 
-    let id = String.map cChar id in
-    if isCKeyword id
-    then cString("slang_" ^ id)
-    else substGlyphInIdent(id)
+  op cString (id : String) : String = 
+    let id = map cChar id in
+    if isCKeyword id then 
+      cString ("slang_" ^ id)
+    else 
+      substGlyphInIdent id
 
-  def substGlyphInIdent(id:String) : String =
-    let def substGlyphChar(c:Char) : List Char =
-       let ord = Char.ord(c) in
-       if ord < 32 then [#_]
-       else
-       if ord > 126 then [#_]
-       else
-       if   ((ord >= 48) && (ord <=  57))
-	 || ((ord >= 65) && (ord <=  90))
-	 || ((ord >= 97) && (ord <= 122))
-         || (ord = 95) || (ord = 36)
-	 then [c]
-       else
-	 case ord
-	   of  32 -> String.explode("Space")
-	    |  33 -> String.explode("Exclam")
-	    |  34 -> String.explode("Quotedbl")
-	    |  35 -> String.explode("Numbersign")
-%	    |  36 -> String.explode("Dollar")
-	    |  37 -> String.explode("Percent")
-	    |  38 -> String.explode("Ampersand")
-	    |  39 -> String.explode("Quotesingle")
-	    |  40 -> String.explode("Parenleft")
-	    |  41 -> String.explode("Parenright")
-	    |  42 -> String.explode("Asterisk")
-	    |  43 -> String.explode("Plus")
-	    |  44 -> String.explode("Comma")
-	    |  45 -> String.explode("$")
-	    |  46 -> String.explode("Period")
-	    |  47 -> String.explode("Slash")
-	    |  58 -> String.explode("Colon")
-	    |  59 -> String.explode("Semicolon")
-	    |  60 -> String.explode("Less")
-	    |  61 -> String.explode("Equal")
-	    |  62 -> String.explode("Greater")
-	    |  63 -> String.explode("Q")
-	    |  64 -> String.explode("At")
-	    |  91 -> String.explode("Bracketleft")
-	    |  92 -> String.explode("Backslash")
-	    |  93 -> String.explode("Bracketright")
-	    |  94 -> String.explode("Caret")
-	    |  96 -> String.explode("Grave")
-	    | 123 -> String.explode("Braceleft")
-	    | 124 -> String.explode("Bar")
-	    | 125 -> String.explode("Braceright")
-	    | 126 -> String.explode("Tilde")
-	    | _ -> [#_]
+  op substGlyphInIdent (id : String) : String =
+    let 
+      def substGlyphChar (c : Char) : List Char =
+        let ord = Char.ord(c) in
+        if ord < 32 then 
+          [#_]
+        else if ord > 126 then 
+          [#_]
+        else if ((ord >= 48) && (ord <=  57))
+  	     || ((ord >= 65) && (ord <=  90))
+	     || ((ord >= 97) && (ord <= 122))
+             || (ord = 95)
+             || (ord = 36)
+         then 
+          [c]
+        else
+	 case ord of
+	   |  32 -> explode "Space"
+           |  33 -> explode "Exclam"
+           |  34 -> explode "Quotedbl"
+           |  35 -> explode "Numbersign"
+          %|  36 -> explode "Dollar"
+           |  37 -> explode "Percent"
+           |  38 -> explode "Ampersand"
+           |  39 -> explode "Quotesingle"
+           |  40 -> explode "Parenleft"
+           |  41 -> explode "Parenright"
+           |  42 -> explode "Asterisk"
+           |  43 -> explode "Plus"
+           |  44 -> explode "Comma"
+           |  45 -> explode "$"
+           |  46 -> explode "Period"
+           |  47 -> explode "Slash"
+           |  58 -> explode "Colon"
+           |  59 -> explode "Semicolon"
+           |  60 -> explode "Less"
+           |  61 -> explode "Equal"
+           |  62 -> explode "Greater"
+           |  63 -> explode "Q"
+           |  64 -> explode "At"
+           |  91 -> explode "Bracketleft"
+           |  92 -> explode "Backslash"
+           |  93 -> explode "Bracketright"
+           |  94 -> explode "Caret"
+           |  96 -> explode "Grave"
+           | 123 -> explode "Braceleft"
+           | 124 -> explode "Bar"
+           | 125 -> explode "Braceright"
+           | 126 -> explode "Tilde"
+           | _ -> [#_]
     in
-    let def substGlyph(carray) =
-       case carray of
-          | [#'] -> [] % special case: last character is a single quote
-	  | c::carray0  -> substGlyphChar(c) ++ substGlyph(carray0)
+    let 
+      def substGlyph carray =
+        case carray of
+          | [#']       -> [] % special case: last character is a single quote
+	  | c::carray0 -> substGlyphChar c ++ substGlyph carray0
 	  | []         -> []
     in
-      String.implode(substGlyph(String.explode(id)))
+    implode (substGlyph (explode id))
 
-  def cChar (c : Char) : Char =
-    case c
-%-      of #- -> #_
-       of #? -> #Q
-       | _  -> c
+  op cChar (c : Char) : Char =
+    case c of
+      | #? -> #Q
+      | _  -> c
 
-  def isCKeyword s =
-     s in? cKeywords
+  op isCKeyword (s : String) : Bool =
+    s in? cKeywords
 
-  def cKeywords =
+  op cKeywords : List String =
     ["auto",     "break",  "case",     "char",    "const",    "continue",
      "default",  "do",     "double",   "else",    "enum",     "extern",
      "float",    "for",    "goto",     "if",      "int",      "long",
@@ -535,422 +364,490 @@ CUtils qualifying spec {
      "struct",   "switch", "typedef",  "union",   "unsigned", "void",
      "volatile", "while"]
 
-
-
-  op mapExp: (CExp -> CExp) -> CExp -> CExp
-  def mapExp f e =
+  op mapExp (f : CExp -> CExp) (e : CExp) : CExp =
     let mp = mapExp f in
-    let e = f e in
+    let e  = f e      in
     case e of
-      | Apply(e,es) -> Apply(mp e,List.map mp es)
-      | Unary(o,e) -> Unary(o,mp e)
-      | Binary(o,e1,e2) -> Binary(o,mp e1,mp e2)
-      | Cast(t,e) -> Cast(t,mp e)
-      | StructRef(e,s) -> StructRef(mp e,s)
-      | UnionRef(e,s) -> UnionRef(mp e,s)
-      | ArrayRef(e1,e2) -> ArrayRef(mp e1, mp e2)
-      | IfExp(e1,e2,e3) -> IfExp(mp e1,mp e2, mp e3)
-      | Comma(e1,e2) -> Comma(mp e1,mp e2)
-      | SizeOfExp(e1) -> SizeOfExp(mp e1)
-      | Field(es) -> Field(List.map mp es)
+      | CApply (e,    es) ->
+        CApply (mp e, map mp es)
+
+      | CUnary (o, e) ->
+        CUnary (o, mp e)
+
+      | CBinary (o, e1,    e2) ->
+        CBinary (o, mp e1, mp e2)
+
+      | CCast (t, e) ->
+        CCast (t, mp e)
+
+      | CStructRef (e,    s) ->
+        CStructRef (mp e, s)
+
+      | CUnionRef (e,    s) ->
+        CUnionRef (mp e, s)
+
+      | CArrayRef (e1,    e2) ->
+        CArrayRef (mp e1, mp e2)
+
+      | CIfExp (e1,    e2,    e3) ->
+        CIfExp (mp e1, mp e2, mp e3)
+
+      | CComma (e1,    e2) ->
+        CComma (mp e1, mp e2)
+
+      | CSizeOfExp (e1) ->
+        CSizeOfExp (mp e1)
+
+      | CField (es) ->
+        CField (map mp es)
+
       | _ -> e
 
-  op mapExp2: (CExp -> CExp) * (CType -> CType) -> CExp -> CExp
-  def mapExp2 (f,ft) e =
+  op mapExp2 (f : CExp -> CExp, ft : CType -> CType) (e : CExp) : CExp =
     let mp = mapExp2 (f,ft) in
-    let e = f e in
+    let e  = f e            in
     case e of
-      | Var decl -> Var(mapVarDecl (f,ft) decl)
-      | Fn decl -> Fn(mapFnDecl (f,ft) decl)
-      | Apply(e,es) -> Apply(mp e,List.map mp es)
-      | Unary(o,e) -> Unary(o,mp e)
-      | Binary(o,e1,e2) -> Binary(o,mp e1,mp e2)
-      | Cast(t,e) -> Cast(t,mp e)
-      | StructRef(e,s) -> StructRef(mp e,s)
-      | UnionRef(e,s) -> UnionRef(mp e,s)
-      | ArrayRef(e1,e2) -> ArrayRef(mp e1, mp e2)
-      | IfExp(e1,e2,e3) -> IfExp(mp e1,mp e2, mp e3)
-      | Comma(e1,e2) -> Comma(mp e1,mp e2)
-      | SizeOfExp(e1) -> SizeOfExp(mp e1)
-      | SizeOfType(t) -> SizeOfType(ft t)
-      | Field(es) -> Field(List.map mp es)
+      | CVar decl -> 
+        CVar (mapVarDecl (f,ft) decl)
+
+      | CFn decl -> 
+        CFn( mapFnDecl (f,ft) decl)
+
+      | CApply(e,es) -> 
+        CApply (mp e,map mp es)
+
+      | CUnary (o, e) -> 
+        CUnary (o, mp e)
+
+      | CBinary (o, e1,    e2) -> 
+        CBinary (o, mp e1, mp e2)
+
+      | CCast (t, e) -> 
+        CCast (t, mp e)
+
+      | CStructRef (e,    s) -> 
+        CStructRef (mp e, s)
+
+      | CUnionRef (e,    s) -> 
+        CUnionRef (mp e, s)
+
+      | CArrayRef (e1,    e2) -> 
+        CArrayRef (mp e1, mp e2)
+
+      | CIfExp (e1,    e2,    e3) -> 
+        CIfExp (mp e1, mp e2, mp e3)
+
+      | CComma (e1,    e2) -> 
+        CComma (mp e1, mp e2)
+
+      | CSizeOfExp e1 -> 
+        CSizeOfExp (mp e1)
+
+      | CSizeOfType t -> 
+        CSizeOfType (ft t)
+
+      | CField es -> 
+        CField (map mp es)
+
       | _ -> e
 
 
-  op substVarInExp: CExp * String * CExp -> CExp
-  def substVarInExp(e,id,substexp) =
-    mapExp (fn(e) -> 
-	    case e of
-	      | Var(id0,_) -> if id0 = id then substexp else e
-	      | _ -> e
-	      ) e
+  op substVarInExp (e : CExp, id : String, substexp : CExp) : CExp =
+    mapExp (fn e -> 
+              case e of
+                | CVar (id0,_) -> if id0 = id then substexp else e
+                | _ -> e)
+           e
 
-  op mapType: (CType -> CType) -> CType -> CType
-  def mapType f t =
+  op mapType (f : CType -> CType) (t : CType) : CType =
     let mp = mapType f in
-    let t = f t in
+    let t  = f t       in
     case t of
-      | Ptr t -> Ptr(mp t)
-      | Array t -> Array(mp t)
-      | ArrayWithSize(n,t) -> ArrayWithSize(n,mp t)
-      | Fn(ts,t) -> Fn(List.map mp ts,mp t)
+
+      | CPtr t -> 
+        CPtr (mp t)
+
+      | CArray t -> 
+        CArray (mp t)
+
+      | CArrayWithSize (n, t) -> 
+        CArrayWithSize (n, mp t)
+
+      | CFn (ts,        t) -> 
+        CFn (map mp ts, mp t)
+
       | _ -> t
 
-  op mapCSpec: (CExp -> CExp) * (CType -> CType) -> CSpec -> CSpec
-  def mapCSpec (fe,ft) cspc =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = List.map (mapVarDefn(fe,ft)) cspc.constDefns,
-     vars = List.map (mapVarDecl(fe,ft)) cspc.vars,
-     fns = List.map (mapFnDecl(fe,ft)) cspc.fns,
-     axioms = List.map (mapExp2(fe,ft)) cspc.axioms,
-     structUnionTypeDefns = List.map (mapStructUnionTypeDefn(fe,ft)) cspc.structUnionTypeDefns,
-     varDefns = List.map (mapVarDefn(fe,ft)) cspc.varDefns,
-     fnDefns = List.map (mapFnDefn(fe,ft)) cspc.fnDefns
-    }
+  op mapCSpec (fe : CExp -> CExp, ft : CType -> CType) (cspc : CSpec) : CSpec =
+    cspc << {
+             constDefns           = map (mapVarDefn             (fe,ft)) cspc.constDefns,
+             vars                 = map (mapVarDecl             (fe,ft)) cspc.vars,
+             fns                  = map (mapFnDecl              (fe,ft)) cspc.fns,
+             axioms               = map (mapExp2                (fe,ft)) cspc.axioms,
+             structUnionTypeDefns = map (mapStructUnionTypeDefn (fe,ft)) cspc.structUnionTypeDefns,
+             varDefns             = map (mapVarDefn             (fe,ft)) cspc.varDefns,
+             fnDefns              = map (mapFnDefn              (fe,ft)) cspc.fnDefns
+             }
 
-  op mapStmt: (CExp -> CExp) * (CType -> CType) -> CStmt -> CStmt
-  def mapStmt (fe,ft) stmt =
-    let mp = mapStmt (fe,ft) in
-    let mpe = mapExp2(fe,ft) in
-    let mpt = mapType ft in
+  op mapStmt (fe : CExp -> CExp, ft : CType -> CType) (stmt : CStmt) : CStmt =
+    let mp  = mapStmt (fe,ft) in
+    let mpe = mapExp2 (fe,ft) in
+    let mpt = mapType ft      in
     case stmt of
-      | Exp e -> Exp(fe e)
-      | Block (decls,stmts) -> Block(List.map (mapVarDecl1(fe,ft)) decls,
-				     List.map mp stmts)
-      | If(e,stmt1,stmt2) -> If(mpe e,mp stmt1,mp stmt2)
-      | Return e -> Return(mpe e)
-      | While(e,stmt) -> While(mpe e,mp stmt)
-      | IfThen(e,stmt) -> IfThen(mpe e,mp stmt)
-      | Switch(e,stmts) -> Switch(mpe e,List.map mp stmts)
+
+      | CExp e -> 
+        CExp (fe e)
+
+      | CBlock (decls,                          stmts) -> 
+        CBlock (map (mapVarDecl1(fe,ft)) decls, map mp stmts)
+
+      | CIf (e,     stmt1,    stmt2) -> 
+        CIf (mpe e, mp stmt1, mp stmt2)
+
+      | CReturn e -> 
+        CReturn (mpe e)
+
+      | CWhile (e,     stmt) -> 
+        CWhile (mpe e, mp stmt)
+
+      | CIfThen (e,     stmt) ->
+        CIfThen (mpe e, mp stmt)
+
+      | CSwitch (e,     stmts) -> 
+        CSwitch (mpe e, map mp stmts)
+
       | _ -> stmt
 
-  op mapVarDecl: (CExp -> CExp) * (CType -> CType) -> CVarDecl -> CVarDecl
-  def mapVarDecl (fe,ft) (id,t) = (id,mapType ft t)
+  op mapVarDecl (fe : CExp -> CExp, ft : CType -> CType) ((id, t) : CVarDecl)    
+    : CVarDecl = 
+    (id, mapType ft t)
 
-  op mapVarDecl1: (CExp -> CExp) * (CType -> CType) -> CVarDecl1 -> CVarDecl1
-  def mapVarDecl1 (fe,ft) (id,t,optexp) = 
-    (id,mapType ft t,case optexp of None -> None | Some e -> Some(mapExp2(fe,ft) e))
+  op mapVarDecl1 (fe : CExp -> CExp, ft : CType -> CType) ((id, t, optexp) : CVarDecl1)   
+    : CVarDecl1 = 
+    (id, 
+     mapType ft t, 
+     case optexp of 
+       | None -> None 
+       | Some e -> Some (mapExp2 (fe,ft) e))
 
-  op mapFnDecl: (CExp -> CExp) * (CType -> CType) -> CFnDecl -> CFnDecl
-  def mapFnDecl (fe,ft) (id,ts,t) = (id,List.map (mapType ft) ts,mapType ft t)
+  op mapFnDecl (fe : CExp -> CExp, ft : CType -> CType) ((id, ts, t) : CFnDecl)     
+    : CFnDecl = 
+    (id, map (mapType ft) ts, mapType ft t)
 
-  op mapTypeDefn: (CExp -> CExp) * (CType -> CType) -> CTypeDefn -> CTypeDefn
-  def mapTypeDefn (fe,ft) (id,t) = (id,mapType ft t)
+  op mapTypeDefn   (fe : CExp -> CExp, ft : CType -> CType) ((id, t): CTypeDefn)   
+    : CTypeDefn = 
+    (id, mapType ft t)
 
-  op mapStructDefn: (CExp -> CExp) * (CType -> CType) -> CStructDefn -> CStructDefn
-  def mapStructDefn (fe,ft) (id,decls) = (id,List.map (mapVarDecl(fe,ft)) decls)
+  op mapStructDefn (fe : CExp -> CExp, ft : CType -> CType) ((id, decls) : CStructDefn) 
+    : CStructDefn = 
+    (id, map (mapVarDecl (fe,ft)) decls)
 
-  op mapUnionDefn: (CExp -> CExp) * (CType -> CType) -> CUnionDefn -> CUnionDefn
-  def mapUnionDefn (fe,ft) (id,decls) = (id,List.map (mapVarDecl(fe,ft)) decls)
+  op mapUnionDefn  (fe : CExp -> CExp, ft : CType -> CType) ((id, decls) : CUnionDefn)
+    : CUnionDefn = 
+    (id, map (mapVarDecl (fe,ft)) decls)
 
-  op mapVarDefn: (CExp -> CExp) * (CType -> CType) -> CVarDefn -> CVarDefn
-  def mapVarDefn (fe,ft) (id,t,e) = (id,mapType ft t,mapExp2 (fe,ft) e)
+  op mapVarDefn (fe : CExp -> CExp, ft : CType -> CType) ((id, t, e) : CVarDefn)
+    : CVarDefn = 
+    (id, mapType ft t, mapExp2 (fe,ft) e)
 
-  op mapFnDefn: (CExp -> CExp) * (CType -> CType) -> CFnDefn -> CFnDefn
-  def mapFnDefn (fe,ft) (id,decls,t,stmt) = 
-    (id,List.map (mapVarDecl (fe,ft)) decls,
-     mapType ft t,mapStmt (fe,ft) stmt)
+  op mapFnDefn (fe : CExp -> CExp, ft : CType -> CType) ((id, decls, t, stmt) : CFnDefn)
+    : CFnDefn = 
+    (id, 
+     map (mapVarDecl (fe,ft)) decls,
+     mapType ft t,
+     mapStmt (fe,ft) stmt)
 
-  op mapStructUnionTypeDefn: (CExp -> CExp) * (CType -> CType) -> CStructUnionTypeDefn -> CStructUnionTypeDefn
-  def mapStructUnionTypeDefn (fe,ft) (sut) =
+  op mapStructUnionTypeDefn (fe : CExp -> CExp, ft : CType -> CType) (sut : CStructUnionTypeDefn) 
+    : CStructUnionTypeDefn =
     case sut of
-      | Struct s -> Struct (mapStructDefn (fe,ft) s)
-      | Union u -> Union (mapUnionDefn (fe,ft) u)
-      | TypeDefn t -> TypeDefn (mapTypeDefn (fe,ft) t)
+      | CStruct   s -> CStruct   (mapStructDefn (fe,ft) s)
+      | CUnion    u -> CUnion    (mapUnionDefn  (fe,ft) u)
+      | CTypeDefn t -> CTypeDefn (mapTypeDefn   (fe,ft) t)
 
   % --------------------------------------------------------------------------------
 
-  op getHeaderCSpec: CSpec -> CSpec
-  def getHeaderCSpec(cspc) =
-    {
-     name = cspc.name,
-     includes = cspc.includes,
-     defines = cspc.defines,
-     constDefns = cspc.constDefns,
-     vars = cspc.vars, % will be printed as "extern"
-     fns = cspc.fns,
-     axioms = [],
-     structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns, % will be printed as "extern"
-     fnDefns = cspc.fnDefns % will be printed as "extern"
-    }
+  op getHeaderCSpec (cspc : CSpec) : CSpec =
+    %% vars will be printed as "extern"
+    %% varDefns will be printed as "extern"
+    %% fnDefns will be printed as "extern"
+    cspc << {axioms = []}
 
-  op getImplCSpec: CSpec -> CSpec
-  def getImplCSpec(cspc) =
+  op getImplCSpec (cspc : CSpec) : CSpec =
     {
-     name = cspc.name,
-     includes = [],
-     defines = [],
-     constDefns = [],
-     vars = cspc.vars,
-     fns = [],
-     axioms = cspc.axioms,
+     name                 = cspc.name,
+     includes             = [],
+     defines              = [],
+     constDefns           = [],
+     vars                 = cspc.vars,
+     fns                  = [],
+     axioms               = cspc.axioms,
      structUnionTypeDefns = [],
-     varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns
+     varDefns             = cspc.varDefns,
+     fnDefns              = cspc.fnDefns
     }
 
   % --------------------------------------------------------------------------------
 
   % this removes void* typedefs in a cspec, if the same typename is defined at another place
   % in the spec
-  op removePtrVoidTypeDefs: CSpec -> CSpec
-  def removePtrVoidTypeDefs(cspc) =
+  op removePtrVoidTypeDefs (cspc : CSpec) : CSpec =
     let suts = cspc.structUnionTypeDefns in
-    let suts = List.foldl
-               (fn(suts,sut) ->
-		case sut of
-		  | TypeDefn (tname,Ptr(Void)) ->
-		    (case findLeftmost (fn|TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
-		       | Some _ -> suts
-		       | _ -> suts ++ [sut]
-		      )
-		  | _ -> suts ++ [sut]
-		 ) [] suts
+    let suts = foldl (fn (suts, sut) ->
+                        case sut of
+
+                          | CTypeDefn (tname, CPtr CVoid) ->
+                            (case findLeftmost (fn |CTypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
+                               | Some _ -> suts
+                               | _ -> suts ++ [sut])
+
+                          | _ -> 
+                            suts ++ [sut])
+                     []
+                     suts
     in
-    setStructUnionTypeDefns(cspc,suts)
+    setStructUnionTypeDefns (cspc, suts)
 
   % --------------------------------------------------------------------------------
 
   % finds the typedef for a given type
-  op findTypeDefn: CSpec * CType -> Option String
-  def findTypeDefn(cspc,typ) =
+  op findTypeDefn (cspc : CSpec, typ : CType) : Option String =
     let typedefns = cspc.structUnionTypeDefns in
     let 
-      def findTypeDefn0(typedefns) =
+      def findTypeDefn0 typedefns =
 	case typedefns of
-	  | (TypeDefn (s,type0))::typedefns ->
-	    if type0 = typ then Some s
-	    else findTypeDefn0(typedefns)
-	  | _::typedefns -> findTypeDefn0(typedefns)
-	  | [] -> None
-    in
-    findTypeDefn0(typedefns)
 
-  op findTypeDefnInCSpecs: List(CSpec) * CType -> Option String
-  def findTypeDefnInCSpecs(cspcl,typ) =
+	  | (CTypeDefn (s,type0)) :: typedefns ->
+	    if type0 = typ then 
+              Some s
+	    else 
+              findTypeDefn0(typedefns)
+
+	  | _ :: typedefns -> findTypeDefn0 typedefns
+
+	  | _ -> None
+    in
+    findTypeDefn0 typedefns
+
+  op findTypeDefnInCSpecs (cspcl : List CSpec, typ : CType) : Option String =
     case cspcl of
       | [] -> None
-      | cspc::cspcl -> (case findTypeDefn(cspc,typ) of
-			  | Some x -> Some x
-			  | None -> findTypeDefnInCSpecs(cspcl,typ))
+      | cspc::cspcl -> 
+        case findTypeDefn(cspc,typ) of
+          | Some x -> Some x
+          | _ -> findTypeDefnInCSpecs (cspcl, typ)
 
   % --------------------------------------------------------------------------------
 
-  op findStructUnionTypeDefn: CSpec * CType -> Option CStructUnionTypeDefn
-  def findStructUnionTypeDefn(cspc,typ) =
+  op findStructUnionTypeDefn (cspc : CSpec, typ : CType) : Option CStructUnionTypeDefn =
     case typ of
-      | Base n -> findLeftmost (fn|(TypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | Struct n -> findLeftmost (fn|(Struct (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | Union n -> findLeftmost (fn|(Union (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | _ -> 
-        %let _ = writeLine("definition for type "^(printCType typ)^" not found.") in
-        None
+      | CBase   n -> findLeftmost (fn |(CTypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | CStruct n -> findLeftmost (fn |(CStruct   (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | CUnion  n -> findLeftmost (fn |(CUnion    (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+      | _ -> None
 
-  op structUnionTypeDefnGT: CSpec -> (CStructUnionTypeDefn * CStructUnionTypeDefn) -> Boolean
-  def structUnionTypeDefnGT cspc (sut1,sut2) =
-    %let deps1 = structUnionTypeDefnDepends(cspc,sut1) in
-    %let t2 = structUnionTypeDefnToType(sut2) in
-    %List.member(t2,deps1)
-    let deps2 = structUnionTypeDefnDepends(cspc,sut2) in
-    let t1 = structUnionTypeDefnToType(sut1) in
+  op structUnionTypeDefnGT (cspc : CSpec) (sut1 : CStructUnionTypeDefn, sut2 : CStructUnionTypeDefn) : Bool =
+    let deps2 = structUnionTypeDefnDepends (cspc, sut2) in
+    let t1    = structUnionTypeDefnToType sut1 in
     t1 nin? deps2
 
-  op sortStructUnionTypeDefns: CSpec -> CSpec
-  def sortStructUnionTypeDefns(cspc) =
-    let suts = cspc.structUnionTypeDefns in
+  op sortStructUnionTypeDefns (cspc : CSpec) : CSpec =
+    let suts = cspc.structUnionTypeDefns               in
     let suts = qsort (structUnionTypeDefnGT cspc) suts in
-    setStructUnionTypeDefns(cspc,suts)
+    setStructUnionTypeDefns (cspc, suts)
 
-  op structUnionTypeDefnToType: CStructUnionTypeDefn -> CType
-  def structUnionTypeDefnToType(sut) =
+  op structUnionTypeDefnToType (sut : CStructUnionTypeDefn) : CType =
     case sut of
-      | TypeDefn (n,_) -> Base n
-      | Struct (s,_) -> Struct s
-      | Union (u,_) -> Union u
+      | CTypeDefn (n,_) -> CBase   n
+      | CStruct   (s,_) -> CStruct s
+      | CUnion    (u,_) -> CUnion  u
 
-  op structUnionTypeDefnDepends: CSpec * CStructUnionTypeDefn -> CTypes
-  def structUnionTypeDefnDepends(cspc,sutdef) =
+  op structUnionTypeDefnDepends (cspc : CSpec, sutdef : CStructUnionTypeDefn) : CTypes =
     case sutdef of
-      %| TypeDefn (n,Ptr(_)) -> typeDepends(cspc,Base n,[])
-      | TypeDefn (n,Fn(tys,ty)) -> typeDepends(cspc,Base n,tys++[ty])
-      | TypeDefn (n,t) -> typeDepends(cspc,Base n,[t])
-      | Struct (s,fields) -> typeDepends(cspc,Struct s,List.map (fn(_,t) -> t) fields)
-      | Union (u,fields) -> typeDepends(cspc,Union u,List.map (fn(_,t) -> t) fields)
+     %| CTypeDefn (n,CPtr(_))     -> typeDepends (cspc, CBase   n, [])
+      | CTypeDefn (n,CFn(tys,ty)) -> typeDepends (cspc, CBase   n, tys++[ty])
+      | CTypeDefn (n,t)           -> typeDepends (cspc, CBase   n, [t])
+      | CStruct   (s,fields)      -> typeDepends (cspc, CStruct s, map (fn (_,t) -> t) fields)
+      | CUnion    (u,fields)      -> typeDepends (cspc, CUnion  u, map (fn (_,t) -> t) fields)
 
-  op getSubTypes: CType -> CTypes
-  def getSubTypes(t) =
+  op getSubTypes (t : CType) : CTypes =
     case t of
-      | Fn(tys,ty) -> List.foldl (fn(res,t) -> res ++ getSubTypes(t)) (getSubTypes(ty)) tys
+
+      | CFn (tys, ty) -> 
+        foldl (fn (res, t) -> 
+                 res ++ getSubTypes t) 
+              (getSubTypes ty)
+              tys
+
       | _ -> []
 
-  op typeDepends: CSpec * CType * CTypes -> CTypes
-  def typeDepends(cspc,_,types) =
+  op typeDepends (cspc : CSpec, _ : CType, types : CTypes) : CTypes =
     let
-      def typeDepends0(t,deps) =
-	if t in? deps then deps
+      def typeDepends0 (t, deps) =
+	if t in? deps then 
+          deps
 	else
-	  case findStructUnionTypeDefn(cspc,t) of
-	  | Some (TypeDefn(n,t1)) -> typeDepends0(t1,Base n :: deps)
-	  | Some (Struct (s,fields)) ->
-	    let deps = Struct s :: deps in
-	    let types = List.map (fn(_,t)->t) fields in
-	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
-	  | Some (Union (u,fields)) ->
-	    let deps = Union u :: deps in
-	    let types = List.map (fn(_,t)->t) fields in
-	    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) deps types
-	  | _ -> deps
-    in
-    List.foldl (fn(deps,t) -> typeDepends0(t,deps)) [] types
-    
-    % --------------------------------------------------------------------------------
+	  case findStructUnionTypeDefn (cspc, t) of
 
-    % identifies equal structs and unions by inserting defines. This
-    % is necessary, because in C structs/unions with the same fields
-    % aren't the same.
-    op identifyEqualStructsUnions: CSpec -> CSpec
-    def identifyEqualStructsUnions(cspc) =
-      % let suts = cspc.structUnionTypeDefns in
-      let
-        def processStructUnion(cspc:CSpec,sut:CStructUnionTypeDefn) is
-	  let suts = cspc.structUnionTypeDefns in
-	  if sut nin? suts then cspc else
+            | Some (CTypeDefn (n, t1)) -> 
+              typeDepends0 (t1, CBase n :: deps)
+
+            | Some (CStruct (s, fields)) ->
+              let deps  = CStruct s :: deps in
+              let types = map (fn (_, t) -> t) fields in
+              foldl (fn (deps, t) -> typeDepends0 (t, deps)) deps types
+
+            | Some (CUnion (u, fields)) ->
+              let deps  = CUnion u :: deps in
+              let types = map (fn (_, t) -> t) fields in
+              foldl (fn (deps, t) -> typeDepends0 (t, deps)) deps types
+
+            | _ -> deps
+    in
+    foldl (fn (deps, t) -> typeDepends0 (t, deps)) [] types
+    
+  % --------------------------------------------------------------------------------
+
+  % identifies equal structs and unions by inserting defines. This
+  % is necessary, because in C structs/unions with the same fields
+  % aren't the same.
+  op identifyEqualStructsUnions (cspc : CSpec) : CSpec =
+    let
+      def processStructUnion (cspc : CSpec, sut : CStructUnionTypeDefn) is
+        let suts = cspc.structUnionTypeDefns in
+        if sut nin? suts then 
+          cspc 
+        else
 	  case sut of
-	    | TypeDefn _ -> cspc
-	    | Struct (id,fields) ->
-	      %let _ = String.writeLine("checking struct \""^id^"\"...") in
-	      (case findLeftmost (fn(sut) ->
-			       case sut of
-				 | Struct (id0,fields0) ->
-				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
-				 | _ -> false) suts of
-		 | Some (Struct (id0,_)) ->
-		   let suts = List.filter (fn |Struct(id1,_) -> (id1 ~= id0)
-					      | _ -> true) suts
+
+	    | CTypeDefn _ -> cspc
+
+	    | CStruct (id,fields) ->
+	      (case findLeftmost (fn sut ->
+                                    case sut of
+                                      | CStruct (id0,fields0) ->
+                                        (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
+                                      | _ -> false) 
+                                 suts 
+                 of
+		 | Some (CStruct (id0,_)) ->
+		   let suts = filter (fn | CStruct(id1,_) -> (id1 ~= id0)
+                                         | _ -> true) 
+                                     suts
 		   in
-		   %let _ = String.writeLine("identifying structs \""^id^"\" and \""^id0^"\"") in
+		   %let _ = writeLine("identifying structs \""^id^"\" and \""^id0^"\"") in
 		   let cspc = setStructUnionTypeDefns(cspc,suts) in
 		   let cspc = addDefine(cspc,id0^" "^id) in
-		   let cspc = mapCSpec ((fn(e)->e),(fn(t) ->
-						    case t of
-						      | Struct id1 -> if id1=id0 then Struct id else t
-						      | _ -> t)) cspc
+		   let cspc = mapCSpec (fn e -> e,
+                                        fn t ->
+                                          case t of
+                                            | CStruct id1 -> if id1=id0 then CStruct id else t
+                                            | _ -> t)
+                                       cspc
 		   in
 		   cspc
+
 		 | None -> 
-		   %let _ = String.writeLine("struct \""^id^"\": no identical structs found.") in
-		   cspc
-		  )
-	    | Union (id,fields) ->
-	      %let _ = String.writeLine("checking union \""^id^"\"...") in
-	      (case findLeftmost (fn(sut) ->
-			       case sut of
-				 | Union (id0,fields0) ->
-				   (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
-				 | _ -> false) suts of
-		 | Some (Union (id0,_)) ->
-		   let suts = List.filter (fn | Union(id1,_) -> id1 ~= id0
-					      | _ -> true) suts
+		   %let _ = writeLine("struct \""^id^"\": no identical structs found.") in
+		   cspc)
+
+	    | CUnion (id, fields) ->
+	      (case findLeftmost (fn sut ->
+                                    case sut of
+                                      | CUnion (id0,fields0) ->
+                                        (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
+                                      | _ -> false) 
+                                 suts
+                 of
+
+                 | Some (CUnion (id0,_)) ->
+		   let suts = filter (fn  | CUnion(id1,_) -> id1 ~= id0
+					  | _ -> true) 
+                                     suts
 		   in
-		   %let _ = String.writeLine("identifying unions \""^id^"\" and \""^id0^"\"") in
-		   let cspc = setStructUnionTypeDefns(cspc,suts) in
-		   let cspc = addDefine(cspc,id0^" "^id) in
-		   let cspc = mapCSpec ((fn(e)->e),(fn(t) ->
-						    case t of
-						      | Union id1 -> if id1=id0 then Union id else t
-						      | _ -> t)) cspc
+		   %let _ = writeLine("identifying unions \""^id^"\" and \""^id0^"\"") in
+		   let cspc = setStructUnionTypeDefns (cspc, suts) in
+		   let cspc = addDefine (cspc, id0 ^ " " ^ id)     in
+		   let cspc = mapCSpec (fn e -> e,
+                                        fn t ->
+                                          case t of
+                                            | CUnion id1 -> if id1=id0 then CUnion id else t
+                                            | _ -> t)
+                                       cspc
 		   in
 		   cspc
+
 		 | None -> 
-		   %let _ = String.writeLine("union \""^id^"\": no identical unions found.") in
-		   cspc
-		  )
+		   %let _ = writeLine("union \""^id^"\": no identical unions found.") in
+		   cspc)
       in
       let
-        def identifyRec(cspc) =
-	  let suts = cspc.structUnionTypeDefns in
-	  %let _ = String.writeLine("---") in
-	  let cspc0 = List.foldl (fn(cspc,sut) -> processStructUnion(cspc,sut)) cspc suts in
+        def identifyRec cspc =
+	  let suts  = cspc.structUnionTypeDefns in
+	  let cspc0 = foldl (fn (cspc, sut) -> processStructUnion (cspc, sut)) cspc suts in
 	  if cspc0 = cspc then cspc else identifyRec cspc0
       in
-      let cspc = identifyRec(cspc) in
-      setStructUnionTypeDefns(cspc,mkUnique(cspc.structUnionTypeDefns))
+      let cspc = identifyRec cspc in
+      setStructUnionTypeDefns (cspc, mkUnique (cspc. structUnionTypeDefns))
 
   % --------------------------------------------------------------------------------
 
-  op unfoldType: CSpec * CType -> CType
-  def unfoldType(cspc,typ) =
-    mapType (fn(t) ->
-	     case t of
-	       | Base tid -> %let _ = writeLine("base type "^tid^" found in unfoldType...") in
-	                     (case findLeftmost 
-				    (fn(sut) ->
-				     case sut of
-				       | TypeDefn (tid0,_) -> 
-				         %let _ = writeLine("   checking typedef for "^tid0) in
-				         tid=tid0
-				       | _ -> false) cspc.structUnionTypeDefns of
-				| Some (TypeDefn (_,tx)) -> tx
-				| None -> t)
-	       | _ -> t) typ
+  op unfoldType (cspc : CSpec, typ : CType) : CType =
+    mapType (fn t ->
+               case t of
+                 | CBase tid -> 
+                   (case findLeftmost (fn sut ->
+                                         case sut of
+                                           | CTypeDefn (tid0, _) -> tid = tid0
+                                           | _ -> false) 
+                                      cspc.structUnionTypeDefns 
+                      of
+                      | Some (CTypeDefn (_, tx)) -> tx
+                      | None -> t)
+                 | _ -> t)
+            typ
 
   % equality modulo typedefns
-  op ctypeEqual: CSpec -> CType * CType -> Boolean
-  def ctypeEqual cspc (t1,t2) =
-    let t1 = unfoldType(cspc,t1) in
-    let t2 = unfoldType(cspc,t2) in
+  op ctypeEqual (cspc : CSpec) (t1 : CType, t2 : CType) : Bool =
+    let t1 = unfoldType (cspc, t1) in
+    let t2 = unfoldType (cspc, t2) in
     t1 = t2
 
-  op equalVarDecl: CSpec -> CVarDecl * CVarDecl -> Boolean
-  def equalVarDecl cspc ((id1,t1),(id2,t2)) =
+  op equalVarDecl (cspc : CSpec) ((id1, t1) : CVarDecl, (id2, t2) : CVarDecl) : Bool =
     if id1=id2 then ctypeEqual cspc (t1,t2) else false
 
-  op equalVarDecls: CSpec -> CVarDecls * CVarDecls -> Boolean
-  def equalVarDecls cspc (decls1,decls2) =
+  op equalVarDecls (cspc : CSpec) (decls1 : CVarDecls, decls2 : CVarDecls) :Bool =
     case (decls1,decls2) of
+
       | ([],[]) -> true
-      | (decl1::decls1,decl2::decls2) ->
-        if equalVarDecl cspc (decl1,decl2)
-	  then equalVarDecls cspc (decls1,decls2)
-	else false
-      | _ -> false
 
-%name
-%includes
-%defines
-%constDefns
-%vars
-%fns
-%axioms
-%structUnionTypeDefns
-%varDefns
-%fnDefns
+      | (decl1::decls1, decl2::decls2) ->
+        if equalVarDecl cspc (decl1,  decl2) then 
+          equalVarDecls cspc (decls1, decls2)
+	else 
+          false
 
-  op mkUnique: [X] List(X) -> List(X)
-  def mkUnique(l) =
-    List.foldr
-    (fn(e,l) -> if e in? l then l else e::l) [] l
+      | _ -> 
+        false
+
+  op [X] mkUnique (l : List X) : List X  =
+    foldr (fn (e,l) -> if e in? l then l else e::l) [] l
 
 
-  op qsort: [X] (X*X->Boolean) -> List(X) -> List(X)
-  def qsort gt l =
+  op [X] qsort (gt : X*X->Bool) (l : List X) : List X =
     let
       def split(x,l) =
 	case l of
 	  | [] -> ([],[])
 	  | y::l -> 
             let (l1,l2) = split(x,l) in
-	    if gt(y,x) 
-	      then (l1,y::l2)
-	    else (y::l1,l2)
+	    if gt (y,x) then
+              (l1, y::l2)
+	    else 
+              (y::l1, l2)
     in
     case l of
-      | [] -> []
-      | [x] -> [x]
+      | []   -> []
+      | [x]  -> [x]
       | x::l -> 
         let (l1,l2) = split(x,l) in
 	let l1 = qsort gt l1 in
@@ -960,317 +857,324 @@ CUtils qualifying spec {
 
   % --------------------------------------------------------------------------------
 
-  op ctypeToString: CType -> String
-  def ctypeToString(t) =
-    let p = ppPlainType(t) in
-    let txt = PrettyPrint.format(80,p) in
-    PrettyPrint.toString(txt)
+  op ctypeToString (t : CType) : String =
+    let p   = ppPlainType t  in
+    let txt = format (80, p) in
+    toString txt
 
   % --------------------------------------------------------------------------------
 
-  op freeVarsExp: List String * CExp -> List String
-  def freeVarsExp(fvs,exp) =
+  op freeVarsExp (fvs : List String, exp : CExp) : List String =
     case exp of
-      | Var(v,_) -> if v in? fvs then fvs else v::fvs
-      | Apply(e1,exps) -> List.foldl (fn(fvs0,exp) -> freeVarsExp(fvs0,exp)) (freeVarsExp(fvs,e1)) exps
-      | Unary(_,exp) -> freeVarsExp(fvs,exp)
-      | Binary(_,e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
-      | Cast(_,e) -> freeVarsExp(fvs,e)
-      | StructRef(e,_) -> freeVarsExp(fvs,e)
-      | UnionRef(e,_) -> freeVarsExp(fvs,e)
-      | ArrayRef(e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
-      | IfExp(e1,e2,e3) -> freeVarsExp(freeVarsExp(freeVarsExp(fvs,e1),e2),e3)
-      | Comma(e1,e2) -> freeVarsExp(freeVarsExp(fvs,e1),e2)
-      | SizeOfExp(e) -> freeVarsExp(fvs,e)
-      | Field exps -> List.foldl (fn(fvs0,exp) -> freeVarsExp(fvs0,exp)) fvs exps
+      | CVar       (v,_)      -> if v in? fvs then fvs else v::fvs
+      | CApply     (e1,exps)  -> foldl (fn (fvs0, exp) ->
+                                          freeVarsExp (fvs0, exp)) 
+                                       (freeVarsExp (fvs, e1)) 
+                                       exps
+      | CUnary     (_,exp)    -> freeVarsExp (fvs, exp)
+      | CBinary    (_,e1,e2)  -> freeVarsExp (freeVarsExp (fvs, e1), e2)
+      | CCast      (_,e)      -> freeVarsExp (fvs, e)
+      | CStructRef (e,_)      -> freeVarsExp (fvs, e)
+      | CUnionRef  (e,_)      -> freeVarsExp (fvs, e)
+      | CArrayRef  (e1,e2)    -> freeVarsExp (freeVarsExp (fvs,e1), e2)
+      | CIfExp     (e1,e2,e3) -> freeVarsExp (freeVarsExp (freeVarsExp (fvs, e1), e2), e3)
+      | CComma     (e1,e2)    -> freeVarsExp (freeVarsExp (fvs,e1), e2)
+      | CSizeOfExp (e)        -> freeVarsExp (fvs,e)
+      | CField     exps       -> foldl (fn (fvs0, exp) -> 
+                                          freeVarsExp(fvs0,exp)) 
+                                       fvs 
+                                       exps
       | _ -> fvs
 
-  op freeVarsStmt: List String * CStmt * Boolean -> List String
-  def freeVarsStmt(fvs,stmt,rec?) =
+  op freeVarsStmt (fvs : List String, stmt : CStmt, rec? : Bool) : List String = 
     case stmt of
-      | Exp e -> freeVarsExp(fvs,e)
-      | Block b -> if rec? then freeVarsBlock(fvs,b,rec?) else fvs
-      | If(e,s1,s2) -> let fvs0 = freeVarsExp(fvs,e) in
-                       if rec? then freeVarsStmt(freeVarsStmt(fvs0,s1,rec?),s2,rec?)
-		       else fvs0
-      | Return e -> freeVarsExp(fvs,e)
-      | While(e,s) -> let fvs0 = freeVarsExp(fvs,e) in
-		      if rec? then freeVarsStmt(fvs0,s,rec?)
-		      else fvs0
-      | IfThen(e,s) -> let fvs0 = freeVarsExp(fvs,e) in
-		       if rec? then freeVarsStmt(fvs0,s,rec?)
-		       else fvs0
-      | Switch(e,stmts) -> let fvs0 = freeVarsExp(fvs,e) in
-			   if rec? then freeVarsStmts(fvs0,stmts,rec?)
-			   else fvs0
+
+      | CExp    e         -> freeVarsExp (fvs, e)
+
+      | CBlock  b         -> if rec? then 
+                               freeVarsBlock (fvs, b, rec?) 
+                             else 
+                               fvs
+
+      | CIf     (e,s1,s2) -> let fvs0 = freeVarsExp (fvs, e) in
+                             if rec? then 
+                               freeVarsStmt (freeVarsStmt (fvs0, s1, rec?), s2, rec?)
+                             else 
+                               fvs0
+
+      | CReturn e         -> freeVarsExp (fvs, e)
+
+      | CWhile  (e,s)     -> let fvs0 = freeVarsExp (fvs, e) in
+                             if rec? then 
+                               freeVarsStmt (fvs0, s, rec?)
+                             else 
+                               fvs0
+
+      | CIfThen (e,s)     -> let fvs0 = freeVarsExp (fvs, e) in
+                             if rec? then 
+                               freeVarsStmt (fvs0, s, rec?)
+                             else 
+                               fvs0
+
+      | CSwitch (e,stmts) -> let fvs0 = freeVarsExp (fvs, e) in
+                             if rec? then 
+                               freeVarsStmts (fvs0, stmts, rec?)
+                             else
+                               fvs0
+
       | _ -> fvs
 
-  op freeVarsStmts: List String * CStmts * Boolean -> List String
-  def freeVarsStmts(fvs,stmts,rec?) =
-     List.foldl (fn(fvs0,stmt) -> freeVarsStmt(fvs0,stmt,rec?)) fvs stmts
+  op freeVarsStmts (fvs : List String, stmts : CStmts, rec? : Bool) : List String =
+    foldl (fn (fvs0, stmt) -> 
+             freeVarsStmt (fvs0, stmt, rec?)) 
+          fvs 
+          stmts
 
-  op freeVarsBlock: List String * CBlock * Boolean -> List String
-  def freeVarsBlock(fvs,block as (decls,stmts),rec?) =
+  op freeVarsBlock (fvs : List String, block as (decls,stmts) : CBlock, rec? : Bool)
+    : List String =
     case decls of
-      | [] -> freeVarsStmts(fvs,stmts,rec?)
-      | (v,_,optexp)::decls ->
+
+      | [] -> freeVarsStmts (fvs, stmts, rec?)
+
+      | (v, _, optexp) :: decls ->
         let fvs0 = case optexp of
-	            | Some e -> freeVarsExp(fvs,e)
-	            | None -> fvs
+                     | Some e -> freeVarsExp (fvs, e)
+                     | None -> fvs
 	in
-	let fvs1 = freeVarsBlock(fvs,(decls,stmts),rec?) in
-	let fvs1 = List.filter (fn(v0) -> v0 ~= v && v0 nin? fvs0) fvs1 in
+	let fvs1 = freeVarsBlock (fvs, (decls, stmts), rec?) in
+	let fvs1 = filter (fn v0 -> v0 ~= v && v0 nin? fvs0) fvs1 in
 	fvs0 ++ fvs1
 
-  op freeVars: CBlock -> List String
-  def freeVars(b) = freeVarsBlock([],b,true)
+  op freeVars         (b : CBlock) : List String = freeVarsBlock ([], b, true)
+  op freeVarsToplevel (b : CBlock) : List String = freeVarsBlock ([], b, false)
 
-  op freeVarsToplevel: CBlock -> List String
-  def freeVarsToplevel(b) = freeVarsBlock([],b,false)
-
-  op showFreeVars: CBlock -> ()
-  def showFreeVars(b) =
-    let fvs = freeVars(b) in
-    let s = List.foldl (fn(s,v) -> if s = "" then v else v^","^s) "" fvs in
-    writeLine("freeVars: ["^s^"]")
+  op showFreeVars (b : CBlock) : () =
+    let fvs = freeVars b in
+    let s   = foldl (fn (s,v) -> if s = "" then v else v^","^s) "" fvs in
+    writeLine ("freeVars: ["^s^"]")
 
   % auxiliary op for moving decls to the innermost block:
   % counts the number of direct sub-blocks of stmts that contain the
   % given variable freely. If it's more than 1 than the decl must stay
   % in the outer level otherwise it can be moved further inside the
   % inner block
-  op countInnerBlocksWithFreeVar: String * CStmts -> Nat
-  def countInnerBlocksWithFreeVar(v,stmts) =
+  op countInnerBlocksWithFreeVar (v : String, stmts : CStmts) : Nat =
     let
-      def fvnum(fvs) =
+      def fvnum fvs =
 	if v in? fvs then 1 else 0
     in
     let
-      def fvnumStmts(n0,stmts) =
-	List.foldl (fn(n,stmt) -> fvnum(freeVarsStmt([],stmt,true))+n) n0 stmts
+      def fvnumStmts (n0, stmts) =
+	foldl (fn (n, stmt) -> 
+                 fvnum (freeVarsStmt ([], stmt, true)) + n)
+              n0
+              stmts
     in
     case stmts of
       | [] -> 0
-      | stmt::stmts -> 
+      | stmt :: stmts -> 
         let n = case stmt of
-		  | Block b -> fvnum(freeVarsBlock([],b,true))
-	          | If(_,s1,s2) -> fvnumStmts(0,[s1,s2])
-	          | While(_,s) -> fvnumStmts(0,[s])
-	          | IfThen(_,s) -> fvnumStmts(0,[s])
-	          | Switch(_,s) -> fvnumStmts(0,s)
+		  | CBlock  b         -> fvnum (freeVarsBlock ([], b, true))
+	          | CIf     (_,s1,s2) -> fvnumStmts (0, [s1,s2])
+	          | CWhile  (_,s)     -> fvnumStmts (0, [s])
+	          | CIfThen (_,s)     -> fvnumStmts (0, [s])
+	          | CSwitch (_,s)     -> fvnumStmts (0, s)
 	          | _ -> 0
 	in
-	let m = countInnerBlocksWithFreeVar(v,stmts) in
+	let m = countInnerBlocksWithFreeVar (v, stmts) in
 	n + m
 
   % called after the countSubBlocksWithFreeVar has returned 1 for the variable
   % it moves the vardecl to the first inner block where it occurs as free variable
-  op moveDeclToInnerBlock: CVarDecl1 * CStmts -> CStmts
-  def moveDeclToInnerBlock(decl as (v,_,_),stmts) =
+  op moveDeclToInnerBlock (decl as (v,_,_) : CVarDecl1, stmts : CStmts) 
+    : CStmts =
     let
-      def moveDeclStmts(stmts) =
+      def moveDeclStmts stmts =
 	case stmts of
+
 	  | [] -> ([],false)
+
 	  | stmt::stmts ->
-	    let fvs = freeVarsStmt([],stmt,true) in
+	    let fvs = freeVarsStmt ([], stmt, true) in
 	    if v in? fvs then 
-	      let stmt = prependDecl(decl,stmt) in
+	      let stmt = prependDecl (decl, stmt) in
 	      let stmt = case stmt of
-			   | Block b -> let b = findBlockForDecls(b) in Block b
+			   | CBlock b -> CBlock (findBlockForDecls b)
 	                   | _ -> stmt
 	      in
-	      (stmt::stmts,true)
+	      (stmt :: stmts, true)
 	    else
-	      let (stmts,added?) = moveDeclStmts(stmts) in
-	      (stmt::stmts,added?)
+	      let (stmts, added?) = moveDeclStmts stmts in
+	      (stmt :: stmts, added?)
     in
     case stmts of
       | [] -> [] % should not happen
-      | stmt::stmts ->
+      | stmt :: stmts ->
         let (stmt,added?) =
-	   case stmt of
-	     | Block (b as (decls,stmts)) -> if v in? freeVarsBlock([],b,true) then
-	                                     let b = (decl::decls,stmts) in 
-					     let b = findBlockForDecls(b) in
-	                                     (Block b,true) else (stmt,false)
-	     | If(e,s1,s2) -> let ([s1,s2],added?) = moveDeclStmts([s1,s2]) in (If(e,s1,s2),added?)
-	     | While(e,s) -> let ([s],added?) = moveDeclStmts([s]) in (While(e,s),added?)
-	     | IfThen(e,s) -> let ([s],added?) = moveDeclStmts([s]) in (IfThen(e,s),added?)
-	     | Switch(e,stmts) -> let (stmts,added?) = moveDeclStmts(stmts) in (Switch(e,stmts),added?)
-	     | _ -> (stmt,false)
+            case stmt of
+              | CBlock  (b as (decls,stmts)) -> if v in? freeVarsBlock([],b,true) then
+                                                  let b = (decl::decls, stmts) in 
+                                                  let b = findBlockForDecls b    in
+                                                  (CBlock b, true) 
+                                                else 
+                                                  (stmt, false)
+              | CIf     (e,s1,s2) -> let ([s1,s2],added?) = moveDeclStmts([s1,s2]) in (CIf     (e,s1,s2), added?)
+              | CWhile  (e,s)     -> let ([s],added?)     = moveDeclStmts([s])     in (CWhile  (e,s),     added?)
+              | CIfThen (e,s)     -> let ([s],added?)     = moveDeclStmts([s])     in (CIfThen (e,s),     added?)
+              | CSwitch (e,stmts) -> let (stmts,added?)   = moveDeclStmts(stmts)   in (CSwitch (e,stmts), added?)
+              | _ -> (stmt,false)
 	in
 	if added? then
 	  stmt::stmts
 	else
-	  let stmts = moveDeclToInnerBlock(decl,stmts) in
+	  let stmts = moveDeclToInnerBlock (decl, stmts) in
 	  stmt::stmts
 
 
-  op findBlockForDecls: CBlock -> CBlock
-  def findBlockForDecls(block as (decls,stmts)) =
+  op findBlockForDecls (block as (decls,stmts) : CBlock) : CBlock =
     case decls of
-      | [] -> ([],stmts)
-      | decl::decls -> findBlockForDecl(decl,(decls,stmts))
+      | [] -> ([], stmts)
+      | decl::decls -> findBlockForDecl (decl, (decls, stmts))
 
 
-  op findBlockForDecl: CVarDecl1 * CBlock -> CBlock
-  def findBlockForDecl(decl as (v,typ,optexp),b as (decls,stmts)) =
+  op findBlockForDecl (decl as (v,typ,optexp) : CVarDecl1, b as (decls,stmts) : CBlock)
+    : CBlock =
     let
-      def dontMoveDecl() =
-	let (decls,stmts) = findBlockForDecls(b) in
-	(decl::decls,stmts)
+      def dontMoveDecl () =
+	let (decls, stmts) = findBlockForDecls b in
+	(decl::decls, stmts)
     in
-    let fvtl = freeVarsToplevel(b) in
+    let fvtl = freeVarsToplevel b in
     if v in? fvtl then
-      dontMoveDecl()
+      dontMoveDecl ()
     else
-      let cnt = countInnerBlocksWithFreeVar(v,stmts) in
+      let cnt = countInnerBlocksWithFreeVar (v, stmts) in
       if cnt = 1 then
-	let stmts = moveDeclToInnerBlock(decl,stmts) in
-	let newblock = (decls,stmts) in
-	findBlockForDecls(newblock)
+	let stmts = moveDeclToInnerBlock (decl, stmts) in
+	let newblock = (decls, stmts) in
+	findBlockForDecls newblock
       else
-	dontMoveDecl()
+	dontMoveDecl ()
 
   % --------------------------------------------------------------------------------
 
-  op NULL: CExp
-  def NULL = Var("NULL",Int)
+  op NULL : CExp = CVar("NULL",CInt)
 
   % --------------------------------------------------------------------------------
 
   % splits the cspc into header and implementation cspcs
-  op splitCSpec: CSpec -> CSpec * CSpec
-  def splitCSpec(cspc) = 
+  op splitCSpec (cspc : CSpec) : CSpec * CSpec =
     let
       def filterFnDefn isHdr (fndefn as (fname,_,_,_)) =
-	isHdr = exists? (fn(c) -> c = #_) fname
-      %def filterFnDecl isHdr (fndecl as (fname,_,_)) =
-	%isHdr = exists (fn(c) -> c = #$) fname
+	isHdr = exists? (fn c -> c = #_) fname
     in
-    let hdr = {
-	       name = cspc.name,
-	       includes = cspc.includes,
-	       defines = cspc.defines,
-	       constDefns = cspc.constDefns,
-	       vars = cspc.vars,
-	       fns = cspc.fns,
-	       axioms = [],
-	       structUnionTypeDefns = cspc.structUnionTypeDefns,
-	       varDefns = cspc.varDefns,
-	       fnDefns = filter (filterFnDefn true) cspc.fnDefns
-	      }
+    let hdr = cspc << {axioms  = [],
+                       fnDefns = filter (filterFnDefn true) cspc.fnDefns}
     in
     let cspc = {
-	       name = cspc.name,
-	       includes = [],
-	       defines = [],
-	       constDefns = [],
-	       vars = [],
-	       fns = [],
-	       axioms = cspc.axioms,
-	       structUnionTypeDefns = [],
-	       varDefns = [],
-	       fnDefns = filter (filterFnDefn false) cspc.fnDefns
-	       }
+                name                 = cspc.name,
+                includes             = [],
+                defines              = [],
+                constDefns           = [],
+                vars                 = [],
+                fns                  = [],
+                structUnionTypeDefns = [],
+                varDefns             = [],
+                axioms               = cspc.axioms,
+                fnDefns              = filter (filterFnDefn false) cspc.fnDefns
+                }
     in
     (hdr,cspc)
 
 
   % --------------------------------------------------------------------------------
 
-  op deleteUnusedTypes: CSpec -> CSpec
-  def deleteUnusedTypes(cspc) =
-    let usedtypes = usedCTypes(cspc) in
-    let suts = filter (fn(TypeDefn(n,_)) -> Base n in? usedtypes
-		       | (Struct(n,_)) -> Struct n in? usedtypes
-		       | (Union(n,_)) ->   Union n in? usedtypes)
-               cspc.structUnionTypeDefns
+  op deleteUnusedTypes (cspc : CSpec) : CSpec =
+    let usedtypes = usedCTypes cspc in
+    let suts = filter (fn (CTypeDefn (n,_)) -> CBase   n in? usedtypes
+		        | (CStruct   (n,_)) -> CStruct n in? usedtypes
+		        | (CUnion    (n,_)) -> CUnion  n in? usedtypes)
+                      cspc.structUnionTypeDefns
     in
-    setStructUnionTypeDefns(cspc,suts)
+    setStructUnionTypeDefns (cspc, suts)
 
   % --------------------------------------------------------------------------------
 
-  op usedCTypes: CSpec -> List CType
-  def usedCTypes(cspc) =
-    let types = flatten (map usedCTypesFnDefn cspc.fnDefns) in
-    let types = (flatten (map usedCTypesVarDefn cspc.varDefns))++types in
-    let types = (flatten (map usedCTypesVarDefn cspc.constDefns))++types in
-    let types = (flatten (map usedCTypesVarDecl cspc.vars))++types in
-    let types = (flatten (map usedCTypesFnDecl cspc.fns))++types in
-    let types = mkUnique types in
-    %let _ = printCSpecToTerminal(cspc) in
-    let types = flatten (map (usedCTypesType cspc []) types) in
-    let types = mkUnique types in
+  op usedCTypes (cspc : CSpec) : List CType =
+    let types = (flatten (map usedCTypesFnDefn  cspc.fnDefns))             in
+    let types = (flatten (map usedCTypesVarDefn cspc.varDefns))   ++ types in
+    let types = (flatten (map usedCTypesVarDefn cspc.constDefns)) ++ types in
+    let types = (flatten (map usedCTypesVarDecl cspc.vars))       ++ types in
+    let types = (flatten (map usedCTypesFnDecl  cspc.fns))        ++ types in
+    let types = mkUnique types                                             in
+    let types = flatten (map (usedCTypesType cspc []) types)               in
+    let types = mkUnique types                                             in
     types
 
-  op usedCTypesFnDefn: CFnDefn -> List CType
-  def usedCTypesFnDefn(_,vdecls,rtype,stmt) =
+  op usedCTypesFnDefn ((_,vdecls,rtype,stmt) : CFnDefn) : List CType =
     let types = flatten (map usedCTypesVarDecl vdecls) in
     let types = rtype::types in
-    let types = (usedCTypeStmt stmt)++types in
+    let types = (usedCTypeStmt stmt) ++ types in
     types
 
-  op usedCTypesFnDecl: CFnDecl -> List CType
-  def usedCTypesFnDecl(_,ptypes,rtype) =
-    rtype::ptypes
+  op usedCTypesFnDecl   ((_,ptypes,rtype) : CFnDecl)   : List CType = rtype::ptypes
+  op usedCTypesVarDefn  ((_,t,_)          : CVarDefn)  : List CType = [t]
+  op usedCTypesVarDecl  ((_,t)            : CVarDecl)  : List CType = [t]
+  op usedCTypesVarDecl1 ((_,t,_)          : CVarDecl1) : List CType = [t]
 
-  op usedCTypesVarDefn: CVarDefn -> List CType
-  def usedCTypesVarDefn(_,t,_) = [t]
-
-  op usedCTypesVarDecl: CVarDecl -> List CType
-  def usedCTypesVarDecl(_,t) = [t]
-
-  op usedCTypesVarDecl1: CVarDecl1 -> List CType
-  def usedCTypesVarDecl1(_,t,_) = [t]
-
-  op usedCTypeStmt: CStmt -> List CType
-  def usedCTypeStmt(stmt) =
+  op usedCTypeStmt (stmt : CStmt) : List CType =
     case stmt of
-      | Block(vdecls1,stmts) ->
+
+      | CBlock(vdecls1,stmts) ->
         let types = flatten (map usedCTypesVarDecl1 vdecls1) in
-	let types = (flatten (map usedCTypeStmt stmts))++types in
+	let types = (flatten (map usedCTypeStmt stmts)) ++ types in
 	types
-      | If(_,s1,s2) -> usedCTypeStmt(s1) ++ usedCTypeStmt(s2)
-      | While(_,s) -> usedCTypeStmt(s)
-      | IfThen(_,s) -> usedCTypeStmt(s)
-      | Switch(_,stmts) -> flatten (map usedCTypeStmt stmts)
+
+      | CIf     (_,s1,s2) -> usedCTypeStmt s1 ++ usedCTypeStmt s2
+
+      | CWhile  (_,s)     -> usedCTypeStmt s
+
+      | CIfThen (_,s)     -> usedCTypeStmt s
+
+      | CSwitch (_,stmts) -> flatten (map usedCTypeStmt stmts)
+
       | _ -> []
 
-  op usedCTypesType: CSpec -> List CType -> CType -> List CType
-  def usedCTypesType cspc visited t =
+  op usedCTypesType (cspc : CSpec) (visited : List CType) (t : CType) : List CType =
     let
-      def usedTypes4SUT(t) =
-	case findStructUnionTypeDefn(cspc,t) of
-	  | Some (TypeDefn(_,t)) -> [t]
-	  | Some (Union(_,vdecls)) -> flatten(map usedCTypesVarDecl vdecls)
-	  | Some (Struct(_,vdecls)) -> flatten(map usedCTypesVarDecl vdecls)
+      def usedTypes4SUT t =
+	case findStructUnionTypeDefn (cspc, t) of
+	  | Some (CTypeDefn (_,t))      -> [t]
+	  | Some (CUnion    (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
+	  | Some (CStruct   (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
 	  | _ -> []
     in
     let newtypes =
       case t of
-	| Ptr(t) -> [t]
-	| Array(t) -> [t]
-	| Base _ -> usedTypes4SUT(t)
-	| Struct _ -> usedTypes4SUT(t)
-	| Union _ -> usedTypes4SUT(t)
-	| ArrayWithSize(_,t) -> [t]
-	| Fn(types,typ) -> typ::types
+	| CPtr           t            -> [t]
+	| CArray         t            -> [t]
+	| CBase          _            -> usedTypes4SUT t
+	| CStruct        _            -> usedTypes4SUT t
+	| CUnion         _            -> usedTypes4SUT t
+	| CArrayWithSize (_,t)        -> [t]
+	| CFn            (types, typ) -> typ::types
 	| _ -> []
     in
-    let newtypes = filter (fn(t) -> t nin? visited) newtypes in
+    let newtypes = filter (fn t -> t nin? visited) newtypes in
     let visited = visited ++ newtypes in
     t :: flatten (map (usedCTypesType cspc visited) newtypes)
 
   % --------------------------------------------------------------------------------
 
-  op prependBlockStmt: CBlock * CStmt -> CStmt
-  def prependBlockStmt(block,stmt) =
+  op prependBlockStmt (block : CBlock, stmt : CStmt) : CStmt =
     case block of
       | ([],[]) -> stmt
       | (decls,stmts) ->
         case stmt of
-	  | Block(decls1,stmts1) -> Block(decls++decls1,stmts++stmts1)
-	  | _ -> Block(decls,stmts++[stmt])
+
+	  | CBlock (decls1,        stmts1) -> 
+            CBlock (decls++decls1, stmts++stmts1)
+
+	  | _ -> CBlock (decls, stmts++[stmt])
 
 }

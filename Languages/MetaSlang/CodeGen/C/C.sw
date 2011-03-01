@@ -15,9 +15,9 @@ C qualifying spec {
      fnDefns               : CFnDefns
     }
 
-  type CStructUnionTypeDefn = | Struct   CStructDefn
-                              | Union    CUnionDefn
-                              | TypeDefn CTypeDefn
+  type CStructUnionTypeDefn = | CStruct   CStructDefn
+                              | CUnion    CUnionDefn
+                              | CTypeDefn CTypeDefn
 
   type CStructUnionTypeDefns = List CStructUnionTypeDefn
 
@@ -34,86 +34,86 @@ C qualifying spec {
   type CBlock      = CVarDecls1 * CStmts
 
   type CType =
-    | Void
-    | Char
-    | Short
-    | Int
-    | Long
-    | UnsignedChar
-    | UnsignedShort
-    | UnsignedInt
-    | UnsignedLong
-    | Float
-    | Double
-    | LongDouble
-    | Base     String
-    | Struct   String
-    | Union    String
-    | Ptr      CType
-    | Array    CType
-    | ArrayWithSize  (String (*name of constant*) * CType)
-    | Fn       CTypes * CType
-    | ConstField
+    | CVoid
+    | CChar
+    | CShort
+    | CInt
+    | CLong
+    | CUnsignedChar
+    | CUnsignedShort
+    | CUnsignedInt
+    | CUnsignedLong
+    | CFloat
+    | CDouble
+    | CLongDouble
+    | CBase     String
+    | CStruct   String
+    | CUnion    String
+    | CPtr      CType
+    | CArray    CType
+    | CArrayWithSize  (String (*name of constant*) * CType)
+    | CFn       CTypes * CType
+    | CConstField
 
   type CStmt =
-    | Exp     CExp
-    | Block   CBlock
-    | If      CExp * CStmt * CStmt
-    | Return  CExp
-    | ReturnVoid
-    | Break
-    | While   CExp * CStmt
-    | Label   String
-    | Goto    String
-    | IfThen  CExp * CStmt
-    | Switch  CExp * CStmts
-    | Case    CVal
-    | Nop
+    | CExp     CExp
+    | CBlock   CBlock
+    | CIf      CExp * CStmt * CStmt
+    | CReturn  CExp
+    | CReturnVoid
+    | CBreak
+    | CWhile   CExp * CStmt
+    | CLabel   String
+    | CGoto    String
+    | CIfThen  CExp * CStmt
+    | CSwitch  CExp * CStmts
+    | CCase    CVal
+    | CNop
 
 
   type CExp =
-    | Const       CVal
-    | Fn          CFnDecl
-    | Var         CVarDecl
-    | Apply       CExp * CExps
-    | Unary       CUnaryOp * CExp
-    | Binary      CBinaryOp * CExp * CExp
-    | Cast        CType * CExp
-    | StructRef   CExp * String
-    | UnionRef    CExp * String
-    | ArrayRef    CExp * CExp
-    | IfExp       CExp * CExp * CExp 
-    | Comma       CExp * CExp
-    | SizeOfType  CType
-    | SizeOfExp   CExp
-    | Field       CExps
+    | CConst       CVal
+    | CFn          CFnDecl
+    | CVar         CVarDecl
+    | CApply       CExp * CExps
+    | CUnary       CUnaryOp * CExp
+    | CBinary      CBinaryOp * CExp * CExp
+    | CCast        CType * CExp
+    | CStructRef   CExp * String
+    | CUnionRef    CExp * String
+    | CArrayRef    CExp * CExp
+    | CIfExp       CExp * CExp * CExp 
+    | CComma       CExp * CExp
+    | CSizeOfType  CType
+    | CSizeOfExp   CExp
+    | CField       CExps
 
   type CVal =
-    | Char        Char
-    | Int         Boolean * Nat
-    | Float       String
-    | String      String
+    | CChar        Char
+    | CInt         Boolean * Nat
+    | CFloat       String
+    | CString      String
 
   type CUnaryOp =
-    | Contents
-    | Address
-    | Negate
-    | BitNot
-    | LogNot
-    | PreInc | PreDec
-    | PostInc | PostDec
+    | CContents
+    | CAddress
+    | CNegate
+    | CBitNot
+    | CLogNot
+    | CPreInc  | CPreDec
+    | CPostInc | CPostDec
 
   type CBinaryOp =
-    | Set
-    | Add | Sub | Mul | Div | Mod
-    | BitAnd | BitOr | BitXor
-    | ShiftLeft | ShiftRight
-    | SetAdd | SetSub | SetMul | SetDiv | SetMod
-    | SetBitAnd | SetBitOr | SetBitXor
-    | SetShiftLeft | SetShiftRight
-    | LogAnd | LogOr
-    | Eq  | NotEq
-    | Lt | Gt | Le | Ge
+    | CSet
+    | CAdd | CSub | CMul | CDiv | CMod
+    | CBitAnd | CBitOr | CBitXor
+    | CShiftLeft | CShiftRight
+    | CSetAdd | CSetSub | CSetMul | CSetDiv | CSetMod
+    | CSetBitAnd | CSetBitOr | CSetBitXor
+    | CSetShiftLeft | CSetShiftRight
+    | CLogAnd | CLogOr
+    | CEq  | CNotEq
+    | CLt | CGt | CLe | CGe
 
   type Strings      = List String
   type CVarDecls    = List CVarDecl
