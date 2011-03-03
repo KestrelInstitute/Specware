@@ -1177,7 +1177,6 @@ end-proof
  Integer.+        -> +     Left  6
  Integer.-        -> -     Left  6
  Integer.*        -> *     Left  7
- Integer.**       -> ^     Left  8
  Integer.<=       -> <=    Infix 4
  Integer.<        -> <     Infix 4
  Integer.>=       -> >=    Infix 4
