@@ -4,14 +4,24 @@
  */
 
 
-
-#include "stdio.h"
-#include "string.h"
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "SWC_Memory.h"
 
 /* Definitions */
+
+typedef unsigned char u1;	// 8 bits always (standard ANSI C)
+typedef uint16_t      u2;	// 16 bits (unsigned), see <stdint.h>
+typedef uint32_t      u4;	// 32 bits (unsigned)
+typedef uint64_t      u8;	// 64 bits (unsigned)
+
+typedef signed char   s1;	// 8 bits always (standard ANSI C)
+typedef int16_t       s2;	// 16 bits (signed), see <stdint.h>
+typedef int32_t       s4;	// 32 bits (signed)
+typedef int64_t       s8;	// 64 bits (signed)
 
 #define Any long long
 
@@ -154,8 +164,6 @@ int Integer_abs (int i) {
 int Integer_pred (int i) {
   {return (i - 1);}
 }
-
-#define String_Less strcmp
 
 #define fail System_fail
 int System_fail(char* msg) {
