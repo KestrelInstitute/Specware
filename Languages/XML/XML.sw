@@ -5,6 +5,7 @@ XML qualifying spec
   import XML_Sig
   import Parser/XML_Parser
   import Printers/XML_Printer
+  import Utilities/Accessors
   import Conversions/GenerateDocument
   import Conversions/InternalizeDocument
 
