@@ -11,42 +11,44 @@ CPrint qualifying spec
   op ppBaseType (s : String, p : Pretty) : Pretty =
     prettysNone [string s, p]
 
-  op ppPlainType    : CType  -> Pretty
-  op ppPlainTypes   : CTypes -> Pretty
-  op ppExp          : CExp   -> Pretty
-  op ppExpInOneLine : CExp   -> Pretty % needed for #defines
+  op ppPlainType    : C_Type  -> Pretty
+  op ppPlainTypes   : C_Types -> Pretty
+  op ppExp          : C_Exp   -> Pretty
+  op ppExpInOneLine : C_Exp   -> Pretty % needed for #defines
 
-  op ppType (t : CType, p : Pretty) : Pretty =
+  op ppType (t : C_Type, p : Pretty) : Pretty =
     case t of
-      | CVoid          -> ppBaseType ("void"          , p)
-      | CChar          -> ppBaseType ("char"          , p)
-      | CConstField    -> ppBaseType ("ConstField"    , p)
-      | CShort         -> ppBaseType ("short"         , p)
-      | CInt           -> ppBaseType ("int"           , p)
-      | CLong          -> ppBaseType ("long"          , p)
-      | CUnsignedChar  -> ppBaseType ("unsigned char" , p)
-      | CUnsignedShort -> ppBaseType ("unsigned short", p)
-      | CUnsignedInt   -> ppBaseType ("unsigned int"  , p)
-      | CUnsignedLong  -> ppBaseType ("unsigned long" , p)
-      | CFloat         -> ppBaseType ("float"         , p)
-      | CDouble        -> ppBaseType ("double"        , p)
-      | CLongDouble    -> ppBaseType ("long double"   , p)
-      | CBase   t      -> ppBaseType ((cId t)         , p)
-      | CStruct s      -> prettysNone [string "struct ", string (cId s), p]
-      | CUnion  u      -> prettysNone [string "union ",  string (cId u), p]
-      | CPtr    t      -> ppType (t, prettysNone [string "*", p, string ""])
-      | CArray  t      -> ppType (t, prettysNone [string "(", p, string "[])"])
-      | CArrayWithSize (conststr, t) -> ppType (t, prettysNone [(*string "(",*) p, strings ["[",conststr,"]"]])
-      | CFn    (ts, t) -> ppType (t, prettysNone [string " (*", p, string ") ", ppPlainTypes ts])
+      | C_Void          -> ppBaseType  ("void"          , p)
+      | C_Char          -> ppBaseType  ("char"          , p)
+      | C_ConstField    -> ppBaseType  ("ConstField"    , p)
+      | C_Short         -> ppBaseType  ("short"         , p)
+      | C_Int           -> ppBaseType  ("int"           , p)
+      | C_Long          -> ppBaseType  ("long"          , p)
+      | C_UnsignedChar  -> ppBaseType  ("unsigned char" , p)
+      | C_UnsignedShort -> ppBaseType  ("unsigned short", p)
+      | C_UnsignedInt   -> ppBaseType  ("unsigned int"  , p)
+      | C_UnsignedLong  -> ppBaseType  ("unsigned long" , p)
+      | C_Float         -> ppBaseType  ("float"         , p)
+      | C_Double        -> ppBaseType  ("double"        , p)
+      | C_LongDouble    -> ppBaseType  ("long double"   , p)
+      | C_Base   t      -> ppBaseType  (cId t           , p)
+      | C_Struct s      -> prettysNone [string "struct ", string (cId s), p]
+      | C_Union  u      -> prettysNone [string "union " , string (cId u), p]
+
+      | C_Ptr           t             -> ppType (t, prettysNone [string "*", p, string ""])
+      | C_Array         t             -> ppType (t, prettysNone [string "(", p, string "[])"])
+      | C_ArrayWithSize (conststr, t) -> ppType (t, prettysNone [(*string "(",*) p, strings ["[",conststr,"]"]])
+      | C_Fn            (ts, t)       -> ppType (t, prettysNone [string " (*", p, string ") ", ppPlainTypes ts])
+
       | mystery -> fail ("Unexpected type to print "^anyToString mystery)
 
-  op ppConst (v : CVal) : Pretty =
+  op ppConst (v : C_Const) : Pretty =
     case v of
-      | CChar   c           -> strings ["'", show c, "'"]
-      | CInt    (b, n)      -> strings [if b then "" else "-", show n]
-%     | CFloat  (b, n1, n2) -> strings [if b then "" else "-", show n1, ".", show n2]
-      | CFloat  f           -> string f
-      | CString s           -> strings ["\"", ppQuoteString(s), "\""]
+      | C_Char   c           -> strings ["'", show c, "'"]
+      | C_Int    (b, n)      -> strings [if b then "" else "-", show n]
+%     | C_Float  (b, n1, n2) -> strings [if b then "" else "-", show n1, ".", show n2]
+      | C_Float  f           -> string f
+      | C_String s           -> strings ["\"", ppQuoteString(s), "\""]
       | _ -> fail "Unexpected const to print"
 
   op ppQuoteString (s : String) : String =
@@ -62,67 +64,67 @@ CPrint qualifying spec
     in
     implode (ppQuoteCharList (explode s))
 
-  op unaryPrefix? (u : CUnaryOp) : Bool =
+  op unaryPrefix? (u : C_UnaryOp) : Bool =
     case u of
-      | CPostInc -> false
-      | CPostDec -> false
+      | C_PostInc -> false
+      | C_PostDec -> false
       | _        -> true
 
-  op ppUnary (u : CUnaryOp) : Pretty =
+  op ppUnary (u : C_UnaryOp) : Pretty =
     string (case u of
-              | CContents -> "*"
-              | CAddress  -> "&"
-              | CNegate   -> "-"
-              | CBitNot   -> "~"
-              | CLogNot   -> "!"
-              | CPreInc   -> "++"
-              | CPreDec   -> "--"
-              | CPostInc  -> "++"
-              | CPostDec  -> "--"
+              | C_Contents -> "*"
+              | C_Address  -> "&"
+              | C_Negate   -> "-"
+              | C_BitNot   -> "~"
+              | C_LogNot   -> "!"
+              | C_PreInc   -> "++"
+              | C_PreDec   -> "--"
+              | C_PostInc  -> "++"
+              | C_PostDec  -> "--"
               | _ -> fail "Unexpected unary")
 
-  op binaryToString(b:CBinaryOp) : String = 
+  op binaryToString(b:C_BinaryOp) : String = 
     case b of
-      | CSet           -> " = "
-      | CAdd           -> " + "
-      | CSub           -> " - "
-      | CMul           -> " * "
-      | CDiv           -> " / "
-      | CMod           -> " % "
-      | CBitAnd        -> " & "
-      | CBitOr         -> " | "
-      | CBitXor        -> " ^ "
-      | CShiftLeft     -> " << "
-      | CShiftRight    -> " >> "
-      | CSetAdd        -> " += "
-      | CSetSub        -> " -= "
-      | CSetMul        -> " *= "
-      | CSetDiv        -> " /= "
-      | CSetMod        -> " %= "
-      | CSetBitAnd     -> " &= "
-      | CSetBitOr      -> " |= "
-      | CSetBitXor     -> " ^= "
-      | CSetShiftLeft  -> " <<= "
-      | CSetShiftRight -> " >>= "
-      | CLogAnd        -> " && "
-      | CLogOr         -> " || "
-      | CEq            -> " == "
-      | CNotEq         -> " != "
-      | CLt            -> " < "
-      | CGt            -> " > "
-      | CLe            -> " <= "
-      | CGe            -> " >= "
+      | C_Set           -> " = "
+      | C_Add           -> " + "
+      | C_Sub           -> " - "
+      | C_Mul           -> " * "
+      | C_Div           -> " / "
+      | C_Mod           -> " % "
+      | C_BitAnd        -> " & "
+      | C_BitOr         -> " | "
+      | C_BitXor        -> " ^ "
+      | C_ShiftLeft     -> " << "
+      | C_ShiftRight    -> " >> "
+      | C_SetAdd        -> " += "
+      | C_SetSub        -> " -= "
+      | C_SetMul        -> " *= "
+      | C_SetDiv        -> " /= "
+      | C_SetMod        -> " %= "
+      | C_SetBitAnd     -> " &= "
+      | C_SetBitOr      -> " |= "
+      | C_SetBitXor     -> " ^= "
+      | C_SetShiftLeft  -> " <<= "
+      | C_SetShiftRight -> " >>= "
+      | C_LogAnd        -> " && "
+      | C_LogOr         -> " || "
+      | C_Eq            -> " == "
+      | C_NotEq         -> " != "
+      | C_Lt            -> " < "
+      | C_Gt            -> " > "
+      | C_Le            -> " <= "
+      | C_Ge            -> " >= "
       | _ -> fail "Unexpected binary"
 
-  op ppBinary (b : CBinaryOp) : Pretty =
+  op ppBinary (b : C_BinaryOp) : Pretty =
     string (binaryToString b)
 
-  op ppExps          : CExps -> Pretty
-  op ppExpsInOneLine : CExps -> Pretty
+  op ppExps          : C_Exps -> Pretty
+  op ppExpsInOneLine : C_Exps -> Pretty
   % op ppPlainType       : Type -> Pretty
 
   (*
-  op ppAssigns :  List[CVarDecl * CExp] -> Pretty
+  op ppAssigns :  List[C_VarDecl * C_Exp] -> Pretty
 
   op ppAssigns(assigns) = 
       prettysFill (map (fn ((id,_),e)->
@@ -135,78 +137,80 @@ CPrint qualifying spec
 
   %% Let (assigns,e) -> parens (prettysFill [ppAssigns assigns,ppExp e])
 
-  op ppExp          (e : CExp) : Pretty = ppExp_internal (e, false)
-  op ppExpInOneLine (e : CExp) : Pretty = ppExp_internal (e, true)
+  op ppExp          (e : C_Exp) : Pretty = ppExp_internal (e, false)
+  op ppExpInOneLine (e : C_Exp) : Pretty = ppExp_internal (e, true)
 
-  op ppExp_internal (e : CExp, inOneLine: Bool) : Pretty =
+  op ppExp_internal (e : C_Exp, inOneLine: Bool) : Pretty =
     let prettysFill   = if inOneLine then prettysNone else prettysFill in
     let prettysLinear = if inOneLine then prettysNone else prettysLinear in
     case e of
-      | CConst v            -> ppConst v
-      | CFn (s, ts, t)      -> string (cId s)
-      | CVar (s, t)         -> string (cId s)
-      | CApply (e, es)      -> prettysFill [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
-      | CUnary (u, e)       -> prettysNone (if unaryPrefix? u then
+      | C_Const v            -> ppConst v
+      | C_Fn (s, ts, t)      -> string (cId s)
+      | C_Var (s, t)         -> string (cId s)
+      | C_Apply (e, es)      -> prettysFill [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
+      | C_Unary (u, e)       -> prettysNone (if unaryPrefix? u then
                                               [ppUnary u, ppExpRec(e,inOneLine)]
                                             else
                                               [ppExpRec(e,inOneLine), ppUnary u])
-      | CBinary (b, e1, e2) -> prettysFill [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
-      | CCast (t, e)        -> parens (prettysNone [parens (ppPlainType t), string " ", ppExp_internal(e,inOneLine)])
-      | CStructRef (CUnary (Contents, e), s) -> 
-			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", (cId s)]]
-      | CStructRef (e, s)   -> prettysNone [ppExp_internal(e,inOneLine), strings [".", (cId s)]]
-      | CUnionRef (e, s)    -> prettysNone [ppExp_internal(e,inOneLine), strings [".", (cId s)]]
-      | CArrayRef (e1, e2)  -> prettysNone [ppExpRec(e1,inOneLine), string "[", ppExp_internal (e2, inOneLine), string "]"]
-      | CIfExp (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec(e1,inOneLine), string " ? "],
+      | C_Binary (b, e1, e2) -> prettysFill [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
+      | C_Cast (t, e)        -> parens (prettysNone [parens (ppPlainType t), string " ", ppExp_internal(e,inOneLine)])
+      | C_StructRef (C_Unary (Contents, e), s) -> 
+			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", cId s]]
+      | C_StructRef (e, s)   -> prettysNone [ppExp_internal(e,inOneLine), strings [".", cId s]]
+      | C_UnionRef (e, s)    -> prettysNone [ppExp_internal(e,inOneLine), strings [".", cId s]]
+      | C_ArrayRef (e1, e2)  -> prettysNone [ppExpRec(e1,inOneLine), string "[", ppExp_internal (e2, inOneLine), string "]"]
+      | C_IfExp (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec(e1,inOneLine), string " ? "],
                                               prettysNone [ppExpRec(e2,inOneLine), string " : "],
                                               ppExpRec(e3,inOneLine)]
-      | CComma (e1, e2)     -> parens (prettysFill [ppExp_internal(e1,inOneLine), string ", ", ppExp_internal(e2,inOneLine)])
-      | CSizeOfType t       -> prettysNone [string "sizeof (", ppPlainType t, string ")"]
-      | CSizeOfExp e        -> prettysNone [string "sizeof (", ppExp_internal(e,inOneLine), string ")"]
-      | CField es -> prettysNone [if inOneLine then ppExpsCurlyInOneline es 
-					       else ppExpsCurly es]
+      | C_Comma (e1, e2)     -> parens (prettysFill [ppExp_internal(e1,inOneLine), string ", ", ppExp_internal(e2,inOneLine)])
+      | C_SizeOfType t       -> prettysNone [string "sizeof (", ppPlainType t, string ")"]
+      | C_SizeOfExp e        -> prettysNone [string "sizeof (", ppExp_internal(e,inOneLine), string ")"]
+      | C_Field es           -> prettysNone [if inOneLine then 
+                                               ppExpsCurlyInOneline es 
+                                             else 
+                                               ppExpsCurly es]
       | _ -> fail "Unexpected expression" 
 
   %% Print non-atomic expressions in parens.
 
-  op ppExpRec (e : CExp, inOneLine : Bool) : Pretty =
+  op ppExpRec (e : C_Exp, inOneLine : Bool) : Pretty =
     case e of
-      | CConst _ -> ppExp_internal(e,inOneLine)
-      | CVar   _ -> ppExp_internal(e,inOneLine)
-      | CFn    _ -> ppExp_internal(e,inOneLine)
+      | C_Const _ -> ppExp_internal(e,inOneLine)
+      | C_Var   _ -> ppExp_internal(e,inOneLine)
+      | C_Fn    _ -> ppExp_internal(e,inOneLine)
       | _ -> parens (ppExp_internal(e,inOneLine))
 
-  op ppBlock   : CBlock -> Pretty
-  op ppInBlock : CStmt  -> Pretty
+  op ppBlock   : C_Block -> Pretty
+  op ppInBlock : C_Stmt  -> Pretty
 
-  op ppStmt (s : CStmt) : Pretty =
+  op ppStmt (s : C_Stmt) : Pretty =
     case s of
-      | CExp e          -> prettysNone [ppExp e, string ";"]
-      | CBlock b        -> ppBlock b
-      | CIfThen (e, s1) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
+      | C_Exp e          -> prettysNone [ppExp e, string ";"]
+      | C_Block b        -> ppBlock b
+      | C_IfThen (e, s1) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
                                          (2, ppInBlock s1),
                                          (0, string "}")])
-      | CIf (e, s1, s2) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
+      | C_If (e, s1, s2) -> blockAll (0, [(0, prettysNone [string "if (",  ppExp e, string ") {"]),
                                          (2, ppInBlock s1),
                                          (0, string "} else {"),
                                          (2, ppInBlock s2),
                                          (0, string "}")])
-      | CReturn e       -> prettysNone [string "return ", ppExp e, string ";"]
-      | CReturnVoid     -> prettysNone [string "return;"]
-      | CBreak          -> string "break;"
-      | CNop            -> string ";"
-      | CWhile (e, s)   -> blockAll (0, [(0, prettysNone [string "while (", ppExp e, string ") {"]),
+      | C_Return e       -> prettysNone [string "return ", ppExp e, string ";"]
+      | C_ReturnVoid     -> prettysNone [string "return;"]
+      | C_Break          -> string "break;"
+      | C_Nop            -> string ";"
+      | C_While (e, s)   -> blockAll (0, [(0, prettysNone [string "while (", ppExp e, string ") {"]),
                                          (2, ppInBlock s),
                                          (0, string "}")])
-      | CLabel s        -> strings [(*"label ", *)s, ":"] %% Changed by Nikolaj
-      | CGoto s         -> strings ["goto ", (cId s), ";"]
-      | CSwitch (e, ss) -> blockAll (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
+      | C_Label s        -> strings [(*"label ", *)s, ":"] %% Changed by Nikolaj
+      | C_Goto s         -> strings ["goto ", cId s, ";"]
+      | C_Switch (e, ss) -> blockAll (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
                                          (2, ppStmts ss),
                                          (0, string "}")])
-      | CCase v         -> prettysNone [string "case ", ppConst v, string ":"]
+      | C_Case v         -> prettysNone [string "case ", ppConst v, string ":"]
       | _ -> fail "Unexpected statement" 
 
-  op ppStmts (ss : CStmts) : Pretty =
+  op ppStmts (ss : C_Stmts) : Pretty =
     prettysAll (map ppStmt ss)
 
   op ppInclude (s : String) : Pretty =
@@ -221,36 +225,36 @@ CPrint qualifying spec
   op ppDefine (s : String) : Pretty =
     strings ["#define ", s]
 
-  op ppArg (s : String, t : CType) : Pretty =
+  op ppArg (s : String, t : C_Type) : Pretty =
     ppType (t, strings [" ", cId s])
 
-  op ppArgs (vds : CVarDecls) : Pretty =
+  op ppArgs (vds : C_VarDecls) : Pretty =
     prettysLinearDelim ("(", ", ", ")") (map ppArg vds)
 
-  op ppPlainType (t : CType) : Pretty =
+  op ppPlainType (t : C_Type) : Pretty =
     ppType (t, emptyPretty ())
 
-  op ppPlainTypes (ts : CTypes) : Pretty =
+  op ppPlainTypes (ts : C_Types) : Pretty =
     prettysLinearDelim ("(", ", ", ")") (map ppPlainType ts)
   
-  op ppVarDecl (s : String, t : CType) : Pretty =
+  op ppVarDecl (s : String, t : C_Type) : Pretty =
     prettysNone [ppArg (s, t), string ";"]
 
-  op ppVarDecl1 (s : String, t : CType, e : Option CExp) : Pretty =
+  op ppVarDecl1 (s : String, t : C_Type, e : Option C_Exp) : Pretty =
     case e of
       | None   -> prettysNone [ppArg (s, t), string ";"]
       | Some e -> prettysNone [ppArg (s, t), string " = ", ppExp(e), string ";"]
 
-  op ppVarDecls (vds : CVarDecls) : Pretty =
+  op ppVarDecls (vds : C_VarDecls) : Pretty =
     prettysAll (map ppVarDecl vds)
 
-  op ppVarDecls1 (vds : CVarDecls1) : Pretty =
+  op ppVarDecls1 (vds : C_VarDecls1) : Pretty =
     prettysAll (map ppVarDecl1 vds)
 
-  op ppTypeDefn (s : String, t : CType) : Pretty =
+  op ppTypeDefn (s : String, t : C_Type) : Pretty =
     let pp =  prettysNone [string "typedef ", ppVarDecl (s, t)] in
     case t of
-      | CBase "Any" ->
+      | C_Base "Any" ->
 	blockAll (0, [(0,strings [ "#ifndef "^s^"_is_externally_defined"]),
                       (0,pp),
                       (0,string "#endif")])
@@ -258,26 +262,26 @@ CPrint qualifying spec
 
   op ppStructUnionTypeDefn (structOrUnion) : Pretty =
     case structOrUnion of
-      | CStruct x -> ppStructDefn x
-      | CUnion  x -> ppUnionDefn  x
-      | CTypeDefn   x -> ppTypeDefn   x
+      | C_Struct x -> ppStructDefn x
+      | C_Union  x -> ppUnionDefn  x
+      | C_TypeDefn   x -> ppTypeDefn   x
 
 
-  op ppStructDefn (s : String, vds : CVarDecls) : Pretty =
+  op ppStructDefn (s : String, vds : C_VarDecls) : Pretty =
     blockAll
-    (0, [(0, strings ["struct ", (cId s), " {"]),
+    (0, [(0, strings ["struct ", cId s, " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
 
-  op ppUnionDefn (s : String, vds : CVarDecls) : Pretty =
+  op ppUnionDefn (s : String, vds : C_VarDecls) : Pretty =
     blockAll
-    (0, [(0, strings ["union ", (cId s), " {"]),
+    (0, [(0, strings ["union ", cId s, " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
 
-  op ppVar (asHeader:Bool) (s : String, t : CType) : Pretty =
+  op ppVar (asHeader:Bool) (s : String, t : C_Type) : Pretty =
 %    if generateCodeForMotes then
 %      if asHeader then
 %	prettysNone ([ppVarDecl (s, t),string ""])
@@ -287,7 +291,7 @@ CPrint qualifying spec
       prettysNone ((if asHeader then [string "extern "] else []) 
 		   ++ [ppVarDecl (s, t)])
 
-  op ppFn (s : String, ts : CTypes, t : CType) : Pretty =
+  op ppFn (s : String, ts : C_Types, t : C_Type) : Pretty =
     (% writeLine ("Pretty printing "^s);
      % app (fn t -> writeLine(anyToString t)) ts;
      % writeLine(anyToString t);
@@ -295,85 +299,82 @@ CPrint qualifying spec
 
     prettysNone
       [(*string "extern ",*)
-       ppType (t, prettysFill [strings [" ", (cId s), " "], ppPlainTypes ts]),
+       ppType (t, prettysFill [strings [" ", cId s, " "], ppPlainTypes ts]),
        string ";"]
      )
 
-  op ppExps               (es : CExps) : Pretty = prettysLinearDelim ("(", ", ", ")") (map ppExp es)
-  op ppExpsInOneline      (es : CExps) : Pretty = prettysNoneDelim   ("(", ", ", ")") (map (fn e -> ppExp_internal (e,true)) es)
-  op ppExpsCurly          (es : CExps) : Pretty = prettysLinearDelim ("{", ", ", "}") (map ppExp es)
-  op ppExpsCurlyInOneline (es : CExps) : Pretty = prettysNoneDelim   ("{", ", ", "}") (map (fn e -> ppExp_internal (e,true)) es)
+  op ppExps               (es : C_Exps) : Pretty = prettysLinearDelim ("(", ", ", ")") (map ppExp es)
+  op ppExpsInOneline      (es : C_Exps) : Pretty = prettysNoneDelim   ("(", ", ", ")") (map (fn e -> ppExp_internal (e,true)) es)
+  op ppExpsCurly          (es : C_Exps) : Pretty = prettysLinearDelim ("{", ", ", "}") (map ppExp es)
+  op ppExpsCurlyInOneline (es : C_Exps) : Pretty = prettysNoneDelim   ("{", ", ", "}") (map (fn e -> ppExp_internal (e,true)) es)
 
-  op ppVarDefn (asHeader:Bool) (s : String, t : CType, e : CExp) : Pretty =
+  op ppVarDefn (asHeader:Bool) (s : String, t : C_Type, e : C_Exp) : Pretty =
     if asHeader then
       ppVar asHeader (s,t) 
     else
-      blockFill	(0, [(0, prettysNone [ppType (t, strings [" ", (cId s)]), string " = "]),
+      blockFill	(0, [(0, prettysNone [ppType (t, strings [" ", cId s]), string " = "]),
                      (2, prettysNone [ppExp e, string ";"]),
                      (0, newline ())])
 
-  op ppVarDefnAsDefine (s : String, (* t *)_: CType, e : CExp) : Pretty =
+  op ppVarDefnAsDefine (s : String, (* t *)_: C_Type, e : C_Exp) : Pretty =
     blockNone (0, [(0, prettysNone [string "#define ", string (cId s), string " "]),
                    (2, prettysNone [ppExpInOneLine e]),
                    (0, newline ())])
 
-  op ppPlainBlock (vds : CVarDecls1, ss : CStmts) : Pretty =
+  op ppPlainBlock (vds : C_VarDecls1, ss : C_Stmts) : Pretty =
     if empty? vds then
       ppStmts ss
     else 
       prettysAll [ppVarDecls1 vds, (*emptyPretty (),*) ppStmts ss]
 
-  op ppInBlock (s : CStmt) : Pretty =
+  op ppInBlock (s : C_Stmt) : Pretty =
     case s of
-      | CBlock (vds, ss) -> ppPlainBlock (vds, ss)
+      | C_Block (vds, ss) -> ppPlainBlock (vds, ss)
       | _ -> ppStmt s
     
 
   %% The printer is set up to always call ppInBlock instead of ppBlock,
   %% but it's here for completeness.
 
-  op ppBlock (vds : CVarDecls1, ss : CStmts) : Pretty =
+  op ppBlock (vds : C_VarDecls1, ss : C_Stmts) : Pretty =
     blockAll
     (0, [(0, string "{"),
          (2, ppPlainBlock (vds, ss)),
          (0, string "}"),
          (0, emptyPretty ())])
 
-  op ppFnDefn (asHeader:Bool) (s : String, vds : CVarDecls, t : CType, b : CStmt) : Pretty =
+  op ppFnDefn (asHeader:Bool) (s : String, vds : C_VarDecls, t : C_Type, b : C_Stmt) : Pretty =
     if asHeader then
       blockAll
       (0, [(0, prettysNone
-	    [ppType (t, prettysFill [strings [" ", (cId s), " "], ppArgs vds]),
+	    [ppType (t, prettysFill [strings [" ", cId s, " "], ppArgs vds]),
 	     string ";"]),
 	   (0, emptyPretty ())])
     else
       blockAll
       (0, [(0, prettysNone
-	    [ppType (t, prettysFill [strings [" ", (cId s), " "], ppArgs vds]),
+	    [ppType (t, prettysFill [strings [" ", cId s, " "], ppArgs vds]),
 	     string " {"]),
 	   (2, ppInBlock b),
 	   (0, string "}"),
 	   (0, emptyPretty ())])
 
-  op ppAxiom (e : CExp) : Pretty =
+  op ppAxiom (e : C_Exp) : Pretty =
     prettysAll [ppExp e, emptyPretty (), emptyPretty ()]
 
   op section (title : String, ps : Prettys) : Prettys =
-    if empty? ps 
-    then [] 
-
+    if empty? ps then
+      [] 
     else
-      Cons (emptyPretty (),
-        Cons (string title,
-          Cons (emptyPretty (), ps)))
+      emptyPretty () :: string title :: emptyPretty () :: ps
 
-  op ppSpec (s : CSpec) : Pretty =
+  op ppSpec (s : C_Spec) : Pretty =
     ppSpec_internal false (s) 
 
-  op ppHeaderSpec (s : CSpec) : Pretty =
+  op ppHeaderSpec (s : C_Spec) : Pretty =
     ppSpec_internal true (s) 
 
-  op ppSpec_internal (asHeader:Bool) (s : CSpec) : Pretty =
+  op ppSpec_internal (asHeader:Bool) (s : C_Spec) : Pretty =
     %let _ = writeLine "Starting sort..." in
     %let s = sortStructUnionTypeDefns s in
     %let typeDefns = topSortTypeDefns s.typeDefns in
@@ -421,7 +422,7 @@ CPrint qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op ppSpecAsHeader(name:String, s:CSpec):Pretty =
+  op ppSpecAsHeader(name:String, s:C_Spec):Pretty =
     let defname = "__METASLANG_" ^ 
                   (map toUpperCase name) ^
 		  "_H"
@@ -434,7 +435,7 @@ CPrint qualifying spec
                  emptyPretty()])
 
 %- --------------------------------------------------------------------------------
-  op ppDeclsWithoutDefns(decls:CFnDecls) : Pretty =
+  op ppDeclsWithoutDefns(decls:C_FnDecls) : Pretty =
     case decls of
       | [] -> emptyPretty()
       | _ ->
@@ -443,7 +444,7 @@ CPrint qualifying spec
 
 %- --------------------------------------------------------------------------------
 
-  op ppFnDefnAppendFile (fndefn : CFnDefn, filename : String) : () =
+  op ppFnDefnAppendFile (fndefn : C_FnDefn, filename : String) : () =
     let fnPretty = ppFnDefn false fndefn in
     appendFile (filename, format (80, fnPretty))
 
@@ -464,7 +465,7 @@ CPrint qualifying spec
 *)
   %% The names include undefined base sorts, which we ignore.
 
-  op findTypeDefns (names : List String, defns : CTypeDefns) : CTypeDefns =
+  op findTypeDefns (names : List String, defns : C_TypeDefns) : C_TypeDefns =
     case names of
       | [] -> []
       | name :: names ->
@@ -472,37 +473,37 @@ CPrint qualifying spec
           | None   -> findTypeDefns (names, defns)
           | Some d -> d :: findTypeDefns (names, defns)
 
-  op expand (name : String, defns : CTypeDefns) : List String =
+  op expand (name : String, defns : C_TypeDefns) : List String =
     case findTypeDefn (name, defns) of
       | None        -> []
       | Some (_, t) -> namesInType t
 
-  op namesInType (t : CType) : List String =
+  op namesInType (t : C_Type) : List String =
     case t of
-      | CBase   name         -> [name]
-      | CPtr    t            -> namesInType t
-      | CStruct _            -> []
-      | CUnion  _            -> []
-      | CFn     (ts, t)      -> (namesInType t) ++ (namesInTypes ts)
-      | CArray  t            -> namesInType t
-      | CArrayWithSize (_,t) -> namesInType t
-      | CVoid                -> []
-      | CChar                -> []
-      | CShort               -> []
-      | CInt                 -> []
-      | CLong                -> []
-      | CUnsignedChar        -> []
-      | CUnsignedShort       -> []
-      | CUnsignedInt         -> []
-      | CUnsignedLong        -> []
-      | CFloat               -> []
-      | CDouble              -> []
-      | CLongDouble          -> []
+      | C_Base          name    -> [name]
+      | C_Ptr           t       -> namesInType t
+      | C_Struct        _       -> []
+      | C_Union         _       -> []
+      | C_Fn            (ts, t) -> (namesInType t) ++ (namesInTypes ts)
+      | C_Array         t       -> namesInType t
+      | C_ArrayWithSize (_,t)   -> namesInType t
+      | C_Void                  -> []
+      | C_Char                  -> []
+      | C_Short                 -> []
+      | C_Int                   -> []
+      | C_Long                  -> []
+      | C_UnsignedChar          -> []
+      | C_UnsignedShort         -> []
+      | C_UnsignedInt           -> []
+      | C_UnsignedLong          -> []
+      | C_Float                 -> []
+      | C_Double                -> []
+      | C_LongDouble            -> []
 
-  op namesInTypes (ts : List CType) : List String =
+  op namesInTypes (ts : List C_Type) : List String =
     flatten (map namesInType ts)
 
-  op findTypeDefn (x : String, defns : CTypeDefns) : Option CTypeDefn =
+  op findTypeDefn (x : String, defns : C_TypeDefns) : Option C_TypeDefn =
     findLeftmost (fn (y, _) -> x = y) defns
 
   op cId (id : String) : String =

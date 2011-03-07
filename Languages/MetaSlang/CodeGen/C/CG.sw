@@ -40,55 +40,55 @@ spec
    *)
 
   (**
-   * generates the CSpec for the given spec. The basespec is used to add the neccessary
+   * generates the C_Spec for the given spec. The basespec is used to add the neccessary
    * sorts and op the base spec to the resulting cspec.
-   * op generateCSpec: (*basespec:*)AnnSpec.Spec -> (*spc:*)AnnSpec.Spec -> CSpec
+   * op generateCSpec: (*basespec:*)AnnSpec.Spec -> (*spc:*)AnnSpec.Spec -> C_Spec
    *)
 
 
   (**
-   * generate a CSpec from an already transformed MetaSlang spec
-   * op generateCSpecFromTransformedSpec: AnnSpec.Spec -> CSpec
+   * generate a C_Spec from an already transformed MetaSlang spec
+   * op generateCSpecFromTransformedSpec: AnnSpec.Spec -> C_Spec
    *)
   
 
   (**
-   * generate a CSpec from an already transformed MetaSlang spec,
+   * generate a C_Spec from an already transformed MetaSlang spec,
    * the filter function is used to selectively generate code only
    * for those ops and sorts x for which filter(x) is true.
-   * The CSpec parameter is used for incremental code generation.
-   * op generateCSpecFromTransformedSpecIncrFilter: CSpec -> AnnSpec.Spec -> (QualifiedId -> Bool) -> CSpec
+   * The C_Spec parameter is used for incremental code generation.
+   * op generateCSpecFromTransformedSpecIncrFilter: C_Spec -> AnnSpec.Spec -> (QualifiedId -> Bool) -> C_Spec
    *)
 
   (**
-   * same as generateCSpecFromTransformedSpec, only that the additional CSpec
-   * is used to lookup already existing definitions in the CSpec
-   * op generateCSpecFromTransformedSpecIncr: CSpec -> AnnSpec.Spec -> CSpec
-   * op generateCSpecFromTransformedSpecEnv: AnnSpec.Spec -> Env CSpec
+   * same as generateCSpecFromTransformedSpec, only that the additional C_Spec
+   * is used to lookup already existing definitions in the C_Spec
+   * op generateCSpecFromTransformedSpecIncr: C_Spec -> AnnSpec.Spec -> C_Spec
+   * op generateCSpecFromTransformedSpecEnv: AnnSpec.Spec -> Env C_Spec
    *)
 
 
   (**
    * print the given cspec to a .h and .c file. The filename is used as
    * base name for the generated file, if omitted it defaults to "cgenout"
-   * op printToFile: CSpec * Option String -> ()
-   * op postProcessCSpec: CSpec -> CSpec
+   * op printToFile: C_Spec * Option String -> ()
+   * op postProcessCSpec: C_Spec -> C_Spec
    *)
 
 
   (**
    * monadic version of printToFile
-   * op printToFileEnv: CSpec * Option String -> Env ()
+   * op printToFileEnv: C_Spec * Option String -> Env ()
    *)
 
   (**
    * transforms a MetaSlang sort to a C type
-   * op sortToCType: CSpec -> AnnSpec.Spec -> Sort -> (CSpec * CType)
+   * op sortToCType: C_Spec -> AnnSpec.Spec -> Sort -> (C_Spec * C_Type)
    *)
 
   (**
    * transforms a MetaSlang term to a C expression
-   * op termToCExp: CSpec -> AnnSpec.Spec -> MS.Term -> (CSpec * CBlock * CExp)
+   * op termToCExp: C_Spec -> AnnSpec.Spec -> MS.Term -> (C_Spec * C_Block * C_Exp)
    *)
 
   (**
@@ -139,31 +139,31 @@ spec
     let spc = instantiateHOFns                      spc in
     spc
 
-  op generateCSpec (base : Spec) (spc : Spec) : CSpec =
+  op generateCSpec (base : Spec) (spc : Spec) : C_Spec =
     let base = substBaseSpecs base              in
     let spc  = transformSpecForCodeGen base spc in
     generateCSpecFromTransformedSpec spc
 
-  op generateCSpecFromTransformedSpec (spc : Spec) : CSpec =
+  op generateCSpecFromTransformedSpec (spc : Spec) : C_Spec =
     let xcspc = emptyCSpec "" in
     generateCSpecFromTransformedSpecIncr xcspc spc
 
-  op generateCSpecFromTransformedSpecIncr (xcspc : CSpec) (spc : Spec) : CSpec =
+  op generateCSpecFromTransformedSpecIncr (xcspc : C_Spec) (spc : Spec) : C_Spec =
     let filter = (fn _ -> true) in
     generateCSpecFromTransformedSpecIncrFilter xcspc spc filter
 
-  op generateCSpecFromTransformedSpecIncrFilter (xcspc : CSpec) (spc : Spec) (filter : QualifiedId -> Bool) 
-    : CSpec =
+  op generateCSpecFromTransformedSpecIncrFilter (xcspc : C_Spec) (spc : Spec) (filter : QualifiedId -> Bool) 
+    : C_Spec =
     let useRefTypes = true                                                        in
     let constrOps   = []                                                          in
     let impunit     = generateI2LCodeSpecFilter(spc,useRefTypes,constrOps,filter) in
     let cspec       = generateC4ImpUnit(impunit, xcspc, useRefTypes)              in
     cspec
 
-  op generateCSpecFromTransformedSpecEnv (spc : Spec) : Env CSpec =
+  op generateCSpecFromTransformedSpecEnv (spc : Spec) : Env C_Spec =
     return (generateCSpecFromTransformedSpec spc)
 
-  op printToFile (cspec : CSpec, optFile : Option String) : () =
+  op printToFile (cspec : C_Spec, optFile : Option String) : () =
     let filename =
         case optFile of
           | None          -> "cgenout.c"
@@ -183,7 +183,7 @@ spec
     let _ = printCSpecToFile (hdrcspc, hfilename) in
     printCSpecToFile (cspec, cfilename)
 
-  op printToFileEnv (cspec : CSpec, optFile : Option String) : Env () =
+  op printToFileEnv (cspec : C_Spec, optFile : Option String) : Env () =
     return (printToFile (cspec, optFile))
 
   op generateCCode (base      : Spec, 
@@ -198,30 +198,30 @@ spec
     printToFile (cspec, optFile)
 
 
-  op sortToCType (cspc : CSpec) (spc : Spec) (typ : Sort) : CSpec * CType =
+  op sortToCType (cspc : C_Spec) (spc : Spec) (typ : Sort) : C_Spec * C_Type =
     %% note: these two defaultCgContext's are very different from each other:
-    let ctxt1   = SpecsToI2L.defaultCgContext         in 
-    let ctxt2   = I2LToC.defaultCgContext             in
-    let tyvars  = []                                  in
+    let ctxt1   = default_S2I_Context                  in 
+    let ctxt2   = default_I2C_Context                  in
+    let tyvars  = []                                   in
     let i2lType = type2itype (ctxt1, spc, tyvars, typ) in
     c4Type(ctxt2,cspc,i2lType)
 
-  op termToCExp (cspc : CSpec) (spc : Spec) (tm : MS.Term) 
-    : CSpec * CBlock * CExp =
+  op termToCExp (cspc : C_Spec) (spc : Spec) (tm : MS.Term) 
+    : C_Spec * C_Block * C_Exp =
     let block = ([],[]) in
     termToCExpB cspc spc block tm
 
-  op termToCExpB (cspc : CSpec) (spc : Spec) (block : CBlock) (tm : MS.Term) 
-    : CSpec * CBlock * CExp =
-    let ctxt1  = SpecsToI2L.defaultCgContext      in
-    let ctxt2  =     I2LToC.defaultCgContext      in
+  op termToCExpB (cspc : C_Spec) (spc : Spec) (block : C_Block) (tm : MS.Term) 
+    : C_Spec * C_Block * C_Exp =
+    let ctxt1  = default_S2I_Context              in
+    let ctxt2  = default_I2C_Context              in
     let i2lExp = term2expression (ctxt1, spc, tm) in
     c4Expression (ctxt2, cspc, block, i2lExp)
 
   def showQualifiedId (qid as Qualified (q, id) : QualifiedId) : String =
     qname2id (q, id)
 
-  op postProcessCSpec (cspc : CSpec) : CSpec =
+  op postProcessCSpec (cspc : C_Spec) : C_Spec =
     I2LToC.postProcessCSpec cspc
 
 

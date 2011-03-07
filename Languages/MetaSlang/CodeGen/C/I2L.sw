@@ -12,120 +12,120 @@ I2L qualifying spec
 
   import CUtils % for qsort
 
-  type IImpUnit = {
-                   name     : String,
-                   includes : IImpUnits,
-                   decls    : IImpUnitDecls
-                  }
-  type IImpUnits = List IImpUnit
+  type I_ImpUnit = {
+                    name     : String,
+                    includes : I_ImpUnits,
+                    decls    : I_ImpUnitDecls
+                    }
+  type I_ImpUnits = List I_ImpUnit
 
-  type IImpUnitDecls = { 
-                        typedefs : ITypeDefinitions,
-                        opdecls  : IDeclarations,
-                        funDecls : IFunDeclarations,
-                        funDefns : IFunDefinitions,
-                        varDecls : IDeclarations,
-                        mapDecls : IFunDeclarations
-                       }
-
-  type ITypeName = String * String
-
-  type ITypeDefinition = ITypeName * IType
-  type ITypeDefinitions = List ITypeDefinition
-
-  type IPrimitive = | IBool | IChar | IString | INat | IInt | IFloat
-
-  type IType = | IPrimitive     IPrimitive
-               | IRestrictedNat Nat
-               | IStruct        IStructFields
-               | IUnion         IUnionFields
-               | ITuple         ITypes
-               | IBoundList     IType * Nat      % list with maximum length
-               | IList          IType
-               | IBase          ITypeName        % reference to an itype definition
-               | IFunOrMap      ITypes * IType
-               | IRef           IType
-               | IVoid
-               | IAny
-  type ITypes = List IType
-
-  type IStructField = String * IType
-  type IStructFields = List IStructField
-
-  type IUnionField = String * IType  % constructor * typ
-  type IUnionFields = List IUnionField
-
-  type IOpName = String * String
-
-  type IDeclaration = IOpName * IType * Option ITypedExpr
-  type IDeclarations = List IDeclaration
-
-  type IParameterDeclaration = String * IType
-  type IParameterDeclarations = List IParameterDeclaration
-
-  type IFunDefinition = {
-                         decl : IFunDeclaration,
-                         body : IFunBody
-                        }
-  type IFunDefinitions = List IFunDefinition
-
-  type IFunDeclaration = {
-                          name       : IOpName,
-                          params     : IParameterDeclarations,
-                          returntype : IType
+  type I_ImpUnitDecls = { 
+                         typedefs : I_TypeDefinitions,
+                         opdecls  : I_Declarations,
+                         funDecls : I_FunDeclarations,
+                         funDefns : I_FunDefinitions,
+                         varDecls : I_Declarations,
+                         mapDecls : I_FunDeclarations
                          }
-  type IFunDeclarations = List IFunDeclaration
 
-  type IFunBody = | IStads IStadsFunBody  % state-based
-                  | IExp   ITypedExpr    % functional
+  type I_TypeName = String * String
 
-  type IStadCode = {
-                    initial?   : Bool,
-                    showLabel? : Bool,
-                    decls      : IImpUnit,
-                    label      : String,
-                    steps      : IStepsCode
-                   }
-  type IStadsFunBody = List IStadCode
+  type I_TypeDefinition = I_TypeName * I_Type
+  type I_TypeDefinitions = List I_TypeDefinition
 
-  type ITypedExpr = IExpr * IType
-  type ITypedExprs = List ITypedExpr
+  type I_Primitive = | I_Bool | I_Char | I_String | I_Nat | I_Int | I_Float
 
-  type IExpr = | IStr            String
-               | IInt            Int
-               | IFloat          String
-               | IChar           Char
-               | IBool           Bool
-               | IVar            IVarName
-               | IVarDeref       IVarName         
-               | IFunCall        IVarName * (*projections*) List String * ITypedExprs
-               | IFunCallDeref   IVarName * (*projections*) List String * ITypedExprs
-               | IMapAccess      IVarName * IType * (*projections:*) List String * ITypedExprs
-               | IMapAccessDeref IVarName * IType * (*projections:*) List String * ITypedExprs
-               | IVarRef         IVarName
-               | IIfExpr         ITypedExpr * ITypedExpr * ITypedExpr
-               | IComma          ITypedExprs
-               | ILet            String * IType * ITypedExpr * ITypedExpr
-               | IUnionCaseExpr  ITypedExpr * List IUnionCase
-               | IAssignUnion    String * Option ITypedExpr
-               | IConstrCall     IVarName * String * List ITypedExpr
-               | IBuiltin        IBuiltinExpression
-               | ITupleExpr      ITypedExprs
-               | IStructExpr     IStructExprFields
-               | IProject        ITypedExpr * String
+  type I_Type = | I_Primitive   I_Primitive
+                | I_BoundedNat  Nat               % Nats smaller than N
+                | I_Struct      I_StructFields
+                | I_Union       I_UnionFields
+                | I_Tuple       I_Types
+                | I_BoundedList I_Type * Nat      % list with maximum length
+                | I_List        I_Type
+                | I_Base        I_TypeName        % reference to an itype definition
+                | I_FunOrMap    I_Types * I_Type
+                | I_Ref         I_Type
+                | I_Void
+                | I_Any
+  type I_Types = List I_Type
+
+  type I_StructField = String * I_Type
+  type I_StructFields = List I_StructField
+
+  type I_UnionField = String * I_Type  % constructor * typ
+  type I_UnionFields = List I_UnionField
+
+  type I_OpName = String * String
+
+  type I_Declaration = I_OpName * I_Type * Option I_TypedExpr
+  type I_Declarations = List I_Declaration
+
+  type I_ParameterDeclaration = String * I_Type
+  type I_ParameterDeclarations = List I_ParameterDeclaration
+
+  type I_FunDefinition = {
+                          decl : I_FunDeclaration,
+                          body : I_FunBody
+                          }
+  type I_FunDefinitions = List I_FunDefinition
+
+  type I_FunDeclaration = {
+                           name       : I_OpName,
+                           params     : I_ParameterDeclarations,
+                           returntype : I_Type
+                           }
+  type I_FunDeclarations = List I_FunDeclaration
+
+  type I_FunBody = | I_Stads I_StadsFunBody  % state-based
+                  | I_Exp   I_TypedExpr    % functional
+
+  type I_StadCode = {
+                     initial?   : Bool,
+                     showLabel? : Bool,
+                     decls      : I_ImpUnit,
+                     label      : String,
+                     steps      : I_StepsCode
+                     }
+  type I_StadsFunBody = List I_StadCode
+
+  type I_TypedExpr = I_Expr * I_Type
+  type I_TypedExprs = List I_TypedExpr
+
+  type I_Expr = | I_Str            String
+                | I_Int            Int
+                | I_Float          String
+                | I_Char           Char
+                | I_Bool           Bool
+                | I_Var            I_VarName
+                | I_VarDeref       I_VarName         
+                | I_FunCall        I_VarName * (*projections*) List String * I_TypedExprs
+                | I_FunCallDeref   I_VarName * (*projections*) List String * I_TypedExprs
+                | I_MapAccess      I_VarName * I_Type * (*projections:*) List String * I_TypedExprs
+                | I_MapAccessDeref I_VarName * I_Type * (*projections:*) List String * I_TypedExprs
+                | I_VarRef         I_VarName
+                | I_IfExpr         I_TypedExpr * I_TypedExpr * I_TypedExpr
+                | I_Comma          I_TypedExprs
+                | I_Let            String * I_Type * I_TypedExpr * I_TypedExpr
+                | I_UnionCaseExpr  I_TypedExpr * List I_UnionCase
+                | I_AssignUnion    String * Option I_TypedExpr
+                | I_ConstrCall     I_VarName * String * List I_TypedExpr
+                | I_Builtin        I_BuiltinExpression
+                | I_TupleExpr      I_TypedExprs
+                | I_StructExpr     I_StructExprFields
+                | I_Project        I_TypedExpr * String
 
   % a variable reference consists of a unit name and an identifier name
-  type IVarName = String * String
+  type I_VarName = String * String
 
   % a UnionCase is used to test a given expression, which must have a
   % union type, which alternative of the union it represents.
 
-  type IUnionCase = | IConstrCase  Option String * Option IType * List (Option String) * ITypedExpr
-                    | INatCase     Nat  * ITypedExpr
-                    | ICharCase    Char * ITypedExpr
+  type I_UnionCase = | I_ConstrCase  Option String * Option I_Type * List (Option String) * I_TypedExpr
+                     | I_NatCase     Nat  * I_TypedExpr
+                     | I_CharCase    Char * I_TypedExpr
 
-  type IStructExprField = String * ITypedExpr
-  type IStructExprFields = List IStructExprField
+  type I_StructExprField = String * I_TypedExpr
+  type I_StructExprFields = List I_StructExprField
 
   % a case is given by the constructor string, e.g. "Cons" or "Nil", the list of variable names
   % representing the arguments to the constructor (which can be omitted, in case they 
@@ -135,64 +135,63 @@ I2L qualifying spec
   % matches everything; as a consequence, all cases following the one
   % with the wildcard constructor are not reachable.
 
-  type IBuiltinExpression = | IEquals              ITypedExpr * ITypedExpr
-                            | IStrEquals           ITypedExpr * ITypedExpr
-                            | IIntPlus             ITypedExpr * ITypedExpr
-                            | IIntMinus            ITypedExpr * ITypedExpr
-                            | IIntUnaryMinus       ITypedExpr
-                            | IIntMult             ITypedExpr * ITypedExpr
-                            | IIntDiv              ITypedExpr * ITypedExpr
-                            | IIntRem              ITypedExpr * ITypedExpr
-                            | IIntLess             ITypedExpr * ITypedExpr
-                            | IIntGreater          ITypedExpr * ITypedExpr
-                            | IIntLessOrEqual      ITypedExpr * ITypedExpr
-                            | IIntGreaterOrEqual   ITypedExpr * ITypedExpr
-                            | IIntToFloat          ITypedExpr
-                            | IStringToFloat       ITypedExpr
-                            | IFloatPlus           ITypedExpr * ITypedExpr
-                            | IFloatMinus          ITypedExpr * ITypedExpr
-                            | IFloatUnaryMinus     ITypedExpr
-                            | IFloatMult           ITypedExpr * ITypedExpr
-                            | IFloatDiv            ITypedExpr * ITypedExpr
-                            | IFloatLess           ITypedExpr * ITypedExpr
-                            | IFloatGreater        ITypedExpr * ITypedExpr
-                            | IFloatLessOrEqual    ITypedExpr * ITypedExpr
-                            | IFloatGreaterOrEqual ITypedExpr * ITypedExpr
-                            | IFloatToInt          ITypedExpr
-                            | IBoolNot             ITypedExpr
-                            | IBoolAnd             ITypedExpr * ITypedExpr
-                            | IBoolOr              ITypedExpr * ITypedExpr
-                            | IBoolImplies         ITypedExpr * ITypedExpr
-                            | IBoolEquiv           ITypedExpr * ITypedExpr
+  type I_BuiltinExpression = | I_Equals              I_TypedExpr * I_TypedExpr
+                             | I_StrEquals           I_TypedExpr * I_TypedExpr
+                             | I_IntPlus             I_TypedExpr * I_TypedExpr
+                             | I_IntMinus            I_TypedExpr * I_TypedExpr
+                             | I_IntUnaryMinus       I_TypedExpr
+                             | I_IntMult             I_TypedExpr * I_TypedExpr
+                             | I_IntDiv              I_TypedExpr * I_TypedExpr
+                             | I_IntRem              I_TypedExpr * I_TypedExpr
+                             | I_IntLess             I_TypedExpr * I_TypedExpr
+                             | I_IntGreater          I_TypedExpr * I_TypedExpr
+                             | I_IntLessOrEqual      I_TypedExpr * I_TypedExpr
+                             | I_IntGreaterOrEqual   I_TypedExpr * I_TypedExpr
+                             | I_IntToFloat          I_TypedExpr
+                             | I_StringToFloat       I_TypedExpr
+                             | I_FloatPlus           I_TypedExpr * I_TypedExpr
+                             | I_FloatMinus          I_TypedExpr * I_TypedExpr
+                             | I_FloatUnaryMinus     I_TypedExpr
+                             | I_FloatMult           I_TypedExpr * I_TypedExpr
+                             | I_FloatDiv            I_TypedExpr * I_TypedExpr
+                             | I_FloatLess           I_TypedExpr * I_TypedExpr
+                             | I_FloatGreater        I_TypedExpr * I_TypedExpr
+                             | I_FloatLessOrEqual    I_TypedExpr * I_TypedExpr
+                             | I_FloatGreaterOrEqual I_TypedExpr * I_TypedExpr
+                             | I_FloatToInt          I_TypedExpr
+                             | I_BoolNot             I_TypedExpr
+                             | I_BoolAnd             I_TypedExpr * I_TypedExpr
+                             | I_BoolOr              I_TypedExpr * I_TypedExpr
+                             | I_BoolImplies         I_TypedExpr * I_TypedExpr
+                             | I_BoolEquiv           I_TypedExpr * I_TypedExpr
  
-
   %% These are the rules that can occur in the body of a transformation step.
   %% An UpdateBlock contains a list of assignments together with local declaration
   %% that are needed to realize the parallel update semantics
   %% e.g. for updates x:=y,y:=x we have to introduce a auxiliary variable z to store
   %% the value of one of x or y, e.g. int z:=x;x:=y;y:=z (assuming x,y of type Nat)
 
-  type IRule = | ISkip
-               | IUpdateBlock IDeclarations * IUpdates
-               | ICond        ITypedExpr * IRule
-               | IUpdate      IUpdate
-               | IProcCall    String * ITypedExprs
-  type IRules = List IRule
+  type I_Rule = | I_Skip
+                | I_UpdateBlock I_Declarations * I_Updates
+                | I_Cond        I_TypedExpr * I_Rule
+                | I_Update      I_Update
+                | I_ProcCall    String * I_TypedExprs
+  type I_Rules = List I_Rule
 
-  type IUpdate = Option ITypedExpr * ITypedExpr
-  type IUpdates = List IUpdate
+  type I_Update = Option I_TypedExpr * I_TypedExpr
+  type I_Updates = List I_Update
 
   % a step consists of rules and a next state label.
   % the rules are supposed to be executed in parallel
-  type IStepCode = IRule * String
-  type IStepsCode = List IStepCode
+  type I_StepCode = I_Rule * String
+  type I_StepsCode = List I_StepCode
 
   % API ------------------------------------------------
 
-  op iproc? (fpdef : IFunDefinition) : Bool = fpdef.decl.returntype = IVoid
-  op ifun?  (fpdef : IFunDefinition) : Bool = ~(iproc? fpdef)
+  op iproc? (fpdef : I_FunDefinition) : Bool = fpdef.decl.returntype = I_Void
+  op ifun?  (fpdef : I_FunDefinition) : Bool = ~(iproc? fpdef)
                     
-  op mergeImpUnit (name : String, impunitlist : IImpUnits) : IImpUnit =
+  op mergeImpUnit (name : String, impunitlist : I_ImpUnits) : I_ImpUnit =
    case impunitlist of
      | [impunit] -> {
                      name     = name,
@@ -215,10 +214,10 @@ I2L qualifying spec
        in
        mergeImpUnit (name, iu::iulst)
 
-  op addInclude (iu : IImpUnit, includedImpUnit : IImpUnit) : IImpUnit =
+  op addInclude (iu : I_ImpUnit, includedImpUnit : I_ImpUnit) : I_ImpUnit =
    iu << {includes = iu.includes ++ [includedImpUnit]}
 
-  op addFunDefinition (iu : IImpUnit, fdefn : IFunDefinition) : IImpUnit =
+  op addFunDefinition (iu : I_ImpUnit, fdefn : I_FunDefinition) : I_ImpUnit =
    iu << {decls = {
                    typedefs = iu.decls.typedefs,
                    opdecls = iu.decls.opdecls,
@@ -228,60 +227,60 @@ I2L qualifying spec
                    mapDecls = iu.decls.mapDecls
                   }}
 
-  op emptyImpUnit (name : String) : IImpUnit =
+  op emptyImpUnit (name : String) : I_ImpUnit =
    {
     name     = name,
     includes = [],
-    decls     = {
-                 typedefs = [],
-                 opdecls  = [],
-                 funDecls = [],
-                 funDefns = [],
-                 varDecls = [],
-                 mapDecls = []
-                 }
+    decls    = {
+                typedefs = [],
+                opdecls  = [],
+                funDecls = [],
+                funDefns = [],
+                varDecls = [],
+                mapDecls = []
+                }
    }
 
   % --------------------------------------------------------------------------------
 
-  op substVarName (exp : ITypedExpr, (old1, old2) : IVarName, newvar : IVarName) : ITypedExpr =
-    mapExpression (fn e ->
-		   case e of
-                     | IVar (id1,id2) ->
-		       if (id1=old1)&&(id2=old2) then IVar newvar else e
-
-                     | IVarRef (id1,id2) ->
-		       if (id1=old1)&&(id2=old2) then IVarRef newvar else e
-
-		     | IVarDeref (id1,id2) ->
-		       if (id1=old1)&&(id2=old2) then IVarDeref newvar else e
-
-		     | IFunCall ((id1,id2),p,x) ->
-		       if (id1=old1)&&(id2=old2) then IFunCall(newvar,p,x) else e
-
-		     | IFunCallDeref ((id1,id2),p,x) ->
-		       if (id1=old1)&&(id2=old2) then IFunCallDeref(newvar,p,x) else e
-
-		     | _ -> e) 
-                  exp
-		     
-
-  op substVarByExpr (exp : ITypedExpr, (v1,v2) : IVarName, sexp : IExpr) : ITypedExpr =
+  op substVarName (exp : I_TypedExpr, (old1, old2) : I_VarName, newvar : I_VarName)
+   : I_TypedExpr =
    mapExpression (fn e ->
                     case e of
-                      | IVar (id1,id2) ->
+                      | I_Var (id1,id2) ->
+                        if (id1=old1)&&(id2=old2) then I_Var newvar else e
+
+                      | I_VarRef (id1,id2) ->
+                        if (id1=old1)&&(id2=old2) then I_VarRef newvar else e
+
+                      | I_VarDeref (id1,id2) ->
+                        if (id1=old1)&&(id2=old2) then I_VarDeref newvar else e
+
+                      | I_FunCall ((id1,id2),p,x) ->
+                        if (id1=old1)&&(id2=old2) then I_FunCall(newvar,p,x) else e
+
+                      | I_FunCallDeref ((id1,id2),p,x) ->
+                        if (id1=old1)&&(id2=old2) then I_FunCallDeref(newvar,p,x) else e
+
+                      | _ -> e) 
+                 exp
+
+  op substVarByExpr (exp : I_TypedExpr, (v1,v2) : I_VarName, sexp : I_Expr) : I_TypedExpr =
+   mapExpression (fn e ->
+                    case e of
+                      | I_Var (id1,id2) ->
                         if (id1=v1)&&(id2=v2) then sexp else e
                       | _ -> e) 
                  exp
 
   % --------------------------------------------------------------------------------
 
-  op sortTypeDefinitions (iu : IImpUnit) (typedefns : ITypeDefinitions) : ITypeDefinitions =
+  op sortTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
    qsort (typeDefnMustFollow iu) typedefns 
 
-  op typeDefnMustFollow (iu : IImpUnit) 
-                        (td1 as (tname1 as (_,id1),_) : ITypeDefinition,
-                         td2 as (tname2 as (_,id2),_) : ITypeDefinition)
+  op typeDefnMustFollow (iu : I_ImpUnit) 
+                        (td1 as (tname1 as (_,id1),_) : I_TypeDefinition,
+                         td2 as (tname2 as (_,id2),_) : I_TypeDefinition)
    : Bool =
    let deps1 = typeDefinitionDepends (iu, td1) in
    let deps2 = typeDefinitionDepends (iu, td2) in
@@ -291,15 +290,16 @@ I2L qualifying spec
    %in
    res
 
-  op typeDefinitionDepends (iu : IImpUnit, typedef as (tname,typ) : ITypeDefinition) : List ITypeName =
+  op typeDefinitionDepends (iu : I_ImpUnit, typedef as (tname,typ) : I_TypeDefinition)
+   : List I_TypeName =
    typeDepends(iu,tname,typ)
 
-  op typeDepends (iu : IImpUnit, t0name : ITypeName, t0 : IType) : List ITypeName =
+  op typeDepends (iu : I_ImpUnit, t0name : I_TypeName, t0 : I_Type) : List I_TypeName =
    let 
      def typeDepends0 (iu, t, deps) =
        case t of
 
-         | IBase (tname as (_, id1)) -> 
+         | I_Base (tname as (_, id1)) -> 
            let _ =
                if t0name = tname then
                  fail ("sorry, this version of the code generator doesn't support recursive types: \"" ^ id1 ^ "\"")
@@ -313,209 +313,208 @@ I2L qualifying spec
                 | Some t -> typeDepends0 (iu, t, deps)
                 | None -> deps)
 
-         | IStruct fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
+         | I_Struct fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
 
-         | IUnion  fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
+         | I_Union  fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
 
-         | ITuple  types   -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
+         | I_Tuple  types   -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
 
-         | IBoundList (t, _) -> typeDepends0 (iu, t, deps)
+         | I_BoundedList (t, _) -> typeDepends0 (iu, t, deps)
 
-         | IFunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
+         | I_FunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
                                          (typeDepends0 (iu, t, deps))
                                          types
-         | IRef t -> typeDepends0 (iu, t, deps)
+         | I_Ref t -> typeDepends0 (iu, t, deps)
 
          | _ -> deps
     in
     typeDepends0 (iu, t0, [])
 
-  op findTypeDefn (iu : IImpUnit, tname : ITypeName) : Option IType =
+  op findTypeDefn (iu : I_ImpUnit, tname : I_TypeName) : Option I_Type =
    case findLeftmost (fn (tname0, _) -> tname0 = tname) iu.decls.typedefs of
      | Some (_,t) -> Some t
      | _ -> None
   
 
-  op impUnitSortTypeDefinitions (iu : IImpUnit) : IImpUnit =
+  op impUnitSortTypeDefinitions (iu : I_ImpUnit) : I_ImpUnit =
    let decls = iu.decls << {typedefs = sortTypeDefinitions iu iu.decls.typedefs} in
    iu << {decls = decls} 
 
   % --------------------------------------------------------------------------------
 
-  op mapExpression (f : IExpr -> IExpr) ((e,t) : ITypedExpr) : ITypedExpr =
+  op mapExpression (f : I_Expr -> I_Expr) ((e,t) : I_TypedExpr) : I_TypedExpr =
    (mapExpr f e, t)
 
-  op mapExpr (f : IExpr -> IExpr) (e : IExpr) : IExpr =
+  op mapExpr (f : I_Expr -> I_Expr) (e : I_Expr) : I_Expr =
    let mp = (fn (e,t) -> (mapExpr f e, t)) in
    let e = f e in
    case e of
 
-      | IFunCall (v, p, exps) -> 
+      | I_FunCall (v, p, exps) -> 
         let exps = map mp exps in
-        IFunCall (v, p, exps)
+        I_FunCall (v, p, exps)
 
-      | IFunCallDeref (v, p, exps) ->
+      | I_FunCallDeref (v, p, exps) ->
         let exps = map mp exps in
-        IFunCallDeref (v, p, exps)
+        I_FunCallDeref (v, p, exps)
 
-      | IIfExpr (   e1,    e2,    e3) -> 
-        IIfExpr (mp e1, mp e2, mp e3)
+      | I_IfExpr (   e1,    e2,    e3) -> 
+        I_IfExpr (mp e1, mp e2, mp e3)
 
-      | IComma exps -> 
+      | I_Comma exps -> 
         let exps = map mp exps in
-        IComma exps
+        I_Comma exps
 
-      | ILet (s, t,    e1,    e2) -> 
-        ILet (s, t, mp e1, mp e2)
+      | I_Let (s, t,    e1,    e2) -> 
+        I_Let (s, t, mp e1, mp e2)
 
-      | IUnionCaseExpr (   e, ucl) -> 
+      | I_UnionCaseExpr (   e, ucl) -> 
         let ucl = 
             map (fn ucase ->
                    case ucase of 
-                     | IConstrCase (x1, x2, x3,    e) -> 
-                       IConstrCase (x1, x2, x3, mp e)
+                     | I_ConstrCase (x1, x2, x3,    e) -> 
+                       I_ConstrCase (x1, x2, x3, mp e)
 
-                     | INatCase (n,    e) -> 
-                       INatCase (n, mp e)
+                     | I_NatCase (n,    e) -> 
+                       I_NatCase (n, mp e)
 
-                     | ICharCase(c,    e) -> 
-                       ICharCase(c, mp e))
+                     | I_CharCase(c,    e) -> 
+                       I_CharCase(c, mp e))
                 ucl
         in
-	IUnionCaseExpr (mp e, ucl)
+        I_UnionCaseExpr (mp e, ucl)
 
-      | IAssignUnion(s, optexp) -> 
+      | I_AssignUnion(s, optexp) -> 
         let optexp = case optexp of 
                        | None   -> None 
                        | Some e -> Some (mp e)
         in
-        IAssignUnion(s, optexp)
+        I_AssignUnion(s, optexp)
 
-      | IConstrCall (varname, consid, exps) -> 
+      | I_ConstrCall (varname, consid, exps) -> 
         let exps = map mp exps in
-        IConstrCall (varname, consid, exps)
+        I_ConstrCall (varname, consid, exps)
 
-      | IBuiltin bexp -> 
+      | I_Builtin bexp -> 
         let bexp = mapBuiltin f bexp in
-        IBuiltin bexp
+        I_Builtin bexp
 
-      | ITupleExpr exps -> 
+      | I_TupleExpr exps -> 
         let exps = map mp exps in
-        ITupleExpr exps
+        I_TupleExpr exps
 
-      | IStructExpr fields -> 
+      | I_StructExpr fields -> 
         let fields = map (fn(s,e) -> (s,mp e)) fields in
-        IStructExpr fields
+        I_StructExpr fields
 
-      | IProject (   exp, s) -> 
-        IProject (mp exp, s)
+      | I_Project (   exp, s) -> 
+        I_Project (mp exp, s)
 
       | _ -> e
 
-  op mapBuiltin (f : IExpr -> IExpr) (exp : IBuiltinExpression) : IBuiltinExpression =
+  op mapBuiltin (f : I_Expr -> I_Expr) (exp : I_BuiltinExpression) : I_BuiltinExpression =
     let mp = fn (exp, typ) -> (mapExpr f exp, typ) in
     case exp of
 
-      | IEquals              (e1,e2) ->
-        IEquals              (mp e1, mp e2)
+      | I_Equals              (e1,e2) ->
+        I_Equals              (mp e1, mp e2)
 
-      | IStrEquals           (e1,e2) ->
-        IStrEquals           (mp e1, mp e2)
+      | I_StrEquals           (e1,e2) ->
+        I_StrEquals           (mp e1, mp e2)
 
-      | IIntPlus             (e1,e2) ->
-        IIntPlus             (mp e1, mp e2)
+      | I_IntPlus             (e1,e2) ->
+        I_IntPlus             (mp e1, mp e2)
 
-      | IIntMinus            (e1,e2) ->
-        IIntMinus            (mp e1, mp e2)
+      | I_IntMinus            (e1,e2) ->
+        I_IntMinus            (mp e1, mp e2)
 
-      | IIntUnaryMinus       (e1)    ->
-        IIntUnaryMinus       (mp e1)
+      | I_IntUnaryMinus       (e1)    ->
+        I_IntUnaryMinus       (mp e1)
 
-      | IIntMult             (e1,e2) ->
-        IIntMult             (mp e1, mp e2)
+      | I_IntMult             (e1,e2) ->
+        I_IntMult             (mp e1, mp e2)
 
-      | IIntDiv              (e1,e2) ->
-        IIntDiv              (mp e1, mp e2)
+      | I_IntDiv              (e1,e2) ->
+        I_IntDiv              (mp e1, mp e2)
 
-      | IIntRem              (e1,e2) ->
-        IIntRem              (mp e1, mp e2)
+      | I_IntRem              (e1,e2) ->
+        I_IntRem              (mp e1, mp e2)
 
-      | IIntLess             (e1,e2) ->
-        IIntLess             (mp e1, mp e2)
+      | I_IntLess             (e1,e2) ->
+        I_IntLess             (mp e1, mp e2)
 
-      | IIntGreater          (e1,e2) ->
-        IIntGreater          (mp e1, mp e2)
+      | I_IntGreater          (e1,e2) ->
+        I_IntGreater          (mp e1, mp e2)
 
-      | IIntLessOrEqual      (e1,e2) ->
-        IIntLessOrEqual      (mp e1, mp e2)
+      | I_IntLessOrEqual      (e1,e2) ->
+        I_IntLessOrEqual      (mp e1, mp e2)
 
-      | IIntGreaterOrEqual   (e1,e2) ->
-        IIntGreaterOrEqual   (mp e1, mp e2)
+      | I_IntGreaterOrEqual   (e1,e2) ->
+        I_IntGreaterOrEqual   (mp e1, mp e2)
 
-      | IIntToFloat          (e1)    ->
-        IIntToFloat          (mp e1) 
+      | I_IntToFloat          (e1)    ->
+        I_IntToFloat          (mp e1) 
 
-      | IFloatPlus           (e1,e2) ->
-        IFloatPlus           (mp e1, mp e2)
+      | I_FloatPlus           (e1,e2) ->
+        I_FloatPlus           (mp e1, mp e2)
 
-      | IFloatMinus          (e1,e2) ->
-        IFloatMinus          (mp e1, mp e2)
+      | I_FloatMinus          (e1,e2) ->
+        I_FloatMinus          (mp e1, mp e2)
 
-      | IFloatUnaryMinus     (e1)    ->
-        IFloatUnaryMinus     (mp e1) 
+      | I_FloatUnaryMinus     (e1)    ->
+        I_FloatUnaryMinus     (mp e1) 
 
-      | IFloatMult           (e1,e2) ->
-        IFloatMult           (mp e1, mp e2)
+      | I_FloatMult           (e1,e2) ->
+        I_FloatMult           (mp e1, mp e2)
 
-      | IFloatDiv            (e1,e2) ->
-        IFloatDiv            (mp e1, mp e2)
+      | I_FloatDiv            (e1,e2) ->
+        I_FloatDiv            (mp e1, mp e2)
 
-      | IFloatLess           (e1,e2) ->
-        IFloatLess           (mp e1, mp e2)
+      | I_FloatLess           (e1,e2) ->
+        I_FloatLess           (mp e1, mp e2)
 
-      | IFloatGreater        (e1,e2) ->
-        IFloatGreater        (mp e1, mp e2)
+      | I_FloatGreater        (e1,e2) ->
+        I_FloatGreater        (mp e1, mp e2)
 
-      | IFloatLessOrEqual    (e1,e2) ->
-        IFloatLessOrEqual    (mp e1, mp e2)
+      | I_FloatLessOrEqual    (e1,e2) ->
+        I_FloatLessOrEqual    (mp e1, mp e2)
 
-      | IFloatGreaterOrEqual (e1,e2) ->
-        IFloatGreaterOrEqual (mp e1, mp e2)
+      | I_FloatGreaterOrEqual (e1,e2) ->
+        I_FloatGreaterOrEqual (mp e1, mp e2)
 
-      | IFloatToInt          (e1)    ->
-        IFloatToInt          (mp e1) 
+      | I_FloatToInt          (e1)    ->
+        I_FloatToInt          (mp e1) 
 
-      | IBoolNot             (e1)    ->
-        IBoolNot             (mp e1)
+      | I_BoolNot             (e1)    ->
+        I_BoolNot             (mp e1)
 
-      | IBoolAnd             (e1,e2) ->
-        IBoolAnd             (mp e1, mp e2)
+      | I_BoolAnd             (e1,e2) ->
+        I_BoolAnd             (mp e1, mp e2)
 
-      | IBoolOr              (e1,e2) ->
-        IBoolOr              (mp e1, mp e2)
+      | I_BoolOr              (e1,e2) ->
+        I_BoolOr              (mp e1, mp e2)
 
-      | IBoolImplies         (e1,e2) ->
-        IBoolImplies         (mp e1, mp e2)
+      | I_BoolImplies         (e1,e2) ->
+        I_BoolImplies         (mp e1, mp e2)
 
-      | IBoolEquiv           (e1,e2) ->
-        IBoolEquiv           (mp e1, mp e2)
-
+      | I_BoolEquiv           (e1,e2) ->
+        I_BoolEquiv           (mp e1, mp e2)
 
   % --------------------------------------------------------------------------------
-  op findStadCode (allstads : List IStadCode, stadname : String) : Option IStadCode =
+  op findStadCode (allstads : List I_StadCode, stadname : String) : Option I_StadCode =
    findLeftmost (fn stadcode -> stadcode.label = stadname) allstads
 
-  op initial? (allstads : List IStadCode, stadname : String) : Bool =
+  op initial? (allstads : List I_StadCode, stadname : String) : Bool =
    case findStadCode (allstads,stadname) of
      | Some stc -> stc.initial?
      | _ -> false
 
-  op final? (allstads : List IStadCode, stadname : String) : Bool =
+  op final? (allstads : List I_StadCode, stadname : String) : Bool =
    case findStadCode (allstads,stadname) of
      | Some stadcode -> stadcode.steps = []
      | _ -> true
 
-  op reachable? (allstads : List IStadCode, stadname : String) : List String =
+  op reachable? (allstads : List I_StadCode, stadname : String) : List String =
     let
       def reachableStads0 (stadname, visited) =
 	case findStadCode (allstads, stadname) of

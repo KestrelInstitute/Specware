@@ -1,132 +1,132 @@
 
 C qualifying spec {
 
-  type CSpec =
+  type C_Spec =
     {
      name                  : String,
      includes              : Strings,
      defines	           : Strings,
-     constDefns            : CVarDefns,      % constant expressions defined by #define's
-     vars                  : CVarDecls,
-     fns                   : CFnDecls,
-     axioms                : CExps,
-     structUnionTypeDefns  : CStructUnionTypeDefns,
-     varDefns              : CVarDefns,      % constant expressions computable at compile-time
-     fnDefns               : CFnDefns
+     constDefns            : C_VarDefns,      % constant expressions defined by #define's
+     vars                  : C_VarDecls,
+     fns                   : C_FnDecls,
+     axioms                : C_Exps,
+     structUnionTypeDefns  : C_StructUnionTypeDefns,
+     varDefns              : C_VarDefns,      % constant expressions computable at compile-time
+     fnDefns               : C_FnDefns
     }
 
-  type CStructUnionTypeDefn = | CStruct   CStructDefn
-                              | CUnion    CUnionDefn
-                              | CTypeDefn CTypeDefn
+  type C_StructUnionTypeDefn = | C_Struct   C_StructDefn
+                               | C_Union    C_UnionDefn
+                               | C_TypeDefn C_TypeDefn
 
-  type CStructUnionTypeDefns = List CStructUnionTypeDefn
+  type C_StructUnionTypeDefns = List C_StructUnionTypeDefn
 
-  type CVarDecl    = String * CType
-  type CVarDecl1   = String * CType * Option(CExp)
-  type CFnDecl     = String * CTypes * CType
-  type CTypeDefn   = String * CType
-  type CStructDefn = String * CVarDecls
-  type CUnionDefn  = String * CVarDecls
-  type CVarDefn    = String * CType * CExp
-  type CFnDefn     = String * CVarDecls * CType * CStmt
-
-
-  type CBlock      = CVarDecls1 * CStmts
-
-  type CType =
-    | CVoid
-    | CChar
-    | CShort
-    | CInt
-    | CLong
-    | CUnsignedChar
-    | CUnsignedShort
-    | CUnsignedInt
-    | CUnsignedLong
-    | CFloat
-    | CDouble
-    | CLongDouble
-    | CBase     String
-    | CStruct   String
-    | CUnion    String
-    | CPtr      CType
-    | CArray    CType
-    | CArrayWithSize  (String (*name of constant*) * CType)
-    | CFn       CTypes * CType
-    | CConstField
-
-  type CStmt =
-    | CExp     CExp
-    | CBlock   CBlock
-    | CIf      CExp * CStmt * CStmt
-    | CReturn  CExp
-    | CReturnVoid
-    | CBreak
-    | CWhile   CExp * CStmt
-    | CLabel   String
-    | CGoto    String
-    | CIfThen  CExp * CStmt
-    | CSwitch  CExp * CStmts
-    | CCase    CVal
-    | CNop
+  type C_VarDecl    = String * C_Type
+  type C_VarDecl1   = String * C_Type * Option C_Exp
+  type C_FnDecl     = String * C_Types * C_Type
+  type C_TypeDefn   = String * C_Type
+  type C_StructDefn = String * C_VarDecls
+  type C_UnionDefn  = String * C_VarDecls
+  type C_VarDefn    = String * C_Type * C_Exp
+  type C_FnDefn     = String * C_VarDecls * C_Type * C_Stmt
 
 
-  type CExp =
-    | CConst       CVal
-    | CFn          CFnDecl
-    | CVar         CVarDecl
-    | CApply       CExp * CExps
-    | CUnary       CUnaryOp * CExp
-    | CBinary      CBinaryOp * CExp * CExp
-    | CCast        CType * CExp
-    | CStructRef   CExp * String
-    | CUnionRef    CExp * String
-    | CArrayRef    CExp * CExp
-    | CIfExp       CExp * CExp * CExp 
-    | CComma       CExp * CExp
-    | CSizeOfType  CType
-    | CSizeOfExp   CExp
-    | CField       CExps
+  type C_Block      = C_VarDecls1 * C_Stmts
 
-  type CVal =
-    | CChar        Char
-    | CInt         Boolean * Nat
-    | CFloat       String
-    | CString      String
+  type C_Type =
+    | C_Void
+    | C_Char
+    | C_Short
+    | C_Int
+    | C_Long
+    | C_UnsignedChar
+    | C_UnsignedShort
+    | C_UnsignedInt
+    | C_UnsignedLong
+    | C_Float
+    | C_Double
+    | C_LongDouble
+    | C_Base           String
+    | C_Struct         String
+    | C_Union          String
+    | C_Ptr            C_Type
+    | C_Array          C_Type
+    | C_ArrayWithSize  String (*name of constant*) * C_Type
+    | C_Fn             C_Types * C_Type
+    | C_ConstField
 
-  type CUnaryOp =
-    | CContents
-    | CAddress
-    | CNegate
-    | CBitNot
-    | CLogNot
-    | CPreInc  | CPreDec
-    | CPostInc | CPostDec
+  type C_Stmt =
+    | C_Exp     C_Exp
+    | C_Block   C_Block
+    | C_If      C_Exp * C_Stmt * C_Stmt
+    | C_Return  C_Exp
+    | C_ReturnVoid
+    | C_Break
+    | C_While   C_Exp * C_Stmt
+    | C_Label   String
+    | C_Goto    String
+    | C_IfThen  C_Exp * C_Stmt
+    | C_Switch  C_Exp * C_Stmts
+    | C_Case    C_Const
+    | C_Nop
 
-  type CBinaryOp =
-    | CSet
-    | CAdd | CSub | CMul | CDiv | CMod
-    | CBitAnd | CBitOr | CBitXor
-    | CShiftLeft | CShiftRight
-    | CSetAdd | CSetSub | CSetMul | CSetDiv | CSetMod
-    | CSetBitAnd | CSetBitOr | CSetBitXor
-    | CSetShiftLeft | CSetShiftRight
-    | CLogAnd | CLogOr
-    | CEq  | CNotEq
-    | CLt | CGt | CLe | CGe
 
-  type Strings      = List String
-  type CVarDecls    = List CVarDecl
-  type CVarDecls1   = List CVarDecl1
-  type CFnDecls     = List CFnDecl
-  type CTypeDefns   = List CTypeDefn
-  type CStructDefns = List CStructDefn
-  type CUnionDefns  = List CUnionDefn
-  type CFnDefns     = List CFnDefn
-  type CVarDefns    = List CVarDefn
-  type CTypes       = List CType
-  type CExps        = List CExp
-  type CStmts       = List CStmt
+  type C_Exp =
+    | C_Const       C_Const
+    | C_Fn          C_FnDecl
+    | C_Var         C_VarDecl
+    | C_Apply       C_Exp * C_Exps
+    | C_Unary       C_UnaryOp * C_Exp
+    | C_Binary      C_BinaryOp * C_Exp * C_Exp
+    | C_Cast        C_Type * C_Exp
+    | C_StructRef   C_Exp * String
+    | C_UnionRef    C_Exp * String
+    | C_ArrayRef    C_Exp * C_Exp
+    | C_IfExp       C_Exp * C_Exp * C_Exp 
+    | C_Comma       C_Exp * C_Exp
+    | C_SizeOfType  C_Type
+    | C_SizeOfExp   C_Exp
+    | C_Field       C_Exps
+
+  type C_Const =
+    | C_Char   Char
+    | C_Int    Boolean * Nat
+    | C_Float  String
+    | C_String String
+
+  type C_UnaryOp =
+    | C_Contents
+    | C_Address
+    | C_Negate
+    | C_BitNot
+    | C_LogNot
+    | C_PreInc  | C_PreDec
+    | C_PostInc | C_PostDec
+
+  type C_BinaryOp =
+    | C_Set
+    | C_Add | C_Sub | C_Mul | C_Div | C_Mod
+    | C_BitAnd | C_BitOr | C_BitXor
+    | C_ShiftLeft | C_ShiftRight
+    | C_SetAdd | C_SetSub | C_SetMul | C_SetDiv | C_SetMod
+    | C_SetBitAnd | C_SetBitOr | C_SetBitXor
+    | C_SetShiftLeft | C_SetShiftRight
+    | C_LogAnd | C_LogOr
+    | C_Eq  | C_NotEq
+    | C_Lt | C_Gt | C_Le | C_Ge
+
+  type Strings       = List String
+  type C_VarDecls    = List C_VarDecl
+  type C_VarDecls1   = List C_VarDecl1
+  type C_FnDecls     = List C_FnDecl
+  type C_TypeDefns   = List C_TypeDefn
+  type C_StructDefns = List C_StructDefn
+  type C_UnionDefns  = List C_UnionDefn
+  type C_FnDefns     = List C_FnDefn
+  type C_VarDefns    = List C_VarDefn
+  type C_Types       = List C_Type
+  type C_Exps        = List C_Exp
+  type C_Stmts       = List C_Stmt
 
 }
 
