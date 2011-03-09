@@ -6,19 +6,15 @@
 SpecsToI2L qualifying spec
 {
 
-  % import ElaborateESpecs
-  import I2L
-
   import /Library/Legacy/DataStructures/ListPair
-  %import MergeSort
-
-  %import SpecEnvironment
-  %import MetaSlangPrint
-  %import PrintESpecs
 
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
+
+  import /Languages/I2L/I2L
+
+  op substGlyphInIdent (id : String) : String  % TODO: defined in CUtils.sw
 
   type Term = MS.Term
 

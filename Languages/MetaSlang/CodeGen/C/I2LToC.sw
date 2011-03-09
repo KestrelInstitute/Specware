@@ -4,9 +4,9 @@
 
 I2LToC qualifying spec 
 {
-  import C
-  import I2L
-  import CUtils
+  import /Languages/C/C
+  import /Languages/C/CUtils
+  import /Languages/I2L/I2L
   import CGenOptions
 
   % import ESpecsCodeGenerationOptions
