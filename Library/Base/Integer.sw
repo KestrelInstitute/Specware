@@ -1104,6 +1104,30 @@ proof Isa mod__def
   by (auto simp add: nat_eq_iff2 zmod_int)
 end-proof
 
+% exponentiation
+
+% ---------------------- we need exponentiation specifically on Nat ----------
+proof Isa -verbatim
+consts npower :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "\<up>" 80)
+defs   npower_def [simp]: "x \<up> y \<equiv> x ^ y"
+end-proof
+% ----------------------------------------------------------------------------
+
+op ** (base:Int, exp:Nat) infixl 30 : Int =
+  if exp = 0 then 1 else base * (base ** (exp - 1))
+
+% the current translator adds a superfluous "nat" here
+
+op *** (base:Nat, exp:Nat) infixl 30 : Nat = base ** exp
+
+proof Isa e_ast_ast__def1
+ by (cases exp__v, auto)
+end-proof
+
+proof Isa e_ast_ast_ast__def
+  by (simp add: zpower_int)
+end-proof
+
 % min and max:
 
 op min (i:Int, j:Int) : Int = if i < j then i else j
@@ -1194,6 +1218,8 @@ end-proof
  Integer.modT     -> rem   Left  7
  Integer.min      -> min   Left  7
  Integer.max      -> max   Left  7
+ Integer.**       -> ^     Left  8
+ Integer.***      -> ^     Left  8
  Integer.compare \_rightarrow compare curried
 #end
 

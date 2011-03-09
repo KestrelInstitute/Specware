@@ -27,12 +27,6 @@ orders.
 Integer qualifying spec
 
 
-  % exponentiation:
-  op ** infixl 30 : Int * Nat -> Int
-  def ** (base,exp) = if exp = 0 then 1
-                      else base * (base ** (exp - 1))
-
-
   import /Library/General/Set
 
 
