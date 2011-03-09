@@ -16,13 +16,13 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % addLoca
 op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp (Qualified (q, id)) =
   case q of
-    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", 
+    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred",
                               "toString", "intToString", "show",  "stringToInt"]
     | "Nat"        -> id in? ["Nat"]
     | "IntegerAux" -> id in? ["-"]  % unary minus
     | "Char"       -> id in? ["Char", "chr", "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii",
                               "toUpperCase", "toLowerCase"]
-    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring", "<"]
+    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring", "<", "compare"]
   % | "Boolean"    -> id in? ["Bool", "true","false","~","&&","||","=>","<=>","~="]
     | _ -> false
 
