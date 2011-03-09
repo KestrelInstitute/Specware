@@ -14,7 +14,7 @@ SpecsToI2L qualifying spec
 
   import /Languages/I2L/I2L
 
-  op substGlyphInIdent (id : String) : String  % TODO: defined in CUtils.sw
+  op CUtils.substGlyphInIdent (id : String) : String  % TODO: defined in CUtils.sw
 
   type Term = MS.Term
 

@@ -10,7 +10,7 @@ I2L qualifying spec
 {
   import /Library/Legacy/Utilities/System
 
-  op [X] qsort (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
+  op [X] CUtils.qsort (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
 
   type I_ImpUnit = {
                     name     : String,
@@ -36,7 +36,8 @@ I2L qualifying spec
   type I_Primitive = | I_Bool | I_Char | I_String | I_Nat | I_Int | I_Float
 
   type I_Type = | I_Primitive   I_Primitive
-                | I_BoundedNat  Nat               % Nats smaller than N
+                | I_BoundedNat  Nat               % Nats smaller than N (e.g. 'unsigned short')
+                | I_BoundedInt  Int * Int         % Ints within exclusive bounds (e.g. 'signed short')
                 | I_Struct      I_StructFields
                 | I_Union       I_UnionFields
                 | I_Tuple       I_Types
@@ -93,7 +94,7 @@ I2L qualifying spec
 
   type I_Expr = | I_Str            String
                 | I_Int            Int
-                | I_Float          String
+                | I_Float          Bool * Nat * Nat * Option (Bool * Nat) % -1.2E-3
                 | I_Char           Char
                 | I_Bool           Bool
                 | I_Var            I_VarName

@@ -42,7 +42,7 @@ typedef int Accord_ProcType ();
 
 #define void int
 
-#define Float_Float      double
+typedef double Float_Float;
 
 Float_Float Float_one_half = 0.5;
 Float_Float Float_one   = 1.0;
@@ -88,11 +88,26 @@ char* String_append(char *s1, char *s2) {
   return res;
 }
 
+int String_compare (char *s1, char *s2) {
+  return strcmp(s1,s2);
+}
+
+int String_Less (char *s1, char *s2) {
+  return strcmp(s1,s2);
+}
+
+typedef char Char_Char;
+int Char_compare(char c1, char c2) {
+  return (c1 < c2);
+}
+
+
 #define String_PlusPlus String_append
 #define String_Caret String_append
 #define Caret String_Caret
 
 #define writeLine System_writeLine
+#define System_toScreen System_writeLine
 #define String_toScreen System_writeLine
 void System_writeLine(char *s) {
   printf("%s\n",s);
@@ -109,7 +124,7 @@ char* Integer_show(int n) {
   strcpy(res,buf);
   return res;
 }
-char* Boolean_show(int n) {
+char* Bool_show(int n) {
   char *res = swc_malloc(sizeof(char)*6);
   if (n) {
     strcpy(res,"true");
@@ -129,7 +144,7 @@ char* Integer_toString(int n) {
   strcpy(res,buf);
   return res;
 }
-char* Boolean_toString(int n) {
+char* Bool_toString(int n) {
   char *res = swc_malloc(sizeof(char)*6);
   if (n) {
     strcpy(res,"true");
@@ -161,7 +176,11 @@ int Integer_abs (int i) {
   if (i >= 0) {return i;} {return (- i);}
 }
 
-int Integer_pred (int i) {
+int Integer_isucc (int i) {
+  {return (i + 1);}
+}
+
+int Integer_ipred (int i) {
   {return (i - 1);}
 }
 

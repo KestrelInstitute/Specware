@@ -1,7 +1,5 @@
-
 CUtils qualifying spec
 {
-
   import C
   import CPrint
   import /Languages/MetaSlang/Specs/Printer
@@ -595,7 +593,7 @@ CUtils qualifying spec
     let suts = foldl (fn (suts, sut) ->
                         case sut of
 
-                          | C_TypeDefn (tname, C_Ptr C_Void) ->
+                          | C_TypeDefn (tname, C_VoidPtr) ->
                             (case findLeftmost (fn |C_TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
                                | Some _ -> suts
                                | _ -> suts ++ [sut])
@@ -854,7 +852,6 @@ CUtils qualifying spec
 	let l2 = qsort gt l2 in
 	l1 ++ (x::l2)
 
-
   % --------------------------------------------------------------------------------
 
   op ctypeToString (t : C_Type) : String =
@@ -1058,7 +1055,7 @@ CUtils qualifying spec
 
   % --------------------------------------------------------------------------------
 
-  op NULL : C_Exp = C_Var ("NULL", C_Int)
+  op NULL : C_Exp = C_Var ("NULL", C_VoidPtr)
 
   % --------------------------------------------------------------------------------
 

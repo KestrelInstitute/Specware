@@ -1,4 +1,3 @@
-
 CPrint qualifying spec
 {
   %import System  	% ../utilities/system-base.sl
@@ -20,35 +19,53 @@ CPrint qualifying spec
     case t of
       | C_Void          -> ppBaseType  ("void"          , p)
       | C_Char          -> ppBaseType  ("char"          , p)
-      | C_ConstField    -> ppBaseType  ("ConstField"    , p)
-      | C_Short         -> ppBaseType  ("short"         , p)
-      | C_Int           -> ppBaseType  ("int"           , p)
-      | C_Long          -> ppBaseType  ("long"          , p)
-      | C_UnsignedChar  -> ppBaseType  ("unsigned char" , p)
-      | C_UnsignedShort -> ppBaseType  ("unsigned short", p)
-      | C_UnsignedInt   -> ppBaseType  ("unsigned int"  , p)
-      | C_UnsignedLong  -> ppBaseType  ("unsigned long" , p)
+
+      | C_Int8          -> ppBaseType  ("int8_t"        , p)  % <stdint.h>
+      | C_Int16         -> ppBaseType  ("int16_t"       , p)  % <stdint.h>
+      | C_Int32         -> ppBaseType  ("int32_t"       , p)  % <stdint.h>
+      | C_Int64         -> ppBaseType  ("int64_t"       , p)  % <stdint.h>
+      | C_UInt8         -> ppBaseType  ("uint8_t"       , p)  % <stdint.h>
+      | C_UInt16        -> ppBaseType  ("uint16_t"      , p)  % <stdint.h>
+      | C_UInt32        -> ppBaseType  ("uint32_t"      , p)  % <stdint.h>
+      | C_UInt64        -> ppBaseType  ("uint64_t"      , p)  % <stdint.h>
+
+      | C_Size          -> ppBaseType  ("uint32_t"      , p)  % TODO: ? machine dependent?
+
       | C_Float         -> ppBaseType  ("float"         , p)
       | C_Double        -> ppBaseType  ("double"        , p)
       | C_LongDouble    -> ppBaseType  ("long double"   , p)
-      | C_Base   t      -> ppBaseType  (cId t           , p)
-      | C_Struct s      -> prettysNone [string "struct ", string (cId s), p]
-      | C_Union  u      -> prettysNone [string "union " , string (cId u), p]
 
-      | C_Ptr           t             -> ppType (t, prettysNone [string "*", p, string ""])
-      | C_Array         t             -> ppType (t, prettysNone [string "(", p, string "[])"])
-      | C_ArrayWithSize (conststr, t) -> ppType (t, prettysNone [(*string "(",*) p, strings ["[",conststr,"]"]])
-      | C_Fn            (ts, t)       -> ppType (t, prettysNone [string " (*", p, string ") ", ppPlainTypes ts])
+      | C_WChar         -> fail("ppType C_WChar not yet implemented")
+      | C_UTF8          -> fail("ppType C_UTF8  not yet implemented")
+      | C_UTF16         -> fail("ppType C_UTF16 not yet implemented")
+      | C_UTF32         -> fail("ppType C_UTF32 not yet implemented")
 
+      | C_Base   t      -> ppBaseType  (cId t                           , p) % TODO ??
+      | C_Struct s      -> prettysNone [string "struct ", string (cId s), p] % TODO: ??
+      | C_Union  u      -> prettysNone [string "union " , string (cId u), p] % TODO: ??
+
+      | C_Ptr           t           -> ppType (t, prettysNone [string "*", p, string ""])
+      | C_Array         t           -> ppType (t, prettysNone [string "(", p, string "[])"])
+      | C_ArrayWithSize (bounds, t) -> ppType (t, prettysNone [p, string "[", ppExps bounds, string "]"])
+      | C_Fn            (ts,     t) -> ppType (t, prettysNone [string " (*", p, string ") ", ppPlainTypes ts])
+
+      | C_ConstField    -> ppBaseType  ("ConstField"    , p)
       | mystery -> fail ("Unexpected type to print "^anyToString mystery)
 
-  op ppConst (v : C_Const) : Pretty =
-    case v of
-      | C_Char   c           -> strings ["'", show c, "'"]
-      | C_Int    (b, n)      -> strings [if b then "" else "-", show n]
-%     | C_Float  (b, n1, n2) -> strings [if b then "" else "-", show n1, ".", show n2]
-      | C_Float  f           -> string f
-      | C_String s           -> strings ["\"", ppQuoteString(s), "\""]
+  op ppConst (c : C_Const) : Pretty =
+    case c of
+      | C_Char  c                 -> strings ["'", show c, "'"]
+      | C_Int   (pos?, n)         -> strings [if pos? then "" else "-", show n]
+      | C_Str   s                 -> strings ["\"", ppQuoteString s, "\""]
+      | C_Macro s                 -> string s
+
+      | C_Float (pos?, m, n, exp) -> let exp_strs = 
+                                         case exp of
+                                           | Some (pos?, e) -> ["E", if pos? then "" else "-", show e]
+                                           | _ -> []
+                                     in
+                                     strings ([if pos? then "" else "-", show m, ".", show n] ++ exp_strs)
+
       | _ -> fail "Unexpected const to print"
 
   op ppQuoteString (s : String) : String =
@@ -83,7 +100,7 @@ CPrint qualifying spec
               | C_PostDec  -> "--"
               | _ -> fail "Unexpected unary")
 
-  op binaryToString(b:C_BinaryOp) : String = 
+  op binaryToString (b:C_BinaryOp) : String = 
     case b of
       | C_Set           -> " = "
       | C_Add           -> " + "
@@ -144,31 +161,65 @@ CPrint qualifying spec
     let prettysFill   = if inOneLine then prettysNone else prettysFill in
     let prettysLinear = if inOneLine then prettysNone else prettysLinear in
     case e of
-      | C_Const v            -> ppConst v
-      | C_Fn (s, ts, t)      -> string (cId s)
-      | C_Var (s, t)         -> string (cId s)
-      | C_Apply (e, es)      -> prettysFill [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
-      | C_Unary (u, e)       -> prettysNone (if unaryPrefix? u then
-                                              [ppUnary u, ppExpRec(e,inOneLine)]
-                                            else
-                                              [ppExpRec(e,inOneLine), ppUnary u])
-      | C_Binary (b, e1, e2) -> prettysFill [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
-      | C_Cast (t, e)        -> parens (prettysNone [parens (ppPlainType t), string " ", ppExp_internal(e,inOneLine)])
-      | C_StructRef (C_Unary (Contents, e), s) -> 
-			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", cId s]]
-      | C_StructRef (e, s)   -> prettysNone [ppExp_internal(e,inOneLine), strings [".", cId s]]
-      | C_UnionRef (e, s)    -> prettysNone [ppExp_internal(e,inOneLine), strings [".", cId s]]
-      | C_ArrayRef (e1, e2)  -> prettysNone [ppExpRec(e1,inOneLine), string "[", ppExp_internal (e2, inOneLine), string "]"]
-      | C_IfExp (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec(e1,inOneLine), string " ? "],
-                                              prettysNone [ppExpRec(e2,inOneLine), string " : "],
-                                              ppExpRec(e3,inOneLine)]
-      | C_Comma (e1, e2)     -> parens (prettysFill [ppExp_internal(e1,inOneLine), string ", ", ppExp_internal(e2,inOneLine)])
-      | C_SizeOfType t       -> prettysNone [string "sizeof (", ppPlainType t, string ")"]
-      | C_SizeOfExp e        -> prettysNone [string "sizeof (", ppExp_internal(e,inOneLine), string ")"]
-      | C_Field es           -> prettysNone [if inOneLine then 
-                                               ppExpsCurlyInOneline es 
-                                             else 
-                                               ppExpsCurly es]
+
+      | C_Const      c            -> ppConst c
+
+      | C_Fn         (s, ts, t)   -> string (cId s)
+
+      | C_Var        (s, t)       -> string (cId s)
+
+      | C_Apply      (e, es)      -> prettysFill [ppExp_internal (e, inOneLine), 
+                                                  prettysNone [string " ", 
+                                                               ppExpsInOneline es]]
+
+      | C_Unary      (u, e)       -> prettysNone (if unaryPrefix? u then
+                                                    [ppUnary u, 
+                                                     ppExpRec (e, inOneLine)]
+                                                  else
+                                                    [ppExpRec (e, inOneLine), 
+                                                     ppUnary u])
+
+      | C_Binary     (b, e1, e2)  -> prettysFill [ppExpRec (e1, inOneLine), 
+                                                  ppBinary b, 
+                                                  ppExpRec (e2, inOneLine)]
+
+      | C_Cast       (t, e)       -> parens (prettysNone [parens (ppPlainType t), 
+                                                          string " ", 
+                                                          ppExp_internal (e, inOneLine)])
+
+      | C_StructRef  (C_Unary (Contents, e), s) ->  prettysNone [ppExpRec (e, inOneLine), 
+                                                                 strings [" -> ", cId s]]
+
+      | C_StructRef  (e, s)       -> prettysNone [ppExp_internal (e, inOneLine), 
+                                                  strings [".", cId s]]
+
+      | C_UnionRef   (e, s)       -> prettysNone [ppExp_internal (e, inOneLine), 
+                                                  strings [".", cId s]]
+
+      | C_ArrayRef   (e1, e2)     -> prettysNone [ppExpRec (e1, inOneLine), 
+                                                  string "[", 
+                                                  ppExp_internal (e2, inOneLine), 
+                                                  string "]"]
+
+      | C_IfExp      (e1, e2, e3) -> prettysLinear [prettysNone [ppExpRec (e1, inOneLine), 
+                                                                 string " ? "],
+                                                    prettysNone [ppExpRec (e2, inOneLine), 
+                                                                 string " : "],
+                                                    ppExpRec (e3, inOneLine)]
+
+      | C_Comma      (e1, e2)     -> parens (prettysFill [ppExp_internal (e1, inOneLine), 
+                                                          string ", ", 
+                                                          ppExp_internal (e2, inOneLine)])
+
+      | C_SizeOfType t            -> prettysNone [string "sizeof (", ppPlainType t, string ")"]
+
+      | C_SizeOfExp  e            -> prettysNone [string "sizeof (", ppExp_internal (e, inOneLine), string ")"]
+
+      | C_Field      es           -> prettysNone [if inOneLine then 
+                                                    ppExpsCurlyInOneline es 
+                                                  else 
+                                                    ppExpsCurly es]
+
       | _ -> fail "Unexpected expression" 
 
   %% Print non-atomic expressions in parens.
@@ -207,7 +258,7 @@ CPrint qualifying spec
       | C_Switch (e, ss) -> blockAll (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
                                          (2, ppStmts ss),
                                          (0, string "}")])
-      | C_Case v         -> prettysNone [string "case ", ppConst v, string ":"]
+      | C_Case c         -> prettysNone [string "case ", ppConst c, string ":"]
       | _ -> fail "Unexpected statement" 
 
   op ppStmts (ss : C_Stmts) : Pretty =
@@ -369,10 +420,10 @@ CPrint qualifying spec
       emptyPretty () :: string title :: emptyPretty () :: ps
 
   op ppSpec (s : C_Spec) : Pretty =
-    ppSpec_internal false (s) 
+    ppSpec_internal false s 
 
   op ppHeaderSpec (s : C_Spec) : Pretty =
-    ppSpec_internal true (s) 
+    ppSpec_internal true s 
 
   op ppSpec_internal (asHeader:Bool) (s : C_Spec) : Pretty =
     %let _ = writeLine "Starting sort..." in
@@ -480,25 +531,38 @@ CPrint qualifying spec
 
   op namesInType (t : C_Type) : List String =
     case t of
-      | C_Base          name    -> [name]
-      | C_Ptr           t       -> namesInType t
-      | C_Struct        _       -> []
-      | C_Union         _       -> []
-      | C_Fn            (ts, t) -> (namesInType t) ++ (namesInTypes ts)
-      | C_Array         t       -> namesInType t
-      | C_ArrayWithSize (_,t)   -> namesInType t
       | C_Void                  -> []
       | C_Char                  -> []
-      | C_Short                 -> []
-      | C_Int                   -> []
-      | C_Long                  -> []
-      | C_UnsignedChar          -> []
-      | C_UnsignedShort         -> []
-      | C_UnsignedInt           -> []
-      | C_UnsignedLong          -> []
+
+      | C_Int8                  -> []
+      | C_Int16                 -> []
+      | C_Int32                 -> []
+      | C_Int64                 -> []
+      | C_UInt8                 -> []
+      | C_UInt16                -> []
+      | C_UInt32                -> []
+      | C_UInt64                -> []
+
+      | C_Size                  -> []
+
       | C_Float                 -> []
       | C_Double                -> []
       | C_LongDouble            -> []
+
+      | C_WChar                 -> []
+      | C_UTF8                  -> []
+      | C_UTF16                 -> []
+      | C_UTF32                 -> []
+
+      | C_Base          name    -> [name]
+      | C_Ptr           t       -> namesInType t
+      | C_Struct        _       -> [] % TODO
+      | C_Union         _       -> [] % TODO
+      | C_Array         t       -> namesInType t
+      | C_ArrayWithSize (_,t)   -> namesInType t
+      | C_Fn            (ts, t) -> (namesInType t) ++ (namesInTypes ts)
+
+      | C_ConstField            -> []
 
   op namesInTypes (ts : List C_Type) : List String =
     flatten (map namesInType ts)

@@ -121,11 +121,12 @@ I2LToC qualifying spec
           %	 ^vname^"\".")
       | _ -> 
         case optinitstr of
-          | None         -> addVar     (cspc, voidToInt (vname, ctype))
+          | None         -> addVar     (cspc, voidToUInt (vname, ctype))
           | Some initstr -> addVarDefn (cspc, (vname, ctype, C_Var (initstr, C_Void))) % ok,ok, ... 
             
-  op voidToInt ((vname, ctype) : C_VarDecl) : C_VarDecl =
-    (vname, if ctype = C_Void then C_Int else ctype)
+  op voidToUInt ((vname, ctype) : C_VarDecl) : C_VarDecl =
+    %% precise type (C_UInt16, C_UInt32, C_UInt64) depends on target machine
+    (vname, if ctype = C_Void then C_UInt32 else ctype)
 
   (*
    * for each non-constant variable definition X an function get_X() and a
@@ -214,7 +215,7 @@ I2LToC qualifying spec
             let fname           = foldr (fn (id, s) -> if s="" then id else s^"_"^id) "" ids in
             let (cspc, vardecl) = addMapForMapDecl (ctxt, cspc, fname, types, rtype)         in
             % todo: add a initializer for the field!
-            (addVar (cspc, voidToInt vardecl), "&" ^ fname, true)
+            (addVar (cspc, voidToUInt vardecl), "&" ^ fname, true)
             
           | _ -> (cspc, "0", false)
     in
@@ -230,7 +231,7 @@ I2LToC qualifying spec
     let fid             = qname2id mdecl.name in
     let paramtypes      = map (fn (_, t)->t) mdecl.params in
     let (cspc, vardecl) = addMapForMapDecl (ctxt, cspc, fid, paramtypes, mdecl.returntype) in
-    addVar (cspc, voidToInt vardecl)
+    addVar (cspc, voidToUInt vardecl)
 
   % addMapForMapDecl is responsible for creating the arrays and access functions for
   % n-ary vars. The inputs are the name of the var, the argument types and the return t_ype.
@@ -242,13 +243,9 @@ I2LToC qualifying spec
     let (cspc, paramctypes) = c4Types (ctxt, cspc, paramtypes) in
     case getBoundedNatList paramtypes of
       
-      | Some ns ->
-        let nstrs         = map show ns                                                          in
+      | Some bounds ->
         let (cspc, rtype) = c4Type (ctxt, cspc, returntype)                                      in
-        let arraytype     = foldl (fn (arraytype, nstr) -> C_ArrayWithSize (nstr, arraytype))
-                                  rtype 
-                                  nstrs
-        in
+        let arraytype     = C_ArrayWithSize (bounds, rtype)                                      in
         let vardecl       = (id, arraytype)                                                      in
         % construct the access function
         let paramnames    = map getParamName (getNumberListOfSameSize paramtypes)                in
@@ -264,7 +261,7 @@ I2LToC qualifying spec
                 "or 1-ary vars of the form \"var "^id^": {n:Nat|n<C}\", where C must be\n"^
                 "an natural number.")
 
-  op getBoundedNatList (types : I_Types) : Option (List Nat) =
+  op getBoundedNatList (types : I_Types) : Option C_Exps =
     case types of
       | [] -> None
       | _ ->
@@ -274,14 +271,15 @@ I2LToC qualifying spec
               | [] -> Some []
               | (I_BoundedNat n) :: types ->
                 (case getBoundedNatList0 types of
-                   | Some ns -> Some (n::ns)
+                   | Some bounds -> 
+                     let bound = C_Const (C_Int (true, n)) in
+                     Some (bound::bounds)
                    | None -> None)
               | _ -> None
         in
         getBoundedNatList0 types
 
-  op coproductSelectorStringLength : String = "COPRDCTSELSIZE"
-
+  op coproductSelectorStringLength : C_Exp = C_Const (C_Macro "COPRDCTSELSIZE")
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %                                                                     %
@@ -295,9 +293,9 @@ I2LToC qualifying spec
         case fields of
           | [] -> (cspc, [])
           | (fname, itype)::fields -> 
-            let (cspc, ctype)   = c4Type (ctxt, cspc, itype)              in
-            let ctype           = if ctype = C_Void then C_Int else ctype in % no void fields allowed
-            let (cspc, sfields) = structUnionFields (cspc, fields)        in
+            let (cspc, ctype)   = c4Type (ctxt, cspc, itype)                in
+            let ctype           = if ctype = C_Void then C_Int32 else ctype in % no void fields allowed
+            let (cspc, sfields) = structUnionFields (cspc, fields)          in
             (cspc, (fname, ctype) :: sfields)
 
       def addFieldNamesToTupleTypes (types) =
@@ -329,7 +327,7 @@ I2LToC qualifying spec
             let unionname          = genName (cspc, "CoProduct",  length (getUnionDefns  cspc))                   in
             let structname         = genName (cspc, "CoProductS", length (getStructDefns cspc))                   in
             let (cspc, uniontype)  = addNewUnionDefn (cspc, ctxt.xcspc, (unionname, ufields))                     in
-            let sfields            = [("sel", C_ArrayWithSize (coproductSelectorStringLength, C_Char)), 
+            let sfields            = [("sel", C_ArrayWithSize ([coproductSelectorStringLength], C_Char)), 
                                       ("alt", uniontype)] 
             in
             let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
@@ -350,16 +348,16 @@ I2LToC qualifying spec
            
           | I_Void -> (cspc, C_Void)
             
-          | I_BoundedNat n -> (cspc, C_Int)
+          | I_BoundedNat n -> (cspc, C_Int32)
             
           | I_BoundedList (ltype, n) -> 
             let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                                   in
             let deflen             = length cspc.defines                                                          in
             let constName          = genName (cspc, "MAX", deflen)                                                in
             let cspc               = addDefine (cspc, constName ^ " " ^ show n)                                   in
-            let arraytype          = C_ArrayWithSize (constName, ctype)                                           in
+            let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)                       in
             let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))                    in
-            let sfields            = [("length", C_Int), ("data", arraytype)]                                     in
+            let sfields            = [("length", C_Int32), ("data", arraytype)]                                   in
             let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
             (cspc, structtype)
             
@@ -377,19 +375,19 @@ I2LToC qualifying spec
 
   op c4PrimitiveType (prim : I_Primitive) : C_Type =
     case prim of
-      | I_Bool   -> C_Int
-      | I_Nat    -> C_Int
-      | I_Int    -> C_Int
+      | I_Bool   -> C_Int8
+      | I_Nat    -> C_UInt32
+      | I_Int    -> C_Int32
       | I_Char   -> C_Char
-      | I_String -> C_Ptr C_Char
+      | I_String -> C_String
       | I_Float  -> C_Float
 
   % handle special cases of types:
 
   op c4TypeSpecial (cspc : C_Spec, typ : I_Type) : Option (C_Spec * C_Type) =
-    if bitStringSpecial then
+    if bitStringSpecial? then
       case typ of
-        | I_Base (_, "BitString") -> Some (cspc, C_UnsignedInt)
+        | I_Base (_, "BitString") -> Some (cspc, C_UInt32)
         | _ -> None
     else
       None
@@ -462,10 +460,10 @@ I2LToC qualifying spec
             fail "unsupported variable format, use 1-ary vars from bounded Nat"
     in
     case expr of
-      | I_Str   s -> (cspc, block, C_Const (C_String s))
-      | I_Int   n -> (cspc, block, C_Const (C_Int    (true, n)))
-      | I_Char  c -> (cspc, block, C_Const (C_Char   c))
-      | I_Float f -> (cspc, block, C_Const (C_Float  f))
+      | I_Str   s -> (cspc, block, C_Const (C_Str   s))
+      | I_Int   n -> (cspc, block, C_Const (C_Int   (true, n)))
+      | I_Char  c -> (cspc, block, C_Const (C_Char  c))
+      | I_Float f -> (cspc, block, C_Const (C_Float f))
       | I_Bool  b -> (cspc, block, if b then ctrue else cfalse)
         
       | I_Builtin bexp -> c4BuiltInExpr (ctxt, cspc, block, bexp)
@@ -583,16 +581,16 @@ I2LToC qualifying spec
         % insert a dummy variable of the same type as the expression to be
         % used in the nonexhaustive match case in order to prevent typing 
         % errors of the C compiler
-        let (cspc, xtype)      = c4Type (ctxt, cspc, typ)                in
-        let xtype              = if xtype = C_Void then C_Int else xtype in
-        let varPrefix          = getVarPrefix ("_Vd_", xtype)            in
-        let xname              = varPrefix ^ show (length decls)         in
-        let xdecl              = (xname, xtype, None)                    in
+        let (cspc, xtype)      = c4Type (ctxt, cspc, typ)                  in
+        let xtype              = if xtype = C_Void then C_Int32 else xtype in
+        let varPrefix          = getVarPrefix ("_Vd_", xtype)              in
+        let xname              = varPrefix ^ show (length decls)           in
+        let xdecl              = (xname, xtype, None)                      in
         let funname4errmsg     = case ctxt.currentFunName of 
                                    | Some id -> " (\"function '"^id^"'\")" 
                                    | _ -> " (\"unknown function\")"         
         in
-        let errorCaseExpr      = C_Comma (C_Var ("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg, C_Int), 
+        let errorCaseExpr      = C_Comma (C_Var ("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg, C_Int32), 
                                           C_Var (xname, xtype)) 
         in
         let block0             = (decls ++ [xdecl], stmts)               in
@@ -778,7 +776,7 @@ I2LToC qualifying spec
     let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                                        in
     let varPrefix                               = getVarPrefix ("_Vb", ctype)                                     in
     let xname                                   = varPrefix^ (show (length decls))                                in
-    let ctype                                   = if ctype = C_Void then C_Int else ctype                         in
+    let ctype                                   = if ctype = C_Void then C_Int32 else ctype                       in
     let decl                                    = (xname, ctype)                                                  in
     let optinit                                 = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
     let decl1                                   = (xname, ctype, optinit)                                         in
@@ -800,6 +798,11 @@ I2LToC qualifying spec
 
   % --------------------------------------------------------------------------------
 
+  op strcmp         : C_Exp = C_Fn ("strcmp",         [C_String,  C_String],          C_Int16)  % might subtract one char from another for result
+  op strncmp        : C_Exp = C_Fn ("strncmp",        [C_String,  C_String, C_Int32], C_Int16)  % might subtract one char from another for result
+  op hasConstructor : C_Exp = C_Fn ("hasConstructor", [C_VoidPtr, C_String],          C_Int8)   % boolean value
+  op selstrncpy     : C_Exp = C_Fn ("SetConstructor", [C_String,  C_String],          C_String) % strncpy
+
   op c4BuiltInExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, exp : I_BuiltinExpression) : C_Spec * C_Block * C_Exp =
     let 
       def c4e e = c4Expression (ctxt, cspc, block, e) 
@@ -813,9 +816,8 @@ I2LToC qualifying spec
     let
       def c41e f e1 =
 	let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
-        (cspc, block, f (ce1))
+        (cspc, block, f ce1)
     in
-    let strcmp = C_Fn ("strcmp", [C_Ptr C_Char, C_Ptr C_Char], C_Int) in
     let
       def strless (ce1, ce2) =
 	let strcmpcall = C_Apply (strcmp, [ce1, ce2]) in
@@ -832,7 +834,9 @@ I2LToC qualifying spec
     let
       def stringToFloat e =
 	case c4e e of
-	  | (cspc, block, C_Const (C_String s)) -> (cspc, block, C_Const (C_Float s))
+	  | (cspc, block, C_Const (C_Str s)) -> 
+            let f = (true, 11, 22, None) in % TODO: FIX THIS TO PARSE s
+            (cspc, block, C_Const (C_Float f))
 	  | _ -> fail "expecting string as argument to \"stringToFloat\""
     in
     case exp of
@@ -867,12 +871,12 @@ I2LToC qualifying spec
       | I_FloatGreater        (e1, e2) -> c42e (fn (c1, c2) -> C_Binary (C_Gt,     c1, c2))     e1 e2
       | I_FloatLessOrEqual    (e1, e2) -> c42e (fn (c1, c2) -> C_Binary (C_Le,     c1, c2))     e1 e2
       | I_FloatGreaterOrEqual (e1, e2) -> c42e (fn (c1, c2) -> C_Binary (C_Ge,     c1, c2))     e1 e2
-      | I_FloatToInt          (e1)     -> c41e (fn (c1)     -> C_Cast   (C_Int,    c1))         e1
+      | I_FloatToInt          (e1)     -> c41e (fn (c1)     -> C_Cast   (C_Int32,  c1))         e1
 
       | I_StrEquals           (e1, e2) -> c42e strequal e1 e2
 
-  op ctrue  : C_Exp = C_Var ("TRUE",  C_Int)
-  op cfalse : C_Exp = C_Var ("FALSE", C_Int)
+  op ctrue  : C_Exp = C_Var ("TRUE",  C_Int32)
+  op cfalse : C_Exp = C_Var ("FALSE", C_Int32)
 
   % --------------------------------------------------------------------------------
 
@@ -895,7 +899,7 @@ I2LToC qualifying spec
 	let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
 	Some (cspc, block, f (ce1))
     in
-    if ~bitStringSpecial then 
+    if ~bitStringSpecial? then 
       None
     else 
       case exp of
@@ -914,20 +918,21 @@ I2LToC qualifying spec
 
   op constExpr? (cspc : C_Spec, expr : C_Exp) : Bool =
     case expr of
-      | C_Const  _               -> true
-      | C_Unary  (_, e1)         -> constExpr? (cspc, e1)
-      | C_Binary (_, e1, e2)     -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
-        % this isn't true in C:
-        % | C_Var (vname, vdecl) ->
-        %   (case findLeftmost (fn (id, _, _)->id=vname) cspc.varDefns of
-        % | Some (_, _, exp) -> constExpr? (cspc, exp)
-        % | _ -> false)
-      | C_Var    ("TRUE",  C_Int) -> true
-      | C_Var    ("FALSE", C_Int) -> true
-      | C_Field  []               -> true
-      | C_Field  (e::es)          -> (constExpr? (cspc, e)) && (constExpr? (cspc, C_Field es))
-      | _ -> false
+      | C_Const  _                  -> true
+      | C_Unary  (_, e1)            -> constExpr? (cspc, e1)
+      | C_Binary (_, e1, e2)        -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
+      | C_Var    ("TRUE",  C_Int32) -> true
+      | C_Var    ("FALSE", C_Int32) -> true
+      | C_Field  []                 -> true
+      | C_Field  (e::es)            -> (constExpr? (cspc, e)) && (constExpr? (cspc, C_Field es))
 
+      % this isn't true in C:
+      % | C_Var (vname, vdecl) ->
+      %   (case findLeftmost (fn (id, _, _)->id=vname) cspc.varDefns of
+      % | Some (_, _, exp) -> constExpr? (cspc, exp)
+      % | _ -> false)
+
+      | _ -> false
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %                                                                     %
@@ -1058,31 +1063,31 @@ I2LToC qualifying spec
   % expressions.
   op getSelAssignStmt (ctxt : I2C_Context, selstr : String, varname : String, vartype : C_Type) 
     : C_Stmt =
-    let selstrncpy = C_Fn ("SetConstructor", [C_Ptr C_Char, C_Ptr C_Char], C_Void)         in
-    let variable   = C_Var (varname, vartype)                                              in
-    let variable   = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
-    C_Exp (C_Apply (selstrncpy, [variable, C_Const (C_String selstr)]))
+    let variable = C_Var (varname, vartype)                                              in
+    let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
+    C_Exp (C_Apply (selstrncpy, [variable, C_Const (C_Str selstr)]))
 
   op getSelCompareExp (ctxt : I2C_Context, expr : C_Exp, selstr : String) : C_Exp =
-    let strncmp        = C_Fn ("strncmp",        [C_Ptr C_Char, C_Ptr C_Char, C_Int], C_Int) in
-    let hasConstructor = C_Fn ("hasConstructor", [C_Ptr C_Void, C_Ptr C_Char],        C_Int) in
     let expr = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr in
     case expr of
 
       | C_Unary (Contents, expr) -> 
-        C_Apply (hasConstructor, [expr, C_Const (C_String selstr)])
+        C_Apply (hasConstructor, [expr, C_Const (C_Str selstr)])
 
       | _ -> 
-        let apply = C_Apply (strncmp, [C_StructRef (expr, "sel"), 
-                                       C_Const (C_String selstr), 
-                                       C_Var ("COPRDCTSELSIZE", C_Int)])
+        let apply = C_Apply (strncmp, 
+                             [C_StructRef (expr, "sel"), 
+                              C_Const     (C_Str selstr),
+                              C_Var ("COPRDCTSELSIZE", C_Int32)])
         in
 	C_Binary (C_Eq, apply, C_Const (C_Int (true, 0)))
 
   op getSelCompareExp0 (ctxt : I2C_Context, expr : C_Exp, selstr : String) : C_Exp =
-    let strcmp = C_Fn ("strcmp", [C_Ptr C_Char, C_Ptr C_Char], C_Int)                     in
     let expr   = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr            in
-    let apply  = C_Apply (strcmp, [C_StructRef (expr, "sel"), C_Const (C_String selstr)]) in
+    let apply  = C_Apply (strcmp, 
+                          [C_StructRef (expr, "sel"), 
+                           C_Const     (C_Str selstr)]) 
+    in
     C_Binary (C_Eq, apply, C_Const (C_Int (true, 0)))
 
   % --------------------------------------------------------------------------------
@@ -1276,9 +1281,9 @@ I2LToC qualifying spec
 
   op getPredefinedFnDecl (fname : String) : C_FnDecl =
     case fname of
-      | "swc_malloc" -> ("swc_malloc", [C_Int],  C_Ptr C_Void)
-      | "sizeof"     -> ("sizeof",     [C_Void], C_Int)
-      | "New"        -> ("New",        [C_Void], C_Ptr C_Void)   % this is defined in SWC_common.h
+      | "swc_malloc" -> ("swc_malloc", [C_Int32], C_VoidPtr)
+      | "sizeof"     -> ("sizeof",     [C_Void],  C_UInt32)
+      | "New"        -> ("New",        [C_Void],  C_VoidPtr)   % this is defined in SWC_common.h
       | _ -> fail ("no predefined function \""^fname^"\" found.")
 
   % --------------------------------------------------------------------------------

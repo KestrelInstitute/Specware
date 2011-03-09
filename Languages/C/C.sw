@@ -1,5 +1,7 @@
+C qualifying spec
+{
 
-C qualifying spec {
+  import /Library/IO/Unicode/UnicodeSig  % for UString, UChar
 
   type C_Spec =
     {
@@ -35,85 +37,137 @@ C qualifying spec {
 
   type C_Type =
     | C_Void
-    | C_Char
-    | C_Short
-    | C_Int
-    | C_Long
-    | C_UnsignedChar
-    | C_UnsignedShort
-    | C_UnsignedInt
-    | C_UnsignedLong
-    | C_Float
-    | C_Double
-    | C_LongDouble
-    | C_Base           String
-    | C_Struct         String
-    | C_Union          String
-    | C_Ptr            C_Type
-    | C_Array          C_Type
-    | C_ArrayWithSize  String (*name of constant*) * C_Type
-    | C_Fn             C_Types * C_Type
+    | C_Char                   % 'char', logically distinct from 'signed char' and 'unsigned char', 
+                               % but could be the same as either, depending on version of C,
+                               % hence could be same as C_Int8 or C_UInt8, depending on version
+
+    %% These integer types are unambiguous, but may correspond to a variety of types
+    %% in different versions of C:
+    | C_Int8                   % same as 'signed char'                                  or 'char'
+    | C_Int16                  % same as 'signed short int'   or 'signed int'           or 'int'
+    | C_Int32                  % same as 'signed int'         or 'signed long int'      or 'int'
+    | C_Int64                  % same as 'signed long int'    or 'signed long long int'
+    | C_UInt8                  % same as 'unsigned char'      or 'char'
+    | C_UInt16                 % same as 'unsigned short int' or 'unsigned int'         
+    | C_UInt32                 % same as 'unsigned int'       or 'unsigned long int'
+    | C_UInt64                 % same as 'unsigned long int'  or 'unsigned long long int'
+
+    | C_Size                   % used as coercion from ptrs, length of arrays, etc. -- machine dependent
+
+    | C_Float                  % 'float'
+    | C_Double                 % ''double'
+    | C_LongDouble             % 'long double'
+
+    | C_WChar                  % wide char: L'xx'
+    | C_UTF8                   % unicode - TODO: obscure rules
+    | C_UTF16                  % unicode - TODO: obscure rules
+    | C_UTF32                  % unicode - TODO: obscure rules
+
+    | C_Base           String  % TODO: String ?
+    | C_Struct         String  % TODO: String ?
+    | C_Union          String  % TODO: String ?
+
+    | C_Ptr            C_Type             % '*void', '*int*,   etc.
+    | C_Array          C_Type             % 'int[]', 'char[]', etc.
+    | C_ArrayWithSize  C_Exps  * C_Type   % 'int[10][20]',     etc.
+    | C_Fn             C_Types * C_Type   % '(int, int) : int' etc.
+
     | C_ConstField
 
+  %% types commonly used when building signatures:
+  %% TODO:  we abuse the naming conventions for op's to make these 
+  %%        look like constructors (good idea or bad?)
+  op C_VoidPtr : C_Type = C_Ptr C_Void  
+  op C_String  : C_Type = C_Ptr C_Char
+
   type C_Stmt =
-    | C_Exp     C_Exp
-    | C_Block   C_Block
-    | C_If      C_Exp * C_Stmt * C_Stmt
-    | C_Return  C_Exp
+    | C_Exp         C_Exp
+    | C_Block       C_Block
+    | C_If          C_Exp * C_Stmt * C_Stmt
+    | C_Return      C_Exp
     | C_ReturnVoid
     | C_Break
-    | C_While   C_Exp * C_Stmt
-    | C_Label   String
-    | C_Goto    String
-    | C_IfThen  C_Exp * C_Stmt
-    | C_Switch  C_Exp * C_Stmts
-    | C_Case    C_Const
+    | C_While       C_Exp * C_Stmt
+    | C_Label       String
+    | C_Goto        String
+    | C_IfThen      C_Exp * C_Stmt
+    | C_Switch      C_Exp * C_Stmts
+    | C_Case        C_Const
     | C_Nop
 
 
+  type C_FieldName = String
+  type C_VariantName = String
+
   type C_Exp =
-    | C_Const       C_Const
-    | C_Fn          C_FnDecl
-    | C_Var         C_VarDecl
-    | C_Apply       C_Exp * C_Exps
-    | C_Unary       C_UnaryOp * C_Exp
-    | C_Binary      C_BinaryOp * C_Exp * C_Exp
-    | C_Cast        C_Type * C_Exp
-    | C_StructRef   C_Exp * String
-    | C_UnionRef    C_Exp * String
-    | C_ArrayRef    C_Exp * C_Exp
-    | C_IfExp       C_Exp * C_Exp * C_Exp 
-    | C_Comma       C_Exp * C_Exp
-    | C_SizeOfType  C_Type
-    | C_SizeOfExp   C_Exp
-    | C_Field       C_Exps
+    | C_Const       C_Const                      % 3, 3.5, 'A', "abc", L"abc"
+    | C_Fn          C_FnDecl                     % 'int foo (int, int)'
+    | C_Var         C_VarDecl                    % 'int x'
+    | C_Apply       C_Exp * C_Exps               % f(x,y,z)
+    | C_Unary       C_UnaryOp * C_Exp            % -x
+    | C_Binary      C_BinaryOp * C_Exp * C_Exp   % x+y
+    | C_Cast        C_Type * C_Exp               % (int)x
+    | C_StructRef   C_Exp * C_FieldName          % x.field
+    | C_UnionRef    C_Exp * C_VariantName        % x.variant
+    | C_ArrayRef    C_Exp * C_Exp                % x[y]
+    | C_IfExp       C_Exp * C_Exp * C_Exp        % if x then y else z
+    | C_Comma       C_Exp * C_Exp                % (x; y)
+    | C_SizeOfType  C_Type                       % sizeof(int)
+    | C_SizeOfExp   C_Exp                        % sizeof(x)
+    | C_Field       C_Exps                       % TODO: ?
 
   type C_Const =
-    | C_Char   Char
-    | C_Int    Boolean * Nat
-    | C_Float  String
-    | C_String String
+    | C_Char   Char                                   % 'A'
+    | C_WChar  UChar                                  % TODO: example L'...' 
+    | C_Int    Boolean * Nat                          % 3, -3   [sign? and magnitude]
+    | C_Str    String                                 % "abc"
+    | C_WStr   UString                                % L"abc"  [unicode]
+    | C_Macro  String                                 % TODO: hack to accomodate macros used as constants
+    | C_Float  Bool * Nat * Nat * Option (Bool * Nat) % -3.7, 2.48e-10, etc.
 
   type C_UnaryOp =
-    | C_Contents
-    | C_Address
-    | C_Negate
-    | C_BitNot
-    | C_LogNot
-    | C_PreInc  | C_PreDec
-    | C_PostInc | C_PostDec
+    | C_Contents       % *x
+    | C_Address        % &x
+    | C_Negate         % -x
+    | C_BitNot         % ~x
+    | C_LogNot         % !x
+    | C_PreInc         % ++x
+    | C_PreDec         % --x
+    | C_PostInc        % x++
+    | C_PostDec        % x--
 
   type C_BinaryOp =
-    | C_Set
-    | C_Add | C_Sub | C_Mul | C_Div | C_Mod
-    | C_BitAnd | C_BitOr | C_BitXor
-    | C_ShiftLeft | C_ShiftRight
-    | C_SetAdd | C_SetSub | C_SetMul | C_SetDiv | C_SetMod
-    | C_SetBitAnd | C_SetBitOr | C_SetBitXor
-    | C_SetShiftLeft | C_SetShiftRight
-    | C_LogAnd | C_LogOr
-    | C_Eq  | C_NotEq
-    | C_Lt | C_Gt | C_Le | C_Ge
+    | C_Set            %  x = y
+    | C_Add            %  x + y
+    | C_Sub            %  x - y
+    | C_Mul            %  x * y
+    | C_Div            %  x / y
+    | C_Mod            %  x % y
+    | C_BitAnd         %  x & y
+    | C_BitOr          %  x | y
+    | C_BitXor         %  x xor y
+    | C_ShiftLeft      %  x << y
+    | C_ShiftRight     %  x >> y
+
+    | C_SetAdd         %  x += y
+    | C_SetSub         %  x -= y
+    | C_SetMul         %  x *= y
+    | C_SetDiv         %  x /= y
+    | C_SetMod         %  x %= y
+    | C_SetBitAnd      %  x &= y
+    | C_SetBitOr       %  x |= y
+    | C_SetBitXor      %  x ^= y
+    | C_SetShiftLeft   %  x <<= y
+    | C_SetShiftRight  %  x >>= y
+
+    | C_LogAnd         %  x && y
+    | C_LogOr          %  x || y
+    | C_Eq             %  x == y
+    | C_NotEq          %  x != y
+    | C_Lt             %  x <  y
+    | C_Gt             %  x >  y
+    | C_Le             %  x <= y
+    | C_Ge             %  x >= y
 
   type Strings       = List String
   type C_VarDecls    = List C_VarDecl
@@ -129,4 +183,3 @@ C qualifying spec {
   type C_Stmts       = List C_Stmt
 
 }
-
