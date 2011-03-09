@@ -20,6 +20,8 @@
            "Integer-Spec::--2"
            "Integer-Spec::|!*|"
            "Integer-Spec::*-2"
+           "Integer-Spec::|!**|"
+           "Integer-Spec::**-2"
            "Integer-Spec::|!<|"
            "Integer-Spec::<-2"
            "Integer-Spec::|!<=|"
@@ -131,6 +133,17 @@
 
 (define-compiler-macro *-2 (x y)
  `(the-int (* (the-int ,x) (the-int ,y))))
+
+(defun |!**| (xy)
+ (declare (cons xy))
+ (the-int (expt (the-int (car xy)) (the-int (cdr xy)))))
+
+(defun **-2 (x y)
+ (declare (integer x y))
+ (the-int (expt x y)))
+
+(define-compiler-macro **-2 (x y)
+ `(the-int (expt (the-int ,x) (the-int ,y))))
 
 (defun |!<| (xy)
  (declare (cons xy))
