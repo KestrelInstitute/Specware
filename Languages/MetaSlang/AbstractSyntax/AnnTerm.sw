@@ -523,7 +523,10 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
          | And ([tm], _)   -> unpack(tm, tvs, o_ty)
 	 | And (tms, a) ->
            (let real_tms = filter (fn tm -> ~(anyTerm? tm)) tms in
-              case real_tms of
+              case if real_tms = [] then tms else real_tms of
+                | [] -> (case o_ty of
+                           | Some ty -> (tvs, ty, And (real_tms, a))
+                           | None -> fail("Untyped term: "^printTerm t))
                 | [tm]  -> unpack(tm, tvs, o_ty)
                 | tm :: r_tms ->
                   case o_ty of
