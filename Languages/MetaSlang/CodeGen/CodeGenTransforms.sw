@@ -22,7 +22,7 @@ def builtinSortOp (Qualified (q, id)) =
     | "IntegerAux" -> id in? ["-"]  % unary minus
     | "Char"       -> id in? ["Char", "chr", "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii",
                               "toUpperCase", "toLowerCase"]
-    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring"]
+    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring", "<"]
   % | "Boolean"    -> id in? ["Bool", "true","false","~","&&","||","=>","<=>","~="]
     | _ -> false
 

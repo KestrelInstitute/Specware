@@ -898,7 +898,7 @@ def builtinSortOp(qid) =
     | "Char"       -> id in? ["Char", "chr", "ord", 
                               "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
                               "toUpperCase", "toLowerCase", "toString"]
-    | "String"     -> id in? ["String", "concat", "++", "^", "newline", "length", "subFromTo", "substring", "@", "sub"]
+    | "String"     -> id in? ["String", "concat", "++", "^", "newline", "length", "subFromTo", "substring", "@", "sub", "<"]
     | "System"     -> id in? ["writeLine", "toScreen"]
       %% Non-constructive
     | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
