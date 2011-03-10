@@ -137,7 +137,13 @@ I2L qualifying spec
   % with the wildcard constructor are not reachable.
 
   type I_BuiltinExpression = | I_Equals              I_TypedExpr * I_TypedExpr
-                             | I_StrEquals           I_TypedExpr * I_TypedExpr
+
+                             | I_BoolNot             I_TypedExpr
+                             | I_BoolAnd             I_TypedExpr * I_TypedExpr
+                             | I_BoolOr              I_TypedExpr * I_TypedExpr
+                             | I_BoolImplies         I_TypedExpr * I_TypedExpr
+                             | I_BoolEquiv           I_TypedExpr * I_TypedExpr
+
                              | I_IntPlus             I_TypedExpr * I_TypedExpr
                              | I_IntMinus            I_TypedExpr * I_TypedExpr
                              | I_IntUnaryMinus       I_TypedExpr
@@ -148,8 +154,10 @@ I2L qualifying spec
                              | I_IntGreater          I_TypedExpr * I_TypedExpr
                              | I_IntLessOrEqual      I_TypedExpr * I_TypedExpr
                              | I_IntGreaterOrEqual   I_TypedExpr * I_TypedExpr
+
                              | I_IntToFloat          I_TypedExpr
                              | I_StringToFloat       I_TypedExpr
+
                              | I_FloatPlus           I_TypedExpr * I_TypedExpr
                              | I_FloatMinus          I_TypedExpr * I_TypedExpr
                              | I_FloatUnaryMinus     I_TypedExpr
@@ -160,12 +168,11 @@ I2L qualifying spec
                              | I_FloatLessOrEqual    I_TypedExpr * I_TypedExpr
                              | I_FloatGreaterOrEqual I_TypedExpr * I_TypedExpr
                              | I_FloatToInt          I_TypedExpr
-                             | I_BoolNot             I_TypedExpr
-                             | I_BoolAnd             I_TypedExpr * I_TypedExpr
-                             | I_BoolOr              I_TypedExpr * I_TypedExpr
-                             | I_BoolImplies         I_TypedExpr * I_TypedExpr
-                             | I_BoolEquiv           I_TypedExpr * I_TypedExpr
  
+                             | I_StrLess             I_TypedExpr * I_TypedExpr
+                             | I_StrEquals           I_TypedExpr * I_TypedExpr
+                             | I_StrGreater          I_TypedExpr * I_TypedExpr
+
   %% These are the rules that can occur in the body of a transformation step.
   %% An UpdateBlock contains a list of assignments together with local declaration
   %% that are needed to realize the parallel update semantics
@@ -420,8 +427,20 @@ I2L qualifying spec
       | I_Equals              (e1,e2) ->
         I_Equals              (mp e1, mp e2)
 
-      | I_StrEquals           (e1,e2) ->
-        I_StrEquals           (mp e1, mp e2)
+      | I_BoolNot             (e1)    ->
+        I_BoolNot             (mp e1)
+
+      | I_BoolAnd             (e1,e2) ->
+        I_BoolAnd             (mp e1, mp e2)
+
+      | I_BoolOr              (e1,e2) ->
+        I_BoolOr              (mp e1, mp e2)
+
+      | I_BoolImplies         (e1,e2) ->
+        I_BoolImplies         (mp e1, mp e2)
+
+      | I_BoolEquiv           (e1,e2) ->
+        I_BoolEquiv           (mp e1, mp e2)
 
       | I_IntPlus             (e1,e2) ->
         I_IntPlus             (mp e1, mp e2)
@@ -486,20 +505,14 @@ I2L qualifying spec
       | I_FloatToInt          (e1)    ->
         I_FloatToInt          (mp e1) 
 
-      | I_BoolNot             (e1)    ->
-        I_BoolNot             (mp e1)
+      | I_StrLess             (e1,e2) ->
+        I_StrLess             (mp e1, mp e2)
 
-      | I_BoolAnd             (e1,e2) ->
-        I_BoolAnd             (mp e1, mp e2)
+      | I_StrEquals           (e1,e2) ->
+        I_StrEquals           (mp e1, mp e2)
 
-      | I_BoolOr              (e1,e2) ->
-        I_BoolOr              (mp e1, mp e2)
-
-      | I_BoolImplies         (e1,e2) ->
-        I_BoolImplies         (mp e1, mp e2)
-
-      | I_BoolEquiv           (e1,e2) ->
-        I_BoolEquiv           (mp e1, mp e2)
+      | I_StrGreater          (e1,e2) ->
+        I_StrGreater          (mp e1, mp e2)
 
   % --------------------------------------------------------------------------------
   op findStadCode (allstads : List I_StadCode, stadname : String) : Option I_StadCode =
