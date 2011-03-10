@@ -117,7 +117,7 @@ spec
                                 (addmissingfrombase? : Bool) 
     : Spec =
     let trans_table = thyMorphismMaps spc "C" c_convertPrecNum in
-    let _ = writeLine(";;; thyMorphismMaps = " ^ anyToString thyMorphismMaps) in
+    %let _ = writeLine(";;; thyMorphismMaps = " ^ anyToString thyMorphismMaps) in
     %let _ = showSorts spc in
     %let _ = writeLine(";;; generating C code...") in
     %let _ = writeLine("-----------------------------------------------------------\n\n\n") in
@@ -125,7 +125,7 @@ spec
     %let _ = writeLine("\n\n\n-----------------------------------------------------------") in
     %let _ = writeLine(printSpec spc) in
     let spc = translateRecordMergeInSpec            spc in
-    let spc = identifyIntSorts                      spc in
+   %let spc = identifyIntSorts                      spc in
     let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, builtinSortOp) else spc in
     let spc = removeCurrying                        spc in
     let spc = instantiateHOFns                      spc in

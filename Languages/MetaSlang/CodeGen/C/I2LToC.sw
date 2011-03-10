@@ -35,7 +35,7 @@ I2LToC qualifying spec
     ctxt << {currentFunParams = params}                        
 
   op generateC4ImpUnit (impunit : I_ImpUnit, xcspc : C_Spec, useRefTypes : Bool) : C_Spec =
-   %let _ = writeLine(";;   phase 2: generating C...") in
+  %let _ = writeLine(";;   phase 2: generating C...") in
     let ctxt = {xcspc            = xcspc,
                 useRefTypes      = useRefTypes,
                 currentFunName   = None,
@@ -125,7 +125,7 @@ I2LToC qualifying spec
           | Some initstr -> addVarDefn (cspc, (vname, ctype, C_Var (initstr, C_Void))) % ok,ok, ... 
             
   op voidToUInt ((vname, ctype) : C_VarDecl) : C_VarDecl =
-    %% precise type (C_UInt16, C_UInt32, C_UInt64) depends on target machine
+    %% TODO: precise type (C_UInt16, C_UInt32, C_UInt64) depends on target machine
     (vname, if ctype = C_Void then C_UInt32 else ctype)
 
   (*
@@ -293,9 +293,9 @@ I2LToC qualifying spec
         case fields of
           | [] -> (cspc, [])
           | (fname, itype)::fields -> 
-            let (cspc, ctype)   = c4Type (ctxt, cspc, itype)                in
-            let ctype           = if ctype = C_Void then C_Int32 else ctype in % no void fields allowed
-            let (cspc, sfields) = structUnionFields (cspc, fields)          in
+            let (cspc, ctype)   = c4Type (ctxt, cspc, itype)                 in
+            let ctype           = if ctype = C_Void then C_UInt32 else ctype in % no void fields allowed
+            let (cspc, sfields) = structUnionFields (cspc, fields)           in
             (cspc, (fname, ctype) :: sfields)
 
       def addFieldNamesToTupleTypes (types) =
@@ -306,6 +306,8 @@ I2LToC qualifying spec
     case c4TypeSpecial (cspc, typ) of
       | Some res -> res
       | _ ->
+        %let _ = writeLine ("Looking at " ^ anyToString typ) in
+        let xx =
         case typ of
 
           | I_Primitive p -> (cspc, c4PrimitiveType p)
@@ -348,8 +350,36 @@ I2LToC qualifying spec
            
           | I_Void -> (cspc, C_Void)
             
-          | I_BoundedNat n -> (cspc, C_Int32)
+          | I_BoundedNat n -> 
+            %let _ = writeLine ("Type for bounded nat : " ^ anyToString n) in
+            let c_type =
+                if n <= 2**8  then C_UInt8  else
+                if n <= 2**16 then C_UInt16 else
+                if n <= 2**32 then C_UInt32 else
+                if n <= 2**64 then C_UInt64 else
+                let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using UInt32") in
+                C_UInt32
+            in
+            %let _ = writeLine (" ===> " ^ anyToString c_type) in
+            (cspc, c_type)
             
+          | I_BoundedInt (m, n) -> 
+            %let _ = writeLine ("Type for bounded int : " ^ anyToString m ^ " " ^ anyToString n) in
+            let c_type =
+                if        0 <= m && n < 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
+                if        0 <= m && n < 2**16 then C_UInt16 else 
+                if        0 <= m && n < 2**32 then C_UInt32 else
+                if        0 <= m && n < 2**64 then C_UInt64 else
+                if -(2**7)  <= m && n < 2**7  then C_Int8   else
+                if -(2**15) <= m && n < 2**15 then C_Int16  else
+                if -(2**31) <= m && n < 2**31 then C_Int32  else
+                if -(2**63) <= m && n < 2**63 then C_Int64  else
+                let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
+                C_Int32
+            in
+            % let _ = writeLine (" ===> " ^ anyToString c_type) in
+            (cspc, c_type)
+
           | I_BoundedList (ltype, n) -> 
             let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                                   in
             let deflen             = length cspc.defines                                                          in
@@ -365,6 +395,9 @@ I2LToC qualifying spec
             (print typ;
              % (cspc, Int)
              fail ("sorry, no code generation implemented for that type."))
+        in
+        % let _ = writeLine ("result = " ^ anyToString xx) in
+        xx
             
   op c4Types (ctxt : I2C_Context, cspc : C_Spec, types : I_Types) : C_Spec * C_Types =
     foldl (fn ((cspc, ctypes), typ) ->
@@ -376,8 +409,10 @@ I2LToC qualifying spec
   op c4PrimitiveType (prim : I_Primitive) : C_Type =
     case prim of
       | I_Bool   -> C_Int8
-      | I_Nat    -> C_UInt32
-      | I_Int    -> C_Int32
+      | I_Nat    -> % let _ = writeLine ("I2LToC Unbounded Nat treated as unsigned 32 bits") in 
+                    C_UInt32  % unbounded -- to be avoided
+      | I_Int    -> % let _ = writeLine ("I2LToC Unbounded Int treated as signed 32 bits")   in 
+                    C_Int32  % unbounded -- to be avoided
       | I_Char   -> C_Char
       | I_String -> C_String
       | I_Float  -> C_Float
@@ -873,7 +908,9 @@ I2LToC qualifying spec
       | I_FloatGreaterOrEqual (e1, e2) -> c42e (fn (c1, c2) -> C_Binary (C_Ge,     c1, c2))     e1 e2
       | I_FloatToInt          (e1)     -> c41e (fn (c1)     -> C_Cast   (C_Int32,  c1))         e1
 
-      | I_StrEquals           (e1, e2) -> c42e strequal e1 e2
+      | I_StrLess             (e1, e2) -> c42e strless    e1 e2
+      | I_StrEquals           (e1, e2) -> c42e strequal   e1 e2
+      | I_StrGreater          (e1, e2) -> c42e strgreater e1 e2
 
   op ctrue  : C_Exp = C_Var ("TRUE",  C_Int32)
   op cfalse : C_Exp = C_Var ("FALSE", C_Int32)

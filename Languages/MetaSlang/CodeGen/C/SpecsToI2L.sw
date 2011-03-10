@@ -181,6 +181,85 @@ SpecsToI2L qualifying spec
     else
       None 
 
+  type LeLt   = | LE | LT
+  type MinMax = | Min | Max
+
+  op find_simple_constant_bounds (tm : Term) : Option (Int * Int) =
+    %% returns Some (m, n) if the type directly expresses the inclusive range [m, n], otherwise None
+    let 
+
+      def eval_const tm =
+        %% todo: could be smarter, but for now just recognizes constant terms such as 10 or -10, but not 3+4 or 2**8, etc.
+        case tm of
+          | Fun   (Nat m,_,_)                                                      -> Some m
+          | Apply (Fun(Op(Qualified("IntegerAux","-"),_),_,_), Fun(Nat m,_,_), _) -> Some (-m)
+          | _ -> None
+
+      def find_min_bound vid tm1 tm2 =
+        %% look for simple constant lower bounds such as '-10 < x', 'x >= 100', etc. 
+        let maybe_min =
+            case (vid, tm1, tm2) of
+              | ("<",  bound,        Var ((v,_),_)) -> Some (bound, LT, v)
+              | ("<=", bound,        Var ((v,_),_)) -> Some (bound, LE, v)
+              | (">",  Var((v,_),_), bound        ) -> Some (bound, LT, v)
+              | (">=", Var((v,_),_), bound        ) -> Some (bound, LE, v)
+              | _ -> None
+        in
+        case maybe_min of
+          | Some (tm, pred, v) | v = vid -> 
+            (case eval_const tm of
+               | Some m -> Some (if pred = LE then m else m + 1) % want bound <= v
+               | _ -> None)
+          | _ -> None
+
+      def find_max_bound vid tm1 tm2 =
+        %% similar, but look for upper bounds such as 'x < -10', 'x <= 100', etc.
+        let maybe_max = 
+            case (vid, tm1, tm2) of
+              | ("<",  Var((v,_),_), bound         ) -> Some (v, LT, bound)
+              | ("<=", Var((v,_),_), bound         ) -> Some (v, LE, bound)
+              | (">",  bound,        Var ((v,_),_) ) -> Some (v, LT, bound)
+              | (">=", bound,        Var ((v,_),_) ) -> Some (v, LE, bound)
+              | _ -> None
+        in
+        case maybe_max of
+          | Some (v, pred, tm) | v = vid ->
+            (case eval_const tm of
+               | Some m -> Some (if pred = LE then m else m - 1) % want v <= bound
+               | _ -> None)
+          | _ -> None
+
+      def find_bound tm vid =
+        case (tm : Term) of
+          | Apply (Fun(Op(Qualified("Integer",id),_),_,_),
+                   Record ([("1",tm1),("2",tm2)],_),
+                   _)
+            ->
+            (case find_min_bound id tm1 tm2 of
+               | Some m -> Some (Min, m)
+               | _ ->
+                 case find_max_bound id tm1 tm2 of
+                   | Some m -> Some (Max, m)
+                   | _ -> None)
+          | _ -> None
+
+    in
+    case tm of
+      | Lambda([(VarPat ((vid,_),_),
+                 Fun (Bool true, _, _),
+                 Apply  (Fun(And,_,_), Record ([("1",tm1), ("2",tm2)], _), _))],
+               _)
+        ->
+        (let r1 = find_bound tm1 vid in 
+         let r2 = find_bound tm2 vid in
+         %% Some (true.  m) indicates inclusive min restriction
+         %% Some (false. n) indicates inclusive max restriction
+         case (r1, r2) of
+           | (Some (Min, m), Some (Max, n)) -> Some (m, n)
+           | (Some (Max, n), Some (Min, m)) -> Some (m, n)
+           | _ -> None)
+      | _ -> None
+
   op type2itype (ctxt : S2I_Context,
                  spc  : Spec,
                  tvs  : TyVars,
@@ -220,7 +299,8 @@ SpecsToI2L qualifying spec
 
       | Subsort (Base (Qualified ("Nat", "Nat"), [], _),
                  %% {x : Nat -> x < n} where n is a Nat
-                 Lambda([(VarPat((X,_),_),_,
+                 Lambda([(VarPat((X,_),_),
+                          Fun (Bool true, _, _),
                           Apply(Fun(Op(Qualified(_,"<"),_),_,_),
                                 Record([(_,Var((X0,_),_)),
                                         (_,Fun(Nat(n),_,_))],
@@ -229,9 +309,19 @@ SpecsToI2L qualifying spec
                         )],_),_) 
         -> 
         if X = X0 then 
-          I_BoundedNat n
+          I_BoundedNat (n - 1)
         else 
           I_Primitive I_Nat
+
+      | Subsort (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
+        (case find_simple_constant_bounds pred of
+           | Some (m, n) ->
+             if m = 0 then
+               I_BoundedNat n
+             else
+               I_BoundedInt (m, n)
+           | _ ->
+             I_Primitive I_Int)
 
       % ----------------------------------------------------------------------
       % special form for list sorts, term must restrict length of list
@@ -244,7 +334,11 @@ SpecsToI2L qualifying spec
         let ptype = type2itype (unsetToplevel ctxt, spc, tvs, ptyp) in
         let err = "wrong form of restriction term for list length" in
         (case tm of
-           | Lambda ([(VarPat((X,_),_),t1,t2)],_) -> 
+           | Lambda ([(VarPat((X,_),_),
+                       Fun (Bool true, _, _),
+                       t2)],
+                     _)
+             -> 
              (case t2 of
                 | Apply(Fun(cmp,_,_),
                         Record([arg1,arg2],_),_) ->
@@ -429,7 +523,7 @@ SpecsToI2L qualifying spec
           % this corresponds to a term of the form {x:Nat|x<C} where C must be a Integer const
           | Subsort (Base (Qualified (_, "Nat"), [], _),
                      Lambda ([(VarPat((X,_), _), 
-                               _,
+                               Fun (Bool true, _, _),
                                Apply (Fun (Op (Qualified(_,"<"), _), _, _),
                                       Record([(_, Var ((X0,_), _)),
                                               (_, Fun (Nat(n), _, _))],
@@ -534,7 +628,7 @@ SpecsToI2L qualifying spec
             prefix ^ "unsupported operator definition format:\n       " ^ printTerm tm
         in
         case tm of
-          | Lambda ([(pat, _, body)], _) ->
+          | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
             let plist =
                 case pat of
 
@@ -601,7 +695,7 @@ SpecsToI2L qualifying spec
   op liftUnsupportedPattern (spc : Spec, tm : Term) : Term =
     let b = termAnn tm in
     case tm of
-      | Lambda ([(pat, _, body)], _) ->
+      | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
         (case pat of
            | VarPat _ -> tm
            | RecordPat (plist, _) -> 
@@ -897,14 +991,14 @@ SpecsToI2L qualifying spec
     let utyp = stripSubsorts (spc, typ) in
     case utyp of
       | Boolean                         _  -> primEq ()
-      | Base (Qualified(_,"Bool"),   [],_) -> primEq ()
-      | Base (Qualified(_,"Nat"),    [],_) -> primEq ()
-      | Base (Qualified(_,"Int"),    [],_) -> primEq ()
-      | Base (Qualified(_,"Int"),    [],_) -> primEq ()
-      | Base (Qualified(_,"Char"),   [],_) -> primEq ()
-     %| Base (Qualified(_,"Float"),  [],_) -> primEq ()
-      | Base (Qualified(_,"String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
+      | Base (Qualified ("Bool",    "Bool"),   [],_) -> primEq ()
+      | Base (Qualified ("Nat",     "Nat"),    [],_) -> primEq ()  % TODO: is this possible?
+      | Base (Qualified ("Integer", "Int"),    [],_) -> primEq ()
+      | Base (Qualified ("Char",    "Char"),   [],_) -> primEq ()
+      | Base (Qualified ("Float",   "Float"),  [],_) -> primEq ()
+      | Base (Qualified ("String",  "String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
       | _ ->
+        %let _ = writeLine("Generating equality for [" ^ printTerm t1 ^ "] vs. [" ^ printTerm t2 ^ "]") in
         let typ = foldSort (spc, termSort t1) in
         let errmsg = "sorry, the current version of the code generator doesn't support the equality check for sort\n"
                      ^ printSort typ
@@ -973,7 +1067,6 @@ SpecsToI2L qualifying spec
       | (Fun (Op (Qualified ("Integer",    "+"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntPlus             (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    "-"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntMinus            (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("IntegerAux", "-"),             _), _, _),  [t1])    -> Some (I_Builtin (I_IntUnaryMinus       (t2e t1)))
-      | (Fun (Op (Qualified ("Integer",    "~"),             _), _, _),  [t1])    -> Some (I_Builtin (I_IntUnaryMinus       (t2e t1)))
       | (Fun (Op (Qualified ("Integer",    "*"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntMult             (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    "div"),           _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntDiv              (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    "rem"),           _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntRem              (t2e t1, t2e t2)))
@@ -999,6 +1092,9 @@ SpecsToI2L qualifying spec
       | (Fun (Op (Qualified ("Float",      "<="),            _), _, _),  [t1,t2]) -> Some (I_Builtin (I_FloatLessOrEqual    (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Float",      ">="),            _), _, _),  [t1,t2]) -> Some (I_Builtin (I_FloatGreaterOrEqual (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Float",      "toInt"),         _), _, _),  [t1])    -> Some (I_Builtin (I_FloatToInt          (t2e t1)))
+
+      | (Fun (Op (Qualified ("String",     "<"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrLess             (t2e t1, t2e t2)))
+      | (Fun (Op (Qualified ("String",     ">"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrGreater          (t2e t1, t2e t2)))
 
       % var refs:
       %      | (Fun(Op(Qualified("ESpecPrimitives","ref"),_),_,_),[t1])
