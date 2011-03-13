@@ -173,8 +173,8 @@ AnnSpecPrinter qualifying spec
      | Op          (idInfo, _) -> pp.ppOpId (idInfo)
      | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
-     | String      s           -> pp.fromString ("\""^s^"\"")              % "abc"
-     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % #A
+     | String      s           -> pp.fromString ("\""^s^"\"")          % "abc"
+     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % #A appease xemacs with bogus closing quote: "
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
@@ -789,7 +789,8 @@ AnnSpecPrinter qualifying spec
      | BoolPat   (b, _) -> string (Bool.show b)
      | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
-     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))   % #A
+     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))   % #A appease xemas with bogus closing quote: "
+
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
 	 blockFill (0, 
