@@ -20,9 +20,13 @@ spec
     %% C   :  version/C/foo.c, foo.h, foo.o, foo*, ...
     %% Java:  version/java/xyz.java, foo*
     {
+     print("\n-Lisp-\n");
      makeLisp spec_info rel_uid version;
+     print("\n-C-\n");
      makeC    spec_info rel_uid version;
-     makeJava spec_info rel_uid version
+     print("\n-Java-\n");
+     % makeJava spec_info rel_uid version;
+     print("\n-----\n")
      }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
