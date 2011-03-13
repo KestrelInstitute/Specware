@@ -142,15 +142,17 @@ RemoveCurrying qualifying spec
         def unCurryApply(f,args,spc) =
 	  let fsrt = termSortEnv(spc,f) in
 	  let curryShape = curryShapeNum(spc,fsrt) in
-	  if curryShape = length args
-	    then mkApply(convertFun(f,curryShape,spc),
-			 mkTuple(map unCurryTermRec args))
+	  if curryShape = length args then
+            mkApply(convertFun(f,curryShape,spc),
+                    mkTuple(map unCurryTermRec args))
 	  else
-	    let newVars = mkNewVars(removePrefix(curryArgSorts(spc,fsrt),
+            %% TODO: Specware miscompiles this if 'freevars f' is used inline
+            let free_vars = freeVars f in
+	    let newVars = mkNewVars(removePrefix(curryArgSorts(spc,fsrt), 
                                                  length args),
-				    map (fn (id,_) -> id) (freeVars f),
-				    spc)
-	    in
+                                    map (fn (id,_) -> id) free_vars,
+                                    spc)
+            in
 	    mkLambda(mkTuplePat(map mkVarPat newVars),
 		     mkApply(convertFun(f,curryShape,spc),
 			     mkTuple(map unCurryTermRec args
