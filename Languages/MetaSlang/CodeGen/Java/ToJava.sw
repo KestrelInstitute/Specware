@@ -377,7 +377,7 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
      | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
   }
 
-op addCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var
+op addCaseMethodsToClsDeclsM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var
                                  * List(Id * JGen.Term) * Option JGen.Term * JGen.Term -> JGenEnv ()
 def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term) =
   {
@@ -415,7 +415,7 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, 
    addMethDeclToSummandsM(opId, srthId, methodDecl, cases, opt_other, case_term)
   }
   
-op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv ()
+op addNonCaseMethodsToClsDeclsM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var * JGen.Term -> JGenEnv ()
 def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
    rngId <- srtIdM rng;
@@ -465,7 +465,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 
-%op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
+%op mkDefaultMethodForCaseM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
 %def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
 %  {
 %   spc <- getEnvSpec;
@@ -474,7 +474,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
 %   return res
 %  }
 
-op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var
+op mkDefaultMethodForCaseM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var
                                * Option JGen.Term -> JGenEnv (Option MethDecl)
 def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,opt_other) =
   %let (mods,opt_mbody) = ([Abstract],None) in
