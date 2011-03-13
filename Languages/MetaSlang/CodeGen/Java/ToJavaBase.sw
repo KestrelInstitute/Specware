@@ -475,7 +475,7 @@ op mkJavaString: String -> JavaExpr
 def mkJavaString(s) =
   let chars = explode s in
   let s = foldl (fn
-		 | (s,#\") -> s^"\\\""
+		 | (s,#\") -> s^"\\\""  % appease xemacs with bogus closing quote: "
 		 | (s,#\n) -> s^"\\n"
                  | (s,c) -> s^(show c)
 		) "" chars
