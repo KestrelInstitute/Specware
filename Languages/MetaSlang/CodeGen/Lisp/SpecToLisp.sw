@@ -788,7 +788,7 @@ SpecToLisp qualifying spec
 				      []
 				      free_vars)]))
 
- def printTerm_OnOneLine term = 
+ def SpecToLisp.printTerm_OnOneLine term = 
    let s = PrettyPrint.toString (format (8000, ppTerm (initialize (asciiPrinter, false))
 					 ([], Top) 
 					 term))
