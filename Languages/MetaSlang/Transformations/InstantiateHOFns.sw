@@ -534,7 +534,6 @@ spec
      | Record (fields, _) -> map (fn (_, tm) -> tm) fields
      | _ -> [tm]
 
-
  %% ================================================================================
  %% The heart of the matter.
  %% Everything else is arranged so that this routine has the right information
@@ -558,6 +557,7 @@ spec
                       curried?     : Bool,
                       spc          : Spec)
    : Term =
+  
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
@@ -570,6 +570,7 @@ spec
    in
    let remaining_params    = map (fn i -> params @ i) remaining_indices in
    let remaining_args      = map (fn i -> args   @ i) remaining_indices in
+
    if recursive? then
      makeRecursiveLocalDef (outer_qid, 
                             qid,
@@ -587,29 +588,34 @@ spec
                             simplifyTerm, 
                             spc)
    else
-     let defbody = instantiateTyVarsInTerm (def_body, tv_subst) in
-     let remaining_params = map (fn p -> instantiateTyVarsInPattern(p, tv_subst))
-                                remaining_params
+     let def_body             = instantiateTyVarsInTerm (def_body, tv_subst)                    in
+     let remaining_params     = map (fn p -> instantiateTyVarsInPattern(p, tv_subst))
+                                    remaining_params
      in
      let (remaining_params, remaining_args) = 
-         adjustBindingsToAvoidCapture (remaining_params, 
-                                       remaining_args, 
-                                       args, 
-                                       defbody)
+         adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body)
      in
-    %let defbody = simplifyTerm defbody in
-     let (new_tm, sbst) = makeLet (remaining_params, remaining_args, defbody, p_subst) in
-     let new_tm         = simplifyTerm new_tm         in
-     let new_tm         = substitute   (new_tm, sbst) in
-     let trans_new_tm   = unfoldInTerm (outer_qid, 
-                                        simplifyTerm new_tm,
-                                        unfold_map, 
-                                        simplifyTerm,
-                                        spc)
-     in
+     let new_body             = simplifyTerm def_body                                           in
+     let new_body             = substitute (new_body, p_subst)                                  in
+
+     %% The substitutions in p_subst only make sense in the body of the definition.
+     %% Once they are done there, do not propagate them into makeLet.
+     %%
+     %% Instead, makeLet may create an entirely new set of substitutions to be applied to the body.
+     %% Alternatively, it might just add the corrseponding let bindings.
+
+     let (new_let, new_subst) = makeLet (remaining_params, remaining_args, new_body)            in
+     let new_let              = substitute (new_let, new_subst)                                 in
+     let new_tm               = simplifyTerm new_let                                            in
+     let trans_new_tm         = unfoldInTerm (outer_qid, new_tm, unfold_map, simplifyTerm, spc) in
+
+     %% TODO: The following test is just weird.  Explain it.
+     %% Note that if avoid_bindings? (used by makeLet) is true, the resulting form looks the 
+     %% same but the freeVars test gives a different result (huh?), changing the sense of the test.
+
      if (trans_new_tm = new_tm 
            && sizeTerm new_tm > sizeTerm orig_tm
-           && ~(exists? (fn (_,t) -> embed? Apply t || freeVars t ~= []) sbst))
+           && ~(exists? (fn (_,t) -> embed? Apply t || freeVars t ~= []) new_subst))
        then 
          orig_tm
      else 
@@ -813,20 +819,23 @@ spec
    else	
      (remaining_params, remaining_args)
 
- op makeLet (params : List Pattern,
-             args   : List Term,
-             body   : Term,
-             sbst   : VarSubst)
+ op avoid_bindings? : Bool = false % not clear if this helps or hurts
+
+ op makeLet (params : List Pattern, args : List Term, body : Term) 
    : Term * VarSubst =
-   case (params, args) of
+   let
+     def aux (params, args, body, sbst) =
+       case (params, args) of
 
-     | (param :: params, arg :: args) ->
-       let (newbod, sbst) = makeLet (params, args, body, sbst) in
-       (case (param, arg) of
-          | (VarPat (v,_), Var _) | false -> (newbod, (v, arg)::sbst) % TODO: Causes problems with var capture
-          | _ -> (mkLet ([(param, arg)], newbod), sbst))
+         | (param :: params, arg :: args) ->
+           let (newbod, sbst) = aux (params, args, body, sbst) in
+           (case (param, arg) of
+              | (VarPat (v,_), Var _) | avoid_bindings? -> (newbod, (v, arg)::sbst) % TODO: figure out which is best
+              | _ -> (mkLet ([(param, arg)], newbod), sbst))
 
-     | _ -> (body, sbst)
+         | _ -> (body, sbst)
+   in
+   aux (params, args, body, [])
 
  %% ================================================================================
  %% simplify
