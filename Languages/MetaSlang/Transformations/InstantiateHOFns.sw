@@ -36,29 +36,36 @@ spec
  *
  *     unFoldTerms
  * 
- *       simplifyUnfoldCase 
- *         tryUnfold
- *           typeMatch
- *             matchL
- *         patternMatchRulesToLet 
- * 
+ *       mapSpecNotingOpNames 
+ *         mapSpecOpsNotingName
+ *
  *       maybeUnfoldTerm 
  *         getTupleArg
  *         exploitableTerm?
+ *
  *         makeUnfoldedTerm
+ * 
  *           matchPairs
  *             lookupId *
+ *
  *           makeRecursiveLocalDef
  *             locallyUniqueName
  *               idReferenced?
  *             unfoldInTerm
- *               maybeUnfoldTerm
+ *               maybeUnfoldTerm *
+ *
  *           adjustBindingsToAvoidCapture
+ *
  *           makeLet
+ *
+ *           simplifyUnfoldCase 
+ *             tryUnfold
+ *               typeMatch
+ *                 matchL
+ *             patternMatchRulesToLet 
+ *
  *           unfoldInTerm *
  * 
- *       mapSpecNotingOpNames 
- *         mapSpecOpsNotingName
  *)
 
  %% ================================================================================
@@ -389,7 +396,8 @@ spec
  %% simplify and unfold throughout spec
  %% ================================================================================
 
- %% generalize the term->term fn in TSP_Maps to a function that creates a term->term fn
+ %% Generalize the term->term function in TSP_Maps to a function that creates a 
+ %% term->term function.
  type Generalized_TSP_Maps = (QualifiedId -> Term -> Term) * 
                              (Type    -> Type)             * 
                              (Pattern -> Pattern)
@@ -409,158 +417,27 @@ spec
     in
     mapSpecNotingOpNames gtsp spc
 
- %% ================================================================================
- %% simplify
- %% ================================================================================
+ %% mapSpecNotingOpNames is a variant of mapSpec that allows us to use the name
+ %% of an op in the tranformations being done on terms within it.
+ %% If necessary, it could be generalized to do something similar for types.
 
- op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
-   case tm of
+ op mapSpecNotingOpNames (gtsp : Generalized_TSP_Maps) (spc : Spec) : Spec =
+   let (make_op_map, typ_map, pat_map) = gtsp in
+   let outer_tsp = (make_op_map (mkUnQualifiedId "outside_of_any_op"), typ_map, pat_map) in
+   spc << {
+	   sorts    = mapSpecSorts         outer_tsp spc.sorts,
+	   ops      = mapSpecOpsNotingName gtsp      spc.ops,
+	   elements = mapSpecProperties    outer_tsp spc.elements
+	  }
 
-     | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
-       %% Unfold if function constructs term that matches one case
-       (let uf_tm = case tryUnfold (spc, arg) of
-                      | Some uf_tm -> uf_tm
-                      | _ -> tm
-        in
-          case simplify spc uf_tm of
-
-            | Let (binds, let_body, pos) ->
-              (case patternMatchRulesToLet (rules, let_body, spc) of
-                 | Some exp_tm -> Let (binds, exp_tm, pos)
-                 | _ -> tm)
-
-            | simp_uf_tm ->
-              (case patternMatchRulesToLet (rules, simp_uf_tm, spc) of
-                 | Some exp_tm -> exp_tm
-                 | _ -> tm))
-
-     | Let (binds, bod, pos) ->
-       simplifyOne spc (Let (binds, simplifyUnfoldCase spc bod, pos))
-
-     | _ -> tm
-
- %% ================================================================================
- %% unfold one term
- %% ================================================================================
-
- op tryUnfold (spc: Spec, tm: Term) : Option Term =
-   case tm of
-
-     | Apply (f, arg, _) ->
-       (case f of
-
-          | Fun (Op (qid, _), fun_type, _) -> 
-            %% Uncurried case
-            (case findTheOp (spc, qid) of
-
-               | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
-                 let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
-                 (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
-
-                    | (Lambda _, Some tv_subst) ->
-                      let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
-                      Some (simplifiedApply (inst_dfn, arg, spc))
-
-                    | _ -> None)
-               | _ -> None)
-
-          | Apply _ ->
-	    (case getCurryArgs tm of
-
-	       | Some (f, args) ->
-		 (case f of
-
-		    | Fun (Op (qid, _), fun_type, _) ->
-		      (case findTheOp (spc, qid) of
-
-                         | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
-                           let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
-                           (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
-
-                              | (Lambda _, Some tv_subst) ->
-                                let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
-                                let inst_tm = mkCurriedApply (inst_dfn, args) in
-                                Some (simplify spc inst_tm)
-
-                              | _ -> None)
-                         | _ -> None)
-                    | _ -> None)
-	       | _ -> None)
-          | _ -> None)
-     | _ -> None
-               
- op sortMatch (t1 : Type, t2 : Type, spc : Spec) : TyVarSubst =
-   let 
-     def match (t1, t2, tv_subst) =
-       case (t1, t2) of
-
-         | (TyVar (id1, _), t2) -> 
-           if some? (findLeftmost (fn (id, _) -> id = id1) tv_subst) then
-             tv_subst
-           else 
-             (id1, t2) :: tv_subst
-             
-         | (Arrow (d1, r1, _), Arrow (d2, r2, _)) -> 
-           match (r1, r2, match (d1, d2, tv_subst))
-           
-         | (Product (ts1, _), Product (ts2, _)) -> 
-           matchL (ts1, ts2, tv_subst,
-                   fn ((_,t1), (_,t2), tv_subst) -> match (t1, t2, tv_subst))
-           
-         | (CoProduct (ts1, _), CoProduct (ts2, _)) -> 
-           matchL (ts1, ts2, tv_subst,
-                   fn ((id1, t1), (id2, t2), tv_subst) ->
-                     if id1 = id2 then
-                       case (t1, t2) of
-                         | (None, None) -> tv_subst 
-                         | (Some t1, Some t2) -> match (t1, t2, tv_subst)
-                     else 
-                       tv_subst)
-           
-         | (Quotient (t1, _, _), Quotient(t2, _, _)) -> 
-           match (t1, t2, tv_subst)
-           
-         | (Subsort (t1, _, _), t2) -> match (t1, t2, tv_subst)
-           
-         | (t1, Subsort (t2, _, _)) -> match (t1, t2, tv_subst)
-           
-         | (Base (id1, ts1, pos1), Base (id2, ts2, pos2)) ->
-           if id1 = id2 then
-             matchL (ts1, ts2, tv_subst, match)
-           else
-             let t2x = unfoldBase(spc, t2) in
-             if equalType? (t2, t2x) then % also reasonable: equivType? spc (typ2, t2x)
-               tv_subst
-             else 
-               match (t1, t2x, tv_subst)
-               
-         | (_, Base _) ->
-           let t2x = unfoldBase(spc, t2) in
-           if equalType? (t2, t2x) then % also reasonable: equivType? spc (typ2, t2x)
-             tv_subst
-           else
-             match(t1, t2x, tv_subst)
-             
-         | _ -> tv_subst
-   in 
-   match (t1, t2, [])
-
- op [a] matchL (l1       : List a, 
-                l2       : List a, 
-                tv_subst : TyVarSubst, 
-                matchElt : a * a * TyVarSubst -> TyVarSubst)
-   : TyVarSubst =
-   case (l1, l2) of
-     | (e1 :: l1, e2 :: l2) -> matchL (l1, l2, matchElt (e1, e2, tv_subst), matchElt)
-     | _ -> tv_subst
-
-
- op patternMatchRulesToLet (rules : Match, tm : Term, spc : Spec) : Option Term =
-   case patternMatchRules (rules, tm) of
-     | Some (vsubst, body) ->
-       let bindings = map (fn (var, val) -> (mkVarPat var, val)) vsubst in
-       Some (simplifyOne spc (mkLet (bindings, body)))
-     | _ -> None
+ op mapSpecOpsNotingName (gtsp : Generalized_TSP_Maps) (ops : AOpMap Position)
+   : AOpMap Position =
+   let (make_op_map, typ_map, pat_map) = gtsp in
+   mapOpInfos (fn info -> 
+                 let inner_tsp = (make_op_map (primaryOpName info), typ_map, pat_map) in
+                 %% now the the tsp knows the name of the op
+                 info << {dfn = mapTerm inner_tsp info.dfn})
+              ops
 
  %% ================================================================================
  %% unfold
@@ -656,6 +533,13 @@ spec
    case tm of
      | Record (fields, _) -> map (fn (_, tm) -> tm) fields
      | _ -> [tm]
+
+
+ %% ================================================================================
+ %% The heart of the matter.
+ %% Everything else is arranged so that this routine has the right information
+ %% to do the appropriate transformations.
+ %% ================================================================================
 
  op makeUnfoldedTerm (outer_qid    : QualifiedId,
                       orig_tm      : Term,
@@ -945,30 +829,158 @@ spec
      | _ -> (body, sbst)
 
  %% ================================================================================
- %% utilities for mapping through spec ops
+ %% simplify
  %% ================================================================================
 
- %% mapSpecNotingOpNames is a variant of mapSpec that allows us to use the name
- %% of an op in the tranformations being done on terms within it.
- %% If necessary, it could be generalized to do something similar for types.
+ op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
+   case tm of
 
- op mapSpecNotingOpNames (gtsp : Generalized_TSP_Maps) (spc : Spec) : Spec =
-   let (make_op_map, typ_map, pat_map) = gtsp in
-   let outer_tsp = (make_op_map (mkUnQualifiedId "outside_of_any_op"), typ_map, pat_map) in
-   spc << {
-	   sorts    = mapSpecSorts         outer_tsp spc.sorts,
-	   ops      = mapSpecOpsNotingName gtsp      spc.ops,
-	   elements = mapSpecProperties    outer_tsp spc.elements
-	  }
+     | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
+       %% Unfold if function constructs term that matches one case
+       (let uf_tm = case tryUnfold (spc, arg) of
+                      | Some uf_tm -> uf_tm
+                      | _ -> tm
+        in
+          case simplify spc uf_tm of
 
- op mapSpecOpsNotingName (gtsp : Generalized_TSP_Maps) (ops : AOpMap Position)
-   : AOpMap Position =
-   let (make_op_map, typ_map, pat_map) = gtsp in
-   mapOpInfos (fn info -> 
-                 let inner_tsp = (make_op_map (primaryOpName info), typ_map, pat_map) in
-                 %% now the the tsp knows the name of the op
-                 info << {dfn = mapTerm inner_tsp info.dfn})
-              ops
+            | Let (binds, let_body, pos) ->
+              (case patternMatchRulesToLet (rules, let_body, spc) of
+                 | Some exp_tm -> Let (binds, exp_tm, pos)
+                 | _ -> tm)
+
+            | simp_uf_tm ->
+              (case patternMatchRulesToLet (rules, simp_uf_tm, spc) of
+                 | Some exp_tm -> exp_tm
+                 | _ -> tm))
+
+     | Let (binds, bod, pos) ->
+       simplifyOne spc (Let (binds, simplifyUnfoldCase spc bod, pos))
+
+     | _ -> tm
+
+ %% ================================================================================
+ %% unfold one term
+ %% ================================================================================
+
+ op tryUnfold (spc: Spec, tm: Term) : Option Term =
+   case tm of
+
+     | Apply (f, arg, _) ->
+       (case f of
+
+          | Fun (Op (qid, _), fun_type, _) -> 
+            %% Uncurried case
+            (case findTheOp (spc, qid) of
+
+               | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
+                 let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
+                 (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
+
+                    | (Lambda _, Some tv_subst) ->
+                      let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
+                      Some (simplifiedApply (inst_dfn, arg, spc))
+
+                    | _ -> None)
+               | _ -> None)
+
+          | Apply _ ->
+	    (case getCurryArgs tm of
+
+	       | Some (f, args) ->
+		 (case f of
+
+		    | Fun (Op (qid, _), fun_type, _) ->
+		      (case findTheOp (spc, qid) of
+
+                         | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
+                           let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
+                           (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
+
+                              | (Lambda _, Some tv_subst) ->
+                                let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
+                                let inst_tm = mkCurriedApply (inst_dfn, args) in
+                                Some (simplify spc inst_tm)
+
+                              | _ -> None)
+                         | _ -> None)
+                    | _ -> None)
+	       | _ -> None)
+          | _ -> None)
+     | _ -> None
+               
+ op sortMatch (t1 : Type, t2 : Type, spc : Spec) : TyVarSubst =
+   let 
+     def match (t1, t2, tv_subst) =
+       case (t1, t2) of
+
+         | (TyVar (id1, _), t2) -> 
+           if some? (findLeftmost (fn (id, _) -> id = id1) tv_subst) then
+             tv_subst
+           else 
+             (id1, t2) :: tv_subst
+             
+         | (Arrow (d1, r1, _), Arrow (d2, r2, _)) -> 
+           match (r1, r2, match (d1, d2, tv_subst))
+           
+         | (Product (ts1, _), Product (ts2, _)) -> 
+           matchL (ts1, ts2, tv_subst,
+                   fn ((_,t1), (_,t2), tv_subst) -> match (t1, t2, tv_subst))
+           
+         | (CoProduct (ts1, _), CoProduct (ts2, _)) -> 
+           matchL (ts1, ts2, tv_subst,
+                   fn ((id1, t1), (id2, t2), tv_subst) ->
+                     if id1 = id2 then
+                       case (t1, t2) of
+                         | (None, None) -> tv_subst 
+                         | (Some t1, Some t2) -> match (t1, t2, tv_subst)
+                     else 
+                       tv_subst)
+           
+         | (Quotient (t1, _, _), Quotient(t2, _, _)) -> 
+           match (t1, t2, tv_subst)
+           
+         | (Subsort (t1, _, _), t2) -> match (t1, t2, tv_subst)
+           
+         | (t1, Subsort (t2, _, _)) -> match (t1, t2, tv_subst)
+           
+         | (Base (id1, ts1, pos1), Base (id2, ts2, pos2)) ->
+           if id1 = id2 then
+             matchL (ts1, ts2, tv_subst, match)
+           else
+             let t2x = unfoldBase(spc, t2) in
+             if equalType? (t2, t2x) then % also reasonable: equivType? spc (typ2, t2x)
+               tv_subst
+             else 
+               match (t1, t2x, tv_subst)
+               
+         | (_, Base _) ->
+           let t2x = unfoldBase(spc, t2) in
+           if equalType? (t2, t2x) then % also reasonable: equivType? spc (typ2, t2x)
+             tv_subst
+           else
+             match(t1, t2x, tv_subst)
+             
+         | _ -> tv_subst
+   in 
+   match (t1, t2, [])
+
+ op [a] matchL (l1       : List a, 
+                l2       : List a, 
+                tv_subst : TyVarSubst, 
+                matchElt : a * a * TyVarSubst -> TyVarSubst)
+   : TyVarSubst =
+   case (l1, l2) of
+     | (e1 :: l1, e2 :: l2) -> matchL (l1, l2, matchElt (e1, e2, tv_subst), matchElt)
+     | _ -> tv_subst
+
+
+ op patternMatchRulesToLet (rules : Match, tm : Term, spc : Spec) : Option Term =
+   case patternMatchRules (rules, tm) of
+     | Some (vsubst, body) ->
+       let bindings = map (fn (var, val) -> (mkVarPat var, val)) vsubst in
+       Some (simplifyOne spc (mkLet (bindings, body)))
+     | _ -> None
+
 
  %% ================================================================================
 
