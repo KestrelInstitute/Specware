@@ -70,6 +70,58 @@ spec
 
  %% snark interface can call this directly to set flag to true
  op aux_instantiateHOFns (spc : Spec) (snark_hack? : Bool) : Spec =
+   (*
+    * Some context:
+    *
+    * The objective here is to inline explicit functional arguments that have 
+    * been passed to routines such as map.
+    *
+    * For example, map has an executable definition in List_Executable.sw, 
+    * as follows:
+    *
+    *  refine def [a,b] map (f: a -> b) (l: List a): List b =
+    *    reverse (foldl (fn (result, x) -> f x::result) [] l)
+    *
+    * Note that not much can be done to optimize an expression such as this:
+    *
+    *  'fn (f : X -> Y, l : List X) -> ... (map f l) ...',
+    *
+    * However, the following expression contains an explicit functional argument
+    * (namely '(fn n -> g n)') which can be inlined and simplified if we expand 
+    * the call to map:
+    *
+    *  'fn l -> ... (map (fn n -> g n) l) ...'
+    *    
+    *     =>
+    *    
+    *  'fn l -> ... (reverse (foldl (fn (result, x) -> ((fn n -> g n) x))::result) [] l)) ...'
+    * 
+    *    simplifying to:
+    *    
+    *  'fn l -> ... (reverse (foldl (fn (result, x) -> (g x)::result) [] l)) ...'
+    * 
+    * In doing this, we must be careful to avoid all the usual pitfalls associated
+    * with substitutions, to ensure that (unfortunately perverse) expressions such 
+    * as the following will expand properly:
+    * 
+    *  'fn (f: List X) -> ... (map (fn n -> g n) f) ...'
+    * 
+    * The danger to avoid is conflation of the 'f' (of type 'List X') from our 
+    * expression here with the 'f' (of type 'a -> b') from the definition of map.
+    *
+    * Such conflations can lead to nonsense, e.g, the 'f' from the definition of map 
+    * will be replaced by '(fn n -> g n)', but then the 'f' in our expression 
+    * could also be bound [erroneously] to the same value, producing gibberish:
+    * 
+    *   (reverse (foldl (fn (result, x) -> (g x)::result)
+    *                   []
+    *                   (fn n -> g n)))  % gibberish
+    *
+    * Note that such gibberish is created after the type-checker has run, 
+    * so it will not be detected staticly, thus silently leading to bogus code.
+    *
+    * The moral is that this code needs to be very carefully vetted.
+    *)
    let spc = normalizeCurriedDefinitions spc             in
    let spc = simplifySpec                spc             in
    let mp  = makeUnfoldMap               spc snark_hack? in
