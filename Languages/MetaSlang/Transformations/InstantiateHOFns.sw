@@ -4,6 +4,8 @@ spec
  import CurryUtils
  import ../Specs/AnalyzeRecursion
 
+ op CodeGenTransforms.stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort  % in CodeGenTransforms
+
  type Term    = MS.Term  % disambiguate from SpecCalc.Term
  type MS.Type = MS.Sort  % also have JGen.Type and MetaslangProofChecker.Type (sigh)
 
@@ -254,7 +256,7 @@ spec
      | _ -> false
 
  op HOType? (typ : Type, spc : Spec) : Bool =
-   case stripSubsorts (spc, typ) of
+   case stripSubsortsAndBaseDefs spc typ of
      | Arrow _ -> true
 
      | Product (fields, _) ->
@@ -458,7 +460,7 @@ spec
 	    (case findAQualifierMap (unfold_map, q, id) of
 	       | Some (vs, defn, deftyp, fnIndices, curried?, recursive?) ->
 		 if ~curried?
-		    && length (termList arg) > foldr max 0 fnIndices
+                    && length (termList arg) > foldr max 0 fnIndices
 		    && exists? (fn i -> exploitableTerm? (getTupleArg (arg, i), unfold_map))
                                fnIndices
                    then 
@@ -480,7 +482,8 @@ spec
                                        spc)
                  else 
                    tm
-               | _ -> tm)
+               | _ -> 
+                 tm)
 
 	  | Apply _ ->
             %% Curried case
@@ -557,7 +560,6 @@ spec
                       curried?     : Bool,
                       spc          : Spec)
    : Term =
-  
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
@@ -613,8 +615,8 @@ spec
      %% Note that if avoid_bindings? (used by makeLet) is true, the resulting form looks the 
      %% same but the freeVars test gives a different result (huh?), changing the sense of the test.
 
-     if (trans_new_tm = new_tm 
-           && sizeTerm new_tm > sizeTerm orig_tm
+     if (trans_new_tm = new_let
+           && sizeTerm new_let > sizeTerm orig_tm
            && ~(exists? (fn (_,t) -> embed? Apply t || freeVars t ~= []) new_subst))
        then 
          orig_tm
