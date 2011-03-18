@@ -6,11 +6,10 @@
 SpecCalc qualifying spec
   import UnitId
   import /Languages/MetaSlang/CodeGen/C/CG
-  import /Languages/MetaSlang/Specs/SubtractSpec
 
   op  evaluateCGen: ValueInfo * Option String -> SpecCalc.Env ValueInfo
   def evaluateCGen (valueInfo as (Spec spc,_,_), optFileNm) = {
     (optBaseUnitId,baseSpec) <- getBase;
-    return (generateCCode (baseSpec, subtractSpec spc baseSpec, spc, optFileNm));
+    return (generateCCode (baseSpec, spc, optFileNm));
     return valueInfo}
 endspec
