@@ -122,8 +122,9 @@ I2L qualifying spec
   % union type, which alternative of the union it represents.
 
   type I_UnionCase = | I_ConstrCase  Option String * Option I_Type * List (Option String) * I_TypedExpr
-                     | I_NatCase     Nat  * I_TypedExpr
-                     | I_CharCase    Char * I_TypedExpr
+                     | I_VarCase     String * I_Type * I_TypedExpr
+                     | I_NatCase     Nat             * I_TypedExpr
+                     | I_CharCase    Char            * I_TypedExpr
 
   type I_StructExprField = String * I_TypedExpr
   type I_StructExprFields = List I_StructExprField
@@ -383,11 +384,14 @@ I2L qualifying spec
                      | I_ConstrCase (x1, x2, x3,    e) -> 
                        I_ConstrCase (x1, x2, x3, mp e)
 
-                     | I_NatCase (n,    e) -> 
-                       I_NatCase (n, mp e)
+                     | I_VarCase (id, ityp,    e) -> 
+                       I_VarCase (id, ityp, mp e)
 
-                     | I_CharCase(c,    e) -> 
-                       I_CharCase(c, mp e))
+                     | I_NatCase (n,     e) -> 
+                       I_NatCase (n,  mp e)
+
+                     | I_CharCase(c,     e) -> 
+                       I_CharCase(c,  mp e))
                 ucl
         in
         I_UnionCaseExpr (mp e, ucl)
