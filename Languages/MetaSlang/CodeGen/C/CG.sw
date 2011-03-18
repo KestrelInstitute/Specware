@@ -12,6 +12,7 @@ spec
   import /Languages/MetaSlang/Transformations/InstantiateHOFns
   import /Languages/MetaSlang/Transformations/RecordMerge
   import /Languages/MetaSlang/Transformations/TheoryMorphism
+  import /Languages/MetaSlang/Specs/SubtractSpec
 
 % --------------------------------------------------------------------------------
 % interface
@@ -112,31 +113,91 @@ spec
      | Some i -> i 
      | None -> 10
 
+  op jjj : Nat = 0
+
+  op showInternals (spc : Spec) : () =
+   appSpec ((fn tm  -> writeLine (printTermWithSorts tm)), 
+            (fn typ -> writeLine (printSort          typ)),
+            (fn pat -> writeLine (printPattern       pat)))
+           spc
+
+  op showSpc (msg : String) (spc : Spec) : () =
+    if jjj > 0 then 
+      let _ = writeLine "--------------------" in
+      let _ = writeLine ("### " ^ msg)         in
+      let _ = writeLine (printSpec spc)        in
+      let _ = writeLine "----"                 in
+      let _ = if (jjj > 1) then showInternals spc else () in
+      let _ = writeLine "--------------------" in
+      ()
+    else
+      ()
+
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 
                                 (addmissingfrombase? : Bool) 
     : Spec =
     let trans_table = thyMorphismMaps spc "C" c_convertPrecNum in
-    %let _ = writeLine(";;; thyMorphismMaps = " ^ anyToString thyMorphismMaps) in
-    %let _ = showSorts spc in
-    %let _ = writeLine(";;; generating C code...") in
-    %let _ = writeLine("-----------------------------------------------------------\n\n\n") in
-    %let _ = writeLine("transforming spec for C code generation...") in
-    %let _ = writeLine("\n\n\n-----------------------------------------------------------") in
-    %let _ = writeLine(printSpec spc) in
-    let spc = translateRecordMergeInSpec            spc in
-   %let spc = identifyIntSorts                      spc in
-    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, builtinSortOp) else spc in
-    let spc = removeCurrying                        spc in
-    let spc = instantiateHOFns                      spc in
+    let _ = if jjj > 0 then 
+              let _ = writeLine(";;; thyMorphismMaps = " ^ anyToString trans_table) in
+              let _ = showSpc "Starting" spc in
+              let _ = writeLine(";;; generating C code...") in
+              let _ = writeLine("-----------------------------------------------------------\n\n\n") in
+              let _ = writeLine("transforming spec for C code generation...") in
+              let _ = writeLine("\n\n\n-----------------------------------------------------------") in
+              ()
+            else
+              ()
+    in
+    let _ = showSpc "Original"                      spc in
+
+    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, builtinSortOp) else spc in  % (1) may add HO fns, etc., so do this first
+    let _ = showSpc ("### addMissingFromBase (" ^ show addmissingfrombase? ^ ")") spc in
+
+    let spc = normalizeTopLevelLambdas              spc in % (??)
+    let _ = showSpc "normalizeTopLevelLambdas"      spc in
+
+    let spc = instantiateHOFns                      spc in % (2) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
+    let _ = showSpc "instantiateHOFns"              spc in
+
+   %let spc = identifyIntSorts                      spc in % Avoid this!
+
+    let spc = removeCurrying                        spc in % (??)
+    let _ = showSpc "removeCurrying"                spc in
+
    %let spc = lambdaToInner                         spc in
-    let spc = poly2mono                             (spc,false) in
-    let spc = addEqOpsToSpec                        spc in
-    let spc = lambdaLift                            (spc,true) in
-    let (spc,constrOps) = addSortConstructorsToSpec spc in
-    let spc = conformOpDecls                        spc in
-    let spc = adjustAppl                            spc in
-    let spc = instantiateHOFns                      spc in
+   %let _ = showSpc("lambdaToInner"                 spc in
+
+    let spc = lambdaLift                     (spc,true) in % (3) 
+    let _ = showSpc "lambdaLift"                    spc in
+
+    let spc = specStripSubsortsAndBaseDefs          spc in % (3) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+    let _ = showSpc "strip subtypes"                spc in
+
+    let spc = translateRecordMergeInSpec            spc in % does it matter when this is done?
+    let _ = showSpc "translateRecordMergeInSpec"    spc in
+
+    let spc = poly2mono                     (spc,false) in % (4) After this is called, we can no longer reason about polymorphic types such as List(a)
+    let _ = showSpc "poly2mono"                     spc in
+
+    let spc = letWildPatToSeq                       spc in % (??)
+    let _ = showSpc "letWildPatToSeq"               spc in
+
+    let spc = simplifySpec                          spc in % (??)
+    let _ = showSpc "simplifySpec"                  spc in
+
+    let spc = addEqOpsToSpec                        spc in % (??)
+    let _ = showSpc "addEqOpsToSpec"                spc in
+
+    let (spc,constrOps) = addSortConstructorsToSpec spc in % (??)
+    let _ = showSpc "addSortConstructorsToSpec"     spc in
+
+    let spc = conformOpDecls                        spc in % (??)
+    let _ = showSpc "conformOpDecls"                spc in
+
+    let spc = adjustAppl                            spc in % (??)
+    let _ = showSpc "adjustAppl"                    spc in
+
     spc
 
   op generateCSpec (base : Spec) (spc : Spec) : C_Spec =
@@ -186,17 +247,19 @@ spec
   op printToFileEnv (cspec : C_Spec, optFile : Option String) : Env () =
     return (printToFile (cspec, optFile))
 
+  op subtract? : Bool = true
+
   op generateCCode (base      : Spec, 
                     spc       : Spec, 
-                    _(*full*) : Spec, 
                     optFile   : Option String) 
     : () =
     %let _ = writeLine(";; bit-string special translation is turned "^
     %		      (if bitStringSpecial then "on" else "off"))
     %in
+
+    let spc = if subtract? then subtractSpec spc base else spc in
     let cspec = generateCSpec base spc in
     printToFile (cspec, optFile)
-
 
   op sortToCType (cspc : C_Spec) (spc : Spec) (typ : Sort) : C_Spec * C_Type =
     %% note: these two defaultCgContext's are very different from each other:
@@ -223,6 +286,5 @@ spec
 
   op postProcessCSpec (cspc : C_Spec) : C_Spec =
     I2LToC.postProcessCSpec cspc
-
 
 end-spec
