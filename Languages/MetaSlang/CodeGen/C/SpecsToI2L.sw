@@ -11,6 +11,7 @@ SpecsToI2L qualifying spec
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
+  import /Languages/MetaSlang/CodeGen/CodeGenTransforms  % stripSubsortsAndBaseDefs
 
   import /Languages/I2L/I2L
 
@@ -548,7 +549,7 @@ SpecsToI2L qualifying spec
  op unfoldBaseKeepPrimitives (spc : Spec, typ : Sort) : Sort =
    case typ of
      | Base (qid, typs, a) ->
-       (case findTheSort (spc, qid) of
+       (case AnnSpec.findTheSort (spc, qid) of
           | Some info ->
             (if ~ (definedSortInfo? info) then
                typ
@@ -786,7 +787,6 @@ SpecsToI2L qualifying spec
                I_Var varname
 
              | Embed (id,_) -> 
-               let typ = foldSort (spc, typ) in
                if useConstrCalls? ctxt then
                  case typ of
 
@@ -988,7 +988,7 @@ SpecsToI2L qualifying spec
     % of the terms
     let typ = inferType (spc, t1) in
     %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-    let utyp = stripSubsorts (spc, typ) in
+    let utyp = stripSubsortsAndBaseDefs spc typ in
     case utyp of
       | Boolean                         _  -> primEq ()
       | Base (Qualified ("Bool",    "Bool"),   [],_) -> primEq ()
@@ -1000,14 +1000,14 @@ SpecsToI2L qualifying spec
       | _ ->
         %let _ = writeLine("Generating equality for [" ^ printTerm t1 ^ "] vs. [" ^ printTerm t2 ^ "]") in
         let typ = foldSort (spc, termSort t1) in
-        let errmsg = "sorry, the current version of the code generator doesn't support the equality check for sort\n"
-                     ^ printSort typ
+        let errmsg = "sorry, the current version of the code generator doesn't support the equality check for\ntype = "
+                     ^ printSort typ ^ "\n t1 = " ^ printTerm t1 ^ "\n t2 = " ^ printTerm t2
         in
         case typ of
 
           | Base(qid,_,_) ->
             let eqid as Qualified (eq, eid) = getEqOpQid qid in
-            (case findTheOp(spc,eqid) of
+            (case AnnSpec.findTheOp(spc,eqid) of
                | Some _ ->
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2])
@@ -1132,6 +1132,7 @@ SpecsToI2L qualifying spec
   *)
 
   op simpleCoProductCase (ctxt : S2I_Context, spc : Spec, tm : Term) : Option I_Expr =
+    let outer_tm = tm in
     case tm of
 
       | Apply(embedfun as Lambda (rules,_), tm, _) ->
@@ -1146,7 +1147,7 @@ SpecsToI2L qualifying spec
 
                def getTypeForConstructorArgs (typ, id) =
                  %let typ = unfoldBase(spc,typ) in
-                 let typ = stripSubsorts (spc, typ) in
+                 let typ = stripSubsortsAndBaseDefs spc typ in
                  case typ of
                    | CoProduct (fields,_) ->
                      (case findLeftmost (fn (id0, _) -> id0 = id) fields of
@@ -1200,12 +1201,14 @@ SpecsToI2L qualifying spec
                      in
                      I_ConstrCase (Some constructorId, opttype, vars, exp)
 
-                   | WildPat _     -> I_ConstrCase (None,None,[], exp)
-                   | NatPat  (n,_) -> I_NatCase    (n,            exp)
-                   | CharPat (c,_) -> I_CharCase   (c,            exp)
+                   | WildPat _            -> I_ConstrCase (None, None, [], exp)
+                   | NatPat  (n,_)        -> I_NatCase    (n,              exp)
+                   | CharPat (c,_)        -> I_CharCase   (c,              exp)
+                   | VarPat  ((id,typ),_) -> let ityp = type2itype(unsetToplevel ctxt, spc, [], typ) in
+                                             I_VarCase    (id, ityp,       exp)
                    | _ -> 
                      fail (mkInOpStr ctxt ^ "unsupported feature: pattern not supported, use embed or wildcard pattern instead:\n"
-                             ^ printPattern pat)
+                             ^ " pattern = " ^ printPattern pat ^ " = " ^ anyToString pat ^ "\n inside term = " ^ printTerm outer_tm ^ " = " ^ anyToString outer_tm ^ "\n")
              in
              let unioncases = map getUnionCase rules          in
              let expr       = term2expression (ctxt, spc, tm) in
