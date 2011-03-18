@@ -640,7 +640,9 @@ I2LToC qualifying spec
                        | I_ConstrCase (optstr, opttype, vlist, expr) ->
                          (case optstr of
                             
-                            | None -> c4Expression (ctxt, cspc0, block0, expr)
+                            | None -> 
+                              %% pattern is just a simple wildcard
+                              c4Expression (ctxt, cspc0, block0, expr)
                               
                             | Some selstr ->
                               let condition = casecond (selstr) in
@@ -649,8 +651,8 @@ I2LToC qualifying spec
                                   case findLeftmost (fn | None -> false | _ -> true) vlist of
                                 
                                     | None -> 
-                                      let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr) in
-                                      (cspc, block, cexpr) % varlist contains only wildcards
+                                      %% varlist contains only wildcards (same as single wildcard case)
+                                      c4Expression (ctxt, cspc, block, expr)
                                       
                                     | _ ->
                                       let typ = 
@@ -670,7 +672,7 @@ I2LToC qualifying spec
                                           let assign         = getSetExpr (ctxt, C_Var decl, valexp)                             in
                                           % the assignment must be attached to the declaration, otherwise
                                           % it may happen that the new variable is accessed in the term without
-                                          % being initialized
+                                          % being initialized  [so why is optinit None then?]
                                           let optinit        = None                                                              in
                                           let decl1          = (id, idtype, optinit)                                             in
                                           let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr)    in
@@ -695,6 +697,19 @@ I2LToC qualifying spec
                                           (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
                               in
                               (cspc, block, C_IfExp (condition, cexpr, ifexp)))
+
+                       | I_VarCase (id,ityp,exp) ->
+                         let (cid, exp)          = substVarIfDeclared (ctxt, id, decls, exp)    in
+                         let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, exp)        in
+                         let (cspc, ctype)       = c4Type (ctxt, cspc, ityp)                    in
+                         let cvar                = (cid, ctype)                                 in
+                         let cassign             = getSetExpr (ctxt, C_Var cvar, C_Var disdecl) in
+                         % the assignment must be attached to the declaration, otherwise
+                         % it may happen that the new variable is accessed in the term 
+                         % without being initialized  [so why is coptinit None then?]
+                         let coptinit            = None                                         in
+                         let cdecl               = (cid, ctype, coptinit)                       in
+                         (cspc, (decls ++ [cdecl], stmts), C_Comma (cassign, cexp))
 
                        | I_NatCase (n, exp) -> 
                          let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                          in
