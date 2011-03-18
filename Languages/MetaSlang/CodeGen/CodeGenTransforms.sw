@@ -16,14 +16,13 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % addLoca
 op builtinSortOp: QualifiedId -> Boolean
 def builtinSortOp (Qualified (q, id)) =
   case q of
-    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred",
-                              "toString", "intToString", "show",  "stringToInt"]
-    | "Nat"        -> id in? ["Nat"]
+    | "Boolean"    -> id in? ["Bool", "show", "toString"]
+    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
     | "IntegerAux" -> id in? ["-"]  % unary minus
-    | "Char"       -> id in? ["Char", "chr", "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii",
-                              "toUpperCase", "toLowerCase"]
-    | "String"     -> id in? ["String", "writeLine", "toScreen", "concat", "++", "^", "newline", "length", "substring", "<", "compare"]
-  % | "Boolean"    -> id in? ["Bool", "true","false","~","&&","||","=>","<=>","~="]
+    | "Nat"        -> id in? ["Nat", "show", "toString"]
+    | "Char"       -> id in? ["Char", "chr", "ord", "compare"] 
+    | "String"     -> id in? ["String", "compare", "append", "++", "^", "<", "newline", "length"]
+    | "System"     -> id in? ["writeLine", "toScreen"]
     | _ -> false
 
 % --------------------------------------------------------------------------------
@@ -67,9 +66,40 @@ def identifyIntSorts spc =
 
 % --------------------------------------------------------------------------------
 
-op specStripSubSorts: Spec -> Spec
-def specStripSubSorts spc =
-  mapSpec (fn t -> t,fn(srt) -> stripSubsorts(spc,srt), fn p -> p) spc
+op CodeGenTransforms.stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort =
+  let 
+    def strip typ =
+      case typ of
+
+        | Subsort (typ, _, _) -> strip typ
+
+        | Base (qid, typs, a) ->
+          (case findTheSort (spc, qid) of
+             | Some info ->
+               if definedSortInfo? info then
+                 let (tvs, tdef) = unpackFirstSortDef info in
+                 let recur? = (length tvs = length typs)
+                              &&
+                              (case tdef of
+                                 | Subsort _ -> true
+                                 | Base    _ -> true
+                                 | _ -> false)
+                 in
+                 if recur? then 
+                   strip (substSort (zip (tvs, typs), tdef))
+                 else
+                   typ
+               else
+                 typ
+             | _ -> typ)
+
+        | _ -> typ
+  in
+  strip typ
+
+op specStripSubsortsAndBaseDefs (spc : Spec) : Spec =
+  let stripper = stripSubsortsAndBaseDefs spc in
+  mapSpec (fn t -> t, stripper, fn p -> p) spc
 
 % --------------------------------------------------------------------------------
 
@@ -937,7 +967,6 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
   if isEmptySortOpInfos? minfo then 
     initSpec 
   else
-    % let _ = writeLine ("added sorts && ops: "^newline^printSortOpInfos (minfo)) in
     let (srts,elts) = foldr (fn (info, (map,elts)) ->
 			     let qid = primarySortName info in
 			     let Qualified (q, id) = qid in
@@ -947,22 +976,21 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
 		       minfo.sorts
     in
     let (ops,elts) = foldr (fn (info, (map,elts)) -> 
-			    let qid = primaryOpName info in
-			    let Qualified (q, id) = qid in
-			    (insertAQualifierMap (map, q, id, info),
-			     [Op (qid,true,noPos)] ++ elts))
+                              let qid = primaryOpName info in
+                              let Qualified (q, id) = qid in
+                              (insertAQualifierMap (map, q, id, info),
+                               [Op (qid,true,noPos)] ++ elts))
 		       (initSpec.ops,elts)
 		       minfo.ops
     in
-    let initSpec = setSorts (initSpec, srts) in
-    let initSpec = setOps   (initSpec, ops)  in
-    let initSpec = setElements(initSpec, elts)  in
+    let initSpec = setSorts   (initSpec, srts) in
+    let initSpec = setOps     (initSpec, ops)  in
+    let initSpec = setElements(initSpec, elts) in
     addMissingFromBase (bspc, initSpec, ignore)
 
 
 op  addMissingFromSort: Spec * Spec * (QualifiedId -> Boolean) * MS.Sort * SortOpInfos -> SortOpInfos
 def addMissingFromSort (bspc, spc, ignore, srt, minfo) =
-  %let _ = writeLine ("addMissingFromSort: "^ (printSort srt)) in
   case srt of
     | Arrow    (srt1, srt2, _) -> addMissingFromSort (bspc, spc, ignore, srt2, addMissingFromSort (bspc, spc, ignore, srt1, minfo))
     | Product  (fields,     _) -> foldl (fn (minfo, (_, srt)) -> addMissingFromSort (bspc, spc, ignore, srt, minfo)) 
@@ -982,7 +1010,6 @@ def addMissingFromSort (bspc, spc, ignore, srt, minfo) =
 	let minfo = foldl (fn (minfo, srt) -> addMissingFromSort (bspc, spc, ignore, srt, minfo)) minfo srts in
 	(case findTheSort (spc, qid) of
 	   | Some _ -> 
-	     %let _ = writeLine ("sort \""^printQualifiedId qid^"\" found in spec.") in
 	     minfo
 	   | None -> 
 	    (case findTheSort (bspc, qid) of
@@ -991,7 +1018,6 @@ def addMissingFromSort (bspc, spc, ignore, srt, minfo) =
 				       %^"\n"^ (printSpec spc)
 				       %   )
 		| Some sinfo ->
-		  %let _ = writeLine ("adding sort \""^printQualifiedId qid^"\" from base spec.") in
 		addSortInfo2SortOpInfos (qid, sinfo, minfo)))
 
    %| Boolean is same as default case
@@ -1004,43 +1030,35 @@ def addMissingFromTerm (bspc, spc, ignore, term, minfo) =
   let def ams (s, minfo) = addMissingFromSort   (bspc, spc, ignore, s, minfo) in
   let def amp (p, minfo) = addMissingFromPattern (bspc, spc, ignore, p, minfo) in
   case term of
-    | Apply     (t1, t2,      _) -> amt (t2, amt (t1, minfo))
-    | Record    (fields,      _) -> foldl (fn (minfo, (_, t)) -> amt (t, minfo)) minfo fields
-    | Bind      (_, vlist, t, _) -> let minfo = foldl (fn (minfo, (_, srt)) -> ams (srt, minfo)) minfo vlist in
+    | Apply      (t1, t2,      _) -> amt (t2, amt (t1, minfo))
+    | Record     (fields,      _) -> foldl (fn (minfo, (_, t)) -> amt (t, minfo)) minfo fields
+    | Bind       (_, vlist, t, _) -> let minfo = foldl (fn (minfo, (_, srt)) -> ams (srt, minfo)) minfo vlist in
                                      amt (t, minfo)
-    | Let       (ptlist, t,   _) -> let minfo = foldl (fn (minfo, (p, t)) -> amp (p, amt (t, minfo))) minfo ptlist in
+    | Let        (ptlist, t,   _) -> let minfo = foldl (fn (minfo, (p, t)) -> amp (p, amt (t, minfo))) minfo ptlist in
 				     amt (t, minfo)
-    | LetRec    (vtlist, t,   _) -> let minfo = foldl (fn (minfo, ( (id, srt), t)) -> ams (srt, amt (t, minfo))) minfo vtlist in
+    | LetRec     (vtlist, t,   _) -> let minfo = foldl (fn (minfo, ( (id, srt), t)) -> ams (srt, amt (t, minfo))) minfo vtlist in
 				     amt (t, minfo)
-    | Var       ((id, srt),   _) -> ams (srt, minfo)
-    | Lambda    (match,       _) -> foldl (fn (minfo, (p, t1, t2)) -> amt (t2, amt (t1, amp (p, minfo)))) minfo match
+    | Var        ((id, srt),   _) -> ams (srt, minfo)
+    | Lambda     (match,       _) -> foldl (fn (minfo, (p, t1, t2)) -> amt (t2, amt (t1, amp (p, minfo)))) minfo match
     | IfThenElse (t1, t2, t3,  _) -> amt (t3, amt (t2, amt (t1, minfo)))
-    | Seq       (tl,          _) -> foldl (fn (minfo, t) -> amt (t, minfo)) minfo tl
+    | Seq        (tl,          _) -> foldl (fn (minfo, t) -> amt (t, minfo)) minfo tl
     | SortedTerm (t, s,        _) -> ams (s, amt (t, minfo))
-    | Fun       (fun, srt,    _) ->
-     (let minfo = ams (srt, minfo) in
-       case fun of
-	 | Op (qid, _) ->
-	   if ignore qid then 
-	     minfo 
-	   else
-	    (case findTheOp (spc, qid) of
-		| Some _ -> minfo
-		| None -> (case findTheOp (bspc, qid) of
-			     | None -> minfo
-			       %fail ("can't happen: couldn't find op \""^printQualifiedId qid^"\""
-				      %^"\n"^ (printSpec bspc)
-				      %^"\n"^ (printSpec spc)
-				      %)
-			       %| Some (opinfo as ((Qualified (_, id))::_, _, _, [])) ->
-			       %  let _ = writeLine ("addMissing: no definition term found for "^
-			       %			 printQualifiedId qid^".")
-			       %  in
-			       %  minfo
-			     | Some opinfo ->
-			       %let _ = writeLine ("adding op "^printQualifiedId qid^" from base spec.") in
-			     addOpInfo2SortOpInfos (qid, opinfo, minfo)))
-	 | _ -> minfo)
+    | Fun        (fun, srt,    _) ->
+      (let minfo = ams (srt, minfo) in
+         case fun of
+           | Op (qid, _) ->
+             if ignore qid then 
+               minfo 
+             else
+               (case findTheOp (spc, qid) of
+                  | Some _ -> 
+                    minfo
+                  | _ -> case findTheOp (bspc, qid) of
+                           | Some opinfo -> 
+                             addOpInfo2SortOpInfos (qid, opinfo, minfo)
+                           | _ -> 
+                             minfo)
+           | _ -> minfo)
     | _ -> minfo
 
 
@@ -1221,7 +1239,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
     (spc, [])
   else
     let (tvs, srt) = unpackFirstSortDef info in
-    let srt = stripSubsorts (spc, srt) in
+    let srt = stripSubsortsAndBaseDefs spc srt in
     case srt of
       | Product (fields, b) -> 
         (%let _ = writeLine ("generating accessor ops for sort "^ (printQualifiedId qid)^"...") in
@@ -1553,7 +1571,7 @@ def addEqOpsFromSort (spc, qid, info) =
   else
     let (tvs, srt) = unpackFirstSortDef info in
     %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-    let usrt = stripSubsorts (spc, srt) in
+    let usrt = stripSubsortsAndBaseDefs spc srt in
     case usrt of
       | Boolean _ -> spc
       | Base (Qualified ("Nat",       "Nat"),     [], _) -> spc
@@ -1633,7 +1651,7 @@ def addEqOpsFromSort (spc, qid, info) =
 				    | Some (fsrt as Base _) -> bcase fsrt
 				    | Some fsrt ->
 				    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-				    let ufsrt = stripSubsorts (spc, fsrt) in
+				    let ufsrt = stripSubsortsAndBaseDefs spc fsrt in
 				      case fsrt of
 					| Product (fields, _) -> 
 					  getEqTermFromProductFields (fields, fsrt, 
@@ -1657,23 +1675,23 @@ def getEqOpQid (Qualified (q, id)) =
 
 % --------------------------------------------------------------------------------
 
-op findTheSort: Spec * QualifiedId -> Option (SortInfo)
-def findTheSort = findTheOpSort AnnSpec.findTheSort AnnSpec.findAllSorts
+%% op findTheSort: Spec * QualifiedId -> Option (SortInfo)
+%% def findTheSort = findTheOpSort AnnSpec.findTheSort AnnSpec.findAllSorts
 
-op findTheOp: Spec * QualifiedId -> Option (OpInfo)
-def findTheOp = findTheOpSort AnnSpec.findTheOp AnnSpec.findAllOps
+%% op findTheOp: Spec * QualifiedId -> Option (OpInfo)
+%% def findTheOp = findTheOpSort AnnSpec.findTheOp AnnSpec.findAllOps
 
-op findTheOpSort: [a] (Spec * QualifiedId -> Option (a)) -> (Spec * QualifiedId -> List (a)) -> Spec * QualifiedId -> Option (a)
-def findTheOpSort origFindThe origFindAll (spc, qid as Qualified (q, id)) =
-  let res1 = origFindThe (spc, qid) in
-  case res1 of
-    | Some _ -> res1
-    | None ->
-      if q = UnQualified then None
-      else
-	case origFindAll (spc, Qualified (UnQualified, id)) of
-	  | [] -> None
-	  | res::_ -> Some res
+%% op findTheOpSort: [a] (Spec * QualifiedId -> Option (a)) -> (Spec * QualifiedId -> List (a)) -> Spec * QualifiedId -> Option (a)
+%% def findTheOpSort origFindThe origFindAll (spc, qid as Qualified (q, id)) =
+%%   let res1 = origFindThe (spc, qid) in
+%%   case res1 of
+%%     | Some _ -> res1
+%%     | None ->
+%%       if q = UnQualified then None
+%%       else
+%% 	case origFindAll (spc, Qualified (UnQualified, id)) of
+%% 	  | [] -> None
+%% 	  | res::_ -> Some res
 
 % --------------------------------------------------------------------------------
 % debug
