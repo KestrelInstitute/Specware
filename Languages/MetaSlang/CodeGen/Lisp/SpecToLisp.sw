@@ -1,15 +1,14 @@
 % Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl
 
 SpecToLisp qualifying spec
- import ../../Transformations/PatternMatch
- import ../../Transformations/InstantiateHOFns
- import ../../Transformations/LambdaLift
- import ../../Transformations/RemoveCurrying
- import ../../Transformations/RecordMerge
- import Lisp
- import ../CodeGenTransforms
- import Suppress
+ import /Languages/MetaSlang/Transformations/PatternMatch
+ import /Languages/MetaSlang/Transformations/InstantiateHOFns
+ import /Languages/MetaSlang/Transformations/LambdaLift
+ import /Languages/MetaSlang/Transformations/RemoveCurrying
+ import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+ import /Languages/Lisp/Lisp
 
  op lisp : Spec -> LispSpec
 
