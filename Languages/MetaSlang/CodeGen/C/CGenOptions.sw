@@ -1,20 +1,2 @@
-(**
- * options for the C generator
- *)
+... moved to /Languages/I2L/CodeGen/C/CGenOptions.sw ...
 
-CG qualifying 
-spec
-
-  (**
-   * flag for the special treatment of BitString sort and ops. 
-   * If set to true the sort BitString will be translated to unsigned int and the operators
-   * One, Zero, leftShift, rightShift, complement, andBits, notZero, orBits, xorBits
-   * are treated specially and directly translated into the corresponding C bit operation/constant
-   *)
-
-  op bitStringSpecial? : Bool
-  def bitStringSpecial? = true
-
-
-
-endspec

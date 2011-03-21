@@ -4,8 +4,6 @@
 
 CG qualifying
 spec
-  import SpecsToI2L
-  import I2LToC
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/MetaSlang/Transformations/RemoveCurrying
   import /Languages/MetaSlang/Transformations/LambdaLift
@@ -13,6 +11,9 @@ spec
   import /Languages/MetaSlang/Transformations/RecordMerge
   import /Languages/MetaSlang/Transformations/TheoryMorphism
   import /Languages/MetaSlang/Specs/SubtractSpec
+
+  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L             % MetaSlang =codegen=> I2L
+  import /Languages/I2L/CodeGen/C/I2LToC                         % I2L       =codegen=> C
 
 % --------------------------------------------------------------------------------
 % interface
@@ -247,18 +248,14 @@ spec
   op printToFileEnv (cspec : C_Spec, optFile : Option String) : Env () =
     return (printToFile (cspec, optFile))
 
-  op subtract? : Bool = true
+  op subtract? : Bool = true  % TODO: Would like to deprecate use of subtractSpec
 
   op generateCCode (base      : Spec, 
                     spc       : Spec, 
                     optFile   : Option String) 
     : () =
-    %let _ = writeLine(";; bit-string special translation is turned "^
-    %		      (if bitStringSpecial then "on" else "off"))
-    %in
-
-    let spc = if subtract? then subtractSpec spc base else spc in
-    let cspec = generateCSpec base spc in
+    let spc = if subtract? then subtractSpec spc base else spc in % TODO: Would like to deprecate use of subtractSpec
+    let cspec = generateCSpec base spc in 
     printToFile (cspec, optFile)
 
   op sortToCType (cspc : C_Spec) (spc : Spec) (typ : Sort) : C_Spec * C_Type =
