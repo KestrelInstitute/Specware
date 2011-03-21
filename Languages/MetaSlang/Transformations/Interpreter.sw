@@ -5,7 +5,7 @@ MSInterpreter qualifying
 spec
   import ../Specs/Environment
   import ../Specs/Utilities
-  import ../CodeGen/Lisp/Suppress
+  import /Languages/Lisp/Suppress
 
   type Subst = List (Id * Value)
 
