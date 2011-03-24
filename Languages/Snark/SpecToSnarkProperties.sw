@@ -1,7 +1,7 @@
 snark qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
-  import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
+  import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp    % specId uses Lisp conventions, in particular for specId
   import /Languages/MetaSlang/CodeGen/CodeGenUtilities
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/MetaSlang/Transformations/OpToAxiom
