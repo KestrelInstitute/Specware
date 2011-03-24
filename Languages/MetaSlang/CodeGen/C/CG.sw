@@ -4,7 +4,17 @@
 
 CG qualifying
 spec
-  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+%  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
+  import /Languages/MetaSlang/CodeGen/AddMissingFromBase
+  import /Languages/MetaSlang/CodeGen/Poly2Mono
+  import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
+  import /Languages/MetaSlang/CodeGen/AddEqOpsToSpec
+  import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec
+  import /Languages/MetaSlang/CodeGen/ConformOpDecls
+  import /Languages/MetaSlang/CodeGen/AdjustAppl
+  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
+
   import /Languages/MetaSlang/Transformations/RemoveCurrying
   import /Languages/MetaSlang/Transformations/LambdaLift
   import /Languages/MetaSlang/Transformations/InstantiateHOFns
@@ -134,6 +144,18 @@ spec
     else
       ()
 
+  op C_BuiltinSortOp? (Qualified (q, id) : QualifiedId) : Bool =
+    case q of
+      | "Boolean"    -> id in? ["Bool", "show", "toString"]
+      | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
+      | "IntegerAux" -> id in? ["-"]  % unary minus
+      | "Nat"        -> id in? ["Nat", "show", "toString"]
+      | "Char"       -> id in? ["Char", "chr", "ord", "compare"] 
+      | "String"     -> id in? ["String", "compare", "append", "++", "^", "<", "newline", "length"]
+      | "System"     -> id in? ["writeLine", "toScreen"]
+      | _ -> false
+
+
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 
                                 (addmissingfrombase? : Bool) 
@@ -152,7 +174,7 @@ spec
     in
     let _ = showSpc "Original"                      spc in
 
-    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, builtinSortOp) else spc in  % (1) may add HO fns, etc., so do this first
+    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, C_BuiltinSortOp?) else spc in  % (1) may add HO fns, etc., so do this first
     let _ = showSpc ("### addMissingFromBase (" ^ show addmissingfrombase? ^ ")") spc in
 
     let spc = normalizeTopLevelLambdas              spc in % (??)
