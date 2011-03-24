@@ -1,13 +1,22 @@
 SpecCalc qualifying spec 
   import UnitId
   %import SpecUnion
+
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin
+
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/MetaSlang/Transformations/RemoveQuotient
-  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
+ %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+  import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases
+  import /Languages/MetaSlang/CodeGen/AddMissingFromBase
+  import /Languages/MetaSlang/CodeGen/Poly2Mono                  % poly2monoForSnark
+  import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec  % addSortConstructorsToSpecForSnark, addProductSortConstructorsToSpec, addProductAccessorsToSpec
+
   import /Library/IO/Primitive/IO
   import UnitId/Utilities                                    % for uidToString, if used...
+
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
@@ -75,9 +84,20 @@ SpecCalc qualifying spec
 		    unit   = unitId})
     }
 
+  op PrimitiveSortOp? (Qualified (q, id) : QualifiedId) : Bool =
+    case q of
+      | "Boolean"    -> id in? ["Bool", "show", "toString"]
+      | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
+      | "IntegerAux" -> id in? ["-"]  % unary minus
+      | "Nat"        -> id in? ["Nat", "show", "toString"]
+      | "Char"       -> id in? ["Char", "chr", "ord", "compare"] 
+      | "String"     -> id in? ["String", "compare", "append", "++", "^", "<", "newline", "length"]
+      | "System"     -> id in? ["writeLine", "toScreen"]
+      | _ -> false
+
   op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProver baseSpc spc =
-    let spc = addMissingFromBase(baseSpc,spc,builtinSortOp) in
+    let spc = addMissingFromBase(baseSpc,spc,PrimitiveSortOp?) in
     let xSpc = transformSpecForFirstOrderProverInt spc in
 (*
     if proverUseBase?
