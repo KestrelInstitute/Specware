@@ -15,6 +15,12 @@ import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 import /Languages/MetaSlang/Specs/SubtractSpec
 
+import /Languages/MetaSlang/CodeGen/AddMissingFromBase
+import /Languages/MetaSlang/CodeGen/IdentifyIntTypes
+import /Languages/MetaSlang/CodeGen/Poly2Mono
+import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
+import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
+
 import Monad
 
 type ArrowType = List Sort * Sort
@@ -950,7 +956,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   let spc = lambdaLift(spc,true) in
   let spc = unfoldSortAliases spc in
   let spc = translateRecordMergeInSpec spc in
-  let spc = identifyIntSorts spc in
+  let spc = identifyIntTypes spc in
 
   let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
   %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
