@@ -666,7 +666,7 @@ def makeFail(context,srt,_(* term *)) =
   let index = ! context.errorIndex + 1 in
   (context.errorIndex := index;
    let srt1 = mkArrow(srt,match_type srt) in
-   let msg  = "Nonexhaustive match failure [#"^ (show index) ^"] in " ^ 
+   let msg  = "Nonexhaustive match failure [#"^ (show index) ^"] in " ^  % add bogus " to appease xemacs
               context.funName
    in    
      mkApply(mkOp(Qualified("TranslationBuiltIn","mkFail"),srt1),
