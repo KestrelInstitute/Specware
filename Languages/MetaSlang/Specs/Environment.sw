@@ -62,6 +62,41 @@ spec
 	     srt)
     | _ -> srt
 
+op stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort =
+  let 
+    def strip typ =
+      case typ of
+
+        | Subsort (typ, _, _) -> strip typ
+
+        | Base (qid, typs, a) ->
+          (case findTheSort (spc, qid) of
+             | Some info ->
+               if definedSortInfo? info then
+                 let (tvs, tdef) = unpackFirstSortDef info in
+                 let recur? = (length tvs = length typs)
+                              &&
+                              (case tdef of
+                                 | Subsort _ -> true
+                                 | Base    _ -> true
+                                 | _ -> false)
+                 in
+                 if recur? then 
+                   strip (substSort (zip (tvs, typs), tdef))
+                 else
+                   typ
+               else
+                 typ
+             | _ -> typ)
+
+        | _ -> typ
+  in
+  strip typ
+
+op specStripSubsortsAndBaseDefs (spc : Spec) : Spec =
+  let stripper = stripSubsortsAndBaseDefs spc in
+  mapSpec (fn t -> t, stripper, fn p -> p) spc
+
  %% This is dangerous as there may be recursion (I have removed calls to it -- sjw)
  op unfoldStripSort : Spec * Sort * Boolean -> Sort
  def unfoldStripSort (spc, srt, verbose) =
