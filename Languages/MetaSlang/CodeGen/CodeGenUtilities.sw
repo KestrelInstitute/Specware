@@ -1,5 +1,6 @@
-spec
+CodeGenUtilities qualifying spec
 import /Languages/MetaSlang/Specs/StandardSpec
+import /Languages/MetaSlang/Specs/Environment
 
 % this is used to distinguish "real" product from "record-products"
  op productfieldsAreNumbered: [a] List (String * a) -> Boolean
@@ -102,5 +103,52 @@ def findMatchingUserTypeOption (spc, srtdef) =
 	  | None -> None
 	    %let _ = writeLine ("no matching user type found for "^printSort srtdef) in
 	    %srtdef
+
+(**
+ * looks in the spec for a user type matching the given sort; if a matching
+ * user type exists, the corresponding sort will be returned, otherwise the sort
+ * given as input itself will be returned
+ *)
+op findMatchingUserType: Spec * Sort -> Sort
+def findMatchingUserType (spc, srt) =
+  case findMatchingUserTypeOption (spc, srt) of
+    | Some s -> 
+      %let _ = writeLine("matching user type: "^(printSort srt)^" ===> "^(printSort s)) in 
+      s
+    | None -> srt
+
+  (**
+    unfolds a sort, only if it is an alias for a Product, otherwise it's left unchanged;
+    this is used to "normalize" the arrow sorts, i.e. to detect, whether the first argument of
+    an arrow sort is a product or not. Only "real" products are unfolded, i.e. sort of the
+    form (A1 * A2 * ... * An) are unfolded, not those of the form {x1:A1, x2:A2, ..., xn:An}
+  *)
+  op unfoldToProduct: Spec * Sort -> Sort
+  def unfoldToProduct (spc, srt) =
+    let
+      def unfoldRec srt =
+	let usrt = unfoldBase (spc, srt) in
+	if usrt = srt then srt else unfoldRec (usrt)
+
+    in
+    let usrt = unfoldRec srt in
+    case usrt of
+      | Product (fields, _) -> if productfieldsAreNumbered (fields) then usrt else srt
+      | _ -> srt
+
+ op inferTypeFoldRecords: Spec * MS.Term -> Sort
+ def inferTypeFoldRecords (spc, term) =
+  let srt = inferType (spc, term) in
+  %let _ = writeLine ("inferType ("^printTerm (term)^") = "^printSort srt) in
+  case srt of
+    | Product _ -> 
+      let srt0 = findMatchingUserType (spc, srt) in
+      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      srt0
+    | CoProduct _ -> 
+      let srt0 = findMatchingUserType (spc, srt) in
+      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      srt0
+    | _ -> srt
 
 end-spec

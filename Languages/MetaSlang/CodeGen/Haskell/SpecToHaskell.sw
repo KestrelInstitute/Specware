@@ -1,7 +1,11 @@
 Haskell qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
- import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
+%import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % adjustElementOrder
+ import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                      % substBaseSpecs1, also gets hack for evaluateUnitId
+
  import /Languages/MetaSlang/Transformations/TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
  import /Library/PrettyPrinter/BjornerEspinosa

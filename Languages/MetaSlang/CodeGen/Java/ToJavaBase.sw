@@ -4,13 +4,16 @@ import IJavaCodeGen
 import ToJavaPatternMatch
 %import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
-import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
+% import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/CodeGenUtilities % findMatchingUserType
+
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 import /Languages/Java/JavaPrint % ppFormPars
 %import /Languages/SpecCalculus/Semantics/Exception
 import ../../Transformations/LambdaLift
 import ../../Transformations/HigherOrderMatching
-
+import /Languages/MetaSlang/Specs/Environment
 import IJavaCodeGen
 import Monad
 
@@ -342,7 +345,7 @@ def JVoid = (Basic Void,0)
 
 %op sortId: Sort -> String 
 %def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
-def CodeGenTransforms.sortId(srt) = 
+def Java.sortId(srt) = 
   case srtIdM srt initialState of
     | (Ok id,_) -> id
     | _ -> fail("fail in CodeGenTransforms.sortId("^(printSort srt)^")")

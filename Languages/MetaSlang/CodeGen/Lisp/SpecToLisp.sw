@@ -7,7 +7,8 @@ SpecToLisp qualifying spec
  import /Languages/MetaSlang/Transformations/RemoveCurrying
  import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/SliceSpec
- import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+%import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+ import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
  import /Languages/Lisp/Lisp
 
  op lisp : Spec -> LispSpec

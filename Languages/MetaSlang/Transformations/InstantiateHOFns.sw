@@ -1,13 +1,13 @@
-tyInstantiateHO qualifying
+InstantiateHO qualifying
 spec
  import Simplify
  import CurryUtils
  import ../Specs/AnalyzeRecursion
 
- op CodeGenTransforms.stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort  % in CodeGenTransforms
+% op CodeGenTransforms.stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort  % in CodeGenTransforms
 
  type Term    = MS.Term  % disambiguate from SpecCalc.Term
- type MS.Type = MS.Sort  % also have JGen.Type and MetaslangProofChecker.Type (sigh)
+ % type MS.Type = MS.Sort  % also have JGen.Type and MetaslangProofChecker.Type (sigh)
 
  %% (params, defn body, indices of applied fn args, curried?, recursive?)
  type DefInfo = List Pattern * Term * Type * List Nat * Bool * Bool
