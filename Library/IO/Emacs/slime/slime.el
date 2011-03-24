@@ -75,7 +75,9 @@
   (require 'apropos)
   (require 'outline)
   (require 'etags)
-  (require 'compile)
+  ;; something about recursive (eval-when (comile) ...) causes error "reading from killed buffer"
+  ;; so moved following out to level of load-slime.el
+  ;; (require 'compile)
   (require 'gud))
 
 (eval-and-compile 

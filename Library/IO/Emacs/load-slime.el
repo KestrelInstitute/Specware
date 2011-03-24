@@ -64,6 +64,9 @@
 (require 'regexp-opt) ; for regexp-opt
 
 (require 'slime)
+;; something about recursive (eval-when (comile) ...) causes error "reading from killed buffer"
+;; so moved following out from under eval-when compile in slime -- 
+(require 'compile) 
 
 (let* ((libfile (locate-library "slime")))
   ;; Is it byte-compiled?
