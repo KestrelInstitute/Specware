@@ -11,6 +11,8 @@ MS qualifying spec
  type Match        = AMatch          StandardAnnotation
  type Sort         = ASort           StandardAnnotation
  type Sorts        = List Sort
+ type Type         = Sort
+ type Types        = List Type
  type Pattern      = APattern        StandardAnnotation
  type Patterns     = List Pattern
  type Fun          = AFun            StandardAnnotation
