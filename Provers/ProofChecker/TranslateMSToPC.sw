@@ -22,7 +22,29 @@ Translate qualifying spec
   %import ../ProofDebugger/Printer
   import ../ProofDebugger/Print
 
-  op specToContext : Spec -> SpecCalc.Env Context
+
+  type MS_Type          = MS.Type
+  type MS_Term          = MS.Term
+  type MS_Pattern       = MS.Pattern
+  type MS_Fixity        = MetaSlang.Fixity
+
+  type PC_Context       = MetaslangProofChecker.Context
+  type PC_Type          = MetaslangProofChecker.Type
+  type PC_Types         = MetaslangProofChecker.Types
+  type PC_TypeName      = MetaslangProofChecker.TypeName
+  type PC_TypeVariable  = MetaslangProofChecker.TypeVariable
+  type PC_Expression    = MetaslangProofChecker.Expression
+  type PC_Operation     = MetaslangProofChecker.Operation
+  type PC_BindingBranch = MetaslangProofChecker.BindingBranch
+  type PC_Variable      = MetaslangProofChecker.Variable
+  type PC_Variables     = MetaslangProofChecker.Variables
+  type PC_Fixity        = MetaslangProofChecker.Fixity
+  type PC_UserField     = MetaslangProofChecker.UserField
+  type PC_AxiomName     = MetaslangProofChecker.AxiomName
+  type PC_OpName        = String   % TODO: MetaslangProofChecker.OpName      if it existed
+  type PC_Constructor   = String   % TODO: MetaslangProofChecker.Constructor if it existed
+
+  op specToContext : Spec -> SpecCalc.Env PC_Context
 (* temporarily commented out:
   def specToContext spc =
     %let _ = fail("specToContext") in
@@ -221,7 +243,7 @@ Translate qualifying spec
       foldM specElemToContextElems empty spc.elements
 *)      
   % Convert a term in MetaSlang abstract syntax to a term in the proof checker's abstract syntax.
-  op Term.msToPC : Spec -> MS.Term -> SpecCalc.Env Expression
+  op Term.msToPC : Spec -> MS_Term -> SpecCalc.Env PC_Expression
 (* temporarily commented out:
   def Term.msToPC spc trm =
     %let _ = fail(printTerm trm) in
@@ -432,7 +454,7 @@ Translate qualifying spec
   % particular type instance (t2) with the abstract type declaration (t1).
   % The latter is assumed to be free of type variables.
 
-  op matchType : Spec -> MS.Sort -> MS.Sort -> Env (List (TyVar * Type))
+  op matchType : Spec -> MS_Type -> MS_Type -> Env (List (TyVar * PC_Type))
 (* temporarily commented out:
   def matchType spc t1 t2 =
     case (t1,t2) of
@@ -494,7 +516,7 @@ Translate qualifying spec
       | (_, TyVar _) -> raise (Fail "matchType: type instance contains type variables")
       | (_, _) -> return []
 
-  op OptType.msToPC : Spec -> Option MS.Sort -> SpecCalc.Env Type
+  op OptType.msToPC : Spec -> Option MS_Type -> SpecCalc.Env PC_Type
   def OptType.msToPC spc typ? =
     case typ? of
       | None -> return UNIT
@@ -502,7 +524,7 @@ Translate qualifying spec
 *)
 
   % Convert a type in MetaSlang abstract syntax to a type in the proof checker's abstract syntax.
-  op Type.msToPC : Spec -> MS.Sort -> SpecCalc.Env Type
+  op Type.msToPC : Spec -> MS_Type -> SpecCalc.Env PC_Type
 (* temporarily commented out:
   def Type.msToPC spc typ =
     %let _ = fail("typetopc") in
@@ -560,7 +582,7 @@ Translate qualifying spec
         }
 *)
   % The second argument is the expression to which we will identify (equate) with all patterns.
-  op GuardedExpr.msToPC : Spec -> Expression -> (MS.Pattern * MS.Term * MS.Term) -> SpecCalc.Env BindingBranch
+  op GuardedExpr.msToPC : Spec -> PC_Expression -> (MS_Pattern * MS_Term * MS_Term) -> SpecCalc.Env PC_BindingBranch
   def GuardedExpr.msToPC spc expr (pattern,guard,term) = {
       (vars,types,lhs) <- Pattern.msToPC spc expr pattern; 
       rhs <- msToPC spc term; 
@@ -571,7 +593,7 @@ Translate qualifying spec
   % In many cases it is just a variable. The function computes a list of variables that
   % are bound by the match, the types of the variables and a boolean valued expression (a guard)
   % that represents the pattern.
-  op Pattern.msToPC : Spec -> Expression -> MS.Pattern -> SpecCalc.Env (Variables * Types * Expression)
+  op Pattern.msToPC : Spec -> PC_Expression -> MS_Pattern -> SpecCalc.Env (PC_Variables * PC_Types * PC_Expression)
 (* temporarily commented out:
   def Pattern.msToPC spc expr pattern = 
     case pattern of
@@ -621,29 +643,29 @@ Translate qualifying spec
       | NatPat (nat, b) -> return (empty,empty,(primNat nat) == expr)
       | WildPat (srt, _) -> return (empty,empty,TRUE)
 *)
-  op idToUserField : String -> UserField
+  op idToUserField : String -> PC_UserField
   def idToUserField s = s
 
-  op idToVariable : String -> Variable
+  op idToVariable : String -> PC_Variable
   def idToVariable s = user s
 
 % temporarily commented out:
-%  op idToConstructor : String -> Constructor
+%  op idToConstructor : String -> PC_Constructor
 %  def idToConstructor s = s
 
-  op idToTypeVariable : String -> TypeVariable
+  op idToTypeVariable : String -> PC_TypeVariable
   def idToTypeVariable s = s
 
-  op propNameToAxiomName : PropertyName -> AxiomName
+  op propNameToAxiomName : PropertyName -> PC_AxiomName
   def propNameToAxiomName qid = printQualifiedId qid
 
-  op qidToTypeName : QualifiedId -> TypeName
+  op qidToTypeName : QualifiedId -> PC_TypeName
   def qidToTypeName qid = printQualifiedId qid
 
-  op qidToOperation : QualifiedId -> MetaslangProofChecker.Fixity -> Operation
+  op qidToOperation : QualifiedId -> PC_Fixity -> PC_Operation
   def qidToOperation qid fxty = (printQualifiedId qid,fxty)
 
-  op newVar : SpecCalc.Env Variable
+  op newVar : SpecCalc.Env PC_Variable
   def newVar = {
     n <- freshNat;   % in the Specware monad
     return (abbr n)
@@ -677,7 +699,7 @@ Translate qualifying spec
     in
       foldOverQualifierMap newF empty qMap
 
-  op primNat : Nat -> Expression
+  op primNat : Nat -> PC_Expression
   def primNat n =
     if n = 0 then
       OPI (qidToOperation (Qualified ("Integer","zero")) (embed prefix),empty)
@@ -685,20 +707,20 @@ Translate qualifying spec
       (OPI (qidToOperation (Qualified ("Nat","succ")) (embed prefix),empty)) @ (primNat (n - 1))
 
   % Construct an expression in the proof checker's abstract syntax that encodes the given string.
-  op primString : String -> Expression
+  op primString : String -> PC_Expression
   def primString str =
     (OPI (qidToOperation (Qualified ("String","implode")) (embed prefix),empty)) @ (primList charType (List.map primChar (explode str)))
 
-  op charType : Type
+  op charType : PC_Type
   def charType = TYPE (qidToTypeName (Qualified ("Char","Char")),empty)
 
   % Construct a expression in the proof checker's abstract syntax that encodes the given char.
-  op primChar : Char -> Expression
+  op primChar : Char -> PC_Expression
   def primChar c = (OPI (qidToOperation (Qualified ("Char","chr")) (embed prefix),empty)) @ (primNat (ord c))
 
   % Construct a expression in the proof checker's abstract syntax that encodes the given
   % list of elements of the given type.
-  op primList : Type -> List Expression -> Expression
+  op primList : PC_Type -> List PC_Expression -> PC_Expression
 (* temporarily commented out:
   def primList typ l =
     let nil = (EMBED (listType typ, idToConstructor "Nil")) @ MTREC in
@@ -708,7 +730,7 @@ Translate qualifying spec
     in
       List.foldr cons nil l
 *)
-  op listType : Type -> Type
+  op listType : PC_Type -> PC_Type
   def listType typ = TYPE (qidToTypeName (Qualified ("List","List")), single typ)
 
   op findInMap : [a] AQualifierMap a -> QualifiedId -> SpecCalc.Env a
@@ -727,7 +749,7 @@ Translate qualifying spec
   % A more comprehensive scheme would need handle mutually recursive type definitions
   % presumably using some sort of toplogical sort.
  
-  op recursiveSumOfProducts? : Spec -> QualifiedId -> SpecCalc.Env Boolean
+  op recursiveSumOfProducts? : Spec -> QualifiedId -> SpecCalc.Env Bool
   def recursiveSumOfProducts? spc qid = {
     typeInfo <- findInMap spc.sorts qid;
     case typeInfo.dfn of
@@ -763,10 +785,10 @@ Translate qualifying spec
       | _ -> return false
     }
 
-  op constructorToOpName : QualifiedId -> String -> String
+  op constructorToOpName : QualifiedId -> String -> PC_OpName
   def constructorToOpName qid name = (printQualifiedId qid) ^ "$" ^ name
 
-  op convertFixity : MetaSlang.Fixity ->  MetaslangProofChecker.Fixity
+  op convertFixity : MS_Fixity ->  PC_Fixity
   def convertFixity fxty =
     case fxty of
       | Nonfix -> embed prefix
