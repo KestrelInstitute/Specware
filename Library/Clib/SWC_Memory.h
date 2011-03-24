@@ -1,7 +1,7 @@
 #ifndef _SWC_Memory_H_
 #define _SWC_Memory_H_
 
-#ifdef SWGC
+#ifdef USEGC
 #include <gc.h>
 #endif
 

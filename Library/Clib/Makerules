@@ -2,23 +2,23 @@
 # common make rules for generated C files from Specware
 #
 
-# uncomment following to disable garbage collector
-# USEGC = no 
+# uncomment following to enable garbage collector
+# USEGC=yes
 
 CC = gcc
 LD = gcc
 
 # the directory for the Boehm garbage collector:
 
-ifeq "$(USEGC)" "no"
-  SWGC = -USWGC
-  GCLIB =
-  GCINCLUDE =
-else
+ifeq "$(USEGC)" "yes"
   GCDIR = $(SPECWARE4)/Library/Clib/gc-7.2alpha2
   SWGC = -DSWGC
   GCLIB = $(GCDIR)/gc.a
   GCINCLUDE = -I$(GCDIR)/include
+else
+#  SWGC=
+#  GCLIB=
+#  GCINCLUDE=
 endif
 
 LDLIBS := $(LDLIBS) $(GCLIB)
