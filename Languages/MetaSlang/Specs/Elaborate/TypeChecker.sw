@@ -455,7 +455,7 @@ TypeChecker qualifying spec
  op allowDependentSubTypes?: Bool = true
 
  op addLambdaVarsToEnv(env: LocalEnv, tm: MS.Term): LocalEnv =
-    let _ = writeLine("alvte: "^printTerm tm^"\n"^anyToString env.vars) in
+   % let _ = writeLine("alvte: "^printTerm tm^"\n"^anyToString env.vars) in
    case tm of
      | Lambda([(pat, _, bod)], pos) ->
        let alpha = freshMetaTyVar ("Lambda_0", pos) in
