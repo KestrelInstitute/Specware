@@ -218,7 +218,7 @@ spec
 
   op printDef (spc: Spec, qid: QualifiedId): SpecCalc.Env () =
     case findTheOp(spc,qid) of
-      | None -> escape ("Can't find op " ^ anyToString qid ^ "\n")
+      | None -> print ("Can't find op " ^ show qid ^ "\n")
       | Some opinfo -> {
           (tvs, ty, dfn) <- return(unpackFirstTerm opinfo.dfn); 
           print (printQualifiedId qid^":");

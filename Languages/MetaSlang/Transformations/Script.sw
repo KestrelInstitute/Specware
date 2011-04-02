@@ -527,7 +527,7 @@ spec
           foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findMatchingOps(spc, qid) of
                    | [] -> {
-                       print ("Can't find op " ^ anyToString qid ^ "\n");
+                       print ("Can't find op " ^ show qid ^ "\n");
                        return (spc, tracing?)
                      }
                    | opinfos ->
