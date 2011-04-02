@@ -1,14 +1,18 @@
-;;; slime-sprof.el --- Integration with SBCL's sb-sprof
-;;;
-;;; Authors: Juho Snellman
-;;;
-;;; License: MIT
-;;;
-;;; Installation
-;;
-;; Add this to your .emacs: 
-;;
-;;   (slime-setup '(... slime-sprof))
+
+(define-slime-contrib slime-sprof
+  "Integration with SBCL's sb-sprof."
+  (:authors "Juho Snellman"
+            "Stas Boukarev")
+  (:license "MIT")
+  (:swank-dependencies swank-sprof)
+  (:on-load
+   (let ((C '(and (slime-connected-p)
+              (equal (slime-lisp-implementation-type) "SBCL"))))
+     (setf (cdr (last (assoc "Profiling" slime-easy-menu)))
+           `("--"
+             [ "Start sb-sprof"  slime-sprof-start ,C ]
+             [ "Stop sb-sprof"   slime-sprof-stop ,C ]
+             [ "Report sb-sprof" slime-sprof-report ,C ])))))
 
 (defvar slime-sprof-exclude-swank nil
   "*Display swank functions in the report.")
@@ -33,9 +37,17 @@
 
 ;; Start / stop profiling
 
-(defun slime-sprof-start ()
+(defun* slime-sprof-start (&optional (mode :cpu))
   (interactive)
-  (slime-eval `(swank:swank-sprof-start)))
+  (slime-eval `(swank:swank-sprof-start :mode ,mode)))
+
+(defun slime-sprof-start-alloc ()
+  (interactive)
+  (slime-sprof-start :alloc))
+
+(defun slime-sprof-start-time ()
+  (interactive)
+  (slime-sprof-start :time))
 
 (defun slime-sprof-stop ()
   (interactive)
@@ -62,7 +74,9 @@
                       :exclude-swank ,exclude-swank)
                     'slime-sprof-format))
 
-(defun slime-sprof-browser ()
+(defalias 'slime-sprof-browser 'slime-sprof-report)
+
+(defun slime-sprof-report ()
   (interactive)
   (slime-with-popup-buffer ((slime-buffer-name :sprof)
                             :connection t
@@ -85,7 +99,7 @@
     (slime-insert-propertized
      (slime-sprof-browser-name-properties)
      (format (format "%%-%ds " name-length)
-             (abbreviate-name name name-length)))
+             (slime-sprof-abbreviate-name name name-length)))
     (insert (format "%6.2f " self))
     (when cumul
       (insert (format "%6.2f " cumul))
@@ -96,7 +110,7 @@
        `(profile-index ,index expanded nil)))
     (insert "\n")))
 
-(defun abbreviate-name (name max-length)
+(defun slime-sprof-abbreviate-name (name max-length)
   (lexical-let ((length (min (length name) max-length)))
     (subseq name 0 length)))
 
@@ -152,7 +166,7 @@
            (slime-sprof-browser-name-properties)
            (let ((len (- 59 (* 2 nesting))))
              (format (format "%%-%ds " len)
-                     (abbreviate-name name len))))
+                     (slime-sprof-abbreviate-name name len))))
           (slime-sprof-browser-add-line-text-properties
            `(profile-sub-index ,index))
           (insert (format "%6.2f" cumul)))))))
@@ -204,17 +218,5 @@
             (ding))
            (t
             (slime-show-source-location source-location))))))))
-
-;;; Menu
-
-(defun slime-sprof-init ()
-  (slime-require :swank-sprof)
-  (let ((C '(and (slime-connected-p)
-             (equal (slime-lisp-implementation-type) "SBCL"))))
-    (setf (cdr (last (assoc "Profiling" slime-easy-menu)))
-          `("--"
-            [ "Start sb-sprof"  slime-sprof-start ,C ]
-            [ "Stop sb-sprof"   slime-sprof-stop ,C ]
-            [ "Report sb-sprof" slime-sprof-browser ,C ]))))
 
 (provide 'slime-sprof)

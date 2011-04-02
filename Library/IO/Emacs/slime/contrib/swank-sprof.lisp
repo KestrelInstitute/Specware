@@ -39,12 +39,15 @@
           (samples-percent (sb-sprof::node-accrued-count node))))
 
 (defun filter-swank-nodes (nodes)
-  (let ((swank-package (find-package :swank)))
+  (let ((swank-packages (load-time-value
+                         (mapcar #'find-package
+                                 '(swank swank-rpc swank-mop
+                                   swank-match swank-backend)))))
     (remove-if (lambda (node)
                  (let ((name (sb-sprof::node-name node)))
                    (and (symbolp name)
-                        (eql (symbol-package name)
-                             swank-package))))
+                        (member (symbol-package name) swank-packages
+                                :test #'eq))))
                nodes)))
 
 (defun serialize-call-graph (&key exclude-swank)
@@ -71,8 +74,8 @@
                                       `((nil "Elsewhere" ,rest nil nil)))))))))
 
 (defslimefun swank-sprof-get-call-graph (&key exclude-swank)
-  (setf *call-graph* (sb-sprof:report :type nil))
-  (serialize-call-graph :exclude-swank exclude-swank))
+  (when (setf *call-graph* (sb-sprof:report :type nil))
+    (serialize-call-graph :exclude-swank exclude-swank)))
 
 (defslimefun swank-sprof-expand-node (index)
   (let* ((node (gethash index *number-nodes*)))
@@ -130,8 +133,8 @@
               (find-source-location function))))
         `(:error "No source location available"))))
 
-(defslimefun swank-sprof-start ()
-  (sb-sprof:start-profiling))
+(defslimefun swank-sprof-start (&key (mode :cpu))
+  (sb-sprof:start-profiling :mode mode))
 
 (defslimefun swank-sprof-stop ()
   (sb-sprof:stop-profiling))
