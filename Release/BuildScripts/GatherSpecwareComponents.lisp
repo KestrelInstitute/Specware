@@ -350,7 +350,7 @@
 			     ))
 	 (generic-files    (append '("Preface.el"
 				     "files.el" 
-				     "compile.el"
+				     ;; "compile.el" ; obsolete
 				     "hideshow.el"
 				     "hideshow.elc"
                                      "augment-load-path.el"
