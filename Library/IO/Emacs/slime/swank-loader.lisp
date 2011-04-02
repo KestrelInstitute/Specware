@@ -55,8 +55,8 @@
     :unix))
 
 (defparameter *architecture-features*
-  '(:powerpc :ppc :x86 :x86-64 :amd64 :i686 :i586 :i486 :pc386 :iapx386
-    :sparc64 :sparc :hppa64 :hppa
+  '(:powerpc :ppc :x86 :x86-64 :x86_64 :amd64 :i686 :i586 :i486 :pc386 :iapx386
+    :sparc64 :sparc :hppa64 :hppa :arm
     :pentium3 :pentium4
     :java-1.4 :java-1.5 :java-1.6 :java-1.7))
 
@@ -221,7 +221,6 @@ If LOAD is true, load the fasl file."
     swank-package-fu
     swank-hyperdoc
     #+sbcl swank-sbcl-exts
-    swank-listener-hooks
     )
   "List of names for contrib modules.")
 
@@ -253,15 +252,11 @@ If LOAD is true, load the fasl file."
 (defun setup ()
   (load-site-init-file *source-directory*)
   (load-user-init-file)
-  (let ((x (find-symbol "*AFTER-INIT-HOOK*" "SWANK"))
-        (y (find-symbol "INIT" "SWANK")))
-    (when (#-clisp probe-file
-                   #+clisp ext:probe-directory        
-                   (contrib-dir *source-directory*))
-      (when (symbol-value x)
-        (eval `(pushnew 'compile-contribs ,(q "swank::*after-init-hook*")))))
-    (when(symbol-function y)
-      (funcall (q "swank::init")))))
+  (when (#-clisp probe-file
+         #+clisp ext:probe-directory        
+         (contrib-dir *source-directory*))
+    (eval `(pushnew 'compile-contribs ,(q "swank::*after-init-hook*"))))
+  (funcall (q "swank::init")))
 
 (defun init (&key delete reload load-contribs (setup t))
   "Load SWANK and initialize some global variables.
@@ -276,13 +271,10 @@ global variabes in SWANK."
          (load-swank))
         (t 
          (warn "Not reloading SWANK.  Package already exists.")))
-  (let ((x (find-symbol "*AFTER-INIT-HOOK*" "SWANK")))
   (when load-contribs
     (compile-contribs :load t))
   (when setup
-    (setup))))
-
-         
+    (setup)))
 
 (defun dump-image (filename)
   (init :setup nil)

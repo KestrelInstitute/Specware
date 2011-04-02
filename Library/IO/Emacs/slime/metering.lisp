@@ -359,8 +359,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; For CLtL2 compatible lisps
 
-;;; Use explicit string as name of package, to stay consistent with snark.
-(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP") 
+(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:export "*MONITORED-FUNCTIONS*"
 	   "MONITOR" "MONITOR-ALL" "UNMONITOR" "MONITOR-FORM"
 	   "WITH-MONITORING"
