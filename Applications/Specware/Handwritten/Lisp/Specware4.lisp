@@ -398,9 +398,11 @@
   `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
      (format nil "~a/Library/IO/Emacs/slime/" 
 	     (Specware::getenv "SPECWARE4")))
-  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
+  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp"))
+        (hooks (in-specware-dir "Library/IO/Emacs/slime/contrib/swank-listener-hooks.lisp")))
     (load loader :verbose t)
-    (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t))
+    (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t)
+    (load hooks :verbose t))
   )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
