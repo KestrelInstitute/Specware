@@ -284,7 +284,8 @@ If NEWLINE is true then add a newline at the end of the input."
       (let ((proc (slime-maybe-start-lisp program program-args env
                                           directory buffer)))
         (slime-inferior-connect proc args)
-        (slime-pop-to-buffer (process-buffer proc))))))
+        (let ((buf (process-buffer proc)))
+          (slime-pop-to-buffer buf (not (equal (buffer-name (current-buffer)) sw:common-lisp-buffer-name))))))))
 
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))
@@ -454,10 +455,8 @@ to end end."
 Return nil iff if point is not at filename."
   (if t  ;(save-excursion (re-search-backward "\"[^ \t\n]+\\=" nil t))
       (let ((comint-completion-addsuffix '("/" . "\"")))
-        (if slime-when-complete-filename-expand
-            (comint-replace-by-expanded-filename)
-          (comint-dynamic-complete-as-filename))
-        t)
+      (comint-replace-by-expanded-filename)
+      t)
     nil))
 
 (provide 'sw-slime)
