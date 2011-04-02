@@ -133,7 +133,8 @@ TypeChecker qualifying spec
 			 let (tvs, srt, tm) = unpackTerm dfn in
 			 if poly? = (tvs ~= []) then
 			   let _ = checkTyVars (env, tvs, pos) in
-			   let srt1 = checkSort (env, srt) in
+                           let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
+			   let srt1 = checkSort (env_s, srt) in
 			   let xx = single_pass_elaborate_term_top (env, tm, srt1) in
 			   maybePiTerm (tvs, SortedTerm (xx, srt1, pos))
 			 else 
@@ -451,15 +452,31 @@ TypeChecker qualifying spec
    let new_dfn = maybeAndTerm (new_decls_and_defs, termAnn info.dfn) in
    info << {dfn = new_dfn}
 
+ op allowDependentSubTypes?: Bool = true
+
+ op addLambdaVarsToEnv(env: LocalEnv, tm: MS.Term): LocalEnv =
+    let _ = writeLine("alvte: "^printTerm tm^"\n"^anyToString env.vars) in
+   case tm of
+     | Lambda([(pat, _, bod)], pos) ->
+       let alpha = freshMetaTyVar ("Lambda_0", pos) in
+       let (_, env) = elaboratePattern (env, pat, alpha) in
+       addLambdaVarsToEnv(env, bod)
+     | Pi(_, tm1, _) -> addLambdaVarsToEnv(env, tm1)
+     | And(tm1::_, _) -> addLambdaVarsToEnv(env, tm1)
+     | _ -> env
+
  def checkOpDef (dfn, info, env) =
    let pos = termAnn dfn in
    let (tvs, srt, tm) = unpackTerm dfn in
    let _ = checkTyVars (env, tvs, pos) in
-   let srt = checkSort (env, srt) in
+   let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
+   let srt = checkSort (env_s, srt) in
    let elaborated_tm = single_pass_elaborate_term_top (env, tm, srt) in
    %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
    let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
-  % let _ = writeLine("chk: "^printTerm elaborated_tm^"\n"^anyToString elaborated_tm) in
+   let _ = if false  % allowDependentSubTypes?
+             then writeLine("chk: "^printTerm elaborated_tm^"\n"^printSortWithSorts srt) else ()
+   in
    let new_tvs =
        if empty? tvs then
 	 tvs_used
