@@ -395,9 +395,9 @@
 ;; Repeat the when test so the defparameter below can 
 ;; be read after the defpackage above has been evaluted.
 (when *using-slime-interface?*
-  `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
-     (format nil "~a/Library/IO/Emacs/slime/" 
-	     (Specware::getenv "SPECWARE4")))
+  (eval
+   `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
+     (format nil "~a/Library/IO/Emacs/slime/" (Specware::getenv "SPECWARE4"))))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp"))
         (hooks (in-specware-dir "Library/IO/Emacs/slime/contrib/swank-listener-hooks.lisp")))
     (load loader :verbose t)
