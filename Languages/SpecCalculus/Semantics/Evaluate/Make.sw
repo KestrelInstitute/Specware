@@ -54,6 +54,9 @@ spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  op writeMakeFile? : Bool = true  % make it easier to disable this
+  op runMakeFile?   : Bool = true  % make it easier to disable this
+
   op  makeC : ValueInfo -> RelativeUID -> String -> Env ()
   def makeC spec_info rel_uid version =
     %% NOTE: This does not yet handle all the options in the lisp version
@@ -78,38 +81,48 @@ spec
      return (ensureDirectoriesExist filename);
 
      junk   <- evaluateCGen (spec_info, Some filename);
-     device <- return (Specware.currentDeviceAsString ());
-     path   <- return ([device] ++ c_dir ++ ["swcmake.mk"]);
-     makefile <- return (uidToFullPath (uid << {path = path}));
-     print (";;; Local Makefile: " ^ makefile ^ "\n");
-     sw_make_file <- return (case getEnv "SPECWARE4" of
-			       | Some s -> s ^ "/Library/Clib/Makerules"
-			       | _ -> "oops");
-     print (";;; Specware Make file: " ^ sw_make_file ^ "\n");
-     s <- return ("# ----------------------------------------------\n" ^
-		  "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT\n" ^
-		  "# ----------------------------------------------\n" ^
-		  "\n\n" ^
-		  "# the toplevel target extracted from the :make command line:\n" ^
-		  "all : " ^ cbase ^ "\n\n" ^
-		  "# include the predefined make rules and variable:\n" ^
- 		  "include " ^ sw_make_file ^ "\n" ^
-		  "# dependencies and rule for main target:\n" ^
-		  cbase ^ ": " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
-		  "	$(CC) -o " ^ cbase ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
-     return (writeStringToFile (s, makefile));
-     dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
-     make_fn   <- return ((case getEnv "SPECWARE4_MAKE" of
-			     | Some s -> s
-			     | _ -> "make"));
-     here <- return (pwdAsString());
-     print (";;; Connecting to ");
-     return (cd dir);
-     print ("\n;;; Running cmd to make C version: " ^ make_fn ^ "-f swcmake.mk\n");
-     return (run_cmd (make_fn, ["-f", "swcmake.mk"]));
-     print (";;; Connecting back to ");
-     return (cd here);
-     print ("\n")
+     if writeMakeFile? then 
+       {
+        device <- return (Specware.currentDeviceAsString ());
+        path   <- return ([device] ++ c_dir ++ ["swcmake.mk"]);
+        makefile <- return (uidToFullPath (uid << {path = path}));
+        print (";;; Local Makefile: " ^ makefile ^ "\n");
+        sw_make_file <- return (case getEnv "SPECWARE4" of
+                                  | Some s -> s ^ "/Library/Clib/Makerules"
+                                  | _ -> "oops");
+        print (";;; Specware Make file: " ^ sw_make_file ^ "\n");
+        s <- return ("# ----------------------------------------------\n" ^
+                       "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT\n" ^
+                       "# ----------------------------------------------\n" ^
+                       "\n\n" ^
+                       "# the toplevel target extracted from the :make command line:\n" ^
+                       "all : " ^ cbase ^ "\n\n" ^
+                       "# include the predefined make rules and variable:\n" ^
+                       "include " ^ sw_make_file ^ "\n" ^
+                       "# dependencies and rule for main target:\n" ^
+                       cbase ^ ": " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
+                       "	$(CC) -o " ^ cbase ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
+        return (writeStringToFile (s, makefile));
+        if runMakeFile? then 
+          {
+           dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
+           make_fn   <- return ((case getEnv "SPECWARE4_MAKE" of
+                                   | Some s -> s
+                                   | _ -> "make"));
+           here <- return (pwdAsString());
+           print (";;; Connecting to ");
+           return (cd dir);
+           print ("\n;;; Running cmd to make C version: " ^ make_fn ^ "-f swcmake.mk\n");
+           return (run_cmd (make_fn, ["-f", "swcmake.mk"]));
+           print (";;; Connecting back to ");
+           return (cd here);
+           print ("\n")
+           }
+        else   
+          print ("\nNot running make file...\n")
+       }
+     else
+       print ("\nNot creating make file...\n")
      }
 
   op Specware.cd                    : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
