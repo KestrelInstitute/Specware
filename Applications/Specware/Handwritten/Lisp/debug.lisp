@@ -79,7 +79,12 @@
 			 (if *dont-break-next-call*
 			     (setq *dont-break-next-call* nil)
 			   t))
-	#-(or allegro cmu) `(cl:trace ,fn-name)))
+        #+sbcl `(cl:trace ,fn-name
+			 :break
+			 (if *dont-break-next-call*
+			     (setq *dont-break-next-call* nil)
+			   t))
+	#-(or allegro cmu sbcl) `(cl:trace ,fn-name)))
 
 
 (defun unbreak-functions (fns)
