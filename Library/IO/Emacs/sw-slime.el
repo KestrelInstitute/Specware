@@ -72,13 +72,15 @@
     (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
-	       (load ,(slime-to-lisp-filename (expand-file-name loader)) :verbose t))
+	       (load 
+                ,(sw::normalize-filename  ; was slime-to-lisp-filename
+                  (expand-file-name loader)) :verbose t))
 	    `(unless (find-package :Specware) 
 	       (defpackage :Specware (:use "CL")))
 	    `(set (intern "*USING-SLIME-INTERFACE?*" :Specware) t)
             `(funcall (read-from-string "swank-loader:init"))
             `(funcall (read-from-string "swank:start-server")
-                        ,(slime-to-lisp-filename
+                        ,(sw::normalize-filename ; slime-to-lisp-filename
                           (if cygwin? (concat "/cygwin" port-filename)
                             port-filename))
                         :coding-system ,encoding))))
@@ -379,7 +381,7 @@ to end end."
             (set-marker slime-repl-prompt-start-mark prompt-start)
             (unless sw:license-displayed-p
               (when (equal sw:system-name "Specware")
-                (sw:eval-in-lisp-no-value "(Specware::check-license)"))
+                (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
               (setq sw:license-displayed-p t))
             prompt-start))))))
 
