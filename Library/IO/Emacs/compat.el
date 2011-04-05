@@ -25,12 +25,14 @@
 				    'gcl
 				  'sbcl)))))
 (defvar *lisp-executable-extension*
-  (case *specware-lisp*
-    (openmcl "mclexe")
-    (cmulisp "cmuexe")
-    (sbcl    "sbclexe")
-    (allegro "aclexe")
-    (gcl     "gclexe")))
+  (if *windows-system-p*
+      "exe"
+    (case *specware-lisp*
+      (openmcl "mclexe")
+      (cmulisp "cmuexe")
+      (sbcl    "sbclexe")
+      (allegro "aclexe")
+      (gcl     "gclexe"))))
 
 (defvar *lisp-image-extension*
   (case *specware-lisp*
