@@ -1351,6 +1351,8 @@ See `slime-start'."
           (format "slime.%S" (emacs-pid))))
 
 (defun slime-temp-directory ()
+  ;; Note: to-cygwin-name will post-process this in a cygwin environment
+  ;;       depending on cygwin? 
   (cond ((fboundp 'temp-directory) (temp-directory))
         ((boundp 'temporary-file-directory) temporary-file-directory)
         (t "/tmp/")))
