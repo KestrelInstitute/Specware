@@ -6,7 +6,26 @@
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* *specware*)
 
-(defvar cygwin? (string= "/cygdrive/" (substring *specware* 0 10)))
+(defvar cygwin? 
+  (let ((test1 (eq system-type 'cygwin32))
+        (test2 (string= "/cygdrive/" (substring *specware* 0 10))))
+    ;; following messages commented out by default...
+    '(cond ((and test1 (not test2))
+            ;; We normally come through this case,
+            ;;  since setting *specware* to "/cygdrive/c/specware" seems to cause problems elsewhere. (sigh)
+            (message "Will assume cygwin32 environment, since system-type is 'cgywin32, but ...")
+            (sit-for 2)
+            (message "*specware* doesn't start with \"/cygdrive/\": %s" *specware*)
+            (sit-for 2))
+           ((and test2 (not test1))
+            (message "Will assume cygwin32 environment, since *specware* starts with \"/cygdrive/\": %s, but ..." 
+                     *specware*)
+            (sit-for 2)
+            (message "system-type is not 'cgywin: %s" system-type)))
+    (or test1 test2)))
+
+(when cygwin?
+  (setq system-type 'windows-nt))
 
 (defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
 
