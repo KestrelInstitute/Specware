@@ -456,6 +456,31 @@ emacs interface functions.
 	       | None -> if val = vali then Some unitId else None)
       None globalContext
 
+  op setCurrentUIDforSpec(spc: Spec): Env () =
+    % let _ = writeLine("setCurrentUIDforSpec:\n"^printSpec spc) in
+    {globalContext <- getGlobalContext;
+     case findUnitIdForUnit(Spec spc, globalContext) of
+       | None -> return ()
+       | Some uid ->
+         setCurrentUID uid}
+
+  op setCurrentUIDfromPos(pos: Position): Env (UnitId) =
+    % let _ = writeLine("setCurrentUIDfromPos:\n"^anyToString pos) in
+    {saveUID <- getCurrentUID;
+     (case pos of
+      | File(filnm, _, _) ->
+        let end_uid = length filnm - 3 in
+        let filnm = if testSubseqEqual?(filnm, ".sw",  end_uid, 0)
+                      then subFromTo(filnm, 0, end_uid) else filnm
+        in
+        {uid <- pathToCanonicalUID filnm;
+         %% Putting hashSuffix enables sub units to be found
+         when (saveUID.path ~= uid.path)
+           (setCurrentUID (uid << {hashSuffix = Some "dummy"}))}
+       | _ -> return ());
+     return saveUID}
+
+
   op  findUnitIdTermForUnit: Value * GlobalContext -> Option (UnitId * SCTerm)
   def findUnitIdTermForUnit (val, globalContext) =
     foldMap (fn result -> fn unitId -> fn (vali,_,_,term) ->
