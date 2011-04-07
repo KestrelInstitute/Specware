@@ -172,14 +172,16 @@ SpecCalc qualifying spec
 %                                        dom_spec.elements
                                  ->
                                % let _ = writeLine("fssrs: "^anyToString sm_tm) in
-                               let new = sm_tm in
+                               let new = (sm_tm, spc) in
                                if new in? result then result
                                  else new :: result
                              | _ -> result)
            [] cod_spec.elements
        in
-       mapM (fn sm_tm ->
-               {sm_info as (Morph sm, ts, uids) <- evaluateTermInfo sm_tm;
+       mapM (fn (sm_tm, spc) ->
+               {saveUID <- setCurrentUIDfromPos(positionOf sm_tm) ;      % Better than nothing -- scheme needs rethinking
+                sm_info as (Morph sm, ts, uids) <- evaluateTermInfo sm_tm;
+                setCurrentUID saveUID;
                 cod_spc <- return(SpecCalc.cod sm);
                 % print(printSpec cod_spc);
                 cod_value_info <- return(Spec(SpecCalc.cod sm), ts, uids);
