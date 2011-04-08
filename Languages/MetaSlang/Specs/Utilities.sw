@@ -487,13 +487,13 @@ Utilities qualifying spec
    substitute2(M,sub,freeNames)
  
  op substitute2(M: MS.Term, sub: VarSubst, freeNames: StringSet.Set): MS.Term = 
-   % let _ = String.writeLine "Map is " in
+   % let _ = writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sub in	
    let
        def subst(M:MS.Term):MS.Term = 
          case M
 	   of Var ((s,_),_) -> 
-	      (%String.writeLine ("Looking up "^s);
+	      (% writeLine ("Looking up "^s);
 	       case lookup(fn (s2,_) -> s = s2,sub) 
 		 of None   -> (%String.writeLine "not found"; 
 			       M) 
@@ -2550,6 +2550,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         | (_, WildPat _) -> Some []
         | (RestrictedPat(x1, t1, _), _) -> matchPatterns(x1, p2)
         | (_, RestrictedPat(x2, t2, _)) -> matchPatterns(p1, x2)
+        | (SortedPat(x1, _, _), _) -> matchPatterns(x1, p2)
+        | (_, SortedPat(x2, _, _)) -> matchPatterns(p1, x2)
         | _ -> None
 
   op topLevelOps(spc: Spec): QualifiedIds =
