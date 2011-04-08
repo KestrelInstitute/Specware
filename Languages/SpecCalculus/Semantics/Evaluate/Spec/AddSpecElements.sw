@@ -188,10 +188,12 @@ SpecCalc qualifying spec
 	let combined_names = removeDuplicates combined_names in % redundant?
 	let (old_tvs, old_srt, old_tm) = unpackFirstOpDef old_info in
 	let (new_tvs, new_srt, new_tm) = unpackFirstOpDef new_info in
+        % let _ = if refine? then writeLine("Old: "^printAliases new_names^": "^printSort old_srt^" =\n"^printTerm old_tm) else () in
+        % let _ = if refine? then writeLine("New: "^printAliases new_names^": "^printSort new_srt^" =\n"^printTerm new_tm) else () in
 	let old_defined? = definedTerm? old_dfn in
 	let new_defined? = definedTerm? new_dfn in
         case (old_defined?, new_defined?) of
-          | (false, false) ->
+          | (false, false) | refine? => equalType?(old_srt, new_srt) ->
             %%  Old: op foo : ...
             %%  New: op foo : ...
             raise (SpecError (pos, 
@@ -227,13 +229,15 @@ SpecCalc qualifying spec
 					 | (_,       Any _) -> old_srt
 					 | (MetaTyVar _, _) -> new_srt
 					 | (_, MetaTyVar _) -> old_srt
+                                         | _ | refine? -> combineSubTypes(old_srt, new_srt, old_tm, new_tm)
 					 | _ -> old_srt)   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
 		  in
-                  let new_tm = if refine?
+                  let new_tm = if refine? && old_defined?
                                  then   %% Reverse order so most refined term first
                                    And(new_tm :: opDefInnerTerms old_info, termAnn new_tm)
                                 else new_tm
                   in
+                  % let _ = if refine? then writeLine("refine "^(printAliases new_names)^": "^printSort combined_srt^" =\n"^printTerm new_tm) else () in
 		  let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
                   % let _ = writeLine("addOP "^id":\n"^printTerm combined_dfn) in
 		  let combined_info = old_info << {names = combined_names, 
@@ -303,6 +307,45 @@ SpecCalc qualifying spec
     in
     return (sp, el)
     }
+
+ op combineSubTypes(old_ty: Sort, new_ty: Sort, old_tm: MS.Term, new_tm: MS.Term): Sort =
+   let sbst = varSubstFromTerms(old_tm, new_tm) in
+   let old_ty = mapSort (fn t -> substitute(t, sbst), id, id) old_ty in
+   let def combineTypes(old_ty, new_ty) =
+         if equalType?(old_ty, new_ty) then new_ty
+         else
+         % let _ = writeLine("combine:\n"^printSort old_ty^"\n"^printSort new_ty) in
+         case (old_ty, new_ty) of
+           | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
+             Arrow(combineTypes(old_d, new_d), combineTypes(old_r, new_r), a)
+           | (Subsort(old_sup, old_p, _), Subsort(new_sup, new_p, a)) ->
+             Subsort(new_sup, combinePreds(old_p, new_p), a)
+           | (Subsort _, _) -> old_ty
+           | _ -> new_ty
+       def combinePreds(old_p, new_p) =
+         case (old_p, new_p) of
+           | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, c, new_ptm)], a)) ->
+             (case matchPatterns(new_pat, old_pat) of
+               | None -> new_p
+               | Some sb ->
+             Lambda([(new_pat, c, mkSimpConj(getConjuncts(substitute(old_ptm, sb)) ++ getConjuncts new_ptm))], a))
+           | (Lambda _, _) -> old_p
+           | _ -> new_p
+    in
+    combineTypes(old_ty, new_ty) 
+
+ op varSubstFromTerms(old_tm: MS.Term, new_tm: MS.Term): VarSubst =
+   let def match(old_tm, new_tm, sbst) =
+         case (old_tm, new_tm) of
+           | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, _, new_ptm)], _)) ->
+             (case matchPatterns(new_pat, old_pat) of
+               | None -> sbst
+               | Some sbst1 ->
+                 match(old_ptm, new_ptm, sbst ++ sbst1))
+           | _ -> sbst
+   in
+   match(old_tm, new_tm, []) 
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
