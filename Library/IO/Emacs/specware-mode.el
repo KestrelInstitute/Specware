@@ -556,7 +556,7 @@ Mode map
     (hs-minor-mode t)
     (setq hs-marker-begin-regexp "\\s-*%{{{")
     (setq hs-marker-end-regexp "\\s-*%}}}"))
-  (run-hooks 'sw:specware-mode-hook))           ; Run the hook
+  (run-mode-hooks 'sw:specware-mode-hook))           ; Run the hook
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
 
