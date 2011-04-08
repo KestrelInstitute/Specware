@@ -457,9 +457,10 @@ If we want the precedence to be optional:
           (1 :QUALIFIABLE-OP-NAMES)
           (6 :FORMAL-PARAMETERS)
           (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
-          (:anyof
-           (:tuple "=" (7 :EXPRESSION))
-           (:tuple "by" "{" (9 (:repeat* :TRANSFORM-EXPR ",")) "}")))
+          (:optional
+           (:anyof
+            (:tuple "=" (7 :EXPRESSION))
+            (:tuple "by" "{" (9 (:repeat* :TRANSFORM-EXPR ",")) "}"))))
   ;; args to make-op-elem are: 
   ;;  1 qualifiable-op-names 
   ;;  2 optional-fixity 
