@@ -613,6 +613,7 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
    let tms = innerTerms tm in
    let len = length tms in
    if i >= 0 && i < len then tms@(len - i - 1)
+     else if len <= 1 then tm
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
