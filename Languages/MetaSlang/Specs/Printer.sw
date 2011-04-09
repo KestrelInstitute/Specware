@@ -793,10 +793,11 @@ AnnSpecPrinter qualifying spec
 
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
-	 blockFill (0, 
-		    [(0, pp.fromString id), 
-		     (0, string " : "), 
-		     (2, ppSort context ([0] ++ path, Top : ParentSort) srt)])
+	 enclose (enclose?, pp,
+                  blockFill (0, 
+                             [(0, pp.fromString id), 
+                              (0, string " : "), 
+                              (2, ppSort context ([0] ++ path, Top : ParentSort) srt)]))
        else 
 	 pp.fromString id
      | EmbedPat  ("Nil", None, Base (Qualified ("List",      "List"), [_], _), _) -> string "[]"
@@ -1048,6 +1049,8 @@ AnnSpecPrinter qualifying spec
 		  else 
 		    string "")
    in
+   let (tvs, ty, dfn) = unpackNthTerm(info.dfn, refine_num) in
+   % let _ = writeLine("def: "^printSort ty^"\n"^printTerm dfn) in
    let 
      def ppDeclWithArgs (tvs, srt, tm) =
        case (tm, srt) of
@@ -1072,10 +1075,9 @@ AnnSpecPrinter qualifying spec
                                                    (4, ppSort context ([index, opIndex], Top) srt)])),
                                 (0, string " ")]))]
            ++
-           ppDefAux ([index, defIndex], tm)
+           ppDefAux (context, [index, defIndex], tm)
 
-     def ppDecl tm =
-       let (tvs, srt, tm) = unpackFirstTerm tm in
+     def ppDecl (tvs, srt, tm) =
        (1, blockFill
              (0, 
               [(0, blockFill
@@ -1103,7 +1105,7 @@ AnnSpecPrinter qualifying spec
                                                                    ([index, opIndex], Top) srt)])),
                                           (0, string " ")]))]
                        ++
-                       ppDefAux ([index, defIndex], tm)
+                       ppDefAux (context, [index, defIndex], tm)
                  else
                    [(0, blockFill
                           (0, [(0, case info.fixity of
@@ -1118,20 +1120,21 @@ AnnSpecPrinter qualifying spec
                                                   (4, ppSort context ([index, opIndex], Top) srt)]))
                                ]))])))
        
-     def ppDefAux (path, term) = 
+     def ppDefAux (context, path, term) = 
        case term of
-% 	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
-% 	   let pat  = ppPattern context ([0, 0] ++ path, false) pat in 
-% 	   let body = ppDefAux ([2, 0] ++ path, body) in
-% 	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
-% 	   if markSubterm? context then
-% 	     let num = State.! context.markNumber in
-% 	     let table = State.! context.markTable in
-% 	     (context.markTable State.:= NatMap.insert (table, num, path);
-% 	      context.markNumber State.:= num + 1;
-% 	      PrettyPrint.markLines (num, prettys))
-% 	   else 
-% 	     prettys
+ 	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
+ 	   let pat  = ppPattern context ([0, 0] ++ path, true) pat in 
+ 	   let body = ppDefAux (context, [2, 0] ++ path, body) in
+ 	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
+ 	   if markSubterm? context then
+ 	     let num = State.! context.markNumber in
+ 	     let table = State.! context.markTable in
+ 	     (context.markTable State.:= NatMap.insert (table, num, path);
+ 	      context.markNumber State.:= num + 1;
+ 	      PrettyPrint.markLines (num, prettys))
+ 	   else 
+ 	     prettys
+         | Any _ -> []
 	 | _ -> 
            [(2, blockNone (1, [(0, pp.DefEquals), 
                                (0, string " "), 
@@ -1140,7 +1143,12 @@ AnnSpecPrinter qualifying spec
      def ppDef tm0 =
        let (tvs, opt_srt, tm) = unpackTerm(tm0) in
        % let _ = writeLine("ppDef:\n"^anyToString tm) in
-       let prettys = ppDefAux ([index, defIndex], tm) in
+       let context = if refine_num > 0
+                       then context << {printSort = true}
+                     else context
+       in
+       let prettys = ppDefAux (context, [index, defIndex], tm)
+       in
        (1, blockFill (0, 
 		      [(0, blockFill (0, 
 				      [(0, button1), 
@@ -1157,11 +1165,11 @@ AnnSpecPrinter qualifying spec
 				     ))]
                       ++ prettys))
    in
-   let (decls, defs) = opInfoDeclsAndDefs info in
+   % let (decls, defs) = opInfoDeclsAndDefs info in
    % let _ = writeLine("ppDef: "^show(head info.names)^" "^show refine_num^" of "^show(length defs)^"\n"^printTerm info.dfn) in
    let the_def = if printDef? || printOpWithDef?
-                  then defs @ (max(0, length defs - refine_num - 1))
-                  else Any(termAnn(head decls))
+                  then dfn
+                  else Any(termAnn(dfn))
    in
 %    let _ = writeLine "Decls:" in
 %    let _ = app (fn d -> writeLine(printTerm d)) decls in
@@ -1182,13 +1190,7 @@ AnnSpecPrinter qualifying spec
 % 	  else
 % 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
-   let decls = 
-       %% make sure an "op ..." form is printed, to establish the type of the op
-       case (decls, defs) of
-	 | ([], dfn :: _) -> [dfn]
-	 | _ -> decls
-   in
-   let ppDecls = if printOp? then map ppDecl (if printOpWithDef? then  [the_def] else decls) else [] in
+   let ppDecls = if printOp? then [ppDecl (tvs, ty, the_def)] else [] in
    % let _ = writeLine("ppOpDeclAux: "^printAliases info.names^": "^show (length defs)^" - "^show refine_num) in
    let ppDefs  = if printDef? then [ppDef the_def] else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
