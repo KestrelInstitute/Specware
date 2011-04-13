@@ -400,6 +400,12 @@
      (format nil "~a/Library/IO/Emacs/slime/" (Specware::getenv "SPECWARE4"))))
   (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp"))
         (hooks (in-specware-dir "Library/IO/Emacs/slime/contrib/swank-listener-hooks.lisp")))
+    (let ((foo (make-pathname :name "swank-arglists" :type *fasl-type*
+                              :defaults (format nil "~a/Library/IO/Emacs/slime/contrib/" (Specware::getenv "SPECWARE4")))))
+      (format t "~&Looking at ~A~%" foo)
+      (when (probe-file foo)
+        (format t "~&To avoid peculiar problem with pretty-print, Deleting ~A~%" foo)
+        (delete-file foo)))
     (load loader :verbose t)
     (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t)
     (load hooks :verbose t))
