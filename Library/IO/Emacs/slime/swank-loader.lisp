@@ -149,7 +149,7 @@ Return nil if nothing appropriate is available."
             context pathname condition))
   (when (equal (directory-namestring pathname)
                ;; Without the following test, this may delete the source file if the binary doesn't exist!
-               (and (not (equal (directory-name pathname) "lisp")) ;; good grief -- did anyone think about this??? 
+               (and (not (equal (pathname-name pathname) "lisp")) ;; good grief -- did anyone think about this??? 
                     (directory-namestring *fasl-directory*)))
     (ignore-errors (delete-file pathname)))
   (abort))
