@@ -978,6 +978,9 @@ TypeChecker qualifying spec
 	let t1    = single_pass_elaborate_term (env, t1, ty) in
 	ApplyN ([t1, t2], pos)
 
+      %% Allow for partially type-checked terms
+      | Apply(t1, t2, pos) -> single_pass_elaborate_term (env, ApplyN ([t1, t2], pos), term_sort)
+
       | ApplyN (terms, pos) ->
 	let 
           def tagTermWithInfixInfo (term : MS.Term) : FixatedTerm =
