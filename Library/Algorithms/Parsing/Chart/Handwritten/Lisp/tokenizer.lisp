@@ -960,6 +960,7 @@
 		(#\s (return-values :CHARACTER #\space     ))
 		(#\\ (return-values :CHARACTER #\\         ))
 		(#\" (return-values :CHARACTER #\"         ))
+                (#\# (return-values :CHARACTER #\#         ))
 		(#\x (progn
 		       (set-last-positions)
 		       (local-read-char 
@@ -1215,6 +1216,7 @@
 	 (#\s (push #\space     token-chars)) 
 	 (#\\ (push #\\         token-chars)) 
 	 (#\" (push #\"         token-chars)) 
+         (#\# (push #\#         token-chars))     ; Allow \# within string for # to stop emacs from getting confused
 	 (#\x (progn
 		(set-last-positions)
 		(local-read-char 
