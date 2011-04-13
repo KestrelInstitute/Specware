@@ -676,7 +676,7 @@ PrettyPrint qualifying spec
   def prettysFillDelim delims ps =
     prettysBlockDelim prettysFill delims ps
 
-  op ppList : fa(T) (T -> Pretty) -> 
+  op ppList : [T] (T -> Pretty) -> 
                  (String * String * String) -> 
                  List T -> Pretty
 
