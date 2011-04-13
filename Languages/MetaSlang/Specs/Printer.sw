@@ -174,7 +174,8 @@ AnnSpecPrinter qualifying spec
      | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^s^"\"")          % "abc"
-     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % #A appease xemacs with bogus closing quote: "
+     % | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs with bogus closing quote: "
+     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % \ to appease emacs with bogus closing quote: "
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
@@ -789,7 +790,8 @@ AnnSpecPrinter qualifying spec
      | BoolPat   (b, _) -> string (Bool.show b)
      | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
-     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))   % #A appease xemas with bogus closing quote: "
+     %| CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
+     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))      % \ to appease emacs 
 
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
@@ -860,6 +862,12 @@ AnnSpecPrinter qualifying spec
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),
 			    (0, ppPattern context ([0]++ path, true) pat)]))
+     | RestrictedPat(pat, Lambda([(p_pat, _, p_bod)], _), _) | equalPattern?(pat, p_pat) ->
+       enclose (true, pp,
+                blockFill(0, [(0, ppPattern context ([0]++ path, false) pat),
+                              (2, prettysNone [pp.Bar,
+                                               let context = context << {printSort = false} in
+                                               ppTerm context ([1]++ path, Top) p_bod])]))
 
      | RestrictedPat (pat, term, _) ->
 %% Don't want restriction expression inside parentheses in normal case statement
@@ -1017,7 +1025,6 @@ AnnSpecPrinter qualifying spec
  def ppOpDeclWithDef context info_res =
    ppOpDeclAux context (true, false, true, 0) true info_res
 
-
  op  ppOpDeclAux: [a] PrContext -> Boolean * Boolean * Boolean * Nat -> Boolean -> (AOpInfo a * IndexLines)
                      -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
@@ -1075,7 +1082,7 @@ AnnSpecPrinter qualifying spec
                                                    (4, ppSort context ([index, opIndex], Top) srt)])),
                                 (0, string " ")]))]
            ++
-           ppDefAux (context, [index, defIndex], tm)
+           ppDefAux (context, [index, defIndex], Some srt, tm)
 
      def ppDecl (tvs, srt, tm) =
        (1, blockFill
@@ -1105,7 +1112,7 @@ AnnSpecPrinter qualifying spec
                                                                    ([index, opIndex], Top) srt)])),
                                           (0, string " ")]))]
                        ++
-                       ppDefAux (context, [index, defIndex], tm)
+                       ppDefAux (context, [index, defIndex], Some srt, tm)
                  else
                    [(0, blockFill
                           (0, [(0, case info.fixity of
@@ -1119,13 +1126,22 @@ AnnSpecPrinter qualifying spec
                                                   (0, string " "), 
                                                   (4, ppSort context ([index, opIndex], Top) srt)]))
                                ]))])))
-       
-     def ppDefAux (context, path, term) = 
+
+     %def ppDeclWithDef(context, path, term, ty) =
+
+     def ppDefAux (context, path, opt_ty, term) = 
        case term of
  	 | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
- 	   let pat  = ppPattern context ([0, 0] ++ path, true) pat in 
- 	   let body = ppDefAux (context, [2, 0] ++ path, body) in
- 	   let prettys = [(0, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
+           let (opt_dom, opt_rng) = case opt_ty of
+                                      | Some(Arrow(dom, rng, _)) -> (Some dom, Some rng)
+                                      | _ -> (None, None)
+           in
+           let pat = maybeIncludeType(pat, opt_dom) in
+ 	   let pat  = let context = context << {printSort = true} in
+                      ppPattern context ([0, 0] ++ path, true) pat
+           in
+ 	   let body = ppDefAux (context, [2, 0] ++ path, opt_rng, body) in
+ 	   let prettys = [(2, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
  	   if markSubterm? context then
  	     let num = State.! context.markNumber in
  	     let table = State.! context.markTable in
@@ -1134,20 +1150,22 @@ AnnSpecPrinter qualifying spec
  	      PrettyPrint.markLines (num, prettys))
  	   else 
  	     prettys
-         | Any _ -> []
-	 | _ -> 
+         | Any _ ->
+           (case opt_ty of
+              | None -> []
+              | Some ty -> [(0, string ":"),
+                            (2, blockNone (0, [(0, string " "), 
+                                               (4, ppSort context
+                                                  ([index, opIndex], Top) ty)]))])
+	 | _ ->
            [(2, blockNone (1, [(0, pp.DefEquals), 
                                (0, string " "), 
                                (2, ppTerm context (path, Top) term)]))]
 	     
-     def ppDef tm0 =
-       let (tvs, opt_srt, tm) = unpackTerm(tm0) in
+     def ppDef (tvs, ty, tm) =
+       % let (tvs, opt_srt, tm) = unpackTerm(tm0) in
        % let _ = writeLine("ppDef:\n"^anyToString tm) in
-       let context = if refine_num > 0
-                       then context << {printSort = true}
-                     else context
-       in
-       let prettys = ppDefAux (context, [index, defIndex], tm)
+       let prettys = ppDefAux (context, [index, defIndex], Some ty, tm)
        in
        (1, blockFill (0, 
 		      [(0, blockFill (0, 
@@ -1192,8 +1210,17 @@ AnnSpecPrinter qualifying spec
    in
    let ppDecls = if printOp? then [ppDecl (tvs, ty, the_def)] else [] in
    % let _ = writeLine("ppOpDeclAux: "^printAliases info.names^": "^show (length defs)^" - "^show refine_num) in
-   let ppDefs  = if printDef? then [ppDef the_def] else [] in
+   let ppDefs  = if printDef? then [ppDef (tvs, ty, the_def)] else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
+
+ op [a] maybeIncludeType(pat: APattern a, opt_ty: Option(ASort a)): APattern a =
+   case pat of
+     | RestrictedPat _ -> pat
+     | _ ->
+   case opt_ty of
+     | Some(Subsort(_, pred, a)) ->
+       RestrictedPat(pat, pred, a)
+     | _ -> pat
 
  op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
  def ppSortDeclSort context info_res =
