@@ -174,8 +174,8 @@ AnnSpecPrinter qualifying spec
      | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^s^"\"")          % "abc"
-     % | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs with bogus closing quote: "
-     | Char        c           -> pp.fromString ("#" ^ (Char.show c))  % \ to appease emacs with bogus closing quote: "
+     % | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs
+      | Char        c           -> pp.fromString ("#" ^ (Char.show c))
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
@@ -530,16 +530,22 @@ AnnSpecPrinter qualifying spec
 	                                           (fn (path, trm) -> ppTerm context (path, Top) trm) 
 						   (pp.LP, string ";", pp.RP)  ts
 	  | Apply (trm1, trm2 as Record ([(_, t1), (_, t2)], _), _) ->
+            let conj_or_disj? = case trm1 of
+                                  | Fun(And,_,_) -> true
+                                  | Fun(Or,_,_)  -> true
+                                  | _ -> false
+            in
             let
-	      def prInfix (f1, f2, l, t1, oper, t2, r) =
-		prettysFill [prettysNone [l, 
-					  ppTerm context ([0, 1]++ path, f1) t1, 
-					  string " "],
-                             %% Don't want qualifiers on infix ops
-			     prettysNone [ppTerm context ([0]++ path, Top) (stripQual oper), 
-					  string " ", 
-					  ppTerm context ([1, 1]++ path, f2) t2, 
-					  r]]
+	      def prInfix (f1, f2, l, t1, oper, t2, r, nested?) =
+		prBreak (if nested? && conj_or_disj? then -3 else 1)
+                  [prettysNone [l, 
+                                ppTerm context ([0, 1]++ path, f1) t1, 
+                                string " "],
+                   %% Don't want qualifiers on infix ops
+                   prettysNone [ppTerm context ([0]++ path, Top) (stripQual oper), 
+                                string " ", 
+                                ppTerm context ([1, 1]++ path, f2) t2, 
+                                r]]
 	    in
 	      %
 	      % Infix printing is to be completed.
@@ -547,20 +553,20 @@ AnnSpecPrinter qualifying spec
               (case (parentTerm, termFixity (trm1)) of
                  | (_, Nonfix) -> prApply (trm1, trm2)
                  | (Nonfix, Infix (a, p)) ->
-                    prInfix (Infix (Left, p), Infix (Right, p), pp.LP, t1, trm1, t2, pp.RP)
+                    prInfix (Infix (Left, p), Infix (Right, p), pp.LP, t1, trm1, t2, pp.RP, false)
                  | (Top, Infix (a, p))  ->
-                    prInfix (Infix (Left, p), Infix (Right, p), pp.Empty, t1, trm1, t2, pp.Empty) 
+                    prInfix (Infix (Left, p), Infix (Right, p), pp.Empty, t1, trm1, t2, pp.Empty, false) 
                  | (Infix (a1, p1), Infix (a2, p2)) ->
 		   if p1 = p2 then
 		     (if a1 = a2 then
-			prInfix (Infix (Left, p2), Infix (Right, p2), pp.Empty, t1, trm1, t2, pp.Empty)
+			prInfix (Infix (Left, p2), Infix (Right, p2), pp.Empty, t1, trm1, t2, pp.Empty, true)
 		      else
-			prInfix (Infix (Left, p2), Infix (Right, p2), pp.LP, t1, trm1, t2, pp.RP))
+			prInfix (Infix (Left, p2), Infix (Right, p2), pp.LP, t1, trm1, t2, pp.RP, false))
 		   else if p2 > p1 then
 		     %% Inner has higher precedence
-		     prInfix (Infix (Left, p2), Infix (Right, p2), pp.Empty, t1, trm1, t2, pp.Empty)
+		     prInfix (Infix (Left, p2), Infix (Right, p2), pp.Empty, t1, trm1, t2, pp.Empty, false)
 		   else 
-		     prInfix (Infix (Left, p2), Infix (Right, p2), pp.LP, t1, trm1, t2, pp.RP))
+		     prInfix (Infix (Left, p2), Infix (Right, p2), pp.LP, t1, trm1, t2, pp.RP, false))
 	  | Apply (t1, t2, _) -> prApply (t1, t2)
 	  | ApplyN ([t], _) -> ppTerm context (path, parentTerm) t
 	  | ApplyN ([trm1, trm2 as Record ([(_, t1), (_, t2)], _)], _) ->
@@ -791,7 +797,7 @@ AnnSpecPrinter qualifying spec
      | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
      %| CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
-     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))      % \ to appease emacs 
+     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))
 
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
@@ -1007,7 +1013,7 @@ AnnSpecPrinter qualifying spec
                         (0, if empty? tyVars then string "" else string " "), 
 			(0, ppForallTyVars pp tyVars), 
 			(0, string " "), 
-			(3, ppTerm context ([index, propertyIndex], Top) term)]))
+			(2, ppTerm context ([index, propertyIndex], Top) term)]))
 
  op  ppOpDecl: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDecl context blankLine? info_res =
@@ -1082,7 +1088,7 @@ AnnSpecPrinter qualifying spec
                                                    (4, ppSort context ([index, opIndex], Top) srt)])),
                                 (0, string " ")]))]
            ++
-           ppDefAux (context, [index, defIndex], Some srt, tm)
+           ppDefAux (context, [index, defIndex], None, tm)
 
      def ppDecl (tvs, srt, tm) =
        (1, blockFill
@@ -1095,7 +1101,7 @@ AnnSpecPrinter qualifying spec
                         else []) ++
                        [(0, ppOpNames ())]))]
                 ++
-                (if printOpWithDef? then
+                (if printOpWithDef? || embed? Lambda tm && anyTerm? tm then
                    case (tm, srt) of
                      | (Lambda _, Arrow _) ->
                        ppDeclWithArgs (tvs, srt, tm)
@@ -1114,18 +1120,16 @@ AnnSpecPrinter qualifying spec
                        ++
                        ppDefAux (context, [index, defIndex], Some srt, tm)
                  else
-                   [(0, blockFill
-                          (0, [(0, case info.fixity of
-                                     | Nonfix         -> string ""
-                                     | Unspecified    -> string ""
-                                     | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                                     | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
-                               (0, string " :"), 
-                               (0, blockNone (0, [(0, if empty? tvs then string "" else string " "),
-                                                  (0, ppForallTyVars pp tvs), 
-                                                  (0, string " "), 
-                                                  (4, ppSort context ([index, opIndex], Top) srt)]))
-                               ]))])))
+                   [(0, case info.fixity of
+                                    | Nonfix         -> string ""
+                                    | Unspecified    -> string ""
+                                    | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                                    | Infix (Right, i) -> string (" infixr "^Nat.show i)),
+                    (4, prConcat [string " :",
+                                  if empty? tvs then string "" else string " ",
+                                  ppForallTyVars pp tvs,
+                                  string " ",
+                                  ppSort context ([index, opIndex], Top) srt])])))
 
      %def ppDeclWithDef(context, path, term, ty) =
 
@@ -1141,7 +1145,7 @@ AnnSpecPrinter qualifying spec
                       ppPattern context ([0, 0] ++ path, true) pat
            in
  	   let body = ppDefAux (context, [2, 0] ++ path, opt_rng, body) in
- 	   let prettys = [(2, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
+ 	   let prettys = [(4, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
  	   if markSubterm? context then
  	     let num = State.! context.markNumber in
  	     let table = State.! context.markTable in
@@ -1153,8 +1157,8 @@ AnnSpecPrinter qualifying spec
          | Any _ ->
            (case opt_ty of
               | None -> []
-              | Some ty -> [(0, string ":"),
-                            (2, blockNone (0, [(0, string " "), 
+              | Some ty -> [(0, string ": "),
+                            (4, blockNone (0, [%(0, string " "), 
                                                (4, ppSort context
                                                   ([index, opIndex], Top) ty)]))])
 	 | _ ->
@@ -1185,33 +1189,14 @@ AnnSpecPrinter qualifying spec
    in
    % let (decls, defs) = opInfoDeclsAndDefs info in
    % let _ = writeLine("ppDef: "^show(head info.names)^" "^show refine_num^" of "^show(length defs)^"\n"^printTerm info.dfn) in
-   let the_def = if printDef? || printOpWithDef?
+   let the_def = if true || printDef? || printOpWithDef?
                   then dfn
                   else Any(termAnn(dfn))
-   in
-%    let _ = writeLine "Decls:" in
-%    let _ = app (fn d -> writeLine(printTerm d)) decls in
-%    let _ = writeLine "Defs:" in
-%    let _ = app (fn d -> writeLine(printTerm d)) defs in
-   let warnings = []
- %       (let m = length decls in
-% 	let n = length defs  in
-% 	if m <= 1 then
-% 	  if n <= 1 then
-% 	    %% Precede with new line only if both op and def 
-% 	    [(0, string " ")]   %(if blankLine? then [(0, string " ")] else [])
-% 	  else
-% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
-% 	else
-% 	  if n <= 1 then
-% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
-% 	  else
-% 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let ppDecls = if printOp? then [ppDecl (tvs, ty, the_def)] else [] in
    % let _ = writeLine("ppOpDeclAux: "^printAliases info.names^": "^show (length defs)^" - "^show refine_num) in
    let ppDefs  = if printDef? then [ppDef (tvs, ty, the_def)] else [] in
-   (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
+   (index + 1, ppDecls ++ ppDefs ++ lines)
 
  op [a] maybeIncludeType(pat: APattern a, opt_ty: Option(ASort a)): APattern a =
    case pat of
@@ -1265,7 +1250,7 @@ AnnSpecPrinter qualifying spec
 		      [(0, string " "), 
 		       (0, pp.DefEquals), 
 		       (0, string " "), 
-		       (3, ppSort context ([index, sortIndex], Top) srt)]))
+		       (2, ppSort context ([index, sortIndex], Top) srt)]))
    in
    let (decls, defs) = sortInfoDeclsAndDefs info in
    let warnings = 
