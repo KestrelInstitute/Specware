@@ -263,7 +263,7 @@ If NEWLINE is true then add a newline at the end of the input."
     (slime-autodoc-mode 1))
   (setq default-directory (concat *specware* "/"))
   (run-hooks 'slime-repl-mode-hook)
-  (run-mode-hooks 'specware-listener-mode-hook))
+  (slime-run-mode-hooks 'specware-listener-mode-hook))
 
 ;;; Redefining slime functions and variables
 (defun* slime-start (&key (program inferior-lisp-program) program-args
