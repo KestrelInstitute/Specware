@@ -6,6 +6,7 @@ CG qualifying
 spec
 %  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
+  import /Languages/MetaSlang/Transformations/SliceSpec
   import /Languages/MetaSlang/CodeGen/AddMissingFromBase
   import /Languages/MetaSlang/CodeGen/Poly2Mono
   import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
@@ -115,7 +116,7 @@ spec
   op transformSpecForCodeGen  (base : Spec) (spc : Spec) : Spec =
     transformSpecForCodeGenAux base spc true
 
-  def transformSpecForCodeGenNoAdd (spc : Spec) : Spec =
+  op transformSpecForCodeGenNoAdd (spc : Spec) : Spec =
     transformSpecForCodeGenAux emptySpec spc false  % initialSpecInCat ??
 
   op c_precNumSteps: List Nat = [13, 14, 15, 20, 23, 25, 27, 30, 35, 1000]
@@ -174,51 +175,52 @@ spec
     in
     let _ = showSpc "Original"                      spc in
 
-    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, C_BuiltinSortOp?) else spc in  % (1) may add HO fns, etc., so do this first
+    let spc = substBaseSpecs                        spc in % (1)
+    let _ = showSpc "substBaseSpecs" spc in
+
+    let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, C_BuiltinSortOp?) else spc in  % (2) may add HO fns, etc., so do this first
     let _ = showSpc ("### addMissingFromBase (" ^ show addmissingfrombase? ^ ")") spc in
 
-    let spc = normalizeTopLevelLambdas              spc in % (??)
+    let spc = removeCurrying                        spc in % (3)
+    let _ = showSpc "removeCurrying"                spc in
+
+    let spc = normalizeTopLevelLambdas              spc in % (4)
     let _ = showSpc "normalizeTopLevelLambdas"      spc in
 
-    let spc = instantiateHOFns                      spc in % (2) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
+    let spc = instantiateHOFns                      spc in % (5) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
     let _ = showSpc "instantiateHOFns"              spc in
-
-   %let spc = identifyIntSorts                      spc in % Avoid this!
-
-    let spc = removeCurrying                        spc in % (??)
-    let _ = showSpc "removeCurrying"                spc in
 
    %let spc = lambdaToInner                         spc in
    %let _ = showSpc("lambdaToInner"                 spc in
 
-    let spc = lambdaLift                     (spc,true) in % (3) 
+    let spc = lambdaLift                     (spc,true) in % (6) 
     let _ = showSpc "lambdaLift"                    spc in
 
-    let spc = specStripSubsortsAndBaseDefs          spc in % (3) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+    let spc = specStripSubsortsAndBaseDefs          spc in % (7) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
     let _ = showSpc "strip subtypes"                spc in
 
-    let spc = translateRecordMergeInSpec            spc in % does it matter when this is done?
-    let _ = showSpc "translateRecordMergeInSpec"    spc in
-
-    let spc = poly2mono                     (spc,false) in % (4) After this is called, we can no longer reason about polymorphic types such as List(a)
+    let spc = poly2mono                     (spc,false) in % (8) After this is called, we can no longer reason about polymorphic types such as List(a)
     let _ = showSpc "poly2mono"                     spc in
 
-    let spc = letWildPatToSeq                       spc in % (??)
+    let spc = letWildPatToSeq                       spc in % (9)
     let _ = showSpc "letWildPatToSeq"               spc in
 
-    let spc = simplifySpec                          spc in % (??)
+    let spc = translateRecordMergeInSpec            spc in % (10)
+    let _ = showSpc "translateRecordMergeInSpec"    spc in
+
+    let spc = simplifySpec                          spc in % (11)
     let _ = showSpc "simplifySpec"                  spc in
 
-    let spc = addEqOpsToSpec                        spc in % (??)
+    let spc = addEqOpsToSpec                        spc in % (12)
     let _ = showSpc "addEqOpsToSpec"                spc in
 
-    let (spc,constrOps) = addSortConstructorsToSpec spc in % (??)
+    let (spc,constrOps) = addSortConstructorsToSpec spc in % (13)
     let _ = showSpc "addSortConstructorsToSpec"     spc in
 
-    let spc = conformOpDecls                        spc in % (??)
+    let spc = conformOpDecls                        spc in % (14)
     let _ = showSpc "conformOpDecls"                spc in
 
-    let spc = adjustAppl                            spc in % (??)
+    let spc = adjustAppl                            spc in % (15)
     let _ = showSpc "adjustAppl"                    spc in
 
     spc
