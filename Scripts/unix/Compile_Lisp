@@ -64,7 +64,12 @@ if [ -z "$EXITING_ON_ERRORS" ]; then
   EXITING_ON_ERRORS=exiting-on-errors
 fi
 
-echo "  Build_Dev:  EXITING_ON_ERRORS = [$EXITING_ON_ERRORS]"
+echo "  Compile_Lisp:  BATCH_LISP        = [$BATCH_LISP]"
+echo "  Compile_Lisp:  LOAD_UTILITIES    = [$LOAD_UTILITIES]"
+echo "  Compile_Lisp:  EXIT_ON_ERRORS    = [$EXIT_ON_ERRORS]"
+echo "  Compile_Lisp:  MEMORY_MANAGEMENT = [$MEMORY_MANAGEMENT]"
+echo "  Compile_Lisp:  EXITING_ON_ERRORS = [$EXITING_ON_ERRORS]"
+echo "  Compile_Lisp:  MAIN_COMPILE_FILE = [$MAIN_COMPILE_FILE]"
 
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version~%") 

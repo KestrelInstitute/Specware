@@ -81,7 +81,13 @@ if [ -z "$EXITING_ON_ERRORS" ]; then
   EXITING_ON_ERRORS=exiting-on-errors
 fi
 
+echo "  Build_Dev:  BATCH_LISP        = [$BATCH_LISP]"
+echo "  Build_Dev:  LOAD_UTILITIES    = [$LOAD_UTILITIES]"
+echo "  Build_Dev:  EXIT_ON_ERRORS    = [$EXIT_ON_ERRORS]"
+echo "  Build_Dev:  MEMORY_MANAGEMENT = [$MEMORY_MANAGEMENT]"
+echo "  Build_Dev:  SAVE_IMAGE        = [$SAVE_IMAGE]"
 echo "  Build_Dev:  EXITING_ON_ERRORS = [$EXITING_ON_ERRORS]"
+echo "  Build_Dev:  MAIN_BUILD_FILE   = [$MAIN_BUILD_FILE]"
 
 $BATCH_LISP <<-XXXX
         (format t "~%--------------------------------------------------------------------------------~%")

@@ -103,6 +103,11 @@ echo " "
 
 cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
 
+echo "  Build_Specware_Dev:  BATCH_LISP        = [$BATCH_LISP]"
+echo "  Build_Specware_Dev:  EXIT_ON_ERRORS    = [$EXIT_ON_ERRORS]"
+echo "  Build_Specware_Dev:  MEMORY_MANAGEMENT = [$MEMORY_MANAGEMENT]"
+echo "  Build_Specware_Dev:  SAVE_IMAGE        = [$SAVE_IMAGE]"
+
 $BATCH_LISP <<-XXXX
 	(progn
 	 (format t "~%--------------------------------------------------------------------------------~%")

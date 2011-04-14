@@ -76,6 +76,10 @@ cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
 echo " "
 echo "About to compile Specware4.lisp produced from Specware4.sw"
 echo " "
+
+echo "  Compile_Specware_Lisp:  BATCH_LISP        = [$BATCH_LISP]"
+echo "  Compile_Specware_Lisp:  EXIT_ON_ERRORS    = [$EXIT_ON_ERRORS]"
+
 $BATCH_LISP <<-XXXX
 	(progn
 	 (load "$EXIT_ON_ERRORS")
