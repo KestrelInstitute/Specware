@@ -14,42 +14,53 @@ spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op  makeLCJ : ValueInfo -> RelativeUID -> String -> Env ()
-  def makeLCJ spec_info rel_uid version =
+  def makeLCJ spec_info spec_uid version =
     %% make Lisp, C, and Java versions
     %% Lisp:  version/lisp/foo.lisp file
     %% C   :  version/C/foo.c, foo.h, foo.o, foo*, ...
     %% Java:  version/java/xyz.java, foo*
     {
+     (target_path, name) <- case spec_uid of
+                              | UnitId_Relative (uid as {path,hashSuffix}) -> 
+                                { 
+                                 current_uid   <- getCurrentUID;
+                                 current_path  <- removeLastElem current_uid.path;
+                                 relative_path <- removeLastElem path;
+                                 name          <- lastElem       path;
+                                 path          <- return (current_path ++ relative_path);
+                                 return (path, name)
+                                 }
+                              | SpecPath_Relative uid -> 
+                                {
+                                 path <- removeLastElem uid.path;
+                                 name <- lastElem       uid.path;
+                                 return (path, name)
+                                 };
      print("\n-Lisp-\n");
-     makeLisp spec_info rel_uid version;
+     makeLisp spec_info spec_uid target_path version name;
      print("\n-C-\n");
-     makeC    spec_info rel_uid version;
+     makeC    spec_info spec_uid target_path version name;
      print("\n-Java-\n");
-     % makeJava spec_info rel_uid version;
+    %makeJava spec_info spec_uid target_path version name;
      print("\n-----\n")
      }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  makeLisp : ValueInfo -> RelativeUID -> String -> Env ValueInfo
-  def makeLisp spec_info rel_uid version =
-   {
-    print ("\n;;; Generating Lisp " ^ version ^ "\n");
-    %% Use a UnitId instead of just getting the path directly,
-    %% so that uidToFullPath can look for device names, etc...
-    uid <- case rel_uid of
-	     | UnitId_Relative   (uid as {path,hashSuffix}) -> 
-               { 
-		current_uid <- getCurrentUID;
-		prefix   <- removeLastElem current_uid.path;
-		mainName <- lastElem       uid.path;
-		path     <- return (prefix ++ [version, "lisp", mainName]);
-		return (uid << {path = path})
-	       }
-	     | SpecPath_Relative uid -> 
-	       return uid;
-    filename <- return ((uidToFullPath uid) ^ ".lisp");
-    evaluateLispCompile (spec_info, (UnitId rel_uid, noPos), Some filename, false)
+  op makeLisp (spec_info   : ValueInfo)
+              (spec_uid    : RelativeUID)
+              (target_path : List String)
+              (version     : String)
+              (name        : String)
+    : Env ValueInfo =
+    {
+     print ("\n;;; Generating Lisp " ^ version ^ "\n");
+     %% Use a UnitId instead of just getting the path directly,
+     %% so that uidToFullPath can look for device names, etc...
+     uid <- return {path = target_path ++ [version, "lisp", name], hashSuffix = None};
+     filename <- return ((uidToFullPath uid) ^ ".lisp");
+     print ("\n;;; Filename = " ^ filename  ^ "\n");
+     evaluateLispCompile (spec_info, (UnitId spec_uid, noPos), Some filename, false)
    }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -57,27 +68,21 @@ spec
   op writeMakeFile? : Bool = true  % make it easier to disable this
   op runMakeFile?   : Bool = true  % make it easier to disable this
 
-  op  makeC : ValueInfo -> RelativeUID -> String -> Env ()
-  def makeC spec_info rel_uid version =
+  op makeC (spec_info   : ValueInfo)
+           (spec_uid    : RelativeUID)
+           (target_path : List String)
+           (version     : String)
+           (name        : String)
+    : Env () =
     %% NOTE: This does not yet handle all the options in the lisp version
     %%       to be found in toplevel.lisp
     {
      print ("\n;;; Generating C " ^ version ^ "\n");
-     (prefix, cbase) <- case rel_uid of
-			      | UnitId_Relative   (uid as {path,hashSuffix}) -> 
-                                { 
-				 current_uid <- getCurrentUID;
-			         return (butLast current_uid.path,
-					 last    uid.path)
-				}
-			      | SpecPath_Relative uid -> 
-				return (butLast uid.path,
-					last    uid.path);
-     c_dir     <- return (prefix ++ [version, "C"]);
-     full_path <- return (c_dir ++ [cbase]);
-     uid       <- return ({path = full_path, hashSuffix = None});
-     filename  <- return (uidToFullPath uid);
-     print (";;; Filename: " ^ filename ^ "\n");
+     c_dir <- return (target_path ++ [version, "C"]);
+     uid   <- return {path = c_dir ++ [name], hashSuffix = None};
+     filename <- return (uidToFullPath uid);
+
+     print ("\n;;; Filename = " ^ filename ^ ".c\n");
      return (ensureDirectoriesExist filename);
 
      junk   <- evaluateCGen (spec_info, Some filename);
@@ -96,12 +101,12 @@ spec
                        "# ----------------------------------------------\n" ^
                        "\n\n" ^
                        "# the toplevel target extracted from the :make command line:\n" ^
-                       "all : " ^ cbase ^ "\n\n" ^
+                       "all : " ^ name ^ "\n\n" ^
                        "# include the predefined make rules and variable:\n" ^
                        "include " ^ sw_make_file ^ "\n" ^
                        "# dependencies and rule for main target:\n" ^
-                       cbase ^ ": " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
-                       "	$(CC) -o " ^ cbase ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ cbase ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
+                       name ^ ": " ^ name ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
+                       "	$(CC) -o " ^ name ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ name ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
         return (writeStringToFile (s, makefile));
         if runMakeFile? then 
           {
@@ -130,26 +135,25 @@ spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  makeJava : ValueInfo -> RelativeUID -> String -> Env ()
-  def makeJava (spec_info as (Spec spc,_,_)) rel_uid version =
+  op makeJava (spec_info as (Spec spc,_,_) : ValueInfo)
+              (spec_uid                    : RelativeUID)
+              (target_path                 : List String)
+              (version                     : String)
+              (name                        : String)
+    : Env () =
     {
+
      (Spec option_spec, _, _) <- mkOptionsSpec (version ^ ".java");
-     uid <- case rel_uid of
-	      | UnitId_Relative   (uid as {path,hashSuffix}) -> 
-               { 
-		 current_uid <- getCurrentUID;
-		 prefix   <- removeLastElem current_uid.path;
-		 mainName <- lastElem       uid.path;
-		 path     <- return (prefix ++ [version, "java", mainName]);
-		 return (uid << {path = path})
-		}
-	      | SpecPath_Relative uid -> 
-		return uid;
+
+     java_dir     <- return (target_path ++ [version, "java"]);
+     uid          <- return {path = java_dir ++ [name], hashSuffix = None};
      javaFileName <- UIDtoJavaFile (uid, None);
-     (optBaseUnitId,baseSpec) <- getBase;
-     spc0 <- return (subtractSpec spc baseSpec);
+
+     print (";;; Filename:  " ^ javaFileName ^ "\n");
 
      %% Generate Java files
+     (optBaseUnitId,baseSpec) <- getBase;
+     spc0 <- return (subtractSpec spc baseSpec);
      return (specToJava(baseSpec, spc0, Some option_spec, javaFileName));
 
      here <- return (pwdAsString());
