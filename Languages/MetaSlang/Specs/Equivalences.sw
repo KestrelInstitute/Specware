@@ -265,9 +265,12 @@ AnnSpec qualifying spec
    %% op  new_equivType? : Spec -> MS.Sort * MS.Sort -> Boolean
 
  def equivType? spc (x, y) =
+    equivTypeSubType? spc (x, y) false
+
+ op equivTypeSubType? (spc: Spec) (x: Sort, y: Sort) (ignore_subtypes?: Bool): Bool =
    let 
      def aux x y prior_diffs =
-       (equalType? (x, y))
+       (equalTypeSubtype? (x, y, ignore_subtypes?))
        ||
        (let env = initialEnv (spc, "internal") in
         let diffs = diffType [] (x, y) in
@@ -283,23 +286,25 @@ AnnSpec qualifying spec
                        if exists? (fn old_diff ->
                                     case old_diff of
                                       | Types (old_x, old_y) ->
-                                        equalType? (x, old_x) && equalType? (y, old_y)
+                                        equalTypeSubtype? (x, old_x, ignore_subtypes?)
+                                         && equalTypeSubtype? (y, old_y, ignore_subtypes?)
                                       | _ -> false)
                          prior_diffs
                          then
                            %% let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
                            %% let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
                            false
-                       else if equalType? (x, y) then 
+                       else if equalTypeSubtype? (x, y, ignore_subtypes?) then 
                          true
                             else
                               let x2 = expandType (env, x) in
                               let y2 = expandType (env, y) in
                               %% treat A and A|p as non-equivalent
-                              if equalType? (x, x2) && equalType? (y, y2) then 
+                              if equalTypeSubtype? (x, x2, ignore_subtypes?)
+                                  && equalTypeSubtype? (y, y2, ignore_subtypes?) then 
                                 false
                               else 
-                                equivType? spc (x2, y2) ||
+                                equivTypeSubType? spc (x2, y2) ignore_subtypes? ||
                                 aux x2 y2 (prior_diffs ++ diffs)
                                       | _ -> false)
              diffs)
