@@ -401,6 +401,7 @@ Should we check to see if qid is in cod_map??
     in
       foldOverQualifierMap compl emptyMap dom_map
 
+  op morphismIgnoresSubtypes?: Bool = true
 
   op  verifySignatureMappings : Spec -> Spec -> Morphism -> Position -> Env ()
   def verifySignatureMappings dom_spec cod_spec sm pos =
@@ -427,7 +428,7 @@ Should we check to see if qid is in cod_map??
 			    raise (MorphError (pos, msg))
 			| cod_sort :: _ -> 
 			  % let cod_sort = sortInnerSort dfn in
-                          if equivType? cod_spec (translated_sort, cod_sort) then
+                          if equivTypeSubType? cod_spec (translated_sort, cod_sort) morphismIgnoresSubtypes? then
 			    return ()
 			  else 
 			    let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
@@ -462,7 +463,7 @@ Should we check to see if qid is in cod_map??
 		       else
                          let (cod_tvs, cod_srt, cod_dfn) = unpackFirstOpDef cod_info in
 			 let cod_sort = maybePiSort (cod_tvs, cod_srt) in
-			 if equivType? cod_spec (translated_sort, cod_sort) then
+			 if equivTypeSubType? cod_spec (translated_sort, cod_sort) morphismIgnoresSubtypes? then
 			   return ()
 			 else
 			   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
