@@ -537,15 +537,19 @@ AnnSpecPrinter qualifying spec
             in
             let
 	      def prInfix (f1, f2, l, t1, oper, t2, r, nested?) =
-		prBreak (if nested? && conj_or_disj? then -3 else 1)
-                  [prettysNone [l, 
-                                ppTerm context ([0, 1]++ path, f1) t1, 
-                                string " "],
-                   %% Don't want qualifiers on infix ops
-                   prettysNone [ppTerm context ([0]++ path, Top) (stripQual oper), 
-                                string " ", 
-                                ppTerm context ([1, 1]++ path, f2) t2, 
-                                r]]
+                let arg_pp = 
+                      [prettysNone [l, 
+                                    ppTerm context ([0, 1]++ path, f1) t1, 
+                                    string " "],
+                       %% Don't want qualifiers on infix ops
+                       prettysNone [ppTerm context ([0]++ path, Top) (stripQual oper), 
+                                    string " ", 
+                                    ppTerm context ([1, 1]++ path, f2) t2, 
+                                    r]]
+                in
+                if nested? && conj_or_disj?
+                   then prLines (-3) arg_pp
+                 else prBreak 1 arg_pp
 	    in
 	      %
 	      % Infix printing is to be completed.
