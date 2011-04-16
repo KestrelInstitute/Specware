@@ -1,4 +1,4 @@
-\section{Abstraction of Spec Calculus}
+(* Abstraction of Spec Calculus
 
 This is an unfortunate (and perhaps unnecessary) mutual dependency
 between specs in this directory and those in the directory for the spec
@@ -10,8 +10,8 @@ the spec calculus terms that are imported to that spec.
 In this spec, we abstract the signature for the sorts and ops from
 the spec calculus that are needed by local specs and thereby break
 the recursion.
+*)
 
-\begin{spec}
 spec
  type SpecCalc.Term a
 
@@ -19,5 +19,4 @@ spec
 
  op sameSCTerm? : [a] SpecCalc.Term a * SpecCalc.Term a -> Boolean
 
-endspec
-\end{spec}
+end-spec
