@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 4.2.10")
+  "specware-mode, Version 4.2.11")
 
 (provide 'specware-mode)
 
@@ -359,11 +359,11 @@ Full documentation will be available after autoloading the function."
   (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table)
   (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
   (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
-  (modify-syntax-entry ?\#      "/   " specware-mode-syntax-table)
+  (modify-syntax-entry ?\#      "/"     specware-mode-syntax-table)
   (modify-syntax-entry ?        " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\t      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\%      "<   "  specware-mode-syntax-table)
-  (modify-syntax-entry ?\n      ">   "   specware-mode-syntax-table)
+  (modify-syntax-entry ?\n      ">   "  specware-mode-syntax-table)
   (modify-syntax-entry ?\f      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\'      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\_      "w"     specware-mode-syntax-table)
