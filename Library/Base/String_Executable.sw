@@ -19,12 +19,12 @@ spec
    if firstchar = #- then - (explodedStringToNat r_s)
                      else    explodedStringToNat e_s
 
- refine def stringToNat (s:String | natConvertible s) : Int =
+ refine def stringToNat (s:String | natConvertible s) : Nat =
    explodedStringToNat(explode s)
 
  refine def explode (s:String) : List Char =
    tabulate (length s, fn i -> s@i)
 
- refine def implode(char_list) =
+ refine def implode(char_list: List Char): String =
    foldl (fn (s, c) -> s ^ show c) "" char_list      % Hopefully code generators will provide a more efficient version
 endspec
