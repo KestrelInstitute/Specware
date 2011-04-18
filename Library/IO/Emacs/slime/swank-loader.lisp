@@ -217,8 +217,11 @@ If LOAD is true, load the fasl file."
 
 (defvar *contribs*
   '(swank-c-p-c swank-arglists swank-fuzzy
-    swank-fancy-inspector
-    swank-presentations swank-presentation-streams
+    ;; These plant time bombs that make sbcl choke during subsequent builds,
+    ;; by chaning the number of slots in a class structure.
+    ;; Evil. Evil. Evil.
+    ;; swank-fancy-inspector
+    ;; swank-presentations swank-presentation-streams
     #+(or asdf sbcl ecl) swank-asdf
     swank-package-fu
     swank-hyperdoc
