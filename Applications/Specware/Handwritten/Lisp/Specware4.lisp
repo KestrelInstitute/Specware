@@ -406,8 +406,9 @@
   )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
-(format t "~2%To bootstrap, run (boot)~%")
-(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
+;; this is just confusing...
+;; (format t "~2%To bootstrap, run (boot)~%")
+;; (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
 ;;;#+allegro
 ;;;(excl:without-package-locks
