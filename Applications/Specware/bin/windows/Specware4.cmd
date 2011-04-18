@@ -1,2 +1,4 @@
 @echo off
-call start-in-xemacs run-specware4
+
+call Run_Emacs run-specware4
+
