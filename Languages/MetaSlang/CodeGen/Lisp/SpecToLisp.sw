@@ -1432,6 +1432,8 @@ SpecToLisp qualifying spec
 
  op substBaseSpecs? : Boolean = true
 
+ op cg.showSpc (msg : String) (spc : Spec) : () 
+
  def toLispEnv (spc, complete?, slicing?) =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
    %% theorems are irrelevant for code generation
@@ -1443,14 +1445,23 @@ SpecToLisp qualifying spec
 			       spc.elements)
    in
    let spc = if complete? && substBaseSpecs? then substBaseSpecs spc else spc in
-   let spc = if slicing? then sliceSpec(spc, topLevelOps spc, topLevelTypes spc, true, false) else spc in
-   let spc = if removeCurrying? then removeCurrying   spc else spc in
-   let spc = normalizeTopLevelLambdas spc in
-   let spc = if instantiateHOFns? then	instantiateHOFns spc else spc in
-   let spc = if lambdaLift?       then lambdaLift(spc,true) else spc in
-   let spc = translateMatch spc in
-   let spc = translateRecordMergeInSpec spc in
-   let spc = arityNormalize             spc in
+   let _   = showSpc "substBaseSpecs"             spc in
+   let spc = if slicing? then sliceSpec (spc, topLevelOps spc, topLevelTypes spc, true, false) else spc in
+   let _   = showSpc "sliceSpec"                  spc in
+   let spc = if removeCurrying? then removeCurrying spc else spc in
+   let _   = showSpc "removeCurrying"             spc in
+   let spc = normalizeTopLevelLambdas             spc in
+   let _ = showSpc "normalizeTopLevelLambdas"     spc in
+   let spc = if instantiateHOFns? then instantiateHOFns spc else spc in
+   let _   = showSpc "instantiateHOFns"           spc in
+   let spc = if lambdaLift? then lambdaLift (spc, true) else spc in
+   let _   = showSpc "lambdaLift"                 spc in
+   let spc = translateMatch                       spc in
+   let _   = showSpc "translateMatch"             spc in
+   let spc = translateRecordMergeInSpec           spc in
+   let _   = showSpc "translateRecordMergeInSpec" spc in
+   let spc = arityNormalize                       spc in
+   let _   = showSpc "arityNormalize"             spc in
    %let _ = toScreen(printSpec spc) in
    let lisp_spec = lisp spc in
    lisp_spec 
