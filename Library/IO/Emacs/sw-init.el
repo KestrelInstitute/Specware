@@ -73,7 +73,8 @@
 	    ;; executable: either generic lisp or standalone specware
 	    (sw::normalize-filename 
 	     (expand-file-name 
-	      (or (getenv "LISP_EXECUTABLE")
+	      (or (getenv "SPECWARE_EXECUTABLE")
+		  (getenv "LISP_EXECUTABLE")
 		  default-sw-executable))))
 
       ;; A heap image is loaded into a (presumably generic) lisp.
@@ -140,6 +141,8 @@
 			sw:common-lisp-image-file))
       (sleep-for 2)
       (wait-for-prompt 0.5)
+      (delete-other-windows)
+      (set-frame-pixel-size (car (frames-of-buffer)) 1200 800)
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (Specware::change-directory %S))" sw:common-lisp-directory))
       (let ((init-form (or (getenv "SPECWARE_INIT_FORM")
@@ -161,6 +164,9 @@
               (gnu/linux "linux")
 	      (t (symbol-name system-type))))))
 
+(defvar fi:allegro-run-status-string)
+(defvar comint-status)
+
 (defun wait-for-prompt (&optional timeout)
   (unless (eq lisp-emacs-interface-type 'slime)
     (sit-for 0.1 t)
@@ -173,7 +179,7 @@
 	(accept-process-output proc (or timeout 5))))))
 
 (defun set-socket-init-for-specware ()
-  (message "set-socket-init-for-specware")
+  ;; (message "set-socket-init-for-specware")
   (setq sw:common-lisp-image-arguments
     (list "-L" (getenv "SOCKET_INIT_FILE"))))
 
@@ -202,6 +208,7 @@ sLisp Heap Image File: ")
   (setq sw:common-lisp-image-name 
 	(or lisp-executable
 	    (and (boundp 'sw:common-lisp-image-name) sw:common-lisp-image-name)
+	    (getenv "SPECWARE_EXECUTABLE")
 	    (getenv "LISP_EXECUTABLE")))
 
   (setq sw:common-lisp-image-file
@@ -251,7 +258,8 @@ sLisp Heap Image File: ")
   ;; to common-lisp-image-file. If the executable is produced by
   ;; generate-application, then typically, there will not be an ACL image file.
 
-  (setq sw:common-lisp-image-name (or (getenv "LISP") (getenv "LISP_EXECUTABLE")))
+  (setq sw:common-lisp-image-name (or (getenv "LISP") 
+                                      (getenv "LISP_EXECUTABLE")))
   (setq sw:common-lisp-image-file nil)
   (setq sw:common-lisp-image-arguments
 	(if (and *windows-system-p* (eq *specware-lisp* 'allegro))
@@ -382,6 +390,195 @@ sLisp Heap Image File: ")
 		 (sit-for 2)))
 	     (simulate-input-expression str))
     (simulate-input-expression str)))
+
+;;; ================================================================================
+
+(defun generate-compile-build-specware4 (&optional in-current-dir?)
+  (interactive "P")
+  (generate-specware4-aux in-current-dir? t nil))
+
+(defun just-generate-specware4 (&optional in-current-dir?)
+  (interactive "P")
+  (generate-specware4-aux in-current-dir? nil nil))
+
+(defun generate-specware4-aux (in-current-dir? also-compile-and-build? regenerating?)
+  (let* ((*specware4-dir      (sw::normalize-filename
+                               (if in-current-dir? 
+                                   (strip-final-slash default-directory)
+                                 (concat (getenv "SPECWARE4")))))
+         (bin-dir             (binary-directory *specware4-dir))
+         (specware-executable (concat bin-dir "/Specware4."
+                                      (if *windows-system-p* "exe"
+                                        *lisp-executable-extension*)))
+         (specware4-base-lisp (concat *specware4-dir "/Applications/Specware/Specware4-base.lisp")))
+
+    (prepare-specware-build-buffer "*Generate Specware lisp files from specs*" *specware4-dir)
+
+    (cond ((not (file-exists-p specware-executable))
+           ;; can't process Specware4.sw without a running specware, so compile, build, and come back here
+           (progn (message "No specware executable, so will first build one, then try again.") 
+                  (sit-for 4))
+           (specware-build-command "### No specware executable, so will first build one, then try again.")
+           (compile-specware4-aux in-current-dir? t t))
+          ((file-newer-than-file-p specware4-base-lisp specware-executable)
+           ;; specware executable is not up to date with current sources, so compile, build, and come back here
+           (progn (message "Previously generated specware lisp files are newer than specware executable.") 
+                  (sit-for 4)
+                  (message "So will recompile them, rebuild specware, and then try again here.") 
+                  (sit-for 4))
+           (specware-build-command "### Previously generated specware lisp files are newer than specware executable,") 
+           (specware-build-command "### so will recompile them, rebuild specware, and then try again here.") 
+           (compile-specware4-aux in-current-dir? t t))
+          (t
+           ;; we have an up-to-date specware, so generate new lisp files
+           ;; Note: (boot) processes Specware4.sw to produce new lisp files
+
+           (progn (message "Generating Specware lisp files from specs, via (cl-user::boot) ...")
+                  (sit-for 1))
+           
+           (sit-for (if regenerating? 10 2)) ; avoid race with prior build process
+           (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*)
+           (sit-for 2)  
+           (let ((print-progress-message
+		  (if also-compile-and-build?
+		      '(format t "Call back to emacs to tell it to compile and build Specware.~%")
+		    ""))
+		 (callback-to-emacs
+                  ;; if we are going to proceed on with compilation and building,
+                  ;; then have lisp generate a call back to emacs just before quiting
+                  (if also-compile-and-build?
+                      ;; First time through, make the third arg true to cause a replay after oompile and build.
+                      ;; Second time through, make it false so we don't replay yet again.
+                      (specware-build-eval-emacs-str "(progn (sit-for 5) (compile-specware4-aux %s t %s))" 
+                                                     in-current-dir?
+                                                     (not regenerating?))
+                    "")))
+             (specware-build-command "(progn (cl:time (cl-user::boot)) %S %s (cl-user::quit))" 
+				     print-progress-message
+				     callback-to-emacs))))))
+
+;;; ================================================================================
+
+(defun compile-build-specware4 (&optional in-current-dir?)
+  (interactive "P")
+  (compile-specware4-aux in-current-dir? t))
+
+(defun just-compile-specware4 (&optional in-current-dir?)
+  (interactive "P")
+  (compile-specware4-aux in-current-dir? nil))
+
+(defun compile-specware4-aux (&optional in-current-dir? also-build? also-regenerate?)
+  (interactive "P")
+  (let* ((*specware4-dir        (sw::normalize-filename
+                                 (if in-current-dir?
+                                     (strip-final-slash (if (stringp in-current-dir?)
+                                                            in-current-dir?
+                                                          default-directory))
+                                   (getenv "SPECWARE4"))))
+	 (build-dir             (concat *specware4-dir "/Applications/Specware/Handwritten/Lisp"))
+	 (lisp-dir              (concat *specware4-dir "/Applications/Specware/lisp"))
+	 (specware4-lisp        (concat lisp-dir "/Specware4.lisp"))
+	 (specware4-base-lisp   (concat *specware4-dir "/Applications/Specware/Specware4-base.lisp"))
+         (specware4-loader      (concat build-dir "/Specware4.lisp")))
+
+    ;; move any old Specware.lisp out of the way
+    (when (and (file-exists-p specware4-base-lisp)
+	       (or (not (file-exists-p specware4-lisp))
+		   (file-newer-than-file-p specware4-base-lisp specware4-lisp)))
+      (when (file-exists-p specware4-lisp)
+	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
+      (copy-file specware4-base-lisp specware4-lisp t))
+
+    (prepare-specware-build-buffer "*Compile Specware lisp files*" build-dir)
+
+    (progn (message "Compiling Specware lisp files, by loading %s" specware4-loader)
+           (sit-for 1))
+
+    ;; start lisp
+    (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
+    (sit-for 2)
+
+    ;; load utilities
+    (specware-build-command "(cl:load %S)" (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors"))
+
+    ;; loading Specare4.lisp will cause lisp files to be compiled
+    (let ((print-progress-message
+           (if also-build?
+	       '(format t "Call back to emacs to tell it to build Specware.~%")
+	     ""))
+	  (callback-to-emacs
+           ;; If we are doing more after we compile, then prepare a form for the lisp image
+           ;; to pass back to emacs for invocation just before that lisp image dies.
+           (if also-build?
+               (specware-build-eval-emacs-str "(progn (sit-for 5) (new-build-specware4 %s %s))" 
+                                              in-current-dir? 
+                                              also-regenerate?)
+             "")))
+      (specware-build-command "(progn (cl:load %S) %S %s (terpri) (quit))" 
+                              specware4-loader 
+			      print-progress-message
+                              callback-to-emacs))))
+
+;;; ================================================================================
+
+(defun just-build-specware4 (&optional in-current-dir? regenerate?)
+  (interactive "P")
+  (new-build-specware4 in-current-dir? nil))
+
+(defun new-build-specware4 (&optional in-current-dir? regenerate?)
+  (interactive "P")
+  (let* ((*specware4-dir        (sw::normalize-filename
+                                 (if in-current-dir?
+                                     (strip-final-slash (if (stringp in-current-dir?)
+                                                            in-current-dir?
+                                                          default-directory))
+                                   (getenv "SPECWARE4"))))
+	 (build-dir             (concat *specware4-dir "/Applications/Specware/Handwritten/Lisp"))
+	 (bin-dir               (binary-directory *specware4-dir))
+	 (lisp-dir              (concat *specware4-dir "/Applications/Specware/lisp"))
+	 (specware-executable   (concat bin-dir "/Specware4." (if *windows-system-p* "exe" *lisp-executable-extension*)))
+	 (specware4-lisp        (concat lisp-dir "/Specware4.lisp"))
+         (specware4-lisp-binary (concat lisp-dir "/Specware4." *fasl-extension*))
+         (specware4-loader      (concat build-dir "/Specware4.lisp")))
+
+    (prepare-specware-build-buffer "*Build Specware executable*" build-dir)
+
+    (progn (message "Build new Specware executable after loading %s" specware4-loader)
+           (sit-for 1))
+
+    ;; start lisp
+    (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
+    (sit-for 2)
+
+    ;; load utilities
+    (specware-build-command "(cl:load %S)" (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors"))
+
+    (cond ((not (file-exists-p specware4-lisp-binary))
+           ;; error
+           )
+          ((not (file-newer-than-file-p specware4-lisp-binary specware4-lisp))
+           ;; error
+           )
+          (t
+           (let ((print-progress-message
+		  (if regenerate? 
+		      '(format t "Call back to emacs to tell it to gnerate Specware again.~%")
+		    ""))
+		 (callback-to-emacs
+                  ;; If we are regenerating, have the lisp image tell emacs to invoke generate-compile-build-specware4 
+                  ;; just before that lisp image saved itself and dies.
+                  ;; To avoid races, have the form sent back to emacs delay for 5 seconds before proceeding,
+                  ;; to give the lisp image time to save itself before it will be invoked.
+                  (if regenerate? 
+                      (specware-build-eval-emacs-str "(progn (sit-for 10) (generate-specware4-aux %s t t))" in-current-dir?)
+                    "")))
+             (specware-build-command "(progn (cl:load %S) %S %s (force-output t) (sb-ext:save-lisp-and-die %S :executable t))"
+                                     specware4-loader
+				     print-progress-message
+                                     callback-to-emacs
+                                     specware-executable))))))
+
+;;; ================================================================================
 
 (defun build-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")
@@ -572,7 +769,7 @@ sLisp Heap Image File: ")
 
 
 ;;; New scheme for booting Specware, specifically for Windows with sbcl
-(defvar *specware-build-buffer-name* "*Boot Specware*")
+(defvar *specware-build-buffer-name* "*Specware Build Buffer*")
 (defvar *specware-build-buffer* nil)
 (defvar *specware)
 
@@ -581,20 +778,58 @@ sLisp Heap Image File: ")
       (replace-in-string filename "/" "\\\\")
     filename))
 
-(defun start-specware-build-buffer ()
+(require 'bridge)
+
+(defun start-specware-build-buffer (&optional name)
   (interactive)
   ;; Works with newer shell.el but not older
   ;;(setq *specware-build-buffer* (get-buffer-create *specware-build-buffer-name*))
   ;;(shell *specware-build-buffer*)
-  (let ((shell-multiple-shells t))
+  (unless (null name)
+    (setq *specware-build-buffer-name* name))
+
+  (let ((shell-multiple-shells t)) ;; unused here, is this used by bridge code??
     (shell)
     (rename-buffer *specware-build-buffer-name*)
     (setq *specware-build-buffer* (current-buffer)))
 
-  (require 'bridge)
   (set-buffer *specware-build-buffer-name*)
   (install-bridge)
   (setq bridge-handlers '(("(" . emacs-eval-handler))))
+
+(defvar buffer-counter 0)
+
+(defun prepare-specware-build-buffer (buffer-name dir)
+
+  ;; on windows, a shell may die inside a live buffer (sigh).
+  ;; The end of that buffer may then say "Process shell finished",
+  ;; so we could look for that and make this smarter...
+  ;; In the meantime, make the buffer names distinct (maybe not a bad idea anyway).
+
+  (when *windows-system-p*
+    (setq buffer-name (concat (format "[%d] " (incf buffer-counter)) buffer-name)))
+
+  (if (and (buffer-live-p (get-buffer buffer-name))
+           (not *windows-system-p*)) ;; see note above
+      (rename-specware-build-buffer buffer-name)
+    (start-specware-build-buffer buffer-name))
+
+  ;; kill any prior lisp accidentally running there...
+  (when (sbcl-running-in-build-buffer)
+    (specware-build-command "(cl-user::quit)"))
+  ;; connect to build directory
+  (sit-for 5) ;; give shell time to start (sigh)
+  (specware-build-cd-command dir)
+  (save-excursion
+    (set-buffer *specware-build-buffer-name*)
+    (delete-other-windows)
+    (set-frame-pixel-size (car (frames-of-buffer)) 1200 800))
+  )
+
+(defun rename-specware-build-buffer (new-name)
+  (set-buffer *specware-build-buffer-name*)
+  (rename-buffer new-name)
+  (setq *specware-build-buffer-name* new-name))
 
 (defun sbcl-running-in-build-buffer()
   (sit-for 0.1)
@@ -603,6 +838,9 @@ sLisp Heap Image File: ")
     (goto-char (point-max))
     (comint-bol nil)
     (not (eq (point) (point-max)))))
+
+(defun specware-build-cd-command (dir)
+  (specware-build-command "cd %s" (if *windows-system-p* dir (shell-filename dir))))
 
 (defun specware-build-command (str &rest args)
   (let ((win (get-buffer-window *specware-build-buffer-name*)))
@@ -629,17 +867,15 @@ sLisp Heap Image File: ")
                                                               *lisp-executable-extension*)))
          (specware4-base-lisp (concat *specware4-dir
                                       "/Applications/Specware/Specware4-base.lisp")))
-    (unless (buffer-live-p (get-buffer *specware-build-buffer-name*))
-      (start-specware-build-buffer))
-    (when continuation? (sit-for 5))
-    (when (and (not continuation?) (sbcl-running-in-build-buffer))
-      (specware-build-command "(cl-user::quit)")
-      (sit-for 0.2))
+    (when continuation? 
+      ;; warning: race condition, previous lisp might still be running (e.g. to save itself)
+      ;; so give it time to complete
+      (sit-for 5))
+    (prepare-specware-build-buffer *specware-build-buffer-name* *specware4-dir)
     (if (or (not (file-exists-p specware-executable))
             (file-newer-than-file-p specware4-base-lisp specware-executable))
         (specware-build in-current-dir? nil 'boot)
-      (progn (specware-build-command "cd %s" (shell-filename *specware4-dir))
-             (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
+      (progn (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
              (sit-for 5)
              (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::quit))"
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
@@ -669,13 +905,9 @@ sLisp Heap Image File: ")
       (when (file-exists-p specware4-lisp)
 	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
       (copy-file specware4-base-lisp specware4-lisp t))
-    (unless (buffer-live-p (get-buffer *specware-build-buffer-name*))
-      (start-specware-build-buffer))
-    (when (and (not continuation?) (sbcl-running-in-build-buffer))
-      (specware-build-command "(cl-user::quit)"))
-    (specware-build-command "cd %s" build-dir)
-    (when *windows-system-p*
-      (specware-build-command "cd %s" (shell-filename build-dir)))
+
+    (prepare-specware-build-buffer *specware-build-buffer-name* build-dir)
+
     (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
     (sit-for 2)
     (specware-build-command "(cl:load %S)"
