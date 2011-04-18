@@ -179,14 +179,13 @@ ListADT qualifying spec {
         (case (v : Val)
           of Boolean b      -> string (if b then "t" else "nil")
            | Nat     n      -> string (Nat.show n)
-           | Char    c      -> strings ["#\\", Char.show c]
+           | Char    c      -> strings ["\#\\", Char.show c]  % backslash before hash to appease emacs
            | String  s      -> string s
            | Symbol  (p, s) -> strings ["'", p, "::", s]
 	   | Cell cell      -> strings ["'", anyToString cell]
 	   | Parameter s    -> string s)
         
-
-       | Op s -> strings ["#'", s]  % add bogus closing quote in comment to appease xemacs: "
+       | Op s -> strings ["#'", s]
 
        | Var s -> string s
 
