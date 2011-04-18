@@ -1,6 +1,6 @@
 (* The Wadler / Lindig pretty printer combinators
 
-sjw 4/15/11: Rewritten to match Lindig's algorithm (with a few extensions)
+sjw 4/15/11: Written to match Lindig's algorithm (with a few extensions)
 
 ppBreak() -- an optional line break
 ppGroup d -- If d doesn't fit in line then enable all ppBreaks 
@@ -75,7 +75,7 @@ WadlerLindig qualifying spec
       | DocNewline -> layout rest DocNil line_length indent indent breaking?
                         (spaces indent :: "\n" :: stream)
       | DocBreak s ->
-        if breaking?
+        if breaking? && indent < column - 1    % Only break if you save at least 2 spaces
           then layout rest DocNil line_length indent indent breaking? (spaces indent :: "\n" :: stream)
           else layout rest DocNil line_length column indent breaking? (s :: stream)
       | DocIndent (newIndent,doc) -> layout doc rest line_length column newIndent breaking? stream
