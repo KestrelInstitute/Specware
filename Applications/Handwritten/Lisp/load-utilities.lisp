@@ -49,6 +49,13 @@
         main-dir-str
       (format nil ".~a" main-dir-str))))
 
+(defun parse-device-directory (str)
+  (let ((found-index (position #\: str)))
+    (if found-index
+        (values (subseq str 0 found-index)
+                (subseq str (1+ found-index)))
+      (values nil str))))
+
 (defun convert-pathname-to-cygwin (dir-str)
   (multiple-value-bind (dev dir)
       (parse-device-directory dir-str)
@@ -116,13 +123,6 @@
         (result ""))
     (lisp:system (format nil "~a ~a > ~a" cmd (or args "") tmp-file))
     (first-line-of-file tmp-file)))
-
-(defun parse-device-directory (str)
-  (let ((found-index (position #\: str)))
-    (if found-index
-        (values (subseq str 0 found-index)
-                (subseq str (1+ found-index)))
-      (values nil str))))
 
 (defun split-components (str delimiters)
   (let* ((chars (coerce str 'list))
