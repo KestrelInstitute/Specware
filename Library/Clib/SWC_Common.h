@@ -282,7 +282,12 @@ int _error (char* s) {
 
 int System_fail(char* msg) {
   fprintf(stderr,"Error: %s\n",msg);
-  exit(0);
+  exit(1);
+}
+
+int TranslationBuiltIn_mkFail (char* msg) {
+  fprintf(stderr,"Failure: %s\n",msg);
+  exit(1);
 }
 
 /*********************  UNQUALIFIED  ********************/
