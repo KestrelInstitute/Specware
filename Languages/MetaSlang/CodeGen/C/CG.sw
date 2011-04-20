@@ -6,6 +6,7 @@ CG qualifying
 spec
 %  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
+  import /Languages/MetaSlang/Transformations/PatternMatch
   import /Languages/MetaSlang/Transformations/SliceSpec
   import /Languages/MetaSlang/CodeGen/AddMissingFromBase
   import /Languages/MetaSlang/CodeGen/Poly2Mono
@@ -175,8 +176,9 @@ spec
     in
     let _ = showSpc "Original"                      spc in
 
-    let spc = substBaseSpecs                        spc in % (1)
-    let _ = showSpc "substBaseSpecs" spc in
+   %adds possibly unused misc ops from List_Executable.sw and String_Executable.sw :
+   %let spc = substBaseSpecs                        spc in % (1)
+   %let _ = showSpc "substBaseSpecs" spc in
 
     let spc = if addmissingfrombase? then addMissingFromBase (basespc, spc, C_BuiltinSortOp?) else spc in  % (2) may add HO fns, etc., so do this first
     let _ = showSpc ("### addMissingFromBase (" ^ show addmissingfrombase? ^ ")") spc in
@@ -201,26 +203,29 @@ spec
 
     let spc = poly2mono                     (spc,false) in % (8) After this is called, we can no longer reason about polymorphic types such as List(a)
     let _ = showSpc "poly2mono"                     spc in
-
+ 
     let spc = letWildPatToSeq                       spc in % (9)
     let _ = showSpc "letWildPatToSeq"               spc in
+ 
+    let spc = translateMatch                        spc in % (10)
+    let _ = showSpc "translateMatch"                spc in
 
-    let spc = translateRecordMergeInSpec            spc in % (10)
+    let spc = translateRecordMergeInSpec            spc in % (11)
     let _ = showSpc "translateRecordMergeInSpec"    spc in
 
-    let spc = simplifySpec                          spc in % (11)
+    let spc = simplifySpec                          spc in % (12)
     let _ = showSpc "simplifySpec"                  spc in
 
-    let spc = addEqOpsToSpec                        spc in % (12)
+    let spc = addEqOpsToSpec                        spc in % (13)
     let _ = showSpc "addEqOpsToSpec"                spc in
 
-    let (spc,constrOps) = addSortConstructorsToSpec spc in % (13)
+    let (spc,constrOps) = addSortConstructorsToSpec spc in % (14)
     let _ = showSpc "addSortConstructorsToSpec"     spc in
 
-    let spc = conformOpDecls                        spc in % (14)
+    let spc = conformOpDecls                        spc in % (15)
     let _ = showSpc "conformOpDecls"                spc in
 
-    let spc = adjustAppl                            spc in % (15)
+    let spc = adjustAppl                            spc in % (16)
     let _ = showSpc "adjustAppl"                    spc in
 
     spc
@@ -287,7 +292,7 @@ spec
     let ctxt1   = default_S2I_Context                  in 
     let ctxt2   = default_I2C_Context                  in
     let tyvars  = []                                   in
-    let i2lType = type2itype (ctxt1, spc, tyvars, typ) in
+    let i2lType = type2itype (tyvars, typ, ctxt1, spc) in
     c4Type(ctxt2,cspc,i2lType)
 
   op termToCExp (cspc : C_Spec) (spc : Spec) (tm : MS.Term) 
@@ -299,7 +304,7 @@ spec
     : C_Spec * C_Block * C_Exp =
     let ctxt1  = default_S2I_Context              in
     let ctxt2  = default_I2C_Context              in
-    let i2lExp = term2expression (ctxt1, spc, tm) in
+    let i2lExp = term2expression (tm, ctxt1, spc) in
     c4Expression (ctxt2, cspc, block, i2lExp)
 
   def showQualifiedId (qid as Qualified (q, id) : QualifiedId) : String =

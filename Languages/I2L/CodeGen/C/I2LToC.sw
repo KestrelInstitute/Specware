@@ -544,10 +544,31 @@ I2LToC qualifying spec
         
       | I_Project (expr, id) ->
         let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, expr, lhs?, forInitializer?)  in
-        let id                   = getProjectionFieldName id                                       in
+        let field_name           = getProjectionFieldName id                                       in
         let cexpr                = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr) else cexpr in
-        (cspc, block, C_StructRef (cexpr, id))
+        (cspc, block, C_StructRef (cexpr, field_name))
         
+      | I_Select (expr as (_, itype), id) ->
+        % Union types are currently implemented something like this:
+        %
+        % union  CoProduct0  { struct Product0* Cons; uint32_t Nil; };
+        % struct CoProductS1 { char sel[(COPRDCTSELSIZE)];  union CoProduct0 alt; };
+        % 
+        % We select a variant by first using a struct ref to get the "alt" field: 'x.alt' or 'x->alt'.
+        % then doing a union ref to get a properly typed pointer at the variant: 'x.alt.Cons' or 'x->alt.Cons'.
+        % (Fow now, the union ref is direct: we don't implement 'x.alt->Cons' or 'x->alt->Cons'.)
+        %
+        % Note: The following I_Project abuses I2L notation to refer to something that is 
+        %       not intrinsic to I2L, but exists only for the sake of the C implementation.
+        %       Abetting this abuse of notation, we take the I_Union type from the argument 
+        %       expression (which will be implemented as a C-struct) and also assign it to 
+        %       the "alt" projection (which will be implemented as an associated C-union).
+        let expr                 = (I_Project (expr, "alt"), itype)                               in % benign abuse of I2L notation
+        let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, expr, lhs?, forInitializer?) in % exploit I2L machinery
+        let variant_name         = getUnionVariantName id                                         in
+        let cexpr                = if false then C_Unary (C_Contents, cexpr) else cexpr           in % indirection not an option
+        (cspc, block, C_UnionRef (cexpr, variant_name))
+
       | I_ConstrCall (typename, consid, exprs) ->
         let consfun       = getConstructorOpNameFromQName (typename, consid) in
         let (cspc, ctype) = c4Type (ctxt, cspc, typ)                         in
@@ -591,7 +612,7 @@ I2LToC qualifying spec
                               | Some cexpr ->
                                 let var   = C_Var decl                                                  in
                                 let sref0 = if ctxt.useRefTypes then C_Unary (C_Contents, var) else var in
-                                let sref  = C_StructRef (C_StructRef (sref0, "alt"), selstr)            in
+                                let sref  = C_UnionRef (C_StructRef (sref0, "alt"), selstr)             in
                                 [C_Exp (getSetExpr (ctxt, sref, cexpr))]
         in
         let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
@@ -667,7 +688,7 @@ I2LToC qualifying spec
                                           let (id, expr)     = substVarIfDeclared (ctxt, id, decls, expr)                        in
                                           let (cspc, idtype) = c4Type (ctxt, cspc, typ)                                          in
                                           let structref      = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                          let valexp         = C_StructRef (C_StructRef (structref, "alt"), selstr)              in
+                                          let valexp         = C_UnionRef (C_StructRef (structref, "alt"), selstr)               in
                                           let decl           = (id, idtype)                                                      in
                                           let assign         = getSetExpr (ctxt, C_Var decl, valexp)                             in
                                           % the assignment must be attached to the declaration, otherwise
@@ -687,7 +708,7 @@ I2LToC qualifying spec
                                           let varPrefix      = getVarPrefix ("_Va", idtype)                                      in
                                           let id             = varPrefix^ (show (length decls))                                  in
                                           let structref      = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                          let valexp         = C_StructRef (C_StructRef (structref, "alt"), selstr)              in
+                                          let valexp         = C_UnionRef (C_StructRef (structref, "alt"), selstr)               in
                                           let decl           = (id, idtype)                                                      in
                                           let optinit        = None                                                              in
                                           let decl1          = (id, idtype, optinit)                                             in
@@ -741,6 +762,10 @@ I2LToC qualifying spec
             C_Comma (xx, newif)
           else 
             ifexpr)
+
+      | I_Embedded (id, exp) ->
+        let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, exp) in
+        (cspc, block, getSelCompareExp (ctxt, cexp, id))
 
       | I_IfExpr (e1, e2, e3) ->
         let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
@@ -1123,7 +1148,7 @@ I2LToC qualifying spec
     let expr = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr in
     case expr of
 
-      | C_Unary (Contents, expr) -> 
+      | C_Unary (C_Contents, expr) -> 
         C_Apply (hasConstructor, [expr, C_Const (C_Str selstr)])
 
       | _ -> 
@@ -1330,6 +1355,9 @@ I2LToC qualifying spec
       "field" ^ show (num - 1)
     else
       pname
+
+  op getUnionVariantName (vname : String) : String =
+     vname
 
   op getPredefinedFnDecl (fname : String) : C_FnDecl =
     case fname of

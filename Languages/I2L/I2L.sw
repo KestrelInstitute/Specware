@@ -107,19 +107,26 @@ I2L qualifying spec
                 | I_IfExpr         I_TypedExpr * I_TypedExpr * I_TypedExpr
                 | I_Comma          I_TypedExprs
                 | I_Let            String * I_Type * I_TypedExpr * I_TypedExpr
-                | I_UnionCaseExpr  I_TypedExpr * List I_UnionCase
-                | I_AssignUnion    String * Option I_TypedExpr
-                | I_ConstrCall     I_VarName * String * List I_TypedExpr
+                | I_UnionCaseExpr  I_TypedExpr * List I_UnionCase        % dispatch among variants of a coproduct/union
+                | I_Embedded       String * I_TypedExpr                  % test for a variant of a coproduct/union
+                | I_AssignUnion    String * Option I_TypedExpr           % set the variant field for a union
+                | I_ConstrCall     I_VarName * String * List I_TypedExpr % call a constructor as a function
                 | I_Builtin        I_BuiltinExpression
-                | I_TupleExpr      I_TypedExprs
-                | I_StructExpr     I_StructExprFields
-                | I_Project        I_TypedExpr * String
+                | I_TupleExpr      I_TypedExprs                          % create a structure using generated field names
+                | I_StructExpr     I_StructExprFields                    % create a structure using given names
+                | I_Project        I_TypedExpr * String                  % access a field   in a product/structure
+                | I_Select         I_TypedExpr * String                  % access a variant in a coproduct/union 
 
   % a variable reference consists of a unit name and an identifier name
   type I_VarName = String * String
 
-  % a UnionCase is used to test a given expression, which must have a
-  % union type, which alternative of the union it represents.
+  % I_UnionCase is used to test and dispatch within I_UnionCaseExpr
+  % It tests a given expression, which must have a union type, to see if it  
+  % has a particular alternative type of the union, and if so, dispatches
+  % to an expression to be evaluated.
+  %
+  % Note that I_Embedded is used for predicates that simply test such expressions 
+  % directly, as in if statements.
 
   type I_UnionCase = | I_ConstrCase  Option String * Option I_Type * List (Option String) * I_TypedExpr
                      | I_VarCase     String * I_Type * I_TypedExpr
@@ -396,6 +403,9 @@ I2L qualifying spec
         in
         I_UnionCaseExpr (mp e, ucl)
 
+      | I_Embedded (s,    t) ->
+        I_Embedded (s, mp t) 
+
       | I_AssignUnion(s, optexp) -> 
         let optexp = case optexp of 
                        | None   -> None 
@@ -421,6 +431,9 @@ I2L qualifying spec
 
       | I_Project (   exp, s) -> 
         I_Project (mp exp, s)
+
+      | I_Select  (   exp, s) -> 
+        I_Select  (mp exp, s)
 
       | _ -> e
 
