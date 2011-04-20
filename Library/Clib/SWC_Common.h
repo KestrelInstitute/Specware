@@ -259,9 +259,12 @@ int Float_EqualEqual (Float_Float x, Float_Float y) {
   }
 }
 
-Float_Float f (Float_Float x) {
-  return ((34 * x * x * x) - (99.0 * x * x) + (1047 * x) + 12345.0);
-    }
+/*
+ * TODO:  ?? What was this doing here ??
+ * Float_Float f (Float_Float x) {
+ *  return ((34 * x * x * x) - (99.0 * x * x) + (1047 * x) + 12345.0);
+ * }
+ */
 
 /*********************  IO  *****************************/
 
