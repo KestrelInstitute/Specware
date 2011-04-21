@@ -353,12 +353,12 @@ I2LToC qualifying spec
           | I_BoundedNat n -> 
             %let _ = writeLine ("Type for bounded nat : " ^ anyToString n) in
             let c_type =
-                if n <= 2**8  then C_UInt8  else
-                if n <= 2**16 then C_UInt16 else
-                if n <= 2**32 then C_UInt32 else
-                if n <= 2**64 then C_UInt64 else
-                let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using UInt32") in
-                C_UInt32
+                if n < 2**8  then C_UInt8  else
+                if n < 2**16 then C_UInt16 else
+                if n < 2**32 then C_UInt32 else
+                if n < 2**64 then C_UInt64 else
+                let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UInt64") in
+                C_UInt64
             in
             %let _ = writeLine (" ===> " ^ anyToString c_type) in
             (cspc, c_type)
