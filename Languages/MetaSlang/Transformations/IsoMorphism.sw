@@ -672,6 +672,11 @@ spec
   op simplifyUnPrimed?: Boolean = false
   op opaqueSimplifyScript: Script = Simplify[]
 
+  op makeQualifierFromPat(old_qual: String, new_pat: String): String =
+    if old_qual = UnQualified
+      then replaceString(new_pat, "*", "Unq")
+      else replaceString(new_pat, "*", old_qual)
+
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                    newOptQual : Option String, extra_rules: List RuleSpec)
       : SpecCalc.Env Spec =
@@ -680,7 +685,7 @@ spec
       def makeDerivedQId (Qualified (qual,id)) =
         case newOptQual of
           | None -> Qualified (qual, id ^ "'")
-          | Some newQual -> Qualified (newQual,id)
+          | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
 
       def derivedQId? (Qualified (qual,id)) =
          case newOptQual of
