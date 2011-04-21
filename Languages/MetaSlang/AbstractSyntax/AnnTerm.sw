@@ -612,7 +612,8 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
    let tms = innerTerms tm in
    let len = length tms in
-   tms@(max(len - i - 1, 0))            % Do best guess in case previous versions replaced
+   if len = 0 then tm
+     else tms@(max(len - i - 1, 0))            % Do best guess in case previous versions replaced
 (*
    if i >= 0 && i < len then tms@(len - i - 1)
      else if len <= 1 then tm
