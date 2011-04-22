@@ -261,6 +261,15 @@ spec
                  {qids <- mapM extractQId locs;
                   return (At(map Def qids, Steps sub_result) :: top_result,
                           [])}
+               | Item("atTheorem", loc, _) ->
+                 {qid <-  extractQId loc;
+                  return (AtTheorem([Def qid], Steps sub_result) :: top_result,
+                          [])}
+               | Apply(Name("atTheorem",_), locs,_) ->
+                 {qids <- mapM extractQId locs;
+                  return (AtTheorem(map Def qids, Steps sub_result) :: top_result,
+                          [])}
+ 
                | Item("trace", Str(on_or_off,_), pos) ->
                  {on? <- case on_or_off of
                            | "on" -> return true
