@@ -563,7 +563,8 @@ spec
                              new_spc <- return(setElements(spc, mapSpecElements (fn el ->
                                                                                  case el of
                                                                                    | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->
-                                                                                     Property (kind, qid1, tvs, new_tm, pos))
+                                                                                     Property (kind, qid1, tvs, new_tm, pos)
+                                                                                   | el -> el)
                                                                   spc.elements));
                              return (new_spc, tracing?)
                              })
