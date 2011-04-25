@@ -229,6 +229,7 @@ SpecCalc qualifying spec
 					 | (_,       Any _) -> old_srt
 					 | (MetaTyVar _, _) -> new_srt
 					 | (_, MetaTyVar _) -> old_srt
+                                         % | _ | existsInType? (embed? MetaTyVar) new_srt -> old_srt
                                          | _ | refine? -> combineSubTypes(old_srt, new_srt, old_tm, new_tm)
 					 | _ -> old_srt)   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
 		  in
@@ -316,6 +317,7 @@ SpecCalc qualifying spec
          else
          % let _ = writeLine("combine:\n"^printSort old_ty^"\n"^printSort new_ty) in
          case (old_ty, new_ty) of
+           | (_, MetaTyVar _) -> old_ty
            | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
              Arrow(combineTypes(old_d, new_d), combineTypes(old_r, new_r), a)
            | (Subsort(old_sup, old_p, _), Subsort(new_sup, new_p, a)) ->
