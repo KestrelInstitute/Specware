@@ -363,23 +363,21 @@ I2L qualifying spec
 
   op mapExpr (f : I_Expr -> I_Expr) (e : I_Expr) : I_Expr =
    let mp = (fn (e,t) -> (mapExpr f e, t)) in
+   %% process parent term before child terms
    let e = f e in
    case e of
 
-      | I_FunCall (v, p, exps) -> 
-        let exps = map mp exps in
-        I_FunCall (v, p, exps)
+      | I_FunCall (v, p,        exps) -> 
+        I_FunCall (v, p, map mp exps)
 
-      | I_FunCallDeref (v, p, exps) ->
-        let exps = map mp exps in
-        I_FunCallDeref (v, p, exps)
+      | I_FunCallDeref (v, p,        exps) ->
+        I_FunCallDeref (v, p, map mp exps)
 
       | I_IfExpr (   e1,    e2,    e3) -> 
         I_IfExpr (mp e1, mp e2, mp e3)
 
-      | I_Comma exps -> 
-        let exps = map mp exps in
-        I_Comma exps
+      | I_Comma (       exps) -> 
+        I_Comma (map mp exps)
 
       | I_Let (s, t,    e1,    e2) -> 
         I_Let (s, t, mp e1, mp e2)
@@ -413,17 +411,14 @@ I2L qualifying spec
         in
         I_AssignUnion(s, optexp)
 
-      | I_ConstrCall (varname, consid, exps) -> 
-        let exps = map mp exps in
-        I_ConstrCall (varname, consid, exps)
+      | I_ConstrCall (varname, consid,        exps) -> 
+        I_ConstrCall (varname, consid, map mp exps)
 
-      | I_Builtin bexp -> 
-        let bexp = mapBuiltin f bexp in
-        I_Builtin bexp
+      | I_Builtin (             bexp) -> 
+        I_Builtin (mapBuiltin f bexp)
 
-      | I_TupleExpr exps -> 
-        let exps = map mp exps in
-        I_TupleExpr exps
+      | I_TupleExpr (       exps) -> 
+        I_TupleExpr (map mp exps)
 
       | I_StructExpr fields -> 
         let fields = map (fn(s,e) -> (s,mp e)) fields in
@@ -435,7 +430,9 @@ I2L qualifying spec
       | I_Select  (   exp, s) -> 
         I_Select  (mp exp, s)
 
-      | _ -> e
+      | _ -> 
+        % I_Str, I_Int, I_Float, I_Char, I_Bool, I_Var, I_VarDeref, I_VarRef :
+        e  
 
   op mapBuiltin (f : I_Expr -> I_Expr) (exp : I_BuiltinExpression) : I_BuiltinExpression =
     let mp = fn (exp, typ) -> (mapExpr f exp, typ) in
