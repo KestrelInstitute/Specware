@@ -329,18 +329,16 @@ I2L qualifying spec
                 | Some t -> typeDepends0 (iu, t, deps)
                 | None -> deps)
 
-         | I_Struct fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
+         | I_Struct fields -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
+         | I_Union  fields -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
+         | I_Tuple  types  -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
 
-         | I_Union  fields  -> foldl (fn (deps, (_, t)) -> typeDepends0 (iu, t, deps)) deps fields
-
-         | I_Tuple  types   -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
-
-         | I_BoundedList (t, _) -> typeDepends0 (iu, t, deps)
+         | I_BoundedList (t, _)  -> typeDepends0 (iu, t, deps)
+         | I_Ref         t       -> typeDepends0 (iu, t, deps)
 
          | I_FunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
-                                         (typeDepends0 (iu, t, deps))
-                                         types
-         | I_Ref t -> typeDepends0 (iu, t, deps)
+                                          (typeDepends0 (iu, t, deps))
+                                          types
 
          | _ -> deps
     in
@@ -438,94 +436,94 @@ I2L qualifying spec
     let mp = fn (exp, typ) -> (mapExpr f exp, typ) in
     case exp of
 
-      | I_Equals              (e1,e2) ->
+      | I_Equals              (   e1,    e2) ->
         I_Equals              (mp e1, mp e2)
 
-      | I_BoolNot             (e1)    ->
+      | I_BoolNot             (   e1) ->
         I_BoolNot             (mp e1)
 
-      | I_BoolAnd             (e1,e2) ->
+      | I_BoolAnd             (   e1,    e2) ->
         I_BoolAnd             (mp e1, mp e2)
 
-      | I_BoolOr              (e1,e2) ->
+      | I_BoolOr              (   e1,    e2) ->
         I_BoolOr              (mp e1, mp e2)
 
-      | I_BoolImplies         (e1,e2) ->
+      | I_BoolImplies         (   e1,    e2) ->
         I_BoolImplies         (mp e1, mp e2)
 
-      | I_BoolEquiv           (e1,e2) ->
+      | I_BoolEquiv           (   e1,    e2) ->
         I_BoolEquiv           (mp e1, mp e2)
 
-      | I_IntPlus             (e1,e2) ->
+      | I_IntPlus             (   e1,    e2) ->
         I_IntPlus             (mp e1, mp e2)
 
-      | I_IntMinus            (e1,e2) ->
+      | I_IntMinus            (   e1,    e2) ->
         I_IntMinus            (mp e1, mp e2)
 
-      | I_IntUnaryMinus       (e1)    ->
+      | I_IntUnaryMinus       (   e1) ->
         I_IntUnaryMinus       (mp e1)
 
-      | I_IntMult             (e1,e2) ->
+      | I_IntMult             (   e1,    e2) ->
         I_IntMult             (mp e1, mp e2)
 
-      | I_IntDiv              (e1,e2) ->
+      | I_IntDiv              (   e1,    e2) ->
         I_IntDiv              (mp e1, mp e2)
 
-      | I_IntRem              (e1,e2) ->
+      | I_IntRem              (   e1,    e2) ->
         I_IntRem              (mp e1, mp e2)
 
-      | I_IntLess             (e1,e2) ->
+      | I_IntLess             (   e1,    e2) ->
         I_IntLess             (mp e1, mp e2)
 
-      | I_IntGreater          (e1,e2) ->
+      | I_IntGreater          (   e1,    e2) ->
         I_IntGreater          (mp e1, mp e2)
 
-      | I_IntLessOrEqual      (e1,e2) ->
+      | I_IntLessOrEqual      (   e1,    e2) ->
         I_IntLessOrEqual      (mp e1, mp e2)
 
-      | I_IntGreaterOrEqual   (e1,e2) ->
+      | I_IntGreaterOrEqual   (   e1,    e2) ->
         I_IntGreaterOrEqual   (mp e1, mp e2)
 
-      | I_IntToFloat          (e1)    ->
+      | I_IntToFloat          (   e1) ->
         I_IntToFloat          (mp e1) 
 
-      | I_FloatPlus           (e1,e2) ->
+      | I_FloatPlus           (   e1,    e2) ->
         I_FloatPlus           (mp e1, mp e2)
 
-      | I_FloatMinus          (e1,e2) ->
+      | I_FloatMinus          (   e1,    e2) ->
         I_FloatMinus          (mp e1, mp e2)
 
-      | I_FloatUnaryMinus     (e1)    ->
+      | I_FloatUnaryMinus     (   e1) ->
         I_FloatUnaryMinus     (mp e1) 
 
-      | I_FloatMult           (e1,e2) ->
+      | I_FloatMult           (   e1,    e2) ->
         I_FloatMult           (mp e1, mp e2)
 
-      | I_FloatDiv            (e1,e2) ->
+      | I_FloatDiv            (   e1,    e2) ->
         I_FloatDiv            (mp e1, mp e2)
 
-      | I_FloatLess           (e1,e2) ->
+      | I_FloatLess           (   e1,    e2) ->
         I_FloatLess           (mp e1, mp e2)
 
-      | I_FloatGreater        (e1,e2) ->
+      | I_FloatGreater        (   e1,    e2) ->
         I_FloatGreater        (mp e1, mp e2)
 
-      | I_FloatLessOrEqual    (e1,e2) ->
+      | I_FloatLessOrEqual    (   e1,    e2) ->
         I_FloatLessOrEqual    (mp e1, mp e2)
 
-      | I_FloatGreaterOrEqual (e1,e2) ->
+      | I_FloatGreaterOrEqual (   e1,    e2) ->
         I_FloatGreaterOrEqual (mp e1, mp e2)
 
-      | I_FloatToInt          (e1)    ->
+      | I_FloatToInt          (   e1) ->
         I_FloatToInt          (mp e1) 
 
-      | I_StrLess             (e1,e2) ->
+      | I_StrLess             (   e1,    e2) ->
         I_StrLess             (mp e1, mp e2)
 
-      | I_StrEquals           (e1,e2) ->
+      | I_StrEquals           (   e1,    e2) ->
         I_StrEquals           (mp e1, mp e2)
 
-      | I_StrGreater          (e1,e2) ->
+      | I_StrGreater          (   e1,    e2) ->
         I_StrGreater          (mp e1, mp e2)
 
   % --------------------------------------------------------------------------------
