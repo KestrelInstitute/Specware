@@ -339,7 +339,6 @@ I2L qualifying spec
          | I_FunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
                                           (typeDepends0 (iu, t, deps))
                                           types
-
          | _ -> deps
     in
     typeDepends0 (iu, t0, [])
@@ -370,6 +369,12 @@ I2L qualifying spec
 
       | I_FunCallDeref (v, p,        exps) ->
         I_FunCallDeref (v, p, map mp exps)
+
+      | I_MapAccess (v, typ, projs,        exps) ->
+        I_MapAccess (v, typ, projs, map mp exps) 
+
+      | I_MapAccessDeref (v, typ, projs,        exps) ->
+        I_MapAccessDeref (v, typ, projs, map mp exps) 
 
       | I_IfExpr (   e1,    e2,    e3) -> 
         I_IfExpr (mp e1, mp e2, mp e3)
