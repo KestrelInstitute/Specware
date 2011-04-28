@@ -492,6 +492,9 @@ I2L qualifying spec
       | I_IntToFloat          (   e1) ->
         I_IntToFloat          (mp e1) 
 
+      | I_StringToFloat       (   e1) ->
+        I_StringToFloat       (mp e1) 
+
       | I_FloatPlus           (   e1,    e2) ->
         I_FloatPlus           (mp e1, mp e2)
 
