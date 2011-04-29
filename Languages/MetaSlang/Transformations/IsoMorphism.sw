@@ -609,47 +609,6 @@ spec
                             insertAQualifierMap(result, q', id', true))
       emptyAQualifierMap qid_map
 
-  op Env.findTheOp : Spec -> QualifiedId -> SpecCalc.Env OpInfo
-  def Env.findTheOp spc qid =
-    case findTheOp (spc, qid) of
-      | None -> escape ("applyIso: " ^ show qid ^ " not found\n")
-      | Some opInfo -> return opInfo
-
-  % This should be moved to the specware monad.
-  op escape : [a] String -> SpecCalc.Env a
-  def escape str = {
-    print str;
-    raise Escape
-  }
- 
-  %{{{  doList
-  % Variation on foldM when the list is inside a product.
-  % Metaslang doesn't support let-polymorphism so this must be at the outer scope
-  op doList : [a,b,c] (a -> b -> SpecCalc.Env (a * c)) -> a -> List b -> SpecCalc.Env (a * List c)
-  def doList f accum lst =
-    case lst of
-      | [] -> return (accum,[])
-      | x::xs -> {
-          (accum,y) <- f accum x;
-          (accum,ys) <- doList f accum xs;
-          return (accum,y::ys)
-        }
-
-  (* The above is meant to be equiv to something like what's below. Below
-     used foldM (a monadic foldl) but the above avoids the append (++)
-     to the end
-
-  def doList f accum lst =
-    let
-      def f' (accum,lst) x = {
-        (accum,x) <- f accum x
-        return (accum, lst ++ [x])
-      }
-    in
-      foldM f' (accum,[]) lst
-   *)
-  %}}}
-
   %{{{  findOpInfo
   op Env.findOpInfo (spc:Spec) (qid:QualifiedId) : SpecCalc.Env IsoInfo =
     case findMatchingOps (spc,qid) of
@@ -1428,7 +1387,7 @@ spec
                       %{{{  create a new op and replace this reference
                       % But first we must recursively transform the body of the new op
                       opsDone <- return (Cons ((qual,id,ty),opsDone));
-                      info <- Env.findTheOp spc (mkQualifiedId (qual,id));
+                      info <- findTheOp spc (mkQualifiedId (qual,id));
                       (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
                       monoDefn <- case typeMatch(defnType, ty, spc, true) of
                          | None -> {
