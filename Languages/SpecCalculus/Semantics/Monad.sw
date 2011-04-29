@@ -170,6 +170,13 @@ Some basic operations for debugging. There should be a proper IO monad.
 
   op print : String -> Env ()
   def print str = return (toScreen str) 
+
+  op escape : [a] String -> SpecCalc.Env a
+  def escape str = {
+    print str;
+    raise Escape
+  }
+ 
 (*
 Some hacks for twiddling memory.  hackMemory essentially calls (room nil)
 in an attempt to appease Allegro CL into not causing mysterious storage 
@@ -228,7 +235,41 @@ rely on the overloading?
             return (Cons (xNew,xsNew))
           }
 
+  %%  doList
+  % Variation on foldM when the list is inside a product.
+  % Metaslang doesn't support let-polymorphism so this must be at the outer scope
+  op doList : [a,b,c] (a -> b -> SpecCalc.Env (a * c)) -> a -> List b -> SpecCalc.Env (a * List c)
+  def doList f accum lst =
+    case lst of
+      | [] -> return (accum,[])
+      | x::xs -> {
+          (accum,y) <- f accum x;
+          (accum,ys) <- doList f accum xs;
+          return (accum,y::ys)
+        }
+
+  (* The above is meant to be equiv to something like what's below. Below
+     used foldM (a monadic foldl) but the above avoids the append (++)
+     to the end
+
+  def doList f accum lst =
+    let
+      def f' (accum,lst) x = {
+        (accum,x) <- f accum x
+        return (accum, lst ++ [x])
+      }
+    in
+      foldM f' (accum,[]) lst
+   *)
+
   op fileExistsAndReadable? : String -> Env Boolean
   def fileExistsAndReadable? fileName = return (fileExistsAndReadable fileName)
+
+  op findTheOp : Spec -> QualifiedId -> SpecCalc.Env OpInfo
+  def findTheOp spc qid =
+    case findTheOp (spc, qid) of
+      | None -> escape (show qid ^ " not found\n")
+      | Some opInfo -> return opInfo
+
 
 endspec
