@@ -312,6 +312,18 @@ op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
           elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn, noPos)]}
 
+op addRefinedTypeToOpinfo(info: OpInfo, new_ty: Sort): OpInfo =
+  let qid as Qualified(q, id) = primaryOpName info in
+  let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
+  let new_full_dfn = piTypeAndTerm(tvs, new_ty, [full_tm]) in
+  info << {dfn = new_full_dfn}
+
+op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =
+  let qid as Qualified(q, id) = primaryOpName info in
+  let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
+  spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
+          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn, noPos)]}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                Recursive TSP map over Specs
