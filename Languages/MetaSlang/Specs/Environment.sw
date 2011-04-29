@@ -199,6 +199,11 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
     of Arrow _ -> true
      | _ -> false
 
+ op range_*(spc: Spec, ty: Sort): Sort =
+   case stripSubsorts (spc, ty)
+    of Arrow(_, rng, _) -> range_*(spc, rng)
+     | _ -> ty
+
  %- def arrowOpt(sp:Spec,srt:Sort) = 
  %-   let res = arrowOpt_(sp,srt) in
  %-   let _ = writeLine("arrowOpt("^printSort(srt)^")="^
