@@ -862,7 +862,7 @@ If we want the precedence to be optional:
    ((:tuple "&")   (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "&&")  (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "\\_and")  (make-fun '(:|And|)    MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ;;((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
    ((:tuple "||")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "\\_or")  (make-fun '(:|Or|)      MS::binaryBoolSort ':left-lcb ':right-lcb))
    ((:tuple "=>")  (make-fun '(:|Implies|)   MS::binaryBoolSort ':left-lcb ':right-lcb))
