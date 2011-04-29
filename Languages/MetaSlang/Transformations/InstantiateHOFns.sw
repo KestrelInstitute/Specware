@@ -134,7 +134,10 @@ spec
    let spc = normalizeCurriedDefinitions spc             in
    let spc = simplifySpec                spc             in
    let mp  = makeUnfoldMap               spc snark_hack? in
-   unFoldTerms (spc, mp)
+   % let _ = writeLine("Instantiate HO fns before:\n"^printSpec spc) in
+   let result = unFoldTerms (spc, mp) in
+   % let _ = writeLine("Instantiate HO fns after:\n"^printSpec result) in
+   result
 
  %% ================================================================================
  %% normalize 
@@ -407,9 +410,11 @@ spec
  op unFoldTerms (spc : Spec, info_map : AQualifierMap DefInfo) : Spec =
    let 
      def simplifyTerm tm =
-       let result = simplify           spc tm     in
-       let result = simplifyUnfoldCase spc result in
-       result
+       let result1 = simplify           spc tm      in
+       let result2 = simplifyUnfoldCase spc result1 in
+       if equalTerm?(tm, result2)
+         then result2
+         else simplifyTerm result2      % Overkill, but doesn't seem too expensive
     in
     let gtsp = (fn outer_qid -> 
                   fn tm -> 
@@ -495,6 +500,7 @@ spec
 		      (case findAQualifierMap(unfold_map, q, id) of
 
 			 | Some (vs, defn, deftyp, fnIndices, curried?, recursive?) ->
+                           %let _ = writeLine("maybeUnfoldTerm:\n"^printTerm f) in
 			   if curried? 
                               && (length args = length vs)
                               && exists? (fn i -> exploitableTerm? (args @ i, unfold_map))
@@ -560,6 +566,7 @@ spec
                       curried?     : Bool,
                       spc          : Spec)
    : Term =
+   % let _ = writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm) in
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
