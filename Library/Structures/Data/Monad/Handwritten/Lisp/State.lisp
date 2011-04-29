@@ -43,3 +43,11 @@
      (progn (rplacd variable value) t)
      (error "writeVar: argument not a variable"))
 )
+
+(defpackage :SpecCalc)
+
+;;; This doesn't belong here but don't want to create its own file yet
+(define-compiler-macro SpecCalc::when-1-1-1 (p command yyy-2)
+  ;; Make strict!
+ `(let ((yyy-2 ,yyy-2))
+    (if ,p (funcall ,command yyy-2) (SpecCalc::return-1-1 nil yyy-2))))

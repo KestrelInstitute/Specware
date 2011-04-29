@@ -9,7 +9,7 @@ ppNestG i d --> ppGroup (ppNest i d)  common pattern
 ppString s -- print string s
 d1 ^ d2   -- command d1 followed by d2
 ppConcat dl -- sequence of commands dl
-ppConcatNG i dl -- ppGroup (ppNest i (ppConcat dl))
+ppConcatGN i dl -- ppGroup (ppNest i (ppConcat dl))
 
 
 *)
@@ -69,13 +69,14 @@ WadlerLindig qualifying spec
   def layout doc rest line_length column indent breaking? stream =
     case doc of
       | DocGroup d -> let prev_break_rest = DocBreaking?(breaking?, rest) in
-                      let break_group? = breaking? && ~(fits(d, prev_break_rest, line_length - column, false)) in
+                      let break_group? = ~(fits(d, prev_break_rest, line_length - column, false)) in
                       layout d prev_break_rest line_length column indent break_group? stream
       | DocText s  -> layout rest DocNil line_length (column + (length s)) indent breaking? (s :: stream)
       | DocNewline -> layout rest DocNil line_length indent indent breaking?
                         (spaces indent :: "\n" :: stream)
       | DocBreak s ->
-        if breaking? && indent < column - 1    % Only break if you save at least 2 spaces
+        if indent < column - 1    % Only break if you save at least 2 spaces
+            && (breaking? || ~(fits(rest, DocNil, line_length - column, true)))
           then layout rest DocNil line_length indent indent breaking? (spaces indent :: "\n" :: stream)
           else layout rest DocNil line_length column indent breaking? (s :: stream)
       | DocIndent (newIndent,doc) -> layout doc rest line_length column newIndent breaking? stream
@@ -130,7 +131,7 @@ WadlerLindig qualifying spec
   op ppFormatWidth : Int -> Doc -> String
 
   def ppFormatWidth line_length doc =
-    let strings = layout (ppGroup doc) DocNil line_length 0 0 true [] in
+    let strings = layout doc DocNil line_length 0 0 false [] in
     % concatList (rev strings)
     IO.withOutputToString
        (fn stream ->
@@ -149,7 +150,7 @@ WadlerLindig qualifying spec
       | Nil ->  ppNil
       | (s::ss) -> ppCons s (ppConcat ss)
 
-  op ppConcatNG (i: Int) (dl: List Doc): Doc = ppGroup (ppNest i (ppConcat dl))
+  op ppConcatGN (i: Int) (dl: List Doc): Doc = ppGroup (ppNest i (ppConcat dl))
 
   op ppNewline : Doc
   def ppNewline = DocNewline
@@ -166,7 +167,7 @@ WadlerLindig qualifying spec
            ppCons s (ppCons sep rest)
 
 op example: Doc =
-  ppConcatNG 0
+  ppConcatGN 0
    [ppNest 3 (ppConcat [ppString "begin ",
                         ppBreak,
                         ppGroup (ppConcat [ppString "stat; ", ppBreak, ppString "stat; ", ppBreak, ppString "stat; "])]),

@@ -1491,7 +1491,7 @@ end-proof
 
 % fold from left/right:
 
-op [a,b] foldl (f: b * a -> b) (base:b) (l: List a) : b =
+op [a,b] foldl (f: b * a -> b) (base: b) (l: List a) : b =
   case l of
   | [] -> base
   | hd::tl -> foldl f (f (base, hd)) tl
