@@ -247,12 +247,30 @@ spec
                | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
                  {iso_prs <- extractIsos iso_tms;
                   return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
+
+               | Apply(Apply(Name("introduce",_), i_ops,_), rls, _) ->
+                 {op_qids <- mapM extractQId i_ops;
+                  srls <- mapM makeRuleRef rls;
+                  return (Introduce(op_qids, srls) :: sub_result ++ top_result, [])}
+               | Apply(Name("introduce",_), i_ops,_) ->
+                  {op_qids <- mapM extractQId i_ops;
+                   return (Introduce(op_qids, []) :: sub_result ++ top_result, [])}
+
+               | Apply(Apply(Name("implement",_), i_ops,_), rls, _) ->
+                 {op_qids <- mapM extractQId i_ops;
+                  srls <- mapM makeRuleRef rls;
+                  return (Implement(op_qids, srls) :: sub_result ++ top_result, [])}
+               | Apply(Name("implement",_), i_ops,_) ->
+                  {op_qids <- mapM extractQId i_ops;
+                   return (Implement(op_qids, []) :: sub_result ++ top_result, [])}
+
                | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
                  {fields <- getAddParameterFields rec_val_prs;
                   return(AddParameter fields :: sub_result ++ top_result, [])}
                | Apply(Name("addSemanticChecks",_), [Record rec_val_prs], _) ->
                  {fields <- getAddSemanticFields rec_val_prs;
                   return(top_result, AddSemanticChecks fields :: sub_result)}
+
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
                   return (At([Def qid], Steps sub_result) :: top_result,
@@ -261,6 +279,7 @@ spec
                  {qids <- mapM extractQId locs;
                   return (At(map Def qids, Steps sub_result) :: top_result,
                           [])}
+
                | Item("atTheorem", loc, _) ->
                  {qid <-  extractQId loc;
                   return (AtTheorem([Def qid], Steps sub_result) :: top_result,

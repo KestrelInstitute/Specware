@@ -37,14 +37,21 @@ spec
     | AbstractCommonExpressions
     | SpecTransform QualifiedId
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
+    | Implement(QualifiedIds * List RuleSpec)
+    | Introduce(QualifiedIds * List RuleSpec)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | AddSemanticChecks(Bool * Bool * Bool)
     | Trace Boolean
     | Print
 
+ %% Defined in Isomorphism.sw
  op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * List RuleSpec -> SpecCalc.Env Spec
  op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
+
+ %% Defined in Coalgebraic.sw
+ op Coalgebraic.introduceOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
+ op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
 
@@ -82,6 +89,9 @@ spec
  op ppBool(b: Bool): WadlerLindig.Pretty =
    ppString(if b then "true" else "false")
 
+ op commaBreak: WadlerLindig.Pretty = ppConcat [ppString ", ", ppBreak]
+
+
  op ppScript(scr: Script): WadlerLindig.Pretty =
     case scr of
       | Steps steps ->
@@ -102,7 +112,7 @@ spec
           else
             ppConcat [ppString "simplify ",
                       ppNest 1 (ppConcat [ppString "(",
-                                          ppSep (ppConcat [ppString ", ", ppBreak])
+                                          ppSep commaBreak
                                             (map ppRuleSpec rules),
                                           ppString ")"])]
       | Simplify1 [rl] -> ppRuleSpec rl
@@ -121,7 +131,19 @@ spec
                                                        ppString ")"])
                                          iso_qid_prs),
                  ppString "), (",
-                 ppSep(ppString ", ") (map ppRuleSpec rls),
+                 ppSep commaBreak (map ppRuleSpec rls),
+                 ppString ")"]
+      | Introduce(qids, rls) ->
+        ppConcat[ppString "introduce (",
+                 ppSep(ppString ", ") (map ppQid qids),
+                 ppString "), (",
+                 ppNest 0 (ppSep commaBreak (map ppRuleSpec rls)),
+                 ppString ")"]
+      | Implement(qids, rls) ->
+        ppConcat[ppString "implement (",
+                 ppSep(ppString ", ") (map ppQid qids),
+                 ppString "), (",
+                 ppNest 0 (ppSep commaBreak (map ppRuleSpec rls)),
                  ppString ")"]
       | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) ->
         ppConcat[ppString "addParameter {",
@@ -157,6 +179,7 @@ spec
       | Trace on_or_off ->
         ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
       | Print -> ppString "print"
+      | scr -> ppString(anyToString scr)
 
  op scriptToString(scr: Script): String =
    let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
@@ -217,7 +240,7 @@ spec
 
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
     if rls = []
-      then (warn(kind ^ printQualifiedId qid ^ " not found!");
+      then (warn(kind ^ show qid ^ " not found!");
             [])
       else rls
 
@@ -488,10 +511,10 @@ spec
       then
       case wildFindUnQualified (spc.ops, id) of
         | [opinfo] -> return(primaryOpName opinfo)
-        | [] -> raise(Fail("Undefined op in "^id_str^" of addParameter "^printQualifiedId qid))
-        | _  -> raise(Fail("Ambiguous op in "^id_str^" of addParameter "^printQualifiedId qid))
+        | [] -> raise(Fail("Undefined op in "^id_str^" of addParameter "^show qid))
+        | _  -> raise(Fail("Ambiguous op in "^id_str^" of addParameter "^show qid))
     else
-    raise(Fail("Undefined op in "^id_str^" of addParameter "^printQualifiedId qid))
+    raise(Fail("Undefined op in "^id_str^" of addParameter "^show qid))
 
   op checkOps(spc: Spec, qids: QualifiedIds, id_str: String): SpecCalc.Env QualifiedIds =
     foldM (fn result -> fn qid -> {rr_qid <- checkOp(spc, qid, id_str);
@@ -506,10 +529,10 @@ spec
       then
       case wildFindUnQualified (spc.sorts, id) of
         | [info] -> return(primarySortName info)
-        | [] -> raise(Fail("Undefined type in "^id_str^" of addParameter "^printQualifiedId qid))
-        | _  -> raise(Fail("Ambiguous type in "^id_str^" of addParameter "^printQualifiedId qid))
+        | [] -> raise(Fail("Undefined type in "^id_str^" of addParameter "^show qid))
+        | _  -> raise(Fail("Ambiguous type in "^id_str^" of addParameter "^show qid))
     else
-    raise(Fail("Undefined type in "^id_str^" of addParameter "^printQualifiedId qid))
+    raise(Fail("Undefined type in "^id_str^" of addParameter "^show qid))
 
   op setOpInfo(spc: Spec, qid: QualifiedId, opinfo: OpInfo): Spec =
     let Qualified(q, id) = qid in
@@ -523,7 +546,7 @@ spec
             (spc, tracing?) steps
       | At (locs, scr) -> {
           when tracing? 
-            (print ("-- { at"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
+            (print ("-- { at"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
           foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findMatchingOps(spc, qid) of
                    | [] -> {
@@ -548,11 +571,11 @@ spec
             (spc, tracing?) locs }
       | AtTheorem (locs, scr) -> {
           when tracing? 
-            (print ("-- { at-theorem"^flatten(map (fn (Def qid) -> " "^printQualifiedId qid) locs) ^" }\n"));
+            (print ("-- { at-theorem"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
           foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findPropertiesNamed(spc, qid) of
                    | [] -> {
-                       print ("Can't find theorem " ^ anyToString qid ^ "\n");
+                       print ("Can't find theorem " ^ show qid ^ "\n");
                        return (spc, tracing?)
                      }
                    | props ->
@@ -572,7 +595,12 @@ spec
             (spc, tracing?) locs }
       | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {
         result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
-        % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
+        return (result, tracing?)}
+      | Introduce(qids, rls) -> {
+        result <- introduceOpsCoalgebraically(spc, qids, rls);
+        return (result, tracing?)}
+      | Implement(qids, rls) -> {
+        result <- implementOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
       | SpecTransform(Qualified(q, id)) ->
         {trans_fn <- return(specTransformFunction (q, id));
@@ -583,11 +611,11 @@ spec
         within <- checkOps(spc, within, "top-function");
         val <- checkOp(spc, val, "initial_value");
         result <- return(addParameter(spc, fun, pos, o_return_pos, name, ty, within, val, o_qual));
-          % return (AnnSpecPrinter.printFlatSpecToFile("DUMP.sw", result));
         return (result, tracing?) }
       | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?), tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
+      | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
 
   op Env.interpret (spc: Spec, script: Script) : SpecCalc.Env Spec = {
    (result, _) <- interpretSpec(spc, script, false); 
