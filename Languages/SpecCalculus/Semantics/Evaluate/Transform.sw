@@ -5,6 +5,7 @@ spec
   import Signature
   % import Spec
   import /Languages/MetaSlang/Transformations/IsoMorphism
+  import /Languages/MetaSlang/Transformations/Coalgebraic
 
   def posOf(tr: TransformExpr): Position =
     case tr of
