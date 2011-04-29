@@ -894,11 +894,6 @@ SpecNorm qualifying spec
 	    mkBind(Forall, [domVar], rangePred))
        | _ -> typePred(spc, ty, term)
 
-  op range_*(spc: Spec, ty: Sort): Sort =
-    case unfoldBase(spc, ty) of
-      | Arrow(_, rng, _) -> range_*(spc, rng)
-      | _ -> ty        
-
   op dontLiftSubtypeTheorem?: Bool = false     % Not sure if this is necessary
 
   op opSubtypeTheorem(spc: Spec, opname as (Qualified(q,id)): QualifiedId, fx: Fixity,
