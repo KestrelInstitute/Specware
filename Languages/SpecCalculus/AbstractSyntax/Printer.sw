@@ -1,4 +1,4 @@
-\section{SpecCalc pretty printer}
+(* SpecCalc pretty printer
 
 This is a pretty printer for the spec calculus. This is almost but
 not quite throw away code. In my opinion, it should be separate from
@@ -18,8 +18,8 @@ are implemented via SpecCalc.evaluatePrint, which is defined in
 and which uses an alternative strategy of printing the value
 that results from evaluating a term, as opposed the term itself
 as done here.
+*)
 
-\begin{spec}
 SpecCalc qualifying spec 
 
  import Types
@@ -110,8 +110,7 @@ SpecCalc qualifying spec
      | Spec specElems -> 
        ppConcat [ppString "spec",
 		 ppNewline,
-		 ppString "  ",
-		 ppNest 2 (ppSpecElems specElems),
+		 ppNestG 0 (ppSpecElems specElems),
 		 ppNewline,
 		 ppString "endspec"]
 
@@ -130,11 +129,11 @@ SpecCalc qualifying spec
         ppConcat [ppString "let",
 		  ppNewline,
 		  ppString "  ",
-		  ppNest 2 (ppDecls decls),
+		  ppNestG 2 (ppDecls decls),
 		  ppNewline,
 		  ppString "in",
 		  ppNewline,
-		  ppNest 2 (ppTerm term)]
+		  ppNestG 2 (ppTerm term)]
 
       | Where (decls, term) ->
 	ppConcat [ppTerm term,
@@ -143,7 +142,7 @@ SpecCalc qualifying spec
 		  ppString "where {",
 		  ppNewline,
 		  ppString "    ",
-		  ppNest 4 (ppDecls decls),
+		  ppNestG 4 (ppDecls decls),
 		  ppNewline,
 		  ppString "}"]
 
@@ -151,7 +150,7 @@ SpecCalc qualifying spec
         ppConcat [ppString "diag {",    % with apologies to stephen
 		  ppNewline,
 		  ppString "  ",
-		  ppNest 2 (ppSep ppNewline (map ppDiagElem elems)),
+		  ppNestG 2 (ppSep ppNewline (map ppDiagElem elems)),
 		  ppNewline,
 		  ppString "}"]
 
@@ -160,10 +159,11 @@ SpecCalc qualifying spec
 		  ppTerm term]
 
       | Subst (specTerm,morphTerm) ->
-	ppConcat [ppTerm specTerm,
-		  ppString " [",
-		  ppTerm morphTerm,
-		  ppString "]"]
+	ppNestG 2 (ppConcat [ppTerm specTerm,
+                            ppBreak,
+                            ppString " [",
+                            ppTerm morphTerm,
+                            ppString "]"])
 
       | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
@@ -192,17 +192,15 @@ SpecCalc qualifying spec
 		                pragmas))
 
 	in
-          ppConcat [ppString "morphism ",
-		    ppTerm dom,
-		    ppString " -> ",
-		    ppTerm cod,
-		    ppNewline,
-		    ppString "  {",
-		    ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
-		    ppNewline,
-		    ppString "} ",
-		    ppSpecMorphPragmas pragmas
-		    ] 
+         ppNestG 1 (ppConcat [ppString "morphism ",
+                             ppTerm dom,
+                             ppString " -> ",
+                             ppTerm cod,
+                             ppBreak,
+                             ppNestG 0 (ppConcat[ppString " {",
+                                                ppNestG 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppSpecMorphRule elems)),
+                                                ppString "}"]),
+                             ppSpecMorphPragmas pragmas])
 
       | Hide (nameExprs, term) ->
         let 
@@ -488,7 +486,7 @@ SpecCalc qualifying spec
 	    ppOtherRenamingRule other_rule
     in
       ppConcat [ppString "{",
-		ppSep (ppString ", ") (map ppRenamingRule rules),
+		ppNestG 1 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppRenamingRule rules)),
 		ppString "}"]
 
   op ppOtherTerm         : [a] OtherTerm   a -> Doc % Used for extensions to Specware
@@ -528,4 +526,3 @@ SpecCalc qualifying spec
 
   %% --------------------------------------------------------------------------------
 endspec
-\end{spec}
