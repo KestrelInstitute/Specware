@@ -999,12 +999,14 @@ If anyone has a good algorithm for this..."
 		   (looking-at "[])}]")))
 	    (1+ (current-column))
 	  (if at-top-level 0
-            (if (and after-comma
-                     (save-excursion (forward-char 1)
-                                     (skip-chars-forward "\t ")
-                                     (or (looking-at "\n")
-                                         (looking-at "(\\*")
-                                         (looking-at comment-start))))
+            (if (or (and after-comma
+                         (save-excursion (forward-char 1)
+                                         (skip-chars-forward "\t ")
+                                         (or (looking-at "\n")
+                                             (looking-at "(\\*")
+                                             (looking-at comment-start))))
+                    (looking-at "{")    ; monadic statement block
+                    )
                 indent
               (if (save-excursion
                     (forward-char 1)
