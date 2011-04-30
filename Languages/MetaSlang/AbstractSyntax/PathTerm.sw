@@ -30,7 +30,10 @@ type APathTerm a = ATerm a * Path
       | Lambda (l, _) -> map (fn (_, _, t) -> t) l
       | IfThenElse(x, y, z, _) -> [x, y, z]
       | Seq(l, _) -> l
-      | SortedTerm(x, _, _) -> [x]
+      | SortedTerm(x, ty, _) ->
+        (case postCondn? ty of
+           | None -> [x]
+           | Some post -> [x,post])
       | And(l, _) -> l
       | _ -> []
 
@@ -164,11 +167,32 @@ type APathTerm a = ATerm a * Path
                | 2 -> IfThenElse(x, y, repl(z, r_path), a))
             | Seq(l, a) ->
               Seq(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
-            | SortedTerm(x, t, a) -> SortedTerm(repl(x, r_path), t, a)
+            | SortedTerm(x, t, a) ->
+              (case i of
+                 | 0 -> SortedTerm(repl(x, r_path), t, a)
+                 | 1 ->
+               case postCondn? t of
+                 | None -> tm           % shouldn't happen
+                 | Some post_condn ->
+                   let new_post_condn = repl(post_condn, r_path) in
+                   SortedTerm(x, replacePostCondn(t, new_post_condn), a))
             | And(l, a) ->
               And(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
             | _ -> tm
     in
     (repl(top_term, reverse path), path)
+
+  op [a] postCondn?(ty: ASort a): Option (ATerm a) =
+    case ty of
+      | Arrow(_, rng, _) -> postCondn? rng
+      | Subsort(_, Lambda([(_, _, pred)], _), _) -> Some pred 
+      | _ -> None
+
+ op [a] replacePostCondn(ty: ASort a, new_post_condn: ATerm a): ASort a =
+    case ty of
+      | Arrow(dom, rng, a) -> Arrow(dom, replacePostCondn(rng, new_post_condn), a)
+      | Subsort(st, Lambda([(p, c, pred)], a1), a3) ->
+        Subsort(st, Lambda([(p, c, new_post_condn)], a1), a3) 
+      | _ -> ty
 
 endspec
