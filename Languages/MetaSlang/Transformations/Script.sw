@@ -425,11 +425,12 @@ spec
       | Next -> moveToNext path_term
       | Prev -> moveToPrev path_term
       | Widen -> parentTerm path_term
-      | All -> Some(path_term.1, case path_term.1 of
-                                   | SortedTerm _ -> [0]
-                                   | _ -> [])
+      | All -> Some(top_term, case top_term of
+                                | SortedTerm _ -> [0]
+                                | _ -> [])
       | Search s -> searchNextSt(path_term, searchPred s)
       | ReverseSearch s -> searchPrevSt(path_term, searchPred s)
+          
 
   op makeMoves(path_term: PathTerm, mvs: List Movement):  Option PathTerm =
     case mvs of
