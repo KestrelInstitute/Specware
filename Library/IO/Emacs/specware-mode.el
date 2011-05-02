@@ -1012,6 +1012,7 @@ If anyone has a good algorithm for this..."
                     (forward-char 1)
                     (and t        ;(looking-at sw:indent-starters-reg)
                          (not (looking-at "\n"))
+                         (not (looking-at "let "))
                          (progn (goto-char origpoint)
                                 (not (sw:previous-line-ends-in-comma)))))
                   (1+ (+ (current-column) sw:indent-level))
