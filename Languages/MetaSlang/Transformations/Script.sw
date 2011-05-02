@@ -346,6 +346,7 @@ spec
 
   op rewriteDepth: Nat = 6
   op rewrite(term: MS.Term, context: Context, rules: List RewriteRule, maxDepth: Nat): MS.Term =
+    (context.traceDepth := 0;
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
                 app printRule rules)
@@ -372,7 +373,7 @@ spec
                   doTerm(rewriteDepth, term)
      in
      let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result) else () in
-     result
+     result)
 
   op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
     foldr (\_lambda (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
