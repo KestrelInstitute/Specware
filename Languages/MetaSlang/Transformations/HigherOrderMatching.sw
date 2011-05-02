@@ -507,13 +507,14 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                   ++ r)
           [] (unifySorts(context,subst,srt1,srt2,Some(mkVar(id2,srt2))))
       | (M,_) -> 
-% 	  let _ = writeLine "matchPair" in
-% 	  let _ = writeLine(printTerm M) in
-% 	  let _ = writeLine(printTerm N) in
-% 	  let _ = printSubst subst in
-	let srt1 = inferType(context.spc,subst,M) in
-	let srt2 = inferType(context.spc,subst,N) in
-	let substs = unifySorts(context,subst,srt1,srt2,Some N) in
+ 	%   let _ = writeLine "matchPair" in
+ 	%   let _ = writeLine(printTerm M) in
+ 	%   let _ = writeLine(printTerm N) in
+ 	%   let _ = printSubst subst in
+	% let srt1 = inferType(context.spc,subst,M) in
+	 let srt2 = inferType(context.spc,subst,N) in
+	% let substs = unifySorts(context,subst,srt1,srt2,Some N) in
+        let substs = [subst] in
         foldr (fn (subst, r) ->
                (case headForm(M) of
                  | [M] -> []
@@ -834,8 +835,8 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 
   op matchFuns : Context * Fun * Sort * Fun * Sort * Stack * SubstC * MS.Term-> List SubstC
   def matchFuns (context,x,srt1,y,srt2,stack,subst,N) =
-    % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
-      if x = y
+      % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
+      if equalFun?(x, y)
 	 then
             if similarType? context.spc (srt1,srt2)
                then matchPairs(context, subst, stack)
@@ -1006,7 +1007,7 @@ closedTermV detects existence of free variables not included in the argument
 
   def closedTermV(term,bound) = 
       case term
-        of Var(v, _) -> exists? (fn w -> v = w) bound	        
+        of Var((v,_), _) -> exists? (fn (w,_) -> v = w) bound	        
 	 | Fun _ -> true
 	 | Apply(M,N,_) -> closedTermV(M,bound) && closedTermV(N,bound)
 	 | Record(fields, _) -> 
