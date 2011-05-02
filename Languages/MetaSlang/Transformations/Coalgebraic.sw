@@ -99,7 +99,7 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                  in
                  let rules = new_rules ++ rules in
                  let rhs1 = rewrite(raw_rhs, context, rules, 2) in
-                 let  _ = writeLine(" --->\n"^printTerm rhs1) in
+                 % let  _ = writeLine(" --->\n"^printTerm rhs1) in
                  let rules = makeRules (context, spc, [Fold intro_qid]) ++ rules in
                  let opt_rhs = rewrite(rhs1, context, rules, maxRewrites) in
                  let  _ = writeLine(" --->\n"^printTerm opt_rhs) in
