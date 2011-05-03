@@ -303,7 +303,18 @@ op addRefinedDefToOpinfo(info: OpInfo, new_dfn: MS.Term): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
   let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
   let curr_dfns = innerTerms full_tm in
-  let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfn :: curr_dfns) in
+  let (new_dfn, ty) = case new_dfn of
+                        | SortedTerm(tm, ty,_) -> (tm, ty)
+                        | _ -> (new_dfn, ty)
+  in
+  let new_dfns = case curr_dfns of
+                   | [] -> [new_dfn]
+                   | last_def :: older_dfs ->
+                     if equalTerm?(new_dfn, last_def) then curr_dfns
+                       else new_dfn :: curr_dfns
+  in
+  let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfns) in
+  % let _ = writeLine("addRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
   info << {dfn = new_full_dfn}
 
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
