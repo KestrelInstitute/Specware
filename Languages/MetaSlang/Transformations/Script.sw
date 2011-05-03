@@ -484,6 +484,7 @@ spec
                 | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
+                  % let ctxt_rules
                   replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
@@ -502,8 +503,8 @@ spec
   op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, top_ty: Sort, qid: QualifiedId, tracing?: Boolean)
     : SpecCalc.Env (MS.Term * Boolean) =
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
-     (new_path_term, tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
-     return(termFromTypedPathTerm new_path_term, tracing?)}
+     ((new_typed_term, _), tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
+     return(new_typed_term, tracing?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
@@ -562,7 +563,7 @@ spec
                                (print ((printTerm tm) ^ "\n")); 
                              (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?); 
                              % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, ty, termAnn opinfo.dfn)));
-                             if equalTerm?(new_tm, tm)
+                             if equalTerm?(new_tm, SortedTerm(tm, ty, noPos))
                                then let _ = writeLine(show qid^" not modified.") in
                                     return (spc, tracing?)
                              else {
