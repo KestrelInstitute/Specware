@@ -15,8 +15,83 @@
 ;;; op debug     : fa(a) String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))
 
+(defvar *spec-print-mode*  :terse)
+;;; NIL      -- handle as any other data
+;;; :TERSE   -- search for specs and print them like this:  #<spec with I elements, J types, K ops, qualified as "foo">
+;;; :LIMITED -- look for specs and print them using special *print-level* and *print-length*, defaulting to 4 and 40
+
+(defvar *spec-print-level*  4)
+(defvar *spec-print-length* 40)
+
+(defun printSpecSpecial? (x)
+  (and (not (null *spec-print-mode*))
+       (typep  x '(simple-vector 4))
+       ;; elements: SpecElements 
+       (typep (svref x 0) 'cons)
+       ;; ops: OpMap
+       (typep (svref x 1) '(SIMPLE-VECTOR 3))
+       (typep (svref (svref x 1) 0) 'HASH-TABLE)
+       (typep (svref (svref x 1) 1) 'BOOLEAN)
+       (typep (svref (svref x 1) 2) 'LIST)
+       ;; qualifier: Option Qualifier
+       (typep (svref x 2) 'cons)
+       ;; sorts: SortMap
+       (typep (svref x 1) '(SIMPLE-VECTOR 3))
+       (typep (svref (svref x 3) 0) 'HASH-TABLE)
+       (typep (svref (svref x 3) 1) 'BOOLEAN)
+       (typep (svref (svref x 3) 2) 'LIST)))
+
+(defun specialSpecToString (s) 
+  (case *spec-print-mode*
+    (:terse
+     (format nil "<Spec with ~3D elements, ~3D types, ~3D ops, ~A>"
+             (length (svref s 0))
+             (hash-table-count (svref (svref s 3) 0))
+             (hash-table-count (svref (svref s 1) 0))
+             (if (eq (car (svref s 2)) :|Some|)
+                 (format nil "qualified by ~S" (cdr (svref s 2)))
+                 "unqualified")))
+    (t
+     ;; :limited
+     (let* ((*print-level*  (min *print-level*  *spec-print-level*))   
+            (*print-length* (min *print-length* *spec-print-length*)))
+       (format nil "~S" s)))))
+
 ;;; op anyToString : fa(a) a -> String
-(defun anyToString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
+(defun anyToString (x) 
+  (let ((common-lisp::*print-pretty* nil)) 
+    (if (null *spec-print-mode*)
+        (format nil "~S" x)
+        (flet ((aux (x)
+                 (typecase x 
+                   (cons 
+                    (let ((strs '("(")))
+                      (do ((x x (cdr x)))
+                          ((atom x)
+                           (pop strs)
+                           (unless (null x)
+                             (push " . " strs)
+                             (push (anyToString x) strs))
+                           (push ")" strs))
+                        (push (anyToString (car x)) strs)
+                        (push " " strs))
+                      (pop strs)
+                      (push ")" strs)
+                      (apply 'concatenate 'string (reverse strs))))
+                   (simple-vector 
+                    (if (printSpecSpecial? x)
+                        (specialSpecToString x)
+                        (let ((strs '("#(")))
+                          (when (> (length x) 0)
+                            (dotimes (i (length x))
+                              (push (anyToString (svref x i)) strs)
+                              (push " " strs))
+                            (pop strs))
+                          (push ")" strs)
+                          (apply 'concatenate 'string (reverse strs)))))
+                   (t
+                    (format nil "~S" x)))))
+          (aux x)))))
 
 ;;; op print    : fa(a) a -> a
 (defun |!print| (x) (print x) (force-output) x)
