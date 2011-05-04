@@ -1609,6 +1609,8 @@ AnnSpecPrinter qualifying spec
  def printSpecFlat spc =
    PrettyPrint.toString (format (80, specToPrettyFlat spc))
 
+ op printSpecExpanded: Spec -> Spec -> String
+
  def printSpecFlatToTerminal spc =
    (toTerminal (format (80, specToPrettyFlat spc)); 
     writeLine "")
