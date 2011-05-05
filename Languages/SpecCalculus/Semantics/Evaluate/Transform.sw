@@ -113,12 +113,12 @@ spec
     case trans of
       | Apply(Name("simplify",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
-         return(Simplify srls)}
+         return(Simplify(srls, maxRewrites))}
       | Apply(Name("simplify1",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify1 srls)}
-      | Name("simplify",_) -> return (Simplify [])
-      | Name("Simplify",_) -> return (Simplify [])
+      | Name("simplify",_) -> return (mkSimplify [])
+      | Name("Simplify",_) -> return (mkSimplify [])
       | Name("simpStandard",_) -> return SimpStandard
       | Name("SimpStandard",_) -> return SimpStandard
       | Name("eval",_) -> return PartialEval
