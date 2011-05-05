@@ -95,6 +95,7 @@ spec
            | "p" -> return Prev
            | "w" -> return Widen
            | "a" -> return All
+           | "post" -> return Post
            | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^prim_mv)))
       | Item(search_type, se, pos) ->
         {target_str <- getSearchString se;
@@ -136,6 +137,8 @@ spec
                                    return (Simplify1([Rewrite qid]))}
       | Item("apply",opid,_) -> {qid <- extractQId opid;
                                  return (Simplify1([MetaRule qid]))}
+      | Item("move", move1, _) -> {move <- makeMove move1;
+                                   return (Move [move])}
       | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
                                              return (Move moves)}
       | Item("trace", Name(on_or_off,_), pos) ->
