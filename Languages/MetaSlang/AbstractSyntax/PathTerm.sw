@@ -1,6 +1,6 @@
 PathTerm qualifying
 spec
-import AnnTerm
+import ../Specs/Utilities
 
 type Path = List Nat
 type APathTerm a = ATerm a * Path
@@ -194,5 +194,13 @@ type APathTerm a = ATerm a * Path
       | Subsort(st, Lambda([(p, c, pred)], a1), a3) ->
         Subsort(st, Lambda([(p, c, new_post_condn)], a1), a3) 
       | _ -> ty
+
+op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
+  case path_term of
+     | (Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_), 0::r_path)
+       -> getSisterConjuncts(p, r_path) ++ getConjuncts q
+     | (Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_), 1::r_path)
+       -> getConjuncts p ++ getSisterConjuncts(q, r_path)
+     | _ -> []
 
 endspec
