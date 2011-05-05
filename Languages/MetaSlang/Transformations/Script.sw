@@ -23,7 +23,7 @@ spec
     | AllDefs
 
   type Movement =
-    | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String
+    | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
 
   type Script =
     | At (List Location * Script)
@@ -85,6 +85,7 @@ spec
      | All -> "a"
      | Search s -> "s \"" ^ s ^ "\""
      | ReverseSearch s -> "r \"" ^ s ^ "\""
+     | Post -> "post"
 
  op ppBool(b: Bool): WadlerLindig.Pretty =
    ppString(if b then "true" else "false")
@@ -324,7 +325,7 @@ spec
              (defRule (context, q, id, opinfo, false)) ++ val)
           [] spc.ops
 
-  op addSubtypeRules?: Boolean = true
+  op addSubtypeRules?: Bool = true
   op subtypeRules(term: MS.Term, context: Context): List RewriteRule =
     if ~addSubtypeRules? then []
     else
@@ -342,11 +343,79 @@ spec
               assertRules(context, fml, "Subtype1", false))
         subtypes)
 
+  op mkApplyTermFromLambdas (hd: MS.Term, f: MS.Term): MS.Term =
+    case f of
+      | Lambda([(param_pat, _, bod)], _) ->
+        let Some arg = patternToTerm param_pat in
+        mkApplyTermFromLambdas(mkApply(hd, arg), bod)
+      | _ -> hd
+
+  op ruleNameMaxLen: Nat = 44
+
+  op ruleName(tm: MS.Term): String =
+    let tm = case tm of
+               | Bind(_, _, bod, _) -> bod
+               | _ -> tm
+    in
+    let str = printTerm tm in
+    if length str <= ruleNameMaxLen then str
+      else subFromTo(str, 0, ruleNameMaxLen)
+
+  op assertRulesFromPreds(context: Context, tms: MS.Terms): List RewriteRule =
+    foldr (fn (cj, rules) ->
+             % let _=writeLine("Context Rule: "^ruleName cj) in
+             assertRules(context, cj, ruleName cj, false) ++ rules)
+      [] tms
+
+  op addContextRules?: Bool = true
+  op contextRulesFromPath(path_term: PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
+    if ~addContextRules? then []
+    else
+    let def collectRules(tm, path) =
+          case path of
+            | [] -> []
+            | i :: r_path ->
+          let rls =
+              case tm of
+                | IfThenElse(p, _, _, _) | i = 1 ->
+                  assertRules(context, p, "if then", false)
+                | IfThenElse(p, _, _, _) | i = 2 ->
+                  assertRules(context,negate p,"if else", false)
+                | SortedTerm(fn_tm, ty, _) | i = 1 ->
+                  (let param_rls = parameterRules ty in
+                   let post_condn_rules =
+                       case range_*(context.spc, ty) of
+                         | Subsort(_, Lambda([(VarPat(v,_), _, pred)], _), _) ->
+                           let sister_cjs = getSisterConjuncts(pred, r_path) in
+                           if sister_cjs = [] then []
+                           else
+                           let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+                           assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
+                   in
+                   param_rls ++ post_condn_rules)
+                | _ -> []
+          in
+          rls ++ collectRules(ithSubTerm(tm, i), r_path)
+       def parameterRules(ty: Sort) =
+         case ty of
+           | Arrow(dom, rng, _) ->
+             let dom_rls =
+                 case dom of
+                    | Subsort(_, Lambda([(_, _, pred)], _), _) ->
+                      assertRulesFromPreds(context, getConjuncts pred)
+                    | _ -> []
+             in
+             dom_rls ++ parameterRules rng
+           | _ -> []
+    in
+    collectRules path_term
+
   op rewriteDebug?: Boolean = false
 
   op rewriteDepth: Nat = 6
-  op rewrite(term: MS.Term, context: Context, rules: List RewriteRule, maxDepth: Nat): MS.Term =
+  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat): MS.Term =
     (context.traceDepth := 0;
+     let term = fromPathTerm path_term in
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
                 app printRule rules)
@@ -354,6 +423,7 @@ spec
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
+     let rules = rules ++ contextRulesFromPath(path_term, qid, context) in
      let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
      let def doTerm (count, trm) =
@@ -431,6 +501,9 @@ spec
                                 | _ -> [])
       | Search s -> searchNextSt(path_term, searchPred s)
       | ReverseSearch s -> searchPrevSt(path_term, searchPred s)
+      | Post -> (case top_term of
+                 | SortedTerm _ -> Some(top_term, [1])
+                 | _ -> None)
           
 
   op makeMoves(path_term: PathTerm, mvs: List Movement):  Option PathTerm =
@@ -480,12 +553,12 @@ spec
                 | Simplify(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
-                  replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, maxRewrites), path_term)
+                  replaceSubTerm(rewrite(path_term, context, qid, rules, maxRewrites), path_term)
                 | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTerm(rewrite(fromPathTerm path_term, context, rules, 1), path_term)
+                  replaceSubTerm(rewrite(path_term, context, qid, rules, 1), path_term)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
