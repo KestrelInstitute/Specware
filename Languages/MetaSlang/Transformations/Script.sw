@@ -30,7 +30,7 @@ spec
     | AtTheorem (List Location * Script)
     | Move (List Movement)
     | Steps List Script
-    | Simplify (List RuleSpec)
+    | Simplify (List RuleSpec * Nat)
     | Simplify1 (List RuleSpec)
     | SimpStandard
     | PartialEval
@@ -98,7 +98,7 @@ spec
       | Steps steps ->
         ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
       | At(locs, scr) ->
-        ppIndent(ppConcat [ppString "at ", ppSep (ppString ", ") (map ppLoc locs), ppString ", ",
+        ppIndent(ppConcat [ppString "at(", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString "), ",
                            ppNewline,
                            ppScript scr])
       | AtTheorem(locs, scr) ->
@@ -108,17 +108,14 @@ spec
       | Move mvmts -> ppConcat [ppString "move (",
                                 ppSep (ppString ", ") (map (fn m -> ppString(moveString m)) mvmts),
                                 ppString ")"]
-      | Simplify rules ->
+      | Simplify(rules, n) ->
         if rules = [] then ppString "simplify"
           else
             ppConcat [ppString "simplify ",
-                      ppNest 1 (ppConcat [ppString "(",
-                                          ppSep commaBreak
-                                            (map ppRuleSpec rules),
-                                          ppString ")"])]
+                      ppNest 1 (ppConcat [ppString "(", ppSep commaBreak (map ppRuleSpec rules), ppString ")"])]
       | Simplify1 [rl] -> ppRuleSpec rl
       | Simplify1 rules ->
-        ppConcat [ppString "apply (", ppSep (ppString ", ") (map ppRuleSpec rules), ppString ")"]
+        ppConcat [ppString "apply (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
@@ -192,7 +189,7 @@ spec
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
  op mkAtTheorem(qid: QualifiedId, steps: List Script): Script = AtTheorem([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
- op mkSimplify(steps: List RuleSpec): Script = Simplify(steps)
+ op mkSimplify(steps: List RuleSpec): Script = Simplify(steps, maxRewrites)
  op mkSimplify1(rules: List RuleSpec): Script = Simplify1 rules
  op mkSimpStandard(): Script = SimpStandard
  op mkPartialEval (): Script = PartialEval
@@ -364,7 +361,7 @@ spec
   op assertRulesFromPreds(context: Context, tms: MS.Terms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _=writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, false) ++ rules)
+             assertRules(context, cj, ruleName cj, true) ++ rules)
       [] tms
 
   op addContextRules?: Bool = true
@@ -386,11 +383,20 @@ spec
                    let post_condn_rules =
                        case range_*(context.spc, ty) of
                          | Subsort(_, Lambda([(VarPat(v,_), _, pred)], _), _) ->
-                           let sister_cjs = getSisterConjuncts(pred, r_path) in
-                           if sister_cjs = [] then []
-                           else
                            let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
-                           assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
+                           let def getSisterConjuncts(pred, path) =
+                                 case pred of
+                                   | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
+                                     (case path of
+                                      | [] -> []
+                                      | i :: r_path ->
+                                        let sister_cjs = getConjuncts(if i = 0 then q else p) in
+                                        assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
+                                          ++ getSisterConjuncts(if i = 0 then p else q, r_path))
+                                   | _ -> collectRules(pred, r_path)
+                           in
+                           getSisterConjuncts(pred, r_path)
+                         | _ -> []
                    in
                    param_rls ++ post_condn_rules)
                 | _ -> []
@@ -550,7 +556,7 @@ spec
                   replaceSubTerm(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term)
                 | AbstractCommonExpressions ->
                   replaceSubTerm(abstractCommonSubExpressions(fromPathTerm path_term, spc), path_term)
-                | Simplify(rules) ->
+                | Simplify(rules, n) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   replaceSubTerm(rewrite(path_term, context, qid, rules, maxRewrites), path_term)

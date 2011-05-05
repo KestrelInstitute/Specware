@@ -629,7 +629,7 @@ spec
   op simplifyIsomorphism?: Boolean = true
   %% Temporary until we have slicing
   op simplifyUnPrimed?: Boolean = false
-  op opaqueSimplifyScript: Script = Simplify[]
+  op opaqueSimplifyScript: Script = mkSimplify[]
 
   op makeQualifierFromPat(old_qual: String, new_pat: String): String =
     %% Syntax doesn't allow a * on its own in general
@@ -1640,29 +1640,29 @@ spec
     in
     let main_script =
       Steps([% SimpStandard,
-             Simplify (gen_unfolds
-              % ++ iso_osi_rewrites
-              % ++ osi_unfolds
-              ++ complex_iso_fn_unfolds
-              ++ rewrite_old
-              ++ iso_osi_rewrites
-              ++ extra_rules)
+             mkSimplify (gen_unfolds
+                           % ++ iso_osi_rewrites
+                           % ++ osi_unfolds
+                           ++ complex_iso_fn_unfolds
+                           ++ rewrite_old
+                           ++ iso_osi_rewrites
+                           ++ extra_rules)
             ] ++
-            [Simplify (gen_unfolds
-              ++ complex_iso_fn_unfolds
-              ++ iso_intro_unfolds
-              ++ rewrite_old
-              ++ iso_osi_rewrites
-              ++ osi_unfolds
-              ++ extra_rules)
+            [mkSimplify (gen_unfolds
+                           ++ complex_iso_fn_unfolds
+                           ++ iso_intro_unfolds
+                           ++ rewrite_old
+                           ++ iso_osi_rewrites
+                           ++ osi_unfolds
+                           ++ extra_rules)
                % AbstractCommonExpressions
              ] ++
-             [Simplify (gen_unfolds
-              ++ unfold_old
-              ++ iso_osi_rewrites
-              ++ osi_unfolds
-              ++ iso_unfolds
-              ++ extra_rules)
+             [mkSimplify (gen_unfolds
+                            ++ unfold_old
+                            ++ iso_osi_rewrites
+                            ++ osi_unfolds
+                            ++ iso_unfolds
+                            ++ extra_rules)
                % AbstractCommonExpressions
              ])
     in {
