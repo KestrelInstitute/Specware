@@ -365,40 +365,44 @@ spec
       [] tms
 
   op addContextRules?: Bool = true
-  op contextRulesFromPath(path_term: PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
+  op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
     if ~addContextRules? then []
     else
     let def collectRules(tm, path) =
+          % let _ = writeLine("collectRules: "^anyToString path^"\n"^printTerm tm) in
           case path of
             | [] -> []
             | i :: r_path ->
-          let rls =
-              case tm of
-                | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", false)
-                | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", false)
-                | SortedTerm(fn_tm, ty, _) | i = 1 ->
+          case tm of
+            | SortedTerm(fn_tm, ty, _) | i = 1 ->
                   (let param_rls = parameterRules ty in
                    let post_condn_rules =
                        case range_*(context.spc, ty) of
                          | Subsort(_, Lambda([(VarPat(v,_), _, pred)], _), _) ->
                            let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
                            let def getSisterConjuncts(pred, path) =
+                                 % let _ = writeLine("gsc: "^anyToString path^"\n"^printTerm pred) in
                                  case pred of
                                    | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
                                      (case path of
-                                      | [] -> []
-                                      | i :: r_path ->
-                                        let sister_cjs = getConjuncts(if i = 0 then q else p) in
+                                      | 1 :: r_path ->
+                                        let sister_cjs = getConjuncts p in
                                         assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
-                                          ++ getSisterConjuncts(if i = 0 then p else q, r_path))
+                                          ++ getSisterConjuncts(q, r_path)
+                                      | _ -> [])
                                    | _ -> collectRules(pred, r_path)
                            in
                            getSisterConjuncts(pred, r_path)
                          | _ -> []
                    in
                    param_rls ++ post_condn_rules)
+            | _ ->
+          let rls =
+              case tm of
+                | IfThenElse(p, _, _, _) | i = 1 ->
+                  assertRules(context, p, "if then", false)
+                | IfThenElse(p, _, _, _) | i = 2 ->
+                  assertRules(context,negate p,"if else", false)
                 | _ -> []
           in
           rls ++ collectRules(ithSubTerm(tm, i), r_path)
@@ -414,7 +418,7 @@ spec
              dom_rls ++ parameterRules rng
            | _ -> []
     in
-    collectRules path_term
+    collectRules (top_term, reverse path)
 
   op rewriteDebug?: Boolean = false
 
@@ -640,8 +644,7 @@ spec
                              (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn); 
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?); 
-                             % newdfn <- return (maybePiTerm(tvs, SortedTerm (new_tm, ty, termAnn opinfo.dfn)));
+                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
                              if equalTerm?(new_tm, SortedTerm(tm, ty, noPos))
                                then let _ = writeLine(show qid^" not modified.") in
                                     return (spc, tracing?)
