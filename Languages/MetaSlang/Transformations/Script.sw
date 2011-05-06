@@ -20,6 +20,7 @@ spec
     | LeftToRight QualifiedId
     | RightToLeft QualifiedId
     | MetaRule    QualifiedId
+    | RLeibniz    QualifiedId           % Hack. Will be handled in more general way in the future
     | AllDefs
 
   type Movement =
@@ -73,6 +74,7 @@ spec
      | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
      | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
      | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
+     | RLeibniz    qid -> ppConcat[ppString "rev-leibniz ", ppQid qid]
      | AllDefs -> ppString "alldefs"
 
  op moveString(m: Movement): String =
@@ -204,6 +206,7 @@ spec
  op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
  op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
  op mkMetaRule(qid: QualifiedId): RuleSpec = MetaRule qid
+ op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
  op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
 
  op ruleConstructor(id: String): QualifiedId -> RuleSpec =
@@ -221,6 +224,7 @@ spec
      | "righttoleft" -> mkRightToLeft
      | "right-to-left" -> mkRightToLeft
      | "apply" -> mkMetaRule
+     | "rev-leibniz" -> mkRLeibniz
      | "alldefs" -> mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
@@ -286,6 +290,24 @@ spec
      rhs   = HigherOrderMatching.mkVar(2,TyVar("''a",noPos)),  % dummy
      trans_fn = Some(metaRuleFunction(q, id) spc)}
 
+  op makeRevLeibnizRule (context: Context) (spc: Spec) (qid: QualifiedId): List RewriteRule =
+    %%  qid x = qid y --> x = y
+    case findTheOp(spc, qid) of
+      | None -> fail(show qid^" not found in rev-leibniz rule")
+      | Some info ->
+    let (tvs, ty, _) = unpackFirstTerm info.dfn in
+    let f = mkOp(qid, ty) in
+    let dom_ty = domain(spc, ty) in
+    let ran_ty = range(spc, ty) in
+    let v1 = ("x", dom_ty) in
+    let v2 = ("y", dom_ty) in
+    let thm = mkBind(Forall, [v1, v2],
+                     mkEquality(boolSort,
+                                mkEquality(ran_ty, mkApply(f, mkVar v1), mkApply(f, mkVar v2)),
+                                mkEquality(dom_ty, mkVar v1, mkVar v2)))
+    in
+    assertRules(context, thm, "Reverse Leibniz "^show qid, true)
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
@@ -316,6 +338,7 @@ spec
         map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
       | MetaRule qid -> [makeMetaRule spc qid]
+      | RLeibniz qid -> makeRevLeibnizRule context spc qid
       | AllDefs ->
         foldriAQualifierMap
           (\_lambda (q, id, opinfo, val) ->
@@ -390,7 +413,7 @@ spec
                                         assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
                                           ++ getSisterConjuncts(q, r_path)
                                       | _ -> [])
-                                   | _ -> collectRules(pred, r_path)
+                                   | _ -> collectRules(pred, path)
                            in
                            getSisterConjuncts(pred, r_path)
                          | _ -> []
