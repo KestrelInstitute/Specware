@@ -1005,7 +1005,7 @@ If anyone has a good algorithm for this..."
 		   (goto-char origpoint)
 		   (looking-at "[])}]")))
 	    (1+ (current-column))
-	  (if at-top-level 0
+	  (if at-top-level indent   ;0
             (if (or (and after-comma
                          (save-excursion (forward-char 1)
                                          (skip-chars-forward "\t ")
