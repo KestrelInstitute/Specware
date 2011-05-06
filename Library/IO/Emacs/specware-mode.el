@@ -923,6 +923,11 @@ If anyone has a good algorithm for this..."
                    (sw:get-paren-indent indent nil)))
               indent))))))))
 
+(defun looking-before (str)
+  (save-excursion
+    (forward-char (- (length str)))
+    (looking-at str)))
+
 (defun sw:previous-line-ends-in-comma ()
   (save-excursion
     (sw:end-of-previous-line)
@@ -931,7 +936,7 @@ If anyone has a good algorithm for this..."
 							     (point))
 			       t)
       (skip-chars-backward "\t\n "))
-    (member (preceding-char) '(?, ?;))))
+    (or (looking-before " in") (member (preceding-char) '(?, ?;)))))
 
 (defun sw:end-of-previous-line ()
   (beginning-of-line)
@@ -987,11 +992,13 @@ If anyone has a good algorithm for this..."
 (defun sw:get-paren-indent (indent after-comma)
   (save-excursion
     (let ((origpoint (point))
-          (at-top-level nil))
+          (at-top-level nil)
+          open-paren-point)
       (insert ")")
       (condition-case ()
           (backward-sexp 1)
         (error (setq at-top-level t)))
+      (setq open-paren-point (point))
       (save-excursion (goto-char origpoint)
                       (delete-char 1))
       (if (and (save-excursion
@@ -1005,9 +1012,13 @@ If anyone has a good algorithm for this..."
                                          (or (looking-at "\n")
                                              (looking-at "(\\*")
                                              (looking-at comment-start))))
-                    (looking-at "{")    ; monadic statement block
+                    ;(looking-at "{")    ; monadic statement block
                     )
-                indent
+                (if (save-excursion (goto-char origpoint)
+                                    (beginning-of-line 0)
+                                    (< (point) open-paren-point))
+                    (- indent 1)
+                  indent)
               (if (save-excursion
                     (forward-char 1)
                     (and t        ;(looking-at sw:indent-starters-reg)
