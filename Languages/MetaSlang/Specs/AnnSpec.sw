@@ -302,26 +302,27 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
 op addRefinedDefToOpinfo(info: OpInfo, new_dfn: MS.Term): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
   let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
+  % let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
   let curr_dfns = innerTerms full_tm in
   let (new_dfn, ty) = case new_dfn of
-                        | SortedTerm(tm, ty,_) -> (tm, ty)
+                        | SortedTerm(tm, ty, _) -> (tm, ty)
                         | _ -> (new_dfn, ty)
   in
   let new_dfns = case curr_dfns of
                    | [] -> [new_dfn]
                    | last_def :: older_dfs ->
-                     if equalTerm?(new_dfn, last_def) then curr_dfns
-                       else new_dfn :: curr_dfns
+                     new_dfn :: curr_dfns
   in
   let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfns) in
-  % let _ = writeLine("addRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
+  % let _ = writeLine("\naddRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
   info << {dfn = new_full_dfn}
 
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
+  % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn - 1, noPos)]}
 
 op addRefinedTypeToOpinfo(info: OpInfo, new_ty: Sort): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
@@ -333,7 +334,7 @@ op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn - 1, noPos)]}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
