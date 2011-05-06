@@ -114,10 +114,10 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
    return spc}
 *)
 
-op findHomomorphismFn(tm: MS.Term): Option MS.Term =
+op findHomomorphismFn(tm: MS.Term): Option QualifiedId =
   case tm of
     | Bind(Forall, _, bod,_) -> findHomomorphismFn bod
-    | Apply(Fun(Equals,_,_),Record([(_,e1),(_,Apply(h_fn, _, _))], _),_) -> Some h_fn
+    | Apply(Fun(Equals,_,_),Record([(_,e1),(_,Apply(Fun(Op(qid,_),_,_), _, _))], _),_) -> Some qid
     | _ -> None
 
 def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
@@ -128,7 +128,7 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
          | [(_, _, _, body, _)] ->
            (case findHomomorphismFn body of
             | None -> raise(Fail("Can't find homomorphism fn from axiom:\n"^printTerm body))
-            | Some homo_fn -> 
+            | Some homo_fn_qid -> 
               {replace_op_info <- findTheOp spc replace_op_qid;
                let (tvs, replace_op_ty, _) = unpackFirstTerm replace_op_info.dfn in
                let _ = writeLine("Implement "^show replace_op_qid^": "^printSort replace_op_ty) in
@@ -148,7 +148,7 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
                let script = Steps[%Trace true,
                                   At(map Def (reverse state_transform_qids),
-                                     Steps [mkSimplify(LeftToRight assert_qid :: rules)])]
+                                     Steps [mkSimplify(RLeibniz homo_fn_qid :: LeftToRight assert_qid :: rules)])]
                in
                {print "rewriting ... \n";
                 print (scriptToString script^"\n");
