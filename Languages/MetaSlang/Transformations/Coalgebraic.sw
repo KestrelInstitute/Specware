@@ -114,10 +114,48 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
    return spc}
 *)
 
-def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rls: List RuleSpec): Env Spec =
-  let qid = head qids in
-  {info <- findTheOp spc qid;
-   let (tvs, ty, tm) = unpackFirstTerm info.dfn in
-   return spc}
+op findHomomorphismFn(tm: MS.Term): Option MS.Term =
+  case tm of
+    | Bind(Forall, _, bod,_) -> findHomomorphismFn bod
+    | Apply(Fun(Equals,_,_),Record([(_,e1),(_,Apply(h_fn, _, _))], _),_) -> Some h_fn
+    | _ -> None
+
+def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+  case qids of
+    | [replace_op_qid, assert_qid] ->
+      (case findPropertiesNamed(spc, assert_qid) of
+         | [] -> raise(Fail("Can't find property named "^show assert_qid))
+         | [(_, _, _, body, _)] ->
+           (case findHomomorphismFn body of
+            | None -> raise(Fail("Can't find homomorphism fn from axiom:\n"^printTerm body))
+            | Some homo_fn -> 
+              {replace_op_info <- findTheOp spc replace_op_qid;
+               let (tvs, replace_op_ty, _) = unpackFirstTerm replace_op_info.dfn in
+               let _ = writeLine("Implement "^show replace_op_qid^": "^printSort replace_op_ty) in
+               let _ = writeLine("With rewrite: "^printTerm body) in
+               let def findStateTransformOps(info, qids) =
+                     let (tvs, ty, tm) = unpackTerm info.dfn in
+                     case range_*(spc, ty) of
+                       | Subsort(result_ty, Lambda([(VarPat(result_var,_), _, body)], _), _)
+                           | existsSubTerm (fn st -> case st of
+                                                       | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
+                                                       | _ -> false)
+                               body
+                         ->
+                         primaryOpName info :: qids
+                       | _ -> qids
+               in
+               let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
+               let script = Steps[%Trace true,
+                                  At(map Def (reverse state_transform_qids),
+                                     Steps [mkSimplify(LeftToRight assert_qid :: rules)])]
+               in
+               {print "rewriting ... \n";
+                print (scriptToString script^"\n");
+                spc <- interpret(spc, script);
+                return spc}
+               })
+         | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
+    | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
 
 end-spec
