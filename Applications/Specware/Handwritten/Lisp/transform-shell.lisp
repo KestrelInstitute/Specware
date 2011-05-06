@@ -347,6 +347,7 @@
            ((rewrite rw)       (apply-command argstr 'Script::mkRewrite 'op))
 	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight 'theorem))
 	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft 'theorem))
+           ((rev-leibniz)      (apply-command argstr 'Script::mkRLeibniz 'op))
 	   ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
 	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
 	   ((partial-eval pe)  (interpret-command (Script::mkPartialEval-0)))
