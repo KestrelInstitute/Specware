@@ -138,7 +138,7 @@ SpecCalc qualifying spec
      spec_replacements <- return((dom_spec, sm_tm, cod_spec, cod_spec_term) :: spec_replacements);
      residue <- return(subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term,
                                                  spec_replacements));
-     %print("residue: \n"^printSpecFlat residue);
+     % print("residue: \n"^printSpecFlat residue);
      translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
      %% Add the elements separately so we can put preserve order
      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
@@ -232,7 +232,7 @@ SpecCalc qualifying spec
     in
     spc << {
 	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts,
-	    ops      = deleteChangedOpinfos  spc.ops       dom_spec.ops cod_spec.ops,
+	    ops      = deleteChangedOpinfos  spc.ops       dom_spec.ops cod_spec.ops,  % Old: mapDiffOps   spc.ops       dom_spec.ops, 
 	    elements = revise_elements       spc.elements  true
 	   }
 
