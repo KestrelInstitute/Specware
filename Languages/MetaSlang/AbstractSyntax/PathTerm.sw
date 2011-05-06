@@ -55,7 +55,8 @@ type APathTerm a = ATerm a * Path
        (Some top_term) path
 
   op [a] typedPathTerm(term: ATerm a, ty: ASort a): APathTerm a =
-    (SortedTerm(term, ty, termAnn term), [0])
+    (SortedTerm(term, ty, termAnn term),
+     [if anyTerm? term then 1 else 0])
 
   op [a] termFromTypedPathTerm(ptm: APathTerm a): ATerm a =
     case ptm.1 of
