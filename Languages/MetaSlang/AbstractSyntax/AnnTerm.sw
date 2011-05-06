@@ -620,8 +620,15 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
+ op [a] unpackBasicTerm(tm: ATerm a): TyVars * ASort a * ATerm a =
+   case tm of
+     | Pi (tvs, SortedTerm (tm, ty, _), _) -> (tvs, ty, tm)
+     | SortedTerm (tm, ty, _) -> ([], ty, tm)
+     | _                      -> ([], Any(termAnn tm), tm)
+
+
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
-   let (tvs, ty, tm) = unpackTerm t in
+   let (tvs, ty, tm) = unpackBasicTerm t in
    (tvs, ty, refinedTerm(tm, n))
 
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
