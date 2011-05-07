@@ -790,14 +790,15 @@ MetaSlangRewriter qualifying spec
       def rewriteRec(rules0,subst,term0,boundVars,history,backChain) =
 	let _ = traceTerm(context,term0,subst)     in
 	let traceDepth = ! context.traceDepth + 1 in
-        if traceDepth > maxDepth then unit history
+        if traceDepth > (if backChain = 0 then maxDepth else max(maxDepth, backwardChainMaxDepth))
+          then unit history
         else
 	let def rewrite(strategy,rules) =
 %                 let _ = writeLine("Rules:") in
 %                 let _ = app printRule (listRules rules) in
 		rewriteTerm 
 		  ({strategy = strategy,
-		    rewriter = applyDemodRewrites(context,subst,maxDepth > 1),
+		    rewriter = applyDemodRewrites(context,subst,maxDepth > 1 || backChain > 0),
 		    context = context},
 		   boundVars,term0,rules)     
 	in
