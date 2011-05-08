@@ -322,7 +322,7 @@ op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
   % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn - 1, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), noPos)]}
 
 op addRefinedTypeToOpinfo(info: OpInfo, new_ty: Sort): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
@@ -334,7 +334,7 @@ op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, numTerms new_opinfo.dfn - 1, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), noPos)]}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
