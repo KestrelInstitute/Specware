@@ -158,6 +158,8 @@ spec
       | _ -> false
 
 
+  op addEqOps? : Bool = false % tell me again why we want those?
+
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 
                                 (addmissingfrombase? : Bool) 
@@ -216,7 +218,9 @@ spec
     let spc = simplifySpec                          spc in % (12)
     let _ = showSpc "simplifySpec"                  spc in
 
-    let spc = addEqOpsToSpec                        spc in % (13)
+    %%  If addEqOps? is true, we need to provide implementations for a lot of low level eq ops, 
+    %%  which can get very tedious and pedantic.
+    let spc = if addEqOps? then addEqOpsToSpec spc else spc in % (13)  -- disabled by default
     let _ = showSpc "addEqOpsToSpec"                spc in
 
     let (spc,constrOps) = addSortConstructorsToSpec spc in % (14)
