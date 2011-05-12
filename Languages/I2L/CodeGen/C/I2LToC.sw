@@ -1189,6 +1189,7 @@ I2LToC qualifying spec
 	else 
           id
     in
+    let id    = cString     id in % e.g., id could be "tv--0" due to maybeIntroduceVarsForTerms in Environment.sw
     let newid = determineId id in
     if newid = id then 
       (id, expr)
