@@ -633,7 +633,7 @@ SpecsToI2L qualifying spec
                 case pat of
 
                   | VarPat ((id,_), _) -> 
-                    [substGlyphInIdent id]
+                    [substGlyphInIdent id]  % TODO: use cString, which also looks for C keywords?
 
                   | RecordPat (plist, _) -> 
                     map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
