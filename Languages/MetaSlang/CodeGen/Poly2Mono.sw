@@ -73,12 +73,19 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
         List.foldl (fn ((r_elts,minfo,ops,srts),el) ->
 	       case el of
 		 | Sort (qid,_) ->
-		   let Some sortinfo = findTheSort(spc,qid) in
-		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
-		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
-		               then [el] else []
-		   in
-		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+                   (case findTheSort(spc,qid) of
+                      | Some sortinfo ->
+                        let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
+                        let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
+                                     then [el] else []
+                        in
+                         incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
+                      | _ ->
+                        let infos = findAllSorts (spc, qid) in
+                        let _ = writeLine ("Cannot find type " ^ printQualifiedId qid ^ ", but could find " ^
+                                             (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos))
+                        in
+                        (r_elts, minfo, ops, srts))
 		 | SortDef (qid,_) ->
 		   let Some sortinfo = findTheSort(spc,qid) in
 		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
@@ -96,9 +103,11 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 			 incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
 		     | _ ->
 		       let infos = findAllOps (spc, qid) in
-		       fail ("Cannot find " ^ printQualifiedId qid ^ 
-			     "but could find " ^ (foldl (fn (s,info) -> s ^ " " ^ printAliases info.names) "" infos) ^
-			     "\nin spec\n" ^ printSpec spc))
+                       let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ 
+                                            (foldl (fn (s,info) -> s ^ " " ^ printAliases info.names) "" infos) ^
+                                            "\nin spec\n" ^ printSpec spc)
+                       in
+                       (r_elts, minfo, ops, srts))
 		 | OpDef (qid,_,_) ->
 		   let Some opinfo = findTheOp(spc,qid) in
 		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in

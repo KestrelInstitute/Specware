@@ -12,6 +12,37 @@ SubstBaseSpecs qualifying spec
  op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
  op baseExecutableSpecNamesJ : List String = ["/Library/Base/List_Executable"]
  
+ op substBaseSpecOpsAndTypes () : QualifiedIds * QualifiedIds =
+  %% used during code generation to avoid miscontruing these as "toplevel" ops and types
+  foldl (fn ((ops, types), exec_spec_name) ->
+           case evaluateUnitId exec_spec_name of
+             | None -> (ops, types)
+             | Some (Spec exec_spc) ->
+               foldl (fn ((ops, types), el) ->
+                        case el of
+                          | Op(qid as Qualified(q,id), true, _) ->
+                            (case findAQualifierMap (exec_spc.ops, q, id) of
+                               | Some _ ->  (qid :: ops, types)
+                               | _ -> (ops, types))
+                          | OpDef(qid as Qualified(q,id), _, _) ->
+                            (case findAQualifierMap (exec_spc.ops, q, id) of
+                               | Some _ ->  (qid :: ops, types)
+                               | _ -> (ops, types))
+                          | Sort(qid as Qualified(q,id), _) -> 
+                            (case findAQualifierMap (exec_spc.sorts, q, id) of
+                               | Some _ ->  (ops, qid :: types)
+                               | _ -> (ops, types))
+                          | SortDef(qid as Qualified(q,id), _) -> 
+                            (case findAQualifierMap (exec_spc.sorts, q, id) of
+                               | Some _ ->  (ops, qid :: types)
+                               | _ -> (ops, types))
+                          | _ ->
+                            (ops, types))
+                     (ops, types)
+                     exec_spc.elements)
+        ([], [])
+        baseExecutableSpecNames
+
  op substBaseSpecs1(spc: Spec, baseExecutableSpecNames: List String): Spec =
    %% Actually does an import
    let (op_map, elements) =

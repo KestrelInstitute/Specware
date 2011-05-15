@@ -597,10 +597,10 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
 
  op [a] innerTerms(tm: ATerm a): List (ATerm a) =
    case tm of
-     | Pi (_, tm, _) -> innerTerms tm
-     | And (tms,_) -> foldl (fn (rtms,tm) -> rtms ++ innerTerms tm) [] tms
+     | Pi         (_, tm, _) -> innerTerms tm
+     | And        (tms,_)    -> foldl (fn (rtms,tm) -> rtms ++ innerTerms tm) [] tms
      | SortedTerm (tm, _, _) -> innerTerms tm
-     | Any _ -> []
+    %| Any        _          -> []
      | _                     -> [tm]
 
  op [a] numTerms(tm: ATerm a): Nat = length(innerTerms tm)

@@ -914,10 +914,16 @@ def toAny     = Term `TranslationBasic.toAny`
 	      newOps)
 	   | Op (Qualified(q,id), true, a) -> % true means decl includes def
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,a))
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,a)
+               | _ ->
+                 let _ = writeLine ("LambdaLift saw Op element not in qmap : " ^ q ^ "." ^ id) in
+                 (Cons (el,r_elts), r_ops))
 	   | OpDef(Qualified(q,id), refine_num, a) ->
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,a))
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,a)
+               | _ ->
+                 let _ = writeLine ("LambdaLift saw OpDef element not in qmap : " ^ q ^ "." ^ id ^ " [refinement number " ^ anyToString refine_num ^ "]") in
+                 (Cons (el,r_elts), r_ops))
 	   | Property p -> doProp(p,r_elts,r_ops)
 	   | _ -> (Cons(el,r_elts),r_ops))
 	 result

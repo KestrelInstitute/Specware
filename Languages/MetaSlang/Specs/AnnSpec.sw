@@ -288,11 +288,8 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
      | None -> 0
      | Some opinfo ->
    let (_, _, full_dfns) = unpackTerm opinfo.dfn in
-   let _ = if length(innerTerms full_dfns) = length(innerTerms opinfo.dfn)
-            then ()
-           else  writeLine("numRefinedDefs: innerTerms anomaly "^show qid^"\n"^printTerm opinfo.dfn)
-   in
-   length(innerTerms full_dfns)
+   %% full_dfns will omit terms such as (fn x -> <any>) if alternatives such as (fn x -> f x) exist
+   length (innerTerms full_dfns)
 
 op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
   case findTheOp(spc, qid) of

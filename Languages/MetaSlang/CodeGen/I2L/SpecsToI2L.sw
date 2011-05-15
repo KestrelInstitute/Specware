@@ -302,7 +302,7 @@ SpecsToI2L qualifying spec
                  %% {x : Nat -> x < n} where n is a Nat
                  Lambda([(VarPat((X,_),_),
                           Fun (Bool true, _, _),
-                          Apply(Fun(Op(Qualified(_,"<"),_),_,_),
+                          Apply(Fun(Op(Qualified(_,pred),_),_,_),
                                 Record([(_,Var((X0,_),_)),
                                         (_,Fun(Nat(n),_,_))],
                                        _),
@@ -310,7 +310,10 @@ SpecsToI2L qualifying spec
                         )],_),_) 
         -> 
         if X = X0 then 
-          I_BoundedNat (n - 1)
+          (case pred of
+             | "<=" ->  I_BoundedNat n
+             | "<"  ->  I_BoundedNat (n - 1)
+             | _    ->  I_Primitive  I_Nat)
         else 
           I_Primitive I_Nat
 
@@ -747,7 +750,9 @@ SpecsToI2L qualifying spec
       | SortedTerm (tm, _,              _) -> let (exp, _) = term2expression (tm, ctxt, spc) in exp
       | _ -> 
         % Bind, The, LetRec, Lambda, Transform, Pi, And, Any 
-        fail ("Unrecognize term in term2expression:\n" ^ printTerm tm)
+        let s = "Unrecognize term in term2expression: " ^ printTerm tm in
+        let _ = writeLine s in
+        I_Str s
 
   op term2expression_fun (fun : Fun, typ : Type, tm : Term, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
@@ -1000,8 +1005,10 @@ SpecsToI2L qualifying spec
       | Base (Qualified ("String",  "String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
       | _ ->
         let typ = foldSort (termSort t1, spc) in
-        let errmsg = "sorry, the current version of the code generator doesn't support the equality check for\ntype = "
-                     ^ printSort typ ^ "\n t1 = " ^ printTerm t1 ^ "\n t2 = " ^ printTerm t2
+        let 
+          def errmsg () = 
+            "sorry, the current version of the code generator doesn't support the equality check for\ntype = "
+            ^ printSort typ ^ "\n t1 = " ^ printTerm t1 ^ "\n t2 = " ^ printTerm t2
         in
         case typ of
 
@@ -1012,7 +1019,7 @@ SpecsToI2L qualifying spec
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2])
                | _ ->
-                 fail (errmsg ^ "\nReason: eq-op not found in extended spec:\n" ^ printSpec spc))
+                 fail (errmsg() ^ "\nReason: eq-op not found for " ^ printQualifiedId qid))
 
           | Product (fields, _) ->
             let eqtm    = getEqTermFromProductFields (fields, typ, t1, t2) in
@@ -1020,7 +1027,7 @@ SpecsToI2L qualifying spec
             exp
 
           | _ -> 
-            fail (errmsg ^ "\n[term sort must be a base or product sort]") %primEq()
+            fail (errmsg() ^ "\n[term sort must be a base or product sort]") %primEq()
 
   op getEqTermFromProductFields (fields : List (Id * Sort),
                                  otyp   : Sort,

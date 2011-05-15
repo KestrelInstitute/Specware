@@ -99,11 +99,15 @@ RemoveCurrying qualifying spec
 	      | Op (Qualified(q,id), true,a) ->  % true means decl includes def
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
-		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))
+		   | _ -> 
+                     let _ = writeLine (q ^ "." ^ id ^ " is an Op element not in the qaulifier map") in
+                     (Cons (el,r_elts), r_ops))
 	      | OpDef(Qualified(q,id),_,a) ->
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
-		   | _ -> fail(q ^ "." ^ id ^ " is not in spec " ^ printSpec spc))
+		   | _ -> 
+                     let _ = writeLine (q ^ "." ^ id ^ " is an OpDef element not in the qaulifier map") in
+                     (Cons (el,r_elts), r_ops))
 	      | _ -> (Cons(el,r_elts),r_ops))
 	    result
 	    elts
