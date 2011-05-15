@@ -135,14 +135,14 @@ int Integer_ipred (int i) {
   {return (i - 1);}
 }
 
-char* Integer_show(int n) {
-  char buf[12];
-  char *res;
-  sprintf(buf,"%d",n);
-  res = swc_malloc(strlen(buf)+1);
-  strcpy(res,buf);
-  return res;
-}
+// char* Integer_show(int n) {
+//   char buf[12];
+//   char *res;
+//   sprintf(buf,"%d",n);
+//   res = swc_malloc(strlen(buf)+1);
+//   strcpy(res,buf);
+//   return res;
+// }
 
 char* Integer_toString(int n) {
   char buf[12];
