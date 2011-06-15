@@ -1063,6 +1063,9 @@ If we want the precedence to be optional:
 (defun make-transform-string (num l r)
   (SpecCalc::mkTransformString-2 num (make-pos l r)))
 
+(defun make-transform-scterm (uid l r)
+  (SpecCalc::mkTransformSCTerm-2 uid (make-pos l r)))
+
 (defun make-transform-qual (q name l r)
   (SpecCalc::mkTransformQual-3 q name (make-pos l r)))
 

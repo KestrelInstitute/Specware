@@ -24,7 +24,7 @@ SpecCalc qualifying spec
 
  type SpecCalc.ValueInfo  % Defined in ../Semantics/Value
 
- type SCTerm = SpecCalc.Term Position
+ type SpecCalc.SCTerm = SpecCalc.Term Position
 
  op valueOf    : [a] a * Position -> a
  op positionOf : [a] a * Position -> Position
@@ -59,7 +59,7 @@ SpecCalc qualifying spec
 		hashSuffix : Option String
 	       }
 
- type RelativeUID =
+ type SpecCalc.RelativeUID =
    | UnitId_Relative UnitId
    | SpecPath_Relative UnitId
 
@@ -457,6 +457,7 @@ SpecCalc qualifying spec
  op mkTransformName(name: String, pos: Position)                  : TransformExpr = Name(name, pos)
  op mkTransformNumber(n: Nat, pos: Position)                      : TransformExpr = Number(n, pos)
  op mkTransformString(s: String, pos: Position)                   : TransformExpr = Str(s, pos)
+ op mkTransformSCTerm(sc_tm: SCTerm, pos: Position)               : TransformExpr = SCTerm(sc_tm, pos)
  op mkTransformQual(q: String, name: String, pos: Position)       : TransformExpr = Qual(q, name, pos)
  op mkTransformItem(mod: String, te: TransformExpr, pos: Position): TransformExpr = Item(mod, te, pos)
  op mkTransformApply(head: TransformExpr, args: List TransformExpr, pos: Position): TransformExpr

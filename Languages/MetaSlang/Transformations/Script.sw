@@ -1,6 +1,7 @@
 Script qualifying
 spec
-  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks
+  import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
+         RedundantErrorCorrecting
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -43,6 +44,7 @@ spec
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | AddSemanticChecks(Bool * Bool * Bool)
+    | RedundantErrorCorrecting (List (SCTerm * Morphism))
     | Trace Boolean
     | Print
 
@@ -175,6 +177,11 @@ spec
                  ppString "checkResult?: ", ppBool checkResult?, ppString ", ",
                  ppString "checkRefine?: ", ppBool checkRefine?,
                  ppString "}"]
+
+      | RedundantErrorCorrecting(morphisms) ->
+        ppConcat[ppString "redundantErrorCorrecting (",
+                 ppSep(ppString ", ") (map (fn (m_uid,_) -> ppTerm m_uid) morphisms),
+                 ppString ")"]
 
       | Trace on_or_off ->
         ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
@@ -722,6 +729,8 @@ spec
         return (result, tracing?) }
       | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?), tracing?)
+      | RedundantErrorCorrecting(morphs) ->
+        redundantErrorCorrecting spc morphs tracing?
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
 
