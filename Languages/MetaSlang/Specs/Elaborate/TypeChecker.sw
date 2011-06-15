@@ -224,7 +224,10 @@ TypeChecker qualifying spec
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
  
-  def TypeChecker.checkSort (env, srt) = 
+  def TypeChecker.checkSort (env, srt) =
+    checkSort1(env, srt, true)
+
+  op checkSort1(env: LocalEnv, srt: Sort, checkTerms?: Bool): Sort =
     %% checkSort calls single_pass_elaborate_term, which calls checkSort
     case srt of
 
@@ -232,7 +235,7 @@ TypeChecker qualifying spec
 
       | MetaTyVar (v, _) ->
         (case ! v of
-	   | {link = Some other_sort, uniqueId, name} -> checkSort (env, other_sort)
+	   | {link = Some other_sort, uniqueId, name} -> checkSort1 (env, other_sort, checkTerms?)
 	   | _ -> srt)
 
       | Boolean _ -> srt
@@ -298,7 +301,7 @@ TypeChecker qualifying spec
 	       in
 	       let new_sort_qid = primarySortName info in
 	       let new_instance_sorts = 
-	           map (fn instance_sort -> checkSort (env, instance_sort))
+	           map (fn instance_sort -> checkSort1 (env, instance_sort, checkTerms?))
 		       instance_sorts
 	       in
 		 if given_sort_qid = new_sort_qid && instance_sorts = new_instance_sorts then 
@@ -308,7 +311,7 @@ TypeChecker qualifying spec
 		
       | CoProduct (fields, pos) ->
 	let nfields = map (fn (id, None)   -> (id, None) 
-                            | (id, Some s) -> (id, Some (checkSort (env, s))))
+                            | (id, Some s) -> (id, Some (checkSort1 (env, s, checkTerms?))))
                        fields
 	in
 	if nfields = fields then 
@@ -317,38 +320,44 @@ TypeChecker qualifying spec
 	  CoProduct (nfields, pos)
 
       | Product (fields, pos) ->
-	let nfields = map (fn (id, s) -> (id, checkSort (env, s))) fields in
+	let nfields = map (fn (id, s) -> (id, checkSort1 (env, s, checkTerms?))) fields in
         if nfields = fields then 
 	  srt
 	else 
 	  Product (nfields, pos)
 
       | Quotient (given_base_sort, given_relation, pos) ->
-        let new_base_sort = checkSort (env, given_base_sort) in
+        let new_base_sort = checkSort1 (env, given_base_sort, checkTerms?) in
         let new_rel_sort = Arrow (Product ([("1", new_base_sort), 
                                             ("2", new_base_sort)], 
                                            pos), 
                                   type_bool, 
                                   pos) 
 	in
-        let new_relation = single_pass_elaborate_term (env, given_relation, new_rel_sort) in
+        let new_relation = if checkTerms?
+                              then single_pass_elaborate_term (env, given_relation, new_rel_sort)
+                              else given_relation
+        in
 	if given_base_sort = new_base_sort && given_relation = new_relation then 
 	  srt
 	else 
 	  Quotient (new_base_sort, new_relation, pos)
 
       | Subsort (given_super_sort, given_predicate, pos) -> 
-        let new_super_sort = checkSort (env, given_super_sort) in
+        let new_super_sort = checkSort1 (env, given_super_sort, checkTerms?) in
         let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
-        let new_predicate  = single_pass_elaborate_term (env, given_predicate, new_pred_sort) in
+        let new_predicate  = if checkTerms?
+                              then single_pass_elaborate_term (env, given_predicate, new_pred_sort)
+                              else given_predicate
+        in
 	if given_super_sort = new_super_sort && given_predicate = new_predicate then 
 	  srt
 	else 
 	  Subsort (new_super_sort, new_predicate, pos)
 
       | Arrow (t1, t2, pos) ->
-	let nt1 = checkSort (env, t1) in
-	let nt2 = checkSort (env, t2) in
+	let nt1 = checkSort1 (env, t1, checkTerms?) in
+	let nt2 = checkSort1 (env, t2, checkTerms?) in
 	if t1 = nt1 && t2 = nt2 then 
 	  srt
 	else 
@@ -357,7 +366,7 @@ TypeChecker qualifying spec
       | And (srts, pos) ->
 	let (new_srts, changed?) =  
             foldl (fn ((new_srts, changed?), srt) ->
-		   let new_srt = checkSort (env, srt) in
+		   let new_srt = checkSort1 (env, srt, checkTerms?) in
 		   (new_srts ++ [new_srt],
 		    changed? || (new_srt ~= srt)))
 	          ([], false)
@@ -474,7 +483,7 @@ TypeChecker qualifying spec
    let elaborated_tm = single_pass_elaborate_term_top (env, tm, srt) in
    %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
    let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
-   let _ = if false  % allowDependentSubTypes?
+   let _ = if  false % allowDependentSubTypes?
              then writeLine("chk: "^printTerm elaborated_tm^"\n"^printSortWithSorts srt) else ()
    in
    let new_tvs =
@@ -586,7 +595,7 @@ TypeChecker qualifying spec
 	     resolveNameFromSort (env, trm, id, srt, pos))
 
       | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
-	(let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
+	(let _ = elaborateCheckSortForOpRef (env, trm, srt, term_sort) in 
 	 %% Either Qualified (id1, id2) or field selection
 	 case findTheOp2 (env, id1, id2) of
            | Some info -> 
@@ -595,7 +604,7 @@ TypeChecker qualifying spec
 	     let (tvs, srt, tm) = unpackFirstOpDef info in
 	     let (_, srt) = metafySort (Pi (tvs, srt, sortAnn srt)) in
 	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
-	     let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
+	     let srt = elaborateCheckSortForOpRef (env, term, srt, term_sort) in
 	     (case term of
 		| Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, srt, pos)
 		| _ -> System.fail ("Op expected for elaboration of "^id1^"."^id2^" as resolved to "^q^"."^id))
@@ -1248,7 +1257,12 @@ TypeChecker qualifying spec
   % ========================================================================
 
   def elaborateCheckSortForTerm (env, term, givenSort, expectedSort) = 
-   elaborateSortForTerm (env, term, (checkSort (env, givenSort)), expectedSort)
+   elaborateSortForTerm (env, term, checkSort (env, givenSort), expectedSort)
+
+  op elaborateCheckSortForOpRef (env: LocalEnv, term: MS.Term, givenSort: Sort, expectedSort: Sort): Sort =
+    if allowDependentSubTypes? && ~env.firstPass?
+      then elaborateSortForTerm(env, term, checkSort1(env, givenSort, false), expectedSort)
+      else elaborateCheckSortForTerm(env, term, givenSort, expectedSort)
 
   def elaborateSortForTerm (env, term, givenSort, expectedSort) = 
     %% unifySorts has side effect of modifying metaTyVar links
@@ -1453,7 +1467,6 @@ TypeChecker qualifying spec
       | Subsort (ssrt, _, _) -> mkProject (env, id, ssrt, pos)
       | _ -> None
       
-
   def consistentTag competing_pterms =
     %% If one of the alternatives (found by findVarOrOps) has optional infix priority
     %% and the others either have the same infix priority or are not infix ops then,
