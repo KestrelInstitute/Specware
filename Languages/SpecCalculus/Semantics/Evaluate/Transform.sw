@@ -12,6 +12,7 @@ spec
       | Name(_,p)-> p
       | Number(_,p)-> p
       | Qual(_,_,p) -> p
+      | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
@@ -57,11 +58,29 @@ spec
       | Name(n,_) -> return n
       | _ -> raise (TypeCheck (posOf itm, "Name expected."))
 
- op extractBool(itm: TransformExpr): SpecCalc.Env Bool =
+  op extractBool(itm: TransformExpr): SpecCalc.Env Bool =
+     case itm of
+       | Name("true",_)  -> return true
+       | Name("false",_) -> return false
+       | _ -> raise (TypeCheck (posOf itm, "Boolean expected."))
+
+  op extractUID(itm: TransformExpr): SpecCalc.Env(SCTerm * SpecCalc.Value) =
     case itm of
-      | Name("true",_)  -> return true
-      | Name("false",_) -> return false
-      | _ -> raise (TypeCheck (posOf itm, "Boolena expected."))
+      | SCTerm(sc_tm, pos) ->
+        {% print(anyToString sc_tm);
+         saveUID <- setCurrentUIDfromPos pos;
+         (val, _, _) <- evaluateTermInfo sc_tm;
+         setCurrentUID saveUID;
+         return(sc_tm, val)}
+      | _ -> raise (TypeCheck (posOf itm, "UnitId expected."))
+
+  op extractMorphs(itms: List TransformExpr): SpecCalc.Env(List(SCTerm * Morphism)) =
+    mapM (fn itm ->
+            {(uid, val) <- extractUID itm;
+             case val of
+               | Morph m -> return(uid, m)
+               | _ -> raise (TypeCheck (posOf itm, "Morphism expected."))})
+      itms
 
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
     case trans of
@@ -274,6 +293,10 @@ spec
                | Apply(Name("addSemanticChecks",_), [Record rec_val_prs], _) ->
                  {fields <- getAddSemanticFields rec_val_prs;
                   return(top_result, AddSemanticChecks fields :: sub_result)}
+
+               | Apply(Name("redundantErrorCorrecting",_), uids, _) ->
+                 {morphs <- extractMorphs uids;
+                  return(top_result, RedundantErrorCorrecting morphs :: sub_result)}
 
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
