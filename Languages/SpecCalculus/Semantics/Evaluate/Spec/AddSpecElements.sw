@@ -239,7 +239,11 @@ SpecCalc qualifying spec
                                 else new_tm
                   in
                   % let _ = if refine? then writeLine("refine "^(printAliases new_names)^": "^printSort combined_srt^" =\n"^printTerm new_tm) else () in
-		  let combined_dfn = maybePiTerm (old_tvs, SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
+		  let combined_dfn = maybePiTerm (old_tvs, if refine? && ~old_defined?
+                                                            then
+                                                              let (_, sort_term_prs) = unpackSortedTerms old_info.dfn in
+                                                              typeTermPairsToTerm((combined_srt, new_tm) :: sort_term_prs)
+                                                            else SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
                   % let _ = writeLine("addOP "^id":\n"^printTerm combined_dfn) in
 		  let combined_info = old_info << {names = combined_names, 
                                                    dfn   = combined_dfn,

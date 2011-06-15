@@ -298,19 +298,21 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
 
 op addRefinedDefToOpinfo(info: OpInfo, new_dfn: MS.Term): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
-  let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
+  let (tvs, (old_ty, full_tm) :: r_ty_tm_prs) = unpackSortedTerms(info.dfn) in
   % let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
-  let curr_dfns = innerTerms full_tm in
-  let (new_dfn, ty) = case new_dfn of
-                        | SortedTerm(tm, ty, _) -> (tm, ty)
-                        | _ -> (new_dfn, ty)
+%  let curr_dfns = innerTerms full_tm in
+  let (new_dfn, new_ty) = case new_dfn of
+                           | SortedTerm(tm, ty, _) -> (tm, ty)
+                           | _ -> (new_dfn, old_ty)
   in
-  let new_dfns = case curr_dfns of
-                   | [] -> [new_dfn]
-                   | last_def :: older_dfs ->
-                     new_dfn :: curr_dfns
-  in
-  let new_full_dfn = piTypeAndTerm(tvs, ty, new_dfns) in
+  % let new_dfns = case curr_dfns of
+  %                  | [] -> [new_dfn]
+  %                  | last_def :: _ ->
+  %                    if equalTerm?(new_dfn, last_def) then curr_dfns
+  %                      else new_dfn :: curr_dfns
+  % in
+  let new_ty_tm_prs = (new_ty, new_dfn) :: (old_ty, full_tm) :: r_ty_tm_prs in
+  let new_full_dfn = maybePiAndSortedTerm(tvs, new_ty_tm_prs) in
   % let _ = writeLine("\naddRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
   info << {dfn = new_full_dfn}
 
@@ -323,8 +325,14 @@ op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
 
 op addRefinedTypeToOpinfo(info: OpInfo, new_ty: Sort): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
-  let (tvs, ty, full_tm) = unpackTerm(info.dfn) in
-  let new_full_dfn = piTypeAndTerm(tvs, new_ty, [full_tm]) in
+  let (tvs, ty_tm_prs) = unpackSortedTerms(info.dfn) in
+  let new_full_dfn = case ty_tm_prs of
+                       | [] -> maybePiTerm(tvs, SortedTerm(Any(sortAnn new_ty), new_ty, sortAnn new_ty))
+                       | (_, old_tm)::_ ->
+                         maybePiAndSortedTerm(tvs, (new_ty, old_tm) :: ty_tm_prs)
+  in
+  % let _ = if show qid = "insertBlack"
+  %          then writeLine("addRefinedType: "^show qid^"\n"^printTerm info.dfn^"\n"^printTerm new_full_dfn^"\n\n") else () in
   info << {dfn = new_full_dfn}
 
 op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =

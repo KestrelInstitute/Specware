@@ -260,11 +260,14 @@ MetaSlang qualifying spec
  type AMetaTyVars     b = List (AMetaTyVar b)
  type AMetaSortScheme b = AMetaTyVars b * ASort b
 
+ type SpecCalc.SCTerm   %% defined in /Languages/SpecCalculus/AbstractSyntax/Types
+
  type ATransformExpr a =
     | Name String * a
     | Number Nat * a
     | Str String * a
     | Qual String * String * a
+    | SCTerm SCTerm * a
     | Item String * ATransformExpr a * a       % e.g. unfold map
     | Tuple List (ATransformExpr a) * a
     | Record List(String * ATransformExpr a) * a
@@ -304,6 +307,17 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
                          | tms -> (And(tms, termAnn(head tms)), termAnn (head tms))
   in
   maybePiTerm(tvs, SortedTerm(main_tm, ty, pos))
+
+op [a] typeTermPairsToTerm(ty_tm_prs: List(ASort a * ATerm a)): ATerm a =
+  case ty_tm_prs of
+    | [(ty, tm)] -> SortedTerm(tm, ty, termAnn tm)
+    | (_, tm) :: _ -> And(map (fn (ty, tm) -> SortedTerm(tm, ty, sortAnn ty))
+                            ty_tm_prs,
+                          termAnn tm)
+
+op [a] maybePiAndSortedTerm(tvs: TyVars, ty_tm_prs: List(ASort a * ATerm a)): ATerm a =
+  maybePiTerm(tvs, typeTermPairsToTerm ty_tm_prs)
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
@@ -603,11 +617,12 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
     %| Any        _          -> []
      | _                     -> [tm]
 
- op [a] numTerms(tm: ATerm a): Nat = length(innerTerms tm)
+ op [a] numTerms(tm: ATerm a): Nat = length(unpackSortedTerms tm).2
 
  op [a] unpackFirstTerm(t: ATerm a): TyVars * ASort a * ATerm a =
-   let (tvs, ty, tm) = unpackTerm t in
-   (tvs, ty, termInnerTerm tm)
+   %let (tvs, ty, tm) = unpackTerm t in
+   let (tvs, (ty1, tm1) :: _) = unpackSortedTerms t in
+   (tvs, ty1, tm1)
 
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
    let tms = innerTerms tm in
@@ -620,6 +635,20 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
+ op [a] unpackSortedTerms(tm: ATerm a): TyVars * List(ASort a * ATerm a) =
+   let def unpackTm(tm: ATerm a, ty: ASort a): List(ASort a * ATerm a) =
+         case tm of
+           | And (tms, _) -> foldr (fn (tm, result) -> unpackTm(tm, ty) ++ result) [] tms
+           | SortedTerm (s_tm, ty, _) -> unpackTm(s_tm, ty)
+           | _ -> [(ty, tm)]
+   in   
+   case tm of
+     | Pi (tvs, tm, _) -> (tvs, (unpackSortedTerms tm).2)
+     | And (tms, _) ->
+       ([], foldr (fn (tm, result) -> (unpackSortedTerms tm).2 ++ result) [] tms)
+     | SortedTerm (tm, ty, _) -> ([], unpackTm(tm, ty))
+     | _                      -> ([], [(termSort tm, tm)])
+
  op [a] unpackBasicTerm(tm: ATerm a): TyVars * ASort a * ATerm a =
    case tm of
      | Pi (tvs, SortedTerm (tm, ty, _), _) -> (tvs, ty, tm)
@@ -628,8 +657,13 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
 
 
  op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
-   let (tvs, ty, tm) = unpackBasicTerm t in
-   (tvs, ty, refinedTerm(tm, n))
+   % let _ = writeLine(printTerm t) in
+   let (tvs, ty_tms) = unpackSortedTerms t in
+   let len = length ty_tms in
+   if len = 0 then (tvs, Any(termAnn t), t)
+     else let (ty, tm) = ty_tms@(max(len - n - 1, 0)) in
+          % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(SortedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
+          (tvs, ty, tm)
 
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
    let tms = innerTerms full_tm in

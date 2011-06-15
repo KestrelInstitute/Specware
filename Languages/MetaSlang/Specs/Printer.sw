@@ -1067,7 +1067,9 @@ AnnSpecPrinter qualifying spec
 		    string "")
    in
    let (tvs, ty, dfn) = unpackNthTerm(info.dfn, refine_num) in
-   % let _ = writeLine("def: "^show refine_num^" "^printSort ty^"\n"^printTerm dfn) in
+   % let _ = if show(head info.names) = "insertBlack"
+   % then writeLine("def "^show(head info.names)^": "^show refine_num^" "^printSort ty^"\n"^printTerm dfn^"\n"
+   %                      ^printTerm info.dfn) else () in
    let 
      def ppDeclWithArgs (tvs, srt, tm) =
        case (tm, srt) of
