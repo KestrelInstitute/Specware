@@ -38,12 +38,14 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
    let _ = writeLine("\nIntroduce "^show intro_qid^": "^printSort intro_ty^"\n"^printTerm intro_fn_def) in
    let def addToDef(info, result as (spc, qids)) =
          let qid = primaryOpName info in
-         let (tvs, ty, tm) = unpackTerm info.dfn in
+         let (tvs, ty, tm) = unpackFirstTerm info.dfn in
+         % let _ = if show qid = "delArc" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
          case range_*(spc, ty) of
            | Subsort(result_ty, Lambda([(VarPat(result_var,_), _, _)], _), _)  | equalTypeSubtype?(result_ty, state_ty, true) ->
              let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              % let _ = writeLine("\nLooking at "^show qid) in
-             % let _ = writeLine("Result var is "^result_var.1^"\nParams are "^anyToString(map (fn (v,_) -> v) params)) in
+             % let _ = writeLine("Result var is "^result_var.1) in
+             % let _ = writeLine("Result tm is "^printTerm result_tm) in
              let new_lhs = mkApply(intro_fn, mkVar result_var) in
              let intro_fn_rng = inferType(spc, new_lhs) in
              let raw_rhs = simplifiedApply(intro_fn_def, result_tm, spc) in
