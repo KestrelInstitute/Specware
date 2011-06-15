@@ -1634,12 +1634,20 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
  op inferType (sp: Spec, tm : MS.Term): Sort = 
   case tm
-    of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1)) of
+    of Apply      (t1, t2,               _) -> (let t1_ty = inferType(sp,t1) in
+                                                case rangeOpt(sp, t1_ty) of
                                                   | Some rng -> rng
 						  | None ->
+                                                    let _ = case t1_ty of
+                                                              | Base (qid, srts, a) ->
+                                                                (case findTheSort (sp, qid) of
+                                                                   | None -> writeLine(show qid^" not defined ")
+                                                                   | Some info -> writeLine("defined"))
+                                                              | _ -> writeLine("Not Base")
+                                                    in
 						    System.fail ("inferType: Could not extract type for "
                                                                    ^ printTermWithSorts tm
-                                                                   ^ " dom " ^ printSort (unfoldBase(sp,inferType(sp,t1)))))
+                                                                   ^ " dom " ^ printSort (unfoldBase(sp,t1_ty))))
      | Bind       _                         -> boolSort
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
