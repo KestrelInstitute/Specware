@@ -158,12 +158,12 @@ Utilities qualifying spec
 	 | Some srt_prs ->
 	   if exists? (fn (o_qid,o_srt) -> qid = o_qid) srt_prs then
 	     constrMap
-	   else 
+	   else
 	     StringMap.insert (constrMap, id,  (qid, cp_srt) :: srt_prs)
 
      def addSort qid (constrMap, dfn) =
        let (tvs, srt) = unpackSort dfn in
-       case srt : MS.Sort of
+       case srt of
 	 | CoProduct (row, _) ->
 	   foldl (fn (constrMap, (id,_)) -> addConstr (id, qid, dfn, constrMap)) 
 	         constrMap
@@ -269,6 +269,9 @@ Utilities qualifying spec
 
  def setEnvSorts (env, newSorts) =
    env << {internal = setSorts (env.internal, newSorts)}
+
+ op setEnvOps (env: LocalEnv, newOps: OpMap): LocalEnv =
+   env << {internal = setOps (env.internal, newOps)}
 
  (* Unlink and unfold recursive sort declarations *)
 

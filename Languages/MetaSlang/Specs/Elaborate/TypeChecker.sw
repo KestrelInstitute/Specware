@@ -91,7 +91,10 @@ TypeChecker qualifying spec
 		            let pos = termAnn dfn in
 			    let (tvs, srt, tm) = unpackTerm dfn in
 			    let _ = checkTyVars (env, tvs, pos) in
-			    let srt1 = checkSort (env, srt) in
+                            let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
+			    let srt1 = checkSort (env_s, srt) in
+                            % let _ = writeLine("elos "^show(head info.names)^": "^printSort srt^"\n -->\n"^printSort srt1) in
+                            % let _ = writeLine(printTermWithSorts tm^"\n") in
 			    maybePiTerm (tvs, SortedTerm (tm, srt1, pos))
 		      in
 			let new_defs = map elaborate_srt (opInfoAllDefs info) in
@@ -130,6 +133,7 @@ TypeChecker qualifying spec
 		 | Some info ->
 		   let def elaborate_dfn dfn =
 			 let pos = termAnn dfn in
+                         % let _ = writeLine("elaborate_local_ops:\n"^printTermWithSorts dfn) in
 			 let (tvs, srt, tm) = unpackTerm dfn in
 			 if poly? = (tvs ~= []) then
 			   let _ = checkTyVars (env, tvs, pos) in
@@ -181,7 +185,6 @@ TypeChecker qualifying spec
     %% ======================================================================
     %%                           PASS ONE  
     %% ======================================================================
-
     %% Add constructors to environment
     let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
 
@@ -192,8 +195,13 @@ TypeChecker qualifying spec
     let elaborated_sorts = elaborate_local_sorts (given_sorts, env_with_constrs) in
     let env_with_elaborated_sorts = setEnvSorts (env_with_constrs, elaborated_sorts) in
 
+    %% Elaborate sorts of ops pass 2 so that subtypes are resolved before instantiation
+    let elaborated_ops_0a = elaborate_local_op_sorts(elaborated_ops_0, env_with_elaborated_sorts) in
+
+    let env_with_elaborated_sorts = setEnvOps(env_with_elaborated_sorts, elaborated_ops_0a) in
+
     %% Elaborate ops (do polymorphic definitions first)
-    let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0, env_with_elaborated_sorts, true)  in
+    let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0a, env_with_elaborated_sorts, true)  in
     let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false) in
     let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true)  in
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
@@ -475,6 +483,7 @@ TypeChecker qualifying spec
      | _ -> env
 
  def checkOpDef (dfn, info, env) =
+   % let _ = writeLine("checkOpDef:\n"^printTermWithSorts dfn) in
    let pos = termAnn dfn in
    let (tvs, srt, tm) = unpackTerm dfn in
    let _ = checkTyVars (env, tvs, pos) in
