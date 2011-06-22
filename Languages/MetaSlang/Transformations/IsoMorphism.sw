@@ -16,7 +16,7 @@ Isomorphism qualifying
 spec
   import Script
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
-  import /Languages/MetaSlang/Specs/AnalyzeRecursion
+%  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
   op orderElements?: Boolean = true
 
