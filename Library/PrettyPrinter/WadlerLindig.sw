@@ -113,7 +113,7 @@ WadlerLindig qualifying spec
   def ppBreak = DocBreak ""
   
   op ppBreakWith : String -> Doc
-  def breakWith s = DocBreak s
+  def ppBreakWith s = DocBreak s
   
   op ppGroup : Doc -> Doc
   def ppGroup d = DocGroup d

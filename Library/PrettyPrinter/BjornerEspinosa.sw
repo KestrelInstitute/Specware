@@ -404,7 +404,7 @@ PrettyPrint qualifying spec
    op shift : String * Nat * PathStack -> PathStack
    def shift (id,pos1,stack) = Cons((id,pos1,0,false,[]),stack)
 
-   def insertElem (elem,(id,pos1,pos2,closed,elems)) = 
+   op insertElem (elem: PathTree, (id,pos1,pos2,closed,elems): PathTree): PathTree = 
        (id,pos1,pos2,closed,Cons(elem,elems))
 
    % Make the top-most element of the stack a child of the 
