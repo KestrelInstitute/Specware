@@ -196,12 +196,13 @@ TypeChecker qualifying spec
     let env_with_elaborated_sorts = setEnvSorts (env_with_constrs, elaborated_sorts) in
 
     %% Elaborate sorts of ops pass 2 so that subtypes are resolved before instantiation
-    let elaborated_ops_0a = elaborate_local_op_sorts(elaborated_ops_0, env_with_elaborated_sorts) in
+    % Second pass of local op sorts doesn't seem needed in normal cases
+    %let elaborated_ops_0a = elaborate_local_op_sorts(elaborated_ops_0, env_with_elaborated_sorts) in
 
-    let env_with_elaborated_sorts = setEnvOps(env_with_elaborated_sorts, elaborated_ops_0a) in
+    let env_with_elaborated_sorts = setEnvOps(env_with_elaborated_sorts, elaborated_ops_0) in
 
     %% Elaborate ops (do polymorphic definitions first)
-    let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0a, env_with_elaborated_sorts, true)  in
+    let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0, env_with_elaborated_sorts, true)  in
     let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false) in
     let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true)  in
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
