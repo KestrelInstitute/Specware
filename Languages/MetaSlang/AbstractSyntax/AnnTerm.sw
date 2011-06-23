@@ -31,10 +31,10 @@ MetaSlang qualifying spec
  type AQualifiedId a = QualifiedId * a
 
  %% the following are invoked by the parser to make qualified names
- def mkUnQualifiedId  id      =  Qualified (UnQualified, id)
- def mkQualifiedId    (q, id) =  Qualified (q,           id)
- def [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
- def [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
+ op mkUnQualifiedId(id: Id): QualifiedId           =  Qualified (UnQualified, id)
+ op mkQualifiedId    (q: Id, id: Id): QualifiedId =  Qualified (q,           id)
+% op [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
+% op [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
 
  op  unQualifiedId?: QualifiedId -> Bool
  def unQualifiedId? id =
