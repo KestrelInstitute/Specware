@@ -660,7 +660,7 @@ Utilities qualifying spec
    (clearMetaTyVarLinks free_mtvs;
     val)
 
- def clearMetaTyVarLinks mtvs =
+ op clearMetaTyVarLinks(mtvs: MetaTyVars): () =
   app (fn mtv -> 
        let cell = ! mtv in
        mtv := cell << {link = None})
