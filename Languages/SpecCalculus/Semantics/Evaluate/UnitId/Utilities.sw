@@ -373,7 +373,8 @@ emacs interface functions.
       | Some globalContext ->
           let unitId = pathStringToCanonicalUID(uidStr,false) in
             case (findDefiningUIDforOpInContext(qId,unitId,globalContext,[],false)).1
-               ++ (findDefiningUIDforSortInContext(qId,unitId,globalContext,[],false)).1 of
+               ++ (findDefiningUIDforSortInContext(qId,unitId,globalContext,[],false)).1
+               ++ findTheoremLocations(qId,uidStr,optGlobalContext) of
               | []     -> removeDuplicates((searchForDefiningUID(qId,optGlobalContext)))
               | result -> removeDuplicates result
 
@@ -597,6 +598,45 @@ emacs interface functions.
     case path of
       | [] -> false
       | s :: _ -> deviceString? s
+
+%%% Find theorems in Spec
+op findTheoremLocationsInSpec(Qualified(qual,id): QualifiedId, spc: Spec): List(String * String) =
+  let results = foldlSpecElements
+                  (fn (result, el) ->
+                     case el of
+                       | Property(_, Qualified(p_qual,p_id), _, _, File(filnm, (line, col, byte), _))
+                       | p_id = id && (p_qual = qual || qual = UnQualified) ->
+                         (show line, filnm) :: result
+                       | _ -> result)
+                  [] spc.elements
+  in
+  removeDuplicates results
+
+op findTheoremLocations(qid: QualifiedId, uidStr: String, optGlobalContext: Option GlobalContext): List(String * String) =
+  case optGlobalContext of
+    | None -> []
+    | Some globalContext ->
+  let unitId = pathStringToCanonicalUID(uidStr,false) in
+  case evalPartial globalContext unitId of
+    | Some(Spec spc,_,_,_) -> findTheoremLocationsInSpec(qid, spc)
+    | _ -> findTheoremLocationsInEnv(qid, optGlobalContext)
+
+op findTheoremLocationsInEnv(qid: QualifiedId, optGlobalContext: Option GlobalContext): List(String * String) =
+  case optGlobalContext of
+    | None -> []
+    | Some globalContext ->
+  foldMap (fn result -> fn unitId -> fn (val,_,_,_) ->
+	     case result of
+	       | _::_ -> result		% After finding any stop looking
+	       | []   ->
+	     case val of
+	       | Spec spc ->
+                 findTheoremLocationsInSpec(qid, spc)
+	       | _ -> [])
+      []
+      globalContext
+
+
 
  %%% Find relationship between Specs
  op  importPathsBetween: Spec * Spec -> List (List (TermBody Position))

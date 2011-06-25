@@ -195,6 +195,7 @@ accepted in lieu of prompting."
       ["Generate Isabelle Obligation Theory" sw:convert-spec-to-isa-thy t]
       "-----"
       ["Find Definition" sw:meta-point t]
+      ["Find Theorem" sw:find-theorems t]
       ["Find Importing Spec" sw:find-importing-specs t]
       ["Find Case dispatch on type" sw:find-case-dispatch-on-type t]
       ["Find Op references" sw:find-op-references t]
@@ -224,6 +225,7 @@ accepted in lieu of prompting."
 (defconst specware-interaction-menu 
     '("Specware"
       ["Find Definition" sw:meta-point t]
+      ["Find Theorem" sw:find-theorems t]
       ["Find Terms of Type" sw:find-terms-of-type t]
       ["Find Case dispatch on type" sw:find-case-dispatch-on-type t]
       ["Find Op reference" sw:find-op-references t]
@@ -281,6 +283,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cfc"   'sw:find-case-dispatch-on-type)
   (define-key map "\C-cft"   'sw:find-terms-of-type)
   (define-key map "\C-cfr"   'sw:find-op-references)
+  (define-key map "\C-cf\C-t" 'sw:find-theorems)
   (define-key map "\C-cf"  'sw:ignore-matches)
 
   (define-key map "\C-c\C-i" 'sw:convert-spec-to-isa-thy)
@@ -1634,12 +1637,16 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun goto-specware-meta-point-definition (sym results)
   (let* ((def-info (car results))
+         (kind (car def-info))
 	 (file (cdr def-info))
-	 (sort? (member (car def-info) '("Type" "Sort"))))
+	 (sort? (member kind '("Type" "Sort")))
+         (theorem? (equal kind "Prop"))
+         (line-num (read kind)))
     (unless (null (cdr results))
       (push (cons 'meta-point (cons sym (cdr results)))
 	    *pending-specware-search-results*))
-    (setq file (concatenate 'string (strip-hash-suffix file) ".sw"))
+    (unless (string-equal (substring file -3) ".sw")
+      (setq file (concatenate 'string (strip-hash-suffix file) ".sw")))
     (push-mark (point))
     (let ((buf
 	   (or (get-file-buffer file)
@@ -1655,32 +1662,37 @@ STRING should be given if the last search was by `string-match' on STRING."
 	  (other-window 1))
       (switch-to-buffer buf))
     (goto-char 0)
-    (let ((qsym (regexp-quote sym)))
-      (or (if sort?
-	      (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
-		  ;; type fie.foo
-		  (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
-	    (if (null current-prefix-arg)
-		(or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward	; def fa(a) foo
-		     (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward	; def [a] foo
-		     (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward	; def fie.foo
-		     (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward	; op fie.foo
-		     (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
-		    (re-search-forward	; op [a] fie.foo
-		     (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
-	      (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
-		  (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-		  (re-search-forward	; op fie.foo
-		   (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
-		  (re-search-forward	; op [a] fie.foo
-		   (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))))
-	  (error "Can't find definition of %s in %s" qsym file)))
+    (if (numberp line-num)
+        (goto-line line-num)
+      (let ((qsym (regexp-quote sym)))
+        (or (if sort?
+                (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
+                    ;; type fie.foo
+                    (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
+              (if theorem?
+                  (or (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+" qsym "\\b") nil t)
+                      (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+\\w+\\." qsym "\\b") nil t))
+                (if (null current-prefix-arg)
+                    (or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward ; def fa(a) foo
+                         (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward ; def [a] foo
+                         (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward ; def fie.foo
+                         (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward ; op fie.foo
+                         (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
+                        (re-search-forward ; op [a] fie.foo
+                         (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
+                  (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+                      (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                      (re-search-forward ; op fie.foo
+                       (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
+                      (re-search-forward ; op [a] fie.foo
+                       (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)))))
+            (error "Can't find definition of %s in %s" qsym file))))
     (beginning-of-line)
     (recenter 4)
     (report-next-match-task-status)))
@@ -1740,6 +1752,35 @@ STRING should be given if the last search was by `string-match' on STRING."
   (let ((pos (position ?# str)))
     (if pos (substring str 0 pos)
       str)))
+
+
+(defun sw:find-theorems (name)
+  (interactive (list (car (sw::get-default-symbol "Specware locate theorem" t t))))
+  (let* ((pr (find-qualifier-info name))
+	 (qualifier (car pr))
+	 (sym (cadr pr)))
+    (message "Requesting info from Lisp...")
+    (let ((results (sw:eval-in-lisp (make-search-theorems-form qualifier sym)))
+          (current (cons "Theorem" (if buffer-file-name
+                                       (sw:containing-specware-unit-id nil)
+                                     ""))))
+      (message nil)
+      (setq results (if (member results '(nil NIL Error:))
+                        (list current)
+                      (if (member current results)
+                          (cons current (remove current results))
+                        results)))
+      (goto-specware-meta-point-definition sym results))))
+
+(defun make-search-theorems-form (qualifier sym)
+  (if (specware-file-name-p buffer-file-name)
+      (format
+       "(SpecCalc::findTheoremLocations-3 '(:|Qualified| %S . %S) %S %s)"
+       qualifier sym (sw:containing-specware-unit-id nil)
+       *specware-context-str*)
+    (format
+     "(SpecCalc::findTheoremLocationsInEnv-2 '(:|Qualified| %S . %S) %s)"
+     qualifier sym *specware-context-str*)))
 
 (defun find-containing-spec ()
   (save-excursion
