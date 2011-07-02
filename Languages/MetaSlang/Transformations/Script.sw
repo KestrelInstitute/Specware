@@ -44,7 +44,7 @@ spec
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | AddSemanticChecks(Bool * Bool * Bool)
-    | RedundantErrorCorrecting (List (SCTerm * Morphism))
+    | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier)
     | Trace Boolean
     | Print
 
@@ -178,7 +178,7 @@ spec
                  ppString "checkRefine?: ", ppBool checkRefine?,
                  ppString "}"]
 
-      | RedundantErrorCorrecting(morphisms) ->
+      | RedundantErrorCorrecting(morphisms, opt_qual) ->
         ppConcat[ppString "redundantErrorCorrecting (",
                  ppSep(ppString ", ") (map (fn (m_uid,_) -> ppTerm m_uid) morphisms),
                  ppString ")"]
@@ -729,8 +729,8 @@ spec
         return (result, tracing?) }
       | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?), tracing?)
-      | RedundantErrorCorrecting(morphs) ->
-        redundantErrorCorrecting spc morphs tracing?
+      | RedundantErrorCorrecting(morphs, opt_qual) ->
+        redundantErrorCorrecting spc morphs opt_qual tracing?
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
 

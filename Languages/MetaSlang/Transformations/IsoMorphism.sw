@@ -639,23 +639,23 @@ spec
       then replaceString(new_pat, "*", "Unq")
       else replaceString(new_pat, "*", old_qual)
 
+  op makeDerivedQId (spc: Spec) (Qualified (qual,id): QualifiedId) (newOptQual : Option String): QualifiedId =
+    case newOptQual of
+      | None -> Qualified (qual, id ^ "'")
+      | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
+
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                    newOptQual : Option String, extra_rules: List RuleSpec)
       : SpecCalc.Env Spec =
     let
       %{{{  newQId
-      def makeDerivedQId (Qualified (qual,id)) =
-        case newOptQual of
-          | None -> Qualified (qual, id ^ "'")
-          | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
-
       def derivedQId? (Qualified (qual,id)) =
          case newOptQual of
           | None -> none?(findTheOp(spc, Qualified (qual, id ^ "'")))
           | Some newQual -> newQual = qual
 
       def makeFreshQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
-        let newQId = makeDerivedQId qid in
+        let newQId = makeDerivedQId spc qid newOptQual in
         case findTheOp(spc, newQId) of
           | Some info -> {
               print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
@@ -915,7 +915,7 @@ spec
              % ### LE - we are folding over ops. Is the equivType? test where we
              % establish whether the op depends on a type subject to an isomorphism?
              % is there overlap with the ignore list? 
-             if qid in? ign_qids || some?(findTheOp(spc, makeDerivedQId qid))
+             if qid in? ign_qids || some?(findTheOp(spc, makeDerivedQId spc qid newOptQual))
                then return result
              else if equivType? spc (op_ty_pr,op_ty)
                then if existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
