@@ -26,6 +26,8 @@ op criticalTypeMap(morphs: List Morphism): QIdMap(List QualifiedId) =
   criticalQIdMap(map (project sortMap) morphs)
 
 op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): SpecCalc.Env(Spec * Bool) =
+  return(spc, tracing?)
+(*
   {morphs2 <- return(map (fn (_,y) -> y) morphs);
    ((_,pos), morph1) :: _ <- return morphs;
    ops_map <- return(criticalOpMap morphs2);
@@ -46,6 +48,6 @@ op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_q
                                       Op(makeDerivedQId spc qid opt_qual, true, noPos) :: elts)
                              [] ops_map);
 
-   return(spc, tracing?)}
+   return(spc, tracing?)} *)
 
 end-spec
