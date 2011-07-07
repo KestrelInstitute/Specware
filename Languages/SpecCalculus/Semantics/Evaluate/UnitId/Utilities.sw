@@ -490,6 +490,14 @@ emacs interface functions.
 	       | None -> if val = vali then Some (unitId,term) else None)
       None globalContext
 
+  op findRelativeUIDforValue(val: Value): Option RelativeUID =
+    case MonadicStateInternal.readGlobalVar "GlobalContext" of
+      | None -> None
+      | Some global_context ->
+    case findUnitIdTermForUnit(val, global_context) of
+      | None -> None
+      | Some (uid, _) -> Some(SpecPath_Relative uid)
+
   op  findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
   def findDefiningTermForUnit (val, globalContext) =
     foldMap (fn result -> fn unitId -> fn (vali,_,_,term) ->

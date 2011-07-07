@@ -631,18 +631,6 @@ spec
   op simplifyUnPrimed?: Boolean = false
   op opaqueSimplifyScript: Script = mkSimplify[]
 
-  op makeQualifierFromPat(old_qual: String, new_pat: String): String =
-    %% Syntax doesn't allow a * on its own in general
-    let new_pat = replaceString(new_pat, "*_", "*") in
-    let new_pat = replaceString(new_pat, "_*", "*") in
-    if old_qual = UnQualified
-      then replaceString(new_pat, "*", "Unq")
-      else replaceString(new_pat, "*", old_qual)
-
-  op makeDerivedQId (spc: Spec) (Qualified (qual,id): QualifiedId) (newOptQual : Option String): QualifiedId =
-    case newOptQual of
-      | None -> Qualified (qual, id ^ "'")
-      | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
 
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                    newOptQual : Option String, extra_rules: List RuleSpec)
