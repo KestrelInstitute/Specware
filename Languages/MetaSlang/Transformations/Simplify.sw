@@ -206,7 +206,7 @@ spec
          let bndvars  = foldl (fn (pvs, (p, _)) -> patternVars p ++ pvs) [] all_decls in
          if exists? (fn (_, t) -> hasVarNameConflict?(t, bndvars)) all_decls
            then  %% Rename to avoid name overload 
-             simplifyOne spc (substitute(term, map (fn v -> (v, mkVar v)) bndvars))
+             simplifyOne spc (renameBoundVars(term, bndvars))
          else
 	 simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
        %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
