@@ -75,7 +75,7 @@ FSet qualifying spec
 
   op [a] <| (s: FSet a, x:a) infixl 25 : FSet a =
     choose[FSet] (fn l ->
-    quotient[FSet] (if x in? l then l else l <| x)
+    quotient[FSet] (if x in? l then l else x :: l)
     ) s
 
   op [a] - (s: FSet a, x:a) infixl 25 : FSet a =
