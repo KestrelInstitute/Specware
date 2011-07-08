@@ -96,7 +96,8 @@ refine FiniteMap by {
   op [a,b] FMap.<<< (m1: FMap(a,b), m2: FMap(a,b)) infixl 25 : FMap(a,b) =
     (m1 restrictDomain (fn x -> x nin? domain m2)) FSet.\/ m2
 
-  op [a,b] FMap.update (m: FMap(a,b)) (x:a) (y:b) : FMap(a,b) = m <<< single (x,y)
+  op [a,b] FMap.update (m: FMap(a,b)) (x:a) (y:b) : FMap(a,b) =
+    single (x,y) FSet.\/ (m restrictDomain (fn z -> z ~= x))
 
   op [a,b] FMap.-- (m: FMap(a,b), xS: FSet a) infixl 25 : FMap(a,b) =
     m restrictDomain (fn x -> x nin? xS)
