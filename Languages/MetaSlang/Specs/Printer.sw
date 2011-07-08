@@ -818,7 +818,7 @@ AnnSpecPrinter qualifying spec
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
-	                           (fn (path, (id, pat)) -> ppPattern context (path, false) pat) 
+	                           (fn (path, (id, pat)) -> ppPattern context (path, embed? RecordPat pat) pat) 
 				   (if enclose? then (pp.LP, pp.Comma, pp.RP)
                                     else (pp.Empty, pp.Comma, pp.Empty)) 
 				   row
