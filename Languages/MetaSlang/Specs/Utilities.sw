@@ -2646,7 +2646,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     let new_pat = replaceString(new_pat, "*_", "*") in
     let new_pat = replaceString(new_pat, "_*", "*") in
     if old_qual = UnQualified
-      then replaceString(new_pat, "*", "Unq")
+      then replaceString(new_pat, "*", "")
       else replaceString(new_pat, "*", old_qual)
 
   op makeDerivedQId (spc: Spec) (Qualified (qual,id): QualifiedId) (newOptQual : Option String): QualifiedId =
