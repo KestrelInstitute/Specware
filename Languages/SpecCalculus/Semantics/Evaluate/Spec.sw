@@ -112,7 +112,7 @@ axioms, etc.
       | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, position), spc))
       | Comment str                              -> return (addComment    (str, position, spc))
 
-  def mergeImport spec_term imported_spec old_spec position =
+  def SpecCalc.mergeImport spec_term imported_spec old_spec position =
     let sorts = old_spec.sorts in
     let ops   = old_spec.ops   in
     {
