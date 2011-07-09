@@ -86,7 +86,7 @@ op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_q
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
-  {morphs2 <- return(map (fn (_,y) -> y) morphs);
+  {morphs2 <- return(map (fn (_,yy) -> yy) morphs);
    ops_map <- return(criticalOpMap morphs2);
    types_map <- return(criticalTypeMap morphs2);
    trg_spcs <- return(map (project cod) morphs2);
