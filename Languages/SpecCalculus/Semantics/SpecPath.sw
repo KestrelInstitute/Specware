@@ -31,8 +31,7 @@ Changed my mind. To be consistent, the \Specware\ starting directory is
 This means that if the user adds the current path to the environment
 variable, then it will appear twice is the list of UnitId's we generate.
 *)
-  op getSpecPath : Env (List UnitId)
-  def getSpecPath =
+  op SpecCalc.getSpecPath0(): List UnitId =
     let specware4Dirs = case getEnv "SPECWARE4" of
                          | Some d -> [d]
                          | None -> []
@@ -48,7 +47,12 @@ variable, then it will appear twice is the list of UnitId's we generate.
                  then [] else specware4Dirs)
         | _ -> ["/"] ++ specware4Dirs
     in
-      mapM topPathToCanonicalUID strings
+      map (fn str -> pathStringToCanonicalUID(str,true)) strings
+
+
+  op getSpecPath : Env (List UnitId)
+  def getSpecPath =
+    return(getSpecPath0())
 
  op specPathSeparator: String = (if msWindowsSystem? then ";" else ":")
 

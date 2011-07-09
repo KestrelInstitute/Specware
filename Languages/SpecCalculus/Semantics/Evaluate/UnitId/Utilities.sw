@@ -248,7 +248,7 @@ Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Pri
   op  relativizeUID : UnitId -> UnitId -> RelativeUID
   def relativizeUID base target =
     UnitId_Relative {path       = relativizePath base.path target.path,
-		  hashSuffix = target.hashSuffix}
+                     hashSuffix = target.hashSuffix}
 
   op  relativizePath : List String -> List String -> List String 
   def relativizePath base target =
@@ -490,13 +490,21 @@ emacs interface functions.
 	       | None -> if val = vali then Some (unitId,term) else None)
       None globalContext
 
+  op getSpecPath0(): List UnitId
+
+  op relativeToSpecPath({path, hashSuffix}: UnitId): UnitId =
+    let swpaths = getSpecPath0() in
+    let rel_paths0 :: rel_paths = map (fn path_uid -> relativizePath path_uid.path path) swpaths in
+    let min_path = foldl (fn (min_path, l) -> if length l < length min_path then l else min_path) rel_paths0 rel_paths in
+    {path = min_path, hashSuffix = hashSuffix}
+
   op findRelativeUIDforValue(val: Value): Option RelativeUID =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None -> None
       | Some global_context ->
     case findUnitIdTermForUnit(val, global_context) of
       | None -> None
-      | Some (uid, _) -> Some(SpecPath_Relative uid)
+      | Some (uid, _) -> Some(SpecPath_Relative(relativeToSpecPath uid))
 
   op  findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
   def findDefiningTermForUnit (val, globalContext) =
