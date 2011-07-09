@@ -492,9 +492,16 @@ emacs interface functions.
 
   op getSpecPath0(): List UnitId
 
+  op relativePath(ref_path: List String, path: List String): List String =
+    let ref_len = length ref_path in
+    if ref_len <= length path
+        && ref_path = subFromTo(path, 0, ref_len)
+      then subFromTo(path, ref_len, length path)
+      else path
+
   op relativeToSpecPath({path, hashSuffix}: UnitId): UnitId =
     let swpaths = getSpecPath0() in
-    let rel_paths0 :: rel_paths = map (fn path_uid -> relativizePath path_uid.path path) swpaths in
+    let rel_paths0 :: rel_paths = map (fn path_uid -> relativePath(path_uid.path, path)) swpaths in
     let min_path = foldl (fn (min_path, l) -> if length l < length min_path then l else min_path) rel_paths0 rel_paths in
     {path = min_path, hashSuffix = hashSuffix}
 
