@@ -4,6 +4,10 @@ SpecCalc qualifying spec
   import Signature 
   import ../SpecPath 
   import ../../Parser/Parse
+
+  type UIDPath    = List String
+  type Shadowing  = List UIDPath
+  type Shadowings = List Shadowing
 (*
 We are given a relative UnitId. To evaluate it, we first look in the local
 context. If we find it we are done. If not then it will either be in
@@ -226,9 +230,6 @@ it easy to experiment with different UnitId path resolution strategies..
 	       shadow_paths
          }
 
-  type UIDPath  = List String
-  type UIDPaths = List UIDPath
-
   %% this is set by norm-unitid-str in toplevel.lisp
   %% It allows a command-line spec to be put into a temporary file but have
   %% any ids be relative to the shell environment and not the local file's unitid
@@ -259,10 +260,10 @@ it easy to experiment with different UnitId path resolution strategies..
   %% this is set by user when creating a shadow version 
   %% It allows files on other directory trees to shadow 
   %% corresponding files in a base tree.
-  op  shadowingPaths : List UIDPaths
+  op  shadowingPaths : Shadowings
   def shadowingPaths = []
 
-  op  pathShadows : UIDPath -> UIDPaths
+  op  pathShadows : UIDPath -> Shadowing
   def pathShadows uid_path =
     let
       def expand shadow =
