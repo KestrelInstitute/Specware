@@ -28,7 +28,7 @@ in the places they are used at present, no such paths are expected.
   op  pathStringToCanonicalUID : String * Boolean -> UnitId
   def pathStringToCanonicalUID (str,global?) =
     %% Windows SWPATHs can have \'s                       
-    let str :: opt_hash = splitStringAt(str,"#") in
+    let str :: opt_hash = splitStringAt(str,"\#") in
     let str = map (fn #\\ -> #/ | c -> c) str in
     let absoluteString =
       case (explode str) of
@@ -216,7 +216,7 @@ This is like the above but accommodates the suffix as well.
        if fileName = "" then
 	 suffix
        else
-	 fileName ^"#"^ suffix
+	 fileName ^"\#"^ suffix
 
 
  %op  SpecCalc.relativeUID_ToString : RelativeUID -> String % already declared in /Languages/SpecCalculus/Semantics/Exception.sw
@@ -236,7 +236,7 @@ This is like the above but accommodates the suffix as well.
 	    if filename = "" then 
 	      suffix
 	    else 
-	      filename ^"#"^ suffix)
+	      filename ^"\#"^ suffix)
      | SpecPath_Relative unitId -> uidToString unitId
 
 
