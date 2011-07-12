@@ -42,7 +42,7 @@ SpecCalc qualifying spec
   def SpecCalc.evaluateTranslate term renaming pos = 
     {
      unitId <- getCurrentUID;
-     print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
+     print (";;; Elaborating spec-translation at " ^ uidToString unitId ^ "\n");
      value_info as (value, ts, uids) <- evaluateTermInfo term;
      case coerceToSpec value of
        | Spec spc -> 
@@ -741,13 +741,12 @@ SpecCalc qualifying spec
 					  | _ -> rules)
 				     | (Op ((dom_qid, _), _, _), _) ->
 				       (case findTheOp (spc, dom_qid) of
-					  | Some _ ->
-                                            % let _ = writeLine("translateSpecElement: "^printQualifiedId dom_qid) in
-                                            rule :: rules
+					  | Some _ -> rule :: rules
 					  | _ -> rules)
                                      | (Ambiguous (dom_qid, _, _), _) | findAllSorts(spc, dom_qid) = [] && findAllOps(spc, dom_qid) = [] ->
                                        rules
 				     | _ -> 
+                                       %% can we translate anything besides sort or op?
 				       [rule] ++ rules)
 		                  []
 				  rules
@@ -757,7 +756,6 @@ SpecCalc qualifying spec
 		     | _ -> 
 		       let renaming = (reverse rules, pos) in
                        let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
-                       % let _ = writeLine("trse: "^anyToString renaming^"\n"^anyToString sp_tm) in
                        case currentUID? of
                          | None -> (trans_spc_tm, spc)
                          | Some currentUID ->
@@ -775,10 +773,8 @@ op  evaluateTermWrtUnitId(sc_tm: SpecCalc.Term Position, currentUID: UnitId): Op
   let
     %% Ignore exceptions
     def handler except =
-      % let _ = writeLine("Exception: "^anyToString except) in
       return None
   in
-  % let _ = writeLine("evaluateTermWrtUnitId") in
   let prog = {cleanEnv;
               setCurrentUID currentUID;
               val  <- evaluateTerm sc_tm;
