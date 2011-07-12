@@ -174,8 +174,7 @@ AnnSpecPrinter qualifying spec
      | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
      | String      s           -> pp.fromString ("\""^s^"\"")          % "abc"
-     % | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs
-      | Char        c           -> pp.fromString ("#" ^ (Char.show c))
+     | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
