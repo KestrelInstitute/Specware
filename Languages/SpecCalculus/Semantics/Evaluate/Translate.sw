@@ -713,10 +713,11 @@ SpecCalc qualifying spec
 
   op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> SpecElements
   def translateSpecElements translators opt_renaming elements currentUID? =
-    mapSpecElements (translateSpecElement translators opt_renaming currentUID?) elements
+    let base = getBaseSpec() in
+    mapSpecElements (translateSpecElement translators opt_renaming currentUID? base) elements
 
-  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> SpecElement -> SpecElement
-  def translateSpecElement translators opt_renaming currentUID? el =
+  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> SpecElement
+  def translateSpecElement translators opt_renaming currentUID? base el =
     case el of
       | Sort    (qid, a)       -> Sort    (translateQualifiedId translators.sorts qid, a) 
       | SortDef (qid, a)       -> SortDef (translateQualifiedId translators.sorts qid, a)
@@ -743,8 +744,11 @@ SpecCalc qualifying spec
 				       (case findTheOp (spc, dom_qid) of
 					  | Some _ -> rule :: rules
 					  | _ -> rules)
-                                     | (Ambiguous (dom_qid, _, _), _) | findAllSorts(spc, dom_qid) = [] && findAllOps(spc, dom_qid) = [] ->
-                                       rules
+                                     | (Ambiguous (dom_qid, _, _), _) ->
+                                          if someNonBaseSort? (spc, dom_qid, base) || someNonBaseOp? (spc, dom_qid, base) then
+                                            [rule] ++ rules
+                                          else
+                                            rules
 				     | _ -> 
                                        %% can we translate anything besides sort or op?
 				       [rule] ++ rules)
@@ -766,6 +770,32 @@ SpecCalc qualifying spec
 	in
 	  Import (new_tm, spc, els, a)
       | _ -> el
+
+ op someNonBaseSort? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
+   if q = UnQualified then
+     case findAQualifierMap (spc.sorts, q, id) of
+       | Some info -> true
+       | None      -> false
+   else
+     let spec_srts = wildFindUnQualified (spc.sorts, id) in
+     if spec_srts = [] then
+       false
+     else
+      let base_srts = wildFindUnQualified (base.sorts, id) in
+      forall? (fn spec_srt -> ~ (spec_srt in? base_srts)) spec_srts
+
+ op someNonBaseOp? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
+   if q = UnQualified then
+     case findAQualifierMap (spc.ops, q, id) of
+       | Some info -> true
+       | None      -> false
+   else
+     let spec_ops = wildFindUnQualified (spc.ops, id) in
+     if spec_ops = [] then
+       false
+     else
+      let base_ops = wildFindUnQualified (base.ops, id) in
+      forall? (fn spec_op-> ~ (spec_op in? base_ops)) spec_ops
 
 op  Specware.cleanEnv : SpecCalc.Env ()
 op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
