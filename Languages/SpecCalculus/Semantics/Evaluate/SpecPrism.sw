@@ -1,58 +1,61 @@
 %%%% Spec Prisms
 
-SpecCalc qualifying 
-spec 
+SpecCalc qualifying spec 
+{
   import SpecInterp
 
-  def SpecCalc.evaluateSpecPrism (prism_tm as (domTerm, smTerms, pmode_tm)) pos = 
+  def SpecCalc.evaluateSpecPrism (prism_fields as (_, _, pmode_tm)) pos =
     case pmode_tm of
-      | Uniform     s       -> evaluateSpecPrismUniform     prism_tm pos
-      | PerInstance iso_tms -> evaluateSpecPrismPerInstance prism_tm pos
+      | Uniform     s       -> evaluateSpecPrismUniform     prism_fields pos
+      | PerInstance iso_tms -> evaluateSpecPrismPerInstance prism_fields pos
 
-  def evaluateSpecPrismUniform (prism_tm as (domTerm, smTerms, pmode_tm)) pos = 
-   {unitId <- getCurrentUID;
-    print (";;; Elaborating spec-prism at " ^ (uidToString unitId) ^ " : uniformly" 
+  op evaluateSpecPrismUniform (prism_fields as (dom_tm   : SCTerm, 
+                                                sm_tms   : List SCTerm, 
+                                                pmode_tm : SpecCalc.PrismModeTerm(Position.Position)))
+                              (pos : Position)
+   : SpecCalc.Env SpecCalc.ValueInfo =
+   {
+    prism_uid <- getCurrentUID;
+    print (";;; Elaborating spec-prism at " ^ (uidToString prism_uid) ^ " : uniformly" 
 	   ^ (let Uniform s = pmode_tm in
 	      case s of
 		| Random  -> " randomly"
 		| Generative -> " generatively"
 		| Nth n ->      " selecting " ^ (show n))
 	   ^ "\n");
-    (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
-    sm_valueinfos                      <- mapM evaluateTermInfo smTerms;
-    dom_spec <- (case coerceToSpec domValue of
+    (dom_value,dom_timestamp,dom_deps) <- evaluateTermInfo dom_tm;
+    sm_valueinfos                      <- mapM evaluateTermInfo sm_tms;
+    dom_spec <- (case coerceToSpec dom_value of
 		   | Spec spc -> return spc
 		   | Other _ -> 
-		     raise (TypeCheck (positionOf domTerm,
+		     raise (TypeCheck (positionOf dom_tm,
 				       "domain of spec prism is other"))
 		   | _ -> 
-		     raise (TypeCheck (positionOf domTerm,
+		     raise (TypeCheck (positionOf dom_tm,
 				       "domain of spec prism is not a spec")));
     sms <- mapM (fn (vi,_,_) ->
 		 case vi of
 		   | Morph sm -> return sm
-		   | _ ->
-		     raise (TypeCheck (pos,
-				       "non-morphism in prism")))
+		   | _ -> raise (TypeCheck (pos, "non-morphism in prism")))
                 sm_valueinfos;								     
-    pmode <- case pmode_tm of | Uniform s -> return (Uniform s);
-    timestamp <- return (case pmode of
-			   | Uniform _ -> 
-			     List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
-			                domTimeStamp
-					sm_valueinfos);
-    deps <- return (case pmode of
-		      | Uniform _ -> 
-		        List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
-			           domDepUIDs
-				   sm_valueinfos);
-    prism_tm <- return (SpecPrism prism_tm, pos);
-    return (SpecPrism {dom   = dom_spec,
-		       sms   = sms, 
-		       pmode = pmode,
-		       tm    = prism_tm},
-	    timestamp,
-	    deps)
+    prism_mode      <- return (case pmode_tm of | Uniform s -> Uniform s);
+    prism_timestamp <- return (List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
+                                          dom_timestamp
+                                          sm_valueinfos);
+    prism_deps      <- return (List.foldl (fn ((deps : List UnitId), (_,_,sm_deps)) -> listUnion (sm_deps, deps))
+                                          dom_deps
+                                          sm_valueinfos);
+    prism_tm        <- return (SpecPrism prism_fields, pos);
+    prism           <- return {dom   = dom_spec,
+                               sms   = sms, 
+                               pmode = prism_mode,
+                               tm    = prism_tm};
+    prior_choices <- getPrismChoices;
+    %% print (";;; prism_uid = " ^ anyToString prism_uid ^ "\n");
+    %% return (map (fn choice -> writeLine (";;; choice = " ^ anyToString choice)) prior_choices);
+    %% look up prism_uid in prior_choices
+    incr?         <- getIncrementNextPrism;
+    return (SpecPrism prism, prism_timestamp, prism_deps)
    }
 
   def evaluateSpecPrismPerInstance (prism_tm as (domTerm, smTerms, pmode_tm)) pos = 
@@ -103,4 +106,4 @@ spec
 	    deps)
     }
 
-endspec
+}

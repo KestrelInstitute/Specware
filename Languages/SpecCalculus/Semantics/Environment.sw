@@ -92,6 +92,7 @@ UnitId_Dependency.
       newGlobalVar ("ValidatedUnitIds",[]);
       newGlobalVar ("CommandInProgress?",false);
       newGlobalVar ("PrismChoices",[]);
+      newGlobalVar ("IncrementNextPrism?", true);  % default value probably never used
       newGlobalVar ("Counter",0);
       return ()
     }
@@ -331,8 +332,14 @@ while there is a transition from names with "UnitId" to "UnitId".
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type PrismChoice  = {uid : UnitId, n : Nat, max : Nat}
+  type PrismChoice  = {uid      : UnitId, % unit id to be touched to force re-evaluation of prism term
+                       prism_tm : SCTerm, % prism term being (re-)evaluated somewhere
+                       n        : Nat}    % index of current sm to use
   type PrismChoices = List PrismChoice
+
+  op cardinality (choice : PrismChoice) : Nat =
+   let (SpecPrism (_,sm_tms,_),_) = choice.prism_tm in
+   length sm_tms
 
   op  getPrismChoices : Env PrismChoices
   def getPrismChoices = 
@@ -342,28 +349,13 @@ while there is a transition from names with "UnitId" to "UnitId".
   def setPrismChoices ps = 
     writeGlobalVar ("PrismChoices", ps)
 
-  op  initialPrismChoice : UnitId * Nat -> PrismChoice
-  def initialPrismChoice (uid, max) =
-    %% indexing is [0 .. n)
-    {uid = uid, n = 0, max = max}
+  op getIncrementNextPrism : Env Bool =
+   %% If this is true, the next prism will evaluate to its next morphism 
+   %% If this is false, the next prism will evaluate to previous choice of morphism
+   readGlobalVar "IncrementNextPrism?"
 
-  op  incrPrismChoices : PrismChoices -> Option PrismChoices
-  def incrPrismChoices pcs =
-    %% compute next set of indices in cartesian product
-    %% return None when past end of all possiblities
-    %% indexing is [0 .. n)
-    case pcs of
-      | [] -> None
-      | pc :: pcs ->
-        let n = pc.n + 1 in
-	if n < pc.max then
-	  %% normal case
-	  Some (Cons (pc << {n = n}, pcs))
-	else
-	  %% "carry" case
-	  case incrPrismChoices pcs of
-	    | Some pcs -> Some (Cons (pc << {n = 0}, pcs))
-	    | None -> None
+  op setIncrementNextPrism (x : Bool) : Env () =
+   writeGlobalVar ("IncrementNextPrism?", x)
 
 (*
 
@@ -371,11 +363,10 @@ I'm not sure the following is necessary. It is called at the start of
 the toplevel functions. 
 
 *)
-  op resetGlobals : Env ()
-  def resetGlobals =
-      % writeGlobalVar ("LocalContext", PolyMap.emptyMap);
-      % writeGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
-      % writeGlobalVar ("PrismChoices", []);
-      writeGlobalVar ("ValidatedUnitIds",[])
+  op resetGlobals : Env () =
+   % writeGlobalVar ("LocalContext", PolyMap.emptyMap);
+   % writeGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
+   writeGlobalVar ("ValidatedUnitIds",[])
+
 endspec
 
