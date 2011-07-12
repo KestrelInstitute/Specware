@@ -124,6 +124,7 @@ typedef int16_t       s2;	// 16 bits (signed), see <stdint.h>
 typedef int32_t       s4;	// 32 bits (signed)
 typedef int64_t       s8;	// 64 bits (signed)
 
+typedef int Integer_Int0;
 
 /* "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**" */
 
@@ -313,4 +314,15 @@ int TranslationBuiltIn_mkFail (char* msg) {
 
 typedef int Accord_ProcType ();
 #define Accord_Object int
+
+/*********************  Pattern Matcher *************************/
+
+int MatchSuccess;
+int MatchValue;
+
+#define TranslationBuiltIn_block(form)     (form)
+#define TranslationBuiltIn_failWith(aa,bb) ((aa), (MatchSuccess == TRUE) ? MatchValue : (bb))
+#define TranslationBuiltIn_mkSuccess(cc)   (MatchSuccess = TRUE, MatchValue = (int) cc)
+#define TranslationBuiltIn_mkBreak         (MatchSuccess = FALSE)
+#define TranslationBuiltIn_mkFail(msg)     (MatchSuccess = FALSE)
 
