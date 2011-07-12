@@ -5,16 +5,18 @@ C qualifying spec
 
   type C_Spec =
     {
-     name                  : String,
-     includes              : Strings,
-     defines	           : Strings,
-     constDefns            : C_VarDefns,      % constant expressions defined by #define's
-     vars                  : C_VarDecls,
-     fns                   : C_FnDecls,
-     axioms                : C_Exps,
-     structUnionTypeDefns  : C_StructUnionTypeDefns,
-     varDefns              : C_VarDefns,      % constant expressions computable at compile-time
-     fnDefns               : C_FnDefns
+     name                 : String,
+     headers              : Strings,
+     includes             : Strings,
+     defines	          : Strings,
+     constDefns           : C_VarDefns,      % constant expressions defined by #define's
+     vars                 : C_VarDecls,
+     fns                  : C_FnDecls,
+     axioms               : C_Exps,
+     structUnionTypeDefns : C_StructUnionTypeDefns,
+     varDefns             : C_VarDefns,      % constant expressions computable at compile-time
+     fnDefns              : C_FnDefns,
+     trailers             : Strings
     }
 
   type C_StructUnionTypeDefn = | C_Struct   C_StructDefn

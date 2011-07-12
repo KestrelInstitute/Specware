@@ -37,21 +37,21 @@ spec
                                  return (path, name)
                                  };
      print("\n-Lisp-\n");
-     makeLisp spec_info spec_uid target_path version name;
+     makeLisp name spec_info spec_uid target_path version;
      print("\n-C-\n");
-     makeC    spec_info spec_uid target_path version name;
+     makeC    name spec_info spec_uid target_path version;
      print("\n-Java-\n");
-    %makeJava spec_info spec_uid target_path version name;
+    %makeJava name spec_info spec_uid target_path version;
      print("\n-----\n")
      }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op makeLisp (spec_info   : ValueInfo)
+  op makeLisp (name        : String)
+              (spec_info   : ValueInfo)
               (spec_uid    : RelativeUID)
               (target_path : List String)
               (version     : String)
-              (name        : String)
     : Env ValueInfo =
     {
      print ("\n;;; Generating Lisp " ^ version ^ "\n");
@@ -65,81 +65,94 @@ spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op writeMakeFile? : Bool = true  % make it easier to disable this
-  op runMakeFile?   : Bool = true  % make it easier to disable this
+  op writeMakeFile?  : Bool = true  % make it easier to disable this
+  op runMakeFile?    : Bool = true  % make it easier to disable this
+  op writeReadyFile? : Bool = true  % make it easier to disable this
 
-  op makeC (spec_info   : ValueInfo)
+  op makeC (app_name    : String)
+           (spec_info   : ValueInfo)
            (spec_uid    : RelativeUID)
            (target_path : List String)
            (version     : String)
-           (name        : String)
     : Env () =
     %% NOTE: This does not yet handle all the options in the lisp version
     %%       to be found in toplevel.lisp
     {
      print ("\n;;; Generating C " ^ version ^ "\n");
      c_dir <- return (target_path ++ [version, "C"]);
-     uid   <- return {path = c_dir ++ [name], hashSuffix = None};
+     uid   <- return {path = c_dir ++ [app_name], hashSuffix = None};
      filename <- return (uidToFullPath uid);
 
      print ("\n;;; Filename = " ^ filename ^ ".c\n");
      return (ensureDirectoriesExist filename);
 
-     junk   <- evaluateCGen (spec_info, Some filename);
+     evaluateCGen (app_name, spec_info, Some filename);
      if writeMakeFile? then 
-       {
-        device <- return (Specware.currentDeviceAsString ());
-        path   <- return ([device] ++ c_dir ++ ["swcmake.mk"]);
-        makefile <- return (uidToFullPath (uid << {path = path}));
-        print (";;; Local Makefile: " ^ makefile ^ "\n");
-        sw_make_file <- return (case getEnv "SPECWARE4" of
-                                  | Some s -> s ^ "/Library/Clib/Makerules"
-                                  | _ -> "oops");
-        print (";;; Specware Make file: " ^ sw_make_file ^ "\n");
-        s <- return ("# ----------------------------------------------\n" ^
-                       "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT\n" ^
-                       "# ----------------------------------------------\n" ^
-                       "\n\n" ^
-                       "# the toplevel target extracted from the :make command line:\n" ^
-                       "all : " ^ name ^ "\n\n" ^
-                       "# include the predefined make rules and variable:\n" ^
-                       "include " ^ sw_make_file ^ "\n" ^
-                       "# dependencies and rule for main target:\n" ^
-                       name ^ ": " ^ name ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
-                       "	$(CC) -o " ^ name ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ name ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
-        return (writeStringToFile (s, makefile));
-        if runMakeFile? then 
-          {
-           dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
-           make_fn   <- return ((case getEnv "SPECWARE4_MAKE" of
-                                   | Some s -> s
-                                   | _ -> "make"));
-           here <- return (pwdAsString());
-           print (";;; Connecting to ");
-           return (cd dir);
-           print ("\n;;; Running cmd to make C version: " ^ make_fn ^ "-f swcmake.mk\n");
-           return (run_cmd (make_fn, ["-f", "swcmake.mk"]));
-           print (";;; Connecting back to ");
-           return (cd here);
-           print ("\n")
-           }
-        else   
-          print ("\nNot running make file...\n")
-       }
+             {
+              device <- return (Specware.currentDeviceAsString ());
+              path   <- return ([device] ++ c_dir ++ ["swcmake.mk"]);
+              makefile <- return (uidToFullPath (uid << {path = path}));
+              print (";;; Local Makefile: " ^ makefile ^ "\n");
+              sw_make_file <- return (case getEnv "SPECWARE4" of
+                                        | Some s -> s ^ "/Library/Clib/Makerules"
+                                        | _ -> "oops");
+              print (";;; Specware Make file: " ^ sw_make_file ^ "\n");
+              s <- return ("# ----------------------------------------------\n" ^
+                             "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT\n" ^
+                             "# ----------------------------------------------\n" ^
+                             "\n\n" ^
+                             "# the toplevel target extracted from the :make command line:\n" ^
+                             "all : " ^ app_name ^ "\n\n" ^
+                             "# include the predefined make rules and variable:\n" ^
+                             "include " ^ sw_make_file ^ "\n" ^
+                             "# dependencies and rule for main target:\n" ^
+                             app_name ^ ": " ^ app_name ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
+                             "	$(CC) -o " ^ app_name ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ app_name ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
+              return (writeStringToFile (s, makefile));
+              if runMakeFile? then 
+                {
+                 dir       <- return (device ^ (uidToFullPath {path = c_dir, hashSuffix = None}));
+                 make_fn   <- return ((case getEnv "SPECWARE4_MAKE" of
+                                         | Some s -> s
+                                         | _ -> "make"));
+                 here <- return (pwdAsString());
+                 print (";;; Connecting to ");
+                 return (cd dir);
+                 print ("\n;;; Running cmd to make C version: " ^ make_fn ^ "-f swcmake.mk\n");
+                 return (run_cmd (make_fn, ["-f", "swcmake.mk"]));
+                 print (";;; Connecting back to ");
+                 return (cd here);
+                 print ("\n")
+                 }
+              else   
+                print ("\nNot running make file...\n")
+                }
+             else
+               print ("\nNot creating make file...\n");
+               
+     if writeReadyFile? then
+       let chars = explode filename in
+       let c_dirname = case rightmostPositionSuchThat (chars, fn c -> c = #/) of
+                         | Some n -> implode (prefix (chars, n + 1))
+                         | _ -> ""
+       in
+       let ready_name = c_dirname ^ "Ready" in
+       let _ = writeStringToFile("Wrote C code for " ^ app_name ^ ", version " ^ version ^ "\n", ready_name) in
+       print ("\nWrote " ^ ready_name ^ "\n")
      else
-       print ("\nNot creating make file...\n")
-     }
-
+       return ()
+    }
+    
   op Specware.cd                    : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
   op Specware.pwdAsString           : () -> String % defined in Preface.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op makeJava (spec_info as (Spec spc,_,_) : ValueInfo)
+  op makeJava (name                        : String)
+              (spec_info as (Spec spc,_,_) : ValueInfo)
               (spec_uid                    : RelativeUID)
               (target_path                 : List String)
               (version                     : String)
-              (name                        : String)
     : Env () =
     {
 

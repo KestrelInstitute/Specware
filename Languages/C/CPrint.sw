@@ -264,6 +264,9 @@ CPrint qualifying spec
   op ppStmts (ss : C_Stmts) : Pretty =
     prettysAll (map ppStmt ss)
 
+  op ppComment (s : String) : Pretty =
+   strings ["/* ", s, "*/"]
+
   op ppInclude (s : String) : Pretty =
     let s = if msWindowsSystem? && head (explode s) in? [#\\, #/] then
 	      (currentDeviceAsString ()) ^ s
@@ -430,6 +433,7 @@ CPrint qualifying spec
     %let s = sortStructUnionTypeDefns s in
     %let typeDefns = topSortTypeDefns s.typeDefns in
     % let _ = writeLine "Topsort done..." in
+    let headers              = map ppComment             s.headers              in
     let includes             = map ppInclude             s.includes             in
     let defines              = map ppDefine              s.defines              in
     let constDefns           = map ppVarDefnAsDefine     s.constDefns           in
@@ -459,6 +463,7 @@ CPrint qualifying spec
     let varDefns    = map (ppVarDefn asHeader) s.varDefns in
     let fnDefns     = map (ppFnDefn asHeader)  s.fnDefns  in
     let axioms      = map ppAxiom              s.axioms   in
+    let trailers    = map ppComment            s.trailers in
     prettysAll (section ("/* C spec */",               [])
                   ++ section ("/* Include files */",        includes)
                   ++ section ("/* Definitions */",          defines)

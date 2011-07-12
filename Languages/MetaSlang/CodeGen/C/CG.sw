@@ -153,9 +153,10 @@ spec
       | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
       | "IntegerAux" -> id in? ["-"]  % unary minus
       | "Nat"        -> id in? ["Nat", "show", "toString"]
-      | "Char"       -> id in? ["Char", "chr", "ord", "compare"] 
-      | "String"     -> id in? ["String", "compare", "append", "++", "^", "<", "newline", "length"]
+      | "Char"       -> id in? ["Char", "chr", "ord", "compare", "show"] 
+      | "String"     -> id in? ["String", "compare", "append", "++", "^", "<", "newline", "length", "implode"]
       | "System"     -> id in? ["writeLine", "toScreen"]
+      | "Handcoded"  -> true
       | _ -> false
 
   op subtract?   : Bool = true  % TODO: Would like to deprecate use of subtractSpec, 
@@ -278,20 +279,20 @@ spec
    let types = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelTypes spc) in
    (ops, types)
 
-  op generateCSpec (base : Spec) (spc : Spec) : C_Spec =
+  op generateCSpec (app_name : String) (base : Spec) (spc : Spec) : C_Spec =
     let base = substBaseSpecs base              in
     let spc  = transformSpecForCodeGen base spc in
-    generateCSpecFromTransformedSpec spc
+    generateCSpecFromTransformedSpec app_name spc 
 
-  op generateCSpecFromTransformedSpec (spc : Spec) : C_Spec =
+  op generateCSpecFromTransformedSpec (app_name : String) (spc : Spec) : C_Spec =
     let xcspc = emptyCSpec "" in
-    generateCSpecFromTransformedSpecIncr xcspc spc
+    generateCSpecFromTransformedSpecIncr app_name xcspc spc
 
-  op generateCSpecFromTransformedSpecIncr (xcspc : C_Spec) (spc : Spec) : C_Spec =
+  op generateCSpecFromTransformedSpecIncr (app_name : String) (xcspc : C_Spec) (spc : Spec) : C_Spec =
     let filter = (fn _ -> true) in
-    generateCSpecFromTransformedSpecIncrFilter xcspc spc filter
+    generateCSpecFromTransformedSpecIncrFilter app_name xcspc spc filter
 
-  op generateCSpecFromTransformedSpecIncrFilter (xcspc : C_Spec) (spc : Spec) (filter : QualifiedId -> Bool) 
+  op generateCSpecFromTransformedSpecIncrFilter (app_name : String) (xcspc : C_Spec) (spc : Spec) (filter : QualifiedId -> Bool) 
     : C_Spec =
     let useRefTypes = true                                                        in
     let constrOps   = []                                                          in
@@ -299,39 +300,51 @@ spec
     let cspec       = generateC4ImpUnit(impunit, xcspc, useRefTypes)              in
     cspec
 
-  op generateCSpecFromTransformedSpecEnv (spc : Spec) : Env C_Spec =
-    return (generateCSpecFromTransformedSpec spc)
+  op generateCSpecFromTransformedSpecEnv (app_name : String) (spc : Spec) : Env C_Spec =
+    return (generateCSpecFromTransformedSpec app_name spc)
 
-  op printToFile (cspec : C_Spec, optFile : Option String) : () =
+  op printToFile (app_name     : String,
+                  c_spec       : C_Spec,
+                  opt_filename : Option String)
+    : () =
     let filename =
-        case optFile of
+        case opt_filename of
           | None          -> "cgenout.c"
           | Some filename -> filename
     in
-    let len = length(filename) in
+    let len = length filename in
     let basename = if subFromTo (filename, len-2, len) = ".c" then
                      subFromTo (filename, 0, len-2)
 		   else
                      filename
     in
-    let _ = writeLine(";; writing generated code to "^basename^".[ch]...") in
-    let cfilename = basename^".c" in
-    let hfilename = basename^".h" in
-    let (hdrcspc,cspc) = splitCSpec cspec  in
-    let cspec = addInclude(cspc,hfilename) in
-    let _ = printCSpecToFile (hdrcspc, hfilename) in
-    printCSpecToFile (cspec, cfilename)
+    let _ = writeLine (";; writing generated code to " ^ basename ^ ".[ch]...") in
+    let c_filename = basename ^ ".c" in
+    let h_filename = basename ^ ".h" in
+    let (h_spec, c_spec) = splitCSpec c_spec  in
+    let c_spec = addHeader  (c_spec, app_name) in
+    let c_spec = addTrailer (c_spec, app_name) in
+    let h_spec = addHeader  (h_spec, app_name) in
+    let h_spec = addTrailer (h_spec, app_name) in
+    let c_spec = addInclude (c_spec, h_filename) in
+    let _ = printCSpecToFile (h_spec, h_filename) in
+    let _ = printCSpecToFile (c_spec, c_filename) in
+    ()
 
-  op printToFileEnv (cspec : C_Spec, optFile : Option String) : Env () =
-    return (printToFile (cspec, optFile))
+  op printToFileEnv (app_name     : String,
+                     c_spec       : C_Spec, 
+                     opt_filename : Option String)
+   : Env () =
+   return (printToFile (app_name, c_spec, opt_filename))
 
-  op generateCCode (base      : Spec, 
-                    spc       : Spec, 
-                    optFile   : Option String) 
+  op generateCCode (app_name     : String,
+                    base         : Spec, 
+                    spc          : Spec, 
+                    opt_filename : Option String)
     : () =
     let spc = if subtract? then subtractSpec spc base else spc in % TODO: Would like to deprecate use of subtractSpec
-    let cspec = generateCSpec base spc in 
-    printToFile (cspec, optFile)
+    let cspec = generateCSpec app_name base spc in 
+    printToFile (app_name, cspec, opt_filename)
 
   op sortToCType (cspc : C_Spec) (spc : Spec) (typ : Sort) : C_Spec * C_Type =
     %% note: these two defaultCgContext's are very different from each other:

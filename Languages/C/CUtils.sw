@@ -7,6 +7,7 @@ CUtils qualifying spec
   op emptyCSpec (name : String) : C_Spec =
     {
      name                 = name,
+     headers              = [],
      includes             = [],
      defines              = [],
      constDefns           = [],
@@ -15,7 +16,8 @@ CUtils qualifying spec
      axioms               = [],
      structUnionTypeDefns = [],
      varDefns             = [],
-     fnDefns              = []}
+     fnDefns              = [],
+     trailers             = []}
 
   op addDefine    (cspc : C_Spec, X : String) : C_Spec =
     let defines = filter (fn(df) -> df ~= X) cspc.defines in
@@ -23,6 +25,7 @@ CUtils qualifying spec
     cspc << {defines = defines}
 
   op renameCSpec             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {name                 = X}                       
+  op addHeader               (cspc : C_Spec, X : String)                 : C_Spec = cspc << {headers              = cspc.headers              ++ [X]}
   op addInclude              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {includes             = cspc.includes             ++ [X]}
   op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
   op addVar                  (cspc : C_Spec, X : C_VarDecl)              : C_Spec = cspc << {vars                 = cspc.vars                 ++ [X]}
@@ -31,6 +34,7 @@ CUtils qualifying spec
   op addStructDefn           (cspc : C_Spec, X : C_StructDefn)           : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Struct X]}
   op addUnionDefn            (cspc : C_Spec, X : C_UnionDefn)            : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Union  X]}
   op setStructUnionTypeDefns (cspc : C_Spec, X : C_StructUnionTypeDefns) : C_Spec = cspc << {structUnionTypeDefns = X}
+  op addTrailer              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {trailers             = cspc.trailers             ++ [X]}
 
   %% CMacros is a list of names of macros defined in SWC_Common.h
   %% E.g. "String_Less" expands to "strcmp", so we should avoid
@@ -211,6 +215,7 @@ CUtils qualifying spec
         let cspc =
          {
 	  name                 = cspc1.name,
+          headers              = cspc1.headers ++ cspc2.headers,
 	  includes             = concatnewEq (cspc1. includes,   cspc2.includes),
 	  defines              = concatnewEq (cspc1. defines,    cspc2.defines),
 	  constDefns           = concatnewEq (cspc1. constDefns, cspc2.constDefns),
@@ -224,7 +229,8 @@ CUtils qualifying spec
                                            | (x,res) -> 
                                              res ++ [x])
                                        cspc2.structUnionTypeDefns
-                                       cspc1.structUnionTypeDefns}
+                                       cspc1.structUnionTypeDefns,
+          trailers             = cspc1.trailers ++ cspc2.trailers}
         in
         mergeCSpecs (cspc :: cspcs)
 
@@ -573,6 +579,7 @@ CUtils qualifying spec
   op getImplCSpec (cspc : C_Spec) : C_Spec =
     {
      name                 = cspc.name,
+     headers              = [],
      includes             = [],
      defines              = [],
      constDefns           = [],
@@ -581,7 +588,8 @@ CUtils qualifying spec
      axioms               = cspc.axioms,
      structUnionTypeDefns = [],
      varDefns             = cspc.varDefns,
-     fnDefns              = cspc.fnDefns
+     fnDefns              = cspc.fnDefns,
+     trailers             = []
     }
 
   % --------------------------------------------------------------------------------
@@ -1070,6 +1078,7 @@ CUtils qualifying spec
     in
     let cspc = {
                 name                 = cspc.name,
+                headers              = [],
                 includes             = [],
                 defines              = [],
                 constDefns           = [],
@@ -1078,7 +1087,8 @@ CUtils qualifying spec
                 structUnionTypeDefns = [],
                 varDefns             = [],
                 axioms               = cspc.axioms,
-                fnDefns              = filter (filterFnDefn false) cspc.fnDefns
+                fnDefns              = filter (filterFnDefn false) cspc.fnDefns,
+                trailers             = []
                 }
     in
     (hdr,cspc)
