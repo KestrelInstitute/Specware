@@ -11,8 +11,50 @@
 ;;; op debug     : fa(a) String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))
 
+;;; The following are hacks to print specs more tersely inside anyToString,
+;;; which normally should be used only for debugging.
+
+(defun System-Spec::probablyASpec? (x)
+  (and ;; (progn (format t "~%Looking for spec....~%") t)
+       (typep  x '(simple-vector 4))  
+       ;; elements: SpecElements 
+       (typep (svref x 0) 'cons)
+       ;; ops: OpMap
+       (typep (svref x 1) '(SIMPLE-VECTOR 3))
+       (typep (svref (svref x 1) 0) 'HASH-TABLE)
+       (typep (svref (svref x 1) 1) 'BOOLEAN)
+       (typep (svref (svref x 1) 2) 'CONS)
+       ;; qualifier: Option Qualifier
+       (typep (svref x 2) 'cons)
+       ;; sorts: SortMap
+       (typep (svref x 3) '(SIMPLE-VECTOR 3))
+       (typep (svref (svref x 3) 0) 'HASH-TABLE)
+       (typep (svref (svref x 3) 1) 'BOOLEAN)
+       (typep (svref (svref x 3) 2) 'CONS)))
+
+(defvar *spec-print-terse*  t)
+(defvar *spec-print-level*  4)
+(defvar *spec-print-length* 40)
+
+(defun anySpecToString (s) 
+  (if *spec-print-terse*
+      (format nil "<Spec with ~D elements, ~D types, ~D ops, ~A>"
+              (length (svref s 0))
+              (hash-table-count (svref (svref s 3) 0))
+              (hash-table-count (svref (svref s 1) 0))
+              (if (eq (car (svref s 2)) :|Some|)
+                  (format nil "qualified by " (cddr (svref s 2)))
+                  "unqualified"))
+      (let* ((common-lisp::*print-level*  *spec-print-level*)
+             (common-lisp::*print-length* *spec-print-length*))
+        (format nil "~S" s))))
+
 ;;; op anyToString : fa(a) a -> String
-(defun anyToString (s) (let ((*print-pretty* nil)) (format nil "~S" s)))
+(defun anyToString (x) 
+  (let ((common-lisp::*print-pretty* nil)) 
+    (if (probablyASpec? x)
+        (anySpecToString x)
+        (format nil "~S" x))))
 
 ;;; op print    : fa(a) a -> a
 (defun |!print| (x) (print x) (force-output))
@@ -116,3 +158,6 @@
 	  ))
     (append (rest (pathname-directory resolved-pathname))
 	    (list (pathname-name resolved-pathname)))))
+
+
+
