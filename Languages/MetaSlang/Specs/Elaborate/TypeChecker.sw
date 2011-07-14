@@ -1283,7 +1283,7 @@ TypeChecker qualifying spec
 	let pos        = termAnn   term in
 	let termString = printTerm term in
 	let tsLength   = length termString in
-	let fillerA    = blankString (10 - tsLength) in  % ### why the qualifier? why the coercion?
+	let fillerA    = blankString (10 - tsLength) in
 	let fillerB    = blankString (tsLength - 10) in
 	let msg        = newLines ["Could not match type constraint", 
 				   fillerA ^ termString ^ " of " ^ (printMaybeAndType givenSort), 
@@ -1309,11 +1309,6 @@ TypeChecker qualifying spec
    %  reversed for some obscure reason, but they seem ok now here.
    %  If there are problems, fix them elsewhere, and don't mangle 
    %  this code!
-   %
-   % Obsolete comment:
-   %   Here, most of the time, expectedSort is C (the sort of the argument)
-   %   while givenSort is A (the domain sort of the function); rather
-   %   ill-chosen names.
 
   op elaborateSortForPat (env: LocalEnv, pat: Pattern, givenSort: Sort, expectedSort: Sort): Sort =
     let givenSortChecked = checkSort (env, givenSort) in
