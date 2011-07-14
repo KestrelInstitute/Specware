@@ -77,7 +77,7 @@ SpecCalc qualifying spec
    let prefix = ppSep (ppString "/") (map ppString path) in
    case hashSuffix of
      | None -> prefix
-     | Some suffix -> ppAppend prefix (ppString ("#" ^ suffix))
+     | Some suffix -> ppAppend prefix (ppString ("\#" ^ suffix))
 
   op ppRelativeUID : RelativeUID -> Doc
  def ppRelativeUID relUID =
