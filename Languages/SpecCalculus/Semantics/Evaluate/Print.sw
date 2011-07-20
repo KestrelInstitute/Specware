@@ -34,6 +34,7 @@ SpecCalc qualifying spec {
 
  def printSpecExpanded? = false
 
+ % from show, showx:
  def SpecCalc.evaluatePrint (term,useXSymbol?) = {
    (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
    (optBaseUnitId,base_spec)     <- getBase;
@@ -99,6 +100,7 @@ SpecCalc qualifying spec {
 				  spc))
 
 
+ % from show, showx:
  def AnnSpecPrinter.printSpecExpanded base_spec (*reverse_context*) spc =
    %% TODO: use reverse_context for imports ?
    AnnSpecPrinter.printSpecFlat (subtractSpec spc base_spec) 
@@ -212,10 +214,10 @@ SpecCalc qualifying spec {
     in
       ppConcat
         (case (ppAbbrevMap "type " sortMap) ++ (ppAbbrevMap "op " opMap) of
-	   | []         -> [ppString "{}"]
-	   | abbrev_map -> [ppString "{",
+	   | []         -> [ppString " {} "]
+	   | abbrev_map -> [ppString " {",
 			    ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
-			    ppString "}"])
+			    ppString "} "])
 
 
   op  ppMorphismPragmas : Morphism -> Doc
@@ -300,7 +302,7 @@ SpecCalc qualifying spec {
 			   % ppBreak, % way too many newlines!
 			   ppElem (eval target_map edge)]),
 			ppBreak, 
-			ppString "+->",
+			ppString " +-> ",
 			ppBreak, 
 			let sm = eval edge_map edge in
 			case evalPartial reverse_context (Morph sm) of
@@ -314,7 +316,7 @@ SpecCalc qualifying spec {
      (ppGroup 
        (ppConcat [ppString "diagram {",
 		  ppNest 9 (ppSep (ppCons (ppString ",") ppBreak) (pp_vertice_entries ++ pp_edge_entries)),
-		  ppString "}"]))
+		  ppString "} "]))
 
    %% ppFormat (ppDiagram
    %%	     (mapDiagram dg 
@@ -379,10 +381,10 @@ SpecCalc qualifying spec {
 	      case cod_strs of
 		| [_] -> cod_strs ++ [doc]
 		| _ -> cod_strs ++ [ppString ", ", doc])
-             [ppString "{"]
+             [ppString " {"]
 	     sp.sms
    in
-   let sms = ppConcat (sms ++ [ppBreak, ppString "}"]) in
+   let sms = ppConcat (sms ++ [ppBreak, ppString "} "]) in
    ppFormat (ppGroup 
 	     (ppConcat 
 	      [prefix,
@@ -414,6 +416,6 @@ SpecCalc qualifying spec {
 	       ppString med_str,
 	       ppString " <- ",
 	       ppMorphismX base_spec reverse_context si.c2m,
-	       ppString "}"]))
+	       ppString "} "]))
 
 }
