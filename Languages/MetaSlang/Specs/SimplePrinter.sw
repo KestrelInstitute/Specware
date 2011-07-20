@@ -138,7 +138,7 @@ SpecCalc qualifying spec
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
   op ppAOpInfo : [a] AOpInfo a -> Pretty
- def ppAOpInfo info = ppAOpInfoAux (" op  ", info)
+ def ppAOpInfo info = ppAOpInfoAux (" op ", info)
 
   op ppAOpInfoAux : [a] String * AOpInfo a -> Pretty
  def ppAOpInfoAux (decl_keyword, info) = 
