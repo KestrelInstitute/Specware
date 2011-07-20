@@ -16,7 +16,9 @@
 	    " type Interval = {start : Integer, stop : Integer}"
 	    (:optional " ")
 	    " op  isEmptyInterval? : Interval -> Boolean"
-	    " def isEmptyInterval? {start = x, stop = y} = x = y"
+            (:alternatives
+             " def isEmptyInterval? {start = x, stop = y} = x = y"
+             " def isEmptyInterval? {start = x : Integer, stop = y : Integer} = x = y")
 	    "endspec"
 	    ""
 	    ""
