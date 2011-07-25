@@ -431,7 +431,7 @@ Should we check to see if qid is in cod_map??
                           if equivTypeSubType? cod_spec (translated_sort, cod_sort) morphismIgnoresSubtypes? then
 			    return ()
 			  else 
-			    let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+                            let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
 			              "\nThe domain type " ^ (printSort dom_sort) ^
 				      "\n  translates to " ^ (printSort translated_sort) ^
 				      "\n   which is not " ^ (printSort cod_sort)
@@ -442,12 +442,12 @@ Should we check to see if qid is in cod_map??
 		   raise (MorphError (pos, "Peculiar: No rule could be found for sort " ^ printQualifiedId dom_qid))
 
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
-	let (dom_tvs, dom_sort,dom_dfn) = unpackFirstOpDef dom_info in
-	case dom_sort of
+	let (dom_tvs, dom_srtx,dom_dfn) = unpackFirstOpDef dom_info in
+	case dom_srtx of
 	  | Any _ -> return ()
 	  | _ ->
 	    let dom_qid         = Qualified (dom_q, dom_id) in
-            let dom_sort        = maybePiSort (dom_tvs, dom_sort) in
+            let dom_sort        = maybePiSort (dom_tvs, dom_srtx) in
 	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
 	    case evalPartial opMap dom_qid of
 	      | Some cod_qid ->
@@ -461,8 +461,8 @@ Should we check to see if qid is in cod_map??
 			 in
 			   raise (MorphError (pos, msg))
 		       else
-                         let (cod_tvs, cod_srt, cod_dfn) = unpackFirstOpDef cod_info in
-			 let cod_sort = maybePiSort (cod_tvs, cod_srt) in
+                         let (cod_tvs, cod_srtx, cod_dfn) = unpackFirstOpDef cod_info in
+			 let cod_sort = maybePiSort (cod_tvs, cod_srtx) in
 			 if equivTypeSubType? cod_spec (translated_sort, cod_sort) morphismIgnoresSubtypes? then
 			   return ()
 			 else
