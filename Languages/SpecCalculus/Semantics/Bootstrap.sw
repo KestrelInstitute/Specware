@@ -214,7 +214,7 @@ Specware qualifying spec
     in
       run (catch prog toplevelHandler) 
 
-   %%% show command
+   %%% show and showx commands:
 
   op  evaluatePrint_fromLisp : String * Boolean -> Boolean
   def evaluatePrint_fromLisp (path,use_x_symbol?) = 
