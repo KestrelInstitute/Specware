@@ -14,8 +14,8 @@ IneqSet qualifying spec
   
   op normalize: IneqSet -> M IneqSet
   def normalize(ineqSet) =
-    if member(contradictIneqGt, ineqSet) or
-      member(contradictIneqGtEq, ineqSet) or
+    if member(contradictIneqGt, ineqSet) ||
+      member(contradictIneqGtEq, ineqSet) ||
       member(contradictIneqGtZero, ineqSet)
       then return ([falseIneq])
     else
