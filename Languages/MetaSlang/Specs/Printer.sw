@@ -799,8 +799,7 @@ AnnSpecPrinter qualifying spec
      | BoolPat   (b, _) -> string (Bool.show b)
      | NatPat    (n, _) -> string (Nat.show     n)
      | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
-     %| CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
-     | CharPat   (c, _) -> pp.fromString ("#" ^ (Char.show c))
+     | CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
 
      | VarPat    ((id, srt), _) -> 
        if printSort? context then
@@ -1088,8 +1087,8 @@ AnnSpecPrinter qualifying spec
               | Infix (Right, i) -> [(4, string (" infixr "^Nat.show i))])
            ++
             [(4, blockNone (0, [(0, string " :"), 
-                                (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
-                                                     (0, string " "), 
+                                (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
+                                                   (0, string " "), 
                                                    (4, ppSort context ([index, opIndex], Top) srt)])),
                                 (0, string " ")]))]
            ++
