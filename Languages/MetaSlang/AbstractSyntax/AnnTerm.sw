@@ -308,16 +308,12 @@ op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
   in
   maybePiTerm(tvs, SortedTerm(main_tm, ty, pos))
 
-op [a] typeTermPairsToTerm(ty_tm_prs: List(ASort a * ATerm a)): ATerm a =
-  case ty_tm_prs of
-    | [(ty, tm)] -> SortedTerm(tm, ty, termAnn tm)
-    | (_, tm) :: _ -> And(map (fn (ty, tm) -> SortedTerm(tm, ty, sortAnn ty))
-                            ty_tm_prs,
-                          termAnn tm)
-
-op [a] maybePiAndSortedTerm(tvs: TyVars, ty_tm_prs: List(ASort a * ATerm a)): ATerm a =
-  maybePiTerm(tvs, typeTermPairsToTerm ty_tm_prs)
-
+op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm a =
+  case triples of
+    | [(tvs, ty, tm)] -> maybePiTerm (tvs, SortedTerm (tm, ty, termAnn tm))
+    | (_, _, tm) :: _ -> And (map (fn (tvs, ty, tm) -> maybePiTerm (tvs, SortedTerm (tm, ty, sortAnn ty)))
+                                  triples,
+                              termAnn tm)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
@@ -617,12 +613,12 @@ op [a] maybePiAndSortedTerm(tvs: TyVars, ty_tm_prs: List(ASort a * ATerm a)): AT
     %| Any        _          -> []
      | _                     -> [tm]
 
- op [a] numTerms(tm: ATerm a): Nat = length(unpackSortedTerms tm).2
+ op [a] numTerms(tm: ATerm a): Nat = length (unpackSortedTerms tm)
 
  op [a] unpackFirstTerm(t: ATerm a): TyVars * ASort a * ATerm a =
    %let (tvs, ty, tm) = unpackTerm t in
-   let (tvs, (ty1, tm1) :: _) = unpackSortedTerms t in
-   (tvs, ty1, tm1)
+   let ((tvs, ty, tm) :: _) = unpackSortedTerms t in
+   (tvs, ty, tm)
 
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
    let tms = innerTerms tm in
@@ -635,19 +631,26 @@ op [a] maybePiAndSortedTerm(tvs: TyVars, ty_tm_prs: List(ASort a * ATerm a)): AT
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
- op [a] unpackSortedTerms(tm: ATerm a): TyVars * List(ASort a * ATerm a) =
-   let def unpackTm(tm: ATerm a, ty: ASort a): List(ASort a * ATerm a) =
-         case tm of
-           | And (tms, _) -> foldr (fn (tm, result) -> unpackTm(tm, ty) ++ result) [] tms
-           | SortedTerm (s_tm, ty, _) -> unpackTm(s_tm, ty)
-           | _ -> [(ty, tm)]
+ op [a] unpackSortedTerms (tm : ATerm a) : List (TyVars * ASort a * ATerm a) =
+   let 
+     def unpackTm (tm: ATerm a, ty: ASort a) : List (TyVars * ASort a * ATerm a) =
+       case tm of
+         | And (tms, _) -> foldl (fn (result, tm) -> result ++ unpackTm(tm, ty)) [] tms
+         | SortedTerm (tm, ty, _) -> unpackTm(tm, ty)
+         | _ -> [([], ty, tm)]
    in   
    case tm of
-     | Pi (tvs, tm, _) -> (tvs, (unpackSortedTerms tm).2)
+     | Pi (pi_tvs, tm, _) -> 
+       foldl (fn (result, (tvs, typ, tm)) -> result ++ [(pi_tvs ++ tvs, typ, tm)])
+             [] 
+             (unpackSortedTerms tm)
+
      | And (tms, _) ->
-       ([], foldr (fn (tm, result) -> (unpackSortedTerms tm).2 ++ result) [] tms)
-     | SortedTerm (tm, ty, _) -> ([], unpackTm(tm, ty))
-     | _                      -> ([], [(termSort tm, tm)])
+       foldl (fn (result, tm) -> result ++ (unpackSortedTerms tm)) [] tms
+
+     | SortedTerm (tm, ty, _) -> unpackTm (tm, ty)
+
+     | _                      -> [([], termSort tm, tm)]
 
  op [a] unpackBasicTerm(tm: ATerm a): TyVars * ASort a * ATerm a =
    case tm of
@@ -656,14 +659,16 @@ op [a] maybePiAndSortedTerm(tvs: TyVars, ty_tm_prs: List(ASort a * ATerm a)): AT
      | _                      -> ([], Any(termAnn tm), tm)
 
 
- op [a] unpackNthTerm(t: ATerm a, n: Nat): TyVars * ASort a * ATerm a =
-   % let _ = writeLine(printTerm t) in
-   let (tvs, ty_tms) = unpackSortedTerms t in
+ op [a] unpackNthTerm (tm : ATerm a, n: Nat): TyVars * ASort a * ATerm a =
+   % let _ = writeLine(printTerm tm) in
+   let ty_tms = unpackSortedTerms tm in
    let len = length ty_tms in
-   if len = 0 then (tvs, Any(termAnn t), t)
-     else let (ty, tm) = ty_tms@(max(len - n - 1, 0)) in
-          % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(SortedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
-          (tvs, ty, tm)
+   if len = 0 then 
+     ([], Any(termAnn tm), tm)
+   else 
+     let (tvs, ty, tm) = ty_tms @ (max (len - n - 1, 0)) in
+     % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(SortedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
+     (tvs, ty, tm)
 
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
    let tms = innerTerms full_tm in
