@@ -233,17 +233,20 @@ SpecCalc qualifying spec
                                          | _ | refine? -> combineSubTypes(old_srt, new_srt, old_tm, new_tm)
 					 | _ -> old_srt)   % TODO:  maybeAndSort ([old_srt, new_srt], sortAnn new_srt)
 		  in
-                  let new_tm = if refine? && old_defined?
-                                 then   %% Reverse order so most refined term first
-                                   And(new_tm :: opDefInnerTerms old_info, termAnn new_tm)
-                                else new_tm
+                  let new_tm = if refine? && old_defined? then
+                                 %% Reverse order so most refined term first
+                                 And (new_tm :: opDefInnerTerms old_info, termAnn new_tm)
+                               else 
+                                 new_tm
                   in
                   % let _ = if refine? then writeLine("refine "^(printAliases new_names)^": "^printSort combined_srt^" =\n"^printTerm new_tm) else () in
-		  let combined_dfn = maybePiTerm (old_tvs, if refine? && ~old_defined?
-                                                            then
-                                                              let (_, sort_term_prs) = unpackSortedTerms old_info.dfn in
-                                                              typeTermPairsToTerm((combined_srt, new_tm) :: sort_term_prs)
-                                                            else SortedTerm (new_tm, combined_srt, termAnn new_tm)) in
+		  let combined_dfn = if refine? && ~old_defined? then
+                                       let triples = unpackSortedTerms old_info.dfn in
+                                       maybePiAndSortedTerm (([], combined_srt, new_tm) :: triples)
+                                     else 
+                                       maybePiTerm (old_tvs, 
+                                                    SortedTerm (new_tm, combined_srt, termAnn new_tm))
+                  in
                   % let _ = writeLine("addOP "^id":\n"^printTerm combined_dfn) in
 		  let combined_info = old_info << {names = combined_names, 
                                                    dfn   = combined_dfn,
