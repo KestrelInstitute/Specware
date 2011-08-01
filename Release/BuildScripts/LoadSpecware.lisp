@@ -10,7 +10,10 @@
 
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf (readtable-case *readtable*) :invert))
+  (defun set-readtable-invert ()
+    (setq *readtable* (copy-readtable *readtable*))
+    (setf (readtable-case *readtable*) :invert))
+  (set-readtable-invert))
 
 (defpackage :SpecToLisp)
 (defpackage :Specware (:use :cl)   ; Most systems default to this but not sbcl until patch loaded below
@@ -18,9 +21,16 @@
   (:nicknames :specware))
 (in-package :Specware)
 
+
+#+case-sensitive
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun set-readtable-invert ()
+    (setq *readtable* (copy-readtable *readtable*))
+    (setf (readtable-case *readtable*) :invert)))
+
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
-(declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -98,7 +108,7 @@
     (load utils)
     (compile-and-load-lisp-file utils)))
 
-(defparameter Specware4 (substitute #\/ #\\ (Specware::getenv "SPECWARE4")))
+(defparameter Specware4 (substitute #\/ #\\ (convert-pathname-from-cygwin (Specware::getenv "SPECWARE4"))))
 
 (if (null Specware::Specware4)
     (warn "SPECWARE4 environment var not set")
@@ -184,6 +194,7 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
+    "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTHarray.lisp"
@@ -191,6 +202,7 @@
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
+    "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     "Provers/DP/Handwritten/Lisp/Rational.lisp"
@@ -372,14 +384,17 @@
   (eval
    `(defparameter ,(intern "*FASL-DIRECTORY*" "SWANK-LOADER")
      (format nil "~a/Library/IO/Emacs/slime/" (Specware::getenv "SPECWARE4"))))
-  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp")))
+  (let ((loader (in-specware-dir "Library/IO/Emacs/slime/swank-loader.lisp"))
+        (hooks (in-specware-dir "Library/IO/Emacs/slime/contrib/swank-listener-hooks.lisp")))
     (load loader :verbose t)
-    (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t))
+    (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t)
+    (load hooks :verbose t))
   )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
-(format t "~2%To bootstrap, run (boot)~%")
-(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
+;; this is just confusing...
+;; (format t "~2%To bootstrap, run (boot)~%")
+;; (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
 ;;;#+allegro
 ;;;(excl:without-package-locks
