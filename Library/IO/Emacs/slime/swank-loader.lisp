@@ -274,8 +274,9 @@ global variabes in SWANK."
     (mapc #'delete-package '(:swank :swank-io-package :swank-backend)))
   (cond ((or (not (find-package :swank)) reload)
          (load-swank))
-        (t 
-         (warn "Not reloading SWANK.  Package already exists.")))
+        (t
+         ;; sjw  warn --> format t
+         (format t "Not reloading SWANK.  Package already exists.")))
   (when load-contribs
     (compile-contribs :load t))
   (when setup
