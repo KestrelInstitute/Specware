@@ -5,8 +5,11 @@ import /Library/Legacy/Utilities/System
 %% Check 1 in numToCheck
 op numToCheck: Nat = 10
 
+op randomCheck?(): Bool =
+   random numToCheck = 0
+
 op [a] randomlyCheckPred(val_to_check: a, pred: a -> Bool): Bool =
-  random numToCheck = 0
+  randomCheck?()
     => pred val_to_check
 
 op [a] checkPredicate(val_to_check: a, pred:a -> Bool, err_msg_fn: a -> String): () =
