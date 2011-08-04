@@ -2285,6 +2285,11 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | _ -> ty
 
 
+  op subtypePredicate(ty: Sort, spc: Spec): MS.Term =
+    case raiseSubtype(ty, spc) of
+      | Subsort(sup_ty, pred, _) -> pred
+      | _ -> mkLambda(mkWildPat ty, trueTerm)
+
   type TyVarSubst = List(TyVar * Sort)
   op  instantiateTyVars: Sort * TyVarSubst -> Sort
   def instantiateTyVars(s,tyVarSubst) =
