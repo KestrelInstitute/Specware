@@ -365,9 +365,26 @@ def mapSpecSorts tsp sorts =
   mapSortInfos (fn info -> info << {dfn = mapSort tsp info.dfn})
                sorts
 
+ op testing? : Bool = false
+ op nnn : Nat = 0
+
+ op fooincr () : () = ()
+
+ op [a] foofoo (second? : Bool, msg : String, x : a) : () = 
+   if testing? then 
+     let _ = writeLine ("nnn = " ^ Nat.show nnn ^ ", " ^ Bool.show second?) in
+     let _ = writeLine (msg ^ anyToString x)  in
+     if second? then fooincr () else ()
+   else 
+     ()
+
  op  mapSpecOps : [b] TSP_Maps b -> AOpMap b -> AOpMap b
  def mapSpecOps tsp ops =
-   mapOpInfos (fn info -> info << {dfn = mapTerm tsp info.dfn})
+   mapOpInfos (fn info -> 
+                 let _ = foofoo (false, "old info: ", info) in
+                 let new_info = info << {dfn = mapTerm tsp info.dfn} in
+                 let _ = foofoo (true, "new info: ", new_info) in
+                 new_info)
               ops
 
 op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =

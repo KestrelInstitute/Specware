@@ -551,6 +551,16 @@ MetaSlang qualifying spec
        | [srt] -> srt
        | _     -> And (srts, pos)
 
+ op traceMaybeAndTerm? : Bool = false
+
+ def describe_and_term tm =
+   let s = if existsSubTerm (fn tm -> case tm of | ApplyN _ -> true | _ -> false) tm then
+            "ApplyN: "
+           else
+            "        "
+   in
+   writeLine (s ^ anyToString tm)
+
  def MetaSlang.maybeAndTerm (tms, pos) =
    let non_dup_terms =
        foldl (fn (pending_tms, tm) ->
@@ -572,6 +582,7 @@ MetaSlang qualifying spec
              []
 	     (andTerms tms)
    in
+   let x = 
    case non_dup_terms of
      | []   -> Any pos
      | [tm] -> tm
@@ -580,5 +591,16 @@ MetaSlang qualifying spec
      | (SortedTerm(Any _, ty, a1)) :: r_tms ->
        SortedTerm(mkAnd r_tms, ty, a1)
      | _    -> And (non_dup_terms, pos)
+   in
+   let _ = if traceMaybeAndTerm? && (length non_dup_terms > 1) then
+             let _ = map (fn tm -> describe_and_term tm) non_dup_terms in
+             let _ = writeLine("=>") in
+             let _ = writeLine(anyToString x) in
+             let _ = writeLine("---") in
+             ()
+           else
+             ()
+   in 
+   x
 
 end-spec

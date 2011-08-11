@@ -132,6 +132,7 @@ Utilities qualifying spec
 				  isFree(v,t3)
      | SortedTerm(t,_,_)      -> isFree(v,t)
      | Seq(tms,_)             -> exists? (fn t -> isFree(v,t)) tms
+     | mystery -> fail ("unrecognized argument to isFree : " ^ anyToString mystery)
 
  op isPatBound : Var * Pattern -> Bool
  def isPatBound (v,pat) = 

@@ -90,22 +90,23 @@ PosSpecToSpec qualifying spec
              | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
              | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
              | _ -> f
+
    in
-%% mapSpec is correct but unnecessarily maps non-locals
-%   mapSpec (convertPTerm, convertPSort, fn x -> x)
-%     spc
-  let {sorts, ops, elements, qualifier} = spc in
-%  let {imports = _, localOps, localSorts, localProperties} = importInfo in
-  let tsp = (convertPTerm, convertPSort, fn x -> x) in
-  let spc = spc << { ops = if ~(hasLocalOp? spc) then 
-                              ops
-                            else
-                              mapOpInfosUnqualified (fn info ->
-                                                     if someOpAliasIsLocal? (info.names, spc) then
-                                                       info << {dfn = mapTerm tsp info.dfn}
-                                                     else 
-                                                       info)
-                                         ops,
+   let tsp = (convertPTerm, convertPSort, fn x -> x) in
+
+   %% let spc = mapSpec tsp spc -- would be correct but unnecessarily maps non-locals
+   
+   let {sorts, ops, elements, qualifier} = spc in
+   let spc = spc << {ops = if ~(hasLocalOp? spc) then 
+                             ops
+                           else
+                             % mapOpInfosUnqualified causes some specs to fail to elaborate properly
+                             mapOpInfos (fn info ->
+                                           if someOpAliasIsLocal? (info.names, spc) then
+                                             info << {dfn = mapTerm tsp info.dfn}
+                                           else 
+                                             info)
+                                        ops,
 
                      sorts = if ~(hasLocalSort? spc) then 
                               sorts
