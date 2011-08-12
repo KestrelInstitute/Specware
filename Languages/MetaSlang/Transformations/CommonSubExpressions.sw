@@ -49,9 +49,6 @@ spec
         in
         (t, cse, single_tms, poss_tms, names)
 
-  op mkCurriedApply(f: MS.Term, terms: List MS.Term): MS.Term =
-    foldl mkApply f terms
-
   op recAbstractCSE(t: MS.Term, names: List String, bindable?: Boolean, spc: Spec)
     : MS.Term * List MS.Term * List MS.Term * List MS.Term * List String =
     case getCurryArgs t of

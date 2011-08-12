@@ -39,9 +39,6 @@ CurryUtils qualifying spec
            | _ -> None
   in aux(t, 0, [])
 
-  op mkCurriedApply(f: MS.Term, args: List MS.Term): MS.Term =
-    foldl mkApply f args
-
   op mkCurriedLambda(params, body): MS.Term =
     case params of
       | [] -> body
