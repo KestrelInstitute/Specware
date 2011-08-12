@@ -2,6 +2,7 @@ MS qualifying spec
  import ../AbstractSyntax/AnnTerm
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
  import Position
+ import /Library/Legacy/DataStructures/MergeSort
 
  type StandardAnnotation = Position
 
@@ -51,6 +52,9 @@ MS qualifying spec
 
  def mkCoProduct fields = CoProduct (fields, noPos)
 
+ op mkCanonCoProduct(flds: List(String * Option Sort)): Sort =
+   mkCoProduct (sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) flds)
+
  %% Sort terms for constant sorts:
 
  op boolSort   : Sort
@@ -98,6 +102,9 @@ MS qualifying spec
  def mkVar        v               = Var        (v,                       noPos)
  def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
  def mkApply      (t1, t2)        = Apply      (t1, t2,                  termAnn(t2))
+ op mkCurriedApply(f: Term, terms: Terms): Term =
+   foldl mkApply f terms
+
  def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         termAnn(t1))  
  def mkApplication(t1, tms)       = 
    let pos = termAnn(t1) in
