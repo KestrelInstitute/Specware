@@ -10,6 +10,8 @@
 
 #include "SWC_Memory.h"
 
+#define int_22 int
+
 /* 
  *  BUILT IN TYPES: 
  *
@@ -70,12 +72,16 @@
 
 /*********************  CONSTRUCTORS  ********************/
 
+/*
 #define COPRDCTSELSIZE 20
 #define SetConstructor(_X_,_SELSTR_) strncpy((_X_).sel,_SELSTR_,COPRDCTSELSIZE)
 #define ConstructorEq(_X_,_SELSTR_) (strncmp((_X_).sel,_SELSTR_,COPRDCTSELSIZE)==0)
 #define ConstructorArg(_X_,_CONSTR_) (_X_).alt._CONSTR_
-
 #define hasConstructor(_VARNAME_,_CONSTRSTR_) ((strncmp ((_VARNAME_) -> sel, _CONSTRSTR_, COPRDCTSELSIZE)) == 0)
+*/
+
+#define SetConstructor(_X_,_N_) (((_X_) -> sel) =  _N_)
+#define hasConstructor(_X_,_N_) (((_X_) -> sel) == _N_)
 
 /*********************  BOOLEANS  ************************/
 
@@ -107,7 +113,7 @@ char* Bool_toString(int n) {
 /* temporary hack to avoid compilation issues with comparisons */
 
 typedef struct {
-  char sel[COPRDCTSELSIZE];
+  uint8_t sel;
 } COMPSTRUCT;
 
 typedef COMPSTRUCT* COMPARISON;
@@ -181,13 +187,13 @@ COMPARISON Char_compare(char c1, char c2) {
    *  But this is a reasonable workaround...
    */
   if (c1 == c2) {
-    SetConstructor(Comparison__EQ, "Equal"); 
+    SetConstructor(&Comparison__EQ, 1); // "Equal"
     return &Comparison__EQ;}
   else if (c1 > c2) {
-    SetConstructor(Comparison__GT, "Greater");
+    SetConstructor(&Comparison__GT, 2); // "Greater"
     return &Comparison__GT;}
   else {
-    SetConstructor(Comparison__LT, "Less");
+    SetConstructor(&Comparison__LT, 3); // "Less"
     return &Comparison__LT;
   }
 }
@@ -205,13 +211,13 @@ COMPARISON String_compare(char *s1, char *s2) {
    */
   int n = strcmp (s1, s2);
   if (n == 0) {
-    SetConstructor(Comparison__EQ, "Equal");
+    SetConstructor(&Comparison__EQ, 1); // "Equal"
     return &Comparison__EQ;}
   else if (n > 0) {
-    SetConstructor(Comparison__GT, "Greater");
+    SetConstructor(&Comparison__GT, 2); // "Greater"
     return &Comparison__GT;}
   else {
-    SetConstructor(Comparison__LT, "Less");
+    SetConstructor(&Comparison__LT, 3); // "Less"
     return &Comparison__LT;
   }
 }
@@ -321,7 +327,7 @@ int MatchSuccess;
 int MatchValue;
 
 #define TranslationBuiltIn_block(form)     (form)
-#define TranslationBuiltIn_failWith(aa,bb) ((aa), (MatchSuccess == TRUE) ? MatchValue : (bb))
+#define TranslationBuiltIn_failWith(aa,bb) ((aa), (char*) (MatchSuccess == TRUE) ? MatchValue : (bb))
 #define TranslationBuiltIn_mkSuccess(cc)   (MatchSuccess = TRUE, MatchValue = (int) cc)
 #define TranslationBuiltIn_mkBreak         (MatchSuccess = FALSE)
 #define TranslationBuiltIn_mkFail(msg)     (MatchSuccess = FALSE)
