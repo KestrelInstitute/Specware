@@ -79,8 +79,9 @@ C qualifying spec
   %% types commonly used when building signatures:
   %% TODO:  we abuse the naming conventions for op's to make these 
   %%        look like constructors (good idea or bad?)
-  op C_VoidPtr : C_Type = C_Ptr C_Void  
-  op C_String  : C_Type = C_Ptr C_Char
+  op C_VoidPtr  : C_Type = C_Ptr C_Void  
+  op C_String   : C_Type = C_Ptr C_Char
+  op C_Selector : C_Type = C_Int16
 
   type C_Stmt =
     | C_Exp         C_Exp
