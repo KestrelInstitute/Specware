@@ -96,7 +96,7 @@ RC=$?
 # If the bootstrap failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
   echo ""
-  echo "Generate_Specware_Lisp_ACL failed with code $RC, exiting ..."
+  echo "Generate_Specware_Lisp failed with code $RC, exiting ..."
   exit $RC
 fi
 
