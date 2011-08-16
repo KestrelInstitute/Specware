@@ -7,6 +7,7 @@ SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                             % for uidToString, if used...
   import SpecSubst   
+  import SpecPrismSubst   
 
   def SpecCalc.evaluateSubstitute (spec_tm, subst_tm) term_pos = % subst_tm could be morphism or prism
    {
@@ -18,21 +19,32 @@ SpecCalc qualifying spec
 
     coercedSpecValue <- return (coerceToSpec spec_value);
     case (coercedSpecValue, subst_value) of % TODO: coerceToMorphismOrPrism subst_value ??
+
       | (Spec spc, Morph sm) ->
-           let timeStamp = max (spec_timestamp, subst_timestamp) in
-           let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in {
-             new_spec <- applySpecMorphismSubstitution sm spc subst_tm term_pos;
-             compressed_spec <- complainIfAmbiguous (compressDefs new_spec) term_pos;
-             return (Spec compressed_spec, timeStamp, dep_UIDs)
-           }
+        let timeStamp = max (spec_timestamp, subst_timestamp)     in
+        let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
+        {
+         new_spec   <- applySpecMorphismSubstitution sm spc subst_tm term_pos;
+         compressed <- complainIfAmbiguous (compressDefs new_spec)   term_pos;
+         return (Spec compressed, timeStamp, dep_UIDs)
+         }
+
+      | (Spec spc, SpecPrism prism) ->
+        let timeStamp = max (spec_timestamp, subst_timestamp)     in
+        let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
+        {
+         new_spec   <- applySpecPrismSubstitution prism spc subst_tm term_pos;
+         compressed <- complainIfAmbiguous (compressDefs new_spec)   term_pos;
+         return (Spec compressed, timeStamp, dep_UIDs)
+         }
+
       | (Other _, Other _) ->
         evaluateOtherSubstitute spec_tm spec_value_info subst_tm subst_value_info term_pos
-      | (_,        Morph _)  ->
-           raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
-      | (Spec _,   _) ->
-           raise (TypeCheck (positionOf subst_tm, "substitution is not a morphism"))
-      | (_,        _) ->
-           raise (TypeCheck (term_pos, "substitution is not a morphism, and is attempted on a non-spec"))
+
+      | (Spec _, _)           -> raise (TypeCheck (positionOf subst_tm, "substitution is not a morphism or prism"))
+      | (_,      Morph     _) -> raise (TypeCheck (positionOf spec_tm,  "substitution attempted on a non-spec"))
+      | (_,      SpecPrism _) -> raise (TypeCheck (positionOf spec_tm,  "prism substitution attempted on a non-spec"))
+      | _                     -> raise (TypeCheck (term_pos,            "substitution is not a morphism or a prism, and is attempted on a non-spec"))
     }
 end-spec
 
