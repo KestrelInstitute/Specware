@@ -329,9 +329,7 @@ I2LToC qualifying spec
             let unionname          = genName (cspc, "CoProduct",  length (getUnionDefns  cspc))                   in
             let structname         = genName (cspc, "CoProductS", length (getStructDefns cspc))                   in
             let (cspc, uniontype)  = addNewUnionDefn (cspc, ctxt.xcspc, (unionname, ufields))                     in
-            let sfields            = [("sel", C_ArrayWithSize ([coproductSelectorStringLength], C_Char)), 
-                                      ("alt", uniontype)] 
-            in
+            let sfields            = [("sel", C_Selector), ("alt", uniontype)]                                    in
             let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
             (cspc, structtype)
             
@@ -433,12 +431,12 @@ I2LToC qualifying spec
   %                                                                     %
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op c4Expression1 (ctxt                    : I2C_Context, 
-                    cspc                    : C_Spec, 
-                    block as (decls, stmts) : C_Block,  
-                    exp   as (expr, typ)    : I_TypedExpr,
-                    lhs?                    : Bool, 
-                    forInitializer?         : Bool)
+  op c4Expression1 (ctxt            : I2C_Context, 
+                    cspc            : C_Spec, 
+                    block           : C_Block,  
+                    exp             : I_TypedExpr,
+                    lhs?            : Bool, 
+                    forInitializer? : Bool)
     : C_Spec * C_Block * C_Exp =
     let (cspc, block, cexpr) = c4Expression2 (ctxt, cspc, block, exp, lhs?, forInitializer?) in
     let (cspc, block, cexpr) = mergeBlockIntoExpr (cspc, block, cexpr)                       in
@@ -447,7 +445,7 @@ I2LToC qualifying spec
   op c4Expression2 (ctxt                    : I2C_Context,
                     cspc                    : C_Spec,
                     block as (decls, stmts) : C_Block,
-                    exp   as (expr, typ)    : I_TypedExpr,
+                    {expr, typ, cast?}      : I_TypedExpr,
                     lhs?                    : Bool,
                     forInitializer?         : Bool)
     : C_Spec * C_Block * C_Exp =
@@ -548,7 +546,7 @@ I2LToC qualifying spec
         let cexpr                = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr) else cexpr in
         (cspc, block, C_StructRef (cexpr, field_name))
         
-      | I_Select (expr as (_, itype), id) ->
+      | I_Select (expr, id) ->
         % Union types are currently implemented something like this:
         %
         % union  CoProduct0  { struct Product0* Cons; uint32_t Nil; };
@@ -563,24 +561,24 @@ I2LToC qualifying spec
         %       Abetting this abuse of notation, we take the I_Union type from the argument 
         %       expression (which will be implemented as a C-struct) and also assign it to 
         %       the "alt" projection (which will be implemented as an associated C-union).
-        let expr                 = (I_Project (expr, "alt"), itype)                               in % benign abuse of I2L notation
-        let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, expr, lhs?, forInitializer?) in % exploit I2L machinery
-        let variant_name         = getUnionVariantName id                                         in
-        let cexpr                = if false then C_Unary (C_Contents, cexpr) else cexpr           in % indirection not an option
+        let alt_expr             = expr << {expr = I_Project (expr, "alt")}                           in % benign abuse of I2L notation
+        let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, alt_expr, lhs?, forInitializer?) in % exploit I2L machinery
+        let variant_name         = getUnionVariantName id                                             in
+        let cexpr                = if false then C_Unary (C_Contents, cexpr) else cexpr               in % indirection not an option
         (cspc, block, C_UnionRef (cexpr, variant_name))
 
-      | I_ConstrCall (typename, consid, exprs) ->
-        let consfun       = getConstructorOpNameFromQName (typename, consid) in
-        let (cspc, ctype) = c4Type (ctxt, cspc, typ)                         in
+      | I_ConstrCall (typename, selector, exprs) ->
+        let consfun       = getConstructorOpNameFromQName (typename, selector.name) in
+        let (cspc, ctype) = c4Type (ctxt, cspc, typ)                                in
         let (cspc, block as (decls, stmt), constrCallExpr) =
-            let fnid = getConstructorOpNameFromQName (typename, consid) in
+            let fnid = getConstructorOpNameFromQName (typename, selector.name) in
             case exprs of
               | [] -> 
                 let fndecl = (fnid, [], ctype) in
                 (cspc, block, C_Apply (C_Fn fndecl, []))
               | _ :: _ -> 
-                let (cspc, ctypes) = foldl (fn ((cspc, ctypes), (_, ty)) -> 
-                                              let (cspc, ctype) = c4Type (ctxt, cspc, ty) in
+                let (cspc, ctypes) = foldl (fn ((cspc, ctypes), typed_expr) -> 
+                                              let (cspc, ctype) = c4Type (ctxt, cspc, typed_expr.typ) in
                                               (cspc, ctypes++[ctype]))
                                            (cspc, []) 
                                            exprs 
@@ -591,7 +589,7 @@ I2LToC qualifying spec
         in
         (cspc, block, constrCallExpr)
 	     
-      | I_AssignUnion (selstr, optexpr) ->
+      | I_AssignUnion (selector, optexpr) ->
         let (cspc, block as (decls, stmts), optcexpr) =
             case optexpr of
               | Some expr -> 
@@ -600,38 +598,39 @@ I2LToC qualifying spec
               | None -> 
                 (cspc, block, None)
         in
-        let (cspc, ctype) = c4Type (ctxt, cspc, typ)                        in
-        let varPrefix     = getVarPrefix ("_Vc", ctype)                     in
-        let xname         = varPrefix ^ (show (length decls))               in
-        let decl          = (xname, ctype)                                  in
-        let optinit       = getMallocApply (cspc, ctype)                    in
-        let decl1         = (xname, ctype, optinit)                         in
-        let selassign     = [getSelAssignStmt (ctxt, selstr, xname, ctype)] in
+        let (cspc, ctype) = c4Type (ctxt, cspc, typ)                          in
+        let varPrefix     = getVarPrefix ("_Vc", ctype)                       in
+        let xname         = varPrefix ^ (show (length decls))                 in
+        let decl          = (xname, ctype)                                    in
+        let optinit       = getMallocApply (cspc, ctype)                      in
+        let decl1         = (xname, ctype, optinit)                           in
+        let selassign     = [getSelAssignStmt (ctxt, selector, xname, ctype)] in
         let altassign     = case optcexpr of
                               | None -> []
                               | Some cexpr ->
                                 let var   = C_Var decl                                                  in
                                 let sref0 = if ctxt.useRefTypes then C_Unary (C_Contents, var) else var in
-                                let sref  = C_UnionRef (C_StructRef (sref0, "alt"), selstr)             in
+                                let sref  = C_UnionRef (C_StructRef (sref0, "alt"), selector.name)      in
                                 [C_Exp (getSetExpr (ctxt, sref, cexpr))]
         in
         let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
         let res   = C_Var decl in
         (cspc, block, res)
         
-      | I_UnionCaseExpr (expr as (_, type0), unioncases) ->
-        let (cspc0, block0 as (decls, stmts), cexpr0) = c4Expression (ctxt, cspc, block, expr) in
+      | I_UnionCaseExpr (typed_expr, unioncases) ->
+        let I_Union union_fields = typed_expr.typ in
+        let (cspc0, block0 as (decls, stmts), cexpr0) = c4Expression (ctxt, cspc, block, typed_expr) in
         % insert a variable for the discriminator in case cexpr0 isn't a variable, 
         % otherwise it can happen that the C Compiler issues an "illegal lvalue" error
         let (block0 as (decls, stmts), disdecl, newdecl?) =
             case cexpr0 of
               | C_Var decl -> ((decls, stmts), decl, false)
               | _ ->
-                let disname         = "_dis_" ^ show (length decls) in
-                let (cspc, distype) = c4Type (ctxt, cspc, type0)    in
-                let disdecl         = (disname, distype)            in
-                let disdecl0        = (disname, distype, None)      in
-                let block0          = (decls++[disdecl0], stmts)    in
+                let disname         = "_dis_" ^ show (length decls)       in
+                let (cspc, distype) = c4Type (ctxt, cspc, typed_expr.typ) in
+                let disdecl         = (disname, distype)                  in
+                let disdecl0        = (disname, distype, None)            in
+                let block0          = (decls++[disdecl0], stmts)          in
                 (block0, disdecl, true)
         in
         % insert a dummy variable of the same type as the expression to be
@@ -651,22 +650,22 @@ I2LToC qualifying spec
         in
         let block0             = (decls ++ [xdecl], stmts)               in
         let 
-          def casecond str = 
-            getSelCompareExp (ctxt, C_Var disdecl, str) 
+          def casecond index = 
+            getSelCompareExp (ctxt, C_Var disdecl, index) 
         in
         let (cspc, block, ifexpr) =
             foldr (fn (unioncase, (cspc, block as (decls, stmts), ifexp)) -> 
                      case unioncase of
                        
-                       | I_ConstrCase (optstr, opttype, vlist, expr) ->
-                         (case optstr of
-                            
+                       | I_ConstrCase (opt_selector, vlist, expr) ->
+                         (case opt_selector of
+
                             | None -> 
                               %% pattern is just a simple wildcard
                               c4Expression (ctxt, cspc0, block0, expr)
                               
-                            | Some selstr ->
-                              let condition = casecond (selstr) in
+                            | Some selector ->
+                              let condition = casecond selector in
                               % insert the variables:
                               let (cspc, block, cexpr) =
                                   case findLeftmost (fn | None -> false | _ -> true) vlist of
@@ -674,29 +673,25 @@ I2LToC qualifying spec
                                     | None -> 
                                       %% varlist contains only wildcards (same as single wildcard case)
                                       c4Expression (ctxt, cspc, block, expr)
-                                      
+
                                     | _ ->
-                                      let typ = 
-                                      case opttype of
-                                        | Some t -> t
-                                        | None -> 
-                                          fail ("internal error: type missing in union case for constructor \""^selstr^"\"")
-                                      in
+                                      let Some (_,field_type) = findLeftmost (fn field -> field.1 = selector.name) union_fields   in
+                                      let (cspc, idtype)      = c4Type (ctxt, cspc, field_type)                                   in
+                                      let structref           = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
+                                      let valexp              = C_UnionRef (C_StructRef (structref, "alt"), selector.name)        in
                                       case vlist of
                                         
                                         | [Some id] -> % contains exactly one var
-                                          let (id, expr)     = substVarIfDeclared (ctxt, id, decls, expr)                        in
-                                          let (cspc, idtype) = c4Type (ctxt, cspc, typ)                                          in
-                                          let structref      = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                          let valexp         = C_UnionRef (C_StructRef (structref, "alt"), selstr)               in
-                                          let decl           = (id, idtype)                                                      in
-                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                             in
+                                          let (id, expr)     = substVarIfDeclared (ctxt, id, decls, expr)                       in % subst before
+                                          %
+                                          let decl           = (id, idtype)                                                     in
+                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                            in
                                           % the assignment must be attached to the declaration, otherwise
                                           % it may happen that the new variable is accessed in the term without
                                           % being initialized  [so why is optinit None then?]
-                                          let optinit        = None                                                              in
-                                          let decl1          = (id, idtype, optinit)                                             in
-                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr)    in
+                                          let optinit        = None                                                             in
+                                          let decl1          = (id, idtype, optinit)                                            in
+                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr)   in
                                           (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
                                           
                                         | _ -> 
@@ -704,18 +699,18 @@ I2LToC qualifying spec
                                           % of the record that is the argument of the constructor. We will introduce
                                           % a fresh variable of that record type and substitute the variable in the vlist
                                           % by corresponding StructRefs into the record.
-                                          let (cspc, idtype) = c4Type (ctxt, cspc, typ)                                          in
-                                          let varPrefix      = getVarPrefix ("_Va", idtype)                                      in
-                                          let id             = varPrefix^ (show (length decls))                                  in
-                                          let structref      = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                          let valexp         = C_UnionRef (C_StructRef (structref, "alt"), selstr)               in
-                                          let decl           = (id, idtype)                                                      in
-                                          let optinit        = None                                                              in
-                                          let decl1          = (id, idtype, optinit)                                             in
-                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                             in
-                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr)    in
-                                          let cexpr          = substVarListByFieldRefs (ctxt, vlist, C_Var decl, cexpr)          in
+
+                                          let varPrefix      = getVarPrefix ("_Va", idtype)                                   in
+                                          let id             = varPrefix^ (show (length decls))                               in
+                                          %
+                                          let decl           = (id, idtype)                                                   in
+                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                          in
+                                          let optinit        = None                                                           in
+                                          let decl1          = (id, idtype, optinit)                                          in
+                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr) in
+                                          let cexpr          = substVarListByFieldRefs (ctxt, vlist, C_Var decl, cexpr)       in  % subst after
                                           (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
+
                               in
                               (cspc, block, C_IfExp (condition, cexpr, ifexp)))
 
@@ -733,24 +728,26 @@ I2LToC qualifying spec
                          (cspc, (decls ++ [cdecl], stmts), C_Comma (cassign, cexp))
 
                        | I_NatCase (n, exp) -> 
-                         let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                          in
-                         let (cspc, block, const) = c4Expression (ctxt, cspc, block, (I_Int n, I_Primitive I_Int)) in
-                         let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                          in
-                         let ifexp                = C_IfExp  (cond, ce, ifexp)                                     in
+                         let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                    in
+                         let constant             = {expr = I_Int n, typ = I_Primitive I_Int, cast? = false} in
+                         let (cspc, block, const) = c4Expression (ctxt, cspc, block, constant)               in  
+                         let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                    in
+                         let ifexp                = C_IfExp  (cond, ce, ifexp)                               in
                          (cspc, block, ifexp)
 
                        | I_CharCase (c, exp) ->
-                         let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                            in
-                         let (cspc, block, const) = c4Expression (ctxt, cspc, block, (I_Char c, I_Primitive I_Char)) in
-                         let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                            in
-                         let ifexp                = C_IfExp  (cond, ce, ifexp)                                       in
+                         let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                      in
+                         let constant             = {expr = I_Char c, typ = I_Primitive I_Char, cast? = false} in
+                         let (cspc, block, const) = c4Expression (ctxt, cspc, block, constant)                 in
+                         let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                      in
+                         let ifexp                = C_IfExp  (cond, ce, ifexp)                                 in
                          (cspc, block, ifexp))
                   (cspc0, block0, errorCaseExpr) 
                   unioncases 
- 	 in
-         (cspc, 
-          block, 
-          if newdecl? then 
+ 	in
+        (cspc, 
+         block, 
+         if newdecl? then 
             %% In general, cexpr0 may be too complex to appear in a C struct accessor form
             %% such as (cexpr0 -> attr), so we need to replace such forms by (var -> attr).
             %% As long as we're at it, we might just as well replace all the cexpr0 
@@ -760,8 +757,8 @@ I2LToC qualifying spec
             let xx    = C_Binary (C_Set, var, cexpr0)                                  in
             let newif = mapExp (fn expr -> if expr = cexpr0 then var else expr) ifexpr in
             C_Comma (xx, newif)
-          else 
-            ifexpr)
+         else 
+           ifexpr)
 
       | I_Embedded (id, exp) ->
         let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, exp) in
@@ -780,11 +777,13 @@ I2LToC qualifying spec
         (cspc, block, varexp)
         
       | I_VarDeref id ->
-        let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, (I_Var id, typ)) in
+        let var_expr = {expr = I_Var id, typ = typ, cast? = false} in
+        let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, var_expr) in
         (cspc, block, C_Unary (C_Contents, cexp))
         
       | I_VarRef id ->
-        let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, (I_Var id, typ)) in
+        let var_expr = {expr = I_Var id, typ = typ, cast? = false} in
+        let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, var_expr) in
         (cspc, block, C_Unary (C_Address, cexp))
         
       | I_Comma (exprs) ->
@@ -875,7 +874,7 @@ I2LToC qualifying spec
 
   op strcmp         : C_Exp = C_Fn ("strcmp",         [C_String,  C_String],          C_Int16)  % might subtract one char from another for result
   op strncmp        : C_Exp = C_Fn ("strncmp",        [C_String,  C_String, C_Int32], C_Int16)  % might subtract one char from another for result
-  op hasConstructor : C_Exp = C_Fn ("hasConstructor", [C_VoidPtr, C_String],          C_Int8)   % boolean value
+  op hasConstructor : C_Exp = C_Fn ("hasConstructor", [C_VoidPtr, C_Int16],           C_Int8)   % boolean value
   op selstrncpy     : C_Exp = C_Fn ("SetConstructor", [C_String,  C_String],          C_String) % strncpy
 
   op c4BuiltInExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, exp : I_BuiltinExpression) : C_Spec * C_Block * C_Exp =
@@ -961,7 +960,7 @@ I2LToC qualifying spec
    * code for handling special case, e.g. the bitstring operators
    *)
 
-  op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, (exp, _) : I_TypedExpr) 
+  op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr : I_TypedExpr) 
     : Option (C_Spec * C_Block * C_Exp) =
     let 
       def c4e e = 
@@ -979,7 +978,7 @@ I2LToC qualifying spec
     if ~bitStringSpecial? then 
       None
     else 
-      case exp of
+      case typed_expr.expr of
 	| I_Var     (_, "Zero")                       -> Some (cspc, block, C_Const (C_Int (true, 0)))
 	| I_Var     (_, "One")                        -> Some (cspc, block, C_Const (C_Int (true, 1)))
 	| I_FunCall ((_, "leftShift"),  [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftLeft,  c1, c2)) e1 e2
@@ -1138,34 +1137,31 @@ I2LToC qualifying spec
 
   % returns the statement for assigning the value for the selector string used in AssignUnion
   % expressions.
-  op getSelAssignStmt (ctxt : I2C_Context, selstr : String, varname : String, vartype : C_Type) 
+  op getSelAssignStmt (ctxt : I2C_Context, selector : I_Selector, varname : String, vartype : C_Type) 
     : C_Stmt =
     let variable = C_Var (varname, vartype)                                              in
     let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
-    C_Exp (C_Apply (selstrncpy, [variable, C_Const (C_Str selstr)]))
+    C_Exp (C_Binary (C_Set, 
+                     C_StructRef (variable, "sel"), 
+                     C_Const (C_Int (true, selector.index))))
 
-  op getSelCompareExp (ctxt : I2C_Context, expr : C_Exp, selstr : String) : C_Exp =
+  op getSelCompareExp (ctxt : I2C_Context, expr : C_Exp, selector : I_Selector) : C_Exp =
     let expr = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr in
     case expr of
 
       | C_Unary (C_Contents, expr) -> 
-        C_Apply (hasConstructor, [expr, C_Const (C_Str selstr)])
+        C_Apply (hasConstructor, [expr, C_Const (C_Int (true, selector.index))])
 
       | _ -> 
-        let apply = C_Apply (strncmp, 
-                             [C_StructRef (expr, "sel"), 
-                              C_Const     (C_Str selstr),
-                              C_Var ("COPRDCTSELSIZE", C_Int32)])
-        in
-	C_Binary (C_Eq, apply, C_Const (C_Int (true, 0)))
+	C_Binary (C_Eq, C_StructRef (expr, "sel"), (C_Const (C_Int (true, selector.index))))
 
-  op getSelCompareExp0 (ctxt : I2C_Context, expr : C_Exp, selstr : String) : C_Exp =
-    let expr   = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr            in
-    let apply  = C_Apply (strcmp, 
-                          [C_StructRef (expr, "sel"), 
-                           C_Const     (C_Str selstr)]) 
+  op getSelCompareExp0 (ctxt : I2C_Context, expr : C_Exp, selector : I_Selector) : C_Exp =
+    let expr   = if ctxt.useRefTypes then 
+                   C_Unary (C_Contents, expr) 
+                 else 
+                   expr 
     in
-    C_Binary (C_Eq, apply, C_Const (C_Int (true, 0)))
+    C_Binary (C_Eq, C_StructRef (expr, "sel"), C_Const (C_Int (true, selector.index)))
 
   % --------------------------------------------------------------------------------
 

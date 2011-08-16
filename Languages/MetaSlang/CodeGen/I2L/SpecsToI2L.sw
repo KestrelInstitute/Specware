@@ -724,7 +724,7 @@ SpecsToI2L qualifying spec
     let typ  = unfoldBaseKeepPrimitives (typ, spc)            in
     let exp  = term2expression_internal (tm, typ, ctxt, spc)  in
     let ityp = type2itype ([], typ, unsetToplevel ctxt, spc)  in
-    (exp, ityp)
+    {expr = exp, typ = ityp, cast? = false}
 
   op term2expression_internal (tm : Term, typ : Sort, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
@@ -747,12 +747,29 @@ SpecsToI2L qualifying spec
                                                         term2expression (t2, ctxt, spc),
                                                         term2expression (t3, ctxt, spc))
       | Seq        (tms,                _) -> I_Comma (map (fn tm -> term2expression (tm, ctxt, spc)) tms)
-      | SortedTerm (tm, _,              _) -> let (exp, _) = term2expression (tm, ctxt, spc) in exp
+      | SortedTerm (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, spc) in typed_expr.expr  % TODO: add cast? ??
       | _ -> 
         % Bind, The, LetRec, Lambda, Transform, Pi, And, Any 
         let s = "Unrecognize term in term2expression: " ^ printTerm tm in
         let _ = writeLine s in
         I_Str s
+
+  op alt_index (x : Id, typ : Type, spc : Spec) : Nat =
+    let 
+      def aux (n, alts) =
+        case alts of
+          | [] -> 0
+          | (alt,_) :: alts ->
+            if alt = x then 
+              n
+            else
+              aux (n + 1, alts)
+    in
+    case unfoldToCoProduct (typ, spc) of
+      | CoProduct (alts,_) -> aux (1, alts)
+      | _ -> 
+        let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printSort typ) in
+        0
 
   op term2expression_fun (fun : Fun, typ : Type, tm : Term, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
@@ -780,20 +797,21 @@ SpecsToI2L qualifying spec
           I_Var varname
 
         | Embed (id,_) -> 
+          let selector = {name = id, index = alt_index (id, typ, spc)} in
           if useConstrCalls? ctxt then
             case typ of
               
               | Base (qid, _, _) ->
                 let vname = qid2varid qid in
-                I_ConstrCall (vname, id, [])
+                I_ConstrCall (vname, selector, [])
 
               | Boolean _ -> 
-                I_ConstrCall (("Boolean", "Boolean"), id, [])
+                I_ConstrCall (("Boolean", "Boolean"), selector, [])
 
               | _ -> 
-                I_AssignUnion (id, None)
+                I_AssignUnion (selector, None)
           else
-            I_AssignUnion (id, None)
+            I_AssignUnion (selector, None)
 
         | _ -> 
           fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm tm)
@@ -882,7 +900,8 @@ SpecsToI2L qualifying spec
           def mkExpr2() = term2expression (t2, ctxt, spc)
         in
         if projections = [] then
-          let typ = foldSort (typ, spc) in
+          % let typ = foldSort (typ, spc) in
+          let selector = {name = id, index = alt_index (id, typ, spc)} in
           if useConstrCalls? ctxt then
             case typ of
               
@@ -897,7 +916,7 @@ SpecsToI2L qualifying spec
                               | _ -> 
                                 [mkExpr2()]
                 in
-                I_ConstrCall(vname,id,exprs)
+                I_ConstrCall (vname, selector, exprs)
                         
               | Boolean _ -> 
                 let exprs = case t2 of
@@ -909,19 +928,29 @@ SpecsToI2L qualifying spec
                               | _ -> 
                                 [mkExpr2()]
                 in
-                I_ConstrCall (("Boolean", "Boolean"), id, exprs)
+                I_ConstrCall (("Boolean", "Boolean"), selector, exprs)
 
               | _ -> 
-                I_AssignUnion (id, Some (mkExpr2()))
+                I_AssignUnion (selector, Some (mkExpr2()))
           else 
-            I_AssignUnion (id, Some (mkExpr2()))
+            I_AssignUnion (selector, Some (mkExpr2()))
 
         else 
           fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
 
       | Embedded id -> 
-        %% predicate used to test for variants among a coproduct
-        I_Embedded (id, term2expression (t2, ctxt, spc))
+        let lhssort = inferType (spc, origlhs)        in
+        let index =
+            case unfoldToArrow (spc, lhssort) of
+              | Arrow (super_type, Bool, _) ->
+                %% type of a predicate used to test for variants among a coproduct
+                alt_index (id, super_type, spc) 
+              | _ ->
+                let _ = writeLine ("Expected arrow type: " ^ printSort lhssort) in
+                0
+        in
+        let selector = {name = id, index = index} in
+        I_Embedded (selector, term2expression (t2, ctxt, spc))
 
       | Select id ->
         let expr2 = term2expression (t2, ctxt, spc) in
@@ -1019,12 +1048,15 @@ SpecsToI2L qualifying spec
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2])
                | _ ->
-                 fail (errmsg() ^ "\nReason: eq-op not found for " ^ printQualifiedId qid))
+                 let _ = appOpInfos (fn info -> writeLine (anyToString info.names)) spc.ops in
+                 let _ = writeLine ("eq-op not found for " ^ anyToString qid ^ " via " ^ anyToString eqid) in
+                 let eqfname = (eq, eid) in
+                 I_FunCall (eqfname, [], [t2e t1, t2e t2]))
 
           | Product (fields, _) ->
-            let eqtm    = getEqTermFromProductFields (fields, typ, t1, t2) in
-            let (exp,_) = t2e eqtm in
-            exp
+            let eqtm       = getEqTermFromProductFields (fields, typ, t1, t2) in
+            let typed_expr = t2e eqtm in
+            typed_expr.expr
 
           | _ -> 
             fail (errmsg() ^ "\n[term sort must be a base or product sort]") %primEq()
@@ -1058,6 +1090,7 @@ SpecsToI2L qualifying spec
     let
       def t2e tm = term2expression (tm, ctxt, spc)
     in
+    let I_one : I_TypedExpr = {expr = I_Int 1, typ = I_Primitive I_Nat, cast? = false} in
     case (tm, args) of
       | (Fun (Equals,    _, _),                                          [t1,t2]) -> Some (equalsExpression (t1, t2, ctxt, spc))
 
@@ -1069,7 +1102,9 @@ SpecsToI2L qualifying spec
       | (Fun (NotEquals, _, _),                                          [t1,t2]) -> let eq_tm = 
                                                                                            I_Builtin (I_Equals              (t2e t1, t2e t2))
                                                                                      in
-                                                                                     Some (I_Builtin (I_BoolNot             (eq_tm, I_Primitive I_Bool)))
+                                                                                     Some (I_Builtin (I_BoolNot             {expr  = eq_tm, 
+                                                                                                                             typ   = I_Primitive I_Bool,
+                                                                                                                             cast? = false}))
 
       | (Fun (Op (Qualified ("Integer",    "+"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntPlus             (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    "-"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntMinus            (t2e t1, t2e t2)))
@@ -1081,10 +1116,10 @@ SpecsToI2L qualifying spec
       | (Fun (Op (Qualified ("Integer",    "<="),            _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntLessOrEqual      (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    ">"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntGreater          (t2e t1, t2e t2)))
       | (Fun (Op (Qualified ("Integer",    ">="),            _), _, _),  [t1,t2]) -> Some (I_Builtin (I_IntGreaterOrEqual   (t2e t1, t2e t2)))
-      | (Fun (Op (Qualified ("Integer",    "isucc"),         _), _, _),  [t1])    -> Some (I_Builtin (I_IntPlus             (t2e t1, (I_Int 1, I_Primitive I_Nat))))
-      | (Fun (Op (Qualified ("Integer",    "ipred"),         _), _, _),  [t1])    -> Some (I_Builtin (I_IntMinus            (t2e t1, (I_Int 1, I_Primitive I_Nat))))
-      | (Fun (Op (Qualified ("Nat",        "succ"),          _), _, _),  [t1])    -> Some (I_Builtin (I_IntPlus             (t2e t1, (I_Int 1, I_Primitive I_Nat))))
-      | (Fun (Op (Qualified ("Nat",        "pred"),          _), _, _),  [t1])    -> Some (I_Builtin (I_IntMinus            (t2e t1, (I_Int 1, I_Primitive I_Nat))))
+      | (Fun (Op (Qualified ("Integer",    "isucc"),         _), _, _),  [t1])    -> Some (I_Builtin (I_IntPlus             (t2e t1, I_one)))
+      | (Fun (Op (Qualified ("Integer",    "ipred"),         _), _, _),  [t1])    -> Some (I_Builtin (I_IntMinus            (t2e t1, I_one)))
+      | (Fun (Op (Qualified ("Nat",        "succ"),          _), _, _),  [t1])    -> Some (I_Builtin (I_IntPlus             (t2e t1, I_one)))
+      | (Fun (Op (Qualified ("Nat",        "pred"),          _), _, _),  [t1])    -> Some (I_Builtin (I_IntMinus            (t2e t1, I_one)))
 
       | (Fun (Op (Qualified ("Float",      "toFloat"),       _), _, _),  [t1])    -> Some (I_Builtin (I_IntToFloat          (t2e t1)))
       | (Fun (Op (Qualified ("Float",      "stringToFloat"), _), _, _),  [t1])    -> Some (I_Builtin (I_StringToFloat       (t2e t1)))
@@ -1147,8 +1182,8 @@ SpecsToI2L qualifying spec
            | [(p as VarPat ((v,ty), b), _, body)] ->
              % that's a very simple case: "case tm of v -> body" (no other case)
              % we transform it to "let v = tm in body"
-             let (exp,_) = term2expression (Let ([(p,tm)], body, b), ctxt, spc) in
-             Some exp
+             let typed_expr = term2expression (Let ([(p,tm)], body, b), ctxt, spc) in
+             Some typed_expr.expr
            | _ -> 
              let
 
@@ -1159,7 +1194,7 @@ SpecsToI2L qualifying spec
                    | CoProduct (fields,_) ->
                      (case findLeftmost (fn (id0, _) -> id0 = id) fields of
                         | Some(_,optsort) -> (case optsort of
-                                                | Some typ -> Some(type2itype([], typ, unsetToplevel ctxt, spc))
+                                                | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt, spc))
                                                 | None -> None)
                         | _ -> fail("internal error: constructor id " ^ id ^ " of term " ^
                                       printTerm tm ^ " cannot be found."))
@@ -1180,8 +1215,8 @@ SpecsToI2L qualifying spec
                  let exp = term2expression (tm, ctxt, spc) in
                  case pat of
 
-                   | EmbedPat (constructorId, optpat, typ, _) ->
-                     let opttype = getTypeForConstructorArgs (typ, constructorId) in
+                   | EmbedPat (constructorId, optpat, parent_type, _) ->
+                     % let opttype = getTypeForConstructorArgs (parent_type, constructorId) in
                      let vars =
                          case optpat of
                         
@@ -1206,13 +1241,14 @@ SpecsToI2L qualifying spec
                                      "var patterns, tuples of these, or \"_\" here, "^
                                      "not:\n"^printPattern pat)
                      in
-                     I_ConstrCase (Some constructorId, opttype, vars, exp)
+                     let selector = {name = constructorId, index = alt_index (constructorId, parent_type, spc)} in
+                     I_ConstrCase (Some selector, vars, exp)
 
-                   | WildPat _            -> I_ConstrCase (None, None, [], exp)
-                   | NatPat  (n,_)        -> I_NatCase    (n,              exp)
-                   | CharPat (c,_)        -> I_CharCase   (c,              exp)
+                   | WildPat _            -> I_ConstrCase (None, [], exp)
+                   | NatPat  (n,_)        -> I_NatCase    (n,        exp)
+                   | CharPat (c,_)        -> I_CharCase   (c,        exp)
                    | VarPat  ((id,typ),_) -> let ityp = type2itype([], typ, unsetToplevel ctxt, spc) in
-                                             I_VarCase    (id, ityp,       exp)
+                                             I_VarCase    (id, ityp, exp)
                    | _ -> 
                      fail (mkInOpStr ctxt ^ "unsupported feature: pattern not supported, use embed or wildcard pattern instead:\n"
                              ^ " pattern = " ^ printPattern pat ^ " = " ^ anyToString pat ^ "\n inside term = " ^ printTerm outer_tm ^ " = " ^ anyToString outer_tm ^ "\n")
