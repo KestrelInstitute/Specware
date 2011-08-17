@@ -2081,7 +2081,8 @@ qualifier: }")
   (if (eq lisp-emacs-interface-type 'slime)
       (push `(show-error-on-new-input-real ,col) *sw-after-prompt-forms*)
     (progn (sit-for 0.1 t)   ; Allow error message to be printed
-	   (show-error-on-new-input-real col))))
+	   (show-error-on-new-input-real col)))
+  nil)
 
 (defun show-error-on-new-input-real (col)
   (goto-char (point-max))
