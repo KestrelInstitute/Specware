@@ -1645,57 +1645,59 @@ STRING should be given if the last search was by `string-match' on STRING."
     (unless (null (cdr results))
       (push (cons 'meta-point (cons sym (cdr results)))
 	    *pending-specware-search-results*))
-    (unless (string-equal (substring file -3) ".sw")
-      (setq file (concatenate 'string (strip-hash-suffix file) ".sw")))
-    (push-mark (point))
-    (let ((buf
-	   (or (get-file-buffer file)
-	       (if (not (file-exists-p file)) ; Check if file exists.
-		   (error "File %s does not exist" file)
-		 (if (not (file-readable-p file)) ; Check if file readable.
-		     (error "File %s is not readable" file)
-		   ;; Can't fail now.
-		   (find-file-noselect file))))))
-      (if (member major-mode '(fi:inferior-common-lisp-mode
-			       fi:lisp-listener-mode
-			       ilisp-mode))
-	  (other-window 1))
-      (switch-to-buffer buf))
-    (goto-char 0)
-    (if (numberp line-num)
-        (goto-line line-num)
-      (let ((qsym (regexp-quote sym)))
-        (or (if sort?
-                (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
-                    ;; type fie.foo
-                    (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
-              (if theorem?
-                  (or (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+" qsym "\\b") nil t)
-                      (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+\\w+\\." qsym "\\b") nil t))
-                (if (null current-prefix-arg)
-                    (or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
-                        (re-search-forward ; def fa(a) foo
-                         (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
-                        (re-search-forward ; def [a] foo
-                         (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-                        (re-search-forward ; def fie.foo
-                         (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
-                        (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+    (if (equal file "")
+        (message "Definition of %s not found!" sym)
+      (unless (string-equal (substring file -3) ".sw")
+        (setq file (concatenate 'string (strip-hash-suffix file) ".sw")))
+      (push-mark (point))
+      (let ((buf
+             (or (get-file-buffer file)
+                 (if (not (file-exists-p file)) ; Check if file exists.
+                     (error "File %s does not exist" file)
+                   (if (not (file-readable-p file)) ; Check if file readable.
+                       (error "File %s is not readable" file)
+                     ;; Can't fail now.
+                     (find-file-noselect file))))))
+        (if (member major-mode '(fi:inferior-common-lisp-mode
+                                 fi:lisp-listener-mode
+                                 ilisp-mode))
+            (other-window 1))
+        (switch-to-buffer buf))
+      (goto-char 0)
+      (if (numberp line-num)
+          (goto-line line-num)
+        (let ((qsym (regexp-quote sym)))
+          (or (if sort?
+                  (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
+                      ;; type fie.foo
+                      (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+\\w+\\." qsym "\\b") nil t))
+                (if theorem?
+                    (or (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+" qsym "\\b") nil t)
+                        (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+\\w+\\." qsym "\\b") nil t))
+                  (if (null current-prefix-arg)
+                      (or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; def fa(a) foo
+                           (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; def [a] foo
+                           (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; def fie.foo
+                           (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; op fie.foo
+                           (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; op [a] fie.foo
+                           (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
+                    (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
                         (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
                         (re-search-forward ; op fie.foo
                          (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
                         (re-search-forward ; op [a] fie.foo
-                         (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
-                  (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
-                      (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-                      (re-search-forward ; op fie.foo
-                       (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
-                      (re-search-forward ; op [a] fie.foo
-                       (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)))))
-            (error "Can't find definition of %s in %s" qsym file))))
-    (beginning-of-line)
-    (recenter 4)
-    (report-next-match-task-status)))
+                         (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)))))
+              (error "Can't find definition of %s in %s" qsym file))))
+      (beginning-of-line)
+      (recenter 4)
+      (report-next-match-task-status))))
 
 (defun report-next-match-task-status ()
   (if (null *pending-specware-search-results*)
