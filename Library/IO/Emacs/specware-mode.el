@@ -919,7 +919,7 @@ If anyone has a good algorithm for this..."
                    ((looking-at "handle\\b") (+ (current-column) 5)))
                 (+ indent sw:pipe-indent))))
             (if sw:paren-lookback       ; Look for open parenthesis ?
-                (if follows-comma
+                (if (eq follows-comma 'comma)
                     (sw:get-paren-indent indent t)
                   (max 
                    indent ; (if (looking-at "[])}]") (1- indent) indent)
@@ -939,7 +939,9 @@ If anyone has a good algorithm for this..."
 							     (point))
 			       t)
       (skip-chars-backward "\t\n "))
-    (or (looking-before " in") (member (preceding-char) '(?, ?;)))))
+    (if (looking-before " in") 'in
+      (if (member (preceding-char) '(?, ?;))
+         'comma nil))))
 
 (defun sw:end-of-previous-line ()
   (beginning-of-line)
