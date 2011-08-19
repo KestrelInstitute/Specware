@@ -394,6 +394,21 @@ spec
              assertRules(context, cj, ruleName cj, true) ++ rules)
       [] tms
 
+  op varProjections (ty: Sort, spc: Spec): Option(MS.Term * List(Var * Option Id)) =
+    case range_*(spc, ty) of
+    | Subsort(result_ty, Lambda([(pat, _, pred)], _), _) ->
+      (case pat of
+         | VarPat(result_var,_) -> Some(pred, [(result_var, None)])
+         | RecordPat(pat_prs, _) ->
+           Some(pred,
+                mapPartial (fn (id2, pat) ->
+                         case pat of
+                           | VarPat(result_var,_) -> Some(result_var, Some id2)
+                           | _ -> None)
+                  pat_prs)                            
+         | _ -> None)
+    | _ -> None
+
   op addContextRules?: Bool = true
   op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
     if ~addContextRules? then []
@@ -407,9 +422,16 @@ spec
             | SortedTerm(fn_tm, ty, _) | i = 1 ->
                   (let param_rls = parameterRules ty in
                    let post_condn_rules =
-                       case range_*(context.spc, ty) of
-                         | Subsort(_, Lambda([(VarPat(v,_), _, pred)], _), _) ->
+                       case varProjections(ty, context.spc) of
+                         | Some(pred, var_projs as _ :: _)->
                            let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+                           let rng = range_*(context.spc, ty) in
+                           let sbst = map (fn (v, proj?) ->
+                                             case proj? of
+                                               | None -> (v, result_tm)
+                                               | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
+                                        var_projs                                                 
+                           in
                            let def getSisterConjuncts(pred, path) =
                                  % let _ = writeLine("gsc: "^anyToString path^"\n"^printTerm pred) in
                                  case pred of
@@ -417,7 +439,7 @@ spec
                                      (case path of
                                       | 1 :: r_path ->
                                         let sister_cjs = getConjuncts p in
-                                        assertRulesFromPreds(context, map (fn cj -> substitute(cj, [(v, result_tm)])) sister_cjs)
+                                        assertRulesFromPreds(context, map (fn cj -> substitute(cj, sbst)) sister_cjs)
                                           ++ getSisterConjuncts(q, r_path)
                                       | _ -> [])
                                    | _ -> collectRules(pred, path)

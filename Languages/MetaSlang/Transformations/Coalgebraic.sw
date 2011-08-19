@@ -28,7 +28,25 @@ op addPostCondition(post_condn: MS.Term, ty: Sort): Sort =
              Subsort(sup_ty, Lambda([(v, c, MS.mkAnd(pred, post_condn))], a1), a2)
   in
   replaceInRange ty
-             
+
+op includedStateVar(ty: Sort, state_ty: Sort, spc: Spec): Option(Var * Option Id) =
+  case range_*(spc, ty) of
+    | Subsort(result_ty, Lambda([(pat, _, _)], _), _) ->
+      (if equalTypeSubtype?(result_ty, state_ty, true)
+       then case pat of
+              | VarPat(result_var,_) -> Some(result_var, None)
+              | _ -> None
+       else case (result_ty, pat) of
+              | (Product(ty_prs, _), RecordPat(pat_prs, _)) ->
+                (case findLeftmost (fn (id, ty) -> equalTypeSubtype?(ty, state_ty, true)) ty_prs of
+                   | None -> None
+                   | Some(id1,_) ->
+                 case findLeftmost (fn (id2, _) -> id1 = id2) pat_prs of
+                   | None -> None
+                   | Some(_, VarPat(result_var,_)) -> Some(result_var, Some id1))                            
+              | _ -> None)
+    | _ -> None
+
 def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let intro_qid = head qids in
   {info <- findTheOp spc intro_qid;
@@ -40,9 +58,13 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in
          % let _ = if show qid = "delArc" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
-         case range_*(spc, ty) of
-           | Subsort(result_ty, Lambda([(VarPat(result_var,_), _, _)], _), _)  | equalTypeSubtype?(result_ty, state_ty, true) ->
-             let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
+         case includedStateVar(ty, state_ty, spc) of
+           | Some (result_var, deref?) ->
+             let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
+             let result_tm = case deref? of
+                               | Some id -> mkApply(mkProject(id, range_*(spc, ty), state_ty), result_tm0)
+                               | None -> result_tm0
+             in
              % let _ = writeLine("\nLooking at "^show qid) in
              % let _ = writeLine("Result var is "^result_var.1) in
              % let _ = writeLine("Result tm is "^printTerm result_tm) in
@@ -53,14 +75,15 @@ def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
              let new_intro_ty = addPostCondition(mkEquality(intro_fn_rng, new_lhs, raw_rhs), ty) in
              let spc = addRefinedType(spc, info, new_intro_ty) in
              (spc, qid :: qids)
-           | _ -> result
+           | None -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let script = Steps[%Trace true,
                       At(map Def (reverse qids),
                          Steps [Move [Post, Last, Last],
                                 Simplify1(rules),
-                                mkSimplify(Fold intro_qid :: rules)])]
+                                mkSimplify(Fold intro_qid ::
+                                             rules)])]
    in
    {print "rewriting ... \n";
     print (scriptToString script^"\n"); 
