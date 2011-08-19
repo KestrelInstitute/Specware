@@ -112,7 +112,7 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                let def findStateTransformOps(info, qids) =
                      let (tvs, ty, tm) = unpackTerm info.dfn in
                      case range_*(spc, ty) of
-                       | Subsort(result_ty, Lambda([(VarPat(result_var,_), _, body)], _), _)
+                       | Subsort(_, Lambda([(_, _, body)], _), _)
                            | existsSubTerm (fn st -> case st of
                                                        | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
                                                        | _ -> false)
