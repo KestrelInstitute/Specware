@@ -47,13 +47,13 @@ op includedStateVar(ty: Sort, state_ty: Sort, spc: Spec): Option(Var * Option Id
               | _ -> None)
     | _ -> None
 
-def Coalgebraic.introduceOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let intro_qid = head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
    let intro_fn = mkOp(intro_qid, intro_ty) in
    let state_ty = domain(spc, intro_ty) in
-   let _ = writeLine("\nIntroduce "^show intro_qid^": "^printSort intro_ty^"\n"^printTerm intro_fn_def) in
+   let _ = writeLine("\nMaintain "^show intro_qid^": "^printSort intro_ty^"\n"^printTerm intro_fn_def) in
    let def addToDef(info, result as (spc, qids)) =
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in

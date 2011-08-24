@@ -40,7 +40,7 @@ spec
     | SpecTransform QualifiedId
     | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
     | Implement(QualifiedIds * List RuleSpec)
-    | Introduce(QualifiedIds * List RuleSpec)
+    | Maintain(QualifiedIds * List RuleSpec)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | AddSemanticChecks(Bool * Bool * Bool)
@@ -53,7 +53,7 @@ spec
  op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
 
  %% Defined in Coalgebraic.sw
- op Coalgebraic.introduceOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
+ op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
  op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
 
  op ppSpace: WadlerLindig.Pretty = ppString " "
@@ -135,8 +135,8 @@ spec
                  ppString "), (",
                  ppSep commaBreak (map ppRuleSpec rls),
                  ppString ")"]
-      | Introduce(qids, rls) ->
-        ppConcat[ppString "introduce (",
+      | Maintain(qids, rls) ->
+        ppConcat[ppString "maintain (",
                  ppSep(ppString ", ") (map ppQid qids),
                  ppString "), (",
                  ppNest 0 (ppSep commaBreak (map ppRuleSpec rls)),
@@ -733,8 +733,8 @@ spec
       | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {
         result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
         return (result, tracing?)}
-      | Introduce(qids, rls) -> {
-        result <- introduceOpsCoalgebraically(spc, qids, rls);
+      | Maintain(qids, rls) -> {
+        result <- maintainOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
       | Implement(qids, rls) -> {
         result <- implementOpsCoalgebraically(spc, qids, rls);

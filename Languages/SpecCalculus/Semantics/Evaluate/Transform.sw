@@ -271,13 +271,13 @@ spec
                  {iso_prs <- extractIsos iso_tms;
                   return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
 
-               | Apply(Apply(Name("introduce",_), i_ops,_), rls, _) ->
+               | Apply(Apply(Name("maintain",_), i_ops,_), rls, _) ->
                  {op_qids <- mapM extractQId i_ops;
                   srls <- mapM makeRuleRef rls;
-                  return (Introduce(op_qids, srls) :: sub_result ++ top_result, [])}
-               | Apply(Name("introduce",_), i_ops,_) ->
+                  return (Maintain(op_qids, srls) :: sub_result ++ top_result, [])}
+               | Apply(Name("maintain",_), i_ops,_) ->
                   {op_qids <- mapM extractQId i_ops;
-                   return (Introduce(op_qids, []) :: sub_result ++ top_result, [])}
+                   return (Maintain(op_qids, []) :: sub_result ++ top_result, [])}
 
                | Apply(Apply(Name("implement",_), i_ops,_), rls, _) ->
                  {op_qids <- mapM extractQId i_ops;
