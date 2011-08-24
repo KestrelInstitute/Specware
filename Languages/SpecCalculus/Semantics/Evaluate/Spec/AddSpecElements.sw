@@ -316,45 +316,6 @@ SpecCalc qualifying spec
     return (sp, el)
     }
 
- op combineSubTypes(old_ty: Sort, new_ty: Sort, old_tm: MS.Term, new_tm: MS.Term): Sort =
-   let sbst = varSubstFromTerms(old_tm, new_tm) in
-   let old_ty = mapSort (fn t -> substitute(t, sbst), id, id) old_ty in
-   let def combineTypes(old_ty, new_ty) =
-         if equalType?(old_ty, new_ty) then new_ty
-         else
-         % let _ = writeLine("combine:\n"^printSort old_ty^"\n"^printSort new_ty) in
-         case (old_ty, new_ty) of
-           | (_, MetaTyVar _) -> old_ty
-           | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
-             Arrow(combineTypes(old_d, new_d), combineTypes(old_r, new_r), a)
-           | (Subsort(old_sup, old_p, _), Subsort(new_sup, new_p, a)) ->
-             Subsort(new_sup, combinePreds(old_p, new_p), a)
-           | (Subsort _, _) -> old_ty
-           | _ -> new_ty
-       def combinePreds(old_p, new_p) =
-         case (old_p, new_p) of
-           | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, c, new_ptm)], a)) ->
-             (case matchPatterns(new_pat, old_pat) of
-               | None -> new_p
-               | Some sb ->
-             Lambda([(new_pat, c, mkSimpConj(getConjuncts(substitute(old_ptm, sb)) ++ getConjuncts new_ptm))], a))
-           | (Lambda _, _) -> old_p
-           | _ -> new_p
-    in
-    combineTypes(old_ty, new_ty) 
-
- op varSubstFromTerms(old_tm: MS.Term, new_tm: MS.Term): VarSubst =
-   let def match(old_tm, new_tm, sbst) =
-         case (old_tm, new_tm) of
-           | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, _, new_ptm)], _)) ->
-             (case matchPatterns(new_pat, old_pat) of
-               | None -> sbst
-               | Some sbst1 ->
-                 match(old_ptm, new_ptm, sbst ++ sbst1))
-           | _ -> sbst
-   in
-   match(old_tm, new_tm, []) 
-
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
