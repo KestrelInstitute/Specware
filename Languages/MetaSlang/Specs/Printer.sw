@@ -1065,7 +1065,7 @@ AnnSpecPrinter qualifying spec
 		    string "")
    in
    let (tvs, ty, dfn) = unpackNthTerm(info.dfn, refine_num) in
-   % let _ = if show(head info.names) = "insertBlack"
+   % let _ = if show(head info.names) = "mark"
    % then writeLine("def "^show(head info.names)^": "^show refine_num^" "^printSort ty^"\n"^printTerm dfn^"\n"
    %                      ^printTerm info.dfn) else () in
    let 
@@ -1166,6 +1166,13 @@ AnnSpecPrinter qualifying spec
                                                (4, ppSort context
                                                   ([index, opIndex], Top) ty)]))])
 	 | _ ->
+           (case opt_ty of
+              | None -> []
+              | Some ty -> [(0, string ": "),
+                            (4, blockNone (0, [%(0, string " "), 
+                                               (4, ppSort context
+                                                  ([index, opIndex], Top) ty)]))])
+           ++ 
            [(2, blockNone (1, [(0, pp.DefEquals), 
                                (0, string " "), 
                                (2, ppTerm context (path, Top) term)]))]
