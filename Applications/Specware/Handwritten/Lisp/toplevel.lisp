@@ -1312,6 +1312,7 @@
 (defun untr () (untrace))
 
 (defun tr (&optional (nms-string ""))
+  (when (eq nms-string nil) (setq nms-string ""))
   (eval `(trace ,@(map 'list #'read-from-string (toplevel-parse-args nms-string)))))
 
 #+allegro
