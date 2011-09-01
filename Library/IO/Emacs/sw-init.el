@@ -142,7 +142,7 @@
       (sleep-for 2)
       (wait-for-prompt 0.5)
       ;(delete-other-windows)
-      (when (fboundp 'frames-of-buffer)
+      (when (and (fboundp 'set-frame-pixel-size) (fboundp 'frames-of-buffer))
         (set-frame-pixel-size (car (frames-of-buffer)) 1200 800))
       (sw:eval-in-lisp-no-value
        (format "(cl:namestring (Specware::change-directory %S))" sw:common-lisp-directory))
@@ -824,7 +824,7 @@ sLisp Heap Image File: ")
   (save-excursion
     (set-buffer *specware-build-buffer-name*)
     ;(delete-other-windows)
-    (when (fboundp 'frames-of-buffer)
+    (when (and (fboundp 'set-frame-pixel-size) (fboundp 'frames-of-buffer))
       (set-frame-pixel-size (car (frames-of-buffer)) 1200 800)))
   )
 
