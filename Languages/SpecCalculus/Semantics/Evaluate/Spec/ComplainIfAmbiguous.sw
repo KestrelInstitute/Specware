@@ -11,42 +11,47 @@ SpecCalc qualifying spec
 
  op  auxComplainIfAmbiguous : Spec -> (Option Spec) * (Option String)
  def auxComplainIfAmbiguous spc =
-   let ambiguous_sorts = 
-       foldriAQualifierMap (fn (_, _, info, ambiguous_sorts) ->
-			    let (decls, defs) = sortInfoDeclsAndDefs info in
-			    if length decls <= 1 && length defs <= 1 then
-			      ambiguous_sorts
-			    else
-			      ListUtilities.insert (info, ambiguous_sorts))
-                           []
-			   spc.sorts
+   let def check_op(spc, qid, result) =
+         case findTheOp(spc, qid) of
+           | None -> result
+           | Some info ->
+         let fixity_err? = embed? Error info.fixity in
+         let ambiguous? = check_op_ambiguity(spc, info) in
+         if ~fixity_err? & ~ambiguous? then result
+         else
+         let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) = result in
+         (ambiguous_sorts,
+          if fixity_err? then ListUtilities.insert (info, bad_fixity_ops) else bad_fixity_ops,
+          if ambiguous? then ListUtilities.insert (info, ambiguous_ops) else ambiguous_ops)
+       def check_op_ambiguity(spc, info) =
+         let (decls, defs) = opInfoDeclsAndDefs info in
+         case (decls, defs) of
+           | ([],  [])  -> false
+           | ([],  [_]) -> false
+           | ([_], [])  -> false
+           | ([x], [y]) -> 
+             let xsort = termSort x in
+             let ysort = termSort y in
+             ~(equivType? spc (xsort, ysort))
+           | _ -> true
    in
-   let bad_fixity_ops = 
-       foldriAQualifierMap (fn (_, _, info, bad_ops) ->
-			    case info.fixity of
-			      | Error _ -> ListUtilities.insert (info, bad_ops)
-			      | _ -> bad_ops)
-                           []
-			   spc.ops
-   in
-   let ambiguous_ops = 
-       foldriAQualifierMap (fn (_, _, info, ambiguous_ops) ->
-			    let (decls, defs) = opInfoDeclsAndDefs info in
-			    case (decls, defs) of
-			      | ([],  [])  -> ambiguous_ops
-			      | ([],  [_]) -> ambiguous_ops
-			      | ([_], [])  -> ambiguous_ops
-			      | ([x], [y]) -> 
-			        let xsort = termSort x in
-				let ysort = termSort y in
-			        if equivType? spc (xsort, ysort) then
-				  ambiguous_ops
-				else
-				  ListUtilities.insert (info, ambiguous_ops)
-			      | _ ->
-			        ListUtilities.insert (info, ambiguous_ops))
-                           []
-			   spc.ops
+   let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) =
+       foldl (fn (result, el) ->
+              case el of
+                | SortDef(qid, _) ->
+                  (case findTheSort(spc, qid) of
+                     | None -> result
+                     | Some info ->
+                       let (decls, defs) = sortInfoDeclsAndDefs info in
+                       if length decls <= 1 && length defs <= 1 then result
+                       else let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) = result in
+                            (ListUtilities.insert (info, ambiguous_sorts),
+                             bad_fixity_ops, ambiguous_ops))
+                | Op(qid, _, _) -> check_op(spc, qid, result)
+                | OpDef(qid, _, _) -> check_op(spc, qid, result)
+                | _ -> result)
+         ([], [], [])
+         spc.elements
    in
    if ambiguous_sorts = [] && bad_fixity_ops = []  % && ambiguous_ops = []
      then (Some spc, None)

@@ -2,6 +2,8 @@ SpecCalc qualifying spec
 
  import ../../Environment
  import /Languages/MetaSlang/Specs/Equivalences
+ import /Languages/MetaSlang/Specs/Utilities
+ 
 
  op  mergeSortInfo : Spec -> SortMap -> SortInfo -> SortMap
  def mergeSortInfo _(*spc*) sorts info =
@@ -74,29 +76,41 @@ SpecCalc qualifying spec
 	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
 	     let combined_decls =
 	         foldl (fn (combined_decls, new_decl) ->
-			if exists? (fn old_decl -> equivTerm? spc (new_decl, old_decl)) combined_decls then
+                        % let _ = writeLine("new: "^printTerm new_decl^"\nold: "^printTerm(head combined_decls)) in
+			if exists? (fn old_decl -> equalTerm? (new_decl, old_decl)) combined_decls then
 			  combined_decls
 			else
-			  new_decl :: combined_decls)
+                          % let _ = writeLine(printTerm(head combined_decls)) in
+                          case (old_defs, new_defs, combined_decls) of
+                            | (old_def :: _, new_def :: _, old_decl :: r_old_decls) ->
+                              combineDecls(old_decl, new_decl, old_def, new_def) ++ r_old_decls
+                            | _ -> new_decl :: combined_decls)
 		       old_decls
 		       new_decls
 	     in
-             let (main_defs, less_defs) = if length new_defs > length old_defs then (new_defs, old_defs) else (old_defs, new_defs) in
+             % let (main_defs, less_defs) = if length new_defs > length old_defs then (new_defs, old_defs) else (old_defs, new_defs) in
 	     let combined_defs =
 	         foldl (fn (combined_defs, new_def) ->
-			if exists? (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs then
-			  combined_defs
+                        let (_, _, new_def) = unpackTerm new_def in
+			if exists? (fn old_def -> equivTerm? spc (new_def, old_def)) combined_defs
+                        then combined_defs
 			else
+                          if anyTerm? new_def && combined_defs ~= [] then
+                            substVarNames(head combined_defs, new_def) :: tail combined_defs
+                          else
+                          % let _ = writeLine("combine def: "^printTerm new_def) in
 			  new_def :: combined_defs)
-		       less_defs
-		       main_defs
+                    []
+                    (old_defs ++ new_defs)
 	     in
 	     %% defer checks for duplicate defs until later, after the caller 
-	     %% has had a chance to call compressDefs   
-	     let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
-             %let _ = if false then ()
-             %  else writeLine("merge old: "^id^"\n"^printTerm(And(old_defs, noPos))^"\n with \n"^printTerm(And(new_defs, noPos))
-             %                 ^"\n to\n"^printTerm combined_dfn) in
+	     %% has had a chance to call compressDefs
+             let (tvs, ty, _) = unpackTerm(head combined_decls) in
+             let pos = termAnn new_info.dfn in
+	     let combined_dfn = maybePiTerm(tvs, SortedTerm(maybeAndTerm (combined_defs, pos), ty, pos)) in
+             let _ = if true then ()
+               else writeLine("merge old: "^id^"\n"^printTerm(And(old_defs, noPos))^"\n with \n"^printTerm(And(new_defs, noPos))
+                              ^"\n to\n"^printTerm combined_dfn) in
 	     new_info << {names           = combined_names, 
 			  dfn             = combined_dfn,
 			  fullyQualified? = false}
@@ -107,5 +121,16 @@ SpecCalc qualifying spec
          ops 
 	 merged_info.names  % new and old
 
+op combineDecls(old_decl: MS.Term, new_decl: MS.Term, old_def: MS.Term, new_def: MS.Term): List MS.Term =
+  case (old_decl, new_decl) of
+    | (Pi(o_tvs, old_tm, _), Pi(n_tvs, new_tm, a)) | o_tvs = n_tvs ->
+      map (fn t -> Pi(n_tvs, t, a)) (combineDecls(old_tm, new_tm, old_def, new_def))
+    | (SortedTerm(old_stm, old_ty, _), SortedTerm(new_stm, new_ty, a2)) ->
+      let comb_ty = combineSubTypes(old_ty, new_ty, old_def, new_def) in
+      map (fn comb_tm -> SortedTerm(comb_tm, comb_ty, a2))
+        (combineDecls(old_stm, new_stm, old_def, new_def))
+    | _ -> if equalTerm?(new_decl, old_decl)
+            then [new_decl]
+            else [new_decl, old_decl]
 
 endspec
