@@ -199,9 +199,10 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
     of Arrow _ -> true
      | _ -> false
 
- op range_*(spc: Spec, ty: Sort): Sort =
-   case stripSubsorts (spc, ty)
-    of Arrow(_, rng, _) -> range_*(spc, rng)
+ op range_*(spc: Spec, ty: Sort, ign_subtypes?: Bool): Sort =
+   case unfoldBase (spc, ty)
+    of Arrow(_, rng, _) -> range_*(spc, rng, ign_subtypes?)
+     | Subsort(st, _, _) | ign_subtypes? -> range_*(spc, st, ign_subtypes?)
      | _ -> ty
 
  %- def arrowOpt(sp:Spec,srt:Sort) = 
