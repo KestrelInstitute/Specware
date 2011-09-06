@@ -395,7 +395,7 @@ spec
       [] tms
 
   op varProjections (ty: Sort, spc: Spec): Option(MS.Term * List(Var * Option Id)) =
-    case range_*(spc, ty) of
+    case range_*(spc, ty, false) of
     | Subsort(result_ty, Lambda([(pat, _, pred)], _), _) ->
       (case pat of
          | VarPat(result_var,_) -> Some(pred, [(result_var, None)])
@@ -425,7 +425,7 @@ spec
                        case varProjections(ty, context.spc) of
                          | Some(pred, var_projs as _ :: _)->
                            let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
-                           let rng = range_*(context.spc, ty) in
+                           let rng = range_*(context.spc, ty, true) in
                            let sbst = map (fn (v, proj?) ->
                                              case proj? of
                                                | None -> (v, result_tm)

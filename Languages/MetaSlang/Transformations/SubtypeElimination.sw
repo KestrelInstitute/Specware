@@ -13,7 +13,7 @@ SpecNorm qualifying spec
 	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")
     \_or (len > 13 \_and subFromTo(s, 0, 14) = "Simplification")
 
-   op makeSubtypeConstrTheoremsString: String   =    "-subtype_constrs"
+  op makeSubtypeConstrTheoremsString: String   =    "-subtype_constrs"
   op noMakeSubtypeConstrTheoremsString: String = "-no-subtype_constrs"
   op makeFreeTheoremsString: String      = "-free-theorems"
   op noMakeFreeTheoremsString: String = "-no-free-theorems"
@@ -905,7 +905,7 @@ SpecNorm qualifying spec
     let base_thm = termSubtypeCondn(spc, fn_tm, ty, Some defn, 0) in
     if dontLiftSubtypeTheorem? || stpFun? id || tvs = [] || hasStpFun?(spc, opname) then base_thm
       else
-      let result_ty = range_*(spc, ty) in
+      let result_ty = range_*(spc, ty, false) in
       let range_tvs = freeTyVars result_ty in
       if range_tvs = [] then base_thm
       else if freeThms?
@@ -914,6 +914,7 @@ SpecNorm qualifying spec
         let tv_ty_map = map (fn (tv, pred) -> (tv, mkSubsort(mkTyVar tv, pred))) tv_pred_map in
         let ty_with_preds = instantiateTyVarsInType(ty, tv_ty_map) in
         let defn_with_preds = substTyVarsWithSubtypes(tv_pred_map, defn) in
+        % let _ = writeLine("defn_with_preds:\n"^printTerm defn_with_preds) in
         let fn_tm = mkInfixOp(opname, fx, ty_with_preds) in
         % let fn_tm = regularizeIfPFun(fn_tm, ty_with_preds, inferType(spc, defn_with_preds), spc) in 
         let pred_thm = termSubtypeCondn(spc, fn_tm, ty_with_preds, Some defn_with_preds, 0) in
@@ -991,7 +992,7 @@ SpecNorm qualifying spec
                                                     defn, ho_eqfns, coercions,
                                                     stp_tbl, freeThms?)
                  in
-                 % let _ = writeLine (printTerm subTypeFmla) in
+                 % let _ = writeLine ("\n"^printTerm subTypeFmla) in
                  % ?? let liftedFmlas = removePatternTop(spc, subTypeFmla) in
                  (case simplify spc subTypeFmla of
                   | Fun(Bool true,_,_) -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)

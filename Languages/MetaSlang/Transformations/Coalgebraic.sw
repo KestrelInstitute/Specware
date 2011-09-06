@@ -30,7 +30,7 @@ op addPostCondition(post_condn: MS.Term, ty: Sort): Sort =
   replaceInRange ty
 
 op includedStateVar(ty: Sort, state_ty: Sort, spc: Spec): Option(Var * Option Id) =
-  case range_*(spc, ty) of
+  case range_*(spc, ty, true) of
     | Subsort(result_ty, Lambda([(pat, _, _)], _), _) ->
       (if equalTypeSubtype?(result_ty, state_ty, true)
        then case pat of
@@ -62,7 +62,7 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
            | Some (result_var, deref?) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              let result_tm = case deref? of
-                               | Some id -> mkApply(mkProject(id, range_*(spc, ty), state_ty), result_tm0)
+                               | Some id -> mkApply(mkProject(id, range_*(spc, ty, true), state_ty), result_tm0)
                                | None -> result_tm0
              in
              % let _ = writeLine("\nLooking at "^show qid) in
@@ -111,7 +111,7 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                let _ = writeLine("With rewrite: "^printTerm body) in
                let def findStateTransformOps(info, qids) =
                      let (tvs, ty, tm) = unpackTerm info.dfn in
-                     case range_*(spc, ty) of
+                     case range_*(spc, ty, false) of
                        | Subsort(_, Lambda([(_, _, body)], _), _)
                            | existsSubTerm (fn st -> case st of
                                                        | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
