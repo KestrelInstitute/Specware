@@ -1,6 +1,7 @@
 theory SW_Integer
 imports Compare Function Presburger
 begin
+types Integer__Integer = "int"
 theorem Integer__isucc_subtype_constr: 
   "bij succ"
    apply(auto simp add: bij_def inj_on_def surj_def)
@@ -806,6 +807,26 @@ theorem Integer__mod_Obligation_subtype0:
 theorem Integer__mod__def: 
   "\<lbrakk>j > 0\<rbrakk> \<Longrightarrow> i mod j = nat (int i modE int j)"
   by (auto simp add: nat_eq_iff2 zmod_int)
+
+consts npower :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "\<up>" 80)
+defs   npower_def [simp]: "x \<up> y \<equiv> x ^ y"
+
+theorem Integer__e_ast_ast_Obligation_subtype: 
+  "\<lbrakk>\<not> (exp__v = 0)\<rbrakk> \<Longrightarrow> int exp__v - 1 \<ge> 0"
+  by auto
+theorem Integer__e_ast_ast__def: 
+  "(base::int) ** 0 = 1"
+  by auto
+theorem Integer__e_ast_ast__def1: 
+  "\<lbrakk>\<not> ((exp__v::nat) = 0)\<rbrakk> \<Longrightarrow> 
+   (base::int) ** exp__v = base * (base ** (exp__v - 1))"
+   by (cases exp__v, auto)
+theorem Integer__e_ast_ast_ast_Obligation_subtype: 
+  "int base ** (exp__v::nat) \<ge> 0"
+  by auto
+consts Integer__e_ast_ast_ast :: "nat \<Rightarrow> nat \<Rightarrow> nat"	(infixl "***" 70)
+defs Integer__e_ast_ast_ast_def: 
+  "(base *** exp_v) \<equiv> nat (int base ** exp_v)"
 theorem Integer__min__def: 
   "\<lbrakk>(i::int) < (j::int)\<rbrakk> \<Longrightarrow> (min i j) = i"
   by auto

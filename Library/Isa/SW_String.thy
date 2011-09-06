@@ -63,9 +63,9 @@ defs e_gt_eq_s_def:
 consts String__newline :: "string"
 defs String__newline_def: "String__newline \<equiv> ''
 ''"
-consts Boolean__show :: "bool \<Rightarrow> string"
-defs Boolean__show_def: 
-  "Boolean__show x \<equiv> (if x then ''true'' else ''false'')"
+consts Bool__show :: "bool \<Rightarrow> string"
+defs Bool__show_def: 
+  "Bool__show x \<equiv> (if x then ''true'' else ''false'')"
 theorem Nat__digitToString_Obligation_exhaustive: 
   "\<lbrakk>(d::nat) < 10\<rbrakk> \<Longrightarrow> 
    d = 0 
@@ -308,11 +308,6 @@ fun Option__show :: "('a \<Rightarrow> string) \<Rightarrow> 'a option \<Rightar
 where
    "Option__show shw None = ''None''"
  | "Option__show shw (Some x) = (''(Some '' @ shw x) @ '')''"
-theorem List__show_Obligation_exhaustive: 
-  "(l::string list) = [] 
-     \<or> ((\<exists>(hd__v::string). l = [hd__v]) 
-      \<or> (\<exists>(hd_1::string) (tl__v::string list). l = Cons hd_1 tl__v))"
-  by (cases l, auto)
 fun List__show :: "string \<Rightarrow> string list \<Rightarrow> string"
 where
    "List__show sep [] = ''''"

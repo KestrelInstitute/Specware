@@ -11,8 +11,8 @@ consts Bool__e_bar_bar_bar :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Right
 defs Bool__e_bar_bar_bar_def [simp]: 
   "(p1 ||| p2) \<equiv> (\<lambda> (x::'a). p1 x \<or> p2 x)"
 theorem Bool__TRUE__def [simp]: 
-  "TRUE x = True"
+  "TRUE zz__0 = True"
   by auto
 consts Bool__FALSE :: "'a \<Rightarrow> bool"
-defs Bool__FALSE_def [simp]: "Bool__FALSE \<equiv> (\<lambda> (x::'a). False)"
+defs Bool__FALSE_def [simp]: "Bool__FALSE zzz_2 \<equiv> False"
 end
