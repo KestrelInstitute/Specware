@@ -296,10 +296,17 @@ spec
 
                | Apply(Name("redundantErrorCorrecting",_), uids, _) ->
                  {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, None) :: sub_result)}
+                  return(top_result, RedundantErrorCorrecting(morphs, None, false) :: sub_result)}
                | Apply(ApplyOptions(Name("redundantErrorCorrecting",_),  [Name (qual, _)],_), uids, _) ->
                  {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, Some qual) :: sub_result)}
+                  return(top_result, RedundantErrorCorrecting(morphs, Some qual, false) :: sub_result)}
+
+               | Apply(Name("redundantErrorCorrectingRestart",_), uids, _) ->
+                 {morphs <- extractMorphs uids;
+                  return(top_result, RedundantErrorCorrecting(morphs, None, true) :: sub_result)}
+               | Apply(ApplyOptions(Name("redundantErrorCorrectingRestart",_),  [Name (qual, _)],_), uids, _) ->
+                 {morphs <- extractMorphs uids;
+                  return(top_result, RedundantErrorCorrecting(morphs, Some qual, true) :: sub_result)}
 
                | Item("at", loc, _) ->
                  {qid <-  extractQId loc;
