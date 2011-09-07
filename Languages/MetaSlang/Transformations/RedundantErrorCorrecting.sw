@@ -161,7 +161,10 @@ op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MS.Term, prim
                     | None -> t
                     | Some op_qids ->
                       case arrowOpt(spc, f_ty) of
-                        | None -> t
+                        | None ->
+                          (if equalType?(f_ty, primary_ty)
+                           then Fun(Op(op_qids@trg_ty_ind, fx), ty_targets@trg_ty_ind, a)
+                           else t)
                         | Some(dom, rng) ->
                           case rng of
                             | Base(ty_qid, _, _) | ty_qid = primary_ty_qid ->
