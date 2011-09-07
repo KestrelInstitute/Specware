@@ -1669,6 +1669,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | SortedTerm (_, srt,               _) -> srt
      | Any a                                -> Any a
      | And        (t1::_,                _) -> inferType (sp, t1)
+     | Pi         (_, t,                 _) -> inferType (sp, t)
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
  op subtype?(sp: Spec, srt: Sort): Bool =
