@@ -104,7 +104,7 @@ op findUniversalIdentity(ty: Sort, term: MS.Term): Option(Var * MS.Term) =
   let def findId(t, universals: Vars) =
         case t of
           | Apply(Fun(Equals,_,_), Record([(_,Var(v, _)), (_, rhs as Apply _)], _),_) ->
-            % let _ = writeLine("findUniversalIdentity:\n"^printTerm t) in
+             %% let _ = writeLine("findUniversalIdentity:\n"^printTerm t) in
               %% Maybe should have a more stringent test on rhs
               if equalType?(v.2, ty) && inVars?(v, universals)
                   && (case freeVars rhs of
@@ -133,6 +133,7 @@ op findIdentityExpr(ty: Sort, spc: Spec): Option(Var * MS.Term) =
 op prependIdInQId(Qualified(q, id): QualifiedId, prefix: String): QualifiedId =
   Qualified(q, prefix ^ id)
 
+op makeCheckRandom?: Bool = false
 op randomCheck?Appl: MS.Term = mkAppl(mkOp(Qualified("SemanticError", "randomCheck?"),
                                            mkArrow(mkProduct[], boolSort)),
                                       [])
@@ -198,8 +199,10 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
                                                      mkTuple(map mkVar arg_vars)]))
           else mkString "mkTestFixBody in RedundantErrorCorrecting only implemented for two"
   in
-  let fix_body = mkTestFixBody(subtype_pred_tms) in
-  let check_fn = mkLambda(param, MS.mkIfThenElse(randomCheck?Appl, simplify spc fix_body, arg)) in
+  let fix_body = simplify spc (mkTestFixBody(subtype_pred_tms)) in
+  let check_fn = mkLambda(param, if makeCheckRandom?
+                                  then MS.mkIfThenElse(randomCheck?Appl, fix_body, arg)
+                                  else fix_body) in
   return(test_fix_fn_qid, check_fn)
 
 %% Defined in /Languages/SpecCalculus/Semantics/Evaluate/Spec.sw
@@ -373,7 +376,8 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
   in
   convertDef dfn
 
-op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
+
+op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
@@ -413,7 +417,7 @@ op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_q
     new_spc <- return(foldl (fn (new_spc, (qid, defn, _)) -> addOpDef(new_spc, qid, Nonfix, defn)) new_spc conversion_fn_defs);
     new_spc <- return(foldMap (fn new_spc -> fn qid -> fn op_target_qids ->
                                let Some opinfo = findTheOp(spc, qid) in
-                               let _ = writeLine("Doing "^show qid) in 
+                               % let _ = writeLine("Doing "^show qid) in 
                                addOpDef(new_spc, makeDerivedQId spc qid opt_qual,
                                         opinfo.fixity,
                                         mkCaseDef(opinfo.dfn, primary_ty, new_primary_ty, coProd_def, conversion_fn_defs,
@@ -422,4 +426,11 @@ op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_q
                         new_spc ops_map);
     return(new_spc, tracing?)}}      % *)
 
+op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier)
+                            (restart?: Bool)(tracing?: Bool): Env(Spec * Bool) =
+  if restart?
+    then redundantErrorCorrectingRestart spc morphs opt_qual tracing?
+    else redundantErrorCorrectingDup spc morphs opt_qual tracing?
+
 end-spec
+
