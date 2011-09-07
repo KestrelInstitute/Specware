@@ -30,7 +30,7 @@ op addPostCondition(post_condn: MS.Term, ty: Sort): Sort =
   replaceInRange ty
 
 op includedStateVar(ty: Sort, state_ty: Sort, spc: Spec): Option(Var * Option Id) =
-  case range_*(spc, ty, true) of
+  case range_*(spc, ty, false) of
     | Subsort(result_ty, Lambda([(pat, _, _)], _), _) ->
       (if equalTypeSubtype?(result_ty, state_ty, true)
        then case pat of
@@ -57,7 +57,7 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
    let def addToDef(info, result as (spc, qids)) =
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in
-         % let _ = if show qid = "delArc" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
+         % let _ = if show qid = "mark" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
          case includedStateVar(ty, state_ty, spc) of
            | Some (result_var, deref?) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
