@@ -35,6 +35,10 @@ op mkApplyI(hd: MS.Term, args: List Terms, i: Nat): MS.Term =
 op replaceType(ty: Sort, src_ty: Sort, trg_ty: Sort): Sort =
   mapSort (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) ty
 
+op replaceTypeInPat(pat: Pattern, src_ty: Sort, trg_ty: Sort): Pattern =
+  mapPattern (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) pat
+
+
 op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term, ty_targets: Sorts,
                   op_target_qids: QualifiedIds, spc: Spec): MS.Term =
   let op_targets = map (fn op_qid ->
@@ -318,6 +322,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                    [] pat
             in
             let Some rng = rangeOpt(spc, ty) in
+            let pat = replaceTypeInPat(pat, primary_ty, new_primary_ty) in
             Lambda([(pat, pred, convertDefTyArgs(bod, rng, args ++ [patToTerm pat], src_params ++ reverse new_src_params))], a)
           | _ ->
             let main_bod =
@@ -326,7 +331,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                     if equalType?(ty, primary_ty)
                       then let conv_bod = foldl (fn (hd, arg) -> mkApply(hd, arg)) (op_targets@0) args in
                            let constr = constructorForQid(ty_targets@0, coProd_def) in
-                           mkApply(mkEmbed1(constr, new_primary_ty), conv_bod)
+                           mkApply(mkEmbed1(constr, mkArrow(primary_ty, new_primary_ty)), conv_bod) % primary_ty ?
                       else mkFailForm "Type must appear as explicit parameter or return type"
                    | src_param0 :: r_src_params ->
                      if equalType?(ty, primary_ty)
@@ -346,7 +351,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                               mkLet(map (fn src_id ->
                                                          (mkVarPat(src_id^"_0", ty0), mkApply(coercion_fn, mkVar(src_id, ty0))))
                                                       r_src_params,
-                                                    mkApply(mkEmbed1(constr_id, new_primary_ty),
+                                                    mkApply(mkEmbed1(constr_id, mkArrow(ty0, new_primary_ty)),
                                                             substitute(main_expr, sbst)))))
                                           coprod_flds
                             in
