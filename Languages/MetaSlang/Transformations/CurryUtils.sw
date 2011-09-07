@@ -19,6 +19,12 @@ CurryUtils qualifying spec
       of Some (dom,rng) -> Cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
        | _ -> []
 
+  op curryTypes(ty: Sort, spc: Spec): (List Sort) * Sort =
+    case arrowOpt(spc, ty)
+      of Some (dom,rng) -> let (doms, rng) = curryTypes(rng,spc) in (dom :: doms, rng)
+       | _ -> ([], ty)
+
+
   op foldrPred: [a] (a -> Boolean * a) -> Boolean -> List a -> (Boolean * List a)
   def foldrPred f i l =
     List.foldr (fn (x,(changed?,result)) ->
@@ -60,6 +66,25 @@ CurryUtils qualifying spec
 	    | _ -> (vs,t)
     in
     aux(defn,[])
+
+  op curriedParamsBody(defn: MS.Term): List Pattern * MS.Term =
+    let def aux(vs,t) =
+          case t of
+	    | Lambda([(p,_,body)],_) -> aux(vs ++ [p], body)
+            | _ -> (vs,t)
+    in
+    aux([],defn)
+
+  op etaExpandCurriedBody(tm: MS.Term, dom_tys: List Sort): MS.Term =
+    case dom_tys of
+      | [] -> tm
+      | ty1 :: r_tys ->
+    case tm of
+      | Lambda([(p,p1,body)], a) -> Lambda([(p,p1,etaExpandCurriedBody(body, r_tys))], a)
+      | _ ->
+    let v = ("cv__"^show(length r_tys), ty1) in
+    mkLambda(mkVarPat v, etaExpandCurriedBody(mkApply(tm, mkVar v), r_tys))
+ 
 
   op  noncurryArgSorts: Spec * Sort -> List Sort
   def noncurryArgSorts(sp,srt) =
