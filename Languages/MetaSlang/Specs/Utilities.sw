@@ -2713,5 +2713,7 @@ op substVarNames(old_tm: MS.Term, new_tm: MS.Term): MS.Term =
    in
    subst(old_tm, new_tm, []) 
 
-
+%% This should be improved
+op nonExecutableTerm?(tm: MS.Term): Bool =
+  existsSubTerm (embed? Bind) tm
 endspec
