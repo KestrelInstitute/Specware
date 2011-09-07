@@ -1,49 +1,57 @@
 SpecTransform qualifying
 spec
-import Simplify, SubtypeElimination, RuntimeSemanticError
+import Simplify, SubtypeElimination, RuntimeSemanticError, CurryUtils
 
 op addSubtypeChecksOnResult?: Bool = true
 op addSubtypeChecksOnArgs?: Bool = true
 
 op addSubtypeChecks(spc: Spec): Spec =
-  addSemanticChecks(spc, true, true, false)
+  addSemanticChecks(spc, true, true, false, [])
+  
+op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateComplain")
+op assurePredicateQId: QualifiedId = Qualified("SemanticError", "assurePredicate")
 
 op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Spec,
-                            checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool): MS.Term =
-  let def mkCheckForm(arg, pred, err_msg_fn) =
-        let arg_tm = mkTuple [arg, pred, err_msg_fn] in
-        simplifiedApply(mkOp(Qualified("SemanticError", "checkPredicate"),
-                             mkArrow(inferType(spc, arg_tm), voidType)),
+                            checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
+                            recovery_fns: List(QualifiedId * QualifiedId)): MS.Term =
+  let def mkAssureForm(arg, pred, complain_fn, ty) =
+        if nonExecutableTerm? pred then []
+        else
+        let (assure_fn_qid, fix_or_complain_fn) =
+            case ty of
+              | Base(qid, [], _) ->
+                (case findLeftmost (fn (ty_qid, _) -> ty_qid = qid) recovery_fns of
+                   | Some(_, fix_fn_qid) -> (assurePredicateQId, mkOp(fix_fn_qid, mkArrow(ty, ty)))
+                   | _ -> (checkPredicateComplainQId, complain_fn))
+              | _ -> (checkPredicateComplainQId, complain_fn)
+        in                                             
+        let arg_tm = mkTuple [arg, pred, fix_or_complain_fn] in
+        [simplifiedApply(mkOp(assure_fn_qid, mkArrow(inferType(spc, arg_tm), ty)),
                         simplify spc arg_tm,
-                        spc)
+                        spc)]
   in
-  case arrowOpt(spc, top_ty) of
-    | None -> tm
-    | Some(dom, rng) ->
+  case curryTypes(top_ty, spc) of
+    | ([], _) -> tm
+    | (doms, rng) ->
+  let tm = etaExpandCurriedBody(tm, doms) in
+  let (param_pats, body) = curriedParamsBody tm in
+  let param_tms = map (fn pat -> let Some p_tm = patternToTerm pat in p_tm) param_pats in
   let result_sup_ty = stripSubsorts(spc, rng) in
-  let tm_1 =
+  let body_1 =
       if checkResult? || checkRefine?
         then
-          let (param_pat, param_tm, condn, body) =
-              case tm of
-                | Lambda([(p, condn, body)], a) ->
-                  let Some p_tm = patternToTerm p in
-                  (p, p_tm, condn, body)
-                | _ ->
-                  let vn = ("x", result_sup_ty) in
-                  (mkVarPat vn, mkVar vn, trueTerm, mkApply(tm, mkVar vn))
-          in
           let result_vn = ("result", result_sup_ty) in
           let checkResult_tests =
               if ~checkResult? then []
               else
+              %% Needs to be generalized to handle case where multiple results returned that might have recovery_fns
               case raiseSubtype(rng, spc) of
                 | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
-                  % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm tm) in
+                  % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm body) in
                   let warn_fn = mkLambda(mkWildPat result_sup_ty,
                                          mkString("Subtype violation on result of "^show qid))
                   in      
-                  [mkCheckForm(mkVar result_vn, pred, warn_fn)]
+                  mkAssureForm(mkVar result_vn, pred, warn_fn, rng)
                 | _ -> []
           in
           let checkRefine_tests =
@@ -57,51 +65,66 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
               if length dfns < 2 then []
               else
               let prev_dfn = dfns@1 in
-              let warn_fn = mkLambda(mkWildPat(mkProduct[dom, rng]),
+              let warn_fn = mkLambda(mkWildPat(mkProduct(doms ++ [rng])),
                                      mkString("Result does not match spec for "^show qid))
               in
-              let arg_result_tm = mkTuple[param_tm, mkVar result_vn] in
-              let equality = mkEquality(rng, mkVar result_vn, simplifiedApply(prev_dfn, param_tm, spc)) in
+              let arg_result_tm = mkTuple(param_tms ++ [mkVar result_vn]) in
+              let rhs = foldl (fn (hd, param_tm) -> simplifiedApply(hd, param_tm, spc)) prev_dfn param_tms in
+              let equality = mkEquality(rng, mkVar result_vn, rhs) in
               let comp_equality = ensureComputable spc equality in
-              let pred = mkLambda(mkTuplePat[param_pat, mkVarPat result_vn], comp_equality) in
-              [mkCheckForm(arg_result_tm, pred, warn_fn)]
+              let pred = mkLambda(mkTuplePat(param_pats ++ [mkVarPat result_vn]), comp_equality) in
+              mkAssureForm(arg_result_tm, pred, warn_fn, Any(noPos))
           in
           let result_tests = checkResult_tests ++ checkRefine_tests in
-          if result_tests = [] then tm
+          if result_tests = [] then body
           else
-          let check_result_Seq = mkSeq(result_tests ++ [mkVar result_vn]) in
-          let new_body = mkLet([(mkVarPat result_vn, body)], check_result_Seq) in
-          Lambda([(param_pat, condn, new_body)], termAnn tm)
-        else tm
+          let check_result_fm = foldl (fn (bod, result_test) ->
+                                       mkLet([(mkVarPat result_vn, result_test)], bod))
+                                  (mkVar result_vn) result_tests
+          in
+          let new_body = mkLet([(mkVarPat result_vn, body)], check_result_fm) in
+          new_body
+        else body
   in
-  let tm_2 =
+  let body_2 =
       if checkArgs?
         then
-          case raiseSubtype(dom, spc) of
-            | Subsort(sup_ty, pred, _) | addSubtypeChecksOnArgs? ->
-              % let _ = writeLine("Checking "^printTerm pred^" in\n"^printTerm tm) in
-              let warn_fn = mkLambda(mkWildPat sup_ty,
-                                     mkString("Subtype violation on arguments of "^show qid))
-              in      
-              let new_tm =
-                  case tm_1 of
-                    | Lambda([(p, condn, body)], a) | some?(patternToTerm p) ->
-                      let Some p_tm = patternToTerm p in
-                      let new_body = mkSeq[mkCheckForm(p_tm, pred, warn_fn), body] in
-                      Lambda([(p, condn, new_body)], a)
-                    | _ ->
-                      let vn = ("x", sup_ty) in
-                      let new_body = mkSeq[mkCheckForm(mkVar vn, pred, warn_fn), mkApply(tm, mkVar vn)] in
-                      mkLambda(mkVarPat vn, new_body)
-              in
-              new_tm
-            | _ -> tm_1
-        else tm_1
+          let def checkArgs(doms, param_pats, param_tms) =
+                case (doms, param_pats, param_tms) of
+                  | ([], _, _) -> []
+                  | (dom :: r_doms, param_pat :: r_param_pats, param_tm :: r_param_tms) ->
+                    checkArg(dom, param_pat, param_tm) ++ checkArgs(r_doms, r_param_pats, r_param_tms)
+              def mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty) =
+                map (fn assure_fm -> (param_pat, assure_fm)) (mkAssureForm(param_tm, pred, warn_fn, param_ty))
+              def checkArg(param_ty, param_pat, param_tm) =
+                let warn_fn = mkLambda(mkWildPat param_ty,
+                                       mkString("Subtype violation on arguments of "^show qid))
+                in
+                case param_pat of
+                  | VarPat _ ->
+                    (case raiseSubtype(param_ty, spc) of
+                       | Subsort(sup_ty, pred, _) | addSubtypeChecksOnArgs? ->
+                         mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty)
+                       | _ -> [])
+                  | RecordPat(pat_prs, _) ->
+                    (case unfoldBase(spc, param_ty) of
+                       | Subsort(s_param_ty, pred, _) ->
+                         mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty) ++ checkArg(s_param_ty, param_pat, param_tm)
+                       | Product(ty_prs, _) ->
+                         let Record(trm_prs, _) = param_tm in
+                         foldl (fn (binds, ((_, tyi), (_, pati), (_, tmi))) -> binds ++ checkArg(tyi, pati, tmi))
+                           [] (zip3(ty_prs, pat_prs, trm_prs))
+                       | _ -> [])
+                  %% Other cases not handled
+                  | _ -> []
+          in
+          foldr (fn (bind, bod) -> mkLet([bind], bod)) body_1 (checkArgs(doms, param_pats, param_tms))
+        else body_1
   in
-  tm_2
+  mkCurriedLambda(param_pats, body_2)
 
 
-op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool): Spec =
+op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool, recovery_fns: List(QualifiedId * QualifiedId)): Spec =
   let base_spc = getBaseSpec() in
   let result_spc =
       setOps(spc,
@@ -121,7 +144,7 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
                   % let _ = writeLine("astcs: "^show qid^": "^printSort dom) in
                   let last_index = length(innerTerms dfns) - 1 in
                   let dfn = refinedTerm(dfns, last_index) in
-                  let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?, checkResult?, checkRefine?) in
+                  let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns) in
                   let new_dfns = replaceNthTerm(dfns, last_index, new_dfn) in
                   let new_full_dfn = maybePiSortedTerm(tvs, Some ty, new_dfns) in
                   opinfo << {dfn = new_full_dfn})               

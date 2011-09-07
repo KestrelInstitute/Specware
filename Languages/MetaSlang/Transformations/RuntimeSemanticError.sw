@@ -20,4 +20,14 @@ op [a] checkPredicates(val_to_check: a, pred_msg_prs: List((a -> Bool) * (a -> S
   app (fn (pred, err_msg_fn) -> checkPredicate(val_to_check, pred, err_msg_fn))
     pred_msg_prs
 
+op [a] assurePredicate(val_to_check: a, pred:a -> Bool, fix_fn: a -> a): a =
+   if randomlyCheckPred(val_to_check, pred) then val_to_check
+   else fix_fn val_to_check
+
+op [a] checkPredicateComplain(val_to_check: a, pred:a -> Bool, err_msg_fn: a -> String): a =
+   if randomlyCheckPred(val_to_check, pred) then val_to_check
+   else (warn(err_msg_fn val_to_check^"\n"^anyToString val_to_check);
+         val_to_check)
+
+
 end-spec

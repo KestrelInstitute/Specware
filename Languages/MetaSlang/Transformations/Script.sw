@@ -43,6 +43,7 @@ spec
     | Maintain(QualifiedIds * List RuleSpec)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
+    | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
     | Trace Boolean
@@ -171,11 +172,15 @@ spec
                                     | None -> []))),
                  ppString "}"]
 
-      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
+      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
         ppConcat[ppString "addSemanticChecks {",
                  ppString "checkArgs?: ", ppBool checkArgs?, ppString ", ",
                  ppString "checkResult?: ", ppBool checkResult?, ppString ", ",
                  ppString "checkRefine?: ", ppBool checkRefine?,
+                 ppString "recoveryFns: ",
+                 (case recovery_fns of
+                   | [(ty_qid, recovery_fn_qid)] -> ppQidPair (ty_qid, recovery_fn_qid)
+                   | _ -> enclose "(" ")" [ppSep (ppString ", ") (map ppQidPair recovery_fns)]),
                  ppString "}"]
 
       | RedundantErrorCorrecting(morphisms, opt_qual, restart?) ->
@@ -187,6 +192,12 @@ spec
         ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
       | Print -> ppString "print"
       | scr -> ppString(anyToString scr)
+
+ op enclose (l: String) (r: String) (main: List WadlerLindig.Pretty): WadlerLindig.Pretty =
+   ppConcat([ppString l] ++ main ++ [ppString r])
+   
+ op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WadlerLindig.Pretty =
+   enclose "(" ")" [ppQid qid1, ppString ", ", ppQid qid2]
 
  op scriptToString(scr: Script): String =
    let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
@@ -621,14 +632,14 @@ spec
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
                   replaceSubTerm(rewrite(path_term, context, qid, rules, 1), path_term)
-                | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
+                | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
                    | SortedTerm(tm, ty, a) ->
-                     (SortedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?),
+                     (SortedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                                  ty, a),
                       [0])
-                   | tm -> (addSemanticChecksForTerm(tm, boolSort, qid, spc, checkArgs?, checkResult?, checkRefine?),
+                   | tm -> (addSemanticChecksForTerm(tm, boolSort, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                             [])));
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
@@ -749,8 +760,8 @@ spec
         val <- checkOp(spc, val, "initial_value");
         result <- return(addParameter(spc, fun, pos, o_return_pos, name, ty, within, val, o_qual));
         return (result, tracing?) }
-      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?) ->
-        return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?), tracing?)
+      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
+        return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?, recovery_fns), tracing?)
       | RedundantErrorCorrecting(morphs, opt_qual, restart?) ->
         redundantErrorCorrecting spc morphs opt_qual restart? tracing?
       | Trace on_or_off -> return (spc, on_or_off)

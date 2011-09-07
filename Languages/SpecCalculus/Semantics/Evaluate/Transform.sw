@@ -48,6 +48,14 @@ spec
       | Tuple(nms, _) -> mapM extractQId nms
       | _ -> raise (TypeCheck (posOf itm, "Names expected."))
 
+  op extractQIdPair(itm: TransformExpr): SpecCalc.Env(QualifiedId * QualifiedId) =
+    case itm of
+      | Tuple([q1, q2], _) ->
+        {qid1 <- extractQId q1;
+         qid2 <- extractQId q2;
+         return (qid1, qid2)}
+      | _ -> raise (TypeCheck(posOf itm, "Pair of names expected"))
+
   op extractNat(itm: TransformExpr): SpecCalc.Env Nat =
     case itm of
       | Number(n,_) -> return n
@@ -233,7 +241,17 @@ spec
       | Some(_, val) -> {o_bool <- extractBool val;
                          return(o_bool)}
       | None -> return default
-      
+
+  op findQidPairs(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env(List(QualifiedId * QualifiedId)) =
+    case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
+      | Some(_, val) -> 
+        (case val of
+         | Tuple(prs as ((Tuple _) :: _), _) ->
+           mapM extractQIdPair prs
+         | _ -> mapM extractQIdPair [val])
+      | None -> return []
+
+
   op getAddParameterFields(val_prs: List(String * TransformExpr) * Position)
        : SpecCalc.Env(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier) =
     {fun <- findQId("function", val_prs);
@@ -247,11 +265,12 @@ spec
      return(fun, pos, o_return_pos, name, ty, within, val, o_qual)}
 
   op getAddSemanticFields(val_prs: List(String * TransformExpr) * Position)
-       : SpecCalc.Env(Bool * Bool * Bool) =
+       : SpecCalc.Env(Bool * Bool * Bool * List(QualifiedId * QualifiedId)) =
     {checkArgs <- findBoolDefault("checkArgs?", val_prs, true);
      checkResult <- findBoolDefault("checkResult?", val_prs, true);
      checkRefine <- findBoolDefault("checkRefine?", val_prs, false);
-     return(checkArgs, checkResult, checkRefine)}
+     recovery_fns <- findQidPairs("recoveryFns", val_prs);
+     return(checkArgs, checkResult, checkRefine, recovery_fns)}
 
   op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
     foldrM (fn (top_result, sub_result) -> fn te ->
