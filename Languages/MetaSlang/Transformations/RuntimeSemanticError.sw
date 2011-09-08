@@ -29,5 +29,9 @@ op [a] checkPredicateComplain(val_to_check: a, pred:a -> Bool, err_msg_fn: a -> 
    else (warn(err_msg_fn val_to_check^"\n"^anyToString val_to_check);
          val_to_check)
 
+op restartCount: Nat = 0
+
+op [a] catchAndRestart: a -> a
+op [a] throwToRestart: String -> a
 
 end-spec
