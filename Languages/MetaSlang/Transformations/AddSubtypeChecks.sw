@@ -72,8 +72,8 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
               let rhs = foldl (fn (hd, param_tm) -> simplifiedApply(hd, param_tm, spc)) prev_dfn param_tms in
               let equality = mkEquality(rng, mkVar result_vn, rhs) in
               let comp_equality = ensureComputable spc equality in
-              let pred = mkLambda(mkTuplePat(param_pats ++ [mkVarPat result_vn]), comp_equality) in
-              mkAssureForm(arg_result_tm, pred, warn_fn, Any(noPos))
+              let pred = mkLambda(mkVarPat result_vn, comp_equality) in
+              mkAssureForm(mkVar result_vn, pred, warn_fn, Any(noPos))
           in
           let result_tests = checkResult_tests ++ checkRefine_tests in
           if result_tests = [] then body
