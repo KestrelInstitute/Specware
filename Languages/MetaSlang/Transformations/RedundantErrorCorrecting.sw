@@ -337,43 +337,48 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                            mkApply(mkEmbed1(constr, mkArrow(primary_ty, new_primary_ty)), conv_bod) % primary_ty ?
                       else mkFailForm "Type must appear as explicit parameter or return type"
                    | src_param0 :: r_src_params ->
-                     if equalType?(ty, primary_ty)
-                       then let cases = map (fn (constr_id, Some ty0) ->
-                                             let pv = (src_param0^"_0", ty0) in
-                                             (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
-                                              trueTerm,
-                                              if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
-                                              else
-                                              let target_i = positionOf(ty_targets, ty0) in
-                                              let coercion_fn = (conversion_fn_defs@target_i).3 in
-                                              let sbst = ((src_param0, primary_ty), mkVar pv)
-                                                        :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
-                                                             r_src_params
-                                              in
-                                              let main_expr = mkCurriedApply(op_targets@target_i, args) in
-                                              mkLet(map (fn src_id ->
-                                                         (mkVarPat(src_id^"_0", ty0), mkApply(coercion_fn, mkVar(src_id, ty0))))
-                                                      r_src_params,
-                                                    mkApply(mkEmbed1(constr_id, mkArrow(ty0, new_primary_ty)),
-                                                            substitute(main_expr, sbst)))))
-                                          coprod_flds
-                            in
-                            mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
-                     else let cases = map (fn (constr_id, Some ty0) ->
-                                             let pv = (src_param0^"_0", ty0) in
-                                             (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
-                                              trueTerm,
-                                              if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
-                                              else
-                                              let sbst = ((src_param0, primary_ty), mkVar pv)
-                                                        :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
-                                                            r_src_params
-                                              in
-                                              let target_i = positionOf(ty_targets, ty0) in
-                                              substitute(mkCurriedApply(op_targets@target_i, args), sbst)))
-                                        coprod_flds
-                            in
-                            mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
+                     let main_body =
+                         if equalType?(ty, primary_ty)
+                           then let cases = map (fn (constr_id, Some ty0) ->
+                                                 let pv = (src_param0^"_0", ty0) in
+                                                 (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
+                                                  trueTerm,
+                                                  if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
+                                                  else
+                                                  let target_i = positionOf(ty_targets, ty0) in
+                                                  let coercion_fn = (conversion_fn_defs@target_i).3 in
+                                                  let sbst = ((src_param0, primary_ty), mkVar pv)
+                                                            :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
+                                                                 r_src_params
+                                                  in
+                                                  let main_expr = mkCurriedApply(op_targets@target_i, args) in
+                                                  mkLet(map (fn src_id ->
+                                                             (mkVarPat(src_id^"_0", ty0), mkApply(coercion_fn, mkVar(src_id, ty0))))
+                                                          r_src_params,
+                                                        mkApply(mkEmbed1(constr_id, mkArrow(ty0, new_primary_ty)),
+                                                                substitute(main_expr, sbst)))))
+                                              coprod_flds
+                                in
+                                mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
+                         else let cases = map (fn (constr_id, Some ty0) ->
+                                                 let pv = (src_param0^"_0", ty0) in
+                                                 (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
+                                                  trueTerm,
+                                                  if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
+                                                  else
+                                                  let sbst = ((src_param0, primary_ty), mkVar pv)
+                                                            :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
+                                                                r_src_params
+                                                  in
+                                                  let target_i = positionOf(ty_targets, ty0) in
+                                                  substitute(mkCurriedApply(op_targets@target_i, args), sbst)))
+                                            coprod_flds
+                                in
+                                mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
+                     in
+                     MS.mkIfThenElse(mkConj(map (fn param -> mkApply(test_fn, mkVar(param, new_primary_ty))) src_params),
+                                     main_body,
+                                     mkFailForm("Error in "^printSort primary_ty^" Data."))
             in
             simplify spc main_bod
       def convertType ty = replaceType(ty, primary_ty, new_primary_ty)
