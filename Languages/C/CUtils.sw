@@ -836,8 +836,7 @@ CUtils qualifying spec
         false
 
   op [X] mkUnique (l : List X) : List X  =
-    foldr (fn (e,l) -> if e in? l then l else e::l) [] l
-
+    foldl (fn (l,e) -> if e in? l then l else e::l) [] l
 
   op [X] qsort (gt : X*X->Bool) (l : List X) : List X =
     let
