@@ -275,6 +275,26 @@ op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(c
   let test_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
   (test_fn_qid, test_fn_body)
 
+op restartCountTerm: MS.Term = mkOp(Qualified("SemanticError", "restartCount"), natSort)
+
+op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(coprod_flds, _): Sort,
+                    conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term),
+                    opt_qual: Option Qualifier, new_spc: Spec)
+  : QualifiedId * MS.Term =
+  let choose_fn_qid = makeDerivedQId new_spc (prependIdInQId(primary_ty_qid, "Choose__")) opt_qual in
+  let param = ("x", new_primary_ty) in
+  let cases = map (fn (id, Some ty) ->
+                   let pv = ("y", ty) in
+                   (mkEmbedPat(id, Some(mkVarPat pv), new_primary_ty), trueTerm,
+                    if equalType?(ty, natSort)
+                      then falseTerm
+                      else simplifiedApply(subtypePredicate(ty, new_spc), mkVar pv, new_spc)))
+                coprod_flds
+  in                     
+  let choose_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
+  (choose_fn_qid, choose_fn_body)
+
+
 op mkConversionFunction(to_type_qid: QualifiedId, primary_ty: Sort, primary_ty_qid: QualifiedId, 
                         new_primary_ty: Sort, new_primary_ty_qid: QualifiedId, 
                         CoProduct(coprod_flds, _): Sort, ident_param: Var, ident_exp: MS.Term,
@@ -303,7 +323,8 @@ op constructorForQid(ty: Sort, CoProduct(coprod_flds, _): Sort): Id =
     | Some(id,_) -> id
 
 op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as CoProduct(coprod_flds, _): Sort,
-             conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term), test_fn: MS.Term,
+             conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term),
+             test_fn: MS.Term, choose_fn: MS.Term,
              ty_targets: Sorts, op_target_qids: QualifiedIds, spc: Spec): MS.Term =
   let op_targets = map (fn op_qid ->
                           let Some info = findTheOp(spc, op_qid) in
@@ -359,7 +380,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                                 substitute(main_expr, sbst)))))
                                               coprod_flds
                                 in
-                                mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
+                                mkApply(Lambda(cases, noPos), mkApply(choose_fn, mkVar(src_param0, new_primary_ty)))
                          else let cases = map (fn (constr_id, Some ty0) ->
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
@@ -374,7 +395,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                   substitute(mkCurriedApply(op_targets@target_i, args), sbst)))
                                             coprod_flds
                                 in
-                                mkApply(Lambda(cases, noPos), mkVar(src_param0, new_primary_ty))
+                                mkApply(Lambda(cases, noPos), mkApply(choose_fn, mkVar(src_param0, new_primary_ty)))
                      in
                      MS.mkIfThenElse(mkConj(map (fn param -> mkApply(test_fn, mkVar(param, new_primary_ty))) src_params),
                                      main_body,
@@ -428,6 +449,8 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
                                                              coProd_def, ident_param, ident_exp, opt_qual, ty_targets, ops_map, new_spc))
                                    ty_target_qids);
     new_spc <- return(foldl (fn (new_spc, (qid, defn, _)) -> addOpDef(new_spc, qid, Nonfix, defn)) new_spc conversion_fn_defs);
+    (choose_fn_qid, choose_fn_def) <- return(mkChooseFunction(primary_ty_qid, new_primary_ty, coProd_def, conversion_fn_defs, opt_qual, new_spc));
+    new_spc <- return(addOpDef(new_spc, choose_fn_qid, Nonfix, choose_fn_def));
     new_spc <- return(foldMap (fn new_spc -> fn qid -> fn op_target_qids ->
                                let Some opinfo = findTheOp(spc, qid) in
                                % let _ = writeLine("Doing "^show qid) in 
@@ -435,6 +458,7 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
                                         opinfo.fixity,
                                         mkCaseDef(opinfo.dfn, primary_ty, new_primary_ty, coProd_def, conversion_fn_defs,
                                                   mkOp(test_fn_qid, mkArrow(new_primary_ty, boolSort)),
+                                                  mkOp(choose_fn_qid, mkArrow(new_primary_ty, new_primary_ty)),
                                                   ty_targets, op_target_qids, new_spc)))
                         new_spc ops_map);
     return(new_spc, tracing?)}}      % *)
