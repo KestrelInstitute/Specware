@@ -460,6 +460,8 @@ refine def [a] delete (x:a) : List a -> List a = fn
   | hd::tl -> if x = hd then delete x tl else Cons (hd, delete x tl)
 
 refine def [a] diff (l1: List a, l2: List a) : List a =
+  if l2 = [] then l1
+  else
   case l1 of
   | []     -> Nil
   | hd::tl -> if hd in? l2 then diff (tl, l2) else Cons (hd, diff (tl, l2))
