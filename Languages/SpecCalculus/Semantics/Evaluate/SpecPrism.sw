@@ -46,7 +46,7 @@ SpecCalc qualifying spec
                                           dom_deps
                                           sm_valueinfos);
     prism_tm        <- return (SpecPrism prism_fields, pos);
-    prism           <- return {dom   = dom_spec,
+    prsm            <- return {dom   = dom_spec,
                                sms   = sms, 
                                pmode = prism_mode,
                                tm    = prism_tm};
@@ -55,7 +55,7 @@ SpecCalc qualifying spec
     %% return (map (fn choice -> writeLine (";;; choice = " ^ anyToString choice)) prior_choices);
     %% look up prism_uid in prior_choices
     incr?         <- getIncrementNextPrism;
-    return (SpecPrism prism, prism_timestamp, prism_deps)
+    return (SpecPrism prsm, prism_timestamp, prism_deps)
    }
 
   def evaluateSpecPrismPerInstance (prism_tm as (domTerm, smTerms, pmode_tm)) pos = 

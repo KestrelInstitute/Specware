@@ -8,12 +8,12 @@ SpecCalc qualifying spec
   % import TypeCoercer                                % for addCoercions
   import /Library/Unvetted/Random                     % for random
 
-  op applySpecPrismSubstitution (prism         : SpecPrism)
+  op applySpecPrismSubstitution (prsm          : SpecPrism)
                                 (original_spec : Spec) 
                                 (prism_tm      : SCTerm) 
                                 (term_pos      : Position) 
    : SpecCalc.Env Spec =                          
-    let should_be_empty_spec = subtractSpec prism.dom original_spec in
+    let should_be_empty_spec = subtractSpec prsm.dom original_spec in
     let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
     let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
     let 
@@ -46,37 +46,37 @@ SpecCalc qualifying spec
     in
       case (sorts_msg, ops_msg, props_msg, clashing_sort_names, clashing_op_names) of
 	| ("", "", "", [], []) ->
-	  auxApplySpecPrismSubstitution prism original_spec prism_tm term_pos
+	  auxApplySpecPrismSubstitution prsm original_spec prism_tm term_pos
 	| _ ->
 	  raise (TypeCheck (term_pos, 
 			    warnAboutMissingItems sorts_msg ops_msg props_msg 
 			                          clashing_sort_names clashing_op_names))
 
-  op auxApplySpecPrismSubstitution (prism    : SpecPrism)
+  op auxApplySpecPrismSubstitution (prsm     : SpecPrism)
                                    (spc      : Spec) 
                                    (prism_tm : SCTerm) 
                                    (pos      : Position) 
    : SpecCalc.Env Spec =                          
    % (p as {dom, sms, pmode, tm}) 
-   case prism.pmode of
+   case prsm.pmode of
      | Uniform s ->
        (case s of
-          | Random     -> applySpecPrismSubstitutionRandom     prism spc pos 
-          | Generative -> applySpecPrismSubstitutionGenerative prism spc pos 
-          | Nth n      -> applySpecPrismSubstitutionNth        prism n spc pos)
+          | Random     -> applySpecPrismSubstitutionRandom     prsm spc pos 
+          | Generative -> applySpecPrismSubstitutionGenerative prsm spc pos 
+          | Nth n      -> applySpecPrismSubstitutionNth        prsm n spc pos)
      | PerInstance _ ->
-       applySpecPrismSubstitutionPerInstance prism spc pos 
+       applySpecPrismSubstitutionPerInstance prsm spc pos 
 	  
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Choose one sm and use it uniformly
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def applySpecPrismSubstitutionRandom prism spc pos =
-    let n = random (length prism.sms) in
-    applySpecPrismSubstitutionNth prism n spc pos
+  def applySpecPrismSubstitutionRandom prsm spc pos =
+    let n = random (length prsm.sms) in
+    applySpecPrismSubstitutionNth prsm n spc pos
 
-  def applySpecPrismSubstitutionGenerative prism spc pos =
-    let prism_tm = prism.tm in
+  def applySpecPrismSubstitutionGenerative prsm spc pos =
+    let prism_tm = prsm.tm in
     {
      uid <- getCurrentUID;
      choices <- getPrismChoices; % get from environment
@@ -99,7 +99,7 @@ SpecCalc qualifying spec
      
      % print (";;; Choice for " ^ anyToString choice.uid ^ " = " ^ anyToString choice.prism_tm ^ "\n");
      % print (";;;  n = " ^ natToString choice.n ^ " of " ^ (natToString (cardinality choice)) ^ "\n");
-     applySpecPrismSubstitutionNth prism choice.n spc pos
+     applySpecPrismSubstitutionNth prsm choice.n spc pos
     }
 
   def applySpecPrismSubstitutionNth p n spc pos =

@@ -29,11 +29,11 @@ SpecCalc qualifying spec
          return (Spec compressed, timeStamp, dep_UIDs)
          }
 
-      | (Spec spc, SpecPrism prism) ->
+      | (Spec spc, SpecPrism prsm) ->
         let timeStamp = max (spec_timestamp, subst_timestamp)     in
         let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
         {
-         new_spec   <- applySpecPrismSubstitution prism spc subst_tm term_pos;
+         new_spec   <- applySpecPrismSubstitution prsm spc subst_tm term_pos;
          compressed <- complainIfAmbiguous (compressDefs new_spec)   term_pos;
          return (Spec compressed, timeStamp, dep_UIDs)
          }
