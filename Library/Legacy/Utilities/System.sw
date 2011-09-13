@@ -18,7 +18,7 @@ System qualifying spec
 
   op warn     : [a] String -> a
   op time     : [a] a -> a
-
+  op internalRunTime () : Nat
   op random: Nat -> Nat
 
 (*

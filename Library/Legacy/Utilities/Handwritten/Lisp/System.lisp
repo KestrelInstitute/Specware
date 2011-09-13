@@ -121,6 +121,9 @@
 ;;; op time     : fa(a) a -> a
 (defmacro |!time| (x) (time x))
 
+;;; op internalRunTime () : Nat
+(defun internalRunTime-0 () (GET-INTERNAL-RUN-TIME))
+
 (defun |!random| (n) (random n))
 
 ;;; #-Lispworks
