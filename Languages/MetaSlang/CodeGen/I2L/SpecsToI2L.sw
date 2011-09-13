@@ -445,6 +445,9 @@ SpecsToI2L qualifying spec
       | Subsort (typ, trm, _) -> % ignore the term...
         type2itype (tvs, typ, ctxt, spc)
 
+      | Quotient (typ, trm, _) -> % ignore the term...
+        type2itype (tvs, typ, ctxt, spc)
+
       | _ ->
         fail ("sorry, code generation doesn't support the use of this sort:\n       "
                 ^ printSort typ)
@@ -656,6 +659,15 @@ SpecsToI2L qualifying spec
             in
             (plist,body)
           | _ -> fail (err())
+
+      def alignTypes pnames types =
+        %% given one var and a list of types, convert list of types to a tuple type
+        case (pnames, types) of
+          | ([_], [_])   -> types
+          | ([_], _)     -> [I_Tuple types]
+          | (_,   [typ]) -> map (fn _ -> I_Void) pnames  % TODO: fix this
+          | _            -> types
+
     in
     let Qualified (q, lid) = qid in
     let id   = (q, lid)                                       in
@@ -669,6 +681,7 @@ SpecsToI2L qualifying spec
           let tm = firstOpDefInnerTerm info          in
           let tm = liftUnsupportedPattern (tm, spc)  in
           let (pnames,body) = getParamNames(ctxt,tm) in
+          let types = alignTypes pnames types in
           let decl = {name       = id,
                       params     = zip (pnames, types),
                       returntype = rtype}
@@ -679,8 +692,11 @@ SpecsToI2L qualifying spec
         else
           let params = 
               case optParNames of
-                | Some pnames -> zip (pnames, types)
-                | _ -> map (fn t -> ("", t)) types
+                | Some pnames -> 
+                  let types = alignTypes pnames types in
+                  zip (pnames, types)
+                | _ -> 
+                  map (fn t -> ("", t)) types
           in
           FunDecl {name       = id,
                    params     = params,
@@ -724,7 +740,12 @@ SpecsToI2L qualifying spec
     let typ  = unfoldBaseKeepPrimitives (typ, spc)            in
     let exp  = term2expression_internal (tm, typ, ctxt, spc)  in
     let ityp = type2itype ([], typ, unsetToplevel ctxt, spc)  in
-    {expr = exp, typ = ityp, cast? = false}
+    let cast? = 
+        case exp of
+          | I_FunCall(("TranslationBuiltIn", "failWith"), _, _) -> true
+          | _ -> false
+    in
+    {expr = exp, typ = ityp, cast? = cast?}
 
   op term2expression_internal (tm : Term, typ : Sort, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
@@ -738,7 +759,6 @@ SpecsToI2L qualifying spec
 
     case tm of
       | Apply      (t1,            t2,  _) -> term2expression_apply  (t1,  t2,    tm, typ, ctxt, spc)
-      | ApplyN     (tms,                _) -> fail ("ApplyN terms not yet handled by term2expression:\n" ^ printTerm tm)
       | Record     (fields,             _) -> term2expression_record (fields,     tm,      ctxt, spc)
       | Let        ([(pat,deftm)], tm,  _) -> term2expression_let    (pat, deftm, tm,      ctxt, spc)
       | Var        ((id, _),            _) -> I_Var ("", id)
@@ -1048,7 +1068,7 @@ SpecsToI2L qualifying spec
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2])
                | _ ->
-                 let _ = appOpInfos (fn info -> writeLine (anyToString info.names)) spc.ops in
+                 % let _ = appOpInfos (fn info -> writeLine (anyToString info.names)) spc.ops in
                  let _ = writeLine ("eq-op not found for " ^ anyToString qid ^ " via " ^ anyToString eqid) in
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2]))
