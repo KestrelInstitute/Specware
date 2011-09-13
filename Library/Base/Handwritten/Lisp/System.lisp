@@ -65,6 +65,9 @@
 ;;; op time     : fa(a) a -> a
 (defmacro |!time| (x) (time x))
 
+;;; op internalRunTime () : Nat
+(defun internalRunTime-0 () (GET-INTERNAL-RUN-TIME))
+
 ;;; #-Lispworks
 ;;; (defun getenv (x) (Specware::getenv x))
 
@@ -158,6 +161,4 @@
 	  ))
     (append (rest (pathname-directory resolved-pathname))
 	    (list (pathname-name resolved-pathname)))))
-
-
 
