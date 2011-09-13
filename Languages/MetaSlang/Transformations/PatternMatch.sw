@@ -69,7 +69,7 @@ PatternMatch qualifying spec
 
   op  translateMatch : Spec -> Spec
 
-  def match_type srt = mkBase (Qualified("TranslationBuiltIn","Match"), [srt])
+  def match_type srt = srt % mkBase (Qualified("TranslationBuiltIn","Match"), [srt])
 
   def mkBreak    srt = mkOp (Qualified("TranslationBuiltIn","mkBreak"), match_type srt)
 
