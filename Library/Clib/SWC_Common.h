@@ -323,11 +323,16 @@ typedef int Accord_ProcType ();
 
 /*********************  Pattern Matcher *************************/
 
-int MatchSuccess;
-int MatchValue;
+u4 MatchSuccess;
+u4 MatchValue;
 
 #define TranslationBuiltIn_block(form)     (form)
-#define TranslationBuiltIn_failWith(aa,bb) ((aa), (char*) (MatchSuccess == TRUE) ? MatchValue : (bb))
+/*
+ * Note that failWith will always be within a cast back to the type of aa,
+ * so any cast to int done by mkSuccess will be properly reversed back to 
+ * the correct type if MatchValue is returned from failWith.
+ */
+#define TranslationBuiltIn_failWith(aa,bb) ((aa), (MatchSuccess == TRUE) ? MatchValue : (bb))
 #define TranslationBuiltIn_mkSuccess(cc)   (MatchSuccess = TRUE, MatchValue = (int) cc)
 #define TranslationBuiltIn_mkBreak         (MatchSuccess = FALSE)
 #define TranslationBuiltIn_mkFail(msg)     (MatchSuccess = FALSE)
