@@ -215,7 +215,7 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
 %% Defined in /Languages/SpecCalculus/Semantics/Evaluate/Spec.sw
 op SpecCalc.mergeImport: SCTerm -> Spec -> Spec -> Position -> Env Spec
 
-op redundantErrorCorrectingDup (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
+op redundantErrorCorrectingProduct (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
@@ -276,22 +276,27 @@ op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(c
   (test_fn_qid, test_fn_body)
 
 op restartCountTerm: MS.Term = mkOp(Qualified("SemanticError", "restartCount"), natSort)
+op mkThrowForm(fail_str: String): MS.Term =
+  mkApply(mkOp(Qualified("SemanticError", "throwToRestart"), mkArrow(stringSort, voidType)),
+          mkString fail_str)
 
-op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(coprod_flds, _): Sort,
+
+op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, coProd_def as CoProduct(coprod_flds, _): Sort,
                     conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term),
-                    opt_qual: Option Qualifier, new_spc: Spec)
+                    opt_qual: Option Qualifier, ty_targets: Sorts, new_spc: Spec)
   : QualifiedId * MS.Term =
   let choose_fn_qid = makeDerivedQId new_spc (prependIdInQId(primary_ty_qid, "Choose__")) opt_qual in
   let param = ("x", new_primary_ty) in
-  let cases = map (fn (id, Some ty) ->
-                   let pv = ("y", ty) in
-                   (mkEmbedPat(id, Some(mkVarPat pv), new_primary_ty), trueTerm,
-                    if equalType?(ty, natSort)
-                      then falseTerm
-                      else simplifiedApply(subtypePredicate(ty, new_spc), mkVar pv, new_spc)))
-                coprod_flds
+  let cases = tabulate(length ty_targets,
+                       fn i -> (mkNatPat i, trueTerm,
+                                let tyi = ty_targets@i in
+                                let constr_id = constructorForQid(tyi, coProd_def) in
+                                mkApply(mkEmbed1(constr_id, mkArrow(tyi, new_primary_ty)),
+                                        mkApply((conversion_fn_defs@i).3,
+                                                mkVar param))))
   in                     
-  let choose_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
+  let other_case = (mkWildPat natSort, trueTerm, mkFailForm("All representations of "^show primary_ty_qid^" failed.")) in
+  let choose_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases ++ [other_case], noPos), restartCountTerm)) in
   (choose_fn_qid, choose_fn_body)
 
 
@@ -364,7 +369,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
+                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printSort primary_ty^" Data.")
                                                   else
                                                   let target_i = positionOf(ty_targets, ty0) in
                                                   let coercion_fn = (conversion_fn_defs@target_i).3 in
@@ -385,7 +390,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkFailForm("Error in "^printSort primary_ty^" Data.")
+                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printSort primary_ty^" Data.")
                                                   else
                                                   let sbst = ((src_param0, primary_ty), mkVar pv)
                                                             :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
@@ -399,7 +404,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                      in
                      MS.mkIfThenElse(mkConj(map (fn param -> mkApply(test_fn, mkVar(param, new_primary_ty))) src_params),
                                      main_body,
-                                     mkFailForm("Error in "^printSort primary_ty^" Data."))
+                                     mkThrowForm("Error in "^printSort primary_ty^" Data."))
             in
             simplify spc main_bod
       def convertType ty = replaceType(ty, primary_ty, new_primary_ty)
@@ -410,6 +415,8 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
   in
   convertDef dfn
 
+ op Specware.evaluateUnitId: String -> Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap, which imports this spec
+op runtimeSemanticErrorSpec: String = "/Languages/MetaSlang/Transformations/RuntimeSemanticError"
 
 op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
@@ -440,6 +447,9 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
                       mergeImport (UnitId imp_spc_uid, noPos) imp_spec spc pos)
       emptySpec
       trg_spcs;
+    new_spc <- let Some(Spec rse_spc) = evaluateUnitId runtimeSemanticErrorSpec in
+               let Some rse_spc_uid = findRelativeUIDforValue(Spec rse_spc) in
+               mergeImport (UnitId rse_spc_uid, noPos) rse_spc new_spc pos;
     coProd_def <- return(mkCoProdOfTypes(ty_target_qids));
     new_spc <- return(addTypeDef(new_spc, new_primary_ty_qid, coProd_def));
     (test_fn_qid, test_fn_def) <- return(mkTestFunction(primary_ty_qid, new_primary_ty, coProd_def, opt_qual, new_spc));
@@ -449,7 +459,8 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
                                                              coProd_def, ident_param, ident_exp, opt_qual, ty_targets, ops_map, new_spc))
                                    ty_target_qids);
     new_spc <- return(foldl (fn (new_spc, (qid, defn, _)) -> addOpDef(new_spc, qid, Nonfix, defn)) new_spc conversion_fn_defs);
-    (choose_fn_qid, choose_fn_def) <- return(mkChooseFunction(primary_ty_qid, new_primary_ty, coProd_def, conversion_fn_defs, opt_qual, new_spc));
+    (choose_fn_qid, choose_fn_def) <- return(mkChooseFunction(primary_ty_qid, new_primary_ty, coProd_def, conversion_fn_defs, opt_qual,
+                                                              ty_targets, new_spc));
     new_spc <- return(addOpDef(new_spc, choose_fn_qid, Nonfix, choose_fn_def));
     new_spc <- return(foldMap (fn new_spc -> fn qid -> fn op_target_qids ->
                                let Some opinfo = findTheOp(spc, qid) in
@@ -467,7 +478,7 @@ op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_q
                             (restart?: Bool)(tracing?: Bool): Env(Spec * Bool) =
   if restart?
     then redundantErrorCorrectingRestart spc morphs opt_qual tracing?
-    else redundantErrorCorrectingDup spc morphs opt_qual tracing?
+    else redundantErrorCorrectingProduct spc morphs opt_qual tracing?
 
 end-spec
 
