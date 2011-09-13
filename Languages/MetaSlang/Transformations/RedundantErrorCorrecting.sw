@@ -358,9 +358,16 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                 case src_params of
                   | [] ->   % No parameters of pertinent type
                     if equalType?(ty, primary_ty)
-                      then let conv_bod = foldl (fn (hd, arg) -> mkApply(hd, arg)) (op_targets@0) args in
-                           let constr = constructorForQid(ty_targets@0, coProd_def) in
-                           mkApply(mkEmbed1(constr, mkArrow(primary_ty, new_primary_ty)), conv_bod) % primary_ty ?
+                      then let cases = tabulate(length ty_targets,
+                                                fn i -> (mkNatPat i, trueTerm,
+                                                         let tyi = ty_targets@i in
+                                                         let constr_id = constructorForQid(tyi, coProd_def) in
+                                                         let conv_bod = foldl (fn (hd, arg) -> mkApply(hd, arg)) (op_targets@i) args in
+                                                         mkApply(mkEmbed1(constr_id, mkArrow(tyi, new_primary_ty)),
+                                                                 conv_bod)))
+                           in                     
+                           let other_case = (mkWildPat natSort, trueTerm, mkFailForm("All representations of "^printSort primary_ty^" failed.")) in
+                           mkApply(Lambda(cases ++ [other_case], noPos), restartCountTerm)
                       else mkFailForm "Type must appear as explicit parameter or return type"
                    | src_param0 :: r_src_params ->
                      let main_body =
