@@ -439,6 +439,14 @@ I2LToC qualifying spec
                     forInitializer? : Bool)
     : C_Spec * C_Block * C_Exp =
     let (cspc, block, cexpr) = c4Expression2 (ctxt, cspc, block, exp, lhs?, forInitializer?) in
+    let cexpr = 
+        let {expr=_,typ,cast?} = exp in
+        if cast? then
+          let (cspc, ctype) = c4Type (ctxt, cspc, typ) in
+          C_Cast (ctype, cexpr)
+        else
+          cexpr
+    in
     let (cspc, block, cexpr) = mergeBlockIntoExpr (cspc, block, cexpr)                       in
     (cspc, block, cexpr)
 
