@@ -100,13 +100,13 @@ RemoveCurrying qualifying spec
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> 
-                     let _ = writeLine (q ^ "." ^ id ^ " is an Op element not in the qaulifier map") in
+                     let _ = writeLine (q ^ "." ^ id ^ " is an Op element not in the qualifier map") in
                      (Cons (el,r_elts), r_ops))
 	      | OpDef(Qualified(q,id),_,a) ->
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> 
-                     let _ = writeLine (q ^ "." ^ id ^ " is an OpDef element not in the qaulifier map") in
+                     let _ = writeLine (q ^ "." ^ id ^ " is an OpDef element not in the qualifier map") in
                      (Cons (el,r_elts), r_ops))
 	      | _ -> (Cons(el,r_elts),r_ops))
 	    result
