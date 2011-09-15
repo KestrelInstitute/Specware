@@ -240,6 +240,8 @@ spec
     let spc = simplifySpec                          spc in % (12) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
     let _ = showSpc "simplifySpec"                  spc in
 
+    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in % prior to adding eq ops
+
     let spc = if addEqOps? then 
                 %%  TODO: can we get the best of both worlds here?
                 %%  If addEqOps? is true, we need to provide implementations for a lot of low level eq ops, 
@@ -254,8 +256,7 @@ spec
     in 
 
     let spc = if slice2? then 
-                let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc             in
-                let spc                  = sliceSpec (spc, top_ops, top_types, true, slice2base?) in % (14) cleanup any unused ops intoduced since previous slice
+                let spc = sliceSpec (spc, top_ops, top_types, true, slice2base?) in % (14) cleanup any unused ops intoduced since previous slice
                 let _ = showSpc "sliceSpec[2]"      spc in 
                 spc
               else
@@ -322,6 +323,8 @@ spec
     let c_filename = basename ^ ".c" in
     let h_filename = basename ^ ".h" in
     let (h_spec, c_spec) = splitCSpec c_spec  in
+    let id_dfn = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
+    let c_spec = addConstDefn (c_spec, id_dfn) in  
     let c_spec = addHeader  (c_spec, app_name) in
     let c_spec = addTrailer (c_spec, app_name) in
     let h_spec = addHeader  (h_spec, app_name) in
