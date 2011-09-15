@@ -29,7 +29,15 @@ SpecCalc qualifying spec
        (case s of
           | Random     -> applySpecPrismSubstitutionRandom     prsm spc pos 
           | Generative -> applySpecPrismSubstitutionGenerative prsm spc pos 
-          | Nth n      -> applySpecPrismSubstitutionNth        prsm n spc pos)
+          | Nth n      -> 
+            if n < length prsm.sms then
+              applySpecPrismSubstitutionNth prsm n spc pos
+            else
+              let _ = writeLine("Error: Attempted to select sm \#" ^ anyToString n ^
+                                  ", but there are only " ^ anyToString (length prsm.sms) ^ 
+                                  " morphisms in prism -- ignoring substitution.") 
+              in
+              return spc)
      | PerInstance _ ->
        applySpecPrismSubstitutionPerInstance prsm spc pos 
 	  
