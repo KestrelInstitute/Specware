@@ -4,7 +4,7 @@
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
-act='launch Specware in SBCL, using slime interface to XEmacs'
+act='launch Specware in SBCL, using slime interface to Emacs'
 
 ########################################################################
 
@@ -25,6 +25,6 @@ PATH="$OLD_PATH"
 . "$HERE/Update_SWPATH"
 . "$HERE/Find_Specware_App_SBCL"
 
-XEMACS_SPECWARE="$HERE"/XEmacs_Specware
+EMACS_SPECWARE="$HERE"/Emacs_Specware
 
-isabelle emacs -p "$XEMACS_SPECWARE" $* 
+isabelle emacs -p "$EMACS_SPECWARE" $* 

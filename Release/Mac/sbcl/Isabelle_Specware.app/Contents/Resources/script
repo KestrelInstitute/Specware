@@ -2,11 +2,11 @@
 
 cd `/usr/bin/dirname $0`/../../..
 SCRIPTDIR=`pwd`
-XEMACS_SPECWARE="$SCRIPTDIR"/XEmacs_Specware
+EMACS_SPECWARE="$SCRIPTDIR"/Emacs_Specware
 
 # Basic
 PATH=/bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin:${PATH}
 # Isabelle, fink, darwinports
-PATH=/Applications/Isabelle2009-2.app/Isabelle/bin:/usr/local/Isabelle/bin:/sw/bin:/opt/local/bin:/opt/local/sbin:$HOME/Isabelle/bin:${PATH}
+PATH=/Applications/Isabelle2011.app/Isabelle/bin:/sw/bin:/opt/local/bin:/opt/local/sbin:$HOME/Applications/Isabelle2011.app/Isabelle/bin:${PATH}
 
-isabelle emacs -p "$XEMACS_SPECWARE" $* 
+isabelle emacs -p "$EMACS_SPECWARE" $* 

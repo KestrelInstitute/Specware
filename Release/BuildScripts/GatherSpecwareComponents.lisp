@@ -137,7 +137,7 @@
     ;;  (generic-delete-directory release-dir t))
       
     (prepare_Specware_Lib specware-dir release-dir)
-    (prepare_XEmacs_Lib   specware-dir release-dir)
+    (prepare_Emacs_Lib   specware-dir release-dir)
     (prepare_C_Lib        specware-dir release-dir)
     (prepare_Specware     specware-dir release-dir distribution-dir)
     (print-blank)
@@ -314,19 +314,19 @@
     ))
 
 ;;; ================================================================================
-;;; XEmacs Library
+;;; Emacs Library
 ;;; ================================================================================
 
-(defun prepare_XEmacs_Lib (specware-dir release-dir)
-  (print-major "XEmacs_Lib")
-  (prepare_XEmacs_Lib_Generic specware-dir release-dir)
-  #+linux     (prepare_XEmacs_Lib_Linux   specware-dir release-dir)
-  #+(or mac darwin) (prepare_XEmacs_Lib_Mac     specware-dir release-dir)
-  #+(or Mswindows Win32) (prepare_XEmacs_Lib_Windows specware-dir release-dir)
+(defun prepare_Emacs_Lib (specware-dir release-dir)
+  (print-major "Emacs_Lib")
+  (prepare_Emacs_Lib_Generic specware-dir release-dir)
+  #+linux     (prepare_Emacs_Lib_Linux   specware-dir release-dir)
+  #+(or mac darwin) (prepare_Emacs_Lib_Mac     specware-dir release-dir)
+  #+(or Mswindows Win32) (prepare_Emacs_Lib_Windows specware-dir release-dir)
   )
 
-(defun prepare_XEmacs_Lib_Generic (specware-dir release-dir)
-  (print-minor "XEmacs_Lib" "generic")
+(defun prepare_Emacs_Lib_Generic (specware-dir release-dir)
+  (print-minor "Emacs_Lib" "generic")
   ;;
   ;; We use various Emacs/Lisp interfaces:
   ;;   slime/swank is used for SBCL on Linux and Mac (and will be for Windows)
@@ -532,21 +532,21 @@
     ))
 
 #+linux     
-(defun prepare_XEmacs_Lib_Linux   (specware-dir release-dir)
+(defun prepare_Emacs_Lib_Linux   (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
-  (print-minor "XEmacs_Lib" "Linux")
+  (print-minor "Emacs_Lib" "Linux")
   )
 
 #+(or mac darwin)
-(defun prepare_XEmacs_Lib_Mac     (specware-dir release-dir)
+(defun prepare_Emacs_Lib_Mac     (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
-  (print-minor "XEmacs_Lib" "Mac")
+  (print-minor "Emacs_Lib" "Mac")
   )
 
 #+(or Mswindows Win32)
-(defun prepare_XEmacs_Lib_Windows (specware-dir release-dir)
+(defun prepare_Emacs_Lib_Windows (specware-dir release-dir)
   (declare (ignore specware-dir release-dir))
-  (print-minor "XEmacs_Lib" "Windows")
+  (print-minor "Emacs_Lib" "Windows")
   )
 
 ;;; ================================================================================
@@ -852,18 +852,18 @@
 					  (merge-pathnames source-linux-cmucl-dir "Find_CMUCL")
 					  (merge-pathnames source-linux-cmucl-dir "Find_Specware_App_CMUCL")
 					  (merge-pathnames source-linux-cmucl-dir "Isabelle_Specware")
-					  (merge-pathnames source-linux-cmucl-dir "XEmacs_Specware")
+					  (merge-pathnames source-linux-cmucl-dir "Emacs_Specware")
 					  )
 				    #+sbcl 
 				    (list (merge-pathnames source-linux-sbcl-dir "Specware")
 					  (merge-pathnames source-linux-sbcl-dir "SpecwareShell")
 					  (merge-pathnames source-linux-sbcl-dir "Find_Specware_App_SBCL")
 					  (merge-pathnames source-linux-sbcl-dir "Isabelle_Specware")
-					  (merge-pathnames source-linux-sbcl-dir "XEmacs_Specware")
+					  (merge-pathnames source-linux-sbcl-dir "Emacs_Specware")
 					  )
 				    (list
 				     (merge-pathnames source-linux-dir      "install_gnome_desktop_icons_specware")
-				     (merge-pathnames source-linux-dir      "Find_XEMACS")
+				     (merge-pathnames source-linux-dir      "Find_EMACS")
 				     (merge-pathnames source-linux-dir      "Find_SPECWARE4")
 				     (merge-pathnames source-linux-dir      "Update_Path")
 				     (merge-pathnames source-linux-dir      "Update_SWPATH")
@@ -922,14 +922,14 @@
                                (merge-pathnames source-mac-cmucl-dir "Find_CMUCL")
                                (merge-pathnames source-mac-cmucl-dir "Find_Specware_App_CMUCL")
                                (merge-pathnames source-mac-cmucl-dir "Isabelle_Specware")
-                               (merge-pathnames source-mac-cmucl-dir "XEmacs_Specware")
+                               (merge-pathnames source-mac-cmucl-dir "Emacs_Specware")
                                )
                          #+sbcl 
                          (list (merge-pathnames source-mac-sbcl-dir "Specware.terminal")
                                (merge-pathnames source-mac-sbcl-dir "SpecwareShell.sh")
                                ; (merge-pathnames source-mac-sbcl-dir "Find_Specware_App_SBCL")
                                (merge-pathnames source-mac-sbcl-dir "Isabelle_Specware.terminal")
-                               (merge-pathnames source-mac-sbcl-dir "XEmacs_Specware")
+                               (merge-pathnames source-mac-sbcl-dir "Emacs_Specware")
                                )
                          (list
                           (merge-pathnames source-generic-dir  "StartSpecwareShell.lisp")
@@ -1095,16 +1095,18 @@
 					  (merge-pathnames source-windows-sbcl-dir "SpecwareShell")
 					  (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL.cmd")
                                           (merge-pathnames source-windows-sbcl-dir "Find_Specware_App_SBCL")
-                                          (merge-pathnames source-windows-sbcl-dir "start-in-xemacs-slime.cmd")
+                                          (merge-pathnames source-windows-sbcl-dir "start-in-emacs-slime.cmd")
                                           (merge-pathnames source-windows-sbcl-dir "Find_SPECWARE4.cmd")
 					  (merge-pathnames source-windows-sbcl-dir "Isabelle_Specware")
-					  (merge-pathnames source-windows-sbcl-dir "XEmacs_Specware")
+					  (merge-pathnames source-windows-sbcl-dir "Emacs_Specware")
 					  )
 				    (list
 				    ; (merge-pathnames source-windows-dir      "install_gnome_desktop_icons_specware")
                                      (merge-pathnames source-windows-dir "Find_SPECWARE4")
 				     (merge-pathnames source-windows-dir      "Find_XEMACS.cmd")
                                      (merge-pathnames source-windows-dir      "Find_XEMACS")
+				     (merge-pathnames source-windows-dir      "Find_EMACS.cmd")
+                                     (merge-pathnames source-windows-dir      "Find_EMACS")
 				    ;
 				     (merge-pathnames source-windows-dir      "Update_Path.cmd")
                                      (merge-pathnames source-windows-dir      "Update_Path")
@@ -1125,7 +1127,9 @@
 			    "Specware.cmd"
 			    "SpecwareShell.cmd"
 			    "Find_Specware_App_SBCL.cmd"
+			    "start-in-emacs-slime.cmd"
 			    "start-in-xemacs-slime.cmd"
+			    "Find_EMACS.cmd"
 			    "Find_XEMACS.cmd"
 			    "Find_SPECWARE4.cmd"
 			    "Update_Path.cmd"

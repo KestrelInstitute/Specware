@@ -1,7 +1,7 @@
 #!/bin/sh
 (shopt -s igncr) 2>/dev/null && shopt -s igncr;  # Ignore cr's
 
-act='launch Specware in SBCL, using slime interface to XEmacs'
+act='launch Specware in SBCL, using slime interface to Emacs'
 
 ########################################################################
 
@@ -22,11 +22,11 @@ PATH="$OLD_PATH"
 . "$HERE/Update_Path"
 . "$HERE/Update_SWPATH"
 . "$HERE/Find_Specware_App_SBCL"
-. "$HERE/Find_XEMACS"
+. "$HERE/Find_EMACS"
 
 ########################################################################
 
-$XEMACS -geometry 180x70+180+2 -name  "Specware" -title "Specware" \
+$EMACS -geometry 180x70+180+2 -name  "Specware" -title "Specware" \
         -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
         $* \
         -f run-specware4 &
