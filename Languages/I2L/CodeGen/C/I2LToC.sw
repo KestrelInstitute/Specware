@@ -136,16 +136,17 @@ I2LToC qualifying spec
     : C_Spec =
     let initfname  = "get_" ^ vname   in
     let valuevname = vname ^ "_value" in
-    let cspc       = addDefine  (cspc, vname ^ " " ^ initfname ^ "()")   in
-    let cspc       = addVarDefn (cspc, (valuevname, ctype, NULL))        in
-    let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), NULL)  in
-    let setexp     = C_Binary   (C_Set, C_Var(valuevname, ctype), cexpr) in
-    let body       = C_Block    (decls, stmts ++ [C_IfThen (condexp, C_Exp setexp), 
-                                                  C_Return (C_Var (valuevname, ctype))]) 
-    in
-    let fndefn     = (initfname, [], ctype, body)             in
-    let cspc       = addFnDefn (cspc, fndefn)                 in
-    let cspc       = addFn     (cspc, (initfname, [], ctype)) in
+    let cspc       = addDefine  (cspc, vname ^ " " ^ initfname ^ "()")        in
+    let null_value = C_Cast (ctype, C_Const (C_Int (true, 0)))                in  % cast null to actual desired type
+    let cspc       = addVarDefn (cspc, (valuevname, ctype, null_value))       in
+    let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), null_value) in
+    let setexp     = C_Binary   (C_Set, C_Var(valuevname, ctype), cexpr)      in
+    let new_ifthen = C_IfThen   (condexp, C_Exp setexp)                       in
+    let new_return = C_Return   (C_Var (valuevname, ctype))                   in
+    let body       = C_Block    (decls, stmts ++ [new_ifthen, new_return])    in
+    let fndefn     = (initfname, [], ctype, body)                             in
+    let cspc       = addFnDefn  (cspc, fndefn)                                in
+    let cspc       = addFn      (cspc, (initfname, [], ctype))                in
     cspc
 
   op c4FunDecl (ctxt : I2C_Context, cspc : C_Spec, fdecl : I_FunDeclaration) : C_Spec =
@@ -180,7 +181,8 @@ I2LToC qualifying spec
                                          stadsbody
         in
         let stmt  = addStmts (C_Block block, stmts) in
-        let fdefn = (fname, vardecls, rtype, stmt) in
+        let stmt  = moveFailAwayFromEnd stmt        in
+        let fdefn = (fname, vardecls, rtype, stmt)  in
         addFnDefn (cspc, fdefn)
 
       | I_Exp expr ->
@@ -191,8 +193,24 @@ I2LToC qualifying spec
 	let block                                  = (decls, stmts++stmts1++stmts2)            in
 	let block                                  = findBlockForDecls block                   in
 	let stmt                                   = C_Block block                             in
+        let stmt                                   = moveFailAwayFromEnd stmt                  in
 	let fdefn                                  = (fname, vardecls, rtype, stmt)            in
 	addFnDefn (cspc, fdefn)
+
+  op moveFailAwayFromEnd (stmt : C_Stmt) : C_Stmt =
+    case stmt of
+      | C_Block (vdecls, stmts) ->
+        (case reverse stmts of
+           | (C_Return (original_final_exp as C_Apply (C_Var (final_fn, _), _))) ::
+             (C_IfThen (pred, original_penultimate_stmt))                        ::
+             stmts 
+              | final_fn in? ["TranslationBuiltIn_mkFail", "fail"] ->
+                let reversed_test = C_IfThen (C_Unary (C_LogNot, pred), 
+                                              C_Exp original_final_exp)
+                in
+                C_Block (vdecls, reverse (original_penultimate_stmt :: reversed_test :: stmts))
+           | _ -> stmt)
+      | _ -> stmt
 
   op c4VarDecl (ctxt : I2C_Context, cspc : C_Spec, vdecl : I_Declaration) : C_Spec =
     % check for records containing functions
