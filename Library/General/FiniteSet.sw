@@ -219,7 +219,7 @@ end-proof
 op [a] List.toSet (l: List a) : FSet a = toFSet (fn x -> x in? l)
 
 proof Isa List__toSet_Obligation_subtype
- by (simp add: mem_iff mem_def finite_set)
+ by (simp add: member_def mem_def finite_set)
 end-proof
 
 % intersection of all sets contained in a list:
@@ -228,7 +228,7 @@ op [a] List.//\\ (ls: List1 (FSet a)) : FSet a = //\\ (toSet ls)
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
   apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
-                  mem_iff mem_def FSet__fromFSet_def)
+                  member_def mem_def FSet__fromFSet_def)
   apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
   apply (frule_tac y="FSet__toFSet (set ls)" in  Function__inverse__stp_apply,
          auto simp add: bij_ON_def)

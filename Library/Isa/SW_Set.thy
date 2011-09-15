@@ -2,21 +2,16 @@ theory SW_Set
 imports Base Set
 begin
 
-lemma Set_Set_P_converse:
-"Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_P_unfold:
-"Set_P P A = (\<forall> x \<in> A . P x)"
+lemma Set_Set_P_converse: "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_P_unfold:       "Set_P P A = (\<forall> x \<in> A . P x)"
   by (auto simp add: Set_P_def mem_def)  
-lemma Set_Fun_PD_Set_P:
-"Fun_PD P A \<Longrightarrow> Set_P P A"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_Fun_PD:
-"Set_P P A \<Longrightarrow> Fun_PD P A"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_RSet:
-"Set_P P A \<Longrightarrow> (RSet P A = A)"
-by (auto simp add: Set_P_def mem_def)
+lemma Set_Fun_PD_Set_P:   "Fun_PD P A \<Longrightarrow> Set_P P A"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_Set_P_Fun_PD:   "Set_P P A \<Longrightarrow> Fun_PD P A"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_Set_P_RSet:     "Set_P P A \<Longrightarrow> (RSet P A = A)"
+  by (auto simp add: Set_P_def mem_def)
 
 theorem Set__in_p__def: 
   "(x \<in> s) = (x \<in> s)"
@@ -99,7 +94,7 @@ defs Set__power__stp_def:
   "Set__power__stp P__a s
      \<equiv> (\<lambda> (sub__v::'a set). Set__e_lt_eq__stp P__a(sub__v, s))"
 theorem Set__empty__def: 
-  "{} = (\<lambda> ignore. False)"
+  "((zz__0::'a) \<in> {}) = False"
   by (auto simp add: mem_def)
 consts Set__empty_p :: "'a set \<Rightarrow> bool"
 defs Set__empty_p_def [simp]: "Set__empty_p s \<equiv> (s = {})"
@@ -107,22 +102,12 @@ consts Set__empty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Righ
 defs Set__empty_p__stp_def [simp]: 
   "Set__empty_p__stp P__a s \<equiv> (s = RSet P__a {})"
 
-lemma Set_empty_apply[simp]:
-"{} x = False"
-by(simp add:Set__empty__def)
-lemma Set_RSet_empty[simp]:
-"RSet P_a {} = {}"
-by auto
-lemma Set_Set_P_empty[simp]:
-"Set_P P {} = True"
-by (simp add:Set_P_def)
-lemma Set_Fun_PD_empty[simp]:
-"Fun_PD P {} = True"
-by auto
+lemma Set_empty_apply[simp]:  "{} x = False"       by auto
+lemma Set_RSet_empty[simp]:   "RSet P_a {} = {}"   by auto
+lemma Set_Set_P_empty[simp]:  "Set_P P {} = True"  by (simp add:Set_P_def)
+lemma Set_Fun_PD_empty[simp]: "Fun_PD P {} = True" by auto
 lemma Set_empty_p_equiv_empty_p_stp:
-"Set__empty_p s = Set__empty_p__stp P__a s"
-by (auto simp add:Set__empty_p__stp_def Set__empty_p_def 
-                  Set__empty__def mem_def)
+   "Set__empty_p s = Set__empty_p__stp P__a s"     by auto
 
 consts Set__nonEmpty_p :: "'a set \<Rightarrow> bool"
 defs Set__nonEmpty_p_def: "Set__nonEmpty_p s \<equiv> (s \<noteq> {})"
@@ -155,7 +140,7 @@ next
 qed
 
 theorem Set__full__def: 
-  "UNIV = (\<lambda> ignore. True)"
+  "((zz__0::'a) \<in> UNIV) = True"
   by (auto simp add: mem_def)
 consts Set__full_p :: "'a set \<Rightarrow> bool"
 defs Set__full_p_def [simp]: "Set__full_p s \<equiv> (s = UNIV)"
@@ -190,7 +175,7 @@ defs Set__onlyMemberOf__stp_def:
 
 lemma Set_single_simp [simp]:
 "Set__single x = {x}"
- by (rule set_ext, simp, simp add: mem_def Set__single_def)
+ by (rule set_eqI, simp, simp add: mem_def Set__single_def)
 lemma Set_single_simp_app1:
 "{x} x = True"
 by(simp del:Set_single_simp 
@@ -217,7 +202,7 @@ theorem Set__theMember_Obligation_the:
   "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
 theorem Set__theMember__def: 
-  "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> contents s = (THE (x::'a). x \<in> s)"
+  "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> the_elem s = (THE (x::'a). x \<in> s)"
   by auto
 consts Set__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> 'a"
 defs Set__theMember__stp_def: 
@@ -890,9 +875,8 @@ theorem Set__fold_Obligation_the:
   apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
          simp add:fun_left_comm_on_def, auto)
   apply (rule ext, simp only: split_paired_all)
-  apply (case_tac "finite b")
-  apply (induct_tac b rule: finite_induct, simp_all)
-  apply (auto simp only: Set__empty__def [symmetric] fold_empty)
+  apply (case_tac "finite b", simp_all)
+  apply (induct_tac b rule: finite_induct, auto simp add: empty_false)
   apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
          in fold_insert, simp_all add: fun_left_comm_on_def)
   done

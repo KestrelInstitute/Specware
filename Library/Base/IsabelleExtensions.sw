@@ -65,12 +65,14 @@ lemma mem_reverse:   "x\_inP \_Longrightarrow P x"
 lemma univ_true:     "(\_lambdax. True) = UNIV"
   by (simp only:UNIV_def Collect_def)
 
+lemma empty_false:   "(\_lambda x. False) = {}"
+  by (simp only: empty_def Collect_def)
+
 (*** stronger control over unfolding "a \_in S" ***)
  
 lemma mem_lambda_int:
   "a \_in (\_lambda(i::int). P i) = P a"
- by (simp add: mem_def)
-  
+ by (simp add: mem_def)  
 
 theorem singleton_set [simp]:
   "{z} x = (x = z)"
@@ -110,7 +112,7 @@ qed
 
 lemma unique_singleton:
   "(\_existsx. P = {x}) = (\_exists!x. P x)"
-  by (simp add:  expand_set_eq singleton_iff,
+  by (simp add: set_eq_iff singleton_iff,
       auto simp add: mem_def)
 
 
@@ -162,6 +164,24 @@ definition foldr' ::
   "('a \_times 'b \_Rightarrow 'b) \_Rightarrow
    'b \_Rightarrow 'a list \_Rightarrow 'b" where
 [simp]: "foldr' f base l \_equiv foldr (\_lambdaa b. f (a,b)) l base"
+
+
+(*************************************************************
+* Isabelle 2011 hides the constants null and and map_filter and
+* drops the definition of list membership. We need all that
+*************************************************************)
+
+abbreviation null :: "'a list  \_Rightarrow bool" where
+   "null \_equiv List.null"
+
+abbreviation (input) mem :: "'a \<Rightarrow> 'a list \<Rightarrow> bool" (infixl "mem" 55) where
+  "x mem xs \_equiv x \_in set xs" -- "for backward compatibility"
+
+abbreviation filtermap :: "('a \<Rightarrow> 'b option) \<Rightarrow> 'a list \<Rightarrow> 'b list" where
+   "filtermap \_equiv  List.map_filter"
+
+declare map_filter_simps [simp add]
+declare null_rec [simp add]
 
 (******************************************************************************
  * Abbreviations for subtype regularization
@@ -1800,12 +1820,12 @@ lemmas prime_def = prime_nat_def
 
 lemma primes_iff:
   "list_all prime  = primel" 
- by (simp add: expand_fun_eq list_all_iff primel_def)
+ by (simp add:fun_eq_iff list_all_iff primel_def)
 
 
 lemma prod_as_foldl:
   "foldl op * (Suc 0) = prod"
- apply (auto simp add: expand_fun_eq)
+ apply (auto simp add:fun_eq_iff)
  apply (induct_tac x, simp_all)
  apply (cut_tac l=list in foldl_mul_assoc1, auto)
 done

@@ -21,21 +21,16 @@ proof Isa -stp-theorems end-proof
 
 (*** Lemmas About Set_P RSet and Fun_PD ***)
 proof Isa -verbatim
-lemma Set_Set_P_converse:
-"Set_P P A \_Longrightarrow (\_forall x \_in A . P x)"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_P_unfold:
-"Set_P P A = (\_forall x \_in A . P x)"
+lemma Set_Set_P_converse: "Set_P P A \_Longrightarrow (\_forall x \_in A . P x)"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_P_unfold:       "Set_P P A = (\_forall x \_in A . P x)"
   by (auto simp add: Set_P_def mem_def)  
-lemma Set_Fun_PD_Set_P:
-"Fun_PD P A \_Longrightarrow Set_P P A"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_Fun_PD:
-"Set_P P A \_Longrightarrow Fun_PD P A"
-by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_RSet:
-"Set_P P A \_Longrightarrow (RSet P A = A)"
-by (auto simp add: Set_P_def mem_def)
+lemma Set_Fun_PD_Set_P:   "Fun_PD P A \_Longrightarrow Set_P P A"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_Set_P_Fun_PD:   "Set_P P A \_Longrightarrow Fun_PD P A"
+  by (auto simp add: Set_P_def mem_def)
+lemma Set_Set_P_RSet:     "Set_P P A \_Longrightarrow (RSet P A = A)"
+  by (auto simp add: Set_P_def mem_def)
 end-proof
 
 % membership:
@@ -115,22 +110,12 @@ proof Isa [simp] end-proof
 proof Isa empty_p__stp [simp] end-proof
 
 proof Isa -verbatim
-lemma Set_empty_apply[simp]:
-"{} x = False"
-by(simp add:Set__empty__def)
-lemma Set_RSet_empty[simp]:
-"RSet P_a {} = {}"
-by auto
-lemma Set_Set_P_empty[simp]:
-"Set_P P {} = True"
-by (simp add:Set_P_def)
-lemma Set_Fun_PD_empty[simp]:
-"Fun_PD P {} = True"
-by auto
+lemma Set_empty_apply[simp]:  "{} x = False"       by auto
+lemma Set_RSet_empty[simp]:   "RSet P_a {} = {}"   by auto
+lemma Set_Set_P_empty[simp]:  "Set_P P {} = True"  by (simp add:Set_P_def)
+lemma Set_Fun_PD_empty[simp]: "Fun_PD P {} = True" by auto
 lemma Set_empty_p_equiv_empty_p_stp:
-"Set__empty_p s = Set__empty_p__stp P__a s"
-by (auto simp add:Set__empty_p__stp_def Set__empty_p_def 
-                  Set__empty__def mem_def)
+   "Set__empty_p s = Set__empty_p__stp P__a s"     by auto
 end-proof
 
 % sets with at least 1 element:
@@ -197,7 +182,7 @@ proof Isa [simp] end-proof
 proof Isa -verbatim
 lemma Set_single_simp [simp]:
 "Set__single x = {x}"
- by (rule set_ext, simp, simp add: mem_def Set__single_def)
+ by (rule set_eqI, simp, simp add: mem_def Set__single_def)
 lemma Set_single_simp_app1:
 "{x} x = True"
 by(simp del:Set_single_simp 
@@ -849,9 +834,8 @@ proof Isa fold_Obligation_the
   apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
          simp add:fun_left_comm_on_def, auto)
   apply (rule ext, simp only: split_paired_all)
-  apply (case_tac "finite b")
-  apply (induct_tac b rule: finite_induct, simp_all)
-  apply (auto simp only: Set__empty__def [symmetric] fold_empty)
+  apply (case_tac "finite b", simp_all)
+  apply (induct_tac b rule: finite_induct, auto simp add: empty_false)
   apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
          in fold_insert, simp_all add: fun_left_comm_on_def)
 end-proof
@@ -951,7 +935,7 @@ proof Isa Thy_Morphism Set
   Set.full  -> UNIV
   Set.finite? -> finite
   Set.size -> card
-  Set.theMember -> contents
+  Set.theMember -> the_elem
   Set.min -> Inter
   Set.max -> Union
 end-proof

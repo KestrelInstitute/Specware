@@ -46,18 +46,17 @@ proof Isa mapOption_subtype_constr
 end-proof
 
 proof Isa isoOption_subtype_constr
- apply(simp add: Option__isoOption_def bij_def, auto)
- (** first subgoal **)
- apply(simp add: inj_on_def Option.map_def, auto)
- apply (simp split: option.split_asm)
- (** second subgoal **)
- apply(simp add:surj_def Option.map_def, auto)
- apply (induct_tac y)
- (** subgoal 2.1    **)
- apply (simp split: option.split)
- (** subgoal 2.2 needs some guidance   **)
- apply (drule_tac x = "a" in  spec, auto)
- apply (rule_tac x="Some x" in exI, auto)  
+   apply(auto simp add: Option__isoOption_def bij_def
+                   inj_on_def surj_def Option.map_def 
+              split: option.split_asm  option.split)
+   apply (induct_tac y, 
+          simp,
+          drule_tac x = "a" in spec, auto) 
+end-proof
+
+proof Isa Option__isoOption_subtype_constr1
+  apply(simp add: Option__isoOption_def, auto)
+  apply (rule_tac P="x = None" in case_split, auto)
 end-proof
 
 proof Isa isoOption_subtype_constr2
@@ -76,10 +75,6 @@ proof Isa isoOption_subtype_constr2
  apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
 end-proof
 
-proof Isa Option__isoOption_subtype_constr1
-  apply(simp add: Option__isoOption_def, auto)
-  apply (rule_tac P="x = None" in case_split, auto)
-end-proof
 
 % mapping to Isabelle:
 

@@ -222,7 +222,7 @@ theorem FSet__theMember_Obligation_subtype:
   by auto
 consts FSet__theMember :: "'a FSet__SingletonFSet \<Rightarrow> 'a"
 defs FSet__theMember_def: 
-  "FSet__theMember s \<equiv> contents (FSet__fromFSet s)"
+  "FSet__theMember s \<equiv> the_elem (FSet__fromFSet s)"
 consts FSet__theMember__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a"
 defs FSet__theMember__stp_def: 
   "FSet__theMember__stp P__a s
@@ -398,7 +398,7 @@ defs FSet__filter__stp_def:
      \<equiv> FSet__toFSet (FSet__fromFSet__stp P__a s \<inter> p)"
 theorem List__toSet_Obligation_subtype: 
   "finite (\<lambda> (x::'a). x mem (l::'a list))"
-   by (simp add: mem_iff mem_def finite_set)
+   by (simp add: member_def mem_def finite_set)
 consts List__toSet :: "'a list \<Rightarrow> 'a FSet__FSet"
 defs List__toSet_def: 
   "List__toSet l \<equiv> FSet__toFSet (\<lambda> (x::'a). x mem l)"
@@ -409,7 +409,7 @@ defs List__toSet__stp_def:
 theorem List__e_fsl_fsl_bsl_bsl_Obligation_subtype: 
   "\<lbrakk>ls \<noteq> []\<rbrakk> \<Longrightarrow> FSet__nonEmpty_p (List__toSet ls)"
   apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
-                  mem_iff mem_def FSet__fromFSet_def)
+                  member_def mem_def FSet__fromFSet_def)
   apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
   apply (frule_tac y="FSet__toFSet (set ls)" in  Function__inverse__stp_apply,
          auto simp add: bij_ON_def)

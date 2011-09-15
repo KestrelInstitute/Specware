@@ -41,18 +41,12 @@ defs Option__isoOption_def:
      \<equiv> (\<lambda> (iso_elem:: ('a, 'b)Function__Bijection). Option.map iso_elem)"
 theorem Option__isoOption_subtype_constr: 
   "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (Option__isoOption iso_elem)"
-   apply(simp add: Option__isoOption_def bij_def, auto)
- (** first subgoal **)
- apply(simp add: inj_on_def Option.map_def, auto)
- apply (simp split: option.split_asm)
- (** second subgoal **)
- apply(simp add:surj_def Option.map_def, auto)
- apply (induct_tac y)
- (** subgoal 2.1    **)
- apply (simp split: option.split)
- (** subgoal 2.2 needs some guidance   **)
- apply (drule_tac x = "a" in  spec, auto)
- apply (rule_tac x="Some x" in exI, auto)
+   apply(auto simp add: Option__isoOption_def bij_def
+                   inj_on_def surj_def Option.map_def 
+              split: option.split_asm  option.split)
+   apply (induct_tac y, 
+          simp,
+          drule_tac x = "a" in spec, auto)
   done
 theorem Option__isoOption_subtype_constr1: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 

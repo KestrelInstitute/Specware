@@ -14,7 +14,7 @@ defs
    MapAC__toIsaMap_def:
    "MapAC__toIsaMap m
     \<equiv> (\<lambda>(a::'a). if a \<in> Domain m 
-                                   then Some (contents (Relation__apply m a)) 
+                                   then Some (the_elem (Relation__apply m a)) 
                                    else None)"
    MapAC__fromIsaMap_def:
    "MapAC__fromIsaMap m
@@ -25,9 +25,9 @@ lemma Relation__functional_p_alt_def:
  apply (simp add: Relation__functional_p_def Relation__apply_def,
         auto simp add: mem_def)
  apply(drule_tac x=x in spec, safe)
- apply (simp add: expand_set_eq, 
+ apply (simp add:set_eq_iff, 
         frule_tac x=ya in spec,drule_tac x=yb in spec,simp add: mem_def)
- apply (thin_tac "?P", simp only: expand_set_eq mem_def, simp)
+ apply (thin_tac "?P", simp only:set_eq_iff mem_def, simp)
  apply (drule_tac x=x in bspec)
  apply (simp add: Domain_def, auto simp add: mem_def)
  apply (drule_tac x=xa in spec, auto simp add: mem_def)
@@ -38,7 +38,7 @@ lemma Relation__functional_p_unfold:
  apply (auto simp add: Relation__functional_p_alt_def)
  apply (drule_tac x=x in bspec, simp add: Domain_def, auto simp add: mem_def)
  apply (drule_tac x=x in spec, safe)
- apply (simp add: expand_set_eq, drule_tac x=ya in spec, simp add: mem_def)
+ apply (simp add:set_eq_iff, drule_tac x=ya in spec, simp add: mem_def)
 done
 
 lemma Relation__finite_if_finite_domain: 
@@ -62,26 +62,26 @@ lemma MapAC__toIsaMap_bij:
   "bij_on MapAC__toIsaMap Relation__functional_p UNIV"
   apply (simp add: bij_on_def inj_on_def surj_on_def Ball_def Bex_def mem_def)
   apply (auto simp add:  MapAC__toIsaMap_def)
-  apply (auto simp add: expand_fun_eq)
+  apply (auto simp add:fun_eq_iff)
   apply (drule_tac x=a in spec, simp add: Relation__apply_def split: split_if_asm)
   apply (drule_tac a=a and m=x in MapAC_unique, simp,
          drule_tac a=a and m=xa in MapAC_unique, simp, 
          simp add: Relation__apply_def, auto)
-  apply (drule sym, simp add: expand_set_eq,
+  apply (drule sym, simp add:set_eq_iff,
          drule_tac x=b in spec, simp add: mem_def)
   apply (drule_tac x=a in spec, simp add: Relation__apply_def split: split_if_asm)
   apply (drule_tac a=a and m=x in MapAC_unique, simp,
          drule_tac a=a and m=xa in MapAC_unique, simp, 
          simp add: Relation__apply_def, auto)
-  apply (drule sym, simp add: expand_set_eq,
+  apply (drule sym, simp add:set_eq_iff,
          drule_tac x=b in spec, simp add: mem_def)
   apply (rule_tac x="MapAC__fromIsaMap x" in exI, 
          auto simp add: MapAC__fromIsaMap_def)
   apply (auto simp add: Relation__functional_p_def Relation__apply_def)
   apply (auto simp add: mem_def ex_in_conv [symmetric])
-  apply (rule_tac t="contents (op = b)" and s="contents {x. x=b}" in subst)
-  apply (rule_tac f="contents" in arg_cong)
-  apply (simp only: expand_set_eq mem_def, auto)
+  apply (rule_tac t="the_elem (op = b)" and s="the_elem {x. x=b}" in subst)
+  apply (rule_tac f="the_elem" in arg_cong)
+  apply (simp only:set_eq_iff mem_def, auto)
 done
 
 
@@ -91,10 +91,10 @@ lemma MapAC__fromIsa_inv_toIsa:
   apply (rule some1_equality, simp add: inv_on_unique  MapAC__toIsaMap_bij)
   apply (auto simp add: MapAC__fromIsaMap_def MapAC__toIsaMap_def
                         Relation__functional_p_alt_def)
-  apply (auto simp add: expand_fun_eq Relation__apply_def)
-  apply (rule_tac t="contents (op = b)" and s="contents {x. x=b}" in subst)
-  apply (rule_tac f="contents" in arg_cong)
-  apply (simp only: expand_set_eq mem_def, auto)
+  apply (auto simp add:fun_eq_iff Relation__apply_def)
+  apply (rule_tac t="the_elem (op = b)" and s="the_elem {x. x=b}" in subst)
+  apply (rule_tac f="the_elem" in arg_cong)
+  apply (simp only:set_eq_iff mem_def, auto)
 done
   
 
@@ -160,7 +160,7 @@ lemma MapAC__e_at__stp_Obligation_the:
  apply (simp add: Relation__functional_p__stp_def MapAC__definedAt__stp_def)
  apply (drule_tac x=x in spec, simp add: Relation__domain__stp_def)
  apply (auto simp add: mem_def Relation__apply_def Set__single_p__stp_def)
- apply (simp add: expand_set_eq)
+ apply (simp add:set_eq_iff)
  apply (frule_tac x=yb in spec, drule_tac x=ya in spec, simp add: mem_def)
 done
 
@@ -363,7 +363,7 @@ theorem MapAC__toFunction_Obligation_subtype:
      (TRUE, Relation__total_p &&& Relation__functional_p) MapAC__fromFunction"
   apply (simp add: bij_ON_def inj_on_def surj_on_def Ball_def Bex_def mem_def)
   apply (auto simp add: MapAC__fromFunction_def)
-  apply (auto simp add: expand_fun_eq)
+  apply (auto simp add:fun_eq_iff)
   apply (rule_tac x="\<lambda>a. x @_m a" in exI, auto)
   apply (rule sym, erule MapAC__e_at_m_eq, simp add: mem_def)
   apply (drule_tac a=a in MapAC__e_at_m_element,
@@ -391,13 +391,13 @@ theorem MapAC__toPartialFun_Obligation_subtype:
       MapAC__fromPartialFun"
   apply (auto simp add: bij_ON_def inj_on_def surj_on_def Ball_def Bex_def mem_def
                         MapAC__fromPartialFun_def,
-         simp add: expand_fun_eq, auto)
+         simp add:fun_eq_iff, auto)
   apply (drule_tac x=xb in spec, case_tac "x xb = None \<and> xa xb = None", auto)
   apply (rule_tac x="MapAC__toIsaMap x" in exI, simp add: MapAC__toIsaMap_def)
-  apply (simp add: expand_fun_eq Relation__apply_def, clarify, rule conjI, clarify)
+  apply (simp add:fun_eq_iff Relation__apply_def, clarify, rule conjI, clarify)
   apply (rule_tac t="(\<lambda>y. (a, y) \<in> x)" and s="{y}" in subst,
-         simp_all only: contents_eq)
-  apply (simp add: Relation__functional_p_alt_def expand_set_eq mem_def Domain_def, auto)
+         simp_all only: the_elem_eq)
+  apply (simp add: Relation__functional_p_alt_def set_eq_iff mem_def Domain_def, auto)
   apply (simp add: Relation__functional_p_alt_def mem_def Domain_def, auto)
   apply (simp add: mem_def)
   apply (simp add: Domain_def, simp add: mem_def)

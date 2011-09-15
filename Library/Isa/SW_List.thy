@@ -691,12 +691,10 @@ theorem List__length_empty [simp]:
   by auto
 theorem List__empty_p__def: 
   "null l = (l = [])"
-  by (simp add: null_empty)
+  by (simp add: null_def)
 theorem List__empty_p_length: 
   "null l = (length l = 0)"
-  apply(case_tac l)
-  apply(auto)
-  done
+  by(case_tac l, auto)
 consts List__nonEmpty_p :: "'a list \<Rightarrow> bool"
 defs List__nonEmpty_p_def [simp]: "List__nonEmpty_p l \<equiv> (l \<noteq> [])"
 types 'a List__List1 = "'a list"
@@ -2271,7 +2269,7 @@ defs List__matchingOptionLists_p_def:
 theorem List__mapPartial_subtype_constr: 
   "\<lbrakk>Fun_PR (Option__Option_P P__b) f\<rbrakk> \<Longrightarrow> 
    list_all P__b (filtermap f l)"
-  apply (induct l, simp_all split: option.split, auto) 
+  apply (induct l, auto split: option.split) 
   apply (drule_tac x=a in spec, simp)
   done
 theorem List__mapPartial__def: 
@@ -3090,7 +3088,7 @@ theorem List__positionsSuchThat_Obligation_the:
   assume "distinct POSs' \<and>
           List__increasingNats_p POSs' \<and>
           (\<forall>i. i mem POSs' = (i < length [] \<and> p ([] ! i)))"
-  hence "POSs' = []" by (auto iff: mem_iff)
+  hence "POSs' = []" by auto
   with POSs_def show "POSs' = POSs" by auto
  qed
  with SAT show ?case by (rule ex1I, auto)
@@ -3157,12 +3155,12 @@ next
     assume "i \<noteq> hd POSs"
     with `i mem POSs` POSs_def have "i mem map Suc POSs0" by auto
     hence "\<exists>k < length (map Suc POSs0). (map Suc POSs0) ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length (map Suc POSs0)"
                     and "(map Suc POSs0) ! k = i" by auto
     hence "i = Suc (POSs0 ! k)" by auto
     from `k < length (map Suc POSs0)` have "k < length POSs0" by auto
-    hence "(POSs0 ! k) mem POSs0" by (auto iff: mem_iff)
+    hence "(POSs0 ! k) mem POSs0" by auto
     with M0 have "(POSs0 ! k) < length t" and "p (t ! (POSs0 ! k))"
      by auto
     with `i = Suc (POSs0 ! k)`
@@ -3183,11 +3181,11 @@ next
     from Suc `p ((h # t) ! i)` have "p (t ! j)" by auto
     with `j < length t` M0 have "j mem POSs0" by auto
     hence "\<exists>k < length POSs0. POSs0 ! k = j"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
     with Suc POSs_def have "POSs ! (Suc k) = i" by auto
     with `k < length POSs0` POSs_def have "Suc k < length POSs" by auto
-    with `POSs ! (Suc k) = i` show ?thesis by (auto iff: mem_iff)
+    with `POSs ! (Suc k) = i` show ?thesis by auto
    qed
   qed
   with D I have
@@ -3213,7 +3211,7 @@ next
     by auto
    from M' `p h` have "0 mem POSs'" by auto
    hence "\<exists>k < length POSs'. POSs' ! k = 0"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    then obtain k where "k < length POSs'" and "POSs' ! k = 0" by auto
    have "k = 0"
    proof (rule ccontr)
@@ -3305,7 +3303,7 @@ next
     fix i
     assume "i mem POSs0'"
     hence "\<exists>k < length POSs0'. POSs0' ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
     with POSs0'_def nth_map have "i = tl POSs' ! k - 1" by auto
     from `k < length POSs0'` POSs0'_def have "k < length POSs' - 1" by auto
@@ -3314,7 +3312,7 @@ next
     with `k < length POSs' - 1` TL_NTH have "POSs' ! (k + 1) = i + 1" by auto
     from `k < length POSs' - 1` have "k + 1 < length POSs'" by auto
     with `POSs' ! (k + 1) = i + 1`
-     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+     have "(i + 1) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "i + 1 < length (h # t)" and "p ((h # t) ! (i + 1))" by auto
     hence "i < length t" and "p (t ! i)" by auto
     thus "i < length t \<and> p (t ! i)" by auto
@@ -3325,7 +3323,7 @@ next
     hence "i + 1 < length (h # t)" and "p ((h # t) ! (i + 1))" by auto
     with M' have "(i + 1) mem POSs'" by auto
     hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
-     by (auto simp: mem_iff in_set_conv_nth)
+     by (auto simp: in_set_conv_nth)
     then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
     with `hd POSs' = 0` `POSs' \<noteq> []` have "k \<noteq> 0"
      by (cases k, auto simp: hd_conv_nth)
@@ -3336,7 +3334,7 @@ next
     from `k < length POSs'` `k \<noteq> 0` POSs0'_def
      have "k - 1 < length POSs0'" by auto
     with `POSs0' ! (k - 1) = i`
-     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+     show "i mem POSs0'" by (auto simp: in_set_conv_nth)
    qed
    with I0' D0' Cons.hyps D0 I0 M0
     have "POSs0' = POSs0" by auto
@@ -3389,12 +3387,12 @@ next
    fix i
    assume "i mem POSs"
    hence "\<exists>k < length POSs. POSs ! k = i"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    then obtain k where "k < length POSs" and "POSs ! k = i" by auto
    with POSs_def nth_map
     have "k < length POSs0" and "Suc (POSs0 ! k) = i" by auto
    hence "(POSs0!k) mem POSs0"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    with M0 have "(POSs0!k) < length t" and "p (t ! (POSs0!k))" by auto
    with `Suc (POSs0!k) = i`
     show "i < length (h # t) \<and> p ((h # t) ! i)"
@@ -3413,10 +3411,10 @@ next
     from Suc `p ((h # t) ! i)` have "p (t ! j)" by auto
     with `j < length t` M0 have "j mem POSs0" by auto
     hence "\<exists>k < length POSs0. POSs0 ! k = j"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
     with Suc POSs_def have "POSs ! k = i" by auto
-    with `k < length POSs0` POSs_def show ?thesis by (auto iff: mem_iff)
+    with `k < length POSs0` POSs_def show ?thesis by auto
    qed
   qed
   with D I have
@@ -3445,7 +3443,7 @@ next
    proof (rule allI, rule impI)
     fix k
     assume "k < length POSs'"
-    hence "(POSs'!k) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+    hence "(POSs'!k) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "POSs'!k < length (h # t)" and "p ((h # t) ! (POSs'!k))"
      by auto
     show "POSs'!k \<noteq> 0"
@@ -3499,14 +3497,14 @@ next
     fix i
     assume "i mem POSs0'"
     hence "\<exists>k < length POSs0'. POSs0' ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
     with POSs0'_def nth_map have "i = POSs' ! k - 1" by auto
     from `k < length POSs0'` POSs0'_def have "k < length POSs'" by auto
     with NZ have "POSs' ! k \<noteq> 0" by auto
     with `i = POSs' ! k - 1` have "POSs' ! k = i + 1" by auto
     with `k < length POSs'`
-     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+     have "(i + 1) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "i + 1 < length (h # t)" and "p ((h # t) ! (i + 1))" by auto
     hence "i < length t" and "p (t ! i)" by auto
     thus "i < length t \<and> p (t ! i)" by auto
@@ -3517,14 +3515,14 @@ next
     hence "i + 1 < length (h # t)" and "p ((h # t) ! (i + 1))" by auto
     with M' have "(i + 1) mem POSs'" by auto
     hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
-     by (auto simp: mem_iff in_set_conv_nth)
+     by (auto simp: in_set_conv_nth)
     then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
     with POSs0'_NTH POSs0'_def `k < length POSs'`
      have "POSs0' ! k = i" by auto
     from `k < length POSs'` POSs0'_def
      have "k < length POSs0'" by auto
     with `POSs0' ! k = i`
-     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+     show "i mem POSs0'" by (auto simp: in_set_conv_nth)
    qed
    with I0' D0' Cons.hyps D0 I0 M0
     have "POSs0' = POSs0" by auto
@@ -3623,11 +3621,11 @@ theorem List__positionOf_Obligation_subtype:
   by auto
  assume "x mem l"
  hence "\<exists>i < length l. l ! i = x"
-  by (auto iff: mem_iff in_set_conv_nth)
+  by (auto iff: in_set_conv_nth)
  then obtain i where "i < length l" and "l ! i = x" by auto
  with M have "i mem (List__positionsOf (l, x))" by auto
  hence "\<exists>k < length (List__positionsOf (l, x)). (List__positionsOf (l, x))!k = i"
-  by (auto iff: mem_iff in_set_conv_nth)
+  by (auto iff: in_set_conv_nth)
  then obtain k where "k < length (List__positionsOf (l, x))" and "(List__positionsOf (l, x))!k = i" by auto
  hence "length (List__positionsOf (l, x)) > 0" by auto
  have "length (List__positionsOf (l, x)) < 2"
@@ -3638,7 +3636,7 @@ theorem List__positionOf_Obligation_subtype:
   hence "k' \<noteq> k" by auto
   def i' \<equiv> "(List__positionsOf (l, x))!k'"
   from k'_def `length (List__positionsOf (l, x)) \<ge> 2` have "k' < length (List__positionsOf (l, x))" by auto
-  with i'_def have "i' mem (List__positionsOf (l, x))" by (auto iff: mem_iff in_set_conv_nth)
+  with i'_def have "i' mem (List__positionsOf (l, x))" by (auto iff: in_set_conv_nth)
   with M have "i' < length l" and "l ! i' = x" by auto
   from List__noRepetitions_p__def D
        `k < length (List__positionsOf (l, x))` `k' < length (List__positionsOf (l, x))` `k' \<noteq> k`
@@ -3722,7 +3720,7 @@ theorem List__positionsOfSublist_Obligation_the:
    with M' List__sublist_position_upper [of subl _ "[]"]
            List__empty_sublist [of _ "[]"]
    have "\<forall>i. i mem POSs' = (i = 0)" by auto
-   hence "set POSs' = {0}" by (auto simp: mem_iff)
+   hence "set POSs' = {0}" by auto
    with D' distinct_card [of POSs'] have "length POSs' = 1" by auto
    with `set POSs' = {0}` have "POSs' = [0]" by (cases POSs', auto)
    with Nil show ?thesis by auto
@@ -3731,7 +3729,7 @@ theorem List__positionsOfSublist_Obligation_the:
    with M' List__sublist_position_upper [of subl _ "[]"]
            List__empty_sublist [of _ "[]"]
    have "\<forall>i. i mem POSs' = False" by auto
-   hence "POSs' = []" by (auto simp: mem_iff)
+   hence "POSs' = []" by auto
    with Cons show ?thesis by auto
   qed
   with POSs_def show "POSs' = POSs" by auto
@@ -3798,12 +3796,12 @@ next
     assume "i \<noteq> hd POSs"
     with `i mem POSs` POSs_def have "i mem map Suc POSs0" by auto
     hence "\<exists>k < length (map Suc POSs0). (map Suc POSs0) ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length (map Suc POSs0)"
                     and "(map Suc POSs0) ! k = i" by auto
     hence "i = Suc (POSs0 ! k)" by auto
     from `k < length (map Suc POSs0)` have "k < length POSs0" by auto
-    hence "(POSs0 ! k) mem POSs0" by (auto iff: mem_iff)
+    hence "(POSs0 ! k) mem POSs0" by auto
     with M0 have "List__sublistAt_p (subl, POSs0 ! k, t)"
      by auto
     have "List__sublistAt_p (subl, i, h#t)"
@@ -3847,11 +3845,11 @@ next
     qed
     with M0 have "j mem POSs0" by auto
     hence "\<exists>k < length POSs0. POSs0 ! k = j"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
     with Suc POSs_def have "POSs ! (Suc k) = i" by auto
     with `k < length POSs0` POSs_def have "Suc k < length POSs" by auto
-    with `POSs ! (Suc k) = i` show ?thesis by (auto iff: mem_iff)
+    with `POSs ! (Suc k) = i` show ?thesis by auto
    qed
   qed
   with D I have
@@ -3875,7 +3873,7 @@ next
    from M' `List__sublistAt_p (subl, 0, h # t)`
     have "0 mem POSs'" by auto
    hence "\<exists>k < length POSs'. POSs' ! k = 0"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    then obtain k where "k < length POSs'" and "POSs' ! k = 0" by auto
    have "k = 0"
    proof (rule ccontr)
@@ -3967,7 +3965,7 @@ next
     fix i
     assume "i mem POSs0'"
     hence "\<exists>k < length POSs0'. POSs0' ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
     with POSs0'_def nth_map have "i = tl POSs' ! k - 1" by auto
     from `k < length POSs0'` POSs0'_def have "k < length POSs' - 1" by auto
@@ -3976,7 +3974,7 @@ next
     with `k < length POSs' - 1` TL_NTH have "POSs' ! (k + 1) = i + 1" by auto
     from `k < length POSs' - 1` have "k + 1 < length POSs'" by auto
     with `POSs' ! (k + 1) = i + 1`
-     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+     have "(i + 1) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "List__sublistAt_p (subl, i + 1, h # t)" by auto
     show "List__sublistAt_p (subl, i, t)"
     proof -
@@ -4010,7 +4008,7 @@ next
     qed
     with M' have "(i + 1) mem POSs'" by auto
     hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
-     by (auto simp: mem_iff in_set_conv_nth)
+     by (auto simp: in_set_conv_nth)
     then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
     with `hd POSs' = 0` `POSs' \<noteq> []` have "k \<noteq> 0"
      by (cases k, auto simp: hd_conv_nth)
@@ -4021,7 +4019,7 @@ next
     from `k < length POSs'` `k \<noteq> 0` POSs0'_def
      have "k - 1 < length POSs0'" by auto
     with `POSs0' ! (k - 1) = i`
-     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+     show "i mem POSs0'" by (auto simp: in_set_conv_nth)
    qed
    with I0' D0' Cons.hyps D0 I0 M0
     have "POSs0' = POSs0" by auto
@@ -4074,12 +4072,12 @@ next
    fix i
    assume "i mem POSs"
    hence "\<exists>k < length POSs. POSs ! k = i"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    then obtain k where "k < length POSs" and "POSs ! k = i" by auto
    with POSs_def nth_map
     have "k < length POSs0" and "Suc (POSs0 ! k) = i" by auto
    hence "(POSs0!k) mem POSs0"
-    by (auto iff: mem_iff in_set_conv_nth)
+    by (auto iff: in_set_conv_nth)
    with M0 have "List__sublistAt_p (subl, POSs0!k, t)" by auto
    show "List__sublistAt_p (subl, i, h # t)"
    proof -
@@ -4120,10 +4118,10 @@ next
     qed
     with M0 have "j mem POSs0" by auto
     hence "\<exists>k < length POSs0. POSs0 ! k = j"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0" and "POSs0 ! k = j" by auto
     with Suc POSs_def have "POSs ! k = i" by auto
-    with `k < length POSs0` POSs_def show ?thesis by (auto iff: mem_iff)
+    with `k < length POSs0` POSs_def show ?thesis by auto
    qed
   qed
   with D I have
@@ -4149,7 +4147,7 @@ next
    proof (rule allI, rule impI)
     fix k
     assume "k < length POSs'"
-    hence "(POSs'!k) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+    hence "(POSs'!k) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "List__sublistAt_p (subl, POSs'!k, h # t)"
      by auto
     show "POSs'!k \<noteq> 0"
@@ -4204,14 +4202,14 @@ next
     fix i
     assume "i mem POSs0'"
     hence "\<exists>k < length POSs0'. POSs0' ! k = i"
-     by (auto iff: mem_iff in_set_conv_nth)
+     by (auto iff: in_set_conv_nth)
     then obtain k where "k < length POSs0'" and "POSs0' ! k = i" by auto
     with POSs0'_def nth_map have "i = POSs' ! k - 1" by auto
     from `k < length POSs0'` POSs0'_def have "k < length POSs'" by auto
     with NZ have "POSs' ! k \<noteq> 0" by auto
     with `i = POSs' ! k - 1` have "POSs' ! k = i + 1" by auto
     with `k < length POSs'`
-     have "(i + 1) mem POSs'" by (auto simp: mem_iff in_set_conv_nth)
+     have "(i + 1) mem POSs'" by (auto simp: in_set_conv_nth)
     with M' have "List__sublistAt_p (subl, i + 1, h # t)" by auto
     show "List__sublistAt_p (subl, i, t)"
     proof -
@@ -4245,14 +4243,14 @@ next
     qed
     with M' have "(i + 1) mem POSs'" by auto
     hence "\<exists>k < length POSs'. POSs' ! k = i + 1"
-     by (auto simp: mem_iff in_set_conv_nth)
+     by (auto simp: in_set_conv_nth)
     then obtain k where "k < length POSs'" and "POSs' ! k = i + 1" by auto
     with POSs0'_NTH POSs0'_def `k < length POSs'`
      have "POSs0' ! k = i" by auto
     from `k < length POSs'` POSs0'_def
      have "k < length POSs0'" by auto
     with `POSs0' ! k = i`
-     show "i mem POSs0'" by (auto simp: mem_iff in_set_conv_nth)
+     show "i mem POSs0'" by (auto simp: in_set_conv_nth)
    qed
    with I0' D0' Cons.hyps D0 I0 M0
     have "POSs0' = POSs0" by auto
@@ -4326,7 +4324,7 @@ theorem List__leftmostPositionOfSublistAndFollowing_Obligation_subtype0:
  hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
  assume "\<not> null POSs"
- hence "hd POSs mem POSs" by (auto simp: mem_iff empty_null)
+ hence "hd POSs mem POSs" by (auto simp: null_def)
  with M have "List__sublistAt_p (subl, hd POSs, supl)" by auto
  then obtain pre and post
   where "pre @ subl @ post = supl" and "length pre = hd POSs"
@@ -4377,7 +4375,7 @@ theorem List__rightmostPositionOfSublistAndPreceding_Obligation_subtype0:
  hence M: "\<forall>i. i mem POSs = List__sublistAt_p (subl, i, supl)"
   by auto
  assume "\<not> null POSs"
- hence "last POSs mem POSs" by (auto simp: mem_iff empty_null)
+ hence "last POSs mem POSs" by (auto simp: null_def)
  with M have "List__sublistAt_p (subl, last POSs, supl)" by auto
  then obtain pre and post
   where "pre @ subl @ post = supl" and "length pre = last POSs"
@@ -4439,8 +4437,8 @@ theorem List__splitAtLeftmost_Obligation_subtype:
   have IF: "(if null POSs then None else Some (hd POSs)) = Some i"
    by (auto simp: List__leftmostPositionSuchThat_def Let_def)
  hence NE: "POSs \<noteq> []" by (cases POSs, auto)
- with IF have I: "i = hd POSs" by (auto simp: null_empty)
- with NE have "i mem POSs" by (auto simp: mem_iff)
+ with IF have I: "i = hd POSs" by (auto simp: null_def)
+ with NE have "i mem POSs" by auto
  from POSs_def
   have "POSs = (THE POSs.
           distinct POSs \<and>
@@ -4475,11 +4473,11 @@ theorem List__splitAtLeftmost_subtype_constr:
          drule_tac x=a in spec, erule mp)
   apply (auto simp add: List__leftmostPositionSuchThat_def Let_def 
               split: split_if_asm)
-  apply (simp add: empty_null [symmetric], drule hd_in_set)
+  apply (simp add: null_def, drule hd_in_set)
   apply (erule rev_mp)
   apply (simp (no_asm_simp) add: List__positionsSuchThat_def)
   apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
-  apply (clarify, drule_tac x="hd x" in spec, simp add: mem_iff)
+  apply (clarify, drule_tac x="hd x" in spec, simp)
   done
 theorem List__splitAtRightmost_Obligation_subtype: 
   "\<lbrakk>List__rightmostPositionSuchThat(l, p) = Some i\<rbrakk> \<Longrightarrow> 
@@ -4491,8 +4489,8 @@ theorem List__splitAtRightmost_Obligation_subtype:
   have IF: "(if null POSs then None else Some (last POSs)) = Some i"
    by (auto simp: List__rightmostPositionSuchThat_def Let_def)
  hence NE: "POSs \<noteq> []" by (cases POSs, auto)
- with IF have I: "i = last POSs" by (auto simp: null_empty)
- with NE have "i mem POSs" by (auto simp: mem_iff)
+ with IF have I: "i = last POSs" by (auto simp: null_def)
+ with NE have "i mem POSs" by auto
  from POSs_def
   have "POSs = (THE POSs.
           distinct POSs \<and>
@@ -4527,11 +4525,11 @@ theorem List__splitAtRightmost_subtype_constr:
          drule_tac x=a in spec, erule mp)
   apply (auto simp add: List__rightmostPositionSuchThat_def Let_def 
               split: split_if_asm)
-  apply (simp add: empty_null [symmetric], drule last_in_set)
+  apply (simp add: null_def, drule last_in_set)
   apply (erule rev_mp)
   apply (simp (no_asm_simp) add: List__positionsSuchThat_def)
   apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
-  apply (clarify, drule_tac x="last x" in spec, simp add: mem_iff)
+  apply (clarify, drule_tac x="last x" in spec, simp)
   done
 theorem List__findLeftmost_Obligation_subtype: 
   "\<lbrakk>filter p l = lp; \<not> (null lp)\<rbrakk> \<Longrightarrow> 
@@ -4545,7 +4543,7 @@ defs List__findLeftmost_def:
 theorem List__findLeftmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P P__a (List__findLeftmost p l)"
-  apply (simp add:  List__findLeftmost_def Let_def list_all_iff empty_null [symmetric]
+  apply (simp add:  List__findLeftmost_def Let_def list_all_iff null_def
               split: option.split, auto)
   apply (drule hd_in_set, auto)
   done
@@ -4561,7 +4559,7 @@ defs List__findRightmost_def:
 theorem List__findRightmost_subtype_constr: 
   "\<lbrakk>Fun_PD P__a p; list_all P__a l\<rbrakk> \<Longrightarrow> 
    Option__Option_P P__a (List__findRightmost p l)"
-  apply (simp add:  List__findRightmost_def Let_def list_all_iff empty_null [symmetric]
+  apply (simp add:  List__findRightmost_def Let_def list_all_iff null_def
               split: option.split, auto)
   apply (drule last_in_set, auto)
   done
@@ -4575,8 +4573,8 @@ theorem List__findLeftmostAndPreceding_Obligation_subtype:
   have IF: "(if null POSs then None else Some (hd POSs)) = Some i"
    by (auto simp: List__leftmostPositionSuchThat_def Let_def)
  hence NE: "POSs \<noteq> []" by (cases POSs, auto)
- with IF have I: "i = hd POSs" by (auto simp: null_empty)
- with NE have "i mem POSs" by (auto simp: mem_iff)
+ with IF have I: "i = hd POSs" by (auto simp: null_def)
+ with NE have "i mem POSs" by auto
  from POSs_def
   have "POSs = (THE POSs.
           distinct POSs \<and>
@@ -4621,10 +4619,10 @@ theorem List__findLeftmostAndPreceding_subtype_constr:
               split: split_if_asm)
   (** first subgoal has a proof similar to one above ***)
   apply (erule_tac bspec, rule nth_mem)
-  apply (simp add: empty_null [symmetric], drule hd_in_set, erule rev_mp)
+  apply (simp add: null_def, drule hd_in_set, erule rev_mp)
   apply (simp (no_asm_simp) add: List__positionsSuchThat_def)
   apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
-  apply (clarify, drule_tac x="hd x" in spec, simp add: mem_iff)
+  apply (clarify, drule_tac x="hd x" in spec, simp)
   (** second subgoal is easier ***)
   apply (erule_tac bspec, erule in_set_takeD)
   done
@@ -4638,8 +4636,8 @@ theorem List__findRightmostAndFollowing_Obligation_subtype:
   have IF: "(if null POSs then None else Some (last POSs)) = Some i"
    by (auto simp: List__rightmostPositionSuchThat_def Let_def)
  hence NE: "POSs \<noteq> []" by (cases POSs, auto)
- with IF have I: "i = last POSs" by (auto simp: null_empty)
- with NE have "i mem POSs" by (auto simp: mem_iff)
+ with IF have I: "i = last POSs" by (auto simp: null_def)
+ with NE have "i mem POSs" by auto
  from POSs_def
   have "POSs = (THE POSs.
           distinct POSs \<and>
@@ -4684,10 +4682,10 @@ theorem List__findRightmostAndFollowing_subtype_constr:
               split: split_if_asm)
   (** first subgoal has a proof similar to one above ***)
   apply (erule_tac bspec, rule nth_mem)
-  apply (simp add: empty_null [symmetric], drule last_in_set, erule rev_mp)
+  apply (simp add: null_def, drule last_in_set, erule rev_mp)
   apply (simp (no_asm_simp) add: List__positionsSuchThat_def)
   apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
-  apply (clarify, drule_tac x="last x" in spec, simp add: mem_iff)
+  apply (clarify, drule_tac x="last x" in spec, simp)
   (** second subgoal is easier ***)
   apply (erule_tac bspec, erule in_set_dropD)
   done
@@ -4905,7 +4903,7 @@ theorem List__permute_Obligation_the:
   fix i::nat
   assume IL: "i < length l"
   with LEN have IP: "i < length prm" by auto
-  with nth_mem have "(prm ! i) mem prm" by (auto simp: mem_iff)
+  with nth_mem have "(prm ! i) mem prm" by auto
   with PERM LEN have "(prm ! i) < length l"
    by (auto simp: List__permutation_p_def)
   with r_def f_def List__element_of_tabulate
@@ -4954,7 +4952,7 @@ theorem List__permute_Obligation_the:
     with distinct_card have CARDeq: "card (set prm) = length prm" by auto
     from PERM have "\<forall>k. k mem prm \<longrightarrow> k < length prm"
      by (auto simp: List__permutation_p_def)
-    hence SUBEQ: "set prm \<subseteq> {..< length prm}" by (auto simp: mem_iff)
+    hence SUBEQ: "set prm \<subseteq> {..< length prm}" by auto
     with JP JN have "set prm \<subset> {..< length prm}" by auto
     with finite_lessThan [of "length prm"]
      have "card (set prm) < card {..< length prm}"
@@ -4981,7 +4979,7 @@ theorem List__permute_Obligation_subtype0:
     r equiLong l; 
     (i::nat) < length l\<rbrakk> \<Longrightarrow> 
    prm ! i < length r"
-   by (auto simp: List__permutation_p_def mem_iff nth_mem)
+   by (auto simp: List__permutation_p_def nth_mem)
 consts List__permute :: "'a list \<times> List__Permutation \<Rightarrow> 'a list"
 defs List__permute_def: 
   "List__permute
@@ -5010,7 +5008,7 @@ theorem List__permute_subtype_constr:
        then by lemma distinct_card we know that set prm is {0..length prm -1}
        Formally this is more tricky
   ***)
-  apply (simp add: in_set_conv_nth [symmetric] mem_iff, 
+  apply (simp add: in_set_conv_nth [symmetric], 
          simp only: distinct_card [symmetric],
          thin_tac "distinct prm")
   apply (fold Ball_def, drule_tac S="set prm" in permutation_set, auto)
@@ -5049,9 +5047,8 @@ defs List__isoList_def:
      \<equiv> (\<lambda> (iso_elem:: ('a, 'b)Function__Bijection). map iso_elem)"
 theorem List__isoList_subtype_constr: 
   "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (List__isoList iso_elem)"
-  apply(simp add:  List__isoList_def bij_def, auto)
+  apply(auto simp add:  List__isoList_def bij_def surj_def)
   (** first subgoal is proved by auto **)
-  apply(simp add: surj_def, auto)
   apply (induct_tac y, auto)
   (** subgoal 2.1 is proved by auto, the other one needs some guidance **)
   apply (drule_tac x = "a" in  spec, auto)
@@ -5152,7 +5149,7 @@ lemma List__list_empty_iff:
    "\<lbrakk>\<exists>(n::nat). f definedOnInitialSegmentOfLength n\<rbrakk>
      \<Longrightarrow> (List__list f = []) = (f = (\<lambda>i. None))"
  by (simp split: option.split, 
-     auto simp add: List__definedOnInitialSegmentOfLength_def expand_fun_eq,
+     auto simp add: List__definedOnInitialSegmentOfLength_def fun_eq_iff,
      drule_tac x=0 in spec, auto)
 
 theorem List__length_is_SegmentLength: 
@@ -5171,7 +5168,7 @@ lemma List__list_nth_aux:
          (\<forall>i<n. f i = Some a \<longrightarrow> (List__list f) ! i = a)"
   apply (induct n, safe)
   apply (simp (no_asm_simp), auto simp del:  List__list.simps)
-  apply (split Option.split, auto simp del:  List__list.simps)
+  apply (split option.split, auto simp del:  List__list.simps)
   apply (simp add: definedOnInitialSegmentOfLengthNoneZero)
   apply (case_tac "i=0", simp_all  del:  List__list.simps)
   apply (drule_tac x="\<lambda>i. f (Suc i)" in spec, drule mp, simp add: definedOnInitialSegmentOfLengthSuc)
@@ -5186,7 +5183,7 @@ lemma List__list_nth:
 lemma List__list_members:
     "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n; f i = Some a\<rbrakk> \<Longrightarrow> a mem (List__list f)"
  by (frule List__list_nth, 
-     auto simp del: List__list.simps simp add: mem_iff nth_mem List__length_is_SegmentLength)
+     auto simp del: List__list.simps simp add: nth_mem List__length_is_SegmentLength)
   
 theorem List__list_subtype_constr_refined: 
   "Function__bijective_p__stp
@@ -5204,7 +5201,7 @@ theorem List__list_subtype_constr_refined:
         simp add: not_le del: List__list.simps)
  apply (frule_tac j=xb in definedOnInitialSegmentOfLengthSome, simp)
  apply (erule exE,  drule_tac x=a in bspec, simp_all del: List__list.simps)
- apply (simp only: mem_iff [symmetric] List__list_members)
+ apply (simp only: List__list_members)
 done
 
 
@@ -5244,7 +5241,7 @@ done
 
 lemma list_1_stp_Isa_nth:
  "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> List__list_1__stp P l = (\<lambda>i. if i < length l then Some (l!i) else None)"
- by (simp add: expand_fun_eq list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
+ by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
 
 
 (******************************** List__tabulate *************)

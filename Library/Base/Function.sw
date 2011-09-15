@@ -52,7 +52,7 @@ end-proof
 op [a,b] surjective? (f: a -> b) : Bool =
   fa (y:b) (ex (x:a) f x = y)
 proof Isa
-  apply(simp add: surj_def eq_commute)
+ by(simp add: surj_def, simp add: eq_commute)
 end-proof
 
 proof Isa -verbatim
@@ -220,9 +220,7 @@ lemma Function__inverse__stp_eq_props_true:
 end-proof
 
 proof Isa inverse_subtype_constr
-  apply(auto simp add: bij_def)
-  apply(erule surj_imp_inj_inv)
-  apply(erule inj_imp_surj_inv)
+  by(auto simp add: bij_def  surj_imp_inj_inv inj_imp_surj_inv)
 end-proof
 
 (* The following Isabelle lemma enables the use of SOME to define inverse, which

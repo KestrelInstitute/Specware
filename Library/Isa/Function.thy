@@ -56,8 +56,7 @@ lemma Function__injective_p__stp_simp [simp]:
 
 theorem Function__surjective_p__def: 
   "surj f = (\<forall>(y::'b). \<exists>(x::'a). f x = y)"
-  apply(simp add: surj_def eq_commute)
-  done
+   by(simp add: surj_def, simp add: eq_commute)
 consts Function__surjective_p__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                        ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 defs Function__surjective_p__stp_def: 
@@ -111,10 +110,7 @@ theorem Function__inverse_Obligation_the:
   done
 theorem Function__inverse_subtype_constr: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> bij (inv f)"
-  apply(auto simp add: bij_def)
-  apply(erule surj_imp_inj_inv)
-  apply(erule inj_imp_surj_inv)
-  done
+  by(auto simp add: bij_def  surj_imp_inj_inv inj_imp_surj_inv)
 theorem Function__inverse__def: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> inv f y = (THE (x::'a). f x = y)"
   apply(rule sym, rule the_equality)

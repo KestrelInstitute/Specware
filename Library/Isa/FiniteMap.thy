@@ -717,7 +717,7 @@ theorem FMap__thePair_Obligation_subtype:
   by auto
 consts FMap__thePair :: " ('a, 'b)FMap__SingletonFMap \<Rightarrow> 'a \<times> 'b"
 defs FMap__thePair_def: 
-  "FMap__thePair m \<equiv> contents (FMap__fromFMap m)"
+  "FMap__thePair m \<equiv> the_elem (FMap__fromFMap m)"
 consts FMap__thePair__stp :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                                ('a, 'b)FMap__FMap \<Rightarrow> 'a \<times> 'b"
 defs FMap__thePair__stp_def: 
