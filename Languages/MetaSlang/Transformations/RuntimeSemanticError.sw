@@ -34,4 +34,31 @@ op restartCount: Nat = 0
 op [a] catchAndRestart: a -> a
 op [a] throwToRestart: String -> a
 
+#translate lisp -morphism
+ SemanticError.catchAndRestart -> SemanticError::catchAndRestart
+ SemanticError.throwToRestart  -> SemanticError::throwToRestart
+#end
+
+#translate lisp -verbatim
+(define-condition semantic-error (error)
+  ((text :initarg :text :reader text)))
+
+  (defun throwToRestart (text)
+  (format t "semantic error: ~a~%" text)
+  (error 'semantic-error))
+
+(defmacro catchAndRestart (expr)
+  `(let ((f (lambda () ,expr)))
+     (let ((restartCount 0)
+           (done? nil)
+           (result nil))
+       (loop until done?
+            do (handler-case (progn (setq result (funcall f))
+                                    (setq done? t))
+                 (semantic-error ()
+                   (format t "Failed with restartCount ~a~%Trying next representation..." restartCount)
+                   (incf restartCount))))
+       result)))
+#end
+
 end-spec
