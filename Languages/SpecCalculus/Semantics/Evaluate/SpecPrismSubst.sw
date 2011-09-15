@@ -13,44 +13,10 @@ SpecCalc qualifying spec
                                 (prism_tm      : SCTerm) 
                                 (term_pos      : Position) 
    : SpecCalc.Env Spec =                          
-    let should_be_empty_spec = subtractSpec prsm.dom original_spec in
-    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
-    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let 
-      def collect_clashing_sorts_and_ops (elts, sorts, ops) =
-	foldl (fn ((sorts, ops), el) ->
-	       case el of
-		 | Sort    (qid,      _) -> (if qid in? sorts then sorts else sorts ++ [qid], ops)
-		 | SortDef (qid,      _) -> (if qid in? sorts then sorts else sorts ++ [qid], ops)
-		 | Op      (qid,_,    _) -> (sorts, if qid in? ops then ops else ops ++ [qid])
-		 | OpDef   (qid,_,    _) -> (sorts, if qid in? ops then ops else ops ++ [qid])
-		 | Import  (_,_,elts, _) -> collect_clashing_sorts_and_ops (elts, sorts, ops)
-		 | _ -> (sorts, ops))
-	      (sorts, ops)
-	      elts
-    in
-    let (clashing_sort_names, clashing_op_names) =
-        collect_clashing_sorts_and_ops (should_be_empty_spec.elements, [], []) 
-    in
-    let props_msg =
-        foldl (fn (str,el) ->
-	       case el of
-		 | Property(_, prop_name, _, _, _) ->
-		   if str = "" then 
-		     printQualifiedId prop_name
-		   else 
-		     str ^ ", " ^ printQualifiedId prop_name
-		 | _ -> str) % Should check other items?
-	      ""			 
-	      should_be_empty_spec.elements
-    in
-      case (sorts_msg, ops_msg, props_msg, clashing_sort_names, clashing_op_names) of
-	| ("", "", "", [], []) ->
-	  auxApplySpecPrismSubstitution prsm original_spec prism_tm term_pos
-	| _ ->
-	  raise (TypeCheck (term_pos, 
-			    warnAboutMissingItems sorts_msg ops_msg props_msg 
-			                          clashing_sort_names clashing_op_names))
+   {
+    verify_subspec prsm.dom original_spec term_pos;
+    auxApplySpecPrismSubstitution prsm original_spec prism_tm term_pos
+    }
 
   op auxApplySpecPrismSubstitution (prsm     : SpecPrism)
                                    (spc      : Spec) 

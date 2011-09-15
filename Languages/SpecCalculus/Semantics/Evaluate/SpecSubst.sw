@@ -9,96 +9,72 @@ SpecCalc qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  applySpecMorphismSubstitution  : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
-  def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
-    if sm.dom = original_spec then return sm.cod else
-    let sub_spec             = SpecCalc.dom sm                     in
-    let should_be_empty_spec = subtractSpec1 sub_spec original_spec true in
-    %let _ = writeLine("SS:\n"^printSpecExpanded sub_spec) in
-    %let _ = writeLine("O:\n"^printSpecExpanded original_spec) in
-    %let _ = writeLine("SBES:\n"^printSpecExpanded should_be_empty_spec) in
-    let sorts_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
-    let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let 
-      def collect_clashing_sorts_and_ops (elts, sorts, ops) =
-	foldl (fn ((sorts, ops),el) ->
-	       case el of
-		 | Sort (qid,_) -> 
-		   (case findAllSorts (should_be_empty_spec, qid) of
-		      | [] -> 
-		        let _ = writeLine ("Internal confusion: Sort    but no info for " ^ printQualifiedId qid) in
-			(sorts, ops)
-		      | _ ->
-			(if  qid in? sorts then sorts else sorts ++ [qid], ops))
-		 | SortDef (qid,_) -> 
-		   (case findAllSorts (should_be_empty_spec, qid) of
-		      | [] -> 
-		        let _ = writeLine ("Internal confusion: SortDef but no info for " ^ printQualifiedId qid) in
-			(sorts, ops)
-		      | _ ->
-			(if  qid in? sorts then sorts else sorts ++ [qid], ops))
-		 | Op (qid,def?,_) -> 
-		   (case findAllOps (should_be_empty_spec, qid) of
-		      | [] -> 
-		        let _ = writeLine ("Internal confusion: Op      but no info for " ^ printQualifiedId qid) in
-			(sorts, ops)
-		      | _ ->
-			(sorts, if  qid in? ops then ops else ops ++ [qid]))
-		 | OpDef (qid,_,_) -> 
-		   (case findAllOps (should_be_empty_spec, qid) of
-		      | [] -> 
-		        let _ = writeLine ("Internal confusion: OpDef   but no info for " ^ printQualifiedId qid) in
-			(sorts, ops)
-		      | _ -> 
-			(sorts, if  qid in? ops then ops else ops ++ [qid]))
-		 | Import (_, _, elts,_) ->  collect_clashing_sorts_and_ops (elts, sorts, ops)
-		 | _ -> (sorts, ops))
-	      (sorts, ops)
-	      elts
-    in
-    let (clashing_sort_names, clashing_op_names) = 
-        collect_clashing_sorts_and_ops (should_be_empty_spec.elements, [], []) 
-    in
-    let props_msg = 
-        foldl (fn (str,el) ->
-	       case el of
-		 | Property(_, prop_name, _, _, _) ->
-		   if str = "" then 
-		     printQualifiedId prop_name
-		   else 
-		     str ^ ", " ^ printQualifiedId prop_name
-		 | _ -> str) % Should check other items?
-	      ""			 
-	      should_be_empty_spec.elements
-    in
-      case (sorts_msg, ops_msg, props_msg, clashing_sort_names, clashing_op_names) of
-	| ("", "", "", [], []) ->
-	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
-	| ("", "", "", _, _) ->
-	  let _ = writeLine ("------------------------------------------") in 
-	  let _ = writeLine ("Warning: for now, ignoring these problems:") in
-	  let _ = writeLine (warnAboutMissingItems "" "" "" clashing_sort_names clashing_op_names) in
-	  let _ = writeLine ("------------------------------------------") in 
-	  auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
-	| _ ->
-	  raise (TypeCheck (term_pos, 
-			    warnAboutMissingItems sorts_msg ops_msg props_msg 
-			                          clashing_sort_names clashing_op_names))
+  op verify_subspec (dom_spc : Spec) (spc : Spec) (pos : Position) : SpecCalc.Env () =
+   let should_be_empty_spec = subtractSpec1 dom_spc spc true                       in
+   let types_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
+   let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
+   let 
+     def aux (elts, types, ops, props) =
+       foldl (fn ((types, ops, props), el) ->
+                case el of
+                  | Sort     (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
+                  | SortDef  (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
+                  | Op       (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
+                  | OpDef    (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
+                  | Property (_, qid, _, _, _) -> (types, ops, if qid in? props then props else props ++ [qid])
+                  | Import   (_,_,elts,     _) -> aux (elts, types, props, ops)
+                  | _ -> (types, ops, props))
+             (types, ops, props)
+             elts
+   in
+   let (type_ids, op_ids, prop_ids) = aux (should_be_empty_spec.elements, [], [], []) in
+   case (types_msg, ops_msg) of
+     | ("", "") ->
+       let _ = 
+           (case (type_ids, op_ids, prop_ids) of
+              | ([],[],[]) -> ()
+              | _ ->
+                let _ = writeLine ("------------------------------------------") in 
+                let _ = writeLine ("Warning: for now, ignoring these problems:") in
+                let _ = writeLine (warnAboutMissingItems "" "" type_ids op_ids prop_ids) in
+                let _ = writeLine ("------------------------------------------") in 
+                ())
+       in
+       return ()
+     | _ ->
+       raise (TypeCheck (pos, warnAboutMissingItems types_msg ops_msg type_ids op_ids prop_ids))
+
+  op applySpecMorphismSubstitution (sm            : Morphism) 
+                                   (original_spec : Spec)
+                                   (sm_tm         : SCTerm) 
+                                   (term_pos      : Position) 
+   : SpecCalc.Env Spec =
+   {
+    verify_subspec (SpecCalc.dom sm) original_spec term_pos;
+    auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos
+   }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  op liftSpecTerm(tm: SCTerm, par: SCTerm): SCTerm =
-    case (tm, par) of
-      | ((UnitId(UnitId_Relative{path = [rel_name], hashSuffix = None}), pos),
-         (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some _}), _)) ->
-        (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some rel_name}), pos)
-      | _ -> tm
 
-  op  auxApplySpecMorphismSubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
-  def auxApplySpecMorphismSubstitution sm spc sm_tm pos =
-    %% Warning: this assumes that dom_spec is a subspec of spc
-    %%    S' = M(S - dom(M)) U cod(M)
-    let dom_spec           = SpecCalc.dom sm            in     % dom(M)
-    let dom_spec_term      = case sm_tm of
+  op liftSpecTerm(tm: SCTerm, par: SCTerm): SCTerm =
+   case (tm, par) of
+     | ((UnitId(UnitId_Relative{path = [rel_name], hashSuffix = None}), pos),
+        (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some _}), _)) ->
+       (UnitId(UnitId_Relative{path = par_path, hashSuffix = Some rel_name}), pos)
+     | _ -> tm
+
+  op auxApplySpecMorphismSubstitution (sm    : Morphism)
+                                      (spc   : Spec)
+                                      (sm_tm : SCTerm)
+                                      (pos   : Position)
+   : SpecCalc.Env Spec =
+   if sm.dom = spc then
+     return sm.cod 
+   else
+     %% Warning: this assumes that dom_spec is a subspec of spc
+     %%    S' = M(S - dom(M)) U cod(M)
+     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
+     let dom_spec_term      = case sm_tm of
 			       | (SpecMorph (dom_spec_tm,_,_,_),_) -> 
 				  dom_spec_tm
 			       | _ -> 
@@ -111,9 +87,9 @@ SpecCalc qualifying spec
 				     let dom_value_info = (Spec dom_spec, oldestTimeStamp, []) in
 				     (Quote dom_value_info, sm_tm.2) % could check cache first
 
-    in
-    let cod_spec           = SpecCalc.cod sm            in     % cod(M)
-    let cod_spec_term      = case sm_tm of
+     in
+     let cod_spec           = SpecCalc.cod sm            in     % cod(M)
+     let cod_spec_term      = case sm_tm of
 			       | (SpecMorph (_,cod_spec_tm,_,_),_) -> 
                                  %% Given a normal spec morphism term, just extract the codomain spec term.
                                  cod_spec_tm 
@@ -131,26 +107,26 @@ SpecCalc qualifying spec
 				   | _ -> 
 				     %% Give up -- cite the morphism term as the import target
 				     sm_tm
-    in
-    %% S - dom(M)
+     in
+     %% S - dom(M)
 
-    {spec_replacements <- findSubSpecReplacements(dom_spec, cod_spec);
-     spec_replacements <- return((dom_spec, sm_tm, cod_spec, cod_spec_term) :: spec_replacements);
-     residue <- return(subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term,
-                                                 spec_replacements));
-     % print("residue: \n"^printSpec residue);
-     translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
-     %% Add the elements separately so we can put preserve order
-     new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
-     new_spec <- return (new_spec << {elements = 
-				      replaceImportStub (new_spec.elements,
-							 Import(cod_spec_term, cod_spec, cod_spec.elements, noPos))});
-     new_spec <- return (removeDuplicateImports new_spec);
-     new_spec <- return (removeVarOpCaptures    new_spec);
-     new_spec <- return (compressDefs           new_spec);
-     new_spec <- complainIfAmbiguous new_spec pos;
-     return new_spec
-     }
+     {spec_replacements <- findSubSpecReplacements(dom_spec, cod_spec);
+      spec_replacements <- return((dom_spec, sm_tm, cod_spec, cod_spec_term) :: spec_replacements);
+      residue <- return(subtractSpecLeavingStubs (spc, sm_tm, dom_spec, dom_spec_term, cod_spec, cod_spec_term,
+                                                  spec_replacements));
+      % print("residue: \n"^printSpec residue);
+      translated_residue <- applySpecMorphism sm residue;  % M(S - dom(M))
+      %% Add the elements separately so we can put preserve order
+      new_spec <- specUnion [translated_residue, cod_spec << {elements = []}] pos;     % M(S - dom(M)) U cod(M)
+      new_spec <- return (new_spec << {elements = 
+                                         replaceImportStub (new_spec.elements,
+                                                            Import(cod_spec_term, cod_spec, cod_spec.elements, noPos))});
+      new_spec <- return (removeDuplicateImports new_spec);
+      new_spec <- return (removeVarOpCaptures    new_spec);
+      new_spec <- return (compressDefs           new_spec);
+      new_spec <- complainIfAmbiguous new_spec pos;
+      return new_spec
+      }
 
   op findSubSpecReplacements(dom_spec: Spec, cod_spec: Spec): SpecCalc.Env(List(Spec * SCTerm * Spec * SCTerm)) =
     let sub_morphisms =
@@ -307,36 +283,38 @@ SpecCalc qualifying spec
   %%  Error handling...
   %% ======================================================================  
 
-  def warnAboutMissingItems sorts_msg ops_msg props_msg sort_names op_names =
+  def warnAboutMissingItems types_msg ops_msg type_ids op_ids prop_ids =
     %% At least one of the messages should be non-empty
     "\n" ^
-    (if sorts_msg = "" then 
+    (if types_msg = "" then 
        ""  
      else
-       "  These sorts from the domain of the morphism are not in the source spec: " ^ sorts_msg ^ "\n")
+       "  These types from the domain of the morphism are not in the source spec: " ^ types_msg ^ "\n")
     ^
     (if ops_msg = "" then 
        ""  
      else
        "  These ops from the domain of the morphism are not in the source spec: " ^ ops_msg  ^ "\n")
     ^
-    (if props_msg = "" then 
+    (if type_ids = [] then
        ""  
      else
-       "  These axioms, etc. from the domain of the morphism are not in the source spec: " ^ props_msg  ^ "\n")
-    ^
-    (if sort_names = [] then
-       ""  
-     else
-       "  These sorts from the domain of the morphism are defined differently in the source spec: " ^ 
-       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" sort_names)
+       "  These types from the domain of the morphism are defined differently in the source spec: " ^ 
+       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" type_ids)
        ^ "\n")
     ^
-    (if op_names = [] then
+    (if op_ids = [] then
        ""  
      else
        "  These ops from the domain of the morphism are defined differently in the source spec: " ^ 
-       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" op_names)
+       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" op_ids)
+       ^ "\n")
+    ^
+    (if prop_ids = [] then 
+       ""  
+     else
+       "  These axioms, etc. from the domain of the morphism are not in the source spec: " ^ 
+       (foldl (fn (s,qid) -> (if s = "" then "" else s ^ ", ") ^ printQualifiedId qid) "" prop_ids)
        ^ "\n")
     ^
     " in substitution term "
@@ -348,7 +326,6 @@ SpecCalc qualifying spec
 			 if str = "" then qid else str^", "^qid)
                         ""
 			qmap 
-
 endspec
 
 (*
