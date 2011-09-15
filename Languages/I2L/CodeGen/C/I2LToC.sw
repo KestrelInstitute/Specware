@@ -373,7 +373,7 @@ I2LToC qualifying spec
                 if -(2**31) <= m && n < 2**31 then C_Int32  else
                 if -(2**63) <= m && n < 2**63 then C_Int64  else
                 let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
-                C_Int32
+                C_Int64
             in
             % let _ = writeLine (" ===> " ^ anyToString c_type) in
             (cspc, c_type)
