@@ -886,7 +886,10 @@ SpecsToI2L qualifying spec
                     case simpleCoProductCase (tm, ctxt, spc) of
                       | Some expr -> expr
                       | _ ->
-                        fail (mkInOpStr ctxt ^ "cannot yet handle: " ^ printTerm t1)
+                        let msg = mkInOpStr ctxt ^ "cannot yet handle: " ^ printTerm t1 in
+                        let _ = writeLine msg in
+                        I_Str msg
+                        
         in
         process_t1 (t1, [])
 
