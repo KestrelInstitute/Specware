@@ -462,14 +462,14 @@
 	(copy-dist-file (merge-pathnames source-dir file)
 			(merge-pathnames slime-dir  file)))
 
-      (let ((source-file (make-pathname :name "swank-backend" :type "lisp"))
-	    (fasl-file   (make-pathname :name "swank-backend" :type *fasl-type*)))
-	(declare (special swank-loader::*fasl-directory* 
-			  swank-loader::*source-directory*))
-	(copy-dist-file (merge-pathnames swank-loader::*source-directory* source-file)
-			(merge-pathnames slime-dir                        source-file))
-	(copy-dist-file (merge-pathnames swank-loader::*fasl-directory*   fasl-file)
-			(merge-pathnames slime-dir                        fasl-file)))
+;        (let ((source-file (make-pathname :name "swank-backend" :type "lisp"))
+;  	    (fasl-file   (make-pathname :name "swank-backend" :type *fasl-type*)))
+;  	(declare (special swank-loader::*fasl-directory* 
+;  			  swank-loader::*source-directory*))
+;  	(copy-dist-file (merge-pathnames swank-loader::*source-directory* source-file)
+;  			(merge-pathnames slime-dir                        source-file))
+; 	(copy-dist-file (merge-pathnames swank-loader::*fasl-directory*   fasl-file)
+; 			(merge-pathnames slime-dir                        fasl-file)))
 
       (dolist (dir haskell-dirs)
 	(copy-dist-directory (extend-directory source-dir dir)
