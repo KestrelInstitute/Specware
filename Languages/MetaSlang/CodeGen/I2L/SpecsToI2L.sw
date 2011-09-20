@@ -15,7 +15,7 @@ SpecsToI2L qualifying spec
 
   import /Languages/I2L/I2L
 
-  op CUtils.substGlyphInIdent (id : String) : String  % TODO: defined in CUtils.sw
+  op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
   type Term = MS.Term
 
@@ -99,23 +99,6 @@ SpecsToI2L qualifying spec
                             []
                             spc.ops
     in
-
-    %let _ = writeLine("ops transformed.") in
-    %let len = length transformedOps in
-    %let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
-    %let _ = foldriAQualifierMap 
-    %(fn(qid,name,(aliases,tvs,defs),l) -> 
-    % let _ = writeLine("sort "^printQualifiedId(Qualified(qid,name))) in
-    % let _ = writeLine("  typeVars: "^(foldl(fn(s,tv)->s^tv^" ") "" tvs)) in
-    % let _ = writeLine("  aliases:     "^(foldl (fn(s,qid0) -> s^(printQualifiedId(qid0))^" ") "" aliases)) in
-    % let _ = writeLine("  defs: ") in
-    % let _ = app(fn(tvs,typ) -> 
-    %    let _ = writeLine("   typeVars: "^(foldl(fn(s,tv)->s^tv^" ") "" tvs)) in
-    %    writeLine("   "^printSort(typ))) defs in
-    % l)
-    %[] spc.sorts
-    %in
-
     let res : I_ImpUnit = 
         {
          name     = "",%s pc.name:String,
@@ -639,18 +622,18 @@ SpecsToI2L qualifying spec
                 case pat of
 
                   | VarPat ((id,_), _) -> 
-                    [substGlyphInIdent id]  % TODO: use cString, which also looks for C keywords?
+                    [cString id]
 
                   | RecordPat (plist, _) -> 
-                    map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
+                    map (fn | (_,VarPat((id,_),_)) -> cString id
                             | _ -> fail (err ()))
                         plist
 
                   | RestrictedPat (VarPat((id,_),_), _, _) -> 
-                    [substGlyphInIdent id]
+                    [cString id]
 
                   | RestrictedPat (RecordPat(plist,_), _, _) -> 
-                    map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
+                    map (fn | (_,VarPat((id,_),_)) -> cString id
                             | _ -> fail (err ()))
                         plist
 

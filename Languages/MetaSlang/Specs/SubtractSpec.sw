@@ -12,33 +12,44 @@ AnnSpec qualifying spec
 
  def subtractSpec x y = subtractSpec1 x y false
 
- op subtractSpec1 (x: Spec) (y: Spec) (poly?: Bool): Spec  =
+ op subtractSpec1 (x_spec : Spec) (y_spec : Spec) (poly?: Bool): Spec  =
    %% If poly? is true remove an instance of  of a polymorphic type
-   let elements = filterSpecElements (fn elt_x ->
-					(case elt_x of
-					   | Import (_, i_sp, _, _) -> ~(i_sp = y)
-					   | _ -> true)
-					&&
-					~(existsSpecElement? (fn elt_y ->
-                                                                let same? = sameSpecElement? (y, elt_y, x, elt_x) in
-                                                                same? ||
-                                                                 (case (elt_x, elt_y)
-                                                                  of (Op (qid1,_, _), Op(qid2,_, _)) | qid1 = qid2 ->
-                                                                      % let Some info1 = findTheOp (x, qid1) in
-                                                                      % let Some info2 = findTheOp (y, qid2) in
-                                                                      % (writeLine(show qid1);
-                                                                      %  writeLine(anyToString info1.names^" =?= "^anyToString info2.names);
-                                                                      %  writeLine(anyToString info1.fixity^" =?= "^anyToString info2.fixity);
-                                                                      %  writeLine(printSort(termSort info1.dfn)^" =?= "^printSort(termSort info2.dfn));
-                                                                       poly?  %)
-                                                                  | _ -> false))
-					                     y.elements))
-	                               x.elements
+   let
+     def add_element se_pair se_pairs =
+       if exists? (sameSpecElement? se_pair) se_pairs then
+         se_pairs
+       else
+         case se_pair.2 of
+           | Import (_, imported_spec, _, _) ->
+             let elements = 
+                 foldl (fn (se_pairs, imported_elt) ->
+                          add_element (imported_spec, imported_elt) se_pairs)
+                       se_pairs
+                       imported_spec.elements
+             in
+             (se_pair :: se_pairs)
+           | _ ->
+             (se_pair :: se_pairs)
    in
-   x << {
-	 elements = elements,
-	 ops      = mapDiffOps   x.ops   y.ops,
-	 sorts    = mapDiffSorts x.sorts y.sorts
+   let y_se_pairs = 
+       foldl (fn (se_pairs, y_elt) -> 
+                add_element (y_spec, y_elt) se_pairs)
+             []
+             y_spec.elements
+   in
+   let x_but_not_y_elements = 
+       foldl (fn (x_elements, x_elt) ->
+                if exists? (sameSpecElement? (x_spec, x_elt)) y_se_pairs then
+                  x_elements
+                else
+                  x_elt :: x_elements)
+             []
+             x_spec.elements
+   in
+   x_spec << {
+              elements = x_but_not_y_elements,
+              ops      = mapDiffOps   x_spec.ops   y_spec.ops,
+              sorts    = mapDiffSorts x_spec.sorts y_spec.sorts
 	}
 
  def subtractSpecProperties (spec1, spec2) =
@@ -52,13 +63,14 @@ AnnSpec qualifying spec
    in
    let newElements =
        filterSpecElements (fn elt_1 ->
-
 			   case elt_1 of
 			     | Property(_, pn, _, _, _) ->
 			       let remove? = pn in? spec2PropNames in
 			       ~remove?
-			     | _ -> ~(existsSpecElement? (fn elt_2 -> sameSpecElement? (spec2, elt_2, spec1, elt_1))
-				                         spec2.elements))
+			     | _ -> 
+                               ~(existsSpecElement? (fn elt_2 -> 
+                                                       sameSpecElement? (spec2, elt_2) (spec1, elt_1))
+                                                    spec2.elements))
 	                  spec1.elements
    in
    let result =   spec1 << {elements = newElements} in
@@ -85,8 +97,7 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  sameSpecElement?: Spec * SpecElement * Spec * SpecElement -> Boolean
- def sameSpecElement? (s1, e1, s2, e2) =
+ def sameSpecElement? (s1 : Spec, e1 : SpecElement) (s2 : Spec, e2 : SpecElement) : Bool =
    case e1 of
      | Import (s1_tm, s1, _, _) ->
        (case e2 of
