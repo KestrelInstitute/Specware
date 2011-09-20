@@ -10,26 +10,23 @@ import /Languages/MetaSlang/Specs/Environment
 
 op addEqOpsToSpec : Spec -> Spec
 def addEqOpsToSpec spc =
-  foldriAQualifierMap
-    (fn (q, id, sortinfo, spc) ->
-     let spc = addEqOpsFromSort (spc, Qualified (q, id), sortinfo) in
-     spc)
-    spc 
-    spc.sorts
+  foldriAQualifierMap (fn (q, id, sortinfo, spc) ->
+                         addEqOpsFromSort (spc, Qualified (q, id), sortinfo))
+                      spc 
+                      spc.sorts
 
 op addEqOpsFromSort: Spec * QualifiedId * SortInfo -> Spec
 def addEqOpsFromSort (spc, qid, info) =
   let
+
     def getLambdaTerm (srt, body, b) =
       let cond = mkTrue () in
       let pat = RecordPat ([("1", VarPat (("x", srt), b)), ("2", VarPat (("y", srt), b))], b) in
       Lambda ([(pat, cond, body)], b)
-  in
-  let
+
     def getEqOpSort (srt, b) =
       Arrow (Product ([("1", srt), ("2", srt)], b), Boolean b, b)
-  in
-  let
+
     def addEqOp (eqqid as Qualified (eq, eid), osrt, body, b) =
       let term = getLambdaTerm (osrt, body, b) in
       let info = {names  = [eqqid],
@@ -38,7 +35,10 @@ def addEqOpsFromSort (spc, qid, info) =
 		  fullyQualified? = false}
       in
       let ops = insertAQualifierMap (spc.ops, eq, eid, info) in
-      setOps (spc, ops)
+      let spc = setOps (spc, ops) in
+      let elt = Op (eqqid, true, noPos) in
+      let spc = appendElement (spc, elt) in
+      spc
   in
   if ~ (definedSortInfo? info) then
     spc
@@ -56,7 +56,6 @@ def addEqOpsFromSort (spc, qid, info) =
       | _ ->
         let b = sortAnn srt in
 	let osrt = Base (qid, map (fn tv -> TyVar (tv, b)) tvs, b) in
-	%let _ = writeLine ("generating eq-op for \""^ (printQualifiedId qid)^"\", unfolded sort="^ (printSort osrt)) in
 	let varx = Var (("x", osrt), b) in
 	let vary = Var (("y", osrt), b) in
 	let eqqid as Qualified (eq, eid) = getEqOpQid qid in
@@ -91,7 +90,6 @@ def addEqOpsFromSort (spc, qid, info) =
 	    addEqOp (eqqid, osrt, body, b)
           %% Boolean is same as default case
 	  | _ ->
-	    %let _ = writeLine ("srt="^printSort srt) in
 	    case srt of
 	      | Product (fields, _) -> 
 	        let body = getEqTermFromProductFields (fields, osrt, varx, vary) in
