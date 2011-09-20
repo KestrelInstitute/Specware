@@ -118,7 +118,7 @@ spec
   op transformSpecForCodeGen  (base : Spec) (spc : Spec) : Spec =
     transformSpecForCodeGenAux base spc true
 
-  op transformSpecForCodeGenNoAdd (spc : Spec) : Spec =
+  op transformSpecForCodeGenNoAdd (spc : Spec) : Spec =  % never called?
     transformSpecForCodeGenAux emptySpec spc false  % initialSpecInCat ??
 
   op c_precNumSteps: List Nat = [13, 14, 15, 20, 23, 25, 27, 30, 35, 1000]
@@ -136,6 +136,8 @@ spec
            spc
 
   op showSpc (msg : String) (spc : Spec) : () =
+    % let n = internalRunTime() in
+    % let _ = writeLine("CG: " ^ show n ^ " " ^ msg) in
     if jjj > 0 then 
       let _ = writeLine "--------------------" in
       let _ = writeLine ("### " ^ msg)         in
@@ -162,16 +164,14 @@ spec
   op subtract?   : Bool = true  % TODO: Would like to deprecate use of subtractSpec, 
                                 % setting subtract? to false still causes problems
 
-  op slice1?     : Bool = true
-  op slice1base? : Bool = false % this means slice base away!
-  op slice2?     : Bool = false % seems to remove needed fns (??)
-  op slice2base? : Bool = false % this means slice base away!
-
-  op addEqOps?   : Bool = true  % sigh -- needed for Diversity test
+  op removeUnusedOps (spc : Spec) : Spec =
+    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in
+    %% ignore subtypes, do not slice base types/ops
+    sliceSpec (spc, top_ops, top_types, true, false)    
 
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 
-                                (addmissingfrombase? : Bool) 
+                                (addmissingfrombase? : Bool)  % true in all actual calls
     : Spec =
     % let trans_table = thyMorphismMaps spc "C" c_convertPrecNum in
     let _ = if jjj > 0 then 
@@ -187,89 +187,72 @@ spec
     in
     let _ = showSpc "Original"                      spc in
 
-    let spc = substBaseSpecs                        spc in %  (1) % adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
-    let _ = showSpc "substBaseSpecs" spc in
+    let spc = substBaseSpecs                        spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
+    let _ = showSpc "substBaseSpecs"                spc in
 
-    let spc = if slice1? then 
-                let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc             in 
-                let spc                  = sliceSpec (spc, top_ops, top_types, true, slice1base?) in % (2) remove all unused ops -- do this early to minimize wasted motion 
-                let _ = showSpc "sliceSpec[1]"      spc in 
-                spc
-              else
-                spc
-    in 
+    let spc = removeUnusedOps                       spc in %  (2) do this early to minimize wasted motion 
+    let _ = showSpc "sliceSpec[1]"                  spc in 
 
-    let spc = if addmissingfrombase? then
-                let spc = addMissingFromBase (basespc, spc, C_BuiltinSortOp?)                     in % (3) may add HO fns, etc., so do this before removeCurrying, etc.
-                let _ = showSpc "addMissingFromBase" spc in
-                spc
-              else
-                spc
+    let spc = 
+        % note: addmissingfrombase? is true in all actual calls here
+        if addmissingfrombase? then                        
+          let spc = 
+              addMissingFromBase (basespc, spc,
+                                  C_BuiltinSortOp?)     in %  (3) may add HO fns, etc., so do this before removeCurrying, etc.
+          let _ = showSpc "addMissingFromBase" spc in
+          spc
+        else
+          spc
     in  
 
-    let spc = removeCurrying                        spc in %  (3)
+    let spc = removeCurrying                        spc in %  (4) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
     let _ = showSpc "removeCurrying"                spc in
 
-    let spc = normalizeTopLevelLambdas              spc in %  (4)
+    let spc = normalizeTopLevelLambdas              spc in %  (5) convert patterned lambdas into case expressions
     let _ = showSpc "normalizeTopLevelLambdas"      spc in
 
-    let spc = instantiateHOFns                      spc in %  (5) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
+    let spc = instantiateHOFns                      spc in %  (6) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
     let _ = showSpc "instantiateHOFns"              spc in
 
    %let spc = lambdaToInner                         spc in %  ??
    %let _ = showSpc("lambdaToInner"                 spc in
 
-    let spc = lambdaLift                     (spc,true) in %  (6) as good a time as any
+    let spc = lambdaLift                     (spc,true) in %  (7) as good a time as any
     let _ = showSpc "lambdaLift"                    spc in
 
-    let spc = specStripNonNatSubtypesAndBaseDefs    spc in %  (7) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
-    let _ = showSpc "strip subtypes"                spc in
-
-    let spc = poly2mono                     (spc,false) in %  (8) After this is called, we can no longer reason about polymorphic types such as List(a)
-    let _ = showSpc "poly2mono"                     spc in
- 
-    let spc = letWildPatToSeq                       spc in %  (9)  pattern stuff
-    let _ = showSpc "letWildPatToSeq"               spc in
- 
-    let spc = translateMatch                        spc in % (10) Wadler's pattern matching compiler
+    let spc = translateMatch                        spc in %  (8) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
     let _ = showSpc "translateMatch"                spc in
 
-    let spc = translateRecordMergeInSpec            spc in % (11) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+    let spc = letWildPatToSeq                       spc in %  (9) transforms "let _ = t1 in t2" into "(t1;t2)"
+    let _ = showSpc "letWildPatToSeq"               spc in
+ 
+    let spc = specStripNonNatSubtypesAndBaseDefs    spc in % (10) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+    let _ = showSpc "strip subtypes"                spc in
+
+    let spc = poly2mono                     (spc,false) in % (11) After this is called, we can no longer reason about polymorphic types such as List(a)
+    let _ = showSpc "poly2mono"                     spc in
+ 
+    let spc = translateRecordMergeInSpec            spc in % (12) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
     let _ = showSpc "translateRecordMergeInSpec"    spc in
 
-    let spc = simplifySpec                          spc in % (12) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
+    let spc = simplifySpec                          spc in % (13) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
     let _ = showSpc "simplifySpec"                  spc in
 
-    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in % prior to adding eq ops
+    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in % prior to adding eq ops, so we can later flush eq ops not reachable from these
 
-    let spc = if addEqOps? then 
-                %%  TODO: can we get the best of both worlds here?
-                %%  If addEqOps? is true, we need to provide implementations for a lot of low level eq ops, 
-                %%  which can get very tedious and pedantic.
-                %%  But if it is false, we lose needed equalify functions on higher level types.
-                %%  Sigh...  Enabled by default.
-                let spc = addEqOpsToSpec            spc in % (13) add equality ops for sums, products, etc.
-                let _ = showSpc "addEqOpsToSpec"    spc in
-                spc
-              else
-                spc 
-    in 
+    let spc = addEqOpsToSpec                        spc in % (14) add equality ops for sums, products, etc. -- TODO: currently adds far too many (but spliceSpec removes them)
+    let _ = showSpc "addEqOpsToSpec"                spc in
 
-    let spc = if slice2? then 
-                let spc = sliceSpec (spc, top_ops, top_types, true, slice2base?) in % (14) cleanup any unused ops intoduced since previous slice
-                let _ = showSpc "sliceSpec[2]"      spc in 
-                spc
-              else
-                spc
-    in
+    let spc = sliceSpec (spc, top_ops, top_types, true, false) in % (15) remove unused ops (mainly eq ops) -- ignore subtypes, do not slice base types/ops
+    let _ = showSpc "sliceSpec[2]"                  spc in 
 
-    let (spc,constrOps) = addSortConstructorsToSpec spc in % (15)  these ops won't survive slicing, so this must follow sliceSpec
+    let (spc,constrOps) = addSortConstructorsToSpec spc in % (16) these ops won't survive slicing, so this must follow sliceSpec
     let _ = showSpc "addSortConstructorsToSpec"     spc in
 
-    let spc = conformOpDecls                        spc in % (16)  final tweaking -- adjustments of args with types 
+    let spc = conformOpDecls                        spc in % (17) change def with multiple args to decompose single arg when decl has one (product) arg
     let _ = showSpc "conformOpDecls"                spc in
 
-    let spc = adjustAppl                            spc in % (17)  final tweaking -- more adjustments of args with types
+    let spc = adjustAppl                            spc in % (18) change call with multiple args to compose single arg when decl has one (product) arg
     let _ = showSpc "adjustAppl"                    spc in
 
     spc
