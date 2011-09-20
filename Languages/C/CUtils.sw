@@ -24,7 +24,7 @@ CUtils qualifying spec
     let defines = defines ++ [X] in
     cspc << {defines = defines}
 
-  op renameCSpec             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {name                 = X}                       
+  op renameCSpec             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {name                 = cString X}                       
   op addHeader               (cspc : C_Spec, X : String)                 : C_Spec = cspc << {headers              = cspc.headers              ++ [X]}
   op addInclude              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {includes             = cspc.includes             ++ [X]}
   op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}

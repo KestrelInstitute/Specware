@@ -238,7 +238,7 @@ I2LToC qualifying spec
           | _ -> (cspc, "0", false)
     in
     let (vname, vtype, e)                = vdecl                                          in
-    let vid                              = (qname2id vname)                               in
+    let vid                              = qname2id vname                                 in
     let (cspc, initstr, initstrIsUseful) = structCheck (cspc, vtype, [vid])               in
     let optinitstr                       = if initstrIsUseful then Some initstr else None in
     c4OpDecl_internal (ctxt, cspc, vdecl, optinitstr)
@@ -314,7 +314,7 @@ I2LToC qualifying spec
             let (cspc, ctype)   = c4Type (ctxt, cspc, itype)                 in
             let ctype           = if ctype = C_Void then C_UInt32 else ctype in % no void fields allowed
             let (cspc, sfields) = structUnionFields (cspc, fields)           in
-            (cspc, (fname, ctype) :: sfields)
+            (cspc, (cString fname, ctype) :: sfields)
 
       def addFieldNamesToTupleTypes (types) =
         let fieldnames = getFieldNamesForTuple types in
@@ -480,8 +480,7 @@ I2LToC qualifying spec
         case projections of
           | [] -> cexpr
           | p :: projections ->
-            let p = getProjectionFieldName p in
-            addProjections (C_StructRef (cexpr, p), projections)
+            addProjections (mkCStructRef (cexpr, p), projections)
     in
     let
       def processFunMap f (vname, projections, exprs) =
@@ -562,15 +561,14 @@ I2LToC qualifying spec
         c4StructExpr (ctxt, cspc, block, typ, exprs, fieldnames, forInitializer?)
 
       | I_StructExpr fields ->
-        let fieldnames = map (fn (n, _) -> n) fields in
-        let exprs      = map (fn (_, e) -> e) fields in
+        let fieldnames = map (fn (n, _) -> cString n) fields in
+        let exprs      = map (fn (_, e) -> e)         fields in
         c4StructExpr (ctxt, cspc, block, typ, exprs, fieldnames, forInitializer?)
         
       | I_Project (expr, id) ->
         let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, expr, lhs?, forInitializer?)  in
-        let field_name           = getProjectionFieldName id                                       in
         let cexpr                = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr) else cexpr in
-        (cspc, block, C_StructRef (cexpr, field_name))
+        (cspc, block, mkCStructRef (cexpr, id))
         
       | I_Select (expr, id) ->
         % Union types are currently implemented something like this:
@@ -589,9 +587,8 @@ I2LToC qualifying spec
         %       the "alt" projection (which will be implemented as an associated C-union).
         let alt_expr             = expr << {expr = I_Project (expr, "alt")}                           in % benign abuse of I2L notation
         let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, alt_expr, lhs?, forInitializer?) in % exploit I2L machinery
-        let variant_name         = getUnionVariantName id                                             in
         let cexpr                = if false then C_Unary (C_Contents, cexpr) else cexpr               in % indirection not an option
-        (cspc, block, C_UnionRef (cexpr, variant_name))
+        (cspc, block, mkCUnionRef (cexpr, id))
 
       | I_ConstrCall (typename, selector, exprs) ->
         let consfun       = getConstructorOpNameFromQName (typename, selector.name) in
@@ -636,7 +633,7 @@ I2LToC qualifying spec
                               | Some cexpr ->
                                 let var   = C_Var decl                                                  in
                                 let sref0 = if ctxt.useRefTypes then C_Unary (C_Contents, var) else var in
-                                let sref  = C_UnionRef (C_StructRef (sref0, "alt"), selector.name)      in
+                                let sref  = mkCUnionRef (mkCStructRef (sref0, "alt"), selector.name)    in
                                 [C_Exp (getSetExpr (ctxt, sref, cexpr))]
         in
         let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
@@ -704,7 +701,7 @@ I2LToC qualifying spec
                                       let Some (_,field_type) = findLeftmost (fn field -> field.1 = selector.name) union_fields   in
                                       let (cspc, idtype)      = c4Type (ctxt, cspc, field_type)                                   in
                                       let structref           = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                      let valexp              = C_UnionRef (C_StructRef (structref, "alt"), selector.name)        in
+                                      let valexp              = mkCUnionRef (mkCStructRef (structref, "alt"), selector.name)      in
                                       case vlist of
                                         
                                         | [Some id] -> % contains exactly one var
@@ -881,9 +878,9 @@ I2LToC qualifying spec
     let optinit                                 = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
     let decl1                                   = (xname, ctype, optinit)                                         in
     let assignstmts = map (fn (field, fexpr) ->
-                             let variable = C_Var decl in
+                             let variable = C_Var decl    in
                              let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
-                             let fieldref = C_StructRef (variable, field) in
+                             let fieldref = mkCStructRef (variable, field) in
                              C_Exp (getSetExpr (ctxt, fieldref, fexpr)))
                           (zip (fieldnames, fexprs))
     in
@@ -1168,7 +1165,7 @@ I2LToC qualifying spec
     let variable = C_Var (varname, vartype)                                              in
     let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
     C_Exp (C_Binary (C_Set, 
-                     C_StructRef (variable, "sel"), 
+                     mkCStructRef (variable, "sel"), 
                      C_Const (C_Int (true, selector.index))))
 
   op getSelCompareExp (ctxt : I2C_Context, expr : C_Exp, selector : I_Selector) : C_Exp =
@@ -1179,7 +1176,7 @@ I2LToC qualifying spec
         C_Apply (hasConstructor, [expr, C_Const (C_Int (true, selector.index))])
 
       | _ -> 
-	C_Binary (C_Eq, C_StructRef (expr, "sel"), (C_Const (C_Int (true, selector.index))))
+	C_Binary (C_Eq, mkCStructRef (expr, "sel"), (C_Const (C_Int (true, selector.index))))
 
   op getSelCompareExp0 (ctxt : I2C_Context, expr : C_Exp, selector : I_Selector) : C_Exp =
     let expr   = if ctxt.useRefTypes then 
@@ -1187,7 +1184,7 @@ I2LToC qualifying spec
                  else 
                    expr 
     in
-    C_Binary (C_Eq, C_StructRef (expr, "sel"), C_Const (C_Int (true, selector.index)))
+    C_Binary (C_Eq, mkCStructRef (expr, "sel"), C_Const (C_Int (true, selector.index)))
 
   % --------------------------------------------------------------------------------
 
@@ -1228,9 +1225,8 @@ I2LToC qualifying spec
 	  | [] -> expr
 	  | None::vlist -> subst (vlist, expr, n+1)
 	  | (Some v)::vlist ->
-	    let field      = "field" ^ show n                                                          in
 	    let structexpr = if ctxt.useRefTypes then C_Unary (C_Contents, structexpr) else structexpr in
-	    let expr       = substVarInExp (expr, v, C_StructRef (structexpr, field))                  in
+	    let expr       = substVarInExp (expr, v, mkCStructRef (structexpr, "field" ^ show n))      in
 	    subst (vlist, expr, n+1)
     in
     subst (vlist, expr, 0)
@@ -1360,7 +1356,7 @@ I2LToC qualifying spec
   op getConstructorOpNameFromQName (qname : String * String, consid : String) : String =
     % the two _'s are important: that is how the constructor op names are
     % distinguished from other opnames (hack)
-    (qname2id qname) ^ "__" ^ consid
+    (qname2id qname) ^ "__" ^ cString consid
 
   op [X] getLastElem (l : List X) : List X * X =
     case l of
@@ -1371,16 +1367,21 @@ I2LToC qualifying spec
 
   % --------------------------------------------------------------------------------
 
+  op mkCStructRef (cexpr: C_Exp, fname : String) : C_Exp = 
+    let field_name = getProjectionFieldName fname in
+    C_StructRef (cexpr, field_name)
+
   op getProjectionFieldName (pname : String) : String =
     let pchars = explode pname in
     if forall? isNum pchars then
       let num = stringToNat pname in
       "field" ^ show (num - 1)
     else
-      pname
+      cString pname
 
-  op getUnionVariantName (vname : String) : String =
-     vname
+  op mkCUnionRef (cexpr: C_Exp, vname : String) : C_Exp = 
+    let variant_name = cString vname in
+    C_UnionRef (cexpr, variant_name)
 
   op getPredefinedFnDecl (fname : String) : C_FnDecl =
     case fname of
