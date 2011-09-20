@@ -50,11 +50,12 @@ SpecCalc qualifying spec
                                sms   = sms, 
                                pmode = prism_mode,
                                tm    = prism_tm};
-    prior_choices <- getPrismChoices;
+
+    %% prior_status <- getPrismStatus;
     %% print (";;; prism_uid = " ^ anyToString prism_uid ^ "\n");
     %% return (map (fn choice -> writeLine (";;; choice = " ^ anyToString choice)) prior_choices);
     %% look up prism_uid in prior_choices
-    incr?         <- getIncrementNextPrism;
+
     return (SpecPrism prsm, prism_timestamp, prism_deps)
    }
 

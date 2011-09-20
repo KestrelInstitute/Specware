@@ -13,35 +13,37 @@ spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  makeLCJ : ValueInfo -> RelativeUID -> String -> Env ()
-  def makeLCJ spec_info spec_uid version =
-    %% make Lisp, C, and Java versions
-    %% Lisp:  version/lisp/foo.lisp file
-    %% C   :  version/C/foo.c, foo.h, foo.o, foo*, ...
-    %% Java:  version/java/xyz.java, foo*
-    {
-     (target_path, name) <- case spec_uid of
-                              | UnitId_Relative (uid as {path,hashSuffix}) -> 
-                                { 
-                                 current_uid   <- getCurrentUID;
-                                 current_path  <- removeLastElem current_uid.path;
-                                 relative_path <- removeLastElem path;
-                                 name          <- lastElem       path;
-                                 path          <- return (current_path ++ relative_path);
-                                 return (path, name)
-                                 }
-                              | SpecPath_Relative uid -> 
-                                {
-                                 path <- removeLastElem uid.path;
-                                 name <- lastElem       uid.path;
-                                 return (path, name)
-                                 };
+  op makeLCJ (spec_info : ValueInfo)
+             (spec_uid  : RelativeUID)
+             (status    : PrismStatus)
+   : Env () =
+   %% make Lisp, C, and Java versions
+   %% Lisp:  version/lisp/foo.lisp file
+   %% C   :  version/C/foo.c, foo.h, foo.o, foo*, ...
+   %% Java:  version/java/xyz.java, foo*
+   {
+    (target_path, name) <- case spec_uid of
+                             | UnitId_Relative (uid as {path,hashSuffix}) -> 
+                               { 
+                                current_uid   <- getCurrentUID;
+                                current_path  <- removeLastElem current_uid.path;
+                                relative_path <- removeLastElem path;
+                                name          <- lastElem       path;
+                                path          <- return (current_path ++ relative_path);
+                                return (path, name)
+                                }
+                             | SpecPath_Relative uid -> 
+                               {
+                                path <- removeLastElem uid.path;
+                                name <- lastElem       uid.path;
+                                return (path, name)
+                                };
      print("\n-Lisp-\n");
-     makeLisp name spec_info spec_uid target_path version;
+     makeLisp name spec_info spec_uid target_path status;
      print("\n-C-\n");
-     makeC    name spec_info spec_uid target_path version;
+     makeC    name spec_info spec_uid target_path status;
      print("\n-Java-\n");
-    %makeJava name spec_info spec_uid target_path version;
+    %makeJava name spec_info spec_uid target_path status;
      print("\n-----\n")
      }
 
@@ -51,13 +53,14 @@ spec
               (spec_info   : ValueInfo)
               (spec_uid    : RelativeUID)
               (target_path : List String)
-              (version     : String)
+              (status      : PrismStatus)
     : Env ValueInfo =
+    let version = show status.version in
     {
      print ("\n;;; Generating Lisp " ^ version ^ "\n");
      %% Use a UnitId instead of just getting the path directly,
      %% so that uidToFullPath can look for device names, etc...
-     uid <- return {path = target_path ++ [version, "lisp", name], hashSuffix = None};
+     uid <- return {path = target_path ++ ["Version_" ^ version, "lisp", name], hashSuffix = None};
      filename <- return ((uidToFullPath uid) ^ ".lisp");
      print ("\n;;; Filename = " ^ filename  ^ "\n");
      evaluateLispCompile (spec_info, (UnitId spec_uid, noPos), Some filename, false)
@@ -73,13 +76,13 @@ spec
            (spec_info   : ValueInfo)
            (spec_uid    : RelativeUID)
            (target_path : List String)
-           (version     : String)
+           (status      : PrismStatus)
     : Env () =
-    %% NOTE: This does not yet handle all the options in the lisp version
-    %%       to be found in toplevel.lisp
+    %% NOTE: This does not yet handle all the options in the lisp version to be found in toplevel.lisp
+    let version = show status.version in
     {
      print ("\n;;; Generating C " ^ version ^ "\n");
-     c_dir <- return (target_path ++ [version, "C"]);
+     c_dir <- return (target_path ++ ["Version_" ^ version, "C"]);
      uid   <- return {path = c_dir ++ [app_name], hashSuffix = None};
      filename <- return (uidToFullPath uid);
 
@@ -136,15 +139,18 @@ spec
                          | Some n -> implode (prefix (chars, n + 1))
                          | _ -> ""
        in
-       let ready_name = c_dirname ^ "Ready" in
-       let _ = writeStringToFile("Wrote C code for " ^ app_name ^ ", version " ^ version ^ "\n", ready_name) in
-       print ("\nWrote " ^ ready_name ^ "\n")
+       let ready_file = c_dirname ^ "Ready" in
+       let line1 = "Wrote C code for " ^ app_name ^ ", version " ^ version in
+       let line2 = "Using choices : " ^ anyToString status.choices         in
+       let text  = line1 ^ "\n" ^ line2                                    in
+       let _ = writeStringToFile (text, ready_file) in
+       print ("\nWrote " ^ ready_file ^ "\n")
      else
        return ()
     }
     
-  op Specware.cd                    : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
-  op Specware.pwdAsString           : () -> String % defined in Preface.lisp
+  op Specware.cd          : String -> () % defined in Preface.lisp -- side effect: prints arg to screen
+  op Specware.pwdAsString : () -> String % defined in Preface.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -152,8 +158,9 @@ spec
               (spec_info as (Spec spc,_,_) : ValueInfo)
               (spec_uid                    : RelativeUID)
               (target_path                 : List String)
-              (version                     : String)
+              (status                      : PrismStatus)
     : Env () =
+    let version = "Version_" ^ show status.version in
     {
 
      (Spec option_spec, _, _) <- mkOptionsSpec (version ^ ".java");

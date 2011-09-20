@@ -52,24 +52,24 @@ SpecCalc qualifying spec
   def applySpecPrismSubstitutionGenerative prsm spc pos =
     let prism_tm = prsm.tm in
     {
-     uid <- getCurrentUID;
-     choices <- getPrismChoices; % get from environment
-     choice  <- (case findLeftmost (fn choice -> prism_tm = choice.prism_tm) choices of
-                   | None ->
-                     {
-                      %% Installing initial choice for prism_tm.
-                      choice <- return {uid = uid, prism_tm = prism_tm, n = 0};
-                      setPrismChoices (choices ++ [choice]); % record in environment
-                      return choice
-                      }
-                   | Some choice ->
-                     %% Fetching stored choice for prism_tm.
-                     %% Note: we don't increment n here and record in the environment,
-                     %% because we need to let the top-level unit id iterate through
-                     %% the entire cartesian product of choices.
-                     %% Depending on choices made at that leve, the next selection 
-                     %% for this prism could be n, n+1, or 0.
-                     return choice);
+     uid    <- getCurrentUID;
+     status <- getPrismStatus; % get from environment
+     choice <- (case findLeftmost (fn choice -> prism_tm = choice.prism_tm) status.choices of
+                  | None ->
+                    {
+                     %% Installing initial choice for prism_tm.
+                     choice <- return {uid = uid, prism_tm = prism_tm, n = 0};
+                     setPrismStatus (status << {choices = status.choices ++ [choice]}); % record in environment
+                     return choice
+                     }
+                  | Some choice ->
+                    %% Fetching stored choice for prism_tm.
+                    %% Note: we don't increment n here and record in the environment,
+                    %% because we need to let the top-level unit id iterate through
+                    %% the entire cartesian product of choices.
+                    %% Depending on choices made at that leve, the next selection 
+                    %% for this prism could be n, n+1, or 0.
+                    return choice);
      
      % print (";;; Choice for " ^ anyToString choice.uid ^ " = " ^ anyToString choice.prism_tm ^ "\n");
      % print (";;;  n = " ^ natToString choice.n ^ " of " ^ (natToString (cardinality choice)) ^ "\n");

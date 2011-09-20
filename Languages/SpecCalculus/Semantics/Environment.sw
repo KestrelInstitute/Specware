@@ -84,16 +84,15 @@ UnitId_Dependency.
   def initGlobalVars =
     run {
       print "\nDeclaring globals ...";
-      newGlobalVar ("BaseInfo", (None : Option RelativeUID, initialSpecInCat)); % as opposed to emptySpec, which doesn't contain Boolean, etc.
-      newGlobalVar ("BaseNames", ([] : QualifiedIds)); % cache for quick access
-      newGlobalVar ("GlobalContext", PolyMap.emptyMap);
-      newGlobalVar ("LocalContext", PolyMap.emptyMap);
-      newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
-      newGlobalVar ("ValidatedUnitIds",[]);
-      newGlobalVar ("CommandInProgress?",false);
-      newGlobalVar ("PrismChoices",[]);
-      newGlobalVar ("IncrementNextPrism?", true);  % default value probably never used
-      newGlobalVar ("Counter",0);
+      newGlobalVar ("BaseInfo",           (None : Option RelativeUID, initialSpecInCat));   % as opposed to emptySpec, which doesn't contain Boolean, etc.
+      newGlobalVar ("BaseNames",          ([] : QualifiedIds));                             % cache for quick access
+      newGlobalVar ("GlobalContext",      PolyMap.emptyMap);
+      newGlobalVar ("LocalContext",       PolyMap.emptyMap);
+      newGlobalVar ("CurrentUnitId",      Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
+      newGlobalVar ("ValidatedUnitIds",   []);
+      newGlobalVar ("CommandInProgress?", false);
+      newGlobalVar ("PrismStatus",        {version = 0, choices = [], incr? = true});       % default value probably never used
+      newGlobalVar ("Counter",            0);
       return ()
     }
 
@@ -332,31 +331,97 @@ while there is a transition from names with "UnitId" to "UnitId".
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  type PrismVersion = Nat
+
   type PrismChoice  = {uid      : UnitId, % unit id to be touched to force re-evaluation of prism term
                        prism_tm : SCTerm, % prism term being (re-)evaluated somewhere
-                       n        : Nat}    % index of current sm to use
-  type PrismChoices = List PrismChoice
+                       n        : Nat}    % index of current sm to use, should be less than cardinality
 
   op cardinality (choice : PrismChoice) : Nat =
    let (SpecPrism (_,sm_tms,_),_) = choice.prism_tm in
    length sm_tms
 
-  op  getPrismChoices : Env PrismChoices
-  def getPrismChoices = 
-    readGlobalVar "PrismChoices"
+  type PrismChoices = List PrismChoice
 
-  op  setPrismChoices : PrismChoices -> Env ()
-  def setPrismChoices ps = 
-    writeGlobalVar ("PrismChoices", ps)
+  type PrismStatus = {version : PrismVersion,
+                      choices : PrismChoices,
+                      incr?   : Bool}
 
-  op getIncrementNextPrism : Env Bool =
-   %% If this is true, the next prism will evaluate to its next morphism 
-   %% If this is false, the next prism will evaluate to previous choice of morphism
-   readGlobalVar "IncrementNextPrism?"
+  %%% -------------------- Prism Status --------------------
 
-  op setIncrementNextPrism (x : Bool) : Env () =
-   writeGlobalVar ("IncrementNextPrism?", x)
+  op getPrismStatus : Env PrismStatus =
+   readGlobalVar "PrismStatus"
 
+  op setPrismStatus (status : PrismStatus) : Env () =
+    writeGlobalVar ("PrismStatus", status)
+
+  op initPrismStatus : Env PrismStatus =
+   let status = {version = 0, choices = [], incr? = true} in
+   {
+    writeGlobalVar ("PrismStatus", status);
+    return status
+    }
+
+  op nextPrismStatus (incr_version? : Bool) : Env PrismStatus =
+   {
+    status      <- getPrismStatus;
+    %% we might want to get a new set of choices but not bump the version number
+    new_version <- return (if incr_version? then status.version + 1 else status.version);
+    new_incr?   <- return true;
+    %% Touching the prisms should ensure that every unit even indirectly referencing them is re-evaluated.
+    new_choices <- touchPrismsAboutToChange status.choices;  % returns new choices
+    new_status  <- return {version = new_version, choices = new_choices, incr? = new_incr?};
+    setPrismStatus new_status;
+    return new_status
+    }
+
+  %%% -------------------- Prism Choices --------------------
+
+  op touchPrismsAboutToChange (choices : PrismChoices) : SpecCalc.Env PrismChoices =
+   case choices of
+     | [] -> return []
+     | choice :: choices ->
+       {
+        %% We always touch the first prism.
+        touch choice.uid;
+        let n = choice.n + 1 in
+        if n < cardinality choice then
+          let choice = choice << {n = n} in
+          %% Don't touch subsequent prisms when they are not going to change.
+          return (choice :: choices)
+        else
+          %% If incrementing this choice would overflow and carry over
+          %% into a change to next choice, then keep touching prisms.
+          let choice = choice << {n = 0} in
+          {
+           choices <- touchPrismsAboutToChange choices;
+           return (choice :: choices)
+           }
+       }
+
+  op touch (uid : UnitId) : Env () =
+   let touched = futureTimeStamp in
+   {
+    optValue <- lookupInLocalContext (UnitId_Relative uid);
+    case optValue of
+      | Some v ->
+        bindInLocalContext (UnitId_Relative uid) (v.1, touched, v.3)
+      | None ->
+        {
+         optValue <- lookupInLocalContext (SpecPath_Relative uid);
+         case optValue of
+           | Some v ->
+             bindInLocalContext (SpecPath_Relative uid) (v.1, touched, v.3)
+           | None ->
+             {
+              optValue <- lookupInGlobalContext uid;
+              case optValue of
+                | Some v -> bindInGlobalContext uid (v.1, touched, v.3, v.4)
+                | None -> return ()
+                  }}
+        }
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 (*
 
 I'm not sure the following is necessary. It is called at the start of
