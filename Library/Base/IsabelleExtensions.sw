@@ -11,7 +11,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 spec
  
-proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" Permutation Recdef Char_nat Main
+proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" "~~/src/HOL/Library/Permutation" "~~/src/HOL/Library/Char_nat" Main
 end-proof
 
 proof Isa -verbatim
