@@ -1,7 +1,7 @@
 theory EndoRelation
 imports SW_Relation
 begin
-types 'a EndoRelation__EndoRelation = " ('a, 'a)Relation__Relation"
+type_synonym 'a EndoRelation__EndoRelation = " ('a, 'a)Relation__Relation"
 theorem EndoRelation__id__def: 
   "(((xxx::'a), (yyy::'a)) \<in> Id) = (xxx = yyy)"
   by auto
@@ -16,7 +16,8 @@ consts EndoRelation__reflexive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow>
 defs EndoRelation__reflexive_p__stp_def: 
   "EndoRelation__reflexive_p__stp P__a r
      \<equiv> (\<forall>(x::'a). P__a x \<longrightarrow> (x, x) \<in> r)"
-types 'a EndoRelation__ReflexiveRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__ReflexiveRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__irreflexive_p__def: 
   "irrefl r = (\<forall>(x::'a). (x, x) \<in> - r)"
   by (simp add: irrefl_def)
@@ -26,7 +27,8 @@ consts EndoRelation__irreflexive_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow
 defs EndoRelation__irreflexive_p__stp_def: 
   "EndoRelation__irreflexive_p__stp P__a r
      \<equiv> (\<forall>(x::'a). P__a x \<longrightarrow> (x, x) \<in> - r)"
-types 'a EndoRelation__IrreflexiveRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__IrreflexiveRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__symmetric_p__def: 
   "sym r = (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<longrightarrow> (y, x) \<in> r)"
   by (simp add: sym_def)
@@ -36,7 +38,8 @@ defs EndoRelation__symmetric_p__stp_def:
   "EndoRelation__symmetric_p__stp P__a r
      \<equiv> (\<forall>(x::'a) (y::'a). 
           P__a x \<and> (P__a y \<and> (x, y) \<in> r) \<longrightarrow> (y, x) \<in> r)"
-types 'a EndoRelation__SymmetricRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__SymmetricRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__antisymmetric_p__def: 
   "antisym r 
      = (\<forall>(x::'a) (y::'a). (x, y) \<in> r \<and> (y, x) \<in> r \<longrightarrow> x = y)"
@@ -49,7 +52,8 @@ defs EndoRelation__antisymmetric_p__stp_def:
      \<equiv> (\<forall>(x::'a) (y::'a). 
           P__a x \<and> (P__a y \<and> ((x, y) \<in> r \<and> (y, x) \<in> r)) 
             \<longrightarrow> x = y)"
-types 'a EndoRelation__AntisymmetricRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__AntisymmetricRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__asymmetric_p__def: 
   "asym r 
      = (\<forall>(x::'a) (y::'a). \<not> ((x, y) \<in> r \<and> (y, x) \<in> r))"
@@ -61,7 +65,8 @@ defs EndoRelation__asymmetric_p__stp_def:
      \<equiv> (\<forall>(x::'a) (y::'a). 
           P__a x \<and> P__a y 
             \<longrightarrow> \<not> ((x, y) \<in> r \<and> (y, x) \<in> r))"
-types 'a EndoRelation__AsymmetricRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__AsymmetricRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__transitive_p__def: 
   "trans r 
      = (\<forall>(x::'a) (y::'a) (z::'a). 
@@ -74,7 +79,8 @@ defs EndoRelation__transitive_p__stp_def:
      \<equiv> (\<forall>(x::'a) (y::'a) (z::'a). 
           P__a x \<and> (P__a y \<and> (P__a z \<and> ((x, y) \<in> r \<and> (y, z) \<in> r))) 
             \<longrightarrow> (x, z) \<in> r)"
-types 'a EndoRelation__TransitiveRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__TransitiveRelation = 
+  "'a EndoRelation__EndoRelation"
 consts EndoRelation__negativeTransitive_p :: "'a EndoRelation__EndoRelation \<Rightarrow> 
                                               bool"
 defs EndoRelation__negativeTransitive_p_def: 
@@ -91,7 +97,7 @@ defs EndoRelation__negativeTransitive_p__stp_def:
           P__a x 
             \<and> (P__a y \<and> (P__a z \<and> ((x, y) \<in> - r \<and> (y, z) \<in> - r))) 
             \<longrightarrow> (x, z) \<in> - r)"
-types 'a EndoRelation__NegativeTransitiveRelation = 
+type_synonym 'a EndoRelation__NegativeTransitiveRelation = 
   "'a EndoRelation__EndoRelation"
 consts EndoRelation__trichotomous_p :: "'a EndoRelation__EndoRelation \<Rightarrow> bool"
 defs EndoRelation__trichotomous_p_def: 
@@ -110,7 +116,8 @@ defs EndoRelation__trichotomous_p__stp_def:
             \<longrightarrow> (x, y) \<in> r \<and> ((y, x) \<in> - r \<and> x \<noteq> y) 
                   \<or> ((x, y) \<in> - r \<and> ((y, x) \<in> r \<and> x \<noteq> y) 
                    \<or> (x, y) \<in> - r \<and> ((y, x) \<in> - r \<and> x = y)))"
-types 'a EndoRelation__TrichotomousRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__TrichotomousRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__equivalence_p__def: 
   "equivalence = refl \<inter> (sym \<inter> trans)"
   by (auto simp add: equiv_def mem_def)
@@ -122,7 +129,7 @@ defs EndoRelation__equivalence_p__stp_def:
      \<equiv> (EndoRelation__reflexive_p__stp P__a 
           \<inter> (EndoRelation__symmetric_p__stp P__a 
                \<inter> EndoRelation__transitive_p__stp P__a))"
-types 'a EndoRelation__Equivalence = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__Equivalence = "'a EndoRelation__EndoRelation"
 consts EndoRelation__partialEquivalence_p :: "'a EndoRelation__EndoRelation \<Rightarrow> 
                                               bool"
 defs EndoRelation__partialEquivalence_p_def: 
@@ -134,7 +141,8 @@ defs EndoRelation__partialEquivalence_p__stp_def:
   "EndoRelation__partialEquivalence_p__stp P__a
      \<equiv> (EndoRelation__symmetric_p__stp P__a 
           \<inter> EndoRelation__transitive_p__stp P__a)"
-types 'a EndoRelation__PartialEquivalence = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__PartialEquivalence = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__wellFounded_p__def: 
   "wf r 
      = (\<forall>(p::'a \<Rightarrow> bool). 
@@ -163,7 +171,8 @@ defs EndoRelation__wellFounded_p__stp_def:
                       \<and> (\<forall>(x::'a). 
                            P__a x \<and> p x 
                              \<longrightarrow> \<not> ((x, y) \<in> r)))))"
-types 'a EndoRelation__WellFoundedRelation = "'a EndoRelation__EndoRelation"
+type_synonym 'a EndoRelation__WellFoundedRelation = 
+  "'a EndoRelation__EndoRelation"
 theorem EndoRelation__reflexiveClosure_Obligation_subtype: 
   "Set__hasMin_p
       (\<lambda> (rc::('a \<times> 'a) set). 

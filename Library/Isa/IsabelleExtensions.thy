@@ -1,5 +1,5 @@
 theory IsabelleExtensions
-imports Main Char_nat Recdef Permutation "~~/src/HOL/Number_Theory/Primes"
+imports Main "~~/src/HOL/Library/Char_nat" Recdef "~~/src/HOL/Library/Permutation" "~~/src/HOL/Number_Theory/Primes"
 begin
 
 

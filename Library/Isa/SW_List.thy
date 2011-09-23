@@ -14,7 +14,7 @@ defs List__definedOnInitialSegmentOfLength_def:
   "(f definedOnInitialSegmentOfLength n)
      \<equiv> ((\<forall>(i::nat). i < n \<longrightarrow> Option__some_p (f i)) 
           \<and> (\<forall>(i::nat). i \<ge> n \<longrightarrow> Option__none_p (f i)))"
-types 'a List__ListFunction = "nat \<Rightarrow> 'a option"
+type_synonym 'a List__ListFunction = "nat \<Rightarrow> 'a option"
 theorem List__unique_initial_segment_length: 
   "\<lbrakk>f definedOnInitialSegmentOfLength n1; 
     f definedOnInitialSegmentOfLength n2\<rbrakk> \<Longrightarrow> 
@@ -697,7 +697,7 @@ theorem List__empty_p_length:
   by(case_tac l, auto)
 consts List__nonEmpty_p :: "'a list \<Rightarrow> bool"
 defs List__nonEmpty_p_def [simp]: "List__nonEmpty_p l \<equiv> (l \<noteq> [])"
-types 'a List__List1 = "'a list"
+type_synonym 'a List__List1 = "'a list"
 consts List__single :: "'a \<Rightarrow> 'a list"
 defs List__single_def [simp]: "List__single x \<equiv> [x]"
 theorem List__single_subtype_constr: 
@@ -3043,7 +3043,7 @@ next
   with `h \<notin> set t` show "distinct (h # t)" by auto
  qed
 qed
-types 'a List__InjList = "'a list"
+type_synonym 'a List__InjList = "'a list"
 theorem List__increasingNats_p_Obligation_subtype: 
   "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> 
    i < length nats"
@@ -4883,7 +4883,7 @@ defs List__permutation_p_def:
   "List__permutation_p prm
      \<equiv> (distinct prm 
           \<and> (\<forall>(i::nat). i mem prm \<longrightarrow> i < length prm))"
-types List__Permutation = "nat list"
+type_synonym List__Permutation = "nat list"
 theorem List__permute_Obligation_the: 
   "\<lbrakk>List__permutation_p prm; l equiLong prm\<rbrakk> \<Longrightarrow> 
    \<exists>!(r::'a list). 

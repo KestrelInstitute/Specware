@@ -347,7 +347,7 @@ defs MapAC__agree_p__stp_def:
             Relation__functional_p__stp(P__a, P__b)
                (RFun
                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) (m1 \<union> m2)))"
-types  ('a,'b)MapAC__TotalMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__TotalMap = " ('a, 'b)Relation__Map"
 theorem MapAC__fromFunction_Obligation_subtype: 
   "Relation__total_p (\<lambda> ((x::'a), (y::'b)). y = (f::'a \<Rightarrow> 'b) x)"
   by (auto simp add: Relation__total_p_def mem_def)
@@ -413,11 +413,11 @@ defs MapAC__toPartialFun__stp_def:
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           Function__inverse__stp (Fun_P(P__a, Option__Option_P P__b))
              MapAC__fromPartialFun)"
-types  ('a,'b)MapAC__SurjectiveMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__InjectiveMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__BijectiveMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__FiniteMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__InfiniteMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__CountableMap = " ('a, 'b)Relation__Map"
-types  ('a,'b)MapAC__UncountableMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__SurjectiveMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__InjectiveMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__BijectiveMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__FiniteMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__InfiniteMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__CountableMap = " ('a, 'b)Relation__Map"
+type_synonym  ('a,'b)MapAC__UncountableMap = " ('a, 'b)Relation__Map"
 end

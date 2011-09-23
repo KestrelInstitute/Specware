@@ -5,10 +5,10 @@ typedecl  ('a,'b)FMap__FMap
 consts FMap__FMap_P :: "('a \<Rightarrow> bool) \<times> ('b \<Rightarrow> bool) \<Rightarrow> 
                          ('a, 'b)FMap__FMap \<Rightarrow> bool"
 consts FMap__toFMap :: " ('a, 'b)MapAC__FiniteMap \<Rightarrow>  ('a, 'b)FMap__FMap"
-axioms FMap__toFMap_subtype_constr: 
+axiomatization where FMap__toFMap_subtype_constr: 
   "Function__bijective_p__stp(finite &&& Relation__functional_p, TRUE)
       FMap__toFMap"
-axioms FMap__toFMap_subtype_constr1: 
+axiomatization where FMap__toFMap_subtype_constr1: 
   "Function__bijective_p__stp
      (Set__finite_p__stp
          (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2) 
@@ -399,7 +399,7 @@ defs FMap__nonEmpty_p__stp_def:
                (RSet
                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                    (FMap__fromFMap__stp(P__a, P__b) m)))"
-types  ('a,'b)FMap__NonEmptyFMap = " ('a, 'b)FMap__FMap"
+type_synonym  ('a,'b)FMap__NonEmptyFMap = " ('a, 'b)FMap__FMap"
 theorem FMap__e_lt_lt_lt_Obligation_subtype: 
   "\<lbrakk>Relation__functional_p (FMap__fromFMap m1 <<< FMap__fromFMap m2)\<rbrakk> \<Longrightarrow> 
    finite (FMap__fromFMap m1 <<< FMap__fromFMap m2)"
@@ -711,7 +711,7 @@ defs FMap__single_p__stp_def:
                (RSet
                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                    (FMap__fromFMap__stp(P__a, P__b) m)))"
-types  ('a,'b)FMap__SingletonFMap = " ('a, 'b)FMap__FMap"
+type_synonym  ('a,'b)FMap__SingletonFMap = " ('a, 'b)FMap__FMap"
 theorem FMap__thePair_Obligation_subtype: 
   "True"
   by auto
@@ -787,7 +787,7 @@ defs FMap__injective_p__stp_def:
                (RFun
                    (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                    (FMap__fromFMap__stp(P__a, P__b) m)))"
-types  ('a,'b)FMap__InjectiveFMap = " ('a, 'b)FMap__FMap"
+type_synonym  ('a,'b)FMap__InjectiveFMap = " ('a, 'b)FMap__FMap"
 theorem FMap__inverse_Obligation_subtype: 
   "\<lbrakk>Relation__injective_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
    finite (converse (FMap__fromFMap m))"

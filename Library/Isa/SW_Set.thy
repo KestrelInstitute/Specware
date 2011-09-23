@@ -114,7 +114,7 @@ defs Set__nonEmpty_p_def: "Set__nonEmpty_p s \<equiv> (s \<noteq> {})"
 consts Set__nonEmpty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__nonEmpty_p__stp_def: 
   "Set__nonEmpty_p__stp P__a s \<equiv> (s \<noteq> RSet P__a {})"
-types 'a Set__Set1 = "'a set"
+type_synonym 'a Set__Set1 = "'a set"
 
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
 "Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
@@ -197,7 +197,7 @@ lemma Set_single_stp_single:
 "\<lbrakk>x \<in> s; Set__single_p__stp P__a s\<rbrakk> \<Longrightarrow> Set__single_p s"
 by (auto simp:Set__single_p__stp_def Set__single_p_def)
 
-types 'a Set__Singleton = "'a set"
+type_synonym 'a Set__Singleton = "'a set"
 theorem Set__theMember_Obligation_the: 
   "\<lbrakk>Set__single_p s\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x \<in> s"
   by auto
@@ -359,7 +359,7 @@ next
           (x \<in> s) = (\<exists> i<n. f i = x)" by auto
 qed
 
-types 'a Set__FiniteSet = "'a set"
+type_synonym 'a Set__FiniteSet = "'a set"
 
 lemma Set__finite_insert__stp_sans:
 "\<lbrakk> Set__finite_p__stp P__a (s::'a \<Rightarrow> bool); Fun_PD P__a s; 
@@ -980,7 +980,7 @@ defs Set__infinite_p_def: "Set__infinite_p \<equiv> - finite"
 consts Set__infinite_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Rightarrow> bool"
 defs Set__infinite_p__stp_def: 
   "Set__infinite_p__stp P__a \<equiv> - (Set__finite_p__stp P__a)"
-types 'a Set__InfiniteSet = "'a set"
+type_synonym 'a Set__InfiniteSet = "'a set"
 consts Set__countable_p :: "'a set \<Rightarrow> bool"
 defs Set__countable_p_def: 
   "Set__countable_p s
@@ -996,7 +996,7 @@ defs Set__countable_p__stp_def:
                  \<and> (\<forall>(x::'a). 
                       P__a x \<and> x \<in> s 
                         \<longrightarrow> (\<exists>(i::nat). f i = x))))"
-types 'a Set__CountableSet = "'a set"
+type_synonym 'a Set__CountableSet = "'a set"
 consts Set__uncountable_p :: "'a set \<Rightarrow> bool"
 defs Set__uncountable_p_def: 
   "Set__uncountable_p \<equiv> (Set__infinite_p \<inter> - Set__countable_p)"
@@ -1005,7 +1005,7 @@ defs Set__uncountable_p__stp_def:
   "Set__uncountable_p__stp P__a
      \<equiv> (Set__infinite_p__stp P__a 
           \<inter> - (Set__countable_p__stp P__a))"
-types 'a Set__UncountableSet = "'a set"
+type_synonym 'a Set__UncountableSet = "'a set"
 consts isMinIn_s :: "'a set \<Rightarrow> 'a set set \<Rightarrow> bool"	(infixl "isMinIn'_s" 60)
 defs isMinIn_s_def: 
   "((s::'a set) isMinIn_s (ss::'a set set))
@@ -1026,7 +1026,7 @@ defs Set__hasMin_p__stp_def:
   "Set__hasMin_p__stp P__a ss
      \<equiv> (\<exists>(s::'a set). 
           Set_P P__a s \<and> Set__isMinIn__stp P__a(s, ss))"
-types 'a Set__SetOfSetsWithMin = "'a set set"
+type_synonym 'a Set__SetOfSetsWithMin = "'a set set"
 theorem Set__min_Obligation_the: 
   "\<lbrakk>Set__hasMin_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMinIn_s ss"
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
@@ -1063,7 +1063,7 @@ defs Set__hasMax_p__stp_def:
   "Set__hasMax_p__stp P__a ss
      \<equiv> (\<exists>(s::'a set). 
           Set_P P__a s \<and> Set__isMaxIn__stp P__a(s, ss))"
-types 'a Set__SetOfSetsWithMax = "'a set set"
+type_synonym 'a Set__SetOfSetsWithMax = "'a set set"
 theorem Set__max_Obligation_the: 
   "\<lbrakk>Set__hasMax_p ss\<rbrakk> \<Longrightarrow> \<exists>!(s::'a set). s isMaxIn_s ss"
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)

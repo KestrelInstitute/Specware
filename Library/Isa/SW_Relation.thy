@@ -1,7 +1,7 @@
 theory SW_Relation
 imports SW_Set
 begin
-types  ('a,'b)Relation__Relation = "('a \<times> 'b) set"
+type_synonym  ('a,'b)Relation__Relation = "('a \<times> 'b) set"
 theorem Relation__domain__def: 
   "((x::'a) \<in> Domain r) = (\<exists>(y::'b). (x, y) \<in> r)"
   by (simp add: Domain_def)
@@ -93,7 +93,7 @@ defs Relation__total_p__stp_def:
           \<lambda> (r:: ('a, 'b)Relation__Relation). 
             RSet P__a (Relation__domain__stp P__b r) 
               = RSet P__a UNIV)"
-types  ('a,'b)Relation__TotalRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__TotalRelation = " ('a, 'b)Relation__Relation"
 consts Relation__surjective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__surjective_p_def: 
   "Relation__surjective_p r \<equiv> (Range r = UNIV)"
@@ -105,7 +105,8 @@ defs Relation__surjective_p__stp_def:
           \<lambda> (r:: ('a, 'b)Relation__Relation). 
             RSet P__b (Relation__range__stp P__a r) 
               = RSet P__b UNIV)"
-types  ('a,'b)Relation__SurjectiveRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__SurjectiveRelation = 
+  " ('a, 'b)Relation__Relation"
 consts Relation__functional_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__functional_p_def: 
   "Relation__functional_p r
@@ -122,7 +123,7 @@ defs Relation__functional_p__stp_def:
                 \<longrightarrow> Relation__apply r x 
                       \<in> Set__single_p__stp P__b 
                           \<union> Set__empty_p__stp P__b)"
-types  ('a,'b)Relation__Map = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__Map = " ('a, 'b)Relation__Relation"
 consts Relation__injective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__injective_p_def: 
   "Relation__injective_p r
@@ -139,7 +140,7 @@ defs Relation__injective_p__stp_def:
                 \<longrightarrow> Relation__applyi r y 
                       \<in> Set__single_p__stp P__a 
                           \<union> Set__empty_p__stp P__a)"
-types  ('a,'b)Relation__InjectiveRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__InjectiveRelation = " ('a, 'b)Relation__Relation"
 consts Relation__bijective_p :: " ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__bijective_p_def: 
   "Relation__bijective_p
@@ -155,7 +156,7 @@ defs Relation__bijective_p__stp_def:
             \<inter> (Relation__surjective_p__stp(P__a, P__b) 
                  \<inter> (Relation__functional_p__stp(P__a, P__b) 
                       \<inter> Relation__injective_p__stp(P__a, P__b))))"
-types  ('a,'b)Relation__BijectiveRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__BijectiveRelation = " ('a, 'b)Relation__Relation"
 consts Relation__totalOn_p :: "'a set \<Rightarrow>  ('a, 'b)Relation__Relation \<Rightarrow> bool"
 defs Relation__totalOn_p_def: 
   "Relation__totalOn_p s r \<equiv> (Domain r = s)"
@@ -201,8 +202,9 @@ defs Relation__bijectiveOn_p__stp_def:
                 \<inter> (Relation__surjectiveOn_p__stp(P__a, P__b) s_cqt 
                      \<inter> (Relation__functional_p__stp(P__a, P__b) 
                           \<inter> Relation__injective_p__stp(P__a, P__b))))"
-types  ('a,'b)Relation__FiniteRelation = " ('a, 'b)Relation__Relation"
-types  ('a,'b)Relation__InfiniteRelation = " ('a, 'b)Relation__Relation"
-types  ('a,'b)Relation__CountableRelation = " ('a, 'b)Relation__Relation"
-types  ('a,'b)Relation__UncountableRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__FiniteRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__InfiniteRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__CountableRelation = " ('a, 'b)Relation__Relation"
+type_synonym  ('a,'b)Relation__UncountableRelation = 
+  " ('a, 'b)Relation__Relation"
 end

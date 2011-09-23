@@ -165,14 +165,14 @@ theorem Nat__natToString_Obligation_subtype0:
 theorem Nat__natToString_Obligation_subtype1: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> x mod 10 < 10"
   by auto
-consts Nat__natToString :: "nat \<Rightarrow> string"
-recdef Nat__natToString "measure size"
-  "Nat__natToString x
-     = (if x < 10 then 
-          Nat__digitToString x
-        else 
-          Nat__natToString (x div 10) 
-            @ Nat__digitToString (x mod 10))"
+fun Nat__natToString :: "nat \<Rightarrow> string"
+where
+   "Nat__natToString x 
+      = (if x < 10 then 
+           Nat__digitToString x
+         else 
+           Nat__natToString (x div 10) 
+             @ Nat__digitToString (x mod 10))"
 
 
 lemma Nat__natToString_small: 

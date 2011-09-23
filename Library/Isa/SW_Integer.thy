@@ -1,7 +1,7 @@
 theory SW_Integer
 imports Compare Function Presburger
 begin
-types Integer__Integer = "int"
+type_synonym Integer__Integer = "int"
 theorem Integer__isucc_subtype_constr: 
   "bij succ"
    apply(auto simp add: bij_def inj_on_def surj_def)
@@ -232,7 +232,7 @@ theorem Integer__induction_naturals:
   done
 consts Nat__posNat_p :: "nat \<Rightarrow> bool"
 defs Nat__posNat_p_def [simp]: "Nat__posNat_p n \<equiv> (n > 0)"
-types Nat__PosNat = "nat"
+type_synonym Nat__PosNat = "nat"
 theorem Nat__succ_Obligation_subtype: 
   "succ (int n) \<ge> 0"
   by auto
@@ -266,7 +266,7 @@ theorem Integer__abs__def:
 theorem Integer__abs__def1: 
   "\<lbrakk>\<not> ((i::int) \<ge> 0)\<rbrakk> \<Longrightarrow> zabs i = nat (- i)"
   by auto
-types Integer__Int0 = "int"
+type_synonym Integer__Int0 = "int"
 theorem Integer__divides__def: 
   "x zdvd y = (\<exists>(z::int). x * z = y)"
   apply(auto simp add: dvd_def)

@@ -100,9 +100,9 @@ lemma Function__bij_inv_stp:
    Function__bijective_p__stp (\<lambda>x. True, A) (inv_on A f)"
   by (simp add: univ_true bij_ON_imp_bij_ON_inv)
 
-types  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
-types  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
-types  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
+type_synonym  ('a,'b)Function__Injection = "'a \<Rightarrow> 'b"
+type_synonym  ('a,'b)Function__Surjection = "'a \<Rightarrow> 'b"
+type_synonym  ('a,'b)Function__Bijection = "'a \<Rightarrow> 'b"
 theorem Function__inverse_Obligation_the: 
   "\<lbrakk>bij f\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). f x = (y::'b)"
   apply(auto simp add: bij_def surj_def inj_on_def)

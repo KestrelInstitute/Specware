@@ -4,9 +4,9 @@ begin
 typedecl 'a FSet__FSet
 consts FSet__FSet_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__FSet \<Rightarrow> bool"
 consts FSet__toFSet :: "'a Set__FiniteSet \<Rightarrow> 'a FSet__FSet"
-axioms FSet__toFSet_subtype_constr: 
+axiomatization where FSet__toFSet_subtype_constr: 
   "Function__bijective_p__stp(finite, TRUE) FSet__toFSet"
-axioms FSet__toFSet_subtype_constr1: 
+axiomatization where FSet__toFSet_subtype_constr1: 
   "Function__bijective_p__stp(Set__finite_p__stp P__a, TRUE) FSet__toFSet"
 consts FSet__fromFSet :: "'a FSet__FSet \<Rightarrow> 'a Set__FiniteSet"
 defs FSet__fromFSet_def: 
@@ -194,7 +194,7 @@ consts FSet__nonEmpty_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a FSet__
 defs FSet__nonEmpty_p__stp_def: 
   "FSet__nonEmpty_p__stp P__a s
      \<equiv> Set__nonEmpty_p__stp P__a (FSet__fromFSet__stp P__a s)"
-types 'a FSet__NonEmptyFSet = "'a FSet__FSet"
+type_synonym 'a FSet__NonEmptyFSet = "'a FSet__FSet"
 theorem FSet__single_Obligation_subtype: 
   "finite (Set__single x)"
   by auto
@@ -216,7 +216,7 @@ defs FSet__onlyMemberOf__stp_def:
   "FSet__onlyMemberOf__stp P__a
      \<equiv> (\<lambda> ((x::'a), (s::'a FSet__FSet)). 
           Set__onlyMemberOf__stp P__a(x, FSet__fromFSet__stp P__a s))"
-types 'a FSet__SingletonFSet = "'a FSet__FSet"
+type_synonym 'a FSet__SingletonFSet = "'a FSet__FSet"
 theorem FSet__theMember_Obligation_subtype: 
   "True"
   by auto
