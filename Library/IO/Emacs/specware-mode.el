@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 4.2.11")
+  "specware-mode, Version 4.2.12")
 
 (provide 'specware-mode)
 
