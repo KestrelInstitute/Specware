@@ -670,7 +670,10 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                          showValue(val, c.recursive?, Some uid, Some thy_nm))
            else ();
 	 prString (case thy_nm of
-                     | "Base" -> "Base"
+                     | "Base" ->
+                       (case getEnv "SPECWARE4" of
+                          | Some _ -> "\"$SPECWARE4/Library/Isa/Base\""
+                          | None -> "Base")
                      | _ -> thy_nm))
 
   op  ppSpecElements: Context -> Spec -> SpecElements -> Pretty
@@ -1186,6 +1189,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
    result
 
  op isabelleReservedWords: List String = ["value", "defs", "theory", "imports", "begin", "end", "axioms",
+                                          "axiomatization",
                                           "recdef", "primrec", "consts", "class", "primitive",
                                           "next", "instance", "and", "open", "extract"]
  op disallowedVarNames: List String =          % \_dots Don't know how to get all of them
@@ -1308,7 +1312,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                                      else [[prString "done",prEmpty]])))
 	   | _ ->
 	     prBreakCat 2
-	       [[prString "types ",
+	       [[prString "type_synonym ",
 		 ppTyVars tvs,
 		 ppIdInfo aliases,
 		 prString " = "],
@@ -1585,8 +1589,9 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
       %% The following conditions are temporary!!
       %% Don't want f(x,y) = ... to be a fun because this would be added as a rewrite
       && (some?(findParenAnnotation opt_prag)
-           || none?(findMeasureAnnotation opt_prag)
-               && (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
+           || % none?(findMeasureAnnotation opt_prag)
+               %&&
+               (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
                      | [(lhs, rhs)] ->
                        (case lhs of
                         | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
@@ -1596,7 +1601,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                           (foldSubTerms (fn (tm, count) -> if embed? Record tm then count + 1 else count)
                              0 lhs)
                            > 1
-                        | _ -> false)
+                        | _ -> containsRefToOp?(rhs, mainId) )
                      | _ -> true)
               )
 
@@ -2258,7 +2263,7 @@ op patToTerm(pat: Pattern, ext: String, c: Context): Option MS.Term =
  op  ppPropertyType : PropertyType -> Pretty
  def ppPropertyType propType =
    case propType of
-     | Axiom -> prString "axioms"
+     | Axiom -> prString "axiomatization where"
      | Theorem -> prString "theorem"
      | Conjecture -> prString "theorem"
      | any -> fail ("No match in ppPropertyType with: '"
