@@ -80,7 +80,7 @@ is not valid. A path without an element preceeding the '#' is invalid.
       when (lastSuffixChar = ##)
         (raise (SyntaxError "Misplaced #"));
       (case (splitAtChar ## suffix) of
-         | [] -> error "pathToRelativeUID: Internal error"
+         | [] -> SpecCalc.error "pathToRelativeUID: Internal error"
          | [pathEnd] ->
             (case charList of
               | #/::_ -> return (SpecPath_Relative
@@ -325,7 +325,7 @@ The next two functions will disappear.
   op  removeLastElem : (List String) -> Env (List String)
   def removeLastElem elems =
     case elems of
-      | [] -> error "removeLastElem: encountered empty string list"
+      | [] -> SpecCalc.error "removeLastElem: encountered empty string list"
       | x::[] -> return []
       | x::rest -> {
           suffix <- removeLastElem rest;
@@ -335,14 +335,14 @@ The next two functions will disappear.
   op  lastElem : (List String) -> Env String
   def lastElem elems =
     case elems of
-      | [] -> error "lastElem: encountered empty string list"
+      | [] -> SpecCalc.error "lastElem: encountered empty string list"
       | x::[] -> return x
       | _::rest -> lastElem rest
 
   op  removeLast: [a] List a -> Env (List a)
   def removeLast elems =
     case elems of
-      | [] -> error "removeLast: encountered empty list"
+      | [] -> SpecCalc.error "removeLast: encountered empty list"
       | x::[] -> return []
       | x::rest -> {
           suffix <- removeLast rest;
@@ -352,13 +352,13 @@ The next two functions will disappear.
   op  first : [a] List a -> Env a
   def first elems =
     case elems of
-      | [] -> error "first: encountered empty list"
+      | [] -> SpecCalc.error "first: encountered empty list"
       | x::_ -> return x
 
   op  last : [a] List a -> Env a
   def last elems =
     case elems of
-      | [] -> error "last: encountered empty list"
+      | [] -> SpecCalc.error "last: encountered empty list"
       | x::[] -> return x
       | _::rest -> last rest
 (*

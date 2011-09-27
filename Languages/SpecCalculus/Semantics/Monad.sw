@@ -141,8 +141,8 @@ This is meant to be for unrecoverable errors. Perhaps it should just call
 \verb+fail+. Heaven help someone trying to debug monadic code within
 the lisp debugger.
 *)
-  op error : [a] String -> Env a
-  def error str = raise (Fail str)
+  op SpecCalc.error : [a] String -> Env a
+  def SpecCalc.error str = raise (Fail str)
 (*
 This is for going into the Lisp Debugger when called during nomal madic execution.
 *)

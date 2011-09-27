@@ -107,7 +107,7 @@ axioms, etc.
       | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term,position), spc)) 
       | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term,position), spc))
       | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term,position), spc))
-      | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
+      | Claim   _                                -> SpecCalc.error "evaluateSpecElem: unsupported claim type"
 
       | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, position), spc))
       | Comment str                              -> return (addComment    (str, position, spc))
