@@ -2,7 +2,8 @@ System qualifying spec
 
   op caseSensitiveSubstrate?: Boolean
 
-  op fail     : [a] String -> a
+  op error    : [a] String -> a   % cl error
+  op fail     : [a] String -> a   % cl break
 
   %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
   op debug    : [a] String -> a % calls lisp's break if the specwareDebug? flag is set.
@@ -78,6 +79,7 @@ System qualifying spec
        | hd::tl -> (f hd; app f tl)
 
 #translate Haskell -morphism
+System.error -> error
 System.fail -> error
 System.warn -> error
 System.print -> error

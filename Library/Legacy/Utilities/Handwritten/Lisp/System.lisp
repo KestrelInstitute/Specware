@@ -9,6 +9,10 @@
   #+case-sensitive t
   #-case-sensitive nil)
 
+(defun |!error| (s)
+  (format t "Error: ~a~%" s)
+  (error s))
+
  ;;; op fail     : fa(a) String -> a
 (defun fail (s) (break "~a" s))
 
