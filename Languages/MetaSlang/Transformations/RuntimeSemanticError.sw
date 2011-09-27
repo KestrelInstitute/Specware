@@ -33,6 +33,10 @@ op restartCount: Nat = 0
 
 op [a] catchAndRestart: a -> a
 op [a] throwToRestart: String -> a
+op [a] catchAndRestartChangeMode: a -> a
+
+op [a] catchRuntimeMonitorError: a * a -> a
+op [a] catchRuntimeMonitorError1: a * a -> a
 
 #translate lisp -morphism
  SemanticError.catchAndRestart -> SemanticError::catchAndRestart
