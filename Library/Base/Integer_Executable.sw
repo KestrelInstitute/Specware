@@ -15,4 +15,7 @@ refine def divE (i:Int, j:Int0): Int =
 refine def modE (i:Int, j:Int0): Int = 
   i modF abs j
 
+refine def divT (i:Int, j:Int0): Int =
+  (abs i) divF (abs j) * sign i
+
 endspec
