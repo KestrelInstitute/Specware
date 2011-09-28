@@ -11,7 +11,7 @@ op addSubtypeChecks(spc: Spec): Spec =
 op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateComplain")
 op assurePredicateQId: QualifiedId = Qualified("SemanticError", "assurePredicate")
 
-op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Spec,
+op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, fn_qid: QualifiedId, spc: Spec,
                             checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
                             recovery_fns: List(QualifiedId * QualifiedId)): MS.Term =
   let def mkAssureForm(arg, pred, complain_fn, ty) =
@@ -21,7 +21,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
             case ty of
               | Base(qid, [], _) ->
                 (case findLeftmost (fn (ty_qid, _) -> ty_qid = qid) recovery_fns of
-                   | Some(_, fix_fn_qid) -> (assurePredicateQId, mkOp(fix_fn_qid, mkArrow(ty, ty)))
+                   | Some(_, fix_fn_qid) | fix_fn_qid ~= fn_qid -> (assurePredicateQId, mkOp(fix_fn_qid, mkArrow(ty, ty)))
                    | _ -> (checkPredicateComplainQId, complain_fn))
               | _ -> (checkPredicateComplainQId, complain_fn)
         in                                             
@@ -49,7 +49,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
                 | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
                   % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm body) in
                   let warn_fn = mkLambda(mkWildPat result_sup_ty,
-                                         mkString("Subtype violation on result of "^show qid))
+                                         mkString("Subtype violation on result of "^show fn_qid))
                   in      
                   mkAssureForm(mkVar result_vn, pred, warn_fn, rng)
                 | _ -> []
@@ -57,7 +57,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
           let checkRefine_tests =
               if ~checkRefine? then []
               else
-              case findTheOp(spc, qid) of
+              case findTheOp(spc, fn_qid) of
                 | None -> []
                 | Some opinfo ->
               let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
@@ -66,7 +66,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
               else
               let prev_dfn = dfns@1 in
               let warn_fn = mkLambda(mkWildPat(mkProduct(doms ++ [rng])),
-                                     mkString("Result does not match spec for "^show qid))
+                                     mkString("Result does not match spec for "^show fn_qid))
               in
               let arg_result_tm = mkTuple(param_tms ++ [mkVar result_vn]) in
               let rhs = foldl (fn (hd, param_tm) -> simplifiedApply(hd, param_tm, spc)) prev_dfn param_tms in
@@ -98,7 +98,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, qid: QualifiedId, spc: Sp
                 map (fn assure_fm -> (param_pat, assure_fm)) (mkAssureForm(param_tm, pred, warn_fn, param_ty))
               def checkArg(param_ty, param_pat, param_tm) =
                 let warn_fn = mkLambda(mkWildPat param_ty,
-                                       mkString("Subtype violation on arguments of "^show qid))
+                                       mkString("Subtype violation on arguments of "^show fn_qid))
                 in
                 case param_pat of
                   | VarPat _ ->
