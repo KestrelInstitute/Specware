@@ -273,8 +273,9 @@
 (defun showx (&optional x)
   (setq x (norm-unitid-str x))
   (flet ((show-int (x)
-	   (let ((SpecCalc::printSpecExpanded? t))
-	     (declare (special SpecCalc::printSpecExpanded?))
+	   (let ((SpecCalc::printSpecExpanded? t)
+                 (AnnSpecPrinter::printPragmas? nil))
+	     (declare (special SpecCalc::printSpecExpanded? AnnSpecPrinter::printPragmas?))
 	     (if x
 		 (Specware::evaluatePrint_fromLisp-2 (setq *last-unit-Id-_loaded* (string x))
 						     (use-x-symbol?))

@@ -34,6 +34,7 @@ AnnSpecPrinter qualifying spec
  import /Library/Legacy/DataStructures/NatMapSplay  % for markTable's
 
  op SpecCalc.getBaseSpec : () -> Spec % defined in /Languages/SpecCalculus/Semantics/Environment
+ op printPragmas?: Bool = true
 
  %% ========================================================================
 
@@ -1318,7 +1319,7 @@ AnnSpecPrinter qualifying spec
 			     [(0, pp.Spec), 
 			      (0, string " ")]))]
 	     ++
-	     (ppSpecElements context spc (NotSpec [base_spec]) spc.elements)
+	     (ppSpecElements context spc (NotSpec []) spc.elements)
 	     ++
 	     [(0, pp.EndSpec), 
 	      (0, string "")])
@@ -1424,10 +1425,12 @@ AnnSpecPrinter qualifying spec
 	    else
 	      Cons ((0, string (" %% " ^ str)),
 		    ppResult))
-	 | Pragma (prefix, body, postfix, pos)->
-	   (index+1,
-	    (0, string " ") :: Cons ((1, string (prefix ^ body ^ postfix)),
-                                     ppResult))
+	 | Pragma (prefix, body, postfix, pos) ->
+	   if printPragmas?
+             then (index+1,
+                   (0, string " ") :: Cons ((1, string (prefix ^ body ^ postfix)),
+                                            ppResult))
+             else (0, [])
 
      def aux(elements,afterOp?,result) =
          case elements of
@@ -1510,7 +1513,7 @@ AnnSpecPrinter qualifying spec
                   ppOpDecl context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[4]: " ^ printQualifiedId qid ^ "\n") in
-		(0, []))
+		(4, [(0, string("op "^show qid))]))
 	 | OpDef (qid, refine_num, _) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
@@ -1544,9 +1547,11 @@ AnnSpecPrinter qualifying spec
 	      Cons ((0, string (" %% " ^ str)),
 		    ppResult))
 	 | Pragma (prefix, body, postfix, pos) \_rightarrow
-	   (index+1,
-	    Cons ((1, string (prefix ^ body ^ postfix)),
-		  ppResult))
+           if printPragmas?
+             then (index+1,
+                   Cons ((1, string (prefix ^ body ^ postfix)),
+                         ppResult))
+             else (0, [])
 
      def aux(elements,afterOp?,result) =
          case elements of
@@ -1592,11 +1597,11 @@ AnnSpecPrinter qualifying spec
    
  def specToPretty spc = 
    let base_spec = SpecCalc.getBaseSpec () in
-   ppSpecHidingImportedStuff (initialize (asciiPrinter, false)) base_spec spc
+   ppSpecHidingImportedStuff (initialize (asciiPrinter, false)) emptySpec spc
    
  def specToPrettyXSymbol spc = 
    let base_spec = SpecCalc.getBaseSpec () in
-   ppSpecHidingImportedStuff (initialize (XSymbolPrinter, false)) base_spec spc
+   ppSpecHidingImportedStuff (initialize (XSymbolPrinter, false)) emptySpec spc
    
  def specToPrettyR spc = 
    ppSpecR (initialize (asciiPrinter, false)) spc
