@@ -753,7 +753,7 @@ SpecsToI2L qualifying spec
       | SortedTerm (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, spc) in typed_expr.expr  % TODO: add cast? ??
       | _ -> 
         % Bind, The, LetRec, Lambda, Transform, Pi, And, Any 
-        let s = "Unrecognize term in term2expression: " ^ printTerm tm in
+        let s = "Unrecognized term in term2expression: " ^ printTerm tm in
         let _ = writeLine s in
         I_Str s
 
