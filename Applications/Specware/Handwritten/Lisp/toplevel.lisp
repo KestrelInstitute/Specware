@@ -9,6 +9,8 @@
 (defpackage :TypeChecker)
 (defpackage :SWShell)
 (defpackage :swank)
+(defpackage :AnnSpecPrinter)
+
 ;; Toplevel Lisp aliases for Specware
 
 (defparameter *sw-help-strings*
