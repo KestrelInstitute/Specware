@@ -9,7 +9,7 @@ SubstBaseSpecs qualifying spec
  op substBaseSpecsJ(spc: Spec): Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
 
  %% To get an executable base
- op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable"]
+ op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable", "/Library/Base/Integer_Executable"]
  op baseExecutableSpecNamesJ : List String = ["/Library/Base/List_Executable"]
  
  op substBaseSpecOpsAndTypes () : QualifiedIds * QualifiedIds =
