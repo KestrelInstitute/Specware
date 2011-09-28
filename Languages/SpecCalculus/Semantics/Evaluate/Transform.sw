@@ -196,6 +196,11 @@ spec
          return [(iso_qid, osi_qid)]}
       | tm :: _ -> raise (TypeCheck (posOf tm, "Illegal isomorphism reference."))
 
+  op checkForNonAttributes(val_prs: List(String * TransformExpr), fld_names: List String, pos: Position): SpecCalc.Env () =
+    case findLeftmost(fn (nm, _) -> nm nin? fld_names) val_prs of
+      | None -> return()
+      | Some(nm,_) -> raise (TypeCheck (pos, "Unexpected field: "^nm))
+
   op findField(fld_name: String, val_prs: List(String * TransformExpr), pos: Position): SpecCalc.Env TransformExpr =
     case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
       | Some(_, val) -> return val
@@ -236,13 +241,13 @@ spec
                          return(o_nat)}
       | None -> return default
       
-  op findBoolDefault(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position), default: Bool): SpecCalc.Env Bool =
+  op findBoolDefault(fld_name: String, val_prs: List(String * TransformExpr), pos: Position, default: Bool): SpecCalc.Env Bool =
     case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
       | Some(_, val) -> {o_bool <- extractBool val;
                          return(o_bool)}
       | None -> return default
 
-  op findQidPairs(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env(List(QualifiedId * QualifiedId)) =
+  op findQidPairs(fld_name: String, val_prs: List(String * TransformExpr), pos: Position): SpecCalc.Env(List(QualifiedId * QualifiedId)) =
     case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
       | Some(_, val) -> 
         (case val of
@@ -264,12 +269,13 @@ spec
      o_qual <- findOptName("qualifier", val_prs);
      return(fun, pos, o_return_pos, name, ty, within, val, o_qual)}
 
-  op getAddSemanticFields(val_prs: List(String * TransformExpr) * Position)
+  op getAddSemanticFields(val_prs: List(String * TransformExpr), pos: Position)
        : SpecCalc.Env(Bool * Bool * Bool * List(QualifiedId * QualifiedId)) =
-    {checkArgs <- findBoolDefault("checkArgs?", val_prs, true);
-     checkResult <- findBoolDefault("checkResult?", val_prs, true);
-     checkRefine <- findBoolDefault("checkRefine?", val_prs, false);
-     recovery_fns <- findQidPairs("recoveryFns", val_prs);
+    {checkForNonAttributes(val_prs, ["checkArgs?", "checkResult?", "checkRefine?", "recoveryFns"], pos);
+     checkArgs <- findBoolDefault("checkArgs?", val_prs, pos, true);
+     checkResult <- findBoolDefault("checkResult?", val_prs, pos, true);
+     checkRefine <- findBoolDefault("checkRefine?", val_prs, pos, false);
+     recovery_fns <- findQidPairs("recoveryFns", val_prs, pos);
      return(checkArgs, checkResult, checkRefine, recovery_fns)}
 
   op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
