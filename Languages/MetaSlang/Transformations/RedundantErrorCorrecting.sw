@@ -150,7 +150,7 @@ op findIdentityExpr(ty: Sort, spc: Spec): Option(Var * MS.Term) =
 op prependIdInQId(Qualified(q, id): QualifiedId, prefix: String): QualifiedId =
   Qualified(q, prefix ^ id)
 
-op makeCheckRandom?: Bool = false
+op makeCheckRandom?: Bool = true
 op randomCheck?Appl: MS.Term = mkAppl(mkOp(Qualified("SemanticError", "randomCheck?"),
                                            mkArrow(mkProduct[], boolSort)),
                                       [])
@@ -184,11 +184,20 @@ op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MS.Term, prim
                               Fun(Op(op_qids@trg_ty_ind, fx), mkArrow(dom, ty_targets@trg_ty_ind), a)
                             | _ ->
                               if primary_ty_qid in? typesInType dom
-                                then Fun(Op(op_qids@src_ty_ind, fx), mkArrow(replaceType(dom, primary_ty, ty_targets@src_ty_ind), rng), a)
+                                then Fun(Op(op_qids@src_ty_ind, fx),
+                                         mkArrow(replaceType(dom, primary_ty, ty_targets@src_ty_ind), rng), a)
                               else t)
                | _ -> t                ,
            id, id)
      ident_exp
+
+op mkNumCondn(ps: Terms, i: Nat): MS.Term =
+  case ps of
+    | [] -> mkNat i
+    | p :: r_ps -> MS.mkIfThenElse(p, mkNat i, mkNumCondn(r_ps, i+1))
+
+op mkCaseExpr(c_tm: MS.Term, cases: Match): MS.Term=
+  mkApply(Lambda(cases, noPos), c_tm)
 
 op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: Sorts, pos: Position,
                      opt_qual: Option Qualifier, ops_map: QIdMap(List QualifiedId), spc: Spec, new_spc: Spec)
@@ -203,21 +212,63 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
   let arg = mkTuple(map mkVar arg_vars) in
   let subtype_pred_tms = map (fn (v,ty) -> simplifiedApply(subtypePredicate(ty, new_spc), mkVar(v,ty), spc)) arg_vars in
   let def mkTestFixBody(subtype_pred_tms) =
-         if length arg_vars = 2
-          then MS.mkIfThenElse(subtype_pred_tms@0,
-                               MS.mkIfThenElse(subtype_pred_tms@1, mkTuple(map mkVar arg_vars),
-                                               mkSeq[mkWarningForm("Component 2 of "^show primary_ty_qid^" corrupted! Recomputing from component 1"),
-                                                     mkTuple[mkVar(arg_vars@0),
-                                                             mkConverterFromIdFun(0, 1, mkVar(arg_vars@0), primary_ty_qid, ident_param, ident_exp,
-                                                                                  primary_ty, ty_targets, ops_map, spc)]]),
-                               MS.mkIfThenElse(subtype_pred_tms@1, 
-                                               mkSeq[mkWarningForm("Component 1 of "^show primary_ty_qid^" corrupted! Recomputing from component 2"),
-                                                     mkTuple[mkConverterFromIdFun(1, 0, mkVar(arg_vars@1), primary_ty_qid, ident_param, ident_exp,
-                                                                                  primary_ty, ty_targets, ops_map, spc),
-                                                             mkVar(arg_vars@1)]],
-                                               mkSeq[mkWarningForm("All implementations of "^show primary_ty_qid^" corrupted!"),
-                                                     mkTuple(map mkVar arg_vars)]))
-          else mkString "mkTestFixBody in RedundantErrorCorrecting only implemented for two"
+       let num_args = length arg_vars in
+       let arg_var_tms = map mkVar arg_vars in
+       if num_args = 2
+        then
+          MS.mkIfThenElse
+            (subtype_pred_tms@0,
+             MS.mkIfThenElse
+               (subtype_pred_tms@1, mkTuple(arg_var_tms),
+                mkSeq[mkWarningForm("Component 2 of "^show primary_ty_qid^" corrupted! Recomputing from component 1"),
+                      mkTuple[mkVar(arg_vars@0),
+                              mkConverterFromIdFun(0, 1, mkVar(arg_vars@0), primary_ty_qid, ident_param, ident_exp,
+                                                   primary_ty, ty_targets, ops_map, spc)]]),
+             MS.mkIfThenElse
+               (subtype_pred_tms@1, 
+                mkSeq[mkWarningForm("Component 1 of "^show primary_ty_qid^" corrupted! Recomputing from component 2"),
+                      mkTuple[mkConverterFromIdFun(1, 0, mkVar(arg_vars@1), primary_ty_qid, ident_param, ident_exp,
+                                                   primary_ty, ty_targets, ops_map, spc),
+                              mkVar(arg_vars@1)]],
+                mkSeq[mkWarningForm("All implementations of "^show primary_ty_qid^" corrupted!"),
+                      mkTuple(arg_var_tms)]))
+       else
+         let result_tuple = mkTuple(arg_var_tms) in
+         let flags = tabulate(num_args, fn i -> ("p"^show i, boolSort)) in
+         let flag_binds = tabulate(num_args, fn i -> (mkVarPat(flags@i), subtype_pred_tms@i)) in
+         let flag_tms = map mkVar flags in
+         let good_posn = ("good_posn", natSort) in
+         let result_cases =
+             tabulate(num_args,
+                      fn i ->
+                        let i_cases =
+                            tabulate(num_args,
+                                     fn j -> (mkNatPat j, trueTerm,
+                                              if i = j then arg_var_tms@i
+                                                else let conv_tm = mkConverterFromIdFun(j, i, arg_var_tms@j, primary_ty_qid, ident_param,
+                                                                                        ident_exp, primary_ty, ty_targets, ops_map, spc)
+                                                     in
+                                                     let warn_tm = mkWarningForm("Component "^show(i+1)^" of "^show primary_ty_qid
+                                                                                   ^" corrupted! Recomputing from component "^show(j+1))
+                                                     in
+                                                     if j < i
+                                                       then MS.mkIfThenElse
+                                                              (flag_tms@i, arg_var_tms@i,
+                                                               mkSeq[warn_tm, conv_tm])
+                                                       else mkSeq[warn_tm, conv_tm]))
+                        in
+                        mkCaseExpr(mkVar good_posn, i_cases))
+         in
+         mkLet(flag_binds,
+               MS.mkIfThenElse
+                 (mkConj(flag_tms),
+                  result_tuple,
+                  mkLet([(mkVarPat good_posn, mkNumCondn(flag_tms, 0))],
+                        MS.mkIfThenElse
+                          (mkEquality(natSort, mkVar good_posn, mkNat num_args),
+                           mkSeq[mkWarningForm("All implementations of "^show primary_ty_qid^" corrupted!"),
+                                 result_tuple],
+                           mkTuple result_cases))))
   in
   let fix_body = simplify spc (mkTestFixBody(subtype_pred_tms)) in
   let check_fn = mkLambda(param, if makeCheckRandom?
@@ -228,7 +279,8 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
 %% Defined in /Languages/SpecCalculus/Semantics/Evaluate/Spec.sw
 op SpecCalc.mergeImport: SCTerm -> Spec -> Spec -> Position -> Env Spec
 
-op redundantErrorCorrectingProduct (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
+op redundantErrorCorrectingProduct (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier)
+                                   (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
