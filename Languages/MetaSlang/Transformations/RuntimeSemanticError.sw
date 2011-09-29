@@ -38,6 +38,27 @@ op [a] catchAndRestartChangeMode: a -> a
 op [a] catchRuntimeMonitorError: a * a -> a
 op [a] catchRuntimeMonitorError1: a * a -> a
 
+op [a] returnMostPopular(l: List a): a =
+  let def addOrNew(groups, x) =
+        case groups of
+          | [] -> [[x]]
+          | g :: r_groups ->
+            if x = head g then (x :: g) :: r_groups
+              else g :: addOrNew(r_groups, x)
+  in
+  let grouped = foldl addOrNew [] l in
+  case grouped of
+    | [x :: _] -> x                     % All equal
+    | _ ->
+  let max_size = foldl (fn (m, g) -> max(length g, m)) 0 grouped in
+  let max_grouped = filter (fn g -> length g = max_size) grouped in
+  case max_grouped of
+    | [x :: _] -> (warn("Multiple results. Returning most popular.");
+                   x)
+    | (x :: _) :: _ ->
+      (warn("Multiple results of equal popularity. Returning first.");
+       x)
+
 #translate lisp -morphism
  SemanticError.catchAndRestart -> SemanticError::catchAndRestart
  SemanticError.throwToRestart  -> SemanticError::throwToRestart

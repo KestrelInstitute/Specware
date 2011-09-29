@@ -11,7 +11,8 @@ op criticalQIdMap(qid_maps: List QualifiedIdMap): QIdMap(List QualifiedId) =
    foldMap (fn result_map -> fn d -> fn c ->
             let r_c_s = mapPartial (fn qid_mapi ->
                                     case evalPartial qid_mapi d of
-                                      | Some ci | ci ~= c -> Some ci 
+                                      | Some ci | ci ~= c ->
+                                        Some ci 
                                       | _ -> None)
                           r_qid_maps
             in
@@ -38,6 +39,14 @@ op replaceType(ty: Sort, src_ty: Sort, trg_ty: Sort): Sort =
 op replaceTypeInPat(pat: Pattern, src_ty: Sort, trg_ty: Sort): Pattern =
   mapPattern (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) pat
 
+op mkListType(ty: Sort): Sort = mkBase(Qualified("List", "List"), [ty])
+
+op mkListForm(tms: Terms, ty: Sort): MS.Term =
+  case tms of
+    | [] -> mkEmbed0("Nil", mkListType ty)
+    | tm1 :: r_tms ->
+      mkApply(mkEmbed1("Cons", mkArrow(mkProduct[ty, mkListType ty], mkListType ty)),
+              mkTuple[tm1, mkListForm(r_tms, ty)])
 
 op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term, ty_targets: Sorts,
                   op_target_qids: QualifiedIds, spc: Spec): MS.Term =
@@ -64,11 +73,15 @@ op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term
             let Some rng = rangeOpt(spc, ty) in
             Lambda([(convertPat pat, pred, convertDefTyArgs(bod, rng, args ++ [new_args], src_params ++ new_src_params))], a)
           | _ ->
+            let result_comps = tabulate(length op_targets,
+                                        fn i -> mkApplyI(op_targets@i, args, i))
+            in
             let main_bod =
                 if equalType?(ty, src_ty)
-                  then mkTuple(tabulate(length op_targets,
-                                        fn i -> mkApplyI(op_targets@i, args, i)))
-                else mkApplyI(op_targets@0, args, 0)
+                  then mkTuple(result_comps)
+                else mkApply(mkOp(Qualified("SemanticError", "returnMostPopular"),
+                                           mkArrow(mkListType ty, ty)),
+                             mkListForm(result_comps, ty))
             in
             %% Add test_fix_fn lets
             foldl (fn (bod, v) ->
@@ -226,7 +239,7 @@ op redundantErrorCorrectingProduct (spc: Spec) (morphs: List(SCTerm * Morphism))
    types_map_l <- return(mapToList types_map);
    when (length types_map_l ~= 1)
       (raise(TypeCheck (pos, "Should be exactly 1 type mapped differently by morphisms:\n"
-                           ^ foldr (fn ((qid,_), s) -> show qid^s) "" (map head (mapToList types_map)))));
+                           ^ foldr (fn ((qid,_), s) -> show qid^" "^s) "" (map head (mapToList types_map)))));
    (primary_ty_qid, ty_target_qids) :: _ <- return types_map_l;
    primary_ty <- return(mkBase(primary_ty_qid, []));
    ty_targets <- return(map (fn qid -> mkBase(qid, [])) ty_target_qids);
@@ -436,7 +449,7 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
    types_map_l <- return(mapToList types_map);
    when (length types_map_l ~= 1)
       (raise(TypeCheck (pos, "Should be exactly 1 type mapped differently by morphisms:\n"
-                           ^ foldr (fn ((qid,_), s) -> show qid^s) "" (map head (mapToList types_map)))));
+                           ^ foldr (fn ((qid,_), s) -> show qid^" "^s) "" (map head (mapToList types_map)))));
    (primary_ty_qid, ty_target_qids) :: _ <- return types_map_l;
    primary_ty <- return(mkBase(primary_ty_qid, []));
    case findIdentityExpr(primary_ty, spc) of
