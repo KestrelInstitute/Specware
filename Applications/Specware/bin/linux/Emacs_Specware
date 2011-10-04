@@ -5,7 +5,7 @@
 
 act='launch Specware'
 
-PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
+PATH=/usr/local/bin:/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 # Find emacs
 DEFAULTEMACS=/Applications/Emacs.app/Contents/MacOS/Emacs
