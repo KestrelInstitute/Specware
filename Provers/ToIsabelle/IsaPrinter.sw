@@ -528,6 +528,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	       else spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
+    % let _ = writeLine("4:\n"^printSpec spc) in
     let spc = if simplify? && some?(AnnSpec.findTheSort(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
@@ -541,13 +542,16 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = addRefineObligations spc in
     let spc = normalizeNewTypes(spc, false) in
+    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
+    % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
+    % let _ = writeLine("4:\n"^printSpec spc) in
     % let _ = printSpecWithSortsToTerminal spc in
     let spc = exploitOverloading coercions false spc in
-    % let _ = writeLine("0:\n"^printSpec spc) in
+    % let _ = writeLine("10:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
@@ -1023,7 +1027,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let opaque_type_map = foldSortInfos
                                  (fn (info, opt_map) ->
                                   let qid = primarySortName info in
-                                  % let _ = writeLine("rdo: "^printQualifiedId qid^" = "^printSort(unpackFirstSortDef info).2) in
+                                  % let _ = writeLine("rdo: "^printQualifiedId qid^" = "^printSort(unpackFirstSortDef info).2
+                                  %                   ^"\n"^printSort(unpackFirstSortDef info).2) in
                                   if opaqueTypeQId? coercions qid && embed? Subsort (unpackFirstSortDef info).2
                                    then (qid, info.dfn) :: opt_map
                                    else opt_map)
@@ -1032,7 +1037,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = spc << {sorts = mapSortInfos
                                 (fn info \_rightarrow
                                  let qid = primarySortName info in
-                                 if opaqueTypeQId? coercions qid && embed? Subsort (firstSortDef info)
+                                 if opaqueTypeQId? coercions qid && embed? Subsort (unpackFirstSortDef info).2
                                    then info << {dfn = And([],noPos)}
                                    else info)
                                 spc.sorts}
