@@ -9,7 +9,7 @@
       "sw-start"
       ;"sw-msp-emacs"
       ;"sw-utilities"
-      "x-symbol-specware"
+      ;"x-symbol-specware"
       "specware-mode"
       "sw-init"
       "sw-font"
