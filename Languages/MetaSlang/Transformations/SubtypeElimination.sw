@@ -735,21 +735,22 @@ SpecNorm qualifying spec
            | Some(sup_ty, pred) -> mkRFun(pred, tm))
       | _ -> tm
 
-  op regTerm (t, ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
+  op regTerm (t, ctxt_ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
     let rm_ty = inferType(spc,t) in
-    % let _ = writeLine("reg: "^show equal_testable?^"\n"^printTerm t) in
+    % let _ = writeLine("reg: "^show equal_testable?^"\n"^printTerm t
+    %                     ^"\n: "^printSort ctxt_ty) in
     let t = if equal_testable? && ~eagerRegularization? && ~(embed? And t)
-              then regularizeIfPFun(t, ty, rm_ty, spc)
+              then regularizeIfPFun(t, ctxt_ty, rm_ty, spc)
             else t
     in
     case t of
       | Apply(f, x, a) ->
         let (dom, rng) = arrow(spc, inferType(spc, f)) in
-        Apply(regTerm(f, mkArrow(inferType(spc, x), ty), false, ho_eqfns, spc),
+        Apply(regTerm(f, mkArrow(inferType(spc, x), ctxt_ty), false, ho_eqfns, spc),
               regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns, spc), ho_eqfns, spc), a)
       | Record(row, a) ->
-        % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ty) in
-        let srts = map (fn (_,x) -> x) (product (spc,ty)) in
+        % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ctxt_ty) in
+        let srts = map (fn (_,x) -> x) (product (spc,ctxt_ty)) in
         Record(map (fn ((idi,tmi), tyi) -> (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
                  (zip(row,srts)), a) 
       | Bind(b, vs, bod, a) ->
@@ -761,30 +762,39 @@ SpecNorm qualifying spec
                                                 possibleEqTestableFunTermIn? (ho_eqfns, spc) bod,
                                                 ho_eqfns, spc)))
                decls,
-             regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
+             regTerm(bod, ctxt_ty, equal_testable?, ho_eqfns, spc), a)
       | LetRec(decls, bod, a) ->
         LetRec (map (fn ((id,srt), trm) -> ((id,srt), regTerm(trm, srt, false, ho_eqfns, spc))) decls,
-                regTerm(bod, ty, equal_testable?, ho_eqfns, spc), a)
+                regTerm(bod, ctxt_ty, equal_testable?, ho_eqfns, spc), a)
       | Lambda(match, a) ->
         let lam_tm = 
             Lambda (map (fn (pat,condn,trm) ->
-                           (pat, regTerm(condn, boolSort, false, ho_eqfns, spc),
-                            regTerm(trm, range(spc,ty), false, ho_eqfns, spc))) % ?
+                           let reg_trm = case arrowOpt(spc, ctxt_ty) of
+                                           | Some(_, rng) -> regTerm(trm, rng, false, ho_eqfns, spc)
+                                           | None ->
+                                         (warn("Can't find range of context for "^printTerm t^"\nUsing range of lambda...");
+                                          case arrowOpt(spc, rm_ty) of
+                                           | Some(_, rng) -> regTerm(trm, rng, false, ho_eqfns, spc)
+                                           | None ->
+                                          (warn("Can't find range of "^printTerm t^"\nUsing body");
+                                           regTerm(trm, inferType(spc, trm), false, ho_eqfns, spc)))
+                           in
+                           (pat, regTerm(condn, boolSort, false, ho_eqfns, spc), reg_trm)) % ?
                       match,
                     a)
         in
         if eagerRegularization?
-          then regularizeIfPFun(lam_tm, ty, rm_ty, spc)
+          then regularizeIfPFun(lam_tm, ctxt_ty, rm_ty, spc)
           else lam_tm
       | IfThenElse(x,y,z, a) ->
         IfThenElse(regTerm(x, boolSort, false, ho_eqfns, spc),
-                   regTerm(y, ty, equal_testable?, ho_eqfns, spc),
-                   regTerm(z, ty, equal_testable?, ho_eqfns, spc), a)
+                   regTerm(y, ctxt_ty, equal_testable?, ho_eqfns, spc),
+                   regTerm(z, ctxt_ty, equal_testable?, ho_eqfns, spc), a)
       %| Seq(tms, a) ->
       | SortedTerm(tm, tm_ty, a) ->
         SortedTerm(regTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
       | And(tms, a) ->
-        And(map (fn tm -> regTerm(tm, ty, equal_testable?, ho_eqfns, spc)) tms, a)
+        And(map (fn tm -> regTerm(tm, ctxt_ty, equal_testable?, ho_eqfns, spc)) tms, a)
       | _ -> t
          
   op regularizeFunctions(spc: Spec): Spec =
