@@ -1,4 +1,4 @@
-BTHMap qualifying
+SimpleAsBTHarray = BTHMap qualifying
 spec
   import Simple
 
@@ -56,3 +56,5 @@ spec
   def domainToList = MapBTHashtable.BTH_domainToList
 
 endspec
+
+M = morphism Simple -> SimpleAsBTHarray {}

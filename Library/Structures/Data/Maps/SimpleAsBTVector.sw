@@ -1,4 +1,4 @@
-BTVMap qualifying
+SimpleAsBTVector = BTVMap qualifying
 spec
   import Simple
 
@@ -57,3 +57,5 @@ spec
   def domainToList = MapBTV.BTV_domainToList
 
 endspec
+
+M = morphism Simple -> SimpleAsBTVector {}

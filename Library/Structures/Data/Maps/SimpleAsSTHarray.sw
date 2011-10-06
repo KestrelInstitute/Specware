@@ -1,4 +1,4 @@
-STHMap qualifying
+SimpleAsSTHarray = STHMap qualifying
 spec
   import Simple
 
@@ -56,3 +56,5 @@ spec
   def domainToList = MapSTHashtable.STH_domainToList
 
 endspec
+
+M = morphism Simple -> SimpleAsSTHarray {}

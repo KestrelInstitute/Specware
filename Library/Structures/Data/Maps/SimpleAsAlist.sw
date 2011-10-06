@@ -152,3 +152,4 @@ meaningless unless an implementation is assumed.
 
 endspec
 
+M = morphism Simple -> SimpleAsAlist {}
