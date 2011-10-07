@@ -857,7 +857,7 @@ spec
        %% Unfold if function constructs term that matches one case
        (let uf_tm = case tryUnfold (spc, arg) of
                       | Some uf_tm -> uf_tm
-                      | _ -> tm
+                      | _ -> arg
         in
           case simplify spc uf_tm of
 
