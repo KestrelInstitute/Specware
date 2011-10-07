@@ -772,7 +772,8 @@ SpecNorm qualifying spec
                            let reg_trm = case arrowOpt(spc, ctxt_ty) of
                                            | Some(_, rng) -> regTerm(trm, rng, false, ho_eqfns, spc)
                                            | None ->
-                                         (warn("Can't find range of context for "^printTerm t^"\nUsing range of lambda...");
+                                          %% This happens because addCoercions only works on local ops!
+                                         (%% warn("Can't find range of context for "^printTerm t^"\nUsing range of lambda...");
                                           case arrowOpt(spc, rm_ty) of
                                            | Some(_, rng) -> regTerm(trm, rng, false, ho_eqfns, spc)
                                            | None ->
