@@ -1,121 +1,10 @@
 MetaSlang qualifying spec
+ import QualifiedId                                    % QualifiedId
  import /Library/Legacy/Utilities/State                % MetaTyVar
- import /Library/Legacy/Utilities/System
- import /Library/Legacy/DataStructures/ListPair
- import /Languages/SpecCalculus/AbstractSyntax/SCTerm
+ import /Library/Legacy/Utilities/System               % fail
+ import /Library/Legacy/DataStructures/ListPair        % misc operations on pairs of lists
  import PrinterSig                                     % printTerm, printSort, printPattern
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                QualifiedId
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  Basic structure for naming things
-
- type Id = String
- type Qualifier = Id
-
- %% This is the key used in the qualifier maps for UnQualified Id
- op UnQualified : Qualifier
- def UnQualified = "<unqualified>" % a non-parsable id
-
- %% The Qualifier's for id's in a spec are established independently
- %% from the name of the spec:  all, some, or none might have the
- %% name of the spec as their qualifier, and the same qualifier can
- %% be used in multiple specs.
-
- type QualifiedId = | Qualified Qualifier * Id
-
- %% An annotated qualified id can record extra information,
- %% e.g. the precise position of the name.
- type AQualifiedId a = QualifiedId * a
-
- %% the following are invoked by the parser to make qualified names
- op mkUnQualifiedId(id: Id): QualifiedId           =  Qualified (UnQualified, id)
- op mkQualifiedId    (q: Id, id: Id): QualifiedId =  Qualified (q,           id)
-% op [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
-% op [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
-
- op  unQualifiedId?: QualifiedId -> Bool
- def unQualifiedId? id =
-   case id of
-     | Qualified(UnQualified, _) -> true
-     | _ -> false
-
- op mainId(Qualified(_,main_id): QualifiedId): String = main_id
-
- %% These are used by translation, morphism code
- def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
- def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")    % used by translate
- def syntactic_qid? (Qualified(q,id)) =                            % used by translate, morphism
-   if q = "Boolean" || q = UnQualified then                        % used by translate, morphism
-     (case id of
-	| "~"   -> true
-	| "&"   -> true  % TODO: deprecate
-	| "&&"  -> true
-	| "or"  -> true  % TODO: deprecate
-	| "||"  -> true
-	| "=>"  -> true
-	| "<=>" -> true
-	| "="   -> true
-	| "~="  -> true
-	| _ -> false)
-   else
-     false
-	
- %% This is useful in some error messages, where you want to be very explicit:
-  op explicitPrintQualifiedId : QualifiedId -> String
- def explicitPrintQualifiedId (Qualified (q, id)) =
-   if q = UnQualified then
-     id
-   else
-     q ^ "." ^ id
-
-  op QualifiedId.show : QualifiedId -> String
- def QualifiedId.show = printQualifiedId
-
- %% This is useful for most normal messages, where you want to be terse:
-  op printQualifiedId : QualifiedId -> String
- def printQualifiedId (Qualified (q, id)) =
-   if q = UnQualified then
-     id
-   else
-     printQualifierDotId (q, id)
-
-  op printQualifierDotId : Qualifier * Id -> String
- def printQualifierDotId (q, id) =
-   if q = "Nat"     ||
-      q = "String"  ||
-      q = "Char"    ||
-      q = UnQualified
-   then id
-   else q ^ "." ^ id
-
- %% This is useful when printing names for Lisp, C, Java, etc.:
-  op printUnderbarQualifiedId : QualifiedId -> String
- def printUnderbarQualifiedId (Qualified (q, id)) =
-   if q = UnQualified then
-     id
-   else
-     printQualifierUnderbarId (q, id)
-
-  op printQualifierUnderbarId : Qualifier * Id -> String
- def printQualifierUnderbarId (q, id) =
-   if q = "Nat"     ||
-      q = "String"  ||
-      q = "Char"    ||
-      q = UnQualified
-   then id
-   else q ^ "_" ^ id
-
- def printAliases aliases =
-   case aliases of
-     | [] -> fail "printAliases: empty name list"
-     | [name] -> printQualifiedId name
-     | first::rest ->
-       "{" ^ (printQualifiedId first) ^
-       (foldl (fn (str, qid) -> str ^ ", " ^ printQualifiedId qid)
-	      ""
-	      rest)
-       ^ "}"
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -126,9 +15,6 @@ MetaSlang qualifying spec
  type SortName       = QualifiedId
  type OpName         = QualifiedId
  type PropertyName   = QualifiedId
-
- type Aliases        = QualifiedIds
- type QualifiedIds   = List QualifiedId
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Type Variables
