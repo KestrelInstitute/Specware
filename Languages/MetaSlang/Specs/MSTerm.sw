@@ -21,8 +21,8 @@ MS qualifying spec
  type Fields       = AFields         StandardAnnotation
  type Field        = AField          StandardAnnotation
 
- type MetaTyVar       = AMetaTyVar      StandardAnnotation
- type MetaTyVars      = AMetaTyVars     StandardAnnotation
+ type MetaTyVar    = AMetaTyVar      StandardAnnotation
+ type MetaTyVars   = AMetaTyVars     StandardAnnotation
 
 
  op mkTyVar        : String                       -> Sort

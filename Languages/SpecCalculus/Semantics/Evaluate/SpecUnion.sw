@@ -2,7 +2,8 @@
 
 SpecUnion qualifying spec 
 
- import ../Environment  % foldM    
+ import /Languages/SpecCalculus/Semantics/Environment % foldM    
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm % SCTerm
 
  import /Library/Legacy/DataStructures/ListUtilities
 

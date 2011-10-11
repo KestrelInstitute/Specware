@@ -3,6 +3,7 @@ spec
 import /Languages/SpecCalculus/Semantics/Monad
 import Simplify  %/Languages/MetaSlang/Specs/Utilities
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+import /Languages/SpecCalculus/AbstractSyntax/SCTerm                 % SCTerm
 
 type QIdMap a = PolyMap.Map (QualifiedId, a)
 
@@ -279,7 +280,7 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
 %% Defined in /Languages/SpecCalculus/Semantics/Evaluate/Spec.sw
 op SpecCalc.mergeImport: SCTerm -> Spec -> Spec -> Position -> Env Spec
 
-op redundantErrorCorrectingProduct (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier)
+op redundantErrorCorrectingProduct (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier)
                                    (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
@@ -490,7 +491,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
  op Specware.evaluateUnitId: String -> Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap, which imports this spec
 op runtimeSemanticErrorSpec: String = "/Languages/MetaSlang/Transformations/RuntimeSemanticError"
 
-op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
+op redundantErrorCorrectingRestart (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
   let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
@@ -546,7 +547,7 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List(SCTerm * Morphism))
                         new_spc ops_map);
     return(new_spc, tracing?)}}      % *)
 
-op redundantErrorCorrecting (spc: Spec) (morphs: List(SCTerm * Morphism)) (opt_qual: Option Qualifier)
+op redundantErrorCorrecting (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier)
                             (restart?: Bool)(tracing?: Bool): Env(Spec * Bool) =
   if restart?
     then redundantErrorCorrectingRestart spc morphs opt_qual tracing?

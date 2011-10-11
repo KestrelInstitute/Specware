@@ -8,6 +8,6 @@ spec {
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Dom
-  op ppDom : Dom -> Pretty
+  op ppDom : Dom -> WLPretty
 }
 \end{spec}

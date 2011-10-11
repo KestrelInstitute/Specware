@@ -11,7 +11,8 @@ import Java qualifying /Languages/Java/Java
 
 import Errors
 %import IJavaCodeGen
-import /Languages/SpecCalculus/Semantics/Wizard   % op specwareWizard? : Boolean
+import /Languages/SpecCalculus/Semantics/Wizard       % op specwareWizard? : Boolean
+import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
 
 sort JGenEnv a = State -> (Result a) * State
 
@@ -48,7 +49,7 @@ type State = {
 
 %% same as NamedSpec in Accord/Sources/Semantics
 %% but it's not clear what that file and this one import in common...
-type AccordNamedSpec = {term : SpecCalc.Term Position,
+type AccordNamedSpec = {term : SCTerm,
 			spc  : Spec}
 
 op initialState : State

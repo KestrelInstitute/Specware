@@ -2,9 +2,9 @@ AnnSpec qualifying spec
 
  import Position
  import MSTerm
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
  import QualifierMapAsSTHTable2
- import SpecCalc
- import ../AbstractSyntax/Equalities
+ import /Languages/MetaSlang/AbstractSyntax/Equalities
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
@@ -18,8 +18,8 @@ AnnSpec qualifying spec
 
  type Spec = ASpec StandardAnnotation
 
- type SortInfo     = ASortInfo       StandardAnnotation 
- type OpInfo       = AOpInfo         StandardAnnotation
+ type SortInfo = ASortInfo StandardAnnotation 
+ type OpInfo   = AOpInfo   StandardAnnotation
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ASpec
@@ -51,7 +51,7 @@ AnnSpec qualifying spec
 
  type ASpecElements b  = List (ASpecElement b)
  type ASpecElement b =
-   | Import   (SpecCalc.Term Position) * Spec * SpecElements * b
+   | Import   SCTerm * Spec * SpecElements * b
    | Sort     QualifiedId * b
    | SortDef  QualifiedId * b
    | Op       QualifiedId * Boolean * b  % if boolean is true, def was supplied as part of decl

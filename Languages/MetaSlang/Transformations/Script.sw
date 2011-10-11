@@ -5,6 +5,8 @@ spec
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm
+  import /Languages/SpecCalculus/AbstractSyntax/Printer % ppSCTerm
 
 %  op [a] dummy: a
 
@@ -57,19 +59,19 @@ spec
  op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
  op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
 
- op ppSpace: WadlerLindig.Pretty = ppString " "
+ op ppSpace: WLPretty = ppString " "
 
  op wildQualifier: String = "*"
 
- op ppQid(Qualified(q, nm): QualifiedId): WadlerLindig.Pretty =
+ op ppQid(Qualified(q, nm): QualifiedId): WLPretty =
    if q = UnQualified then ppString nm
      else ppConcat[ppString q, ppString ".", ppString nm]
 
- op ppLoc(loc: Location): WadlerLindig.Pretty =
+ op ppLoc(loc: Location): WLPretty =
    case loc of
      | Def qid -> ppQid qid
 
- op ppRuleSpec(rl: RuleSpec): WadlerLindig.Pretty =
+ op ppRuleSpec(rl: RuleSpec): WLPretty =
    case rl of
      | Unfold  qid -> ppConcat   [ppString "unfold ", ppQid qid]
      | Fold    qid -> ppConcat   [ppString "fold ", ppQid qid]
@@ -92,13 +94,13 @@ spec
      | ReverseSearch s -> "r \"" ^ s ^ "\""
      | Post -> "post"
 
- op ppBool(b: Bool): WadlerLindig.Pretty =
+ op ppBool(b: Bool): WLPretty =
    ppString(if b then "true" else "false")
 
- op commaBreak: WadlerLindig.Pretty = ppConcat [ppString ", ", ppBreak]
+ op commaBreak: WLPretty = ppConcat [ppString ", ", ppBreak]
 
 
- op ppScript(scr: Script): WadlerLindig.Pretty =
+ op ppScript(scr: Script): WLPretty =
     case scr of
       | Steps steps ->
         ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
@@ -185,7 +187,7 @@ spec
 
       | RedundantErrorCorrecting(morphisms, opt_qual, restart?) ->
         ppConcat[ppString(if restart? then "redundantErrorCorrectingRestart ("else "redundantErrorCorrecting ("),
-                 ppSep(ppString ", ") (map (fn (m_uid,_) -> ppTerm m_uid) morphisms),
+                 ppSep(ppString ", ") (map (fn (m_uid,_) -> ppSCTerm m_uid) morphisms),
                  ppString ")"]
 
       | Trace on_or_off ->
@@ -193,10 +195,10 @@ spec
       | Print -> ppString "print"
       | scr -> ppString(anyToString scr)
 
- op enclose (l: String) (r: String) (main: List WadlerLindig.Pretty): WadlerLindig.Pretty =
+ op enclose (l: String) (r: String) (main: List WLPretty): WLPretty =
    ppConcat([ppString l] ++ main ++ [ppString r])
    
- op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WadlerLindig.Pretty =
+ op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WLPretty =
    enclose "(" ")" [ppQid qid1, ppString ", ", ppQid qid2]
 
  op scriptToString(scr: Script): String =

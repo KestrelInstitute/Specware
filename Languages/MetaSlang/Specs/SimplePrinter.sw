@@ -15,7 +15,7 @@ SpecCalc qualifying spec
 
  %% called via ppObj attribute in specCat
  %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
-  op ppASpec : Spec -> Pretty
+  op ppASpec : Spec -> WLPretty
  def ppASpec (spc as {sorts,ops,elements,qualifier}) = 
    let 
      def lookupSort(Qualified(q,id)) =
@@ -51,7 +51,7 @@ SpecCalc qualifying spec
 	      ]
 
  %% not called by Specware per se (see PSL)
-  op ppASpecLocal : Spec -> Pretty
+  op ppASpecLocal : Spec -> WLPretty
  def ppASpecLocal (spc as {sorts,ops,elements,qualifier}) = 
    let 
      def lookupSort(Qualified(q,id)) =
@@ -76,7 +76,7 @@ SpecCalc qualifying spec
 		| Sort     (qId,_)              -> Cons (ppASort     qId,  result)
 		| SortDef  (qId,_)              -> result                          % Cons(ppASortDef qId,result)
 		| Comment  (str,_)              -> Cons (ppComment   str,  result)
-		| Import   (specCalcTerm,_,_,_) -> Cons (ppString("import " ^ (showTerm specCalcTerm)), result))
+		| Import   (specCalcTerm,_,_,_) -> Cons (ppString("import " ^ (showSCTerm specCalcTerm)), result))
 	 [] elts
   in
      
@@ -87,7 +87,7 @@ SpecCalc qualifying spec
 
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
-  op ppASortInfo : [a] ASortInfo a -> Pretty
+  op ppASortInfo : [a] ASortInfo a -> WLPretty
  def ppASortInfo info =
    let ppNames =
        case info.names of
@@ -137,10 +137,10 @@ SpecCalc qualifying spec
      ppConcat (ppDecls ++ ppDefs)
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
-  op ppAOpInfo : [a] AOpInfo a -> Pretty
+  op ppAOpInfo : [a] AOpInfo a -> WLPretty
  def ppAOpInfo info = ppAOpInfoAux (" op ", info)
 
-  op ppAOpInfoAux : [a] String * AOpInfo a -> Pretty
+  op ppAOpInfoAux : [a] String * AOpInfo a -> WLPretty
  def ppAOpInfoAux (decl_keyword, info) = 
    let ppNames =
        case info.names of
@@ -217,7 +217,7 @@ SpecCalc qualifying spec
      ppConcat (ppWarnings ++ ppDecls ++ [ppNewline] ++ ppDefs)
 
  %% other than from here, called from /Languages/SpecCalculus/AbstractSyntax/Printer.sw
-  op ppAProperty : [a] AProperty a -> Pretty
+  op ppAProperty : [a] AProperty a -> WLPretty
  def ppAProperty (propType, name, tvs, term, _) =
    ppConcat [
      ppPropertyType propType,
@@ -239,7 +239,7 @@ SpecCalc qualifying spec
 				 ]))
 	    ]
 
-  op ppPropertyType : PropertyType -> Pretty
+  op ppPropertyType : PropertyType -> WLPretty
  def ppPropertyType propType =
    case propType of
      | Axiom      -> ppString "axiom"

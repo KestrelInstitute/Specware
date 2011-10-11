@@ -69,8 +69,8 @@ Cat qualifying spec {
   % op composable? : fa (O,A) Cat (O,A) -> A -> A -> Boolean
   op compose : fa (O,A) Cat (O,A) -> A -> A -> A
 
-  op ppObj : fa (O,A) Cat (O,A) -> O -> Pretty
-  op ppArr : fa (O,A) Cat (O,A) -> A -> Pretty
+  op ppObj : fa (O,A) Cat (O,A) -> O -> WLPretty
+  op ppArr : fa (O,A) Cat (O,A) -> A -> WLPretty
 }
 \end{spec}
 

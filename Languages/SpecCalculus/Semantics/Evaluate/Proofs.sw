@@ -1,11 +1,9 @@
 spec
 
- import Signature
+ import Signature    % including SCTerm
  import UnitId
  import Obligations
 
- type SCDecl = SpecCalc.Decl Position
- 
  op generateProof: Spec * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
  def generateProof (spc, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
@@ -14,10 +12,10 @@ spec
 	else qual^"_"^id^"_proof" in
    let assertions = All in
    let (_, propName, _, _,_) = prop in
-   let scTerm = scTermFromScTerm(Spec spc, scTerm, globalContext, fileUID, swpath, fromObligations?) in
+   let scTerm    = scTermFromScTerm(Spec spc, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
-   let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
+   let ProveTerm_A: SCTerm = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
  op generateProofMorphism: Morphism * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
@@ -31,7 +29,7 @@ spec
    let scTerm = scTermFromScTerm(Morph morph, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
-   let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
+   let ProveTerm_A: SCTerm = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
  op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * List UnitId * Boolean -> SCTerm
@@ -211,8 +209,7 @@ spec
 % def ppProof(proof) =
 %   SpecCalc.ppTerm(proof)
 
- op ppProofs: List SCDecl -> WadlerLindig.Pretty
-
+ op ppProofs: List SCDecl -> WLPretty
  def ppProofs(proofs) =
    ppAppend (ppDecls(proofs)) ppNewline
 %   ppSep ppNewline (map ppProof proofs)
@@ -266,7 +263,7 @@ spec
    ppProofsToFile(proofDecls, file)
 *)
 
-  op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ValueInfo
+  op SpecCalc.evaluateProofGen : ValueInfo * SCTerm * Option String * Boolean -> SpecCalc.Env ValueInfo
   %% Need to add error detection code
   def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
@@ -288,9 +285,7 @@ spec
      {print("Generated Proof file: " ^ proofFileName ^ "\n");
       return valueInfo}}
 
-  op SpecCalc.evaluateProofGenLocal : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
-                                -> SpecCalc.Env ValueInfo
-
+  op SpecCalc.evaluateProofGenLocal : ValueInfo * SCTerm * Option String * Boolean -> SpecCalc.Env ValueInfo
   def SpecCalc.evaluateProofGenLocal(valueInfo as (value,_,_), cterm, optFileName, fromObligations?) =
     {cUID <- SpecCalc.getUID cterm;
      globalContext <- getGlobalContext;
@@ -371,6 +366,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.33  2009/12/08 22:52:40  westfold
+%% Update Specware to not use deprecated ops
+%%
 %% Revision 1.32  2009/08/20 01:21:02  westfold
 %% && ||
 %%

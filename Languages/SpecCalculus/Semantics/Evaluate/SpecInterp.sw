@@ -1,10 +1,10 @@
 %%% Spec Interpretations
 
 SpecCalc qualifying spec {
-  import Signature 
+  import Signature                                    % including SCTerm
   import Spec/CoerceToSpec
-  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-  import UnitId/Utilities                                % for uidToString, if used...
+  import /Library/Legacy/DataStructures/ListUtilities % listUnion
+  import UnitId/Utilities                             % uidToString, if used...
   import Spec/AccessSpec
 
   def SpecCalc.evaluateSpecInterp (domTerm, codTerm, ({med, d2m, c2m}, pos1)) pos2 = 

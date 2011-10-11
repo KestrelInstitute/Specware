@@ -15,7 +15,7 @@ SpecCalc qualifying spec
 
   def ppGrConcat x = ppGroup (ppConcat x)
 
-  op ppATerm : [a] ATerm a -> Pretty
+  op ppATerm : [a] ATerm a -> WLPretty
   def ppATerm term =
     case isFiniteList term of
         Some terms ->
@@ -252,17 +252,17 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           | Any _ -> ppString "<anyterm>"
           | mystery -> fail ("No match in ppATerm with: '" ^ (anyToString mystery) ^ "'"))
 
-  op ppBinder : Binder -> Pretty
+  op ppBinder : Binder -> WLPretty
   def ppBinder binder =
     case binder of
       | Forall -> ppString "fa"
       | Exists -> ppString "ex"
       | Exists1 -> ppString "ex1"
 
-  op ppAVarWithoutSort : [a] AVar a -> Pretty
+  op ppAVarWithoutSort : [a] AVar a -> WLPretty
   def ppAVarWithoutSort (id, _(* srt *)) = ppString id
 
-  op ppAVar : [a] AVar a -> Pretty
+  op ppAVar : [a] AVar a -> WLPretty
   def ppAVar (id,srt) =
     ppConcat [
       ppString id,
@@ -270,7 +270,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       ppASort srt
     ]
 
-  op ppAMatch : [a] AMatch a -> Pretty
+  op ppAMatch : [a] AMatch a -> WLPretty
   def ppAMatch cases =
     let def ppCase (pattern,_,term) =
        ppGrConcat [
@@ -282,7 +282,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
     in
       ppGroup (ppSep ppNewline (map ppCase cases))
 
-  op ppAPattern : [a] APattern a -> Pretty
+  op ppAPattern : [a] APattern a -> WLPretty
   def ppAPattern pattern = 
     case pattern of
       | AliasPat (pat1,pat2,_) -> 
@@ -366,13 +366,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | mystery -> fail ("No match in ppAPattern with: '" ^ (anyToString mystery) ^ "'")
 
 
-  op ppBoolean : Boolean -> Pretty
+  op ppBoolean : Boolean -> WLPretty
   def ppBoolean b =
     case b of
       | true -> ppString "true"
       | false -> ppString "false"
 
-  op ppAFun : [a] AFun a -> Pretty
+  op ppAFun : [a] AFun a -> WLPretty
   def ppAFun fun =
     case fun of
       | Not           -> ppString "~"
@@ -433,14 +433,14 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
   def omittedQualifiers = ["Integer","Nat","Double","List","String","Char"]  % "IntegerAux" "Option" ...?
 
-  op ppQualifiedId : QualifiedId -> Pretty
+  op ppQualifiedId : QualifiedId -> WLPretty
   def ppQualifiedId (Qualified (qualifier,id)) =
     if (qualifier = UnQualified) || (qualifier in? omittedQualifiers) then
       ppString id
     else
       ppString (qualifier ^ "." ^ id)
 
-  op ppFixity : Fixity -> Pretty
+  op ppFixity : Fixity -> WLPretty
   def ppFixity fix =
     case fix of
       | Infix (Left,  n) -> ppConcat [
@@ -467,7 +467,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Boolean _ -> true
       | _ -> false
 
-  op ppASort : [a] ASort a -> Pretty
+  op ppASort : [a] ASort a -> WLPretty
   def ppASort srt =
     case srt of
       | Arrow (srt1,srt2,_) ->
@@ -567,6 +567,6 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
       | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
 
- op [a] ppTransformExprs(tre: List(ATransformExpr a)): Pretty
+ op [a] ppTransformExprs(tre: List(ATransformExpr a)): WLPretty
 
 endspec

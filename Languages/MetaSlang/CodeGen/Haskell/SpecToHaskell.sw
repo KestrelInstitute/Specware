@@ -1,7 +1,6 @@
 Haskell qualifying spec
 
- import /Languages/SpecCalculus/Semantics/Evaluate/Signature
-
+ import /Languages/SpecCalculus/Semantics/Evaluate/Signature             % SCTerm
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % adjustElementOrder
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                      % substBaseSpecs1, also gets hack for evaluateUnitId
@@ -76,12 +75,6 @@ Haskell qualifying spec
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
  type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort | Apply
 
- type SpecTerm = SpecCalc.SpecTerm StandardAnnotation
- type Term = SpecCalc.Term StandardAnnotation
-% type SpecElem = SpecCalc.SpecElem StandardAnnotation
- type Decl = SpecCalc.Decl StandardAnnotation
-
-  
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
 
@@ -193,7 +186,7 @@ Haskell qualifying spec
 
   op deleteHaskellFilesForSpec (spc: Spec, slicing?: Bool, top_uid: UnitId): () =
     let base_spec = getBaseSpec() in
-    let def delUIDfor(spc: Spec, sc_tm: Term, currentUID: UnitId, red_els: SpecElements): () =
+    let def delUIDfor(spc: Spec, sc_tm: SCTerm, currentUID: UnitId, red_els: SpecElements): () =
           if spc = base_spec then ()
           else
           case uidForValueOrTerm(currentUID, Spec spc, sc_tm, slicing?, top_uid) of
@@ -228,7 +221,7 @@ Haskell qualifying spec
         Some(haskellnm ^ hash, haskell_module_name ^ hash, filnm ^ hash, uid)
 
   op uidStringPairTermForValue (val: Value, slicing?: Bool, top_uid?: Option UnitId)
-       : Option ((String * String * String * String) * UnitId * Term) =
+       : Option ((String * String * String * String) * UnitId * SCTerm) =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None -> None
       | Some global_context ->
@@ -249,7 +242,7 @@ Haskell qualifying spec
       then "SW_Char"
       else spname
 
-  op uidForValueOrTerm(currentUID: UnitId, val: Value, sc_tm: Term, slicing?: Bool, top_uid: UnitId) : Option(UnitId * String) =
+  op uidForValueOrTerm(currentUID: UnitId, val: Value, sc_tm: SCTerm, slicing?: Bool, top_uid: UnitId) : Option(UnitId * String) =
     case uidStringPairTermForValue (val, slicing?, Some top_uid) of
       | None ->
         (case uidStringPairForTerm(currentUID, sc_tm, slicing?, top_uid) of
@@ -258,7 +251,7 @@ Haskell qualifying spec
       | Some((_, _, filnm, hash), uid, _) -> Some(uid, haskellName(filnm ^ hash) ^ ".hs")
 
   op uidStringPairForValueOrTerm
-       (currentUID: UnitId, val: Value, sc_tm: Term, slicing?: Bool, top_uid: UnitId)
+       (currentUID: UnitId, val: Value, sc_tm: SCTerm, slicing?: Bool, top_uid: UnitId)
        : Option((String * String * String * String) * Value * UnitId) =
     case uidStringPairTermForValue(val, slicing?, Some top_uid) of
       | None ->
@@ -281,7 +274,7 @@ Haskell qualifying spec
               haskellName(filnm ^ hash) ^ ".hs"),
              val, uid)
 
-  op uidStringPairForTerm(currentUID: UnitId, sc_tm: Term, slicing?: Bool, top_uid: UnitId)
+  op uidStringPairForTerm(currentUID: UnitId, sc_tm: SCTerm, slicing?: Bool, top_uid: UnitId)
        : Option((String * String * String * String) * UnitId) =
     % let _ = writeLine("Evaluating sc_tm:\n"^anyToString sc_tm) in
     case sc_tm of
@@ -322,7 +315,7 @@ Haskell qualifying spec
         (writeLine("sc_tm not handled:\n"^anyToString sc_tm);
          None)
 
-  op scTermShortName(sc_tm: Term): String =
+  op scTermShortName(sc_tm: SCTerm): String =
     case sc_tm of
       | (UnitId relId, _) -> relativeIdShortName relId
       | _ -> "tm"
@@ -353,7 +346,7 @@ Haskell qualifying spec
     in
       runSpecCommand (catch prog handler)
 
-  op  evaluateTermWrtUnitId(sc_tm: Term, currentUID: UnitId): Option Value = 
+  op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value = 
     % let _ = writeLine("Evaluating term wrt UID:\n"^anyToString sc_tm) in
     let
       %% Ignore exceptions except for warning message
@@ -377,12 +370,12 @@ Haskell qualifying spec
       | Some global_context ->
         findUnitIdForUnit(val, global_context)
   
-  op findSpecQualifier(sc_tm: Term): Option String =
+  op findSpecQualifier(sc_tm: SCTerm): Option String =
     case sc_tm of
       | (Qualify(_, qual), _) -> Some (haskellName qual)
       | _ -> None
 
-  op dummySpecCalcTerm: Term = (Spec [], noPos)
+  op dummySpecCalcTerm: SCTerm = (Spec [], noPos)
 
   op  showValue : Value * Bool * Spec * UnitId * Bool * QualifierSet * QualifierSet * Bool * UnitId
                     * Option String -> Text
@@ -783,7 +776,7 @@ Haskell qualifying spec
       | (SortDef (type_id, _)) :: _ -> Some type_id
       | _ :: r -> firstTypeDef r
 
-  op  ppImport: Context -> Term -> Spec -> Option (Pretty * String)
+  op  ppImport: Context -> SCTerm -> Spec -> Option (Pretty * String)
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(getCurrentUID c, Spec spc, sc_tm, c.slicing?, c.top_uid) of
       | None ->

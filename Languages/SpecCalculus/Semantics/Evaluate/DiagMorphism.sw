@@ -1,11 +1,6 @@
-\subsection{Evalution of a diagram term in the Spec Calculus}
-
-\begin{spec}
 SpecCalc qualifying spec {
   import Signature
-\end{spec}
 
-\begin{spec}
   def SpecCalc.evaluateDiagMorph (domTerm,codTerm,morphRules) = {
       domValueInfo <- SpecCalc.evaluateTermInfo domTerm;
       codValueInfo <- SpecCalc.evaluateTermInfo codTerm;
@@ -23,4 +18,4 @@ SpecCalc qualifying spec {
 			  ^ " diagram-morphism rules \n"))
     }
 }
-\end{spec}
+

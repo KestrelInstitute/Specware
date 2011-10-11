@@ -41,7 +41,7 @@ Also it is not clear that a concrete definition belongs here at all.
 Perhaps it belongs in the refinements of this spec.
 
 \begin{spec}
-  op pp : Set -> Pretty
+  op pp : Set -> WLPretty
   def pp set =
      ppSep (ppString ",")
        (fold (fn l -> fn elem -> Cons (Elem.pp elem, l)) [] set)

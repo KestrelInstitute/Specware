@@ -3,7 +3,8 @@ Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/UnitId.sl
 *)
 
 SpecCalc qualifying spec
-  import ../../Environment
+  import /Languages/SpecCalculus/Semantics/Environment
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
   import /Library/Unvetted/StringUtilities
 (*
 Given a string (assumed to be a filesystem path), this parses
@@ -662,7 +663,7 @@ op findTheoremLocationsInEnv(qid: QualifiedId, optGlobalContext: Option GlobalCo
 
 
  %%% Find relationship between Specs
- op  importPathsBetween: Spec * Spec -> List (List (TermBody Position))
+ op  importPathsBetween: Spec * Spec -> List (List SCTermBody)
  def importPathsBetween(spc1,spc2) =
    let def findPaths(sp,path) =
          if sp = spc2

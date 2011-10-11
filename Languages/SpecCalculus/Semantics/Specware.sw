@@ -9,10 +9,10 @@
 
 Specware qualifying spec
   import Bootstrap
-  import ../../MetaSlang/Transformations/Interpreter % for MSInterpreter.eval
-  import ../AbstractSyntax/Printer % for showUI
-  import /Languages/XML/XML        % for XML I/O
-  import /Languages/MetaSlang/Transformations/EditFunctions     % Functions called from XEmacs
+  import /Languages/MetaSlang/Transformations/Interpreter    % for MSInterpreter.eval
+ %import /Languages/SpecCalculus/AbstractSyntax/Printer      % for showUI
+  import /Languages/XML/XML                                  % for XML I/O
+  import /Languages/MetaSlang/Transformations/EditFunctions  % Functions called from XEmacs
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java

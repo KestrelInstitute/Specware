@@ -30,7 +30,7 @@ spec {
   op edges : Graph -> Edge.Set
   op src : Graph -> Map
   op target : Graph -> Map
-  op ppGraph : Graph -> Pretty
+  op ppGraph : Graph -> WLPretty
 \end{spec}
 
 Next we include some basic functions for building a graph incrementally by

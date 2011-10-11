@@ -10,8 +10,8 @@ SpecCalc qualifying spec
 
   import /Languages/MetaSlang/Specs/CompressSpec
 
-  import Signature 
-  import UnitId/Utilities                                % for uidToString, if used...
+  import Signature                                  % including SCTerm
+  import UnitId/Utilities                           % for uidToString, if used...
 
   import Spec/AccessSpec
   import Spec/MergeSpecs
@@ -799,7 +799,7 @@ SpecCalc qualifying spec
 
 op  Specware.cleanEnv : SpecCalc.Env ()
 op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
-op  evaluateTermWrtUnitId(sc_tm: SpecCalc.Term Position, currentUID: UnitId): Option Value = 
+op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value = 
   let
     %% Ignore exceptions
     def handler except =

@@ -21,14 +21,14 @@ SpecCalc qualifying spec
        | _  -> raise (TypeCheck (positionOf spec_tm, "op refinement attempted on a non-spec"))
      }
 
-  op  evaluateSpecEltElems : ASpec Position -> List (SpecElem Position) -> SpecCalc.Env (ASpec Position)
+  op  evaluateSpecEltElems : Spec -> SpecElemTerms -> SpecCalc.Env Spec
   def evaluateSpecEltElems src_spec elts = 
     {src_spec <- return(exposeOpsForRefine(src_spec, elts));
      (spc,opt_el,pragmas) <- foldrM evaluateSpecEltElem (src_spec, None, []) elts;
      let spc = if pragmas = [] then spc else addElementsBeforeOrAtEnd(spc, pragmas, opt_el) in
      return spc}
 
-  op  evaluateSpecEltElem : (Spec * Option SpecElement * SpecElements) -> SpecElem Position
+  op  evaluateSpecEltElem : (Spec * Option SpecElement * SpecElements) -> SpecElemTerm 
       -> SpecCalc.Env (Spec * Option SpecElement * SpecElements)
   def evaluateSpecEltElem (spc, opt_next_el, pragmas) (elem, pos) =
     %let _ = writeLine("opt_next_el: "^anyToString opt_next_el^"\n"^printSpec spc) in
@@ -46,7 +46,7 @@ SpecCalc qualifying spec
         return (spc, opt_next_el, prag::pragmas)
       | _ -> raise (SpecError(pos,"Given refinement element is not an op definition."))
 
-  op exposeOpsForRefine(spc: Spec, refine_elts: List (SpecElem Position)): Spec =
+  op exposeOpsForRefine(spc: Spec, refine_elts: SpecElemTerms): Spec =
     let ops = mapPartial (fn (elem,_) ->
                                  case elem of
                                    | Op(op_id::_, _, _, _) -> Some op_id

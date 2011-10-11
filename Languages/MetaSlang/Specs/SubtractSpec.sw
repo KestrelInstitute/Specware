@@ -1,7 +1,6 @@
 AnnSpec qualifying spec
 
  import Equivalences
- import /Languages/MetaSlang/Specs/Printer
 
  % substract the ops and sorts in the second argument from those
  % appearing in the first.

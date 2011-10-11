@@ -2,7 +2,7 @@
 
 SpecCalc qualifying spec 
 {
-  import SpecInterp
+  import SpecInterp % including SCTerm
 
   def SpecCalc.evaluateSpecPrism (prism_fields as (_, _, pmode_tm)) pos =
     case pmode_tm of
@@ -11,7 +11,7 @@ SpecCalc qualifying spec
 
   op evaluateSpecPrismUniform (prism_fields as (dom_tm   : SCTerm, 
                                                 sm_tms   : List SCTerm, 
-                                                pmode_tm : SpecCalc.PrismModeTerm(Position.Position)))
+                                                pmode_tm : PrismModeTerm))
                               (pos : Position)
    : SpecCalc.Env SpecCalc.ValueInfo =
    {

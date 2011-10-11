@@ -32,7 +32,7 @@ spec
 
   % op takeOne : fa (a) Set a -> Option (a * Set a)
 
-  op ppSet : [a] (a -> Pretty) -> Set a -> Pretty
+  op ppSet : [a] (a -> WLPretty) -> Set a -> WLPretty
 \end{spec}
 
 The operator \verb+take+ will remove an arbitrary element

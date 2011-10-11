@@ -3,15 +3,14 @@ SpecCalc qualifying spec
   import UnitId
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
   import /Languages/Snark/SpecToSnark
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
 
   %% Hopefully these will be unnecessary in the final system
 
   % sort Env a = SpecCalc.Env a
   %sort Spec = MetaSlang.Spec
 
-  op SpecCalc.evaluateSnarkGen : ValueInfo * (SpecCalc.Term Position) * Option String
-                                -> SpecCalc.Env ValueInfo
-
+  op SpecCalc.evaluateSnarkGen : ValueInfo * SCTerm * Option String -> SpecCalc.Env ValueInfo
   %% Need to add error detection code
   def SpecCalc.evaluateSnarkGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);

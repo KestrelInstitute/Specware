@@ -2,7 +2,7 @@
 (* Implements transform command *)
 SpecCalc qualifying
 spec
-  import Signature
+  import Signature % including SCTerm
   % import Spec
   import /Languages/MetaSlang/Transformations/IsoMorphism
   import /Languages/MetaSlang/Transformations/Coalgebraic

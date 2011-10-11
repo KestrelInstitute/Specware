@@ -113,7 +113,7 @@ SpecCalc qualifying spec {
      | (Quote (Spec spc, _, _), _) ->
         AnnSpecPrinter.ppImportedSpec context spc import_directions 
      | _ ->
-       string (indentString "  " (showTerm im_sp_tm))
+       string (indentString "  " (showSCTerm im_sp_tm))
 
  %% ======================================================================
  %% Morphism
@@ -153,9 +153,9 @@ SpecCalc qualifying spec {
 	  (ppGroup 
 	    (ppConcat 
 	      [ppString "morphism ",
-	       ppString (showTerm dom_tm),
+	       ppString (showSCTerm dom_tm),
 	       ppString " -> ",
-	       ppString (showTerm cod_tm)
+	       ppString (showSCTerm cod_tm)
 	      ]))
 	| _ ->
 	  let dom_spec = dom sm in
@@ -354,7 +354,7 @@ SpecCalc qualifying spec {
 	  (ppGroup 
 	    (ppConcat 
 	      [ppString "prism ",
-	       ppString (showTerm dom_tm),
+	       ppString (showSCTerm dom_tm),
 	       ppString " -> "
 	      ]))
 	| _ ->

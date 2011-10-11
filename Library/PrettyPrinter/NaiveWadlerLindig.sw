@@ -19,7 +19,7 @@ WadlerLindig qualifying spec
     | DocNewline
     | DocBreak String
     | DocGroup Doc
-   type Pretty = Doc
+   type WLPretty = Doc
 
 %   op layout : Doc -> Doc -> Nat -> Nat -> List String
 %   def layout doc rest column indent =

@@ -9,6 +9,6 @@ Elem qualifying spec
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Elem
-  op pp : Elem -> Pretty
+  op pp : Elem -> WLPretty
 end
 \end{spec}

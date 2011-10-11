@@ -24,7 +24,7 @@ SpecCalc qualifying spec {
  import /Languages/MetaSlang/Specs/AnnSpec
  import /Languages/MetaSlang/Specs/SimplePrinter
  import /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
- import /Languages/SpecCalculus/AbstractSyntax/Types
+ import /Languages/SpecCalculus/AbstractSyntax/Types  % SCTerm
 
  type QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
  type MorphismSortMap = QualifiedIdMap
@@ -35,11 +35,11 @@ SpecCalc qualifying spec {
     cod     : Spec,
     sortMap : MorphismSortMap,
     opMap   : MorphismOpMap,
-    pragmas : SM_Pragmas Position,
+    pragmas : SM_Pragmas,
     sm_tm   : Option SCTerm
   }
 
-  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * SM_Pragmas Position * Option SCTerm -> Morphism
+  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * SM_Pragmas * Option SCTerm -> Morphism
   def makeMorphism (dom_spec, cod_spec, sort_map, op_map, pragmas, sm_tm) =
    {dom     = dom_spec,
     cod     = cod_spec,
@@ -52,7 +52,7 @@ SpecCalc qualifying spec {
   % When printing the maps, we print only where they differ
   % from the canonical injection (where they differ from
   % the identity)
-  op ppMorphMap : PolyMap.Map (QualifiedId,QualifiedId) -> WadlerLindig.Pretty
+  op ppMorphMap : PolyMap.Map (QualifiedId,QualifiedId) -> WLPretty
   def ppMorphMap map =
     let abbrevMap =
       foldMap (fn newMap -> fn d -> fn c ->
@@ -75,7 +75,7 @@ SpecCalc qualifying spec {
         ppString "}"
       ]))
 
-  op  ppMorphPragmas : SM_Pragmas Position -> WadlerLindig.Pretty
+  op  ppMorphPragmas : SM_Pragmas -> WLPretty
   def ppMorphPragmas pragmas =
     case pragmas of
       | [] -> ppNil

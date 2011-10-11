@@ -150,7 +150,7 @@ spec or in specific refinements of it. Note that the map is printed
 in the reverse order to the way it it traversed by foldMap.
 
 \begin{spec}
-  op ppMap : Map -> Pretty
+  op ppMap : Map -> WLPretty
   def ppMap map =
      ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
                -> Cons (ppConcat [

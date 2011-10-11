@@ -1,9 +1,10 @@
 SpecCalc qualifying spec
   import UnitId
   import UnitId/Utilities
-  import ../Value
+  import /Languages/SpecCalculus/Semantics/Value
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm, sameSCTerm?
 
-  def AnnSpec.sameSCTerm? (x, y) =
+  def SpecCalc.sameSCTerm? (x, y) =
     case (x.1, y.1) of
       | (Quote x, Quote y) -> x.1 = y.1
       | (Other _, _) -> otherSameSCTerm? (x, y)

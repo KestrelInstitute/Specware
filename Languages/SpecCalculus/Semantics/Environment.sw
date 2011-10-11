@@ -8,8 +8,7 @@ are described monolithically ... everything appears below. Ugh!
 *)
 
 SpecCalc qualifying spec
-  import ../AbstractSyntax/Types   
-  import ../AbstractSyntax/Printer
+  import /Languages/SpecCalculus/AbstractSyntax/Types   % including SCTerm
   import Monad
 
 (*
@@ -54,6 +53,7 @@ UnitId_Dependency.
   type LocalContext  = PolyMap.Map (RelativeUID, ValueTermInfo)
   % type State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
+(*
   %% ppValueInfo uses Printer, which uses Types,
   %% so this can't easily be defined in Types.sw
   op ppValueInfo : ValueTermInfo -> Doc
@@ -77,6 +77,7 @@ UnitId_Dependency.
 	     ++
 	     [ppString "]"])
 
+*)
 (*
 
 *)
@@ -106,8 +107,9 @@ UnitId_Dependency.
   op  getBase : Env ((Option RelativeUID) * Spec)
   def getBase = readGlobalVar "BaseInfo"
 
-% op getBaseSpec : () -> Spec % declared in /Languages/MetaSlang/Specs/Printer
-  def SpecCalc.getBaseSpec() =
+
+  op getBaseSpec : () -> Spec % declared in /Languages/MetaSlang/Specs/Printer
+  def getBaseSpec() =
     let prog = {
        (optBaseUnitId,baseSpec) <- getBase;
        case optBaseUnitId of
@@ -183,6 +185,7 @@ UnitId_Dependency.
     in 
       run prog
 
+(*
   op showGlobalContext : Env String
   def showGlobalContext = {
       globalContext <- readGlobalVar "GlobalContext";
@@ -194,7 +197,7 @@ UnitId_Dependency.
       str <- showGlobalContext;
       print ("global context: " ^ str ^ "\n")
     }
-
+*)
   op emptyGlobalContext : Env ()
   def emptyGlobalContext = setGlobalContext PolyMap.emptyMap
 
@@ -252,6 +255,7 @@ The local context is where "let" bindings are deposied
       return (evalPartial localContext relative_uid)
     }
 
+(*
   op showLocalContext : Env String
   def showLocalContext = {
       localContext <- readGlobalVar "LocalContext";
@@ -263,6 +267,7 @@ The local context is where "let" bindings are deposied
       str <- showLocalContext;
       print ("local context: " ^ str ^ "\n")
     }
+*)
 (*
 
 When evaluating new locally scoped bindings, we need to be able to

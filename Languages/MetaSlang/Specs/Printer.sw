@@ -27,13 +27,15 @@
 %% 
 
 AnnSpecPrinter qualifying spec 
- import ../AbstractSyntax/Printer
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
+ import /Languages/MetaSlang/AbstractSyntax/Printer
  import AnnSpec
- % import /Library/IO/Primitive/IO                    % for getEnv
- import /Library/Legacy/DataStructures/IntSetSplay  % for indicesToDisable
- import /Library/Legacy/DataStructures/NatMapSplay  % for markTable's
+ % import /Library/IO/Primitive/IO                    % getEnv
+ import /Library/Legacy/DataStructures/IntSetSplay    % indicesToDisable
+ import /Library/Legacy/DataStructures/NatMapSplay    % markTable's
 
- op SpecCalc.getBaseSpec : () -> Spec % defined in /Languages/SpecCalculus/Semantics/Environment
+ import /Languages/SpecCalculus/Semantics/Environment
+ % op SpecCalc.getBaseSpec : () -> Spec % defined in /Languages/SpecCalculus/Semantics/Environment
  op printPragmas?: Bool = true
 
  %% ========================================================================
@@ -1451,11 +1453,11 @@ AnnSpecPrinter qualifying spec
    in
      aux(elements,true,result)
        
- op  ppImportTerm : PrContext -> ImportDirections -> SpecCalc.Term Position -> Pretty
+ op  ppImportTerm : PrContext -> ImportDirections -> SCTerm -> Pretty
 
- %% ppImportTerm wants to dispatch on the structure of the SpecCalc.Term, but that isn't defined here,
+ %% ppImportTerm wants to dispatch on the structure of the SCTerm, but that isn't defined here,
  %% so ppImportTerm is defined over in /Languages/SpecCalculus/Semantics/Evaluate/Print.sw,
- %% where SpecCalc.Term has been defined.
+ %% where SCTerm has been defined.
  %% 
  %%  def AnnSpecPrinter.ppImportTerm context import_directions im_sp_tm =
  %%    case im_sp_tm of
@@ -1489,13 +1491,13 @@ AnnSpecPrinter qualifying spec
 					   %% since it will indent inside string literals
 					   %% But pretty printers make it inordinately 
 					   %% difficult to do simple things like indentation.
-					   string (indentString "  " (showTerm im_sp_tm))]),
+					   string (indentString "  " (showSCTerm im_sp_tm))]),
 			  ppResult))
 	     | Verbose ->
 	       (index,
 		Cons((2, blockFill (0, 
 				    [(0, string "import "), 
-				     (0, string (showTerm im_sp_tm)), 
+				     (0, string (showSCTerm im_sp_tm)), 
 				     (0, string " |-> "), 
 				     (0, ppSpecAll context im_sp)])),
 		     ppResult))
@@ -1596,11 +1598,11 @@ AnnSpecPrinter qualifying spec
    ppSpecFlat (initialize (asciiPrinter, false)) spc
    
  def specToPretty spc = 
-   let base_spec = SpecCalc.getBaseSpec () in
+   let base_spec = getBaseSpec () in
    ppSpecHidingImportedStuff (initialize (asciiPrinter, false)) emptySpec spc
    
  def specToPrettyXSymbol spc = 
-   let base_spec = SpecCalc.getBaseSpec () in
+   let base_spec = getBaseSpec () in
    ppSpecHidingImportedStuff (initialize (XSymbolPrinter, false)) emptySpec spc
    
  def specToPrettyR spc = 

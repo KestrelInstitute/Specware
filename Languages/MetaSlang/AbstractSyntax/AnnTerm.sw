@@ -1,7 +1,8 @@
 MetaSlang qualifying spec
- import /Library/Legacy/Utilities/State  % for MetaTyVar's
+ import /Library/Legacy/Utilities/State         % for MetaTyVar's
  import /Library/Legacy/Utilities/System
  import /Library/Legacy/DataStructures/ListPair
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm
 
  op AnnSpecPrinter.printTerm   : [a] ATerm    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
  op AnnSpecPrinter.printSort   : [a] ASort    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
@@ -260,19 +261,17 @@ MetaSlang qualifying spec
  type AMetaTyVars     b = List (AMetaTyVar b)
  type AMetaSortScheme b = AMetaTyVars b * ASort b
 
- type SpecCalc.SCTerm   %% defined in /Languages/SpecCalculus/AbstractSyntax/Types
-
  type ATransformExpr a =
-    | Name String * a
-    | Number Nat * a
-    | Str String * a
-    | Qual String * String * a
-    | SCTerm SCTerm * a
-    | Item String * ATransformExpr a * a       % e.g. unfold map
-    | Tuple List (ATransformExpr a) * a
-    | Record List(String * ATransformExpr a) * a
+    | Name         String                                     * a
+    | Number       Nat                                        * a
+    | Str          String                                     * a
+    | Qual         String * String                            * a
+    | SCTerm       SCTerm                                     * a
+    | Item         String * ATransformExpr a                  * a  % e.g. unfold map
+    | Tuple        List (ATransformExpr a)                    * a
+    | Record       List(String * ATransformExpr a)            * a
     | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a
-    | Apply ATransformExpr a * List (ATransformExpr a) * a
+    | Apply        ATransformExpr a * List (ATransformExpr a) * a
 
  %%% Predicates
  op product?: [a] ASort a -> Bool

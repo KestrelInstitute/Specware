@@ -681,7 +681,7 @@ spec
        | ("getEnv",String s) -> (case getEnv s of
 				   | None -> Constant("None",optionStringType)
 				   | Some s -> Constructor("Some",String s,optionStringType))
-       | ("garbageCollect",Bool b) -> let _ = garbageCollect b in RecordVal []
+       | ("garbageCollect",Bool b) -> let _ = System.garbageCollect b in RecordVal []
        | ("trueFilename",String s) -> String(trueFilename s)
 
        | ("anyToString", Int i)      -> String (show i)

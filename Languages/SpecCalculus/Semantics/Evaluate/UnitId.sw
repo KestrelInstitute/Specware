@@ -1,7 +1,7 @@
 %%% Evalution of a UnitId term in the Spec Calculus
 
 SpecCalc qualifying spec
-  import Signature 
+  import Signature                 % including SCTerm
   import ../SpecPath 
   import ../../Parser/Parse
 
@@ -313,11 +313,11 @@ to one of many bindings in a file. For example \verb|/a/b#c|.
 (*      
 Given a term find a canonical UnitId for it.
 *)
-  op  SpecCalc.getUID : SpecCalc.Term Position -> Env UnitId
+  op  SpecCalc.getUID : SCTerm -> Env UnitId
   def SpecCalc.getUID term =
     case (valueOf term) of
       | UnitId unitId -> {(_,r_uid) <- evaluateReturnUID (positionOf term) unitId;
-                    return r_uid}
+                          return r_uid}
       | _ -> getCurrentUID                % Not sure what to do here
 (*
 Having resolved a UnitId to a file in the file system, this loads and
@@ -360,7 +360,7 @@ handled correctly.
 	   | Decls decls -> storeGlobalDecls unitId fileName decls)
   %  }
 
-  op storeGlobalDecls : UnitId -> String -> List (Decl Position) -> Env (List String)
+  op storeGlobalDecls : UnitId -> String -> SCDecls -> Env (List String)
   def storeGlobalDecls {path, hashSuffix=_} fileName decls =
     let def storeGlobalDecl (name,term) =
 	  let newUID = {path=path,hashSuffix=Some name} in
@@ -370,7 +370,7 @@ handled correctly.
     in {checkForMultipleDefs decls;
 	mapM storeGlobalDecl decls}
 
-  op checkForMultipleDefs: List (Decl Position) -> Env ()
+  op checkForMultipleDefs: SCDecls -> Env ()
   def checkForMultipleDefs decls =
     case foldl (fn (result as (seenNames,duplicate?), (name,term)) ->
 	        case duplicate? of

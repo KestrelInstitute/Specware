@@ -3,7 +3,7 @@ SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec % ??
   import SpecUnion                                    % for specUnion
-  import SpecSubst                                    % for warnAboutMissingItems
+  import SpecSubst                                    % for warnAboutMissingItems, SCTerm
   import Print                                        % for printMorphism
   % import TypeCoercer                                % for addCoercions
   import /Library/Unvetted/Random                     % for random

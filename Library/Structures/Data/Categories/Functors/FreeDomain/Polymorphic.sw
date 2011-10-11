@@ -53,7 +53,7 @@ When pretty printing a functor, we don't print the domain or codomain.
 Printing the domain (generator) is not unreasonable.
 
 \begin{spec}
-  op ppFunctor : fa (O,A) Functor (O,A) -> Pretty
+  op ppFunctor : fa (O,A) Functor (O,A) -> WLPretty
   def ppFunctor functor = 
     ppConcat [
       ppString "Vertex Map =",

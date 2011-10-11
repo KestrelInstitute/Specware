@@ -7,7 +7,6 @@ extensions of Specware that don't use OtherTerm, OtherValue, etc.
 SpecCalc qualifying spec 
 
   import Signature
-  import /Languages/SpecCalculus/AbstractSyntax/Printer
   import /Languages/SpecCalculus/Semantics/Value
   import UnitId/Utilities
   import Translate
@@ -85,6 +84,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.29  2006/12/20 08:39:53  mcdonald
+%% added qualifiers
+%%
 %% Revision 1.28  2006/12/19 00:29:14  mcdonald
 %% added required qualifiers
 %%

@@ -195,29 +195,29 @@ spec
     let mtv         : Sort = freshMetaTyVar ("gen", noPos)           in
     let list_type   : Sort = Base (mkQualifiedId ("List",    "List"),   [mtv], noPos) in
     let string_type : Sort = Base (mkQualifiedId ("String" , "String"), [],    noPos) in
-    let public_element : SpecElem Position = (Op ([mkUnQualifiedId "public"], 
-						  Unspecified,
-                                                  false,
-						  ApplyN ([Fun (Embed ("Cons", true),
-								Arrow (Product ([("1", mtv), 
-										 ("2", list_type)],
-										noPos),
-								       list_type,
-								       noPos),
-								noPos),
-							   Record ([("1", Fun (String "main",        string_type, noPos)),
-								    ("2", Fun (Embed ("Nil", false), list_type,   noPos))],
-								   noPos)],
-							  noPos)),
-					      noPos)
+    let public_element : SpecElemTerm = (Op ([mkUnQualifiedId "public"], 
+                                             Unspecified,
+                                             false,
+                                             ApplyN ([Fun (Embed ("Cons", true),
+                                                           Arrow (Product ([("1", mtv), 
+                                                                            ("2", list_type)],
+                                                                           noPos),
+                                                                  list_type,
+                                                                  noPos),
+                                                           noPos),
+                                                      Record ([("1", Fun (String "main",        string_type, noPos)),
+                                                               ("2", Fun (Embed ("Nil", false), list_type,   noPos))],
+                                                              noPos)],
+                                                     noPos)),
+                                         noPos)
     in
-    let package_element : SpecElem Position = (Op ([mkUnQualifiedId "package"], 
-                                                   Unspecified,
-                                                   false,
-                                                   Fun (String s, string_type, noPos)),
-					       noPos)
+    let package_element : SpecElemTerm = (Op ([mkUnQualifiedId "package"], 
+                                              Unspecified,
+                                              false,
+                                              Fun (String s, string_type, noPos)),
+                                          noPos)
     in
-      SpecCalc.evaluateSpec [public_element, package_element] noPos 
+    SpecCalc.evaluateSpec [public_element, package_element] noPos 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

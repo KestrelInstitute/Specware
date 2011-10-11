@@ -40,7 +40,7 @@ Of course we need the naturality condition on this and the axiom that
 the functors have the same domain and codomain.
 
 \begin{spec}
-  op ppNatTrans : fa (O,A) NatTrans (O,A) -> Pretty
+  op ppNatTrans : fa (O,A) NatTrans (O,A) -> WLPretty
   def ppNatTrans nt =
     ppConcat [
       ppString "Components=",

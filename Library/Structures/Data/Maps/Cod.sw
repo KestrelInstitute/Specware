@@ -8,6 +8,6 @@ spec {
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Cod
-  op ppCod : Cod -> Pretty
+  op ppCod : Cod -> WLPretty
 }
 \end{spec}

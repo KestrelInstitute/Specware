@@ -1,5 +1,6 @@
 SpecCalc qualifying spec 
- import ../../Environment
+ import /Languages/SpecCalculus/Semantics/Environment
+ import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
  import AccessSpec
  import /Languages/MetaSlang/Specs/Environment
  import /Library/Legacy/DataStructures/TopSort
@@ -319,16 +320,16 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addImport      : [a] (SpecCalc.Term Position * Spec)    * ASpec a * a -> ASpec a
- op addProperty    : [a] (AProperty a)                          * ASpec a -> ASpec a
+ op addImport      : [a] (SCTerm * Spec)                            * ASpec a * a -> ASpec a
+ op addProperty    : [a] (AProperty a)                              * ASpec a -> ASpec a
  op addAxiom       : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
  op addConjecture  : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
  op addTheorem     : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
  op addTheoremLast : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
  op addConjectures : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
  op addTheorems    : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
- op addComment     : [a] String * a                             * ASpec a -> ASpec a
- op addPragma      : [a] (String * String * String * a)         * ASpec a -> ASpec a
+ op addComment     : [a] String * a                                 * ASpec a -> ASpec a
+ op addPragma      : [a] (String * String * String * a)             * ASpec a -> ASpec a
 
  %% called by evaluateSpecImport
  def addImport ((specCalcTerm, imported_spec), spc, a) =

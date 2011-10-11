@@ -4,11 +4,16 @@ SpecCalc qualifying spec
   import /Provers/Proof                                  % Proof
   import /Library/IO/Primitive/IO                        % Time
   import /Library/Algorithms/Thread                      % Mutex
+  import ValueSig                                        % ValueInfo
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm   % SCTerm
 
   type SpecCalc.ValueInfo     = Value * TimeStamp * UnitId_Dependency
   type SpecCalc.ValueTermInfo = Value * TimeStamp * UnitId_Dependency * SCTerm
 
   %% --------------------------------------------------------------------------------
+
+%  type UnitId 
+%  type RelativeUID
 
   type Value =
     | Spec        Spec

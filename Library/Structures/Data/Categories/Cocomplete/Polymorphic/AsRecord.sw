@@ -42,8 +42,8 @@ Cat qualifying spec {
       % For now, use option to indicate errors. A monad would be nicer.
       colimit : Diagram (O,A) -> Option (InitialCocone (O,A)) * Option String,
       initialObject : O,
-      ppObj : O -> Pretty,
-      ppArr : A -> Pretty
+      ppObj : O -> WLPretty,
+      ppArr : A -> WLPretty
     }
 
 %  op ident: fa(O,A) Cat(O,A) -> O -> A
@@ -52,8 +52,8 @@ Cat qualifying spec {
 %  % op composable?: fa(O,A) Cat (O,A)  -> A -> A -> Boolean
 %  op compose: fa(O,A) Cat(O,A) -> A -> A -> A 
 %  op colimit: fa(O,A) Cat(O,A) -> Diagram (O,A) -> InitialCocone (O,A)
-%  op ppObj: fa(O,A) Cat(O,A) -> O -> Pretty
-%  op ppArr: fa(O,A) Cat(O,A) -> A -> Pretty
+%  op ppObj: fa(O,A) Cat(O,A) -> O -> WLPretty
+%  op ppArr: fa(O,A) Cat(O,A) -> A -> WLPretty
 
   def Cat.ident cat = cat.ident 
   def Cat.dom cat = cat.dom

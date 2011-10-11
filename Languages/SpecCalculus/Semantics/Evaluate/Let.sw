@@ -29,7 +29,7 @@ evaluating a list of declarations in a file.
 The list must be sorted in dependence order. Recursion is not allowed.
 
 \begin{spec}
-  op evaluateLocalDecls : List (Decl Position) -> Env ()
+  op evaluateLocalDecls : SCDecls -> Env ()
   def evaluateLocalDecls decls =
     let def evaluateLocalDecl ((name,term)) = {
         valueInfo <- evaluateTermInfo term;

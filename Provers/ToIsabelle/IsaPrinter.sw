@@ -7,7 +7,7 @@ IsaTermPrinter qualifying spec
  %import /Library/PrettyPrinter/WadlerLindig
  import /Library/PrettyPrinter/BjornerEspinosa
  import /Library/Legacy/DataStructures/ListUtilities
- import /Languages/SpecCalculus/AbstractSyntax/Types
+ import /Languages/SpecCalculus/AbstractSyntax/Types                % including SCTerm
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/MetaSlang/Transformations/SubtypeElimination
  import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
@@ -66,11 +66,6 @@ IsaTermPrinter qualifying spec
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
  type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct
                    | Quotient | Subsort | Apply
-
- type SpecTerm = SpecCalc.SpecTerm StandardAnnotation
- type Term = SpecCalc.Term StandardAnnotation
- type SpecElem = SpecCalc.SpecElem StandardAnnotation
- type Decl = SpecCalc.Decl StandardAnnotation
 
  % def prGrConcat x = prGroup (prConcat x)
  op prSymString(s: String): Pretty =
@@ -195,7 +190,7 @@ IsaTermPrinter qualifying spec
       else spname
 
   op uidStringPairForValueOrTerm
-       (c: Context, val: Value, sc_tm: Term)
+       (c: Context, val: Value, sc_tm: SCTerm)
        : Option((String * String * String) * Value * UnitId) =
     case uidStringPairForValue val of
       | None ->
@@ -213,7 +208,7 @@ IsaTermPrinter qualifying spec
               thyName(filnm ^ hash) ^ ".thy"),
              val, uid)
 
-  op uidStringPairForTerm(c: Context, sc_tm: Term): Option((String * String * String) * UnitId) =
+  op uidStringPairForTerm(c: Context, sc_tm: SCTerm): Option((String * String * String) * UnitId) =
     case sc_tm of
       | (Subst(spc_tm, morph_tm), pos) ->
         (case uidStringPairForTerm(c, spc_tm) of
@@ -234,7 +229,7 @@ IsaTermPrinter qualifying spec
                  uid))
       | _ -> None
 
-  op scTermShortName(sc_tm: Term): String =
+  op scTermShortName(sc_tm: SCTerm): String =
     case sc_tm of
       | (UnitId relId, _) -> relativeIdShortName relId
       | _ -> "tm"
@@ -263,7 +258,7 @@ IsaTermPrinter qualifying spec
       runSpecCommand (catch prog handler)
 
 
-  op  evaluateTermWrtUnitId(sc_tm: Term, currentUID: UnitId): Option Value = 
+  op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value = 
     let
       %% Ignore exceptions
       def handler _ (* except *) =
@@ -650,7 +645,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
       | (SortDef (type_id, _)) :: _ -> Some type_id
       | _ :: r -> firstTypeDef r
 
-  op  ppImport: Context -> Term -> Spec -> Pretty
+  op  ppImport: Context -> SCTerm -> Spec -> Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None ->

@@ -55,11 +55,7 @@ The conditions for a diagram expression to be valid include:
 \end{itemize}
 
 \begin{spec}
-  op evaluateDiagElem :
-       (SpecDiagram * TimeStamp * UnitId_Dependency)
-    -> DiagElem Position
-    -> Env (SpecDiagram * TimeStamp * UnitId_Dependency)
-
+  op evaluateDiagElem : (SpecDiagram * TimeStamp * UnitId_Dependency) -> DiagElem -> Env (SpecDiagram * TimeStamp * UnitId_Dependency)
   def evaluateDiagElem (dgm : SpecDiagram,timeStamp,depUIDs) elem =
     case (valueOf elem) of
       | Node (nodeId,term) -> {

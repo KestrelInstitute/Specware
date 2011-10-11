@@ -137,7 +137,7 @@ spec or in specific refinements of it. Note that the map is printed
 in the reverse order to the way it it traversed by foldMap.
 
 \begin{spec}
-  op ppMap : fa (a,b) (a -> Pretty) -> (b -> Pretty) -> Map (a,b) -> Pretty
+  op ppMap : fa (a,b) (a -> WLPretty) -> (b -> WLPretty) -> Map (a,b) -> WLPretty
   def ppMap ppKey ppValue map =
      ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
                -> Cons (ppConcat [

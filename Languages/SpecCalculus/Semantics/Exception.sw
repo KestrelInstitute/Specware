@@ -33,18 +33,8 @@ SpecCalc qualifying spec
   import /Library/Structures/Data/Monad/Exception
   import /Library/Legacy/Utilities/System
 
-  %% avoid importing Printer, because it defines monadic 
-  %% stuff that causes conflicts when this spec is imported by 
-  %% /Languages/SpecCalculus/Semantics/Monad.sw
-  %%
-  %% import /Languages/SpecCalculus/AbstractSyntax/Printer
-
-  %% Instead, just import Position and declare whatever else we need here....
+  import /Languages/SpecCalculus/AbstractSyntax/UnitId
   import /Languages/MetaSlang/Specs/Position
-  type UnitId 
-  type RelativeUID
-  op showRelativeUID : RelativeUID -> String
-  op showUID : UnitId -> String
 
   type Monad.Exception =
     | Fail                String 
@@ -71,10 +61,6 @@ SpecCalc qualifying spec
     | Warning             Position * String
     | Escape  % Control flow mechanism - see IsoMorphism.sw
 
-
-  op uidToString          : UnitId      -> String  % defined in Evaluate/UnitId/Utilities.sw
-  op relativeUID_ToString : RelativeUID -> String  % defined in Evaluate/UnitId/Utilities.sw
-
   op decodeException : Exception -> (Option (Position * Boolean)) * String 
   def decodeException except =
     case except of
@@ -93,7 +79,7 @@ SpecCalc qualifying spec
       | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: "    ^ msg)
       | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: "      ^ msg)
       | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
-      | CircularDefinition  uid        -> (None,              "Circular definition: "     ^ showUID uid)
+      | CircularDefinition  uid        -> (None,              "Circular definition: "     ^ showUnitId uid)
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: "             ^ msg)
       | UndefinedGlobalVar  name       -> (None,              "Undefined global var: "    ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)

@@ -22,58 +22,26 @@ as done here.
 
 SpecCalc qualifying spec 
 
- import Types
+ import Types                               % including SCTerm
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
  import /Languages/MetaSlang/Specs/Printer
  import /Languages/SpecCalculus/Semantics/Value
 
-  %% ppValue is defined in /Languages/SpecCalculus/Semantics/Value, 
-  %% but we can't import that without circularity...
+ def SpecCalc.showSCTerm term = ppFormat (ppSCTerm term)
+ def SpecCalc.showUnitId uid  = ppFormat (ppUnitId uid)
 
- %% never called...
-  op showSpecTerm : [a] SpecTerm a -> String
- def showSpecTerm spec_term = ppFormat (ppSpecTerm spec_term)
-
- %% SpecCalc.showTerm is called from /Languages/MetaSlang/Specs/Printer.sw and 
- %%  SimplePrinter.sw to print import terms.
- %% They use /Languages/MetaSlang/Specs/SpecCalc.sw as a hack to refer to this,
- %%  which they otherwise would not have access to.
- %% op showTerm : [a] SpecCalc.Term a -> String
- def SpecCalc.showTerm term = ppFormat (ppTerm term)
-
-  op showUID : UnitId -> String
- def showUID unitId = ppFormat (ppUID unitId)
-
-%   op ppUID : UnitId -> Doc
-%   def ppUID {path, hashSuffix}  = 
-%     let def ppElem elem =
-%       ppConcat [
-%           ppString "\"",
-%           ppString elem,
-%           ppString "\""
-%         ]
-%     in
-%       ppConcat [
-%           ppString "[",
-%           ppSep (ppString " ") (map ppElem path),
-%           (case hashSuffix of
-%             | None -> ppNil
-%             | Some suffix -> ppString (" # " ^ suffix)),
-%           ppString "]"
-%         ]
-
-  op ppUID : UnitId -> Doc
- def ppUID unitId =
-   let ppLocal = ppUIDlocal unitId in
-   case unitId of
+  op ppUnitId : UnitId -> Doc
+ def ppUnitId uid =
+   let ppLocal = ppUnitIdLocal uid in
+   case uid of
      | {path=h::_,hashSuffix=_} ->
        if deviceString? h
 	 then ppLocal
 	 else ppAppend (ppString "/") ppLocal
      | _ -> ppLocal			% Shouldn't happen
 
-  op ppUIDlocal : UnitId -> Doc
- def ppUIDlocal {path, hashSuffix} =
+  op ppUnitIdLocal : UnitId -> Doc
+ def ppUnitIdLocal {path, hashSuffix} =
    let prefix = ppSep (ppString "/") (map ppString path) in
    case hashSuffix of
      | None -> prefix
@@ -82,27 +50,19 @@ SpecCalc qualifying spec
   op ppRelativeUID : RelativeUID -> Doc
  def ppRelativeUID relUID =
    case relUID of
-     | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUIDlocal unitId)
-     | UnitId_Relative   unitId -> ppUIDlocal unitId
+     | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUnitIdLocal unitId)
+     | UnitId_Relative   unitId -> ppUnitIdLocal unitId
 
-  op showRelativeUID : RelativeUID -> String
- def showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
-
- %% never called
-  op ppSpecTerm : [a] SpecTerm a -> Doc
- def ppSpecTerm (sterm, _(* position *)) =
-   case sterm of
-     | Term  term -> ppTerm term
-     | Decls decls -> ppDecls decls
+ def SpecCalc.showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
  %% From Specware, called only for printing import SC terms !!
  %% From Forges, called for printing inline and specialize SC terms
-  op ppTerm : [a] SpecCalc.Term a -> Doc
- def ppTerm (term, _(* position *)) =
+  op ppSCTerm : SCTerm -> Doc
+ def ppSCTerm (term, _(* position *)) =
    case term of
      | Print t ->
        ppConcat [ppString "print ",
-		 ppTerm t]
+		 ppSCTerm t]
 
      | UnitId unitId -> 
        ppRelativeUID unitId
@@ -117,11 +77,11 @@ SpecCalc qualifying spec
       | Qualify (term, qualifier) ->
         ppConcat [ppString qualifier,
 		  ppString " qualifying ",
-		  ppTerm term]
+		  ppSCTerm term]
 
       | Translate (term, renaming) ->
 	ppConcat [ppString "translate (",
-		  ppTerm term,
+		  ppSCTerm term,
 		  ppString ") by ",
 		  ppRenaming renaming]
 
@@ -133,10 +93,10 @@ SpecCalc qualifying spec
 		  ppNewline,
 		  ppString "in",
 		  ppNewline,
-		  ppNestG 2 (ppTerm term)]
+		  ppNestG 2 (ppSCTerm term)]
 
       | Where (decls, term) ->
-	ppConcat [ppTerm term,
+	ppConcat [ppSCTerm term,
 		  ppNewline,
 		  ppString "  ",
 		  ppString "where {",
@@ -156,13 +116,13 @@ SpecCalc qualifying spec
 
       | Colimit term ->
 	ppConcat [ppString "colim ",
-		  ppTerm term]
+		  ppSCTerm term]
 
       | Subst (specTerm,morphTerm) ->
-	ppNestG 2 (ppConcat [ppTerm specTerm,
+	ppNestG 2 (ppConcat [ppSCTerm specTerm,
                             ppBreak,
                             ppString " [",
-                            ppTerm morphTerm,
+                            ppSCTerm morphTerm,
                             ppString "]"])
 
       | SpecMorph (dom, cod, elems, pragmas) ->
@@ -193,9 +153,9 @@ SpecCalc qualifying spec
 
 	in
          ppNestG 1 (ppConcat [ppString "morphism ",
-                             ppTerm dom,
+                             ppSCTerm dom,
                              ppString " -> ",
-                             ppTerm cod,
+                             ppSCTerm cod,
                              ppBreak,
                              ppNestG 0 (ppConcat[ppString " {",
                                                 ppNestG 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppSpecMorphRule elems)),
@@ -232,16 +192,16 @@ SpecCalc qualifying spec
 	  ppConcat [ppString "hide {",
 		    ppSep (ppString ",") (map ppNameExpr nameExprs),
 		    ppString "} in",
-		    ppTerm term]
+		    ppSCTerm term]
     % | Export (nameExpr, term) ->
     %   ppConcat [ppString "export {",
     %             ppSep (ppString ",") (map ppIdInfo nameExpr),
     %             ppString "} from",
-    %             ppTerm term]
+    %             ppSCTerm term]
 
       | Generate (target, term, optFileNm) ->
         ppConcat [ppString ("generate " ^ target ^ " "),
-		  ppTerm term,
+		  ppSCTerm term,
 		  (case optFileNm of
 		     | Some filNm -> ppString (" in " ^ filNm)
 		     | _ -> ppNil)]
@@ -250,12 +210,12 @@ SpecCalc qualifying spec
 	ppConcat [ppString "reduce ",
 		  ppATerm msTerm,
 		  ppString " in ",
-		  ppTerm scTerm]
+		  ppSCTerm scTerm]
 
       | Prove (claimName, term, proverName, assertions, proverOptions, proverBaseOptions, answer_var) ->
 	  ppConcat [
 	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
-	    ppTerm term,
+	    ppSCTerm term,
 	    (case assertions of
 	       | All -> ppNil
 	       | Explicit ([]) -> ppNil
@@ -275,11 +235,11 @@ SpecCalc qualifying spec
 
       | Expand term ->
 	ppConcat [ppString "expand ",
-		  ppTerm term]
+		  ppSCTerm term]
 
       | Obligations term ->
 	ppConcat [ppString "obligations ",
-		  ppTerm term]
+		  ppSCTerm term]
 
       | Quote (value,_,_) -> 
 	ppValue value
@@ -293,14 +253,14 @@ SpecCalc qualifying spec
    else 
      ppString (q ^ "." ^ id)
 
-   op ppDiagElem : [a] DiagElem a -> Doc
+ op ppDiagElem : DiagElem -> Doc
  def ppDiagElem (elem, _ (* position *)) =
     case elem of
       | Node (nodeId, term) ->
           ppConcat [
             ppString nodeId,
             ppString " |-> ",
-            ppTerm term
+            ppSCTerm term
           ]
       | Edge (edgeId, dom, cod, term) ->
           ppConcat [
@@ -310,27 +270,27 @@ SpecCalc qualifying spec
             ppString " -> ",
             ppString cod,
             ppString " |-> ",
-            ppTerm term
+            ppSCTerm term
           ]
 
-  op ppDecls : [a] List (Decl a) -> Doc
+  op ppDecls : SCDecls -> Doc
  def ppDecls decls =
    let 
      def ppDecl (name, term) =
        ppConcat [ppString name,
 		 ppString " = ",
-		 ppTerm term]
+		 ppSCTerm term]
    in
      ppSep ppNewline (map ppDecl decls)
 
-  op ppSpecElems : [a] List (SpecElem a) -> Doc
+  op ppSpecElems : SpecElemTerms -> Doc
  def ppSpecElems elems = ppSep ppNewline (map ppSpecElem elems)
 
-  op ppSpecElem : [a] SpecElem a -> Doc
+  op ppSpecElem : SpecElemTerm -> Doc
  def ppSpecElem (elem, a) = 
    case elem of
      | Import  term                   -> ppConcat [ppString "import ",
-						   ppSep (ppString ", ") (map ppTerm term)]
+						   ppSep (ppString ", ") (map ppSCTerm term)]
      | Sort    (aliases, dfn)         -> myppASortInfo (aliases, dfn)
      | Op      (aliases, fixity, refine?, dfn) ->
        myppAOpInfo(aliases, fixity, refine?, dfn)
@@ -489,7 +449,7 @@ SpecCalc qualifying spec
 		ppNestG 1 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppRenamingRule rules)),
 		ppString "}"]
 
-  op ppOtherTerm         : [a] OtherTerm   a -> Doc % Used for extensions to Specware
+  op ppOtherTerm         : OtherTerm         -> Doc % Used for extensions to Specware
   op ppOtherRenamingRule : OtherRenamingRule -> Doc % Used for extensions to Specware
 
   %% --------------------------------------------------------------------------------

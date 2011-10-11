@@ -9,7 +9,7 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/Specs/CompressSpec
   import /Languages/MetaSlang/Transformations/DefToAxiom
 
-  import Signature
+  import Signature                 % including SCTerm
   import UnitId/Utilities  
   import Spec/ComplainIfAmbiguous
 

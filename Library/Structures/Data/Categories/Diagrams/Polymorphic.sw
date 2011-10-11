@@ -77,7 +77,7 @@ can be folded over a diagram dgm with:
 \end{spec}
 
 \begin{spec}
-  op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
+  op ppDiagram : fa (O,A) Diagram (O,A) -> WLPretty
   def ppDiagram dgm =
     ppConcat [
       ppString "Shape=",

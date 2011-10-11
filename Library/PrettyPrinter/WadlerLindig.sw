@@ -28,7 +28,8 @@ WadlerLindig qualifying spec
     | DocBreak String
     | DocGroup Doc
     | DocBreaking? Bool * Doc    % For internal use to limit scope of breaking? parameter in layout
-   type Pretty = Doc
+
+  type WLPretty = Doc
 
   op PrettyPrint.blanks : Nat -> String
   op spaces : Nat -> String

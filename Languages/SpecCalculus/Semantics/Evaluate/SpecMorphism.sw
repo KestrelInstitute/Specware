@@ -7,6 +7,7 @@ SpecCalc qualifying spec
   import Spec/CoerceToSpec
   import UnitId/Utilities                                % for uidToString, if used...
   import Spec/AccessSpec
+  import /Languages/SpecCalculus/AbstractSyntax/SCTerm   % SCTerm
 
 (*
 For morphisms, evaluate the domain and codomain terms, and check
@@ -54,7 +55,7 @@ coherence conditions of the morphism elements.
                       "domain and codomain of spec morphism are not specs"))
     }
 
-  op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> (SM_Pragmas Position) -> Position -> Option SCTerm -> Env Morphism
+  op makeSpecMorphism : Spec -> Spec -> List SpecMorphRule -> SM_Pragmas -> Position -> Option SCTerm -> Env Morphism
   def makeSpecMorphism domSpec codSpec rawMapping pragmas position opt_sm_tm = 
     {
       morphism_map <- makeResolvedMapping domSpec codSpec rawMapping;
@@ -77,12 +78,7 @@ coherence conditions of the morphism elements.
 %%    let sort_renaming = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_sort_map in
 %%    (op_renaming, sort_renaming)
 
-  op makeResolvedMapping :
-        Spec
-     -> Spec
-     -> List (SpecMorphRule Position)
-     -> Env MorphismMaps
-
+  op makeResolvedMapping : Spec -> Spec -> List SpecMorphRule -> Env MorphismMaps
   def makeResolvedMapping dom_spec cod_spec sm_rules =
     let 
       def findCodOp position qid =
@@ -179,7 +175,7 @@ coherence conditions of the morphism elements.
 	      op_map   <- foldOverQualifierMap extend_op_map   op_map   dom_spec.ops;
 	      return (op_map, sort_map)})
 
-      def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
+      def insert (op_map,sort_map) ((sm_rule,position) : SpecMorphRule) =
 	case sm_rule of
           | Sort (dom_qid, cod_qid) ->
 	    (let dom_types = findAllSorts (dom_spec, dom_qid) in
@@ -291,7 +287,7 @@ coherence conditions of the morphism elements.
          Spec 
       -> Spec 
       -> (AQualifierMap QualifiedId) * (AQualifierMap QualifiedId)
-      -> SM_Pragmas Position
+      -> SM_Pragmas 
       -> Option SCTerm
       -> Env Morphism
   def buildSpecMorphism domSpec codSpec (opMap,sortMap) pragmas opt_sm_tm = {
