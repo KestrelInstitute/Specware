@@ -1,12 +1,9 @@
 MetaSlang qualifying spec
- import /Library/Legacy/Utilities/State         % for MetaTyVar's
+ import /Library/Legacy/Utilities/State                % MetaTyVar
  import /Library/Legacy/Utilities/System
  import /Library/Legacy/DataStructures/ListPair
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm
-
- op AnnSpecPrinter.printTerm   : [a] ATerm    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
- op AnnSpecPrinter.printSort   : [a] ASort    a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
- op AnnSpecPrinter.printPattern: [a] APattern a -> String %  defined in ../Specs/Printer, which imports this spec (circularity)
+ import PrinterSig                                     % printTerm, printSort, printPattern
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId
@@ -150,7 +147,7 @@ MetaSlang qualifying spec
  %% location information and free variables for use in
  %% various transformation steps.
 
- type ATerm b =
+ type MetaSlang.ATerm b =
   | Apply        ATerm b * ATerm b                       * b
   | ApplyN       List (ATerm b)                          * b % Before elaborateSpec
   | Record       List (Id * ATerm b)                     * b
@@ -180,7 +177,7 @@ MetaSlang qualifying spec
 
  type AMatch b = List (APattern b * ATerm b * ATerm b)
 
- type ASort b =
+ type MetaSlang.ASort b =
   | Arrow        ASort b * ASort b                   * b
   | Product      List (Id * ASort b)                 * b
   | CoProduct    List (Id * Option (ASort b))        * b
@@ -196,7 +193,7 @@ MetaSlang qualifying spec
                                                           % but then the various mapping functions become much trickier.
   | Any                                                b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 
- type APattern b =
+ type MetaSlang.APattern b =
   | AliasPat      APattern b * APattern b             * b
   | VarPat        AVar b                              * b
   | EmbedPat      Id * Option (APattern b) * ASort b  * b

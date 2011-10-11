@@ -28,6 +28,7 @@
 
 AnnSpecPrinter qualifying spec 
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
+ import /Languages/MetaSlang/AbstractSyntax/PrinterSig % printTerm, printSort, printPattern
  import /Languages/MetaSlang/AbstractSyntax/Printer
  import AnnSpec
  % import /Library/IO/Primitive/IO                    % getEnv
