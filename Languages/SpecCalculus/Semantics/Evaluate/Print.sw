@@ -103,7 +103,7 @@ SpecCalc qualifying spec {
  % from show, showx:
  def AnnSpecPrinter.printSpecExpanded base_spec (*reverse_context*) spc =
    %% TODO: use reverse_context for imports ?
-   AnnSpecPrinter.printSpecFlat (subtractSpec spc base_spec) 
+   AnnSpecPrinter.printSpecFlat spc
 
  %% This wants to live in /Languages/MetaSlang/Specs/Printer.sw,
  %% but SpecCalc.Term is merely declared (not defined) there,
