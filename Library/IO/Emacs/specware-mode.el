@@ -1437,6 +1437,8 @@ STRING should be given if the last search was by `string-match' on STRING."
       (setq filename (subseq filename (1+ pos))))
     (cons head (concat "/" filename))))
 
+(unless (fboundp 'char-to-int) (defalias 'char-to-int 'identity))
+
 (defun unitIdChar (ch)
   (or (member ch '(?/ ?_ ?#))
       (let ((num (char-to-int ch)))
