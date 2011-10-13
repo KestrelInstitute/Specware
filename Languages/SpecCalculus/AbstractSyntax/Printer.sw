@@ -80,9 +80,11 @@ SpecCalc qualifying spec
 		  ppSCTerm term]
 
       | Translate (term, renaming) ->
-	ppConcat [ppString "translate (",
-		  ppSCTerm term,
-		  ppString ") by ",
+	ppConcat [ppString "translate ",
+		  if embed? UnitId term.1
+                    then ppSCTerm term
+                    else ppConcat[ppString "(", ppSCTerm term, ppString ")"],
+		  ppString " by ",
 		  ppRenaming renaming]
 
       | Let (decls, term) ->
