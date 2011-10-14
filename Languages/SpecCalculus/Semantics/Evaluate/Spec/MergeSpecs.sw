@@ -53,6 +53,75 @@ SpecCalc qualifying spec
 	 merged_info.names  % new and old
 
 
+
+ op  mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
+   let
+     def aux (new_info, Qualified (q, id)) =
+       case findAQualifierMap (ops, q, id) of
+	 | None -> new_info
+	 | Some old_info ->
+	   if new_info = old_info then
+	     new_info
+	   else
+	     let names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
+	     let combined_names  = removeDuplicates names in % redundant?
+	     %% defer checks for conflicting fixities until later, after the caller 
+	     %% has had a chance to call compressDefs   
+	     let combined_fixity = (if new_info.fixity = old_info.fixity then
+				      new_info.fixity
+				    else
+				      Error [new_info.fixity, old_info.fixity])
+	     in
+	     let old_type_tms = unpackSortedTerms old_info.dfn in
+	     let new_type_tms = unpackSortedTerms new_info.dfn in
+	     let combined_type_tms =
+	         foldl (fn (combined_type_tms, (new_tvs, new_ty, new_dfn)) ->
+                        % let _ = writeLine("new: "^printTerm new_decl^"\nold: "^printTerm(head combined_decls)) in
+			if exists? (fn (old_tvs, old_ty, old_dfn) -> new_tvs = old_tvs
+                                                                    && compatibleTypes?(new_ty, old_ty)
+                                                                    && compatibleTerms?(new_dfn, old_dfn))
+                              combined_type_tms
+                          then map (fn oldtriple as (old_tvs, old_ty, old_dfn) ->
+                                      if new_tvs = old_tvs
+                                        && compatibleTypes?(new_ty, old_ty)
+                                        && compatibleTerms?(new_dfn, old_dfn)
+                                       then (old_tvs, chooseDefinedType(old_ty, new_ty),
+                                             chooseDefinedTerm(old_dfn, new_dfn))
+                                       else oldtriple)
+                                combined_type_tms
+			else combined_type_tms ++ [(new_tvs, new_ty, new_dfn)])
+		       []
+		       (if length old_type_tms > length new_type_tms
+                        then old_type_tms ++ new_type_tms
+                        else new_type_tms ++ old_type_tms)
+	     in
+	     let combined_dfn = maybePiAndSortedTerm combined_type_tms in
+             let _ = if true then ()
+               else writeLine("merge old: "^id^"\n"^printTerm(old_info.dfn)^"\n with \n"^printTerm(new_info.dfn)
+                              ^"\n to\n"^printTerm combined_dfn) in
+	     new_info << {names           = combined_names, 
+			  dfn             = combined_dfn,
+			  fullyQualified? = false}
+   in
+   let merged_info = foldl aux info info.names in
+   foldl (fn (ops, Qualified (q, id)) ->
+	  insertAQualifierMap (ops, q, id, merged_info))
+         ops 
+	 merged_info.names  % new and old
+
+op compatibleTypes?(ty1: Sort, ty2: Sort): Bool =
+  anySort? ty1 || anySort? ty2 || equalType?(ty1, ty2)
+
+op chooseDefinedType(ty1: Sort, ty2: Sort): Sort =
+  if anySort? ty1 then ty2 else ty1
+
+op compatibleTerms?(tm1: MS.Term, tm2: MS.Term): Bool =
+  anyTerm? tm1 || anyTerm? tm2 || equalTerm?(tm1, tm2)
+ 
+op chooseDefinedTerm(tm1: MS.Term, tm2: MS.Term): MS.Term =
+  if anyTerm? tm1 then tm2 else tm1
+
+(*
  op  mergeOpInfo : Spec -> OpMap -> OpInfo -> OpMap
  def mergeOpInfo spc ops info =
    let
@@ -74,6 +143,10 @@ SpecCalc qualifying spec
 	     in
 	     let (old_decls, old_defs) = opInfoDeclsAndDefs old_info in
 	     let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
+             %let _ = writeLine("old: "^printTerm old_info.dfn) in
+             %let _ = writeLine("new: "^printTerm new_info.dfn) in
+             % let _ = (writeLine("old decls: "); app (fn d -> writeLine(printTerm d)) old_decls) in
+             % let _ = (writeLine("old defs: "); app (fn d -> writeLine (printTerm d)) old_defs) in
 	     let combined_decls =
 	         foldl (fn (combined_decls, new_decl) ->
                         % let _ = writeLine("new: "^printTerm new_decl^"\nold: "^printTerm(head combined_decls)) in
@@ -88,6 +161,7 @@ SpecCalc qualifying spec
 		       old_decls
 		       new_decls
 	     in
+             %let _ = (writeLine("Combined decls: "); app (fn d -> writeLine(printTerm d)) combined_decls) in
              % let (main_defs, less_defs) = if length new_defs > length old_defs then (new_defs, old_defs) else (old_defs, new_defs) in
 	     let combined_defs =
 	         foldl (fn (combined_defs, new_def) ->
@@ -103,6 +177,7 @@ SpecCalc qualifying spec
                     []
                     (old_defs ++ new_defs)
 	     in
+             %let _ = (writeLine("Combined defs: "); app (fn d -> writeLine (printTerm d)) combined_defs) in
 	     %% defer checks for duplicate defs until later, after the caller 
 	     %% has had a chance to call compressDefs
              let (tvs, ty, _) = unpackTerm(head combined_decls) in
@@ -120,6 +195,7 @@ SpecCalc qualifying spec
 	  insertAQualifierMap (ops, q, id, merged_info))
          ops 
 	 merged_info.names  % new and old
+*)
 
 op combineDecls(old_decl: MS.Term, new_decl: MS.Term, old_def: MS.Term, new_def: MS.Term): List MS.Term =
   case (old_decl, new_decl) of
