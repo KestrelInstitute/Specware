@@ -103,7 +103,8 @@ AnnTermPrinter qualifying spec
 	      qualifier = "IntegerAux" || 
               qualifier = "General"    ||
               qualifier = "Char"       ||
-              qualifier = "List" 
+              qualifier = "List"       ||
+              qualifier = "Bool"
              then 
                id
            else
