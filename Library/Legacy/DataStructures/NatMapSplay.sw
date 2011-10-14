@@ -1,7 +1,7 @@
 NatMap qualifying spec {
   import SplayMap
 
-  sort NatMap.Map a = SplayMap.Map (Nat, a)
+  type NatMap.Map a = SplayMap.Map (Nat, a)
 
   op empty      : fa(a) NatMap.Map a
   op insert     : fa(a) NatMap.Map a * Nat * a -> NatMap.Map a
@@ -12,7 +12,7 @@ NatMap qualifying spec {
   op appi       : fa(a) (Nat * a -> ()) -> NatMap.Map a -> ()
   op foldri     : fa(a,b) (Nat * a * b -> b) -> b ->  NatMap.Map a -> b
   op listItems  : fa(a) NatMap.Map a -> List a
-  op inDomain   : fa(a) NatMap.Map a * Nat -> Boolean 
+  op inDomain   : fa(a) NatMap.Map a * Nat -> Bool 
   op numItems   : fa(a) NatMap.Map a -> Nat
 
   op compose    : NatMap.Map Nat * NatMap.Map Nat -> NatMap.Map Nat

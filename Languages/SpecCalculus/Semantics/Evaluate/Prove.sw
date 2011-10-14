@@ -12,7 +12,7 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases
   import /Languages/MetaSlang/CodeGen/AddMissingFromBase
   import /Languages/MetaSlang/CodeGen/Poly2Mono                  % poly2monoForSnark
-  import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec  % addSortConstructorsToSpecForSnark, addProductSortConstructorsToSpec, addProductAccessorsToSpec
+  import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec  % addTypeConstructorsToSpecForSnark, addProductTypeConstructorsToSpec, addProductAccessorsToSpec
 
   import /Library/IO/Primitive/IO
   import UnitId/Utilities                                    % for uidToString, if used...
@@ -84,7 +84,7 @@ SpecCalc qualifying spec
 		    unit   = unitId})
     }
 
-  op PrimitiveSortOp? (Qualified (q, id) : QualifiedId) : Bool =
+  op PrimitiveTypeOp? (Qualified (q, id) : QualifiedId) : Bool =
     case q of
       | "Boolean"    -> id in? ["Bool", "show", "toString"]
       | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
@@ -97,7 +97,7 @@ SpecCalc qualifying spec
 
   op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProver baseSpc spc =
-    let spc = addMissingFromBase(baseSpc,spc,PrimitiveSortOp?) in
+    let spc = addMissingFromBase(baseSpc,spc,PrimitiveTypeOp?) in
     let xSpc = transformSpecForFirstOrderProverInt spc in
 (*
     if proverUseBase?
@@ -115,7 +115,7 @@ SpecCalc qualifying spec
   def transformSpecForFirstOrderProverInt spc =
      %let _ = writeLine("orig") in
      %let _ = writeLine(printSpec spc) in
-    let spc = unfoldSortAliases spc in
+    let spc = unfoldTypeAliases spc in
     let spc = removeCurrying spc in
      %let _ = writeLine("remCur") in
      %let _ = writeLine(printSpec spc) in
@@ -130,13 +130,13 @@ SpecCalc qualifying spec
      %let _ = writeLine("remPoly") in
      %let _ = writeLine(printSpec spc) in
      %let spc = addEqOpsToSpec spc in
-     %let _ = printSpecWithSortsToTerminal spc in
+     %let _ = printSpecWithTypesToTerminal spc in
     let spc = lambdaLift (spc,true) in
      %let _ = writeLine("lambdaLift") in
      %let _ = writeLine(printSpec spc) in
-     %let spc = foldRecordSorts(spc) in
-    let (spc,constrOps) = addSortConstructorsToSpecForSnark spc in
-    let (spc,constrOps) = addProductSortConstructorsToSpec spc in
+     %let spc = foldRecordTypes(spc) in
+    let (spc,constrOps) = addTypeConstructorsToSpecForSnark spc in
+    let (spc,constrOps) = addProductTypeConstructorsToSpec spc in
     let (spc,constrOps) = addProductAccessorsToSpec spc in
      %let _ = writeLine("ConsAccAdds") in
      %let _ = writeLine(printSpec spc) in
@@ -440,7 +440,7 @@ SpecCalc qualifying spec
 	   | Theorem -> "Theorem" 
 	   | Axiom -> "Axiom" in
    let claimType = getClaimType(claimType) in
-   let snarkSortDecls = snarkSorts(spc) in
+   let snarkTypeDecls = snarkTypes(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
    let snarkBaseHypothesis = if includeBase
@@ -450,17 +450,17 @@ SpecCalc qualifying spec
 %   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewriteSpc, prop))
 %                                     rewriteHypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
-   let snarkSubsortHypothesis = snarkSubsortProperties(context, spc) in
+   let snarkSubtypeHypothesis = snarkSubtypeProperties(context, spc) in
    let snarkPropertyHypothesis = foldr (fn (prop, list) ->
 					snarkPropertiesFromProperty(context, spc, prop)++list)
                                    [] hypothesis
    in
-   let snarkHypothesis = snarkSubsortHypothesis ++ snarkPropertyHypothesis in
+   let snarkHypothesis = snarkSubtypeHypothesis ++ snarkPropertyHypothesis in
    let snarkConjecture =
      case answerVariable of
        | None -> snarkConjectureRemovePattern(context, spc, claim)
        | Some var -> snarkAnswer(context, spc, claim, [var]) in
-   let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkSortDecls, snarkOpDecls,
+   let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkTypeDecls, snarkOpDecls,
 					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
    let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
@@ -486,10 +486,10 @@ SpecCalc qualifying spec
 	   | Axiom -> "Axiom" in
    let claimType = getClaimType(claimType) in
    let context = emptyToFMContext in
-   %let fmSubsortHypothesis = fmSubsortProperties(context, spc) in
-   %let fmSubsortHypothesis = [] in
+   %let fmSubtypeHypothesis = fmSubtypeProperties(context, spc) in
+   %let fmSubtypeHypothesis = [] in
    %let fmPropertyHypothesis = foldr (fn (prop, list) -> [toFMProperty(context, spc, prop)]++list) [] hypothesis in
-   %let fmHypothesis = fmSubsortHypothesis ++ fmPropertyHypothesis in
+   %let fmHypothesis = fmSubtypeHypothesis ++ fmPropertyHypothesis in
    %let fmConjecture = toFMProperty(context, spc, claim) in
    let runTime = "FM" in
    let proved = proveMSProb(spc, [], claim) in
@@ -502,7 +502,7 @@ SpecCalc qualifying spec
  op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
                            * List LispCell * LispCell -> LispCell
 
- def makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
+ def makeSnarkProveDecls(proverOptions, snarkTypeDecl, snarkOpDecls,
 			 snarkBaseHypothesis, % snarkRewriteHypothesis,
 			 snarkHypothesis, snarkConjecture) =
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
@@ -513,7 +513,7 @@ SpecCalc qualifying spec
    [Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
     Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(10)]),
     Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
-    Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-TYPES"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
     Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
@@ -543,8 +543,8 @@ SpecCalc qualifying spec
                Lisp.quote(Lisp.symbol("SNARK","=>"))]),
 
     Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
-    Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
-   Lisp.++ (Lisp.list snarkSortDecl)
+    Lisp.list([Lisp.symbol("SNARK","USE-WELL-TYPEING"), Lisp.bool(false)])]
+   Lisp.++ (Lisp.list snarkTypeDecl)
    Lisp.++ (Lisp.list snarkOpDecls)
    Lisp.++ (Lisp.list proverOptions)
    Lisp.++ (Lisp.list [setOfSupportOn])
@@ -584,14 +584,14 @@ Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
  op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
                            * List LispCell * LispCell * String -> LispCell
 
- def makeSnarkProveEvalForm(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis,
+ def makeSnarkProveEvalForm(proverOptions, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis,
 			    % snarkRewriteHypothesis,
 			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %let _ = if specwareDebug? then writeLine(" using: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
-   let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
+   let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkTypeDecl, snarkOpDecls,
 					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture) in
    	 Lisp.list 

@@ -656,9 +656,9 @@ CUtils qualifying spec
     let t1    = structUnionTypeDefnToType sut1 in
     t1 nin? deps2
 
-  op sortStructUnionTypeDefns (cspc : C_Spec) : C_Spec =
+  op typeStructUnionTypeDefns (cspc : C_Spec) : C_Spec =
     let suts = cspc.structUnionTypeDefns               in
-    let suts = qsort (structUnionTypeDefnGT cspc) suts in
+    let suts = qtype (structUnionTypeDefnGT cspc) suts in
     setStructUnionTypeDefns (cspc, suts)
 
   op structUnionTypeDefnToType (sut : C_StructUnionTypeDefn) : C_Type =
@@ -838,7 +838,7 @@ CUtils qualifying spec
   op [X] mkUnique (l : List X) : List X  =
     foldl (fn (l,e) -> if e in? l then l else e::l) [] l
 
-  op [X] qsort (gt : X*X->Bool) (l : List X) : List X =
+  op [X] qtype (gt : X*X->Bool) (l : List X) : List X =
     let
       def split(x,l) =
 	case l of
@@ -855,8 +855,8 @@ CUtils qualifying spec
       | [x]  -> [x]
       | x::l -> 
         let (l1,l2) = split(x,l) in
-	let l1 = qsort gt l1 in
-	let l2 = qsort gt l2 in
+	let l1 = qtype gt l1 in
+	let l2 = qtype gt l2 in
 	l1 ++ (x::l2)
 
   % --------------------------------------------------------------------------------

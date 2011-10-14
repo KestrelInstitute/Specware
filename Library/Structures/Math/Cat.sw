@@ -1,16 +1,16 @@
 \section{Categories}
 
 This is the base specs for a category. That is, a model of this
-spec is a category. It does not include a sort for category.\footnote{Do we 
+spec is a category. It does not include a type for category.\footnote{Do we 
 need dependent types to do this in terms of homsets?}
 
 \begin{spec}
 Cat qualifying spec {
   import /Library/Structures/Data/Pretty
 
-  sort Object
-  sort Arrow
-  sort Composable = {(g,f) : Arrow * Arrow | dom g = cod f}
+  type Object
+  type Arrow
+  type Composable = {(g,f) : Arrow * Arrow | dom g = cod f}
   
   op dom : Arrow -> Object
   op cod : Arrow -> Object
@@ -38,6 +38,6 @@ Define the following import to \verb+Cat+:
     ["Node"   |-> "Object",
      "Edge"   |-> "Arrow"]
 \end{verbatim}
-and then omit the sorts \verb+Object+ and \verb+Arrow+ and the operator
+and then omit the types \verb+Object+ and \verb+Arrow+ and the operator
 \verb+ident+.
 

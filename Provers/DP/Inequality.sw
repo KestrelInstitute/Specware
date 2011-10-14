@@ -14,7 +14,7 @@ Ineq qualifying spec
   op Eq: CompPred
   op Neq: CompPred
 
-  op distinct: [a] List a -> Boolean
+  op distinct: [a] List a -> Bool
   axiom CompPredDistinct is distinct([Gt, Lt, GtEq, LtEq, Eq, Neq])
   axiom CompPredExhaust is fa (x: CompPred) member(x, [Gt, Lt, GtEq, LtEq, Eq, Neq])
 
@@ -23,7 +23,7 @@ Ineq qualifying spec
   op compPred: Ineq -> CompPred
   op poly: Ineq -> Poly
   op mkIneq: CompPred * Poly -> Ineq
-  op isIneq?: Ineq -> Boolean
+  op isIneq?: Ineq -> Bool
 
   op mkCounterExample: Var * Coef -> Ineq
 *)
@@ -60,20 +60,20 @@ Ineq qualifying spec
     else if comp = Eq then embed Eq
     else embed Neq
 
-  op isEq?: Ineq -> Boolean
+  op isEq?: Ineq -> Bool
   def isEq?(ineq) =
     compPred(ineq) = Eq
 
-  op isNeq?: Ineq -> Boolean
+  op isNeq?: Ineq -> Bool
   def isNeq?(ineq) =
     compPred(ineq) = Neq
 
-  op isGtEq?:Ineq -> Boolean
+  op isGtEq?:Ineq -> Bool
   def isGtEq?(ineq) =
     compPred(ineq) = GtEq &&
     constant(hdTerm(poly(ineq))) > toCoef(0)
 
-  op isTrue?: Ineq -> Boolean
+  op isTrue?: Ineq -> Bool
   def isTrue?(ineq) =
     let poly = poly(ineq) in
     let comp = compPred(ineq) in

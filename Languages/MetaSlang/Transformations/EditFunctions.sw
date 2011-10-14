@@ -4,7 +4,7 @@ spec
   import ../Specs/Environment, /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
   op findMatchesFromTopSpecs
-       (pred: MS.Term * Spec \_rightarrow Boolean, uidStr: String, optGlobalContext: Option GlobalContext)
+       (pred: MSTerm * Spec \_rightarrow Bool, uidStr: String, optGlobalContext: Option GlobalContext)
        : List (String * (Nat * Nat)) =
     case optGlobalContext of
       | None -> []
@@ -43,16 +43,16 @@ spec
            \_or (case ty of
                | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
                  (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
-                 \_or (case AnnSpec.findTheSort(spc,qid2) of
+                 \_or (case AnnSpec.findTheType(spc,qid2) of
                      | Some {names,dfn} \_rightarrow matchType?(dfn,spc)
                      | None \_rightarrow false)
                | Pi(_,s_ty,_)      \_rightarrow matchType?(s_ty,spc)
-               | Subsort(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
+               | Subtype(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
                | _ \_rightarrow false)
         def match_case_dispatch (t,spc) =
           case t of
             | Apply(Lambda _,case_tm, File(file_nm,(line,col,byte),_)) \_rightarrow
-              matchType?(termSortEnv(spc,case_tm),spc)
+              matchType?(termTypeEnv(spc,case_tm),spc)
             | _ \_rightarrow false
     in
     findMatchesFromTopSpecs(match_case_dispatch, uidStr, optGlobalContext)
@@ -74,17 +74,17 @@ spec
            \_or (case ty of
                | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
                  (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
-                 \_or (case AnnSpec.findTheSort(spc,qid2) of
+                 \_or (case AnnSpec.findTheType(spc,qid2) of
                      | Some {names,dfn} \_rightarrow matchType?(dfn,spc)
                      | None \_rightarrow false)
                | Pi(_,s_ty,_)      \_rightarrow matchType?(s_ty,spc)
-               | Subsort(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
+               | Subtype(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
                | _ \_rightarrow false)
         def match_term_type? (t,spc) =
           case t of
             | Let _ -> false
             | IfThenElse _ -> false
-            | _ -> matchType?(termSortEnv(spc,t),spc)
+            | _ -> matchType?(termTypeEnv(spc,t),spc)
     in
     findMatchesFromTopSpecs(match_term_type?, uidStr, optGlobalContext)
 

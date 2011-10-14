@@ -84,6 +84,15 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.30  2011/10/11 07:37:55  mcdonald
+%% internal revisions to simplify specs:
+%%
+%% pervasive change to eliminate polymorphism in SpecCalculus terms
+%%
+%% also misc changes to simplify imports
+%%
+%% also misc changes to clarify some names of some types
+%%
 %% Revision 1.29  2006/12/20 08:39:53  mcdonald
 %% added qualifiers
 %%
@@ -131,7 +140,7 @@ endspec
 %% translation_maps => renamings
 %% translation_map  => renaming
 %% op_id_map        => op_renaming
-%% sort_id_map      => sort_renaming
+%% type_id_map      => type_renaming
 %% etc.
 %%
 %% Revision 1.16  2005/06/07 20:18:49  mcdonald

@@ -53,7 +53,7 @@ Trace qualifying spec
   op notBefore infixl 25 : [a] DiscreteTrace a * Time -> DiscreteTrace a
   def notBefore (tr,t) = tr restrictDomain (fn t1 -> t1 >= t)
 
-  op suchThat infixl 25 : [a] DiscreteTrace a * (a -> Boolean) -> DiscreteTrace a
+  op suchThat infixl 25 : [a] DiscreteTrace a * (a -> Bool) -> DiscreteTrace a
   def suchThat (tr,p) = tr restrictRange p
 
   % return first element of trace, if trace is not empty:
@@ -81,7 +81,7 @@ Trace qualifying spec
 
   % check whether trace is constant in set of times (usually an interval):
 
-  op constantIn infixl 20 : [a] ContinuousTrace a * Set Time -> Boolean
+  op constantIn infixl 20 : [a] ContinuousTrace a * Set Time -> Bool
   def constantIn (tr,times) = (ex(x) (fa(t) t in? times => tr t = x))
 
   % if trace constant in set of times, return that constant value:
@@ -121,7 +121,7 @@ Trace qualifying spec
   op startedNotBefore infixl 25 : [a] SegmentTrace a * Time -> SegmentTrace a
   def startedNotBefore (tr,t) = tr /\ (fn seg -> inf (extent seg) >= t)
 
-  op nonOverlapping? : [a] SegmentTrace a -> Boolean
+  op nonOverlapping? : [a] SegmentTrace a -> Bool
   def nonOverlapping? tr =
     (fa(seg1,seg2) seg1 in? tr && seg2 in? tr && seg1 ~= seg2 =>
                    extent seg1 /\ extent seg2 = empty)

@@ -64,7 +64,7 @@ spec
   auxiliary predicate satisfiesInferenceRule? that says whether a predicate on
   judgements satisfies a given rule. *)
 
-  op satisfiesInferenceRule? : (Judgement -> Boolean) -> InferenceRule -> Boolean
+  op satisfiesInferenceRule? : (Judgement -> Bool) -> InferenceRule -> Bool
   def satisfiesInferenceRule? pj = fn
 
     %%%%%%%%%% well-formed contexts:
@@ -387,7 +387,7 @@ spec
       && pj (wellTypedExpr (cx, e, t))
       => pj (theoreM (cx, r @ e)))
 
-  op provable? : Judgement -> Boolean
+  op provable? : Judgement -> Bool
   def provable? = min (fn provable? ->
     (fa(ir:InferenceRule) satisfiesInferenceRule? provable? ir))
 

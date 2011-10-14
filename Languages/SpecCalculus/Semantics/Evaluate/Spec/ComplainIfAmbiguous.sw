@@ -19,8 +19,8 @@ SpecCalc qualifying spec
          let ambiguous? = check_op_ambiguity(spc, info) in
          if ~fixity_err? & ~ambiguous? then result
          else
-         let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) = result in
-         (ambiguous_sorts,
+         let (ambiguous_types, bad_fixity_ops, ambiguous_ops) = result in
+         (ambiguous_types,
           if fixity_err? then ListUtilities.insert (info, bad_fixity_ops) else bad_fixity_ops,
           if ambiguous? then ListUtilities.insert (info, ambiguous_ops) else ambiguous_ops)
        def check_op_ambiguity(spc, info) =
@@ -30,22 +30,22 @@ SpecCalc qualifying spec
            | ([],  [_]) -> false
            | ([_], [])  -> false
            | ([x], [y]) -> 
-             let xsort = termSort x in
-             let ysort = termSort y in
-             ~(equivType? spc (xsort, ysort))
+             let xtype = termType x in
+             let ytype = termType y in
+             ~(equivType? spc (xtype, ytype))
            | _ -> true
    in
-   let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) =
+   let (ambiguous_types, bad_fixity_ops, ambiguous_ops) =
        foldl (fn (result, el) ->
               case el of
-                | SortDef(qid, _) ->
-                  (case findTheSort(spc, qid) of
+                | TypeDef(qid, _) ->
+                  (case findTheType(spc, qid) of
                      | None -> result
                      | Some info ->
-                       let (decls, defs) = sortInfoDeclsAndDefs info in
+                       let (decls, defs) = typeInfoDeclsAndDefs info in
                        if length decls <= 1 && length defs <= 1 then result
-                       else let (ambiguous_sorts, bad_fixity_ops, ambiguous_ops) = result in
-                            (ListUtilities.insert (info, ambiguous_sorts),
+                       else let (ambiguous_types, bad_fixity_ops, ambiguous_ops) = result in
+                            (ListUtilities.insert (info, ambiguous_types),
                              bad_fixity_ops, ambiguous_ops))
                 | Op(qid, _, _) -> check_op(spc, qid, result)
                 | OpDef(qid, _, _) -> check_op(spc, qid, result)
@@ -53,17 +53,17 @@ SpecCalc qualifying spec
          ([], [], [])
          spc.elements
    in
-   if ambiguous_sorts = [] && bad_fixity_ops = []  % && ambiguous_ops = []
+   if ambiguous_types = [] && bad_fixity_ops = []  % && ambiguous_ops = []
      then (Some spc, None)
    else
-     let sort_msg = 
-         case ambiguous_sorts of
+     let type_msg = 
+         case ambiguous_types of
 	   | [] -> ""
 	   | _ ->
-	     (foldl (fn (msg, sort_info) ->
-		     msg ^ (ppFormat (ppASortInfo sort_info)))
+	     (foldl (fn (msg, type_info) ->
+		     msg ^ (ppFormat (ppATypeInfo type_info)))
 	            "\nAmbiguous types:\n"
-		    ambiguous_sorts)
+		    ambiguous_types)
 	     ^ "\n"
      in
      let fixity_msg = 
@@ -84,6 +84,6 @@ SpecCalc qualifying spec
 	            "\nAmbiguous ops:\n"
 		    ambiguous_ops)
      in
-       (None, Some ("\n" ^ sort_msg ^ fixity_msg ^ op_msg ^ "\n"))
+       (None, Some ("\n" ^ type_msg ^ fixity_msg ^ op_msg ^ "\n"))
 
 endspec

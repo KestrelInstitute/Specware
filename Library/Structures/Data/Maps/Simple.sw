@@ -19,7 +19,7 @@ spec
   op update : [key,a] Map (key,a) * key * a -> Map (key,a)
   op remove : [a,key] Map (key,a) * key -> Map (key,a)
 
-  op inDomain? : [key,a] Map (key,a) * key -> Boolean
+  op inDomain? : [key,a] Map (key,a) * key -> Bool
   op numItems : [a,key] Map (key,a) -> Nat
 
 (* The functions that follow come in two varieties. All take functions
@@ -56,16 +56,16 @@ meaningless unless an implementation is assumed.
        -> Map (key,a) -> Map (key,a) -> Map(key,a)
   op intersectWithi : [key,a] (key * a * a -> a)
        -> Map (key,a) -> Map (key,a) -> Map (key,a)
-  op filter  : [key,a] (a -> Boolean) -> Map (key,a) -> Map (key,a)	  
-  op filteri : [key,a] (key * a -> Boolean) -> Map (key,a) -> Map (key,a)
+  op filter  : [key,a] (a -> Bool) -> Map (key,a) -> Map (key,a)	  
+  op filteri : [key,a] (key * a -> Bool) -> Map (key,a) -> Map (key,a)
 
   op mapPartial  : [key,a,b] (a -> Option b) -> Map (key,a) -> Map (key,b)
   op mapiPartial : [key,a,b] (key * a -> Option b) -> Map (key,a) -> Map (key,b)
   op compare : [a,key] (a * a -> Comparison)
        -> Map (key,a) -> Map (key,a) -> Comparison
 
-  op submap? : [a,b] Map (a,b) * Map (a,b) -> Boolean
+  op submap? : [a,b] Map (a,b) * Map (a,b) -> Bool
 
-  op allMap : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
-  op existsMap : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
+  op allMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
+  op existsMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
 endspec

@@ -32,7 +32,7 @@ RemoveCurrying qualifying spec
 			       let (old_tvs, old_srt, old_tm) = unpackFirstOpDef old_info in
 			       let new_tm = unCurryTerm (old_tm, spc) in
 			       let new_dfn = maybePiTerm (old_tvs, 
-							  SortedTerm (new_tm, 
+							  TypedTerm (new_tm, 
 								      old_srt,
 								      termAnn old_info.dfn))
 			       in
@@ -41,18 +41,18 @@ RemoveCurrying qualifying spec
 			       old_info)
                             spc.ops
     in
-    let newSorts = mapSortInfos (fn old_info ->
-				 if definedSortInfo? old_info then
+    let newTypes = mapTypeInfos (fn old_info ->
+				 if definedTypeInfo? old_info then
 				   %% TODO: Handle multiple defs??
-				   let (old_tvs, old_srt) = unpackFirstSortDef old_info in
-				   let new_srt = (unCurrySort(old_srt,spc)).2 in
-				   let new_dfn = maybePiSort (old_tvs, new_srt) in
+				   let (old_tvs, old_srt) = unpackFirstTypeDef old_info in
+				   let new_srt = (unCurryType(old_srt,spc)).2 in
+				   let new_dfn = maybePiType (old_tvs, new_srt) in
 				   old_info << {dfn = new_dfn}
 				 else
 				   old_info)
-                                spc.sorts
+                                spc.types
     in
-    setOps (setSorts (spc, newSorts), newOps)
+    setOps (setTypes (spc, newTypes), newOps)
 
    op addUnCurriedOps: Spec -> Spec
   def addUnCurriedOps spc =
@@ -68,7 +68,7 @@ RemoveCurrying qualifying spec
 		       (%% remove old defs, but insure at least one real decl
 			let decls_but_no_defs = 
 			    case old_decls of
-			      | [] -> [maybePiTerm (old_tvs, SortedTerm (Any pos, old_srt, pos))]
+			      | [] -> [maybePiTerm (old_tvs, TypedTerm (Any pos, old_srt, pos))]
 			      | _ -> old_decls
 			in
 			let new_dfn = maybeAndTerm (decls_but_no_defs, pos) in 
@@ -76,7 +76,7 @@ RemoveCurrying qualifying spec
 		   in
 		   %% Add definition of replacement (only bother with first def)
 		   %% TODO: Handle multiple defs??
-		   let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, pos)) in
+		   let new_dfn = maybePiTerm (old_tvs, TypedTerm (old_tm, new_srt, pos)) in
 		   let new_ops = insertAQualifierMap (new_ops, q, new_id,
 						      info << {names = [Qualified (q, new_id)],
 							       dfn   = new_dfn})
@@ -116,9 +116,9 @@ RemoveCurrying qualifying spec
     spc << {ops        = newOps, 
 	    elements   = newElts}
 
-  op  newUncurriedOp: Spec * Id * Sort -> Option (Id * Sort)
+  op  newUncurriedOp: Spec * Id * MSType -> Option (Id * MSType)
   def newUncurriedOp (spc, nm, srt) =
-    let (hasCurried?, unCurriedSrt) = unCurrySort (srt, spc) in
+    let (hasCurried?, unCurriedSrt) = unCurryType (srt, spc) in
     if ~hasCurried? then 
       None
     else 
@@ -126,10 +126,10 @@ RemoveCurrying qualifying spec
       Some(unCurryName (nm, curryshape),
 	   unCurriedSrt)
 
- %op  unCurryDef: MS.Term * Nat -> MS.Term
+ %op  unCurryDef: MSTerm * Nat -> MSTerm
  %def unCurryDef(tm,curryshape) =
 
-  op  getCurryFnArgs: MS.Term -> Option(MS.Term * List MS.Term)
+  op  getCurryFnArgs: MSTerm -> Option (MSTerm * MSTerms)
   def getCurryFnArgs t =
     let def aux (term, i, args) =
       case term of
@@ -140,11 +140,11 @@ RemoveCurrying qualifying spec
     in 
       aux (t, 0, [])
 
-  op  unCurryTerm: MS.Term * Spec -> MS.Term
+  op  unCurryTerm: MSTerm * Spec -> MSTerm
   def unCurryTerm (tm, spc) =
     let def unCurryTermRec t = unCurryTerm(t,spc)
         def unCurryApply(f,args,spc) =
-	  let fsrt = termSortEnv(spc,f) in
+	  let fsrt = termTypeEnv(spc,f) in
 	  let curryShape = curryShapeNum(spc,fsrt) in
 	  if curryShape = length args then
             mkApply(convertFun(f,curryShape,spc),
@@ -152,7 +152,7 @@ RemoveCurrying qualifying spec
 	  else
             %% TODO: Specware miscompiles this if 'freevars f' is used inline
             let free_vars = freeVars f in
-	    let newVars = mkNewVars(removePrefix(curryArgSorts(spc,fsrt), 
+	    let newVars = mkNewVars(removePrefix(curryArgTypes(spc,fsrt), 
                                                  length args),
                                     map (fn (id,_) -> id) free_vars,
                                     spc)
@@ -172,7 +172,7 @@ RemoveCurrying qualifying spec
 	if row = newRow then tm
 	  else Record(newRow,a)
       | Var((id,srt),a) ->
-	let (hasCurried?,nSrt) = unCurrySort(srt,spc) in
+	let (hasCurried?,nSrt) = unCurryType(srt,spc) in
 	if ~hasCurried?
 	  then tm
 	  else Var((id,nSrt),a)
@@ -183,9 +183,9 @@ RemoveCurrying qualifying spec
 	
       %% Assume multiple rules have been transformed away and predicate is true
       | Lambda([(pat,_,body)],_)  ->
-	let bodySort = termSortEnv(spc,body) in
-	if arrow? (spc,bodySort)
-	  then flattenLambda([pat],body,bodySort,spc)
+	let bodyType = termTypeEnv(spc,body) in
+	if arrow? (spc,bodyType)
+	  then flattenLambda([pat],body,bodyType,spc)
 	else
 	let newBody = unCurryTermRec body in
 	if newBody = body
@@ -229,14 +229,14 @@ RemoveCurrying qualifying spec
 %      | Bind(b,vars,M,_)  -> 
       | _ -> tm
 
-  op  unCurrySort: Sort * Spec -> Boolean * Sort
-  %% Returns transformed sort and whether any change was made
-  %% Don't look inside sort definitions except to follow arrows
+  op  unCurryType: MSType * Spec -> Bool * MSType
+  %% Returns transformed type and whether any change was made
+  %% Don't look inside type definitions except to follow arrows
   %% (otherwise infinitely recursive)
-  def unCurrySort(srt,spc) =
-    let def unCurryRec s = unCurrySort(s,spc)
+  def unCurryType(srt,spc) =
+    let def unCurryRec s = unCurryType(s,spc)
         def unCurryArrowAux(rng,accumDomSrts) =
-	  (case stripSubsorts(spc,rng) of
+	  (case stripSubtypes(spc,rng) of
 	    | Arrow(dom, restRng, _) ->
 	      let expandedDomSrts = accumDomSrts
 %                  foldl (fn (dom_srt, dom_srts) ->
@@ -253,10 +253,10 @@ RemoveCurrying qualifying spec
 	      in (changed?,mkArrow(mkProduct nDomSrts, nRng)))
     in
     case srt of
-      | Subsort(srt, p, a) -> 
+      | Subtype(srt, p, a) -> 
         let (changed?, ns) = unCurryRec srt in
 	let np = unCurryTerm(p, spc) in
-	(changed?, Subsort(ns, np, a))
+	(changed?, Subtype(ns, np, a))
       | Arrow(dom, rng, _) ->
         unCurryArrowAux(rng,[dom])
       | Product(xs,a) ->
@@ -280,13 +280,13 @@ RemoveCurrying qualifying spec
 	(changed?, Quotient (ns,nt,a))
       | s -> (false,s)
 
-  op  flattenLambda: List Pattern * MS.Term * Sort * Spec -> MS.Term
-  def flattenLambda(vs,body,bodySort,spc) =
+  op  flattenLambda: MSPatterns * MSTerm * MSType * Spec -> MSTerm
+  def flattenLambda(vs,body,bodyType,spc) =
     case body of
       | Lambda([(sPat,_,sBody)],_) ->
-        flattenLambda(vs ++ [sPat],sBody,termSortEnv(spc,sBody),spc)
+        flattenLambda(vs ++ [sPat],sBody,termTypeEnv(spc,sBody),spc)
       | _ ->
-	case arrowOpt(spc,bodySort) of
+	case arrowOpt(spc,bodyType) of
 	  | Some (dom,_) ->
 	    %% !!? If dom is a product should we flatten it? No, for the moment.
 	    let newVars = mkNewVars([dom],
@@ -299,7 +299,7 @@ RemoveCurrying qualifying spec
 
   def varNamePool = ["x","y","z","w","l","m","n","o","p","q","r","s"]
 
-  op  mkNewVars: List Sort * List Id * Spec -> List Var
+  op  mkNewVars: MSTypes * List Id * Spec -> List Var
   def mkNewVars(srts,usedNames,spc) =
     let def findUnused(srts,usedNames,pool) =
           case srts of
@@ -307,16 +307,16 @@ RemoveCurrying qualifying spec
 	    | srt::rSrts ->
 	      if head pool in? usedNames
 		then findUnused(srts,usedNames,tail pool)
-		else Cons((head pool,(unCurrySort(srt,spc)).2),
+		else Cons((head pool,(unCurryType(srt,spc)).2),
 			  findUnused(rSrts,usedNames,tail pool))
     in findUnused(srts,usedNames,varNamePool)
 
-  op  convertFun: MS.Term * Nat * Spec -> MS.Term
+  op  convertFun: MSTerm * Nat * Spec -> MSTerm
   def convertFun(tm,curryshape,spc) =
     case tm of
       | Fun (Op (Qualified(q,id),_),srt,_) ->
         mkOp(Qualified(q,unCurryName(id,curryshape)),
-	     (unCurrySort(srt,spc)).2)
-      | Var((id,srt),a) -> Var((id,(unCurrySort(srt,spc)).2),a)
+	     (unCurryType(srt,spc)).2)
+      | Var((id,srt),a) -> Var((id,(unCurryType(srt,spc)).2),a)
       | _ -> tm
 endspec

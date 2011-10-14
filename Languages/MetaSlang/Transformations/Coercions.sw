@@ -8,15 +8,15 @@ spec
   op handleOverloading?: Bool = false
 
   type TypeCoercionInfo = {subtype: QualifiedId,
-			   supertype: MS.Sort,
-			   coerceToSuper: MS.Term,
-			   coerceToSub: MS.Term,
+			   supertype: MSType,
+			   coerceToSuper: MSTerm,
+			   coerceToSub: MSTerm,
                            overloadedOps: List String}
   type TypeCoercionTable = List TypeCoercionInfo
 
-  op needsCoercion?(ctxt_ty: Sort, gen_ty: Sort, coercions: TypeCoercionTable, spc: Spec)
-     : Option(Boolean * TypeCoercionInfo) =
-    % let _ = writeLine(printSort gen_ty^" -~-> "^printSort ctxt_ty) in
+  op needsCoercion?(ctxt_ty: MSType, gen_ty: MSType, coercions: TypeCoercionTable, spc: Spec)
+     : Option(Bool * TypeCoercionInfo) =
+    % let _ = writeLine(printType gen_ty^" -~-> "^printType ctxt_ty) in
     let result =
           case findLeftmost (fn tb -> subtypeOf?(gen_ty, tb.subtype, spc) \_and \_not(subtypeOf?(ctxt_ty, tb.subtype, spc))) coercions of
             | Some tb -> Some(true, tb)
@@ -31,15 +31,15 @@ spec
   op opaqueTypeQId?(coercions: TypeCoercionTable) (qid: QualifiedId): Bool =
     exists? (fn tb -> qid = tb.subtype) coercions
 
-  op opaqueType?(ty: Sort, coercions: TypeCoercionTable, spc: Spec): Boolean =
+  op opaqueType?(ty: MSType, coercions: TypeCoercionTable, spc: Spec): Bool =
     exists? (fn tb -> subtypeOf?(ty, tb.subtype, spc)) coercions
 
-  op idFn?(t: MS.Term): Boolean =
+  op idFn?(t: MSTerm): Bool =
     case t of
       | Fun(Op(Qualified(_, "id"), _), _, _) -> true
       | _ -> false
 
-  op patTermVarsForProduct(fields: List(Id * Sort)): MS.Pattern * MS.Term =
+  op patTermVarsForProduct(fields: List(Id * MSType)): MSPattern * MSTerm =
     let (pats, tms, _) = foldr (fn ((fld_i, p_ty), (pats, tms, i)) ->
                                 let v = ("x_"^show i, p_ty) in
                                 (Cons((fld_i, mkVarPat v), pats),
@@ -56,17 +56,17 @@ spec
         let tm = refinedTerm(full_term, refine_num) in
         % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
         let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-        let ty = MetaSlang.mapSort(id, mapType, id) ty in
+        let ty = MetaSlang.mapType(id, mapType, id) ty in
 	let result = mapTerm(tm1, ty) in
         let full_term =  if equalTerm?(result, tm) then full_term
                            else replaceNthTerm(full_term, refine_num, result)
         in
-        maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) 
+        maybePiTerm(tvs, TypedTerm(full_term, ty, termAnn full_term)) 
 
       def mapType ty =
         case ty of
-          | Subsort(s_ty, pred, a) ->
-            Subsort(s_ty, mapTerm(pred, mkArrow(s_ty, boolSort)), a)
+          | Subtype(s_ty, pred, a) ->
+            Subtype(s_ty, mapTerm(pred, mkArrow(s_ty, boolType)), a)
           | _ -> ty
 
       def mapTerm(tm, ty) =
@@ -75,7 +75,7 @@ spec
 	    case tm of
 	      | Lambda _ ->
                 (case rangeOpt(spc, rm_ty) of   % Don't delay set
-                   | Some r_ty | equalType?(r_ty, boolSort) -> false
+                   | Some r_ty | equalType?(r_ty, boolType) -> false
                    | _ -> false)
 	      | Let _ -> true
               | Apply(Lambda _, _, _) -> true
@@ -87,7 +87,7 @@ spec
 	let n_tm = mapSubTerms(tm, if delayCoercion? \_or embed? Lambda tm then ty else rm_ty) in
 	if delayCoercion? \_or (handleOverloading? && overloadedTerm? n_tm) then n_tm
 	else
-        % let _ = writeLine(printTerm tm^": "^printSort rm_ty ^"\n-> " ^ printSort ty^"\n") in
+        % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n-> " ^ printType ty^"\n") in
 	case needsCoercion?(ty, rm_ty, coercions, spc) of
           | Some(toSuper?, tb) ->
             (case tm of
@@ -113,7 +113,7 @@ spec
                             some?(needsCoercion?(p_ty, rm_p_ty, coercions, spc)))
                     (if length fields = length rm_fields
                        then zip(fields, rm_fields)
-                       else let _ = writeLine("ac zip error: "^printTerm n_tm^": "^printSort rm_ty^"\n"^printSort ty) in
+                       else let _ = writeLine("ac zip error: "^printTerm n_tm^": "^printType rm_ty^"\n"^printType ty) in
                             []) ->
               let (v_pat, v_tm) = patTermVarsForProduct rm_fields in
               mkLet([(v_pat, n_tm)], v_tm)
@@ -122,7 +122,7 @@ spec
         else n_tm
 
       def mapSubTerms(tm, ty) =
-        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printSort ty) in
+        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printMSType ty) in
 	case tm of
 	  | Apply (t1, t2, a) ->
 	    let fn_ty = inferType(spc, t1) in
@@ -133,7 +133,7 @@ spec
                       let t1 = if embed? Fun t1 then t1 else mapTerm(t1, fn_ty) in
                       let t2 = mapTerm(t2, p) in
                       Apply(mkInfixOp(Qualified("Set", "in?"), Infix(Left, 20),
-                                      mkArrow(mkProduct[p, fn_ty], boolSort)),
+                                      mkArrow(mkProduct[p, fn_ty], boolType)),
                             mkTuple[t2, t1],
                             a))
                | _ ->
@@ -147,10 +147,10 @@ spec
 	  | Bind (bnd, vars, trm, a) ->
 	    Bind (bnd, vars, mapTerm(trm, ty), a)
 	  | The (var, trm, a) ->
-	    The (var, mapTerm(trm, boolSort), a)
+	    The (var, mapTerm(trm, boolType), a)
 	  | Let (decls, bdy, a) ->
 	    %Let (map (fn (pat, trm) -> (pat, mapTerm(trm, ty)))   % Assumes no coercions in pattern
-	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternSort pat)))   % Assumes no coercions in pattern
+	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternType pat)))   % Assumes no coercions in pattern
 		   decls,
 		 mapTerm(bdy, ty), a)
 	  | LetRec (decls, bdy, a) ->
@@ -158,18 +158,18 @@ spec
 		    mapTerm(bdy, ty), a)
 	  | Lambda (match, a) ->
 	    Lambda (map (fn (pat, condn, trm) ->
-			 (pat, mapTerm(condn, boolSort), mapTerm(trm, range(spc, ty))))
+			 (pat, mapTerm(condn, boolType), mapTerm(trm, range(spc, ty))))
 			 match,
 		    a)
 	  | IfThenElse (t1, t2, t3, a) ->
-	    IfThenElse (mapTerm(t1, boolSort), mapTerm(t2, ty), mapTerm(t3, ty), a)
+	    IfThenElse (mapTerm(t1, boolType), mapTerm(t2, ty), mapTerm(t3, ty), a)
 	  | Seq (terms, a) ->
             let pre_trms = butLast terms in
             let lst_trm  =    last terms in 
 	    Seq (map (fn trm -> mapTerm(trm, mkProduct [])) pre_trms
                    ++ [mapTerm(lst_trm, ty)], a)
-	  | SortedTerm (trm, srt, a) ->
-	    SortedTerm (mapTerm(trm, srt), srt, a)
+	  | TypedTerm (trm, srt, a) ->
+	    TypedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
 
       def coerceToSuper(tm, tb) =
@@ -188,7 +188,7 @@ spec
               else mkApply(tb.coerceToSub, tm)
       def coerceSubtypePreds ty =
         case ty of
-          | Subsort(ss, pred, a) -> Subsort(ss, mapTerm(pred, inferType(spc, pred)), a)
+          | Subtype(ss, pred, a) -> Subtype(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
       def coerceRestrictedPats pat =
         case pat of
@@ -196,7 +196,7 @@ spec
             RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> pat
     in
-    % let _ = printSpecWithSortsToTerminal spc in
+    % let _ = printSpecWithTypesToTerminal spc in
     let spc =
         spc << {ops = foldl (fn (ops, el) ->
                              case el of
@@ -220,7 +220,7 @@ spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term, a) ->
-                                      let term = mapTerm(term, boolSort) in
+                                      let term = mapTerm(term, boolType) in
                                       let term = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) term in
                                       Property(pt, nm, tvs, term, a)
                                     | _ -> el)
@@ -230,13 +230,13 @@ spec
     % let _ = writeLine(printSpec spc) in
     spc
 
-  op checkCoercions (tm: MS.Term, coercions: TypeCoercionTable): Option(TypeCoercionInfo * MS.Term) =
+  op checkCoercions (tm: MSTerm, coercions: TypeCoercionTable): Option(TypeCoercionInfo * MSTerm) =
     % let _ = writeLine("cc: "^printTerm tm) in
     let result = (checkCoercions1 (tm, coercions)).2 in
     % let _ = writeLine("is "^show (some? result)) in
     result
 
-  op checkCoercions1  (tm: MS.Term, coercions: TypeCoercionTable): Bool * Option(TypeCoercionInfo * MS.Term) =
+  op checkCoercions1  (tm: MSTerm, coercions: TypeCoercionTable): Bool * Option(TypeCoercionInfo * MSTerm) =
     case tm of
       | Apply(Lambda (match, _), _, _) ->
         foldl (\_lambda (result, (_, _, x)) -> checkCoercions2(result, x, coercions))
@@ -254,8 +254,8 @@ spec
       | Fun(Nat _, _, _)  -> (true, None)
       | _ -> (false, None)
 
-  op checkCoercions2(result: Bool * Option(TypeCoercionInfo * MS.Term), tm: MS.Term, coercions: TypeCoercionTable)
-       : Bool * Option(TypeCoercionInfo * MS.Term) =
+  op checkCoercions2(result: Bool * Option(TypeCoercionInfo * MSTerm), tm: MSTerm, coercions: TypeCoercionTable)
+       : Bool * Option(TypeCoercionInfo * MSTerm) =
     case checkCoercions1 (tm, coercions) of
       | (false, _) -> (false, None)
       | new_result ->
@@ -264,7 +264,7 @@ spec
        | (true, Some _) -> result
        | (true, None) -> new_result
 
-  op removeCoercions(tm: MS.Term, f, product?: Bool, coercions: TypeCoercionTable): MS.Term =
+  op removeCoercions(tm: MSTerm, f, product?: Bool, coercions: TypeCoercionTable): MSTerm =
     % let _ = writeLine("rc: "^printTerm tm^" cf: "^printTerm f) in
     let result =
         case tm of
@@ -282,7 +282,7 @@ spec
      % let _ = writeLine("= "^printTerm result) in
      result
 
-  op equalOpFn?(qid: QualifiedId, tm: MS.Term): Bool =
+  op equalOpFn?(qid: QualifiedId, tm: MSTerm): Bool =
     case tm of
       | Fun(Op(qid2, _), _, _) -> qid = qid2
       | _ -> false
@@ -293,18 +293,18 @@ spec
         let tm = if embed? Any full_term then full_term else refinedTerm(full_term, refine_num) in
         % let _ = writeLine("exploitOverloading\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
         let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-        let new_ty = MetaSlang.mapSort(id, mapType, id) ty in
+        let new_ty = MetaSlang.mapType(id, mapType, id) ty in
 	let result = mapTerm(tm1, ty) in
         let full_term =  if equalTerm?(result, tm) then full_term
                            else replaceNthTerm(full_term, refine_num, result)
         in
-        % let _ = writeLine("\nresult:\n"^printTerm(SortedTerm(full_term, new_ty, termAnn full_term))) in
-        maybePiTerm(tvs, SortedTerm(full_term, new_ty, termAnn full_term)) 
+        % let _ = writeLine("\nresult:\n"^printTerm(TypedTerm(full_term, new_ty, termAnn full_term))) in
+        maybePiTerm(tvs, TypedTerm(full_term, new_ty, termAnn full_term)) 
 
       def mapType ty =
         case ty of
-          | Subsort(s_ty, pred, a) ->
-            Subsort(s_ty, mapTerm(pred, mkArrow(s_ty, boolSort)), a)
+          | Subtype(s_ty, pred, a) ->
+            Subtype(s_ty, mapTerm(pred, mkArrow(s_ty, boolType)), a)
           | _ -> ty
 
        def mapTerm(tm, target_ty) =
@@ -326,15 +326,15 @@ spec
              let f_type = inferType(spc, f) in
              %% The id call means we get the correct obligation but it disappears in the final translation
              if t1 ~= nt1 && t2 ~= nt2
-               then mkApply(mkOp(Qualified("Function", "id"), mkArrow(range(spc, f_type), natSort)),
+               then mkApply(mkOp(Qualified("Function", "id"), mkArrow(range(spc, f_type), natType)),
                             mkAppl(mkInfixOp(Qualified("Integer", "-"), fx,
-                                             mkArrow(mkProduct[natSort, natSort], intSort)),
+                                             mkArrow(mkProduct[natType, natType], intType)),
                                    [nt1, nt2]))
                else tm
            | Fun(Nat i, _, _) | subtype = Qualified("Nat", "Nat") -> mkNat i
            | _ -> tm
        def liftCoercion (tm, rm_ty, target_ty) =
-        % let _ = toScreen("lc: "^ printTerm tm ^": "^ printSort rm_ty ^" -> "^ printSort target_ty ^"\n ") in
+        % let _ = toScreen("lc: "^ printTerm tm ^": "^ printType rm_ty ^" -> "^ printType target_ty ^"\n ") in
         case tm of
           | Apply(f as Fun(Op(qid as Qualified(qual, idn), fx), f_ty, _), x, a) ->
             % let _ = writeLine("lift?: " ^ printTerm tm^"\n"^anyToString tm) in
@@ -362,7 +362,7 @@ spec
                                                mkArrow(dom_ty, ran_ty)),
                                      new_x, a)
                   in
-                  % let _ = writeLine("\nrm_ty: "^printSort rm_ty^"\ntarget: "^printSort target_ty) in
+                  % let _ = writeLine("\nrm_ty: "^printType rm_ty^"\ntarget: "^printType target_ty) in
                   (if possiblySubtypeOf?(rm_ty, tb.supertype, spc)
                     then % let _ = writeLine("Added: "^printTerm (Apply(coerce_fn, new_tm, a))) in
                          Apply(coerce_fn, new_tm, a)
@@ -383,12 +383,12 @@ spec
        def getCoercedRange(f_ty, tb, coerce_fn) =
          let old_range = range(spc, f_ty) in
          let coerce_fn_ty = inferType(spc, coerce_fn) in
-         % let _ = writeLine("gcr: "^printSort f_ty^" "^printSort coerce_fn_ty) in
-         if possiblySubtypeOf?(old_range, stripSubsorts(spc, range(spc, coerce_fn_ty)), spc)
-           then stripSubsorts(spc, domain(spc, coerce_fn_ty))
+         % let _ = writeLine("gcr: "^printType f_ty^" "^printType coerce_fn_ty) in
+         if possiblySubtypeOf?(old_range, stripSubtypes(spc, range(spc, coerce_fn_ty)), spc)
+           then stripSubtypes(spc, domain(spc, coerce_fn_ty))
            else old_range
        def mapSubTerms(tm, ty) =
-        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printSort ty) in
+        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printType ty) in
 	case tm of
 	  | Apply (t1, t2, a) ->
 	    let fn_ty = inferType(spc, t1) in
@@ -402,10 +402,10 @@ spec
 	  | Bind (bnd, vars, trm, a) ->
 	    Bind (bnd, vars, mapTerm(trm, ty), a)
 	  | The (var, trm, a) ->
-	    The (var, mapTerm(trm, boolSort), a)
+	    The (var, mapTerm(trm, boolType), a)
 	  | Let (decls, bdy, a) ->
 	    %Let (map (fn (pat, trm) -> (pat, mapTerm(trm, ty)))   % Assumes no coercions in pattern
-	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternSort pat)))   % Assumes no coercions in pattern
+	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternType pat)))   % Assumes no coercions in pattern
 		   decls,
 		 mapTerm(bdy, ty), a)
 	  | LetRec (decls, bdy, a) ->
@@ -413,29 +413,29 @@ spec
 		    mapTerm(bdy, ty), a)
 	  | Lambda (match, a) ->
 	    Lambda (map (fn (pat, condn, trm) ->
-			 (pat, mapTerm(condn, boolSort), mapTerm(trm, range(spc, ty))))
+			 (pat, mapTerm(condn, boolType), mapTerm(trm, range(spc, ty))))
 			 match,
 		    a)
 	  | IfThenElse (t1, t2, t3, a) ->
-	    IfThenElse (mapTerm(t1, boolSort), mapTerm(t2, ty), mapTerm(t3, ty), a)
+	    IfThenElse (mapTerm(t1, boolType), mapTerm(t2, ty), mapTerm(t3, ty), a)
 	  | Seq (terms, a) ->
             let pre_trms = butLast terms in
             let lst_trm  =    last terms in 
 	    Seq (map (fn trm -> mapTerm(trm, mkProduct [])) pre_trms
                    ++ [mapTerm(lst_trm, ty)], a)
-	  | SortedTerm (trm, srt, a) ->
-	    SortedTerm (mapTerm(trm, srt), srt, a)
+	  | TypedTerm (trm, srt, a) ->
+	    TypedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
-      def coerceSubtypePreds(ty: Sort): Sort =
+      def coerceSubtypePreds (ty: MSType): MSType =
         case ty of
-          | Subsort(ss, pred, a) -> Subsort(ss, mapTerm(pred, inferType(spc, pred)), a)
+          | Subtype(ss, pred, a) -> Subtype(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
       def coerceRestrictedPats pat =
         case pat of
           | RestrictedPat(pat, pred, a) -> RestrictedPat(pat, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> pat
     in
-    % let _ = printSpecWithSortsToTerminal spc in
+    % let _ = printSpecWithTypesToTerminal spc in
     let spc =
         spc << {ops = foldl (fn (ops, el) ->
                              case el of
@@ -459,7 +459,7 @@ spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term, a) ->
-                                      let term = mapTerm(term, boolSort) in
+                                      let term = mapTerm(term, boolType) in
                                       let term = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) term in
                                       Property(pt, nm, tvs, term, a)
                                     | _ -> el)
@@ -468,7 +468,7 @@ spec
     % let _ = writeLine(printSpec spc) in
     spc
 
-  op coerceLiterals (spc: Spec) (tm: MS.Term): MS.Term =
+  op coerceLiterals (spc: Spec) (tm: MSTerm): MSTerm =
     let def mapTermTop tm =
               mapTerm(tm, inferType(spc, tm))
         def mapTerm(tm, target_ty) =
@@ -492,10 +492,10 @@ spec
 	  | Bind (bnd, vars, trm, a) ->
 	    Bind (bnd, vars, mapTerm(trm, ty), a)
 	  | The (var, trm, a) ->
-	    The (var, mapTerm(trm, boolSort), a)
+	    The (var, mapTerm(trm, boolType), a)
 	  | Let (decls, bdy, a) ->
 	    %Let (map (fn (pat, trm) -> (pat, mapTerm(trm, ty)))   % Assumes no coercions in pattern
-	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternSort pat)))   % Assumes no coercions in pattern
+	    Let (map (fn (pat, trm) -> (pat, mapTerm(trm, patternType pat)))   % Assumes no coercions in pattern
 		   decls,
 		 mapTerm(bdy, ty), a)
 	  | LetRec (decls, bdy, a) ->
@@ -503,22 +503,22 @@ spec
 		    mapTerm(bdy, ty), a)
 	  | Lambda (match, a) ->
 	    Lambda (map (fn (pat, condn, trm) ->
-			 (pat, mapTerm(condn, boolSort), mapTerm(trm, range(spc, ty))))
+			 (pat, mapTerm(condn, boolType), mapTerm(trm, range(spc, ty))))
 			 match,
 		    a)
 	  | IfThenElse (t1, t2, t3, a) ->
-	    IfThenElse (mapTerm(t1, boolSort), mapTerm(t2, ty), mapTerm(t3, ty), a)
+	    IfThenElse (mapTerm(t1, boolType), mapTerm(t2, ty), mapTerm(t3, ty), a)
 	  | Seq (terms, a) ->
             let pre_trms = butLast terms in
             let lst_trm  =    last terms in 
 	    Seq (map (fn trm -> mapTerm(trm, mkProduct [])) pre_trms
                    ++ [mapTerm(lst_trm, ty)], a)
-	  | SortedTerm (trm, srt, a) ->
-	    SortedTerm (mapTerm(trm, srt), srt, a)
+	  | TypedTerm (trm, srt, a) ->
+	    TypedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
     in
     let tm = MetaSlang.mapTerm (id, fn s -> case s of
-                                            | Subsort(ss, t, a) -> Subsort(ss, mapTermTop t, a)
+                                            | Subtype(ss, t, a) -> Subtype(ss, mapTermTop t, a)
                                             | _ -> s,
                                 id)
                tm
@@ -532,26 +532,26 @@ spec
     in
     coercions
 
-  op  overloadedTerm?: MS.Term -> Boolean
+  op  overloadedTerm?: MSTerm -> Bool
   def overloadedTerm? tm =
     case tm of
       | Fun(Nat _, _, _) -> true
       | _ -> false
 
-  op directlyImplementedSubsort?(ty: Sort, coercions: TypeCoercionTable): Boolean =
+  op directlyImplementedSubtype? (ty: MSType, coercions: TypeCoercionTable): Bool =
     case ty of
       | Base(qid, _, _) -> opaqueTypeQId? coercions qid
       | _ -> false
 
-  op convertApplyToIn?(spc: Spec) (tm0: MS.Term): MS.Term =
+  op convertApplyToIn?(spc: Spec) (tm0: MSTerm): MSTerm =
     mapTerm (fn tm -> case tm of
                         | Apply (t1, t2, a) ->
                           let fn_ty = inferType(spc, t1) in
-                          % let _ = writeLine("in??: "^printTerm tm^": "^printSort fn_ty) in
+                          % let _ = writeLine("in??: "^printTerm tm^": "^printType fn_ty) in
                           (case subtypeOf(fn_ty, Qualified("Set", "Set"), spc) of
                              | Some(Base(_, [p], _)) ->
                                Apply(mkInfixOp(Qualified("Set", "in?"), Infix(Left, 20),
-                                               mkArrow(mkProduct[p, fn_ty], boolSort)),
+                                               mkArrow(mkProduct[p, fn_ty], boolType)),
                                      mkTuple[t2, t1], a)
                              | _ -> tm)
                         | _ -> tm,

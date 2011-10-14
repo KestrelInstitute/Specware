@@ -9,7 +9,7 @@ and edges of the graph underlying the sketch.
 
 Note the following. In
 \specref{Library/Structures/Data/Categories/Functors/Polymorphic},
-the sort Functor is defined over 4 type variables. The first two are
+the type Functor is defined over 4 type variables. The first two are
 the types of the objects and arrows in the domain category. The other
 two for the codomain category. In contrast, here there are only type
 variables characterizing the objects and arrows in the codomain.
@@ -33,7 +33,7 @@ spec {
   import /Library/Structures/Data/Categories/Polymorphic
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
-  sort Functor (O,A)
+  type Functor (O,A)
 
   op dom : fa (O,A) Functor (O,A) -> Sketch
   op cod : fa (O,A) Functor (O,A) -> Cat (O,A)

@@ -2,58 +2,50 @@ SimpleAsSTHarray = STHMap qualifying
 spec
   import Simple
 
-  op MapSTHashtable.STH_empty_map : [key,a] Map (key,a)
-  op MapSTHashtable.STH_numItems : [a,key] Map (key,a) -> Nat
+  op MapSTHashtable.STH_empty_map    : [key,a]    Map (key,a)
+  op MapSTHashtable.STH_numItems     : [a,key]    Map (key,a) -> Nat
+  op MapSTHashtable.STH_apply        : [key,a]    Map (key,a) * key     -> Option a
+  op MapSTHashtable.STH_eval         : [key,a]    Map (key,a) * key     -> a
+  op MapSTHashtable.STH_update       : fa (key,a) Map (key,a) * key * a -> Map (key,a)
+  op MapSTHashtable.STH_remove       : fa (a,key) Map (key,a) * key     -> Map (key,a)
+  op MapSTHashtable.STH_inDomain?    : [key,a]    Map (key,a) * key     -> Bool
 
-  op MapSTHashtable.STH_apply : [key,a] Map(key,a) * key -> Option a
-  op MapSTHashtable.STH_eval  : [key,a] Map(key,a) * key -> a
+  op MapSTHashtable.STH_mapi         : [key,a,b]   (key * a -> b)           * Map (key,a) -> Map (key,b)
+  op MapSTHashtable.STH_map          : [key,a,b]   (a       -> b)           * Map (key,a) -> Map (key,b)
+  op MapSTHashtable.STH_mapPartial   : [key,a,b]   (a -> Option b)          * Map (key,a) -> Map (key,b)
+  op MapSTHashtable.STH_mapiPartial  : [key,a,b]   (key * a -> Option b)    * Map (key,a) -> Map (key,b)
+  op MapSTHashtable.STH_app          : [key,a]     (a       -> ())          * Map (key,a) -> ()
+  op MapSTHashtable.STH_appi         : [key,a]     (key * a -> ())          * Map (key,a) -> ()
+  op MapSTHashtable.STH_foldi        : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
+  op MapSTHashtable.STH_imageToList  : [key,a]     Map (key,a) -> List a
+  op MapSTHashtable.STH_mapToList    : [key,a]     Map (key,a) -> List (key * a)
+  op MapSTHashtable.STH_domainToList : [key,a]     Map (key,a) -> List key
 
-  op MapSTHashtable.STH_update : fa (key,a) Map (key,a) * key * a -> Map (key,a)
-  op MapSTHashtable.STH_remove : fa (a,key) Map (key,a) * key -> Map (key,a)
-  op MapSTHashtable.STH_inDomain? : [key,a] Map (key,a) * key -> Boolean
-  op MapSTHashtable.STH_mapi : [key,a,b] (key * a -> b) * Map (key,a) -> Map (key,b)
-  op MapSTHashtable.STH_map  : [key,a,b] (a -> b) * Map (key,a) -> Map (key,b)
+  def emptyMap     = MapSTHashtable.STH_empty_map
+  def numItems     = MapSTHashtable.STH_numItems
+  def apply        = MapSTHashtable.STH_apply
+  def eval         = MapSTHashtable.STH_eval
+  def remove       = MapSTHashtable.STH_remove
+  def imageToList  = MapSTHashtable.STH_imageToList
+  def mapToList    = MapSTHashtable.STH_mapToList
+  def domainToList = MapSTHashtable.STH_domainToList
 
-  op MapSTHashtable.STH_mapPartial  : [key,a,b] (a -> Option b) * Map (key,a)
-                                             -> Map (key,b)
-  op MapSTHashtable.STH_mapiPartial : [key,a,b] (key * a -> Option b) * Map (key,a)
-                                             -> Map (key,b)
+  def update (x, y, z) = MapSTHashtable.STH_update (x, y, z)
 
-
-  op MapSTHashtable.STH_app   : [key,a] (a -> ()) * Map (key,a) -> ()
-  op MapSTHashtable.STH_appi  : [key,a] (key * a -> ()) * Map (key,a) -> ()
-
-  op MapSTHashtable.STH_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
-
-  op MapSTHashtable.STH_imageToList : [key,a] Map (key,a) -> List a
-  op MapSTHashtable.STH_mapToList : [key,a] Map (key,a) -> List (key * a)
-  op MapSTHashtable.STH_domainToList : [key,a] Map (key,a) -> List key
-
-  def emptyMap = MapSTHashtable.STH_empty_map
-  def numItems = MapSTHashtable.STH_numItems
-
-  def apply = MapSTHashtable.STH_apply
-  def eval  = MapSTHashtable.STH_eval
-  def update(x,y,z) = MapSTHashtable.STH_update(x,y,z)
-  def remove = MapSTHashtable.STH_remove
   def inDomain? (m, x) =
     case apply (m, x) of
       | None -> false
       | Some _ -> true
 
-  def mapi f m = MapSTHashtable.STH_mapi(f,m)
-  def map  f m = MapSTHashtable.STH_map (f,m)
-  def mapiPartial f m = MapSTHashtable.STH_mapiPartial(f,m)
-  def mapPartial  f m = MapSTHashtable.STH_mapPartial (f,m)
-
-  def app  f m = MapSTHashtable.STH_app (f,m)
-  def appi f m = MapSTHashtable.STH_appi(f,m)
+  def mapi        f m = MapSTHashtable.STH_mapi        (f,m)
+  def map         f m = MapSTHashtable.STH_map         (f,m)
+  def mapiPartial f m = MapSTHashtable.STH_mapiPartial (f,m)
+  def mapPartial  f m = MapSTHashtable.STH_mapPartial  (f,m)
+  def app         f m = MapSTHashtable.STH_app         (f,m)
+  def appi        f m = MapSTHashtable.STH_appi        (f,m)
 
   def foldi f e m = MapSTHashtable.STH_foldi(f,e,m)
 
-  def imageToList = MapSTHashtable.STH_imageToList
-  def mapToList   = MapSTHashtable.STH_mapToList
-  def domainToList = MapSTHashtable.STH_domainToList
 
 endspec
 

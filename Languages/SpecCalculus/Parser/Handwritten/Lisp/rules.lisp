@@ -8,12 +8,12 @@
 ;;;  TODO: In doc: Change references to modules
 ;;;  TODO: In doc: Remove reference to spec-definition within a spec
 ;;;  TODO: In doc: import sc-term, not just spec-name
-;;;  TODO: In doc: sort-declaration now uses qualified name, not just name
-;;;  TODO: In doc: sort-definition now uses qualified name, not just name
+;;;  TODO: In doc: type-declaration now uses qualified name, not just name
+;;;  TODO: In doc: type-definition now uses qualified name, not just name
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 ;;;  TODO: In doc: op-definition now uses qualified name, not just name
 ;;;  TODO: In doc: use "=", not :EQUALS in claim definition
-;;;  TODO: In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression
+;;;  TODO: In doc: type-quotient relation is expression, but that's ambiguous -- need tight-expression
 ;;;
 ;;; ========================================================================
 ;;;
@@ -27,14 +27,14 @@
 ;;;
 ;;; ========================================================================
 ;;;
-;;;  NOTE: :LOCAL-SORT-VARIABLE as :CLOSED-SORT       would introduce ambiguities, so we parse as :SORT-REF          and post-process
+;;;  NOTE: :LOCAL-TYPE-VARIABLE as :CLOSED-TYPE       would introduce ambiguities, so we parse as :TYPE-REF          and post-process
 ;;;  NOTE: :LOCAL-VARIABLE      as :CLOSED-EXPRESSION would introduce ambiguities, so we parse as :ATOMIC-EXPRESSION and post-process
 ;;;
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
 ;;;        but use :NAME-OR-EQUAL for op refs.
 ;;;
-;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-SORT,
-;;;        but in the documentation, it's viewed as 0 entries in :SORT-RECORD
+;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-TYPE,
+;;;        but in the documentation, it's viewed as 0 entries in :TYPE-RECORD
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -269,7 +269,7 @@
 (define-sw-parser-rule :DECLARATION ()
   (:anyof
    (1 :IMPORT-DECLARATION)
-   (1 :SORT-DECLARATION)
+   (1 :TYPE-DECLARATION)
    (1 :OP-DECLARATION)
    (1 :DEFINITION)
    (1 :PRAGMA-DECLARATION))
@@ -278,7 +278,7 @@
 ;;;  TODO: In doc: Remove reference to spec-definition within a spec
 (define-sw-parser-rule :DEFINITION ()
   (:anyof
-   (1 :SORT-DEFINITION)
+   (1 :TYPE-DEFINITION)
    (1 :OP-DEFINITION)
    (1 :CLAIM-DEFINITION))
   1)
@@ -293,23 +293,23 @@
   (make-import-declaration 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
-;;;  QUALIFIABLE-SORT-NAME 
+;;;  QUALIFIABLE-TYPE-NAME 
 ;;; ------------------------------------------------------------------------
-(define-sw-parser-rule :QUALIFIABLE-SORT-NAME ()
-  (:anyof :UNQUALIFIED-SORT-NAME :QUALIFIED-SORT-NAME))
+(define-sw-parser-rule :QUALIFIABLE-TYPE-NAME ()
+  (:anyof :UNQUALIFIED-TYPE-NAME :QUALIFIED-TYPE-NAME))
 
-(define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
-  (1 :SORT-NAME)
+(define-sw-parser-rule :UNQUALIFIED-TYPE-NAME ()
+  (1 :TYPE-NAME)
   (MetaSlang::mkUnQualifiedId 1))
 
-(define-sw-parser-rule :QUALIFIED-SORT-NAME ()
-  (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
+(define-sw-parser-rule :QUALIFIED-TYPE-NAME ()
+  (:tuple (1 :QUALIFIER) "." (2 :TYPE-NAME))
   (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :QUALIFIER ()
   :NAME)
 
-(define-sw-parser-rule :SORT-NAME ()
+(define-sw-parser-rule :TYPE-NAME ()
   :NAME)
 
 ;;; ------------------------------------------------------------------------
@@ -349,40 +349,40 @@
   :NAME)
 
 ;;; ------------------------------------------------------------------------
-;;;  SORT-DECLARATION
+;;;  TYPE-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-;;;  TODO: Fix doc: sort-declaration now uses qualified name, not just name
-(define-sw-parser-rule :SORT-DECLARATION ()
-  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
-  (make-sort-declaration 1 2 ':left-lcb ':right-lcb))
+;;;  TODO: Fix doc: type-declaration now uses qualified name, not just name
+(define-sw-parser-rule :TYPE-DECLARATION ()
+  (:tuple :KW-TYPE (1 :QUALIFIABLE-TYPE-NAMES) (:optional (2 :FORMAL-TYPE-PARAMETERS)))
+  (make-type-declaration 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :KW-TYPE ()
   (:anyof "sort" "type"))
 
-(define-sw-parser-rule :FORMAL-SORT-PARAMETERS ()
+(define-sw-parser-rule :FORMAL-TYPE-PARAMETERS ()
   ;; a little tricky.  Allow "X" "(X)" "(X,Y)" etc. but not "()"
-  (:anyof :SINGLE-SORT-VARIABLE :LOCAL-SORT-VARIABLE-LIST))
+  (:anyof :SINGLE-TYPE-VARIABLE :LOCAL-TYPE-VARIABLE-LIST))
 
-(define-sw-parser-rule :SINGLE-SORT-VARIABLE ()
-  (1 :LOCAL-SORT-VARIABLE)
+(define-sw-parser-rule :SINGLE-TYPE-VARIABLE ()
+  (1 :LOCAL-TYPE-VARIABLE)
   (list 1))				; e.g. "x" => (list "x")
 
-(define-sw-parser-rule :LOCAL-SORT-VARIABLE-LIST ()
-  (:tuple "(" (1 (:repeat+ :LOCAL-SORT-VARIABLE ",")) ")")
+(define-sw-parser-rule :LOCAL-TYPE-VARIABLE-LIST ()
+  (:tuple "(" (1 (:repeat+ :LOCAL-TYPE-VARIABLE ",")) ")")
   1)					; e.g. ("x" "y" "z") => (list "x" "y" "z")
 
-(define-sw-parser-rule :LOCAL-SORT-VARIABLE ()
+(define-sw-parser-rule :LOCAL-TYPE-VARIABLE ()
   :NAME)
 
 ;;; ------------------------------------------------------------------------
-;;;  SORT-DEFINITION
+;;;  TYPE-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-;;;  TODO: In doc: sort-definition now uses qualified name, not just name
-(define-sw-parser-rule :SORT-DEFINITION ()
-  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT-DEF-RHS))
-  (make-sort-definition 1 2 3 ':left-lcb ':right-lcb))
+;;;  TODO: In doc: type-definition now uses qualified name, not just name
+(define-sw-parser-rule :TYPE-DEFINITION ()
+  (:tuple :KW-TYPE (1 :QUALIFIABLE-TYPE-NAMES) (:optional (2 :FORMAL-TYPE-PARAMETERS)) :EQUALS (3 :TYPE-DEF-RHS))
+  (make-type-definition 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
@@ -391,13 +391,13 @@
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 (define-sw-parser-rule :OP-DECLARATION ()
   (:tuple "op" 
-	  (:optional (3 :NEW-SORT-VARIABLE-BINDER))
+	  (:optional (3 :NEW-TYPE-VARIABLE-BINDER))
 	  (1 :QUALIFIABLE-OP-NAMES) 
           (:optional (6 :FORMAL-PARAMETERS))
 	  (:optional (2 :FIXITY)) 
 	  ":" 
-	  (:optional (4 :SORT-VARIABLE-BINDER)) 
-	  (5 :SORT)
+	  (:optional (4 :TYPE-VARIABLE-BINDER)) 
+	  (5 :TYPE)
 	  (:optional 
 	   (:tuple "=" (7 :EXPRESSION))))
   ;; args to make-op-elem are: 
@@ -432,17 +432,17 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :PRIORITY ()
   :NUMBER)				; we want a raw number here, not a :NAT-LITERAL
 
-(define-sw-parser-rule :SORT-VARIABLE-BINDER ()
+(define-sw-parser-rule :TYPE-VARIABLE-BINDER ()
   (:anyof 
-   :OLD-SORT-VARIABLE-BINDER  
-   :NEW-SORT-VARIABLE-BINDER ))
+   :OLD-TYPE-VARIABLE-BINDER  
+   :NEW-TYPE-VARIABLE-BINDER ))
 
-(define-sw-parser-rule :OLD-SORT-VARIABLE-BINDER ()
-  (:tuple "fa" (1 :LOCAL-SORT-VARIABLE-LIST))
+(define-sw-parser-rule :OLD-TYPE-VARIABLE-BINDER ()
+  (:tuple "fa" (1 :LOCAL-TYPE-VARIABLE-LIST))
   1)
 
-(define-sw-parser-rule :NEW-SORT-VARIABLE-BINDER ()
-  (:tuple "["  (1 (:repeat+ :LOCAL-SORT-VARIABLE ",")) "]")
+(define-sw-parser-rule :NEW-TYPE-VARIABLE-BINDER ()
+  (:tuple "["  (1 (:repeat+ :LOCAL-TYPE-VARIABLE ",")) "]")
   1)
 
 ;;; ------------------------------------------------------------------------
@@ -454,10 +454,10 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :OP-DEFINITION ()
   (:tuple (8 (:optional "refine"))
           "def"
-          (:optional (3 :SORT-VARIABLE-BINDER))
+          (:optional (3 :TYPE-VARIABLE-BINDER))
           (1 :QUALIFIABLE-OP-NAMES)
           (6 :FORMAL-PARAMETERS)
-          (:optional (:tuple ":" (:optional (4 :SORT-VARIABLE-BINDER)) (5 :SORT)))
+          (:optional (:tuple ":" (:optional (4 :TYPE-VARIABLE-BINDER)) (5 :TYPE)))
           (:optional
            (:anyof
             (:tuple "=" (7 :EXPRESSION))
@@ -512,29 +512,29 @@ If we want the precedence to be optional:
   (format nil "~D" 1))
 
 (define-sw-parser-rule :CLAIM ()
-  (:tuple (:optional (1 :SORT-QUANTIFICATION)) (2 :EXPRESSION-NSWB)) ; "NSWB" means "Not starting with bracket"
+  (:tuple (:optional (1 :TYPE-QUANTIFICATION)) (2 :EXPRESSION-NSWB)) ; "NSWB" means "Not starting with bracket"
   (cons 1 2))
 
-(define-sw-parser-rule :SORT-QUANTIFICATION ()
+(define-sw-parser-rule :TYPE-QUANTIFICATION ()
   (:anyof 
-   :OLD-SORT-QUANTIFICATION
-   :NEW-SORT-VARIABLE-BINDER))
+   :OLD-TYPE-QUANTIFICATION
+   :NEW-TYPE-VARIABLE-BINDER))
 
-(define-sw-parser-rule :OLD-SORT-QUANTIFICATION ()
-  (:tuple :KW-TYPE (1 :OLD-SORT-VARIABLE-BINDER))
+(define-sw-parser-rule :OLD-TYPE-QUANTIFICATION ()
+  (:tuple :KW-TYPE (1 :OLD-TYPE-VARIABLE-BINDER))
   1)
 
 ;;; ========================================================================
-;;;   SORT DECLARATION
-;;;   http://www.specware.org/manual/html/sorts.html
+;;;   TYPE DECLARATION
+;;;   http://www.specware.org/manual/html/types.html
 ;;; ========================================================================
 
-(define-sw-parser-rule :SORT-DEF-RHS () ; as in rhs of  T x = | A x | B x
+(define-sw-parser-rule :TYPE-DEF-RHS () ; as in rhs of  T x = | A x | B x
   (:anyof
-   ;; these are sort abbreviations, not 
+   ;; these are type abbreviations, not 
    (1 :TYPE-ABBREVIATION  :documentation "Type abbreviation") 
    (1 :RAW-SUBTYPE        :documentation "Subtype")         ; Allow unparenthesized subtype at top level: "Foo | q?"
-   (1 :SORT               :documentation "Function sort")   ; All other sorts, including "(Foo | q?)"
+   (1 :TYPE               :documentation "Function type")   ; All other types, including "(Foo | q?)"
    )
   1)
 
@@ -547,10 +547,10 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :TYPE-ABBREVIATION () 
   ;; these are type abbreviations, not true types
   (:anyof
-   (1 :SUM-TYPE          :documentation "Co-product sort") ; "(| Foo Nat | Bar String)"
-   (1 :RAW-SUM-TYPE      :documentation "Co-product sort") ; "| Foo Nat | Bar String"
-   (1 :QUOTIENT-TYPE     :documentation "Sort quotient")   ; "(Foo / q?)"
-   (1 :RAW-QUOTIENT-TYPE :documentation "Sort quotient")   ; "Foo / q?"
+   (1 :SUM-TYPE          :documentation "Co-product type") ; "(| Foo Nat | Bar String)"
+   (1 :RAW-SUM-TYPE      :documentation "Co-product type") ; "| Foo Nat | Bar String"
+   (1 :QUOTIENT-TYPE     :documentation "Type quotient")   ; "(Foo / q?)"
+   (1 :RAW-QUOTIENT-TYPE :documentation "Type quotient")   ; "Foo / q?"
    )
   1)
 
@@ -566,11 +566,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :RAW-SUM-TYPE ()
   (:tuple (1 (:repeat+ :TYPE-SUMMAND nil)))
-  (make-sort-sum 1 ':left-lcb ':right-lcb))
+  (make-type-sum 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TYPE-SUMMAND ()
-  (:tuple "|" (1 :CONSTRUCTOR) (:optional (2 :SLACK-SORT)))
-  (make-sort-summand 1 2 ':left-lcb ':right-lcb))
+  (:tuple "|" (1 :CONSTRUCTOR) (:optional (2 :SLACK-TYPE)))
+  (make-type-summand 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :CONSTRUCTOR ()
   :NAME)
@@ -587,165 +587,165 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :RAW-QUOTIENT-TYPE ()
   ;; TODO: [still relevant given above?] 
-  ;;       In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression 
-  (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
-  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
+  ;;       In doc: type-quotient relation is expression, but that's ambiguous -- need tight-expression 
+  (:tuple (1 :CLOSED-TYPE) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
+  (make-type-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
 
 ;;; ========================================================================
-;;;   SORT
-;;;   http://www.specware.org/manual/html/sorts.html
+;;;   TYPE
+;;;   http://www.specware.org/manual/html/types.html
 ;;; ========================================================================
 
-(define-sw-parser-rule :SORT () ; anywhere
+(define-sw-parser-rule :TYPE () ; anywhere
   (:anyof
-   (1 :SORT-ARROW              :documentation "Function sort")
-   (1 :SLACK-SORT              :documentation "Slack sort")
+   (1 :TYPE-ARROW              :documentation "Function type")
+   (1 :SLACK-TYPE              :documentation "Slack type")
    )
   1)
 
-(define-sw-parser-rule :SLACK-SORT ()
+(define-sw-parser-rule :SLACK-TYPE ()
   (:anyof
-   (1 :SORT-PRODUCT            :documentation "Product sort")
-   (1 :TIGHT-SORT              :documentation "Tight sort")
+   (1 :TYPE-PRODUCT            :documentation "Product type")
+   (1 :TIGHT-TYPE              :documentation "Tight type")
    )
   1)
 
-(define-sw-parser-rule :TIGHT-SORT ()
+(define-sw-parser-rule :TIGHT-TYPE ()
   (:anyof
-   (1 :SORT-INSTANTIATION      :documentation "Sort instantiation")
-   (1 :CLOSED-SORT             :documentation "Closed sort -- unambiguous termination")
+   (1 :TYPE-INSTANTIATION      :documentation "Type instantiation")
+   (1 :CLOSED-TYPE             :documentation "Closed type -- unambiguous termination")
    )
   1)
 
-(define-sw-parser-rule :CLOSED-SORT ()
+(define-sw-parser-rule :CLOSED-TYPE ()
   (:anyof
-   (1 :SORT-REF                :documentation "Qualifiable sort name") ; could refer to sort or sort variable
-   (1 :SORT-RECORD             :documentation "Sort record")
-   (1 :SORT-RESTRICTION        :documentation "Sort restriction")
-   (1 :SORT-COMPREHENSION      :documentation "Sort comprehension")
-   (1 :PARENTHESIZED-SORT      :documentation "Parenthesized Sort")
+   (1 :TYPE-REF                :documentation "Qualifiable type name") ; could refer to type or type variable
+   (1 :TYPE-RECORD             :documentation "Type record")
+   (1 :TYPE-RESTRICTION        :documentation "Type restriction")
+   (1 :TYPE-COMPREHENSION      :documentation "Type comprehension")
+   (1 :PARENTHESIZED-TYPE      :documentation "Parenthesized Type")
    )
   1)
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-ARROW
+;;;   TYPE-ARROW
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-ARROW ()
-  (:tuple (1 :ARROW-SOURCE) (:anyof "->" "\\_rightarrow") (2 :SORT))
-  (make-sort-arrow 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TYPE-ARROW ()
+  (:tuple (1 :ARROW-SOURCE) (:anyof "->" "\\_rightarrow") (2 :TYPE))
+  (make-type-arrow 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ARROW-SOURCE ()
-  :SLACK-SORT)
+  :SLACK-TYPE)
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-PRODUCT
+;;;   TYPE-PRODUCT
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-PRODUCT ()
-  (:tuple (1 (:repeat++ :TIGHT-SORT (:anyof "*" "\\_times"))))
-  (make-sort-product 1 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TYPE-PRODUCT ()
+  (:tuple (1 (:repeat++ :TIGHT-TYPE (:anyof "*" "\\_times"))))
+  (make-type-product 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-INSTANTIATION
+;;;   TYPE-INSTANTIATION
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-INSTANTIATION ()
-  ;; Don't use :SORT-REF for first arg, since that could
-  ;;  refer to sort variables as well as sorts,
+(define-sw-parser-rule :TYPE-INSTANTIATION ()
+  ;; Don't use :TYPE-REF for first arg, since that could
+  ;;  refer to type variables as well as types,
   ;;  which we don't want to allow here.
-  (:tuple (1 :QUALIFIABLE-SORT-NAME) (2 :ACTUAL-SORT-PARAMETERS))
-  (make-sort-instantiation 1 2 ':left-lcb ':right-lcb))
+  (:tuple (1 :QUALIFIABLE-TYPE-NAME) (2 :ACTUAL-TYPE-PARAMETERS))
+  (make-type-instantiation 1 2 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :ACTUAL-SORT-PARAMETERS ()
+(define-sw-parser-rule :ACTUAL-TYPE-PARAMETERS ()
   (:anyof
-   ((:tuple (1 :CLOSED-SORT))       (list 1))
-   ((:tuple (1 :PROPER-SORT-LIST))  1)
+   ((:tuple (1 :CLOSED-TYPE))       (list 1))
+   ((:tuple (1 :PROPER-TYPE-LIST))  1)
    ))
 
-(define-sw-parser-rule :PROPER-SORT-LIST ()
-  (:tuple "(" (1 (:repeat++ :SORT ",")) ")")
+(define-sw-parser-rule :PROPER-TYPE-LIST ()
+  (:tuple "(" (1 (:repeat++ :TYPE ",")) ")")
   1)
 
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :QUALIFIABLE-SORT-NAMES ()
+(define-sw-parser-rule :QUALIFIABLE-TYPE-NAMES ()
   ;; "S"  "A.S"  "{S, A.X, Y}" etc.
   ;; "{S}" is same as "S"
   (:anyof 
-   ((:tuple (1 :QUALIFIABLE-SORT-NAME))                          (list 1))
-   ((:tuple "{" (2 (:repeat+ :QUALIFIABLE-SORT-NAME ",")) "}")   2)))
+   ((:tuple (1 :QUALIFIABLE-TYPE-NAME))                          (list 1))
+   ((:tuple "{" (2 (:repeat+ :QUALIFIABLE-TYPE-NAME ",")) "}")   2)))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-REF
+;;;   TYPE-REF
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-REF ()
-  (1 :QUALIFIABLE-SORT-NAME)
-  (make-sort-ref 1 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TYPE-REF ()
+  (1 :QUALIFIABLE-TYPE-NAME)
+  (make-type-ref 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-RECORD
+;;;   TYPE-RECORD
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-RECORD ()
+(define-sw-parser-rule :TYPE-RECORD ()
   (:anyof
-   (1 :UNIT-PRODUCT-SORT)
-   (:tuple "{" (1 :FIELD-SORT-LIST) "}"))
+   (1 :UNIT-PRODUCT-TYPE)
+   (:tuple "{" (1 :FIELD-TYPE-LIST) "}"))
   1)
 
-;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-SORT,
-;;;        but in the documentation, it's viewed as 0 entries in :SORT-RECORD
+;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-TYPE,
+;;;        but in the documentation, it's viewed as 0 entries in :TYPE-RECORD
 ;;;  TODO: In code: We should add :record* as a parser production.
-(define-sw-parser-rule :UNIT-PRODUCT-SORT ()
+(define-sw-parser-rule :UNIT-PRODUCT-TYPE ()
   (:anyof
    (:tuple "{" "}")
    (:tuple "(" ")"))
-  (make-sort-record  nil        ':left-lcb ':right-lcb) :documentation "Unit product")
+  (make-type-record  nil        ':left-lcb ':right-lcb) :documentation "Unit product")
 
-(define-sw-parser-rule :FIELD-SORT-LIST ()
-  (1 (:repeat+ :FIELD-SORT ","))
-  (make-sort-record  1 ':left-lcb ':right-lcb) :documentation "Record Sort")
+(define-sw-parser-rule :FIELD-TYPE-LIST ()
+  (1 (:repeat+ :FIELD-TYPE ","))
+  (make-type-record  1 ':left-lcb ':right-lcb) :documentation "Record Type")
 
-(define-sw-parser-rule :FIELD-SORT ()
-  (:tuple (1 :FIELD-NAME) ":" (2 :SORT))
-  (make-field-sort 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :FIELD-TYPE ()
+  (:tuple (1 :FIELD-NAME) ":" (2 :TYPE))
+  (make-field-type 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIELD-NAME ()
   :NAME)
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-RESTRICTION
+;;;   TYPE-RESTRICTION
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-RESTRICTION ()
+(define-sw-parser-rule :TYPE-RESTRICTION ()
   ;; The multiple uses of "|" in the grammar complicates this rule.
-  ;; E.g., without parens required here, sort comprehension {x : Integer | f x}
-  ;; could be parsed as a one-element field sort with x of type (Integer | f x).
+  ;; E.g., without parens required here, type comprehension {x : Integer | f x}
+  ;; could be parsed as a one-element field type with x of type (Integer | f x).
   ;; But with parens required here, that would need to be {x : (Integer | f x)}
   ;; to get that effect.
   (:tuple "(" (1 :RAW-SUBTYPE) ")")
   1)
 
 (define-sw-parser-rule :RAW-SUBTYPE ()
-  ;; This can also be used as a :SORT-DEF-RHS
-  (:tuple (1 :SLACK-SORT) "|" (2 :EXPRESSION))
-  (make-sort-restriction 1 2 ':left-lcb ':right-lcb) :documentation "Subsort")
+  ;; This can also be used as a :TYPE-DEF-RHS
+  (:tuple (1 :SLACK-TYPE) "|" (2 :EXPRESSION))
+  (make-type-restriction 1 2 ':left-lcb ':right-lcb) :documentation "Subtype")
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-COMPREHENSION
+;;;   TYPE-COMPREHENSION
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SORT-COMPREHENSION ()
+(define-sw-parser-rule :TYPE-COMPREHENSION ()
   (:tuple "{" (1 :ANNOTATED-PATTERN) "|" (2 :EXPRESSION) "}")
-  (make-sort-comprehension 1 2 ':left-lcb ':right-lcb) :documentation "Sort comprehension")
+  (make-type-comprehension 1 2 ':left-lcb ':right-lcb) :documentation "Type comprehension")
 
 ;;; ------------------------------------------------------------------------
-;;;   PARENTHESIZED-SORT
+;;;   PARENTHESIZED-TYPE
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :PARENTHESIZED-SORT ()
-  (:tuple "(" (1 :SORT) ")")
+(define-sw-parser-rule :PARENTHESIZED-TYPE ()
+  (:tuple "(" (1 :TYPE) ")")
   1)
 
 ;;; ========================================================================
@@ -860,27 +860,24 @@ If we want the precedence to be optional:
    ;; "~" is treated specially: see semantics.lisp
    ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator,
    ;; so we don't make "~" a keyword (which would exclude the latter)
-   ((:tuple "&")   (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
-   ((:tuple "&&")  (make-fun '(:|And|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_and")  (make-fun '(:|And|)    MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ;;((:tuple "or")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
-   ((:tuple "||")  (make-fun '(:|Or|)        MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_or")  (make-fun '(:|Or|)      MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "=>")  (make-fun '(:|Implies|)   MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_Rightarrow")  (make-fun '(:|Implies|) MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "<=>") (make-fun '(:|Iff|)       MS::binaryBoolSort ':left-lcb ':right-lcb))
-   ((:tuple "\\_Leftrightarrow") (make-fun '(:|Iff|) MS::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "&")                 (make-bool-fun '(:|And|)     ':left-lcb ':right-lcb)) ; deprecated
+   ((:tuple "&&")                (make-bool-fun '(:|And|)     ':left-lcb ':right-lcb))
+   ((:tuple "\\_and")            (make-bool-fun '(:|And|)     ':left-lcb ':right-lcb))
+   ((:tuple "||")                (make-bool-fun '(:|Or|)      ':left-lcb ':right-lcb))
+   ((:tuple "\\_or")             (make-bool-fun '(:|Or|)      ':left-lcb ':right-lcb))
+   ((:tuple "=>")                (make-bool-fun '(:|Implies|) ':left-lcb ':right-lcb))
+   ((:tuple "\\_Rightarrow")     (make-bool-fun '(:|Implies|) ':left-lcb ':right-lcb))
+   ((:tuple "<=>")               (make-bool-fun '(:|Iff|)     ':left-lcb ':right-lcb))
+   ((:tuple "\\_Leftrightarrow") (make-bool-fun '(:|Iff|)     ':left-lcb ':right-lcb))
    ;;
    ;; "=" is treated specially: see semantics.lisp
    ;; "=" refers to the built-in Equals, but can also appear as a keyword in other rules
-   ;; ((:tuple "=")   (make-equality-fun '(:|Equals|)    ':left-lcb ':right-lcb))
-   ((:tuple "~=")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
-   ((:tuple "\\_noteq")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
-   ((:tuple "<<")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
-			     ':left-lcb ':right-lcb))
-   ((:tuple "\\_guillemotleft")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
-					   ':left-lcb ':right-lcb))
-   ((:tuple "::")  (make-unqualified-op-ref "Cons" ':left-lcb ':right-lcb))
+   ;; ((:tuple "=")              (make-equality-fun '(:|Equals|)    ':left-lcb ':right-lcb))
+   ((:tuple "~=")                (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
+   ((:tuple "\\_noteq")          (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
+   ((:tuple "<<")                (make-fun          '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb) ':left-lcb ':right-lcb))
+   ((:tuple "\\_guillemotleft")  (make-fun          '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb) ':left-lcb ':right-lcb))
+   ((:tuple "::")                (make-unqualified-op-ref "Cons" ':left-lcb ':right-lcb))
    ))
 
 ;;; ------------------------------------------------------------------------
@@ -949,7 +946,7 @@ If we want the precedence to be optional:
   (:repeat+ :REC-LET-BINDING nil))
 
 (define-sw-parser-rule :REC-LET-BINDING ()
-  (:tuple "def" (1 :NAME) (2 :FORMAL-PARAMETER-SEQUENCE) (:optional (:tuple ":" (3 :SORT))) :EQUALS (4 :EXPRESSION))
+  (:tuple "def" (1 :NAME) (2 :FORMAL-PARAMETER-SEQUENCE) (:optional (:tuple ":" (3 :TYPE))) :EQUALS (4 :EXPRESSION))
   (make-rec-let-binding 1 2 3 4 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETER-SEQUENCE ()
@@ -1006,7 +1003,7 @@ If we want the precedence to be optional:
   (make-local-variable-list 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ANNOTATED-VARIABLE ()
-  (:tuple (1 :LOCAL-VARIABLE) (:optional (:tuple ":" (2 :SORT))))
+  (:tuple (1 :LOCAL-VARIABLE) (:optional (:tuple ":" (2 :TYPE))))
   (make-annotated-variable 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :LOCAL-VARIABLE ()
@@ -1018,7 +1015,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :ANNOTATED-EXPRESSION ()
   ;;  "P : S1 : S2" is legal,  meaning P is of type S1, which is also of type S2
-  (:tuple (1 :TIGHT-EXPRESSION) ":" (2 :SORT))
+  (:tuple (1 :TIGHT-EXPRESSION) ":" (2 :TYPE))
   (make-annotated-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Annotated term")
 
@@ -1066,12 +1063,12 @@ If we want the precedence to be optional:
 ;;; phase.  See <sw>/meta-slang/infix.sl
 
 (define-sw-parser-rule :APPLICATION ()
-  (:tuple (1 :CLOSED-EXPRESSION) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
+  (:tuple (1 :CLOSED-EXPRESSION) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :TYPE)))
   (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
 
 (define-sw-parser-rule :APPLICATION-NSWB  ()
-  (:tuple (1 :CLOSED-EXPRESSION-NSWB) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
+  (:tuple (1 :CLOSED-EXPRESSION-NSWB) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :TYPE)))
   (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
 
@@ -1229,12 +1226,12 @@ If we want the precedence to be optional:
    ((:tuple "project" (1 :FIELD-NAME)) (make-field-name-selector 1 ':left-lcb ':right-lcb) :documentation "Projection")))
 
 (define-sw-parser-rule :QUOTIENTER ()
-  (:tuple "quotient" "[" (1 :QUALIFIABLE-SORT-NAME) "]")
+  (:tuple "quotient" "[" (1 :QUALIFIABLE-TYPE-NAME) "]")
   (make-quotienter 1  ':left-lcb ':right-lcb)
   :documentation "Quotient")
 
 (define-sw-parser-rule :CHOOSER ()
-  (:tuple "choose" "[" (1 :QUALIFIABLE-SORT-NAME) "]")
+  (:tuple "choose" "[" (1 :QUALIFIABLE-TYPE-NAME) "]")
   (make-chooser 1  ':left-lcb ':right-lcb)
   :documentation "Choice")
 
@@ -1351,7 +1348,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :ANNOTATED-PATTERN ()
-  (:tuple (1 :PATTERN) ":" (2 :SORT))                            (make-annotated-pattern  1 2   ':left-lcb ':right-lcb) :documentation "Annotated Pattern")
+  (:tuple (1 :PATTERN) ":" (2 :TYPE))                            (make-annotated-pattern  1 2   ':left-lcb ':right-lcb) :documentation "Annotated Pattern")
 
 (define-sw-parser-rule :ALIASED-PATTERN   ()
   (:tuple (1 :VARIABLE-PATTERN) "as" (2 :TIGHT-PATTERN))         (make-aliased-pattern    1 2   ':left-lcb ':right-lcb) :documentation "Aliased pattern")
@@ -1363,7 +1360,7 @@ If we want the precedence to be optional:
   (:tuple (1 :CONSTRUCTOR) (2 :CLOSED-PATTERN))                  (make-embed-pattern      1 2   ':left-lcb ':right-lcb) :documentation "Embed pattern")
 
 (define-sw-parser-rule :QUOTIENT-PATTERN ()
-  (:tuple "quotient" "[" (1 :QUALIFIABLE-SORT-NAME) "]" (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
+  (:tuple "quotient" "[" (1 :QUALIFIABLE-TYPE-NAME) "]" (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
 
 (define-sw-parser-rule :RESTRICTED-PATTERN ()
   (:tuple (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION))                (make-restricted-pattern 1 2   ':left-lcb ':right-lcb) :documentation "Restricted pattern")
@@ -1440,15 +1437,15 @@ If we want the precedence to be optional:
   (make-sc-qualify 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
-;;;  SORT REF
+;;;  TYPE REF
 ;;; ------------------------------------------------------------------------
 
-(define-sw-parser-rule :SC-SORT-REF ()
-  ;; When we know it must be a sort ref...
+(define-sw-parser-rule :SC-TYPE-REF ()
+  ;; When we know it must be a type ref...
   ;; "[A.]X" "([A.]X)", but X cannot be "="
   (:anyof 
-   ((:tuple     (1 :QUALIFIABLE-SORT-NAME)     )  1) ; "[A.]f"  
-   ((:tuple "(" (1 :QUALIFIABLE-SORT-NAME) ")" )  1) ; "([A.]f)"
+   ((:tuple     (1 :QUALIFIABLE-TYPE-NAME)     )  1) ; "[A.]f"  
+   ((:tuple "(" (1 :QUALIFIABLE-TYPE-NAME) ")" )  1) ; "([A.]f)"
    ))
 
 ;;; ------------------------------------------------------------------------
@@ -1457,14 +1454,14 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-OP-REF ()
   ;; When we know it must be an op ref...
-  ;; "[A,]f", "([A,]f)", "[A.]f : <sort>", "([A.]f : <sort>)"
+  ;; "[A,]f", "([A,]f)", "[A.]f : <type>", "([A.]f : <type>)"
   (:anyof 
    ((:tuple     (1 :SC-OP-REF-AUX)     )  1) ; "[A.]f"  
    ((:tuple "(" (1 :SC-OP-REF-AUX) ")" )  1) ; "([A.]f)"
    ))
 
 (define-sw-parser-rule :SC-OP-REF-AUX ()
-  ;; "[A,]f", "([A,]f)", "[A.]f : <sort>", "([A.]f : <sort>)"
+  ;; "[A,]f", "([A,]f)", "[A.]f : <type>", "([A.]f : <type>)"
   (:anyof 
    :SC-UNANNOTATED-OP-REF
    :SC-ANNOTATED-OP-REF))
@@ -1477,8 +1474,8 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-ANNOTATED-OP-REF ()
   ;; This can only be an op ref...
-  ;; "[A.]f : <sort>"
-  (:tuple (1 :QUALIFIABLE-OP-NAME) ":" (2 :SORT))
+  ;; "[A.]f : <type>"
+  (:tuple (1 :QUALIFIABLE-OP-NAME) ":" (2 :TYPE))
   (make-sc-annotated-op-ref 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
@@ -1498,7 +1495,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :SC-AMBIGUOUS-REF ()
-  ;; When we're not sure if its a sort/op/axiom ref...
+  ;; When we're not sure if its a type/op/axiom ref...
   ;; "X"  "A.X"  "(X)"  "(A.X)"
   ;; We assume that semantic routines will disambiguate as an OP-REF if X is "="
   (:anyof 
@@ -1507,11 +1504,11 @@ If we want the precedence to be optional:
    ))
 
 ;;; ------------------------------------------------------------------------
-;;;  QUALIFIABLE-AMBIGUOUS-NAME (might refer to sort/op/axiom)
+;;;  QUALIFIABLE-AMBIGUOUS-NAME (might refer to type/op/axiom)
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :QUALIFIABLE-AMBIGUOUS-NAME ()
-  ;; might be sort or op name, but will be of the form XXX or QQQ.XXX
+  ;; might be type or op name, but will be of the form XXX or QQQ.XXX
   (:anyof :UNQUALIFIED-AMBIGUOUS-NAME :QUALIFIED-AMBIGUOUS-NAME))
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
@@ -1549,10 +1546,10 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple :KW-TYPE (1 :SC-SORT-REF)       :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-TYPE-REF)       :MAPS-TO (2 :SC-TYPE-REF))          (make-sc-type-rule      1 2 ':left-lcb ':right-lcb))
    ((:tuple "op"     (1 :SC-OP-REF)         :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
-   ;; Without an explicit "sort" or "op" keyword, 
+   ;; Without an explicit "type" or "op" keyword, 
    ;;  if either side is annotated, this is an op rule:
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
@@ -1585,10 +1582,10 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-spec-morph-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple :KW-TYPE (1 :SC-SORT-REF)       :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-TYPE-REF)       :MAPS-TO (2 :SC-TYPE-REF))          (make-sm-type-rule      1 2 ':left-lcb ':right-lcb))
    ((:tuple "op"     (1 :SC-OP-REF)         :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
-   ;; Without an explicit "sort" or "op" keyword, 
+   ;; Without an explicit "type" or "op" keyword, 
    ;;  if either side is annotated, this is an op rule:
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
    ((:tuple        (1 :SC-ANNOTATED-OP-REF) :MAPS-TO (2 :SC-ANNOTATED-OP-REF))  (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
@@ -1645,8 +1642,8 @@ If we want the precedence to be optional:
   (:tuple "refine" (1 :SC-TERM) "by" "{"
 	  (2 (:repeat+ (:anyof :OP-DEFINITION
 			       :OP-DECLARATION
-                               :SORT-DECLARATION
-                               :SORT-DEFINITION
+                               :TYPE-DECLARATION
+                               :TYPE-DEFINITION
                                :CLAIM-DEFINITION
                                :PRAGMA-DECLARATION) nil)) "}")
   (make-sc-op-refine 1 2 ':left-lcb ':right-lcb))
@@ -1806,7 +1803,7 @@ If we want the precedence to be optional:
   (make-sc-export 1 2 ':left-lcb ':right-lcb))
 
 ;; Right now we simply list the names to hide or export. Later
-;; we might provide some sort of expressions or patterns
+;; we might provide some type of expressions or patterns
 ;; that match sets of identifiers.
 ;; (define-sw-parser-rule :SC-NAME-EXPR ()
 ;;   (:tuple "{" (1 (:optional :QUALIFIABLE-AMBIGUOUS-NAME-LIST)) "}")
@@ -1817,10 +1814,10 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-DECL-REF ()
   (:anyof 
-   ((:tuple :KW-TYPE        (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE        (1 :SC-TYPE-REF))          (make-sc-type-ref      1 ':left-lcb ':right-lcb))
    ((:tuple "op"            (1 :SC-OP-REF))            (make-sc-op-ref        1 ':left-lcb ':right-lcb))
    ((:tuple (1 :CLAIM-KIND) (2 :SC-CLAIM-REF))         (make-sc-claim-ref     1 2 ':left-lcb ':right-lcb))
-   ;; Without an explicit "sort" or "op" keyword, if ref is annotated, its an op ref:
+   ;; Without an explicit "type" or "op" keyword, if ref is annotated, its an op ref:
    ((:tuple                 (1 :SC-ANNOTATED-OP-REF))  (make-sc-op-ref        1 ':left-lcb ':right-lcb))
    ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
    ((:tuple                 (1 :SC-AMBIGUOUS-REF))     (make-sc-ambiguous-ref 1 ':left-lcb ':right-lcb))

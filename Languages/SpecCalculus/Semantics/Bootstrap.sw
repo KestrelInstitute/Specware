@@ -24,7 +24,7 @@ Specware qualifying spec
   %% 
   %% This is not used at present.
   %% 
-  %%   op runSpecware : () -> Boolean
+  %%   op runSpecware : () -> Bool
   %%   def runSpecware () =
   %%     case run (catch toplevelLoop toplevelHandler) of
   %%       | (Ok val,_)      -> fail "Specware toplevel loop terminated unexpectedly"
@@ -60,7 +60,7 @@ Specware qualifying spec
   %% toplevel is used within the bootstrap. If the toplevel fails, then lisp
   %% exits with a non-zero status and hence the bootstrap fails.
 
-  op  runSpecwareUID : String -> Boolean
+  op  runSpecwareUID : String -> Bool
   def runSpecwareUID path = 
     let prog = {
 		cleanEnv;
@@ -104,7 +104,7 @@ Specware qualifying spec
 
   op  initializeInterpreterBase : () -> () % defined in toplevel.lisp
 
-  op  intializeSpecware : () -> Boolean
+  op  intializeSpecware : () -> Bool
   def initializeSpecware () =
     let prog = { 
 		(optBaseUnitId,_) <- getBase;
@@ -121,7 +121,7 @@ Specware qualifying spec
     in
       run (catch prog toplevelHandler)
 
-  op  reintializeSpecware : () -> Boolean
+  op  reintializeSpecware : () -> Bool
   def reinitializeSpecware () =
     let prog = {
 		%% maybe following two should be invoked inseparably...
@@ -133,7 +133,7 @@ Specware qualifying spec
     in
       run (catch prog toplevelHandler)
 
-  op  unitIDCurrentInCache? : String -> Boolean
+  op  unitIDCurrentInCache? : String -> Bool
   def unitIDCurrentInCache? path =
     let prog = {
 		cleanEnv;
@@ -151,7 +151,7 @@ Specware qualifying spec
   %% The first just evaluates a UnitId. The second evaluates a UnitId and then
   %% compiles the resulting specification to lisp.
 
-  op  evaluateUID_fromLisp : String -> Boolean
+  op  evaluateUID_fromLisp : String -> Bool
   def evaluateUID_fromLisp path = 
     let prog = {
 		cleanEnv;
@@ -187,7 +187,7 @@ Specware qualifying spec
   %% when it is reloaded. On the other hand, if the user sets a canonical UnitId,
   %% then unless they have "/" in there SWPATH, the canonical UnitId may not be found.
 
-  op  setBase_fromLisp : String -> Boolean
+  op  setBase_fromLisp : String -> Bool
   def setBase_fromLisp path =
     let prog = {
 		cleanEnv;
@@ -201,7 +201,7 @@ Specware qualifying spec
     in
       runSpecCommand (catch prog toplevelHandler) 
 
-  op  showBase_fromLisp : () -> Boolean
+  op  showBase_fromLisp : () -> Bool
   def showBase_fromLisp () =
     let prog = {
 		(optBaseUnitId,baseSpec) <- getBase;
@@ -216,7 +216,7 @@ Specware qualifying spec
 
    %%% show and showx commands:
 
-  op  evaluatePrint_fromLisp : String * Boolean -> Boolean
+  op  evaluatePrint_fromLisp : String * Bool -> Bool
   def evaluatePrint_fromLisp (path,use_x_symbol?) = 
     let prog = {
 		cleanEnv;
@@ -235,7 +235,7 @@ Specware qualifying spec
 
   %% The following corresponds to the :show command.
 
-  op  listLoadedUnits : () -> Boolean
+  op  listLoadedUnits : () -> Bool
   def listLoadedUnits () = 
     let prog = {
 		globalContext <- getGlobalContext;
@@ -276,7 +276,7 @@ Specware qualifying spec
 
   %% Second argument is interpreted as spec containing options for the code generation.
 
-  op  evaluateLispCompileLocal_fromLisp : String * Option String -> Boolean
+  op  evaluateLispCompileLocal_fromLisp : String * Option String -> Bool
   def evaluateLispCompileLocal_fromLisp (path,targetFile) = 
     let target =
       case targetFile of
@@ -361,10 +361,10 @@ Specware qualifying spec
   %% not used.
   %% 
   %% Right now this returns a boolean to be consistent with the hander.
-  %% When written, this should never return. All the Boolean's should
+  %% When written, this should never return. All the Bool's should
   %% become unit types.
 
-  op  toplevelLoop : SpecCalc.Env Boolean
+  op  toplevelLoop : SpecCalc.Env Bool
   def toplevelLoop = return true
 
   %% This is the toplevel exception handler. Eventually, when we have our own
@@ -377,7 +377,7 @@ Specware qualifying spec
   %% functions have unit type (within the monad). It seems to make
   %% sense that no toplevel functions return anything.
 
-  %op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean % See Signature.sw
+  %op Specware.toplevelHandler : Exception -> SpecCalc.Env Bool % See Signature.sw
   def Specware.toplevelHandler except =
     {
      cleanupGlobalContext;		% Remove InProcess entries

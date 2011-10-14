@@ -7,14 +7,13 @@ spec
   %% so one might be tempted to hack a polymorphic version that's 
   %% useable but logically sloppy.
 
-  sort Element
-  sort EquivalenceClass  
-  sort QuotientSet       % not necessarily implemented as a set per se
+  type Element
+  type EquivalenceClass  
+  type QuotientSet       % not necessarily implemented as a set per se
 
-  op equiv : Element * Element -> Boolean
-
-  op class_member : Element * EquivalenceClass     -> Boolean
-  op qset_member  : EquivalenceClass * QuotientSet -> Boolean
+  op equiv        : Element          * Element          -> Bool
+  op class_member : Element          * EquivalenceClass -> Bool
+  op qset_member  : EquivalenceClass * QuotientSet      -> Bool
 
   axiom connected is fa (z : EquivalenceClass)
                      fa (x : Element, y : Element)

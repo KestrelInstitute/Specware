@@ -44,14 +44,14 @@ StateMonad qualifying spec
   def >>> (m1,m2) = m1 >> (fn _ -> m2)
 
   op IF : [state,a]  % monadic if-then-else
-     Boolean -> StateMonad(state,a) -> StateMonad(state,a) -> StateMonad(state,a)
+     Bool -> StateMonad(state,a) -> StateMonad(state,a) -> StateMonad(state,a)
   def IF b m1 m2 st = if b then m1 st else m2 st
 
   op NOP : [state] StateMonad(state,())  % monadic no-operation
   def NOP = fn st -> (st, ())
 
   op IF0 : [state]  % monadic if-then
-     Boolean -> StateMonad(state,()) -> StateMonad(state,())
+     Bool -> StateMonad(state,()) -> StateMonad(state,())
   def IF0 b m = IF b m NOP
 
   op ignoreResult : [state,a] StateMonad(state,a) -> StateMonad(state,())

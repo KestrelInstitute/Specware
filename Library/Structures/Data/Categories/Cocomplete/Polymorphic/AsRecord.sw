@@ -1,10 +1,10 @@
-\section{Concrete Sort for Cocomplete Cats as Record}
+\section{Concrete Type for Cocomplete Cats as Record}
 
 \begin{spec}
 Cat qualifying spec {
   import ../Polymorphic
 
-  sort Cocone (O,A) = {
+  type Cocone (O,A) = {
       diagram : Diagram (O,A),
       apex : O,
       natTrans : NatTrans (O,A)
@@ -20,7 +20,7 @@ Cat qualifying spec {
       natTrans = emptyNatTrans targetCat
    }
 
-  sort InitialCocone (O,A) = {
+  type InitialCocone (O,A) = {
       cocone : Cocone (O,A),
       universal : Cocone (O,A) -> A
     }
@@ -33,11 +33,11 @@ Cat qualifying spec {
       universal = fn _ (* cocone *) -> ident targetCat (initialObject targetCat)
     }
 
-  sort Cat.Cat (O,A) = {
+  type Cat.Cat (O,A) = {
       ident : O -> A,
       dom : A -> O,
       cod : A -> O,
-      % composable? : A -> A -> Boolean,
+      % composable? : A -> A -> Bool,
       compose : A -> A -> A,
       % For now, use option to indicate errors. A monad would be nicer.
       colimit : Diagram (O,A) -> Option (InitialCocone (O,A)) * Option String,
@@ -49,7 +49,7 @@ Cat qualifying spec {
 %  op ident: fa(O,A) Cat(O,A) -> O -> A
 %  op dom: fa(O,A) Cat(O,A) -> A -> O
 %  op cod: fa(O,A) Cat(O,A) -> A -> O
-%  % op composable?: fa(O,A) Cat (O,A)  -> A -> A -> Boolean
+%  % op composable?: fa(O,A) Cat (O,A)  -> A -> A -> Bool
 %  op compose: fa(O,A) Cat(O,A) -> A -> A -> A 
 %  op colimit: fa(O,A) Cat(O,A) -> Diagram (O,A) -> InitialCocone (O,A)
 %  op ppObj: fa(O,A) Cat(O,A) -> O -> WLPretty

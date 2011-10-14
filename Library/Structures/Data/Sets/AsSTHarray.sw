@@ -4,19 +4,19 @@ spec
   import /Library/PrettyPrinter/WadlerLindig
 
   op SetSTHashtable.emptySet : [a] Set a
-  op SetSTHashtable.emptySet? : [a] Set a -> Boolean
+  op SetSTHashtable.emptySet? : [a] Set a -> Bool
 
 %  op SetSTHashtable.union : [a] Set a * Set a -> Set a
 %  op SetSTHashtable.intersection : [a] Set a * Set a -> Set a
 %  op SetSTHashtable.difference : [a] Set a * Set a -> Set a
 
-  op SetSTHashtable.member? : [a] Set a * a -> Boolean
-  op SetSTHashtable.subset?: [a] Set a * Set a -> Boolean
+  op SetSTHashtable.member? : [a] Set a * a -> Bool
+  op SetSTHashtable.subset?: [a] Set a * Set a -> Bool
 
   op SetSTHashtable.delete : [a] Set a * a -> Set a
   op SetSTHashtable.insert : [a] Set a * a -> Set a
 
-  op SetSTHashtable.find: [a] (a -> Boolean) * Set a -> Option a
+  op SetSTHashtable.find: [a] (a -> Bool) * Set a -> Option a
 
   %op SetSTHashtable.singleton : [a] a -> Set a
 

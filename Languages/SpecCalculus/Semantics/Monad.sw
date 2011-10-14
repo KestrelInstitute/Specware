@@ -19,7 +19,7 @@ SpecCalc qualifying spec
     by {Monad._ +-> SpecCalc._}
   import /Library/IO/Primitive/IO
   import Value
-  import Wizard  % op specwareWizard? : Boolean
+  import Wizard  % op specwareWizard? : Bool
 
   %% To avoid name clashes, define undefinedGlobalVariable after importing 
   %% translated Monad stuff, as opposed to defining it in Exception.
@@ -182,7 +182,7 @@ Some hacks for twiddling memory.  hackMemory essentially calls (room nil)
 in an attempt to appease Allegro CL into not causing mysterious storage 
 conditions during the bootstrap. (sigh)  
 *)
-  op garbageCollect : Boolean -> Env ()
+  op garbageCollect : Bool -> Env ()
   def garbageCollect full? = return (System.garbageCollect full?) 
 
   op hackMemory : Env ()
@@ -191,7 +191,7 @@ conditions during the bootstrap. (sigh)
 The following is used when one wants to guard a command with a predicate.
 The predicate is not computed in the monad.
 *)
-  op when : Boolean -> Env () -> Env ()
+  op when : Bool -> Env () -> Env ()
   def when p command = if p then (fn s -> (command s)) else return ()
 (*
 The following is essentially a \verb+foldl+ over a list but within a
@@ -262,7 +262,7 @@ rely on the overloading?
       foldM f' (accum,[]) lst
    *)
 
-  op fileExistsAndReadable? : String -> Env Boolean
+  op fileExistsAndReadable? : String -> Env Bool
   def fileExistsAndReadable? fileName = return (fileExistsAndReadable fileName)
 
   op findTheOp : Spec -> QualifiedId -> SpecCalc.Env OpInfo

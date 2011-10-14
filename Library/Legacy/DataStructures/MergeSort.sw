@@ -1,6 +1,6 @@
 (* MergeSort
 
-List sorting routines using a smooth applicative merge sort
+List typeing routines using a smooth applicative merge type
 Taken from the SML/NJ distribution, which again is
 taken from, ML for the Working Programmer, LCPaulson. pg 99-100, which again is.
 taken from ...
@@ -10,9 +10,9 @@ MergeSort qualifying spec
 
  import /Library/Legacy/Utilities/System
 
-  op sortGT     : [a] (a * a -> Boolean) -> List a -> List a
+  op sortGT     : [a] (a * a -> Bool)       -> List a -> List a
   op uniqueSort : [a] (a * a -> Comparison) -> List a -> List a
-  op sorted     : [a] (a * a -> Boolean) -> List a -> Boolean
+  op sorted     : [a] (a * a -> Bool)       -> List a -> Bool
 
   def sortGT cmpGT ls =
     case ls of

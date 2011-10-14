@@ -10,7 +10,7 @@ I2L qualifying spec
 {
   import /Library/Legacy/Utilities/System
 
-  op [X] CUtils.qsort (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
+  op [X] CUtils.qtype (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
 
   type I_ImpUnit = {
                     name     : String,
@@ -293,8 +293,8 @@ I2L qualifying spec
 
   % --------------------------------------------------------------------------------
 
-  op sortTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
-   qsort (typeDefnMustFollow iu) typedefns 
+  op typeTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
+   qtype (typeDefnMustFollow iu) typedefns 
 
   op typeDefnMustFollow (iu : I_ImpUnit) 
                         (td1 as (tname1 as (_,id1),_) : I_TypeDefinition,
@@ -351,8 +351,8 @@ I2L qualifying spec
      | _ -> None
   
 
-  op impUnitSortTypeDefinitions (iu : I_ImpUnit) : I_ImpUnit =
-   let decls = iu.decls << {typedefs = sortTypeDefinitions iu iu.decls.typedefs} in
+  op impUnitTypeTypeDefinitions (iu : I_ImpUnit) : I_ImpUnit =
+   let decls = iu.decls << {typedefs = typeTypeDefinitions iu iu.decls.typedefs} in
    iu << {decls = decls} 
 
   % --------------------------------------------------------------------------------

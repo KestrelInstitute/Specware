@@ -3,12 +3,12 @@ spec
 
 import LiftPattern
 
-op renameVar: Term * Var * Var -> Term
+op renameVar: MSTerm * Var * Var -> MSTerm
 
-op renameVarApply: Term * Var * Var -> Term
-op renameVarRecord: Term * Var * Var -> Term
-op renameVarIfThenElse: Term * Var * Var -> Term
-op renameVarLet: Term * Var * Var -> Term
+op renameVarApply: MSTerm * Var * Var -> MSTerm
+op renameVarRecord: MSTerm * Var * Var -> MSTerm
+op renameVarIfThenElse: MSTerm * Var * Var -> MSTerm
+op renameVarLet: MSTerm * Var * Var -> MSTerm
 
 
 def renameVar(term, oldV, newV) =
@@ -48,7 +48,7 @@ def renameVarCase(term, oldV, newV) =
   let res = mkApply(Lambda (newCases, b), newCaseTerm) in
   withAnnT(res,termAnn(term))
 
-op renameVarMatch: (Pattern * Term * Term) * Var * Var -> Pattern * Term * Term
+op renameVarMatch: (MSPattern * MSTerm * MSTerm) * Var * Var -> MSPattern * MSTerm * MSTerm
 
 def renameVarMatch((pat, cond, patBody), oldV, newV) =
   let boundVars = patVars(pat) in
@@ -85,7 +85,7 @@ def renameVarLetOldVar(letTerm, letBody, vpat, oldV, newV) =
   let res = mkLet([(vpat, newLetTerm)], newLetBody) in
   withAnnT(res,termAnn(letTerm))
 
-op distinctVar: Term * List Id -> Term * List Id
+op distinctVar: MSTerm * List Id -> MSTerm * List Id
 def distinctVar(term, ids) =
   if caseTerm?(term) then distinctVarCase(term, ids) else
   case term of
@@ -99,7 +99,7 @@ def distinctVar(term, ids) =
 		  %TODO: catch lambda terms
     | LetRec _ -> (term,ids) %fail("inner function definitions not yet supported.")
     %(term,ids)
-    | SortedTerm(t,_,_) -> distinctVar(t,ids)
+    | TypedTerm(t,_,_) -> distinctVar(t,ids)
     | Seq(terms,b) -> foldl (fn((Seq(terms,b),ids0),term) ->
 			     let (t,ids) = distinctVar(term,ids0) in
 			     (Seq(terms ++ [t],b),ids)) (Seq([],b),ids) terms
@@ -112,7 +112,7 @@ def distinctVar(term, ids) =
     | _ -> (writeLine ("unsupported term format (in distinctVar): "^printTerm(term));
             (term, ids))
 
-op distinctVars: List Term * List Id -> List Term * List Id
+op distinctVars: MSTerms * List Id -> MSTerms * List Id
 def distinctVars(terms, ids) =
   case terms of
     | [] -> ([], ids)
@@ -122,14 +122,14 @@ def distinctVars(terms, ids) =
     (Cons(newTerm, restTerms), restIds)
 
 
-op distinctVarApply: Term * List Id -> Term * List Id
+op distinctVarApply: MSTerm * List Id -> MSTerm * List Id
 def distinctVarApply(term as Apply (opTerm, argsTerm, _), ids) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newIds) = distinctVars(args, ids) in
     let res = (mkApplication(opTerm, newArgs)) in
     (withAnnT(res,termAnn(term)), newIds)
 
-op distinctVarLambda: Term * List Id -> Term * List Id
+op distinctVarLambda: MSTerm * List Id -> MSTerm * List Id
 def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
   let argNames = patternNamesOpt(pat) in
     (case argNames of
@@ -141,7 +141,7 @@ def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
        %| _ -> fail("DistinctVarLambda with no args: "^printTerm(term))
      )
 
-op distinctVarRecord: Term * List Id -> Term * List Id
+op distinctVarRecord: MSTerm * List Id -> MSTerm * List Id
 def distinctVarRecord(term as Record (fields,_), ids) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newTerms, newIds) = distinctVars(recordTerms, ids) in
@@ -149,14 +149,14 @@ def distinctVarRecord(term as Record (fields,_), ids) =
     let res = (mkRecord(newFields)) in
     (withAnnT(res,termAnn(term)),newIds)
 
-op distinctVarIfThenElse: Term * List Id -> Term * List Id
+op distinctVarIfThenElse: MSTerm * List Id -> MSTerm * List Id
 def distinctVarIfThenElse(term as IfThenElse(t1, t2, t3, _), ids) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newIds) = distinctVars(args, ids) in
     let res = MS.mkIfThenElse(newT1, newT2, newT3) in
     (withAnnT(res,termAnn(term)), newIds)
 
-op getPatternIds: Pattern -> List Id
+op getPatternIds: MSPattern -> List Id
 def getPatternIds pat =
   case pat of
     | VarPat((id,_),_) -> [id]
@@ -177,7 +177,7 @@ def distinctVarCase(term, ids) =
   let newTerm = withAnnT(newTerm,termAnn(term)) in
   (newTerm, newIds3)
 
-op distinctVarLet: Term * List Id -> Term * List Id
+op distinctVarLet: MSTerm * List Id -> MSTerm * List Id
 def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
   case letBindings of
     | [(VarPat (v, _), letTerm)] ->
@@ -210,16 +210,16 @@ def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
 
 
 %def distinctVarBind (term as Bind(binder, vars, body, _), ids) =
-%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
+%  writeLine ("unsupported term format (in distinctVar) "^printMSTerm(term))
 
 %def distinctVarThe (term as The(var, body, _), ids) =
-%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
+%  writeLine ("unsupported term format (in distinctVar) "^printMSTerm(term))
 
 %def distinctVarPi (term as Pi(tyvars, body, _), ids) =
-%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
+%  writeLine ("unsupported term format (in distinctVar) "^printMSTerm(term))
 
 %def distinctVarAnd (term as And(terms, _), ids) =
-%  writeLine ("unsupported term format (in distinctVar) "^printTerm(term))
+%  writeLine ("unsupported term format (in distinctVar) "^printMSTerm(term))
 
 op findNewId: Id * List Id -> Id
 
@@ -236,7 +236,7 @@ def mkNewId(id, n) =
  %% JLM -- Fri Jul 22 01:40:10 PDT 2005
  %% The following has been revised to be more direct and lighter weight.
  %%
- %% The goal here is to revise the opinfos in the sort.ops field, but note that 
+ %% The goal here is to revise the opinfos in the type.ops field, but note that 
  %% this should not affect anything else (e.g. the elements field) since no names
  %% are changed.
  %%
@@ -245,7 +245,7 @@ def mkNewId(id, n) =
  %% It also had the unfortunate side effect of turning all ops (local or imported)
  %% into local ops.
  %%
- %% This code works by directly revising the sort.ops map, leaving everything
+ %% This code works by directly revising the type.ops map, leaving everything
  %% else in the spec untouched.  In particular, the structure of the elements 
  %% (which contains merely names, not infos) is left unchanged, so the import
  %% hierarchy is preserved.
@@ -268,12 +268,12 @@ def mkNewId(id, n) =
 				  %let _ = writeLine("formal pars for op "^id^": "^(foldl (fn(s,id) -> if s = "" then id else s^","^id) "" ids)) in
 				  let (new_body, new_ids) = distinctVar (old_body, old_ids) in
 				  let isConstantOp? = case old_srt of Arrow _ -> false | _ -> true in
-				  let new_dom = srtDomKeepSubsorts old_srt in
-				  let new_rng = srtRange           old_srt in
+				  let new_dom = typeDomKeepSubtypes old_srt in
+				  let new_rng = typeRng             old_srt in
 				  let new_srt = case new_dom of 
 				                  %% probably best to be consistent about adding annotation or not
 						  | [] -> if isConstantOp? then new_rng else mkArrow (mkProduct [], new_rng)
-						 %| [new_dom] -> withAnnS (mkArrow (new_dom, new_rng), sortAnn new_dom)
+						 %| [new_dom] -> withAnnS (mkArrow (new_dom, new_rng), typeAnn new_dom)
 						  | [new_dom] -> mkArrow (new_dom, new_rng) 
 						  | _ -> mkArrow (mkProduct new_dom, new_rng)
 				  in
@@ -285,7 +285,7 @@ def mkNewId(id, n) =
 							     mkLambda (mkTuplePat new_varPatterns, new_body)
 						 | _ -> mkLambda (mkTuplePat new_varPatterns, new_body)
 				  in
-				  let new_dfn  = SortedTerm (new_body, new_srt, termAnn old_dfn) in
+				  let new_dfn  = TypedTerm (new_body, new_srt, termAnn old_dfn) in
 				  let new_info = old_info << {dfn = new_dfn} in
 				  insertAQualifierMap (new_map, q, id, new_info)
 			        | _ ->

@@ -9,7 +9,7 @@ and edges of the graph underlying the sketch.
 
 Note the following. In
 \UnitId{Library/Structures/Data/Categories/Functors/Polymorphic},
-the sort Functor is defined over 4 type variables. The first two are
+the type Functor is defined over 4 type variables. The first two are
 the types of the objects and arrows in the domain category. The other
 two for the codomain category. In contrast, here there are only type
 variables characterizing the objects and arrows in the codomain.
@@ -46,7 +46,7 @@ Functor qualifying spec {
       Cat.Cod +-> Cat.Object
     })
 
-  sort Functor
+  type Functor
 
   op dom : Functor -> Sketch
   op vertexMap : Functor -> VertexMap.Map

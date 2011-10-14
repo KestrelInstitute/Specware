@@ -76,7 +76,7 @@ meaningless unless an implementation is assumed.
   % op domain : [key,a] Map (key,a) -> Set key
   % op domainToList : [key,a] Map (key,a) -> List key
 
-  % op inDomain? : [key,a] Map (key,a) -> key -> Boolean
+  % op inDomain? : [key,a] Map (key,a) -> key -> Bool
   % def inDomain? map key =
   %   case map of
   %       [] -> false
@@ -120,8 +120,8 @@ List the key/range pairs in order of appearance.
   %      -> Map (key,a) -> Map (key,a) -> Map(key,a)
   % op intersectWithi : [key,a] (key -> a -> a -> a)
   %      -> Map (key,a) -> Map (key,a) -> Map (key,a)
-  % op filter  : [key,a] (a -> Boolean) -> Map (key,a) -> Map (key,a)	  
-  % op filteri : [key,a] (key -> a -> Boolean) -> Map (key,a) -> Map (key,a)
+  % op filter  : [key,a] (a -> Bool) -> Map (key,a) -> Map (key,a)	  
+  % op filteri : [key,a] (key -> a -> Bool) -> Map (key,a) -> Map (key,a)
 
   % op mapPartial : [key,a,b] (a -> Option b) -> Map (key,a) -> Map (key,b)
   def mapPartial f m = 
@@ -133,11 +133,10 @@ List the key/range pairs in order of appearance.
     in
       foldMap g emptyMap m
 
-  % op compare : [a,key] (a * a -> Comparison)
-  %      -> Map (key,a) -> Map (key,a) -> Comparison
-  % op fromSet : [a,b] Set (a * b) -> Map (a, b)
+  % op compare  : [a,key] (a * a -> Comparison) -> Map (key,a) -> Map (key,a) -> Comparison
+  % op fromSet  : [a,b] Set  (a * b) -> Map (a, b)
   % op fromList : [a,b] List (a * b) -> Map (a, b)
-  % op subset? : [a,b] Map (a,b) -> Map (a,b) -> Boolean
-  % op all : [a,b] (a -> b -> Boolean) -> Map (a,b) -> Boolean
-  % op exists : [a,b] (a -> b -> Boolean) -> Map (a,b) -> Boolean
+  % op subset?  : [a,b] Map (a,b)           -> Map (a,b) -> Bool
+  % op all      : [a,b] (a -> b -> Bool) -> Map (a,b) -> Bool
+  % op exists   : [a,b] (a -> b -> Bool) -> Map (a,b) -> Bool
 endspec

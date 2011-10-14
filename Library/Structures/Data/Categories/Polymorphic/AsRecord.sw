@@ -1,17 +1,17 @@
 \section{Initial Data Type for Polymorphic Categories}
 
-Here we define an explicit sort for categories. This is 
+Here we define an explicit type for categories. This is 
 a refinement of Cats where a category is represented by a record. 
 
 \begin{spec}
 spec {
   import /Library/Structures/Data/Categories/Polymorphic
 
-  sort Cat (O,A) = {
+  type Cat (O,A) = {
     ident : O -> A,
     dom : A -> O,
     cod : A -> O,
-    % composable? : A -> A -> Boolean,
+    % composable? : A -> A -> Bool,
     compose : A -> A -> A,
     ppObj : O -> Pretty,
     ppArr : A -> Pretty

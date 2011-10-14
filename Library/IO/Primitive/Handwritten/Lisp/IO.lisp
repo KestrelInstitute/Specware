@@ -3,9 +3,9 @@
 (defpackage :IO-Spec)
 (in-package :IO-Spec)
 
-;;;  sort Filename = String
-;;;  sort Time     = Nat          % Not a fixnum
-;;;  sort Byte     = {x : Nat | 0 <= x &  x < 256} 
+;;;  type Filename = String
+;;;  type Time     = Nat          % Not a fixnum
+;;;  type Byte     = {x : Nat | 0 <= x &  x < 256} 
 ;;;
 ;;;  op getCurrentDirectory   : () -> Filename
 ;;;  op fileExistsAndReadable : Filename -> Boolean
@@ -137,8 +137,8 @@
 
 ;;; From UnicodeSig.sw :
 ;;;
-;;;  sort Encoding = UChars -> Bytes   % UTF-8, UTF-16, JIS, etc.
-;;;  sort Decoding = Bytes  -> UChars  % UTF-8, UTF-16, JIS, etc.
+;;;  type Encoding = UChars -> Bytes   % UTF-8, UTF-16, JIS, etc.
+;;;  type Decoding = Bytes  -> UChars  % UTF-8, UTF-16, JIS, etc.
 ;;;
 ;;;  op read_unicode_chars_from_file : Filename * Encoding -> Option UChars
 ;;;  op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()

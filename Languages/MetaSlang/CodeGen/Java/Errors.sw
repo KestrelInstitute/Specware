@@ -12,13 +12,13 @@ type JGenError =
                  % note: for now, this is used only by checkraise, and checkraise is never called
        | NotSupported              String
        | Fail                      String % generic error case
-       | UnsupportedSubsortTerm    String
+       | UnsupportedSubtypeTerm    String
        | UnsupportedQuotient       String
-       | UnsupportedSubsort        String
+       | UnsupportedSubtype        String
        | UnsupportedPattern        String
        | UnsupportTermInCase       String
        | UnsupportedTermFormat     String
-       | UnsupportedSortInRestrict String
+       | UnsupportedTypeInRestrict String
        | NoUserTypeInApplArgList   String
        | UnsupportedLambdaTerm     String
 
@@ -27,14 +27,14 @@ def errToString err =
   case err of
     | UnsupportedLambdaTerm     termstr -> "not yet supported: stand-alone lambda terms: \""^termstr^"\""
     | NoUserTypeInApplArgList   termstr -> "no user type found in argument list of application "^termstr
-    | UnsupportedSortInRestrict srtstr  -> "unsupported sort in restrict term: "^srtstr
+    | UnsupportedTypeInRestrict srtstr  -> "unsupported type in restrict term: "^srtstr
     | UnsupportTermInCase       termstr -> "term format not supported for toplevel case term: \""^termstr^"\""
     | UnsupportedPattern        patstr  -> "pattern format not supported: \""^patstr^"\""
-    | UnsupportedSubsort        termstr -> "unsupported term for subsort: \""^termstr^"\"; only operator names are supported."
-    | UnsupportedQuotient       termstr -> "unsupported term for quotient sort: \""^termstr^"\"; only operator names are supported."
+    | UnsupportedSubtype        termstr -> "unsupported term for subtype: \""^termstr^"\"; only operator names are supported."
+    | UnsupportedQuotient       termstr -> "unsupported term for quotient type: \""^termstr^"\"; only operator names are supported."
     | NotSupported              s       -> "Feature not supported: "^s
     | Fail                      msg     -> msg
-    | UnsupportedSubsortTerm    srt     -> "this format of subsorts/quotients is currently not supported: "^srt
+    | UnsupportedSubtypeTerm    srt     -> "this format of subtypes/quotients is currently not supported: "^srt
     | UnsupportedTermFormat     termstr -> "term format not supported: \""^termstr^"\""
 
 % --------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ XML qualifying spec
 
   op [a] non_null? (xx : List a): Bool = ~ (empty? xx)
 
-  op sublist? : [a] List a * List a -> Boolean 
+  op sublist? : [a] List a * List a -> Bool 
   def sublist? (aa, bb) =
     case leftmostPositionOfSublistAndFollowing (aa, bb) of 
       | None -> false

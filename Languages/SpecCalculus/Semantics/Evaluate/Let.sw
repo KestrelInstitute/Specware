@@ -26,7 +26,7 @@ The next evaluates a list of declarations. It is used in the evaluation
 of \verb+let+ and \verb+where+ declarations and at the top level when
 evaluating a list of declarations in a file.
 
-The list must be sorted in dependence order. Recursion is not allowed.
+The list must be typeed in dependence order. Recursion is not allowed.
 
 \begin{spec}
   op evaluateLocalDecls : SCDecls -> Env ()

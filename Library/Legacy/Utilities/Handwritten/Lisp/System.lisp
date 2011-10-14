@@ -39,7 +39,7 @@
        (typep (svref (svref x 1) 2) 'LIST)
        ;; qualifier: Option Qualifier
        (typep (svref x 2) 'cons)
-       ;; sorts: SortMap
+       ;; types: TypeMap
        (typep (svref x 1) '(SIMPLE-VECTOR 3))
        (typep (svref (svref x 3) 0) 'HASH-TABLE)
        (typep (svref (svref x 3) 1) 'BOOLEAN)

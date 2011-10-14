@@ -8,11 +8,11 @@ Utilities qualifying spec
  import /Languages/MetaSlang/AbstractSyntax/Equalities  % equalType?
  import Elaborate/Utilities                             % freshMetaTyVar
 
- %% Similar to unfoldSort, but obeys new rules for Quotient and Coproduct.
+ %% Similar to unfoldType, but obeys new rules for Quotient and Coproduct.
  %% Replace a base type by its instantiated definition, unless it is 
  %% defined as a Quotient or CoProduct,
 
- op  expandType : LocalEnv * Sort          -> Sort
+ op  expandType : LocalEnv * MSType -> MSType
  def expandType (env, typ) = 
    let 
      def compare_qid (Qualified (q1, id1), Qualified (q2, id2)) =
@@ -22,7 +22,7 @@ Utilities qualifying spec
    in
      expandTypeRec (env, typ, SplaySet.empty compare_qid)
    
- def expandTypeRec (env, typ, qids) : MS.Sort = 
+ def expandTypeRec (env, typ, qids) : MSType = 
    let 
      def expansion_error (env, msg, pos) =
        let errors = env.errors in
@@ -37,11 +37,11 @@ Utilities qualifying spec
          | _ -> t
 
      def instantiate_type_scheme (env, pos, type_args, typ) = 
-       let (tvs, unpacked_type) = unpackSort typ in
+       let (tvs, unpacked_type) = unpackType typ in
        if ~(length type_args = length tvs) then
          (expansion_error (env, 
                            "\nInstantiation list (" ^ 
-                             (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" type_args) ^
+                             (foldl (fn (s,arg) -> s ^ " " ^ (printType arg)) "" type_args) ^
                              " ) does not match argument list (" ^ 
                              (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
                              " )",
@@ -56,25 +56,25 @@ Utilities qualifying spec
           new_type)
 
      def metafy_type typ =
-       let (tvs, typ) = unpackSort typ in
+       let (tvs, typ) = unpackType typ in
        if empty? tvs then
          ([],typ)
        else
-         let mtvar_position = Internal "metafySort" in
+         let mtvar_position = Internal "metafyType" in
          let tv_map = List.map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs in
          let
-           def mapTyVar (tv, tvs, pos) : MS.Sort = 
+           def mapTyVar (tv, tvs, pos) : MSType = 
              case tvs of
                | [] -> TyVar (tv, pos)
                | (tv1, s) :: tvs -> 
                  if tv = tv1 then s else mapTyVar (tv, tvs, pos)
                    
-           def cp (typ : MS.Sort) = 
+           def cp (typ : MSType) = 
              case typ of
                | TyVar (tv, pos) -> mapTyVar (tv, tv_map, pos)
                | typ -> typ
          in
-           let typ  = mapSort (id, cp, id) typ in
+           let typ  = mapType (id, cp, id) typ in
            let mtvs = List.map (fn (_, (MetaTyVar (y, _))) -> y) tv_map in
            (mtvs, typ)
 
@@ -88,16 +88,16 @@ Utilities qualifying spec
                           pos);
 	 unlinked_type)
       else
-        (case findAllSorts (env.internal, qid) of
+        (case findAllTypes (env.internal, qid) of
           | info :: r ->
-	    (if ~ (definedSortInfo? info) then
-	       let tvs = firstSortDefTyVars info in
+	    (if ~ (definedTypeInfo? info) then
+	       let tvs = firstTypeDefTyVars info in
 	       let l1 = length tvs in
 	       let l2 = length type_args in
 	       ((if l1 ~= l2 then
 		   expansion_error (env,
                                     "\nInstantiation list (" ^ 
-                                      (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" type_args) ^
+                                      (foldl (fn (s,arg) -> s ^ " " ^ (printType arg)) "" type_args) ^
                                       " ) does not match argument list (" ^ 
                                       (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
                                       " )",
@@ -106,11 +106,11 @@ Utilities qualifying spec
 		   ());
 		%% Use the primary name, even if the reference was via some alias.
                 %% This normalizes all references to be via the same name.
-		Base (primarySortName info, type_args, pos))
+		Base (primaryTypeName info, type_args, pos))
 	     else
-	       let defs = sortInfoDefs info in
+	       let defs = typeInfoDefs info in
 	       let true_defs = filter (fn typ ->
-				       case sortInnerSort typ of
+				       case typeInnerType typ of
 					 | Quotient  _ -> false
 					 | CoProduct _ -> false
 					 | _  -> true)
@@ -120,7 +120,7 @@ Utilities qualifying spec
                  unlinked_type
                else
                  let base_defs = filter (fn typ ->
-                                           let (tvs, typ) = unpackSort typ in
+                                           let (tvs, typ) = unpackType typ in
                                            case typ of
                                              | Base _ -> true
                                              | _      -> false)
@@ -128,12 +128,12 @@ Utilities qualifying spec
                  in
                    case base_defs of
                      | [] ->
-                       let dfn = maybeAndSort (true_defs, sortAnn info.dfn) in
+                       let dfn = maybeAndType (true_defs, typeAnn info.dfn) in
                        instantiate_type_scheme (env, pos, type_args, dfn)
                      | _ ->
                        %% A base type can be defined in terms of other base types
                        %% So we unfold recursively here.
-                       let dfn = maybeAndSort (base_defs, sortAnn info.dfn) in
+                       let dfn = maybeAndType (base_defs, typeAnn info.dfn) in
                        expandTypeRec (env,
                                       instantiate_type_scheme (env, pos, type_args, dfn),
                                       %% Watch for self-references, even via aliases: 

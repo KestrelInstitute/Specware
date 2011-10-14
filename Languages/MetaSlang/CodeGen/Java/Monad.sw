@@ -11,16 +11,16 @@ import Java qualifying /Languages/Java/Java
 
 import Errors
 %import IJavaCodeGen
-import /Languages/SpecCalculus/Semantics/Wizard       % op specwareWizard? : Boolean
+import /Languages/SpecCalculus/Semantics/Wizard       % op specwareWizard? : Bool
 import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
 
-sort JGenEnv a = State -> (Result a) * State
+type JGenEnv a = State -> (Result a) * State
 
-sort Result a =
+type Result a =
   | Ok a
   | Exception JGenException
 
-type SpecialFunType = StringMap.Map JavaExpr * MS.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
+type SpecialFunType = StringMap.Map JavaExpr * MSTerm * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
 
 type State = {
 	      envSpec            : Spec,
@@ -29,21 +29,21 @@ type State = {
 	      clsDecls           : List ClsDecl,
 	      interfDecls        : List InterfDecl,
 	      arrowclasses       : List Java.ClsDecl,
-	      productSorts       : List Sort,
+	      productTypes       : List MSType,
 	      typeAliases        : List(String * String), % a list of type aliases for recording type definitions of the form "type t1 = t2" where t2 is either a base type or boolean
 	      primitiveClassName : String,
-	      ignoreSubsorts     : Boolean,
-	      verbose            : Boolean,
+	      ignoreSubtypes     : Bool,
+	      verbose            : Bool,
 	      sep                : String, % the string used for Java class name generation, default "_"
 	      transformSpecFun   : Spec -> Spec,              % Accord
 	      localVarToJExpr    : String -> Option JavaExpr, % Accord: return some java expression if the string is a local parameter
 	      definedOps         : List QualifiedId,                % Accord: list of ops defined across many specs
 	      specialFun         : SpecialFunType,
-              createFieldFun     : MS.Term -> Boolean,
-	      ignoreTypeDefFun   : String -> Boolean, % returns true, if the code generation should ignore the type definition for 
-		                                    % the given string, used to prevent code generation for the type definition
-		                                    % generated for the accord classes
-              isClassNameFun     : String -> Boolean, % returns true if the given ident is a currently visible classname
+              createFieldFun     : MSTerm -> Bool,
+	      ignoreTypeDefFun   : String -> Bool, % returns true, if the code generation should ignore the type definition for 
+		                                   % the given string, used to prevent code generation for the type definition
+		                                   % generated for the accord classes
+              isClassNameFun     : String -> Bool, % returns true if the given ident is a currently visible classname
 	      cresCounter        : Nat
 	     }
 
@@ -60,10 +60,10 @@ def initialState = {
 		    clsDecls           = [],
 		    interfDecls        = [],
 		    arrowclasses       = [],
-		    productSorts       = [],
+		    productTypes       = [],
 		    typeAliases        = [],
 		    primitiveClassName = "Primitive",
-		    ignoreSubsorts     = false,
+		    ignoreSubtypes     = false,
 		    verbose            = true,
 		    sep                = "_",
 		    transformSpecFun   = (fn spc -> spc),
@@ -236,30 +236,30 @@ def getClsDecls =
   fn state ->
   (Ok (state.clsDecls), state)
 
-op addProductSort: Sort -> JGenEnv ()
-def addProductSort srt =
+op addProductType: MSType -> JGenEnv ()
+def addProductType srt =
   fn state ->
-  (Ok (), state << { productSorts = state.productSorts ++ [srt] })
+  (Ok (), state << { productTypes = state.productTypes ++ [srt] })
 
 op addArrowClass: ClsDecl -> JGenEnv ()
 def addArrowClass clsDecl =
   fn state ->
   (Ok (), state << { arrowclasses = state.arrowclasses ++ [clsDecl] })
 
-op putProductSorts: List Sort -> JGenEnv ()
-def putProductSorts srts =
+op putProductTypes: MSTypes -> JGenEnv ()
+def putProductTypes srts =
   fn state ->
-  (Ok (), state << { productSorts = srts })
+  (Ok (), state << { productTypes = srts })
 
 op putArrowClasses: List ClsDecl -> JGenEnv ()
 def putArrowClasses clsDecls =
   fn state ->
   (Ok (), state << { arrowclasses = clsDecls })
 
-op getProductSorts: JGenEnv (List Sort)
-def getProductSorts =
+op getProductTypes: JGenEnv MSTypes
+def getProductTypes =
   fn state ->
-  (Ok state.productSorts, state)
+  (Ok state.productTypes, state)
 
 op getArrowClasses: JGenEnv (List ClsDecl)
 def getArrowClasses =
@@ -310,22 +310,22 @@ def setPrimitiveClassName s =
   fn state ->
   (Ok (), state << { primitiveClassName = s })
 
-op isIgnoreSubsorts: JGenEnv Boolean
-def isIgnoreSubsorts =
+op isIgnoreSubtypes: JGenEnv Bool
+def isIgnoreSubtypes =
   fn state ->
-  (Ok state.ignoreSubsorts, state)
+  (Ok state.ignoreSubtypes, state)
 
-op setIgnoreSubsorts: Boolean -> JGenEnv ()
-def setIgnoreSubsorts b =
+op setIgnoreSubtypes: Bool -> JGenEnv ()
+def setIgnoreSubtypes b =
   fn state ->
-  (Ok (), state << { ignoreSubsorts = b })
+  (Ok (), state << { ignoreSubtypes = b })
 
-op isVerbose: JGenEnv Boolean
+op isVerbose: JGenEnv Bool
 def isVerbose =
   fn state ->
   (Ok state.verbose, state)
 
-op setVerbose: Boolean -> JGenEnv ()
+op setVerbose: Bool -> JGenEnv ()
 def setVerbose b =
   fn state ->
   (Ok (), state << { verbose = b })
@@ -380,32 +380,32 @@ def setSpecialFun sfun =
   fn state ->
   (Ok (), state << { specialFun = sfun })
 
-op getCreateFieldFun: JGenEnv (MS.Term -> Boolean)
+op getCreateFieldFun: JGenEnv (MSTerm -> Bool)
 def getCreateFieldFun =
   fn state ->
   (Ok state.createFieldFun, state)
 
-op setCreateFieldFun: (MS.Term -> Boolean) -> JGenEnv ()
+op setCreateFieldFun: (MSTerm -> Bool) -> JGenEnv ()
 def setCreateFieldFun cfun =
   fn state ->
   (Ok (), state << { createFieldFun = cfun })
 
-op getIgnoreTypeDefFun: JGenEnv (String -> Boolean)
+op getIgnoreTypeDefFun: JGenEnv (String -> Bool)
 def getIgnoreTypeDefFun =
   fn state ->
   (Ok state.ignoreTypeDefFun, state)
 
-op setIgnoreTypeDefFun: (String -> Boolean) -> JGenEnv ()
+op setIgnoreTypeDefFun: (String -> Bool) -> JGenEnv ()
 def setIgnoreTypeDefFun ifun =
   fn state ->
   (Ok (), state << { ignoreTypeDefFun = ifun })
 
-op getIsClassNameFun: JGenEnv (String -> Boolean)
+op getIsClassNameFun: JGenEnv (String -> Bool)
 def getIsClassNameFun =
   fn state ->
   (Ok state.isClassNameFun, state)
 
-op setIsClassNameFun: (String -> Boolean) -> JGenEnv ()
+op setIsClassNameFun: (String -> Bool) -> JGenEnv ()
 def setIsClassNameFun ifun =
   fn state ->
   (Ok (), state << { isClassNameFun = ifun })
@@ -495,7 +495,7 @@ def try f =
 op return : [a] a -> JGenEnv a
 def return x = fn state -> (Ok x, state)
 
-op when : Boolean -> JGenEnv () -> JGenEnv ()
+op when : Bool -> JGenEnv () -> JGenEnv ()
 def when p command = if p then (fn s -> (command s)) else return ()
 
 op foldM : [a,b] (a -> b -> JGenEnv a) -> a -> List b -> JGenEnv a
@@ -549,17 +549,17 @@ def mapOptionM f x =
 		 return (Some res)
 		}
 
-op require: Boolean -> JGenException -> JGenEnv ()
+op require: Bool -> JGenException -> JGenEnv ()
 def require check except =
   if check then return ()
   else raise except
 
-op checkSupported: Boolean -> String * Pos -> JGenEnv ()
+op checkSupported: Bool -> String * Pos -> JGenEnv ()
 def checkSupported check (msg,pos) =
   if check then return ()
   else raise(NotSupported(msg),pos)
 
-op ifM: Boolean -> JGenEnv () -> JGenEnv ()
+op ifM: Bool -> JGenEnv () -> JGenEnv ()
 def ifM check f =
   if check then f else return ()
 
@@ -615,7 +615,7 @@ def vprintln s =
 op printI: Int -> JGenEnv ()
 def printI n = print (Integer.show n)
 
-op debug?: Boolean
+op debug?: Bool
 def debug? = true
 
 op dbg: String -> JGenEnv ()

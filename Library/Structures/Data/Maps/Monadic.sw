@@ -3,7 +3,7 @@ MonadicMap qualifying spec
   import translate (Dom qualifying ../Elem) by {Dom.Elem +-> Dom.Dom}
   import translate (Cod qualifying ../Elem) by {Cod.Elem +-> Cod.Cod}
 
-  sort MapRef
+  type MapRef
 
   op new : Monad MapRef
   op copy : MapRef -> Monad MapRef

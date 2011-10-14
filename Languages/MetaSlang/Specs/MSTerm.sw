@@ -6,16 +6,17 @@ MS qualifying spec
 
  type StandardAnnotation = Position
 
- type Term         = ATerm           StandardAnnotation
- type Terms        = List Term
+ type MSTypes    = List MSType
+ type MSType     = AType Position
+
+ type MSTerms    = List MSTerm
+ type MSTerm     = ATerm Position
+
+ type MSPatterns = List MSPattern
+ type MSPattern  = APattern Position
+
  type Var          = AVar            StandardAnnotation
  type Match        = AMatch          StandardAnnotation
- type Sort         = ASort           StandardAnnotation
- type Sorts        = List Sort
- type Type         = Sort
- type Types        = List Type
- type Pattern      = APattern        StandardAnnotation
- type Patterns     = List Pattern
  type Fun          = AFun            StandardAnnotation
 
  type Fields       = AFields         StandardAnnotation
@@ -25,72 +26,74 @@ MS qualifying spec
  type MetaTyVars   = AMetaTyVars     StandardAnnotation
 
 
- op mkTyVar        : String                       -> Sort
- op mkBase         : QualifiedId * List Sort      -> Sort
- op mkArrow        : Sort * Sort                  -> Sort
- op mkSubsort      : Sort * Term                  -> Sort
- op mkQuotientSort : Sort * Term                  -> Sort
- op mkProduct      : List Sort                    -> Sort
- op mkCoProduct    : List (String * Option Sort)  -> Sort
+ op mkTyVar        : String                        -> MSType
+ op mkBase         : QualifiedId * MSTypes         -> MSType
+ op mkArrow        : MSType * MSType               -> MSType
+ op mkSubtype      : MSType * MSTerm               -> MSType
+ op mkQuotientType : MSType * MSTerm               -> MSType
+ op mkProduct      : List MSType                   -> MSType
+ op mkCoProduct    : List (String * Option MSType) -> MSType
 
  def mkTyVar        name        = TyVar    (name,       noPos)
  def mkBase         (qid, srts) = Base     (qid, srts,  noPos)
  def mkArrow        (s1, s2)    = Arrow    (s1, s2,     noPos)
- def mkSubsort      (srt, pred) = Subsort  (srt, pred,  noPos)
- def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   noPos)
+ def mkSubtype      (srt, pred) = Subtype  (srt, pred,  noPos)
+ def mkQuotientType (srt, rel)  = Quotient (srt, rel,   noPos)
 
- def mkProduct sorts =
-  case sorts of
+ def mkProduct types =
+  case types of
     | [s] -> s
     | _ ->
-      let def loop (n, sorts) = 
-	   case sorts  of
+      let def loop (n, types) = 
+	   case types  of
 	      | []         -> []
-	      | srt::sorts -> Cons((show n, srt), loop(n + 1, sorts))
+	      | srt::types -> Cons((show n, srt), loop(n + 1, types))
       in
-	Product(loop(1,sorts), noPos)
+	Product(loop(1,types), noPos)
 
  def mkCoProduct fields = CoProduct (fields, noPos)
 
- op mkCanonCoProduct(flds: List(String * Option Sort)): Sort =
+ op mkCanonCoProduct(flds: List(String * Option MSType)): MSType =
    mkCoProduct (sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) flds)
 
- %% Sort terms for constant sorts:
+ %% Type terms for constant types:
 
- op boolSort   : Sort
- op intSort    : Sort
- op natSort    : Sort
- op charSort   : Sort
- op stringSort : Sort
+ op boolType   : MSType
+ op intType    : MSType
+ op natType    : MSType
+ op charType   : MSType
+ op stringType : MSType
 
- def boolSort    = Boolean noPos
- def intSort     = mkBase (Qualified("Integer", "Int"),    []) 
- def natSort     = mkBase (Qualified("Nat",     "Nat"),    []) 
- def charSort    = mkBase (Qualified("Char",    "Char"),   [])
- def stringSort  = mkBase (Qualified("String",  "String"), [])
- op voidType : Sort = mkProduct[]
+ def boolType    = Boolean noPos
+ def intType     = mkBase (Qualified("Integer", "Int"),    []) 
+ def natType     = mkBase (Qualified("Nat",     "Nat"),    []) 
+ def charType    = mkBase (Qualified("Char",    "Char"),   [])
+ def stringType  = mkBase (Qualified("String",  "String"), [])
+ op voidType : MSType = mkProduct[]
 
- op listCharType     : Sort = mkBase(Qualified("List",  "List"),  [charSort])
- op optionStringType : Sort = mkBase(Qualified("Option","Option"),[stringSort])
+ op listCharType     : MSType = mkBase(Qualified("List",  "List"),  [charType])
+ op optionStringType : MSType = mkBase(Qualified("Option","Option"),[stringType])
 
 
- def unaryBoolSort  = mkArrow (boolSort, boolSort)
- def binaryBoolSort = mkArrow (mkProduct [boolSort, boolSort], boolSort)
+ def unaryBoolType  = mkArrow (boolType, boolType)
+ def binaryBoolType = mkArrow (mkProduct [boolType, boolType], boolType)
+
+ def unaryBoolSort  = unaryBoolType % TODO -- temp, remove when parser no longer uses this
 
  %% Primitive term constructors:
 
- op mkRecord      : List (Id * Term)              -> Term
- op mkLet         : List (Pattern * Term) * Term  -> Term
- op mkLetRec      : List (Var     * Term) * Term  -> Term
- op mkLambda      : Pattern * Term                -> Term
- op mkThe         : Var * Term                    -> Term
- op mkBind        : Binder * List Var * Term      -> Term
- op mkVar         : Var                           -> Term
- op mkFun         : Fun * Sort                    -> Term
- op mkApply       : Term * Term                   -> Term
- op mkAppl        : Term * List Term              -> Term
- op mkApplication : Term * List Term              -> Term
- op mkIfThenElse  : Term * Term * Term            -> Term
+ op mkRecord      : List (Id * MSTerm)                 -> MSTerm
+ op mkLet         : List (MSPattern * MSTerm) * MSTerm -> MSTerm
+ op mkLetRec      : List (Var       * MSTerm) * MSTerm -> MSTerm
+ op mkLambda      : MSPattern * MSTerm                 -> MSTerm
+ op mkThe         : Var * MSTerm                       -> MSTerm
+ op mkBind        : Binder * List Var * MSTerm         -> MSTerm
+ op mkVar         : Var                                -> MSTerm
+ op mkFun         : Fun * MSType                       -> MSTerm
+ op mkApply       : MSTerm * MSTerm                    -> MSTerm
+ op mkAppl        : MSTerm * MSTerms                   -> MSTerm
+ op mkApplication : MSTerm * MSTerms                   -> MSTerm
+ op mkIfThenElse  : MSTerm * MSTerm * MSTerm           -> MSTerm
 
  def mkRecord     fields          = Record     (fields,                  noPos)
  def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
@@ -102,7 +105,7 @@ MS qualifying spec
  def mkVar        v               = Var        (v,                       noPos)
  def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
  def mkApply      (t1, t2)        = Apply      (t1, t2,                  termAnn(t2))
- op mkCurriedApply(f: Term, terms: Terms): Term =
+ op mkCurriedApply(f: MSTerm, terms: MSTerms): MSTerm =
    foldl mkApply f terms
 
  def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         termAnn(t1))  
@@ -113,42 +116,42 @@ MS qualifying spec
      | [t2] -> mkApply(t1, t2)
      | trm::rest -> mkAppl(t1, tms)
  def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              termAnn(t1))
- op mkSeq(tms: Terms): Term =
+ op mkSeq(tms: MSTerms): MSTerm =
    case tms of
      | [tm] -> tm
      | _ -> Seq(tms, noPos)
- op mkSortedTerm(tm: Term, ty: Sort): Term = SortedTerm(tm, ty, termAnn tm)
+ op mkTypedTerm(tm: MSTerm, ty: MSType): MSTerm = TypedTerm(tm, ty, termAnn tm)
 
  %% Fun's
 
- op mkTrue   : ()     -> Term
- op mkFalse  : ()     -> Term
- op mkInt    : Int    -> Term
- op mkNat    : Nat    -> Term
- op mkChar   : Char   -> Term
- op mkBool   : Bool   -> Term
- op mkString : String -> Term
+ op mkTrue   : ()     -> MSTerm
+ op mkFalse  : ()     -> MSTerm
+ op mkInt    : Int    -> MSTerm
+ op mkNat    : Nat    -> MSTerm
+ op mkChar   : Char   -> MSTerm
+ op mkBool   : Bool   -> MSTerm
+ op mkString : String -> MSTerm
 
- op mkRelax    : Sort        * Term -> Term
- op mkEmbed0   : FieldName   * Sort -> Term
- op mkEmbed1   : FieldName   * Sort -> Term
- op mkEmbedded : FieldName   * Sort -> Term
- op mkOp       : QualifiedId * Sort -> Term
- op mkInfixOp  : QualifiedId * Fixity * Sort -> Term
+ op mkRelax    : MSType        * MSTerm -> MSTerm
+ op mkEmbed0   : FieldName   * MSType -> MSTerm
+ op mkEmbed1   : FieldName   * MSType -> MSTerm
+ op mkEmbedded : FieldName   * MSType -> MSTerm
+ op mkOp       : QualifiedId * MSType -> MSTerm
+ op mkInfixOp  : QualifiedId * Fixity * MSType -> MSTerm
 
- def mkTrue  () = mkFun (Bool true,  boolSort)
- def mkFalse () = mkFun (Bool false, boolSort)
+ def mkTrue  () = mkFun (Bool true,  boolType)
+ def mkFalse () = mkFun (Bool false, boolType)
 
- op trueTerm : Term = mkTrue()
- op falseTerm: Term = mkFalse()
+ op trueTerm : MSTerm = mkTrue()
+ op falseTerm: MSTerm = mkFalse()
 
- op  trueTerm?: [a] ATerm a -> Boolean
+ op  trueTerm?: [a] ATerm a -> Bool
  def trueTerm? t =
    case t of
      | Fun(Bool true,_,_)  -> true
      | _ -> false
 
- op  falseTerm?: [a] ATerm a -> Boolean
+ op  falseTerm?: [a] ATerm a -> Bool
  def falseTerm? t =
    case t of
      | Fun(Bool false,_,_)  -> true
@@ -156,20 +159,20 @@ MS qualifying spec
 
  def mkInt i = if i >= 0
 		 then mkNat(i)
-	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(intSort, natSort)), mkNat(-i))
- def mkNat n = mkFun (Nat n, natSort)
- def mkChar char = mkFun (Char char, charSort)
- def mkBool bool = mkFun (Bool bool, boolSort)
- def mkString str = mkFun (String str, stringSort)
+	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(intType, natType)), mkNat(-i))
+ def mkNat n = mkFun (Nat n, natType)
+ def mkChar char = mkFun (Char char, charType)
+ def mkBool bool = mkFun (Bool bool, boolType)
+ def mkString str = mkFun (String str, stringType)
 
- def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
- def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubsort (srt, pred)))
-% def mkChoose   (srt, equiv) = let q = mkQuotientSort (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
+ def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubtype (srt, pred), srt))
+ def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubtype (srt, pred)))
+% def mkChoose   (srt, equiv) = let q = mkQuotientType (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
  def mkQuotient (a,qid,srt)   = mkApply(mkFun (Quotient qid, mkArrow(srt,Base(qid,[],noPos))), a)
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
- def mkEmbedded (id, srt) = mkFun (Embedded id, mkArrow (srt, boolSort))
+ def mkEmbedded (id, srt) = mkFun (Embedded id, mkArrow (srt, boolType))
  def mkProject (id, super, sub) = mkFun (Project id, mkArrow (super, sub))
  def mkSelect (id, super, field) = mkFun (Project id, mkArrow (super, field))
  def mkEquals (srt) = mkFun (Equals, srt)
@@ -182,7 +185,7 @@ MS qualifying spec
 
  %% Record's
 
- op mkTuple : List Term -> Term
+ op mkTuple : List MSTerm -> MSTerm
 
  op tagTuple : [A] List A -> List (Id * A)
 
@@ -199,7 +202,7 @@ MS qualifying spec
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
 
- op voidTerm: Term = mkTuple []
+ op voidTerm: MSTerm = mkTuple []
 
  op  termToList: [a] ATerm a -> List(ATerm a)
  def termToList t =
@@ -227,24 +230,24 @@ MS qualifying spec
 
  %% Applications...
 
- op mkNot         : Term                        -> Term
- op mkAnd         : Term * Term                 -> Term
- op mkOr          : Term * Term                 -> Term
- op mkImplies     : Term * Term                 -> Term
- op mkIff         : Term * Term                 -> Term
- op mkConj        : List Term                   -> Term
- op mkOrs         : List Term                   -> Term
- op mkEquality    : Sort * Term * Term          -> Term
- op mkRestriction : {pred : Term, term : Term}  -> Term
- op mkChoice      : Term * Term * Sort          -> Term
- op mkProjection  : Id * Term                   -> Term
- op mkSelection   : Id * Term                   -> Term
+ op mkNot         : MSTerm                         -> MSTerm
+ op mkAnd         : MSTerm * MSTerm                -> MSTerm
+ op mkOr          : MSTerm * MSTerm                -> MSTerm
+ op mkImplies     : MSTerm * MSTerm                -> MSTerm
+ op mkIff         : MSTerm * MSTerm                -> MSTerm
+ op mkConj        : MSTerms                        -> MSTerm
+ op mkOrs         : MSTerms                        -> MSTerm
+ op mkEquality    : MSType * MSTerm * MSTerm       -> MSTerm
+ op mkRestriction : {pred : MSTerm, term : MSTerm} -> MSTerm
+ op mkChoice      : MSTerm * MSTerm * MSType       -> MSTerm
+ op mkProjection  : Id * MSTerm                    -> MSTerm
+ op mkSelection   : Id * MSTerm                    -> MSTerm
 
- def mkNot     trm      = mkApply (Fun (Not,     unaryBoolSort,  noPos), trm)
- def mkAnd     (t1, t2) = mkApply (Fun (And,     binaryBoolSort, noPos), mkTuple [t1,t2])
- def mkOr      (t1, t2) = mkApply (Fun (Or,      binaryBoolSort, noPos), mkTuple [t1,t2])
- def mkImplies (t1, t2) = mkApply (Fun (Implies, binaryBoolSort, noPos), mkTuple [t1,t2])
- def mkIff     (t1, t2) = mkApply (Fun (Iff,     binaryBoolSort, noPos), mkTuple [t1,t2])
+ def mkNot     trm      = mkApply (Fun (Not,     unaryBoolType,  noPos), trm)
+ def mkAnd     (t1, t2) = mkApply (Fun (And,     binaryBoolType, noPos), mkTuple [t1,t2])
+ def mkOr      (t1, t2) = mkApply (Fun (Or,      binaryBoolType, noPos), mkTuple [t1,t2])
+ def mkImplies (t1, t2) = mkApply (Fun (Implies, binaryBoolType, noPos), mkTuple [t1,t2])
+ def mkIff     (t1, t2) = mkApply (Fun (Iff,     binaryBoolType, noPos), mkTuple [t1,t2])
 
  def mkConj(cjs) =
   case cjs
@@ -258,49 +261,49 @@ MS qualifying spec
      | [x]    -> x
      | x::rcs -> mkOr (x, mkOrs rcs)
 
- def mkEquality (dom_sort, t1, t2) = 
-     let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort) in
+ def mkEquality (dom_type, t1, t2) = 
+     let srt = mkArrow(mkProduct [dom_type,dom_type],boolType) in
      mkApply(mkEquals srt, mkTuple [t1,t2])
 
- op mkNotEquality (dom_sort: Sort, t1: Term, t2: Term): Term = 
-     let srt = mkArrow(mkProduct [dom_sort,dom_sort],boolSort) in
+ op mkNotEquality (dom_type: MSType, t1: MSTerm, t2: MSTerm): MSTerm = 
+     let srt = mkArrow(mkProduct [dom_type,dom_type],boolType) in
      mkApply(mkNotEquals srt, mkTuple [t1,t2])
 
  def mkRestriction {pred, term} = 
-   let srt = termSort term in
+   let srt = termType term in
    mkApply (mkRestrict(srt, pred), term)
     
  % This definition of choose is not correct according to David's
  % requirements.
 % def mkChoice (term, equiv, srt) =   mkApply (mkChoose(srt, equiv), term)
 
- def mkChooseFun (q as Base(qid,_,_), srt1, srt2, f) = % used by matchSubSort
+ def mkChooseFun (q as Base(qid,_,_), srt1, srt2, f) = % used by matchSubType
    let chSrt = mkArrow(mkArrow(srt1,srt2), mkArrow (q, srt2)) in
    let ch = mkFun(Choose qid, chSrt) in
    mkApply (ch, f)
 
  def mkProjection (id, term) = 
-   let super_sort = termSort(term) in
-   case super_sort of
+   let super_type = termType(term) in
+   case super_type of
     | Product (fields, _) -> 
       (case findLeftmost (fn (id2, _) -> id = id2) fields of
-        | Some (_,sub_sort) -> 
-          mkApply (mkProject (id, super_sort, sub_sort),term)
-        | _ -> System.fail ("Projection index " ^ id ^ " not found in product " ^ printSort super_sort))
-    | _ -> System.fail ("Product sort expected for mkProjection: " ^ printSort super_sort)
+        | Some (_,sub_type) -> 
+          mkApply (mkProject (id, super_type, sub_type),term)
+        | _ -> System.fail ("Projection index " ^ id ^ " not found in product " ^ printType super_type))
+    | _ -> System.fail ("Product type expected for mkProjection: " ^ printType super_type)
 
 
  def mkSelection (id, term) = 
-   let srt = termSort term in
+   let srt = termType term in
    case srt
      of CoProduct(fields,_) -> 
         (case findLeftmost (fn (id2,_) -> id = id2) fields
-           of Some (_,Some fieldSort) ->
-              mkApply(mkSelect (id, srt, fieldSort), term)
+           of Some (_,Some fieldType) ->
+              mkApply(mkSelect (id, srt, fieldType), term)
             | _ -> System.fail "Selection index not found in product")
-      | _ -> System.fail ("CoProduct sort expected for mkSelection: " ^ printSort srt)
+      | _ -> System.fail ("CoProduct type expected for mkSelection: " ^ printType srt)
 
- op negateTerm: Term -> Term
+ op negateTerm: MSTerm -> MSTerm
  %% Gets the negated version of term. 
  def negateTerm tm =
    case tm of
@@ -311,19 +314,19 @@ MS qualifying spec
 
  %% Patterns ...
 
- op mkAliasPat      : Pattern * Pattern          -> Pattern
- op mkVarPat        : Var                        -> Pattern
- op mkEmbedPat      : Id * Option Pattern * Sort -> Pattern
- op mkRecordPat     : List(Id * Pattern)         -> Pattern
- op mkTuplePat      : List Pattern               -> Pattern
- op mkWildPat       : Sort                       -> Pattern
- op mkBoolPat       : Bool                       -> Pattern
- op mkNatPat        : Nat                        -> Pattern
- op mkStringPat     : String                     -> Pattern
- op mkCharPat       : Char                       -> Pattern
- op mkQuotientPat   : Pattern * SortName         -> Pattern
- op mkRestrictedPat : Pattern * Term             -> Pattern
- op mkSortedPat     : Pattern * Sort             -> Pattern
+ op mkAliasPat      : MSPattern * MSPattern          -> MSPattern
+ op mkVarPat        : Var                            -> MSPattern
+ op mkEmbedPat      : Id * Option MSPattern * MSType -> MSPattern
+ op mkRecordPat     : List(Id * MSPattern)           -> MSPattern
+ op mkTuplePat      : MSPatterns                     -> MSPattern
+ op mkWildPat       : MSType                         -> MSPattern
+ op mkBoolPat       : Bool                           -> MSPattern
+ op mkNatPat        : Nat                            -> MSPattern
+ op mkStringPat     : String                         -> MSPattern
+ op mkCharPat       : Char                           -> MSPattern
+ op mkQuotientPat   : MSPattern * TypeName           -> MSPattern
+ op mkRestrictedPat : MSPattern * MSTerm             -> MSPattern
+ op mkTypedPat      : MSPattern * MSType             -> MSPattern
 
  op patternToList: [a] APattern a -> List(APattern a)
 
@@ -344,7 +347,7 @@ MS qualifying spec
  def mkCharPat       c            = CharPat       (c,             noPos)
  def mkQuotientPat   (p, qid)     = QuotientPat   (p, qid,        noPos)
  def mkRestrictedPat (p, tm)      = RestrictedPat (p, tm,         noPos)
- def mkSortedPat     (p, typ)     = SortedPat     (p, typ,        noPos)
+ def mkTypedPat      (p, typ)     = TypedPat      (p, typ,        noPos)
 
  def patternToList t =
     case t of
@@ -354,16 +357,16 @@ MS qualifying spec
 	 else [t]
       | _ -> [t]
 
-  op mkUnaryBooleanFn : Fun * Position -> Term
+  op mkUnaryBooleanFn : Fun * Position -> MSTerm
  def mkUnaryBooleanFn (f,pos) =
    %let pos = Internal "mkUnaryBooleanFn" in
    let pattern = VarPat (("xb", Boolean pos), pos) in
-   let f       = Fun (f, unaryBoolSort, pos) in
+   let f       = Fun (f, unaryBoolType, pos) in
    let arg     = Var (("xb", Boolean pos), pos) in
    let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
    Lambda ([branch], pos)
 
- op  mkBinaryFn : Fun * Sort * Sort * Sort * Position -> Term
+ op  mkBinaryFn : Fun * MSType * MSType * MSType * Position -> MSTerm
  def mkBinaryFn (f,t1,t2,t3,pos) =
    %let pos = Internal "mkBinaryFn" in
    let pattern = RecordPat ([("1", VarPat(("xxx", t1), pos)),
@@ -378,7 +381,7 @@ MS qualifying spec
    let branch  = (pattern, mkTrue(), ApplyN([f,arg],pos)) in
    Lambda ([branch], pos)
 
-  op  termList: Term -> List Term
+  op  termList: MSTerm -> MSTerms
   def termList t =
     case t of
       | Record(fields, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields

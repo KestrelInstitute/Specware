@@ -9,7 +9,7 @@ Lisp qualifying spec
 
   op nat          : Nat                       -> LispCell
   op char         : Char                      -> LispCell
-  op bool         : Boolean                   -> LispCell
+  op bool         : Bool                      -> LispCell
   op string       : String                    -> LispCell
   op LispString   : LispCell                  -> String
 
@@ -29,7 +29,7 @@ Lisp qualifying spec
   op cell         : [A] A                   -> LispCell
   op uncell       : [A] LispCell            -> A
 
-  op null         : LispCell -> Boolean
+  op null         : LispCell -> Bool
 
   %% No defs here -- see ...
 endspec

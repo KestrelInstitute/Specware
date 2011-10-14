@@ -5,14 +5,14 @@ Adapted from the SML/NJ distribution
 SplayTree qualifying spec {
   import /Library/Base
 
-  sort Splay a = | SplayNil
+  type Splay a = | SplayNil
                  | SplayObj {
                               value : a,
                               right : Splay a,
                               left  : Splay a
                             }
 
-  sort ans_t(a) = | No | Eq a | Lt a | Gt a
+  type ans_t(a) = | No | Eq a | Lt a | Gt a
 
   %% Exported:
 

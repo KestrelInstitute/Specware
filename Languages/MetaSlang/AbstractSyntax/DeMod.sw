@@ -10,13 +10,13 @@ spec
          idMap : NatMap.Map a }
 
    op empty     : [a] Demod a
-   op isEmpty   : [a] Demod a -> Boolean
+   op isEmpty   : [a] Demod a -> Bool
 
    op numRules  : [a] Demod a -> Nat
    op listRules : [a] Demod a -> List a
-   op addRule   : [a] MS.Term * a * Demod a -> Demod a
-   op addRules  : [a] List (MS.Term * a) * Demod a -> Demod a
-   op getRules  : [a] Demod a * MS.Term -> List a
+   op addRule   : [a] MSTerm * a * Demod a -> Demod a
+   op addRules  : [a] List (MSTerm * a) * Demod a -> Demod a
+   op getRules  : [a] Demod a * MSTerm -> List a
    op mergeRules  : [a] Demod a * Demod a -> Demod a
 
 (*  Demodulation structure for maintaining rewrite rules and 

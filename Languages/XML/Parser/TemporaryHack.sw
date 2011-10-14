@@ -2,16 +2,16 @@ XML qualifying spec
 
   import Parse_ExternalDTD
 
-  %  sort ExternalID = (GenericID | well_formed_external_id?)
-  %  sort GenericID = {w1     : WhiteSpace,
+  %  type ExternalID = (GenericID | well_formed_external_id?)
+  %  type GenericID = {w1     : WhiteSpace,
   %                    public : Option PubidLiteral,
   %                    w2     : WhiteSpace,
   %                    system : Option SystemLiteral}
   %
-  %  sort PubidLiteral  = (QuotedText | well_formed_pubid_literal?)
-  %  sort SystemLiteral = QuotedText
-  %  sort QuotedText = (BoundedText | quoted_text?)
-  %  sort BoundedText = {qchar : QuoteChar,
+  %  type PubidLiteral  = (QuotedText | well_formed_pubid_literal?)
+  %  type SystemLiteral = QuotedText
+  %  type QuotedText = (BoundedText | quoted_text?)
+  %  type BoundedText = {qchar : QuoteChar,
   %                      text  : UString}
 
   %% TEMPORARY!

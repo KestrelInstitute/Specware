@@ -56,9 +56,9 @@ variable, then it will appear twice is the list of UnitId's we generate.
 
  op specPathSeparator: String = (if msWindowsSystem? then ";" else ":")
 
- op checkSpecPathsExistence?: Boolean = true
+ op checkSpecPathsExistence?: Bool = true
 
- op checkSpecPathsExistence: String -> Boolean
+ op checkSpecPathsExistence: String -> Bool
  def checkSpecPathsExistence str =
    if checkSpecPathsExistence?
      then forall? (fn dir -> if fileExists? dir

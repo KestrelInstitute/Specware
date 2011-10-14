@@ -22,7 +22,7 @@ spec
   op initialState: State
   def initialState = {Memo = emptyMap}
 
-  op memoS?: Proof -> State -> Boolean
+  op memoS?: Proof -> State -> Bool
   def memoS?(p) =
     fn state ->
     let memo = state.Memo in
@@ -32,7 +32,7 @@ spec
       | None -> false in
     res
 
-  op checkMemoS: Proof -> State -> Option (Judgement)
+  op checkMemoS: Proof -> State -> Option Judgement
   def checkMemoS(p) =
     fn state ->
     let memo = state.Memo in

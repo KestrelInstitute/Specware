@@ -85,7 +85,7 @@ UnitId_Dependency.
   def initGlobalVars =
     run {
       print "\nDeclaring globals ...";
-      newGlobalVar ("BaseInfo",           (None : Option RelativeUID, initialSpecInCat));   % as opposed to emptySpec, which doesn't contain Boolean, etc.
+      newGlobalVar ("BaseInfo",           (None : Option RelativeUID, initialSpecInCat));   % as opposed to emptySpec, which doesn't contain Bool, etc.
       newGlobalVar ("BaseNames",          ([] : QualifiedIds));                             % cache for quick access
       newGlobalVar ("GlobalContext",      PolyMap.emptyMap);
       newGlobalVar ("LocalContext",       PolyMap.emptyMap);
@@ -162,12 +162,12 @@ UnitId_Dependency.
 
   op setBaseNames : Spec -> Env ()
   def setBaseNames base_spec =
-    let base_sort_names = 
+    let base_type_names = 
         foldriAQualifierMap (fn (q, id, _, names) ->
 			     Cons (Qualified(q, id), names))
 	                    [mkQualifiedId("Boolean", "Boolean"),
 			     mkUnQualifiedId "Boolean"] 
-			    base_spec.sorts
+			    base_spec.types
     in
     let base_op_names = 
         foldriAQualifierMap (fn (q, id, _, names) ->
@@ -175,7 +175,7 @@ UnitId_Dependency.
 	                    [] 
 			    base_spec.ops
     in			    
-    let base_names = (base_sort_names, base_op_names) in			   
+    let base_names = (base_type_names, base_op_names) in			   
     writeGlobalVar ("BaseNames", base_names)  % cache for quick access
 
   op setBaseNames_fromLisp : () -> ()
@@ -308,13 +308,13 @@ while there is a transition from names with "UnitId" to "UnitId".
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  validatedUID? : UnitId -> Env Boolean
+  op  validatedUID? : UnitId -> Env Bool
   def validatedUID? = validatedUnitId?
 
   op setValidatedUID : UnitId -> Env ()
   def setValidatedUID = setValidatedUnitId
 
-  op validatedUnitId? : UnitId -> Env Boolean
+  op validatedUnitId? : UnitId -> Env Bool
   def validatedUnitId? unitId = {
       validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
       return (unitId in? validatedUnitIds)

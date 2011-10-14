@@ -8,7 +8,7 @@ SplayMap qualifying spec {
   import /Library/Legacy/Utilities/State
   import SplayTree
 
-  sort Map (key, a) =
+  type Map (key, a) =
     | EMPTY (key * key -> Comparison)
     | MAP  {
           comp : (key * key -> Comparison),
@@ -48,7 +48,7 @@ SplayMap qualifying spec {
 
   op listItemsi     : [key,a] Map(key,a) -> List(key*a)
   op listDomain     : [key,a] Map(key,a) -> List(key)
-  op inDomain       : [key,a] Map(key,a) * key -> Boolean
+  op inDomain       : [key,a] Map(key,a) * key -> Bool
 
   %% Apply a function to the entries of the map
 
@@ -66,8 +66,8 @@ SplayMap qualifying spec {
   op unionWithi     : [key,a]   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
   op intersectWith  : [key,a]   (a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
   op intersectWithi : [key,a]   (key * a * a -> a) -> Map(key,a) * Map(key,a) -> Map(key,a)
-  op filter         : [key,a]   (a -> Boolean) -> Map(key,a) -> Map(key,a)          
-  op filteri        : [key,a]   (key * a -> Boolean) -> Map(key,a) -> Map(key,a)          
+  op filter         : [key,a]   (a -> Bool) -> Map(key,a) -> Map(key,a)          
+  op filteri        : [key,a]   (key * a -> Bool) -> Map(key,a) -> Map(key,a)          
   op mapPartial     : [key,a,b] (a -> Option(b)) -> Map(key,a) -> Map(key,b)
   op compare        : [a,key]   (a * a -> Comparison) -> (Map(key,a) * Map(key,a)) -> Comparison
   op toList         : [a,b]    Map (a, b) -> List (a * b)
@@ -75,10 +75,10 @@ SplayMap qualifying spec {
 
   op applyi         : [a] (a -> ()) -> Splay(a) -> ()
     
-  op subset?        : [a,b] Map (a,b) * Map (a,b) -> Boolean
+  op subset?        : [a,b] Map (a,b) * Map (a,b) -> Bool
 
-  op all            : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
-  op exists         : [a,b] (a * b -> Boolean) -> Map (a,b) -> Boolean
+  op all            : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
+  op exists         : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
 
   op listItemsf     : [a,b] (a -> b) * Splay(a) * List(b) -> List b
   op api            : [key,a,b] (key*a -> b) -> Splay(key*a) -> Splay(key*b)

@@ -2,9 +2,9 @@ CSE qualifying
 spec
   import /Languages/MetaSlang/Specs/Utilities, CurryUtils
 
-  op newCSEs(cse1: List MS.Term, cse2: List MS.Term, tms1: List MS.Term, tms2: List MS.Term,
-             poss_tms1: List MS.Term, poss_tms2: List MS.Term)
-    : List MS.Term * List MS.Term * List MS.Term =
+  op newCSEs(cse1: List MSTerm, cse2: List MSTerm, tms1: List MSTerm, tms2: List MSTerm,
+             poss_tms1: List MSTerm, poss_tms2: List MSTerm)
+    : List MSTerm * List MSTerm * List MSTerm =
     let cse12 = termsUnion(termsIntersect(tms1, tms2),
                            termsUnion(termsIntersect(tms1, poss_tms2),
                                       termsIntersect(poss_tms1, tms2)))
@@ -14,12 +14,12 @@ spec
     let poss_tms = termsDiff(termsUnion(poss_tms1, poss_tms2), new_ces) in
     (new_ces, single_tms, poss_tms)
 
-  op removeLocal(tms: List MS.Term, vs: List Var): List MS.Term =
+  op removeLocal(tms: List MSTerm, vs: List Var): List MSTerm =
     filter (fn t -> ~(hasRefTo?(t,vs))) tms
 
-  op maybeAbstract(t: MS.Term, cse: List MS.Term, names: List String, bindable?: Boolean,
-                   single_tms: List MS.Term, poss_tms: List MS.Term, spc: Spec)
-    : MS.Term * List MS.Term * List MS.Term * List MS.Term * List String =
+  op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,
+                   single_tms: List MSTerm, poss_tms: List MSTerm, spc: Spec)
+    : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
     let bvs = boundVars t in
     let cse = removeLocal(cse,bvs) in
     case cse of
@@ -49,8 +49,8 @@ spec
         in
         (t, cse, single_tms, poss_tms, names)
 
-  op recAbstractCSE(t: MS.Term, names: List String, bindable?: Boolean, spc: Spec)
-    : MS.Term * List MS.Term * List MS.Term * List MS.Term * List String =
+  op recAbstractCSE(t: MSTerm, names: List String, bindable?: Bool, spc: Spec)
+    : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
     case getCurryArgs t of
       | Some(f,c_args) ->
         %% Don't wan't to abstract partial applications
@@ -176,7 +176,7 @@ spec
       | _ -> (t,[],[],[],names)
 
 
-  op abstractCommonSubExpressions(t: MS.Term, spc: Spec): MS.Term =
+  op abstractCommonSubExpressions(t: MSTerm, spc: Spec): MSTerm =
     let all_names = map (fn (nm,_) ->  nm) (boundVarsIn t) in
     (recAbstractCSE(t, all_names, true, spc)).1
 

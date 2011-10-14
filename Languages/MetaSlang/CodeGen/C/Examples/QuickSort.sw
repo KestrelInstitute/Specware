@@ -1,7 +1,7 @@
-% QuickSort = 
+% QuickType = 
 spec
 
-  op partitionList: [a] (a * a -> Boolean) * a * List(a) -> List(a) * List(a)
+  op partitionList: [a] (a * a -> Bool) * a * List(a) -> List(a) * List(a)
   def partitionList(cmp,x,l) =
     case l of
       Nil -> (Nil,Nil)
@@ -14,17 +14,17 @@ spec
 	else
 	  (l1,Cons(hd,l2))
 
-  op sortList : [a] (a * a -> Boolean) * List a -> List a
-  def sortList(cmp,l) =
+  op typeList : [a] (a * a -> Bool) * List a -> List a
+  def typeList(cmp,l) =
     case l of
         Nil -> Nil
       | hd::tl ->
           let l12 = partitionList(cmp,hd,tl) in
 	  let l1 = l12.1 in
 	  let l2 = l12.2 in
-	  (sortList(cmp,l1)) ++ List.cons (hd, (sortList(cmp,l2)))
+	  (typeList(cmp,l1)) ++ List.cons (hd, (typeList(cmp,l2)))
 
-%  op grt: Nat * Nat -> Boolean
+%  op grt: Nat * Nat -> Bool
 %  def grt(a,b) = a>b
 
   op showList: List Nat -> String
@@ -48,9 +48,9 @@ spec
     let l2 = [7,1,6,2,3,4,5] in
     let _ = writeLine("l1 = "^showList(l1)) in
     let _ = writeLine("l2 = "^showList(l2)) in
-    let _ = writeLine("sorting...") in
-    let l1 = sortList(<,l1) in
-    let l2 = sortList(<,l2) in
+    let _ = writeLine("typeing...") in
+    let l1 = typeList(<,l1) in
+    let l2 = typeList(<,l2) in
     let _ = writeLine("l1 = "^showList(l1)) in
     let _ = writeLine("l2 = "^showList(l2)) in
     if l1 = l2 then

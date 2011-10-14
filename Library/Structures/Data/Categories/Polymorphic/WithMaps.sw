@@ -5,19 +5,19 @@ objects to arrows in the dom, cod and ident operations is via maps rather
 then function spaces.  Arguably this spec is more abstract and the base
 polymorphic version should be presented as a refinement of this.
 
-The spec below defines a sort for representing categories.  The sort is
-polymorphic in the sense that the same sort can be used at runtime to
+The spec below defines a type for representing categories.  The type is
+polymorphic in the sense that the same type can be used at runtime to
 represent different categories. For instance, categories of finite sets,
 Specs, graphs etc.
 
 In most cases, the polymorphism appearing here is not needed and one
-is better to use a monomorphic sort. Also, often, one does not need a
-sort for category at all but rather just a spec.  Note that the spec
+is better to use a monomorphic type. Also, often, one does not need a
+type for category at all but rather just a spec.  Note that the spec
 below is roughly what you get from a naive internalization of the spec
 Structures/Math/Categories/Cat. There is another such internalization
 without the polymorphism.
 
-This sort of internalization is yields definitions closest to Burstall
+This type of internalization is yields definitions closest to Burstall
 and Rydeheard's presentation.
 
 The spec is intended to handle two distinct cases: when the sets of
@@ -25,7 +25,7 @@ objects and arrows are finite or generated from a finite set (as in the
 category generated from a graph) and when the sets are possibly infinite
 (as in the category Spec). In the first, we might expect 'Set a' to refine
 to lists or trees. In the second we might expect 'Set a' to refine to
-'a -> Boolean'.  For the category Spec, for example, this might end up
+'a -> Bool'.  For the category Spec, for example, this might end up
 as just 'fn x -> True'. It would appear that this scheme also allows us
 to define subcategories easily.
 
@@ -37,7 +37,7 @@ spec {
   import /Library/Structures/Data/Sets/Polymorphic
   import /Library/Structures/Data/Maps/Polymorphic
 
-  sort Cat (O,A) 
+  type Cat (O,A) 
 
   op objects : fa (O,A) Cat (O,A) -> Set O
   op arrows : fa (O,A) Cat (O,A) -> Set A

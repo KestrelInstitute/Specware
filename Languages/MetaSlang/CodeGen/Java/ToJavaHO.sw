@@ -15,44 +15,44 @@ spec
   (**
    * translates a lambda term into a java expression, called from translateToExpression in ToJavaStatements
    *)
-  %op JGen.translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
-  %op JGen.translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+  %op JGen.translateLambdaToExpr: TCx * MSTerm * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
+  %op JGen.translateLambdaToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
   def JGen.translateLambdaToExprM(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l) =
     case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExprM(tcx,(qid,srt),k,l)
       | Fun(Embed(c,_),srt,_) ->
-	let dom = srtDom(srt) in
-	let rng = srtRange(srt) in
+	let dom = typeDom srt in
+	let rng = typeRng srt in
 	{
 	 apran <- tt_idM rng;
 	 rexp <- return(mkMethInv(apran,c,mkNArgsExpr(dom,None)));
-	 res <- standAloneFromSortM (mkReturnStmt(rexp),srt,k,l);
+	 res <- standAloneFromTypeM (mkReturnStmt(rexp),srt,k,l);
 	 return res
 	}
       | Fun(Project(id),srt,_) -> 
 	let rexp = mkMethInv("arg1",getFieldName(id),[]) in
-	standAloneFromSortM (mkReturnStmt(rexp),srt,k,l)
+	standAloneFromTypeM (mkReturnStmt(rexp),srt,k,l)
       | Fun(Restrict,srt,_) -> 
-	let rng = srtRange(srt) in
+	let rng = typeRng srt in
 	{
 	 rngid <- tt_idM rng;
 	 rexp <- return(mkNewClasInst(rngid,mkNArgsExpr([0],None)));
-	 res <- standAloneFromSortM(mkReturnStmt(rexp),srt,k,l);
+	 res <- standAloneFromTypeM(mkReturnStmt(rexp),srt,k,l);
 	 return res
 	}
       | Fun(Relax,srt,_) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"relax") in
-	standAloneFromSortM (mkReturnStmt(rexp),srt,k,l)
+	standAloneFromTypeM (mkReturnStmt(rexp),srt,k,l)
       | Fun(Choose _, srt, _) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"choose") in
-	standAloneFromSortM(mkReturnStmt(rexp),srt,k,l)
+	standAloneFromTypeM(mkReturnStmt(rexp),srt,k,l)
       | Fun(Quotient qid, srt, _) ->
 	% let rng = srtRange(srt) in % TODO: verify this isn't needed
 	{
 	 % rngid <- tt_idM rng; % TODO: verify this isn't needed
          rngid <- tt_idM (Base (qid, [], noPos)); % TODO: verify this is correct 
 	 rexp <- return(mkNewClasInst(rngid,mkNArgsExpr([0],None)));
-	 res <- standAloneFromSortM(mkReturnStmt(rexp),srt,k,l);
+	 res <- standAloneFromTypeM(mkReturnStmt(rexp),srt,k,l);
 	 return res
 	}
       | Lambda((pat,cond,body)::_,_) -> translateLambdaTermM(tcx,term,k,l)
@@ -63,7 +63,7 @@ spec
    (**
     * this is called, when a lambda term is found in the input; it implements v3:p48:r4
     *)
-   op translateLambdaTermM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+   op translateLambdaTermM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
    def translateLambdaTermM(tcx,term as Lambda((pat,cond,body)::_,_),k,l) =
      {
       spc <- getEnvSpec;
@@ -92,7 +92,7 @@ spec
 	     }) ([],tcx) freeVars;
       (s,_,_) <- termToExpressionRetM(tcx0,body,1,1,false);
       parNames <- return(mkParamsFromPattern pat);
-      (_,e,_,_) <- standAloneFromSortWithParNamesM(Block s,termSrt,parNames,k,l);
+      (_,e,_,_) <- standAloneFromTypeWithParNamesM(Block s,termSrt,parNames,k,l);
       return(block,e,k,l)
      }
   
@@ -101,11 +101,11 @@ spec
    (**
     * this is active when a "stand-alone" operator appears as term, i.e. an operator symbol without any arguments
     *)
-   op translateStandAloneOpToExprM: TCx * (QualifiedId * Sort) * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat *Nat)
+   op translateStandAloneOpToExprM: TCx * (QualifiedId * MSType) * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat *Nat)
    def translateStandAloneOpToExprM(tcx,(qid,srt),k,l) =
 %     let _ = case srt of
 %	       | Arrow(_,_,_) -> true
-%               | _ -> fail("can't happen: srt in translateStandAloneOpToExpr is not an arrow sort: "^printSort(srt))
+%               | _ -> fail("can't happen: srt in translateStandAloneOpToExpr is not an arrow type: "^printType(srt))
 %     in
      let Qualified(spcname,id) = qid in
      if (id = "+" || id = "-" || id = "*" || id = "div" || id = "mod") &&
@@ -142,13 +142,13 @@ spec
 	 let rexp = mkUnExp("~",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["boolean"],"boolean"),(["Boolean"],"Boolean"),k,l)
      else
-       let dom = srtDom(srt) in
-       let rng = srtRange(srt) in
+       let dom = typeDom srt in
+       let rng = typeRng srt in
        {
 	spc <- getEnvSpec;
-	apdom <- mapSortColM(tt_idM,dom);
+	apdom <- mapTypeColM(tt_idM,dom);
 	apran <- tt_idM rng;
-	atdom <- mapSortColM(srtIdM,dom);
+	atdom <- mapTypeColM(srtIdM,dom);
 	atran <- srtIdM rng;
 	if forall? (fn(srt) -> notAUserType?(spc,srt)) dom then
 	  if notAUserType?(spc,rng) then
@@ -180,7 +180,7 @@ spec
 	     let rexp = mkMethInv(argh,id,mkNArgsExpr(dom,Some h)) in
 	     standaloneM(mkReturnStmt(rexp),(apdom,apran),(atdom,atran),k,l)
 	   | None -> 
-	     raise(Fail("can't happen in translateStandAloneOpToExpr: cannot find user type in sort "^printSort(srt)),sortAnn srt)
+	     raise(Fail("can't happen in translateStandAloneOpToExpr: cannot find user type in type "^printType(srt)),typeAnn srt)
 
        }
 
@@ -204,36 +204,36 @@ def standaloneWithParNamesM(s,applySig as (apdom,apran),arrowTypeSig as (atdom,a
    return (mts,exp,k,l)
   }
 
-op standAloneFromSortM: JavaStmt * Sort * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
-def standAloneFromSortM(s,srt,k,l) =
-  let dom = srtDom(srt) in
-  let rng = srtRange(srt) in
+op standAloneFromTypeM: JavaStmt * MSType * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+def standAloneFromTypeM(s,srt,k,l) =
+  let dom = typeDom srt in
+  let rng = typeRng srt in
   %let apdom = map tt_id dom in
   {
-   apdom <- mapSortColM(tt_idM,dom);
+   apdom <- mapTypeColM(tt_idM,dom);
    apran <- tt_idM rng;
-   atdom <- mapSortColM(srtIdM,dom);
+   atdom <- mapTypeColM(srtIdM,dom);
    atran <- srtIdM rng;
    standaloneM(s,(apdom,apran),(atdom,atran),k,l)
   }
 
-op mapSortColM: (Sort -> JGenEnv Id) * List Sort -> JGenEnv (List String)
-def mapSortColM(srtf,srtl) =
+op mapTypeColM: (MSType -> JGenEnv Id) * List MSType -> JGenEnv (List String)
+def mapTypeColM(srtf,srtl) =
   mapM (fn(srt) -> srtf srt) srtl
 %  foldl (fn((srtl,col),srt) ->
 %	 let (sid,col1) = srtf srt in 
 %	 (concat(srtl,[sid]),concatCollected(col,col1))) 
 %  ([],nothingCollected) srtl
 
-op standAloneFromSortWithParNamesM: JavaStmt * Sort * List Id * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
-def standAloneFromSortWithParNamesM(s,srt,parNames,k,l) =
-  let dom = srtDom(srt) in
-  let rng = srtRange(srt) in
+op standAloneFromTypeWithParNamesM: JavaStmt * MSType * List Id * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+def standAloneFromTypeWithParNamesM(s,srt,parNames,k,l) =
+  let dom = typeDom srt in
+  let rng = typeRng srt in
   {
    spc <- getEnvSpec;
-   apdom <- mapSortColM(tt_idM,dom);
+   apdom <- mapTypeColM(tt_idM,dom);
    apran <- tt_idM rng;
-   atdom <- mapSortColM(srtIdM,dom);
+   atdom <- mapTypeColM(srtIdM,dom);
    rng <- return(findMatchingUserType(spc,rng));
    atran <- srtIdM rng;
    standaloneWithParNamesM(s,(apdom,apran),(atdom,atran),parNames,k,l)

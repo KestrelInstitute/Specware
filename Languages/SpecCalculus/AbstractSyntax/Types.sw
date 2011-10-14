@@ -2,7 +2,7 @@
 
 SpecCalc qualifying spec
 
- %% We import PosSpec for Position, QualifiedId, ASortScheme etc.  This is a
+ %% We import PosSpec for Position, QualifiedId, ATypeScheme etc.  This is a
  %% bit of a shame as AnnSpec would like to import this spec so as to insert
  %% a spec calculus term in the import of a spec. This would create a cyclic
  %% dependency between specs. At present, this is addressed in AnnSpec by
@@ -18,8 +18,8 @@ SpecCalc qualifying spec
 
  %% All the objects in the abstract syntax are polymorphic and defined at
  %% two levels.  The first level pairs the type the type parameter. 
- %% The second level defines the constructors for the sort.
- %% In this way, every sort is annotated. The annotation is typically 
+ %% The second level defines the constructors for the type.
+ %% In this way, every type is annotated. The annotation is typically 
  %% information about the position of the term in the file. 
  %% It is not clear that there is any benefit in making this polymorphic. 
  %% Might might be enough to pair it with the Position type and then 
@@ -155,8 +155,6 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type MSType = ASort Position
- type MSTerm = ATerm Position
 
  %% A SpecElemTerm is a declaration within a spec -- the ops types etc.
 
@@ -166,7 +164,7 @@ SpecCalc qualifying spec
 
  type SpecElemBody =
    | Import  List SCTerm
-   | Sort    List QualifiedId          * MSType
+   | Type    List QualifiedId          * MSType
    | Op      List QualifiedId * Fixity * Bool * MSTerm
    | Claim   PropertyType * PropertyName * TyVars * MSTerm
    | Pragma  String * String * String
@@ -183,19 +181,19 @@ SpecCalc qualifying spec
   : SpecElemTerm =
   (Pragma (prefix, body, postfix), pos)
 
- op mkSortSpecElem (names : SortNames, 
+ op mkTypeSpecElem (names : TypeNames, 
                     tvs   : TyVars, 
                     defs  : List MSType,
                     pos   : Position) 
   : SpecElemTerm =
   let dfn = 
       case defs of
-        | []    -> maybePiSort (tvs, Any pos)
-        | [dfn] -> maybePiSort (tvs, dfn)
-        | _     -> And (map (fn srt -> maybePiSort (tvs, srt)) defs, 
+        | []    -> maybePiType (tvs, Any pos)
+        | [dfn] -> maybePiType (tvs, dfn)
+        | _     -> And (map (fn srt -> maybePiType (tvs, srt)) defs, 
                         pos)
   in
-  (Sort (names, dfn), pos)
+  (Type (names, dfn), pos)
 
  op mkOpSpecElem (names   : OpNames, 
                   fixity  : Fixity, 
@@ -210,7 +208,7 @@ SpecCalc qualifying spec
   %% a complication we don't need now (or perhaps ever).
   let dfn =
       case defs of
-	| []   -> SortedTerm (Any pos, srt, pos) % op decl
+	| []   -> TypedTerm (Any pos, srt, pos) % op decl
         | [tm] -> tm
   in
   let dfn = maybePiTerm (tvs, dfn) in
@@ -259,7 +257,7 @@ SpecCalc qualifying spec
  type SpecMorphRule     = SpecMorphRuleBody * Position
  type SpecMorphRuleBody = 
    | Ambiguous QualifiedId                   * QualifiedId 
-   | Sort      QualifiedId                   * QualifiedId
+   | Type      QualifiedId                   * QualifiedId
    | Op        (QualifiedId * Option MSType) * (QualifiedId * Option MSType)
 
  type SM_Pragma  = (String * String * String) * Position
@@ -387,7 +385,7 @@ SpecCalc qualifying spec
 
  type TranslateTerm = SCTerm * Renaming
 
- %% A Renaming denotes some mappings of names, e.g. for sorts, ops,
+ %% A Renaming denotes some mappings of names, e.g. for types, ops,
  %% and possibly other entities.
  %% Some mappings may be ambiguous until placed in some context.
 
@@ -395,9 +393,9 @@ SpecCalc qualifying spec
  type RenamingRules = List RenamingRule
  type RenamingRule  = RenamingRuleBody * Position
  type RenamingRuleBody =
-   | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases, including name in second field
-   | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases, including name in second field
-   | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases, including name in second field
+   | Ambiguous QualifiedId                   * QualifiedId                   * Aliases   % last field is all aliases, including name in second field
+   | Type      QualifiedId                   * QualifiedId                   * TypeNames % last field is all aliases, including name in second field
+   | Op        (QualifiedId * Option MSType) * (QualifiedId * Option MSType) * OpNames   % last field is all aliases, including name in second field
    | Other     OtherRenamingRule
 
  op  mkTranslate (term : SCTerm, renaming : Renaming, pos : Position) 
@@ -436,8 +434,8 @@ SpecCalc qualifying spec
  %% a position as in Renaming above.
 
  type NameExpr = 
-   | Sort       QualifiedId
-   | Op         QualifiedId * Option Sort
+   | Type       QualifiedId
+   | Op         QualifiedId * Option MSType
    | Axiom      QualifiedId
    | Theorem    QualifiedId
    | Conjecture QualifiedId

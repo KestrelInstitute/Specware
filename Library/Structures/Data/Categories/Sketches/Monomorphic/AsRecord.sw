@@ -4,7 +4,7 @@
 spec {
   import ../Monomorphic
 
-  sort Sketch = {
+  type Sketch = {
       vertices : Vertex.Set,
       edges : Edge.Set,
       src : Map,

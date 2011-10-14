@@ -197,7 +197,7 @@ Java qualifying spec
                List.map ppClsDecl cb.clss,
                List.map ppInterfDecl cb.interfs]))
 
-  def isEmptyClsBody (cb : ClsBody) : Boolean =
+  def isEmptyClsBody (cb : ClsBody) : Bool =
       empty? cb.staticInits && empty? cb.flds &&
       empty? cb.constrs && empty? cb.meths &&
       empty? cb.clss && empty? cb.interfs
@@ -216,7 +216,7 @@ Java qualifying spec
                List.map ppClsDecl ib.clss,
                List.map ppInterfDecl ib.interfs]))
 
-  def isEmptyInterfBody (ib : InterfBody) : Boolean =
+  def isEmptyInterfBody (ib : InterfBody) : Bool =
       empty? ib.flds && empty? ib.meths &&
       empty? ib.clss && empty? ib.interfs
 
@@ -332,7 +332,7 @@ Java qualifying spec
 
 %%%% single formal parameter
 
-  def ppFormPar (b : Boolean, t : JavaType, vdi : VarDeclId) 
+  def ppFormPar (b : Bool, t : JavaType, vdi : VarDeclId) 
                                                  : Pretty =
       prettysNone
         [toPretty (if b = true then "final " else ""),
@@ -395,7 +395,7 @@ Java qualifying spec
 
 %%%% local vriable declaration
 
- def ppLocVarDecl (b : Boolean, t : JavaType, vd : VarDecl,
+ def ppLocVarDecl (b : Bool, t : JavaType, vd : VarDecl,
                                  vds : List VarDecl) : Pretty =
      prettysNone 
        [toPretty (if b then "final " else ""),
@@ -410,7 +410,7 @@ Java qualifying spec
   def ppStmt(st:JavaStmt) = ppStmt_internal(st,false)
   def ppStmtOmitBrackets(st:JavaStmt) = ppStmt_internal(st,true)
 
-  def ppStmt_internal (st : JavaStmt, omitBrackets? : Boolean) : Pretty = 
+  def ppStmt_internal (st : JavaStmt, omitBrackets? : Bool) : Pretty = 
       case st of 
         Block bk ->
           (case bk of 
@@ -626,7 +626,7 @@ Java qualifying spec
   def ppExpr (e : JavaExpr) = ppExpr_internal(e,false)
   def ppExprOmitBrackets(e : JavaExpr) = ppExpr_internal(e,true)
 
-  def ppExpr_internal (e : JavaExpr, omitBrackets? : Boolean) : Pretty = 
+  def ppExpr_internal (e : JavaExpr, omitBrackets? : Bool) : Pretty = 
       case e of 
         Ass ass     -> ppAss ass
      |  CondExp(be,opt) -> ppCondExp(be,opt,omitBrackets?)
@@ -688,7 +688,7 @@ Java qualifying spec
 
 %%%% conditional expression
 
-  def ppCondExp (be : BinExp, rest : Option (JavaExpr * CondExp), omitBrackets? : Boolean)
+  def ppCondExp (be : BinExp, rest : Option (JavaExpr * CondExp), omitBrackets? : Bool)
                                                      : Pretty =
     let (openbr,closebr) = case rest of None -> ("","") | Some _ -> ("(",")") in
       prettysNone
@@ -707,7 +707,7 @@ Java qualifying spec
 
 %%%% binary expression 
 
-  def ppBinExp (be : BinExp, omitBrackets? : Boolean) : Pretty =
+  def ppBinExp (be : BinExp, omitBrackets? : Bool) : Pretty =
       case be of 
         Bin (o,be1,be2) 
            -> prettysNone
@@ -734,7 +734,7 @@ Java qualifying spec
 
 %%%% unary expression
 
-  def ppUnExp (ue : UnExp, omitBrackets? : Boolean) : Pretty =
+  def ppUnExp (ue : UnExp, omitBrackets? : Bool) : Pretty =
       case ue of
         Un (o,ue)  -> prettysNone [if omitBrackets? then emptyPretty() else toPretty "( ",
                                      ppUnOp o,

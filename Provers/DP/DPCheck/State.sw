@@ -24,7 +24,7 @@ spec
   def initialState = {proofInfo = emptyMap}
 
 (*
-  op memoS?: Proof -> State -> Boolean
+  op memoS?: Proof -> State -> Bool
   def memoS?(p) =
     fn state ->
     let memo = state.Memo in

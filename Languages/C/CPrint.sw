@@ -1,7 +1,7 @@
 CPrint qualifying spec
 {
   %import System  	% ../utilities/system-base.sl
-  % import Topsort  	% ../data-structures/topsort.sl
+  % import Toptype  	% ../data-structures/toptype.sl
   import C
   import /Languages/MetaSlang/Specs/Printer
 
@@ -429,10 +429,10 @@ CPrint qualifying spec
     ppSpec_internal true s 
 
   op ppSpec_internal (asHeader:Bool) (s : C_Spec) : Pretty =
-    %let _ = writeLine "Starting sort..." in
-    %let s = sortStructUnionTypeDefns s in
-    %let typeDefns = topSortTypeDefns s.typeDefns in
-    % let _ = writeLine "Topsort done..." in
+    %let _ = writeLine "Starting type..." in
+    %let s = typeStructUnionTypeDefns s in
+    %let typeDefns = topTypeTypeDefns s.typeDefns in
+    % let _ = writeLine "Toptype done..." in
     let headers              = map ppComment             s.headers              in
     let includes             = map ppInclude             s.includes             in
     let defines              = map ppDefine              s.defines              in
@@ -508,18 +508,18 @@ CPrint qualifying spec
 %- --------------------------------------------------------------------------------
 
 (*
-  %% Topsort type definitions
+  %% Toptype type definitions
 
-  op topSortTypeDefns defns =
+  op topTypeTypeDefns defns =
     let names = map (fn (name, _) -> name) defns in
-    let sortedNames = 
-	topSort (EQUAL,
+    let typeedNames = 
+	topType (EQUAL,
                  fn name -> expand (name, defns),
                  names)
     in
-    findTypeDefns (sortedNames, defns)
+    findTypeDefns (typeedNames, defns)
 *)
-  %% The names include undefined base sorts, which we ignore.
+  %% The names include undefined base types, which we ignore.
 
   op findTypeDefns (names : List String, defns : C_TypeDefns) : C_TypeDefns =
     case names of

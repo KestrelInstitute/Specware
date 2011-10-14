@@ -8,13 +8,13 @@ Prover qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
 
 
-  op proverNatSort: () -> Sort
+  op proverNatType: () -> MSType
 
-  def proverNatSort() =
+  def proverNatType() =
     let baseProverSpec = run getBaseProverSpec in
-    let optSrt = findTheSort(baseProverSpec, Qualified("PrInteger","ProverNat")) in
+    let optSrt = findTheType(baseProverSpec, Qualified("PrInteger","ProverNat")) in
     let Some info = optSrt in
-    firstSortDefInnerSort info 
+    firstTypeDefInnerType info 
 
   op getBaseProverSpec : Env Spec
   def getBaseProverSpec = 
@@ -38,7 +38,7 @@ Prover qualifying spec
       | NotEquals -> true
       | _ -> false
 
-  op simpleBody?(bod: MS.Term): Bool =
+  op simpleBody?(bod: MSTerm): Bool =
     simpleTerm bod
       || (case bod of
             | Record(fields,_) ->
@@ -49,7 +49,7 @@ Prover qualifying spec
 
   op unfoldSizeThreshold: Nat = 16
 
-  op maybeUnfoldSubTypePred(spc: Spec, predFn: MS.Term): MS.Term =
+  op maybeUnfoldSubTypePred(spc: Spec, predFn: MSTerm): MSTerm =
     case predFn of
       | Fun(Op(qid,_),ty,_) ->
         (case findTheOp(spc, qid) of
@@ -66,21 +66,21 @@ Prover qualifying spec
                   | _ -> predFn))
       | _ -> predFn
 
-  op srtPred: Spec * Sort * MS.Term -> MS.Term
+  op srtPred: Spec * MSType * MSTerm -> MSTerm
 
-  %% compute the predicate constraining srt to its ultimate supersort
+  %% compute the predicate constraining srt to its ultimate supertype
   def srtPred(spc, srt, tm) =
-    % let _ = writeLine ("TPB: "^printTerm tm^": "^printSort srt) in
+    % let _ = writeLine ("TPB: "^printTerm tm^": "^printType srt) in
     let def topPredBaseSrt(srt) =
          case srt of
-	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatSort())
+	   | Base(Qualified("Nat","Nat"),_,_) | treatNatSpecially? -> topPredBaseSrt(proverNatType())
 	   | Base (qid, _, _) ->
              let uf_srt = unfoldBase(spc, srt) in
              if uf_srt = srt
                then (Some qid, mkTrue())
                else topPredBaseSrt uf_srt
 	   | Boolean _        -> (None,     mkTrue())
-	   | Subsort (supSrt, predFn, _) ->
+	   | Subtype (supSrt, predFn, _) ->
              let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
              let predFn = maybeUnfoldSubTypePred (spc, predFn) in
              % let _ = writeLine("Unfold? "^printTerm predFn) in
@@ -94,35 +94,35 @@ Prover qualifying spec
     % let _ = writeLine (printTerm topPred^"  "^anyToString topBaseQId) in
     case topBaseQId of
       | Some topBaseQId ->
-        let optSrt = findTheSort(spc, topBaseQId) in
+        let optSrt = findTheType(spc, topBaseQId) in
         (case optSrt of
            | Some info ->               % sjw: I think this case is superceded by unfoldBase above
-             (case sortInfoDefs info of
+             (case typeInfoDefs info of
                 | [dfn] ->
-                  let newSrt = sortInnerSort dfn in
+                  let newSrt = typeInnerType dfn in
                   Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
                 | _ -> topPred)
            | _ -> topPred)
       | _ -> topPred
 
-  op opSubsortAxiom: Spec * QualifiedId * Sort -> MS.Term
+  op opSubtypeAxiom: Spec * QualifiedId * MSType -> MSTerm
 
-  def opSubsortAxiom(spc, opname, srt) =
-    (case (curryShapeNum(spc, srt), sortArity(spc, srt))
+  def opSubtypeAxiom(spc, opname, srt) =
+    (case (curryShapeNum(spc, srt), typeArity(spc, srt))
        of (1,None) ->     %let _ = debug("noArity") in 
-	 opSubsortNoArityAxiom(spc, opname, srt)
+	 opSubtypeNoArityAxiom(spc, opname, srt)
 	| (1, Some(_,arity)) -> %let _ = debug("noCurry") in 
-	 opSubsortNoCurryAxiom(spc, opname, srt, arity)
+	 opSubtypeNoCurryAxiom(spc, opname, srt, arity)
 	| (curryN, None) -> %let _ = debug("CurryNoArity") in 
-	 opSubsortCurryNoArityAxiom(spc, opname, srt)
+	 opSubtypeCurryNoArityAxiom(spc, opname, srt)
 	| (curryN, Some (_, arity)) -> %let _ = debug("Curry") in 
-	 opSubsortCurryAxiom()
+	 opSubtypeCurryAxiom()
 	| _ -> %let _ = debug("Last") in
-	 opSubsortNoArityAxiom(spc, opname, srt))
+	 opSubtypeNoArityAxiom(spc, opname, srt))
 
-  op opSubsortNoArityAxiom: Spec * QualifiedId * Sort -> MS.Term
+  op opSubtypeNoArityAxiom: Spec * QualifiedId * MSType -> MSTerm
 
-  def opSubsortNoArityAxiom(spc, opname as Qualified (qual, name), srt) =
+  def opSubtypeNoArityAxiom(spc, opname as Qualified (qual, name), srt) =
     case srt of
       | Arrow(dom, rng, _) ->
        let domVar = ("dom_" ^ name, dom) in
@@ -139,17 +139,17 @@ Prover qualifying spec
        let srtPred = srtPred(spc, srt, rangeTerm) in
        srtPred
 
-  op opSubsortNoCurryAxiom: Spec * QualifiedId * Sort * Nat -> MS.Term
+  op opSubtypeNoCurryAxiom: Spec * QualifiedId * MSType * Nat -> MSTerm
 
-  def opSubsortNoCurryAxiom(spc, opname as Qualified (qual, name), srt, arity) =
+  def opSubtypeNoCurryAxiom(spc, opname as Qualified (qual, name), srt, arity) =
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 
-	    let domVars = map (fn (id: Id, srt:Sort) -> ("dom_" ^ name ^ "_" ^ id, srt))
+	    let domVars = map (fn (id: Id, typ:MSType) -> ("dom_" ^ name ^ "_" ^ id, typ))
                               fields in
 	    let domVarTerms = map (fn (var) -> mkVar(var)) domVars in
-	    let domPreds = map (fn (varTerm) -> srtPred(spc, termSort(varTerm), varTerm))
+	    let domPreds = map (fn (varTerm) -> srtPred(spc, termType(varTerm), varTerm))
 	                       domVarTerms in
 	    let domPred = Utilities.mkSimpConj(domPreds) in
 	    let rangeTerm = mkAppl(mkOp(opname, srt), domVarTerms) in
@@ -169,14 +169,14 @@ Prover qualifying spec
 	    let fmla = mkBind(Forall, [domVar], rangePred) in
   	      fmla
 
-  op opSubsortCurryNoArityAxiom: Spec * QualifiedId * Sort -> MS.Term
+  op opSubtypeCurryNoArityAxiom: Spec * QualifiedId * MSType -> MSTerm
 
-  def opSubsortCurryNoArityAxiom(spc, qname, srt) =
-    opSubsortNoArityAxiom(spc, qname, srt)
+  def opSubtypeCurryNoArityAxiom(spc, qname, srt) =
+    opSubtypeNoArityAxiom(spc, qname, srt)
 
-  op opSubsortCurryAxiom: () -> MS.Term
+  op opSubtypeCurryAxiom: () -> MSTerm
 
-  def opSubsortCurryAxiom() =
+  def opSubtypeCurryAxiom() =
     mkTrue()
 
 endspec

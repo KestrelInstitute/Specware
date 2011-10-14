@@ -3,32 +3,32 @@ StandardSpec qualifying spec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars - should be abstracted
  import /Library/Legacy/DataStructures/StringMapSplay % for makeTyVarMap
 
- type SortMap      = ASortMap        StandardAnnotation
+ type TypeMap      = ATypeMap        StandardAnnotation
  type OpMap        = AOpMap          StandardAnnotation
 
 % type Property     = AProperty       StandardAnnotation
 
  type Specs        = ASpecs          StandardAnnotation
- % type Sorts        = ASorts          StandardAnnotation
+ % type Types        = ATypes          StandardAnnotation
  % type Ops          = AOps            StandardAnnotation
 
- op addTypeDef(spc: Spec, qid as Qualified(q,id): QualifiedId, dfn: Sort): Spec =
-   spc << {sorts = insertAQualifierMap(spc.sorts, q, id, {names = [qid], dfn = dfn}),
-           elements = spc.elements ++ [SortDef(qid,noPos)]}
+ op addTypeDef(spc: Spec, qid as Qualified(q,id): QualifiedId, dfn: MSType): Spec =
+   spc << {types = insertAQualifierMap(spc.types, q, id, {names = [qid], dfn = dfn}),
+           elements = spc.elements ++ [TypeDef(qid,noPos)]}
 
- op addOpDef(spc: Spec, qid as Qualified(q,id): QualifiedId, fixity: Fixity, dfn: MS.Term): Spec =
+ op addOpDef(spc: Spec, qid as Qualified(q,id): QualifiedId, fixity: Fixity, dfn: MSTerm): Spec =
    spc << {ops = insertAQualifierMap(spc.ops, q, id, 
                                      {names = [qid], dfn = dfn, fixity = fixity, fullyQualified? = false}),
            elements = spc.elements ++ [Op(qid,true,noPos)]}
 
- type MetaSortScheme = AMetaSortScheme StandardAnnotation
+ type MetaTypeScheme = AMetaTypeScheme StandardAnnotation
 
- op emptySortMap  : SortMap    
+ op emptyTypeMap  : TypeMap    
  op emptyOpMap    : OpMap      
  op emptyElements : SpecElements 
 
- def emptySortMap  = emptyASortMap
- def emptyOpMap    = emptyASortMap
+ def emptyTypeMap  = emptyATypeMap
+ def emptyOpMap    = emptyATypeMap
  def emptyElements = emptyAElements
 
  type MetaTyVarsContext = {map     : Ref (NatMap.Map String),
@@ -57,63 +57,63 @@ StandardSpec qualifying spec
 
  % The following are used in the semantic rules in the parser.
 
- op abstractSort : (String -> TyVar) * List String * MS.Sort -> TyVars * MS.Sort
- def abstractSort (fresh, tyVars, srt) = 
+ op abstractType : (String -> TyVar) * List String * MSType -> TyVars * MSType
+ def abstractType (fresh, tyVars, srt) = 
   if empty? tyVars then ([], srt) else
-  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-  let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
+  let (m, doType) = makeTyVarMap (fresh, tyVars) in
+  let srt = mapType (fn M -> M, doType, fn p -> p) srt in
   (mapImage (m, tyVars), srt)
 
- op newAbstractSort : (String -> TyVar) * List String * MS.Sort -> MS.Sort
- def newAbstractSort (fresh, tyVars, srt) = 
+ op newAbstractType : (String -> TyVar) * List String * MSType -> MSType
+ def newAbstractType (fresh, tyVars, srt) = 
   if empty? tyVars then 
     srt
   else
-    let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-    let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
+    let (m, doType) = makeTyVarMap (fresh, tyVars) in
+    let srt = mapType (fn M -> M, doType, fn p -> p) srt in
     let tvs = mapImage (m, tyVars) in
-    maybePiSort (tvs, srt)
+    maybePiType (tvs, srt)
 
- op abstractTerm : (String -> TyVar) * List String * MS.Term -> TyVars * MS.Term
+ op abstractTerm : (String -> TyVar) * List String * MSTerm -> TyVars * MSTerm
  def abstractTerm (fresh, tyVars, trm) = 
-  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-  let trm = mapTerm (fn M -> M, doSort, fn p -> p) trm in
+  let (m, doType) = makeTyVarMap (fresh, tyVars) in
+  let trm = mapTerm (fn M -> M, doType, fn p -> p) trm in
   (mapImage (m, tyVars), trm)
 
- op newAbstractTerm : (String -> TyVar) * List String * MS.Term -> MS.Term
+ op newAbstractTerm : (String -> TyVar) * List String * MSTerm -> MSTerm
  def newAbstractTerm (fresh, tyVars, trm) = 
-  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-  let trm = mapTerm (fn M -> M, doSort, fn p -> p) trm in
+  let (m, doType) = makeTyVarMap (fresh, tyVars) in
+  let trm = mapTerm (fn M -> M, doType, fn p -> p) trm in
   let tvs = mapImage (m, tyVars) in
   maybePiTerm (tvs, trm)
 
  %%
  %% It is important that the order of the type variables is preserved
- %% as this function is used to abstract sort in recursive sort defintions.
+ %% as this function is used to abstract type in recursive type defintions.
  %% For example, if 
  %% type ListPair(a,b) = | Nil | Cons a * b * ListPair(a,b)
- %% is defined, then abstractSort is used to return the pair:
+ %% is defined, then abstractType is used to return the pair:
  %% ( (a,b), | Nil | Cons a * b * ListPair(a,b) )
  %%
 
  op makeTyVarMap: (String -> TyVar) * List String
-                 -> StringMap.Map String * (MS.Sort -> MS.Sort)
+                 -> StringMap.Map String * (MSType -> MSType)
  def makeTyVarMap (fresh, tyVars) = 
   let def insert (tv, map) = StringMap.insert (map, tv, fresh tv) in
   let m = List.foldr insert StringMap.empty tyVars in
-  let doSort = 
-      fn (srt as (Base (Qualified (_, s), [], pos)) : MS.Sort) -> 
+  let doType = 
+      fn (srt as (Base (Qualified (_, s), [], pos)) : MSType) -> 
          (case StringMap.find (m, s) of
-           | Some tyVar -> (TyVar (tyVar, pos)) : MS.Sort
+           | Some tyVar -> (TyVar (tyVar, pos)) : MSType
            | None -> srt) 
        | s -> s
   in
-    (m, doSort)
+    (m, doType)
 
- op mkApplyN      : MS.Term * MS.Term                 -> MS.Term
- def mkApplyN (t1, t2) : MS.Term = ApplyN ([t1, t2],       internalPosition)
+ op mkApplyN      : MSTerm * MSTerm                 -> MSTerm
+ def mkApplyN (t1, t2) : MSTerm = ApplyN ([t1, t2],       internalPosition)
 
- def mkList (terms : List MS.Term, pos: Position, element_type: MS.Sort): MS.Term = 
+ def mkList (terms : List MSTerm, pos: Position, element_type: MSType): MSTerm = 
   let list_type  = Base (Qualified ("List", "List"),  [element_type], pos) in
   let list1_type = Base (Qualified ("List", "List1"), [element_type], pos) in
   let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),
@@ -124,20 +124,20 @@ StandardSpec qualifying spec
   foldr mkCons empty_list terms
 
  % ------------------------------------------------------------------------
- %  Recursive constructors of MS.Pattern's
+ %  Recursive constructors of MSPattern's
  % ------------------------------------------------------------------------
 
- op mkListPattern : List MS.Pattern       * Position * MS.Sort -> MS.Pattern
- op mkConsPattern : MS.Pattern * MS.Pattern * Position * MS.Sort -> MS.Pattern
+ op mkListPattern : MSPatterns            * Position * MSType -> MSPattern
+ op mkConsPattern : MSPattern * MSPattern * Position * MSType -> MSPattern
 
- def mkListPattern (patterns : List MS.Pattern, pos, element_type) : MS.Pattern = 
+ def mkListPattern (patterns : MSPatterns, pos, element_type) : MSPattern = 
   let list_type  = Base (Qualified("List","List"),  [element_type], pos) in
   let empty_list = EmbedPat ("Nil",  None,  list_type, pos) in
   let def mkCons (x, xs) = 
        EmbedPat ("Cons", Some (RecordPat ([("1",x), ("2",xs)], pos)), list_type, pos) in
   List.foldr mkCons empty_list patterns
 
- def mkConsPattern (p1 : MS.Pattern, p2 : MS.Pattern, pos, element_type) : MS.Pattern =
+ def mkConsPattern (p1 : MSPattern, p2 : MSPattern, pos, element_type) : MSPattern =
   let list_type  = Base (Qualified("List","List"), [element_type], pos) in
   EmbedPat ("Cons", Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
 

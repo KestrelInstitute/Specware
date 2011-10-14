@@ -8,14 +8,14 @@ SpecToPosSpec qualifying spec {
  def convertSpecToPosSpec spc = spc
 
 (* ### unused
- op convertSortInfoToPSortInfo : SortInfo  -> MS.SortInfo
+ op convertTypeInfoToPTypeInfo : TypeInfo  -> MS.TypeInfo
  op convertOpInfoToPOpInfo     : OpInfo    -> MS.OpInfo
 
  op convertTermToPTerm         : MS.Term      -> MS.Term
  op convertVarToPVar           : Var       -> MS.Var
  op convertVarsToPVars         : List Var  -> List MS.Var
  op convertPatternToPPattern   : Pattern   -> MS.Pattern
- op convertSortToPSort         : Sort      -> MS.Sort
+ op convertTypeToPType         : Type      -> MS.Type
  op convertFunToPFun           : Fun       -> MS.Fun
 *)
 
@@ -23,27 +23,27 @@ SpecToPosSpec qualifying spec {
  * Remainder of the file is not longer used
 
  %% Half-baked conversion from StandardSpec to PosSpec
-% def convertSpecToPosSpec {importInfo, sorts, ops, properties = _} =
+% def convertSpecToPosSpec {importInfo, types, ops, properties = _} =
 %  {importInfo   = importInfo,
-%   sorts        = mapAQualifierMap convertSortInfoToPSortInfo sorts,
+%   types        = mapAQualifierMap convertTypeInfoToPTypeInfo types,
 %   ops          = mapAQualifierMap convertOpInfoToPOpInfo     ops,
 %   properties   = emptyAProperties
 %  } 
 
-def convertSortInfoToPSortInfo info = info
+def convertTypeInfoToPTypeInfo info = info
 
-% def convertSortInfoToPSortInfo (sort_names, tvs, opt_def : Option Sort) = 
-%  let new_opt_pdef : Option PSort =
+% def convertTypeInfoToPTypeInfo (type_names, tvs, opt_def : Option Type) = 
+%  let new_opt_pdef : Option PType =
 %      (case opt_def of
 %        | None     -> None
-%        | Some srt -> Some (convertSortToPSort srt))
+%        | Some srt -> Some (convertTypeToPType srt))
 %  in
-%    (sort_names, tvs, new_opt_pdef)
+%    (type_names, tvs, new_opt_pdef)
 
 def convertOpInfoToPOpInfo info = info
 
 % def convertOpInfoToPOpInfo (op_names, fixity, (tvs, srt), opt_def : Option Term) =
-%  let new_psrt = convertSortToPSort srt in
+%  let new_psrt = convertTypeToPType srt in
 %  let new_opt_pdef : Option PTerm =
 %      (case opt_def of
 %        | None     -> None
@@ -51,16 +51,16 @@ def convertOpInfoToPOpInfo info = info
 %  in
 %    (op_names, fixity, (tvs, new_psrt), new_opt_pdef)
 
-% def convertSortInfoToPSortInfo (sort_names, tvs, opt_def : Option Sort) = 
-%  let new_opt_pdef : Option PSort =
+% def convertTypeInfoToPTypeInfo (type_names, tvs, opt_def : Option Type) = 
+%  let new_opt_pdef : Option PType =
 %      (case opt_def of
 %        | None     -> None
-%        | Some srt -> Some (convertSortToPSort srt))
+%        | Some srt -> Some (convertTypeToPType srt))
 %  in
-%    (sort_names, tvs, new_opt_pdef)
+%    (type_names, tvs, new_opt_pdef)
 
 % def convertOpInfoToPOpInfo (op_names, fixity, (tvs, srt), opt_def : Option Term) =
-%  let new_psrt = convertSortToPSort srt in
+%  let new_psrt = convertTypeToPType srt in
 %  let new_opt_pdef : Option PTerm =
 %      (case opt_def of
 %        | None     -> None
@@ -69,7 +69,7 @@ def convertOpInfoToPOpInfo info = info
 %    (op_names, fixity, (tvs, new_psrt), new_opt_pdef)
 
 
- %sort TVContext = StringMap TyVar
+ %type TVContext = StringMap TyVar
  %op tvToAst   : TyVar -> TyVar
  %op tvsToAst  : Nat * TyVars -> Nat * TVContext * TyVars
  %op qIdToAst  : QualifiedId -> IdInfo
@@ -89,9 +89,9 @@ def convertOpInfoToPOpInfo info = info
           Let(map (fn(pat,t)-> (convertPatternToPPattern pat,convertTermToPTerm t)) decls,convertTermToPTerm term,pos)
         | LetRec(defs,term,_) -> 
           LetRec(map (fn(v,t)-> (convertVarToPVar v,convertTermToPTerm t)) defs,convertTermToPTerm term,pos)
-        | Var((n,s),_) -> Var((n,convertSortToPSort s),pos)
+        | Var((n,s),_) -> Var((n,convertTypeToPType s),pos)
         | Fun(f,s,_) -> 
-          let srt = convertSortToPSort s in
+          let srt = convertTypeToPType s in
           Fun(convertFunToPFun (f),srt,pos)
         | Lambda(match,_) -> 
           Lambda(map 
@@ -102,7 +102,7 @@ def convertOpInfoToPOpInfo info = info
         | Seq(terms,_) -> Seq(map convertTermToPTerm terms,pos)
 
  def convertVarToPVar (n,s) =
-   (n,convertSortToPSort s)
+   (n,convertTypeToPType s)
 
  def convertVarsToPVars vars =
    map convertVarToPVar vars
@@ -115,7 +115,7 @@ def convertOpInfoToPOpInfo info = info
    | CharPat     (c,          _) -> CharPat     (c,                    pos)
    | NatPat      (n,          _) -> NatPat      (n,                    pos)
    | VarPat      (v,          _) -> VarPat      (convertVarToPVar   v, pos)
-   | WildPat     (s,          _) -> WildPat     (convertSortToPSort s, pos)
+   | WildPat     (s,          _) -> WildPat     (convertTypeToPType s, pos)
 
    | AliasPat    (p1, p2,     _) -> AliasPat    (convertPatternToPPattern p1, 
                                                  convertPatternToPPattern p2, 
@@ -129,30 +129,30 @@ def convertOpInfoToPOpInfo info = info
                                                  case pat of
                                                   | None -> None
                                                   | Some p -> Some (convertPatternToPPattern p),
-                                                 convertSortToPSort s,
+                                                 convertTypeToPType s,
                                                  pos)
 
- def convertSortToPSort s = 
-  let pos = Internal "converted from linked sort" in
+ def convertTypeToPType s = 
+  let pos = Internal "converted from linked type" in
   case s of
-   | Arrow     (s1, s2,    _) -> Arrow     (convertSortToPSort s1, 
-                                            convertSortToPSort s2,
+   | Arrow     (s1, s2,    _) -> Arrow     (convertTypeToPType s1, 
+                                            convertTypeToPType s2,
                                             pos)
-   | Product   (fields,    _) -> Product   (List.map (fn (f,s) -> (f,convertSortToPSort s)) fields,
+   | Product   (fields,    _) -> Product   (List.map (fn (f,s) -> (f,convertTypeToPType s)) fields,
                                             pos)
    | CoProduct (fields,    _) -> CoProduct (List.map (fn (f,s) -> (f, case s of
                                                                          | None -> None
-                                                                       | Some s -> Some (convertSortToPSort s)))
+                                                                       | Some s -> Some (convertTypeToPType s)))
                                                       fields,
                                             pos)
-   | Quotient (s, t,       _) -> Quotient  (convertSortToPSort s, 
+   | Quotient (s, t,       _) -> Quotient  (convertTypeToPType s, 
                                             convertTermToPTerm t, 
                                             pos)
-   | Subsort  (s, t,       _) -> Subsort   (convertSortToPSort s, 
+   | Subtype  (s, t,       _) -> Subtype   (convertTypeToPType s, 
                                             convertTermToPTerm t, 
                                             pos)
-   | Base     (qid, sorts, _) -> Base      (qid, 
-                                            List.map convertSortToPSort sorts,
+   | Base     (qid, types, _) -> Base      (qid, 
+                                            List.map convertTypeToPType types,
                                             pos)
    | TyVar    (tv,         _) -> TyVar     (tv, pos)
 

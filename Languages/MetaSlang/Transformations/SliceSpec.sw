@@ -30,7 +30,7 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
- op  filterSpecNonBaseElements: (SpecElement -> Boolean) -> SpecElements -> Bool -> Spec -> SpecElements
+ op  filterSpecNonBaseElements: (SpecElement -> Bool) -> SpecElements -> Bool -> Spec -> SpecElements
  def filterSpecNonBaseElements p elements sliceBase? base_spec =
    mapPartial
      (fn el ->
@@ -56,8 +56,8 @@ op [a] sliceAQualifierMap(m: AQualifierMap a, s: QualifierSet, pred: QualifiedId
 op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec: Spec, sliceBase?: Bool): Spec =
   let def element_filter el =
         case el of
-          | Sort     (qid,              _) -> qid in? type_set
-          | SortDef  (qid,              _) -> qid in? type_set
+          | Type     (qid,              _) -> qid in? type_set
+          | TypeDef  (qid,              _) -> qid in? type_set
           | Op       (qid, _,           _) -> 
             let keep? = qid in? op_set && numRefinedDefs spc qid = 1 in
             % let _ = writeLine ((if keep? then "keep op " else "scrub op ") ^ anyToString qid) in
@@ -70,7 +70,7 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
             forall? (fn qid -> qid in? op_set || (sliceBase? && some?(findTheOp(base_spec, qid))))
                     (opsInTerm formula)
             && 
-            forall? (fn qid -> qid in? type_set || (sliceBase? && some?(findTheSort(base_spec, qid))))
+            forall? (fn qid -> qid in? type_set || (sliceBase? && some?(findTheType(base_spec, qid))))
                     (typesInTerm formula)
 %         | Import(tm, im_spc, im_elts, _) ->
 %           exists? (fn im_el -> if element_filter im_el
@@ -81,7 +81,7 @@ op scrubSpec(spc: Spec, op_set: QualifierSet, type_set: QualifierSet, base_spec:
           | _ -> haskellElement? el
   in
   spc <<
-    {sorts = sliceAQualifierMap(spc.sorts, type_set, fn qid -> sliceBase? && some?(findTheSort(base_spec, qid))),
+    {types = sliceAQualifierMap(spc.types, type_set, fn qid -> sliceBase? && some?(findTheType(base_spec, qid))),
      ops =   sliceAQualifierMap(spc.ops,     op_set, fn qid -> sliceBase? && some?(findTheOp(base_spec, qid))),
      elements = filterSpecNonBaseElements element_filter spc.elements sliceBase? base_spec
      }
@@ -93,7 +93,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
   in
   let base_spec = SpecCalc.getBaseSpec() in
   let 
-      def newOpsInTerm (tm : MS.Term, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
+      def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
         foldTerm (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
@@ -113,8 +113,8 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                  newopids 
                  tm
 
-      def newOpsInType (ty : Sort, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-        foldSort (fn opids -> fn tm ->
+      def newOpsInType (ty : MSType, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
+        foldType (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
                         if qid nin? opids && qid nin? op_set && (sliceBase? => none? (findTheOp (base_spec, qid))) then
@@ -133,7 +133,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                  newopids 
                  ty
 
-      def newTypesInTerm (tm : MS.Term, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
+      def newTypesInTerm (tm : MSTerm, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
         foldTerm (fn result -> fn _ -> result,
                   fn result -> fn t ->
                     case t of
@@ -148,8 +148,8 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                  newtypeids 
                  tm
 
-      def newTypesInType (ty : Sort, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
-        foldSort (fn result -> fn _ -> result,
+      def newTypesInType (ty : MSType, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
+        foldType (fn result -> fn _ -> result,
                   fn result -> fn t ->
                     case t of
                       | Base (qid,_,_) 
@@ -182,7 +182,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
                 new_ops_in_ops
               else
                 foldl (fn (newopids, qid) ->
-                         case findTheSort (spc, qid) of
+                         case findTheType (spc, qid) of
                            | Some typeinfo -> newOpsInType(typeinfo.dfn, newopids, op_set)
                            | None -> newopids)
                       new_ops_in_ops
@@ -198,7 +198,7 @@ op sliceSpecInfo(spc: Spec, root_ops: QualifiedIds, root_types: QualifiedIds, ig
           in
           let new_types_in_ops_or_types = 
               foldl (fn (newtypeids, qid) ->
-                       case findTheSort (spc, qid) of
+                       case findTheType (spc, qid) of
                          | Some typeinfo -> newTypesInType (typeinfo.dfn, newtypeids, type_set)
                          | None -> newtypeids)
                     new_types_in_ops

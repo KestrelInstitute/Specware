@@ -5,23 +5,24 @@ Prover qualifying spec
  import Simplify
  import ../CodeGen/CodeGenUtilities
 
-  % sort Term = MS.Term
-  op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
+  % type Term = MS.Term
 
-  op unCurrySort: Sort * Nat -> Sort
+  op unCurry: MSTerm * Nat -> Option ((List Id) * MSTerm)
 
-  op mkUncurryEquality: Spec * Sort * QualifiedId * MS.Term -> MS.Term
+  op unCurryType: MSType * Nat -> MSType
+
+  op mkUncurryEquality: Spec * MSType * QualifiedId * MSTerm -> MSTerm
 
   def mkUncurryEquality (sp, srt, qid, trm) =
     let funOp = mkOp (qid, srt) in
     mkUncurryEqualityRec (sp, srt, trm, funOp, srt, trm, [])
 
-  op mkUncurryEqualityRec: Spec * Sort * MS.Term * MS.Term *
-                           Sort * MS.Term * List MS.Term -> MS.Term
+  op mkUncurryEqualityRec: Spec * MSType * MSTerm * MSTerm *
+                           MSType * MSTerm * List MSTerm -> MSTerm
 
   def mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
     case trm of
-      | SortedTerm(t,_,_) ->
+      | TypedTerm(t,_,_) ->
         mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs)
       | Pi(srts,t,a) ->
 	Pi(srts,mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs),a)
@@ -36,20 +37,20 @@ Prover qualifying spec
 	    (case argNames of
 	      | Some argNames ->
 	        let numargs = length argNames in
-		let argSorts = case productOpt (sp, dom) of
+		let argTypes = case productOpt (sp, dom) of
 				 | Some fields -> map (fn (_, srt) -> srt) fields
 				 | None -> [dom] in
-		let arity = length argSorts in
+		let arity = length argTypes in
 		if arity = numargs then
-		  let newArgs = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argSorts) in
+		  let newArgs = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argTypes) in
 		  mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, rng, body, prevArgs ++ newArgs)
 		else 
-		  let argSorts = case dom of
+		  let argTypes = case dom of
 				   | Product (fields, _) -> map (fn (_, srt) -> srt) fields
 				   | None -> [dom] in
-		  let arity = length argSorts in
+		  let arity = length argTypes in
 		  if arity = numargs then
-		    let newArgs = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argSorts) in
+		    let newArgs = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argTypes) in
 		    mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, rng, body, prevArgs ++ newArgs)
 		  else
 		    %let _ = if topFunOp = mkOp (mkUnQualifiedId "switch", topSrt) then debug "topUnc" else () in 
@@ -68,36 +69,36 @@ Prover qualifying spec
 	   | _ -> 
 	     mkEquality (srt, mkAppl (topFunOp, prevArgs), trm)
       
-(*  op mkUncurryEqualityRec: Spec * Sort * MS.Term *
-                           Sort * QualifiedId * Pattern *
-			   Sort * MS.Term * Nat -> MS.Term
+(*  op mkUncurryEqualityRec: Spec * MSType * MSTerm *
+                           MSType * QualifiedId * Pattern *
+			   MSType * MSTerm * Nat -> MSTerm
 
   def mkUncurryEqualityRec (sp, srt, trm, dom, qid, pat, rng, body, curryN) =
     let argNames = patternNames pat in
     let numargs = length argNames in
-    let argSorts = case productOpt (sp, dom) of
+    let argTypes = case productOpt (sp, dom) of
 		     | Some fields -> map (fn (_, srt) -> srt) fields
 		     | None -> [dom] in
-    let arity = length argSorts in
+    let arity = length argTypes in
     let funOp = mkOp (qid, srt) in
     if arity = numargs
       then 
-	let args = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argSorts) in
+	let args = map (fn (id, srt) -> mkVar (id, srt)) (argNames, argTypes) in
 	let lhs = mkAppl (funOp, args) in
 	mkEquality (rng, lhs, body)
     else
       mkEquality (srt, funOp, trm)
 *)
 
-  op mkDefEquality: Sort * QualifiedId * MS.Term -> MS.Term
+  op mkDefEquality: MSType * QualifiedId * MSTerm -> MSTerm
 
   def mkDefEquality (srt, qid, trm) =
     mkEquality (srt, mkOp (qid, srt), trm)
 
-  def functionSort? (sp, srt) = 
+  def functionType? (sp, srt) = 
       case unfoldBase (sp, srt)
         of Arrow _ -> true
-         | Subsort (s, _, _) -> functionSort? (sp, s)
+         | Subtype (s, _, _) -> functionType? (sp, s)
          | _ -> false
 (*
  op patternNameOpt : Pattern       -> Option Id
@@ -123,7 +124,7 @@ Prover qualifying spec
      | _ -> None
 *)
 
-  op unLambdaDef: Spec * Sort * QualifiedId * MS.Term -> List MS.Term
+  op unLambdaDef: Spec * MSType * QualifiedId * MSTerm -> List MSTerm
 
   def unLambdaDef (spc, srt, name, term) =
     let new_equality = mkUncurryEquality (spc, srt, name, term) in
@@ -139,9 +140,9 @@ Prover qualifying spec
     [if srt_vars = [] then eqltyWithPos
       else Pi(srt_vars,eqltyWithPos,piPos)]
 
-(*    if functionSort? (spc, srt)
+(*    if functionType? (spc, srt)
       then
-	(case (curryShapeNum (spc, srt), sortArity (spc, srt))
+	(case (curryShapeNum (spc, srt), typeArity (spc, srt))
 	   of (1, None) ->
 	     (case term of 
 		| Lambda ([(pat, cond, body)], _)
@@ -193,7 +194,7 @@ Prover qualifying spec
 	       let liftedFmlas = removePatternTop(spc, initialFmla) in
 	       %let simplifiedLiftedFmlas = map (fn fmla -> simplify spc fmla) liftedFmlas in
 	       %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
-	       let defAxioms = map (fn (fmla:MS.Term) ->
+	       let defAxioms = map (fn (fmla:MSTerm) ->
 				    Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos), pos))
 	                         liftedFmlas
 	       in
@@ -205,15 +206,15 @@ Prover qualifying spec
 
    op axiomFromOpSrtTop: Spec * QualifiedId * OpInfo -> SpecElements
   def axiomFromOpSrtTop (spc, qid as Qualified(q,id), info) =
-    let srt = firstOpDefInnerSort info in
+    let srt = firstOpDefInnerType info in
     if true then   %localOp? (qid, spc) then
-      let pos = sortAnn srt in
-      let subTypeFmla = opSubsortAxiom (spc, qid, srt) in
+      let pos = typeAnn srt in
+      let subTypeFmla = opSubtypeAxiom (spc, qid, srt) in
       let liftedFmlas = removePatternTop(spc, subTypeFmla) in
       let subTypeAxioms =
-          map (fn (fmla : MS.Term) -> 
+          map (fn (fmla : MSTerm) -> 
 	       Property(Axiom, 
-			mkQualifiedId (q, id^"_def_subsort"), 
+			mkQualifiedId (q, id^"_def_subtype"), 
 			[], 
 			withAnnT (fmla, pos), pos)) 
 	      liftedFmlas 
@@ -226,7 +227,7 @@ Prover qualifying spec
       []
 
 
-  op foldRecordFmla: Spec * Sort * MS.Term -> List MS.Term
+  op foldRecordFmla: Spec * MSType * MSTerm -> List MSTerm
   def foldRecordFmla (spc, srt, fmla) =
     case srt of
       | Arrow (dom, range, _) ->
@@ -245,7 +246,7 @@ Prover qualifying spec
 	   | _ -> [])
       | _ -> []
 
-  op substituteInRHSEquality: MS.Term * List (Var * MS.Term) -> MS.Term
+  op substituteInRHSEquality: MSTerm * List (Var * MSTerm) -> MSTerm
   def substituteInRHSEqualityBody (term, subst) =
     case term of
       | Apply (Fun (Equals, eSrt, _), 
@@ -259,15 +260,15 @@ Prover qualifying spec
   op mkRecVarId: QualifiedId -> String
   def mkRecVarId (Qualified (_, id)) = id ^ "RecVar"
 
-  op mkSubstProjForVar: List Var * List (FieldName * Sort) * Sort * Var -> List (Var * MS.Term)
-  def mkSubstProjForVar (vars, fields, recSrt as Base (sort_qid as Qualified (_, sort_id), _,  _), recVar) =
+    op mkSubstProjForVar: List Var * List (FieldName * MSType) * MSType * Var -> List (Var * MSTerm)
+  def mkSubstProjForVar (vars, fields, recSrt as Base (type_qid as Qualified (_, type_id), _,  _), recVar) =
     let
       def mkSubstProjForVarRec (vars, fields) =
 	case (vars, fields) of
 	  | ([], []) -> []
           | (hdVar::restVars, (field_id, fieldSrt) :: restFields) ->
 	    let restSubst = mkSubstProjForVarRec (restVars, restFields) in
-            let proj_id   = getAccessorOpName (sort_id, sort_qid, field_id) in
+            let proj_id   = getAccessorOpName (type_id, type_qid, field_id) in
 	    let funTerm   = Fun (Op (proj_id, Nonfix), 
 				 Arrow (recSrt, fieldSrt, noPos), 
 				 noPos) 

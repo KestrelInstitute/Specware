@@ -13,25 +13,25 @@ fa(H, x) x in? nodes H
 fa(H,x,y) black(addArc H (x, y)) = H
 *)
 
-op mkApplyTermFromLambdas (hd: MS.Term, f: MS.Term): MS.Term =
+op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
   case f of
     | Lambda([(param_pat, _, bod)], _) ->
       let Some arg = patternToTerm param_pat in
       mkApplyTermFromLambdas(mkApply(hd, arg), bod)
     | _ -> hd
 
-op addPostCondition(post_condn: MS.Term, ty: Sort): Sort =
+op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
   let def replaceInRange ty =
         case ty of
            | Arrow(dom, rng, a) -> Arrow(dom, replaceInRange rng, a)
-           | Subsort(sup_ty, Lambda([(v, c, pred)], a1), a2) ->
-             Subsort(sup_ty, Lambda([(v, c, MS.mkAnd(pred, post_condn))], a1), a2)
+           | Subtype(sup_ty, Lambda([(v, c, pred)], a1), a2) ->
+             Subtype(sup_ty, Lambda([(v, c, MS.mkAnd(pred, post_condn))], a1), a2)
   in
   replaceInRange ty
 
-op includedStateVar(ty: Sort, state_ty: Sort, spc: Spec): Option(Var * Option Id) =
+op includedStateVar(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option Id) =
   case range_*(spc, ty, false) of
-    | Subsort(result_ty, Lambda([(pat, _, _)], _), _) ->
+    | Subtype(result_ty, Lambda([(pat, _, _)], _), _) ->
       (if equalTypeSubtype?(result_ty, state_ty, true)
        then case pat of
               | VarPat(result_var,_) -> Some(result_var, None)
@@ -53,7 +53,7 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
    let intro_fn = mkOp(intro_qid, intro_ty) in
    let state_ty = domain(spc, intro_ty) in
-   let _ = writeLine("\nMaintain "^show intro_qid^": "^printSort intro_ty^"\n"^printTerm intro_fn_def) in
+   let _ = writeLine("\nMaintain "^show intro_qid^": "^printType intro_ty^"\n"^printTerm intro_fn_def) in
    let def addToDef(info, result as (spc, qids)) =
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in
@@ -90,7 +90,7 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
     spc <- interpret(spc, script);
     return spc}}
 
-op findHomomorphismFn(tm: MS.Term): Option QualifiedId =
+op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
   case tm of
     | Bind(Forall, _, bod,_) -> findHomomorphismFn bod
     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,Apply(Fun(Op(qid,_),_,_), _, _))], _),_) -> Some qid
@@ -107,12 +107,12 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
             | Some homo_fn_qid -> 
               {replace_op_info <- findTheOp spc replace_op_qid;
                let (tvs, replace_op_ty, _) = unpackFirstTerm replace_op_info.dfn in
-               let _ = writeLine("Implement "^show replace_op_qid^": "^printSort replace_op_ty) in
+               let _ = writeLine("Implement "^show replace_op_qid^": "^printType replace_op_ty) in
                let _ = writeLine("With rewrite: "^printTerm body) in
                let def findStateTransformOps(info, qids) =
                      let (tvs, ty, tm) = unpackTerm info.dfn in
                      case range_*(spc, ty, false) of
-                       | Subsort(_, Lambda([(_, _, body)], _), _)
+                       | Subtype(_, Lambda([(_, _, body)], _), _)
                            | existsSubTerm (fn st -> case st of
                                                        | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
                                                        | _ -> false)

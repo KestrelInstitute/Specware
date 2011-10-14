@@ -13,20 +13,20 @@ MetaSlang qualifying spec
  %%%                      ultimately less confusing.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Boolean
- op equalType?          : [a,b] ASort    a * ASort    b -> Boolean
- op equalPattern?       : [a,b] APattern a * APattern b -> Boolean
- op equalFun?           : [a,b] AFun     a * AFun     b -> Boolean
- op equalVar?           : [a,b] AVar     a * AVar     b -> Boolean
- op equalTransform?     : [a,b] ATransformExpr a * ATransformExpr b -> Boolean
+ op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Bool
+ op equalType?          : [a,b] AType    a * AType    b -> Bool
+ op equalPattern?       : [a,b] APattern a * APattern b -> Bool
+ op equalFun?           : [a,b] AFun     a * AFun     b -> Bool
+ op equalVar?           : [a,b] AVar     a * AVar     b -> Bool
+ op equalTransform?     : [a,b] ATransformExpr a * ATransformExpr b -> Bool
 
- %% term equality ignoring sorts
- op equalTermStruct?    : [a,b] ATerm    a * ATerm    b -> Boolean
- op equalPatternStruct? : [a,b] APattern a * APattern b -> Boolean
- op equalFunStruct?     : [a,b] AFun     a * AFun     b -> Boolean
- op equalVarStruct?     : [a,b] AVar     a * AVar     b -> Boolean
+ %% term equality ignoring types
+ op equalTermStruct?    : [a,b] ATerm    a * ATerm    b -> Bool
+ op equalPatternStruct? : [a,b] APattern a * APattern b -> Bool
+ op equalFunStruct?     : [a,b] AFun     a * AFun     b -> Bool
+ op equalVarStruct?     : [a,b] AVar     a * AVar     b -> Bool
 
-  op equalList? : [a,b] List a * List b * (a * b -> Boolean) -> Boolean
+  op equalList? : [a,b] List a * List b * (a * b -> Bool) -> Bool
  def equalList? (x, y, eqFn) =
    (length x) = (length y) &&
    (case (x, y) of
@@ -35,7 +35,7 @@ MetaSlang qualifying spec
                                              equalList? (tail_x, tail_y, eqFn)
       | _ -> false)
 
-  op equalOpt? : [a,b] Option a * Option b * (a * b -> Boolean) -> Boolean
+  op equalOpt? : [a,b] Option a * Option b * (a * b -> Bool) -> Bool
  def equalOpt? (x, y, eqFn) =
    case (x, y) of
      | (None,    None)    -> true
@@ -106,8 +106,8 @@ MetaSlang qualifying spec
      | (Seq        (xs1,         _),
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
-     | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
+     | (TypedTerm  (x1, s1,      _),
+        TypedTerm  (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
 
      | (Transform  (t1s,         _),
         Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
@@ -127,9 +127,9 @@ MetaSlang qualifying spec
  def equalType? (s1, s2) =
    equalTypeSubtype?(s1, s2, false)
  
- op [a, b] equalTypeSubtype?(s1: ASort a, s2: ASort b, ignore_subtypes?: Bool): Bool =
+ op [a, b] equalTypeSubtype?(s1: AType a, s2: AType b, ignore_subtypes?: Bool): Bool =
    let def equalType?(s1, s2) =
-         let _ = if traceEqualTerm? then writeLine(printSort s1^" =?= "^printSort s2) else () in
+         let _ = if traceEqualTerm? then writeLine(printType s1^" =?= "^printType s2) else () in
          case (s1,s2) of
 
            | (Arrow     (x1, y1,  _),
@@ -150,12 +150,12 @@ MetaSlang qualifying spec
            | (Quotient  (x1, t1,  _),
               Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
              
-           | (Subsort   (x1, t1,  _), _) | ignore_subtypes? -> equalType?(x1, s2) 
+           | (Subtype   (x1, t1,  _), _) | ignore_subtypes? -> equalType?(x1, s2) 
 
-           | (_,   Subsort (x2, t2,  _)) | ignore_subtypes? -> equalType?(s1, x2) 
+           | (_,   Subtype (x2, t2,  _)) | ignore_subtypes? -> equalType?(s1, x2) 
 
-           | (Subsort   (x1, t1,  _),
-              Subsort   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
+           | (Subtype   (x1, t1,  _),
+              Subtype   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
            | (Base      (q1, xs1, _),
               Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
@@ -205,14 +205,14 @@ MetaSlang qualifying spec
                                                     (srts1, srts2)
 
            %% The following two cases handle comparisons of "X" with "And (X, Y)"
-           %%  where X and Y are equivalent, but not equal, sorts.
+           %%  where X and Y are equivalent, but not equal, types.
            %%
-           %% This can happen for the sort of the dfn field of an opinfo
+           %% This can happen for the type of the dfn field of an opinfo
            %%  for some op that had both a decl and a def, which gave it two
-           %%  sorts that are equivalent, but not equal.
+           %%  types that are equivalent, but not equal.
            %%
            %% This was noticed as a problem for subsitution, which calls subtractSpec and 
-           %% then complains if any sorts and ops from the dom spec of the morphism have
+           %% then complains if any types and ops from the dom spec of the morphism have
            %% failed to find a match in the spec that morphism is being applied to.
 
            | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
@@ -266,8 +266,8 @@ MetaSlang qualifying spec
      | (RestrictedPat(x1, t1,      _),
         RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
-     | (SortedPat    (x1, t1,      _),
-        SortedPat    (x2, t2,      _)) -> equalPattern? (x1, x2) && equalType? (t1, t2)
+     | (TypedPat     (x1, t1,      _),
+        TypedPat     (x2, t2,      _)) -> equalPattern? (x1, x2) && equalType? (t1, t2)
 
      | _ -> false
 
@@ -309,16 +309,16 @@ MetaSlang qualifying spec
  def equalVar? ((id1,s1), (id2,s2)) = 
    id1 = id2 && equalType? (s1, s2)
 
-  op equalTyVar?: TyVar * TyVar -> Boolean
+  op equalTyVar?: TyVar * TyVar -> Bool
  def equalTyVar? (tyVar1, tyVar2) = 
    tyVar1 = tyVar2
 
-  op equalTyVars?: TyVars * TyVars -> Boolean
+  op equalTyVars?: TyVars * TyVars -> Bool
  def equalTyVars? (tyVars1, tyVars2) =
    all (fn (tyV1, tyV2) -> equalTyVar? (tyV1, tyV2)) 
        (tyVars1, tyVars2)
 
- op equalTyVarSets?(tyVars1: TyVars, tyVars2: TyVars): Boolean =
+ op equalTyVarSets?(tyVars1: TyVars, tyVars2: TyVars): Bool =
    length tyVars1 = length tyVars2
      && forall? (fn tyV1 -> tyV1 in? tyVars2) tyVars1
 
@@ -400,8 +400,8 @@ MetaSlang qualifying spec
      | (Seq        (xs1,         _),
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTermStruct?)
 
-     | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equalTermStruct? (x1, x2)
+     | (TypedTerm  (x1, s1,      _),
+        TypedTerm  (x2, s2,      _)) -> equalTermStruct? (x1, x2)
 
      | (Transform  (t1s,         _),
         Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
@@ -500,15 +500,15 @@ MetaSlang qualifying spec
      | (RestrictedPat(x1, t1,      _),
         RestrictedPat(x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)
 
-     | (SortedPat    (x1, _,       _),
-        SortedPat    (x2, _,       _)) -> equalPatternStruct? (x1, x2)
+     | (TypedPat     (x1, _,       _),
+        TypedPat     (x2, _,       _)) -> equalPatternStruct? (x1, x2)
 
      | _ -> false
 
  def equalVarStruct? ((id1,_), (id2,_)) = id1 = id2
 
   %% List Term set operations
-  op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Boolean =
+  op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Bool =
     exists? (fn t2 -> equalTerm?(t1,t2)) tms
 
   op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
@@ -520,7 +520,7 @@ MetaSlang qualifying spec
   op [a] termsIntersect(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
     filter(fn t1 -> termIn?(t1, tms2)) tms1
 
-  op [a] typeIn?(t1: ASort a, tms: List (ASort a)): Boolean =
+  op [a] typeIn?(t1: AType a, tms: List (AType a)): Bool =
     exists? (fn t2 -> equalType?(t1,t2)) tms
 
  op [a] removeDuplicateTerms(tms: List (ATerm a)): List (ATerm a) =
@@ -531,8 +531,8 @@ MetaSlang qualifying spec
                 if termIn?(t1, nr) then nr
                   else t1::nr
 
- def MetaSlang.maybeAndSort (srts, pos) =
-   let non_dup_sorts =
+ def MetaSlang.maybeAndType (srts, pos) =
+   let non_dup_types =
        foldl (fn (pending_srts, srt) ->
                 if exists? (fn pending_srt -> equalType? (srt, pending_srt)) pending_srts then
                   pending_srts
@@ -541,13 +541,13 @@ MetaSlang qualifying spec
              []
 	     srts
    in
-     let compressed_sorts = filter (fn srt -> case srt of | Any _ -> false | _ -> true) non_dup_sorts in
-     case compressed_sorts of
+     let compressed_types = filter (fn srt -> case srt of | Any _ -> false | _ -> true) non_dup_types in
+     case compressed_types of
        | [] -> 
-         (case non_dup_sorts of
+         (case non_dup_types of
             | []  -> Any pos
             | [s] -> s
-            | _   -> And (non_dup_sorts, pos))
+            | _   -> And (non_dup_types, pos))
        | [srt] -> srt
        | _     -> And (srts, pos)
 
@@ -566,7 +566,7 @@ MetaSlang qualifying spec
        foldl (fn (pending_tms, tm) ->
                 case termInnerTerm tm of
                   | Any _ ->
-                    if exists? (fn pending_tm -> equalType? (termSort tm, termSort pending_tm)) pending_tms then
+                    if exists? (fn pending_tm -> equalType? (termType tm, termType pending_tm)) pending_tms then
                       pending_tms
                     else
                       pending_tms ++ [tm]
@@ -574,7 +574,7 @@ MetaSlang qualifying spec
                     %% For symmetry: any-term may occur before or after real term
                     let pending_tms = filter (fn pending_tm ->
                                                 case termInnerTerm pending_tm of
-                                                  | Any _ -> ~(equalType? (termSort tm, termSort pending_tm))
+                                                  | Any _ -> ~(equalType? (termType tm, termType pending_tm))
                                                   | _ -> true)
                                         pending_tms
                     in
@@ -586,10 +586,10 @@ MetaSlang qualifying spec
    case non_dup_terms of
      | []   -> Any pos
      | [tm] -> tm
-     | (Pi(tvs, SortedTerm(Any _, ty, a1), a2)) :: r_tms ->
-       Pi(tvs, SortedTerm(mkAnd r_tms, ty, a1), a2) 
-     | (SortedTerm(Any _, ty, a1)) :: r_tms ->
-       SortedTerm(mkAnd r_tms, ty, a1)
+     | (Pi(tvs, TypedTerm(Any _, ty, a1), a2)) :: r_tms ->
+       Pi(tvs, TypedTerm(mkAnd r_tms, ty, a1), a2) 
+     | (TypedTerm(Any _, ty, a1)) :: r_tms ->
+       TypedTerm(mkAnd r_tms, ty, a1)
      | _    -> And (non_dup_terms, pos)
    in
    let _ = if traceMaybeAndTerm? && (length non_dup_terms > 1) then

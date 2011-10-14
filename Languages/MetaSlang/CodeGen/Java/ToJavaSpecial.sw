@@ -284,7 +284,7 @@ spec
 	 return(Some res)
 	}
       | Apply(Fun(Iff,     _, _), Record([(_,t1),(_,t2)],_),b) ->
-	let srt = Arrow(boolSort,boolSort,b):Sort in
+	let srt = Arrow(boolType,boolType,b):MSType in
 	let nott2 = Apply(Fun(Not,srt,b),t2,b) in
 	let t = IfThenElse(t1,t2,nott2,b) in
 	{
@@ -362,7 +362,7 @@ spec
 		%% WARNING:  The spec we just obtained here may not be completely kosher!
 		%%           It was created by a call to transformSpecForJavaCodeGen,
 		%%           which calls poly2mono, which can remove the declarations 
-		%%           for sorts and ops, even if there are references to them
+		%%           for types and ops, even if there are references to them
 		%%           in terms throughout the spec.
 
 		if  qid in? defined_ops || definedOp? (spc, qid) then  % even declaredOp? can be false here!
@@ -374,25 +374,25 @@ spec
 		  % let _ = writeLine ("    ------------") in
 		  (case argterms of
 		     | allargs as (t1 :: argterms) ->
-		       % check whether the first argument has an unrefined sort
+		       % check whether the first argument has an unrefined type
 		       % let _ = writeLine ("  --> checking for method call based on first arg: " ^ myPrintTerm t1) in
 		       let t1srt = unfoldBase (spc, inferTypeFoldRecords (spc, t1)) in
 		       let t1srt = findMatchingUserType (spc, t1srt) in
-		       % let _ = writeLine ("  --> t1srt=" ^ myPrintSort t1srt) in
+		       % let _ = writeLine ("  --> t1srt=" ^ myPrintType t1srt) in
 		       if builtinJavaBaseType? t1srt then
-			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is builtin:: " ^ myPrintSort t1srt) in
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is builtin:: " ^ myPrintType t1srt) in
 			 % let _ = writeLine ("    did not find java method call to " ^ printQualifiedId qid) in
 			 % let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
 			 % check whether the qualifier is present
 			 check4StaticOrNew (q, id, allargs)
-		       else if (sortIsDefinedInSpec? (spc, t1srt)) then
-			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is defined:  "^ myPrintSort t1srt) in
+		       else if (typeIsDefinedInSpec? (spc, t1srt)) then
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    is defined:  "^ myPrintType t1srt) in
 			 % let _ = writeLine ("    see if new or static: " ^ printQualifiedId qid) in
 			 % let _ = writeLine ("    ------------") in
 			 % check whether the qualifier is present
 			 check4StaticOrNew (q, id, allargs)
 		       else
-			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    has no current definition: " ^ myPrintSort t1srt) in
+			 % let _ = writeLine ("    Type of first arg in " ^ myPrintTerm term ^ "\n    has no current definition: " ^ myPrintType t1srt) in
 			 % let _ = writeLine ("    presume non-static library method definition exists for for " ^ printQualifiedId qid) in
 			 % let _ = writeLine ("    ------------") in
 			 let opid = id in
@@ -417,9 +417,9 @@ spec
 
       | _ -> return None
 
- %%  op myPrintSort : MS.Sort -> String
- %%  def myPrintSort tm =
- %%    my_trim_whitespace(printSort tm)
+ %%  op myPrintType : MS.Type -> String
+ %%  def myPrintType tm =
+ %%    my_trim_whitespace(printType tm)
  %%
  %%  op myPrintTerm : MS.Term -> String
  %%  def myPrintTerm tm =
@@ -442,15 +442,15 @@ spec
  %%    in
  %%      implode (trim (explode s))
 
-  op  builtinJavaBaseType?: Sort -> Boolean
+  op  builtinJavaBaseType?: MSType -> Bool
   def builtinJavaBaseType? typ =
-    boolSort?   typ || % v3:p1 
-    intSort?    typ || % v3:p1 
-    natSort?    typ || % v3:p1 says NO  -- TODO: resolve this
-    stringSort? typ || % v3:p1 says NO  -- TODO: resolve this
-    charSort?   typ    % v3:p1 
+    boolType?   typ || % v3:p1 
+    intType?    typ || % v3:p1 
+    natType?    typ || % v3:p1 says NO  -- TODO: resolve this
+    stringType? typ || % v3:p1 says NO  -- TODO: resolve this
+    charType?   typ    % v3:p1 
 
-  op  builtinJavaBaseTypeQualifier?: Qualifier -> Boolean  
+  op  builtinJavaBaseTypeQualifier?: Qualifier -> Bool  
   def builtinJavaBaseTypeQualifier? q =
     %% TODO: is this a complete set?  See basicQualifiers
     %% v3:p1 

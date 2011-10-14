@@ -1,7 +1,7 @@
 spec
   import /Library/Structures/Data/Monad
 
-  sort MapRef (a,b)
+  type MapRef (a,b)
 
   op new : fa (a,b) Monad (MapRef (a,b))
   op copy : fa (a,b) MapRef (a,b) -> Monad (MapRef (a,b))

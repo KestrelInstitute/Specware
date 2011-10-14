@@ -8,7 +8,7 @@ PrList qualifying spec
        % qualifier required for internal parsing reasons
 
   axiom induction is [a]
-    fa (p : List a -> Boolean)
+    fa (p : List a -> Bool)
       p Nil &&  % base
       (fa (x:a, l:List a) p l => p(Cons(x,l))) =>  % step
       (fa (l:List a) p l)
@@ -19,7 +19,7 @@ PrList qualifying spec
   op cons            : [a]   a * List a -> List a
   op insert          : [a]   a * List a -> List a
   op length          : [a]   List a -> Nat
-  op null            : [a]   List a -> Boolean
+  op null            : [a]   List a -> Bool
   op hd              : [a]   {l : List a | ~(null l)} -> a
   op tl              : [a]   {l : List a | ~(null l)} -> List a
   op concat          : [a]   List a * List a -> List a
@@ -27,33 +27,28 @@ PrList qualifying spec
 %% Deprecated for some time so it should be safe to remove
 %  op @  infixl 25    : [a]   List a * List a -> List a
   op nth             : [a]   {(l,i) : List a * Nat | i < length l} -> a
-  op nthTail         : [a]   {(l,i) : List a * Nat | i < length l} ->
-                               List a
+  op nthTail         : [a]   {(l,i) : List a * Nat | i < length l} -> List a
   op last            : [a]   {l: List a | length(l) > 0} -> a
   op butLast         : [a]   {l: List a | length(l) > 0} -> List a
-  op member          : [a]   a * List a -> Boolean
-%  op sublist         : [a]   {(l,i,j) : List a * Nat * Nat |
-%                                i <= j && j <= length l} -> List a
+  op member          : [a]   a * List a -> Bool
+%  op sublist         : [a]   {(l,i,j) : List a * Nat * Nat | i <= j && j <= length l} -> List a
   op map             : [a,b] (a -> b) -> List a -> List b
   op mapPartial      : [a,b] (a -> Option b) -> List a -> List b
   op foldl           : [a,b] (a * b -> b) -> b -> List a -> b
   op foldr           : [a,b] (a * b -> b) -> b -> List a -> b
-  op exists          : [a]   (a -> Boolean) -> List a -> Boolean
-  op all             : [a]   (a -> Boolean) -> List a -> Boolean
-  op filter          : [a]   (a -> Boolean) -> List a -> List a
+  op exists          : [a]   (a -> Bool) -> List a -> Bool
+  op all             : [a]   (a -> Bool) -> List a -> Bool
+  op filter          : [a]   (a -> Bool) -> List a -> List a
   op diff            : [a]   List a * List a -> List a
   op rev             : [a]   List a -> List a
   op rev2            : [a]   List a * List a -> List a
   op flatten         : [a]   List(List a) -> List a
-  op find            : [a]   (a -> Boolean) -> List a -> Option(a)
+  op find            : [a]   (a -> Bool) -> List a -> Option(a)
   op tabulate        : [a]   Nat * (Nat -> a) -> List a
-  op firstUpTo       : [a]   (a -> Boolean) -> List a ->
-                               Option (a * List a)
-  op splitList       : [a]   (a -> Boolean) -> List a ->
-                               Option(List a * a * List a)
+  op firstUpTo       : [a]   (a -> Bool) -> List a -> Option (a * List a)
+  op splitList       : [a]   (a -> Bool) -> List a -> Option(List a * a * List a)
   op locationOf      : [a]   List a * List a -> Option(Nat * List a)
-  op compare         : [a]   (a * a -> Comparison) -> List a * List a ->
-                               Comparison
+  op compare         : [a]   (a * a -> Comparison) -> List a * List a -> Comparison
   op app             : [a]   (a -> ()) -> List a -> ()  % deprecated
 *)
 

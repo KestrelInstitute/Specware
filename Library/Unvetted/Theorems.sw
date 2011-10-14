@@ -19,49 +19,49 @@ spec
 %%%% Boolean
 
   theorem true_def is
-    fa (p : Boolean) (p = true) = p
+    fa (p : Bool) (p = true) = p
 
   theorem false_def is
-    fa (p : Boolean) (p = false) = ~p
+    fa (p : Bool) (p = false) = ~p
 
   theorem if_pull is
-    [a,b] fa(f : a -> b, p : Boolean, x : a, y : a)
+    [a,b] fa(f : a -> b, p : Bool, x : a, y : a)
       f(if p then x else y) = (if p then f x else f y)
 
   theorem if_id is
-    fa(p : Boolean)
+    fa(p : Bool)
       (if p then true else false) = p
 
   theorem if_subst is
-    [a] fa(p : Boolean, t : Boolean -> a, e : Boolean -> a)
+    [a] fa(p : Bool, t : Bool -> a, e : Bool -> a)
       (if p then t p else e p) = (if p then t true else e false)
 
   theorem if_same is
-    [a] fa(p : Boolean, x : a)
+    [a] fa(p : Bool, x : a)
       (if p then x else x) = x
 
   theorem if_swap is
-    [a] fa(p : Boolean, x : a, y : a)
+    [a] fa(p : Bool, x : a, y : a)
       (if ~p then x else y) = (if p then y else x)
 
   theorem ~_def is
-    fa (p : Boolean)
+    fa (p : Bool)
       (~p) = (if p then false else true)
 
   theorem <=>_def is
-    fa (p : Boolean, q : Boolean)
+    fa (p : Bool, q : Bool)
       (p <=> q) = (if p then q else ~q)
 
   theorem =>_def is
-    fa (p : Boolean, q : Boolean)
+    fa (p : Bool, q : Bool)
       (p => q) = (if p then q else true)
 
   theorem &&_def is
-    fa (p : Boolean, q : Boolean)
+    fa (p : Bool, q : Bool)
       (p && q) = (if p then q else false)
 
   theorem ||_def is
-    fa (p : Boolean, q : Boolean)
+    fa (p : Bool, q : Bool)
       (p || q) = (if p then true else q)
 
 %%%% Nat

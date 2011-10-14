@@ -2,7 +2,7 @@
 
 (*
  * MetaSlang pretty printer.
- * This module contains utilities for printing terms, sorts, and patterns to 
+ * This module contains utilities for printing terms, types, and patterns to 
  * strings, files, or standard out.
  *
  * Formats supported are:
@@ -29,12 +29,12 @@ AnnTermPrinter qualifying spec
    {
     ppOpId             : QualifiedId -> Pretty,
     ppPOpId            : QualifiedId -> Pretty,
-    ppSortId           : QualifiedId -> Pretty,
-    ppPSortId          : QualifiedId -> Pretty,
+    ppTypeId           : QualifiedId -> Pretty,
+    ppPTypeId          : QualifiedId -> Pretty,
     ppDefaultQualifier : String -> Pretty,
     fromString         : String -> Pretty,
     ppOp               : String -> Pretty,
-    ppSort             : String -> Pretty,
+    ppType             : String -> Pretty,
     ppFormulaDesc      : String -> Pretty,
     Spec               : Pretty,
     EndSpec            : Pretty,
@@ -121,12 +121,12 @@ AnnTermPrinter qualifying spec
    {
     ppOpId             = ppAsciiId,
     ppPOpId            = ppAsciiId,
-    ppSortId           = ppAsciiId,
-    ppPSortId          = ppAsciiId,
+    ppTypeId           = ppAsciiId,
+    ppPTypeId          = ppAsciiId,
     ppDefaultQualifier = string,
     fromString         = string,
     ppOp               = string,
-    ppSort             = string,
+    ppType             = string,
     ppFormulaDesc      = string,
     Spec               = string "spec ",
     EndSpec            = string "endspec",
@@ -182,12 +182,12 @@ AnnTermPrinter qualifying spec
    {
     ppOpId             = ppAsciiId,
     ppPOpId            = ppAsciiId,
-    ppSortId           = ppAsciiId,
-    ppPSortId          = ppAsciiId,
+    ppTypeId           = ppAsciiId,
+    ppPTypeId          = ppAsciiId,
     ppDefaultQualifier = string,
     fromString         = string,
     ppOp               = string,
-    ppSort             = string,
+    ppType             = string,
     ppFormulaDesc      = string,
     Spec               = string "spec ",
     EndSpec            = string "endspec",
@@ -244,7 +244,7 @@ AnnTermPrinter qualifying spec
      string s
    else 
      % Ad hoc treatment for LaTeX
-     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> show ch) s in
+     let s = String.translate (fn #^ -> "++" | ## -> "\\#" | #_ -> "\\_" | #& -> "\\&" | ch -> show ch) s in % "
      %   if String.sub(s,0) = #^
      %   then lengthString (2,"{\\tt ++}")
      %   else
@@ -283,11 +283,11 @@ AnnTermPrinter qualifying spec
    {
     ppOpId             = ppLatexId,
     ppPOpId            = ppLatexId,
-    ppSortId           = ppLatexId,
-    ppPSortId          = ppLatexId,
+    ppTypeId           = ppLatexId,
+    ppPTypeId          = ppLatexId,
     ppDefaultQualifier = string,
     ppOp               = latexString,
-    ppSort             = latexString,
+    ppType             = latexString,
     fromString         = latexString,
     ppFormulaDesc      = fn s -> lengthString (String.length s, "{\\tt "^s^"}" ),
     Spec               = lengthString (5, "\\SWspec\\ "          ),
@@ -374,11 +374,11 @@ AnnTermPrinter qualifying spec
    {
     ppOpId             = pdfId (spc, "Op"),
     ppPOpId            = pdfId (spc, "Op"),
-    ppSortId           = pdfId (spc, "Type"),
-    ppPSortId          = pdfId (spc, "Type"),
+    ppTypeId           = pdfId (spc, "Type"),
+    ppPTypeId          = pdfId (spc, "Type"),
     ppDefaultQualifier = string,
-    ppOp                = pdfIdDecl (spc,"Op"),
-    ppSort               = pdfIdDecl (spc,"Type"),
+    ppOp               = pdfIdDecl (spc,"Op"),
+    ppType             = pdfIdDecl (spc,"Type"),
     ppFormulaDesc      = fn s -> (counter State.:= (State.! counter) + 1;
                                   prettysNone [lengthString (0,
                                                              "\\pdfdest num "^(Nat.show (State.! counter))^
@@ -450,7 +450,7 @@ AnnTermPrinter qualifying spec
    let def ppQid (Qualified (qualifier, id) : QualifiedId) = 
         if qualifier = UnQualified then
           lengthString (String.length id,
-                        "<a href = #"^nameNumber id^">"^id^"</a>") 
+                        "<a href = #"^nameNumber id^">"^id^"</a>") % "
         else
           case qualifier of
            | "Nat"     -> string id
@@ -466,19 +466,23 @@ AnnTermPrinter qualifying spec
    %%                    | id::idi2 -> id^"."^(f idi2) in
    %%             string (f idi)  
    in   
-   let def ppOp s = 
-        lengthString (String.length s,
-                      "<a name = "^nameNumber(s)^">"^s^"</a>")
+   let 
+     def ppOp s = 
+      lengthString (String.length s,
+                    "<a name = "^nameNumber(s)^">"^s^"</a>")
+     def ppType s = 
+      lengthString (String.length s,
+                    "<a name = "^nameNumber(s)^">"^s^"</a>")
    in
    {
     ppOpId             = ppQid,
     ppPOpId            = ppQid,
-    ppSortId           = ppQid, 
-    ppPSortId          = ppQid, 
+    ppTypeId           = ppQid, 
+    ppPTypeId          = ppQid, 
     ppDefaultQualifier = string,
     fromString         = string,
     ppOp               = ppOp,
-    ppSort             = ppOp,
+    ppType             = ppType,
     ppFormulaDesc      = string,
     Spec               = lengthString ( 5, "<b>spec </b>"        ),
     EndSpec            = lengthString ( 7, "<b>endspec</b>"      ),

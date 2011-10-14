@@ -4,22 +4,22 @@ spec
 import /Languages/MetaSlang/Specs/Utilities
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/SpecCalculus/Semantics/Environment
-import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AccessSpec % sortIsDefinedInSpec?
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AccessSpec % typeIsDefinedInSpec?
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 %import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
-sort Term = MS.Term
-%sort Env a = SpecCalc.Env a
+%type Term = MS.Term
+%type Type = MS.Type
+%type Env a = SpecCalc.Env a
 
-sort Op = QualifiedId
+type Op = QualifiedId
 
-sort Type = Sort
-%sort BaseType = (Sort | baseType?)
+%type BaseType = (Type | baseType?)
 
-sort OpDef = Op * List Sort * Sort * List Var * Term
+type OpDef  = Op * MSTypes * MSType * List Var * MSTerm
 % the Boolean flag is used to distinguish the case of a function with no arguments
 % from a constant: if the flag is true, then it's a constant
-sort OpDef2 = Op * List Sort * Sort * List Var * Term * Boolean (* constant or function *)
+type OpDef2 = Op * MSTypes * MSType * List Var * MSTerm * Bool (* constant or function *)
 
 op unSupported: Op -> String
 def unSupported x =
@@ -31,41 +31,41 @@ def unSupported x =
  * a base type wrt. code generation are the builtin base types Bool,Nat,Int,Char,String
  * and also those types that do *not* have a definition in the spec, i.e. those which
  * are just declared.
- * TODO:  v3:p1 says base types are exactly Boolean, Int, Char  -- resolve this
+ * TODO:  v3:p1 says base types are exactly Bool, Int, Char  -- resolve this
  *)
-op baseType?: Spec * Sort -> Boolean
+op baseType?: Spec * MSType -> Bool
 def baseType? (spc, typ) =
-  %let _ = writeLine("baseType? "^(printSort typ)^"...") in
+  %let _ = writeLine("baseType? "^(printType typ)^"...") in
   %% TODO: is this a complete set?  See basicQualifiers
-  boolSort?    typ ||   % v3:p1 
-  intSort?     typ ||   % v3:p1 
-  natSort?     typ ||   % v3:p1 says NO  -- TODO: resolve this
-  stringSort?  typ ||   % v3:p1 says NO  -- TODO: resolve this
-  charSort?    typ ||   % v3:p1 
+  boolType?    typ ||   % v3:p1 
+  intType?     typ ||   % v3:p1 
+  natType?     typ ||   % v3:p1 says NO  -- TODO: resolve this
+  stringType?  typ ||   % v3:p1 says NO  -- TODO: resolve this
+  charType?    typ ||   % v3:p1 
   (case typ of
-     | Base _ -> ~ (sortIsDefinedInSpec? (spc, typ))  % v3:p1 says NO -- TODO: resolve this
+     | Base _ -> ~ (typeIsDefinedInSpec? (spc, typ))  % v3:p1 says NO -- TODO: resolve this
      | _ -> false)
 
- op builtinBaseType?: Sort -> Boolean
+ op builtinBaseType?: MSType -> Bool
 def builtinBaseType? typ =
-  boolSort?    typ || % v3:p1 
-  intSort?     typ || % v3:p1 
-  natSort?     typ || % v3:p1 says NO  -- TODO: resolve this
-  stringSort?  typ || % v3:p1 says NO  -- TODO: resolve this
-  charSort?    typ    % v3:p1 
+  boolType?    typ || % v3:p1 
+  intType?     typ || % v3:p1 
+  natType?     typ || % v3:p1 says NO  -- TODO: resolve this
+  stringType?  typ || % v3:p1 says NO  -- TODO: resolve this
+  charType?    typ    % v3:p1 
 
- op baseTypeAlias?: Spec * Sort -> Boolean
+ op baseTypeAlias?: Spec * MSType -> Bool
 def baseTypeAlias? (spc, srt) =
   if baseType? (spc, srt) then 
     true
   else
     let usrt = unfoldBase (spc, srt) in
     case usrt of
-      | Subsort  (srt,_,_) -> baseTypeAlias? (spc, srt)
+      | Subtype  (srt,_,_) -> baseTypeAlias? (spc, srt)
       | Quotient (srt,_,_) -> baseTypeAlias? (spc, srt)
       | _ -> baseType?(spc,usrt)
 
- op builtinBaseTypeId?: Id -> Boolean  
+ op builtinBaseTypeId?: Id -> Bool  
 def builtinBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
   id = "Boolean" || % v3:p1 
@@ -75,7 +75,7 @@ def builtinBaseTypeId? id =
   id = "String"  || % v3:p1 says NO  -- TODO: resolve this
   id = "Char"       % v3:p1 
 
- op baseTypeId?: Spec * Id -> Boolean
+ op baseTypeId?: Spec * Id -> Bool
 def baseTypeId? (spc, id) =
   id = "Boolean" || % v3:p1 
   id = "Bool"    || % v3:p1 
@@ -83,16 +83,16 @@ def baseTypeId? (spc, id) =
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
   id = "String"  || % v3:p1 says NO  -- TODO: resolve this
   id = "Char"    || % v3:p1 
-  ~ (sortIdIsDefinedInSpec? (spc, id)) % v3:p1 says NO: resolve this
+  ~ (typeIdIsDefinedInSpec? (spc, id)) % v3:p1 says NO: resolve this
 
-op userType?: Spec * Sort -> Boolean
+op userType?: Spec * MSType -> Bool
 
 (**
  * extended the definition of userType? to check not only that it is not a base type, 
  * but also that it is the name of a type, as opposed to being a complex type such as arrow type
  *
  * TODO: v3:p2 says "Each user-defined type has a definition that is a type product, sum, restriction, or quotient."
- * So if srt expands to a base sort, v3 says it is not a user type.
+ * So if srt expands to a base type, v3 says it is not a user type.
  * Note that this would have at least the effect of shifting more methods into Primitive.java
  * I'm not sure what other effects there might be.
  * 
@@ -103,7 +103,7 @@ def userType?(spc,srt) =
   else
     (case srt of
        | Base(qid,_,_) -> true
-       %| Subsort(srt,_,_) -> userType?(srt)
+       %| Subtype(srt,_,_) -> userType?(srt)
        %| Quotient(srt,_,_) -> userType?(srt)
        | _ -> false
       )
@@ -115,11 +115,11 @@ def notAUserType?(spc,srt) = ~(userType?(spc,srt))
  * returns the first user type occuring in the type srt from left to right, where the constituent of
  * each srt is also considered in case srt is an arrow type
  *)
-op ut: Spec * Sort -> Option Sort
+op ut: Spec * MSType -> Option MSType
 def ut(spc,srt) =
   ut_internal (fn(s) -> userType?(spc,s)) srt
 
-op ut_internal: (Sort -> Boolean) -> Sort -> Option Sort
+op ut_internal: (MSType -> Bool) -> MSType -> Option MSType
 def ut_internal isUserType? srt =
   let
     def utlist0(srts) =
@@ -133,7 +133,7 @@ def ut_internal isUserType? srt =
   in
   if isUserType?(srt) then Some srt
   else
-    let domsrts = srtDom(srt) in
+    let domsrts = typeDom srt in
     case utlist0(domsrts) of
       | Some s -> Some s
       | None -> 
@@ -142,11 +142,11 @@ def ut_internal isUserType? srt =
 	   | _ -> None
 	  )
 
-op utlist: Spec * List Sort -> Option Sort
+op utlist: Spec * MSTypes -> Option MSType
 def utlist(spc,srts) = 
   utlist_internal (fn(srt) -> userType?(spc,srt)) srts
 
-op utlist_internal: (Sort -> Boolean) -> List Sort -> Option Sort
+op utlist_internal: (MSType -> Bool) -> MSTypes -> Option MSType
 def utlist_internal isUserType? srts =
   case srts of
     | [] -> None
@@ -158,17 +158,17 @@ def utlist_internal isUserType? srts =
 
 
 (** 
- * returns whether or not the given sort is "flat" meaning that it
- * is a simple identifier, not an arrow sort, for instance.
+ * returns whether or not the given type is "flat" meaning that it
+ * is a simple identifier, not an arrow type, for instance.
  *)
-op flatType?: Sort -> Boolean
+op flatType?: MSType -> Bool
 def flatType?(srt) =
   case srt of
     | Base(qid,_,_) -> true
     | _ -> false
 
-op baseVar?: Spec * Var -> Boolean
-op userVar?: Spec * Var -> Boolean
+op baseVar?: Spec * Var -> Bool
+op userVar?: Spec * Var -> Bool
 
 def baseVar?(spc,variable) =
   let (id, srt) = variable in
@@ -180,7 +180,7 @@ def userVar?(spc,variable) =
 (**
   * disabled this op def, the new srtId op is in ToJavaBase; it also handles other kinds of types.
   *)
-op srtId_v2: Sort -> Id 
+op srtId_v2: MSType -> Id 
 def srtId_v2(srt as Base (Qualified (q, id), _, _)) = id
 
 op mkNewOp: Op * Nat -> Op
@@ -189,38 +189,38 @@ def mkNewOp(oper, k) =
   let Qualified (qual, id) = oper in
   mkQualifiedId(qual, id ^ natToString(k))
 
-op mkNewVar: Op * Nat * Sort -> Var
+op mkNewVar: Op * Nat * MSType -> Var
 
 def mkNewVar(oper, k, t) =
   let Qualified (qual, id) = oper in
   (id ^ natToString(k), t)
 
-op caseTerm?: Term -> Boolean
+op caseTerm?: MSTerm -> Bool
 
-def caseTerm?(term) =
+def caseTerm? term =
   case term of
     | Apply (Lambda (match, _), trm, _) -> true
     | _ -> false
 
-op caseTerm: (Term | caseTerm?) -> Term
+op caseTerm: (MSTerm | caseTerm?) -> MSTerm
 
 def caseTerm(term) =
   let Apply (Lambda (match, _), trm, _) = term in
     trm
 
-op caseCases: (Term | caseTerm?) -> Match
+op caseCases: (MSTerm | caseTerm?) -> Match
 def caseCases(trm) =
   let  Apply (Lambda (match, _), trm, _) = trm in
     match
 
-op recordFieldsToTerms: List (Id * Term) -> List Term
+op recordFieldsToTerms: List (Id * MSTerm) -> MSTerms
 
-def recordFieldsToTerms(fields) : List Term =
+def recordFieldsToTerms(fields) : MSTerms =
   case fields of 
     | [] -> []
     | (id,term)::fields -> Cons(term, recordFieldsToTerms(fields))
 
-op applyArgsToTerms: Term -> List Term
+op applyArgsToTerms: MSTerm -> MSTerms
 
 def applyArgsToTerms(args) =
   case args of
@@ -233,7 +233,7 @@ def applyArgsToTerms(args) =
  * args must be a one-elementary list of terms, otherwise, the #elems in the Record fields
  * and the #elems in the args list must be the same.
  *) 
-op exchangeArgTerms: Term * List Term -> Term
+op exchangeArgTerms: MSTerm * MSTerms -> MSTerm
 def exchangeArgTerms(argTerm,args) =
   case argTerm of
     | Record(fields,b) ->
@@ -245,15 +245,15 @@ def exchangeArgTerms(argTerm,args) =
 	      | _ -> argTerm % should not happen
 	   )
 
-op opDom: Spec * Op -> List Sort
-op opRange: Spec * Op -> Sort
+op opDom  : Spec * Op -> MSTypes
+op opRange: Spec * Op -> MSType
 
 def opDom (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
     | info ::_ -> 
-      let srt = firstOpDefInnerSort info in
-      srtDom srt
+      let srt = firstOpDefInnerType info in
+      typeDom srt
     | _ -> 
       let _ = unSupported oper in 
       []
@@ -262,55 +262,55 @@ def opRange (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
     | info ::_ -> 
-      let srt = firstOpDefInnerSort info in
-      srtRange srt
+      let srt = firstOpDefInnerType info in
+      typeRng srt
     | _ -> 
       let _ = unSupported oper in 
-      boolSort
+      boolType
 
-op srtDom: Sort -> List Sort
-op srtRange: Sort -> Sort
+op typeDom : MSType -> MSTypes
+op typeRng : MSType -> MSType
 
-def srtDom(srt) =
+def typeDom srt =
   let def domSrtDom(dom) =
        (case dom of
 	  | Product (fields,    _) -> map (fn (_,srt) -> srt) fields
-	  | Subsort (subSrt, _, _) -> domSrtDom subSrt
+	  | Subtype (subSrt, _, _) -> domSrtDom subSrt
 	  | _ -> [dom]) 
   in
   case srt of
     | Arrow (dom, rng, _) ->
-      (let argSorts = domSrtDom dom in
-       argSorts)
-    | Pi (_, s, _) -> srtDom s
+      (let argTypes = domSrtDom dom in
+       argTypes)
+    | Pi (_, s, _) -> typeDom s
     | _ -> []
 
-op srtDomKeepSubsorts: Sort -> List Sort
-def srtDomKeepSubsorts srt =
+op typeDomKeepSubtypes: MSType -> MSTypes
+def typeDomKeepSubtypes srt =
   let def domSrtDom dom =
        (case dom of
 	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
-	  %| Subsort (subSrt, _, _) -> domSrtDom(subSrt)
+	  %| Subtype (subSrt, _, _) -> domSrtDom(subSrt)
 	  | _ -> [dom]) in
   case srt of
     | Arrow (dom, rng, _) ->
-      (let argSorts = domSrtDom(dom) in
-       argSorts)
-    | Pi (_, s, _) -> srtDomKeepSubsorts s
+      (let argTypes = domSrtDom(dom) in
+       argTypes)
+    | Pi (_, s, _) -> typeDomKeepSubtypes s
     | _ -> []
 
-def srtRange srt =
+def typeRng srt =
   case srt of
     | Arrow (dom, rng, _) -> rng
-    | Pi (_, s, _) -> srtRange s
+    | Pi (_, s, _) -> typeRng s
     | _ -> srt
 
-op srtDomPreds: Sort -> List (Option Term)
-def srtDomPreds srt =
-  %let _ = writeLine("srtDomPreds "^printSort(srt)) in
-  let def srtPred (srt) : Option Term =
+op typeDomPreds: MSType -> List (Option MSTerm)
+def typeDomPreds srt =
+  %let _ = writeLine("typeDomPreds "^printType(srt)) in
+  let def srtPred (srt) : Option MSTerm =
         case srt of
-	  | Subsort(_,pred,_) -> 
+	  | Subtype(_,pred,_) -> 
 	    %let _ = writeLine("collecting restriction term "^printTerm(pred)) in
 	    Some pred
 	  | _ -> None
@@ -318,11 +318,11 @@ def srtDomPreds srt =
     case srt of
       | Arrow (Product (fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
       | Arrow (srt, _, _) -> [srtPred(srt)]
-      | Pi (_, s, _) -> srtDomPreds s
+      | Pi (_, s, _) -> typeDomPreds s
       | _ -> []
 
-op patternNameOpt : Pattern       -> Option Id
-op patternNamesOpt: Pattern       -> Option (List Id)
+op patternNameOpt : MSPattern -> Option Id
+op patternNamesOpt: MSPattern -> Option (List Id)
 
 def patternNameOpt (pattern) = 
   case pattern of
@@ -344,7 +344,7 @@ def patternNamesOpt (pattern) =
 		 fields
      | _ -> None
 
-op opDelta: Spec * Op -> List Var * Term
+op opDelta: Spec * Op -> List Var * MSTerm
 
 def opDelta(spc, oper) =
   let opDom = opDom(spc, oper) in
@@ -375,15 +375,15 @@ def opDelta(spc, oper) =
 
 % srtTermDelta defines the delta function in Alessandros document.
 % (See Sec. 1.5 of DevDoc/java-codegen/v3.pdf)
-% It takes a Lambda term and its sort and
+% It takes a Lambda term and its type and
 % returns the list of arguments and the lambda body.
-op srtTermDelta : Sort * Term -> List Var * Term
+op srtTermDelta : MSType * MSTerm -> List Var * MSTerm
 def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,false)
 
-op srtTermDelta_internal: Sort * Term * Boolean-> List Var * Term
+op srtTermDelta_internal: MSType * MSTerm * Bool-> List Var * MSTerm
 def srtTermDelta_internal(srt, term, fail?) =
-  let opDom = srtDom(srt) in
-  let opRng = srtRange(srt) in
+  let opDom = typeDom(srt) in
+  let opRng = typeRng(srt) in
   let
     def arityMismatchError(pat,args1,term,args2) = 
       "unsupported: pattern "^printPattern(pat)^" has "^Integer.show(args1)^" args, but "
@@ -412,7 +412,7 @@ def srtTermDelta_internal(srt, term, fail?) =
      )
     | _ -> ([], term)
 
-op liftCaseTopCase: Op * (Term | caseTerm?) * Nat -> Term * Nat * List OpDef
+op liftCaseTopCase: Op * (MSTerm | caseTerm?) * Nat -> MSTerm * Nat * List OpDef
 
 def liftCaseTopCase(oper, body, k) =
   let b = termAnn(body) in
@@ -426,12 +426,12 @@ def liftCaseTopCase(oper, body, k) =
   (newTerm, newK, newOds)
   
 
-op liftCase: Op * Term * Nat -> Term * Nat * List OpDef
-op liftCaseCase: Op * (Term | caseTerm?) * Nat -> Term * Nat * List OpDef
-op liftCaseApply: Op * Term * Nat -> Term * Nat * List OpDef
-op liftCaseRecord: Op * Term * Nat -> Term * Nat * List OpDef
-op liftCaseIfThenElse: Op * Term * Nat -> Term * Nat * List OpDef
-op liftCaseLet: Op * Term * Nat -> Term * Nat * List OpDef
+op liftCase: Op * MSTerm * Nat -> MSTerm * Nat * List OpDef
+op liftCaseCase: Op * (MSTerm | caseTerm?) * Nat -> MSTerm * Nat * List OpDef
+op liftCaseApply: Op * MSTerm * Nat -> MSTerm * Nat * List OpDef
+op liftCaseRecord: Op * MSTerm * Nat -> MSTerm * Nat * List OpDef
+op liftCaseIfThenElse: Op * MSTerm * Nat -> MSTerm * Nat * List OpDef
+op liftCaseLet: Op * MSTerm * Nat -> MSTerm * Nat * List OpDef
 
 def liftCase(oper, term, k) =
   if caseTerm?(term) then liftCaseCase(oper, term, k) else
@@ -471,9 +471,9 @@ def liftCaseLet(oper, term as Let (letBindings, letBody, _), k) =
 
 def liftCaseCase(oper, term, k) =
   let b = termAnn(term) in
-  let ttermSort = termSort(term) in
+  let ttermType = termType(term) in
   let caseTerm = caseTerm(term) in
-  let caseTermSort = termSort(caseTerm) in
+  let caseTermType = termType(caseTerm) in
   let (newCaseTerm, newK, newOds1) = liftCase(oper, caseTerm, k+1) in
   let cases = caseCases(term) in
   let caseBodys = map (fn (pat, cond, patBody) -> patBody) cases in
@@ -481,16 +481,16 @@ def liftCaseCase(oper, term, k) =
   let newCases = ListPair.map (fn ((pat, cond, _), (newPatBody)) -> (pat, cond, newPatBody)) (cases, newCaseBodys) in
   let freeVarsCases = List.foldr (fn (match,vs) -> vs ++ freeVarsMatch match) [] newCases in
   let freeVars = uniqueSort (fn ((id1, _), (id2, _)) -> compare(id1, id2)) freeVarsCases in
-  let freeVarsSorts = map (fn(id, srt) -> srt) freeVars in
+  let freeVarsTypes = map (fn(id, srt) -> srt) freeVars in
   let newOp = mkNewOp(oper, k) in
-  let newOpSrt = withAnnS(mkArrow(mkProduct(Cons(caseTermSort, freeVarsSorts)), ttermSort),b) in
-  let newVar = mkNewVar(oper, k, caseTermSort) in
+  let newOpSrt = withAnnS(mkArrow(mkProduct(Cons(caseTermType, freeVarsTypes)), ttermType),b) in
+  let newVar = mkNewVar(oper, k, caseTermType) in
   let newOpTerm = withAnnT(mkApply(Lambda (newCases, b), mkVar(newVar)),b) in
-  let newOpDef = (newOp, Cons(caseTermSort,freeVarsSorts), ttermSort, Cons(newVar, freeVars), newOpTerm) in
+  let newOpDef = (newOp, Cons(caseTermType,freeVarsTypes), ttermType, Cons(newVar, freeVars), newOpTerm) in
   let newTerm = withAnnT(mkApplication(mkOp(newOp, newOpSrt), Cons(newCaseTerm, map mkVar freeVars)),b) in
   (newTerm, finalK, newOds1++newOds2++[newOpDef])
   
-op liftCases: Op * List Term * Nat -> List Term * Nat * List OpDef
+op liftCases: Op * MSTerms * Nat -> MSTerms * Nat * List OpDef
 
 def liftCases(oper, terms, k) =
   case terms of
@@ -500,7 +500,7 @@ def liftCases(oper, terms, k) =
     let (restTerms, restK, restOds) = liftCases(oper, terms, newK) in
     (Cons(newTerm, restTerms), restK, newOds++restOds)
 
-op lift: Spec * Op * (List Var * Term) -> Term * List OpDef
+op lift: Spec * Op * (List Var * MSTerm) -> MSTerm * List OpDef
 
 def lift(spc,oper, (formals, body)) =
   let firstUserVar = findLeftmost (fn(v) -> userVar?(spc,v)) formals in
@@ -538,29 +538,27 @@ def liftPattern spc =
 			 let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
 			 let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
 			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
-			 let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
+			 let origOpNewDef = (origOp, typeDom srt, typeRng srt, origOpVars, newTerm) in
 			 Cons (origOpNewDef, newOds++result)
 		       | _ -> result)
 		    []
 		    spc.ops 
   in
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
-  let result = setSorts (result, spc.sorts) in
+  let result = setTypes (result, spc.types) in
   let result = foldr addOpToSpec result newOpDefs in
    result
 
-op addOpToSpec: OpDef * Spec -> Spec
-def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term), spc:Spec) =
-  addOpToSpec2((oper,dom,rng,formals,body,false),spc)
+ op addOpToSpec((oper, dom, rng, formals, body) : OpDef, spc : Spec) : Spec =
+  addOpToSpec2 ((oper, dom, rng, formals, body, false), spc)
    
-op addOpToSpec2: OpDef2 * Spec -> Spec
-def addOpToSpec2((oper as Qualified(q,id), dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
+ op addOpToSpec2 ((oper as Qualified(q,id), dom, rng, formals, body, isConstantOp?): OpDef2, spc : Spec) : Spec =
   if basicQualifiedId? oper then
     spc
   else
   let srt = case dom of 
 	      | [] -> if isConstantOp? then rng else mkArrow(mkProduct([]),rng)
-	      | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom))
+	      | [dom] -> withAnnS(mkArrow(dom, rng),typeAnn(dom))
 	      | _ -> mkArrow(mkProduct(dom), rng)
   in
   let varPatterns = map mkVarPat formals in
@@ -574,5 +572,5 @@ def addOpToSpec2((oper as Qualified(q,id), dom:(List Sort), rng:Sort, formals:Li
    
 def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =
   let b = termAnn(term) in
-  addOp [oper] Nonfix false (SortedTerm (term, srt, noPos)) spc b
+  addOp [oper] Nonfix false (TypedTerm (term, srt, noPos)) spc b
 endspec

@@ -13,9 +13,9 @@ spec
  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
  import /Library/Legacy/Utilities/State
 
- sort MergeUnionMap  (key, value) = Map (key, MergeUnionNode value)
+ type MergeUnionMap  (key, value) = Map (key, MergeUnionNode value)
 
- sort MergeUnionNode value = {rank   : Ref Nat,
+ type MergeUnionNode value = {rank   : Ref Nat,
 			      parent : Ref (Option (MergeUnionNode value)),
 			      value  : value}
 

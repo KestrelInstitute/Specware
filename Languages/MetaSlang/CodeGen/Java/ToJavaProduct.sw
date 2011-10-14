@@ -5,7 +5,7 @@ import ToJavaBase
 import ToJavaStatements
 import Monad
 
-op mkProdConstrDecl: Id * List (Id * Sort) -> JGenEnv ConstrDecl
+op mkProdConstrDecl: Id * List (Id * MSType) -> JGenEnv ConstrDecl
 def mkProdConstrDecl(id,fields) =
   {
    formParams <- foldM (fn fpars -> fn(fieldProj,fieldType) ->
@@ -36,7 +36,7 @@ op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> 
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
   ([], (id, None, []), setConstrs(setMethods(setFlds(Java.emptyClsBody, prodFieldsDecl), prodMethodDecls), constrDecls))
 
-op productToClsDecls: Id * Sort -> JGenEnv ()
+op productToClsDecls: Id * MSType -> JGenEnv ()
 def productToClsDecls(id, srtDef as Product (fields, _)) =
   {
    prodFieldsDecls <- foldM (fn decls -> fn(fieldProj,fieldType) ->

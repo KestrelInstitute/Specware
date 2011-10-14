@@ -2,7 +2,7 @@
 
 \begin{spec}
 Map qualifying spec
-  sort Map (key,a) = List (key * a)
+  type Map (key,a) = List (key * a)
 
   op empty : fa(key,a) Map (key,a)
   def empty = Nil

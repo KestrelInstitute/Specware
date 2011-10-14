@@ -46,7 +46,7 @@ spec
   def negatePoly (p) =
     coefTimesPoly(minusOne, p)
 
-  op checkProof: Proof -> Boolean
+  op checkProof: Proof -> Bool
   def checkProof(p) =
     let checkRes = run check p in
     case checkRes of

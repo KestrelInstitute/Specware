@@ -3,7 +3,7 @@ Unicode qualifying spec
 
   import UnicodeSig
 
-  sort Unicode.UString = List Unicode.UChar
+  type Unicode.UString = List Unicode.UChar
 
   def Unicode.null? = List.empty?
   def Unicode.all?  = List.forall?
@@ -31,7 +31,7 @@ Unicode qualifying spec
 
   % def Unicode.all? pred ustring = foldl (fn (uchar, result) -> result & (pred uchar)) true ustring
 
-  def Unicode.substring? (s1 : UString, s2 : UString) : Boolean =
+  def Unicode.substring? (s1 : UString, s2 : UString) : Bool =
     case (s1, s2) of
       | ([], _) -> true
       | (_, []) -> false

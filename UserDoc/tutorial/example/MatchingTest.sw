@@ -2,9 +2,9 @@ Test = spec
 
   import MatchingRefinements#FindMatches
 
-  op word_char?(ch: Char): Boolean = isUpperCase ch
+  op word_char?(ch: Char): Bool = isUpperCase ch
 
-  op msg_char?(ch: Char): Boolean = isUpperCase ch || ch = #*
+  op msg_char?(ch: Char): Bool = isUpperCase ch || ch = #*
 
   type WordString = (String | forall? word_char?)
 

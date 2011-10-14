@@ -1,7 +1,7 @@
 Monad qualifying spec
   import /Library/Structures/Data/Monad
 
-  op If : fa(a) Monad Boolean -> Monad a -> Monad a -> Monad a
+  op If : fa(a) Monad Bool -> Monad a -> Monad a -> Monad a
   def If Test Then Else = {
       b <- Test;
       if b then
@@ -10,19 +10,19 @@ Monad qualifying spec
         Else
     }
 
-  op When : Monad Boolean -> Monad () -> Monad ()
+  op When : Monad Bool -> Monad () -> Monad ()
   def When Test Then = If Test Then (return ())
 
-  op While : Monad Boolean -> Monad () -> Monad ()
+  op While : Monad Bool -> Monad () -> Monad ()
   def While Test Body =  When Test {Body; While Test Body}
 
-  op Not : Monad Boolean -> Monad Boolean
+  op Not : Monad Bool -> Monad Bool
   def Not stmt = {
       res <- stmt;
       return (~res)
     }
 
-  op And infixl 15 : Monad Boolean * Monad Boolean -> Monad Boolean
+  op And infixl 15 : Monad Bool * Monad Bool -> Monad Bool
   def And (x,y) = {
     xval <- x;
     if xval then
@@ -31,7 +31,7 @@ Monad qualifying spec
       return false
   }
 
-  op Or infixl 14 : Monad Boolean * Monad Boolean -> Monad Boolean
+  op Or infixl 14 : Monad Bool * Monad Bool -> Monad Bool
   def Or (x,y) = {
     xval <- x;
     if xval then

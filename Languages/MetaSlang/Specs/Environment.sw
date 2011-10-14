@@ -3,7 +3,7 @@
 % to avoid clashes with others qualified with MetaSlang
 
 (*
- * SpecEnvironment builds an association map of sort identifiers 
+ * SpecEnvironment builds an association map of type identifiers 
  * to their definitional unfolding. 
  *) 
  
@@ -16,7 +16,7 @@ spec
  %import Elaborate/TypeChecker
 
  type SpecEnvironment = StringMap Spec
- % sort Env             = SpecName * SpecEnvironment
+ % type Env             = SpecName * SpecEnvironment
 
  op makeEnv     : List Spec              -> SpecEnvironment
  op empty       : ()                     -> SpecEnvironment
@@ -44,45 +44,45 @@ spec
 %       in Ok spc
 
 
- op unfoldBeforeCoProduct: Spec * Sort -> Sort
+ op unfoldBeforeCoProduct: Spec * MSType -> MSType
  def unfoldBeforeCoProduct(sp, srt) =
    case srt of
      | Base (qid, srts, a) ->
-      (case findTheSort (sp, qid) of
+      (case findTheType (sp, qid) of
 	 | None -> srt
 	 | Some info ->
-	   if definedSortInfo? info then
-	     let (tvs, fsrt) = unpackFirstSortDef info in
+	   if definedTypeInfo? info then
+	     let (tvs, fsrt) = unpackFirstTypeDef info in
 	     case fsrt of
 	       | CoProduct _ -> srt
 	       | _ -> 
-	       let ssrt = substSort (zip (tvs, srts), fsrt) in
+	       let ssrt = substType (zip (tvs, srts), fsrt) in
 		 unfoldBeforeCoProduct (sp, ssrt)
 	   else
 	     srt)
     | _ -> srt
 
-op stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort =
+op stripSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType =
   let 
     def strip typ =
       case typ of
 
-        | Subsort (typ, _, _) -> strip typ
+        | Subtype (typ, _, _) -> strip typ
 
         | Base (qid, typs, a) ->
-          (case findTheSort (spc, qid) of
+          (case findTheType (spc, qid) of
              | Some info ->
-               if definedSortInfo? info then
-                 let (tvs, tdef) = unpackFirstSortDef info in
+               if definedTypeInfo? info then
+                 let (tvs, tdef) = unpackFirstTypeDef info in
                  let recur? = (length tvs = length typs)
                               &&
                               (case tdef of
-                                 | Subsort _ -> true
+                                 | Subtype _ -> true
                                  | Base    _ -> true
                                  | _ -> false)
                  in
                  if recur? then 
-                   strip (substSort (zip (tvs, typs), tdef))
+                   strip (substType (zip (tvs, typs), tdef))
                  else
                    typ
                else
@@ -93,99 +93,99 @@ op stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort =
   in
   strip typ
 
-op specStripSubsortsAndBaseDefs (spc : Spec) : Spec =
-  let stripper = stripSubsortsAndBaseDefs spc in
+op specStripSubtypesAndBaseDefs (spc : Spec) : Spec =
+  let stripper = stripSubtypesAndBaseDefs spc in
   mapSpec (fn t -> t, stripper, fn p -> p) spc
 
  %% This is dangerous as there may be recursion (I have removed calls to it -- sjw)
- op unfoldStripSort : Spec * Sort * Boolean -> Sort
- def unfoldStripSort (spc, srt, verbose) =
-  unfoldStripSort1 (spc, srt, [], verbose)
+ op unfoldStripType : Spec * MSType * Bool -> MSType
+ def unfoldStripType (spc, srt, verbose) =
+  unfoldStripType1 (spc, srt, [], verbose)
 
- op unfoldStripSort1 : Spec * Sort * List(Sort) * Boolean -> Sort
- def unfoldStripSort1 (sp, srt, vsrts, verbose) =
+ op unfoldStripType1 : Spec * MSType * List(MSType) * Bool -> MSType
+ def unfoldStripType1 (sp, srt, vsrts, verbose) =
   if typeIn?(srt, vsrts) then
     srt
   else
     case srt of
        | Arrow(srt1,srt2,a) -> 
-         Arrow(unfoldStripSort1(sp,srt1,vsrts,verbose),
-               unfoldStripSort1(sp,srt2,vsrts,verbose),
+         Arrow(unfoldStripType1(sp,srt1,vsrts,verbose),
+               unfoldStripType1(sp,srt2,vsrts,verbose),
                a)
        | Product(srtlist, a) -> 
-         Product(List.map (fn(id,s) -> (id,unfoldStripSort1(sp,s,vsrts,verbose))) srtlist,
+         Product(List.map (fn(id,s) -> (id,unfoldStripType1(sp,s,vsrts,verbose))) srtlist,
                   a)
        | CoProduct (srtlist, a) -> 
          CoProduct (List.map (fn 
                               | (id, None)   -> (id, None)
-                              | (id, Some s) -> (id, Some (unfoldStripSort1 (sp,
+                              | (id, Some s) -> (id, Some (unfoldStripType1 (sp,
                                                                              s, 
                                                                              vsrts,
                                                                              verbose))))
                              srtlist,
                      a)
-       | Quotient (srt, _,    _) -> unfoldStripSort1 (sp, srt, vsrts, verbose)
-       | Subsort  (srt, t,    _) -> unfoldStripSort1 (sp, srt, vsrts, verbose)
+       | Quotient (srt, _,    _) -> unfoldStripType1 (sp, srt, vsrts, verbose)
+       | Subtype  (srt, t,    _) -> unfoldStripType1 (sp, srt, vsrts, verbose)
        | Base     (qid, srts, a) ->
-         let srts = List.map (fn(s) -> unfoldStripSort1 (sp, s, vsrts, verbose)) srts in
+         let srts = List.map (fn(s) -> unfoldStripType1 (sp, s, vsrts, verbose)) srts in
          let srt0 = Base (qid, srts, a) in
          let srt = unfoldBaseV (sp, srt0, verbose) in
          if srt = srt0 then
              srt
          else
-          unfoldStripSort1 (sp, srt, Cons(srt0,vsrts), verbose)
+          unfoldStripType1 (sp, srt, Cons(srt0,vsrts), verbose)
        | Boolean _ -> srt
        | TyVar (tv, a) -> srt
      
 
-op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): Sort =
+op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): MSType =
    case srt of
      | Base(qid, _, _) | qid in? dontUnfoldQIds -> srt
-     | Subsort (s_srt, _, _) -> stripRangeSubsorts (sp, s_srt, dontUnfoldQIds)
-     | Arrow (d_srt, r_srt, a)-> Arrow(d_srt, stripRangeSubsorts (sp, r_srt, dontUnfoldQIds), a)
+     | Subtype (s_srt, _, _) -> stripRangeSubtypes (sp, s_srt, dontUnfoldQIds)
+     | Arrow (d_srt, r_srt, a)-> Arrow(d_srt, stripRangeSubtypes (sp, r_srt, dontUnfoldQIds), a)
      | Base _ ->
        let uf_srt = unfoldBase (sp, srt) in
        if equalType?(uf_srt, srt) || embed? CoProduct srt || embed? Quotient srt
          then srt
-         else stripRangeSubsorts (sp, uf_srt, dontUnfoldQIds)
+         else stripRangeSubtypes (sp, uf_srt, dontUnfoldQIds)
      | _ -> srt
    
- op arrow : Spec * Sort -> Sort * Sort
+ op arrow : Spec * MSType -> MSType * MSType
 
- def arrow (sp : Spec, srt : Sort) = 
-   case stripSubsorts (sp, srt) of
+ def arrow (sp : Spec, srt : MSType) = 
+   case stripSubtypes (sp, srt) of
      | Arrow (dom, rng, _) -> (dom, rng)
      | mystery ->
        % let _ = writeLine(printSpecFlat sp) in
-       System.fail ("Could not extract arrow sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+       System.fail ("Could not extract arrow type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
      
- def product (sp : Spec, srt : Sort) = 
+ def product (sp : Spec, srt : MSType) = 
    let srt = unfoldBase(sp,srt) in
-   case stripSubsorts (sp, srt) of
+   case stripSubtypes (sp, srt) of
      | Product (fields, _) -> fields
-     | mystery -> System.fail ("Could not extract product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+     | mystery -> System.fail ("Could not extract product type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
       
- op  productSorts: Spec * Sort -> List Sort
- def productSorts (sp, srt1) =
+ op  productTypes: Spec * MSType -> List MSType
+ def productTypes (sp, srt1) =
    let srt = unfoldBase(sp,srt1) in
-   case stripSubsorts (sp, srt)
+   case stripSubtypes (sp, srt)
     of Product (fields, _) ->
        if tupleFields? fields
 	 then map (fn (_,x) -> x) fields
 	 else [srt1]
      | _ -> [srt1]
 
- op recordTypes(sp: Spec, ty1: Sort): List Sort =
+ op recordTypes(sp: Spec, ty1: MSType): List MSType =
    let ty = unfoldBase(sp, ty1) in
-   case stripSubsorts (sp, ty)
+   case stripSubtypes (sp, ty)
     of Product (fields, _) ->
        map (fn (_,x) -> x) fields
      | _ -> [ty1]
 
- def coproduct (sp : Spec, srt : Sort) = 
-  case stripSubsorts (sp, srt) of
+ def coproduct (sp : Spec, srt : MSType) = 
+  case stripSubtypes (sp, srt) of
     | CoProduct (fields, _) -> fields
-    | mystery -> System.fail ("Could not extract co-product sort: " ^ (printSort srt) ^ " yielded " ^ (printSort mystery))
+    | mystery -> System.fail ("Could not extract co-product type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
   
  def domain (sp, srt) = 
   let (dom, _) = arrow (sp, srt) in dom
@@ -193,57 +193,57 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
  def range (sp, srt) = 
   let (_, rng) = arrow (sp, srt) in rng
 
- op  arrow?     : Spec * Sort -> Boolean
+ op  arrow?     : Spec * MSType -> Bool
  def arrow? (sp, srt) =
-   case stripSubsorts (sp, srt)
+   case stripSubtypes (sp, srt)
     of Arrow _ -> true
      | _ -> false
 
- op range_*(spc: Spec, ty: Sort, ign_subtypes?: Bool): Sort =
+ op range_*(spc: Spec, ty: MSType, ign_subtypes?: Bool): MSType =
    case unfoldBase (spc, ty)
     of Arrow(_, rng, _) -> range_*(spc, rng, ign_subtypes?)
-     | Subsort(st, _, _) | ign_subtypes? -> range_*(spc, st, ign_subtypes?)
+     | Subtype(st, _, _) | ign_subtypes? -> range_*(spc, st, ign_subtypes?)
      | _ -> ty
 
- %- def arrowOpt(sp:Spec,srt:Sort) = 
+ %- def arrowOpt(sp:Spec,srt:Type) = 
  %-   let res = arrowOpt_(sp,srt) in
- %-   let _ = writeLine("arrowOpt("^printSort(srt)^")="^
+ %-   let _ = writeLine("arrowOpt("^printType(srt)^")="^
  %-                       (case res
  %-                          of None -> "None"
- %-                           | Some(dom,rng) -> printSort(Arrow(dom,rng)))) in
+ %-                           | Some(dom,rng) -> printType(Arrow(dom,rng)))) in
  %-   res
 
 
-% def SpecEnvironment.stringSort : Sort = Base (Qualified ("String",  "String"), [], noPos)
-% def boolSort                   : Sort = Boolean noPos
-% def SpecEnvironment.charSort   : Sort = Base (Qualified ("Char",    "Char"),   [], noPos)
-% def intSort                    : Sort = Base (Qualified ("Integer", "Int"),    [], noPos)
+% def SpecEnvironment.stringType : MSType = Base (Qualified ("String",  "String"), [], noPos)
+% def boolType                   : MSType = Boolean noPos
+% def SpecEnvironment.charType   : MSType = Base (Qualified ("Char",    "Char"),   [], noPos)
+% def intType                    : MSType = Base (Qualified ("Integer", "Int"),    [], noPos)
 
-%% This is no different than MetaSlang.patternSort 
-% op SpecEnvironment.patternSort : Pattern -> Sort
-% def SpecEnvironment.patternSort = fn
-%   | AliasPat   (pat1, _,       _) -> SpecEnvironment.patternSort pat1
+%% This is no different than MetaSlang.patternType 
+% op SpecEnvironment.patternType : MSPattern -> MSType
+% def SpecEnvironment.patternType = fn
+%   | AliasPat   (pat1, _,       _) -> SpecEnvironment.patternType pat1
 %   | VarPat     ((_,srt),       _) -> srt
 %   | EmbedPat   (_,_,srt,       _) -> srt
 %   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
-%                                                             (id, SpecEnvironment.patternSort pat)) 
+%                                                             (id, SpecEnvironment.patternType pat)) 
 %                                                            idpatternlist in
 %                                      Product (fields, noPos)
 %   | WildPat     (srt,          _) -> srt
-%   | StringPat   _                 -> SpecEnvironment.stringSort
-%   | BoolPat     _                 -> boolSort
-%   | CharPat     _                 -> SpecEnvironment.charSort
-%   | NatPat      _                 -> intSort
-%   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
+%   | StringPat   _                 -> SpecEnvironment.stringType
+%   | BoolPat     _                 -> boolType
+%   | CharPat     _                 -> SpecEnvironment.charType
+%   | NatPat      _                 -> intType
+%   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternType pat
 
 
- op mkRestrict    : Spec * {pred : MS.Term, term : MS.Term} -> MS.Term
- op mkProjectTerm : Spec * Id * MS.Term                  -> MS.Term
- op mkSelectTerm  : Spec * Id * MS.Term                  -> MS.Term
+ op mkRestrict    : Spec * {pred : MSTerm, term : MSTerm} -> MSTerm
+ op mkProjectTerm : Spec * Id * MSTerm                    -> MSTerm
+ op mkSelectTerm  : Spec * Id * MSTerm                    -> MSTerm
 
  def mkRestrict (sp, {pred, term}) = 
   let srt = inferType (sp, term) in
-  let srt = mkArrow (srt, mkSubsort (srt, pred)) in
+  let srt = mkArrow (srt, mkSubtype (srt, pred)) in
   mkApply ((Fun (Restrict, srt, noPos)), 
            term)
  
@@ -266,11 +266,11 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 
  
  % Assuming that op names are unambiguous in a spec
- % one can obtain the sort of ops given the name and spec only.
+ % one can obtain the type of ops given the name and spec only.
 
 %%  ### unused
-%%  op  getSortOfOp : Spec * String * String -> TyVars * Sort
-%%  def getSortOfOp (spc, qid, opName) =
+%%  op  getTypeOfOp : Spec * String * String -> TyVars * Type
+%%  def getTypeOfOp (spc, qid, opName) =
 %%   % sjw: (4/02) Not sure if should check imports
 %%   case findAQualifierMap (spc.ops, qid, opName)
 %%     of None -> (printSpecToTerminal spc;
@@ -354,11 +354,11 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 
  %- --------------------------------------------------------------------------------
  (**
-  unfold to an arrow sort; if it doesn't unfold to an arrow, leave it unchanged.
+  unfold to an arrow type; if it doesn't unfold to an arrow, leave it unchanged.
   *)
 
 (* ### unused #NO! **)
- op unfoldToArrow: Spec * Sort -> Sort
+ op unfoldToArrow: Spec * MSType -> MSType
  def unfoldToArrow (sp, srt) =
   let 
     def unfoldRec srt = 
@@ -372,41 +372,41 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 
  %- --------------------------------------------------------------------------------
  (**
-   determine the sort of a term including unfolding of base sorts.
+   determine the type of a term including unfolding of base types.
   *)
 
- op termSortEnv : Spec * MS.Term -> Sort
- def termSortEnv(sp,term) = 
+ op termTypeEnv : Spec * MSTerm -> MSType
+ def termTypeEnv(sp,term) = 
   let res =
    case term 
      of Apply      (t1, t2,               _) -> 
-        (case stripSubsorts(sp,termSortEnv (sp, t1)) of
+        (case stripSubtypes(sp,termTypeEnv (sp, t1)) of
            | Arrow (dom, rng, _)            -> rng
-	   | _ -> System.fail ("Cannot extract sort of application "^ printTerm term))
-      | Bind       _                         -> boolSort
+	   | _ -> System.fail ("Cannot extract type of application "^ printTerm term))
+      | Bind       _                         -> boolType
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
-                                                             (id, termSortEnv (sp, t)))
+                                                             (id, termTypeEnv (sp, t)))
                                                             fields,
                                                         noPos)
-      | Let        (_, t,                 _) -> termSortEnv   (sp, t)
-      | LetRec     (_, t,                 _) -> termSortEnv   (sp, t)
+      | Let        (_, t,                 _) -> termTypeEnv   (sp, t)
+      | LetRec     (_, t,                 _) -> termTypeEnv   (sp, t)
       | Var        ((_, srt),             _) -> unfoldToArrow (sp, srt)
       | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
-      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternSort pat,
-                                                         termSortEnv (sp, body))
+      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternType pat,
+                                                         termTypeEnv (sp, body))
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | The        ((_,srt),_,            _) -> unfoldToArrow (sp, srt)
-      | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)
+      | IfThenElse (_, t2, t3,            _) -> termTypeEnv   (sp, t2)
       | Seq        _                         -> mkProduct     []
-      | SortedTerm (_, s,                 _) -> s
-      | Pi         (_, t,                 _) -> termSortEnv   (sp, t)
+      | TypedTerm  (_, s,                 _) -> s
+      | Pi         (_, t,                 _) -> termTypeEnv   (sp, t)
       | mystery                              ->
-	System.fail ("In termSortEnv, unrecognized term: " ^ printTerm mystery)
+	System.fail ("In termTypeEnv, unrecognized term: " ^ printTerm mystery)
   in
-  %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
+  %let _ = writeLine("termTypeEnv: "^printTerm(term)^"="^printType(res)) in
   res
 
-  op  maybeIntroduceVarsForTerms: MS.Term * List MS.Term * Spec -> MS.Term
+  op  maybeIntroduceVarsForTerms: MSTerm * List MSTerm * Spec -> MSTerm
   def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
   %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
     case filter(fn t -> ~(simpleTerm t) && (existsSubTerm (fn st -> st = t) mainTerm)) vterms of
@@ -423,7 +423,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 			id,id)
 		 mainTerm)
 
-  op  fieldAcessTerm: MS.Term * String * Spec -> MS.Term
+  op  fieldAcessTerm: MSTerm * String * Spec -> MSTerm
   def fieldAcessTerm(t,field,spc) =
     case t of
       | Record(fields,_) ->
@@ -432,27 +432,27 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
 	  | _ -> mkProjection(field,t,spc))	% Shouldn't happen
       | _ -> mkProjection(field,t,spc)
 
-  op  mkProjection  : Id * MS.Term * Spec -> MS.Term
+  op  mkProjection  : Id * MSTerm * Spec -> MSTerm
   def mkProjection (id, term, spc) = 
-    let super_sort = termSort(term) in
-    case productOpt(spc,super_sort) of
+    let super_type = termType(term) in
+    case productOpt(spc,super_type) of
      | Some (fields) -> 
        (case findLeftmost (fn (id2, _) -> id = id2) fields of
-	 | Some (_,sub_sort) -> 
-	   mkApply (mkProject (id, super_sort, sub_sort),term)
+	 | Some (_,sub_type) -> 
+	   mkApply (mkProject (id, super_type, sub_type),term)
 	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
                              ^(foldl (fn (res,(id2, _)) -> res^id2^" ") "" fields)
                              ^"at "^print(termAnn term)))
-     | _ -> System.fail("Product sort expected for mkProjectTerm: "^printTermWithSorts term)
+     | _ -> System.fail("Product type expected for mkProjectTerm: "^printTermWithTypes term)
 
 
- op productLength(sp: Spec, srt:Sort): Nat = 
+ op productLength(sp: Spec, srt:MSType): Nat = 
    case productOpt(sp,srt)
      of Some fields -> length fields
       | None -> 1
 
- op sortArity : Spec * Sort            -> Option(Sort * Nat)
- def sortArity(sp,srt) =
+ op typeArity : Spec * MSType            -> Option(MSType * Nat)
+ def typeArity(sp,srt) =
      case arrowOpt(sp,srt)
        of Some(dom,rng) -> 
           let len = productLength(sp,dom) in 
@@ -464,7 +464,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
  def polymorphicDomainOp? (spc, idf) =
    case findTheOp (spc, idf) of
      | Some info -> 
-       let srt = firstOpDefInnerSort info in
+       let srt = firstOpDefInnerType info in
        polymorphicDomain? (spc, srt)
      | None -> false
 
@@ -473,7 +473,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      | Some (TyVar _, _) -> true
      | _                -> false
 
- op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MS.Term, rhs_tm: MS.Term): MS.Term * List MS.Term * List Var =
+ op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MSTerm, rhs_tm: MSTerm): MSTerm * List MSTerm * List Var =
    case rhs_tm of
      | Lambda ([(pat, _, body)], _) ->
        let (arg_tm, conds, vs) = patternToTermPlusExConds(pat) in
@@ -481,7 +481,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
        (eql, conds ++ r_conds, vs ++ r_vs)
      | _ -> (mkEquality (inferType(spc, lhs_tm), lhs_tm, rhs_tm), [], [])
 
- op defToTheorem(spc: Spec, ty: Sort, name: QualifiedId, term: MS.Term): MS.Term =
+ op defToTheorem(spc: Spec, ty: MSType, name: QualifiedId, term: MSTerm): MSTerm =
     let (new_equality, conds, faVars) = mkCondEqualityFromLambdaDef (spc, mkOp(name, ty), term) in
     % let _ = writeLine("new_eq: "^printTerm new_equality) in
     let cond_equality = mkSimpImplies(mkSimpConj conds, new_equality) in
@@ -511,7 +511,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
      (nameList,names)
 
 
- op normalizeLambda(term: MS.Term, dom: Sort, ran: Sort, usedNames: StringSet.Set, spc: Spec): MS.Term =
+ op normalizeLambda(term: MSTerm, dom: MSType, ran: MSType, usedNames: StringSet.Set, spc: Spec): MSTerm =
    case term of
      | Lambda((pat1,_,_)::(_::_),_) ->
        (case productOpt(spc, dom) of
@@ -550,7 +550,7 @@ op stripRangeSubsorts(sp: Spec, srt: Sort, dontUnfoldQIds: List QualifiedId): So
                                       | None -> dfn
                                       | Some(dom, ran) ->
                                     let tm = normalizeLambda(term, dom, ran, empty, spc) in
-                                    maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+                                    maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
                                old_defs
                          in
                            let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in

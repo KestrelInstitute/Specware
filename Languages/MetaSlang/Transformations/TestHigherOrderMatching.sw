@@ -23,7 +23,7 @@ spec
      List.app 
 	(fn (pt,desc,tvs,fml) -> 
 	  let _ = writeLine ("Matching "^desc)  in
-	  let _ = writeLine (printTermWithSorts fml) in
+	  let _ = writeLine (printTermWithTypes fml) in
 	  let subs = match context (skolemize fml)     in
 	  (writeLine "";
 	   List.app printSubst subs))

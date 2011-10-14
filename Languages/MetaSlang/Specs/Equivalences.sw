@@ -9,12 +9,12 @@ AnnSpec qualifying spec
  %%%      Equivalences wrt alpha-conversion and type expansion
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
- op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
- op equivVar?     : Spec -> MS.Var     * MS.Var     -> Boolean
+ op equivTerm?    : Spec -> MSTerm    * MSTerm    -> Bool
+ op equivPattern? : Spec -> MSPattern * MSPattern -> Bool
+ op equivVar?     : Spec -> MS.Var    * MS.Var    -> Bool
 
- op similarType?  : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are similar
- op equivType?    : Spec -> MS.Sort    * MS.Sort    -> Boolean  % assumes A and A|p are not equivalent
+ op similarType?  : Spec -> MSType    * MSType    -> Bool  % assumes A and A|p are similar
+ op equivType?    : Spec -> MSType    * MSType    -> Bool  % assumes A and A|p are not equivalent
 
  def Utilities.unifyTerm? spc (t1, t2) = equivTerm? spc (t1, t2) % hack to avoid circularity
 
@@ -31,7 +31,7 @@ AnnSpec qualifying spec
  %%%      Utilities for comparing structures
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  equivList? : [b] Spec -> List b * List b * (Spec -> b * b -> Boolean) -> Boolean
+ op  equivList? : [b] Spec -> List b * List b * (Spec -> b * b -> Bool) -> Bool
  def equivList? spc (x, y, eqFn) =
   (length x) = (length y) &&
   (case (x, y) of
@@ -40,7 +40,7 @@ AnnSpec qualifying spec
                                              equivList? spc (tail_x, tail_y, eqFn)
       | _ -> false)
 
-  op equivOpt? : [b] Spec -> Option b * Option b * (Spec -> b * b -> Boolean) -> Boolean
+  op equivOpt? : [b] Spec -> Option b * Option b * (Spec -> b * b -> Bool) -> Bool
  def equivOpt? spc (x, y, eqFn) =
   case (x, y) of
      | (None,    None)    -> true
@@ -114,7 +114,7 @@ AnnSpec qualifying spec
     in
       empty? filtered_diffs)
 
-   %% op  old_equivTerm? : Spec -> MS.Term * MS.Term -> Boolean
+   %% op  old_equivTerm? : Spec -> MS.Term * MS.Term -> Bool
    %% def old_equivTerm? spc (t1, t2) =
    %%   (equalTerm? (t1, t2))
    %%   ||
@@ -173,8 +173,8 @@ AnnSpec qualifying spec
    %%     | (Seq        (xs1,         _),
    %%        Seq        (xs2,         _)) -> equivList? spc (xs1, xs2, old_equivTerm?)
    %%
-   %%     | (SortedTerm (x1, s1,      _),
-   %%        SortedTerm (x2, s2,      _)) -> old_equivTerm? spc (x1, x2) && equivType? spc (s1, s2)
+   %%     | (TypedTerm (x1, s1,      _),
+   %%        TypedTerm (x2, s2,      _)) -> old_equivTerm? spc (x1, x2) && equivType? spc (s1, s2)
    %%
    %%     %% TODO: Could check modulo alpha conversion for Pi terms...
    %%     | (Pi (_,x1,_),  _          ) -> old_equivTerm? spc (x1, t2) 
@@ -182,7 +182,7 @@ AnnSpec qualifying spec
    %%
    %%     | _ -> false)
    %%
-   %% op  old_equivFun? : Spec -> MS.Fun * MS.Fun -> Boolean
+   %% op  old_equivFun? : Spec -> MS.Fun * MS.Fun -> Bool
    %% def old_equivFun? spc (f1, f2) =
    %%  case (f1, f2) of
    %%     | (PQuotient qid1,     PQuotient qid2)     -> qid1 = qid2
@@ -262,12 +262,12 @@ AnnSpec qualifying spec
    %%     new?
    %%
    %%
-   %% op  new_equivType? : Spec -> MS.Sort * MS.Sort -> Boolean
+   %% op  new_equivType? : Spec -> MS.Type * MS.Type -> Bool
 
  def equivType? spc (x, y) =
     equivTypeSubType? spc (x, y) false
 
- op equivTypeSubType? (spc: Spec) (x: Sort, y: Sort) (ignore_subtypes?: Bool): Bool =
+ op equivTypeSubType? (spc: Spec) (x: MSType, y: MSType) (ignore_subtypes?: Bool): Bool =
    let 
      def aux x y prior_diffs =
        (equalTypeSubtype? (x, y, ignore_subtypes?))
@@ -276,7 +276,7 @@ AnnSpec qualifying spec
         let diffs = diffType [] (x, y) in
         forall? (fn diff ->
                    %% Coproducts are the only reasonable way to get 
-                   %% recursively defined sorts, so we shouldn't need
+                   %% recursively defined types, so we shouldn't need
                    %% an occurence check to avoid infinite expansions,
                    %% but someone might present us with pathological
                    %% types such as T = T * T, or T = T | p.
@@ -311,13 +311,13 @@ AnnSpec qualifying spec
    in
      aux x y []
 
-   %% op  old_equivType? : Spec -> MS.Sort * MS.Sort -> Boolean
+   %% op  old_equivType? : Spec -> MS.Type * MS.Type -> Bool
    %% def old_equivType? spc (s1, s2) =
    %%   (equalType? (s1, s2))
    %%   ||
    %%   (let env = initialEnv (spc, "internal") in
    %%    %% treat A and A|p as non-equivalent
-   %%    unifySorts env false s1 s2 )
+   %%    unifyTypes env false s1 s2 )
 
  %% used by checkRecursiveCall in TypeObligations.sw
  def similarType? spc (s1, s2) =
@@ -325,7 +325,7 @@ AnnSpec qualifying spec
    ||
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as similar
-    unifySorts env true s1 s2 )
+    unifyTypes env true s1 s2 )
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -342,7 +342,7 @@ AnnSpec qualifying spec
    %%   in	
    %%     old?
    %%
-   %% op  new_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
+   %% op  new_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Bool
 
  def equivPattern? spc (p1,p2) =
    case diffPattern [] (p1, p2) of
@@ -365,7 +365,7 @@ AnnSpec qualifying spec
             equivs)
      | _ -> false	
 
-   %% op  old_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
+   %% op  old_equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Bool
    %% def old_equivPattern? spc (p1,p2) =
    %%   (equalPattern? (p1, p2))
    %%   ||
@@ -408,23 +408,23 @@ AnnSpec qualifying spec
    %%     | (RestrictedPat (x1, t1,    _),
    %%        RestrictedPat (x2, t2,    _)) -> old_equivPattern? spc (x1, x2) && old_equivTerm? spc (t1, t2)
    %%
-   %%     | (SortedPat   (x1, t1,      _),
-   %%        SortedPat   (x2, t2,      _)) -> old_equivPattern? spc (x1, x2) && equivType? spc (t1, t2)
+   %%     | (TypedPat   (x1, t1,      _),
+   %%        TypedPat   (x2, t2,      _)) -> old_equivPattern? spc (x1, x2) && equivType? spc (t1, t2)
    %%
    %%     | _ -> false)
    %%
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%      Var Equivalences, expanding definitions for sorts
+ %%%      Var Equivalences, expanding definitions for types
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivVar? spc ((id1,s1), (id2,s2)) = 
    (id1 = id2)
    &&
-   %% May want to make the ignoreSubsort? be a parameter rather than false
+   %% May want to make the ignoreSubtype? be a parameter rather than false
    (equivType? spc (s1, s2))
 
- op equivTermIn? (spc: Spec) (t1: MS.Term, tms: List MS.Term): Boolean =
+ op equivTermIn? (spc: Spec) (t1: MSTerm, tms: MSTerms): Bool =
    exists? (fn t2 -> equivTerm? spc (t1,t2)) tms
 
 end-spec

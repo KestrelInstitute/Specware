@@ -5,11 +5,11 @@ import CodeGenUtilities
  (*
  * conformOpDecls checks whether we have an opdef of the form
  *
- * sort P = A * B
+ * type P = A * B
  * op foo: P -> Q
  * def foo (a, b) = ...
  *
- * i.e. the declaration contains the user sort name, but the arguments refer to its definition term.
+ * i.e. the declaration contains the user type name, but the arguments refer to its definition term.
  * ops are transformed to something like
  * 
  * def foo (arg) = 
@@ -28,7 +28,7 @@ def conformOpDecls spc =
 	         List.map (fn dfn ->
 			   let (tvs, srt, term) = unpackFirstTerm dfn in
 			   let new_tm = conformOpDeclsTerm (spc, srt, term, id) in
-			   maybePiTerm (tvs, SortedTerm (new_tm, srt, termAnn term)))
+			   maybePiTerm (tvs, TypedTerm (new_tm, srt, termAnn term)))
 		          old_defs
 	     in
 	     let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
@@ -38,7 +38,7 @@ def conformOpDecls spc =
   in
   setOps (spc, ops)
 
-op conformOpDeclsTerm: Spec * MS.Sort * MS.Term * Id -> MS.Term
+op conformOpDeclsTerm: Spec * MSType * MSTerm * Id -> MSTerm
 def conformOpDeclsTerm (spc, srt, term, _) =
   let srt = unfoldToArrow (spc, srt) in
   case srt of
@@ -46,8 +46,8 @@ def conformOpDeclsTerm (spc, srt, term, _) =
     let usrt = unfoldToProduct (spc, domsrt) in
     (case usrt of
        | Product (fields, _) ->
-       let termsort = inferType (spc, term) in
-       (case termsort of
+       let termtype = inferType (spc, term) in
+       (case termtype of
 	  | Arrow (Product (fields0, _), _, _) ->
 	  if productfieldsAreNumbered (fields0) then
 	    case term of

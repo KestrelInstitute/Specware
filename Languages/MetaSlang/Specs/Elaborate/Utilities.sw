@@ -1,7 +1,7 @@
 % Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl 
 
 Utilities qualifying spec
- import SpecToPosSpec                                   % for PosSpec's, plus convertSort[Info]ToPSort[Info]
+ import SpecToPosSpec                                   % for PosSpec's, plus convertType[Info]ToPType[Info]
  import ../Printer                                      % error messages
  import /Library/Legacy/DataStructures/MergeSort        % combining error messages
  import /Library/Legacy/DataStructures/ListPair         % misc utility
@@ -13,28 +13,28 @@ Utilities qualifying spec
       {importMap  : Environment,
        internal   : Spec,
        errors     : Ref (List (String * Position)),
-       vars       : StringMap MS.Sort,
-       firstPass? : Boolean,
-       constrs    : StringMap (List (QualifiedId * Sort)),
+       vars       : StringMap MSType,
+       firstPass? : Bool,
+       constrs    : StringMap (List (QualifiedId * MSType)),
        file       : String}
  
  op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
  op addConstrsEnv  : LocalEnv * Spec -> LocalEnv
 
- op addVariable    : LocalEnv * String * Sort -> LocalEnv
- op secondPass     : LocalEnv                 -> LocalEnv
- op setEnvSorts    : LocalEnv * SortMap       -> LocalEnv
- op unfoldSort     : LocalEnv * Sort          -> Sort
- op findVarOrOps   : LocalEnv * Id * Position -> List MS.Term
+ op addVariable    : LocalEnv * String * MSType -> LocalEnv
+ op secondPass     : LocalEnv                   -> LocalEnv
+ op setEnvTypes    : LocalEnv * TypeMap         -> LocalEnv
+ op unfoldType     : LocalEnv * MSType          -> MSType
+ op findVarOrOps   : LocalEnv * Id * Position   -> List MSTerm
 
  op error          : LocalEnv * String * Position -> ()
 
- op unifyTerm?     : Spec -> (MS.Term * MS.Term) -> Boolean % hack to avoid circularity
+ op unifyTerm?     : Spec -> (MSTerm * MSTerm) -> Bool % hack to avoid circularity
 
  (* Auxiliary functions: *)
 
  % Generate a fresh type variable at a given position.
- op freshMetaTyVar : String * Position -> MS.Sort
+ op freshMetaTyVar : String * Position -> MSType
 
  def metaTyVarCounter = (Ref 0) : Ref Nat
 
@@ -49,12 +49,12 @@ Utilities qualifying spec
 		    uniqueId = new_counter},
 	       pos))
 
-  op unlinkSort : MS.Sort -> MS.Sort
- def unlinkSort srt = 
+  op unlinkType : MSType -> MSType
+ def unlinkType srt = 
   case srt of
    | MetaTyVar (mtv, _) -> 
      (case (! mtv).link of
-       | Some srt -> unlinkSort srt
+       | Some srt -> unlinkType srt
        | _ -> srt)
    | _ -> srt 
 
@@ -65,58 +65,58 @@ Utilities qualifying spec
      | _ -> mtv
 
  %% create a copy of srt, but replace type vars by meta type vars
-  op metafySort : Sort -> MetaSortScheme
- def metafySort srt =
-   let (tvs, srt) = unpackSort srt in
+  op metafyType : MSType -> MetaTypeScheme
+ def metafyType srt =
+   let (tvs, srt) = unpackType srt in
    if empty? tvs then
      ([],srt)
    else
-     let mtvar_position = Internal "metafySort" in
+     let mtvar_position = Internal "metafyType" in
      let tv_map = List.map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs in
      let
-        def mapTyVar (tv, tvs, pos) : MS.Sort = 
+        def mapTyVar (tv, tvs, pos) : MSType = 
 	  case tvs of
 	    | [] -> TyVar (tv, pos)
 	    | (tv1, s) :: tvs -> 
 	      if tv = tv1 then s else mapTyVar (tv, tvs, pos)
 
-        def cp (srt : MS.Sort) = 
+        def cp (srt : MSType) = 
 	  case srt of
 	    | TyVar (tv, pos) -> mapTyVar (tv, tv_map, pos)
 	    | srt -> srt
      in
-     let srt = mapSort (id, cp, id) srt in
+     let srt = mapType (id, cp, id) srt in
      let mtvs = List.map (fn (_, (MetaTyVar (y, _))) -> y) tv_map in
      (mtvs, srt)
 
- op metafyBaseType(qid: QualifiedId, ty: Sort, pos: Position): Sort * Sort =
-   let (tvs, srt) = unpackSort ty in
+ op metafyBaseType(qid: QualifiedId, ty: MSType, pos: Position): MSType * MSType =
+   let (tvs, srt) = unpackType ty in
    if empty? tvs then
      (Base(qid,[],pos),srt)
    else
-   let mtvar_position = pos in          % Internal "metafySort"
+   let mtvar_position = pos in          % Internal "metafyType"
    let tv_map = List.map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs in
-   let  def mapTyVar (tv, tvs, pos) : MS.Sort = 
+   let  def mapTyVar (tv, tvs, pos) : MSType = 
 	  case tvs of
 	    | [] -> TyVar (tv, pos)
 	    | (tv1, s) :: tvs -> 
 	      if tv = tv1 then s else mapTyVar (tv, tvs, pos)
 
-        def cp (srt : MS.Sort) = 
+        def cp (srt : MSType) = 
 	  case srt of
 	    | TyVar (tv, pos) -> mapTyVar (tv, tv_map, pos)
 	    | srt -> srt
      in
-     let srt = mapSort (id, cp, id) srt in
+     let srt = mapType (id, cp, id) srt in
      let mtvs = List.map (fn (_, mv) -> mv) tv_map in
      (Base(qid,mtvs,pos), srt)
 
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
-   let {sorts, ops, elements, qualifier} = spc in
+   let {types, ops, elements, qualifier} = spc in
    let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
    let spc = {%importInfo = importInfo,
-	      sorts      = sorts,
+	      types      = types,
 	      ops        = ops,
 	      elements   = elements,
 	      qualifier  = qualifier
@@ -133,7 +133,7 @@ Utilities qualifying spec
    in
    env
 
- def sameCPSort? (s1 : MS.Sort, s2 : MS.Sort) : Boolean =
+ def sameCPType? (s1 : MSType, s2 : MSType) : Bool =
    case (s1, s2) of
     | (CoProduct (row1, _), CoProduct (row2, _)) ->
       length row1 = length row2
@@ -147,9 +147,9 @@ Utilities qualifying spec
 	   constrs  = computeConstrMap sp % importMap
 	   }
 
- %% Computes a map from constructor names to set of sorts for them
- def computeConstrMap spc : StringMap (List (QualifiedId * Sort)) =
-   let sorts = spc.sorts in
+ %% Computes a map from constructor names to set of types for them
+ def computeConstrMap spc : StringMap (List (QualifiedId * MSType)) =
+   let types = spc.types in
    let 
 
      def addConstr (id, qid, cp_srt, constrMap) =
@@ -161,27 +161,27 @@ Utilities qualifying spec
 	   else
 	     StringMap.insert (constrMap, id,  (qid, cp_srt) :: srt_prs)
 
-     def addSort qid (constrMap, dfn) =
-       let (tvs, srt) = unpackSort dfn in
+     def addType qid (constrMap, dfn) =
+       let (tvs, srt) = unpackType dfn in
        case srt of
 	 | CoProduct (row, _) ->
 	   foldl (fn (constrMap, (id,_)) -> addConstr (id, qid, dfn, constrMap)) 
 	         constrMap
 		 row
 	   %% | Base (Qualified (qid, id), _, _) ->
-	   %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
-	   %%           lookupSortInImports(importMap, qid, id)
+	   %%   (let matching_entries : List(String * QualifiedId * TypeInfo) = 
+	   %%           lookupTypeInImports(importMap, qid, id)
 	   %%       in
 	   %%       case matching_entries
 	   %%  of [(_, _, (_, e_tvs, Some e_srt))] ->
-	   %%     addSort(e_tvs, convertSortToPSort e_srt)
+	   %%     addType(e_tvs, convertTypeToPType e_srt)
 	   %%   | _ -> ())
 	 | _ -> constrMap
    in
-     foldSortInfos (fn (info, constrMap) -> 
-		    foldl (addSort (primarySortName info)) constrMap (sortInfoDefs info))
+     foldTypeInfos (fn (info, constrMap) -> 
+		    foldl (addType (primaryTypeName info)) constrMap (typeInfoDefs info))
                    StringMap.empty 
-		   sorts
+		   types
 
 
  %% These errors are more likely to be the primary cause of a type error than other errors
@@ -253,7 +253,7 @@ Utilities qualifying spec
  %            gotoErrorLocation other_errors)
  %     | _ -> ()
 
- op traceErrors?: Boolean = false
+ op traceErrors?: Bool = false
  
  def error (env, msg, pos) =
    let _ = if traceErrors? then writeLine(msg^" at\n"^Position.print pos) else () in
@@ -267,13 +267,13 @@ Utilities qualifying spec
  def secondPass env =
    env << {firstPass? = false}
 
- def setEnvSorts (env, newSorts) =
-   env << {internal = setSorts (env.internal, newSorts)}
+ def setEnvTypes (env, newTypes) =
+   env << {internal = setTypes (env.internal, newTypes)}
 
  op setEnvOps (env: LocalEnv, newOps: OpMap): LocalEnv =
    env << {internal = setOps (env.internal, newOps)}
 
- (* Unlink and unfold recursive sort declarations *)
+ (* Unlink and unfold recursive type declarations *)
 
  def compareQId (Qualified (q1, id1), Qualified (q2, id2)) : Comparison = 
    case String.compare (q1, q2) of
@@ -281,29 +281,29 @@ Utilities qualifying spec
      | result -> result
 
  %% sjw: Replace base srt by its instantiated definition
- def unfoldSort (env,srt) = 
-   unfoldSortRec (env, srt, SplaySet.empty compareQId) 
+ def unfoldType (env,srt) = 
+   unfoldTypeRec (env, srt, SplaySet.empty compareQId) 
    
- def unfoldSortRec (env, srt, qids) : MS.Sort = 
-   let unlinked_sort = unlinkSort srt in
-   case unlinked_sort of
+ def unfoldTypeRec (env, srt, qids) : MSType = 
+   let unlinked_type = unlinkType srt in
+   case unlinked_type of
     | Base (qid, ts, pos) -> 
       if SplaySet.member (qids, qid) then
 	(error (env,
-		"The sort " ^ (printQualifiedId qid) ^ " is recursively defined using itself",
+		"The type " ^ (printQualifiedId qid) ^ " is recursively defined using itself",
 		pos);
-	 unlinked_sort)
+	 unlinked_type)
       else
-        (case findAllSorts (env.internal, qid) of
+        (case findAllTypes (env.internal, qid) of
           | info :: r ->
-	    (if ~ (definedSortInfo? info) then
-	       let tvs = firstSortDefTyVars info in
+	    (if ~ (definedTypeInfo? info) then
+	       let tvs = firstTypeDefTyVars info in
 	       let l1 = length tvs in
 	       let l2 = length ts  in
 	       ((if l1 ~= l2 then
 		   error (env,
 			  "\nInstantiation list (" ^ 
-			  (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" ts) ^
+			  (foldl (fn (s,arg) -> s ^ " " ^ (printType arg)) "" ts) ^
 			  " ) does not match argument list (" ^ 
 			  (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
 			  " )",
@@ -312,11 +312,11 @@ Utilities qualifying spec
 		   ());
 		%% Use the primary name, even if the reference was via some alias.
                 %% This normalizes all references to be via the same name.
-		Base (primarySortName info, ts, pos))
+		Base (primaryTypeName info, ts, pos))
 	     else
-	       let defs = sortInfoDefs info in
+	       let defs = typeInfoDefs info in
 	       let base_defs = filter (fn srt ->
-				       let (tvs, srt) = unpackSort srt in
+				       let (tvs, srt) = unpackType srt in
 				       case srt of
 					 | Base _ -> true
 					 | _      -> false)
@@ -324,41 +324,41 @@ Utilities qualifying spec
 	       in
 		 case base_defs of
 		   | [] ->
-		     let dfn = maybeAndSort (defs, sortAnn info.dfn) in
+		     let dfn = maybeAndType (defs, typeAnn info.dfn) in
 		     instantiateScheme (env, pos, ts, dfn)
 		   | _ ->
-		     %% A base sort can be defined in terms of other base sorts.
+		     %% A base type can be defined in terms of other base types.
    		     %% So we unfold recursively here.
-		     let dfn = maybeAndSort (base_defs, sortAnn info.dfn) in
-		     unfoldSortRec (env,
+		     let dfn = maybeAndType (base_defs, typeAnn info.dfn) in
+		     unfoldTypeRec (env,
 				    instantiateScheme (env, pos, ts, dfn),
 				    %% Watch for self-references, even via aliases: 
 				    foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
 				          qids
 					  info.names))
           | [] -> 
-	    (error (env, "Could not find sort "^ printQualifiedId qid, pos);
-	     unlinked_sort))
+	    (error (env, "Could not find type "^ printQualifiedId qid, pos);
+	     unlinked_type))
    %| Boolean is the same as default case
     | s -> s 
 
- %% sjw: Returns srt with all  sort variables dereferenced
+ %% sjw: Returns srt with all  type variables dereferenced
  def unlinkRec srt = 
-   mapSort (fn x -> x, 
-            fn s -> unlinkSort s,
+   mapType (fn x -> x, 
+            fn s -> unlinkType s,
             fn x -> x)
            srt
     
  %% findTheFoo2 is just a variant of findTheFoo, 
  %%  but taking Qualifier * Id instead of QualifiedId
- op findTheSort2 : LocalEnv * Qualifier * Id -> Option SortInfo
+ op findTheType2 : LocalEnv * Qualifier * Id -> Option TypeInfo
  op findTheOp2   : LocalEnv * Qualifier * Id -> Option OpInfo
 
- def findTheSort2 (env, qualifier, id) =
-  %% We're looking for precisely one sort,
+ def findTheType2 (env, qualifier, id) =
+  %% We're looking for precisely one type,
   %% which we might have specified as being unqualified.
   %% (I.e., unqualified is not a wildcard here.)
-  findAQualifierMap (env.internal.sorts, qualifier, id)
+  findAQualifierMap (env.internal.types, qualifier, id)
 
  def findTheOp2 (env, qualifier, id) =
   %% We're looking for precisely one op,
@@ -366,7 +366,7 @@ Utilities qualifying spec
   %% (I.e., unqualified is not a wildcard here.)
   findAQualifierMap (env.internal.ops, qualifier, id)
 
- op findVar(env: LocalEnv, id: Id, a: Position): Option MS.Term =
+ op findVar(env: LocalEnv, id: Id, a: Position): Option MSTerm =
    case StringMap.find (env.vars, id) of
       | Some srt -> Some(Var ((id, srt), a))
       | None -> None
@@ -375,7 +375,7 @@ Utilities qualifying spec
   let 
     def mkTerm (a, info) =
       let (tvs, srt, tm) = unpackFirstOpDef info in
-      let (_,srt) = metafySort (Pi (tvs, srt, noPos)) in
+      let (_,srt) = metafyType (Pi (tvs, srt, noPos)) in
       let Qualified (q, id) = primaryOpName info in
       Fun (%% Allow (UnQualified, x) through as TwoNames term ...
 	   %% if qualifier = UnQualified
@@ -393,18 +393,18 @@ Utilities qualifying spec
 
 
  def instantiateScheme (env, pos, types, srt) = 
-   let (tvs, sss) = unpackSort srt in
+   let (tvs, sss) = unpackType srt in
    if ~(length types = length tvs) then
      (error (env, 
 	     "\nInstantiation list (" ^ 
-	     (foldl (fn (s,arg) -> s ^ " " ^ (printSort arg)) "" types) ^
+	     (foldl (fn (s,arg) -> s ^ " " ^ (printType arg)) "" types) ^
 	     " ) does not match argument list (" ^ 
 	     (foldl (fn (s,tv) -> s ^ " " ^ tv) "" tvs) ^
 	     " )",
 	     pos);
       sss)
    else
-     let (new_mtvs, new_srt) = metafySort srt in
+     let (new_mtvs, new_srt) = metafyType srt in
      (ListPair.app (fn (typ, mtv) -> 
                     let cell = ! mtv in
                     mtv := cell << {link = Some typ})
@@ -412,32 +412,32 @@ Utilities qualifying spec
       new_srt)
 
 
- type Unification = | NotUnify  MS.Sort * MS.Sort 
-                    | Unify List (MS.Sort * MS.Sort)
+ type Unification = | NotUnify  MSType * MSType 
+                    | Unify List (MSType * MSType)
 
-  op unifyL : [a] LocalEnv * MS.Sort * MS.Sort * 
+  op unifyL : [a] LocalEnv * MSType * MSType * 
                   List a * List a * 
-                  List (MS.Sort * MS.Sort) * Boolean * 
-                  (LocalEnv * a * a *  List (MS.Sort * MS.Sort) * Boolean -> Unification)
+                  List (MSType * MSType) * Bool * 
+                  (LocalEnv * a * a *  List (MSType * MSType) * Bool -> Unification)
 		  -> Unification
- def unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubsorts?, unify) : Unification = 
-   %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
+ def unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubtypes?, unify) : Unification = 
+   %% ignoreSubtypes? really should be called ignoreSubtypePreds? 
    case (l1, l2) of
      | ([], []) -> Unify pairs
      | (e1 :: l1, e2 :: l2) -> 
-       (case unify (env, e1, e2, pairs, ignoreSubsorts?) of
-	  | Unify pairs -> unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubsorts?, unify)
+       (case unify (env, e1, e2, pairs, ignoreSubtypes?) of
+	  | Unify pairs -> unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubtypes?, unify)
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
-  op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean
- def unifySorts env ignoreSubsorts? s1 s2 =
-   %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
+  op unifyTypes : LocalEnv -> Bool -> MSType -> MSType -> Bool
+ def unifyTypes env ignoreSubtypes? s1 s2 =
+   %% ignoreSubtypes? really should be called ignoreSubtypePreds? 
 
-   (* Unify possibly recursive sorts s1 and s2.
+   (* Unify possibly recursive types s1 and s2.
       The auxiliary list "pairs" is a list of pairs of 
-      sorts that can be assumed unified. The list avoids
-      indefinite expansion of recursive sorts.
+      types that can be assumed unified. The list avoids
+      indefinite expansion of recursive types.
            
       Let for instance:
 
@@ -454,52 +454,52 @@ Utilities qualifying spec
 
       These also unify.
 
-      More generally  sorts unify just in case that their
+      More generally  types unify just in case that their
       unfoldings are bisimilar.
 
       *)
 
-   case unify (env, s1, s2, [], ignoreSubsorts?) of
+   case unify (env, s1, s2, [], ignoreSubtypes?) of
      | Unify     _       -> true
      | NotUnify (s1, s2) -> false
 
-  op unifyCP : LocalEnv * Sort * Sort * 
-               List (Id * Option Sort) * List (Id * Option Sort) * 
-	       List (Sort * Sort) * Boolean
+  op unifyCP : LocalEnv * MSType * MSType * 
+               List (Id * Option MSType) * List (Id * Option MSType) * 
+	       List (MSType * MSType) * Bool
 	       -> Unification
- def unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?) = 
-   unifyL (env,srt1, srt2, r1, r2, pairs,ignoreSubsorts?,
-	   fn (env, (id1, s1), (id2, s2), pairs, ignoreSubsorts?) -> 
+ def unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?) = 
+   unifyL (env,srt1, srt2, r1, r2, pairs,ignoreSubtypes?,
+	   fn (env, (id1, s1), (id2, s2), pairs, ignoreSubtypes?) -> 
 	   if id1 = id2 then
 	     case (s1, s2) of
 	       | (None,    None)    -> Unify pairs 
-	       | (Some s1, Some s2) -> unify (env, s1, s2, pairs, ignoreSubsorts?)
+	       | (Some s1, Some s2) -> unify (env, s1, s2, pairs, ignoreSubtypes?)
 	       | _                  -> NotUnify (srt1, srt2)
 	   else
 	     NotUnify (srt1, srt2))
 
-  op unifyP : LocalEnv * Sort * Sort * 
-              List (Id * Sort) * List (Id * Sort) * 
-              List (Sort * Sort) * Boolean
+  op unifyP : LocalEnv * MSType * MSType * 
+              List (Id * MSType) * List (Id * MSType) * 
+              List (MSType * MSType) * Bool
 	      -> Unification
- def unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?) = 
-     unifyL (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?,
-	     fn (env, (id1, s1), (id2, s2), pairs, ignoreSubsorts?) -> 
+ def unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?) = 
+     unifyL (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?,
+	     fn (env, (id1, s1), (id2, s2), pairs, ignoreSubtypes?) -> 
 	     if id1 = id2 then
-	       unify (env, s1, s2, pairs, ignoreSubsorts?)
+	       unify (env, s1, s2, pairs, ignoreSubtypes?)
 	     else 
 	       NotUnify (srt1, srt2))
 
- op debugUnify?: Boolean = false
+ op debugUnify?: Bool = false
 
-  op unify : LocalEnv * Sort * Sort * List (Sort * Sort) * Boolean -> Unification
- def unify (env, s1, s2, pairs, ignoreSubsorts?) = 
-   let _ = if debugUnify? then writeLine("Unifying "^printSort s1^" with "^printSort s2) else () in
+  op unify : LocalEnv * MSType * MSType * List (MSType * MSType) * Bool -> Unification
+ def unify (env, s1, s2, pairs, ignoreSubtypes?) = 
+   let _ = if debugUnify? then writeLine("Unifying "^printType s1^" with "^printType s2) else () in
    let spc  = env.internal in
-   let pos1 = sortAnn s1  in
-   let pos2 = sortAnn s2  in
-   let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
-   let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
+   let pos1 = typeAnn s1  in
+   let pos2 = typeAnn s2  in
+   let srt1 = withAnnS (unlinkType s1, pos1) in % ? DerivedFrom pos1 ?
+   let srt2 = withAnnS (unlinkType s2, pos2) in % ? DerivedFrom pos2 ?
    if equalType? (srt1, srt2) then 
      Unify pairs 
    else
@@ -509,7 +509,7 @@ Utilities qualifying spec
          foldl (fn (result,s1) ->
 		case result of
 		  | Unify _ -> result
-		  | _ -> unify (env, s1, srt2, pairs, ignoreSubsorts?))
+		  | _ -> unify (env, s1, srt2, pairs, ignoreSubtypes?))
 	       (NotUnify (srt1, srt2))
 	       srts1
        
@@ -517,32 +517,32 @@ Utilities qualifying spec
          foldl (fn (result,s2) ->
 		case result of
 		  | Unify _ -> result
-		  | _ -> unify (env, srt1, s2, pairs, ignoreSubsorts?))
+		  | _ -> unify (env, srt1, s2, pairs, ignoreSubtypes?))
 	       (NotUnify (srt1, srt2))
 	       srts2
        
        | (CoProduct (r1, _), CoProduct (r2, _)) -> 
-         unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?)
+         unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?)
 
        | (Product (r1, _), Product (r2, _)) -> 
-	 unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubsorts?)
+	 unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?)
 
        | (Arrow (t1, t2, _), Arrow (s1, s2, _)) -> 
-	 (case unify (env, t1, s1, pairs, ignoreSubsorts?) of
-	    | Unify pairs -> unify (env, t2, s2, pairs, ignoreSubsorts?)
+	 (case unify (env, t1, s1, pairs, ignoreSubtypes?) of
+	    | Unify pairs -> unify (env, t2, s2, pairs, ignoreSubtypes?)
 	    | notUnify -> notUnify)
 
        | (Quotient (ty, trm, _), Quotient (ty2, trm2, _)) ->
 	 if equalTermStruct? (trm, trm2) then
-	   unify (env, ty, ty2, pairs, ignoreSubsorts?)
+	   unify (env, ty, ty2, pairs, ignoreSubtypes?)
 	 else 
 	   NotUnify (srt1, srt2)
 
 	   %                 if trm = trm_ then
-	   %                   unify (ty, ty2, pairs, ignoreSubsorts?) 
+	   %                   unify (ty, ty2, pairs, ignoreSubtypes?) 
 	   %                 else 
 	   %                   NotUnify (srt1, srt2)
-	   %               | (Subsort (ty, trm, _), Subsort (ty2, trm2, _)) -> 
+	   %               | (Subtype (ty, trm, _), Subtype (ty2, trm2, _)) -> 
 	   %                  if trm = trm_ then
 	   %                    unify (ty, ty_, pairs) 
 	   %                  else 
@@ -557,8 +557,8 @@ Utilities qualifying spec
 	    NotUnify (srt1, srt2)
 
 	| (MetaTyVar (mtv, _), _) -> 
-	   let s3 = unfoldSort (env, srt2) in
-	   let s4 = unlinkSort s3 in
+	   let s3 = unfoldType (env, srt2) in
+	   let s4 = unlinkType s3 in
 	   if equalType? (s4, s1) then
 	     Unify pairs
 	   else if occurs (mtv, s4) then
@@ -568,8 +568,8 @@ Utilities qualifying spec
 	      Unify pairs)
 
 	| (s3, MetaTyVar (mtv, _)) -> 
-	  let s4 = unfoldSort (env, s3) in
-	  let s5 = unlinkSort s4 in
+	  let s4 = unfoldType (env, s3) in
+	  let s5 = unlinkType s4 in
 	  if equalType? (s5, s2) then
 	    Unify pairs
 	  else if occurs (mtv, s5) then
@@ -588,17 +588,17 @@ Utilities qualifying spec
 	    then
 	      Unify pairs
 	  else if id = id2 then
-	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubsorts?, unify)
+	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubtypes?, unify)
 	  else 
-	    let s1x = unfoldSort (env, srt1) in
-	    let s2x = unfoldSort (env, srt2) in
+	    let s1x = unfoldType (env, srt1) in
+	    let s2x = unfoldType (env, srt2) in
 	    if equalType? (s1, s1x) && equalType? (s2x, s2) then
 	      NotUnify  (srt1, srt2)
 	    else 
 	      unify (env, withAnnS (s1x, pos1), 
 		     withAnnS (s2x, pos2), 
 		     Cons ((s1, s2), pairs), 
-		     ignoreSubsorts?)
+		     ignoreSubtypes?)
 
 	% TODO: alpha equivalence...
 	% | (Pi _, Pi _) -> alpha equivalence directly
@@ -606,57 +606,57 @@ Utilities qualifying spec
 
 	| (Pi _, _) ->
 	  % TODO: or perhaps alpha equivalence by converting vars to meta-ty-vars here...
-	  unify (env, sortInnerSort srt1, srt2, pairs, ignoreSubsorts?)
+	  unify (env, typeInnerType srt1, srt2, pairs, ignoreSubtypes?)
 
 	| (_, Pi _) ->
-	  unify (env, srt1, sortInnerSort srt2, pairs, ignoreSubsorts?)
+	  unify (env, srt1, typeInnerType srt2, pairs, ignoreSubtypes?)
 
 	| (Any _, _) -> Unify pairs
 	| (_, Any _) -> Unify pairs
 
 	| _ ->
-	  if ignoreSubsorts? then
+	  if ignoreSubtypes? then
 	    case (srt1, srt2) of
-	      | (Subsort (ty, _, _), ty2) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
-	      | (ty, Subsort (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubsorts?)
+	      | (Subtype (ty, _, _), ty2) -> unify (env, ty, ty2, pairs, ignoreSubtypes?)
+	      | (ty, Subtype (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubtypes?)
 	      | (Base _, _) -> 
-	        let s1x = unfoldSort (env, srt1) in
+	        let s1x = unfoldType (env, srt1) in
 		if equalType? (s1, s1x) then
 		  NotUnify (srt1, srt2)
 		else 
-		  unify (env, s1x, s2, pairs, ignoreSubsorts?)
+		  unify (env, s1x, s2, pairs, ignoreSubtypes?)
 	      | (_, Base _) ->
-		let s3 = unfoldSort (env, srt2) in
+		let s3 = unfoldType (env, srt2) in
 		if equalType? (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
-		  unify (env, s1, s3, pairs, ignoreSubsorts?)
+		  unify (env, s1, s3, pairs, ignoreSubtypes?)
 	      | _ -> NotUnify (srt1, srt2)
 	  else 
 	    case (srt1, srt2) of
-	      | (Subsort (s1, p1, _), Subsort (s2, p2, _)) ->
+	      | (Subtype (s1, p1, _), Subtype (s2, p2, _)) ->
 		if unifyTerm? env.internal (p1, p2) then 
-		  unify (env, s1, s2, pairs, ignoreSubsorts?)
+		  unify (env, s1, s2, pairs, ignoreSubtypes?)
 		else
 		  NotUnify (srt1, srt2)
 	      | (Base _, _) -> 
-	        let  s3 = unfoldSort (env, srt1) in
+	        let  s3 = unfoldType (env, srt1) in
 		if equalType? (s1, s3) then 
 		  NotUnify (srt1, srt2)
 		else 
-		  unify (env, s3, s2, pairs, ignoreSubsorts?)
+		  unify (env, s3, s2, pairs, ignoreSubtypes?)
 	      | (_, Base _) ->
-		let s3 = unfoldSort (env, srt2) in
+		let s3 = unfoldType (env, srt2) in
 		if equalType? (s2, s3) then
 		  NotUnify (srt1, srt2)
 		else 
-		  unify (env, s1, s3, pairs, ignoreSubsorts?)
+		  unify (env, s1, s3, pairs, ignoreSubtypes?)
 	      | _ -> NotUnify (srt1, srt2)
 
-  op consistentSorts? : LocalEnv * MS.Sort * MS.Sort * Boolean -> Boolean
- def consistentSorts? (env, srt1, srt2, ignoreSubsorts?) =
+  op consistentTypes? : LocalEnv * MSType * MSType * Bool -> Bool
+ def consistentTypes? (env, srt1, srt2, ignoreSubtypes?) =
    let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
-   let val = (unifySorts env ignoreSubsorts? srt1 srt2) in
+   let val = (unifyTypes env ignoreSubtypes? srt1 srt2) in
    (clearMetaTyVarLinks free_mtvs;
     val)
 
@@ -672,15 +672,15 @@ Utilities qualifying spec
      def vr srt = 
        case srt of
 	 | MetaTyVar (tv, pos) -> 
-	   (case unlinkSort srt of
+	   (case unlinkType srt of
 	      | MetaTyVar (tv, _) -> (vars := Cons (tv, ! vars); srt)
-	      | s -> mapSort (fn x -> x, vr, fn x -> x) (withAnnS (s, pos)))
+	      | s -> mapType (fn x -> x, vr, fn x -> x) (withAnnS (s, pos)))
 	 | _ -> srt
    in
-   let _ = mapSort (fn x -> x, vr, fn x -> x) srt in
+   let _ = mapType (fn x -> x, vr, fn x -> x) srt in
    ! vars
 
- def occurs (mtv : MS.MetaTyVar, srt : MS.Sort) : Boolean = 
+ def occurs (mtv : MS.MetaTyVar, srt : MSType) : Bool = 
    let
       def occursOptRow (mtv, row) =
        case row of
@@ -698,11 +698,11 @@ Utilities qualifying spec
      | Arrow     (t1, t2,  _) -> occurs (mtv, t1) || occurs (mtv, t2)
      %% sjw 3/404 It seems safe to ignore the predicates and it fixes bug 82
      | Quotient  (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
-     | Subsort   (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
+     | Subtype   (t, pred, _) -> occurs (mtv, t)  %or occursT (mtv, pred)
      | Base      (_, srts, _) -> exists? (fn s -> occurs (mtv, s)) srts
      | Boolean             _  -> false
      | TyVar               _  -> false 
-     | MetaTyVar           _  -> (case unlinkSort srt of
+     | MetaTyVar           _  -> (case unlinkType srt of
 				    | MetaTyVar (mtv1, _) -> mtv = mtv1 
 				    | t -> occurs (mtv, t))
      | And       (srts,    _) -> exists? (fn s -> occurs (mtv, s)) srts
@@ -727,14 +727,14 @@ Utilities qualifying spec
  op break(s: String): () = ()
 
  (* Apply substitution as variable linking *)
-  op linkMetaTyVar : MS.MetaTyVar -> MS.Sort -> ()
+  op linkMetaTyVar : MS.MetaTyVar -> MSType -> ()
  def linkMetaTyVar (mtv : MS.MetaTyVar) tm = 
    let cell = ! mtv in
-   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.show cell.uniqueId^" with "^printSort tm) else ();
+   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.show cell.uniqueId^" with "^printType tm) else ();
     if embed? CoProduct tm then break("copr") else ();
     mtv := cell << {link = Some tm})
 
-  op simpleTerm : MS.Term -> Boolean
+  op simpleTerm : MSTerm -> Bool
  def simpleTerm term = 
    case term of
      | Var _ -> true
@@ -742,17 +742,17 @@ Utilities qualifying spec
      | _ -> false
 
  %% Used by the Accord extension to typechecker that considers f(x) to be a 
- %% possible interpretation of x.f (if type of x is a subsort of domain of f)
+ %% possible interpretation of x.f (if type of x is a subtype of domain of f)
  %% Don't do any unification, to avoid coercing undeclared x to bogus type.
-  op subsort? : LocalEnv -> MS.Sort -> MS.Sort -> Boolean
- def subsort? env x y =
+  op Accord.subtypeOf? : LocalEnv -> MSType -> MSType -> Bool
+ def Accord.subtypeOf? env x y =
    let spc = env.internal in
    let 
      def aux x =
        equalType? (x, y) ||
-       (let x = unfoldSort (env, x) in
+       (let x = unfoldType (env, x) in
         case x of
-	  | Subsort (x, _, _) -> aux x 
+	  | Subtype (x, _, _) -> aux x 
 	  | _ -> false)
    in
      aux x

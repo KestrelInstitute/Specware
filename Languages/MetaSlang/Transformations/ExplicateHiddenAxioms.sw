@@ -1,18 +1,18 @@
 Prover qualifying spec
  import DefToAxiom
- import SortToAxiom
+ import TypeToAxiom
 % import OpToAxiom
 
   op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
-%    let def axiomFromSortDef(qname,name,sortDecl,sortAxioms) = sortAxioms ++ axiomFromSortDefTop(spc,qname,name,sortDecl) in
+%    let def axiomFromTypeDef(qname,name,typeDecl,typeAxioms) = typeAxioms ++ axiomFromTypeDefTop(spc,qname,name,typeDecl) in
 %    let def axiomFromOp(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpTop(spc,qname,name,decl) in
 %    %let def axiomFromProp(prop,props) = props ++ axiomFromPropTop(spc,prop) in
 
-%    let newSortAxioms = foldriAQualifierMap axiomFromSortDef [] spc.sorts in
+%    let newTypeAxioms = foldriAQualifierMap axiomFromTypeDef [] spc.types in
 %    let newDefAxioms = foldriAQualifierMap axiomFromOp [] spc.ops in
 %    %let newPropAxioms = foldr axiomFromProp [] spc.elements in
-%    let newElements = mergeAxiomsByPos(spc.elements, newSortAxioms) in
+%    let newElements = mergeAxiomsByPos(spc.elements, newTypeAxioms) in
 %    let newElements = mergeAxiomsByPos(newElements, newDefAxioms) in
 %    %let newElements = mergeAxiomsByPos(newElements, newPropAxioms) in
     %%let _ = debug("explicateHidden") in 
@@ -24,10 +24,10 @@ Prover qualifying spec
 	      | Import (s_tm,i_sp,s_elts,a) ->
 		let newElts = expandElts(s_elts,[]) in
 		Cons(Import(s_tm,i_sp,newElts,a),r_elts)
-	      | SortDef (qid, _) ->
-	        (case AnnSpec.findTheSort(spc,qid) of
-		   | Some sortinfo ->
-		     Cons(el,axiomFromSortDefTop(spc,qid,sortinfo) ++ r_elts))
+	      | TypeDef (qid, _) ->
+	        (case AnnSpec.findTheType(spc,qid) of
+		   | Some typeinfo ->
+		     Cons(el,axiomFromTypeDefTop(spc,qid,typeinfo) ++ r_elts))
 	      | Op (qid,def?,_) ->
 	        (case AnnSpec.findTheOp(spc,qid) of
 		   | Some opinfo -> Cons (el,

@@ -5,10 +5,10 @@ SpecCalc qualifying spec
  import ../AbstractSyntax/SimplePrinter
  import AnnSpec
 
- %  sort ASpec b = 
+ %  type ASpec b = 
  %   {
  %    importInfo   : ImportInfo,       %  not used in equality test on specs
- %    sorts        : ASortMap    b,
+ %    types        : ATypeMap    b,
  %    ops          : AOpMap      b,
  %    properties   : AProperties b
  %   }
@@ -16,16 +16,16 @@ SpecCalc qualifying spec
  %% called via ppObj attribute in specCat
  %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
   op ppASpec : Spec -> WLPretty
- def ppASpec (spc as {sorts,ops,elements,qualifier}) = 
+ def ppASpec (spc as {types,ops,elements,qualifier}) = 
    let 
-     def lookupSort(Qualified(q,id)) =
-       case findAQualifierMap(sorts,q,id) of
+     def lookupType(Qualified(q,id)) =
+       case findAQualifierMap(types,q,id) of
 	 | Some v -> v
      def lookupOp(Qualified(q,id)) =
        case findAQualifierMap(ops,q,id) of
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
-     def ppASort qId = ppASortInfo (lookupSort qId)
+     def ppAType qId = ppATypeInfo (lookupType qId)
      def ppComment str = 
        if exists? (fn chr -> chr = #\n) str then
 	 ppConcat [ppString "(*", ppString str, ppString "*)"]
@@ -37,8 +37,8 @@ SpecCalc qualifying spec
 		| Property prop            -> Cons (ppAProperty prop, result)
 		| Op       (qId,def?,_)    -> Cons (ppAOp qId,        result) % Currently does def as well  % TODO: discriminate decl-with-def from decl then def
 		| OpDef    (qId,_,_)       -> result                          % Cons(ppAOpDef   qId,result)
-		| Sort     (qId,_)         -> Cons (ppASort qId,      result)
-		| SortDef  (qId,_)         -> result                          % Cons(ppASortDef qId,result)
+		| Type     (qId,_)         -> Cons (ppAType qId,      result)
+		| TypeDef  (qId,_)         -> result                          % Cons(ppATypeDef qId,result)
 		| Comment  (str,_)         -> Cons (ppComment str,    result)
 		| Import   (_,_,impElts,_) -> (ppElements impElts) ++ result)
 	 [] elts
@@ -52,16 +52,16 @@ SpecCalc qualifying spec
 
  %% not called by Specware per se (see PSL)
   op ppASpecLocal : Spec -> WLPretty
- def ppASpecLocal (spc as {sorts,ops,elements,qualifier}) = 
+ def ppASpecLocal (spc as {types,ops,elements,qualifier}) = 
    let 
-     def lookupSort(Qualified(q,id)) =
-       case findAQualifierMap(sorts,q,id) of
+     def lookupType(Qualified(q,id)) =
+       case findAQualifierMap(types,q,id) of
 	 | Some v -> v
      def lookupOp(Qualified(q,id)) =
        case findAQualifierMap(ops,q,id) of
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
-     def ppASort qId = ppASortInfo (lookupSort qId)
+     def ppAType qId = ppATypeInfo (lookupType qId)
      def ppComment str = 
        if exists? (fn chr -> chr = #\n) str then
 	 ppConcat [ppString "(*", ppString str, ppString "*)"]
@@ -73,8 +73,8 @@ SpecCalc qualifying spec
 		| Property prop                 -> Cons (ppAProperty prop, result)
 		| Op       (qId,def?,_)         -> Cons (ppAOp       qId,  result) % Currently does def as well
 		| OpDef    (qId,_,_)            -> result                          % Cons(ppAOpDef qId,result)
-		| Sort     (qId,_)              -> Cons (ppASort     qId,  result)
-		| SortDef  (qId,_)              -> result                          % Cons(ppASortDef qId,result)
+		| Type     (qId,_)              -> Cons (ppAType     qId,  result)
+		| TypeDef  (qId,_)              -> result                          % Cons(ppATypeDef qId,result)
 		| Comment  (str,_)              -> Cons (ppComment   str,  result)
 		| Import   (specCalcTerm,_,_,_) -> Cons (ppString("import " ^ (showSCTerm specCalcTerm)), result))
 	 [] elts
@@ -87,11 +87,11 @@ SpecCalc qualifying spec
 
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
-  op ppASortInfo : [a] ASortInfo a -> WLPretty
- def ppASortInfo info =
+  op ppATypeInfo : [a] ATypeInfo a -> WLPretty
+ def ppATypeInfo info =
    let ppNames =
        case info.names of
-	 | [] -> fail "ppASortInfo: empty name list in sort info"
+	 | [] -> fail "ppATypeInfo: empty name list in type info"
 	 | [name] -> ppQualifiedId name
 	 | _ -> 
 	   ppConcat [ppString "{",
@@ -108,14 +108,14 @@ SpecCalc qualifying spec
 		      ppSep (ppString ",") (map ppString tvs),
 		      ppString ")"]
       def ppDecl srt =
-	let (tvs, srt) = unpackSort srt in
+	let (tvs, srt) = unpackType srt in
 	ppConcat [ppString " type ", ppNames, ppTvs tvs]
 
       def ppDef srt =
-	let (tvs, srt) = unpackSort srt in
-	ppConcat [ppString " type ", ppNames, ppTvs tvs, ppString " = ", ppASort srt]
+	let (tvs, srt) = unpackType srt in
+	ppConcat [ppString " type ", ppNames, ppTvs tvs, ppString " = ", ppAType srt]
    in
-   let (decls, defs) = sortInfoDeclsAndDefs info in
+   let (decls, defs) = typeInfoDeclsAndDefs info in
    let ppDecls =
        case decls of
 	 | []    -> []
@@ -144,7 +144,7 @@ SpecCalc qualifying spec
  def ppAOpInfoAux (decl_keyword, info) = 
    let ppNames =
        case info.names of
-	 | [] -> fail "ppAOpInfo: empty name list in sort info"
+	 | [] -> fail "ppAOpInfo: empty name list in type info"
 	 | [name] -> ppQualifiedId name
 	 | _      -> ppConcat [ppString "{",
 			       ppSep (ppString ",") (map ppQualifiedId info.names),
@@ -152,17 +152,17 @@ SpecCalc qualifying spec
    in
    let 
      def ppType srt =
-       let (tvs, srt) = unpackSort srt in
+       let (tvs, srt) = unpackType srt in
        case (tvs, srt) of
-	 | ([],srt) -> ppASort srt
+	 | ([],srt) -> ppAType srt
 	 | (tvs,srt) ->
 	   ppConcat [ppString "[",
 		     ppSep (ppString ",") (map ppString tvs),
 		     ppString "] ",
-		     ppASort srt]
+		     ppAType srt]
 
      def ppDecl tm =
-       let srt = termSort tm in
+       let srt = termType tm in
        ppGroup (ppConcat [ppString decl_keyword, % " op ", " var ", etc.
 			  ppNames, 
 			  ppString " : ", 

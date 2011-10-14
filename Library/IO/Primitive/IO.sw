@@ -14,13 +14,13 @@ IO qualifying spec
   type Byte     = {x : Nat | 0 <= x &&  x < 256} 
 
   op getCurrentDirectory   : () -> Filename
-  op fileExistsAndReadable : Filename -> Boolean
+  op fileExistsAndReadable : Filename -> Bool
   op fileWriteTime         : Filename -> Time
   op nullFileWriteTime     : Time
   op currentTime           : () -> Time
   op convertToFileName     : String -> Filename
 
-  op fileWritable          : Filename -> Boolean
+  op fileWritable          : Filename -> Bool
   op readBytesFromFile     : Filename -> List Byte
   op writeBytesToFile      : List Byte * Filename -> ()
 

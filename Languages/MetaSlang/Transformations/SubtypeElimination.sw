@@ -6,7 +6,7 @@ SpecNorm qualifying spec
   op regularizeBoolToFalse?: Bool = false    % Can do this effectively in IsabelleExtensions
   op removeExcessAssumptions?: Bool = false
 
-  op  isaPragma?(s: String): Boolean =
+  op  isaPragma?(s: String): Bool =
     let s = stripOuterSpaces s in
     let len = length s in
     len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
@@ -21,24 +21,24 @@ SpecNorm qualifying spec
   op noSubtypePredicateOpsObligationsString: String = "-no-stp-op-obligations"
   op makeSubtypePredicateTheoremsString: String =      "-stp-theorems"
   op noMakeSubtypePredicateTheoremsString: String = "-no-stp-theorems"
-  op makeStpTheoremsDefault?: Boolean = false
+  op makeStpTheoremsDefault?: Bool = false
 
   %% Polymorphic ops have versions that have a predicate for each polymorphic variable
   type PolyOpTable = AQualifierMap(QualifiedId * List TyVar)
 
     % mkLambda(mkWildPat ty, trueTerm)
 
-  op substTyVarsWithSubtypes(tv_map: List(TyVar * MS.Term), tm: MS.Term): MS.Term =
+  op substTyVarsWithSubtypes(tv_map: List(TyVar * MSTerm), tm: MSTerm): MSTerm =
     let result = instantiateTyVarsInTerm(tm, map (fn (tv,v) ->
-                                                    (tv, Subsort(mkTyVar tv, v, noPos)))
+                                                    (tv, Subtype(mkTyVar tv, v, noPos)))
                                                tv_map)
     in
-    %let _ = writeLine("r: "^printTermWithSorts result) in
+    %let _ = writeLine("r: "^printTermWithTypes result) in
     result
 
-  op subtypeC?(spc: Spec, ty: Sort, coercions: TypeCoercionTable): Bool =
+  op subtypeC?(spc: Spec, ty: MSType, coercions: TypeCoercionTable): Bool =
     case ty of
-     | Subsort _ -> true
+     | Subtype _ -> true
      | Base(qid, _, _) | opaqueTypeQId? coercions qid -> false
      | Product(flds, _) ->
        exists? (fn (_,tyi) -> subtypeC?(spc, tyi, coercions)) flds
@@ -53,7 +53,7 @@ SpecNorm qualifying spec
  
   op polyCallsTransformers (spc: Spec, tb: PolyOpTable, types?: Bool, coercions: TypeCoercionTable)
      : TSP_Maps_St =
-    let def doTerm (t: MS.Term): MS.Term =
+    let def doTerm (t: MSTerm): MSTerm =
           case t of
             | Fun(Op(qid as Qualified(q, id), fix?), ty, a) ->
               (case findAQualifierMap(tb, q, id) of
@@ -63,14 +63,14 @@ SpecNorm qualifying spec
                  | None -> t
                  | Some opinfo ->
                let (tvs, ty1, defn) = unpackFirstOpDef opinfo in
-               % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printSort ty) in
-               % let _ = writeLine("Matching with: "^printSort ty1) in
+               % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printType ty) in
+               % let _ = writeLine("Matching with: "^printType ty1) in
                case typeMatch(ty1, ty, spc, false) of
                  | None -> t
                  | Some tvsubst ->
                let tvsubst = filter (fn (tv,_) -> tv in? used_tvs) tvsubst in
                % let _ = (writeLine "Subst";
-               %          app (fn (tv, ty) -> writeLine(tv^": "^printSort ty)) tvsubst) in
+               %          app (fn (tv, ty) -> writeLine(tv^": "^printType ty)) tvsubst) in
                if exists? (fn (_, s_ty) -> subtypeC?(spc, s_ty, coercions)) tvsubst
                  then let (predArgs, predTypes) =
                           unzip
@@ -80,14 +80,14 @@ SpecNorm qualifying spec
                                            in
                                            let s_ty1 = raiseSubtypeFn(s_ty, spc) in
                                            % let _ = if equalType?(s_ty1, s_ty) then ()
-                                           %         else writeLine("pct: "^printSort s_ty^" --> "^printSort s_ty1)
+                                           %         else writeLine("pct: "^printType s_ty^" --> "^printType s_ty1)
                                            % in
                                            case s_ty1 of
-                                             | Subsort(s_ty2, pred, _) -> (pred, mkArrow(s_ty2, boolSort))
-                                             | _ -> (mkTruePred s_ty, mkArrow(s_ty, boolSort)))
+                                             | Subtype(s_ty2, pred, _) -> (pred, mkArrow(s_ty2, boolType))
+                                             | _ -> (mkTruePred s_ty, mkArrow(s_ty, boolType)))
                                used_tvs)
                       in
-                      % let _ = app (fn pred -> writeLine(printTermWithSorts pred)) predArgs in
+                      % let _ = app (fn pred -> writeLine(printTermWithTypes pred)) predArgs in
                       % let predTypes = map (fn pred -> inferType(spc, pred)) predArgs in
                       let new_t = mkAppl(Fun(Op(r_qid, Nonfix),
                                              mkArrow(mkProduct predTypes, ty), a),
@@ -98,36 +98,36 @@ SpecNorm qualifying spec
                  else t)
             | _ -> t
 
-        def doType (ty: Sort): Sort =
+        def doType (ty: MSType): MSType =
           case ty of
             | Base(qid, args, _) | args ~= [] && types? ->
               let new_ty = unfoldBase(spc, ty) in
               if equalType?(new_ty, ty) || embed? CoProduct new_ty then ty
               else
-              let tr_ty = mapSort (doTerm, doType, id) new_ty in
+              let tr_ty = mapType (doTerm, doType, id) new_ty in
               if equalType?(tr_ty, new_ty) then ty
                 else tr_ty
             | _ -> ty
     in
     (doTerm, doType, id)
 
-  op domSubtypePred(ty: Sort, spc: Spec): List MS.Term =
+  op domSubtypePred(ty: MSType, spc: Spec): List MSTerm =
     case arrowOpt(spc, ty) of
       | None -> []
       | Some(dom_ty, _) ->
     let r_dom_ty = raiseSubtypeFn(dom_ty, spc) in
     case r_dom_ty of
-      | Subsort(dom_ty, domPred, _) ->
+      | Subtype(dom_ty, domPred, _) ->
         [mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
-                      mkArrow(mkArrow(dom_ty, boolSort),
-                              mkArrow(ty, boolSort))),
+                      mkArrow(mkArrow(dom_ty, boolType),
+                              mkArrow(ty, boolType))),
                  domPred)]
       | _ -> []
 
-  op typePredTerm(ty0: Sort, tm: MS.Term, spc: Spec): MS.Term =
+  op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
     let ty = raiseSubtypeFn(ty0, spc) in
     let preds1 = case ty of
-                 | Subsort(_, pred, _) ->
+                 | Subtype(_, pred, _) ->
                    [maybeUnfoldSubTypePred(spc, pred)]
                  | _ -> []
     in
@@ -138,7 +138,7 @@ SpecNorm qualifying spec
         let pred = composeConjPreds(preds, spc) in
         simplifiedApply(pred, tm, spc)
 
-  op maybeRelativize?(t: MS.Term, tb: PolyOpTable): Bool =
+  op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
     if eagerRegularization? then true
     else
     existsSubTerm (fn tm ->
@@ -152,7 +152,7 @@ SpecNorm qualifying spec
                        | _ -> false)
       t
 
-  op subtypePredFreeVars (t: MS.Term, spc: Spec): List Var =
+  op subtypePredFreeVars (t: MSTerm, spc: Spec): List Var =
     foldSubTerms (fn (t,fvs) ->
                     case t of
                       | Bind(_,bndVars,_,_) ->
@@ -174,14 +174,14 @@ SpecNorm qualifying spec
 
   op reduceStpFnArgs?: Bool = true
 
-  op tryRelativizeTerm(tvs: TyVars, tm: MS.Term, tb: PolyOpTable, ty: Sort,
+  op tryRelativizeTerm(tvs: TyVars, tm: MSTerm, tb: PolyOpTable, ty: MSType,
                        ho_eqfns: List QualifiedId, spc: Spec,
                        coercions: TypeCoercionTable)
-      : List(Id * MS.Term) * MS.Term =
+      : List(Id * MSTerm) * MSTerm =
     % let _ = writeLine("tm: "^printTerm tm) in
     if tvs = [] || ~(maybeRelativize?(tm, tb))then ([],tm)
     else
-    let tv_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolSort)))) tvs in
+    let tv_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolType)))) tvs in
     % let _ = writeLine("tv_map: "^anyToString tv_map) in
     let st_tm = substTyVarsWithSubtypes(tv_map,tm) in
     let rel_tm = mapTerm (polyCallsTransformers(spc, tb, false, coercions)) st_tm in
@@ -245,14 +245,14 @@ SpecNorm qualifying spec
                                                      (Qualified(q,new_id),
                                                       map (fn (tv,_) -> tv) tv_map))
                     in
-                    let rel_ty_tm = substTyVarsWithSubtypes (tv_map, SortedTerm(dfn,ty,noPos)) in
-                    let SortedTerm(rel_dfn,ty,_) = rel_ty_tm in
+                    let rel_ty_tm = substTyVarsWithSubtypes (tv_map, TypedTerm(dfn,ty,noPos)) in
+                    let TypedTerm(rel_dfn,ty,_) = rel_ty_tm in
                     let rel_tm = mkLambda(mkTuplePat(map (fn (_,Var v) -> VarPat v) tv_map),
                                           rel_dfn)
                     in
                     let new_ty = mkArrow(mkProduct(map (fn (_,Var((_,ty),_)) -> ty) tv_map), ty) in
                     let new_opinfo = {names = [Qualified(q,new_id)],
-                                      dfn = Pi(tvs, SortedTerm(rel_tm, new_ty, noPos), noPos),
+                                      dfn = Pi(tvs, TypedTerm(rel_tm, new_ty, noPos), noPos),
                                       fixity = Nonfix,
                                       fullyQualified? = opinfo.fullyQualified?}
                     in
@@ -268,7 +268,7 @@ SpecNorm qualifying spec
                 | make_stp_thms? && tvs ~= [] && knd ~= Conjecture ->
               let (new_elts, op_map, tb) = relativizeElts(r_elts, top?, make_stp_thms?, op_map, tb) in
               % let _ = writeLine("Trying "^printQualifiedId qid^": "^printTerm bod) in
-              (case tryRelativizeTerm(tvs, bod, tb, boolSort, ho_eqfns, spc, coercions) of
+              (case tryRelativizeTerm(tvs, bod, tb, boolType, ho_eqfns, spc, coercions) of
                  | ([],_) -> (el :: new_elts, op_map, tb)
                  | (tv_map,_) ->
                    let new_id = id ^ "__stp" in
@@ -300,38 +300,38 @@ SpecNorm qualifying spec
   %% For internal use. Choose unparseable name
   def toIsaQual = "ToIsa-Internal"
 
-  op mkArbitrary(ty: Sort): MS.Term =
+  op mkArbitrary(ty: MSType): MSTerm =
     mkOp(Qualified(toIsaQual, "regular_val"), ty)
 
-  op mkSubtypeFnPredicate(dom_ty: Sort, ran_ty: Sort, f_ty: Sort): Option MS.Term =
-    if ~(embed? Subsort dom_ty || embed? Subsort ran_ty) then None
+  op mkSubtypeFnPredicate(dom_ty: MSType, ran_ty: MSType, f_ty: MSType): Option MSTerm =
+    if ~(embed? Subtype dom_ty || embed? Subtype ran_ty) then None
     else
     case (dom_ty, ran_ty) of
-      | (Subsort(dom_ty, domPred, _), Subsort(ran_ty, ranPred, _)) ->
+      | (Subtype(dom_ty, domPred, _), Subtype(ran_ty, ranPred, _)) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_P"),
-                          mkArrow(mkProduct[mkArrow(dom_ty, boolSort),
-                                            mkArrow(ran_ty, boolSort)],
-                                  mkArrow(f_ty, boolSort))),
+                          mkArrow(mkProduct[mkArrow(dom_ty, boolType),
+                                            mkArrow(ran_ty, boolType)],
+                                  mkArrow(f_ty, boolType))),
                      mkTuple [domPred, ranPred]))
-      | (Subsort(dom_ty, domPred, _), Boolean _) | regularizeBoolToFalse? -> 
+      | (Subtype(dom_ty, domPred, _), Boolean _) | regularizeBoolToFalse? -> 
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PDB"),
-                          mkArrow(mkArrow(dom_ty, boolSort),
-                                  mkArrow(f_ty, boolSort))),
+                          mkArrow(mkArrow(dom_ty, boolType),
+                                  mkArrow(f_ty, boolType))),
                      domPred))
        %% Not used because of lazy regulization
-%      | (Subsort(dom_ty, domPred, _), _) ->
+%      | (Subtype(dom_ty, domPred, _), _) ->
 %        Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
-%                          mkArrow(mkArrow(dom_ty, boolSort),
-%                                  mkArrow(f_ty, boolSort))),
+%                          mkArrow(mkArrow(dom_ty, boolType),
+%                                  mkArrow(f_ty, boolType))),
 %                     domPred))
-      | (_, Subsort(ran_ty, ranPred, _)) ->
+      | (_, Subtype(ran_ty, ranPred, _)) ->
         Some(mkApply(mkOp(Qualified(toIsaQual, "Fun_PR"),
-                          mkArrow(mkArrow(ran_ty, boolSort),
-                                  mkArrow(f_ty, boolSort))),
+                          mkArrow(mkArrow(ran_ty, boolType),
+                                  mkArrow(f_ty, boolType))),
                      ranPred))
       | _ -> None
 
-  op changePatternType(pat: Pattern, ty: Sort, spc: Spec): Pattern =
+  op changePatternType (pat: MSPattern, ty: MSType, spc: Spec): MSPattern =
     case pat of
       | VarPat((v, _), a) -> VarPat((v, ty), a)
       | WildPat(_, a) -> WildPat(ty, a)
@@ -347,8 +347,8 @@ SpecNorm qualifying spec
     
 
   %% Not currently used
-  op changeDomainType(fn_tm: MS.Term, dom_ty: Sort, spc: Spec): MS. Term =
-    % let _ = writeLine("cdt: "^printTermWithSorts fn_tm^"  c  "^printSort dom_ty) in
+  op changeDomainType (fn_tm: MSTerm, dom_ty: MSType, spc: Spec): MSTerm =
+    % let _ = writeLine("cdt: "^printTermWithTypes fn_tm^"  c  "^printType dom_ty) in
     let result =
     case fn_tm of
       | Fun(f, fn_ty, a) ->
@@ -373,20 +373,20 @@ SpecNorm qualifying spec
         Let(decls, changeDomainType(bod, dom_ty, spc), a)
       | _ -> fn_tm
     in
-    %let _ = writeLine("returned: "^ printTermWithSorts result) in
+    %let _ = writeLine("returned: "^ printTermWithTypes result) in
     result
 
-  op raiseSubtypeFn(ty: Sort, spc: Spec): Sort =
+  op raiseSubtypeFn(ty: MSType, spc: Spec): MSType =
     %% Bring subtypes to the top-level
     %% Like raiseSubtype, but doesn't look inside Nat (because it should already have
     %% been expanded) The two functions should be merged
     %% Also assumes that the definitions of named types have been raised already
-    % let _ = writeLine("rstf< "^printSort ty) in
+    % let _ = writeLine("rstf< "^printType ty) in
     let result =
         case ty of
           | Base(qid, args, a) | qid nin? dontRaiseTypes ->
             let args = map (fn tyi -> raiseSubtypeFn(tyi, spc)) args in
-            if exists? (fn tyi -> embed? Subsort tyi) args
+            if exists? (fn tyi -> embed? Subtype tyi) args
               then
               let Qualified(q,id) = qid in
               let pred_name = id^"_P" in
@@ -395,7 +395,7 @@ SpecNorm qualifying spec
                  | Some _ ->
                    let arg_comps = map (fn tyi ->
                                         case tyi of
-                                          | Subsort(styi, pr, _) -> (styi, pr)
+                                          | Subtype(styi, pr, _) -> (styi, pr)
                                           | _ -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
                                      args
                    in
@@ -403,9 +403,9 @@ SpecNorm qualifying spec
                    let bare_ty = Base(qid, bare_args, a) in
                    let arg_preds_lst =  decomposeListConjPred arg_preds in
                    let preds = map (fn arg_preds ->
-                                      mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
+                                      mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType))
                                                                                 bare_args),
-                                                                    mkArrow(bare_ty, boolSort))),
+                                                                    mkArrow(bare_ty, boolType))),
                                              arg_preds))
                                  arg_preds_lst
                    in
@@ -415,19 +415,19 @@ SpecNorm qualifying spec
                  | Some exp_ty -> mergeRaisedBase(ty, raiseSubtypeFn(exp_ty, spc), spc)
                  | None -> raiseBase spc ty)
             else raiseBase spc ty
-          | Subsort(s_ty, p, a) ->
+          | Subtype(s_ty, p, a) ->
             (case raiseSubtypeFn(s_ty, spc) of
-               | Subsort(sss_ty, pr, _) ->
-                 % let _ = writeLine("rsf ss: "^printSort s_ty^"\n"^printSort sss_ty^" | "^printTerm pr) in
+               | Subtype(sss_ty, pr, _) ->
+                 % let _ = writeLine("rsf ss: "^printType s_ty^"\n"^printType sss_ty^" | "^printTerm pr) in
                  composeSubtypes(sss_ty, p, pr, a, spc)
                | _ -> ty)
           | Product(flds, a) ->
             let flds = map (fn (id, ty) -> (id, raiseSubtypeFn(ty, spc))) flds in
-            if exists? (fn (_,tyi) -> embed? Subsort tyi) flds
+            if exists? (fn (_,tyi) -> embed? Subtype tyi) flds
               then let (bare_flds, arg_id_vars, pred,_) =
                     foldl (fn ((bare_flds, arg_id_vars, pred, i),(id,tyi)) ->
                              case tyi of
-                               | Subsort(t,p,_) -> let v = ("x_"^id, t)  in
+                               | Subtype(t,p,_) -> let v = ("x_"^id, t)  in
                                                    (bare_flds ++ [(id,t)],
                                                     arg_id_vars ++ [(id, mkVarPat v)],
                                                     Utilities.mkAnd(pred, mkApply(p, mkVar v)),
@@ -438,53 +438,53 @@ SpecNorm qualifying spec
                                        i+1))
                       ([],[],trueTerm,0) flds
                    in
-                   Subsort(Product(bare_flds,a),
+                   Subtype(Product(bare_flds,a),
                            mkLambda(mkRecordPat arg_id_vars, pred), a)
               else ty
           | Arrow(dom, rng ,a) ->
             (case mkSubtypeFnPredicate(raiseSubtypeFn(dom,spc), raiseSubtypeFn(rng,spc), ty) of
-               | Some pred -> Subsort(ty, pred, a)
+               | Some pred -> Subtype(ty, pred, a)
                | None -> ty)
           | _ -> ty
      in
-     % let _ = writeLine("rstf> "^printSort result) in
+     % let _ = writeLine("rstf> "^printType result) in
      result
  
   op raiseNamedTypes(spc: Spec): Spec =
-    let def raiseSortDefs(elts: SpecElements, spc: Spec, sbst: TermSubst)
+    let def raiseTypeDefs(elts: SpecElements, spc: Spec, sbst: TermSubst)
               : SpecElements * Spec * TermSubst =
           foldl (fn ((elts, spc, sbst), el) ->
                  case el of
                  | Import(s_tm, i_sp, s_elts, a) ->
-                   let (s_elts, spc, sbst) = raiseSortDefs(s_elts, spc, sbst) in
+                   let (s_elts, spc, sbst) = raiseTypeDefs(s_elts, spc, sbst) in
                    (Import(s_tm, i_sp, reverse s_elts, a)::elts, spc, sbst)
-                 | SortDef(qid, a) ->
-                   (case AnnSpec.findTheSort(spc, qid) of
+                 | TypeDef(qid, a) ->
+                   (case AnnSpec.findTheType(spc, qid) of
                     | Some  {names, dfn} ->
-                      let (tvs, ty) = unpackSort dfn in
+                      let (tvs, ty) = unpackType dfn in
                       % let _ = writeLine(printQualifiedId qid) in
                       (case raiseSubtypeFn(ty, spc) of
-                       | r_ty as Subsort(sup_ty, pred, a1) ->
+                       | r_ty as Subtype(sup_ty, pred, a1) ->
                          % let _ = writeLine("rnt: "^printQualifiedId qid^"\n"^
-                         %                   printSort ty^"\n-->\n"^printTerm pred) in
+                         %                   printType ty^"\n-->\n"^printTerm pred) in
                          let Qualified(q, ty_name) = qid in
                          let pred = termSubst(pred, sbst) in
                          if termSize pred < Prover.unfoldSizeThreshold
                            then let sup_ty = if equalType?(ty, r_ty) then sup_ty
                                              else case ty of
-                                                    | Subsort(s_ty, _, _) -> s_ty
+                                                    | Subtype(s_ty, _, _) -> s_ty
                                                     | _ -> ty
                                 in
-                                let sortinfo = {names = names,
-                                                dfn = maybePiSort(tvs, Subsort(sup_ty, pred, a1))}
+                                let typeinfo = {names = names,
+                                                dfn = maybePiType(tvs, Subtype(sup_ty, pred, a1))}
                                 in
-                                let spc = spc << {sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)} in
+                                let spc = spc << {types = insertAQualifierMap(spc.types,q,ty_name,typeinfo)} in
                                 (el::elts, spc, sbst)
                          else
                          let base_ty = mkBase(qid, map mkTyVar tvs) in
-                         let pred_nm = ty_name^"__subsort_pred" in
+                         let pred_nm = ty_name^"__subtype_pred" in
                          let pred_id = Qualified(q, pred_nm) in
-                         let pred_ty = mkArrow(sup_ty, boolSort) in
+                         let pred_ty = mkArrow(sup_ty, boolType) in
                          let pred_tm = mkOp(pred_id, pred_ty) in
                          let pred_el = Op(pred_id, true, a) in
                          let pred =
@@ -497,14 +497,14 @@ SpecNorm qualifying spec
                          let opinfo = {names = [pred_id],
                                        fixity = Nonfix,
                                        dfn = maybePiTerm(tvs,
-                                                         SortedTerm(pred, pred_ty, a1)),
+                                                         TypedTerm(pred, pred_ty, a1)),
                                        fullyQualified? = false}
                          in
-                         let sortinfo = {names = names,
-                                         dfn = maybePiSort(tvs, Subsort(sup_ty, pred_tm, a1))}
+                         let typeinfo = {names = names,
+                                         dfn = maybePiType(tvs, Subtype(sup_ty, pred_tm, a1))}
                          in
                          let spc = spc << {ops   = insertAQualifierMap(spc.ops,  q,pred_nm,opinfo),
-                                           sorts = insertAQualifierMap(spc.sorts,q,ty_name,sortinfo)}
+                                           types = insertAQualifierMap(spc.types,q,ty_name,typeinfo)}
                          in
                          %% This is in reverse order of what is legal for Specware but works in Isabelle
                          %% as the type does not refer to the predicate
@@ -514,17 +514,17 @@ SpecNorm qualifying spec
                  | _ -> (el::elts, spc, sbst))
             ([], spc, sbst) elts
     in
-    let (r_elts, spc, _) = raiseSortDefs(spc.elements, spc, []) in
+    let (r_elts, spc, _) = raiseTypeDefs(spc.elements, spc, []) in
     let spc = spc << {elements = reverse r_elts} in
     % let _ = writeLine("raiseNamedTypes:\n"^printSpec spc) in
     spc
 
-  op relativizeQuantifiers(spc: Spec) (t: MS.Term): MS.Term =
+  op relativizeQuantifiers(spc: Spec) (t: MSTerm): MSTerm =
     case t of
       | Bind(bndr,bndVars,bod,a) ->
         let (bndVars,bndVarsPred) =
             foldr (fn ((vn,ty), (bndVars,res)) ->
-                     % let _ = writeLine("relQ: "^printSort ty0^" ---> "^printSort ty) in
+                     % let _ = writeLine("relQ: "^printType ty0^" ---> "^printType ty) in
                      let pred_tm = typePredTerm(ty, mkVar(vn,ty), spc) in
                      % let _ = writeLine("rq0: "^printTerm pred_tm) in
                      let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
@@ -548,27 +548,27 @@ SpecNorm qualifying spec
       | Op(qid,_) -> qid in? qids
       | _ -> false
 
-  op hoTypesIn(spc: Spec) (ty: Sort): List Sort =
+  op hoTypesIn(spc: Spec) (ty: MSType): List MSType =
     case unfoldBeforeCoProduct(spc, ty) of
       | Arrow _ -> [ty]
       | TyVar _ -> [ty]
       | Product(flds,_) -> foldl (fn (result,(_,tyi)) -> hoTypesIn spc tyi ++ result) [] flds
-      | Subsort(s_ty,_,_) -> hoTypesIn spc s_ty
+      | Subtype(s_ty,_,_) -> hoTypesIn spc s_ty
       | _ -> []
 
-  op hoFunTypes(spc: Spec) (f_ty: Sort): List Sort =
+  op hoFunTypes(spc: Spec) (f_ty: MSType): List MSType =
     case arrowOpt(spc, f_ty) of
       | Some(dom, rng) ->
         hoTypesIn spc dom ++ hoFunTypes spc rng
       | None -> []
 
-  op hasArgTypeIn?(spc: Spec) (tys: List Sort) (a_ty: Sort): Bool =
+  op hasArgTypeIn?(spc: Spec) (tys: List MSType) (a_ty: MSType): Bool =
     case unfoldBeforeCoProduct(spc, a_ty) of
       | Product(flds,_)   -> exists? (fn (_,tyi) -> hasArgTypeIn? spc tys tyi) flds
-      | Subsort(s_ty,_,_) -> hasArgTypeIn? spc tys s_ty
+      | Subtype(s_ty,_,_) -> hasArgTypeIn? spc tys s_ty
       | _ -> a_ty in? tys
 
-  op hasFunTypeIn?(spc: Spec) (tys: List Sort) (f_ty: Sort): Bool =
+  op hasFunTypeIn?(spc: Spec) (tys: List MSType) (f_ty: MSType): Bool =
     case arrowOpt(spc, f_ty) of
       | Some(dom, rng) ->
         hasArgTypeIn? spc tys dom
@@ -613,7 +613,7 @@ SpecNorm qualifying spec
       | NotEquals -> true
       | _ -> refToHo_eqfns(f, ho_eqfns)
 
-  op possibleEqTestableFunTerm?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MS.Term): Bool =
+  op possibleEqTestableFunTerm?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MSTerm): Bool =
     let result =
     case tm of
       | Fun(f, Product([("1", ty), ("2", _)], _), _) | f = Equals || f = NotEquals ->
@@ -625,14 +625,14 @@ SpecNorm qualifying spec
     % let _ = if result then writeLine(printTerm tm) else () in
     result
 
-  op possibleEqTestableFunTermIn?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MS.Term): Bool =
+  op possibleEqTestableFunTermIn?(ho_eqfns: List QualifiedId, spc: Spec) (tm: MSTerm): Bool =
     let result =
     existsSubTerm (possibleEqTestableFunTerm? (ho_eqfns, spc)) tm
     in
     % let _ = if result then writeLine(printTerm tm) else () in
     result
 
-  op possibleHoEqualTestableArg?(f: MS.Term, ho_eqfns: List QualifiedId, spc: Spec): Bool =
+  op possibleHoEqualTestableArg?(f: MSTerm, ho_eqfns: List QualifiedId, spc: Spec): Bool =
     case f of
       | Fun(f, _, _) ->
         possibleEqTestableFun?(f, ho_eqfns) || embed? Embed f
@@ -644,7 +644,7 @@ SpecNorm qualifying spec
       | Lambda _ -> possibleEqTestableFunTermIn? (ho_eqfns, spc) f
       | _ -> false
 
-  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MS.Term =
+  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MSTerm =
     let (tvs,ty,full_term) = unpackTerm info.dfn in
     let tm = refinedTerm(full_term, refine_num) in
     let def reg1 tm =
@@ -663,16 +663,16 @@ SpecNorm qualifying spec
     else
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
     let full_result_tm = replaceNthTerm(full_term, refine_num, result) in
-    maybePiTerm(tvs, SortedTerm(full_result_tm,ty,termAnn tm)) 
+    maybePiTerm(tvs, TypedTerm(full_result_tm,ty,termAnn tm)) 
 
-  op regularizeIfPFun(tm: MS.Term, ty: Sort, rm_ty: Sort, spc: Spec): MS.Term =
+  op regularizeIfPFun(tm: MSTerm, ty: MSType, rm_ty: MSType, spc: Spec): MSTerm =
     % ty is expected type, rm_ty is provided types
-    % let _ = writeLine("Regularize: "^printTerm tm^": \n"^printSort ty^" to \n"^printSort rm_ty) in
+    % let _ = writeLine("Regularize: "^printTerm tm^": \n"^printType ty^" to \n"^printType rm_ty) in
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom, rng), Some(rm_dom, rm_rng)) ->
         if embed? Var tm && equalType?(dom, rm_dom) then tm
         else
-        let rfun = if embed? Boolean (stripSubsorts(spc, rng))
+        let rfun = if embed? Boolean (stripSubtypes(spc, rng))
                      then case ty of
                             | Base(Qualified("Set", "Set"),_,_) | regularizeSets? -> "RSet"
                             | _ -> if regularizeBoolToFalse? then "RFunB" else "RFun"
@@ -735,10 +735,10 @@ SpecNorm qualifying spec
            | Some(sup_ty, pred) -> mkRFun(pred, tm))
       | _ -> tm
 
-  op regTerm (t, ctxt_ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MS.Term =
+  op regTerm (t, ctxt_ty, equal_testable?, ho_eqfns: List QualifiedId, spc: Spec): MSTerm =
     let rm_ty = inferType(spc,t) in
     % let _ = writeLine("reg: "^show equal_testable?^"\n"^printTerm t
-    %                     ^"\n: "^printSort ctxt_ty) in
+    %                     ^"\n: "^printType ctxt_ty) in
     let t = if equal_testable? && ~eagerRegularization? && ~(embed? And t)
               then regularizeIfPFun(t, ctxt_ty, rm_ty, spc)
             else t
@@ -749,16 +749,16 @@ SpecNorm qualifying spec
         Apply(regTerm(f, mkArrow(inferType(spc, x), ctxt_ty), false, ho_eqfns, spc),
               regTerm(x, dom, possibleHoEqualTestableArg?(f, ho_eqfns, spc), ho_eqfns, spc), a)
       | Record(row, a) ->
-        % let _ = writeLine("regTerm "^printTerm t^":\n"^printSort ctxt_ty) in
+        % let _ = writeLine("regTerm "^printTerm t^":\n"^printType ctxt_ty) in
         let srts = map (fn (_,x) -> x) (product (spc,ctxt_ty)) in
         Record(map (fn ((idi,tmi), tyi) -> (idi, regTerm(tmi, tyi, equal_testable?, ho_eqfns, spc)))
                  (zip(row,srts)), a) 
       | Bind(b, vs, bod, a) ->
-        Bind(b, vs, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
+        Bind(b, vs, regTerm(bod, boolType, false, ho_eqfns, spc), a)
       | The(v, bod, a) ->
-        The(v, regTerm(bod, boolSort, false, ho_eqfns, spc), a)
+        The(v, regTerm(bod, boolType, false, ho_eqfns, spc), a)
       | Let(decls, bod, a) ->
-        Let (map (fn (pat,trm) -> (pat, regTerm(trm, patternSort pat,
+        Let (map (fn (pat,trm) -> (pat, regTerm(trm, patternType pat,
                                                 possibleEqTestableFunTermIn? (ho_eqfns, spc) bod,
                                                 ho_eqfns, spc)))
                decls,
@@ -780,7 +780,7 @@ SpecNorm qualifying spec
                                           (warn("Can't find range of "^printTerm t^"\nUsing body");
                                            regTerm(trm, inferType(spc, trm), false, ho_eqfns, spc)))
                            in
-                           (pat, regTerm(condn, boolSort, false, ho_eqfns, spc), reg_trm)) % ?
+                           (pat, regTerm(condn, boolType, false, ho_eqfns, spc), reg_trm)) % ?
                       match,
                     a)
         in
@@ -788,12 +788,12 @@ SpecNorm qualifying spec
           then regularizeIfPFun(lam_tm, ctxt_ty, rm_ty, spc)
           else lam_tm
       | IfThenElse(x,y,z, a) ->
-        IfThenElse(regTerm(x, boolSort, false, ho_eqfns, spc),
+        IfThenElse(regTerm(x, boolType, false, ho_eqfns, spc),
                    regTerm(y, ctxt_ty, equal_testable?, ho_eqfns, spc),
                    regTerm(z, ctxt_ty, equal_testable?, ho_eqfns, spc), a)
       %| Seq(tms, a) ->
-      | SortedTerm(tm, tm_ty, a) ->
-        SortedTerm(regTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
+      | TypedTerm(tm, tm_ty, a) ->
+        TypedTerm(regTerm(tm, tm_ty, equal_testable?, ho_eqfns, spc), tm_ty, a)
       | And(tms, a) ->
         And(map (fn tm -> regTerm(tm, ctxt_ty, equal_testable?, ho_eqfns, spc)) tms, a)
       | _ -> t
@@ -825,17 +825,17 @@ SpecNorm qualifying spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term,a) ->
-                                      Property(pt, nm, tvs, regTerm(term, boolSort, false, ho_eqfns, spc),a)
+                                      Property(pt, nm, tvs, regTerm(term, boolType, false, ho_eqfns, spc),a)
                                     | _ -> el)
                              spc.elements}
     in
     % let _ = writeLine(printSpec spc) in
     spc
 
-  op typePred(spc: Spec, ty: Sort, tm: MS.Term): MS.Term =
-    % let _ = writeLine("tp: "^printTerm tm^": "^printSort ty) in
+  op typePred(spc: Spec, ty: MSType, tm: MSTerm): MSTerm =
+    % let _ = writeLine("tp: "^printTerm tm^": "^printType ty) in
     case raiseSubtypeFn(ty, spc) of
-      | Subsort(_, pred, _) ->
+      | Subtype(_, pred, _) ->
         % let _ = writeLine("tpp: "^printTerm pred) in
         let pred = maybeUnfoldSubTypePred(spc, pred) in
         (case pred of
@@ -851,18 +851,18 @@ SpecNorm qualifying spec
       | 2 -> "d__z"
       | _ -> "d__"^show i
 
-  op tryUnpackLambda(tm: Option MS.Term): Option(Pattern * MS.Term) =
+  op tryUnpackLambda (tm: Option MSTerm): Option (MSPattern * MSTerm) =
     case tm of
       | Some(Lambda([(pat, Fun(Bool true,_,_), bod)], _)) | varRecordPattern? pat -> Some(pat, bod)
       | _ -> None
 
-  op stripRFun(tm: MS.Term): MS.Term =
+  op stripRFun(tm: MSTerm): MSTerm =
     case tm of
       | Apply(Apply(Fun(Op(Qualified(_, "RFun"),_),_,_), _, _), r_tm, _) -> r_tm
       | _ -> tm
 
-  op termSubtypeCondn(spc: Spec, term: MS.Term, ty: Sort, defn?: Option MS.Term, depth: Nat): MS.Term =
-    % let _ = writeLine("\ntsc: "^printTerm term^": "^printSort ty^"\n"^(case defn? of
+  op termSubtypeCondn(spc: Spec, term: MSTerm, ty: MSType, defn?: Option MSTerm, depth: Nat): MSTerm =
+    % let _ = writeLine("\ntsc: "^printTerm term^": "^printType ty^"\n"^(case defn? of
     %                                                                    Some defn -> printTerm defn | _ -> "")) in
     case unfoldBase(spc, ty) of
       | Arrow(dom, rng, _) ->
@@ -871,7 +871,7 @@ SpecNorm qualifying spec
                          | None -> dom
          in
          case dom_exp of
-          | Subsort(_, Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _), _) | varRecordPattern? pat ->
+          | Subtype(_, Lambda([(pat, Fun(Bool true,_,_), sub_ty_bod)], _), _) | varRecordPattern? pat ->
             let Some arg_tm = patternToTerm pat in
             let vs = patternVars pat in
             let rangeTerm = mkApply(stripRFun term, arg_tm) in
@@ -908,9 +908,9 @@ SpecNorm qualifying spec
   op dontLiftSubtypeTheorem?: Bool = false     % Not sure if this is necessary
 
   op opSubtypeTheorem(spc: Spec, opname as (Qualified(q,id)): QualifiedId, fx: Fixity,
-                      tvs: TyVars, ty: Sort, defn: MS.Term, ho_eqfns: List QualifiedId,
+                      tvs: TyVars, ty: MSType, defn: MSTerm, ho_eqfns: List QualifiedId,
                       coercions: TypeCoercionTable, stp_tbl: PolyOpTable,
-                      freeThms?: Bool): MS.Term =
+                      freeThms?: Bool): MSTerm =
     let fn_tm = mkInfixOp(opname, fx, ty) in
     % let fn_tm = regularizeIfPFun(fn_tm, ty, inferType(spc, defn), spc) in 
     let base_thm = termSubtypeCondn(spc, fn_tm, ty, Some defn, 0) in
@@ -921,8 +921,8 @@ SpecNorm qualifying spec
       if range_tvs = [] then base_thm
       else if freeThms?
       then
-        let tv_pred_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolSort)))) range_tvs in
-        let tv_ty_map = map (fn (tv, pred) -> (tv, mkSubsort(mkTyVar tv, pred))) tv_pred_map in
+        let tv_pred_map = map (fn tv -> (tv, mkVar("P__"^tv, mkArrow(mkTyVar tv, boolType)))) range_tvs in
+        let tv_ty_map = map (fn (tv, pred) -> (tv, mkSubtype(mkTyVar tv, pred))) tv_pred_map in
         let ty_with_preds = instantiateTyVarsInType(ty, tv_ty_map) in
         let defn_with_preds = substTyVarsWithSubtypes(tv_pred_map, defn) in
         % let _ = writeLine("defn_with_preds:\n"^printTerm defn_with_preds) in
@@ -933,7 +933,7 @@ SpecNorm qualifying spec
         let pred_thm = mapTerm (polyCallsTransformers(spc, stp_tbl, true, coercions)) pred_thm in
         mkConj[base_thm, pred_thm]
       else
-        (case tryRelativizeTerm(tvs, base_thm, stp_tbl, boolSort, ho_eqfns, spc, coercions) of
+        (case tryRelativizeTerm(tvs, base_thm, stp_tbl, boolType, ho_eqfns, spc, coercions) of
            | ([],_) -> base_thm
            | (tv_map, pred_tm) ->
          % let pred_tm = substTyVarsWithSubtypes(tv_map, pred_tm) in
@@ -943,7 +943,7 @@ SpecNorm qualifying spec
          let pred_thm = mkBind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, pred_tm) in
          mkConj[base_thm, pred_thm]) 
 
-  op separateRhsConjuncts (spc: Spec) (tm: MS.Term): List MS.Term =
+  op separateRhsConjuncts (spc: Spec) (tm: MSTerm): List MSTerm =
     case tm of
       | Bind(Forall, vs, bod, a) ->
         map (fn b -> Bind(Forall, vs, b, a)) (separateRhsConjuncts spc bod)
@@ -968,7 +968,7 @@ SpecNorm qualifying spec
 
   op  removeSubTypes: Spec -> TypeCoercionTable -> PolyOpTable -> Spec
   def removeSubTypes spc coercions stp_tbl =
-    %% Remove subsort definition for directly-implemented subtypes after saving defs
+    %% Remove subtype definition for directly-implemented subtypes after saving defs
     let ho_eqfns = findHOEqualityFuns spc in
     %% Add subtype assertions from op declarations
     let def makeSubtypeConstrThms(elts, new_elts, subtypeConstrThms?, freeThms?) =
@@ -997,8 +997,8 @@ SpecNorm qualifying spec
                    | (subtypeConstrThms? || ~def?) && ~(stpFun? id) ->
                  let Some info = AnnSpec.findTheOp(spc,qid) in
                  let (tvs, ty, defn) = unpackFirstOpDef info in
-                 % let _ = writeLine ("\nstc: "^id^": "^printSort ty) in
-                 % let _ = writeLine(printSort(raiseSubtypeFn(ty, spc))) in
+                 % let _ = writeLine ("\nstc: "^id^": "^printType ty) in
+                 % let _ = writeLine(printType(raiseSubtypeFn(ty, spc))) in
                  let subTypeFmla = opSubtypeTheorem(spc, qid, info.fixity, tvs, ty,
                                                     defn, ho_eqfns, coercions,
                                                     stp_tbl, freeThms?)
@@ -1035,7 +1035,7 @@ SpecNorm qualifying spec
     %% Replace subtypes by supertypes
     let spc = mapSpec (id,fn s ->
                          case s of
-                           | Subsort(supTy,_,_) -> supTy
+                           | Subtype(supTy,_,_) -> supTy
                            | _ -> s,
                        id)
                 spc
@@ -1043,31 +1043,31 @@ SpecNorm qualifying spec
     % let _ = writeLine(printSpec spc) in
     spc
 
-  op removeSubtypesInTerm (spc: Spec) (t: MS.Term): MS.Term =
+  op removeSubtypesInTerm (spc: Spec) (t: MSTerm): MSTerm =
     let t = mapTerm(relativizeQuantifiers spc, id, id) t in
     mapTerm (id,fn s -> case s of
-		          | Subsort(supTy,_,_) -> supTy
+		          | Subtype(supTy,_,_) -> supTy
                           | _ -> s,
              id)
       t
 
-  op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: List Sort, param_ty: Sort, spc: Spec)
-     : Option MS.Term =
+  op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: List MSType, param_ty: MSType, spc: Spec)
+     : Option MSTerm =
     let pred_qid = Qualified(q,id^"_P") in
     case AnnSpec.findTheOp(spc, pred_qid) of
       | None -> None
       | Some info ->
         let pred_args = map (fn ty -> mkOptLambda(typePattern(ty, spc))) tys in
-        Some(mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) tys),
-                                           mkArrow(param_ty, boolSort))),
+        Some(mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType)) tys),
+                                           mkArrow(param_ty, boolType))),
                     pred_args))
 
-  op typePattern(ty: Sort, spc: Spec): Pattern * MS.Term =
+  op typePattern(ty: MSType, spc: Spec): MSPattern * MSTerm =
     let def aux(ty, i: Nat) =
           case ty of
             | TyVar(tv,a) ->
               let nm = "x"^show i in
-              (mkVarPat(nm, ty), mkApply(mkVar("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)),
+              (mkVarPat(nm, ty), mkApply(mkVar("P_"^tv, Arrow(TyVar(tv, a), boolType, a)),
                                          mkVar(nm, ty)))
             | Base(qid, a_tys, a) | a_tys ~= [] ->
               (case hoSubtypePredicateForType(qid, a_tys, ty, spc) of
@@ -1093,10 +1093,10 @@ SpecNorm qualifying spec
   %% For named type T a create HO predicate T_P that takes a subtype on a and produces subtype on T a
   op addSubtypePredicateLifters(spc: Spec): Spec =
     let def addPredDecl((qid as Qualified(q,id),a), el, n_elts, spc) =
-          case AnnSpec.findTheSort(spc, qid) of
-            | Some info % ? | definedSortInfo? info
+          case AnnSpec.findTheType(spc, qid) of
+            | Some info % ? | definedTypeInfo? info
               ->
-              let (tvs,ty_def) = unpackFirstSortDef info in
+              let (tvs,ty_def) = unpackFirstTypeDef info in
               if tvs = [] || (case ty_def of
                                 | Any _ -> false
                                 | CoProduct _ -> false
@@ -1112,10 +1112,10 @@ SpecNorm qualifying spec
                  | Some _ -> (Cons(el, n_elts), spc) % already exists. Should check type is correct!
                  | None ->
                let param_ty = Base(qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
-               let pred_ty = Arrow(mkProduct(map (fn tv -> Arrow(TyVar(tv, a), boolSort, a)) tvs),
-                                   Arrow(param_ty, boolSort, a), a)
+               let pred_ty = Arrow(mkProduct(map (fn tv -> Arrow(TyVar(tv, a), boolType, a)) tvs),
+                                   Arrow(param_ty, boolType, a), a)
                in
-               let x_dfn = Pi(tvs, SortedTerm(Any a, pred_ty, a), a) in
+               let x_dfn = Pi(tvs, TypedTerm(Any a, pred_ty, a), a) in
                let op_map = insertAQualifierMap(spc.ops, q, pred_name,
                                                 {names = [pred_qid], dfn = x_dfn,
                                                  fixity = Nonfix, fullyQualified? = false})
@@ -1125,17 +1125,17 @@ SpecNorm qualifying spec
         def addPredDeclss (elts, op_map) =
           foldl (fn ((n_elts, op_map),el) ->
                  case el of
-                   | Sort sd -> addPredDecl(sd, el, n_elts, op_map)
-                   | SortDef sd -> addPredDecl(sd, el, n_elts, op_map)
+                   | Type sd -> addPredDecl(sd, el, n_elts, op_map)
+                   | TypeDef sd -> addPredDecl(sd, el, n_elts, op_map)
                    | Import(s_tm, i_sp, i_elts, a) ->
                      let (r_elts, op_map) = addPredDeclss(i_elts, op_map) in
                      (Cons(Import(s_tm, i_sp, reverse r_elts, a), n_elts), op_map)
                    |  _ -> (Cons(el, n_elts), op_map))
             ([], op_map) elts
         def addPredDef((ty_qid as Qualified(q,id), a), spc) =
-          case AnnSpec.findTheSort(spc, ty_qid) of
-            | Some info | definedSortInfo? info ->
-              let (tvs, ty_def) = unpackFirstSortDef info in
+          case AnnSpec.findTheType(spc, ty_qid) of
+            | Some info | definedTypeInfo? info ->
+              let (tvs, ty_def) = unpackFirstTypeDef info in
               (if tvs = [] || (case ty_def of
                                 | Any _ -> false
                                 | CoProduct _ -> false
@@ -1155,7 +1155,7 @@ SpecNorm qualifying spec
                                  mkLambda(mkTuplePat(map (fn tv ->
                                                             mkVarPat("P_"^tv,
                                                                      Arrow(TyVar(tv, a),
-                                                                           boolSort, a)))
+                                                                           boolType, a)))
                                                        tvs),
                                           mkLambda
                                             (mkVarPat("x__c", param_ty),
@@ -1173,12 +1173,12 @@ SpecNorm qualifying spec
                                                      mkVar("x__c", param_ty))))
                                | Product _ ->
                                  let (p,p_t) = typePattern(ty_def, spc) in
-                                 mkLambda(mkTuplePat(map (fn tv -> mkVarPat("P_"^tv, Arrow(TyVar(tv, a), boolSort, a)))
+                                 mkLambda(mkTuplePat(map (fn tv -> mkVarPat("P_"^tv, Arrow(TyVar(tv, a), boolType, a)))
                                                        tvs),
                                           mkLambda(p, p_t))
                                | _ -> Any a
                    in
-                   let x_dfn = Pi(tvs, SortedTerm(dfn, pred_ty, a), a) in
+                   let x_dfn = Pi(tvs, TypedTerm(dfn, pred_ty, a), a) in
                    let ops = insertAQualifierMap(spc.ops, q, pred_name, info << {dfn = x_dfn}) in
                    spc << {ops = ops}
                  | None -> spc)
@@ -1189,7 +1189,7 @@ SpecNorm qualifying spec
     let spc = foldlSpecElements
                 (fn (spc, el) ->
                  case el of
-                   | SortDef ty_qid -> addPredDef(ty_qid, spc)
+                   | TypeDef ty_qid -> addPredDef(ty_qid, spc)
                    | _ -> spc)
                 spc spc.elements
     in

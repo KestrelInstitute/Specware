@@ -15,10 +15,10 @@ spec {
   import Category qualifying /Library/Structures/Math/Cat  % need to avoid clash of op dom
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic 
 
-  sort Functor
+  type Functor
 
 % the record refinement should appear elsewhere.
-  sort Functor = {
+  type Functor = {
     dom : Sketch,
     vertexMap : PolyMap.Map (V.Elem,Object),
     edgeMap :  PolyMap.Map (E.Elem,Arrow)

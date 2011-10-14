@@ -11,21 +11,21 @@ IR qualifying spec
   op p2Mult: Proof -> Coef
 
   op normIR: Proof * Ineq -> Proof
-  op normIR?: Proof -> Boolean
+  op normIR?: Proof -> Bool
 
   op axiomIR: Ineq -> Proof
-  op axiomIR?: Proof -> Boolean
+  op axiomIR?: Proof -> Bool
 
   op chainNZIR: Proof * Proof * Coef * Coef -> Proof
-  op chainNZIR?: Proof -> Boolean
+  op chainNZIR?: Proof -> Bool
 
   op chainNEQIR: Proof * Proof * Coef * Coef -> Proof
-  op chainNEQIR?: Proof -> Boolean
+  op chainNEQIR?: Proof -> Bool
 
   op narrowIntIR: Proof -> Proof
-  op narrowIntIR?: Proof -> Boolean
+  op narrowIntIR?: Proof -> Bool
 
   op chainZIR: Proof * Proof * Coef * Coef -> Proof
-  op chainZIR?: Proof -> Boolean
+  op chainZIR?: Proof -> Bool
 
 endspec

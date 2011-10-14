@@ -304,7 +304,7 @@ FM qualifying spec
   op normalizePoly: Poly -> Poly
   def normalizePoly(sum) =
     let sortedSum = sortGT termGT sum in
-    let simplifiedSum = mergeCommonVars(sortedSum) in
+    let simplifiedSum = mergeCommonVars sortedSum in
     %let reducedSum = reduceCoefs(simplifiedSum) in
     simplifiedSum
   
@@ -528,7 +528,7 @@ FM qualifying spec
   type IneqSet = List Ineq
 
   op sortIneqSet: IneqSet -> IneqSet
-  def sortIneqSet(ineqSet) =
+  def sortIneqSet ineqSet =
     uniqueSort ineq.compare ineqSet
 
   op FMRefute?: IneqSet -> Option IneqSet

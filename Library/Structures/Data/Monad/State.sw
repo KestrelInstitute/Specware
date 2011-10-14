@@ -17,12 +17,12 @@ See below for further notes regarding the safety of these operations.
 MonadicStateInternal = spec
     type VarRef a = | VarRef a
 
-    op newGlobalVar : [a] String * a -> Boolean
-    op readGlobalVar : [a] String -> Option a
-    op writeGlobalVar : [a] String * a -> Boolean
+    op newGlobalVar   : [a] String * a -> Bool
+    op readGlobalVar  : [a] String     -> Option a
+    op writeGlobalVar : [a] String * a -> Bool
 
-    op newVar : [a] a -> VarRef a
-    op writeVar : [a] VarRef a * a -> VarRef a
+    op newVar         : [a] a            -> VarRef a
+    op writeVar       : [a] VarRef a * a -> VarRef a
   endspec
 
 (*

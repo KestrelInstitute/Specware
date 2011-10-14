@@ -287,7 +287,7 @@ FM qualifying spec
       result
 
   op filterSubsumed(ineqSet: IneqSet): IneqSet =
-    %% Assumes that ineqSet is sorted
+    %% Assumes that ineqSet is typeed
     rev(foldl (fn (ineqSet, ineq) ->
                %if ineq = trueIneq then ineqSet
 %               else

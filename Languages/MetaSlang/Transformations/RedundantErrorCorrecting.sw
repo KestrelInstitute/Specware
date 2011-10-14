@@ -7,7 +7,7 @@ import /Languages/SpecCalculus/AbstractSyntax/SCTerm                 % SCTerm
 
 type QIdMap a = PolyMap.Map (QualifiedId, a)
 
-op criticalQIdMap(qid_maps: List QualifiedIdMap): QIdMap(List QualifiedId) =
+op criticalQIdMap(qid_maps: List QualifiedIdMap): QIdMap(QualifiedIds) =
   let qid_map1 :: r_qid_maps = qid_maps in
    foldMap (fn result_map -> fn d -> fn c ->
             let r_c_s = mapPartial (fn qid_mapi ->
@@ -22,35 +22,35 @@ op criticalQIdMap(qid_maps: List QualifiedIdMap): QIdMap(List QualifiedId) =
                    update result_map d (c :: r_c_s))
      emptyMap qid_map1
 
-op criticalOpMap(morphs: List Morphism): QIdMap(List QualifiedId)  =
+op criticalOpMap (morphs: List Morphism) : QIdMap QualifiedIds =
   criticalQIdMap(map (project opMap) morphs)
 
-op criticalTypeMap(morphs: List Morphism): QIdMap(List QualifiedId) =
-  criticalQIdMap(map (project sortMap) morphs)
+op criticalTypeMap (morphs: List Morphism) : QIdMap QualifiedIds =
+  criticalQIdMap(map (project typeMap) morphs)
 
-op mkApplyI(hd: MS.Term, args: List Terms, i: Nat): MS.Term =
+op mkApplyI (hd: MSTerm, args: List MSTerms, i: Nat): MSTerm =
   case args of
     | [] -> hd
     | ai :: r_args ->
       mkApplyI(mkApply(hd, ai@(min(i, length ai - 1))), r_args, i)
 
-op replaceType(ty: Sort, src_ty: Sort, trg_ty: Sort): Sort =
-  mapSort (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) ty
+op replaceType (ty: MSType, src_ty: MSType, trg_ty: MSType): MSType =
+  mapType (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) ty
 
-op replaceTypeInPat(pat: Pattern, src_ty: Sort, trg_ty: Sort): Pattern =
+op replaceTypeInPat(pat: MSPattern, src_ty: MSType, trg_ty: MSType): MSPattern =
   mapPattern (id, fn sty -> if equalType?(sty, src_ty) then trg_ty else sty, id) pat
 
-op mkListType(ty: Sort): Sort = mkBase(Qualified("List", "List"), [ty])
+op mkListType(ty: MSType): MSType = mkBase(Qualified("List", "List"), [ty])
 
-op mkListForm(tms: Terms, ty: Sort): MS.Term =
+op mkListForm(tms: MSTerms, ty: MSType): MSTerm =
   case tms of
     | [] -> mkEmbed0("Nil", mkListType ty)
     | tm1 :: r_tms ->
       mkApply(mkEmbed1("Cons", mkArrow(mkProduct[ty, mkListType ty], mkListType ty)),
               mkTuple[tm1, mkListForm(r_tms, ty)])
 
-op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term, ty_targets: Sorts,
-                  op_target_qids: QualifiedIds, spc: Spec): MS.Term =
+op mkRedundantDef(dfn: MSTerm, src_ty: MSType, trg_ty: MSType, test_fix_fn: MSTerm, ty_targets: MSTypes,
+                  op_target_qids: QualifiedIds, spc: Spec): MSTerm =
   let op_targets = map (fn op_qid ->
                           let Some info = findTheOp(spc, op_qid) in
                           mkInfixOp(op_qid, info.fixity, inferType(spc, info.dfn)))
@@ -59,9 +59,9 @@ op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term
   let def convertDef(tm) =
         case tm of
           | Pi(tvs, stm, a) -> Pi(tvs, convertDef(stm), a)
-          | SortedTerm(stm, ty, a) -> SortedTerm(convertDefTyArgs(stm, ty, [], []), convertType ty, a)
+          | TypedTerm(stm, ty, a) -> TypedTerm(convertDefTyArgs(stm, ty, [], []), convertType ty, a)
           | _ -> convertDefTyArgs(tm, inferType(spc, tm), [], [])
-      def convertDefTyArgs(tm: MS.Term, ty: Sort, args: List Terms, src_params: Ids): MS.Term =
+      def convertDefTyArgs(tm: MSTerm, ty: MSType, args: List MSTerms, src_params: Ids): MSTerm =
         case tm of
           | Lambda([(pat, pred, bod)], a) ->
             let new_args = tabulate(length ty_targets, fn i -> convertPatToArg(pat, i)) in
@@ -92,7 +92,7 @@ op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term
                      mkLet([(pat, mkApply(test_fix_fn, patToTerm pat))], bod))
               main_bod src_params
       def convertType ty = replaceType(ty, src_ty, trg_ty)
-      def convertPat(pat: Pattern): Pattern =
+      def convertPat(pat: MSPattern): MSPattern =
         mapPattern (id, id,
                     fn pat ->
                       case pat of
@@ -101,7 +101,7 @@ op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term
                                               fn i -> mkVarPat(v^"__"^show i, ty_targets@i)))
                         | _ -> pat)
           pat
-      def convertPatToArg(pat: Pattern, i: Nat): MS.Term =
+      def convertPatToArg(pat: MSPattern, i: Nat): MSTerm =
         let pati = mapPattern (id, id,
                                fn pat ->
                                  case pat of
@@ -118,7 +118,7 @@ op mkRedundantDef(dfn: MS.Term, src_ty: Sort, trg_ty: Sort, test_fix_fn: MS.Term
   in
   convertDef dfn
 
-op findUniversalIdentity(ty: Sort, term: MS.Term): Option(Var * MS.Term) =
+op findUniversalIdentity(ty: MSType, term: MSTerm): Option(Var * MSTerm) =
   let def findId(t, universals: Vars) =
         case t of
           | Apply(Fun(Equals,_,_), Record([(_,Var(v, _)), (_, rhs as Apply _)], _),_) ->
@@ -139,7 +139,7 @@ op findUniversalIdentity(ty: Sort, term: MS.Term): Option(Var * MS.Term) =
   in
   findId(term, [])
 
-op findIdentityExpr(ty: Sort, spc: Spec): Option(Var * MS.Term) =
+op findIdentityExpr(ty: MSType, spc: Spec): Option(Var * MSTerm) =
   foldlSpecElements (fn (result, el) ->
                        if some? result then result
                        else case el of
@@ -152,21 +152,21 @@ op prependIdInQId(Qualified(q, id): QualifiedId, prefix: String): QualifiedId =
   Qualified(q, prefix ^ id)
 
 op makeCheckRandom?: Bool = true
-op randomCheck?Appl: MS.Term = mkAppl(mkOp(Qualified("SemanticError", "randomCheck?"),
-                                           mkArrow(mkProduct[], boolSort)),
+op randomCheck?Appl: MSTerm = mkAppl(mkOp(Qualified("SemanticError", "randomCheck?"),
+                                           mkArrow(mkProduct[], boolType)),
                                       [])
 
-op mkWarningForm(warn_str: String): MS.Term =
-  mkApply(mkOp(Qualified("System", "warn"), mkArrow(stringSort, voidType)),
+op mkWarningForm(warn_str: String): MSTerm =
+  mkApply(mkOp(Qualified("System", "warn"), mkArrow(stringType, voidType)),
           mkString warn_str)
 
-op mkFailForm(fail_str: String): MS.Term =
-  mkApply(mkOp(Qualified("System", "fail"), mkArrow(stringSort, voidType)),
+op mkFailForm(fail_str: String): MSTerm =
+  mkApply(mkOp(Qualified("System", "fail"), mkArrow(stringType, voidType)),
           mkString fail_str)
 
-op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MS.Term, primary_ty_qid: QualifiedId, ident_param: Var,
-                        ident_exp: MS.Term, primary_ty: Sort, ty_targets: Sorts, ops_map: QIdMap(List QualifiedId), spc: Spec)
-   : MS.Term =
+op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MSTerm, primary_ty_qid: QualifiedId, ident_param: Var,
+                        ident_exp: MSTerm, primary_ty: MSType, ty_targets: MSTypes, ops_map: QIdMap(QualifiedIds), spc: Spec)
+   : MSTerm =
    mapTerm(fn t ->
              case t of
                | Var(v, _) | equalVar?(v, ident_param) -> src_var
@@ -192,20 +192,20 @@ op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MS.Term, prim
            id, id)
      ident_exp
 
-op mkNumCondn(ps: Terms, i: Nat): MS.Term =
+op mkNumCondn(ps: MSTerms, i: Nat): MSTerm =
   case ps of
     | [] -> mkNat i
     | p :: r_ps -> MS.mkIfThenElse(p, mkNat i, mkNumCondn(r_ps, i+1))
 
-op mkCaseExpr(c_tm: MS.Term, cases: Match): MS.Term=
+op mkCaseExpr(c_tm: MSTerm, cases: Match): MSTerm=
   mkApply(Lambda(cases, noPos), c_tm)
 
-op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: Sorts, pos: Position,
-                     opt_qual: Option Qualifier, ops_map: QIdMap(List QualifiedId), spc: Spec, new_spc: Spec)
-  : Env(QualifiedId * MS.Term) =
+op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: MSType, ty_targets: MSTypes, pos: Position,
+                     opt_qual: Option Qualifier, ops_map: QIdMap(QualifiedIds), spc: Spec, new_spc: Spec)
+  : Env(QualifiedId * MSTerm) =
   case findIdentityExpr(primary_ty, spc) of
     | None -> raise(TypeCheck (pos, "Can't find identity theorem for type: "
-                           ^ printSort primary_ty))
+                           ^ printType primary_ty))
     | Some(ident_param, ident_exp) ->
   let test_fix_fn_qid = makeDerivedQId spc (prependIdInQId(primary_ty_qid, "TestFix__")) opt_qual in
   let arg_vars = tabulate(length ty_targets, fn i -> ("x_"^show i, ty_targets@i)) in
@@ -235,10 +235,10 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
                       mkTuple(arg_var_tms)]))
        else
          let result_tuple = mkTuple(arg_var_tms) in
-         let flags = tabulate(num_args, fn i -> ("p"^show i, boolSort)) in
+         let flags = tabulate(num_args, fn i -> ("p"^show i, boolType)) in
          let flag_binds = tabulate(num_args, fn i -> (mkVarPat(flags@i), subtype_pred_tms@i)) in
          let flag_tms = map mkVar flags in
-         let good_posn = ("good_posn", natSort) in
+         let good_posn = ("good_posn", natType) in
          let result_cases =
              tabulate(num_args,
                       fn i ->
@@ -266,7 +266,7 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: Sort, ty_targets: 
                   result_tuple,
                   mkLet([(mkVarPat good_posn, mkNumCondn(flag_tms, 0))],
                         MS.mkIfThenElse
-                          (mkEquality(natSort, mkVar good_posn, mkNat num_args),
+                          (mkEquality(natType, mkVar good_posn, mkNat num_args),
                            mkSeq[mkWarningForm("All implementations of "^show primary_ty_qid^" corrupted!"),
                                  result_tuple],
                            mkTuple result_cases))))
@@ -283,7 +283,7 @@ op SpecCalc.mergeImport: SCTerm -> Spec -> Spec -> Position -> Env Spec
 op redundantErrorCorrectingProduct (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier)
                                    (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
-  let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
+  let {types = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
   {morphs2 <- return(map (fn (_,yy) -> yy) morphs);
    ops_map <- return(criticalOpMap morphs2);      % Maps source ops to list of ops (when mapped differently)
@@ -320,20 +320,20 @@ op redundantErrorCorrectingProduct (spc: Spec) (morphs: List (SCTerm * Morphism)
                        new_spc ops_map);
    return(new_spc, tracing?)}      % *)
 
-op mkCoProdOfTypes(ty_target_qids: QualifiedIds): Sort =
+op mkCoProdOfTypes(ty_target_qids: QualifiedIds): MSType =
   let coprod_flds = map (fn qid as Qualified(q,id) -> (q^"__"^id, Some(mkBase(qid, [])))) ty_target_qids in
-  let errorFld = ("Data_Error", Some(natSort)) in
+  let errorFld = ("Data_Error", Some(natType)) in
   mkCanonCoProduct(errorFld :: coprod_flds)
 
-op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(coprod_flds, _): Sort,
+op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: MSType, CoProduct(coprod_flds, _): MSType,
                   opt_qual: Option Qualifier, new_spc: Spec)
-  : QualifiedId * MS.Term =
+  : QualifiedId * MSTerm =
   let test_fn_qid = makeDerivedQId new_spc (prependIdInQId(primary_ty_qid, "Test__")) opt_qual in
   let param = ("x", new_primary_ty) in
   let cases = map (fn (id, Some ty) ->
                    let pv = ("y", ty) in
                    (mkEmbedPat(id, Some(mkVarPat pv), new_primary_ty), trueTerm,
-                    if equalType?(ty, natSort)
+                    if equalType?(ty, natType)
                       then falseTerm
                       else simplifiedApply(subtypePredicate(ty, new_spc), mkVar pv, new_spc)))
                 coprod_flds
@@ -341,16 +341,16 @@ op mkTestFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, CoProduct(c
   let test_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
   (test_fn_qid, test_fn_body)
 
-op restartCountTerm: MS.Term = mkOp(Qualified("SemanticError", "restartCount"), natSort)
-op mkThrowForm(fail_str: String): MS.Term =
-  mkApply(mkOp(Qualified("SemanticError", "throwToRestart"), mkArrow(stringSort, voidType)),
+op restartCountTerm: MSTerm = mkOp(Qualified("SemanticError", "restartCount"), natType)
+op mkThrowForm(fail_str: String): MSTerm =
+  mkApply(mkOp(Qualified("SemanticError", "throwToRestart"), mkArrow(stringType, voidType)),
           mkString fail_str)
 
 
-op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, coProd_def as CoProduct(coprod_flds, _): Sort,
-                    conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term),
-                    opt_qual: Option Qualifier, ty_targets: Sorts, new_spc: Spec)
-  : QualifiedId * MS.Term =
+op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: MSType, coProd_def as CoProduct(coprod_flds, _): MSType,
+                    conversion_fn_defs: List(QualifiedId * MSTerm * MSTerm),
+                    opt_qual: Option Qualifier, ty_targets: MSTypes, new_spc: Spec)
+  : QualifiedId * MSTerm =
   let choose_fn_qid = makeDerivedQId new_spc (prependIdInQId(primary_ty_qid, "Choose__")) opt_qual in
   let param = ("x", new_primary_ty) in
   let cases = tabulate(length ty_targets,
@@ -361,24 +361,24 @@ op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: Sort, coProd_de
                                         mkApply((conversion_fn_defs@i).3,
                                                 mkVar param))))
   in                     
-  let other_case = (mkWildPat natSort, trueTerm, mkFailForm("All representations of "^show primary_ty_qid^" failed.")) in
+  let other_case = (mkWildPat natType, trueTerm, mkFailForm("All representations of "^show primary_ty_qid^" failed.")) in
   let choose_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases ++ [other_case], noPos), restartCountTerm)) in
   (choose_fn_qid, choose_fn_body)
 
 
-op mkConversionFunction(to_type_qid: QualifiedId, primary_ty: Sort, primary_ty_qid: QualifiedId, 
-                        new_primary_ty: Sort, new_primary_ty_qid: QualifiedId, 
-                        CoProduct(coprod_flds, _): Sort, ident_param: Var, ident_exp: MS.Term,
-                        opt_qual: Option Qualifier, ty_targets: Sorts, ops_map: QIdMap(List QualifiedId),
+op mkConversionFunction(to_type_qid: QualifiedId, primary_ty: MSType, primary_ty_qid: QualifiedId, 
+                        new_primary_ty: MSType, new_primary_ty_qid: QualifiedId, 
+                        CoProduct(coprod_flds, _): MSType, ident_param: Var, ident_exp: MSTerm,
+                        opt_qual: Option Qualifier, ty_targets: MSTypes, ops_map: QIdMap(QualifiedIds),
                         new_spc: Spec)
-   : QualifiedId * MS.Term * MS.Term =
+   : QualifiedId * MSTerm * MSTerm =
   let to_type = mkBase(to_type_qid, []) in
   let conversion_fn_qid = makeDerivedQId new_spc (prependIdInQId(to_type_qid, "to_")) opt_qual in
   let param = ("x", new_primary_ty) in
   let cases = map (fn (id, Some ty) ->
                    let pv = ("y", ty) in
                    (mkEmbedPat(id, Some(mkVarPat pv), new_primary_ty), trueTerm,
-                    if equalType?(ty, natSort)
+                    if equalType?(ty, natType)
                       then mkFailForm("Error in "^show new_primary_ty_qid^" Data.")
                       else if equalType?(ty, to_type)
                       then mkVar pv
@@ -389,14 +389,14 @@ op mkConversionFunction(to_type_qid: QualifiedId, primary_ty: Sort, primary_ty_q
   let conversion_fn_body = mkLambda(mkVarPat param, mkApply(Lambda(cases, noPos), mkVar param)) in
   (conversion_fn_qid, conversion_fn_body, mkOp(conversion_fn_qid, mkArrow(new_primary_ty, to_type)))
 
-op constructorForQid(ty: Sort, CoProduct(coprod_flds, _): Sort): Id =
+op constructorForQid(ty: MSType, CoProduct(coprod_flds, _): MSType): Id =
   case findLeftmost (fn (id, Some c_ty) -> equalType?(ty, c_ty)) coprod_flds of
     | Some(id,_) -> id
 
-op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as CoProduct(coprod_flds, _): Sort,
-             conversion_fn_defs: List(QualifiedId * MS.Term * MS.Term),
-             test_fn: MS.Term, choose_fn: MS.Term,
-             ty_targets: Sorts, op_target_qids: QualifiedIds, spc: Spec): MS.Term =
+op mkCaseDef(dfn: MSTerm, primary_ty: MSType, new_primary_ty: MSType, coProd_def as CoProduct(coprod_flds, _): MSType,
+             conversion_fn_defs: List(QualifiedId * MSTerm * MSTerm),
+             test_fn: MSTerm, choose_fn: MSTerm,
+             ty_targets: MSTypes, op_target_qids: QualifiedIds, spc: Spec): MSTerm =
   let op_targets = map (fn op_qid ->
                           let Some info = findTheOp(spc, op_qid) in
                           mkInfixOp(op_qid, info.fixity, inferType(spc, info.dfn)))
@@ -405,9 +405,9 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
   let def convertDef(tm) =
         case tm of
           | Pi(tvs, stm, a) -> Pi(tvs, convertDef(stm), a)
-          | SortedTerm(stm, ty, a) -> SortedTerm(convertDefTyArgs(stm, ty, [], []), convertType ty, a)
+          | TypedTerm(stm, ty, a) -> TypedTerm(convertDefTyArgs(stm, ty, [], []), convertType ty, a)
           | _ -> convertDefTyArgs(tm, inferType(spc, tm), [], [])
-      def convertDefTyArgs(tm: MS.Term, ty: Sort, args: Terms, src_params: Ids): MS.Term =
+      def convertDefTyArgs(tm: MSTerm, ty: MSType, args: MSTerms, src_params: Ids): MSTerm =
         case tm of
           | Lambda([(pat, pred, bod)], a) ->
             let new_src_params = foldSubPatterns (fn (p, src_params) ->
@@ -432,7 +432,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                          mkApply(mkEmbed1(constr_id, mkArrow(tyi, new_primary_ty)),
                                                                  conv_bod)))
                            in                     
-                           let other_case = (mkWildPat natSort, trueTerm, mkFailForm("All representations of "^printSort primary_ty^" failed.")) in
+                           let other_case = (mkWildPat natType, trueTerm, mkFailForm("All representations of "^printType primary_ty^" failed.")) in
                            mkApply(Lambda(cases ++ [other_case], noPos), restartCountTerm)
                       else mkFailForm "Type must appear as explicit parameter or return type"
                    | src_param0 :: r_src_params ->
@@ -442,7 +442,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printSort primary_ty^" Data.")
+                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
                                                   else
                                                   let target_i = positionOf(ty_targets, ty0) in
                                                   let coercion_fn = (conversion_fn_defs@target_i).3 in
@@ -463,7 +463,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                                                  let pv = (src_param0^"_0", ty0) in
                                                  (mkEmbedPat(constr_id, Some(mkVarPat pv), new_primary_ty),
                                                   trueTerm,
-                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printSort primary_ty^" Data.")
+                                                  if constr_id = "Data_Error" then mkThrowForm("Error in "^printType primary_ty^" Data.")
                                                   else
                                                   let sbst = ((src_param0, primary_ty), mkVar pv)
                                                             :: map (fn src_id -> ((src_id, primary_ty), mkVar(src_id^"_0", ty0)))
@@ -477,7 +477,7 @@ op mkCaseDef(dfn: MS.Term, primary_ty: Sort, new_primary_ty: Sort, coProd_def as
                      in
                      MS.mkIfThenElse(mkConj(map (fn param -> mkApply(test_fn, mkVar(param, new_primary_ty))) src_params),
                                      main_body,
-                                     mkThrowForm("Error in "^printSort primary_ty^" Data."))
+                                     mkThrowForm("Error in "^printType primary_ty^" Data."))
             in
             simplify spc main_bod
       def convertType ty = replaceType(ty, primary_ty, new_primary_ty)
@@ -493,7 +493,7 @@ op runtimeSemanticErrorSpec: String = "/Languages/MetaSlang/Transformations/Runt
 
 op redundantErrorCorrectingRestart (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
-  let {sorts = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
+  let {types = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
   {morphs2 <- return(map (fn (_,yy) -> yy) morphs);
    ops_map <- return(criticalOpMap morphs2);      % Maps source ops to list of ops (when mapped differently)
@@ -507,7 +507,7 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List (SCTerm * Morphism)
    primary_ty <- return(mkBase(primary_ty_qid, []));
    case findIdentityExpr(primary_ty, spc) of
     | None -> raise(TypeCheck (pos, "Can't find identity theorem for type: "
-                           ^ printSort primary_ty))
+                           ^ printType primary_ty))
     | Some(ident_param, ident_exp) ->
    {ty_targets <- return(map (fn qid -> mkBase(qid, [])) ty_target_qids);
     new_primary_ty_qid <- return(makeDerivedQId spc primary_ty_qid opt_qual);
@@ -541,7 +541,7 @@ op redundantErrorCorrectingRestart (spc: Spec) (morphs: List (SCTerm * Morphism)
                                addOpDef(new_spc, makeDerivedQId spc qid opt_qual,
                                         opinfo.fixity,
                                         mkCaseDef(opinfo.dfn, primary_ty, new_primary_ty, coProd_def, conversion_fn_defs,
-                                                  mkOp(test_fn_qid, mkArrow(new_primary_ty, boolSort)),
+                                                  mkOp(test_fn_qid, mkArrow(new_primary_ty, boolType)),
                                                   mkOp(choose_fn_qid, mkArrow(new_primary_ty, new_primary_ty)),
                                                   ty_targets, op_target_qids, new_spc)))
                         new_spc ops_map);

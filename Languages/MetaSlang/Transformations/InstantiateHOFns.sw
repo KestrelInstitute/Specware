@@ -4,13 +4,13 @@ spec
  import CurryUtils
  import ../Specs/AnalyzeRecursion
 
-% op CodeGenTransforms.stripSubsortsAndBaseDefs (spc : Spec) (typ : Sort) : Sort  % in CodeGenTransforms
+% op CodeGenTransforms.stripSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType  % in CodeGenTransforms
 
- type Term    = MS.Term  % disambiguate from SpecCalc.Term
- % type MS.Type = MS.Sort  % also have JGen.Type and MetaslangProofChecker.Type (sigh)
+ % type Term    = MS.Term  % disambiguate from SpecCalc.Term
+ % type MS.Type = MS.Type  % also have JGen.Type and MetaslangProofChecker.Type (sigh)
 
  %% (params, defn body, indices of applied fn args, curried?, recursive?)
- type DefInfo = List Pattern * Term * Type * List Nat * Bool * Bool
+ type DefInfo = MSPatterns * MSTerm * MSType * List Nat * Bool * Bool
 
 (*
  * calling pattern: 
@@ -157,9 +157,9 @@ spec
                            let pos              = termAnn         dfn in
                            let (tvs, typ, def1) = unpackFirstTerm dfn in
                            let numCurryArgs     = curryShapeNum   (spc, typ) in
-                           let arg_types        = curryArgSorts   (spc, typ) in
+                           let arg_types        = curryArgTypes   (spc, typ) in
                            let normDef1         = normalizeCurriedDefn (def1, arg_types) in
-                           maybePiTerm (tvs, SortedTerm (normDef1, typ, pos)))
+                           maybePiTerm (tvs, TypedTerm (normDef1, typ, pos)))
                         old_defs
                 in
                 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)})
@@ -167,7 +167,7 @@ spec
    in 
    setOps (spc, normOps)
 
- op normalizeCurriedDefn (dfn : Term, curry_arg_types : List Type) : Term =
+ op normalizeCurriedDefn (dfn : MSTerm, curry_arg_types : MSTypes) : MSTerm =
    let 
      def 
        aux (dfn, curry_arg_types, arg_num) = 
@@ -230,9 +230,9 @@ spec
               let numCurryArgs = curryShapeNum (spc, typ) in
               % see note below about debugging indexing error
               let arg_types = (if numCurryArgs > 1 then
-                                 curryArgSorts    (spc, typ)
+                                 curryArgTypes    (spc, typ)
                                else 
-                                 noncurryArgSorts (spc, typ))
+                                 noncurryArgTypes (spc, typ))
               in
               let HOArgs? = map (fn s -> HOType? (s, spc)) arg_types in
               if numCurryArgs > 1 then
@@ -245,7 +245,7 @@ spec
      spc.ops
 
  %% has an argument that is HO. Arguments are either curried or product
- op HOFnType? (typ : Type, spc : Spec) : Bool =
+ op HOFnType? (typ : MSType, spc : Spec) : Bool =
    case arrowOpt (spc, typ) of
      | Some (dom, rng) ->
        HOType? (dom, spc) ||
@@ -258,8 +258,8 @@ spec
                 exists? (fn (_, s) -> arrow? (spc, s)) fields)
      | _ -> false
 
- op HOType? (typ : Type, spc : Spec) : Bool =
-   case stripSubsortsAndBaseDefs spc typ of
+ op HOType? (typ : MSType, spc : Spec) : Bool =
+   case stripSubtypesAndBaseDefs spc typ of
      | Arrow _ -> true
 
      | Product (fields, _) ->
@@ -270,16 +270,16 @@ spec
  op unfoldSizeThreshold   : Nat = 40
  op unfoldHOSizeThreshold : Nat = 80
   
- op unfoldable? (dfn : Term) : Bool =
+ op unfoldable? (dfn : MSTerm) : Bool =
    sizeTerm dfn < unfoldHOSizeThreshold
 
- op sizeTerm (tm : Term) : Nat = 
+ op sizeTerm (tm : MSTerm) : Nat = 
    foldSubTerms (fn (_, sum) -> sum + 1) 0 tm
 
  op analyzeCurriedDefn (qid          : QualifiedId,
-                        dfn          : Term,
+                        dfn          : MSTerm,
                         HOArgs?      : List Bool,
-                        typ          : Type,
+                        typ          : MSType,
                         ref_map      : RefMap,
                         numCurryArgs : Nat)
    : Option DefInfo =
@@ -303,9 +303,9 @@ spec
      analyzeDefn (qid, params, normalizedBody, HOArgs?, true, typ, ref_map)
 
  op analyzeUnCurriedDefn (qid     : QualifiedId,
-                          dfn     : Term,
+                          dfn     : MSTerm,
                           HOArgs? : List Bool,
-                          typ     : Type,
+                          typ     : MSType,
                           ref_map : RefMap)
    : Option DefInfo =
    case dfn of
@@ -316,11 +316,11 @@ spec
      | _ -> None
 
  op analyzeDefn (qid      : QualifiedId,
-                 params   : List Pattern,
-                 body     : Term,
+                 params   : MSPatterns,
+                 body     : MSTerm,
                  HOArgs?  : List Bool,
                  curried? : Bool,
-                 typ      : Type,
+                 typ      : MSType,
                  ref_map  : RefMap)
    : Option DefInfo =
    if recursiveCallsPreserveHOParameters? (body, qid, params, HOArgs?, curried?) then
@@ -343,9 +343,9 @@ spec
  op [a] indices_for (l : List a) : List Nat =
    tabulate (length l, id)
 
- op recursiveCallsPreserveHOParameters? (body     : Term, 
+ op recursiveCallsPreserveHOParameters? (body     : MSTerm, 
                                          qid      : QualifiedId,
-                                         params   : List Pattern,
+                                         params   : MSPatterns,
                                          HOArgs?  : List Bool,
                                          curried? : Bool)
   : Bool =
@@ -367,8 +367,8 @@ spec
             | _ -> false)
        body)
 
- op HOParamsSame? (params  : List Pattern, 
-                   args    : List Term, 
+ op HOParamsSame? (params  : MSPatterns, 
+                   args    : MSTerms, 
                    HOArgs? : List Bool)
    : Bool =
    length params >= length args
@@ -379,7 +379,7 @@ spec
                       true)
            (indices_for args)
 
- op patternMatchesTerm? (pat : Pattern, tm : Term) : Bool =
+ op patternMatchesTerm? (pat : MSPattern, tm : MSTerm) : Bool =
    case (pat, tm) of
 
      | (VarPat ((vpid, _), _), Var ((vid, _), _)) -> 
@@ -392,7 +392,7 @@ spec
        
      | _ -> false
 
- op lookupId (id : Id, fields : List (Id * Term)) : Term =
+ op lookupId (id : Id, fields : List (Id * MSTerm)) : MSTerm =
    case findLeftmost (fn (id1, tm) -> id = id1) fields of
      | Some (_, tm) -> tm
      | _ -> fail "lookupId: Shouldn't happen"
@@ -403,9 +403,9 @@ spec
 
  %% Generalize the term->term function in TSP_Maps to a function that creates a 
  %% term->term function.
- type Generalized_TSP_Maps = (QualifiedId -> Term -> Term) * 
-                             (Type    -> Type)             * 
-                             (Pattern -> Pattern)
+ type Generalized_TSP_Maps = (QualifiedId -> MSTerm -> MSTerm) * 
+                             (MSType      -> MSType)           * 
+                             (MSPattern   -> MSPattern)
 
  op unFoldTerms (spc : Spec, info_map : AQualifierMap DefInfo) : Spec =
    let 
@@ -432,7 +432,7 @@ spec
    let (make_op_map, typ_map, pat_map) = gtsp in
    let outer_tsp = (make_op_map (mkUnQualifiedId "outside_of_any_op"), typ_map, pat_map) in
    spc << {
-	   sorts    = mapSpecSorts         outer_tsp spc.sorts,
+	   types    = mapSpecTypes         outer_tsp spc.types,
 	   ops      = mapSpecOpsNotingName gtsp      spc.ops,
 	   elements = mapSpecProperties    outer_tsp spc.elements
 	  }
@@ -451,11 +451,11 @@ spec
  %% ================================================================================
 
  op maybeUnfoldTerm (outer_qid    : QualifiedId,
-                     tm           : Term,
+                     tm           : MSTerm,
                      unfold_map   : AQualifierMap DefInfo,
-                     simplifyTerm : Term -> Term,
+                     simplifyTerm : MSTerm -> MSTerm,
                      spc          : Spec)
-   : Term =
+   : MSTerm =
    case tm of
      | Apply (f, arg, _) ->
        (case f of
@@ -474,7 +474,7 @@ spec
                                        f, 
                                        termToList arg, 
                                        inferType (spc, tm),
-                                       sortMatch (deftyp, typ, spc),
+                                       typeMatch (deftyp, typ, spc),
                                        vs, 
                                        defn, 
                                        fnIndices, 
@@ -511,7 +511,7 @@ spec
                                                  f, 
                                                  args, 
                                                  inferType (spc, tm),
-                                                 sortMatch (deftyp, typ, spc),
+                                                 typeMatch (deftyp, typ, spc),
                                                  vs, 
                                                  defn, 
                                                  fnIndices, 
@@ -530,15 +530,15 @@ spec
 	  | _ -> tm)
      | _ -> tm
 
- op getTupleArg (tm : Term, i : Nat) : Term =
+ op getTupleArg (tm : MSTerm, i : Nat) : MSTerm =
    case tm of
      | Record (tms, _) -> (tms @ i).2
      | _ -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
- op exploitableTerm? (tm : Term, unfoldMap : AQualifierMap DefInfo) : Bool =
+ op exploitableTerm? (tm : MSTerm, unfoldMap : AQualifierMap DefInfo) : Bool =
    ~(embed? Var tm)
 
- op termToList (tm : Term) : List Term =
+ op termToList (tm : MSTerm) : MSTerms =
    case tm of
      | Record (fields, _) -> map (fn (_, tm) -> tm) fields
      | _ -> [tm]
@@ -550,22 +550,22 @@ spec
  %% ================================================================================
 
  op makeUnfoldedTerm (outer_qid    : QualifiedId,
-                      orig_tm      : Term,
-                      f            : Term,
-                      args         : List Term,
-                      result_type  : Type,
+                      orig_tm      : MSTerm,
+                      f            : MSTerm,
+                      args         : MSTerms,
+                      result_type  : MSType,
                       tv_subst     : TyVarSubst,
-                      params       : List Pattern,
-                      def_body     : Term,
+                      params       : MSPatterns,
+                      def_body     : MSTerm,
                       fn_indices   : List Nat,
                       recursive?   : Bool,
                       qid          : QualifiedId,
                       nm           : String,
                       unfold_map   : AQualifierMap DefInfo,
-                      simplifyTerm : Term -> Term,
+                      simplifyTerm : MSTerm -> MSTerm,
                       curried?     : Bool,
                       spc          : Spec)
-   : Term =
+   : MSTerm =
    % let _ = writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm) in
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
@@ -630,7 +630,7 @@ spec
      else 
        trans_new_tm
 
- op matchPairs (pat : Pattern, tm : Term) : List (Var * Term) =
+ op matchPairs (pat : MSPattern, tm : MSTerm) : List (Var * MSTerm) =
    case (pat, tm) of
 
      | (VarPat(pv, _), _) -> [(pv, tm)]
@@ -645,19 +645,19 @@ spec
  op makeRecursiveLocalDef (outer_qid         : QualifiedId,
                            qid               : QualifiedId,
                            nm                : String,
-                           def_body          : Term,
-                           result_type       : Type,
+                           def_body          : MSTerm,
+                           result_type       : MSType,
                            tv_subst          : TyVarSubst,
-                           remaining_params  : List Pattern,
-                           remaining_args    : List Term,
+                           remaining_params  : MSPatterns,
+                           remaining_args    : MSTerms,
                            remaining_indices : List Nat,
-                           param_subst       : List (Var * Term),
+                           param_subst       : List (Var * MSTerm),
                            curried?          : Bool,
                            numargs           : Nat,
                            unfold_map        : AQualifierMap DefInfo,
-                           simplifyTerm      : Term -> Term,
+                           simplifyTerm      : MSTerm -> MSTerm,
                            spc               : Spec)
-  : Term =
+  : MSTerm =
 
   %% check name conflict with args and defbody. defbody should be safe
   %% because user can't put "--" in identifier, but to be safe
@@ -670,7 +670,7 @@ spec
                                                 mkTuple (def_body :: remaining_args))
   in
   let combined_arg         = mkTuple remaining_args                       in
-  let instantiated_fn_type = mkArrow (termSort combined_arg, result_type) in
+  let instantiated_fn_type = mkArrow (termType combined_arg, result_type) in
   let local_fn             = (local_fn_name, instantiated_fn_type)        in
   let 
     def foldRecursiveCall tm =
@@ -717,7 +717,7 @@ spec
   in
   simplifyTerm new_letrec
 
- op locallyUniqueName (base_id : Id, tm : Term) : Id =
+ op locallyUniqueName (base_id : Id, tm : MSTerm) : Id =
    let 
      def aux i =
        let new_id = base_id ^ "-" ^ show i in
@@ -728,7 +728,7 @@ spec
    in 
    aux 0
 
- op idReferenced? (id : Id, tm : Term) : Bool =
+ op idReferenced? (id : Id, tm : MSTerm) : Bool =
    existsSubTerm
      (fn subtm -> case subtm of
                     | Var ((vid, _), _) -> vid = id
@@ -736,19 +736,19 @@ spec
      tm
 
  op unfoldInTerm (outer_qid    : QualifiedId,
-                  tm           : Term,
+                  tm           : MSTerm,
                   info_map     : AQualifierMap DefInfo,
-                  simplifyTerm : Term -> Term,
+                  simplifyTerm : MSTerm -> MSTerm,
                   spc          : Spec)
-   : Term =
+   : MSTerm =
    mapSubTerms (fn tm -> maybeUnfoldTerm (outer_qid, tm, info_map, simplifyTerm, spc))
                tm
 
- op adjustBindingsToAvoidCapture (remaining_params : List Pattern, 
-                                  remaining_args   : List Term,
-                                  args             : List Term,
-                                  defbody          : Term)
-   : (List Pattern * List Term) =
+ op adjustBindingsToAvoidCapture (remaining_params : MSPatterns, 
+                                  remaining_args   : MSTerms,
+                                  args             : MSTerms,
+                                  defbody          : MSTerm)
+   : (MSPatterns * MSTerms) =
 
    %% If a parameter var could capture a free var in an arg, introduce temp vars to 
    %% avoid the capture:
@@ -817,7 +817,7 @@ spec
      let (_, temp_vars) = 
          foldl (fn ((index, new_vars), arg) ->
                   let (index, new_id) = find_unused_id index in
-                  let new_var = ((new_id, termSort arg), noPos) in
+                  let new_var = ((new_id, termType arg), noPos) in
                   (index,  new_vars ++ [new_var]))
                (0, [])
                remaining_args
@@ -830,8 +830,8 @@ spec
 
  op avoid_bindings? : Bool = false % not clear if this helps or hurts
 
- op makeLet (params : List Pattern, args : List Term, body : Term) 
-   : Term * VarSubst =
+ op makeLet (params : MSPatterns, args : MSTerms, body : MSTerm) 
+   : MSTerm * VarSubst =
    let
      def aux (params, args, body, sbst) =
        case (params, args) of
@@ -850,7 +850,7 @@ spec
  %% simplify
  %% ================================================================================
 
- op simplifyUnfoldCase (spc: Spec) (tm: Term): Term =
+ op simplifyUnfoldCase (spc: Spec) (tm: MSTerm): MSTerm =
    case tm of
 
      | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
@@ -880,7 +880,7 @@ spec
  %% unfold one term
  %% ================================================================================
 
- op tryUnfold (spc: Spec, tm: Term) : Option Term =
+ op tryUnfold (spc: Spec, tm: MSTerm) : Option MSTerm =
    case tm of
 
      | Apply (f, arg, _) ->
@@ -926,7 +926,7 @@ spec
           | _ -> None)
      | _ -> None
                
- op sortMatch (t1 : Type, t2 : Type, spc : Spec) : TyVarSubst =
+ op typeMatch (t1 : MSType, t2 : MSType, spc : Spec) : TyVarSubst =
    let 
      def match (t1, t2, tv_subst) =
        case (t1, t2) of
@@ -957,9 +957,9 @@ spec
          | (Quotient (t1, _, _), Quotient(t2, _, _)) -> 
            match (t1, t2, tv_subst)
            
-         | (Subsort (t1, _, _), t2) -> match (t1, t2, tv_subst)
+         | (Subtype (t1, _, _), t2) -> match (t1, t2, tv_subst)
            
-         | (t1, Subsort (t2, _, _)) -> match (t1, t2, tv_subst)
+         | (t1, Subtype (t2, _, _)) -> match (t1, t2, tv_subst)
            
          | (Base (id1, ts1, pos1), Base (id2, ts2, pos2)) ->
            if id1 = id2 then
@@ -992,7 +992,7 @@ spec
      | _ -> tv_subst
 
 
- op patternMatchRulesToLet (rules : Match, tm : Term, spc : Spec) : Option Term =
+ op patternMatchRulesToLet (rules : Match, tm : MSTerm, spc : Spec) : Option MSTerm =
    case patternMatchRules (rules, tm) of
      | Some (vsubst, body) ->
        let bindings = map (fn (var, val) -> (mkVarPat var, val)) vsubst in
@@ -1004,7 +1004,7 @@ spec
 
  %% unused?
  %%
- %% op termHead (tm : Term) : Term =
+ %% op termHead (tm : MSTerm) : MSTerm =
  %%    case tm of
  %%     | Apply (f, _, _) -> termHead f
  %%     | _ -> tm
@@ -1014,7 +1014,7 @@ spec
  %%  %% Returns nm if it is not referenced in t, otherwise adds -i to
  %%  %% to make it unique
  %%
- %%  op  transparentRenaming: Qualifier * Id * Term * Spec -> Qualifier * Id * Term
+ %%  op  transparentRenaming: Qualifier * Id * MSTerm * Spec -> Qualifier * Id * MSTerm
  %%  %% If definition is just a renaming then "unfold"
  %%  def transparentRenaming (q, id, def1, spc) =
  %%    case def1 of

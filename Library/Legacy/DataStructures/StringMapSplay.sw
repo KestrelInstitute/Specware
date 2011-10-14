@@ -1,11 +1,11 @@
 StringMap qualifying spec {
   import SplayMap   
 
-  sort StringMap.Map a = SplayMap.Map (String,a)
+  type StringMap.Map a = SplayMap.Map (String,a)
 
   %% Alias so importers can avoid qualification
 
-  sort StringMap a = SplayMap.Map (String, a)
+  type StringMap a = SplayMap.Map (String, a)
 
   op empty : fa(a) StringMap.Map a
 
@@ -70,10 +70,10 @@ StringMap qualifying spec {
         -> StringMap.Map a  
 
   op listDomain : fa(a) StringMap.Map a -> List String
-  op filter : fa(a) (a -> Boolean) -> StringMap.Map a -> StringMap.Map a
+  op filter : fa(a) (a -> Bool) -> StringMap.Map a -> StringMap.Map a
   op listItems : fa(a) StringMap.Map a -> List a
   op listItemsi : fa(a) StringMap.Map a -> List (String * a)
-  op inDomain : fa(a) StringMap.Map a * String -> Boolean
+  op inDomain : fa(a) StringMap.Map a * String -> Bool
  
   op toList : fa(a) StringMap.Map a -> List (String * a)
   op fromList : fa(a) List (String * a) -> StringMap.Map a
@@ -85,7 +85,7 @@ StringMap qualifying spec {
           -> StringMap.Map a
           -> StringMap.Map b
  
-  op subset? : fa(a) StringMap.Map a * StringMap.Map a -> Boolean
+  op subset? : fa(a) StringMap.Map a * StringMap.Map a -> Bool
 
   def empty  = SplayMap.empty String.compare
   def StringMap.insert = SplayMap.insert

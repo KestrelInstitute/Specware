@@ -11,7 +11,7 @@ Ineq qualifying spec
   op Eq: CompPred
   op Neq: CompPred
 
-  op distinct: [a] List a -> Boolean
+  op distinct: [a] List a -> Bool
   axiom CompPredDistinct is distinct([Gt, Lt, GtEq, LtEq, Eq, Neq])
   axiom CompPredExhaust is fa (x: CompPred) x in? [Gt, Lt, GtEq, LtEq, Eq, Neq]
 
@@ -19,7 +19,7 @@ Ineq qualifying spec
 
   op IneqS.print: Ineq -> String
 
-  op isIneq?: Ineq -> Boolean
+  op isIneq?: Ineq -> Bool
 
   op compPred: Ineq -> CompPred
   op poly: Ineq -> Poly

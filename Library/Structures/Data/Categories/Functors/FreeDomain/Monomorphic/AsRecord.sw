@@ -4,7 +4,7 @@
 spec {
   import ../Monomorphic
 
-  sort Functor = {
+  type Functor = {
       dom : Sketch,
       vertexMap : PolyMap.Map (Vertex.Elem,Object),
       edgeMap : PolyMap.Map (Edge.Elem,Arrow)

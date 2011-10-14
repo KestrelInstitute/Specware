@@ -2,7 +2,7 @@
 
 This should be an extension of the spec appearing in ../Graphs. Perhaps later.
 
-The translates need sorting out. 
+The translates need typeing out. 
 
 \begin{spec}
 let
@@ -20,7 +20,7 @@ in spec
     import EdgeSet qualifying EdgeSet
     import GraphMap qualifying GraphMap
   
-    sort Graph
+    type Graph
 
     op vertices : Graph -> VertexSet.Set
     op edges : Graph -> EdgeSet.Set

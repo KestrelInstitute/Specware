@@ -21,9 +21,9 @@ spec
 
  %% Note: this assumes you can extract the appropriate key from a value in constant time.
 
- sort MFSetMap   = Map (Element, MFSetNode)
+ type MFSetMap   = Map (Element, MFSetNode)
 
- sort MFSetNode  = {rank   : Ref Nat,
+ type MFSetNode  = {rank   : Ref Nat,
 		    parent : Ref (Option MFSetNode),
 		    value  : Element}
 

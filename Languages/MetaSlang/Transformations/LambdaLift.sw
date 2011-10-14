@@ -19,17 +19,17 @@ LambdaLift qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
  import Simplify
 
- type Term = MS.Term
+ % type Term = MS.Term
 
- op lambdaLift : Spec * Boolean -> Spec
+ op lambdaLift : Spec * Bool -> Spec
 
  type LiftInfo = {ident    : String,   % Name of original identifier for lambda lifted term.
 		  name     : String,   % Name of lambda-lifted function.
 		  freeVars : FreeVars, % Free variables in body (excluding those in pattern).
-		  closure  : Term,     % Expression corresponding to name(freeVars)
-		  pattern  : Pattern,  % Pattern.
-                  domain   : Sort,     % Sort of pattern (including subsort)
-		  body     : Term      % Body of lambda lifted expression.
+		  closure  : MSTerm,     % Expression corresponding to name(freeVars)
+		  pattern  : MSPattern,  % Pattern.
+                  domain   : MSType,     % Type of pattern (including subtype)
+		  body     : MSTerm      % Body of lambda lifted expression.
 		 }
  %
  % The purpose of LiftInfo is to capture the situation where:
@@ -60,7 +60,7 @@ where possible and lifts local functions to global functions. The latter could b
 made optional as well. It seems the allegro compiler handles global functions more 
 efficiently, but cmulisp may do better with local functions.
 **)
- op  simulateClosures?: Boolean		% If false just use lambdas with free vars
+ op  simulateClosures?: Bool		% If false just use lambdas with free vars
  def simulateClosures? = false
 
  type Ops   = Map.Map (String, LiftInfo)
@@ -75,7 +75,7 @@ efficiently, but cmulisp may do better with local functions.
 
 
 (* 
- * Term decorated with free variables in each sub-expression.
+ * MSTerm decorated with free variables in each sub-expression.
  *)
 
  type VarTerm = VarTermBody * FreeVars * Position
@@ -84,17 +84,17 @@ efficiently, but cmulisp may do better with local functions.
   | Record       List (Id * VarTerm)
   | Bind         Binder * List Var * VarTerm
   | The          Var * VarTerm
-  | Let	         List (Pattern * VarTerm) * VarTerm
-  | LetRec       List (Var     * VarTerm) * VarTerm
+  | Let	         List (MSPattern * VarTerm) * VarTerm
+  | LetRec       List (Var       * VarTerm) * VarTerm
   | Var          Var
-  | Fun          Fun * Sort
+  | Fun          Fun * MSType
   | Lambda       VarMatch
   | IfThenElse   VarTerm * VarTerm * VarTerm
   | Seq          List VarTerm
 
- type VarMatch = List(Pattern * Term * VarTerm)
- op makeVarTerm: Term -> VarTerm
- op lambdaLiftTerm : LLEnv * VarTerm -> List LiftInfo * Term
+ type VarMatch = List (MSPattern * MSTerm * VarTerm)
+ op makeVarTerm: MSTerm -> VarTerm
+ op lambdaLiftTerm : LLEnv * VarTerm -> List LiftInfo * MSTerm
 
 
 (**
@@ -111,7 +111,7 @@ efficiently, but cmulisp may do better with local functions.
  *)
 
  (* Already defined in Utilities
-def patternVars (pat:Pattern): List Var = 
+def patternVars (pat:MSPattern): List Var = 
    case pat of
      | VarPat       (v,              _) -> [v]
      | RecordPat    (fields,         _) -> foldr (fn ((_, p), vs)-> patternVars p ++ vs) [] fields
@@ -121,7 +121,7 @@ def patternVars (pat:Pattern): List Var =
      | AliasPat     (pat1, pat2,     _) -> concat (patternVars pat1, patternVars pat2)
      | QuotientPat  (pat, _,         _) -> patternVars pat
      | RestrictedPat(pat, _,         _) -> patternVars pat
-     | SortedPat    (pat, _,         _) -> patternVars pat
+     | TypedPat     (pat, _,         _) -> patternVars pat
      | StringPat    _                   -> []
      | BoolPat      _                   -> []
      | CharPat      _                   -> []
@@ -129,7 +129,7 @@ def patternVars (pat:Pattern): List Var =
      | _ -> System.fail("Unexpected pattern in match normalized expression: "^printPattern pat)
 *)
 
- def makeVarTerm (term:Term) = 
+ def makeVarTerm (term:MSTerm) = 
    %let _ = String.writeLine("{") in
    %let _ = String.writeLine("makeVarTerm("^MetaSlangPrint.printTerm term^")...") in
    %let res =
@@ -198,7 +198,7 @@ def patternVars (pat:Pattern): List Var =
        let vars = diffVs (vs, [var]) in
        (The (var, body), vars, a)
 
-     | SortedTerm (t, srt, a) ->
+     | TypedTerm (t, srt, a) ->
        let (t, vars, _) = makeVarTerm t in
        (t, vars, a)
 
@@ -220,7 +220,7 @@ def patternVars (pat:Pattern): List Var =
        else 
 	 Cons (hd, diffVs (tl, l2))
 
- op  memberPred: [a] a * List a * (a * a -> Boolean) -> Boolean
+ op  memberPred: [a] a * List a * (a * a -> Bool) -> Bool
  def memberPred (x, l, p) =
    case l of
      | []     -> false
@@ -247,7 +247,7 @@ def patternVars (pat:Pattern): List Var =
    mkOp (Qualified ("TranslationBuiltIn", "makeClosure"), srt2)
 
 
- def makeUnitClosureOp ():Term = 
+ def makeUnitClosureOp ():MSTerm = 
    let alpha = mkTyVar "alpha" in
    let beta  = mkTyVar "beta"  in
    mkOp (Qualified ("TranslationBuiltIn", "makeUnitClosure"), 
@@ -256,11 +256,11 @@ def patternVars (pat:Pattern): List Var =
 			 [alpha, beta], noPos))))
 
  %
- % (dom type should be a list of dom sorts corresponding to record/tuple patterns in functions)
+ % (dom type should be a list of dom types corresponding to record/tuple patterns in functions)
  %
  def makeClosureApplication (env, name, freeVars, pat, dom, rng) = 
    let qualname = Qualified (env.qName, name) in
-   %let dom = patternSort pat in
+   %let dom = patternType pat in
    if freeVars = [] then  
      mkOp (qualname, mkArrow (dom, rng))
    else if ~simulateClosures? then
@@ -269,7 +269,7 @@ def patternVars (pat:Pattern): List Var =
 			let newV = case p of
 				     | VarPat (v, _) -> v
 				     | _ -> ("Xv-"^ (Nat.show (length result)), 
-					     patternSort p)
+					     patternType p)
 			in 
 			  result ++ [newV])
                        []
@@ -277,7 +277,7 @@ def patternVars (pat:Pattern): List Var =
      in
        mkLambda (mkTuplePat (map mkVarPat oVars), 
 		 mkAppl (mkOp (qualname, 
-			       mkArrow (mkProduct (productSorts (getSpecEnv env, dom)
+			       mkArrow (mkProduct (productTypes (getSpecEnv env, dom)
 						   ++ 
 						   map (fn (_, varSrt) -> varSrt) freeVars), 
 					rng)), 
@@ -291,13 +291,13 @@ def patternVars (pat:Pattern): List Var =
 			   mkVar (id, varSrt)])
        | _ ->
 	 let prod = mkTuple (map mkVar freeVars) in
-	 let srt1 = termSortEnv (getSpecEnv env, prod) in
+	 let srt1 = termTypeEnv (getSpecEnv env, prod) in
 	 let oper = mkOp (qualname, mkArrow (mkProduct [srt1, dom], rng)) in
 	 mkApply (makeClosureOp (), 
 		  mkTuple[oper, ArityNormalize.mkArityTuple (env.spc, prod)])	
 
- op makeLiftInfo (env: LLEnv, id: String, name: String, pat: Pattern, body: Term,
-                  dom: Sort, rng: Sort, vars: FreeVars): LiftInfo = 
+ op makeLiftInfo (env: LLEnv, id: String, name: String, pat: MSPattern, body: MSTerm,
+                  dom: MSType, rng: MSType, vars: FreeVars): LiftInfo = 
    {ident    = id, 
     name     = name, 
     freeVars = vars, 
@@ -343,7 +343,7 @@ def patternVars (pat:Pattern): List Var =
 	 removeBound (removeOne variableList, bvs)
 
  % ensure that the term is a closure
- def ensureClosure (term : Term) : Term =
+ def ensureClosure (term : MSTerm) : MSTerm =
    if ~ simulateClosures? then 
      term
    else
@@ -360,7 +360,7 @@ def patternVars (pat:Pattern): List Var =
 
 (*
 
-  Lambda lifting inserts ops with the following sorts:
+  Lambda lifting inserts ops with the following types:
 
    op clos : ('a * 'b -> 'c) * 'a -> ('b -> 'c)
 
@@ -407,12 +407,12 @@ Given let definition:
      let a = (fn (x, y) -> fn pat -> body_a_lifted (x, y)) (x, y) in body
 
  3. Insert association:
-     [ a |-> (a_op, (x, y), fn pat -> body_a_lifted (x, y), sortOf_a) ]
+     [ a |-> (a_op, (x, y), fn pat -> body_a_lifted (x, y), typeOf_a) ]
     in env.
 
  4. Recursively lambda lift body (a)
 
- 5. Return with other ops, also (a_op, (x, y), fn pat -> body_a_lifted (x, y), sortOf_a).
+ 5. Return with other ops, also (a_op, (x, y), fn pat -> body_a_lifted (x, y), typeOf_a).
 
 Given let definition:
      let a = body_a (x, y) in body
@@ -433,7 +433,7 @@ Given let definition:
 	       let vars = actualFreeVars (env, vars) in
 	       let oper = makeLiftInfo (env, id, name, pat2, body,
                                         domain (getSpecEnv env, srt),
-                                        termSortEnv (getSpecEnv env, body),
+                                        termTypeEnv (getSpecEnv env, body),
                                         vars)
                in
 	       let env  = insertOper (oper, env) in
@@ -492,8 +492,8 @@ in
 
      opers:
      [
-      f |-> (f_op, (x, y, z), fn pat_1 -> body_1_lifted (f_op (x, y, z), g_op (x, y, z), x, y), sortOf_f_op), 
-      g |-> (g_op, (x, y, z), fn pat_2 -> body_2_lifted (f_op (x, y, z), g_op (x, y, z), y, z), sortOf_g_op)
+      f |-> (f_op, (x, y, z), fn pat_1 -> body_1_lifted (f_op (x, y, z), g_op (x, y, z), x, y), typeOf_f_op), 
+      g |-> (g_op, (x, y, z), fn pat_2 -> body_2_lifted (f_op (x, y, z), g_op (x, y, z), y, z), typeOf_g_op)
      ]
 
    update the environment with these associations.    
@@ -531,7 +531,7 @@ in
 	   let (opers2, body) = lambdaLiftTerm (env1, realBody) in
 	   let oper = makeLiftInfo (env, ident, name, pattern, body,
                                     domain,
-				    termSortEnv (getSpecEnv (env), body), 
+				    termTypeEnv (getSpecEnv (env), body), 
 				    freeVars)
 	   in
 	      oper::opers ++ opers2
@@ -584,8 +584,8 @@ in
 	 let vars = actualFreeVars (env, vars) in
 
 	 let liftInfo = makeLiftInfo (env, ident, name, pat, body,
-                                      patternSort pat,
-                                      termSortEnv (getSpecEnv env, body),
+                                      patternType pat,
+                                      termTypeEnv (getSpecEnv env, body),
                                       vars)
          in
 
@@ -595,8 +595,8 @@ in
 	  liftInfoClosure)
 
      | Lambda (match as ((pat, cond, body)::_)) ->
-       let argSorts = productSorts (getSpecEnv env, patternSort pat) in
-       let newVs = makeNewVars argSorts in
+       let argTypes = productTypes (getSpecEnv env, patternType pat) in
+       let newVs = makeNewVars argTypes in
        lambdaLiftTerm (env, 
 		       (Lambda [(mkTuplePat (map mkVarPat newVs), 
 				 mkTrue (), 
@@ -691,7 +691,7 @@ in
 
      | _ -> System.fail "Unexpected term"
 
- op  makeNewVars: List Sort -> List Var
+ op  makeNewVars: List MSType -> List Var
  def makeNewVars srts =
    foldl (fn (result, s) ->
 	  Cons (("llp-"^Nat.show (length result), s), result))
@@ -752,25 +752,25 @@ def toAny     = Term `TranslationBasic.toAny`
      let srt   = mkArrow (alpha, any) in
      mkApply (mkOp (Qualified ("TranslationBuiltIn", "toAny"), srt), t)
 
- op  abstractName: LLEnv * String * FreeVars * Pattern * Sort * Term -> OpInfo
+ op  abstractName: LLEnv * String * FreeVars * MSPattern * MSType * MSTerm -> OpInfo
  def abstractName (env, name, freeVars, pattern, domain, body) =
    if ~simulateClosures? then
      let oldPatLst = patternToList pattern in
      let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in
-     let domSort = addSubsortInfo(newPattern,pattern,domain,getSpecEnv env) in
-     let new_sort = mkArrow (domSort, 
-			     termSortEnv (getSpecEnv (env), body)) 
+     let domType = addSubtypeInfo(newPattern,pattern,domain,getSpecEnv env) in
+     let new_type = mkArrow (domType, 
+			     termTypeEnv (getSpecEnv (env), body)) 
      in
      let pos = termAnn(body) in
      let new_term = withAnnT(mkLambda (newPattern, body), pos) in
-     let tvs = freeTyVars new_sort in
+     let tvs = freeTyVars new_type in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      dfn    = maybePiTerm(tvs, SortedTerm (new_term, new_sort, termAnn body)),
+      dfn    = maybePiTerm(tvs, TypedTerm (new_term, new_type, termAnn body)),
       fullyQualified? = false}
    else
-     let varSort = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
-     let closureVar = ("closure-var", mkAny varSort) in
+     let varType = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
+     let closureVar = ("closure-var", mkAny varType) in
      let closureArg = mkApply (fromAny (), mkVar closureVar) in
      let closureVarPat = mkVarPat (closureVar) in
      let newPattern =
@@ -786,7 +786,7 @@ def toAny     = Term `TranslationBasic.toAny`
      let 
        def mkProject ((id, srt), n) = 
 	 (mkVarPat ((id, srt)), 
-	  mkApply ((Fun (Project (Nat.show n), mkArrow (varSort, srt), noPos)), 
+	  mkApply ((Fun (Project (Nat.show n), mkArrow (varType, srt), noPos)), 
 		   closureArg))
      in
      let newBody = 
@@ -802,22 +802,22 @@ def toAny     = Term `TranslationBasic.toAny`
 	     in
 	       mkLet (decls, body)
      in
-     let new_sort = mkArrow (patternSort newPattern, 
-			     termSortEnv (getSpecEnv env, body))
+     let new_type = mkArrow (patternType newPattern, 
+			     termTypeEnv (getSpecEnv env, body))
      in
      let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      dfn    = SortedTerm (new_term, new_sort, termAnn body),
+      dfn    = TypedTerm (new_term, new_type, termAnn body),
       fullyQualified? = false}
 
- op addSubsortInfo(new_pat: Pattern ,old_pat: Pattern, orig_ty: Sort, spc: Spec): Sort =
-   let ty = patternSort new_pat in
+ op addSubtypeInfo(new_pat: MSPattern ,old_pat: MSPattern, orig_ty: MSType, spc: Spec): MSType =
+   let ty = patternType new_pat in
    case orig_ty of
-     | Subsort(_,pred,a) ->
+     | Subtype(_,pred,a) ->
        (case patternToTerm old_pat of
           | Some old_var_tm ->
-            Subsort(ty, simplify spc (mkLambda(new_pat, mkApply(pred,old_var_tm))) ,a)
+            Subtype(ty, simplify spc (mkLambda(new_pat, mkApply(pred,old_var_tm))) ,a)
           | _ -> ty)
      | _ -> ty
 
@@ -829,7 +829,7 @@ def toAny     = Term `TranslationBasic.toAny`
  def varsToString vars = 
    (List.foldl (fn (s, v as (id, srt)) ->
 		s ^ (if s = "[" then "" else " ")
-		^ id ^ ":" ^ printSort srt)
+		^ id ^ ":" ^ printType srt)
               "[" 
 	      vars)
    ^ "]"
@@ -872,9 +872,9 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     let term = Lambda ([(pat, cond, term)], a) in
              % let _ = writeLine(" -->\n"^printTerm term) in
-	     % let _ = writeLine ("addop "^id^":"^printSort srt) in
+	     % let _ = writeLine ("addop "^id^":"^printType srt) in
              let full_term = replaceNthTerm(full_term, refine_num, term) in
-	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
+	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
@@ -885,9 +885,9 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
 	     let term = makeVarTerm term in
 	     let (opers, term) = lambdaLiftTerm (env, term) in
-	     % let _ = writeLine ("addop "^id^":"^printSort srt) in
+	     % let _ = writeLine ("addop "^id^":"^printType srt) in
              let full_term = replaceNthTerm(full_term, refine_num, term) in
-	     let new_dfn = maybePiTerm (tvs, SortedTerm (full_term, srt, termAnn term)) in
+	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
@@ -946,7 +946,7 @@ def toAny     = Term `TranslationBasic.toAny`
 %   in
 %     addNewOpAux (info, spc)
 
- op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Boolean * Nat * a -> ASpecElements a * AOpMap a
+ op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Bool * Nat * a -> ASpecElements a * AOpMap a
  def addNewOpAux (info, elts, ops, decl?, refine_num, a) =
    let name as Qualified (q, id) = primaryOpName info in
    let new_ops = insertAQualifierMap (ops, q, id, info) in

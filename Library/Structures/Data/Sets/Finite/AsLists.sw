@@ -2,7 +2,7 @@ spec
   import ../Finite
   import FinitePolySet qualifying Polymorphic/AsLists
 
-  sort Set = FinitePolySet.Set Elem
+  type Set = FinitePolySet.Set Elem
 
   def empty = FinitePolySet.empty
   def empty? = FinitePolySet.empty?

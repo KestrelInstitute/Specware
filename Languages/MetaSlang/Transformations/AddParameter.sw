@@ -77,7 +77,7 @@ op addParameter(spc: Spec, fun: QualifiedId, param_pos: Nat, o_return_pos: Optio
         let new_qid = transformQId qid in
         let thm = oldNewTheorem(qid, new_qid, tvs, ty, new_ty, dfn, new_dfn) in
         (info << {names = [new_qid],
-                  dfn = maybePiTerm(tvs, mkSortedTerm(new_dfn, new_ty))},
+                  dfn = maybePiTerm(tvs, mkTypedTerm(new_dfn, new_ty))},
          thm)
       def oldNewTheorem(old_qid, new_qid, tvs, old_ty, new_ty, old_dfn, new_dfn) =
         let new_op_ref = mkOp(new_qid, new_ty) in

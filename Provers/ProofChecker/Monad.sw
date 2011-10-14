@@ -30,7 +30,7 @@ spec
 
   % monadic ops to provide access to the state of the monad:
 
-  op memo?: Proof -> M Boolean
+  op memo?: Proof -> M Bool
   def memo?(p) =
     fn state ->
     (RETURN (memoS? p state), state)

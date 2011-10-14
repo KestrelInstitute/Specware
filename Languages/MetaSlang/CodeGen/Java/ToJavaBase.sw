@@ -17,28 +17,28 @@ import /Languages/MetaSlang/Specs/Environment
 import IJavaCodeGen
 import Monad
 
-sort ToExprSort = JavaBlock * JavaExpr * Nat * Nat
+type ToExprType = JavaBlock * JavaExpr * Nat * Nat
 
 % --------------------------------------------------------------------------------
 
-%op JGen.metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
+%op JGen.metaSlangTypeToJavaType: MSType -> JGenEnv JavaType
 def JGen.metaSlangTypeToJavaType = tt_v3M
 
-op baseSrtToJavaTypeM: Sort -> JGenEnv JavaType
+op baseSrtToJavaTypeM: MSType -> JGenEnv JavaType
 def baseSrtToJavaTypeM(srt) =
-  if boolSort?(srt)
+  if boolType?(srt)
     then return(tt("Boolean"))
   else
-    if stringSort?(srt)
+    if stringType?(srt)
       then return(tt("String"))
     else
-      if charSort?(srt)
+      if charType?(srt)
 	then return(tt("Char"))
       else
-	if intSort?(srt)
+	if intType?(srt)
 	  then return(tt("Integer"))
 	else
-	  if natSort?(srt)
+	  if natType?(srt)
 	    then return(tt("Integer"))
 	  else
 	    {
@@ -188,7 +188,7 @@ def mkDefaultCase() =
   let stmt = mkThrowMalf() in
   [(swlabel,[Stmt stmt])]
 
-%sort JSpec = CompUnit
+%type JSpec = CompUnit
 
 op mkIfRes: Nat -> Id
 def mkIfRes(k) =
@@ -221,7 +221,7 @@ op mkFinalVar: Id -> Id
 def mkFinalVar(id) =
   finalVarPrefix^id
 
-op isFinalVar?: Id -> Boolean
+op isFinalVar?: Id -> Bool
 def isFinalVar?(id) =
   let l = length(finalVarPrefix) in
   if length(id) > l then
@@ -229,7 +229,7 @@ def isFinalVar?(id) =
   else
       false
 
-op mkFinalVarDeclM: Id * Sort * JavaExpr -> JGenEnv JavaBlockStmt
+op mkFinalVarDeclM: Id * MSType * JavaExpr -> JGenEnv JavaBlockStmt
 def mkFinalVarDeclM(varid,srt,exp) =
   {
    typ <- tt_v3M srt;
@@ -238,7 +238,7 @@ def mkFinalVarDeclM(varid,srt,exp) =
    return (changeTimeVars(LocVarDecl(isfinal,typ,vdecl,[])))
   }
 
-op isIdentityAssignment?: JavaBlockStmt -> Boolean
+op isIdentityAssignment?: JavaBlockStmt -> Bool
 def isIdentityAssignment?(stmt) =
   case stmt of
     | LocVarDecl(_,_,((lhsid,0),Some(Expr rhsexpr)),_) ->
@@ -278,7 +278,7 @@ def mapAliasesFun aliases id =
  * returns whether or not the given type is the void type, i.e. the product type
  * with an empty field list
  *)
-op isVoid?: Spec * Sort -> Boolean
+op isVoid?: Spec * MSType -> Bool
 def isVoid?(spc,srt) =
   let srt = unfoldBase(spc,srt) in
   case srt of
@@ -288,7 +288,7 @@ def isVoid?(spc,srt) =
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
  *)
-op tt_v3M: Sort -> JGenEnv JavaType
+op tt_v3M: MSType -> JGenEnv JavaType
 def tt_v3M srt =
   {
    spc <- getEnvSpec;
@@ -318,21 +318,21 @@ def tt_v3M srt =
 	         | Some usrt -> return usrt
 	         | None -> return srt;
 	sid <- srtIdM(srt);
-	%println("tt_v3M: found product type: "^(printSort srt)^" --> "^sid);
+	%println("tt_v3M: found product type: "^(printType srt)^" --> "^sid);
 	return(mkJavaObjectType sid)
        }
      | TyVar id -> 
        let id = "Object" in
        return(mkJavaObjectType id)
-     | Subsort(srt,_,_) -> tt_v3M srt
+     | Subtype(srt,_,_) -> tt_v3M srt
      | _ ->
        (case findMatchingUserTypeOption(spc,srt) of
 	  | Some usrt -> tt_v3M usrt
-	  | None -> raise(Fail("tt_v3 failed for sort "^(printSort srt)),sortAnn srt)
+	  | None -> raise(Fail("tt_v3 failed for type "^(printType srt)),typeAnn srt)
        )
   }
 
-op tt_idM: Sort -> JGenEnv Id
+op tt_idM: MSType -> JGenEnv Id
 def tt_idM srt =
   {
    ty <- tt_v3M srt;
@@ -343,25 +343,25 @@ def tt_idM srt =
 op JVoid: JavaType
 def JVoid = (Basic Void,0)
 
-%op sortId: Sort -> String 
-%def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
-def Java.sortId(srt) = 
+%op typeId: MSType -> String 
+%def CodeGenTransforms.typeId(srt) = (project 1)(srtId srt)
+def Java.typeId(srt) = 
   case srtIdM srt initialState of
     | (Ok id,_) -> id
-    | _ -> fail("fail in CodeGenTransforms.sortId("^(printSort srt)^")")
+    | _ -> fail("fail in CodeGenTransforms.typeId("^(printType srt)^")")
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
  * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
  *)
-op srtIdM: Sort -> JGenEnv String
+op srtIdM: MSType -> JGenEnv String
 def srtIdM srt =
   {
    (_,s) <- srtId_internalM(srt,true);
    return s
   }
 
-op srtId_internalM: Sort * Boolean -> JGenEnv (List JavaType * String)
+op srtId_internalM: MSType * Bool -> JGenEnv (List JavaType * String)
 def srtId_internalM(srt,addIds?) =
   case srt of
     | Base (Qualified (q, id), tvs, _) -> 
@@ -389,7 +389,7 @@ def srtId_internalM(srt,addIds?) =
 			  let types = types ++ [tt_v2(str0)] in
 			  return (types,str)
 			 }) ([],"") fields;
-       if addIds? then addProductSortToEnv srt else return ();
+       if addIds? then addProductTypeToEnv srt else return ();
        return (l,str)
      }
     | CoProduct(fields,_) ->
@@ -422,11 +422,11 @@ def srtId_internalM(srt,addIds?) =
     | TyVar(id,_) ->
       let id = "Object" in
       return ([tt_v2 id],id)
-    | Subsort(srt,_,_) -> srtId_internalM(srt,addIds?)
+    | Subtype(srt,_,_) -> srtId_internalM(srt,addIds?)
     | Quotient(srt,_,_) -> srtId_internalM(srt,addIds?)
-    | _ -> raise(NotSupported("sort format not supported: "^printSort srt),sortAnn srt)
-           %(issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
-	   % ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
+    | _ -> raise(NotSupported("type format not supported: "^printType srt),typeAnn srt)
+           %(issueUnsupportedError(typeAnn(srt),"type format not supported: "^printType(srt));
+	   % ([tt_v2 "ERRORTYPE"],"ERRORTYPE",nothingCollected))
 
 op getJavaTypeId: JavaType -> Id
 def getJavaTypeId(jt) =
@@ -447,14 +447,14 @@ def getJavaTypeId(jt) =
 
 (**
  * generates a string representation of the type id1*id2*...*idn -> id
- * the ids are MetaSlang sort ids 
+ * the ids are MetaSlang type ids 
  *)
 op mkArrowSrtId: List Id * Id -> JGenEnv String
 def mkArrowSrtId(domidlist,ranid) =
   let p = Internal "" in
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
   let (fields,_) = foldl (fn((fields,n),id) -> 
-			  let field = (natToString(n),Base(mkUnQualifiedId(id),[],p):Sort) in 
+			  let field = (natToString(n),Base(mkUnQualifiedId(id),[],p):MSType) in 
 			  (fields ++ [field],n+1))
                    ([],1) domidlist
   in
@@ -470,7 +470,7 @@ op mkJavaNumber: Int -> JavaExpr
 def mkJavaNumber(i) =
   CondExp (Un (Prim (IntL (i))), None)
 
-op mkJavaBool: Boolean -> JavaExpr
+op mkJavaBool: Bool -> JavaExpr
 def mkJavaBool(b) =
   CondExp (Un (Prim (Bool (b))), None)
 
@@ -537,7 +537,7 @@ def mkBaseJavaUnOp(id) =
     | "-" -> Minus
     | "~" -> LogNot
 
-op javaBaseOp?: Id -> Boolean
+op javaBaseOp?: Id -> Bool
 def javaBaseOp?(id) =
   case id of
     | "&&" -> true
@@ -660,9 +660,9 @@ def mkVars(ids) =
 (**
  * returns the application that constitutes the assertion for the given var.
  * E.g., (id,(Nat|even)  -> Some(Apply(even,id))
- * This only works, because the super sort of a restriction sort must be a flat sort, no records etc. 
+ * This only works, because the super type of a restriction type must be a flat type, no records etc. 
 *)
-op mkAsrtTestAppl: Spec * (MS.Term * Option MS.Term) -> Option MS.Term
+op mkAsrtTestAppl: Spec * (MSTerm * Option MSTerm) -> Option MSTerm
 def mkAsrtTestAppl(spc,(trm,optt)) =
   case optt of
     | Some t -> 
@@ -678,7 +678,7 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
 %def mkAsrtTestAppl(spc,var as (id,srt)) =
 %  case getRestrictionTerm(spc,srt) of
 %    | Some t -> 
-%      let b = sortAnn(srt) in
+%      let b = typeAnn(srt) in
 %      Some(Apply(t,Var(var,b),b))
 %    | None -> None
 
@@ -686,20 +686,20 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
 (**
  * generates the conjunction of assertions for the given variable list
  *)
-op mkAsrtExpr: Spec * List Var * List(Option MS.Term) -> Option MS.Term
+op mkAsrtExpr: Spec * List Var * List(Option MSTerm) -> Option MSTerm
 def mkAsrtExpr(spc,vars,dompreds) =
   % let _ = writeLine("mse: "^foldl (fn (r,(id,_)) -> r^" "^id) "" vars) in
   % let _ = writeLine(foldl (fn (r,dp) -> r^(case dp of Some d -> ", "^printTerm d | _ -> " ? ")) "" dompreds) in
   let vars = if length(dompreds) = 1 && length(vars) > 1
 	       then let (fields,_) = foldl (fn((fields,n),(id,srt)) ->
-					    let b = sortAnn(srt) in
+					    let b = typeAnn(srt) in
 					    let t = Var((id,srt),b) in
 					    let nstr = natToString(n) in
 					    (fields ++ [(nstr,t)],n+1)) ([],1) vars
 		    in
 		    [Record(fields,noPos)]
 	     else
-	       map (fn(id,srt) -> Var((id,srt),sortAnn(srt))) vars
+	       map (fn(id,srt) -> Var((id,srt),typeAnn(srt))) vars
   in
   let varspred = zip(vars,dompreds) in
   let
@@ -726,14 +726,14 @@ def mkAsrtExpr(spc,vars,dompreds) =
   mkAsrtExpr0(varspred,None)
 
 (**
- * returns the restriction term for the given sort, if it has one.
+ * returns the restriction term for the given type, if it has one.
  *)
-op getRestrictionTerm: Spec * Sort -> Option MS.Term
+op getRestrictionTerm: Spec * MSType -> Option MSTerm
 def getRestrictionTerm(spc,srt) =
-  %let _ = writeLine("get restriction term: "^printSort(srt)) in
+  %let _ = writeLine("get restriction term: "^printType(srt)) in
   let srt = unfoldBase(spc,srt) in
   case srt of
-    | Subsort(_,pred,_) -> Some pred
+    | Subtype(_,pred,_) -> Some pred
     | _ -> None
 
 
@@ -876,7 +876,7 @@ def mkReturnStmt(expr) =
  * creates from the given pattern a list of formal parameters to be used in the definition of a method;
  * if a pattern is a wildcard pattern, the id "argi" is used, where i is the position of the parameter.
  *)
-op mkParamsFromPattern: Pattern -> List Id
+op mkParamsFromPattern: MSPattern -> List Id
 def mkParamsFromPattern(pat) =
   let
     def errmsg_unsupported(pat) =
@@ -1013,7 +1013,7 @@ def Stmt.validateMainMethodBody stmt =
     | Return(Some e) -> Block [Stmt(Expr e),Stmt(Return None)]
     | _ -> stmt
 
-op findMatchingUserTypeM: Sort -> JGenEnv Sort
+op findMatchingUserTypeM: MSType -> JGenEnv MSType
 def findMatchingUserTypeM srt =
   {
    spc <- getEnvSpec;
@@ -1022,7 +1022,7 @@ def findMatchingUserTypeM srt =
      | None ->
        {
 	case srt of
-	  | Product _ -> addProductSort srt
+	  | Product _ -> addProductType srt
 	  | _ -> return ();
 	return srt
        }
@@ -1030,36 +1030,36 @@ def findMatchingUserTypeM srt =
 
 
 (**
- * looks in the spec for a user type that is a restriction type, where the given sort is the sort of the
- * restrict operator. The sort must be in the form X -> (X|p), and this op returns the name of the user type
+ * looks in the spec for a user type that is a restriction type, where the given type is the type of the
+ * restrict operator. The type must be in the form X -> (X|p), and this op returns the name of the user type
  * that is defined as (X|p)
  *)
- op  findMatchingRestritionType: Spec * Sort -> Option Sort
+ op  findMatchingRestritionType: Spec * MSType -> Option MSType
  def findMatchingRestritionType(spc,srt) =
    case srt of
-     | Arrow (X0, ssrt as Subsort (X1, pred, _), _) -> 
+     | Arrow (X0, ssrt as Subtype (X1, pred, _), _) -> 
        if equivType? spc (X0, X1) then
-	 let srts = sortsAsList spc in
-	 let srtPos = sortAnn ssrt in
+	 let srts = typesAsList spc in
+	 let srtPos = typeAnn ssrt in
 	 let foundSrt = 
 	     findLeftmost (fn (_, _, info) ->
-                             if definedSortInfo? info then
-                               let srt = firstSortDefInnerSort info in
+                             if definedTypeInfo? info then
+                               let srt = firstTypeDefInnerType info in
                                equivType? spc (ssrt, srt)
                              else
                                false)
 	          srts 
 	 in
 	   case foundSrt of
-	     | Some (q, subsortid, _) -> 
-	       Some (Base (mkUnQualifiedId subsortid, [], srtPos))
+	     | Some (q, subtypeid, _) -> 
+	       Some (Base (mkUnQualifiedId subtypeid, [], srtPos))
 	     | None -> None
        else 
 	 None
      | _ -> None
 
- op  foldRecordsForOpSort : Spec * Sort -> Sort
- def foldRecordsForOpSort (spc, srt) =
+ op  foldRecordsForOpType : Spec * MSType -> MSType
+ def foldRecordsForOpType (spc, srt) =
    case srt of
      | Arrow (domsrt, rngsrt, b) ->
        let domsrt =
@@ -1080,10 +1080,10 @@ def findMatchingUserTypeM srt =
 
 
 (**
- * inserts "restrict" structs, if there's a mismatch between the domain sorts and 
- * the sorts of the args
+ * inserts "restrict" structs, if there's a mismatch between the domain types and 
+ * the types of the args
  *)
-op insertRestricts: Spec * List Sort * List MS.Term -> List MS.Term
+op insertRestricts: Spec * MSTypes * MSTerms -> MSTerms
 def insertRestricts(spc,dom,args) =
   let
     def castNatToInteger srt =
@@ -1093,12 +1093,12 @@ def insertRestricts(spc,dom,args) =
         | _ -> srt
 
     def insertRestrict(domsrt,argterm) =
-      %let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
+      %let _ = writeLine("insertRestrict: domsrt="^printType(domsrt)^", argterm="^printTermWithTypes(argterm)) in
       let domsrt = unfoldBase(spc,domsrt) in
       case domsrt of
-	| Subsort(srt,pred,_) ->
+	| Subtype(srt,pred,_) ->
 	  %let tsrt = inferType(spc,argterm) in
-	  let tsrt = termSort(argterm) in
+	  let tsrt = termType(argterm) in
 	  let b = termAnn(argterm) in
           let srt  = castNatToInteger srt  in
           let tsrt = castNatToInteger tsrt in
@@ -1128,7 +1128,7 @@ def insertRestricts(spc,dom,args) =
 (**
  * this is used to distinguish "real" product from "record-products"
  *)
-op fieldsAreNumbered: [a] List(String * a) -> Boolean
+op fieldsAreNumbered: [a] List(String * a) -> Bool
 def fieldsAreNumbered(fields) =
   let
     def fieldsAreNumbered0(i,fields) =
@@ -1140,10 +1140,10 @@ def fieldsAreNumbered(fields) =
 
 
 (**
- * compares the summand sort with the match and returns the list of constructor ids
+ * compares the summand type with the match and returns the list of constructor ids
  * that are not present in the match.
  *)
-op getMissingConstructorIds: Sort * List(Id * MS.Term) -> List Id
+op getMissingConstructorIds: MSType * List(Id * MSTerm) -> List Id
 def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
   let missingsummands = filter (fn(constrId,_) -> 
 				case findLeftmost (fn(id,_) -> id = constrId) cases of
@@ -1156,7 +1156,7 @@ def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
  * search for the wild pattern in the match and returns the corresponding body, if it
  * has been found.
  *)
-op findVarOrWildPat: Match -> Option MS.Term
+op findVarOrWildPat: Match -> Option MSTerm
 def findVarOrWildPat(cases) =
   case cases of
     | [] -> None
@@ -1167,16 +1167,16 @@ def findVarOrWildPat(cases) =
 	 | _ -> findVarOrWildPat(cases)
 	)
 
-op addProductSortToEnv: Sort -> JGenEnv ()
-def addProductSortToEnv srt =
-  %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
+op addProductTypeToEnv: MSType -> JGenEnv ()
+def addProductTypeToEnv srt =
+  %let _ = writeLine("collecting product type "^printType(srt)^"...") in
   {
    spc <- getEnvSpec;
-   productSorts <- getProductSorts;
-   if exists? (fn(psrt) -> equivType? spc (srt,psrt)) productSorts then
+   productTypes <- getProductTypes;
+   if exists? (fn(psrt) -> equivType? spc (srt,psrt)) productTypes then
      return ()
    else
-     addProductSort srt
+     addProductType srt
   }
 
 op packageNameToPath: String -> String
@@ -1212,11 +1212,11 @@ def mapJavaIdent sep id =
 
 % --------------------------------------------------------------------------------
 
-op isAnyTerm?: MS.Term -> Boolean
+op isAnyTerm?: MSTerm -> Bool
 def isAnyTerm? t =
-  let def stripSortedTerm trm =
+  let def stripTypedTerm trm =
   (case trm of
-     | SortedTerm(trm,_,_) -> stripSortedTerm trm
+     | TypedTerm(trm,_,_) -> stripTypedTerm trm
      | _ -> trm)
   in
   anyTerm? t

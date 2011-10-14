@@ -1,9 +1,9 @@
 \section{Polymorphic Cocomplete Categories}
 
-This refines the basic sort for categories by adding
+This refines the basic type for categories by adding
 colimits and an initial object.
 
-The cocone sorts and associated ops will be factored into a
+The cocone types and associated ops will be factored into a
 Cocone spec.
 
 \begin{spec}
@@ -12,7 +12,7 @@ spec {
   import ../Diagrams/Polymorphic
   import NatTrans qualifying ../NatTrans/FreeFunctorDomain/Polymorphic
 
-  sort Cocone (O,A)
+  type Cocone (O,A)
 
   op diagram : fa(O,A) Cocone (O,A) -> Diagram (O,A)
   op apex : fa(O,A) Cocone (O,A) -> O
@@ -21,7 +21,7 @@ spec {
   % The argument is the target category for the diagram
   op emptyCocone : fa (O,A) Cat (O,A) -> Cocone (O,A)
 
-  sort InitialCocone (O,A)
+  type InitialCocone (O,A)
  
   op cocone : fa(O,A) InitialCocone (O,A) -> Cocone (O,A)
   op universal : fa(O,A) InitialCocone (O,A) -> (Cocone (O,A) -> A)

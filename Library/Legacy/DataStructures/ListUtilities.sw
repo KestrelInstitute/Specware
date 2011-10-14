@@ -10,8 +10,8 @@ ListUtilities qualifying spec {
   op enumerate         : Nat * Nat -> List Nat
   op index             : [T] List T * T -> Nat
 
-  op collectDuplicates : [T] List T * (T * T -> Boolean) -> List T
-  op split             : [T] (T -> Boolean) * List T -> (List T * List T)
+  op collectDuplicates : [T] List T * (T * T -> Bool) -> List T
+  op split             : [T] (T -> Bool) * List T -> (List T * List T)
   op take              : [T] Nat * List T -> List T
   op drop              : [T] Nat * List T -> List T
   op deleteNth         : [a] Nat * List a -> List a
@@ -21,12 +21,12 @@ ListUtilities qualifying spec {
 
   op findOption        : [a,b] (a -> Option b) -> List a -> Option b
   op findOptionIndex   : [a,b] (a * Nat -> Option b) -> List a -> Option (Nat * b)
-  op findIndex         : [a]   (a -> Boolean) -> List a -> Option(Nat * a)
+  op findIndex         : [a]   (a -> Bool) -> List a -> Option(Nat * a)
 
   op mapWithIndexRec   : [a,b] (Nat * a -> b) * List a * Nat -> List b
   op mapWithIndex      : [a,b] (Nat * a -> b) -> List a -> List b
 
-  op subset?           : [a] List a * List a -> Boolean
+  op subset?           : [a] List a * List a -> Bool
 
   op mapCross          : [a,b,c] (a * b -> c) -> List a * List b -> List c
 

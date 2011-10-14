@@ -5,35 +5,35 @@
 
 spec
 
-sort JavaFile = (*filename*) String * CompUnit
+type JavaFile = (*filename*) String * CompUnit
 
-sort CompUnit = Option JavaName * List JavaName * List ClsOrInterfDecl
+type CompUnit = Option JavaName * List JavaName * List ClsOrInterfDecl
 %% JavaName is for package
 %% List JavaName for imports
 
-sort ClsOrInterfDecl = 
+type ClsOrInterfDecl = 
   | ClsDecl     ClsDecl
   | InterfDecl  InterfDecl 
 
-sort ClsDecl = List Mod * ClsHeader * ClsBody
+type ClsDecl = List Mod * ClsHeader * ClsBody
 
-sort InterfDecl = List Mod * InterfHeader * InterfBody
+type InterfDecl = List Mod * InterfHeader * InterfBody
 
-sort Mod = 
+type Mod = 
   | Public | Protected | Private 
   | Static 
   | Abstract | Final | Native | Synchronized | Transient | Volatile
   | Strictfp 
 
-sort ClsHeader = Ident * SuperCls * SuperInterf
+type ClsHeader = Ident * SuperCls * SuperInterf
 
-sort InterfHeader = Ident * SuperInterf
+type InterfHeader = Ident * SuperInterf
 
-sort SuperCls = Option JavaName
+type SuperCls = Option JavaName
 
-sort SuperInterf = List JavaName
+type SuperInterf = List JavaName
 
-sort ClsBody = 
+type ClsBody = 
   { handwritten : List String,
     staticInits : List JavaBlock,
     flds        : List FldDecl,
@@ -42,7 +42,7 @@ sort ClsBody =
     clss        : List ClsDecl,
     interfs     : List InterfDecl }  
 
-sort InterfBody = 
+type InterfBody = 
   { flds : List FldDecl,
     %% only constants
     meths  : List MethHeader,
@@ -50,42 +50,42 @@ sort InterfBody =
     clss      : List ClsDecl,
     interfs   : List InterfDecl }
 
-sort FldDecl = List Mod * JavaType * VarDecl * List VarDecl
+type FldDecl = List Mod * JavaType * VarDecl * List VarDecl
 
-sort ConstrDecl = 
+type ConstrDecl = 
      List Mod * Ident * FormPars * Throws * JavaBlock
 
-sort MethDecl = MethHeader * Option JavaBlock
+type MethDecl = MethHeader * Option JavaBlock
 
-sort VarDecl = VarDeclId * Option VarInit
+type VarDecl = VarDeclId * Option VarInit
 
-sort VarDeclId = Ident * Int
+type VarDeclId = Ident * Int
 %% Int is for # of dimensions, 0 indicating it is not an array
 
-sort VarInit = 
+type VarInit = 
   | Expr     JavaExpr
   | ArrInit  ArrInit
 
-sort ArrInit = List (Option VarInit)
+type ArrInit = List (Option VarInit)
 %% NONE indicates occurrence of a comma
 
-sort MethHeader = List Mod * JavaRetType * Ident * FormPars * Throws
+type MethHeader = List Mod * JavaRetType * Ident * FormPars * Throws
 
-sort FormPar = Boolean * JavaType * VarDeclId
+type FormPar = Bool * JavaType * VarDeclId
 %% Boolean value "true" indicates that "final" is present
-sort FormPars = List FormPar
+type FormPars = List FormPar
 
-sort Throws = List JavaName
+type Throws = List JavaName
 
-sort JavaBlock = List JavaBlockStmt
+type JavaBlock = List JavaBlockStmt
 
-sort JavaBlockStmt = 
-  | LocVarDecl  Boolean * JavaType * VarDecl * List VarDecl
+type JavaBlockStmt = 
+  | LocVarDecl  Bool * JavaType * VarDecl * List VarDecl
     %% Boolean indicates if "final" is present
   | ClsDecl     List Mod * ClsHeader * ClsBody
   | Stmt        JavaStmt
 
-sort JavaStmt = 
+type JavaStmt = 
   | Block         JavaBlock
   | Labeled       Ident * JavaStmt
   | If            JavaExpr * JavaStmt * Option JavaStmt
@@ -105,30 +105,30 @@ sort JavaStmt =
   | Expr          JavaExpr
   | Empty
 
-sort ForInit =
-  | LocVarDecl  Boolean * JavaType * VarDecl * List VarDecl           
+type ForInit =
+  | LocVarDecl  Bool * JavaType * VarDecl * List VarDecl           
   | StmtExprs    JavaExpr * List JavaExpr 
 
-sort ForUpdate = JavaExpr * List JavaExpr 
+type ForUpdate = JavaExpr * List JavaExpr 
 
-sort SwitchBlock = List (List SwitchLab * List JavaBlockStmt)
+type SwitchBlock = List (List SwitchLab * List JavaBlockStmt)
 
-sort SwitchLab = 
+type SwitchLab = 
   | JCase     JavaExpr
   | Default
 
-sort JavaExpr = 
+type JavaExpr = 
   | CondExp CondExp
   | Ass     JavaLHS * AssOp * JavaExpr
 
-sort JavaLHS =
+type JavaLHS =
   | Name          JavaName
     %% field access
   | FldAcc        FldAcc
     %% 2 array access
   | ArrAcc        ArrAcc
 
-sort AssOp = 
+type AssOp = 
   | Assgn 
   | Mul | Div | Rem | Plus | Minus 
   | LShift | RShift | LShiftSpec
@@ -151,14 +151,14 @@ def assOpToString (o : AssOp) : String =
          | BitInclOr  -> "|="
 
 
-sort CondExp = BinExp * Option (JavaExpr * CondExp)
+type CondExp = BinExp * Option (JavaExpr * CondExp)
 
-sort BinExp =  
+type BinExp =  
   | Bin    BinOp * BinExp * BinExp
   | InstOf BinExp * JavaType
   | Un     UnExp
   
-sort BinOp = 
+type BinOp = 
   | CdOr | CdAnd | InclOr | ExclOr | And 
   | Eq | NotEq | Gt | Lt | Ge | Le
   | LShft | RShft | RShftSp
@@ -186,14 +186,14 @@ def binOpToString (o : BinOp) : String =
          | Div    -> "/"
          | Rem    -> "%"
 
-sort UnExp = 
+type UnExp = 
   | Un      UnOp * UnExp
   | Cast    JavaType * UnExp
   | PostUn  UnExp * PostUnOp
   | Prim    Prim
 %  | Name    JavaName
 
-sort UnOp = 
+type UnOp = 
   | Plus | Minus
   | PreInc | PreDec
   | BitNot | LogNot
@@ -207,7 +207,7 @@ def unOpToString (o : UnOp) : String =
          | BitNot  -> "~"
          | LogNot  -> "!"
 
-sort PostUnOp = 
+type PostUnOp = 
   | PostInc | PostDec
 
 def postUnOpToString (o : PostUnOp) : String =
@@ -215,13 +215,13 @@ def postUnOpToString (o : PostUnOp) : String =
            PostInc -> "++"
          | PostDec -> "--"
 
-sort Prim =
+type Prim =
   | Name             JavaName
     %% 6 literals follow
   | IntL             Int
   | Float            Int * Int
                           %% the second int should be a nat
-  | Bool             Boolean
+  | Bool             Bool
   | Char             Char
   | String           String
   | Null 
@@ -245,7 +245,7 @@ sort Prim =
 def mkNamePr (nm : JavaName) : Prim = Name nm
 def mkIntLPr (i : Int) : Prim = IntL i
 def mkFloatPr (i : Int, j : Int)  : Prim = Float (i,j)
-def mkBoolPr (b : Boolean) : Prim = Bool b
+def mkBoolPr (b : Bool) : Prim = Bool b
 def mkCharPr (c : Char) : Prim = Char c
 def mkStringPr (s : String) : Prim = String s
 def mkNullPr () : Prim = Null
@@ -259,7 +259,7 @@ def mkMethInvPr (mi : MethInv) : Prim = MethInv mi
 def mkArrAccPr (aac : ArrAcc) : Prim = ArrAcc aac
 
 
-sort NewClsInst =
+type NewClsInst =
   | ForCls        JavaName * List JavaExpr * Option ClsBody
   | ForInnCls     Prim * Ident * List JavaExpr * Option ClsBody
 
@@ -270,13 +270,13 @@ def mkForInnClsNCI (pm : Prim, id : Ident, args : List JavaExpr,
                             cbd : Option ClsBody): NewClsInst =
     ForInnCls (pm, id, args, cbd) 
  
-sort NewArr =
+type NewArr =
     %% List JavaExpr is for the lenths of the first n dimensions. 
     %% Int is for the extra # of "[]"
   | Arr           JavaName * List JavaExpr * Int
   | ArrWInit      JavaName * Int * ArrInit
 
-sort FldAcc =
+type FldAcc =
   | ViaPrim       Prim * Ident
   | ViaSuper      Ident
   | ViaCls        JavaName * Ident
@@ -288,7 +288,7 @@ def mkViaSuperFA (id : Ident) : FldAcc =
 def mkViaClsFA (nm : JavaName, id : Ident) : FldAcc =
     ViaCls (nm,id)
 
-sort MethInv =
+type MethInv =
   | ViaName       JavaName * List JavaExpr
   | ViaPrim      Prim * Ident * List JavaExpr
   | ViaSuper     Ident  * List JavaExpr
@@ -305,26 +305,26 @@ def mkViaClsSuperMI (nm : JavaName, id : Ident, args : List JavaExpr)
                                                 : MethInv =
     ViaClsSuper (nm,id,args)
 
-sort ArrAcc = 
+type ArrAcc = 
   | ViaName        JavaName * JavaExpr
   | ViaNoNewArray  Prim * JavaExpr
 
 
-sort JavaType = BasicOrName * Int
+type JavaType = BasicOrName * Int
 %% Int is for dimension, 0 means that it is not an array.
 
-sort BasicOrName = | Basic Basic | Name JavaName 
+type BasicOrName = | Basic Basic | Name JavaName 
 
-sort Basic = 
+type Basic = 
   | JBool | Byte | Short | Char | JInt | Long | JFloat | Double | Void
 
-sort JavaRetType = Option JavaType
+type JavaRetType = Option JavaType
 
 
-sort JavaName = List Ident * Ident
+type JavaName = List Ident * Ident
 %% Package, method, type, expression names are all qualified identifiers.
 
-sort Ident = String
+type Ident = String
 
 % --------------------------------------------------------------------------------
 
@@ -583,8 +583,8 @@ def mapNameMethInv ii minv =
     | ViaClsSuper(n,id,el) -> ViaClsSuper(mapNameName ii n,ii id,map (mapNameExpr ii) el)
 
 
-op javaKeyword?: Ident -> Boolean
-def javaKeyword?(id) =
+op javaKeyword?: Ident -> Bool
+def javaKeyword? id =
   id="abstract" ||
   id="double" ||
   id="int" ||

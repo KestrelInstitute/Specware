@@ -1,6 +1,6 @@
 (* Specware 4 Toplevel Specification *)
 
-%%% This constructs Specware and refines various abstract sorts.
+%%% This constructs Specware and refines various abstract types.
 
 spec 
   import /Languages/SpecCalculus/Semantics/Specware

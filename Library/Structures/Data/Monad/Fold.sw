@@ -3,7 +3,7 @@
 The first function a \verb+fold+ over any finite and enumerable
 data type but within a monad.
 
-### This definition wrongly constrains the collection sort to
+### This definition wrongly constrains the collection type to
 be enumerable. The point is that there is no reason that the
 fold operation should be expressed in terms if takeOne. By doing
 so we are implicitly asserting that the order of the fold is relevant.

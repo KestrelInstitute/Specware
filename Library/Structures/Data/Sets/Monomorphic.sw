@@ -10,27 +10,23 @@ way that sets might have been defined in the old Slang.
 spec
   import Elem 
 
-  sort Set
+  type Set
 
-  op empty : Set
-  op empty? : Set -> Boolean
-
-  op union : Set -> Set -> Set
+  op empty        : Set
+  op empty?       : Set -> Bool
+  op member?      : Set -> Elem -> Bool
+  op subset?      : Set -> Set  -> Bool
+  op delete       : Set -> Elem -> Set
+  op insert       : Set -> Elem -> Set
+  op union        : Set -> Set -> Set
   op intersection : Set -> Set -> Set
-  op difference : Set -> Set -> Set
-
-  op member? : Set -> Elem -> Boolean
-  op subset? : Set -> Set -> Boolean
-  op delete : Set -> Elem -> Set
-
-  op singleton : Elem -> Set
-  op insert : Set -> Elem -> Set
+  op difference   : Set -> Set -> Set
+  op singleton    : Elem       -> Set
 
   % These belong in some extended spec for finite or enumerable sets. 
-  op fold : fa(a) (a -> Elem -> a) -> a -> Set -> a
-  op map : (Elem -> Elem) -> Set -> Set
-
-  % op takeOne : Set -> Option (Elem * Set)
+  op fold    : fa(a) (a -> Elem -> a) -> a -> Set -> a
+  op map     : (Elem -> Elem) -> Set -> Set
+ %op takeOne : Set -> Option (Elem * Set)
 \end{spec}
 
 This pretty prints the elements of a list with breaks at each element.
@@ -56,7 +52,7 @@ These don't belong here
 end
 \end{spec}
 
-Intuitively, when \sortref{Set} = \sortref{List} then,
+Intuitively, when \typeref{Set} = \typeref{List} then,
 
 \begin{verbatim}
    fold f e [] = e
@@ -71,6 +67,6 @@ for enumerable sets where fold is included.
 One could also argue that the last three don't belong in this spec.
 
 A problem with the presentation is that, as I see it, the dependency
-between the sort Set and the sort Elem is not reflected in the definition
-of the sort Set. Put another way, the sort for Set, does not say
-explicitly that it is a sort for sets of Elem.
+between the type Set and the type Elem is not reflected in the definition
+of the type Set. Put another way, the type for Set, does not say
+explicitly that it is a type for sets of Elem.

@@ -43,10 +43,10 @@ IO qualifying spec
         | (Exception except, newState) -> handler except newState)
 
 
-  op when : Boolean -> IO () -> IO ()
+  op when : Bool -> IO () -> IO ()
   def when p command = if p then command else return ()
 
-  op unless : Boolean -> IO () -> IO ()
+  op unless : Bool -> IO () -> IO ()
   def unless p command = if ~p then command else return ()
 
   op mapM : [a,b] (a -> IO b) -> (List a) -> IO (List b)

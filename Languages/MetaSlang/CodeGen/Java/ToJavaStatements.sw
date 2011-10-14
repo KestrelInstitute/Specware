@@ -4,10 +4,10 @@ spec
 import ToJavaBase
 
 % defined in ToJavaHO
-op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateLambdaToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 
 %defined in ToJavaSpecial
-op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
+op specialTermToExpressionM: TCx * MSTerm * Nat * Nat -> JGenEnv (Option (JavaBlock * JavaExpr * Nat * Nat))
 
 op getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
 
@@ -16,7 +16,7 @@ op getPostSubstFun: JGenEnv (JavaExpr -> JavaExpr)
  * toplevel entry point for translating a meta-slang term to a java expression 
  * (in general preceded by statements)
  *) 
-op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op termToExpressionM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def termToExpressionM(tcx, term, k, l) =
   %let _ = toScreen( ";;; termToExpression: term=" ^ printTerm term ^ "\n") in
   {
@@ -30,7 +30,7 @@ def termToExpressionM(tcx, term, k, l) =
    return (b,jexpr,k,l)
   }
 
-op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op termToExpression_internalM: TCx * MSTerm * Nat * Nat * Bool -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
   {
    primitiveClassName <- getPrimitiveClassName;
@@ -45,7 +45,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
        translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?)
      | None ->
        case term of
-	 | SortedTerm(t,_,_) -> termToExpressionM(tcx,t,k,l)
+	 | TypedTerm(t,_,_) -> termToExpressionM(tcx,t,k,l)
 	 | Var ((id, srt), _) ->
 	   (case StringMap.find(tcx, id) of
 	      | Some (newV) -> return (mts, newV, k, l)
@@ -58,7 +58,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	      | None ->
 	        (if builtinBaseType?(srt) then
 		   %{
-		    %println(";;; "^id^" has primitive type: "^(printSort srt));
+		    %println(";;; "^id^" has primitive type: "^(printType srt));
 		    return (mts,mkQualJavaExpr(primitiveClassName,id),k,l)
 		   %}
 		 else
@@ -71,7 +71,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
                         %% TODO: arrive here for types such as
                         %% fa (x1:Int, x2:Int) ...
                         %% fa (y:Int) ex(x:Int) ...
-			raise(UnsupportedTermFormat((printTermWithSorts term)^" [2]"),termAnn term)
+			raise(UnsupportedTermFormat((printTermWithTypes term)^" [2]"),termAnn term)
 			 ))
 	   }
 	 | Fun (Nat    n, _, _) -> return(mts, mkJavaNumber n, k, l)
@@ -114,8 +114,8 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 
 % --------------------------------------------------------------------------------
 
-op translateApplyToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
-%op translateApplyToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
+op translateApplyToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+%op translateApplyToExpr: TCx * MSTerm * Nat * Nat * Spec -> (JavaBlock * JavaExpr * Nat * Nat) * Collected
 def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
   {
    spc <- getEnvSpec;
@@ -127,53 +127,53 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 			| Some opinfo ->
 			  let dfn = opinfo.dfn in
 			 %let _ = writeLine(";; definition term for id "^id^": "^(printTerm dfn)) in
-			  let def stripSortedTerm trm =
+			  let def stripTypedTerm trm =
 			       (case trm of
-				  | SortedTerm(trm,_,_) -> stripSortedTerm trm
+				  | TypedTerm(trm,_,_) -> stripTypedTerm trm
 				  | _ -> trm)
 			  in
-                          anyTerm?(stripSortedTerm dfn))
+                          anyTerm?(stripTypedTerm dfn))
       in
       %let _ = writeLine(";; translateApplyToExpr: "^q^"."^id^", isField? = " ^ toString isField?) in
       let rng = inferTypeFoldRecords(spc,term) in
       let args = applyArgsToTerms argsTerm in
-      % use the sort of the operator for the domain, if possible; this
+      % use the type of the operator for the domain, if possible; this
       % avoid problems like: the operator is defined on the restriction type, but
       % the args have the unrestricted type
-      let dom_sorts = case opTerm of
-			| Fun (Op _, opsrt, _) -> srtDom opsrt
+      let dom_types = case opTerm of
+			| Fun (Op _, opsrt, _) -> typeDom opsrt
 			| _ -> map (fn arg ->
 				    let srt = inferTypeFoldRecords (spc, arg) in
 				    %findMatchingUserType(spc,srt)
 				    srt)
                                    args
       in
-      let args = insertRestricts (spc, dom_sorts, args) in
+      let args = insertRestricts (spc, dom_types, args) in
       let argsTerm = exchangeArgTerms (argsTerm, args) in
 
       %% The tests here should be consistent with those in addMethodFromOpToClsDeclsM, defined in ToJava.sw,
       %% which places methods in classes.
       %%
-      %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
-      %% let _ = writeLine("\n;;; Finding class assignment for invocation of " ^ printTerm opTerm ^ " : " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
+      %% let debug_dom = case dom_types of [dom] -> dom | _ -> mkProduct dom_types in 
+      %% let _ = writeLine("\n;;; Finding class assignment for invocation of " ^ printTerm opTerm ^ " : " ^ printType debug_dom ^ " -> " ^ printType rng) in
 
-      if forall? (fn (srt) -> notAUserType? (spc, srt)) dom_sorts then
-	%% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
+      if forall? (fn (srt) -> notAUserType? (spc, srt)) dom_types then
+	%% let _ = writeLine(";;; no user type directly in domain " ^ printType debug_dom) in
 	if notAUserType? (spc, rng) then
-	  %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
+	  %% let _ = writeLine (";;; range " ^ printType rng ^ " is not a user type") in
 	  %% the following call to utlist_internal should be consistent with ut, which calls userType? but not baseTypeAlias?
 	  %% See the comments there about the effects of calling baseTypeAlias? 
-	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (dom_sorts ++ [rng]) of
+	  case utlist_internal (fn srt -> userType? (spc, srt) (* & ~(baseTypeAlias? (spc, srt))*)) (dom_types ++ [rng]) of
 	    | Some usrt ->
 	      {
 	       classId <- srtIdM usrt;
-	         %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
+	         %% let _ = writeLine(";;; ut found user type " ^ printType usrt) in
 	         %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
 	         %% v3:p45:r8
 	       translateBaseApplToExprM(tcx,id,argsTerm,k,l,classId)
 	      }
 	    | None ->
-	        %% let _ = writeLine(";;; ut found no user types among " ^ printSort debug_dom ^ " -> " ^ printSort rng) in
+	        %% let _ = writeLine(";;; ut found no user types among " ^ printType debug_dom ^ " -> " ^ printType rng) in
  	        %% let _ = writeLine(";;; --> static method in class Primitive\n") in
 	        %% v3:p46:r1
 	      translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
@@ -187,7 +187,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 	  %% {
 	  %% classId <- srtIdM rng;
 	  %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with at least one user-type arg\n") in
-	translateUserApplToExprM(tcx, id, dom_sorts, argsTerm, k, l, isField?)
+	translateUserApplToExprM(tcx, id, dom_types, argsTerm, k, l, isField?)
 	  %% }
    in
    case opTerm of
@@ -221,7 +221,7 @@ def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
 
 % --------------------------------------------------------------------------------
 
-op translateRestrictToExprM: TCx * Sort * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateRestrictToExprM: TCx * MSType * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateRestrictToExprM(tcx, srt, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
   {
@@ -238,11 +238,11 @@ def translateRestrictToExprM(tcx, srt, argsTerm, k, l) =
 	  | Some (Base(Qualified(q,srtId),_,_)) ->
 	    return (newBlock,mkNewClasInst(srtId,[newArg]), newK, newL)
 	  | None ->
-	    raise(UnsupportedSortInRestrict("term: "^(printTerm argsTerm)^", sort: "^(printSort srt)),sortAnn srt)
+	    raise(UnsupportedTypeInRestrict("term: "^(printTerm argsTerm)^", type: "^(printType srt)),typeAnn srt)
        }
   }
 
-op translateRelaxToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateRelaxToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateRelaxToExprM(tcx, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
   {
@@ -250,7 +250,7 @@ def translateRelaxToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkFldAcc(newArg, "relax"), newK, newL)
   }
 
-op translateQuotientToExprM: TCx * Sort * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateQuotientToExprM: TCx * MSType * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateQuotientToExprM(tcx, srt, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
   {
@@ -259,7 +259,7 @@ def translateQuotientToExprM(tcx, srt, argsTerm, k, l) =
    return (newBlock, mkNewClasInst(srtId, [newArg]), newK, newL)
   }
 
-op translateChooseToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateChooseToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateChooseToExprM(tcx, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
   {
@@ -267,7 +267,7 @@ def translateChooseToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkFldAcc(newArg, "choose"), newK, newL)
   }
 
-op translateNotToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateNotToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateNotToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
   {
@@ -275,7 +275,7 @@ def translateNotToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaNot jE1, newK, newL)
   }
 
-op translateAndToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateAndToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateAndToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -283,7 +283,7 @@ def translateAndToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaAnd(jE1, jE2), newK, newL)
   }
 
-op translateOrToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateOrToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateOrToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -291,7 +291,7 @@ def translateOrToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaOr(jE1, jE2), newK, newL)
   }
 
-op translateImpliesToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateImpliesToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateImpliesToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -299,7 +299,7 @@ def translateImpliesToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaImplies(jE1, jE2), newK, newL)
   }
 
-op translateIffToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateIffToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateIffToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -307,7 +307,7 @@ def translateIffToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaIff(jE1, jE2), newK, newL)
   }
 
-op translateEqualsToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateEqualsToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateEqualsToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -317,7 +317,7 @@ def translateEqualsToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaEq(jE1, jE2, sid), newK, newL)
   }
 
-op translateNotEqualsToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateNotEqualsToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateNotEqualsToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
   {
@@ -327,7 +327,7 @@ def translateNotEqualsToExprM(tcx, argsTerm, k, l) =
    return (newBlock, mkJavaNotEq(jE1, jE2, sid), newK, newL)
   }
 
-op translateProjectToExprM: TCx * Id * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateProjectToExprM: TCx * Id * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateProjectToExprM(tcx, id, argsTerm, k, l) =
   %% If argsTerm is a select then it was created by the pattern-match compiler and is handled
   %% specially
@@ -347,7 +347,7 @@ def translateProjectToExprM(tcx, id, argsTerm, k, l) =
    return (newBlock, mkFldAcc(e, id), newK, newL)
   }
 
-op translateSelectToExprM: TCx * Id * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateSelectToExprM: TCx * Id * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateSelectToExprM(tcx, _, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
   let id = mkArgProj "1" in
@@ -356,7 +356,7 @@ def translateSelectToExprM(tcx, _, argsTerm, k, l) =
    return (newBlock, mkFldAcc(e, id), newK, newL)
   }
 
-op translateConstructToExprM: TCx * Id * Id * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateConstructToExprM: TCx * Id * Id * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateConstructToExprM(tcx, srtId, opId, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
   {
@@ -364,7 +364,7 @@ def translateConstructToExprM(tcx, srtId, opId, argsTerm, k, l) =
    return (newBlock, mkMethInv(srtId, opId, javaArgs), newK, newL)
   }
 
-op translatePrimBaseApplToExprM: TCx * Id * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translatePrimBaseApplToExprM: TCx * Id * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translatePrimBaseApplToExprM(tcx, opId, argsTerm, k, l) =
   {
    primitiveClassName <- getPrimitiveClassName;
@@ -372,7 +372,7 @@ def translatePrimBaseApplToExprM(tcx, opId, argsTerm, k, l) =
    translateBaseApplToExprM(tcx,opId,argsTerm,k,l,primitiveClassName)
   }
 
-op translateBaseApplToExprM: TCx * Id * JGen.Term * Nat * Nat * Id -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateBaseApplToExprM: TCx * Id * MSTerm * Nat * Nat * Id -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateBaseApplToExprM(tcx, opId, argsTerm, k, l, clsId) =
   let args = applyArgsToTerms(argsTerm) in
   %let _ = writeLine(";; opid: "^opId^", args: "^(printTerm argsTerm)) in
@@ -388,7 +388,7 @@ def translateBaseApplToExprM(tcx, opId, argsTerm, k, l, clsId) =
    return res
   }
 
-op translateBaseArgsApplToExprM: TCx * Id * JGen.Term * JGen.Type * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateBaseArgsApplToExprM: TCx * Id * MSTerm * MSType * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateBaseArgsApplToExprM(tcx, opId, argsTerm, rng, k, l) =
   let args = applyArgsToTerms(argsTerm) in
   {
@@ -402,11 +402,11 @@ def translateBaseArgsApplToExprM(tcx, opId, argsTerm, rng, k, l) =
      }
   }
 
-op translateUserApplToExprM: TCx * Id * List JGen.Type * JGen.Term * Nat * Nat * Boolean -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateUserApplToExprM: TCx * Id * MSTypes * MSTerm * Nat * Nat * Bool -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l, isField?) =
-  %let _ = writeLine(";; argsTerm for op "^opId^": "^(printTermWithSorts argsTerm)) in
+  %let _ = writeLine(";; argsTerm for op "^opId^": "^(printTermWithTypes argsTerm)) in
   let args = applyArgsToTerms(argsTerm) in
-  %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(s,srt) -> " "^printSort(srt)) "" dom)) in
+  %let _ = writeLine(";; dom type for "^opId^": "^(foldl (fn(s,srt) -> " "^printType(srt)) "" dom)) in
   {
    spc <- getEnvSpec;
    case findIndex (fn(srt) -> userType?(spc,srt)) dom of
@@ -433,7 +433,7 @@ def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l, isField?) =
     | _ -> raise(NoUserTypeInApplArgList(printTerm argsTerm),termAnn argsTerm)
   }
 
-op translateRecordToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateRecordToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateRecordToExprM(tcx, term as Record (fields, _), k, l) =
   let recordTerms = recordFieldsToTerms(fields) in
   {
@@ -447,16 +447,16 @@ def translateRecordToExprM(tcx, term as Record (fields, _), k, l) =
        if fieldsAreNumbered fields then
 	 {
 	  recordClassId <- srtIdM recordSrt;
-	  addProductSort recordSrt;
+	  addProductType recordSrt;
 	  return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
 	 }
        else
-	 raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
+	 raise(NotSupported("product type must be introduced as a type definition"),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
 
-op translateIfThenElseToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateIfThenElseToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateIfThenElseToExprM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
@@ -469,7 +469,7 @@ def translateIfThenElseToExprM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
      | _ -> translateIfThenElseToStatementM(tcx, term, k, l))
   }
 
-op translateIfThenElseToStatementM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateIfThenElseToStatementM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateIfThenElseToStatementM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
   {
    spc <- getEnvSpec;
@@ -484,7 +484,7 @@ def translateIfThenElseToStatementM(tcx, term as IfThenElse(t0, t1, t2, _), k, l
    return([vDecl]++b0++[ifStmt], vExpr, k2, l2)
   }
 
-op translateLetToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateLetToExprM: TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateLetToExprM(tcx, term as Let (letBindings, letBody, _), k, l) =
   {
    spc <- getEnvSpec;
@@ -506,7 +506,7 @@ def translateLetToExprM(tcx, term as Let (letBindings, letBody, _), k, l) =
     return (b0++b1, jLetBody, k1, l1)
    }
 
-op translateLetRetM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (JavaBlock * Nat * Nat)
+op translateLetRetM: TCx * MSTerm * Nat * Nat * Bool -> JGenEnv (JavaBlock * Nat * Nat)
 def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l, break?) =
   {
    spc <- getEnvSpec;
@@ -528,7 +528,7 @@ def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l, break?) =
     return (b0++b1, k1, l1)
    }
 
-op translateCaseToExprM: TCx * JGen.Term * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Boolean
+op translateCaseToExprM: TCx * MSTerm * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Bool
                         -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?) =
   {
@@ -554,7 +554,7 @@ def translateCaseToExprM(tcx, case_term, cases, opt_other, k, l, block?) =
     return (caseTermBlock++[cresDecl]++[switchStatement], cresJavaExpr, finalK, finalL)
    }
 
-op getVarsPattern: Option Pattern -> List Id * Boolean
+op getVarsPattern: Option MSPattern -> List Id * Bool
 def getVarsPattern(pat) =
   case pat of
     | Some (RecordPat (args, _)) -> 
@@ -572,14 +572,14 @@ def getVarsPattern(pat) =
     | Some(WildPat _) -> (["ignored"],true)
     | Some(pat) -> ([],false)
 
-op translateCaseCasesToSwitchesM: TCx * Sort * JavaExpr * Id * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+op translateCaseCasesToSwitchesM: TCx * MSType * JavaExpr * Id * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesM(tcx, coSrt, caseExpr, cres, cases, opt_other, k0, l0, l) =
   let
     def translateCaseCaseToSwitch((cons,body), ks, ls) =
       {
        spc <- getEnvSpec;
        (caseBlock, newK, newL) <- termToExpressionAsgVM(cres, tcx, body, ks, ls);
-       coSrt <- return(unfoldToSubsort(spc,coSrt));
+       coSrt <- return(unfoldToSubtype(spc,coSrt));
        caseType <- srtIdM coSrt;
        tagId <- return(mkTagCId(cons));
        caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
@@ -610,7 +610,7 @@ def translateCaseCasesToSwitchesM(tcx, coSrt, caseExpr, cres, cases, opt_other, 
     in
       translateCasesToSwitchesRec(cases, k0, l0)
 
-op patternNotSupported: Pattern -> () 
+op patternNotSupported: MSPattern -> () 
 def patternNotSupported pat =
   let
     def errmsg whatpat =
@@ -628,10 +628,10 @@ def patternNotSupported pat =
     | CharPat _ -> errmsg "char"
     | QuotientPat _ -> errmsg "quotient"
     | RestrictedPat _ -> errmsg "restricted pattern"
-    | SortedPat _ -> errmsg "sorted"
+    | TypedPat _ -> errmsg "typed"
     | _ -> errmsg "unknown"
 
-op patternNotSupportedM: [a] Pattern -> JGenEnv a
+op patternNotSupportedM: [a] MSPattern -> JGenEnv a
 def patternNotSupportedM pat =
   let
     def errmsg whatpat =
@@ -649,7 +649,7 @@ def patternNotSupportedM pat =
     | CharPat _ -> errmsg "char"
     | QuotientPat _ -> errmsg "quotient"
     | RestrictedPat _ -> errmsg "restricted pattern"
-    | SortedPat _ -> errmsg "sorted"
+    | TypedPat _ -> errmsg "typed"
     | _ -> errmsg "unknown"
 
 op addSubsToTcx: TCx * List Id * Id -> TCx
@@ -663,19 +663,19 @@ def addSubsToTcx(tcx, args, subId) =
 	     addSubRec(StringMap.insert(tcx, arg, argExpr), args, n+1) in
    addSubRec(tcx, args, 1)
 
-op relaxChooseTerm: Spec * JGen.Term -> JGen.Term
+op relaxChooseTerm: Spec * MSTerm -> MSTerm
 def relaxChooseTerm(spc,t) =
   case t of
     | Apply(Fun(Restrict,_,_),_,_) -> t
     | Apply(Fun(Choose _,_,_),_,_) -> t
     | _ -> 
       %let srt0 = inferTypeFoldRecords(spc,t) in
-      let srt0 = termSort(t) in
+      let srt0 = termType(t) in
       let srt = unfoldBase(spc,srt0) in
-      %let _ = writeLine("relaxChooseTerm: termSort("^printTerm(t)^") = "^printSort(srt)) in
+      %let _ = writeLine("relaxChooseTerm: termType("^printTerm(t)^") = "^printType(srt)) in
       case srt of
-        | Subsort(ssrt,_,b) ->
-          %let _ = writeLine("relaxChooseTerm: subsort "^printSort(srt)^" found") in
+        | Subtype(ssrt,_,b) ->
+          %let _ = writeLine("relaxChooseTerm: subtype "^printType(srt)^" found") in
           let rsrt = Arrow(srt0,ssrt,b) in
           let t = Apply(Fun(Relax,rsrt,b),t,b) in
           relaxChooseTerm(spc,t)
@@ -686,11 +686,11 @@ def relaxChooseTerm(spc,t) =
                let t = Apply(Fun(Choose qid,rsrt,b),t,b) in
                relaxChooseTerm(spc,t)
              | _ ->
-               fail ("Internal confusion in relaxChooseTerm: expected " ^ printSort srt0 ^ " to be the name of a quotient sort"))
+               fail ("Internal confusion in relaxChooseTerm: expected " ^ printType srt0 ^ " to be the name of a quotient type"))
         | _ -> t
 
 
-op translateTermsToExpressionsM: TCx * List JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * List JavaExpr * Nat * Nat)
+op translateTermsToExpressionsM: TCx * List MSTerm * Nat * Nat -> JGenEnv (JavaBlock * List JavaExpr * Nat * Nat)
 def translateTermsToExpressionsM(tcx, terms, k, l) =
     case terms of
     | [] ->  return ([], [], k, l)
@@ -725,7 +725,7 @@ def remove_returns block =
         []
 	block
 
-op termToExpressionRetM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (JavaBlock * Nat * Nat)
+op termToExpressionRetM: TCx * MSTerm * Nat * Nat * Bool -> JGenEnv (JavaBlock * Nat * Nat)
 def termToExpressionRetM(tcx, term, k, l, break?) =
 %  if caseTerm?(term)
 %    then translateCaseRetM(tcx, term, k, l)
@@ -809,7 +809,7 @@ def termToExpressionRetM(tcx, term, k, l, break?) =
 
 % --------------------------------------------------------------------------------
 
-op translateIfThenElseRetM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (JavaBlock * Nat * Nat)
+op translateIfThenElseRetM: TCx * MSTerm * Nat * Nat * Bool -> JGenEnv (JavaBlock * Nat * Nat)
 def translateIfThenElseRetM(tcx, term as IfThenElse(t0, t1, t2, _), k, l, break?) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
@@ -821,7 +821,7 @@ def translateIfThenElseRetM(tcx, term as IfThenElse(t0, t1, t2, _), k, l, break?
 
 % --------------------------------------------------------------------------------
 
-op translateCaseRetM: TCx * JGen.Term * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Boolean * Boolean 
+op translateCaseRetM: TCx * MSTerm * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Bool * Bool 
                     -> JGenEnv (JavaBlock * Nat * Nat)
 def translateCaseRetM(tcx, case_term, cases, opt_other, k, l, break?, block?) =
   {
@@ -845,18 +845,18 @@ def translateCaseRetM(tcx, case_term, cases, opt_other, k, l, break?, block?) =
    return(caseTermBlock++[switchStatement], finalK, finalL)
   }
 
-op unfoldToSubsort: Spec * Sort -> Sort
-def unfoldToSubsort(spc,srt) =
+op unfoldToSubtype: Spec * MSType -> MSType
+def unfoldToSubtype(spc,srt) =
   let def uf(srt) =
   case srt of
-    | Subsort(srt,_,_) -> srt
+    | Subtype(srt,_,_) -> srt
     | _ -> let usrt = unfoldBase(spc,srt) in
     if usrt = srt then srt else
-      unfoldToSubsort(spc,usrt)
+      unfoldToSubtype(spc,usrt)
   in
     let usrt = uf(srt) in
     case usrt of
-      | Subsort _ -> usrt
+      | Subtype _ -> usrt
       | _ -> srt
 
 % ----------------------------------------
@@ -870,13 +870,13 @@ def insertCast(typeId,cons,caseExpr) caseBlock =
   }
 % ----------------------------------------
 
-op translateCaseCasesToSwitchesRetM: TCx * Sort * JavaExpr * List(Id * JGen.Term) * Option JGen.Term * Boolean * Nat * Nat * Nat
+op translateCaseCasesToSwitchesRetM: TCx * MSType * JavaExpr * List(Id * MSTerm) * Option MSTerm * Bool * Nat * Nat * Nat
                                     -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, break?, k0, l0, l) =
   let def translateCaseCaseToSwitch((cons,body), ks, ls) =
         {
 	 spc <- getEnvSpec;
-	 coSrt <- return(unfoldToSubsort(spc,coSrt));
+	 coSrt <- return(unfoldToSubtype(spc,coSrt));
 	 caseType <- srtIdM coSrt;
 	 (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls, true);
 	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
@@ -911,7 +911,7 @@ def translateCaseCasesToSwitchesRetM(tcx, coSrt, caseExpr, cases, opt_other, bre
 
 
 
-op termToExpressionAsgNVM: Id * Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op termToExpressionAsgNVM: Id * Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def termToExpressionAsgNVM(srtId, vId, tcx, term, k, l) =
   {
    spc <- getEnvSpec;
@@ -929,7 +929,7 @@ def termToExpressionAsgNVM(srtId, vId, tcx, term, k, l) =
        }
   }
 
-op translateIfThenElseAsgNVM: Id * Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op translateIfThenElseAsgNVM: Id * Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def translateIfThenElseAsgNVM(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
@@ -940,7 +940,7 @@ def translateIfThenElseAsgNVM(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _)
    return ([varDecl]++b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgNVM: Id * Id * TCx * JGen.Term * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Boolean
+op translateCaseAsgNVM: Id * Id * TCx * MSTerm * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Bool
                        -> JGenEnv (JavaBlock * Nat * Nat)
 def translateCaseAsgNVM(vSrtId, vId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
@@ -964,13 +964,13 @@ def translateCaseAsgNVM(vSrtId, vId, tcx, case_term, cases, opt_other, k, l, blo
   }
 
 
-op translateCaseCasesToSwitchesAsgNVM: Id * TCx * Sort * JavaExpr * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+op translateCaseCasesToSwitchesAsgNVM: Id * TCx * MSType * JavaExpr * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_other, k0, l0, l) =
   let def translateCaseCaseToSwitch((cons,body), ks, ls) =
         {
 	 spc <- getEnvSpec;
 	 (caseBlock, newK, newL) <- termToExpressionAsgVM(oldVId, tcx, body, ks, ls);
-	 coSrt <- return(unfoldToSubsort(spc,coSrt));
+	 coSrt <- return(unfoldToSubtype(spc,coSrt));
 	 tagId <- return(mkTagCId cons);
 	 caseType <- srtIdM coSrt;
 	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
@@ -1000,7 +1000,7 @@ def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, coSrt, caseExpr, cases, opt_
    in
      translateCasesToSwitchesRec(cases, k0, l0)
 
-op termToExpressionAsgVM: Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op termToExpressionAsgVM: Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def termToExpressionAsgVM(vId, tcx, term, k, l) =
   {
    spc <- getEnvSpec;
@@ -1018,7 +1018,7 @@ def termToExpressionAsgVM(vId, tcx, term, k, l) =
        }
   }
 
-op translateIfThenElseAsgVM: Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op translateIfThenElseAsgVM: Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def translateIfThenElseAsgVM(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
@@ -1028,7 +1028,7 @@ def translateIfThenElseAsgVM(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) 
    return (b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgVM: Id * TCx * JGen.Term * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Boolean
+op translateCaseAsgVM: Id * TCx * MSTerm * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Bool
                        -> JGenEnv (JavaBlock * Nat * Nat)
 def translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
@@ -1051,14 +1051,14 @@ def translateCaseAsgVM(vId, tcx, case_term, cases, opt_other, k, l, block?) =
   }
 
 
-op translateCaseCasesToSwitchesAsgVM: Id * TCx * Sort * JavaExpr * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+op translateCaseCasesToSwitchesAsgVM: Id * TCx * MSType * JavaExpr * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_other, k0, l0, l) =
   let
     def translateCaseCaseToSwitch((cons,body), ks, ls) =
           {
 	   spc <- getEnvSpec;
 	   (caseBlock, newK, newL) <- termToExpressionAsgVM(oldVId, tcx, body, ks, ls);
-	   coSrt <- return(unfoldToSubsort(spc,coSrt));
+	   coSrt <- return(unfoldToSubtype(spc,coSrt));
 	   caseType <- srtIdM coSrt;
 	   caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	   tagId <- return(mkTagCId(cons));
@@ -1090,7 +1090,7 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, coSrt, caseExpr, cases, opt_o
      translateCasesToSwitchesRec(cases, k0, l0)
 
 
-op termToExpressionAsgFM: Id * Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op termToExpressionAsgFM: Id * Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def termToExpressionAsgFM(cId, fId, tcx, term, k, l) =
   {
    spc <- getEnvSpec;
@@ -1108,7 +1108,7 @@ def termToExpressionAsgFM(cId, fId, tcx, term, k, l) =
        }
   }
 
-op translateIfThenElseAsgFM: Id * Id * TCx * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
+op translateIfThenElseAsgFM: Id * Id * TCx * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * Nat * Nat)
 def translateIfThenElseAsgFM(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
   {
    (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
@@ -1118,7 +1118,7 @@ def translateIfThenElseAsgFM(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k
    return (b0++[ifStmt], k2, l2)
   }
 
-op translateCaseAsgFM: Id * Id * TCx * JGen.Term * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Boolean
+op translateCaseAsgFM: Id * Id * TCx * MSTerm * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Bool
                        -> JGenEnv (JavaBlock * Nat * Nat)
 def translateCaseAsgFM(cId, fId, tcx, case_term, cases, opt_other, k, l, block?) =
   {
@@ -1141,13 +1141,13 @@ def translateCaseAsgFM(cId, fId, tcx, case_term, cases, opt_other, k, l, block?)
   }
 
 
-op translateCaseCasesToSwitchesAsgFM: Id * Id * TCx * Sort * JavaExpr * List(Id * JGen.Term) * Option JGen.Term * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+op translateCaseCasesToSwitchesAsgFM: Id * Id * TCx * MSType * JavaExpr * List(Id * MSTerm) * Option MSTerm * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
 def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, coSrt, caseExpr, cases, opt_other, k0, l0, l) =
   let def translateCaseCaseToSwitch((cons,body), ks, ls) =
         {
 	 spc <- getEnvSpec;
 	 (caseBlock, newK, newL) <- termToExpressionAsgFM(cId, fId, tcx, body, ks, ls);
-	 coSrt <- return(unfoldToSubsort(spc,coSrt));
+	 coSrt <- return(unfoldToSubtype(spc,coSrt));
 	 caseType <- srtIdM coSrt;
 	 caseBlock <- insertCast(caseType,cons,caseExpr) caseBlock;
 	 let tagId = mkTagCId(cons) in
@@ -1180,7 +1180,7 @@ def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, coSrt, caseExpr, cases, opt
 (**
  * implements v3:p48:r3
  *)
-op translateOtherTermApplyM: TCx * JGen.Term * JGen.Term * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
+op translateOtherTermApplyM: TCx * MSTerm * MSTerm * Nat * Nat -> JGenEnv (JavaBlock * JavaExpr * Nat * Nat)
 def translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l) =
   let
     def doArgs(terms,k,l,block,exprs) =

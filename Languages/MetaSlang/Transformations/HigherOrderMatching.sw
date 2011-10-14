@@ -15,16 +15,16 @@ spec
  import ../Specs/Utilities
  import Simplify, Interpreter
 
- type SubstC    = StringMap Sort * NatMap.Map MS.Term * List MS.Term
+ type SubstC    = StringMap MSType * NatMap.Map MSTerm * List MSTerm
 
- op match : Context -> MS.Term * MS.Term -> List SubstC
+ op match : Context -> MSTerm * MSTerm -> List SubstC
 
  op matchPairs : Context * SubstC * Stack -> List SubstC
 
  type Context = 
       { 
         spc         : Spec,
-        trace 	    : Boolean,
+        trace 	    : Bool,
         traceDepth  : Ref Nat,
 	traceIndent : Ref Nat,
 	boundVars   : List Var,
@@ -49,10 +49,10 @@ spec
 %% . boundVars  : List of bound variables in scope of term
 %% . counter    : Counter to generate fresh variables
 
-% A substitution maps type variables to sorts and 
+% A substitution maps type variables to types and 
 % flexible variables to terms.
 
- type Stack = {new : List (MS.Term * MS.Term), flex:  List (MS.Term * MS.Term)}
+ type Stack = {new : List (MSTerm * MSTerm), flex:  List (MSTerm * MSTerm)}
 
 (*  Stack operations
 
@@ -68,8 +68,8 @@ The stack is accessed and modified using the operations
 *)
 
  op emptyStack : Stack
- op next : Stack -> Option (Stack * MS.Term * MS.Term)
- op insert : MS.Term * MS.Term * Stack -> Stack
+ op next : Stack -> Option (Stack * MSTerm * MSTerm)
+ op insert : MSTerm * MSTerm * Stack -> Stack
 
  def emptyStack = {new = [],flex = []}
 
@@ -88,23 +88,23 @@ The stack is accessed and modified using the operations
 	| [] -> None
 
  def insert(M,N,{new,flex}) = {new = Cons((M,N),new),flex = flex}
- op stackFromList: List(MS.Term * MS.Term) -> Stack
+ op stackFromList: List(MSTerm * MSTerm) -> Stack
  def stackFromList pairs = 
      foldr (fn ((M,N),stack) -> insert(M,N,stack)) emptyStack pairs
 
 
 (* Utilities for fresh and bound variables *)
 
- op freshVar : Context * Sort -> MS.Term
+ op freshVar : Context * MSType -> MSTerm
 
 % Meta variables (flexible variables) are represented in the form
 % Apply(Fun(Op "%Flex",Arrow(Nat,s)),Fun(Int n,Nat))
  op flexQId: QualifiedId = mkUnQualifiedId "%Flex"
 
- op mkVar: Nat * Sort -> MS.Term
+ op mkVar: Nat * MSType -> MSTerm
  def mkVar(num,srt) = 
-     Apply(Fun(Op (flexQId,Nonfix),Arrow(natSort,srt,noPos),noPos),
-	   Fun(Nat num,natSort,noPos),noPos)
+     Apply(Fun(Op (flexQId,Nonfix),Arrow(natType,srt,noPos),noPos),
+	   Fun(Nat num,natType,noPos),noPos)
 
  def freshVar (context,srt) = 
      let num = ! context.counter in
@@ -117,21 +117,21 @@ The stack is accessed and modified using the operations
      (context.counter := num + 1;
       ("x%"^show num,srt))
 
- op flexRef?(t: MS.Term): Boolean =
+ op flexRef?(t: MSTerm): Bool =
    case t of
      | Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_) -> true
      | _ -> false
 
- op hasFlexRef?(t: MS.Term): Boolean =
+ op hasFlexRef?(t: MSTerm): Bool =
    existsSubTerm flexRef? t
 
- op isFlexVar? : MS.Term -> Option Nat
+ op isFlexVar? : MSTerm -> Option Nat
  def isFlexVar?(term) = 
      case term
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  Some n
 	| _ -> None
- op  hasFlexHead? : MS.Term -> Option Nat
+ op  hasFlexHead? : MSTerm -> Option Nat
  def hasFlexHead?(term) = isFlexVar?(head(headForm term))
 
 (*
@@ -154,10 +154,10 @@ irrefutable patterns, where it is obvious how to perform
 beta contraction.
 *)
 
- op dereferenceR : SubstC -> MS.Term -> MS.Term
- op dereference : SubstC -> MS.Term -> MS.Term
+ op dereferenceR : SubstC -> MSTerm -> MSTerm
+ op dereference : SubstC -> MSTerm -> MSTerm
 
- def dereferenceR (S as (sortSubst,termSubst,_)) term = 
+ def dereferenceR (S as (typeSubst,termSubst,_)) term = 
      (case term
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  (case NatMap.find(termSubst,n)
@@ -190,7 +190,7 @@ beta contraction.
 %% Wasteful, but simple beta-normalizer.
 %%
 
- op dereferenceAll (subst: SubstC) (term: MS.Term): MS.Term =
+ op dereferenceAll (subst: SubstC) (term: MSTerm): MSTerm =
 %   let freeNames = NatMap.foldri (fn (_,trm,vs) ->
 %                                    StringSet.union (StringSet.fromList
 %                                                       (map (fn (n,_) -> n) (freeVars trm)),
@@ -198,7 +198,7 @@ beta contraction.
 %                     StringSet.empty subst.2
 %   in
 %   let term = substitute2(term,[],freeNames) in % Purely for renaming to avoid name clashes
-   let (sortSubst,termSubst,_) = subst in
+   let (typeSubst,termSubst,_) = subst in
    let def deref (term) = 
            case isFlexVar?(term)
              of Some n -> 
@@ -219,14 +219,14 @@ beta contraction.
                  | _ -> term)
        def derefAll term = dereferenceAll subst term
    in
-   mapTerm(deref,fn s -> dereferenceSort(subst,s),fn p -> p) term
+   mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
 		 		  
 
 
- def bindPattern (pat,trm):MS.Term = Lambda([(pat,trueTerm,trm)],noPos)
+ def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
 % Get list of applications, assumes that the term is already dereferenced.
- op  headForm : MS.Term -> List MS.Term
+ op  headForm : MSTerm -> List MSTerm
  def headForm (term) = 
      case isFlexVar? term
        of Some n -> [term]
@@ -235,7 +235,7 @@ beta contraction.
        of Apply(M,N,_) -> headForm M ++ [N]
         | _ -> [term]
      
- op insertFields (stack: Stack) (fields1: List(Id * MS.Term), fields2: List(Id * MS.Term)): Stack = 
+ op insertFields (stack: Stack) (fields1: List(Id * MSTerm), fields2: List(Id * MSTerm)): Stack = 
    %% Try to put the easy cases that don't generate multiple possibilities first
    let (pairs, hard_pairs) =
      ListPair.foldr
@@ -330,19 +330,19 @@ Note: projections should in general be represented as
 \lambda (x_1,\ldots,x_i,\ldots,x_n) \ . \ x_i with a suitable match on a 
 record type.
 
-Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
+Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 *)
 
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
  op debugHOM: Ref Nat = Ref 0
- op evaluateConstantTerms?: Boolean = false     % For now until utility is proven
- op allowTrivialMatches?: Boolean = false       % Allow matches that don't use match terms
+ op evaluateConstantTerms?: Bool = false     % For now until utility is proven
+ op allowTrivialMatches?: Bool = false       % Allow matches that don't use match terms
  op resultLimitHOM: Nat = 8
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,emptyStack))
 
- op onlyTrivialMatchesPossible?(topStack:  Option (Stack * MS.Term * MS.Term)): Boolean =
+ op onlyTrivialMatchesPossible?(topStack:  Option (Stack * MSTerm * MSTerm)): Bool =
    case topStack of
      | None -> false
      | Some(_,M,N) ->
@@ -392,7 +392,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 %% Var 
 %% Check that N does not contain bound variables.
 %% sjw: 2/15/01 Moved before Eta
-      | (Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),Arrow(_,s,_),_),
+      | (Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),Arrow(_,s : MSType,_),_),
 		Fun(Nat n,_,_),_),
 	 N) ->
 	if closedTermV(N,context.boundVars) && ~(occursProper n N)
@@ -400,7 +400,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	   let srt2 = inferType(context.spc,subst,N) in
 	   foldr (fn (subst,r) ->
                     matchPairs(context,updateSubst(subst,n,N),stack) ++ r)
-             [] (unifySorts(context,subst,s,srt2,Some N))
+             [] (unifyTypes(context,subst,s,srt2,Some N))
 	else []
       | (M, N as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_), _,_)) | ~(hasFlexRef? M) ->
         matchPairs(context,subst,insert(N,M,insert(N,M,stack)))
@@ -413,7 +413,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                matchPairs (context,subst,
                            insert(Apply(M,Var(x,noPos),noPos),Apply(N,Var(x,noPos),noPos),stack))
                  ++ r)
-          [] (unifySorts(context,subst,
+          [] (unifyTypes(context,subst,
 			 inferType(context.spc,subst,M),
 			 inferType(context.spc,subst,N),
                          Some N))
@@ -424,7 +424,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                             insert(bindPattern(VarPat(x,noPos),Apply(M,Var(x,noPos),noPos)),
                                    N,stack))
                    ++ r)
-          [] (unifySorts(context,subst,
+          [] (unifyTypes(context,subst,
 			 inferType(context.spc,subst,M),
 			 inferType(context.spc,subst,N),
                          Some N))
@@ -466,7 +466,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                  let b2 = substitute(b2,S2) in
                  matchPairs (context,subst,insert(b1,b2,insert(e1,e2,stack)))
                    ++ r)
-          [] (unifySorts(context,subst,srt1,srt2,None))
+          [] (unifyTypes(context,subst,srt1,srt2,None))
       | (Bind(qf1,vars1,M,_),Bind(qf2,vars2,N,_)) -> 
 	if ~(qf1 = qf2) || ~(length vars1 = length vars2)
 	   then []
@@ -477,7 +477,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	      if ~ flag
 		 then (S1,S2,subst,flag)
 	      else
-	      case unifySorts(context,subst,s1,s2,None)   % None ??
+	      case unifyTypes(context,subst,s1,s2,None)   % None ??
 		of subst :: _ ->                          % Need to generalize!!
 		   let x = freshBoundVar(context,s1) in
 		   let S1 = Cons(((v1,s1),mkVar(x)),S1) in
@@ -505,7 +505,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
                  let N = substitute(N,S2) in
                  matchPairs (context,subst,insert(M,N,stack))
                   ++ r)
-          [] (unifySorts(context,subst,srt1,srt2,Some(mkVar(id2,srt2))))
+          [] (unifyTypes(context,subst,srt1,srt2,Some(mkVar(id2,srt2))))
       | (M,_) -> 
  	%   let _ = writeLine "matchPair" in
  	%   let _ = writeLine(printTerm M) in
@@ -513,7 +513,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
  	%   let _ = printSubst subst in
 	% let srt1 = inferType(context.spc,subst,M) in
 	 let srt2 = inferType(context.spc,subst,N) in
-	% let substs = unifySorts(context,subst,srt1,srt2,Some N) in
+	% let substs = unifyTypes(context,subst,srt1,srt2,Some N) in
         let substs = [subst] in
         foldr (fn (subst, r) ->
                (case headForm(M) of
@@ -703,7 +703,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
      in
      result
 
-  op  insertPairs : List MS.Term * List MS.Term * Stack -> Option Stack
+  op  insertPairs : List MSTerm * List MSTerm * Stack -> Option Stack
 
   def insertPairs(Ms,Ns,stack): Option Stack = 
       case (Ms,Ns)
@@ -712,27 +712,27 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
 	 | _ -> None
 
 
-  def updateSubst((sortSubst,termSubst,condns),n,M) = 
+  def updateSubst((typeSubst,termSubst,condns),n,M) = 
       case isFlexVar?(M)
-	of Some m | n = m -> (sortSubst,termSubst,condns)
-	 | _ -> (sortSubst,NatMap.insert(termSubst,n,M),condns)
+	of Some m | n = m -> (typeSubst,termSubst,condns)
+	 | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
 
 %%
-%% Infer type with sort dereferencing
+%% Infer type with type dereferencing
 %%
- op inferType: Spec * SubstC * MS.Term -> Sort
+ op inferType: Spec * SubstC * MSTerm -> MSType
  def inferType(spc,subst,N) = 
      case N
        of Apply(t1,t2,_) -> 
-	  let srt = dereferenceSort(subst,inferType(spc,subst,t1)) in
+	  let srt = dereferenceType(subst,inferType(spc,subst,t1)) in
 	  (case Utilities.rangeOpt(spc,srt)
 	     of Some rng -> rng
 	      | None -> 
-		(% System.print N; printSpecWithSortsToTerminal spc;
+		(% System.print N; printSpecWithTypesToTerminal spc;
                  System.fail 
                    ("Could not extract type for "^
-                      printTermWithSorts N)))
-        | Bind _ -> boolSort
+                      printTermWithTypes N)))
+        | Bind _ -> boolType
         | Record(fields,a) -> 
 	  Product(map (fn (id,t)-> (id,inferType(spc,subst,t))) fields,a)
         | Let(_,term,_) -> inferType(spc,subst,term)
@@ -740,7 +740,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other sort constructors.
         | Var((_,srt), _) -> srt
         | Fun(_,srt, _) -> srt
         | Lambda((Cons((pat,_,body),_)), _) -> 
-	  mkArrow(patternSort pat,inferType(spc,subst,body))
+	  mkArrow(patternType pat,inferType(spc,subst,body))
         | Lambda([], _) -> System.fail "Ill formed lambda abstraction"
         | The ((_,srt),_,_) -> srt
         | IfThenElse(_,t2,t3,_) -> inferType(spc,subst,t2)
@@ -756,7 +756,7 @@ possibly by using pre-cooking.
 
 \subsection{Projections}
 
-Projections are correctly computed based on the sort structure of the flexible variable.
+Projections are correctly computed based on the type structure of the flexible variable.
 Thus, if 
 
    X : \sigma_1 --> \sigma_2 --> \cdots --> \sigma_k --> \tau
@@ -782,32 +782,31 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 \]
 *)
 
-  op projections : Context * SubstC * List MS.Term * List Var * Sort 
-				-> List (SubstC * MS.Term)
+  op projections : Context * SubstC * MSTerms * List Var * MSType -> List (SubstC * MSTerm)
 
-  def projectTerm (fields,label,srt,N):MS.Term = 
+  def projectTerm (fields,label,srt,N):MSTerm = 
       mkApply(mkFun(Project label,mkArrow(Product(fields,noPos),srt)),N)
 
   def projections (context,subst,(* terms *)_,vars,srt) =
       let
-	  def projectSort(srt1,N) = 
-	      (case unifySorts(context,subst,srt1,srt,None)  % None ??
+	  def projectType(srt1,N) = 
+	      (case unifyTypes(context,subst,srt1,srt,None)  % None ??
 		 of [] -> []
 		  | subst :: _ -> [(subst,N)])    % Need to generalize!
 	      ++
-	      (case dereferenceSort(subst,srt1)
+	      (case dereferenceType(subst,srt1)
 		 of Product(fields, _) -> 
 		    flatten 
 			(map (fn (l,s) -> 
-			      projectSort(s,projectTerm(fields,l,s,N))) fields)
+			      projectType(s,projectTerm(fields,l,s,N))) fields)
 		  | Arrow(srt1,srt2,_) -> 
 		    let srt1 = foldr mkArrow srt1 (map (fn (_,s) -> s) vars) in
 		    let X = freshVar(context,srt1) in
 		    let trm = foldl (fn (t1,v) -> mkApply(t1,mkVar(v))) X vars in
-		    projectSort(srt2,mkApply(N,trm)) 
+		    projectType(srt2,mkApply(N,trm)) 
 		  | _ -> [])
       in
-      let terms = map (fn (x,s) -> projectSort(s,mkVar(x,s))) vars in
+      let terms = map (fn (x,s) -> projectType(s,mkVar(x,s))) vars in
       let terms = flatten terms in
       let terms = map (fn (subst,M) -> 
                          (subst,foldr (fn(v,M) -> bindPattern(mkVarPat(v),M)) M vars))
@@ -824,26 +823,26 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 
   Constants and bound variables are matched using {\tt matchBase}.
 *)
-  op matchBase : [a] Context * a * Sort * a * Sort * Stack * SubstC * MS.Term-> List SubstC
+  op matchBase : [a] Context * a * MSType * a * MSType * Stack * SubstC * MSTerm-> List SubstC
   def matchBase (context,x,srt1,y,srt2,stack,subst,N) =
-    % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
+    % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printType srt1^"\n"^printType srt2) in
       if x = y
 	 then 
 	    foldr (fn (subst,r) -> matchPairs(context, subst,stack) ++ r)
-              [] (unifySorts(context,subst,srt1,srt2,Some N))
+              [] (unifyTypes(context,subst,srt1,srt2,Some N))
       else []
 
-  op matchFuns : Context * Fun * Sort * Fun * Sort * Stack * SubstC * MS.Term-> List SubstC
+  op matchFuns : Context * Fun * MSType * Fun * MSType * Stack * SubstC * MSTerm -> List SubstC
   def matchFuns (context,x,srt1,y,srt2,stack,subst,N) =
-      % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printSort srt1^"\n"^printSort srt2) in
+      % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printType srt1^"\n"^printType srt2) in
       if equalFun?(x, y)
 	 then
             if similarType? context.spc (srt1,srt2)
                then matchPairs(context, subst, stack)
             else
-            % let _ = writeLine("matchFuns: "^anyToString x^"\n"^printSort srt1^"\n ~= \n"^printSort srt2) in
+            % let _ = writeLine("matchFuns: "^anyToString x^"\n"^printType srt1^"\n ~= \n"^printType srt2) in
 	    foldr (fn (subst,r) -> matchPairs(context, subst, stack) ++ r)
-              [] (unifySorts(context,subst,srt1,srt2,Some N))
+              [] (unifyTypes(context,subst,srt1,srt2,Some N))
       else []
 
 
@@ -873,7 +872,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 (* matchPattern, matchPatterns, and matchIrefutablePattern recurse on
   aligning the same pattern matches. *)
 
-   op matchPattern(context: Context, pat1: Pattern, pat2: Pattern, pairs: List(Pattern * Pattern),
+   op matchPattern(context: Context, pat1: MSPattern, pat2: MSPattern, pairs: List(MSPattern * MSPattern),
                    S1: VarSubst, S2: VarSubst)
       : Option (VarSubst * VarSubst) = 
       case (pat1,pat2)
@@ -918,12 +917,12 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
               of Some S2 -> matchPatterns(context,pairs,S1,S2)
                | None -> None
 
-  op matchPatterns(context: Context, pairs: List(Pattern * Pattern), S1: VarSubst, S2: VarSubst)
+  op matchPatterns(context: Context, pairs: List(MSPattern * MSPattern), S1: VarSubst, S2: VarSubst)
      : Option (VarSubst * VarSubst) = 
      case pairs
        of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2)
         | [] -> Some (S1,S2)	   
-  op matchIrefutablePattern(context: Context, pat: Pattern, S: VarSubst)
+  op matchIrefutablePattern(context: Context, pat: MSPattern, S: VarSubst)
      : Option VarSubst = 
      case pat
        of WildPat _ -> Some S
@@ -951,14 +950,14 @@ input to be a matching problem. In fact, in the glue code generation, proper
 skolemization transforms a proper matching problem into an inproper one.
 *)
 
-  op occursProper : Nat -> MS.Term -> Boolean
+  op occursProper : Nat -> MSTerm -> Bool
   def occursProper n M = 
       case isFlexVar?(M)
 	of Some _ -> false
 	 | None -> occurs n M
 
-  op occurs : Nat -> MS.Term -> Boolean
-  op occursP : [a] Nat -> a * MS.Term -> Boolean
+  op occurs : Nat -> MSTerm -> Bool
+  op occursP : [a] Nat -> a * MSTerm -> Bool
   def occursP n (_,M) = occurs n M
   def occurs n term = 
       case term
@@ -988,8 +987,8 @@ Closed terms
 closedTerm  determines whether a term contains any free variables or not.
 closedTermV detects existence of free variables not included in the argument 
 *)
-  op closedTerm : MS.Term -> Boolean
-  op closedTermV : MS.Term * List Var -> Boolean
+  op closedTerm : MSTerm -> Bool
+  op closedTermV : MSTerm * List Var -> Bool
 
   def closedTerm(term) = closedTermV(term,[])
 
@@ -1037,21 +1036,21 @@ closedTermV detects existence of free variables not included in the argument
 	   closedTermV(M,bound) && 
 	   (forall? (fn (_,M) -> closedTermV(M,bound)) decls) 
 
- op noReferencesTo?(tm: MS.Term, tms: List MS.Term): Boolean =
+ op noReferencesTo?(tm: MSTerm, tms: List MSTerm): Bool =
    ~(existsSubTerm (fn t -> termIn?(t,tms)) tm)
 
-(* Sort unification}
- Unification of sorts is similar to the one in AstTypes.
- It uses a list of already processed sort pairs to avoid cycling through
+(* Type unification}
+ Unification of types is similar to the one in AstTypes.
+ It uses a list of already processed type pairs to avoid cycling through
  recursive definitions.
 *)
 
   type Unification = 
-    | NotUnify  Sort * Sort 
+    | NotUnify  MSType * MSType 
     | Unify     SubstC 
 
-  op  unifyL : [a] SubstC * Sort * Sort * List(a) * List(a) * List (Sort * Sort) * Option MS.Term *
-                  (SubstC * a * a * a * List(Sort * Sort) * Option MS.Term -> List Unification)
+  op  unifyL : [a] SubstC * MSType * MSType * List(a) * List(a) * List (MSType * MSType) * Option MSTerm *
+                  (SubstC * a * a * a * List(MSType * MSType) * Option MSTerm -> List Unification)
                   ->  List Unification
   def unifyL(subst,srt1,srt2,l1,l2,equals,optTerm,unify): List Unification = 
       case (l1,l2)
@@ -1064,7 +1063,7 @@ closedTermV detects existence of free variables not included in the argument
               []  (unify(subst,e1,e2,e1,equals,optTerm)))
          | _ -> [NotUnify(srt1,srt2)]
 
-  op  occursRec : SubstC * String * Sort -> Boolean
+  op  occursRec : SubstC * String * MSType -> Bool
   def occursRec (subst,v,srt) = 
       case srt 
         of Base(_,srts,_) -> exists? (fn s -> occursRec(subst,v,s)) srts
@@ -1076,30 +1075,30 @@ closedTermV detects existence of free variables not included in the argument
 	   (case StringMap.find(subst.1,w)
 	      of Some s -> occursRec (subst,v,s)
 	       | None -> v = w) 
-	 | Subsort(s,_,_) -> occursRec(subst,v,s)
+	 | Subtype(s,_,_) -> occursRec(subst,v,s)
 	 | Quotient(s,_,_) -> occursRec(subst,v,s)
          | Boolean _ -> false
-%         | _ -> let _ = writeLine("occursRec missing case: "^printSort srt) in
+%         | _ -> let _ = writeLine("occursRec missing case: "^printMSType srt) in
 %                false
 
-  def dereferenceSort(subst:SubstC,srt) = 
+  def dereferenceType(subst:SubstC,srt) = 
       case srt
         of TyVar(v, _) -> 
 	   (case StringMap.find(subst.1,v)
-              of Some srt -> dereferenceSort(subst,srt)	
+              of Some srt -> dereferenceType(subst,srt)	
 	       | None -> srt)
 	 | _ -> srt
 
-  %% Not symmetric wrt subsorts
-  op unifySorts(context: Context,subst: SubstC,srt1: Sort,srt2: Sort,optTerm: Option MS.Term): List SubstC = 
+  %% Not symmetric wrt subtypes
+  op unifyTypes(context: Context,subst: SubstC,srt1: MSType,srt2: MSType,optTerm: Option MSTerm): List SubstC = 
 %      let _ = case optTerm of None -> () | Some t -> writeLine("Term: "^printTerm t) in
       let spc = context.spc in
       let
-	def insert(v,srt,(sortSubst,termSubst,condns)): SubstC = 
-	    (StringMap.insert(sortSubst,v,srt),termSubst,condns)
-        def addCondition(condn: MS.Term, subst as (sortSubst,termSubst,condns): SubstC): SubstC =
+	def insert(v,srt,(typeSubst,termSubst,condns)): SubstC = 
+	    (StringMap.insert(typeSubst,v,srt),termSubst,condns)
+        def addCondition(condn: MSTerm, subst as (typeSubst,termSubst,condns): SubstC): SubstC =
           if trueTerm? condn || termIn?(condn,condns) then subst
-            else (sortSubst,termSubst,Cons(condn,condns))
+            else (typeSubst,termSubst,Cons(condn,condns))
 	def unifyCP(subst,srt1,srt2,r1,r2,equals):List Unification = 
 	    unifyL(subst,srt1,srt2,r1,r2,equals,None,
 		   fn(subst,(id1,s1),(id2,s2),_,equals,_) -> 
@@ -1116,10 +1115,10 @@ closedTermV detects existence of free variables not included in the argument
 		      if id1 = id2 
 			then unify(subst,s1,s2,s1,equals,None)
 		      else [NotUnify(srt1,srt2)])
-	def unify(subst,srt1:Sort,srt2:Sort,srt1_orig:Sort,equals,optTerm: Option MS.Term): List Unification =
-            % let _ = writeLine("Matching "^printSort srt1^" --> "^printSort(dereferenceSort(subst,srt1))^" with \n"
-            %                   ^printSort srt2^" --> "^printSort(dereferenceSort(subst,srt2))) in
-	    case (dereferenceSort(subst,srt1), dereferenceSort(subst,srt2))
+	def unify(subst,srt1:MSType,srt2:MSType,srt1_orig:MSType,equals,optTerm: Option MSTerm): List Unification =
+            % let _ = writeLine("Matching "^printType srt1^" --> "^printType(dereferenceType(subst,srt1))^" with \n"
+            %                   ^printType srt2^" --> "^printType(dereferenceType(subst,srt2))) in
+	    case (dereferenceType(subst,srt1), dereferenceType(subst,srt2))
 	      of (Boolean _, Boolean_) -> [Unify subst]
                | (CoProduct(r1,_),CoProduct(r2,_)) -> 
 		 unifyCP(subst,srt1,srt2,r1,r2,equals)
@@ -1135,7 +1134,7 @@ closedTermV detects existence of free variables not included in the argument
 		 if equalTerm?(trm1, trm2)
 		    then unify(subst,ty1,ty2,ty1,equals,None)
 		 else [NotUnify (srt1,srt2)]
-	       | (Subsort(ty1,p1,_),Subsort(ty2,p2,_))
+	       | (Subtype(ty1,p1,_),Subtype(ty2,p2,_))
                    | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
                  unify(subst,ty1,ty2,srt1_orig,equals,optTerm)
 	       | (bsrt1 as Base(id1,ts1,_), bsrt2 as Base(id2,ts2,_)) -> 
@@ -1172,7 +1171,7 @@ closedTermV detects existence of free variables not included in the argument
 		 let Some s2 = tryUnfoldBase spc bsrt2 in
 		 unify(subst,bsrt1,s2,srt1_orig,Cons((bsrt1,bsrt2),equals),optTerm)
                %% Analysis could be smarter here so that order of subtypes is not so important
-               | (bsrt1 as Subsort(ty1 ,p1, _), ty2) | ~(possiblySubtypeOf?(ty2, bsrt1, spc)) ->
+               | (bsrt1 as Subtype(ty1 ,p1, _), ty2) | ~(possiblySubtypeOf?(ty2, bsrt1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
                  (case optTerm of
                        | None -> [NotUnify(srt1,srt2)]
@@ -1180,20 +1179,20 @@ closedTermV detects existence of free variables not included in the argument
                          case unify(subst,ty1,ty2,srt1_orig,equals,optTerm) of
                            | (Unify subst) :: _ ->    % Should generalize
                              let p1 = dereferenceAll subst p1 in
-                             % let _ = writeLine("Pred: "^printTermWithSorts p1) in
+                             % let _ = writeLine("Pred: "^printTermWithTypes p1) in
                              % let _ = printSubst subst in
                              let condn = simplifiedApply(p1,tm,context.spc) in
-                             % let _ = writeLine("Condn: "^printTermWithSorts condn) in
+                             % let _ = writeLine("Condn: "^printTermWithTypes condn) in
                              if falseTerm? condn then [NotUnify(srt1,srt2)]
                              else [Unify(addCondition(condn, subst))]
                            | result -> result)
                  ++ (case srt1_orig of
-                    | TyVar(v,_) | equalType?(stripSubsorts(spc,ty1), stripSubsorts(spc,ty2)) ->
+                    | TyVar(v,_) | equalType?(stripSubtypes(spc,ty1), stripSubtypes(spc,ty2)) ->
                       %% If we are matching a type variable then loosen match of variable
                       %% Could using ty2 cause overshoot?
                       [Unify(insert(v,ty2,subst))]
                     | _ -> [])
-	       | (ty,Subsort(ty2,_,_)) -> unify(subst,ty,ty2,srt1_orig,equals,optTerm)
+	       | (ty,Subtype(ty2,_,_)) -> unify(subst,ty,ty2,srt1_orig,equals,optTerm)
 	       | _ -> [NotUnify(srt1,srt2)]
       in
       let results = unifyL(subst,srt1,srt2,[srt1],[srt2],[],optTerm,unify) in
@@ -1202,12 +1201,12 @@ closedTermV detects existence of free variables not included in the argument
       foldr (fn (r1,r) ->
              case r1 of
                | NotUnify (s1,s2) -> 
-                 (if !debugHOM > 0 then (writeLine (printSort s1^" ~= "^printSort s2);
+                 (if !debugHOM > 0 then (writeLine (printType s1^" ~= "^printType s2);
                                          printSubst subst)
                   else ();
                   r)
                | Unify subst ->
-                 (if !debugHOM > 0 then (writeLine (printSort srt1^" =t= "^printSort srt2);
+                 (if !debugHOM > 0 then (writeLine (printType srt1^" =t= "^printType srt2);
                                          printSubst subst)
                     else (); 
                   Cons(subst,r)))
@@ -1219,7 +1218,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 {\tt LetRec}, replacing these by function symbols and applications.
 *)
 
-  op doNormalizeTerm : Spec -> MS.Term -> MS.Term
+  op doNormalizeTerm : Spec -> MSTerm -> MSTerm
   def doNormalizeTerm spc term = 
     case term of
       | Let ([(pat,N)],M,a) -> Apply (Lambda([(pat,trueTerm,M)],a),N,a)
@@ -1229,7 +1228,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
        % | IfThenElse (M,N,P,a) -> 
        %    let srt = inferType(spc,N) in
        %    Apply(Fun(Op(Qualified("TranslationBuiltIn","IfThenElse"),Nonfix),
-       %              mkArrow(mkProduct [boolSort,srt,srt],srt), a),
+       %              mkArrow(mkProduct [boolType,srt,srt],srt), a),
        %          mkTuple [M,N,P], a)
 %       | LetRec(decls,M,_) -> 
 %          System.fail "Replacement of LetRec by fix has not been implemented"
@@ -1254,7 +1253,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
       let doTerm = doNormalizeTerm spc in
       mapSpec(doTerm,fn s -> s,fn p -> p) spc
 
-  def doDeNormalizeTerm(term:MS.Term):MS.Term = 
+  def doDeNormalizeTerm(term:MSTerm):MSTerm = 
       case term
 	of Apply(Lambda([(WildPat _,Fun(Bool true,_,_),M)], _),N,a) -> 
 	   Seq([N,M],a)
@@ -1293,13 +1292,13 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
       boundVars = bv,counter = counter}
 
 
-  op [a] printSubst: StringMap(ASort a) * NatMap.Map(ATerm a) * List (ATerm a) -> ()
-  def printSubst(sortSubst,termSubst,condns) = 
+  op [a] printSubst: StringMap(AType a) * NatMap.Map(ATerm a) * List (ATerm a) -> ()
+  def printSubst(typeSubst,termSubst,condns) = 
       (writeLine "---------- substitution ---------";
 	StringMap.appi 
 	(fn (s,srt) -> 
-	     writeLine(s^" |-> "^printSort srt^" "))
-	sortSubst;
+	     writeLine(s^" |-> "^printType srt^" "))
+	typeSubst;
        writeLine "";
        NatMap.appi
 	(fn (i,trm) -> 
@@ -1316,7 +1315,7 @@ In order to ensure that type variables in a term to be rewritten are not
 participating in unification we introduce freeze and thaw operations.
 *)
 
- def freezeTerm(spc,term:MS.Term) = 
+ def freezeTerm(spc,term:MSTerm) = 
      let term = normalizeTerm spc term in
      let
 	doFreeze = fn (s as TyVar _) -> Base(mkUnQualifiedId("TypeVar!"),[s],noPos)
@@ -1324,7 +1323,7 @@ participating in unification we introduce freeze and thaw operations.
      in
      mapTerm(fn tm -> tm,doFreeze,fn p -> p) term
 
- def thawTerm(term:MS.Term) =
+ def thawTerm(term:MSTerm) =
      let term = deNormalizeTerm term in
      let
 	doThaw = fn(Base(Qualified (UnQualified,"TypeVar!"),[s],_)) -> s

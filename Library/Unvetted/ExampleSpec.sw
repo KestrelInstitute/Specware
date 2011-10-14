@@ -15,7 +15,7 @@ Natural = Peano qualifying spec
     | Zero
     | Succ Natural
 
-  op  positive? : Natural -> Boolean
+  op  positive? : Natural -> Bool
   def positive? = fn
     | Zero   -> true
     | Succ _ -> false
@@ -29,7 +29,7 @@ Natural = Peano qualifying spec
   def pred = inverse succ
 
   theorem induction is
-    fa(p : Natural -> Boolean)
+    fa(p : Natural -> Bool)
       (fa(n) p n) <=> p Zero && (fa(n) p n => p(Succ n))
 
 endspec

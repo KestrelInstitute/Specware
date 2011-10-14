@@ -24,9 +24,9 @@ IneqSet qualifying spec
 
   
   op sortIneqSet: IneqSet -> IneqSet
-  def sortIneqSet(ineqSet) =
+  def sortIneqSet ineqSet =
     let res = uniqueSort compare ineqSet in
-    %let _ = writeLine("SortIneqSet:") in
+    %let _ = writeLine("sortIneqSet:") in
     %let _ = writeIneqSet(res) in
     res
 

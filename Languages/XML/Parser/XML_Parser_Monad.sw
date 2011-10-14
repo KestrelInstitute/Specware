@@ -77,7 +77,7 @@ XML qualifying spec
   %op return : [a] a -> Env a
   def return x = fn state -> (Ok x, state)
 
-   op when : Boolean -> Env () -> Env ()
+   op when : Bool -> Env () -> Env ()
   def when p command = if p then (fn s -> (command s)) else return ()
 
    op foldM : [a,b] (a -> b -> Env a) -> a -> List b -> Env a
@@ -227,7 +227,7 @@ XML qualifying spec
 
   %% --------------------------------------------------------------------------------
 
-  def Wizard_Fail_Hard? : Boolean = false
+  def Wizard_Fail_Hard? : Bool = false
 
 #translate Haskell -instance Monad XML.Env
   XML.monadBind -> >>=  Left 1

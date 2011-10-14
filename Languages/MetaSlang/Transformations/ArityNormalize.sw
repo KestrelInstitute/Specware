@@ -71,47 +71,47 @@ ArityNormalize qualifying spec
            | _ -> 1
         
  
-% The arity map stores the ops having a domain sort consisting of
+% The arity map stores the ops having a domain type consisting of
 % a record (possibly subsetted)
 
 
- type Gamma         = List(String * Option(Sort * Nat))
+ type Gamma = List (String * Option (MSType * Nat))
 
- op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
+ op normalizeArity : Spec * Gamma * UsedNames * MSTerm -> MSTerm
  
- op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
-% op opArity   : Spec * String * String -> Option(Sort * Nat)
+ op termArity : Spec * Gamma * MSTerm -> Option (MSType * Nat)
+% op opArity   : Spec * String * String -> Option(Type * Nat)
 
 
 
 (*
  Arities are associated with term identifiers according to 
- arities in sort definitions or arities of top-level pattern.
+ arities in type definitions or arities of top-level pattern.
  The top-level pattern gets precedence such that the pattern 
  matching algorithm can always generate the pattern with 
  as many arguments as possible.
  *)
   
- def termArity(sp,gamma,term:MS.Term) = 
+ def termArity(sp,gamma,term:MSTerm) = 
      case term
        of Apply _ -> None
         | Var((id,_),_) -> 
           (case findLeftmost (fn (id2,r) -> id = id2) gamma
              of Some (w,r) -> r
               | None -> None)
-        | Fun(Not,      srt,_) -> sortArity(sp,srt)
-        | Fun(And,      srt,_) -> sortArity(sp,srt)
-        | Fun(Or,       srt,_) -> sortArity(sp,srt)
-        | Fun(Implies,  srt,_) -> sortArity(sp,srt)
-        | Fun(Iff,      srt,_) -> sortArity(sp,srt)
-        | Fun(Equals,   srt,_) -> sortArity(sp,srt)
-        | Fun(NotEquals,srt,_) -> sortArity(sp,srt)
-        | Fun(RecordMerge,srt,_) -> sortArity(sp,srt)
+        | Fun(Not,      srt,_) -> typeArity(sp,srt)
+        | Fun(And,      srt,_) -> typeArity(sp,srt)
+        | Fun(Or,       srt,_) -> typeArity(sp,srt)
+        | Fun(Implies,  srt,_) -> typeArity(sp,srt)
+        | Fun(Iff,      srt,_) -> typeArity(sp,srt)
+        | Fun(Equals,   srt,_) -> typeArity(sp,srt)
+        | Fun(NotEquals,srt,_) -> typeArity(sp,srt)
+        | Fun(RecordMerge,srt,_) -> typeArity(sp,srt)
         %% sjw: 1/14/02 Have multiple entry points for functions
 %        | Fun(Op (Local id,_),_,_) -> opArity(sp,specName,id)
 %        | Fun(Op (Qualified(specName,id),_),_,_) -> 
 %          opArity(sp,specName,id)
-        | Fun(Embed(id,true),srt,_) -> None  % sortArity(sp,srt)
+        | Fun(Embed(id,true),srt,_) -> None  % typeArity(sp,srt)
         | Fun _ -> None
         | Let _ -> None
         | LetRec _ -> None
@@ -122,7 +122,7 @@ ArityNormalize qualifying spec
           if mArity = 1
              then None
           else Some(case match
-                      of (pat,_,_)::_ -> patternSort pat
+                      of (pat,_,_)::_ -> patternType pat
                        | _ -> System.fail "Unexpected empty match",mArity)
         | IfThenElse _ -> None
         | Record _ -> None
@@ -132,9 +132,9 @@ ArityNormalize qualifying spec
  def mkArityApply(sp,dom,t1,t2,usedNames) =
      % let def makeFreshBoundVariable(id,usedNames) =  freshName("v"^id,usedNames) in
      let
-        def unfoldArgument(dom:Sort,t2) = 
+        def unfoldArgument(dom:MSType,t2) = 
             case unfoldBase(sp,dom)
-              of Subsort(s,t,_) -> 
+              of Subtype(s,t,_) -> 
 %
 % First relax the argument, then restrict the result.
 %
@@ -165,7 +165,7 @@ ArityNormalize qualifying spec
                | _ -> 
                 (toScreen "Unexpected non-record argument to function ";
                  toScreen (printTerm t2^" :  " );
-                 writeLine (printSort dom);
+                 writeLine (printType dom);
                 (t2,[])) 
                   %% This should not happen (?) 
                   %% because we only apply it to terms expecting
@@ -180,7 +180,7 @@ ArityNormalize qualifying spec
      mkApply(mkOp(Qualified("TranslationBuiltIn","mkTuple"),mkArrow(srt,srt)),term)
 
 
- def insertPattern(pat:Pattern,result as (usedNames,gamma:Gamma)) = 
+ def insertPattern(pat:MSPattern,result as (usedNames,gamma:Gamma)) = 
      case pat
        of VarPat((v as (id,srt)),_) -> 
           (StringSet.add(usedNames,id),(id,None) :: gamma)
@@ -194,7 +194,7 @@ ArityNormalize qualifying spec
        (usedNames,gamma) 
        vars
 
-  op  addLocalVars: MS.Term * UsedNames -> UsedNames
+  op  addLocalVars: MSTerm * UsedNames -> UsedNames
   def addLocalVars(t,usedNames) =
     let used = Ref usedNames in
     let _ = mapTerm (id,id,fn (p as VarPat((qid,_),_))
@@ -203,7 +203,7 @@ ArityNormalize qualifying spec
               t
     in !used
 
-  op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
+  op  etaExpand : Spec * UsedNames * MSType * MSTerm -> MSTerm
 
   def etaExpand(sp,usedNames,srt,term) = 
       case arrowOpt(sp,srt)
@@ -245,12 +245,12 @@ ArityNormalize qualifying spec
         | [(pat,cond,_)] -> simplePattern pat && isTrue cond
 	| _ -> false
 
-  def isTrue(term:MS.Term) = 
+  def isTrue(term:MSTerm) = 
       case term
 	of Fun(Bool true,_,_) -> true
 	 | _ -> false
 
- def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term =
+ def normalizeArityTopLevel(sp,gamma,usedNames,term:MSTerm):MSTerm =
      % let _ = writeLine("n_arity:\n"^printTerm term) in
      case term
        of Lambda(rules,a) -> 
@@ -269,7 +269,7 @@ ArityNormalize qualifying spec
 
  def normalizeArity(sp,gamma,usedNames,term) = 
      let
-        def normalizeRecordArguments(t:MS.Term):MS.Term * Boolean = 
+        def normalizeRecordArguments(t:MSTerm):MSTerm * Bool = 
             case t
               of Record(fields,_) -> 
                  let fields = 
@@ -374,7 +374,7 @@ ArityNormalize qualifying spec
         | And(tm::r_tms, a) -> And(normalizeArity(sp,gamma,usedNames,tm) :: r_tms, a)
         | tm -> tm
 
-  def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
+  def convertToArity1(sp,gamma,usedNames,term):MSTerm = 
       case termArity(sp,gamma,term)
         of None -> term
          | Some (dom,num) ->
@@ -388,7 +388,7 @@ ArityNormalize qualifying spec
                      mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
 
 %
-% This one ignores arity normalization in sorts, axioms and theorems.
+% This one ignores arity normalization in types, axioms and theorems.
 %     
 
   def arityNormalize spc =
@@ -407,7 +407,7 @@ ArityNormalize qualifying spec
 				     normalizeArityTopLevel (spc, [], usedNames,
 							     etaExpand (spc, usedNames, srt, term))
 				 in
-				   maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+				   maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
 			        old_defs
 			in
 			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in

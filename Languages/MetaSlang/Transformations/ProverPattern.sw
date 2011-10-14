@@ -19,7 +19,7 @@ Prover qualifying spec
     let _ = wildCounter := res+1 in
     res
 
-  op mkDeComposedEquality: Spec * Sort * MS.Term * MS.Term -> MS.Term
+  op mkDeComposedEquality: Spec * MSType * MSTerm * MSTerm -> MSTerm
   def mkDeComposedEquality(spc, srt, t1, t2) =
     case (t1, t2) of
       | (Record(args1, _), Record(args2, _)) ->
@@ -34,12 +34,12 @@ Prover qualifying spec
        | (_, Var (("Wild__Var", _), _)) -> mkTrue()
        | _ -> mkEquality(srt, t1, t2)
 
-  op mkWildVar: Sort -> MS.Term
+  op mkWildVar: MSType -> MSTerm
   def mkWildVar(srt) =
     let wildCount = useWildCounter() in
     Var(("Wild__Var_"^natToString(wildCount), srt), noPos)
 
-  type CondTerm = List(Var) * MS.Term * MS.Term
+  type CondTerm = List(Var) * MSTerm * MSTerm
   type CondTerms = List(CondTerm)
 
   op printCondTerm: CondTerm -> String
@@ -49,12 +49,12 @@ Prover qualifying spec
     let fmla = condTermToFmla(condTerm) in
     "CT: "^printTerm(fmla)
 
-  op condTermToFmlaWithPos: CondTerm * Position -> MS.Term
+  op condTermToFmlaWithPos: CondTerm * Position -> MSTerm
   def condTermToFmlaWithPos(condTerm, pos) =
     let fmla = condTermToFmla(condTerm) in
     withAnnT(fmla, pos)
 
-  op condTermToFmla: CondTerm -> MS.Term
+  op condTermToFmla: CondTerm -> MSTerm
   def condTermToFmla(condTerm) =
     let (vars, cond, term) = condTerm in
     let body = mkSimpImplies(cond, term) in
@@ -63,7 +63,7 @@ Prover qualifying spec
                 | _ -> mkBind(Forall, vars, body) in
     res
 
-  op removePatternTop: Spec * MS.Term -> List MS.Term
+  op removePatternTop: Spec * MSTerm -> MSTerms
   def removePatternTop(spc, term) =
     % let _ = writeLine("PP: "^printTerm(term)) in
     let pos = termAnn(term) in
@@ -99,7 +99,7 @@ Prover qualifying spec
 	      addCrossProduct(hdList, restRes) in
     map finalFun (generateCrossRec(listOfList))
 
-  op generateCrossTerms: List(CondTerms) * (List(MS.Term) -> MS.Term) -> CondTerms
+  op generateCrossTerms: List(CondTerms) * (MSTerms -> MSTerm) -> CondTerms
 (*
   def generateCrossTerms(condTermsList, leafFunction) =
     let def recurseDownOldCrossTerms(condTerm as (vars, cond, term), condCrossTerms) =
@@ -132,7 +132,7 @@ Prover qualifying spec
 
     def generateCrossTerms(condTermsList, leafFunction) =
       let def initialFun(condTerms:CondTerms) = map (fn (vars, cond, term) -> (vars, cond, [term])) condTerms in
-      let def interimFun(condTerm:CondTerm, condCrossTerm:(List(MS.Var) * MS.Term * List(MS.Term))) =
+      let def interimFun(condTerm:CondTerm, condCrossTerm:(List Var) * MSTerm * MSTerms) =
             let (vars, cond, term) = condTerm in
 	    let (dnVars, dnCond, dnTerms) = condCrossTerm in
 	    (vars++dnVars, Utilities.mkAnd(cond, dnCond), term :: dnTerms) in
@@ -173,7 +173,7 @@ Prover qualifying spec
       | [condTerms] -> condTerms
       | hdCondTerms::tlCondTerms-> mkFinalCondTerms(generateCasesRec(hdCondTerms, generateCases(tlCondTerms)))
 *)
-  op removePatternTerm: Spec * MS.Term -> CondTerms
+  op removePatternTerm: Spec * MSTerm -> CondTerms
 
   def removePatternTerm(spc, term) =
     if caseTerm?(term) then removePatternCase(spc, renameShadowedVars term) else
@@ -188,7 +188,7 @@ Prover qualifying spec
       | Fun(_) -> removePatternFun(term)
       | Lambda(_) -> removePatternLambda(term)
       | IfThenElse(_) -> removePatternIfThenElse(spc, term)
-      | SortedTerm(_) -> removePatternSortedTerm(term)
+      | TypedTerm(_) -> removePatternTypedTerm(term)
       | Seq(trmlst,_) -> removePatternSeq(spc, trmlst)
       | Pi(_,t,_) -> removePatternTerm(spc, t)
 
@@ -253,7 +253,7 @@ def removePatternCase(spc, term) =
   %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
   res
 
-  op removePatternApply: Spec * MS.Term -> CondTerms
+  op removePatternApply: Spec * MSTerm -> CondTerms
   def removePatternApply(spc, term as Apply(t1, t2, b)) =
     let res1 = removePatternTerm(spc, t1) in
     let res2 = removePatternTerm(spc, t2) in
@@ -275,12 +275,12 @@ def removePatternCase(spc, term) =
 	    | hdFunCase::restFunCases -> generateCasesArg(hdFunCase, generateCasesFun(restFunCases, argCases)) in
     generateCasesFun(res1, res2)
 
-  op removePatternRecord: Spec * MS.Term -> CondTerms
+  op removePatternRecord: Spec * MSTerm -> CondTerms
 
   def removePatternRecord(spc, term as Record(fields, b)) =
     let condFieldTermsList = map (fn (id, term) -> removePatternTerm(spc, term)) fields in
     let fieldIds = map (fn(id, term) -> id) fields in
-    let def mkLeafCase(terms:List(MS.Term)) =
+    let def mkLeafCase(terms:MSTerms) =
           mkRecord(zip(fieldIds, terms)) in
     generateCrossTerms(condFieldTermsList, mkLeafCase)
 
@@ -307,7 +307,7 @@ def removePatternCase(spc, term) =
   op varUnion: List Var * List Var -> List Var
   def varUnion(vl1, vl2) = foldl (fn (l,v) -> insertNewVar(v,l)) vl1 vl2
 
-  op removePatternBind: Spec * MS.Term -> CondTerms
+  op removePatternBind: Spec * MSTerm -> CondTerms
   def removePatternBind(spc, term as Bind (binder, bndVars, body, b)) =
     let printT = printTerm(term) in
     %let _ = if printT = "fa(n : NN) p n = fa(n1 : NN) (~(lte(n1, n)) => lte(n, n1))"
@@ -325,7 +325,7 @@ def removePatternCase(spc, term) =
     %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
     res
 
-  op removePatternThe: Spec * MS.Term -> CondTerms
+  op removePatternThe: Spec * MSTerm -> CondTerms
   def removePatternThe(spc, term as The (var, body, b)) =
     let bodyConds = removePatternTerm (spc, body) in
     let def mkLeafCase(condTerm) =
@@ -335,7 +335,7 @@ def removePatternCase(spc, term) =
     let res = map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds in
     res
 
-  op patternToTerms: Pattern -> List MS.Term
+  op patternToTerms: MSPattern -> MSTerms
   def patternToTerms(pat) =
     case pat of
       | AliasPat(_) -> aliasPatternToTerms(pat)
@@ -351,20 +351,20 @@ def removePatternCase(spc, term) =
       | RestrictedPat(p,_,_) -> patternToTerms p
       | _ -> fail("pattern not supported")
 
-  op aliasPatternToTerms: Pattern -> List MS.Term
+  op aliasPatternToTerms: MSPattern -> MSTerms
   def aliasPatternToTerms(pat as AliasPat(pat1, pat2, b)) =
     let terms1 = patternToTerms(pat1) in
     let terms2 = patternToTerms(pat2) in
     terms1++terms2
 
-  op embedPatternToTerms: Pattern -> List MS.Term
+  op embedPatternToTerms: MSPattern -> MSTerms
   def embedPatternToTerms(pat as EmbedPat(id, optPat, srt, b)) =
     case optPat of
       | None -> [mkEmbed0(id, srt)]
       | Some(pat) -> let argTerms = patternToTerms(pat) in
                        map (fn (argTerm) ->
-			    let domSort = termSort argTerm in
-			    mkApply(mkEmbed1(id, Arrow(domSort,srt,b)), argTerm))
+			    let domType = termType argTerm in
+			    mkApply(mkEmbed1(id, Arrow(domType,srt,b)), argTerm))
 		         argTerms
 
   op crossProduct: [a, b] List a * List b -> List (a*b)
@@ -389,11 +389,11 @@ def removePatternCase(spc, term) =
                    let res = crossProductTwoList(hdL, tlRes) in
 		   res
 
-  op idTermListToListIdTerm: Id*List(MS.Term) -> List(Id * MS.Term)
+  op idTermListToListIdTerm: Id*MSTerms -> List(Id * MSTerm)
   def idTermListToListIdTerm(id, terms) =
     map (fn (term) -> (id, term)) terms
 
-  op idPatternListToListListIdTerm: List(Id*Pattern) -> List(List(Id*MS.Term))
+  op idPatternListToListListIdTerm: List(Id*MSPattern) -> List(List(Id*MSTerm))
   def idPatternListToListListIdTerm(idPatList) =
     case idPatList of
       | Nil -> []
@@ -403,14 +403,14 @@ def removePatternCase(spc, term) =
 	let hdListIdTerm = idTermListToListIdTerm(hdId, patTerms) in
 	hdListIdTerm :: tlRes
   
-  op recordPatternToTerms: Pattern -> List MS.Term
-  def recordPatternToTerms(pat as RecordPat(fieldPats:List(Id*Pattern), b)) =
+  op recordPatternToTerms: MSPattern -> MSTerms
+  def recordPatternToTerms(pat as RecordPat(fieldPats:List(Id*MSPattern), b)) =
     let recordFieldsList = idPatternListToListListIdTerm(fieldPats) in
     let def crossFieldProduct(recordFieldsList) = crossProductList(recordFieldsList) in
     let recordFieldsCross = crossFieldProduct(recordFieldsList) in
     map (fn (fields) -> mkRecord(fields)) recordFieldsCross
 
-  op removePatternLet: Spec * MS.Term -> CondTerms
+  op removePatternLet: Spec * MSTerm -> CondTerms
   def removePatternLet(spc, term as Let(patternTermList, body, b)) =
     let newBodyCondTerms = removePatternTerm(spc, body) in
     let def patternTermsToVarsConds(patTerms, term, srt) =
@@ -451,16 +451,16 @@ def removePatternCase(spc, term) =
     %let _ = writeLine("removePatternLet: "^printTerm(term)) in
     res
 
-  op removePatternVar: MS.Term -> CondTerms
+  op removePatternVar: MSTerm -> CondTerms
   def removePatternVar(term) = [([], mkTrue(), term)]
 
-  op removePatternFun: MS.Term -> CondTerms
+  op removePatternFun: MSTerm -> CondTerms
   def removePatternFun(term) = [([], mkTrue(), term)]
 
-  op removePatternLambda: MS.Term -> CondTerms
+  op removePatternLambda: MSTerm -> CondTerms
   def removePatternLambda(term) = [([], mkTrue(), term)]
 
-  op removePatternIfThenElse: Spec * MS.Term -> CondTerms
+  op removePatternIfThenElse: Spec * MSTerm -> CondTerms
   def removePatternIfThenElse(spc, term as IfThenElse(condTerm, thenTerm, elseTerm, b)) =
     let condCondTerms = removePatternTerm(spc, condTerm) in
     let thenCondTerms = removePatternTerm(spc, thenTerm) in
@@ -484,15 +484,15 @@ def removePatternCase(spc, term) =
 	      thenRes++elseRes++tlRes in
      recurseDownCondCondTerms(condCondTerms, thenCondTerms, elseCondTerms)
 
-  op removePatternSortedTerm: MS.Term -> CondTerms
-  def removePatternSortedTerm(term) = [([], mkTrue(), term)]
+  op removePatternTypedTerm: MSTerm -> CondTerms
+  def removePatternTypedTerm(term) = [([], mkTrue(), term)]
 
-  op removePatternSeq: Spec * List MS.Term -> CondTerms
+  op removePatternSeq: Spec * MSTerms -> CondTerms
   def removePatternSeq(spc, trmlst) =
     let lastTerm = last(trmlst) in
     removePatternTerm(spc, lastTerm)
 
-  op removePatternLetRec: MS.Term -> CondTerms
+  op removePatternLetRec: MSTerm -> CondTerms
   def removePatternLetRec(term) = [([], mkTrue(), term)]
 
 (*  op removePattern: Spec -> Spec
@@ -513,7 +513,7 @@ def removePatternCase(spc, term) =
 			     normalizeArityTopLevel (spc, [], usedNames,
 						     etaExpand (spc, usedNames, srt, term))
 			     in
-			       maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+			       maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
 			        old_defs
 			in
 			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in

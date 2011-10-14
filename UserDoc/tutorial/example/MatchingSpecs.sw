@@ -17,7 +17,7 @@ endspec
 
 SymbolMatching = spec
   import Symbols
-  op symb_matches?(s: Symbol, os: Option Symbol): Boolean
+  op symb_matches?(s: Symbol, os: Option Symbol): Bool
     = case os of
         | Some s1 -> s = s1
         | None    -> true
@@ -30,7 +30,7 @@ WordMatching = spec
   import Messages
   import SymbolMatching
 
-  op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
+  op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Bool =
     pos + length wrd <= length msg &&
     (fa(i:Nat) i < length wrd => symb_matches?(wrd@i, msg@(pos+i)))
 

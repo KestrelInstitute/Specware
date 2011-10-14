@@ -192,9 +192,9 @@ spec
 
   op  mkOptionsSpec : String -> Env ValueInfo
   def mkOptionsSpec s =
-    let mtv         : Sort = freshMetaTyVar ("gen", noPos)           in
-    let list_type   : Sort = Base (mkQualifiedId ("List",    "List"),   [mtv], noPos) in
-    let string_type : Sort = Base (mkQualifiedId ("String" , "String"), [],    noPos) in
+    let mtv         : MSType = freshMetaTyVar ("gen", noPos)           in
+    let list_type   : MSType = Base (mkQualifiedId ("List",    "List"),   [mtv], noPos) in
+    let string_type : MSType = Base (mkQualifiedId ("String" , "String"), [],    noPos) in
     let public_element : SpecElemTerm = (Op ([mkUnQualifiedId "public"], 
                                              Unspecified,
                                              false,

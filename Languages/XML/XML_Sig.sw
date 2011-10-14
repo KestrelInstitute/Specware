@@ -281,7 +281,7 @@ XML qualifying spec
   %%  [KWFC: XML Decl]                              *[81]
   %%  [KWFC: Text Decl]                             *[81]
   %%
-  def legal_encoding_name? (name : UChars) : Boolean =
+  def legal_encoding_name? (name : UChars) : Bool =
     case name of
       | char :: tail -> (latin_alphabetic_char? char) && (all? enc_name_char? tail)
       | []           -> false
@@ -342,7 +342,7 @@ XML qualifying spec
 
   type ElementTagPrefix = (UChars | element_tag_prefix?)
 
-  def element_tag_prefix?  (prefix : UChars) : Boolean =
+  def element_tag_prefix?  (prefix : UChars) : Bool =
     case prefix of
       | []             -> true
       | [63] (* '?' *) -> true
@@ -385,7 +385,7 @@ XML qualifying spec
 			   w3    : WhiteSpace,
 			   value : AttValue}
 
-  def no_external_entity_references? (attribute : ElementAttribute, dtd : DocTypeDecl) : Boolean =
+  def no_external_entity_references? (attribute : ElementAttribute, dtd : DocTypeDecl) : Bool =
     foldl (fn (ok?, item : AttValue_Item) ->
 	   case item of
 	     | Ref (Entity entity_ref) -> ~ (ref_to_external_entity? (entity_ref.name, dtd))
@@ -395,7 +395,7 @@ XML qualifying spec
           true
           attribute.value.items
 
-  def ref_to_external_entity? (name : Name, dtd : DocTypeDecl) : Boolean =
+  def ref_to_external_entity? (name : Name, dtd : DocTypeDecl) : Bool =
     case find_entity_decl (name, dtd) of
       %% Note that entity decl could have come from the internal or external subset of the dtd.
       %% It is an "internal entity" iff the declaration has an immediate value,
@@ -454,7 +454,7 @@ XML qualifying spec
 
   type ElementTagPostfix = (UChars | element_tag_postfix?)
 
-  def element_tag_postfix?  (postfix : UChars) : Boolean =
+  def element_tag_postfix?  (postfix : UChars) : Bool =
     case postfix of
       | []             -> true
       | [63] (* '?' *) -> true
@@ -572,7 +572,7 @@ XML qualifying spec
 		      w3          : WhiteSpace,
 		      decls       : Option InternalDecls}
 
-  def no_pe_references_within_internal_markup? (internal_dtd : InternalDTD) : Boolean =
+  def no_pe_references_within_internal_markup? (internal_dtd : InternalDTD) : Bool =
     case internal_dtd.decls of
       | Some dtd_decls ->
         %% parameter-entity references not at the top level can occur only within entity values
@@ -625,7 +625,7 @@ XML qualifying spec
 
   type InternalDecl = (Decl | internal_decl?)
 
-  def internal_decl? (decl : Decl) : Boolean =
+  def internal_decl? (decl : Decl) : Bool =
     case decl of
       %% *[29] markupdecl
       | Element     _ -> true
@@ -1602,7 +1602,7 @@ XML qualifying spec
 
   type WhiteSpace = (UChars | whitespace?)    %  [3]
 
-  def whitespace? (chars : UChars) : Boolean =
+  def whitespace? (chars : UChars) : Bool =
     all? white_char? chars
 
   def null_whitespace : WhiteSpace = []
@@ -1832,7 +1832,7 @@ XML qualifying spec
 
   type EntityRef = {name : (Name | entity_declared?)}
 
-  op entity_declared? : Name -> Boolean   % TODO -- tricky
+  op entity_declared? : Name -> Bool   % TODO -- tricky
 
   %% -------------------------------------------------------------------------------------------------
   %%  [69]  PEReference  ::=  '%' Name ';'
@@ -2064,27 +2064,27 @@ XML qualifying spec
 
   %% These are all handwritten as vector-of-boolean accesses
 
-  op char?                  : UChar -> Boolean    %  [2]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op white_char?            : UChar -> Boolean    %  [3]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op letter?                : UChar -> Boolean    %  [84]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op base_char?             : UChar -> Boolean    %  [85]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op ideographic_char?      : UChar -> Boolean    %  [86]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op combining_char?        : UChar -> Boolean    %  [87]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op digit?                 : UChar -> Boolean    %  [88]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op extender_char?         : UChar -> Boolean    %  [89]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op name_char?             : UChar -> Boolean    %  [4]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op name_start_char?       : UChar -> Boolean    %  [5]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op pubid_char?            : UChar -> Boolean    %  [13]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op hex_digit?             : UChar -> Boolean    %  [66]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op version_num_char?      : UChar -> Boolean    % *[26]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op enc_name_char?         : UChar -> Boolean    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op latin_alphabetic_char? : UChar -> Boolean    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op char_data_char?        : UChar -> Boolean    %  [14]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op char?                  : UChar -> Bool    %  [2]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op white_char?            : UChar -> Bool    %  [3]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op letter?                : UChar -> Bool    %  [84]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op base_char?             : UChar -> Bool    %  [85]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op ideographic_char?      : UChar -> Bool    %  [86]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op combining_char?        : UChar -> Bool    %  [87]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op digit?                 : UChar -> Bool    %  [88]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op extender_char?         : UChar -> Bool    %  [89]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op name_char?             : UChar -> Bool    %  [4]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op name_start_char?       : UChar -> Bool    %  [5]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op pubid_char?            : UChar -> Bool    %  [13]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op hex_digit?             : UChar -> Bool    %  [66]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op version_num_char?      : UChar -> Bool    % *[26]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op enc_name_char?         : UChar -> Bool    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op latin_alphabetic_char? : UChar -> Bool    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op char_data_char?        : UChar -> Bool    %  [14]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
 
   %%
   %%  [9] [10] *[11] *[12] *[24] *[32] *[80] [K39]
   %%
-  def quote_char? (char : UChar) : Boolean =
+  def quote_char? (char : UChar) : Bool =
     (char = UChar.double_quote) ||
     (char = UChar.apostrophe)
 

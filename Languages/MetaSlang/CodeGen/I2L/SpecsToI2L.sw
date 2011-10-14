@@ -11,20 +11,18 @@ SpecsToI2L qualifying spec
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
-% import /Languages/MetaSlang/CodeGen/CodeGenTransforms  % stripSubsortsAndBaseDefs
+% import /Languages/MetaSlang/CodeGen/CodeGenTransforms  % stripSubtypesAndBaseDefs
 
   import /Languages/I2L/I2L
 
   op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
-
-  type Term = MS.Term
 
   type S2I_Context = {
                       specname       : String,             % not (yet) used
                       isToplevel     : Bool,               % not used
                       useRefTypes    : Bool,               % always true
                       constrOps      : List   QualifiedId, % not used, constrOps are distinguished by their name (contain "__")
-                      currentOpSort  : Option QualifiedId
+                      currentOpType  : Option QualifiedId
                       }
 
   op default_S2I_Context : S2I_Context =
@@ -33,22 +31,22 @@ SpecsToI2L qualifying spec
      isToplevel    = false,
      useRefTypes   = true,
      constrOps     = [],
-     currentOpSort = None
+     currentOpType = None
      }
 
   op unsetToplevel (ctxt : S2I_Context) : S2I_Context =
     ctxt << {isToplevel = false}
 
-  op setCurrentOpSort (qid : QualifiedId, ctxt : S2I_Context) : S2I_Context = 
-    ctxt << {currentOpSort = Some qid}
+  op setCurrentOpType (qid : QualifiedId, ctxt : S2I_Context) : S2I_Context = 
+    ctxt << {currentOpType = Some qid}
 
   op mkInOpStr (ctxt : S2I_Context) : String =
-    case ctxt.currentOpSort of
+    case ctxt.currentOpType of
       | Some qid -> "in op \"" ^ (printQualifiedId qid) ^ "\": "
       | _ -> ""
 
   op useConstrCalls? (ctxt : S2I_Context) : Bool =
-    case ctxt.currentOpSort of
+    case ctxt.currentOpType of
 
       | None -> true
 
@@ -86,9 +84,9 @@ SpecsToI2L qualifying spec
                 isToplevel    = true, 
                 useRefTypes   = useRefTypes?,
                 constrOps     = constrOps,
-                currentOpSort = None}
+                currentOpType = None}
     in
-    %let spc = normalizeArrowSortsInSpec spc in
+    %let spc = normalizeArrowTypesInSpec spc in
     let transformedOps = 
         foldriAQualifierMap (fn (q, id, opinfo, l1) ->
                                if filter (Qualified (q, id)) then
@@ -104,15 +102,15 @@ SpecsToI2L qualifying spec
          name     = "",%s pc.name:String,
          includes = [],
          decls    = {
-                     typedefs = foldriAQualifierMap (fn (qid, name, sortinfo, l2) ->
+                     typedefs = foldriAQualifierMap (fn (qid, name, typeinfo, l2) ->
                                                        if filter (Qualified (qid, name)) then
-                                                         case sortinfo2typedef (Qualified (qid, name), sortinfo, ctxt, spc) of
+                                                         case typeinfo2typedef (Qualified (qid, name), typeinfo, ctxt, spc) of
                                                            | Some typedef -> l2 ++ [typedef]
                                                            | _            -> l2
                                                        else 
                                                          l2)
                                                     []
-                                                    spc.sorts,
+                                                    spc.types,
                      opdecls  = foldl (fn | (l3,OpDecl d) -> l3++[d] 
                                           | (l4,_)        -> l4)
                                       []
@@ -145,21 +143,21 @@ SpecsToI2L qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %                                                                    %
-  %                       SORTS -> I2L.TYPES                           %
+  %                       TYPES -> I2L.TYPES                           %
   %                                                                    %
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   (**
-   transforms a sortinfo into a type definition; the name of the type
+   transforms a typeinfo into a type definition; the name of the type
    is the unqualified name, the qualifier is ignored.
    *)
-  op sortinfo2typedef (Qualified (q, id) : QualifiedId,
-                       info              : SortInfo,
+  op typeinfo2typedef (Qualified (q, id) : QualifiedId,
+                       info              : TypeInfo,
                        ctxt              : S2I_Context,
                        spc               : Spec)
     : Option I_TypeDefinition =
-    if definedSortInfo? info then
-      let (tvs, typ) = unpackFirstSortDef info in
+    if definedTypeInfo? info then
+      let (tvs, typ) = unpackFirstTypeDef info in
       let typename = (q, id) in
       Some (typename, type2itype (tvs, typ, ctxt, spc))
     else
@@ -168,7 +166,7 @@ SpecsToI2L qualifying spec
   type LeLt   = | LE | LT
   type MinMax = | Min | Max
 
-  op find_simple_constant_bounds (tm : Term) : Option (Int * Int) =
+  op find_simple_constant_bounds (tm : MSTerm) : Option (Int * Int) =
     %% returns Some (m, n) if the type directly expresses the inclusive range [m, n], otherwise None
     let 
 
@@ -214,7 +212,7 @@ SpecsToI2L qualifying spec
           | _ -> None
 
       def find_bound tm vid =
-        case (tm : Term) of
+        case (tm : MSTerm) of
           | Apply (Fun(Op(Qualified("Integer",id),_),_,_),
                    Record ([("1",tm1),("2",tm2)],_),
                    _)
@@ -245,7 +243,7 @@ SpecsToI2L qualifying spec
       | _ -> None
 
   op type2itype (tvs  : TyVars,
-                 typ  : Sort,
+                 typ  : MSType,
                  ctxt : S2I_Context,
                  spc  : Spec)
     : I_Type =
@@ -276,12 +274,12 @@ SpecsToI2L qualifying spec
      %| Base(Qualified(_,"List"),[ptyp],_) ->
      %  System.fail("sorry, this version of the code generator doesn't support lists.")
      %         
-     %     System.fail("if using List sort, please add a term restricting "^
+     %     System.fail("if using List type, please add a term restricting "^
      %     "the length of the list\n       "^
-     %     "(e.g. \"{l:List("^printSort(ptyp)^")| length(l) <= 32}\")")
+     %     "(e.g. \"{l:List("^printType(ptyp)^")| length(l) <= 32}\")")
      % ----------------------------------------------------------------------
 
-      | Subsort (Base (Qualified ("Nat", "Nat"), [], _),
+      | Subtype (Base (Qualified ("Nat", "Nat"), [], _),
                  %% {x : Nat -> x < n} where n is a Nat
                  Lambda([(VarPat((X,_),_),
                           Fun (Bool true, _, _),
@@ -300,7 +298,7 @@ SpecsToI2L qualifying spec
         else 
           I_Primitive I_Nat
 
-      | Subsort (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
+      | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
         (case find_simple_constant_bounds pred of
            | Some (m, n) ->
              if m = 0 then
@@ -311,13 +309,13 @@ SpecsToI2L qualifying spec
              I_Primitive I_Int)
 
       % ----------------------------------------------------------------------
-      % special form for list sorts, term must restrict length of list
+      % special form for list types, term must restrict length of list
       % the form of the term must be {X:List(T)| length(X) < N}
       % where N must be a constant term evaluating to a positive Nat
       % lenght(X) <= N, N > length(X), N >= length(X), N = length(X) can also be used
       % ----------------------------------------------------------------------
 
-      | Subsort (Base (Qualified ("List", "List"), [ptyp], _), tm, _) ->
+      | Subtype (Base (Qualified ("List", "List"), [ptyp], _), tm, _) ->
         let ptype = type2itype (tvs, ptyp, unsetToplevel ctxt, spc) in
         let err = "wrong form of restriction term for list length" in
         (case tm of
@@ -359,7 +357,7 @@ SpecsToI2L qualifying spec
            | _ -> fail err)
 
       % ----------------------------------------------------------------------
-      % for arrow sorts make a distinction between products and argument lists:
+      % for arrow types make a distinction between products and argument lists:
       % op foo(n:Nat,m:Nat) -> Nat must be called with two Nats
       % ----------------------------------------------------------------------
 
@@ -420,22 +418,22 @@ SpecsToI2L qualifying spec
           fail("sorry, this version of the code generator doesn't support polymorphic types.")
 
       % ----------------------------------------------------------------------
-      % use the base sorts as given, assume that the original definition has been checked
+      % use the base types as given, assume that the original definition has been checked
       % ----------------------------------------------------------------------
 
       | Base (Qualified (q, id), _, _) -> I_Base (q, id)
 
-      | Subsort (typ, trm, _) -> % ignore the term...
+      | Subtype (typ, trm, _) -> % ignore the term...
         type2itype (tvs, typ, ctxt, spc)
 
       | Quotient (typ, trm, _) -> % ignore the term...
         type2itype (tvs, typ, ctxt, spc)
 
       | _ ->
-        fail ("sorry, code generation doesn't support the use of this sort:\n       "
-                ^ printSort typ)
+        fail ("sorry, code generation doesn't support the use of this type:\n       "
+                ^ printType typ)
 
-  op constantTermIntValue (tm : Term, spc : Spec) : Int =
+  op constantTermIntValue (tm : MSTerm, spc : Spec) : Int =
     let 
       def err () = 
         let _ = print tm in
@@ -453,7 +451,7 @@ SpecsToI2L qualifying spec
   (**
    returns the definition term of the given op, if it exists in the given spec.
    *)
-  op getOpDefinition (Qualified (q, id) : QualifiedId, spc : Spec) : Option Term =
+  op getOpDefinition (Qualified (q, id) : QualifiedId, spc : Spec) : Option MSTerm =
     case findAQualifierMap (spc.ops, q, id) of
       | Some info ->
         if definedOpInfo? info then
@@ -468,7 +466,7 @@ SpecsToI2L qualifying spec
     an arrow type is a product or not. Only "real" products are unfolded, i.e. type of the
     form (A1 * A2 * ... * An) are unfolded, not those of the form {x1:A1,x2:A2,...,xn:An}
   *)
-  op  unfoldToProduct (typ : Sort, spc : Spec) : Sort =
+  op  unfoldToProduct (typ : MSType, spc : Spec) : MSType =
     let
       def unfoldRec typ =
         let utyp = unfoldBaseKeepPrimitives (typ, spc) in
@@ -481,7 +479,7 @@ SpecsToI2L qualifying spec
       | _ -> typ
 
 
-  op unfoldToCoProduct (typ : Sort, spc : Spec) : Sort =
+  op unfoldToCoProduct (typ : MSType, spc : Spec) : MSType =
     let
       def unfoldRec typ =
         let utyp = unfoldBase (spc, typ) in
@@ -496,10 +494,10 @@ SpecsToI2L qualifying spec
   % unfold to special type in order to get the necessary information to generate code
   % e.g. unfold to type of the form {n:Nat|n<C} which is needed to generate arrays
 
-  op unfoldToSpecials (typ : Sort, _ : Spec) : Sort = 
+  op unfoldToSpecials (typ : MSType, _ : Spec) : MSType = 
     typ
 
-  op unfoldToSpecials1 (typ : Sort, spc : Spec) : Sort =
+  op unfoldToSpecials1 (typ : MSType, spc : Spec) : MSType =
     let
       def unfoldToSpecials0 typ =
         let
@@ -510,7 +508,7 @@ SpecsToI2L qualifying spec
         let utyp = unfoldRec typ in
         case utyp of
           % this corresponds to a term of the form {x:Nat|x<C} where C must be a Integer const
-          | Subsort (Base (Qualified (_, "Nat"), [], _),
+          | Subtype (Base (Qualified (_, "Nat"), [], _),
                      Lambda ([(VarPat((X,_), _), 
                                Fun (Bool true, _, _),
                                Apply (Fun (Op (Qualified(_,"<"), _), _, _),
@@ -524,9 +522,9 @@ SpecsToI2L qualifying spec
             if X = X0 then utyp else typ
         | _ -> typ
     in
-    mapSort (fn tm -> tm, unfoldToSpecials0, fn pat -> pat) typ
+    mapType (fn tm -> tm, unfoldToSpecials0, fn pat -> pat) typ
   
-  op normalizeArrowSortsInSpec (spc : Spec) : Spec =
+  op normalizeArrowTypesInSpec (spc : Spec) : Spec =
     mapSpec (fn tm -> tm,
              fn | Arrow (typ1, typ2, X) -> 
                   Arrow (unfoldToProduct (typ1, spc), typ2, X)
@@ -534,18 +532,18 @@ SpecsToI2L qualifying spec
              fn pat -> pat) 
             spc
 
- op unfoldBaseKeepPrimitives (typ : Sort, spc : Spec) : Sort =
+ op unfoldBaseKeepPrimitives (typ : MSType, spc : Spec) : MSType =
    case typ of
      | Base (qid, typs, a) ->
-       (case AnnSpec.findTheSort (spc, qid) of
+       (case AnnSpec.findTheType (spc, qid) of
           | Some info ->
-            (if ~ (definedSortInfo? info) then
+            (if ~ (definedTypeInfo? info) then
                typ
              else
-               let (tvs, typ2) = unpackFirstSortDef info in
+               let (tvs, typ2) = unpackFirstTypeDef info in
                let
                  def continue () =
-                   let styp = substSort (zip (tvs, typs), typ2) in
+                   let styp = substType (zip (tvs, typs), typ2) in
                    unfoldBaseKeepPrimitives (styp, spc)
                in
                case typ of
@@ -586,7 +584,7 @@ SpecsToI2L qualifying spec
   %                                                                    %
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort opInfoResult = | OpDecl  I_Declaration 
+  type opInfoResult = | OpDecl  I_Declaration 
                       | FunDecl I_FunDeclaration
                       | FunDefn I_FunDefinition
                       | VarDecl I_Declaration
@@ -610,7 +608,7 @@ SpecsToI2L qualifying spec
       def getParamNames (ctxt, tm) =
         let 
           def err () = 
-            let prefix = case ctxt.currentOpSort of 
+            let prefix = case ctxt.currentOpType of 
                            | Some qid -> "in op "^ qid2str qid ^ ":\n" 
                            | _ -> ""
             in
@@ -657,7 +655,7 @@ SpecsToI2L qualifying spec
     let id0  = (q, "__" ^ lid ^ "__")                         in
     let typ  = unfoldToArrow (spc, typ)                       in
     let typ  = type2itype (tvs, typ, unsetToplevel ctxt, spc) in
-    let ctxt = setCurrentOpSort (qid, ctxt)                   in
+    let ctxt = setCurrentOpType (qid, ctxt)                   in
     case typ of 
       | I_FunOrMap (types, rtype) ->
         if definedOpInfo? info then
@@ -694,7 +692,7 @@ SpecsToI2L qualifying spec
         in
         OpDecl (id, typ, opt_exp)
 
-  op liftUnsupportedPattern (tm : Term, spc : Spec) : Term =
+  op liftUnsupportedPattern (tm : MSTerm, spc : Spec) : MSTerm =
     let b = termAnn tm in
     case tm of
       | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
@@ -718,7 +716,7 @@ SpecsToI2L qualifying spec
 
   op qid2varid (Qualified (q, id) : QualifiedId) : I_VarName = (q, id)
 
-  op term2expression (tm : Term, ctxt : S2I_Context, spc : Spec) : I_TypedExpr =
+  op term2expression (tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_TypedExpr =
     let typ  = inferType (spc, tm)                            in
     let typ  = unfoldBaseKeepPrimitives (typ, spc)            in
     let exp  = term2expression_internal (tm, typ, ctxt, spc)  in
@@ -730,7 +728,7 @@ SpecsToI2L qualifying spec
     in
     {expr = exp, typ = ityp, cast? = cast?}
 
-  op term2expression_internal (tm : Term, typ : Sort, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_internal (tm : MSTerm, typ : MSType, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
     % Accord hack:
     % checks, whether the given id is an outputop of the espec; if yes is has to be
@@ -750,14 +748,14 @@ SpecsToI2L qualifying spec
                                                         term2expression (t2, ctxt, spc),
                                                         term2expression (t3, ctxt, spc))
       | Seq        (tms,                _) -> I_Comma (map (fn tm -> term2expression (tm, ctxt, spc)) tms)
-      | SortedTerm (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, spc) in typed_expr.expr  % TODO: add cast? ??
+      | TypedTerm  (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, spc) in typed_expr.expr  % TODO: add cast? ??
       | _ -> 
         % Bind, The, LetRec, Lambda, Transform, Pi, And, Any 
         let s = "Unrecognized term in term2expression: " ^ printTerm tm in
         let _ = writeLine s in
         I_Str s
 
-  op alt_index (x : Id, typ : Type, spc : Spec) : Nat =
+  op alt_index (x : Id, typ : MSType, spc : Spec) : Nat =
     let 
       def aux (n, alts) =
         case alts of
@@ -771,18 +769,18 @@ SpecsToI2L qualifying spec
     case unfoldToCoProduct (typ, spc) of
       | CoProduct (alts,_) -> aux (1, alts)
       | _ -> 
-        let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printSort typ) in
+        let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printType typ) in
         0
 
-  op term2expression_fun (fun : Fun, typ : Type, tm : Term, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_fun (fun : Fun, typ : MSType, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
     % This is called when a Fun occurs "standalone", i.e. not in the context of an apply.
-    % We restrict the possible forms to those not having an arrow sort, 
+    % We restrict the possible forms to those not having an arrow type, 
     % i.e. we don't support functions as objects
     % Not, And, Or, etc,. should never occur "standalone", so we don't look for them here
     % See process_t1 below for case where Fun is applied.
 
-    if arrowSort? (typ, spc) then
+    if arrowType? (typ, spc) then
       case fun of
         | Op (qid,_) -> I_VarRef (qid2varid qid)
         | _ -> 
@@ -819,10 +817,10 @@ SpecsToI2L qualifying spec
         | _ -> 
           fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm tm)
 
-  op getExprs4Args (args : List Term, ctxt : S2I_Context, spc : Spec) : List I_TypedExpr = 
+  op getExprs4Args (args : MSTerms, ctxt : S2I_Context, spc : Spec) : List I_TypedExpr = 
     map (fn tm -> term2expression (tm, ctxt, spc)) args
 
-  op term2expression_apply (t1 : Term, t2 : Term, tm : Term, typ : Type, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_apply (t1 : MSTerm, t2 : MSTerm, tm : MSTerm, typ : MSType, ctxt : S2I_Context, spc : Spec) : I_Expr =
     let args = 
         % extract the list of argument terms from a record term given
         % as second argument of an Apply term
@@ -855,9 +853,9 @@ SpecsToI2L qualifying spec
                 let varname = ("", id) in
                 % infer the type of the original lhs to get the real type of the map
                 % taking all the projections into account
-                let lhssort = inferType (spc, origlhs)                          in
-                let lhssort = unfoldToSpecials (lhssort, spc)                   in
-                let lhstype = type2itype ([], lhssort, unsetToplevel ctxt, spc) in
+                let lhstype = inferType (spc, origlhs)                          in
+                let lhstype = unfoldToSpecials (lhstype, spc)                   in
+                let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, spc) in
                 I_FunCall(varname,projections,exprs)
                 
               | Fun (fun, _, _) -> term2expression_apply_fun (fun, origlhs, projections, t2, args, tm, typ, ctxt, spc)
@@ -877,12 +875,12 @@ SpecsToI2L qualifying spec
         process_t1 (t1, [])
 
   op term2expression_apply_fun (fun         : Fun, 
-                                origlhs     : Term,
+                                origlhs     : MSTerm,
                                 projections : List Id, 
-                                t2          : Term,
-                                args        : List Term,
-                                tm          : Term, 
-                                typ         : Type, 
+                                t2          : MSTerm,
+                                args        : MSTerms,
+                                tm          : MSTerm, 
+                                typ         : MSType, 
                                 ctxt        : S2I_Context, 
                                 spc         : Spec) 
     : I_Expr =
@@ -892,9 +890,9 @@ SpecsToI2L qualifying spec
         let varname = qid2varid qid                                     in
         % infer the type of the original lhs to get the real type of the map
         % taking all the projections into account
-        let lhssort = inferType (spc, origlhs)                          in
-        let lhssort = unfoldToSpecials (lhssort, spc)                   in
-        let lhstype = type2itype ([], lhssort, unsetToplevel ctxt, spc) in
+        let lhstype = inferType (spc, origlhs)                          in
+        let lhstype = unfoldToSpecials (lhstype, spc)                   in
+        let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, spc) in
         %if isOutputOp varname then MapAccessDeref (varname,lhstype,projections,exprs) else 
         if isVariable (ctxt, qid) then
           I_MapAccess (varname, lhstype, projections, exprs)
@@ -906,7 +904,7 @@ SpecsToI2L qualifying spec
           def mkExpr2() = term2expression (t2, ctxt, spc)
         in
         if projections = [] then
-          % let typ = foldSort (typ, spc) in
+          % let typ = foldType (typ, spc) in
           let selector = {name = id, index = alt_index (id, typ, spc)} in
           if useConstrCalls? ctxt then
             case typ of
@@ -945,14 +943,14 @@ SpecsToI2L qualifying spec
           fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
 
       | Embedded id -> 
-        let lhssort = inferType (spc, origlhs)        in
+        let lhstype = inferType (spc, origlhs)        in
         let index =
-            case unfoldToArrow (spc, lhssort) of
+            case unfoldToArrow (spc, lhstype) of
               | Arrow (super_type, Bool, _) ->
                 %% type of a predicate used to test for variants among a coproduct
                 alt_index (id, super_type, spc) 
               | _ ->
-                let _ = writeLine ("Expected arrow type: " ^ printSort lhssort) in
+                let _ = writeLine ("Expected arrow type: " ^ printType lhstype) in
                 0
         in
         let selector = {name = id, index = index} in
@@ -978,7 +976,7 @@ SpecsToI2L qualifying spec
       | _ ->
         fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
 
-  op term2expression_let (pat : Pattern, deftm : Term, tm : Term, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
     % let's can only contain one pattern/term entry (see parser)
     case pat of
 
@@ -996,7 +994,7 @@ SpecsToI2L qualifying spec
       | _ -> 
         fail (mkInOpStr ctxt ^ "unsupported feature: this form of pattern cannot be used in a let:\n" ^ printPattern pat)
 
-  op term2expression_record (fields : List (Id * Term), tm : Term, ctxt : S2I_Context, spc : Spec) : I_Expr = 
+  op term2expression_record (fields : List (Id * MSTerm), tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr = 
     if numbered? fields then
       let exps = map (fn (_, tm) -> term2expression (tm, ctxt, spc)) fields in
       I_TupleExpr exps
@@ -1004,7 +1002,7 @@ SpecsToI2L qualifying spec
       let fields = map (fn (id, tm) -> (id, term2expression (tm, ctxt, spc))) fields in
       I_StructExpr fields
 
-  op arrowSort? (typ : Sort, spc : Spec) : Bool =
+  op arrowType? (typ : MSType, spc : Spec) : Bool =
     case unfoldToArrow (spc, typ) of
       | Arrow _ -> true
       | _ -> false
@@ -1012,7 +1010,7 @@ SpecsToI2L qualifying spec
   op getEqOpQid (Qualified (q, id) : QualifiedId) : QualifiedId =
     Qualified (q, "eq_" ^ id)
 
-  op equalsExpression (t1 : Term, t2 : Term, ctxt : S2I_Context, spc : Spec) 
+  op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context, spc : Spec) 
     : I_Expr =
     let
 
@@ -1028,8 +1026,8 @@ SpecsToI2L qualifying spec
     % already made sure, that the types fit, so just look at one
     % of the terms
     let typ = inferType (spc, t1) in
-    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-    let utyp = stripSubsortsAndBaseDefs spc typ in
+    %% Was unfoldStripType which is unnecessary and dangerous because of recursive types
+    let utyp = stripSubtypesAndBaseDefs spc typ in
     case utyp of
       | Boolean                         _  -> primEq ()
       | Base (Qualified ("Bool",    "Bool"),   [],_) -> primEq ()
@@ -1039,11 +1037,11 @@ SpecsToI2L qualifying spec
       | Base (Qualified ("Float",   "Float"),  [],_) -> primEq ()
       | Base (Qualified ("String",  "String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
       | _ ->
-        let typ = foldSort (termSort t1, spc) in
+        let typ = foldType (termType t1, spc) in
         let 
           def errmsg () = 
             "sorry, the current version of the code generator doesn't support the equality check for\ntype = "
-            ^ printSort typ ^ "\n t1 = " ^ printTerm t1 ^ "\n t2 = " ^ printTerm t2
+            ^ printType typ ^ "\n t1 = " ^ printTerm t1 ^ "\n t2 = " ^ printTerm t2
         in
         case typ of
 
@@ -1065,14 +1063,14 @@ SpecsToI2L qualifying spec
             typed_expr.expr
 
           | _ -> 
-            fail (errmsg() ^ "\n[term sort must be a base or product sort]") %primEq()
+            fail (errmsg() ^ "\n[term type must be a base or product type]") %primEq()
 
-  op getEqTermFromProductFields (fields : List (Id * Sort),
-                                 otyp   : Sort,
-                                 varx   : Term,
-                                 vary   : Term)
-    : Term =
-    let b       = sortAnn otyp in
+  op getEqTermFromProductFields (fields : List (Id * MSType),
+                                 otyp   : MSType,
+                                 varx   : MSTerm,
+                                 vary   : MSTerm)
+    : MSTerm =
+    let b       = typeAnn otyp in
     let default = mkTrue()     in
     foldr (fn ((fid, ftyp), eq_all) ->
            let projtyp  = Arrow (otyp,                                 ftyp,          b) in
@@ -1088,8 +1086,8 @@ SpecsToI2L qualifying spec
           default
           fields
 
-  op getBuiltinExpr (tm   : Term, 
-                     args : List Term,
+  op getBuiltinExpr (tm   : MSTerm, 
+                     args : MSTerms,
                      ctxt : S2I_Context,
                      spc  : Spec)
     : Option I_Expr =
@@ -1175,11 +1173,11 @@ SpecsToI2L qualifying spec
   *    | Constr1 (x1,x2)
   *    | Constr2 (y1)
   *    ....
-  *  i.e. where the term's sort is a coproduct and the cases are the constructors of the coproduct.
+  *  i.e. where the term's type is a coproduct and the cases are the constructors of the coproduct.
   *  In the args of the constructors (x1,x2,y1 above) only var pattern are supported.
   *)
 
-  op simpleCoProductCase (tm : Term, ctxt : S2I_Context, spc : Spec) : Option I_Expr =
+  op simpleCoProductCase (tm : MSTerm, ctxt : S2I_Context, spc : Spec) : Option I_Expr =
     let outer_tm = tm in
     case tm of
 
@@ -1195,11 +1193,11 @@ SpecsToI2L qualifying spec
 
                def getTypeForConstructorArgs (typ, id) =
                  %let typ = unfoldBase(spc,typ) in
-                 let typ = stripSubsortsAndBaseDefs spc typ in
+                 let typ = stripSubtypesAndBaseDefs spc typ in
                  case typ of
                    | CoProduct (fields,_) ->
                      (case findLeftmost (fn (id0, _) -> id0 = id) fields of
-                        | Some(_,optsort) -> (case optsort of
+                        | Some(_,opttype) -> (case opttype of
                                                 | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt, spc))
                                                 | None -> None)
                         | _ -> fail("internal error: constructor id " ^ id ^ " of term " ^
@@ -1207,8 +1205,8 @@ SpecsToI2L qualifying spec
                    | _ -> 
                      let utyp = unfoldBase (spc, typ) in
                      if utyp = typ then
-                       fail ("internal error: sort of term is no coproduct: " ^
-                               printTerm tm ^ ":" ^ printSort typ)
+                       fail ("internal error: type of term is no coproduct: " ^
+                               printTerm tm ^ ":" ^ printType typ)
                      else 
                        getTypeForConstructorArgs (utyp, id)
 
@@ -1270,18 +1268,18 @@ SpecsToI2L qualifying spec
 
 % --------------------------------------------------------------------------------
 
- op foldSort (typ : Sort, spc : Spec) : Sort =
+ op foldType (typ : MSType, spc : Spec) : MSType =
    let opt_typ =
        foldriAQualifierMap (fn (q, id, info, opt_typ) ->
                               case opt_typ of
                                 | Some _ -> opt_typ
                                 | _ -> 
-                                  if definedSortInfo? info then
-                                    let (tvs, typ0) = unpackFirstSortDef info in
+                                  if definedTypeInfo? info then
+                                    let (tvs, typ0) = unpackFirstTypeDef info in
                                     %let utyp = unfoldBase(spc,typ) in
                                     %let utyp0 = unfoldBase(spc,typ0) in
                                     if equivType? spc (typ, typ0) then
-                                      let b   = sortAnn typ0                     in
+                                      let b   = typeAnn typ0                     in
                                       let qid = Qualified (q, id)                in
                                       let tvs = map (fn tv -> TyVar (tv, b)) tvs in
                                       Some (Base (qid, tvs, b))
@@ -1290,7 +1288,7 @@ SpecsToI2L qualifying spec
                                   else
                                     None)
                            None 
-                           spc.sorts
+                           spc.types
    in
    case opt_typ of
      | Some new_typ -> new_typ

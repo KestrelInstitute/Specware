@@ -19,7 +19,7 @@ op compare (cmp1:Comparison, cmp2:Comparison) : Comparison =
   else (*  cmp1 = Greater ||
            cmp2 = Less *)       Greater
 
-(* We can linearly order and compare booleans (false < true). We use the Boolean
+(* We can linearly order and compare booleans (false < true). We use the Bool
 qualifier to distinguish this op from the previous one and from similar ops in
 other specs (e.g. String.compare). *)
 

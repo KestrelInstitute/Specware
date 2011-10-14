@@ -9,15 +9,15 @@ SAT qualifying spec
   type Formula
   type Formulas = List Formula
 
-  op isTrue?: Formula -> Boolean
-  op isFalse?: Formula -> Boolean
+  op isTrue?: Formula -> Bool
+  op isFalse?: Formula -> Bool
 
-  op isImplies?: Formula -> Boolean
-  op isAnd?: Formula -> Boolean
-  op isOr?: Formula -> Boolean
-  op isXor?: Formula -> Boolean
-  op isIfThenElse?: Formula -> Boolean
-  op isNot?: Formula -> Boolean
+  op isImplies?: Formula -> Bool
+  op isAnd?: Formula -> Bool
+  op isOr?: Formula -> Bool
+  op isXor?: Formula -> Bool
+  op isIfThenElse?: Formula -> Bool
+  op isNot?: Formula -> Bool
 
   op antecedent: Formula -> Formula
   op consequent: Formula -> Formula
@@ -46,7 +46,7 @@ SAT qualifying spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op isDecidable?: Formula -> Boolean
+  op isDecidable?: Formula -> Bool
   op DPFalse: DPTerm
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,16 +1,16 @@
 StringSet qualifying spec { 
   import SplaySet   
 
-  sort StringSet.Set = SplaySet.Set String
+  type StringSet.Set = SplaySet.Set String
 
   op empty         : StringSet.Set
   op difference    : StringSet.Set * StringSet.Set -> StringSet.Set
   op add           : StringSet.Set * String -> StringSet.Set
   op addList       : StringSet.Set * List String -> StringSet.Set
-  op member        : StringSet.Set * String -> Boolean
+  op member        : StringSet.Set * String -> Bool
   op fromList      : List String -> StringSet.Set
   op toList        : StringSet.Set -> List String
-  op isEmpty       : StringSet.Set -> Boolean
+  op isEmpty       : StringSet.Set -> Bool
   op listItems     : StringSet.Set -> List String
   op union         : StringSet.Set * StringSet.Set -> StringSet.Set
   op intersection  : StringSet.Set * StringSet.Set -> StringSet.Set

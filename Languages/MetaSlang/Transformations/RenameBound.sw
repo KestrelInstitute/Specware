@@ -8,8 +8,7 @@ spec
 
   %% Environment
 
-  type Environment = Ref (StringMap(String))
-  type Term = MS.Term
+  type Environment = Ref (StringMap String)
 
   op emptyEnv : () -> Environment
   op insertEnv : Environment -> (String * String) -> ()
@@ -59,14 +58,12 @@ spec
 
   %% Renaming
   op renameInSpec   : Spec -> Spec
-  op renameOp       : Context -> OpInfo -> OpInfo
-  op renameFormula  : Context -> Property -> Property
-
-  op renameTerm     : Context -> Term -> Term
-  op renamePattern  : Context -> Pattern -> Pattern
-
-  op renameTerms    : Context -> Terms -> Terms
-  op renamePatterns : Context -> Patterns -> Patterns
+  op renameOp       : Context -> OpInfo     -> OpInfo
+  op renameFormula  : Context -> Property   -> Property
+  op renameTerm     : Context -> MSTerm     -> MSTerm
+  op renameTerms    : Context -> MSTerms    -> MSTerms
+  op renamePattern  : Context -> MSPattern  -> MSPattern
+  op renamePatterns : Context -> MSPatterns -> MSPatterns
 
   def renameTerms c terms =
     List.map (renameTerm c) terms
@@ -94,7 +91,7 @@ spec
     let new_defs = 
         map (fn dfn ->
 	     let (tvs, srt, term) = unpackFirstTerm dfn in
-	     maybePiTerm (tvs, SortedTerm (renameTerm c term, srt, termAnn dfn)))
+	     maybePiTerm (tvs, TypedTerm (renameTerm c term, srt, termAnn dfn)))
 	    old_defs
     in
     let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in

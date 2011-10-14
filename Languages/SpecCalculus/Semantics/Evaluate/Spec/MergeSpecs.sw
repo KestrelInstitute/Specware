@@ -5,19 +5,19 @@ SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/Utilities
  
 
- op  mergeSortInfo : Spec -> SortMap -> SortInfo -> SortMap
- def mergeSortInfo _(*spc*) sorts info =
+ op  mergeTypeInfo : Spec -> TypeMap -> TypeInfo -> TypeMap
+ def mergeTypeInfo _(*spc*) types info =
    let 
      def aux (new_info, Qualified (q, id)) =
-       case findAQualifierMap (sorts, q, id) of
+       case findAQualifierMap (types, q, id) of
 	 | None -> new_info
 	 | Some old_info ->
 	   let names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
 	   let names = removeDuplicates names in % redundant?
-	   %let old_tvs = firstSortDefTyVars old_info in
-	   %let new_tvs = firstSortDefTyVars new_info in
-	   let (old_decls, old_defs) = sortInfoDeclsAndDefs old_info in
-	   let (new_decls, new_defs) = sortInfoDeclsAndDefs new_info in
+	   %let old_tvs = firstTypeDefTyVars old_info in
+	   %let new_tvs = firstTypeDefTyVars new_info in
+	   let (old_decls, old_defs) = typeInfoDeclsAndDefs old_info in
+	   let (new_decls, new_defs) = typeInfoDeclsAndDefs new_info in
 	   let combined_decls =
                foldl (fn (combined_decls, new_decl) ->
 		      %% For now, use equalType?, as opposed to equivType? -- 
@@ -42,19 +42,17 @@ SpecCalc qualifying spec
 	   in
 	   %% Defer checks for duplicate definitions until later, after the caller 
 	   %% has had a chance to call compressDefs 
-	   let combined_dfn = maybeAndSort (combined_decls ++ combined_defs, sortAnn new_info.dfn) in
+	   let combined_dfn = maybeAndType (combined_decls ++ combined_defs, typeAnn new_info.dfn) in
 	   {names = names, 
 	    dfn   = combined_dfn}
    in
    let merged_info = foldl aux info info.names in
-   foldl (fn (sorts, Qualified (q, id)) ->
-	  insertAQualifierMap (sorts, q, id, merged_info))
-         sorts
+   foldl (fn (types, Qualified (q, id)) ->
+	  insertAQualifierMap (types, q, id, merged_info))
+         types
 	 merged_info.names  % new and old
 
-
-
- op  mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
+ op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
    let
      def aux (new_info, Qualified (q, id)) =
        case findAQualifierMap (ops, q, id) of
@@ -72,8 +70,8 @@ SpecCalc qualifying spec
 				    else
 				      Error [new_info.fixity, old_info.fixity])
 	     in
-	     let old_type_tms = unpackSortedTerms old_info.dfn in
-	     let new_type_tms = unpackSortedTerms new_info.dfn in
+	     let old_type_tms = unpackTypedTerms old_info.dfn in
+	     let new_type_tms = unpackTypedTerms new_info.dfn in
 	     let combined_type_tms =
 	         foldl (fn (combined_type_tms, (new_tvs, new_ty, new_dfn)) ->
                         % let _ = writeLine("new: "^printTerm new_decl^"\nold: "^printTerm(head combined_decls)) in
@@ -95,7 +93,7 @@ SpecCalc qualifying spec
                         then old_type_tms ++ new_type_tms
                         else new_type_tms ++ old_type_tms)
 	     in
-	     let combined_dfn = maybePiAndSortedTerm combined_type_tms in
+	     let combined_dfn = maybePiAndTypedTerm combined_type_tms in
              let _ = if true then ()
                else writeLine("merge old: "^id^"\n"^printTerm(old_info.dfn)^"\n with \n"^printTerm(new_info.dfn)
                               ^"\n to\n"^printTerm combined_dfn) in
@@ -109,16 +107,16 @@ SpecCalc qualifying spec
          ops 
 	 merged_info.names  % new and old
 
-op compatibleTypes?(ty1: Sort, ty2: Sort): Bool =
-  anySort? ty1 || anySort? ty2 || equalType?(ty1, ty2)
+op compatibleTypes?(ty1: MSType, ty2: MSType): Bool =
+  anyType? ty1 || anyType? ty2 || equalType?(ty1, ty2)
 
-op chooseDefinedType(ty1: Sort, ty2: Sort): Sort =
-  if anySort? ty1 then ty2 else ty1
+op chooseDefinedType(ty1: MSType, ty2: MSType): MSType =
+  if anyType? ty1 then ty2 else ty1
 
-op compatibleTerms?(tm1: MS.Term, tm2: MS.Term): Bool =
+op compatibleTerms?(tm1: MSTerm, tm2: MSTerm): Bool =
   anyTerm? tm1 || anyTerm? tm2 || equalTerm?(tm1, tm2)
  
-op chooseDefinedTerm(tm1: MS.Term, tm2: MS.Term): MS.Term =
+op chooseDefinedTerm(tm1: MSTerm, tm2: MSTerm): MSTerm =
   if anyTerm? tm1 then tm2 else tm1
 
 (*
@@ -197,13 +195,13 @@ op chooseDefinedTerm(tm1: MS.Term, tm2: MS.Term): MS.Term =
 	 merged_info.names  % new and old
 *)
 
-op combineDecls(old_decl: MS.Term, new_decl: MS.Term, old_def: MS.Term, new_def: MS.Term): List MS.Term =
+op combineDecls(old_decl: MSTerm, new_decl: MSTerm, old_def: MSTerm, new_def: MSTerm): MSTerms =
   case (old_decl, new_decl) of
     | (Pi(o_tvs, old_tm, _), Pi(n_tvs, new_tm, a)) | o_tvs = n_tvs ->
       map (fn t -> Pi(n_tvs, t, a)) (combineDecls(old_tm, new_tm, old_def, new_def))
-    | (SortedTerm(old_stm, old_ty, _), SortedTerm(new_stm, new_ty, a2)) ->
+    | (TypedTerm(old_stm, old_ty, _), TypedTerm(new_stm, new_ty, a2)) ->
       let comb_ty = combineSubTypes(old_ty, new_ty, old_def, new_def) in
-      map (fn comb_tm -> SortedTerm(comb_tm, comb_ty, a2))
+      map (fn comb_tm -> TypedTerm(comb_tm, comb_ty, a2))
         (combineDecls(old_stm, new_stm, old_def, new_def))
     | _ -> if equalTerm?(new_decl, old_decl)
             then [new_decl]

@@ -37,13 +37,13 @@ SpecCalc qualifying spec
 		      }
  
   op morphismObligations: Morphism * GlobalContext * Position -> Spec
-  def morphismObligations ({dom, cod, sortMap, opMap, pragmas, sm_tm=_},globalContext,pos) =
+  def morphismObligations ({dom, cod, typeMap, opMap, pragmas, sm_tm=_},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
     let translated_dom_axioms =
         foldrSpecElements (fn (el,newprops) ->
 			   case el of
 			     | Property(Axiom, name, tyvars, fm, _) ->
-			       let new_fm = translateTerm (fm, sortMap, opMap) in
+			       let new_fm = translateTerm (fm, typeMap, opMap) in
 			       if existsSpecElement?
 				    (fn el ->
 				     case el of
@@ -86,26 +86,26 @@ SpecCalc qualifying spec
                                      ++ map (fn ((p1,p2,p3),pos) -> Pragma(p1,p2,p3,pos)) pragmas} in
     ob_spc
 
-  op  defToConjecture: Spec * Qualifier * Id * MS.Term -> SpecElements
+  op  defToConjecture: Spec * Qualifier * Id * MSTerm -> SpecElements
   def defToConjecture (spc, q, id, term) =
     let opName = Qualified (q, id) in
-    let srt = termSortEnv(spc,term) in
+    let srt = termTypeEnv(spc,term) in
     let initialFmla = head (unLambdaDef(spc, srt, opName, term)) in
     let liftedFmlas = removePatternTop(spc, initialFmla) in
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
     map (fn(fmla) -> mkConjecture(Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas
 
-  op translateTerm: MS.Term * MorphismSortMap * MorphismOpMap -> MS.Term
-  def translateTerm (tm, sortMap, opMap) =
+  op translateTerm: MSTerm * MorphismTypeMap * MorphismOpMap -> MSTerm
+  def translateTerm (tm, typeMap, opMap) =
     let def findName m QId =
 	  case evalPartial m QId of
 	    | Some nQId -> nQId
 	    | _ -> QId
-	def translateSort srt =
+	def translateType srt =
 	  case srt of
 	    | Base (QId, srts, a) -> 
 	      let cod_srt =
-	          (case findName sortMap QId of
+	          (case findName typeMap QId of
 		     | Qualified("Boolean", "Boolean") -> Boolean a
 		     | cod_qid -> Base (cod_qid, srts, a))
 	      in
@@ -138,11 +138,11 @@ SpecCalc qualifying spec
 		Fun (fun, srt, a)
 	    | _ -> trm
     in 
-    mapTerm (translateTerm, translateSort, id) tm
+    mapTerm (translateTerm, translateType, id) tm
 
   op specObligations : Spec * SCTerm -> Spec % Result was Env Spec, but can there be errors, etc.?
   def specObligations (spc, spcTerm) = 
-    %% So far only does type conditions (for subsorts
+    %% So far only does type conditions (for subtypes
     %% TODO: Add obligations found by definitions, etc.
     %% Second argument should be specRef for spc (showTerm blows up)
     let pos = positionOf spcTerm in

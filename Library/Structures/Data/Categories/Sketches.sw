@@ -22,10 +22,10 @@ spec
   import translate ../Graphs/Finite by {Graph +-> Sketch} 
 \end{spec}
 
-We define a sort for paths though they aren't used yet.
+We define a type for paths though they aren't used yet.
 
 \begin{spec}
-  sort Path = {
+  type Path = {
     first : Vertex,
     path : List Edge,
     last : Vertex

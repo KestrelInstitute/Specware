@@ -5,7 +5,7 @@ import ../Specs/Utilities
 type Path = List Nat
 type APathTerm a = ATerm a * Path
 
- op [a] infixFn?(f: AFun a): Boolean =
+ op [a] infixFn?(f: AFun a): Bool =
     case f of
       | Op(Qualified(_, s), Infix _) -> true
       | And -> true
@@ -30,7 +30,7 @@ type APathTerm a = ATerm a * Path
       | Lambda (l, _) -> map (fn (_, _, t) -> t) l
       | IfThenElse(x, y, z, _) -> [x, y, z]
       | Seq(l, _) -> l
-      | SortedTerm(x, ty, _) ->
+      | TypedTerm(x, ty, _) ->
         (case postCondn? ty of
            | None -> [x]
            | Some post -> [x,post])
@@ -54,13 +54,13 @@ type APathTerm a = ATerm a * Path
             | (i, None) -> None)
        (Some top_term) path
 
-  op [a] typedPathTerm(term: ATerm a, ty: ASort a): APathTerm a =
-    (SortedTerm(term, ty, termAnn term),
+  op [a] typedPathTerm(term: ATerm a, ty: AType a): APathTerm a =
+    (TypedTerm(term, ty, termAnn term),
      [if anyTerm? term then 1 else 0])
 
   op [a] termFromTypedPathTerm(ptm: APathTerm a): ATerm a =
     case ptm.1 of
-      | SortedTerm(tm, _, _) -> tm
+      | TypedTerm(tm, _, _) -> tm
       | tm -> tm
 
   op [a] parentTerm((top_term, path): APathTerm a): Option (APathTerm a) =
@@ -83,7 +83,7 @@ type APathTerm a = ATerm a * Path
     if i > 0 then Some(top_term, i-1 :: r_path)
       else moveToPrev(top_term, r_path)
 
-  op [a] searchNextSt(path_term: APathTerm a, pred: ATerm a -> Boolean):  Option(APathTerm a) =
+  op [a] searchNextSt(path_term: APathTerm a, pred: ATerm a -> Bool):  Option(APathTerm a) =
     let def try_next(path_term as (top_term, path)) =
           case path of
             | [] -> None
@@ -105,7 +105,7 @@ type APathTerm a = ATerm a * Path
    in
    try_first path_term
 
- op [a] searchPrevSt(path_term: APathTerm a, pred: ATerm a -> Boolean):  Option(APathTerm a) =
+ op [a] searchPrevSt(path_term: APathTerm a, pred: ATerm a -> Bool):  Option(APathTerm a) =
    let def try_prev (top_term, path) =
          case path of
            | [] -> None
@@ -168,32 +168,32 @@ type APathTerm a = ATerm a * Path
                | 2 -> IfThenElse(x, y, repl(z, r_path), a))
             | Seq(l, a) ->
               Seq(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
-            | SortedTerm(x, t, a) ->
+            | TypedTerm(x, t, a) ->
               (case i of
-                 | 0 -> SortedTerm(repl(x, r_path), t, a)
+                 | 0 -> TypedTerm(repl(x, r_path), t, a)
                  | 1 ->
                case postCondn? t of
                  | None -> tm           % shouldn't happen
                  | Some post_condn ->
                    let new_post_condn = repl(post_condn, r_path) in
-                   SortedTerm(x, replacePostCondn(t, new_post_condn), a))
+                   TypedTerm(x, replacePostCondn(t, new_post_condn), a))
             | And(l, a) ->
               And(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
             | _ -> tm
     in
     (repl(top_term, reverse path), path)
 
-  op [a] postCondn?(ty: ASort a): Option (ATerm a) =
+  op [a] postCondn?(ty: AType a): Option (ATerm a) =
     case ty of
       | Arrow(_, rng, _) -> postCondn? rng
-      | Subsort(_, Lambda([(_, _, pred)], _), _) -> Some pred 
+      | Subtype(_, Lambda([(_, _, pred)], _), _) -> Some pred 
       | _ -> None
 
- op [a] replacePostCondn(ty: ASort a, new_post_condn: ATerm a): ASort a =
+ op [a] replacePostCondn(ty: AType a, new_post_condn: ATerm a): AType a =
     case ty of
       | Arrow(dom, rng, a) -> Arrow(dom, replacePostCondn(rng, new_post_condn), a)
-      | Subsort(st, Lambda([(p, c, pred)], a1), a3) ->
-        Subsort(st, Lambda([(p, c, new_post_condn)], a1), a3) 
+      | Subtype(st, Lambda([(p, c, pred)], a1), a3) ->
+        Subtype(st, Lambda([(p, c, new_post_condn)], a1), a3) 
       | _ -> ty
 
 op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =

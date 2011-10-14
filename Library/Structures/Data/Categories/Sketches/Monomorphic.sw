@@ -28,10 +28,10 @@ spec {
     } 
 \end{spec}
 
-We define a sort for paths though they aren't used yet.
+We define a type for paths though they aren't used yet.
 
 \begin{spec}
-  sort Path = {
+  type Path = {
     first : Vertex.Elem,
     path : List Edge.Elem,
     last : Vertex.Elem

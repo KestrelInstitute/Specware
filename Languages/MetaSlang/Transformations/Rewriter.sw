@@ -6,7 +6,7 @@ MetaSlangRewriter qualifying spec
  
  type Context = HigherOrderMatching.Context
 
- type TermPredicate = MS.Term * MS.Term -> Boolean
+ type TermPredicate = MSTerm * MSTerm -> Bool
 
  op traceRewriting : Nat 
  def traceRewriting = 0
@@ -27,10 +27,10 @@ MetaSlangRewriter qualifying spec
 
  op applyRewrites : 
     Context * List RewriteRule * SubstC 
-       -> List Var * MS.Term 
-	   -> LazyList (MS.Term * (SubstC * RewriteRule * List Var * List RewriteRule))
+       -> List Var * MSTerm 
+	   -> LazyList (MSTerm * (SubstC * RewriteRule * List Var * List RewriteRule))
 
- op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MS.Term): List SubstC = 
+ op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MSTerm): List SubstC = 
    let lhs = rule.lhs in
    filter (fn subst -> completeMatch(lhs,subst))
      (matchPairsTop(context,subst,stackFromList [(lhs,term)]))
@@ -64,8 +64,8 @@ MetaSlangRewriter qualifying spec
    in
     simpleRules ++ condRules
 
- op optimizeSuccessList(results: List(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)))
-      : List(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+ op optimizeSuccessList(results: List(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)))
+      : List(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
    %% Prefer unconditional match if result is the same -- happens with subtypes and type parameters
 %    let opt_num = if length results > 1 then
 %                   let (t1,(s1,rule1,_,_))::_ = results in
@@ -101,12 +101,12 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
- op useStandardSimplify?: Boolean = true
- op debugApplyRewrites?:  Boolean = false
+ op useStandardSimplify?: Bool = true
+ op debugApplyRewrites?:  Bool = false
 
- op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Boolean)
-                      (boundVars: List Var, term: MS.Term, demod: Demod RewriteRule)
-                      : LazyList(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule))  = 
+ op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
+                      (boundVars: List Var, term: MSTerm, demod: Demod RewriteRule)
+                      : LazyList(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule))  = 
 %     let _ = writeLine("Rewriting:\n"^printTerm term) in
 %     let _ = writeLine("with rules:") in
 %     let _ = app printRule (listRules demod) in
@@ -182,17 +182,17 @@ MetaSlangRewriter qualifying spec
  op ssRule(s: String): RewriteRule =
    evalRule << {name = s}
 
- op evalRule?(rl: RewriteRule): Boolean =
+ op evalRule?(rl: RewriteRule): Bool =
    rl.tyVars = [] && rl.lhs = evalRule.lhs && rl.rhs = evalRule.rhs
 
- op baseSpecTerm?(term: MS.Term): Boolean =
+ op baseSpecTerm?(term: MSTerm): Bool =
    ~(existsSubTerm (fn t -> case t of
                               | Fun(Op(Qualified(qual,_),_),_,_) ->
                                 qual nin? evalQualifiers
                               | _ -> false)
        term)
 
- op reduceTerm(term: MS.Term, spc: Spec): MS.Term =
+ op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
    if ~(constantTerm? term) && freeVarsRec term = [] && sideEffectFree term
      then let v = eval(term,spc) in
        if fullyReduced? v
@@ -200,14 +200,14 @@ MetaSlangRewriter qualifying spec
          else term
      else term
 
- op reduceSubTerms(term: MS.Term, spc: Spec): MS.Term =
+ op reduceSubTerms(term: MSTerm, spc: Spec): MSTerm =
    mapTerm (fn t -> reduceTerm(t,spc), id, id) term
 
- op pushFunctionsIn?: Boolean = true
- op evalGroundTerms?: Boolean = true
+ op pushFunctionsIn?: Bool = true
+ op evalGroundTerms?: Bool = true
 
- op standardSimplify (spc: Spec) (term: MS.Term, subst: SubstC, boundVars: List Var, demod: Demod RewriteRule)
-    :  LazyList(MS.Term * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+ op standardSimplify (spc: Spec) (term: MSTerm, subst: SubstC, boundVars: List Var, demod: Demod RewriteRule)
+    :  LazyList(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
    %let _ = (writeLine "ss:"; printSubst subst) in
    let (simp?, term) = if evalGroundTerms?
                          then
@@ -238,7 +238,7 @@ MetaSlangRewriter qualifying spec
              (let tm_ty = inferType(spc, tm) in
               let term_ty = inferType(spc, term) in
                 (equivType? spc (tm_ty, term_ty)
-                   || equivType? spc (stripSubsorts (spc, tm_ty), term_ty))
+                   || equivType? spc (stripSubtypes (spc, tm_ty), term_ty))
               && forall? (fn (i1,t1) ->
                             case t1 of
                               | Apply(Fun(Project i2,_,_), t, _) ->
@@ -272,7 +272,7 @@ MetaSlangRewriter qualifying spec
 %      | _ -> Nil
 
  %% Whether a function can be pushed inside Let, If, Case
- op pushable?(f: MS.Term): Boolean =
+ op pushable?(f: MSTerm): Bool =
    case f of
      | Fun _ -> true
      | Var _ -> true
@@ -280,14 +280,14 @@ MetaSlangRewriter qualifying spec
      | Lambda _ -> true
      | _ -> false
 
-  op addPatternRestriction(context: Context, pat: Pattern, rules: Demod RewriteRule)
+  op addPatternRestriction(context: Context, pat: MSPattern, rules: Demod RewriteRule)
     : Demod RewriteRule =
    case pat of
      | VarPat(v as (_,ty), _) ->
        (let ty = unfoldBase(context.spc,ty) in
           case ty of
-            %% Redundant with subsort rules introduced in Script.sw
-            | Subsort(_,p,_) ->
+            %% Redundant with subtype rules introduced in Script.sw
+            | Subtype(_,p,_) ->
               (let pred = case p of
                            | Fun(Op(qid, _),_,_) ->
                              (case findTheOp(context.spc, qid) of
@@ -310,7 +310,7 @@ MetaSlangRewriter qualifying spec
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
-     | SortedPat(p, _, _)   -> addPatternRestriction(context, p, rules)
+     | TypedPat(p, _, _)    -> addPatternRestriction(context, p, rules)
      | _ -> rules
 
  def negate term =
@@ -320,9 +320,9 @@ MetaSlangRewriter qualifying spec
        Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term
 
- op useUnfoldLetStrategy?: Boolean = true
+ op useUnfoldLetStrategy?: Bool = true
 
- op substFromBinds(binds: List(Pattern * MS.Term)): VarSubst =
+ op substFromBinds(binds: List(MSPattern * MSTerm)): VarSubst =
    foldl (fn (sbst, (p, be)) ->
                  case (p, be) of
                    | (VarPat(v,_), _) -> (v, be) :: sbst
@@ -334,15 +334,15 @@ MetaSlangRewriter qualifying spec
      []
      binds
  
- op unFoldSimpleLet(binds: List(Pattern * MS.Term), M: MS.Term)
-    : MS.Term =
+ op unFoldSimpleLet(binds: List(MSPattern * MSTerm), M: MSTerm)
+    : MSTerm =
     let v_subst = substFromBinds binds in
     if binds = [] || v_subst = [] || ~useUnfoldLetStrategy?
       then M
       else substitute(M,v_subst)
 
- op reFoldLetVars(binds: List(Pattern * MS.Term), M: MS.Term, b: Position)
-    : MS.Term =
+ op reFoldLetVars(binds: List(MSPattern * MSTerm), M: MSTerm, b: Position)
+    : MSTerm =
    let v_subst = substFromBinds binds in
    if binds = [] || v_subst = [] || ~useUnfoldLetStrategy?
       then Let(binds,M,b)
@@ -359,12 +359,12 @@ MetaSlangRewriter qualifying spec
               M1, b)
 
   op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
- op persistentFlexVar?(t: MS.Term): Boolean =
+ op persistentFlexVar?(t: MSTerm): Bool =
    case isFlexVar? t of
      | Some n -> n >= persistentFlexVarStartNum
      | None -> false
 
- op renumberFlexVars(term: MS.Term, flexNumIncrement: Nat): MS.Term =
+ op renumberFlexVars(term: MSTerm, flexNumIncrement: Nat): MSTerm =
    mapTerm (fn t ->
             case t of
               | Apply(Fun(Op(Qualified (UnQualified,"%Flex"),x1),x2,x3),Fun(Nat n, x4,x5),x6)
@@ -376,7 +376,7 @@ MetaSlangRewriter qualifying spec
      term
 
  op removeLocalFlexVars(subst: SubstC, del_flexvarnums: List Nat): SubstC =
-   let (sortSubst,termSubst,typeConds) = subst in
+   let (typeSubst,termSubst,typeConds) = subst in
    let new_termsubst = NatMap.foldri (fn (i,v,result) ->
                                         if i >= persistentFlexVarStartNum && i nin? del_flexvarnums
                                           then NatMap.insert(result,i,v)
@@ -385,13 +385,13 @@ MetaSlangRewriter qualifying spec
    in
      (StringMap.empty,new_termsubst,[])
 
- op renameConditionFlexVars(rule: RewriteRule, term: MS.Term, subst: SubstC): RewriteRule * MS.Term * List Nat =
+ op renameConditionFlexVars(rule: RewriteRule, term: MSTerm, subst: SubstC): RewriteRule * MSTerm * List Nat =
    case rule.condition of
      | None -> (rule, term, [])
      | Some condn ->
    let condn = dereferenceAll subst condn in
    let term  = dereferenceAll subst term in
-   %let (sortSubst,termSubst,typeConds) = subst in
+   %let (typeSubst,termSubst,typeConds) = subst in
    let unBoundRefs = foldSubTerms (fn (t,result)  ->
                                     case isFlexVar? t of
                                       | Some n | n nin? result -> n::result
@@ -456,19 +456,19 @@ MetaSlangRewriter qualifying spec
 
 *)
 
- type Rewriter a = List Var * MS.Term * Demod RewriteRule -> LazyList (MS.Term * a) 
+ type Rewriter a = List Var * MSTerm * Demod RewriteRule -> LazyList (MSTerm * a) 
  %type Matcher  a = List Var * Term * Term -> LazyList a
  type Strategy   = | Innermost | Outermost
  type RewriteInfo a = {strategy: Strategy, rewriter: Rewriter a, context: Context}
 
- op rewriteTerm    : [a] RewriteInfo a * List Var * MS.Term * Demod RewriteRule
-                           -> LazyList (MS.Term * a)
- op rewriteSubTerm : [a] RewriteInfo a * List Var * MS.Term * Demod RewriteRule
-                           -> LazyList (MS.Term * a)
+ op rewriteTerm    : [a] RewriteInfo a * List Var * MSTerm * Demod RewriteRule
+                           -> LazyList (MSTerm * a)
+ op rewriteSubTerm : [a] RewriteInfo a * List Var * MSTerm * Demod RewriteRule
+                           -> LazyList (MSTerm * a)
 
  op [a] rewritePattern (solvers: RewriteInfo a, boundVars: List Var,
-                        pat: Pattern, rules: Demod RewriteRule)
-          : LazyList(Pattern * a) =
+                        pat: MSPattern, rules: Demod RewriteRule)
+          : LazyList(MSPattern * a) =
    case pat of
      | RestrictedPat(p,t,b) ->
        LazyList.map 
@@ -556,9 +556,9 @@ MetaSlangRewriter qualifying spec
                                let Some v_tm = patternToTerm p in
                                let memb_assert = mkAppl(mkInfixOp(mkUnQualifiedId("in?"),
                                                                   Infix(Left,100),
-                                                                  mkArrow(mkProduct[termSort v_tm,
-                                                                                    termSort set_term],
-                                                                          boolSort)),
+                                                                  mkArrow(mkProduct[termType v_tm,
+                                                                                    termType set_term],
+                                                                          boolType)),
                                                         [v_tm,set_term])
                                in
                                addDemodRules(assertRules(context, memb_assert,
@@ -633,8 +633,8 @@ MetaSlangRewriter qualifying spec
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,P,
                          addDemodRules(assertRules(context,negate M,"if else",false),rules))))
-     | SortedTerm(M,s,b) ->
-       LazyList.map (fn (M,a) -> (SortedTerm(M,s,b),a))
+     | TypedTerm(M,s,b) ->
+       LazyList.map (fn (M,a) -> (TypedTerm(M,s,b),a))
             (rewriteTerm(solvers,boundVars,M,rules))
      | Pi(tvs,M,b) ->
        LazyList.map (fn (M,a) -> (Pi(tvs,M,b),a))
@@ -644,7 +644,7 @@ MetaSlangRewriter qualifying spec
 
 (* Trace utilities *)
 
- op printTerm: Nat * MS.Term -> String
+ op printTerm: Nat * MSTerm -> String
  def printTerm (indent,term) = 
      let indent   = PrettyPrint.blanks indent in
      let context  = initialize(asciiPrinter,false) in 
@@ -653,7 +653,7 @@ MetaSlangRewriter qualifying spec
      let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent,termPP] in
      PrettyPrint.toString(PrettyPrint.format(60,termPP))
 
- op traceTerm : Context * MS.Term * SubstC -> ()
+ op traceTerm : Context * MSTerm * SubstC -> ()
  def traceTerm(context,term,(* subst *)_) = 
      if traceRewriting > 1 then 
      % if context.trace then 
@@ -679,7 +679,7 @@ MetaSlangRewriter qualifying spec
  def completeMatch(term,subst:SubstC) =
      let S = subst.2 in
      let 
-	 def loop(term:MS.Term):Boolean = 
+	 def loop(term:MSTerm):Bool = 
 	     case term
 	       of Fun(top,srt,_) -> true
 	        | Var((id,srt), _)  -> true
@@ -704,18 +704,18 @@ MetaSlangRewriter qualifying spec
 
  op backwardChainMaxDepth: Nat = 10
 
- type History = List (RewriteRule * MS.Term * SubstC)
+ type History = List (RewriteRule * MSTerm * SubstC)
 
- op historyRepetition: History -> Boolean
+ op historyRepetition: History -> Bool
  def historyRepetition = 
      fn (_,term1,_)::(_,term2,_)::_ -> equalTerm?(term1,term2)
       | _ -> false
 
  op rewriteRecursive : 
-    Context * List Var * RewriteRules * MS.Term * Nat -> LazyList (History)
+    Context * List Var * RewriteRules * MSTerm * Nat -> LazyList (History)
 
  op rewriteRecursivePre : 
-    Context * List Var * Demod RewriteRule * MS.Term * Nat -> LazyList (History)
+    Context * List Var * Demod RewriteRule * MSTerm * Nat -> LazyList (History)
 
 
 %%
@@ -746,9 +746,9 @@ MetaSlangRewriter qualifying spec
                %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some c_subst else None
 
-      def solveCondition(rules,rule,(sortSubst,termSubst,typeConds),prev_term,boundVars,history,backChain)
+      def solveCondition(rules,rule,(typeSubst,termSubst,typeConds),prev_term,boundVars,history,backChain)
           : Option SubstC = 
-        let subst = (sortSubst,termSubst,[])
+        let subst = (typeSubst,termSubst,[])
         in
         let conds = case rule.condition of
                       | None -> typeConds
@@ -845,7 +845,7 @@ MetaSlangRewriter qualifying spec
       rewriteRec(rules0,emptySubstitution,term,boundVars,[],0)
 
  op rewriteOnce : 
-    Context * List Var * RewriteRules * MS.Term -> List MS.Term
+    Context * List Var * RewriteRules * MSTerm -> List MSTerm
 
 %%
 %% Apply unconditional rewrite rules using outer-most strategy
@@ -892,7 +892,7 @@ Discussion
         type Box a = | Boxed Term | UnBoxed a
         op  boxifySpec : Spec -> Spec
         op  boxifyTerm : Term -> Term
-        op  boxifySort : Sort -> Sort
+        op  boxifyType : Type -> Type
             
         boxifyDef(def f = fn x -> body) = 
             def f = fn Boxed x -> Boxed('Apply(f,x)) | UnBoxed x -> boxifyTerm body

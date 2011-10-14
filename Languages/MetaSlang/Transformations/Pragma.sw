@@ -19,27 +19,27 @@ op controlPragmaString(s: String): Option(List String) =
       Some(str::rst)
     | _ -> None
 
-op controlPragma?(s: String): Boolean =
+op controlPragma?(s: String): Bool =
   embed? Some (controlPragmaString s)
 
 op validName?(s: String): Bool =
   s ~= "" &&
   ~(s = "fa" || s@0 in? [#(,#[,#\\,#",#-])
 
-op namedPragma?(p: Pragma): Boolean =
+op namedPragma?(p: Pragma): Bool =
    let (_,s,_,_) = p in
    let line1 = getFirstLine s in
    case removeEmpty(splitStringAt(line1, " ")) of
     | pragma_kind::name?::r -> validName? name?
     | _ -> false
 
- op unnamedPragma?(p: Pragma): Boolean =
+ op unnamedPragma?(p: Pragma): Bool =
    let control? = controlPragmaString p.2 in
    ~(namedPragma? p || some? control?) || control? = Some ["-typedef"]
 
  op verbatimIdString: String = "-verbatim"
 
- op verbatimPragma?(s: String): Boolean =
+ op verbatimPragma?(s: String): Bool =
    case controlPragmaString s of
      | Some(str::_) -> str = verbatimIdString
      | _ -> false

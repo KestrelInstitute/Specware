@@ -29,7 +29,7 @@ There are two copies of Set in sketches imported when we import
 Functor. One for the vertices and one for the edges. See the comment re
 import below.
 
-For the time being, the sort for the domain of the functor and for the
+For the time being, the type for the domain of the functor and for the
 sketch are the same. This is reflected in the fact that we don't import
 a copy of Sketch directly but through the import of Functor. It is also
 reflected in the type for the elements of the set. 
@@ -53,7 +53,7 @@ spec {
   import Polymorphic/Functor
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort System (O,A) = {
+  type System (O,A) = {
     shape : Sketch,
     functor : Functor (O,A)
   }
@@ -113,8 +113,8 @@ an empty system we must give fix the target category.
     }
   }
 
-  op vertexInSystem? : fa (O,A) System (O,A) -> V.Elem -> Boolean
-  op edgeInSystem? : fa (O,A) System (O,A) -> E.Elem -> Boolean
+  op vertexInSystem? : fa (O,A) System (O,A) -> V.Elem -> Bool
+  op edgeInSystem?   : fa (O,A) System (O,A) -> E.Elem -> Bool
 
   op labelVertex : fa (O,A) System (O,A) -> V.Elem -> O -> System (O,A)
   def labelVertex sys vertex obj = {
@@ -148,7 +148,7 @@ If necessary, the function being folded can be curried where its first
 argument is the system. For example, the function f:
 
 \begin{verbatim}
-  sort S
+  type S
   op f : fa (O,A) System (O,A) -> x -> E.Vertex -> x
   op unit : S
 \end{verbatim}
@@ -184,19 +184,19 @@ can be folded over a system sys with:
   }
 \end{spec}
 
-While they are distinguished in the signatures above, the sorts of edges
+While they are distinguished in the signatures above, the types of edges
 and vertices of the sketch must be the same. The sets must also be
-the same sort. Then the domain of the functor is a sketch where the
-vertices and edges are the coproduct of the sort for the vertices
+the same type. Then the domain of the functor is a sketch where the
+vertices and edges are the coproduct of the type for the vertices
 end edges.
 
-The coproduct sort is far more restructive than it needs to be.
+The coproduct type is far more restructive than it needs to be.
 
 \begin{spec}
-  sort Elem
+  type Elem
   op ppElem : Elem -> Pretty
 
-  sort TaggedElem =
+  type TaggedElem =
      | Just Elem
      | Tag (Nat * TaggedElem)
 
@@ -219,15 +219,15 @@ a single spec for Sketches. This is not right. The sets should be
 different ..  and there should be no concrete representation for the
 domain of the functor.
 
-Identifying the sorts for the edges and vertices is done by equations.
+Identifying the types for the edges and vertices is done by equations.
 It would be better if they were identified by a colimit so that there
-is only one sort.
+is only one type.
 
 \begin{spec}
-  sort V.Set = E.Set  % Without this things don't typecheck??
+  type V.Set = E.Set  % Without this things don't typecheck??
 
-  sort V.Elem = TaggedElem
-  sort E.Elem = TaggedElem
+  type V.Elem = TaggedElem
+  type E.Elem = TaggedElem
 
   % op V.ppElem : V.Elem -> Pretty
   % op E.ppElem : E.Elem -> Pretty
@@ -246,13 +246,13 @@ Next we define the coproduct operation. This is not used at runtime.
     V.union s1p s2p
 \end{spec}
 
-Next we fix the sorts for the maps between graphs. Again these are
+Next we fix the types for the maps between graphs. Again these are
 the coproducts given above.  This should get fixed by the above in
 someway. This should be redundant.
 
 \begin{spec}
-  sort Dom = TaggedElem
-  sort Cod = TaggedElem
+  type Dom = TaggedElem
+  type Cod = TaggedElem
 
   op ppDom : Dom -> Pretty
   op ppCod : Cod -> Pretty
@@ -269,7 +269,7 @@ This is not used at runtime. It would be far better to have a
 axiomatic characterization of this.
 
 This is where there is a small problem. Below, we define the
-twist. The assumption made below is that the we use the same sorts for
+twist. The assumption made below is that the we use the same types for
 both sketches. The underlying sets may have different representations.
 This is wrong. Also, there shouldn't be a call to makeSketch.  It should
 be done incrementally with addVertex and addE.

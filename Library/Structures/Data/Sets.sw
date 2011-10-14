@@ -8,19 +8,15 @@ way that sets might have been defined in the old Slang.
 spec
   import translate Collections by {Collection +-> Set}
 
-  op empty : Set
-  op empty? : Set -> Boolean
-
-  op union : Set * Set -> Set
-  op intersection : Set * Set -> Set
-  op difference : Set * Set -> Set
-
-  op member? : Set * Elem -> Boolean
-  op delete : Set * Elem -> Set
-
-  op singleton : Elem -> Set
+  op empty        : Set
+  op empty?       : Set -> Bool
+  op member?      : Set * Elem -> Bool
+  op union        : Set * Set  -> Set
+  op intersection : Set * Set  -> Set
+  op difference   : Set * Set  -> Set
+  op delete       : Set * Elem -> Set
+  op singleton    : Elem       -> Set
+  op insert       : Set * Elem -> Set
   op theSingleton : (Set | fn set -> ex (x) set = singleton x) -> Elem
-
-  op insert : Set * Elem -> Set
 endspec
 \end{spec}

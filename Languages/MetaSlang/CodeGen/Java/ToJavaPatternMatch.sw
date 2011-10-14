@@ -23,7 +23,7 @@ def translateMatchJava spc =
 	   id,id)
     spc
 
-op  parseCoProductCase: Spec -> MS.Term -> Option(MS.Term * List (Id * MS.Term) * Option MS.Term * Boolean)
+op  parseCoProductCase: Spec -> MSTerm -> Option(MSTerm * List (Id * MSTerm) * Option MSTerm * Bool)
 
 def parseCoProductCase spc term =
   let def makeCases(id,case_tm,then_exp,els_exp,block?) =
@@ -74,7 +74,7 @@ def parseCoProductCase spc term =
 
     | _ -> None
 
-%op  coProductCase?: Term * Boolean -> Boolean
+%op  coProductCase?: Term * Bool -> Bool
 
 %def coProductCase?(term,allowOtherwise?) =
   

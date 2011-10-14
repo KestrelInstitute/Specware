@@ -131,7 +131,7 @@ SpecCalc qualifying spec
 	let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
 	    case rule of          
-	      | Sort (left_qid, right_qid) ->
+	      | Type (left_qid, right_qid) ->
 	        ppConcat [ppString " type ",
 			  ppQualifier left_qid,
 			  ppString " +-> ",
@@ -168,11 +168,11 @@ SpecCalc qualifying spec
         let 
 	  def ppNameExpr expr = 
 	    case expr of          
-	      | Sort qid ->
-	        ppConcat [ppString "sort ",
+	      | Type qid ->
+	        ppConcat [ppString "type ",
 			  ppQualifier qid]
 
-	      | Op (qid, optSort) ->
+	      | Op (qid, optType) ->
 		ppConcat [ppString "op ",
 			  ppQualifier qid]
 
@@ -293,7 +293,7 @@ SpecCalc qualifying spec
    case elem of
      | Import  term                   -> ppConcat [ppString "import ",
 						   ppSep (ppString ", ") (map ppSCTerm term)]
-     | Sort    (aliases, dfn)         -> myppASortInfo (aliases, dfn)
+     | Type    (aliases, dfn)         -> myppATypeInfo (aliases, dfn)
      | Op      (aliases, fixity, refine?, dfn) ->
        myppAOpInfo(aliases, fixity, refine?, dfn)
      | Claim   (pr, nm, tvs, b)       -> ppAProperty   (pr,nm,tvs,b,a)
@@ -307,25 +307,25 @@ SpecCalc qualifying spec
   op ppIdInfo : List QualifiedId -> Doc
  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-  op myppASortInfo : [a] List QualifiedId * ASort a -> Doc
- def myppASortInfo (aliases, dfn) =
-   let prefix = ppConcat [ppString "sort ", ppIdInfo aliases] in
-   case sortDefs dfn of
+  op myppATypeInfo : [a] List QualifiedId * AType a -> Doc
+ def myppATypeInfo (aliases, dfn) =
+   let prefix = ppConcat [ppString "type ", ppIdInfo aliases] in
+   case typeDefs dfn of
      | [] ->  prefix
      | [dfn] ->
-       let (tvs, srt) = unpackSort dfn in
+       let (tvs, srt) = unpackType dfn in
        ppConcat [prefix,
 		 ppTyVars tvs,
-		 ppAppend (ppString " = ") (ppASort srt)]
+		 ppAppend (ppString " = ") (ppAType srt)]
      | defs ->
        ppConcat [ppNewline,
-		 ppString " (* Warning: Multiple definitions for following sort: *) ",
+		 ppString " (* Warning: Multiple definitions for following type: *) ",
 		 ppNewline,
 		 ppSep ppNewline (map (fn dfn ->
-				       let (tvs, srt) = unpackSort dfn in
+				       let (tvs, srt) = unpackType dfn in
 				       ppConcat [prefix,
 						 ppTyVars tvs,
-						 ppAppend (ppString " = ") (ppASort srt)])
+						 ppAppend (ppString " = ") (ppAType srt)])
                                       defs)]
 
   op ppTyVars : TyVars -> Doc
@@ -364,7 +364,7 @@ SpecCalc qualifying spec
                   ppConcat [ppString "[",
 			    ppSep (ppString ",") (map ppString tvs),
 			    ppString "] "]),
-	     ppASort srt]
+	     ppAType srt]
 
   op ppAOpDefs : [a] Aliases * List (ATerm a) * Bool -> Doc
  def ppAOpDefs (aliases, defs, refine?) =
@@ -428,7 +428,7 @@ SpecCalc qualifying spec
     let 
       def ppRenamingRule (rule, _(* position *)) = 
 	case rule of          
-	  | Sort (left_qid, right_qid, aliases) ->
+	  | Type (left_qid, right_qid, aliases) ->
 	    ppConcat [ppString " type ",
 		      ppQualifier left_qid,
 		      ppString " +-> ",

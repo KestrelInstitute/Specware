@@ -14,15 +14,15 @@ Goals qualifying spec
 
   op addHyp: Expression * Goal -> Goal
 
-  op andGoal?: Goal -> Boolean
+  op andGoal?: Goal -> Bool
   def andGoal?(g) =
     andExpr?(goalExpr(g))
 
-  op trueGoal?: Goal -> Boolean
+  op trueGoal?: Goal -> Bool
   def trueGoal?(g) =
     trueExpr?(goalExpr(g))
 
-  op reflGoal?: Goal -> Boolean
+  op reflGoal?: Goal -> Bool
 
   def test = addConc(test, emptyGoal)
 

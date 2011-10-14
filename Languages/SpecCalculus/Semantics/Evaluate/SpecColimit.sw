@@ -10,7 +10,7 @@ spec
  %% (as opposed to categories where morphisms are continuous functions, etc.).
  % import translate /Library/Structures/Data/QuotientSets/Monomorphic/MFSet by {MFSet.Element +-> VQid}
  import translate /Library/Structures/Data/QuotientSets/Monomorphic/MFSetViaRefs by {Element +-> VQid}
- %%  In particular, after translation we have the following sorts:
+ %%  In particular, after translation we have the following types:
  %%    QuotientSet      = List (List VQidToQidRule)
  %%    EquivalenceClass = List VQid
  %%    MFSetMap         = PolyMap.Map (VQid, {rank : Nat, parent : Option MFSetNode, value : VQid}
@@ -48,7 +48,7 @@ spec
                                     }
  type VertexRanking         = List Vertex.Elem
 
- type VQidSortMap   = PolyMap.Map (VQid, SortInfo)
+ type VQidTypeMap   = PolyMap.Map (VQid, TypeInfo)
  type VQidOpMap     = PolyMap.Map (VQid, OpInfo)
  type VQidPropMap   = PolyMap.Map (VQid, Property) 
 
@@ -62,8 +62,8 @@ spec
 
  %% ----
 
- %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- op convertSortRules : RenamingRules -> MorphismSortMap  
+ %% Morphism[Type/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
+ op convertTypeRules : RenamingRules -> MorphismTypeMap  
  op convertOpRules   : RenamingRules -> MorphismOpMap
  op convertPropRules : RenamingRules -> MorphismPropMap
 
@@ -102,25 +102,25 @@ spec
   %%   for a simple colimit.
   %%
   let 
-     def extract_sorts (spc : Spec) =
-       foldriAQualifierMap (fn (qualifier, id, info, sorts) ->
-			    Cons ((qualifier, id, info), sorts))
+     def extract_types (spc : Spec) =
+       foldriAQualifierMap (fn (qualifier, id, info, types) ->
+			    Cons ((qualifier, id, info), types))
                            [] 
-			   spc.sorts    
+			   spc.types    
      def extract_ops (spc : Spec) =
        foldriAQualifierMap (fn (qualifier, id, info, ops) ->
 			    Cons ((qualifier, id, info), ops))
                            [] 
 			   spc.ops
 
-     def extract_non_base_sorts spc =
-       let base_sorts = base_spec.sorts in
-       foldriAQualifierMap (fn (qualifier, id, info, non_base_sorts) ->
-			    case findAQualifierMap (base_sorts, qualifier, id) of
-			      | None -> Cons ((qualifier, id, info), non_base_sorts) 
-			      | _    -> non_base_sorts)
+     def extract_non_base_types spc =
+       let base_types = base_spec.types in
+       foldriAQualifierMap (fn (qualifier, id, info, non_base_types) ->
+			    case findAQualifierMap (base_types, qualifier, id) of
+			      | None -> Cons ((qualifier, id, info), non_base_types) 
+			      | _    -> non_base_types)
                            [] 
-			   spc.sorts    
+			   spc.types    
      def extract_non_base_ops spc =
        let base_ops = base_spec.ops in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_ops) ->
@@ -149,11 +149,11 @@ spec
 
   %% For each equivalence class, list the elements of the class and also note whether 
   %% some distinguished element from the class will be the only one to survive in the apex spec.
-  let sort_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_sorts          sortMap dominating_vertices in
+  let type_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_types          typeMap dominating_vertices in
   let   op_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_ops              opMap dominating_vertices in
   %% let prop_qset : CompressedQuotientSet = computeCompressedQuotientSet dg extract_non_base_props propMap dominating_vertices in
 
-  %% let _ = showVQidQuotientSets [("sort", sort_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
+  %% let _ = showVQidQuotientSets [("type", type_qset), ("op", op_qset) (*, ("prop", prop_qset) *)] in 
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (2) Disambiguate the target names appearing in those quotient sets, by (only if necessary) 
@@ -163,8 +163,8 @@ spec
   %%     This should be O(N log N) as above.
   %% -------------------------------------------------------------------------------------------------------------
 
-  %% let _ = toScreen "----------------------------------------\nSorts:\n" in
-  let vqid_to_apex_qid_and_aliases_sort_map = computeVQidToApexQidAndAliasesMap sort_qset in
+  %% let _ = toScreen "----------------------------------------\nTypes:\n" in
+  let vqid_to_apex_qid_and_aliases_type_map = computeVQidToApexQidAndAliasesMap type_qset in
 
   %% let _ = toScreen "----------------------------------------\nOps:\n" in
   let vqid_to_apex_qid_and_aliases_op_map   = computeVQidToApexQidAndAliasesMap   op_qset in
@@ -172,7 +172,7 @@ spec
   %% let _ = toScreen "----------------------------------------\nProps:\n" in
   %% let vqid_to_apex_qid_and_aliases_prop_map = computeVQidToApexQidAndAliasesMap prop_qset in
 
-  %% let _ = showVQidMaps [("sort", vqid_to_apex_qid_and_aliases_sort_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
+  %% let _ = showVQidMaps [("type", vqid_to_apex_qid_and_aliases_type_map), ("op", vqid_to_apex_qid_and_aliases_op_map) (*, ("prop", vqid_to_apex_qid_and_aliases_prop_map) *)] in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (3) Construct maps Vertex => Renaming, where the renaming 
@@ -184,8 +184,8 @@ spec
   %%       type RenamingRule  = RenamingRuleBody * Position
   %%       type RenamingRuleBody =
   %%         | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   
-  %%         | Sort      QualifiedId                 * QualifiedId                 * SortNames 
-  %%         | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   
+  %%         | Type      QualifiedId                 * QualifiedId                 * TypeNames 
+  %%         | Op        (QualifiedId * Option Type) * (QualifiedId * Option Type) * OpNames   
   %%         | Other     OtherRenamingRule
   %%   
   %%     Most of the new renaming rules will be identity mappings, unless the 
@@ -195,11 +195,11 @@ spec
   %%     construct the cocone morphisms.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let vertex_to_sm_sort_rules : PolyMap.Map (Vertex.Elem, RenamingRules) =
+  let vertex_to_sm_type_rules : PolyMap.Map (Vertex.Elem, RenamingRules) =
       makeVertexToRenamingRulesMap dg 
-                                    vqid_to_apex_qid_and_aliases_sort_map
-				    extract_non_base_sorts
-                                    makeRenamingSortRule
+                                    vqid_to_apex_qid_and_aliases_type_map
+				    extract_non_base_types
+                                    makeRenamingTypeRule
 
 
   in
@@ -220,7 +220,7 @@ spec
   let vertex_to_sm_rules : PolyMap.Map (Vertex.Elem, Renaming) =
       foldOverVertices (fn vertex_renamings -> fn vertex ->
 			let cocone_renaming_rules = 
-			    (case evalPartial vertex_to_sm_sort_rules vertex of
+			    (case evalPartial vertex_to_sm_type_rules vertex of
 			       | Some renaming_rules -> renaming_rules
 			       | _ -> [])
 			     ++			    
@@ -279,7 +279,7 @@ spec
   in
 
   let apex_spec = auxSpecUnion (Cons (base_spec, translated_specs)) in
-  let apex_spec = removeDuplicateOpSortElements apex_spec in
+  let apex_spec = removeDuplicateOpTypeElements apex_spec in
   let apex_spec = compressDefs apex_spec in
 
   %% -------------------------------------------------------------------------------------------------------------
@@ -301,8 +301,8 @@ spec
 			    (let dom_spec : Spec = vertexLabel dg vertex in
 			     makeMorphism (dom_spec,
 					   apex_spec,
-					   case evalPartial vertex_to_sm_sort_rules vertex of
-					     | Some rules -> convertSortRules rules
+					   case evalPartial vertex_to_sm_type_rules vertex of
+					     | Some rules -> convertTypeRules rules
 					     | _ -> [],
 					   case evalPartial vertex_to_sm_op_rules vertex of
 					     | Some rules -> convertOpRules rules
@@ -324,9 +324,9 @@ spec
 
  %% ====================================================================================================
 
- def makeRenamingSortRule (dom_qid, cod_qid, cod_aliases) =
-   let rule_body : RenamingRuleBody = Sort (dom_qid, cod_qid, cod_aliases) in
-   let rule      : RenamingRule     = (rule_body, Internal "Colimit Sort") in
+ def makeRenamingTypeRule (dom_qid, cod_qid, cod_aliases) =
+   let rule_body : RenamingRuleBody = Type (dom_qid, cod_qid, cod_aliases) in
+   let rule      : RenamingRule     = (rule_body, Internal "Colimit Type") in
    rule
 
  def makeRenamingOpRule (dom_qid, cod_qid, cod_aliases) =
@@ -562,10 +562,10 @@ spec
  %%     maps each item from the vertex's spec into an item in the apex spec, 
  %%     using the cannonical structures for translation morphisms:
  %%
- %%     sort RenamingExpr  a = List (RenamingRule a) * a
- %%     sort RenamingRule  a = (RenamingRuleBody a) * a
- %%     sort RenamingRuleBody a = | Sort       QualifiedId                 * QualifiedId                  * Aliases
- %%                             | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * Aliases
+ %%     type RenamingExpr  a = List (RenamingRule a) * a
+ %%     type RenamingRule  a = (RenamingRuleBody a) * a
+ %%     type RenamingRuleBody a = | Type       QualifiedId                 * QualifiedId                  * Aliases
+ %%                             | Op         (QualifiedId * Option Type) * (QualifiedId * Option Type)  * Aliases
  %%                             | Property   QualifiedId                 * QualifiedId                  * Aliases
  %%                             | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases      
  %%    
@@ -596,7 +596,7 @@ spec
 				%% A rule is a no-op if it is just going to rename something to itself 
 				%% and moreover, that name is the primary name in the target.
 				let no_op? = case rule.1 of
-					       | Sort (x, y, first_alias :: _) -> x = y && x   = first_alias
+					       | Type (x, y, first_alias :: _) -> x = y && x   = first_alias
 					       | Op   (x, y, first_alias :: _) -> x = y && x.1 = first_alias
 					       | _ -> false
 				in
@@ -643,9 +643,9 @@ spec
  %% (5) Support for building cocone morphisms
  %% ================================================================================
 
- %% Morphism[Sort/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
- def convertSortRules renaming_rules =
-   foldl (fn (new_sm_map, (Sort (dom_qid, cod_qid, aliases), _)) ->
+ %% Morphism[Type/Op/Prop]Map = QualifiedIdMap = PolyMap.Map (QualifiedId, QualifiedId)
+ def convertTypeRules renaming_rules =
+   foldl (fn (new_sm_map, (Type (dom_qid, cod_qid, aliases), _)) ->
 	  update new_sm_map dom_qid cod_qid)
          PolyMap.emptyMap
          renaming_rules
@@ -663,23 +663,23 @@ spec
  %%%         renaming_rules
 
  %% Misc support
- op  removeDuplicateOpSortElements: Spec -> Spec
- def removeDuplicateOpSortElements spc =
+ op  removeDuplicateOpTypeElements: Spec -> Spec
+ def removeDuplicateOpTypeElements spc =
    let def canonOp qid =
          case findTheOp(spc,qid) of
 	   | Some opinfo -> primaryOpName opinfo
 	   | _ -> qid
-       def canonSort qid =
-         case findTheSort(spc,qid) of
-	   | Some sortinfo -> primarySortName sortinfo
+       def canonType qid =
+         case findTheType(spc,qid) of
+	   | Some typeinfo -> primaryTypeName typeinfo
 	   | _ -> qid
        def addIfNew(el,newElts) =
 	 if exists? (fn e ->
                       case (e, el) of
                         | (Op  (qid1,d1,_), Op  (qid2,d2,_)) -> qid1 = qid2 && d1 = d2
                         | (OpDef(qid1,refine1?,_), OpDef  (qid2,refine2?,_)) -> qid1 = qid2 && refine1? = refine2?
-                        | (Sort   (qid1,_), Sort   (qid2,_)) -> qid1 = qid2
-                        | (SortDef(qid1,_), SortDef(qid2,_)) -> qid1 = qid2
+                        | (Type   (qid1,_), Type   (qid2,_)) -> qid1 = qid2
+                        | (TypeDef(qid1,_), TypeDef(qid2,_)) -> qid1 = qid2
                         | _ -> false)
               newElts
            then newElts
@@ -690,8 +690,8 @@ spec
 			case el of
 			  | Op      (qid,def?,a) -> addIfNew (Op      (canonOp   qid, def?,a), newElts)
 			  | OpDef   (qid, refine?,a) -> addIfNew (OpDef(canonOp  qid, refine?,a),newElts)
-			  | Sort    (qid,a)      -> addIfNew (Sort    (canonSort qid,a),       newElts)
-			  | SortDef (qid,a)      -> addIfNew (SortDef (canonSort qid,a),       newElts)
+			  | Type    (qid,a)      -> addIfNew (Type    (canonType qid,a),       newElts)
+			  | TypeDef (qid,a)      -> addIfNew (TypeDef (canonType qid,a),       newElts)
 			  | _ -> Cons(el,newElts))
 		   [] spc.elements
    in
@@ -837,7 +837,7 @@ endspec
 %%%%
 %%%%  Standard specware terms:
 %%%%
-%%%%  qualified id - <qualifier>.<id> : a two part name for sorts, ops, etc.
+%%%%  qualified id - <qualifier>.<id> : a two part name for types, ops, etc.
 %%%%
 %%%%         These names are global for the union semantics used by import, so we
 %%%%         need to be careful here to avoid accidental identification of items in 
@@ -852,16 +852,16 @@ endspec
 %%%%
 %%%%  Local terms:
 %%%%
-%%%%  item - anything identified by a qualified name within a spec: sort, op, 
+%%%%  item - anything identified by a qualified name within a spec: type, op, 
 %%%%         (and maybe in the future) theorem, definition, proof, etc.
 %%%%
-%%%%  info - information associated with an item: sortInfo, opInfo, etc.
+%%%%  info - information associated with an item: typeInfo, opInfo, etc.
 %%%%
-%%%%         This might include typing information, free (sort) variables, an 
+%%%%         This might include typing information, free (type) variables, an 
 %%%%         optional definition, etc.
 %%%%
 %%%%  vqid - vertex and qualified id : a globally unique name within an entire 
-%%%%         diagram for an item (of a given type such as sort, op, theorem, proof,
+%%%%         diagram for an item (of a given type such as type, op, theorem, proof,
 %%%%         etc.) located within any spec labelling any vertex of that diagram.  
 %%%%
 %%%%         Given a spec labelling multiple vertices, this is how we distinguish

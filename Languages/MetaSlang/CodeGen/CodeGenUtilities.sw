@@ -3,7 +3,7 @@ import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Environment
 
 % this is used to distinguish "real" product from "record-products"
- op productfieldsAreNumbered: [a] List (String * a) -> Boolean
+ op productfieldsAreNumbered: [a] List (String * a) -> Bool
 def productfieldsAreNumbered (fields) =
   let
     def fieldsAreNumbered0 (i, fields) =
@@ -14,8 +14,8 @@ def productfieldsAreNumbered (fields) =
   fieldsAreNumbered0 (1, fields)
 
 
-op patternFromSort: Option Sort * Position -> Pattern
-def patternFromSort (optsrt, b) =
+op patternFromType: Option MSType * Position -> MSPattern
+def patternFromType (optsrt, b) =
   let
     def mkVarPat (id, srt) =
       VarPat ((id, srt), b)
@@ -31,8 +31,8 @@ def patternFromSort (optsrt, b) =
 	  else mkVarPat ("x", srt)
 	| _ -> mkVarPat ("x", srt)
 
-op argTermFromSort: Option Sort * MS.Term * Position -> MS.Term
-def argTermFromSort (optsrt, funterm, b) =
+op argTermFromType: Option MSType * MSTerm * Position -> MSTerm
+def argTermFromType (optsrt, funterm, b) =
   let
     def mkVarTerm (id, srt) =
       Var ((id, srt), b)
@@ -50,8 +50,8 @@ def argTermFromSort (optsrt, funterm, b) =
       in
       Apply (funterm, term, b)
 
-op recordTermFromSort: Sort * Position -> MS.Term
-def recordTermFromSort (srt, b) =
+op recordTermFromType: MSType * Position -> MSTerm
+def recordTermFromType (srt, b) =
   let
     def mkVarTerm (id, srt) =
       Var ((id, srt), b)
@@ -77,53 +77,53 @@ def getRecordConstructorOpName (qid as Qualified (q, id)) =
 
 
 (**
- * looks in the spec for a user type matching the given sort; if a matching
+ * looks in the spec for a user type matching the given type; if a matching
  * user type exists.
  *)
-op findMatchingUserTypeOption: Spec * Sort -> Option Sort
+op findMatchingUserTypeOption: Spec * MSType -> Option MSType
 def findMatchingUserTypeOption (spc, srtdef) =
   case srtdef of
     | Base    _ -> Some srtdef
     | Boolean _ -> Some srtdef
     | Product ([],_) -> Some srtdef
     | _ ->
-      let srts = sortsAsList spc in
-      let srtPos = sortAnn srtdef in
+      let srts = typesAsList spc in
+      let srtPos = typeAnn srtdef in
       let foundSrt = findLeftmost (fn (q, id, info) ->
-                                     case sortInfoDefs info of
+                                     case typeInfoDefs info of
                                        | [srt] -> 
-                                         equalType? (srtdef, sortInnerSort srt) %% also reasonable:  equivType? spc (srtdef, sortInnerSort srt) 
+                                         equalType? (srtdef, typeInnerType srt) %% also reasonable:  equivType? spc (srtdef, typeInnerType srt) 
                                        |_ -> false)
                           srts 
       in
 	case foundSrt of
 	  | Some (q, classId, _) -> 
-            %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort srtdef) in
+            %let _ = writeLine("matching user type found: type "^classId^" = "^printType srtdef) in
             Some (Base (mkUnQualifiedId (classId), [], srtPos))
 	  | None -> None
-	    %let _ = writeLine ("no matching user type found for "^printSort srtdef) in
+	    %let _ = writeLine ("no matching user type found for "^printType srtdef) in
 	    %srtdef
 
 (**
- * looks in the spec for a user type matching the given sort; if a matching
- * user type exists, the corresponding sort will be returned, otherwise the sort
+ * looks in the spec for a user type matching the given type; if a matching
+ * user type exists, the corresponding type will be returned, otherwise the type
  * given as input itself will be returned
  *)
-op findMatchingUserType: Spec * Sort -> Sort
+op findMatchingUserType: Spec * MSType -> MSType
 def findMatchingUserType (spc, srt) =
   case findMatchingUserTypeOption (spc, srt) of
     | Some s -> 
-      %let _ = writeLine("matching user type: "^(printSort srt)^" ===> "^(printSort s)) in 
+      %let _ = writeLine("matching user type: "^(printType srt)^" ===> "^(printType s)) in 
       s
     | None -> srt
 
   (**
-    unfolds a sort, only if it is an alias for a Product, otherwise it's left unchanged;
-    this is used to "normalize" the arrow sorts, i.e. to detect, whether the first argument of
-    an arrow sort is a product or not. Only "real" products are unfolded, i.e. sort of the
+    unfolds a type, only if it is an alias for a Product, otherwise it's left unchanged;
+    this is used to "normalize" the arrow types, i.e. to detect, whether the first argument of
+    an arrow type is a product or not. Only "real" products are unfolded, i.e. type of the
     form (A1 * A2 * ... * An) are unfolded, not those of the form {x1:A1, x2:A2, ..., xn:An}
   *)
-  op unfoldToProduct: Spec * Sort -> Sort
+  op unfoldToProduct: Spec * MSType -> MSType
   def unfoldToProduct (spc, srt) =
     let
       def unfoldRec srt =
@@ -136,18 +136,18 @@ def findMatchingUserType (spc, srt) =
       | Product (fields, _) -> if productfieldsAreNumbered (fields) then usrt else srt
       | _ -> srt
 
- op inferTypeFoldRecords: Spec * MS.Term -> Sort
+ op inferTypeFoldRecords: Spec * MSTerm -> MSType
  def inferTypeFoldRecords (spc, term) =
   let srt = inferType (spc, term) in
-  %let _ = writeLine ("inferType ("^printTerm (term)^") = "^printSort srt) in
+  %let _ = writeLine ("inferType ("^printTerm (term)^") = "^printType srt) in
   case srt of
     | Product _ -> 
       let srt0 = findMatchingUserType (spc, srt) in
-      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      %let _ = writeLine ("findMatchingUserType ("^printType srt^") = "^printType (srt0)) in
       srt0
     | CoProduct _ -> 
       let srt0 = findMatchingUserType (spc, srt) in
-      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      %let _ = writeLine ("findMatchingUserType ("^printType srt^") = "^printType (srt0)) in
       srt0
     | _ -> srt
 

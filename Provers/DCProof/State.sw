@@ -47,7 +47,7 @@ spec
     let newTx = propagateProven(tx) in
     {treeX = newTx}
 
-  op proven: State -> Boolean
+  op proven: State -> Bool
   def proven(s) =
     let tx = s.treeX in
     allProven?(tree(tx))

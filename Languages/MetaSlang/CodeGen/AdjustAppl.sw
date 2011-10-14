@@ -7,14 +7,14 @@ AdjustAppl qualifying spec
   *
   * op foo: A -> B
   *
-  * and A is a sort defined as a product sort.
+  * and A is a type defined as a product type.
   *)
- op getFoldedDomain: Spec * QualifiedId -> Option (MS.Sort)
+ op getFoldedDomain: Spec * QualifiedId -> Option MSType
  def getFoldedDomain (spc, qid) =
    case findTheOp (spc, qid) of
      | None -> None
      | Some info ->
-       let srt = firstOpDefInnerSort info in 
+       let srt = firstOpDefInnerType info in 
        let srt = unfoldToArrow (spc, srt) in
        case srt of
 	 | Arrow (domsrt as (Base _), ransrt, _) ->
@@ -30,7 +30,7 @@ AdjustAppl qualifying spec
   * above check). If the argument of the application term is a product, then
   * a let variable is introduced and used as argument, e.g.:
   *
-  * sort A = B * C
+  * type A = B * C
   * op foo: A -> D
   *
   * foo (b, c) would then be transformed into foo (let arg= (b, c) in arg)

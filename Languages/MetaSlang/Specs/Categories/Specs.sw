@@ -9,7 +9,7 @@ clear how they should be qualified if at all.
 
 There should be a separate spec for SpecMorphisms as there
 is for Spec. The former should be a refinement of an
-abstract sort.
+abstract type.
 
 \begin{spec}
 spec {

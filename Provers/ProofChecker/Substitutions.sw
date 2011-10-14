@@ -34,7 +34,7 @@ spec
   % true iff tsbs is substitution of tvS@i with tS@i:
 
   % API private
-  op isTypeSubstFrom? : TypeSubstitution * TypeVariables * Types -> Boolean
+  op isTypeSubstFrom? : TypeSubstitution * TypeVariables * Types -> Bool
   def isTypeSubstFrom?(tsbs,tvS,tS) =
     noRepetitions? tvS && length tvS = length tS && tsbs = fromLists (tvS, tS)
 
@@ -66,7 +66,7 @@ spec
   % true iff substitution of u with d in e causes no variable capture:
 
   % API private
-  op exprSubstOK? : Variable -> Expression -> Expression -> Boolean
+  op exprSubstOK? : Variable -> Expression -> Expression -> Bool
   def exprSubstOK? u d e =
     exprFreeVars d /\ captVars u e = empty
 

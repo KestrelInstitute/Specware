@@ -2,7 +2,7 @@ spec
 
   type Proof
 
-  op andElim?: Proof -> Boolean
+  op andElim?: Proof -> Bool
 
   type AndElim = (Proof | andElim?)
 
@@ -11,12 +11,12 @@ spec
 
   op andElim: Proof * Proof -> Proof
 
-  op trueProof?: Boolean
+  op trueProof?: Bool
   op trueProof: Proof
 
-  op thRefl: Proof
-  op thSubst: Proof * Proof -> Proof
-  op thSymm: Proof -> Proof
-  op thIf: Proof * Proof -> Proof
+  op thRefl  : Proof
+  op thSymm  : Proof -> Proof
+  op thSubst : Proof * Proof -> Proof
+  op thIf    : Proof * Proof -> Proof
 
 endspec

@@ -63,7 +63,7 @@ spec
  op simplifyUsingSubtypes?: Bool = false
 
 
- op  countVarRefs: MS.Term * Var -> Nat
+ op  countVarRefs: MSTerm * Var -> Nat
  def countVarRefs(term,v) =
    let occ = Ref 0 : Ref Nat in
    let
@@ -76,7 +76,7 @@ spec
      let _ = mapSubTerms occurs term in
      ! occ
 
- op  removeUnnecessaryVariable: Spec -> MS.Term -> MS.Term
+ op  removeUnnecessaryVariable: Spec -> MSTerm -> MSTerm
  def removeUnnecessaryVariable spc term =
       let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
@@ -99,7 +99,7 @@ spec
           if sideEffectFree(e) then body else term
 	| _ -> term
 
-  op noInterveningSideEffectsBefore?: MS.Term * (MS.Term -> Bool) -> Bool 
+  op noInterveningSideEffectsBefore?: MSTerm * (MSTerm -> Bool) -> Bool 
   def noInterveningSideEffectsBefore?(tm,p) =
     %% examine terms in execution order until either p is true or a possibly side-effection
     %% term is encountered
@@ -128,8 +128,8 @@ spec
 % matching compilation such that all references to let (u,v) = z in .. are of the
 % form let u = project(1) z, v = project(2) z in ..
 %
- op tupleInstantiate: Spec -> MS.Term -> MS.Term
- op tupleInstantiate (spc: Spec) (term:  MS.Term): MS.Term =
+ op tupleInstantiate: Spec -> MSTerm -> MSTerm
+ op tupleInstantiate (spc: Spec) (term:  MSTerm): MSTerm =
    let
       def elimTuple(zId,srt,fields,body) =
         let (zId,body) =
@@ -148,7 +148,7 @@ spec
         let varFields = 
             case productOpt(spc,srt)
               of Some fields -> map mkField fields 
-               | _ -> fail ("Product type expected for let bound variable. Found "^printSort srt)
+               | _ -> fail ("Product type expected for let bound variable. Found "^printType srt)
         in
         let allFields = zip(fields,varFields) in
         let
@@ -193,7 +193,7 @@ spec
         simplifyOne spc (elimTuple(zId,srt,fields,body))
       | _ -> term
 
- op  simplifyOne: Spec -> MS.Term -> MS.Term
+ op  simplifyOne: Spec -> MSTerm -> MSTerm
  def simplifyOne spc term =
       let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
      let result =
@@ -264,7 +264,7 @@ spec
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
        | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) | simplifyUsingSubtypes? ->
          mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
-                     Arrow(mkProduct[intSort,intSort],boolSort,a),
+                     Arrow(mkProduct[intType,intType],boolType,a),
                      a),
                  [e, mkNat 0]))
 %       %% Eta fn v -> case v of p -> e --> fn p -> e
@@ -341,7 +341,7 @@ spec
                then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
     result
 
-  op countDeReferencesIn(v: Var, tms: List MS.Term): Nat =
+  op countDeReferencesIn(v: Var, tms: List MSTerm): Nat =
     foldl (fn (i,t) ->
              foldSubTerms (fn (st,i) ->
                              case st of
@@ -352,7 +352,7 @@ spec
                i t)
       0 tms
 
-  op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
+  op  simplifyForall: Spec -> List Var * List MSTerm * MSTerm -> MSTerm
   def simplifyForall spc (vs, cjs, bod) =
     % let _ = writeLine("\nsfa: "^printTerm(mkConj cjs)^"\n => "^ printTerm bod) in
     let name_set = varNamesSet(vs, bod::cjs) in
@@ -434,7 +434,7 @@ spec
           then mkSimpBind(Forall, vs, mkSimpImplies(mkSimpConj cjs, bod))
           else simplifyForall spc (simpVs, simplCJs, bod)
 
-  op  simplifyConjunct: MS.Term * Spec -> List MS.Term 
+  op  simplifyConjunct: MSTerm * Spec -> MSTerms
   def simplifyConjunct (cj,spc) =
     case cj of
       | Apply(Fun(Equals,_,_),Record([("1",Record(lhs_flds,_)),("2",Record(rhs_flds,_))],_),_) ->
@@ -442,7 +442,7 @@ spec
 	  (zip(lhs_flds,rhs_flds))
       | _ -> [cj]
 
-  op simplifyConjuncts(cjs: Terms): Terms =
+  op simplifyConjuncts(cjs: MSTerms): MSTerms =
     map (fn cj ->
            case cj of
              | Apply(Fun(Implies, _, _),
@@ -454,14 +454,14 @@ spec
              | _ -> cj)
       cjs
 
-  op  varNamesSet: List Var * List MS.Term -> StringSet.Set
+  op  varNamesSet: List Var * List MSTerm -> StringSet.Set
   def varNamesSet(vs,tms) =
     foldl (fn (nm_set,(nm,_)) -> StringSet.add(nm_set,nm))
       StringSet.empty
       (vs ++ foldl (fn (fvs,t) -> freeVars t ++ fvs) [] tms)
     
 
-  op  normForallBody: MS.Term * StringSet.Set * Spec -> Option(List Var * List MS.Term * MS.Term)
+  op  normForallBody: MSTerm * StringSet.Set * Spec -> Option(List Var * List MSTerm * MSTerm)
   %% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
   def normForallBody(body, used_names, spc) =
     case body of
@@ -487,7 +487,7 @@ spec
           | (vs, lhs_cjs, rhs_cjs) -> Some (vs, lhs_cjs, mkConj rhs_cjs))
       | _ -> None
 
-  op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MS.Term)
+  op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MSTerm)
   def getRenamingSubst(vs, used_names) =
     foldr (fn (v as (nm, ty), (vs, sb)) ->
 	   let new_nm = StringUtilities.freshName(nm, used_names) in
@@ -497,7 +497,7 @@ spec
 	         (Cons(new_v, vs), Cons((v, mkVar new_v), sb)))
       ([], []) vs
 
-  op  simpSubstitute: Spec * MS.Term *  List (Var * MS.Term) -> MS.Term
+  op  simpSubstitute: Spec * MSTerm *  List (Var * MSTerm) -> MSTerm
   def simpSubstitute(spc, t, sbst) =
     % let _ = toScreen("\nBefore subst:\n" ^ printTerm t ^ "\n") in
     let stm = substitute(t, sbst) in
@@ -506,7 +506,7 @@ spec
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
-  op  bindEquality: MS.Term * List Var -> Option(Var * MS.Term)
+  op  bindEquality: MSTerm * List Var -> Option(Var * MSTerm)
   def bindEquality (t, vs) =
     case t of
       | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
@@ -518,7 +518,7 @@ spec
 	  | _ -> None)
       | _ -> None
 
-  op  simplifyExists: Spec -> List Var * List MS.Term -> MS.Term
+  op  simplifyExists: Spec -> List Var * List MSTerm -> MSTerm
   def simplifyExists spc (vs, cjs) =
     let vs = filter (fn v -> (exists? (fn cj -> isFree(v, cj)) cjs)
                             || ~(knownNonEmpty?(v.2,  spc)))
@@ -526,12 +526,12 @@ spec
     in
     mkSimpBind(Exists, vs, mkSimpConj cjs)    
 
-  op  simplifyExists1: List Var * List MS.Term -> MS.Term
+  op  simplifyExists1: List Var * List MSTerm -> MSTerm
   def simplifyExists1(vs, cjs) =
     mkSimpBind(Exists1, vs, mkSimpConj cjs)    
 
-  op simplifyRecordBind(spc: Spec, pats: List (Id * Pattern), acts: List (Id * MS.Term), body: MS.Term)
-     : Option MS.Term =
+  op simplifyRecordBind(spc: Spec, pats: List (Id * MSPattern), acts: List (Id * MSTerm), body: MSTerm)
+     : Option MSTerm =
     if forall? (fn(_,VarPat _) -> true | (_,WildPat _) -> true | _ -> false) pats 
       then (if forall? (fn(_,Var _) -> true | _ -> false) acts
               then Some(substitute(body,makeSubstFromRecord(pats,acts)))
@@ -559,7 +559,7 @@ spec
                      body binds))
       else None
 
-  op simplifyCase (spc: Spec) (term: MS.Term): Option MS.Term =
+  op simplifyCase (spc: Spec) (term: MSTerm): Option MSTerm =
     case term of
       %% case (a,b,c) of (x,y,z) -> g(x,y,z) --> g(a,b,c)
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
@@ -573,7 +573,7 @@ spec
                 (mkLet(map (fn (id,p) -> (p, mkProjection(id, v, spc))) pats, body)))
       | _ -> None
 
-  op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
+  op  makeSubstFromRecord: List(Id * MSPattern) * List(Id * MSTerm) -> List(Var * MSTerm)
   def makeSubstFromRecord(pats,acts) =
     foldl (fn (result,(id,VarPat(v,_)))
              -> Cons((v,findField(id,acts)),result)
@@ -587,7 +587,7 @@ spec
     % let _ = writeLine(" --> "^printTerm result) in
     result
 
-  op  simpleTerm?: MS.Term -> Bool
+  op  simpleTerm?: MSTerm -> Bool
   def simpleTerm?(term) = 
     case term of 
       | Record(fields,_) ->
@@ -595,14 +595,14 @@ spec
       | Lambda _ \_rightarrow true
       | _ -> simpleTerm term
 
- op simpleOrConstrTerm?(term: MS.Term): Bool =
+ op simpleOrConstrTerm?(term: MSTerm): Bool =
    simpleTerm? term
      || (case term of
            | Apply(Fun(Embed _,_,_), arg, _) ->
              forall? simpleOrConstrTerm? (termToList arg)
            | _ -> false)
 
- op simplify (spc: Spec) (term: MS.Term): MS.Term =
+ op simplify (spc: Spec) (term: MSTerm): MSTerm =
    let simp_term = mapSubTerms(simplifyOne spc) term in
    let trace? = traceSimplify? && ~(equalTerm?(simp_term, term)) in
    let _ = if trace? then toScreen("Before:\n" ^ printTerm term ^ "\n") else () in
@@ -635,7 +635,7 @@ spec
                       let dfn = refinedTerm(full_dfn, refine_num) in
                       let simp_dfn = simplify spc dfn in
                       let full_dfn = replaceNthTerm(full_dfn, refine_num, simp_dfn) in
-                      let new_dfn = maybePiTerm (tvs, SortedTerm (full_dfn, ty, termAnn dfn)) in
+                      let new_dfn = maybePiTerm (tvs, TypedTerm (full_dfn, ty, termAnn dfn)) in
                       insertAQualifierMap(ops, q, id, info << {dfn = new_dfn})))
                   | _ -> (elt :: elts, ops))
          ([], spc.ops) spc.elements

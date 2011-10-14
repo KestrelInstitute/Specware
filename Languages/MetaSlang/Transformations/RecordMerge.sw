@@ -5,7 +5,7 @@ spec
   def translateRecordMergeInSpec spc =
     mapSpec (fn t -> translateRecordMerge(t,spc),id,id) spc
 
-  op  translateRecordMerge : MS.Term * Spec -> MS.Term
+  op  translateRecordMerge : MSTerm * Spec -> MSTerm
   def translateRecordMerge (t,spc) =
     case t of
       | Apply(Fun(RecordMerge,s,_),Record([("1",t1),("2",t2)],_),a) ->

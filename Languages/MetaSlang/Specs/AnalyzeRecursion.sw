@@ -56,12 +56,12 @@ op opUsesTypesMap(spc: Spec): RefMap =
     spc.ops
 
 op typeUsesOpsMap(spc: Spec): RefMap =
-  mapAQualifierMap (fn (sortinfo) -> opsInType sortinfo.dfn)
-    spc.sorts
+  mapAQualifierMap (fn (typeinfo) -> opsInType typeinfo.dfn)
+    spc.types
 
 op typeUsesTypesMap(spc: Spec): RefMap =
-  mapAQualifierMap (fn (sortinfo) -> typesInType sortinfo.dfn)
-    spc.sorts
+  mapAQualifierMap (fn (typeinfo) -> typesInType typeinfo.dfn)
+    spc.types
 
 op whoRefMap(spc: Spec): RefMap =
   let ouo_map = opUsesOpsMap spc in
@@ -75,7 +75,7 @@ op recursiveOps(spc: Spec): QualifiedIds =
                            else result)
     [] calls_map
 
-op recursiveOp?(qid: QualifiedId, uses_map: RefMap, max_depth: Nat): Boolean =
+op recursiveOp?(qid: QualifiedId, uses_map: RefMap, max_depth: Nat): Bool =
   let def find_rec_use(Qualified(q_u, id_u), depth) =
         if depth >= max_depth then false
         else

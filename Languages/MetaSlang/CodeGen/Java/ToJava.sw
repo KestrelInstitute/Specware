@@ -4,7 +4,7 @@ import IJavaCodeGen
 import ToJavaStatements
 import ToJavaProduct
 import ToJavaCoProduct
-import ToJavaSubSort
+import ToJavaSubType
 import ToJavaQuotient
 import ToJavaHO
 import ToJavaSpecial
@@ -23,7 +23,7 @@ import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
 
 import Monad
 
-type ArrowType = List Sort * Sort
+type ArrowType = MSTypes * MSType
 
 % --------------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ def JGen.metaSlangTermToJavaExpr term =
    return (block,expr)
   }
 
-%op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (JavaBlock * List JavaExpr)
+%op metaSlangTermsToJavaExprs: MSTerms -> JGenEnv (JavaBlock * List JavaExpr)
 def JGen.metaSlangTermsToJavaExprs terms =
   {
    cres_counter <- getCresCounter;
@@ -48,35 +48,35 @@ def JGen.metaSlangTermsToJavaExprs terms =
 
 % --------------------------------------------------------------------------------
 
-op clsDeclsFromSorts: Spec -> JGenEnv ()
-def clsDeclsFromSorts spc =
-  %% If there is no definition for a sort,
+op clsDeclsFromTypes: Spec -> JGenEnv ()
+def clsDeclsFromTypes spc =
+  %% If there is no definition for a type,
   %% we assume it is referring to an external java type (see README.JavaCodeGen)
 
   %% We don't need to pre-emptively add a primitive class decl here.
   %% addMethDeclToClsDeclsM and addFldDeclToClsDeclsM now add it lazily if needed... 
   {
    putEnvSpec spc;
-   foldM (fn _ -> fn (q,id,sortInfo) ->
-	  sortToClsDecls(q,id,sortInfo))
-         () (sortsAsList spc)
+   foldM (fn _ -> fn (q,id,typeInfo) ->
+	  typeToClsDecls(q,id,typeInfo))
+         () (typesAsList spc)
   }
 
-op checkSubsortFormat: Sort -> JGenEnv Sort
-def checkSubsortFormat srt =
-  let (ok,ssrt,issubsortorquotient) = case srt of
-		   | Subsort(ssrt,Fun(Op _,_,_),_) -> (true,ssrt,true)
-		   | Subsort(ssrt,_,_)             -> (false,ssrt,true)
+op checkSubtypeFormat: MSType -> JGenEnv MSType
+def checkSubtypeFormat srt =
+  let (ok,ssrt,issubtypeorquotient) = case srt of
+		   | Subtype(ssrt,Fun(Op _,_,_),_) -> (true,ssrt,true)
+		   | Subtype(ssrt,_,_)             -> (false,ssrt,true)
 		   | Quotient(ssrt,Fun(Op _,_,_),_) -> (true,ssrt,true)
 		   | Quotient(ssrt,_,_)              -> (false,ssrt,true)
 		   | _ -> (true,srt,false)
   in
     {
-     ignoreSubsorts <- isIgnoreSubsorts;
-     if ignoreSubsorts then
+     ignoreSubtypes <- isIgnoreSubtypes;
+     if ignoreSubtypes then
        {
-	if issubsortorquotient then
-	  println(";; Warning: removed subsort information from \""^(printSort srt)^"\"")
+	if issubtypeorquotient then
+	  println(";; Warning: removed subtype information from \""^(printType srt)^"\"")
 	else return();
 	return ssrt
        }
@@ -84,24 +84,24 @@ def checkSubsortFormat srt =
        if ok then
 	 return srt
        else
-	 return ssrt  %raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
+	 return ssrt  %raise(UnsupportedSubtypeTerm(printType srt),typeAnn(srt))
     }
 
-op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv Boolean
+op checkBaseTypeAlias: TypeInfo -> MSType -> JGenEnv Bool
 def checkBaseTypeAlias _(*info*) srt =
   {
    spc <- getEnvSpec;
    if baseType?(spc,srt) then
      %{
-      %vprintln (warn(sortAnn srt,"Ignoring sort " ^ printAliases info.names ^ " defined as alias for base type " ^printSort srt));
+      %vprintln (warn(typeAnn srt,"Ignoring type " ^ printAliases info.names ^ " defined as alias for base type " ^printType srt));
       return true
      %}
    else return false
   }
 
-op sortToClsDecls: Qualifier * Id * SortInfo -> JGenEnv ()
-def sortToClsDecls (q, id, sort_info) =
-   if ~(definedSortInfo? sort_info) then return ()
+op typeToClsDecls: Qualifier * Id * TypeInfo -> JGenEnv ()
+def typeToClsDecls (q, id, type_info) =
+   if ~(definedTypeInfo? type_info) then return ()
    else
      {
       ignoreTypeDefFun <- getIgnoreTypeDefFun;
@@ -110,17 +110,17 @@ def sortToClsDecls (q, id, sort_info) =
 	return ()
       else
 	{
-	 srtDef_a <- return(firstSortDefInnerSort sort_info);
-	 srtDef <- checkSubsortFormat srtDef_a;
-	 base_type_alias? <- checkBaseTypeAlias sort_info srtDef;
+	 srtDef_a <- return(firstTypeDefInnerType type_info);
+	 srtDef <- checkSubtypeFormat srtDef_a;
+	 base_type_alias? <- checkBaseTypeAlias type_info srtDef;
 	 %if base_type_alias? then
 	 %return ()
 	 %else
 	 case srtDef of
 	   | Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
 	   | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
-	   | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort,quotientPred)
-	   | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort,pred)
+	   | Quotient  (superType, quotientPred,   _) -> quotientToClsDecls  (id, superType,quotientPred)
+	   | Subtype   (superType, pred,           _) -> subTypeToClsDecls   (id, superType,pred)
 	   | Base      (Qualified (qual, id1), [], _) ->
 	     if base_type_alias? then
 	       let _ = writeLine(";; adding type alias: "^id^" = "^id1) in
@@ -130,14 +130,14 @@ def sortToClsDecls (q, id, sort_info) =
 	   | Boolean   _                              ->
 	     let _ = writeLine(";; adding type alias: "^id^" = Boolean") in
 	     addTypeAlias(id, "Boolean")
-	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	   | _ -> %fail("Unsupported type definition: type "^id^" = "^printType srtDef)
 	     if true || q = "Accord" && (id = "Update" || id = "ProcType") then return () else
-	     raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
+	     raise(NotSupported("type definition: type "^id^" = "^printType(srtDef)),typeAnn(srtDef))
 	}
      }
 
 (**
- * sort A = B is translated to the empty class A extending B (A and B are user sorts).
+ * type A = B is translated to the empty class A extending B (A and B are user types).
  * class A extends B {}
  *)
 op userTypeToClsDecls: Id * Id -> JGenEnv ()
@@ -206,23 +206,23 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
  * this op is responsible for adding the method that correspond to a given op to the right
  * classes.
  *)
-op addMethodFromOpToClsDeclsM: Id * Sort * List(Option JGen.Term) * JGen.Term -> JGenEnv ()
+op addMethodFromOpToClsDeclsM: Id * MSType * List(Option MSTerm) * MSTerm -> JGenEnv ()
 def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
   {
    spc <- getEnvSpec;
-   let dom_sorts = srtDom   srt in
-   let rng       = srtRange srt in
+   let dom_types = typeDom srt in
+   let rng       = typeRng srt in
 
    %% The tests here should be consistent with those in translateApplyToExprM, defined in ToJavaStatements.sw,
    %% which creates method invocations assuming a class placement
    %%
-   %% let debug_dom = case dom_sorts of [dom] -> dom | _ -> mkProduct dom_sorts in 
-   %% let _ = writeLine("\n;;; Finding class assignment for op " ^ opId ^ ": " ^ printSort srt) in
+   %% let debug_dom = case dom_types of [dom] -> dom | _ -> mkProduct dom_types in 
+   %% let _ = writeLine("\n;;; Finding class assignment for op " ^ opId ^ ": " ^ printType srt) in
 
-   if forall? (fn (srt) -> notAUserType?(spc,srt)) dom_sorts then
-     %% let _ = writeLine(";;; no user type directly in domain " ^ printSort debug_dom) in
+   if forall? (fn (srt) -> notAUserType?(spc,srt)) dom_types then
+     %% let _ = writeLine(";;; no user type directly in domain " ^ printType debug_dom) in
      if notAUserType? (spc, rng) then
-       %% let _ = writeLine (";;; range " ^ printSort rng ^ " is not a user type") in
+       %% let _ = writeLine (";;; range " ^ printType rng ^ " is not a user type") in
 
        %% For now, (userType? A) and (baseTypeAlias? A) can be both be true for A, even though this contradicts v3.  
        %% (See LiftPattern.sw for some discussion.)
@@ -234,39 +234,39 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
        %% As given here, without the call to baseTypeAlias, this is equivalent to:
        %%  case ut (spc, srt) of ...
        %% We present it this way for clarity and for consistency with translateApplyToExprM
-       case utlist_internal (fn srt -> userType? (spc, srt) (* && ~(baseTypeAlias? (spc, srt)) *) ) (dom_sorts ++ [rng]) of
+       case utlist_internal (fn srt -> userType? (spc, srt) (* && ~(baseTypeAlias? (spc, srt)) *) ) (dom_types ++ [rng]) of
 	 | Some usrt ->
 	   {
 	    classId <- srtIdM usrt;
-	     %% let _ = writeLine(";;; ut found user type " ^ printSort usrt) in
+	     %% let _ = writeLine(";;; ut found user type " ^ printType usrt) in
 	     %% let _ = writeLine(";;; --> static method in class " ^ classId ^ "\n") in
 	     %% v3:p45:r8
-	    addStaticMethodToClsDeclsM(opId,srt,dom_sorts,dompreds,rng,trm,classId)
+	    addStaticMethodToClsDeclsM(opId,srt,dom_types,dompreds,rng,trm,classId)
 	   }
 	 | None ->
- 	    %% let _ = writeLine(";;; ut found no user types among " ^ printSort srt) in
+ 	    %% let _ = writeLine(";;; ut found no user types among " ^ printType srt) in
 	    %% let _ = writeLine(";;; --> static method in class Primitive\n") in
 	    %% v3:p46:r1
-	   addPrimMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+	   addPrimMethodToClsDeclsM(opId, srt, dom_types, dompreds, rng, trm)
      else
          %% {
 	 %% classId <- srtIdM rng;
 	 %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with primitive args\n") in
-       addPrimArgsMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+       addPrimArgsMethodToClsDeclsM(opId, srt, dom_types, dompreds, rng, trm)
          %% }
    else
        %% {
        %% classId <- srtIdM rng;
        %% let _ = writeLine(";;; --> method in class " ^ classId ^ ", with at least one user-type arg\n") in
-     addUserMethodToClsDeclsM(opId, srt, dom_sorts, dompreds, rng, trm)
+     addUserMethodToClsDeclsM(opId, srt, dom_types, dompreds, rng, trm)
        %% }
   }
 
-op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term * Id -> JGenEnv ()
+op addStaticMethodToClsDeclsM: Id * MSType * MSTypes * List(Option MSTerm) * MSType * MSTerm * Id -> JGenEnv ()
 def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId) =
   {
    spc <- getEnvSpec;
-   % println("addStaticMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printSort srt);
+   % println("addStaticMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printType srt);
    (vars, body) <- return(srtTermDelta(srt, trm));
    rngid <- tt_v3M rng;
    fpars <- varsToFormalParamsM vars;
@@ -296,7 +296,7 @@ def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualifie
   addMethDeclToClsDeclsM(opId, classId, methodDecl)
  }
 
-op addPrimMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
+op addPrimMethodToClsDeclsM: Id * MSType * MSTypes * List(Option MSTerm) * MSType * MSTerm -> JGenEnv ()
 def addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    primitiveClassName <- getPrimitiveClassName;
@@ -308,32 +308,32 @@ def mkAsrtStmt(asrtOpId,fpars) =
   let expr = mkMethodInvFromFormPars(asrtOpId,fpars) in
   [Stmt(Expr(mkMethInvName(([],"assert"),[expr])))]
 
-op mkAssertFromDomM: List Sort -> JGenEnv JavaBlock
+op mkAssertFromDomM: MSTypes -> JGenEnv JavaBlock
 def mkAssertFromDomM dom =
   case dom of
-    | [Subsort(_, subPred, _)] ->
+    | [Subtype(_, subPred, _)] ->
       {
        (stmt, jPred, newK, newL) <- termToExpressionM(empty, subPred, 1, 1);
        case (stmt, newK, newL) of
 	 | ([], 1, 1) ->
 	   return [Stmt(Expr(mkMethInvName(([],"assert"), [jPred])))]
 	 | _ ->
-	   raise(NotSupported("subsort format not supported; can't create assert statement: "^(printTerm subPred)),termAnn(subPred))
+	   raise(NotSupported("subtype format not supported; can't create assert statement: "^(printTerm subPred)),termAnn(subPred))
       }
     | _ -> return []
 
-op mkPrimArgsMethodBodyM: JGen.Term -> JGenEnv JavaBlock
+op mkPrimArgsMethodBodyM: MSTerm -> JGenEnv JavaBlock
 def mkPrimArgsMethodBodyM body =
   {
    (b,_,_) <- termToExpressionRetM(empty,body,1,1,false);
    return b
   }
 
-op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
+op addPrimArgsMethodToClsDeclsM: Id * MSType * MSTypes * List(Option MSTerm) * MSType * MSTerm -> JGenEnv ()
 def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
-   % println("addPrimArgsMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printSort srt);
+   % println("addPrimArgsMethodToClsDeclsM: "^opId^" "^printTerm trm^": "^printType srt);
    (vars, body) <- return(srtTermDelta(srt, trm));
    %rngId <- srtIdM rng;
    classId <- srtIdM rng;
@@ -365,7 +365,7 @@ def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
    addMethDeclToClsDeclsM(opId, classId, methodDecl)
   }
 
-op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
+op addUserMethodToClsDeclsM: Id * MSType * MSTypes * List(Option MSTerm) * MSType * MSTerm -> JGenEnv ()
 def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
@@ -383,8 +383,8 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
      | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
   }
 
-op addCaseMethodsToClsDeclsM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var
-                                 * List(Id * JGen.Term) * Option JGen.Term * JGen.Term -> JGenEnv ()
+op addCaseMethodsToClsDeclsM: Id * MSTypes * List(Option MSTerm) * MSType * List Var
+                                 * List(Id * MSTerm) * Option MSTerm * MSTerm -> JGenEnv ()
 def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, case_term) =
   {
    spc <- getEnvSpec;
@@ -421,7 +421,7 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, cases, opt_other, 
    addMethDeclToSummandsM(opId, srthId, methodDecl, cases, opt_other, case_term)
   }
   
-op addNonCaseMethodsToClsDeclsM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var * JGen.Term -> JGenEnv ()
+op addNonCaseMethodsToClsDeclsM: Id * MSTypes * List(Option MSTerm) * MSType * List Var * MSTerm -> JGenEnv ()
 def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
    rngId <- srtIdM rng;
@@ -471,7 +471,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 
-%op mkDefaultMethodForCaseM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
+%op mkDefaultMethodForCaseM: Id * MSTypes * List(Option MSTerm) * MSType * List Var * MSTerm -> JGenEnv (Option MethDecl)
 %def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
 %  {
 %   spc <- getEnvSpec;
@@ -480,8 +480,8 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
 %   return res
 %  }
 
-op mkDefaultMethodForCaseM: Id * List JGen.Type * List(Option JGen.Term) * JGen.Type * List Var
-                               * Option JGen.Term -> JGenEnv (Option MethDecl)
+op mkDefaultMethodForCaseM: Id * MSTypes * List(Option MSTerm) * MSType * List Var
+                               * Option MSTerm -> JGenEnv (Option MethDecl)
 def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,opt_other) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   {
@@ -500,7 +500,7 @@ def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,opt_other) 
        }
   }
 
-op mkNonCaseMethodBodyM: Id * JGen.Term -> JGenEnv JavaBlock
+op mkNonCaseMethodBodyM: Id * MSTerm -> JGenEnv JavaBlock
 def mkNonCaseMethodBodyM(vId, body) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
@@ -509,31 +509,31 @@ def mkNonCaseMethodBodyM(vId, body) =
    return b
   }
 
-op unfoldToCoProduct: Spec * Sort -> Sort
+op unfoldToCoProduct: Spec * MSType -> MSType
 def unfoldToCoProduct(spc,srt) =
   case srt of
     | CoProduct _ -> srt
-    | Subsort(srt,_,_) -> unfoldToCoProduct(spc,srt)
+    | Subtype(srt,_,_) -> unfoldToCoProduct(spc,srt)
     | Quotient(srt,_,_) -> unfoldToCoProduct(spc,srt)
     | _ -> let usrt = unfoldBase(spc,srt) in
            if usrt = srt then srt else
 	     unfoldToCoProduct(spc,usrt)
 
 (**
- * adds the methods that correspond to the cases to the subclasses of the co-product sort class
+ * adds the methods that correspond to the cases to the subclasses of the co-product type class
  * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
  * case and the constructor is not mentioned as case in the case construct.
  *)
- op  addMethDeclToSummandsM: Id * Id * MethDecl * List(Id * JGen.Term) * Option JGen.Term * JGen.Term -> JGenEnv ()
+ op  addMethDeclToSummandsM: Id * Id * MethDecl * List(Id * MSTerm) * Option MSTerm * MSTerm -> JGenEnv ()
  def addMethDeclToSummandsM (opId, srthId, methodDecl,  cases, opt_other, case_term) =
    {
     spc <- getEnvSpec;
-    case findAllSorts (spc, mkUnQualifiedId srthId) of
+    case findAllTypes (spc, mkUnQualifiedId srthId) of
       | info  ::_  ->  % consider only one candidate
 
-        if definedSortInfo? info then
+        if definedTypeInfo? info then
 
-	  let srt = firstSortDefInnerSort info in % consider only first definition
+	  let srt = firstTypeDefInnerType info in % consider only first definition
 	  case srt of
 	    | CoProduct (summands, _) ->
 	      % find the missing constructors:
@@ -552,12 +552,12 @@ def unfoldToCoProduct(spc,srt) =
 		       | None -> cases)
 	      }
 
-	     | _ -> raise(Fail("sort is not a CoProduct: "^srthId),termAnn case_term)
+	     | _ -> raise(Fail("type is not a CoProduct: "^srthId),termAnn case_term)
 
 	else
-	  raise(Fail("sort has no definition: "^srthId),termAnn case_term)
+	  raise(Fail("type has no definition: "^srthId),termAnn case_term)
 
-     | _ -> raise(Fail("sort not found: " ^ srthId),termAnn case_term)
+     | _ -> raise(Fail("type not found: " ^ srthId),termAnn case_term)
    }
 
 op addMissingSummandMethDeclToClsDeclsM: Id * Id * Id * MethDecl -> JGenEnv ()
@@ -567,7 +567,7 @@ def addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl) =
   let newMethDecl = appendMethodBody(methodDecl,body) in
   addMethDeclToClsDeclsM(opId,summandId,newMethDecl)
 
-op addSumMethDeclToClsDeclsM: Id * Id * JGen.Term * Id * JGen.Term * MethDecl -> JGenEnv ()
+op addSumMethDeclToClsDeclsM: Id * Id * MSTerm * Id * MSTerm * MethDecl -> JGenEnv ()
 def addSumMethDeclToClsDeclsM(opId, srthId, case_term, id, cb, methodDecl) =
   let
     def addMethodM(classid,vids) =
@@ -636,32 +636,32 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
    let opsrt = case opsrt of
 		 | Base(Qualified("Accord","ProcType"),[arg_type,rtype,_],pos) ->
                    let new_type = Arrow (arg_type, rtype, pos) in
-                   %% let _ = writeLine("Revising " ^ printSort opsrt ^ " to " ^ printSort new_type) in
+                   %% let _ = writeLine("Revising " ^ printType opsrt ^ " to " ^ printType new_type) in
 		   new_type
 		 | Arrow (_, Base(Qualified("Accord","ProcType"),[arg_type,rtype,_],_), pos) ->
                    let new_type = Arrow (arg_type, rtype, pos) in
-                   %% let _ = writeLine("Revising " ^ printSort opsrt ^ " to " ^ printSort new_type) in
+                   %% let _ = writeLine("Revising " ^ printType opsrt ^ " to " ^ printType new_type) in
 		   new_type
 		 | _ -> 
 		   opsrt
    in
-   %% let _ = toScreen("\n OpSort = [" ^ printSort opsrt ^ "]\n") in
-   let dompreds = srtDomPreds opsrt in
-   %let srt = termSort(trm) in
+   %% let _ = toScreen("\n OpType = [" ^ printType opsrt ^ "]\n") in
+   let dompreds = typeDomPreds opsrt in
+   %let srt = termType(trm) in
    let srt = inferType (spc, trm) in
-   %% let _ = toScreen("\n Sort = [" ^ printSort srt ^ "]\n") in
-   let srt = foldRecordsForOpSort(spc,srt) in
-   %% let _ = toScreen("\n Sort = [" ^ printSort srt ^ "]\n") in
-   let srtrng = unfoldBase(spc,srtRange(srt)) in
-   %% let _ = toScreen("\n Sort Range = [" ^ printSort srtrng ^ "]\n") in
-   let opsrtrng = unfoldBase(spc,srtRange(opsrt)) in
-   %let _ = toScreen("\n OpSort Range = [" ^ printSort opsrtrng ^ "]\n") in
-   %let _ = writeLine("op "^id^": opsort="^printSort(opsrtrng)^", termsort="^printSort(srtrng)) in
-   %let _ = writeLine("op "^id^": "^printSort(srt)) in
+   %% let _ = toScreen("\n Type = [" ^ printType srt ^ "]\n") in
+   let srt = foldRecordsForOpType(spc,srt) in
+   %% let _ = toScreen("\n Type = [" ^ printType srt ^ "]\n") in
+   let srtrng = unfoldBase(spc,typeRng srt) in
+   %% let _ = toScreen("\n Type Range = [" ^ printType srtrng ^ "]\n") in
+   let opsrtrng = unfoldBase(spc,typeRng opsrt) in
+   %let _ = toScreen("\n OpType Range = [" ^ printType opsrtrng ^ "]\n") in
+   %let _ = writeLine("op "^id^": optype="^printType(opsrtrng)^", termtype="^printType(srtrng)) in
+   %let _ = writeLine("op "^id^": "^printType(srt)) in
    let trm = mapTerm (Function.id,
                       (fn srt ->
                          case srt of
-                           | Subsort (srt,_,_) -> srt 
+                           | Subtype (srt,_,_) -> srt 
                            | Quotient(srt,_,_) -> srt 
                            | srt               -> srt),
                       Function.id) 
@@ -671,13 +671,13 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
        | Arrow(domsrt,rngsrt,b) ->
          %let _ = writeLine("function op: "^id) in
          let trm = (case (opsrtrng,srtrng) of
-                      | (Subsort(srt0,t0,_),srt1) | equivType? spc (srt0,srt1) ->
+                      | (Subtype(srt0,t0,_),srt1) | equivType? spc (srt0,srt1) ->
                          (case trm of
                             | Lambda(match,b) ->
                               let match = map (fn (p,cond,trm) ->
                                                  %let _ = writeLine("inserting restrict...") in
                                                  let b = termAnn(trm) in
-                                                 let rsrt = Arrow(srtrng,opsrtrng,b):Sort in
+                                                 let rsrt = Arrow(srtrng,opsrtrng,b):MSType in
                                                  let trm = Apply(Fun(Restrict,rsrt,b),trm,b) in
                                                  (p,cond,trm))
                                               match
@@ -686,11 +686,11 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                             | _ -> trm)
                       | _ -> trm)
          in
-         let domSrts = srtDomKeepSubsorts(srt) in
+         let domSrts = typeDomKeepSubtypes(srt) in
          let domSrts = map (fn(srt) -> unfoldBase(spc,srt)) domSrts in
          let trm = case trm of
                      | Lambda((p,cond,body)::match,b) ->
-                       let vars:List(Option JGen.Term) =
+                       let vars:List(Option MSTerm) =
                            case p of
                              | VarPat((id,srt),b) -> 
                                [Some(Var((id,srt),b))]
@@ -708,7 +708,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                        let body =
                            foldr (fn((optvt,srt),body) ->
                                     case (optvt,srt) of
-                                      | (Some(Var((id,vsrt),b)),Subsort(ssrt,_,_)) -> 
+                                      | (Some(Var((id,vsrt),b)),Subtype(ssrt,_,_)) -> 
                                         %let relaxterm = Var((id,ssrt),b) in
                                         %let body = Let ([(VarPat((id,vsrt),b),relaxterm)],body,b) in
                                         body
@@ -719,7 +719,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                          Lambda (Cons((p,cond,body),match), b)
                      | _ -> trm
          in
-           let srt = Arrow(domsrt,srtRange(opsrt),b) in
+           let srt = Arrow(domsrt,typeRng opsrt,b) in
            addMethodFromOpToClsDeclsM(id, srt, dompreds, trm)
        | _ ->
          %let _ = writeLine("constant op: "^id) in
@@ -727,7 +727,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
                       trm 
                     else
                       case (opsrtrng,srtrng) of
-                        | (Subsort (srt0,t0,_), srt1) | equivType? spc (srt0,srt1) ->
+                        | (Subtype (srt0,t0,_), srt1) | equivType? spc (srt0,srt1) ->
                           % let _ = writeLine("inserting restrict\n" ^ anyToString srt0 ^ "\n" ^ anyToString srt1 ^ "\n") in
                           let b = termAnn(trm) in
                           let rsrt = Arrow(srtrng,opsrtrng,b) in
@@ -768,37 +768,37 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 
 % --------------------------------------------------------------------------------
 
-op insertClsDeclsForCollectedProductSorts : JGenEnv ()
-def insertClsDeclsForCollectedProductSorts =
+op insertClsDeclsForCollectedProductTypes : JGenEnv ()
+def insertClsDeclsForCollectedProductTypes =
   {
-   psrts <- getProductSorts;
+   psrts <- getProductTypes;
    %println("#psrts ="^(Integer.toString(length psrts)));
    if psrts = [] then
      return ()
    else
      {
-      psrts <- return(uniqueSort (fn(s1,s2) -> compare((sortId s1),(sortId s2))) psrts);
-      %clearCollectedProductSortsM;
-      %psrts0 <- getProductSorts;
+      psrts <- return(uniqueSort (fn(s1,s2) -> compare((typeId s1),(typeId s2))) psrts);
+      %clearCollectedProductTypesM;
+      %psrts0 <- getProductTypes;
       %println("#psrts0 ="^(Integer.toString(length psrts0)));
       let
-       def insertSort (srt) =
+       def insertType (srt) =
 	 {
 	  id <- srtIdM srt;
-	  let sort_info = {names = [mkUnQualifiedId id],
+	  let type_info = {names = [mkUnQualifiedId id],
 			   dfn   = srt}
 	  in
-	  sortToClsDecls (UnQualified, id, sort_info)
+	  typeToClsDecls (UnQualified, id, type_info)
 	 }
       in
 	{
-	 %psrts0 <- getProductSorts;
+	 %psrts0 <- getProductTypes;
 	 %println("#psrts0 ="^(Integer.toString(length psrts0)));
-	 mapM (fn srt -> insertSort srt) psrts;
-	 %psrts1 <- getProductSorts;
+	 mapM (fn srt -> insertType srt) psrts;
+	 %psrts1 <- getProductTypes;
 	 %println("#psrts1 ="^(Integer.toString(length psrts1)));
 	 %ifM ((length psrts1) > (length psrts0))
-	 %   insertClsDeclsForCollectedProductSorts;
+	 %   insertClsDeclsForCollectedProductTypes;
 	 return ()
 	}
      }
@@ -809,10 +809,10 @@ def insertClsDeclsForCollectedProductSorts =
 
 % --------------------------------------------------------------------------------
 
-op clearCollectedProductSortsM: JGenEnv ()
-def clearCollectedProductSortsM =
+op clearCollectedProductTypesM: JGenEnv ()
+def clearCollectedProductTypesM =
   {
-   putProductSorts [];
+   putProductTypes [];
    putArrowClasses []
   }
 
@@ -892,8 +892,8 @@ def JGen.printJavaFile(jfile as (filename,jspc)) =
 
 % --------------------------------------------------------------------------------
 
-op builtinSortOp: QualifiedId -> Boolean
-def builtinSortOp(qid) =
+op builtinTypeOp: QualifiedId -> Bool
+def builtinTypeOp(qid) =
   let Qualified (q, id) = qid in
   case q of
     | "Nat"        -> id in? ["Nat", "PosNat", "toString", "natToString", "show", "stringToNat"]
@@ -931,7 +931,7 @@ op etaExpandDefs(spc: Spec): Spec =
 				 let (tvs, srt, term) = unpackFirstTerm dfn in
 				 let usedNames = addLocalVars (term, empty) in
 				 let tm = etaExpand (spc, usedNames, srt, term) in
-				 maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+				 maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
 			        old_defs
 			in
 			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
@@ -949,16 +949,16 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   % let _ = writeLine("ops0: "^printOpNms spc) in
   let spc = subtractSpec spc basespc in
   % let _ = writeLine("ops1: "^printOpNms spc) in
-  let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  let spc = addMissingFromBase(basespc,spc,builtinTypeOp) in
   % let _ = writeLine("ops2: "^printOpNms spc) in
   let spc = substBaseSpecsJ spc in
   % let _ = writeLine("ops3: "^printOpNms spc) in
   let spc = lambdaLift(spc,true) in
-  let spc = unfoldSortAliases spc in
+  let spc = unfoldTypeAliases spc in
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntTypes spc in
 
-  let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic sorts and ops in the new spec
+  let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic types and ops in the new spec
   %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
 
   let spc = letWildPatToSeq spc in
@@ -987,10 +987,10 @@ def JGen.generateJavaCodeFromTransformedSpecM spc =
    %println(printSpecVerbose spc);
    %println("\n--------------- END SPEC PASSED TO JGEN\n");
    sep <- getSep;
-   clsDeclsFromSorts spc;
+   clsDeclsFromTypes spc;
    modifyClsDeclsFromOps;
    arrowcls <- getArrowClasses;
-   insertClsDeclsForCollectedProductSorts;
+   insertClsDeclsForCollectedProductTypes;
    clsDecls <- getClsDecls;
    typeNameAliases <- getTypeAliases;
    let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
@@ -1016,7 +1016,6 @@ def specToJava(basespc,spc,optspec,filename) =
   if jgendebug? then fail("failing, because jgendebug? flag is true") else 
   jspc
 
-op jgendebug? : Boolean
-def jgendebug? = false
+op jgendebug? : Bool = false
 
 endspec

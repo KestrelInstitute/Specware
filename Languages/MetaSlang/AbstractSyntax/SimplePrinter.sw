@@ -6,7 +6,7 @@ SpecCalc qualifying spec
   import AnnTerm
   import /Library/PrettyPrinter/WadlerLindig
 
-  op isSimpleTerm? : [a] ATerm a -> Boolean
+  op isSimpleTerm? : [a] ATerm a -> Bool
   def isSimpleTerm? trm =
     case trm of
       | Var _ -> true
@@ -168,7 +168,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           | The (var,term,_) ->
               ppGrConcat [
                 ppString "the (",
-                ppAVarWithoutSort var,
+                ppAVarWithoutType var,
                 ppString ") ",
                 ppATerm term
               ]
@@ -176,7 +176,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppGrConcat [
                 ppBinder binder,
                 ppString " (",
-                ppSep (ppString ",") (map ppAVarWithoutSort vars),
+                ppSep (ppString ",") (map ppAVarWithoutType vars),
                 ppString ") ",
                 ppATerm term
               ]
@@ -198,7 +198,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               let def ppDecl (v,term) =
                 ppGrConcat [
                   ppString "def ",
-                  ppAVarWithoutSort v,
+                  ppAVarWithoutType v,
                   ppString " = ",
                   ppATerm term
                 ] in
@@ -212,7 +212,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppNewline,
                 ppATerm term
              ]
-          | Var (v,_) -> ppAVarWithoutSort v
+          | Var (v,_) -> ppAVarWithoutType v
           | Fun (fun,srt,_) -> ppAFun fun
           | Lambda ([(pattern,_,term)],_) ->
               ppGrConcat [
@@ -241,8 +241,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ]
           | Seq (terms,_) ->
               ppSep (ppString "; ") (map ppATerm terms)
-	  | SortedTerm (tm,srt,_) ->
-	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
+	  | TypedTerm (tm,srt,_) ->
+	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppAType srt]
           | Transform (trs, _) ->
             ppTransformExprs trs
           | And (tms, _) ->
@@ -259,15 +259,15 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Exists -> ppString "ex"
       | Exists1 -> ppString "ex1"
 
-  op ppAVarWithoutSort : [a] AVar a -> WLPretty
-  def ppAVarWithoutSort (id, _(* srt *)) = ppString id
+  op ppAVarWithoutType : [a] AVar a -> WLPretty
+  def ppAVarWithoutType (id, _(* srt *)) = ppString id
 
   op ppAVar : [a] AVar a -> WLPretty
   def ppAVar (id,srt) =
     ppConcat [
       ppString id,
       ppString ":",
-      ppASort srt
+      ppAType srt
     ]
 
   op ppAMatch : [a] AMatch a -> WLPretty
@@ -291,7 +291,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString " as ",
             ppAPattern pat2
           ]
-      | VarPat (v,_) -> ppAVarWithoutSort v
+      | VarPat (v,_) -> ppAVarWithoutType v
       | EmbedPat (constr,pat,srt,_) ->
           ppGrConcat [
             ppString constr,
@@ -362,11 +362,11 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 	    ppGrConcat [ppAPattern pat,
 			ppString " | ",
 			ppATerm term] %)
-      | SortedPat (pat,srt,_) -> ppAPattern pat
+      | TypedPat (pat,srt,_) -> ppAPattern pat
       | mystery -> fail ("No match in ppAPattern with: '" ^ (anyToString mystery) ^ "'")
 
 
-  op ppBoolean : Boolean -> WLPretty
+  op ppBoolean : Bool -> WLPretty
   def ppBoolean b =
     case b of
       | true -> ppString "true"
@@ -460,33 +460,33 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
-  op isSimpleSort? : [a] ASort a -> Boolean
-  def isSimpleSort? srt =
+  op isSimpleType? : [a] AType a -> Bool
+  def isSimpleType? srt =
     case srt of
       | Base _ -> true
       | Boolean _ -> true
       | _ -> false
 
-  op ppASort : [a] ASort a -> WLPretty
-  def ppASort srt =
+  op ppAType : [a] AType a -> WLPretty
+  def ppAType srt =
     case srt of
       | Arrow (srt1,srt2,_) ->
-          if (isSimpleSort? srt1) || (isSimpleSort? srt2) then
+          if (isSimpleType? srt1) || (isSimpleType? srt2) then
             ppGroup (ppConcat [
               ppString "(",
-              ppASort srt1,
+              ppAType srt1,
               ppString " -> ",
-              ppASort srt2,
+              ppAType srt2,
               ppString ")"
             ])
           else
             ppGrConcat [
               ppString "(",
-              ppASort srt1,
+              ppAType srt1,
               ppGroup (ppIndent (ppConcat [
                 ppString " ->",
                 ppBreak,             
-                ppASort srt2,
+                ppAType srt2,
                 ppString ")"
               ]))
             ]
@@ -494,7 +494,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           (case fields of
               [] -> ppString "()"
             | ("1",_)::_ ->
-                let def ppField (_,y) = ppASort y in
+                let def ppField (_,y) = ppAType y in
                 ppGrConcat [
                   ppString "(",
                   ppSep (ppString " * ") (map ppField fields),
@@ -505,42 +505,42 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                   ppGroup (ppConcat [
                     ppString x,
                     ppString " : ",
-                    ppASort y
+                    ppAType y
                   ]) in
                 ppIndent (ppGrConcat [
                   ppString "{",
                   ppSep (ppAppend (ppString ",") ppBreak) (map ppField fields),
                   ppString "}"
                 ]))
-      | CoProduct (taggedSorts,_) -> 
-          let def ppTaggedSort (id,optSrt) =
+      | CoProduct (taggedTypes,_) -> 
+          let def ppTaggedType (id,optSrt) =
             case optSrt of
               | None -> ppString id
               | Some srt ->
                   ppConcat [
                     ppString (id ^ " "),
-                    ppASort srt
+                    ppAType srt
                   ]
           in ppGrConcat [
             ppString "(",
             ppGrConcat [
               ppString "|  ",
-              ppSep (ppAppend ppBreak (ppString "| ")) (map ppTaggedSort taggedSorts)
+              ppSep (ppAppend ppBreak (ppString "| ")) (map ppTaggedType taggedTypes)
             ],
             ppString ")"
           ]
       | Quotient (srt,term,_) ->
           ppGrConcat [
             ppString "(",
-            ppASort srt,
+            ppAType srt,
             ppString " \\ ",
             ppATerm term,
             ppString ")"
           ]
-      | Subsort (srt,term,_) ->
+      | Subtype (srt,term,_) ->
           ppGrConcat [
             ppString "(",
-            ppASort srt,
+            ppAType srt,
             ppString " | ",
             ppATerm term,
             ppString ")"
@@ -550,13 +550,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
            ppGrConcat [
              ppQualifiedId qid,
              ppString " ",
-             ppASort srt
+             ppAType srt
            ]
       | Base (qid,srts,_) ->
            ppGrConcat [
              ppQualifiedId qid,
              ppString " (",
-             ppSep (ppString ",") (map ppASort srts),
+             ppSep (ppString ",") (map ppAType srts),
              ppString ")"
            ]
       | Boolean _ -> ppString "Boolean"  
@@ -565,7 +565,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
          let ({link, uniqueId, name}) = ! tyVar in
              ppString (name ^ (Nat.show uniqueId))
 
-      | mystery -> fail ("No match in ppASort with: '" ^ (anyToString mystery) ^ "'")
+      | mystery -> fail ("No match in ppAType with: '" ^ (anyToString mystery) ^ "'")
 
  op [a] ppTransformExprs(tre: List(ATransformExpr a)): WLPretty
 

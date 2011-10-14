@@ -64,8 +64,8 @@
 
   (vector t1 t2 ... tn)   - a product
   (cons t1 t2)            - a two tuple
-  (cons t1 t2) , nil      - an element of a list sort
-  (list 'Quotient 'fn t)  - an element of a quotient sort
+  (cons t1 t2) , nil      - an element of a list type
+  (list 'Quotient 'fn t)  - an element of a quotient type
   (cons 'Name t)          - an embedding
   atom                    - a string, char, or nat constant.
 

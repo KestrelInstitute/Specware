@@ -20,7 +20,7 @@ spec {
   import Cod 
   import Dom
 
-  sort Map
+  type Map
 
   op emptyMap : Map 
   op update : Map -> Dom -> Cod -> Map
@@ -46,7 +46,7 @@ List the key/range pairs in order of appearance.
 \end{spec}
 
 \begin{spec}
-  op inDomain? : Map -> Dom -> Boolean
+  op inDomain? : Map -> Dom -> Bool
   op numItems : Map -> Nat
 \end{spec}
 
@@ -94,7 +94,7 @@ Don't understand the next one.
 \end{spec}
 
 Compose two maps. In the monomorphic case, this requires that
-the domain and range be of the same sort. Either that or we make two
+the domain and range be of the same type. Either that or we make two
 copies of the Maps spec and derive a third.
 
 \begin{spec}
@@ -117,8 +117,8 @@ copies of the Maps spec and derive a third.
 \end{spec}
 
 \begin{spec}
-%  op filter  : fa(key,a) (a -> Boolean) -> Map (key,a) -> Map (key,a)	  
-%  op filteri : fa(key,a) (key -> a -> Boolean) -> Map (key,a) -> Map (key,a)
+%  op filter  : fa(key,a) (a -> Bool) -> Map (key,a) -> Map (key,a)	  
+%  op filteri : fa(key,a) (key -> a -> Bool) -> Map (key,a) -> Map (key,a)
 \end{spec}
 
 \begin{spec}
@@ -137,12 +137,12 @@ form a map from an association set.
 \end{spec}
 
 \begin{spec}
-  op subset? : Map -> Map -> Boolean
+  op subset? : Map -> Map -> Bool
 \end{spec}
 
 \begin{spec}
-  op all : (Dom -> Cod -> Boolean) -> Map -> Boolean
-  op exists : (Dom -> Cod -> Boolean) -> Map -> Boolean
+  op all : (Dom -> Cod -> Bool) -> Map -> Bool
+  op exists : (Dom -> Cod -> Bool) -> Map -> Bool
 \end{spec}
 
 Pretty printing. As in sets, it is not clear that this belongs in this

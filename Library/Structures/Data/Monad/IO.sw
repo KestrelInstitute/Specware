@@ -41,7 +41,7 @@ IO qualifying spec
       % | Ok txt -> return txt
       % | EOF str -> raise (eof str)
 
-  op atEOF? : Stream -> Monad Boolean
+  op atEOF? : Stream -> Monad Bool
   def atEOF? strm = return (ImpureIO.atEOF? strm)
 
   op writeLine : Stream -> String -> Monad ()

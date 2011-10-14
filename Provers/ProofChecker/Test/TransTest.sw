@@ -43,14 +43,14 @@ spec
      % fa (n1:Nat, n2:Nat) succ n1 = succ n2 => n1 = n2
 
 %   axiom induction is
-%     fa (p : Nat -> Boolean)
+%     fa (p : Nat -> Bool)
 %       p zero &&
 %       (fa(n:Nat) p n => p (succ n)) =>
 %       (fa(n:Nat) p n)
 % 
 %   % positive natural numbers:
 % 
-%   op posNat? : Nat -> Boolean
+%   op posNat? : Nat -> Bool
 %   def posNat? n = (n ~= zero)
 % 
 %   type PosNat = {n : Nat | posNat? n}
@@ -69,7 +69,7 @@ spec
 %   axiom plus_def2 is
 %     fa(n:Nat, n0:Nat) plus(n,succ n0) = succ(plus(n,n0))
 % 
-%   op lte : Nat * Nat -> Boolean
+%   op lte : Nat * Nat -> Bool
 %   axiom lte_def1 is
 %     fa(n:Nat) lte(zero,n)
 %   axiom lte_def2 is

@@ -55,8 +55,8 @@ IsaTermPrinter qualifying spec
 	      (parseMorphMap(trans_string, result, kind, pos), None))
        | OpDef (qid,_,_) \_rightarrow (result,Some(qid, false))
        | Op    (qid,_,_) \_rightarrow (result,Some(qid, false))
-       | SortDef(qid,_)  \_rightarrow (result,Some(qid, true))
-       | Sort  (qid,_)   \_rightarrow (result,Some(qid, true))
+       | TypeDef(qid,_)  \_rightarrow (result,Some(qid, true))
+       | Type  (qid,_)   \_rightarrow (result,Some(qid, true))
        | _               \_rightarrow (result,None))
      (emptyTranslationTable, None)
      spc.elements).1

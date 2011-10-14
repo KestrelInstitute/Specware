@@ -8,7 +8,7 @@ spec {
   import ../Monomorphic
   import PolyMap qualifying ../Polymorphic/AsLists
 
-  sort Map = PolyMap.Map (Dom,Cod)
+  type Map = PolyMap.Map (Dom,Cod)
 
   def emptyMap = PolyMap.emptyMap
   def update = PolyMap.update

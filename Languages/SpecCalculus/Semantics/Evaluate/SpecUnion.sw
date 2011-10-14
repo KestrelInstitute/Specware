@@ -35,7 +35,7 @@ SpecUnion qualifying spec
 
  op  auxSpecUnion : List Spec -> Spec
  def auxSpecUnion specs =
-   let new_spec = {sorts     = sortsUnion specs,
+   let new_spec = {types     = typesUnion specs,
 		   ops       = opsUnion   specs,
 		   elements  = eltsUnion  specs,
 		   qualifier = None}
@@ -47,27 +47,27 @@ SpecUnion qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op sortsUnion : List Spec -> SortMap
+ op typesUnion : List Spec -> TypeMap
  op opsUnion   : List Spec -> OpMap
  op eltsUnion  : List Spec -> SpecElements
 
- def sortsUnion specs = foldl unionSortMaps emptySortMap  specs
+ def typesUnion specs = foldl unionTypeMaps emptyTypeMap  specs
  def opsUnion   specs = foldl unionOpMaps   emptyOpMap    specs
  def eltsUnion  specs = foldl unionElts     emptyElements specs
  
- def unionSortMaps (sorts, next_spec) =
+ def unionTypeMaps (types, next_spec) =
    %% Jan 8, 2003: Fix for bug 23
-   %% Assertion: If new_sorts at a given name refers to an info, then it will
+   %% Assertion: If new_types at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
-   foldriAQualifierMap (fn (q, id, info, sorts) ->
-			let Qualified (primary_q, primary_id) = primarySortName info in
+   foldriAQualifierMap (fn (q, id, info, types) ->
+			let Qualified (primary_q, primary_id) = primaryTypeName info in
 			if q = primary_q && id = primary_id then
 			  %% Assertion: We take this branch exactly once per new info.
-			  mergeSortInfo next_spec sorts info % may introduce duplicate defs
+			  mergeTypeInfo next_spec types info % may introduce duplicate defs
 			else
-			  sorts)
-                       sorts 
-		       next_spec.sorts
+			  types)
+                       types 
+		       next_spec.types
 
  def unionOpMaps (ops, next_spec) =
    %% Assertion: If new_op_map at a given name refers to an info, then it will

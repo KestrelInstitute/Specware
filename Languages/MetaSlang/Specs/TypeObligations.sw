@@ -10,7 +10,7 @@ spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/MergeSpecs
 
- %type SpecElement  = QualifiedId * TyVars * MS.Term 
+ %type SpecElement  = QualifiedId * TyVars * MSTerm 
  type TypeCheckConditions = SpecElements * StringSet.Set
 
  op makeTypeCheckObligationSpec: Spec * Bool * (String * String -> Bool) * String -> Spec
@@ -34,29 +34,29 @@ spec
 % and also accumulates local context assertions.
 
  type Decl  = 
-   | Var Var 
-   | Cond MS.Term                 
-   | LetRec List (Var * MS.Term) 
-   | Let List (Pattern * MS.Term)
+   | Var    Var 
+   | Cond   MSTerm                 
+   | LetRec List (Var       * MSTerm) 
+   | Let    List (MSPattern * MSTerm)
 
- type Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * QualifiedId
-                * Option Sort * NameSupply * Bool * Ref Nat
+ type Gamma = List Decl * TyVars * Spec * Option (QualifiedId * MSPatterns) * QualifiedId
+                * Option MSType * NameSupply * Bool * Ref Nat
 
  op  insert       : Var * Gamma -> Gamma
- op  assertCond   : MS.Term * Gamma * String -> Gamma
- op  insertLet    : List (Pattern * MS.Term) * Gamma -> Gamma
- op  insertLetRec : List (Var * MS.Term) * Gamma -> Gamma
+ op  assertCond   : MSTerm * Gamma * String -> Gamma
+ op  insertLet    : List (MSPattern * MSTerm) * Gamma -> Gamma
+ op  insertLetRec : List (Var       * MSTerm) * Gamma -> Gamma
 
- op  assertSubtypeCond: MS.Term * MS.Sort * Gamma -> Gamma
+ op  assertSubtypeCond: MSTerm * MSType * Gamma -> Gamma
  def assertSubtypeCond(term, srt, gamma) = 
      case srt
-       of Subsort(srt, pred, _) ->
+       of Subtype(srt, pred, _) ->
           let (ds, tvs, spc, qid, name, ty, names, lift?, trivs) = gamma in
           assertSubtypeCond(term, srt, (Cons(Cond(mkLetOrApply(pred, term, gamma)), ds),
                                         tvs, spc, qid, name, ty, names, lift?, trivs))
         | _ -> gamma
 
- op  mkLetOrApply: MS.Term * MS.Term * Gamma -> MS.Term
+ op  mkLetOrApply: MSTerm * MSTerm * Gamma -> MSTerm
  def mkLetOrApply(fntm, arg, (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) =
    let fntm = renameTerm (names, emptyEnv()) fntm in
    case fntm of
@@ -108,7 +108,7 @@ spec
      let gamma = (ds, tvs, spc, qid, name, ty, names, lift?, trivs) in
      let gamma = assertSubtypeCond(mkVar(x, srt), srt, gamma) in
      gamma
-% Subsort conditions:
+% Subtype conditions:
  def insertLet(decls, (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) = 
      (Cons(Let decls, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
  def insertLetRec(decls, (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) =
@@ -117,7 +117,7 @@ spec
 
  def printDecl(d:Decl) = 
      case d
-       of Var (x, srt) -> x^":"^printSort srt
+       of Var (x, srt) -> x^":"^printType srt
 	| Cond term -> "assert "^printTerm term
 	| LetRec (decls) -> printTerm (LetRec(decls, mkRecord([]), noPos))
 	| Let decls -> printTerm (Let(decls, mkRecord([]), noPos))
@@ -133,7 +133,7 @@ spec
      ()
  
 
- op addCondition : TypeCheckConditions * Gamma * MS.Term * String -> 
+ op addCondition : TypeCheckConditions * Gamma * MSTerm * String -> 
 		   TypeCheckConditions
  op addFailure :   TypeCheckConditions * Gamma * String -> 
 		   TypeCheckConditions
@@ -144,12 +144,12 @@ spec
  def ??(x) = x
 
 
- op |- infixl 7 : (TypeCheckConditions * Gamma) * (MS.Term * Sort) -> TypeCheckConditions
+ op |- infixl 7 : (TypeCheckConditions * Gamma) * (MSTerm * MSType) -> TypeCheckConditions
 
- op <= : TypeCheckConditions * Gamma * MS.Term * Sort * Sort -> TypeCheckConditions
+ op <= : TypeCheckConditions * Gamma * MSTerm * MSType * MSType -> TypeCheckConditions
 
  op getSpec    : Gamma -> Spec
- op unfoldBase : Gamma * Sort -> Sort
+ op unfoldBase : Gamma * MSType -> MSType
 
  def getSpec (_, _, e, _, _, _, _, _, _) = e
 
@@ -160,13 +160,13 @@ spec
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
- op notTypePredTerm? (spc: Spec, vs: Vars) (t: MS.Term): Bool =
+ op notTypePredTerm? (spc: Spec, vs: Vars) (t: MSTerm): Bool =
    case t of
      | Apply(p, Var(v as (_,ty), _), _) ->
        ~(inVars?(v, vs) && subtypePred?(ty, p, spc))
      | _ -> true
 
- op removeRedundantTypePredicates (spc: Spec) (tm: MS.Term): MS.Term =
+ op removeRedundantTypePredicates (spc: Spec) (tm: MSTerm): MSTerm =
    mapTerm (fn t ->
               case t of
                 | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([(_,lhs), (_,rhs)], _), _), a) ->
@@ -180,12 +180,12 @@ spec
             id, id)
      tm
 
- op simplifyObligUnfoldSubsortPredicates?: Bool = true
- op simplifyUnfoldSubsortPredicates (spc: Spec) (tm: MS.Term): MS.Term =
+ op simplifyObligUnfoldSubtypePredicates?: Bool = true
+ op simplifyUnfoldSubtypePredicates (spc: Spec) (tm: MSTerm): MSTerm =
    let tm1 = mapTerm (fn t ->
                       case t of
                         | Fun(Op(Qualified(_, nm), _), _, _)
-                            | testSubseqEqual?("_subsort_pred", nm, 0, length nm - 13) ->
+                            | testSubseqEqual?("_subtype_pred", nm, 0, length nm - 13) ->
                           (case unfoldOpRef(t, spc) of
                            | Some ut -> ut
                            | None    -> t)
@@ -198,7 +198,7 @@ spec
    % let _ = writeLine("  --> "^printTerm r_tm) in
    r_tm
 
- op simplifyOblig (spc: Spec) (oblig: MS.Term) (bare_oblig: MS.Term): MS.Term =
+ op simplifyOblig (spc: Spec) (oblig: MSTerm) (bare_oblig: MSTerm): MSTerm =
    let _ = if traceObligationSimplify? then writeLine("Obligation: "^printTerm oblig) else () in
    let oblig1 = if simplifyObligations?
                  then
@@ -210,8 +210,8 @@ spec
                    let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
                                 else simplify spc oblig2
                    in
-                   let oblig4 = %if simplifyObligUnfoldSubsortPredicates?
-            %                     then simplifyUnfoldSubsortPredicates spc oblig3
+                   let oblig4 = %if simplifyObligUnfoldSubtypePredicates?
+            %                     then simplifyUnfoldSubtypePredicates spc oblig3
             %                     else
                                    oblig3
                    in
@@ -226,7 +226,7 @@ spec
      let name = mkQualifiedId(qid, descName) in
      (Cons(mkConjecture(name, [], mkFalse()), tcc), StringSet.add(claimNames, descName))
 
- op  makeVerificationCondition: Gamma * MS.Term * String * StringSet.Set -> Option(QualifiedId * TyVars * MS.Term)
+ op  makeVerificationCondition: Gamma * MSTerm * String * StringSet.Set -> Option(QualifiedId * TyVars * MSTerm)
  def makeVerificationCondition((decls, tvs, spc, qid, name as Qualified(qual, id), _, _, _, triv_count_ref),
                                term, id_tag, claimNames) = 
      let
@@ -273,7 +273,7 @@ spec
  def freshName((_, _, _, _, _, _, names, lift?, trivs), name) =
    fresh names name
 
- op  freshVar: Id * Sort * Gamma -> MS.Term * Gamma
+ op  freshVar: Id * MSType * Gamma -> MSTerm * Gamma
  def freshVar(name0, sigma1, gamma) =
    let x = freshName(gamma, name0) in
    let xVar   = mkVar(x, sigma1) in
@@ -281,7 +281,7 @@ spec
    (xVar, gamma1)
 
  %%% If sigma1 is a product produce a product of new vars
- op  freshVars: Id * Sort * Gamma -> MS.Term * Gamma
+ op  freshVars: Id * MSType * Gamma -> MSTerm * Gamma
  def freshVars(name0, sigma1, gamma) =
    case sigma1 of
      | Product(prs, _) ->
@@ -297,7 +297,7 @@ spec
 % check type well formedness as well...
 
  def |-((tcc, gamma), (M, tau)) =
-   % let _ = writeLine(".. |- ("^printTerm M^", "^printSort tau^")") in
+   % let _ = writeLine(".. |- ("^printTerm M^", "^printType tau^")") in
    case M
      of Apply(N1, N2, _) ->
         let spc = getSpec gamma in
@@ -320,10 +320,10 @@ spec
          let tcc  = (tcc, gamma) |- N1 ?? sigma1 	           in
          case nonStrictAppl(N1, N2) of
            | Some (p1, p2, polarity) ->
-             let tcc   = (tcc, gamma)   |- p1 ?? boolSort 	   in
+             let tcc   = (tcc, gamma)   |- p1 ?? boolType 	   in
              let gamma1 = assertCond(if polarity then p1 else negateTerm p1, gamma, "nonStrict") in
-             let tcc   = (tcc, gamma1) |- p2 ?? boolSort           in
-             let tcc   = <= (tcc, gamma, M, boolSort, tau) 	   in
+             let tcc   = (tcc, gamma1) |- p2 ?? boolType           in
+             let tcc   = <= (tcc, gamma, M, boolType, tau) 	   in
              tcc
            | _ ->
              let tcc  = (tcc, gamma) |- N2 ?? domain(spc, sigma1)  in
@@ -342,26 +342,26 @@ spec
         in
         % Check recursively that every element is well typed 
         let tcc = ListPair.foldl checkField tcc (fields, types) in
-        % Check possible subsort constraints in tau 
+        % Check possible subtype constraints in tau 
         let tcc = <= (tcc, gamma, M, Product(types, noPos), tau) in
         tcc
 
       | Bind(binder, vars, body, _) -> 
         let gamma = foldl (fn (x, y) -> insert(y, x))  gamma vars in
-        let tcc = (tcc, gamma) |- body ?? boolSort  in
-        let tcc = <= (tcc, gamma, M, boolSort, tau) in
+        let tcc = (tcc, gamma) |- body ?? boolType  in
+        let tcc = <= (tcc, gamma, M, boolType, tau) in
         tcc
       | The(v as (_, srt), body, _) ->
         % let _ = writeLine("The_oblig:\n"^printTerm(mkBind(Exists1, [v], body))) in
         let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         let gamma = insert (v, gamma) in
-        let tcc = (tcc, gamma) |- body ?? boolSort  in
+        let tcc = (tcc, gamma) |- body ?? boolType  in
         let tcc = <= (tcc, gamma, M, srt, tau)         in
         tcc
       | Let(decls, body, _)    ->
         let (tcc, gamma) =
              foldl (fn ((tcc, ngamma), (pat, trm)) ->
-                    let sigma1 = patternSort pat                         in
+                    let sigma1 = patternType pat                         in
                     let (ngamma, tp) = bindPattern(ngamma, pat, sigma1)     in
                     %% This is alternative to insertLet below
                     let ngamma = assertCond(mkEquality(inferType(getSpec gamma, trm),
@@ -437,12 +437,12 @@ spec
         checkLambda(tcc, gamma, rules, tau, None)
 
       | Lambda(rules as (pat, _, body)::_, a) ->	% eta-normalize to simple pattern & case
-        let (v, gamma) = freshVar("eV", patternSort pat, gamma) in
+        let (v, gamma) = freshVar("eV", patternType pat, gamma) in
         let Var v_t = v in
         |-((tcc, gamma), (Lambda([(VarPat v_t, mkTrue(), mkApply(M, v))], a), tau))
 
       | IfThenElse(t1, t2, t3, _) -> 
-        let tcc1   = (tcc, gamma)   |- t1 ?? boolSort 		in
+        let tcc1   = (tcc, gamma)   |- t1 ?? boolType 		in
         let gamma1 = assertCond(t1, gamma, "if-true") 			in
         let tcc2   = (tcc1, gamma1) |- t2 ?? tau 		in
         let gamma2 = assertCond(negateTerm t1, gamma, "if-false") 		in
@@ -456,7 +456,7 @@ spec
         let tcc   = (tcc, gamma) |- Seq(Ms, noPos) ?? tau	in
         tcc
 
- op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Bool)
+ op  nonStrictAppl: MSTerm * MSTerm -> Option (MSTerm * MSTerm * Bool)
  def nonStrictAppl(rator, args) =
    case (rator, args) of
      | (Fun(And,     _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p && q  -- can assume  p in q
@@ -464,8 +464,7 @@ spec
      | (Fun(Implies, _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p => q -- can assume  p in q
      | _ -> None
 
- op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term
-                -> TypeCheckConditions
+ op  checkLambda: TypeCheckConditions * Gamma * Match * MSType * Option MSTerm -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
    let spc = getSpec gamma in
    let dom = domain(spc, tau) in
@@ -473,7 +472,7 @@ spec
    let casesDisjoint? = disjointMatches rules in
    let (tcc, _) = foldl (checkRule(dom, rng, optArg, casesDisjoint?)) (tcc, gamma) rules  in
    let exhaustive? = exhaustivePatterns?(map (project 1) rules, dom, spc) in
-   % let _ = writeLine("\nExh "^show exhaustive?^": "^printSort dom) in
+   % let _ = writeLine("\nExh "^show exhaustive?^": "^printType dom) in
    % let _ = app (fn (p,_,_) -> writeLine(printPattern p)) rules in
    if exhaustive? then tcc
    else
@@ -533,14 +532,14 @@ spec
 %                        addCondition(tcc, gamma, frm, "_exhaustive")
 %                  else tcc)
 
- op  useNameFrom: Gamma * Option MS.Term * String -> String
+ op  useNameFrom: Gamma * Option MSTerm * String -> String
  def useNameFrom(gamma, optTm, default) =
    case optTm of
      | Some(Var((nm, _), _)) -> nm
      | _ -> freshName(gamma, default)
 
- op  checkRule: Sort * Sort * Option MS.Term * Bool
-               -> (TypeCheckConditions * Gamma) * (Pattern * MS.Term * MS.Term)  
+ op  checkRule: MSType * MSType * Option MSTerm * Bool
+               -> (TypeCheckConditions * Gamma) * (MSPattern * MSTerm * MSTerm)  
                -> TypeCheckConditions * Gamma
  def checkRule(dom, rng, optArg, casesDisjoint?) ((tcc, gamma), (pat, cond, body)) = 
      let (gamma0, tp) = bindPattern(gamma, pat, dom) 	  in
@@ -552,7 +551,7 @@ spec
 	      (condn, gamma0)
 	    | _ -> (mkTrue(), gamma0)
      in
-     let tcc = (tcc, gamma1) |- cond ?? boolSort 	  in
+     let tcc = (tcc, gamma1) |- cond ?? boolType 	  in
      let gamma2 = assertCond(cond, gamma1, "case-condn")		  in
      let tcc = (tcc, gamma2) |- body ?? rng 		  in
      let tcc = addQuotientCondition(tcc, gamma, pat, body, optArg) in
@@ -564,7 +563,7 @@ spec
      in
      (tcc, nextGamma)
 
- op  negateExistTerm: MS.Term * Gamma * Gamma -> MS.Term
+ op  negateExistTerm: MSTerm * Gamma * Gamma -> MSTerm
  def negateExistTerm(c, (decls_new, _, _, _, _, _, _, _, _), (decls_old, _, _, _, _, _, _, _, _)) =
    let vs = mapPartial (fn decl -> case decl of
 			             | Var v | isFree(v, c) ->
@@ -575,7 +574,7 @@ spec
    in
    negateTerm(mkSimpBind(Exists, vs, c))
 
- op  addQuotientCondition: TypeCheckConditions * Gamma * Pattern * MS.Term * Option MS.Term
+ op  addQuotientCondition: TypeCheckConditions * Gamma * MSPattern * MSTerm * Option MSTerm
                           -> TypeCheckConditions
  def addQuotientCondition(tcc, gamma, pat, body, optArg) =
    case optArg of
@@ -584,7 +583,7 @@ spec
                                 case p of 
                                   | QuotientPat (VarPat pv, super_type_name, _) -> 
                                     %% If the spec has type-checked, there must be an info for the super_type.
-                                    let Some info = findTheSort (gamma.3, super_type_name) in
+                                    let Some info = findTheType (gamma.3, super_type_name) in
                                     let Quotient (base_type, _, _) = info.dfn in
                                     Some (pv, base_type)
                                   | _ -> result)
@@ -598,11 +597,11 @@ spec
 	   let v2n = (vn^"__2", base_type) in % was type of v, but should be base type of Q
 	   let v2 = Var(v2n, vpos) in
 	   let (tm, conds, vs) = patternToTermPlusExConds pat in
-	   let mainCond = [mkEquality(termSort arg, arg, tm)] in
+	   let mainCond = [mkEquality(termType arg, arg, tm)] in
 	   let all_conds = mainCond ++ conds in
 	   let v1Conds = map (fn c -> substitute(c, [(v, v1)])) all_conds in
 	   let v2Conds = map (fn c -> substitute(c, [(v, v2)])) all_conds in
-           let body_type = termSort body in
+           let body_type = termType body in
 	   let quotCond = mkBind(Forall, [v1n, v2n]++vs,
 				 mkSimpImplies(mkConj(v1Conds ++ v2Conds),
                                                mkEquality(body_type, % was type of v, but should be type of body
@@ -613,7 +612,7 @@ spec
 	 | _ -> tcc)
      | _ -> tcc
 
- op  returnPattern: Gamma * MS.Term * Sort * Sort  -> Gamma * MS.Term
+ op  returnPattern: Gamma * MSTerm * MSType * MSType  -> Gamma * MSTerm
  def returnPattern(gamma, t, tau1, tau2) = 
      returnPatternRec([], gamma, t, tau1, tau2)
 
@@ -630,18 +629,18 @@ spec
 	then (gamma, M)
      else
      case tau1 
-       of Subsort(tau2, pred, _) -> 
+       of Subtype(tau2, pred, _) -> 
 	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype1") in
           returnPatternRec(pairs, gamma, M, tau2, sigma1)
 	| _ ->
-     % let _ = writeLine("returnPattern:\n"^printSort sigma1) in
+     % let _ = writeLine("returnPattern:\n"^printType sigma1) in
      case sigma1 
-       of Subsort(sigma2, pred, _) -> 
+       of Subtype(sigma2, pred, _) -> 
 	  let gamma = assertCond(mkLetOrApply(pred, M, gamma), gamma, "pat-subtype2") in
 	  returnPatternRec(pairs, gamma, M, tau1, sigma2)
 	| _ -> (gamma, M)
 
- op  bindPattern : Gamma * Pattern * Sort  -> Gamma * MS.Term
+ op  bindPattern : Gamma * MSPattern * MSType -> Gamma * MSTerm
  def bindPattern(gamma, pat, tau) = 
    case pat
      of AliasPat(p1, p2, _) -> 
@@ -653,7 +652,7 @@ spec
 	let gamma1 = insert(v, gamma) in
 	returnPattern(gamma1, mkVar(v), srt, tau)
       | EmbedPat(constr, Some p, tau2, _) -> 
-	let tau1 = patternSort p in
+	let tau1 = patternType p in
 	let (gamma1, t1) = bindPattern(gamma, p, tau1) in
 	let t2 = mkApply(mkFun(Embed(constr, true),
 			       mkArrow(tau1, tau2)),
@@ -672,18 +671,18 @@ spec
 	      (gamma, []) fields
 	in
 	let trm = mkRecord(terms) in
-	returnPattern(gamma, trm, patternSort pat, tau)
+	returnPattern(gamma, trm, patternType pat, tau)
       | WildPat(sigma, _)	->
 	let (v, gamma1) = freshVar("P", sigma, gamma)in
 	(gamma1, v)
      | StringPat(s, _) 	->      
-       returnPattern(gamma, mkFun(String s, stringSort), stringSort, tau)
+       returnPattern(gamma, mkFun(String s, stringType), stringType, tau)
      | BoolPat(b, _) 		->      
-       returnPattern(gamma, mkFun(Bool b, boolSort), boolSort, tau)
+       returnPattern(gamma, mkFun(Bool b, boolType), boolType, tau)
      | CharPat(ch, _) 	->      
-       returnPattern(gamma, mkFun(Char ch, charSort), charSort, tau)
+       returnPattern(gamma, mkFun(Char ch, charType), charType, tau)
      | NatPat(i, _) 		->      
-       returnPattern(gamma, mkFun(Nat i, natSort), natSort, tau)
+       returnPattern(gamma, mkFun(Nat i, natType), natType, tau)
      | QuotientPat(p, qid, _) 	-> 
        let Quotient(tau1, _, _) = unfoldBase(gamma, tau) in
        let (gamma, trm) = bindPattern(gamma, p, tau1)
@@ -696,7 +695,7 @@ spec
 
 %% Well-foundedness condition
 
- op  checkRecursiveCall: TypeCheckConditions * Gamma * MS.Term * MS.Term * MS.Term -> TypeCheckConditions
+ op  checkRecursiveCall: TypeCheckConditions * Gamma * MSTerm * MSTerm * MSTerm -> TypeCheckConditions
  (* Don't need to generate obligation if arguments of call are independent of parameters. Normally, if an 
     obligation is generated, it should be trivial to find a WFO because the "recursive" call is made with 
     constant arguments, but if type of call is different from type of def then don't generate condition
@@ -741,7 +740,7 @@ spec
 	 | _ -> tcc)
      | _ -> tcc
 
- op addUniqueExistenceCondition((tccs, claimNames): TypeCheckConditions, gamma: Gamma, body: MS.Term)
+ op addUniqueExistenceCondition((tccs, claimNames): TypeCheckConditions, gamma: Gamma, body: MSTerm)
       : TypeCheckConditions =
    let (_, tvs, spc, Some(op_qid as Qualified(qual, fn_nm), _), _, Some op_ty, _, _, _) = gamma in
    if ~(containsRefToOp?(body, op_qid)) then (tccs, claimNames)
@@ -767,14 +766,14 @@ spec
      (Cons(mkConjecture condn, tccs), StringSet.add(claimNames, sname))
 
  %% Obsolete. Replaced by above
- op  add_WFO_Condition: TypeCheckConditions * Gamma * MS.Term * MS.Term
+ op  add_WFO_Condition: TypeCheckConditions * Gamma * MSTerm * MSTerm
                        -> TypeCheckConditions
  def add_WFO_Condition((tccs, claimNames), (decls, tvs, spc, qid, name as Qualified(qual, id), _, _, _, _),
                        param, recParam) =
    %% ex(pred) (wfo(pred) && fa(params) context(params) => pred(recParams, params))
-   let paramSort = inferType(spc, recParam) in
-   let predSort = mkArrow(mkProduct [paramSort, paramSort], boolSort) in
-   let pred = ("pred", predSort) in
+   let paramType = inferType(spc, recParam) in
+   let predType = mkArrow(mkProduct [paramType, paramType], boolType) in
+   let pred = ("pred", predType) in
    let rhs = mkAppl(mkVar pred, [recParam, param]) in
    let def insert(formula, decl) = 
 	 case decl
@@ -790,7 +789,7 @@ spec
    let form = foldl insert rhs decls in
    let form = simplify spc form in
    let form = mkBind(Exists, [pred], mkConj[mkApply(mkOp(Qualified("Function", "wfo"),
-						       mkArrow(predSort, boolSort)),
+						       mkArrow(predType, boolType)),
 						  mkVar pred),
 					  form])
    in
@@ -811,7 +810,7 @@ spec
 % by replacing TranslationBuiltIn.failWith by "or"
 %
 
- op simplifyMatch: MS.Term -> MS.Term
+ op simplifyMatch: MSTerm -> MSTerm
  def simplifyMatch(trm) = 
      case trm
        of IfThenElse(t1, t2, t3, _) -> 
@@ -837,45 +836,45 @@ spec
 
  op includesPredLifter?(spc: Spec): Bool = embed? Some (findTheOp(spc, Qualified("List", "List_P")))
 
- op maybeRaiseSubtypes(ty1: Sort, ty2: Sort, gamma: Gamma): Sort * Sort =
+ op maybeRaiseSubtypes(ty1: MSType, ty2: MSType, gamma: Gamma): MSType * MSType =
    %% Temporary backward compatibility until we add these functions at type-check time rather
    %% than just in the Isabelle translator
    if lifting? gamma then
-       % let _ = writeLine("Lift tau: "^printSort ty1^"\nLift sigma: "^printSort ty2) in
+       % let _ = writeLine("Lift tau: "^printType ty1^"\nLift sigma: "^printType ty2) in
        let spc = gamma.3 in
        let (n_ty1, n_ty2) = raiseSubtypes(ty1, ty2, spc) in
        (if equalType?(n_ty1, ty1) then ty1
-         else % let _ = writeLine("Lift tau: "^printSort ty1^" --> "^printSort n_ty1) in
+         else % let _ = writeLine("Lift tau: "^printType ty1^" --> "^printType n_ty1) in
               case n_ty1 of
-                | Subsort(_, p, _) ->
-                  % let _ = writeLine("Raised "^printSort ty1^"\nstp: "^printTerm p) in
+                | Subtype(_, p, _) ->
+                  % let _ = writeLine("Raised "^printType ty1^"\nstp: "^printTerm p) in
                   n_ty1
                 | _ -> n_ty1,
         if equalType?(n_ty2, ty2) then ty2
-         else % let _ = writeLine("Lift sigma: "^printSort ty2^" --> "^printSort n_ty2) in
+         else % let _ = writeLine("Lift sigma: "^printType ty2^" --> "^printType n_ty2) in
               case n_ty2 of
-                | Subsort(_, p, _) ->
-                  % let _ = writeLine("Raised "^printSort ty2^"\nstp: "^printTerm p) in
+                | Subtype(_, p, _) ->
+                  % let _ = writeLine("Raised "^printType ty2^"\nstp: "^printTerm p) in
                   n_ty2
                 | _ -> n_ty2)
      else (ty1, ty2)
 
  def <=	(tcc, gamma, M, tau, sigma) = 
-   (% writeLine(printTerm M^ ": "^ printSort tau^" <= "^ printSort sigma);
+   (% writeLine(printTerm M^ ": "^ printType tau^" <= "^ printType sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
-    % let _ =  writeLine(printTerm M^ ": \n"^ printSort tau^"\n <= \n"^ printSort sigma) in
+    % let _ =  writeLine(printTerm M^ ": \n"^ printType tau^"\n <= \n"^ printType sigma) in
     let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
     if lifting? gamma then
       let gamma =
           case tau0 of
-          | Subsort(_, pred, _) -> 
+          | Subtype(_, pred, _) -> 
             let preds = decomposeConjPred pred in
             foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma, "subtype")) gamma preds
           | _ -> gamma
       in
       case sigma0 of
-      | Subsort(_, pred, _) ->
+      | Subtype(_, pred, _) ->
 	% let _ = writeLine("Verifying "^printTerm pred^" for "^printTerm M) in
         let preds = decomposeConjPred pred in
         foldl (fn (tcc, pred) -> addCondition(tcc, gamma, mkLetOrApply(pred, M, gamma), "_subtype"))
@@ -892,19 +891,19 @@ spec
    else
 %      let _ = writeLine
 %       	   (printTerm M^ " : "^
-%                printSort tau^" <= "^
-%       	        printSort sigma)
+%                printType tau^" <= "^
+%       	        printType sigma)
 %      in
    let pairs  = Cons((tau, sigma), pairs) in 
    let tau1   = if lifting? gamma then tau   else unfoldBeforeCoProduct(spc, tau)   in
    let sigma1 = if lifting? gamma then sigma else unfoldBeforeCoProduct(spc, sigma) in
-%    let _ = writeLine("tau0: "^printSort tau^", "^"tau1: "^printSort tau1^", "^
-%                      "\nsig0: "^printSort sigma^", "^"sig1: "^printSort sigma1) in
+%    let _ = writeLine("tau0: "^printType tau^", "^"tau1: "^printType tau1^", "^
+%                      "\nsig0: "^printType sigma^", "^"sig1: "^printType sigma1) in
    if equalType?(tau1, sigma1)
       then tcc
    else
    case tau1 
-     of Subsort(tau2, pred, _) -> 
+     of Subtype(tau2, pred, _) -> 
 	% let _ = writeLine("Asserting "^printTerm pred^" of "^printTerm M) in
         let preds = decomposeConjPred pred in
         let gamma = foldl (fn (gamma, pred) -> assertCond(mkLetOrApply(pred, M, gamma), gamma, "subtypeR"))
@@ -912,7 +911,7 @@ spec
         subtypeRec(pairs, tcc, gamma, M, tau2, sigma1)
       | _ -> 
    case sigma1 
-     of Subsort(sigma2, pred, _) -> 
+     of Subtype(sigma2, pred, _) -> 
 	% let _ = writeLine("Verifying "^printTerm pred^" for "^printTerm M) in
         let tcc = subtypeRec(pairs, tcc, gamma, M, tau1, sigma2) in
         let preds = decomposeConjPred pred in
@@ -949,7 +948,7 @@ spec
               (fn(tcc, (_, t1), (id, t2)) -> 
                  (case (t1, t2)
                     of (Some t1, Some t2) -> 
-                       let gamma = assertCond(mkApply(mkFun(Embedded id, mkArrow(sigma, boolSort)),
+                       let gamma = assertCond(mkApply(mkFun(Embedded id, mkArrow(sigma, boolType)),
                                                       M),
                                               gamma, "coprod") in
                        subtypeRec(pairs, tcc, gamma,
@@ -984,32 +983,32 @@ spec
          else
          addFailure(tcc,
                     gamma,
-                    " "^printSort tau^
+                    " "^printType tau^
                     " could not be made subtype of "^
-                    printSort sigma)
+                    printType sigma)
       | (Boolean(_), Boolean(_)) -> tcc
       | (Boolean(_), _) ->
          addFailure(tcc,
                     gamma,
-                    printSort tau1^
+                    printType tau1^
                     " could not be made subtype of "^
-                    printSort sigma1)
+                    printType sigma1)
       | (_, Boolean(_)) ->
          addFailure(tcc,
                     gamma,
-                    printSort tau^
+                    printType tau^
                     " could not be made subtype of "^
-                    printSort sigma)
+                    printType sigma)
       | _ -> (%writeLine("subtypeRec: type error in "^printTerm M^"\nat "
-              %          ^print(termAnn M)^"\n"^printSort tau^" <=? "^printSort sigma);
+              %          ^print(termAnn M)^"\n"^printType tau^" <=? "^printType sigma);
               tcc)
 
- op  equivalenceConjectures: MS.Term * Spec -> SpecElements
+ op  equivalenceConjectures: MSTerm * Spec -> SpecElements
  def equivalenceConjectures (r, spc) =
    let name = nameFromTerm r in
    let qual = qualifierFromTerm r in
    let domty = domain(spc, inferType(spc, r)) in
-   let elty = head(productSorts(spc, domty)) in
+   let elty = head(productTypes(spc, domty)) in
    let tyVars = freeTyVars elty in
    let x = ("x", elty) in
    let y = ("y", elty) in
@@ -1028,13 +1027,13 @@ spec
     mkConjecture(mkQualifiedId(qual, name^"_reflexive"), tyVars,
 		 mkBind(Forall, [x], mkAppl(r, [mkVar x, mkVar x])))]
 
- op  nameFromTerm: MS.Term -> String
+ op  nameFromTerm: MSTerm -> String
  def nameFromTerm t =
    case t of
      | Fun(Op(Qualified(q, id), _), _, _) -> id
      | _ -> "UnnamedRelation"
 
- op  qualifierFromTerm: MS.Term -> String
+ op  qualifierFromTerm: MSTerm -> String
  def qualifierFromTerm t =
    case t of
      | Fun(Op(Qualified(q, id), _), _, _) -> q
@@ -1051,7 +1050,7 @@ spec
      else Qualified(q,nm^"__"^show refine_num)
 
 % op dontGenerateObligations?(q: String, id: String): Bool =
-%   false %endsIn?(id, "__subsort_pred")
+%   false %endsIn?(id, "__subtype_pred")
 
  op dontUnfoldTypes: List QualifiedId = [Qualified("Nat", "Nat")]
 
@@ -1091,14 +1090,14 @@ spec
                                                 | _ -> [tau]
                                    in
                                    let taus = if omitDefSubtypeConstrs?
-                                               then map (fn tau -> stripRangeSubsorts(spc, tau, dontUnfoldTypes)) taus
+                                               then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
                                                else taus
                                    in
                                    foldr (fn (tau, tcc) ->
                                           let gamma = gamma0 tvs
-                                                      %% Was unfoldStripSort but that cause infinite recursion.
-                                                      %% Is stripSubsorts sufficient (or necessary)?
-                                                        (Some (stripSubsorts(spc, tau)))
+                                                      %% Was unfoldStripType but that cause infinite recursion.
+                                                      %% Is stripSubtypes sufficient (or necessary)?
+                                                        (Some (stripSubtypes(spc, tau)))
                                                         (Some (qid, (curriedParams term).1))
                                                         (Qualified (q, id ^ "_Obligation"))
                                           in
@@ -1138,15 +1137,15 @@ spec
                                             | _ -> [tau]
                                in
                                let taus = if omitDefSubtypeConstrs?
-                                           then map (fn tau -> stripRangeSubsorts(spc, tau, dontUnfoldTypes)) taus
+                                           then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
                                            else taus
                                in
                                let Qualified(q, id) = refinedQID refine_num qid in
                                foldr (fn (tau, tcc) ->
                                       let gamma = gamma0 tvs
-                                                      %% Was unfoldStripSort but that cause infinite recursion.
-                                                      %% Is stripSubsorts sufficient (or necessary)?
-                                                        (Some (stripSubsorts(spc, tau)))
+                                                      %% Was unfoldStripType but that cause infinite recursion.
+                                                      %% Is stripSubtypes sufficient (or necessary)?
+                                                        (Some (stripSubtypes(spc, tau)))
                                                         (Some (qid, (curriedParams term).1))
                                                         (Qualified (q, id ^ "_Obligation"))
                                       in
@@ -1158,15 +1157,15 @@ spec
                                    tcc taus)
                           (el::tccs, claimNames) 
                           (opInfoDefs opinfo))
-                 | SortDef (qid as Qualified(q, id), _) ->
+                 | TypeDef (qid as Qualified(q, id), _) ->
                    (let tcc = (el::tccs, claimNames) in
-                    case findTheSort(spc, qid) of
-                      | Some sortinfo ->
-                        let quotientRelations: Ref(List MS.Term) = Ref [] in
-                        let subtypePreds:      Ref(List (TyVars * MS.Term * Sort)) = Ref [] in
+                    case findTheType(spc, qid) of
+                      | Some typeinfo ->
+                        let quotientRelations: Ref(List MSTerm) = Ref [] in
+                        let subtypePreds:      Ref(List (TyVars * MSTerm * MSType)) = Ref [] in
                         let _ = app (fn srt ->
-                                     let (tvs, srt) = unpackSort srt in
-                                     appSort (fn _ -> (),
+                                     let (tvs, srt) = unpackType srt in
+                                     appType (fn _ -> (),
                                               fn s ->
                                               case s of
                                                 | Quotient(_, r, _) ->
@@ -1174,12 +1173,12 @@ spec
                                                        (!quotientRelations) then ()
                                                   else 
                                                   quotientRelations := r :: !quotientRelations
-                                                | Subsort(ss, p, _) ->
-                                                  subtypePreds := (tvs, p, mkArrow(ss, boolSort)) :: !subtypePreds
+                                                | Subtype(ss, p, _) ->
+                                                  subtypePreds := (tvs, p, mkArrow(ss, boolType)) :: !subtypePreds
                                                 | _ -> (),
                                               fn _ -> ())
                                        srt)
-                                  (sortInfoDefs sortinfo)
+                                  (typeInfoDefs typeinfo)
                         in
                         let tcc = foldr (fn (r, (tccs, names)) ->
                                            (equivalenceConjectures(r, spc) ++ tccs, names))
@@ -1198,7 +1197,7 @@ spec
                    let fm = renameTerm (emptyContext()) fm in
                    let (new_tccs, claimNames) =
                        (([], claimNames), gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
-                          |- fm ?? boolSort
+                          |- fm ?? boolType
                    in
                    (reverse new_tccs ++ (el::tccs), claimNames)
                  | _ -> (el::tccs, claimNames))

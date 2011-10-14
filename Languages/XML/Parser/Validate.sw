@@ -127,7 +127,7 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  %% We provide a special sort for Valid_XML_Document, but not ValidDTD, ValidElement, etc.
+  %% We provide a special type for Valid_XML_Document, but not ValidDTD, ValidElement, etc.
   %% The assumption is that a valid xml document is recursively composed of valid components.
 
   type Valid_XML_Document = (XML_Document | valid_xml_document?)
@@ -138,7 +138,7 @@ XML qualifying spec
   %%               [KVC: Valid Root Element]
   %%               [KVC: External General Parsed Entity]
   %%
-  def valid_xml_document? (xml_doc : XML_Document) : Boolean =
+  def valid_xml_document? (xml_doc : XML_Document) : Bool =
       (valid_dtd?                    xml_doc)  % must validate combined internal/external dtd
     & (consistent_root_element_type? xml_doc)
     & (valid_root_element?           xml_doc)
@@ -155,7 +155,7 @@ XML qualifying spec
   %%
   %%    A document must contain exactly one doctypedecl.
   %%
-  def valid_dtd? (xml_doc : XML_Document) : Boolean =
+  def valid_dtd? (xml_doc : XML_Document) : Bool =
     let items = xml_doc.document in
     %% We've already determined there is at most one dtd, for the document to be well-formed,
     %% so we only need to test here for at least one dtd.
@@ -171,7 +171,7 @@ XML qualifying spec
   %%
   %%    The Name in the document type declaration must match the element type of the root element.
   %%
-  def consistent_root_element_type? (xml_document : XML_Document) : Boolean =
+  def consistent_root_element_type? (xml_document : XML_Document) : Bool =
    let items = xml_document.document in
    case (foldl (fn (item, (root_name : Option ElementName, dtd_name)) ->
 		case item of
@@ -189,7 +189,7 @@ XML qualifying spec
   %%
   %%    In a valid document, every element must be valid.
   %%
-  def valid_root_element? (xml_document : XML_Document) : Boolean =
+  def valid_root_element? (xml_document : XML_Document) : Bool =
    let items = xml_document.document in
     let dtd_and_root = foldl (fn (item, (dtd, root)) ->
 			      case item of
@@ -294,7 +294,7 @@ XML qualifying spec
   %%
   def unique_element_type_declarations? (dtd             : DocTypeDecl,
 					 external_subset : ExtSubset)
-    : Boolean =
+    : Bool =
     %% This is O(N**2) and could be smarter, but that's not worth it unless
     %% there's an implausibly huge DTD (tens of thousands of element decls).
     let decls = external_subset in
@@ -320,7 +320,7 @@ XML qualifying spec
   %%
   def one_id_per_element_type? (dtd             : DocTypeDecl,
 				external_subset : ExtSubset)
-    : Boolean =
+    : Bool =
     %% This is O(N**2) and could be smarter, but that's not worth it unless
     %% there's an implausibly huge DTD (tens of thousands of attlist decls).
     let decls = external_subset in
@@ -383,7 +383,7 @@ XML qualifying spec
   %%
   %%  [KVC: External General Parsed Entity]         Specification in English in section 4.3.2
   %%
-  op valid_external_general_parsed_entity? : ExtParsedEnt     -> Boolean
+  op valid_external_general_parsed_entity? : ExtParsedEnt     -> Bool
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          XMLDecl                                                                             %%%
@@ -544,7 +544,7 @@ XML qualifying spec
   %%
   %%    The same name must not appear more than once in a single mixed-content declaration.
   %%
-  def valid_mixed? (mixed : Mixed) : Boolean =
+  def valid_mixed? (mixed : Mixed) : Bool =
     case mixed of
       | Names {w1, names, w2} ->
         let
@@ -849,7 +849,7 @@ XML qualifying spec
   %%
   %%      Every child element of a valid element is valid.
   %%
-  def valid_element? (element : Element, dtd : DocTypeDecl) : Boolean =
+  def valid_element? (element : Element, dtd : DocTypeDecl) : Bool =
     let name = element_name element in
     case element of
       | Empty _ -> true

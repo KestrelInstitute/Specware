@@ -54,11 +54,11 @@ spec {
  %% A given key always represents the same value, and in fact could be the value,
  %% but we distinguish them since the key may be a more efficient index into a map
 
- sort MFSetNode = {rank   : Nat,
+ type MFSetNode = {rank   : Nat,
 		   parent : Option MFSetNode,
 		   value  : Element}
 
- sort MFSetMap  = Map (Element, MFSetNode)
+ type MFSetMap  = Map (Element, MFSetNode)
 
  %% Ops for building initial collection to be partitioned:
  op emptyMFSetMap   : MFSetMap  

@@ -20,9 +20,9 @@ constant time penalties associated with cloning nodes for functional updates.
 spec {
  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
 
- sort MergeUnionMap  (key, value) = Map (key, MergeUnionNode (key, value))
+ type MergeUnionMap  (key, value) = Map (key, MergeUnionNode (key, value))
 
- sort MergeUnionNode (key, value) = {rank   : Nat,
+ type MergeUnionNode (key, value) = {rank   : Nat,
 				     parent : Option (MergeUnionNode (key, value)),
 				     key    : key,
 				     value  : value}

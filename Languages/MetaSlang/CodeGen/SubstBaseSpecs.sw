@@ -28,12 +28,12 @@ SubstBaseSpecs qualifying spec
                             (case findAQualifierMap (exec_spc.ops, q, id) of
                                | Some _ ->  (qid :: ops, types)
                                | _ -> (ops, types))
-                          | Sort(qid as Qualified(q,id), _) -> 
-                            (case findAQualifierMap (exec_spc.sorts, q, id) of
+                          | Type(qid as Qualified(q,id), _) -> 
+                            (case findAQualifierMap (exec_spc.types, q, id) of
                                | Some _ ->  (ops, qid :: types)
                                | _ -> (ops, types))
-                          | SortDef(qid as Qualified(q,id), _) -> 
-                            (case findAQualifierMap (exec_spc.sorts, q, id) of
+                          | TypeDef(qid as Qualified(q,id), _) -> 
+                            (case findAQualifierMap (exec_spc.types, q, id) of
                                | Some _ ->  (ops, qid :: types)
                                | _ -> (ops, types))
                           | _ ->
@@ -77,7 +77,7 @@ SubstBaseSpecs qualifying spec
    case dfn of
      | And(d1::_, _) -> d1
      | Pi(tvs, tm, pos) -> Pi(tvs, firstDef tm, pos)
-     | SortedTerm(tm, ty, pos) -> SortedTerm(firstDef tm, ty, pos)
+     | TypedTerm(tm, ty, pos) -> TypedTerm(firstDef tm, ty, pos)
      | d -> d
 
  op [a] trimOldDefs(opinfo: AOpInfo a): AOpInfo a =

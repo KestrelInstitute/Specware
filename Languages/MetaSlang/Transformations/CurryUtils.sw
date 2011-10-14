@@ -2,30 +2,30 @@ CurryUtils qualifying spec
   import ../Specs/Utilities
   import ../Specs/Environment
 
-  op  curriedSort?: Spec * Sort -> Boolean
-  def curriedSort?(sp,srt) = curryShapeNum(sp,srt) > 1
+  op  curriedType?: Spec * MSType -> Bool
+  def curriedType?(sp,srt) = curryShapeNum(sp,srt) > 1
 
-  op  curryShapeNum: Spec * Sort -> Nat
+  op  curryShapeNum: Spec * MSType -> Nat
   def curryShapeNum(sp,srt) =
-    let srt = sortInnerSort srt in % might not be needed, but ...
+    let srt = typeInnerType srt in % might not be needed, but ...
     case arrowOpt(sp,srt)
       of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
        | _ -> 0
 
-  op  curryArgSorts: Spec * Sort -> List Sort
-  def curryArgSorts(sp,srt) =
-    let srt = sortInnerSort srt in % might not be needed, but ...
+  op  curryArgTypes: Spec * MSType -> MSTypes
+  def curryArgTypes(sp,srt) =
+    let srt = typeInnerType srt in % might not be needed, but ...
     case arrowOpt(sp,srt)
-      of Some (dom,rng) -> Cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
+      of Some (dom,rng) -> Cons(stripSubtypes(sp,dom),curryArgTypes(sp,rng))
        | _ -> []
 
-  op curryTypes(ty: Sort, spc: Spec): (List Sort) * Sort =
+  op curryTypes(ty: MSType, spc: Spec): MSTypes * MSType =
     case arrowOpt(spc, ty)
       of Some (dom,rng) -> let (doms, rng) = curryTypes(rng,spc) in (dom :: doms, rng)
        | _ -> ([], ty)
 
 
-  op foldrPred: [a] (a -> Boolean * a) -> Boolean -> List a -> (Boolean * List a)
+  op foldrPred: [a] (a -> Bool * a) -> Bool -> List a -> (Bool * List a)
   def foldrPred f i l =
     List.foldr (fn (x,(changed?,result)) ->
 	   let (nchanged?,nx) = f x in
@@ -33,7 +33,7 @@ CurryUtils qualifying spec
       (i,[])
       l
 
-  op  getCurryArgs: MS.Term -> Option(MS.Term * List MS.Term)
+  op  getCurryArgs: MSTerm -> Option (MSTerm * MSTerms)
   def getCurryArgs t =
     let def aux(term, i, args) =
         case term
@@ -45,12 +45,12 @@ CurryUtils qualifying spec
            | _ -> None
   in aux(t, 0, [])
 
-  op mkCurriedLambda(params, body): MS.Term =
+  op mkCurriedLambda(params, body): MSTerm =
     case params of
       | [] -> body
       | p::r -> mkLambda(p, mkCurriedLambda(r, body))
 
-  op  curriedParams: MS.Term -> List Pattern * MS.Term
+  op  curriedParams: MSTerm -> MSPatterns * MSTerm
   def curriedParams defn =
     let def aux(t,vs) =
           case t of
@@ -67,7 +67,7 @@ CurryUtils qualifying spec
     in
     aux(defn,[])
 
-  op curriedParamsBody(defn: MS.Term): List Pattern * MS.Term =
+  op curriedParamsBody(defn: MSTerm): MSPatterns * MSTerm =
     let def aux(vs,t) =
           case t of
 	    | Lambda([(p,_,body)],_) -> aux(vs ++ [p], body)
@@ -75,7 +75,7 @@ CurryUtils qualifying spec
     in
     aux([],defn)
 
-  op etaExpandCurriedBody(tm: MS.Term, dom_tys: List Sort): MS.Term =
+  op etaExpandCurriedBody(tm: MSTerm, dom_tys: MSTypes): MSTerm =
     case dom_tys of
       | [] -> tm
       | ty1 :: r_tys ->
@@ -86,8 +86,8 @@ CurryUtils qualifying spec
     mkLambda(mkVarPat v, etaExpandCurriedBody(mkApply(tm, mkVar v), r_tys))
  
 
-  op  noncurryArgSorts: Spec * Sort -> List Sort
-  def noncurryArgSorts(sp,srt) =
+  op  noncurryArgTypes: Spec * MSType -> MSTypes
+  def noncurryArgTypes(sp,srt) =
     case arrowOpt(sp,srt)
       of Some (dom,_) ->
 	 (case productOpt(sp,dom) of

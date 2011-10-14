@@ -1,6 +1,6 @@
 System qualifying spec 
 
-  op caseSensitiveSubstrate?: Boolean
+  op caseSensitiveSubstrate?: Bool
 
   op error    : [a] String -> a   % cl error
   op fail     : [a] String -> a   % cl break

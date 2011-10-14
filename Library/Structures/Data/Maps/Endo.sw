@@ -17,7 +17,7 @@ Endo maps can be composed.
 
 We give the "axiom" for composition in terms of a definition. This is
 problematic. Maps do not have an explicit domain.  So if a key of a given
-sort is absent, the function is not defined on that element. However, for
+type is absent, the function is not defined on that element. However, for
 the op \Op{prefix}, defined below, is motivated by a different assumption.
 If a key is absent then the element maps to itself. In the latter case,
 the definition of composition below is wrong if \Op{fold} is interpreted as

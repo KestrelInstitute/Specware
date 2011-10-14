@@ -19,12 +19,12 @@ PrChar qualifying spec
 
 (*
   op chr         : {n : Nat | n < 256} -> Char
-  op isUpperCase : Char -> Boolean
-  op isLowerCase : Char -> Boolean
-  op isAlpha     : Char -> Boolean
-  op isNum       : Char -> Boolean
-  op isAlphaNum  : Char -> Boolean
-  op isAscii     : Char -> Boolean
+  op isUpperCase : Char -> Bool
+  op isLowerCase : Char -> Bool
+  op isAlpha     : Char -> Bool
+  op isNum       : Char -> Bool
+  op isAlphaNum  : Char -> Bool
+  op isAscii     : Char -> Bool
   op toUpperCase : Char -> Char
   op toLowerCase : Char -> Char
   op compare     : Char * Char -> Comparison

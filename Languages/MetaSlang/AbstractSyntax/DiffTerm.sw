@@ -8,8 +8,8 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  type Diffs  = List Diff
- type Diff   = | Types (MS.Sort * MS.Sort)
-               | Terms (MS.Term * MS.Term)
+ type Diff   = | Types (MSType * MSType)
+               | Terms (MSTerm * MSTerm)
                | MetaTyVars (MetaTyVar * MetaTyVar)
 
  type Equivs = List Equiv
@@ -18,7 +18,7 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  diffTermList : Equivs -> List MS.Term * List MS.Term -> Diffs
+ op  diffTermList : Equivs -> List MSTerm * List MSTerm -> Diffs
  def diffTermList equivs (x, y) =
    let
      def aux (x, y) =
@@ -30,7 +30,7 @@ AnnSpec qualifying spec
    in
      aux (x, y)
 
- op  matchingVars? : Equivs -> MS.Var * MS.Var -> Boolean
+ op  matchingVars? : Equivs -> MS.Var * MS.Var -> Bool
  def matchingVars? equivs (v1, v2) =
    case equivs of
      | [] -> false
@@ -53,7 +53,7 @@ AnnSpec qualifying spec
        ++ 
        equateTyVars (tail1, tail2)
 
- op  matchingTyVars? : Equivs -> TyVar * TyVar -> Boolean
+ op  matchingTyVars? : Equivs -> TyVar * TyVar -> Bool
  def matchingTyVars? equivs (v1, v2) =
    case equivs of
      | [] -> false
@@ -69,9 +69,9 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op diffTerm    : Equivs -> MS.Term     * MS.Term     -> Diffs
- op diffType    : Equivs -> MS.Sort     * MS.Sort     -> Diffs
- op diffPattern : Equivs -> MS.Pattern  * MS.Pattern  -> Option (Equivs * Diffs)
+ op diffTerm    : Equivs -> MSTerm     * MSTerm     -> Diffs
+ op diffType    : Equivs -> MSType     * MSType     -> Diffs
+ op diffPattern : Equivs -> MSPattern  * MSPattern  -> Option (Equivs * Diffs)
  op diffVars    : Equivs -> List MS.Var * List MS.Var -> Equivs * Diffs
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -230,7 +230,7 @@ AnnSpec qualifying spec
        | (Seq (xs1, _), Seq (xs2, _)) | length xs1 = length xs2 ->
          diffTermList outer_equivs (xs1, xs2)
 
-       | (SortedTerm (x1, t1, _), SortedTerm (x2, t2, _)) -> 
+       | (TypedTerm (x1, t1, _), TypedTerm (x2, t2, _)) -> 
          (diffTerm outer_equivs (x1, x2)) ++
          (diffType outer_equivs (t1, t2))
 
@@ -331,7 +331,7 @@ AnnSpec qualifying spec
          (diffType equivs (type1, type2)) ++
          (diffTerm equivs (rel1,  rel2))
 
-       | (Subsort  (type1, pred1, _), Subsort (type2, pred2, _)) ->
+       | (Subtype  (type1, pred1, _), Subtype (type2, pred2, _)) ->
          (diffType equivs (type1, type2)) ++
          (diffTerm equivs (pred1, pred2))
 
@@ -431,7 +431,7 @@ AnnSpec qualifying spec
    mapTerm (backtranslate_tsp equivs) term
 
  def relabel_vars_in_type equivs typ =
-   mapSort (backtranslate_tsp equivs) typ
+   mapType (backtranslate_tsp equivs) typ
 
  def local_tyvar_mismatch? equivs diffs =
    %%
@@ -519,7 +519,7 @@ AnnSpec qualifying spec
               Some (equivs, pdiffs ++ diffTerm equivs (t1, t2))
             | _ -> None)
 
-       | (SortedPat (p1, t1, _), SortedPat (p2, t2, _)) -> 
+       | (TypedPat (p1, t1, _), TypedPat (p2, t2, _)) -> 
          (case diffPattern outer_equivs (p1, p2) of
             | Some (equivs, pdiffs) -> 
               Some (equivs, pdiffs ++ diffType equivs (t1, t2))

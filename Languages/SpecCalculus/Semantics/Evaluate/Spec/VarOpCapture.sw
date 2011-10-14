@@ -1,20 +1,20 @@
 SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/AnnSpec
- import /Languages/MetaSlang/Specs/MSTerm            % Term, Sort, Pattern
+ import /Languages/MetaSlang/Specs/MSTerm            % Term, Type, Pattern
  import /Languages/MetaSlang/Specs/StandardSpec      % Spec
  import /Library/Legacy/DataStructures/ListUtilities % listUnion
  import /Languages/MetaSlang/Specs/Utilities         % patVars
 
  op  removeVarOpCaptures : Spec    -> Spec 
 
- op  deconflictTerm      : MS.Term    -> MS.Term    
- op  deconflictTermRec   : MS.Term    -> MS.Term    * Boolean * VarNames
+ op  deconflictTerm      : MSTerm    -> MSTerm    
+ op  deconflictTermRec   : MSTerm    -> MSTerm    * Bool * VarNames
 
- op  deconflictSort      : MS.Sort    -> MS.Sort    
- op  deconflictSortRec   : MS.Sort    -> MS.Sort    * Boolean * VarNames
+ op  deconflictType      : MSType    -> MSType    
+ op  deconflictTypeRec   : MSType    -> MSType    * Bool * VarNames
 
- op  deconflictPattern   : MS.Pattern -> MS.Pattern 
- op  deconflictPatRec    : MS.Pattern -> MS.Pattern * Boolean * VarNames
+ op  deconflictPattern   : MSPattern -> MSPattern 
+ op  deconflictPatRec    : MSPattern -> MSPattern * Bool * VarNames
 
  type VarNames = List Id
 
@@ -24,7 +24,7 @@ SpecCalc qualifying spec
  %% to allow testing in preparation for the real code
 
  def removeVarOpCaptures spc =
-   let new_sorts = mapSortInfos (fn info -> info << {dfn = deconflictSort info.dfn}) spc.sorts in
+   let new_types = mapTypeInfos (fn info -> info << {dfn = deconflictType info.dfn}) spc.types in
    let new_ops   = mapOpInfos   (fn info -> info << {dfn = deconflictTerm info.dfn}) spc.ops   in
    let new_elts  = map (fn el ->
 			case el of
@@ -32,7 +32,7 @@ SpecCalc qualifying spec
 			  | _ -> el)
                      spc.elements
    in
-   spc << {sorts    = new_sorts,
+   spc << {types    = new_types,
 	   ops      = new_ops,
 	   elements = new_elts}
 
@@ -42,8 +42,8 @@ SpecCalc qualifying spec
    let (new_term, _, _) = deconflictTermRec term in
    new_term
 
- def deconflictSort srt =
-   let (new_srt, _, _) = deconflictSortRec srt in
+ def deconflictType srt =
+   let (new_srt, _, _) = deconflictTypeRec srt in
    new_srt
 
  def deconflictPattern pat =
@@ -113,7 +113,7 @@ SpecCalc qualifying spec
        let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
        let (new_vars, vars_changed?, vars_op_names, captures) = 
            foldl (fn ((new_vars, vars_changed?, all_op_names, captures), (id, srt)) -> 
-		  let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
+		  let (new_srt, srt_changed?, op_names) = deconflictTypeRec srt in
 		  let new_captures = (if id in? tm_op_names then
 					captures ++ [id]
 				      else
@@ -188,7 +188,7 @@ SpecCalc qualifying spec
 				      else
 					captures)
 		  in
-		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+		  let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
 		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
 		  (new_decls ++ [((id, new_srt), new_tm)],
 		   decls_changed? || srt_changed? || tm_changed?,
@@ -214,7 +214,7 @@ SpecCalc qualifying spec
 	  listUnion (decls_op_names, body_op_names))
 
      | Var ((id, srt), a) ->
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        (if srt_changed? then
 	  Var ((id, new_srt), a)
 	else
@@ -223,7 +223,7 @@ SpecCalc qualifying spec
 	srt_op_names)
 
      | Fun (f, srt, a) ->
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        let op_names = (case f of
 			 | Op (Qualified(_,id),_) -> srt_op_names ++ [id]
 			 | _ -> srt_op_names)
@@ -280,7 +280,7 @@ SpecCalc qualifying spec
 
      | The (var as (id, srt), tm, a) ->
        let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
-       let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, op_names) = deconflictTypeRec srt in
        let capture? = id in? tm_op_names in
        let changed? = srt_changed? || tm_changed? in
        let new_term = 
@@ -328,12 +328,12 @@ SpecCalc qualifying spec
 	  tms_changed?,
 	  tms_op_names)
 
-     | SortedTerm (tm, srt, a) ->
+     | TypedTerm (tm, srt, a) ->
        let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        let changed? = tm_changed? || srt_changed? in
        (if changed? then
-	  SortedTerm (new_tm, new_srt, a)
+	  TypedTerm (new_tm, new_srt, a)
 	else
 	  term,
 	changed?,
@@ -370,13 +370,13 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def deconflictSortRec srt =
+ def deconflictTypeRec srt =
 
    case srt of
 
      | Arrow (s1, s2, a) ->
-       let (new_s1, s1_changed?, s1_op_names) = deconflictSortRec s1 in
-       let (new_s2, s2_changed?, s2_op_names) = deconflictSortRec s2 in
+       let (new_s1, s1_changed?, s1_op_names) = deconflictTypeRec s1 in
+       let (new_s2, s2_changed?, s2_op_names) = deconflictTypeRec s2 in
        let changed? = s1_changed? || s2_changed? in
        (if changed? then
 	  Arrow (new_s1, new_s2, a)
@@ -388,7 +388,7 @@ SpecCalc qualifying spec
      | Product (row, a) ->
        let (new_row, row_changed?, row_op_names) = 
            foldl (fn ((new_row, row_changed?, row_op_names), (id, srt)) ->
-		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+		  let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
 		  (new_row ++ [(id, new_srt)],
 		   row_changed? || srt_changed?,
 		   listUnion (srt_op_names, row_op_names)))
@@ -409,7 +409,7 @@ SpecCalc qualifying spec
 		      case opt_srt of
 			| None -> (None, false, [])
 			| Some srt -> 
-			  let (srt, changed?, op_names) = deconflictSortRec srt in
+			  let (srt, changed?, op_names) = deconflictTypeRec srt in
 			  (Some srt, changed?, op_names)
 		  in
 		    (new_row ++ [(id, new_srt)],
@@ -426,8 +426,8 @@ SpecCalc qualifying spec
 	  row_op_names)
 
 	       
-     | Quotient (base_sort, tm, a) ->
-       let (new_base, base_changed?, base_op_names) = deconflictSortRec base_sort in
+     | Quotient (base_type, tm, a) ->
+       let (new_base, base_changed?, base_op_names) = deconflictTypeRec base_type in
        let (new_tm,   tm_changed?,   tm_op_names)    = deconflictTermRec tm in
        let changed? = base_changed? || tm_changed? in
        (if changed? then
@@ -437,12 +437,12 @@ SpecCalc qualifying spec
         changed?,
 	listUnion (base_op_names, tm_op_names))
 
-     | Subsort (super_sort, tm, a) ->
-       let (new_super, super_changed?, super_op_names) = deconflictSortRec super_sort in
+     | Subtype (super_type, tm, a) ->
+       let (new_super, super_changed?, super_op_names) = deconflictTypeRec super_type in
        let (new_tm,    tm_changed?,    tm_op_names)    = deconflictTermRec tm in
        let changed? = super_changed? || tm_changed? in
        (if changed? then
-	  Subsort (new_super, new_tm, a)
+	  Subtype (new_super, new_tm, a)
 	else
 	  srt,
         changed?,
@@ -451,7 +451,7 @@ SpecCalc qualifying spec
      | Base (qid as Qualified(_,id), srts, a) ->
        let (new_srts, srts_changed?, srts_op_names) = 
            foldl (fn ((new_srts, srts_changed?, srts_op_names), srt) ->
-		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+		  let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
 		  (new_srts ++ [srt],
 		   srts_changed? || srt_changed?,
 		   listUnion (srts_op_names, srt_op_names)))
@@ -474,7 +474,7 @@ SpecCalc qualifying spec
 	case link of
 	  | None -> (srt, false, [])
 	  | Some xsrt ->
-	    let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec xsrt in
+	    let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec xsrt in
 	    (if srt_changed? then
 	       MetaTyVar(Ref {name     = name,
 			      uniqueId = uniqueId,
@@ -486,7 +486,7 @@ SpecCalc qualifying spec
 	     srt_op_names))
 
      | Pi (tvs, body, a) -> 
-       let (new_body, body_changed?, body_op_names) = deconflictSortRec body in
+       let (new_body, body_changed?, body_op_names) = deconflictTypeRec body in
        (if body_changed? then
 	  Pi (tvs, new_body, a)
 	else
@@ -497,7 +497,7 @@ SpecCalc qualifying spec
      | And (srts, a) -> 
        let (new_srts, srts_changed?, srts_op_names) = 
            foldl (fn ((new_srts, srts_changed?, srts_op_names), srt) ->
-		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+		  let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
 		  (new_srts ++ [srt],
 		   srts_changed? || srt_changed?,
 		   listUnion (srts_op_names, srt_op_names)))
@@ -532,7 +532,7 @@ SpecCalc qualifying spec
         listUnion (p1_op_names, p2_op_names))
 	   
      | VarPat ((v, srt), a) ->
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        let clashes = [] in
        (if srt_changed? then
 	  VarPat ((v, new_srt), a)
@@ -543,7 +543,7 @@ SpecCalc qualifying spec
 	     
      | EmbedPat (id, Some pat, srt, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        let changed? = pat_changed? || srt_changed? in
        (if changed? then
 	  EmbedPat (id, Some new_pat, new_srt, a)
@@ -553,7 +553,7 @@ SpecCalc qualifying spec
 	listUnion (pat_op_names, srt_op_names))
 	       
      | EmbedPat (id, None, srt, a) ->
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        (if srt_changed? then
 	  EmbedPat (id, None, new_srt, a)
 	else
@@ -579,7 +579,7 @@ SpecCalc qualifying spec
 	  fields_op_names)
 		   
      | WildPat (srt, a) ->
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        (if srt_changed? then
 	  WildPat (new_srt, a)
 	else
@@ -607,12 +607,12 @@ SpecCalc qualifying spec
 	changed?,
 	listUnion (pat_op_names, tm_op_names))
 
-     | SortedPat (pat, srt, a) ->
+     | TypedPat (pat, srt, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
-       let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let (new_srt, srt_changed?, srt_op_names) = deconflictTypeRec srt in
        let changed? = pat_changed? || srt_changed? in
        (if changed? then
-	  SortedPat (new_pat, new_srt, a)
+	  TypedPat (new_pat, new_srt, a)
 	else
 	  pattern,
 	changed?,

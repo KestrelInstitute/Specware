@@ -7,7 +7,7 @@ import /Languages/MetaSlang/Specs/Categories/AsRecord
 import /Languages/Snark/SpecToSnark
 import /Library/Legacy/DataStructures/ListPair
 
-op SNARK.ANSWER: Boolean -> LispCell
+op SNARK.ANSWER: Bool -> LispCell
 
 op answerVarsFromSnark: () -> List Id
 
@@ -48,7 +48,7 @@ def extendMorphism(morph, base_spc) =
   %let axiomFmlas = map (fn (_,_,_,fmla) -> fmla) axioms in
   let newAxiomFmlas = map (fn (fmla) -> substOpMap(opMap, fmla)) axiomFmlas in
   let incompleteAxioms = filter (fn (fmla) -> termOpsInSpec?(fmla, dom)) newAxiomFmlas in
-  let _ = if specwareDebug? then map (fn (f:MS.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
+  let _ = if specwareDebug? then map (fn (f:MSTerm) -> printTermToTerminal(f)) incompleteAxioms else [()] in
   let testAxiom = head incompleteAxioms in
   let _ = if specwareDebug? then printTermToTerminal(testAxiom) else () in
   let (existentialTest, ansVars) = mkExistential(dom, testAxiom) in
@@ -63,7 +63,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   let dom = morph.dom in
   let cod = morph.cod in
   let opMap = morph.opMap in
-  let srtMap = morph.sortMap in
+  let srtMap = morph.typeMap in
   let codIds = answerVarsFromSnark() in
   let domIds = map (fn (id,_) -> id) domVars in
   let newOpMap = foldl (fn (map, domId, codId) -> (update map (mkUnQualifiedId(domId)) (mkUnQualifiedId(codId)))) opMap (domIds, codIds) in
@@ -73,7 +73,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
     makeMorphism(dom, cod, srtMap, newOpMap, morph.pragmas, morph.sm_tm)
 
-op mkExistential: Spec * MS.Term -> Property * Vars
+op mkExistential: Spec * MSTerm -> Property * Vars
 
 def mkExistential (spc, term) =
   let opsToQuantify = termOpsInSpec(term, spc) in
@@ -97,7 +97,7 @@ def mkExistential (spc, term) =
   let _ = if specwareDebug? then printTermToTerminal(existTerm) else () in
     ((Conjecture, mkUnQualifiedId("morphismExistential"), [], existTerm, noPos), newVars)
 
-op termOpsInSpec?: MS.Term * Spec -> Boolean
+op termOpsInSpec?: MSTerm * Spec -> Bool
 
 def termOpsInSpec?(term, spc) =
   let 
@@ -149,7 +149,7 @@ def termOpsInSpec?(term, spc) =
 	 let resTerms = foldl (fn (res, trm) -> res || (mapRec trm)) false terms in
 	   resTerms
 
-       | SortedTerm (       trm,                  srt, a) -> 
+       | TypedTerm (       trm,                  srt, a) -> 
 	 let resTrm = mapRec trm in
 	   resTrm
 
@@ -159,7 +159,7 @@ def termOpsInSpec?(term, spc) =
   in
     mapRec term
 
-op termOpsInSpec: MS.Term * Spec -> List MS.Term
+op termOpsInSpec: MSTerm * Spec -> List MSTerm
 
 def termOpsInSpec(term, spc) =
   let 
@@ -211,7 +211,7 @@ def termOpsInSpec(term, spc) =
 	 let resTerms = foldl (fn (res, trm) -> res ++ (mapRec trm)) [] terms in
 	   resTerms
 
-       | SortedTerm (       trm,                  srt, a) -> 
+       | TypedTerm (       trm,                  srt, a) -> 
 	 let resTrm = mapRec trm in
 	   resTrm
 
@@ -221,7 +221,7 @@ def termOpsInSpec(term, spc) =
   in
     mapRec term
 
-op substOpMap: MorphismOpMap * MS.Term -> MS.Term
+op substOpMap: MorphismOpMap * MSTerm -> MSTerm
 
 def substOpMap (opMap, term) =
   %%
@@ -299,11 +299,11 @@ def substOpMap (opMap, term) =
 	 if newTerms = terms then term
 	   else ApplyN (newTerms, a)
 
-       | SortedTerm (       trm,                  srt, a) -> 
+       | TypedTerm (       trm,                  srt, a) -> 
 	 let newTrm = mapRec trm in
          let newSrt = srt in
 	 if newTrm = trm && srt = newSrt then term
-	   else SortedTerm (newTrm, newSrt, a)
+	   else TypedTerm (newTrm, newSrt, a)
 
    def mapRec term = 
      %% apply map to leaves, then apply map to result
@@ -318,7 +318,7 @@ def substOpMap (opMap, term) =
 									   hashSuffix = None});
 *)
  
- op proveForAns: Vars * Property * Spec * Spec * List LispCell * String -> Boolean
+ op proveForAns: Vars * Property * Spec * Spec * List LispCell * String -> Bool
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, prover_options, snarkLogFileName) =
    %% (removed base_spc as distinct arg)
@@ -329,13 +329,13 @@ def substOpMap (opMap, term) =
    %%	     | Theorem -> "Theorem" 
    %%	     | Axiom -> "Axiom" in
    %% let claim_type = claimType(claim_type) in
-   let snarkSortDecls = snarkSorts(spc) in
+   let snarkTypeDecls = snarkTypes(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
    let snarkBaseHypothesis = snarkProperties base_hypothesis in
    let snarkHypothesis = snarkProperties spc in
    let snarkConjecture = snarkAnswer(context, spc, claim, ansVars) in
-   let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
+   let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkTypeDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
      let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
@@ -346,7 +346,7 @@ def substOpMap (opMap, term) =
 
  op makeSnarkAnsEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
 
- def makeSnarkAnsEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
+ def makeSnarkAnsEvalForm(prover_options, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %%let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %%let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %%let _ = if specwareDebug? then writeLine(" using: ") else () in
@@ -371,12 +371,12 @@ def substOpMap (opMap, term) =
 		     ],
 	   Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
 	   Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(60)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
+           Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-TYPES"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
 	  ]
 	  Lisp.++ (Lisp.list prover_options)
-	  Lisp.++ (Lisp.list snarkSortDecl)
+	  Lisp.++ (Lisp.list snarkTypeDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)
 	  Lisp.++ (Lisp.list snarkBaseHypothesis)
 	  Lisp.++ (Lisp.list baseAxioms)

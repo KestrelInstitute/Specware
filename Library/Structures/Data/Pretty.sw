@@ -21,7 +21,7 @@ not WadlerLindig.
 
 \begin{spec}
 WadlerLindig qualifying spec
-  sort Doc
+  type Doc
 
   op ppString : String -> Doc
   op ppNewline : Doc

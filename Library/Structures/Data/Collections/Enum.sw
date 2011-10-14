@@ -9,7 +9,7 @@ Need the axioms.
 spec
   import ../Collections
 
-  sort TakeResult = | None | One (Elem * Collection)
+  type TakeResult = | None | One (Elem * Collection)
   op takeOne : Collection -> TakeResult
 endspec
 \end{spec}

@@ -31,8 +31,8 @@ spec
  op qualifiers               : [a] AQualifierMap a -> List Qualifier
  op qualifierIds             : [a] AQualifierMap a -> List Id
 
- op equalAQualifierMap?      : [a] AQualifierMap a * AQualifierMap a -> Boolean
- op subsetAQualifierMap?     : [a] AQualifierMap a * AQualifierMap a -> Boolean
+ op equalAQualifierMap?      : [a] AQualifierMap a * AQualifierMap a -> Bool
+ op subsetAQualifierMap?     : [a] AQualifierMap a * AQualifierMap a -> Bool
 
  op foldOverQualifierMap :
     [a,b] (Qualifier * Id * a * b -> SpecCalc.Env b)

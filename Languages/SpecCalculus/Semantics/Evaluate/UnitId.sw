@@ -157,7 +157,7 @@ These are called only from evaluateUID.
           }
 
   %% Don't want to try loading from file you are currently processing
-  op  inSameFile?: UnitId * UnitId -> Boolean
+  op  inSameFile?: UnitId * UnitId -> Bool
   def inSameFile?(unitId,currentUID) =
     case (unitId,currentUID) of
       | ({path = path1, hashSuffix = Some _},
@@ -385,7 +385,7 @@ handled correctly.
 (*
 Used so toplevel UI functions can find out whether a unitId has up-to-date version in cache. 
 *)
-  op  checkInCache? : RelativeUID -> Env Boolean
+  op  checkInCache? : RelativeUID -> Env Bool
   def checkInCache? unitId =
     { uidList <- generateUIDList unitId;
       optValue <- searchContextForUID uidList;
@@ -425,7 +425,7 @@ aren't are removed from the environment.
 	     }
 	  }
 
-  op  upToDateOrNotPresent?: UnitId * TimeStamp -> Boolean
+  op  upToDateOrNotPresent?: UnitId * TimeStamp -> Bool
   def upToDateOrNotPresent?(unitId,timeStamp) =
     let fileName = (uidToFullPath unitId) ^ ".sw" in
     let writeTime = fileWriteTime fileName in

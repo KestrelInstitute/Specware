@@ -2,8 +2,8 @@
 
 This is to be deprecated. See Graphs/Finite.sw for the new version.
 
-The translates need sorting out. And the equating of Dom to Edge.Elem should be done
-by translate. Basically reduce the number redundant sorts.
+The translates need typeing out. And the equating of Dom to Edge.Elem should be done
+by translate. Basically reduce the number redundant types.
 
 \begin{spec}
 spec {
@@ -19,12 +19,12 @@ spec {
 
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort Dom = Edge.Elem   % does this actually refine the sorts in Maps
-  sort Cod = Vertex.Elem   % perhaps this would be better if qualified
+  type Dom = Edge.Elem   % does this actually refine the types in Maps
+  type Cod = Vertex.Elem   % perhaps this would be better if qualified
   def ppDom = Edge.ppElem
   def ppCod = Vertex.ppElem
 
-  sort Graph
+  type Graph
 
   op vertices : Graph -> Vertex.Set
   op edges : Graph -> Edge.Set

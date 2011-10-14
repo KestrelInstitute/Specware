@@ -1,10 +1,10 @@
 \section{Polymorphic Diagrams Implemented as Records}
 
-This is a naive transcription of the definition of a diagram into a product sort.
+This is a naive transcription of the definition of a diagram into a product type.
 Even the obvious redundancy whereby the shape is repeated in the domain
 of the functor has not been eliminated.
 
-Note that importing this has the effect of refining the functor sort into a
+Note that importing this has the effect of refining the functor type into a
 record. This should change.
 
 \begin{spec}
@@ -12,7 +12,7 @@ spec {
   import ../Polymorphic
   import Functor qualifying ../../Functors/FreeDomain/Polymorphic/AsRecord
 
-  sort Diagram (O,A) = {
+  type Diagram (O,A) = {
     shape : Sketch,
     functor : Functor (O,A)
   }

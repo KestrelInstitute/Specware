@@ -21,7 +21,7 @@ spec {
   % import /Library/Structures/Data/Sets/Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort Map (key,a)
+  type Map (key,a)
 
   op emptyMap : fa(key,a) Map (key,a)
 
@@ -54,7 +54,7 @@ begin{spec}
 end{spec}
 
 begin{spec}
-  op inDomain? : fa(key,a) Map (key,a) -> key -> Boolean
+  op inDomain? : fa(key,a) Map (key,a) -> key -> Bool
   op numItems : fa(a,key) Map (key,a) -> Nat
 end{spec}
 
@@ -106,8 +106,8 @@ begin{spec}
 end{spec}
 
 begin{spec}
-  op filter  : fa(key,a) (a -> Boolean) -> Map (key,a) -> Map (key,a)	  
-  op filteri : fa(key,a) (key -> a -> Boolean) -> Map (key,a) -> Map (key,a)
+  op filter  : fa(key,a) (a -> Bool)        -> Map (key,a) -> Map (key,a)	  
+  op filteri : fa(key,a) (key -> a -> Bool) -> Map (key,a) -> Map (key,a)
 end{spec}
 
 \begin{spec}
@@ -124,12 +124,12 @@ begin{spec}
 end{spec}
 
 begin{spec}
-  op subset? : fa (a,b) Map (a,b) -> Map (a,b) -> Boolean
+  op subset? : fa (a,b) Map (a,b) -> Map (a,b) -> Bool
 end{spec}
 
 begin{spec}
-  op all : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
-  op exists : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean
+  op all    : fa (a,b) (a -> b -> Bool) -> Map (a,b) -> Bool
+  op exists : fa (a,b) (a -> b -> Bool) -> Map (a,b) -> Bool
 end{spec}
 
 Pretty printing. As in sets, it is not clear that this belongs in this

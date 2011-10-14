@@ -56,7 +56,7 @@ SpecToLisp qualifying spec
     && 
     id nin? notReallyLispStrings)
 
- op  lispPackage? : String -> Boolean
+ op  lispPackage? : String -> Bool
  def lispPackage? id =
    let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
    Lisp.uncell pkg
@@ -80,9 +80,9 @@ SpecToLisp qualifying spec
    ith (0, id, row)
 
  def isSpecialProjection (sp, srt, id) : Option String = 
-   case stripSubsorts (sp, srt) of
+   case stripSubtypes (sp, srt) of
      | Arrow (dom, _, _) -> 
-       (case stripSubsorts (sp, dom) of
+       (case stripSubtypes (sp, dom) of
 	  | Product ([(id1, _), (id2, _)], _) -> 
 	    Some (if id1 = id then "car" else "cdr")
 	  | Product ([(id1, _)], _) ->	% Unary record
@@ -90,15 +90,15 @@ SpecToLisp qualifying spec
 	  | _ -> None)
      | _ -> None
 
- op  isConsDataType : Spec * Sort -> Option (Id * Id)
+ op  isConsDataType : Spec * MSType -> Option (Id * Id)
  def isConsDataType (sp, srt) : Option (Id * Id) = 
    let
-     def isTwoTuple (srt : Sort) = 
-       case stripSubsorts (sp, srt) of
+     def isTwoTuple (srt : MSType) = 
+       case stripSubtypes (sp, srt) of
 	 | Product ([_, _], _) -> true 
 	 | _ -> false
    in
-     case stripSubsorts (sp, srt) of
+     case stripSubtypes (sp, srt) of
        | CoProduct ([("None", None), ("Some", Some _)], _) -> None 
 
        % Options never get to be cons types.
@@ -111,7 +111,7 @@ SpecToLisp qualifying spec
     
 
  def hasConsEmbed (sp, srt) = 
-   case stripSubsorts (sp, srt) of
+   case stripSubtypes (sp, srt) of
      | Arrow (_, rng, _) -> 
        (case isConsDataType (sp, rng) of
 	  | Some _ -> true
@@ -124,20 +124,20 @@ SpecToLisp qualifying spec
      | None -> None
 
  def hasConsDomain (sp, id, srt) : Option String = 
-   case stripSubsorts (sp, srt) of
+   case stripSubtypes (sp, srt) of
      | Arrow (dom, _, _) -> 
        (case isConsDataType (sp, dom) of
 	  | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
 	  | None -> None)
      | _ -> None
     
- def patternName (pattern : Pattern) = 
+ def patternName (pattern : MSPattern) = 
    case pattern of
      | VarPat ((id, _), _) -> id 
      | _ -> 
        System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
- def patternNames (pattern : Pattern) = 
+ def patternNames (pattern : MSPattern) = 
    case pattern of
      | VarPat    ((id, _), _) -> [id] 
      | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
@@ -217,7 +217,7 @@ SpecToLisp qualifying spec
 	 (pkg ^ "::" ^ specId (id, pkg))
       
  def opArity (sp, idf, srt) =
-   case sortArity (sp, srt) of
+   case typeArity (sp, srt) of
      | None -> None
      | arity ->
        if polymorphicDomainOp? (sp, idf) then
@@ -271,14 +271,14 @@ SpecToLisp qualifying spec
  % Ad hoc optimization of the equality operation.
  %
  def mkLEqualityOp (sp, srt) = 
-   case stripSubsorts (sp, srt) of
+   case stripSubtypes (sp, srt) of
      | Arrow (dom, _, _) -> 
-       (case stripSubsorts (sp, dom) of
+       (case stripSubtypes (sp, dom) of
 	  | Product ([(_, s), _], _) -> 
-	    if natSort? s then         % intSort? s
+	    if natType? s then         % intType? s
 	      "="
 	    else
-	      (case stripSubsorts (sp, s) of
+	      (case stripSubtypes (sp, s) of
 		 | Boolean _                                    -> "eq"
 		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "="
 		 | Base (Qualified ("Integer", "Int"),    _, _) -> "="
@@ -292,14 +292,14 @@ SpecToLisp qualifying spec
  % Ad hoc optimization of the inequality operation.
  %
  def mkLInEqualityOp (sp, srt) = 
-   case stripSubsorts (sp, srt) of  
+   case stripSubtypes (sp, srt) of  
      | Arrow (dom, _, _) -> 
-       (case stripSubsorts (sp, dom) of
+       (case stripSubtypes (sp, dom) of
 	  | Product ([(_, s), _], _) -> 
-	    if natSort? s then     % intSort?(s)
+	    if natType? s then     % intType?(s)
 	      "/="
 	    else
-	      (case stripSubsorts (sp, s) of
+	      (case stripSubtypes (sp, s) of
 		 | Boolean _                                    -> "Slang-Built-In:boolean-term-not-equals-2"
 		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "/="
 		 | Base (Qualified ("Integer", "Int"),    _, _) -> "/="
@@ -309,7 +309,7 @@ SpecToLisp qualifying spec
 	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
      | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
- op  mkLTermOp : [a] Spec * String * StringSet.Set * (Fun * Sort * a) * Option (MS.Term) -> LispTerm
+ op  mkLTermOp : [a] Spec * String * StringSet.Set * (Fun * MSType * a) * Option (MSTerm) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
    case termOp of
      | (Project id, srt, _) -> 
@@ -451,7 +451,7 @@ SpecToLisp qualifying spec
 	(case optArgs of
 	   | None ->
 	     let pid = printPackageId (id, dpn) in
-	     if functionSort? (sp, srt) then
+	     if functionType? (sp, srt) then
 	       mkLUnaryFnRef (pid, arity, vars)
 	     else 
 	       Const (Parameter pid)
@@ -486,10 +486,10 @@ SpecToLisp qualifying spec
        % let _ = toScreen("\nQuotient vars    = " ^  anyToString vars    ^ "\n") in
        % let _ = toScreen("\nQuotient termOp  = " ^  anyToString termOp  ^ "\n") in
        % let _ = toScreen("\nQuotient optArgs = " ^  anyToString optArgs ^ "\n") in
-       (case findAllSorts (sp, qid) of
+       (case findAllTypes (sp, qid) of
           | [info] ->
             % let _ = toScreen("\nQuotient info    = " ^  anyToString info  ^ "\n") in
-            (case unpackFirstSortDef info of
+            (case unpackFirstTypeDef info of
                 | (tvs, Quotient (_, equiv, _)) ->
                   let equiv = mkLTerm (sp, dpn, vars, equiv) in
                   % let _ = toScreen("\nQuotient tvs     = " ^  anyToString tvs   ^ "\n") in
@@ -502,9 +502,9 @@ SpecToLisp qualifying spec
                 | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
           | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
      | (Choose qid, srt, _) ->  
-       (case findAllSorts (sp, qid) of
+       (case findAllTypes (sp, qid) of
           | [info] ->
-            (case unpackFirstSortDef info of
+            (case unpackFirstTypeDef info of
                 | (tvs, Quotient _) ->
                   %% Don't need the equivalence relation when doing a choose
                   (case optArgs of
@@ -530,7 +530,7 @@ SpecToLisp qualifying spec
 
      | mystery -> System.fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
 
- op  flattenFailWith : MS.Term -> List (MS.Term)
+ op  flattenFailWith : MSTerm -> MSTerms
  def flattenFailWith term =
    case term of
      | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _), 
@@ -540,12 +540,12 @@ SpecToLisp qualifying spec
      | _ -> [term]
 
 
- def lispBlock (sp, dpn, vars, term : MS.Term) : LispTerm = 
+ def lispBlock (sp, dpn, vars, term : MSTerm) : LispTerm = 
    let terms = flattenFailWith term in
    let terms = List.map (fn term -> blockAtom (sp, dpn, vars, term)) terms in
    mkLSeq terms        
 
- def blockAtom (sp, dpn, vars, term : MS.Term) : LispTerm = 
+ def blockAtom (sp, dpn, vars, term : MSTerm) : LispTerm = 
    case term of
 
      | IfThenElse (t1, t2, Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _), _) ->
@@ -583,13 +583,13 @@ SpecToLisp qualifying spec
 
  % DIE HARD if the above cases are not exhaustive
 
- op  sortOfOp : Spec * QualifiedId -> Sort
- def sortOfOp (sp, qid) =
+ op  typeOfOp : Spec * QualifiedId -> MSType
+ def typeOfOp (sp, qid) =
    case AnnSpec.findTheOp (sp, qid) of
      | Some info -> 
-       firstOpDefInnerSort info 
+       firstOpDefInnerType info 
 
- op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
+ op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MSTerm -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
    let 
 
@@ -597,7 +597,7 @@ SpecToLisp qualifying spec
        case term of
 
 	 | Fun (Op (id, _), srt, _) ->
-	   if i > 1 && i = curryShapeNum (sp, sortOfOp (sp, id)) then
+	   if i > 1 && i = curryShapeNum (sp, typeOfOp (sp, id)) then
 	     Some (mkLApply (mkLOp (unCurryName (id, i, dpn)), 
 			     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) args))
 	   else 
@@ -626,7 +626,7 @@ SpecToLisp qualifying spec
     aux (term, 0, [])
 
 
- def mkLTermList (sp, dpn, vars, term : MS.Term) = 
+ def mkLTermList (sp, dpn, vars, term : MSTerm) = 
    case term of
      | Record (fields, _) -> List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields
      | _ -> [mkLTerm (sp, dpn, vars, term)]
@@ -636,7 +636,7 @@ SpecToLisp qualifying spec
  op  non_constructive_format_msg : LispTerm
  def non_constructive_format_msg = mkLString "Non-constructive Term: ~A~%       where ~{~A = ~S~^, ~}"
 
- def mkLTerm (sp, dpn, vars, term : MS.Term) = 
+ def mkLTerm (sp, dpn, vars, term : MSTerm) = 
    case fullCurriedApplication (sp, dpn, vars, term) of
      | Some lTerm -> lTerm
      | _ ->
@@ -1145,10 +1145,10 @@ SpecToLisp qualifying spec
  def lispTerm (sp, dpn, term) = 
    reduceTerm (mkLTerm (sp, dpn, StringSet.empty, term))
 
- def functionSort? (sp, srt) = 
+ def functionType? (sp, srt) = 
    case unfoldBase (sp, srt) of
      | Arrow _ -> true
-     | Subsort (s, _, _) -> functionSort? (sp, s)
+     | Subtype (s, _, _) -> functionType? (sp, s)
      | _ -> false
 
  def genNNames n = 
@@ -1294,8 +1294,8 @@ SpecToLisp qualifying spec
 	      let qid = Qualified (q, id) in
 	      let uName = unaryName (printPackageId (qid, defPkgName)) in
 	      let new_defs =
-	          if functionSort? (spc, srt) then
-		     (case (curryShapeNum (spc, srt), sortArity (spc, srt)) of
+	          if functionType? (spc, srt) then
+		     (case (curryShapeNum (spc, srt), typeArity (spc, srt)) of
 			| (1, None) ->
 			  (case term of
 			     | Lambda (formals, _, _) -> [(uName, term)]
@@ -1397,7 +1397,7 @@ SpecToLisp qualifying spec
 	  ())
        defs
 
- op  calls_specific_error? : LispTerm -> LispTerm -> Boolean
+ op  calls_specific_error? : LispTerm -> LispTerm -> Bool
  def calls_specific_error? tm format_str =
    let 
       def aux tm =
@@ -1421,16 +1421,16 @@ SpecToLisp qualifying spec
 
  def toLisp spc = toLispEnv (spc, true, false)
 
- op  instantiateHOFns? : Boolean
+ op  instantiateHOFns? : Bool
  def instantiateHOFns? = true
 
- op  lambdaLift? : Boolean
+ op  lambdaLift? : Bool
  def lambdaLift? = false
 
- op  removeCurrying? : Boolean
+ op  removeCurrying? : Bool
  def removeCurrying? = false
 
- op substBaseSpecs? : Boolean = true
+ op substBaseSpecs? : Bool = true
 
  op cg.showSpc (msg : String) (spc : Spec) : () 
 
@@ -1491,7 +1491,7 @@ SpecToLisp qualifying spec
 			else 
 			  let pos = termAnn info.dfn in
 			  let (tvs, srt, _) = unpackFirstOpDef info in
-			  info << {dfn = maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))})
+			  info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, srt, pos))})
 		       spc.ops)
    in
    let spc = setElements(spc,mapPartialSpecElements 
@@ -1524,7 +1524,7 @@ In the meantime the following does the job.
 %   def toLispFileAsPackage (spc, file, package) =
 %    let renamedSpec = {
 %      imports = spc.imports, 
-%      sorts = spc.sorts, 
+%      types = spc.types, 
 %      ops = spc.ops, 
 %      properties = spc.properties
 %    } : Spec in

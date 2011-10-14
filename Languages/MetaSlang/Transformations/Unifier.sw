@@ -131,7 +131,7 @@ spec
 
      | (Seq(xs1,_), Seq(xs2,_)) -> unifyList (xs1, xs2, sb, vs, unifyRec)
 
-     | (SortedTerm (x1, s1,_), SortedTerm (x2, s2,_)) ->
+     | (TypedTerm (x1, s1,_), TypedTerm (x2, s2,_)) ->
        if equalType? (s1, s2)
 	 then unifyRec(x1, x2, sb, vs)
 	 else None

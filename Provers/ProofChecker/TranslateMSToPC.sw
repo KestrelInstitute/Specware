@@ -1,9 +1,6 @@
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % WARNING: some of the code below is temporarily commented out because the code
-% needs to be updated to conform to recent changes in the Metaslang logic and
+% needs to be updated to conform to recent changes in the Metaslang logic and 
 % proof checker
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -23,10 +20,7 @@ Translate qualifying spec
   import ../ProofDebugger/Print
 
 
-  type MS_Type          = MS.Type
-  type MS_Term          = MS.Term
-  type MS_Pattern       = MS.Pattern
-  type MS_Fixity        = MetaSlang.Fixity
+  type MSFixity        = MetaSlang.Fixity
 
   type PC_Context       = MetaslangProofChecker.Context
   type PC_Type          = MetaslangProofChecker.Type
@@ -59,14 +53,14 @@ Translate qualifying spec
               otherCtxt <- specToContext spc;
               return (fSeq ++ otherCtxt)
             }
-          | Sort qid -> {
-              typeInfo <- findInMap spc.sorts qid;
+          | Type qid -> {
+              typeInfo <- findInMap spc.types qid;
               case typeInfo.dfn of
                 | Pi (tyVars,typ,_) -> return (fSeq <| (typeDeclaration (qidToTypeName qid, length tyVars)))
                 | typ -> return (fSeq <| (typeDeclaration (qidToTypeName qid, 0)))
             }
-          | SortDef qid -> {
-              typeInfo <- findInMap spc.sorts qid;
+          | TypeDef qid -> {
+              typeInfo <- findInMap spc.types qid;
               case typeInfo.dfn of
                 | Pi (tyVars,typ as (CoProduct (sums,_)),_) -> {
                      newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
@@ -175,22 +169,22 @@ Translate qualifying spec
               % print ("Op:" ^ (printQualifiedId qid) ^ "\n");
               opInfo <- findInMap spc.ops qid;
               case opInfo.dfn of
-                | Pi (tyVars,SortedTerm (_,typ,_),_) -> {
+                | Pi (tyVars,TypedTerm (_,typ,_),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newType <- Type.msToPC spc typ;
                        return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newType)))
                     }
-%%                 | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
+%%                 | Pi (tyVars,TypedTerm (term,typ,_),_) -> {
 %%                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
 %%                        newTerm <- msToPC spc term;
 %%                        return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
 %%                     }
-%%                 | SortedTerm (_,Pi (tyVars,typ,pos),_) -> {
+%%                 | TypedTerm (_,Pi (tyVars,typ,pos),_) -> {
 %%                       newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
 %%                       newType <- Type.msToPC spc typ;
 %%                       return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newType)))
 %%                     }
-                 | SortedTerm (_,typ,_) -> {
+                 | TypedTerm (_,typ,_) -> {
                        newType <- Type.msToPC spc typ;
                        return (fSeq <| (opDeclaration (qidToOperation qid (convertFixity opInfo.fixity), empty, newType)))
                      }
@@ -200,21 +194,21 @@ Translate qualifying spec
               % print ("OpDef:" ^ (printQualifiedId qid) ^ "\n");
                opInfo <- findInMap spc.ops qid;
                case opInfo.dfn of
-                 | Pi (tyVars,SortedTerm (term,typ,_),_) -> {
+                 | Pi (tyVars,TypedTerm (term,typ,_),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newTerm <- msToPC spc term;
 % the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
                        return fSeq
 %                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
                      }
-                 | SortedTerm (term,Pi (tyVars,typ,pos),_) -> {
+                 | TypedTerm (term,Pi (tyVars,typ,pos),_) -> {
                        newTyVars <- mapListToFSeq (fn tyVar -> return (idToTypeVariable tyVar)) tyVars;
                        newTerm <- msToPC spc term;
 % the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
                        return fSeq
 %                       return (fSeq <| (opDefinition (qidToOperation qid (convertFixity opInfo.fixity), newTyVars, newTerm)))
                      }
-                 | SortedTerm (term,typ,_) -> {
+                 | TypedTerm (term,typ,_) -> {
                        newTerm <- msToPC spc term;
 % the following needs to be updated to reflect the elimination of opDefinition from the proof checker:
                        return fSeq
@@ -243,7 +237,7 @@ Translate qualifying spec
       foldM specElemToContextElems empty spc.elements
 *)      
   % Convert a term in MetaSlang abstract syntax to a term in the proof checker's abstract syntax.
-  op Term.msToPC : Spec -> MS_Term -> SpecCalc.Env PC_Expression
+  op Term.msToPC : Spec -> MSTerm -> SpecCalc.Env PC_Expression
 (* temporarily commented out:
   def Term.msToPC spc trm =
     %let _ = fail(printTerm trm) in
@@ -286,7 +280,7 @@ Translate qualifying spec
       | Apply (Fun (Project id,srt,_),term,_) -> {
           termPC <- msToPC spc term;
           typePC <- msToPC spc (inferType (spc,term));%srt
-          if natConvertible id then let _ = fail(printSort srt) in
+          if natConvertible id then let _ = fail(printType srt) in
             return (DOT (termPC, typePC, prod (stringToNat id)))
           else
             return (DOT (termPC, typePC, user (idToUserField id)))
@@ -382,17 +376,17 @@ Translate qualifying spec
                     else
                       lookup rest id
           in {
-            % print ("msToPC: term=" ^ (printTerm trm) ^ " type=" ^ (printSort typ) ^ "\n");
+            % print ("msToPC: term=" ^ (printTerm trm) ^ " type=" ^ (printType typ) ^ "\n");
             opInfo <- findInMap spc.ops id;
             case opInfo.dfn of
-              | Pi (tyVars,SortedTerm (_,abstTyp,_),_) -> {
-                  % print ("msToPC: abstract type=" ^ (printSort abstTyp) ^ "\n");
+              | Pi (tyVars,TypedTerm (_,abstTyp,_),_) -> {
+                  % print ("msToPC: abstract type=" ^ (printType abstTyp) ^ "\n");
                   subs <- catch (matchType spc abstTyp typ)
-                     (fn (Fail str) -> raise (Fail (str ^ "\nTerm.msToPC: abstTyp=" ^ (printSort abstTyp) ^ " typ=" ^ (printSort typ))));
+                     (fn (Fail str) -> raise (Fail (str ^ "\nTerm.msToPC: abstTyp=" ^ (printType abstTyp) ^ " typ=" ^ (printType typ))));
                   types <- mapListToFSeq (fn tyVar -> lookup subs tyVar) tyVars;
                   return (OPI (qidToOperation id (convertFixity fxty),types)) 
                 }
-              | SortedTerm (_,typ,_) -> return (OPI (qidToOperation id (convertFixity fxty),empty)) 
+              | TypedTerm (_,typ,_) -> return (OPI (qidToOperation id (convertFixity fxty),empty)) 
               | _ -> raise (Fail "trying to translate empty MetaSlang match for proof checker")
           }
       | Fun (Embed(id,b),srt,_) ->  {
@@ -404,7 +398,7 @@ Translate qualifying spec
       | Lambda ((match as ((pat,guard,rhs)::_)),pos) -> {
           var <- newVar;
           branches <- mapListToFSeq (GuardedExpr.msToPC spc (VAR var)) match;
-          lhsType <- Type.msToPC spc (patternSort pat);
+          lhsType <- Type.msToPC spc (patternType pat);
           rhsType <- Type.msToPC spc (inferType (spc,rhs));
           return (FN (var, lhsType, COND (rhsType,branches)))
         }
@@ -415,7 +409,7 @@ Translate qualifying spec
             Term.msToPC spc (Let ([(WildPat (inferType (spc,term),pos),term)], Seq (rest,pos),pos))
       | Seq ([],pos) -> 
           raise (Fail "trying to translate empty MetaSlang Seq for proof checker")
-      | SortedTerm  (term,typ,pos) -> msToPC spc term
+      | TypedTerm  (term,typ,pos) -> msToPC spc term
       | Pi (tyVars,term,pos) -> msToPC spc term
       | And (terms,pos) -> 
           raise (Fail "trying to translate MetaSlang join operation on terms for proof checker")
@@ -454,7 +448,7 @@ Translate qualifying spec
   % particular type instance (t2) with the abstract type declaration (t1).
   % The latter is assumed to be free of type variables.
 
-  op matchType : Spec -> MS_Type -> MS_Type -> Env (List (TyVar * PC_Type))
+  op matchType : Spec -> MSType -> MSType -> Env (List (TyVar * PC_Type))
 (* temporarily commented out:
   def matchType spc t1 t2 =
     case (t1,t2) of
@@ -479,7 +473,7 @@ Translate qualifying spec
            return (foldl (fn (x,y) -> List.concat(y,x)) [] subs)
          }
       | (Quotient (lTyp,lTerm,_), Quotient (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
-      | (Subsort (lTyp,lTerm,_), Subsort (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
+      | (Subtype (lTyp,lTerm,_), Subtype (rTyp,rTerm,_)) -> matchType spc lTyp rTyp
       | (Base (qid1,types1,_),Base (qid,types2,_)) ->
            foldM (fn subs1 -> fn (t1,t2) -> {
              subs2 <- matchType spc t1 t2;
@@ -487,21 +481,21 @@ Translate qualifying spec
            }) [] (zip types1 types2)
 *)
 %%       | (_,Base (qid,[],_)) -> {
-%%            typeInfo <- findInMap spc.sorts qid;
+%%            typeInfo <- findInMap spc.types qid;
 %%            matchType spc t1 typeInfo.dfn
 %%          }
 %%       | (Base (qid,types,_),_) -> {
-%%            typeInfo <- findInMap spc.sorts qid; case typeInfo.dfn of
+%%            typeInfo <- findInMap spc.types qid; case typeInfo.dfn of
 %%              | Pi (tyVars,typ,_) -> {
-%%                   newType <- return (substSort (zip tyVars types, typ));
+%%                   newType <- return (substType (zip tyVars types, typ));
 %%                   matchType spc newType t2
 %%                 }
 %%              | _ -> raise (Fail "matchType: mismatch of ")
 %%           }
 %%       | (_,Base (qid,types,_)) -> {
-%%            typeInfo <- findInMap spc.sorts qid; case typeInfo.dfn of
+%%            typeInfo <- findInMap spc.types qid; case typeInfo.dfn of
 %%              | Pi (tyVars,typ,_) -> {
-%%                   newType <- return (substSort (zip tyVars types, typ));
+%%                   newType <- return (substType (zip tyVars types, typ));
 %%                   matchType spc t1 newType
 %%                 }
 %%              | _ -> raise (Fail "matchType: mismatch of ")
@@ -510,13 +504,13 @@ Translate qualifying spec
 (* temporarily commented out:
       | (TyVar (id,_),_) -> {
             newType <- catch (msToPC spc t2)
-               (fn (Fail str) -> raise (Fail (str ^ "\nmatchType: matching type var " ^ id ^ " with type: " ^ (printSort t2))));
+               (fn (Fail str) -> raise (Fail (str ^ "\nmatchType: matching type var " ^ id ^ " with type: " ^ (printType t2))));
             return [(id, newType)]
           }
       | (_, TyVar _) -> raise (Fail "matchType: type instance contains type variables")
       | (_, _) -> return []
 
-  op OptType.msToPC : Spec -> Option MS_Type -> SpecCalc.Env PC_Type
+  op OptType.msToPC : Spec -> Option MSType -> SpecCalc.Env PC_Type
   def OptType.msToPC spc typ? =
     case typ? of
       | None -> return UNIT
@@ -524,7 +518,7 @@ Translate qualifying spec
 *)
 
   % Convert a type in MetaSlang abstract syntax to a type in the proof checker's abstract syntax.
-  op Type.msToPC : Spec -> MS_Type -> SpecCalc.Env PC_Type
+  op Type.msToPC : Spec -> MSType -> SpecCalc.Env PC_Type
 (* temporarily commented out:
   def Type.msToPC spc typ =
     %let _ = fail("typetopc") in
@@ -553,8 +547,8 @@ Translate qualifying spec
            newTerm <- Term.msToPC spc term;
            return (QUOT (newType,newTerm))
           }
-      | Subsort (typ,term,_) -> 
-      %let _ = fail("subsort") in
+      | Subtype (typ,term,_) -> 
+      %let _ = fail("subtype") in
 				{
            newType <- Type.msToPC spc typ;
            newTerm <- Term.msToPC spc term;
@@ -567,22 +561,22 @@ Translate qualifying spec
       | Boolean _ -> return BOOL
       | TyVar (id,_) -> return (VAR (idToTypeVariable id))
       | MetaTyVar _ ->
-           raise (Fail ("trying to translate MetaSlang meta type variable for proof checker: " ^ (printSort typ)))
+           raise (Fail ("trying to translate MetaSlang meta type variable for proof checker: " ^ (printType typ)))
       | Pi _ ->
            let _ = fail("trying to translate MetaSlang type scheme for proof checker") in
-           raise (Fail ("trying to translate MetaSlang type scheme for proof checker: " ^ (printSort typ)))
+           raise (Fail ("trying to translate MetaSlang type scheme for proof checker: " ^ (printType typ)))
       | And (types,_) -> 
-           raise (Fail ("trying to translate MetaSlang join type for proof checker: " ^ (printSort typ)))
+           raise (Fail ("trying to translate MetaSlang join type for proof checker: " ^ (printType typ)))
       | Any _ ->
-           raise (Fail ("trying to translate MetaSlang any type for proof checker: " ^ (printSort typ)))
+           raise (Fail ("trying to translate MetaSlang any type for proof checker: " ^ (printType typ)))
       | _ -> {
           print ("Type.msToPC: no match\n");
-          print ("type = " ^ (printSort typ) ^ "\n");
+          print ("type = " ^ (printType typ) ^ "\n");
           raise (Fail "no match in Type.msToPC")
         }
 *)
   % The second argument is the expression to which we will identify (equate) with all patterns.
-  op GuardedExpr.msToPC : Spec -> PC_Expression -> (MS_Pattern * MS_Term * MS_Term) -> SpecCalc.Env PC_BindingBranch
+  op GuardedExpr.msToPC : Spec -> PC_Expression -> (MSPattern * MSTerm * MSTerm) -> SpecCalc.Env PC_BindingBranch
   def GuardedExpr.msToPC spc expr (pattern,guard,term) = {
       (vars,types,lhs) <- Pattern.msToPC spc expr pattern; 
       rhs <- msToPC spc term; 
@@ -593,7 +587,7 @@ Translate qualifying spec
   % In many cases it is just a variable. The function computes a list of variables that
   % are bound by the match, the types of the variables and a boolean valued expression (a guard)
   % that represents the pattern.
-  op Pattern.msToPC : Spec -> PC_Expression -> MS_Pattern -> SpecCalc.Env (PC_Variables * PC_Types * PC_Expression)
+  op Pattern.msToPC : Spec -> PC_Expression -> MSPattern -> SpecCalc.Env (PC_Variables * PC_Types * PC_Expression)
 (* temporarily commented out:
   def Pattern.msToPC spc expr pattern = 
     case pattern of
@@ -622,7 +616,7 @@ Translate qualifying spec
       | RecordPat (fields as (("1",_)::_),_) -> {
       %let _ = fail "recPat" in
         recTypes <- foldM (fn (res) -> (fn (n,pat) -> {
-			fieldType <- Type.msToPC spc (patternSort pat);
+			fieldType <- Type.msToPC spc (patternType pat);
 			return (res FSeq.<| fieldType)})) empty fields;
 	let recFields = firstNProductFields (length fields) in
 	let recType = RECORD(recFields, recTypes) in
@@ -633,7 +627,7 @@ Translate qualifying spec
 						 }
       | RecordPat (fields,_) -> 
            foldM (fn (vars,types,newExpr) -> fn (id,pat) -> {
-              fieldType <- Type.msToPC spc (patternSort pat);
+              fieldType <- Type.msToPC spc (patternType pat);
               (fVars,fType,fExpr) <- Pattern.msToPC spc (DOT (expr, fieldType, user (idToUserField id))) pat;
               return (vars ++ fVars,types ++ fType,newExpr &&& fExpr)
             }) (empty,empty,TRUE) fields
@@ -747,11 +741,11 @@ Translate qualifying spec
   % to the same type.
   %
   % A more comprehensive scheme would need handle mutually recursive type definitions
-  % presumably using some sort of toplogical sort.
+  % presumably using some type of toplogical type.
  
   op recursiveSumOfProducts? : Spec -> QualifiedId -> SpecCalc.Env Bool
   def recursiveSumOfProducts? spc qid = {
-    typeInfo <- findInMap spc.sorts qid;
+    typeInfo <- findInMap spc.types qid;
     case typeInfo.dfn of
       | Pi (tyVars,CoProduct (pairs,_),_) -> 
           let
@@ -788,7 +782,7 @@ Translate qualifying spec
   op constructorToOpName : QualifiedId -> String -> PC_OpName
   def constructorToOpName qid name = (printQualifiedId qid) ^ "$" ^ name
 
-  op convertFixity : MS_Fixity ->  PC_Fixity
+  op convertFixity : MSFixity ->  PC_Fixity
   def convertFixity fxty =
     case fxty of
       | Nonfix -> embed prefix

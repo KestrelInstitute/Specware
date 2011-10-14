@@ -70,18 +70,18 @@ ArityNormalizeCGen qualifying spec {
 	   | _ -> 1
         
  
-% The arity map stores the ops having a domain sort consisting of
+% The arity map stores the ops having a domain type consisting of
 % a record (possibly subsetted)
 
 
  type UsedNames = StringSet.Set
- type Gamma 	= List(String * Option(Sort * Nat))
+ type Gamma 	= List(String * Option(Type * Nat))
 
  op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
- op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
- op sortArity : Spec * Sort            -> Option(Sort * Nat)
- op opArity   : Spec * QualifiedId -> Option(Sort * Nat)
+ op termArity : Spec * Gamma * MS.Term    -> Option(Type * Nat)
+ op typeArity : Spec * Type            -> Option(Type * Nat)
+ op opArity   : Spec * QualifiedId -> Option(Type * Nat)
 
 
 
@@ -106,28 +106,28 @@ ArityNormalizeCGen qualifying spec {
  def opArity (sp, QId) = 
    %let _ = writeLine("(opArity: specName="^specName^", id="^id) in
    case findTheOp (sp, QId)
-     of Some (_,_,(_,srt),_) -> let res = sortArity (sp, srt) in
+     of Some (_,_,(_,srt),_) -> let res = typeArity (sp, srt) in
         %let _ = writeLine(")") in
         res
       | None -> 
 	%let _ = writeLine(" None)") in
 	None
  
- op isShortTuple : [A] Nat * List(Id * A) -> Boolean
+ op isShortTuple : [A] Nat * List(Id * A) -> Bool
  def isShortTuple(i,row) = 
      case row
        of [] -> true
 	| (lbl,r)::row -> lbl = toString i & isShortTuple(i + 1,row)
       
- def sortArity(sp,srt) =
+ def typeArity(sp,srt) =
      let 
-	def productLength(srt:Sort) = 
+	def productLength(srt:Type) = 
 	    case SpecEnvironment.productOpt(sp,srt)
 	      of Some fields -> 
 		if isShortTuple(1,fields)
 		  then length fields 
 		else
-		  %let _ = writeLine("record(1): "^MetaSlangPrint.printSort(srt)) in
+		  %let _ = writeLine("record(1): "^MetaSlangPrint.printType(srt)) in
 		  1
 	       | None -> 1
      in
@@ -139,19 +139,19 @@ ArityNormalizeCGen qualifying spec {
 	   else None
 	  | _ -> None
 
- def sortEmbedArity(sp,srt,id:String) =
-   let def productLength(srt:Sort) = 
+ def typeEmbedArity(sp,srt,id:String) =
+   let def productLength(srt:Type) = 
 	    case SpecEnvironment.productOpt(sp,srt)
 	      of Some fields ->  
 		if isShortTuple(1,fields)
 		  then length fields 
 		else
-		  %let _ = writeLine("record(1): "^MetaSlangPrint.printSort(srt)) in
+		  %let _ = writeLine("record(1): "^MetaSlangPrint.printType(srt)) in
 		  1
 	       | None -> 1
    in
    let def findCoProduct(srt) =
-            %let _ = writeLine("findCoProduct: "^MetaSlangPrint.printSort(srt)) in
+            %let _ = writeLine("findCoProduct: "^MetaSlangPrint.printType(srt)) in
             case srt
 	      of  CoProduct(fields,_) -> 
 		  let field1 = filter (fn(id0,_) -> (id0 = id)) fields in
@@ -159,7 +159,7 @@ ArityNormalizeCGen qualifying spec {
 		    of [(_,Some srt)] -> Some(productLength(srt))
 		      | _ -> None)
 		| Quotient(s,t,_) -> findCoProduct(s)
-		| Subsort(s,t,_) -> findCoProduct(s)
+		| Subtype(s,t,_) -> findCoProduct(s)
 		| Base(qid,srts,_) ->
 		  let def newtypevars(srts,n) =
 		          case srts of [] -> []
@@ -168,7 +168,7 @@ ArityNormalizeCGen qualifying spec {
 		  in
 		  let srts = newtypevars(srts,0) in
 		  let srt = Base(qid,srts,noPos) in
-		  %let _ = writeLine("unfolding "^MetaSlangPrint.printSort(srt)^"...") in
+		  %let _ = writeLine("unfolding "^MetaSlangPrint.printType(srt)^"...") in
 		  let usrt = Utilities.unfoldBase(sp,srt) in
 		  if usrt = srt then None
 		  else findCoProduct(usrt)
@@ -179,7 +179,7 @@ ArityNormalizeCGen qualifying spec {
    case SpecEnvironment.arrowOpt(sp,srt)
      of Some(dom,rng) -> 
        (case findCoProduct(rng)
-	 of None -> sortArity(sp,srt)
+	 of None -> typeArity(sp,srt)
 	   | Some len ->
 	   if  len > 1
 	     then Some (dom,len)
@@ -190,7 +190,7 @@ ArityNormalizeCGen qualifying spec {
 
 (*
  Arities are associated with term identifiers according to 
- arities in sort definitions or arities of top-level pattern.
+ arities in type definitions or arities of top-level pattern.
  The top-level pattern gets precedence such that the pattern 
  matching algorithm can always generate the pattern with 
  as many arguments as possible.
@@ -204,18 +204,18 @@ ArityNormalizeCGen qualifying spec {
 	  (case find (fn (id2,r) -> id = id2) gamma
 	     of Some (w,r) -> r
 	      | None -> None)
-        | Fun(Not,      srt,_) -> sortArity(sp,srt)
-        | Fun(And,      srt,_) -> sortArity(sp,srt)
-        | Fun(Or,       srt,_) -> sortArity(sp,srt)
-        | Fun(Implies,  srt,_) -> sortArity(sp,srt)
-        | Fun(Iff,      srt,_) -> sortArity(sp,srt)
-        | Fun(Equals,   srt,_) -> sortArity(sp,srt)
-        | Fun(NotEquals,srt,_) -> sortArity(sp,srt)
+        | Fun(Not,      srt,_) -> typeArity(sp,srt)
+        | Fun(And,      srt,_) -> typeArity(sp,srt)
+        | Fun(Or,       srt,_) -> typeArity(sp,srt)
+        | Fun(Implies,  srt,_) -> typeArity(sp,srt)
+        | Fun(Iff,      srt,_) -> typeArity(sp,srt)
+        | Fun(Equals,   srt,_) -> typeArity(sp,srt)
+        | Fun(NotEquals,srt,_) -> typeArity(sp,srt)
 	| Fun(Op (QId,_),_,_) -> 
 	  opArity(sp,QId)
 	| Fun(Embed(id,true),srt,_) -> 
 	  %let _ = writeLine("embed "^id) in
-	  sortEmbedArity(sp,srt,id)
+	  typeEmbedArity(sp,srt,id)
 	| Fun _ -> None
         | Let _ -> None
         | LetRec _ -> None
@@ -226,7 +226,7 @@ ArityNormalizeCGen qualifying spec {
 	  if mArity <= 1
 	     then None
 	  else Some(case match
-		      of (pat,_,_)::_ -> patternSort pat
+		      of (pat,_,_)::_ -> patternType pat
 		       | _ -> System.fail "Unexpected empty match",mArity)
 	| IfThenElse _ -> None
 	| Record _ -> None
@@ -237,9 +237,9 @@ ArityNormalizeCGen qualifying spec {
  def mkArityApply(sp,dom,t1,t2,usedNames) =
      % let def makeFreshBoundVariable(id,usedNames) = freshName("v"^id,usedNames) in % unused
      let
-	def unfoldArgument(dom:Sort,t2) = 
+	def unfoldArgument(dom:Type,t2) = 
             case Utilities.unfoldBase(sp,dom)
-	      of Subsort(s,t,_) -> 
+	      of Subtype(s,t,_) -> 
 %
 % First relax the argument, then restrict the result.
 %
@@ -270,7 +270,7 @@ ArityNormalizeCGen qualifying spec {
 	       | _ -> 
 		(toScreen "Unexpected non-record argument to function ";
 		 toScreen (printTerm t2^" :  " );
-		 writeLine (printSort dom);
+		 writeLine (printType dom);
 		(t2,[])) 
 		  %% This should not happen (?) 
 		  %% because we only apply it to terms expecting
@@ -304,7 +304,7 @@ ArityNormalizeCGen qualifying spec {
 
 
 
-  op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
+  op  etaExpand : Spec * UsedNames * Type * MS.Term -> MS.Term
 
   def etaExpand(sp,usedNames,srt,term) =
     let def etaExpandAux(dom,term) =
@@ -334,7 +334,7 @@ ArityNormalizeCGen qualifying spec {
       case SpecEnvironment.productOpt(sp,dom)
 	of None -> etaExpandAux(dom,term)
 	 | Some fields ->
-	  %let _ = writeLine("etaExpand: "^MetaSlangPrint.printSort(dom)) in
+	  %let _ = writeLine("etaExpand: "^MetaSlangPrint.printType(dom)) in
 	  if ~(isShortTuple(1,fields)) then 
 	    %let _ = writeLine("  is record.") in
 	    etaExpandAux(dom,term)
@@ -376,7 +376,7 @@ ArityNormalizeCGen qualifying spec {
 
  def normalizeArity(sp,gamma,usedNames,term) = 
      let
-	def normalizeRecordArguments(t:MS.Term):MS.Term * Boolean = 
+	def normalizeRecordArguments(t:MS.Term):MS.Term * Bool = 
 	    case t
 	      of Record(fields,_) -> 
 		 let fields = 
@@ -480,7 +480,7 @@ ArityNormalizeCGen qualifying spec {
 	  term
 	 | Some (dom,num) ->
 	   let (name,usedNames) = freshName("xx",usedNames) in
-	   %let _ = writeLine("var "^name^":"^MetaSlangPrint.printSort(dom)) in
+	   %let _ = writeLine("var "^name^":"^MetaSlangPrint.printType(dom)) in
 	   let x = (name,dom) in
 	   (Lambda([((VarPat(x,noPos)),mkTrue(),
 		     mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
@@ -488,7 +488,7 @@ ArityNormalizeCGen qualifying spec {
  
 
 %
-% This one ignores arity normalization in sorts, axioms and theorems.
+% This one ignores arity normalization in types, axioms and theorems.
 %     
 
   def arityNormalize (spc) = 

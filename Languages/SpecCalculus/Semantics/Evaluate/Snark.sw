@@ -7,8 +7,8 @@ SpecCalc qualifying spec
 
   %% Hopefully these will be unnecessary in the final system
 
-  % sort Env a = SpecCalc.Env a
-  %sort Spec = MetaSlang.Spec
+  % type Env a = SpecCalc.Env a
+  %type Spec = MetaSlang.Spec
 
   op SpecCalc.evaluateSnarkGen : ValueInfo * SCTerm * Option String -> SpecCalc.Env ValueInfo
   %% Need to add error detection code

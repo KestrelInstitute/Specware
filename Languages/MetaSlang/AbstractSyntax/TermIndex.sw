@@ -44,8 +44,8 @@ spec
  type Index = TermDiscNet.Disc_net
 
  op TermIndex.empty : Index
- op indexTerm       : Index * MS.Term * Nat -> Index
- op generalizations : Index * MS.Term -> List Nat
+ op indexTerm       : Index * MSTerm * Nat -> Index
+ op generalizations : Index * MSTerm -> List Nat
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
@@ -56,7 +56,7 @@ spec
      (app (fn i -> toScreen(Integer.show i^" ")) path;
       writeLine "")
 
- def getApplys(M: MS.Term,Ms) = 
+ def getApplys (M: MSTerm, Ms) = 
      case M
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  (M::Ms,true)

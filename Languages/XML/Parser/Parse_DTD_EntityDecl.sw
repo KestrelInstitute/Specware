@@ -121,7 +121,7 @@ XML qualifying spec
   %%   [70]  EntityDecl     ::=  GEDecl | PEDecl
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_EntityDecl (start : UChars, allow_pe_refs? : Boolean) : Required EntityDecl =
+  def parse_EntityDecl (start : UChars, allow_pe_refs? : Bool) : Required EntityDecl =
     %% We begin here just past the '<!ENTITY' in rules [71] and [72], looking for
     %% one of the following:
     %%  S       Name S EntityDef S? '>'
@@ -147,7 +147,7 @@ XML qualifying spec
   %%   [71]  GEDecl         ::=  '<!ENTITY' S       Name S EntityDef S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_GEDecl (start : UChars,  w1 : WhiteSpace, allow_pe_refs? : Boolean) : Required GEDecl =
+  def parse_GEDecl (start : UChars,  w1 : WhiteSpace, allow_pe_refs? : Bool) : Required GEDecl =
     %% We begin here just past the first S in rule [71], looing for:
     %%   Name S EntityDef S? '>'
    {
@@ -199,7 +199,7 @@ XML qualifying spec
   %%   [72]  PEDecl         ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_PEDecl (start : UChars, w1 : WhiteSpace, allow_pe_refs? : Boolean) : Required PEDecl =
+  def parse_PEDecl (start : UChars, w1 : WhiteSpace, allow_pe_refs? : Bool) : Required PEDecl =
    %% We begin here just past the % in rule [72], looking for:
    %%   S Name S PEDef S? '>'
    {

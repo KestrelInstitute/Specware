@@ -4,19 +4,19 @@ import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Environment
 
  (**
- * adds for each user sort the corresponding
+ * adds for each user type the corresponding
  * equality op
  *)
 
 op addEqOpsToSpec : Spec -> Spec
 def addEqOpsToSpec spc =
-  foldriAQualifierMap (fn (q, id, sortinfo, spc) ->
-                         addEqOpsFromSort (spc, Qualified (q, id), sortinfo))
+  foldriAQualifierMap (fn (q, id, typeinfo, spc) ->
+                         addEqOpsFromType (spc, Qualified (q, id), typeinfo))
                       spc 
-                      spc.sorts
+                      spc.types
 
-op addEqOpsFromSort: Spec * QualifiedId * SortInfo -> Spec
-def addEqOpsFromSort (spc, qid, info) =
+op addEqOpsFromType: Spec * QualifiedId * TypeInfo -> Spec
+def addEqOpsFromType (spc, qid, info) =
   let
 
     def getLambdaTerm (srt, body, b) =
@@ -24,14 +24,14 @@ def addEqOpsFromSort (spc, qid, info) =
       let pat = RecordPat ([("1", VarPat (("x", srt), b)), ("2", VarPat (("y", srt), b))], b) in
       Lambda ([(pat, cond, body)], b)
 
-    def getEqOpSort (srt, b) =
+    def getEqOpType (srt, b) =
       Arrow (Product ([("1", srt), ("2", srt)], b), Boolean b, b)
 
     def addEqOp (eqqid as Qualified (eq, eid), osrt, body, b) =
       let term = getLambdaTerm (osrt, body, b) in
       let info = {names  = [eqqid],
 		  fixity = Nonfix,
-		  dfn    = SortedTerm (term, getEqOpSort (osrt, b), b),
+		  dfn    = TypedTerm (term, getEqOpType (osrt, b), b),
 		  fullyQualified? = false}
       in
       let ops = insertAQualifierMap (spc.ops, eq, eid, info) in
@@ -40,12 +40,12 @@ def addEqOpsFromSort (spc, qid, info) =
       let spc = appendElement (spc, elt) in
       spc
   in
-  if ~ (definedSortInfo? info) then
+  if ~ (definedTypeInfo? info) then
     spc
   else
-    let (tvs, srt) = unpackFirstSortDef info in
-    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-    let usrt = stripSubsortsAndBaseDefs spc srt in
+    let (tvs, srt) = unpackFirstTypeDef info in
+    %% Was unfoldStripType which is unnecessary and dangerous because of recursive types
+    let usrt = stripSubtypesAndBaseDefs spc srt in
     case usrt of
       | Boolean _ -> spc
       | Base (Qualified ("Nat",       "Nat"),     [], _) -> spc
@@ -54,7 +54,7 @@ def addEqOpsFromSort (spc, qid, info) =
       | Base (Qualified ("String",    "String"),  [], _) -> spc
      %| Base (Qualified ("??",        "Float"),   [], _) -> spc
       | _ ->
-        let b = sortAnn srt in
+        let b = typeAnn srt in
 	let osrt = Base (qid, map (fn tv -> TyVar (tv, b)) tvs, b) in
 	let varx = Var (("x", osrt), b) in
 	let vary = Var (("y", osrt), b) in
@@ -63,11 +63,11 @@ def addEqOpsFromSort (spc, qid, info) =
           def getEqTermFromProductFields (fields, osrt, varx, vary) =
 	    foldr (fn ((fid, fsrt), body) ->
 		   let projsrt = Arrow (osrt, fsrt, b) in
-		   let eqsort = Arrow (Product ([("1", fsrt), ("2", fsrt)], b), Boolean b, b) in
+		   let eqtype = Arrow (Product ([("1", fsrt), ("2", fsrt)], b), Boolean b, b) in
 		   let proj = Fun (Project (fid), projsrt, b) in
 		   let t1 = Apply (proj, varx, b) in
 		   let t2 = Apply (proj, vary, b) in
-		   let t = Apply (Fun (Equals, eqsort, b), Record ([("1", t1), ("2", t2)], b), b) in
+		   let t = Apply (Fun (Equals, eqtype, b), Record ([("1", t1), ("2", t2)], b), b) in
 		   if body = mkTrue () then 
 		     t
 		   else
@@ -82,9 +82,9 @@ def addEqOpsFromSort (spc, qid, info) =
 	% check for aliases first
 	case srt of
 	  | Base (aqid, _, b) ->
-	    % define the eq-op in terms of the aliased sort
+	    % define the eq-op in terms of the aliased type
 	    let aeqqid = getEqOpQid (aqid) in
-	    let fun = Fun (Op (aeqqid, Nonfix), getEqOpSort (osrt, b), b) in
+	    let fun = Fun (Op (aeqqid, Nonfix), getEqOpType (osrt, b), b) in
 	    let args = Record ([("1", varx), ("2", vary)], b) in
 	    let body = Apply (fun, args, b) in
 	    addEqOp (eqqid, osrt, body, b)
@@ -111,7 +111,7 @@ def addEqOpsFromSort (spc, qid, info) =
 			    let eqFsrt =
 			        let 
                                   def bcase fsrt =
-				    let eqsrt = getEqOpSort (fsrt, b) in
+				    let eqsrt = getEqOpType (fsrt, b) in
 				    Apply (Fun (Equals, eqsrt, b), 
 					   Record ([("1", Var (("x0", fsrt), b)), 
 						    ("2", Var (("y0", fsrt), b))],
@@ -122,8 +122,8 @@ def addEqOpsFromSort (spc, qid, info) =
 				    | None -> mkTrue ()
 				    | Some (fsrt as Base _) -> bcase fsrt
 				    | Some fsrt ->
-				    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
-				    let ufsrt = stripSubsortsAndBaseDefs spc fsrt in
+				    %% Was unfoldStripType which is unnecessary and dangerous because of recursive types
+				    let ufsrt = stripSubtypesAndBaseDefs spc fsrt in
 				      case fsrt of
 					| Product (fields, _) -> 
 					  getEqTermFromProductFields (fields, fsrt, 

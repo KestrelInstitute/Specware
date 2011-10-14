@@ -8,15 +8,15 @@ Poly qualifying spec
   type Poly
 
   op toString: Var -> String
-  op equal: Poly * Poly -> Boolean
+  op equal: Poly * Poly -> Bool
   op plus: Term * Poly -> Poly
-  op PolyTerm.zero?: Term -> Boolean
-  op zero?: Poly -> Boolean
+  op PolyTerm.zero?: Term -> Bool
+  op zero?: Poly -> Bool
   op toTerm: Coef -> Term
   op mkTerm: Coef * Var -> Term
   op toPoly: Term -> Poly
-  op PolyTerm.constant?: Term -> Boolean
-  op constant?: Poly -> Boolean
+  op PolyTerm.constant?: Term -> Bool
+  op constant?: Poly -> Bool
   op PolyTerm.constant: Term -> Coef
   op PolyTerm.var: Term -> Var
   op constant: Poly -> Coef
@@ -24,7 +24,7 @@ Poly qualifying spec
   op termPlusConstant: Term * Coef -> Poly
   op hdTerm: Poly -> Term
   op restPoly: Poly -> Poly
-  op Var.equal?: Var * Var -> Boolean
+  op Var.equal?: Var * Var -> Bool
   op Var.compare: Var * Var -> Comparison
   op Var.print: Var -> String
 
@@ -66,7 +66,7 @@ Poly qualifying spec
       then None
     else Some (var(tm))
 
-  op varGT?: Var * Var -> Boolean
+  op varGT?: Var * Var -> Bool
   def varGT?(v1, v2) =
     case compare(v1, v2) of
       | Greater -> true
@@ -207,7 +207,7 @@ Poly qualifying spec
 	    | Less -> Greater
 	    | Greater -> Less
 
-  op PolyTerm.equal?(t1: Term, t2: Term): Boolean =
+  op PolyTerm.equal?(t1: Term, t2: Term): Bool =
     if constant?(t1) && constant?(t2)
       then constant(t1) = constant(t2)
     else if constant?(t1) || constant?(t2) then false

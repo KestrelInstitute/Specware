@@ -22,7 +22,7 @@ as an Option-valued function that returns Some(...) on all the natural numbers i
 < n and None on all the natural numbers i >= n. *)
 
 op [a] definedOnInitialSegmentOfLength
-       (f: Nat -> Option a, n:Nat) infixl 20 : Boolean =
+       (f: Nat -> Option a, n:Nat) infixl 20 : Bool =
   (fa (i:Nat) i <  n => some? (f i)) &&
   (fa (i:Nat) i >= n => none? (f i))
 

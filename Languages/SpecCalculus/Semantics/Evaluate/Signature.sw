@@ -27,7 +27,7 @@ SpecCalc qualifying spec {
   op evaluateDiagMorph        : DiagramMorphismTerm                                              -> SpecCalc.Env ValueInfo
   op evaluateColimit          : ColimitTerm                                          -> Position -> SpecCalc.Env ValueInfo
   op evaluateTermInfo         : SCTerm                                                           -> SpecCalc.Env ValueInfo
-  op evaluatePrint            : PrintTerm * Boolean                                              -> SpecCalc.Env ValueInfo
+  op evaluatePrint            : PrintTerm * Bool                                                 -> SpecCalc.Env ValueInfo
   op evaluateQualify          : SCTerm -> Qualifier                                              -> SpecCalc.Env ValueInfo
   op evaluateTranslate        : SCTerm -> Renaming                                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateSubstitute       : SubstTerm                                            -> Position -> SpecCalc.Env ValueInfo
@@ -45,8 +45,8 @@ SpecCalc qualifying spec {
   op evaluateOtherTranslate     : SCTerm -> ValueInfo -> Renaming                    -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherObligations   : OtherValue                                         -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherPrint         : OtherValue                                         -> Position -> SpecCalc.Env ()
-  op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean      -> Position -> SpecCalc.Env ()
-  op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean      -> Position -> SpecCalc.Env ()
+  op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Bool         -> Position -> SpecCalc.Env ()
+  op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Bool         -> Position -> SpecCalc.Env ()
   op evaluateOtherSubstitute    : SCTerm -> ValueInfo -> SCTerm -> ValueInfo         -> Position -> SpecCalc.Env ValueInfo
 
   op evaluateOtherSpecMorph     : ValueInfo -> ValueInfo -> List SpecMorphRule -> SM_Pragmas                    -> Position -> SpecCalc.Env ValueInfo
@@ -63,12 +63,12 @@ SpecCalc qualifying spec {
   op getUnitId    : SCTerm -> SpecCalc.Env UnitId
   op coerceToSpec : Value -> Value
 
-  op Specware.toplevelHandler       : Exception -> SpecCalc.Env Boolean
+  op Specware.toplevelHandler       : Exception -> SpecCalc.Env Bool
   op Specware.toplevelHandlerOption : [a] Exception -> SpecCalc.Env (Option a)
 
   op Specware.getOptSpec      : Option String -> Option Spec
 
-  op SpecCalc.otherSameSCTerm? : SCTerm * SCTerm -> Boolean
+  op SpecCalc.otherSameSCTerm? : SCTerm * SCTerm -> Bool
 
 }
 
@@ -78,6 +78,15 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.55  2011/10/11 07:37:55  mcdonald
+%% internal revisions to simplify specs:
+%%
+%% pervasive change to eliminate polymorphism in SpecCalculus terms
+%%
+%% also misc changes to simplify imports
+%%
+%% also misc changes to clarify some names of some types
+%%
 %% Revision 1.54  2010/11/25 05:06:34  westfold
 %% Summary: Add interface for producing lisp code for sliced specs
 %%
@@ -127,7 +136,7 @@ SpecCalc qualifying spec {
 %% translation_maps => renamings
 %% translation_map  => renaming
 %% op_id_map        => op_renaming
-%% sort_id_map      => sort_renaming
+%% type_id_map      => type_renaming
 %% etc.
 %%
 %% Revision 1.41  2005/06/07 06:34:12  mcdonald

@@ -3,7 +3,7 @@ Expr qualifying spec
   type Expression
   op print: Expression -> String
 
-  op andExpr?: Expression -> Boolean
+  op andExpr?: Expression -> Bool
 
   type AndExpr = (Expression | andExpr?)
 
@@ -12,20 +12,20 @@ Expr qualifying spec
 
   op mkAndExpr: Expression * Expression -> AndExpr
 
-  op trueExpr?: Expression -> Boolean
+  op trueExpr?: Expression -> Bool
 
   type TrueExpr = (Expression | trueExpr?)
 
   op mkTrueExpr: TrueExpr
 
-  op eqExpr?: Expression -> Boolean
+  op eqExpr?: Expression -> Bool
   type EqExpr = (Expression | eqExpr?)
 
   op lhs: EqExpr -> Expression
   op rhs: EqExpr -> Expression
   op mkEqExpr: Expression * Expression -> Expression
 
-  op ifExpr?: Expression -> Boolean
+  op ifExpr?: Expression -> Bool
   type IfExpr = (Expression | ifExpr?)
 
   op ifCond: IfExpr -> Expression
@@ -34,7 +34,7 @@ Expr qualifying spec
 
   op mkIfExpr: Expression * Expression * Expression -> Expression
 
-  op notExpr?: Expression -> Boolean
+  op notExpr?: Expression -> Bool
   type NotExpr = (Expression | notExpr?)
 
   op notArg: NotExpr -> Expression

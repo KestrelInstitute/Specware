@@ -14,7 +14,7 @@ spec {
   import Functor qualifying ../Functors/FreeDomain/Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort Diagram (O,A)
+  type Diagram (O,A)
   op shape : fa (O,A) Diagram (O,A) -> Sketch
   op functor : fa (O,A) Diagram (O,A) -> Functor (O,A)
 \end{spec}
@@ -36,8 +36,8 @@ an empty diagram we must give fix the target category.
   op addEdge : fa (O,A) Diagram (O,A)
     -> Edge.Elem -> Vertex.Elem -> Vertex.Elem -> Diagram (O,A)
 
-  op vertexInDiagram? : fa (O,A) Diagram (O,A) -> Vertex.Elem -> Boolean
-  op edgeInDiagram? : fa (O,A) Diagram (O,A) -> Edge.Elem -> Boolean
+  op vertexInDiagram? : fa (O,A) Diagram (O,A) -> Vertex.Elem -> Bool
+  op edgeInDiagram? : fa (O,A) Diagram (O,A) -> Edge.Elem -> Bool
 
   op labelVertex : fa (O,A) Diagram (O,A) -> Vertex.Elem -> O -> Diagram (O,A)
   op labelEdge : fa (O,A) Diagram (O,A) -> Edge.Elem -> A -> Diagram (O,A)
@@ -51,7 +51,7 @@ If necessary, the function being folded can be curried where its first
 argument is the diagram. For example, the function f:
 
 \begin{verbatim}
-  sort S
+  type S
   op f : fa (O,A) Diagram (O,A) -> x -> Edge.Vertex -> x
   op unit : S
 \end{verbatim}
@@ -96,6 +96,6 @@ of the diagram. In a concrete representation, the apparent redundancy
 can be eliminated.
 
 \begin{spec}
-  axiom diagram_domain is sort fa (O,A) fa (dgm:Diagram(O,A)) (shape dgm) = dom (functor dgm)
+  axiom diagram_domain is type fa (O,A) fa (dgm:Diagram(O,A)) (shape dgm) = dom (functor dgm)
 }
 \end{spec}

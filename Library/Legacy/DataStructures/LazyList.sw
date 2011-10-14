@@ -17,8 +17,8 @@ spec
  op mapEach       : [a,b] (List a * a * List a -> LazyList b) -> List a -> LazyList b
  op map           : [a,b] (a -> b) -> LazyList a -> LazyList b
  op emptyList     : [a]   LazyList a
- op find          : [a] (a -> Boolean) -> LazyList a -> Option a
- op find_n        : [a] (a -> Boolean) -> LazyList a -> Nat -> Option a
+ op find          : [a] (a -> Bool) -> LazyList a -> Option a
+ op find_n        : [a] (a -> Bool) -> LazyList a -> Nat -> Option a
  op app	          : [a]   (a -> ()) -> LazyList a -> ()
 
  def emptyList = Nil

@@ -4,7 +4,7 @@
 spec {
   import ../Polymorphic
 
-  sort NatTrans (O,A) = {
+  type NatTrans (O,A) = {
     dom : Functor (O,A),
     cod : Functor (O,A),
     components : PolyMap.Map (Vertex.Elem,A)

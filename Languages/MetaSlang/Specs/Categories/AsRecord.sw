@@ -3,11 +3,11 @@
 This will likely move to a new home. This needs to be abstracted factored!
 
 This is a naive representation of the category of specs. Note that in
-this case we are using a concrete record sort for categories. Categories
+this case we are using a concrete record type for categories. Categories
 are data.  A category can be passed as an argument to a function.
 
 There are many many options with respect to representing categories
-including monomorphic variants and where there is no explicit sort
+including monomorphic variants and where there is no explicit type
 for categories.
 
 It might be better to factor Morphism into a separate spec.
@@ -27,23 +27,23 @@ SpecCalc qualifying spec {
  import /Languages/SpecCalculus/AbstractSyntax/Types  % SCTerm
 
  type QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
- type MorphismSortMap = QualifiedIdMap
+ type MorphismTypeMap = QualifiedIdMap
  type MorphismOpMap   = QualifiedIdMap
 
   type Morphism = {
     dom     : Spec,
     cod     : Spec,
-    sortMap : MorphismSortMap,
+    typeMap : MorphismTypeMap,
     opMap   : MorphismOpMap,
     pragmas : SM_Pragmas,
     sm_tm   : Option SCTerm
   }
 
-  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * SM_Pragmas * Option SCTerm -> Morphism
-  def makeMorphism (dom_spec, cod_spec, sort_map, op_map, pragmas, sm_tm) =
+  op makeMorphism : Spec * Spec * MorphismTypeMap * MorphismOpMap * SM_Pragmas * Option SCTerm -> Morphism
+  def makeMorphism (dom_spec, cod_spec, type_map, op_map, pragmas, sm_tm) =
    {dom     = dom_spec,
     cod     = cod_spec,
-    sortMap = sort_map,
+    typeMap = type_map,
     opMap   = op_map,
     pragmas = pragmas,
     sm_tm   = sm_tm}
@@ -85,10 +85,10 @@ SpecCalc qualifying spec {
 		        pragmas)
 
   op ppMorphism : Morphism -> Doc
-  def ppMorphism {dom=_, cod=_, sortMap, opMap, pragmas, sm_tm =_} = 
+  def ppMorphism {dom=_, cod=_, typeMap, opMap, pragmas, sm_tm =_} = 
     ppGroup (ppConcat [
-      ppString "sort map = ",
-      ppMorphMap sortMap,
+      ppString "type map = ",
+      ppMorphMap typeMap,
       ppNewline,
       ppString "op map = ",
       ppMorphMap opMap,
@@ -98,18 +98,18 @@ SpecCalc qualifying spec {
   op dom     : Morphism -> Spec
   op cod     : Morphism -> Spec
   op opMap   : Morphism -> MorphismOpMap
-  op sortMap : Morphism -> MorphismSortMap
+  op typeMap : Morphism -> MorphismTypeMap
 
   def dom     morph = morph.dom
   def cod     morph = morph.cod
   def opMap   morph = morph.opMap
-  def sortMap morph = morph.sortMap
+  def typeMap morph = morph.typeMap
 
   op compose : Morphism -> Morphism -> Morphism
   def compose mor1 mor2 = {
      dom     = mor1.dom,
      cod     = mor2.cod,
-     sortMap = PolyMap.compose mor1.sortMap mor2.sortMap,
+     typeMap = PolyMap.compose mor1.typeMap mor2.typeMap,
      opMap   = PolyMap.compose mor1.opMap mor2.opMap,
      pragmas = mor1.pragmas ++ mor2.pragmas,			   
      sm_tm   = mor1.sm_tm
@@ -117,21 +117,21 @@ SpecCalc qualifying spec {
 
   %% We could have named InitialCocone (and SpecInitialCocone, etc.) 
   %%  as Colimit (and SpecColimit, etc.), but InitialCocone is a bit more explicit
-  sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)
-  sort SpecCocone         = Cat.Cocone        (Spec, Morphism) 
-  sort SpecInitialCocone  = Cat.InitialCocone (Spec, Morphism) 
+  type SpecDiagram        = Cat.Diagram       (Spec, Morphism)
+  type SpecCocone         = Cat.Cocone        (Spec, Morphism) 
+  type SpecInitialCocone  = Cat.InitialCocone (Spec, Morphism) 
   op specColimit : SpecDiagram -> Option SpecInitialCocone * Option String
 
 
   op specCat : () -> Cat.Cat (Spec, Morphism)
   def specCat () = 
     {
-    dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _, pragmas = _, sm_tm = _} -> dom,
-    cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _, pragmas = _, sm_tm = _} -> cod,
+    dom = fn {dom = dom, cod = _,   typeMap = _, opMap = _, pragmas = _, sm_tm = _} -> dom,
+    cod = fn {dom = _,   cod = cod, typeMap = _, opMap = _, pragmas = _, sm_tm = _} -> cod,
     ident = fn spc -> {
        dom     = spc,
        cod     = spc,
-       sortMap = emptyMap,
+       typeMap = emptyMap,
        opMap   = emptyMap,
        pragmas = [],		       
        sm_tm   = None

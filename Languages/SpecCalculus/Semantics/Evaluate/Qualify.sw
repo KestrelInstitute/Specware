@@ -51,7 +51,7 @@ SpecCalc qualifying spec
       def check_for_type_collisions () =
         foldOverQualifierMap (fn (q, id, old_info, _) -> 
                               if q = UnQualified then
-                                case findAQualifierMap (spc.sorts, new_q, id) of
+                                case findAQualifierMap (spc.types, new_q, id) of
                                   | Some new_info ->
                                     if new_info = old_info then
                                       %% collapsing {id, new_q.id} into {new_q.id} is ok 
@@ -66,7 +66,7 @@ SpecCalc qualifying spec
                               else
                                 return ())
                              ()
-                             spc.sorts
+                             spc.types
         
       def check_for_op_collisions () =
         foldOverQualifierMap (fn (q, id, old_info, _) -> 
@@ -88,12 +88,12 @@ SpecCalc qualifying spec
                              ()
                              spc.ops
         
-      def qualify_sort sort_term =
-        case sort_term of
+      def qualify_type type_term =
+        case type_term of
          | Base (qid, srts, a) ->
-           let new_qid = qualifySortId new_q qid in
-           if new_qid = qid then sort_term else Base (new_qid, srts, a)
-         | _ -> sort_term
+           let new_qid = qualifyTypeId new_q qid in
+           if new_qid = qid then type_term else Base (new_qid, srts, a)
+         | _ -> type_term
   
       def qualify_term op_term =
         case op_term of
@@ -104,16 +104,16 @@ SpecCalc qualifying spec
   
       def qualify_pattern pat = pat
   
-      def qualify_sorts sorts =
+      def qualify_types types =
         let 
-          def qualify_sortinfo (q, _, info, sorts) =
+          def qualify_typeinfo (q, _, info, types) =
 	    let revised_q = if q = UnQualified then new_q else q in
 	    %% Translation can cause names to become duplicated, so remove duplicates
-	    let new_names = reverse (removeDuplicates (map (qualifySortId revised_q) info.names)) in % revised_q was new_q ??
+	    let new_names = reverse (removeDuplicates (map (qualifyTypeId revised_q) info.names)) in % revised_q was new_q ??
 	    let new_info  = info << {names = new_names} in
-	    return (mergeSortInfo spc sorts new_info)
+	    return (mergeTypeInfo spc types new_info)
 	in
-	  foldOverQualifierMap qualify_sortinfo emptyAQualifierMap sorts
+	  foldOverQualifierMap qualify_typeinfo emptyAQualifierMap types
 
       def qualify_ops ops =
         let 
@@ -145,16 +145,16 @@ SpecCalc qualifying spec
           in
             return spc
         | _ ->
-          let {sorts, ops, elements, qualifier} = 
-              mapSpecUnqualified (qualify_term, qualify_sort, qualify_pattern) spc
+          let {types, ops, elements, qualifier} = 
+              mapSpecUnqualified (qualify_term, qualify_type, qualify_pattern) spc
           in 
             {
              check_for_type_collisions ();
              check_for_op_collisions   ();
-             newSorts    <- qualify_sorts sorts;
+             newTypes    <- qualify_types types;
              newOps      <- qualify_ops   ops;
              newElements <- return (qualifySpecElements new_q immune_ids elements);
-             new_spec    <- return {sorts     = newSorts,
+             new_spec    <- return {types     = newTypes,
                                     ops       = newOps,
                                     elements  = newElements,
                                     qualifier = Some new_q};
@@ -187,8 +187,8 @@ SpecCalc qualifying spec
 		  qualifySpecElements new_q immune_ids els, a)
       | Op      (qid,def?,a) -> Op      (qualifyOpId   new_q immune_ids qid, def?,a)
       | OpDef   (qid,refine?,a) -> OpDef   (qualifyOpId   new_q immune_ids qid, refine?,a)
-      | Sort    (qid,a)      -> Sort    (qualifySortId new_q qid,a)
-      | SortDef (qid,a)      -> SortDef (qualifySortId new_q qid,a)
+      | Type    (qid,a)      -> Type    (qualifyTypeId new_q qid,a)
+      | TypeDef (qid,a)      -> TypeDef (qualifyTypeId new_q qid,a)
       | Property (pt, qid, tvs, fmla, a) ->
 	%% Translation can cause names to become duplicated, but won't remove duplicates
 	let new_name = qualifyPropertyId new_q qid in
@@ -202,7 +202,7 @@ SpecCalc qualifying spec
     else 
       qid
 
-  def qualifySortId new_q (qid as Qualified (q, id)) =
+  def qualifyTypeId new_q (qid as Qualified (q, id)) =
     if q = UnQualified then
       Qualified (new_q, id)
     else 

@@ -8,6 +8,13 @@
 (defpackage :MS)
 (defpackage :Position)
 
+(defun new-version? (n) 
+  ;; temporary hack for transition to new code
+  (let* ((sym (find-symbol "ABSTRACTTYPE-3" "STANDARDSPEC"))
+         (result (and sym (fboundp sym))))
+    ;; (format t (if result "~&=== PARSER SEES NEW VERSION AT ~D ===~%" "~&=== PARSER SEES OLD VERSION AT ~D ===~%") n)
+    result))
+
 ;;; variables associated with new definition tables (circa May 8, 2002)
 (defvar *current-module-name*   nil) ; used only in this file
 (defvar *collected-symbols*     nil) ; used in this file and in meta-slang-parser-semantics-espec.lisp
@@ -21,7 +28,6 @@
 ;;; ========================================================================
 ;;;  Misc utilities
 ;;; ========================================================================
-
 
 (defun make-pos (x y) 
   ;; make-region defined in Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-semantics.lisp 
@@ -70,11 +76,11 @@
 ;;; (defun mkUnQualifiedId (id) 
 ;;;   (MetaSlang::mkUnQualifiedId id))
 ;;; 
-;;; (defun make-unqualified-sort-name (id left right)
+;;; (defun make-unqualified-type-name (id left right)
 ;;;   (declare (ignore left right))
 ;;;   (MetaSlang::mkUnQualifiedId id))
 ;;; 
-;;; (defun make-qualified-sort-name (qualifier id left right)
+;;; (defun make-qualified-type-name (qualifier id left right)
 ;;;   (declare (ignore left right))
 ;;;   (MetaSlang::mkQualifiedId-2 qualifier id))
 ;;; 
@@ -183,16 +189,18 @@
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(defun make-internal-sort (name)
+(defun make-internal-type (name)
   (cons :|Base| 
 	(vector (MetaSlang::mkQualifiedId-2 name name)
 		nil 
 		*internal-parser-position*)))
 
-(defparameter char-sort   (make-internal-sort "Char"    ))
-(defparameter string-sort (make-internal-sort "String"  ))
-(defparameter int-sort    (make-internal-sort "Integer" ))
-(defparameter nat-sort    (make-internal-sort "Nat"     ))
+(defparameter char-type   (make-internal-type "Char"    ))
+(defparameter string-type (make-internal-type "String"  ))
+(defparameter int-type    (make-internal-type "Integer" ))
+(defparameter nat-type    (make-internal-type "Nat"     ))
+
+(defparameter bool-type   (cons :|Boolean| nil)) ; special built-in type
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
@@ -222,41 +230,53 @@
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------
-;;;  SORT-DECLARATION
+;;;  TYPE-DECLARATION
 ;;; ------------------------------------------------------------------------
 
 
 ;; To factor the parser further, perhaps we should think about removing
 ;; the reference to StandardSpec from the semantic rules.
-(defun make-sort-declaration (qualifiable-sort-names optional-tvs l r)
+(defun make-type-declaration (qualifiable-type-names optional-tvs l r)
   (let*  ((tvs     (if (eq :unspecified optional-tvs) nil optional-tvs))
 	  ;;
-	  (names   (remove-duplicates qualifiable-sort-names :test 'equal :from-end t))
-          ;; use of nat-sort below is a hack -- conversion by abstractSort will be ignored
-          (tvs-srt (StandardSpec::abstractSort-3 #'namedTypeVar tvs nat-sort))
+	  (names   (remove-duplicates qualifiable-type-names :test 'equal :from-end t))
+          ;; use of nat-type below is a hack -- conversion by abstractType will be ignored
+          (tvs-and-types
+           (if (new-version? 0)
+               (StandardSpec::abstractType-3 #'namedTypeVar tvs nat-type)
+               (StandardSpec::abstractSort-3 #'namedTypeVar tvs nat-type)))
 	  ;; Since namedTypeVar is the identity function,
-	  ;;  (car tvs-srt) will just be a copy of typeVars1,
-	  ;;  (cdr tvs-srt) will be ignored. 
-          (tvs     (car tvs-srt))
+	  ;;  (car tvs-and-type) will just be a copy of typeVars1,
+	  ;;  (cdr tvs-and-type) will be ignored. 
+          (tvs     (car tvs-and-types))
 	  (defs    '())
 	  (pos     (make-pos l r)))
-    (SpecCalc::mkSortSpecElem-4 names tvs defs pos)))
+    (if (new-version? 1)
+        (SpecCalc::mkTypeSpecElem-4 names tvs defs pos)
+        (SpecCalc::mkSortSpecElem-4 names tvs defs pos))
+    ))
 
 ;;; ------------------------------------------------------------------------
-;;;  SORT-DEFINITION
+;;;  TYPE-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-definition (qualifiable-sort-names optional-tvs sort l r)
+(defun make-type-definition (qualifiable-type-names optional-tvs type l r)
   (let* ((tvs      (if (eq :unspecified optional-tvs) nil optional-tvs))
-	 (names    (remove-duplicates qualifiable-sort-names :test 'equal :from-end t))
-         (tvs-srt  (StandardSpec::abstractSort-3 #'namedTypeVar tvs sort))
+	 (names    (remove-duplicates qualifiable-type-names :test 'equal :from-end t))
+         (tvs-and-types
+           (if (new-version? 2)
+               (StandardSpec::abstractType-3 #'namedTypeVar tvs type) 
+               (StandardSpec::abstractSort-3 #'namedTypeVar tvs type)))
 	 ;; Since namedTypeVar is the identity function,
-	 ;;  (car tvs-srt) will just be a copy of typeVars1,
-	 ;;  (cdr tvs-srt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
-         (tvs      (car tvs-srt))
-         (defs     (list (cdr tvs-srt)))
+	 ;;  (car tvs-and-types) will just be a copy of typeVars1,
+	 ;;  (cdr tvs-and-types) will be a copy of type with (Base qid) replaced by (TyVar id) where appropriate.
+         (tvs      (car tvs-and-types))
+         (defs     (list (cdr tvs-and-types)))
 	 (pos      (make-pos l r))) 
-    (SpecCalc::mkSortSpecElem-4 names tvs defs pos)))
+    (if (new-version? 3)
+        (SpecCalc::mkTypeSpecElem-4 names tvs defs pos) 
+        (SpecCalc::mkSortSpecElem-4 names tvs defs pos))
+    ))
 
 
 ;;; ------------------------------------------------------------------------
@@ -291,7 +311,11 @@
 			())))
 	 (typ    (if (equal  optional-type :unspecified) 
 		     (freshMetaTypeVar l r)
-		     (cdr (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type))))
+		     (cdr 
+                      (if (new-version? 4)
+                          (StandardSpec::abstractType-3 #'namedTypeVar tvs optional-type)
+                          (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type)))
+                     ))
 	 ;; ---------------------------------------------------------------
 	 (refine?            (not (eq optional-refine :unspecified)))
          (dfn                (if (and refine? (not (eq optional-transform-expr :unspecified)))
@@ -299,7 +323,7 @@
                                (if (equal optional-def :unspecified)
                                    (cons :|Any| pos)
                                    optional-def)))
-	 (typed-term         (make-sorted-term dfn typ l r))
+	 (typed-term         (make-typed-term dfn typ l r))
 	 (typed-term         (if (equal optional-params :unspecified)
 				  typed-term 
 				  (bind-op-parameters optional-params typed-term l r)))
@@ -321,9 +345,9 @@
 
 (defun make-restricted-formal-pattern (pat pred l r)
   (make-restricted-pattern pat pred l r)
-;  (MS::mkSortedPat-2
+;  (MS::mkTypedPat-2
 ;   pat 
-;   (MS::mkSubsort-2 (freshMetaTypeVar l r)
+;   (MS::mkSubtype-2 (freshMetaTypeVar l r)
 ;		    (MS::mkLambda-2 pat pred)))
   )
 
@@ -345,9 +369,9 @@ If we want the precedence to be optional:
 
 
 (defun make-claim-definition (claim-kind label claim l r)
-  (let ((optional-sort-quantification (car claim))
+  (let ((optional-type-quantification (car claim))
         (expression                   (cdr claim)))
-    (let* ((typevars     (if (equal :unspecified optional-sort-quantification) nil optional-sort-quantification))
+    (let* ((typevars     (if (equal :unspecified optional-type-quantification) nil optional-type-quantification))
            (typeVarsTerm (StandardSpec::abstractTerm-3 #'namedTypeVar typevars expression))
            (typevars     (car typeVarsTerm))
            (term         (cdr typeVarsTerm)))
@@ -372,44 +396,44 @@ If we want the precedence to be optional:
       (cons (car x) (aux (cdr x))))))
 
 ;;; ========================================================================
-;;;   SORT
-;;;   http://www.specware.org/manual/html/sorts.html
+;;;   TYPE
+;;;   http://www.specware.org/manual/html/types.html
 ;;; ========================================================================
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-SUM
+;;;   TYPE-SUM
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-sum (sort-summands l r)
-  (let ((alphabetical-sort-summands (sort sort-summands #'(lambda (x y) (string< (car x) (car y))))))
+(defun make-type-sum (type-summands l r)
+  (let ((alphabetical-type-summands (sort type-summands #'(lambda (x y) (string< (car x) (car y))))))
     (cons :|CoProduct|
-          (cons alphabetical-sort-summands
+          (cons alphabetical-type-summands
                 (make-pos l r)))))
 
-(defun make-sort-summand (constructor optional-slack-sort l r)
+(defun make-type-summand (constructor optional-slack-type l r)
   (declare (ignore l r))
   (cons constructor
-        (if (eq :unspecified optional-slack-sort)
+        (if (eq :unspecified optional-slack-type)
             '(:|None|)
-            (cons :|Some| optional-slack-sort))))
+            (cons :|Some| optional-slack-type))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-ARROW
+;;;   TYPE-ARROW
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-arrow (arrow-source sort l r)
+(defun make-type-arrow (arrow-source type l r)
   (cons :|Arrow|
-        (vector arrow-source sort
+        (vector arrow-source type
                 (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-PRODUCT
+;;;   TYPE-PRODUCT
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-product (tight-sorts l r)
-  (if (> (length tight-sorts) 1)
-      (make-product tight-sorts l r)
-    (car tight-sorts)))
+(defun make-type-product (tight-types l r)
+  (if (> (length tight-types) 1)
+      (make-product tight-types l r)
+    (car tight-types)))
 
 (defun make-product (fields l r)
   (cons :|Product|
@@ -417,79 +441,84 @@ If we want the precedence to be optional:
               (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-INSTANTIATION
+;;;   TYPE-INSTANTIATION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-instantiation (qualifiable-sort-name actual-sort-parameters l r)
+(defun make-type-instantiation (qualifiable-type-name actual-type-parameters l r)
   (cons :|Base|
-        (vector qualifiable-sort-name actual-sort-parameters
+        (vector qualifiable-type-name actual-type-parameters
                 (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-REF
+;;;   TYPE-REF
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-ref (qualifiable-sort-name l r)
-  (if (or (equal qualifiable-sort-name '(:|Qualified| "<unqualified>" . "Boolean"))
-	  (equal qualifiable-sort-name '(:|Qualified| "Boolean" . "Boolean")))      ; Deprecate "Boolean" as qualifier?
+(defun make-type-ref (qualifiable-type-name l r)
+  (if (or (equal qualifiable-type-name '(:|Qualified| "<unqualified>" . "Boolean"))
+	  (equal qualifiable-type-name '(:|Qualified| "Boolean" . "Boolean")))      ; Deprecate "Boolean" as qualifier?
       (cons :|Boolean| (make-pos l r))
-    (let ((sort-args nil))
+    (let ((type-args nil))
       (cons :|Base|
-	    (vector qualifiable-sort-name sort-args
+	    (vector qualifiable-type-name type-args
 		    (make-pos l r))))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-RECORD
+;;;   TYPE-RECORD
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-record (field-sorts l r)
-  (let ((alphabetical-field-sorts (sort field-sorts #'(lambda (x y) (string< (car x) (car y))))))
+(defun make-type-record (field-types l r)
+  (let ((alphabetical-field-types (sort field-types #'(lambda (x y) (string< (car x) (car y))))))
     (cons :|Product|
-          (cons alphabetical-field-sorts
+          (cons alphabetical-field-types
                 (make-pos l r)))))
 
-(defun make-field-sort (field-name sort l r)
+(defun make-field-type (field-name type l r)
   (declare (ignore l r))
-  (cons field-name sort))
+  (cons field-name type))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-RESTRICTION
+;;;   TYPE-RESTRICTION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-restriction (slack-sort expression l r)
-  (cons :|Subsort|
-        (vector slack-sort expression
+(defun make-type-restriction (slack-type expression l r)
+  (cons (if (new-version? 5) :|Subtype| :|Subsort|)
+        (vector slack-type expression
                 (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-COMPREHENSION
+;;;   TYPE-COMPREHENSION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-comprehension (annotated-pattern expression l r)
-  ;; (cons :|SortedPat|   (vector pattern sort (make-pos l r))))
+(defun make-type-comprehension (annotated-pattern expression l r)
+  ;; (cons :|TypedPat|   (vector pattern type (make-pos l r))))
   ;; why did we build the structure above in the first place?
   (let* ((v (cdr annotated-pattern))
          (pattern (svref v 0))
-         (sort    (svref v 1)))
-    (cons :|Subsort|
-          (vector sort
+         (type    (svref v 1)))
+    (cons (if (new-version? 6) :|Subtype| :|Subsort|)
+          (vector type
                   (make-lambda-form (list (make-branch pattern expression l r))
                                     l r)
                   (make-pos l r)))))
 
 ;;; ------------------------------------------------------------------------
-;;;   SORT-QUOTIENT
+;;;   TYPE-QUOTIENT
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-quotient (sort tight-expression l r)
+(defun make-type-quotient (type tight-expression l r)
   (cons :|Quotient|
-        (vector sort tight-expression
+        (vector type tight-expression
                 (make-pos l r))))
 
 ;;; ========================================================================
 ;;;   EXPRESSION
 ;;;   http://www.specware.org/manual/html/expressions.html
 ;;; ========================================================================
+
+(defun make-bool-fun (op l r)
+  (make-fun op 
+            (if (new-version? 15) MS::binaryBoolType MS::binaryBoolSort)
+            l r))
 
 ;;; ------------------------------------------------------------------------
 ;;;   UNQUALIFIED-OP-REF
@@ -500,7 +529,7 @@ If we want the precedence to be optional:
 	 ;; "~" is treated specially:
 	 ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator...
 	 (make-fun '(:|Not|)
-		   MS::unaryBoolSort
+                   (if (new-version? 7) MS::unaryBoolType MS::unaryBoolSort)
 		   l r))
 	((equal name "=")
 	 ;; "=" is treated specially:
@@ -559,11 +588,11 @@ If we want the precedence to be optional:
   (declare (ignore l r))
   (cons pattern expression))
 
-(defun make-rec-let-binding (name formal-parameter-sequence optional-sort expression l r)
+(defun make-rec-let-binding (name formal-parameter-sequence optional-type expression l r)
   (let* ((var  (cons name (freshMetaTypeVar l r)))
-         (term (if (eq :unspecified optional-sort)
+         (term (if (eq :unspecified optional-type)
                    expression
-                 (make-sorted-term expression optional-sort l r)))
+                 (make-typed-term expression optional-type l r)))
          (term (bindParams formal-parameter-sequence term l r)))
     (cons var term)))
 
@@ -607,22 +636,22 @@ If we want the precedence to be optional:
   (declare (ignore l r))
   annotated-variables)
 
-(defun make-annotated-variable (local-variable optional-sort l r)
-  (let ((sort (if (eq optional-sort :unspecified)
+(defun make-annotated-variable (local-variable optional-type l r)
+  (let ((type (if (eq optional-type :unspecified)
                   (freshMetaTypeVar l r)
-                optional-sort)))
-    (cons local-variable sort)))
+                optional-type)))
+    (cons local-variable type)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   ANNOTATED-EXPRESSION
 ;;; ------------------------------------------------------------------------
 
-(defun make-annotated-expression (tight-expression sort l r)
-  (make-sorted-term tight-expression sort l r))
+(defun make-annotated-expression (tight-expression type l r)
+  (make-typed-term tight-expression type l r))
 
-(defun make-sorted-term (tight-expression sort l r)
-  (cons :|SortedTerm|
-        (vector tight-expression sort
+(defun make-typed-term (tight-expression type l r)
+  (cons (if (new-version? 8) :|TypedTerm| :|SortedTerm|)
+        (vector tight-expression type
                 (make-pos l r))))
 
 (defun make-transform-term (transform-expression pos)
@@ -642,12 +671,10 @@ If we want the precedence to be optional:
 ;;;   LITERAL
 ;;; ------------------------------------------------------------------------
 
-(defun make-boolean-literal (boolean   l r) (make-fun (cons :|Bool|   boolean)
-						      (cons :|Boolean| nil)
-						      l r))
-(defun make-nat-literal     (number    l r) (make-fun (cons :|Nat|    number)     nat-sort    l r))
-(defun make-char-literal    (character l r) (make-fun (cons :|Char|   character)  char-sort   l r))
-(defun make-string-literal  (string    l r) (make-fun (cons :|String| string)     string-sort l r))
+(defun make-boolean-literal (boolean   l r) (make-fun (cons :|Bool|   boolean)    bool-type   l r))
+(defun make-nat-literal     (number    l r) (make-fun (cons :|Nat|    number)     nat-type    l r))
+(defun make-char-literal    (character l r) (make-fun (cons :|Char|   character)  char-type   l r))
+(defun make-string-literal  (string    l r) (make-fun (cons :|String| string)     string-type l r))
 
 ;;; ------------------------------------------------------------------------
 ;;;   FIELD-SELECTION
@@ -714,8 +741,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-projector      (field-selector l r) (make-fun (cons :|Project|   field-selector)         (freshMetaTypeVar l r) l r))
-(defun make-quotienter     (sort-qid       l r) (make-fun (cons :|PQuotient| sort-qid)               (freshMetaTypeVar l r) l r))
-(defun make-chooser        (sort-qid       l r) (make-fun (cons :|PChoose|   sort-qid)               (freshMetaTypeVar l r) l r))
+(defun make-quotienter     (type-qid       l r) (make-fun (cons :|PQuotient| type-qid)               (freshMetaTypeVar l r) l r))
+(defun make-chooser        (type-qid       l r) (make-fun (cons :|PChoose|   type-qid)               (freshMetaTypeVar l r) l r))
 (defun make-embedder       (constructor    l r) (make-fun (cons :|Embed|     (cons constructor nil)) (freshMetaTypeVar l r) l r))
 (defun make-embedding-test (constructor    l r) (make-fun (cons :|Embedded|  constructor)            (freshMetaTypeVar l r) l r))
 
@@ -749,15 +776,22 @@ If we want the precedence to be optional:
 			   (l (svref pos 1))
 			   (r (svref pos 2)))
 		      (cond ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
-			     (MS::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0))
+                             (if (new-version? 9)
+                                 (MS::mkBinaryFn-5 f MS::boolType MS::boolType MS::boolType pos0)
+                                 (MS::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0)))
 			    ((eq (car f) :|Not|)
 			     (MS::mkUnaryBooleanFn-2 f pos0))
 			    ((member (car f) '(:|Equals| :|NotEquals|))
 			     (let ((a1 (freshMetaTypeVar l r)))
-			       (MS::mkBinaryFn-5 f a1 a1 MS::boolSort pos0)))
+			       (if (new-version? 10)
+                                   (MS::mkBinaryFn-5 f a1 a1 MS::boolType pos0)
+                                   (MS::mkBinaryFn-5 f a1 a1 MS::boolSort pos0))))
 			    ((eq (car f) :|RecordMerge|)
-			     (MS::mkBinaryFn-5 f (freshMetaTypeVar l r) (freshMetaTypeVar l r)
-					       (freshMetaTypeVar l r) pos0))
+			     (MS::mkBinaryFn-5 f 
+                                               (freshMetaTypeVar l r) 
+                                               (freshMetaTypeVar l r)
+					       (freshMetaTypeVar l r) 
+                                               pos0))
 			    (t
 			     x)))))))
 	(t
@@ -846,34 +880,36 @@ If we want the precedence to be optional:
 ;;;  http://www.specware.org/manual/html/matchesandpatterns.html
 ;;; ========================================================================
 
-(defun make-annotated-pattern        (pattern sort     l r)
+(defun make-annotated-pattern  (pattern type     l r)
   (when (eq (car pattern) ':|VarPat|)	; Optimize common case, and ensure that variable gets correct type
-    (setf (cdadr pattern) sort))
-  (cons :|SortedPat| (vector pattern sort (make-pos l r))))
-(defun make-aliased-pattern          (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
-(defun make-embed-pattern            (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
-(defun make-quotient-pattern         (sort-qid pattern l r) (cons :|QuotientPat|   (vector pattern sort-qid                                   (make-pos l r))))
-(defun make-restricted-pattern       (pattern term     l r) (cons :|RestrictedPat| (vector pattern term                                       (make-pos l r))))
-(defun make-variable-pattern         (id               l r) (cons :|VarPat|        (cons   (cons id (freshMetaTypeVar l r))                   (make-pos l r))))
-(defun make-wildcard-pattern         (                 l r) (cons :|WildPat|       (cons   (freshMetaTypeVar l r)                             (make-pos l r))))
-(defun make-boolean-pattern          (bool             l r) (cons :|BoolPat|       (cons   bool                                               (make-pos l r))))
-(defun make-nat-pattern              (nat              l r) (cons :|NatPat|        (cons   nat                                                (make-pos l r))))
-(defun make-char-pattern             (char             l r) (cons :|CharPat|       (cons   char                                               (make-pos l r))))
-(defun make-string-pattern           (str              l r) (cons :|StringPat|     (cons   str                                                (make-pos l r))))
+    (setf (cdadr pattern) type))
+  (cons (if (new-version? 11) :|TypedPat| :|SortedPat|)
+        (vector pattern type (make-pos l r))))
 
-(defun make-cons-pattern             (pattern patterns l r) (StandardSpec::mkConsPattern-4 pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
-(defun make-list-pattern             (patterns         l r) (StandardSpec::mkListPattern-3 patterns         (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-aliased-pattern    (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
+(defun make-embed-pattern      (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
+(defun make-quotient-pattern   (type-qid pattern l r) (cons :|QuotientPat|   (vector pattern type-qid                                   (make-pos l r))))
+(defun make-restricted-pattern (pattern term     l r) (cons :|RestrictedPat| (vector pattern term                                       (make-pos l r))))
+(defun make-variable-pattern   (id               l r) (cons :|VarPat|        (cons   (cons id (freshMetaTypeVar l r))                   (make-pos l r))))
+(defun make-wildcard-pattern   (                 l r) (cons :|WildPat|       (cons   (freshMetaTypeVar l r)                             (make-pos l r))))
+(defun make-boolean-pattern    (bool             l r) (cons :|BoolPat|       (cons   bool                                               (make-pos l r))))
+(defun make-nat-pattern        (nat              l r) (cons :|NatPat|        (cons   nat                                                (make-pos l r))))
+(defun make-char-pattern       (char             l r) (cons :|CharPat|       (cons   char                                               (make-pos l r))))
+(defun make-string-pattern     (str              l r) (cons :|StringPat|     (cons   str                                                (make-pos l r))))
 
-(defun make-tuple-pattern            (patterns         l r)
+(defun make-cons-pattern       (pattern patterns l r) (StandardSpec::mkConsPattern-4 pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-list-pattern       (patterns         l r) (StandardSpec::mkListPattern-3 patterns         (make-pos l r) (freshMetaTypeVar l r)))
+
+(defun make-tuple-pattern      (patterns         l r)
   (if (= (length patterns) 1)
       (car patterns)
     (cons :|RecordPat| (cons (MS::tagTuple patterns) (make-pos l r)))))
 
-(defun make-record-pattern          (fields            l r)
+(defun make-record-pattern     (fields            l r)
   (let ((alphabetized-fields (sort fields #'(lambda (x y) (string< (car x) (car y))))))
     (cons :|RecordPat| (cons alphabetized-fields (make-pos l r)))))
 
-(defun make-field-pattern           (field-name optional-pattern l r)
+(defun make-field-pattern      (field-name optional-pattern l r)
   (let ((pattern (if (equal optional-pattern :unspecified)
                      (make-variable-pattern field-name l r)
                    optional-pattern)))
@@ -910,9 +946,9 @@ If we want the precedence to be optional:
 (defun make-sc-export (name-list sc-term l r)
   (SpecCalc::mkExport-3 name-list sc-term (make-pos l r)))
 
-(defun make-sc-sort-ref      (sort-ref             l r)  
+(defun make-sc-type-ref      (type-ref             l r)  
   (declare (ignore l r))
-  (cons :|Sort|      sort-ref))
+  (cons (if (new-version? 12) :|Type| :|Sort|) type-ref))
 
 (defun make-sc-op-ref        (op-ref               l r)  
   (declare (ignore l r))
@@ -934,13 +970,13 @@ If we want the precedence to be optional:
   (declare (ignore l r))
   (cons op-ref '(:|None|)))
 
-(defun make-sc-annotated-op-ref   (op-ref sort l r)
+(defun make-sc-annotated-op-ref   (op-ref type l r)
   (declare (ignore l r))
-  (cons op-ref (cons :|Some| sort)))
+  (cons op-ref (cons :|Some| type)))
 
-(defun make-annotated-op-ref   (op-ref sort l r) ; deprecate
+(defun make-annotated-op-ref   (op-ref type l r) ; deprecate
   (declare (ignore l r))
-  (cons op-ref (cons :|Some| sort)))
+  (cons op-ref (cons :|Some| type)))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
@@ -962,8 +998,9 @@ If we want the precedence to be optional:
 ;;;   (cons (cons left-qualifiable-name right-qualifiable-name)
 ;;;        (make-pos l r)))
 
-(defun make-sc-sort-rule (left-sort-ref right-sort-ref l r)
-  (cons (cons :|Sort| (vector left-sort-ref right-sort-ref (list right-sort-ref)))
+(defun make-sc-type-rule (left-type-ref right-type-ref l r)
+  (cons (cons (if (new-version? 13) :|Type| :|Sort|)
+              (vector left-type-ref right-type-ref (list right-type-ref)))
         (make-pos l r)))
 
 (defun make-sc-op-rule (left-op-ref right-op-ref l r)
@@ -975,7 +1012,7 @@ If we want the precedence to be optional:
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------
-;;;  QUALIFIABLE-NAME (might refer to sort or op)
+;;;  QUALIFIABLE-NAME (might refer to type or op)
 ;;; ------------------------------------------------------------------------
 
 ;;; ========================================================================
@@ -992,8 +1029,9 @@ If we want the precedence to be optional:
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
 
-(defun make-sm-sort-rule (left-sort-ref right-sort-ref l r)
-  (cons (cons :|Sort| (cons left-sort-ref right-sort-ref))
+(defun make-sm-type-rule (left-type-ref right-type-ref l r)
+  (cons (cons (if (new-version? 14) :|Type| :|Sort|)
+              (cons left-type-ref right-type-ref))
 		(make-pos l r)))
 
 (defun make-sm-op-rule (left-op-ref right-op-ref l r)

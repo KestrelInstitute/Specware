@@ -6,7 +6,7 @@ StringUtilities qualifying spec
   op freshName  : String * StringSet.Set -> String
   %% Already in String
   %op concatList : List String -> String
-  op tokens     : (Char -> Boolean) -> String -> List String
+  op tokens     : (Char -> Bool) -> String -> List String
 
   % freshName (x,names)
   % Generate a fresh name that is not in the list of names given

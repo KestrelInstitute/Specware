@@ -5,8 +5,8 @@ ListPair qualifying spec
 %  op zip    : [a,b] List a *  List b -> List (a * b)
 %  op unzip  : [a,b] List (a * b) -> List a *  List b
   op map    : [a,b,c] (a * b -> c) -> List a * List b -> List c
-  op all    : [a,b] (a * b -> Boolean) -> List a * List b -> Boolean
-  op exists : [a,b] (a * b -> Boolean) -> List a * List b -> Boolean
+  op all    : [a,b] (a * b -> Bool) -> List a * List b -> Bool
+  op exists : [a,b] (a * b -> Bool) -> List a * List b -> Bool
   op foldr  : [a,b,c] (a * b * c -> c) -> c -> List a * List b -> c 
   op foldl  : [a,b,c] (c * a * b -> c) -> c -> List a * List b -> c 
   op app    : [a,b] (a * b -> ()) -> List a * List b -> ()

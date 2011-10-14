@@ -51,9 +51,9 @@ MSToFM qualifying spec
   op fmFalse: FMTerm
   def fmFalse = LitBool (false)
   
-  type TransMap = FMMap.Map(MS.Term, FMTerm)
+  type TransMap = FMMap.Map(MSTerm, FMTerm)
 
-  type RevTransMap = FMMap.Map(FMTerm, MS.Term)
+  type RevTransMap = FMMap.Map(FMTerm, MSTerm)
 
   type Context = {map: TransMap,
 		  revMap: RevTransMap,
@@ -177,7 +177,7 @@ MSToFM qualifying spec
 
   def fmBoolOps = ["&", "or", "~", "=>", "<=>"]
 
-  op fmInterp?: MS.Term -> Bool
+  op fmInterp?: MSTerm -> Bool
   def fmInterp?(term) =
     case term of
       | Apply(Fun(f, srt, _), arg, _) ->
@@ -378,19 +378,19 @@ MSToFM qualifying spec
       let (restFMTerms, context) = toFMProperties(context, spc, restProps) in
       (Cons(fmTerm, restFMTerms), context)
 
-  op toFMTermTop: Context * Spec * MS.Term -> FMTerm * Context
+  op toFMTermTop: Context * Spec * MSTerm -> FMTerm * Context
   def toFMTermTop(context, sp, term) =
     case term of 
       | Bind(Forall, bndVars, term, _) ->
 	let fmBndList = fmBndVars bndVars in
-	let bndVarsPred:MS.Term = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MS.Term in
+	let bndVarsPred:MSTerm = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MSTerm in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
 	(fmFmla, newContext)
       | _ -> toFMTerm(context, sp, term)
 
 
-  op toFMTerm: Context * Spec * MS.Term -> FMTerm * Context
+  op toFMTerm: Context * Spec * MSTerm -> FMTerm * Context
   def toFMTerm(context, sp, term) =
     let term = cleanTerm(term) in
     let found = FMMap.apply(context.map, term) in
@@ -401,7 +401,7 @@ MSToFM qualifying spec
     case term of 
       (* | Bind(Forall, bndVars, term, _) ->
 	let fmBndList = fmBndVars bndVars in
-	let bndVarsPred:MS.Term = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MS.Term in
+	let bndVarsPred:MSTerm = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MSTerm in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
 	(fmFmla, newContext)
@@ -427,7 +427,7 @@ MSToFM qualifying spec
      *)
     (resTerm, newContext)
 
-  op toFMTermApp:  Context * Spec * MS.Term * Fun * Sort * MS.Term -> FMTerm * Context
+  op toFMTermApp:  Context * Spec * MSTerm * Fun * MSType * MSTerm -> FMTerm * Context
   def toFMTermApp(cntxt, spc, term, f, _, arg) =
     let args = case arg of
                  | Record(flds,_) -> map(fn (_, term) -> term) flds
@@ -444,7 +444,7 @@ MSToFM qualifying spec
         case args of 
 	  | [] -> toFMTermConstant(cntxt, term, f)
 	  | _ -> let (newVar, newContext) = toNewFMVar(term, cntxt) in (newVar, newContext) in
-      if termSort(term) = boolSort
+      if termType(term) = boolType
 	then (fmEquals(resPoly, fmTrue), context)
       else (resPoly, context)
 
@@ -458,7 +458,7 @@ MSToFM qualifying spec
     let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(one, v)))) vars in
       fmVarList
 
-  op toFMTermConstant: Context * MS.Term * Fun -> FMTerm * Context
+  op toFMTermConstant: Context * MSTerm * Fun -> FMTerm * Context
   def toFMTermConstant(cntxt, term, f) =
     let resTerm = 
     case f of
@@ -469,7 +469,7 @@ MSToFM qualifying spec
     let context = {map = map, revMap = revMap, varCounter = cntxt.varCounter} in
     (resTerm, context)
 
-  op toNewFMVar: MS.Term * Context -> FMTerm * Context
+  op toNewFMVar: MSTerm * Context -> FMTerm * Context
   def toNewFMVar(term, context) =
     %let _ = fail(printTerm(term)) in
     let (newVar, context) = mkNewFMVar(context) in
@@ -486,7 +486,7 @@ MSToFM qualifying spec
     let context = {map = context.map, revMap = context.revMap, varCounter = varCounter+1} in
     (newVar, context)
 
-  op toFMTerms: Spec * List MS.Term * Context -> (List FMTerm) * Context
+  op toFMTerms: Spec * List MSTerm * Context -> (List FMTerm) * Context
   def toFMTerms(spc, terms, context) =
     case terms of
       | [] -> ([], context)
@@ -495,7 +495,7 @@ MSToFM qualifying spec
       let (restFMTerms, context) = toFMTerms(spc, restTerms, context) in
       (Cons(fmTerm, restFMTerms), context)
 
-  op fromFMTerm: Spec * FMTerm * Context -> MS.Term
+  op fromFMTerm: Spec * FMTerm * Context -> MSTerm
   def fromFMTerm(spc, fmtm, context) =
     case fmtm of
       | Poly poly -> fromFMTermPoly(spc, poly, context)
@@ -503,7 +503,7 @@ MSToFM qualifying spec
       | BoolBinOp(bbop, t1, t2) -> fromFMTermBoolBinOp(spc, bbop, t1, t2, context)
       | BoolUnOp(buop, t1) -> fromFMTermBoolUnOp(spc, buop, t1, context)
 
-  op fromFMTermPoly: Spec * FM.Poly * Context -> MS.Term
+  op fromFMTermPoly: Spec * FM.Poly * Context -> MSTerm
   def fromFMTermPoly(spc, p, context) =
     if zeroPoly?(p) then mkNat(0)
     else case p of
@@ -511,13 +511,13 @@ MSToFM qualifying spec
       | hdTm::rp -> mkAddition(fromFMTermTerm(hdTm, context),
 			       fromFMTermPoly(spc, rp, context))
 
-  op mkAddition: MS.Term * MS.Term -> MS.Term
+  op mkAddition: MSTerm * MSTerm -> MSTerm
   def mkAddition(t1, t2) =
     let addOp = mkInfixOp(mkQualifiedId("Integer", "+"), Infix (Left, 25),
-			  mkArrow(mkProduct([intSort, intSort]), intSort)) in
+			  mkArrow(mkProduct([intType, intType]), intType)) in
     mkApplication(addOp, [t1, t2])
 
-  op fromFMTermIneq: Spec * FM.Ineq * Context -> MS.Term
+  op fromFMTermIneq: Spec * FM.Ineq * Context -> MSTerm
   def fromFMTermIneq(spc, ineq, context) =
     let def compToQid(comp) =
           case comp of
@@ -529,14 +529,14 @@ MSToFM qualifying spec
 	    | Neq  -> mkQualifiedId("Integer","~=")
     in
     let def fromFMComp(comp) =
-          let srt = mkArrow(mkProduct([intSort, intSort]), boolSort) in
+          let srt = mkArrow(mkProduct([intType, intType]), boolType) in
           mkInfixOp(compToQid(comp), Infix (Left, 20), srt) in
     let (comp, p) = ineq in
     let MSP = fromFMTermPoly(spc, p, context) in
     let compOp = fromFMComp(comp) in
     mkApply(compOp, MSP)
 
-  op fromFMTermTerm: FM.Term * Context -> MS.Term
+  op fromFMTermTerm: FM.Term * Context -> MSTerm
   def fromFMTermTerm(tm, context) =
     case tm of
       | Constant coef -> mkInt(ratToInt(coef))
@@ -547,20 +547,20 @@ MSToFM qualifying spec
 	  let varTerm = fromFMTermVar(var, context) in
 	  mkMult(coefTerm, varTerm)
 
-op fromFMTermVar: FM.Var * Context -> MS.Term
+op fromFMTermVar: FM.Var * Context -> MSTerm
   def fromFMTermVar(var, context) =
     let revMap = context.revMap in
     case FMMap.apply(revMap, Poly (mkPoly1(mkMonom(one, var)))) of
       | Some MSTerm -> MSTerm
       | _ -> fail("Shouldnt happen.")
 
-  op mkMult: MS.Term * MS.Term -> MS.Term
+  op mkMult: MSTerm * MSTerm -> MSTerm
   def mkMult(t1, t2) =
     let multOp = mkInfixOp(mkQualifiedId("Integer", "*"), Infix (Left, 27),
-			   mkArrow(mkProduct([intSort, intSort]), intSort)) in
+			   mkArrow(mkProduct([intType, intType]), intType)) in
     mkApplication(multOp, [t1, t2])
   
-  op fromFMTermBoolBinOp: Spec * BoolBinOp * FMTerm * FMTerm * Context -> MS.Term
+  op fromFMTermBoolBinOp: Spec * BoolBinOp * FMTerm * FMTerm * Context -> MSTerm
   def fromFMTermBoolBinOp(spc, bop, t1, t2, context) =
     let msT1 = fromFMTerm(spc, t1, context) in
     let msT2 = fromFMTerm(spc, t2, context) in
@@ -570,13 +570,13 @@ op fromFMTermVar: FM.Var * Context -> MS.Term
       | Implies -> mkSimpImplies(msT1, msT2)
       | Equiv -> mkSimpIff(msT1, msT2)
 
-  op fromFMTermBoolUnOp: Spec * BoolUnOp * FMTerm * Context -> MS.Term
+  op fromFMTermBoolUnOp: Spec * BoolUnOp * FMTerm * Context -> MSTerm
   def fromFMTermBoolUnOp(spc, uop, t1, context) =
     let msT1 = fromFMTerm(spc, t1, context) in
     case uop of
       | Not -> negateTerm(msT1)
 
-  op simpTerm: Spec -> MS.Term -> MS.Term
+  op simpTerm: Spec -> MSTerm -> MSTerm
   def simpTerm spc term =
     let context = emptyToFMContext in
     case term of
@@ -593,19 +593,19 @@ op fromFMTermVar: FM.Var * Context -> MS.Term
   def simpSpecFMTerm(spc) =
     mapSpec (simpTerm spc, fn s -> s, fn p -> p) spc
 
-  op cleanTerm: MS.Term -> MS.Term
+  op cleanTerm: MSTerm -> MSTerm
   def cleanTerm(t) =
     mapTerm (remPosT, remPosS, remPosP) t
 
-  op remPosT: MS.Term -> MS.Term
+  op remPosT: MSTerm -> MSTerm
   def remPosT(t) =
     withAnnT(t, noPos)
 
-  op remPosS: MS.Sort -> MS.Sort
+  op remPosS: MSType -> MSType
   def remPosS(s) =
     withAnnS(s, noPos)
 
-  op remPosP: MS.Pattern -> MS.Pattern
+  op remPosP: MSPattern -> MSPattern
   def remPosP(p) =
     withAnnP(p, noPos)
 

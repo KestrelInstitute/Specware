@@ -33,7 +33,7 @@ to use explicit coproducts.
 
 Also, this is for graphs and not reflexive graphs as shapes.
 
-For the time being, the sort for the domain of the functor and for the
+For the time being, the type for the domain of the functor and for the
 sketch are the same. This is reflected in the fact that we don't import
 a copy of Sketch directly but through the import of Functor. It is also
 reflected in the type for the elements of the set. 
@@ -59,10 +59,10 @@ System qualifying spec {
 
   import /Library/Structures/Data/Pretty
 
-  sort TW.Edge = | Forw Edge.Edge | Back Edge.Edge
-  sort TW.Vertex = | Vertex Vertex.Vertex | Edge Edge.Edge
+  type TW.Edge = | Forw Edge.Edge | Back Edge.Edge
+  type TW.Vertex = | Vertex Vertex.Vertex | Edge Edge.Edge
 
-  sort System = {
+  type System = {
       shape : Sketch,
       edgeMap : EdgeMap.Map,
       vertexMap : VertexMap.Map
@@ -131,7 +131,7 @@ If necessary, the function being folded can be curried where its first
 argument is the system. For example, the function f:
 
 \begin{verbatim}
-  sort S
+  type S
   op f : fa (O,A) System (O,A) -> x -> Shape.Vertex -> x
   op unit : S
 \end{verbatim}

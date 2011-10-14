@@ -92,8 +92,8 @@ spec
     | LETDEF     ExtType * Variables * ExtTypes * ExtExpressions * ExtExpression
 
   axiom induction_on_extended_types_and_expressions is
-    fa (predT : ExtType       -> Boolean,
-        predE : ExtExpression -> Boolean)
+    fa (predT : ExtType       -> Bool,
+        predE : ExtExpression -> Bool)
   %%%%% induction base and step:
    (fa (tn  : TypeName,
         o   : Operation,

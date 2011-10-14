@@ -45,7 +45,7 @@ and then qualify the resulting spec if the spec was given a name.
     return (Spec (removeDuplicateImports transformed_spec),TS,depUIDs)
   }
 (*
-We first evaluate the imports and then the locally declared ops, sorts
+We first evaluate the imports and then the locally declared ops, types
 axioms, etc.
 *)
   op evaluateSpecElems : ASpec Position -> SpecElemTerms -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
@@ -78,7 +78,7 @@ axioms, etc.
               (reverse terms) % just so result shows in same order as read
       | _ -> return val
 
-  op  anyImports?: SpecElemTerms -> Boolean
+  op  anyImports?: SpecElemTerms -> Bool
   def anyImports? specElems =
     exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
@@ -96,7 +96,7 @@ axioms, etc.
 		  })
               spc               
               terms
-      | Sort    (names,       dfn)               -> addSort names      dfn spc position
+      | Type    (names,       dfn)               -> addType names      dfn spc position
       | Op      (names, fxty, refine?, dfn)      -> addOp   names fxty refine? dfn spc position
 
       | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term,position), spc)) 
@@ -108,19 +108,19 @@ axioms, etc.
       | Comment str                              -> return (addComment    (str, position, spc))
 
   def SpecCalc.mergeImport spec_term imported_spec old_spec position =
-    let sorts = old_spec.sorts in
+    let types = old_spec.types in
     let ops   = old_spec.ops   in
     {
      new_spec  <- return (addImport ((spec_term, imported_spec), old_spec, position));
 
-     new_sorts <- if sorts = emptySpec.sorts then 
-                    return imported_spec.sorts
+     new_types <- if types = emptySpec.types then 
+                    return imported_spec.types
 		  else 
 		    %% TODO: fold over just infos?
-		    foldOverQualifierMap (fn (_, _, info, sorts) ->
-					  return (mergeSortInfo new_spec sorts info)) % Which should it be: old_spec, imported_spec, or new_spec ?
-		                         sorts 
-				         imported_spec.sorts;
+		    foldOverQualifierMap (fn (_, _, info, types) ->
+					  return (mergeTypeInfo new_spec types info)) % Which should it be: old_spec, imported_spec, or new_spec ?
+		                         types 
+				         imported_spec.types;
 
      new_ops   <- if ops = emptySpec.ops then 
                     return imported_spec.ops
@@ -131,7 +131,7 @@ axioms, etc.
 		                         ops
 					 imported_spec.ops;
 
-    return (new_spec << {sorts = new_sorts,
+    return (new_spec << {types = new_types,
 			 ops   = new_ops})
     }
 
@@ -169,7 +169,7 @@ such time as the current one can made monadic.
                         {(_, steps) <- makeScript refine_steps;
                          % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
                          (tr_term, _) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false);
-                         new_dfn <- return (maybePiTerm(tvs, SortedTerm (replaceNthTerm(full_tm, refine_num, tr_term),
+                         new_dfn <- return (maybePiTerm(tvs, TypedTerm (replaceNthTerm(full_tm, refine_num, tr_term),
                                                                          ty, termAnn opinfo.dfn)));
                          return (setOpInfo(spc,qid,opinfo << {dfn = new_dfn}))})
                    | _ -> return spc)

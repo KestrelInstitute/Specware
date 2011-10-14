@@ -3,7 +3,7 @@ spec
 
   import ../Finite
 
-  sort Map = FinitePolyMap.Map (Dom,Cod)
+  type Map = FinitePolyMap.Map (Dom,Cod)
   def empty = FinitePolyMap.empty
   def evalPartial = FinitePolyMap.evalPartial
   def eval = FinitePolyMap.eval

@@ -34,21 +34,21 @@ spec
 
   (**
    * performs the neccessary transformations on the MetaSlang spec spc as preparation
-   * for the C code generation. The basespec is used to add the neccessary sorts and op
+   * for the C code generation. The basespec is used to add the neccessary types and op
    * the base spec to the resulting spec.
    * op transformSpecForCodeGen: (*basespec:*)AnnSpec.Spec -> (*spc:*)AnnSpec.Spec -> AnnSpec.Spec 
    *)
 
   (**
    * same as transformSpecForCodeGen, only that the transformation step "addMissingFromBase"
-   * is omitted, i.e. no ops and sorts are added from the base spec
+   * is omitted, i.e. no ops and types are added from the base spec
    * op transformSpecForCodeGenNoAdd: AnnSpec.Spec -> AnnSpec.Spec
    *)
 
   (**
    * generates C code for the given spec and writes it into the given file.
    * If the filename is None, "cgenout.c" is taken.
-   * The basespec is used to add the neccessary sorts and op
+   * The basespec is used to add the neccessary types and op
    * the base spec to the resulting spec.
    * The third argument is ignored (todo: eliminate 3rd parameter in calls to this op)
    * op generateCCode: (*basespec:*)AnnSpec.Spec * (*spc:*)AnnSpec.Spec * AnnSpec.Spec * Option String -> ()
@@ -56,7 +56,7 @@ spec
 
   (**
    * generates the C_Spec for the given spec. The basespec is used to add the neccessary
-   * sorts and op the base spec to the resulting cspec.
+   * types and op the base spec to the resulting cspec.
    * op generateCSpec: (*basespec:*)AnnSpec.Spec -> (*spc:*)AnnSpec.Spec -> C_Spec
    *)
 
@@ -70,7 +70,7 @@ spec
   (**
    * generate a C_Spec from an already transformed MetaSlang spec,
    * the filter function is used to selectively generate code only
-   * for those ops and sorts x for which filter(x) is true.
+   * for those ops and types x for which filter(x) is true.
    * The C_Spec parameter is used for incremental code generation.
    * op generateCSpecFromTransformedSpecIncrFilter: C_Spec -> AnnSpec.Spec -> (QualifiedId -> Bool) -> C_Spec
    *)
@@ -97,13 +97,13 @@ spec
    *)
 
   (**
-   * transforms a MetaSlang sort to a C type
-   * op sortToCType: C_Spec -> AnnSpec.Spec -> Sort -> (C_Spec * C_Type)
+   * transforms a MetaSlang type to a C type
+   * op typeToCType: C_Spec -> AnnSpec.Spec -> Type -> (C_Spec * C_Type)
    *)
 
   (**
    * transforms a MetaSlang term to a C expression
-   * op termToCExp: C_Spec -> AnnSpec.Spec -> MS.Term -> (C_Spec * C_Block * C_Exp)
+   * op termToCExp: C_Spec -> AnnSpec.Spec -> MSTerm -> (C_Spec * C_Block * C_Exp)
    *)
 
   (**
@@ -130,8 +130,8 @@ spec
   op jjj : Nat = 0
 
   op showInternals (spc : Spec) : () =
-   appSpec ((fn tm  -> writeLine (printTermWithSorts tm)), 
-            (fn typ -> writeLine (printSort          typ)),
+   appSpec ((fn tm  -> writeLine (printTermWithTypes tm)), 
+            (fn typ -> writeLine (printType          typ)),
             (fn pat -> writeLine (printPattern       pat)))
            spc
 
@@ -149,7 +149,7 @@ spec
     else
       ()
 
-  op C_BuiltinSortOp? (Qualified (q, id) : QualifiedId) : Bool =
+  op C_BuiltinTypeOp? (Qualified (q, id) : QualifiedId) : Bool =
     case q of
       | "Boolean"    -> id in? ["Bool", "show", "toString"]
       | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
@@ -198,7 +198,7 @@ spec
         if addmissingfrombase? then                        
           let spc = 
               addMissingFromBase (basespc, spc,
-                                  C_BuiltinSortOp?)     in %  (3) may add HO fns, etc., so do this before removeCurrying, etc.
+                                  C_BuiltinTypeOp?)     in %  (3) may add HO fns, etc., so do this before removeCurrying, etc.
           let _ = showSpc "addMissingFromBase" spc in
           spc
         else
@@ -246,8 +246,8 @@ spec
     let spc = sliceSpec (spc, top_ops, top_types, true, false) in % (15) remove unused ops (mainly eq ops) -- ignore subtypes, do not slice base types/ops
     let _ = showSpc "sliceSpec[2]"                  spc in 
 
-    let (spc,constrOps) = addSortConstructorsToSpec spc in % (16) these ops won't survive slicing, so this must follow sliceSpec
-    let _ = showSpc "addSortConstructorsToSpec"     spc in
+    let (spc,constrOps) = addTypeConstructorsToSpec spc in % (16) these ops won't survive slicing, so this must follow sliceSpec
+    let _ = showSpc "addTypeConstructorsToSpec"     spc in
 
     let spc = conformOpDecls                        spc in % (17) change def with multiple args to decompose single arg when decl has one (product) arg
     let _ = showSpc "conformOpDecls"                spc in
@@ -332,7 +332,7 @@ spec
     let cspec = generateCSpec app_name base spc in 
     printToFile (app_name, cspec, opt_filename)
 
-  op sortToCType (cspc : C_Spec) (spc : Spec) (typ : Sort) : C_Spec * C_Type =
+  op typeToCType (cspc : C_Spec) (spc : Spec) (typ : MSType) : C_Spec * C_Type =
     %% note: these two defaultCgContext's are very different from each other:
     let ctxt1   = default_S2I_Context                  in 
     let ctxt2   = default_I2C_Context                  in
@@ -340,12 +340,12 @@ spec
     let i2lType = type2itype (tyvars, typ, ctxt1, spc) in
     c4Type(ctxt2,cspc,i2lType)
 
-  op termToCExp (cspc : C_Spec) (spc : Spec) (tm : MS.Term) 
+  op termToCExp (cspc : C_Spec) (spc : Spec) (tm : MSTerm) 
     : C_Spec * C_Block * C_Exp =
     let block = ([],[]) in
     termToCExpB cspc spc block tm
 
-  op termToCExpB (cspc : C_Spec) (spc : Spec) (block : C_Block) (tm : MS.Term) 
+  op termToCExpB (cspc : C_Spec) (spc : Spec) (block : C_Block) (tm : MSTerm) 
     : C_Spec * C_Block * C_Exp =
     let ctxt1  = default_S2I_Context              in
     let ctxt2  = default_I2C_Context              in
@@ -358,12 +358,12 @@ spec
   op postProcessCSpec (cspc : C_Spec) : C_Spec =
     I2LToC.postProcessCSpec cspc
 
-  op stripNonNatSubtypesAndBaseDefs (spc : Spec) (typ : Sort) : Sort =
+  op stripNonNatSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType =
     let 
       def strip typ =
         case typ of
           %% new case to preserve subtypes of Nat:
-          | Subsort (Base (Qualified ("Nat", "Nat"), [], _),
+          | Subtype (Base (Qualified ("Nat", "Nat"), [], _),
                      %% {x : Nat -> x < n} where n is a Nat
                      Lambda ([(VarPat ((X,_), _),
                                Fun (Bool true, _, _),
@@ -377,24 +377,24 @@ spec
                      _)
             | X = X0 && pred in? ["<=", "<"] 
             ->
-            % let _ = writeLine ("preserving subtype of Nat: " ^ printSort typ) in
+            % let _ = writeLine ("preserving subtype of Nat: " ^ printType typ) in
             typ
-        | Subsort (typ, _, _) -> strip typ
+        | Subtype (typ, _, _) -> strip typ
 
         | Base (qid, typs, a) ->
-          (case findTheSort (spc, qid) of
+          (case findTheType (spc, qid) of
              | Some info ->
-               if definedSortInfo? info then
-                 let (tvs, tdef) = unpackFirstSortDef info in
+               if definedTypeInfo? info then
+                 let (tvs, tdef) = unpackFirstTypeDef info in
                  let recur? = (length tvs = length typs)
                               &&
                               (case tdef of
-                                 | Subsort _ -> true
+                                 | Subtype _ -> true
                                  | Base    _ -> true
                                  | _ -> false)
                  in
                  if recur? then 
-                   strip (substSort (zip (tvs, typs), tdef))
+                   strip (substType (zip (tvs, typs), tdef))
                  else
                    typ
                else

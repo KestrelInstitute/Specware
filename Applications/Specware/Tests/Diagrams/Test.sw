@@ -1,14 +1,14 @@
 let
   a = spec {
-     sort X
+     type X
      op x : X
     }
   b = spec {
-     sort Y
+     type Y
      op y : Y
     }
   c = spec {
-     sort Z
+     type Z
      op z : Z
     }
   m = morphism a -> b {X +-> Y, x +-> y}

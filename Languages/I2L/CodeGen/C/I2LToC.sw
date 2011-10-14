@@ -54,7 +54,7 @@ I2LToC qualifying spec
     cspc
 
   op postProcessCSpec (cspc : C_Spec) : C_Spec =
-    let cspc = sortStructUnionTypeDefns cspc in
+    let cspc = typeStructUnionTypeDefns cspc in
     let cspc = deleteUnusedTypes cspc in
     cspc
 

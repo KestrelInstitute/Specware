@@ -1,7 +1,7 @@
 IntSet qualifying spec {
   import SplaySet
 
-  sort IntSet.Set = SplaySet.Set Int
+  type IntSet.Set = SplaySet.Set Int
 
   op empty         : IntSet.Set
   op difference    : IntSet.Set * IntSet.Set -> IntSet.Set

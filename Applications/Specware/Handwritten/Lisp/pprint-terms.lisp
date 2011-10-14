@@ -26,29 +26,29 @@
 
 (set-pprint-dispatch '(cons term_symbol) #'print_term)
 
-(defun print_sort (strm sort)
+(defun print_type (strm type)
   (let ((*standard-output* strm))
-    (if (and (consp sort))
-	(AnnSpecPrinter::printSortToTerminal sort)
-      (print_dotted_pair strm sort))))
+    (if (and (consp type))
+	(AnnSpecPrinter::printTypeToTerminal type)
+      (print_dotted_pair strm type))))
 
-(defun sort_symbol? (s)
+(defun type_symbol? (s)
   (and *print-constructors?* *print-metaslang-terms?*
-       (member s '(:|Arrow| :|Product| :|CoProduct| :|Quotient| :|Subsort| :|Base|
+       (member s '(:|Arrow| :|Product| :|CoProduct| :|Quotient| :|Subtype| :|Base|
 		   :|TyVar|))))
 
-(deftype sort_symbol ()
-  `(and symbol (satisfies sort_symbol?)))
+(deftype type_symbol ()
+  `(and symbol (satisfies type_symbol?)))
 
-(set-pprint-dispatch '(cons sort_symbol) #'print_sort)
+(set-pprint-dispatch '(cons type_symbol) #'print_type)
 
 
 (defun print_dotted_pair (strm l)
   (format strm "~@:<~W ~_. ~W~:>" (car l) (cdr l)))
 
-(defun sort_or_term? (x)
+(defun type_or_term? (x)
   (or (term_symbol? (car x))
-      (sort_symbol? (car x))))
+      (type_symbol? (car x))))
 
-(set-pprint-dispatch '(cons T (and cons (satisfies sort_or_term?)))
+(set-pprint-dispatch '(cons T (and cons (satisfies type_or_term?)))
 		     #'print_dotted_pair)

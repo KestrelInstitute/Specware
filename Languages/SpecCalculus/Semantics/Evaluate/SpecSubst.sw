@@ -12,14 +12,14 @@ SpecCalc qualifying spec
 
   op verify_subspec (dom_spc : Spec) (spc : Spec) (pos : Position) : SpecCalc.Env () =
    let should_be_empty_spec = subtractSpec1 dom_spc spc true                       in
-   let types_msg            = printNamesInAQualifierMap should_be_empty_spec.sorts in
+   let types_msg            = printNamesInAQualifierMap should_be_empty_spec.types in
    let ops_msg              = printNamesInAQualifierMap should_be_empty_spec.ops   in
    let 
      def aux (elts, types, ops, props) =
        foldl (fn ((types, ops, props), el) ->
                 case el of
-                  | Sort     (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
-                  | SortDef  (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
+                  | Type     (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
+                  | TypeDef  (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
                   | Op       (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
                   | OpDef    (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
                   | Property (_, qid, _, _, _) -> (types, ops, if qid in? props then props else props ++ [qid])
@@ -208,7 +208,7 @@ SpecCalc qualifying spec
 	    elements
     in
     spc << {
-	    sorts    = mapDiffSorts          spc.sorts     dom_spec.sorts,
+	    types    = mapDiffTypes          spc.types     dom_spec.types,
 	    ops      = deleteChangedOpinfos  spc.ops       dom_spec.ops cod_spec.ops,  % Old: mapDiffOps   spc.ops       dom_spec.ops, 
 	    elements = revise_elements       spc.elements  true
 	   }
@@ -264,14 +264,14 @@ SpecCalc qualifying spec
 
   op  applySpecMorphism : Morphism -> Spec -> Env Spec 
   def applySpecMorphism sm spc =
-   %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
+   %% The opMap and typeMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
    let op_translator   = convertIdMap (opMap   sm) in
    let prop_translator = op_translator             in  % TODO: fix evil hack
    let translators = {
 		      ambigs = emptyTranslator,
-		      sorts  = convertIdMap (sortMap sm),
+		      types  = convertIdMap (typeMap sm),
 		      ops    = op_translator,
 		      props  = prop_translator,
 		      others = None

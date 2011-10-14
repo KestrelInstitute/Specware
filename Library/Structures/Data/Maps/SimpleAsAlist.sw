@@ -94,7 +94,7 @@ meaningless unless an implementation is assumed.
     foldi (fn (value, _, values) -> Cons (value, values))
       [] map      
 
-  % op inDomain? : [key,a] Map (key,a) -> key -> Boolean
+  % op inDomain? : [key,a] Map (key,a) -> key -> Bool
   def inDomain? (map, key) =
     case map of
         [] -> false

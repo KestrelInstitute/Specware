@@ -2,7 +2,7 @@ SplaySet qualifying spec {
   import /Library/Legacy/Utilities/State
   import SplayTree
 
-  sort Set key =
+  type Set key =
     | EMPTY (key * key -> Comparison)
     | SET {
           comp : (key * key -> Comparison),
@@ -16,13 +16,13 @@ SplaySet qualifying spec {
   op add_rev      : fa(key) key * Set key -> Set key
   op addList      : fa(key) Set key * List key -> Set key
   op delete       : fa(key) Set key * key -> Set key
-  op member       : fa(key) Set key * key -> Boolean
+  op member       : fa(key) Set key * key -> Bool
   op numItems     : fa(key) Set key -> Nat
   op listItems    : fa(key) Set key -> List key
-  op isEmpty      : fa(key) Set key -> Boolean
+  op isEmpty      : fa(key) Set key -> Bool
  
-  op equal        : fa(key) Set key * Set key -> Boolean
-  op isSubset     : fa(key) Set key * Set key -> Boolean
+  op equal        : fa(key) Set key * Set key -> Bool
+  op isSubset     : fa(key) Set key * Set key -> Bool
  
   op compare      : fa(key) Set key * Set key -> Comparison
  
@@ -33,15 +33,15 @@ SplaySet qualifying spec {
   op app          : fa(key) (key -> ()) -> Set key -> ()
   op foldr        : fa(key,a) (key * a -> a) -> a -> Set key -> a
   op foldl        : fa(key,a) (key * a -> a) -> a -> Set key -> a
-  op filter       : fa(key) (key -> Boolean) -> Set key -> Set key
-  op exists       : fa(key) (key -> Boolean) -> Set key -> Boolean
-  op find         : fa(key) (key -> Boolean) -> Set key -> Option key
+  op filter       : fa(key) (key -> Bool) -> Set key -> Set key
+  op exists       : fa(key) (key -> Bool) -> Set key -> Bool
+  op find         : fa(key) (key -> Bool) -> Set key -> Option key
  
   op compf        : fa(a) (a * a -> Comparison) * a -> a -> Comparison
   op insert       : fa(a) (a * a -> Comparison) -> a * (Nat * Splay a) -> Nat * Splay a
   op listItemsApp : fa(key) Splay key * List key -> List key
-  op memberT      : fa(key) (key * key -> Comparison) * key * Splay key -> Boolean
-  op treeIn       : fa(key) ((key * key -> Comparison) * Splay key * Splay key) -> Boolean
+  op memberT      : fa(key) (key * key -> Comparison) * key       * Splay key -> Bool
+  op treeIn       : fa(key) (key * key -> Comparison) * Splay key * Splay key -> Bool
   op next         : fa(key) List (Splay key) -> Splay key * List (Splay key)
   op left         : fa(key) Splay key * List (Splay key) -> List (Splay key)
   op cmp :
@@ -62,9 +62,9 @@ SplaySet qualifying spec {
   op foldrSplay   : fa(a,b) (a * b -> b) -> b -> Splay a -> b
   op foldlSplay   : fa(a,b) (a * b -> b) -> b -> Splay a -> b
   % op mkSplayNil   : fa(a) Splay a
-  op filterSplay  : fa(a) (a * a -> Comparison) -> (a -> Boolean) * Splay a * (Nat * Splay a) -> Nat * Splay a
-  op existsSplay  : fa(a) (a -> Boolean) -> Splay a -> Boolean
-  op findSplay    : fa(a) (a -> Boolean) -> Splay a -> Option a
+  op filterSplay  : fa(a) (a * a -> Comparison) -> (a -> Bool) * Splay a * (Nat * Splay a) -> Nat * Splay a
+  op existsSplay  : fa(a) (a -> Bool) -> Splay a -> Bool
+  op findSplay    : fa(a) (a -> Bool) -> Splay a -> Option a
 
   %% ========================================================================
 

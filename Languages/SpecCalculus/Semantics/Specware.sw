@@ -18,7 +18,7 @@ Specware qualifying spec
   %%% Java
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op evaluateJavaGen_fromLisp : String * Option String -> Boolean
+  op evaluateJavaGen_fromLisp : String * Option String -> Bool
   def evaluateJavaGen_fromLisp (path,optopath) = 
     %let optspec = getOptSpec optopath in
     let prog = {
@@ -34,7 +34,7 @@ Specware qualifying spec
     } in
     runSpecCommand (catch prog toplevelHandler) 
 
-  op evaluateUID_fromJava : String -> Boolean
+  op evaluateUID_fromJava : String -> Bool
   def evaluateUID_fromJava path = 
     let prog = {
       cleanEnv;
@@ -52,7 +52,7 @@ Specware qualifying spec
     runSpecCommand (catch prog toplevelHandlerForJava)
 
 
-  op toplevelHandlerForJava: Exception -> SpecCalc.Env Boolean
+  op toplevelHandlerForJava: Exception -> SpecCalc.Env Bool
   def toplevelHandlerForJava except =
     {cleanupGlobalContext;		% Remove InProcess entries
      % saveSpecwareState;			% So work done before error is not lost
@@ -106,7 +106,7 @@ Specware qualifying spec
   %%% C 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op evaluateCGen_fromLisp : String * Option String -> Boolean
+  op evaluateCGen_fromLisp : String * Option String -> Bool
   def evaluateCGen_fromLisp (path,targetFile) = 
     let target =
       case targetFile of
@@ -159,7 +159,7 @@ Specware qualifying spec
   %%% Prover
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 (*
-  op evaluateProofCheck_fromLisp : String * Option String -> Boolean
+  op evaluateProofCheck_fromLisp : String * Option String -> Bool
   def evaluateProofCheck_fromLisp (path,targetFile) = 
     let target =
       case targetFile of
@@ -198,7 +198,7 @@ Specware qualifying spec
     } in
     runSpecCommand (catch prog toplevelHandler)
 *)
-  op evaluateProofGen_fromLisp : String * Option String * Boolean -> Boolean
+  op evaluateProofGen_fromLisp : String * Option String * Bool -> Bool
   def evaluateProofGen_fromLisp (path,targetFile, fromObligations?) = 
     let target =
       case targetFile of
@@ -220,7 +220,7 @@ Specware qualifying spec
 
   %% Second argument is interpreted as spec containing options for the code generation.
 
-  op evaluateProofGenLocal_fromLisp : String * Option String * Boolean -> Boolean
+  op evaluateProofGenLocal_fromLisp : String * Option String * Bool -> Bool
   def evaluateProofGenLocal_fromLisp (path,targetFile, fromObligations?) = 
     let target =
       case targetFile of

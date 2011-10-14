@@ -1,7 +1,7 @@
-% QuickSort = 
+% QuickType = 
 spec
 
-  import QuickSort
+  import QuickType
 
   op main: () -> ()
   def main() =

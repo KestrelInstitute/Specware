@@ -1,7 +1,7 @@
 spec
   import ../Polymorphic
 
-  sort Set a = List a
+  type Set a = List a
 
   def empty? s = ([] = s)
 

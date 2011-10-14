@@ -9,13 +9,13 @@ spec
   import Maps
   import Elements
 
-  sort Morphism a = {
+  type Morphism a = {
     dom : Finite.Set a,
     cod : Finite.Set a,
     map : Poly.Map (a,a)
   }
 
-  sort SetCat a = Cat (Finite.Set a, Morphism a)
+  type SetCat a = Cat (Finite.Set a, Morphism a)
 
   op setCat : fa (a) (a -> Pretty) -> Cat (Finite.Set a, Morphism a)
   def setCat ppElem = {
@@ -37,7 +37,7 @@ spec
 end
 \end{spec}
     
-looks like we need a sort for concrete category where we can enumerate
+looks like we need a type for concrete category where we can enumerate
 over the objects and arrows:
 
 Presumably these are not all the arrows but the generators.
@@ -46,9 +46,9 @@ But in the case of diagrams, the codomain will not have an enumerable set
 of objects
 
 \begin{verbatim}
-sort Object a = Set a
+type Object a = Set a
 
-sort Cat a {
+type Cat a {
   objects : Set a,
   arrows : Set (Morphism a),
   ident : Set a -> Morphism a,

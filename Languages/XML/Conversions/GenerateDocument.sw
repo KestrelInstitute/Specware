@@ -1,7 +1,7 @@
 
 XML qualifying spec
 
-  import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
+  import /Languages/MetaSlang/Specs/Elaborate/TypeDescriptor
   import ../XML_Sig
   import ../Utilities/XML_Unicode
   import Make_XML_Things
@@ -44,9 +44,9 @@ XML qualifying spec
       char :: repeat_char (char, n - 1)
 
   def [X] generate_Document (datum : X,
-                             table as (main_entry as (main_sort, _) :: _) : SortDescriptorExpansionTable)
+                             table as (main_entry as (main_type, _) :: _) : TypeDescriptorExpansionTable)
     : Document =
-    let Base ((qualifier, main_id), _) = main_sort in
+    let Base ((qualifier, main_id), _) = main_type in
     let dtd = {internal = None,
 	       external = None,
 	       entities = []}
@@ -55,7 +55,7 @@ XML qualifying spec
 		   [],
 		   dtd,
 		   [WhiteSpace [UChar.newline, UChar.newline]],
-		   generate_Element (main_id, datum, main_sort, table, 2, 0, true),
+		   generate_Element (main_id, datum, main_type, table, 2, 0, true),
 		   [])
 
   def print_qid (qualifier, id) =
@@ -66,7 +66,7 @@ XML qualifying spec
     else
       qualifier ^ "." ^ id
 
-  def pp_sort_descriptor_for_xml_attribute (sd : SortDescriptor) : UString =
+  def pp_type_descriptor_for_xml_attribute (sd : TypeDescriptor) : UString =
     let
        def aux sd =
 	 case sd of
@@ -86,26 +86,26 @@ XML qualifying spec
 		"[?? Product ??]"
 	   | Quotient _ ->
 		"[?? Quotient ??]"
-	   | Subsort _ ->
-		"[?? Subsort ??]"
+	   | Subtype _ ->
+		"[?? Subtype ??]"
 	   | _ ->
-		"[?? Mystery sort ??]"
+		"[?? Mystery type ??]"
     in
       ustring (aux sd)
 
-  def [X] generate_Element (name     : String,
-                            datum    : X,
-                            sd       : SortDescriptor,
-                            table    : SortDescriptorExpansionTable,
-                            vspacing : Nat,
-                            indent   : Nat,
-                            show_type? : Boolean)
+  def [X] generate_Element (name       : String,
+                            datum      : X,
+                            sd         : TypeDescriptor,
+                            table      : TypeDescriptorExpansionTable,
+                            vspacing   : Nat,
+                            indent     : Nat,
+                            show_type? : Bool)
     : Element =
-    let pattern   = expand_SortDescriptor (sd, table) in
+    let pattern   = expand_TypeDescriptor (sd, table) in
     let uname     = convert_ms_name_to_xml_name name in
     let attributes = (if show_type? then
 			let value = {qchar = UChar.apostrophe,
-				     items = [NonRef (pp_sort_descriptor_for_xml_attribute sd)],
+				     items = [NonRef (pp_type_descriptor_for_xml_attribute sd)],
 				     value = []} % todo
 			in
 			let type_attr : ElementAttribute = {w1    = [UChar.space],
@@ -129,8 +129,8 @@ XML qualifying spec
 	      etag    = etag}
 
   def [X] generate_content (datum      : X,
-                            sd_pattern : SortDescriptor,
-                            table      : SortDescriptorExpansionTable,
+                            sd_pattern : TypeDescriptor,
+                            table      : TypeDescriptorExpansionTable,
                             vspacing   : Nat,
                             indent     : Nat)
     : Option Content =
@@ -178,13 +178,13 @@ XML qualifying spec
 	        case sd_options of
 		  | [("None", _), ("Some", _)]  ->
 		    generate_content (sub_datum,
-				      expand_SortDescriptor (sd_sub_pattern, table),
+				      expand_TypeDescriptor (sd_sub_pattern, table),
 				      table,
 				      1, % vspacing,
 				      indent)
 		  | [("Some", _), ("None", _)]->
 		    generate_content (sub_datum,
-				      expand_SortDescriptor (sd_sub_pattern, table),
+				      expand_TypeDescriptor (sd_sub_pattern, table),
 				      table,
 				      1, % vspacing,
 				      indent)
@@ -214,7 +214,7 @@ XML qualifying spec
 
 	  | ("List",    "List") ->
 	    (let [element_sd] = args in
-	     let expanded_element_sd = expand_SortDescriptor(element_sd, table) in
+	     let expanded_element_sd = expand_TypeDescriptor(element_sd, table) in
 	     let items = Magic.magicCastToList datum in
 	     Some {items = reverse (foldl (fn (items, item) ->
                                              Cons (generate_Content_Item (item,
@@ -243,7 +243,7 @@ XML qualifying spec
 	          None
 	       | _ ->
 	         generate_content (sub_datum,
-				   expand_SortDescriptor (sub_sd, table),
+				   expand_TypeDescriptor (sub_sd, table),
 				   table,
 				   vspacing,
 				   indent))
@@ -254,12 +254,12 @@ XML qualifying spec
       | _ ->
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
 
-  op write_ad_hoc_string : [X] SortDescriptor * X -> String
+  op write_ad_hoc_string : [X] TypeDescriptor * X -> String
 
   def [X] generate_Content_Item (datum      : X,
-                                 sd         : SortDescriptor,
-                                 sd_pattern : SortDescriptor,
-                                 table      : SortDescriptorExpansionTable,
+                                 sd         : TypeDescriptor,
+                                 sd_pattern : TypeDescriptor,
+                                 table      : TypeDescriptorExpansionTable,
                                  vspacing   : Nat,
                                  indent     : Nat)
     : Option CharData * Content_Item =
@@ -299,14 +299,14 @@ XML qualifying spec
 		  | [("None", _), ("Some", _)]  ->
 		    generate_Content_Item (sub_datum,
 					   sd_sub_pattern,
-					   expand_SortDescriptor (sd_sub_pattern, table),
+					   expand_TypeDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
 					   indent)
 		  | [("Some", _), ("None", _)]->
 		    generate_Content_Item (sub_datum,
 					   sd_sub_pattern,
-					   expand_SortDescriptor (sd_sub_pattern, table),
+					   expand_TypeDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
 					   indent)
@@ -360,7 +360,7 @@ XML qualifying spec
 	       | _ ->
 		 generate_Content_Item (sub_datum,
 					sub_sd,
-					expand_SortDescriptor (sub_sd, table),
+					expand_TypeDescriptor (sub_sd, table),
 					table,
 					vspacing,
 					indent))

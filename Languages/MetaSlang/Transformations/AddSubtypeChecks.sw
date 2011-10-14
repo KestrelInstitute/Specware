@@ -11,9 +11,9 @@ op addSubtypeChecks(spc: Spec): Spec =
 op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateComplain")
 op assurePredicateQId: QualifiedId = Qualified("SemanticError", "assurePredicate")
 
-op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, fn_qid: QualifiedId, spc: Spec,
+op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc: Spec,
                             checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
-                            recovery_fns: List(QualifiedId * QualifiedId)): MS.Term =
+                            recovery_fns: List(QualifiedId * QualifiedId)): MSTerm =
   let def mkAssureForm(arg, pred, complain_fn, ty) =
         if nonExecutableTerm? pred then []
         else
@@ -36,7 +36,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, fn_qid: QualifiedId, spc:
   let tm = etaExpandCurriedBody(tm, doms) in
   let (param_pats, body) = curriedParamsBody tm in
   let param_tms = map (fn pat -> let Some p_tm = patternToTerm pat in p_tm) param_pats in
-  let result_sup_ty = stripSubsorts(spc, rng) in
+  let result_sup_ty = stripSubtypes(spc, rng) in
   let body_1 =
       if checkResult? || checkRefine?
         then
@@ -46,7 +46,7 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, fn_qid: QualifiedId, spc:
               else
               %% Needs to be generalized to handle case where multiple results returned that might have recovery_fns
               case raiseSubtype(rng, spc) of
-                | Subsort(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
+                | Subtype(sup_ty, pred, _) | addSubtypeChecksOnResult? ->
                   % let _ = writeLine("Checking "^printTerm pred^" in result of\n"^printTerm body) in
                   let warn_fn = mkLambda(mkWildPat result_sup_ty,
                                          mkString("Subtype violation on result of "^show fn_qid))
@@ -103,12 +103,12 @@ op addSemanticChecksForTerm(tm: MS.Term, top_ty: Sort, fn_qid: QualifiedId, spc:
                 case param_pat of
                   | VarPat _ ->
                     (case raiseSubtype(param_ty, spc) of
-                       | Subsort(sup_ty, pred, _) | addSubtypeChecksOnArgs? ->
+                       | Subtype(sup_ty, pred, _) | addSubtypeChecksOnArgs? ->
                          mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty)
                        | _ -> [])
                   | RecordPat(pat_prs, _) ->
                     (case unfoldBase(spc, param_ty) of
-                       | Subsort(s_param_ty, pred, _) ->
+                       | Subtype(s_param_ty, pred, _) ->
                          mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty) ++ checkArg(s_param_ty, param_pat, param_tm)
                        | Product(ty_prs, _) ->
                          let Record(trm_prs, _) = param_tm in
@@ -141,19 +141,19 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
                   case arrowOpt(spc, ty) of
                     | None -> opinfo
                     | Some(dom, rng) ->
-                  % let _ = writeLine("astcs: "^show qid^": "^printSort dom) in
+                  % let _ = writeLine("astcs: "^show qid^": "^printType dom) in
                   let last_index = length(innerTerms dfns) - 1 in
                   let dfn = refinedTerm(dfns, last_index) in
                   let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns) in
                   let new_dfns = replaceNthTerm(dfns, last_index, new_dfn) in
-                  let new_full_dfn = maybePiSortedTerm(tvs, Some ty, new_dfns) in
+                  let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfns) in
                   opinfo << {dfn = new_full_dfn})               
                spc.ops)
   in
   % let _ = writeLine(printSpec result_spc) in
   result_spc
 
-op computableTerm? (t: MS.Term): Bool =
+op computableTerm? (t: MSTerm): Bool =
   ~(existsSubTerm (fn st ->
                      case st of
                        | The _ -> true
@@ -161,7 +161,7 @@ op computableTerm? (t: MS.Term): Bool =
                        | _ -> false)
       t)
 
-op ensureComputable (spc: Spec) (t: MS.Term): MS.Term =
+op ensureComputable (spc: Spec) (t: MSTerm): MSTerm =
   let t = simplify spc t in
   let def weaken? polarity? t =
         case t of
@@ -186,7 +186,7 @@ op ensureComputable (spc: Spec) (t: MS.Term): MS.Term =
           | Lambda(match, a) -> Lambda(map (fn (pi,ci,ti) -> (pi, ci, weaken? polarity? ti)) match, a)
           | IfThenElse(p, q, r, a) -> IfThenElse(weaken? polarity? p, weaken? polarity? q, weaken? polarity? r, a)
           | Seq(tms, a) -> Seq(map (weaken? polarity?) tms, a)
-          | SortedTerm(t1, ty, a) -> SortedTerm(weaken? polarity? t1, ty, a)
+          | TypedTerm(t1, ty, a) -> TypedTerm(weaken? polarity? t1, ty, a)
           | _ -> t
   in
   weaken? true t

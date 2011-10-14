@@ -1,14 +1,14 @@
-\section{Definition of the exception sort}
+\section{Definition of the exception type}
 
 These are the exceptions that one might raise. This refines the abstract
-sort under \UnitId{/Library/Structures/Data/Monad/Exception}
+type under \UnitId{/Library/Structures/Data/Monad/Exception}
 
-Ideally the exception sort should be defined
+Ideally the exception type should be defined
 compositionally ... specs that need an exception should be able to extend
-the sort.  We need exceptions for things like:
+the type.  We need exceptions for things like:
 
 \begin{itemize}
-\item environment: failing to find an op or sort id etc.
+\item environment: failing to find an op or type id etc.
 \item typechecking: 
 \item io: can't open file, permisssions, etc
 \item parsing
@@ -61,7 +61,7 @@ SpecCalc qualifying spec
     | Warning             Position * String
     | Escape  % Control flow mechanism - see IsoMorphism.sw
 
-  op decodeException : Exception -> (Option (Position * Boolean)) * String 
+  op decodeException : Exception -> (Option (Position * Bool)) * String 
   def decodeException except =
     case except of
       | Fail str                       -> (None,              "Fail: " ^ str)

@@ -2,7 +2,7 @@ MetaRule qualifying
 spec
 import Simplify
 
-op dropLet (spc: Spec) (tm: MS.Term): Option MS.Term =
+op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Let([(pat, b_tm)], m, a) ->
        (let pat_vs = patVars pat in
@@ -15,14 +15,14 @@ op dropLet (spc: Spec) (tm: MS.Term): Option MS.Term =
         | _ -> None)
      | _ -> None
 
-op tupleOfVars?(tm: MS.Term, vs: Vars): Bool =
+op tupleOfVars?(tm: MSTerm, vs: Vars): Bool =
   case tm of
     | Var(v, _) -> inVars?(v, vs)
     | Record(flds, _) ->
       forall? (fn (_,ti) -> tupleOfVars?(ti, vs)) flds
     | _ -> false
 
-op matchPats(tm: MS.Term, pat: Pattern): VarPatSubst =
+op matchPats(tm: MSTerm, pat: MSPattern): VarPatSubst =
   case (tm, pat) of
     | (Var(v, _), pat) -> [(v, pat)]
     | (Record(tm_flds, _),  RecordPat(pat_flds, _)) ->
@@ -31,7 +31,7 @@ op matchPats(tm: MS.Term, pat: Pattern): VarPatSubst =
         [] (zip(tm_flds, pat_flds))
     | _ -> []
 
-op caseMerge (spc: Spec) (tm: MS.Term): Option MS.Term =
+op caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let merge_cases = foldr (fn ((pi, ci, ti), new_cases) ->
@@ -64,7 +64,7 @@ op constantCases(cases: Match): Bool =
           pi)
        && constantCases rst
 
-op caseToIf (spc: Spec) (tm: MS.Term): Option MS.Term =
+op caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let arg1_ty = inferType (spc, arg1) in

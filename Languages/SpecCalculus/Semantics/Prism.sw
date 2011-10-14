@@ -15,7 +15,7 @@ Specware qualifying spec
     [[prism_dir ++ ["Sources"], sw_dir]]
 
   %% experimental loop to generate all implementations of a spec
-  op  Specware.evaluateGenAll_fromLisp : String -> Boolean
+  op  Specware.evaluateGenAll_fromLisp : String -> Bool
   def Specware.evaluateGenAll_fromLisp path = 
     let prog = {
       cleanEnv;

@@ -11,14 +11,14 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  %% StandardAnnotation is the annotation of fully resolved specs and terms
- %% i.e., sorts Spec, Term, Sort etc. Currently it is just Position,
+ %% i.e., types Spec, Term, Type etc. Currently it is just Position,
  %% conceivably it could be more interesting in the future.
 
- % sort StandardAnnotation = Position	% was ()
+ % type StandardAnnotation = Position	% was ()
 
  type Spec = ASpec StandardAnnotation
 
- type SortInfo = ASortInfo StandardAnnotation 
+ type TypeInfo = ATypeInfo StandardAnnotation 
  type OpInfo   = AOpInfo   StandardAnnotation
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,34 +28,34 @@ AnnSpec qualifying spec
  type ASpecs b = List (ASpec b)
 
  type ASpec b = {
-		 sorts     : ASortMap      b,
+		 types     : ATypeMap      b,
 		 ops       : AOpMap        b,
 		 elements  : ASpecElements b,
 		 qualifier : Option Qualifier
 		}
 
- type ASortMap  b = AQualifierMap (ASortInfo b) % i.e., Qualifier -> Id -> info
+ type ATypeMap  b = AQualifierMap (ATypeInfo b) % i.e., Qualifier -> Id -> info
  type AOpMap    b = AQualifierMap (AOpInfo   b) % i.e., Qualifier -> Id -> info
 
- type ASortInfo b = {
-		     names : SortNames,
-		     dfn   : ASort b
+ type ATypeInfo b = {
+		     names : TypeNames,
+		     dfn   : AType b
 		    }
 
  type AOpInfo   b = {
 		     names           : OpNames,
 		     fixity          : Fixity,
 		     dfn             : ATerm b,
-		     fullyQualified? : Boolean
+		     fullyQualified? : Bool
 		    }
 
  type ASpecElements b  = List (ASpecElement b)
  type ASpecElement b =
    | Import   SCTerm * Spec * SpecElements * b
-   | Sort     QualifiedId * b
-   | SortDef  QualifiedId * b
-   | Op       QualifiedId * Boolean * b  % if boolean is true, def was supplied as part of decl
-   | OpDef    QualifiedId * Nat * b      % Nat is number of redefinitions
+   | Type     QualifiedId * b
+   | TypeDef  QualifiedId * b
+   | Op       QualifiedId * Bool * b  % if boolean is true, def was supplied as part of decl
+   | OpDef    QualifiedId * Nat  * b  % Nat is number of redefinitions
    | Property (AProperty b)
    | Comment  String * b
    | Pragma   String * String * String * b
@@ -63,7 +63,7 @@ AnnSpec qualifying spec
  type SpecElement  = ASpecElement  StandardAnnotation
  type SpecElements = ASpecElements StandardAnnotation
 
- op  propertyElement?: [a] ASpecElement a -> Boolean
+ op  propertyElement?: [a] ASpecElement a -> Bool
  def propertyElement? p =
    case p of
      | Property _ -> true
@@ -75,58 +75,58 @@ AnnSpec qualifying spec
  type Property       = AProperty   StandardAnnotation
  type Properties     = AProperties StandardAnnotation
 
- op  primarySortName : [b] ASortInfo b -> SortName
+ op  primaryTypeName : [b] ATypeInfo b -> TypeName
  op  primaryOpName   : [b] AOpInfo   b -> OpName
  op  propertyName    : [b] AProperty b -> PropertyName
 
- def primarySortName info = head info.names
+ def primaryTypeName info = head info.names
  def primaryOpName   info = head info.names
  def propertyName    p    = p.2
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  definedSortInfo? : [b] ASortInfo b -> Boolean
- def definedSortInfo? info =
-   definedSort? info.dfn
+ op  definedTypeInfo? : [b] ATypeInfo b -> Bool
+ def definedTypeInfo? info =
+   definedType? info.dfn
 
- op  definedSort? : [b] ASort b -> Boolean
- def definedSort? srt =
+ op  definedType? : [b] AType b -> Bool
+ def definedType? srt =
    case srt of
      | Any _           -> false
-     | Pi  (_, srt, _) -> definedSort? srt
-     | And (srts,   _) -> exists? definedSort? srts
+     | Pi  (_, srt, _) -> definedType? srt
+     | And (srts,   _) -> exists? definedType? srts
      | _               -> true
 
- op  definedOpInfo? : [b] AOpInfo b -> Boolean
+ op  definedOpInfo? : [b] AOpInfo b -> Bool
  def definedOpInfo? info =
    definedTerm? info.dfn
 
- op  definedTerm? : [b] ATerm b -> Boolean
+ op  definedTerm? : [b] ATerm b -> Bool
  def definedTerm? tm =
    case tm of
      | Any        _                  -> false               % op foo : Nat
      | Lambda     ([(_,_,body)],  _) -> definedTerm? body   % e.g., "op foo (n : Nat) : Nat" will see internal "fn n -> any" as undefined
-     | SortedTerm (tm, _,         _) -> definedTerm? tm
+     | TypedTerm  (tm, _,         _) -> definedTerm? tm
      | Pi         (_, tm,         _) -> definedTerm? tm
      | And        (tms,           _) -> exists? definedTerm? tms
      | _                             -> true
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  components of sortInfo
+ %%%  components of typeInfo
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  sortInfoDefs : [b] ASortInfo b -> List (ASort b)
- def sortInfoDefs info =
+ op  typeInfoDefs : [b] ATypeInfo b -> List (AType b)
+ def typeInfoDefs info =
    case info.dfn of
-     | And (srts, _) -> filter definedSort? srts
-     | srt           -> filter definedSort? [srt]
+     | And (srts, _) -> filter definedType? srts
+     | srt           -> filter definedType? [srt]
 
- op  sortInfoDeclsAndDefs : [b] ASortInfo b -> List (ASort b) * List (ASort b)
- def sortInfoDeclsAndDefs info =
+ op  typeInfoDeclsAndDefs : [b] ATypeInfo b -> List (AType b) * List (AType b)
+ def typeInfoDeclsAndDefs info =
    let
      def segregate srts =
        foldl (fn ((decls, defs), srt) ->
-	      if definedSort? srt then
+	      if definedType? srt then
 		(decls, defs ++ [srt])
 	      else
 		(decls ++ [srt], defs))
@@ -137,11 +137,11 @@ AnnSpec qualifying spec
        | And (srts, _) -> segregate srts
        | srt           -> segregate [srt]
 
- op  sortDefs : [b] ASort b -> List (ASort b)
- def sortDefs srt =
+ op  typeDefs : [b] AType b -> List (AType b)
+ def typeDefs srt =
    case srt of
-     | And (srts, _) -> filter definedSort? srts
-     | srt           -> filter definedSort? [srt]
+     | And (srts, _) -> filter definedType? srts
+     | srt           -> filter definedType? [srt]
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of opInfo
@@ -171,12 +171,12 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
          case tm of
            | Pi (tvs, tm, _) -> segregate(tm, tvs, o_ty, tms)
            | And (a_tms,_) -> foldl (fn ((tvs, o_ty, tms), tm) -> segregate(tm, tvs, o_ty, tms)) (tvs, o_ty, tms) a_tms
-           | SortedTerm (tm, ty, _) -> segregate(tm, tvs, Some ty, tms)
+           | TypedTerm (tm, ty, _) -> segregate(tm, tvs, Some ty, tms)
            | Any _ -> (tvs, o_ty, tms)
-           | _ -> (tvs, o_ty, (maybePiSortedTerm(tvs, o_ty, tm)) :: tms)
+           | _ -> (tvs, o_ty, (maybePiTypedTerm(tvs, o_ty, tm)) :: tms)
    in
    case segregate(tm, [], None, []) of
-     | (tvs, Some ty, tms) -> ([maybePiTerm(tvs, SortedTerm(Any a, ty, a))], reverse tms)
+     | (tvs, Some ty, tms) -> ([maybePiTerm(tvs, TypedTerm(Any a, ty, a))], reverse tms)
      | (tvs, None, tms)    -> ([maybePiTerm(tvs, Any a)], reverse tms)
 
 % op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
@@ -202,37 +202,37 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
      | tm           -> filter definedTerm? [tm]
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  components of primary sort def
+ %%%  components of primary type def
  %%%  Any uses of these simply ignore any definitions after the
  %%%  first one, which (IMHO) is probably not a good thing to do,
  %%%  but they are here for backwards compatibility
  %%%  Each use should be reviewed.
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  firstSortDef          : [b] ASortInfo b -> ASort b
- op  unpackFirstSortDef    : [b] ASortInfo b -> TyVars * ASort b
- op  firstSortDefTyVars    : [b] ASortInfo b -> TyVars
- op  firstSortDefInnerSort : [b] ASortInfo b -> ASort b
+ op  firstTypeDef          : [b] ATypeInfo b -> AType b
+ op  unpackFirstTypeDef    : [b] ATypeInfo b -> TyVars * AType b
+ op  firstTypeDefTyVars    : [b] ATypeInfo b -> TyVars
+ op  firstTypeDefInnerType : [b] ATypeInfo b -> AType b
 
- def firstSortDef info =
-   let (decls, defs)  = sortInfoDeclsAndDefs info in
+ def firstTypeDef info =
+   let (decls, defs)  = typeInfoDeclsAndDefs info in
    case defs ++ decls of
      | first_def :: _ -> first_def
      | _ -> (fail("No decls or defs for: "^anyToString info))
 
- def unpackFirstSortDef info =
-   unpackSort (firstSortDef info)
+ def unpackFirstTypeDef info =
+   unpackType (firstTypeDef info)
 
- def firstSortDefTyVars info =
+ def firstTypeDefTyVars info =
    case info.dfn of
      | And([], _) -> []
-     | _ -> sortTyVars (firstSortDef info)
+     | _ -> typeTyVars (firstTypeDef info)
 
- def firstSortDefInnerSort info =
-   sortInnerSort (head (sortInfoDefs info)) % fail if no decl but no def
+ def firstTypeDefInnerType info =
+   typeInnerType (head (typeInfoDefs info)) % fail if no decl but no def
 
  %%% Qualification flag
- op qualifiedSpec?  : [a] ASpec a -> Boolean
+ op qualifiedSpec?  : [a] ASpec a -> Bool
  op markQualified   : [a] ASpec a -> Qualifier -> ASpec a
  op markUnQualified : [a] ASpec a              -> ASpec a
 
@@ -249,9 +249,9 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op  firstOpDef          : [b] AOpInfo b -> ATerm b
- op  unpackFirstOpDef    : [b] AOpInfo b -> TyVars * ASort b * ATerm b
+ op  unpackFirstOpDef    : [b] AOpInfo b -> TyVars * AType b * ATerm b
  op  firstOpDefTyVars    : [b] AOpInfo b -> TyVars
- op  firstOpDefInnerSort : [b] AOpInfo b -> ASort b
+ op  firstOpDefInnerType : [b] AOpInfo b -> AType b
  op  firstOpDefInnerTerm : [b] AOpInfo b -> ATerm b
 
  def firstOpDef info =
@@ -262,18 +262,18 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
  def unpackFirstOpDef info =
    unpackFirstTerm (info.dfn)
 
- op [a] unpackNthOpDef(info: AOpInfo a, n: Nat): TyVars * ASort a * ATerm a =
+ op [a] unpackNthOpDef(info: AOpInfo a, n: Nat): TyVars * AType a * ATerm a =
    unpackNthTerm(info.dfn, n)
 
  def firstOpDefTyVars info =
    termTyVars (firstOpDef info)
 
- def firstOpDefInnerSort info =
+ def firstOpDefInnerType info =
    let (decls, defs)  = opInfoDeclsAndDefs info in
    let first_def :: _ = defs ++ decls in
    case first_def of
-     | Pi (_, tm, _) -> termSort tm % avoid returning Pi sort
-     | tm            -> termSort tm
+     | Pi (_, tm, _) -> termType tm % avoid returning Pi type
+     | tm            -> termType tm
 
  def firstOpDefInnerTerm info =
    termInnerTerm (head (opInfoDefs info)) % fail if decl but no def
@@ -296,13 +296,13 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
     | None -> false
     | Some info -> (unpackFirstOpDef info).1 ~= []
 
-op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MS.Term): OpInfo =
-  let old_triples = unpackSortedTerms info.dfn in
+op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
+  let old_triples = unpackTypedTerms info.dfn in
   % let qid as Qualified(q, id) = primaryOpName info in
   % let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
   % let curr_dfns = innerTerms old_tm in
   let new_triple = case new_dfn of
-                     | SortedTerm (new_tm, new_ty, _) -> ([], new_ty, new_tm)
+                     | TypedTerm (new_tm, new_ty, _) -> ([], new_ty, new_tm)
                      | _ -> 
                        let (old_tvs, old_ty, _) :: _ = old_triples in
                        (old_tvs, old_ty, new_dfn)
@@ -314,30 +314,30 @@ op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MS.Term): OpInfo =
   %                      else new_dfn :: curr_dfns
   % in
   let new_triples = new_triple :: old_triples in
-  let new_dfn = maybePiAndSortedTerm new_triples in
+  let new_dfn = maybePiAndTypedTerm new_triples in
   % let _ = writeLine("\naddRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
   info << {dfn = new_dfn}
 
-op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MS.Term): Spec =
+op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MSTerm): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
   % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
           elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), noPos)]}
 
-op addRefinedTypeToOpinfo (info: OpInfo, new_ty: Sort): OpInfo =
+op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
-  let triples = unpackSortedTerms(info.dfn) in
+  let triples = unpackTypedTerms(info.dfn) in
   let new_full_dfn = case triples of
-                       | [] -> SortedTerm (Any (sortAnn new_ty), new_ty, sortAnn new_ty)
+                       | [] -> TypedTerm (Any (typeAnn new_ty), new_ty, typeAnn new_ty)
                        | (tvs, _, old_tm) ::_ ->
-                         maybePiAndSortedTerm (([], new_ty, old_tm) :: triples)
+                         maybePiAndTypedTerm (([], new_ty, old_tm) :: triples)
   in
   % let _ = if show qid = "insertBlack"
   %          then writeLine("addRefinedType: "^show qid^"\n"^printTerm info.dfn^"\n"^printTerm new_full_dfn^"\n\n") else () in
   info << {dfn = new_full_dfn}
 
-op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =
+op addRefinedType(spc: Spec, info: OpInfo, new_ty: MSType): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
@@ -347,7 +347,7 @@ op addRefinedType(spc: Spec, info: OpInfo, new_ty: Sort): Spec =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                Recursive TSP map over Specs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% "TSP" means "Term, Sort, Pattern"
+%%% "TSP" means "Term, Type, Pattern"
 
 %%% Can't make mapSpec polymorphic because elements in imports have to be Standard
 
@@ -355,15 +355,15 @@ type TSP_Maps_St = TSP_Maps StandardAnnotation
 op  mapSpec : TSP_Maps_St -> Spec -> Spec
 def mapSpec tsp spc =
   spc << {
-          sorts        = mapSpecSorts      tsp spc.sorts,
+          types        = mapSpecTypes      tsp spc.types,
           ops          = mapSpecOps        tsp spc.ops,
           elements     = mapSpecProperties tsp spc.elements
          }
 
-op  mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b
-def mapSpecSorts tsp sorts =
-  mapSortInfos (fn info -> info << {dfn = mapSort tsp info.dfn})
-               sorts
+op  mapSpecTypes : [b] TSP_Maps b -> ATypeMap b -> ATypeMap b
+def mapSpecTypes tsp types =
+  mapTypeInfos (fn info -> info << {dfn = mapType tsp info.dfn})
+               types
 
  op testing? : Bool = false
  op nnn : Nat = 0
@@ -397,7 +397,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
             if equalTerm?(tm, new_tm) then ops
             else
               let full_term = replaceNthTerm(full_term, refine_num, new_tm) in
-              let new_dfn = maybePiTerm(tvs, SortedTerm(full_term, ty, termAnn full_term)) in
+              let new_dfn = maybePiTerm(tvs, TypedTerm(full_term, ty, termAnn full_term)) in
               insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})                                       
           | _ -> ops
   in
@@ -412,7 +412,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  op  mapSpecUnqualified : TSP_Maps_St -> Spec -> Spec
  def mapSpecUnqualified tsp spc =
    spc << {
-	   sorts        = mapSpecSorts          tsp spc.sorts,
+	   types        = mapSpecTypes          tsp spc.types,
 	   ops          = mapSpecOpsUnqualified tsp spc.ops,
 	   elements     = mapSpecProperties     tsp spc.elements
 	  }
@@ -445,29 +445,29 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      ops
      ops
 
- %% mapSortInfos and mapOpInfos apply the provided function
+ %% mapTypeInfos and mapOpInfos apply the provided function
  %% just once to an info, even if it has multiple aliases,
  %% then arrange for each alias to index that same new info.
 
- op  primarySortName? : [a] Qualifier * Id * ASortInfo a -> Boolean
- op  primaryOpName?   : [a] Qualifier * Id * AOpInfo   a -> Boolean
+ op  primaryTypeName? : [a] Qualifier * Id * ATypeInfo a -> Bool
+ op  primaryOpName?   : [a] Qualifier * Id * AOpInfo   a -> Bool
 
- def primarySortName? (q, id, info) =
-   let Qualified (qq, ii) = primarySortName info in
+ def primaryTypeName? (q, id, info) =
+   let Qualified (qq, ii) = primaryTypeName info in
    q = qq && id = ii
 
  def primaryOpName? (q, id, info) =
    let Qualified (qq, ii) = primaryOpName info in
    q = qq && id = ii
 
- op  mapSortInfos : [b] (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b
- def mapSortInfos sortinfo_map sorts =
+ op  mapTypeInfos : [b] (ATypeInfo b -> ATypeInfo b) -> ATypeMap b -> ATypeMap b
+ def mapTypeInfos typeinfo_map types =
    foldriAQualifierMap
      (fn (q, id, info, new_map) ->
-      if primarySortName? (q, id, info) then
+      if primaryTypeName? (q, id, info) then
 	%% When access is via a primary alias, update the info and
 	%% record that (identical) new value for all the aliases.
-	let new_info = sortinfo_map info in
+	let new_info = typeinfo_map info in
 	foldl (fn (new_map, Qualified (q, id)) ->
 	       insertAQualifierMap (new_map, q, id, new_info))
 	      new_map
@@ -477,7 +477,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 	%% since they are handled derivatively above.
 	new_map)
      emptyAQualifierMap
-     sorts
+     types
 
  op  mapOpInfos : [b] (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b
  def mapOpInfos opinfo_map ops =
@@ -516,11 +516,11 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 %     emptyAQualifierMap
 %     ops
 
- op  filterSortMap : [b] (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b
- def filterSortMap keep? sorts =
+ op  filterTypeMap : [b] (ATypeInfo b -> Bool) -> ATypeMap b -> ATypeMap b
+ def filterTypeMap keep? types =
    foldriAQualifierMap
      (fn (q, id, info, new_map) ->
-      if primarySortName? (q, id, info) && keep? info then
+      if primaryTypeName? (q, id, info) && keep? info then
 	foldl (fn (new_map, Qualified(q, id)) ->
 	       insertAQualifierMap (new_map, q, id, info))
 	      new_map
@@ -528,9 +528,9 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
       else
 	new_map)
      emptyAQualifierMap
-     sorts
+     types
 
- op  filterOpMap : [b] (AOpInfo b -> Boolean) -> AOpMap b -> AOpMap b
+ op  filterOpMap : [b] (AOpInfo b -> Bool) -> AOpMap b -> AOpMap b
  def filterOpMap keep? ops =
    foldriAQualifierMap
      (fn (q, id, info, new_map) ->
@@ -544,16 +544,16 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      emptyAQualifierMap
      ops
 
- op  foldSortInfos : [a,b] (ASortInfo a * b -> b) -> b -> ASortMap a -> b
- def foldSortInfos f init sorts =
+ op  foldTypeInfos : [a,b] (ATypeInfo a * b -> b) -> b -> ATypeMap a -> b
+ def foldTypeInfos f init types =
    foldriAQualifierMap
      (fn (q, id, info, result) ->
-      if primarySortName? (q, id, info) then
+      if primaryTypeName? (q, id, info) then
 	f (info, result)
       else
 	result)
      init
-     sorts
+     types
 
  op  foldOpInfos : [a,b] (AOpInfo a * b -> b) -> b -> AOpMap a -> b
  def foldOpInfos f init ops =
@@ -566,15 +566,15 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      init
      ops
 
- op  appSortInfos : [b] (ASortInfo b -> ()) -> ASortMap b -> ()
- def appSortInfos f sorts =
+ op  appTypeInfos : [b] (ATypeInfo b -> ()) -> ATypeMap b -> ()
+ def appTypeInfos f types =
    appiAQualifierMap
      (fn (q, id, info) ->
-      if primarySortName? (q, id, info) then
+      if primaryTypeName? (q, id, info) then
 	f info
       else
 	())
-     sorts
+     types
 
  op  appOpInfos : [b] (AOpInfo b -> ()) -> AOpMap b -> ()
  def appOpInfos f ops =
@@ -616,7 +616,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 	| new_el -> new_el)
      elements
 
- op  filterSpecElements: (SpecElement -> Boolean) -> SpecElements -> SpecElements
+ op  filterSpecElements: (SpecElement -> Bool) -> SpecElements -> SpecElements
  def filterSpecElements p elements =
    mapPartial
      (fn el ->
@@ -663,7 +663,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
          ini
 	 els
 
- op  existsSpecElement?: (SpecElement -> Boolean) -> SpecElements -> Boolean
+ op  existsSpecElement?: (SpecElement -> Bool) -> SpecElements -> Bool
  def existsSpecElement? p els =
    foldlSpecElements (fn (result, el) -> result || p el) false els
 
@@ -708,7 +708,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Sort, Pattern"
+ %%% "TSP" means "Term, Type, Pattern"
 
  type appTSP_St = appTSP StandardAnnotation
 
@@ -716,13 +716,13 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  def appSpec tsp spc =
    (
     appSpecOps      tsp spc.ops;
-    appSpecSorts    tsp spc.sorts;
+    appSpecTypes    tsp spc.types;
     appSpecElements tsp spc.elements
    )
 
- op  appSpecSorts : [a] appTSP a -> ASortMap a -> ()
- def appSpecSorts tsp sorts =
-   appAQualifierMap (fn info -> appSort tsp info.dfn) sorts
+ op  appSpecTypes : [a] appTSP a -> ATypeMap a -> ()
+ def appSpecTypes tsp types =
+   appAQualifierMap (fn info -> appType tsp info.dfn) types
 
  op  appSpecOps : [a] appTSP a -> AOpMap a -> ()
  def appSpecOps tsp ops =
@@ -738,33 +738,33 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
        elements
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                Sorts, Ops
+ %%%                Types, Ops
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- % return sorts/ops as list with entries of the form (qualifier, id, info)
+ % return types/ops as list with entries of the form (qualifier, id, info)
 
- op sortsAsList     : [b] ASpec b -> List (Qualifier * Id * ASortInfo b)
+ op typesAsList     : [b] ASpec b -> List (Qualifier * Id * ATypeInfo b)
  op opsAsList       : [b] ASpec b -> List (Qualifier * Id * AOpInfo   b)
- op sortInfosAsList : [b] ASpec b -> List (ASortInfo b)
+ op typeInfosAsList : [b] ASpec b -> List (ATypeInfo b)
  op opInfosAsList   : [b] ASpec b -> List (AOpInfo   b)
 
- def sortsAsList(spc) =
+ def typesAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
 			Cons ((q, id, info), new_list))
                        []
-		       spc.sorts
+		       spc.types
 
- def sortInfosAsList spc =
+ def typeInfosAsList spc =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
-			%% there could be multiple entries for the same sortInfo,
+			%% there could be multiple entries for the same typeInfo,
 			%% so just consider the entry corresponding to the primary alias
-			let Qualified (primary_q, primary_id) = primarySortName info in
+			let Qualified (primary_q, primary_id) = primaryTypeName info in
 			if q = primary_q && id = primary_id then
 			  Cons (info, new_list)
 			else
 			  new_list)
                        []
-		       spc.sorts
+		       spc.types
 
  def opsAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
@@ -786,8 +786,8 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  % --------------------------------------------------------------------------------
 
- op  emptySortNames : SortNames
- def emptySortNames = []
+ op  emptyTypeNames : TypeNames
+ def emptyTypeNames = []
 
  op  emptyOpNames : OpNames
  def emptyOpNames = []
@@ -795,10 +795,10 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  op  emptyPropertyNames : PropertyNames
  def emptyPropertyNames = []
 
- op  memberNames : QualifiedId * List QualifiedId -> Boolean
+ op  memberNames : QualifiedId * List QualifiedId -> Bool
  def memberNames (qid, qids) = qid in? qids
 
- op  memberQualifiedId : Qualifier * Id * List QualifiedId -> Boolean
+ op  memberQualifiedId : Qualifier * Id * List QualifiedId -> Bool
  def memberQualifiedId (q, id, qids) =
    exists? (fn (Qualified (qq, ii)) -> q = qq && id = ii) qids
 
@@ -808,35 +808,35 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  op emptySpec         : [a] ASpec         a
  op emptyAElements    : [a] ASpecElements a
- op emptyASortMap     : [a] AQualifierMap a
+ op emptyATypeMap     : [a] AQualifierMap a
  op emptyAOpMap       : [a] AQualifierMap a
  op initialSpecInCat  : [a] ASpec         a
 
- %% Create new spec with altered name, imports, sorts, ops, elements, etc.
+ %% Create new spec with altered name, imports, types, ops, elements, etc.
 
  op setLocalOps      : [a] ASpec a * OpNames          -> ASpec a
- op setLocalSorts    : [a] ASpec a * SortNames        -> ASpec a
+ op setLocalTypes    : [a] ASpec a * TypeNames        -> ASpec a
  op setLocalElements : [a] ASpec a * PropertyNames    -> ASpec a
- op setSorts         : [a] ASpec a * ASortMap      a  -> ASpec a
+ op setTypes         : [a] ASpec a * ATypeMap      a  -> ASpec a
  op setOps           : [a] ASpec a * AOpMap        a  -> ASpec a
  op setElements      : [a] ASpec a * ASpecElements a  -> ASpec a
  op appendElement    : [a] ASpec a * ASpecElement  a  -> ASpec a
  op prependElement   : [a] ASpec a * ASpecElement  a  -> ASpec a
 
- op someSortAliasIsLocal? : [b] Aliases * ASpec b -> Boolean
- op someOpAliasIsLocal?   : [b] Aliases * ASpec b -> Boolean
+ op someTypeAliasIsLocal? : [b] Aliases * ASpec b -> Bool
+ op someOpAliasIsLocal?   : [b] Aliases * ASpec b -> Bool
 
  op getQIdIfOp: [a] ASpecElement a -> Option QualifiedId
 
- op localSort?        : [a] QualifiedId * ASpec a -> Boolean
- op localOp?          : [a] QualifiedId * ASpec a -> Boolean
- op localProperty?    : [a] QualifiedId * ASpec a -> Boolean
+ op localType?        : [a] QualifiedId * ASpec a -> Bool
+ op localOp?          : [a] QualifiedId * ASpec a -> Bool
+ op localProperty?    : [a] QualifiedId * ASpec a -> Bool
  op localProperties   : [a] ASpec a -> AProperties a
  op allProperties     : Spec -> Properties
- op localSorts        : [a] ASpec a -> List QualifiedId
+ op localTypes        : [a] ASpec a -> List QualifiedId
  op localOps          : [a] ASpec a -> List QualifiedId
- op hasLocalSort?     : [a] ASpec a -> Boolean
- op hasLocalOp?       : [a] ASpec a -> Boolean
+ op hasLocalType?     : [a] ASpec a -> Bool
+ op hasLocalOp?       : [a] ASpec a -> Bool
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -844,12 +844,12 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def [a] emptyAElements = []
- def emptyASortMap      = emptyAQualifierMap
+ def emptyATypeMap      = emptyAQualifierMap
  def emptyAOpMap        = emptyAQualifierMap
 
  def emptySpec =
    {
-    sorts     = emptyASortMap,
+    types     = emptyATypeMap,
     ops       = emptyAOpMap,
     elements  = emptyAElements,
     qualifier = None
@@ -857,24 +857,24 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  def initialSpecInCat =
    {
-    sorts     = emptyASortMap,
+    types     = emptyATypeMap,
     ops       = emptyAOpMap,
     elements  = emptyAElements,
     qualifier = None
    }
 
- def setSorts    (spc, new_sorts)    = spc << {sorts    = new_sorts}
+ def setTypes    (spc, new_types)    = spc << {types    = new_types}
  def setOps      (spc, new_ops)      = spc << {ops      = new_ops}
  def setElements (spc, new_elements) = spc << {elements = new_elements}
 
  def appendElement  (spc, new_element) = spc << {elements = spc.elements ++ [new_element]}
  def prependElement (spc, new_element) = spc << {elements = Cons (new_element, spc.elements)}
 
- op [a] equalSpecElement?(el1: ASpecElement a, el2: ASpecElement a): Boolean =
+ op [a] equalSpecElement?(el1: ASpecElement a, el2: ASpecElement a): Bool =
    case (el1, el2) of
      | (Import(tm1, spc1, _, _), Import(tm2, spc2, _, _)) -> tm1 = tm2 && spc1 = spc2 % ?
-     | (Sort(qid1, _), Sort(qid2, _)) -> qid1 = qid2
-     | (SortDef(qid1, _), SortDef(qid2, _)) -> qid1 = qid2
+     | (Type(qid1, _), Type(qid2, _)) -> qid1 = qid2
+     | (TypeDef(qid1, _), TypeDef(qid2, _)) -> qid1 = qid2
      | (Op(qid1, def1?,_), Op(qid2, def2?, _)) -> qid1 = qid2 && def1? = def2?
      | (OpDef(qid1, refine1?, _), OpDef(qid2, refine2?, _)) -> qid1 = qid2 && refine1? = refine2?
      | (Property(pty1, qid1, tvs1, bod1, _), Property(pty2, qid2,tvs2, bod2, _)) ->
@@ -909,7 +909,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  op [a] deleteElement(spc: ASpec a, del_el: ASpecElement a): ASpec a =
    setElements(spc, filter (fn el -> ~(equalSpecElement?(el, del_el))) spc.elements)
 
- op [a] conjecture?(p: ASpecElement a): Boolean =
+ op [a] conjecture?(p: ASpecElement a): Bool =
    case p of
      | Property(Conjecture,_,_,_,_) -> true
      | _ -> false
@@ -926,11 +926,11 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 		      take (i, elts) ++ new_elements ++ drop (i, elts)}
 
 
- def someSortAliasIsLocal? (aliases, spc) =
+ def someTypeAliasIsLocal? (aliases, spc) =
    exists? (fn el ->
               case el of
-                | Sort (qid,_)    -> qid in? aliases
-                | SortDef (qid,_) -> qid in? aliases
+                | Type (qid,_)    -> qid in? aliases
+                | TypeDef (qid,_) -> qid in? aliases
                 | _ -> false)
           spc.elements
 
@@ -948,11 +948,11 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      | OpDef (qid,_,_) -> Some qid
      | _ -> None
 
- def localSort? (qid, spc) = 
+ def localType? (qid, spc) = 
    exists? (fn el ->
               case el of
-                | Sort    (qid1,_) -> qid = qid1
-                | SortDef (qid1,_) -> qid = qid1
+                | Type    (qid1,_) -> qid = qid1
+                | TypeDef (qid1,_) -> qid = qid1
                 | _ -> false)
           spc.elements
 
@@ -971,11 +971,11 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                 | _ -> false)
           spc.elements
 
- def localSorts spc =
+ def localTypes spc =
    removeDuplicates (mapPartial (fn el ->
 				 case el of
-				   | Sort    (qid,_) -> Some qid
-				   | SortDef (qid,_) -> Some qid
+				   | Type    (qid,_) -> Some qid
+				   | TypeDef (qid,_) -> Some qid
 				   | _ -> None)
 		                spc.elements)
 
@@ -1011,11 +1011,11 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                      []
 		     spc.elements
 
- def hasLocalSort? spc =
+ def hasLocalType? spc =
    exists? (fn el ->
               case el of
-                | Sort _    -> true
-                | SortDef _ -> true
+                | Type _    -> true
+                | TypeDef _ -> true
                 | _ -> false)
           spc.elements
 
@@ -1029,17 +1029,17 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op findTheSort  : [a] ASpec a * QualifiedId -> Option (ASortInfo a)
+ op findTheType  : [a] ASpec a * QualifiedId -> Option (ATypeInfo a)
  op findTheOp    : [a] ASpec a * QualifiedId -> Option (AOpInfo   a)
 
- op findAllSorts : [a] ASpec a * QualifiedId -> List (ASortInfo a)
+ op findAllTypes : [a] ASpec a * QualifiedId -> List (ATypeInfo a)
  op findAllOps   : [a] ASpec a * QualifiedId -> List (AOpInfo   a)
 
- def findTheSort (spc, Qualified (q, id)) =
-   %% We're looking for precisely one sort,
+ def findTheType (spc, Qualified (q, id)) =
+   %% We're looking for precisely one type,
    %% which we might have specified as being unqualified.
    %% (I.e., unqualified is not a wildcard here.)
-   findAQualifierMap (spc.sorts, q, id)
+   findAQualifierMap (spc.types, q, id)
 
  def findTheOp (spc, Qualified (q, id)) =
    %% We're looking for precisely one op,
@@ -1047,16 +1047,16 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    %% (I.e., unqualified is not a wildcard here.)
    findAQualifierMap (spc.ops, q, id)
 
- %% Overloading is not particularly meaningful for sorts.
- %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct sorts?)
- %% but we might have two or more sorts X.S, Y.S, etc.
+ %% Overloading is not particularly meaningful for types.
+ %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct types?)
+ %% but we might have two or more types X.S, Y.S, etc.
 
  %% If the qualifier is UnQualified then we return unqualified answer first so as to
  %% give preference to it because there is no other way to refer to this entry.
- %% Note that checkSort depends on this behavior.
+ %% Note that checkType depends on this behavior.
 
- def findAllSorts (spc, Qualified (q, id)) =
-   let found = (case findAQualifierMap (spc.sorts, q, id) of
+ def findAllTypes (spc, Qualified (q, id)) =
+   let found = (case findAQualifierMap (spc.types, q, id) of
 		  | Some info -> [info]
 		  | None           -> [])
    in
@@ -1064,7 +1064,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      %% various other routines assume that any
      %% unqualified answer will be listed first
      found ++ filter (fn info -> info nin? found)
-                     (wildFindUnQualified (spc.sorts, id))
+                     (wildFindUnQualified (spc.types, id))
    else
      found
 
@@ -1083,8 +1083,8 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  % this next one is use only in substract spec. it cannot be defined inside
  % the scope of subtractSpec as there is no let-polymorphism in Specware
- op  mapDiffSorts : [a] ASortMap a -> ASortMap a -> ASortMap a
- def mapDiffSorts xMap yMap =
+ op  mapDiffTypes : [a] ATypeMap a -> ATypeMap a -> ATypeMap a
+ def mapDiffTypes xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
                           | None ->
@@ -1092,10 +1092,10 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 			    %% so include the x_info, whether it is defined or not
 			    insertAQualifierMap (newMap, q, id, x_info)
 			  | Some y_info ->
-			    if definedSortInfo? y_info then
+			    if definedTypeInfo? y_info then
 			      %% omit the x_info, whether it is defined or not
 			      newMap
-			    else if definedSortInfo? x_info then
+			    else if definedTypeInfo? x_info then
 			      insertAQualifierMap (newMap, q, id, x_info)
 			    else
 			      newMap)

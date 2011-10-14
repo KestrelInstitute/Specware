@@ -5,34 +5,34 @@ NormTypes qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
 
-  op topLevelTypes(spc: Spec): List(QualifiedId * TyVars * Sort) =
+  op topLevelTypes(spc: Spec): List(QualifiedId * TyVars * MSType) =
     foldriAQualifierMap
       (\_lambda (q, id, info, result) ->
-         if primarySortName? (q, id, info) then
+         if primaryTypeName? (q, id, info) then
            %% When access is via a primary alias, update the info and
            %% record that (identical) new value for all the aliases.
-           if  definedSortInfo? info
+           if  definedTypeInfo? info
              then
-               let (tvs,ty) = unpackFirstSortDef info in
+               let (tvs,ty) = unpackFirstTypeDef info in
                if replaceableType? ty
                  then Cons((Qualified(q, id),tvs,ty),result)
                else result
            else result
          else result)
-      [] spc.sorts
+      [] spc.types
 
   op normalizeType
-       (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * Sort), checkTop?: Boolean,
+       (spc: Spec, typeNameInfo: List(QualifiedId * TyVars * MSType), checkTop?: Bool,
         ign_subtypes?: Bool)
-       (ty: Sort): Sort =
-    % let _ = writeLine("nt: "^printSort ty) in
+       (ty: MSType): MSType =
+    % let _ = writeLine("nt: "^printType ty) in
     if replaceableType? ty
       \_and \_not (checkTop? && exists? (\_lambda (id,vs,top_ty) \_rightarrow ty = top_ty) typeNameInfo) % Avoid changing definition itself!
      then
        case foldl (\_lambda (result,(qid,tvs,top_ty)) \_rightarrow
                    case result of
                      | None \_rightarrow
-                       % let _ = writeLine("qid: "^printQualifiedId qid^"\n"^"nt: "^printSort ty^" =~= "^printSort top_ty) in
+                       % let _ = writeLine("qid: "^printQualifiedId qid^"\n"^"nt: "^printType ty^" =~= "^printType top_ty) in
                        (case typeMatch(top_ty,ty,spc,ign_subtypes?) of
                           | Some tyvar_sbst \_rightarrow
                             if checkTop? && ty = top_ty then None else
@@ -47,12 +47,12 @@ NormTypes qualifying spec
            Base(qid,map (\_lambda tv \_rightarrow case findLeftmost (\_lambda (tv1,_) \_rightarrow tv = tv1) tyvar_sbst of
                                    | Some(_,ty_i) \_rightarrow ty_i)
                       tvs,
-                 sortAnn ty)
+                 typeAnn ty)
 
          | _ \_rightarrow ty
      else ty
 
-  %% Replaces type expressions by their named sorts
+  %% Replaces type expressions by their named types
   op normalizeTypes(spc: Spec, ign_subtypes?: Bool): Spec =
     let typeNameInfo = topLevelTypes spc in
     mapSpec (id, normalizeType(spc, typeNameInfo, true, ign_subtypes?), id) spc
@@ -62,10 +62,10 @@ NormTypes qualifying spec
       | Some info \_rightarrow spc \_guillemotleft {ops = insertAQualifierMap (spc.ops, q, id, info \_guillemotleft {dfn = mapTerm map_fns info.dfn})}
       | None \_rightarrow spc
 
-  op normSortDef(qid as Qualified(q,id), map_fns, spc): Spec =
-    case findTheSort(spc, qid) of
+  op normTypeDef(qid as Qualified(q,id), map_fns, spc): Spec =
+    case findTheType(spc, qid) of
       | Some info \_rightarrow
-        spc \_guillemotleft {sorts = insertAQualifierMap (spc.sorts, q, id, info \_guillemotleft {dfn = mapSort map_fns info.dfn})}
+        spc \_guillemotleft {types = insertAQualifierMap (spc.types, q, id, info \_guillemotleft {dfn = mapType map_fns info.dfn})}
       | None \_rightarrow spc
 
   %% Normalize without normalizing imports
@@ -84,16 +84,16 @@ NormTypes qualifying spec
            case el of
              | OpDef(qid,_,_) \_rightarrow normDef(qid, map_fns, spc)
              | Op(qid,true,_) \_rightarrow normDef(qid, map_fns, spc)
-             %| SortDef(qid,_) \_rightarrow normSortDef(qid, map_fns, spc)
+             %| TypeDef(qid,_) \_rightarrow normTypeDef(qid, map_fns, spc)
              | _ \_rightarrow spc)
       spc spc.elements
 
-  op  replaceableType?: [a] ASort a \_rightarrow Boolean
+  op  replaceableType?: [a] AType a \_rightarrow Bool
   def replaceableType? ty =
     case ty of
       | Quotient _ \_rightarrow true
       | CoProduct _ \_rightarrow true
-      | Subsort _ \_rightarrow true
+      | Subtype _ \_rightarrow true
       | Product((id1,_)::_, a) -> id1 ~= "1"
       | _ \_rightarrow false
 

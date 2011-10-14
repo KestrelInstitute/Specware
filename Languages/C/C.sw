@@ -122,7 +122,7 @@ C qualifying spec
   type C_Const =
     | C_Char   Char                                   % 'A'
     | C_WChar  UChar                                  % TODO: example L'...' 
-    | C_Int    Boolean * Nat                          % 3, -3   [sign? and magnitude]
+    | C_Int    Bool * Nat                             % 3, -3   [sign? and magnitude]
     | C_Str    String                                 % "abc"
     | C_WStr   UString                                % L"abc"  [unicode]
     | C_Macro  String                                 % TODO: hack to accomodate macros used as constants

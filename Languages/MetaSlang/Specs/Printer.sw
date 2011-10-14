@@ -28,7 +28,7 @@
 
 AnnSpecPrinter qualifying spec 
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
- import /Languages/MetaSlang/AbstractSyntax/PrinterSig % printTerm, printSort, printPattern
+ import /Languages/MetaSlang/AbstractSyntax/PrinterSig % printTerm, printType, printPattern
  import /Languages/MetaSlang/AbstractSyntax/Printer
  import AnnSpec
  % import /Library/IO/Primitive/IO                    % getEnv
@@ -43,14 +43,14 @@ AnnSpecPrinter qualifying spec
 
  type Path = List Nat
 
- type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
+ type ParentType = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subtype 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
 
  type PrContext = {
                    pp                 : ATermPrinter,
-                   printSort          : Boolean,
-                   markSubterm        : Boolean,
+                   printType          : Bool,
+                   markSubterm        : Bool,
                    markNumber         : Ref Nat,
                    markTable          : Ref (NatMap.Map (List Nat)),
                    indicesToDisable   : IntSet.Set,
@@ -62,11 +62,11 @@ AnnSpecPrinter qualifying spec
  %% ========================================================================
 
  op printTyVars                  : TyVars            -> String 
-%op printSort                    : [a] ASort       a -> String 
+%op printType                    : [a] AType       a -> String 
 %op printPattern                 : [a] APattern    a -> String
- op printSortScheme              : [a] ASortScheme a -> String 
+ op printTypeScheme              : [a] ATypeScheme a -> String 
  op printTermScheme              : [a] ATermScheme a -> String 
- op printTermWithSorts           : [a] ATerm       a -> String
+ op printTermWithTypes           : [a] ATerm       a -> String
  op printSpec                    : [a] ASpec       a -> String
  op latexSpec                    : [a] ASpec       a -> String
 
@@ -75,19 +75,19 @@ AnnSpecPrinter qualifying spec
  op latexSpecToFile              : [a] String * ASpec a -> ()
  op printSpecFlatToTerminal      : [a]          ASpec a -> ()
  op printSpecToTerminal          : [a]          ASpec a -> ()
- op printSpecWithSortsToTerminal : [a]          ASpec a -> ()
+ op printSpecWithTypesToTerminal : [a]          ASpec a -> ()
 
- op isShortTuple                 : [a] Nat * List (Id * a) -> Boolean
+ op isShortTuple                 : [a] Nat * List (Id * a) -> Bool
  op ppTerm                       : [a] PrContext -> Path * ParentTerm -> ATerm    a -> Pretty
- op ppSort                       : [a] PrContext -> Path * ParentSort -> ASort    a -> Pretty
- op ppPattern                    : [a] PrContext -> Path * Boolean    -> APattern a -> Pretty
+ op ppType                       : [a] PrContext -> Path * ParentType -> AType    a -> Pretty
+ op ppPattern                    : [a] PrContext -> Path * Bool       -> APattern a -> Pretty
  op termToPretty                 : [a] ATerm a -> Pretty
  op printTermToTerminal          : [a] ATerm a -> ()
-%op printSort                    : [a] ASort a -> String
- op printSortToTerminal          : [a] ASort a -> ()
-%op printSortScheme              : [a] ASortScheme a -> String
+%op printType                    : [a] AType a -> String
+ op printTypeToTerminal          : [a] AType a -> ()
+%op printTypeScheme              : [a] ATypeScheme a -> String
 %op printPattern                 : [a] APattern a -> String
-%op printTermWithSorts           : [a] ATerm a -> String
+%op printTermWithTypes           : [a] ATerm a -> String
  op ppProperty                   : [a] PrContext -> Nat * AProperty a -> Line
  op ppSpec                       : [a] PrContext -> ASpec a -> Pretty  
  op ppSpecR                      : [a] PrContext -> ASpec a -> Pretty
@@ -109,7 +109,7 @@ AnnSpecPrinter qualifying spec
 %op printSpecToFile              : [a] String * ASpec a -> ()
  op printMarkedSpecToFile        : [a] String * String * IntSet.Set * IntSet.Set * ASpec a ->          NatMap.Map (List Nat)
  op printMarkedSpecToString      : [a]                   IntSet.Set * IntSet.Set * ASpec a -> String * NatMap.Map (List Nat)
-%op printSpecWithSortsToTerminal : [a] ASpec a -> ()
+%op printSpecWithTypesToTerminal : [a] ASpec a -> ()
  op latexSpecToPretty            : [a] ASpec a -> Pretty
 %op latexSpec                    : [a] ASpec a -> String
 %op latexSpecToFile              : [a] String * ASpec a -> ()
@@ -125,10 +125,9 @@ AnnSpecPrinter qualifying spec
      | []           -> true
      | (lbl, r) :: row -> lbl = Nat.show i && isShortTuple (i + 1, row)
       
-
- def initialize (pp, printSort?) : PrContext = 
+ def initialize (pp, printType?) : PrContext = 
    {pp                 = pp,
-    printSort          = printSort?,
+    printType          = printType?,
     markSubterm        = false,
     markNumber         = Ref 0,
     markTable          = Ref NatMap.empty,
@@ -137,14 +136,14 @@ AnnSpecPrinter qualifying spec
  
  def initializeMark (pp, indicesToDisable, sosIndicesToEnable) : PrContext = 
    {pp                 = pp,
-    printSort          = false,
+    printType          = false,
     markSubterm        = true, 
     markNumber         = (Ref 0),
     markTable          = Ref NatMap.empty,
     indicesToDisable   = indicesToDisable,
     sosIndicesToEnable = sosIndicesToEnable}
  
- def printSort?   (c:PrContext) = c.printSort
+ def printType?   (c:PrContext) = c.printType
  def markSubterm? (c:PrContext) = c.markSubterm
  
  def [a] termFixity (term : ATerm a) : Fixity = 
@@ -170,7 +169,7 @@ AnnSpecPrinter qualifying spec
  def [a] printOp (context, 
 		  pp     : ATermPrinter, 
 		  termOp : AFun  a, 
-		  srt    : ASort a, 
+		  srt    : AType a, 
 		  a      : a) 
    : Pretty = 
    case termOp of
@@ -197,12 +196,12 @@ AnnSpecPrinter qualifying spec
      | OneName     (x, _)      -> pp.fromString x
      | TwoNames    (x, y, _)   -> pp.fromString (if x = UnQualified then y else x^"."^ y)
      
-     | Relax                   -> let p = case srt of Arrow (Subsort (_, p, _), _, _) -> p | _ -> mkTrueA a in
+     | Relax                   -> let p = case srt of Arrow (Subtype (_, p, _), _, _) -> p | _ -> mkTrueA a in
                                   prettysFill [pp.fromString "relax", 
 					       string "(",
 					       ppTerm context ([], Top) p, 
 					       string ")"]
-     | Restrict                -> let p = case srt of Arrow (_, Subsort (_, p, _), _) -> p | _ -> mkTrueA a in
+     | Restrict                -> let p = case srt of Arrow (_, Subtype (_, p, _), _) -> p | _ -> mkTrueA a in
 				  prettysFill [pp.fromString "restrict", 
 					       string "(",
 					       ppTerm context ([], Top) p,
@@ -231,7 +230,7 @@ AnnSpecPrinter qualifying spec
 	 | Fun (Bool true, _, _) -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
-                                        let context = context << {printSort = enclose?} in
+                                        let context = context << {printType = enclose?} in
 					ppPattern context ([0, i] ++ path, enclose?) pat,
 					pp.Arrow]),
 		       (3, ppTerm context ([2, i] ++ path, par) trm)])
@@ -269,7 +268,7 @@ AnnSpecPrinter qualifying spec
    else 
      pretty
 
- op printLocalDefSorts?: Boolean = false
+ op printLocalDefTypes?: Bool = false
 
  def [a] ppTerm1 context (path, parentTerm) (term: ATerm a) : Pretty =
    let pp : ATermPrinter = context.pp in
@@ -287,37 +286,37 @@ AnnSpecPrinter qualifying spec
 	   % Print tuple projection using
 	   % dot notation.
 	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
-	   if printSort? context then
+	   if printType? context then
 	     prettysNone [pp.fromString id, 
 			  string ":", 
-			  ppSort context ([0, 1] ++ path, Top) srt2, 
+			  ppType context ([0, 1] ++ path, Top) srt2, 
 			  string ".", 
 			  string p, 
 			  string ":", 
-			  ppSort context ([0, 0] ++ path, Top) srt1]
+			  ppType context ([0, 0] ++ path, Top) srt1]
 	   else
 	     prettysNone [pp.fromString id, string ".", pp.fromString p]
 	 | (Fun (Project p, srt1, _), tm as Fun _) ->
-	   if printSort? context then
+	   if printType? context then
 	     prettysNone [ppTerm context (path, parentTerm) tm,
 			  string ":", 
-			  ppSort context ([0, 1] ++ path, Top) (termSort tm),
+			  ppType context ([0, 1] ++ path, Top) (termType tm),
 			  string ".", 
 			  string p, 
 			  string ":", 
-			  ppSort context ([0, 0] ++ path, Top) srt1]
+			  ppType context ([0, 0] ++ path, Top) srt1]
 	   else
 	     prettysNone [ppTerm context (path, parentTerm) tm, string ".", pp.fromString p]
 	 | (Fun (Project p, srt1, _), tm) ->
-	   if printSort? context then
+	   if printType? context then
 	     prettysNone [string "(",
 			  ppTerm context (path, parentTerm) tm,
 			  string ":", 
-			  ppSort context ([0, 1] ++ path, Top) (termSort tm),
+			  ppType context ([0, 1] ++ path, Top) (termType tm),
 			  string ").",
 			  string p, 
 			  string ":", 
-			  ppSort context ([0, 0] ++ path, Top) srt1]
+			  ppType context ([0, 0] ++ path, Top) srt1]
 	   else
 	     prettysNone [string "(",
 			  ppTerm context (path, parentTerm) tm, 
@@ -363,19 +362,19 @@ AnnSpecPrinter qualifying spec
      | None -> 
        (case term of
 	  | Fun (top, srt, a) -> 
-	    if printSort? context then
+	    if printType? context then
 	      blockFill (0, 
 			 [(0, printOp (context, pp, top, srt, a)), 
 			  (0, string " : "), 
-			  (2, ppSort context ([0] ++ path, Top) srt)])
+			  (2, ppType context ([0] ++ path, Top) srt)])
 	    else 
 	      printOp (context, pp, top, srt, a)
 	  | Var ((id, srt), _) -> 
-	    if printSort? context then
+	    if printType? context then
 	      blockFill (0, 
 			 [(0, pp.fromString id), 
 			  (0, string " : "), 
-			  (0, ppSort context ([0] ++ path, Top) srt)])
+			  (0, ppType context ([0] ++ path, Top) srt)])
 	    else 
 	      pp.fromString id
 	  | Let (decls, body, _) -> 
@@ -435,8 +434,8 @@ AnnSpecPrinter qualifying spec
 						    string " ", 
 						    ppPattern context ([1, 0] ++ path, true)
                                                       (case srt of
-                                                         | Arrow(dom,rng, apos) | printLocalDefSorts? ->
-                                                           SortedPat(pat, dom, apos)
+                                                         | Arrow(dom,rng, apos) | printLocalDefTypes? ->
+                                                           TypedPat(pat, dom, apos)
                                                          | _ -> pat), 
 						    string " ", 
 						    pp.Equals, 
@@ -500,7 +499,7 @@ AnnSpecPrinter qualifying spec
 			    pp.LP,
 			    pp.fromString id, 
 			    string " : ", 
-			    ppSort context ([2] ++ path, Top) srt,
+			    ppType context ([2] ++ path, Top) srt,
 			    pp.RP, string " "
 			   ]), 
 			  (1, ppTerm context ([2] ++ path, Top) body)]))
@@ -515,7 +514,7 @@ AnnSpecPrinter qualifying spec
 	      def ppBound (index, (id, srt)) =
 		(prettys [pp.fromString id, 
 			  string " : ", 
-			  ppSort context ([index]++ path, Top) srt])
+			  ppType context ([index]++ path, Top) srt])
 	    in
 	      enclose(case parentTerm of
 			| Infix _ -> true % Add parens if inside an infix expr
@@ -600,14 +599,14 @@ AnnSpecPrinter qualifying spec
 		   prInfix (Nonfix, Nonfix, pp.LP, t1, trm1, t2, pp.RP))
 	  | ApplyN ([t1, t2], _) -> prApply (t1, t2)
 	  | ApplyN (t1 :: t2 :: ts, a) -> prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
-	  | SortedTerm (t, s, _) -> 
+	  | TypedTerm (t, s, _) -> 
 	    (case s of
 	      | MetaTyVar _ ->  
 	        ppTerm context ([0] ++ path, Top) t
 	      | _ ->
 	        prettysFill [ppTerm context ([0]++ path, Top) t, 
 			     prettysNone[string ":", string " ", 
-                                         ppSort context ([1]++ path, Top) s]])
+                                         ppType context ([1]++ path, Top) s]])
           | Transform (ts, _) -> ppTransformExprs context.pp ts
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
@@ -628,12 +627,12 @@ AnnSpecPrinter qualifying spec
 	  | _ -> System.fail "Uncovered case for term")
       
 
- def ppSortScheme context parent (tyVars, srt) = 
-   let pp2 = ppSort context parent srt in
+ def ppTypeScheme context parent (tyVars, srt) = 
+   let pp2 = ppType context parent srt in
    let pp1 = ppForallTyVars context.pp tyVars in
    prettysNone [pp1, string " ", pp2]     
 
- def ppSort context (path, parent) srt = 
+ def ppType context (path, parent) srt = 
    let pp : ATermPrinter = context.pp in
    case srt of
 
@@ -645,16 +644,16 @@ AnnSpecPrinter qualifying spec
 	       prettysNone [pp.Bar, 
 			    pp.fromString  id, 
 			    string  " ", 
-			    ppSort context (path, CoProduct) s]
+			    ppType context (path, CoProduct) s]
 	     | None -> 
 	       prettysNone [pp.Bar, 
 			    pp.fromString  id]
        in
        let (left, right) = 
            case parent of
-	     | Product -> (pp.LP, pp.RP)
+	     | Product   -> (pp.LP, pp.RP)
 	     | CoProduct -> (pp.LP, pp.RP)
-	     | Subsort -> (pp.LP, pp.RP)
+	     | Subtype   -> (pp.LP, pp.RP)
 	     | _ -> (pp.Empty, pp.Empty)
        in
 	 AnnTermPrinter.ppListPath path ppEntry (left, pp.Empty, right) row
@@ -666,11 +665,11 @@ AnnSpecPrinter qualifying spec
 	let (left, right) = 
 	    case parent of
 	      | Product -> (pp.LP, pp.RP)
-	      | Subsort -> (pp.LP, pp.RP)
+	      | Subtype -> (pp.LP, pp.RP)
 	      | _ -> (pp.Empty, pp.Empty)
 	in
 	  AnnTermPrinter.ppListPath path 
-	                            (fn (path, (lbl, t)) -> ppSort context (path, Product) t) 
+	                            (fn (path, (lbl, t)) -> ppType context (path, Product) t) 
 				    (left, pp.Product, right) 
 	                            row
       else
@@ -679,7 +678,7 @@ AnnSpecPrinter qualifying spec
 	    blockFill (0, 
 		       [(0, pp.fromString  id), 
 			(0, string  " : "), 
-			(0, ppSort context (path, Top) s)])
+			(0, ppType context (path, Top) s)])
 	in
 	  AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly)  row
               
@@ -688,39 +687,39 @@ AnnSpecPrinter qualifying spec
           case parent of
 	    | Product   -> (pp.LP, pp.RP)
 	    | ArrowLeft -> (pp.LP, pp.RP)
-	    | Subsort -> (pp.LP, pp.RP)
+	    | Subtype   -> (pp.LP, pp.RP)
 	    | _ -> (pp.Empty, pp.Empty)
       in
 	blockFill (0, 
 		   [(0, prettysNone [left, 
-				     ppSort context ([0]++ path, ArrowLeft  : ParentSort) dom, 
+				     ppType context ([0]++ path, ArrowLeft  : ParentType) dom, 
 				     pp.Arrow]), 
-		    (3, prettysNone [ppSort context ([1]++ path, ArrowRight : ParentSort) rng, 
+		    (3, prettysNone [ppType context ([1]++ path, ArrowRight : ParentType) rng, 
 				     right])])
 
-    | Subsort (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) ->
-      let context = context << {printSort = false} in
+    | Subtype (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) ->
+      let context = context << {printType = false} in
       prettysNone [pp.LCurly,
                    blockFill (0, 
                               [(0, ppPattern context ([0, 0, 1] ++ path, false) pat), 
                                (0, string " : "), 
-                               (0, ppSort    context ([0]       ++ path, Subsort) s), 
+                               (0, ppType    context ([0]       ++ path, Subtype) s), 
                                (0, pp.Bar), 
                                (0, ppTerm    context ([2, 0, 1] ++ path, Top) t)]),
                    pp.RCurly]
-    | Subsort (s, t, _) -> 
-      let context = context << {printSort = false} in
+    | Subtype (s, t, _) -> 
+      let context = context << {printType = false} in
       blockFill (0, 
 		 [(0, pp.LP), 
-		  (0, ppSort context ([0] ++ path, Subsort) s), 
+		  (0, ppType context ([0] ++ path, Subtype) s), 
 		  (0, pp.Bar), 
 		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
     | Quotient (s, t, _) -> 
-      let context = context << {printSort = false} in
+      let context = context << {printType = false} in
       blockFill (0, 
 		 [(0, pp.LP), 
-		  (0, ppSort context ([0] ++ path, Top) s), 
+		  (0, ppType context ([0] ++ path, Top) s), 
 		  (0, string  " / "), 
 		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
@@ -730,22 +729,22 @@ AnnSpecPrinter qualifying spec
 
     | Boolean _ -> string "Boolean"
 
-    | Base (idInfo, [], _) -> pp.ppSortId idInfo
+    | Base (idInfo, [], _) -> pp.ppTypeId idInfo
 
     | Base (idInfo, ts, _) -> 
       blockFill (0, 
-		 [(0, pp.ppSortId idInfo), 
+		 [(0, pp.ppTypeId idInfo), 
 		  (0, AnnTermPrinter.ppListPath path
-		   (fn (path, srt) -> ppSort context (path, Top : ParentSort) srt)
+		   (fn (path, srt) -> ppType context (path, Top : ParentType) srt)
 		   (pp.LP, pp.Comma, pp.RP) ts)])
 
-%    | PBase (idInfo, [], _) -> pp.ppPSortId (idInfo)
+%    | PBase (idInfo, [], _) -> pp.ppPTypeId (idInfo)
 
 %    | PBase (idInfo, ts, _) -> 
 %            blockFill (0, 
-%                [(0, pp.ppPSortId idInfo), 
+%                [(0, pp.ppPTypeId idInfo), 
 %                 (0, AnnTermPrinter.ppListPath path
-%                      (fn (path, srt) -> ppSort context (path, Top : ParentSort) srt)
+%                      (fn (path, srt) -> ppType context (path, Top : ParentType) srt)
 %                      (pp.LP, pp.Comma, pp.RP) ts)])
 
     | TyVar (id, _) -> string id
@@ -754,23 +753,23 @@ AnnSpecPrinter qualifying spec
 
     | Pi (tvs, srt, _) ->
       let pp1 = ppForallTyVars context.pp tvs in
-      let pp2 = ppSort context (path, parent) srt in
+      let pp2 = ppType context (path, parent) srt in
       prettysNone [pp1, string " ", pp2]     
 
-    | Any _ -> string ("<anysort>")
+    | Any _ -> string ("<anytype>")
 
-    | And (srts, _) -> prettysNone ([string "<AndSorts: "] 
+    | And (srts, _) -> prettysNone ([string "<AndTypes: "] 
 				    ++
 				    (foldl (fn (pps, srt) -> 
 					    pps ++
-					    [ppSort context (path, Top : ParentSort) srt,
+					    [ppType context (path, Top : ParentType) srt,
 					     string " "])
 				           []
 					   srts)
 				    ++
 				    [string ">"])
 
-    | _ -> string ("ignoring mystery sort: " ^ (anyToString srt))
+    | _ -> string ("ignoring mystery type: " ^ (anyToString srt))
       
  op showBoundMetaTyvarInfo?: Bool = false
 
@@ -781,13 +780,13 @@ AnnSpecPrinter qualifying spec
     | Some srt -> (if showBoundMetaTyvarInfo?
                      then "mtv%"^name^"%"^ (Nat.show uniqueId)^": "
                      else "")
-                 ^ printSort srt
+                 ^ printType srt
 
   %% More elaborate version
   %     let linkr =
   %       case link
   %         of None  -> ""
-  %          | Some srt -> "["^printSort srt^"]"
+  %          | Some srt -> "["^printType srt^"]"
   %     in "mtv%"^Nat.show uniqueId^linkr
 
  def enclose (enclose?, pp, pretty) = 
@@ -806,12 +805,12 @@ AnnSpecPrinter qualifying spec
      | CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
 
      | VarPat    ((id, srt), _) -> 
-       if printSort? context then
+       if printType? context then
 	 enclose (enclose?, pp,
                   blockFill (0, 
                              [(0, pp.fromString id), 
                               (0, string " : "), 
-                              (2, ppSort context ([0] ++ path, Top : ParentSort) srt)]))
+                              (2, ppType context ([0] ++ path, Top : ParentType) srt)]))
        else 
 	 pp.fromString id
      | EmbedPat  ("Nil", None, Base (Qualified ("List",      "List"), [_], _), _) -> string "[]"
@@ -857,12 +856,12 @@ AnnSpecPrinter qualifying spec
 				     [pp.LP, 
 				      ppPattern context ([0]++ path, false) pat, 
 				      pp.RP])))
-     | SortedPat (pat, srt, _) -> 
+     | TypedPat (pat, srt, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, ppPattern context ([0]++ path, true) pat), 
 			    (0, string  " : "), 
-			    (0, ppSort context ([1]++ path, Top : ParentSort) srt)]))
+			    (0, ppType context ([1]++ path, Top : ParentType) srt)]))
      | AliasPat (pat1, pat2, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
@@ -878,7 +877,7 @@ AnnSpecPrinter qualifying spec
        enclose (true, pp,
                 blockFill(0, [(0, ppPattern context ([0]++ path, false) pat),
                               (2, prettysNone [pp.Bar,
-                                               let context = context << {printSort = false} in
+                                               let context = context << {printType = false} in
                                                ppTerm context ([1]++ path, Top) p_bod])]))
 
      | RestrictedPat (pat, term, _) ->
@@ -914,7 +913,7 @@ AnnSpecPrinter qualifying spec
 				 [(0, ppPattern context ([0]++ path, false) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
                                                      (0,
-                                                      let context = context << {printSort = false} in
+                                                      let context = context << {printType = false} in
                                                       ppTerm context ([1]++ path, Top) term)]))])) %)
 
      | _ -> System.fail "Uncovered2 case for pattern"
@@ -941,23 +940,23 @@ AnnSpecPrinter qualifying spec
 		                  ([], Top) 
 				  term))
  
- def AnnSpecPrinter.printSort srt = 
-    PrettyPrint.toString (format (80, ppSort (initialize (asciiPrinter, false))
-				             ([], Top : ParentSort) 
+ def AnnSpecPrinter.printType srt = 
+    PrettyPrint.toString (format (80, ppType (initialize (asciiPrinter, false))
+				             ([], Top : ParentType) 
 					     srt))
 
- op [a] printSortWithSorts(srt: ASort a): String =
-   toString (format (80, ppSort (initialize (asciiPrinter, true))
-                           ([], Top : ParentSort) 
+ op [a] printTypeWithTypes(srt: AType a): String =
+   toString (format (80, ppType (initialize (asciiPrinter, true))
+                           ([], Top : ParentType) 
                            srt))
 
- def printSortToTerminal srt = 
-   toTerminal (format (80, ppSort (initialize (uiPrinter(), false))
-		                  ([], Top : ParentSort) 
+ def printTypeToTerminal srt = 
+   toTerminal (format (80, ppType (initialize (uiPrinter(), false))
+		                  ([], Top : ParentType) 
 				  srt))
  
- def printSortScheme scheme = 
-   PrettyPrint.toString (format (80, ppSortScheme (initialize (asciiPrinter, false))
+ def printTypeScheme scheme = 
+   PrettyPrint.toString (format (80, ppTypeScheme (initialize (asciiPrinter, false))
 				                  ([], Top)
 						  scheme))
 
@@ -971,7 +970,7 @@ AnnSpecPrinter qualifying spec
 			                       ([], false) 
 					       pat))
 
- def printTermWithSorts term = 
+ def printTermWithTypes term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, true))
 			                    ([], Top)
 					    term))
@@ -988,7 +987,7 @@ AnnSpecPrinter qualifying spec
      | [] -> string ""
      | _ -> AnnTermPrinter.ppList string (pp.LP, pp.Comma, pp.RP) tvs
 
- def sortIndex     = 0
+ def typeIndex     = 0
  def opIndex       = 1
  def defIndex      = 2
  def propertyIndex = 3
@@ -1021,7 +1020,7 @@ AnnSpecPrinter qualifying spec
 			(0, string " "), 
 			(2, ppTerm context ([index, propertyIndex], Top) term)]))
 
- op  ppOpDecl: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ op  ppOpDecl: [a] PrContext -> Bool -> (AOpInfo a * IndexLines) -> IndexLines
  def ppOpDecl context blankLine? info_res =
    ppOpDeclAux context (true, false, false, 0) blankLine? info_res
 
@@ -1037,7 +1036,7 @@ AnnSpecPrinter qualifying spec
  def ppOpDeclWithDef context info_res =
    ppOpDeclAux context (true, false, true, 0) true info_res
 
- op  ppOpDeclAux: [a] PrContext -> Boolean * Boolean * Boolean * Nat -> Boolean -> (AOpInfo a * IndexLines)
+ op  ppOpDeclAux: [a] PrContext -> Bool * Bool * Bool * Nat -> Bool -> (AOpInfo a * IndexLines)
                      -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
  def ppOpDeclAux context (printOp?, printDef?, printOpWithDef?, refine_num) blankLine? (info, (index, lines)) =
@@ -1070,16 +1069,16 @@ AnnSpecPrinter qualifying spec
    in
    let (tvs, ty, dfn) = unpackNthTerm(info.dfn, refine_num) in
    % let _ = if show(head info.names) = "mark"
-   % then writeLine("def "^show(head info.names)^": "^show refine_num^" "^printSort ty^"\n"^printTerm dfn^"\n"
+   % then writeLine("def "^show(head info.names)^": "^show refine_num^" "^printType ty^"\n"^printTerm dfn^"\n"
    %                      ^printTerm info.dfn) else () in
    let 
      def ppDeclWithArgs (tvs, srt, tm) =
        case (tm, srt) of
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
            [(4, blockNone (0, [(0, string " ("), 
-                               (0, ppPattern (context << {printSort = true})
+                               (0, ppPattern (context << {printType = true})
                                      ([index, opIndex], false)
-                                     pat  (* (SortedPat (pat, dom, apos)) *) ),
+                                     pat  (* (TypedPat (pat, dom, apos)) *) ),
                                (0, string ")")]))]
            ++
            ppDeclWithArgs (tvs, rng, body)
@@ -1093,7 +1092,7 @@ AnnSpecPrinter qualifying spec
             [(4, blockNone (0, [(0, string " :"), 
                                 (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
                                                    (0, string " "), 
-                                                   (4, ppSort context ([index, opIndex], Top) srt)])),
+                                                   (4, ppType context ([index, opIndex], Top) srt)])),
                                 (0, string " ")]))]
            ++
            ppDefAux (context, [index, defIndex], None, tm)
@@ -1122,7 +1121,7 @@ AnnSpecPrinter qualifying spec
                                           (0, string " :"), 
                                           (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                                                (0, string " "), 
-                                                             (4, ppSort context
+                                                             (4, ppType context
                                                                    ([index, opIndex], Top) srt)])),
                                           (0, string " ")]))]
                        ++
@@ -1137,7 +1136,7 @@ AnnSpecPrinter qualifying spec
                                   if empty? tvs then string "" else string " ",
                                   ppForallTyVars pp tvs,
                                   string " ",
-                                  ppSort context ([index, opIndex], Top) srt])])))
+                                  ppType context ([index, opIndex], Top) srt])])))
 
      %def ppDeclWithDef(context, path, term, ty) =
 
@@ -1149,7 +1148,7 @@ AnnSpecPrinter qualifying spec
                                       | _ -> (None, None)
            in
            let pat = maybeIncludeType(pat, opt_dom) in
- 	   let pat  = let context = context << {printSort = true} in
+ 	   let pat  = let context = context << {printType = true} in
                       ppPattern context ([0, 0] ++ path, true) pat
            in
  	   let body = ppDefAux (context, [2, 0] ++ path, opt_rng, body) in
@@ -1167,14 +1166,14 @@ AnnSpecPrinter qualifying spec
               | None -> []
               | Some ty -> [(0, string ": "),
                             (4, blockNone (0, [%(0, string " "), 
-                                               (4, ppSort context
+                                               (4, ppType context
                                                   ([index, opIndex], Top) ty)]))])
 	 | _ ->
            (case opt_ty of
               | None -> []
               | Some ty -> [(0, string ": "),
                             (4, blockNone (0, [%(0, string " "), 
-                                               (4, ppSort context
+                                               (4, ppType context
                                                   ([index, opIndex], Top) ty)]))])
            ++ 
            [(1, blockNone (1, [(0, string " "),
@@ -1194,7 +1193,7 @@ AnnSpecPrinter qualifying spec
                                       ++ (if refine_num > 0 then [(0, pp.Refine)] else [])
                                       ++
 				      [(0, pp.Def), 
-				       (if printSort? context then
+				       (if printType? context then
 					  (0, ppForallTyVars pp tvs) 
 					else 
 					  (0, string "")), 
@@ -1214,61 +1213,61 @@ AnnSpecPrinter qualifying spec
    let ppDefs  = if printDef? then [ppDef (tvs, ty, the_def)] else [] in
    (index + 1, ppDecls ++ ppDefs ++ lines)
 
- op [a] maybeIncludeType(pat: APattern a, opt_ty: Option(ASort a)): APattern a =
+ op [a] maybeIncludeType(pat: APattern a, opt_ty: Option(AType a)): APattern a =
    case pat of
      | RestrictedPat _ -> pat
      | _ ->
    case opt_ty of
-     | Some(Subsort(_, pred, a)) ->
+     | Some(Subtype(_, pred, a)) ->
        RestrictedPat(pat, pred, a)
      | _ -> pat
 
- op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
- def ppSortDeclSort context info_res =
-   ppSortDecl context false info_res
+ op  ppTypeDeclType: [a] PrContext -> (ATypeInfo a * IndexLines) -> IndexLines
+ def ppTypeDeclType context info_res =
+   ppTypeDecl context false info_res
 
- op  ppSortDeclDef: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
- def ppSortDeclDef context info_res =
-   ppSortDecl context true info_res
+ op  ppTypeDeclDef: [a] PrContext -> (ATypeInfo a * IndexLines) -> IndexLines
+ def ppTypeDeclDef context info_res =
+   ppTypeDecl context true info_res
 
- op  ppSortDecl: [a] PrContext -> Boolean -> (ASortInfo a * IndexLines) -> IndexLines
+ op  ppTypeDecl: [a] PrContext -> Bool -> (ATypeInfo a * IndexLines) -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
- def ppSortDecl context printDef? (info, (index, lines)) =
+ def ppTypeDecl context printDef? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
-     def ppSortName (qid as Qualified (q, id)) =
+     def ppTypeName (qid as Qualified (q, id)) =
        if q = UnQualified then
-	 pp.ppSort id
+	 pp.ppType id
        else
-	 pp.ppSortId qid
+	 pp.ppTypeId qid
 
-     def ppSortNames () =
+     def ppTypeNames () =
        case info.names of
-	 | [name] -> ppSortName name
-	 | _      -> ppList ppSortName ("{", ", ", "}") info.names
+	 | [name] -> ppTypeName name
+	 | _      -> ppList ppTypeName ("{", ", ", "}") info.names
 
      def ppLHS tvs =
        [(0, pp.Type), 
 	(0, string " "), 
-	(0, ppSortNames()), 
+	(0, ppTypeNames()), 
 	(0, ppTyVars pp tvs)]
        
      def ppDecl srt =
-       let (tvs, srt) = unpackSort srt in
+       let (tvs, srt) = unpackType srt in
        (1, blockFill (0, 
 		      (ppLHS tvs))) 
        
      def ppDef srt =
-       let (tvs, srt) = unpackSort srt in
+       let (tvs, srt) = unpackType srt in
        (1, blockFill (0, 
 		      (ppLHS tvs) 
 		      ++
 		      [(0, string " "), 
 		       (0, pp.DefEquals), 
 		       (0, string " "), 
-		       (2, ppSort context ([index, sortIndex], Top) srt)]))
+		       (2, ppType context ([index, typeIndex], Top) srt)]))
    in
-   let (decls, defs) = sortInfoDeclsAndDefs info in
+   let (decls, defs) = typeInfoDeclsAndDefs info in
    let warnings = 
        (let m = length decls in
 	let n = length defs  in
@@ -1276,18 +1275,18 @@ AnnSpecPrinter qualifying spec
 	  if n <= 1 then
 	    []
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryTypeName info)) ^ " has " ^ (show n) ^ " definitions. *)"))]
 	else
 	  if n <= 1 then
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryTypeName info)) ^ " has " ^ (show m) ^ " declarations. *)"))]
 	  else
-	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
+	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryTypeName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let ppDecls = if printDef? then [] else map ppDecl decls in
    let ppDefs  = if printDef? then map ppDef  defs else []  in
    (index + 1, [(0, string " ")] ++ warnings ++ ppDecls ++ ppDefs ++ lines)
 
-   % op isBuiltIn? : Import -> Boolean
+   % op isBuiltIn? : Import -> Bool
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
    % spec_ref = "String"  or spec_ref = "Nat"  or 
    % spec_ref = "Boolean" or spec_ref = "Char" or
@@ -1405,15 +1404,15 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[2]: " ^ printQualifiedId qid ^ "\n") in
 		result)
-	 | Sort (qid,_) ->
-	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
+	 | Type (qid,_) ->
+	   (case findTheType(spc,qid) of
+	      | Some typeinfo -> ppTypeDeclType context (typeinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type[1]: " ^ printQualifiedId qid ^ "\n") in
 		result)
-	 | SortDef (qid,_) ->
-	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
+	 | TypeDef (qid,_) ->
+	   (case findTheType(spc,qid) of
+	      | Some typeinfo -> ppTypeDeclDef context (typeinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type[2]: " ^ printQualifiedId qid ^ "\n") in
 		result)
@@ -1528,15 +1527,15 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[5]: " ^ printQualifiedId qid ^ "\n") in
 		result)
-	 | Sort (qid,_) ->
-	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result)
+	 | Type (qid,_) ->
+	   (case findTheType(spc,qid) of
+	      | Some typeinfo -> ppTypeDeclType context (typeinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type[3]: " ^ printQualifiedId qid ^ "\n") in
 		result)
-	 | SortDef (qid,_) ->
-	   (case findTheSort(spc,qid) of
-	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result)
+	 | TypeDef (qid,_) ->
+	   (case findTheType(spc,qid) of
+	      | Some typeinfo -> ppTypeDeclDef context (typeinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing type[4]: " ^ printQualifiedId qid ^ "\n") in
 		result)
@@ -1657,7 +1656,7 @@ AnnSpecPrinter qualifying spec
    let spcAndMarking = PrettyPrint.toStringWithPathIndexing (format (90, specToPretty spc)) in
    (spcAndMarking, State.! context.markTable)
 
- def printSpecWithSortsToTerminal spc =
+ def printSpecWithTypesToTerminal spc =
    toTerminal (format (80, ppSpec (initialize (asciiPrinter, true)) spc))
    
  def latexSpecToPretty spc = 
@@ -1690,17 +1689,17 @@ AnnSpecPrinter qualifying spec
  def positive? n = if n > 0 then 1 else 0
    
  def pdfMenu spc = 
-   let sorts = 
+   let types = 
        foldriAQualifierMap 
-        (fn (q, id, _, sorts) -> 
+        (fn (q, id, _, types) -> 
 	 Cons (prettysNone [string ("  \\pdfoutline goto name {"^"???"^":Type:"
 				   ^ (if q = UnQualified then "" else q^".")^id^"} {"), 
 			   string (if q = UnQualified then "" else q^"."), 
 			   string id, 
 			   string "}"], 
-	      sorts))
+	      types))
 	[] 
-	spc.sorts        
+	spc.types        
    in
    let ops = 
        foldriAQualifierMap 
@@ -1727,25 +1726,25 @@ AnnSpecPrinter qualifying spec
 	     spc.elements
    in
    let properties = reverse properties    in
-   let sortCount  = length sorts      in
+   let typeCount  = length types      in
    let opCount    = length ops        in
    let pCount     = length properties in
 
-   let menuCount = positive? sortCount + 
+   let menuCount = positive? typeCount + 
                    positive? opCount +
 		   positive? pCount        
    in
      prettysAll ([string ("\\pdfoutline goto name {Spec:"^"???"^"} count -"^
 			 Nat.show menuCount^"  {"^"???"^"}")]
 		++
-		(if sortCount > 0 then
+		(if typeCount > 0 then
 		   [string ("\\pdfoutline goto name {Spec:"^"???"^
-			    "} count -"^Nat.show sortCount^
-			    " {Sorts}")]
+			    "} count -"^Nat.show typeCount^
+			    " {Types}")]
 		 else 
 		   [])
 		++
-		sorts
+		types
 		++
 		(if opCount > 0 then
 		   [string ("\\pdfoutline goto name {Spec:"^"???"^"} count -"^

@@ -66,8 +66,8 @@
 
 ;;; For each binary op, there are two Lisp functions. One takes two arguments,
 ;;; the other takes one argument that is a pair. In MetaSlang, there is no such
-;;; distinction: all ops are really unary, from a domain sort D to a codomain
-;;; sort C, where D can be a product, e.g. A * B, in which case the op can be
+;;; distinction: all ops are really unary, from a domain type D to a codomain
+;;; type C, where D can be a product, e.g. A * B, in which case the op can be
 ;;; "viewed" as being binary. These double variants match Specware's Lisp code
 ;;; generator, which generates two variants for ops whose domain is a product:
 ;;; one that takes one argument for each factor, and the other that takes just

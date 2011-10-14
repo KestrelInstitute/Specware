@@ -25,10 +25,10 @@ def getStringAttributesFromSpec spc =
 	ops
 
 
- type AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
+ type AttrValue = | String String | Nat Nat | StringList (List String) | Bool Bool | Null
 
  (**
-  * reads an "option" spec and returns the value of the given operator using the AttrValue sort
+  * reads an "option" spec and returns the value of the given operator using the AttrValue type
   * as result type.
   *)
  op getAttributeFromSpec: Spec * String -> AttrValue
@@ -68,24 +68,24 @@ def getStringAttributesFromSpec spc =
 
  (**
   * returns whether or not id is declared without a definition
-  * as sort in spc
+  * as type in spc
   *)
-  op sortIsDefinedInSpec?: Spec * Sort -> Boolean
- def sortIsDefinedInSpec? (spc, srt) =
+  op typeIsDefinedInSpec?: Spec * MSType -> Bool
+ def typeIsDefinedInSpec? (spc, srt) =
   case srt of
-    | Base (Qualified (_,id),_,_) -> sortIdIsDefinedInSpec? (spc, id)
+    | Base (Qualified (_,id),_,_) -> typeIdIsDefinedInSpec? (spc, id)
     | Boolean _ -> true
     | _ -> false
 
-  op sortIdIsDefinedInSpec?: Spec * Id -> Boolean
- def sortIdIsDefinedInSpec? (spc, id) =
+  op typeIdIsDefinedInSpec?: Spec * Id -> Bool
+ def typeIdIsDefinedInSpec? (spc, id) =
    %%TODO: fix this -- hideously inefficient, and dubious semantics
-   let srts = sortsAsList spc in
+   let srts = typesAsList spc in
    case findLeftmost (fn (_, id0, _) -> id0 = id) srts of
-     | Some (_,_,info) -> definedSortInfo? info
+     | Some (_,_,info) -> definedTypeInfo? info
      | _ -> false 
 
- op opIdIsDefinedInSpec?: Spec * Id -> Boolean
+ op opIdIsDefinedInSpec?: Spec * Id -> Bool
  def opIdIsDefinedInSpec?(spc,id) =
    %%TODO: fix this -- hideously inefficient, and dubious semantics
    let ops = opsAsList spc in
@@ -93,13 +93,13 @@ def getStringAttributesFromSpec spc =
      | Some (_,_,info) -> definedOpInfo? info
      | _ -> false
 
- op  definedOp? : Spec * QualifiedId -> Boolean
+ op  definedOp? : Spec * QualifiedId -> Bool
  def definedOp? (spc,qid) =
    case findTheOp (spc, qid) of
      | Some info -> definedOpInfo? info
      | _ -> false
 
- op  declaredOp? : Spec * QualifiedId -> Boolean
+ op  declaredOp? : Spec * QualifiedId -> Bool
  def declaredOp? (spc,qid) =
    case findTheOp (spc, qid) of
      | Some _ -> true
@@ -107,7 +107,7 @@ def getStringAttributesFromSpec spc =
 
 % --------------------------------------------------------------------------------
 (**
- * returns the list of qualified id's that are declared in the spec (sorts and ops)
+ * returns the list of qualified id's that are declared in the spec (types and ops)
  *)
 
  op getDeclaredQualifiedIds: Spec -> List QualifiedId
@@ -115,7 +115,7 @@ def getStringAttributesFromSpec spc =
    let qids = foldriAQualifierMap
                 (fn (q, id, _, qids) -> Cons (Qualified (q, id), qids))
 	        [] 
-	        spc.sorts
+	        spc.types
    in
    let qids = foldriAQualifierMap
                 (fn (q, id, _, qids) -> Cons (Qualified (q, id), qids))
@@ -126,10 +126,10 @@ def getStringAttributesFromSpec spc =
 
 % --------------------------------------------------------------------------------
 
-   op basicQualifier?   : Qualifier   -> Boolean
-   op basicQualifiedId? : QualifiedId -> Boolean
-   op basicSortName?    : QualifiedId -> Boolean
-   op basicOpName?      : QualifiedId -> Boolean
+   op basicQualifier?   : Qualifier   -> Bool
+   op basicQualifiedId? : QualifiedId -> Bool
+   op basicTypeName?    : QualifiedId -> Bool
+   op basicOpName?      : QualifiedId -> Bool
 
   def basicQualifiers = [
 			 "Boolean",    % can appear in raw translation rules
@@ -150,13 +150,13 @@ def getStringAttributesFromSpec spc =
   (* def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers) *)
 
   def basicQualifiedId? qid =
-    let (basic_sort_names, basic_op_names) = getBaseNames() in
-    qid in? basic_sort_names || 
+    let (basic_type_names, basic_op_names) = getBaseNames() in
+    qid in? basic_type_names || 
     qid in? basic_op_names
 
-  def basicSortName? qid =
-    let (basic_sort_names, _) = getBaseNames () in
-    qid in? basic_sort_names
+  def basicTypeName? qid =
+    let (basic_type_names, _) = getBaseNames () in
+    qid in? basic_type_names
 
   def basicOpName? qid =
     let (_, basic_op_names) = getBaseNames () in

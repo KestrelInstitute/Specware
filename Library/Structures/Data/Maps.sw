@@ -5,7 +5,7 @@ spec
   import translate (Dom qualifying Elem) by {Dom.Elem +-> Dom.Dom}
   import translate (Cod qualifying Elem) by {Cod.Elem +-> Cod.Cod}
 
-  sort Map
+  type Map
 
   op empty : Map 
 

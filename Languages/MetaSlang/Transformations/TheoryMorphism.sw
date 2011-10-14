@@ -41,8 +41,8 @@ op findQIDForName(prag_nm: String, elts: SpecElements): Option(QualifiedId * Boo
                case el of
                  | OpDef (qid, _, _) | qidMatch?(prag_nm, qid) -> Some(qid, false)
                  | Op    (qid, _, _) | qidMatch?(prag_nm, qid) -> Some(qid, false)
-                 | SortDef (qid, _)  | qidMatch?(prag_nm, qid) -> Some(qid, true)
-                 | Sort (qid, _)     | qidMatch?(prag_nm, qid) -> Some(qid, true)
+                 | TypeDef (qid, _)  | qidMatch?(prag_nm, qid) -> Some(qid, true)
+                 | Type (qid, _)     | qidMatch?(prag_nm, qid) -> Some(qid, true)
                  | _ -> None)
         None elts
   in
@@ -91,8 +91,8 @@ op thyMorphismMaps (spc: Spec) (kind: String) (convertPrecNum: Int -> Int): Tran
                                  (parseMorphMap(trans_string, result, kind, pos), None))
                   | OpDef (qid,_,_) -> (result,Some(qid, false))
                   | Op    (qid,_,_) -> (result,Some(qid, false))
-                  | SortDef(qid,_)  -> (result,Some(qid, true))
-                  | Sort  (qid,_)   -> (result,Some(qid, true))
+                  | TypeDef(qid,_)  -> (result,Some(qid, true))
+                  | Type  (qid,_)   -> (result,Some(qid, true))
                   | _               -> (result,None))
        accum
        elts

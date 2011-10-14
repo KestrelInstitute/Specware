@@ -15,13 +15,13 @@ spec
     | String      String
     | Bool        Bool
     | RecordVal   Subst
-    | Constructor Id * Value * MS.Sort
-    | Constant    Id * MS.Sort
-    | QuotientVal Value * Value	* QualifiedId	% closure * element * sort id
-    | ChooseClosure Value * MS.Sort * QualifiedId
+    | Constructor Id * Value * MSType
+    | Constant    Id * MSType
+    | QuotientVal Value * Value	* QualifiedId	% closure * element * type id
+    | ChooseClosure Value * MSType * QualifiedId
     | Closure     Match * Subst
     | RecClosure  Match * Subst * List Id
-    | Unevaluated MS.Term
+    | Unevaluated MSTerm
 
   op equalValue?(v1: Value, v2: Value): Bool =
     case (v1,v2) of
@@ -55,10 +55,10 @@ spec
   def addToSubst(sb,v,t) = Cons((v,t),sb)
 
 %%% --------------------
-  op  eval: MS.Term * Spec -> Value
+  op  eval: MSTerm * Spec -> Value
   def eval(t,spc) = evalRec(t,emptySubst,spc,0,traceEval?)
 
-  op evalFullyReducibleSubTerms(t: MS.Term,spc: Spec): MS.Term =
+  op evalFullyReducibleSubTerms(t: MSTerm,spc: Spec): MSTerm =
     mapSubTerms (fn st ->
                  if ~(constantTerm? st)
                    then
@@ -69,13 +69,13 @@ spec
                    else st)
       t
 
-  op partialEval(t: MS.Term,spc: Spec): MS.Term =
+  op partialEval(t: MSTerm,spc: Spec): MSTerm =
     valueToTerm(eval(t,spc))
 
   op  traceEval?: Bool
   def traceEval? = false
 
-  op  traceable?: MS.Term -> Bool
+  op  traceable?: MSTerm -> Bool
   def traceable? t =
     case t of
       %| Var _ -> false
@@ -86,7 +86,7 @@ spec
       | Apply(Fun(Embed(nm,_),_,_), _, _) -> false
       | _ -> true
 
-  op  preTrace: MS.Term * Nat * Bool -> ()
+  op  preTrace: MSTerm * Nat * Bool -> ()
   def preTrace(t,depth,trace?) =
     if traceEval? && trace? && traceable? t then
       let _ = toScreen (blanks depth) in
@@ -102,7 +102,7 @@ spec
 	  ()
     else ()
     
-  op  postTrace: MS.Term * Value * Nat * Bool -> ()
+  op  postTrace: MSTerm * Value * Nat * Bool -> ()
   def postTrace(t,val,depth,trace?) =
     if traceEval? && trace? && traceable? t then
       case t of
@@ -121,14 +121,14 @@ spec
   op traceWithinFns: List String = []
   op noTraceWithinFns: List String = []
   
-  op fnMember?(f: MS.Term, fns: List String): Bool =
+  op fnMember?(f: MSTerm, fns: List String): Bool =
     fns ~= [] &&
     (case f of
       | Fun(Op(qid as Qualified(spName,opName),_),_,_) ->
         opName in? fns || printQualifiedId qid in? fns
       | _ -> false)
 
-  op  evalRec: MS.Term * Subst * Spec * Nat * Bool -> Value
+  op  evalRec: MSTerm * Subst * Spec * Nat * Bool -> Value
   def evalRec(t,sb,spc,depth,trace?) =
     let _ = preTrace(t,depth,trace?) in
     let depth = if traceable? t then depth else depth -1 in
@@ -206,7 +206,7 @@ spec
       | None -> findTheOp (spc, qid)
       | v -> v
   
-  op  evalFun: Fun * MS.Term * MS.Sort * Subst * Spec * Nat * Bool -> Value
+  op  evalFun: Fun * MSTerm * MSType * Subst * Spec * Nat * Bool -> Value
   def evalFun(fun,t,ty,sb,spc,depth,trace?) =
     case fun of
       | Op (qid, _) ->
@@ -233,13 +233,13 @@ spec
       | Embed (id, false) -> Constant(id,ty)
       | _ -> Unevaluated t
 
-  op  nonStrict?: MS.Term -> Bool
+  op  nonStrict?: MSTerm -> Bool
   def nonStrict? t =
     case t of
       | Fun(f,_,_)  -> f in?[And,Or,Implies]
       | _ -> false
 
-  op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat * Bool -> Value
+  op  evalApplyNonStrict: MSTerm * MSTerm * Subst * Spec * Nat * Bool -> Value
   def evalApplyNonStrict(ft,at,sb,spc,depth,trace?) =
     case at of
       | Record([("1",at1),("2",at2)],_) ->
@@ -277,13 +277,13 @@ spec
       | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth,trace?)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
 
-  op  mkSimpApply: MS.Term * MS.Term -> MS.Term
+  op  mkSimpApply: MSTerm * MSTerm -> MSTerm
   def mkSimpApply(f,x) =
     case f of
       | Lambda([(p,_,bod)],_) -> mkLet([(p,x)],bod)
       | _ -> mkApply(f,x)
 
-  op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat * Bool -> Value
+  op  evalApplySpecial: MSTerm * Value * Subst * Spec * Nat * Bool -> Value
   def evalApplySpecial(ft,a,sb,spc,depth,trace?) =
     let def default() = Unevaluated(mkApply(ft, valueToTerm a)) in
     case ft of
@@ -367,7 +367,7 @@ spec
          case a of
            | RecordVal [("1", Constructor(id1, v1, s1)), ("2", Constructor(id2, v2, _))] ->
              if id1 = id2
-               then evalApplySpecial(Fun(Equals,mkArrow(mkProduct[s1, s1], boolSort),a1),
+               then evalApplySpecial(Fun(Equals,mkArrow(mkProduct[s1, s1], boolType),a1),
                                      RecordVal [("1", v1), ("2", v2)],
                                      sb, spc, depth, trace?)
                else Bool false
@@ -382,7 +382,7 @@ spec
 	    RecordVal(mergeFields(r1,r2))
 	  | _ -> default()) 
       | Fun(Quotient srt_id,srt,_) ->
-	(case stripSubsorts(spc,range(spc,srt)) of
+	(case stripSubtypes(spc,range(spc,srt)) of
 	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1,trace?),a,srt_id)
 	  | _ -> default())
       %% Handled at n
@@ -461,7 +461,7 @@ spec
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- op  patternMatch : Pattern * Value * Subst * Spec * Nat * Bool -> MatchResult 
+ op  patternMatch : MSPattern * Value * Subst * Spec * Nat * Bool -> MatchResult 
 
  def patternMatch(pat,N,S,spc,depth,trace?) = 
      case pat
@@ -539,7 +539,7 @@ spec
       | Unevaluated t -> Unevaluated(mkLetOrsubst(t,newSb,oldSb))
       | _ -> val
 
-  op  mkLetOrsubst: MS.Term * Subst * Subst -> MS.Term
+  op  mkLetOrsubst: MSTerm * Subst * Subst -> MSTerm
   def mkLetOrsubst(t,newSb,oldSb) =
     let def splitSubst sb =
           List.foldl (fn ((letSb,substSb),(vr,val)) ->
@@ -624,7 +624,7 @@ spec
   op  stringIntVals: List(Id * Value) -> String * Int
   def stringIntVals([(_,x),(_,y)]) = (stringVal x,intVal y)
 
-  op  attemptEval1: String * Value * MS.Term -> Value
+  op  attemptEval1: String * Value * MSTerm -> Value
   def attemptEval1(opName,arg,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm arg)) in
     case (opName,arg) of
@@ -692,7 +692,7 @@ spec
 
        | _                      -> default()
 
-  op  attemptEvaln: String * String * List(Id * Value) * MS.Term -> Value
+  op  attemptEvaln: String * String * List(Id * Value) * MSTerm -> Value
   def attemptEvaln(spName,opName,fields,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm(RecordVal fields))) in
     case opName of
@@ -818,7 +818,7 @@ spec
 
   %% Separate function rather than in-line because in Allegro time compile with a closure
   %% which gets created on each call even if not needed
-  op  timeEvalRec:  MS.Term * Subst * Spec * Nat * Bool -> Value
+  op  timeEvalRec:  MSTerm * Subst * Spec * Nat * Bool -> Value
   def timeEvalRec(t,sb,spc,depth,trace?) =
     time(evalRec(t,sb,spc,depth,trace?))
 
@@ -925,7 +925,7 @@ spec
       | Constant ("Nil",_) -> Some []
       | _ -> None
 
-  op  valueToTerm: Value -> MS.Term
+  op  valueToTerm: Value -> MSTerm
   def valueToTerm v =
     case v of
       | Int         n  -> mkNat n
@@ -938,7 +938,7 @@ spec
 % TODO: restore these
       | QuotientVal (f,arg,srt_qid)  ->
         let argtm = valueToTerm arg in
-	mkQuotient(argtm,srt_qid,termSort argtm)
+	mkQuotient(argtm,srt_qid,termType argtm)
       | ChooseClosure(a,srt,srt_id) -> mkApply(mkFun(Choose srt_id,srt),valueToTerm a)
       | Closure(f,sb)   -> mkLetOrsubst(Lambda(f,noPos),sb,emptySubst)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
@@ -955,8 +955,8 @@ spec
       | ChooseClosure (arg,srt,srt_id) -> fullyReduced? arg
       | _ -> true
 
-  op  unknownSort: Sort
-  def unknownSort = mkTyVar "Unknown"
+  op  unknownType: MSType
+  def unknownType = mkTyVar "Unknown"
 
   %% Generally useful utility
   op  loopn: [a] (Nat * a -> a) -> a -> Nat -> a
@@ -965,7 +965,7 @@ spec
           if i = n then result else loop(i+1,f(i,result))
     in loop(0,init)
 
-  op termToValue : MS.Term -> Value
+  op termToValue : MSTerm -> Value
   def termToValue term =
     case term of
       | Fun (Nat n,srt,pos) -> Int n

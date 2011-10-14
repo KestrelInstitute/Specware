@@ -2,14 +2,14 @@ CompPred qualifying spec
 
   type CompPred
   
-  op Gt: CompPred
-  op Lt: CompPred
-  op GtEq: CompPred
-  op LtEq: CompPred
-  op Eq: CompPred
-  op Neq: CompPred
+  op Gt   : CompPred
+  op Lt   : CompPred
+  op GtEq : CompPred
+  op LtEq : CompPred
+  op Eq   : CompPred
+  op Neq  : CompPred
 
-  op distinct: [a] List a -> Boolean
+  op distinct: [a] List a -> Bool
   axiom CompPredDistinct is distinct([Gt, Lt, GtEq, LtEq, Eq, Neq])
   axiom CompPredExhaust is fa (x: CompPred) member(x, [Gt, Lt, GtEq, LtEq, Eq, Neq])
 

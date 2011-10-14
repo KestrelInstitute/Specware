@@ -5,10 +5,10 @@
 Infix qualifying spec 
  import Utilities
 
- type FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
-                    | Nonfix  MS.Term
+ type FixatedTerm = | Infix   MSTerm *  (Associativity * Precedence)
+                    | Nonfix  MSTerm
 
- op resolveInfixes : Option LocalEnv * (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
+ op resolveInfixes : Option LocalEnv * (MSTerm -> FixatedTerm) * Position * List MSTerm -> MSTerm
 
  %    fun printTagged(Nonfix t) = TextIO.print("Nonfix "^AstPrint4.printTerm t^"\n")
  %      | printTagged(Infix(t,(assoc,p))) = 

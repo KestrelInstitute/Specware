@@ -40,15 +40,15 @@ def sumArgToClsDecl(ty, c) =
   let summandId = mkSummandId(ty, c) in
   ([], (summandId, Some ([], ty), []), Java.emptyClsBody)
 
-op fieldsToFormalParams: List (Id * Sort) -> JGenEnv (List FormPar)
+op fieldsToFormalParams: List (Id * MSType) -> JGenEnv (List FormPar)
 def fieldsToFormalParams(args) =
   fieldsToX (fn(fieldProj,fieldType) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) args
 
-op fieldsToFldDecls: List (Id * Sort) -> JGenEnv (List FldDecl)
+op fieldsToFldDecls: List (Id * MSType) -> JGenEnv (List FldDecl)
 def fieldsToFldDecls(args) =
   fieldsToX (fn(fieldProj,fieldType) -> fieldToFldDecl(mkArgProj(fieldProj), fieldType)) args
 
-op fieldsToX: [A] (Id * Id -> A) -> List (Id * Sort) -> JGenEnv (List A)
+op fieldsToX: [A] (Id * Id -> A) -> List (Id * MSType) -> JGenEnv (List A)
 def fieldsToX fun (args) =
   foldM (fn fpars -> fn(fieldProj,srt) ->
 	 {
@@ -58,7 +58,7 @@ def fieldsToX fun (args) =
 	  return fpars
 	 }) [] args
 
-op sumToConsMethodDecl: Id * Id * List (Id * Sort) -> JGenEnv MethDecl
+op sumToConsMethodDecl: Id * Id * List (Id * MSType) -> JGenEnv MethDecl
 def sumToConsMethodDecl(id, c, args) =
   {
    formalParams <- fieldsToFormalParams args;
@@ -74,7 +74,7 @@ def mkSumConstructBody(id, n) =
   let args = if n = 0 then [] else mkArgs(1) in
   [Stmt (Return (Some (CondExp(Un (Prim (NewClsInst (ForCls (([], id), args, None)))), None))))]
 
-op mkSumConstrDecl: Id * Id * Id * List (Id * Sort) -> JGenEnv ConstrDecl
+op mkSumConstrDecl: Id * Id * Id * List (Id * MSType) -> JGenEnv ConstrDecl
 def mkSumConstrDecl(id, mainSumClassId, tagId, fields) =
   let tagfield = FldAcc(ViaPrim(This None,"tag")) in
   let constrConstant = mkFldAccViaClass(mainSumClassId,tagId) in
@@ -95,7 +95,7 @@ def mkSumConstBody(n) =
     let restAssns = mkSumConstBody(n-1) in
     restAssns++[assn]
 
-op sumToClsDecl: Id * Id * List (Id * Sort) -> JGenEnv ClsDecl
+op sumToClsDecl: Id * Id * List (Id * MSType) -> JGenEnv ClsDecl
 def sumToClsDecl(id, c, args) =
   let summandId = mkSummandId(id, c) in
   {
@@ -116,7 +116,7 @@ def mkSumEqMethBody(clsId, consId, summandId, flds) =
    return [mkIfStmt(tagEqExpr, [s, Stmt (Return (Some (eqExpr)))], [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))])]
   }
 
-op coProductToClsDecls: Id * Sort -> JGenEnv ()
+op coProductToClsDecls: Id * MSType -> JGenEnv ()
 def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
    let tagFieldDecl = fieldToFldDecl("tag", "Integer") in
    let

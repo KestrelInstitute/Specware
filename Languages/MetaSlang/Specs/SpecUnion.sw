@@ -7,7 +7,7 @@ SpecUnion qualifying spec {
 
  op specUnion       : List Spec       -> Spec
  op importsUnion    : List Imports    -> Imports
- op sortsUnion      : List SortMap    -> SortMap
+ op typesUnion      : List TypeMap    -> TypeMap
  op opsUnion        : List OpMap      -> OpMap
  op propertiesUnion : List Properties -> Properties
 
@@ -18,10 +18,10 @@ SpecUnion qualifying spec {
 				          []
 					  specs),
 		 localOps      = emptyOpNames,
-		 localSorts    = emptySortNames,
+		 localTypes    = emptyTypeNames,
 		 localProperties = emptyPropertyNames},
-   sorts         = sortsUnion      (List.foldl (fn (spc, sorts_list) ->
-					   cons (spc.sorts, sorts_list))
+   types         = typesUnion      (List.foldl (fn (spc, types_list) ->
+					   cons (spc.types, types_list))
 				          []
 					  specs),
    ops           = opsUnion        (List.foldl (fn (spc, ops_list)  ->
@@ -40,24 +40,24 @@ SpecUnion qualifying spec {
 
  %% TODO: This quietly ignores multiple infos for the same name
  %% TODO: This doesn't deal with multiple names within an info
- def sortsUnion sort_maps = List.foldl unionSortMaps emptySortMap sort_maps
+ def typesUnion type_maps = List.foldl unionTypeMaps emptyTypeMap type_maps
  def opsUnion   op_maps   = List.foldl unionOpMaps   emptyOpMap   op_maps
 
- op  unionSortMaps: SortMap * SortMap -> SortMap
- def unionSortMaps (new_sort_map, old_sort_map) =
-  foldri augmentSortMap old_sort_map new_sort_map
+ op  unionTypeMaps: TypeMap * TypeMap -> TypeMap
+ def unionTypeMaps (new_type_map, old_type_map) =
+  foldri augmentTypeMap old_type_map new_type_map
 
  op  unionOpMaps: OpMap * OpMap -> OpMap
  def unionOpMaps (new_op_map, old_op_map) =
   StringMap.foldri augmentOpMap old_op_map new_op_map
 
- op  augmentSortMap: QualifiedId * SortInfo * SortMap -> SortMap
- def augmentSortMap (qualifier, new_qmap, old_sort_map) =
-   StringMap.insert (old_sort_map,
+ op  augmentTypeMap: QualifiedId * TypeInfo * TypeMap -> TypeMap
+ def augmentTypeMap (qualifier, new_qmap, old_type_map) =
+   StringMap.insert (old_type_map,
                      qualifier,
-                     case StringMap.find (old_sort_map, qualifier) of
+                     case StringMap.find (old_type_map, qualifier) of
                       | None          -> new_qmap
-                      | Some old_qmap -> unionSortQMaps (new_qmap, old_qmap))
+                      | Some old_qmap -> unionTypeQMaps (new_qmap, old_qmap))
 
  op  augmentOpMap: QualifiedId * OpInfo * OpMap -> OpMap
  def augmentOpMap (qualifier, new_qmap, old_op_map) =
@@ -68,19 +68,19 @@ SpecUnion qualifying spec {
                       | Some old_qmap -> unionOpQMaps (new_qmap, old_qmap))
 
                 
- def unionSortQMaps (new_qmap, old_qmap) =
-  StringMap.foldri augmentSortQMap old_qmap new_qmap
+ def unionTypeQMaps (new_qmap, old_qmap) =
+  StringMap.foldri augmentTypeQMap old_qmap new_qmap
 
  def unionOpQMaps (new_qmap, old_qmap) =
   StringMap.foldri augmentOpQMap old_qmap new_qmap
 
 
- def augmentSortQMap (id, new_sort_info, old_qmap) =
+ def augmentTypeQMap (id, new_type_info, old_qmap) =
    StringMap.insert (old_qmap,
                      id,
                      case StringMap.find (old_qmap, id) of
-                      | None               -> new_sort_info
-                      | Some old_sort_info -> unionSortInfos (new_sort_info, old_sort_info))
+                      | None               -> new_type_info
+                      | Some old_type_info -> unionTypeInfos (new_type_info, old_type_info))
                      
  def augmentOpQMap (id, new_op_info, old_qmap) =
    StringMap.insert (old_qmap,
@@ -89,9 +89,9 @@ SpecUnion qualifying spec {
                       | None             -> new_op_info
                       | Some old_op_info -> unionOpInfos (new_op_info, old_op_info))
 
- def unionSortInfos (new_sort_info, old_sort_info) =
-   (toScreen "unionSortInfos not yet implmented";
-    new_sort_info)
+ def unionTypeInfos (new_type_info, old_type_info) =
+   (toScreen "unionTypeInfos not yet implmented";
+    new_type_info)
 
  def unionOpInfos (new_op_info, old_op_info) =
    (toScreen "unionOpInfos not yet implmented";

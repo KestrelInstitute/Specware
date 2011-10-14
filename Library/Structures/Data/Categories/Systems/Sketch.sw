@@ -18,10 +18,10 @@ Shape qualifying spec {
     }
   import /Library/PrettyPrinter/WadlerLindig
 
-  sort Shape.Dom = E.Elem   % does this actually refine the sorts in Maps
-  sort Shape.Cod = V.Elem   % perhaps this would be better if qualified
+  type Shape.Dom = E.Elem   % does this actually refine the types in Maps
+  type Shape.Cod = V.Elem   % perhaps this would be better if qualified
 
-  sort Sketch
+  type Sketch
 
   op vertices : Sketch -> V.Set
   op edges : Sketch -> E.Set
@@ -29,7 +29,7 @@ Shape qualifying spec {
   op target : Sketch -> Map
   op ppSketch : Sketch -> Pretty
 
-  sort Sketch = {
+  type Sketch = {
     vertices : V.Set,
     edges : E.Set,
     src : Map,
@@ -119,10 +119,10 @@ should add another constuctor function for adding equations to the sketch.
      ]
 \end{spec}
 
-We define a sort for paths though they aren't used yet.
+We define a type for paths though they aren't used yet.
 
 \begin{spec}
-  sort Path = {
+  type Path = {
     first : V.Elem,
     path : List E.Elem,
     last : V.Elem

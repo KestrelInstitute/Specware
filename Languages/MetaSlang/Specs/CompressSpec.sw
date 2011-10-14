@@ -1,6 +1,6 @@
 AnnSpec qualifying spec 
 
- import Elaborate/Utilities % unifySorts
+ import Elaborate/Utilities % unifyTypes
  import Equivalences        % equivType?, equivTerm?
 
  %% compressDefs is called from many places
@@ -8,33 +8,33 @@ AnnSpec qualifying spec
  op  compressDefs : Spec -> Spec
  def compressDefs spc =
    spc << {
-	   sorts    = compressSorts    spc,
+	   types    = compressTypes    spc,
 	   ops      = compressOps      spc,
 	   elements = compressElements spc
 	  }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  compressSorts : Spec -> ASortMap Position
- def compressSorts spc =
-   %% this compresses the definition for each individual sort
-   %% it does not coalesce similar sorts
-   foldriAQualifierMap (fn (q, id, old_info, revised_sorts) ->
-			case compressSortDefs spc old_info of
-			  | Some new_info -> insertAQualifierMap (revised_sorts, q, id, new_info)
-			  | _             -> revised_sorts)
-                       spc.sorts
-		       spc.sorts   
+ op  compressTypes : Spec -> ATypeMap Position
+ def compressTypes spc =
+   %% this compresses the definition for each individual type
+   %% it does not coalesce similar types
+   foldriAQualifierMap (fn (q, id, old_info, revised_types) ->
+			case compressTypeDefs spc old_info of
+			  | Some new_info -> insertAQualifierMap (revised_types, q, id, new_info)
+			  | _             -> revised_types)
+                       spc.types
+		       spc.types   
 
- op  compressSortDefs : Spec -> SortInfo -> Option SortInfo 
- def compressSortDefs spc info =
-   let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+ op  compressTypeDefs : Spec -> TypeInfo -> Option TypeInfo 
+ def compressTypeDefs spc info =
+   let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
    case old_defs of
      | []  -> None
      | [_] -> None
      | _ ->
-       let pos = sortAnn info.dfn in
-       let (tvs, srt) = unpackFirstSortDef info in
+       let pos = typeAnn info.dfn in
+       let (tvs, srt) = unpackFirstTypeDef info in
        let tvs = map mkTyVar tvs in
        let xxx_defs = map (fn name -> mkBase (name, tvs)) info.names in 
        let new_defs = 
@@ -52,13 +52,13 @@ AnnSpec qualifying spec
 		    then
 		      new_defs
 		  else
-		    %% just cons here -- let maybeAndSort remove redundant Any's
+		    %% just cons here -- let maybeAndType remove redundant Any's
 		    Cons (old_def, new_defs)) 
 	         []
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn   = maybeAndSort (old_decls ++ new_defs, pos) in % TODO: write and use version of maybeAndSort that uses equivType?, not equalType?
+       let new_dfn   = maybeAndType (old_decls ++ new_defs, pos) in % TODO: write and use version of maybeAndType that uses equivType?, not equalType?
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
         
@@ -86,15 +86,15 @@ AnnSpec qualifying spec
        let pos = termAnn info.dfn in
        let new_decls =
            foldl (fn (new_decls,old_decl) ->
-		  let old_sort = termSort old_decl in
+		  let old_type = termType old_decl in
 		  if exists? (fn new_decl -> 
-			     let new_sort = termSort new_decl in
-			     equivType? spc (old_sort, new_sort))
+			     let new_type = termType new_decl in
+			     equivType? spc (old_type, new_type))
 		            new_decls 
 		    then
 		      new_decls
 		  else
-		    Cons (SortedTerm (Any noPos, old_sort, noPos),
+		    Cons (TypedTerm (Any noPos, old_type, noPos),
 			  new_decls))
 	         []
 		 (old_decls ++ old_defs)

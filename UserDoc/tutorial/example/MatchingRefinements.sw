@@ -12,7 +12,7 @@ import MatchingSpecs#Words
 import MatchingSpecs#Messages
 import MatchingSpecs#SymbolMatching
 
-op word_matches_aux?(wrd: Word, msg: Message | length wrd <= length msg): Boolean =
+op word_matches_aux?(wrd: Word, msg: Message | length wrd <= length msg): Bool =
   case wrd of [] -> true
             | wsym::wrd1 ->
               let msym::msg1 = msg in
@@ -56,7 +56,7 @@ apply (case_tac i, auto)
 apply (case_tac msga, auto)
 end-proof
 
-op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Boolean =
+op word_matches_at?(wrd: Word, msg: Message, pos: Nat): Bool =
   if pos + length wrd > length msg
     then false
     else word_matches_aux?(wrd, removePrefix(msg, pos))

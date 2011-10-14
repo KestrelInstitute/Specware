@@ -79,7 +79,7 @@ String qualifying spec
       | None -> s
       | Some i -> subFromTo(s,0,i) ^ rep ^ replaceString(subFromTo(s,i + length pat,length s),pat,rep)
 
-  op  testSubseqEqual? : String * String * Int * Int -> Boolean
+  op  testSubseqEqual? : String * String * Int * Int -> Bool
   %% True if s1 from s1@i1 to end is the same as s2@i2 to s2@(i2+(length s1)-i1)
   def testSubseqEqual? (s1, s2, i1, i2) =
     let sz1 = length s1 in
@@ -96,13 +96,13 @@ String qualifying spec
     in 
       loop 0
 
-  op endsIn?(s: String, pat: String): Boolean =
+  op endsIn?(s: String, pat: String): Bool =
     let len_pat = length pat in
     let len_s   = length   s in
     len_s >= len_pat
       && testSubseqEqual?(pat, s, 0, len_s - len_pat)
 
-  op  searchPred : String * (Char -> Boolean) -> Option Nat
+  op  searchPred : String * (Char -> Bool) -> Option Nat
   def searchPred (s, pred) =
     let sz = length s in
     let 
@@ -165,7 +165,7 @@ op splitAtStr(s: String, pat: String): Option(String * String) =
       | Some i -> subFromTo(s,i,length s)
       | None -> s
 
-  op  whiteSpaceChar?: Char -> Boolean
+  op  whiteSpaceChar?: Char -> Bool
   def whiteSpaceChar? c = c in? [#\s,#\t,#\n]
 
 

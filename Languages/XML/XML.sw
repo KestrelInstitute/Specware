@@ -16,7 +16,7 @@ XML qualifying spec
   %% WARNING: These are not normal metaslang functions.
   %%
   %%          The typechecker adds an extra argument when generating calls to 
-  %%           these specially recognized functions.  See sortCognizantOperator? 
+  %%           these specially recognized functions.  See typeCognizantOperator? 
   %%           defined in /Languages/MetaSlang/Specs/Elaborate/TypeChecker.sw
   %%
   %%          The actual handwritten (Lisp/C/Java/...) definitions are written
@@ -25,8 +25,8 @@ XML qualifying spec
   %%          See Languages/XML/Handwritten/Lisp/Support.lisp
   %%
   %%          An alternative scheme would be to add a reflection operation to
-  %%           metaslang, e.g. DescribeSort S, mapping a sort to a normal term
-  %%           describing that sort, to make the extra arg apparent.
+  %%           metaslang, e.g. DescribeType S, mapping a type to a normal term
+  %%           describing that type, to make the extra arg apparent.
   %%
   op readXMLFile          : [X] Filename -> X         % Tricky -- see Support.lisp
   op parseXML             : [X] String  -> X          % Tricky -- see Support.lisp
@@ -42,7 +42,7 @@ XML qualifying spec
   %%%                 INPUT
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  % sort Filename = String
+  % type Filename = String
 
   % op unicode.read_unicode_chars_from_file : Filename * Decoding -> Option UChars
 

@@ -19,12 +19,12 @@ XML qualifying spec
      pe_defs    = empty_map,
      context    = default_processing_environment}
 
-  type Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
+  type Processing_Environment = {tracing? : Bool} % could add verbosity, etc.
 
   def default_processing_environment : Processing_Environment =
     {tracing? = Trace_XML_Parser?}
 
-  def Trace_XML_Parser? : Boolean = false
+  def Trace_XML_Parser? : Bool = false
 
   type XML_Exception = {kind        : XML_Exception_Type,
 			requirement : String,

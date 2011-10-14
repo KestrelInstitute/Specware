@@ -3,16 +3,16 @@ MetaSlang qualifying spec
  import /Library/Legacy/Utilities/State                % MetaTyVar
  import /Library/Legacy/Utilities/System               % fail
  import /Library/Legacy/DataStructures/ListPair        % misc operations on pairs of lists
- import PrinterSig                                     % printTerm, printSort, printPattern
+ import PrinterSig                                     % printTerm, printType, printPattern
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type SortNames      = List SortName
+ type TypeNames      = List TypeName
  type OpNames        = List OpName
  type PropertyNames  = List PropertyName
 
- type SortName       = QualifiedId
+ type TypeName       = QualifiedId
  type OpName         = QualifiedId
  type PropertyName   = QualifiedId
 
@@ -26,7 +26,7 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% ATerm, ASort, APattern, AFun, AVar, AMatch, and MetaTyVar
+ %%% ATerm, AType, APattern, AFun, AVar, AMatch, and MetaTyVar
  %%%  are all mutually recursive types.
 
  %% Terms are tagged with auxiliary information such as
@@ -42,56 +42,56 @@ MetaSlang qualifying spec
   | Let          List (APattern b * ATerm b) * ATerm b   * b
   | LetRec       List (AVar b     * ATerm b) * ATerm b   * b
   | Var          AVar b                                  * b
-  | Fun          AFun b * ASort b                        * b
+  | Fun          AFun b * AType b                        * b
   | Lambda       AMatch b                                * b
   | IfThenElse   ATerm b * ATerm b * ATerm b             * b
   | Seq          List (ATerm b)                          * b
-  | SortedTerm   ATerm b * ASort b                       * b
+  | TypedTerm    ATerm b * AType b                       * b
   | Transform    List(ATransformExpr b)                  * b  % For specifying refinement by script
   | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
   | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
                                                               % We might want to record a quotient of consistent terms plus a list of inconsistent pairs,
                                                               % but then the various mapping functions become much trickier.
-  | Any                                                    b  % e.g. "op f : Nat -> Nat"  has defn:  SortedTerm (Any noPos, Arrow (Nat, Nat, p1), noPos)
+  | Any                                                    b  % e.g. "op f : Nat -> Nat"  has defn:  TypedTerm (Any noPos, Arrow (Nat, Nat, p1), noPos)
  
  type Binder =
   | Forall
   | Exists
   | Exists1
 
- type AVar b = Id * ASort b
+ type AVar b = Id * AType b
 
  type AMatch b = List (APattern b * ATerm b * ATerm b)
 
- type MetaSlang.ASort b =
-  | Arrow        ASort b * ASort b                   * b
-  | Product      List (Id * ASort b)                 * b
-  | CoProduct    List (Id * Option (ASort b))        * b
-  | Quotient     ASort b * ATerm b                   * b
-  | Subsort      ASort b * ATerm b                   * b
-  | Base         QualifiedId * List (ASort b)        * b  % Typechecker verifies that QualifiedId refers to some sortInfo
+ type MetaSlang.AType b =
+  | Arrow        AType b * AType b                   * b
+  | Product      List (Id * AType b)                 * b
+  | CoProduct    List (Id * Option (AType b))        * b
+  | Quotient     AType b * ATerm b                   * b
+  | Subtype      AType b * ATerm b                   * b
+  | Base         QualifiedId * List (AType b)        * b  % Typechecker verifies that QualifiedId refers to some typeInfo
   | Boolean                                            b
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
-  | Pi           TyVars * ASort b                    * b  % for now, used only at top level of defn's
-  | And          List (ASort b)                      * b  % for now, used only by colimit and friends -- meet (or join)
-                                                          % We might want to record a quotient of consistent sorts plus a list of inconsistent pairs,
+  | Pi           TyVars * AType b                    * b  % for now, used only at top level of defn's
+  | And          List (AType b)                      * b  % for now, used only by colimit and friends -- meet (or join)
+                                                          % We might want to record a quotient of consistent types plus a list of inconsistent pairs,
                                                           % but then the various mapping functions become much trickier.
-  | Any                                                b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
+  | Any                                                b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 
  type MetaSlang.APattern b =
   | AliasPat      APattern b * APattern b             * b
   | VarPat        AVar b                              * b
-  | EmbedPat      Id * Option (APattern b) * ASort b  * b
+  | EmbedPat      Id * Option (APattern b) * AType b  * b
   | RecordPat     List(Id * APattern b)               * b
-  | WildPat       ASort b                             * b
+  | WildPat       AType b                             * b
   | BoolPat       Bool                                * b
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
-  | QuotientPat   APattern b * SortName               * b
+  | QuotientPat   APattern b * TypeName               * b
   | RestrictedPat APattern b * ATerm b                * b
-  | SortedPat     APattern b * ASort b                * b  % Before elaborateSpec
+  | TypedPat      APattern b * AType b                * b  % Before elaborateSpec
 
  type AFun b =
 
@@ -103,13 +103,13 @@ MetaSlang qualifying spec
   | Equals
   | NotEquals
 
-  | Quotient       SortName
-  | Choose         SortName
+  | Quotient       TypeName
+  | Choose         TypeName
   | Restrict
   | Relax
 
-  | PQuotient      SortName
-  | PChoose        SortName
+  | PQuotient      TypeName
+  | PChoose        TypeName
 
   | Op             QualifiedId * Fixity
   | Project        Id
@@ -137,12 +137,12 @@ MetaSlang qualifying spec
  type Associativity = | Left | Right | NotAssoc
  type Precedence    = Nat
 
- type AMetaTyVar      b = Ref ({link     : Option (ASort b),
+ type AMetaTyVar      b = Ref ({link     : Option (AType b),
                                 uniqueId : Nat,
                                 name     : String })
 
  type AMetaTyVars     b = List (AMetaTyVar b)
- type AMetaSortScheme b = AMetaTyVars b * ASort b
+ type AMetaTypeScheme b = AMetaTyVars b * AType b
 
  type ATransformExpr a =
     | Name         String                                     * a
@@ -157,17 +157,17 @@ MetaSlang qualifying spec
     | Apply        ATransformExpr a * List (ATransformExpr a) * a
 
  %%% Predicates
- op product?: [a] ASort a -> Bool
+ op product?: [a] AType a -> Bool
  def product? s =
    case s of
      | Product _ -> true
      | _         -> false
 
-  op maybePiSort : [b] TyVars * ASort b -> ASort b
- def maybePiSort (tvs, srt) =
+  op maybePiType : [b] TyVars * AType b -> AType b
+ def maybePiType (tvs, srt) =
    case tvs of
      | [] -> srt
-     | _ -> Pi (tvs, srt, sortAnn srt)
+     | _ -> Pi (tvs, srt, typeAnn srt)
 
   op maybePiTerm : [b] TyVars * ATerm b -> ATerm b
  def maybePiTerm (tvs, tm) =
@@ -175,25 +175,25 @@ MetaSlang qualifying spec
      | [] -> tm
      | _ -> Pi (tvs, tm, termAnn tm)
 
-op [a] maybePiSortedTerm(tvs: TyVars, o_ty: Option(ASort a), tm: ATerm a): ATerm a =
+op [a] maybePiTypedTerm(tvs: TyVars, o_ty: Option(AType a), tm: ATerm a): ATerm a =
   let s_tm = case o_ty of
-               | Some ty -> SortedTerm(tm, ty, termAnn tm)
+               | Some ty -> TypedTerm(tm, ty, termAnn tm)
                | None -> tm
   in
   maybePiTerm(tvs, s_tm)
 
-op [a] piTypeAndTerm(tvs: TyVars, ty: ASort a, tms: List(ATerm a)): ATerm a =
+op [a] piTypeAndTerm(tvs: TyVars, ty: AType a, tms: List(ATerm a)): ATerm a =
   let (main_tm, pos) = case tms of
-                         | [] -> (And(tms, sortAnn ty), sortAnn ty)
+                         | [] -> (And(tms, typeAnn ty), typeAnn ty)
                          | [tm] -> (tm, termAnn tm)
                          | tms -> (And(tms, termAnn(head tms)), termAnn (head tms))
   in
-  maybePiTerm(tvs, SortedTerm(main_tm, ty, pos))
+  maybePiTerm(tvs, TypedTerm(main_tm, ty, pos))
 
-op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm a =
+op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a =
   case triples of
-    | [(tvs, ty, tm)] -> maybePiTerm (tvs, SortedTerm (tm, ty, termAnn tm))
-    | (_, _, tm) :: _ -> And (map (fn (tvs, ty, tm) -> maybePiTerm (tvs, SortedTerm (tm, ty, sortAnn ty)))
+    | [(tvs, ty, tm)] -> maybePiTerm (tvs, TypedTerm (tm, ty, termAnn tm))
+    | (_, _, tm) :: _ -> And (map (fn (tvs, ty, tm) -> maybePiTerm (tvs, TypedTerm (tm, ty, typeAnn ty)))
                                   triples,
                               termAnn tm)
 
@@ -204,19 +204,19 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
  %% A fundamental assumption for
  %%
  %% . Records
- %% . Product sorts
- %% . CoProduct sorts
+ %% . Product types
+ %% . CoProduct types
  %%
- %% is that the fields are always sorted in alphabetical order
+ %% is that the fields are always typeed in alphabetical order
  %% according to their labels (Id).
- %% For example, a tuple with 10 fields is sorted internally:
+ %% For example, a tuple with 10 fields is typeed internally:
  %% {1,10,2,3,4,5,6,7,8,9}
  %%
  %% This invariant is established by the parser and must be
  %% maintained by all transformations.
 
  type AFields b = List (AField b)
- type AField  b = FieldName * ASort b  % used by products and co-products
+ type AField  b = FieldName * AType b  % used by products and co-products
  type FieldName = String
 
   op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
@@ -225,7 +225,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | None      -> None
      | Some(_,t) -> Some t
 
- op [a] getTermField(l:  List (Id * ASort a), id: Id): Option(ASort a) =
+ op [a] getTermField(l:  List (Id * AType a), id: Id): Option(AType a) =
    case findLeftmost (fn (id1,_) -> id = id1) l of
      | None      -> None
      | Some(_,s) -> Some s
@@ -249,7 +249,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | The        (_,_,   a) -> a
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
-     | SortedTerm (_,_,   a) -> a
+     | TypedTerm  (_,_,   a) -> a
      | Transform  (_,     a) -> a
      | Pi         (_,_,   a) -> a
      | And        (_,     a) -> a
@@ -270,20 +270,20 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | Lambda     (m,        b) -> if a = b then tm else Lambda     (m,          a)
      | IfThenElse (t1,t2,t3, b) -> if a = b then tm else IfThenElse (t1, t2, t3, a)
      | Seq        (l,        b) -> if a = b then tm else Seq        (l,          a)
-     | SortedTerm (t,s,      b) -> if a = b then tm else SortedTerm (t, s,       a)
+     | TypedTerm  (t,s,      b) -> if a = b then tm else TypedTerm (t, s,       a)
      | Transform  (t,        b) -> if a = b then tm else Transform  (t,          a)
      | Pi         (tvs, t,   b) -> if a = b then tm else Pi         (tvs, t,     a)
      | And        (l,        b) -> if a = b then tm else And        (l,          a)
      | Any                   b  -> if a = b then tm else Any                     a
 
-  op sortAnn: [a] ASort a -> a
- def sortAnn srt =
+  op typeAnn: [a] AType a -> a
+ def typeAnn srt =
    case srt of
      | Arrow     (_,_, a) -> a
      | Product   (_,   a) -> a
      | CoProduct (_,   a) -> a
      | Quotient  (_,_, a) -> a
-     | Subsort   (_,_, a) -> a
+     | Subtype   (_,_, a) -> a
      | Base      (_,_, a) -> a
      | Boolean         a  -> a
      | TyVar     (_,   a) -> a
@@ -306,7 +306,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | CharPat      (_,     a) -> a
      | QuotientPat  (_,_,   a) -> a
      | RestrictedPat(_,_,   a) -> a
-     | SortedPat    (_,_,   a) -> a
+     | TypedPat     (_,_,   a) -> a
 
   op withAnnP: [a] APattern a * a -> APattern a
  def withAnnP (pat, b) =
@@ -322,9 +322,9 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | CharPat       (c,       a) -> if b = a then pat else CharPat      (c,       b)
      | QuotientPat   (p,t,     a) -> if b = a then pat else QuotientPat  (p,t,     b)
      | RestrictedPat (p,t,     a) -> if b = a then pat else RestrictedPat(p,t,     b)
-     | SortedPat     (p,s,     a) -> if b = a then pat else SortedPat    (p,s,     b)
+     | TypedPat      (p,s,     a) -> if b = a then pat else TypedPat    (p,s,     b)
 
-  op withAnnS: [a] ASort a * a -> ASort a
+  op withAnnS: [a] AType a * a -> AType a
  def withAnnS (srt, a) =
   % Avoid creating new structure if possible
    case srt of
@@ -332,7 +332,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | Product   (fields,   b) -> if a = b then srt else Product   (fields,   a)
      | CoProduct (fields,   b) -> if a = b then srt else CoProduct (fields,   a)
      | Quotient  (ss,t,     b) -> if a = b then srt else Quotient  (ss,t,     a)
-     | Subsort   (ss,t,     b) -> if a = b then srt else Subsort   (ss,t,     a)
+     | Subtype   (ss,t,     b) -> if a = b then srt else Subtype   (ss,t,     a)
      | Base      (qid,srts, b) -> if a = b then srt else Base      (qid,srts, a)
      | Boolean              b  -> if a = b then srt else Boolean a
      | TyVar     (tv,       b) -> if a = b then srt else TyVar     (tv,       a)
@@ -342,55 +342,55 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | Any                  b  -> if a = b then srt else Any       a
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                Sort components
+ %%%                Type components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackSort    : [b] ASort b -> TyVars * ASort b
- op sortTyVars    : [b] ASort b -> TyVars 
- op sortInnerSort : [b] ASort b -> ASort b
+ op unpackType    : [b] AType b -> TyVars * AType b
+ op typeTyVars    : [b] AType b -> TyVars 
+ op typeInnerType : [b] AType b -> AType b
 
- def unpackSort s =
+ def unpackType s =
    case s of
      | Pi (tvs, srt, _) -> (tvs, srt)
-     | And (tms, _) -> ([], s) %  fail ("unpackSort: Trying to unpack an And of sorts.")
+     | And (tms, _) -> ([], s) %  fail ("unpackType: Trying to unpack an And of types.")
      | _ -> ([], s)
 
- def sortTyVars srt =
+ def typeTyVars srt =
    case srt of
      | Pi (tvs, _, _) -> tvs
-     | And _ -> [] % fail ("sortTyVars: Trying to extract type vars from an And of sorts.")
+     | And _ -> [] % fail ("typeTyVars: Trying to extract type vars from an And of types.")
      | _ -> []
 
- def sortInnerSort srt =
+ def typeInnerType srt =
    case srt of
      | Pi (_, srt, _) -> srt
-     | And _ -> srt % fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
+     | And _ -> srt % fail ("typeInneType: Trying to extract inner type from an And of types.")
      | _ -> srt
 
- op [a] anySort?(t: ASort a): Bool =
+ op [a] anyType?(t: AType a): Bool =
    case t of
      | Any _        -> true
-     | Pi(_, tm, _) -> anySort? tm
-     | And(tms, _)  -> forall? anySort? tms
+     | Pi(_, tm, _) -> anyType? tm
+     | And(tms, _)  -> forall? anyType? tms
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackTerm    : [a] ATerm a -> TyVars * ASort a * ATerm a
+ op unpackTerm    : [a] ATerm a -> TyVars * AType a * ATerm a
  op termTyVars    : [b] ATerm b -> TyVars
- op termSort      : [b] ATerm b -> ASort b
+ op termType      : [b] ATerm b -> AType b
  op termInnerTerm : [b] ATerm b -> ATerm b
 
- op maybeAndSort  : [b] List (ASort b) * b -> ASort b % Defined in Equalities.sw
+ op maybeAndType  : [b] List (AType b) * b -> AType b % Defined in Equalities.sw
  op maybeAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
 
  op [a] anyTerm?(t: ATerm a): Bool =
    case t of
      | Any _                 -> true
      | Pi(_, tm, _)          -> anyTerm? tm
-     | SortedTerm(tm, _, _)  -> anyTerm? tm
+     | TypedTerm(tm, _, _)  -> anyTerm? tm
      | And(tms, _)           -> forall? anyTerm? tms
      | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
      | _ -> false
@@ -400,16 +400,16 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | Transform(steps, _)   -> Some steps
      | Any _                 -> None
      | Pi(_, tm, _)          -> transformSteps? tm
-     | SortedTerm(tm, _, _)  -> transformSteps? tm
+     | TypedTerm(tm, _, _)  -> transformSteps? tm
      | And(tms, _)           -> None
      | Lambda([(_,_,tm)], _) -> transformSteps? tm     % Arguments given but no body
      | _ -> None
 
  def [a] unpackTerm t =
-   let def unpack(t: ATerm a, tvs: TyVars, o_ty: Option(ASort a)): TyVars * (ASort a) * (ATerm a) =
+   let def unpack(t: ATerm a, tvs: TyVars, o_ty: Option(AType a)): TyVars * (AType a) * (ATerm a) =
         case t of
 	 | Pi (tvs, tm, _) -> unpack(tm, tvs, o_ty)
-         | SortedTerm(tm, ty, _) -> (case ty of
+         | TypedTerm(tm, ty, _) -> (case ty of
                                        | Pi(tvs, s_ty, _) -> unpack(tm, tvs, Some s_ty)
                                        | _ -> unpack(tm, tvs, Some ty))
          | And ([tm], _)   -> unpack(tm, tvs, o_ty)
@@ -430,7 +430,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	 | _ -> (tvs,
                  case o_ty of
                    | Some ty -> ty
-                   | None -> termSort t,
+                   | None -> termType t,
                  t)
    in
    let (tvs, ty, tm) = unpack(t, [], None) in
@@ -443,39 +443,39 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      | And _ -> fail ("termTyVars: Trying to extract type vars from an And of terms.")
      | _ -> []
 
- def termSort term =
+ def termType term =
    case term of
-     | Apply      (t1,t2,   _) -> (case termSort t1 of
+     | Apply      (t1,t2,   _) -> (case termType t1 of
 				     | Arrow(dom,rng,_) -> rng
-                                     | Subsort(Arrow(dom,rng,_),_,_) -> rng
-				     | _ -> System.fail ("Cannot extract sort of application:\n"
+                                     | Subtype(Arrow(dom,rng,_),_,_) -> rng
+				     | _ -> System.fail ("Cannot extract type of application:\n"
 							 ^ printTerm term))
-     | ApplyN     ([t1,t2], _) -> (case termSort t1 of
+     | ApplyN     ([t1,t2], _) -> (case termType t1 of
 				     | Arrow(dom,rng,_) -> rng
-				     | _ -> System.fail ("Cannot extract sort of application "
+				     | _ -> System.fail ("Cannot extract type of application "
 							 ^ printTerm term))
 
-     | Record     (fields,  a)              -> Product (List.map (fn (id, t) -> (id, termSort t)) fields, a)
+     | Record     (fields,  a)              -> Product (List.map (fn (id, t) -> (id, termType t)) fields, a)
      | Bind       (_,_,_,   a)              -> Boolean a
-     | Let        (_,term,  _)              -> termSort term
-     | LetRec     (_,term,  _)              -> termSort term
+     | Let        (_,term,  _)              -> termType term
+     | LetRec     (_,term,  _)              -> termType term
      | Var        ((_,srt), _)              -> srt
      | Fun        (_,srt,   _)              -> srt
      | The        ((_,srt),_,_)             -> srt
-     | Lambda     ([(pat,_,body)], a)    -> Arrow(patternSort pat, termSort body, a)
+     | Lambda     ([(pat,_,body)], a)    -> Arrow(patternType pat, termType body, a)
      | Lambda     (Cons((pat,_,body),_), a) ->
        let dom = case pat of
-                   | RestrictedPat(p, t, a) -> patternSort p
-                   | _ -> patternSort pat
-       in Arrow(dom, termSort body, a)
-     | Lambda     ([],                   _) -> System.fail "termSort: Ill formed lambda abstraction"
-     | IfThenElse (_,t2,t3, _)              -> termSort t2
+                   | RestrictedPat(p, t, a) -> patternType p
+                   | _ -> patternType pat
+       in Arrow(dom, termType body, a)
+     | Lambda     ([],                   _) -> System.fail "termType: Ill formed lambda abstraction"
+     | IfThenElse (_,t2,t3, _)              -> termType t2
      | Seq        (_,       a)              -> Product([],a)
-     | SortedTerm (_,   s,  _)              -> s
-     | Pi         (tvs, t,  a)              -> Pi (tvs, termSort t, a) 
-     | And        (tms,     a)              -> maybeAndSort (map termSort tms,  a)
+     | TypedTerm (_,   s,  _)              -> s
+     | Pi         (tvs, t,  a)              -> Pi (tvs, termType t, a) 
+     | And        (tms,     a)              -> maybeAndType (map termType tms,  a)
      | Any                  a               -> Any a
-     | mystery -> fail ("\n No match in termSort with: " ^ (anyToString mystery) ^ "\n")
+     | mystery -> fail ("\n No match in termType with: " ^ (anyToString mystery) ^ "\n")
 
  def termInnerTerm tm =
    case tm of
@@ -484,22 +484,22 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
        if embed? Transform tm
          then termInnerTerm(And(r, pos))
          else termInnerTerm tm
-     | SortedTerm (tm, _, _) -> termInnerTerm tm
+     | TypedTerm (tm, _, _) -> termInnerTerm tm
      | _                     -> tm
 
  op [a] innerTerms(tm: ATerm a): List (ATerm a) =
    case tm of
      | Pi         (_, tm, _) -> innerTerms tm
      | And        (tms,_)    -> foldl (fn (rtms,tm) -> rtms ++ innerTerms tm) [] tms
-     | SortedTerm (tm, _, _) -> innerTerms tm
+     | TypedTerm (tm, _, _) -> innerTerms tm
     %| Any        _          -> []
      | _                     -> [tm]
 
- op [a] numTerms(tm: ATerm a): Nat = length (unpackSortedTerms tm)
+ op [a] numTerms(tm: ATerm a): Nat = length (unpackTypedTerms tm)
 
- op [a] unpackFirstTerm(t: ATerm a): TyVars * ASort a * ATerm a =
+ op [a] unpackFirstTerm(t: ATerm a): TyVars * AType a * ATerm a =
    %let (tvs, ty, tm) = unpackTerm t in
-   let ((tvs, ty, tm) :: _) = unpackSortedTerms t in
+   let ((tvs, ty, tm) :: _) = unpackTypedTerms t in
    (tvs, ty, tm)
 
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
@@ -513,43 +513,43 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
- op [a] unpackSortedTerms (tm : ATerm a) : List (TyVars * ASort a * ATerm a) =
+ op [a] unpackTypedTerms (tm : ATerm a) : List (TyVars * AType a * ATerm a) =
    let 
-     def unpackTm (tm: ATerm a, ty: ASort a) : List (TyVars * ASort a * ATerm a) =
+     def unpackTm (tm: ATerm a, ty: AType a) : List (TyVars * AType a * ATerm a) =
        case tm of
          | And (tms, _) -> foldl (fn (result, tm) -> result ++ unpackTm(tm, ty)) [] tms
-         | SortedTerm (tm, ty, _) -> unpackTm(tm, ty)
+         | TypedTerm (tm, ty, _) -> unpackTm(tm, ty)
          | _ -> [([], ty, tm)]
    in   
    case tm of
      | Pi (pi_tvs, tm, _) -> 
        foldl (fn (result, (tvs, typ, tm)) -> result ++ [(pi_tvs ++ tvs, typ, tm)])
              [] 
-             (unpackSortedTerms tm)
+             (unpackTypedTerms tm)
 
      | And (tms, _) ->
-       foldl (fn (result, tm) -> result ++ (unpackSortedTerms tm)) [] tms
+       foldl (fn (result, tm) -> result ++ (unpackTypedTerms tm)) [] tms
 
-     | SortedTerm (tm, ty, _) -> unpackTm (tm, ty)
+     | TypedTerm (tm, ty, _) -> unpackTm (tm, ty)
 
-     | _                      -> [([], termSort tm, tm)]
+     | _                      -> [([], termType tm, tm)]
 
- op [a] unpackBasicTerm(tm: ATerm a): TyVars * ASort a * ATerm a =
+ op [a] unpackBasicTerm(tm: ATerm a): TyVars * AType a * ATerm a =
    case tm of
-     | Pi (tvs, SortedTerm (tm, ty, _), _) -> (tvs, ty, tm)
-     | SortedTerm (tm, ty, _) -> ([], ty, tm)
+     | Pi (tvs, TypedTerm (tm, ty, _), _) -> (tvs, ty, tm)
+     | TypedTerm (tm, ty, _) -> ([], ty, tm)
      | _                      -> ([], Any(termAnn tm), tm)
 
 
- op [a] unpackNthTerm (tm : ATerm a, n: Nat): TyVars * ASort a * ATerm a =
+ op [a] unpackNthTerm (tm : ATerm a, n: Nat): TyVars * AType a * ATerm a =
    % let _ = writeLine(printTerm tm) in
-   let ty_tms = unpackSortedTerms tm in
+   let ty_tms = unpackTypedTerms tm in
    let len = length ty_tms in
    if len = 0 then 
      ([], Any(termAnn tm), tm)
    else 
      let (tvs, ty, tm) = ty_tms @ (max (len - n - 1, 0)) in
-     % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(SortedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
+     % let _ = writeLine("unpackNthTerm: "^show n^"\n"^printTerm(TypedTerm(tm, ty, termAnn t))^"\n"^printTerm t) in
      (tvs, ty, tm)
 
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, n_tm: ATerm a): ATerm a =
@@ -580,7 +580,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
        case tm of
          | And(tms, a) -> And(andTerms (map flattenAnds tms), a)
          | Pi(tvs, tm, a) -> Pi(tvs, flattenAnds tm, a)
-         | SortedTerm(tm, ty, a) -> SortedTerm(flattenAnds tm, ty, a)
+         | TypedTerm(tm, ty, a) -> TypedTerm(flattenAnds tm, ty, a)
          | _ -> tm
    in
    % let _ = writeLine("fla:\n"^printTerm tm^"\n -->"^printTerm result) in
@@ -590,14 +590,14 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
  %%%                Pattern components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op patternSort : [b] APattern b -> ASort b
+ op patternType : [b] APattern b -> AType b
 
- def patternSort pat =
+ def patternType pat =
    case pat of
-     | AliasPat     (p1,_,    _) -> patternSort p1
+     | AliasPat     (p1,_,    _) -> patternType p1
      | VarPat       ((_,s),   _) -> s
      | EmbedPat     (_,_,s,   _) -> s
-     | RecordPat    (fields,  a) -> Product (map (fn (id, p) -> (id, patternSort p)) fields, a)
+     | RecordPat    (fields,  a) -> Product (map (fn (id, p) -> (id, patternType p)) fields, a)
      | WildPat      (srt,     _) -> srt
      | BoolPat      (_,       a) -> Boolean a
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
@@ -609,8 +609,8 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
        %% so users of that result must be prepared to handle that discrepency between 
        %% this result and the actual type referenced.
      | RestrictedPat(p, t,    a) ->
-       Subsort(patternSort p,Lambda([(p,mkTrueA a,t)],a),a)
-     | SortedPat    (_, srt,  _) -> srt
+       Subtype(patternType p,Lambda([(p,mkTrueA a,t)],a),a)
+     | TypedPat     (_, srt,  _) -> srt
 
  op [a] deRestrict(p: APattern a): APattern a =
    case p of
@@ -620,14 +620,14 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Sort, Pattern"
+ %%% "TSP" means "Term, Type, Pattern"
 
  type TSP_Maps b = (ATerm    b -> ATerm    b) *
-                   (ASort    b -> ASort    b) *
+                   (AType    b -> AType    b) *
                    (APattern b -> APattern b)
 
  op mapTerm    : [b] TSP_Maps b -> ATerm    b -> ATerm    b
- op mapSort    : [b] TSP_Maps b -> ASort    b -> ASort    b
+ op mapType    : [b] TSP_Maps b -> AType    b -> AType    b
  op mapPattern : [b] TSP_Maps b -> APattern b -> APattern b
 
  def mapTerm (tsp as (term_map,_,_)) term =
@@ -667,7 +667,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     Record (newRow, a)
 
 	 | Bind (bnd, vars, trm, a) ->
-	   let newVars = map (fn (id, srt)-> (id, mapSort tsp srt)) vars in
+	   let newVars = map (fn (id, srt)-> (id, mapType tsp srt)) vars in
 	   let newTrm = mapRec trm in
 	   if newVars = vars && newTrm = trm then
 	     term
@@ -675,7 +675,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     Bind (bnd, newVars, newTrm, a)
 
 	 | The (var as (id,srt), trm, a) ->
-	   let newVar = (id, mapSort tsp srt) in
+	   let newVar = (id, mapType tsp srt) in
 	   let newTrm = mapRec trm in
 	   if newVar = var && newTrm = trm then
 	     term
@@ -696,7 +696,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 
 	 | LetRec (decls, bdy, a) ->
 	   let newDecls = map (fn ((id, srt), trm) ->
-			       ((id, mapSort tsp srt),
+			       ((id, mapType tsp srt),
 				mapRec trm))
 	                      decls
 	   in
@@ -707,14 +707,14 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     LetRec (newDecls, newBdy, a)
 
 	 | Var ((id, srt), a) ->
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newSrt = srt then
 	     term
 	   else
 	     Var ((id, newSrt), a)
 
 	 | Fun (f, srt, a) ->
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newSrt = srt then
 	     term
 	   else
@@ -748,13 +748,13 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	   else
 	     Seq (newTerms, a)
 
-	 | SortedTerm (trm, srt, a) ->
+	 | TypedTerm (trm, srt, a) ->
 	   let newTrm = mapRec trm in
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newTrm = trm && newSrt = srt then
 	     term
 	   else
-	     SortedTerm (newTrm, newSrt, a)
+	     TypedTerm (newTrm, newSrt, a)
 
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t,   a) % TODO: what if map alters vars??
 
@@ -769,53 +769,53 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
    in
      mapRec term
 
- def mapSort (tsp as (_, sort_map, _)) srt =
+ def mapType (tsp as (_, type_map, _)) srt =
    let
 
      %% Written with explicit parameter passing to avoid closure creation
-     def mapS (tsp, sort_map, srt) =
+     def mapS (tsp, type_map, srt) =
        case srt of
 
 	 | Arrow (s1, s2, a) ->
-	   let newS1 = mapRec (tsp, sort_map, s1) in
-	   let newS2 = mapRec (tsp, sort_map, s2) in
+	   let newS1 = mapRec (tsp, type_map, s1) in
+	   let newS2 = mapRec (tsp, type_map, s2) in
 	   if newS1 = s1 && newS2 = s2 then
 	     srt
 	   else
 	     Arrow (newS1, newS2, a)
 	   
 	 | Product (row, a) ->
-	   let newRow = mapSRow (tsp, sort_map, row) in
+	   let newRow = mapSRow (tsp, type_map, row) in
 	   if newRow = row then
 	     srt
 	   else
 	     Product (newRow, a)
 	     
 	 | CoProduct (row, a) ->
-	   let newRow = mapSRowOpt (tsp, sort_map, row) in
+	   let newRow = mapSRowOpt (tsp, type_map, row) in
 	   if newRow = row then
 	     srt
 	   else
 	     CoProduct (newRow, a)
 	       
-	 | Quotient (super_sort, trm, a) ->
-	   let newSsrt = mapRec (tsp, sort_map, super_sort) in
+	 | Quotient (super_type, trm, a) ->
+	   let newSsrt = mapRec (tsp, type_map, super_type) in
 	   let newTrm =  mapTerm tsp trm in
-	   if newSsrt = super_sort && newTrm = trm then
+	   if newSsrt = super_type && newTrm = trm then
 	     srt
 	   else
 	     Quotient (newSsrt, newTrm, a)
 		 
-	 | Subsort (sub_sort, trm, a) ->
-	   let newSsrt = mapRec (tsp, sort_map, sub_sort) in
+	 | Subtype (sub_type, trm, a) ->
+	   let newSsrt = mapRec (tsp, type_map, sub_type) in
 	   let newTrm =  mapTerm tsp trm in
-	   if newSsrt = sub_sort && newTrm = trm then
+	   if newSsrt = sub_type && newTrm = trm then
 	     srt
 	   else
-	     Subsort (newSsrt, newTrm, a)
+	     Subtype (newSsrt, newTrm, a)
 		   
 	 | Base (qid, srts, a) ->
-	   let newSrts = mapSLst (tsp, sort_map, srts) in
+	   let newSrts = mapSLst (tsp, type_map, srts) in
 	   if newSrts = srts then
 	     srt
 	   else
@@ -830,7 +830,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	   (case link of
 	      | None -> srt
 	      | Some ssrt ->
-	        let newssrt = mapRec (tsp, sort_map, ssrt) in
+	        let newssrt = mapRec (tsp, type_map, ssrt) in
 		if newssrt = ssrt then
 		  srt
 		else
@@ -839,43 +839,43 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 				 link     = Some newssrt},
 			    pos))
 
-         | Pi  (tvs, srt, a) -> Pi (tvs, mapRec (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
+         | Pi  (tvs, srt, a) -> Pi (tvs, mapRec (tsp, type_map, srt), a)  % TODO: what if map alters vars?
 
-         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapRec (tsp, sort_map, srt)) srts, a)
+         | And (srts,     a) -> maybeAndType (map (fn srt -> mapRec (tsp, type_map, srt)) srts, a)
 
          | Any  _            -> srt
 
 	 | _ -> srt
 
-     def mapSLst (tsp, sort_map, srts) =
+     def mapSLst (tsp, type_map, srts) =
        case srts of
 	 | [] -> []
-	 | ssrt::rsrts -> Cons(mapRec  (tsp, sort_map, ssrt),
-			       mapSLst (tsp, sort_map, rsrts))
+	 | ssrt::rsrts -> Cons(mapRec  (tsp, type_map, ssrt),
+			       mapSLst (tsp, type_map, rsrts))
 
-     def mapSRowOpt (tsp, sort_map, row) =
+     def mapSRowOpt (tsp, type_map, row) =
        case row of
 	 | [] -> []
-	 | (id,optsrt)::rrow -> Cons ((id, mapRecOpt (tsp, sort_map, optsrt)),
-				      mapSRowOpt (tsp, sort_map, rrow))
+	 | (id,optsrt)::rrow -> Cons ((id, mapRecOpt (tsp, type_map, optsrt)),
+				      mapSRowOpt (tsp, type_map, rrow))
 
-     def mapSRow (tsp, sort_map, row) =
+     def mapSRow (tsp, type_map, row) =
        case row of
 	 | [] -> []
-	 | (id,ssrt)::rrow -> Cons ((id, mapRec (tsp, sort_map, ssrt)),
-				    mapSRow (tsp, sort_map, rrow))
+	 | (id,ssrt)::rrow -> Cons ((id, mapRec (tsp, type_map, ssrt)),
+				    mapSRow (tsp, type_map, rrow))
 
-     def mapRecOpt (tsp, sort_map, opt_sort) =
-       case opt_sort of
+     def mapRecOpt (tsp, type_map, opt_type) =
+       case opt_type of
 	 | None      -> None
-	 | Some ssrt -> Some (mapRec (tsp, sort_map, ssrt))
+	 | Some ssrt -> Some (mapRec (tsp, type_map, ssrt))
 
-     def mapRec (tsp, sort_map, srt) =
+     def mapRec (tsp, type_map, srt) =
        %% apply map to leaves, then apply map to result
-       sort_map (mapS (tsp, sort_map, srt))
+       type_map (mapS (tsp, type_map, srt))
 
    in
-     mapRec (tsp, sort_map, srt)
+     mapRec (tsp, type_map, srt)
 
  def mapPattern (tsp as (_, _, pattern_map)) pattern =
    let
@@ -892,7 +892,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     AliasPat (newP1, newP2, a)
 	   
 	 | VarPat ((v, srt), a) ->
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newSrt = srt then
 	     pattern
 	   else
@@ -900,14 +900,14 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     
 	 | EmbedPat (id, Some pat, srt, a) ->
 	   let newPat = mapRec pat in
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newPat = pat && newSrt = srt then
 	     pattern
 	   else
 	     EmbedPat (id, Some newPat, newSrt, a)
 	       
 	 | EmbedPat (id, None, srt, a) ->
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newSrt = srt then
 	     pattern
 	   else
@@ -921,7 +921,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	     RecordPat (newFields, a)
 		   
 	 | WildPat (srt, a) ->
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newSrt = srt then
 	     pattern
 	   else
@@ -942,13 +942,13 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	   else
 	     RestrictedPat (newPat, newTrm, a)
 			 
-	 | SortedPat (pat, srt, a) ->
+	 | TypedPat (pat, srt, a) ->
 	   let newPat = mapRec pat in
-	   let newSrt = mapSort tsp srt in
+	   let newSrt = mapType tsp srt in
 	   if newPat = pat && newSrt = srt then
 	     pattern
 	   else
-	     SortedPat (newPat, newSrt, a)
+	     TypedPat (newPat, newSrt, a)
 			   
        % | BoolPat   ??
        % | NatPat    ??
@@ -964,7 +964,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
    in
      mapRec pattern
 
- %% Like mapTerm but ignores sorts
+ %% Like mapTerm but ignores types
   op mapSubTerms: [a] (ATerm a -> ATerm a) -> ATerm a -> ATerm a
  def mapSubTerms f term =
    let
@@ -1054,12 +1054,12 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 	   else
 	     Seq (newTerms, a)
 			   
-	 | SortedTerm (trm, srt, a) ->
+	 | TypedTerm (trm, srt, a) ->
 	   let newTrm = mapRec trm in
 	   if newTrm = trm then
 	     term
 	   else
-	     SortedTerm (newTrm, srt, a)
+	     TypedTerm (newTrm, srt, a)
 			     
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t, a)  % TODO: what if map alters vars?
 
@@ -1121,7 +1121,7 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
 
       | Seq         (Ms,       _) -> exists? (existsSubTerm pred?) Ms
 
-      | SortedTerm  (M, srt,   _) -> existsSubTerm pred? M
+      | TypedTerm   (M, srt,   _) -> existsSubTerm pred? M
 
       | Pi          (tvs, t,   _) -> existsSubTerm pred? t
 
@@ -1147,10 +1147,10 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
        exists? (fn (_,p)-> existsPattern? pred? p) fields
      | QuotientPat  (pat,_,_) -> existsPattern? pred? pat
      | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
-     | SortedPat    (pat,_,_) -> existsPattern? pred? pat
+     | TypedPat     (pat,_,_) -> existsPattern? pred? pat
      | _ -> false)
 
- op [a] existsInType? (pred?: ASort a -> Bool) (ty: ASort a): Bool =
+ op [a] existsInType? (pred?: AType a -> Bool) (ty: AType a): Bool =
    pred? ty ||
    (case ty of
       | Arrow(x,y,_) -> existsInType? pred? x || existsInType? pred? y
@@ -1161,21 +1161,21 @@ op [a] maybePiAndSortedTerm (triples : List(TyVars * ASort a * ATerm a)): ATerm 
                                          | None -> false)
                                prs
       | Quotient(x,_,_) -> existsInType? pred? x
-      | Subsort(x,_,_) -> existsInType? pred? x
+      | Subtype(x,_,_) -> existsInType? pred? x
       | And(tys,_) -> exists? (existsInType? pred?) tys
       | _ -> false)
 
-op [a] existsTypeInPattern? (pred?: ASort a -> Bool) (pat: APattern a): Bool =
+op [a] existsTypeInPattern? (pred?: AType a -> Bool) (pat: APattern a): Bool =
   existsPattern? (fn p ->
                   case p of
                     | VarPat ((_, ty), _)    -> existsInType? pred? ty
                     | WildPat(ty, _)         -> existsInType? pred? ty
                     | EmbedPat (_, _, ty, _) -> existsInType? pred? ty
-                    | SortedPat(_, ty, _)    -> existsInType? pred? ty
+                    | TypedPat (_, ty, _)    -> existsInType? pred? ty
                     | _ -> false)
     pat
 
-op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
+op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
   existsSubTerm (fn t ->
                  case t of
                    | Var((_, ty), _) -> existsInType? pred? ty
@@ -1189,7 +1189,7 @@ op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
                      exists? (fn ((_, ty), _) -> existsInType? pred? ty) decls
                    | Lambda (match, a) ->
                      exists? (fn (pat, _, _) -> existsTypeInPattern? pred? pat) match
-                   | SortedTerm(_, ty, _) -> existsInType? pred? ty
+                   | TypedTerm(_, ty, _) -> existsInType? pred? ty
                    | _ -> false)
     tm
 
@@ -1233,7 +1233,7 @@ op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
 
      | Seq       (Ms,       _) -> foldl (fn (val,M) -> foldSubTerms f val M) newVal Ms
 
-     | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
+     | TypedTerm (M,   _,   _) -> foldSubTerms f newVal M
 
      | Pi        (_,   M,   _) -> foldSubTerms f newVal M
 
@@ -1311,7 +1311,7 @@ op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
 					   foldSubTermsEvalOrder f val M)
 					  val Ms
 
-	 | SortedTerm(M,_,    _) -> foldSubTermsEvalOrder f val M
+	 | TypedTerm (M,_,    _) -> foldSubTermsEvalOrder f val M
 
          | Pi        (_,  M,  _) -> foldSubTermsEvalOrder f val M
 
@@ -1341,20 +1341,20 @@ op [a] existsTypeInTerm? (pred?: ASort a -> Bool) (tm: ATerm a): Bool =
        foldl (fn (r,(_,p))-> foldSubPatterns f r p) result fields
      | QuotientPat  (pat,_,_) -> foldSubPatterns f result pat
      | RestrictedPat(pat,_,_) -> foldSubPatterns f result pat
-     | SortedPat    (pat,_,_) -> foldSubPatterns f result pat
+     | TypedPat     (pat,_,_) -> foldSubPatterns f result pat
      | _ -> result
 
-op [b,r] foldTypesInTerm (f: r * ASort b -> r) (init: r) (tm: ATerm b): r =
+op [b,r] foldTypesInTerm (f: r * AType b -> r) (init: r) (tm: ATerm b): r =
   let result = Ref init in
   (mapTerm (id, fn s -> (result := f(!result, s); s), id) tm;
    !result)
 
-op [b,r] foldTypesInType (f: r * ASort b -> r) (init: r) (tm: ASort b): r =
+op [b,r] foldTypesInType (f: r * AType b -> r) (init: r) (tm: AType b): r =
   let result = Ref init in
-  (mapSort (id, fn s -> (result := f(!result, s); s), id) tm;
+  (mapType (id, fn s -> (result := f(!result, s); s), id) tm;
    !result)
 
-op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r =
+op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r =
   let result = Ref init in
   (mapPattern (id, fn s -> (result := f(!result, s); s), id) tm;
    !result)
@@ -1362,15 +1362,15 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Sort, Pattern"
+ %%% "TSP" means "Term, Type, Pattern"
 
- type ReplaceSort a = (ATerm    a -> Option (ATerm    a)) *
-                      (ASort    a -> Option (ASort    a)) *
+ type ReplaceType a = (ATerm    a -> Option (ATerm    a)) *
+                      (AType    a -> Option (AType    a)) *
                       (APattern a -> Option (APattern a))
 
- op replaceTerm    : [b] ReplaceSort b -> ATerm    b -> ATerm    b
- op replaceSort    : [b] ReplaceSort b -> ASort    b -> ASort    b
- op replacePattern : [b] ReplaceSort b -> APattern b -> APattern b
+ op replaceTerm    : [b] ReplaceType b -> ATerm    b -> ATerm    b
+ op replaceType    : [b] ReplaceType b -> AType    b -> AType    b
+ op replacePattern : [b] ReplaceType b -> APattern b -> APattern b
 
 
  def replaceTerm (tsp as (term_map, _, _)) term =
@@ -1390,12 +1390,12 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 
 	| Bind        (bnd, vars, trm, a) ->
 	  Bind        (bnd,
-		       map (fn (id, srt)-> (id, replaceSort tsp srt)) vars,
+		       map (fn (id, srt)-> (id, replaceType tsp srt)) vars,
 		       replaceRec trm,
 		       a)
 	  
 	| The        ((id,srt), trm, a) ->
-	  The        ((id, replaceSort tsp srt), replaceRec trm, a)
+	  The        ((id, replaceType tsp srt), replaceRec trm, a)
 	  
 	| Let         (decls, bdy, a) ->
 	  Let         (map (fn (pat, trm)-> (replacePattern tsp pat, replaceRec trm)) decls,
@@ -1408,10 +1408,10 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 		       a)
 	  
 	| Var         ((id,                 srt), a) ->
-	  Var         ((id, replaceSort tsp srt), a)
+	  Var         ((id, replaceType tsp srt), a)
 	  
 	| Fun         (top,                 srt, a) ->
-	  Fun         (top, replaceSort tsp srt, a)
+	  Fun         (top, replaceType tsp srt, a)
 	  
 	| Lambda      (match, a) ->
 	  Lambda      (map (fn (pat, cond, trm)->
@@ -1427,8 +1427,8 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 	| Seq         (               terms, a) ->
 	  Seq         (map replaceRec terms, a)
 	  
-	| SortedTerm  (           trm,                 srt, a) ->
-	  SortedTerm  (replaceRec trm, replaceSort tsp srt, a)
+	| TypedTerm   (           trm,                 srt, a) ->
+	  TypedTerm   (replaceRec trm, replaceType tsp srt, a)
 	  
         | Pi          (tvs,            tm, a) ->  % TODO: can replaceRec alter vars?
 	  Pi          (tvs, replaceRec tm, a)
@@ -1449,7 +1449,7 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
   in
     replaceRec term
 
- def replaceSort (tsp as (_, sort_map, _)) srt =
+ def replaceType (tsp as (_, type_map, _)) srt =
    let
 
      def replace srt =
@@ -1466,8 +1466,8 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 	 | Quotient  (           srt,                 trm, a) ->
 	   Quotient  (replaceRec srt, replaceTerm tsp trm, a)
 	   
-	 | Subsort   (           srt,                 trm, a) ->
-	   Subsort   (replaceRec srt, replaceTerm tsp trm, a)
+	 | Subtype   (           srt,                 trm, a) ->
+	   Subtype   (replaceRec srt, replaceTerm tsp trm, a)
 	   
 	 | Base      (qid,                srts, a) ->
 	   Base      (qid, map replaceRec srts, a)
@@ -1481,7 +1481,7 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 	   Pi        (tvs, replaceRec srt, a) 
 
          | And       (               srts, a) ->
-	   maybeAndSort (map replaceRec srts, a)
+	   maybeAndType (map replaceRec srts, a)
 
 	 | Any _ -> srt
 
@@ -1494,7 +1494,7 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 
      def replaceRec srt =
        %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
-       case sort_map srt of
+       case type_map srt of
 	 | None        -> replace srt
 	 | Some newSrt -> newSrt
 
@@ -1511,19 +1511,19 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
            AliasPat     (replaceRec p1, replaceRec p2, a)
 
 	 | VarPat       ((v,                 srt), a) ->
-	   VarPat       ((v, replaceSort tsp srt), a)
+	   VarPat       ((v, replaceType tsp srt), a)
 
 	 | EmbedPat     (id, Some             pat,                  srt, a) ->
-	   EmbedPat     (id, Some (replaceRec pat), replaceSort tsp srt, a)
+	   EmbedPat     (id, Some (replaceRec pat), replaceType tsp srt, a)
 	   
 	 | EmbedPat     (id, None,                                  srt, a) ->
-	   EmbedPat     (id, None,                  replaceSort tsp srt, a)
+	   EmbedPat     (id, None,                  replaceType tsp srt, a)
 	   
 	 | RecordPat    (                                     fields, a) ->
 	   RecordPat    (map (fn (id,p)-> (id, replaceRec p)) fields, a)
 	   
 	 | WildPat      (                srt, a) ->
-	   WildPat      (replaceSort tsp srt, a)
+	   WildPat      (replaceType tsp srt, a)
 
 	 | QuotientPat  (           pat, qid, a) -> 
 	   QuotientPat  (replaceRec pat, qid, a)
@@ -1531,7 +1531,7 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 	 | RestrictedPat(           pat,                 trm, a) ->
 	   RestrictedPat(replaceRec pat, replaceTerm tsp trm, a)
 
-       % | SortedPat ??
+       % | TypedPat ??
        % | BoolPat   ??
        % | NatPat    ??
        % | StringPat ??
@@ -1551,26 +1551,26 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Application (for side-effects)
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Sort, Pattern"
+ %%% "TSP" means "Term, Type, Pattern"
 
  type appTSP a = (ATerm    a -> ()) *
-                 (ASort    a -> ()) *
+                 (AType    a -> ()) *
                  (APattern a -> ())
 
  type ATermOpt a = Option(ATerm a)
- type ASortOpt a = Option(ASort a)
+ type ATypeOpt a = Option(AType a)
 
- type ASortScheme  b = TyVars * ASort b
+ type ATypeScheme  b = TyVars * AType b
  type ATermScheme  b = TyVars * ATerm b
- type ASortSchemes b = List (ASortScheme b)
+ type ATypeSchemes b = List (ATypeScheme b)
  type ATermSchemes b = List (ATermScheme b)
 
  op appTerm        : [a] appTSP a -> ATerm        a -> ()
- op appSort        : [a] appTSP a -> ASort        a -> ()
+ op appType        : [a] appTSP a -> AType        a -> ()
  op appPattern     : [a] appTSP a -> APattern     a -> ()
  op appTermOpt     : [a] appTSP a -> ATermOpt     a -> ()
- op appSortOpt     : [a] appTSP a -> ASortOpt     a -> ()
- op appSortSchemes : [a] appTSP a -> ASortSchemes a -> ()
+ op appTypeOpt     : [a] appTSP a -> ATypeOpt     a -> ()
+ op appTypeSchemes : [a] appTSP a -> ATypeSchemes a -> ()
  op appTermSchemes : [a] appTSP a -> ATermSchemes a -> ()
 
  def appTerm (tsp as (term_app, _, _)) term =
@@ -1585,10 +1585,10 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 
 	 | Record     (row,          _) -> app (fn (id, trm) -> appRec trm) row
 
-	 | Bind       (_, vars, trm, _) -> (app (fn (id, srt) -> appSort tsp srt) vars;
+	 | Bind       (_, vars, trm, _) -> (app (fn (id, srt) -> appType tsp srt) vars;
 					    appRec trm)
 
-	 | The        ((id,srt), trm,    _) -> (appSort tsp srt; appRec trm)
+	 | The        ((id,srt), trm,    _) -> (appType tsp srt; appRec trm)
 
 	 | Let        (decls, bdy,   _) -> (app (fn (pat, trm) ->
 						 (appPattern tsp pat;
@@ -1599,9 +1599,9 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 	 | LetRec     (decls, bdy,   _) -> (app (fn (id, trm) -> appRec trm) decls;
 					    appRec bdy)
 
-	 | Var        ((id, srt),    _) -> appSort tsp srt
+	 | Var        ((id, srt),    _) -> appType tsp srt
 	 
-	 | Fun        (top, srt,     _) -> appSort tsp srt
+	 | Fun        (top, srt,     _) -> appType tsp srt
 	 
 	 | Lambda     (match,        _) -> app (fn (pat, cond, trm) ->
 						(appPattern tsp pat;
@@ -1613,7 +1613,7 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
 
 	 | Seq        (terms,        _) -> app appRec terms
 
-	 | SortedTerm (trm, srt,     _) -> (appRec trm; appSort tsp srt)
+	 | TypedTerm  (trm, srt,     _) -> (appRec trm; appType tsp srt)
 
 	 | Pi         (tvs, tm,      _) -> appRec tm
 
@@ -1628,16 +1628,16 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
    in
      appRec term
 
- def appSort (tsp as (_, srt_app, _)) srt =
+ def appType (tsp as (_, srt_app, _)) srt =
    let 
 
      def appS (tsp, srt) =
        case srt of
 	 | Arrow     (s1,  s2,   _) -> (appRec s1;  appRec s2)
 	 | Product   (row,       _) -> app (fn (id, srt) -> appRec srt) row
-	 | CoProduct (row,       _) -> app (fn (id, opt) -> appSortOpt tsp opt) row
+	 | CoProduct (row,       _) -> app (fn (id, opt) -> appTypeOpt tsp opt) row
 	 | Quotient  (srt, trm,  _) -> (appRec srt; appTerm tsp trm)
-	 | Subsort   (srt, trm,  _) -> (appRec srt; appTerm tsp trm)
+	 | Subtype   (srt, trm,  _) -> (appRec srt; appTerm tsp trm)
 	 | Base      (qid, srts, _) -> app appRec srts
 	 | Boolean               _  -> ()
 
@@ -1663,14 +1663,14 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
      def appP (tsp, pat) =
        case pat of
 	 | AliasPat     (p1, p2,            _) -> (appRec p1; appRec p2)
-	 | VarPat       ((v, srt),          _) -> appSort tsp srt
-	 | EmbedPat     (id, Some pat, srt, _) -> (appRec pat; appSort tsp srt)
-	 | EmbedPat     (id, None, srt,     _) -> appSort tsp srt
+	 | VarPat       ((v, srt),          _) -> appType tsp srt
+	 | EmbedPat     (id, Some pat, srt, _) -> (appRec pat; appType tsp srt)
+	 | EmbedPat     (id, None, srt,     _) -> appType tsp srt
 	 | RecordPat    (fields,            _) -> app (fn (id, p) -> appRec p) fields
-	 | WildPat      (srt,               _) -> appSort tsp srt
+	 | WildPat      (srt,               _) -> appType tsp srt
 	 | QuotientPat  (pat, _,            _) -> appRec pat
 	 | RestrictedPat(pat, trm,          _) -> appRec pat
-        %| SortedPat ??
+        %| TypedPat  ??
         %| BoolPat   ??
         %| NatPat    ??
 	%| StringPat ??
@@ -1682,18 +1682,18 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
    in
      appRec pat
 
- def appSortOpt tsp opt_sort =
-   case opt_sort of
+ def appTypeOpt tsp opt_type =
+   case opt_type of
      | None     -> ()
-     | Some srt -> appSort tsp srt
+     | Some srt -> appType tsp srt
 
  def appTermOpt tsp opt_term =
    case opt_term of
      | None     -> ()
      | Some trm -> appTerm tsp trm
 
- def appSortSchemes tsp sort_schemes =
-   app (fn (_,srt) -> appSort tsp srt) sort_schemes
+ def appTypeSchemes tsp type_schemes =
+   app (fn (_,srt) -> appType tsp srt) type_schemes
 
  def appTermSchemes tsp term_schemes =
    app (fn (_,term) -> appTerm tsp term) term_schemes
@@ -1702,33 +1702,33 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
  %%%                Misc Base Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op boolSort?    : [b] ASort b -> Bool
- op stringSort?  : [b] ASort b -> Bool
- op natSort?     : [b] ASort b -> Bool
- op intSort?     : [b] ASort b -> Bool
- op charSort?    : [b] ASort b -> Bool
+ op boolType?    : [b] AType b -> Bool
+ op stringType?  : [b] AType b -> Bool
+ op natType?     : [b] AType b -> Bool
+ op intType?     : [b] AType b -> Bool
+ op charType?    : [b] AType b -> Bool
 
- def boolSort? s =
+ def boolType? s =
    case s of
      | Boolean _ -> true
      | _ -> false
 
- def stringSort? s =
+ def stringType? s =
    case s of
      | Base (Qualified ("String",  "String"),  [], _) -> true
      | _ -> false
 
- def charSort? s =
+ def charType? s =
    case s of
      | Base (Qualified ("Char",  "Char"),  [], _) -> true
      | _ -> false
 
- def natSort? s =
+ def natType? s =
    case s of
      | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
      | _ -> false
 
- def intSort? s =
+ def intType? s =
    case s of
      | Base (Qualified ("Integer", "Int"),     [], _) -> true
      | _ -> false
@@ -1739,14 +1739,14 @@ op [b,r] foldTypesInPattern (f: r * ASort b -> r) (init: r) (tm: APattern b): r 
  
   op mkAndOp : [a] a -> ATerm a
  def mkAndOp a =
-   let bool_sort = Boolean a in
-   let binary_bool_sort = Arrow (Product ([("1",bool_sort), ("2",bool_sort)], a),
-				 bool_sort,
+   let bool_type = Boolean a in
+   let binary_bool_type = Arrow (Product ([("1",bool_type), ("2",bool_type)], a),
+				 bool_type,
 				 a)
    in
-     Fun (And, binary_bool_sort, a)
+     Fun (And, binary_bool_type, a)
 
-  op mkABase : [b] QualifiedId * List (ASort b) * b -> ASort b
+  op mkABase : [b] QualifiedId * List (AType b) * b -> AType b
  def mkABase (qid, srts, a) = Base (qid, srts, a)
 
  op mkTrueA  : [b] b -> ATerm b

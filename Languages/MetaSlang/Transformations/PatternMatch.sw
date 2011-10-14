@@ -25,7 +25,7 @@
 	. Handle patterns from:
 		Coproducts: embed
 		Products:   tuple
-		Subsort:    relax
+		Subtype:    relax
 		Quotient:   quotient
 		Natural, String, character constants.
 		Variables.
@@ -73,7 +73,7 @@ PatternMatch qualifying spec
 
   def mkBreak    srt = mkOp (Qualified("TranslationBuiltIn","mkBreak"), match_type srt)
 
-  def isBreak (term : MS.Term) = 
+  def isBreak (term : MSTerm) = 
     case term of
       | Fun (Op (Qualified("TranslationBuiltIn","mkBreak"), _), _, _) -> true
       | _ -> false
@@ -106,7 +106,7 @@ PatternMatch qualifying spec
    
  *)
 
-  op failWith (context : Context) (t1 : MS.Term) (t2 : MS.Term) : MS.Term =
+  op failWith (context : Context) (t1 : MSTerm) (t2 : MSTerm) : MSTerm =
     if isBreak t2 then 
       t1 
     else 
@@ -127,28 +127,28 @@ PatternMatch qualifying spec
                     | Some t -> printTerm t
                     | _ -> ""))
   
-  type Rule  = List Pattern * MS.Term * MS.Term
+  type Rule  = List MSPattern * MSTerm * MSTerm
   type Rules = List Rule
   
   type Context = {counter    : Ref Nat,
 		  spc        : Spec,
 		  funName    : String,
 		  errorIndex : Ref Nat,
-		  term       : Option MS.Term}
+		  term       : Option MSTerm}
 
   def storeTerm (tm, ctx) =
     ctx << {term = Some tm}
 
-%  op  mkProjectTerm : Spec * Id * MS.Term -> MS.Term
+%  op  mkProjectTerm : Spec * Id * MSTerm -> MSTerm
 %  def mkProjectTerm = SpecEnvironment.mkProjectTerm
-%  op  mkRestrict :    Spec * {pred:MS.Term,term: MS.Term} -> MS.Term
+%  op  mkRestrict :    Spec * {pred:MSTerm,term: MSTerm} -> MSTerm
 %  def mkRestrict = SpecEnvironment.mkRestrict
   
-  op match : Context * List MS.Term * Rules * MS.Term * MS.Term -> MS.Term
+  op match : Context * List MSTerm * Rules * MSTerm * MSTerm -> MSTerm
 
   (* The following invariant holds of the patterns:
      - for a call to match(vars,rules,default):
-	each list of patterns in the rules has the same length and sorting 
+	each list of patterns in the rules has the same length and typeing 
         as the list of vars.
 
      Pattern matching compilation proceeds according to 
@@ -249,7 +249,7 @@ PatternMatch qualifying spec
 	   | ... -> term2
  *)
 
-  def substPat(e,pat:Pattern,t) = 
+  def substPat(e,pat:MSPattern,t) = 
       if isTrue(e) then e else 
       case pat
 	of WildPat _ -> e
@@ -262,19 +262,19 @@ PatternMatch qualifying spec
  *)
 
   def embedded (constructorName : String) term = 
-    mkApply (mkEmbedded (constructorName, termSort term),
+    mkApply (mkEmbedded (constructorName, termType term),
              term)
 
 
   def relaxed predicate term = 
     mkApply (predicate, term)
  
-  def equalToConstant (srt, constantTerm : MS.Term) term =
+  def equalToConstant (srt, constantTerm : MSTerm) term =
     mkEquality (srt, constantTerm, term)
 
-  def mkLet (lets : List (Pattern * MS.Term), term) = 
+  def mkLet (lets : List (MSPattern * MSTerm), term) = 
     case lets of
-      | [] -> term : MS.Term
+      | [] -> term : MSTerm
       | _  -> MS.mkLet (lets, term)
         	
   op [A,B] partition : (A -> B) -> List A        -> List (List A)
@@ -294,10 +294,10 @@ PatternMatch qualifying spec
 
   type RuleType = | Var 
                   | Con 
-                  | Alias      Pattern * Pattern
-                  | Relax      Pattern * MS.Term 
-                  | Quotient   Pattern * SortName
-                  | Restricted Pattern * MS.Term 
+                  | Alias      MSPattern * MSPattern
+                  | Relax      MSPattern * MSTerm 
+                  | Quotient   MSPattern * TypeName
+                  | Restricted MSPattern * MSTerm 
 
   op ruleType (q : Rule) : RuleType = 
     case q of
@@ -322,7 +322,7 @@ PatternMatch qualifying spec
     let _ = writeLine ("Condition: " ^ printTerm cond) in
     writeLine ("Body: " ^ printTerm body)
 
-  def sameConstructor spc (pat1 : Pattern, pat2 : Pattern) = 
+  def sameConstructor spc (pat1 : MSPattern, pat2 : MSPattern) = 
     case (pat1, pat2) of
       | (RecordPat _,         RecordPat _       ) -> true
       | (EmbedPat (e1,_,_,_), EmbedPat(e2,_,_,_)) -> e1 = e2
@@ -364,23 +364,23 @@ PatternMatch qualifying spec
 		
  *)
 
-  type DestructedRule = MS.Term * List MS.Term * List (Pattern * MS.Term) * Pattern * Rules
+  type DestructedRule = MSTerm * List MSTerm * List (MSPattern * MSTerm) * MSPattern * Rules
 
-  op partitionConstructors : Context * MS.Term * Rules -> List DestructedRule
+  op partitionConstructors : Context * MSTerm * Rules -> List DestructedRule
 
-  op freshVar (context : Context, srt : Sort) : Var =
+  op freshVar (context : Context, srt : MSType) : Var =
    let num = ! context.counter + 1 in
    (context.counter := num;
     ("pV" ^ (Nat.show num), srt))
 
-  op freshVars (num : Nat, context : Context, pat : Pattern) : List (String * Var) =
+  op freshVars (num : Nat, context : Context, pat : MSPattern) : List (String * Var) =
    case num of
      | 0 -> []
-     | 1 -> [("", freshVar (context, patternSort pat))]
+     | 1 -> [("", freshVar (context, patternType pat))]
      | _ ->
        case pat of
          | RecordPat(fields,_) -> 
-           map (fn (l, p) -> (l, freshVar (context, patternSort p)))
+           map (fn (l, p) -> (l, freshVar (context, patternType p)))
                fields
          | _ -> System.fail "Record pattern expected"
 
@@ -389,31 +389,31 @@ PatternMatch qualifying spec
    *  of the pattern 
    *)
 
-  op queryPat (pattern : Pattern) : MS.Term -> MS.Term = 
+  op queryPat (pattern : MSPattern) : MSTerm -> MSTerm = 
    case pattern of
      | EmbedPat  (e,_,_, _) -> embedded e
-     | NatPat    (n,     _) -> equalToConstant (natSort,    mkNat    n)
-     | CharPat   (c,     _) -> equalToConstant (charSort,   mkChar   c)
-     | BoolPat   (b,     _) -> equalToConstant (boolSort,   mkBool   b)
-     | StringPat (s,     _) -> equalToConstant (stringSort, mkString s)
+     | NatPat    (n,     _) -> equalToConstant (natType,    mkNat    n)
+     | CharPat   (c,     _) -> equalToConstant (charType,   mkChar   c)
+     | BoolPat   (b,     _) -> equalToConstant (boolType,   mkBool   b)
+     | StringPat (s,     _) -> equalToConstant (stringType, mkString s)
      | RecordPat _          -> (fn _ -> trueTerm)
      | _                    -> (fn _ -> trueTerm)
               
 
-  op coproductFields (spc: Spec, srt: Sort) : List (Id * Option Sort) = 
+  op coproductFields (spc: Spec, srt: MSType) : List (Id * Option MSType) = 
    let srt = unfoldBase (spc, srt) in
    case srt of
      | CoProduct (fields, _) -> fields
-     | Subsort   (tau, _, _) -> coproductFields (spc, tau)
+     | Subtype   (tau, _, _) -> coproductFields (spc, tau)
      | Base (Qualified ("List", "List"), [x], _) -> 
        [("Nil",  None), 
         ("Cons", Some (Product ([("1", x), ("2", srt)], 
-                                sortAnn srt)))]
-     | _ -> System.fail ("CoProduct sort expected, but got " ^ printSort srt)
+                                typeAnn srt)))]
+     | _ -> System.fail ("CoProduct type expected, but got " ^ printType srt)
 
   def partitionConstructors (context, t, rules) =
     let
-      def patDecompose (pattern : Pattern) : List (Pattern * MS.Term) = 
+      def patDecompose (pattern : MSPattern) : List (MSPattern * MSTerm) = 
         case pattern of
           | RecordPat (pats,_) -> 
             map (fn (index, p)-> (p, mkProjectTerm(context.spc, index, t))) 
@@ -434,7 +434,7 @@ PatternMatch qualifying spec
           | ((pat::pats,cond,body),[]) -> 
             let query         = queryPat pat t   in
             let decomposition = patDecompose pat in
-            let newVars       = map (fn (p, _) -> freshVar (context, patternSort p)) 
+            let newVars       = map (fn (p, _) -> freshVar (context, patternType p)) 
                                     decomposition 
             in
             let lets          = ListPair.map (fn ((p, t), v)-> (mkVarPat v, t))
@@ -460,7 +460,7 @@ PatternMatch qualifying spec
       in
       foldr insert [] rules 
 	       
-  op abstract (vs: List (String * Var), tm : MS.Term, srt) : MS.Term = 
+  op abstract (vs: List (String * Var), tm : MSTerm, srt) : MSTerm = 
     let st? = simplifyPatternMatchResult tm in
     let tm  = case st? of
                 | Some tm -> tm
@@ -495,7 +495,7 @@ PatternMatch qualifying spec
       | Var                        -> matchVar        (context,           vars, rules, default, break)
       | Con                        -> matchCon        (context,           vars, rules, default, break)
       | Alias      (p1,  p2)       -> matchAlias      (context, p1, p2,   vars, rules, default, break)
-      | Relax      (pat, pred)     -> matchSubsort    (context, pred,     vars, rules, default, break)
+      | Relax      (pat, pred)     -> matchSubtype    (context, pred,     vars, rules, default, break)
       | Restricted (pat, bool_exp) -> matchRestricted (context, bool_exp, vars, rules, default, break)
       | Quotient    _              -> matchQuotient   (context,           vars, rules, default, break) 
       
@@ -541,7 +541,7 @@ PatternMatch qualifying spec
     in
     match (context, tm :: terms, rules, default, break)
 
-  def matchSubsort (context, pred, tm::terms, rules, default, break) =
+  def matchSubtype (context, pred, tm::terms, rules, default, break) =
     let _(* srt *) = inferType  (context.spc, tm) in
     let t1         = mkRestrict (context.spc, {pred = pred, term = tm}) in
     failWith context 
@@ -573,14 +573,14 @@ PatternMatch qualifying spec
         let v     = ("v",srt)                                    in
         let f     = mkLambda (VarPat (v, noPos), Var (v, noPos)) in
         let t1    = mkApply  (mkChooseFun (q, srt, srt, f), tm)  in
-        let rules = map (fn ((Cons ((QuotientPat (p, pred, _)):Pattern, pats), cond, e) : Rule) ->
+        let rules = map (fn ((Cons ((QuotientPat (p, pred, _)):MSPattern, pats), cond, e) : Rule) ->
                            (p::pats, cond, e))
                         rules 
         in
         failWith context
                  (match (context, t1::terms, rules, break, break))
                  default 	
-      | _ -> fail ("Internal confusion in matchQuotient: expected " ^ printSort q ^ " to name a quotient type")
+      | _ -> fail ("Internal confusion in matchQuotient: expected " ^ printType q ^ " to name a quotient type")
 
 
  %% fn (x as pat) -> bod  -->  fn x -> let pat = x in bod
@@ -595,7 +595,7 @@ PatternMatch qualifying spec
                a2))]
     | _ -> rules
 
- def splitPattern (arity, pat : Pattern) :List Pattern =
+ def splitPattern (arity, pat : MSPattern) :List MSPattern =
    if arity = 1 then 
      [pat] 
    else
@@ -610,11 +610,11 @@ PatternMatch qualifying spec
      | ((_, pat)::fields, (_,t)::terms) -> (pat,t) :: zipFields (fields, terms)
      | _ -> System.fail "zipFields: Uneven length of fields"
 
- def flattenLetDecl ((pat : Pattern, term : MS.Term), (context, decls)) =
+ def flattenLetDecl ((pat : MSPattern, term : MSTerm), (context, decls)) =
    case (pat, term) of
      | (WildPat (srt,_), Var _)        -> (context, decls)
      | (WildPat (srt,_), Record([],_)) -> (context, decls)
-     | (WildPat (srt,_), term)         -> (context, Cons ((mkVarPat (freshVar (context, patternSort pat)), term), 
+     | (WildPat (srt,_), term)         -> (context, Cons ((mkVarPat (freshVar (context, patternType pat)), term), 
                                                           decls))
 
      | (RecordPat (fields, _), Record (terms, _)) ->
@@ -634,9 +634,9 @@ PatternMatch qualifying spec
      | _ -> 
        (context, (pat, term) :: decls)
 
- op eliminatePattern: Context -> Pattern -> Pattern 
- op eliminateTerm   : Context -> MS.Term -> MS.Term
- op eliminateSort   : Context -> Sort    -> Sort
+ op eliminatePattern: Context -> MSPattern -> MSPattern 
+ op eliminateTerm   : Context -> MSTerm    -> MSTerm
+ op eliminateType   : Context -> MSType    -> MSType
 
  def eliminatePattern context pat = 
    case pat of
@@ -645,18 +645,18 @@ PatternMatch qualifying spec
        AliasPat (eliminatePattern context p1, eliminatePattern context p2, a)
 
      | VarPat ((n, s),                       a) -> 
-       VarPat ((n, eliminateSort context s), a)
+       VarPat ((n, eliminateType context s), a)
 
      | EmbedPat (i, Some p,                            s,                       a) ->
-       EmbedPat (i, Some (eliminatePattern context p), eliminateSort context s, a)
+       EmbedPat (i, Some (eliminatePattern context p), eliminateType context s, a)
 
      | EmbedPat (i, None, s,                       a) ->
-       EmbedPat (i, None, eliminateSort context s, a)
+       EmbedPat (i, None, eliminateType context s, a)
 
      | RecordPat (fields,                                                   a) -> 
        RecordPat (map (fn (i, p)-> (i, eliminatePattern context p)) fields, a)
 
-     | WildPat   (s, a) -> VarPat (freshVar (context, eliminateSort context s), a)
+     | WildPat   (s, a) -> VarPat (freshVar (context, eliminateType context s), a)
      | StringPat (s, a) -> StringPat (s, a)
      | BoolPat   (b, a) -> BoolPat   (b, a)
      | CharPat   (c, a) -> CharPat   (c, a)
@@ -668,42 +668,42 @@ PatternMatch qualifying spec
      | RestrictedPat (p,                          tm,                       a) ->
        RestrictedPat (eliminatePattern context p, eliminateTerm context tm, a)
 
-     | SortedPat (p,                          ty,                       a) ->
-       SortedPat (eliminatePattern context p, eliminateSort context ty, a)
+     | TypedPat (p,                          ty,                       a) ->
+       TypedPat (eliminatePattern context p, eliminateType context ty, a)
 
- def eliminateSort context srt =
+ def eliminateType context srt =
    case srt of
 
      | Arrow (s1,                       s2,                       a) -> 
-       Arrow (eliminateSort context s1, eliminateSort context s2, a)
+       Arrow (eliminateType context s1, eliminateType context s2, a)
 
      | Product (fields,                                                 a) -> 
-       Product (map (fn (i, s) -> (i, eliminateSort context s)) fields, a)
+       Product (map (fn (i, s) -> (i, eliminateType context s)) fields, a)
 
      | CoProduct (fields, a) -> 
        CoProduct (map (fn (i, x) -> 
                          (i,
                           case x of
-                            | Some s -> Some (eliminateSort context s)
+                            | Some s -> Some (eliminateType context s)
                             | _ -> None))
                       fields,
                   a)
 
      | Quotient (s,                       tm,                       a) -> 
-       Quotient (eliminateSort context s, eliminateTerm context tm, a)
+       Quotient (eliminateType context s, eliminateTerm context tm, a)
 
-     | Subsort (s,                       tm, a) -> 
-       % Subsort predicates aren't used in code generation (??), so omit eliminateTerm context tm,  ????
-       Subsort (eliminateSort context s, tm, a) 
+     | Subtype (s,                       tm, a) -> 
+       % Subtype predicates aren't used in code generation (??), so omit eliminateTerm context tm,  ????
+       Subtype (eliminateType context s, tm, a) 
 
-     | Base (qid, sorts,                             a) -> 
-       Base (qid, map (eliminateSort context) sorts, a)
+     | Base (qid, types,                             a) -> 
+       Base (qid, map (eliminateType context) types, a)
 
      | Boolean _ -> srt
      | TyVar   _ -> srt
      | Any     _ -> srt
-     | And (srts,     a) -> And (map (eliminateSort context) srts, a)
-     | Pi  (tvs, srt, a) -> Pi  (tvs, eliminateSort context srt,   a)
+     | And (srts,     a) -> And (map (eliminateType context) srts, a)
+     | Pi  (tvs, srt, a) -> Pi  (tvs, eliminateType context srt,   a)
 
  (* Generate the default catch all case given a set of rules *)
 
@@ -727,7 +727,7 @@ PatternMatch qualifying spec
            (reverse firstRules, mkSuccess (srt, body))
 
          | [(VarPat (v, _), Fun(Bool true, _, _), body)] ->
-           let term : MS.Term = 
+           let term : MSTerm = 
                case vs of
                  | [(_, v)] -> Var (v, noPos)
                  | _ -> Record (map (fn(l,v)-> (l, mkVar v)) vs, 
@@ -764,7 +764,7 @@ PatternMatch qualifying spec
  %%% The last case of a Lambda case has the obligation of always matching, so if it
  %%% is has | (such-that) clause, there is the obligation that it is true
 
- op alwaysCheckRestrictedPatInLambda?: Boolean = false
+ op alwaysCheckRestrictedPatInLambda?: Bool = false
 
  def eliminateTerm context term = 
    case term of
@@ -799,17 +799,17 @@ PatternMatch qualifying spec
                           rules
 	 in			      
 	 let (pat, cond, bdy)  = head rules                                      in
-	 let bdySort           = inferType (context.spc, bdy)                    in
+	 let bdyType           = inferType (context.spc, bdy)                    in
 	 let vs                = freshVars (arity, context, pat)                 in
 	 %%%	 let  _ = writeLine "Elimination from lambda: rules "            in
-	 let (rules, default)  = makeDefault (context, bdySort, rules, vs, term) in
+	 let (rules, default)  = makeDefault (context, bdyType, rules, vs, term) in
 	 let rules = map (fn (p, c, t) -> 
-                            (splitPattern(arity,p), c, mkSuccess (bdySort, t))) 
+                            (splitPattern(arity,p), c, mkSuccess (bdyType, t))) 
                          rules 
          in
 	 let vars = map (fn (_, v) -> mkVar v) vs                                            in
-	 let trm  = match (storeTerm (term, context), vars, rules, default, mkBreak bdySort) in
-	 let trm  = abstract (vs, trm, bdySort)                                              in
+	 let trm  = match (storeTerm (term, context), vars, rules, default, mkBreak bdyType) in
+	 let trm  = abstract (vs, trm, bdyType)                                              in
 	 trm
 
      (* 
@@ -841,7 +841,7 @@ PatternMatch qualifying spec
          in
          let bdySrt = inferType (context. spc, body) in
          % let _  = writeLine "Let pattern elimination tabulating " in
-         let vs = map (fn pat -> freshVar (context, patternSort pat)) pats in
+         let vs = map (fn pat -> freshVar (context, patternType pat)) pats in
          let (vars,_) = 
              foldl (fn ((vars, num), v) -> 
                       (Cons ((Nat.show num, v), vars), num + 1))
@@ -870,24 +870,24 @@ PatternMatch qualifying spec
 	Record (map (fn (id, t) -> (id, eliminateTerm context t)) fields, a)
 
       | Bind (b, vars,                                             tm,                       a) -> 
-	Bind (b, map (fn(n,s)-> (n,eliminateSort context s)) vars, eliminateTerm context tm, a)
+	Bind (b, map (fn(n,s)-> (n,eliminateType context s)) vars, eliminateTerm context tm, a)
 
       | The ((id, srt),                       tm,                       a) -> 
-	The ((id, eliminateSort context srt), eliminateTerm context tm, a)
+	The ((id, eliminateType context srt), eliminateTerm context tm, a)
 
       | LetRec (decls, body, a) -> 
 	LetRec (map (fn ((n, s), t)->
-                       ((n, eliminateSort context s),
+                       ((n, eliminateType context s),
                         eliminateTerm context t)) 
                     decls,
                 eliminateTerm context body,
                 a)
 
       | Var ((n, s),                       a) -> 
-        Var ((n, eliminateSort context s), a)
+        Var ((n, eliminateType context s), a)
 
       | Fun (f, s,                       a) -> 
-        Fun (f, eliminateSort context s, a)
+        Fun (f, eliminateType context s, a)
 
       | IfThenElse (s1, s2, s3, a) -> 
         IfThenElse (eliminateTerm context s1,
@@ -901,12 +901,12 @@ PatternMatch qualifying spec
       | And (tm                       :: r_tms, a) -> 
         And (eliminateTerm context tm :: r_tms, a)
 
-      | SortedTerm (tm,                       ty,                       a) ->
-        SortedTerm (eliminateTerm context tm, eliminateSort context ty, a)
+      | TypedTerm (tm,                       ty,                       a) ->
+        TypedTerm (eliminateTerm context tm, eliminateType context ty, a)
 
       | tm -> tm
 
- op simplifyPatternMatchResult (t : MS.Term) : Option MS.Term =
+ op simplifyPatternMatchResult (t : MSTerm) : Option MSTerm =
   let 
 
     def simpRec (t1, t2) =
@@ -975,13 +975,13 @@ PatternMatch qualifying spec
       simpRec (t1, simpLet t2)
     | _ -> None
      
- op simpLamBody (t : MS.Term) : MS.Term =
+ op simpLamBody (t : MSTerm) : MSTerm =
   case t of
     | Lambda ([(pat, c, Apply(Lambda([(VarPat(v,_),_,body)],_),wVar as (Var(w,_)),_))], pos) ->
       Lambda ([(pat, c, substitute(body,[(v,wVar)]))],                                  pos)
     | _ -> t
 
- op simpLet (tm : MS.Term) : MS.Term =
+ op simpLet (tm : MSTerm) : MSTerm =
    case tm of
 
      | Apply (Fun (Op(Qualified("TranslationBuiltIn","mkSuccess"),a1),t1,a2), st1,         a3) ->
@@ -994,7 +994,7 @@ PatternMatch qualifying spec
 
      | _ -> tm
 
- op simpleSuccTerm? (tm : MS.Term) : Bool =
+ op simpleSuccTerm? (tm : MSTerm) : Bool =
   case tm of
     | Apply (Fun (Op (Qualified("TranslationBuiltIn","mkSuccess"),_),_,_), st1, _) -> 
       simpleSuccTerm? st1
@@ -1037,29 +1037,29 @@ PatternMatch qualifying spec
 	term       = None} 
    in
      spc << {
-             sorts = mapSortInfos (fn info ->
-                                   let Qualified (_,id) = primarySortName info in
-                                   let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+             types = mapTypeInfos (fn info ->
+                                   let Qualified (_,id) = primaryTypeName info in
+                                   let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
                                    let new_defs =
 				       map (fn dfn ->
-                                            let (tvs, srt) = unpackSort dfn in
-                                            let new_sort = eliminateSort (mkContext id) srt in
-                                            maybePiSort (tvs, new_sort))
+                                            let (tvs, srt) = unpackType dfn in
+                                            let new_type = eliminateType (mkContext id) srt in
+                                            maybePiType (tvs, new_type))
                                            old_defs
                                    in
-                                     let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
+                                     let new_dfn = maybeAndType (old_decls ++ new_defs, typeAnn info.dfn) in
                                      info << {dfn = new_dfn}) 
-                                  spc.sorts,
+                                  spc.types,
              ops = mapOpInfos (fn info ->
                                let Qualified (_,id) = primaryOpName info in
                                let (old_decls, old_defs) = opInfoDeclsAndDefs info in
                                let new_defs = 
                                    map (fn dfn ->
 					let (tvs, srt, term) = unpackFirstTerm dfn in
-					let new_srt = eliminateSort (mkContext id) srt in
+					let new_srt = eliminateType (mkContext id) srt in
 					let new_tm  = eliminateTerm (mkContext id) term in
 					let new_tm = simpLamBody new_tm in
-					maybePiTerm (tvs, SortedTerm (new_tm, new_srt, termAnn term)))
+					maybePiTerm (tvs, TypedTerm (new_tm, new_srt, termAnn term)))
 				       old_defs
 			       in
                                  let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
@@ -1080,7 +1080,7 @@ endspec
  * Arity raising must take place before or during pattern matching compilation
  * because that flattens the record patterns.
  *
- * def arityRaising(term:MS.Term):MS.Term = 
+ * def arityRaising(term:MSTerm):MSTerm = 
  *     case term
  *       of (Lambda 
  *	   [((VarPat(v1,_),pos0),(Fun(Bool true,_),_),
@@ -1088,7 +1088,7 @@ endspec
  *	  if (v1 = v2) &&  
  *	     forall? (fn(_,(VarPat v3,_))-> ~(v1 = v3) | _ -> false) fields
  *	  then 
- *	  let letTerm:MS.Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
+ *	  let letTerm:MSTerm = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
  *	  (Lambda [(pat,trueTerm,Match.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
  *	  else term
  *	| _ -> term
@@ -1112,7 +1112,7 @@ endspec
  *  | CONST :: {const : const, span : Nat}
  * and const = 
  *  | NAT  :: Nat
- *  | BOOL :: Boolean
+ *  | BOOL :: Bool
  *  | CHAR :: Char
  *  | STRING :: String
  * 
@@ -1149,12 +1149,12 @@ endspec
  *  *)
  * 
  * type pattern = 
- *   | Var :: String * Sort
- *   | Con :: con * List[pattern] * Sort
+ *   | Var :: String * Type
+ *   | Con :: con * List[pattern] * Type
  *   | Alias :: pattern * pattern
  * 
  * (*
- *  * convertPattern : SpecEnvironment * Pattern -> pattern
+ *  * convertPattern : SpecEnvironment * MSPattern -> pattern
  *  * 
  *  * Convert MetaSlang Ast pattern into internal simplified pattern
  *  * representation.
@@ -1164,21 +1164,21 @@ endspec
  * def coProductLength(spc,srt) = 
  *     case unfoldBase(spc,srt)
  *       of (CoProduct fields,_) -> length fields
- *        | _ -> System.fail "Not a co-product sort"
+ *        | _ -> System.fail "Not a co-product type"
  * 
- * def relaxTerm(srt:Sort) = 
+ * def relaxTerm(srt:Type) = 
  *     case srt
- *       of (Arrow((Subsort(_,trm),_),_),_) -> trm
+ *       of (Arrow((Subtype(_,trm),_),_),_) -> trm
  *        | _ -> trueTerm (* Should not happen *)
  *     
  * 
- * def convertPattern(spc,pat as (p,_):Pattern):pattern = 
+ * def convertPattern(spc,pat as (p,_):MSPattern):pattern = 
  *     case p
  *       of VarPat var -> Var var
  *        | AliasPat(p1,p2) -> Alias(convertPattern(spc,p1),
  * 				  convertPattern(spc,p2))
  *        | QuotientPat(p,t) -> 
- * 	 Con(QUOTIENT(t),[convertPattern(spc,p)],patternSort(pat))
+ * 	 Con(QUOTIENT(t),[convertPattern(spc,p)],patternType(pat))
  *        | EmbedPat(con,Some arg,srt) ->
  * 	 Con(CON{arity = 1,name = con,span = coProductLength(spc,srt)},
  * 	    [convertPattern(spc,arg)],srt) 
@@ -1188,22 +1188,22 @@ endspec
  *        | RecordPat(fields) -> 
  * 	 Con(CON{arity = length fields,name = "",span = 1},
  * 		map (fn(id,p) -> convertPattern(spc,p)) fields,
- * 	        patternSort(pat))
+ * 	        patternType(pat))
  * 	 (* 
  * 	  * The empty constructor name is reserved for record
  * 	  * constructors.
  *           *)
  *        | WildPat srt -> Var("",srt)
- *        | StringPat s -> Con(CONST{const = STRING s,span = 0},[],stringSort)
- *        | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolSort)
- *        | NatPat n    -> Con(CONST{const = NAT n,span = 0},[],intSort)
- *        | CharPat ch  -> Con(CONST{const = CHAR ch,span = 256},[],charSort)
+ *        | StringPat s -> Con(CONST{const = STRING s,span = 0},[],stringType)
+ *        | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolType)
+ *        | NatPat n    -> Con(CONST{const = NAT n,span = 0},[],intType)
+ *        | CharPat ch  -> Con(CONST{const = CHAR ch,span = 256},[],charType)
  * 
- * def patternSort(pat:pattern):Sort = 
+ * def patternType(pat:pattern):Type = 
  *     case pat
  *       of Var(_,srt) -> srt
  *        | Con(_,_,srt) -> srt
- *        | Alias(p1,p2) -> patternSort p1
+ *        | Alias(p1,p2) -> patternType p1
  * 
  * (* Term descriptions *)
  * 
@@ -1322,7 +1322,7 @@ endspec
  *        | Restrict s -> "restrict_"^printTerm s
  *        | Choose s -> "choose_"^printTerm s
  * 
- * type var = String * Sort
+ * type var = String * Type
  * 
  * type test = 
  *  | Embedded :: String * var
@@ -1444,7 +1444,7 @@ endspec
  * 			 tabulate(arity,fn i -> 
  * 			      let sp = selectproject(name,i+1) in
  * 			      let pat_i = nth(pargs,i) in
- * 			      let srt_i = patternSort(pat_i) in
+ * 			      let srt_i = patternType(pat_i) in
  * 			      let s  = if name = "" 
  * 					then "project"^show i
  * 				       else "select_"^name
@@ -1485,7 +1485,7 @@ endspec
  * 	       | Con(pcon as RELAX term,pargs,srt) ->
  * 		 let acc  = restrict(term) in 
  * 		 let oarg = "relax_"^obj in 
- * 		 let srt0 = termSort term in
+ * 		 let srt0 = termType term in
  * 		 let decls = [((oarg,srt0),acc,(obj,srt))] in 
  * 		 let test:test = Relaxed(term,(obj,srt)) in 
  * 		 let def dynamicfail() = 

@@ -1,11 +1,11 @@
 
-The following defines both a concrete sort for categories.
+The following defines both a concrete type for categories.
 
 \begin{spec}
 spec {
   import ../WithMaps
 
-  sort Cat (O,A) = {
+  type Cat (O,A) = {
     objects : Set O,
     arrows : Set A,
     ident : Map (O,A),

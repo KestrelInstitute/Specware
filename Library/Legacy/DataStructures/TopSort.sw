@@ -1,4 +1,4 @@
-%% toplogical sort
+%% toplogical type
 
 TopSort qualifying spec
   import HashTable

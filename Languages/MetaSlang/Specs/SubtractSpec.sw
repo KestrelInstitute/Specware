@@ -2,7 +2,7 @@ AnnSpec qualifying spec
 
  import Equivalences
 
- % substract the ops and sorts in the second argument from those
+ % substract the ops and types in the second argument from those
  % appearing in the first.
 
  op subtractSpec              : Spec -> Spec -> Spec
@@ -48,7 +48,7 @@ AnnSpec qualifying spec
    x_spec << {
               elements = x_but_not_y_elements,
               ops      = mapDiffOps   x_spec.ops   y_spec.ops,
-              sorts    = mapDiffSorts x_spec.sorts y_spec.sorts
+              types    = mapDiffTypes x_spec.types y_spec.types
 	}
 
  def subtractSpecProperties (spec1, spec2) =
@@ -102,11 +102,11 @@ AnnSpec qualifying spec
        (case e2 of
 	  | Import (s2_tm, s2, _, _) -> s1 = s2  %% sameSCTerm? (s1_tm, s2_tm) 
 	  | _ -> false)
-     | Sort (qid1, _) -> 
+     | Type (qid1, _) -> 
        (case e2 of
-	  | Sort (qid2, _) -> 
-	    let Some info1 = findTheSort (s1, qid1) in
-	    let Some info2 = findTheSort (s2, qid2) in
+	  | Type (qid2, _) -> 
+	    let Some info1 = findTheType (s1, qid1) in
+	    let Some info2 = findTheType (s2, qid2) in
 	    (info1.names = info2.names
 	     &&
 	     (case (info1.dfn, info2.dfn) of
@@ -114,11 +114,11 @@ AnnSpec qualifying spec
 		| (_, Any _) -> true
 		| (srt1, srt2) -> equivType? s2 (srt1, srt2)))
 	  | _ -> false)
-     | SortDef (qid1, _) -> 
+     | TypeDef (qid1, _) -> 
        (case e2 of
-	  | SortDef (qid2, _) -> 
-	    let Some info1 = findTheSort (s1, qid1) in
-	    let Some info2 = findTheSort (s2, qid2) in
+	  | TypeDef (qid2, _) -> 
+	    let Some info1 = findTheType (s1, qid1) in
+	    let Some info2 = findTheType (s2, qid2) in
 	    (info1.names = info2.names
 	     &&
 	     (case (info1.dfn, info2.dfn) of
@@ -133,15 +133,15 @@ AnnSpec qualifying spec
 	    let Some info2 = findTheOp (s2, qid2) in
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
-	     && (equivType? s2 (termSort info1.dfn,
-                                termSort info2.dfn)
-                   || equivType? s1 (termSort info1.dfn, 
-                                     termSort info2.dfn))
+	     && (equivType? s2 (termType info1.dfn,
+                                termType info2.dfn)
+                   || equivType? s1 (termType info1.dfn, 
+                                     termType info2.dfn))
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true
 		   | (_,                    Any _) -> true
-		   | (SortedTerm (Any _, _, _), _) -> true
-		   | (_, SortedTerm (Any _, _, _)) -> true
+		   | (TypedTerm (Any _, _, _), _) -> true
+		   | (_, TypedTerm (Any _, _, _)) -> true
 		   | (tm1, tm2) ->  equivTerm? s2 (tm1, tm2)))
 	  | _ -> false)
      | OpDef (qid1, refine1?, _) -> 
@@ -152,12 +152,12 @@ AnnSpec qualifying spec
 	    (info1.names = info2.names
 	     && info1.fixity = info2.fixity
              && refine1? = refine2?
-	     && equivType? s2 (termSort info1.dfn, termSort info2.dfn)
+	     && equivType? s2 (termType info1.dfn, termType info2.dfn)
 	     && (case (info1.dfn, info2.dfn) of
 		   | (Any _,                    _) -> true
 		   | (_,                    Any _) -> true
-		   | (SortedTerm (Any _, _, _), _) -> true
-		   | (_, SortedTerm (Any _, _, _)) -> true
+		   | (TypedTerm (Any _, _, _), _) -> true
+		   | (_, TypedTerm (Any _, _, _)) -> true
 		   | (tm1, tm2) -> equivTerm? s2 (tm1, tm2)))
 	  | _ -> false)
      | Property p1 ->
@@ -169,19 +169,19 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  never used...
  %%%
- %%%  op  equalSortInfo?: [a] ASortInfo a * ASortInfo a -> Boolean
- %%%  def equalSortInfo? (info1, info2) =
+ %%%  op  equalTypeInfo?: [a] ATypeInfo a * ATypeInfo a -> Bool
+ %%%  def equalTypeInfo? (info1, info2) =
  %%%    info1.names = info2.names
  %%%    %% Could take into account substitution of tvs
  %%%    && equalType? (info1.dfn, info2.dfn)
  %%% 
- %%%  op  equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
+ %%%  op  equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Bool
  %%%  def equalOpInfo? (info1, info2) =
  %%%    info1.names = info2.names
  %%%    && info1.fixity = info2.fixity
  %%%    && equalTerm? (info1.dfn, info2.dfn)
  %%% 
- %%%  op  equalProperty?: [a] AProperty a * AProperty a -> Boolean
+ %%%  op  equalProperty?: [a] AProperty a * AProperty a -> Bool
  %%%  def equalProperty? ((propType1, propName1, tvs1, fm1),
  %%% 		     (propType2, propName2, tvs2, fm2))
  %%%    =

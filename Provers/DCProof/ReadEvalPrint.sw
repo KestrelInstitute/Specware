@@ -27,7 +27,7 @@ spec
      return ()
       }
 
-  op while: IO Boolean -> IO () -> IO ()
+  op while: IO Bool -> IO () -> IO ()
   def while pred body =
     { 
       t <- pred;
@@ -127,7 +127,7 @@ spec
        | None -> return (Unchanged)
     }
 
-  op evalSplit: IO Boolean
+  op evalSplit: IO Bool
   def evalSplit =
     {
      tx <- treeX;
@@ -139,7 +139,7 @@ spec
      return false
     }
 
-  op evalTriv: IO Boolean
+  op evalTriv: IO Bool
   def evalTriv =
     {
      tx <- treeX;
@@ -168,7 +168,7 @@ spec
        | _ -> readEvalPrint
     }
 
-  op testProof: () -> Boolean
+  op testProof: () -> Bool
   def testProof () =
     let _ = readEvalPrint initialState in
     true

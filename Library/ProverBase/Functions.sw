@@ -17,7 +17,7 @@ PrFunctions qualifying spec
 
 (* Waldinger's experimental axioms to help Snark prove termination
 
-  op projection1 : [a, b] (a * a -> Boolean) -> ((a * b) * (a * b) ->     Boolean)
+  op projection1 : [a, b] (a * a -> Bool) -> ((a * b) * (a * b) ->     Bool)
 
   axiom first_projection_def is
     fa(ua,va,ub,vb,p)
@@ -27,7 +27,7 @@ PrFunctions qualifying spec
   axiom first_projection_preserves_well_foundedness is
     fa(p) wfo(p) => wfo(projection1(p))
 
-  op is_tail : [a]  {l : List a | ~(null l)} *  List a -> Boolean
+  op is_tail : [a]  {l : List a | ~(null l)} *  List a -> Bool
 
   axiom is_tail_def is
    fa(y,l1,l2)

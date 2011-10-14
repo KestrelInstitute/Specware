@@ -78,13 +78,13 @@ spec
     fn state ->
     ((RETURN()), (propagateProven(state)))
 
-  op Monad.proven: M Boolean
+  op Monad.proven: M Bool
   def Monad.proven =
     fn state ->
     ((RETURN (proven(state))), state)
 *)
   (*
-  op memo?: Proof -> M Boolean
+  op memo?: Proof -> M Bool
   def memo?(p) =
     fn state ->
     (RETURN (memoS? p state), state)

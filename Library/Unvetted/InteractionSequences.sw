@@ -37,7 +37,7 @@ spec. *)
 
 param = InteractionSequence qualifying spec
   type Event
-  op input? : Event -> Boolean  % partitioning predicate
+  op input? : Event -> Bool  % partitioning predicate
 endspec
 
 
@@ -52,7 +52,7 @@ body = InteractionSequence qualifying spec
 
   type InputEvent = (Event | input?)
 
-  op output? : Event -> Boolean
+  op output? : Event -> Bool
   def output? = ~~ input?
 
   type OutputEvent = (Event | output?)
@@ -111,7 +111,7 @@ body = InteractionSequence qualifying spec
   the total number of events that precede event ev in the interaction
   sequence. *)
 
-  op validEventSeparation? : Nat -> EventSeparation -> Boolean
+  op validEventSeparation? : Nat -> EventSeparation -> Bool
   def validEventSeparation? n evSep =
     % constraint on min:
     (case evSep.min of
@@ -170,7 +170,7 @@ body = InteractionSequence qualifying spec
   (consisting of the events that precede ev). *)
 
   op separatedFrom? : {(t,teS,evSep) : Time * EventSeq * EventSeparation |
-                       validEventSeparation? (length teS) evSep} -> Boolean
+                       validEventSeparation? (length teS) evSep} -> Bool
   def separatedFrom? (t,teS,evSep) =
     % t must not come earlier than any instant in tS (since the instants in teS
     % are ordered, it is sufficient to test t against the last instant in tS),
@@ -199,7 +199,7 @@ body = InteractionSequence qualifying spec
   event no further input events are supplied to the system, waiting for an
   output event to occur. *)
 
-  op noInputsUntilOutput? : DiscreteTrace Event -> Time -> Boolean
+  op noInputsUntilOutput? : DiscreteTrace Event -> Time -> Bool
   def noInputsUntilOutput? evTr t =
     % for every instant t1 after t:
     (fa(t1:Time) t1 > t &&
@@ -214,7 +214,7 @@ body = InteractionSequence qualifying spec
   explicitly present in an interaction sequence occur, and no others. *)
 
   op onlyInputAtAfter? :
-     DiscreteTrace Event -> InputEvent -> Time -> Time -> Boolean
+     DiscreteTrace Event -> InputEvent -> Time -> Time -> Bool
   def onlyInputAtAfter? evTr ev t1 t =
     t1 > t &&
     evTr suchThat input? after t notAfter t1 = single (t1, ev)
@@ -227,7 +227,7 @@ body = InteractionSequence qualifying spec
   output events rather than input events. *)
 
   op onlyOutputAtAfter? :
-     DiscreteTrace Event -> OutputEvent -> Time -> Time -> Boolean
+     DiscreteTrace Event -> OutputEvent -> Time -> Time -> Bool
   def onlyOutputAtAfter? evTr ev t1 t =
     t1 > t &&
     evTr suchThat output? after t notAfter t1 = single (t1, ev)
@@ -548,7 +548,7 @@ body = InteractionSequence qualifying spec
       fa(i:Nat) i < length nextEventsWithSeparations =>
         validEventSeparation? (length previousEvents + i)
                               (nextEventsWithSeparations @ i).1} ->
-     DiscreteTrace Event -> Boolean
+     DiscreteTrace Event -> Bool
   def eventTraceConstraintAux (previousEvents, nextEventsWithSeparations) evTr =
     % if no more events, we are done, return true (i.e. no constraint on evTr):
     if empty? nextEventsWithSeparations then true else
@@ -578,7 +578,7 @@ body = InteractionSequence qualifying spec
             (previousEvents <| (t, ev), rtail nextEventsWithSeparations) evTr))
 
   op eventTraceConstraint :
-     InteractionSequence -> (Time -> Boolean) -> DiscreteTrace Event -> Boolean
+     InteractionSequence -> (Time -> Bool) -> DiscreteTrace Event -> Bool
   def eventTraceConstraint intSeq cond evTr =
     fa(t:Time)  % universal quantification
       % t satisfies the given condition:

@@ -18,10 +18,10 @@ spec
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 %  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
-  op orderElements?: Boolean = true
+  op orderElements?: Bool = true
 
 (*
-  op makeNewPrimedQid(Qualified(q,id): QualifiedId, exists?: QualifiedId -> Boolean): QualifiedId =
+  op makeNewPrimedQid(Qualified(q,id): QualifiedId, exists?: QualifiedId -> Bool): QualifiedId =
     let primed_qid = Qualified(q,id^"'") in
     if exists? primed_qid
       then makeNewPrimedQid(primed_qid, exists?)
@@ -33,10 +33,10 @@ spec
     makeNewPrimedQid(qid, fn nqid -> some?(findTheOp(spc, nqid)))
 
   op makePrimedTypeQid(qid: QualifiedId, spc: Spec): QualifiedId =
-    makeNewPrimedQid(qid, fn nqid -> some?(findTheSort(spc, nqid)))
+    makeNewPrimedQid(qid, fn nqid -> some?(findTheType(spc, nqid)))
 *)
 
- op Or (left : SpecCalc.Env Boolean) (right : SpecCalc.Env Boolean) : SpecCalc.Env Boolean = {
+ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool = {
    b <- left;
    if b then
      right
@@ -44,12 +44,12 @@ spec
      return false
  }
 
- op [a] exists (f : a -> SpecCalc.Env Boolean) (l : List a) : SpecCalc.Env Boolean =
+ op [a] exists (f : a -> SpecCalc.Env Bool) (l : List a) : SpecCalc.Env Bool =
   case l of
     | [] -> return false
     | x::xs -> Or (f x) (exists f xs)
    
- op existsSubTerm : [b] (ATerm b -> SpecCalc.Env Boolean) -> ATerm b -> SpecCalc.Env Boolean
+ op existsSubTerm : [b] (ATerm b -> SpecCalc.Env Bool) -> ATerm b -> SpecCalc.Env Bool
  def existsSubTerm pred? term =
    Or (pred? term) 
      (case term of
@@ -72,12 +72,12 @@ spec
            (Or (existsSubTerm pred? N) 
                (existsSubTerm pred? P))
        | Seq (Ms, _) -> exists (existsSubTerm pred?) Ms
-       | SortedTerm (M, srt, _) -> existsSubTerm pred? M
+       | TypedTerm (M, srt, _) -> existsSubTerm pred? M
        | Pi (tvs, t, _) -> existsSubTerm pred? t
        | And (tms, _) -> exists (existsSubTerm pred?) tms
        | Any _ -> return false)                 
 
- op existsSubTermPat : [b] (ATerm b -> SpecCalc.Env Boolean) -> APattern b -> SpecCalc.Env Boolean
+ op existsSubTermPat : [b] (ATerm b -> SpecCalc.Env Bool) -> APattern b -> SpecCalc.Env Bool
  def existsSubTermPat pred? pat =
    case pat of
      | RestrictedPat(_,t,_) -> existsSubTerm pred? t
@@ -87,7 +87,7 @@ spec
   %% Look for fns of the form Bijection(a,a') -> Bijection(L a,L a')
   op findComplexIsoFns(spc: Spec): IsoFnInfo =
     foldOpInfos (fn (info, result) ->
-                   case firstOpDefInnerSort info of
+                   case firstOpDefInnerType info of
                      | Arrow(Base(Qualified("Function","Bijection"),_,_),
                              Base(Qualified("Function","Bijection"),
                                   [Base(qid1,_,_), Base(qid2,_,_)],
@@ -102,8 +102,8 @@ spec
   % (fn_qid) : (dom_ty -> rng_ty) -> (ty_qid dom_ty -> ty_qid rng_ty)
   % and (fn_arg)
   % construct (fn_qid fn_arg)
-  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId, fn_arg: MS.Term, dom_ty: Sort, rng_ty: Sort,
-               spc: Spec): MS.Term =
+  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId, fn_arg: MSTerm, dom_ty: MSType, rng_ty: MSType,
+               spc: Spec): MSTerm =
     mkApply(mkOpFromDef (fn_qid,
                          mkArrow(mkArrow(dom_ty,rng_ty),
                                  mkArrow(mkBase(ty_qid, [dom_ty]),
@@ -114,7 +114,7 @@ spec
   % given fn_arg and list_arg
   % construct (List.Map fn_arg list_arg)
   % List.Map : (dom_ty -> rng_ty) -> (List dom_ty -> List rng_ty)
-  op mkMapApply(fn_arg: MS.Term, list_arg: MS.Term, dom_ty: Sort, rng_ty: Sort, spc: Spec): MS.Term =
+  op mkMapApply(fn_arg: MSTerm, list_arg: MSTerm, dom_ty: MSType, rng_ty: MSType, spc: Spec): MSTerm =
     mkApply(mkApply(mkOpFromDef
                       (Qualified("List","map"),
                        mkArrow(mkArrow(dom_ty,rng_ty),
@@ -124,8 +124,8 @@ spec
                     fn_arg),
             list_arg)
 
-  op makeIsoTheorems(spc: Spec, iso_ref: MS.Term, osi_ref: MS.Term, tvs: TyVars,
-                     src_ty: Sort, trg_ty: Sort, prev: List QualifiedId)
+  op makeIsoTheorems(spc: Spec, iso_ref: MSTerm, osi_ref: MSTerm, tvs: TyVars,
+                     src_ty: MSType, trg_ty: MSType, prev: List QualifiedId)
      : Spec * List QualifiedId =
     %% Thm inverse iso = osi
     let inv_thm1 = mkEquality(mkArrow(trg_ty,src_ty),
@@ -167,7 +167,7 @@ spec
                                       mkApply(osi_ref,mkApply(iso_ref, mkVar x_var)),
                                       mkVar x_var))
      in
-     %let _ = writeLine("osi__iso theorem:\n"^printTermWithSorts inv_thm1) in
+     %let _ = writeLine("osi__iso theorem:\n"^printTermWithTypes inv_thm1) in
      let osi__iso_qid = Qualified("generated","osi__iso") in
      let spc = addTheorem((osi__iso_qid, tvs, inv_thm1, noPos), spc) in
 
@@ -199,7 +199,7 @@ spec
 
   %% fn x -> fn (x,y) -> \_dots  \_longrightarrow  fn x -> fn (x,y) -> f (x) (y,z)
   % ### LE I don't get this.
-  op makeTrivialDef(spc: Spec, dfn: MS.Term, qid_pr_ref: MS.Term): MS.Term =
+  op makeTrivialDef(spc: Spec, dfn: MSTerm, qid_pr_ref: MSTerm): MSTerm =
     let def constructDef(tm, new_bod) =
           case tm of
             | Lambda(binds,a) ->
@@ -231,13 +231,13 @@ spec
       | (qid1,qid2)::_ | qid = qid1 -> Some qid2
       | _::r -> lookupIsoFnInfo(qid,r)
 
-  type IsoInfo = MS.Term * TyVars * Sort * Sort
+  type IsoInfo = MSTerm * TyVars * MSType * MSType
   type IsoInfoList = List(IsoInfo * IsoInfo)
 
   op printIsoInfoList(iso_info: IsoInfoList): () =
     app (fn ((tma1, _, tya1, tya2), (tmb1, _, tyb1, tyb2)) ->
-         (writeLine(printTerm tma1^": "^printSort tya1^" -> "^printSort tya2);
-          writeLine(printTerm tmb1^": "^printSort tyb1^" -> "^printSort tyb2)))
+         (writeLine(printTerm tma1^": "^printType tya1^" -> "^printType tya2);
+          writeLine(printTerm tmb1^": "^printType tyb1^" -> "^printType tyb2)))
       iso_info
 
   op lookupIsoInfo(qid: QualifiedId, iso_info: IsoInfoList): Option(IsoInfo * IsoInfo) =
@@ -250,7 +250,7 @@ spec
   op invertIsoInfo(iso_info: IsoInfoList): IsoInfoList =
     map (fn (x,y) -> (y,x)) iso_info
 
-  op typeInIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList): Boolean =
+  op typeInIsoInfoList(qid: QualifiedId, iso_info: IsoInfoList): Bool =
     case iso_info of
       | [] -> false
       | (info as ((_,_,Base(ty_qid,_,_),Base(ty'_qid,_,_)),_) :: _) | qid = ty_qid || qid = ty'_qid -> 
@@ -336,12 +336,12 @@ spec
 
   %{{{  dependsOnIsoInfo
   op dependsOnIsoInfo?(qid: QualifiedId, iso_info: IsoInfoList, spc: Spec, seen: List QualifiedId)
-       : Boolean =
+       : Bool =
     let seen = Cons(qid, seen) in
-    case findTheSort(spc, qid) of
+    case findTheType(spc, qid) of
       | None -> false
       | Some info ->
-    let (_,def_ty) = unpackSort info.dfn in
+    let (_,def_ty) = unpackType info.dfn in
     existsInType? (fn ty ->
                      case ty of
                        | Base(s_qid,_,_) ->
@@ -353,15 +353,15 @@ spec
   %}}}
 
   %{{{  identityFn
-  op identityFn(ty: Sort): MS.Term = mkInfixOp(Qualified("Function","id"),Unspecified,mkArrow(ty,ty))
-  op identityFn?(tm: MS.Term): Boolean =
+  op identityFn(ty: MSType): MSTerm = mkInfixOp(Qualified("Function","id"),Unspecified,mkArrow(ty,ty))
+  op identityFn?(tm: MSTerm): Bool =
     case tm of
       | Fun(Op(Qualified("Function","id"),_),_,_) -> true
       | _ -> false
   %}}}
 
   %{{{  mkCompose
-  op mkCompose(f1: MS.Term, f2: MS.Term, spc: Spec): MS.Term =
+  op mkCompose(f1: MSTerm, f2: MSTerm, spc: Spec): MSTerm =
     if identityFn? f1 then f2
       else if identityFn? f2 then f1
       else
@@ -375,11 +375,11 @@ spec
   %}}}
 
   %{{{  createPrimeDef
-  op createPrimeDef(spc: Spec, old_dfn: MS.Term, op_ty: Sort, src_ty: Sort, trg_ty: Sort,
-                    iso_ref: MS.Term, osi_ref: MS.Term)
-     : MS.Term =
+  op createPrimeDef(spc: Spec, old_dfn: MSTerm, op_ty: MSType, src_ty: MSType, trg_ty: MSType,
+                    iso_ref: MSTerm, osi_ref: MSTerm)
+     : MSTerm =
     let
-      def makePrimedPat (p: Pattern, sb: List(Var * MS.Term)): Pattern * List(Var * MS.Term) =
+      def makePrimedPat (p: MSPattern, sb: List(Var * MSTerm)): MSPattern * List(Var * MSTerm) =
         case p of
           | VarPat(v as (vn,v_ty),a) ->
             if equalType?(v_ty,src_ty)
@@ -444,7 +444,7 @@ spec
     makePrimeBody(old_dfn, [], op_ty)    
   %}}}
 
-  op typeQid(ty: Sort): QualifiedId =
+  op typeQid(ty: MSType): QualifiedId =
     let Base(qid, _, _) = ty in
     qid
 
@@ -468,10 +468,10 @@ spec
 
   type if the term does not look into the structure of the type *)
 
-  op checkTypeOpacity?(tm: MS.Term, ty: Sort, base_src_QIds: List QualifiedId, src_QIds: List QualifiedId,
-                       spc: Spec): Boolean =
+  op checkTypeOpacity?(tm: MSTerm, ty: MSType, base_src_QIds: List QualifiedId, src_QIds: List QualifiedId,
+                       spc: Spec): Bool =
     let def opacityPreserved?(d_ty, u_ty) =
-          % let _ = writeLine("oP?: "^printSort d_ty^" =?= "^printSort u_ty) in
+          % let _ = writeLine("oP?: "^printType d_ty^" =?= "^printType u_ty) in
           equalType?(d_ty, u_ty)
             ||
           (let result =
@@ -480,7 +480,7 @@ spec
                  opacityPreserved?(x1, x2) && opacityPreserved?(y1, y2)
                | (Product(xs1, _), Product(xs2, _)) ->
                  forall? (fn ((_, x1), (_, x2)) -> opacityPreserved?(x1, x2)) (zip(xs1, xs2))
-               | (Subsort(x1, t1,  _), Subsort(x2, t2,  _)) ->
+               | (Subtype(x1, t1,  _), Subtype(x2, t2,  _)) ->
                  % equalTerm?(t1, t2) &&
                  opacityPreserved?(x1, x2)
                | (Base(q1, xs1, _), Base(q2, xs2, _)) | q1 = q2 ->
@@ -494,9 +494,9 @@ spec
                   case tryUnfoldBase spc d_ty of
                   | Some d_ty1 -> opacityPreserved?(d_ty1, u_ty)
                   | None -> false)
-               | (Subsort(x1, _,  _), _) ->
+               | (Subtype(x1, _,  _), _) ->
                  opacityPreserved?(x1, u_ty)
-               | (_, Subsort(x2, _,  _)) ->
+               | (_, Subtype(x2, _,  _)) ->
                  opacityPreserved?(d_ty, x2)
                | (Base(q1, _, _), _) | q1 nin? base_src_QIds ->
                  (case tryUnfoldBase spc d_ty of
@@ -536,11 +536,11 @@ spec
              let srts = map (project 2) (product (spc, d_ty)) in
              forall? (fn (f_ty, (_, tmi)) -> cto?(tmi, f_ty))
                (zip(srts, row))
-           | Bind (_, _, bod, _) -> cto?(bod, boolSort)
-           | The  (var,  bod, _) -> cto?(bod, boolSort)
+           | Bind (_, _, bod, _) -> cto?(bod, boolType)
+           | The  (var,  bod, _) -> cto?(bod, boolType)
            | Let (decls, bdy, _) ->
              cto?(bdy, d_ty)
-               && forall? (fn (pat, trm) -> cto?(trm, patternSort pat))
+               && forall? (fn (pat, trm) -> cto?(trm, patternType pat))
                     decls
            | LetRec (decls, bdy, _) ->
              cto?(bdy, d_ty)
@@ -549,16 +549,16 @@ spec
            | Lambda (match, _) ->
              let ran = range(spc, d_ty) in
              forall? (fn (pat, condn, bod) ->
-                    cto?(condn, boolSort) && cto?(bod, ran))
+                    cto?(condn, boolType) && cto?(bod, ran))
                match
            | IfThenElse (t1, t2, t3, _) ->
-             cto?(t1, boolSort) && cto?(t2, d_ty) && cto?(t3, d_ty)
+             cto?(t1, boolType) && cto?(t2, d_ty) && cto?(t3, d_ty)
            | Seq (terms, _) ->
              let pre_trms = butLast terms in
              let lst_trm  =    last terms in
              cto?(lst_trm, d_ty)
                && forall? (fn trm -> cto?(trm, mkProduct [])) pre_trms
-           | SortedTerm (trm, srt, _) -> cto?(trm, srt)
+           | TypedTerm (trm, srt, _) -> cto?(trm, srt)
            | _ -> true)
       def recordTy? ty =
         case productOpt(spc, ty) of
@@ -569,7 +569,7 @@ spec
   %}}}
 
   %{{{  primeTermsTypes
-  op primeTermsTypes(tm: MS.Term, qidPrMap: QualifiedIdMap, iso_info: IsoInfoList): MS.Term =
+  op primeTermsTypes(tm: MSTerm, qidPrMap: QualifiedIdMap, iso_info: IsoInfoList): MSTerm =
     mapTerm (fn t -> case t of
              | Fun(Op(qid as Qualified(q,idn), fx), ty, a) ->
                let nqid = case findAQualifierMap(qidPrMap, q, idn) of
@@ -592,7 +592,7 @@ spec
   type QualifiedIdMap = AQualifierMap(QualifiedId)
 
   % Returns true if the predicate holds for some element of the qualified map
-  op existsQMap : [a] (Qualifier * Id -> SpecCalc.Env Boolean) -> (AQualifierMap a) -> SpecCalc.Env Boolean
+  op existsQMap : [a] (Qualifier * Id -> SpecCalc.Env Bool) -> (AQualifierMap a) -> SpecCalc.Env Bool
 
   def existsQMap pred qmap  =
     let 
@@ -624,11 +624,11 @@ spec
       | _ -> escape  ("Ambiguous op name: " ^ show qid ^ "\n")
   %}}}
 
-  op traceIsomorphismGenerator?: Boolean = false
+  op traceIsomorphismGenerator?: Bool = false
   op traceMono?: Bool = false
-  op simplifyIsomorphism?: Boolean = true
+  op simplifyIsomorphism?: Bool = true
   %% Temporary until we have slicing
-  op simplifyUnPrimed?: Boolean = false
+  op simplifyUnPrimed?: Bool = false
   op opaqueSimplifyScript: Script = mkSimplify[]
 
 
@@ -650,7 +650,7 @@ spec
               escape "An operator with that name already exists\n" 
             }
           | None ->
-              (case findTheSort(spc, newQId) of
+              (case findTheType(spc, newQId) of
                 | Some info -> {
                     print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
                     escape "A type with that name already exists\n" 
@@ -662,11 +662,11 @@ spec
       %}}}
       %{{{  isoTerm
       def isoTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                 (ty: Sort)
-                 (tm: MS.Term): SpecCalc.Env MS.Term =
+                 (ty: MSType)
+                 (tm: MSTerm): SpecCalc.Env MSTerm =
         let
-          def makePrimedPat (p: Pattern, body: MS.Term, p_ty: Sort, sb: List(Var * MS.Term))
-              : SpecCalc.Env (Pattern * MS.Term * List(Var * MS.Term)) =
+          def makePrimedPat (p: MSPattern, body: MSTerm, p_ty: MSType, sb: List(Var * MSTerm))
+              : SpecCalc.Env (MSPattern * MSTerm * List(Var * MSTerm)) =
             case p of
               | VarPat(v as (vn,v_ty),a) -> {
                   v_ty' <- isoType (spc, iso_info, iso_fn_info) false v_ty; 
@@ -720,7 +720,7 @@ spec
                     return new_bod
                   else {
                     iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) result_ty; 
-                    % print ("itf: "^ printTermWithSorts iso_fn ^ ": _ -> "^printSort result_ty); 
+                    % print ("itf: "^ printTermWithTypes iso_fn ^ ": _ -> "^printType result_ty); 
                     return (simplifiedApply(iso_fn, new_bod, spc))
                   }
                 }
@@ -728,8 +728,8 @@ spec
           makePrimeBody(tm, [], ty)    
       %}}}
       %{{{  isoType
-      def isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive?: Boolean)
-                    (ty: Sort): SpecCalc.Env Sort =
+      def isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive?: Bool)
+                    (ty: MSType): SpecCalc.Env MSType =
         let
           def isoType1 ty =
               case ty of
@@ -803,8 +803,8 @@ spec
                     }
                   }
                 %}}}
-                %{{{  Subsort
-                | Subsort (s, tm, a) -> {
+                %{{{  Subtype
+                | Subtype (s, tm, a) -> {
                     s1 <- isoType1 s; 
                     if equalType?(s,s1) then
                       return ty
@@ -821,7 +821,7 @@ spec
                               tm_ty <- return (inferType(spc,tm)); 
                               isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
                             };
-                      return (Subsort (s1, tm', a))
+                      return (Subtype (s1, tm', a))
                     }
                   }
                 %}}}
@@ -846,37 +846,37 @@ spec
          : SpecCalc.Env (IsoInfoList * Spec) =
         foldOverQualifierMap 
           (fn (_,_,info,result as (new_iso_info, spc)) ->
-             let qid = primarySortName info in
+             let qid = primaryTypeName info in
              let Qualified(q,id) = qid in
              if typeInIsoInfoList(qid, iso_info) then
                return result
              else
-               let (tvs,ty) = unpackFirstSortDef info in {
+               let (tvs,ty) = unpackFirstTypeDef info in {
                  %% Use init_spec because priming algorithm assumes primed types haven't been added yet
                  ty' <- isoType (init_spc, iso_info, iso_fn_info) true ty;
-                 % print("type "^printQualifiedId qid^" = "^printSort ty^"\n--> "^printSort ty'^"\n");
+                 % print("type "^printQualifiedId qid^" = "^printType ty^"\n--> "^printType ty'^"\n");
                  if equalType? (ty,ty') then
                    return result
                  else {
                    qid' <- makeFreshTypeQId spc qid;
-                   let spc  = addTypeDef(spc, qid', maybePiSort(tvs, ty')) in
+                   let spc  = addTypeDef(spc, qid', maybePiType(tvs, ty')) in
                    let qid_ref  = mkBase(qid, map mkTyVar tvs) in
                    let qid'_ref = mkBase(qid',map mkTyVar tvs) in
           
                    let iso_qid = Qualified(q,"iso"^id) in
                    let iso_ty  = mkArrow(qid_ref, qid'_ref) in
                    let iso_fn  = mkInfixOp(iso_qid, Unspecified, iso_ty) in
-                   let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, SortedTerm(Any noPos, iso_ty, noPos))) in
+                   let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, iso_ty, noPos))) in
     
                    let osi_qid = Qualified(q,"osi"^id) in
                    let osi_ty  = mkArrow(qid'_ref, qid_ref) in
                    let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
-                   let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, SortedTerm(Any noPos, osi_ty, noPos))) in
+                   let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, osi_ty, noPos))) in
                    return
                      (Cons(((iso_fn, tvs, qid_ref, qid'_ref), (osi_fn, tvs, qid'_ref, qid_ref)),
                          new_iso_info),
                       spc)
-                 }}) ([], init_spc) init_spc.sorts
+                 }}) ([], init_spc) init_spc.types
       %}}}
       %{{{  makeDerivedOps
       %% (search-forward-regexp specware-definition-regexp) (match-string 0) (match-string 2)
@@ -948,12 +948,12 @@ spec
                print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
                when (nm = "andd")
                  (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
-                  print (printTermWithSorts dfn ^ "\n"
-                           ^ printTermWithSorts prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
+                  print (printTermWithTypes dfn ^ "\n"
+                           ^ printTermWithTypes prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
              }
              else
                {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
-                when (nm = "andd") (print(printTermWithSorts dfn^"\n"))};
+                when (nm = "andd") (print(printTermWithTypes dfn^"\n"))};
              if qid = qid_pr
                then    % refine def instead of generating new one
                return ((addRefinedDefToOpinfo(info, dfn_pr),
@@ -965,16 +965,16 @@ spec
              id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
              new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
              % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
-             return ((info << {dfn = maybePiTerm(tvs, SortedTerm(new_dfn, op_ty, noPos))},
+             return ((info << {dfn = maybePiTerm(tvs, TypedTerm(new_dfn, op_ty, noPos))},
                       info << {names = [qid_pr],
-                               dfn = maybePiTerm(tvs, SortedTerm(dfn_pr, op_ty_pr, noPos))})
+                               dfn = maybePiTerm(tvs, TypedTerm(dfn_pr, op_ty_pr, noPos))})
                        ::result,
                      transformQIds)
           }}) ([], []) qidPrMap
       %}}}
       %{{{  isoTypeFn 
       def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                   (ty: Sort): SpecCalc.Env MS.Term =
+                   (ty: MSType): SpecCalc.Env MSTerm =
         case ty of
           %{{{  Base
           | Base(qid,params,a) ->
@@ -1035,33 +1035,33 @@ spec
               return (mkLambda(mkVarPat xv, mkApply(Lambda (matches,noPos), mkVar xv)))
             }
           %}}}
-          %{{{  Subsort
-          | Subsort (sub_sort, trm, a) -> {
+          %{{{  Subtype
+          | Subtype (sub_type, trm, a) -> {
               xv <- return ("x",ty); 
-              iso <- isoTerm (spc, iso_info, iso_fn_info) sub_sort (mkVar xv);
+              iso <- isoTerm (spc, iso_info, iso_fn_info) sub_type (mkVar xv);
               return (mkLambda(mkVarPat xv, iso))
             }
           %}}}
-      %     | Quotient (super_sort, trm, a) ->  %% Shouldn't happen as quotients should be at top level
+      %     | Quotient (super_type, trm, a) ->  %% Shouldn't happen as quotients should be at top level
           | _ -> return (identityFn ty)
       %}}}
       %{{{  osiTypeFn 
       def osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                   (ty: Sort): SpecCalc.Env MS.Term = {
+                    (ty: MSType): SpecCalc.Env MSTerm = {
           ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
           isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) ty'
         }
       %}}}
       %{{{  osiTerm 
       def osiTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                 (ty: Sort)
-                 (tm: MS.Term): SpecCalc.Env MS.Term = {
+                  (ty: MSType)
+                  (tm: MSTerm): SpecCalc.Env MSTerm = {
           ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
           isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) ty' tm
         }
       %}}}
       %{{{  addIsoDefForIso   CHECK THIS
-      def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MS.Term): SpecCalc.Env Spec =
+      def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MSTerm): SpecCalc.Env Spec =
         case iso_ref of
           | Fun(Op(qid,fixity),ty,_) ->
             (case findTheOp(spc, qid) of
@@ -1073,22 +1073,22 @@ spec
                    uf_dom <- return (unfoldBaseOne(spc, dom));
                    newtm <-
                      case uf_dom of
-                       | Quotient (super_sort, trm, a) -> {
+                       | Quotient (super_type, trm, a) -> {
                            xv <- return ("x",ty); 
-                           yv <- return ("y",super_sort);
+                           yv <- return ("y",super_type);
                            qid' <- 
                              case ran of
                                | Base(qid',_,_) -> return qid'
                                | _ -> escape ("addIsoDefForIso: ran=" ^ anyToString ran ^ "\n");
-                           iso <- isoTerm (spc, iso_info, iso_fn_info) super_sort (mkVar yv);
+                           iso <- isoTerm (spc, iso_info, iso_fn_info) super_type (mkVar yv);
                            return (mkLambda(mkVarPat xv,
                                   mkApply(mkChooseFun(dom, ty, ran,
                                                       mkLambda(mkVarPat yv,
-                                                               mkQuotient(iso,qid',super_sort))),
+                                                               mkQuotient(iso,qid',super_type))),
                                           mkVar xv)))
                          }
                        | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom;
-                   newdfn <- return (maybePiTerm(tvs, SortedTerm (newtm, srt, termAnn opinfo.dfn)));
+                   newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
                    return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
                  }
                | _ -> escape ("addIsoDefForIso: findTheOp failed qid=" ^ printQualifiedId qid ^ "\n"))
@@ -1205,15 +1205,15 @@ spec
             %{{{  RestrictedPat
             | RestrictedPat (pat,trm,pos) -> {
                 (accum,pat) <- doPattern accum pat;
-                (accum,trm) <- doTerm accum trm boolSort;  % ### LE Check!
+                (accum,trm) <- doTerm accum trm boolType;  % ### LE Check!
                 return (accum, RestrictedPat (pat,trm,pos))
               }
             %}}}
-            %{{{  SortedPat
-            | SortedPat (pat,typ,pos) -> {
+            %{{{  TypedPat
+            | TypedPat (pat,typ,pos) -> {
                 (accum,pat) <- doPattern accum pat;
                 (accum,typ) <- doType accum typ;
-                return (accum, SortedPat (pat,typ,pos))
+                return (accum, TypedPat (pat,typ,pos))
               }
             %}}}
             | _ -> return (accum,pat)
@@ -1254,15 +1254,15 @@ spec
             %{{{  Quotient
             | Quotient (typ,trm,pos) -> {
                 (accum,typ) <- doType accum typ;
-                (accum,trm) <- doTerm accum trm (mkArrow (mkProduct [typ,typ], boolSort));
+                (accum,trm) <- doTerm accum trm (mkArrow (mkProduct [typ,typ], boolType));
                 return (accum, Quotient (typ,trm,pos))
               }
             %}}}
-            %{{{  Subsort
-            | Subsort (typ,trm,pos) -> {
+            %{{{  Subtype
+            | Subtype (typ,trm,pos) -> {
                 (accum,typ) <- doType accum typ;
-                (accum,trm) <- doTerm accum trm (mkArrow (typ,boolSort));
-                return (accum, Subsort (typ,trm,pos))
+                (accum,trm) <- doTerm accum trm (mkArrow (typ,boolType));
+                return (accum, Subtype (typ,trm,pos))
               }
             %}}}
                 %{{{  Pi
@@ -1283,22 +1283,22 @@ spec
             | Boolean b
             | TyVar TyVar * b
             | MetaTyVar    AMetaTyVar b * b  % Before elaborateSpec
-            | And List (ASort b) * b  
-            | Any b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
+            | And List (AType b) * b  
+            | Any b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 *)
         %}}}
         %{{{  doTerm
         def doTerm accum trm ctxtType = {
           when traceMono? (print ("doTerm:  " ^ printTerm trm ^ "\n"));
-          when traceMono? (print ("  dnType=" ^ printSort ctxtType ^ "\n"));
+          when traceMono? (print ("  dnType=" ^ printType ctxtType ^ "\n"));
           case trm of
             %{{{  Fun (Op (qid, fxty), ty, pos)
             | Fun (Op(qid, fxty), ty, pos) ->
                 let
                   %{{{  monoInstance
                   def monoInstance dnType upType =
-                   (if traceMono? then (writeLine ("mono dnType=" ^ printSort dnType);
-                                        writeLine ("     upType=" ^ printSort upType))
+                   (if traceMono? then (writeLine ("mono dnType=" ^ printType dnType);
+                                        writeLine ("     upType=" ^ printType upType))
                       else ();
                     case (dnType,upType) of
                       | (Base (dnQid,dnTypes,_), _) ->
@@ -1322,9 +1322,9 @@ spec
                           (fn | ((_,None),(_,None)) -> true
                               | ((_,Some dnType), (_,Some upType)) -> monoInstance dnType upType
                               | _ -> fail ("doTerm: monoInstance: coproduct\n")) (zip (dnPairs,upPairs))
-                      | (Subsort (dnType,_,_),Subsort (upType,_,_)) -> monoInstance dnType upType
-                      | (Subsort (dnType,_,_),                   _) -> monoInstance dnType upType
-                      | (                   _,Subsort (upType,_,_)) -> monoInstance dnType upType
+                      | (Subtype (dnType,_,_),Subtype (upType,_,_)) -> monoInstance dnType upType
+                      | (Subtype (dnType,_,_),                   _) -> monoInstance dnType upType
+                      | (                   _,Subtype (upType,_,_)) -> monoInstance dnType upType
                       | (Quotient (dnType,_,_),Quotient (upType,_,_)) -> monoInstance dnType upType
                       | (TyVar _, _) -> false
                       | (_, TyVar _) -> false
@@ -1332,8 +1332,8 @@ spec
                       | (_, MetaTyVar _) -> false
                       | (Boolean _,_) -> false
                       | (_,Boolean _) -> false
-                      | _ -> (%writeLine ("doTerm: monoInstance:\n  dnType=" ^ printSort dnType
-                              %             ^ "\n  upType=" ^ printSort upType);
+                      | _ -> (%writeLine ("doTerm: monoInstance:\n  dnType=" ^ printType dnType
+                              %             ^ "\n  upType=" ^ printType upType);
                               false))
                   %}}}
                 in
@@ -1354,10 +1354,10 @@ spec
                                                ^ qual ^ "." ^ id ^ " and " ^ otherQual ^ "." ^ id ^ "\n")
                                 else return false
                             else
-                              if ~(equivType? spc (maybePiSort(freeTyVars ty, ty),maybePiSort (freeTyVars otherTyp, otherTyp))) then {
+                              if ~(equivType? spc (maybePiType(freeTyVars ty, ty),maybePiType (freeTyVars otherTyp, otherTyp))) then {
                                 print "makeIsomorphism: two functions with common qualified id by disparate types subject to iso transformation\n";
-                                print ("funType: " ^ (printSort ty) ^ "\n");
-                                print ("otherType: " ^ (printSort otherTyp) ^ "\n");
+                                print ("funType: " ^ (printType ty) ^ "\n");
+                                print ("otherType: " ^ (printType otherTyp) ^ "\n");
                                 print "ignoring\n";
                                 return true
                               }
@@ -1379,13 +1379,13 @@ spec
                       (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
                       monoDefn <- case typeMatch(defnType, ty, spc, true) of
                          | None -> {
-                             print ("defnType: " ^ printSort defnType ^ "\n");
-                             print ("upType: " ^ printSort ty ^ "\n");
+                             print ("defnType: " ^ printType defnType ^ "\n");
+                             print ("upType: " ^ printType ty ^ "\n");
                              escape "makeIsoMorphism: typeMatch failed\n"
                            }
                          | Some subst -> return (instantiateTyVarsInTerm(defnTerm, subst));
                       ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
-                      newDefnTerm <- return (SortedTerm (defnTerm, ctxtType,noPos));
+                      newDefnTerm <- return (TypedTerm (defnTerm, ctxtType,noPos));
                       spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
                       print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
                       return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
@@ -1403,11 +1403,11 @@ spec
             | Apply (M, N, pos) -> {
                 (dom,cod) <- return (arrow(spc,inferType(spc, M)));
                 when traceMono? {print ("doTerm: Apply: inferType M gives:\n");
-                                 print ("  dom=" ^ printSort dom ^ "\n");
-                                 print ("  cod=" ^ printSort cod ^ "\n");
+                                 print ("  dom=" ^ printType dom ^ "\n");
+                                 print ("  cod=" ^ printType cod ^ "\n");
                                  print ("doTerm: Apply: inferType N gives:\n")};
                 dom <- return (inferType(spc, N));
-                when traceMono? (print ("  dom=" ^ printSort dom ^ "\n"));
+                when traceMono? (print ("  dom=" ^ printType dom ^ "\n"));
                 (accum,M) <- doTerm accum M (mkArrow(dom,ctxtType));   % ### LE range ctxtType and cod should agree
                 (accum,N) <- doTerm accum N dom;
                 return (accum, Apply (M, N, pos))
@@ -1417,7 +1417,7 @@ spec
             | Record (pairs, pos) -> {
                 types <- return (recordTypes(spc,ctxtType));
                 when (length types ~= length pairs)
-                  (print("zip3err:\n"^printTerm trm^ " :\n"^ printSort ctxtType));
+                  (print("zip3err:\n"^printTerm trm^ " :\n"^ printType ctxtType));
                 triples <- 
                   let
                     def zip3 trms typs =
@@ -1436,13 +1436,13 @@ spec
             %}}}
             %{{{  Bind
             | Bind (binder,vars,trm,pos) -> {
-                (accum,trm) <- doTerm accum trm boolSort;
+                (accum,trm) <- doTerm accum trm boolType;
                 return (accum,Bind (binder,vars,trm,pos))       
               }
             %}}}
             %{{{  The
             | The (var,trm,pos) -> {
-                (accum,trm) <- doTerm accum trm boolSort;
+                (accum,trm) <- doTerm accum trm boolType;
                 return (accum,The (var,trm,pos))       
               }
             %}}}
@@ -1451,7 +1451,7 @@ spec
                 (accum,decls) <-
                   doList (fn accum -> fn (pat,rhs) -> {
                       (accum,pat) <- doPattern accum pat;
-                      (accum,rhs) <- doTerm accum rhs (patternSort pat);
+                      (accum,rhs) <- doTerm accum rhs (patternType pat);
                       return (accum,(pat,rhs))
                     }) accum decls;
                 (accum,trm) <- doTerm accum trm ctxtType;
@@ -1474,7 +1474,7 @@ spec
                 (accum,matches) <- 
                   doList (fn accum -> fn (pat,cond,trm) -> {
                       (accum,pat) <- doPattern accum pat;    % ### LE Should be (domain ctxtType)
-                      (accum,cond) <- doTerm accum cond boolSort;
+                      (accum,cond) <- doTerm accum cond boolType;
                       (accum,trm) <- doTerm accum trm (range (spc, ctxtType));
                       return (accum,(pat,cond,trm))
                     }) accum matches;
@@ -1483,23 +1483,23 @@ spec
             %}}}
             %{{{  IfThenElse
             | IfThenElse (pred,t1,t2,pos) -> {
-                (accum,pred) <- doTerm accum pred boolSort;
+                (accum,pred) <- doTerm accum pred boolType;
                 (accum,t1) <- doTerm accum t1 ctxtType;
                 (accum,t2) <- doTerm accum t2 ctxtType;
                 return (accum,IfThenElse (pred,t1,t2,pos))
               }
             %}}}
-            %{{{  SortedTerm
-            | SortedTerm (trm,typ,pos) -> {
+            %{{{  TypedTerm
+            | TypedTerm (trm,typ,pos) -> {
                 (accum,trm) <- doTerm accum trm typ;
                 (accum,typ) <- doType accum typ;
-                return (accum,SortedTerm (trm,typ,pos))
+                return (accum,TypedTerm (trm,typ,pos))
               }
             %}}}
             %{{{  Var
             | Var ((id,typ),pos) -> {
                 when traceMono? (print ("doTerm: Var: id=" ^ id ^ "\n"));
-                when traceMono? (print ("  typ=" ^ printSort typ ^ "\n"));
+                when traceMono? (print ("  typ=" ^ printType typ ^ "\n"));
                 return (accum,trm)
               }
             %}}}
@@ -1515,16 +1515,16 @@ spec
             % print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
             (typVars,typ,trm) <- return (unpackFirstTerm opInfo.dfn);  
             ((spc,opsDone),trm) <- doTerm (spc,opsDone) trm typ ;
-            dfn <- return (maybePiTerm(typVars, SortedTerm (trm, typ, noPos))); 
+            dfn <- return (maybePiTerm(typVars, TypedTerm (trm, typ, noPos))); 
             ops <- return (insertAQualifierMap (spc.ops,qual,id,opInfo << {dfn = dfn}));
             return (spc << {ops = ops},opsDone)
           }
         %}}}
-        %{{{ doSort 
-        def doSort (qual,id,sortInfo,(spc,opsDone)) = {
-            ((spc,opsDone),dfn) <- doType (spc,opsDone) sortInfo.dfn;
-            sorts <- return (insertAQualifierMap (spc.sorts,qual,id,sortInfo << {dfn = dfn}));
-            return (spc << {sorts = sorts},opsDone)
+        %{{{ doType 
+        def doTypeDef (qual,id,typeInfo,(spc,opsDone)) = {
+            ((spc,opsDone),dfn) <- doType (spc,opsDone) typeInfo.dfn;
+            types <- return (insertAQualifierMap (spc.types,qual,id,typeInfo << {dfn = dfn}));
+            return (spc << {types = types},opsDone)
           }
         %}}}
         def matchingQualifier (qual,_) = return (case newOptQual of
@@ -1534,13 +1534,13 @@ spec
           %print ("applyIso: Qualifier=" ^ newQual ^"\n");
           %{{{  Fail if new qualifier conflicts with those in use
           % b1 <- existsQMap matchingQualifier spc.ops;
-          % b2 <- existsQMap matchingQualifier spc.sorts;
+          % b2 <- existsQMap matchingQualifier spc.types;
           % when (b1 || b2) 
             % (escape ("Iso: new qualifier '" ^ newQual ^ "' conflicts with existing qualifiers\n"));
           %}}}
           % ### LE perhaps make "opsDone" a qualifier map rather than a list.
           (spc,opsDone) <- foldOverQualifierMap doOp (spc,[]) spc.ops;
-          (spc,opsDone) <- foldOverQualifierMap doSort (spc,opsDone) spc.sorts;
+          (spc,opsDone) <- foldOverQualifierMap doTypeDef (spc,opsDone) spc.types;
           return spc 
       };
     %}}}
@@ -1701,7 +1701,7 @@ spec
                 else {
                   when traceIsomorphismGenerator?
                     (printDef (spc, qid));
-                  new_dfn <- return (maybePiTerm(tvs, SortedTerm (simp_dfn, ty, noPos))); 
+                  new_dfn <- return (maybePiTerm(tvs, TypedTerm (simp_dfn, ty, noPos))); 
                   when traceIsomorphismGenerator? {
                      print ("\n" ^ printQualifiedId qid ^ ":");
                      print (printTerm simp_dfn ^ "\n")

@@ -12,8 +12,8 @@ XML qualifying spec
   import /Library/Legacy/Utilities/System
 
   op [X] aux_internalize_Document (document : Document,
-                                   sd       : SortDescriptor,
-                                   table    : SortDescriptorExpansionTable)
+                                   sd       : TypeDescriptor,
+                                   table    : TypeDescriptorExpansionTable)
     : Option X =
     aux_internalize_Element (document.element, sd, table)
     
@@ -22,14 +22,14 @@ XML qualifying spec
   %% e.g. Option String -- [bug in type checker?]
 
   op [X] aux_internalize_Element (element     : Element,
-                                  sd          : SortDescriptor,
-                                  table       : SortDescriptorExpansionTable)
+                                  sd          : TypeDescriptor,
+                                  table       : TypeDescriptorExpansionTable)
     : Option X =
-    let expanded_sd : SortDescriptor = expand_SortDescriptor (sd, table) in
+    let expanded_sd : TypeDescriptor = expand_TypeDescriptor (sd, table) in
     case element of
 
       | Full elt ->
-	%%% let _ = (let desired = print_SortDescriptor sd in
+	%%% let _ = (let desired = print_TypeDescriptor sd in
 	%%% 	 let given_type = (case (element_type_attribute elt) of
 	%%% 			     | Some str -> str
 	%%% 			     | _ -> "unspecified type")
@@ -39,7 +39,7 @@ XML qualifying spec
 	internalize_PossibleElement (elt, sd, expanded_sd, table)
 
       | Empty etag -> 
-	%%% let _ = (let desired = print_SortDescriptor sd in
+	%%% let _ = (let desired = print_TypeDescriptor sd in
 	%%% 	let given_type = (case (etag_type_attribute etag) of
         %%% 			    | Some str -> str
         %%% 			    | _ -> "unspecified type")
@@ -49,50 +49,50 @@ XML qualifying spec
 	internalize_EmptyElemTag (etag, sd, expanded_sd, table)
 
   op [X] internalize_PossibleElement (element     : PossibleElement,
-                                      sd          : SortDescriptor,
-                                      expanded_sd : SortDescriptor,
-                                      table       : SortDescriptorExpansionTable)
+                                      sd          : TypeDescriptor,
+                                      expanded_sd : TypeDescriptor,
+                                      table       : TypeDescriptorExpansionTable)
     : Option X =
     %%
-    %%   sort Content = {items   : List (Option CharData * Content_Item),
+    %%   type Content = {items   : List (Option CharData * Content_Item),
     %%                   trailer : Option CharData}
     %% 
-    %%   sort Content_Item = | Element   Element
+    %%   type Content_Item = | Element   Element
     %%                       | Reference Reference
     %%                       | CDSect    CDSect
     %%                       | PI        PI
     %%                       | Comment   Comment
     %%
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as " ^ (print_SortDescriptor sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as " ^ (print_TypeDescriptor sd) ^ "\n") in
     case expanded_sd of
       | Product   field_sds    -> internalize_PossibleElement_as_product   (element, sd, field_sds,    table)
       | CoProduct optional_sds -> internalize_PossibleElement_as_coproduct (element, sd, optional_sds, table)
-      | Base      (qid, args)  -> internalize_PossibleElement_as_base_sort (element, sd, qid, args,    table)
+      | Base      (qid, args)  -> internalize_PossibleElement_as_base_type (element, sd, qid, args,    table)
       | Boolean                -> internalize_PossibleElement_as_Boolean   element
       | _ -> fail "unrecognized type"
 
 
-  op making_attributes_and_elements_explicit? (field_sds  : List (IdDescriptor * SortDescriptor)) 
-    : Boolean =
+  op making_attributes_and_elements_explicit? (field_sds  : List (IdDescriptor * TypeDescriptor)) 
+    : Bool =
     case field_sds of
       | [("attributes", _), ("elements", _)] -> true
       | _ -> false
 
   op explicit_attributes_and_elements? (element : PossibleElement)
-    : Boolean =
+    : Bool =
     (case find_matching_sub_element (element, "attributes") of | Some _ -> true | _ -> false)
     &&
     (case find_matching_sub_element (element, "elements")   of | Some _ -> true | _ -> false)
 
   op [X] internalize_PossibleElement_as_product (element    : PossibleElement,
-                                                 product_sd : SortDescriptor,
-                                                 field_sds  : List (IdDescriptor * SortDescriptor),
-                                                 table      : SortDescriptorExpansionTable)
+                                                 product_sd : TypeDescriptor,
+                                                 field_sds  : List (IdDescriptor * TypeDescriptor),
+                                                 table      : TypeDescriptorExpansionTable)
     : Option X =
     %% Note that datum_elements is a heterogenous list,
     %%  hence cannot be properly typed in metaslang,
     %%  hence there is "magic" here.
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as product for " ^ (print_SortDescriptor product_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as product for " ^ (print_TypeDescriptor product_sd) ^ "\n") in
     if (making_attributes_and_elements_explicit? field_sds) && ~(explicit_attributes_and_elements? element) then
       internalize_Attributes_and_Elements (Full element, product_sd, table)
     else
@@ -101,17 +101,17 @@ XML qualifying spec
 		 case possible_magic_values of
 		   | None -> None
 		   | Some magic_values ->
-		     %%% let _ = toScreen ((level_str level) ^ "First, seeking field named " ^ field_name ^ " to construct " ^ (print_SortDescriptor field_sd) ^ "\n") in
+		     %%% let _ = toScreen ((level_str level) ^ "First, seeking field named " ^ field_name ^ " to construct " ^ (print_TypeDescriptor field_sd) ^ "\n") in
 		     case (case find_matching_sub_element (element, field_name) of
 			     | Some matching_elt ->
-			       (%%% let _ = toScreen ((level_str level) ^ "Second, internalizing matching xml element named " ^ (string matching_elt.stag.name) ^ " as " ^ (print_SortDescriptor field_sd) ^ "\n") in
-				let expanded_field_sd = expand_SortDescriptor (field_sd, table) in
+			       (%%% let _ = toScreen ((level_str level) ^ "Second, internalizing matching xml element named " ^ (string matching_elt.stag.name) ^ " as " ^ (print_TypeDescriptor field_sd) ^ "\n") in
+				let expanded_field_sd = expand_TypeDescriptor (field_sd, table) in
 				internalize_PossibleElement (matching_elt, field_sd, expanded_field_sd, table))
 			     | None -> 
 			       case default_field_value (element, field_sd, table) of
 				 | Some field_value  -> Some field_value
 				 | None -> 
-				   % let expanded_field_sd = expand_SortDescriptor (field_sd, table) in
+				   % let expanded_field_sd = expand_TypeDescriptor (field_sd, table) in
 				 default_field_value (element, field_sd, table))
 		       of 
                          %% magic_values is a list over some unknown generic type
@@ -155,19 +155,19 @@ XML qualifying spec
 	  element.content.items
 
   op [X] default_field_value (element    : PossibleElement,
-                              field_sd   : SortDescriptor, 
-                              table      : SortDescriptorExpansionTable)
+                              field_sd   : TypeDescriptor, 
+                              table      : TypeDescriptorExpansionTable)
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Could not find field " ^ field_name ^ "\n") in
     case field_sd of % don't chase expansion, as that would expand list and option
       | Boolean -> 
-        %%% let _ = toScreen ((level_str level) ^ "Using default value of false for Boolean\n") in
+        %%% let _ = toScreen ((level_str level) ^ "Using default value of false for Bool\n") in
 	Some (magicCastFromBool false)
       | Base (("Nat", "Nat"),       []) -> 
-	%%% let _ = toScreen ((level_str level) ^ "Using default value of 0 for "     ^ (print_SortDescriptor field_sd) ^ "\n") in
+	%%% let _ = toScreen ((level_str level) ^ "Using default value of 0 for "     ^ (print_TypeDescriptor field_sd) ^ "\n") in
 	Some (magicCastFromInt 0)
       | Base (("String", "String"), []) -> 
-	%%% let _ = toScreen ((level_str level) ^ "Using default value of \"\" for "  ^ (print_SortDescriptor field_sd) ^ "\n") in
+	%%% let _ = toScreen ((level_str level) ^ "Using default value of \"\" for "  ^ (print_TypeDescriptor field_sd) ^ "\n") in
 	Some (magicCastFromString "")
       | Base (("List", "List"), args) -> 
 	Some (case internalize_PossibleElement_as_List (element, args, table) of
@@ -176,16 +176,16 @@ XML qualifying spec
       | Base (("Option", "Option"), _) -> 
 	Some (magicCastFromOption None)
       | _ -> 
-        %% todo: add hook for user defined base sorts
+        %% todo: add hook for user defined base types
 	None
 
   op [X] internalize_PossibleElement_as_coproduct (element      : PossibleElement,
-                                                   coproduct_sd : SortDescriptor,
-                                                   sd_options   : List (IdDescriptor * Option SortDescriptor),
-                                                   table        : SortDescriptorExpansionTable)
+                                                   coproduct_sd : TypeDescriptor,
+                                                   sd_options   : List (IdDescriptor * Option TypeDescriptor),
+                                                   table        : TypeDescriptorExpansionTable)
     : Option X =
     let element_name = element.stag.name in
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element_name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element_name) ^ " as coproduct for " ^ (print_TypeDescriptor coproduct_sd) ^ "\n") in
     case (findLeftmost (fn sd_option -> 
                           (case element_type_attribute element of
                              | Some str -> sd_option.1 = str
@@ -197,12 +197,12 @@ XML qualifying spec
        | Some (_, Some matching_sd_option) -> 
 	 (case internalize_PossibleElement (element,
 					    coproduct_sd,
-					    expand_SortDescriptor (matching_sd_option, table),
+					    expand_TypeDescriptor (matching_sd_option, table),
 					    table)
 	    of
 	     | Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name element_name, datum))
 	     | _ ->
-	       fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
+	       fail ("looking for coproduct element: " ^ (print_TypeDescriptor coproduct_sd) ^ "\n" ))
        | _ ->
 	 case element.content.items of
 	   | [(_, Element (Full elt))] -> 
@@ -212,7 +212,7 @@ XML qualifying spec
 	     (case internalize_PossibleElement (elt, coproduct_sd, coproduct_sd, table) of
 		| Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name elt.stag.name, datum))
 		| _ ->
-		  fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
+		  fail ("looking for coproduct element: " ^ (print_TypeDescriptor coproduct_sd) ^ "\n" ))
 	   | _ -> 
 	     fail ("decoding CoProduct: XML datum named " ^ (string element_name) ^ " doesn't match any of " ^ 
 		   (foldl (fn (result, (name, _)) ->
@@ -223,11 +223,11 @@ XML qualifying spec
 			  sd_options)
 		   ^ " coproduct options")
 
-  op [X] internalize_PossibleElement_as_base_sort (element : PossibleElement,
-                                                   base_sd : SortDescriptor,
+  op [X] internalize_PossibleElement_as_base_type (element : PossibleElement,
+                                                   base_sd : TypeDescriptor,
                                                    qid     : QIdDescriptor,
-                                                   args    : List SortDescriptor,
-                                                   table   : SortDescriptorExpansionTable)
+                                                   args    : List TypeDescriptor,
+                                                   table   : TypeDescriptorExpansionTable)
     : Option X =
     case qid of
       | ("Integer", "Int")    -> internalize_PossibleElement_as_Int    (element)
@@ -239,7 +239,7 @@ XML qualifying spec
 
   op [X] internalize_PossibleElement_as_Boolean (element : PossibleElement)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Boolean for " ^ (print_SortDescriptor boolean_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Bool for " ^ (print_TypeDescriptor boolean_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
     Some (magicCastFromBool 
 	  (case possible_datum of
@@ -248,25 +248,25 @@ XML qualifying spec
 		  | "true"  -> true
 		  | "false" -> false)
 	     | None -> 
-	       %%% let _ = toScreen ((level_str level) ^ "Using default value of false for " ^ (print_SortDescriptor boolean_sd) ^ "\n") in
+	       %%% let _ = toScreen ((level_str level) ^ "Using default value of false for " ^ (print_TypeDescriptor boolean_sd) ^ "\n") in
 	       false))
 
 
   op [X] internalize_PossibleElement_as_Int (element : PossibleElement)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Int for " ^ (print_SortDescriptor integer_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Int for " ^ (print_TypeDescriptor integer_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
     Some (magicCastFromInt
 	  (case possible_datum of
 	     | Some char_data -> stringToInt (trim_whitespace (string char_data))
 	     | None -> 
-	       %%% let _ = toScreen ((level_str level) ^ "Using default value of 0 for " ^ (print_SortDescriptor integer_sd) ^ "\n") in
+	       %%% let _ = toScreen ((level_str level) ^ "Using default value of 0 for " ^ (print_TypeDescriptor integer_sd) ^ "\n") in
 	       0))
 
 
   op [X] internalize_PossibleElement_as_String (element : PossibleElement)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as String for " ^ (print_SortDescriptor string_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as String for " ^ (print_TypeDescriptor string_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
     Some (magicCastFromString 
 	  (case possible_datum of
@@ -275,13 +275,13 @@ XML qualifying spec
 	       %% which would print back out as '<...> " "abcd" " <...>'
 	       trim_whitespace_and_quotes (string char_data)
 	     | None -> 
-	       %%% let _ = toScreen ((level_str level) ^ "Using default value of \"\" for " ^ (print_SortDescriptor string_sd) ^ "\n") in
+	       %%% let _ = toScreen ((level_str level) ^ "Using default value of \"\" for " ^ (print_TypeDescriptor string_sd) ^ "\n") in
 	       ""))
 
 
   op [X] internalize_PossibleElement_as_Char (element : PossibleElement)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Char for " ^ (print_SortDescriptor char_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Char for " ^ (print_TypeDescriptor char_sd) ^ "\n") in
     let possible_datum = element.content.trailer in
     case possible_datum of
       | Some char_data -> 
@@ -298,30 +298,30 @@ XML qualifying spec
       | None -> 
 	None
 
-  op internalize_PossibleElement_as_List : [X] PossibleElement * (List SortDescriptor) * SortDescriptorExpansionTable -> Option X 
+  op internalize_PossibleElement_as_List : [X] PossibleElement * (List TypeDescriptor) * TypeDescriptorExpansionTable -> Option X 
 
   op [X] internalize_PossibleElement_as_List (element : PossibleElement,
-                                              args    : List SortDescriptor,
-                                              table   : SortDescriptorExpansionTable)
+                                              args    : List TypeDescriptor,
+                                              table   : TypeDescriptorExpansionTable)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as List for " ^ (print_SortDescriptor list_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as List for " ^ (print_TypeDescriptor list_sd) ^ "\n") in
     let element_sd = head args in
     let data = reverse (foldl (fn (result, (possible_chardata,item)) ->
-			   %%% let _ = toScreen ((level_str level) ^ "Seeking next list element: " ^ (print_SortDescriptor element_sd) ^ "\n") in
+			   %%% let _ = toScreen ((level_str level) ^ "Seeking next list element: " ^ (print_TypeDescriptor element_sd) ^ "\n") in
 			   case item of
 			     | Element element ->
 			       (case aux_internalize_Element (element, element_sd, table) of
 				  | Some datum -> 
-				    %%% let _ = toScreen ((level_str level) ^ "Found list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
+				    %%% let _ = toScreen ((level_str level) ^ "Found list element: " ^ (print_TypeDescriptor (hd args)) ^ "\n") in
 				    datum:: result
 				  | _ -> 
-				    let _ = toScreen ("\nWarning: failure looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ) in
+				    let _ = toScreen ("\nWarning: failure looking for list element: " ^ (print_TypeDescriptor element_sd) ^ "\n" ) in
 				    result)
 			     | _ -> 
 			       case possible_chardata of
 				 | Some ustr -> trim_whitespace (string ustr) :: result
 				 | _ -> 
-				   %%% let _ = toScreen ((level_str level) ^ "While looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^ "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n") in
+				   %%% let _ = toScreen ((level_str level) ^ "While looking for list element: " ^ (print_TypeDescriptor element_sd) ^ "\n" ^ "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n") in
 				   result)
 		          []
 			  element.content.items)
@@ -329,10 +329,10 @@ XML qualifying spec
       Some (magicCastFromList data)
 
   op [X] internalize_PossibleElement_ad_hoc (element : PossibleElement,
-                                             base_sd : SortDescriptor
+                                             base_sd : TypeDescriptor
                                                % qid     : QIdDescriptor,
-                                               % args    : List SortDescriptor,
-                                               % table   : SortDescriptorExpansionTable,
+                                               % args    : List TypeDescriptor,
+                                               % table   : TypeDescriptorExpansionTable,
                                                )
     : Option X =
     %% Allow sophisticated users to hack with their own base types
@@ -340,46 +340,46 @@ XML qualifying spec
     Some (read_ad_hoc_string (base_sd, element.content))
 
   op [X] internalize_PossibleElement_as_Option (element   : PossibleElement,
-                                                sd        : SortDescriptor,
-                                                table     : SortDescriptorExpansionTable)
+                                                sd        : TypeDescriptor,
+                                                table     : TypeDescriptorExpansionTable)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Option for " ^ (print_SortDescriptor option_sd) ^ "\n") in
-    let expanded_sd = expand_SortDescriptor (sd, table) in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as Option for " ^ (print_TypeDescriptor option_sd) ^ "\n") in
+    let expanded_sd = expand_TypeDescriptor (sd, table) in
     magicCastToOption (Some (internalize_PossibleElement (element, sd, expanded_sd, table)))
 
   op [X] internalize_EmptyElemTag (etag        : EmptyElemTag,
-                                   sd          : SortDescriptor,
-                                   expanded_sd : SortDescriptor,
-                                   table       : SortDescriptorExpansionTable)
+                                   sd          : TypeDescriptor,
+                                   expanded_sd : TypeDescriptor,
+                                   table       : TypeDescriptorExpansionTable)
     : Option X =
     %%
-    %%   sort Content = {items   : List (Option CharData * Content_Item),
+    %%   type Content = {items   : List (Option CharData * Content_Item),
     %%                   trailer : Option CharData}
     %% 
-    %%   sort Content_Item = | Element   Element
+    %%   type Content_Item = | Element   Element
     %%                       | Reference Reference
     %%                       | CDSect    CDSect
     %%                       | PI        PI
     %%                       | Comment   Comment
     %%
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing " ^ (string etag.name) ^ " as " ^ (print_SortDescriptor sd) ^ " = " ^ (print_SortDescriptor expanded_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing " ^ (string etag.name) ^ " as " ^ (print_TypeDescriptor sd) ^ " = " ^ (print_TypeDescriptor expanded_sd) ^ "\n") in
     case expanded_sd of
       | Product   field_sds    -> internalize_EmptyElemTag_as_product   (etag, sd, field_sds,    table) 
       | CoProduct optional_sds -> internalize_EmptyElemTag_as_coproduct (etag, sd, optional_sds, table)
-      | Base      (qid, args)  -> internalize_EmptyElemTag_as_base_sort (etag, sd, qid, args,    table)
+      | Base      (qid, args)  -> internalize_EmptyElemTag_as_base_type (etag, sd, qid, args,    table)
       | Boolean                -> Some (magicCastFromBool false)
       | _ -> fail "unrecognized type"
 
 
   op [X] internalize_EmptyElemTag_as_product (etag       : EmptyElemTag,
-                                              product_sd : SortDescriptor,
-                                              field_sds  : List (IdDescriptor * SortDescriptor),
-                                              table      : SortDescriptorExpansionTable)
+                                              product_sd : TypeDescriptor,
+                                              field_sds  : List (IdDescriptor * TypeDescriptor),
+                                              table      : TypeDescriptorExpansionTable)
     : Option X =
     %% Note that datum_etags is a heterogenous list,
     %%  hence cannot be properly typed in metaslang,
     %%  hence the "magic" here.
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as product for " ^ (print_SortDescriptor product_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as product for " ^ (print_TypeDescriptor product_sd) ^ "\n") in
     if making_attributes_and_elements_explicit? field_sds then
       internalize_Attributes_and_Elements (Empty etag, product_sd, table)
     else
@@ -387,11 +387,11 @@ XML qualifying spec
       magicCastFromOption (Some ())
 
   op [X] internalize_EmptyElemTag_as_coproduct (etag         : EmptyElemTag,
-                                                coproduct_sd : SortDescriptor,
-                                                sd_options   : List (IdDescriptor * Option SortDescriptor),
-                                                table        : SortDescriptorExpansionTable)
+                                                coproduct_sd : TypeDescriptor,
+                                                sd_options   : List (IdDescriptor * Option TypeDescriptor),
+                                                table        : TypeDescriptorExpansionTable)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as coproduct for " ^ (print_TypeDescriptor coproduct_sd) ^ "\n") in
     case (findLeftmost (fn sd_option -> 
                           (case etag_type_attribute etag of
                              | Some str -> sd_option.1 = str
@@ -403,20 +403,20 @@ XML qualifying spec
         | Some (_, Some matching_sd_option) -> 
  	  (case internalize_EmptyElemTag (etag,
 					  matching_sd_option,
-					  expand_SortDescriptor (matching_sd_option, table),
+					  expand_TypeDescriptor (matching_sd_option, table),
 					  table) 
 	     of
 	      | Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name etag.name, datum))
 	      | _ ->
-	        fail ("looking for coproduct etag: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
+	        fail ("looking for coproduct etag: " ^ (print_TypeDescriptor coproduct_sd) ^ "\n" ))
 	| _ ->
           None
 
-  op [X] internalize_EmptyElemTag_as_base_sort (etag    : EmptyElemTag,
-                                                base_sd : SortDescriptor,
+  op [X] internalize_EmptyElemTag_as_base_type (etag    : EmptyElemTag,
+                                                base_sd : TypeDescriptor,
                                                 qid     : QIdDescriptor,
-                                                args    : List SortDescriptor,
-                                                table   : SortDescriptorExpansionTable)
+                                                args    : List TypeDescriptor,
+                                                table   : TypeDescriptorExpansionTable)
     : Option X =
     case qid of
       %% Todo: maybe extract some of these from attributes?
@@ -428,27 +428,27 @@ XML qualifying spec
       | _                     -> internalize_EmptyElemTag_ad_hoc    (etag, base_sd (* , qid, args, table, *))
 
   %% TODO: Implement this
-  op internalize_EmptyElemTag_ad_hoc : [X] EmptyElemTag * SortDescriptor (* * QIdDescriptor * (List SortDescriptor) * SortDescriptorExpansionTable *) -> Option X
+  op internalize_EmptyElemTag_ad_hoc : [X] EmptyElemTag * TypeDescriptor (* * QIdDescriptor * (List TypeDescriptor) * TypeDescriptorExpansionTable *) -> Option X
 
   op [X] internalize_EmptyElemTag_as_Option (etag      : EmptyElemTag,
-                                             sd        : SortDescriptor,
-                                             table     : SortDescriptorExpansionTable)
+                                             sd        : TypeDescriptor,
+                                             table     : TypeDescriptorExpansionTable)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as Option for " ^ (print_SortDescriptor option_sd) ^ "\n") in
-    let expanded_sd = expand_SortDescriptor (sd, table) in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as Option for " ^ (print_TypeDescriptor option_sd) ^ "\n") in
+    let expanded_sd = expand_TypeDescriptor (sd, table) in
     magicCastToOption (Some (internalize_EmptyElemTag (etag, sd, expanded_sd, table)))
 
   op [Z] internalize_Attributes_and_Elements (element     : Element,
-                                              sd          : SortDescriptor,
-                                              table       : SortDescriptorExpansionTable)
+                                              sd          : TypeDescriptor,
+                                              table       : TypeDescriptorExpansionTable)
     : Option Z =
     %% We know that expanded_sd matches:  Product [("attributes", _), ("elements", _)]
 
-    %%% let _ = toScreen ("\nHere goes..." ^ (print_SortDescriptor sd) ^ " \n") in
+    %%% let _ = toScreen ("\nHere goes..." ^ (print_TypeDescriptor sd) ^ " \n") in
     case element of
 
       | Full elt ->
-	(%%% let _ = (let desired = print_SortDescriptor sd in
+	(%%% let _ = (let desired = print_TypeDescriptor sd in
 	 %%% 	  let given_type = (case (element_type_attribute elt) of
 	 %%% 			      | Some str -> str
          %%%                          | _ -> "unspecified type")
@@ -456,9 +456,9 @@ XML qualifying spec
 	 %%% 	    toScreen ((level_str level) ^ "Seeking " ^ desired ^ " from xml element named " ^ string elt.stag.name ^" of " ^ given_type ^ "\n"))
 	 %%%  in
 	 let attributes : Attributes = internalize_PossibleElement_Attributes (elt (* , sd, table, *)) in
-	 let expanded_sd = expand_SortDescriptor (sd, table) in
+	 let expanded_sd = expand_TypeDescriptor (sd, table) in
 	 let elements_sd = (case expanded_sd of Product [("attributes", _), ("elements", xx)] -> xx) in
-	 let expanded_sd : SortDescriptor = expand_SortDescriptor (elements_sd, table) in
+	 let expanded_sd : TypeDescriptor = expand_TypeDescriptor (elements_sd, table) in
 	 case internalize_PossibleElement (elt, elements_sd, expanded_sd, table) of
 	   | Some elements -> 
 	     Some (magicCastFromAE {attributes = attributes,
@@ -466,7 +466,7 @@ XML qualifying spec
 	   | _ -> None)
 
       | Empty etag -> 
-	%%% let _ = (let desired = print_SortDescriptor sd in
+	%%% let _ = (let desired = print_TypeDescriptor sd in
 	%%% 	 let given_type = (case (etag_type_attribute etag) of
 	%%% 			     | Some str -> str
 	%%% 			     | _ -> "unspecified type")
@@ -480,28 +480,28 @@ XML qualifying spec
   op Magic.magicCastFromAE       : [E,X]  {attributes : Attributes, elements : E} -> X   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
 
-  %% op internalize_EmptyElemTag_Attributes    : EmptyElemTag    * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Attributes
-  %% op internalize_PossibleElement_Attributes : PossibleElement * SortDescriptor * SortDescriptor * SortDescriptorExpansionTable -> Attributes
+  %% op internalize_EmptyElemTag_Attributes    : EmptyElemTag    * TypeDescriptor * TypeDescriptor * TypeDescriptorExpansionTable -> Attributes
+  %% op internalize_PossibleElement_Attributes : PossibleElement * TypeDescriptor * TypeDescriptor * TypeDescriptorExpansionTable -> Attributes
 
   op internalize_EmptyElemTag_Attributes (etag  : EmptyElemTag
-                                            % sd    : SortDescriptor,
-                                            % table : SortDescriptorExpansionTable,
+                                            % sd    : TypeDescriptor,
+                                            % table : TypeDescriptorExpansionTable,
                                           )
     : Attributes =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing attributes for empty xml element " ^ (string etag.name) ^ " as " ^ (print_SortDescriptor sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing attributes for empty xml element " ^ (string etag.name) ^ " as " ^ (print_TypeDescriptor sd) ^ "\n") in
     internalize_ElementTag_Attributes (etag (* , sd, table *))
 
   op internalize_PossibleElement_Attributes (element : PossibleElement
-                                               % sd      : SortDescriptor,
-                                               % table   : SortDescriptorExpansionTable
+                                               % sd      : TypeDescriptor,
+                                               % table   : TypeDescriptorExpansionTable
                                                )
     : Attributes =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing attributes for xml element " ^ (string element.stag.name) ^ " as " ^ (print_SortDescriptor sd) ^ "\n") in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing attributes for xml element " ^ (string element.stag.name) ^ " as " ^ (print_TypeDescriptor sd) ^ "\n") in
     internalize_ElementTag_Attributes (element.stag (* , sd, table, *))
 
   op internalize_ElementTag_Attributes (tag   : ElementTag
-                                          % sd    : SortDescriptor,
-                                          % table : SortDescriptorExpansionTable
+                                          % sd    : TypeDescriptor,
+                                          % table : TypeDescriptorExpansionTable
                                         )
     : Attributes =
     map (fn (attr : ElementAttribute) -> 

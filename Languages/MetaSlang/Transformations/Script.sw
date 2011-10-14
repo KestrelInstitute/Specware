@@ -48,7 +48,7 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
-    | Trace Boolean
+    | Trace Bool
     | Print
 
  %% Defined in Isomorphism.sw
@@ -248,7 +248,7 @@ spec
      | "alldefs" -> mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
- op  claimNameMatch: QualifiedId * QualifiedId -> Boolean
+ op  claimNameMatch: QualifiedId * QualifiedId -> Bool
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
@@ -267,7 +267,7 @@ spec
       else rls
 
 %%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
-  op getOpDef(spc: Spec, qid: QualifiedId): Option(MS.Term * Sort) =
+  op getOpDef(spc: Spec, qid: QualifiedId): Option(MSTerm * MSType) =
     case findMatchingOps(spc, qid) of
       | [] -> (warn("No defined op with that name."); None)
       | [opinfo] ->
@@ -275,7 +275,7 @@ spec
         Some(tm, ty)
       | _ -> (warn("Ambiguous op name."); None)
 
-  op getTheoremBody(spc: Spec, qid: QualifiedId): Option MS.Term =
+  op getTheoremBody(spc: Spec, qid: QualifiedId): Option MSTerm =
     case findPropertiesNamed(spc, qid) of
       | [] -> (warn("No Theorem with that name."); None)
       | [(_, _, _, bod, _)] -> Some bod
@@ -288,7 +288,7 @@ spec
             | Some info -> [info]
             | None      -> []
 
-  op trivialMatchTerm?(tm: MS.Term): Bool =
+  op trivialMatchTerm?(tm: MSTerm): Bool =
     %% Not certain about hasFlexHead?
     some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
 
@@ -298,7 +298,7 @@ spec
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
   op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
-  op metaRuleFunction: String * String -> Spec -> MS.Term -> Option MS.Term    % defined in transform-shell.lisp
+  op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
   op specTransformFn?:  String * String -> Bool                                % defined in transform-shell.lisp
 
   op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
@@ -322,7 +322,7 @@ spec
     let v1 = ("x", dom_ty) in
     let v2 = ("y", dom_ty) in
     let thm = mkBind(Forall, [v1, v2],
-                     mkEquality(boolSort,
+                     mkEquality(boolType,
                                 mkEquality(ran_ty, mkApply(f, mkVar v1), mkApply(f, mkVar v2)),
                                 mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
@@ -366,7 +366,7 @@ spec
           [] spc.ops
 
   op addSubtypeRules?: Bool = true
-  op subtypeRules(term: MS.Term, context: Context): List RewriteRule =
+  op subtypeRules(term: MSTerm, context: Context): List RewriteRule =
     if ~addSubtypeRules? then []
     else
     let subtypes = foldSubTerms (fn (t, subtypes) ->
@@ -383,7 +383,7 @@ spec
               assertRules(context, fml, "Subtype1", false))
         subtypes)
 
-  op mkApplyTermFromLambdas (hd: MS.Term, f: MS.Term): MS.Term =
+  op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
     case f of
       | Lambda([(param_pat, _, bod)], _) ->
         let Some arg = patternToTerm param_pat in
@@ -392,7 +392,7 @@ spec
 
   op ruleNameMaxLen: Nat = 44
 
-  op ruleName(tm: MS.Term): String =
+  op ruleName(tm: MSTerm): String =
     let tm = case tm of
                | Bind(_, _, bod, _) -> bod
                | _ -> tm
@@ -401,15 +401,15 @@ spec
     if length str <= ruleNameMaxLen then str
       else subFromTo(str, 0, ruleNameMaxLen)
 
-  op assertRulesFromPreds(context: Context, tms: MS.Terms): List RewriteRule =
+  op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _=writeLine("Context Rule: "^ruleName cj) in
              assertRules(context, cj, ruleName cj, true) ++ rules)
       [] tms
 
-  op varProjections (ty: Sort, spc: Spec): Option(MS.Term * List(Var * Option Id)) =
+  op varProjections (ty: MSType, spc: Spec): Option(MSTerm * List(Var * Option Id)) =
     case range_*(spc, ty, false) of
-    | Subsort(result_ty, Lambda([(pat, _, pred)], _), _) ->
+    | Subtype(result_ty, Lambda([(pat, _, pred)], _), _) ->
       (case pat of
          | VarPat(result_var,_) -> Some(pred, [(result_var, None)])
          | RecordPat(pat_prs, _) ->
@@ -432,7 +432,7 @@ spec
             | [] -> []
             | i :: r_path ->
           case tm of
-            | SortedTerm(fn_tm, ty, _) | i = 1 ->
+            | TypedTerm(fn_tm, ty, _) | i = 1 ->
                   (let param_rls = parameterRules ty in
                    let post_condn_rules =
                        case varProjections(ty, context.spc) of
@@ -471,12 +471,12 @@ spec
                 | _ -> []
           in
           rls ++ collectRules(ithSubTerm(tm, i), r_path)
-       def parameterRules(ty: Sort) =
+       def parameterRules(ty: MSType) =
          case ty of
            | Arrow(dom, rng, _) ->
              let dom_rls =
                  case dom of
-                    | Subsort(_, Lambda([(_, _, pred)], _), _) ->
+                    | Subtype(_, Lambda([(_, _, pred)], _), _) ->
                       assertRulesFromPreds(context, getConjuncts pred)
                     | _ -> []
              in
@@ -485,10 +485,10 @@ spec
     in
     collectRules (top_term, reverse path)
 
-  op rewriteDebug?: Boolean = false
+  op rewriteDebug?: Bool = false
 
   op rewriteDepth: Nat = 6
-  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat): MS.Term =
+  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat): MSTerm =
     (context.traceDepth := 0;
      let term = fromPathTerm path_term in
      let _ = if rewriteDebug? then
@@ -535,7 +535,7 @@ spec
       | NotEquals -> Some "~="
       | _ -> None
 
-   op [a] searchPred(s: String): ATerm a -> Boolean =
+   op [a] searchPred(s: String): ATerm a -> Bool =
     case s of
       | "if" -> embed? IfThenElse
       | "let" -> (fn t -> embed? Let t || embed? LetRec t)
@@ -572,12 +572,12 @@ spec
       | Prev -> moveToPrev path_term
       | Widen -> parentTerm path_term
       | All -> Some(top_term, case top_term of
-                                | SortedTerm _ -> [0]
+                                | TypedTerm _ -> [0]
                                 | _ -> [])
       | Search s -> searchNextSt(path_term, searchPred s)
       | ReverseSearch s -> searchPrevSt(path_term, searchPred s)
       | Post -> (case top_term of
-                 | SortedTerm _ -> Some(top_term, [1])
+                 | TypedTerm _ -> Some(top_term, [1])
                  | _ -> None)
           
 
@@ -593,8 +593,8 @@ spec
   op maxRewrites: Nat = 900
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
-  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Boolean)
-     : SpecCalc.Env (PathTerm * Boolean) =
+  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool)
+     : SpecCalc.Env (PathTerm * Bool) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
       | Steps steps ->
@@ -637,19 +637,19 @@ spec
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
-                   | SortedTerm(tm, ty, a) ->
-                     (SortedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                   | TypedTerm(tm, ty, a) ->
+                     (TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                                  ty, a),
                       [0])
-                   | tm -> (addSemanticChecksForTerm(tm, boolSort, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                   | tm -> (addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                             [])));
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
           return (path_term, tracing?)
         }
 
-  op interpretTerm(spc: Spec, script: Script, def_term: MS.Term, top_ty: Sort, qid: QualifiedId, tracing?: Boolean)
-    : SpecCalc.Env (MS.Term * Boolean) =
+  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool)
+    : SpecCalc.Env (MSTerm * Bool) =
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
      ((new_typed_term, _), tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
      return(new_typed_term, tracing?)}
@@ -673,13 +673,13 @@ spec
       [] qids
 
   op checkType(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
-    case findTheSort(spc, qid) of
+    case findTheType(spc, qid) of
       | Some _ -> return qid
       | None -> 
     if q = UnQualified
       then
-      case wildFindUnQualified (spc.sorts, id) of
-        | [info] -> return(primarySortName info)
+      case wildFindUnQualified (spc.types, id) of
+        | [info] -> return(primaryTypeName info)
         | [] -> raise(Fail("Undefined type in "^id_str^" of addParameter "^show qid))
         | _  -> raise(Fail("Ambiguous type in "^id_str^" of addParameter "^show qid))
     else
@@ -689,7 +689,7 @@ spec
     let Qualified(q, id) = qid in
     spc << {ops = insertAQualifierMap(spc.ops, q, id, opinfo)}
 
-  op interpretSpec(spc: Spec, script: Script, tracing?: Boolean): SpecCalc.Env (Spec * Boolean) =
+  op interpretSpec(spc: Spec, script: Script, tracing?: Bool): SpecCalc.Env (Spec * Bool) =
     case script of
       | Steps steps ->
           foldM (\_lambda (spc, tracing?) -> fn stp ->
@@ -710,7 +710,7 @@ spec
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
                              (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
-                             if equalTerm?(new_tm, SortedTerm(tm, ty, noPos))
+                             if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                then let _ = writeLine(show qid^" not modified.") in
                                     return (spc, tracing?)
                              else {
@@ -732,7 +732,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  {
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, boolSort, qid1, tracing?); 
+                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?); 
                              new_spc <- return(setElements(spc, mapSpecElements (fn el ->
                                                                                  case el of
                                                                                    | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->

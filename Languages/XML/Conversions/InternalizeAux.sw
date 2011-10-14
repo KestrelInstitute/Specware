@@ -2,10 +2,10 @@ XML qualifying spec
 
   import ../XML_Sig
   import ../Printers/XML_Printer % for error messages
-  import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
+  import /Languages/MetaSlang/Specs/Elaborate/TypeDescriptor
   import Magic
 
-  def ms_name_matches_xml_name? (ms_name : String, xml_name: UString) : Boolean =
+  def ms_name_matches_xml_name? (ms_name : String, xml_name: UString) : Bool =
     ms_name = convert_xml_name_to_ms_name xml_name
 
   def convert_xml_name_to_ms_name (xml_name : UString) : String =
@@ -94,7 +94,7 @@ XML qualifying spec
     in
       "\n" ^ (aux 0)
 
-  op read_ad_hoc_string : [X] SortDescriptor * Content -> X
+  op read_ad_hoc_string : [X] TypeDescriptor * Content -> X
 
   type ID             = String
   type Attributes     = List Attribute

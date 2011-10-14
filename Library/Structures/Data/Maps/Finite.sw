@@ -14,7 +14,7 @@ in spec
   import KeyValue
   import ../Maps
 
-  sort KeyValue = Dom * Cod
+  type KeyValue = Dom * Cod
 
   op map : Map -> (Cod -> Cod) -> Map
   def map m f = fold (fn (m,(k,v)) -> update (m, k, f v), empty, m)

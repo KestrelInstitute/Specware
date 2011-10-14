@@ -77,7 +77,7 @@
   (if (null *transform-term*)
       (princ "No term chosen")
       (princ (if with-types?
-		 (AnnSpecPrinter::printTermWithSorts (PathTerm::fromPathTerm *transform-term*))
+		 (AnnSpecPrinter::printTermWithTypes (PathTerm::fromPathTerm *transform-term*))
 		 (AnnSpecPrinter::printTerm (PathTerm::fromPathTerm *transform-term*)))))
   (values))
 

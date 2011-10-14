@@ -44,7 +44,7 @@ spec
   type G2TDState =
     {tdefs : Seq Typedef, nonces : Seq Notion,
      skipped : Seq Notion, badSkips : Seq Notion,
-     flags : {inAlt : Boolean, inCompound : Boolean, isTypor : Boolean}}
+     flags : {inAlt : Bool, inCompound : Bool, isTypor : Bool}}
 
   type S a = a * G2TDState
   type Arrow(a, b) = S a -> S b
@@ -88,7 +88,7 @@ spec
        | ProperSeq _ -> true
        | _           -> false
 
-  op  complicated : S Notion -> Boolean
+  op  complicated : S Notion -> Bool
   def complicated(n, s) =
     let aa = theGrammar@n in
     if length aa = 1

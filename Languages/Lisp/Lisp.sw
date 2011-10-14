@@ -85,7 +85,7 @@ ListADT qualifying spec {
     | Ignore  Strings
 
   type Val =
-    | Boolean   Boolean
+    | Boolean   Bool
     | Nat       Nat
     | Char      Char
     | String    String
@@ -124,16 +124,16 @@ ListADT qualifying spec {
          | Letrec  (_,terms,body) -> List.foldl (fn (names,tm) -> ops(tm,names)) (ops(body,names)) terms
          | Seq     terms -> List.foldr ops names terms
 
-  op moveDefparamsToEnd?: Boolean = true
+  op moveDefparamsToEnd?: Bool = true
 
-  op nonLambdaDef?((_, body): Definition): Boolean =
+  op nonLambdaDef?((_, body): Definition): Bool =
     ~(embed? Lambda body)
 
   op makeDefNil((nm, _): Definition): Definition =
     (nm, Const(Boolean false))          % nil
 
-  op  sortDefs: Definitions -> Definitions
-  def sortDefs(defs) = 
+  op  typeDefs: Definitions -> Definitions
+  def typeDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 <= nm1) defs in
       let defMap = 
 	  List.foldl (fn(map, (name,term))-> STHMap.update(map,name,(name,term)))
@@ -261,7 +261,7 @@ ListADT qualifying spec {
            ("(progn ", " ", ")")
            (List.map ppTerm ts)
 
-  op warnAboutSuppressingDefuns?: Boolean = false
+  op warnAboutSuppressingDefuns?: Bool = false
 
   def ppOpDefn(s : String,term:LispTerm) : PrettyPrint.Pretty = 
     if  s in? SpecToLisp.SuppressGeneratedDefuns then
@@ -312,7 +312,7 @@ ListADT qualifying spec {
 
   def ppSpecToFile (spc, file, preamble) =
     %% Rewritten to not use ppSpec which requires a lot of space for large specs
-    let defs = sortDefs(spc.opDefns) 	in
+    let defs = typeDefs(spc.opDefns) 	in
     let name = spc.name 		in
     IO.withOpenFileForWrite
       (file,
@@ -354,7 +354,7 @@ ListADT qualifying spec {
       
 
   def ppSpec (s : LispSpec) : PrettyPrint.Pretty =
-      let defs = sortDefs(s.opDefns) 	in
+      let defs = typeDefs(s.opDefns) 	in
       let name = s.name 		in
       prettysAll
      (
@@ -396,7 +396,7 @@ op  mkLQuote  : String  -> LispTerm
 op  mkLNat    : Nat     -> LispTerm
 op  mkLInt    : Int     -> LispTerm
 op  mkLChar   : Char    -> LispTerm
-op  mkLBool   : Boolean -> LispTerm
+op  mkLBool   : Bool    -> LispTerm
 op  mkLString : String  -> LispTerm
 op  mkLIntern : String  -> LispTerm
 op  mkLLambda : Strings  * LispDecls      * LispTerm -> LispTerm

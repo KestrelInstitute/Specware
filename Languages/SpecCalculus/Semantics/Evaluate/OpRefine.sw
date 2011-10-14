@@ -37,8 +37,8 @@ SpecCalc qualifying spec
         {(spc,next_el) <- addOrRefineOp names fxty refine? dfn spc pos opt_next_el false;
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
-      | Sort(names, ty_defn) ->
-        {(spc,next_el) <- addOrRefineSort names ty_defn spc pos opt_next_el false;
+      | Type(names, ty_defn) ->
+        {(spc,next_el) <- addOrRefineType names ty_defn spc pos opt_next_el false;
          let spc = addElementsAfterConjecture(spc, pragmas, next_el) in
          return (spc,Some next_el,[])}
       | Pragma(prefix, body, postfix) ->
@@ -55,7 +55,7 @@ SpecCalc qualifying spec
     in
     let tys = mapPartial (fn (elem,_) ->
                                  case elem of
-                                   | Sort(ty_id::_, _) -> Some ty_id
+                                   | Type(ty_id::_, _) -> Some ty_id
                                    | _ -> None)
                 refine_elts
     in
@@ -64,7 +64,7 @@ SpecCalc qualifying spec
                    case el of
                      | Import(_, im_spc, im_elts, _)
                          | exists? (fn op_id -> some?(findTheOp  (im_spc, op_id))) ops
-                          || exists? (fn ty_id -> some?(findTheSort(im_spc, ty_id))) tys
+                          || exists? (fn ty_id -> some?(findTheType(im_spc, ty_id))) tys
                         ->
                         maybeUnfoldImports im_elts ++ new_elts
                      | _ -> el::new_elts)

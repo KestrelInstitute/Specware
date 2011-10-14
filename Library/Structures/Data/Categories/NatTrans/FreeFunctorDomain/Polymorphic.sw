@@ -11,14 +11,14 @@ so that this spec can import a copy without being aware of other things
 in the chain of imports.
 
 There should be obtained by refining a spec for morphism by makes
-instances of dom, cod and compose for the natural transformation sort.
+instances of dom, cod and compose for the natural transformation type.
 
 \begin{spec}
 spec {
   import /Library/PrettyPrinter/WadlerLindig
   import Functor qualifying /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic
 
-  sort NatTrans (O,A)
+  type NatTrans (O,A)
 
   op dom : fa (O,A) NatTrans (O,A) -> Functor (O,A)
   op cod : fa (O,A) NatTrans (O,A) -> Functor (O,A)

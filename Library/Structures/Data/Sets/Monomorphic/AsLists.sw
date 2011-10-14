@@ -8,7 +8,7 @@ spec
   import PolySet qualifying ../Polymorphic/AsLists
   import ../Monomorphic
 
-  sort Set = PolySet.Set Elem
+  type Set = PolySet.Set Elem
 
   def empty? = PolySet.empty?
   def empty = PolySet.empty

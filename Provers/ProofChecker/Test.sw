@@ -6,7 +6,7 @@ Translate qualifying spec
   import TranslateMSToPC[Refinement]
   import ../ProofGenerator/ContextProofsI
 
-  op test : String -> Boolean
+  op test : String -> Bool
   def test path =
     let prog = {
       cleanEnv;
@@ -32,7 +32,7 @@ Translate qualifying spec
     } in
     runSpecCommand (catch prog toplevelHandler)
 
-  op testProofGen: String -> Boolean
+  op testProofGen: String -> Bool
   def testProofGen path =
     let prog = {
       cleanEnv;

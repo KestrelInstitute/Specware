@@ -5,37 +5,37 @@ spec
   op mkTypeSubstitution: TypeVariables * Types -> TypeSubstitution
   def mkTypeSubstitution(tvs, ts) = fromLists(tvs, ts)
 
-  op typeDeclaration?: ContextElement -> Boolean
+  op typeDeclaration?: ContextElement -> Bool
   def typeDeclaration?(ce) =
     case ce of
       | typeDeclaration _ -> true
       | _ -> false
 
-  op opDeclaration?: ContextElement -> Boolean
+  op opDeclaration?: ContextElement -> Bool
   def opDeclaration?(ce) =
     case ce of
       | opDeclaration _ -> true
       | _ -> false
 
-  op axioM?: ContextElement -> Boolean
+  op axioM?: ContextElement -> Bool
   def axioM?(ce) =
     case ce of
       | axioM _ -> true
       | _ -> false
 
-  op lemma?: ContextElement -> Boolean
+  op lemma?: ContextElement -> Bool
   def lemma?(ce) =
     case ce of
       | lemma _ -> true
       | _ -> false
 
-  op typeVarDeclaration?: ContextElement -> Boolean
+  op typeVarDeclaration?: ContextElement -> Bool
   def typeVarDeclaration?(ce) =
     case ce of
       | typeVarDeclaration _ -> true
       | _ -> false
 
-  op varDeclaration?: ContextElement -> Boolean
+  op varDeclaration?: ContextElement -> Bool
   def varDeclaration?(ce) =
     case ce of
       | varDeclaration _ -> true

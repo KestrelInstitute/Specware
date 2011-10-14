@@ -4,7 +4,7 @@
 spec {
   import ../Polymorphic
 
-  sort Functor (O,A) = {
+  type Functor (O,A) = {
       dom : Sketch,
       cod : Cat (O,A),
       vertexMap : PolyMap.Map (Vertex.Elem,O),

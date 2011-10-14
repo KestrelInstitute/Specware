@@ -30,7 +30,7 @@ spec
     else
       None
 
-  op reflExpr?: Expression -> Boolean
+  op reflExpr?: Expression -> Bool
   def reflExpr?(e) =
     eqExpr?(e) &&
     lhs(e) = rhs(e)

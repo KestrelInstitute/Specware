@@ -1,5 +1,5 @@
 Utilities qualifying spec  
- import MSTerm    % defines sorts Spec, Term, etc.
+ import MSTerm    % defines types Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntSetSplay
  import /Library/Legacy/DataStructures/ListPair 
  import /Library/Legacy/DataStructures/ListUtilities
@@ -9,19 +9,19 @@ Utilities qualifying spec
  import ../AbstractSyntax/Fold
 
  type Vars = List Var
- type VarSubst = List (Var * MS.Term)
+ type VarSubst = List (Var * MSTerm)
 
  op varNames(vs: Vars): List Id = map (fn (vn,_) -> vn) vs
 
- op substitute    : MS.Term * VarSubst -> MS.Term
- op freeVars      : MS.Term -> Vars
+ op substitute    : MSTerm * VarSubst -> MSTerm
+ op freeVars      : MSTerm -> Vars
 
  %% Translate a term encoding an assignment to a list of pairs.
  %% Redundant assignments of a variable to itself are eliminated.
 
- op extractAssignment : MS.Term * MS.Term -> List (Pattern * MS.Term)
+ op extractAssignment : MSTerm * MSTerm -> List (MSPattern * MSTerm)
 
- op patternToTerm : Pattern -> Option MS.Term
+ op patternToTerm : MSPattern -> Option MSTerm
 
  def patternToTerm(pat) = 
      case pat
@@ -31,7 +31,7 @@ Utilities qualifying spec
           (case patternToTerm(p)
              of None -> None
 	      | Some (trm) -> 
-		let srt1 = patternSort p in
+		let srt1 = patternType p in
 		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
         | RecordPat(fields,a) -> 
 	  let
@@ -61,7 +61,7 @@ Utilities qualifying spec
 %	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
 
- op  patternToTermPlusExConds(pat: Pattern): MS.Term * List MS.Term * List Var =
+ op  patternToTermPlusExConds(pat: MSPattern): MSTerm * MSTerms * List Var =
    let wild_num = Ref 0 in
    let def patToTPV pat =
          case pat
@@ -69,7 +69,7 @@ Utilities qualifying spec
               (Fun(Embed(con, false), srt, a), [], [])
             | EmbedPat(con, Some p, srt, a) -> 
               let (trm, conds, vs) = patToTPV p in
-              let srt1 = patternSort p in
+              let srt1 = patternType p in
               (Apply(Fun(Embed(con, true), Arrow(srt1, srt, a), a), trm, a), conds, vs)
             | RecordPat(fields, a) -> 
               let
@@ -92,17 +92,17 @@ Utilities qualifying spec
                (mkVar gen_var, [], [gen_var]))
             | QuotientPat(pat, qid, _)  -> 
               let (t, conds, vs) = patToTPV pat in
-              (mkQuotient(t, qid, termSort t), conds, vs)
+              (mkQuotient(t, qid, termType t), conds, vs)
             | RestrictedPat(pat, cond, _)  ->
               let (p, conds, vs) = patToTPV pat in (p, cond::conds, vs)
             | AliasPat(p1, p2, _) -> 
               let (t2, conds2, vs2) = patToTPV p2 in
               let (t1, conds1, vs1) = patToTPV p1 in
-              (t2, [mkEquality(termSort t1, t1, t2)]++conds1++conds2, vs1++vs2)
+              (t2, [mkEquality(termType t1, t1, t2)]++conds1++conds2, vs1++vs2)
    in
    patToTPV pat
 
- op isFree : Var * MS.Term -> Bool
+ op isFree : Var * MSTerm -> Bool
  def isFree (v, term) = 
    case term of
      | Var(w,_)               -> v = w
@@ -130,11 +130,11 @@ Utilities qualifying spec
      | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) || 
 			          isFree(v,t2) || 
 				  isFree(v,t3)
-     | SortedTerm(t,_,_)      -> isFree(v,t)
+     | TypedTerm(t,_,_)       -> isFree(v,t)
      | Seq(tms,_)             -> exists? (fn t -> isFree(v,t)) tms
      | mystery -> fail ("unrecognized argument to isFree : " ^ anyToString mystery)
 
- op isPatBound : Var * Pattern -> Bool
+ op isPatBound : Var * MSPattern -> Bool
  def isPatBound (v,pat) = 
    case pat of
      | AliasPat(p1,p2,_)      -> isPatBound(v,p1) || isPatBound(v,p2)
@@ -145,7 +145,7 @@ Utilities qualifying spec
      | RestrictedPat(p,_,_)   -> isPatBound(v,p)
      | _ -> false
 
- op replace : MS.Term * List (MS.Term * MS.Term) -> MS.Term
+ op replace : MSTerm * List (MSTerm * MSTerm) -> MSTerm
  def replace(M,sub) = 
    if empty? sub then 
      M 
@@ -161,7 +161,7 @@ Utilities qualifying spec
  
  def replace2(M,sub,freeNames) = 
    let
-       def rep(M:MS.Term):MS.Term = 
+       def rep(M:MSTerm):MSTerm = 
          case lookup(fn N -> N = M,sub)
 	   of Some N -> N
 	    | None -> 
@@ -220,8 +220,8 @@ Utilities qualifying spec
    in
      rep(M)
 
- op repPattern : Pattern * List (MS.Term * MS.Term) * StringSet.Set -> Pattern * List (MS.Term * MS.Term) * StringSet.Set
- op repBoundVars: Vars *  List (MS.Term * MS.Term) * StringSet.Set -> Vars *  List (MS.Term * MS.Term) * StringSet.Set
+ op repPattern : MSPattern * List (MSTerm * MSTerm) * StringSet.Set -> MSPattern * List (MSTerm * MSTerm) * StringSet.Set
+ op repBoundVars: Vars *  List (MSTerm * MSTerm) * StringSet.Set -> Vars *  List (MSTerm * MSTerm) * StringSet.Set
 
 
  def repBoundVars(vars,sub,freeNames) = 
@@ -276,13 +276,13 @@ Utilities qualifying spec
   op inVars?(v: Var, vs: List Var): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
 
-  op hasRefTo?(t: MS.Term, vs: List Var): Bool =
+  op hasRefTo?(t: MSTerm, vs: List Var): Bool =
     existsSubTerm (fn t -> case t of
                              | Var(v,_) -> inVars?(v, vs)
                              | _ -> false)
       t
 
- op hasVarNameConflict?(tm: MS.Term, vs: List Var): Bool =
+ op hasVarNameConflict?(tm: MSTerm, vs: List Var): Bool =
    let names = map (project 1) vs in
    existsSubTerm (fn t -> case t of
                             | Var((nm,_),_) -> nm in? names
@@ -312,7 +312,7 @@ Utilities qualifying spec
  op deleteVars (vars_to_remove: Vars, original_vars: Vars): Vars =
    foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
- op freeVarsRec (M : MS.Term): Vars =   
+ op freeVarsRec (M : MSTerm): Vars =   
    case M of
      | Var    (v,      _) -> [v]
 
@@ -349,14 +349,14 @@ Utilities qualifying spec
 
      | Seq (tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
 
-     | SortedTerm (tm, _, _) -> freeVarsRec tm
+     | TypedTerm (tm, _, _) -> freeVarsRec tm
 
      | Pi (_, tm, _) -> freeVarsRec tm
      
      | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
      | _ -> []
 
- op  freeVarsList : [a] List(a * MS.Term) -> Vars
+ op  freeVarsList : [a] List(a * MSTerm) -> Vars
  def freeVarsList tms = 
    foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
 
@@ -366,8 +366,8 @@ Utilities qualifying spec
    let bvars = freeVarsRec body in
    deleteVars (pvars, insertVars (cvars, bvars))
 
- op  patVars: Pattern -> List Var
- def patVars(pat:Pattern) = 
+ op  patVars: MSPattern -> List Var
+ def patVars(pat:MSPattern) = 
    case pat
      of AliasPat(p1,p2,_)      -> insertVars (patVars p1, patVars p2)
       | VarPat(v,_)            -> [v]
@@ -381,10 +381,10 @@ Utilities qualifying spec
       | NatPat  _              -> []
       | QuotientPat(p,_,_)     -> patVars p
       | RestrictedPat(p,_,_)   -> patVars p
-      | SortedPat(p,_,_)       -> patVars p
+      | TypedPat(p,_,_)        -> patVars p
 
- op  getParams: Pattern -> List Pattern
- def getParams(pat:Pattern) = 
+ op  getParams: MSPattern -> MSPatterns
+ def getParams(pat:MSPattern) = 
    case pat
      of VarPat(v,_)-> [pat]
       | RecordPat(fields,_) ->
@@ -401,22 +401,22 @@ Utilities qualifying spec
       if desired_key?(key) then Some value else lookup(desired_key?, alist_tail)
 
 
- op  freeTyVars: Sort -> TyVars
+ op  freeTyVars: MSType -> TyVars
  def freeTyVars(srt) = 
    let vars = Ref [] in
    let def vr(srt) = 
          case srt of
 	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	   | MetaTyVar(tv,pos) -> 
-	     (case unlinkSort srt of
+	     (case unlinkType srt of
 	       | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	       | _ -> ())
 	   | _ -> ()
    in
-   let _ = appSort(fn _ -> (),vr,fn _ -> ()) srt in
+   let _ = appType(fn _ -> (),vr,fn _ -> ()) srt in
    ! vars
 
- op boundVars(t: MS.Term): List Var =
+ op boundVars(t: MSTerm): List Var =
    case t of
      | Let(decls, _, _) -> flatten (map (fn (pat, _) -> patternVars pat) decls)
      | LetRec (decls, _, _) ->  map (fn (v, _) -> v) decls
@@ -424,17 +424,17 @@ Utilities qualifying spec
      | Bind (_, bound, _, _) -> bound
      | _ -> []
 
- op boundVarsIn(t: MS.Term): List Var =
+ op boundVarsIn(t: MSTerm): List Var =
    removeDuplicateVars(foldSubTerms (fn (t,r) -> boundVars t ++ r) [] t)
 
- op boundVarNamesIn(t: MS.Term): List Id =
+ op boundVarNamesIn(t: MSTerm): List Id =
    varNames(boundVarsIn t)
 
  % This implementation of substitution 
- % completely ignores free variables in sorts.
+ % completely ignores free variables in types.
  %
- % This is legal if indeed sorts do not have free variables,
- % which is a reasonable assumption given how Specware sorts
+ % This is legal if indeed types do not have free variables,
+ % which is a reasonable assumption given how Specware types
  % are handled.
 
  def substituteType(srt,S) = 
@@ -448,7 +448,7 @@ Utilities qualifying spec
    substituteType2(srt,S,freeNames) 
 
  def substituteType2(srt,S,freeNames) = 
-   let def subst(s:Sort):Sort = 
+   let def subst(s:MSType):MSType = 
 	   case s
 	     of Base(id,srts,a) -> 
 	        Base(id,
@@ -464,8 +464,8 @@ Utilities qualifying spec
 	      | CoProduct(fields,a) -> 
 		CoProduct(List.map (fn (l,s) -> (l,mapOption subst s)) fields,
 			  a)
-	      | Subsort(s,p,a) -> 
-		Subsort(subst s,
+	      | Subtype(s,p,a) -> 
+		Subtype(subst s,
 			substitute2(p,S,freeNames),
 			a)
 	      | Quotient(s,p,a) -> 
@@ -487,11 +487,11 @@ Utilities qualifying spec
    in 
    substitute2(M,sub,freeNames)
  
- op substitute2(M: MS.Term, sub: VarSubst, freeNames: StringSet.Set): MS.Term = 
+ op substitute2(M: MSTerm, sub: VarSubst, freeNames: StringSet.Set): MSTerm = 
    % let _ = writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sub in	
    let
-       def subst(M:MS.Term):MS.Term = 
+       def subst(M:MSTerm):MSTerm = 
          case M
 	   of Var ((s,_),_) -> 
 	      (% writeLine ("Looking up "^s);
@@ -544,8 +544,8 @@ Utilities qualifying spec
 	    | Seq(terms,a) -> 
 	      Seq(List.map subst terms,
 		  a)
-	    | SortedTerm(term, srt, a) ->
-	      SortedTerm(subst(term), srt, a)
+	    | TypedTerm(term, srt, a) ->
+	      TypedTerm(subst(term), srt, a)
             | _ -> M
 
 	def substRule (pat,cond,term) = 
@@ -621,9 +621,9 @@ Utilities qualifying spec
       | _ -> 
 	(pat,sub,freeNames)
 
-type VarPatSubst = List (Var * Pattern)
+type VarPatSubst = List (Var * MSPattern)
 
-op substPat(pat: Pattern, sub: VarPatSubst): Pattern = 
+op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern = 
    case pat
      of VarPat(v,a) ->
         (case lookup(fn sv -> sv = v, sub) 
@@ -659,7 +659,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
   	  [(VarPat v,arguments)]
       | (Record(fields,_),Record(fields2,_)) -> 
 	  ListPair.foldr 
-	    (fn((_,(Var(v,_)):MS.Term),(_,arg:MS.Term),assignments)->
+	    (fn((_,(Var(v,_)):MSTerm),(_,arg:MSTerm),assignments)->
 	     (case arg
 		of (Var(w,_)) -> if v = w 
                                  then assignments else
@@ -668,20 +668,20 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	    [] (fields,fields2) 
 
 
- op renameBoundVars(term: MS.Term, vs: List Var): MS.Term =
+ op renameBoundVars(term: MSTerm, vs: List Var): MSTerm =
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
- op renameShadowedVars(term: MS.Term): MS.Term =
+ op renameShadowedVars(term: MSTerm): MSTerm =
    renameBoundVars(term, freeVars term)
 
- op reverseSubst (v_subst: VarSubst) (t: MS.Term): MS.Term =
+ op reverseSubst (v_subst: VarSubst) (t: MSTerm): MSTerm =
    case v_subst of
      | [] -> t
      | (v,vt)::_ | equalTerm?(vt,t) && ~(embed? Fun vt) -> mkVar v
      | _ :: r -> reverseSubst r t
 
- op invertSubst (tm: MS.Term, sbst: VarSubst): MS.Term =
+ op invertSubst (tm: MSTerm, sbst: VarSubst): MSTerm =
    if sbst = [] then tm
      else mapTerm (reverseSubst sbst, id, id) tm
 
@@ -693,7 +693,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
  % ----------------------------------------------------------------------
 
- op  mkConjecture: QualifiedId * TyVars * MS.Term -> SpecElement
+ op  mkConjecture: QualifiedId * TyVars * MSTerm -> SpecElement
  def mkConjecture(qid,tvs,fm) =
    Property(Conjecture,qid,tvs,fm,noPos)
 
@@ -713,39 +713,39 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
  %- ----------------------------------------------------------------
 
- op letRecToLetTermSort: Sort -> Sort
- def letRecToLetTermSort srt =
+ op letRecToLetTermType: MSType -> MSType
+ def letRecToLetTermType srt =
    case srt
      of Arrow(s1,s2,a)  -> 
-        Arrow(letRecToLetTermSort(s1),
-	      letRecToLetTermSort(s2),
+        Arrow(letRecToLetTermType(s1),
+	      letRecToLetTermType(s2),
 	      a)
       | Product(fields,a) -> 
-	Product(List.map (fn(id,s) -> (id, letRecToLetTermSort(s))) fields,
+	Product(List.map (fn(id,s) -> (id, letRecToLetTermType(s))) fields,
 		a)
       | CoProduct(fields,a) -> 
 	CoProduct(List.map (fn (id,optsrt) ->
 			    (id, case optsrt
-				   of Some s -> Some(letRecToLetTermSort(s))
+				   of Some s -> Some(letRecToLetTermType(s))
 				    | None  -> None)) 
 		           fields,
 		  a)
       | Quotient(srt,term,a) ->
-	Quotient(letRecToLetTermSort(srt),
+	Quotient(letRecToLetTermType(srt),
 		 letRecToLetTermTerm(term),
 		 a)
-      | Subsort(srt,term,a) ->
-	Subsort(letRecToLetTermSort(srt),
+      | Subtype(srt,term,a) ->
+	Subtype(letRecToLetTermType(srt),
 		letRecToLetTermTerm(term),
 		a)
       | Base(qid,srts,a) -> 
 	Base(qid,
-	     List.map (fn(s) -> letRecToLetTermSort(s)) srts,
+	     List.map (fn(s) -> letRecToLetTermType(s)) srts,
 	     a)
      %| Boolean is the same as default case
       | _ -> srt
 
- op letRecToLetTermTerm: MS.Term -> MS.Term
+ op letRecToLetTermTerm: MSTerm -> MSTerm
  def letRecToLetTermTerm term =
    case term
      of Apply(t1,t2,a) -> 
@@ -794,7 +794,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	    a)
       | Fun(f,s,a) -> 
 	Fun(letRecToLetTermFun(f),
-	    letRecToLetTermSort(s),
+	    letRecToLetTermType(s),
 	    a)
       | Lambda(match,a) -> 
 	Lambda(List.map (fn(pat,t1,t2) -> 
@@ -814,9 +814,9 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | _  -> term
 
  op letRecToLetTermVar: Var -> Var
- def letRecToLetTermVar ((id, srt)) = (id, letRecToLetTermSort srt)
+ def letRecToLetTermVar ((id, srt)) = (id, letRecToLetTermType srt)
 
- op letRecToLetTermPattern: Pattern -> Pattern
+ op letRecToLetTermPattern: MSPattern -> MSPattern
  def letRecToLetTermPattern pat = 
    case pat
      of AliasPat(p1,p2,a) -> 
@@ -831,13 +831,13 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 		 case optpat
 		   of  None   -> None
 		    | Some p -> Some(letRecToLetTermPattern(p)),
-		 letRecToLetTermSort(srt),
+		 letRecToLetTermType(srt),
 		 a)
       | RecordPat(fields,a) -> 
 	RecordPat(List.map (fn(id,p) -> (id,letRecToLetTermPattern(p))) fields,
 		  a)
       | WildPat(srt,a) -> 
-	WildPat(letRecToLetTermSort(srt),
+	WildPat(letRecToLetTermType(srt),
 		a)
       | QuotientPat (p,                        qid, a) -> 
 	QuotientPat (letRecToLetTermPattern p, qid, a)
@@ -853,17 +853,17 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
  op letRecToLetTermSpec: Spec -> Spec
  def letRecToLetTermSpec spc =
    let 
-     def letRecToLetTermSortInfo info =
-       let pos = sortAnn info.dfn in
-       let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+     def letRecToLetTermTypeInfo info =
+       let pos = typeAnn info.dfn in
+       let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
        let new_defs = 
            map (fn srt ->
-		let pos = sortAnn srt in
-		let (tvs, srt) = unpackSort srt in
-		Pi (tvs, letRecToLetTermSort srt, pos))
+		let pos = typeAnn srt in
+		let (tvs, srt) = unpackType srt in
+		Pi (tvs, letRecToLetTermType srt, pos))
 	       old_defs
        in
-	 info << {dfn = maybeAndSort (old_decls ++ new_defs, pos)}
+	 info << {dfn = maybeAndType (old_decls ++ new_defs, pos)}
 
      def letRecToLetTermOpInfo info = 
        let pos = termAnn info.dfn in
@@ -872,20 +872,20 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
            map (fn tm ->
 		let pos = termAnn tm in
 		let (tvs, srt, tm) = unpackFirstTerm tm in
-		Pi (tvs, SortedTerm (tm, letRecToLetTermSort srt, pos), pos))
+		Pi (tvs, TypedTerm (tm, letRecToLetTermType srt, pos), pos))
 	       old_defs
        in
 	 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)}
 
    in
    spc <<
-   {sorts = mapSortInfos letRecToLetTermSortInfo spc.sorts,
+   {types = mapTypeInfos letRecToLetTermTypeInfo spc.types,
     ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
- op  patternVars  : Pattern -> List Var
+ op  patternVars  : MSPattern -> List Var
  def patternVars(p) = 
      let
-	def loopP(p:Pattern,vs) = 
+	def loopP(p:MSPattern,vs) = 
 	    case p
 	      of VarPat(v,_) -> Cons(v,vs)
 	       | RecordPat(fields,_) -> 
@@ -895,17 +895,17 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	       | QuotientPat(p,_,_) -> loopP(p,vs)
 	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
 	       | RestrictedPat(p,_,_) -> loopP(p,vs)
-               | SortedPat(p,_,_) -> loopP(p,vs)
+               | TypedPat(p,_,_) -> loopP(p,vs)
 	       | _ -> vs
      in
      loopP(p,[])
 
- op  mkLetWithSubst: MS.Term * VarSubst -> MS.Term
+ op  mkLetWithSubst: MSTerm * VarSubst -> MSTerm
  def mkLetWithSubst(tm,sb) =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
- def mkIfThenElse(t1,t2:MS.Term,t3:MS.Term):MS.Term =
+ def mkIfThenElse(t1,t2:MSTerm,t3:MSTerm):MSTerm =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
      | Fun(Bool false,_,_) -> t3
@@ -922,7 +922,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
  %% Utilities.mkOr, etc:
 
- op  mkOr: MS.Term * MS.Term -> MS.Term 
+ op  mkOr: MSTerm * MSTerm -> MSTerm 
  def mkOr(t1,t2) = 
      case (t1,t2)
        of (Fun(Bool true,_,_),_) -> t1
@@ -931,7 +931,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	| (_,Fun(Bool false,_,_)) -> t1
 	| _ -> MS.mkOr(t1,t2)
 
- op  mkAnd: MS.Term * MS.Term -> MS.Term 
+ op  mkAnd: MSTerm * MSTerm -> MSTerm 
  def mkAnd(t1,t2) = 
      case (t1,t2)
        of (Fun(Bool true,_,_),_) -> t2
@@ -943,7 +943,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
             then t2
             else MS.mkAnd(t1,t2)
 
- op  mkSimpConj: List MS.Term -> MS.Term
+ op  mkSimpConj: MSTerms -> MSTerm
  def mkSimpConj(cjs) =
   let cjs = foldl (fn (cjs, cj) -> if termIn?(cj, cjs) then cjs else cj::cjs) [] cjs in
   case reverse cjs
@@ -951,20 +951,20 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | [x]    -> x
      | x::rcs -> mkAnd (x, mkConj rcs)
 
- op  mkSimpOrs: List MS.Term -> MS.Term
+ op  mkSimpOrs: MSTerms -> MSTerm
  def mkSimpOrs(cjs) =
   case cjs
     of []     -> mkTrue()
      | [x]    -> x
      | x::rcs -> mkOr (x, mkOrs rcs)
 
- op mkSimpBind: Binder * List Var * MS.Term -> MS.Term
+ op mkSimpBind: Binder * List Var * MSTerm -> MSTerm
  def mkSimpBind(b, vars, term) =
    if vars = []
      then term
      else Bind(b,vars,term,noPos)
 
- op  mkSimpImplies: MS.Term * MS.Term -> MS.Term
+ op  mkSimpImplies: MSTerm * MSTerm -> MSTerm
  def mkSimpImplies (t1, t2) =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
@@ -979,7 +979,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
            mkSimpImplies(mkAnd(t1,p1), q1)
 	 | _ -> mkImplies (t1,t2)
 
- op  mkSimpIff: MS.Term * MS.Term -> MS.Term
+ op  mkSimpIff: MSTerm * MSTerm -> MSTerm
  def mkSimpIff (t1, t2) =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
@@ -991,7 +991,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	 | _ -> mkIff (t1,t2)
 
 
-  op mkOptLambda(pat: Pattern, tm: MS.Term): MS.Term =
+  op mkOptLambda(pat: MSPattern, tm: MSTerm): MSTerm =
     case tm of
       | Apply(f,arg,_) ->
         (case patternToTerm pat of
@@ -1022,7 +1022,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     foldl (fn (name_set, (n,_)) -> StringSet.add(name_set, n)) name_set vs
 
   %% Given a universal quantification return list of quantified variables, conditions and rhs
-  op  forallComponents: MS.Term -> List Var * List MS.Term * MS.Term
+  op  forallComponents: MSTerm -> List Var * MSTerms * MSTerm
   def forallComponents t =
     % let _ = writeLine("forallComponents:\n"^printTerm t) in
     let def aux(t, sbst, freeNames) =
@@ -1046,7 +1046,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
  op traceRemoveExcessAssumptions?: Bool = false
 
- op removeExcessAssumptions (t: MS.Term): MS.Term =
+ op removeExcessAssumptions (t: MSTerm): MSTerm =
    let (vs, cjs, bod) = forallComponents t in
    let def findDepCjs(lvs, cjs, dep_cjs) =
          let n_dep_cjs = filter (fn cj -> hasRefTo?(cj, lvs)) cjs in
@@ -1066,7 +1066,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      else t
 
   %% Given an existential quantification return list of quantified variables and conjuncts
-  op  existsComponents: MS.Term -> List Var * List MS.Term
+  op  existsComponents: MSTerm -> List Var * MSTerms
   def existsComponents t =
     let def aux(t, sbst, freeNames) =
           case t of
@@ -1085,7 +1085,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     aux(t, [], freeNames)
 
   %% Given an existential (one) quantification return list of quantified variables and conjuncts
-  op  exists1Components: MS.Term -> List Var * List MS.Term
+  op  exists1Components: MSTerm -> List Var * MSTerms
   def exists1Components t =
     let def aux(t, sbst, freeNames) =
           case t of
@@ -1129,7 +1129,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                              | _ -> false)
       term
 
-  op opsInTerm(tm: MS.Term): QualifiedIds =
+  op opsInTerm(tm: MSTerm): QualifiedIds =
     foldTerm (fn opids -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? opids ->
@@ -1139,8 +1139,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
               fn result -> fn _ -> result)
       [] tm
 
-  op opsInType(ty: Sort): QualifiedIds =
-    foldSort (fn result -> fn t ->
+  op opsInType(ty: MSType): QualifiedIds =
+    foldType (fn result -> fn t ->
                 case t of
                   | Fun(Op(qid,_),_,_) | qid nin? result -> qid::result
                   | _ -> result,
@@ -1149,7 +1149,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
       [] ty
 
-  op typesInTerm(tm: MS.Term): QualifiedIds =
+  op typesInTerm(tm: MSTerm): QualifiedIds =
     foldTerm (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of
@@ -1159,8 +1159,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 
       [] tm
 
-  op typesInType(ty: Sort): QualifiedIds =
-    foldSort (fn result -> fn _ -> result,
+  op typesInType(ty: MSType): QualifiedIds =
+    foldType (fn result -> fn _ -> result,
               fn result -> fn t ->
                 case t of
                   | Base(qid,_,_) | qid nin? result -> qid::result
@@ -1175,7 +1175,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | None -> []
 
   op typesInTypeDefFor(ty_id: QualifiedId, spc: Spec): QualifiedIds =
-    case findTheSort(spc, ty_id) of
+    case findTheType(spc, ty_id) of
       | Some info -> typesInType info.dfn
       | None -> []
 
@@ -1199,39 +1199,39 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	    | _ -> false)
       | _ -> false
 
- op  natVal: MS.Term -> Nat
+ op  natVal: MSTerm -> Nat
  def natVal = fn (Fun(Nat i,_,_)) -> i
- op  natVals: List(Id * MS.Term) -> List Nat
+ op  natVals: List(Id * MSTerm) -> List Nat
  def natVals = map (fn (_,t) -> natVal t)
 
- op  charVal: MS.Term -> Char
+ op  charVal: MSTerm -> Char
  def charVal = fn (Fun(Char c,_,_)) -> c
- op  charVals: List(Id * MS.Term) -> List Char
+ op  charVals: List(Id * MSTerm) -> List Char
  def charVals = map (fn (_,t) -> charVal t)
 
- op  stringVal: MS.Term -> String
+ op  stringVal: MSTerm -> String
  def stringVal = fn (Fun(String s,_,_)) -> s
- op  stringVals: List(Id * MS.Term) -> List String
+ op  stringVals: List(Id * MSTerm) -> List String
  def stringVals = map (fn (_,t) -> stringVal t)
 
- op  boolVal?(t: MS.Term): Bool =
+ op  boolVal?(t: MSTerm): Bool =
    case t of
      | Fun(Bool _,_,_) -> true
      | _ -> false
 
- op  boolVal: MS.Term -> Bool
+ op  boolVal: MSTerm -> Bool
  def boolVal = fn (Fun(Bool s,_,_)) -> s
- op  boolVals: List(Id * MS.Term) -> List Bool
+ op  boolVals: List(Id * MSTerm) -> List Bool
  def boolVals = map (fn (_,t) -> boolVal t)
 
 
- op  sortFromField: List(Id * MS.Term) * Sort -> Sort
- def sortFromField(fields,defaultS) =
+ op  typeFromField: List(Id * MSTerm) * MSType -> MSType
+ def typeFromField(fields,defaultS) =
    case fields
      of (_,Fun(_,s,_)) :: _ -> s
       | _ -> defaultS
 
- def sortFromArg(arg: MS.Term,defaultS:Sort): Sort =
+ def typeFromArg(arg: MSTerm,defaultS:MSType): MSType =
    case arg
      of Fun(_,s,_) -> s
       | _ -> defaultS
@@ -1266,7 +1266,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
       
- op  sideEffectFree: MS.Term -> Bool
+ op  sideEffectFree: MSTerm -> Bool
  def sideEffectFree(term) = 
      case term
        of Var _ -> true
@@ -1279,17 +1279,17 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	      && (sideEffectFree t3)
 	| _ -> false 
 
- op  evalBinary: [a] (a * a -> Fun) * (List(Id * MS.Term) -> List a)
-                      * List(Id * MS.Term) * Sort
-                     -> Option MS.Term
+ op  evalBinary: [a] (a * a -> Fun) * (List(Id * MSTerm) -> List a)
+                      * List(Id * MSTerm) * MSType
+                     -> Option MSTerm
  def evalBinary(f, fVals, fields, srt) =
    case fVals fields
      of [i,j] -> Some(Fun(f(i,j),srt,noPos))
       | _ -> None
 
- op  evalBinaryNotZero: (Nat * Nat -> Fun) * (List(Id * MS.Term) -> List Nat)
-                      * List(Id * MS.Term) * Sort
-                     -> Option MS.Term
+ op  evalBinaryNotZero: (Nat * Nat -> Fun) * (List(Id * MSTerm) -> List Nat)
+                      * List(Id * MSTerm) * MSType
+                     -> Option MSTerm
  def evalBinaryNotZero(f, fVals, fields, srt) =
    case fVals fields
      of [i,j] ->
@@ -1306,70 +1306,70 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
  def str  f x = String (f x)
  def bool f x = Bool   (f x)
 
- op  attemptEval1: String * MS.Term -> Option MS.Term
+ op  attemptEval1: String * MSTerm -> Option MSTerm
  def attemptEval1(opName,arg) =
    case (opName,arg) of
-      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (- i), natSort,aa))
-      | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
-      | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
-      | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (show i), stringSort,aa))
-      | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natSort,aa))
+      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (- i), natType,aa))
+      | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolType,aa))
+      | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natType,aa))
+      | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (show i), stringType,aa))
+      | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natType,aa))
 
-      | ("length",Fun (String s,_,aa)) -> Some(Fun (Nat(length s),natSort,aa))
-      | ("stringToInt",Fun (String s,_,aa)) -> Some(Fun (Nat (stringToInt s),natSort,aa))
+      | ("length",Fun (String s,_,aa)) -> Some(Fun (Nat(length s),natType,aa))
+      | ("stringToInt",Fun (String s,_,aa)) -> Some(Fun (Nat (stringToInt s),natType,aa))
 
       | ("isUpperCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Bool(isUpperCase c),boolSort,aa))
+          Some(Fun (Bool(isUpperCase c),boolType,aa))
       | ("isLowerCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Bool(isLowerCase c),boolSort,aa))
+          Some(Fun (Bool(isLowerCase c),boolType,aa))
       | ("isAlphaNum",Fun (Char c,_,aa)) ->
-          Some(Fun(Bool(isAlphaNum c),boolSort,aa))
-      | ("isAlpha",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAlpha c),boolSort,aa))
-      | ("isNum",Fun (Char c,_,aa)) -> Some(Fun (Bool(isNum c),boolSort,aa))
-      | ("isAscii",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAscii c),boolSort,aa))
+          Some(Fun(Bool(isAlphaNum c),boolType,aa))
+      | ("isAlpha",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAlpha c),boolType,aa))
+      | ("isNum",Fun (Char c,_,aa)) -> Some(Fun (Bool(isNum c),boolType,aa))
+      | ("isAscii",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAscii c),boolType,aa))
       | ("toUpperCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Char(toUpperCase c),charSort,aa))
+          Some(Fun (Char(toUpperCase c),charType,aa))
       | ("toLowerCase",Fun (Char c,_,aa)) ->
-          Some(Fun (Char(toLowerCase c),charSort,aa))
-      | ("ord",Fun (Char c,_,aa)) -> Some(Fun (Nat(ord c),natSort,aa))
-      | ("chr",Fun (Nat i,_,aa)) -> Some(Fun (Char(chr i),charSort,aa))
+          Some(Fun (Char(toLowerCase c),charType,aa))
+      | ("ord",Fun (Char c,_,aa)) -> Some(Fun (Nat(ord c),natType,aa))
+      | ("chr",Fun (Nat i,_,aa)) -> Some(Fun (Char(chr i),charType,aa))
       | _ -> None
 
- op  attemptEvaln: String * String * List(Id * MS.Term) ->  Option MS.Term
+ op  attemptEvaln: String * String * List(Id * MSTerm) ->  Option MSTerm
  def attemptEvaln(spName,opName,fields) =
    case opName of
       %% Nat operations
       | "+" ->
         Some(Fun(Nat((foldl +) 0 (natVals fields)),
-		 sortFromField(fields,natSort),noPos))
+		 typeFromField(fields,natType),noPos))
       | "*" ->
         Some(Fun(Nat((foldl * ) 1 (natVals fields)),
-		 sortFromField(fields,natSort),noPos))
+		 typeFromField(fields,natType),noPos))
       | "-"   -> evalBinary(nat -,natVals,fields,
-			    sortFromField(fields,natSort))
+			    typeFromField(fields,natType))
       | "<"   -> if spName = "String"
-	          then evalBinary(bool <,stringVals,fields,boolSort)
-		  else evalBinary(bool <,natVals,fields,boolSort)
+	          then evalBinary(bool <,stringVals,fields,boolType)
+		  else evalBinary(bool <,natVals,fields,boolType)
       | "<="  -> if spName = "String"
-	          then evalBinary(bool <=,stringVals,fields,boolSort)
-		  else evalBinary(bool <=,natVals,fields,boolSort)
+	          then evalBinary(bool <=,stringVals,fields,boolType)
+		  else evalBinary(bool <=,natVals,fields,boolType)
       | ">"   -> if spName = "String"
-	          then evalBinary(bool >,stringVals,fields,boolSort)
-		  else evalBinary(bool >,natVals,fields,boolSort)
+	          then evalBinary(bool >,stringVals,fields,boolType)
+		  else evalBinary(bool >,natVals,fields,boolType)
       | ">="  -> if spName = "String"
-	          then evalBinary(bool >=,stringVals,fields,boolSort)
-		  else evalBinary(bool >=,natVals,fields,boolSort)
+	          then evalBinary(bool >=,stringVals,fields,boolType)
+		  else evalBinary(bool >=,natVals,fields,boolType)
       | "min" -> evalBinary(nat min,natVals,fields,
-			    sortFromField(fields,natSort))
+			    typeFromField(fields,natType))
       | "max" -> evalBinary(nat max,natVals,fields,
-			    sortFromField(fields,natSort))
-      | "modT" -> evalBinaryNotZero(nat modT,natVals,fields,natSort)
-      | "divE" -> evalBinaryNotZero(nat divE,natVals,fields,natSort)
+			    typeFromField(fields,natType))
+      | "modT" -> evalBinaryNotZero(nat modT,natVals,fields,natType)
+      | "divE" -> evalBinaryNotZero(nat divE,natVals,fields,natType)
 
       %% string operations
-      | "concat" -> evalBinary(str ^,stringVals,fields,stringSort)
-      | "++"  -> evalBinary(str ^,stringVals,fields,stringSort)
-      | "^"   -> evalBinary(str ^,stringVals,fields,stringSort)
+      | "concat" -> evalBinary(str ^,stringVals,fields,stringType)
+      | "++"  -> evalBinary(str ^,stringVals,fields,stringType)
+      | "^"   -> evalBinary(str ^,stringVals,fields,stringType)
       | "substring" ->
 	(case fields
 	   of [(_,s),(_,i),(_,j)] ->
@@ -1378,24 +1378,24 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	      let jv = natVal j in
 	      if iv <= jv && jv <= length sv
 		then Some(Fun(String(subFromTo(sv,iv,jv)),
-			      stringSort,noPos))
+			      stringType,noPos))
 		else None
 	    | _ -> None)
-      | "leq" -> evalBinary(bool <=,stringVals,fields,boolSort)
-      | "lt"  -> evalBinary(bool <,stringVals,fields,boolSort)
+      | "leq" -> evalBinary(bool <=,stringVals,fields,boolType)
+      | "lt"  -> evalBinary(bool <,stringVals,fields,boolType)
 
       | _ -> None
 
- op  attemptEval: Spec -> MS.Term -> MS.Term
+ op  attemptEval: Spec -> MSTerm -> MSTerm
  def attemptEval spc t = mapSubTerms (attemptEvalOne spc) t
 
- op  attemptEvalOne: Spec -> MS.Term -> MS.Term
+ op  attemptEvalOne: Spec -> MSTerm -> MSTerm
  def attemptEvalOne spc t =
    case tryEvalOne spc t of
      | Some t1 -> t1
      | None    -> t
 
- op reduceEqual(t1: MS.Term, t2: MS.Term, eq?: Bool, spc: Spec): Option(MS.Term) =
+ op reduceEqual(t1: MSTerm, t2: MSTerm, eq?: Bool, spc: Spec): Option(MSTerm) =
    case (t1, t2) of
      | (Apply(Fun(Embed(id1, true), _, _), st1, _), Apply(Fun(Embed(id2, true), _, _), st2, _)) ->
        Some(if id1 = id2
@@ -1408,7 +1408,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
        Some(mkBool(~eq?))
      | _ -> None
 
- op  tryEvalOne: Spec -> MS.Term -> Option MS.Term
+ op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
  def tryEvalOne spc term =
    case term
      of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
@@ -1468,7 +1468,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         (case getField(m,i) of
            | Some fld -> Some fld
            | None -> tryEvalOne spc (mkApply(proj_fn, r1)))
-      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intSort))
+      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intType))
       | _ -> None
 
  op  disjointMatches: Match -> Bool
@@ -1480,10 +1480,10 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
              matches 
         && disjointMatches matches
 
- op  disjointPatterns: Pattern * Pattern -> Bool
+ op  disjointPatterns: MSPattern * MSPattern -> Bool
  def disjointPatterns = 
-     (fn (EmbedPat(con1,Some p1,_,_):Pattern,
-	  EmbedPat(con2,Some p2,_,_):Pattern) -> 
+     (fn (EmbedPat(con1,Some p1,_,_):MSPattern,
+	  EmbedPat(con2,Some p2,_,_):MSPattern) -> 
 	 if con1 = con2
 	    then disjointPatterns(p1,p2)
          else true
@@ -1504,8 +1504,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
        | _ -> false
       )
 
- op substSort : [a] List (Id * ASort a) * ASort a -> ASort a
- def substSort (S, srt) =
+ op substType : [a] List (Id * AType a) * AType a -> AType a
+ def substType (S, srt) =
   let def find (name, S, a) =  
        case S 
          of []            -> TyVar(name,a)
@@ -1516,60 +1516,60 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
           | TyVar (name, a) -> find (name, S, a)
           | _ -> srt
   in 
-  mapSort (id, subst1, id) srt
+  mapType (id, subst1, id) srt
  
- op unfoldBase  : Spec * Sort -> Sort 
+ op unfoldBase  : Spec * MSType -> MSType 
  def unfoldBase (sp, srt) =
    unfoldBaseV (sp, srt, true)
 
- op unfoldBaseV : Spec * Sort * Bool -> Sort 
+ op unfoldBaseV : Spec * MSType * Bool -> MSType 
  def unfoldBaseV (sp, srt, verbose) = 
   case srt of
     | Base (qid, srts, a) ->
-      (case findTheSort (sp, qid) of
+      (case findTheType (sp, qid) of
 	 | None -> srt
 	 | Some info ->
-	   if definedSortInfo? info then
-	     let (tvs, srt_def) = unpackFirstSortDef info in
+	   if definedTypeInfo? info then
+	     let (tvs, srt_def) = unpackFirstTypeDef info in
              if length tvs ~= length srts
-               then (% writeLine("Type arg# mismatch: "^printSort srt);
-                     %% This can arise because of inadequacy of patternSort on QuotientPat
+               then (% writeLine("Type arg# mismatch: "^printType srt);
+                     %% This can arise because of inadequacy of patternType on QuotientPat
                      srt_def)
              else
-	     let ssrt = substSort (zip (tvs, srts), srt_def) in
+	     let ssrt = substType (zip (tvs, srts), srt_def) in
 	     unfoldBaseV (sp, ssrt, verbose)
 	   else
 	     srt)
     | _ -> srt
 
- op  unfoldBaseOne : Spec * Sort -> Sort 
+ op  unfoldBaseOne : Spec * MSType -> MSType 
  def unfoldBaseOne (sp, srt) = 
   case srt of
     | Base (qid, srts, a) ->
-      (case findTheSort (sp, qid) of
+      (case findTheType (sp, qid) of
 	 | None -> srt
 	 | Some info ->
-	   if definedSortInfo? info then
-	     let (tvs, srt) = unpackFirstSortDef info in
-	     let ssrt = substSort (zip (tvs, srts), srt) in
+	   if definedTypeInfo? info then
+	     let (tvs, srt) = unpackFirstTypeDef info in
+	     let ssrt = substType (zip (tvs, srts), srt) in
 	     ssrt
 	   else
 	     srt)
     | _ -> srt
 
-  op tryUnfoldBase (spc: Spec) (ty: Sort): Option Sort =
+  op tryUnfoldBase (spc: Spec) (ty: MSType): Option MSType =
     let exp_ty = unfoldBaseOne(spc, ty) in
     if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
       then None
       else Some exp_ty
 
-  op unfoldBase0 (spc: Spec) (ty: Sort): Sort =
+  op unfoldBase0 (spc: Spec) (ty: MSType): MSType =
     let exp_ty = unfoldBaseOne(spc, ty) in
     if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
       then ty
       else exp_ty
 
- op existsInFullType? (spc: Spec) (pred?: Sort -> Bool) (ty: Sort): Bool =
+ op existsInFullType? (spc: Spec) (pred?: MSType -> Bool) (ty: MSType): Bool =
    pred? ty ||
    (case ty of
       | Base _ ->
@@ -1584,28 +1584,28 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                          | None -> false)
                                prs
       | Quotient(x,_,_) -> existsInFullType? spc pred? x
-      | Subsort(x,_,_) -> existsInFullType? spc pred? x
+      | Subtype(x,_,_) -> existsInFullType? spc pred? x
       | And(tys,_) -> exists? (existsInFullType? spc pred?) tys
       | _ -> false)
 
- op stripSubsorts (sp: Spec, srt: Sort): Sort = 
+ op stripSubtypes (sp: Spec, srt: MSType): MSType = 
   let X = unfoldBase (sp, srt) in
   case X 
-    of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
+    of Subtype (srt, _, _) -> stripSubtypes (sp, srt)
      | srt -> srt
 
- op arrowOpt (sp : Spec, srt : Sort): Option (Sort * Sort) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
+ op arrowOpt (sp : Spec, srt : MSType): Option (MSType * MSType) = 
+  case stripSubtypes (sp, unfoldBase (sp,srt))
     of Arrow (dom, rng, _) -> Some (dom, rng)
      | _ -> None
 
- op ProcTypeOpt (sp : Spec, srt : Sort): Option (Sort * Sort) = 
-  case stripSubsorts (sp, srt) of
+ op ProcTypeOpt (sp : Spec, srt : MSType): Option (MSType * MSType) = 
+  case stripSubtypes (sp, srt) of
     | Base (Qualified ("Accord", "ProcType"), [dom, rng, _], _) ->
       Some (dom, rng)
     | _ -> None
 
- op rangeOpt (sp: Spec, srt: Sort): Option Sort = 
+ op rangeOpt (sp: Spec, srt: MSType): Option MSType = 
   case arrowOpt (sp, srt) of
     | None ->
       (case ProcTypeOpt (sp, srt) of 
@@ -1613,27 +1613,27 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	 | _ -> None)
     | Some (_, rng) -> Some rng
 
- op productOpt (sp : Spec, srt : Sort): Option (List (Id * Sort)) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
+ op productOpt (sp : Spec, srt : MSType): Option (List (Id * MSType)) = 
+  case stripSubtypes (sp, unfoldBase (sp,srt))
     of Product (fields, _) -> Some fields
      | _ -> None
 
- op fieldTypes (sp : Spec, srt : Sort): List Sort =
-   case stripSubsorts (sp, unfoldBase (sp,srt))
+ op fieldTypes (sp : Spec, srt : MSType): List MSType =
+   case stripSubtypes (sp, unfoldBase (sp,srt))
     of Product (fields, _) -> map (fn (_, ty) -> ty) fields
      | _ -> [srt]
 
- op tupleType? (sp : Spec, srt : Sort): Bool =
+ op tupleType? (sp : Spec, srt : MSType): Bool =
    case productOpt(sp, srt) of
      | Some(("1",_)::_) -> true
      | _ -> false
 
- op coproductOpt (sp : Spec, srt : Sort): Option (List (Id * Option Sort)) = 
-  case stripSubsorts (sp, unfoldBase (sp,srt))
+ op coproductOpt (sp : Spec, srt : MSType): Option (List (Id * Option MSType)) = 
+  case stripSubtypes (sp, unfoldBase (sp,srt))
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
- op inferType (sp: Spec, tm : MS.Term): Sort = 
+ op inferType (sp: Spec, tm : MSTerm) : MSType = 
   case tm
     of Apply      (t1, t2,               _) -> (let t1_ty = inferType(sp,t1) in
                                                 case rangeOpt(sp, t1_ty) of
@@ -1641,15 +1641,15 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 						  | None ->
                                                     let _ = case t1_ty of
                                                               | Base (qid, srts, a) ->
-                                                                (case findTheSort (sp, qid) of
+                                                                (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
                                                                    | Some info -> writeLine("defined"))
                                                               | _ -> writeLine("Not Base")
                                                     in
 						    System.fail ("inferType: Could not extract type for "
-                                                                   ^ printTermWithSorts tm
-                                                                   ^ " dom " ^ printSort (unfoldBase(sp,t1_ty))))
-     | Bind       _                         -> boolSort
+                                                                   ^ printTermWithTypes tm
+                                                                   ^ " dom " ^ printType (unfoldBase(sp,t1_ty))))
+     | Bind       _                         -> boolType
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
 						         fields,
@@ -1658,7 +1658,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | LetRec     (_, term,              _) -> inferType (sp, term)
      | Var        ((_,srt),              _) -> srt
      | Fun        (_, srt,               _) -> srt
-     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
+     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternType pat,
                                                        inferType (sp, body))
      | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
      | The        ((_,srt), _,           _) -> srt
@@ -1666,110 +1666,110 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
-     | SortedTerm (_, srt,               _) -> srt
+     | TypedTerm  (_, srt,               _) -> srt
      | Any a                                -> Any a
      | And        (t1::_,                _) -> inferType (sp, t1)
      | Pi         (_, t,                 _) -> inferType (sp, t)
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
- op subtype?(sp: Spec, srt: Sort): Bool =
+ op subtype?(sp: Spec, srt: MSType): Bool =
    case srt of
-     | Subsort _ -> true
+     | Subtype _ -> true
      | _ ->
        let exp_srt =  unfoldBase (sp, srt) in
        if srt = exp_srt then false
          else subtype?(sp, exp_srt)
 
- op subtypeComps(sp: Spec, ty: Sort): Option(Sort * MS.Term) =
+ op subtypeComps(sp: Spec, ty: MSType): Option (MSType * MSTerm) =
    case ty of
-     | Subsort(sty,p,_) -> Some(sty,p)
+     | Subtype(sty,p,_) -> Some(sty,p)
      | _ ->
        let exp_ty =  unfoldBase (sp, ty) in
        if ty = exp_ty then None
          else subtypeComps(sp, exp_ty)
 
-  op subtypeOf(ty: Sort, qid: QualifiedId, spc: Spec): Option Sort =
+ op subtypeOf (ty: MSType, qid: QualifiedId, spc: Spec): Option MSType =
     case ty of
       | Base(qid1,srts,_) ->
         if qid1 = qid then Some ty
           else
-	 (case findTheSort (spc, qid1) of
+	 (case findTheType (spc, qid1) of
             | None -> None
             | Some info ->
-              if definedSortInfo? info then
-                let (tvs, srt) = unpackFirstSortDef info in
-                let ssrt = substSort (zip (tvs, srts), srt) in
+              if definedTypeInfo? info then
+                let (tvs, srt) = unpackFirstTypeDef info in
+                let ssrt = substType (zip (tvs, srts), srt) in
                 subtypeOf(ssrt,qid,spc)
               else
                 None)
-      | Subsort(t1,_,_) -> subtypeOf(t1,qid,spc)
+      | Subtype(t1,_,_) -> subtypeOf(t1,qid,spc)
       | _ -> None
 
-  op  subtypeOf?: Sort * QualifiedId * Spec -> Bool
-  def subtypeOf?(ty,qid,spc) =
-    % let _ = toScreen(printQualifiedId qid^" <:? "^printSort ty^"\n") in
+  op  subtypeOf?: MSType * QualifiedId * Spec -> Bool
+  def subtypeOf? (ty,qid,spc) =
+    % let _ = toScreen(printQualifiedId qid^" <:? "^printType ty^"\n") in
     let result =
     case ty of
       | Base(qid1,srts,_) ->
         qid1 = qid
-	 || (case findTheSort (spc, qid1) of
+	 || (case findTheType (spc, qid1) of
 	      | None -> false
 	      | Some info ->
-		if definedSortInfo? info then
-		  let (tvs, srt) = unpackFirstSortDef info in
-		  let ssrt = substSort (zip (tvs, srts), srt) in
+		if definedTypeInfo? info then
+		  let (tvs, srt) = unpackFirstTypeDef info in
+		  let ssrt = substType (zip (tvs, srts), srt) in
 		  subtypeOf?(ssrt,qid,spc)
 		else
 		  false)
-      | Subsort(t1,_,_) -> subtypeOf?(t1,qid,spc)
+      | Subtype(t1,_,_) -> subtypeOf?(t1,qid,spc)
       | _ -> false
     in
     % let _ = writeLine("= "^ (if result then "true" else "false")) in
     result
 
-   op subtypePreds(tys: List Sort): List MS.Term =
+   op subtypePreds(tys: List MSType): MSTerms =
      mapPartial (fn ty ->
                  case ty of
-                   | Subsort(_, p, _) -> Some p
+                   | Subtype(_, p, _) -> Some p
                    | _ -> None)
        tys
  
-   op subtypePred?(ty: Sort, p: MS.Term, spc: Spec): Bool =
+   op subtypePred?(ty: MSType, p: MSTerm, spc: Spec): Bool =
      case subtypeComps(spc, ty) of
        | Some(_, pt) -> equalTerm?(p, pt)
        | None -> false
 
-   op possiblySubtypeOf?(ty1: Sort, ty2: Sort, spc: Spec): Bool =
-     % let _ = writeLine(printSort ty1^" <=? "^printSort ty2) in
+   op possiblySubtypeOf?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
+     % let _ = writeLine(printType ty1^" <=? "^printType ty2) in
      equalType?(ty1, ty2)
        || (case ty1 of
              | Base(qid1, srts, _) ->
-               (case findTheSort (spc, qid1) of
+               (case findTheType (spc, qid1) of
                   | None -> false
                   | Some info ->
-                    if definedSortInfo? info then
-                      let (tvs, srt) = unpackFirstSortDef info in
-                      let ssrt = substSort (zip (tvs, srts), srt) in
+                    if definedTypeInfo? info then
+                      let (tvs, srt) = unpackFirstTypeDef info in
+                      let ssrt = substType (zip (tvs, srts), srt) in
                       possiblySubtypeOf?(ssrt, ty2, spc)
                     else
                       false)
-             | Subsort(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
+             | Subtype(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
              | _ -> false)
 
-   op commonSuperType(ty1: Sort, ty2: Sort, spc: Spec): Sort =
+   op commonSuperType(ty1: MSType, ty2: MSType, spc: Spec): MSType =
      %% Experimental version
      let def cst(rty1, rty2, ty1, ty2) =
        if equalType?(rty1, rty2) then ty1
        else
        case (rty1, rty2) of  %raiseSubtypes(rty1, rty2, spc) of
          | (rrty1, rrty2) ->
-       % let _ = writeLine("cst: "^printSort rrty1^"\n"^printSort rrty2) in
+       % let _ = writeLine("cst: "^printType rrty1^"\n"^printType rrty2) in
        case (rrty1, rrty2) of
-         | (Subsort(sty1, p1, _), Subsort(sty2, p2, _)) ->
+         | (Subtype(sty1, p1, _), Subtype(sty2, p2, _)) ->
            if equalTerm?(p1, p2) then ty1
              else cst(sty1, sty2, sty1, sty2)
-         | (Subsort(sty1, p1, _), rty2) -> cst(sty1, rty2, sty1, ty2)
-         | (rty1, Subsort(sty2, p2, _)) -> cst(rty1, sty2, ty1, sty2)
+         | (Subtype(sty1, p1, _), rty2) -> cst(sty1, rty2, sty1, ty2)
+         | (rty1, Subtype(sty2, p2, _)) -> cst(rty1, sty2, ty1, sty2)
          | (Arrow(d1, r1, a), Arrow(d2, r2, _)) ->
            Arrow(cst(d1, d2, d1, d2), cst(r1, r2, r1, r2), a)
          | (Base(qid1, args1, a), Base(qid2, args2, _)) | qid1 = qid2 ->
@@ -1794,17 +1794,17 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          | _ -> ty1
      in
      let result = cst(ty1, ty2, ty1, ty2) in
-     % let _ = writeLine("cst: "^printSort ty1^" <?> "^printSort ty2^"\n"^printSort result) in
+     % let _ = writeLine("cst: "^printType ty1^" <?> "^printType ty2^"\n"^printType result) in
      result
 
-   op etaReduce(tm: MS.Term): MS.Term =
+   op etaReduce(tm: MSTerm): MSTerm =
      case tm of
        | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
                   Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
          lam
        | _ -> tm
 
-   op varRecordTerm?(tm: MS.Term): Bool =
+   op varRecordTerm?(tm: MSTerm): Bool =
      %% Var or product
      case tm of
        | Var _ -> true
@@ -1812,7 +1812,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          forall? (fn (_, fld_tm) -> varRecordTerm? fld_tm) fields
        | _ -> false
 
-   op varRecordPattern?(pat: Pattern): Bool =
+   op varRecordPattern?(pat: MSPattern): Bool =
      %% Var or product
      case pat of
        | VarPat _ -> true
@@ -1820,14 +1820,14 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          forall? (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
        | _ -> false
 
-   op simpleLambda?(tm: MS.Term): Bool =
+   op simpleLambda?(tm: MSTerm): Bool =
      %% One case, true pred & variable of product of variable pattern
      case tm of
        | Lambda([(pat, Fun(Bool True, _, _), _)], _) ->
          varRecordPattern? pat
        | _ -> false
 
-   op decomposeConjPred(pred: MS.Term): List MS.Term =
+   op decomposeConjPred(pred: MSTerm): MSTerms =
      case pred of
        | Lambda([(VarPat(v,_), Fun(Bool True, _, _), conj as Apply(Fun(And,_,_), _, _))], _) ->
          let conjs = getConjuncts conj in
@@ -1843,7 +1843,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
          removeDuplicateTerms(decomposeConjPred p1 ++ decomposeConjPred p2)
        | _ -> [etaReduce pred]
 
-   op decomposeListConjPred(preds: List MS.Term): List(List MS.Term) =
+   op decomposeListConjPred(preds: MSTerms): List MSTerms =
      case preds of
        | [] -> [[]]
        | pred::r ->
@@ -1854,15 +1854,15 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                    ++ predss)
            [] rpredss
 
-  op TruePred?(pred: MS.Term): Bool =
+  op TruePred?(pred: MSTerm): Bool =
     case pred of
       | Fun(Op(Qualified("Bool","TRUE"), _), _, _) -> true
       | _ -> false
 
-  op mkTruePred(ty: Sort): MS.Term =
-    mkOp(Qualified("Bool","TRUE"), mkArrow(ty, boolSort))
+  op mkTruePred(ty: MSType): MSTerm =
+    mkOp(Qualified("Bool","TRUE"), mkArrow(ty, boolType))
 
-  op composeConjPreds(preds: List MS.Term, spc: Spec): MS.Term =
+  op composeConjPreds(preds: MSTerms, spc: Spec): MSTerm =
     let preds = removeDuplicateTerms preds in
     let preds = filter (~~~ TruePred?) preds
     in
@@ -1881,24 +1881,24 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         foldl (fn (result, pred) -> mkAppl(op_exp, [result, pred]))
           pred1 rpreds
 
-  op mkSubtypePreds(sss_ty: Sort, preds: List MS.Term, a: Position, spc: Spec): Sort =
+  op mkSubtypePreds(sss_ty: MSType, preds: MSTerms, a: Position, spc: Spec): MSType =
     case preds of
       | [] -> sss_ty
-      | _ -> Subsort(sss_ty, composeConjPreds(preds, spc), a)
+      | _ -> Subtype(sss_ty, composeConjPreds(preds, spc), a)
 
-  op composeSubtypes(sss_ty: Sort, p1: MS.Term, p2: MS.Term, a: Position, spc: Spec): Sort =
+  op composeSubtypes(sss_ty: MSType, p1: MSTerm, p2: MSTerm, a: Position, spc: Spec): MSType =
     % let _ = writeLine("composeStys: "^printTerm p1^" with "^printTerm p2) in
     let p1s = decomposeConjPred p1 in
     let p2s = decomposeConjPred p2 in
     mkSubtypePreds(sss_ty, p1s ++ p2s, a, spc)
 
-  op maybeComposeSubtypes(ty: Sort, pr1: MS.Term, spc: Spec, a: Position): Sort =
-    % let _ = writeLine("mcs: "^printSort ty^" | "^printTerm pr1) in
+  op maybeComposeSubtypes(ty: MSType, pr1: MSTerm, spc: Spec, a: Position): MSType =
+    % let _ = writeLine("mcs: "^printType ty^" | "^printTerm pr1) in
     case ty of
-      | Subsort(s_ty, pr2, _) -> composeSubtypes(s_ty, pr2, pr1, a, spc)
-      | _ -> Subsort(ty, pr1, a)
+      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, pr2, pr1, a, spc)
+      | _ -> Subtype(ty, pr1, a)
 
-  op unfoldOpRef(tm: MS.Term, spc: Spec): Option MS.Term =
+  op unfoldOpRef(tm: MSTerm, spc: Spec): Option MSTerm =
     case tm of
       | Fun(Op(qid, _),ty,_) ->
         (case findTheOp(spc, qid) of
@@ -1910,16 +1910,16 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
            | None -> None)
       | _ -> None
 
-  type TermSubst = List(MS.Term * MS.Term)
+  type TermSubst = List(MSTerm * MSTerm)
 
-  op mkFoldSubst(tms: List MS.Term, spc: Spec): TermSubst =
+  op mkFoldSubst(tms: MSTerms, spc: Spec): TermSubst =
     mapPartial (fn tm ->
                 case unfoldOpRef(tm, spc) of
                   | Some defn -> Some(defn, tm)
                   | None -> None)
       tms
 
-  op termSubst1 (sbst: TermSubst) (s_tm: MS.Term): MS.Term =
+  op termSubst1 (sbst: TermSubst) (s_tm: MSTerm): MSTerm =
     case findLeftmost (fn (t1,_) -> equalTerm?(t1, s_tm)) sbst of
       | Some (_,t2) -> t2
       | None -> s_tm
@@ -1928,7 +1928,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
     (writeLine "TermSubst:";
      app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) sbst)
 
-  op termSubst(tm: MS.Term, sbst: TermSubst): MS.Term =
+  op termSubst(tm: MSTerm, sbst: TermSubst): MSTerm =
     if sbst = [] then tm
     else
 %    let _ = writeLine(printTerm tm) in
@@ -1937,40 +1937,40 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 %    let _ = writeLine("= "^printTerm result) in
     result
 
-  op typeTermSubst(ty: Sort, sbst: TermSubst): Sort =
+  op typeTermSubst(ty: MSType, sbst: TermSubst): MSType =
     if sbst = [] then ty
     else
-%    let _ = writeLine(printSort ty) in
+%    let _ = writeLine(printType ty) in
 %    let _ = printTermSubst sbst in
-    let result =  mapSort (termSubst1 sbst, id, id) ty in
-%    let _ = writeLine("= "^printSort result) in
+    let result =  mapType (termSubst1 sbst, id, id) ty in
+%    let _ = writeLine("= "^printType result) in
     result
 
-  op maybeComposeFoldSubtypes(ty: Sort, pr1: MS.Term, sbst: TermSubst, spc: Spec, a: Position): Sort =
-    % let _ = writeLine("mcs: "^printSort ty^" | "^printTerm pr1) in
+  op maybeComposeFoldSubtypes(ty: MSType, pr1: MSTerm, sbst: TermSubst, spc: Spec, a: Position): MSType =
+    % let _ = writeLine("mcs: "^printType ty^" | "^printTerm pr1) in
     let pr1 = termSubst(pr1, sbst) in
     case ty of
-      | Subsort(s_ty, pr2, _) -> composeSubtypes(s_ty, termSubst(pr2, sbst), pr1, a, spc)
-      | _ -> Subsort(ty, pr1, a)
+      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, termSubst(pr2, sbst), pr1, a, spc)
+      | _ -> Subtype(ty, pr1, a)
 
-  op raiseBase (spc: Spec) (ty: Sort): Sort =
-    % let _ = writeLine("rb: "^printSort ty) in
+  op raiseBase (spc: Spec) (ty: MSType): MSType =
+    % let _ = writeLine("rb: "^printType ty) in
     case unfoldBase0 spc ty of
-      | Subsort(_, pred, a) -> Subsort(ty, pred, a)
+      | Subtype(_, pred, a) -> Subtype(ty, pred, a)
       | _ -> ty          
 
-  op mergeRaisedBase(ty: Sort, r_ty: Sort, spc: Spec): Sort =
-    % let _ = writeLine("mrb: "^printSort ty^" u "^printSort r_ty) in
+  op mergeRaisedBase(ty: MSType, r_ty: MSType, spc: Spec): MSType =
+    % let _ = writeLine("mrb: "^printType ty^" u "^printType r_ty) in
     case raiseBase spc ty of
-      | Subsort(_, prb, a) ->
+      | Subtype(_, prb, a) ->
         maybeComposeSubtypes(r_ty, prb, spc, a)
       | _ -> r_ty
 
-%  op Simplify.simplify (spc: Spec) (term: MS.Term): MS.Term
+%  op Simplify.simplify (spc: Spec) (term: MSTerm): MSTerm
 
-  op filterSharedPred2(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
+  op filterSharedPred2(ty1: MSType, ty2: MSType, spc: Spec): MSType * MSType =
     case (ty1, ty2) of
-      | (Subsort(_, p1, _), Subsort(sty2, p2, a2)) ->
+      | (Subtype(_, p1, _), Subtype(sty2, p2, a2)) ->
         let p1s = decomposeConjPred p1 in
         let uf_p1s = mapPartial (fn t -> unfoldOpRef(t, spc)) p1s in
 %        let _ = case uf_p1s of
@@ -1985,39 +1985,39 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         (ty1, mkSubtypePreds(sty2, f_p2s, a2, spc))
       | _ -> (ty1, ty2)
 
-  op printSubtypeWithTypes(ty: Sort): () =
+  op printSubtypeWithTypes(ty: MSType): () =
     case ty of
-      | Subsort(sty, p, _) ->
-        writeLine(printSort sty^" | "^printTermWithSorts p)
-      | _ -> writeLine(printSort ty)
+      | Subtype(sty, p, _) ->
+        writeLine(printType sty^" | "^printTermWithTypes p)
+      | _ -> writeLine(printType ty)
 
   op dontRaiseTypes: QualifiedIds = []   % [Qualified("Nat", "Nat")]
-  op treatAsAtomicType?(ty: Sort): Bool =
+  op treatAsAtomicType?(ty: MSType): Bool =
     case ty of
       | Base(qid, _, _) -> qid in? dontRaiseTypes
       | _ -> false
 
   op namedTypesRaised?: Bool = false
 
-  op raiseSubtypes(ty1: Sort, ty2: Sort, spc: Spec): Sort * Sort =
-    % let _ = writeLine("\nrst: "^printSort ty1^" <> "^printSort ty2) in
+  op raiseSubtypes(ty1: MSType, ty2: MSType, spc: Spec): MSType * MSType =
+    % let _ = writeLine("\nrst: "^printType ty1^" <> "^printType ty2) in
     let (r_ty1, r_ty2) =  raiseSubtypes1(ty1, ty2, false, false, [], [], spc) in
-    % let _ = writeLine("rtd: "^printSort r_ty1^" <> "^printSort r_ty2^"\n") in
+    % let _ = writeLine("rtd: "^printType r_ty1^" <> "^printType r_ty2^"\n") in
     (r_ty1, r_ty2)      
 
   %% Want to expand given type and expected type consistently so subtype is transparent
   %% Not symmetric: remove conditions from ty2 greedily to avoid spurious obligations
-  op raiseSubtypes1(ty1: Sort, ty2: Sort, uf1?: Bool, uf2?: Bool, real_as1: Sorts, real_as2: Sorts,
-                    spc: Spec): Sort * Sort =
+  op raiseSubtypes1(ty1: MSType, ty2: MSType, uf1?: Bool, uf2?: Bool, real_as1: MSTypes, real_as2: MSTypes,
+                    spc: Spec): MSType * MSType =
   %% Bring subtypes to the top-level
     let uf1? = ~(uf1? => typeIn?(ty1, real_as1)) in
     let uf2? = ~(uf2? => typeIn?(ty2, real_as2)) in
-    % let _ = writeLine("rts< ("^toString uf1?^","^toString uf2?^") "^printSort ty1^" <> "^printSort ty2) in
-    let def existsSubsortArg?(args, uf?, real_as) =
-          exists? (fn ty -> embed? Subsort ty && (uf? => typeIn?(ty, real_as))) args
+    % let _ = writeLine("rts< ("^toString uf1?^","^toString uf2?^") "^printType ty1^" <> "^printType ty2) in
+    let def existsSubtypeArg?(args, uf?, real_as) =
+          exists? (fn ty -> embed? Subtype ty && (uf? => typeIn?(ty, real_as))) args
         def tryRaiseFromArgs(ty, qid, args, uf?, real_as, a) =
-          % let _ = writeLine("trfa: "^printSort(Base(qid, args, a))) in
-          if existsSubsortArg?(args, uf?, real_as)
+          % let _ = writeLine("trfa: "^printType(Base(qid, args, a))) in
+          if existsSubtypeArg?(args, uf?, real_as)
             then
             let Qualified(q,id) = qid in
             let pred_name = id^"_P" in
@@ -2026,7 +2026,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                | Some _ ->
                  let arg_comps = map (fn tyi ->
                                       case tyi of
-                                        | Subsort(ty, pr, _) -> (ty, pr)
+                                        | Subtype(ty, pr, _) -> (ty, pr)
                                         | None -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
                                    args
                  in
@@ -2035,28 +2035,28 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                  let arg_preds_lst = decomposeListConjPred arg_preds in
                  let preds = map (fn arg_preds ->
                                     mkAppl(mkOp(pred_qid,
-                                                mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort))
+                                                mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType))
                                                                     bare_args),
-                                                        mkArrow(bare_ty, boolSort))),
+                                                        mkArrow(bare_ty, boolType))),
                                            arg_preds))
                                arg_preds_lst
                  in
-                 % let _ = writeLine("--> "^printSort(mkSubtypePreds(bare_ty, preds, a, spc))) in
+                 % let _ = writeLine("--> "^printType(mkSubtypePreds(bare_ty, preds, a, spc))) in
                  Some(mkSubtypePreds(bare_ty, preds, a, spc))
                | None -> None)
           else None
 
         def maybeComposeWithRaisedBase ty =
-          % let _ = writeLine("mcrwb: "^printSort ty) in
+          % let _ = writeLine("mcrwb: "^printType ty) in
           case ty of
-            | Subsort(s_ty, pr1, a) ->
+            | Subtype(s_ty, pr1, a) ->
               maybeComposeSubtypes(raiseBase spc s_ty, pr1, spc, a)
             | _ -> raiseBase spc ty
 
         def tryRaiseFields(flds1, flds2, a) =
           let def addField(id, l_ty, (n_flds, arg_fld_vars, pred, i)) =
                 case l_ty of
-                  | Subsort(t, p, _) ->
+                  | Subtype(t, p, _) ->
                     let v = ("xf"^show i, t) in
                     (n_flds ++ [(id,t)],
                      arg_fld_vars ++ [(id, mkVarPat v)],
@@ -2066,23 +2066,23 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                           arg_fld_vars ++ [(id, mkWildPat l_ty)],
                           pred,
                           i+1)
-              def mkNonTrivSubsort(n_flds, arg_fld_vars, pred) =
+              def mkNonTrivSubtype(n_flds, arg_fld_vars, pred) =
                 let prod = Product(n_flds, a) in
                 if trueTerm? pred then prod
-                  else Subsort(prod, mkLambda(mkRecordPat arg_fld_vars, pred), a)
+                  else Subtype(prod, mkLambda(mkRecordPat arg_fld_vars, pred), a)
           in
           let ((n_flds1, arg_fld_vars1, pred1, _), (n_flds2, arg_fld_vars2, pred2, _)) =
               foldl (fn ((info1, info2), ((id1, tyi1), (id2, tyi2))) ->
                      let (r_tyi1, r_tyi2) = raiseSubtypes1(tyi1, tyi2, uf1?, uf2?, real_as1, real_as2, spc) in
                   %   let _ = writeLine("Raising field "^id1^", "^id2^"\n("^
-%                                       printSort tyi1^", "^printSort tyi2^")\nto\n("^
-%                                       printSort r_tyi1^", "^printSort r_tyi2^")\n") in
+%                                       printType tyi1^", "^printType tyi2^")\nto\n("^
+%                                       printType r_tyi1^", "^printType r_tyi2^")\n") in
                      (addField(id1, r_tyi1, info1),
                       addField(id2, r_tyi2, info2)))
                 (([],[],trueTerm,0), ([],[],trueTerm,0)) (zip(flds1, flds2))
           in
-          (mkNonTrivSubsort(n_flds1, arg_fld_vars1, pred1),
-           mkNonTrivSubsort(n_flds2, arg_fld_vars2, pred2))
+          (mkNonTrivSubtype(n_flds1, arg_fld_vars1, pred1),
+           mkNonTrivSubtype(n_flds2, arg_fld_vars2, pred2))
     in
     let (ty1, ty2) =
     if uf1? && equalType?(ty1, ty2) then (ty1, ty2)
@@ -2100,7 +2100,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         let ty2r = Base(qid2, rargs2, a2) in
         let args1 = rargs1 in %originalForInternals(zip(args1, rargs1), uf1?, real_as1) in
         let args2 = rargs2 in %originalForInternals(zip(args2, rargs2), uf2?, real_as2) in
-        if (existsSubsortArg?(args1, uf1?, real_as1) || existsSubsortArg?(args2, uf2?, real_as2))
+        if (existsSubtypeArg?(args1, uf1?, real_as1) || existsSubtypeArg?(args2, uf2?, real_as2))
           && embed? None (findTheOp(spc, Qualified(q, pred_name)))
           && embed? Some (tryUnfoldBase spc ty1r)
           then let (rty1, rty2) = raiseSubtypes1(unfoldBase0 spc ty1r, unfoldBase0 spc ty2r,
@@ -2154,17 +2154,17 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                    in
                    (if uf1? then rty1 else mergeRaisedBase(ty1, rty1, spc), rty2)
                  | None -> (raiseSubtype(ty1, spc), raiseSubtype(ty2, spc)))
-      | (Subsort(s_ty1, p1, a1), Subsort(s_ty2, p2, a2)) ->
+      | (Subtype(s_ty1, p1, a1), Subtype(s_ty2, p2, a2)) ->
         let (rty1, rty2) = raiseSubtypes1(s_ty1, s_ty2, uf1?, uf2?, real_as1, real_as2, spc) in
         let sbst = mkFoldSubst([p1, p2] ++ subtypePreds[rty1, rty2], spc) in
         (if uf1? then rty1 else maybeComposeFoldSubtypes(rty1, p1, sbst, spc, a1),
          if uf2? then rty2 else maybeComposeFoldSubtypes(rty2, p2, sbst, spc, a2))
-      | (Subsort(s_ty1, p1, a1), _) ->
+      | (Subtype(s_ty1, p1, a1), _) ->
         let (rty1, rty2) = raiseSubtypes1(s_ty1, ty2, uf1?, uf2?, real_as1, real_as2, spc) in
         let sbst = mkFoldSubst(p1 :: subtypePreds[rty1, rty2], spc) in
         (if uf1? then rty1 else maybeComposeFoldSubtypes(rty1, p1, sbst, spc, a1),
          typeTermSubst(rty2, sbst))
-      | (_, Subsort(s_ty2, p2, a2)) ->
+      | (_, Subtype(s_ty2, p2, a2)) ->
         let (rty1, rty2) = raiseSubtypes1(ty1, s_ty2, uf1?, uf2?, real_as1, real_as2, spc) in
         let sbst = mkFoldSubst(p2 :: subtypePreds[rty1, rty2], spc) in
         (typeTermSubst(rty1, sbst),
@@ -2194,27 +2194,27 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         tryRaiseFields(flds1, flds2, a1)
  %     | Arrow(dom, rng ,a) ->
 %        (case raiseSubtype(dom,spc) of
-%           | Subsort(d,d_p,_) ->
+%           | Subtype(d,d_p,_) ->
 %             %% Using d would be more natural, but then you have to change the type of all variable refs
 %             %% to avoid unnecessary type annotation in Isabelle output (or else freeVars needs to be
 %             %% fixed to ignore types
 %             let f_ty = Arrow(dom,rng,a) in
-%             Subsort(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
+%             Subtype(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
 %           | _ -> ty)
       | _ -> (raiseSubtype(ty1, spc), raiseSubtype(ty2, spc))
     in
     let (ty1, ty2) = filterSharedPred2(ty1, ty2, spc) in
-    % let _ = writeLine("rts> "^printSort ty1^" <> "^printSort ty2) in
+    % let _ = writeLine("rts> "^printType ty1^" <> "^printType ty2) in
     (ty1, ty2)     
 
-  op raiseSubtype(ty: Sort, spc: Spec): Sort =
+  op raiseSubtype(ty: MSType, spc: Spec): MSType =
     %% Bring subtypes to the top-level
-    % let _ = writeLine("rt: "^printSort ty) in
+    % let _ = writeLine("rt: "^printType ty) in
     case ty of
       | Base(qid, [], _) | qid in? dontRaiseTypes -> ty
       | Base(qid, args, a) ->
         let args = map (fn tyi -> raiseSubtype(tyi, spc)) args in
-        if exists? (embed? Subsort) args
+        if exists? (embed? Subtype) args
           then
           let Qualified(q,id) = qid in
           let pred_name = id^"_P" in
@@ -2223,7 +2223,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
              | Some _ ->
                let arg_comps = map (fn tyi ->
                                       case tyi of
-                                        | Subsort(ty, pr, _) -> (ty, pr)
+                                        | Subtype(ty, pr, _) -> (ty, pr)
                                         | None -> (tyi, mkLambda(mkWildPat tyi, trueTerm)))
                                  args
                in
@@ -2231,8 +2231,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                let bare_ty = Base(qid, bare_args, a) in
                let arg_preds_lst =  decomposeListConjPred arg_preds in
                let preds = map (fn arg_preds ->
-                                  mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolSort)) bare_args),
-                                                                mkArrow(bare_ty, boolSort))),
+                                  mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType)) bare_args),
+                                                                mkArrow(bare_ty, boolType))),
                                          arg_preds))
                              arg_preds_lst
                in
@@ -2242,19 +2242,19 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                   | None -> ty
                   | Some exp_ty ->
                     let raise_ty = if namedTypesRaised? then exp_ty else raiseSubtype(exp_ty, spc) in
-                    if embed? Subsort raise_ty
+                    if embed? Subtype raise_ty
                       then raise_ty else ty))
         else
           (case tryUnfoldBase spc ty of
              | None -> ty
              | Some exp_ty ->
                if namedTypesRaised?
-                 then (if embed? Subsort exp_ty
+                 then (if embed? Subtype exp_ty
                          then exp_ty else ty)
                else raiseSubtype(exp_ty, spc))
-      | Subsort(s_ty, p, a) ->
+      | Subtype(s_ty, p, a) ->
         (case raiseSubtype(s_ty, spc) of
-           | Subsort(sss_ty, pr, _) ->
+           | Subtype(sss_ty, pr, _) ->
              composeSubtypes(sss_ty, p, pr, a, spc)
            | _ -> ty)
       | Product(flds, a) ->
@@ -2273,27 +2273,27 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                       i+1))
                   ([],[],trueTerm,0) flds
                in
-               Subsort(Product(bare_flds,a), mkLambda(mkRecordPat arg_fld_vars, pred), a)
+               Subtype(Product(bare_flds,a), mkLambda(mkRecordPat arg_fld_vars, pred), a)
           else ty
  %     | Arrow(dom, rng ,a) ->
 %        (case raiseSubtype(dom,spc) of
-%           | Subsort(d,d_p,_) ->
+%           | Subtype(d,d_p,_) ->
 %             %% Using d would be more natural, but then you have to change the type of all variable refs
 %             %% to avoid unnecessary type annotation in Isabelle output (or else freeVars needs to be
 %             %% fixed to ignore types
 %             let f_ty = Arrow(dom,rng,a) in
-%             Subsort(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
+%             Subtype(f_ty, mkSubtypeFnPredicate(d_p, f_ty, d, rng), a)
 %           | _ -> ty)
       | _ -> ty
 
 
-  op subtypePredicate(ty: Sort, spc: Spec): MS.Term =
+  op subtypePredicate(ty: MSType, spc: Spec): MSTerm =
     case raiseSubtype(ty, spc) of
-      | Subsort(sup_ty, pred, _) -> pred
+      | Subtype(sup_ty, pred, _) -> pred
       | _ -> mkLambda(mkWildPat ty, trueTerm)
 
-  type TyVarSubst = List(TyVar * Sort)
-  op  instantiateTyVars: Sort * TyVarSubst -> Sort
+  type TyVarSubst = List(TyVar * MSType)
+  op  instantiateTyVars: MSType * TyVarSubst -> MSType
   def instantiateTyVars(s,tyVarSubst) =
     case s of
       | TyVar (name, _) ->
@@ -2302,19 +2302,19 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	   | _ -> s)
       | _ -> s
 
-  op instantiateTyVarsInType(ty: Sort, subst: TyVarSubst): Sort =
-    mapSort (id, fn ty -> instantiateTyVars(ty,subst), id) ty
+  op instantiateTyVarsInType(ty: MSType, subst: TyVarSubst): MSType =
+    mapType (id, fn ty -> instantiateTyVars(ty,subst), id) ty
 
-  op instantiateTyVarsInTerm(tm: MS.Term, subst: TyVarSubst): MS.Term =
+  op instantiateTyVarsInTerm(tm: MSTerm, subst: TyVarSubst): MSTerm =
     mapTerm (id, fn ty -> instantiateTyVars(ty,subst), id) tm
 
-  op instantiateTyVarsInPattern(pat: Pattern, subst: TyVarSubst): Pattern =
+  op instantiateTyVarsInPattern(pat: MSPattern, subst: TyVarSubst): MSPattern =
     mapPattern (id, fn ty -> instantiateTyVars(ty,subst), id) pat
 
-  op  typeMatch: Sort * Sort * Spec * Bool -> Option TyVarSubst
+  op  typeMatch: MSType * MSType * Spec * Bool -> Option TyVarSubst
   def typeMatch(s1,s2,spc,ign_subtypes?) =
-   let def match(srt1: Sort, srt2: Sort, pairs: TyVarSubst): Option TyVarSubst =
-        % let _ = writeLine(printSort srt1^" =?= "^ printSort srt2) in
+   let def match(srt1: MSType, srt2: MSType, pairs: TyVarSubst): Option TyVarSubst =
+        % let _ = writeLine(printType srt1^" =?= "^ printType srt2) in
         let result =
             case (srt1,srt2) of
               | (TyVar(id1,_), srt2) -> 
@@ -2347,11 +2347,11 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                   match(ty,ty2,pairs)
                 else 
                   None
-              | (Subsort(ty,t1,_),Subsort(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
+              | (Subtype(ty,t1,_),Subtype(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
                 match(ty,ty2,pairs)
-              | (Subsort(ty,_,_), ty2) | ign_subtypes? ->
+              | (Subtype(ty,_,_), ty2) | ign_subtypes? ->
                 match(ty,ty2,pairs)
-              | (ty1, Subsort(ty,_,_)) | ign_subtypes? ->
+              | (ty1, Subtype(ty,_,_)) | ign_subtypes? ->
                 match(ty1,ty,pairs)
               | (Base(id,ts,pos1),Base(id2,ts2,pos2)) ->
                 if id = id2
@@ -2388,7 +2388,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	   | None -> None)
       | _ -> Some pairs
 
-  op mkOpFromDef(qid: QualifiedId, ty: Sort, spc: Spec): MS.Term =
+  op mkOpFromDef(qid: QualifiedId, ty: MSType, spc: Spec): MSTerm =
     case findTheOp(spc, qid) of
       | Some opinfo ->
         (let (tvs,ty1,_) = unpackFirstOpDef opinfo in
@@ -2399,7 +2399,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
            | None ->  mkOp(qid, ty)) 
       | _ -> mkOp(qid, ty)
 
-  op termSize (t: MS.Term): Nat =
+  op termSize (t: MSTerm): Nat =
     foldSubTerms (fn (_,i) -> i + 1) 0 t
 
   op [a] maximal (f: a -> Nat) (l: List a): Option a =
@@ -2435,14 +2435,14 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      Qualified("List",    "List"), 
      Qualified("Option",  "Option")]
 
-  op existsOpWithType?(ty: Sort, spc: Spec): Bool =
+  op existsOpWithType?(ty: MSType, spc: Spec): Bool =
     foldriAQualifierMap
       (fn (q, id, info, result) ->
          result
-        || (equalType?(firstOpDefInnerSort info, ty) ))
+        || (equalType?(firstOpDefInnerType info, ty) ))
       false spc.ops
 
-  op existsTrueExistentialAxiomForType?(ty: Sort, spc: Spec): Bool =
+  op existsTrueExistentialAxiomForType?(ty: MSType, spc: Spec): Bool =
     foldlSpecElements (fn (result,el) ->
                          result || (case el of
                                       | Property(Axiom, _, _,
@@ -2451,12 +2451,12 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
                                       | _ -> false))
       false spc.elements
 
-  op knownNonEmpty?(ty: Sort, spc: Spec): Bool =
+ op knownNonEmpty?(ty: MSType, spc: Spec): Bool =
     case ty of
       | Base(qid,tvs,_) ->
         qid in? knownNonEmptyBaseTypes
           || tvs ~= []                  % Not completely safe
-          || (let Some info = findTheSort(spc, qid) in
+          || (let Some info = findTheType(spc, qid) in
               knownNonEmpty?(info.dfn, spc))
           || existsOpWithType?(ty, spc)
          %% Leave out for now as it messes up emptyTypesToSubtypes
@@ -2464,21 +2464,21 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Quotient(sty,_,_) -> knownNonEmpty?(sty, spc)
       | Pi(_,sty,_) -> knownNonEmpty?(sty, spc)
       | And(sty::_,_) -> knownNonEmpty?(sty, spc)
-      | Subsort _ -> false
+      | Subtype _ -> false
       | TyVar _ -> false
       | Any _ -> false
       | _ -> true
 
  type MatchResult = | Match VarSubst | NoMatch | DontKnow
 
- op  patternMatch : Pattern * MS.Term * VarSubst -> MatchResult 
+ op  patternMatch : MSPattern * MSTerm * VarSubst -> MatchResult 
 
- def patternMatch(pat:Pattern,N,S) = 
+ def patternMatch(pat:MSPattern,N,S) = 
      case pat
        of VarPat(x, _) -> Match(Cons((x,N),S))
 	| WildPat _ -> Match S
 	| RecordPat(fields, _) -> 
-	  let fields2 = map (fn (l,p) -> (l,patternSort p,p)) fields in
+	  let fields2 = map (fn (l,p) -> (l,patternType p,p)) fields in
 	  let srt = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
 	  let 
 	      def loop(fields,S) : MatchResult = 
@@ -2530,7 +2530,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
 	     | _ -> DontKnow)
 	| _ -> DontKnow
 
- op  patternMatchRules : Match * MS.Term -> Option (VarSubst * MS.Term)
+ op  patternMatchRules : Match * MSTerm -> Option (VarSubst * MSTerm)
  def patternMatchRules(rules,N) = 
      case rules 
        of [] -> None
@@ -2547,7 +2547,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | _ -> None
 
   %% ignores types
-  op matchPatterns(p1: Pattern, p2: Pattern): Option VarSubst =
+  op matchPatterns(p1: MSPattern, p2: MSPattern): Option VarSubst =
     if equalPatternStruct?(p1, p2) then Some []
       else
       case (p1, p2) of
@@ -2565,8 +2565,8 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
         | (_, WildPat _) -> Some []
         | (RestrictedPat(x1, t1, _), _) -> matchPatterns(x1, p2)
         | (_, RestrictedPat(x2, t2, _)) -> matchPatterns(p1, x2)
-        | (SortedPat(x1, _, _), _) -> matchPatterns(x1, p2)
-        | (_, SortedPat(x2, _, _)) -> matchPatterns(p1, x2)
+        | (TypedPat(x1, _, _), _) -> matchPatterns(x1, p2)
+        | (_, TypedPat(x2, _, _)) -> matchPatterns(p1, x2)
         | _ -> None
 
   op topLevelOps(spc: Spec): QualifiedIds =
@@ -2580,12 +2580,12 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
   op topLevelTypes(spc: Spec): QualifiedIds =
     mapPartial (fn el ->
                   case el of
-                    | Sort(qid, _) -> Some qid
-                    | SortDef(qid, _) -> Some qid
+                    | Type(qid, _) -> Some qid
+                    | TypeDef(qid, _) -> Some qid
                     | _ -> None)
      spc.elements
 
- op boolType?(spc: Spec, ty: Sort): Bool =
+ op boolType?(spc: Spec, ty: MSType): Bool =
    case ty of
      | Boolean _ -> true
      | Base _ ->
@@ -2594,7 +2594,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
           | None -> false)
      | _ -> false
 
- op unconditionalPattern?(pat: Pattern): Bool =
+ op unconditionalPattern?(pat: MSPattern): Bool =
    case pat of
      | WildPat _ -> true
      | VarPat _  -> true
@@ -2602,7 +2602,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
      | AliasPat(p1, p2, _) -> unconditionalPattern? p1 && unconditionalPattern? p2
      | _ -> false
 
- op exhaustivePatterns?(pats: List Pattern, ty: Sort, spc: Spec): Bool =
+ op exhaustivePatterns?(pats: MSPatterns, ty: MSType, spc: Spec): Bool =
    pats ~= []
     && ( unconditionalPattern?(last pats)
      || (case (pats, subtypeComps(spc, ty)) of
@@ -2662,7 +2662,7 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
       | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
 
 
- op varSubstFromTerms(old_tm: MS.Term, new_tm: MS.Term): VarSubst =
+ op varSubstFromTerms(old_tm: MSTerm, new_tm: MSTerm): VarSubst =
    let def match(old_tm, new_tm, sbst) =
          case (old_tm, new_tm) of
            | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, _, new_ptm)], _)) ->
@@ -2674,20 +2674,20 @@ op substPat(pat: Pattern, sub: VarPatSubst): Pattern =
    in
    match(old_tm, new_tm, []) 
 
-op combineSubTypes(old_ty: Sort, new_ty: Sort, old_tm: MS.Term, new_tm: MS.Term): Sort =
+op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTerm): MSType =
    let sbst = varSubstFromTerms(old_tm, new_tm) in
-   let old_ty = mapSort (fn t -> substitute(t, sbst), id, id) old_ty in
+   let old_ty = mapType (fn t -> substitute(t, sbst), id, id) old_ty in
    let def combineTypes(old_ty, new_ty) =
          if equalType?(old_ty, new_ty) then new_ty
          else
-         % let _ = writeLine("combine:\n"^printSort old_ty^"\n"^printSort new_ty) in
+         % let _ = writeLine("combine:\n"^printType old_ty^"\n"^printType new_ty) in
          case (old_ty, new_ty) of
            | (_, MetaTyVar _) -> old_ty
            | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
              Arrow(combineTypes(old_d, new_d), combineTypes(old_r, new_r), a)
-           | (Subsort(old_sup, old_p, _), Subsort(new_sup, new_p, a)) ->
-             Subsort(new_sup, combinePreds(old_p, new_p), a)
-           | (Subsort _, _) -> old_ty
+           | (Subtype(old_sup, old_p, _), Subtype(new_sup, new_p, a)) ->
+             Subtype(new_sup, combinePreds(old_p, new_p), a)
+           | (Subtype _, _) -> old_ty
            | _ -> new_ty
        def combinePreds(old_p, new_p) =
          case (old_p, new_p) of
@@ -2701,7 +2701,7 @@ op combineSubTypes(old_ty: Sort, new_ty: Sort, old_tm: MS.Term, new_tm: MS.Term)
     in
     combineTypes(old_ty, new_ty) 
 
-op substVarNames(old_tm: MS.Term, new_tm: MS.Term): MS.Term =
+op substVarNames(old_tm: MSTerm, new_tm: MSTerm): MSTerm =
   let def subst(old_tm, new_tm, sbst) =
          case (old_tm, new_tm) of
            | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, cnd, new_ptm)], _)) ->
@@ -2714,6 +2714,6 @@ op substVarNames(old_tm: MS.Term, new_tm: MS.Term): MS.Term =
    subst(old_tm, new_tm, []) 
 
 %% This should be improved
-op nonExecutableTerm?(tm: MS.Term): Bool =
+op nonExecutableTerm?(tm: MSTerm): Bool =
   existsSubTerm (embed? Bind) tm
 endspec

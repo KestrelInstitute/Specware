@@ -31,13 +31,13 @@ Unicode qualifying spec
 
   op null         : UString
 
-  op null?        : UString -> Boolean
-  op non_null?    : UString -> Boolean
+  op null?        : UString -> Bool
+  op non_null?    : UString -> Bool
   op length       : UString -> Nat
 
   op ^  infixl 25 : UString * UString -> UString
 
-  op substring?   : UString * UString -> Boolean
+  op substring?   : UString * UString -> Bool
 
   %% op find         : UString -> UString -> Option Nat
   %% op find_pattern : UString -> UString -> Option (Nat * Nat)
@@ -46,9 +46,9 @@ Unicode qualifying spec
 
   op nth  : UString * Nat -> Option UChar
 
-  op all? : (UChar -> Boolean) -> UString -> Boolean
+  op all? : (UChar -> Bool) -> UString -> Bool
 
-  op in?  : UChar * UString -> Boolean
+  op in?  : UChar * UString -> Bool
 
   %% ------------------------------------------------------------------------
 

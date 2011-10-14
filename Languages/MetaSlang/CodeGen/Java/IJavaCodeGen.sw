@@ -25,7 +25,7 @@ spec
 
 %  type Collected = {
 %		    arrowclasses : List Java.ClsDecl,
-%		    productSorts : List Sort
+%		    productTypes : List Type
 %		   }
 
   %% OPERATIONS
@@ -49,15 +49,15 @@ spec
 
   (**
    * returns the java type for the given MetaSlang type.
-   * assumes that the sort and envspec in the monad are
+   * assumes that the type and envspec in the monad are
    * already transformed using the above transform-op
    *)
-  op metaSlangTypeToJavaType: Sort -> JGenEnv JavaType
+  op metaSlangTypeToJavaType: MSType -> JGenEnv JavaType
 
 
-  op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (JavaBlock * JavaExpr)
+  op metaSlangTermToJavaExpr: MSTerm -> JGenEnv (JavaBlock * JavaExpr)
 
-  op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (JavaBlock * List JavaExpr)
+  op metaSlangTermsToJavaExprs: MSTerms -> JGenEnv (JavaBlock * List JavaExpr)
 
   (**
    * reads the optional option spec, which contains user-supplied

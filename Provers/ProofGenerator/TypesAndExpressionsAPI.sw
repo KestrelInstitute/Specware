@@ -5,7 +5,7 @@ spec
   (* This spec provides an abstract datatype API for Types and
   Expressions. *)
 
-  op check?: Proof -> Boolean
+  op check?: Proof -> Bool
   def check?(p) =
     case (check p initialState) of
       | (RETURN _, _) -> true
@@ -23,7 +23,7 @@ spec
       then (p, x)
     else fail("check1")
 
-  op VAR?: Expression -> Boolean
+  op VAR?: Expression -> Bool
   def VAR?(e) =
     case e of
       | VAR _ -> true
@@ -37,9 +37,9 @@ spec
   def var(VAR(v)) = v
 
   axiom VARa1 is fa (var_v: Variable) var(mkVAR(var_v)) = var_v
-  axiom VARc is fa (var_e: VARExpr) mkVAR(var(var_e)) = var_e
+  axiom VARc  is fa (var_e: VARExpr)  mkVAR(var(var_e)) = var_e
 
-  op OPI?: Expression -> Boolean
+  op OPI?: Expression -> Bool
   def OPI?(e) =
     case e of
       | OPI _ -> true
@@ -59,7 +59,7 @@ spec
   axiom OPIa2 is fa (oper_v: Operation, types_v: Types) types(mkOPI(oper_v, types_v)) = types_v
   axiom OPIc is fa (opi_e: OPIExpr) mkOPI(oper(opi_e), types(opi_e)) = opi_e
 
-  op APPLY?: Expression -> Boolean
+  op APPLY?: Expression -> Bool
   def APPLY?(e) =
     case e of
       | APPLY _ -> true
@@ -76,7 +76,7 @@ spec
   op mkAPPLY: Expression * Expression -> APPLYExpr
 
 
-  op FN?: Expression -> Boolean
+  op FN?: Expression -> Bool
   def FN?(e) =
     case e of
       | FN _ -> true
@@ -100,7 +100,7 @@ spec
 %  axiom FNa2 is fa (oper_v: Operation, types_v: Types) types(mkFN(oper_v, types_v)) = types_v
 %  axiom FNc is fa (fn_e: FNExpr) mkFN(oper(fn_e), types(fn_e)) = fn_e
 
-  op EQ?: Expression -> Boolean
+  op EQ?: Expression -> Bool
   def EQ?(e) =
     case e of
       | EQ _ -> true
@@ -114,7 +114,7 @@ spec
   op eqRhs: EQExpr -> Expression
   def eqRhs(EQ(l, r)) = r
 
-  op IF?: Expression -> Boolean
+  op IF?: Expression -> Bool
   def IF?(e) =
     case e of
       | IF _ -> true
@@ -131,7 +131,7 @@ spec
   op ifElse: IFExpr -> Expression
   def ifElse(IF(_,_,e)) = e
 
-  op IOTA?: Expression -> Boolean
+  op IOTA?: Expression -> Bool
   def IOTA?(e) =
     case e of
       | IOTA _ -> true
@@ -139,7 +139,7 @@ spec
 
   type IOTAExpr = (Expression | IOTA?)
 
-  op PROJECT?: Expression -> Boolean
+  op PROJECT?: Expression -> Bool
   def PROJECT?(e) =
     case e of
       | PROJECT _ -> true
@@ -147,7 +147,7 @@ spec
 
   type PROJECTExpr = (Expression | PROJECT?)
 
-  op TYPE?: Type -> Boolean
+  op TYPE?: Type -> Bool
   def TYPE?(t) =
     case t of
       | TYPE _ -> true
@@ -161,7 +161,7 @@ spec
   op TYPEtypes: TYPEType -> Types
   def TYPEtypes(TYPE(_, ts)) = ts
 
-  op ARROW?: Type -> Boolean
+  op ARROW?: Type -> Bool
   def ARROW?(t) =
     case t of
       | ARROW _ -> true
@@ -175,7 +175,7 @@ spec
   op range: ARROWType -> Type
   def range(ARROW(_, t2)) = t2
 
-  op RECORD?: Type -> Boolean
+  op RECORD?: Type -> Bool
   def RECORD?(t) =
     case t of
       | RECORD _ -> true
@@ -189,7 +189,7 @@ spec
   op RECtypes: RECORDType -> Types
   def RECtypes(RECORD(_, types)) = types
 
-  op RESTR?: Type -> Boolean
+  op RESTR?: Type -> Bool
   def RESTR?(t) =
     case t of
       | RESTR (t, r) -> true

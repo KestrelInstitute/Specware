@@ -20,21 +20,21 @@ RewriteRules qualifying spec
 
  type Decl  = 
    | Var Var 
-   | Cond MS.Term 
-   | LetRec List (Var * MS.Term) 
-   | Let List (Pattern * MS.Term)
+   | Cond MSTerm 
+   | LetRec List (Var * MSTerm) 
+   | Let List (MSPattern * MSTerm)
 
  type Gamma = List Decl * TyVars * Spec * String * StringSet.Set
 
  type RewriteRule = 
    { 
 	name      : String,
-	lhs       : MS.Term,
-	rhs       : MS.Term, 
+	lhs       : MSTerm,
+	rhs       : MSTerm, 
 	tyVars    : List String,
-	freeVars  : List (Nat * Sort),
-	condition : Option MS.Term,
-        trans_fn   : Option(MS.Term -> Option MS.Term)
+	freeVars  : List (Nat * MSType),
+	condition : Option MSTerm,
+        trans_fn   : Option(MSTerm -> Option MSTerm)
    } 
 
 %%
@@ -55,8 +55,8 @@ RewriteRules qualifying spec
 %% freshRule is only relevant when matching against non-ground terms.
 %%
 
-op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * Sort))
-   : (MS.Term -> MS.Term) * (Sort -> Sort) * NatMap.Map(Nat * Sort) * StringMap.Map TyVar = 
+op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType))
+   : (MSTerm -> MSTerm) * (MSType -> MSType) * NatMap.Map(Nat * MSType) * StringMap.Map TyVar = 
 % tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
@@ -66,7 +66,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	            StringMap.empty tyVars
      in
      let
-	 def doSort(srt: Sort): Sort = 
+	 def doType(srt: MSType): MSType = 
 	     case srt
 	       of TyVar(v,a) -> 
 		  (case StringMap.find(tyVMap,v)
@@ -74,19 +74,19 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 		      | None -> TyVar(v,a)) 
 		%% Unabstracted type variables are treated as rigid
 		| _ -> srt
-	 def freshSort srt = 
-	     mapSort((fn M -> M),doSort,fn p -> p) srt
+	 def freshType srt = 
+	     mapType((fn M -> M),doType,fn p -> p) srt
      in
 % varMap = {| num -> (num1,srt) | (num,srt) in freeVars & num1 = ... |}
      let varMap = 
 	 foldr (fn ((num,srt), varMap) -> 
                   let num1 = ! context.counter in
                   (context.counter := num1 + 1;
-                   NatMap.insert(varMap,num,(num1,freshSort srt))))
+                   NatMap.insert(varMap,num,(num1,freshType srt))))
 	   NatMap.empty freeVars	
      in
      let
-	 def doTerm(term: MS.Term): MS.Term = 
+	 def doTerm(term: MSTerm): MSTerm = 
 	     case isFlexVar?(term)
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
@@ -94,13 +94,13 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 		      | None -> System.fail (show n^" not found"))
 		| None -> term
 	 def freshTerm trm = 
-	     mapTerm(doTerm, doSort, id) trm
+	     mapTerm(doTerm, doType, id) trm
      in
-	(freshTerm, freshSort, varMap, tyVMap)
+	(freshTerm, freshType, varMap, tyVMap)
 
  def freshRule(context: Context, {name,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule = 
-     let (freshTerm,freshSort,varMap,tyVMap) = 
+     let (freshTerm,freshType,varMap,tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars) in
      {  name = name,
 	lhs  = freshTerm lhs,
@@ -116,7 +116,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- op defRule (context: Context, q: String, id: String, info : OpInfo, includeAll?: Boolean): List RewriteRule = 
+ op defRule (context: Context, q: String, id: String, info : OpInfo, includeAll?: Bool): List RewriteRule = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstTerm info.dfn in
      let rule = 
@@ -141,12 +141,12 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 %% If this is not possible, return the empty list of
 %% rules, disabling the further use of the rule.
 %%
- op equalToArg?(tm: MS.Term, apply_tm: MS.Term): Boolean =
+ op equalToArg?(tm: MSTerm, apply_tm: MSTerm): Bool =
    case apply_tm of
      | Apply(_, arg_tm, _) -> equalTerm?(tm, arg_tm)
      | _ -> false
 
- op equalToSomeArg?(tm: MS.Term, apply_tm: MS.Term): Boolean =
+ op equalToSomeArg?(tm: MSTerm, apply_tm: MSTerm): Bool =
    case apply_tm of
      | Apply(_, arg_tm, _) ->
        equalTerm?(tm, arg_tm)
@@ -155,7 +155,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
        exists? (fn (_,fld) -> equalTerm?(tm, fld)) flds
      | _ -> false
 
- op replaceArg(old_tm: MS.Term, new_tm, apply_tm: MS.Term): MS.Term =
+ op replaceArg(old_tm: MSTerm, new_tm, apply_tm: MSTerm): MSTerm =
    if equalTerm?(old_tm, apply_tm) then new_tm
    else
    case apply_tm of
@@ -165,7 +165,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
        mkRecord (map (fn (id,fld) -> (id, replaceArg(old_tm, new_tm, fld))) flds)
      | _ -> apply_tm
 
- op deleteLambdaFromRule (context: Context) (includeAll?: Boolean)
+ op deleteLambdaFromRule (context: Context) (includeAll?: Bool)
      : List RewriteRule * List RewriteRule -> List RewriteRule = 
      fn ([], old) -> old
       | (rule::rules, old) -> 
@@ -187,9 +187,9 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
               let new_rule = freshRule(context, rule) in
               deleteLambdaFromRule context includeAll? (rules, new_rule::old))
 
- op deleteMatches(context: Context, matches: Match, opt_case_tm: Option MS.Term,
+ op deleteMatches(context: Context, matches: Match, opt_case_tm: Option MSTerm,
                   rule: RewriteRule, rules: List RewriteRule,
-                  old: List RewriteRule, includeAll?: Boolean)
+                  old: List RewriteRule, includeAll?: Bool)
      : List RewriteRule = 
      case matches
        of [] -> deleteLambdaFromRule context includeAll? (rules,old)
@@ -212,18 +212,15 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
           in
           deleteMatches(context, r_matches, opt_case_tm, rule, rule1::rules, old, includeAll?)
 
- def addToCondition(condition : Option MS.Term,cond:MS.Term):Option MS.Term = 
+ def addToCondition(condition : Option MSTerm,cond:MSTerm):Option MSTerm = 
      case (condition,cond)
        of (_,Fun(Bool true,_,_)) -> condition
         | (None,_) -> Some cond
 	| (Some cond1,_) -> Some (Utilities.mkAnd(cond1,cond))
 
- type PatternToTermOut = 
-      Option (MS.Term * List (Nat * Sort) * List (Var * MS.Term))
+ type PatternToTermOut =  Option (MSTerm * List (Nat * MSType) * List (Var * MSTerm))
 
- op patternToTerm : 
-    Context * Pattern * List (Nat * Sort) * List (Var * MS.Term) -> 
-       PatternToTermOut
+ op patternToTerm : Context * MSPattern * List (Nat * MSType) * List (Var * MSTerm) -> PatternToTermOut
 
  def patternToTerm(context,pat,vars,S) = 
      case pat
@@ -233,7 +230,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
           (case patternToTerm(context,p,vars,S)
              of None -> None
 	      | Some (trm,vars,S) -> 
-		let srt1 = patternSort p in
+		let srt1 = patternType p in
 		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a),vars,S))
         | RecordPat(fields,a) -> 
 	  let
@@ -323,7 +320,7 @@ is rewritten to
 %% rewrite rules that obviously lead to diverging behaviour.
 %%    
 
-  def isFlexibleTerm(term:MS.Term) = 
+  def isFlexibleTerm(term:MSTerm) = 
       case isFlexVar?(term)
         of Some m -> true
 	 | None -> 
@@ -332,7 +329,7 @@ is rewritten to
 	 | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
 	 | _ -> false
 
-  def deleteFlexTail(term:MS.Term) = 
+  def deleteFlexTail(term:MSTerm) = 
       case term 
         of Apply(M,N,_) -> 
 	   if isFlexibleTerm N
@@ -355,12 +352,12 @@ is rewritten to
       else Some rule
 
  %% If term is a qf binder then Introduce a number for each Var and return
- %% a list of the numbers paired with the sort
+ %% a list of the numbers paired with the type
  %% A substitution mapping old Var to new flex var with that number
  %% The body of the binder (handles nested binders of the same type)
- op bound(qf: Binder, n: Nat, term: MS.Term, freeVars: List(Nat * Sort),
-          S: List(Var * MS.Term)) 
-    : List (Nat * Sort) * Nat * List (Var * MS.Term) * MS.Term =
+ op bound(qf: Binder, n: Nat, term: MSTerm, freeVars: List(Nat * MSType),
+          S: List(Var * MSTerm)) 
+    : List (Nat * MSType) * Nat * List (Var * MSTerm) * MSTerm =
    case term
      of Bind(binder,vars,body,_) -> 
         if qf = binder
@@ -379,7 +376,7 @@ is rewritten to
 % Disambiguate between HigerOrderMatchingMetaSlang and MetaSlang
   def mkVar = HigherOrderMatching.mkVar     
 
-  op equality : Context -> List (Var * MS.Term) * MS.Term -> Option (MS.Term * MS.Term)
+  op equality : Context -> List (Var * MSTerm) * MSTerm -> Option (MSTerm * MSTerm)
 
   def equality context (S,N)  = 
       case N
@@ -391,19 +388,19 @@ is rewritten to
            equality context (S,N)
          | _ -> None
  
-op simpleRwTerm?(t: MS.Term): Boolean =
+op simpleRwTerm?(t: MSTerm): Bool =
    case t of
      | Var _ -> true
      | Fun _ -> true
      | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
      | _ -> false
 
- op assertRules (context: Context, term: MS.Term, desc: String, lr?: Boolean): List RewriteRule =
+ op assertRules (context: Context, term: MSTerm, desc: String, lr?: Bool): List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
    assertRulesRec(context, term, desc, lr?, [], [], None)
 
- op assertRulesRec (context: Context, term: MS.Term, desc: String, lr?: Boolean, freeVars: List (Nat * Sort), 
-                    subst: VarSubst, condition: Option MS.Term)
+ op assertRulesRec (context: Context, term: MSTerm, desc: String, lr?: Bool, freeVars: List (Nat * MSType), 
+                    subst: VarSubst, condition: Option MSTerm)
     : List RewriteRule =
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let freeVars = fvs ++ freeVars in
@@ -484,7 +481,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
        else
        (app (fn tv -> toScreen(tv^" ")) tyVars;
         if empty? tyVars then () else writeLine "";
-        app (fn (n,srt) -> toScreen(show n^" : " ^ printSort srt^" "))
+        app (fn (n,srt) -> toScreen(show n^" : " ^ printType srt^" "))
           freeVars;
         if empty? freeVars then () else writeLine "";
         (case condition 
@@ -515,13 +512,13 @@ op simpleRwTerm?(t: MS.Term): Boolean =
 		(y,srt)))
 	      else (x,srt)
 
-	  def doTerm(term:MS.Term):MS.Term = 
+	  def doTerm(term:MSTerm):MSTerm = 
 	      case term of
 		 | Var(v,a) -> Var(doVar v,a)
 		 | Bind(qf,vars,body,a) -> Bind(qf,map doVar vars,body,a)
 		 | The (var,body,a) -> The (doVar var,body,a)
 		 | term -> term
-	   def doPat(pat:Pattern):Pattern = 
+	   def doPat(pat:MSPattern):MSPattern = 
 	       case pat
 		 of VarPat(v,a) -> VarPat(doVar v,a)
 		  | _ -> pat
@@ -553,7 +550,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
 		        = (axiomRules context
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
-				 tvs, mkEquality(boolSort,c,trueTerm),noPos))
+				 tvs, mkEquality(boolType,c,trueTerm),noPos))
 			    ++ rules
 		   in 
 		   case c of
@@ -562,7 +559,7 @@ op simpleRwTerm?(t: MS.Term): Boolean =
 			  (Axiom,
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
-			   tvs, mkEquality(boolSort,nc,falseTerm),noPos))
+			   tvs, mkEquality(boolType,nc,falseTerm),noPos))
 			++ rules
 		     | _ -> rules)
 		| _ -> rules

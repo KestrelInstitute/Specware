@@ -1,7 +1,7 @@
 SpecCalc qualifying spec {
   import Signature 
   import UnitId/Utilities
-  import /Languages/MetaSlang/Specs/SubtractSpec
+ %import /Languages/MetaSlang/Specs/SubtractSpec
 
  % This implements the "print" command, which evaluates its argument and 
  %  returns that value, with the side effect of printing the value.  
@@ -190,7 +190,7 @@ SpecCalc qualifying spec {
   %% inspired by ppMorphMap from /Languages/MetaSlang/Specs/Categories/AsRecord.sw,
   %%  but substantially different
   op ppMorphismMap : Morphism -> Doc
-  def ppMorphismMap {dom=_, cod=_, sortMap, opMap, pragmas=_, sm_tm=_} =
+  def ppMorphismMap {dom=_, cod=_, typeMap, opMap, pragmas=_, sm_tm=_} =
     let 
       def abbrevMap map =
 	foldMap (fn newMap -> fn d -> fn c ->
@@ -213,7 +213,7 @@ SpecCalc qualifying spec {
 		(abbrevMap map)
     in
       ppConcat
-        (case (ppAbbrevMap "type " sortMap) ++ (ppAbbrevMap "op " opMap) of
+        (case (ppAbbrevMap "type " typeMap) ++ (ppAbbrevMap "op " opMap) of
 	   | []         -> [ppString " {} "]
 	   | abbrev_map -> [ppString " {",
 			    ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
@@ -336,7 +336,7 @@ SpecCalc qualifying spec {
    %%%  %% which uses /Library/PrettyPrinter/WadlerLindig
    %%%  %% ppFormat  (ppColimit col)
    %%%  let apex_spec = Cat.apex (Cat.cocone col) in
-   %%%  %% Note: localSorts and localOps in apex_spec will both be empty,
+   %%%  %% Note: localTypes and localOps in apex_spec will both be empty,
    %%%  %%       so whether or not it makes sense, we must work around this fact.
    %%%  let trimmed_apex_spec = subtractSpec apex_spec base_spec in
    %%%  AnnSpecPrinter.printSpec trimmed_apex_spec

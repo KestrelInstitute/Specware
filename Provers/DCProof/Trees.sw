@@ -5,7 +5,7 @@ spec
   %import ExtExpressionImpl#MetaSlangExtExpr
   import GoalsA
 
-  op find: [a] (a * a -> Boolean) * a * FSeq a -> Option Nat
+  op find: [a] (a * a -> Bool) * a * FSeq a -> Option Nat
   def find(f, x, s) =
     if empty? s then None
     else if f (x, first(s)) then Some 0
@@ -60,14 +60,14 @@ spec
 
   type Tree = Node * FSeq Tree
 
-  type Node = {formula: Goal, proven: Boolean, step: String, label: String}
+  type Node = {formula: Goal, proven: Bool, step: String, label: String}
   def Node.print(n) =
     n.label^": "^print(n.formula)
 
-  op nodeEqual: Node * Node -> Boolean
+  op nodeEqual: Node * Node -> Bool
   def nodeEqual(n1, n2) = n1.label = n2.label
 
-  op Tree.leaf?: Tree -> Boolean
+  op Tree.leaf?: Tree -> Bool
   def Tree.leaf?(t) =
     empty?(children(t))
 
@@ -90,14 +90,14 @@ spec
       let node = mkNewNode(label, first(gs)) in
       node |> mkNewNodesAux(l, (rtail gs), n+1)
 
-  op Tree.find: (Tree -> Boolean) * Tree -> Option Tree
+  op Tree.find: (Tree -> Bool) * Tree -> Option Tree
   def Tree.find(pred, t) =
     if pred(t) then Some t 
     else
       let ch = children(t) in
       Tree.findChildren(pred, ch)
 
-  op Tree.findChildren: (Tree -> Boolean)* FSeq Tree -> Option Tree
+  op Tree.findChildren: (Tree -> Bool)* FSeq Tree -> Option Tree
   def Tree.findChildren(pred, ch) =
     if empty? ch then None
     else
@@ -105,7 +105,7 @@ spec
 	| Some t -> Some t
 	| None -> Tree.findChildren(pred, rtail(ch))
 
-  op allProven?: Tree -> Boolean
+  op allProven?: Tree -> Bool
   def allProven?(t) =
     case find ((fn tt -> ~((node(tt)).proven)), t) of
       | Some _ -> false
@@ -222,7 +222,7 @@ spec
 	  | Some _ -> lRes
 	  | None -> Tree.parentOptList(posRes, n, restChildren)
   
-  op root?: TreeX -> Boolean
+  op root?: TreeX -> Bool
   def root?(tx) =
     nodeEqual(focus(tx), node(tree(tx)))
   
@@ -306,6 +306,6 @@ spec
 
   op root: Tree -> Node
 
-  op leaf?: TreeX -> Boolean
+  op leaf?: TreeX -> Bool
 
 endspec

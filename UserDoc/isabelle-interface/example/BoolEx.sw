@@ -1,12 +1,12 @@
 spec 
 type boolex = 
-  | Const Boolean
+  | Const Bool
   | Var Nat
   | Neg boolex
   | And (boolex \_times boolex)
 
 op bvalue:
-  boolex \_rightarrow (Nat \_rightarrow Boolean) \_rightarrow Boolean
+  boolex \_rightarrow (Nat \_rightarrow Bool) \_rightarrow Bool
 def bvalue be env =
   case be of
     | Const b  \_rightarrow b
@@ -15,9 +15,9 @@ def bvalue be env =
     | And(b,c) \_rightarrow bvalue b env
                  \_and bvalue c env
 
-type ifex = | CIF Boolean | VIF Nat | IF (ifex \_times ifex \_times ifex)
+type ifex = | CIF Bool | VIF Nat | IF (ifex \_times ifex \_times ifex)
 
-op valif : ifex \_rightarrow (Nat \_rightarrow Boolean) \_rightarrow Boolean
+op valif : ifex \_rightarrow (Nat \_rightarrow Bool) \_rightarrow Bool
 def valif be env =
   case be of
     | CIF b    \_rightarrow b
@@ -69,7 +69,7 @@ theorem  valif_main is
     apply(auto)
   end-proof
 
-op normal: ifex \_rightarrow Boolean
+op normal: ifex \_rightarrow Bool
 def normal ie =
   case ie of
     | CIF b    \_rightarrow true
