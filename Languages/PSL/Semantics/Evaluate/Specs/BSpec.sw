@@ -5,11 +5,11 @@ BSpec qualifying spec
   import Subst/AsOpInfo
   import Env
 
-  sort CoAlg = List (Vertex * (List Transition))
+  type CoAlg = List (Vertex * (List Transition))
   op CoAlg.empty : CoAlg
   def CoAlg.empty = []
 
-  op Vrtx.eq? : Vertex * Vertex -> Boolean
+  op Vrtx.eq? : Vertex * Vertex -> Bool
   def Vrtx.eq? (v1,v2) =
     case (v1,v2) of
       | (Nat n1, Nat n2) -> n1 = n2
@@ -30,7 +30,7 @@ BSpec qualifying spec
     in
       findVertex coAlg []
 
-  sort BSpec = {
+  type BSpec = {
       modes : List Mode,
       transitions : List Transition,
       outTrans : CoAlg,
@@ -107,7 +107,7 @@ BSpec qualifying spec
         ])
 
 
-  sort Mode = {
+  type Mode = {
       vertex : Vrtx.Vertex,
       modeSpec : ModeSpec
     }
@@ -128,7 +128,7 @@ BSpec qualifying spec
   op Mode.modeSpec : Mode -> ModeSpec
   def Mode.modeSpec mode = mode.modeSpec
 
-  op Mode.eq? : Mode * Mode -> Boolean
+  op Mode.eq? : Mode * Mode -> Bool
   def Mode.eq? (m1,m2) = Vrtx.eq? (vertex m1, vertex m2)
 
   op Mode.substOf : Mode -> Subst
@@ -137,7 +137,7 @@ BSpec qualifying spec
       | Nat _ -> []
       | Pair (vrtx,subst) -> subst
 
-  sort Transition = {
+  type Transition = {
       edge : Edge,
       source : Mode,
       target : Mode,
@@ -159,13 +159,13 @@ BSpec qualifying spec
   op Transition.transSpec : Transition -> TransSpec
   def Transition.transSpec transition = transition.transSpec
 
-  sort TransSet
+  type TransSet
 
-  sort Vrtx.Vertex =
+  type Vrtx.Vertex =
     | Nat (Nat * Id.Id)
     | Pair (Vrtx.Vertex * Subst)
 
-  sort Edg.Edge =
+  type Edg.Edge =
     | Nat (Nat * Id.Id)
     | Triple (Edg.Edge * Subst * Subst)
 
@@ -232,7 +232,7 @@ BSpec qualifying spec
     } in
     (newBSpec, newMode)
 
-  op BSpec.deriveMode : BSpec -> Mode -> BSpec -> Subst -> ModeSpec -> (BSpec * Mode * Boolean)
+  op BSpec.deriveMode : BSpec -> Mode -> BSpec -> Subst -> ModeSpec -> (BSpec * Mode * Bool)
   def BSpec.deriveMode oldBSpec mode newBSpec subst modeSpec =
       let newVertex = Pair (vertex mode, subst) in
       let
@@ -460,7 +460,7 @@ BSpec qualifying spec
             String.pp ")"
           ]
 
-  op Edg.eq? : Edg.Edge * Edg.Edge -> Boolean 
+  op Edg.eq? : Edg.Edge * Edg.Edge -> Bool
   def Edg.eq? (e1,e2) =
     case (e1,e2) of
       | (Nat n1, Nat n2) -> n1 = n2
@@ -512,7 +512,7 @@ BSpec qualifying spec
         ppFrom baseModeSpec bSpec transition.target visited newDoc
     }
 
-  op Mode.member? : List Mode -> Mode -> Boolean
+  op Mode.member? : List Mode -> Mode -> Bool
   def Mode.member? modes mode =
     case modes of
       | [] -> false

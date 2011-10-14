@@ -8,8 +8,8 @@ Claim qualifying spec
   import /Languages/MetaSlang/Specs/SimplePrinter
   import ../Id/Legacy
 
-  sort Claim.Claim = AnnSpec.AProperty Position
-  sort Claim.ClaimType = AnnSpec.PropertyType
+  type Claim.Claim = AnnSpec.AProperty Position
+  type Claim.ClaimType = AnnSpec.PropertyType
 
   % op idOf : Claim -> IdSet.Set
   def Claim.idOf (claim_type as _,name : Id.Id,tyVars as _,term as _) = name  %% ### hack!
@@ -40,7 +40,7 @@ Claim qualifying spec
  
   def Claim.pp = ppAProperty
 
-  sort Claim.Ref = PropertyName
+  type Claim.Ref = PropertyName
   def ClaimRef.pp = ppQualifiedId
   def Claim.refOf    (claim_type as _,name,typeVars as _,term as _) = name
   def ClaimEnv.refOf (claim_type as _,name,typeVars as _,term as _) = return name

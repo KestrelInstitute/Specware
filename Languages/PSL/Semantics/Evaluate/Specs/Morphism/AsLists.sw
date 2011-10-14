@@ -5,8 +5,8 @@ SpecMorph qualifying spec
       by {Elem._ +-> Op._, KeyValue._ +-> OpPair._})
       by {Op.Elem +-> Op.OpInfo})
   
-  import SortMap qualifying
+  import TypeMap qualifying
     (translate (translate /Library/Structures/Data/Maps/Endo/AsAssocLists
-      by {Elem._ +-> Sort._, KeyValue._ +-> SortPair._})
-      by {Sort.Elem +-> Sort.SortInfo})
+      by {Elem._ +-> Type._, KeyValue._ +-> TypePair._})
+      by {Type.Elem +-> Type.TypeInfo})
 endspec

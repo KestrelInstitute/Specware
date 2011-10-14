@@ -9,14 +9,14 @@ ModeSpec qualifying spec
   import /Languages/MetaSlang/Transformations/Rewriter
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
-  sort ModeSpec.ModeSpec = {
+  type ModeSpec.ModeSpec = {
       spc : Spec.Spec,
       variables : OpRefSet.Set,
       hidden : OpRefSet.Set,
       invariants : ClaimRefSet.Set,
       context : HigherOrderMatching.Context,
       rewriteRules : DemodRewriteRules,
-      localSorts : SortRefSet.Set,
+      localTypes : TypeRefSet.Set,
       localOps : OpRefSet.Set,
       localClaims : ClaimRefSet.Set
     }
@@ -43,8 +43,8 @@ ModeSpec qualifying spec
   op ModeSpec.rewriteRules : ModeSpec -> DemodRewriteRules
   def ModeSpec.rewriteRules modeSpec = modeSpec.rewriteRules
 
-  op ModeSpec.localSorts : ModeSpec -> SortRefSet.Set
-  def ModeSpec.localSorts modeSpec = modeSpec.localSorts
+  op ModeSpec.localTypes : ModeSpec -> TypeRefSet.Set
+  def ModeSpec.localTypes modeSpec = modeSpec.localTypes
 
   op ModeSpec.localOps : ModeSpec -> OpRefSet.Set
   def ModeSpec.localOps modeSpec = modeSpec.localOps
@@ -60,7 +60,7 @@ ModeSpec qualifying spec
       invariants = invariants,
       context = makeContext initialSpecInCat,
       rewriteRules = {unconditional=empty,conditional=empty},
-      localSorts = empty,
+      localTypes = empty,
       localOps = empty,
       localClaims = empty
     }
@@ -73,7 +73,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -86,7 +86,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -98,7 +98,7 @@ ModeSpec qualifying spec
              ((specOf modeSpec).ops, variables modeSpec) subst;
       let spc = specOf modeSpec in
       let newSpec:Spec.Spec = {
-        sorts = spc.sorts,
+        types = spc.types,
         ops = localOps,
         properties = spc.properties,
         importInfo = spc.importInfo
@@ -115,7 +115,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -128,7 +128,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = ctxt,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -141,7 +141,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rules,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -154,7 +154,7 @@ ModeSpec qualifying spec
       invariants = invariants,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -167,7 +167,7 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = insert (localOps modeSpec, ref),
       localClaims = localClaims modeSpec
     }
@@ -180,20 +180,20 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = localSorts modeSpec,
+      localTypes = localTypes modeSpec,
       localOps = localOps modeSpec,
       localClaims = insert (localClaims modeSpec, ref)
     }
 
-  op ModeSpec.addLocalSort : ModeSpec -> Sort.Ref -> ModeSpec
-  def ModeSpec.addLocalSort modeSpec ref = {
+  op ModeSpec.addLocalType : ModeSpec -> Type.Ref -> ModeSpec
+  def ModeSpec.addLocalType modeSpec ref = {
       spc = specOf modeSpec,
       variables = variables modeSpec,
       hidden = hidden modeSpec,
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      localSorts = insert (localSorts modeSpec, ref),
+      localTypes = insert (localTypes modeSpec, ref),
       localOps = localOps modeSpec,
       localClaims = localClaims modeSpec
     }
@@ -212,10 +212,10 @@ ModeSpec qualifying spec
       % else
         % return (modeSpec withSpec newSpec)
 
-  % op addSort : ModeSpec -> Sort.SortInfo -> Position -> Env ModeSpec
-  def ModeSpec.addSort modeSpec sortInfo position = {
-      newSpec <- SpecEnv.addSort (specOf modeSpec) sortInfo position;
-      return (addLocalSort (modeSpec withSpec newSpec) (refOf sortInfo))
+  % op addType : ModeSpec -> Type.TypeInfo -> Position -> Env ModeSpec
+  def ModeSpec.addType modeSpec typeInfo position = {
+      newSpec <- SpecEnv.addType (specOf modeSpec) typeInfo position;
+      return (addLocalType (modeSpec withSpec newSpec) (refOf typeInfo))
     }
 
   % op addVariable : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
@@ -346,10 +346,10 @@ ModeSpec qualifying spec
             importInfo = {
               imports = modeSpec.spc.importInfo.imports,
               localOps = [],
-              localSorts = [],
+              localTypes = [],
               localProperties = []
             },
-            sorts = modeSpec.spc.sorts,
+            types = modeSpec.spc.types,
             ops = modeSpec.spc.ops,
             properties = modeSpec.spc.properties
           },
@@ -358,7 +358,7 @@ ModeSpec qualifying spec
         invariants = invariants modeSpec,
         context = context modeSpec,
         rewriteRules = rewriteRules modeSpec,
-        localSorts = empty,
+        localTypes = empty,
         localOps = empty,
         localClaims = empty
       }
@@ -400,7 +400,7 @@ ModeSpec qualifying spec
             | [dfn] ->
 	      let (tvs, srt, tm) = unpackTerm dfn in
               let tm = doTerm 20 tm in
-	      info << {dfn = maybePiTerm (tvs, SortedTerm (tm, srt, termAnn dfn))}
+	      info << {dfn = maybePiTerm (tvs, TypedTerm (tm, srt, termAnn dfn))}
             | _ -> fail "multiple term schemes"
         else
           info
@@ -415,7 +415,7 @@ ModeSpec qualifying spec
           claim in
     let spc = specOf modeSpec in
     let newSpec:Spec.Spec = {
-        sorts = spc.sorts,
+        types = spc.types,
         ops = mapAQualifierMap doOp spc.ops,
         properties = map doClaim spc.properties,
         importInfo = spc.importInfo
@@ -458,7 +458,7 @@ ModeSpec qualifying spec
             claim in
     let spc = specOf modeSpec in
     let newSpec:Spec.Spec = {
-        sorts = spc.sorts,
+        types = spc.types,
         ops = spc.ops,
         properties = map doClaim spc.properties,
         importInfo = spc.importInfo
@@ -483,7 +483,7 @@ ModeSpec qualifying spec
         context = context ms1,
         rewriteRules = mergeDemodRules [rewriteRules ms1, rewriteRules ms2],
         localOps = union (localOps ms1,localOps ms2),
-        localSorts = union (localSorts ms1,localSorts ms2),
+        localTypes = union (localTypes ms1,localTypes ms2),
         localClaims = union (localClaims ms1,localClaims ms2)
       }
   }

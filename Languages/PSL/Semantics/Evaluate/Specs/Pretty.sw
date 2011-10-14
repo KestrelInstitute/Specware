@@ -17,6 +17,6 @@ in the state monad.
 
 \begin{spec}
 Pretty qualifying spec
-  sort Doc
+  type Doc
 endspec
 \end{spec}

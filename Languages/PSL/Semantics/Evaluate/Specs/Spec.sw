@@ -2,17 +2,17 @@
 
 \begin{spec}
 Spec qualifying spec
-  import SortSets
+  import TypeSets
   import OpSets
   import ClaimSets
 \end{spec}
 
-Intuitively, a spec consists of a set of sorts, operators and axioms
+Intuitively, a spec consists of a set of types, operators and axioms
 (properties).
 
 We want a true abstract data-type in the sense that
 we should not be able to build a spec by explicitly constructing
-a record. The sort might be isomorphic to a product,
+a record. The type might be isomorphic to a product,
 but we should never be obliged to represent it as a particular
 product.
 
@@ -22,7 +22,7 @@ more than change a record.
 Should the user see the references?
 
 We import two copies of monomorphic sets. One for sets of ops and the
-other for sets of sorts. We may choose to implement them differently.
+other for sets of types. We may choose to implement them differently.
 Some of the operations on specs need to be monadic so they can raise
 exceptions. Hence we import a locally extended version of \Spec{Set}
 with a monadic fold operation. Note that the monad operations other than
@@ -36,15 +36,15 @@ Here \Qualifier{OpSetEnv} is the qualifier for the monadic fold. The fold
 has a single polymorphic variable. The other type is monomorphic and
 in this case it is \Type{OpInfo}.
 
-Define an abstract \Sort{Spec} sort. Later this will be refined to a concrete
+Define an abstract \Type{Spec} type. Later this will be refined to a concrete
 record.
 
 \begin{spec}
-  sort Spec
+  type Spec
 \end{spec}
 
 A key difference between what we have now is that the collection of ops
-and sorts are now sets rather than maps. This is to deal with the aliasing
+and types are now sets rather than maps. This is to deal with the aliasing
 that we have now and the full-overloading to come later.
 
 When will I want to look at the ops in isolation? Do they may sense outside
@@ -68,18 +68,18 @@ What about updating the ops en-masse?
   op ops : Spec -> OpSet.Set
   % op withOps infixl 17 : Spec * OpSet.Set -> Spec
 
-  op sorts : Spec -> SortSet.Set
-  % op withSorts infixl 17 : Spec * SortSet.Set -> Spec
+  op types : Spec -> TypeSet.Set
+  % op withTypes infixl 17 : Spec * TypeSet.Set -> Spec
 
   op properties : Spec -> List Claim
 \end{spec}
 
   op findOp : Spec -> Id.Id -> Option Op.OpInfo
-  op findSort : Spec -> Id.Id -> Option Sort.SortInfo
+  op findType : Spec -> Id.Id -> Option Type.TypeInfo
 
 \begin{spec}
   op SpecEnv.findOp : Spec -> Id.Id -> Env OpSet.Set
-  op SpecEnv.findSort : Spec -> Id.Id -> Env SortSet.Set
+  op SpecEnv.findType : Spec -> Id.Id -> Env TypeSet.Set
 
   op SpecEnv.findTheOp : Spec -> Id.Id -> Env Op.OpInfo
 %   def findTheOp spc id = {
@@ -90,13 +90,13 @@ What about updating the ops en-masse?
 %         | _ -> fatalError ("findTheOp id is ambiguous : " ^ (show id))
 %     }
 
-  op SpecEnv.findTheSort : Spec -> Id.Id -> Env Sort.SortInfo
-%   def findTheSort spc id = {
-%       sortInfoSet <- findSort spc id;
-%       case (size sortInfoSet) of
-%         | 0 -> fatalError ("findTheSort: id does not exist: " ^ (show id))
-%         | 1 -> return (theSingleton sortInfoSet)
-%         | _ -> fatalError ("findTheSort id is ambiguous : " ^ (show id))
+  op SpecEnv.findTheType : Spec -> Id.Id -> Env Type.TypeInfo
+%   def findTheType spc id = {
+%       typeInfoSet <- findType spc id;
+%       case (size typeInfoSet) of
+%         | 0 -> fatalError ("findTheType: id does not exist: " ^ (show id))
+%         | 1 -> return (theSingleton typeInfoSet)
+%         | _ -> fatalError ("findTheType id is ambiguous : " ^ (show id))
 %     }
 \end{spec}
 
@@ -104,7 +104,7 @@ Later might need the following. Or they could return a TakeResult.
 
 \begin{verbatim}
   op Op.findOp : Spec -> Id.Id -> Op.Set
-  op Sort.findSort : Spec -> Id.Id -> Sort.Set
+  op Type.findType : Spec -> Id.Id -> Type.Set
 \end{verbatim}
 
 Note that the find operation takes a qualified id. In the current code
@@ -126,26 +126,26 @@ from imports. This is useful for typechecking and seems like a great idea.
 
 \begin{spec}
   op Op.local : Spec -> OpSet.Set
-  op Op.isLocal? : Spec -> Op.OpInfo -> Boolean
+  op Op.isLocal? : Spec -> Op.OpInfo -> Bool
 
-  op Sort.local : Spec -> SortSet.Set
-  op Sort.isLocal? : Spec -> Sort.SortInfo -> Boolean
+  op Type.local : Spec -> TypeSet.Set
+  op Type.isLocal? : Spec -> Type.TypeInfo -> Bool
 \end{spec}
 
 Perhaps there needs to be two fold operations. The most common fold
 operations exclude the hidden names. Then there might be fold family that
 includes the hidden names. The ops above, as they stand mey not be useful.
 
-Controlling visibility of sorts and ops. Perhaps the predicates should
+Controlling visibility of types and ops. Perhaps the predicates should
 be monadic. The name \Op{hide} is a keyword so we munge it until it
 becomes allowed as a op name.
 
 \begin{spec}
   op Op.hyde : Spec -> Op.OpInfo -> Env Spec
-  op Op.isHidden? : Spec -> Op.OpInfo -> Boolean
+  op Op.isHidden? : Spec -> Op.OpInfo -> Bool
 
-  op Sort.hyde : Spec -> Sort.SortInfo -> Env Spec
-  op Sort.isHidden? : Spec -> Sort.SortInfo -> Boolean
+  op Type.hyde : Spec -> Type.TypeInfo -> Env Spec
+  op Type.isHidden? : Spec -> Type.TypeInfo -> Bool
 \end{spec}
 
 Typechecking.
@@ -160,10 +160,10 @@ The empty specification.
   op empty : Spec
 \end{spec}
 
-The following add a sort or op to a spec.  Adding an op or sort is
-deliberately separated from constucting an op or sort value. Perhaps this
-is wrong.  These replace the \Op{addOp} and \Op{addSort} operations
-which take many arguments and construct the sort and operator info
+The following add a type or op to a spec.  Adding an op or type is
+deliberately separated from constucting an op or type value. Perhaps this
+is wrong.  These replace the \Op{addOp} and \Op{addType} operations
+which take many arguments and construct the type and operator info
 and insert it into a spec. The non-monadic versions are probably
 not very useful.
 
@@ -180,7 +180,7 @@ the latter is the better way.
 
 \begin{verbatim}
   op Spec.addOp : Spec -> Op.OpInfo -> Spec
-  op Spec.addSort : Spec -> Sort.SortInfo -> Spec
+  op Spec.addType : Spec -> Type.TypeInfo -> Spec
   op Spec.addClaim : Spec -> Claim.Claim -> Spec
 \end{verbatim}
 
@@ -189,11 +189,11 @@ where exceptions are raised.
 
 \begin{spec}
   op SpecEnv.addOp : Spec -> Op.OpInfo -> Position -> Env Spec
-  op SpecEnv.addSort : Spec -> Sort.SortInfo -> Position -> Env Spec
+  op SpecEnv.addType : Spec -> Type.TypeInfo -> Position -> Env Spec
   op SpecEnv.addClaim : Spec -> Claim.Claim -> Position -> Env Spec
 \end{spec}
 
-The following functions fold an operation over the sorts or ops of
+The following functions fold an operation over the types or ops of
 a spec.  These functions take their arguments in the order I prefer and
 are curried. This is not essential (but certainly religious), but however
 the arguments are passed, there should be uniformity with \Op{fold} in
@@ -203,12 +203,12 @@ the arguments are passed, there should be uniformity with \Op{fold} in
   op Spec.foldOps : fa(a) (a -> Op.OpInfo -> a) -> a -> Spec -> a
   % def Spec.foldOps f unit spc = OpSet.fold f unit (ops spc)
 
-  op Spec.foldSorts : fa(a) (a -> Sort.SortInfo -> a) -> a -> Spec -> a
-  % def Spec.foldSorts f unit spc = fold f unit (sorts spc)
+  op Spec.foldTypes : fa(a) (a -> Type.TypeInfo -> a) -> a -> Spec -> a
+  % def Spec.foldTypes f unit spc = fold f unit (types spc)
 \end{spec}
 
 The fold operations are applied to a spec rather than a set of operators
-or sorts. So the definition above is better seen as a specification of the
+or types. So the definition above is better seen as a specification of the
 fold operations rather than than as an ideal implementation. Depending
 on the representation of specs, the expression \Term{(ops spc)} may
 have to construct the a set and there may be no need to construct the
@@ -220,19 +220,19 @@ The same points can be made about the next two.
   op SpecEnv.foldOps : fa(a) (a -> Op.OpInfo -> Env a) -> a -> Spec -> Env a
   % def SpecEnv.foldOps f unit spc = OpSetEnv.fold f unit (ops spc)
 
-  op SpecEnv.foldSorts : fa(a) (a -> Sort.SortInfo -> Env a) -> a -> Spec -> Env a
-  % def SpecEnv.foldSorts f unit spc = SortSetEnv.fold f unit (sorts spc)
+  op SpecEnv.foldTypes : fa(a) (a -> Type.TypeInfo -> Env a) -> a -> Spec -> Env a
+  % def SpecEnv.foldTypes f unit spc = TypeSetEnv.fold f unit (types spc)
 \end{spec}
 
 Map operations. These are are monomorphic and hence less general than
-one might like as they map only from op to op or sort to sort.
+one might like as they map only from op to op or type to type.
 
 \begin{verbatim}
   op SpecEnv.mapOps : (Op.OpInfo -> Env Op.OpInfo) -> Spec -> Env Spec
   def SpecEnv.mapOps f spc = OpSetEnv.map f (ops spc)
 
-  op SpecEnv.mapSorts : (Sort.SortInfo -> Env Sort.SortInfo) -> Spec -> Env Spec
-  def SpecEnv.mapSorts f spc = SortSetEnv.map f (sorts spc)
+  op SpecEnv.mapTypes : (Type.TypeInfo -> Env Type.TypeInfo) -> Spec -> Env Spec
+  def SpecEnv.mapTypes f spc = TypeSetEnv.map f (types spc)
 \end{verbatim}
 
 Why not handle variables and let bound names in the same way?
@@ -249,7 +249,7 @@ I would prefer to keep things separate .. but perhaps it makes sense.
 Perhaps there should be two make steps.
 
 How do we create a new reference? If we wish to refine this
-to code where \Sort{OpRef} is \Sort{QualifiedId} then
+to code where \Type{OpRef} is \Type{QualifiedId} then
 we need to pass an argument to any \Op{newRef} operator.
 
 \begin{spec}
@@ -269,13 +269,13 @@ will need state to control there operation.
 
 \begin{spec}
   op simplifyOp : Spec -> Op.Ref -> Env Spec
-  op simplifySort : Spec -> Sort.Ref -> Env Spec
+  op simplifyType : Spec -> Type.Ref -> Env Spec
   op simplifyClaim : Spec -> Claim.Ref -> Env Spec
 \end{spec}
 
-What does it mean to simplify a sort? Perhaps there should be different
-Id sorts for ops, sorts and axioms. Op.Id, Sort.Id etc.
-Perhaps the above belong in the op, sort claim specs respectively.
+What does it mean to simplify a type? Perhaps there should be different
+Id types for ops, types and axioms. Op.Id, Type.Id etc.
+Perhaps the above belong in the op, type claim specs respectively.
 
 The next operation is speculative. The assumption is that some or all terms
 might be assigned an identifier (even if only visible internally).

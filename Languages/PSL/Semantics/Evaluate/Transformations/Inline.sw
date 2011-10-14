@@ -14,7 +14,7 @@ then it must become a local variable. If it disappears as
 a parameter .. then it is ground .. then we would like to conclude
 that any place where it appeared on the left will also have been ground.
 But this is not true. One may use the parameter just as a local
-variable to receive any sort of local binding.. hence it might not always
+variable to receive any type of local binding.. hence it might not always
 be bound. Hence .. for correctness .. we must walk through the bspec
 and see what identifiers are updated. But then presumably, if the
 partial evaluation was done right, then the right things should already
@@ -224,7 +224,7 @@ copies fills in the calling arguments.
        | _ -> return None
     }
      
-  sort CallInfo = {
+  type CallInfo = {
     procId : Id.Id,
     argList : List MSlang.Term,
     returnTerm : MSlang.Term,
@@ -238,7 +238,7 @@ copies fills in the calling arguments.
       | (Axiom, Qualified(_,"call")) -> {
   	    (procId,callArg) <-
               case (term claim) of
-                | Apply (Fun (Op (procId,fxty),procSort,pos),callArg,_) -> return (procId,callArg)
+                | Apply (Fun (Op (procId,fxty),procType,pos),callArg,_) -> return (procId,callArg)
                 | _ -> raise (SpecError (noPos, "Call term: " ^ (printTerm (term claim)) ^ " is not an application"));
             (argTerm,returnTerm,storeTerm) <-
               case callArg of

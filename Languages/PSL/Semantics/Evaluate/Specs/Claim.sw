@@ -8,8 +8,8 @@ Claim qualifying spec
   import /Languages/MetaSlang/Specs/AnnSpec
   import Op
 
-  sort Claim
-  sort ClaimType
+  type Claim
+  type ClaimType
 
   op idOf : Claim -> PropertyName   
   op ids : Claim -> IdSet.Set
@@ -53,8 +53,8 @@ Claim qualifying spec
   op pp : Claim -> Doc
   op show : Claim -> String
 
-  sort Ref
-  % sort Spec.Spec
+  type Ref
+  % type Spec.Spec
 
   op ClaimRef.pp : Ref -> Doc
 

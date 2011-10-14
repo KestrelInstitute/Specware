@@ -11,13 +11,13 @@ This defines the abstract syntax of a simple procedural specification
 language. It is built on top of MetaSlang. We import the spec defining the
 abstract syntax of MetaSlang.
 
-This is a general sort for an annotated syntax tree for the procedural
+This is a general type for an annotated syntax tree for the procedural
 specification language. The annotations give rise to the polymorphism of
-the sorts defined below. Thus, one can associate positional information,
-types, etc. with fragments of code. At present, only the sort Command
-is annotated. Annotated versions of the other sorts may be needed later.
+the types defined below. Thus, one can associate positional information,
+types, etc. with fragments of code. At present, only the type Command
+is annotated. Annotated versions of the other types may be needed later.
 
-Declarations are MetaSlang \verb+sort+, \verb+op+, \verb+def+, and
+Declarations are MetaSlang \verb+type+, \verb+op+, \verb+def+, and
 \verb+axiom+ declarations plus \verb+var+ (variable) and \verb+proc+
 (procedure) declarations. Bear in mind that \verb+def+s in the concrete
 syntax appear as \verb+op+s in the abstract syntax with an associated
@@ -26,32 +26,32 @@ defining term.
 ### The name of the procedure should be a qualified id.
 
 \begin{spec}
-  sort OscarSpecElem a = (OscarSpecElemBody a) * a
+  type OscarSpecElem a = (OscarSpecElemBody a) * a
 
-  sort Ident = String
-  sort OscarSpecElemBody a =
+  type Ident = String
+  type OscarSpecElemBody a =
     | Import (List (SpecCalc.Term a))
-    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Type   List QualifiedId * (TyVars * List (ATypeScheme a))
+    | Op     List QualifiedId * (Fixity * ATypeScheme a * List (ATermScheme a))
     | Claim  (Claim a)
-    | Var    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
-    | Def    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Var    List QualifiedId * (Fixity * ATypeScheme a * List (ATermScheme a))
+    | Def    List QualifiedId * (Fixity * ATypeScheme a * List (ATermScheme a))
     | Proc   Ident * (ProcInfo a)
 
-  sort Claim a = ClaimType * PropertyName * TyVars * ATerm a
-  sort ClaimType = | Axiom | Theorem | Invariant | Conjecture
+  type Claim a = ClaimType * PropertyName * TyVars * ATerm a
+  type ClaimType = | Axiom | Theorem | Invariant | Conjecture
 
-  sort ProcInfo a = {
+  type ProcInfo a = {
     formalArgs : List (AVar a),
-    returnSort : ASort a,
+    returnType : AType a,
     command : Command a
   }
 
   op formalArgs : fa(a) ProcInfo a -> List (AVar a)
   def formalArgs procInfo = procInfo.formalArgs
 
-  op returnSort : fa(a) ProcInfo a -> ASort a
-  def returnSort procInfo = procInfo.returnSort
+  op returnType : fa(a) ProcInfo a -> AType a
+  def returnType procInfo = procInfo.returnType
 
   op command : fa(a) ProcInfo a -> Command a
   def command procInfo = procInfo.command
@@ -61,30 +61,30 @@ defining term.
   op mkImport : (List (SpecCalc.Term Position)) * Position -> OscarSpecElem Position
   def mkImport (terms,position) = (Import terms, position)
 
-  op mkSort : List QualifiedId * TyVars * List (ASortScheme Position) * Position -> OscarSpecElem Position
-  def mkSort (ids,tyVars,sortSchemes,position) = (Sort (ids, (tyVars,sortSchemes)),position) 
+  op mkType : List QualifiedId * TyVars * List (ATypeScheme Position) * Position -> OscarSpecElem Position
+  def mkType (ids,tyVars,typeSchemes,position) = (Type (ids, (tyVars,typeSchemes)),position) 
 
   op mkProc : Ident * (ProcInfo Position) * Position -> OscarSpecElem Position
   def mkProc (ident,procInfo,position) = (Proc (ident,procInfo),position)
 
-  op mkProcInfo : List (AVar Position) * (ASort Position) * Command Position -> ProcInfo Position
-  def mkProcInfo (formalArgs,returnSort,command) =
-    {formalArgs = formalArgs, returnSort = returnSort, command = command}
+  op mkProcInfo : List (AVar Position) * (AType Position) * Command Position -> ProcInfo Position
+  def mkProcInfo (formalArgs,returnType,command) =
+    {formalArgs = formalArgs, returnType = returnType, command = command}
 
-  op mkVar : (List QualifiedId) * (ASortScheme Position) * Position -> OscarSpecElem Position
-  def mkVar (ids,sortScheme,position) = (Var (ids, (Nonfix,sortScheme,[])),position)
+  op mkVar : (List QualifiedId) * (ATypeScheme Position) * Position -> OscarSpecElem Position
+  def mkVar (ids,typeScheme,position) = (Var (ids, (Nonfix,typeScheme,[])),position)
 
-  op mkDef : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
-  def mkDef (ids,optFixity,sortScheme,termSchemes,position) = 
+  op mkDef : (List QualifiedId) * (Option Fixity) * (ATypeScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkDef (ids,optFixity,typeScheme,termSchemes,position) = 
     case optFixity of
-      | None -> (Def (ids, (Nonfix,sortScheme,termSchemes)),position)
-      | Some fixity -> (Def (ids, (fixity,sortScheme,termSchemes)),position)
+      | None -> (Def (ids, (Nonfix,typeScheme,termSchemes)),position)
+      | Some fixity -> (Def (ids, (fixity,typeScheme,termSchemes)),position)
 
-  op mkOp : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
-  def mkOp (ids,optFixity,sortScheme,termSchemes,position) = 
+  op mkOp : (List QualifiedId) * (Option Fixity) * (ATypeScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkOp (ids,optFixity,typeScheme,termSchemes,position) = 
     case optFixity of
-      | None -> (Op (ids, (Nonfix,sortScheme,termSchemes)),position)
-      | Some fixity -> (Op (ids, (fixity,sortScheme,termSchemes)),position)
+      | None -> (Op (ids, (Nonfix,typeScheme,termSchemes)),position)
+      | Some fixity -> (Op (ids, (fixity,typeScheme,termSchemes)),position)
 \end{spec}
 
 The abstract syntax for commands is modeled after Dijkstra's guarded
@@ -102,8 +102,8 @@ both a \verb+let+ command and a MetaSlang \verb+let+ expression. This
 needs some thought.
 
 \begin{spec}
-  sort Command a = (CommandBody a) * a
-  sort CommandBody a = 
+  type Command a = (CommandBody a) * a
+  type CommandBody a = 
     | If         List (Alternative a)
     | Case       (ATerm a) * (List (Case a))
     | Do         List (Alternative a)
@@ -166,10 +166,10 @@ since, with guards, the case statement subsumes it.
 Perhaps the guard term in the case should be made \verb+Option+al.
 
 \begin{spec}
-  sort Alternative a = (AlternativeBody a) * a
-  sort AlternativeBody a = (ATerm a) * (Command a)
-  sort Case a = (CaseBody a) * a
-  sort CaseBody a = (List (AVar a)) * (APattern a) * (ATerm a) * (Command a)
+  type Alternative a = (AlternativeBody a) * a
+  type AlternativeBody a = (ATerm a) * (Command a)
+  type Case a = (CaseBody a) * a
+  type CaseBody a = (List (AVar a)) * (APattern a) * (ATerm a) * (Command a)
 
   op mkCaseBranch : (List (AVar Position)) * (APattern Position) * (Command Position) * Position -> Case Position
   def mkCaseBranch (vars,pat,cmd,pos) = ((vars,pat,mkTrueA pos,cmd),pos)
@@ -207,7 +207,7 @@ Idealized Algol and Forsythe.
 \begin{spec}
 
 (*
-  sort SpecCalc.OtherTerm a =
+  type SpecCalc.OtherTerm a =
     | Specialize MS.Term * SpecCalc.Term a
     | Inline String * SpecCalc.Term a
     | OscarDecls List (OscarSpecElem a)

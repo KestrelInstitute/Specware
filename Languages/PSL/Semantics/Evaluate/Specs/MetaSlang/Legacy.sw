@@ -2,11 +2,11 @@
 
 Points to make:
 
-- A type is identified with a sort scheme. In some cases the type variables
+- A type is identified with a type scheme. In some cases the type variables
   get ignored and in other cases we introduce a empty list (though we might
   be better off to compute the free type variables.)
 
-- The field names in record types are identifiers (like those of ops and sorts)
+- The field names in record types are identifiers (like those of ops and types)
   Later we will makes ops out of them anyway.
 
 \begin{spec}
@@ -17,10 +17,10 @@ MSlang qualifying spec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Elaborate/Utilities % for freshMetaTyVar
 
-  % sort MSlang.Term = MetaSlang.ATerm Position.Position
-  sort MSlang.Type = MetaSlang.ASortScheme Position
-  sort MSlang.Fun = MetaSlang.AFun Position 
-  sort MSlang.TypeVars = MetaSlang.TyVars
+  % type MSlang.Term = MetaSlang.ATerm Position.Position
+  type MSlang.Type = MetaSlang.ATypeScheme Position
+  type MSlang.Fun = MetaSlang.AFun Position 
+  type MSlang.TypeVars = MetaSlang.TyVars
 
   % op boolType : Position -> Type
   % op natType : Position -> Type
@@ -38,10 +38,10 @@ MSlang qualifying spec
   def Term.show term = printTerm term
 
   % op Type.pp : Type -> Doc
-  def Type.pp typ = pp (printSortScheme typ)
+  def Type.pp typ = pp (printTypeScheme typ)
 
   % op Type.show : Type -> String
-  def Type.show typ = printSortScheme typ
+  def Type.show typ = printTypeScheme typ
 
   % op MSlangEnv.mkApply : Term * Term * Position -> Env Term
   def MSlangEnv.mkApply (t1,t2,position) = return (Apply (t1,t2,position))
@@ -69,8 +69,8 @@ MSlang qualifying spec
     Record (map (fn (id,term) -> (idToFieldName id,term)) fields,position)
 
   def MSlang.mkProduct (types,position) =
-    let def loop (n, sorts) = 
-      case sorts  of
+    let def loop (n, types) = 
+      case types  of
         | []  -> []
         | (_,srt)::types -> cons ((Nat.show n, srt), loop (n + 1, types))
     in
@@ -88,7 +88,7 @@ MSlang qualifying spec
   def MSlang.mkEquals (typ, position) = MSlang.mkFun (Equals, typ, position)
    
   (*
-   * This differs from the usual in that we don't give the sort for equality
+   * This differs from the usual in that we don't give the type for equality
    * It must be inferred. 
    *)
   % op mkEquality : Term * Term * Position -> Term
@@ -103,7 +103,7 @@ MSlang qualifying spec
   % op MSPosEnv.mkTrue : Position -> Env Term
   
   % op mkNot : Term -> Position -> Term
-  def MSlang.mkNot (trm, position) = mkApplyN (Fun (Not, unaryBoolSort, noPos),
+  def MSlang.mkNot (trm, position) = mkApplyN (Fun (Not, unaryBoolType, noPos),
 					       trm, 
 					       position)
   

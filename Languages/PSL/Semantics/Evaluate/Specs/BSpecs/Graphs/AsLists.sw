@@ -14,7 +14,7 @@ in spec
     import GraphMap qualifying GraphMap
     import /Library/Structures/Data/Graphs/Finite
 
-    sort Graph = {
+    type Graph = {
       vertices : VertexSet.Set,
       edges : EdgeSet.Set,
       source : GraphMap.Map,

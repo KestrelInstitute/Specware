@@ -1,11 +1,11 @@
 \section{Oscar Specs (prototype)}
 
-This defines the sort \Sort{Oscar.Spec}. It represents the semantic
+This defines the type \Type{Oscar.Spec}. It represents the semantic
 value of evaluating an Oscar specification.
 
-The field \Op{modeSpec} consists of all the (global) sorts, ops and variables
+The field \Op{modeSpec} consists of all the (global) types, ops and variables
 within scope in the procedures in \Op{procedures}.
-## How does the latter differ from the modeSpec in \Sort{Procedure}.
+## How does the latter differ from the modeSpec in \Type{Procedure}.
 
 \begin{spec}
 Oscar qualifying spec
@@ -15,7 +15,7 @@ Oscar qualifying spec
   import Procedure
   import ProcMap
 
-  sort Spec = {
+  type Spec = {
     modeSpec : ModeSpec,
     procedures : ProcMap.Map
   }
@@ -56,9 +56,9 @@ Oscar qualifying spec
       return (spc withModeSpec modeSpec)
     }
 
-  op addSort : Spec -> Sort.SortInfo -> Position -> Env Spec
-  def addSort spc sortInfo position = {
-      modeSpec <- addSort (modeSpec spc) sortInfo position;
+  op addType : Spec -> Type.TypeInfo -> Position -> Env Spec
+  def addType spc typeInfo position = {
+      modeSpec <- addType (modeSpec spc) typeInfo position;
       return (spc withModeSpec modeSpec)
     }
 

@@ -5,7 +5,7 @@ SpecCalc qualifying spec {
   import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
   import /Languages/C/AbstractSyntax/MetaCToC
 
-  % sort Spec.Spec = ASpec Position
+  % type Spec.Spec = ASpec Position
 
   op CInterface.addInclude : CGen.CSpec * String -> CGen.CSpec
   def CInterface.addInclude (cSpec,str) = addInclude cSpec str
@@ -22,7 +22,7 @@ SpecCalc qualifying spec {
   def oscarToC oscSpec base optName =
     let cSpec = CGen.emptyCSpec "" in
     % let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
-    % let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in
+    % let envSpec = addMissingFromBase(base,envSpec,builtinTypeOp) in
     % let cSpec = generateCTypes cSpec envSpec in
     % let cSpec = generateCVars cSpec envSpec in
     % let cSpec = generateCFunctions cSpec envSpec in
@@ -39,8 +39,8 @@ SpecCalc qualifying spec {
     let varDecls =
       List.map (fn argRef -> 
 		let info = Op.deref (specOf initSpec, argRef) in
-		let typ = firstOpDefInnerSort info in
-		(OpRef.show argRef, sortToCType typ))
+		let typ = firstOpDefInnerType info in
+		(OpRef.show argRef, typeToCType typ))
                parameters 
     in
     let returnType =
@@ -48,8 +48,8 @@ SpecCalc qualifying spec {
         | None -> Void 
         | Some retRef ->
           let info = Op.deref (specOf initSpec, retRef) in
-	  let typ = firstOpDefInnerSort info in
-	  sortToCType typ in
+	  let typ = firstOpDefInnerType info in
+	  typeToCType typ in
     let def handler id proc except =
       case except of
         | SpecError (pos, msg) -> {
@@ -149,16 +149,16 @@ with a loop or out of a conditional.
               (case rhs of
                 | Apply (Fun (Op (Qualified ("CGen","mkAssign"),fxty),srt,pos),
                    Record ([("1",Fun (String primedVarName,_,_)), ("2",rhs)],_),_) ->
-                      Exp (Apply (Binary Set, [Var (removePrime primedVarName,sortToCType srt), metaExpToExp rhs]))
+                      Exp (Apply (Binary Set, [Var (removePrime primedVarName,typeToCType srt), metaExpToExp rhs]))
                 | _ -> Exp (Apply (Binary Set, [metaExpToExp lhs, metaExpToExp rhs]))))
-      | Apply (Fun (Op (procId,fxty),procSort,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
+      | Apply (Fun (Op (procId,fxty),procType,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-                (Exp (metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))))
+                (Exp (metaExpToExp (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos))))
             | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) ->
-                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))))
-            | _ -> (Exp (Apply (Binary Set, [metaExpToExp returnTerm, metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))]))))
+                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos))))
+            | _ -> (Exp (Apply (Binary Set, [metaExpToExp returnTerm, metaExpToExp (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos))]))))
       | _ -> let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in
          Nop
 }

@@ -1,7 +1,7 @@
-\section{Simple refinements of substutions as \Sort{OpInfo}}
+\section{Simple refinements of substutions as \Type{OpInfo}}
 
 The idea here is that we can apply a substitution to a spec by simply
-adding the \Sort{OpInfo}s associated with the name to the spec. The
+adding the \Type{OpInfo}s associated with the name to the spec. The
 step of acually performing the reductions is done elsewhere.
 
 So we can substitute only for ops and not variables using this scheme.
@@ -13,8 +13,8 @@ Subst qualifying spec
   import ../Op/Legacy
   import ../Spec/Legacy
 
-  sort Subst.Binding = Op.OpInfo
-  sort Subst.Subst = List Subst.Binding
+  type Subst.Binding = Op.OpInfo
+  type Subst.Subst = List Subst.Binding
 
   def Subst.filter = List.filter
 
@@ -45,7 +45,7 @@ Subst qualifying spec
 %%           let (s1,s2) = (order l1,order l2) in 
 %%           s1 ++ (Cons (x,s2))
 
-  op nameLT : Binding -> Binding -> Boolean
+  op nameLT : Binding -> Binding -> Bool
   def nameLT op1 op2 =
     case (Op.idOf op1, Op.idOf op2) of
       | (Qualified (q1,n1), Qualified (q2,n2)) -> String.lt (n1,n2)
@@ -68,7 +68,7 @@ Subst qualifying spec
   def Subst.equalSubst? (s1,s2) = equalList? (s1,s2,equalStuff?)
   def Subst.eq? (s1,s2) = equalSubst? (s1,s2)
 
-  op equalStuff? : Op.OpInfo * Op.OpInfo -> Boolean
+  op equalStuff? : Op.OpInfo * Op.OpInfo -> Bool
   def equalStuff? (op1,op2) =
       ((idOf op1) = (idOf op2))
     & (case (term op1, term op2) of
@@ -76,10 +76,10 @@ Subst qualifying spec
         | (Some trm1, Some trm2) -> myEqualTerm? (trm1,trm2)
         | _ -> false)
 
- (* Same as equalTerm? but ignores the sort information. The problem is that the
- two terms may have sorts that are the same in the context of a spec, but
+ (* Same as equalTerm? but ignores the type information. The problem is that the
+ two terms may have types that are the same in the context of a spec, but
  the spec is unavailable to us here to dereference against *)
- op myEqualTerm? : ATerm Position * ATerm Position   -> Boolean
+ op myEqualTerm? : ATerm Position * ATerm Position -> Bool
  def myEqualTerm? (t1, t2) =
   case (t1, t2) of
 
@@ -136,8 +136,8 @@ Subst qualifying spec
      | (Seq        (xs1,         _),
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, myEqualTerm?)
 
-     | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> myEqualTerm? (x1, x2)   % && equalType? spc (s1, s2)
+     | (TypedTerm (x1, s1,      _),
+        TypedTerm (x2, s2,      _)) -> myEqualTerm? (x1, x2)   % && equalType? spc (s1, s2)
      | _ -> false
 endspec
 \end{spec}

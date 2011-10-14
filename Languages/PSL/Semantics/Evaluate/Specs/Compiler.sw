@@ -11,7 +11,7 @@ SpecCalc qualifying spec
   import MetaSlang
   import MetaSlang/Legacy
   % import /Languages/SpecCalculus/Semantics/Monad
-  import SortList
+  import TypeList
   import Subst
   import Claim/Legacy    % shameful
 
@@ -22,7 +22,7 @@ SpecCalc qualifying spec
 \end{spec}
 
 An Oscar spec consists of a collection of "elements" called "OscarSpec
-elements".  Elements include, sorts, ops, axioms plus vars and
+elements".  Elements include, types, ops, axioms plus vars and
 procedures. Objects are to come later.
 
 A value of an Oscar spec is a mode spec and a map from procedure names
@@ -46,15 +46,15 @@ and the new values for the global variables.
 
 For instance, suppose we have a procedure "proc exp (x : Nat, y : Nat)
 : Nat" for computing exponential, and this procedure is defined in a
-context with variables u:String, v :Boolean. Then in the context we
+context with variables u:String, v :Bool. Then in the context we
 would have an op:
 
-op exp : Proc (Nat * Nat, Nat, String * Boolean)
+op exp : Proc (Nat * Nat, Nat, String * Bool)
 
 where
 
-sort Proc (arg,rtn,store) = (arg * rtn * (Delta store)) -> Boolean
-sort Delta x = x * x
+type Proc (arg,rtn,store) = (arg * rtn * (Delta store)) -> Bool
+type Delta x = x * x
 
 A call of the form "z := exp (u,5)" would yield a transition
 labelled with an axiom:
@@ -65,13 +65,13 @@ axiom call is exp ((u,5),z',((u,v),(u',v')))
   op evaluateOscarSpecElems  : Oscar.Spec -> List (OscarSpecElem Position) -> Env (Oscar.Spec * TimeStamp * UnitId_Dependency)
   op evaluateOscarSpecContextElems : Oscar.Spec -> List (OscarSpecElem Position) -> Env Oscar.Spec
 
-  op sortOpInfoList : List Op.OpInfo -> List Op.OpInfo
-  def sortOpInfoList infoList =
+  op typeOpInfoList : List Op.OpInfo -> List Op.OpInfo
+  def typeOpInfoList infoList =
     let
       def cmpOpInfo (o1:Op.OpInfo,o2:Op.OpInfo) =
         (Id.show (idOf o1)) <= (Id.show (idOf o2))
     in
-      sortList cmpOpInfo infoList
+      typeList cmpOpInfo infoList
 
   op evaluateProcElemPassOne : Oscar.Spec -> OscarSpecElem Position -> Env Oscar.Spec
   def evaluateProcElemPassOne oscarSpec (elem,position) =
@@ -79,13 +79,13 @@ axiom call is exp ((u,5),z',((u,v),(u',v')))
       | Proc (procName,procInfo) -> {
           (*
            * We begin by defining the operator to represent the procedure in the static context. This
-           * op has Proc sort and is used to label those transitions that call the procedure.
+           * op has Proc type and is used to label those transitions that call the procedure.
            *)
           argProd <- mkProduct (map (fn (name,srt) -> toType srt) (formalArgs procInfo), position); 
-          varOps <- return (sortOpInfoList (foldVariables
+          varOps <- return (typeOpInfoList (foldVariables
                (fn varList -> fn (varInfo:Op.OpInfo) -> cons (varInfo,varList)) [] (modeSpec oscarSpec)));
           storeProd <- mkProduct (map (fn (varInfo:Op.OpInfo) -> opinfo_type varInfo) varOps, position);
-          procType <- mkBase (makeId "Proc", [argProd,toType procInfo.returnSort,storeProd], position); 
+          procType <- mkBase (makeId "Proc", [argProd,toType procInfo.returnType,storeProd], position); 
           procId <- return (makeId procName);
           procOp <- makeOp (procId, procType);
           modeSpec <- addOp (modeSpec oscarSpec) procOp position;
@@ -110,16 +110,16 @@ to the initial and final states.
     case elem of
       | Proc (procName,procInfo) -> {
           procId <- return (makeId procName);
-          varOps <- return (sortOpInfoList (foldVariables
+          varOps <- return (typeOpInfoList (foldVariables
                (fn varList -> fn (varInfo:Op.OpInfo) -> cons (varInfo,varList)) [] (modeSpec oscarSpec)));
           varsInScope <- return (map refOf varOps);
           argVars <-
              let def paramsToOps params =
                 case params of
                   | [] -> return []
-                  | (paramName,paramSort)::params -> {
+                  | (paramName,paramType)::params -> {
                        vars <- paramsToOps params;
-                       varInfo <- makeOp (makeId paramName, toType paramSort);
+                       varInfo <- makeOp (makeId paramName, toType paramType);
                        return (cons (varInfo,vars))
                     }
              in
@@ -133,10 +133,10 @@ to the initial and final states.
                 }) (Oscar.modeSpec oscarSpec) argVars; 
  
           (finalSpec,returnInfo) <- 
-             case procInfo.returnSort of
+             case procInfo.returnType of
                | Product ([],_) -> return (initial_spec, None)
                | _ -> {
-                     varInfo <- makeOp (makeId "#return#" procName, toType (returnSort procInfo));
+                     varInfo <- makeOp (makeId "#return#" procName, toType (returnType procInfo));
                      spc <- addVariable initial_spec varInfo position;
                      returnRef <- refOf varInfo;
                      return (spc, Some returnRef)
@@ -155,7 +155,7 @@ to the initial and final states.
         }
       | _ -> return oscarSpec
 
-  op toType : ASort Position -> Type
+  op toType : AType Position -> Type
   % def toType srt = (tyVarsOf srt,srt)
   def toType srt = ([],srt)
 \end{spec}
@@ -214,15 +214,15 @@ the full bSpec.
       | _ -> return oscarSpec
 \end{spec}
 
-The following function compiles a procedure declaration (sort
-\verb+ProcInfo+, plus the name of sort \verb+Ident+) into a procedure
-representation (sort \verb+Procedure+).
+The following function compiles a procedure declaration (type
+\verb+ProcInfo+, plus the name of type \verb+Ident+) into a procedure
+representation (type \verb+Procedure+).
 
-Some care will have to take when choosing the sorts for the vertices and
+Some care will have to take when choosing the types for the vertices and
 edges of the shape graph. Procedures are to be partial evaluated. The
 partial evaluator generates new vertices from old by augmenting a vertex
 with a model.  The types of the vertices before and after should be the
-same. A reasonable choice is to instantiate the vertex and edge sorts
+same. A reasonable choice is to instantiate the vertex and edge types
 for the graphs to be MetaSlang terms.
 
 To compile the procedure, we generate a \BSpec\ from the \verb+command+
@@ -255,7 +255,7 @@ compilation of a command also returns the procedures nested inside the
 command.
 
 The partial evaluator requires the nodes and edges of the generated
-\BSpecs\ to be MetaSlang terms (of sort \verb+ATerm+). It does not
+\BSpecs\ to be MetaSlang terms (of type \verb+ATerm+). It does not
 matter which exact terms, as long as they are terms. So, we use MetaSlang
 natural number constants. Since we need to combine \BSpecs\ for
 sub-commands into \BSpecs\ for super-commands, we generate
@@ -265,7 +265,7 @@ functions to compile commands. The counter is used generate unique
 ``names'' for nodes and edges.
 
 \begin{spec}
-  sort Systems.Elem = ATerm Position
+  type Systems.Elem = ATerm Position
 \end{spec}
 
 Even if bipointed \BSpecs\ have one starting node and a set of ending nodes,
@@ -410,7 +410,7 @@ may appear qualified or unqualified.
 
 To handle a Return command, we must first check that function returns
 something when it has been declared to do so, and doesn't return anything
-if it has been given a return sort of \verb|()|.
+if it has been given a return type of \verb|()|.
 
 If it returns nothing, then we connect the current start vertex with
 the exit vertex with a transition that is taken unconditionally and has
@@ -427,10 +427,10 @@ axiom but we might be better off without an axiom at all.
                 }
             | (None,Some returnRef) -> {
                   returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
-                  specError ("Procedure has return sort " ^ (show (opinfo_type returnVar)) ^ " but no return value") position
+                  specError ("Procedure has return type " ^ (show (opinfo_type returnVar)) ^ " but no return value") position
                 }
             | (Some term, None) ->
-                specError "Procedure with unit sort returns a value" position
+                specError "Procedure with unit type returns a value" position
             | (Some term, Some returnRef) -> {
                   returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
                   lhs <- mkFun (idToNameRef (idOf returnVar), opinfo_type returnVar, position);
@@ -571,7 +571,7 @@ This should be an invariant. Must check.
 \end{spec}
 
 Here we add the axioms encoding the assignment to the apex spec. Right
-now the axiom has no type varibles in the sort scheme. There might
+now the axiom has no type varibles in the type scheme. There might
 be scope for more polymorphism if we use the \verb+tyVarsOf+ function
 that Alessandro wrote below rather than use, as below, an empty list of
 type variables.
@@ -626,8 +626,8 @@ and then we go through and replace every instance of op Over.f with eval f
 this doesn't work in the following case:
 
 var z : A => B => C -> A => (B => C) -> z : X
-sort X = Map_A_Y
-sort Y = Map_B_C
+type X = Map_A_Y
+type Y = Map_B_C
 op Y.eval : Map_B_C -> B -> C
 op X.eval : Map_A_Y -> A -> Y
 
@@ -685,7 +685,7 @@ it is a constuctor.
 So the following doesn't handle the situation where the name are captured by lambda's.
 
 \begin{spec}
-  op isPrimedName? : QualifiedId -> Boolean
+  op isPrimedName? : QualifiedId -> Bool
   def isPrimedName? (qualId as (Qualified (qual,id))) = hd (rev (explode id)) = #'
 \end{spec}
 
@@ -711,9 +711,9 @@ So the following doesn't handle the situation where the name are captured by lam
          | None ->
              raise (SpecError (position, "compileAxiomStmt: unprimed id '"
                           ^ (printQualifiedId (removePrime qualId)) ^ "' is undefined"))
-         | Some (names,fixity,sortScheme,optTerm) -> {
+         | Some (names,fixity,typeScheme,optTerm) -> {
                   print ("compileAxiomStmt: " ^ (printQualifiedId qualId) ^ "\n");
-                  addOp [qualId] fixity sortScheme optTerm spc position}
+                  addOp [qualId] fixity typeScheme optTerm spc position}
        )) (dynamic ctxt) primedNames; 
      apexSpec <- return (addInvariant (("axiom stmt",[],trm),apexSpec));
      connectVertices ctxt (initial ctxt) (final ctxt) apexSpec
@@ -727,7 +727,7 @@ to the procedure and an optional term. If present, the term represents
 the left hand side of the assignment where the procedure is called.
 If absent, then there is no return value.
 
-The sort of this function is a nightmare.
+The type of this function is a nightmare.
 
 For the time being, we will assume that the names of the arguments
 differ from anything in the dynamic context. This bad.
@@ -737,7 +737,7 @@ comes from handling both the case where the function we're compiling
 returns something and the case where it doesn't. There should be better
 way to factor this.
 
-It might be better to define two different Proc sorts .. one for functions
+It might be better to define two different Proc types .. one for functions
 that return something and one for functions that don't .. and then handle
 the two cases separately throughout the code.
 
@@ -959,19 +959,19 @@ Perhaps addMode and friends shoul act on and return a context rather than a bSpe
           }
 \end{spec}
 
-The following function creates a vertex/edge (of sort \verb+Vrtx.Vertex+
+The following function creates a vertex/edge (of type \verb+Vrtx.Vertex+
 from a natural number. 
 
 begin{spec}
-  sort Vrtx.Vertex =
+  type Vrtx.Vertex =
     | Nat (Nat * Id.Id)
     | Pair (Vrtx.Vertex * Subst)
 
-  op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
+  op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Bool
   def Vrtx.eq? = Vrtx.equalVertex?
   % def Vrtx.eq? (v1,v2) = (show v1) = (show v2)
 
-  op Vrtx.equalVertex? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
+  op Vrtx.equalVertex? : Vrtx.Vertex * Vrtx.Vertex -> Bool
   def Vrtx.equalVertex? (v1,v2) =
     case (v1,v2) of
       | (Nat n1, Nat n2) -> n1 = n2
@@ -1001,7 +1001,7 @@ begin{spec}
 end{spec}
 
 begin{spec}
-  sort Edg.Edge =
+  type Edg.Edge =
     | Nat (Nat * Id.Id)
     | Triple (Edg.Edge * Subst * Subst)
 
@@ -1019,10 +1019,10 @@ begin{spec}
             String.pp ")"
           ]
 
-  op Edg.eq? : Edg.Edge * Edg.Edge -> Boolean 
+  op Edg.eq? : Edg.Edge * Edg.Edge -> Bool
   def Edg.eq? = Edg.equalEdge?
 
-  op Edg.equalEdge? : Edg.Edge * Edg.Edge -> Boolean 
+  op Edg.equalEdge? : Edg.Edge * Edg.Edge -> Bool
   def Edg.equalEdge? (e1,e2) =
     case (e1,e2) of
       | (Nat n1, Nat n2) -> n1 = n2
@@ -1075,9 +1075,9 @@ level, it will be renamed the second time.
 # we don't check for clashes between procedure names, vars etc.
 
 \begin{spec}
-   sort NamePair = String * String
+   type NamePair = String * String
  
-   sort XSubst = List (NamePair * NamePair)
+   type XSubst = List (NamePair * NamePair)
    op XSubst.pp : XSubst -> Doc
    def XSubst.pp subst =
      ppConcat [
@@ -1132,7 +1132,7 @@ level, it will be renamed the second time.
 
    import PS qualifying /Library/Structures/Data/Sets/Finite/Polymorphic/AsLists
 
-   sort NameSet = PS.Set NamePair
+   type NameSet = PS.Set NamePair
 
    op NameSet.pp : NameSet -> Doc
    def NameSet.pp nameSet =
@@ -1156,16 +1156,16 @@ level, it will be renamed the second time.
        def takeName ((decl,x),usedNames) =
          case decl of
            | Import spcTerm -> usedNames
-           | Sort ([qid],_) -> usedNames
+           | Type ([qid],_) -> usedNames
            | Op ([qid],_) -> PS.insert (usedNames, qidToNamePair qid)
            | Var ([qid],_) -> PS.insert (usedNames, qidToNamePair qid)
            | Def ([qid],_) -> PS.insert (usedNames, qidToNamePair qid)
            | Claim claim -> usedNames
-           | Proc (name,{formalArgs,returnSort,command}) -> PS.insert (usedNames, stringToNamePair name)
+           | Proc (name,{formalArgs,returnType,command}) -> PS.insert (usedNames, stringToNamePair name)
            | _ -> usedNames
        def renameDecl usedNames subst (decl,x) =
          let newDecl = case decl of
-           | Sort ([qid],_) -> decl
+           | Type ([qid],_) -> decl
            | Op ([qid],(fxty,schemes,[])) ->
                 let newQid = applySubstToQid subst qid in
                   Op ([newQid],(fxty,schemes,[]))
@@ -1209,7 +1209,7 @@ level, it will be renamed the second time.
          (newDecls,newUsedNames,newSubst)
 
   op renameProcInfo : NameSet -> XSubst -> ProcInfo Position -> ProcInfo Position
-  def renameProcInfo usedNames subst {formalArgs,returnSort,command} =
+  def renameProcInfo usedNames subst {formalArgs,returnType,command} =
     let boundNames = List.foldl (fn ((x,_),s) -> PS.insert (s, stringToNamePair x)) PS.empty formalArgs in
     let conflicts = PS.intersect (boundNames,usedNames) in
     %   let _ = toScreen ("renameProcInfo: conflicts = " ^ (show conflicts) ^ "\n") in
@@ -1220,7 +1220,7 @@ level, it will be renamed the second time.
     let newUsedNames = PS.union (usedNames,newBoundNames) in
     let newFormalArgs = map (fn (id,srt) -> (applySubstToString newSubst id,srt)) formalArgs in
     let newCommand = renameCommand newUsedNames newSubst command in
-      {formalArgs=newFormalArgs,returnSort=returnSort,command=newCommand}
+      {formalArgs=newFormalArgs,returnType=returnType,command=newCommand}
 
   op renameAlt : NameSet -> XSubst -> Alternative Position -> Alternative Position
   def renameAlt usedNames subst ((term,command),position) =
@@ -1287,7 +1287,7 @@ level, it will be renamed the second time.
          | Bind (b,vars,M,a) -> Bind (b, vars, sub M, a)
          | IfThenElse (t1,t2,t3,a) -> IfThenElse (sub t1, sub t2, sub t3, a)
          | Seq (terms,a) -> Seq (map sub terms, a)
-         | SortedTerm (term,srt,a) -> SortedTerm (sub term, srt, a)
+         | TypedTerm (term,srt,a) -> TypedTerm (sub term, srt, a)
 
      def renameRule usedNames (pat,cond,term) = 
           let newUsedNames = removePatternVars pat usedNames in

@@ -4,9 +4,9 @@
 spec
   import /Library/Structures/Data/Maps/Finite
 
-  sort Map = List (Dom * Cod)
+  type Map = List (Dom * Cod)
 
-  op Dom.eq? : Dom * Dom -> Boolean
+  op Dom.eq? : Dom * Dom -> Bool
 
   def empty = Nil
 

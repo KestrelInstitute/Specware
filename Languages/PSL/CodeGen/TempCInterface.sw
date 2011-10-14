@@ -1,14 +1,14 @@
 spec
- sort CSpec
- sort Id.Id
- sort Proc.Procedure
- sort Spec.Spec
- sort Oscar.Spec
+ type CSpec
+ type Id.Id
+ type Proc.Procedure
+ type Spec.Spec
+ type Oscar.Spec
 
- sort SpecCalc.Env a
+ type SpecCalc.Env a
 
- sort Convert.StructOscarSpec
- sort ModeSpec.ModeSpec
+ type Convert.StructOscarSpec
+ type ModeSpec.ModeSpec
 
  op emptyCSpec : String -> CSpec
 

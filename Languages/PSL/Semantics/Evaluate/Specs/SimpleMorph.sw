@@ -6,10 +6,10 @@ also reconciled with the other definition in \UnitId{Morphism}.
 SpecMorph qualifying spec 
   import ModeSpec
 
-  sort Morphism
+  type Morphism
   op changedOps : Morphism -> OpRefSet.Set
 
-  sort Morphism = {
+  type Morphism = {
     changedVars : OpRefSet.Set
   }
 

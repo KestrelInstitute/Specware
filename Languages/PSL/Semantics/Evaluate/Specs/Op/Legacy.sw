@@ -8,8 +8,8 @@ Op qualifying spec
   import /Languages/MetaSlang/Specs/AnnSpec
   import /Languages/MetaSlang/Specs/SimplePrinter
 
-  sort Op.OpInfo = AOpInfo Position
-  sort Op.Fixity = MetaSlang.Fixity
+  type Op.OpInfo = AOpInfo Position
+  type Op.Fixity = MetaSlang.Fixity
 
   % op Op.idOf : Op.OpInfo -> Id
   def Op.idOf info =
@@ -52,13 +52,13 @@ Op qualifying spec
   def Op.makeOp (id, fixity, term, (tvs,typ)) = 
     {names  = [id],
      fixity = fixity,
-     dfn    = maybePiTerm (tvs, SortedTerm (term, typ, termAnn term))}
+     dfn    = maybePiTerm (tvs, TypedTerm (term, typ, termAnn term))}
 
   % op OpNoTerm.makeOp : Id * Fixity * Type -> OpInfo
   def OpNoTerm.makeOp (id, fixity, (tvs, typ)) =
     {names  = [id],
      fixity = fixity,
-     dfn    = maybePiTerm (tvs, SortedTerm (Any noPos, typ, noPos))}
+     dfn    = maybePiTerm (tvs, TypedTerm (Any noPos, typ, noPos))}
 
   % op join : OpInfo -> OpInfo -> Env OpInfo
 
@@ -78,7 +78,7 @@ Op qualifying spec
   % op show : OpInfo -> String
   def Op.show opInfo = ppFormat (Op.pp opInfo)
 
-  sort Op.Ref = Id.Id
+  type Op.Ref = Id.Id
 
   % op OpRef.pp : Ref -> Doc
   def OpRef.pp = Id.pp

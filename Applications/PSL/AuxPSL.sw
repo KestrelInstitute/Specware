@@ -1,6 +1,6 @@
 \section{PSL Toplevel Specification}
 
-This constructs PSL and refines various abstract sorts.
+This constructs PSL and refines various abstract types.
 
 \begin{spec}
 
@@ -34,7 +34,7 @@ spec {
 
   % This doesn't work because the sketches refer explicitly to
   % Vertex.Elem and Edge.Elem so the translation yields operators
-  % with the incorrect sort. so insertEdge refers to Vertex.Elem rather than V.Elem
+  % with the incorrect type. so insertEdge refers to Vertex.Elem rather than V.Elem
   % import Shape qualifying
   %   translate /Library/Structures/Data/Categories/Sketches/Monomorphic/AsRecord
   % import Shape qualifying
@@ -52,7 +52,7 @@ spec {
   % def V.union = E.union
   % def V.member? = E.member?
 
-  % sort Systems.Elem = ATerm Position
+  % type Systems.Elem = ATerm Position
 % These shouldn't be here.
   % def Systems.ppElem term = SpecCalc.ppATerm term
   % def Shape.ppDom = ppTaggedElem
@@ -64,8 +64,8 @@ Now we repeat some of the definitions appearing in
 It follows that we should only have had to import one copy of monomorphic
 sets but then the names wouldn't have gone through elsewhere.
 
-  sort Dom = TaggedElem
-  sort Cod = TaggedElem
+  type Dom = TaggedElem
+  type Cod = TaggedElem
 \begin{spec}
  }
 \end{spec}

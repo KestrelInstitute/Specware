@@ -3,7 +3,7 @@
 This is an instance of monomorphic sets extended with monadic fold operation
 over the set.
 
-The monadic sorts and ops are all qualified with \Qualifier{SpecCalc}.
+The monadic types and ops are all qualified with \Qualifier{SpecCalc}.
 
 \begin{spec}
 let Monad = /Library/Structures/Data/Monad/Fold in

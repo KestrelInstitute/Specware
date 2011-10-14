@@ -1,6 +1,6 @@
 spec {
   import Double
 
-  sort Delta a = a * a
-  sort Proc (args,rtn,store) = (args * rtn * Delta store) -> Boolean
+  type Delta a = a * a
+  type Proc (args,rtn,store) = (args * rtn * Delta store) -> Bool
 }

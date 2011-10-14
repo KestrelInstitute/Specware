@@ -181,7 +181,7 @@ explores the transitions leaving the target state.
         removeNilsFrom oldBSpec (Transition.target transition) (outTrans oldBSpec (Transition.target transition)) newBSpec
       }
 
-  op lengthOne : List Transition -> Boolean
+  op lengthOne : List Transition -> Bool
   def lengthOne l =
     case l of 
       | [_] -> true
@@ -201,7 +201,7 @@ To see if we need to pe a procedure, then check to see which
 map it is in.
 
 \begin{spec}
-  op existsInSet : (Transition -> Boolean) -> List Transition -> Env Boolean
+  op existsInSet : (Transition -> Bool) -> List Transition -> Env Bool
   def existsInSet f l =
     case l of
       | [] -> return false
@@ -212,7 +212,7 @@ map it is in.
            existsInSet f l
 
   % This should be a fold
-  op isNilTransition? : Transition -> Boolean
+  op isNilTransition? : Transition -> Bool
   def isNilTransition? transition =
     let ms = Transition.modeSpec transition in
     let def trueAxiom? claim =

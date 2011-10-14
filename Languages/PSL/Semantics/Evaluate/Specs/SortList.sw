@@ -1,6 +1,6 @@
 spec
-  op sortList : fa (a) (a * a -> Boolean) -> List a -> List a
-  def sortList cmp l =
+  op typeList : fa (a) (a * a -> Bool) -> List a -> List a
+  def typeList cmp l =
     let def partitionList x l =
       case l of
        | [] -> ([],[])
@@ -14,5 +14,5 @@ spec
       | [] -> []
       | hd::tl ->
           let (l1,l2) = partitionList hd tl in
-             (sortList cmp l1) ++ [hd] ++ (sortList cmp l2)
+             (typeList cmp l1) ++ [hd] ++ (typeList cmp l2)
 endspec

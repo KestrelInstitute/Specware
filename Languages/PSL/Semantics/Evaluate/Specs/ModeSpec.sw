@@ -38,7 +38,7 @@ ModeSpec qualifying spec
   import Constraints  % Not needed now .. but maybe later when we generalize substitutions
   import Subst    
 
-  sort ModeSpec 
+  type ModeSpec 
 
   op specOf : ModeSpec -> Spec.Spec
   op variables : ModeSpec -> OpRefSet.Set
@@ -49,7 +49,7 @@ ModeSpec qualifying spec
 
   op make : Spec.Spec -> OpRefSet.Set -> ClaimRefSet.Set -> ModeSpec
 
-  op addSort : ModeSpec -> Sort.SortInfo -> Position -> Env ModeSpec
+  op addType : ModeSpec -> Type.TypeInfo -> Position -> Env ModeSpec
 
   op addOp : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
   op addVariable : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec

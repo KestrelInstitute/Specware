@@ -2,8 +2,8 @@ CGenUtils qualifying spec {
 
    import ../Semantics/Evaluate/Specs/Oscar
 
-   sort OscarSpec = Oscar.Spec
-   sort MSSpec = Spec.Spec
+   type OscarSpec = Oscar.Spec
+   type MSSpec = Spec.Spec
 
    % --------------------------------------------------------------------------------
 

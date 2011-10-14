@@ -12,17 +12,17 @@ spec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex delete
   import /Languages/MetaSlang/Specs/Printer
 
-  sort Index = Int			% Acually Nat + -1
+  type Index = Int			% Acually Nat + -1
 
   % term annotated with its environment spec
-  sort EnvTerm = AnnSpec.Spec * MS.Term
+  type EnvTerm = AnnSpec.Spec * MS.Term
 
-  sort Stat =
+  type Stat =
     | Assign EnvTerm
     | Proc EnvTerm
     | Return EnvTerm
 
-  sort NodeContent =
+  type NodeContent =
     %% First three for pure control flow graphs
     | Branch { condition   : EnvTerm,
 	       trueBranch  : Index,
@@ -48,8 +48,8 @@ spec
   op noContinue: Index			% To represent return destination
   def noContinue = -1
     
-  sort Node = Index * NodeContent * List Index % predecessors
-  sort Graph = List Node		% In some topological order
+  type Node = Index * NodeContent * List Index % predecessors
+  type Graph = List Node		% In some topological order
 
   op  deletedNode?: Node -> Bool
   def deletedNode? nd =

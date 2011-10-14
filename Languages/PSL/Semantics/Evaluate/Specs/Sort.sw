@@ -1,6 +1,6 @@
-\section{Abstraction of MetaSlang Sorts}
+\section{Abstraction of MetaSlang Types}
 
-Would prefer \Sort{SortInfo} to be called \Sort{Sort}.
+Would prefer \Type{TypeInfo} to be called \Type{Type}.
 
 We have included non-monadic and monadic versions of the make operators.
 It is unlikely one will use both. The monadic version is there to
@@ -10,55 +10,55 @@ so requires state.
 It may be convenient to include monadic versions of some of the other operators.
 
 \begin{spec}
-Sort qualifying spec
+Type qualifying spec
   import Id
   import Env
   import MetaSlang
 
-  sort SortInfo
+  type TypeInfo
 
-  op idOf : SortInfo -> Id.Id
-  op ids : SortInfo -> IdSet.Set
-  op sortinfo_type : SortInfo -> Type
+  op idOf : TypeInfo -> Id.Id
+  op ids : TypeInfo -> IdSet.Set
+  op typeinfo_type : TypeInfo -> Type
 
-  op withId infixl 18 : SortInfo * Id.Id -> SortInfo
-  op withIds infixl 18 : SortInfo * IdSet.Set -> SortInfo
-  op withType infixl 18 : SortInfo * Type -> SortInfo
+  op withId infixl 18 : TypeInfo * Id.Id -> TypeInfo
+  op withIds infixl 18 : TypeInfo * IdSet.Set -> TypeInfo
+  op withType infixl 18 : TypeInfo * Type -> TypeInfo
 
-  op makeSort : Id.Id -> Type -> SortInfo
+  op makeType : Id.Id -> Type -> TypeInfo
   
-  op SortEnv.makeSort : Id.Id -> Type -> Env SortInfo
-  def SortEnv.makeSort id si_type = return (makeSort id si_type)
+  op TypeEnv.makeType : Id.Id -> Type -> Env TypeInfo
+  def TypeEnv.makeType id si_type = return (makeType id si_type)
 
-  op SortNoType.makeSort : Id.Id -> SortInfo
+  op TypeNoType.makeType : Id.Id -> TypeInfo
 
-  op SortNoTypeEnv.makeSort : Id.Id -> Env SortInfo
-  def SortNoTypeEnv.makeSort id = return (makeSort id)
+  op TypeNoTypeEnv.makeType : Id.Id -> Env TypeInfo
+  def TypeNoTypeEnv.makeType id = return (makeType id)
 
-  op join : SortInfo -> SortInfo -> Env SortInfo
+  op join : TypeInfo -> TypeInfo -> Env TypeInfo
 
-  op pp : SortInfo -> Doc
-  op show : SortInfo -> String
+  op pp : TypeInfo -> Doc
+  op show : TypeInfo -> String
 
-  sort Ref
-  sort Spec.Spec
+  type Ref
+  type Spec.Spec
 
-  op SortRef.pp : Ref -> Doc
+  op TypeRef.pp : Ref -> Doc
 
-  op deref : Spec.Spec -> Ref -> SortInfo
-  op refOf : SortInfo -> Ref
+  op deref : Spec.Spec -> Ref -> TypeInfo
+  op refOf : TypeInfo -> Ref
 
-  op SortEnv.deref : Spec.Spec -> Ref -> Env SortInfo
-  op SortEnv.refOf : SortInfo -> Env Ref
+  op TypeEnv.deref : Spec.Spec -> Ref -> Env TypeInfo
+  op TypeEnv.refOf : TypeInfo -> Env Ref
 endspec
 \end{spec}
 
-Above we introduce \Sort{Type} where there was \Sort{SortScheme}
-before. The idea is that in the near term, we can refine \Sort{Type}
+Above we introduce \Type{Type} where there was \Type{TypeScheme}
+before. The idea is that in the near term, we can refine \Type{Type}
 in that way, and then later add polymorphism to the available types.
 
 That being the case, we don't need an explicit set \verb{TypeVars}. 
-as found in the current \verb{SortInfo}.
+as found in the current \verb{TypeInfo}.
 
 There is an argument for restoring a list of type variables
 and making them parameters to the type and obliging a user
@@ -66,13 +66,13 @@ to declare when a type is polymorphic.
 
 So for example,
 \begin{verbatim}
-  sort List Elem
+  type List Elem
 \end{verbatim}
-would not be valid unless \Sort{Elem} had previously
-been declared as a sort. This might address something
+would not be valid unless \Type{Elem} had previously
+been declared as a type. This might address something
 that Alessandro had been requesting.
 
 The \Op{with} operators are meant as a temporary measure until syntax
 for updating formal products and maps is introduced. In the case of
-records, such an update is straightforward. For abstract sorts it seems
+records, such an update is straightforward. For abstract types it seems
 trickier to me.

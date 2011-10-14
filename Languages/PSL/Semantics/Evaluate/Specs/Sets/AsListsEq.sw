@@ -1,9 +1,9 @@
 spec
   import /Library/Structures/Data/Sets/Finite
   
-  op Elem.eq? : Elem * Elem -> Boolean
+  op Elem.eq? : Elem * Elem -> Bool
 
-  sort Set = List Elem
+  type Set = List Elem
 
   def empty? s = ([] = s)
 

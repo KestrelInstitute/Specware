@@ -13,7 +13,7 @@ to reflect this and thereby simplify the task of restoring the context.
 CompCtxt qualifying spec 
   import ProcMap 
 
-  sort CompCtxt = {
+  type CompCtxt = {
       procedures : ProcMap.Map,
       modeSpec : ModeSpec,
       varCounter : Nat,

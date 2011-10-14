@@ -140,19 +140,19 @@ SpecCalc qualifying spec {
   op ppOscarSpecElem : [a] OscarSpecElem a -> Pretty
   def ppOscarSpecElem (decl,_) = 
     case decl of
-      | Sort (names,(tvs,[(_,typ)])) -> 
-        ppASortInfo {names = names, dfn = maybePiSort (tvs, typ)}
+      | Type (names,(tvs,[(_,typ)])) -> 
+        ppATypeInfo {names = names, dfn = maybePiType (tvs, typ)}
 
       | Def (names,(fixity,(tvs,typ),[(_,tm)])) ->
-        ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))}
+        ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, TypedTerm (tm, typ, termAnn tm))}
 
       | Op (names,(fixity,(tvs,typ),[(_,tm)])) ->
-        ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))}
+        ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, TypedTerm (tm, typ, termAnn tm))}
 
       | Claim claim -> pp claim
 
       | Var (names,(fixity,(tvs,typ),[(_,tm)])) ->
-	ppAOpInfoAux (" var", {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))})
+	ppAOpInfoAux (" var", {names = names, fixity = fixity, dfn = maybePiTerm (tvs, TypedTerm (tm, typ, termAnn tm))})
 
       | Proc (name,procInfo) ->
           ppConcat [
@@ -207,7 +207,7 @@ SpecCalc qualifying spec {
       ppString "(",
       ppSep (ppString ",") (map ppAVar (formalArgs procInfo)),
       ppString "):",
-      ppASort (returnSort procInfo),
+      ppAType (returnType procInfo),
       ppString " {",
       ppNewline,
       ppString "  ",

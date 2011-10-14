@@ -1,7 +1,7 @@
 spec
   import Specs/OpSets/AsLists
   % import Specs/EdgeSets/AsLists
-  import Specs/SortSets/AsLists
+  import Specs/TypeSets/AsLists
   import Specs/ProcMap/AsLists
   import Specs/ModeSpec/AsRecord
   import Specs/Claim/Legacy

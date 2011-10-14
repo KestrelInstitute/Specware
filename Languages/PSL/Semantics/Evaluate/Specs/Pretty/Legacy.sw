@@ -18,6 +18,6 @@ in the state monad.
 \begin{spec}
 spec
   import /Library/PrettyPrinter/WadlerLindig 
-  % sort Pretty.Doc = WadlerLindig.Doc
+  % type Pretty.Doc = WadlerLindig.Doc
 endspec
 \end{spec}

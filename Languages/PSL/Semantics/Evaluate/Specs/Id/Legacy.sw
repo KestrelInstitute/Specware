@@ -5,7 +5,7 @@ Id qualifying spec
   import translate (translate ../MonadicSets/AsLists by {Elem.Elem +-> Id.Id})
     by {Elem._ +-> Id._, MonadFold._ +-> IdSetEnv._, _ +-> IdSet._}
 
-  sort Id.Id = QualifiedId
+  type Id.Id = QualifiedId
 
   % op makeId : String -> String -> Id
   def Id.makeId str1 str2 = mkQualifiedId (str1,str2)

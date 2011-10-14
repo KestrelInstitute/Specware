@@ -1,21 +1,21 @@
 \section{Abstraction of MetaSlang Ops}
 
-I would prefer that sort \Sort{OpInfo} was just \Sort{Op}. Given the qualifiers
+I would prefer that type \Type{OpInfo} was just \Type{Op}. Given the qualifiers
 I suppose it could. Easy enough to change later. As things stand, however,
-we can't have a operator called \Op{op} of sort \Sort{Op}.
+we can't have a operator called \Op{op} of type \Type{Op}.
 
 Fixity should come from elsewhere.
 
-As in \UnitId{Sort}, there are monadic versions of the constructors.
+As in \UnitId{Type}, there are monadic versions of the constructors.
 
 \begin{spec}
 Op qualifying spec
-  import Sort
+  import Type
   import Env
   import MetaSlang
 
-  sort OpInfo
-  sort Fixity
+  type OpInfo
+  type Fixity
 
   op nonFix : Fixity
 
@@ -58,8 +58,8 @@ Op qualifying spec
   op pp : OpInfo -> Doc
   op show : OpInfo -> String
 
-  sort Ref
-  % sort Spec.Spec
+  type Ref
+  % type Spec.Spec
 
   op OpRef.pp : Ref -> Doc
 
@@ -71,7 +71,7 @@ Op qualifying spec
 endspec
 \end{spec}
 
-Perhaps the \Sort{Fixity} should be part of the name? Maybe not. Seems
+Perhaps the \Type{Fixity} should be part of the name? Maybe not. Seems
 strange where it is. 
 
 The second make function appears because in many instances the fixity

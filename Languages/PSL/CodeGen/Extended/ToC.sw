@@ -7,7 +7,7 @@ SpecCalc qualifying spec {
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AccessSpec
   import ../CGenUtils
 
-  % sort Spec.Spec = ASpec Position
+  % type Spec.Spec = ASpec Position
 
   %% similar_specs? is used only to cache old work, so false negatives are ok, 
   %% but undesirable 
@@ -29,10 +29,10 @@ SpecCalc qualifying spec {
   %% is just defined as LISP::EQUALP in Accord/Scripts/Lisp/process-files.lisp
   %% This works well enough for now for Accord.
 
-   op similar_specs? : Spec.Spec * Spec.Spec -> Boolean  % See note above
+   op similar_specs? : Spec.Spec * Spec.Spec -> Bool  % See note above
 
   def oscarToC oscSpec base opt_name =
-    let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntSorts (subtractSpec spc base))) oscSpec in
+    let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntTypes (subtractSpec spc base))) oscSpec in
     %let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
     let (missing, cached_transforms) = 
         foldlSpecsOscarSpec (fn (spc,(missing, cached_transforms)) ->
@@ -117,7 +117,7 @@ SpecCalc qualifying spec {
                (fn(q,id,sinfo,map) ->
 		if filterOut(q,id) then map
 		else insertAQualifierMap(map,q,id,sinfo)
-	       ) emptyASortMap spc.sorts
+	       ) emptyATypeMap spc.types
     in
     let ops = foldriAQualifierMap
                (fn(q,id,sinfo,map) ->
@@ -125,7 +125,7 @@ SpecCalc qualifying spec {
 		else insertAQualifierMap(map,q,id,sinfo)
 	       ) emptyAOpMap spc.ops
     in
-    let spc = setSorts(spc,srts) in
+    let spc = setTypes(spc,srts) in
     let spc = setOps(spc,ops) in
     let spc = setProperties(spc,[]) in
     spc
@@ -139,7 +139,7 @@ SpecCalc qualifying spec {
     let mmspc = mergeModeSpecs procedure in
     let mmspc = cleanupModeSpec(mmspc,parameters) in
     let newqids = getDeclaredQualifiedIds(subtractSpec mmspc envSpec) in
-    let newqids = filter (fn(qid) -> ~(builtinSortOp qid)) newqids in
+    let newqids = filter (fn(qid) -> ~(builtinTypeOp qid)) newqids in
     %let _ = writeLine("new decls in proc "^(printQualifiedId procId)^(foldl(fn(Qualified(q,id),s) -> s^"\n  "^(q^"."^id)) ": [" newqids)^"]") in
     %let _ = writeLine("proc "^(printQualifiedId procId)^", merged mode-spec="^(printSpec mmspc)) in
     let filter = (fn(qid) -> member(qid,newqids)) in
@@ -152,8 +152,8 @@ SpecCalc qualifying spec {
       List.map (fn argRef ->
 		let spc = specOf initSpec in
 		let info = Op.deref (spc, argRef) in
-		let srt = firstOpDefInnerSort info in
-		let (cspc,ctype) = sortToCType cspc spc srt in
+		let srt = firstOpDefInnerType info in
+		let (cspc,ctype) = typeToCType cspc spc srt in
 		let Qualified (_,id) = argRef in
 		(OpRef.show (mkUnQualifiedId id), ctype))
                 parameters
@@ -163,8 +163,8 @@ SpecCalc qualifying spec {
 		let spc = specOf initSpec in
 		let argRef = mkUnQualifiedId id in
 		let info = Op.deref (spc, argRef) in
-		let srt = firstOpDefInnerSort info in
-		let (cspc,ctype) = sortToCType cspc spc srt in
+		let srt = firstOpDefInnerType info in
+		let (cspc,ctype) = typeToCType cspc spc srt in
 		let Qualified (_,id) = argRef in
 		(OpRef.show (mkUnQualifiedId id), ctype, None))
                varsInScope 
@@ -176,8 +176,8 @@ SpecCalc qualifying spec {
 	    let spc = specOf modeSpec in
 	    case AnnSpec.findAllOps (spc,retRef) of
 	      | [info] ->
-		let srt = firstOpDefInnerSort info in
-	        sortToCType cspc spc srt
+		let srt = firstOpDefInnerType info in
+	        typeToCType cspc spc srt
 	      | _ ->
 		let _ = toScreen ("Could not find return var: " ^ (anyToString retRef) ^ "\n") in 
 		(cspc,Void)		
@@ -292,7 +292,7 @@ with a loop or out of a conditional.
       else
         consume cspc (findTopIndex graph) [(length graph)]
 
-  op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Boolean -> CSpec * CStmt
+  op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Bool -> CSpec * CStmt
   def termToCStmtNew cspc spc term final? =
     let (cspc,block,stmt) =
     %let _ = toScreen ("\nTerm: " ^ (ppFormat (ppATerm term)) ^ "\n") in
@@ -312,12 +312,12 @@ with a loop or out of a conditional.
             | _ ->
               (case rhs of
                 | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),_),_,pos), Fun (Op (Qualified (_,"active"),_),srt,_),  _), idx,_),expr,_) ->
-		  let (cspc,ctype) = sortToCType cspc spc srt in
+		  let (cspc,ctype) = typeToCType cspc spc srt in
 		  let (cspc,block,cexp1) = termToCExp cspc spc idx in
 		  let (cspc,block,cexp2) = termToCExpB cspc spc block expr in
 		  (cspc,block,Exp (Binary(Set,ArrayRef (Var ("active",ctype),cexp1),cexp2)))
                 | Apply (Fun (Op (Qualified (_,"update"),_),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),_),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
-		  let (cspc,ctype) = sortToCType cspc spc srt in
+		  let (cspc,ctype) = typeToCType cspc spc srt in
 		  let (cspc,block,cexp) = termToCExp cspc spc expr in
 		  (cspc,block,
 		   if n = 0 then
@@ -329,21 +329,21 @@ with a loop or out of a conditional.
 		  let (cspc,block,cexp1) = termToCExp cspc spc lhs in
 		  let (cspc,block,cexp2) = termToCExpB cspc spc block rhs in
 		  (cspc,block,Exp (Binary(Set,cexp1, cexp2)))))
-      | Apply (Fun (Op (procId,fxty),procSort,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
+      | Apply (Fun (Op (procId,fxty),procType,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp cexp)
             | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos)) in
 	      (cspc,block,Return cexp)
             | Fun (Op (Qualified ("<unqualified>","ignore'"),fxty),srt,pos) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp cexp)
             | _ ->
 	      let (cspc,block,cexp1) = termToCExp cspc spc returnTerm in
-	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
+	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procType,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp (Binary(Set,cexp1,cexp2)))
 	     )
       | _ -> % let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in

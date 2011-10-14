@@ -23,7 +23,7 @@ Convert qualifying spec
     let modeSpecString = ppFormat (ModeSpec.pp (subtract oscarSpec.modeSpec ms)) in
       ("modeSpec=\n" ^ modeSpecString ^ "\nprocedures=\n" ^ procs)
 
-  sort StructOscarSpec = {
+  type StructOscarSpec = {
     modeSpec : ModeSpec,
     procedures : FinitePolyMap.Map (QualifiedId,StructProcedure)
   }
@@ -78,7 +78,7 @@ Convert qualifying spec
       }
   }
 
-  sort StructProcedure = {
+  type StructProcedure = {
     parameters : List Op.Ref,
     varsInScope : List Op.Ref,
     return : Option Op.Ref,
@@ -122,8 +122,8 @@ Convert qualifying spec
       }
   }
 
-  op sortGraph : fa (a) (a * a -> Boolean) -> List a -> List a
-  def sortGraph cmp l =
+  op typeGraph : fa (a) (a * a -> Bool) -> List a -> List a
+  def typeGraph cmp l =
     let def partitionList x l =
       case l of
        | [] -> ([],[])
@@ -137,7 +137,7 @@ Convert qualifying spec
       | [] -> []
       | hd::tl ->
           let (l1,l2) = partitionList hd tl in
-             (sortGraph cmp l1) ++ [hd] ++ (sortGraph cmp l2)
+             (typeGraph cmp l1) ++ [hd] ++ (typeGraph cmp l2)
 
   op printVList : List (String * Index) -> String
   % op printVList : List (Vrtx.Vertex * Index) -> String
@@ -176,9 +176,9 @@ Convert qualifying spec
         % print "\n\ngraph=\n";
         % print (printNCList g0);
         % print "\n";
-        g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) g0);
+        g <- return (typeGraph (fn ((n,_),(m,_)) -> n < m) g0);
         g <- return (addPredecessors (map (fn (x,y) -> y) g));
-        % print "\nconvertBSpec NCList after sort\n";
+        % print "\nconvertBSpec NCList after type\n";
         % print (printGraph g);
         % print "\n\n";
         % g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
@@ -504,6 +504,6 @@ are no longer needed. *)
       else
         return bindings
 
-  op isPrimedName? : QualifiedId -> Boolean
+  op isPrimedName? : QualifiedId -> Bool
   def isPrimedName? (qualId as (Qualified (qual,id))) = hd (rev (explode id)) = #'
 endspec

@@ -17,7 +17,7 @@ SpecCalc qualifying spec {
 \end{spec}
 
 \begin{spec}
-  sort SpecCalc.OtherValue = Oscar.Spec
+  type SpecCalc.OtherValue = Oscar.Spec
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -103,13 +103,13 @@ They are procedures in context.
   op evaluateOscarSpecContextElem : Oscar.Spec -> OscarSpecElem Position -> SpecCalc.Env Oscar.Spec
   def evaluateOscarSpecContextElem oscarSpec (elem, position) =
     case elem of
-      | Sort ([id],(tyVars,[])) -> {
-            sortInfo <- makeSort id;
-            addSort oscarSpec sortInfo position
+      | Type ([id],(tyVars,[])) -> {
+            typeInfo <- makeType id;
+            addType oscarSpec typeInfo position
           }
-      | Sort ([id],(tyVars,[si_type])) -> {
-            sortInfo <- makeSort id si_type;
-            addSort oscarSpec sortInfo position
+      | Type ([id],(tyVars,[si_type])) -> {
+            typeInfo <- makeType id si_type;
+            addType oscarSpec typeInfo position
           }
       | Def ([id],(fxty,oi_type,[(_,term)])) -> {
             opInfo <- makeOp (id,fxty,term,oi_type);
@@ -150,7 +150,7 @@ and then we start construction the diagram for the body of some
 procedure. Don't we want to elaborate as we go along?
 
 begin{spec}
-  op PosSpec.mkTyVar : String -> ASort Position
+  op PosSpec.mkTyVar : String -> AType Position
   def PosSpec.mkTyVar name = TyVar (name, internalPosition)
 
   op staticBase : SpecCalc.Env Spec
@@ -189,10 +189,10 @@ begin{spec}
 }
 \end{spec}
 
-      op addConstantSort : OscarSpec -> QualifiedId -> TyVars ASortScheme Position -> Position -> SpecCalc.Env OscarSpec
-      def addConstantSort pSpec name tyVars optSort)) position = {
+      op addConstantType : OscarSpec -> QualifiedId -> TyVars ATypeScheme Position -> Position -> SpecCalc.Env OscarSpec
+      def addConstantType pSpec name tyVars optType)) position = {
             static <- staticSpec pSpec;
-            static <- addSort names tyVars [optSort] static position;
+            static <- addType names tyVars [optType] static position;
             setStaticSpec pSpec static
           }
 A constant must be added to both the static and dynamic spec. We do this
@@ -203,7 +203,7 @@ mechanism is a design descision and perhaps a poor one. There should
 be a more abstract way of doing this. For instance, to label each state
 with both the static and dynamic specs. Needs thought.
 
-      op addConstant : OscarSpec -> QualifiedId -> Fixity -> ASortScheme Position -> Position -> SpecCalc.Env OscarSpec
+      op addConstant : OscarSpec -> QualifiedId -> Fixity -> ATypeScheme Position -> Position -> SpecCalc.Env OscarSpec
       def addConstant pSpec qualId fxty srtScheme position = {
             static <- staticSpec pSpec;
             static <- addOp [qualId] fxty srtScheme [] static position;
@@ -217,7 +217,7 @@ with both the static and dynamic specs. Needs thought.
                  }
           }
 
-      op addVariable : OscarSpec -> QualifiedId -> Fixity -> ASortScheme Position -> Position -> SpecCalc.Env OscarSpec
+      op addVariable : OscarSpec -> QualifiedId -> Fixity -> ATypeScheme Position -> Position -> SpecCalc.Env OscarSpec
       def addVariable pSpec qualId fxty srtScheme optTerm = {
             dynamic <- dynamicSpec pSpec;
             dynamic <- addOp [qualId] fxty srtScheme [] dynamic position;

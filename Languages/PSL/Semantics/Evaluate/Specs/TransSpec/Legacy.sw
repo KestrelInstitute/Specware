@@ -7,7 +7,7 @@ TransSpec qualifying spec
   import ../Subst/AsOpInfo
   import ../ModeSpec/AsRecord
 
-  % sort TransSpec.TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
+  % type TransSpec.TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
 
   % op forwMorph : TransSpec -> SpecMorph.Morphism
   % op backMorph : TransSpec -> SpecMorph.Morphism
@@ -61,10 +61,10 @@ TransSpec qualifying spec
             importInfo = {
               imports = elabSpec.importInfo.imports,
               localOps = [],
-              localSorts = [],
+              localTypes = [],
 	      localProperties = []
             },
-            sorts = elabSpec.sorts,
+            types = elabSpec.types,
             ops = elabSpec.ops,
             properties = elabSpec.properties
           },
@@ -73,7 +73,7 @@ TransSpec qualifying spec
         invariants = invariants (modeSpec transSpec),
         context = context (modeSpec transSpec),
         rewriteRules = rewriteRules (modeSpec transSpec),
-        localSorts = empty,
+        localTypes = empty,
         localOps = empty,
         localClaims = empty
       };
@@ -117,7 +117,7 @@ TransSpec qualifying spec
    This is odd. After rewriting, it should be sufficient just to check for non-op Fun
    constructs. Not true. May have constructors and residual applications.
    *)
-  op groundTerm? : MSlang.Term -> Boolean
+  op groundTerm? : MSlang.Term -> Bool
   def groundTerm? term =
     case term of
       | Apply (t1,t2,_) -> (groundTerm? t1) & (groundTerm? t2)
@@ -135,7 +135,7 @@ TransSpec qualifying spec
       | IfThenElse (t1,t2,t3,_) ->
          (groundTerm? t1) & (groundTerm? t2) & (groundTerm? t3)
       | Seq (terms,_) -> all groundTerm? terms
-      | SortedTerm (term,_,_) -> groundTerm? term
+      | TypedTerm (term,_,_) -> groundTerm? term
 
   def TransSpec.makePrimedId (Qualified (qual,id)) = Qualified (qual,id ^ "'")
 
@@ -164,8 +164,8 @@ TransSpec qualifying spec
 
  def TransSpec.withClaim (transSpec,newClaim) =
    let ms = modeSpec transSpec in
-   let {importInfo,sorts,ops,properties} = specOf ms in
-   let newSpec = {importInfo=importInfo,sorts=sorts,ops=ops,properties=[newClaim]} in
+   let {importInfo,types,ops,properties} = specOf ms in
+   let newSpec = {importInfo=importInfo,types=types,ops=ops,properties=[newClaim]} in
      transSpec withModeSpec (ms withSpec newSpec)
 \end{spec}
 
@@ -255,7 +255,7 @@ for lists.
                       if isPrimedName? qid then {
                         varInfo <- findTheVariable modeSpec qid;
                         newModeSpec <- addVariable modeSpec (varInfo withTerm N) pos;
-                        return (newModeSpec, Fun (Bool true,boolSort,pos))
+                        return (newModeSpec, Fun (Bool true,boolType,pos))
                       } else
                         return (modeSpec,formula)
                 % | Apply (Fun (Op(qid,fxty),_,_), arg,pos) -> {
@@ -263,7 +263,7 @@ for lists.
                 %       newTuple <- return (mkTuple [mkOp (makeId "update))
                 %       newTerm <- return mkApply;
                 %       newModeSpec <- addVariable modeSpec (varInfo withTerm N) pos;
-                %       return (newModeSpec, Fun (Bool true,boolSort,pos))
+                %       return (newModeSpec, Fun (Bool true,boolType,pos))
                 %    }
                 | _ -> return (modeSpec,formula))
           | _ -> return (modeSpec,formula))
@@ -271,7 +271,7 @@ for lists.
       (newModeSpec,newClaims,newInvars) <-
          normalizeClaims (modeSpec transSpec) (specOf (modeSpec transSpec)).properties ClaimRefSet.empty;
       let newSpec:Spec.Spec = {
-          sorts = (specOf newModeSpec).sorts,
+          types = (specOf newModeSpec).types,
           ops = (specOf newModeSpec).ops,
           properties = newClaims,
           importInfo = (specOf newModeSpec).importInfo
@@ -282,7 +282,7 @@ for lists.
                           withInvariants newInvars)))
     }
 
-  op isPrimedName? : QualifiedId -> Boolean
+  op isPrimedName? : QualifiedId -> Bool
   def isPrimedName? (qualId as (Qualified (qual,id))) = hd (rev (explode id)) = #'
 endspec
 \end{spec}

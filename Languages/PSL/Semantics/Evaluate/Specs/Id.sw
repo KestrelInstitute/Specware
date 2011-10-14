@@ -1,6 +1,6 @@
 \section{Qualified Ids}
 
-This defines the sort \Sort{Id} and sets of such things. There is some
+This defines the type \Type{Id} and sets of such things. There is some
 inconsistency here since, elsewhere, it is the user of the sets that
 creates the instance.
 
@@ -8,7 +8,7 @@ This should be enriched with constructors and destructors (projections)
 for getting qualifiers etc.
 
 As elsewhere, there may be a win in renaming \Op{make} to \Op{makeId}.
-Cast your vote. The references to sort \Op{String} should probably be
+Cast your vote. The references to type \Op{String} should probably be
 made abstract.
 
 The qualifier \Qualifier{IdSet} is needed because \UnitId{Sets} imports

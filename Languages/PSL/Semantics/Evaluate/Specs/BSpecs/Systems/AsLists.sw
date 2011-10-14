@@ -18,7 +18,7 @@ System qualifying spec
 %        by {KeyValue._ +-> EdgeCat._, Dom._ +-> TW_Edge._, Cod._ +-> Cat._})
 %        by {TW_Edge.Dom +-> TW.Edge, Cat.Cod +-> Cat.Arrow})
 
-  % op TW_Edge.eq? : TW.Edge * TW.Edge -> Boolean
+  % op TW_Edge.eq? : TW.Edge * TW.Edge -> Bool
   def TW_Edge.eq? (e1,e2) =
     case (e1,e2) of
       | (Forw e1,Forw e2) -> Edge.eq? (e1,e2)
@@ -35,7 +35,7 @@ System qualifying spec
 %        by {KeyValue._ +-> VertexCat._, Dom._ +-> TW_Vertex._, Cod._ +-> Cat._})
 %        by {TW_Vertex.Dom +-> TW.Vertex, Cat.Cod +-> Cat.Object})
 
-  % op TW_Vertex.eq? : TW.Vertex * TW.Vertex -> Boolean
+  % op TW_Vertex.eq? : TW.Vertex * TW.Vertex -> Bool
   def TW_Vertex.eq? (v1,v2) =
     case (v1,v2) of
       | (Vertex v1,Vertex v2) -> Vertex.eq? (v1,v2)

@@ -1,13 +1,13 @@
-\section{Abstract sort for procedures}
+\section{Abstract type for procedures}
 
-This spec defines the sort corresponding to the semantic value of a PSL /
+This spec defines the type corresponding to the semantic value of a PSL /
 Oscar procedure.
 
 The list of strings, \verb+parameters+, gives the formal parameters to
 the procedure.  These are strings but an alternative might be to also
-include the sort for the variables.  Parameters are call by value.
+include the type for the variables.  Parameters are call by value.
 
-The field \verb+modeSpec+ records the ops, sorts and variables in scope
+The field \verb+modeSpec+ records the ops, types and variables in scope
 at the point where the procedure is declared. It does not include the
 formal parameters of the procedure.
 
@@ -31,12 +31,12 @@ Proc qualifying spec
 %         Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
 %         VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
 % 
-  sort ReturnInfo = Option Op.Ref
+  type ReturnInfo = Option Op.Ref
 
   op ReturnInfo.make : Op.Ref -> ReturnInfo
   def ReturnInfo.make ref = Some ref
 
-  sort Procedure = {
+  type Procedure = {
     parameters : List Op.Ref,
     varsInScope : List Op.Ref,
     returnInfo : ReturnInfo,
@@ -100,7 +100,7 @@ make a transition to the final state of the \BSpec\ and that along that
 transition, it will assign a return value to the given identifier. This
 final state has no successor transitions.
 
-The field \verb+modeSpec+ gives the sorts, operators variables and axioms
+The field \verb+modeSpec+ gives the types, operators variables and axioms
 that are in scope within the procedure. This does not include the formal
 parameters to the procedure.  It also includes an operator declaration
 mirroring the procedure being defined and each procedure in scope. See

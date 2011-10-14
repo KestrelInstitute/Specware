@@ -2,7 +2,7 @@
 
 This is experimental as, for better or worse, the labelling of transitions is forced
 by the theory to consist of a pair of morphisms and a mode spec. Thus, it is not clear
-whether defining an abstract sort for transition specification is a win.
+whether defining an abstract type for transition specification is a win.
 
 I suppose there is a win if we say that a transition spec is isomorphic
 to a triple but is implemented in some other way. For instance, it might
@@ -16,7 +16,7 @@ TransSpec qualifying spec
   import Subst
   import Constraints
 
-  sort TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
+  type TransSpec = SpecMorph.Morphism * ModeSpec.ModeSpec * SpecMorph.Morphism
 
   op forwMorph : TransSpec -> SpecMorph.Morphism
   op backMorph : TransSpec -> SpecMorph.Morphism
@@ -33,7 +33,7 @@ TransSpec qualifying spec
   op projectPostSubst : TransSpec -> Env Subst
 
   op hideVariables : TransSpec -> Subst -> Subst -> Env TransSpec
-  op provablyInconsistent? : TransSpec -> Boolean
+  op provablyInconsistent? : TransSpec -> Bool
 
   op withClaim infixl 18 : TransSpec * Claim -> TransSpec
 

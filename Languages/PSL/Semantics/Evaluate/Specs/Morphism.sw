@@ -5,38 +5,38 @@ SpecMorph qualifying spec
       by {Elem._ +-> Op._, KeyValue._ +-> OpPair._})
       by {Op.Elem +-> Op.OpInfo})
   
-  import SortMap qualifying
+  import TypeMap qualifying
     (translate (translate /Library/Structures/Data/Maps/Endo
-      by {Elem._ +-> Sort._, KeyValue._ +-> SortPair._})
-      by {Sort.Elem +-> Sort.SortInfo})
+      by {Elem._ +-> Type._, KeyValue._ +-> TypePair._})
+      by {Type.Elem +-> Type.TypeInfo})
   
-  sort Morphism
+  type Morphism
 
   op dom : Morphism -> Spec.Spec
   op cod : Morphism -> Spec.Spec
-  op sortMap : Morphism -> SortMap.Map
+  op typeMap : Morphism -> TypeMap.Map
   op opMap : Morphism -> OpMap.Map 
 
-  sort Morphism = {
+  type Morphism = {
     dom : Spec.Spec,
     cod : Spec.Spec,
-    sortMap : SortMap.Map,
+    typeMap : TypeMap.Map,
     opMap : OpMap.Map
   }
 
   def dom morph = morph.dom
   def cod morph = morph.cod
-  def sortMap morph = morph.sortMap
+  def typeMap morph = morph.typeMap
   def opMap morph = morph.opMap
 
-  op makeMorphism : Spec.Spec -> Spec.Spec -> SortMap.Map -> OpMap.Map -> Morphism
-  def makeMorphism dom cod sortMap opMap = {
+  op makeMorphism : Spec.Spec -> Spec.Spec -> TypeMap.Map -> OpMap.Map -> Morphism
+  def makeMorphism dom cod typeMap opMap = {
       dom = dom,
       cod = cod,
-      sortMap = sortMap,
+      typeMap = typeMap,
       opMap = opMap
     }
 
-  op identSortMap : SortMap.Map
-  op identOpMap : SortMap.Map
+  op identTypeMap : TypeMap.Map
+  op identOpMap : TypeMap.Map
 endspec

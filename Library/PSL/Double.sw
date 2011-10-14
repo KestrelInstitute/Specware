@@ -2,7 +2,7 @@
 
 \begin{spec}
 Double qualifying spec {
-  sort Double
+  type Double
   op +  infixl 25 : Double * Double -> Double
   op -  infixl 25 : Double * Double -> Double
   op *  infixl 27 : Double * Double -> Double

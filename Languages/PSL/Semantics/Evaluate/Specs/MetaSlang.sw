@@ -3,8 +3,8 @@
 Not clear that this is useful at this stage. Would
 prefer the qualifier to be MetaSlang but this is taken.
 
-It is expected that \Sort{Term} refines to \Sort{ATerm Position}
-Similary, we expect that \Sort{Type} refines to \Sort{ASortScheme Position}
+It is expected that \Type{Term} refines to \Type{ATerm Position}
+Similary, we expect that \Type{Type} refines to \Type{ATypeScheme Position}
 
 The name of the qualifier is unfortunate. Would prefer \Qualifier{MetaSlang}
 or \Qualifier{MS} but both are taken.
@@ -17,12 +17,12 @@ MSlang qualifying spec
   import Id
   import Env
 
-  % sort MetaSlang.ATerm b
+  % type MetaSlang.ATerm b
 
-  sort Term = MetaSlang.ATerm Position
-  sort Type
-  sort Fun
-  sort TypeVars
+  type Term = MetaSlang.ATerm Position
+  type Type
+  type Fun
+  type TypeVars
 
   op Term.pp : Term -> Doc
   op Term.show : Term -> String

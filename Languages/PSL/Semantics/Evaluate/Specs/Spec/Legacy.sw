@@ -4,7 +4,7 @@
 Spec qualifying spec
   import ../Spec
   import ../Id/Legacy
-  import ../Sort/Legacy
+  import ../Type/Legacy
   import ../Op/Legacy
   import ../Claim/Legacy
   import ../MetaSlang/Legacy
@@ -17,29 +17,29 @@ Spec qualifying spec
 \end{spec}
 
 \begin{spec}
-  sort Spec.Spec = AnnSpec.ASpec Position
+  type Spec.Spec = AnnSpec.ASpec Position
 \end{spec}
 
 \begin{spec}
   % op SpecEnv.findOp : Spec -> Id -> Env OpSet.Set
-  % op SpecEnv.findSort : Spec -> Id -> Env SortSet.Set
+  % op SpecEnv.findType : Spec -> Id -> Env TypeSet.Set
   def SpecEnv.findTheOp spc id =
     case AnnSpec.findTheOp (spc,id) of
       | None -> specError ("findTheOp: id " ^ (Id.show id) ^ " is not defined")
       | Some opInfo -> return opInfo
 
-  def SpecEnv.findTheSort spc id =
-    case AnnSpec.findTheSort (spc,id) of
-      | None -> specError ("findTheSort: id " ^ (Id.show id) ^ " is not defined")
-      | Some sortInfo -> return sortInfo
+  def SpecEnv.findTheType spc id =
+    case AnnSpec.findTheType (spc,id) of
+      | None -> specError ("findTheType: id " ^ (Id.show id) ^ " is not defined")
+      | Some typeInfo -> return typeInfo
 \end{spec}
 
 \begin{spec}
   % op Op.local : Spec -> OpSet.Set
-  % op Op.isLocal? : Spec -> OpInfo -> Boolean
+  % op Op.isLocal? : Spec -> OpInfo -> Bool
 
-  % op Sort.local : Spec -> SortSet.Set
-  % op Sort.isLocal? : Spec -> SortInfo -> Boolean
+  % op Type.local : Spec -> TypeSet.Set
+  % op Type.isLocal? : Spec -> TypeInfo -> Bool
 \end{spec}
 
 \begin{spec}
@@ -67,11 +67,11 @@ where exceptions are raised.
   def SpecEnv.addOp spc info position =
     SpecCalc.addOp info.names info.fixity info.dfn spc position
 
-  % op SpecEnv.addSort : Spec -> SortInfo -> Position -> Env Spec
-  % def SpecEnv.addSort spc sortInfo position =
-  %   SpecCalc.addSort [idOf sortInfo] [] [type sortInfo] spc position
-  def SpecEnv.addSort spc info position =
-    SpecCalc.addSort info.names info.dfn spc position
+  % op SpecEnv.addType : Spec -> TypeInfo -> Position -> Env Spec
+  % def SpecEnv.addType spc typeInfo position =
+  %   SpecCalc.addType [idOf typeInfo] [] [type typeInfo] spc position
+  def SpecEnv.addType spc info position =
+    SpecCalc.addType info.names info.dfn spc position
 
   % op SpecEnv.addClaim : Spec -> Claim -> Position -> Env Spec
   def SpecEnv.addClaim spc claim position = return (SpecCalc.addProperty (claim,spc))
@@ -81,26 +81,26 @@ where exceptions are raised.
   % op Spec.foldOps : fa(a) (a -> OpInfo -> a) -> a -> Spec -> a
   def Spec.foldOps f unit spc = foldriAQualifierMap (fn (qual,id,opInfo,x) -> f x opInfo) unit spc.ops
 
-  % op Spec.foldSorts : fa(a) (a -> SortInfo -> a) -> a -> Spec -> a
-  def Spec.foldSorts f unit spc = foldriAQualifierMap (fn (qual,id,sortInfo,x) -> f x sortInfo) unit spc.sorts
+  % op Spec.foldTypes : fa(a) (a -> TypeInfo -> a) -> a -> Spec -> a
+  def Spec.foldTypes f unit spc = foldriAQualifierMap (fn (qual,id,typeInfo,x) -> f x typeInfo) unit spc.types
 \end{spec}
 
 \begin{spec}
   % op SpecEnv.foldOps : fa(a) (a -> OpInfo -> Env a) -> a -> Spec -> Env a
   def SpecEnv.foldOps f unit spc = foldOverQualifierMap (fn (qual,id,opInfo,x) -> f x opInfo) unit spc.ops
 
-  % op SpecEnv.foldSorts : fa(a) (a -> SortInfo -> Env a) -> a -> Spec -> Env a
+  % op SpecEnv.foldTypes : fa(a) (a -> TypeInfo -> Env a) -> a -> Spec -> Env a
 \end{spec}
 
 Map operations. These are are monomorphic and hence less general than
-one might like as they map only from op to op or sort to sort.
+one might like as they map only from op to op or type to type.
 
 \begin{verbatim}
   op SpecEnv.mapOps : (OpInfo -> Env OpInfo) -> Spec -> Env Spec
   def SpecEnv.mapOps f spc = OpSetEnv.map f (ops spc)
 
-  op SpecEnv.mapSorts : (SortInfo -> Env SortInfo) -> Spec -> Env Spec
-  def SpecEnv.mapSorts f spc = SortSetEnv.map f (sorts spc)
+  op SpecEnv.mapTypes : (TypeInfo -> Env TypeInfo) -> Spec -> Env Spec
+  def SpecEnv.mapTypes f spc = TypeSetEnv.map f (types spc)
 \end{verbatim}
 
 \begin{spec}

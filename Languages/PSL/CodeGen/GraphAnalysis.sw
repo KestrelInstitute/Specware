@@ -12,14 +12,14 @@ spec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
   import /Languages/MetaSlang/Specs/Printer
 
-  sort Index = Int			% Acually Nat + -1
+  type Index = Int			% Acually Nat + -1
 
-  sort Stat =
+  type Stat =
     | Assign MS.Term
     | Proc MS.Term
     | Return MS.Term
 
-  sort NodeContent =
+  type NodeContent =
     %% First three for pure control flow graphs
     | Branch { condition   : MS.Term,
 	       trueBranch  : Index,
@@ -44,8 +44,8 @@ spec
   op noContinue: Index			% To represent return destination
   def noContinue = -1
     
-  sort Node = Index * NodeContent * List Index % predecessors
-  sort Graph = List Node		% In some topological order
+  type Node = Index * NodeContent * List Index % predecessors
+  type Graph = List Node		% In some topological order
 
   op nodeContent: Nat * Graph -> NodeContent
   def nodeContent(i,g) = (nth(g,i)).2

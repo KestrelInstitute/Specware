@@ -176,12 +176,12 @@ PE qualifying spec
 
   op specializeProcedure : Oscar.Spec -> (Oscar.Spec * MS.Term) -> Env (Oscar.Spec * MS.Term * Subst.Subst)
   def specializeProcedure oldOscSpec (newOscSpec, callTerm) = {
-    (procId,procSort,procInfo,callArg) <-
+    (procId,procType,procInfo,callArg) <-
       case callTerm of
-        | Apply (Fun (Op (procId,fxty),procSort,pos),callArg,_) ->
+        | Apply (Fun (Op (procId,fxty),procType,pos),callArg,_) ->
              (case evalPartial (procedures newOscSpec, procId) of
                 | None -> raise (SpecError (noPos, "application is not a procedure call" ^ (printTerm callTerm)))
-                | Some procInfo -> return (procId,procSort,procInfo,callArg))
+                | Some procInfo -> return (procId,procType,procInfo,callArg))
         | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (System.anyToString callTerm) ^ " is not an application"));
     if traceRewriting > 0 then
       print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n") else return ();
@@ -199,14 +199,14 @@ PE qualifying spec
       case argTerm of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
         | _ -> return [argTerm]; % there is only one.
-    (paramSort,returnSort,storeSort) <-
-      case procSort of
-        | Base (qid, [paramSort,returnSort,storeSort],_) -> return (paramSort,returnSort,storeSort)
+    (paramType,returnType,storeType) <-
+      case procType of
+        | Base (qid, [paramType,returnType,storeType],_) -> return (paramType,returnType,storeType)
         | _ -> raise (SpecError (noPos, "Argument is not record"));
-    paramSortList <-
-      case paramSort of
+    paramTypeList <-
+      case paramType of
         | Product (fields,_) -> return (map (fn (x,y) -> y) fields)
-        | _ -> return [paramSort];
+        | _ -> return [paramType];
     (oldStore,newStore) <-
       case storeTerm of
         | Record ([(_,oldStore),(_,newStore)],_) -> return (oldStore,newStore)
@@ -215,39 +215,39 @@ PE qualifying spec
       case oldStore of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
         | _ -> return [oldStore];
-    (subst,residParams,residArgs,residSorts) <-
+    (subst,residParams,residArgs,residTypes) <-
        let
-         def partitionArgs (params,args,sorts) =
-           case (params,args,sorts) of
+         def partitionArgs (params,args,types) =
+           case (params,args,types) of
              | ([],[],[]) -> return ([],[],[],[])
-             | (param::params,arg::args,srt::sorts) -> {
-                    (subst,residParams,residArgs,residSorts) <- partitionArgs (params,args,sorts);
+             | (param::params,arg::args,srt::types) -> {
+                    (subst,residParams,residArgs,residTypes) <- partitionArgs (params,args,types);
                     if (groundTerm? arg) then {
                       varInfo <- deref (specOf (Mode.modeSpec (initial (bSpec procInfo))), param);
-                      return (cons (varInfo withTerm arg,subst), residParams,residArgs,residSorts)
+                      return (cons (varInfo withTerm arg,subst), residParams,residArgs,residTypes)
                     } else 
-                      return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
+                      return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residTypes))
                  }
              | _ -> fail ("mismatched lists in partitionArgs: "
                     ^ "\n  parameters=" ^ (anyToString procInfo.parameters) 
                     ^ "\n  argList=" ^ (anyToString argList) 
-                    ^ "\n  paramSortList=" ^ (anyToString paramSortList) 
+                    ^ "\n  paramTypeList=" ^ (anyToString paramTypeList) 
                     ^ "\n")
        in
-         partitionArgs (procInfo.parameters,argList,paramSortList);
+         partitionArgs (procInfo.parameters,argList,paramTypeList);
 
-    (extendedSubst,residStateVars,residStateArgs,residStateSorts) <-
+    (extendedSubst,residStateVars,residStateArgs,residStateTypes) <-
        let
          def partitionState subst stateVars stateArgs =
            case (stateVars,stateArgs) of
              | ([],[]) -> return (subst,[],[],[])
              | (stateVar::stateVars,stateArg::stateArgs) -> {
-                    (subst,residStateVars,residStateArgs,residStateSorts) <- partitionState subst stateVars stateArgs;
+                    (subst,residStateVars,residStateArgs,residStateTypes) <- partitionState subst stateVars stateArgs;
                     varInfo <- deref (specOf procInfo.modeSpec, stateVar);
                     if (groundTerm? stateArg) then
-                      return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateSorts)
+                      return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateTypes)
                     else 
-                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateSorts))
+                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateTypes))
                  }
              | _ -> fail ("mismatched lists in partitionState"
                     ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
@@ -269,7 +269,7 @@ PE qualifying spec
        newBSpec <- removeNilTransitions newBSpec;
        if traceRewriting > 0 then
          print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
-       (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
+       (newReturnInfo : ReturnInfo, newReturnTerm, newReturnType,postcondition,bindingTerm) <-
          let
            def mkAnd t0 t1 = MSlang.mkApply (mkAndOp noPos, MSlang.mkTuple ([t0,t1], noPos), noPos)
            def projectSub subIn subOut termOut varRef =
@@ -356,9 +356,9 @@ PE qualifying spec
                       catch (prog ()) handler
           }};
 
-       residProd <- mkProduct (map toType residSorts,noPos);
-       residStore <- mkProduct (residStateSorts,noPos);
-       newProcType <- mkBase (makeId "Proc", [residProd,newReturnSort,residStore], noPos);
+       residProd <- mkProduct (map toType residTypes,noPos);
+       residStore <- mkProduct (residStateTypes,noPos);
+       newProcType <- mkBase (makeId "Proc", [residProd,newReturnType,residStore], noPos);
        newProcOp <- makeOp (newProcId,newProcType);
        newModeSpec <- addOp (modeSpec newOscSpec) newProcOp noPos;
        paramTerm <- mkTuple (residArgs,noPos);
@@ -388,12 +388,12 @@ PE qualifying spec
        -> (Oscar.Spec * MS.Term)
        -> Env (Option (Oscar.Spec * BSpec * Option Op.Ref * Procedure))
   def specialProc oldOscSpec (newOscSpec, callTerm) = {
-    (procId,procSort,procInfo,callArg) <-
+    (procId,procType,procInfo,callArg) <-
       case callTerm of
-        | Apply (Fun (Op (procId,fxty),procSort,pos),callArg,_) ->
+        | Apply (Fun (Op (procId,fxty),procType,pos),callArg,_) ->
              (case evalPartial (procedures newOscSpec, procId) of
                 | None -> raise (SpecError (noPos, "application is not a procedure call" ^ (printTerm callTerm)))
-                | Some procInfo -> return (procId,procSort,procInfo,callArg))
+                | Some procInfo -> return (procId,procType,procInfo,callArg))
         | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (System.anyToString callTerm) ^ " is not an application"));
     if traceRewriting > 0 then
       print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n") else return ();
@@ -411,14 +411,14 @@ PE qualifying spec
       case argTerm of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
         | _ -> return [argTerm]; % there is only one.
-    (paramSort,returnSort,storeSort) <-
-      case procSort of
-        | Base (qid, [paramSort,returnSort,storeSort],_) -> return (paramSort,returnSort,storeSort)
+    (paramType,returnType,storeType) <-
+      case procType of
+        | Base (qid, [paramType,returnType,storeType],_) -> return (paramType,returnType,storeType)
         | _ -> raise (SpecError (noPos, "Argument is not record"));
-    paramSortList <-
-      case paramSort of
+    paramTypeList <-
+      case paramType of
         | Product (fields,_) -> return (map (fn (x,y) -> y) fields)
-        | _ -> return [paramSort];
+        | _ -> return [paramType];
     (oldStore,newStore) <-
       case storeTerm of
         | Record ([(_,oldStore),(_,newStore)],_) -> return (oldStore,newStore)
@@ -427,39 +427,39 @@ PE qualifying spec
       case oldStore of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
         | _ -> return [oldStore];
-    (subst,residParams,residArgs,residSorts) <-
+    (subst,residParams,residArgs,residTypes) <-
        let
-         def partitionArgs (params,args,sorts) =
-           case (params,args,sorts) of
+         def partitionArgs (params,args,types) =
+           case (params,args,types) of
              | ([],[],[]) -> return ([],[],[],[])
-             | (param::params,arg::args,srt::sorts) -> {
-                    (subst,residParams,residArgs,residSorts) <- partitionArgs (params,args,sorts);
+             | (param::params,arg::args,srt::types) -> {
+                    (subst,residParams,residArgs,residTypes) <- partitionArgs (params,args,types);
                     if (groundTerm? arg) then {
                       varInfo <- deref (specOf (Mode.modeSpec (initial (bSpec procInfo))), param);
-                      return (cons (varInfo withTerm arg,subst), residParams,residArgs,residSorts)
+                      return (cons (varInfo withTerm arg,subst), residParams,residArgs,residTypes)
                     } else 
-                      return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
+                      return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residTypes))
                  }
              | _ -> fail ("mismatched lists in partitionArgs: "
                     ^ "\n  parameters=" ^ (anyToString procInfo.parameters) 
                     ^ "\n  argList=" ^ (anyToString argList) 
-                    ^ "\n  paramSortList=" ^ (anyToString paramSortList) 
+                    ^ "\n  paramTypeList=" ^ (anyToString paramTypeList) 
                     ^ "\n")
        in
-         partitionArgs (procInfo.parameters,argList,paramSortList);
+         partitionArgs (procInfo.parameters,argList,paramTypeList);
 
-    (extendedSubst,residStateVars,residStateArgs,residStateSorts) <-
+    (extendedSubst,residStateVars,residStateArgs,residStateTypes) <-
        let
          def partitionState subst stateVars stateArgs =
            case (stateVars,stateArgs) of
              | ([],[]) -> return (subst,[],[],[])
              | (stateVar::stateVars,stateArg::stateArgs) -> {
-                    (subst,residStateVars,residStateArgs,residStateSorts) <- partitionState subst stateVars stateArgs;
+                    (subst,residStateVars,residStateArgs,residStateTypes) <- partitionState subst stateVars stateArgs;
                     varInfo <- deref (specOf procInfo.modeSpec, stateVar);
                     if (groundTerm? stateArg) then
-                      return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateSorts)
+                      return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateTypes)
                     else 
-                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateSorts))
+                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateTypes))
                  }
              | _ -> fail ("mismatched lists in partitionState"
                     ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
@@ -969,8 +969,8 @@ associated with the edge.
               let (usedVars,newTerm) = convertOpsToVars variables usedVars term in
                 (usedVars,cons (newTerm,newTerms))) (usedVars,[]) terms in
             (usedVars, Seq (newTerms, a))
-      | SortedTerm (term,srt,a) ->
+      | TypedTerm (term,srt,a) ->
           let (usedVars,newTerm) = convertOpsToVars variables usedVars term in
-            (usedVars, SortedTerm (newTerm, srt, a))
+            (usedVars, TypedTerm (newTerm, srt, a))
 endspec
 \end{spec}
