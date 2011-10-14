@@ -17,7 +17,7 @@ and \Qualifier{Edge}.
 BSpec qualifying spec {
   import /Library/Structures/Data/Categories/Systems
 
-  sort BSpec = {
+  type BSpec = {
     initial : Vertex.Vertex,
     final : VertexSet.Set,
     system : System

@@ -30,7 +30,7 @@ Actually it doesn't look like it matters if we do the reachability
 forward or bacward .. we just reverse the termination test.
 
 \begin{spec}
-%   sort AbstStmt =
+%   type AbstStmt =
 %       | Loop AbstCode * (List AbstCode)
 %       | If (List AbstCode)
 %       | Step PTerm
@@ -39,8 +39,8 @@ forward or bacward .. we just reverse the termination test.
 %       | Break
 %       | Nil
 
-  sort AbstCode = List AbstStmt
-  sort AbstStmt =
+  type AbstCode = List AbstStmt
+  type AbstStmt =
       | If AbstCode * AbstCode
       | Assign PTerm
       | Guard PTerm

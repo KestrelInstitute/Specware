@@ -18,7 +18,7 @@ The following record type is used as container for additional code generation in
 \end{tabular}
 
 \begin{spec}
-  sort CodeGenerationUserInfo = {
+  type CodeGenerationUserInfo = {
      funName        : String,
      funParNames    : List String,
      resultOpName   : Option String,
@@ -36,7 +36,7 @@ The "CodeGenerationInfo" type is used to store internal information used in code
 
 
 \begin{spec}
-   sort CodeGenerationInfo = {
+   type CodeGenerationInfo = {
      funName         : String,
      funParams       : VarDecls,
      returnStmt      : CStmt,
@@ -45,12 +45,12 @@ The "CodeGenerationInfo" type is used to store internal information used in code
    }
 \end{spec}
 
-The sort "UpdateTerm" is used to represent left and right-hand-side of
+The type "UpdateTerm" is used to represent left and right-hand-side of
 a term representing a state update.
 
 \begin{spec}
-  sort Guard = PTerm
-  sort UpdateTerm = PTerm * PTerm
+  type Guard = PTerm
+  type UpdateTerm = PTerm * PTerm
 \end{spec}
 
 The operator "generateCode" is the main entry point for the code generation. It takes a program as input and generates a CSpec, i.e. an abstract representation of a C program.
@@ -124,8 +124,8 @@ Ensure, that the startelement is the first element in the mode list:
     in
     result
 
-%   sort AbstCode = List AbstStmt
-%   sort AbstStmt =
+%   type AbstCode = List AbstStmt
+%   type AbstStmt =
 %       | If AbstCode * AbstCode
 %       | Assign PTerm
 %       | Guard PTerm
@@ -248,9 +248,9 @@ is suffices for now.
 
 The operator \verb+generateVarDefns+ takes a spec and generates the corresponding variable declarations for the operations. Current restrictions:
 \begin{itemize}
-\item operator may only have primitive sorts "Nat", "Int", "Char", "String";
-\item operators with arrow sorts are not allowed;
-\item sort definitions are ignored.
+\item operator may only have primitive types "Nat", "Int", "Char", "String";
+\item operators with arrow types are not allowed;
+\item type definitions are ignored.
 \end{itemize}
 
 \begin{spec}
@@ -295,24 +295,24 @@ The following operator is used for generating global variables.
 \begin{spec}
   op generateVarDeclFromSpec: Spec -> String * OpInfo_ms -> VarDecl
   def generateVarDeclFromSpec spc (varname,opinfo) =
-    let (fixity,sortscheme,optterm) = opinfo in
-    generateVarDecl spc varname sortscheme
+    let (fixity,typescheme,optterm) = opinfo in
+    generateVarDecl spc varname typescheme
 \end{spec}
 
 \begin{spec}
-  op generateVarDecl: Spec -> String -> (TyVars_ms * Sort_ms) -> VarDecl
+  op generateVarDecl: Spec -> String -> (TyVars_ms * Type_ms) -> VarDecl
   def generateVarDecl spc varname (tyvars,srt) =
-    let ctype = varSortToType srt in
+    let ctype = varTypeToType srt in
     (varname,ctype)
 \end{spec}
 
-The operator "varSortToType" converts a MetaSlang sort to a C type for
+The operator "varTypeToType" converts a MetaSlang type to a C type for
 a variable. As mentioned above, for now only primitve types are
 regarded.
 
 \begin{spec}
-  op varSortToType0: Sort_ms -> Option Type
-  def varSortToType0 srt =
+  op varTypeToType0: Type_ms -> Option Type
+  def varTypeToType0 srt =
     case srt of
        |  Boolean _ -> Some Int
        |  Base (Imported("Nat","Nat"),[]) -> Some Int
@@ -324,20 +324,20 @@ regarded.
        |  Base (Imported("Static","Double"),[]) -> Some Double
        |  Product [] -> Some Void
        |  _ -> None
-       %|  _ -> (writeLine ("only primitive sorts may be used:"^toString(srt));fail "")
+       %|  _ -> (writeLine ("only primitive types may be used:"^toString(srt));fail "")
 
-  op varSortToType: Sort_ms -> Type
-  def varSortToType srt =
+  op varTypeToType: Type_ms -> Type
+  def varTypeToType srt =
     case srt of
       | Arrow(srt1,srt2) ->
-        (case varSortToType0 srt1 of
-           | Some _ -> (case varSortToType0 srt2 of
+        (case varTypeToType0 srt1 of
+           | Some _ -> (case varTypeToType0 srt2 of
                           | Some s -> s
-                          | None -> fail("illegal sort: "^toString(srt2))
+                          | None -> fail("illegal type: "^toString(srt2))
                        )
-           | None -> fail("if using an arrow sort, the domain must be a primitive type")
+           | None -> fail("if using an arrow type, the domain must be a primitive type")
           )
-      | _ -> (case varSortToType0 srt of
+      | _ -> (case varTypeToType0 srt of
                 | Some t -> t
                 | None -> fail("only primitive types may be used for variables")
              )
@@ -435,7 +435,7 @@ format $lhs = rhs$ and returns the term pairs, if this is true.
                Record [("1",args),("2",lhs),_])
           -> let lhs =
                (case lhs of
-                   (Record []) -> Fun(Op(Local("void_p"),Nonfix),intSort_ms)
+                   (Record []) -> Fun(Op(Local("void_p"),Nonfix),intType_ms)
                  | _ -> lhs) in
              Some (lhs,Apply(Fun(procop,procsrt),args))
       | _ -> None
@@ -444,7 +444,7 @@ format $lhs = rhs$ and returns the term pairs, if this is true.
 The predicate "isSuccModeOp" determines whether a given operator belongs to the successor state. Is our case, this means whether it is a local operator the name of which ends with a single quote.
 
 \begin{spec}
-  op isSuccModeOp: QualifiedId_ms -> Boolean
+  op isSuccModeOp: QualifiedId_ms -> Bool
   def isSuccModeOp(qid) =
     case qid
       of  Local(id) -> let lastChar = List.nth(String.explode(id),String.length(id)-1) in
@@ -474,7 +474,7 @@ The operator "containsSuccModeOps" determines whether a given term
 contains operators of the successor mode.
 
 \begin{spec}
-  op containsSuccModeOps: PTerm -> Boolean
+  op containsSuccModeOps: PTerm -> Bool
   def containsSuccModeOps(t) =
     let usedops = getUsedOperatorsTerm(t) in
     List.exists (fn(opr) -> isSuccModeOp(opr)) usedops
@@ -486,14 +486,14 @@ an updateable operator must syntactically belong to the successor
 mode.
 
 \begin{spec}
-  op isUpdateableOp: QualifiedId_ms -> Boolean
+  op isUpdateableOp: QualifiedId_ms -> Bool
   def isUpdateableOp = isSuccModeOp
 \end{spec}
 
 Given a term $lhsTerm$ representing the left-hand-side of an assignment term, the following operator determines, whether $lhsTerm$ refers to an operator that may be updated.
 
 \begin{spec}
-  op isUpdateableTerm: PTerm -> Boolean
+  op isUpdateableTerm: PTerm -> Bool
   def isUpdateableTerm(lhsTerm) =
     case lhsTerm
       of Fun(Op(qid,_),_) -> isUpdateableOp qid
@@ -550,7 +550,7 @@ A guard term is a term that isn't an update term and that does not
 contain any operators of the successor state.
 
 \begin{spec} 
-  op isGuardTerm: PTerm -> Boolean
+  op isGuardTerm: PTerm -> Bool
   def isGuardTerm t =
     case isUpdateTerm t of
       | Some(_,_) -> false
@@ -561,7 +561,7 @@ contain any operators of the successor state.
 
 The following operator "termToCExp" translates a MetaSlang term to a C
 expression. The "Spec" parameter is not used for now, it may be used
-later to unfold sort definitions.
+later to unfold type definitions.
 
 \begin{spec}
   op termToCExp: CodeGenerationInfo * Spec * PTerm -> CExp
@@ -638,14 +638,14 @@ restrict the code generation to primitive constants and locally
 defined variables with a primitive type.
 
 \begin{spec}
-  op fun0ToCExp: CodeGenerationInfo * Spec * Fun_ms * Sort_ms -> CExp
+  op fun0ToCExp: CodeGenerationInfo * Spec * Fun_ms * Type_ms -> CExp
   def fun0ToCExp(cginfo,spc,fun,srt) =
     let procNames = cginfo.procNames in
     case fun
       of  Op(Local(id),_) -> 
              let _ = writeLine("local id "^id) in
              if List.member(id,procNames) then Fn(id,[],Void)
-             else Var(id,varSortToType srt)
+             else Var(id,varTypeToType srt)
         | Int(val) -> Const(if val<0 then Int(false, - val) else Int(true,val))
         | Char(val) -> Const(Char(val))
         | Bool(val) -> Const(Int(true,if val then 1 else 0))
@@ -658,7 +658,7 @@ operators defined for the primitive types are allowed that have their
 pendant on the C side.
 
 \begin{spec}
-  op funToCExp: Spec * Fun_ms * Sort_ms -> CExp
+  op funToCExp: Spec * Fun_ms * Type_ms -> CExp
   def funToCExp(spc,fun,srt) = 
     case fun of
         Equals -> Binary(Eq)
@@ -714,7 +714,7 @@ pendant on the C side.
 \end{spec}
 
 \begin{spec}
-  op funIdToCExp: QualifiedId_ms * Sort_ms -> CExp
+  op funIdToCExp: QualifiedId_ms * Type_ms -> CExp
   def funIdToCExp(qid,srt) =
     let id = case qid of
                | Local(id) -> id
@@ -746,7 +746,7 @@ from an auxiliary update of the form $x = x_0$.
     let auxOp = getUpdatedOperator(rhs) in % this can be done, because we have constructed the rhs from an lhs
     let Local(auxid) = auxOp in
     case lookupOp(spc,existingOp) of
-      | Some (id,(fx,sortscheme,_)) -> generateVarDecl spc auxid sortscheme
+      | Some (id,(fx,typescheme,_)) -> generateVarDecl spc auxid typescheme
       | None -> (writeLine "internal error"; fail "")
 \end{spec}
 
@@ -849,8 +849,8 @@ from an auxiliary update of the form $x = x_0$.
         \end{spec}
 
         \begin{spec}
-          op isFinalMode: CodeGenerationInfo -> TaggedElem -> Boolean
-          op isJumpTarget: CodeGenerationInfo -> TaggedElem -> Boolean
+          op isFinalMode: CodeGenerationInfo -> TaggedElem -> Bool
+          op isJumpTarget: CodeGenerationInfo -> TaggedElem -> Bool
         \end{spec}
           def isJumpTarget cginfo mod =
             List.member(mod,cginfo.jumpTargetModes)
@@ -860,25 +860,25 @@ from an auxiliary update of the form $x = x_0$.
 
 
 
-        natSort is the sort for natural numbers. The string "Nat" appears
-        twice. The first is the name of the (imported) spec in which the sort
-        is defined.  compSort is the sort for comparison operators: =, <= and >
-        on the natural numbers and arithSort is for arithmetic operations.
+        natType is the type for natural numbers. The string "Nat" appears
+        twice. The first is the name of the (imported) spec in which the type
+        is defined.  compType is the type for comparison operators: =, <= and >
+        on the natural numbers and arithType is for arithmetic operations.
 
         \begin{spec}
-          % def natSort = Base (Imported ("Nat","Nat"), []) : Sort_ms
+          % def natType = Base (Imported ("Nat","Nat"), []) : Type_ms
 
-          def compSort =
-            Arrow (mkProduct_ms [natSort_ms, natSort_ms], boolSort_ms) : Sort_ms
-          def arithSort =
-            Arrow (mkProduct_ms [natSort_ms, natSort_ms], natSort_ms) : Sort_ms
+          def compType =
+            Arrow (mkProduct_ms [natType_ms, natType_ms], boolType_ms) : Type_ms
+          def arithType =
+            Arrow (mkProduct_ms [natType_ms, natType_ms], natType_ms) : Type_ms
         \end{spec}
 
-        Next is the sort for conjunction.
+        Next is the type for conjunction.
 
         \begin{spec}
-          def conjSort =
-            Arrow (mkProduct_ms [boolSort_ms,boolSort_ms], boolSort_ms) : Sort_ms
+          def conjType =
+            Arrow (mkProduct_ms [boolType_ms,boolType_ms], boolType_ms) : Type_ms
         \end{spec}
 
         The next few help to construct terms.  localOp is a local operator, impOp
@@ -889,8 +889,8 @@ from an auxiliary update of the form $x = x_0$.
         \begin{spec}
           def localOp opr srt = Fun (Op (Local opr, Nonfix), srt) : PTerm
           def impOp opr srt = Fun (Op (Imported opr, Nonfix), srt) : PTerm
-          def natConst n = Fun (Int n, natSort_ms) : PTerm
-          def equals = (Fun (Equals, compSort)) : PTerm
+          def natConst n = Fun (Int n, natType_ms) : PTerm
+          def equals = (Fun (Equals, compType)) : PTerm
         \end{spec}
 
         Given a list of (assumed) boolean terms, this returns the term representing
@@ -899,9 +899,9 @@ from an auxiliary update of the form $x = x_0$.
         \begin{spec}
           op conjList : List PTerm -> PTerm
           def conjList l = case l of
-	    | [] -> Fun (Bool true, boolSort_ms)
+	    | [] -> Fun (Bool true, boolType_ms)
             | h::[] -> h
-            | h::t -> Apply (Fun (And, conjSort), mkTuple_ms [h, conjList t])
+            | h::t -> Apply (Fun (And, conjType), mkTuple_ms [h, conjList t])
         \end{spec}
 
         \begin{spec}
@@ -1032,7 +1032,7 @@ from an auxiliary update of the form $x = x_0$.
                               spc1.ops spc2.ops
                    in
                      {
-                      sorts = spc1.sorts,
+                      types = spc1.types,
                       ops = ops,
                       imports = spc1.imports,
                       name = spc1.name,
@@ -1086,7 +1086,7 @@ from an auxiliary update of the form $x = x_0$.
 
           op collUndecExp: VarDecls * Exp -> VarDecls
           def collUndecExp(decls,exp) =
-            let def isDeclared(vd as (id,_)):Boolean =
+            let def isDeclared(vd as (id,_)):Bool =
                   case List.find (fn(id0,_) -> id0 = id) decls of
                     | Some d -> true
                     | None -> false

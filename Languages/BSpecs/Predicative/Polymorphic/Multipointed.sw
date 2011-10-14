@@ -52,21 +52,21 @@ happen later.
 
 This needs some work. For starters, it is not enough to label modes
 and transitions in the category \cat{Spec}. We need to distinguish between
-the sorts and ops that are part of the state and those that are ``static''
+the types and ops that are part of the state and those that are ``static''
 (in the ASM sense). This suggests labeling the states and transitions
 in slice categories. Are all such spec sliced over the same spec?
-Presumably sorts like \verb{Nat} should be pervasive. But there should also
-be the possibility to define sorts whose interpretation is fixed
+Presumably types like \verb{Nat} should be pervasive. But there should also
+be the possibility to define types whose interpretation is fixed
 but scoped nevertheless.
 
-Importing the category of specs includes also the sorts for the abstract
+Importing the category of specs includes also the types for the abstract
 syntax of MetaSlang and spec morphisms.
 
 \begin{spec}
 BSpec qualifying spec {
   import /Library/Structures/Data/Categories/Systems/Polymorphic
 
-  sort BSpec = {
+  type BSpec = {
     initial : V.Elem,
     final : V.Set,
     system : System (Spec, Morphism)
@@ -184,16 +184,16 @@ spec for the transition and the morphisms from the start and end specs
 into the new spec. The axioms are added to the new spec. At present the
 Axioms have no type variables.
 
-When constructing the new spec, we ignore the sorts for now. We assume
-for now that the program does not define any new sorts.
+When constructing the new spec, we ignore the types for now. We assume
+for now that the program does not define any new types.
 
 \begin{spec}
-%  sort Axiom = String * Term
+%  type Axiom = String * Term
 %   op makeSpan : Spec -> List Axiom -> (Spec * Morphism * Morphism)
 %   def makeSpan spc axioms = 
 %     let newSpc = {
 %        name = spc.name ^ " + " ^ spc.name ^ "'",  % prettyPrinting only
-%        sorts = spc.sorts,
+%        types = spc.types,
 %        ops = foldMap_p
 %           (fn map ->
 %              fn opr ->
@@ -205,7 +205,7 @@ for now that the program does not define any new sorts.
 %     let sm1 : Morphism = {
 %       dom = spc,
 %       cod = newSpc,
-%       sortMap = emptyMap_p,   % wrong but not used
+%       typeMap = emptyMap_p,   % wrong but not used
 %       opMap = foldMap_p
 %           (fn map ->
 %              fn opr ->
@@ -214,7 +214,7 @@ for now that the program does not define any new sorts.
 %     let sm2 : Morphism = {
 %       dom = spc,
 %       cod = newSpc,
-%       sortMap = emptyMap_p,   % wrong but not used
+%       typeMap = emptyMap_p,   % wrong but not used
 %       opMap = foldMap_p 
 %           (fn map ->
 %              fn opr ->

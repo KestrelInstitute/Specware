@@ -7,7 +7,7 @@ category is monomorphic. See the comments in the above.
 BSpec qualifying spec {
   import /Library/Structures/Data/Categories/Systems/Monomorphic
 
-  sort BSpec = {
+  type BSpec = {
     initial : V.Elem,
     final : V.Set,
     system : System

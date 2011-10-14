@@ -16,12 +16,12 @@ spec
 It is convenient, when traversing an algorithm representing a diagram,
 to first convert it into a coalgebra. The coalgebra can represented
 either as a function or as a map. The latter has the advantage that it
-can be updated. We define sorts for each of the two representations
+can be updated. We define types for each of the two representations
 of coalgebras.
 
 \begin{spec}
-  sort Coalgebra = Vertex.Vertex -> EdgeSet.Set
-  sort CoalgebraMap = CoalgMap.Map % (Vertex.Vertex, EdgeSet.Set)
+  type Coalgebra = Vertex.Vertex -> EdgeSet.Set
+  type CoalgebraMap = CoalgMap.Map % (Vertex.Vertex, EdgeSet.Set)
 \end{spec}
 
 A better scheme might be to start with just the Map version and then

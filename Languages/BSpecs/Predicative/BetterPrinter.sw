@@ -71,13 +71,13 @@ spec {
           (visited,ppBefore) (coAlg src)
 
   op ppMorphismShort : Morphism -> Doc
-  def ppMorphismShort {dom=_, cod=_, sortMap, opMap} = 
-    let sortM =
+  def ppMorphismShort {dom=_, cod=_, typeMap, opMap} = 
+    let typeM =
       foldMap (fn newMap -> fn d -> fn c ->
           if d = c then
             newMap
           else
-            update newMap d c) emptyMap sortMap in
+            update newMap d c) emptyMap typeMap in
     let opM =
       foldMap (fn newMap -> fn d -> fn c ->
           if d = c then
@@ -89,17 +89,17 @@ spec {
                           ppQualifiedId dom,
                           ppString "+->",
                           ppQualifiedId cod], l)) [] map) in
-    if sortM = emptyMap & opM = emptyMap then
+    if typeM = emptyMap & opM = emptyMap then
       ppNil
     else
       ppConcat [
         ppBreak,
-        (if sortM = emptyMap then
+        (if typeM = emptyMap then
            ppNil
          else
            ppConcat [
-             ppString "sort map {",
-             ppM sortM,
+             ppString "type map {",
+             ppM typeM,
              ppString "} "
            ]),
         (if opM = emptyMap then
