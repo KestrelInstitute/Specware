@@ -180,7 +180,7 @@ op chooseDefinedTerm(tm1: MSTerm, tm2: MSTerm): MSTerm =
 	     %% has had a chance to call compressDefs
              let (tvs, ty, _) = unpackTerm(head combined_decls) in
              let pos = termAnn new_info.dfn in
-	     let combined_dfn = maybePiTerm(tvs, SortedTerm(maybeAndTerm (combined_defs, pos), ty, pos)) in
+	     let combined_dfn = maybePiTerm(tvs, TypedTerm(maybeAndTerm (combined_defs, pos), ty, pos)) in
              let _ = if true then ()
                else writeLine("merge old: "^id^"\n"^printTerm(And(old_defs, noPos))^"\n with \n"^printTerm(And(new_defs, noPos))
                               ^"\n to\n"^printTerm combined_dfn) in
