@@ -587,6 +587,10 @@ spec
      Qualified("String","implode"),
      Qualified("String","^"),
      Qualified("Integer","ipred"),
+     Qualified("Integer","divides"),
+     Qualified("Integer","divR"),
+     Qualified("Integer","divE"),
+     Qualified("Integer","divT"),
      Qualified("Char","ord"),
      Qualified("Char","isUpperCase"),
      Qualified("Char","isLowerCase"),
@@ -853,7 +857,7 @@ spec
   def ppValue context v =
     case v of
       | Int         n  -> string (show n)
-      | Char        c  -> string ("#"^show c)
+      | Char        c  -> string ("\#"^show c)
       | String      s  -> string ("\"" ^ s ^ "\"")
       | Bool        b  -> string (if b then "true" else "false")
       | RecordVal   rm ->
