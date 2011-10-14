@@ -727,7 +727,7 @@ AnnSpecPrinter qualifying spec
   % | Base (Qualified ("String", "String"))  -> string "String"
   % | Base (Qualified ("Nat",    "Nat"))     -> string "Nat"
 
-    | Boolean _ -> string "Boolean"
+    | Boolean _ -> string "Bool"
 
     | Base (idInfo, [], _) -> pp.ppTypeId idInfo
 
@@ -1306,7 +1306,7 @@ AnnSpecPrinter qualifying spec
 			     [(0, pp.Spec), 
 			      (0, string " ")]))]
 	     ++
-	     (ppSpecElements context spc (NotSpec Nil) spc.elements)
+	     (ppSpecElements context spc (NotSpec [getBaseSpec()]) spc.elements)
 	     ++
 	     [(0, pp.EndSpec), 
 	      (0, string "")])
@@ -1322,7 +1322,7 @@ AnnSpecPrinter qualifying spec
 			     [(0, pp.Spec), 
 			      (0, string " ")]))]
 	     ++
-	     (ppSpecElements context spc (NotSpec []) spc.elements)
+	     (ppSpecElements context spc (NotSpec [getBaseSpec()]) spc.elements)
 	     ++
 	     [(0, pp.EndSpec), 
 	      (0, string "")])
