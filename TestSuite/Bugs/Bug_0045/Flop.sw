@@ -1,13 +1,13 @@
 Flip =
   spec
-     sort Flip
+     type Flip
      op flip : Flip -> Flip
   endspec
 
 Flop =
   spec
-     sort A
-     sort B
+     type A
+     type B
      op A.flop : A -> A
      op B.flop : B -> B
   endspec

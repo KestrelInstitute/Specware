@@ -1,13 +1,13 @@
 S = spec
 
-  type Predicate a = a -> Boolean
+  type Predicate a = a -> Bool
 
-  op uniquelySatisfies? : [a] a * Predicate a -> Boolean
+  op uniquelySatisfies? : [a] a * Predicate a -> Bool
   axiom uniquelySatisfies?_def is [a] fa(x,p)
     uniquelySatisfies?(x,p) =
     (p x && (fa (y:a) p y => y = x))
 
-  op uniquelySatisfied? : [a] Predicate a -> Boolean
+  op uniquelySatisfied? : [a] Predicate a -> Bool
   axiom uniquelySatisfied?_def is [a] fa(p)
     uniquelySatisfied? p =
     (ex (x:a) uniquelySatisfies?(x,p))

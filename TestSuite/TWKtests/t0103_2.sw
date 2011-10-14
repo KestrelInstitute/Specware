@@ -1,9 +1,9 @@
 player = spec
-   op you:    Boolean
-   op me:     Boolean
-   op next:   Boolean -> Boolean
-   op isMe?:  Boolean -> Boolean
-   op isYou?: Boolean -> Boolean 
+   op you:    Bool
+   op me:     Bool
+   op next:   Bool -> Bool
+   op isMe?:  Bool -> Bool
+   op isYou?: Bool -> Bool 
 
    axiom y is you = false
    axiom m is me  = true
@@ -16,7 +16,7 @@ player = spec
 position = spec 
    import player
 
-   sort position = Nat * Nat * Nat * Nat * Boolean
+   type position = Nat * Nat * Nat * Nat * Bool
 
    op numPearls : position -> Nat
    def numPearls (b) = b.1 + b.2 + b.3 + b.4
@@ -25,9 +25,9 @@ position = spec
 
 move = spec
     import position
-    sort row     = {n : Nat | n > 0 && n <= 4}
-    sort move    = position * row * Nat
-    op legal?:   move -> Boolean
+    type row     = {n : Nat | n > 0 && n <= 4}
+    type move    = position * row * Nat
+    op legal?:   move -> Bool
     def legal?(m) = true
 %   def legal?(mov) = 
 %       let rw = mov.2 in 
@@ -37,5 +37,5 @@ move = spec
 %           (project rw pos) >= num 
 %            && num > 0 
 %            && numPearls(pos) > n)
-    sort legalMove =  {m: move | legal? m}
+    type legalMove =  {m: move | legal? m}
     end

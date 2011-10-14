@@ -16,7 +16,7 @@ M = morphism A -> B {Counter +-> Nat}
 AA = spec
   import A
   type Interval = {start: Counter, stop: Counter}
-  op  isEmptyInterval? : Interval -> Boolean
+  op  isEmptyInterval? : Interval -> Bool
   def isEmptyInterval? {start = x, stop = y} = (x = y)
 endspec
 

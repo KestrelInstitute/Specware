@@ -1,5 +1,5 @@
-OneSort = spec
-  sort X
+OneType = spec
+  type X
 endspec
 
 
@@ -7,9 +7,9 @@ Lists = spec
 
   % (parameterized) spec for monomorphic lists
 
-  import OneSort  % parameter
+  import OneType  % parameter
 
-  sort LList = | nnil | ccons X * LList
+  type LList = | nnil | ccons X * LList
   % we double the initial letters to avoid conflict with built-in lists
 
   op len : LList -> Integer
@@ -27,7 +27,7 @@ Lists = spec
                         | ccons(hd,tl) -> if n = 0 then tl
                                           else nthtail(tl,n-1)
 
-  op haselem : LList * X -> Boolean
+  op haselem : LList * X -> Bool
   def haselem(l,x) = case l of
                         | nnil -> false
                         | ccons(hd,tl) -> if x = hd then true
@@ -37,7 +37,7 @@ endspec
 
 
 Symbols = spec
-  sort Symbol
+  type Symbol
 endspec
 
 
@@ -45,7 +45,7 @@ PossiblyObscuredSymbols = spec
 
   import Symbols
 
-  sort POSymbol = | obscured
+  type POSymbol = | obscured
                   | clear Symbol
 
 endspec
@@ -53,7 +53,7 @@ endspec
 
 Words =  % lists of symbols, via instantiation
   translate
-    Lists[morphism OneSort -> Symbols {X +-> Symbol}]
+    Lists[morphism OneType -> Symbols {X +-> Symbol}]
     by {LList   +-> Word,
         len     +-> lenW,
         nthelem +-> nthelemW,
@@ -63,7 +63,7 @@ Words =  % lists of symbols, via instantiation
 
 Messages =  % lists of possibly obscured symbols, via instantiation
   translate
-    Lists[morphism OneSort -> PossiblyObscuredSymbols {X +-> POSymbol}]
+    Lists[morphism OneType -> PossiblyObscuredSymbols {X +-> POSymbol}]
     by {LList   +-> Message,
         len     +-> lenM,
         nthelem +-> nthelemM,
@@ -75,7 +75,7 @@ SymbolMatching = spec
 
   import PossiblyObscuredSymbols
 
-  op symb_matches? : Symbol * POSymbol -> Boolean
+  op symb_matches? : Symbol * POSymbol -> Bool
   def symb_matches?(s,os) = case os of
                                | clear s1 -> s = s1
                                | obscured -> true
@@ -89,7 +89,7 @@ WordMatching = spec
   import Messages
   import SymbolMatching
 
-  op word_matches_at? : Word * Message * Integer -> Boolean
+  op word_matches_at? : Word * Message * Integer -> Bool
   axiom word_matching is
         fa(wrd,msg,pos)
           word_matches_at?(wrd,msg,pos) <=>
@@ -106,14 +106,14 @@ Matches = spec
 
   import Words
 
-  sort Match = {word : Word, position : Integer}
+  type Match = {word : Word, position : Integer}
 
 endspec
 
 
 MatchLists =  % lists of matches, via instantiation
   translate
-    Lists[morphism OneSort -> Matches {X +-> Match}]
+    Lists[morphism OneType -> Matches {X +-> Match}]
     by {LList   +-> MatchList,
         len     +-> lenML,
         nthelem +-> nthelemML,
@@ -123,7 +123,7 @@ MatchLists =  % lists of matches, via instantiation
 
 WordLists =  % lists of words, via instantiation
   translate
-    Lists[morphism OneSort -> Words {X +-> Word}]
+    Lists[morphism OneType -> Words {X +-> Word}]
     by {LList   +-> WordList,
         len     +-> lenWL,
         nthelem +-> nthelemWL,

@@ -3,32 +3,32 @@
 %% Also, A and B (the domain and codomain of M) both import misc specs, as does C and A2.
 
 S = spec
-     op foo : List Nat -> List Boolean
+     op foo : List Nat -> List Bool
      def foo nats =
        map (fn(n:Nat) -> if n=0 then false else true) nats
     endspec
 
 A = spec
      import S
-     sort A
+     type A
     end-spec
 
 T = spec
-     op baz : List Nat -> List Boolean
+     op baz : List Nat -> List Bool
      def baz nats =
        map (fn(n:Nat) -> if n=0 then false else true) nats
     endspec
 
 B = spec
      import S
-     sort B 
+     type B 
      import T
     end-spec
 
 M = morphism A -> B {A +-> B}
 
 Z = spec
-     sort Z 
+     type Z 
     end-spec
 
 A2 = spec
@@ -40,8 +40,8 @@ A2 = spec
 
 C = spec
      import A2
-     sort W 
-     sort Y 
+     type W 
+     type Y 
      op bar : A -> A
     end-spec
 

@@ -3,18 +3,18 @@
 %% Also, A and B (the domain and codomain of M) both import misc specs, as does C and A2.
 
 S = spec
-     op foo : List Nat -> List Boolean
+     op foo : List Nat -> List Bool
      def foo nats =
        map (fn(n:Nat) -> if n=0 then false else true) nats
     endspec
 
 B = spec
      import S
-     sort B
+     type B
     end-spec
 
 C = spec
-     sort C
+     type C
     end-spec
 
 A = spec
@@ -26,8 +26,8 @@ A = spec
 
 E = spec
      import A
-     sort X
-     sort Y 
+     type X
+     type Y 
      op bar : A -> A
     end-spec
 

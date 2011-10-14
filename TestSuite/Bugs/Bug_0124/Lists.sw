@@ -1,10 +1,10 @@
 spec
 
-  sort ListI = | nilI
+  type ListI = | nilI
                | consI Integer * ListI
   % we add "I" (for "Integers") to distinguish from built-in lists
 
-  op isempty : ListI -> Boolean
+  op isempty : ListI -> Bool
   def isempty(l) = (l = nilI)
 
   op length : ListI -> Integer
@@ -23,7 +23,7 @@ spec
                          | nilI -> l2
                          | consI(hd,tl) -> consI(hd,concat(tl,l2))
 
-  op member : Integer * ListI -> Boolean
+  op member : Integer * ListI -> Bool
   def member(i,l) = case l of
                        | nilI -> false
                        | consI(hd,tl) -> if i = hd then true

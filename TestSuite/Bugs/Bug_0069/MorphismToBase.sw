@@ -1,6 +1,6 @@
 (* its ok to map into the base *)
 
-S = spec sort SS endspec
+S = spec type SS endspec
 
 T = spec endspec
 

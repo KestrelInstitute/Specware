@@ -1,10 +1,10 @@
 S = spec
 
- sort A
- sort S
- sort R
+ type A
+ type S
+ type R
  op h: E * (A -> E) * S -> R * S
- sort E = S -> R * S
+ type E = S -> R * S
 
  op bind: E * (A -> E) -> E
  def bind(f, g) s =

@@ -1,6 +1,6 @@
 spec
   def verbose = false
-  op tester : String * Boolean -> ()
+  op tester : String * Bool -> ()
   def tester (what, test) =
     if verbose then
       writeLine((if test then "P: " else "F: ")^what)
@@ -8,10 +8,10 @@ spec
       if test then ()
       else writeLine("F: "^what)
 
-  def alltests : () = (% Boolean [  1]:  op ~             : Boolean -> Boolean
+  def alltests : () = (% Bool [  1]:  op ~             : Bool -> Bool
     tester ("(~ ( true )) = false", (~ ( true )) = false);
     tester ("(~ ( false )) = true", (~ ( false )) = true);
-% Boolean [  2]:  op &&   infixr 15 : Boolean * Boolean -> Boolean 
+% Bool [  2]:  op &&   infixr 15 : Bool * Bool -> Bool 
     tester ("(&& ( false , false )) = false", (&& ( false , false )) = false);
     tester ("let A = id ( false , false ) in (&& A) = false", let A = id ( false , false ) in (&& A) = false);
     tester ("(&& ( false , true )) = false", (&& ( false , true )) = false);
@@ -20,7 +20,7 @@ spec
     tester ("let A = id ( true , false ) in (&& A) = false", let A = id ( true , false ) in (&& A) = false);
     tester ("(&& ( true , true )) = true", (&& ( true , true )) = true);
     tester ("let A = id ( true , true ) in (&& A) = true", let A = id ( true , true ) in (&& A) = true);
-% Boolean [  3]:  op ||  infixr 14 : Boolean * Boolean -> Boolean 
+% Bool [  3]:  op ||  infixr 14 : Bool * Bool -> Bool 
     tester ("(|| ( false , false )) = false", (|| ( false , false )) = false);
     tester ("let A = id ( false , false ) in (|| A) = false", let A = id ( false , false ) in (|| A) = false);
     tester ("(|| ( false , true )) = true", (|| ( false , true )) = true);
@@ -29,7 +29,7 @@ spec
     tester ("let A = id ( true , false ) in (|| A) = true", let A = id ( true , false ) in (|| A) = true);
     tester ("(|| ( true , true )) = true", (|| ( true , true )) = true);
     tester ("let A = id ( true , true ) in (|| A) = true", let A = id ( true , true ) in (|| A) = true);
-% Boolean [  4]:  op =>  infixr 13 : Boolean * Boolean -> Boolean 
+% Bool [  4]:  op =>  infixr 13 : Bool * Bool -> Bool 
     tester ("(=> ( false , false )) = true", (=> ( false , false )) = true);
     tester ("let A = id ( false , false ) in (=> A) = true", let A = id ( false , false ) in (=> A) = true);
     tester ("(=> ( false , true )) = true", (=> ( false , true )) = true);
@@ -38,7 +38,7 @@ spec
     tester ("let A = id ( true , false ) in (=> A) = false", let A = id ( true , false ) in (=> A) = false);
     tester ("(=> ( true , true )) = true", (=> ( true , true )) = true);
     tester ("let A = id ( true , true ) in (=> A) = true", let A = id ( true , true ) in (=> A) = true);
-% Boolean [  5]:  op <=> infixr 12 : Boolean * Boolean -> Boolean 
+% Bool [  5]:  op <=> infixr 12 : Bool * Bool -> Bool 
     tester ("(<=> ( false , false )) = true", (<=> ( false , false )) = true);
     tester ("let A = id ( false , false ) in (<=> A) = true", let A = id ( false , false ) in (<=> A) = true);
     tester ("(<=> ( false , true )) = false", (<=> ( false , true )) = false);
@@ -47,12 +47,12 @@ spec
     tester ("let A = id ( true , false ) in (<=> A) = false", let A = id ( true , false ) in (<=> A) = false);
     tester ("(<=> ( true , true )) = true", (<=> ( true , true )) = true);
     tester ("let A = id ( true , true ) in (<=> A) = true", let A = id ( true , true ) in (<=> A) = true);
-% Boolean [  6]:  op ~=  infixr 20 : fa(a) a * a -> Boolean
+% Bool [  6]:  op ~=  infixr 20 : fa(a) a * a -> Bool
     tester ("(~= ( 4 , 4 )) = false", (~= ( 4 , 4 )) = false);
     tester ("let A = id ( 4 , 4 ) in (~= A) = false", let A = id ( 4 , 4 ) in (~= A) = false);
     tester ("(~= ( 4 , 5 )) = true", (~= ( 4 , 5 )) = true);
     tester ("let A = id ( 4 , 5 ) in (~= A) = true", let A = id ( 4 , 5 ) in (~= A) = true);
-% Boolean [  7]:  op compare  : Boolean * Boolean -> Comparison
+% Bool [  7]:  op compare  : Bool * Bool -> Comparison
     tester ("(compare ( false , false )) = Equal", (compare ( false , false )) = Equal);
     tester ("let A = id ( false , false ) in (compare A) = Equal", let A = id ( false , false ) in (compare A) = Equal);
     tester ("(compare ( false , true )) = Less", (compare ( false , true )) = Less);
@@ -61,10 +61,10 @@ spec
     tester ("let A = id ( true , false ) in (compare A) = Greater", let A = id ( true , false ) in (compare A) = Greater);
     tester ("(compare ( true , true )) = Equal", (compare ( true , true )) = Equal);
     tester ("let A = id ( true , true ) in (compare A) = Equal", let A = id ( true , true ) in (compare A) = Equal);
-% Boolean [120]:  op toString : Boolean -> String  % deprecated
+% Bool [120]:  op toString : Bool -> String  % deprecated
     tester ("(toString ( true )) = \"true\"", (toString ( true )) = "true");
     tester ("(toString ( false )) = \"false\"", (toString ( false )) = "false");
-% Boolean [129]:  op show : Boolean -> String
+% Bool [129]:  op show : Bool -> String
     tester ("(show ( true )) = \"true\"", (show ( true )) = "true");
     tester ("(show ( false )) = \"false\"", (show ( false )) = "false");
 
@@ -72,39 +72,39 @@ spec
     tester ("(ord ( #A )) = 65", (ord ( #A )) = 65);
 % Char [ 11]:  op chr : {n : Nat | n < 256} -> Char
     tester ("(chr ( 65 )) = #A", (chr ( 65 )) = #A);
-% Char [ 12]:  op isUpperCase : Char -> Boolean
+% Char [ 12]:  op isUpperCase : Char -> Bool
     tester ("(isUpperCase ( #! )) = false", (isUpperCase ( #! )) = false);
     tester ("(isUpperCase ( #3 )) = false", (isUpperCase ( #3 )) = false);
     tester ("(isUpperCase ( #A )) = true", (isUpperCase ( #A )) = true);
     tester ("(isUpperCase ( #a )) = false", (isUpperCase ( #a )) = false);
     tester ("(isUpperCase ( #\\xdd )) = true", (isUpperCase ( #\xdd )) = true);
     tester ("(isUpperCase ( #\\xff )) = false", (isUpperCase ( #\xff )) = false);
-% Char [ 13]:  op isLowerCase : Char -> Boolean
+% Char [ 13]:  op isLowerCase : Char -> Bool
     tester ("(isLowerCase ( #! )) = false", (isLowerCase ( #! )) = false);
     tester ("(isLowerCase ( #3 )) = false", (isLowerCase ( #3 )) = false);
     tester ("(isLowerCase ( #A )) = false", (isLowerCase ( #A )) = false);
     tester ("(isLowerCase ( #a )) = true", (isLowerCase ( #a )) = true);
     tester ("(isLowerCase ( #\\xdd )) = false", (isLowerCase ( #\xdd )) = false);
     tester ("(isLowerCase ( #\\xff )) = true", (isLowerCase ( #\xff )) = true);
-% Char [ 14]:  op isAlpha     : Char -> Boolean
+% Char [ 14]:  op isAlpha     : Char -> Bool
     tester ("(isAlpha ( #! )) = false", (isAlpha ( #! )) = false);
     tester ("(isAlpha ( #3 )) = false", (isAlpha ( #3 )) = false);
     tester ("(isAlpha ( #A )) = true", (isAlpha ( #A )) = true);
     tester ("(isAlpha ( #a )) = true", (isAlpha ( #a )) = true);
     tester ("(isAlpha ( #\\xff )) = true", (isAlpha ( #\xff )) = true);
-% Char [ 15]:  op isNum       : Char -> Boolean
+% Char [ 15]:  op isNum       : Char -> Bool
     tester ("(isNum ( #! )) = false", (isNum ( #! )) = false);
     tester ("(isNum ( #3 )) = true", (isNum ( #3 )) = true);
     tester ("(isNum ( #A )) = false", (isNum ( #A )) = false);
     tester ("(isNum ( #a )) = false", (isNum ( #a )) = false);
     tester ("(isNum ( #\\xff )) = false", (isNum ( #\xff )) = false);
-% Char [ 16]:  op isAlphaNum  : Char -> Boolean
+% Char [ 16]:  op isAlphaNum  : Char -> Bool
     tester ("(isAlphaNum ( #! )) = false", (isAlphaNum ( #! )) = false);
     tester ("(isAlphaNum ( #3 )) = true", (isAlphaNum ( #3 )) = true);
     tester ("(isAlphaNum ( #A )) = true", (isAlphaNum ( #A )) = true);
     tester ("(isAlphaNum ( #a )) = true", (isAlphaNum ( #a )) = true);
     tester ("(isAlphaNum ( #\\xff )) = true", (isAlphaNum ( #\xff )) = true);
-% Char [ 17]:  op isAscii     : Char -> Boolean
+% Char [ 17]:  op isAscii     : Char -> Bool
     tester ("(isAscii ( #! )) = true", (isAscii ( #! )) = true);
     tester ("(isAscii ( #3 )) = true", (isAscii ( #3 )) = true);
     tester ("(isAscii ( #A )) = true", (isAscii ( #A )) = true);
@@ -164,9 +164,9 @@ spec
 % Functions [ 26]:  op o infixl 24 : fa(a,b,c) (b -> c) * (a -> b) -> (a -> c)
     tester ("((o(succ,succ))3) = 5", ((o(succ,succ))3) = 5);
     tester ("(let(ss)=(succ,succ)in(o(ss))3) = 5", (let(ss)=(succ,succ)in(o(ss))3) = 5);
-% Functions [ 27]:  op injective?  : fa(a,b) (a -> b) -> Boolean
-% Functions [ 28]:  op surjective? : fa(a,b) (a -> b) -> Boolean
-% Functions [ 29]:  op bijective?  : fa(a,b) (a -> b) -> Boolean
+% Functions [ 27]:  op injective?  : fa(a,b) (a -> b) -> Bool
+% Functions [ 28]:  op surjective? : fa(a,b) (a -> b) -> Bool
+% Functions [ 29]:  op bijective?  : fa(a,b) (a -> b) -> Bool
 % Functions [ 30]:  op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
 
 % Integer [ 31]:  op ~             : Integer -> Integer
@@ -186,22 +186,22 @@ spec
 % Integer [ 36]:  op rem infixl 26 : Integer * NZInteger -> Integer
     tester ("(rem ( 27 , 10 )) = 7", (rem ( 27 , 10 )) = 7);
     tester ("let A = id ( 27 , 10 ) in (rem A) = 7", let A = id ( 27 , 10 ) in (rem A) = 7);
-% Integer [ 37]:  op <   infixl 20 : Integer * Integer -> Boolean
+% Integer [ 37]:  op <   infixl 20 : Integer * Integer -> Bool
     tester ("(< ( 3 , 4 )) = true", (< ( 3 , 4 )) = true);
     tester ("let A = id ( 3 , 4 ) in (< A) = true", let A = id ( 3 , 4 ) in (< A) = true);
     tester ("(< ( 4 , 4 )) = false", (< ( 4 , 4 )) = false);
     tester ("let A = id ( 4 , 4 ) in (< A) = false", let A = id ( 4 , 4 ) in (< A) = false);
-% Integer [ 38]:  op <=  infixl 20 : Integer * Integer -> Boolean
+% Integer [ 38]:  op <=  infixl 20 : Integer * Integer -> Bool
     tester ("(<= ( 3 , 3 )) = true", (<= ( 3 , 3 )) = true);
     tester ("let A = id ( 3 , 3 ) in (<= A) = true", let A = id ( 3 , 3 ) in (<= A) = true);
     tester ("(<= ( 4 , 3 )) = false", (<= ( 4 , 3 )) = false);
     tester ("let A = id ( 4 , 3 ) in (<= A) = false", let A = id ( 4 , 3 ) in (<= A) = false);
-% Integer [ 39]:  op >  infixl 20 : Integer * Integer -> Boolean
+% Integer [ 39]:  op >  infixl 20 : Integer * Integer -> Bool
     tester ("(> ( 4 , 3 )) = true", (> ( 4 , 3 )) = true);
     tester ("let A = id ( 4 , 3 ) in (> A) = true", let A = id ( 4 , 3 ) in (> A) = true);
     tester ("(> ( 4 , 4 )) = false", (> ( 4 , 4 )) = false);
     tester ("let A = id ( 4 , 4 ) in (> A) = false", let A = id ( 4 , 4 ) in (> A) = false);
-% Integer [ 40]:  op >= infixl 20 : Integer * Integer -> Boolean
+% Integer [ 40]:  op >= infixl 20 : Integer * Integer -> Bool
     tester ("(>= ( 3 , 3 )) = true", (>= ( 3 , 3 )) = true);
     tester ("let A = id ( 3 , 3 ) in (>= A) = true", let A = id ( 3 , 3 ) in (>= A) = true);
     tester ("(>= ( 3 , 4 )) = false", (>= ( 3 , 4 )) = false);
@@ -228,7 +228,7 @@ spec
     tester ("(Integer.show ( 123 )) = \"123\"", (Integer.show ( 123 )) = "123");
 % Integer [124]:  op intToString    : Integer -> String
     tester ("(intToString ( 123 )) = \"123\"", (intToString ( 123 )) = "123");
-% Integer [124.5]:  op intConvertible : String -> Boolean
+% Integer [124.5]:  op intConvertible : String -> Bool
     tester ("(intConvertible ( \"123\" )) = true", (intConvertible ( "123" )) = true);
     tester ("(intConvertible ( \"-123\" )) = true", (intConvertible ( "-123" )) = true);
     tester ("(intConvertible ( \"000\" )) = true", (intConvertible ( "000" )) = true);
@@ -247,7 +247,7 @@ spec
     tester ("let A = id ( 3 , [4] ) in (insert A) = [3,4]", let A = id ( 3 , [4] ) in (insert A) = [3,4]);
 % List [ 52]:  op length          : fa(a)   List a -> Nat
     tester ("(length ( [3,4] )) = 2", (length ( [3,4] )) = 2);
-% List [ 53]:  op null            : fa(a)   List a -> Boolean
+% List [ 53]:  op null            : fa(a)   List a -> Bool
     tester ("(null ( nil )) = true", (null ( nil )) = true);
     tester ("(null ( [3] )) = false", (null ( [3] )) = false);
 % List [ 54]:  op hd              : fa(a)   {l : List a | ~(null l)} -> a
@@ -269,7 +269,7 @@ spec
 % List [ 60]:  op nthTail         : fa(a)   {(l,i) : List a * Nat | i <= length l} -> List a
     tester ("(nthTail ( [3,4,5] , 2 )) = [5]", (nthTail ( [3,4,5] , 2 )) = [5]);
     tester ("let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]", let A = id ( [3,4,5] , 2 ) in (nthTail A) = [5]);
-% List [ 61]:  op member          : fa(a)   a * List a -> Boolean
+% List [ 61]:  op member          : fa(a)   a * List a -> Bool
     tester ("(member ( 4 , [3,5,7] )) = false", (member ( 4 , [3,5,7] )) = false);
     tester ("let A = id ( 4 , [3,5,7] ) in (member A) = false", let A = id ( 4 , [3,5,7] ) in (member A) = false);
     tester ("(member ( 5 , [3,5,7] )) = true", (member ( 5 , [3,5,7] )) = true);
@@ -289,21 +289,21 @@ spec
 % List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
     tester ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13", (foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13);
     tester ("let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13", let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13);
-% List [ 67]:  op exists          : fa(a)   (a -> Boolean) -> List a -> Boolean
+% List [ 67]:  op exists          : fa(a)   (a -> Bool) -> List a -> Bool
     tester ("(exists ( posNat? ) ( [] )) = false", (exists ( posNat? ) ( [] )) = false);
     tester ("let F = id ( exists ( posNat? )) in (F ( [] )) = false", let F = id ( exists ( posNat? )) in (F ( [] )) = false);
     tester ("(exists ( posNat? ) ( [0,0,0] )) = false", (exists ( posNat? ) ( [0,0,0] )) = false);
     tester ("let F = id ( exists ( posNat? )) in (F ( [0,0,0] )) = false", let F = id ( exists ( posNat? )) in (F ( [0,0,0] )) = false);
     tester ("(exists ( posNat? ) ( [0,1,0] )) = true", (exists ( posNat? ) ( [0,1,0] )) = true);
     tester ("let F = id ( exists ( posNat? )) in (F ( [0,1,0] )) = true", let F = id ( exists ( posNat? )) in (F ( [0,1,0] )) = true);
-% List [ 68]:  op all             : fa(a)   (a -> Boolean) -> List a -> Boolean
+% List [ 68]:  op all             : fa(a)   (a -> Bool) -> List a -> Bool
     tester ("(all ( posNat? ) ( [] )) = true", (all ( posNat? ) ( [] )) = true);
     tester ("let F = id ( all ( posNat? )) in (F ( [] )) = true", let F = id ( all ( posNat? )) in (F ( [] )) = true);
     tester ("(all ( posNat? ) ( [1,1,1] )) = true", (all ( posNat? ) ( [1,1,1] )) = true);
     tester ("let F = id ( all ( posNat? )) in (F ( [1,1,1] )) = true", let F = id ( all ( posNat? )) in (F ( [1,1,1] )) = true);
     tester ("(all ( posNat? ) ( [1,0,1] )) = false", (all ( posNat? ) ( [1,0,1] )) = false);
     tester ("let F = id ( all ( posNat? )) in (F ( [1,0,1] )) = false", let F = id ( all ( posNat? )) in (F ( [1,0,1] )) = false);
-% List [ 69]:  op filter          : fa(a)   (a -> Boolean) -> List a -> List a
+% List [ 69]:  op filter          : fa(a)   (a -> Bool) -> List a -> List a
     tester ("(filter ( posNat? ) ( [5,0,2] )) = [5,2]", (filter ( posNat? ) ( [5,0,2] )) = [5,2]);
     tester ("let F = id ( filter ( posNat? )) in (F ( [5,0,2] )) = [5,2]", let F = id ( filter ( posNat? )) in (F ( [5,0,2] )) = [5,2]);
 % List [ 70]:  op diff            : fa(a)   List a * List a -> List a
@@ -316,7 +316,7 @@ spec
     tester ("let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]", let A = id ( [1,2,3] , [4,5,6] ) in (rev2 A) = [3,2,1,4,5,6]);
 % List [ 73]:  op flatten         : fa(a)   List(List a) -> List a
     tester ("(flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]", (flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]);
-% List [ 74]:  op find            : fa(a)   (a -> Boolean) -> List a -> Option(a)
+% List [ 74]:  op find            : fa(a)   (a -> Bool) -> List a -> Option(a)
     tester ("(find ( posNat? ) ( [0,0,0] )) = None", (find ( posNat? ) ( [0,0,0] )) = None);
     tester ("let F = id ( find ( posNat? )) in (F ( [0,0,0] )) = None", let F = id ( find ( posNat? )) in (F ( [0,0,0] )) = None);
     tester ("(find ( posNat? ) ( [0,1,0] )) = Some(1)", (find ( posNat? ) ( [0,1,0] )) = Some(1));
@@ -324,12 +324,12 @@ spec
 % List [ 75]:  op tabulate        : fa(a)   Nat * (Nat -> a) -> List a
     tester ("(tabulate ( 3 , succ )) = [1,2,3]", (tabulate ( 3 , succ )) = [1,2,3]);
     tester ("let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]", let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]);
-% List [ 76]:  op firstUpTo       : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
+% List [ 76]:  op firstUpTo       : fa(a)   (a -> Bool) -> List a -> Option (a * List a)
     tester ("(firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])", (firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]]));
     tester ("let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])", let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]]));
     tester ("(firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None", (firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None);
     tester ("let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[4]] )) = None", let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[4]] )) = None);
-% List [ 78]:  op splitList       : fa(a)  (a -> Boolean) -> List a -> Option(List a * a * List a)
+% List [ 78]:  op splitList       : fa(a)  (a -> Bool) -> List a -> Option(List a * a * List a)
     tester ("(splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])", (splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]]));
     tester ("let F = id ( splitList ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])", let F = id ( splitList ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]]));
     tester ("(splitList ( null ) ( [[1],[2,3],[4]] )) = None", (splitList ( null ) ( [[1],[2,3],[4]] )) = None);
@@ -365,7 +365,7 @@ spec
     tester ("(one) = 1", (one) = 1);
 %% % Nat [ 88]:  op two     : Nat
 %% %    tester ("(two) = 2", (two) = 2);
-% Nat [ 89]:  op posNat? : Nat -> Boolean
+% Nat [ 89]:  op posNat? : Nat -> Bool
     tester ("(posNat? ( 0 )) = false", (posNat? ( 0 )) = false);
     tester ("(posNat? ( 1 )) = true", (posNat? ( 1 )) = true);
 % Nat [122]:  op toString     : Nat -> String      % deprecated
@@ -374,7 +374,7 @@ spec
     tester ("(Nat.show ( 123 )) = \"123\"", (Nat.show ( 123 )) = "123");
 % Nat [126]:  op natToString  : Nat -> String
     tester ("(natToString ( 123 )) = \"123\"", (natToString ( 123 )) = "123");
-% Nat [126.5]:  op natConvertible : String -> Boolean
+% Nat [126.5]:  op natConvertible : String -> Bool
     tester ("(natConvertible ( \"123\" )) = true", (natConvertible ( "123" )) = true);
     tester ("(natConvertible ( \"-123\" )) = false", (natConvertible ( "-123" )) = false);
     tester ("(natConvertible ( \"000\" )) = true", (natConvertible ( "000" )) = true);
@@ -386,10 +386,10 @@ spec
     tester ("(some ( 1 )) = Some(1)", (some ( 1 )) = Some(1));
 % Option [ 95]:  op none      : fa(a) Option a
     tester ("(none) = None", (none) = None);
-% Option [ 96]:  op some?     : fa(a) Option a -> Boolean
+% Option [ 96]:  op some?     : fa(a) Option a -> Bool
     tester ("(some? ( None )) = false", (some? ( None )) = false);
     tester ("(some? ( Some(1) )) = true", (some? ( Some(1) )) = true);
-% Option [ 97]:  op none?     : fa(a) Option a -> Boolean
+% Option [ 97]:  op none?     : fa(a) Option a -> Bool
     tester ("(none? ( None )) = true", (none? ( None )) = true);
     tester ("(none? ( Some(1) )) = false", (none? ( Some(1) )) = false);
 % Option [ 98]:  op compare   : fa(a) (a * a -> Comparison) -> Option a * Option a -> Comparison
@@ -437,12 +437,12 @@ spec
 % String [107]:  op map           : (Char -> Char) -> String -> String
     tester ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( \"terra\" )) = \"green\"", (map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( "terra" )) = "green");
     tester ("let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( \"terra\" )) = \"green\"", let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( "terra" )) = "green");
-% String [108]:  op exists        : (Char -> Boolean) -> String -> Boolean
+% String [108]:  op exists        : (Char -> Bool) -> String -> Bool
     tester ("(exists ( isNum ) ( \"\" )) = false", (exists ( isNum ) ( "" )) = false);
     tester ("let F = id ( exists ( isNum )) in (F ( \"\" )) = false", let F = id ( exists ( isNum )) in (F ( "" )) = false);
     tester ("(exists ( isNum ) ( \"c3po\" )) = true", (exists ( isNum ) ( "c3po" )) = true);
     tester ("let F = id ( exists ( isNum )) in (F ( \"c3po\" )) = true", let F = id ( exists ( isNum )) in (F ( "c3po" )) = true);
-% String [109]:  op all           : (Char -> Boolean) -> String -> Boolean
+% String [109]:  op all           : (Char -> Bool) -> String -> Bool
     tester ("(all ( isAlpha ) ( \"\" )) = true", (all ( isAlpha ) ( "" )) = true);
     tester ("let F = id ( all ( isAlpha )) in (F ( \"\" )) = true", let F = id ( all ( isAlpha )) in (F ( "" )) = true);
     tester ("(all ( isAlpha ) ( \"c3po\" )) = false", (all ( isAlpha ) ( "c3po" )) = false);
@@ -459,7 +459,7 @@ spec
 % String [113]:  op translate     : (Char -> String) -> String -> String
     tester ("(translate ( fn(c)->implode[c,c] ) ( \"2B\" )) = \"22BB\"", (translate ( fn(c)->implode[c,c] ) ( "2B" )) = "22BB");
     tester ("let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( \"2B\" )) = \"22BB\"", let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( "2B" )) = "22BB");
-% String [114]:  op <  infixl 20 : String * String -> Boolean
+% String [114]:  op <  infixl 20 : String * String -> Bool
     tester ("(< ( \"\" , \"\" )) = false", (< ( "" , "" )) = false);
     tester ("let A = id ( \"\" , \"\" ) in (< A) = false", let A = id ( "" , "" ) in (< A) = false);
     tester ("(< ( \"\" , \"1\" )) = true", (< ( "" , "1" )) = true);
@@ -476,7 +476,7 @@ spec
     tester ("let A = id ( \"10\" , \"1\" ) in (< A) = false", let A = id ( "10" , "1" ) in (< A) = false);
     tester ("(< ( \"2\" , \"1\" )) = false", (< ( "2" , "1" )) = false);
     tester ("let A = id ( \"2\" , \"1\" ) in (< A) = false", let A = id ( "2" , "1" ) in (< A) = false);
-% String [115]:  op <= infixl 20 : String * String -> Boolean
+% String [115]:  op <= infixl 20 : String * String -> Bool
     tester ("(<= ( \"\" , \"\" )) = true", (<= ( "" , "" )) = true);
     tester ("let A = id ( \"\" , \"\" ) in (<= A) = true", let A = id ( "" , "" ) in (<= A) = true);
     tester ("(<= ( \"\" , \"1\" )) = true", (<= ( "" , "1" )) = true);

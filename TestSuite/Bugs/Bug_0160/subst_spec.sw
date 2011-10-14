@@ -4,7 +4,7 @@ A = spec
     end-spec
 
 B = spec
-     op foo (nats: List Nat): List Boolean =
+     op foo (nats: List Nat): List Bool =
        map (fn(n:Nat) -> if n=0 then false else true) nats
      type B 
     end-spec

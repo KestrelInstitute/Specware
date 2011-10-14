@@ -10,8 +10,8 @@ spec
                           if (hd1 < hd2) then consI(hd1,merge(tail(l1),l2))
                           else consI(hd2,merge(l1,tail(l2)))
 
-  op msort : ListI -> ListI
-  def msort(l) = if (length(l) < 2) then l
-                 else merge (msort(half1(l)), msort(half2(l)))
+  op mtype : ListI -> ListI
+  def mtype(l) = if (length(l) < 2) then l
+                 else merge (mtype(half1(l)), mtype(half2(l)))
 
 endspec

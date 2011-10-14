@@ -17,13 +17,13 @@ O = PFunction qualifying spec
   def o (f,g) x = case g x of Some y -> f y
                             | None   -> None
 
-  op definedAt? : [a,b] PFunction(a,b) * a -> Boolean
+  op definedAt? : [a,b] PFunction(a,b) * a -> Bool
   def definedAt?(f,x) = embed? Some (f x)
 
-  op undefinedAt? : [a,b] PFunction(a,b) * a -> Boolean
+  op undefinedAt? : [a,b] PFunction(a,b) * a -> Bool
   def undefinedAt?(f,x) = embed? None (f x)
 
-  op finite? : [a,b] PFunction(a,b) -> Boolean
+  op finite? : [a,b] PFunction(a,b) -> Bool
   def [a,b] finite? f =
     Set.finite? (fn(x:a) -> definedAt?(f,x))
 

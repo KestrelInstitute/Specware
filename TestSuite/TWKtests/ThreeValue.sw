@@ -1,18 +1,18 @@
 ThreeValues = spec 
-  sort  Three
+  type  Three
   op    nextmod3: Three -> Three
   axiom threedifferent is 
         fa(t)     ~(nextmod3 t = t)
 endspec 
 
 ThreeValuesDef = spec 
-  sort Three      = | Z0 | Z1 | Z2
+  type Three      = | Z0 | Z1 | Z2
   op   nextmod3:  Three -> Three
   def  nextmod3 t = (case t of | Z0 -> Z1
                                | Z1 -> Z2
                                | Z2 -> Z0) 
 
-  sort foo = | A | B (Integer * Integer)
+  type foo = | A | B (Integer * Integer)
 
 %  axiom z0notz1 is ~(Z0 = Z1)
 %  axiom z0notz2 is ~(Z0 = Z2)

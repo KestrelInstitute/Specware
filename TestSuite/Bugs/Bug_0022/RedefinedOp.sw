@@ -33,7 +33,7 @@ endspec
 Mixed = spec
  op f : String
  def f = true
- op f : Boolean
+ op f : Bool
 endspec
 
 

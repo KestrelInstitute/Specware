@@ -18,10 +18,10 @@
 S =
 spec
 
-  op eq_mod10 : Nat * Nat -> Boolean
+  op eq_mod10 : Nat * Nat -> Bool
   def eq_mod10(n1,n2) = (n1 rem 10 = n2 rem 10)
 
-  sort Q = Nat / eq_mod10
+  type Q = Nat / eq_mod10
 
   op f : Q -> Nat
   def f x =

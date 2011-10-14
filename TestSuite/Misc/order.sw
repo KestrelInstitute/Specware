@@ -1,13 +1,13 @@
 order = spec 
   import B
-  sort X
+  type X
 endspec
 
 B = spec 
   import C
-  sort Y
+  type Y
 endspec
 
 C = spec
-  sort Z
+  type Z
 endspec

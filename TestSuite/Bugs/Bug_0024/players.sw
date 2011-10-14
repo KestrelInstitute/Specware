@@ -1,5 +1,5 @@
 players is spec 
-   sort player
+   type player
    op nextPlayer: player -> player
    op playerName: player -> String
    axiom namesDiffer is 
@@ -29,10 +29,10 @@ twoPlayers is spec
    end 
 
 twoPlayersImpl is spec
-   op playerName : Boolean -> String
-   op nextPlayer : Boolean -> Boolean
-   op me   : Boolean
-   op you  : Boolean 
+   op playerName : Bool -> String
+   op nextPlayer : Bool -> Bool
+   op me   : Bool
+   op you  : Bool
    def playerName(b) =
       if b then "ME" else "You"
    def nextPlayer(b) = ~b
@@ -41,4 +41,4 @@ twoPlayersImpl is spec
    end
 
 twoPlayers = morphism 
-    twoPlayers -> twoPlayersImpl {player +-> Boolean}
+    twoPlayers -> twoPlayersImpl {player +-> Bool}

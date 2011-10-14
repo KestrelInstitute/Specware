@@ -1,11 +1,11 @@
 A = spec
-sort a
+type a
 end
 
 B = spec
-sort b
+type b
 end
 
 C = spec
-sort c
+type c
 end

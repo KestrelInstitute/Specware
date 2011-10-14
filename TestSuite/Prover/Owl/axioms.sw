@@ -10,7 +10,7 @@
 % (proved or unproved) conjectures.
 
 % changes made to use specware/snark interface 1/19/2005
-% the new translation uses predicate symbols rather than snark sorts to 
+% the new translation uses predicate symbols rather than snark types to 
 % represent specware types.
 
 % Type "prwb nil" before running Specware
@@ -26,7 +26,7 @@ owl_core = spec
 %  The relation Class? characterizes those individuals that are 
 %  classes.
 
-  op Class? : Individual -> Boolean
+  op Class? : Individual -> Bool
 
 % Classes provide an abstraction mechanism for grouping resources with
 % similar characteristics. Like RDF classes, every OWL class is
@@ -41,7 +41,7 @@ owl_core = spec
 
 %  We introduce relations for Type and SubClass: 
 
-  op Type : Individual * Class -> Boolean
+  op Type : Individual * Class -> Bool
 
 % The rdfs:subClassOf construct is defined as part of RDF Schema [RDF
 % Schema]. Its meaning in OWL is exactly the same: if the class
@@ -51,11 +51,11 @@ owl_core = spec
 % definition a subclass of itself (as the subset may be the complete
 % set).
 
-  op SubClass : Class * Class -> Boolean
+  op SubClass : Class * Class -> Bool
 
 % In Owl, every relation corresponds to a Property.
 
-  op Property? : Individual -> Boolean
+  op Property? : Individual -> Bool
 
 % The Specware type Property corresponds to the OWL Class Property.
   
@@ -63,7 +63,7 @@ owl_core = spec
 
   op Property : Class
 
-  axiom Sort_Properties_are_Properties is
+  axiom Type_Properties_are_Properties is
    fa(P : Property)Type(P, Property)
 
 % The properties corresponding to Type and SubClass are
@@ -77,7 +77,7 @@ owl_core = spec
 % The relationship between a relation and its 
 % corresponding property is defined in terms of the Holds relation.
 
-  op Holds : Property * Individual * Individual -> Boolean
+  op Holds : Property * Individual * Individual -> Bool
 
   axiom SubClass_relation_vs_property is
     fa(c1 : Class, c2 : Class)
@@ -133,7 +133,7 @@ owl_core = spec
 % references actually refer to the same thing: the individuals have the
 % same "identity".
 
-op sameAs : Individual * Individual -> Boolean 
+op sameAs : Individual * Individual -> Bool
 
    axiom definition_sameAs is
     fa(x : Individual, y : Individual)
@@ -149,7 +149,7 @@ op sameAs : Individual * Individual -> Boolean
 % references refer to different individuals.
 
 
-op differentFrom : Individual * Individual -> Boolean 
+op differentFrom : Individual * Individual -> Bool
   
    axiom definition_differentFrom is
     fa(x : Individual, y : Individual)
@@ -188,7 +188,7 @@ axiom rest_of_cons is
    fa(x : Individual, l : List)
     rest(cons(x, l)) = l
 
-op AllDifferent2 : Individual * List -> Boolean
+op AllDifferent2 : Individual * List -> Bool
 % AllDifferent2(x, t) means x is distinct from the elements of t.
 
 axiom AllDifferent2_nil is
@@ -200,7 +200,7 @@ axiom AllDifferent2_cons is
     AllDifferent2(x, cons(y, l)) <=>
     ~(x = y) && AllDifferent2(x, l)
 
-op AllDifferent : List -> Boolean
+op AllDifferent : List -> Bool
 
 % AllDifferent(t) means the elements of t are distinct
 
@@ -240,7 +240,7 @@ op addOne : Individual * Class -> Class
 % class extension (i.e., both class extensions contain exactly the same
 % set of individuals).
 
-  op equivalentClass :  Class * Class -> Boolean
+  op equivalentClass :  Class * Class -> Bool
 
   axiom definition_equivalentClass is 
   fa(C1 : Class, C2 : Class)
@@ -522,7 +522,7 @@ op complementOf : Class -> Class
 % definition: it imposes a necessary but not sufficient condition on the
 % class.
 
-op disjointWith : Class * Class -> Boolean
+op disjointWith : Class * Class -> Bool
 
   axiom disjoint_implies_no_common_element is
    fa(C1 : Class, C2 : Class, x : Individual)
@@ -1068,11 +1068,11 @@ import owl_core
 % owl:InverseFunctionalProperty. See also the OWL Full characterization
 % in Section 8.1.
 
-op Data? : Individual -> Boolean
+op Data? : Individual -> Bool
  
 type Data = {x : Individual | Data? x}
 
-op DatatypeProperty? : Property -> Boolean
+op DatatypeProperty? : Property -> Bool
 
 type DatatypeProperty = {x : Property | DatatypeProperty? x}
 
@@ -1085,7 +1085,7 @@ type DatatypeProperty = {x : Property | DatatypeProperty? x}
 % pairs).
 
 
-  op subPropertyOf : Property * Property -> Boolean
+  op subPropertyOf : Property * Property -> Bool
 
   axiom definition_of_subPropertyOf is
     fa(P1 : Property, P2 : Property)
@@ -1104,7 +1104,7 @@ type DatatypeProperty = {x : Property | DatatypeProperty? x}
 
 
 
-  op Domain : Property * Class -> Boolean
+  op Domain : Property * Class -> Bool
 
   axiom definition_of_Domain is
     fa(P : Property, c : Class)
@@ -1122,7 +1122,7 @@ type DatatypeProperty = {x : Property | DatatypeProperty? x}
 % class description or to data values in the specified data range.
 
 
-  op Range : Property * Class -> Boolean
+  op Range : Property * Class -> Bool
 
   axiom definition_of_range is
     fa(P : Property, c : Class)

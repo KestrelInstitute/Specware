@@ -1,5 +1,5 @@
 psl {
-  op even : Nat -> Boolean
+  op even : Nat -> Bool
 
   proc expon(x : Nat, y : Nat) : Nat {
   let

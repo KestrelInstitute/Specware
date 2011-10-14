@@ -1,6 +1,6 @@
 Flipflop =
   spec
-     sort Flip
+     type Flip
      op flop : Flip -> Flip
      axiom change is
         fa(x) ~(flop x = x)
@@ -8,12 +8,12 @@ Flipflop =
 
 GiveNameToTilde = % since ~ can't appear directly in morphisms
  spec
-    op negation : Boolean -> Boolean
+    op negation : Bool -> Bool
    def negation = (~)
  endspec
 
 FlipFlopImplementation =
-  morphism Flipflop -> GiveNameToTilde {Flip +-> Boolean, flop +-> negation}
+  morphism Flipflop -> GiveNameToTilde {Flip +-> Bool, flop +-> negation}
 
 ShouldBeProvable =
   prove change in obligations FlipFlopImplementation

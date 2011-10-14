@@ -1,7 +1,7 @@
 spec
 
 op computeFib: Nat -> Nat
-op computeFibH: Nat * Nat * Nat -> Boolean
+op computeFibH: Nat * Nat * Nat -> Bool
   def computeFIb(n) = 
     case n of
          | 0 -> 0

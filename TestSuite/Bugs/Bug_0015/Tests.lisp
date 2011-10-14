@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0015 : Substitute and Translate fail to update the localSorts and localOps"
+ ("Bug 0015 : Substitute and Translate fail to update the localTypes and localOps"
   :show "subsExample#BB"
   :output '(";;; Elaborating spec-substitution at $TESTDIR/subsExample#BB"
 	    ";;; Elaborating spec at $TESTDIR/subsExample#AA"

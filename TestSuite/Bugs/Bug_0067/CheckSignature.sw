@@ -1,12 +1,12 @@
 S1 = spec
-  sort A
+  type A
   op f : A 
 endspec
 
 
 S2 = spec
-  sort B  
-  sort C
+  type B  
+  type C
   op g : C % B would be ok
 endspec
 

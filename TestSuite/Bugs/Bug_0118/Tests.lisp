@@ -3,12 +3,12 @@
 (test 
 
  ("Bug 0118 : Equivalence of Pi types failing"
-  :show   "EquivSorts#D"
+  :show   "EquivTypes#D"
   :output '(
-	    ";;; Elaborating spec at $TESTDIR/EquivSorts#D"
-	    ";;; Elaborating spec at $TESTDIR/EquivSorts#A"
-	    ";;; Elaborating spec at $TESTDIR/EquivSorts#B"
-	    ";;; Elaborating spec at $TESTDIR/EquivSorts#C"
+	    ";;; Elaborating spec at $TESTDIR/EquivTypes#D"
+	    ";;; Elaborating spec at $TESTDIR/EquivTypes#A"
+	    ";;; Elaborating spec at $TESTDIR/EquivTypes#B"
+	    ";;; Elaborating spec at $TESTDIR/EquivTypes#C"
 	    ""
 	    "spec  "
 	    " import A"

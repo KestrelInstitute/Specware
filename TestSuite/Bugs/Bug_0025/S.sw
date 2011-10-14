@@ -1,7 +1,7 @@
 
 spec
 
-  op foo : String * String -> Boolean
+  op foo : String * String -> Bool
 
   def foo (x, y) =
     (implode (explode x)) ^ (implode (explode y))

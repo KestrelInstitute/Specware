@@ -1,16 +1,16 @@
 A = spec 
- sort a
- sort b
+ type a
+ type b
  op c: a -> b
 end-spec
 
 B = spec
- sort e
+ type e
 end-spec
 
 C = spec 
- sort a
- sort b
+ type a
+ type b
  op c: a -> b
 end-spec
 

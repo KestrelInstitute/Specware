@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0028 : A few sort names such as Filename are mysteriously problematic."
+ ("Bug 0028 : A few type names such as Filename are mysteriously problematic."
   :show "ProblematicTypes"
   :output '(";;; Elaborating spec at $TESTDIR/ProblematicTypes"
 	    ""

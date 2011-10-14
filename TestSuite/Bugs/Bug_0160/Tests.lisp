@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0160 : Merging of disparate sorts should not be allowed"
+ ("Bug 0160 : Merging of disparate types should not be allowed"
   :sw "subst_spec"
   :output '(
 	    ";;; Elaborating spec-substitution at $TESTDIR/subst_spec#subst_spec"

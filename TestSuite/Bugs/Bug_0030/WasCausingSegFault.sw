@@ -1,11 +1,11 @@
 BinaryRel = spec
-  sort X
-  op brel infixl 100 : X * X -> Boolean
+  type X
+  op brel infixl 100 : X * X -> Bool
 endspec
 
 
 BinaryOp = spec
-  sort X
+  type X
   op bop infixl 100 : X * X -> X
 endspec
 

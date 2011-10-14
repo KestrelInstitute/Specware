@@ -12,10 +12,10 @@ spec
   type LineColumnByte = Nat
   type Position = Nat
 
-  %% findTheSort for any of these returns (:|Some| :|Some| :|None|)
-  %% which makes addSort fail in a call to listUnion
+  %% findTheType for any of these returns (:|Some| :|Some| :|None|)
+  %% which makes addType fail in a call to listUnion
 
-  %% The default spec sort map seems to be a hash table plus four entries,
-  %%  one for each of the above sorts.  Very curious.
+  %% The default spec type map seems to be a hash table plus four entries,
+  %%  one for each of the above types.  Very curious.
 
 endspec

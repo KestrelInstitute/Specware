@@ -1,5 +1,5 @@
 X1 = spec 
-  sort X1  = Integer * Integer
+  type X1  = Integer * Integer
   op  makeX : Integer * Integer -> X1
   def makeX(i,j) = (i, j)
   conjecture twoMakesMakeAMatch1 is 

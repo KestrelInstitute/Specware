@@ -1,10 +1,10 @@
 Symbols = spec
 
-  op upcase? : Integer -> Boolean
+  op upcase? : Integer -> Bool
   def upcase?(i) = (65 <= i && i <= 90)
   % characters represented as ASCII codes
 
-  sort Symbol = (Integer | upcase?)
+  type Symbol = (Integer | upcase?)
 
 endspec
 
@@ -19,7 +19,7 @@ WordMatching0 = spec
   import MatchingSpecs#Messages
   import MatchingSpecs#SymbolMatching
 
-  op word_matches_at? : Word * Message * Integer -> Boolean
+  op word_matches_at? : Word * Message * Integer -> Bool
   def word_matches_at?(wrd,msg,pos) =
       if pos + lenW(wrd) > lenM(msg)
       then false
@@ -27,7 +27,7 @@ WordMatching0 = spec
             (wrd, if pos = 0 then msg else nthtailM(msg,pos-1))
 
   op word_matches_aux? :
-     {(wrd,msg) : Word * Message | lenW(wrd) <= lenM(msg)} -> Boolean
+     {(wrd,msg) : Word * Message | lenW(wrd) <= lenM(msg)} -> Bool
   def word_matches_aux?(wrd,msg) =
       case wrd of
          | nnil -> true

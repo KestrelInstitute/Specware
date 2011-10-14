@@ -1,6 +1,6 @@
 spec
   %import /Library/Base/Boolean
-  %sort Option a = | None | Some a
+  %type Option a = | None | Some a
   def f x = case x of
               | Some (Some y) -> y
 	      | _ -> true

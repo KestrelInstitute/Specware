@@ -2,21 +2,21 @@ spec
 
   import Lists
 
-  op no_repetitions : ListI -> Boolean
+  op no_repetitions : ListI -> Bool
   def no_repetitions(l) = case l of
                              | nilI -> true
                              | consI(hd,tl) -> ~(member(hd,tl))
                                              & no_repetitions(tl)
 
-  sort ListNR = (ListI | no_repetitions)
+  type ListNR = (ListI | no_repetitions)
 
-  op permutation : ListNR * ListNR -> Boolean
+  op permutation : ListNR * ListNR -> Bool
   def permutation(l1,l2) = length(l1) = length(l2) &
                            (case l1 of
                                | nilI -> true
                                | consI(hd,tl) -> permutation(tl,delete(l2,hd)))
 
-  sort SetAsList = ListNR / permutation
+  type SetAsList = ListNR / permutation
 
   op empty_set : SetAsList
   def empty_set = quotient[SetAsList] nilI
