@@ -366,6 +366,15 @@ spec
                | Name(nm, pos) | nm nin? commands ->
                  {qid <- extractQId te;
                   return (mkSpecTransform qid :: sub_result ++ top_result, [])}
+               | Apply(fn_nm as Name(nm, pos), qid_tms, _) | nm nin? commands ->
+                 {qid <- extractQId fn_nm;
+                  qids <- mapM extractQId qid_tms;
+                  return (mkSpecQIdTransform(qid, qids, []) :: sub_result ++ top_result, [])}
+               | Apply(Apply(fn_nm as Name(nm, pos), qid_tms, _), rl_tms, _) | nm nin? commands ->
+                 {qid <- extractQId fn_nm;
+                  qids <- mapM extractQId qid_tms;
+                  rls <- mapM makeRuleRef rl_tms;
+                  return (mkSpecQIdTransform(qid, qids, rls) :: sub_result ++ top_result, [])}
                | Qual _ -> {qid <- extractQId te;
                             return (mkSpecTransform qid :: sub_result ++ top_result, [])}
                | _ ->
