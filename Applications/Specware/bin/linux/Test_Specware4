@@ -35,15 +35,16 @@ echo "Waiting for $LOG_FILE ..."
 # We print a mini-buffer progress msg for each test,
 # so make the value very much larger -- 100000.
 
+export LISP_HEAP_IMAGE=NONE
+export SPECWARE_INIT_FORM=NIL
+
 $xemacs -no-init-file \
 	-geometry 137x50-50-50 \
 	-name "Specware4" \
 	-title "Specware4" \
 	-l "$SPECWARE4"/Library/IO/Emacs/load-slime \
 	-eval "(set-face-background 'default \"lightyellow\")" \
-        -eval "(sit-for 2)" \
 	-eval "(run-specware4)" \
-        -eval "(sit-for 2)" \
 	-eval "(setq fi:lisp-evalserver-number-reads 100000)" \
 	-eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
 	-eval "(sw:eval-in-lisp \"(load \\\"$SPECWARE4/Applications/Specware/Tests/test-specware4\\\")\")" \
