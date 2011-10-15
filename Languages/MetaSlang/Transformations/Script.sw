@@ -26,6 +26,8 @@ spec
     | RLeibniz    QualifiedId           % Hack. Will be handled in more general way in the future
     | AllDefs
 
+  type RuleSpecs = List RuleSpec
+
   type Movement =
     | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
 
@@ -34,15 +36,16 @@ spec
     | AtTheorem (List Location * Script)
     | Move (List Movement)
     | Steps List Script
-    | Simplify (List RuleSpec * Nat)
-    | Simplify1 (List RuleSpec)
+    | Simplify (RuleSpecs * Nat)
+    | Simplify1 (RuleSpecs)
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
     | SpecTransform QualifiedId
-    | IsoMorphism(List(QualifiedId * QualifiedId) * List RuleSpec * Option Qualifier)
-    | Implement(QualifiedIds * List RuleSpec)
-    | Maintain(QualifiedIds * List RuleSpec)
+    | SpecQIdTransform(QualifiedId * QualifiedIds* RuleSpecs)
+    | IsoMorphism(List(QualifiedId * QualifiedId) * RuleSpecs * Option Qualifier)
+    | Implement(QualifiedIds * RuleSpecs)
+    | Maintain(QualifiedIds * RuleSpecs)
       %%      function, position, return_position, name, type,         within,       value,        qualifier
     | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
     | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
@@ -52,12 +55,12 @@ spec
     | Print
 
  %% Defined in Isomorphism.sw
- op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * List RuleSpec -> SpecCalc.Env Spec
- op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * List RuleSpec -> SpecCalc.Env Spec
+ op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * RuleSpecs -> SpecCalc.Env Spec
+ op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * RuleSpecs -> SpecCalc.Env Spec
 
  %% Defined in Coalgebraic.sw
- op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
- op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * List RuleSpec -> SpecCalc.Env Spec
+ op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
+ op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
 
  op ppSpace: WLPretty = ppString " "
 
@@ -99,6 +102,13 @@ spec
 
  op commaBreak: WLPretty = ppConcat [ppString ", ", ppBreak]
 
+ op ppQIds(qids: QualifiedIds): WLPretty = ppConcat[ppString "(",
+                                                    ppSep(ppString ", ") (map ppQid qids),
+                                                    ppString ")"]
+ op ppRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
+                                      else ppConcat[ppString "(",
+                                                    ppSep(ppString ", ") (map ppRuleSpec rls),
+                                                    ppString ")"]
 
  op ppScript(scr: Script): WLPretty =
     case scr of
@@ -127,6 +137,10 @@ spec
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
       | SpecTransform(qid as Qualified(q,id)) -> if q = "SpecTransform" then ppString id else ppQid qid
+      | SpecQIdTransform(qid as Qualified(q,id), qids, rls) ->
+        ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
+                 ppQIds qids,
+                 ppRls rls]
       | IsoMorphism(iso_qid_prs, rls, opt_qual) ->
         ppConcat[ppString "isomorphism (",
                  ppSep(ppString ", ") (map (fn (iso, osi) ->
@@ -211,13 +225,14 @@ spec
  op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
  op mkAtTheorem(qid: QualifiedId, steps: List Script): Script = AtTheorem([Def qid], mkSteps steps)
  op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
- op mkSimplify(steps: List RuleSpec): Script = Simplify(steps, maxRewrites)
- op mkSimplify1(rules: List RuleSpec): Script = Simplify1 rules
+ op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
+ op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules
  op mkSimpStandard(): Script = SimpStandard
  op mkPartialEval (): Script = PartialEval
  op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
  op mkMove(l: List Movement): Script = Move l
  op mkSpecTransform(qid: QualifiedId): Script = SpecTransform qid
+ op mkSpecQIdTransform(qid: QualifiedId, qids: QualifiedIds, rls: RuleSpecs): Script = SpecQIdTransform(qid, qids, rls)
 
  %% For convenience calling from lisp
  op mkFold(qid: QualifiedId): RuleSpec = Fold qid
@@ -298,6 +313,7 @@ spec
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
   op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
+  op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Spec                   % defined in transform-shell.lisp
   op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
   op specTransformFn?:  String * String -> Bool                                % defined in transform-shell.lisp
 
@@ -520,7 +536,7 @@ spec
      let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result) else () in
      result)
 
-  op makeRules (context: Context, spc: Spec, rules: List RuleSpec): List RewriteRule =
+  op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
     foldr (\_lambda (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
 
 
@@ -753,8 +769,11 @@ spec
         result <- implementOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
       | SpecTransform(Qualified(q, id)) ->
-        {trans_fn <- return(specTransformFunction (q, id));
+        {trans_fn <- return(specTransformFunction(q, id));
          return (trans_fn spc, tracing?)}
+      | SpecQIdTransform(Qualified(q, id), qids, rls) ->
+        {trans_fn <- return(specQIdTransformFunction(q, id));
+         return (trans_fn(spc, qids, rls), tracing?)}
       | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) -> {
         fun <- checkOp(spc, fun, "function");
         ty <- checkType(spc, ty, "parameter-type");

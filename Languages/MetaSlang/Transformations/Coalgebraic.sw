@@ -29,12 +29,12 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
   in
   replaceInRange ty
 
-op includedStateVar(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option Id) =
+op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option Id * MSTerm) =
   case range_*(spc, ty, false) of
-    | Subtype(result_ty, Lambda([(pat, _, _)], _), _) ->
+    | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) ->
       (if equalTypeSubtype?(result_ty, state_ty, true)
        then case pat of
-              | VarPat(result_var,_) -> Some(result_var, None)
+              | VarPat(result_var,_) -> Some(result_var, None, condn)
               | _ -> None
        else case (result_ty, pat) of
               | (Product(ty_prs, _), RecordPat(pat_prs, _)) ->
@@ -43,7 +43,7 @@ op includedStateVar(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Optio
                    | Some(id1,_) ->
                  case findLeftmost (fn (id2, _) -> id1 = id2) pat_prs of
                    | None -> None
-                   | Some(_, VarPat(result_var,_)) -> Some(result_var, Some id1))                            
+                   | Some(_, VarPat(result_var,_)) -> Some(result_var, Some id1, condn))                            
               | _ -> None)
     | _ -> None
 
@@ -58,8 +58,8 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in
          % let _ = if show qid = "mark" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
-         case includedStateVar(ty, state_ty, spc) of
-           | Some (result_var, deref?) ->
+         case getStateVarAndPostCondn(ty, state_ty, spc) of
+           | Some (result_var, deref?, _) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              let result_tm = case deref? of
                                | Some id -> mkApply(mkProject(id, range_*(spc, ty, true), state_ty), result_tm0)
@@ -139,5 +139,50 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                })
          | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
     | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
+
+op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
+  existsInType? (fn sty -> case sty of
+                             | Base(qid, _, _) -> qid = ty_qid
+                             | _ -> false)
+    ty
+
+op getConjoinedEqualities(t: MSTerm): MSTerms =
+  case t of
+    | IfThenElse(_, t1, t2, _) -> getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+    | _ -> foldl (fn (r, ti) -> r ++ getConjoinedEqualities ti) [] (getConjuncts t)
+
+op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
+  let state_ty = mkBase(state_qid, []) in
+  foldOpInfos (fn (info, stored_qids) ->
+               let  (tvs, ty, tm) = unpackTerm info.dfn in
+               case getStateVarAndPostCondn(ty, state_ty, spc) of
+                 | Some(state_var, deref?, post_condn) ->
+                   mapPartial (fn cj ->
+                                 case cj of
+                                   | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
+                                     (case lhs of
+                                        | Apply(Fun(Op(qid,_), _, _), Var(v, _), _) | qid nin? stored_qids && equalVar?(v, state_var) ->
+                                          Some qid
+                                        | _ -> None)
+                                   | _ -> None)
+                     (getConjoinedEqualities post_condn)
+                   ++ stored_qids
+                 | None -> stored_qids)
+  
+    [] spc.ops
+
+
+op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+  let _ = writeLine("finalizeCoType") in
+  case qids of
+    | [] -> raise(Fail("No type to realize!"))
+    | state_qid :: rest_qids ->
+  case findTheType(spc, state_qid) of
+    | None -> raise(Fail("type "^show state_qid^" not found!"))
+    | Some type_info ->
+  {new_spc <- return spc;
+   stored_qids <- return(findStoredOps(spc, state_qid));
+   print("stored_qids: "^flatten (map show stored_qids));
+   return new_spc}
 
 end-spec
