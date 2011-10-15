@@ -9,9 +9,11 @@
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Dom")
 	     (:optional ";;; Elaborating spec at $TESTDIR/M#Cod_1_1")
 	     (:optional "")
-	     "morphism Dom -> Cod_1_1"
-	     "                    {type T +-> Q.T,"
-	     "                      op f +-> Q.f}"
+             (:alternatives
+              "morphism Dom -> Cod_1_1 {type T +-> Q.T,op f +-> Q.f}"
+              ("morphism Dom -> Cod_1_1"
+               "                    {type T +-> Q.T,"
+               "                      op f +-> Q.f}"))
 	     (:optional "")
 	     (:optional "")
 	     ))
