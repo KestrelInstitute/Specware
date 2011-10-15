@@ -10,7 +10,7 @@
 	    "spec  "
 	    (:optional " import /Library/Base/WFO")
 	    " "
-	    " op  eq_mod10 : Nat * Nat -> Boolean"
+	    " op  eq_mod10 : Nat * Nat -> Bool"
             " def eq_mod10 (n1, n2) = n1 rem 10 = n2 rem 10"
             " "
             " conjecture eq_mod10_transitive is "

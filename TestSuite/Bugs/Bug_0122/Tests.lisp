@@ -20,8 +20,8 @@
   :value     '(:|Apply|
 	      . #((:|Fun|
 		   . #((:|NotEquals|)
-		       (:|Arrow| . #((:|Product| (("1" :|Boolean|) ("2" :|Boolean|))) 
-				     (:|Boolean|))))) 
+		       (:|Arrow| . #((:|Product| (("1" :|Bool|) ("2" :|Bool|))) 
+				     (:|Bool|))))) 
 		  (:|Record|
 		   (("1" :|Apply|
 		     . #((:|Fun|
@@ -30,7 +30,7 @@
 				. #((:|Product|
 				     (("1" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))
 				      ("2" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))
-				    (:|Boolean|)))))
+				    (:|Bool|)))))
 			 (:|Record|
 			  (("1" :|Fun|
 			    . #((:|Op| (:|Qualified| "<unqualified>" . "f") :|Unspecified|)
@@ -39,7 +39,7 @@
 			    . #((:|Op| (:|Qualified| "<unqualified>" . "g") :|Unspecified|)
 				(:|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))))
 			 ))
-		    ("2" :|Fun| . #((:|Bool|) (:|Boolean|)))))))
+		    ("2" :|Fun| . #((:|Bool|) (:|Bool|)))))))
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))
@@ -56,8 +56,8 @@
   :value     '(:|Apply|
 	      . #((:|Fun|
 		   . #((:|NotEquals|)
-		       (:|Arrow| . #((:|Product| (("1" :|Boolean|) ("2" :|Boolean|))) 
-				     (:|Boolean|))))) 
+		       (:|Arrow| . #((:|Product| (("1" :|Bool|) ("2" :|Bool|))) 
+				     (:|Bool|))))) 
 		  (:|Record|
 		   (("1" :|Apply|
 		     . #((:|Fun|
@@ -66,7 +66,7 @@
 				. #((:|Product|
 				     (("1" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))
 				      ("2" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))
-				    (:|Boolean|)))))
+				    (:|Bool|)))))
 			 (:|Record|
 			  (("1" :|Fun|
 			    . #((:|Op| (:|Qualified| "<unqualified>" . "f") :|Unspecified|)
@@ -75,7 +75,7 @@
 			    . #((:|Nat| . 33)
 				(:|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))))
 			 ))
-		    ("2" :|Fun| . #((:|Bool|) (:|Boolean|)))))))
+		    ("2" :|Fun| . #((:|Bool|) (:|Bool|)))))))
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))
@@ -93,8 +93,8 @@
   :value     '(:|Apply|
 	      . #((:|Fun|
 		   . #((:|NotEquals|)
-		       (:|Arrow| . #((:|Product| (("1" :|Boolean|) ("2" :|Boolean|))) 
-				     (:|Boolean|))))) 
+		       (:|Arrow| . #((:|Product| (("1" :|Bool|) ("2" :|Bool|))) 
+				     (:|Bool|))))) 
 		  (:|Record|
 		   (("1" :|Apply|
 		     . #((:|Fun|
@@ -103,7 +103,7 @@
 				. #((:|Product|
 				     (("1" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))
 				      ("2" :|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))
-				    (:|Boolean|)))))
+				    (:|Bool|)))))
 			 (:|Record|
 			  (("1" :|Fun|
 			    . #((:|Nat| . 33)
@@ -112,7 +112,7 @@
 			    . #((:|Op| (:|Qualified| "<unqualified>" . "g") :|Unspecified|)
 				(:|Base| . #((:|Qualified| "Nat" . "Nat") NIL))))))
 			 ))
-		    ("2" :|Fun| . #((:|Bool|) (:|Boolean|)))))))
+		    ("2" :|Fun| . #((:|Bool|) (:|Bool|)))))))
   :value-predicate #'(lambda (x y) 
 		       (and (equal (car x) :|Unevaluated|)
 			    (METASLANG::equalTerm?-2 (cdr x) y)))

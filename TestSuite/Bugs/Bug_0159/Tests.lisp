@@ -34,7 +34,7 @@
             ""
 	    " type A1"
 	    " "
-	    " op  foo : List(Nat) -> List(Boolean)"
+	    " op  foo : List Nat -> List Bool"
             (:alternatives
              " def foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def foo nats = "
@@ -42,7 +42,7 @@
             ""
 	    " type B"
 	    " "
-	    " op  baz : List(Nat) -> List(Boolean)"
+	    " op  baz : List Nat -> List Bool"
             (:alternatives
              " def baz nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def baz nats = "
@@ -91,7 +91,7 @@
             ""
 	    " type A2"
 	    " "
-	    " op  foo : List(Nat) -> List(Boolean)"
+	    " op  foo : List Nat -> List Bool"
             (:alternatives
              " def foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def foo nats = "
@@ -142,7 +142,7 @@
             ""
 	    " type Q.A"
 	    " "
-	    " op  Q.foo : List(Nat) -> List(Boolean)"
+	    " op  Q.foo : List Nat -> List Bool"
             (:alternatives
              " def Q.foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def Q.foo nats = "

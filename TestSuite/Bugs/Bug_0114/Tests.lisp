@@ -12,9 +12,9 @@
 	    ";;; Elaborating spec at $TESTDIR/Colimit#S"
 	    ";;; Elaborating spec-morphism at $TESTDIR/Colimit#D"
 	    ";;; Elaborating spec at $TESTDIR/Colimit#T"
-	    ""
-	    "spec  "
-	    " "
+	    (:optional "")
+	    "spec"
+	    (:optional "")
 	    (:alternatives 
 	     (" type {X, Y, Z}")
 	     (" type {X, X, Y}")
@@ -44,8 +44,9 @@
 	     (" op  {g, h, f} : Z")
 	     (" op  {h, f, g} : Z")
 	     (" op  {h, g, f} : Z"))
+	    (:optional "")
 	    "endspec"
-	    ""
-	    ""))
-
+	    (:optional "")
+	    (:optional "")
+            ))
  )

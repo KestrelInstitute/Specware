@@ -22,17 +22,28 @@
 	    (:optional "")
 	    " op  z : Affirm"
 	    (:optional "")
-	    " def f = 3"
+	    (:alternatives
+             " def f = 3"
+             " def f : Integer = 3")
 	    (:optional "")
-	    " def g = 3"
+	    (:alternatives
+             " def g = 3"
+             " def g : Nat = 3")
 	    (:optional "")
-	    " def x = []"
+	    (:alternatives
+             " def x = []"
+             " def x : List(Char) = []")
 	    (:optional "")
-	    " def y = []"
+	    (:alternatives
+             " def y = []"
+             " def y : List(String) = []")
 	    (:optional "")
-	    " def z = Yes"
+	    (:alternatives
+             " def z = Yes"
+             " def z : Affirm = Yes")
 	    (:optional "")
 	    "endspec"
 	    (:optional "")
-	    (:optional "")))
- )
+	    (:optional "")
+            ))
+)

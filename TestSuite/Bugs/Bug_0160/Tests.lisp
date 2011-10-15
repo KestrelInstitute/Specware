@@ -15,7 +15,7 @@
 	    "Ambiguous ops:"
 	    ""
 	    " (* Warning: Multiple declarations for following op *) "
-	    " op  foo : (List Nat -> List Boolean)"
+	    " op  foo : (List Nat -> List Bool)"
 	    " op  foo : (B -> B)"
 	    " def foo ="
 	    "  (fn nats ->"

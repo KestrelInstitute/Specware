@@ -8,7 +8,7 @@
 	    ""
 	    "spec  "
             ""
-	    " axiom A is (ex(x : Boolean) x) => false"
+	    " axiom A is (ex(x : Bool) x) => false"
             ""
 	    " axiom B is (let zero = 1 in "
 	    "             zero) = zero"

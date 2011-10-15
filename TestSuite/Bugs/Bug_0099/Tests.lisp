@@ -12,10 +12,10 @@
 	    (:optional " import /Library/Base/WFO")
 	    " import Integer"
 	    " "
-	    " op  natural? (i : Integer) : Boolean = i >= zero"
+	    " op  natural? (i : Integer) : Bool = i >= zero"
 	    " type Nat = (Integer | natural?)"
 	    " "
-	    " op  posNat? (n : Nat) : Boolean = n > zero"
+	    " op  posNat? (n : Nat) : Bool = n > zero"
 	    " type PosNat = (Nat | posNat?)"
 	    " "
 	    " op  succ : Nat -> Nat"
