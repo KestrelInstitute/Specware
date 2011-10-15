@@ -27,6 +27,8 @@ export LISP_DIRECTORY="$SPECWARE4"
 xemacs=`which xemacs`
 
 LOG_FILE=/tmp/test-specware4-bug-$BUG_NUMBER-`/bin/date +"%y%m%d-%H%M%S"`
+export LISP_HEAP_IMAGE=NONE
+export SPECWARE_INIT_FORM=NIL
 
 /bin/date
 echo "Waiting for $LOG_FILE ..."
