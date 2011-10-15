@@ -7,9 +7,12 @@
   :output '(";;; Elaborating spec at $TESTDIR/RedefinedOp#OpDef"
             ""
             "spec  "
-            " "
+            (:optional "")
             " op  f : Nat"
-            " def f = 3"
+            (:alternatives
+             " def f : Nat = 3"
+             " def f = 3")
+            (:optional "")
             "endspec"
             ""
             ""))

@@ -11,6 +11,6 @@ MM = morphism AA -> BB {A +-> B}
 NN = morphism AA -> CC {A +-> C}
 
 DD = diagram {M : A -> B +-> MM,
-	      N : A -> C +-> NN}
+              N : A -> C +-> NN}
 
 XX = colimit DD

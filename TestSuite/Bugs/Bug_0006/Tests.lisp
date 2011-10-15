@@ -13,14 +13,17 @@
 	    ";;; Elaborating spec-morphism at $TESTDIR/Diagram#D"
 	    ";;; Elaborating spec at $TESTDIR/Diagram#T"
 	    (:optional "")
-	    "diagram {a : p -> q"
-	    "         +->"
-	    "         morphism R -> S"
-	    "          {type X +-> Y},"
-	    "         b : p -> r"
-	    "         +->"
-	    "         morphism R -> T"
-	    "          {type X +-> Z}}"
+            (:alternatives
+             ("diagram {a : p -> q +-> morphism R -> S {type X +-> Y} ,"
+              "         b : p -> r +-> morphism R -> T {type X +-> Z} } ")
+             ("diagram {a : p -> q"
+               "         +->"
+               "         morphism R -> S"
+               "          {type X +-> Y},"
+               "         b : p -> r"
+               "         +->"
+               "         morphism R -> T"
+               "          {type X +-> Z}}"))
 	    (:optional "")
 	    (:optional "")
 	    ))

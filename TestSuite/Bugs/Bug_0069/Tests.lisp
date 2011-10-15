@@ -32,9 +32,12 @@
   :output '(";;; Elaborating spec-morphism at $TESTDIR/MorphismToBase#M"
 	    ";;; Elaborating spec at $TESTDIR/MorphismToBase#S"
 	    ";;; Elaborating spec at $TESTDIR/MorphismToBase#T"
-	    ""
-	    "morphism S -> T"
-	    " {type SS +-> Char}"
-	    ""))
+	    (:optional "")
+            (:alternatives
+             ("morphism S -> T"
+              " {type SS +-> Char}")
+             "morphism S -> T {type SS +-> Char}")
+	    (:optional "")
+            ))
 
  )

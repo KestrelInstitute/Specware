@@ -12,36 +12,35 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivalentTypes#Foo"
 	    ";;; Elaborating spec-morphism at $TESTDIR/EquivalentTypes#NN"
 	    ";;; Elaborating spec at $TESTDIR/EquivalentTypes#CC"
-	    ""
-	    "spec  "
-	    ;; :optional  :alternatives doesn't work yet, 
-	    ;;  so this is the clumsy workaround:
-            ""
+            (:optional "")
+            (:optional "")
+	    "spec"
+            (:optional " ")
+            (:optional " type {A, B, C}")
+            (:optional " type {A, C, B}")
+            (:optional " type {B, A, C}")
+            (:optional " type {B, C, A}")
+            (:optional " type {C, A, B}")
+            (:optional " type {C, B, A}")
+            (:optional " ")
 	    (:alternatives 
-	     (" type {A, B, C}" " import Foo")
-	     (" type {A, C, B}" " import Foo")
-	     (" type {B, A, C}" " import Foo")
-	     (" type {B, C, A}" " import Foo")
-	     (" type {C, A, B}" " import Foo")
-	     (" type {C, B, A}" " import Foo")
-	     (" import Foo"))
-            ""
-	    (:alternatives 
-	     " type {A, B, C} = List(Nat * Nat)"
-	     " type {A, B, C} = Foo(Nat)"
-	     " type {A, C, B} = List(Nat * Nat)"
-	     " type {A, C, B} = Foo(Nat)"
-	     " type {B, A, C} = List(Nat * Nat)"
-	     " type {B, A, C} = Foo(Nat)"
-	     " type {B, C, A} = List(Nat * Nat)"
-	     " type {B, C, A} = Foo(Nat)"
-	     " type {C, A, B} = List(Nat * Nat)"
-	     " type {C, A, B} = Foo(Nat)"
-	     " type {C, B, A} = List(Nat * Nat)"
-	     " type {C, B, A} = Foo(Nat)"
-	     )
+             " type {A, B, C} = List(Nat * Nat)"
+             " type {A, B, C} = Foo(Nat)"
+             " type {A, C, B} = List(Nat * Nat)"
+             " type {A, C, B} = Foo(Nat)"
+             " type {B, A, C} = List(Nat * Nat)"
+             " type {B, A, C} = Foo(Nat)"
+             " type {B, C, A} = List(Nat * Nat)"
+             " type {B, C, A} = Foo(Nat)"
+             " type {C, A, B} = List(Nat * Nat)"
+             " type {C, A, B} = Foo(Nat)"
+             " type {C, B, A} = List(Nat * Nat)"
+             " type {C, B, A} = Foo(Nat)")
+            (:optional " ")
+            " import Foo"
+            (:optional " ")
 	    "endspec"
-	    ""
-	    ""))
-
+            (:optional "")
+            (:optional "")
+            ))
  )
