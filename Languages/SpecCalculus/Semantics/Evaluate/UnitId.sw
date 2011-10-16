@@ -5,9 +5,6 @@ SpecCalc qualifying spec
   import ../SpecPath 
   import ../../Parser/Parse
 
-  type UIDPath    = List String
-  type Shadowing  = List UIDPath
-  type Shadowings = List Shadowing
 (*
 We are given a relative UnitId. To evaluate it, we first look in the local
 context. If we find it we are done. If not then it will either be in

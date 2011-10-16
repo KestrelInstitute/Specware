@@ -12,6 +12,7 @@ SpecCalc qualifying spec {
  %% term or a list of bindings. Thus a canonical UnitId may resolve to two
  %% possible path names. Later we may want to have UIDs with network addresses.
 
+ type UnitIds = List UnitId
  type UnitId = {
 		path       : List   String,
 		hashSuffix : Option String

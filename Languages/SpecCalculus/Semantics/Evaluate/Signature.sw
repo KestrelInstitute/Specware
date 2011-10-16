@@ -49,7 +49,7 @@ SpecCalc qualifying spec {
   op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Bool         -> Position -> SpecCalc.Env ()
   op evaluateOtherSubstitute    : SCTerm -> ValueInfo -> SCTerm -> ValueInfo         -> Position -> SpecCalc.Env ValueInfo
 
-  op evaluateOtherSpecMorph     : ValueInfo -> ValueInfo -> List SpecMorphRule -> SM_Pragmas                    -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherSpecMorph     : ValueInfo -> ValueInfo -> SpecMorphRules -> SM_Pragmas                        -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherGenerate      : String * SCTerm * Option String -> OtherValue * TimeStamp * UnitId_Dependency -> Position -> SpecCalc.Env ValueInfo
 
   op evaluateOtherProve         : ClaimName   * OtherValue * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar -> Position -> SpecCalc.Env Value
@@ -78,6 +78,29 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.56  2011/10/14 10:53:38  mcdonald
+%% pervasive internal cleanup affecting about 350 files
+%%
+%% Among other things:
+%%
+%% 'sort' should now be fully removed in favor of 'type'
+%% (but 'sort' is still accepted for the time being)
+%% As a side effect, some files that had "Sort" in their names
+%% have been renamed to use "Type", to avoid confusion.
+%%
+%% The type 'Boolean' should now be fully removed in favor of 'Bool'
+%% (but 'Boolean' is still defined as 'Bool' for now)
+%%
+%% The internal types for structures in the Metaslang abstract syntax
+%% are now universally referenced as 'MSType', 'MSTerm', and 'MSPattern',
+%% to make it easier to avoid conflicts with descriptions of types, terms,
+%% and patterns in other langauges such as SpecCalculus, Lisp, Java, C,
+%% Haskell, Isabelle, etc.
+%%
+%% Some imports have been restructured to more cleanly share declarations.
+%%
+%% And probably some other minor changes as well...
+%%
 %% Revision 1.55  2011/10/11 07:37:55  mcdonald
 %% internal revisions to simplify specs:
 %%

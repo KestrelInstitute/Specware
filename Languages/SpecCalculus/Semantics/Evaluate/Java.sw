@@ -29,8 +29,8 @@ SpecCalc qualifying spec
     case optFileNm
       of Some filNam -> return filNam
        | _ ->
-    {prefix <- removeLastElem path;
-     mainName <- lastElem path;
+    {prefix <- removeLast path;
+     mainName <- last path;
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/java/" ^ mainName ^ ".java"
      in

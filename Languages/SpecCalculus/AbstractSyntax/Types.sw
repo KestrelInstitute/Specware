@@ -114,10 +114,10 @@ SpecCalc qualifying spec
 
  type Assertions = 
    | All
-   | Explicit (List ClaimName)
+   | Explicit ClaimNames
 
  type ProverOptions = 
-   | OptionString (List LispCell)
+   | OptionString LispCells
    | OptionName   QualifiedId
    | Error        (String * String)  % error msg, problematic string
 
@@ -141,6 +141,7 @@ SpecCalc qualifying spec
  type ProofCheckTerm = PCClaimName * SCTerm * ProverName * Assertions * ProverOptions * ProverBaseOptions
 
  type PCClaimName = | WellFormed | Claim QualifiedId
+ type ClaimNames  = List ClaimName
  type ClaimName   = QualifiedId
 
  op mkProofCheck  (claim_name     : PCClaimName,
@@ -163,9 +164,9 @@ SpecCalc qualifying spec
  type ExplicitSpecTerm = SpecElemTerms
 
  type SpecElemBody =
-   | Import  List SCTerm
-   | Type    List QualifiedId          * MSType
-   | Op      List QualifiedId * Fixity * Bool * MSTerm
+   | Import  SCTerms
+   | Type    Aliases * MSType
+   | Op      Aliases * Fixity * Bool * MSTerm
    | Claim   PropertyType * PropertyName * TyVars * MSTerm
    | Pragma  String * String * String
    | Comment String
@@ -183,7 +184,7 @@ SpecCalc qualifying spec
 
  op mkTypeSpecElem (names : TypeNames, 
                     tvs   : TyVars, 
-                    defs  : List MSType,
+                    defs  : MSTypes,
                     pos   : Position) 
   : SpecElemTerm =
   let dfn = 
@@ -199,7 +200,7 @@ SpecCalc qualifying spec
                   fixity  : Fixity, 
                   tvs     : TyVars, 
                   srt     : MSType,
-                  defs    : List MSTerm,
+                  defs    : MSTerms,
                   refine? : Bool, 
                   pos     : Position) 
   : SpecElemTerm =
@@ -219,7 +220,7 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type DiagramTerm = List DiagElem
+ type DiagramTerm = DiagElems
 
  %% A diagram is defined by a list of elements. An element may be a labeled
  %% vertex or edge.
@@ -230,13 +231,14 @@ SpecCalc qualifying spec
  %% shape may be tuples and equivalence classes. It remains to be seen whether 
  %% we need a concrete syntax for this.
 
+ type DiagElems    = List DiagElem
  type DiagElem     = DiagElemBody * Position
  type DiagElemBody = | Node NodeId * SCTerm
                      | Edge EdgeId * NodeId * NodeId * SCTerm
  type NodeId = Name
  type EdgeId = Name
 
- op mkDiag (elements : List DiagElem, pos : Position) : SCTerm = 
+ op mkDiag (elements : DiagElems, pos : Position) : SCTerm = 
   (Diag elements, pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,25 +249,26 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type SpecMorphismTerm = SCTerm * SCTerm * (List SpecMorphRule) * SM_Pragmas 
+ type SpecMorphismTerm = SCTerm * SCTerm * SpecMorphRules * SM_Pragmas 
  %% The calculus supports two types of morphisms: morphisms between specs and
  %% morphisms between diagrams.  Right now spec morphism are distinguished
  %% from diagram morphisms in both the concrete and abstract syntax.
  %% The first two elements in the morphism products are terms that evaluate
  %% to the domain and codomain of the morphisms.
 
+ type SpecMorphRules    = List SpecMorphRule
  type SpecMorphRule     = SpecMorphRuleBody * Position
  type SpecMorphRuleBody = 
    | Ambiguous QualifiedId                   * QualifiedId 
    | Type      QualifiedId                   * QualifiedId
    | Op        (QualifiedId * Option MSType) * (QualifiedId * Option MSType)
 
- type SM_Pragma  = (String * String * String) * Position
  type SM_Pragmas = List SM_Pragma 
+ type SM_Pragma  = (String * String * String) * Position
 
  op mkSpecMorph (dom_term : SCTerm, 
                  cod_term : SCTerm, 
-                 rules    : List SpecMorphRule, 
+                 rules    : SpecMorphRules, 
                  pragmas  : SM_Pragmas, 
                  pos      : Position) 
   : SCTerm =
@@ -309,25 +312,25 @@ SpecCalc qualifying spec
  %% or interpretations to translate as necessary when the resulting
  %% types would otherwise not match.
 
- type SpecPrismTerm = SCTerm * (List SCTerm) * PrismModeTerm 
+ type SpecPrismTerm = SCTerm * SCTerms * PrismModeTerm 
    %% The first  arg denotes a shared domain spec.
    %% The second arg denotes a list of morphisms, all with the same domain spec.
    %% The third  arg gives the rules for choosing among the morphism.
 
  type PrismModeTerm = 
    | Uniform      PrismSelection
-   | PerInstance  List SCTerm     % sms or interps
+   | PerInstance  SCTerms     % sms or interps
 
  type PrismSelection = | Nth Nat | Random | Generative
 
  op mkSpecPrism (dom_term : SCTerm, 
-                 sm_terms : List SCTerm, 
+                 sm_terms : SCTerms, 
                  pmode    : PrismModeTerm, 
                  pos      : Position) 
   : SCTerm =
   (SpecPrism (dom_term, sm_terms, pmode), pos)
 
- op mkPrismPerInstance (interps : List SCTerm) : PrismModeTerm =
+ op mkPrismPerInstance (interps : SCTerms) : PrismModeTerm =
   PerInstance interps
 
  op mkPrismUniform (s : PrismSelection) : PrismModeTerm =
@@ -355,14 +358,15 @@ SpecCalc qualifying spec
  %% The components are indexed by vertices in the shape.
  %% The term in the component must evaluate to a morphism.
 
- type DiagramMorphismTerm = SCTerm * SCTerm * (List DiagMorphRule)
+ type DiagramMorphismTerm = SCTerm * SCTerm * DiagMorphRules
+ type DiagMorphRules      = List DiagMorphRule
  type DiagMorphRule       = DiagMorphRuleBody * Position
  type DiagMorphRuleBody   = | ShapeMap    Name * Name
                             | NatTranComp Name * SCTerm 
 
  op mkDiagMorph (dom_term : SCTerm, 
                  cod_term : SCTerm, 
-                 rules    : List DiagMorphRule,
+                 rules    : DiagMorphRules,
                  pos      : Position) 
   : SCTerm =
   (DiagMorph (dom_term, cod_term, rules), pos)
@@ -420,7 +424,7 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type HideTerm = (List NameExpr) * SCTerm
+ type HideTerm = NameExprs * SCTerm
 
  %% A NameExpr denotes the name of an op, type or claim. Lists of such
  %% expressions are used in hide and export terms to either
@@ -433,7 +437,8 @@ SpecCalc qualifying spec
  %% There is some inconsistency here as NameExpr is not annotated with 
  %% a position as in Renaming above.
 
- type NameExpr = 
+ type NameExprs = List NameExpr
+ type NameExpr  = 
    | Type       QualifiedId
    | Op         QualifiedId * Option MSType
    | Axiom      QualifiedId
@@ -441,13 +446,13 @@ SpecCalc qualifying spec
    | Conjecture QualifiedId
    | Ambiguous  QualifiedId
 
- op  mkHide (names : List NameExpr, term : SCTerm, pos : Position) : SCTerm = 
+ op  mkHide (names : NameExprs, term : SCTerm, pos : Position) : SCTerm = 
   (Hide (names, term), pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type ExportTerm = (List NameExpr) * SCTerm
- op mkExport (names : List NameExpr, term : SCTerm, pos : Position) : SCTerm = 
+ type ExportTerm = NameExprs * SCTerm
+ op mkExport (names : NameExprs, term : SCTerm, pos : Position) : SCTerm = 
   (Export (names, term), pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -495,28 +500,29 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Spec transformation. Takes a spec and a transformation script.
 
- type TransformTerm = SCTerm * List TransformExpr
+ type TransformTerm = SCTerm * TransformExprs
 
  op mkTransform (spec_term  : SCTerm, 
-                 transforms : List TransformExpr,
+                 transforms : TransformExprs,
                  pos        : Position) 
   : SCTerm = 
   (Transform (spec_term, transforms), pos)
 
  %% --------------------
 
- type TransformExpr = ATransformExpr Position
+ type TransformExprs = List TransformExpr
+ type TransformExpr  = ATransformExpr Position
 
- op mkTransformName         (name:  String,                                  pos: Position) : TransformExpr = Name         (name,        pos)
- op mkTransformNumber       (n:     Nat,                                     pos: Position) : TransformExpr = Number       (n,           pos)
- op mkTransformString       (s:     String,                                  pos: Position) : TransformExpr = Str          (s,           pos)
- op mkTransformSCTerm       (sc_tm: SCTerm,                                  pos: Position) : TransformExpr = SCTerm       (sc_tm,       pos)
- op mkTransformQual         (q:     String,        name: String,             pos: Position) : TransformExpr = Qual         (q,    name,  pos)
- op mkTransformItem         (mod:   String,        te:   TransformExpr,      pos: Position) : TransformExpr = Item         (mod,  te,    pos)
- op mkTransformApply        (head:  TransformExpr, args: List TransformExpr, pos: Position) : TransformExpr = Apply        (head, args,  pos)
- op mkTransformApplyOptions (head:  TransformExpr, args: List TransformExpr, pos: Position) : TransformExpr = ApplyOptions (head, args,  pos)
- op mkTransformTuple        (itms:  List TransformExpr,                      pos: Position) : TransformExpr = Tuple        (itms,        pos)
- op mkRecord                (fld_val_prs: List (String * TransformExpr),     pos: Position) : TransformExpr = Record       (fld_val_prs, pos)
+ op mkTransformName         (name:  String,                              pos: Position) : TransformExpr = Name         (name,        pos)
+ op mkTransformNumber       (n:     Nat,                                 pos: Position) : TransformExpr = Number       (n,           pos)
+ op mkTransformString       (s:     String,                              pos: Position) : TransformExpr = Str          (s,           pos)
+ op mkTransformSCTerm       (sc_tm: SCTerm,                              pos: Position) : TransformExpr = SCTerm       (sc_tm,       pos)
+ op mkTransformQual         (q:     String,        name: String,         pos: Position) : TransformExpr = Qual         (q,    name,  pos)
+ op mkTransformItem         (mod:   String,        te:   TransformExpr,  pos: Position) : TransformExpr = Item         (mod,  te,    pos)
+ op mkTransformApply        (head:  TransformExpr, args: TransformExprs, pos: Position) : TransformExpr = Apply        (head, args,  pos)
+ op mkTransformApplyOptions (head:  TransformExpr, args: TransformExprs, pos: Position) : TransformExpr = ApplyOptions (head, args,  pos)
+ op mkTransformTuple        (itms:  TransformExprs,                      pos: Position) : TransformExpr = Tuple        (itms,        pos)
+ op mkRecord                (fld_val_prs: List (String * TransformExpr), pos: Position) : TransformExpr = Record       (fld_val_prs, pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Obligations takes a spec or a a morphism and returns a spec including
@@ -570,8 +576,8 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type SCDecl  = Name * SCTerm 
  type SCDecls = List SCDecl
+ type SCDecl  = Name * SCTerm 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

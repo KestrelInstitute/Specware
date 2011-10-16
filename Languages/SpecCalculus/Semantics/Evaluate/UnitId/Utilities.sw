@@ -6,6 +6,13 @@ SpecCalc qualifying spec
   import /Languages/SpecCalculus/Semantics/Environment
   import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
   import /Library/Unvetted/StringUtilities
+
+ type UIDPath    = List String
+ type Shadowing  = List UIDPath
+ type Shadowings = List Shadowing
+ type Chars      = List Char
+
+
 (*
 Given a string (assumed to be a filesystem path), this parses
 the string and attempts to form a canonical unitId for that object.
@@ -63,8 +70,8 @@ is not valid. A path without an element preceeding the '#' is invalid.
 
   op  pathToRelativeUID : String -> Env RelativeUID
   def pathToRelativeUID str =
-    let charList : List Char = explode str in
-    let pathElems : List (List Char) = splitAtChar #/ charList in
+    let charList : Chars = explode str in
+    let pathElems : List Chars = splitAtChar #/ charList in
     let def validElem charList =
       when (## in? charList)
         (raise (SyntaxError "Unit identifier path element contains # symbol")) in
@@ -73,7 +80,7 @@ is not valid. A path without an element preceeding the '#' is invalid.
         (raise (SyntaxError "Empty unit identifier"));
       suffix <- last pathElems;
       pathPrefix <- removeLast pathElems;
-      mapM validElem (pathPrefix : List (List Char));
+      mapM validElem (pathPrefix : List Chars);
       firstSuffixChar <- first suffix;
       lastSuffixChar <- last suffix;
       when (firstSuffixChar = ##)
@@ -127,7 +134,7 @@ a fixpoint is reached since there may be sequences of "..".
   %%   {path       = trueFilePath (path, false), % false means absolute, true means relative 
   %%   hashSuffix = hashSuffix}
 
-  op  addDevice?: List String -> List String
+  op  addDevice?: UIDPath -> UIDPath
   def addDevice? path =
     if msWindowsSystem?
       then (if ~(path = []) && deviceString? (head path)
@@ -164,7 +171,7 @@ hash suffix is ignored.
 	then (head path) ^ mainPath
 	else mainPath
 
-  op  abbreviatedPath: List String -> List String
+  op  abbreviatedPath: UIDPath -> UIDPath
   def abbreviatedPath path =
     let home = case getEnv "HOME" of
                 | Some str -> splitStringAt(str,"/")
@@ -189,7 +196,7 @@ hash suffix is ignored.
 (*
 This is like the above but accommodates the suffix as well.
 *)
-  op  uidsToString : List UnitId -> String
+  op  uidsToString : UnitIds -> String
   def uidsToString uids =
     case uids of
       | [] -> "[]"
@@ -251,7 +258,7 @@ Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Pri
     UnitId_Relative {path       = relativizePath base.path target.path,
                      hashSuffix = target.hashSuffix}
 
-  op  relativizePath : List String -> List String -> List String 
+  op  relativizePath : UIDPath -> UIDPath -> UIDPath
   def relativizePath base target =
     let 
       def addUpLinks (base,target) =
@@ -278,7 +285,7 @@ yields \verb+["a", "b", "c"].
 The next function will go away.
 *)
 (*
-  op  splitStringAtChar : Char -> String -> List String
+  op  splitStringAtChar : Char -> String -> Strings
   def splitStringAtChar char str =
     let def parseCharList chars =
       case chars of
@@ -293,7 +300,7 @@ The next function will go away.
       parseCharList (explode str)
 *)
 
-  op  splitAtChar : Char -> List Char -> List (List Char)
+  op  splitAtChar : Char -> Chars -> List Chars
   def splitAtChar char charList =
     let def parseCharList chars =
       case chars of
@@ -322,8 +329,7 @@ doesn't belong here.
             ([], l)
 (*
 The next two functions will disappear.
-*)
-  op  removeLastElem : (List String) -> Env (List String)
+  op  removeLastElem : Strings -> Env Strings
   def removeLastElem elems =
     case elems of
       | [] -> SpecCalc.error "removeLastElem: encountered empty string list"
@@ -333,12 +339,14 @@ The next two functions will disappear.
           return (Cons (x,suffix))
         }
 
-  op  lastElem : (List String) -> Env String
+  op  lastElem : Strings -> Env String
   def lastElem elems =
     case elems of
       | [] -> SpecCalc.error "lastElem: encountered empty string list"
       | x::[] -> return x
       | _::rest -> lastElem rest
+
+*)
 
   op  removeLast: [a] List a -> Env (List a)
   def removeLast elems =
@@ -389,8 +397,8 @@ emacs interface functions.
            ++ (searchForDefiningUIDforType(qId,globalContext,[],false)))
 
   op  findDefiningUIDforOp
-       : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * List UnitId * Bool
-           -> List (String * String) * List UnitId
+       : QualifiedId * Spec * UnitId * UnitIds * GlobalContext * UnitIds * Bool
+           -> List (String * String) * UnitIds
   def findDefiningUIDforOp(opId,spc,unitId,depUIDs,globalContext,seenUIDs,rec?) =
     let def findLocalUID (opId,seenUIDs) =
           if localOp?(opId,spc)
@@ -434,8 +442,8 @@ emacs interface functions.
 	        ([],seenUIDs)
 		infos
 
-  op  findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * List UnitId * Bool
-                                     -> List (String * String) * List UnitId
+  op  findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * UnitIds * Bool
+                                     -> List (String * String) * UnitIds
   def findDefiningUIDforOpInContext (opId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
       | Some(Spec spc,_,depUIDs,_) ->
@@ -491,9 +499,9 @@ emacs interface functions.
 	       | None -> if val = vali then Some (unitId,term) else None)
       None globalContext
 
-  op getSpecPath0(): List UnitId
+  op getSpecPath0(): UnitIds
 
-  op relativePath(ref_path: List String, path: List String): List String =
+  op relativePath(ref_path: UIDPath, path: UIDPath): UIDPath =
     let ref_len = length ref_path in
     if ref_len <= length path
         && ref_path = subFromTo(path, 0, ref_len)
@@ -522,7 +530,7 @@ emacs interface functions.
 	       | None -> if val = vali then Some (term) else None)
       None globalContext
 
-  op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * List UnitId * Bool
+  op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * UnitIds * Bool
                                 -> List (String * String)
   def searchForDefiningUIDforOp (opId, globalContext, seenUIDs, rec?) =
     %% Currently rec? is always false
@@ -543,8 +551,8 @@ emacs interface functions.
       []
       globalContext
 
-  op  findDefiningUIDforType : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * List UnitId * Bool
-                               -> List (String * String) * List UnitId
+  op  findDefiningUIDforType : QualifiedId * Spec * UnitId * UnitIds * GlobalContext * UnitIds * Bool
+                               -> List (String * String) * UnitIds
   def findDefiningUIDforType (typeId, spc, unitId, depUIDs, globalContext, seenUIDs, rec?) =
     let def findLocalUID (typeId,seenUIDs) =
           if localType? (typeId, spc) then
@@ -594,8 +602,8 @@ emacs interface functions.
 	        ([],seenUIDs)
 		infos
 
-  op  findDefiningUIDforTypeInContext : QualifiedId * UnitId * GlobalContext * List UnitId * Bool
-                                       -> List (String * String) * List UnitId
+  op  findDefiningUIDforTypeInContext : QualifiedId * UnitId * GlobalContext * UnitIds * Bool
+                                       -> List (String * String) * UnitIds
   def findDefiningUIDforTypeInContext (typeId, unitId, globalContext, seenUIDs, rec?) =
     case evalPartial globalContext unitId of
       | Some (Spec spc, _, depUIDs,_) ->
@@ -604,7 +612,7 @@ emacs interface functions.
 				globalContext, Cons(unitId, seenUIDs), rec?)
       | _ -> ([],seenUIDs)
 
-  op  searchForDefiningUIDforType : QualifiedId * GlobalContext * List UnitId * Bool -> List (String * String)
+  op  searchForDefiningUIDforType : QualifiedId * GlobalContext * UnitIds * Bool -> List (String * String)
   def searchForDefiningUIDforType (typeId, globalContext, seenUIDs, rec?) =
     foldMap (fn result -> fn unitId -> fn (val, _, depUIDs, _) ->
 	     case result of
@@ -617,7 +625,7 @@ emacs interface functions.
       []
       globalContext
 
-  op  absolutePath?: List String -> Bool
+  op  absolutePath?: UIDPath -> Bool
   def absolutePath? path =
     case path of
       | [] -> false

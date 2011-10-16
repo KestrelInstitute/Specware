@@ -26,16 +26,16 @@ spec
                              | UnitId_Relative (uid as {path,hashSuffix}) -> 
                                { 
                                 current_uid   <- getCurrentUID;
-                                current_path  <- removeLastElem current_uid.path;
-                                relative_path <- removeLastElem path;
-                                name          <- lastElem       path;
+                                current_path  <- removeLast current_uid.path;
+                                relative_path <- removeLast path;
+                                name          <- last       path;
                                 path          <- return (current_path ++ relative_path);
                                 return (path, name)
                                 }
                              | SpecPath_Relative uid -> 
                                {
-                                path <- removeLastElem uid.path;
-                                name <- lastElem       uid.path;
+                                path <- removeLast uid.path;
+                                name <- last       uid.path;
                                 return (path, name)
                                 };
      print("\n-Lisp-\n");

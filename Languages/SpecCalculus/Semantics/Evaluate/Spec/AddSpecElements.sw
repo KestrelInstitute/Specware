@@ -316,23 +316,22 @@ SpecCalc qualifying spec
     return (sp, el)
     }
 
-
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addImport      : [a] (SCTerm * Spec)                            * ASpec a * a -> ASpec a
- op addProperty    : [a] (AProperty a)                              * ASpec a -> ASpec a
- op addAxiom       : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
- op addConjecture  : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
- op addTheorem     : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
- op addTheoremLast : [a] (PropertyName * TyVars * ATerm a * a)      * ASpec a -> ASpec a
- op addConjectures : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
- op addTheorems    : [a] List (PropertyName * TyVars * ATerm a * a) * ASpec a -> ASpec a
- op addComment     : [a] String * a                                 * ASpec a -> ASpec a
- op addPragma      : [a] (String * String * String * a)             * ASpec a -> ASpec a
+ op addImport      : (SCTerm * Spec)                                  * Spec * Position -> Spec
+ op addProperty    : Property                                         * Spec -> Spec
+ op addAxiom       : (PropertyName * TyVars * MSTerm * Position)      * Spec -> Spec
+ op addConjecture  : (PropertyName * TyVars * MSTerm * Position)      * Spec -> Spec
+ op addTheorem     : (PropertyName * TyVars * MSTerm * Position)      * Spec -> Spec
+ op addTheoremLast : (PropertyName * TyVars * MSTerm * Position)      * Spec -> Spec
+ op addConjectures : List (PropertyName * TyVars * MSTerm * Position) * Spec -> Spec
+ op addTheorems    : List (PropertyName * TyVars * MSTerm * Position) * Spec -> Spec
+ op addComment     : String * Position                                * Spec -> Spec
+ op addPragma      : (String * String * String * Position)            * Spec -> Spec
 
  %% called by evaluateSpecImport
- def addImport ((specCalcTerm, imported_spec), spc, a) =
-   appendElement (spc, Import (specCalcTerm, imported_spec, imported_spec.elements, a))
+ def addImport ((specCalcTerm, imported_spec), spc, pos) =
+   appendElement (spc, Import (specCalcTerm, imported_spec, imported_spec.elements, pos))
 
  %% called by evaluateSpecElem 
 
@@ -373,9 +372,9 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% op addLocalTypeName     : [a] ASpec a * QualifiedId -> ASpec a
-% op addLocalOpName       : [a] ASpec a * QualifiedId -> ASpec a
-% op addLocalPropertyName : [a] ASpec a * QualifiedId -> ASpec a
+% op addLocalTypeName     : Spec * QualifiedId -> Spec 
+% op addLocalOpName       : Spec * QualifiedId -> Spec 
+% op addLocalPropertyName : Spec * QualifiedId -> Spec 
  op addToNames           : QualifiedId * QualifiedIds -> QualifiedIds
 
 % def addLocalTypeName (spc, new_local_type) =
@@ -402,7 +401,7 @@ SpecCalc qualifying spec
 *)
  def addToNames (qid, qids) = qid::qids
 
- op lastOpInSpec(qids: List QualifiedId, spc: Spec | qids ~= []): QualifiedId =
+ op lastOpInSpec(qids: QualifiedIds, spc: Spec | qids ~= []): QualifiedId =
    let _ = writeLine("lookingForOps: "^anyToString(qids)) in
    case qids of
      | [qid] -> qid

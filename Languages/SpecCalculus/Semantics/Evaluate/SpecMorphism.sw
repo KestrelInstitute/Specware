@@ -55,7 +55,7 @@ coherence conditions of the morphism elements.
                       "domain and codomain of spec morphism are not specs"))
     }
 
-  op makeSpecMorphism : Spec -> Spec -> List SpecMorphRule -> SM_Pragmas -> Position -> Option SCTerm -> Env Morphism
+  op makeSpecMorphism : Spec -> Spec -> SpecMorphRules -> SM_Pragmas -> Position -> Option SCTerm -> Env Morphism
   def makeSpecMorphism domSpec codSpec rawMapping pragmas position opt_sm_tm = 
     {
       morphism_map <- makeResolvedMapping domSpec codSpec rawMapping;
@@ -78,7 +78,7 @@ coherence conditions of the morphism elements.
 %%    let type_renaming = mapAQualifierMap (fn qid -> (qid, [qid])) morphism_type_map in
 %%    (op_renaming, type_renaming)
 
-  op makeResolvedMapping : Spec -> Spec -> List SpecMorphRule -> Env MorphismMaps
+  op makeResolvedMapping : Spec -> Spec -> SpecMorphRules -> Env MorphismMaps
   def makeResolvedMapping dom_spec cod_spec sm_rules =
     let 
       def findCodOp position qid =

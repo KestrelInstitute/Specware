@@ -31,6 +31,7 @@ spec
   type Movement =
     | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
 
+  type Scripts = List Script
   type Script =
     | At (List Location * Script)
     | AtTheorem (List Location * Script)

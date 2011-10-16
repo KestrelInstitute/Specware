@@ -94,8 +94,8 @@ Make a lisp file name for a UnitId.
     case optFileName of
       | Some fileName -> return fileName
       | _ -> {
-         prefix <- removeLastElem path;
-         mainName <- lastElem path;
+         prefix <- removeLast path;
+         mainName <- last path;
          fileName <- return ((uidToFullPath {path=prefix,hashSuffix=None})
                              ^ "/lisp/" ^ mainName ^ ".lisp");
          return fileName}

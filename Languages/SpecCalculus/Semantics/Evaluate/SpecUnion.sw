@@ -24,7 +24,7 @@ SpecUnion qualifying spec
  %% and also by applySpecMorphismSubstitution to stich together 
  %% the translated and non-translated portions of the subject spec.
 
- op  specUnion : List Spec -> Position -> Env Spec
+ op  specUnion : Specs -> Position -> Env Spec
  def specUnion specs pos =
   {
    new_spec  <- return (auxSpecUnion specs);
@@ -33,7 +33,7 @@ SpecUnion qualifying spec
    return new_spec
   }
 
- op  auxSpecUnion : List Spec -> Spec
+ op  auxSpecUnion : Specs -> Spec
  def auxSpecUnion specs =
    let new_spec = {types     = typesUnion specs,
 		   ops       = opsUnion   specs,
@@ -47,9 +47,9 @@ SpecUnion qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op typesUnion : List Spec -> TypeMap
- op opsUnion   : List Spec -> OpMap
- op eltsUnion  : List Spec -> SpecElements
+ op typesUnion : Specs -> TypeMap
+ op opsUnion   : Specs -> OpMap
+ op eltsUnion  : Specs -> SpecElements
 
  def typesUnion specs = foldl unionTypeMaps emptyTypeMap  specs
  def opsUnion   specs = foldl unionOpMaps   emptyOpMap    specs

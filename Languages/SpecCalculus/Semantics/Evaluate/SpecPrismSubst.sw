@@ -185,7 +185,7 @@ SpecCalc qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  applySpecPrism : List Morphism -> Spec -> Position -> Env Spec 
+  op  applySpecPrism : Morphisms -> Spec -> Position -> Env Spec 
   def applySpecPrism sms spc position =
    %% The opMap and typeMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)

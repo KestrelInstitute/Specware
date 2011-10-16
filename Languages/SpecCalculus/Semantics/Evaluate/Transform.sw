@@ -82,7 +82,7 @@ spec
          return(sc_tm, val)}
       | _ -> raise (TypeCheck (posOf itm, "UnitId expected."))
 
-  op extractMorphs(itms: List TransformExpr): SpecCalc.Env(List(SCTerm * Morphism)) =
+  op extractMorphs(itms: TransformExprs): SpecCalc.Env(List(SCTerm * Morphism)) =
     mapM (fn itm ->
             {(uid, val) <- extractUID itm;
              case val of
@@ -185,7 +185,7 @@ spec
          return (iso_qid, osi_qid)}
       | _ -> raise (TypeCheck (posOf iso_tm, "Parenthesis expected"))
  
-  op extractIsos(iso_tms: List TransformExpr): SpecCalc.Env (List(QualifiedId * QualifiedId)) =
+  op extractIsos(iso_tms: TransformExprs): SpecCalc.Env (List(QualifiedId * QualifiedId)) =
     case iso_tms of
       | [] -> return []
       | (Tuple _) :: _ ->
@@ -278,7 +278,7 @@ spec
      recovery_fns <- findQidPairs("recoveryFns", val_prs, pos);
      return(checkArgs, checkResult, checkRefine, recovery_fns)}
 
-  op makeScript(trans_steps: List TransformExpr): SpecCalc.Env (List Script * List Script) =
+  op makeScript(trans_steps: TransformExprs): SpecCalc.Env (Scripts * Scripts) =
     foldrM (fn (top_result, sub_result) -> fn te ->
              case te of
                | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->

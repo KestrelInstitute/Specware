@@ -14,6 +14,7 @@ the recursion.
 
 SpecCalc qualifying spec
 {
+ type SCTerms = List SCTerm 
  type SCTerm 
 
  op showSCTerm : SCTerm -> String

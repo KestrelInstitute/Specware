@@ -30,6 +30,7 @@ SpecCalc qualifying spec {
  type MorphismTypeMap = QualifiedIdMap
  type MorphismOpMap   = QualifiedIdMap
 
+  type Morphisms = List Morphism
   type Morphism = {
     dom     : Spec,
     cod     : Spec,

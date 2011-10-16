@@ -4,7 +4,7 @@ spec
  import UnitId
  import Obligations
 
- op generateProof: Spec * SCTerm * Property * Bool * Bool * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
+ op generateProof: Spec * SCTerm * Property * Bool * Bool * String * ProverOptions * GlobalContext * UnitIds * Option UnitId -> SCDecl
  def generateProof (spc, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
@@ -18,7 +18,7 @@ spec
    let ProveTerm_A: SCTerm = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
- op generateProofMorphism: Morphism * SCTerm * Property * Bool * Bool * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
+ op generateProofMorphism: Morphism * SCTerm * Property * Bool * Bool * String * ProverOptions * GlobalContext * UnitIds * Option UnitId -> SCDecl
  def generateProofMorphism (morph, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
@@ -32,7 +32,7 @@ spec
    let ProveTerm_A: SCTerm = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
- op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * List UnitId * Bool -> SCTerm
+ op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * UnitIds * Bool -> SCTerm
  def scTermFromScTerm(v, scTerm, globalContext, fileUID, swpath, fromObligations?) =
    case findUnitIdForUnit(v, globalContext) of
      | Some specFullUId ->
@@ -57,7 +57,7 @@ spec
   If baseUid is None, then relativeUidToUidAndSWPATH returns a Uid that is equivalent to uid, but with respect to SWPATH.
   *)
  
- op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> SCTerm
+ op relativeUidToUidAndSWPATH: UnitId * Option UnitId * UnitIds -> SCTerm
  def relativeUidToUidAndSWPATH(uid as {path,hashSuffix}, baseUid, swpath) =
    case baseUid of
      | None -> (UnitId (SpecPath_Relative (relativeUidToSWPATH(uid, swpath))), noPos)
@@ -74,7 +74,7 @@ spec
      | Some tailPath -> Some ({path = tailPath, hashSuffix = uid.hashSuffix})
      | _ -> None
  
- op relativeUidToSWPATH: UnitId * List UnitId -> UnitId
+ op relativeUidToSWPATH: UnitId * UnitIds -> UnitId
  def relativeUidToSWPATH(uid, swpath) =
    %let _ = String.writeLine("\n relativeUidToSWPATH UID = "^showUID(uid)^"\n swPath = "^(foldr concat "," (map (fn (path) -> (showUID(path)^" ; ")) swpath))) in 
    let foundSwUid = findOption (fn (swUid) -> relativeUidToUid(uid, swUid)) swpath in
@@ -88,7 +88,7 @@ spec
      | (UnitId ( UnitId_Relative (uid)), _) -> let path = uid.path in head(path) = "Base"
      | _ -> false
 
- op unionProofDecls: List SCDecl * List SCDecl -> List SCDecl
+ op unionProofDecls: SCDecls * SCDecls -> SCDecls
  def unionProofDecls(pfDecls1, pfDecls2) =
     let def insert (pfDecls, pd as (pdName, _)) = 
     case pfDecls of
@@ -101,7 +101,7 @@ spec
             Cons (pd1, insert (pds, pd)) in
      foldl insert pfDecls1 pfDecls2
 
- op generateProofsInSpec: Spec * SCTerm * Bool * Spec * Bool * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateProofsInSpec: Spec * SCTerm * Bool * Spec * Bool * String * ProverOptions * ClaimNames * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateProofsInSpec (spc, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) =
    %let imports = (spc.importInfo).imports in
    %let _ = debug("import check") in
@@ -133,7 +133,7 @@ spec
    let _ = debug("genprfsinspc") in
    unionProofDecls(localProofDecls, importProofDecls)
 
- op generateProofsInMorph: Morphism * SCTerm * Bool * Spec * Bool * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateProofsInMorph: Morphism * SCTerm * Bool * Spec * Bool * String * ProverOptions * ClaimNames * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateProofsInMorph (morph, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) =
    let spc = morphismObligations(morph, globalContext, noPos) in
    %let imports = (spc.importInfo).imports in
@@ -165,7 +165,7 @@ spec
    let _ = debug("genprfsinspc") in
    unionProofDecls(localProofDecls, importProofDecls)
 
- op generateLocalProofsInSpec: Spec * SCTerm * Bool * Bool * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateLocalProofsInSpec: Spec * SCTerm * Bool * Bool * String * ProverOptions * ClaimNames * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateLocalProofsInSpec (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = allProperties usedSpc in
@@ -176,7 +176,7 @@ spec
 				   prover_options, globalContext, swpath, fileUID))
      localProps
 
- op generateLocalProofsInMorph: Morphism * SCTerm * Bool * Bool * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateLocalProofsInMorph: Morphism * SCTerm * Bool * Bool * String * ProverOptions * ClaimNames * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateLocalProofsInMorph (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = allProperties usedSpc in
@@ -188,7 +188,7 @@ spec
  % The difference between generateProofsInSpecLocal and generateLocalProofsInSpec is that generateProofsInSpecLocal is used by the
  % lpunits commands to only generate local proofs, while generateLocalProofsInSpec is the original code used as part of the full punits command.
  % Eventually I'll only use generateProofsInSpecLocal.
- op generateProofsInSpecLocal: Spec * SCTerm * Bool * Bool * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateProofsInSpecLocal: Spec * SCTerm * Bool * Bool * String * ProverOptions * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateProofsInSpecLocal (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = localProperties usedSpc in
@@ -196,7 +196,7 @@ spec
    let localProps = filter (fn (propType, propName, _, _, _) -> ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
- op generateProofsInMorphLocal: Morphism * SCTerm * Bool * Bool * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ op generateProofsInMorphLocal: Morphism * SCTerm * Bool * Bool * String * ProverOptions * GlobalContext * UnitIds * Option UnitId -> SCDecls
  def generateProofsInMorphLocal (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = localProperties usedSpc in
@@ -209,12 +209,12 @@ spec
 % def ppProof(proof) =
 %   SpecCalc.ppTerm(proof)
 
- op ppProofs: List SCDecl -> WLPretty
+ op ppProofs: SCDecls -> WLPretty
  def ppProofs(proofs) =
    ppAppend (ppDecls(proofs)) ppNewline
 %   ppSep ppNewline (map ppProof proofs)
 
- op ppProofsToFile: List SCDecl * String -> ()
+ op ppProofsToFile: SCDecls * String -> ()
 
  def ppProofsToFile(proofs, file) =
    let prettyProofs = ppProofs(proofs) in
@@ -227,7 +227,7 @@ spec
      fn stream ->  write(stream, fileContents))
 *)
 
- op toProofFileEnv: Spec * SCTerm * Bool * Bool * Spec * Bool * GlobalContext * List UnitId * Option UnitId * String -> ()
+ op toProofFileEnv: Spec * SCTerm * Bool * Bool * Spec * Bool * GlobalContext * UnitIds * Option UnitId * String -> ()
  def toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
    %let _ = writeLine("Writing Proof file "^file) in
    let basePropNames = map (fn (_, pn, _, _, _) -> pn) (allProperties baseSpc) in
@@ -237,7 +237,7 @@ spec
      else generateProofsInSpec(spc, spcTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
    ppProofsToFile(proofDecls, file)
 
- op toProofFileMorphEnv: Morphism * SCTerm * Bool * Bool * Spec * Bool * GlobalContext * List UnitId * Option UnitId * String -> ()
+ op toProofFileMorphEnv: Morphism * SCTerm * Bool * Bool * Spec * Bool * GlobalContext * UnitIds * Option UnitId * String -> ()
  def toProofFileMorphEnv (morph, morphTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
    %let _ = writeLine("Writing Proof file "^file) in
    let basePropNames = map (fn (_, pn, _, _, _) -> pn) (allProperties baseSpc) in
@@ -247,11 +247,11 @@ spec
      else generateProofsInMorph(morph, morphTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
    ppProofsToFile(proofDecls, file)
 
-  op toProofFile    : Spec * SCTerm * Spec * Bool * GlobalContext * List UnitId * Option UnitId * String * Bool * Bool -> ()
+  op toProofFile    : Spec * SCTerm * Spec * Bool * GlobalContext * UnitIds * Option UnitId * String * Bool * Bool -> ()
   def toProofFile (spc, spcTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?, local?) =  
       toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
 
-  op toProofFileMorph    : Morphism * SCTerm * Spec * Bool * GlobalContext * List UnitId * Option UnitId * String * Bool * Bool -> ()
+  op toProofFileMorph    : Morphism * SCTerm * Spec * Bool * GlobalContext * UnitIds * Option UnitId * String * Bool * Bool -> ()
   def toProofFileMorph (morph, morphTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?, local?) =  
       toProofFileMorphEnv (morph, morphTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
 
@@ -336,8 +336,8 @@ spec
 
  op UIDtoSingleProofFile: UnitId -> Env (UnitId * String * Bool)
  def UIDtoSingleProofFile (unitId as {path,hashSuffix}) = {
-    prefix <- (removeLastElem path);
-    mainName <- lastElem path;
+    prefix <- (removeLast path);
+    mainName <- last path;
     fileUID <- return {path=prefix,hashSuffix=None};
     let filNm = (uidToFullPath fileUID)
 %        ^ "/proofs/" ^ mainName ^ ".log"
@@ -348,8 +348,8 @@ spec
  op UIDtoMultipleProofFile: UnitId -> Env (UnitId * String * Bool)
  def UIDtoMultipleProofFile (unitId as {path,hashSuffix}) =
    let Some hashSuffix = hashSuffix in
-    {prefix <- removeLastElem path;
-     newSubDir <- lastElem path;
+    {prefix <- removeLast path;
+     newSubDir <- last path;
      mainName <- return hashSuffix;
      fileUID <- return {path=prefix,hashSuffix=None};
      let filNm = (uidToFullPath fileUID)
@@ -366,6 +366,29 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.35  2011/10/14 10:53:38  mcdonald
+%% pervasive internal cleanup affecting about 350 files
+%%
+%% Among other things:
+%%
+%% 'sort' should now be fully removed in favor of 'type'
+%% (but 'sort' is still accepted for the time being)
+%% As a side effect, some files that had "Sort" in their names
+%% have been renamed to use "Type", to avoid confusion.
+%%
+%% The type 'Boolean' should now be fully removed in favor of 'Bool'
+%% (but 'Boolean' is still defined as 'Bool' for now)
+%%
+%% The internal types for structures in the Metaslang abstract syntax
+%% are now universally referenced as 'MSType', 'MSTerm', and 'MSPattern',
+%% to make it easier to avoid conflicts with descriptions of types, terms,
+%% and patterns in other langauges such as SpecCalculus, Lisp, Java, C,
+%% Haskell, Isabelle, etc.
+%%
+%% Some imports have been restructured to more cleanly share declarations.
+%%
+%% And probably some other minor changes as well...
+%%
 %% Revision 1.34  2011/10/11 07:37:55  mcdonald
 %% internal revisions to simplify specs:
 %%

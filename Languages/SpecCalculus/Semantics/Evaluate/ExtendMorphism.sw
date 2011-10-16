@@ -159,7 +159,7 @@ def termOpsInSpec?(term, spc) =
   in
     mapRec term
 
-op termOpsInSpec: MSTerm * Spec -> List MSTerm
+op termOpsInSpec: MSTerm * Spec -> MSTerms
 
 def termOpsInSpec(term, spc) =
   let 
@@ -318,7 +318,7 @@ def substOpMap (opMap, term) =
 									   hashSuffix = None});
 *)
  
- op proveForAns: Vars * Property * Spec * Spec * List LispCell * String -> Bool
+ op proveForAns: Vars * Property * Spec * Spec * LispCells * String -> Bool
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, prover_options, snarkLogFileName) =
    %% (removed base_spc as distinct arg)
@@ -344,7 +344,7 @@ def substOpMap (opMap, term) =
      %%let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
        proved
 
- op makeSnarkAnsEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
+ op makeSnarkAnsEvalForm: LispCells * LispCells * LispCells * LispCells * LispCells * LispCell * String -> LispCell
 
  def makeSnarkAnsEvalForm(prover_options, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %%let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in

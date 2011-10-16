@@ -10,7 +10,7 @@ SpecCalc qualifying spec
       | PerInstance iso_tms -> evaluateSpecPrismPerInstance prism_fields pos
 
   op evaluateSpecPrismUniform (prism_fields as (dom_tm   : SCTerm, 
-                                                sm_tms   : List SCTerm, 
+                                                sm_tms   : SCTerms, 
                                                 pmode_tm : PrismModeTerm))
                               (pos : Position)
    : SpecCalc.Env SpecCalc.ValueInfo =
@@ -42,7 +42,7 @@ SpecCalc qualifying spec
     prism_timestamp <- return (List.foldl (fn ((y : TimeStamp), (_,x,_)) -> max (x, y))
                                           dom_timestamp
                                           sm_valueinfos);
-    prism_deps      <- return (List.foldl (fn ((deps : List UnitId), (_,_,sm_deps)) -> listUnion (sm_deps, deps))
+    prism_deps      <- return (List.foldl (fn ((deps : UnitIds), (_,_,sm_deps)) -> listUnion (sm_deps, deps))
                                           dom_deps
                                           sm_valueinfos);
     prism_tm        <- return (SpecPrism prism_fields, pos);
@@ -94,7 +94,7 @@ SpecCalc qualifying spec
 						sm_valueinfos)
 				    iso_valueinfos);
     deps <- return (List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
-		               (List.foldl (fn ((y : List UnitId), (_,_,x)) -> listUnion (x, y))
+		               (List.foldl (fn ((y :  UnitIds), (_,_,x)) -> listUnion (x, y))
 				           domDepUIDs
 					   sm_valueinfos)
 			       iso_valueinfos);

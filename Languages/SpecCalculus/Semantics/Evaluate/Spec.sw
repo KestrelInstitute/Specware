@@ -48,7 +48,7 @@ and then qualify the resulting spec if the spec was given a name.
 We first evaluate the imports and then the locally declared ops, types
 axioms, etc.
 *)
-  op evaluateSpecElems : ASpec Position -> SpecElemTerms -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
+  op evaluateSpecElems : Spec -> SpecElemTerms -> SpecCalc.Env (Spec * TimeStamp * UnitId_Dependency)
   def evaluateSpecElems starting_spec specElems = {
       %% Use the name starting_spec to avoid any possible confusion with the
       %% op initialSpecInCat, which refers to the initial spec in the category of specs.
@@ -82,7 +82,7 @@ axioms, etc.
   def anyImports? specElems =
     exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
-  op evaluateSpecElem : ASpec Position -> SpecElemTerm -> SpecCalc.Env (ASpec Position)
+  op evaluateSpecElem : Spec -> SpecElemTerm -> SpecCalc.Env Spec
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import terms ->

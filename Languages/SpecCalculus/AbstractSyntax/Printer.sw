@@ -221,9 +221,9 @@ SpecCalc qualifying spec
 	    (case assertions of
 	       | All -> ppNil
 	       | Explicit ([]) -> ppNil
-	       | Explicit (assertions) -> ppConcat [
-					    ppString " using ",
-					    ppSep (ppString ", ") (map ppQualifier assertions)]),
+	       | Explicit claim_names-> ppConcat [
+                                                  ppString " using ",
+                                                  ppSep (ppString ", ") (map ppQualifier claim_names)]),
             (case proverOptions of
 	       | OptionString ([option]) -> 
 	                                  if option = string("") then ppNil else
@@ -304,10 +304,10 @@ SpecCalc qualifying spec
 					 else
 					   ppString (" %% " ^ str)
 
-  op ppIdInfo : List QualifiedId -> Doc
+  op ppIdInfo : Aliases -> Doc
  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-  op myppATypeInfo : [a] List QualifiedId * AType a -> Doc
+  op myppATypeInfo : Aliases * MSType -> Doc
  def myppATypeInfo (aliases, dfn) =
    let prefix = ppConcat [ppString "type ", ppIdInfo aliases] in
    case typeDefs dfn of
@@ -336,13 +336,13 @@ SpecCalc qualifying spec
 		       ppSep (ppString ",") (map ppString tvs),
 		       ppString ") "]
 
-  op myppAOpInfo : [a] Aliases * Fixity * Bool * ATerm a -> Doc
+  op myppAOpInfo : Aliases * Fixity * Bool * MSTerm -> Doc
   def myppAOpInfo (aliases, fixity, refine?, dfn) =
     let (decls, defs) = termDeclsAndDefs dfn in
     ppConcat [ppAOpDecl (aliases, fixity, decls),
 	      ppAOpDefs (aliases, defs, refine?)]
 
-  op ppAOpDecl : [a] Aliases * Fixity * List (ATerm a) -> Doc
+  op ppAOpDecl : Aliases * Fixity * MSTerms -> Doc
  def ppAOpDecl (aliases, fixity, dfns) =
    case dfns of
      | [] -> ppNil
@@ -366,7 +366,7 @@ SpecCalc qualifying spec
 			    ppString "] "]),
 	     ppAType srt]
 
-  op ppAOpDefs : [a] Aliases * List (ATerm a) * Bool -> Doc
+  op ppAOpDefs : Aliases * MSTerms * Bool -> Doc
  def ppAOpDefs (aliases, defs, refine?) =
    let 
      def pp_def dfn =
@@ -393,7 +393,7 @@ SpecCalc qualifying spec
 		   ppSep ppNewline (map pp_def defs)]
 
 
- %  op ppAProperty : [a] AProperty a -> Doc
+ %  op ppAProperty : MSProperty -> Doc
  %   def ppAProperty (propType, name, tyVars, term) =
  %     ppConcat [
  %      ppPropertyType propType,

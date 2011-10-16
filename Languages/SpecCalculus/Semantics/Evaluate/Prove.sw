@@ -209,8 +209,8 @@ SpecCalc qualifying spec
 
  op UIDtoSingleLogFile: UnitId * String * String -> SpecCalc.Env String
  def UIDtoSingleLogFile (unitId as {path,hashSuffix}, proverName, suffix) =
-    {prefix <- removeLastElem path;
-     mainName <- lastElem path;
+    {prefix <- removeLast path;
+     mainName <- last path;
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/"^proverName^"/" ^ mainName ^ "." ^ suffix
      in
@@ -219,8 +219,8 @@ SpecCalc qualifying spec
  op UIDtoMultipleLogFile: UnitId * String * String -> SpecCalc.Env String
  def UIDtoMultipleLogFile (unitId as {path,hashSuffix}, proverName, suffix) =
    let Some hashSuffix = hashSuffix in
-    {prefix <- removeLastElem path;
-     newSubDir <- lastElem path;
+    {prefix <- removeLast path;
+     newSubDir <- last path;
      mainName <- return (convertToFileName hashSuffix);
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/"^proverName^"/" ^ newSubDir ^ "/" ^ mainName ^ "." ^ suffix
@@ -240,7 +240,7 @@ SpecCalc qualifying spec
    else cq = pq && cid = pid
 
  op  proveInSpec: Option String * ClaimName * Spec * Option String * Spec * String * 
-                  Assertions * List LispCell * Bool * AnswerVar * String * Position -> SpecCalc.Env Bool
+                  Assertions * LispCells * Bool * AnswerVar * String * Position -> SpecCalc.Env Bool
  def proveInSpec (proofName, claimName, spc, specName, baseSpc, % rewriteSpc,
                   proverName, assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = 
    let _ = debug("pinspec") in
@@ -291,7 +291,7 @@ SpecCalc qualifying spec
                              ^ printMissingHypothesis (map (fn((_,pn,_,_,_)) -> pn) actualHypothesis)))
 
 
- op actualHypothesis: List Property * Assertions * Position -> List Property
+ op actualHypothesis: Properties * Assertions * Position -> Properties
 
  def actualHypothesis (validHypothesis, assertions, _ (* pos *)) =
      case assertions of
@@ -303,7 +303,7 @@ SpecCalc qualifying spec
 	in
 	  hypothesis
 
- op missingHypothesis: List Property * Assertions -> List ClaimName
+ op missingHypothesis: Properties * Assertions -> ClaimNames
 
  def missingHypothesis (actualHypothesis, assertions) =
      case assertions of
@@ -317,7 +317,7 @@ SpecCalc qualifying spec
 	 in
 	   missingHypothesis
 
- op printMissingHypothesis: List ClaimName -> String
+ op printMissingHypothesis: ClaimNames -> String
  def printMissingHypothesis(cns) =
    case cns of
      | []  -> ""
@@ -401,9 +401,9 @@ SpecCalc qualifying spec
      then "."
    else " in "^runTime^" seconds."
    
- op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
-                         % List Property * Spec *
-                         String * List LispCell * Bool * AnswerVar * String -> Bool
+ op proveWithHypothesis: Option String * Property * Properties * Spec * Option String * Properties * Spec *
+                         % Properties * Spec *
+                         String * LispCells * Bool * AnswerVar * String -> Bool
 
  def proveWithHypothesis(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
                          % rewriteSpc,
@@ -424,9 +424,9 @@ SpecCalc qualifying spec
                                 "Snark", proverOptions, includeBase, answerVariable, snarkLogFileName)
 
 
- op proveWithHypothesisSnark: Option String * Property * List Property * Spec * Option String * List Property * Spec *
-                         % List Property * % Spec *
-                         String * List LispCell * Bool * AnswerVar * String -> Bool
+ op proveWithHypothesisSnark: Option String * Property * Properties * Spec * Option String * Properties * Spec *
+                         % Properties * % Spec *
+                         String * LispCells * Bool * AnswerVar * String -> Bool
 
  def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc, % rewriteHypothesis,
                               % rewriteSpc,
@@ -499,8 +499,8 @@ SpecCalc qualifying spec
    proved
 
  %print-clocks??
- op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
-                           * List LispCell * LispCell -> LispCell
+ op makeSnarkProveDecls: LispCells * LispCells * LispCells * LispCells % * LispCells
+                           * LispCells * LispCell -> LispCell
 
  def makeSnarkProveDecls(proverOptions, snarkTypeDecl, snarkOpDecls,
 			 snarkBaseHypothesis, % snarkRewriteHypothesis,
@@ -581,8 +581,8 @@ Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
    Lisp.++ (Lisp.list snarkHypothesis)
    Lisp.++ (Lisp.list [snarkConjecture])
 
- op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell % * List LispCell
-                           * List LispCell * LispCell * String -> LispCell
+ op makeSnarkProveEvalForm: LispCells * LispCells * LispCells * LispCells % * LispCells
+                           * LispCells * LispCell * String -> LispCell
 
  def makeSnarkProveEvalForm(proverOptions, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis,
 			    % snarkRewriteHypothesis,
