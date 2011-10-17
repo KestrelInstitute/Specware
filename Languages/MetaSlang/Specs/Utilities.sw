@@ -1643,7 +1643,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                               | Base (qid, srts, a) ->
                                                                 (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
-                                                                   | Some info -> writeLine("defined"))
+                                                                   | Some info -> writeLine(show qid^" defined"^"\n"^printTerm tm))
                                                               | _ -> writeLine("Not Base")
                                                     in
 						    System.fail ("inferType: Could not extract type for "
