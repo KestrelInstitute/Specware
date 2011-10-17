@@ -1068,7 +1068,7 @@ AnnSpecPrinter qualifying spec
 		    string "")
    in
    let (tvs, ty, dfn) = unpackNthTerm(info.dfn, refine_num) in
-   % let _ = if show(head info.names) = "mark"
+   % let _ = if show(head info.names) = "i"
    % then writeLine("def "^show(head info.names)^": "^show refine_num^" "^printType ty^"\n"^printTerm dfn^"\n"
    %                      ^printTerm info.dfn) else () in
    let 
@@ -1111,18 +1111,18 @@ AnnSpecPrinter qualifying spec
                 (if printOpWithDef? || embed? Lambda tm && anyTerm? tm then
                    case (tm, srt) of
                      | (Lambda _, Arrow _) ->
-                       ppDeclWithArgs (tvs, srt, tm)
+                       ppDeclWithArgs ([], srt, tm)
                      | _ ->
                        [(0, blockFill(0, [(0, case info.fixity of
                                                 | Nonfix         -> string ""
                                                 | Unspecified    -> string ""
                                                 | Infix (Left, i)  -> string (" infixl "^Nat.show i)
                                                 | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
-                                          (0, string " :"), 
-                                          (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
-                                                               (0, string " "), 
-                                                             (4, ppType context
-                                                                   ([index, opIndex], Top) srt)])),
+                                          % (0, string " :"), 
+                                          % (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
+                                          %                      (0, string " "), 
+                                          %                    (4, ppType context
+                                          %                          ([index, opIndex], Top) srt)])),
                                           (0, string " ")]))]
                        ++
                        ppDefAux (context, [index, defIndex], Some srt, tm)
@@ -1183,7 +1183,7 @@ AnnSpecPrinter qualifying spec
 	     
      def ppDef (tvs, ty, tm) =
        % let (tvs, opt_srt, tm) = unpackTerm(tm0) in
-       % let _ = writeLine("ppDef:\n"^anyToString tm) in
+       % let _ = writeLine("ppDef:\n"^printTerm tm^":: "^printType ty) in
        let prettys = ppDefAux (context, [index, defIndex], Some ty, tm)
        in
        (1, blockFill (0, 
