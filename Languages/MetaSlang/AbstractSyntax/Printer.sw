@@ -130,7 +130,7 @@ AnnTermPrinter qualifying spec
     ppType             = string,
     ppFormulaDesc      = string,
     Spec               = string "spec ",
-    EndSpec            = string "endspec",
+    EndSpec            = string "end-spec",
     Module             = string "module ",
     EndModule          = string "end-module",
     Type               = string "type",
@@ -191,7 +191,7 @@ AnnTermPrinter qualifying spec
     ppType             = string,
     ppFormulaDesc      = string,
     Spec               = string "spec ",
-    EndSpec            = string "endspec",
+    EndSpec            = string "end-spec",
     Module             = string "module ",
     EndModule          = string "end-module",
     Type               = string "type",
@@ -486,7 +486,7 @@ AnnTermPrinter qualifying spec
     ppType             = ppType,
     ppFormulaDesc      = string,
     Spec               = lengthString ( 5, "<b>spec </b>"        ),
-    EndSpec            = lengthString ( 7, "<b>endspec</b>"      ),
+    EndSpec            = lengthString ( 7, "<b>end-spec</b>"      ),
     Module             = lengthString ( 7, "<b>module </b>"      ),
     EndModule          = lengthString ( 9, "<b>end-module </b>"  ),
     Type               = lengthString ( 4, "<b>type</b>"         ),
@@ -549,5 +549,5 @@ AnnTermPrinter qualifying spec
        addSeparator sep 
          (mapWithIndex (fn (i, x) -> f (Cons (i, path), x)) ps)),
      right]
-endspec
+end-spec
 
