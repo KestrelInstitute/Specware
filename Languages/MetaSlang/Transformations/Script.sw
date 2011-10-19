@@ -314,7 +314,7 @@ spec
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
   op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
-  op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Spec                   % defined in transform-shell.lisp
+  op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec                   % defined in transform-shell.lisp
   op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
   op specTransformFn?:  String * String -> Bool                                % defined in transform-shell.lisp
 
@@ -774,7 +774,8 @@ spec
          return (trans_fn spc, tracing?)}
       | SpecQIdTransform(Qualified(q, id), qids, rls) ->
         {trans_fn <- return(specQIdTransformFunction(q, id));
-         return (trans_fn(spc, qids, rls), tracing?)}
+         new_spc <- trans_fn(spc, qids, rls);
+         return (new_spc, tracing?)}
       | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) -> {
         fun <- checkOp(spc, fun, "function");
         ty <- checkType(spc, ty, "parameter-type");
