@@ -35,10 +35,10 @@ SpecCalc qualifying spec
            (case (type_ids, op_ids, prop_ids) of
               | ([],[],[]) -> ()
               | _ ->
-                % let _ = writeLine ("------------------------------------------") in 
-                % let _ = writeLine ("Warning: for now, ignoring these problems:") in
-                % let _ = writeLine (warnAboutMissingItems "" "" type_ids op_ids prop_ids) in
-                % let _ = writeLine ("------------------------------------------") in 
+                let _ = writeLine ("------------------------------------------") in 
+                let _ = writeLine ("Warning: for now, ignoring these problems:") in
+                let _ = writeLine (warnAboutMissingItems "" "" type_ids op_ids prop_ids) in
+                let _ = writeLine ("------------------------------------------") in 
                 ())
        in
        return ()
