@@ -696,14 +696,14 @@ Translate qualifying spec
   op primNat : Nat -> PC_Expression
   def primNat n =
     if n = 0 then
-      OPI (qidToOperation (Qualified ("Integer","zero")) (embed prefix),empty)
+      OPI (qidToOperation (Qualified ("Integer","zero")) (embed prefix), [])
     else
-      (OPI (qidToOperation (Qualified ("Nat","succ")) (embed prefix),empty)) @ (primNat (n - 1))
+      (OPI (qidToOperation (Qualified ("Nat","succ")) (embed prefix), [])) @ (primNat (n - 1))
 
   % Construct an expression in the proof checker's abstract syntax that encodes the given string.
   op primString : String -> PC_Expression
   def primString str =
-    (OPI (qidToOperation (Qualified ("String","implode")) (embed prefix),empty)) @ (primList charType (List.map primChar (explode str)))
+    (OPI (qidToOperation (Qualified ("String","implode")) (embed prefix), [])) @ (primList charType (List.map primChar (explode str)))
 
   op charType : PC_Type
   def charType = TYPE (qidToTypeName (Qualified ("Char","Char")),empty)
