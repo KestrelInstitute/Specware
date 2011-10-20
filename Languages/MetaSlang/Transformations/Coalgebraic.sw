@@ -25,6 +25,7 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
         case ty of
            | Arrow(dom, rng, a) -> Arrow(dom, replaceInRange rng, a)
            | Subtype(sup_ty, Lambda([(v, c, pred)], a1), a2) ->
+             % Subtype(sup_ty, Lambda([(v, c, mkConj(getConjuncts pred ++ [post_condn]))], a1), a2)
              Subtype(sup_ty, Lambda([(v, c, MS.mkAnd(pred, post_condn))], a1), a2)
   in
   replaceInRange ty
@@ -80,7 +81,8 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let script = Steps[%Trace true,
                       At(map Def (reverse qids),
-                         Steps [Move [Post, Last, Last],
+                         Steps [%Trace true,
+                                Move [Post, Last, Last], % Go to postcondition just added and simplify
                                 Simplify1(rules),
                                 mkSimplify(Fold intro_qid ::
                                              rules)])]
@@ -149,23 +151,28 @@ op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
 op getConjoinedEqualities(t: MSTerm): MSTerms =
   case t of
     | IfThenElse(_, t1, t2, _) -> getConjoinedEqualities t1 ++ getConjoinedEqualities t2
-    | _ -> foldl (fn (r, ti) -> r ++ getConjoinedEqualities ti) [] (getConjuncts t)
+    | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) -> getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+    | _ -> [t]
 
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
   let state_ty = mkBase(state_qid, []) in
   foldOpInfos (fn (info, stored_qids) ->
-               let  (tvs, ty, tm) = unpackTerm info.dfn in
+               let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
+               if ~(anyTerm? tm) then stored_qids
+               else
                case getStateVarAndPostCondn(ty, state_ty, spc) of
                  | Some(state_var, deref?, post_condn) ->
-                   mapPartial (fn cj ->
-                                 case cj of
-                                   | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
-                                     (case lhs of
-                                        | Apply(Fun(Op(qid,_), _, _), Var(v, _), _) | qid nin? stored_qids && equalVar?(v, state_var) ->
-                                          Some qid
-                                        | _ -> None)
-                                   | _ -> None)
-                     (getConjoinedEqualities post_condn)
+                   removeDuplicates
+                     (mapPartial (fn cj ->
+                                    case cj of
+                                      | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
+                                        (case lhs of
+                                           | Apply(Fun(Op(qid,_), _, _), Var(v, _), _) | qid nin? stored_qids && equalVar?(v, state_var) ->
+                                             let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
+                                             Some qid
+                                           | _ -> None)
+                                      | _ -> None)
+                     (getConjoinedEqualities post_condn))
                    ++ stored_qids
                  | None -> stored_qids)
   
@@ -182,7 +189,7 @@ op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleS
     | Some type_info ->
   {new_spc <- return spc;
    stored_qids <- return(findStoredOps(spc, state_qid));
-   print("stored_qids: "^flatten (map show stored_qids));
+   print("stored_qids: "^anyToString (map show stored_qids));
    return new_spc}
 
 end-spec
