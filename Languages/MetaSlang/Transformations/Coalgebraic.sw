@@ -112,7 +112,7 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                let _ = writeLine("Implement "^show replace_op_qid^": "^printType replace_op_ty) in
                let _ = writeLine("With rewrite: "^printTerm body) in
                let def findStateTransformOps(info, qids) =
-                     let (tvs, ty, tm) = unpackTerm info.dfn in
+                     let (tvs, ty, tm) = unpackFirstTerm info.dfn in
                      case range_*(spc, ty, false) of
                        | Subtype(_, Lambda([(_, _, body)], _), _)
                            | existsSubTerm (fn st -> case st of
