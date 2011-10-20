@@ -384,12 +384,16 @@ spec
 
   op addSubtypeRules?: Bool = true
   op subtypeRules(term: MSTerm, context: Context): List RewriteRule =
+    %% let _ = writeLine("subtypeRules for\n"^printTerm term) in
     if ~addSubtypeRules? then []
     else
     let subtypes = foldSubTerms (fn (t, subtypes) ->
                                  let ty = inferType(context.spc, t) in
-                                 if subtype? (context.spc, ty) && ~(typeIn?(ty, subtypes))
-                                   then Cons(ty, subtypes)
+                                 if subtype? (context.spc, ty) && ~(typeIn?(ty, subtypes)) && ~ (embed? Subtype ty)
+                                   %% Not sure about the ~(embed? ..) but need some restriction to avoid trivial application
+                                   then
+                                     %% let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in
+                                     Cons(ty, subtypes)
                                    else subtypes)
                       [] term
     in
@@ -397,6 +401,7 @@ spec
       (map (fn ty -> let Some(sty, p) = subtypeComps (context.spc, ty) in
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
+              %% let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
               assertRules(context, fml, "Subtype1", false))
         subtypes)
 
