@@ -354,7 +354,7 @@
   (let ((r-args (if (not (null args))
 		    (extract-final-file-name args)
 		  (if (equal (car *last-swl-args*) *last-unit-Id-_loaded*)
-		      *last-unit-Id-_loaded*
+		      *last-swl-args*
 		      (list *last-unit-Id-_loaded*)))))
     (if r-args
 	(progn (setq *last-swl-args* r-args)
