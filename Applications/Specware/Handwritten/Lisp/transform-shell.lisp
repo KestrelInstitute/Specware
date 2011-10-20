@@ -216,14 +216,14 @@
   (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) spc))
 
 (defun Script::specQIdTransformFunction-name (q id)
-  (let ((f (find-symbol (Specware::fixCase id)
-                        (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" (concatenate 'string q "-1-1"))))))
-    (format t "specQIdTransformFunction: ~a,~a" q id)
+  (let ((f (find-symbol (Specware::fixCase (concatenate 'string id "-1-1"))
+                        (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
+    ; (format t "specQIdTransformFunction: ~a,~a" q id)
     (if (fboundp f) f
         (error "~a not a function" (MetaSlang::printQualifierDotId-2 q id)))))
 
 (defun Script::specQIdTransformFunction-1-1-1 (qid_pr spc_qid_rls yyy-1)
-  (format t "specQIdTransformFunction: ~a~%" qid_pr)
+  ; (format t "specQIdTransformFunction: ~a~%" qid_pr)
   (funcall (Script::specQIdTransformFunction-name (car qid_pr) (cdr qid_pr)) spc_qid_rls yyy-1))
 
 (defun Script::specQIdTransformFunction-2 (q id)
