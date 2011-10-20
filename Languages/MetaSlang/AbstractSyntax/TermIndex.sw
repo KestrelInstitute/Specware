@@ -105,7 +105,7 @@ spec
 		   then [prefix ++ [-1]]
 		else
 		let indexT = getFunIndex M in
-		let Ms = subterms Ms in
+		let Mss = subterms Ms in
                 let
 		    def getRec(i,ts) =
 			case ts
@@ -114,7 +114,9 @@ spec
 			     genPathSymPairs(prefix ++ [indexT,i],t) ++
 			     getRec(i + 1,ts)
 		in
-		    (prefix ++ [indexT] :: getRec(1,Ms))
+		    (prefix ++ [indexT] :: (if length Mss = 1
+                                            then genPathSymPairs(prefix ++ [indexT], head Mss)
+                                            else getRec(1,Mss)))
 		
 	    def addOne(index,path) = 
 		TermDiscNet.addForPath(index,path,id)
@@ -139,6 +141,7 @@ spec
                | SymS _ -> contents node)
 	   | None -> IntSet.empty
 
+(* Old
     def generalizations (index,term) = 
 	let
 	    def get(p,M) = 
@@ -169,6 +172,43 @@ spec
 	
 	in
         IntSet.listItems(get([],term))
+*)
+
+    def generalizations (index,term) = 
+	let
+	    def get(p,M) = 
+		let (M::Ms,isFlex?) = getApplys(M,[]) in
+		if isFlex?
+		   then getTerms(index,p,Star)
+		else
+		let subTerms = subterms Ms in
+		let arity = length subTerms in
+		let indexT = getFunIndex M in
+		let set1 = getTerms(index,p,SymS (-1)) in
+		let set2 = 
+		       (if arity = 0 
+                          then getTerms(index,p,SymS(indexT))
+                        else if arity = 1
+                          then get(p ++ [indexT], head subTerms)
+			else 
+                          let p = p ++ [indexT] in
+                          if length Ms = 1 then
+                          let set_tup = getTerms(index,p,SymS (-1)) in
+			  IntSet.union(set_tup, getList(p,1,subTerms))
+                        else getList(p,1,subTerms))
+		in
+                IntSet.union(set1,set2)
+	    def getList(path,i,terms) = 
+		case terms
+		  of [] -> IntSet.empty
+		   | [term] -> get(path ++ [i],term)
+		   | term::terms -> 
+		     let set = get(path ++ [i],term) in
+                     if IntSet.isEmpty set 
+                       then set 
+                     else IntSet.intersection(set,getList(path,i + 1,terms))
+	in
+        IntSet.listItems(get([],term))
 	
-endspec (* structure TermIndex *)
+end-spec (* structure TermIndex *)
 
