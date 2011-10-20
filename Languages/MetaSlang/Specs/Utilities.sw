@@ -1406,6 +1406,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        Some(mkBool(~eq?))
      | (Fun(Embed(_, false), _, _), Apply(Fun(Embed(_, true), _, _), st1, _)) ->
        Some(mkBool(~eq?))
+     %%  (x1, .., xn) = (y1, .., yn) --> x1 = y1 && .. && xn = yn
+     | (Record(xs, _), Record(ys,_)) ->
+       Some(mkSimpConj(map (fn ((_,xi), (_,yi)) -> mkEquality(inferType(spc, xi), xi, yi)) (zip(xs, ys))))
      | _ -> None
 
  op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
