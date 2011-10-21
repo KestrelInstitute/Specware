@@ -178,18 +178,62 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
   
     [] spc.ops
 
+op qualifiedIdToField(Qualified(_, id): QualifiedId): Id = id
+
+op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
+  map (fn qid ->
+         let Some info = findTheOp(spc, qid) in
+         (qualifiedIdToField qid, range(spc, inferType(spc, info.dfn))))
+    qids  
+
+op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
+
+op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option Id,
+                            spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType))
+     : MSTerm =
+   let def makeDef(tm) =
+         case tm of
+           | IfThenElse(p, q, r, a) ->
+             IfThenElse(p, makeDef q, makeDef r, a)
+           | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) ->
+             (let cjs = getConjuncts tm in
+              case findSourceVar(cjs, state_var, stored_qids) of
+                | Some src_var -> tm
+                | None -> tm)
+   in
+   makeDef post_condn
+
+op makeDefinitionsForUpdatingCoType
+     (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =
+  foldOpInfos (fn (info, spc) ->
+                 let (tvs, ty, tm) = unpackFirstTerm info.dfn in
+                 if ~(anyTerm? tm) then spc
+                 else
+                 (case getStateVarAndPostCondn(ty, state_ty, spc) of
+                    | None -> spc
+                    | Some(state_var, deref?, post_condn) ->
+                      let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
+                      addRefinedDef(spc, info, makeDefForUpdatingCoType(post_condn, state_var, deref?,
+                                                                        spc, state_ty, stored_qids, field_pairs))))
+    spc spc.ops
+                           
+
 
 op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in
   case qids of
     | [] -> raise(Fail("No type to realize!"))
     | state_qid :: rest_qids ->
+  let state_ty = mkBase(state_qid, []) in
   case findTheType(spc, state_qid) of
     | None -> raise(Fail("type "^show state_qid^" not found!"))
     | Some type_info ->
   {new_spc <- return spc;
-   stored_qids <- return(findStoredOps(spc, state_qid));
+   stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
    print("stored_qids: "^anyToString (map show stored_qids));
+   field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
+   new_spc <- return(addTypeDef(new_spc, state_qid, Product(field_pairs, noPos)));
+   new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
 
 end-spec
