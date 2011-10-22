@@ -188,20 +188,46 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
 
 op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
 
-op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option Id,
+op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option Id, qid: QualifiedId,
                             spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType))
      : MSTerm =
    let def makeDef(tm) =
          case tm of
            | IfThenElse(p, q, r, a) ->
              IfThenElse(p, makeDef q, makeDef r, a)
-           | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) ->
+           | Let(binds, bod, a) -> Let(binds, makeDef bod, a)
+           | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),a) ->
              (let cjs = getConjuncts tm in
-              case findSourceVar(cjs, state_var, stored_qids) of
-                | Some src_var -> tm
-                | None -> tm)
+              let rec_prs = mapPartial recordItemVal cjs in
+              case tryIncrementalize(rec_prs) of
+                | (Some src_tm, inc_rec_prs) ->
+                  if inc_rec_prs = [] then src_tm
+                    else mkRecordMerge(src_tm, Record(reverse inc_rec_prs, a))
+                | (None, _) -> Record(rec_prs, a))
+           | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term.\n"^printTerm tm))
+       def recordItemVal cj =
+         case cj of
+           | Apply(Fun(Equals,_,_),Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
+               | qid in? stored_qids && equalVar?(state_var, v) ->
+             Some(qualifiedIdToField qid, rhs)
+           | _ -> (writeLine("Ignoring conjunct\n"^printTerm cj);
+                   None)
+       def tryIncrementalize(rec_prs) =
+         foldl (fn ((opt_src_tm, result_prs), (id, tm)) ->
+                  case tm of
+                    | Apply(Fun(Op(qid,_),_,_), arg, _)
+                        | qualifiedIdToField qid = id && (case opt_src_tm of
+                                                            | None -> true
+                                                            | Some(src_tm) -> equalTerm?(arg, src_tm))
+                        -> (Some arg, result_prs)
+                    | _ -> (opt_src_tm, (id, tm) :: result_prs))
+           (None, [])
+           rec_prs
    in
-   makeDef post_condn
+   let dfn = makeDef post_condn in
+   let unfold_tuple_fns = map Unfold stored_qids in
+   let (uf_dfn, _) = rewriteWithRules(spc, unfold_tuple_fns, qid, toPathTerm dfn) in
+   uf_dfn
 
 op makeDefinitionsForUpdatingCoType
      (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =
@@ -212,12 +238,22 @@ op makeDefinitionsForUpdatingCoType
                  (case getStateVarAndPostCondn(ty, state_ty, spc) of
                     | None -> spc
                     | Some(state_var, deref?, post_condn) ->
-                      let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
-                      addRefinedDef(spc, info, makeDefForUpdatingCoType(post_condn, state_var, deref?,
+                      % let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
+                      addRefinedDef(spc, info, makeDefForUpdatingCoType(post_condn, state_var, deref?, primaryOpName info,
                                                                         spc, state_ty, stored_qids, field_pairs))))
     spc spc.ops
                            
-
+op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
+  case findTheOp(spc, qid) of
+    | None -> spc
+    | Some info ->
+      let (tvs, ty, tm) = unpackFirstTerm info.dfn in
+      case ty of
+        | Arrow(dom, rng, _) ->
+          let v = ("st", dom) in
+          let new_def = mkLambda(mkVarPat v, mkApply(mkProject(qualifiedIdToField qid, dom, rng), mkVar v)) in
+          addRefinedDef(spc, info, maybePiTerm(tvs, TypedTerm(new_def, ty, termAnn tm)))
+        | _ -> spc
 
 op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in
@@ -233,6 +269,7 @@ op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleS
    print("stored_qids: "^anyToString (map show stored_qids));
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
    new_spc <- return(addTypeDef(new_spc, state_qid, Product(field_pairs, noPos)));
+   new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
 

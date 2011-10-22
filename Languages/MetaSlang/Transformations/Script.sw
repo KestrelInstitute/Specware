@@ -614,6 +614,11 @@ spec
 
   op maxRewrites: Nat = 900
 
+  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm): PathTerm =
+    let context = makeContext spc in
+    let rules = makeRules (context, spc, rules) in
+    replaceSubTerm(rewrite(path_term, context, qid, rules, maxRewrites), path_term)
+
   %% term is the current focus and should  be a sub-term of the top-level term path_term
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool)
      : SpecCalc.Env (PathTerm * Bool) =
@@ -647,10 +652,7 @@ spec
                   replaceSubTerm(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term)
                 | AbstractCommonExpressions ->
                   replaceSubTerm(abstractCommonSubExpressions(fromPathTerm path_term, spc), path_term)
-                | Simplify(rules, n) ->
-                  let context = makeContext spc in
-                  let rules = makeRules (context, spc, rules) in
-                  replaceSubTerm(rewrite(path_term, context, qid, rules, maxRewrites), path_term)
+                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term)
                 | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
