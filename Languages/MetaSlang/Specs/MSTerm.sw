@@ -249,6 +249,11 @@ MS qualifying spec
  def mkImplies (t1, t2) = mkApply (Fun (Implies, binaryBoolType, noPos), mkTuple [t1,t2])
  def mkIff     (t1, t2) = mkApply (Fun (Iff,     binaryBoolType, noPos), mkTuple [t1,t2])
 
+ op mkRecordMerge(t1: MSTerm, t2: MSTerm): MSTerm =
+   let arg = mkTuple [t1,t2] in
+   let rec_ty = termType t1 in
+   mkApply(mkFun(RecordMerge, mkArrow(mkProduct[rec_ty, termType t2], rec_ty)), mkTuple [t1,t2])
+
  def mkConj(cjs) =
   case cjs
     of []     -> mkTrue()
