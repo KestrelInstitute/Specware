@@ -565,33 +565,25 @@ MetaSlang qualifying spec
    let tms = andTerms tms in
    let defns =
        foldl (fn (pending_tms, tm) ->
-                case termInnerTerm tm of
-                  | Any _ -> pending_tms
-                  | _ ->
-                    %% For symmetry: any-term may occur before or after real term
-                    let pending_tms = filter (fn pending_tm ->
-                                                case termInnerTerm pending_tm of
-                                                  | Any _ -> ~(equalType? (termType tm, termType pending_tm))
-                                                  | _ -> true)
-                                        pending_tms
-                    in
-                    pending_tms ++ [tm])
+                if anyTerm? tm then
+                  pending_tms
+                else
+                  pending_tms ++ [tm])
              []
 	     tms
    in
-   let decls =
+   let non_dup_terms =
        foldl (fn (pending_tms, tm) ->
-                case termInnerTerm tm of
-                  | Any _ ->
-                    if exists? (fn pending_tm -> equalType? (termType tm, termType pending_tm)) defns then
-                      pending_tms
-                    else
-                      pending_tms ++ [tm]
-                  | _ -> pending_tms)
-             []
+                if anyTerm? tm then
+                  if exists? (fn pending_tm -> equalType? (termType tm, termType pending_tm)) pending_tms then
+                    pending_tms
+                  else
+                    pending_tms ++ [tm]
+                else
+                  pending_tms)
+             defns
 	     tms
    in
-   let non_dup_terms = decls ++ defns in
    let x = 
    case non_dup_terms of
      | []   -> Any pos
