@@ -204,7 +204,13 @@ op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option I
                   if inc_rec_prs = [] then src_tm
                     else mkRecordMerge(src_tm, Record(reverse inc_rec_prs, a))
                 | (None, _) -> Record(rec_prs, a))
-           | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term.\n"^printTerm tm))
+           | Apply(Fun(Equals,_,_), _, _) ->
+             (case recordItemVal tm of
+                | Some(qid, newval) -> Record([(qid, newval)], noPos)
+                | None -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality.\n"^printTerm tm);
+                           mkVar("Unrecognized_term", state_ty)))
+           | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term.\n"^printTerm tm);
+                   mkVar("Unrecognized_term", state_ty))
        def recordItemVal cj =
          case cj of
            | Apply(Fun(Equals,_,_),Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
