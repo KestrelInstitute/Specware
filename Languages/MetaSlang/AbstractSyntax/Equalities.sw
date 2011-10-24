@@ -562,14 +562,11 @@ MetaSlang qualifying spec
    writeLine (s ^ anyToString tm)
 
  def MetaSlang.maybeAndTerm (tms, pos) =
-   let non_dup_terms =
+   let tms = andTerms tms in
+   let defns =
        foldl (fn (pending_tms, tm) ->
                 case termInnerTerm tm of
-                  | Any _ ->
-                    if exists? (fn pending_tm -> equalType? (termType tm, termType pending_tm)) pending_tms then
-                      pending_tms
-                    else
-                      pending_tms ++ [tm]
+                  | Any _ -> pending_tms
                   | _ ->
                     %% For symmetry: any-term may occur before or after real term
                     let pending_tms = filter (fn pending_tm ->
@@ -580,8 +577,21 @@ MetaSlang qualifying spec
                     in
                     pending_tms ++ [tm])
              []
-	     (andTerms tms)
+	     tms
    in
+   let decls =
+       foldl (fn (pending_tms, tm) ->
+                case termInnerTerm tm of
+                  | Any _ ->
+                    if exists? (fn pending_tm -> equalType? (termType tm, termType pending_tm)) defns then
+                      pending_tms
+                    else
+                      pending_tms ++ [tm]
+                  | _ -> pending_tms)
+             []
+	     tms
+   in
+   let non_dup_terms = decls ++ defns in
    let x = 
    case non_dup_terms of
      | []   -> Any pos
