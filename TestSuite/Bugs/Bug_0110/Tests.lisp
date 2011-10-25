@@ -21,8 +21,11 @@
   :sw "BogusNil#Loser2"
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil#Loser2"
 	    "Errors in $TESTDIR/BogusNil.sw"
-	    "20.1-20.14	: Incomplete type for op loser:"
+	    "20.*-20.14	: Incomplete type for op loser:"
 	    "mtv%parser%*"
+	    (:optional 
+             "20.*-20.14	: Incomplete type for op loser:"
+             "mtv%parser%*")
 	    (:optional "")))
 
  )
