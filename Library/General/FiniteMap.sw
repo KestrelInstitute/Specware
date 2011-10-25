@@ -137,7 +137,7 @@ op [a] id (dom: FSet a) : FMap(a,a) = toFMap (idOver (fromFSet dom))
 proof Isa id_Obligation_subtype
   apply (simp add: Id_on_def )
   apply (cut_tac A="{S. \<exists>x\<in>FSet__fromFSet dom__v. S={(x,x)}}"  in finite_Union)
-  apply (auto simp add: Bex_def Union_def UNION_def)
+  apply (auto simp add: Bex_def)
   apply (cut_tac s=dom__v in FSet__fromFSet_finite,
          drule_tac h="\<lambda>x. {(x,x)}" in finite_imageI,
          simp add: image_def Bex_def)

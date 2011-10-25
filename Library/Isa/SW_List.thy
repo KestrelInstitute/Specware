@@ -5171,9 +5171,9 @@ lemma List__list_nth_aux:
   apply (split option.split, auto simp del:  List__list.simps)
   apply (simp add: definedOnInitialSegmentOfLengthNoneZero)
   apply (case_tac "i=0", simp_all  del:  List__list.simps)
-  apply (drule_tac x="\<lambda>i. f (Suc i)" in spec, drule mp, simp add: definedOnInitialSegmentOfLengthSuc)
-  apply (rule_tac t=i and s="Suc (i - 1)" in subst, simp)
-  apply (simp only: nth_Cons_Suc, drule_tac x="i - 1" in spec, auto)
+  apply (drule_tac x="\<lambda>i. f (Suc i)" in spec, drule mp, 
+         simp add: definedOnInitialSegmentOfLengthSuc)
+  apply (drule_tac x="i - 1" in spec, auto)
 done
 
 lemma List__list_nth:

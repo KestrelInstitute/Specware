@@ -20,9 +20,7 @@ theorem Function__identity__stp:
   "\<lbrakk>Fun_PD P__a f\<rbrakk> \<Longrightarrow> 
    RFun P__a (id o f) = f 
      \<and> RFun P__a (f o id) = f"
-  apply(auto)
-  apply(rule ext, simp)+
-  done
+  by auto
 theorem Function__associativity: 
   "(h o g) o f = h o (g o f)"
   apply(simp add: o_assoc)

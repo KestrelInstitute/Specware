@@ -17,10 +17,6 @@ op [a,b,c] o (g: b -> c, f: a -> b) infixl 24 : a -> c = fn x:a -> g (f x)
 theorem identity is [a,b]
   fa (f: a -> b) id o f = f
               && f o id = f
-proof Isa identity__stp
-  apply(auto)
-  apply(rule ext, simp)+
-end-proof
 
 theorem associativity is [a,b,c,d]
   fa (f: a -> b, g: b -> c, h: c -> d) (h o g) o f = h o (g o f)

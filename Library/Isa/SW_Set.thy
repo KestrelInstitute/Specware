@@ -1,5 +1,5 @@
 theory SW_Set
-imports Base Set
+imports "$SPECWARE4/Library/Isa/Base" Set
 begin
 
 lemma Set_Set_P_converse: "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
@@ -739,6 +739,13 @@ next
     qed
   qed
 qed
+
+lemma Diff1_fold_graph:
+  "fold_graph f z (A - {x}) y \<Longrightarrow> x \<in> A \<Longrightarrow> fold_graph f z A (f x y)"
+by (erule insert_Diff [THEN subst], rule fold_graph.intros, auto)
+
+lemma fold_graph_imp_finite: "fold_graph f z A x \<Longrightarrow> finite A"
+  by (erule fold_graph.induct, auto simp del: Set_empty_apply)
 
 lemma fold_graph_determ_aux:
   "fun_left_comm_on f A  \<Longrightarrow> A = h`{i::nat. i<n} \<Longrightarrow> inj_on h {i. i<n}

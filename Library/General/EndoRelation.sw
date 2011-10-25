@@ -136,7 +136,7 @@ proof Isa reflexiveClosure_Obligation_subtype
 end-proof
 
 proof Isa reflexiveClosure_Obligation_subtype0
-  by (auto simp add: refl_on_def mem_def Inter_def)
+  by (auto simp add: refl_on_def, simp add: mem_def)
 end-proof
 
 proof Isa reflexiveClosure__def

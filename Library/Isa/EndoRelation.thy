@@ -187,7 +187,7 @@ theorem EndoRelation__reflexiveClosure_Obligation_subtype0:
       (Inter
           (\<lambda> (rc::('a \<times> 'a) set). 
              (r::'a EndoRelation__EndoRelation) \<subseteq> rc \<and> refl rc))"
-  by (auto simp add: refl_on_def mem_def Inter_def)
+  by (auto simp add: refl_on_def, simp add: mem_def)
 theorem EndoRelation__reflexiveClosure__def: 
   "reflcl r 
      = Inter (\<lambda> (rc::('a \<times> 'a) set). r \<subseteq> rc \<and> refl rc)"
