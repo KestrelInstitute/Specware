@@ -31,4 +31,5 @@ O = PFunction qualifying spec
 
 endspec
 
-P = prove o_Obligation_exhaustive in obligations O
+%% The following is now verified before an obligation is generated
+%% P = prove o_Obligation_exhaustive in obligations O

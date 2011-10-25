@@ -1,6 +1,7 @@
 (test-directories ".")
 
-(test 
+;; Test is now moot -- obligation is no longer generated
+'(test 
 
  ("Bug 0131 : Attempting to prove simple Option obligation breaks into Lisp"
   :sw "Option#P"
@@ -20,10 +21,31 @@
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/General/Map")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/General/Assert")
 
-	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
-	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/Simple")
-	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/IntegerExt")
-	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/StateAndExceptionMonads")
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#SimpleAsAlist")
+
+            (:optional ";;; Elaborating spec-substitution at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
+            (:optional ";;; Elaborating spec-substitution at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#SimpleAsAlist")
+
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/Simple")
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/Simple#Simple")
+
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/Simple#Map")
+
+            (:optional ";;; Elaborating spec-morphism at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
+            (:optional ";;; Elaborating spec-morphism at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#SimpleAsAlist")
+
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#MapList")
+            (:optional ";;; Elaborating spec at $SPECWARE/Library/Legacy/Utilities/System")
+
+            (:optional ";;; Elaborating spec-substitution at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
+            (:optional ";;; Elaborating spec-substitution at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#SimpleAsAlist")
+
+            (:optional ";;; Elaborating spec-morphism at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist")
+            (:optional ";;; Elaborating spec-morphism at $SPECWARE/Library/Structures/Data/Maps/SimpleAsAlist#SimpleAsAlist")
+
+            (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/IntegerExt")
+            (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/StateAndExceptionMonads")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 	    (:optional ";;; Elaborating proof-term at $TESTDIR/Option#P")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
