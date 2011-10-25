@@ -333,15 +333,19 @@ spec
       | None -> fail(show qid^" not found in rev-leibniz rule")
       | Some info ->
     let (tvs, ty, _) = unpackFirstTerm info.dfn in
-    let f = mkOp(qid, ty) in
+    let qf = mkOp(qid, ty) in
     let dom_ty = domain(spc, ty) in
     let ran_ty = range(spc, ty) in
     let v1 = ("x", dom_ty) in
     let v2 = ("y", dom_ty) in
-    let thm = mkBind(Forall, [v1, v2],
-                     mkEquality(boolType,
-                                mkEquality(ran_ty, mkApply(f, mkVar v1), mkApply(f, mkVar v2)),
-                                mkEquality(dom_ty, mkVar v1, mkVar v2)))
+    let equal_ty = mkTyVar "a" in
+    let f = ("f", mkArrow(ran_ty, equal_ty)) in
+    let thm = 
+                 mkBind(Forall, [f, v1, v2],
+                        mkEquality(boolType,
+                                   mkEquality(equal_ty, mkApply(mkVar f, mkApply(qf, mkVar v1)),
+                                              mkApply(mkVar f, mkApply(qf, mkVar v2))),
+                                   mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
     assertRules(context, thm, "Reverse Leibniz "^show qid, true)
 
