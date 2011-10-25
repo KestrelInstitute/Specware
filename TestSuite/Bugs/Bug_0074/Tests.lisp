@@ -37,7 +37,9 @@
              " type {C, B, A} = List(Nat * Nat)"
              " type {C, B, A} = Foo(Nat)")
             (:optional "")
-            " import Foo"
+            (:alternatives 
+             " import Foo"
+             "type Foo(x) = List(x * x)")
             (:optional "")
 	    (:alternatives "endspec" "end-spec")
             (:optional "")
