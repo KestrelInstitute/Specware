@@ -26,7 +26,16 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
            | Arrow(dom, rng, a) -> Arrow(dom, replaceInRange rng, a)
            | Subtype(sup_ty, Lambda([(v, c, pred)], a1), a2) ->
              % Subtype(sup_ty, Lambda([(v, c, mkConj(getConjuncts pred ++ [post_condn]))], a1), a2)
-             Subtype(sup_ty, Lambda([(v, c, MS.mkAnd(pred, post_condn))], a1), a2)
+             Subtype(sup_ty, Lambda([(v, c, replaceInTerm pred)], a1), a2)
+      def replaceInTerm tm =
+        case tm of
+          | IfThenElse(p, q, r, a) ->
+            IfThenElse(p, replaceInTerm q, replaceInTerm r, a)
+          | Bind(Exists, vs, bod, a) ->
+            Bind(Exists, vs, replaceInTerm bod, a)
+          | Let(binds, bod, a) ->
+            Let(binds, replaceInTerm bod, a)
+          | _ ->  MS.mkAnd(tm, post_condn)
   in
   replaceInRange ty
 
@@ -59,6 +68,8 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
          let qid = primaryOpName info in
          let (tvs, ty, tm) = unpackFirstTerm info.dfn in
          % let _ = if show qid = "mark" then writeLine("dfn: "^printTerm info.dfn^"\n"^printTerm tm) else () in
+         if ~(anyTerm? tm) then result
+         else
          case getStateVarAndPostCondn(ty, state_ty, spc) of
            | Some (result_var, deref?, _) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
@@ -130,9 +141,11 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                        else qids
                in
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
-               let script = Steps[%Trace true,
+               let script = Steps[Trace true,
                                   At(map Def (reverse state_transform_qids),
-                                     Steps [mkSimplify(RLeibniz homo_fn_qid :: LeftToRight assert_qid :: rules)])]
+                                     Steps [mkSimplify(RLeibniz homo_fn_qid
+                                                         :: LeftToRight assert_qid
+                                                         :: rules)])]
                in
                {print "rewriting ... \n";
                 print (scriptToString script^"\n");
@@ -188,8 +201,9 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
 
 op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
 
-op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option Id, qid: QualifiedId,
-                            spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType))
+op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var, deref?: Option Id,
+                            qid: QualifiedId, spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
+                            field_pairs: List(Id * MSType))
      : MSTerm =
    let def makeDef(tm) =
          case tm of
@@ -229,24 +243,32 @@ op makeDefForUpdatingCoType(post_condn: MSTerm, state_var: Var, deref?: Option I
                     | _ -> (opt_src_tm, (id, tm) :: result_prs))
            (None, [])
            rec_prs
+       def replaceBody(dfn, bod) =
+         case dfn of
+           | Lambda([(binds, p, o_bod)], a) ->
+             Lambda([(binds, p, replaceBody(o_bod, bod))], a)
+           | _ -> bod
    in
-   let dfn = makeDef post_condn in
+   let dfn = replaceBody(top_dfn, makeDef post_condn) in
    let unfold_tuple_fns = map Unfold stored_qids in
    let (uf_dfn, _) = rewriteWithRules(spc, unfold_tuple_fns, qid, toPathTerm dfn) in
    uf_dfn
 
 op makeDefinitionsForUpdatingCoType
      (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =
-  foldOpInfos (fn (info, spc) ->
-                 let (tvs, ty, tm) = unpackFirstTerm info.dfn in
-                 if ~(anyTerm? tm) then spc
-                 else
-                 (case getStateVarAndPostCondn(ty, state_ty, spc) of
-                    | None -> spc
-                    | Some(state_var, deref?, post_condn) ->
-                      % let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
-                      addRefinedDef(spc, info, makeDefForUpdatingCoType(post_condn, state_var, deref?, primaryOpName info,
-                                                                        spc, state_ty, stored_qids, field_pairs))))
+  foldOpInfos
+    (fn (info, spc) ->
+       let (tvs, ty, top_tm) = unpackFirstTerm info.dfn in
+       if ~(anyTerm? top_tm) then spc
+       else
+         (case getStateVarAndPostCondn(ty, state_ty, spc) of
+            | None -> spc
+            | Some(state_var, deref?, post_condn) ->
+              % let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
+              addRefinedDef(spc, info,
+                            makeDefForUpdatingCoType(top_tm, post_condn, state_var, deref?,
+                                                     primaryOpName info, spc, state_ty, stored_qids,
+                                                     field_pairs))))
     spc spc.ops
                            
 op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
