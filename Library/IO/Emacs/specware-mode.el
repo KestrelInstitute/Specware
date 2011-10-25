@@ -936,12 +936,12 @@ If anyone has a good algorithm for this..."
     (sw:end-of-previous-line)
     (forward-comment -100)
     (while (re-search-backward comment-start (save-excursion (beginning-of-line)
-							     (point))
-			       t)
+ 							     (point))
+ 			       t)
       (skip-chars-backward "\t\n "))
     (if (looking-before " in") 'in
-      (if (member (preceding-char) '(?, ?;))
-         'comma nil))))
+      (if (member (preceding-char) '(?, ?\;))
+          'comma nil))))
 
 (defun sw:end-of-previous-line ()
   (beginning-of-line)
