@@ -1,4 +1,4 @@
 spec
   op b : Nat -> String
-  def b = toString
+  def b = show
 endspec
