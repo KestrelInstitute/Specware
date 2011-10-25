@@ -61,9 +61,6 @@ spec
     tester ("let A = id ( true , false ) in (compare A) = Greater", let A = id ( true , false ) in (compare A) = Greater);
     tester ("(compare ( true , true )) = Equal", (compare ( true , true )) = Equal);
     tester ("let A = id ( true , true ) in (compare A) = Equal", let A = id ( true , true ) in (compare A) = Equal);
-% Bool [120]:  op toString : Bool -> String  % deprecated
-    tester ("(toString ( true )) = \"true\"", (toString ( true )) = "true");
-    tester ("(toString ( false )) = \"false\"", (toString ( false )) = "false");
 % Bool [129]:  op show : Bool -> String
     tester ("(show ( true )) = \"true\"", (show ( true )) = "true");
     tester ("(show ( false )) = \"false\"", (show ( false )) = "false");
@@ -129,8 +126,6 @@ spec
     tester ("let A = id ( #4 , #4 ) in (compare A) = Equal", let A = id ( #4 , #4 ) in (compare A) = Equal);
     tester ("(compare ( #5 , #4 )) = Greater", (compare ( #5 , #4 )) = Greater);
     tester ("let A = id ( #5 , #4 ) in (compare A) = Greater", let A = id ( #5 , #4 ) in (compare A) = Greater);
-% Char [123]:  op toString    : Char -> String     % deprecated
-    tester ("(toString ( #A )) = \"A\"", (toString ( #A )) = "A");
 % Char [135]:  op show    : Char -> String
     tester ("(show ( #A )) = \"A\"", (show ( #A )) = "A");
 
@@ -183,9 +178,9 @@ spec
 % Integer [ 35]:  op div infixl 26 : Integer * NZInteger -> Integer
     tester ("(div ( 27 , 10 )) = 2", (div ( 27 , 10 )) = 2);
     tester ("let A = id ( 27 , 10 ) in (div A) = 2", let A = id ( 27 , 10 ) in (div A) = 2);
-% Integer [ 36]:  op rem infixl 26 : Integer * NZInteger -> Integer
-    tester ("(rem ( 27 , 10 )) = 7", (rem ( 27 , 10 )) = 7);
-    tester ("let A = id ( 27 , 10 ) in (rem A) = 7", let A = id ( 27 , 10 ) in (rem A) = 7);
+% Integer [ 36]:  op mod infixl 26 : Integer * NZInteger -> Integer
+    tester ("(mod ( 27 , 10 )) = 7", (mod ( 27 , 10 )) = 7);
+    tester ("let A = id ( 27 , 10 ) in (mod A) = 7", let A = id ( 27 , 10 ) in (mod A) = 7);
 % Integer [ 37]:  op <   infixl 20 : Integer * Integer -> Bool
     tester ("(< ( 3 , 4 )) = true", (< ( 3 , 4 )) = true);
     tester ("let A = id ( 3 , 4 ) in (< A) = true", let A = id ( 3 , 4 ) in (< A) = true);
@@ -222,8 +217,6 @@ spec
     tester ("let A = id ( 4 , 4 ) in (compare A) = Equal", let A = id ( 4 , 4 ) in (compare A) = Equal);
     tester ("(compare ( 5 , 4 )) = Greater", (compare ( 5 , 4 )) = Greater);
     tester ("let A = id ( 5 , 4 ) in (compare A) = Greater", let A = id ( 5 , 4 ) in (compare A) = Greater);
-% Integer [121]:  op toString : Integer -> String  % deprecated
-    tester ("(toString ( 123 )) = \"123\"", (toString ( 123 )) = "123");
 % Integer [132]:  op show : Integer -> String
     tester ("(Integer.show ( 123 )) = \"123\"", (Integer.show ( 123 )) = "123");
 % Integer [124]:  op intToString    : Integer -> String
@@ -237,18 +230,18 @@ spec
 % Integer [125]:  op stringToInt    : (String | intConvertible) -> Integer
     tester ("(stringToInt ( \"123\" )) = 123", (stringToInt ( "123" )) = 123);
     tester ("(stringToInt ( \"-123\" )) = -123", (stringToInt ( "-123" )) = -123);
-% List [ 49]:  op nil             : fa(a)   List a
-    tester ("(nil) = []", (nil) = []);
-% List [ 50]:  op cons            : fa(a)   a * List a -> List a
-    tester ("(cons ( 3 , [4] )) = [3,4]", (cons ( 3 , [4] )) = [3,4]);
-    tester ("let A = id ( 3 , [4] ) in (cons A) = [3,4]", let A = id ( 3 , [4] ) in (cons A) = [3,4]);
+% List [ 49]:  op Nil             : fa(a)   List a
+    tester ("(Nil) = []", (Nil) = []);
+% List [ 50]:  op Cons            : fa(a)   a * List a -> List a
+    tester ("(Cons ( 3 , [4] )) = [3,4]", (Cons ( 3 , [4] )) = [3,4]);
+    tester ("let A = id ( 3 , [4] ) in (Cons A) = [3,4]", let A = id ( 3 , [4] ) in (Cons A) = [3,4]);
 % List [ 51]:  op insert          : fa(a)   a * List a -> List a
     tester ("(insert ( 3 , [4] )) = [3,4]", (insert ( 3 , [4] )) = [3,4]);
     tester ("let A = id ( 3 , [4] ) in (insert A) = [3,4]", let A = id ( 3 , [4] ) in (insert A) = [3,4]);
 % List [ 52]:  op length          : fa(a)   List a -> Nat
     tester ("(length ( [3,4] )) = 2", (length ( [3,4] )) = 2);
 % List [ 53]:  op null            : fa(a)   List a -> Bool
-    tester ("(null ( nil )) = true", (null ( nil )) = true);
+    tester ("(null ( Nil )) = true", (null ( nil )) = true);
     tester ("(null ( [3] )) = false", (null ( [3] )) = false);
 % List [ 54]:  op hd              : fa(a)   {l : List a | ~(null l)} -> a
     tester ("(hd ( [3,4] )) = 3", (hd ( [3,4] )) = 3);
@@ -284,11 +277,11 @@ spec
     tester ("(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]", (mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]);
     tester ("let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]", let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]);
 % List [ 65]:  op foldl           : fa(a,b) (b * a -> b) -> b -> List a -> b
-    tester ("(foldl ( fn(m,n)->(n)rem(m) ) ( 20 ) ( [77,47] )) = 13", (foldl ( fn(m,n)->(n)rem(m) ) ( 20 ) ( [77,47] )) = 13);
-    tester ("let F = id ( foldl ( fn(m,n)->(n)rem(m) )) in (F ( 20 ) ( [77,47] )) = 13", let F = id ( foldl ( fn(m,n)->(n)rem(m) )) in (F ( 20 ) ( [77,47] )) = 13);
+    tester ("(foldl ( fn(m,n)->(n)mod(m) ) ( 20 ) ( [77,47] )) = 13", (foldl ( fn(m,n)->(n)mod(m) ) ( 20 ) ( [77,47] )) = 13);
+    tester ("let F = id ( foldl ( fn(m,n)->(n)mod(m) )) in (F ( 20 ) ( [77,47] )) = 13", let F = id ( foldl ( fn(m,n)->(n)mod(m) )) in (F ( 20 ) ( [77,47] )) = 13);
 % List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
-    tester ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13", (foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13);
-    tester ("let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13", let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13);
+    tester ("(foldr ( fn(m,n)->(m)mod(n) ) ( 77 ) ( [27,91] )) = 13", (foldr ( fn(m,n)->(m)mod(n) ) ( 77 ) ( [27,91] )) = 13);
+    tester ("let F = id ( foldr ( fn(m,n)->(m)mod(n) )) in (F ( 77 ) ( [27,91] )) = 13", let F = id ( foldr ( fn(m,n)->(m)mod(n) )) in (F ( 77 ) ( [27,91] )) = 13);
 % List [ 67]:  op exists          : fa(a)   (a -> Bool) -> List a -> Bool
     tester ("(exists ( posNat? ) ( [] )) = false", (exists ( posNat? ) ( [] )) = false);
     tester ("let F = id ( exists ( posNat? )) in (F ( [] )) = false", let F = id ( exists ( posNat? )) in (F ( [] )) = false);
@@ -350,7 +343,6 @@ spec
     tester ("let F = id ( compare ( Integer.compare )) in (F ( [1] , [1] )) = Equal", let F = id ( compare ( Integer.compare )) in (F ( [1] , [1] )) = Equal);
     tester ("(compare ( Integer.compare ) ( [1,0] , [1] )) = Greater", (compare ( Integer.compare ) ( [1,0] , [1] )) = Greater);
     tester ("let F = id ( compare ( Integer.compare )) in (F ( [1,0] , [1] )) = Greater", let F = id ( compare ( Integer.compare )) in (F ( [1,0] , [1] )) = Greater);
-% List [ 82]:  op app             : fa(a)  (a -> ()) -> List a -> ()  % deprecated
 % List [134]:  op show    : String -> List String -> String
     tester ("(show ( \"ns\" ) ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", (show ( "ns" ) ( ["no","e","e"] )) = "nonsense");
     tester ("let F = id ( show ( \"ns\" )) in (F ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", let F = id ( show ( "ns" )) in (F ( ["no","e","e"] )) = "nonsense");
@@ -368,8 +360,6 @@ spec
 % Nat [ 89]:  op posNat? : Nat -> Bool
     tester ("(posNat? ( 0 )) = false", (posNat? ( 0 )) = false);
     tester ("(posNat? ( 1 )) = true", (posNat? ( 1 )) = true);
-% Nat [122]:  op toString     : Nat -> String      % deprecated
-    tester ("(toString ( 123 )) = \"123\"", (toString ( 123 )) = "123");
 % Nat [133]:  op show     : Nat -> String
     tester ("(Nat.show ( 123 )) = \"123\"", (Nat.show ( 123 )) = "123");
 % Nat [126]:  op natToString  : Nat -> String
@@ -435,8 +425,8 @@ spec
     tester ("(^ ( \"now\" , \"here\" )) = \"nowhere\"", (^ ( "now" , "here" )) = "nowhere");
     tester ("let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"", let A = id ( "now" , "here" ) in (^ A) = "nowhere");
 % String [107]:  op map           : (Char -> Char) -> String -> String
-    tester ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( \"terra\" )) = \"green\"", (map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( "terra" )) = "green");
-    tester ("let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( \"terra\" )) = \"green\"", let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( "terra" )) = "green");
+    tester ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) ( \"terra\" )) = \"green\"", (map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) ) ( "terra" )) = "green");
+    tester ("let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) )) in (F ( \"terra\" )) = \"green\"", let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)mod(26)))) )) in (F ( "terra" )) = "green");
 % String [108]:  op exists        : (Char -> Bool) -> String -> Bool
     tester ("(exists ( isNum ) ( \"\" )) = false", (exists ( isNum ) ( "" )) = false);
     tester ("let F = id ( exists ( isNum )) in (F ( \"\" )) = false", let F = id ( exists ( isNum )) in (F ( "" )) = false);
@@ -495,8 +485,6 @@ spec
     tester ("let A = id ( \"2\" , \"1\" ) in (<= A) = false", let A = id ( "2" , "1" ) in (<= A) = false);
 % String [116]:  op newline       : String
     tester ("(newline) = \"\\n\"", (newline) = "\n");
-% String [117]:  op toScreen      : String -> ()  % deprecated
-% String [118]:  op writeLine     : String -> ()  % deprecated
 % String [119]:  op compare : String * String -> Comparison
     tester ("(compare ( \"\" , \"\" )) = Equal", (compare ( "" , "" )) = Equal);
     tester ("let A = id ( \"\" , \"\" ) in (compare A) = Equal", let A = id ( "" , "" ) in (compare A) = Equal);
