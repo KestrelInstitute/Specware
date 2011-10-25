@@ -45,7 +45,7 @@
 	     (" op  {h, f, g} : Z")
 	     (" op  {h, g, f} : Z"))
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
             ))

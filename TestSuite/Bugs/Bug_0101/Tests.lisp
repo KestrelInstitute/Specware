@@ -1140,7 +1140,7 @@
 	    "   Integer.lcm      -> ilcm"
 	    "   Nat.succ         -> Suc"
 	    "  end-proof"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

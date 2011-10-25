@@ -15,12 +15,12 @@
 	    " import B"
             (:optional "")
 	    " type Interval = {start : Nat, stop : Nat}"
-            (:optional " ")
+            (:optional "")
 	    " op  isEmptyInterval? : Interval -> Bool"
             (:alternatives
              " def isEmptyInterval? {start = x, stop = y} = x = y"
              " def isEmptyInterval? {start = x : Nat, stop = y : Nat} : Bool = x = y")
-	    "endspec"
+	    (:alternatives "endspec" "end-spec")
             (:optional "")
             (:optional "")))
  )

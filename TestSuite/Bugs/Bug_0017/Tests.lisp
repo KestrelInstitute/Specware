@@ -14,7 +14,7 @@
 	    (:optional "")
 	    " op  Y.fubaz : Nat = 12345"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 

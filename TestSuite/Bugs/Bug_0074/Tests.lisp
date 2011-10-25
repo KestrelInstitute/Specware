@@ -15,14 +15,14 @@
             (:optional "")
             (:optional "")
 	    "spec"
-            (:optional " ")
+            (:optional "")
             (:optional " type {A, B, C}")
             (:optional " type {A, C, B}")
             (:optional " type {B, A, C}")
             (:optional " type {B, C, A}")
             (:optional " type {C, A, B}")
             (:optional " type {C, B, A}")
-            (:optional " ")
+            (:optional "")
 	    (:alternatives 
              " type {A, B, C} = List(Nat * Nat)"
              " type {A, B, C} = Foo(Nat)"
@@ -36,10 +36,10 @@
              " type {C, A, B} = Foo(Nat)"
              " type {C, B, A} = List(Nat * Nat)"
              " type {C, B, A} = Foo(Nat)")
-            (:optional " ")
+            (:optional "")
             " import Foo"
-            (:optional " ")
-	    "endspec"
+            (:optional "")
+	    (:alternatives "endspec" "end-spec")
             (:optional "")
             (:optional "")
             ))

@@ -46,7 +46,7 @@
              " def f n = The((fn m : Nat -> m = n))"
              " def f (n : Nat) : Nat = The(fn (m : Nat) -> m = n)")
 	    (:optional "")
-            "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

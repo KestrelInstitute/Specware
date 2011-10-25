@@ -89,7 +89,7 @@
 	    "               (foldable?(s with x, c, f) "
 	    "               => fold(s with x, c, f) = f(fold(s wout x, c, f), x)))))"
             (:optional "")
-            "endspec"
+            (:alternatives "endspec" "end-spec")
             (:optional "")
             (:optional "")
 	    ))

@@ -21,7 +21,7 @@
             "      f(Cons(hd, tl), i) = (if i = 0 then hd else f(Cons(hd, tl), i))"
             " "
 	    " def f (hd :: tl, i) = if i = 0 then hd else f(Cons(hd, tl), i)"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ";;; Elaborating proof-term at $TESTDIR/NeedWFO#P"

@@ -8,27 +8,29 @@
 	    (:optional "creating directory: $TESTDIR/Snark/")
 	    (:optional "creating directory: $TESTDIR/Snark/MinusOb/")
 	    (:optional "")
-	    "spec  "
+	    "spec"
+	    (:optional "")
 	    (:optional " import /Library/Base/WFO")
 	    " import Integer"
-	    " "
+	    (:optional "")
 	    " op  natural? (i : Integer) : Bool = i >= zero"
 	    " type Nat = (Integer | natural?)"
-	    " "
+	    (:optional "")
 	    " op  posNat? (n : Nat) : Bool = n > zero"
 	    " type PosNat = (Nat | posNat?)"
-	    " "
+	    (:optional "")
 	    " op  succ : Nat -> Nat"
 	    (:alternatives
 	     " conjecture Nat.succ_Obligation_subtype is fa(n : Nat) natural?(succ n)"
 	     " conjecture Nat.succ_Obligation_subtype is fa(n : Nat) succ n >= 0")
-	    " "
+	    (:optional "")
 	    " def succ n = succ n"
+	    (:optional "")
 	    " proof Isa Thy_Morphism"
 	    "   type Nat.Nat -> nat (int,nat) [+,*,div,rem,<=,<,>=,>,abs,min,max]"
 	    "   Nat.succ     -> Suc"
 	     "  end-proof"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

@@ -9,13 +9,15 @@
 	    ";;; Elaborating spec at $TESTDIR/subsExample#A"
 	    ";;; Elaborating spec-morphism at $TESTDIR/subsExample#M"
 	    ";;; Elaborating spec at $TESTDIR/subsExample#B"
-	    ""
-	    "spec  "
+	    (:optional "")
+	    "spec"
+	    (:optional "")
 	    " import B"
-            ""
+	    (:optional "")
 	    " type Interval = {start : Integer, stop : Integer}"
-	    (:optional " ")
+	    (:optional "")
 	    " op  isEmptyInterval? : Interval -> Bool"
+	    (:optional "")
             (:alternatives
              " def isEmptyInterval? {start = x, stop = y} = x = y"
              " def isEmptyInterval? {start = x : Integer, stop = y : Integer} = x = y"
@@ -23,9 +25,10 @@
               " x = y")
              (" def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool"
               " = x = y"))
-	    "endspec"
-	    ""
-	    ""
+	    (:optional "")
+	    (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
 	    ))
 
  )

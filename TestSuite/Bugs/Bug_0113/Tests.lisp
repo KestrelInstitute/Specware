@@ -100,7 +100,7 @@
 	    " type Y"
             (:optional "")
 	    " type Z"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : Y"
             (:optional "")
 	    " op  g : Y"
@@ -112,11 +112,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Z"
             (:optional "")
 	    " op  E.m : Z"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -129,7 +129,7 @@
 	    " type Y"
             (:optional "")
 	    " type Z"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : Y"
             (:optional "")
 	    " op  g : Y"
@@ -141,11 +141,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Z"
             (:optional "")
 	    " op  E.m : Z"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -158,7 +158,7 @@
 	    " type Y"
             (:optional "")
 	    " type X"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : Y"
             (:optional "")
 	    " op  g : Y"
@@ -170,11 +170,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : X"
             (:optional "")
 	    " op  E.m : X"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -187,7 +187,7 @@
 	    " type Y"
             (:optional "")
 	    " type X"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : Y"
             (:optional "")
 	    " op  g : Y"
@@ -199,11 +199,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : X"
             (:optional "")
 	    " op  E.m : X"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -216,7 +216,7 @@
 	    " type X"
             (:optional "")
 	    " type Y"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : X"
             (:optional "")
 	    " op  g : X"
@@ -228,11 +228,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Y"
             (:optional "")
 	    " op  E.m : Y"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -245,7 +245,7 @@
 	    " type X"
             (:optional "")
 	    " type Y"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : X"
             (:optional "")
 	    " op  g : X"
@@ -257,11 +257,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Y"
             (:optional "")
 	    " op  E.m : Y"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -274,7 +274,7 @@
 	    " type X"
             (:optional "")
 	    " type Y"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : X"
             (:optional "")
 	    " op  g : X"
@@ -286,11 +286,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Y"
             (:optional "")
 	    " op  E.m : Y"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -303,7 +303,7 @@
 	    " type X"
             (:optional "")
 	    " type Y"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f : X"
             (:optional "")
 	    " op  g : X"
@@ -315,11 +315,11 @@
 	    " type A.T"
             (:optional "")
 	    " type B.T"
-	    (:optional " ")
+	    (:optional "")
 	    " op  D.m : Y"
             (:optional "")
 	    " op  E.m : Y"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -344,7 +344,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -362,7 +362,7 @@
 	     (" type {YY, ZZ, XX}")
 	     (" type {ZZ, XX, YY}")
 	     (" type {ZZ, YY, XX}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -376,7 +376,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -390,7 +390,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -404,7 +404,7 @@
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -418,7 +418,7 @@
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -432,7 +432,7 @@
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -446,7 +446,7 @@
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -464,7 +464,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -478,7 +478,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -496,7 +496,7 @@
 	     (" type {Y, Z, P}")
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -510,7 +510,7 @@
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -522,7 +522,7 @@
 	    "spec  "
             (:optional "")
 	    " type Y"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -536,7 +536,7 @@
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -550,7 +550,7 @@
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -562,7 +562,7 @@
 	    "spec  "
             (:optional "")
 	    " type Z"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -576,7 +576,7 @@
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -594,7 +594,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -608,7 +608,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -626,7 +626,7 @@
 	     (" type {Y, Z, P}")
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -644,7 +644,7 @@
 	     (" type {X, Z, P}")
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -658,7 +658,7 @@
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -672,7 +672,7 @@
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -690,7 +690,7 @@
 	     (" type {Q, Z, P}")
 	     (" type {Z, P, Q}")
 	     (" type {Z, Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -708,7 +708,7 @@
 	     (" type {X, Y, P}")
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -722,7 +722,7 @@
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -736,7 +736,7 @@
 	    (:alternatives 
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -754,7 +754,7 @@
 	     (" type {R, Y, P}")
 	     (" type {Y, P, R}")
 	     (" type {Y, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -766,7 +766,7 @@
 	    "spec  "
             (:optional "")
 	    " type X"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -780,7 +780,7 @@
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -794,7 +794,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -808,7 +808,7 @@
 	    (:alternatives 
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -826,7 +826,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -844,7 +844,7 @@
 	     (" type {X, Z, P}")
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -858,7 +858,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -876,7 +876,7 @@
 	     (" type {X, Y, P}")
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -890,7 +890,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -908,7 +908,7 @@
 	     (" type {R, X, P}")
 	     (" type {X, P, R}")
 	     (" type {X, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -922,7 +922,7 @@
 	    (:alternatives
 	     (" type {Y, X}")
 	     (" type {X, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -936,7 +936,7 @@
 	    (:alternatives
 	     (" type {X, Y}")
 	     (" type {Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -954,7 +954,7 @@
 	     (" type {X, Y, R}")
 	     (" type {Y, R, X}")
 	     (" type {Y, X, R}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -972,7 +972,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -986,7 +986,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1004,7 +1004,7 @@
 	     (" type {Y, Z, R}")
 	     (" type {Z, R, Y}")
 	     (" type {Z, Y, R}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1022,7 +1022,7 @@
 	     (" type {X, Y, P}")
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1036,7 +1036,7 @@
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1050,7 +1050,7 @@
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1068,7 +1068,7 @@
 	     (" type {R, Y, P}")
 	     (" type {Y, P, R}")
 	     (" type {Y, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1082,7 +1082,7 @@
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1100,7 +1100,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1118,7 +1118,7 @@
 	     (" type {X, Z, R}")
 	     (" type {Z, R, X}")
 	     (" type {Z, X, R}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1132,7 +1132,7 @@
 	    (:alternatives
 	     (" type {X, Z}")
 	     (" type {Z, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1146,7 +1146,7 @@
 	    (:alternatives
 	     (" type {Y, Z}")
 	     (" type {Z, Y}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1160,7 +1160,7 @@
 	    (:alternatives
 	     (" type {R, Z}")
 	     (" type {Z, R}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1178,7 +1178,7 @@
 	     (" type {X, Z, P}")
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1196,7 +1196,7 @@
 	     (" type {Y, Z, P}")
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1210,7 +1210,7 @@
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1228,7 +1228,7 @@
 	     (" type {R, Z, P}")
 	     (" type {Z, P, R}")
 	     (" type {Z, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1242,7 +1242,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1260,7 +1260,7 @@
 	     (" type {X, Y, P}")
 	     (" type {Y, P, X}")
 	     (" type {Y, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1274,7 +1274,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1292,7 +1292,7 @@
 	     (" type {R, X, P}")
 	     (" type {X, P, R}")
 	     (" type {X, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1310,7 +1310,7 @@
 	     (" type {X, Z, P}")
 	     (" type {Z, P, X}")
 	     (" type {Z, X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1328,7 +1328,7 @@
 	     (" type {Y, Z, P}")
 	     (" type {Z, P, Y}")
 	     (" type {Z, Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1342,7 +1342,7 @@
 	    (:alternatives
 	     (" type {P, Z}")
 	     (" type {Z, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1360,7 +1360,7 @@
 	     (" type {R, Z, P}")
 	     (" type {Z, P, R}")
 	     (" type {Z, R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1374,7 +1374,7 @@
 	    (:alternatives
 	     (" type {P, X}")
 	     (" type {X, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1388,7 +1388,7 @@
 	    (:alternatives
 	     (" type {P, Y}")
 	     (" type {Y, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1400,7 +1400,7 @@
 	    "spec  "
             (:optional "")
 	    " type P"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1414,7 +1414,7 @@
 	    (:alternatives
 	     (" type {P, R}")
 	     (" type {R, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1432,7 +1432,7 @@
 	     (" type {Q, X, P}")
 	     (" type {X, P, Q}")
 	     (" type {X, Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1450,7 +1450,7 @@
 	     (" type {Q, Y, P}")
 	     (" type {Y, P, Q}")
 	     (" type {Y, Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1464,7 +1464,7 @@
 	    (:alternatives
 	     (" type {P, Q}")
 	     (" type {Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1478,7 +1478,7 @@
 	    (:alternatives
 	     (" type {P, Q}")
 	     (" type {Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )
@@ -1496,7 +1496,7 @@
 	     (" type {Q, R, P}")
 	     (" type {R, P, Q}")
 	     (" type {R, Q, P}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
   )

@@ -17,7 +17,7 @@
      (" op  b : Nat -> String"
       " def b = show"))
     (:optional "")
-    "endspec"
+    (:alternatives "endspec" "end-spec")
     (:optional "")
     (:optional "")))
 

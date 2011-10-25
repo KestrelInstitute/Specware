@@ -8,14 +8,17 @@
 	    ";;; Elaborating spec at $TESTDIR/ManySpecs#C"
 	    ";;; Elaborating spec at $TESTDIR/ManySpecs#B"
 	    ";;; Elaborating spec at $TESTDIR/ManySpecs#A"
-	    ""
-	    "spec  "
+	    (:optional "")
+	    "spec"
+	    (:optional "")
 	    " import C"
-            ""
+	    (:optional "")
 	    " type D"
-	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+            (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+	    ))
 
 
  )

@@ -7,10 +7,12 @@
   :output '(
 	    (:optional ";;; Elaborating spec at $TESTDIR/ImportNum#B2")
 	    (:optional ";;; Elaborating spec at $TESTDIR/ImportNum#A1")
-	    (:optional " ")
+	    (:optional "")
 	    "spec  "
+	    (:optional "")
 	    " import ImportNum#A1"
-	    "endspec"
+	    (:optional "")
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

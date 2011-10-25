@@ -42,7 +42,7 @@
              " def z = Yes"
              " def z : Affirm = Yes")
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
             ))

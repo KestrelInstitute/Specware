@@ -24,7 +24,7 @@
 	    "                                  in"
 	    "                                  ww0 n + ww n"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 
@@ -50,7 +50,7 @@
 	    "                                 in"
 	    "                                 ww0 n + bb n"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 

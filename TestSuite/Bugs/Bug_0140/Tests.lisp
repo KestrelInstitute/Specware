@@ -20,7 +20,7 @@
 	    ;; "spec  "
 	    ;; " import $TESTDIR/STO#T"
 	    ;; " conjecture c_def is fa() c = c"
-	    ;; "endspec"
+	    ;; "end-spec"
 	    ;; ""
 	    ))
 

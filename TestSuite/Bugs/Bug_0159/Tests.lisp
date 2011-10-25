@@ -23,7 +23,7 @@
 	    (:optional "")
 	    " op  bar : B -> B"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -63,7 +63,7 @@
 	    (:optional "")
 	    " op  bar : B -> B"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -87,7 +87,7 @@
 	    (:optional "")
 	    " op  bar : A2 -> A2"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -119,7 +119,7 @@
 	    (:optional "")
 	    " op  bar : A2 -> A2"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -143,7 +143,7 @@
 	    (:optional "")
 	    " op  Q.bar : Q.A -> Q.A"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -176,7 +176,7 @@
 	    (:optional "")
 	    " op  Q.bar : Q.A -> Q.A"
 	    (:optional "")
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

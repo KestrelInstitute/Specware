@@ -33,7 +33,7 @@
   :file-goto-error '("$TESTDIR/players.sw" 43 13)
   :output '("Error in specification: Name \"twoPlayers\" defined twice in file."
 	    " found in $TESTDIR/players.sw"
-	    "43.13-44.52"))
+	    "43.*-44.*"))
 
  ("Colimit with no sharing"
   :sw "colimit"
@@ -77,7 +77,7 @@
 ;;; 	    " import /Library/Base/WFO"
 ;;; 	    " "
 ;;; 	    " op  nonNeg? : Integer -> Bool"
-;;; 	    (:optional " ")
+;;; 	    (:optional "")
 ;;; 	    " op  f : {p : (Integer * Integer) | p.1 > -(p.2)} -> Nat"
 ;;; 	    " conjecture f_Obligation_subtype is "
 ;;; 	    "    fa(y : Integer, x : Integer) x > - y => nonNeg?(x + y)"
@@ -86,7 +86,7 @@
 ;;; 	    "     x > - y && nonNeg?(x + y) => natural?(x + y)"
 ;;; 	    " "
 ;;; 	    " def f (x, y) = restrict(nonNeg?)(x + y)"
-;;; 	    "endspec"
+;;; 	    "end-spec"
 ;;; 	    ""
 ;;; 	    ""))
 
@@ -99,29 +99,30 @@
  ("Prettyprint Parens"
   :show "PP"
   :output '(";;; Elaborating spec at $TESTDIR/PP"
-	    ""
+	    (:options "")
 	    "spec  "
-	    ""
+	    (:options "")
 	    " type Injection1(a, b) = ((a -> b) | Function.injective?)"
-	    ""
+	    (:options "")
 	    " type T0 =  | Foo | Fum"
-	    ""
+	    (:options "")
 	    " type T = (T0 | truep)"
-	    ""
+	    (:options "")
 	    " type T1 = {x : T0 | true}"
-	    ""
+	    (:options "")
 	    " type T2 = ((T * T1) | truep)"
-	    " "
+	    (:options "")
 	    " op  truep : [a] a -> Bool"
-	    ""
+	    (:options "")
 	    " axiom List.induction1 is [a] "
 	    "    fa(p : List(a) -> Bool) "
 	    "     p([]) "
 	    "     && (fa(x : a, l : List(a)) "
 	    "          (p l => p(Cons(x, l)) => (fa(l : List(a)) p l)))"
-	    "endspec"
-	    ""
-	    ""))
+            (:alternatives "endspec" "end-spec")
+	    (:options "")
+	    (:options "")
+	    ))
 
  ("swe Pattern A"
   :swe "v"

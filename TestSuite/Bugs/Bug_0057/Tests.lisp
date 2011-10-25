@@ -8,14 +8,14 @@
 	    ";;; Elaborating spec at $TESTDIR/UnusedSpecs#C"
 	    ";;; Elaborating spec at $TESTDIR/UnusedSpecs#B"
 	    ";;; Elaborating spec at $TESTDIR/UnusedSpecs#A"
-	    ""
+	    (:optional "")
 	    "spec  "
 	    " import C"
-            ""
+	    (:optional "")
 	    " type D"
-	    "endspec"
-	    ""
-	    ""))
-
+	    (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+            ))
 
  )

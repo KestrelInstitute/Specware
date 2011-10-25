@@ -27,7 +27,7 @@
             "      of [] -> 0"
             "      | _ -> (100 div length l)"
 	    (:optional "")
- 	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
  )

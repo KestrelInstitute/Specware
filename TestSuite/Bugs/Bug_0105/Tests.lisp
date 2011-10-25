@@ -5,17 +5,18 @@
  ("Bug 0105 A: The new-style type quantifications in claim definitions are ambiguous"
   :show   "QuantifiedAxiom#A"
   :output '(";;; Elaborating spec at $TESTDIR/QuantifiedAxiom#A"
-	    (:optional " ")
+	    (:optional "")
 	    "spec"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f infixl 22 : [a] List(a) * a -> Integer"
-	    (:optional " ")
+	    (:optional "")
 	    " op i : Nat = 123"
-	    (:optional " ")
+	    (:optional "")
 	    " axiom A is [i] f 3 = 0"
-	    "endspec"
-	    (:optional " ")
-	    (:optional " ")))
+            (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+            ))
 
 
  ("Bug 0105 B: The new-style type quantifications in claim definitions are ambiguous"
@@ -27,22 +28,24 @@
 	    "13.18-13.18	: Could not match type constraint"
 	    "                   3 of type Nat"
 	    "          with expected type List(mtv%metafy%*) * mtv%metafy%*"
-	    (:optional " ")))
+	    (:optional "")
+            ))
 
 
  ("Bug 0105 C: The new-style type quantifications in claim definitions are ambiguous"
   :show   "QuantifiedAxiom#C"
   :output '(";;; Elaborating spec at $TESTDIR/QuantifiedAxiom#C"
-	    (:optional " ")
+	    (:optional "")
 	    "spec"
-	    (:optional " ")
+	    (:optional "")
 	    " op  f infixl 22 : [a] a -> Integer"
-	    (:optional " ")
+	    (:optional "")
 	    " op  i : Nat = 123"
-	    (:optional " ")
+	    (:optional "")
 	    " axiom A is [i] f(3) = 0"
-	    "endspec"
-	    (:optional " ")
-	    (:optional " ")))
+            (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+            ))
 
  )

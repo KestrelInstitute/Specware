@@ -7,7 +7,7 @@
   :output '(";;; Elaborating spec at $TESTDIR/BogusNil"
 	    (:optional "")
 	    "spec"
-	    " "
+	    (:optional "")
 	    " type NotList(a) =  | Cons a * NotList(a) | Nil"
 	    (:optional "")
 	    " op  bogus_nil : NotList(Nat) = Nil"
@@ -17,7 +17,7 @@
 	    " op  true_nil : List(Nat) = []"
 	    (:optional "")
 	    " op  true_cons : List(Nat) = [1, 2, 3]"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
 

@@ -6,12 +6,13 @@
   :output '(";;; Elaborating obligator at $TESTDIR/BogusImport#O"
 	    ";;; Elaborating spec at $TESTDIR/BogusImport#S"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
-	    ""
+	    (:optional "")
 	    "spec  "
 	    (:optional " import /Library/Base/WFO")
-	    "endspec"
-	    ""
-	    ""))
+            (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+	    ))
  
 
 )

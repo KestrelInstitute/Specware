@@ -5,17 +5,18 @@
  ("Bug 0022 : Redefined ops processed without giving error message [OpDef]."
   :show "RedefinedOp#OpDef"
   :output '(";;; Elaborating spec at $TESTDIR/RedefinedOp#OpDef"
-            ""
-            "spec  "
+            (:optional "")
+            "spec"
             (:optional "")
             " op  f : Nat"
             (:alternatives
              " def f : Nat = 3"
              " def f = 3")
             (:optional "")
-            "endspec"
-            ""
-            ""))
+	    (:alternatives "endspec" "end-spec")
+            (:optional "")
+            (:optional "")
+            ))
 
  ("Bug 0022 : Redefined ops processed without giving error message [DefOp]"
   :sw "RedefinedOp#DefOp"

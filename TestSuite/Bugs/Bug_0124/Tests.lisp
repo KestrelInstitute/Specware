@@ -96,7 +96,7 @@
                "      s"))
 	     (:optional "")
 	     (:optional "")
-	     "endspec"
+             (:alternatives "endspec" "end-spec")
 	     (:optional "")
 	     (:optional "")
 	     ))

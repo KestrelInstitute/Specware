@@ -1126,7 +1126,7 @@
 	    "   Integer.divides  -> zdvd  Left 30 "
 	    "   Nat.succ         -> Suc"
 	    "  end-proof"
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))

@@ -9,13 +9,16 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivTypes#A"
 	    ";;; Elaborating spec at $TESTDIR/EquivTypes#B"
 	    ";;; Elaborating spec at $TESTDIR/EquivTypes#C"
-	    ""
+	    (:optional "")
 	    "spec  "
+	    (:optional "")
 	    " import A"
 	    " import B"
 	    " import C"
-	    "endspec"
-	    ""
-	    ""))
+	    (:optional "")
+            (:alternatives "endspec" "end-spec")
+	    (:optional "")
+	    (:optional "")
+	    ))
 
  )

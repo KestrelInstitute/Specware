@@ -37,7 +37,7 @@
 	    ";;; Elaborating spec-morphism at $TESTDIR/Diagram#C1"
 	    ";;; Elaborating spec-morphism at $TESTDIR/Diagram#C1"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives 
 	     (" type {X, Y, Z}")
@@ -46,7 +46,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
@@ -57,7 +57,7 @@
 	    (:optional "")
 	    ";;; Elaborating diagram-colimit at $TESTDIR/Diagram#C2"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives 
 	     (" type {X, Y, Z}")
@@ -66,7 +66,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    "endspec"
+            (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
 	    ))
