@@ -9,18 +9,32 @@
 	    (:optional "")
 	    "spec  "
 	    (:optional " import /Library/Base/WFO")
-	    " "
-            " op f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
-	    " "
+	    (:optional "")
+            (:alternatives
+             " op f : [a] {(l, i) : (List(a) * Nat) | i < length l} -> a"
+             " op f : [a] {l, i : (List(a) * Nat) | i < length l} -> a")
+	    (:optional "")
 	    " conjecture f_Obligation_exhaustive is [a] "
-	    "    fa(D : {(l, i) : (List(a) * Nat) | i < length l}) embed?(Cons)(D.1)"
-	    " "
+            (:alternatives
+             "    fa(D : {(l, i) : (List(a) * Nat) | i < length l}) embed?(Cons)(D.1)"
+             ("    fa(D : {l, i : (List(a) * Nat) | i < length l}) "
+              "    ex(hd : a, tl : List(a), i : Nat) D = (Cons(hd, tl), i)"))
+	    (:optional "")
             " conjecture f_Obligation_uniqueness is [a] "
-            "    ex1(f : {(l, i) : (List(a) * Nat) | i < length l} -> a) "
-            "     fa(tl : List(a), hd : a, i : Nat) "
-            "      f(Cons(hd, tl), i) = (if i = 0 then hd else f(Cons(hd, tl), i))"
-            " "
-	    " def f (hd :: tl, i) = if i = 0 then hd else f(Cons(hd, tl), i)"
+            (:alternatives
+             "    ex1(f : {(l, i) : (List(a) * Nat) | i < length l} -> a) "
+             "    ex1(f : {l, i : (List(a) * Nat) | i < length l} -> a) ")
+            (:alternatives
+             "    fa(tl : List(a), hd : a, i : Nat) "
+             "    fa(hd : a, tl : List(a), i : Nat) ")
+            "      f (Cons(hd, tl), i) = (if i = 0 then hd else f (Cons(hd, tl), i))"
+	    (:optional "")
+            (:alternatives
+             " def f (hd :: tl, i) = if i = 0 then hd else f(Cons(hd, tl), i)"
+             (" def f "
+              "     (hd : a :: tl : List(a), i : Nat"
+              "        | fn (l : List(a), i : Nat) -> i < length l) : a"
+              "   = if i = 0 then hd else f(Cons(hd, tl), i)"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
