@@ -924,7 +924,7 @@ AnnSpecPrinter qualifying spec
      | []     -> "[]"
      | v1::vs -> "[" ^ v1 ^ (foldl (fn (str, v) -> str ^","^ v) "" vs) ^ "]"
 
- def useXSymbols? = true
+ def useXSymbols? = false
  def uiPrinter() = if useXSymbols? then XSymbolPrinter else asciiPrinter
 
  def AnnSpecPrinter.printTerm term = 
@@ -1389,6 +1389,7 @@ AnnSpecPrinter qualifying spec
 	       ppSpecElementsAux context spc import_directions im_elements result)
 	       
 	 | Op (qid,def?,_) ->
+           % let _ = writeLine("printing op "^show qid^" "^show def?) in
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo ->
                 if def? then
@@ -1399,6 +1400,7 @@ AnnSpecPrinter qualifying spec
 	        let _  = toScreen("\nInternal error: Missing op[1]: " ^ printQualifiedId qid ^ "\n") in
 		result)
 	 | OpDef (qid,refine_num,_) ->
+           % let _ = writeLine("printing def "^show qid^" "^show refine_num) in
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
 	      | _ -> 
