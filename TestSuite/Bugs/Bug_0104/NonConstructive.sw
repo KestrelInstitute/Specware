@@ -1,6 +1,6 @@
 spec
 
- %% notFalse should evaluate to true (or perhaps to itself),
+ %% notFalse should evaluate to true (or perhaps fail to evaluate)
  %% but should not evaluate to false!
 
  op notFalse : Bool
