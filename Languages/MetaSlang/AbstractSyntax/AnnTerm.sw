@@ -517,20 +517,29 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    let 
      def unpackTm (tm: ATerm a, ty: AType a) : List (TyVars * AType a * ATerm a) =
        case tm of
-         | And (tms, _) -> foldl (fn (result, tm) -> result ++ unpackTm(tm, ty)) [] tms
-         | TypedTerm (tm, ty, _) -> unpackTm(tm, ty)
+         | Pi (pi_tvs, stm, _) -> 
+           foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
+             [] 
+             (unpackTm(stm, ty))
+         | And (tms, _) -> foldl (fn (result, stm) -> result ++ unpackTm(stm, ty)) [] tms
+         | TypedTerm (stm, ty, _) -> unpackTm(stm, ty)
          | _ -> [([], ty, tm)]
    in   
    case tm of
-     | Pi (pi_tvs, tm, _) -> 
-       foldl (fn (result, (tvs, typ, tm)) -> result ++ [(pi_tvs ++ tvs, typ, tm)])
-             [] 
-             (unpackTypedTerms tm)
+     | Pi (pi_tvs, stm, _) -> 
+       foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
+         [] 
+         (unpackTypedTerms stm)
 
      | And (tms, _) ->
        foldl (fn (result, tm) -> result ++ (unpackTypedTerms tm)) [] tms
 
-     | TypedTerm (tm, ty, _) -> unpackTm (tm, ty)
+     | TypedTerm (stm, Pi(pi_tvs, ty, _), _)  ->
+       foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
+         [] 
+         (unpackTm(stm, ty))
+
+     | TypedTerm (stm, ty, _)  -> unpackTm(stm, ty)
 
      | _                      -> [([], termType tm, tm)]
 
