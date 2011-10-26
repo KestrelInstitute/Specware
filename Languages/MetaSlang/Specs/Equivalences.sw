@@ -321,7 +321,7 @@ AnnSpec qualifying spec
 
  %% used by checkRecursiveCall in TypeObligations.sw
  def similarType? spc (s1, s2) =
-   (equalType? (s1, s2))
+   (equalTypeSubtype? (s1, s2, true))
    ||
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as similar
