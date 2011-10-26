@@ -734,7 +734,8 @@ spec
                      }
                    | opinfos ->
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
-                             (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn); 
+                             (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
+                             % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
                              (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
