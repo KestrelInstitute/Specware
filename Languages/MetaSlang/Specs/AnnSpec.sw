@@ -298,8 +298,8 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
 
 op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   let old_triples = unpackTypedTerms info.dfn in
-  % let qid as Qualified(q, id) = primaryOpName info in
-  % let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
+  let qid as Qualified(q, id) = primaryOpName info in
+   %let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
   % let curr_dfns = innerTerms old_tm in
   let new_triple = case new_dfn of
                      | TypedTerm (new_tm, new_ty, _) -> ([], new_ty, new_tm)
@@ -315,7 +315,7 @@ op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   % in
   let new_triples = new_triple :: old_triples in
   let new_dfn = maybePiAndTypedTerm new_triples in
-  % let _ = writeLine("\naddRefinedDefToOpinfo "^show qid^":\n"^printTerm new_full_dfn) in
+  % let _ = writeLine("\naddRefinedDefToOpinfo "^show qid^":\n"^printTerm new_dfn) in
   info << {dfn = new_dfn}
 
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MSTerm): Spec =
