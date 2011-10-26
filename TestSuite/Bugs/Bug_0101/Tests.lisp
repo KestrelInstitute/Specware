@@ -73,16 +73,19 @@
 	    " conjecture Integer.positive?_Obligation_the is "
 	    "    ex1(positive? : Int -> Bool) "
 	    "     let def satisfiesInductiveDef? p? = "
-	    "           p?(one) && (fa(i : Int) (p? i => p?(isucc i)))"
+	    "           p? (one) && (fa(i : Int) (p? i => p? (isucc i)))"
 	    "     in "
 	    "     satisfiesInductiveDef? positive? "
 	    "     && (fa(p?_1 : Int -> Bool, i_1 : Int) "
 	    "          (satisfiesInductiveDef? p?_1 && positive? i_1 => p?_1 i_1))"
 	    (:optional "")
-	    " op positive? : Int -> Bool = "
-	    "   the (positive? : Int -> Bool) "
+            (:alternatives
+             (" op positive? : Int -> Bool = "
+              "   the (positive? : Int -> Bool) ")
+             (" op positive? : Int -> Bool"
+              "  = the (positive? : Int -> Bool) "))
 	    "    let def satisfiesInductiveDef? p? = "
-	    "          p?(one) && (fa(i : Int) (p? i => p?(isucc i)))"
+	    "          p? (one) && (fa(i : Int) (p? i => p? (isucc i)))"
 	    "    in "
 	    "    satisfiesInductiveDef? positive? "
 	    "    && (fa(p? : Int -> Bool) "

@@ -49,13 +49,13 @@
             "   ex(f : Int -> Int) Function.injective? f && ~(Function.surjective? f)"
 	    (:optional "")
             " proof Isa"
-            "  apply(rule_tac x="\<lambda>i. 2*i" in exI, auto simp add: surj_def inj_on_def)"
-            "  apply(rule_tac x="1"               in exI, auto simp add: pos_zmult_eq_1_iff)"
+            "  apply(rule_tac x=\"\\<lambda>i. 2*i\" in exI, auto simp add: surj_def inj_on_def)"
+            "  apply(rule_tac x=\"1\"               in exI, auto simp add: pos_zmult_eq_1_iff)"
             " end-proof"
 	    (:optional "")
 	    " axiom Integer.induction is "
 	    "    fa(p : Int -> Bool) "
-	    "     p(zero) && (fa(i : Int) (p i => p(isucc i) && p(ipred i))) "
+	    "     p (zero) && (fa(i : Int) (p i => p (isucc i) && p (ipred i))) "
 	    "     => (fa(i : Int) p i)"
 	    (:optional "")
 	    " proof Isa"
@@ -71,20 +71,26 @@
 	    " conjecture Integer.positive?_Obligation_the is "
 	    "    ex1(positive? : Int -> Bool) "
 	    "     let def satisfiesInductiveDef? p? = "
-	    "           p?(one) && (fa(i : Int) (p? i => p?(isucc i)))"
+	    "           p? (one) && (fa(i : Int) (p? i => p? (isucc i)))"
 	    "     in "
 	    "     satisfiesInductiveDef? positive? "
 	    "     && (fa(p?_1 : Int -> Bool, i_1 : Int) "
 	    "          (satisfiesInductiveDef? p?_1 && positive? i_1 => p?_1 i_1))"
 	    (:optional "")
-	    " op  positive? : Int -> Bool = "
-	    "   the (positive? : Int -> Bool) "
+            (:alternatives
+             (" op  positive? : Int -> Bool = "
+              "   the (positive? : Int -> Bool) ")
+             (" op positive? : Int -> Bool"
+              "   = the (positive? : Int -> Bool) "))
 	    "    let def satisfiesInductiveDef? p? = "
-	    "          p?(one) && (fa(i : Int) (p? i => p?(isucc i)))"
+	    "          p? (one) && (fa(i : Int) (p? i => p? (isucc i)))"
 	    "    in "
 	    "    satisfiesInductiveDef? positive? "
 	    "    && (fa(p? : Int -> Bool) "
-	    "         (satisfiesInductiveDef? p? => (fa(i : Int) positive? i => p? i)))"
+            (:alternatives
+             "         (satisfiesInductiveDef? p? => (fa(i : Int) positive? i => p? i)))"
+             ("            (satisfiesInductiveDef? p? "
+              "             => (fa(i : Int) positive? i => p? i)))"))
 	    (:optional "")
 	    " proof Isa positive_p_Obligation_the  "
 	    "   apply(simp add:Integer__positive_p__satisfiesInductiveDef_p_def)"
@@ -136,9 +142,9 @@
 	    (:optional "")
 	    " theorem Integer.induction_pos_neg is "
 	    "    fa(p : Int -> Bool) "
-	    "     p(zero) "
-	    "     && (fa(i : Int) (~(negative? i) && p i => p(isucc i))) "
-	    "        && (fa(i : Int) (~(positive? i) && p i => p(ipred i))) "
+	    "     p (zero) "
+	    "     && (fa(i : Int) (~(negative? i) && p i => p (isucc i))) "
+	    "        && (fa(i : Int) (~(positive? i) && p i => p (ipred i))) "
 	    "     => (fa(i : Int) p i)"
 	    (:optional "")
 	    " conjecture IntegerAux.-_Obligation_the is "
@@ -242,11 +248,11 @@
 	    " type Nat = {i : Int | i >= 0}"
 	    (:optional "")
 	    " conjecture Integer.induction_naturals_Obligation_subtype is "
-	    "    fa(p : Nat -> Bool, n : Nat) p(0) && p n => n + 1 >= 0"
+	    "    fa(p : Nat -> Bool, n : Nat) p (0) && p n => n + 1 >= 0"
 	    (:optional "")
 	    " theorem Integer.induction_naturals is "
 	    "    fa(p : Nat -> Bool) "
-	    "     p(0) && (fa(n : Nat) (p n => p(n + 1))) => (fa(n : Nat) p n)"
+	    "     p (0) && (fa(n : Nat) (p n => p (n + 1))) => (fa(n : Nat) p n)"
 	    (:optional "")
 	    " op  posNat? (n : Nat) : Bool = n > 0"
 	    (:optional "")
