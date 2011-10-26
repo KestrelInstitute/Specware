@@ -170,8 +170,9 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
    let def segregate(tm, tvs, o_ty, tms) =
          case tm of
            | Pi (tvs, tm, _) -> segregate(tm, tvs, o_ty, tms)
-           | And (a_tms,_) -> foldl (fn ((tvs, o_ty, tms), tm) -> segregate(tm, tvs, o_ty, tms)) (tvs, o_ty, tms) a_tms
-           | TypedTerm (tm, ty, _) -> segregate(tm, tvs, Some ty, tms)
+           | And (a_tms,_) ->
+             foldl (fn ((tvs, o_ty, tms), tm) -> segregate(tm, tvs, o_ty, tms)) (tvs, o_ty, tms) a_tms
+           | TypedTerm (tm, ty, _) -> segregate(tm, tvs, if some? o_ty then o_ty else Some ty, tms)
            | Any _ -> (tvs, o_ty, tms)
            | _ -> (tvs, o_ty, (maybePiTypedTerm(tvs, o_ty, tm)) :: tms)
    in
