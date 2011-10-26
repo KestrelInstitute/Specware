@@ -107,18 +107,6 @@ SpecCalc qualifying spec
          ops 
 	 merged_info.names  % new and old
 
-op compatibleTypes?(ty1: MSType, ty2: MSType): Bool =
-  anyType? ty1 || anyType? ty2 || equalType?(ty1, ty2)
-
-op chooseDefinedType(ty1: MSType, ty2: MSType): MSType =
-  if anyType? ty1 then ty2 else ty1
-
-op compatibleTerms?(tm1: MSTerm, tm2: MSTerm): Bool =
-  anyTerm? tm1 || anyTerm? tm2 || equalTerm?(tm1, tm2)
- 
-op chooseDefinedTerm(tm1: MSTerm, tm2: MSTerm): MSTerm =
-  if anyTerm? tm1 then tm2 else tm1
-
 (*
  op  mergeOpInfo : Spec -> OpMap -> OpInfo -> OpMap
  def mergeOpInfo spc ops info =
