@@ -19,7 +19,7 @@
 (defun term_symbol? (s)
   (and *print-constructors?* *print-metaslang-terms?*
        (member s '(:|Apply| :|ApplyN| :|Record| :|Bind| :|Let| :|LetRec| :|Var|
-		   :|Fun| :|Lambda| :|IfThenElse| :|Seq| ))))
+		   :|Fun| :|Lambda| :|IfThenElse| :|Seq| :|TypedTerm|))))
 
 (deftype term_symbol ()
   `(and symbol (satisfies term_symbol?)))
