@@ -240,7 +240,7 @@ SpecCalc qualifying spec
                                  new_tm
                   in
                   % let _ = if refine? then writeLine("refine "^(printAliases new_names)^": "^printType combined_srt^" =\n"^printTerm new_tm) else () in
-		  let combined_dfn = if refine? && ~old_defined? then
+		  let combined_dfn = if false && refine? && ~old_defined? then
                                        let triples = unpackTypedTerms old_info.dfn in
                                        maybePiAndTypedTerm (([], combined_srt, new_tm) :: triples)
                                      else 
