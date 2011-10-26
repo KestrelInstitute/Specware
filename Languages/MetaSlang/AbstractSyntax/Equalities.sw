@@ -568,7 +568,7 @@ op [a] chooseDefinedTerm(tm1: ATerm a, tm2: ATerm a): ATerm a =
 op [a] chooseLonger(l1: List a, l2: List a): List a =
   if length l2 > length l1 then l2 else l1
 
-def MetaSlang.maybeAndTerm (tms, pos) =
+op [a] maybeAndTerm (tms: List(ATerm a), pos: a): ATerm a =
   let tvs_type_term_triples = flatten (map unpackTypedTerms tms) in
   let non_dup_triples =
       foldr (fn (triple as (tvs, ty, tm), pending_tms) ->
