@@ -553,13 +553,59 @@ MetaSlang qualifying spec
 
  op traceMaybeAndTerm? : Bool = false
 
+op [a] compatibleTypes?(ty1: AType a, ty2: AType a): Bool =
+  anyType? ty1 || anyType? ty2 || equalTypeSubtype?(ty1, ty2, true)
+
+op [a] chooseDefinedType(ty1: AType a, ty2: AType a): AType a =
+  if anyType? ty1 then ty2 else ty1
+
+op [a] compatibleTerms?(tm1: ATerm a, tm2: ATerm a): Bool =
+  anyTerm? tm1 || anyTerm? tm2 || equalTerm?(tm1, tm2)
+ 
+op [a] chooseDefinedTerm(tm1: ATerm a, tm2: ATerm a): ATerm a =
+  if anyTerm? tm1 then tm2 else tm1
+
+op [a] chooseLonger(l1: List a, l2: List a): List a =
+  if length l2 > length l1 then l2 else l1
+
+def MetaSlang.maybeAndTerm (tms, pos) =
+  let tvs_type_term_triples = flatten (map unpackTypedTerms tms) in
+  let non_dup_triples =
+      foldr (fn (triple as (tvs, ty, tm), pending_tms) ->
+               case pending_tms of
+                 | [] -> [triple]
+                 | (o_tvs, o_ty, o_tm) :: old_tms ->
+                   if compatibleTypes?(ty, o_ty) && compatibleTerms?(tm, o_tm)
+                     then (chooseLonger(tvs, o_tvs),
+                           chooseDefinedType(ty, o_ty),
+                           chooseDefinedTerm(tm, o_tm))
+                          :: old_tms
+                     else triple :: pending_tms)
+            []
+            tvs_type_term_triples
+  in
+  let result = maybePiAndTypedTerm(non_dup_triples) in
+  let _ = if traceMaybeAndTerm? && (length non_dup_triples > 1) then
+            let _ = app (fn (tvs, ty, tm) -> writeLine(anyToString tvs^printTerm tm^": "
+                                                         ^printType ty)) non_dup_triples in
+            let _ = writeLine("=>") in
+            let _ = writeLine(printTerm result) in
+            let _ = writeLine("---") in
+            ()
+          else
+            ()
+  in 
+  result
+
+(*
+
  def describe_and_term tm =
    let s = if existsSubTerm (fn tm -> case tm of | ApplyN _ -> true | _ -> false) tm then
             "ApplyN: "
            else
             "        "
    in
-   writeLine (s ^ anyToString tm)
+   writeLine (s ^ printTerm tm)
 
  def MetaSlang.maybeAndTerm (tms, pos) =
    let tms = andTerms tms in
@@ -597,12 +643,13 @@ MetaSlang qualifying spec
    let _ = if traceMaybeAndTerm? && (length non_dup_terms > 1) then
              let _ = map (fn tm -> describe_and_term tm) non_dup_terms in
              let _ = writeLine("=>") in
-             let _ = writeLine(anyToString x) in
+             let _ = writeLine(printTerm x) in
              let _ = writeLine("---") in
              ()
            else
              ()
    in 
    x
+*)
 
 end-spec
