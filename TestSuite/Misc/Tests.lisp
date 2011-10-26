@@ -93,35 +93,36 @@
  ("libtest" 
   :swll "libtest"
   :output '(";;; Elaborating spec at $TESTDIR/libtest"
+            ";;; Elaborating spec at $SPECWARE/Library/Legacy/Utilities/System"
 	    ";;; Generating lisp file /tmp*/lgen_lisp_tmp.lisp"
 	    ""))
 
  ("Prettyprint Parens"
   :show "PP"
   :output '(";;; Elaborating spec at $TESTDIR/PP"
-	    (:options "")
+	    (:optional "")
 	    "spec  "
-	    (:options "")
+	    (:optional "")
 	    " type Injection1(a, b) = ((a -> b) | Function.injective?)"
-	    (:options "")
+	    (:optional "")
 	    " type T0 =  | Foo | Fum"
-	    (:options "")
+	    (:optional "")
 	    " type T = (T0 | truep)"
-	    (:options "")
+	    (:optional "")
 	    " type T1 = {x : T0 | true}"
-	    (:options "")
+	    (:optional "")
 	    " type T2 = ((T * T1) | truep)"
-	    (:options "")
+	    (:optional "")
 	    " op  truep : [a] a -> Bool"
-	    (:options "")
+	    (:optional "")
 	    " axiom List.induction1 is [a] "
 	    "    fa(p : List(a) -> Bool) "
-	    "     p([]) "
+	    "     p ([]) "
 	    "     && (fa(x : a, l : List(a)) "
-	    "          (p l => p(Cons(x, l)) => (fa(l : List(a)) p l)))"
+	    "          (p l => p (Cons(x, l)) => (fa(l : List(a)) p l)))"
             (:alternatives "endspec" "end-spec")
-	    (:options "")
-	    (:options "")
+	    (:optional "")
+	    (:optional "")
 	    ))
 
  ("swe Pattern A"

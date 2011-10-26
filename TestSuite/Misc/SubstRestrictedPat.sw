@@ -2,7 +2,7 @@ A=
 spec
 
   def f x =
-    let b = hd x in
+    let b = head x in
     case x of
       | a::_ | a = b -> a
       | _ -> 0
