@@ -329,13 +329,13 @@ def substOpMap (opMap, term) =
    %%	     | Theorem -> "Theorem" 
    %%	     | Axiom -> "Axiom" in
    %% let claim_type = claimType(claim_type) in
-   let snarkTypeDecls = snarkTypes(spc) in
+   let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
    let snarkBaseHypothesis = snarkProperties base_hypothesis in
    let snarkHypothesis = snarkProperties spc in
    let snarkConjecture = snarkAnswer(context, spc, claim, ansVars) in
-   let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkTypeDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
+   let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
      let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
@@ -346,7 +346,7 @@ def substOpMap (opMap, term) =
 
  op makeSnarkAnsEvalForm: LispCells * LispCells * LispCells * LispCells * LispCells * LispCell * String -> LispCell
 
- def makeSnarkAnsEvalForm(prover_options, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
+ def makeSnarkAnsEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %%let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %%let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %%let _ = if specwareDebug? then writeLine(" using: ") else () in
@@ -376,7 +376,7 @@ def substOpMap (opMap, term) =
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
 	  ]
 	  Lisp.++ (Lisp.list prover_options)
-	  Lisp.++ (Lisp.list snarkTypeDecl)
+	  Lisp.++ (Lisp.list snarkSortDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)
 	  Lisp.++ (Lisp.list snarkBaseHypothesis)
 	  Lisp.++ (Lisp.list baseAxioms)

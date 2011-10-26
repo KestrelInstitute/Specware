@@ -440,7 +440,7 @@ SpecCalc qualifying spec
 	   | Theorem -> "Theorem" 
 	   | Axiom -> "Axiom" in
    let claimType = getClaimType(claimType) in
-   let snarkTypeDecls = snarkTypes(spc) in
+   let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
    let snarkBaseHypothesis = if includeBase
@@ -450,17 +450,17 @@ SpecCalc qualifying spec
 %   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewriteSpc, prop))
 %                                     rewriteHypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
-   let snarkSubtypeHypothesis = snarkSubtypeProperties(context, spc) in
+   let snarkSubsortHypothesis = snarkSubsortProperties(context, spc) in
    let snarkPropertyHypothesis = foldr (fn (prop, list) ->
 					snarkPropertiesFromProperty(context, spc, prop)++list)
                                    [] hypothesis
    in
-   let snarkHypothesis = snarkSubtypeHypothesis ++ snarkPropertyHypothesis in
+   let snarkHypothesis = snarkSubsortHypothesis ++ snarkPropertyHypothesis in
    let snarkConjecture =
      case answerVariable of
        | None -> snarkConjectureRemovePattern(context, spc, claim)
        | Some var -> snarkAnswer(context, spc, claim, [var]) in
-   let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkTypeDecls, snarkOpDecls,
+   let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkSortDecls, snarkOpDecls,
 					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
    let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
@@ -502,7 +502,7 @@ SpecCalc qualifying spec
  op makeSnarkProveDecls: LispCells * LispCells * LispCells * LispCells % * LispCells
                            * LispCells * LispCell -> LispCell
 
- def makeSnarkProveDecls(proverOptions, snarkTypeDecl, snarkOpDecls,
+ def makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
 			 snarkBaseHypothesis, % snarkRewriteHypothesis,
 			 snarkHypothesis, snarkConjecture) =
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
@@ -543,8 +543,8 @@ SpecCalc qualifying spec
                Lisp.quote(Lisp.symbol("SNARK","=>"))]),
 
     Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
-    Lisp.list([Lisp.symbol("SNARK","USE-WELL-TYPEING"), Lisp.bool(false)])]
-   Lisp.++ (Lisp.list snarkTypeDecl)
+    Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
+   Lisp.++ (Lisp.list snarkSortDecl)
    Lisp.++ (Lisp.list snarkOpDecls)
    Lisp.++ (Lisp.list proverOptions)
    Lisp.++ (Lisp.list [setOfSupportOn])
@@ -584,14 +584,14 @@ Lisp.list([Lisp.symbol("SNARK","DECLARE-ORDERING-GREATERP"),
  op makeSnarkProveEvalForm: LispCells * LispCells * LispCells * LispCells % * LispCells
                            * LispCells * LispCell * String -> LispCell
 
- def makeSnarkProveEvalForm(proverOptions, snarkTypeDecl, snarkOpDecls, snarkBaseHypothesis,
+ def makeSnarkProveEvalForm(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis,
 			    % snarkRewriteHypothesis,
 			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %let _ = if specwareDebug? then writeLine(" using: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
-   let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkTypeDecl, snarkOpDecls,
+   let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls,
 					      snarkBaseHypothesis, % snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture) in
    	 Lisp.list 
