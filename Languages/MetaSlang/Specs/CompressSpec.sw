@@ -97,7 +97,7 @@ AnnSpec qualifying spec
 		    Cons (TypedTerm (Any noPos, old_type, noPos),
 			  new_decls))
 	         []
-		 (old_decls ++ old_defs)
+		 (old_decls)  %  ++ old_defs
        in
        let new_defs =
            foldl (fn (new_defs,old_def) ->
