@@ -384,7 +384,11 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op termInnerTerm : [b] ATerm b -> ATerm b
 
  op maybeAndType  : [b] List (AType b) * b -> AType b % Defined in Equalities.sw
- op maybeAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
+ op maybeMkAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
+ def maybeMkAndTerm(tms, a) =
+   case tms of
+     | [tm] -> tm
+     | _ -> And(tms, a)
 
  op [a] anyTerm?(t: ATerm a): Bool =
    case t of
@@ -567,7 +571,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    if i >= len then fail("Less than "^show (i+1)^" refined terms")
    else
    let (pref, _, post) = splitAt(tms, len - i - 1) in
-   maybeAndTerm(pref++(n_tm::post), termAnn full_tm)
+   maybeMkAndTerm(pref++(n_tm::post), termAnn full_tm)
 
 
  op [a] andTerms (tms: List(ATerm a)): List(ATerm a) =
@@ -767,7 +771,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t,   a) % TODO: what if map alters vars??
 
-         | And (tms, a)    -> maybeAndTerm (map mapRec tms, a)
+         | And (tms, a)    -> maybeMkAndTerm (map mapRec tms, a)
 
          | _           -> term
 
@@ -1072,7 +1076,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 			     
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t, a)  % TODO: what if map alters vars?
 
-         | And (tms, a)    -> maybeAndTerm (map mapT tms, a)
+         | And (tms, a)    -> maybeMkAndTerm (map mapT tms, a)
 
          | _ -> term
 			     
@@ -1443,7 +1447,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 	  Pi          (tvs, replaceRec tm, a)
 
         | And         (               tms, a) ->
-	  maybeAndTerm (map replaceRec tms, a)
+	  maybeMkAndTerm (map replaceRec tms, a)
 
         | Any _ -> term
 
