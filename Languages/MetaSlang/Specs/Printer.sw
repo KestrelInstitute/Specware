@@ -701,7 +701,7 @@ AnnSpecPrinter qualifying spec
       let context = context << {printType = false} in
       prettysNone [pp.LCurly,
                    blockFill (0, 
-                              [(0, ppPattern context ([0, 0, 1] ++ path, false) pat), 
+                              [(0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
                                (0, string " : "), 
                                (0, ppType    context ([0]       ++ path, Subtype) s), 
                                (0, pp.Bar), 
