@@ -391,15 +391,16 @@ spec
     %% let _ = writeLine("subtypeRules for\n"^printTerm term) in
     if ~addSubtypeRules? then []
     else
-    let subtypes = foldSubTerms (fn (t, subtypes) ->
-                                 let ty = inferType(context.spc, t) in
-                                 if subtype? (context.spc, ty) && ~(typeIn?(ty, subtypes)) && ~ (embed? Subtype ty)
-                                   %% Not sure about the ~(embed? ..) but need some restriction to avoid trivial application
-                                   then
-                                     %% let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in
-                                     Cons(ty, subtypes)
-                                   else subtypes)
-                      [] term
+    let subtypes = foldSubTerms
+                     (fn (t, subtypes) ->
+                        let ty = inferType(context.spc, t) in
+                        if subtype?(context.spc, ty) && ~(typeIn?(ty, subtypes)) && ~(embed? Subtype ty)
+                          %% Not sure about the ~(embed? ..) but need some restriction to avoid trivial application
+                          then
+                            %% let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in
+                            Cons(ty, subtypes)
+                        else subtypes)
+                     [] term
     in
     flatten
       (map (fn ty -> let Some(sty, p) = subtypeComps (context.spc, ty) in
@@ -452,41 +453,29 @@ spec
   op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
     if ~addContextRules? then []
     else
-    let def collectRules(tm, path) =
+    let def collectRules(tm, path, sbst) =
           % let _ = writeLine("collectRules: "^anyToString path^"\n"^printTerm tm) in
           case path of
             | [] -> []
             | i :: r_path ->
           case tm of
             | TypedTerm(fn_tm, ty, _) | i = 1 ->
-                  (let param_rls = parameterRules ty in
-                   let post_condn_rules =
-                       case varProjections(ty, context.spc) of
-                         | Some(pred, var_projs as _ :: _)->
-                           let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
-                           let rng = range_*(context.spc, ty, true) in
-                           let sbst = map (fn (v, proj?) ->
-                                             case proj? of
-                                               | None -> (v, result_tm)
-                                               | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
-                                        var_projs                                                 
-                           in
-                           let def getSisterConjuncts(pred, path) =
-                                 % let _ = writeLine("gsc: "^anyToString path^"\n"^printTerm pred) in
-                                 case pred of
-                                   | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
-                                     (case path of
-                                      | 1 :: r_path ->
-                                        let sister_cjs = getConjuncts p in
-                                        assertRulesFromPreds(context, map (fn cj -> substitute(cj, sbst)) sister_cjs)
-                                          ++ getSisterConjuncts(q, r_path)
-                                      | _ -> [])
-                                   | _ -> collectRules(pred, path)
-                           in
-                           getSisterConjuncts(pred, r_path)
-                         | _ -> []
-                   in
-                   param_rls ++ post_condn_rules)
+              (let param_rls = parameterRules ty in
+               let post_condn_rules =
+                   case varProjections(ty, context.spc) of
+                     | Some(pred, var_projs as _ :: _)->
+                       let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+                       let rng = range_*(context.spc, ty, true) in
+                       let sbst = map (fn (v, proj?) ->
+                                         case proj? of
+                                           | None -> (v, result_tm)
+                                           | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
+                                    var_projs                                                 
+                       in
+                       collectRules(pred, r_path, sbst)
+                     | _ -> []
+               in
+               param_rls ++ post_condn_rules)
             | _ ->
           let rls =
               case tm of
@@ -494,9 +483,25 @@ spec
                   assertRules(context, p, "if then", false)
                 | IfThenElse(p, _, _, _) | i = 2 ->
                   assertRules(context,negate p,"if else", false)
+                | Apply(Fun(And,_,_), _,_) | i = 1 ->
+                  let def getSisterConjuncts(pred, path) =
+                        % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
+                        case pred of
+                          | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
+                            (case path of
+                             | 1 :: r_path ->
+                               let sister_cjs = getConjuncts p in
+                               assertRulesFromPreds(context,
+                                                    map (fn cj -> substitute(cj, sbst))
+                                                      sister_cjs)
+                                 ++ getSisterConjuncts(q, r_path)
+                             | _ -> [])
+                          | _ -> []
+                  in
+                  getSisterConjuncts(tm, path)
                 | _ -> []
           in
-          rls ++ collectRules(ithSubTerm(tm, i), r_path)
+          rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst)
        def parameterRules(ty: MSType) =
          case ty of
            | Arrow(dom, rng, _) ->
@@ -509,7 +514,7 @@ spec
              dom_rls ++ parameterRules rng
            | _ -> []
     in
-    collectRules (top_term, reverse path)
+    collectRules (top_term, reverse path, [])
 
   op rewriteDebug?: Bool = false
 
