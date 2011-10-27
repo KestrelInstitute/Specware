@@ -32,6 +32,11 @@ MS qualifying spec
  op mkSubtype      : MSType * MSTerm               -> MSType
  op mkQuotientType : MSType * MSTerm               -> MSType
  op mkProduct      : List MSType                   -> MSType
+ op mkRecordType (fields: List(Id * MSType)): MSType =
+   Product(fields, noPos)
+ op mkCanonRecordType(fields: List(Id * MSType)): MSType =
+   mkRecordType(sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) fields)
+
  op mkCoProduct    : List (String * Option MSType) -> MSType
 
  def mkTyVar        name        = TyVar    (name,       noPos)
@@ -96,6 +101,8 @@ MS qualifying spec
  op mkIfThenElse  : MSTerm * MSTerm * MSTerm           -> MSTerm
 
  def mkRecord     fields          = Record     (fields,                  noPos)
+ op mkCanonRecord(fields: List(Id * MSTerm)): MSTerm =
+   mkRecord(sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) fields)
  def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
  def mkLetRec     (decls, term)   = LetRec     (decls, term,             termAnn(term))
  def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], termAnn(term))
