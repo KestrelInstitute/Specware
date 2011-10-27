@@ -57,7 +57,8 @@ op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var 
               | _ -> None)
     | _ -> None
 
-def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+def Coalgebraic.maintainOpsCoalgebraically
+      (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let intro_qid = head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
@@ -74,7 +75,9 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
            | Some (result_var, deref?, _) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              let result_tm = case deref? of
-                               | Some (id, _) -> mkApply(mkProject(id, range_*(spc, ty, true), state_ty), result_tm0)
+                               | Some (id, _) ->
+                                 mkApply(mkProject(id, range_*(spc, ty, true), state_ty),
+                                         result_tm0)
                                | None -> result_tm0
              in
              % let _ = writeLine("\nLooking at "^show qid) in
@@ -106,10 +109,13 @@ def Coalgebraic.maintainOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules:
 op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
   case tm of
     | Bind(Forall, _, bod,_) -> findHomomorphismFn bod
-    | Apply(Fun(Equals,_,_),Record([(_,e1),(_,Apply(Fun(Op(qid,_),_,_), _, _))], _),_) -> Some qid
+    | Apply(Fun(Equals,_,_),
+            Record([(_,e1),(_,Apply(Fun(Op(qid,_),_,_), _, _))], _),_) ->
+      Some qid
     | _ -> None
 
-def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+def Coalgebraic.implementOpsCoalgebraically
+  (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   case qids of
     | [replace_op_qid, assert_qid] ->
       (case findPropertiesNamed(spc, assert_qid) of
@@ -126,16 +132,18 @@ def Coalgebraic.implementOpsCoalgebraically(spc: Spec, qids: QualifiedIds, rules
                      let (tvs, ty, tm) = unpackFirstTerm info.dfn in
                      case range_*(spc, ty, false) of
                        | Subtype(_, Lambda([(_, _, body)], _), _)
-                           | existsSubTerm (fn st -> case st of
-                                                       | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
-                                                       | _ -> false)
+                           | existsSubTerm
+                               (fn st -> case st of
+                                           | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
+                                           | _ -> false)
                                body
                          ->
                          primaryOpName info :: qids
                        | _ ->
-                     if existsSubTerm (fn st -> case st of
-                                                       | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
-                                                       | _ -> false)
+                     if existsSubTerm
+                         (fn st -> case st of
+                                     | Fun(Op(qid,_), _, _) -> qid = replace_op_qid
+                                     | _ -> false)
                          tm
                        then primaryOpName info :: qids
                        else qids
@@ -227,12 +235,12 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
               let state_res = case tryIncrementalize(state_rec_prs) of
                                 | (Some src_tm, inc_rec_prs) ->
                                   if inc_rec_prs = [] then src_tm
-                                  else mkRecordMerge(src_tm, Record(reverse inc_rec_prs, a))
+                                  else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
                                 | (None, _) -> Record(state_rec_prs, a)
               in
               if result_tuple_info = []
                 then state_res
-                else mkRecord((state_id, state_res) :: opt_rec_prs))             
+                else mkCanonRecord((state_id, state_res) :: opt_rec_prs))             
            | Apply(Fun(Equals,_,_), _, _) ->
              (case recordItemVal (([], []), tm) of
                 | ([(id, newval)], []) -> Record([(id, newval)], noPos)
@@ -315,7 +323,7 @@ op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleS
    stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
    print("stored_qids: "^anyToString (map show stored_qids));
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
-   new_spc <- return(addTypeDef(new_spc, state_qid, Product(field_pairs, noPos)));
+   new_spc <- return(addTypeDef(new_spc, state_qid, mkCanonRecordType(field_pairs)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
