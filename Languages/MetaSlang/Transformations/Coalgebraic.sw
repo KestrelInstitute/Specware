@@ -59,7 +59,7 @@ op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var 
 
 def Coalgebraic.maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
-  let intro_qid = head qids in
+  let intro_qid as Qualified(intro_q, intro_id)= head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
    let intro_fn = mkOp(intro_qid, intro_ty) in
@@ -97,7 +97,11 @@ def Coalgebraic.maintainOpsCoalgebraically
    let script = Steps[%Trace true,
                       At(map Def (reverse qids),
                          Steps [%Trace true,
-                                Move [Post, Last, Last], % Go to postcondition just added and simplify
+                                Move [Search intro_id, Next], % Go to postcondition just added and simplify
+                                Simplify1(rules),
+                                mkSimplify(Fold intro_qid ::
+                                             rules),
+                                Move [Search intro_id, Next],
                                 Simplify1(rules),
                                 mkSimplify(Fold intro_qid ::
                                              rules)])]
