@@ -72,7 +72,8 @@ def Coalgebraic.maintainOpsCoalgebraically
          if ~(anyTerm? tm) then result
          else
          case getStateVarAndPostCondn(ty, state_ty, spc) of
-           | Some (result_var, deref?, _) ->
+           | Some (result_var, deref?, post_cond)
+               | ~(containsRefToOp?(post_cond, intro_qid)) ->
              let result_tm0 = mkApplyTermFromLambdas(mkOp(qid, ty), tm) in
              let result_tm = case deref? of
                                | Some (id, _) ->
@@ -90,7 +91,7 @@ def Coalgebraic.maintainOpsCoalgebraically
              let new_intro_ty = addPostCondition(mkEquality(intro_fn_rng, new_lhs, raw_rhs), ty) in
              let spc = addRefinedType(spc, info, new_intro_ty) in
              (spc, qid :: qids)
-           | None -> result
+           | _ -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let script = Steps[%Trace true,
@@ -210,9 +211,9 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
 op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
 
 op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
-                            deref?: Option(Id * List(Id * MSPattern)),
-                            qid: QualifiedId, spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
-                            field_pairs: List(Id * MSType))
+                            deref?: Option(Id * List(Id * MSPattern)), qid: QualifiedId,
+                            spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
+                            field_pairs: List(Id * MSType), result_ty: MSType)
      : MSTerm =
    let (state_id, result_tuple_info) =
        case deref? of
@@ -247,7 +248,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                 | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality.\n"^printTerm tm);
                         mkVar("Unrecognized_term", state_ty)))
            | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term.\n"^printTerm tm);
-                   mkVar("Unrecognized_term", state_ty))
+                   mkVar("Unrecognized_term", result_ty))
        def recordItemVal((state_itms, result_itms), cj) =
          case cj of
            | Apply(Fun(Equals,_,_),Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
@@ -293,9 +294,10 @@ op makeDefinitionsForUpdatingCoType
             | Some(state_var, deref?, post_condn) ->
               % let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
               addRefinedDef(spc, info,
-                            makeDefForUpdatingCoType(top_tm, post_condn, state_var, deref?,
-                                                     primaryOpName info, spc, state_ty, stored_qids,
-                                                     field_pairs))))
+                            makeDefForUpdatingCoType
+                              (top_tm, post_condn, state_var, deref?,
+                               primaryOpName info, spc, state_ty, stored_qids,
+                               field_pairs, range_*(spc, ty, true)))))
     spc spc.ops
                            
 op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
