@@ -40,7 +40,9 @@
 	      ))
    ("Tutorial: MatchingProofs p2A (subtype)" 
     :sw "/UserDoc/tutorial/example/MatchingProofs#p2A"
-    :output '(";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching_Oblig"
+    :output '((:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/")
+              (:optional "creating directory: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/")
+	      ";;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#WordMatching_Oblig"
 	      ";;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p2A"
               (:optional 
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top"
@@ -51,7 +53,7 @@
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
                ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String")
-	      "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.sw"
+              "    Expanded spec file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.sw"
 	      "    Snark Log file: $SPECWARE/UserDoc/tutorial/example/Snark/MatchingProofs/p2A.log"
 	      "p2A: Conjecture word_matches_at?_Obligation_subtype in MatchingObligations#WordMatching_Oblig is Proved! *"
 	      (:optional "")
@@ -163,12 +165,20 @@
    ("Tutorial: swl find-matches" 
     :swl "/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
     :output '(";;; Generating lisp file $TESTDIR/find-matches.lisp"
-              "WARNING: Non-constructive def for List-Spec::lengthOfListFunction"
-	      "WARNING: Non-constructive def for List-Spec::definedOnInitialSegmentOfLength-2"
-	      "WARNING: Non-constructive def for Function-Spec::inverse-1-1"
-	      "WARNING: Non-constructive def for Function-Spec::surjective?"
-	      "WARNING: Non-constructive def for Function-Spec::injective?"
-	      "")
+              (:alternatives
+               ("WARNING: Non-constructive def for Function-Spec::injective?"
+                "WARNING: Non-constructive def for Function-Spec::surjective?"
+                "WARNING: Non-constructive def for Function-Spec::inverse-1-1"
+                "WARNING: Non-constructive def for List-Spec::definedOnInitialSegmentOfLength-2"
+                "WARNING: Non-constructive def for List-Spec::lengthOfListFunction")
+               ("WARNING: Non-constructive def for List-Spec::lengthOfListFunction"
+                "WARNING: Non-constructive def for List-Spec::definedOnInitialSegmentOfLength-2"
+                "WARNING: Non-constructive def for Function-Spec::inverse-1-1"
+                "WARNING: Non-constructive def for Function-Spec::surjective?"
+                "WARNING: Non-constructive def for Function-Spec::injective?"))
+	      (:optional "")
+	      (:optional "")
+	      )
     :files '("$TESTDIR/find-matches.lisp"))
 
    ("Tutorial: Load find-matches.lisp" 

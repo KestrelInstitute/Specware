@@ -24,10 +24,8 @@
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/List"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Option"
 	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/String"
-	    ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/System")
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
-
-
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/axioms/theorem_one_gtq.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/axioms/ does not exist, will create.")
