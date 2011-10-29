@@ -8,6 +8,54 @@
 (defpackage :MS)
 (defpackage :Position)
 
+;;; ========================================================================
+
+;; TODO:  can more of this be expressed directly in metaslang?
+(defun Parser4::mkProverOptions (string)
+  (let ((done? nil)
+	(whitespaces '(#\space #\tab #\newline)))
+    (let* ((trimmed-string (string-trim whitespaces string))
+	   (index 0)
+	   (result 
+	    (catch 'problem
+	      (prog1
+		  (handler-bind ((error #'(lambda (signal) 
+					    (throw 'problem (list signal index)))))
+		    (let ((sexp nil)
+			  (s-expressions ())
+			  (n (length trimmed-string)))
+		      (loop
+                          (multiple-value-setq (sexp index)
+                            ;; bug in Allegro?  
+                            ;; Setting eof-error-p to nil won't suppress eof error 
+                            ;; unless there is no text at all to parse.
+                            ;; At any rate, other kinds of errors are also possible.
+                            (let ((*package* (find-package 'snark)))
+                              (read-from-string trimmed-string nil nil 
+                                                :start               index 
+                                                :preserve-whitespace t)))
+                          (push sexp s-expressions)
+			(when (>= index n)
+			  (return (reverse s-expressions))))))
+                ;; Prog1 returns the value of the first expression.
+		;; So if there were no problems, done? will become true but
+		;; result will be bound to the value returned from the loop.
+		(setq done? t)))))
+      (if done?
+	  (cons :|OptionString| result)
+          ;; cause parser error?
+          (let ((signal (first result))
+                (index  (second result)))
+            (let ((error-msg 
+                   (format nil "~A at position ~D" 
+                           (if (eq (type-of signal) 'common-lisp::end-of-file)
+                               "Premature EOF for expression starting"
+                               signal)
+                           index)))
+              (cons :|Error| (cons error-msg string))))))))
+
+;;; ========================================================================
+
 (defun new-version? (n) 
   ;; temporary hack for transition to new code
   (let* ((sym (find-symbol "ABSTRACTTYPE-3" "STANDARDSPEC"))

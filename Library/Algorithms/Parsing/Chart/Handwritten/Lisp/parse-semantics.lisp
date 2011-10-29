@@ -2,6 +2,17 @@
 
 (in-package :Parser4)
 
+;; These two may be used by various MetaSlang constructors called from various parsers,
+;; using the following interface:
+;;
+;; type ParserOptional a  % to indicate that value might be non-MetaSlang value of :unspecified
+;;
+;; op [a] Parser4.parser_unspecified? : ParserOptional a -> Bool % primitive defined in parse-semantics.lisp
+;; op [a] Parser4.parser_id           : ParserOptional a -> a    % primitive defined in parse-semantics.lisp
+
+(defun parser_unspecified? (x) (unspecified? x)) 
+(defun parser_id (x) x)
+
 (defun parser-get-values (session &optional (min-size 1))
   (let* ((locations (parse-session-locations session))
 	 (max-index        (length locations))

@@ -5,6 +5,7 @@
 SpecCalc qualifying spec
   import ../AbstractSyntax/Types
   import /Library/Legacy/Utilities/Lisp
+  import SCConstructors
 
   op parseSpecwareFile : String -> Option SpecTerm
 
