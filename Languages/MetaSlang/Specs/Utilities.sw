@@ -2698,9 +2698,15 @@ op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTer
              (case matchPatterns(new_pat, old_pat) of
                | None -> new_p
                | Some sb ->
-             Lambda([(new_pat, c, mkSimpConj(getConjuncts(substitute(old_ptm, sb)) ++ getConjuncts new_ptm))], a))
+              let comb_bool = combineBool(substitute(old_ptm, sb), new_ptm) in
+              Lambda([(new_pat, c, comb_bool)], a))
            | (Lambda _, _) -> old_p
            | _ -> new_p
+       def combineBool(old_b, new_b) =
+         case old_b of
+           | IfThenElse(p, q, r, a) ->
+             IfThenElse(p, combineBool(q, new_b), combineBool(r, new_b), a)
+           | _ -> mkSimpConj(getConjuncts old_b ++ getConjuncts new_b)
     in
     combineTypes(old_ty, new_ty) 
 
