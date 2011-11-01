@@ -241,7 +241,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                                 | (Some src_tm, inc_rec_prs) ->
                                   if inc_rec_prs = [] then src_tm
                                   else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
-                                | (None, _) -> Record(state_rec_prs, a)
+                                | (None, _) -> mkCanonRecord(state_rec_prs)
               in
               if result_tuple_info = []
                 then state_res
