@@ -435,7 +435,11 @@
 (defvar *parser-source* nil)  ; bound in calls to parser
 (defvar *make-source-warnings-seen* 0)
 
+
 (defun make-region (left right) 
+  (makeRegion-2 left right))
+
+(defun makeRegion-2 (left right) 
   (case (first *parser-source*)
     (:file   (cons :|File|     (vector (second *parser-source*) left right)))
     (:string (cons :|String|   (vector (second *parser-source*) left right)))

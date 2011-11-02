@@ -1,5 +1,7 @@
 ;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
+(defpackage :SpecCalc (:use :COMMON-LISP-USER))
+(defpackage :SCParser (:use :COMMON-LISP-USER))
 (in-package :Parser4)
 
 ;;; ========================================================================
@@ -121,18 +123,18 @@
 
 (define-sw-parser-rule :SC-TOPLEVEL-TERM ()
   (:tuple (1 :SC-TERM))
-  (make-sc-toplevel-term 1 ':left-lcb ':right-lcb))
+  (SCParser::mkToplevelTerm-3 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-TOPLEVEL-DECLS ()
   (:tuple (1 :SC-DECLS))
-  (make-sc-toplevel-decls 1 ':left-lcb ':right-lcb))
+  (SCParser::mkToplevelDecls-3 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DECLS ()
   (:repeat+ :SC-DECL nil))
 
 (define-sw-parser-rule :SC-DECL ()
   (:tuple  (1 :NAME) :EQUALS (2 :SC-TERM))
-  (make-sc-decl 1 2 ':left-lcb ':right-lcb))
+  (SpecCalc::mkSCDecl-4 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-TERM

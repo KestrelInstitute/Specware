@@ -164,11 +164,11 @@
 ;;;  TOPLEVEL
 ;;; ========================================================================
 
-(defun make-sc-toplevel-term (sc-term l r)
-  (SpecCalc::mkTerm-2 sc-term (make-pos l r)))
+;; (defun make-sc-toplevel-term (sc-term l r)
+;;  (SpecCalc::mkTerm-2 sc-term (make-pos l r)))
 
-(defun make-sc-toplevel-decls (sc-decls l r)
-  (SpecCalc::mkDecls-2 sc-decls (make-pos l r)))
+;; (defun make-sc-toplevel-decls (sc-decls l r)
+;;  (SpecCalc::mkDecls-2 sc-decls (make-pos l r)))
 
 (defun make-sc-decl (name sc-term l r)
   (declare (ignore l r))

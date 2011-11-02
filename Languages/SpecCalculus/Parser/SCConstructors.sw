@@ -14,6 +14,7 @@ spec
 
  op [a] Parser4.parser_unspecified? : ParserOptional a -> Bool % primitive defined in semantics.lisp
  op [a] Parser4.parser_id           : ParserOptional a -> a    % primitive defined in semantics.lisp
+ op     Parser4.makeRegion          : LCB * LCB -> Position    % primitive defined in semantics.lisp
 
  op [a] defaultToNull (x : ParserOptional (List a)) : List a =
    if Parser4.parser_unspecified? x then
@@ -39,11 +40,15 @@ spec
 
  %% =============================================================================
 
- op mkImportSpecElem (tms : SCTerms, pos : Position) : SpecElemTerm = (Import tms, pos)
+ op mkRegion (left : LCB) (right : LCB) : Position =
+   Parser4.makeRegion (left, right)
 
- op mkRegion (left : LCB) (right : LCB) : Position
+ op mkImportSpecElem (tms : SCTerms, pos : Position) : SpecElemTerm = 
+  (Import tms, pos)
 
- op SpecCalc.mkSCDecl (name : String, term : SCTerm) : SCDecl = (name, term)
+ op SpecCalc.mkSCDecl (name : String, term : SCTerm, left : LCB, right : LCB) : SCDecl = 
+  % TODO: don't ignore left and right
+  (name, term)
 
  op SCParser.mkSpecTerm (elements : SpecElemTerms, left : LCB, right : LCB) : SCTerm =
   SpecCalc.mkSpec (elements, mkRegion left right)
@@ -54,10 +59,6 @@ spec
  op SCParser.mkToplevelDecls (decls : SCDecls, left : LCB, right : LCB) : SpecTerm =
   SpecCalc.mkDecls (decls, mkRegion left right)
  
- op SCParser.mkDecl (name : String, term : SCTerm, left : LCB, right : LCB) : SCDecl =
-  % TODO: don't ignore left and right
-  SpecCalc.mkSCDecl (name, term) 
-
  op SCParser.mkPrint (term : SCTerm, left : LCB, right : LCB) : SCTerm = 
   SpecCalc.mkPrint (term, mkRegion left right)
 
@@ -90,7 +91,7 @@ spec
 
  op SCParser.mkUnannotatedOpRef      (opRef : QualifiedId,                      left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, None)      % TODO: use left and right
  op SCParser.mkAnnotatedOpRef        (opRef : QualifiedId, typ : MSType,        left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, Some typ)  % TODO: use left and right
- op SCParser.mkRenaming              (rules : RenamingRules,                    left : LCB, right : LCB) : Renaming     = (rules,                       mkRegion left right)
+ op SCParser.mkRenaming              (rules : RenamingRules,                    left : LCB, right : LCB) : Renaming     = (rules,                            mkRegion left right)
  op SCParser.mkTypeRenamingRule      (lref  : TypeRef,     rref : TypeRef,      left : LCB, right : LCB) : RenamingRule = (Type      (lref, rref, [rref]),   mkRegion left right)
  op SCParser.mkOpRenamingRule        (lref  : OpRef,       rref : OpRef,        left : LCB, right : LCB) : RenamingRule = (Op        (lref, rref, [rref.1]), mkRegion left right)
  op SCParser.mkAmbiguousRenamingRule (lref  : AmbigRef,    rref : AmbigRef,     left : LCB, right : LCB) : RenamingRule = (Ambiguous (lref, rref, [rref]),   mkRegion left right)
