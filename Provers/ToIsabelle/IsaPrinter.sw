@@ -645,6 +645,49 @@ removeSubTypes can introduce subtype conditions that require addCoercions
       | (TypeDef (type_id, _)) :: _ -> Some type_id
       | _ :: r -> firstTypeDef r
 
+  op Specware.Specware4: String
+
+  op normIsaPath(p: List String): List String =
+    let specware4 = splitStringAt(Specware4, "/") in
+    let sw4_len = length specware4 in
+    let red_p = if length p >= sw4_len && subFromTo(p, 0, sw4_len) = specware4
+                  then let rem_p = case subFromTo(p, sw4_len, length p) of
+                                     | "Library" :: _ ->
+                                       ["Library"]
+                                     | rem_p -> rem_p
+                       in
+                       "$SPECWARE4" :: rem_p
+                  else abbreviatedPath p
+    in
+    red_p ++ ["Isa"]
+
+  op tryRelativize(p: List String, rel_p: List String): List String =
+    let def aux(pi, rel_pi) =
+          %let _ = writeLine("tryRelativize:\n"^anyToString pi^"\n"^anyToString rel_pi) in
+          case (pi, rel_pi) of
+            | ([], []) -> []
+            | ([], rel_pi) -> ["/"]
+            | (pi, []) -> pi
+            | (x :: r_p, y :: r_rel_p) | x = y ->
+              aux(r_p, r_rel_p)
+            | _ -> if length rel_pi > 3 then p
+                    else tabulate(length rel_pi, fn _ -> "..") ++ pi
+    in
+    aux(p, rel_p)
+
+  op importName(c:Context) (thy_nm: Id) (thy_fil_nm: Id): String =
+    let cur_uid = getCurrentUID c in
+    let ctxt_comps = normIsaPath(butLast(splitStringAt(uidToFullPath cur_uid, "/"))) in
+    let thy_comps  = normIsaPath(removeSuffix(splitStringAt(thy_fil_nm, "/"), 2)) in
+    if thy_comps = ctxt_comps
+      then thy_nm
+    else
+      let rel_path = tryRelativize(thy_comps, ctxt_comps) in
+      let nm = foldr (fn (compi, result) -> compi^"/"^result) thy_nm rel_path in
+      (%writeLine("imports "^nm);
+       if exists? (fn c -> c = #/) nm
+         then "\""^nm^"\"" else nm)
+
   op  ppImport: Context -> SCTerm -> Spec -> Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
@@ -668,12 +711,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
              else toFile(thy_fil_nm,
                          showValue(val, c.recursive?, Some uid, Some thy_nm))
            else ();
-	 prString (case thy_nm of
-                     | "Base" ->
-                       (case getEnv "SPECWARE4" of
-                          | Some _ -> "\"$SPECWARE4/Library/Isa/Base\""
-                          | None -> "Base")
-                     | _ -> thy_nm))
+	 prString (importName c thy_nm thy_fil_nm))
 
   op  ppSpecElements: Context -> Spec -> SpecElements -> Pretty
   def ppSpecElements c spc elems =
