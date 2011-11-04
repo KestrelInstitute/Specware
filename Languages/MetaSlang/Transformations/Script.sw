@@ -24,6 +24,7 @@ spec
     | RightToLeft QualifiedId
     | MetaRule    QualifiedId
     | RLeibniz    QualifiedId           % Hack. Will be handled in more general way in the future
+    | Weaken      QualifiedId
     | AllDefs
 
   type RuleSpecs = List RuleSpec
@@ -84,6 +85,7 @@ spec
      | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
      | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
      | RLeibniz    qid -> ppConcat[ppString "rev-leibniz ", ppQid qid]
+     | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
      | AllDefs -> ppString "alldefs"
 
  op moveString(m: Movement): String =
@@ -243,6 +245,7 @@ spec
  op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
  op mkMetaRule(qid: QualifiedId): RuleSpec = MetaRule qid
  op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
+ op mkWeaken(qid: QualifiedId): RuleSpec = Weaken qid
  op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
 
  op ruleConstructor(id: String): QualifiedId -> RuleSpec =
@@ -261,6 +264,7 @@ spec
      | "right-to-left" -> mkRightToLeft
      | "apply" -> mkMetaRule
      | "rev-leibniz" -> mkRLeibniz
+     | "weaken" -> mkWeaken
      | "alldefs" -> mkAllDefs
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
@@ -349,6 +353,19 @@ spec
     in
     assertRules(context, thm, "Reverse Leibniz "^show qid, true)
 
+  op weakenRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule =
+    case formula of
+      | Bind(Forall, vs,
+             Apply(Fun (Implies, _, _),
+                   Record([("1", p1),
+                           ("2", Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _))], _), _),
+             _) ->
+        let not_thm = mkBind(Forall, vs, mkImplies(p1, mkEquality(boolType, t2, t1))) in
+        axiomRules context (pt,desc,tyVars,not_thm,a)
+      | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _), _) ->
+        let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
+        axiomRules context (pt,desc,tyVars,not_thm,a)
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
@@ -378,6 +395,13 @@ spec
       | RightToLeft(qid) ->
         map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
+      | Weaken   qid ->
+        warnIfNone(qid, "Implication theorem ",
+                   foldr (\_lambda (p, r) ->
+                            if claimNameMatch(qid, p.2)
+                              then (weakenRules context p) ++ r
+                            else r)
+                     [] (allProperties spc))
       | MetaRule qid -> [makeMetaRule spc qid]
       | RLeibniz qid -> makeRevLeibnizRule context spc qid
       | AllDefs ->

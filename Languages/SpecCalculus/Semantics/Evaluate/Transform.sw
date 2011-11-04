@@ -96,6 +96,8 @@ spec
                              return (LeftToRight qid)}
       | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (RightToLeft qid)}
+      | Item("weaken",thm,_) -> {qid <- extractQId thm;
+                                 return (Weaken qid)}
       | Item("fold",opid,_) -> {qid <- extractQId opid;
                                 return (Fold qid)}
       | Item("unfold",opid,_) -> {qid <- extractQId opid;
@@ -104,6 +106,8 @@ spec
                                    return (Rewrite qid)}
       | Item("apply",opid,_) -> {qid <- extractQId opid;
                                  return (MetaRule qid)}
+      | Item("rev-leibniz",opid,_) -> {qid <- extractQId opid;
+                                       return (RLeibniz qid)}
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
 
  op getSearchString(se: TransformExpr): SpecCalc.Env String =
@@ -156,6 +160,8 @@ spec
                              return (Simplify1([LeftToRight qid]))}
       | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (Simplify1([RightToLeft qid]))}
+      | Item("weaken",thm,_) -> {qid <- extractQId thm;
+                                 return (Simplify1([Weaken qid]))}
       | Item("fold",opid,_) -> {qid <- extractQId opid;
                                 return (Simplify1([Fold qid]))}
       | Item("unfold",opid,_) -> {qid <- extractQId opid;
