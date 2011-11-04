@@ -215,10 +215,15 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
 op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
 
 op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
-                            deref?: Option(Id * List(Id * MSPattern)), qid: QualifiedId,
+                            deref?: Option(Id * List(Id * MSPattern)), op_qid: QualifiedId,
                             spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
                             field_pairs: List(Id * MSType), result_ty: MSType)
      : MSTerm =
+   let params = case top_dfn of
+                  | Lambda([(binds, p, o_bod)], a) ->
+                    patVars binds
+                  | _ -> []
+   in
    let (state_id, result_tuple_info) =
        case deref? of
          | None -> ("No id", [])
@@ -249,9 +254,11 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
            | Apply(Fun(Equals,_,_), _, _) ->
              (case recordItemVal (([], []), tm) of
                 | ([(id, newval)], []) -> Record([(id, newval)], noPos)
-                | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality.\n"^printTerm tm);
+                | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality in "^show op_qid^"\n"
+                               ^printTerm tm);
                         mkVar("Unrecognized_term", state_ty)))
-           | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term.\n"^printTerm tm);
+           | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term in "^show op_qid^"\n"
+                          ^printTerm tm);
                    mkVar("Unrecognized_term", result_ty))
        def recordItemVal((state_itms, result_itms), cj) =
          case cj of
@@ -264,17 +271,47 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
              (state_itms, (id, rhs) :: result_itms)
            | _ -> (writeLine("Ignoring conjunct\n"^printTerm cj);
                    (state_itms, result_itms))
-       def tryIncrementalize(rec_prs) =
-         foldl (fn ((opt_src_tm, result_prs), (id, tm)) ->
-                  case tm of
-                    | Apply(Fun(Op(qid,_),_,_), arg, _)
-                        | qualifiedIdToField qid = id && (case opt_src_tm of
-                                                            | None -> true
-                                                            | Some(src_tm) -> equalTerm?(arg, src_tm))
-                        -> (Some arg, result_prs)
-                    | _ -> (opt_src_tm, (id, tm) :: result_prs))
-           (None, [])
-           rec_prs
+       def tryIncrementalize(rec_prs: List(Id * MSTerm)): Option MSTerm * List(Id * MSTerm) =
+         let (opt_src_tm, result_prs) =
+             foldl (fn ((opt_src_tm, result_prs), (id, tm)) ->
+                      case tm of
+                        | Apply(Fun(Op(qid,_),_,_), arg, _)
+                            | qualifiedIdToField qid = id && (case opt_src_tm of
+                                                                | None -> true
+                                                                | Some(src_tm) -> equalTerm?(arg, src_tm))
+                            -> (Some arg, result_prs)
+                        | _ -> (opt_src_tm, (id, tm) :: result_prs))
+               (None, [])
+               rec_prs
+         in
+         if some? opt_src_tm || length result_prs = length field_pairs then (opt_src_tm, result_prs)
+           else
+             % let _ = writeLine("Incrementalizing "^show op_qid) in
+             let opt_src_tm =
+                 foldl (fn (result, (id, tm)) ->
+                          if some? result then result
+                          else
+                            % let _ = writeLine(id^": "^printTerm tm) in
+                            foldSubTerms
+                              (fn (s_tm, result) ->
+                                 if some? result then result
+                                 else case s_tm of
+                                        | Apply(Fun(Project idi, _, _), v as Var _, _) | idi = id ->
+                                          Some v
+                                        | Apply(Fun(Op(qidi,_), _, _), v as Var _, _)
+                                            | qualifiedIdToField qidi = id ->
+                                          Some v
+                                        | _ -> None)
+                              result tm)
+                   None result_prs
+             in
+             let opt_src_tm = if some? opt_src_tm then opt_src_tm
+                              else case findLeftmost (fn (_, ty) -> equalType?(ty, state_ty)) params of
+                                     | Some v -> Some(mkVar v)
+                                     | None -> None
+             in
+             % let _ = writeLine(case opt_src_tm of Some tm -> printTerm tm | None -> "None") in
+             (opt_src_tm, result_prs)
        def replaceBody(dfn, bod) =
          case dfn of
            | Lambda([(binds, p, o_bod)], a) ->
@@ -283,7 +320,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
    in
    let dfn = replaceBody(top_dfn, makeDef post_condn) in
    let unfold_tuple_fns = map Unfold stored_qids in
-   let (uf_dfn, _) = rewriteWithRules(spc, unfold_tuple_fns, qid, toPathTerm dfn) in
+   let (uf_dfn, _) = rewriteWithRules(spc, unfold_tuple_fns, op_qid, toPathTerm dfn) in
    uf_dfn
 
 op makeDefinitionsForUpdatingCoType
