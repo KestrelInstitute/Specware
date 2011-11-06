@@ -14,74 +14,51 @@ AnnSpec qualifying spec
  op subtractSpec1 (x_spec : Spec) (y_spec : Spec) (poly?: Bool): Spec  =
    %% If poly? is true remove an instance of  of a polymorphic type
    let
-     def subsumed? se_pair se_pairs =
-       case se_pairs of
-         | [] -> false
-         | (s2, e2) :: others -> 
-           (case se_pair.2 of
-              | Type (qid1, _) ->
-                (case e2 of
-                   | Type    (qid2, _) -> qid1 = qid2
-                   | TypeDef (qid2, _) -> qid1 = qid2
-                   | _ -> false)
-              | TypeDef (qid1, _) ->
-                (case e2 of
-                   | TypeDef (qid2, _) -> qid1 = qid2
-                   | _ -> false)
-              | Op (qid1, _, _) ->
-                (case e2 of
-                   | Op    (qid2, _, _) -> qid1 = qid2
-                   | OpDef (qid2, _, _) -> qid1 = qid2
-                   | _ -> false)
-              | OpDef (qid1, refine1, _) ->
-                (case e2 of
-                   | OpDef (qid2, refine2, _) -> qid1 = qid2 && refine1 <= refine2
-                   | _ -> false)
-              | e1 -> 
-                e1 = e2)
-           ||
-           subsumed? se_pair others
-             
-     def add_pair se_pair se_pairs =
-       if subsumed? se_pair se_pairs then
-         se_pairs
+     def add_pair pair pairs =
+       if exists? (fn prior_pair -> subsumedSpecElement? pair prior_pair) pairs then
+         pairs
        else
-         case se_pair.2 of
-           | Import (_, imported_spec, _, _) ->
-             let se_pairs = 
-                 foldl (fn (se_pairs, imported_elt) ->
-                          add_pair (imported_spec, imported_elt) se_pairs)
-                       se_pairs
-                       imported_spec.elements
+         case pair.2 of
+           | Import (_, imported_spec, imported_elements, _) ->
+             let pairs = 
+                 foldl (fn (pairs, imported_elt) ->
+                          add_pair (imported_spec, imported_elt) pairs)
+                       pairs
+                       imported_elements
              in
-             (se_pair :: se_pairs)
+             (pair :: pairs)
            | _ ->
-             (se_pair :: se_pairs)
-
-     def add_element se_pair se_pairs elements =
-       if subsumed? se_pair se_pairs then
+             (pair :: pairs)
+   in
+   let y_pairs = foldl (fn (y_se_pairs, y_elt) ->
+                          add_pair (y_spec, y_elt) y_se_pairs)
+                       [] 
+                       y_spec.elements
+   in
+   let
+     def add_element pair elements =
+       if exists? (fn y_pair -> subsumedSpecElement? pair y_pair) y_pairs then
          elements
        else
-         let e1 = se_pair.2 in
-         case e1 of
-           | Import (_, imported_spec, _, _) ->
+         case pair.2 of
+           | Import (_, imported_spec, imported_elts, _) ->
              foldl (fn (elements, imported_elt) ->
-                      add_element (imported_spec, imported_elt) se_pairs elements)
+                      add_element (imported_spec, imported_elt) elements)
                    elements
-                   imported_spec.elements
-           | _ ->
+                   imported_elts
+           | e1 ->
              e1 :: elements
    in
-
    %% The same element could be present via many import paths, so before we begin looking 
    %% for elements of x that are not in y, we elimate duplicates in the list of y elements.
    %% This is just an optimization, so tolerate some duplicates.
-
-   let y_se_pairs           = foldl (fn (pairs,    y_elt) ->  add_pair    (y_spec, y_elt) pairs)               [] y_spec.elements in
-   let x_but_not_y_elements = foldl (fn (elements, x_elt) ->  add_element (x_spec, x_elt) y_se_pairs elements) [] x_spec.elements in
-
+   let x_but_not_y_elements = foldl (fn (elements, x_elt) -> 
+                                       add_element (x_spec, x_elt) elements) 
+                                    []
+                                    x_spec.elements
+   in
    x_spec << {
-              elements = x_but_not_y_elements,
+              elements = reverse x_but_not_y_elements,
               ops      = mapDiffOps   x_spec.ops   y_spec.ops,
               types    = mapDiffTypes x_spec.types y_spec.types
 	}
@@ -116,17 +93,7 @@ AnnSpec qualifying spec
    case e1 of
      | Import (s1_tm, s1, _, _) ->
        (case e2 of
-          | Import (s2_tm, s2, _, _) -> 
-            let x1 = (s1 = s2) in
-            let x2 = sameSCTerm? (s1_tm, s2_tm) in
-            let _ = if (x1 ~= x2) then
-                     let _ = writeLine ("import confusion: " ^ anyToString x1 ^ " " ^ anyToString x2) in
-                     let _ = writeLine (showSCTerm s1_tm) in
-                     let _ = writeLine (showSCTerm s2_tm) in
-                     ()
-                   else
-                     ()
-            in x1 || x2
+          | Import (s2_tm, s2, _, _) -> sameSCTerm? (s1_tm, s2_tm)
           | _ -> false)
      | Type (qid1, _) ->
        (case e2 of
