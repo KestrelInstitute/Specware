@@ -717,6 +717,7 @@ spec
        %| ">="  -> Bool(>=(intVals fields))
        %| "min" -> Int(min(intVals fields))
        %| "max" -> Int(max(intVals fields))
+       | "divides" -> Bool(divides(intVals fields))
        | "modT" -> let (x,y) = intVals fields in
 		  if y = 0 then default()
 		    else Int(modT(x,y))
