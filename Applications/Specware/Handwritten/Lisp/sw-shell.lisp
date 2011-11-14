@@ -43,6 +43,7 @@
     ("lpunits"   . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
     ("transform" . "[unit-identifier] Enter transform shell for spec.")
     ("ctext"     . "[spec-term] Sets the current context for eval commands.
+                        \"None\" resets it to Base spec.
                         With no arguments displays context.")
     ("eval"      . "[expression] Evaluates expression with respect to current context.")
     ("e"         . "[expression] Abbreviation for eval.")
@@ -163,7 +164,7 @@
 						((member form '(OK |ok|))
 						 (return))
 						((not (eq form magic-eof-cookie))
-						 (let* ((*raw-command* )
+						 (let* (;(*raw-command* )
                                                         (results
                                                          (multiple-value-list 
                                                           (sw-shell-command *current-command-processor*
@@ -401,7 +402,7 @@
 				     (format t "~&Current context: ~a" cl-user::*current-swe-spec*)
 				     (format t "~&Current context: Base Spec"))
 				 (values))
-			  (if (string= argstr "None")
+			  (if (string-equal argstr "none")
 			      (progn (setq cl-user::*current-swe-spec* nil)
 				     (format t "~&Subsequent evaluation commands will import just the base spec.~%"))
 			      (cl-user::swe-spec argstr))))
@@ -444,7 +445,9 @@
 	   (set-base          (cl-user::set-base argstr))
 	   (show-base-unit-id (cl-user::show-base-unit-id))
 
-	   ((lisp l)  (with-break-possibility (lisp-value (multiple-value-list (eval (read-from-string argstr))))))
+	   ((lisp l)  (if (null argstr)
+                          (format t "Error: ~a requires an argument" *raw-command*)
+                        (with-break-possibility (lisp-value (multiple-value-list (eval (read-from-string argstr)))))))
 	   (cl        (with-break-possibility (cl-user::cl argstr)))
 	   (ld        (with-break-possibility (cl-user::ld argstr)))
 	   (cf        (cl-user::cf argstr))

@@ -43,7 +43,7 @@
 (defun sw-help (&optional command)
   (if command
       (let ((pr (assoc command *sw-help-strings* :test 'equal)))
-        (if pr (print-command-doc (car pr) (cdr pr) nil)
+        (if pr (print-command-doc (car pr) (cdr pr))
             (format t "No documentation for command.")))
       (loop for (com . helpstr) in *sw-help-strings* do
             (print-command-doc com helpstr)))
@@ -1154,7 +1154,9 @@
   (values))
 
 (defun ld (file)
-  (load (subst-home file)))
+  (if (null file)
+      (format t "Error: ld requires an argument")
+    (load (subst-home file))))
 
 (defun pwd ()
   (princ (namestring (Specware::current-directory)))
@@ -1168,10 +1170,14 @@
 (top-level:alias ("quit" ) () (exit))
 
 (defun cl (file)
-  (Specware::compile-and-load-lisp-file (subst-home file)))
+  (if (null file)
+      (format t "Error: cl requires an argument")
+    (Specware::compile-and-load-lisp-file (subst-home file))))
 
 (defun cf (file)
-  (compile-file (subst-home file)))
+  (if (null file)
+      (format t "Error: cf requires an argument")
+    (compile-file (subst-home file))))
 
 (defun help (&optional command)
   (sw-help command))
