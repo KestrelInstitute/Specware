@@ -248,12 +248,18 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                                   else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
                                 | (None, _) -> mkCanonRecord(state_rec_prs)
               in
+              % let _ = writeLine("makeDef: "^printTerm state_res) in
               if result_tuple_info = []
                 then state_res
                 else mkCanonRecord((state_id, state_res) :: opt_rec_prs))             
            | Apply(Fun(Equals,_,_), _, _) ->
              (case recordItemVal (([], []), tm) of
-                | ([(id, newval)], []) -> Record([(id, newval)], noPos)
+                | (state_rec_prs, []) ->
+                  (case tryIncrementalize(state_rec_prs) of
+                     | (Some src_tm, inc_rec_prs) ->
+                       if inc_rec_prs = [] then src_tm
+                       else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
+                     | (None, _) -> mkCanonRecord(state_rec_prs))
                 | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality in "^show op_qid^"\n"
                                ^printTerm tm);
                         mkVar("Unrecognized_term", state_ty)))
@@ -306,7 +312,9 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                    None result_prs
              in
              let opt_src_tm = if some? opt_src_tm then opt_src_tm
-                              else case findLeftmost (fn (_, ty) -> equalType?(ty, state_ty)) params of
+                              else
+                                 % let _ = writeLine("tryInc: "^ printType state_ty^"\n"^foldl (fn (r, (v, ty)) -> r^", "^v^": "^printType ty) "" params) in
+                                 case findLeftmost (fn (_, ty) -> equalType?(ty, state_ty)) params of
                                      | Some v -> Some(mkVar v)
                                      | None -> None
              in
