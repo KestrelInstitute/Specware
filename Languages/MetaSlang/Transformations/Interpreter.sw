@@ -164,7 +164,7 @@ spec
 			  case ssb of
 			    | Some sbr ->
 			      %% The e are evaluated in the outer environment (sb not sbr)
-			      (case patternMatch(pat,e,sbr,spc,depth,trace?) of
+			      (case patternMatch(pat,e,sbr,true,spc,depth,trace?) of
 				 | Match S -> Some S
 				 | _ -> None)
 			    | None -> None)
@@ -455,21 +455,23 @@ spec
      case rules 
        of [] -> None
         | (pat,Fun(Bool true,_,_),body)::rules -> 
-	  (case patternMatch(pat,N,sb,spc,depth,trace?)
+	  (case patternMatch(pat,N,sb,rules = [],spc,depth,trace?)
 	     of Match S -> Some(maybeMkLetOrSubst(evalRec(body,S,spc,depth+1,trace?),S,sb))
 	      | NoMatch -> patternMatchRules(rules,N,sb,spc,depth,trace?)
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- op  patternMatch : MSPattern * Value * Subst * Spec * Nat * Bool -> MatchResult 
+ op  patternMatch : MSPattern * Value * Subst * Bool * Spec * Nat * Bool -> MatchResult 
 
- def patternMatch(pat,N,S,spc,depth,trace?) = 
+ def patternMatch(pat,N,S,soft_conds?,spc,depth,trace?) =
+   %% soft_conds? is true when there is no fall-through case, i.e. it is in a let or
+   %% it is the last clause of a lambda (case).
      case pat
        of VarPat((x,_), _) -> Match(addToSubst(S,x,N))
 	| WildPat _ -> Match S
 	| AliasPat(p1,p2,_) ->
-	  (case patternMatch(p1,N,S,spc,depth,trace?) of
-	     | Match S1 -> patternMatch(p2,N,S1,spc,depth,trace?)
+	  (case patternMatch(p1,N,S,soft_conds?,spc,depth,trace?) of
+	     | Match S1 -> patternMatch(p2,N,S1,soft_conds?,spc,depth,trace?)
 	     | result -> result)
 	| RecordPat(fields, _) ->
 	  (case N of
@@ -479,7 +481,7 @@ spec
 			| Match S ->
 			  (case lookup(valFields,lbl) of
 			     | None -> DontKnow
-			     | Some v -> patternMatch(rpat,v,S,spc,depth,trace?))
+			     | Some v -> patternMatch(rpat,v,S,soft_conds?,spc,depth,trace?))
 			| _ -> result)
 	         (Match S) fields
 	     | _ -> DontKnow)
@@ -492,22 +494,23 @@ spec
 	  (case N of 
 	     | Constructor(lbl2,N2,_) -> 
 	       if lbl = lbl2 
-		  then patternMatch(p,N2,S,spc,depth,trace?)
+		  then patternMatch(p,N2,S,soft_conds?,spc,depth,trace?)
 	       else NoMatch
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
         | QuotientPat(pat,_,_) ->
 	  (case N of
-	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,spc,depth,trace?)
+	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,soft_conds?,spc,depth,trace?)
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
         | RestrictedPat(pat,pred,_) ->
-	  (case patternMatch(pat,N,S,spc,depth,trace?) of
+	  (case patternMatch(pat,N,S,soft_conds?,spc,depth,trace?) of
 	     | Match S1 ->
 	       (case evalRec(pred,S1,spc,depth+1,trace?) of
 		 | Bool true  -> Match S1
 		 | Bool false -> NoMatch
-		 | _ -> DontKnow)
+		 | _ ->  %% If soft_conds? then succeed as there is no other case
+                   if soft_conds? then Match S1 else DontKnow)
 	     | result -> result)
 	| StringPat(n,_) ->
 	  (case N
