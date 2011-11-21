@@ -644,13 +644,56 @@ SpecNorm qualifying spec
       | Lambda _ -> possibleEqTestableFunTermIn? (ho_eqfns, spc) f
       | _ -> false
 
+  op simpleTermIn?(term: MSTerm, vs: Vars): Bool = 
+    case term of 
+      | Record(fields,_) ->
+        forall? (fn (_,t) -> simpleTermIn?(t, vs)) fields
+      | Var(v, _) -> inVars?(v, vs)
+      | Fun _ -> true
+      | _ -> false
+
+  %% This could be more sophisticated as there are cases it doesn't catch.
+  %% Note that its imprecision doesn't effect correctness as it only used to determine whether
+  %% to add the subtype predicate into the definition.
+  %% A false negative means an unnecessarily complex defn which might need extra user
+  %% annotation to prove termination.
+  %% A false negative means is only a problem if the missing subtype predicate is necessary
+  %% to prove termination
+  op simpleRecursion?(dfn: MSTerm, qid: QualifiedId): Bool =
+    let def checkBody?(tm, params) =
+          case tm of
+            | Apply(Lambda(binds, _), arg, _) | simpleTermIn?(arg, params) ->
+              forall?(fn (pat, _, bod) -> checkBody?(bod, patVars pat ++ params)) binds
+            %% Could add a case for simple lets
+            | _ ->
+              ~(existsSubTerm
+                 (fn stm ->
+                  case stm of
+                    | Apply(Fun(Op(qidi, _), _, _), arg, _) | qid = qidi ->
+                      ~(simpleTermIn?(arg, params))
+                    | Apply _ ->        % Curried version
+                      (case getCurryArgs stm of
+                         | Some(Fun(Op(qidi, _), _, _), args) | qid = qidi ->
+                           exists? (fn arg -> ~(simpleTermIn?(arg, params))) args
+                         | _ -> false)
+                    | _ -> false)
+                  tm)
+        def checkLambdas(tm, params) =
+          case tm of
+            | Lambda(binds, _) ->
+              forall? (fn (pat, _, bod) -> checkLambdas(bod, patVars pat ++ params)) binds
+            | _ -> checkBody?(tm, params)
+    in
+    checkLambdas(dfn, [])
+
   op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MSTerm =
     let (tvs,ty,full_term) = unpackTerm info.dfn in
     let tm = refinedTerm(full_term, refine_num) in
     let def reg1 tm =
-         let recursive? = containsRefToOp?(tm, primaryOpName info) in
+         let qid = primaryOpName info in
+         let recursive? = containsRefToOp?(tm, qid) in
          let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
-         let result = if recursive?
+         let result = if recursive? && ~(simpleRecursion?(tm, qid))
                        then   % May need condition to prove termination
                          regularizeIfPFun(result, ty, inferType(spc,result), spc)
                        else result
