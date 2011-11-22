@@ -70,6 +70,12 @@
 	    ;; Preload for efficiency and flexibility
 	    (eval-when (:compile-toplevel :load-toplevel :execute)
 	      (let ((sb-fasl:*fasl-file-type* "fasl"))
+                ;; The following four lines load hunchentoot and supercede the next four requires
+                ;; (load "quicklisp")
+                ;; (load "/Users/westfold/quicklisp/setup.lisp")
+                ;; (pushnew :hunchentoot-no-ssl *features*)
+                ;; (funcall (find-symbol "QUICKLOAD" :ql) "hunchentoot")
+
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
@@ -416,6 +422,10 @@
 ;;;   #'swshell::specware-shell0))
 
 (defun cl-user::boot ()
+  (cl-user::sw "/Applications/Specware/Specware4")
+  (format t "Full garbage collection...")
+  (system-spec::garbageCollect t)
+  (terpri t)
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val
       (funcall (intern #+case-sensitive "eval-in-emacs"
