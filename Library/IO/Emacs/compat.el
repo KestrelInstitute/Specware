@@ -50,7 +50,7 @@
     (sbcl    "sfsl")
     (gcl     "o")))
 
-(defvar *sbcl-size* 900 "Size of --dynamic-space-size for sbcl")
+(defvar *sbcl-size* 800 "Size of --dynamic-space-size for sbcl")
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
