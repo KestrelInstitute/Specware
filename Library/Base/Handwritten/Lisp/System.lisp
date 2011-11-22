@@ -122,6 +122,7 @@
 ;;; op garbageCollect : Boolean -> ()
 (defun garbageCollect (full?)
   #+allegro (sys::gc full?)
+  #+sbcl (sb-ext:gc :full full?)
   #+(and cmu (not darwin)) (ext:gc :full full?)
   #+(and cmu darwin) (when full? (ext:gc)))
 
