@@ -30,8 +30,10 @@
            "Integer-Spec::>-2"
            "Integer-Spec::|!>=|"
            "Integer-Spec::>=-2"
-           "Integer-Spec::succ"
-           "Integer-Spec::pred"
+           "Integer-Spec::isucc"
+           "Integer-Spec::ipred"
+           "Nat-Spec::succ"
+           "Nat-Spec::pred"
            "Integer-Spec::divides"
            "Integer-Spec::divides-2"
            "Integer-Spec::|!gcd|"
@@ -91,7 +93,11 @@
 
 (defun isucc (x) (+ x 1))
 
+(define-compiler-macro isucc (x) `(the-int (+ (the-int ,x) 1)))
+
 (defun ipred (x) (- x 1))
+
+(define-compiler-macro ipred (x) `(the-int (- (the-int ,x) 1)))
 
 (defparameter one 1)
 
@@ -189,9 +195,13 @@
 (define-compiler-macro >=-2 (x y)
  `(>= (the-int ,x) (the-int ,y)))
 
-(defun succ (x) (+ x 1))
+(defun Nat-Spec::succ (x) (+ x 1))
 
-(defun pred (x) (- x 1))
+(define-compiler-macro Nat-Spec::succ (x) `(the-int (+ (the-int ,x) 1)))
+
+(defun Nat-Spec::pred (x) (- x 1))
+
+(define-compiler-macro Nat-Spec::pred (x) `(the-int (- (the-int ,x) 1)))
 
 (defun divides (xy)
  (declare (cons xy))
