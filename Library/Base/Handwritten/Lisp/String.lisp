@@ -15,8 +15,7 @@
                 "STRING-SPEC::sub"
                 "STRING-SPEC::subFromTo-3"
                 "STRING-SPEC::subFromTo"
-                "STRING-SPEC::++-2"
-                "STRING-SPEC::|!++|"
+                "STRING-SPEC::^-2"
                 "STRING-SPEC::forall?-1-1"
                 "STRING-SPEC::forall?"
                 "STRING-SPEC::exists?-1-1"
@@ -50,8 +49,7 @@
                 "String-Spec::sub"
                 "String-Spec::subFromTo-3"
                 "String-Spec::subFromTo"
-                "String-Spec::++-2"
-                "String-Spec::|!++|"
+                "String-Spec::^-2"
                 "String-Spec::forall?-1-1"
                 "String-Spec::forall?"
                 "String-Spec::exists?-1-1"
@@ -140,22 +138,14 @@
                                     (the cl:fixnum (svref sse 1))
                                     (the cl:fixnum (svref sse 2)))))
 
-(defun ++-2 (x y)
- (declare (type cl:simple-string x y))
- (the cl:simple-string 
-   (concatenate 'string x y)))
+(defun ^-2 (x y)
+  (declare (type cl:simple-string x y))
+  (the cl:simple-string 
+    (concatenate 'string x y)))
 
 ;;; Putting (the cl:simple-string ,y) gives mcl exponential compiler behavior
-(define-compiler-macro ++-2 (x y)
- `(concatenate 'string ,(if (stringp x) x `(the cl:simple-string ,x))
-               ,y))
-
-(defun |!++| (xy)
- (declare (cons xy))
- (the cl:simple-string 
-   (concatenate 'string 
-                (the cl:simple-string (car xy)) 
-                (the cl:simple-string (cdr xy)))))
+;(define-compiler-macro ^-2 (x y)
+; `(concatenate 'string ,x ,y))
 
 (defun forall? (p)
  (lambda (s)
