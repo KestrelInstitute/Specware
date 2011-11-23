@@ -9,6 +9,8 @@
 (defun |!cdr|  (x) (cdr x))
 (defun symbol-2  (pkg name) (intern name (find-package pkg)))
 (defun |!symbol|  (x) (intern (car x) (find-package (cdr x))))
+(defun findSymbol-2  (name pkg) (find-symbol name pkg))
+(defun findSymbol  (x) (find-symbol (car x) (cdr x)))
 (defun |!string|   (s) s)
 (defun LispString (s) (string s))
 ;(defun toString (s) (format nil "~A" s))
