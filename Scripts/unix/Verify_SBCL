@@ -1,6 +1,11 @@
 #!/bin/bash --noprofile
 # set -v
 
+
+# Some machines require the dynamic space size to be smaller (e.g. 800)
+# On those, preset SBCL_SIZE before invoking this script.
+export SBCL_SIZE="${SBCL_SIZE:=1200}"
+
 SCRIPTDIR=`/usr/bin/dirname $0`
 
 export LISP_MODE="SBCL"
@@ -28,7 +33,12 @@ if [ -z "$LISP" ]; then
   fi
 fi
 
-export BIG_LISP="$LISP --dynamic-space-size 800 --end-runtime-options"
+# be careful to use double-dash!  "-dynamic-space-size 800" would be silently ignored!
+# 512 is default
+# see assignment of SBCL_SIZE at start of script
+# 1000 was too large, but now 1200 seems ok (?) 
+
+export BIG_LISP="$LISP --dynamic-space-size $SBCL_SIZE --end-runtime-options"
 export LISP_VERSION="SBCL"
 export BATCH_LISP="$BIG_LISP --disable-debugger"
 
@@ -55,13 +65,8 @@ export BATCH_LISP="$BIG_LISP --disable-debugger"
 #      Print SBCL's version information, then exit. 
 #================================================================================  
 
-# -dynamic-space-size should be at least about 530 (MByte) for Accord
-# be careful to use double-dash!  "-dynamic-space-size 800" would be silently ignored!
-# 512 is default
-# 1000 was too large, but now seems ok (?)
-
-export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size 800 --end-runtime-options"}
-export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size 800 --end-runtime-options"}
+export BATCH_SPECWARE=${BATCH_SPECWARE:-"$SPECWARE4/Applications/Specware/bin/linux/Specware4.${EXECUTABLE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
+export BATCH_BOOTSTRAP=${BATCH_BOOTSTRAP:-"$LISP --core $SPECWARE4/Applications/Specware/bin/linux/Bootstrap.${IMAGE_EXTENSION} --dynamic-space-size $SBCL_SIZE --end-runtime-options"}
 
 echo " "
 echo "  Verify_SBCL:  LISP_MODE            = [$LISP_MODE]"
