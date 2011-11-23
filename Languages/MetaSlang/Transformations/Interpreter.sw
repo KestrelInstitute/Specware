@@ -7,23 +7,23 @@ spec
   import ../Specs/Utilities
   import /Languages/Lisp/Suppress
 
-  type Subst = List (Id * Value)
+  type Subst = List (Id * MSIValue)
 
-  type Value =
+  type MSIValue =
     | Int         Int
     | Char        Char
     | String      String
     | Bool        Bool
     | RecordVal   Subst
-    | Constructor Id * Value * MSType
+    | Constructor Id * MSIValue * MSType
     | Constant    Id * MSType
-    | QuotientVal Value * Value	* QualifiedId	% closure * element * type id
-    | ChooseClosure Value * MSType * QualifiedId
+    | QuotientVal MSIValue * MSIValue	* QualifiedId	% closure * element * type id
+    | ChooseClosure MSIValue * MSType * QualifiedId
     | Closure     Match * Subst
     | RecClosure  Match * Subst * List Id
     | Unevaluated MSTerm
 
-  op equalValue?(v1: Value, v2: Value): Bool =
+  op equalValue?(v1: MSIValue, v2: MSIValue): Bool =
     case (v1,v2) of
       | (Int n1, Int n2) -> n1 = n2
       | (Char ch1, Char ch2) -> ch1 = ch2
@@ -38,24 +38,24 @@ spec
       %% Should have special cases for QuotientVal ChooseClosure Closure RecClosure
       | _ -> v1 = v2
 
-  op  unevaluated?: Value -> Bool
+  op  unevaluated?: MSIValue -> Bool
   def unevaluated? x = embed? Unevaluated x
 
   op  emptySubst: Subst
   def emptySubst = []
 
-  op lookup: Subst * Id -> Option Value
+  op lookup: Subst * Id -> Option MSIValue
   def lookup(sbst,v) =
     case sbst of
       | [] -> None
       | (vi,vali)::rsbst ->
 	if vi = v then Some vali else lookup(rsbst,v)
 
-  op  addToSubst: Subst * Id * Value -> Subst
+  op  addToSubst: Subst * Id * MSIValue -> Subst
   def addToSubst(sb,v,t) = Cons((v,t),sb)
 
 %%% --------------------
-  op  eval: MSTerm * Spec -> Value
+  op  eval: MSTerm * Spec -> MSIValue
   def eval(t,spc) = evalRec(t,emptySubst,spc,0,traceEval?)
 
   op evalFullyReducibleSubTerms(t: MSTerm,spc: Spec): MSTerm =
@@ -102,18 +102,18 @@ spec
 	  ()
     else ()
     
-  op  postTrace: MSTerm * Value * Nat * Bool -> ()
+  op  postTrace: MSTerm * MSIValue * Nat * Bool -> ()
   def postTrace(t,val,depth,trace?) =
     if traceEval? && trace? && traceable? t then
       case t of
 	| Var _ ->
-	  let _ = printValue (val,false) in
+	  let _ = printMSIValue (val,false) in
 	  let _ = toScreen newline in
 	  ()
 	| _ ->
 	  let _ = toScreen (blanks depth) in
 	  let _ = toScreen ((show depth)^"> ") in
-	  let _ = printValue (val,false) in
+	  let _ = printMSIValue (val,false) in
 	  let _ = toScreen newline in
 	  ()
     else ()
@@ -128,7 +128,7 @@ spec
         opName in? fns || printQualifiedId qid in? fns
       | _ -> false)
 
-  op  evalRec: MSTerm * Subst * Spec * Nat * Bool -> Value
+  op  evalRec: MSTerm * Subst * Spec * Nat * Bool -> MSIValue
   def evalRec(t,sb,spc,depth,trace?) =
     let _ = preTrace(t,depth,trace?) in
     let depth = if traceable? t then depth else depth -1 in
@@ -206,7 +206,7 @@ spec
       | None -> findTheOp (spc, qid)
       | v -> v
   
-  op  evalFun: Fun * MSTerm * MSType * Subst * Spec * Nat * Bool -> Value
+  op  evalFun: Fun * MSTerm * MSType * Subst * Spec * Nat * Bool -> MSIValue
   def evalFun(fun,t,ty,sb,spc,depth,trace?) =
     case fun of
       | Op (qid, _) ->
@@ -239,7 +239,7 @@ spec
       | Fun(f,_,_)  -> f in?[And,Or,Implies]
       | _ -> false
 
-  op  evalApplyNonStrict: MSTerm * MSTerm * Subst * Spec * Nat * Bool -> Value
+  op  evalApplyNonStrict: MSTerm * MSTerm * Subst * Spec * Nat * Bool -> MSIValue
   def evalApplyNonStrict(ft,at,sb,spc,depth,trace?) =
     case at of
       | Record([("1",at1),("2",at2)],_) ->
@@ -259,7 +259,7 @@ spec
 	     Unevaluated(mkApply(ft,mkTuple([r_at1,at2]))))
       | _ -> evalApplySpecial(ft,evalRec(at,sb,spc,depth+1,trace?),sb,spc,depth,trace?)
 	   
-  op  evalApply: Value * Value * Subst * Spec * Nat * Bool -> Value
+  op  evalApply: MSIValue * MSIValue * Subst * Spec * Nat * Bool -> MSIValue
   def evalApply(f,a,sb,spc,depth,trace?) =
     case f of
       | Closure(match,csb) ->
@@ -283,7 +283,7 @@ spec
       | Lambda([(p,_,bod)],_) -> mkLet([(p,x)],bod)
       | _ -> mkApply(f,x)
 
-  op  evalApplySpecial: MSTerm * Value * Subst * Spec * Nat * Bool -> Value
+  op  evalApplySpecial: MSTerm * MSIValue * Subst * Spec * Nat * Bool -> MSIValue
   def evalApplySpecial(ft,a,sb,spc,depth,trace?) =
     let def default() = Unevaluated(mkApply(ft, valueToTerm a)) in
     case ft of
@@ -402,7 +402,7 @@ spec
       %| Fun(Select id,srt,_) ->
       | _ -> default()
 
-  op  checkEquality: Value * Subst * Spec * Nat * Bool -> Option Bool
+  op  checkEquality: MSIValue * Subst * Spec * Nat * Bool -> Option Bool
   def checkEquality(a,sb,spc,depth,trace?) =
     case a of
       | RecordVal [("1",QuotientVal(equivfn,a1,_)),("2",QuotientVal(_,a2,_))] ->
@@ -450,7 +450,7 @@ spec
  %% Adapted from HigherOrderMatching 
  type MatchResult = | Match Subst | NoMatch | DontKnow
 
- op  patternMatchRules : Match * Value * Subst * Spec * Nat * Bool -> Option Value
+ op  patternMatchRules : Match * MSIValue * Subst * Spec * Nat * Bool -> Option MSIValue
  def patternMatchRules(rules,N,sb,spc,depth,trace?) = 
      case rules 
        of [] -> None
@@ -461,8 +461,7 @@ spec
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
- op  patternMatch : MSPattern * Value * Subst * Bool * Spec * Nat * Bool -> MatchResult 
-
+ op  patternMatch : MSPattern * MSIValue * Subst * Bool * Spec * Nat * Bool -> MatchResult 
  def patternMatch(pat,N,S,soft_conds?,spc,depth,trace?) =
    %% soft_conds? is true when there is no fall-through case, i.e. it is in a let or
    %% it is the last clause of a lambda (case).
@@ -536,7 +535,7 @@ spec
 
   %% Considers incremental newSb vs oldSb. Looks for references to these vars in val and
   %% either substitutees them (if their values are simple) or let-binds them.
-  op  maybeMkLetOrSubst: Value * Subst * Subst -> Value
+  op  maybeMkLetOrSubst: MSIValue * Subst * Subst -> MSIValue
   def maybeMkLetOrSubst(val,newSb,oldSb) =
     case val of
       | Unevaluated t -> Unevaluated(mkLetOrsubst(t,newSb,oldSb))
@@ -574,7 +573,7 @@ spec
   %% Evaluation of constant terms
   %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
   def evalQualifiers = ["Nat","Integer","IntegerAux","String","Char","System","Boolean"]
-  op  evalConstant?: Value -> Bool
+  op  evalConstant?: MSIValue -> Bool
   def evalConstant?(v) =
     case v
       of Unevaluated t -> embed? Fun t
@@ -613,34 +612,34 @@ spec
   op avoidExpanding? (qid : QualifiedId) : Bool =
     qid in? builtInQids
 
-  op  valConstant?: Value -> Bool
+  op  valConstant?: MSIValue -> Bool
   def valConstant? v =
     case v
       of Unevaluated _ -> false
        | _ -> true
 
-  op  intVal: Value -> Int
+  op  intVal: MSIValue -> Int
   def intVal = fn (Int i) -> i
-  op  intVals: List(Id * Value) -> Int * Int
+  op  intVals: List(Id * MSIValue) -> Int * Int
   def intVals([(_,x),(_,y)]) = (intVal x,intVal y)
 
-  op  charVal: Value -> Char
+  op  charVal: MSIValue -> Char
   def charVal = fn (Char c) -> c
 
-  op  stringVal: Value -> String
+  op  stringVal: MSIValue -> String
   def stringVal = fn (String s) -> s
-  op  stringVals: List(Id * Value) -> String * String
+  op  stringVals: List(Id * MSIValue) -> String * String
   def stringVals([(_,x),(_,y)]) = (stringVal x,stringVal y)
 
-  op  boolVal: Value -> Bool
+  op  boolVal: MSIValue -> Bool
   def boolVal = fn (Bool s) -> s
-  op  boolVals: List(Id * Value) -> Bool * Bool
+  op  boolVals: List(Id * MSIValue) -> Bool * Bool
   def boolVals([(_,x),(_,y)]) = (boolVal x,boolVal y)
 
-  op  stringIntVals: List(Id * Value) -> String * Int
+  op  stringIntVals: List(Id * MSIValue) -> String * Int
   def stringIntVals([(_,x),(_,y)]) = (stringVal x,intVal y)
 
-  op  attemptEval1: String * Value * MSTerm -> Value
+  op  attemptEval1: String * MSIValue * MSTerm -> MSIValue
   def attemptEval1(opName,arg,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm arg)) in
     case (opName,arg) of
@@ -670,7 +669,8 @@ spec
 %	   else default()
        | ("length",String s)  -> Int(length s)
        | ("explode",String s) -> foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)],
-                                                                listCharType))
+                                                                mkArrow(mkProduct[charType, listCharType],
+                                                                        listCharType)))
                                    (Constant("Nil",listCharType)) (explode s)
        | ("toScreen",String s)  -> let _ = toScreen  s in RecordVal []
        | ("writeLine",String s) -> let _ = writeLine s in RecordVal []
@@ -708,7 +708,7 @@ spec
 
        | _                      -> default()
 
-  op  attemptEvaln: String * String * List(Id * Value) * MSTerm -> Value
+  op  attemptEvaln: String * String * List(Id * MSIValue) * MSTerm -> MSIValue
   def attemptEvaln(spName,opName,fields,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm(RecordVal fields))) in
     case opName of
@@ -839,17 +839,17 @@ spec
 
   %% Separate function rather than in-line because in Allegro time compile with a closure
   %% which gets created on each call even if not needed
-  op  timeEvalRec:  MSTerm * Subst * Spec * Nat * Bool -> Value
+  op  timeEvalRec:  MSTerm * Subst * Spec * Nat * Bool -> MSIValue
   def timeEvalRec(t,sb,spc,depth,trace?) =
     time(evalRec(t,sb,spc,depth,trace?))
 
-  op  metaListToList: (Value | metaList?) -> List Value
+  op  metaListToList: (MSIValue | metaList?) -> List MSIValue
   def metaListToList v =
     case v of
       | Constant ("Nil",_) -> []
       | Constructor("Cons",RecordVal[("1",x),("2",r)],_) -> Cons(x,metaListToList r)
 
-  op  metaList?: Value -> Bool
+  op  metaList?: MSIValue -> Bool
   def metaList? v =
     case v of
       | Constant("Nil",_) -> true
@@ -857,20 +857,20 @@ spec
       | _ -> false
 
 
-  op  printValue: Value * Bool -> ()
-  def printValue (v,useXSymbol?) =
+  op  printMSIValue: MSIValue * Bool -> ()
+  def printMSIValue (v,useXSymbol?) =
     PrettyPrint.toTerminal(format(80,ppValue (initialize(if useXSymbol?
 							   then XSymbolPrinter
 							   else asciiPrinter,
 							 false))
 				  v))
 
-  op  stringValue: Value -> String
+  op  stringValue: MSIValue -> String
   def stringValue v =
     PrettyPrint.toString(format(80,ppValue (initialize(asciiPrinter,false)) v))
 
 
-  op  ppValue: PrContext -> Value -> Pretty
+  op  ppValue: PrContext -> MSIValue -> Pretty
   def ppValue context v =
     case v of
       | Int         n  -> string (show n)
@@ -936,7 +936,7 @@ spec
 				      ppTerm context ([],Top:ParentTerm) t,
 				      string ">"]
 
-  op  valueToList: Value -> Option(List Value)
+  op  valueToList: MSIValue -> Option(List MSIValue)
   def valueToList v =
     case v of
       | Constructor("Cons",RecordVal[(_,a),(_,rl)],_) ->
@@ -946,7 +946,7 @@ spec
       | Constant ("Nil",_) -> Some []
       | _ -> None
 
-  op  valueToTerm: Value -> MSTerm
+  op  valueToTerm: MSIValue -> MSTerm
   def valueToTerm v =
     case v of
       | Int         n  -> mkNat n
@@ -965,7 +965,7 @@ spec
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
 
-  op fullyReduced?(v: Value): Bool =
+  op fullyReduced?(v: MSIValue): Bool =
     case v of
       | Unevaluated_  -> false
       | Closure _ -> false
@@ -986,7 +986,7 @@ spec
           if i = n then result else loop(i+1,f(i,result))
     in loop(0,init)
 
-  op termToValue : MSTerm -> Value
+  op termToValue : MSTerm -> MSIValue
   def termToValue term =
     case term of
       | Fun (Nat n,srt,pos) -> Int n
@@ -997,5 +997,17 @@ spec
       | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
- endspec
+
+ op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
+   if ~(constantTerm? term) && freeVarsRec term = [] && sideEffectFree term
+     then let v = eval(term,spc) in
+       if fullyReduced? v
+         then valueToTerm v
+         else term
+     else term
+
+ op reduceSubTerms(term: MSTerm, spc: Spec): MSTerm =
+   mapTerm (fn t -> reduceTerm(t,spc), id, id) term
+
+end-spec
 %%% 
