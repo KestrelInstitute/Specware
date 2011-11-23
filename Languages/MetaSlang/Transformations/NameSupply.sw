@@ -7,23 +7,28 @@
 
 NameSupply qualifying
 spec
-  %import State  	% ../utilities/state.sl
-  import /Library/Legacy/DataStructures/StringMapSplay
+  import /Library/Legacy/Utilities/State
+  %import /Library/Legacy/DataStructures/StringMapSplay
+  import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
-  type NameSupply = Ref (StringMap (Nat))
+  type NameSupply = Ref (Map (String, Nat))
 
   op empty : () -> NameSupply
   op fresh : NameSupply -> String -> String
 
   def empty () =
-    Ref StringMap.empty
+    Ref emptyMap
+
+  op addName(ns: NameSupply, nm: String, i: Nat): NameSupply =
+    (ns := update(!ns, nm, i);
+     ns)
 
   def fresh ns prefix =
     let n =
-	case StringMap.find (! ns, prefix)
+	case apply (! ns, prefix)
 	  of None   -> 0
 	   | Some n -> n in
-    (ns State.:= StringMap.insert (! ns, prefix, n + 1);
+    (ns State.:= update (! ns, prefix, n + 1);
      if n = 0 then prefix
        else prefix ^ "_" ^ show n)
 
