@@ -1236,6 +1236,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      of Fun(_,s,_) -> s
       | _ -> defaultS
 
+  op knownSideEffectFreeQualifiers: List Qualifier =
+    ["Integer", "Nat", "Bool", "Char", "String", "Option", "Function", "List"]
+
   op  knownSideEffectFreeQIds: List(Qualifier * Id)
   def knownSideEffectFreeQIds =
     [("Integer",    "~"),  % TODO: deprecate
@@ -1254,14 +1257,15 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      ("Integer",    "compare"),
      ("List",       "length")]
 
-  op knownSideEffectFreeFns: List String =
+   op knownSideEffectFreeFns: List String =
     ["toString", "return"]
 
   op  knownSideEffectFreeFn?: Fun -> Bool
   def knownSideEffectFreeFn? f =
     case f of
       | Op(Qualified(qid),_) ->
-        qid in? knownSideEffectFreeQIds
+        qid.1 in? knownSideEffectFreeQualifiers
+          || qid in? knownSideEffectFreeQIds
           || qid.2 in? knownSideEffectFreeFns
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
