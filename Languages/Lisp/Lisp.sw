@@ -1,6 +1,6 @@
 % Synchronized with version 1.1 of SW4/Languages/MetaSlang/ToLisp/Lisp.sl
 
-ListADT qualifying spec {
+ListADT qualifying spec
   import /Library/Legacy/Utilities/Lisp
   import /Library/Legacy/DataStructures/ListPair
   import /Library/Legacy/DataStructures/TopSort
@@ -466,7 +466,7 @@ def addDefinitions(defns,lspc) =
   List.foldl (fn(lspc,(modulename,defn))
 	       -> addDefinition(modulename,defn,lspc)) lspc defns
 
-}
+end-spec
 
 (*
 
