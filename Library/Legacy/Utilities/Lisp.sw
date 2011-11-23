@@ -1,8 +1,8 @@
-\section{Lisp Primitives}
+(* Lisp Primitives 
 
 These are based upon Common Lisp primitives.
+*)
 
-\begin{spec}
 Lisp qualifying spec
 
   type LispCells = List LispCell
@@ -15,6 +15,7 @@ Lisp qualifying spec
   op LispString   : LispCell              -> String
 
   op symbol       : String * String       -> LispCell
+  op findSymbol   : String * String       -> LispCell
 
   op nil          : ()                    -> LispCell
   op car          : LispCell              -> LispCell
@@ -33,5 +34,4 @@ Lisp qualifying spec
   op null         : LispCell -> Bool
 
   %% No defs here -- see ...
-endspec
-\end{spec}
+end-spec
