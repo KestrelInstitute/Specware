@@ -1434,6 +1434,15 @@ SpecToLisp qualifying spec
 
  op cg.showSpc (msg : String) (spc : Spec) : () 
 
+ op builtInLispType? (qid : QualifiedId) : Bool = false
+ op builtInLispOp?   (qid : QualifiedId) : Bool = false
+
+ op removeUnusedOps (slicing? : Bool) (spc : Spec) : Spec =
+  if slicing? then 
+    sliceSpecForCode (spc, topLevelOps spc, topLevelTypes spc, builtInLispOp?, builtInLispType?)
+  else 
+    spc 
+
  def toLispEnv (spc, complete?, slicing?) =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
    %% theorems are irrelevant for code generation
@@ -1446,7 +1455,7 @@ SpecToLisp qualifying spec
    in
    let spc = if complete? && substBaseSpecs? then substBaseSpecs spc else spc in
    let _   = showSpc "substBaseSpecs"             spc in
-   let spc = if slicing? then sliceSpec (spc, topLevelOps spc, topLevelTypes spc, true, false) else spc in
+   let spc = removeUnusedOps slicing?             spc in
    let _   = showSpc "sliceSpec"                  spc in
    let spc = if removeCurrying? then removeCurrying spc else spc in
    let _   = showSpc "removeCurrying"             spc in

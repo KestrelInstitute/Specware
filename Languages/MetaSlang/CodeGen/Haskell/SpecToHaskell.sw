@@ -512,11 +512,13 @@ Haskell qualifying spec
     let spc = addExecutableDefs(spc, c.spec_name) in
     let trans_table = thyMorphismMaps spc "Haskell" convertPrecNum in
     % let _ = writeLine("0a:\n"^printSpecFlat( spc)^"\n") in
-    let c = if c.slicing? && c.top_spec?
-             then let (needed_ops, needed_types) = sliceSpecInfo(spc, topLevelOps spc, topLevelTypes spc, true, false) in
-                  c << {needed_ops = needed_ops,
-                        needed_types = needed_types}
-             else c
+    let c = if c.slicing? && c.top_spec? then
+              %% don't recur into subtype predicates, don't chase through theorems
+              let (needed_ops, needed_types) = sliceSpecInfoForCode (spc, topLevelOps spc, topLevelTypes spc) in
+              c << {needed_ops   = needed_ops,
+                    needed_types = needed_types}
+            else 
+              c
     in
     let rel_elements = filter haskellElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in

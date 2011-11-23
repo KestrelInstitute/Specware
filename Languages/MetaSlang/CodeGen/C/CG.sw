@@ -8,6 +8,7 @@ spec
 
   import /Languages/MetaSlang/Transformations/PatternMatch
   import /Languages/MetaSlang/Transformations/SliceSpec
+
   import /Languages/MetaSlang/CodeGen/AddMissingFromBase
   import /Languages/MetaSlang/CodeGen/Poly2Mono
   import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
@@ -21,8 +22,8 @@ spec
   import /Languages/MetaSlang/Transformations/LambdaLift
   import /Languages/MetaSlang/Transformations/InstantiateHOFns
   import /Languages/MetaSlang/Transformations/RecordMerge
-  import /Languages/MetaSlang/Transformations/SliceSpec
   import /Languages/MetaSlang/Transformations/TheoryMorphism
+
   import /Languages/MetaSlang/Specs/SubtractSpec
 
   import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L             % MetaSlang =codegen=> I2L
@@ -149,6 +150,28 @@ spec
     else
       ()
 
+  op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
+    case q of
+      | "Boolean"    -> id in? ["Bool"]
+      | "Integer"    -> id in? ["Int", "Int0"]
+      | "Nat"        -> id in? ["Nat"]
+      | "Char"       -> id in? ["Char"]
+      | "String"     -> id in? ["String"]
+      | _ -> false
+
+  op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
+    case q of
+      | "Boolean"    -> id in? ["show", "toString"]
+      | "Integer"    -> id in? ["+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
+      | "IntegerAux" -> id in? ["-"]  % unary minus
+      | "Nat"        -> id in? ["show", "toString"]
+      | "Char"       -> id in? ["chr", "ord", "compare", "show"] 
+      | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode"]
+      | "System"     -> id in? ["writeLine", "toScreen"]
+      | "Handcoded"  -> true
+      | _ -> false
+
+  %% TODO: deprecated...
   op C_BuiltinTypeOp? (Qualified (q, id) : QualifiedId) : Bool =
     case q of
       | "Boolean"    -> id in? ["Bool", "show", "toString"]
@@ -161,13 +184,11 @@ spec
       | "Handcoded"  -> true
       | _ -> false
 
-  op subtract?   : Bool = true  % TODO: Would like to deprecate use of subtractSpec, 
-                                % setting subtract? to false still causes problems
+  op subtract? : Bool = true  % TODO: Would like to deprecate use of subtractSpec, 
+                              % setting subtract? to false still causes problems
 
-  op removeUnusedOps (spc : Spec) : Spec =
-    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in
-    %% ignore subtypes, do not slice base types/ops
-    sliceSpec (spc, top_ops, top_types, true, false)    
+  op removeUnusedOps (top_ops : QualifiedIds) (top_types : QualifiedIds) (spc : Spec) : Spec =
+   sliceSpecForCode (spc, top_ops, top_types, builtinCType?, builtinCOp?)
 
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 
@@ -187,15 +208,18 @@ spec
     in
     let _ = showSpc "Original"                      spc in
 
+    let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in
+
     let spc = substBaseSpecs                        spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
     let _ = showSpc "substBaseSpecs"                spc in
 
-    let spc = removeUnusedOps                       spc in %  (2) do this early to minimize wasted motion 
+    let spc = removeUnusedOps top_ops top_types     spc in %  (2) do this early to minimize wasted motion 
     let _ = showSpc "sliceSpec[1]"                  spc in 
 
     let spc = 
         % note: addmissingfrombase? is true in all actual calls here
-        if addmissingfrombase? then                        
+        if subtract? && addmissingfrombase? then                        
+          %% TODO: deprecated...
           let spc = 
               addMissingFromBase (basespc, spc,
                                   C_BuiltinTypeOp?)     in %  (3) may add HO fns, etc., so do this before removeCurrying, etc.
@@ -243,7 +267,7 @@ spec
     let spc = addEqOpsToSpec                        spc in % (14) add equality ops for sums, products, etc. -- TODO: currently adds far too many (but spliceSpec removes them)
     let _ = showSpc "addEqOpsToSpec"                spc in
 
-    let spc = sliceSpec (spc, top_ops, top_types, true, false) in % (15) remove unused ops (mainly eq ops) -- ignore subtypes, do not slice base types/ops
+    let spc = removeUnusedOps top_ops top_types     spc in % (15) remove unused ops (mainly eq ops) -- ignore subtypes, do not slice base types/ops
     let _ = showSpc "sliceSpec[2]"                  spc in 
 
     let (spc,constrOps) = addTypeConstructorsToSpec spc in % (16) these ops won't survive slicing, so this must follow sliceSpec
