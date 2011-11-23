@@ -589,11 +589,20 @@ spec
     [Qualified("String","explode"),
      Qualified("String","implode"),
      Qualified("String","^"),
+     Qualified("String","<"),
+     Qualified("String","<="),
+     Qualified("String",">"),
+     Qualified("String",">="),
+     
      Qualified("Integer","ipred"),
      Qualified("Integer","divides"),
      Qualified("Integer","divR"),
      Qualified("Integer","divE"),
      Qualified("Integer","divT"),
+     Qualified("Integer","<"),
+     Qualified("Integer","<="),
+     Qualified("Integer",">"),
+     Qualified("Integer",">="),
      Qualified("Char","ord"),
      Qualified("Char","isUpperCase"),
      Qualified("Char","isLowerCase"),
@@ -715,9 +724,13 @@ spec
        | "<="  -> if spName = "String"
                     then Bool(<=(stringVals fields))
 		    else Bool(<=(intVals fields))
-       %% Following have definitions
-       %| ">"   -> Bool(>(intVals fields))
-       %| ">="  -> Bool(>=(intVals fields))
+       %% Following have definitions but rather inefficient
+       | ">"   -> if spName = "String"
+                    then Bool(>(stringVals fields))
+		    else Bool(>(intVals fields))
+       | ">="  -> if spName = "String"
+                    then Bool(>=(stringVals fields))
+		    else Bool(>=(intVals fields))
        %| "min" -> Int(min(intVals fields))
        %| "max" -> Int(max(intVals fields))
        | "divides" -> Bool(divides(intVals fields))
