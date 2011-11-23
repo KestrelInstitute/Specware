@@ -192,17 +192,6 @@ MetaSlangRewriter qualifying spec
                               | _ -> false)
        term)
 
- op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
-   if ~(constantTerm? term) && freeVarsRec term = [] && sideEffectFree term
-     then let v = eval(term,spc) in
-       if fullyReduced? v
-         then valueToTerm v
-         else term
-     else term
-
- op reduceSubTerms(term: MSTerm, spc: Spec): MSTerm =
-   mapTerm (fn t -> reduceTerm(t,spc), id, id) term
-
  op pushFunctionsIn?: Bool = true
  op evalGroundTerms?: Bool = true
 
