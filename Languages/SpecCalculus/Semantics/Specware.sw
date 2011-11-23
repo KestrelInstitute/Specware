@@ -129,7 +129,7 @@ Specware qualifying spec
   %%% Interpreter
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op  evalDefInSpec: String * QualifiedId -> Option MSInterpreter.Value
+  op  evalDefInSpec: String * QualifiedId -> Option MSIValue
   def evalDefInSpec(path,qid) =
     let prg = {
 	       cleanEnv;
