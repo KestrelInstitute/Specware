@@ -1,4 +1,4 @@
-% Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl
+(* Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl *)
 
 SpecToLisp qualifying spec
  import /Languages/MetaSlang/Transformations/PatternMatch
@@ -10,6 +10,7 @@ SpecToLisp qualifying spec
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
  import /Languages/Lisp/Lisp
+ import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
  op lisp : Spec -> LispSpec
 
@@ -21,8 +22,8 @@ SpecToLisp qualifying spec
 		     %% Added for cmulisp compatibility
 		     "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
- def lispStrings =
-     StringSet.fromList 
+ op lispStrings: StringSet =
+    foldl add emptyMap 
       (["NIL", "T", "CONS", "NULL", "CAR", "CDR", "LIST", "LISP", 
 	"APPEND", "REVAPPEND", "REVERSE", "COMPILE", "REDUCE", 
 	"SUBSTITUTE", "COUNT", "ENCLOSE", "EVAL", "ERROR", "FIRST", "LAST", 
@@ -47,12 +48,10 @@ SpecToLisp qualifying spec
    ["C", "D", "I", "M", "N", "P", "S", "V", "X", "Y", "Z", "KEY", "NAME", "VALUE", "PATTERN"]
 
  def isLispString id = 
-   StringSet.member (lispStrings, id) 
+   member (lispStrings, id) 
    ||
    %% The above is only necessary for packages. They should be done differently in next release.
-   (Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "FIND-SYMBOL"), 
-			     [Lisp.string id, 
-			      Lisp.string "CL"]))
+   (Lisp.uncell (Lisp.findSymbol(id, "CL"))
     && 
     id nin? notReallyLispStrings)
 
@@ -145,29 +144,48 @@ SpecToLisp qualifying spec
      | _ -> 
        System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
 
+ % type StringSet = StringSet.Set
+ type StringSet = STHMap.Map(String, Bool)
+ op member(S: StringSet, x: String): Bool =
+   case apply(S, x) of
+     | Some b -> b
+     | None -> false
+
+ op add( S: StringSet, x: String): StringSet =
+   update(S, x, true)
+
+ %op delete( S: StringSet, x: String): StringSet =
+%   remove(S, x, false)
+
+op addList(S: StringSet, l: List String): StringSet =
+  foldl add S l
+
+%op difference(S1: StringSet, S2: StringSet): StringSet =
+%  foldi (fn (x, y, S) -> if y then remove(S, x) else S) S1 S2
+
  %% Domain is qualification. First set is strings as given, second is upper case version
- op  userStringMap : Ref (StringMap.Map ((Ref StringSet.Set) * (Ref StringSet.Set)))
- def userStringMap = Ref (StringMap.empty)
+ op  userStringMap : Ref (STHMap.Map (String, (Ref StringSet) * (Ref StringSet)))
+ def userStringMap = Ref (emptyMap)
  def initializeSpecId () =
-   (userStringMap := StringMap.empty)
+   (userStringMap := emptyMap)
        
  op  lookupSpecId : String * String * String -> String
  def lookupSpecId (id, ID, pkg) =
-   case StringMap.find (! userStringMap, pkg) of
+   case apply (! userStringMap, pkg) of
      | Some (userStrings, userUpper) ->
-       if StringSet.member (! userUpper, ID) then
-         if StringSet.member (! userStrings, id) then
+       if member (! userUpper, ID) then
+         if member (! userStrings, id) then
 	   id
 	 else 
 	   "|!" ^ id ^ "|"
        else 
-         (userUpper   := StringSet.add (! userUpper,   ID);
-          userStrings := StringSet.add (! userStrings, id);
+         (userUpper   := add (! userUpper,   ID);
+          userStrings := add (! userStrings, id);
           id)
      | None -> 
-       (userStringMap := StringMap.insert (! userStringMap, pkg, 
-					  (Ref (StringSet.add (empty, id)), 
-					   Ref (StringSet.add (empty, ID))));
+       (userStringMap := update (! userStringMap, pkg, 
+                                 (Ref (add (emptyMap, id)), 
+                                  Ref (add (emptyMap, ID))));
 	id)
 
  def specId (id, pkg) = 
@@ -183,7 +201,7 @@ SpecToLisp qualifying spec
    let ID = if generateCaseSensitiveLisp? then id else upper_ID in
    if isLispString upper_ID || id@0 = #! then
        "|!" ^ id ^ "|"
-     else if exists? (fn ch -> ch = #:) (explode id) then
+     else if exists? (fn ch -> ch = #:) id then
        "|"  ^ id ^ "|"
      else 
        lookupSpecId (id, upper_ID, pkg)
@@ -244,7 +262,7 @@ SpecToLisp qualifying spec
 		   dpn)
 
  def mkLUnaryFnRef (id : String, arity, vars) =
-   if StringSet.member (vars, id) then 
+   if member (vars, id) then 
      mkLVar id
    else 
      case arity of
@@ -254,7 +272,7 @@ SpecToLisp qualifying spec
  %op mkLApplyArity : String * Option Nat *
  def mkLApplyArity (id : QualifiedId, defPkgNm : String, arity, vars, args) =
    let pid = printPackageId (id, defPkgNm) in
-   let rator = (if StringSet.member (vars, pid) then 
+   let rator = (if member (vars, pid) then 
 		  mkLVar pid
 		else 
 		  case arity of
@@ -309,7 +327,7 @@ SpecToLisp qualifying spec
 	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
      | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
- op  mkLTermOp : [a] Spec * String * StringSet.Set * (Fun * MSType * a) * Option (MSTerm) -> LispTerm
+ op  mkLTermOp : [a] Spec * String * StringSet * (Fun * MSType * a) * Option (MSTerm) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
    case termOp of
      | (Project id, srt, _) -> 
@@ -563,7 +581,7 @@ SpecToLisp qualifying spec
        let  names = List.map (fn id -> specId (id, "")) names      in
        mkLLet (names, 
 	      List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms, 
-	      blockAtom (sp, dpn, StringSet.addList (vars, names), body))   
+	      blockAtom (sp, dpn, addList (vars, names), body))   
 
      | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"), _), _, _), 
 	      term, _)
@@ -589,7 +607,7 @@ SpecToLisp qualifying spec
      | Some info -> 
        firstOpDefInnerType info 
 
- op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MSTerm -> Option LispTerm
+ op  fullCurriedApplication : AnnSpec.Spec * String * StringSet * MSTerm -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
    let 
 
@@ -646,7 +664,7 @@ SpecToLisp qualifying spec
 
 	 | Var ((id, srt), _) -> 
 	   let id = specId (id, "") in
-	   if StringSet.member (vars, id) then
+	   if member (vars, id) then
 	     Var id 
 	   else
 	     Op id
@@ -657,7 +675,7 @@ SpecToLisp qualifying spec
 	   let  names = List.map (fn id -> specId (id, "")) names in
 	   mkLLet (names, 
 		  List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms, 
-		  mkLTerm (sp, dpn, StringSet.addList (vars, names), body))   
+		  mkLTerm (sp, dpn, addList (vars, names), body))   
 
 	 | LetRec (decls, term, _) ->
 	   let
@@ -670,7 +688,8 @@ SpecToLisp qualifying spec
 	   in
 	   let (names, terms) = unfold (decls, [], []) in
 	   let names = List.map (fn (id, _) -> specId (id, "")) names in
-	   let vars  = StringSet.difference (vars, StringSet.fromList names) in
+           let vars  = foldl remove vars names in
+	   % let vars  = StringSet.difference (vars, StringSet.fromList names) in
 
 	   %% Letrec bound names are to be treated as op-refs and not var-refs 
 
@@ -726,7 +745,7 @@ SpecToLisp qualifying spec
 
 	      | Var ((id, srt), _) ->
 		let id = specId (id, "") in
-		if StringSet.member (vars, id) then
+		if member (vars, id) then
 		  mkLApply (mkLTerm (sp, dpn, vars, term1), 
 			    [mkLTerm (sp, dpn, vars, term2)])
 		else 
@@ -750,7 +769,7 @@ SpecToLisp qualifying spec
            let names = List.map (fn id -> specId (id, "")) names in
 	   mkLLambda (names, 
 		     [], 
-		     mkLTerm (sp, dpn, StringSet.addList (vars, names), trm))
+		     mkLTerm (sp, dpn, addList (vars, names), trm))
             
 	 | Seq (terms, _) ->
            mkLSeq (List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms)
@@ -1143,7 +1162,7 @@ SpecToLisp qualifying spec
      | l -> l
                           
  def lispTerm (sp, dpn, term) = 
-   reduceTerm (mkLTerm (sp, dpn, StringSet.empty, term))
+   reduceTerm (mkLTerm (sp, dpn, emptyMap, term))
 
  def functionType? (sp, srt) = 
    case unfoldBase (sp, srt) of
@@ -1371,13 +1390,13 @@ SpecToLisp qualifying spec
 		  else 
 		    [(uName, term)]
 	      in
-		defs ++ new_defs)
+		new_defs ++ defs)
              defs
 	     (case opInfoDefs info of
               | main_def :: _ -> [main_def]
               | _ -> [])
    in
-     let defs = foldriAQualifierMap mkLOpDef [] spc.ops in
+     let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
      let _    = warn_about_non_constructive_defs defs   in
      {name          = defPkgName, 
       extraPackages = extraPackages, 
