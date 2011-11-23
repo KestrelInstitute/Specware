@@ -225,7 +225,8 @@ spec
             %% would like to remove tvs ~= [] condition but currently causes problem in Snark translation
             let snark_problem? = if snark_hack? then tvs = [] else false in
             
-            if (~ snark_problem?) && HOFnType? (typ, spc) && unfoldable? tm then
+            if ~ snark_problem? && q nin? dontUnfoldQualifiers
+                && HOFnType? (typ, spc) && unfoldable? tm then
               
               let numCurryArgs = curryShapeNum (spc, typ) in
               % see note below about debugging indexing error
@@ -243,6 +244,8 @@ spec
             else 
               None)
      spc.ops
+
+op dontUnfoldQualifiers: Ids = ["String"]
 
  %% has an argument that is HO. Arguments are either curried or product
  op HOFnType? (typ : MSType, spc : Spec) : Bool =
