@@ -56,8 +56,9 @@
 
 Simplify qualifying
 spec
- import ../Specs/Environment
- import ../Specs/Utilities
+ import Interpreter
+% import ../Specs/Environment
+% import ../Specs/Utilities
 
  op traceSimplify?: Bool = false
  op simplifyUsingSubtypes?: Bool = false
@@ -195,149 +196,149 @@ spec
 
  op  simplifyOne: Spec -> MSTerm -> MSTerm
  def simplifyOne spc term =
-      let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
+     let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
      let result =
-     case tryEvalOne spc term of
-       | Some cterm -> cterm
-       | _ ->
-     case term of
-       | Let([], tm, _) -> tm
-       | Let(all_decls as decl1::decl2::decls,body,_) ->
-         let bndvars  = foldl (fn (pvs, (p, _)) -> patternVars p ++ pvs) [] all_decls in
-         if exists? (fn (_, t) -> hasVarNameConflict?(t, bndvars)) all_decls
-           then  %% Rename to avoid name overload 
-             simplifyOne spc (renameBoundVars(term, bndvars))
-         else
-	 simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
-       %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
-       | Let([(pat as RecordPat(pflds, _), tm as Record(tflds, _))], body, pos)
-           | varRecordPattern? pat && varRecordTerm? tm ->
-         let new_decls = map (fn ((_,p), (_,t)) -> (p,t)) (zip(pflds, tflds)) in
-         simplifyOne spc (Let(new_decls, body, pos))
-       %% let y = x in f y  --> f x
-       | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
-	 substitute(body,[(v,wVar)])
-       %% case e of pat => bod   --> let pat = e in bod
-       | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
-         simplifyOne spc (Let([(pat, t)], body, pos))
-       %% Normalize simple lambda application to let
-       | Apply(Lambda([(VarPat vp,_,body)],_),t,pos) ->
-	 simplifyOne spc (Let([(VarPat vp,t)],body,pos))
-       %% case y of _ -> z  -->  z if y side-effect free
-       | Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
-	 if sideEffectFree tm then body else term
-%       %% case e of p -> body --> let p = e in body
-%       | Apply(Lambda([(p,Fun(Bool true,_,_),body)],_),e,pos) ->
-%         simplifyOne spc (Let([(p,e)],body,pos))
-       | Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
-	     body,_) ->
-	 simplifyOne spc (substitute(body,[(v,letTerm)])) 
-       %% Distribution of terms over application
-       %% (if p then x else y) z --> if p then x z else y z
-       | Apply(IfThenElse(t1,t2,t3,a),tm,_) ->
-	 if simpleTerm? tm
-	   then IfThenElse(t1,simplifiedApply(t2,tm,spc),simplifiedApply(t3,tm,spc),a)
-	   else term
-       %% (let x = y in f) z --> let x = y in f z
-       | Apply(Let(binds,body,a),tm,_) ->
-	 if simpleTerm? tm
-	   then Let(binds,simplifiedApply(body,tm,spc),a)
-	   else term
-       %% (letrec x = y in f) z --> let x = y in f z
-       | Apply(LetRec(binds,body,a),tm,_) ->
-	 if simpleTerm? tm
-	   then LetRec(binds,simplifiedApply(body,tm,spc),a)
-	   else term
-       %% (case x of p1 -> e1 p2 -> e2 ...) z  --> case x of p1 -> e1 z p2 -> e2 .z ..
-       | Apply(Apply(Lambda(cases,a1),x,a2),tm,_) ->
-	 if simpleTerm? tm
-	   then Apply(Lambda(map (fn (p,pred,ei) -> (p,pred,simplifiedApply(ei,tm,spc))) cases,a1),
-		      x,a2)
-	   else term	%% let y = <exp> in f y  --> f <exp> where y occurs once in f and no side-effects
-%	| Let([(VarPat((id,_),_),tm)],body,_) -> 
-%	  let
-%	     def replace(term) = 
-%		 case term
-%		   of (Var((id2,_),_)) -> if id = id2 then wVar else term 
-%		    | _ -> term
-%	  in
-%	     mapTerm(replace,fn x -> x,fn p -> p) body
-       | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) | simplifyUsingSubtypes? ->
-         mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
-                     Arrow(mkProduct[intType,intType],boolType,a),
-                     a),
-                 [e, mkNat 0]))
-%       %% Eta fn v -> case v of p -> e --> fn p -> e
-%       | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
-%                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
-%         lam
-       %% Quantification simplification
-       %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
-       | Bind(Forall,_,_,_) ->
-         let result = simplifyForall spc (forallComponents term) in
-         % let _ = writeLine("\nSFA0:\n"^printTerm term^"\n --->\n"^printTerm result) in
-         result
-       | Bind(Exists,_,_,_) -> simplifyExists spc (existsComponents term)
-       | Bind(Exists1,_,_,_) -> simplifyExists1(exists1Components term)
-       | Apply(Fun(Project i,_,_),Record(m,_),_) ->
-	 (case getField(m,i) of
-	   | Some fld -> fld
-	   | None -> term)
-       | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-         if  (trueTerm? t2 || equalTerm?(t1, t2)) && sideEffectFree t1
-           then mkTrue()
-           else mkSimpImplies(t1,t2)
-       %% x + n - n \_longrightarrow x  (Could generalize, but useful for IsaPrinter)
-       | Apply(Fun(Op(Qualified("Integer","-"),_),_,_),
-               Record([("1",Apply(Fun(Op(Qualified("Integer","+"),_),_,_),
-                                  Record([("1",t1),
-                                          ("2",Fun(Nat n1,_,_))],_),_)),
-                       ("2",Fun(Nat n2,_,_))],_), _)
-           | n1 = n2 ->
-         t1
-       %% (x:Nat) >= 0 --> true
-       | Apply(Fun(Op(Qualified("Integer",">="),_),_,_),
-               Record([("1", x), ("2", Fun(Nat 0, _, _))], _), _)
-           | simplifyUsingSubtypes? && subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
-         trueTerm
-       %% Isabelle specific: int x >= 0
-       | Apply(Fun(Op(Qualified("Integer", ">="),_),_,_),
-               Record([("1", Apply(Fun(Op(Qualified("ToIsa-Internal", "int"),_),_,_), _, _)),
-                       ("2", Fun(Nat 0, _, _))], _), _) ->
-         trueTerm
-       | Apply(Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_),
-                     Record([("1", pred1), ("2", pred2)],_), _),
-               arg_tm, _) | termSize arg_tm < 40 ->
-         mkSimpConj [simplifiedApply(pred1, arg_tm, spc),
-                     simplifiedApply(pred2, arg_tm, spc)]
-       | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, a) ->
-         let preds = decomposeConjPred term in
-         (case findLeftmost simpleLambda? preds of
-            | Some (lam as Lambda ([(pat, _, bod)], _)) ->
-              let other_preds = delete lam preds in
-              let Some arg_tm = patternToTerm pat in
-              mkLambda(pat, mkConj(bod::map (fn pred -> simplifiedApply(pred, arg_tm, spc)) other_preds))
-            | _ ->
-              let result = composeConjPreds(preds, spc) in
-              result)
-       %| Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
-       %  -> x
-       | IfThenElse(t1,t2,t3,a) ->
-         (case t1 of
-            | Fun(Bool true, _,_) -> t2
-            | Fun(Bool false,_,_) -> t1
-            | _ -> term)
-       %% There are contexts where this is undesirable, e.g. at one stage in Isabelle translator
-       %% | Apply(p, Var((_,ty), _), _) | subtypePred?(ty, p, spc) -> trueTerm
-       | _ ->
-     case simplifyCase spc term of
-       | Some tm -> tm
-       | None ->
-     let term = removeUnnecessaryVariable spc term in
-     let term = tupleInstantiate spc term in
-     term
+         case tryEvalOne spc term of
+           | Some cterm -> cterm
+           | _ ->
+         case term of
+           | Let([], tm, _) -> tm
+           | Let(all_decls as decl1::decl2::decls,body,_) ->
+             let bndvars  = foldl (fn (pvs, (p, _)) -> patternVars p ++ pvs) [] all_decls in
+             if exists? (fn (_, t) -> hasVarNameConflict?(t, bndvars)) all_decls
+               then  %% Rename to avoid name overload 
+                 simplifyOne spc (renameBoundVars(term, bndvars))
+             else
+             simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
+           %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
+           | Let([(pat as RecordPat(pflds, _), tm as Record(tflds, _))], body, pos)
+               | varRecordPattern? pat && varRecordTerm? tm ->
+             let new_decls = map (fn ((_,p), (_,t)) -> (p,t)) (zip(pflds, tflds)) in
+             simplifyOne spc (Let(new_decls, body, pos))
+           %% let y = x in f y  --> f x
+           | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
+             substitute(body,[(v,wVar)])
+           %% case e of pat => bod   --> let pat = e in bod
+           | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
+             simplifyOne spc (Let([(pat, t)], body, pos))
+           %% Normalize simple lambda application to let
+           | Apply(Lambda([(VarPat vp,_,body)],_),t,pos) ->
+             simplifyOne spc (Let([(VarPat vp,t)],body,pos))
+           %% case y of _ -> z  -->  z if y side-effect free
+           | Apply(Lambda([(WildPat(_,_),_,body)],_),tm,_) ->
+             if sideEffectFree tm then body else term
+    %       %% case e of p -> body --> let p = e in body
+    %       | Apply(Lambda([(p,Fun(Bool true,_,_),body)],_),e,pos) ->
+    %         simplifyOne spc (Let([(p,e)],body,pos))
+           | Let([(VarPat(v,_),letTerm as (Apply(Fun(Restrict,_,_),(Var _),_)))],
+                 body,_) ->
+             simplifyOne spc (substitute(body,[(v,letTerm)])) 
+           %% Distribution of terms over application
+           %% (if p then x else y) z --> if p then x z else y z
+           | Apply(IfThenElse(t1,t2,t3,a),tm,_) ->
+             if simpleTerm? tm
+               then IfThenElse(t1,simplifiedApply(t2,tm,spc),simplifiedApply(t3,tm,spc),a)
+               else term
+           %% (let x = y in f) z --> let x = y in f z
+           | Apply(Let(binds,body,a),tm,_) ->
+             if simpleTerm? tm
+               then Let(binds,simplifiedApply(body,tm,spc),a)
+               else term
+           %% (letrec x = y in f) z --> let x = y in f z
+           | Apply(LetRec(binds,body,a),tm,_) ->
+             if simpleTerm? tm
+               then LetRec(binds,simplifiedApply(body,tm,spc),a)
+               else term
+           %% (case x of p1 -> e1 p2 -> e2 ...) z  --> case x of p1 -> e1 z p2 -> e2 .z ..
+           | Apply(Apply(Lambda(cases,a1),x,a2),tm,_) ->
+             if simpleTerm? tm
+               then Apply(Lambda(map (fn (p,pred,ei) -> (p,pred,simplifiedApply(ei,tm,spc))) cases,a1),
+                          x,a2)
+               else term	%% let y = <exp> in f y  --> f <exp> where y occurs once in f and no side-effects
+    %	| Let([(VarPat((id,_),_),tm)],body,_) -> 
+    %	  let
+    %	     def replace(term) = 
+    %		 case term
+    %		   of (Var((id2,_),_)) -> if id = id2 then wVar else term 
+    %		    | _ -> term
+    %	  in
+    %	     mapTerm(replace,fn x -> x,fn p -> p) body
+           | Apply(Fun(Op(Qualified("Nat","natural?"), _),_,_), e, a) | simplifyUsingSubtypes? ->
+             mkAppl((Fun(Op (Qualified("Integer",">="),Infix(Left,20)),
+                         Arrow(mkProduct[intType,intType],boolType,a),
+                         a),
+                     [e, mkNat 0]))
+    %       %% Eta fn v -> case v of p -> e --> fn p -> e
+    %       | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
+    %                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
+    %         lam
+           %% Quantification simplification
+           %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
+           | Bind(Forall,_,_,_) ->
+             let result = simplifyForall spc (forallComponents term) in
+             % let _ = writeLine("\nSFA0:\n"^printTerm term^"\n --->\n"^printTerm result) in
+             result
+           | Bind(Exists,_,_,_) -> simplifyExists spc (existsComponents term)
+           | Bind(Exists1,_,_,_) -> simplifyExists1(exists1Components term)
+           | Apply(Fun(Project i,_,_),Record(m,_),_) ->
+             (case getField(m,i) of
+               | Some fld -> fld
+               | None -> term)
+           | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
+             if  (trueTerm? t2 || equalTerm?(t1, t2)) && sideEffectFree t1
+               then mkTrue()
+               else mkSimpImplies(t1,t2)
+           %% x + n - n \_longrightarrow x  (Could generalize, but useful for IsaPrinter)
+           | Apply(Fun(Op(Qualified("Integer","-"),_),_,_),
+                   Record([("1",Apply(Fun(Op(Qualified("Integer","+"),_),_,_),
+                                      Record([("1",t1),
+                                              ("2",Fun(Nat n1,_,_))],_),_)),
+                           ("2",Fun(Nat n2,_,_))],_), _)
+               | n1 = n2 ->
+             t1
+           %% (x:Nat) >= 0 --> true
+           | Apply(Fun(Op(Qualified("Integer",">="),_),_,_),
+                   Record([("1", x), ("2", Fun(Nat 0, _, _))], _), _)
+               | simplifyUsingSubtypes? && subtypeOf?(inferType(spc, x), Qualified("Nat", "Nat"), spc) ->
+             trueTerm
+           %% Isabelle specific: int x >= 0
+           | Apply(Fun(Op(Qualified("Integer", ">="),_),_,_),
+                   Record([("1", Apply(Fun(Op(Qualified("ToIsa-Internal", "int"),_),_,_), _, _)),
+                           ("2", Fun(Nat 0, _, _))], _), _) ->
+             trueTerm
+           | Apply(Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_),
+                         Record([("1", pred1), ("2", pred2)],_), _),
+                   arg_tm, _) | termSize arg_tm < 40 ->
+             mkSimpConj [simplifiedApply(pred1, arg_tm, spc),
+                         simplifiedApply(pred2, arg_tm, spc)]
+           | Apply(Fun(Op(Qualified("Bool","&&&"),_),_,_), _, a) ->
+             let preds = decomposeConjPred term in
+             (case findLeftmost simpleLambda? preds of
+                | Some (lam as Lambda ([(pat, _, bod)], _)) ->
+                  let other_preds = delete lam preds in
+                  let Some arg_tm = patternToTerm pat in
+                  mkLambda(pat, mkConj(bod::map (fn pred -> simplifiedApply(pred, arg_tm, spc)) other_preds))
+                | _ ->
+                  let result = composeConjPreds(preds, spc) in
+                  result)
+           %| Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
+           %  -> x
+           | IfThenElse(t1,t2,t3,a) ->
+             (case t1 of
+                | Fun(Bool true, _,_) -> t2
+                | Fun(Bool false,_,_) -> t1
+                | _ -> term)
+           %% There are contexts where this is undesirable, e.g. at one stage in Isabelle translator
+           %% | Apply(p, Var((_,ty), _), _) | subtypePred?(ty, p, spc) -> trueTerm
+           | _ ->
+         case simplifyCase spc term of
+           | Some tm -> tm
+           | None ->
+         let term = removeUnnecessaryVariable spc term in
+         let term = tupleInstantiate spc term in
+         term
     in
-     let _ = if traceSimplify? && ~ (equalTerm?(term, result))
+    let _ = if traceSimplify? && ~ (equalTerm?(term, result))
                then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
     result
 
