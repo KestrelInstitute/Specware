@@ -100,11 +100,11 @@ spec
        (Cons(Cond cond, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
  def insert((x, srt), gamma as (ds, tvs, spc, qid, name, ty, names, lift?, trivs))  = 
      let ds = Cons(Var(x, srt), ds) in
-     let i = case StringMap.find (!names, x)
+     let i = case apply(!names, x)
 	      of None   -> 0
 	       | Some n -> n
      in
-     let _ = names := StringMap.insert(!names, x, i) in
+     let _ = names := update(!names, x, i) in
      let gamma = (ds, tvs, spc, qid, name, ty, names, lift?, trivs) in
      let gamma = assertSubtypeCond(mkVar(x, srt), srt, gamma) in
      gamma
@@ -112,7 +112,7 @@ spec
  def insertLet(decls, (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) = 
      (Cons(Let decls, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
  def insertLetRec(decls, (ds, tvs, spc, qid, name, ty, names, lift?, trivs)) =
-   let _ = app (fn((x, _), _)-> names := StringMap.insert(!names, x, 0)) decls in
+   let _ = app (fn((x, _), _)-> names := update(!names, x, 0)) decls in
    (Cons(LetRec decls, ds), tvs, spc, qid, name, ty, names, lift?, trivs)
 
  def printDecl(d:Decl) = 
@@ -180,6 +180,14 @@ spec
             id, id)
      tm
 
+ op evaluateGroundRhs(tm: MSTerm, spc: Spec): MSTerm =
+   case tm of
+     | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([(_,lhs), (_,rhs)], _), _), a) ->
+       let new_rhs = reduceTerm(rhs, spc) in
+       if equalTerm?(rhs, new_rhs) then tm
+         else Bind(Forall, vs, mkSimpImplies(lhs, new_rhs), a)
+     | _ -> reduceTerm(tm, spc)
+
  op simplifyObligUnfoldSubtypePredicates?: Bool = true
  op simplifyUnfoldSubtypePredicates (spc: Spec) (tm: MSTerm): MSTerm =
    let tm1 = mapTerm (fn t ->
@@ -205,10 +213,10 @@ spec
                    if ~simplifyFalseObligations? && falseTerm?(simplify spc bare_oblig)
                      then oblig
                    else
-                   let oblig1 = simplify spc oblig in
+                   let oblig1 = simplify spc (evaluateGroundRhs (oblig, spc)) in
                    let oblig2 = removeRedundantTypePredicates spc oblig1 in
                    let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
-                                else simplify spc oblig2
+                                else simplify spc (evaluateGroundRhs(oblig2, spc))
                    in
                    let oblig4 = %if simplifyObligUnfoldSubtypePredicates?
             %                     then simplifyUnfoldSubtypePredicates spc oblig3
@@ -297,7 +305,7 @@ spec
 % check type well formedness as well...
 
  def |-((tcc, gamma), (M, tau)) =
-   % let _ = writeLine(".. |- ("^printTerm M^", "^printType tau^")") in
+   % let _ = writeLine("\n.. |- ("^printTerm M^", "^printType tau^")\n") in
    case M
      of Apply(N1, N2, _) ->
         let spc = getSpec gamma in
@@ -860,7 +868,7 @@ spec
      else (ty1, ty2)
 
  def <=	(tcc, gamma, M, tau, sigma) = 
-   (% writeLine(printTerm M^ ": "^ printType tau^" <= "^ printType sigma);
+   (% writeLine(printTerm M^ ": "^ printType tau^"\n <= "^ printType sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
     % let _ =  writeLine(printTerm M^ ": \n"^ printType tau^"\n <= \n"^ printType sigma) in
@@ -1039,11 +1047,11 @@ spec
      | Fun(Op(Qualified(q, id), _), _, _) -> q
      | _ -> UnQualified
 
- op  insertQID: QualifiedId * StringMap Nat -> StringMap Nat
+ op  insertQID: QualifiedId * NameSupply -> NameSupply
  def insertQID(Qualified(q, id), m) =
    if q = UnQualified
      then m
-     else StringMap.insert (m, id, 0)
+     else addName (m, id, 0)
 
  op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
    if refine_num = 0 then qid
@@ -1056,18 +1064,18 @@ spec
 
  def checkSpec (spc, omitDefSubtypeConstrs?, ignoreOpFn?, spc_name) = 
    %let localOps = spc.importInfo.localOps in
-   let names = foldl (fn (m, el) ->
+   let names = foldl (fn (ns, el) ->
 		      case el of
-			| Op    (qid, def?, _) -> insertQID(qid, m)
-			| OpDef (qid, _, _)    -> insertQID(qid, m)
-			| _ -> m)
-                     empty 
+			| Op    (qid, def?, _) -> insertQID(qid, ns)
+			| OpDef (qid, _, _)    -> insertQID(qid, ns)
+			| _ -> ns)
+                     (empty()) 
 		     spc.elements
    in
    let lift? = includesPredLifter? spc in
    let triv_count_ref = Ref 0 in
    let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm ->
-                  ([], tvs, spc, qid, nm, tau, Ref names, lift?, triv_count_ref)
+                  ([], tvs, spc, qid, nm, tau, names, lift?, triv_count_ref)
    in
    let tcc = ([], empty) in
    %% Use foldr rather than foldl so that we can maintain adjacency of pragmas to defs (see Op case)
