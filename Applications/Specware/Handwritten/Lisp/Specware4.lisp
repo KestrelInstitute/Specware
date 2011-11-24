@@ -79,8 +79,10 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
-                (require 'sb-cltl2)
-		; (require :sb-sprof)
+                (require :sb-cltl2)
+		;(require :sb-sprof)
+                (require :asdf)
+                (require :sb-grovel)
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
@@ -422,17 +424,18 @@
 ;;;   #'swshell::specware-shell0))
 
 (defun cl-user::boot ()
-  (cl-user::sw "/Applications/Specware/Specware4")
-  (format t "Full garbage collection...")
-  (system-spec::garbageCollect t)
-  (terpri t)
-  (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
+  #+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
+  (let ((cl:*print-pretty* nil)
+        (val (and (cl-user::sw "/Applications/Specware/Specware4")
+                  (progn (format t "Full garbage collection...")
+                         (system-spec::garbageCollect t)
+                         (terpri t)
+                         (cl-user::swl "/Applications/Specware/Specware4")))))
     (unless val
       (funcall (intern #+case-sensitive "eval-in-emacs"
                        #-case-sensitive "EVAL-IN-EMACS"
                        :Emacs)
-	       "(delete-continuation)"))
-    val)
-  )
-
+               "(delete-continuation)"))
+    val))
+;(trace load)
 (declaim (optimize (speed 2) (debug 3) (safety 2)))
