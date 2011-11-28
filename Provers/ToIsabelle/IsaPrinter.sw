@@ -2224,9 +2224,10 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 
  op prfEndsWithTerminator?(prf: String): Bool =
    let len = length prf in
-   testSubseqEqual?("done",prf,0,len-4)
-  \_or testSubseqEqual?("sorry",prf,0,len-5)
-  \_or testSubseqEqual?("qed",prf,0,len-3)
+   endsIn?(prf,"done")
+  \_or endsIn?(prf,"sorry")
+  \_or endsIn?(prf,"oops")
+  \_or endsIn?(prf,"qed")
   \_or lastLineEnds prf
 
  op  stripExcessWhiteSpace: String -> String
