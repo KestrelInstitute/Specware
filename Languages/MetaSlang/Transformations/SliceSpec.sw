@@ -30,19 +30,17 @@ op haskellPragma?(s: String): Bool =
   len > 2 \_and (let pr_type = subFromTo(s, 0, 7) in
              pr_type = "Haskell" \_or pr_type = "haskell")
 
- op  filterSpecNonBaseElements: (SpecElement -> Bool) -> SpecElements -> Bool -> Spec -> SpecElements
- def filterSpecNonBaseElements p elements sliceBase? base =
+ op  filterSpecNonBaseElements: (SpecElement -> Bool) -> SpecElements -> Spec -> SpecElements
+ def filterSpecNonBaseElements p elements base =
    mapPartial
      (fn el ->
       if ~(p el) then
 	None
       else
-	Some(case el of
-	       | Import (s_tm, i_sp, elts, a) ->
-	         if (sliceBase? => i_sp ~= base)
-                   then Import (s_tm, i_sp, filterSpecNonBaseElements p elts sliceBase? base, a)
-                   else el
-	       | _ ->  el))
+	Some (case el of
+                | Import (s_tm, i_sp, elts,                                  a) ->
+                  Import (s_tm, i_sp, filterSpecNonBaseElements p elts base, a)
+                | _ ->  el))
      elements
 
 op [a] sliceAQualifierMap(m: AQualifierMap a, s: QualifierSet, pred: QualifiedId -> Bool): AQualifierMap a =
@@ -57,7 +55,6 @@ op scrubSpec (spc        : Spec,
               op_set     : QualifierSet, 
               type_set   : QualifierSet)
  : Spec =
- let sliceBase? = false in
  let base = SpecCalc.getBaseSpec() in
  let 
    def element_filter el =
@@ -73,11 +70,9 @@ op scrubSpec (spc        : Spec,
          % let _ = writeLine ((if keep? then "keep opdef " else "scrub opdef ") ^ anyToString qid) in
          keep?
        | Property (_, _, _, formula, _) ->
-         forall? (fn qid -> qid in? op_set || (sliceBase? && some?(findTheOp(base, qid))))
-         (opsInTerm formula)
+         forall? (fn qid -> qid in? op_set) (opsInTerm formula)
          && 
-         forall? (fn qid -> qid in? type_set || (sliceBase? && some?(findTheType(base, qid))))
-         (typesInTerm formula)
+         forall? (fn qid -> qid in? type_set) (typesInTerm formula)
 %         | Import(tm, im_spc, im_elts, _) ->
 %           exists? (fn im_el -> if element_filter im_el
 %                                    then % let _ = writeLine("filter accepts:\n"^ anyToString tm) in
@@ -86,9 +81,9 @@ op scrubSpec (spc        : Spec,
        | Import _ -> true
        | _ -> haskellElement? el
  in
- spc << {types    = sliceAQualifierMap (spc.types, type_set, fn qid -> sliceBase? && some? (findTheType (base, qid))),
-         ops      = sliceAQualifierMap (spc.ops,     op_set, fn qid -> sliceBase? && some? (findTheOp   (base, qid))),
-         elements = filterSpecNonBaseElements element_filter spc.elements sliceBase? base
+ spc << {types    = sliceAQualifierMap (spc.types, type_set, fn qid -> false),
+         ops      = sliceAQualifierMap (spc.ops,     op_set, fn qid -> false),
+         elements = filterSpecNonBaseElements element_filter spc.elements base
          }
 
 op sliceSpecInfoForCode (spc        : Spec,
@@ -107,7 +102,6 @@ op sliceSpecInfo (spc             : Spec,
   : QualifierSet * QualifierSet =
   let base             = SpecCalc.getBaseSpec() in
   let ignore_subtypes? = ~ chase_subtypes?      in
-  let sliceBase?       = false                  in
   let 
       def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
 
@@ -115,7 +109,7 @@ op sliceSpecInfo (spc             : Spec,
         foldTerm (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
-                        if qid nin? opids  && qid nin? op_set && (sliceBase? => none? (findTheOp (base, qid))) then
+                        if qid nin? opids  && qid nin? op_set then
                           qid :: opids
                         else
                           opids
@@ -135,7 +129,7 @@ op sliceSpecInfo (spc             : Spec,
         foldType (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
-                        if qid nin? opids && qid nin? op_set && (sliceBase? => none? (findTheOp (base, qid))) then
+                        if qid nin? opids && qid nin? op_set then
                           qid :: opids
                         else
                           opids
@@ -155,12 +149,7 @@ op sliceSpecInfo (spc             : Spec,
         foldTerm (fn result -> fn _ -> result,
                   fn result -> fn t ->
                     case t of
-                      | Base (qid,_,_)
-                          | qid nin? result   && 
-                            qid nin? type_set && 
-                            (sliceBase? => none? (findTheOp (base, qid))) 
-                        ->
-                        qid :: result
+                      | Base (qid,_,_) | qid nin? result && qid nin? type_set -> qid :: result
                       | _ -> result,
                   fn result -> fn _ -> result)
                  newtypeids 
@@ -170,12 +159,7 @@ op sliceSpecInfo (spc             : Spec,
         foldType (fn result -> fn _ -> result,
                   fn result -> fn t ->
                     case t of
-                      | Base (qid,_,_) 
-                          | qid nin? result   && 
-                            qid nin? type_set && 
-                            (sliceBase? => none? (findTheOp (base, qid))) 
-                        ->
-                        qid :: result
+                      | Base (qid,_,_) | qid nin? result && qid nin? type_set -> qid :: result
                       | _ -> result,
                   fn result -> fn _ -> result)
                  newtypeids 
