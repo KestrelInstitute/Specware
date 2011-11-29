@@ -573,8 +573,8 @@
 	    (if (eq (car value) :|None|)
 		(warn "No value for expression?")
 	      (if *swe-return-value?* (cdr value)
-		(MSInterpreter::printValue-2 (cdr value)
-					     (use-x-symbol?))))
+		(MSInterpreter::printMSIValue-2 (cdr value)
+                                                (use-x-symbol?))))
 	  (let (#+allegro *redefinition-warnings*)
 	    ;; Load resulting lisp code:
 	    (load (make-pathname :type "lisp" :defaults tmp-cl))
