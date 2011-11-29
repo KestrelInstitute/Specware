@@ -14,16 +14,35 @@ spec
                            overloadedOps: List String}
   type TypeCoercionTable = List TypeCoercionInfo
 
+  op lifterFuns: List(QualifiedId * QualifiedId) =
+    [(Qualified("List", "List"), Qualified("List", "map"))]
+    
   op needsCoercion?(ctxt_ty: MSType, gen_ty: MSType, coercions: TypeCoercionTable, spc: Spec)
-     : Option(Bool * TypeCoercionInfo) =
+     : Option(Bool * TypeCoercionInfo * List(QualifiedId * QualifiedId)) =
     % let _ = writeLine(printType gen_ty^" -~-> "^printType ctxt_ty) in
     let result =
-          case findLeftmost (fn tb -> subtypeOf?(gen_ty, tb.subtype, spc) \_and \_not(subtypeOf?(ctxt_ty, tb.subtype, spc))) coercions of
-            | Some tb -> Some(true, tb)
+          case findLeftmost (fn tb -> subtypeOf?(gen_ty, tb.subtype, spc)
+                               \_and \_not(subtypeOf?(ctxt_ty, tb.subtype, spc))) coercions of
+            | Some tb -> Some(true, tb, [])
             | None ->
-          case findLeftmost (fn tb -> subtypeOf?(ctxt_ty, tb.subtype, spc) \_and \_not(subtypeOf?(gen_ty, tb.subtype, spc))) coercions of
-            | Some tb -> Some(false, tb)
-            | None -> None
+          case findLeftmost (fn tb -> subtypeOf?(ctxt_ty, tb.subtype, spc)
+                               \_and \_not(subtypeOf?(gen_ty, tb.subtype, spc))) coercions of
+            | Some tb -> Some(false, tb, [])
+            | None ->
+          case unfoldBeforeCoProduct(spc, ctxt_ty) of
+            | Base(ctxt_qid, [ctxt_ty_a], _) ->
+              (case unfoldBeforeCoProduct(spc, gen_ty) of
+                 | Base(gen_qid, [gen_ty_a], _) | ctxt_qid = gen_qid ->
+                   (case needsCoercion?(ctxt_ty_a, gen_ty_a, coercions, spc) of
+                    | None -> None
+                    | Some(toSuper?, tb, lifters) ->
+                    case findLeftmost(fn (qid, _) -> qid = ctxt_qid) lifterFuns of
+                      | Some(lifter) -> Some(toSuper?, tb, lifter :: lifters)
+                      | None -> (warn("Missing coercion lifting function for type "
+                                      ^show ctxt_qid);
+                                 None))
+                 | _ -> None)
+            | _ -> None
     in
     % let _ = writeLine(if some? result then " Yes" else " No") in
     result
@@ -38,6 +57,19 @@ spec
     case t of
       | Fun(Op(Qualified(_, "id"), _), _, _) -> true
       | _ -> false
+
+  op mkLiftedFun(f: MSTerm, lifterFns: List(QualifiedId * QualifiedId), spc: Spec): MSTerm =
+   case lifterFns of
+     | [] -> f
+     | (lift_ty_qid, lifter_fn) :: r_lifterFns ->
+   let rf = mkLiftedFun(f, r_lifterFns, spc) in
+   let f_ty = inferType(spc, f) in
+   case arrowOpt(spc, f_ty) of
+     | Some(dom, rng) -> mkApply(mkOp(lifter_fn,
+                                      mkArrow(f_ty, mkArrow(mkBase(lift_ty_qid, [dom]),
+                                                            mkBase(lift_ty_qid, [rng])))),
+                                 f)
+     | None -> fail("mkLiftedFun: "^printTerm f^" not a function type.")
 
   op patTermVarsForProduct(fields: List(Id * MSType)): MSPattern * MSTerm =
     let (pats, tms, _) = foldr (fn ((fld_i, p_ty), (pats, tms, i)) ->
@@ -89,10 +121,11 @@ spec
 	else
         % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n-> " ^ printType ty^"\n") in
 	case needsCoercion?(ty, rm_ty, coercions, spc) of
-          | Some(toSuper?, tb) ->
+          | Some(toSuper?, tb, lifters) ->
             (case tm of
               | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
-              | _ -> if toSuper? then coerceToSuper(n_tm, tb) else coerceToSub(n_tm, tb))
+              | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters)
+                     else coerceToSub(n_tm, tb, lifters))
           | None ->
         if simpleTerm n_tm then         % Var or Op
           case (arrowOpt(spc, ty), arrowOpt(spc, rm_ty)) of
@@ -172,21 +205,23 @@ spec
 	    TypedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
 
-      def coerceToSuper(tm, tb) =
+      def coerceToSuper(tm, tb, lifters) =
         case tm of
-          | Apply(f, x, _) | f = tb.coerceToSub -> x
-          | Let(m, b, a) -> Let(m, coerceToSuper(b, tb), a)
+          | Apply(f, x, _) | f = tb.coerceToSub && lifters = [] ->
+            x
+          | Let(m, b, a) -> Let(m, coerceToSuper(b, tb, lifters), a)
           | _ ->
             if idFn? tb.coerceToSuper then tm
-              else mkApply(tb.coerceToSuper, tm)
-      def coerceToSub(tm, tb) =
+              else mkApply(mkLiftedFun(tb.coerceToSuper, lifters, spc), tm)
+      def coerceToSub(tm, tb, lifters) =
         case tm of
-          | Apply(f, x, _) | f = tb.coerceToSuper -> x
-          | Let(m, b, a) -> Let(m, coerceToSub(b, tb), a)
+          | Apply(f, x, _) | f = tb.coerceToSuper && lifters = [] ->
+            x
+          | Let(m, b, a) -> Let(m, coerceToSub(b, tb, lifters), a)
           | _ ->
             if idFn? tb.coerceToSub then tm
-              else mkApply(tb.coerceToSub, tm)
-      def coerceSubtypePreds ty =
+              else mkApply(mkLiftedFun(tb.coerceToSub, lifters, spc), tm)
+      def coerceSubtypePreds(ty: MSType): MSType =
         case ty of
           | Subtype(ss, pred, a) -> Subtype(ss, mapTerm(pred, inferType(spc, pred)), a)
           | _ -> ty
