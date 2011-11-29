@@ -442,11 +442,50 @@
 			      nil))
       (format t "No previous unit evaluated~%"))))
 
+(defun unitIdChar (ch)
+  (or (member ch '(#\/ #\_ #\#))
+      (let ((num (char-code ch)))
+	(or (and (>= num (char-code #\0))
+		 (<= num (char-code #\9)))
+	    (and (>= num (char-code #\a))
+		 (<= num (char-code #\z)))
+	    (and (>= num (char-code #\A))
+		 (<= num (char-code #\Z)))))))
+
+(defun split-filename-for-path (filename)
+  ;; Splits absolute filename into head suitable for swpath entry and
+  ;; tail suitable for a uid. Note that uids cannot contain ~ or spaces
+  ;; Assumes sw::normalize-filename has been called
+  (let (head pos) 
+    (if (eq (elt filename 1) #\:)
+	(progn (setq head (subseq filename 0 3))
+	       (setq filename (subseq filename 3)))
+      (progn (setq head (subseq filename 0 1))
+	     (setq filename (subseq filename 1))))
+    (loop while (and (position-if-not 'unitIdChar filename)
+                     (setq pos (position #\/ filename)))
+      do (setq head (concatenate 'string head (subseq filename 0 (1+ pos))))
+         (setq filename (subseq filename (1+ pos))))
+    (cons head (concatenate 'string "/" filename))))
+
+(defun name-relative-to-swpath (filename)
+  (let ((swpath (get-swpath)))
+    (loop for dir in (Specware::split-components swpath (if System-Spec::msWindowsSystem?
+                                                            '(#\;) '(#\:)))
+       do (let ((dir (norm-unitid-str dir)))
+	    (if (string-equal dir (subseq  filename 0 (min (length dir) (length filename))))
+		(let ((rel-filename (subseq filename (length dir))))
+		  (unless (position-if-not 'unitIdChar rel-filename)
+		    (return (if (eq (elt rel-filename 0) #\/)
+				rel-filename
+			      (concatenate 'string "/" rel-filename)))))))
+       finally (return (split-filename-for-path filename)))))
+
 (defpackage :SWE) ; for access to results
 
 (defvar *swe-use-interpreter?* t)   ; nil means used compiled lisp code
 (defvar *current-swe-spec*     nil) ; nil means no import
-(defvar *current-swe-spec-dir* nil)
+(defvar *current-swe-spec-dir* "")
 (defvar swe::tmp)
 
 (defun swe-spec (&optional x)
@@ -455,27 +494,21 @@
   (if (null x) (format t "~&No previous spec")
     (progn
       (setq x (norm-unitid-str x))
-      (let ((swpath-relative? (eq (elt x 0) #\/)))
+      (let ((x0 x)
+            (swpath-relative? (eq (elt x 0) #\/)))
+        (setq *current-swe-spec-dir* "")
 	(unless swpath-relative?
-	  ;(format t "~&coercing ~A to /~A~%" x x)
-	  (setq x (format nil "/~A" x))
-	  (add-to-swpath (Specware::current-directory)))
+	  (setq x (name-relative-to-swpath (format nil "~A~A" (Specware::current-directory) x)))
+          (when (consp x)
+            (setq *current-swe-spec-dir* (car x)
+                  x (cdr x)))
+          ;(format t "~&coercing ~A~A~%" (or *current-swe-spec-dir* "") x)
+          )
 	;;      (setq x (norm-unitid-str x))
 	(let ((saved-swpath (and *saved-swpath*
 				 (Specware::getenv "SWPATH"))))
-	  (cond ((sw (string x))	; restores *saved-swpath* if necessary
+	  (cond ((sw (string x0))	; restores *saved-swpath* if necessary
 		 (setq *current-swe-spec* x)
-		 (setq *current-swe-spec-dir*
-		   (if swpath-relative?
-		       (if saved-swpath
-			   (subseq saved-swpath 0
-				   ;; if position returns nil we get the whole
-				   ;; thing which is correct
-				   (position (if System-Spec::msWindowsSystem?
-                                                 #\; #\:)
-					     saved-swpath))
-			 "")
-		     (Specware::current-directory)))
 		 (format t "~&Subsequent evaluation commands will now import ~A~A.~%"
 			 *current-swe-spec-dir*
 			 (if (equal *current-swe-spec-dir* "") x (subseq x 1)))
