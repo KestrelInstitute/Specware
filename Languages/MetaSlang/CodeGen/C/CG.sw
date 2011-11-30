@@ -151,6 +151,7 @@ spec
       ()
 
   op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
+    %% If true, don't include these (and don't recur through their definitions) when slicing for code generation.
     case q of
       | "Boolean"    -> id in? ["Bool"]
       | "Integer"    -> id in? ["Int", "Int0"]
@@ -160,6 +161,7 @@ spec
       | _ -> false
 
   op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
+    %% If true, don't include these (and don't recur through their definitions) when slicing for code generation.
     case q of
       | "Boolean"    -> id in? ["show", "toString"]
       | "Integer"    -> id in? ["+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
@@ -184,11 +186,11 @@ spec
       | "Handcoded"  -> true
       | _ -> false
 
-  op subtract? : Bool = true  % TODO: Would like to deprecate use of subtractSpec, 
-                              % setting subtract? to false still causes problems
+  op subtract? : Bool = false  % TODO: Would like to deprecate use of subtractSpec, 
+                               % setting subtract? to false still causes problems
 
   op removeUnusedOps (top_ops : QualifiedIds) (top_types : QualifiedIds) (spc : Spec) : Spec =
-   sliceSpecForCode (spc, top_ops, top_types, builtinCType?, builtinCOp?)
+   sliceSpecForCode (spc, top_ops, top_types, builtinCOp?, builtinCType?)
 
   op transformSpecForCodeGenAux (basespc             : Spec)
                                 (spc                 : Spec) 

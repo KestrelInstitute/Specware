@@ -140,6 +140,15 @@ int Integer_ipred (int i) {
   return (i - 1);
 }
 
+int Integer_div (int i, int j) {
+  return (i / j);
+}
+
+int Integer_mod (int i, int j) {
+  return (i % j);
+}
+
+
 // char* Integer_show(int n) {
 //   char buf[12];
 //   char *res;

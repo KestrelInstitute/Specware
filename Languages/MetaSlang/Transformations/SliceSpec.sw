@@ -114,13 +114,19 @@ SliceSpec qualifying spec
       foldTerm (fn opids -> fn tm ->
                   case tm of
                     | Fun (Op (qid,_), funtype, _) ->
-                      if qid nin? opids  && qid nin? op_set then
+                      % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                      if cut_op? qid then
+                        opids
+                      else if qid nin? opids  && qid nin? op_set then
                         qid :: opids
                       else
                         opids
                     | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
                       let eq_qid = eq_op_qid type_qid in
-                      if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
+                      % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
+                      if cut_op? eq_qid then
+                        opids
+                      else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
                         eq_qid :: opids
                       else
                         opids
@@ -134,13 +140,19 @@ SliceSpec qualifying spec
       foldType (fn opids -> fn tm ->
                   case tm of
                     | Fun (Op (qid,_), funtype, _) ->
-                      if qid nin? opids && qid nin? op_set then
+                      % let _ = writeLine("new_ops_in_type: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                      if cut_op? qid then
+                        opids
+                      else if qid nin? opids && qid nin? op_set then
                         qid :: opids
                       else
                         opids
                     | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
                       let eq_qid = eq_op_qid type_qid in
-                      if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
+                      % let _ = writeLine("new_ops_in_type: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
+                      if cut_op? eq_qid then
+                        opids
+                      else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
                         eq_qid :: opids
                       else
                         opids
@@ -154,7 +166,14 @@ SliceSpec qualifying spec
       foldTerm (fn result -> fn _ -> result,
                 fn result -> fn t ->
                   case t of
-                    | Base (qid,_,_) | qid nin? result && qid nin? type_set -> qid :: result
+                    | Base (qid,_,_) ->
+                      % let _ = writeLine("new_types_in_term: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
+                      if cut_type? qid then
+                        result
+                      else if qid nin? result && qid nin? type_set then
+                        qid :: result
+                      else
+                        result
                     | _ -> result,
                 fn result -> fn _ -> result)
                newtypeids 
@@ -164,32 +183,53 @@ SliceSpec qualifying spec
       foldType (fn result -> fn _ -> result,
                 fn result -> fn t ->
                   case t of
-                    | Base (qid,_,_) | qid nin? result && qid nin? type_set -> qid :: result
+                    | Base (qid,_,_) ->
+                      % let _ = writeLine("new_types_in_type: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
+                      if cut_type? qid then
+                        result
+                      else if qid nin? result && qid nin? type_set then
+                        qid :: result
+                      else
+                        result
                     | _ -> result,
                 fn result -> fn _ -> result)
                newtypeids 
                ty
       
-    def iterateDeps (new_ops, new_types, op_set, type_set) =
+    def iterateDeps (new_ops, new_types, op_set, type_set, n) =
+      % let _ = writeLine ("================================================================================") in
+      % let _ = writeLine ("Round " ^ show n) in
       if new_ops = [] && new_types = [] then 
+        % let _ = writeLine ("Done") in
+        % let _ = writeLine ("================================================================================") in
         (op_set, type_set)
       else
+        % let _ = writeLine ("New ops:  " ^ anyToString new_ops) in
+        % let _ = writeLine ("New type: " ^ anyToString new_types) in
         let op_set   = addList (op_set,   new_ops)   in
         let type_set = addList (type_set, new_types) in
         let new_ops_in_ops = 
             foldl (fn (newopids, qid) ->
-                     case findTheOp (spc, qid) of
-                       | Some opinfo -> newOpsInTerm (opinfo.dfn, newopids, op_set)
-                       | None -> newopids)
+                     % let _ = writeLine("new_ops_in_ops: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                     if cut_op? qid then
+                       newopids
+                     else
+                       case findTheOp (spc, qid) of
+                         | Some opinfo -> newOpsInTerm (opinfo.dfn, newopids, op_set)
+                         | None -> newopids)
                   [] 
                   new_ops
         in
         let new_ops_in_ops_or_types = 
             if chase_subtypes? then 
               foldl (fn (newopids, qid) ->
-                       case findTheType (spc, qid) of
-                         | Some typeinfo -> newOpsInType(typeinfo.dfn, newopids, op_set)
-                         | None -> newopids)
+                       % let _ = writeLine("new_ops_in_types: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
+                       if cut_type? qid then
+                         newopids
+                       else
+                         case findTheType (spc, qid) of
+                           | Some typeinfo -> newOpsInType(typeinfo.dfn, newopids, op_set)
+                           | None -> newopids)
                     new_ops_in_ops
                     new_types
             else
@@ -197,23 +237,31 @@ SliceSpec qualifying spec
         in
         let new_types_in_ops = 
             foldl (fn (newtypeids, qid) ->
-                     case findTheOp (spc, qid) of
-                       | Some opinfo -> newTypesInTerm (opinfo.dfn, newtypeids, type_set)
-                       | None -> newtypeids)
+                     % let _ = writeLine("new_types_in_ops: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                     if cut_op? qid then
+                       newtypeids
+                     else
+                       case findTheOp (spc, qid) of
+                         | Some opinfo -> newTypesInTerm (opinfo.dfn, newtypeids, type_set)
+                         | None -> newtypeids)
                   [] 
                   new_ops
         in
         let new_types_in_ops_or_types = 
             foldl (fn (newtypeids, qid) ->
-                     case findTheType (spc, qid) of
-                       | Some typeinfo -> newTypesInType (typeinfo.dfn, newtypeids, type_set)
-                       | None -> newtypeids)
+                     % let _ = writeLine("new_types_in_types: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
+                     if cut_type? qid then
+                       newtypeids
+                     else
+                       case findTheType (spc, qid) of
+                         | Some typeinfo -> newTypesInType (typeinfo.dfn, newtypeids, type_set)
+                         | None -> newtypeids)
                   new_types_in_ops
                   new_types
         in
-        iterateDeps (new_ops_in_ops_or_types, new_types_in_ops_or_types, op_set, type_set)
+        iterateDeps (new_ops_in_ops_or_types, new_types_in_ops_or_types, op_set, type_set, n + 1)
   in
-  let (op_set, type_set) = iterateDeps(root_ops, root_types, emptySet, emptySet) in
+  let (op_set, type_set) = iterateDeps (root_ops, root_types, emptySet, emptySet, 0) in
   (op_set, type_set)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
