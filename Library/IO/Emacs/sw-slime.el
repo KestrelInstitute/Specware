@@ -435,6 +435,7 @@ to end end."
 ;; Mod to use new slime-repl-update-banner hooks?
 (setq slime-repl-banner-function 'sw-slime-repl-insert-banner)
 (defun sw-slime-repl-insert-banner ()
+  (slime-move-point (point-max))
   (let* ((banner (format "%s %s on %s %s"
                          sw:system-name
 			 (sw:eval-in-lisp "(if (boundp '*Specware-Version*) *Specware-Version* \"\")")
