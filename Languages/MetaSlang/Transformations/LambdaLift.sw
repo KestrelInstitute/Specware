@@ -834,6 +834,9 @@ def toAny     = Term `TranslationBasic.toAny`
 	      vars)
    ^ "]"
 
+ op lambdaLiftWithImports (spc : Spec) : Spec =
+  lambdaLift (spc, true)
+
  def lambdaLift (spc,imports?) = 
    % let _ = toScreen(printSpec spc^"\n\n") in
    let counter = Ref 1 : Ref Nat in
