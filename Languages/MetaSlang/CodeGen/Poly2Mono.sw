@@ -21,6 +21,9 @@ op Java.typeId: MSType -> Id
  * resulting spec or not. If keepPolyMorphic? is false, the resulting spec will be free of polymorphic
  * entities.
  *)
+op poly2monoAndDropPoly (spc : Spec) : Spec =
+ poly2mono (spc, false)
+
 op poly2mono: Spec * Bool -> Spec
 def poly2mono (spc, keepPolyMorphic?) =
   poly2monoInternal (spc, keepPolyMorphic?, false) 
