@@ -207,7 +207,7 @@ spec
    r_tm
 
  op simplifyOblig (spc: Spec) (oblig: MSTerm) (bare_oblig: MSTerm): MSTerm =
-   let _ = if traceObligationSimplify? then writeLine("Obligation: "^printTerm oblig) else () in
+   let _ = if traceObligationSimplify? then writeLine("Obligation:\n"^printTerm oblig) else () in
    let oblig1 = if simplifyObligations?
                  then
                    if ~simplifyFalseObligations? && falseTerm?(simplify spc bare_oblig)
@@ -343,15 +343,18 @@ spec
              in tcc)
       | Record(fields, _) -> 
         let spc = getSpec gamma in
-        let types = product(spc, tau) in
+        let tau_types = product(spc, tau) in
         let
             def checkField(tcc, (id, term), (id2, tau)) = 
                 (tcc, gamma) |- term ?? tau
         in
         % Check recursively that every element is well typed 
-        let tcc = ListPair.foldl checkField tcc (fields, types) in
+        let tcc = ListPair.foldl checkField tcc (fields, tau_types) in
         % Check possible subtype constraints in tau 
-        let tcc = <= (tcc, gamma, M, Product(types, noPos), tau) in
+        let tcc = if subtype?(spc, tau)
+                    then <= (tcc, gamma, M, inferType(spc, M), tau)
+                    else tcc
+        in
         tcc
 
       | Bind(binder, vars, body, _) -> 
@@ -364,28 +367,28 @@ spec
         let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         let gamma = insert (v, gamma) in
         let tcc = (tcc, gamma) |- body ?? boolType  in
-        let tcc = <= (tcc, gamma, M, srt, tau)         in
+        let tcc = <= (tcc, gamma, M, srt, tau) in
         tcc
       | Let(decls, body, _)    ->
         let (tcc, gamma) =
              foldl (fn ((tcc, ngamma), (pat, trm)) ->
-                    let sigma1 = patternType pat                         in
-                    let (ngamma, tp) = bindPattern(ngamma, pat, sigma1)     in
+                    let sigma1 = patternType pat in
+                    let (ngamma, tp) = bindPattern(ngamma, pat, sigma1) in
                     %% This is alternative to insertLet below
                     let ngamma = assertCond(mkEquality(inferType(getSpec gamma, trm),
                                                        trm,
                                                        tp),
                                             ngamma, "let-pattern")
                     in
-                    let spc = getSpec gamma 				   in
-                    let tcc = (tcc, gamma) |- trm ?? sigma1               in
+                    let spc = getSpec gamma in
+                    let tcc = (tcc, gamma) |- trm ?? sigma1 in
                     let tcc = addQuotientCondition(tcc, gamma, pat, body, Some trm) in
                     (tcc, ngamma))
                 (tcc, gamma)
                 decls
         in
-        %let gamma = insertLet(decls, gamma)         in
-        let tcc = (tcc, gamma) |- body ?? tau       in
+        %let gamma = insertLet(decls, gamma) in
+        let tcc = (tcc, gamma) |- body ?? tau in
         tcc
 
       | LetRec(decls, body, _) ->
@@ -451,9 +454,9 @@ spec
 
       | IfThenElse(t1, t2, t3, _) -> 
         let tcc1   = (tcc, gamma)   |- t1 ?? boolType 		in
-        let gamma1 = assertCond(t1, gamma, "if-true") 			in
+        let gamma1 = assertCond(t1, gamma, "if-true") 		in
         let tcc2   = (tcc1, gamma1) |- t2 ?? tau 		in
-        let gamma2 = assertCond(negateTerm t1, gamma, "if-false") 		in
+        let gamma2 = assertCond(negateTerm t1, gamma, "if-false") in
         let tcc3   = (tcc2, gamma2) |- t3 ?? tau 		in
         tcc3
       | Seq([], _)    -> tcc
@@ -1075,7 +1078,7 @@ spec
    let lift? = includesPredLifter? spc in
    let triv_count_ref = Ref 0 in
    let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm ->
-                  ([], tvs, spc, qid, nm, tau, names, lift?, triv_count_ref)
+                  ([], tvs, spc, qid, nm, tau, Ref(!names), lift?, triv_count_ref)
    in
    let tcc = ([], empty) in
    %% Use foldr rather than foldl so that we can maintain adjacency of pragmas to defs (see Op case)
