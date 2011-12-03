@@ -80,7 +80,7 @@ AnnSpecPrinter qualifying spec
  op isShortTuple                 : [a] Nat * List (Id * a) -> Bool
  op ppTerm                       : [a] PrContext -> Path * ParentTerm -> ATerm    a -> Pretty
  op ppType                       : [a] PrContext -> Path * ParentType -> AType    a -> Pretty
- op ppPattern                    : [a] PrContext -> Path * Bool       -> APattern a -> Pretty
+ op ppPattern                    : [a] PrContext -> Path * Bool * Bool-> APattern a -> Pretty
  op termToPretty                 : [a] ATerm a -> Pretty
  op printTermToTerminal          : [a] ATerm a -> ()
 %op printType                    : [a] AType a -> String
@@ -222,7 +222,7 @@ AnnSpecPrinter qualifying spec
      | Fun(Op(Qualified(_,opName),fx),s,a) -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
      | _ -> tm
 
- def printLambda (context, path, marker, match, enclose?) = 
+ def printLambda (context, path, marker, match, enclose?, case?) = 
    let pp : ATermPrinter = context.pp in
    let 
      def prRule marker (i, (pat, cond, trm)) par = 
@@ -231,13 +231,13 @@ AnnSpecPrinter qualifying spec
 	   blockFill (0,
 		      [(0, prettysNone [marker,
                                         let context = context << {printType = enclose?} in
-					ppPattern context ([0, i] ++ path, enclose?) pat,
+					ppPattern context ([0, i] ++ path, enclose?, case?) pat,
 					pp.Arrow]),
 		       (3, ppTerm context ([2, i] ++ path, par) trm)])
 	 | _ -> 
 	   blockFill (0,
 		      [(0, prettysNone [marker,
-					ppPattern context ([0, i] ++ path, enclose?) pat,
+					ppPattern context ([0, i] ++ path, enclose?, case?) pat,
 					string " ",
 					pp.Where,
 					string " ",
@@ -282,7 +282,7 @@ AnnSpecPrinter qualifying spec
                    blockAll (0, 
                              [(0, prettysNone [pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
                               (1, prettysNone 
-                                 [printLambda (context, [0] ++ path, pp.Of, rules, false)])]))
+                                 [printLambda (context, [0] ++ path, pp.Of, rules, false, true)])]))
 	   % Print tuple projection using
 	   % dot notation.
 	 | (Fun (Project p, srt1, _), Var ((id, srt2), _)) ->
@@ -384,9 +384,9 @@ AnnSpecPrinter qualifying spec
 		  | (VarPat _, Lambda ([(pat2, Fun (Bool true, _, _), body)], _)) ->
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, false) pat, 
+						       ppPattern context ([0, index]++ path, false, false) pat, 
 						       string " ", 
-						       ppPattern context ([0, 1, index]++ path, true) pat2, 
+						       ppPattern context ([0, 1, index]++ path, true, false) pat2, 
 						       string " ", 
 						       pp.Equals, 
 						       string " "]), 
@@ -398,7 +398,7 @@ AnnSpecPrinter qualifying spec
 		  | _ -> 
 		    (0, blockLinear (0, 
 				     [(0, prettysNone [separator, 
-						       ppPattern context ([0, index]++ path, true) pat, 
+						       ppPattern context ([0, index]++ path, true, false) pat, 
 						       string " ", 
 						       pp.Equals, 
 						       string " "]), 
@@ -432,7 +432,7 @@ AnnSpecPrinter qualifying spec
 				  [(0, prettysNone [pp.Def, 
 						    pp.fromString id, 
 						    string " ", 
-						    ppPattern context ([1, 0] ++ path, true)
+						    ppPattern context ([1, 0] ++ path, true, false)
                                                       (case srt of
                                                          | Arrow(dom,rng, apos) | printLocalDefTypes? ->
                                                            TypedPat(pat, dom, apos)
@@ -490,7 +490,7 @@ AnnSpecPrinter qualifying spec
 					(0, ppTerm context ([2]++ path, Top) t3)]))]))
 	  | Lambda (match, _) -> 
 	    enclose(~(embed? Top parentTerm), pp,
-                    printLambda (context, path, pp.Lambda, match, true))
+                    printLambda (context, path, pp.Lambda, match, true, false))
           | The ((id,srt),body,_) ->
 	    enclose(~(embed? Top parentTerm), pp,
 		    blockFill (0, [
@@ -701,7 +701,7 @@ AnnSpecPrinter qualifying spec
       let context = context << {printType = false} in
       prettysNone [pp.LCurly,
                    blockFill (0, 
-                              [(0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
+                              [(0, ppPattern context ([0, 0, 1] ++ path, true, false) pat), 
                                (0, string " : "), 
                                (0, ppType    context ([0]       ++ path, Subtype) s), 
                                (0, pp.Bar), 
@@ -795,7 +795,7 @@ AnnSpecPrinter qualifying spec
    else
      pretty 
         
- def ppPattern context (path, enclose?) pattern = 
+ def ppPattern context (path, enclose?, case?) pattern = 
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
@@ -819,8 +819,8 @@ AnnSpecPrinter qualifying spec
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
-	                           (fn (path, (id, pat)) -> ppPattern context (path, embed? RecordPat pat) pat) 
-				   (if enclose? then (pp.LP, pp.Comma, pp.RP)
+	                           (fn (path, (id, pat)) -> ppPattern context (path, embed? RecordPat pat, false) pat) 
+				   (if enclose? || case? then (pp.LP, pp.Comma, pp.RP)
                                     else (pp.Empty, pp.Comma, pp.Empty)) 
 				   row
        else
@@ -829,16 +829,16 @@ AnnSpecPrinter qualifying spec
 	     blockFill (0, 
 			[(0, prettysNone [pp.fromString id, string " ", pp.Equals, string " "]), 
 			 (2, 
-			  prettysFill [ppPattern context (path, false) pat])])
+			  prettysFill [ppPattern context (path, false, false) pat])])
 	 in
 	   AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
      | EmbedPat ("Cons", 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_(* Qualified ("List", "List") *), [_], _), _) -> 
        enclose (enclose?, pp, 
-		prettysFill [ppPattern context ([0]++ path, false) p1, 
+		prettysFill [ppPattern context ([0]++ path, false, false) p1, 
 			     string " :: ", 
-			     ppPattern context ([1]++ path, false) p2])
+			     ppPattern context ([1]++ path, false, false) p2])
  %  | EmbedPat ("Cons", 
  %             Some (RecordPat ([("1", p1), ("2", p2)], _)), 
  %              PBase (_(* Qualified ("List", "List") *), [_], _), _) -> 
@@ -848,34 +848,34 @@ AnnSpecPrinter qualifying spec
  %                        ppPattern context ([1]++ path, false) p2])
      | EmbedPat (id, Some pat, _(* srt *), _) -> 
        enclose (enclose?, pp,
-		prettysFill (Cons (pp.fromString id, 
-				   if singletonPattern pat then
-				     [string " ", 
-				      ppPattern context ([0]++ path, true) pat]
-				   else
-				     [pp.LP, 
-				      ppPattern context ([0]++ path, false) pat, 
-				      pp.RP])))
+		blockFill (0, (Cons ((0, pp.fromString id), 
+                                     if singletonPattern pat then
+                                       [(0, string " "), 
+                                        (2, ppPattern context ([0]++ path, true, false) pat)]
+                                     else
+                                       [(2, prettysNone[pp.LP, 
+                                                        ppPattern context ([0]++ path, false, false) pat, 
+                                                        pp.RP])]))))
      | TypedPat (pat, srt, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, ppPattern context ([0]++ path, true) pat), 
+			   [(0, ppPattern context ([0]++ path, true, false) pat), 
 			    (0, string  " : "), 
 			    (0, ppType context ([1]++ path, Top : ParentType) srt)]))
      | AliasPat (pat1, pat2, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, ppPattern context ([0]++ path, true) pat1), 
+			   [(0, ppPattern context ([0]++ path, true, false) pat1), 
 			    (0, string  " as "), 
-			    (0, ppPattern context ([1]++ path, true) pat2)]))
+			    (0, ppPattern context ([1]++ path, true, false) pat2)]))
      | QuotientPat (pat, qid, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),
-			    (0, ppPattern context ([0]++ path, true) pat)]))
+			    (0, ppPattern context ([0]++ path, true, false) pat)]))
      | RestrictedPat(pat, Lambda([(p_pat, _, p_bod)], _), _) | equalPattern?(pat, p_pat) ->
        enclose (true, pp,
-                blockFill(0, [(0, ppPattern context ([0]++ path, false) pat),
+                blockFill(0, [(0, ppPattern context ([0]++ path, false, false) pat),
                               (2, prettysNone [pp.Bar,
                                                let context = context << {printType = false} in
                                                ppTerm context ([1]++ path, Top) p_bod])]))
@@ -910,7 +910,7 @@ AnnSpecPrinter qualifying spec
 %	   | _ ->
 	     enclose (enclose?, pp,
 		      blockFill (0, 
-				 [(0, ppPattern context ([0]++ path, false) pat), 
+				 [(0, ppPattern context ([0]++ path, false, false) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
                                                      (0,
                                                       let context = context << {printType = false} in
@@ -928,7 +928,7 @@ AnnSpecPrinter qualifying spec
  def uiPrinter() = if useXSymbols? then XSymbolPrinter else asciiPrinter
 
  def AnnSpecPrinter.printTerm term = 
-   PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (90, ppTerm (initialize (asciiPrinter, false))
 				            ([], Top) 
 					    term))
 
@@ -936,42 +936,42 @@ AnnSpecPrinter qualifying spec
    ppTerm (initialize (asciiPrinter, false)) ([], Top) term
 
  def printTermToTerminal term =
-   toTerminal (format (80, ppTerm (initialize (uiPrinter(), false)) 
+   toTerminal (format (90, ppTerm (initialize (uiPrinter(), false)) 
 		                  ([], Top) 
 				  term))
  
  def AnnSpecPrinter.printType srt = 
-    PrettyPrint.toString (format (80, ppType (initialize (asciiPrinter, false))
+    PrettyPrint.toString (format (90, ppType (initialize (asciiPrinter, false))
 				             ([], Top : ParentType) 
 					     srt))
 
  op [a] printTypeWithTypes(srt: AType a): String =
-   toString (format (80, ppType (initialize (asciiPrinter, true))
+   toString (format (90, ppType (initialize (asciiPrinter, true))
                            ([], Top : ParentType) 
                            srt))
 
  def printTypeToTerminal srt = 
-   toTerminal (format (80, ppType (initialize (uiPrinter(), false))
+   toTerminal (format (90, ppType (initialize (uiPrinter(), false))
 		                  ([], Top : ParentType) 
 				  srt))
  
  def printTypeScheme scheme = 
-   PrettyPrint.toString (format (80, ppTypeScheme (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (90, ppTypeScheme (initialize (asciiPrinter, false))
 				                  ([], Top)
 						  scheme))
 
  def printTermScheme scheme = 
-   PrettyPrint.toString (format (80, ppTermScheme (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (90, ppTermScheme (initialize (asciiPrinter, false))
 				                  ([], Top) 
 						  scheme))
 
  def AnnSpecPrinter.printPattern pat = 
-   PrettyPrint.toString (format (80, ppPattern (initialize (asciiPrinter, false))
-			                       ([], false) 
+   PrettyPrint.toString (format (90, ppPattern (initialize (asciiPrinter, false))
+			                       ([], false, false) 
 					       pat))
 
  def printTermWithTypes term = 
-   PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, true))
+   PrettyPrint.toString (format (90, ppTerm (initialize (asciiPrinter, true))
 			                    ([], Top)
 					    term))
 
@@ -1077,7 +1077,7 @@ AnnSpecPrinter qualifying spec
          | (Lambda ([(pat,cond,body)],_), Arrow (dom,rng, apos)) ->
            [(4, blockNone (0, [(0, string " ("), 
                                (0, ppPattern (context << {printType = true})
-                                     ([index, opIndex], false)
+                                     ([index, opIndex], false, false)
                                      pat  (* (TypedPat (pat, dom, apos)) *) ),
                                (0, string ")")]))]
            ++
@@ -1149,7 +1149,7 @@ AnnSpecPrinter qualifying spec
            in
            let pat = maybeIncludeType(pat, opt_dom) in
  	   let pat  = let context = context << {printType = true} in
-                      ppPattern context ([0, 0] ++ path, true) pat
+                      ppPattern context ([0, 0] ++ path, true, false) pat
            in
  	   let body = ppDefAux (context, [2, 0] ++ path, opt_rng, body) in
  	   let prettys = [(4, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
@@ -1616,28 +1616,28 @@ AnnSpecPrinter qualifying spec
    ppSpecR (initialize (asciiPrinter, false)) spc
    
  def printSpec spc =
-   PrettyPrint.toString (format (80, specToPretty spc))
+   PrettyPrint.toString (format (90, specToPretty spc))
 
  def printSpecXSymbol spc =
-   PrettyPrint.toString (format (80, specToPrettyXSymbol spc))
+   PrettyPrint.toString (format (90, specToPrettyXSymbol spc))
    
  def printSpecVerbose spc =
-   PrettyPrint.toString (format (80, specToPrettyVerbose spc))
+   PrettyPrint.toString (format (90, specToPrettyVerbose spc))
 
  def printSpecVerboseXSymbol spc =
-   PrettyPrint.toString (format (80, specToPrettyVerboseXSymbol spc))
+   PrettyPrint.toString (format (90, specToPrettyVerboseXSymbol spc))
 
  def printSpecFlat spc =
-   PrettyPrint.toString (format (80, specToPrettyFlat spc))
+   PrettyPrint.toString (format (90, specToPrettyFlat spc))
 
  op printSpecExpanded: Spec -> Spec -> String
 
  def printSpecFlatToTerminal spc =
-   (toTerminal (format (80, specToPrettyFlat spc)); 
+   (toTerminal (format (90, specToPrettyFlat spc)); 
     writeLine "")
    
  def printSpecToTerminal spc =
-   (toTerminal (format (80, specToPretty spc)); 
+   (toTerminal (format (90, specToPretty spc)); 
     writeLine "")
    
  def printSpecToFile (fileName, spc) = 
@@ -1659,7 +1659,7 @@ AnnSpecPrinter qualifying spec
    (spcAndMarking, State.! context.markTable)
 
  def printSpecWithTypesToTerminal spc =
-   toTerminal (format (80, ppSpec (initialize (asciiPrinter, true)) spc))
+   toTerminal (format (90, ppSpec (initialize (asciiPrinter, true)) spc))
    
  def latexSpecToPretty spc = 
    let pSpec = ppSpec (initialize (latexPrinter, false)) spc in
