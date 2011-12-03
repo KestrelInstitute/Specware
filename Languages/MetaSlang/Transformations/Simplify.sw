@@ -321,6 +321,9 @@ spec
                 | _ ->
                   let result = composeConjPreds(preds, spc) in
                   result)
+           %% Specific to Isabelle translator, but cheap
+           | Apply(Fun(Op(Qualified("ToIsa-Internal","int"),_),_,_), Fun(Nat i, _, a), _) ->
+             Fun(Nat i, intType, a)
            %| Apply(Fun(Op(Qualified("Function", "id"),_), Arrow(dom, ran, _),_), x, _) | ~(equalType?(dom, ran))
            %  -> x
            | IfThenElse(t1,t2,t3,a) ->
