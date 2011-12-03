@@ -128,14 +128,20 @@ SpecNorm qualifying spec
     let ty = raiseSubtypeFn(ty0, spc) in
     let preds1 = case ty of
                  | Subtype(_, pred, _) ->
-                   [maybeUnfoldSubTypePred(spc, pred)]
+                   let uf_pred = maybeUnfoldSubTypePred(spc, pred) in
+                   % let _ = if equalTerm?(pred, uf_pred) then () else
+                   %          writeLine("maybeUnfoldSubTypePred:\n"^printTerm pred^"\n--> "^printTerm uf_pred)
+                   % in
+                   [uf_pred]
                  | _ -> []
     in
     let preds2 = domSubtypePred(ty, spc) in
     case preds1 ++ preds2 of
       | [] -> trueTerm
       | preds ->
+    %let _ = writeLine("typePredTerm:\n"^printTerm tm^"\n: "^printType ty0^"\n^ "^printType ty) in
         let pred = composeConjPreds(preds, spc) in
+    %let _ = writeLine("Pred: "^printTermWithTypes pred) in
         simplifiedApply(pred, tm, spc)
 
   op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
@@ -524,7 +530,7 @@ SpecNorm qualifying spec
       | Bind(bndr,bndVars,bod,a) ->
         let (bndVars,bndVarsPred) =
             foldr (fn ((vn,ty), (bndVars,res)) ->
-                     % let _ = writeLine("relQ: "^printType ty0^" ---> "^printType ty) in
+                     % let _ = writeLine("relQ: "^printType ty^" ---> "^printType ty) in
                      let pred_tm = typePredTerm(ty, mkVar(vn,ty), spc) in
                      % let _ = writeLine("rq0: "^printTerm pred_tm) in
                      let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
