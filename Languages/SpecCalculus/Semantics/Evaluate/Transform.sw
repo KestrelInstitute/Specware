@@ -14,7 +14,7 @@ spec
       | Qual(_,_,p) -> p
       | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
-      | Globalize(_,_,p) -> p
+      | Globalize(_,_,_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
       | Apply(_,_,p) -> p
@@ -182,7 +182,12 @@ spec
                   | _ -> raise(TypeCheck (pos, "Trace on or off?"));
          return(Trace on?)}
       | Name("print",_) -> return Print
-      | Globalize (typ, gvar, _) -> raise (TypeCheck (posOf trans, "Globalize transform not yet implemented: (" ^ printType typ ^ ", " ^ show gvar ^ ")"))
+      | Globalize (typ, gvar, opt_init, _) -> 
+        raise (TypeCheck (posOf trans, "Globalize transform not yet implemented: (" ^ show typ ^ ", " ^ show gvar ^ 
+                            (case opt_init of
+                               | Some init -> ", " ^ show init 
+                               | _ -> "")
+                            ^ ")"))
 
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
         

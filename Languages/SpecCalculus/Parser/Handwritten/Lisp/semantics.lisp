@@ -1158,8 +1158,11 @@ If we want the precedence to be optional:
 (defun make-transform-item (oper transform l r)
   (SpecCalc::mkTransformItem-3 oper transform (make-pos l r)))
 
-(defun make-transform-globalize (type gvar l r)
-  (SpecCalc::mkTransformGlobalize-3 type gvar (make-pos l r)))
+(defun make-transform-globalize (typeRef globalVar optInitOp l r)
+  (let ((initOp (if (equal optInitOp :unspecified)
+                    '(:|None|)
+                    (cons :|Some| optInitOp))))
+    (SpecCalc::mkTransformGlobalize-4 typeRef globalVar initOp (make-pos l r))))
 
 (defun make-transform-apply (trans1 transforms l r)
   (SpecCalc::mkTransformApply-3 trans1 transforms (make-pos l r)))

@@ -513,17 +513,17 @@ SpecCalc qualifying spec
  type TransformExprs = List TransformExpr
  type TransformExpr  = ATransformExpr Position
 
- op mkTransformName         (name:  String,                              pos: Position) : TransformExpr = Name         (name,        pos)
- op mkTransformNumber       (n:     Nat,                                 pos: Position) : TransformExpr = Number       (n,           pos)
- op mkTransformString       (s:     String,                              pos: Position) : TransformExpr = Str          (s,           pos)
- op mkTransformSCTerm       (sc_tm: SCTerm,                              pos: Position) : TransformExpr = SCTerm       (sc_tm,       pos)
- op mkTransformQual         (q:     String,        name: String,         pos: Position) : TransformExpr = Qual         (q,    name,  pos)
- op mkTransformItem         (mod:   String,        te:   TransformExpr,  pos: Position) : TransformExpr = Item         (mod,  te,    pos)
- op mkTransformGlobalize    (typ:   MSType,        gvar: GlobalVarName,  pos: Position) : TransformExpr = Globalize    (typ,  gvar,  pos)
- op mkTransformApply        (head:  TransformExpr, args: TransformExprs, pos: Position) : TransformExpr = Apply        (head, args,  pos)
- op mkTransformApplyOptions (head:  TransformExpr, args: TransformExprs, pos: Position) : TransformExpr = ApplyOptions (head, args,  pos)
- op mkTransformTuple        (itms:  TransformExprs,                      pos: Position) : TransformExpr = Tuple        (itms,        pos)
- op mkRecord                (fld_val_prs: List (String * TransformExpr), pos: Position) : TransformExpr = Record       (fld_val_prs, pos)
+ op mkTransformName         (name:  String,                                            pos: Position) : TransformExpr = Name         (name,           pos)
+ op mkTransformNumber       (n:     Nat,                                               pos: Position) : TransformExpr = Number       (n,              pos)
+ op mkTransformString       (s:     String,                                            pos: Position) : TransformExpr = Str          (s,              pos)
+ op mkTransformSCTerm       (sc_tm: SCTerm,                                            pos: Position) : TransformExpr = SCTerm       (sc_tm,          pos)
+ op mkTransformQual         (q:     String,        name: String,                       pos: Position) : TransformExpr = Qual         (q, name,        pos)
+ op mkTransformItem         (mod:   String,        te:   TransformExpr,                pos: Position) : TransformExpr = Item         (mod, te,        pos)
+ op mkTransformGlobalize    (typ:   TypeName,      var:  OpName, init : Option OpName, pos: Position) : TransformExpr = Globalize    (typ, var, init, pos)
+ op mkTransformApply        (head:  TransformExpr, args: TransformExprs,               pos: Position) : TransformExpr = Apply        (head, args,     pos)
+ op mkTransformApplyOptions (head:  TransformExpr, args: TransformExprs,               pos: Position) : TransformExpr = ApplyOptions (head, args,     pos)
+ op mkTransformTuple        (itms:  TransformExprs,                                    pos: Position) : TransformExpr = Tuple        (itms,           pos)
+ op mkRecord                (fld_val_prs: List (String * TransformExpr),               pos: Position) : TransformExpr = Record       (fld_val_prs,    pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Obligations takes a spec or a a morphism and returns a spec including

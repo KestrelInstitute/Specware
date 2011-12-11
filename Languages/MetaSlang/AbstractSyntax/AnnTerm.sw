@@ -144,8 +144,6 @@ MetaSlang qualifying spec
  type AMetaTyVars     b = List (AMetaTyVar b)
  type AMetaTypeScheme b = AMetaTyVars b * AType b
 
- type GlobalVarName = QualifiedId
-
  type ATransformExpr a =
     | Name         String                                     * a
     | Number       Nat                                        * a
@@ -153,7 +151,12 @@ MetaSlang qualifying spec
     | Qual         String * String                            * a
     | SCTerm       SCTerm                                     * a
     | Item         String * ATransformExpr a                  * a  % e.g. unfold map
-    | Globalize    AType a * GlobalVarName                    * a  % change all local vars of given type into references to named global var 
+
+    | Globalize    TypeName * OpName * Option OpName          * a  
+      % Change all local vars of given type into references to named global var, 
+      % which is initialized by the optional named op, or by a unique source op 
+      % if the initializer is left unspecified.
+
     | Tuple        List (ATransformExpr a)                    * a
     | Record       List(String * ATransformExpr a)            * a
     | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a
