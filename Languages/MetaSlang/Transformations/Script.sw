@@ -1,7 +1,7 @@
 Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
-         RedundantErrorCorrecting
+         RedundantErrorCorrecting, Globalize
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -53,6 +53,7 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
+    | Globalize (TypeName * OpName * Option OpName)
     | Trace Bool
     | Print
 
@@ -206,7 +207,6 @@ spec
         ppConcat[ppString(if restart? then "redundantErrorCorrectingRestart ("else "redundantErrorCorrecting ("),
                  ppSep(ppString ", ") (map (fn (m_uid,_) -> ppSCTerm m_uid) morphisms),
                  ppString ")"]
-
       | Trace on_or_off ->
         ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
       | Print -> ppString "print"
@@ -828,6 +828,7 @@ spec
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?, recovery_fns), tracing?)
       | RedundantErrorCorrecting(morphs, opt_qual, restart?) ->
         redundantErrorCorrecting spc morphs opt_qual restart? tracing?
+      | Globalize (gtype, gvar, opt_ginit) -> globalizeSingleThreadedType (spc, gtype, gvar, opt_ginit, tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
 
@@ -836,4 +837,5 @@ spec
     % let _ = writeLine(printSpec result) in
     return result
   }
+
 endspec

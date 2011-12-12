@@ -182,12 +182,8 @@ spec
                   | _ -> raise(TypeCheck (pos, "Trace on or off?"));
          return(Trace on?)}
       | Name("print",_) -> return Print
-      | Globalize (typ, gvar, opt_init, _) -> 
-        raise (TypeCheck (posOf trans, "Globalize transform not yet implemented: (" ^ show typ ^ ", " ^ show gvar ^ 
-                            (case opt_init of
-                               | Some init -> ", " ^ show init 
-                               | _ -> "")
-                            ^ ")"))
+
+      | Globalize (typ, gvar, opt_init, _) -> return (Globalize (typ, gvar, opt_init))
 
       | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
         
