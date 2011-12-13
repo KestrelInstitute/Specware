@@ -424,7 +424,7 @@
 ;;;   #'swshell::specware-shell0))
 
 (defun cl-user::boot ()
-  #+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
+  ;#+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
   (let ((cl:*print-pretty* nil)
         (val (and (cl-user::sw "/Applications/Specware/Specware4")
                   (progn (format t "Full garbage collection...")
