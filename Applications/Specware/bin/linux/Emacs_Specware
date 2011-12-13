@@ -9,8 +9,10 @@ PATH=/usr/local/bin:/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 
 # Find emacs
 DEFAULTEMACS=/Applications/Emacs.app/Contents/MacOS/Emacs
+if [ -z "$EMACS" ]; then
 if [ -x $DEFAULTEMACS ]; then
     EMACS=$DEFAULTEMACS
+fi
 fi
 
 if [ -z "$EMACS" ]; then
