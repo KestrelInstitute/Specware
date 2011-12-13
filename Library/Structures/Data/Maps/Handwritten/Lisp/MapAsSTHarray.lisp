@@ -324,3 +324,6 @@
 	       (map-as-undo-harray--harray m))
     items)))
 
+(defun STH_size (m)
+  (let ((m (map-as-undo-harray-assure-current m)))
+    (hash-table-count (map-as-undo-harray--harray m))))
