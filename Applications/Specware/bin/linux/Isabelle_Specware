@@ -3,10 +3,16 @@
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. 
 
-SCRIPTDIR=`/usr/bin/dirname $0`
-EMACS_SPECWARE="$SCRIPTDIR"/Emacs_Specware
-cd "$SCRIPTDIR"
+export EMACS=/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs
+EMACS_SPECWARE="$SPECWARE4"/Applications/Specware/bin/linux/Emacs_Specware
+cd "$SPECWARE4"
+
+declare -a EMACS_OPTIONS=()
+if [ -n "$EMACS" ]; then
+  export EMACS_OPTIONS=(-p "$EMACS")
+fi
 
 PATH=/Applications/Isabelle2011-1.app/Isabelle/bin:$PATH
+export ISABELLE_PATH=$SPECWARE4/Library/Isa/:ISABELLE_PATH
 
 isabelle emacs -p $EMACS_SPECWARE $* 
