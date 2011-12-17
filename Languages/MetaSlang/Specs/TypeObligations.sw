@@ -146,7 +146,7 @@ spec
 
  op |- infixl 7 : (TypeCheckConditions * Gamma) * (MSTerm * MSType) -> TypeCheckConditions
 
- op <= : TypeCheckConditions * Gamma * MSTerm * MSType * MSType -> TypeCheckConditions
+ op <= : TypeCheckConditions * Gamma * MSTerm * MSType * MSType * Bool -> TypeCheckConditions
 
  op getSpec    : Gamma -> Spec
  op unfoldBase : Gamma * MSType -> MSType
@@ -316,13 +316,13 @@ spec
              let tcc  = (tcc, gamma) |- N2 ?? dom_sig  in
              %% Following is at best redundant, at worst assumes better inferType
              % let tau2 = range(spc, sigma1) in
-             % let tcc  = <= (tcc, gamma, M, tau2, tau) in
+             % let tcc  = <= (tcc, gamma, M, tau2, tau, true) in
              let lam_tau = mkArrow(dom_sig, tau) in
              checkLambda(tcc, gamma, rules, lam_tau, Some N2)
            | Fun(Restrict, s, _) ->
              let (dom, ran) = arrow(spc, s) in
              let tcc  = (tcc, gamma) |- N2 ?? ran		   in
-             let tcc  = <= (tcc, gamma, N2, ran, tau) 		   in
+             let tcc  = <= (tcc, gamma, N2, ran, tau, true) 		   in
              tcc
            | _ ->
          let tcc  = (tcc, gamma) |- N1 ?? sigma1 	           in
@@ -331,12 +331,12 @@ spec
              let tcc   = (tcc, gamma)   |- p1 ?? boolType 	   in
              let gamma1 = assertCond(if polarity then p1 else negateTerm p1, gamma, "nonStrict") in
              let tcc   = (tcc, gamma1) |- p2 ?? boolType           in
-             let tcc   = <= (tcc, gamma, M, boolType, tau) 	   in
+             let tcc   = <= (tcc, gamma, M, boolType, tau, true) 	   in
              tcc
            | _ ->
              let tcc  = (tcc, gamma) |- N2 ?? domain(spc, sigma1)  in
              let tau2 = range(spc, sigma1) 		    	   in
-             let tcc  = <= (tcc, gamma, M, tau2, tau) 		   in
+             let tcc  = <= (tcc, gamma, M, tau2, tau, true) 		   in
              let tcc  = tcc %% if generateTerminationConditions?
                             %%   then checkRecursiveCall(tcc, gamma, M, N1, N2)
                             %%   else tcc
@@ -352,7 +352,7 @@ spec
         let tcc = ListPair.foldl checkField tcc (fields, tau_types) in
         % Check possible subtype constraints in tau 
         let tcc = if subtype?(spc, tau)
-                    then <= (tcc, gamma, M, inferType(spc, M), tau)
+                    then <= (tcc, gamma, M, inferType(spc, M), tau, false)
                     else tcc
         in
         tcc
@@ -360,14 +360,14 @@ spec
       | Bind(binder, vars, body, _) -> 
         let gamma = foldl (fn (x, y) -> insert(y, x))  gamma vars in
         let tcc = (tcc, gamma) |- body ?? boolType  in
-        let tcc = <= (tcc, gamma, M, boolType, tau) in
+        let tcc = <= (tcc, gamma, M, boolType, tau, true) in
         tcc
       | The(v as (_, srt), body, _) ->
         % let _ = writeLine("The_oblig:\n"^printTerm(mkBind(Exists1, [v], body))) in
         let tcc = addCondition(tcc, gamma, mkBind(Exists1, [v], body), "_the") in
         let gamma = insert (v, gamma) in
         let tcc = (tcc, gamma) |- body ?? boolType  in
-        let tcc = <= (tcc, gamma, M, srt, tau) in
+        let tcc = <= (tcc, gamma, M, srt, tau, true) in
         tcc
       | Let(decls, body, _)    ->
         let (tcc, gamma) =
@@ -407,10 +407,10 @@ spec
         let tcc = (tcc, gamma) |- body ?? tau       in
         tcc
       | Var((id, srt), _) -> 
-        let tcc = <= (tcc, gamma, M, srt, tau)         in
+        let tcc = <= (tcc, gamma, M, srt, tau, true)         in
         tcc
       | Fun(f, s, _) -> 
-        let tcc = <= (tcc, gamma, M, s, tau)	     in
+        let tcc = <= (tcc, gamma, M, s, tau, true)	     in
 %
 % List subcases explicitly to leave place for 
 % special treatment.
@@ -444,7 +444,7 @@ spec
 %%
       | Lambda(rules, _) | length rules <= 1 ->
         let tau2 = inferType(getSpec gamma, M) in
-        let tcc  = <= (tcc, gamma, M, tau2, tau)  in
+        let tcc  = <= (tcc, gamma, M, tau2, tau, true)  in
         checkLambda(tcc, gamma, rules, tau, None)
 
       | Lambda(rules as (pat, _, body)::_, a) ->	% eta-normalize to simple pattern & case
@@ -870,12 +870,12 @@ spec
                 | _ -> n_ty2)
      else (ty1, ty2)
 
- def <=	(tcc, gamma, M, tau, sigma) = 
+ def <=	(tcc, gamma, M, tau, sigma, raise?) = 
    (% writeLine(printTerm M^ ": "^ printType tau^"\n <= "^ printType sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
     % let _ =  writeLine(printTerm M^ ": \n"^ printType tau^"\n <= \n"^ printType sigma) in
-    let (tau0, sigma0)   = maybeRaiseSubtypes(tau, sigma, gamma) in
+    let (tau0, sigma0)   = if raise? then maybeRaiseSubtypes(tau, sigma, gamma) else (tau, sigma) in
     if lifting? gamma then
       let gamma =
           case tau0 of
