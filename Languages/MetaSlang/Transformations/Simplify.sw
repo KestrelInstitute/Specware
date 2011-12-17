@@ -381,6 +381,17 @@ spec
         in
         simplifyForall spc (new_v::vs, new_cjs, bod)
       | _ ->
+     case findLeftmost (fn cj ->
+                         case cj of
+                           | Let([_], _, _) -> true
+                           | _ -> false)
+           cjs of
+      | Some(cj as Let([(pat, e)], let_body, _)) ->
+        %% turn let bound pattern into conjuncts with universally quantified vars
+        let (pat_tm, new_conds, new_vs) = patternToTermPlusExConds pat in
+        let eq_tm = mkEquality(inferType(spc, pat_tm), pat_tm, e) in
+        simplifyForall spc (new_vs ++ vs, eq_tm :: let_body :: new_conds ++ delete cj cjs , bod)
+      | _ ->
     case findLeftmost (fn cj ->
                          case bindEquality (cj,vs) of
                            | None -> false
