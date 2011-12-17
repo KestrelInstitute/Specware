@@ -35,11 +35,6 @@ op zero : Int
 
 op isucc : Bijection (Int, Int)
 
-proof Isa Integer__isucc_subtype_constr
- apply(auto simp add: bij_def inj_on_def surj_def)
- apply(rule_tac x="y - 1" in exI, auto)
-end-proof
-
 op ipred : Bijection (Int, Int) = inverse isucc
  proof Isa
   apply(rule ext, rule sym, auto simp add: inv_def)
@@ -51,21 +46,12 @@ op ipred : Bijection (Int, Int) = inverse isucc
 
 axiom infinity is
   ex (f : Int -> Int) injective? f && ~ (surjective? f)
-proof Isa
-  apply(rule_tac x="\<lambda>i. 2*i" in exI, auto simp add: surj_def inj_on_def)
-  apply(rule_tac x="1"               in exI, auto simp add: pos_zmult_eq_1_iff)
- end-proof
 
 axiom induction is
   fa (p : Int -> Bool)
     p zero &&
     (fa(i) p i => p (isucc i) && p (ipred i)) =>
     (fa(i) p i)
-proof Isa
- apply(cases i)
- apply(rule_tac k="0" in int_ge_induct,simp_all)
- apply(rule_tac k="0" in int_le_induct,simp_all)
-end-proof
 
 % number 1:
 op one : Int = isucc zero
@@ -89,27 +75,8 @@ op positive? : Int -> Bool = the(positive?)
   satisfiesInductiveDef? positive? &&
   (fa(p?) satisfiesInductiveDef? p? =>
           (fa(i) positive? i => p? i))
-proof Isa positive_p_Obligation_the  
- apply(simp add:Integer__positive_p__satisfiesInductiveDef_p_def)
- (****** The following fact is needed twice in the proof *******)
- apply(subgoal_tac
-   "\<forall>P i. P (1::int) \<and> (\<forall>i. P i
-    \<longrightarrow> P (i + 1)) \<and> 1 \<le> i \<longrightarrow> P i")
- apply(rule_tac a="\<lambda>i. i\<ge>1" in ex1I,simp_all)
- (********* Auto goes off in the wrong direction, so we need to guide ***)
- (*** first subgoal is now uniqueness    ***)
- apply(clarify, rule ext)
- apply(drule_tac x="x" in spec, rotate_tac 3, drule_tac x="i" in spec)
- apply(drule_tac x="\<lambda>i. 1 \<le> i" in spec,
-       rotate_tac 3, drule_tac x="i" in spec)
- apply(rule iffI, simp_all)
- (*** second subgoal: prove the stated fact by positive induction ***)
- apply(clarify, rule_tac k="1" in int_ge_induct, simp)
- apply(clarify, drule_tac x="ia" in spec, simp)
-end-proof
 
 op negative? (i:Int) : Bool = ~ (positive? i) && ~ (zero? i)
-
 
 % ----------------------------------------------------------------------
 % For reasoning purposes it is useful to have an explicit representation
@@ -139,7 +106,6 @@ done
 end-proof
 % ----------------------------------------------------------------------
 
-
 (* The following is a more convenient induction principle on integers than the
 earlier axiom. Instead of going back and forth from i to both its successor and
 its predecessor for all integers, it goes through positive and negative integers
@@ -151,11 +117,6 @@ theorem induction_pos_neg is
     (fa(i:Int) ~ (negative? i) && p i => p (isucc i)) &&
     (fa(i:Int) ~ (positive? i) && p i => p (ipred i)) =>
     (fa(i:Int) p i)
-proof Isa
- apply(simp, cases i)
- apply(rule_tac k="0" in int_ge_induct, simp_all)
- apply(rule_tac k="0" in int_le_induct, simp_all)
-end-proof 
 
 % unary minus (qualifier avoids confusion with binary minus):
 
@@ -164,44 +125,12 @@ op IntegerAux.- : Bijection (Int, Int) = the(minus)
   (fa(i) positive? i => minus i    = ipred (minus (ipred i))) &&
   (fa(i) negative? i => minus i    = isucc (minus (isucc i)))
 
-proof Isa e_dsh_Obligation_the
- apply(rule_tac a="zminus" in ex1I,simp_all)
- (*** first subgoal: bijectivity - same proof as below (beware of auto) ***)
- apply(simp add: bij_def inj_on_def surj_def, clarify)
- apply(rule_tac x ="-y" in  exI,simp)
- (*** second subgoal: uniqueness ***)
- apply(clarify, rule ext)
- apply(rule_tac p="\<lambda>i. x i = - i" in Integer__induction, auto)
- apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
- apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
-end-proof
-proof Isa e_dsh_subtype_constr 
- apply(auto simp add: bij_def inj_on_def surj_def)
- apply(rule_tac x ="-y" in  exI, auto)
-end-proof
-proof Isa IntegerAux__e_dsh__def
- apply(rule the1_equality [symmetric])
- apply(rule IntegerAux__e_dsh_Obligation_the)
- apply(simp add: IntegerAux__e_dsh_subtype_constr)
-end-proof
-
 % addition:
 
 op + infixl 25 : Int * Int -> Int = the(plus)
   (fa(j)                  plus (zero, j) = j) &&
   (fa(i,j) positive? i => plus (i,    j) = isucc (plus (ipred i, j))) &&
   (fa(i,j) negative? i => plus (i,    j) = ipred (plus (isucc i, j)))
-proof Isa e_pls_Obligation_the
- apply(rule_tac a="\<lambda>(i,j). i+j" in ex1I, auto)
- apply(rule ext, auto simp add: split_paired_all)
- apply(rule_tac p="\<lambda>a. x (a,b)  = a+b" in Integer__induction, auto)
- apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)+
-end-proof
-proof Isa e_pls__def
- apply(rule the1_equality [symmetric])
- apply(rule Integer__e_pls_Obligation_the)
- apply(auto)
-end-proof
 
 % subtraction:
 
@@ -213,12 +142,6 @@ op * infixl 27 : Int * Int -> Int = the(times)
   (fa(j)                  times (zero, j) = zero) &&
   (fa(i,j) positive? i => times (i,    j) = times (ipred i, j) + j) &&
   (fa(i,j) negative? i => times (i,    j) = times (isucc i, j) - j)
-proof Isa e_ast_Obligation_the
- apply(rule_tac a="\<lambda>(i,j). i*j" in ex1I, auto simp add: ring_distribs)
- apply(rule ext, auto simp add: split_paired_all)
- apply(rule_tac p="\<lambda>a. x (a,b)  = a*b" in Integer__induction, auto)
- apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto simp add: ring_distribs)+
-end-proof
 proof Isa e_ast__def
  apply(rule the1_equality [symmetric])
  apply(rule Integer__e_ast_Obligation_the)
@@ -255,9 +178,6 @@ theorem induction_naturals is
     p 0 &&
     (fa(n:Nat) p n => p (n+1)) =>
     (fa(n:Nat) p n)
-proof Isa 
-  apply(rule nat_induct, auto)
-end-proof
 
 % positive (i.e. non-zero) natural numbers:
 
@@ -278,9 +198,6 @@ op sign (i:Int) : {s:Int | s = 0 || s = 1 || s = -1} =
        if i > 0 then  1  % positive
   else if i < 0 then -1  % negative
   else (* i = 0 *)    0  % zero
-proof Isa sign_subtype_constr
- apply (simp add: sign_def)
-end-proof
 
 % absolute value:
 
@@ -299,9 +216,6 @@ expressed as x * z for some integer z. *)
 
 op divides (x:Int, y:Int) infixl 20 : Bool =
   ex(z:Int) x * z = y
-proof Isa divides__def
-  apply(auto simp add: dvd_def)
-end-proof
 
 (* Obviously, any integer divides 0. *)
 
@@ -351,20 +265,6 @@ op gcd (x:Int, y:Int) : Nat =
      z divides x && z divides y &&
   % and is divided by any integer that also divides x and y:
      (fa(w:Int) w divides x && w divides y => w divides z)
-proof Isa
- apply(rule the1_equality [symmetric])
- apply(rule Integer__gcd_Obligation_the)
- apply(simp add: zgcd_greatest_iff)
-end-proof
-proof Isa gcd_Obligation_the
-  apply(rule_tac a="igcd(x,y)" in ex1I, auto)
-  apply(simp add: zgcd_greatest_iff)
-  apply(subgoal_tac "int xa =zgcd (x,y)")
-  apply(simp only: igcd_to_zgcd [symmetric])
-  apply(rule dvd_antisym, auto)
-  apply(rule zgcd_geq_zero)
-  apply(simp add: zgcd_greatest_iff)
-end-proof
 
 op lcm (x:Int, y:Int) : Nat =
   the(z:Nat)
@@ -372,20 +272,6 @@ op lcm (x:Int, y:Int) : Nat =
      z multipleOf x && z multipleOf y &&
   % and any integer that is a multiple of x and y is also a multiple of z:
      (fa(w:Int) w multipleOf x && w multipleOf y => w multipleOf z)
-proof Isa
- apply(rule the1_equality [symmetric])
- apply(rule Integer__lcm_Obligation_the)
- apply(simp add: zlcm_least)
-end-proof
-proof Isa lcm_Obligation_the
- apply(rule_tac a="ilcm(x,y)" in ex1I, simp_all)
- apply(simp add: zlcm_least)
- apply(subgoal_tac "int xa =zlcm (x,y)")
- apply(simp only: ilcm_to_zlcm [symmetric])
- apply(rule dvd_antisym, simp_all)
- apply(rule zlcm_geq_zero)
- apply(rule zlcm_least, simp_all)
-end-proof
 
 (* If x and y are not both 0, their g.c.d. is positive and is the largest
 integer (according to the usual ordering on the integers) that divides both x
@@ -396,12 +282,6 @@ theorem gcd_of_not_both_zero is
     gcd(x,y) > 0 &&
     gcd(x,y) divides x && gcd(x,y) divides y &&
     (fa(w:Int) w divides x && w divides y => gcd(x,y) >= w)
-proof Isa
-  apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
-  apply(metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
-  apply(metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd
-              int_eq_0_conv zgcd_specware_def)
-end-proof
 
 theorem gcd_of_zero_zero_is_zero is
   gcd (0, 0) = 0
@@ -412,23 +292,11 @@ the non-zero multiples of x and y. *)
 theorem lcm_smallest_abs_multiple is
   fa (x:Int, y:Int, w:Int0)
     w multipleOf x && w multipleOf y => lcm(x,y) <= abs w
-proof Isa
-  apply(subgoal_tac "int (ilcm (x, y)) \_le abs w", simp_all (no_asm_simp))
-  apply(rule zdvd_imp_le)
-  apply(auto simp add:zlcm_least)
-end-proof
 
 % exact division of integers:
 
 op / (i:Int, j:Int0 | j divides i) infixl 26 : Int =
   the(k:Int) i = j * k
-proof Isa
- by (rule the1I2, rule Integer__e_fsl_Obligation_the, auto)
-end-proof
-proof Isa e_fsl_Obligation_the
- apply(rule_tac a="i div j"in ex1I)
- apply(auto simp add: dvd_def)
-end-proof 
 proof Isa -verbatim
 theorem Integer__e_fsl_equality [simp]:
   "\<lbrakk>(j::int) \<noteq> 0; j zdvd i\<rbrakk>
@@ -483,7 +351,6 @@ theorem Integer__divT_unique_pos:
 done
 end-proof
 
-
 op divT (i:Int, j:Int0) infixl 26 : Int =
   % if divisor's magnitude exceeds dividend's, result is 0:
   if abs i < abs j then 0
@@ -492,34 +359,8 @@ op divT (i:Int, j:Int0) infixl 26 : Int =
   % to the magnitude of the dividend without exceeding it:
   else the(q:Int) sign q = sign i * sign j
                && abs i - abs j < abs (q * j) && abs (q * j) <= abs i
-proof Isa divT_Obligation_the
- apply(cut_tac i="\<bar>i\<bar>" and j="\<bar>j\<bar>"
-         in Integer__divT_unique_pos,
-       simp_all add: not_less nat_le_eq_zle) 
- apply(erule ex1E, clarify)
- apply(rule_tac a="q * sign (i*j)" in ex1I, 
-       simp_all add: abs_mult abs_idempotent)
- apply(rule_tac t=q and s="x * (sign i * sign j)" in subst, clarify)
- defer apply (simp add: algebra_simps mult_sign_self)
- apply (drule_tac x="x * (sign i * sign j)" in spec, erule mp)
- apply (subgoal_tac "i \<noteq> 0")
- apply (simp add: abs_mul,
-        simp only: sign_pos_iff [symmetric],
-        simp add: algebra_simps mult_sign_self)
- apply (auto)
-end-proof
-proof Isa divT__def1
-apply(rule the1_equality [symmetric])
-apply(rule Integer__divT_Obligation_the, simp_all)
-apply(simp only: zero_less_abs_iff [symmetric] not_less)
-apply(simp del: zero_less_abs_iff
-           add: divT_def abs_mult divT_abs [symmetric] div_bounds div_signs)
-end-proof
 
 op modT (i:Int, j:Int0) infixl 26 : Int = i - j * (i divT j)
-proof Isa
-  apply (simp add: modT_alt_def)
-end-proof
 
 (* Some examples of divT and modT.
 
@@ -541,9 +382,6 @@ dividend evenly. *)
 
 theorem exact_divT is
   fa (i:Int, j:Int0) j divides i => i divT j = i / j
-proof Isa
-  apply (simp add: divides_iff_modT_0 modT_alt_def)
-end-proof
 
 (* The quotient is the largest integer (in magnitude) that, when multiplied by
 the divisor, does not exceed the dividend (in magnitude). *)
@@ -553,64 +391,39 @@ theorem divT_is_largest_in_abs is
     % if k (multiplied by divisor) does not exceed dividend in magnitude,
     % then k does not exceed quotient in magnitude:
     abs (k * j) <= abs i  =>  abs k <= abs (i divT j)
-proof Isa
-  apply (simp add: nat_le_eq_zle,
-         simp add: divT_abs [symmetric] divT_pos div_is_largest_pos)
-end-proof
 
 (* Negating the divisor or the dividend negates the quotient. *)
 
 theorem divT_of_negated_divisor is
   fa (i:Int, j:Int0) i divT -j = - (i divT j)
-proof Isa
-  apply(simp add: divT_def)     
-end-proof
 
 theorem divT_of_negated_dividend is
   fa (i:Int, j:Int0) -i divT j = - (i divT j)
-proof Isa
-  apply(simp add: divT_def) 
-end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
 
 theorem divides_iff_modT_0 is
   fa (i:Int, j:Int0) j divides i <=> i modT j = 0
-proof Isa
-  apply(auto simp add: modT_0_equals_mod_0 dvd_eq_mod_eq_0)
-end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
 
 theorem modT_less_than_divisor_in_abs is
   fa (i:Int, j:Int0) abs (i modT j) < abs j
-proof Isa
-  apply(simp add: modT_def abs_mult, cases "i=0", auto)
-end-proof
 
 (* Negating the divisor leaves the remainder unchanged. *)
 
 theorem modT_of_negated_divisor is
   fa (i:Int, j:Int0) i modT -j = i modT j
-proof Isa
-  apply(simp add: modT_def)
-end-proof
 
 (* Negating the dividend negates the remainder. *)
 
 theorem modT_of_negated_dividend is
   fa (i:Int, j:Int0) -i modT j = - (i modT j)
-proof Isa
-  apply(simp add: modT_def)
-end-proof
 
 (* If non-zero, the sign of the remainder coincides with the dividend's. *)
 
 theorem sign_of_non_zero_modT is
   fa (i:Int, j:Int0) (i modT j) ~= 0 => sign (i modT j) = sign i
-proof Isa
-   apply(auto simp add: modT_def less_le)
-end-proof
 
 (* Another possible way to define integer division is by flooring (hence the
 "F") the result, i.e. approximating it with the largest integer that does not
@@ -625,18 +438,8 @@ result is the result of divT decreased by 1. *)
 op divF (i:Int, j:Int0) infixl 26 : Int =
   if i modT j = 0 || sign i = sign j then i divT j
                                      else i divT j - 1
-proof Isa divF__def
-  apply(auto simp add: divides_iff_modT_0 [symmetric] 
-                      divT_is_div_if_dvd divT_is_div_if_eqsign)
-end-proof
-proof Isa divF__def1
-  apply(simp add: divides_iff_modT_0 [symmetric] divT_vs_div_else)
-end-proof
 
 op modF (i:Int, j:Int0) infixl 26 : Int = i - j * (i divF j)
-proof Isa modF__def
-  apply(cut_tac a=i and b=j and k=0 in zdiv_zmod_equality, arith)
-end-proof
 
 (* Some examples of divF and modF.
 
@@ -665,10 +468,6 @@ does not exceed the dividend. *)
 theorem divF_is_largest is
   fa (i:Int, j:Int0, k:Int)
     k * (abs j) <= i * (sign j)  =>  k <= i divF j
-proof Isa  
-apply(simp add: abs_if sign_def div_is_largest_pos div_is_largest_neg
-           split: split_if_asm)    
-end-proof
 
 (* Negating the divisor or the dividend negates the quotient and decreases it by
 1 unless division is exact. *)
@@ -676,43 +475,26 @@ end-proof
 theorem divF_of_negated_divisor is
   fa (i:Int, j:Int0) i divF -j = - (i divF j)
                                  - (if j divides i then 0 else 1)
-proof Isa
-  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus2_eq_if)
-end-proof
 
 theorem divF_of_negated_dividend is
   fa (i:Int, j:Int0) -i divF j = - (i divF j)
                                  - (if j divides i then 0 else 1)
-proof Isa
-  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus1_eq_if)
-end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
 
 theorem divides_iff_modF_0 is
   fa (i:Int, j:Int0) j divides i <=> i modF j = 0
-proof Isa
-  apply(simp add: dvd_eq_mod_eq_0)
-end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
 
 theorem modF_less_than_divisor_in_abs is
   fa (i:Int, j:Int0) abs (i modF j) < abs j
-proof Isa
-  apply(auto simp add: abs_if not_less)
-  apply(cut_tac a=i and b=j in pos_mod_sign, auto)
-  apply(cut_tac a=i and b=j in neg_mod_sign, auto)
-end-proof
 
 (* Negating the divisor decreases a non-zero remainder by the divisor. *)
 
 theorem modF_of_negated_divisor is
   fa (i:Int, j:Int0) i modF -j = i modF j
                                  - j * (if j divides i then 0 else 1)
-proof Isa
-  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus2_eq_if)
-end-proof
 
 (* Negating the dividend negates the remainder and increases it by the divisor
 unless division is exact. *)
@@ -720,17 +502,11 @@ unless division is exact. *)
 theorem modF_of_negated_dividend is
   fa (i:Int, j:Int0) -i modF j = - (i modF j)
                                  + j * (if j divides i then 0 else 1)
-proof Isa
-  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus1_eq_if)
-end-proof
 
 (* If non-zero, the sign of the remainder coincides with the divisor's. *)
 
 theorem sign_of_non_zero_modF is
   fa (i:Int, j:Int0) (i modF j) ~= 0 => sign (i modF j) = sign j
-proof Isa
- apply(cases "j < 0", auto simp add: sign_def not_less neq_le_trans)
-end-proof
 
 (* Another possible way to define integer division is by ceiling (hence the
 "C"), i.e. approximating it with the smallest integer that is not exceeded by
@@ -745,18 +521,8 @@ i.e. the result is the result of divT increased by 1. *)
 op divC (i:Int, j:Int0) infixl 26 : Int =
   if i modT j = 0 || sign i ~= sign j then i divT j
                                       else i divT j + 1
-proof Isa divC__def
- apply (simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_dvd)
- apply (auto simp add: divT_vs_div_else)
-end-proof
-proof Isa divC__def1
- apply(simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_eqsign)
-end-proof
 
 op modC (i:Int, j:Int0) infixl 26 : Int = i - j * (i divC j)
-proof Isa modC__def
- apply(simp add: modC_def)
-end-proof
 
 (* Some examples of divC and modC.
 
@@ -778,9 +544,6 @@ dividend evenly. *)
 
 theorem exact_divC is
   fa (i:Int, j:Int0) j divides i => i divC j = i / j
-proof Isa
-  by (simp add: divC_def)
-end-proof
 
 (* The quotient is the smallest integer that, when multiplied by the divisor, is
 not exceeded by the dividend. *)
@@ -788,9 +551,6 @@ not exceeded by the dividend. *)
 theorem divC_is_smallest is
   fa (i:Int, j:Int0, k:Int)
     k * (abs j) >= i * (sign j)  =>  k >= i divC j
-proof Isa
-  apply (auto simp add: neq_iff divC_is_smallest_pos divC_is_smallest_neg)
-end-proof
 
 (* The result of divC coincides with the result of divF if it is exact.
 Otherwise, the former is always 1 more than the latter. *)
@@ -799,9 +559,6 @@ theorem divC_divF_relation is
   fa (i:Int, j:Int0)
     (if j divides i then i divC j = i divF j
                     else i divC j = i divF j + 1)
-proof Isa
- apply(simp add: divC_def)
-end-proof
 
 (* Negating the divisor or the dividend negates the quotient and increases it by
 1 unless division is exact. *)
@@ -809,47 +566,26 @@ end-proof
 theorem divC_of_negated_divisor is
   fa (i:Int, j:Int0) i divC -j = - (i divC j)
                                  + (if j divides i then 0 else 1)
-proof Isa
- apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: dvd_eq_mod_eq_0)
-end-proof
 
 theorem divC_of_negated_dividend is
   fa (i:Int, j:Int0) -i divC j = - (i divC j)
                                  + (if j divides i then 0 else 1)
-proof Isa
- apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: dvd_eq_mod_eq_0)
-end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
 
 theorem divides_iff_modC_0 is
   fa (i:Int, j:Int0) j divides i <=> i modC j = 0
-proof Isa
- apply(auto simp add: modC_def divC_def 
-                      dvd_eq_mod_eq_0 algebra_simps div_bounds_neq)
-end-proof
 
 (* The remainder is exceeded, in magnitude, by the divisor. *)
 
 theorem modC_less_than_divisor_in_abs is
   fa (i:Int, j:Int0) abs (i modC j) < abs j
-proof Isa
- apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
- apply (cases "j>0", auto simp add: algebra_simps not_less_iff_gr_or_eq)
- apply (frule_tac i=i in div_pos_low_bound2, 
-        simp add: div_via_mod pos_mod_sign less_le)
- apply (frule_tac i=i in div_neg_up_bound2, 
-        simp add: div_via_mod pos_mod_sign less_le)
-end-proof
 
 (* Negating the divisor decreases a non-zero remainder by the divisor. *)
 
 theorem modC_of_negated_divisor is
   fa (i:Int, j:Int0) i modC -j = i modC j
                                  + j * (if j divides i then 0 else 1)
-proof Isa
- apply(auto simp add: modC_def Integer__divC_of_negated_divisor algebra_simps)
-end-proof
 
 (* Negating the dividend negates the remainder and decreases it by the divisor
 unless division is exact. *)
@@ -857,18 +593,11 @@ unless division is exact. *)
 theorem modC_of_negated_dividend is
   fa (i:Int, j:Int0) -i modC j = - (i modC j)
                                  - j * (if j divides i then 0 else 1)
-proof Isa
- apply(auto simp add: modC_def Integer__divC_of_negated_dividend algebra_simps)
-end-proof
 
 (* If non-zero, the sign of the reminder is the opposite of the divisor's. *)
 
 theorem sign_of_non_zero_modC is
   fa (i:Int, j:Int0) (i modC j) ~= 0 => sign (i modC j) = - sign j
-proof Isa
- apply (simp add: Integer__divides_iff_modC_0 [symmetric],
-        auto simp add: modC_def divC_def algebra_simps neq_iff div_bounds)
-end-proof
 
 (* Yet another possible way to define integer division is by rounding (hence the
 "R"), i.e. approximating it with the closest integer. When two integers are
@@ -895,16 +624,6 @@ op divR (i:Int, j:Int0) infixl 26 : Int = the(q)
   division, the sign of q must be the sign of the exact division (which is
   also the sign of the product of i and j. *)
   (q ~= 0 => sign q = sign (i * j))
-proof Isa divR_Obligation_the
- apply (simp add: divR_def_aux1 [symmetric])
- apply (rule_tac a="i divR j" in ex1I)
- apply (auto simp add: divR_def_lemmas)
-end-proof
-proof Isa divR__def
-  apply (rule the1_equality [symmetric])
-  apply (rule Integer__divR_Obligation_the, 
-         auto simp add: divR_def_aux1 [symmetric] divR_def_lemmas)
-end-proof
 (***************************************************************************
 * Note: most of the proof burden is handled in IsabelleExtensions.thy
 * There are six divR_def_lemmas and even more auxiliary lemmas with fairly
@@ -913,9 +632,6 @@ end-proof
 ***************************************************************************) 
 
 op modR (i:Int, j:Int0) infixl 26 : Int = i - j * (i divR j)
-proof Isa modR__def
-  apply (simp add: modR_def)
-end-proof
 
 (* Some examples of divR and modR.
 
@@ -937,32 +653,19 @@ dividend evenly. *)
 
 theorem exact_divR is
   fa (i:Int, j:Int0) j divides i => i divR j = i / j
-proof Isa
- apply(simp add: divides_iff_modR_0 modR_def)
-end-proof
 
 (* Negating the divisor or the dividend negates the quotient. *)
 
 theorem divR_of_negated_divisor is
   fa (i:Int, j:Int0) i divR -j = - (i divR j)
-proof Isa
-  apply (simp add: divR_zminus2)
-end-proof
 
 theorem divR_of_negated_dividend is
   fa (i:Int, j:Int0) -i divR j = - (i divR j)
-proof Isa
-   apply (simp add: divR_zminus1)
-end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
 
 theorem divides_iff_modR_0 is
   fa (i:Int, j:Int0) j divides i <=> i modR j = 0
-proof Isa
-  apply (auto simp add: modR_def divR_def algebra_simps div_eq_if_dvd, 
-         simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
-end-proof
 
 (* Boute's paper (mentioned earlier) proposes yet another version of integer
 division, namely Euclidean division (hence the "E"). It is based on the
@@ -977,41 +680,12 @@ op euclidianDivision? (i:Int, j:Int0, q:Int, r:Int) : Bool =
 % given i and non-zero j, there exist unique q and r satisfying the predicate:
 theorem euclideanDivision is
   fa (i:Int, j:Int0) ex1 (qr: Int * Int) euclidianDivision? (i, j, qr.1, qr.2)
-proof Isa
- apply (simp add: Integer__euclidianDivision_p_def, 
-        rule_tac a="(i divE j, i modE j)" in ex1I)
- apply (auto simp add: modE_sign modE_bound,
-        auto simp add: modE_alt_def divE_def div_abs_unique)
-end-proof
 
 op divE (i:Int, j:Int0) infixl 26 : Int = the(q:Int)
   ex(r:Int) euclidianDivision? (i, j, q, r)
-proof Isa divE_Obligation_the
-  apply (drule Integer__euclideanDivision, auto)
-end-proof
-proof Isa divE__def  
- apply (rule the1_equality [symmetric],
-        rule Integer__divE_Obligation_the, auto)
- apply (simp add: Integer__euclidianDivision_p_def, 
-        rule_tac x="i modE j" in exI)
- apply (auto simp add: modE_sign modE_bound,
-        auto simp add: modE_alt_def divE_def div_abs_unique)
-end-proof
 
 op modE (i:Int, j:Int0) infixl 26 : Int = the(r:Int)
   ex(q:Int) euclidianDivision? (i, j, q, r)
-proof Isa modE_Obligation_the
-  apply (drule Integer__euclideanDivision, auto)
-end-proof
-proof Isa modE__def  
- apply (rule the1_equality [symmetric],
-        rule Integer__modE_Obligation_the, auto)
- apply (rule_tac x="i divE j" in exI,
-        simp add: Integer__euclidianDivision_p_def)
- apply (auto simp add: modE_sign modE_bound,
-        auto simp add: modE_alt_def divE_def div_abs_unique)
-end-proof
-
 
 (* Some examples of divE and modE.
 
@@ -1033,17 +707,11 @@ dividend evenly. *)
 
 theorem exact_divE is
   fa (i:Int, j:Int0) j divides i => i divE j = i / j
-proof Isa
-  apply (simp add: divides_iff_modE_0 modE_alt_def)
-end-proof
 
 (* Negating the divisor negates the quotient. *)
 
 theorem divE_of_negated_divisor is
   fa (i:Int, j:Int0) i divE -j = - (i divE j)
-proof Isa
-  apply (simp add: divE_def) 
-end-proof
 
 (* Negating the dividend negates the quotient and, unless division is exact,
 decreases resp. increases it by 1 if the divisor is positive resp. negative. *)
@@ -1051,27 +719,17 @@ decreases resp. increases it by 1 if the divisor is positive resp. negative. *)
 theorem divE_of_negated_dividend is
   fa (i:Int, j:Int0) -i divE j = - (i divE j)
                                  - sign j * (if j divides i then 0 else 1)
-proof Isa
-  apply (auto simp add: divE_def abs_if zdiv_zminus1_eq_if,
-         auto simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
-end-proof
 
 (* The following usual property can be taken as an alternative definition of op
 modE. *)
 
 theorem modE_alt_def is
   fa (i:Int, j:Int0) i modE j = i - j * (i divE j)
-proof Isa
- apply (simp add: divE_def modE_def sign_def mod_via_div)
-end-proof
 
 (* The divisor evenly divides the dividend iff there is no remainder. *)
 
 theorem divides_iff_modE_0 is
   fa (i:Int, j:Int0) j divides i <=> i modE j = 0
-proof Isa
-   apply (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
-end-proof
 
 (* Division on natural numbers is typically defined to be euclidean, which (for
 natural numbers) gives the same results as truncation and flooring (but not
@@ -1081,28 +739,13 @@ truncation, and flooring ops. *)
 
 theorem divE_equals_divT_on_naturals is
   fa (i:Nat, j:PosNat) i divE j = i divT j
-proof Isa
-  apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
-end-proof
 
 theorem divE_equals_divF_on_naturals is
   fa (i:Nat, j:PosNat) i divE j = i divF j
-proof Isa
-  apply (simp add: divE_def sign_def int_mult [symmetric])
-end-proof
 
 op div (i:Nat, j:PosNat) infixl 26 : Nat = i divE j
-proof Isa div_Obligation_subtype0
-  apply (simp add: div_signs)
-end-proof
-proof Isa div__def
-  apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
-end-proof
 
 op mod (i:Nat, j:PosNat) infixl 26 : Nat = i modE j
-proof Isa mod__def
-  by (auto simp add: nat_eq_iff2 zmod_int)
-end-proof
 
 % exponentiation
 
@@ -1119,14 +762,6 @@ op ** (base:Int, exp:Nat) infixl 30 : Int =
 % the current translator adds a superfluous "nat" here
 
 op *** (base:Nat, exp:Nat) infixl 30 : Nat = base ** exp
-
-proof Isa e_ast_ast__def1
- by (cases exp__v, auto)
-end-proof
-
-proof Isa e_ast_ast_ast__def
-  by (simp add: zpower_int)
-end-proof
 
 % min and max:
 
@@ -1223,6 +858,445 @@ end-proof
  Integer.***      -> ^     Left  8
  Integer.compare \_rightarrow compare curried
 #end
+
+proof Isa Integer__isucc_subtype_constr
+ apply(auto simp add: bij_def inj_on_def surj_def)
+ apply(rule_tac x="y - 1" in exI, auto)
+end-proof
+
+proof Isa infinity
+  apply(rule_tac x="\<lambda>i. 2*i" in exI, auto simp add: surj_def inj_on_def)
+  apply(rule_tac x="1"               in exI, auto simp add: pos_zmult_eq_1_iff)
+ end-proof
+
+proof Isa induction
+ apply(cases i)
+ apply(rule_tac k="0" in int_ge_induct,simp_all)
+ apply(rule_tac k="0" in int_le_induct,simp_all)
+end-proof
+
+proof Isa positive_p_Obligation_the  
+ apply(simp add:Integer__positive_p__satisfiesInductiveDef_p_def)
+ (****** The following fact is needed twice in the proof *******)
+ apply(subgoal_tac
+   "\<forall>P i. P (1::int) \<and> (\<forall>i. P i
+    \<longrightarrow> P (i + 1)) \<and> 1 \<le> i \<longrightarrow> P i")
+ apply(rule_tac a="\<lambda>i. i\<ge>1" in ex1I,simp_all)
+ (********* Auto goes off in the wrong direction, so we need to guide ***)
+ (*** first subgoal is now uniqueness    ***)
+ apply(clarify, rule ext)
+ apply(drule_tac x="x" in spec, rotate_tac 3, drule_tac x="i" in spec)
+ apply(drule_tac x="\<lambda>i. 1 \<le> i" in spec,
+       rotate_tac 3, drule_tac x="i" in spec)
+ apply(rule iffI, simp_all)
+ (*** second subgoal: prove the stated fact by positive induction ***)
+ apply(clarify, rule_tac k="1" in int_ge_induct, simp)
+ apply(clarify, drule_tac x="ia" in spec, simp)
+end-proof
+
+proof Isa induction_pos_neg
+ apply(simp, cases i)
+ apply(rule_tac k="0" in int_ge_induct, simp_all)
+ apply(rule_tac k="0" in int_le_induct, simp_all)
+end-proof
+
+proof Isa e_dsh_Obligation_the
+ apply(rule_tac a="zminus" in ex1I,simp_all)
+ (*** first subgoal: bijectivity - same proof as below (beware of auto) ***)
+ apply(simp add: bij_def inj_on_def surj_def, clarify)
+ apply(rule_tac x ="-y" in  exI,simp)
+ (*** second subgoal: uniqueness ***)
+ apply(clarify, rule ext)
+ apply(rule_tac p="\<lambda>i. x i = - i" in Integer__induction, auto)
+ apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
+ apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)
+end-proof
+
+proof Isa IntegerAux__e_dsh__def
+ apply(rule the1_equality [symmetric])
+ apply(rule IntegerAux__e_dsh_Obligation_the)
+ apply(simp add: IntegerAux__e_dsh_subtype_constr)
+end-proof
+
+proof Isa e_pls_Obligation_the
+ apply(rule_tac a="\<lambda>(i,j). i+j" in ex1I, auto)
+ apply(rule ext, auto simp add: split_paired_all)
+ apply(rule_tac p="\<lambda>a. x (a,b)  = a+b" in Integer__induction, auto)
+ apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto)+
+end-proof
+
+proof Isa e_dsh_subtype_constr 
+ apply(auto simp add: bij_def inj_on_def surj_def)
+ apply(rule_tac x ="-y" in  exI, auto)
+end-proof
+
+proof Isa e_pls__def
+ apply(rule the1_equality [symmetric])
+ apply(rule Integer__e_pls_Obligation_the)
+ apply(auto)
+end-proof
+
+proof Isa e_ast_Obligation_the
+ apply(rule_tac a="\<lambda>(i,j). i*j" in ex1I, auto simp add: ring_distribs)
+ apply(rule ext, auto simp add: split_paired_all)
+ apply(rule_tac p="\<lambda>a. x (a,b)  = a*b" in Integer__induction, auto)
+ apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto simp add: ring_distribs)+
+end-proof
+
+proof Isa induction_naturals 
+  apply(rule nat_induct, auto)
+end-proof
+
+proof Isa sign_subtype_constr
+ apply (simp add: sign_def)
+end-proof
+
+proof Isa divides__def
+  apply(auto simp add: dvd_def)
+end-proof
+
+proof Isa gcd__def
+ apply(rule the1_equality [symmetric])
+ apply(rule Integer__gcd_Obligation_the)
+ apply(simp add: zgcd_greatest_iff)
+end-proof
+
+proof Isa gcd_Obligation_the
+  apply(rule_tac a="igcd(x,y)" in ex1I, auto)
+  apply(simp add: zgcd_greatest_iff)
+  apply(subgoal_tac "int xa =zgcd (x,y)")
+  apply(simp only: igcd_to_zgcd [symmetric])
+  apply(rule dvd_antisym, auto)
+  apply(rule zgcd_geq_zero)
+  apply(simp add: zgcd_greatest_iff)
+end-proof
+
+proof Isa lcm__def
+ apply(rule the1_equality [symmetric])
+ apply(rule Integer__lcm_Obligation_the)
+ apply(simp add: zlcm_least)
+end-proof
+
+proof Isa lcm_Obligation_the
+ apply(rule_tac a="ilcm(x,y)" in ex1I, simp_all)
+ apply(simp add: zlcm_least)
+ apply(subgoal_tac "int xa =zlcm (x,y)")
+ apply(simp only: ilcm_to_zlcm [symmetric])
+ apply(rule dvd_antisym, simp_all)
+ apply(rule zlcm_geq_zero)
+ apply(rule zlcm_least, simp_all)
+end-proof
+
+proof Isa gcd_of_not_both_zero
+  apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
+  apply(metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
+  apply(metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd
+              int_eq_0_conv zgcd_specware_def)
+end-proof
+
+proof Isa lcm_smallest_abs_multiple
+  apply(subgoal_tac "int (ilcm (x, y)) \_le abs w", simp_all (no_asm_simp))
+  apply(rule zdvd_imp_le)
+  apply(auto simp add:zlcm_least)
+end-proof
+
+proof Isa /__def
+ by (rule the1I2, rule Integer__e_fsl_Obligation_the, auto)
+end-proof
+
+proof Isa e_fsl_Obligation_the
+ apply(rule_tac a="i div j"in ex1I)
+ apply(auto simp add: dvd_def)
+end-proof
+
+proof Isa divT_Obligation_the
+ apply(cut_tac i="\<bar>i\<bar>" and j="\<bar>j\<bar>"
+         in Integer__divT_unique_pos,
+       simp_all add: not_less nat_le_eq_zle) 
+ apply(erule ex1E, clarify)
+ apply(rule_tac a="q * sign (i*j)" in ex1I, 
+       simp_all add: abs_mult abs_idempotent)
+ apply(rule_tac t=q and s="x * (sign i * sign j)" in subst, clarify)
+ defer apply (simp add: algebra_simps mult_sign_self)
+ apply (drule_tac x="x * (sign i * sign j)" in spec, erule mp)
+ apply (subgoal_tac "i \<noteq> 0")
+ apply (simp add: abs_mul,
+        simp only: sign_pos_iff [symmetric],
+        simp add: algebra_simps mult_sign_self)
+ apply (auto)
+end-proof
+
+proof Isa divT__def1
+apply(rule the1_equality [symmetric])
+apply(rule Integer__divT_Obligation_the, simp_all)
+apply(simp only: zero_less_abs_iff [symmetric] not_less)
+apply(simp del: zero_less_abs_iff
+           add: divT_def abs_mult divT_abs [symmetric] div_bounds div_signs)
+end-proof
+
+proof Isa modT__def
+  apply (simp add: modT_alt_def)
+end-proof
+
+proof Isa exact_divT
+  apply (simp add: divides_iff_modT_0 modT_alt_def)
+end-proof
+
+proof Isa divT_is_largest_in_abs
+  apply (simp add: nat_le_eq_zle,
+         simp add: divT_abs [symmetric] divT_pos div_is_largest_pos)
+end-proof
+
+proof Isa divT_of_negated_divisor
+  apply(simp add: divT_def)     
+end-proof
+
+proof Isa divT_of_negated_dividend
+  apply(simp add: divT_def) 
+end-proof
+
+proof Isa divides_iff_modT_0
+  apply(auto simp add: modT_0_equals_mod_0 dvd_eq_mod_eq_0)
+end-proof
+
+proof Isa modT_less_than_divisor_in_abs
+  apply(simp add: modT_def abs_mult, cases "i=0", auto)
+end-proof
+
+proof Isa modT_of_negated_divisor
+  apply(simp add: modT_def)
+end-proof
+
+proof Isa modT_of_negated_dividend
+  apply(simp add: modT_def)
+end-proof
+
+proof Isa sign_of_non_zero_modT
+   apply(auto simp add: modT_def less_le)
+end-proof
+
+proof Isa divF__def
+  apply(auto simp add: divides_iff_modT_0 [symmetric] 
+                      divT_is_div_if_dvd divT_is_div_if_eqsign)
+end-proof
+
+proof Isa divF__def1
+  apply(simp add: divides_iff_modT_0 [symmetric] divT_vs_div_else)
+end-proof
+
+proof Isa modF__def
+  apply(cut_tac a=i and b=j and k=0 in zdiv_zmod_equality, arith)
+end-proof
+
+proof Isa divF_is_largest  
+apply(simp add: abs_if sign_def div_is_largest_pos div_is_largest_neg
+           split: split_if_asm)    
+end-proof
+
+proof Isa divF_of_negated_divisor
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus2_eq_if)
+end-proof
+
+proof Isa divF_of_negated_dividend
+  apply(simp add: dvd_eq_mod_eq_0 zdiv_zminus1_eq_if)
+end-proof
+
+proof Isa divides_iff_modF_0
+  apply(simp add: dvd_eq_mod_eq_0)
+end-proof
+
+proof Isa modF_less_than_divisor_in_abs
+  apply(auto simp add: abs_if not_less)
+  apply(cut_tac a=i and b=j in pos_mod_sign, auto)
+  apply(cut_tac a=i and b=j in neg_mod_sign, auto)
+end-proof
+
+proof Isa modF_of_negated_divisor
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus2_eq_if)
+end-proof
+
+proof Isa modF_of_negated_dividend
+  apply(simp add: dvd_eq_mod_eq_0 zmod_zminus1_eq_if)
+end-proof
+
+proof Isa sign_of_non_zero_modF
+ apply(cases "j < 0", auto simp add: sign_def not_less neq_le_trans)
+end-proof
+
+proof Isa divC__def
+ apply (simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_dvd)
+ apply (auto simp add: divT_vs_div_else)
+end-proof
+
+proof Isa divC__def1
+ apply(simp add: divC_def divides_iff_modT_0 [symmetric] divT_is_div_if_eqsign)
+end-proof
+
+proof Isa modC__def
+ apply(simp add: modC_def)
+end-proof
+
+proof Isa exact_divC
+  by (simp add: divC_def)
+end-proof
+
+proof Isa divC_is_smallest
+  apply (auto simp add: neq_iff divC_is_smallest_pos divC_is_smallest_neg)
+end-proof
+
+proof Isa divC_divF_relation
+ apply(simp add: divC_def)
+end-proof
+
+proof Isa divC_of_negated_divisor
+ apply(simp add: divC_def zdiv_zminus2_eq_if, simp add: dvd_eq_mod_eq_0)
+end-proof
+
+proof Isa divC_of_negated_dividend
+ apply(simp add: divC_def zdiv_zminus1_eq_if, simp add: dvd_eq_mod_eq_0)
+end-proof
+
+proof Isa divides_iff_modC_0
+ apply(auto simp add: modC_def divC_def 
+                      dvd_eq_mod_eq_0 algebra_simps div_bounds_neq)
+end-proof
+
+proof Isa modC_less_than_divisor_in_abs
+ apply (auto simp add: modC_def divC_def dvd_eq_mod_eq_0)
+ apply (cases "j>0", auto simp add: algebra_simps not_less_iff_gr_or_eq)
+ apply (frule_tac i=i in div_pos_low_bound2, 
+        simp add: div_via_mod pos_mod_sign less_le)
+ apply (frule_tac i=i in div_neg_up_bound2, 
+        simp add: div_via_mod pos_mod_sign less_le)
+end-proof
+
+proof Isa modC_of_negated_divisor
+ apply(auto simp add: modC_def Integer__divC_of_negated_divisor algebra_simps)
+end-proof
+
+proof Isa modC_of_negated_dividend
+ apply(auto simp add: modC_def Integer__divC_of_negated_dividend algebra_simps)
+end-proof
+
+proof Isa sign_of_non_zero_modC
+ apply (simp add: Integer__divides_iff_modC_0 [symmetric],
+        auto simp add: modC_def divC_def algebra_simps neq_iff div_bounds)
+end-proof
+
+proof Isa divR_Obligation_the
+ apply (simp add: divR_def_aux1 [symmetric])
+ apply (rule_tac a="i divR j" in ex1I)
+ apply (auto simp add: divR_def_lemmas)
+end-proof
+
+proof Isa divR__def
+  apply (rule the1_equality [symmetric])
+  apply (rule Integer__divR_Obligation_the, 
+         auto simp add: divR_def_aux1 [symmetric] divR_def_lemmas)
+end-proof
+
+proof Isa modR__def
+  apply (simp add: modR_def)
+end-proof
+
+proof Isa exact_divR
+ apply(simp add: divides_iff_modR_0 modR_def)
+end-proof
+
+proof Isa divR_of_negated_divisor
+  apply (simp add: divR_zminus2)
+end-proof
+
+proof Isa divR_of_negated_dividend
+   apply (simp add: divR_zminus1)
+end-proof
+
+proof Isa divides_iff_modR_0
+  apply (auto simp add: modR_def divR_def algebra_simps div_eq_if_dvd, 
+         simp_all add: dvd_if_div_eq  dvd_eq_mod_eq_0 div_via_mod)
+end-proof
+
+proof Isa euclideanDivision
+ apply (simp add: Integer__euclidianDivision_p_def, 
+        rule_tac a="(i divE j, i modE j)" in ex1I)
+ apply (auto simp add: modE_sign modE_bound,
+        auto simp add: modE_alt_def divE_def div_abs_unique)
+end-proof
+
+proof Isa divE_Obligation_the
+  apply (drule Integer__euclideanDivision, auto)
+end-proof
+
+proof Isa divE__def  
+ apply (rule the1_equality [symmetric],
+        rule Integer__divE_Obligation_the, auto)
+ apply (simp add: Integer__euclidianDivision_p_def, 
+        rule_tac x="i modE j" in exI)
+ apply (auto simp add: modE_sign modE_bound,
+        auto simp add: modE_alt_def divE_def div_abs_unique)
+end-proof
+
+proof Isa modE_Obligation_the
+  apply (drule Integer__euclideanDivision, auto)
+end-proof
+
+proof Isa modE__def  
+ apply (rule the1_equality [symmetric],
+        rule Integer__modE_Obligation_the, auto)
+ apply (rule_tac x="i divE j" in exI,
+        simp add: Integer__euclidianDivision_p_def)
+ apply (auto simp add: modE_sign modE_bound,
+        auto simp add: modE_alt_def divE_def div_abs_unique)
+end-proof
+
+proof Isa exact_divE
+  apply (simp add: divides_iff_modE_0 modE_alt_def)
+end-proof
+
+proof Isa divE_of_negated_divisor
+  apply (simp add: divE_def) 
+end-proof
+
+proof Isa divE_of_negated_dividend
+  apply (auto simp add: divE_def abs_if zdiv_zminus1_eq_if,
+         auto simp add: zmod_zminus2_eq_if dvd_eq_mod_eq_0)
+end-proof
+
+proof Isa modE_alt_def
+ apply (simp add: divE_def modE_def sign_def mod_via_div)
+end-proof
+
+proof Isa divides_iff_modE_0
+   apply (simp add: modE_def divE_def dvd_eq_mod_eq_0 [symmetric])
+end-proof
+
+proof Isa divE_equals_divT_on_naturals
+  apply (simp add: divE_def divT_def sign_def int_mult [symmetric])
+end-proof
+
+proof Isa  divE_equals_divF_on_naturals
+  apply (simp add: divE_def sign_def int_mult [symmetric])
+end-proof
+
+proof Isa div_Obligation_subtype0
+  apply (simp add: div_signs)
+end-proof
+
+proof Isa div__def
+  apply (auto simp add: nat_eq_iff2 zdiv_int div_signs)
+end-proof
+
+proof Isa mod__def
+  by (auto simp add: nat_eq_iff2 zmod_int)
+end-proof
+
+proof Isa e_ast_ast__def1
+ by (cases exp__v, auto)
+end-proof
+
+proof Isa e_ast_ast_ast__def
+  by (simp add: zpower_int)
+end-proof
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim

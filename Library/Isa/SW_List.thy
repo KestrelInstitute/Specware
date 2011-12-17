@@ -123,6 +123,68 @@ proof (relation "measure List__lengthOfListFunction")
    by auto
  qed
 qed
+
+lemma list_last_elem:
+"\<And>f n. f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
+            List__list f =
+            List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+proof -
+ fix f n
+ assume "f definedOnInitialSegmentOfLength (Suc n)"
+ thus "List__list f =
+       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+ proof (induct n arbitrary: f)
+ case 0
+  then obtain x where "f 0 = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence "the (f 0) = x" by auto
+  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def f' \<equiv> "\<lambda>i. f (i + 1)"
+  with 0 have f'_None: "f' = (\<lambda>i. None)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'_None have "List__list f' = []" by auto
+  with f'_def `f 0 = Some x` fseg
+   have "List__list f = [x]" by auto
+  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
+  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  from g_def have "g = (\<lambda>i. None)" by auto
+  with gseg have "List__list g = []" by auto
+  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
+  with g_def `List__list f = [x]` show ?case by auto
+ next
+ case (Suc n)
+  then obtain h where f0: "f 0 = Some h"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def g \<equiv> "\<lambda>i. f (i + 1)"
+  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
+  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  then obtain x where "g n = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence "the (g n) = x" by auto
+  with g_def have "the (f (Suc n)) = x" by auto
+  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
+  with Suc.hyps g_suc_n `the (g n) = x`
+   have Lg: "List__list g = List__list g' @ [x]" by auto
+  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
+  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
+  from f'_def f0 have f'0: "f' 0 = Some h" by auto
+  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
+  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
+  with Lg have "List__list f' @ [x] = h # List__list g" by auto
+  with Lf have "List__list f = List__list f' @ [x]" by auto
+  with f'_def `the (f (Suc n)) = x` show ?case by auto
+ qed
+qed
+
 theorem List__list_subtype_constr: 
   "Function__bijective_p__stp
      (\<lambda> (f::nat \<Rightarrow> 'a option). 
@@ -318,68 +380,6 @@ theorem List__list_subtype_constr2:
   apply (erule notE)
   apply (simp add: List__definedOnInitialSegmentOfLength_def)
   done
-
-lemma list_last_elem:
-"\<And>f n. f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
-            List__list f =
-            List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
-proof -
- fix f n
- assume "f definedOnInitialSegmentOfLength (Suc n)"
- thus "List__list f =
-       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
- proof (induct n arbitrary: f)
- case 0
-  then obtain x where "f 0 = Some x"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence "the (f 0) = x" by auto
-  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def f' \<equiv> "\<lambda>i. f (i + 1)"
-  with 0 have f'_None: "f' = (\<lambda>i. None)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'_None have "List__list f' = []" by auto
-  with f'_def `f 0 = Some x` fseg
-   have "List__list f = [x]" by auto
-  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
-  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  from g_def have "g = (\<lambda>i. None)" by auto
-  with gseg have "List__list g = []" by auto
-  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
-  with g_def `List__list f = [x]` show ?case by auto
- next
- case (Suc n)
-  then obtain h where f0: "f 0 = Some h"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def g \<equiv> "\<lambda>i. f (i + 1)"
-  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
-  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  then obtain x where "g n = Some x"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence "the (g n) = x" by auto
-  with g_def have "the (f (Suc n)) = x" by auto
-  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
-  with Suc.hyps g_suc_n `the (g n) = x`
-   have Lg: "List__list g = List__list g' @ [x]" by auto
-  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
-  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
-  from f'_def f0 have f'0: "f' 0 = Some h" by auto
-  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
-  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
-  with Lg have "List__list f' @ [x] = h # List__list g" by auto
-  with Lf have "List__list f = List__list f' @ [x]" by auto
-  with f'_def `the (f (Suc n)) = x` show ?case by auto
- qed
-qed
-
 consts List__list_1 :: "'a list \<Rightarrow> 'a List__ListFunction"
 defs List__list_1_def: 
   "List__list_1
@@ -2951,98 +2951,16 @@ theorem List__noRepetitions_p__def:
      = (\<forall>(i::nat) (j::nat). 
           i < length l \<and> (j < length l \<and> i \<noteq> j) 
             \<longrightarrow> l ! i \<noteq> l ! j)"
-  proof (induct l)
- case Nil thus ?case by auto
-next
- case (Cons h t)
- show ?case
- proof
-  assume "distinct (h # t)"
-  hence H: "h \<notin> set t" and T: "distinct t" by auto
-  with Cons have IJT:
-   "\<forall>i j. i < length t \<and> j < length t \<and> i \<noteq> j
-                  \<longrightarrow> t ! i \<noteq> t ! j"
-    by auto
-  show "\<forall>i j. i < length (h # t) \<and> j < length (h # t)
-                      \<and> i \<noteq> j
-                      \<longrightarrow> (h # t) ! i \<noteq> (h # t) ! j"
-  proof (rule allI, rule allI, rule impI)
-   fix i j
-   assume "i < length (h # t) \<and> j < length (h # t) \<and> i \<noteq> j"
-   hence "i < length (h # t)" and "j < length (h # t)" and "i \<noteq> j"
-    by auto
-   show "(h # t) ! i \<noteq> (h # t) ! j"
-   proof (cases "i = 0")
-    assume "i = 0"
-    hence "(h # t) ! i = h" by auto
-    from `i = 0` `i \<noteq> j` obtain j' where "j = Suc j'" by (cases j, auto)
-    hence "(h # t) ! j = t ! j'" by auto
-    from `j < length (h # t)` `j = Suc j'` have "j' < length t" by auto
-    with nth_mem have "t!j' \<in> set t" by auto
-    with H have "h \<noteq> t!j'" by auto
-    with `(h # t) ! i = h` `j = Suc j'`
-     show "(h # t) ! i \<noteq> (h # t) ! j" by auto
-   next
-    assume "i \<noteq> 0"
-    then obtain i' where "i = Suc i'" by (cases i, auto)
-    hence "(h # t) ! i = t ! i'" by auto
-    from `i < length (h # t)` `i = Suc i'` have "i' < length t" by auto
-    show "(h # t) ! i \<noteq> (h # t) ! j"
-    proof (cases "j = 0")
-     assume "j = 0"
-     hence "(h # t) ! j = h" by auto
-     from `i' < length t` nth_mem have "t!i' \<in> set t" by auto
-     with H have "h \<noteq> t!i'" by auto
-     with `(h # t) ! j = h` `i = Suc i'`
-      show "(h # t) ! i \<noteq> (h # t) ! j" by auto
-    next
-     assume "j \<noteq> 0"
-     then obtain j' where "j = Suc j'" by (cases j, auto)
-     hence "(h # t) ! j = t ! j'" by auto
-     from `j < length (h # t)` `j = Suc j'` have "j' < length t" by auto
-     with `i' < length t` `i \<noteq> j` `i = Suc i'` `j = Suc j'` IJT
-      have "t ! i' \<noteq> t ! j'" by auto
-     with `(h # t) ! i = t ! i'` `(h # t) ! j = t ! j'`
-      show "(h # t) ! i \<noteq> (h # t) ! j" by auto
-    qed
-   qed
-  qed
- next
-  assume IJHT: "\<forall>i j. i < length (h # t) \<and> j < length (h # t)
-                      \<and> i \<noteq> j
-                      \<longrightarrow> (h # t) ! i \<noteq> (h # t) ! j"
-  hence "\<forall>j. 0 < length (h # t) \<and> j < length (h # t)
-             \<and> 0 \<noteq> j
-             \<longrightarrow> (h # t) ! 0 \<noteq> (h # t) ! j"
-   by (rule spec)
-  hence JHT: "\<forall>j < length (h # t). j \<noteq> 0
-              \<longrightarrow> h \<noteq> (h # t) ! j" by auto
-  have "h \<notin> set t"
-  proof
-   assume "h \<in> set t"
-   hence "\<exists>j < length t. t ! j = h" by (auto simp: in_set_conv_nth)
-   then obtain j where "j < length t" and "t ! j = h" by auto
-   hence "Suc j < length (h # t)" and "(h # t) ! (Suc j) = h" by auto
-   with JHT have "h \<noteq> h" by auto
-   thus False by auto
-  qed
-  have "\<forall>i j. i < length t \<and> j < length t \<and> i \<noteq> j
-           \<longrightarrow> t ! i \<noteq> t ! j"
-  proof (rule allI, rule allI, rule impI)
-   fix i j
-   assume "i < length t \<and> j < length t \<and> i \<noteq> j"
-   hence "i < length t" and "j < length t" and "i \<noteq> j" by auto
-   def i' \<equiv> "Suc i" and j' \<equiv> "Suc j"
-   with `i < length t` and `j < length t` and `i \<noteq> j`
-   have "i' < length (h # t)" and "j' < length (h # t)" and "i' \<noteq> j'"
-    by auto
-   with IJHT have "(h # t) ! i' \<noteq> (h # t) ! j'" by auto
-   with i'_def j'_def show "t ! i \<noteq> t ! j" by auto
-  qed
-  with Cons have "distinct t" by auto
-  with `h \<notin> set t` show "distinct (h # t)" by auto
- qed
-qed
+  apply (auto simp add: nth_eq_iff_index_eq)
+  apply (erule rev_mp, induct_tac l, simp, clarsimp)
+  apply (rule conjI)
+  defer
+  apply (erule mp, auto)
+  apply (drule_tac x="Suc i" in spec, drule_tac x="Suc j" in spec, simp)
+  apply (drule_tac x="Suc i" in spec, drule_tac x="Suc j" in spec, simp)
+  apply (auto simp add: set_conv_nth)
+  apply (drule_tac x=0 in spec, drule_tac x="Suc i" in spec, simp)
+  done
 type_synonym 'a List__InjList = "'a list"
 theorem List__increasingNats_p_Obligation_subtype: 
   "\<lbrakk>int i < int (length nats) - 1\<rbrakk> \<Longrightarrow> 
@@ -5024,11 +4942,11 @@ defs List__permutationOf_def:
             \<and> (prm equiLong l1 \<and> List__permute(l1, prm) = l2))"
 theorem List__compare_Obligation_exhaustive: 
   "(\<exists>(hd1::'a) (tl1::'a list) (hd2::'a) (tl2::'a list). 
-      ((l1::'a list), (l2::'a list)) 
-        = (Cons hd1 tl1, Cons hd2 tl2)) 
-     \<or> ((l1, l2) = ([], []) 
-      \<or> ((\<exists>(zz__0::'a list). (l1, l2) = ([], zz__0)) 
-       \<or> (\<exists>(zz__0::'a list). (l1, l2) = (zz__0, []))))"
+      (l1::'a list) = Cons hd1 tl1 
+        \<and> (l2::'a list) = Cons hd2 tl2) 
+     \<or> (l1 = [] \<and> l2 = [] 
+      \<or> ((\<exists>(zz__0::'a list). l1 = [] \<and> l2 = zz__0) 
+       \<or> (\<exists>(zz__0::'a list). l1 = zz__0 \<and> l2 = [])))"
   by (cases l1, auto, cases l2, auto)
 fun List__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                       'a list \<times> 'a list \<Rightarrow> Compare__Comparison"
@@ -5162,7 +5080,6 @@ theorem List__length_is_SegmentLength:
   apply (simp add: List__unique_initial_segment_length)
 done
 
-
 lemma List__list_nth_aux:
     "\<forall>f. f definedOnInitialSegmentOfLength n \<longrightarrow>  
          (\<forall>i<n. f i = Some a \<longrightarrow> (List__list f) ! i = a)"
@@ -5204,8 +5121,6 @@ theorem List__list_subtype_constr_refined:
  apply (simp only: List__list_members)
 done
 
-
-
 (********************************   List__list_1_stp *************)
 
 lemma List__list_1_stp_nil:
@@ -5243,7 +5158,6 @@ lemma list_1_stp_Isa_nth:
  "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> List__list_1__stp P l = (\<lambda>i. if i < length l then Some (l!i) else None)"
  by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
 
-
 (******************************** List__tabulate *************)
 
 theorem List__tabulate_nil:
@@ -5278,8 +5192,6 @@ theorem List__e_at_at__stp_nth2:
 theorem List__e_at_at__stp_nth:
  "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
  by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
-
-
 
 (***********************************************************************
  * From now on List__list should not be unfolded automatically  
