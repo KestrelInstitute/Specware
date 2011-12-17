@@ -55,11 +55,12 @@
 	    )
 
 #+sbcl    (progn
-	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+	    ;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
 	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
 					       sb-int:package-at-variance))
+            (setq sb-ext:*muffled-warnings* 'sb-int:package-at-variance)
 	    (setq sb-ext::*compile-print* nil)
 	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
 	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
@@ -71,8 +72,9 @@
 		(require :sb-bsd-sockets)
 		(require :sb-introspect)
 		(require :sb-posix)
-                (require 'sb-cltl2)
+                (require :sb-cltl2)
 		; (require :sb-sprof)
+                (require :sb-grovel)
                 ))
 
 	    (setq sb-debug:*debug-beginner-help-p* nil)
@@ -402,13 +404,18 @@
 ;;;   #'swshell::specware-shell0))
 
 (defun cl-user::boot ()
-  (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
+  ;#+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
+  (let ((cl:*print-pretty* nil)
+        (val (and (cl-user::sw "/Applications/Specware/Specware4")
+                  (progn (format t "Full garbage collection...")
+                         (system-spec::garbageCollect t)
+                         (terpri t)
+                         (cl-user::swl "/Applications/Specware/Specware4")))))
     (unless val
       (funcall (intern #+case-sensitive "eval-in-emacs"
                        #-case-sensitive "EVAL-IN-EMACS"
                        :Emacs)
-	       "(delete-continuation)"))
-    val)
-  )
+               "(delete-continuation)"))
+    val))
 
-(declaim (optimize (speed 2) (debug 3) (safety 2)))
+(declaim (optimize (speed 2) (debug 3) (safety 3)))

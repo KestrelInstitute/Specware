@@ -3,13 +3,48 @@
 # Basic
 PATH=/bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin:${PATH}
 # fink, darwinports
-PATH=/usr/local/Isabelle/bin:/sw/bin:/opt/local/bin:/opt/local/sbin:$HOME/Isabelle/bin:${PATH}
+PATH=/sw/bin:/opt/local/bin:/opt/local/sbin:${PATH}
 
-xemacs=`which xemacs`
+
+function choosefrom ()
+{
+  local RESULT=""
+  local FILE=""
+
+  for FILE in "$@"
+  do
+    [ -z "$RESULT" -a -e "$FILE" ] && RESULT="$FILE"
+  done
+
+  [ -z "$RESULT" ] && RESULT="$FILE"
+  echo "$RESULT"
+}
+
+emacs="$(choosefrom \
+  "/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  "$HOME/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  /Applications/Emacs.app/Contents/MacOS/Emacs \
+  "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" \
+  "")"
+
+defaultemacs=/Applications/Emacs.app/Contents/MacOS/Emacs
+if [ -z "$emacs" ]; then
+  if [ -x $defaultemacs ]; then
+      emacs=$defaultemacs
+  fi
+fi
+
+if [ -z "$emacs" ]; then
+    emacs=`which emacs`
+    if [ -z "$emacs" ]; then
+	emacs="/usr/bin/emacs"
+    fi
+fi
+
 act='launch Specware'
 
-if [ -z "$xemacs" ]; then
-  xemacs="/sw/bin/xemacs"
+if [ -z "$emacs" ]; then
+  emacs="/sw/bin/emacs"
 fi
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
@@ -49,4 +84,4 @@ export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 export SPECWARE_INIT_FORM
 
-$xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4 &
+$emacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4 &
