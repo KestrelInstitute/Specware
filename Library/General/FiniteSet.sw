@@ -113,7 +113,7 @@ op [a] power (s: FSet a) : FSet (FSet a) =
   toFSet (map toFSet (power (fromFSet s)))
 
 proof Isa power_Obligation_subtype
-  by (simp add: FSet__fromFSet_finite finite_Pow_iff)
+  by (metis FSet__fromFSet_finite PowD Set_P_unfold rev_finite_subset)
 end-proof
 
 op empty : [a] FSet a = toFSet empty
