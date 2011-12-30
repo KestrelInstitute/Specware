@@ -188,6 +188,8 @@ TypeChecker qualifying spec
     %% Add constructors to environment
     let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
 
+
+
     %% Elaborate types of ops
     let elaborated_ops_0 = elaborate_local_op_types (given_ops,env_with_constrs) in
 
@@ -204,6 +206,7 @@ TypeChecker qualifying spec
     %% Elaborate ops (do polymorphic definitions first)
     let elaborated_ops_a = elaborate_local_ops (elaborated_ops_0, env_with_elaborated_types, true)  in
     let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_types, false) in
+    % let _ = printIncr elaborated_ops_b in
     let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_types, true)  in
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_types, false) in
     %% Elaborate properties
@@ -228,6 +231,13 @@ TypeChecker qualifying spec
     case checkErrors second_pass_env of
       | []   -> Spec (convertPosSpecToSpec final_spec)
       | msgs -> Errors msgs
+
+(* Debugging fun
+op printIncr(ops: AOpMap StandardAnnotation): () =
+  case findAQualifierMap (ops, "Foo", "increasingNats1?") of
+    | None -> ()
+    | Some info -> writeLine("increasingNats1?:\n"^printTermWithTypes info.dfn)
+*)
 
   % ========================================================================
   %% ---- called inside TYPES : PASS 0  -----
@@ -564,7 +574,20 @@ TypeChecker qualifying spec
     in                        
       appTerm (fn _ -> (), cType, fn _ -> ()) tm
 
-  
+  op ambiguousTerm?(tm: MSTerm): Bool =
+    let def ambig?(tm, count) =
+          if count = 0 then false
+            else
+              let count = count - 1 in
+              case tm of
+                | Fun(OneName _, _, _) -> true
+                | ApplyN(tms, _) -> exists? (fn tm -> ambig?(tm, count)) tms
+                | Record(id_prs, _) -> exists? (fn (_, tm) -> ambig?(tm, count)) id_prs
+                | Var((nm, ty), _) -> undeterminedType? ty
+                % | Lambda(matches, _) -> exists? (fn (_, _, tm) -> ambig?(tm, count)) matches
+                | _ -> false
+    in
+    ambig?(tm, 2)
 
   op  elaborateTerm : LocalEnv * MSTerm    * MSType            -> MSTerm                       % backward compatibility for Forges Legacy
   def elaborateTerm (env, trm, term_type) = single_pass_elaborate_term_top (env, trm, term_type)  % backward compatibility for Forges Legacy
@@ -575,6 +598,7 @@ TypeChecker qualifying spec
     resolveMetaTyVars trm
 
   def single_pass_elaborate_term (env, trm, term_type) =
+    % let _ = writeLine("tc: "^printType term_type^"\n"^printTerm trm) in
     case trm of
       | Fun (OneName (id, fixity), srt, pos) ->
         (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
@@ -835,9 +859,16 @@ TypeChecker qualifying spec
 	    let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
 	    let (pat, env) = elaboratePattern (env, pat, alpha) in
 	    (Cons ((pat, bdy), decls), env)
+          def maybeRedoDeclaration ((pat, bdy), decls) =
+            let new_bdy = if ambiguousTerm? bdy
+                           then single_pass_elaborate_term (env0, bdy, patternType pat)
+                           else bdy
+            in
+            (pat, new_bdy) :: decls
 	in         
-	let (decls, env) = foldr doDeclaration ([], env) decls in
-	let body = single_pass_elaborate_term (env, body, term_type) in 
+	let (decls, body_env) = foldr doDeclaration ([], env) decls in
+	let body = single_pass_elaborate_term (body_env, body, term_type) in
+        let decls = foldr maybeRedoDeclaration [] decls in
 	Let (decls, body, pos)
 
       | IfThenElse (test, thenTrm, elseTrm, pos) -> 
@@ -962,16 +993,25 @@ TypeChecker qualifying spec
       | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
         let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
 	let ty    = Arrow (alpha, term_type, pos) in
-	let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
-	let t2    = single_pass_elaborate_term      (env, t2, alpha) in
-	%% Repeated for help in overload resolution once argument type is known
-	let t1    = (if env.firstPass? then
-		       case t1 of
-			 | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
-			 | _ -> t1
-		     else 
-		       t1)
-	in
+        let (t1, t2) =
+            if env.firstPass?
+              then
+                let t2 = single_pass_elaborate_term      (env, t2, alpha) in
+                let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
+                %% Repeated for help in overload resolution once argument type is known
+                if ambiguousTerm? t2 then
+                  let t2 = single_pass_elaborate_term (env, t2, alpha) in
+                  %let t1  = case t1 of
+                  %             | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
+                  %             | _ -> t1
+                  % in
+                  (t1, t2)
+                else (t1, t2)
+              else
+                let t1 = single_pass_elaborate_term_head (env, t1, ty, trm) in
+                let t2 = single_pass_elaborate_term      (env, t2, alpha) in
+                (t1, t2)
+        in
 	%% This is same effect as old code, but restructured
 	%% so it's easier to intercept the XML references
 	if env.firstPass? then
