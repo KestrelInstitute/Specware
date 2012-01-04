@@ -20,7 +20,7 @@
 	    " op  g (n : Nat) : Int = let xx0 = n in "
 	    "                             xx0 + xx"
 	    (:optional "")
-	    " op  h (n : Int) : Int  = let def ww0 n = n"
+	    " op  h (n : Nat) : Int  = let def ww0 n = n"
 	    "                                  in"
 	    "                                  ww0 n + ww n"
 	    (:optional "")
@@ -46,7 +46,7 @@
 	    " op  g (n : Nat) : Int = let xx0 = n in "
 	    "                             xx0 + aa"
 	    (:optional "")
-	    " op  h (n : Int) : Int = let def ww0 n = n"
+	    " op  h (n : Nat) : Int = let def ww0 n = n"
 	    "                                 in"
 	    "                                 ww0 n + bb n"
 	    (:optional "")
