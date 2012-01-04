@@ -467,10 +467,25 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | None -> undeclaredName (env, trm, id, srt, pos)
       | _    -> ambiguousCons (env, trm, id, srt, pos)
 
-  op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, srt: MSType, pos: Position): Option MSTerm =
-    case mkEmbed0 (env, srt, id) of
-      | Some id -> Some(Fun (Embed (id, false), checkType (env, srt), pos))
-      | None -> mkEmbed1 (env, srt, trm, id, pos) 
+  op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): List MSTerm =
+    case mkEmbed0 (env, ty, id) of
+      | Some id -> [Fun (Embed (id, false), checkType (env, ty), pos)]
+      | None -> 
+    case mkEmbed1 (env, ty, trm, id, pos) of
+      | Some term -> [term]
+      | None ->
+    case uniqueConstr (env, trm, id, pos) of
+      | Some term -> [term]
+      | _ ->
+    case StringMap.find (env.constrs, id) of
+      | None -> []
+      | Some constrs -> mapPartial (fn (coprod_qid, coprod_ty) -> constrTerm(env, id, coprod_qid, coprod_ty, trm, pos)) constrs
+
+
+  op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
+    case mkEmbed0 (env, ty, id) of
+      | Some id -> Some(Fun (Embed (id, false), checkType (env, ty), pos))
+      | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
  def checkOp (info, env) =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
@@ -612,7 +627,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
          case tryResolveNameFromType(env, trm, id, srt, pos) of
            | Some t -> t
            | _ -> 
-	 case findVarOrOps (env, id, pos) of
+	 case findVarOrOps (env, id, pos) ++  findConstrsWithName (env, trm, id, srt, pos) of
 	   | terms as _::_ ->
 	     %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
 	     (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
@@ -624,6 +639,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		     | Var ((id, _),          pos) -> Var ((id, srt),         pos)  % Now handled above
 		     | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
 		     | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
+                     | Fun (Embed _, _, _)         -> term
 		     | _ -> System.fail "Variable or constant expected"))
 	   | [] ->
 	     resolveNameFromType (env, trm, id, srt, pos))
@@ -999,7 +1015,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                 let t2 = single_pass_elaborate_term      (env, t2, alpha) in
                 let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
                 %% Repeated for help in overload resolution once argument type is known
-                if ambiguousTerm? t2 then
+                if false && ambiguousTerm? t2 then
                   let t2 = single_pass_elaborate_term (env, t2, alpha) in
                   %let t1  = case t1 of
                   %             | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
@@ -1470,25 +1486,27 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     in 
       loop(row1,row2,[])
 
+  op constrTerm(env: LocalEnv, id: Id, coprod_qid: QualifiedId, coprod_ty: MSType, trm: MSTerm, pos: Position): Option MSTerm =
+    let (v_ty, c_ty) = metafyBaseType (coprod_qid, coprod_ty, termAnn trm) in
+    let id_ty = case c_ty of
+                   | CoProduct (fields, pos) ->
+                     (case findLeftmost (fn (id2, _) -> id = id2) fields of
+                        | Some (_, Some dom_ty) -> Arrow (dom_ty, v_ty, pos)
+                        | _ -> v_ty)
+                   | _ -> v_ty
+    in
+    (case mkEmbed0 (env, id_ty, id) of
+       | Some id -> Some (Fun (Embed (id, false), checkType (env, id_ty), pos))
+       | None -> mkEmbed1 (env, id_ty, trm, id, pos))
+
   %% If id is the unique name of a constructor, use that constructor
   def uniqueConstr (env, trm, id, pos) =
     case StringMap.find (env.constrs, id) of
-      | Some [(qid, srt_info)] ->
-        let (v_srt, c_srt) = metafyBaseType (qid, srt_info, termAnn trm) in
-	let id_srt = case c_srt of
-		       | CoProduct (fields, pos) ->
-	                 (case findLeftmost (fn (id2, _) -> id = id2) fields of
-			    | Some (_, Some dom_srt) -> Arrow (dom_srt, v_srt, pos)
-			    | _ -> v_srt)
-		       | _ -> v_srt
-	in
-	(case mkEmbed0 (env, id_srt, id) of
-	   | Some id -> Some (Fun (Embed (id, false), checkType (env, id_srt), pos))
-	   | None -> mkEmbed1 (env, id_srt, trm, id, pos))
+      | Some [(coprod_qid, coprod_ty)] -> constrTerm(env, id, coprod_qid, coprod_ty, trm, pos)
       | _ -> None
 
-  def mkProject (env, id, srt, pos) = 
-    case unfoldType (env, srt) of
+  def mkProject (env, id, ty, pos) = 
+    case unfoldType (env, ty) of
       | Arrow (dom, rng, _) -> 
         (let 
            def analyzeDom dom =
@@ -1497,19 +1515,19 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                  (let def findId ls = 
                         case ls of
                           | [] -> None : Option MSTerm
-                          | (selector_id, selector_rng_srt) :: ids -> 
+                          | (selector_id, selector_rng_ty) :: ids -> 
                             if id = selector_id then
-                              (elaborateType (env, selector_rng_srt, withAnnS (rng, pos));
-                               Some (Fun (Project id, srt, pos)))
+                              (elaborateType (env, selector_rng_ty, withAnnS (rng, pos));
+                               Some (Fun (Project id, ty, pos)))
                             else 
                               findId ids
 		  in
 		    findId row)
-	       | Subtype (ssrt, _, _) -> analyzeDom ssrt
+	       | Subtype (sty, _, _) -> analyzeDom sty
 	       | _ -> None
 	 in 
 	   analyzeDom dom)
-      | Subtype (ssrt, _, _) -> mkProject (env, id, ssrt, pos)
+      | Subtype (sty, _, _) -> mkProject (env, id, sty, pos)
       | _ -> None
       
   def consistentTag competing_pterms =
