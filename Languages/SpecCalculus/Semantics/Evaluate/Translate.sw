@@ -805,7 +805,7 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
     def handler except =
       return None
   in
-  let prog = {cleanEnv;
+  let prog = {%cleanEnv;
               setCurrentUID currentUID;
               val  <- evaluateTerm sc_tm;
               % print ("evalTerm:\n"^(case val of Spec spc -> printSpecFlat (subtractSpec spc (getBaseSpec())) | _ -> "")^"\n" );
@@ -848,5 +848,4 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-endspec
-\end{spec}
+end-spec
