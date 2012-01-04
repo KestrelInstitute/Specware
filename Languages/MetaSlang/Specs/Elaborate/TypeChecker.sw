@@ -613,7 +613,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     resolveMetaTyVars trm
 
   def single_pass_elaborate_term (env, trm, term_type) =
-    % let _ = writeLine("tc: "^printType term_type^"\n"^printTerm trm) in
+     % let _ = writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) in
     case trm of
       | Fun (OneName (id, fixity), srt, pos) ->
         (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
@@ -627,7 +627,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
          case tryResolveNameFromType(env, trm, id, srt, pos) of
            | Some t -> t
            | _ -> 
-	 case findVarOrOps (env, id, pos) ++  findConstrsWithName (env, trm, id, srt, pos) of
+	 case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, srt, pos) of
 	   | terms as _::_ ->
 	     %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
 	     (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
@@ -1007,12 +1007,12 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	ApplyN ([t1, t2], pos)
 	
       | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
-        let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
-	let ty    = Arrow (alpha, term_type, pos) in
         let (t1, t2) =
             if env.firstPass?
               then
-                let t2 = single_pass_elaborate_term      (env, t2, alpha) in
+                let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
+                let ty    = Arrow (alpha, term_type, pos) in
+                let t2    = single_pass_elaborate_term (env, t2, alpha) in
                 let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
                 %% Repeated for help in overload resolution once argument type is known
                 if false && ambiguousTerm? t2 then
@@ -1024,6 +1024,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                   (t1, t2)
                 else (t1, t2)
               else
+                let alpha = case maybeTermType t2 of
+                              | Some ty -> ty
+                              | None -> freshMetaTyVar("ApplyN_Fun", pos)
+                in
+                let ty    = Arrow (alpha, term_type, pos) in
                 let t1 = single_pass_elaborate_term_head (env, t1, ty, trm) in
                 let t2 = single_pass_elaborate_term      (env, t2, alpha) in
                 (t1, t2)
