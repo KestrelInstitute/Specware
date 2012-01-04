@@ -22,7 +22,7 @@
 	     (" type {Y, Z, X}")
 	     (" type {Z, X, Y}")
 	     (" type {Z, Y, X}"))
-	    " "
+	    (:optional "")
 	    (:alternatives
 	     (" op  {f, g, h} : X")
 	     (" op  {f, h, g} : X")
