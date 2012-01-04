@@ -775,90 +775,6 @@ op compare (i:Int, j:Int) : Comparison = if i < j then Less
                                     else if i > j then Greater
                                     else (* i = j *)   Equal
 
-% mapping to Isabelle:
-
-proof Isa Thy_Morphism Presburger
- type Integer.Int -> int
- type Nat.Nat     -> nat (int,nat) [+,*,/,rem,mod,modF,<=,<,>=,>,abs,min,max]
- Integer.zero     -> 0
- Integer.one      -> 1
- Integer.ipred    -> pred
- Integer.isucc    -> succ
- IntegerAux.-     -> -
- Integer.+        -> +     Left 65
- Integer.-        -> -     Left 65
- Integer.*        -> *     Left 70
- Integer.<=       -> \<le> Left 50
- Integer.<        -> <     Left 50
- Integer.>=       -> \<ge> Left 50
- Integer.>        -> >     Left 50
- Integer.sign     -> sign
- Integer.abs      -> zabs
- Integer./        -> div   Left 70
- Integer.divT     -> divT  Left 70
- Integer.divF     -> div   Left 70
- Integer.divC     -> divC  Left 70
- Integer.divR     -> divR  Left 70
- Integer.divE     -> divE  Left 70
- Integer.div      -> div   Left 70
- Integer.modT     -> modT  Left 70
- Integer.modF     -> mod   Left 70
- Integer.modC     -> modC  Left 70
- Integer.modR     -> modR  Left 70
- Integer.modE     -> modE  Left 70
- Integer.mod      -> mod   Left 70
- Integer.**        -> **        Left 70
- Integer.min      -> min           curried
- Integer.max      -> max           curried
- Integer.divides  -> zdvd  Left 70 
- Integer.gcd      -> igcd
- Integer.lcm      -> ilcm
- Nat.succ         -> Suc
-end-proof
-
-#translate Haskell -header
-{-# OPTIONS -fno-warn-duplicate-exports #-}
-#end
-
-#translate Haskell -morphism
- type Integer.Int -> Int
- type Nat.Nat     -> Int
- Integer.zero     -> 0
- Integer.one      -> 1
- IntegerAux.-     -> negate
- Integer.isucc    -> (+ 1)
- Integer.ipred    -> (- 1)
- Integer.zero?    -> (== 0)
- Integer.positive? -> (> 0)
- Integer.negative? -> (< 0)
- Nat.succ         -> (1 +)
- Nat.pred         -> (-1 +)
- Nat.posNat?      -> (> 0)
- Integer.+        -> +     Left  6
- Integer.-        -> -     Left  6
- Integer.*        -> *     Left  7
- Integer.<=       -> <=    Infix 4
- Integer.<        -> <     Infix 4
- Integer.>=       -> >=    Infix 4
- Integer.>        -> >     Infix 4
- Integer./        -> div   Left  7
- Integer.sign     -> signum
- Integer.gcd      -> gcd
- Integer.lcm      -> lcm
- Integer.abs      -> abs
- Integer.div      -> div   Left  7
- Integer.divF     -> div   Left  7
- Integer.divT     -> quot  Left  7
- Integer.modF     -> mod   Left  7
- Integer.mod      -> mod   Left  7
- Integer.modT     -> rem   Left  7
- Integer.min      -> min   Left  7
- Integer.max      -> max   Left  7
- Integer.**       -> ^     Left  8
- Integer.***      -> ^     Left  8
- Integer.compare \_rightarrow compare curried
-#end
-
 proof Isa Integer__isucc_subtype_constr
  apply(auto simp add: bij_def inj_on_def surj_def)
  apply(rule_tac x="y - 1" in exI, auto)
@@ -1353,4 +1269,89 @@ done
 end-proof
 % ------------------------------------------------------------------------------
 
-endspec
+
+% mapping to Isabelle:
+
+proof Isa Thy_Morphism Presburger
+ type Integer.Int -> int
+ type Nat.Nat     -> nat (int,nat) [+,*,/,rem,mod,modF,<=,<,>=,>,abs,min,max]
+ Integer.zero     -> 0
+ Integer.one      -> 1
+ Integer.ipred    -> pred
+ Integer.isucc    -> succ
+ IntegerAux.-     -> -
+ Integer.+        -> +     Left 65
+ Integer.-        -> -     Left 65
+ Integer.*        -> *     Left 70
+ Integer.<=       -> \<le> Left 50
+ Integer.<        -> <     Left 50
+ Integer.>=       -> \<ge> Left 50
+ Integer.>        -> >     Left 50
+ Integer.sign     -> sign
+ Integer.abs      -> zabs
+ Integer./        -> div   Left 70
+ Integer.divT     -> divT  Left 70
+ Integer.divF     -> div   Left 70
+ Integer.divC     -> divC  Left 70
+ Integer.divR     -> divR  Left 70
+ Integer.divE     -> divE  Left 70
+ Integer.div      -> div   Left 70
+ Integer.modT     -> modT  Left 70
+ Integer.modF     -> mod   Left 70
+ Integer.modC     -> modC  Left 70
+ Integer.modR     -> modR  Left 70
+ Integer.modE     -> modE  Left 70
+ Integer.mod      -> mod   Left 70
+ Integer.**        -> **        Left 70
+ Integer.min      -> min           curried
+ Integer.max      -> max           curried
+ Integer.divides  -> zdvd  Left 70 
+ Integer.gcd      -> igcd
+ Integer.lcm      -> ilcm
+ Nat.succ         -> Suc
+end-proof
+
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
+
+#translate Haskell -morphism
+ type Integer.Int -> Int
+ type Nat.Nat     -> Int
+ Integer.zero     -> 0
+ Integer.one      -> 1
+ IntegerAux.-     -> negate
+ Integer.isucc    -> (+ 1)
+ Integer.ipred    -> (- 1)
+ Integer.zero?    -> (== 0)
+ Integer.positive? -> (> 0)
+ Integer.negative? -> (< 0)
+ Nat.succ         -> (1 +)
+ Nat.pred         -> (-1 +)
+ Nat.posNat?      -> (> 0)
+ Integer.+        -> +     Left  6
+ Integer.-        -> -     Left  6
+ Integer.*        -> *     Left  7
+ Integer.<=       -> <=    Infix 4
+ Integer.<        -> <     Infix 4
+ Integer.>=       -> >=    Infix 4
+ Integer.>        -> >     Infix 4
+ Integer./        -> div   Left  7
+ Integer.sign     -> signum
+ Integer.gcd      -> gcd
+ Integer.lcm      -> lcm
+ Integer.abs      -> abs
+ Integer.div      -> div   Left  7
+ Integer.divF     -> div   Left  7
+ Integer.divT     -> quot  Left  7
+ Integer.modF     -> mod   Left  7
+ Integer.mod      -> mod   Left  7
+ Integer.modT     -> rem   Left  7
+ Integer.min      -> min   Left  7
+ Integer.max      -> max   Left  7
+ Integer.**       -> ^     Left  8
+ Integer.***      -> ^     Left  8
+ Integer.compare \_rightarrow compare curried
+#end
+
+end-spec

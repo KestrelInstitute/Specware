@@ -209,6 +209,53 @@ op Nat.natConvertible (s:String) : Bool =
 
 op Nat.stringToNat (s:String | natConvertible s) : Nat =
   the(x:Nat) natToString x = s
+
+% convert integers to strings:
+
+op Integer.intToString (x:Int) : String =
+  if x >= 0 then        natToString   x
+            else "-" ^ natToString (-x)
+#translate Haskell -> intToString #end
+
+op Integer.show : Int -> String = intToString
+
+% convert strings to integers (if convertible):
+
+op Integer.intConvertible (s:String) : Bool =
+  ex(x:Int) intToString x = s
+#translate Haskell -> intConvertible #end
+
+op Integer.stringToInt (s:String | intConvertible s) : Int =
+  the(x:Int) intToString x = s
+#translate Haskell -> stringToInt #end
+
+% convert characters to strings:
+
+op Char.show (c:Char) : String = implode [c]
+
+% convert comparisons to strings:
+
+op Compare.show : Comparison -> String = fn
+  | Greater -> "Greater"
+  | Equal   -> "Equal"
+  | Less    -> "Less"
+
+% given conversion from type a to String, convert Option a to String:
+
+op [a] Option.show (shw: a -> String) : Option a -> String = fn
+  | None   -> "None"
+  | Some x -> "(Some " ^ (shw x) ^ ")"
+
+% convert list of strings to string, using given separator:
+
+op List.show (sep:String) (l: List String) : String =
+  case l of
+     | []     -> ""
+     | hd::[] -> hd
+     | hd::tl -> hd ^ sep ^ (List.show sep tl)
+
+%%% Isabelle proofs
+
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
@@ -248,24 +295,6 @@ proof Isa stringToNat_Obligation_the
          rule mod_div_equality2)
 end-proof
 
-% convert integers to strings:
-
-op Integer.intToString (x:Int) : String =
-  if x >= 0 then        natToString   x
-            else "-" ^ natToString (-x)
-#translate Haskell -> intToString #end
-
-op Integer.show : Int -> String = intToString
-
-% convert strings to integers (if convertible):
-
-op Integer.intConvertible (s:String) : Bool =
-  ex(x:Int) intToString x = s
-#translate Haskell -> intConvertible #end
-
-op Integer.stringToInt (s:String | intConvertible s) : Int =
-  the(x:Int) intToString x = s
-#translate Haskell -> stringToInt #end
 proof Isa stringToInt_Obligation_the
   apply (simp add:Integer__intConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp)
@@ -285,31 +314,6 @@ proof Isa stringToInt_Obligation_the
                    Nat__natToString (nat (- x))",
          auto)
 end-proof
-
-% convert characters to strings:
-
-op Char.show (c:Char) : String = implode [c]
-
-% convert comparisons to strings:
-
-op Compare.show : Comparison -> String = fn
-  | Greater -> "Greater"
-  | Equal   -> "Equal"
-  | Less    -> "Less"
-
-% given conversion from type a to String, convert Option a to String:
-
-op [a] Option.show (shw: a -> String) : Option a -> String = fn
-  | None   -> "None"
-  | Some x -> "(Some " ^ (shw x) ^ ")"
-
-% convert list of strings to string, using given separator:
-
-op List.show (sep:String) (l: List String) : String =
-  case l of
-     | []     -> ""
-     | hd::[] -> hd
-     | hd::tl -> hd ^ sep ^ (List.show sep tl)
 
 proof Isa show_Obligation_exhaustive
   by (cases l, auto)

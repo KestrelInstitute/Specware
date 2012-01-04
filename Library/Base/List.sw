@@ -811,81 +811,6 @@ op [a] compare
 op [a,b] isoList : Bijection(a,b) -> Bijection (List a, List b) =
   fn iso_elem -> map iso_elem
 
-% mapping to Isabelle:
-
-proof Isa Thy_Morphism List
-  type List.List      -> list
-  List.List_P         -> list_all
-  List.length         -> length
-  List.@              -> !            Left  100
-  List.empty          -> []
-  List.empty?         -> null
-  List.in?            -> mem          Left  55
-  List.prefix         -> take         curried  reversed
-  List.removePrefix   -> drop         curried  reversed
-  List.head           -> hd
-  List.last           -> last
-  List.tail           -> tl
-  List.butLast        -> butlast
-  List.++             -> @            Left  65
-  List.|>             -> #            Right 65
-  List.update         -> list_update  curried
-  List.forall?        -> list_all
-  List.exists?        -> list_ex
-  List.filter         -> filter
-  List.foldl          -> foldl'
-  List.foldr          -> foldr'
-  List.zip            -> zip          curried
-  List.map            -> map
-  List.mapPartial     -> filtermap
-  List.reverse        -> rev
-  List.repeat         -> replicate             reversed
-  List.flatten        -> concat
-  List.noRepetitions? -> distinct
-end-proof
-
-#translate Haskell -header
-{-# OPTIONS -fno-warn-duplicate-exports #-}
-#end
-
-#translate Haskell -morphism  List
-  type List.List    -> []
-  Nil               -> []
-  Cons              -> :            Right 5
-  List.List_P       -> list_all
-  List.length       -> length
-  List.@            -> !!           Left  9
-  List.empty        -> []
-  List.empty?       -> null
-  List.in?          -> elem         Infix 4
-  List.nin?         -> notElem      Infix 4
-  List.prefix       -> take         curried  reversed
-  List.removePrefix -> drop         curried  reversed
-  List.head         -> head
-  List.last         -> last
-  List.tail         -> tail
-  List.butLast      -> init
-  List.++           -> ++           Left 5
-  List.|>           -> :            Right 5
-  List.update       -> list_update  curried
-  List.forall?      -> all
-  List.exists?      -> any
-  List.filter       -> filter
-  List.zip          -> zip          curried
-  List.unzip        -> unzip
-  List.zip3         -> zip3         curried
-  List.unzip3       -> unzip3
-  List.map          -> map
-  List.isoList      -> map
-  List.reverse      -> reverse
-  List.repeat       -> replicate    curried  reversed
-  List.flatten      -> concat
-  List.findLeftMost -> find
-  List.leftmostPositionSuchThat -> findIndex  curried  reversed
-  List.positionsSuchThat -> findIndices  curried  reversed
-  List.positionsOf  -> elemIndices  curried  reverse
-#end
-
 proof Isa unique_initial_segment_length
 proof -
  fix f n1 n2
@@ -5197,4 +5122,80 @@ declare List__list.simps [simp del]
 end-proof
 % ------------------------------------------------------------------------------
 
-endspec
+
+% mapping to Isabelle:
+
+proof Isa Thy_Morphism List
+  type List.List      -> list
+  List.List_P         -> list_all
+  List.length         -> length
+  List.@              -> !            Left  100
+  List.empty          -> []
+  List.empty?         -> null
+  List.in?            -> mem          Left  55
+  List.prefix         -> take         curried  reversed
+  List.removePrefix   -> drop         curried  reversed
+  List.head           -> hd
+  List.last           -> last
+  List.tail           -> tl
+  List.butLast        -> butlast
+  List.++             -> @            Left  65
+  List.|>             -> #            Right 65
+  List.update         -> list_update  curried
+  List.forall?        -> list_all
+  List.exists?        -> list_ex
+  List.filter         -> filter
+  List.foldl          -> foldl'
+  List.foldr          -> foldr'
+  List.zip            -> zip          curried
+  List.map            -> map
+  List.mapPartial     -> filtermap
+  List.reverse        -> rev
+  List.repeat         -> replicate             reversed
+  List.flatten        -> concat
+  List.noRepetitions? -> distinct
+end-proof
+
+#translate Haskell -header
+{-# OPTIONS -fno-warn-duplicate-exports #-}
+#end
+
+#translate Haskell -morphism  List
+  type List.List    -> []
+  Nil               -> []
+  Cons              -> :            Right 5
+  List.List_P       -> list_all
+  List.length       -> length
+  List.@            -> !!           Left  9
+  List.empty        -> []
+  List.empty?       -> null
+  List.in?          -> elem         Infix 4
+  List.nin?         -> notElem      Infix 4
+  List.prefix       -> take         curried  reversed
+  List.removePrefix -> drop         curried  reversed
+  List.head         -> head
+  List.last         -> last
+  List.tail         -> tail
+  List.butLast      -> init
+  List.++           -> ++           Left 5
+  List.|>           -> :            Right 5
+  List.update       -> list_update  curried
+  List.forall?      -> all
+  List.exists?      -> any
+  List.filter       -> filter
+  List.zip          -> zip          curried
+  List.unzip        -> unzip
+  List.zip3         -> zip3         curried
+  List.unzip3       -> unzip3
+  List.map          -> map
+  List.isoList      -> map
+  List.reverse      -> reverse
+  List.repeat       -> replicate    curried  reversed
+  List.flatten      -> concat
+  List.findLeftMost -> find
+  List.leftmostPositionSuchThat -> findIndex  curried  reversed
+  List.positionsSuchThat -> findIndices  curried  reversed
+  List.positionsOf  -> elemIndices  curried  reverse
+#end
+
+end-spec

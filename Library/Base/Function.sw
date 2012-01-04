@@ -20,12 +20,6 @@ theorem identity is [a,b]
 
 theorem associativity is [a,b,c,d]
   fa (f: a -> b, g: b -> c, h: c -> d) (h o g) o f = h o (g o f)
-proof Isa
-  apply(simp add: o_assoc)
-end-proof
-proof Isa associativity__stp
-  apply(rule ext, simp)
-end-proof
 
 % forward (a.k.a. diagrammatic) composition:
 
@@ -35,9 +29,6 @@ op [a,b,c] :> (f: a -> b, g: b -> c) infixl 24 : a -> c = g o f
 
 op [a,b] injective? (f: a -> b) : Bool =
   fa (x1:a,x2:a) f x1 = f x2 => x1 = x2
-proof Isa
-  apply(simp add: inj_on_def)
-end-proof
 
 proof Isa -verbatim
 lemma Function__injective_p__stp_simp [simp]:
@@ -47,9 +38,6 @@ end-proof
 
 op [a,b] surjective? (f: a -> b) : Bool =
   fa (y:b) (ex (x:a) f x = y)
-proof Isa
- by(simp add: surj_def, simp add: eq_commute)
-end-proof
 
 proof Isa -verbatim
 lemma Function__surjective_p__stp_simp[simp]:
@@ -60,9 +48,6 @@ end-proof
 
 op [a,b] bijective? (f: a -> b) : Bool =
   injective? f && surjective? f
-proof Isa
-  apply(simp add: bij_def)
-end-proof
 
 proof Isa -verbatim
 lemma Function__bijective_p__stp_simp[simp]:
@@ -93,10 +78,6 @@ type Bijection (a,b) = ((a -> b) | bijective?)
 
 op [a,b] inverse (f: Bijection(a,b)) : Bijection(b,a) =
   fn y:b -> the(x:a) f x = y
-proof Isa
-  apply(rule sym, rule the_equality)
-  apply(auto simp add: bij_def surj_f_inv_f)
-end-proof
 
 proof Isa -verbatim
 lemma Function__inverse__stp_alt:
@@ -179,16 +160,7 @@ proof -
 qed
 end-proof
 
-proof Isa inverse__stp_Obligation_the
-  apply(auto simp add:
-          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
-  apply(rotate_tac -1, drule_tac x="y" in spec, auto)
-end-proof
 
-proof Isa inverse_Obligation_the
-  apply(auto simp add: bij_def surj_def inj_on_def)
-  apply(drule spec, erule exE, drule sym, auto)
-end-proof
 
 
 proof Isa -verbatim
@@ -215,9 +187,6 @@ lemma Function__inverse__stp_eq_props_true:
   by (simp add: Function__inverse__stp_eq_props)
 end-proof
 
-proof Isa inverse_subtype_constr
-  by(auto simp add: bij_def  surj_imp_inj_inv inj_imp_surj_inv)
-end-proof
 
 (* The following Isabelle lemma enables the use of SOME to define inverse, which
 is sometimes more convenient than THE because only existence of a solution must
@@ -259,36 +228,89 @@ end-proof
 theorem inverse_comp is [a,b]
   fa(f:Bijection(a,b)) f o inverse f = id
                     && inverse f o f = id
-proof Isa
+
+theorem f_inverse_apply is [a,b]
+  fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
+
+theorem inverse_f_apply is [a,b]
+  fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
+
+theorem fxy_implies_inverse is [a,b]
+  fa (f:Bijection(a,b), x:a, y:b) f x = y => x = inverse f y
+
+% eta conversion:
+
+theorem eta is [a,b]
+  fa(f: a -> b) (fn x -> f x) = f
+
+%%% Isabelle proofs
+proof Isa associativity
+  apply(simp add: o_assoc)
+end-proof
+
+proof Isa associativity__stp
+  apply(rule ext, simp)
+end-proof
+
+proof Isa injective_p__def
+  apply(simp add: inj_on_def)
+end-proof
+
+proof Isa surjective?__def
+ by(simp add: surj_def, simp add: eq_commute)
+end-proof
+
+proof Isa bijective?__def
+  apply(simp add: bij_def)
+end-proof
+
+proof Isa inverse__def
+  apply(rule sym, rule the_equality)
+  apply(auto simp add: bij_def surj_f_inv_f)
+end-proof
+
+proof Isa inverse__stp_Obligation_the
+  apply(auto simp add:
+          bij_ON_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+  apply(rotate_tac -1, drule_tac x="y" in spec, auto)
+end-proof
+
+proof Isa inverse_Obligation_the
+  apply(auto simp add: bij_def surj_def inj_on_def)
+  apply(drule spec, erule exE, drule sym, auto)
+end-proof
+
+proof Isa inverse_subtype_constr
+  by(auto simp add: bij_def  surj_imp_inj_inv inj_imp_surj_inv)
+end-proof
+
+proof Isa inverse_comp
   apply(simp add: bij_def surj_iff inj_iff)
 end-proof
+
 proof Isa inverse_comp__stp [simp]
   apply(auto)
   apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
   apply(rule ext, clarsimp simp add: mem_def bij_ON_def)
 end-proof
 
-theorem f_inverse_apply is [a,b]
-  fa(f:Bijection(a,b), x: b) f(inverse f (x)) = x
-proof Isa
+proof Isa f_inverse_apply
   apply(simp add: bij_def surj_f_inv_f)
 end-proof
+
 proof Isa f_inverse_apply__stp
   apply(auto simp add: mem_def bij_ON_def)
 end-proof
 
-theorem inverse_f_apply is [a,b]
-  fa(f:Bijection(a,b), x: a) inverse f(f (x)) = x
-proof Isa
+proof Isa inverse_f_apply
   apply(simp add: bij_def inv_f_f)
 end-proof
+
 proof Isa inverse_f_apply__stp
   apply(auto simp add: mem_def bij_ON_def)
 end-proof
 
-theorem fxy_implies_inverse is [a,b]
-  fa (f:Bijection(a,b), x:a, y:b) f x = y => x = inverse f y
-proof Isa
+proof Isa fxy_implies_inverse
 proof -
  assume BIJ: "bij (f::'a \<Rightarrow> 'b)"
  assume FXY: "f x = y"
@@ -302,6 +324,7 @@ proof -
  with INV_SOME show "x = inv f y" by auto
 qed
 end-proof
+
 proof Isa fxy_implies_inverse__stp
 proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
@@ -330,10 +353,6 @@ proof -
 qed
 end-proof
 
-% eta conversion:
-
-theorem eta is [a,b]
-  fa(f: a -> b) (fn x -> f x) = f
 proof Isa eta__stp
   apply(rule ext, simp)
 end-proof

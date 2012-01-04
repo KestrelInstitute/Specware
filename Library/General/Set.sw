@@ -42,9 +42,6 @@ op [a] nin? (x:a, s:Set a) infixl 20 : Bool = ~(x in? s)
 % Lifting a predicate from elements to regularized sets
 op [a] Set_P (Pa: a -> Bool) (s:Set a): Bool =
   fa(x: a) ~(Pa x) => x nin? s     % contrapositive: x in? s => Pa x
-proof Isa
-  by (simp add: Set_P_def)
-end-proof
 
 % (strict) sub/superset:
 
@@ -101,13 +98,8 @@ op [a] power (s:Set a) : Set (Set a) =
 % set with no elements (lift `false' to sets):
 
 op empty : [a] Set a = fn _ -> false
-proof Isa
-  by (auto simp add: mem_def)
-end-proof
 
 op [a] empty? (s:Set a) : Bool = (s = empty)
-proof Isa [simp] end-proof
-proof Isa empty_p__stp [simp] end-proof
 
 proof Isa -verbatim
 lemma Set_empty_apply[simp]:  "{} x = False"       by auto
@@ -152,12 +144,8 @@ end-proof
 % set with all elements (lift `true' to sets):
 
 op full : [a] Set a = fn _ -> true
-proof Isa
-  by (auto simp add: mem_def)
-end-proof
 
 op [a] full? (s:Set a) : Bool = (s = full)
-proof Isa [simp] end-proof
 
 proof Isa -verbatim
 lemma Set__full_apply[simp]:
@@ -173,11 +161,9 @@ end-proof
 op [a] single(*ton*) (x:a) :Set a = fn y:a -> y = x
 
 op [a] single? (s:Set a) : Bool = (ex(x:a) s = single x)
-proof Isa [simp] end-proof
 
 op [a] onlyMemberOf (x:a, s:Set a) infixl 20 : Bool =
   single? s && x in? s
-proof Isa [simp] end-proof
 
 proof Isa -verbatim
 lemma Set_single_simp [simp]:
@@ -242,7 +228,7 @@ end-proof
 % remove member from set:
 
 op [a] - (s:Set a, x:a) infixl 25 : Set a = s -- single x
-proof Isa -> less [simp] end-proof
+proof Isa - -> less [simp] end-proof
 
 proof Isa -verbatim
 lemma Set__RSet_less_simp[simp]:  
@@ -312,27 +298,9 @@ op [a] finite? (s:Set a) : Bool =
   % (which are "pseudo-types" because of the free variables `n' and `s'):
   (ex (f: Nat -> a, n:Nat)
     (fa(x:a) x in? s <=> (ex(i:Nat) i < n && f i = x)))
-proof Isa 
-proof
- assume "finite (s::'a set)"
- thus "Set__empty_p s \_or 
-       (\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x))"
- by(auto simp:finite_nat_seg)
-next
- assume "Set__empty_p s \_or 
-      (\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x))"
- thus "finite s"
- proof
-  assume "Set__empty_p s" thus "finite s" 
-  by(auto simp:Set__empty_p_def)
- next
-  assume "\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x)"
-  thus ?thesis by(rule nat_seq_finite)
- qed
-qed
-end-proof
 
 % **** Lemmas for subtyped predicate + finite 
+
 
 proof Isa -verbatim
 lemma finite_stp_nat_seg:
@@ -393,12 +361,6 @@ end-proof
 theorem finite_insert is [a]
   fa (s: FiniteSet a, x: a)
     finite? (s <| x)
-proof Isa finite_insert__stp
-by (auto simp only: Set__finite_insert__stp_sans Set_Set_P_Fun_PD Set__RSet_insert_simp)
-end-proof
-proof Isa Set__finite_insert
-by auto
-end-proof
 
 (* Additional Lemmas For Later Proofs *)
 proof Isa -verbatim
@@ -505,70 +467,8 @@ theorem induction is [a]
     (fa (s: FiniteSet a, x:a) p s => p (s <| x)) =>
     (fa (s: FiniteSet a) p s)
 
-proof Isa induction__stp_Obligation_subtype
-  by (simp add: Set__finite_p__stp_def)
-end-proof
-proof Isa induction__stp_Obligation_subtype0
-  by (rule Set__finite_insert__stp)
-end-proof
 
-proof Isa induction__stp
-  proof -
- assume 
- "Fun_PD (Set__finite_p__stp (P__a::'a\_Rightarrowbool) &&& Set_P P__a) (p::'a set \_Rightarrow bool)"
- "Set__finite_p__stp P__a (s::'a set)"
- "Set_P P__a s" " p {}" and
- HI:" \_forall(s::'a \_Rightarrow bool) (x::'a). 
-      Set__finite_p__stp P__a s 
-        \_and (Set_P P__a s \_and (P__a x \_and p (s::'a set))) 
-        \_longrightarrow p (insert x s)"
- thus "p s"
- proof(induct_tac s rule:finite_induct_stp)
-  assume "Set__finite_p__stp P__a s" "Set_P P__a s"
-  thus "finite s" 
-  by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
- next
-  assume "p {}" thus "p {}" .
- next
-  fix A::"'a set" and a::"'a"
-  from HI have "Set__finite_p__stp P__a A 
-        \_and (Set_P P__a A \_and (P__a a \_and p A))  
-        \_longrightarrow p (insert a A)" by auto
- moreover 
-  assume asump:"finite A \_and Set_P P__a A \_and P__a a \_and p A"
-  from this have "Set__finite_p__stp P__a A" 
-  by (simp add:Set__finite_p_imp_finite_stp)
- moreover 
-  from asump have "Fun_PD P__a A" by (simp only:Set_Set_P_Fun_PD)
- ultimately show "p (insert a A)" using asump 
-  by (auto)
- next
-  from `Set_P P__a s` show "Set_P P__a s" 
-  by(simp)
- qed
-qed
-end-proof
 
-proof Isa induction
-  proof - (* induct_tac s rule:finite_induct, auto *)
- assume ASM: "Fun_PD finite (p::'a Set__FiniteSet \_Rightarrow bool)"
-             "finite (s::'a set)"   "p {}" 
-             "\_forall(s::'a set) (x::'a). finite s \_and p s \_longrightarrow p (insert x s)"
- thus "p (s::'a Set__FiniteSet)"
- proof (induct_tac s rule:finite_induct)
-  assume "finite s" thus "finite s" by assumption
- next
-  assume "p {}" thus "p {}" by assumption
- next    
-  fix x F 
-  assume "finite F" "x \_notin F" "p F"
-  from ASM obtain s y where "s = s" and "x = x" 
-                        and "finite s \_and p s \_longrightarrow p (insert x s)"
-  by auto
-  from this ASM `finite F` `p F` show "p(insert x F)" by blast
- qed
-qed
-end-proof
 (*** SIZE HELPERS ***)
 proof Isa -verbatim
 fun SIZ::"('a\_Rightarrowbool) \_Rightarrow ('a set) \_Rightarrow nat"
@@ -587,32 +487,7 @@ op size : [a] FiniteSet a -> Nat = the(size)
   (size empty = 0) &&
   (fa (s: FiniteSet a, x:a) size (s <| x) = 1 + size (s - x))
 
-proof Isa size_Obligation_the
- apply (rule_tac a="RFun finite card" in ex1I, auto)
- apply (frule_tac x=x in card_insert_if, auto,
-        drule_tac x=x in card_Suc_Diff1, auto)
- apply (rule ext, auto) 
- apply (thin_tac "\<forall>xa. \<not> finite xa \<longrightarrow> x xa = regular_val",
-        induct_tac xa rule: finite_induct)
- apply (simp, simp only: card_empty) 
- apply (drule_tac x=F in spec, drule mp, simp)
- apply (drule_tac x=xb in spec, simp)
-end-proof
 
-proof Isa size__def
-  apply (simp, rule ext, auto)
-  apply (rule_tac P="\<lambda>size__v. (\<forall>x. \<not> finite x \<longrightarrow> size__v x = regular_val) \<and>
-            size__v {} = 0 \<and>
-            (\<forall>s. finite s \<longrightarrow> (\<forall>x. size__v (insert x s) = Suc (size__v (s - {x}))))" 
-         in the1I2,
-         cut_tac Set__size_Obligation_the, simp)
-  apply (clarify, 
-         thin_tac "\<forall>x. \<not> finite x \<longrightarrow> xa x = regular_val")
-  apply (induct_tac x rule: finite_induct)
-  apply (simp, simp only: card_empty) 
-  apply (drule_tac x=F in spec, drule mp, simp)
-  apply (drule_tac x=xb in spec, simp)
-end-proof
 
 op [a] hasSize (s:Set a, n:Nat) infixl 20 : Bool =
   finite? s && size s = n
@@ -628,7 +503,6 @@ op [a,b] foldable? (c:b, f: b * a -> b, s: FiniteSet a) : Bool =
   %% Definition of foldable? doesn't depend on initial value c, but it's
   %% convenient to have foldable? apply to entire sequence of args to fold.
   (fa (x:a, y:a, z:b) x in? s && y in? s => f(f(z,x),y) = f(f(z,y),x))
-proof Isa [simp] end-proof
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
@@ -834,18 +708,6 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
        foldable? (c, f, s <| x) =>
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
-proof Isa fold_Obligation_the
-  apply (rule_tac a="(\<lambda>(c,f,s). if finite s \<and> Set__foldable_p (c,f,s)
-                                   then fold (\<lambda>x y. f (y,x)) c s 
-                                   else regular_val)" in ex1I, auto)
-  apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
-         simp add:fun_left_comm_on_def, auto)
-  apply (rule ext, simp only: split_paired_all)
-  apply (case_tac "finite b", simp_all)
-  apply (induct_tac b rule: finite_induct, auto simp add: empty_false)
-  apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
-         in fold_insert, simp_all add: fun_left_comm_on_def)
-end-proof
 
 
 % finite powerset:
@@ -887,15 +749,7 @@ type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 
 op [a] min (ss: SetOfSetsWithMin a) : Set a = the(s) s isMinIn ss
 
-proof Isa  Set__min_Obligation_the
-  apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
-end-proof
 
-proof Isa  Set__min__def
-  apply (rule_tac P = "\<lambda>s. s isMinIn_s ss" in the1I2)
-  apply (erule Set__min_Obligation_the)
-  apply (auto simp add: isMinIn_s_def)
-end-proof
 
 op [a] isMaxIn (s:Set a, ss:Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s >= s1)
@@ -907,6 +761,177 @@ type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
 
+
+% Isabelle pragmas
+
+proof Isa Set_P__def
+  by (simp add: Set_P_def)
+end-proof
+
+proof Isa empty__def
+  by (auto simp add: mem_def)
+end-proof
+
+proof Isa empty? [simp] end-proof
+
+proof Isa empty_p__stp [simp] end-proof
+
+proof Isa full__def
+  by (auto simp add: mem_def)
+end-proof
+
+proof Isa full? [simp] end-proof
+
+proof Isa single? [simp] end-proof
+
+proof Isa onlyMemberOf [simp] end-proof
+
+proof Isa finite?__def
+proof
+ assume "finite (s::'a set)"
+ thus "Set__empty_p s \_or 
+       (\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x))"
+ by(auto simp:finite_nat_seg)
+next
+ assume "Set__empty_p s \_or 
+      (\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x))"
+ thus "finite s"
+ proof
+  assume "Set__empty_p s" thus "finite s" 
+  by(auto simp:Set__empty_p_def)
+ next
+  assume "\_exists(f::nat \_Rightarrow 'a) n::nat. \_forall x::'a. (x \_in s) = (\_exists i<n. f i = x)"
+  thus ?thesis by(rule nat_seq_finite)
+ qed
+qed
+end-proof
+
+proof Isa finite_insert__stp
+by (auto simp only: Set__finite_insert__stp_sans Set_Set_P_Fun_PD Set__RSet_insert_simp)
+end-proof
+
+proof Isa Set__finite_insert
+by auto
+end-proof
+
+proof Isa induction__stp_Obligation_subtype
+  by (simp add: Set__finite_p__stp_def)
+end-proof
+
+proof Isa induction__stp_Obligation_subtype0
+  by (rule Set__finite_insert__stp)
+end-proof
+
+proof Isa induction__stp
+  proof -
+ assume 
+ "Fun_PD (Set__finite_p__stp (P__a::'a\_Rightarrowbool) &&& Set_P P__a) (p::'a set \_Rightarrow bool)"
+ "Set__finite_p__stp P__a (s::'a set)"
+ "Set_P P__a s" " p {}" and
+ HI:" \_forall(s::'a \_Rightarrow bool) (x::'a). 
+      Set__finite_p__stp P__a s 
+        \_and (Set_P P__a s \_and (P__a x \_and p (s::'a set))) 
+        \_longrightarrow p (insert x s)"
+ thus "p s"
+ proof(induct_tac s rule:finite_induct_stp)
+  assume "Set__finite_p__stp P__a s" "Set_P P__a s"
+  thus "finite s" 
+  by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
+ next
+  assume "p {}" thus "p {}" .
+ next
+  fix A::"'a set" and a::"'a"
+  from HI have "Set__finite_p__stp P__a A 
+        \_and (Set_P P__a A \_and (P__a a \_and p A))  
+        \_longrightarrow p (insert a A)" by auto
+ moreover 
+  assume asump:"finite A \_and Set_P P__a A \_and P__a a \_and p A"
+  from this have "Set__finite_p__stp P__a A" 
+  by (simp add:Set__finite_p_imp_finite_stp)
+ moreover 
+  from asump have "Fun_PD P__a A" by (simp only:Set_Set_P_Fun_PD)
+ ultimately show "p (insert a A)" using asump 
+  by (auto)
+ next
+  from `Set_P P__a s` show "Set_P P__a s" 
+  by(simp)
+ qed
+qed
+end-proof
+
+proof Isa induction
+  proof - (* induct_tac s rule:finite_induct, auto *)
+ assume ASM: "Fun_PD finite (p::'a Set__FiniteSet \_Rightarrow bool)"
+             "finite (s::'a set)"   "p {}" 
+             "\_forall(s::'a set) (x::'a). finite s \_and p s \_longrightarrow p (insert x s)"
+ thus "p (s::'a Set__FiniteSet)"
+ proof (induct_tac s rule:finite_induct)
+  assume "finite s" thus "finite s" by assumption
+ next
+  assume "p {}" thus "p {}" by assumption
+ next    
+  fix x F 
+  assume "finite F" "x \_notin F" "p F"
+  from ASM obtain s y where "s = s" and "x = x" 
+                        and "finite s \_and p s \_longrightarrow p (insert x s)"
+  by auto
+  from this ASM `finite F` `p F` show "p(insert x F)" by blast
+ qed
+qed
+end-proof
+
+proof Isa size_Obligation_the
+ apply (rule_tac a="RFun finite card" in ex1I, auto)
+ apply (frule_tac x=x in card_insert_if, auto,
+        drule_tac x=x in card_Suc_Diff1, auto)
+ apply (rule ext, auto) 
+ apply (thin_tac "\<forall>xa. \<not> finite xa \<longrightarrow> x xa = regular_val",
+        induct_tac xa rule: finite_induct)
+ apply (simp, simp only: card_empty) 
+ apply (drule_tac x=F in spec, drule mp, simp)
+ apply (drule_tac x=xb in spec, simp)
+end-proof
+
+proof Isa size__def
+  apply (simp, rule ext, auto)
+  apply (rule_tac P="\<lambda>size__v. (\<forall>x. \<not> finite x \<longrightarrow> size__v x = regular_val) \<and>
+            size__v {} = 0 \<and>
+            (\<forall>s. finite s \<longrightarrow> (\<forall>x. size__v (insert x s) = Suc (size__v (s - {x}))))" 
+         in the1I2,
+         cut_tac Set__size_Obligation_the, simp)
+  apply (clarify, 
+         thin_tac "\<forall>x. \<not> finite x \<longrightarrow> xa x = regular_val")
+  apply (induct_tac x rule: finite_induct)
+  apply (simp, simp only: card_empty) 
+  apply (drule_tac x=F in spec, drule mp, simp)
+  apply (drule_tac x=xb in spec, simp)
+end-proof
+
+proof Isa foldable? [simp] end-proof
+
+proof Isa fold_Obligation_the
+  apply (rule_tac a="(\<lambda>(c,f,s). if finite s \<and> Set__foldable_p (c,f,s)
+                                   then fold (\<lambda>x y. f (y,x)) c s 
+                                   else regular_val)" in ex1I, auto)
+  apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
+         simp add:fun_left_comm_on_def, auto)
+  apply (rule ext, simp only: split_paired_all)
+  apply (case_tac "finite b", simp_all)
+  apply (induct_tac b rule: finite_induct, auto simp add: empty_false)
+  apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
+         in fold_insert, simp_all add: fun_left_comm_on_def)
+end-proof
+
+proof Isa  Set__min_Obligation_the
+  apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
+end-proof
+
+proof Isa  Set__min__def
+  apply (rule_tac P = "\<lambda>s. s isMinIn_s ss" in the1I2)
+  apply (erule Set__min_Obligation_the)
+  apply (auto simp add: isMinIn_s_def)
+end-proof
+
 proof Isa  Set__max_Obligation_the
   apply(auto simp add: Set__hasMax_p_def isMaxIn_s_def)
 end-proof
@@ -916,6 +941,7 @@ proof Isa  Set__max__def
   apply (erule Set__max_Obligation_the)
   apply (auto simp add: isMaxIn_s_def)
 end-proof
+
 
 % mapping to Isabelle:
 
