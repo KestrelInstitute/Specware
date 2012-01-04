@@ -1,4 +1,4 @@
-\section{Definition of the exception type}
+(* Definition of the exception type
 
 These are the exceptions that one might raise. This refines the abstract
 type under \UnitId{/Library/Structures/Data/Monad/Exception}
@@ -27,8 +27,8 @@ raised but where the position information is unavailable. Needs thought.
 
 A \Op{SyntaxError} is one that is raised at the toplevel when the user
 enters something bad. A \Op{ParserError} is raised when the file parser fails.
+*)
 
-\begin{spec}
 SpecCalc qualifying spec
   import /Library/Structures/Data/Monad/Exception
   import /Library/Legacy/Utilities/System
@@ -163,5 +163,4 @@ SpecCalc qualifying spec
       | [] -> []
       | x::r -> Cons(x,firstN(r,n-1))
 
-endspec
-\end{spec}
+end-spec
