@@ -492,11 +492,28 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op [a] maybeTermType(term: ATerm a): Option(AType a) =
    case term of
      | Apply      (t1,t2,   _)  -> (case maybeTermType t1 of
-				     | Some(Arrow(dom,rng,_)) -> Some rng
+				     | Some(Arrow(dom,rng,_)) ->
+                                       (case rng of
+                                         | MetaTyVar(tv,_) -> 
+                                           let {name=_,uniqueId=_,link} = ! tv in
+                                           (case link
+                                              of None -> (
+                                                          Some rng)
+                                               | _ -> Some rng)
+                                         | _ -> Some rng)
                                      | Some(Subtype(Arrow(dom,rng,_),_,_)) -> Some rng
 				     | _ -> None)
      | ApplyN     ([t1,t2], _)  -> (case maybeTermType t1 of
-				     | Some(Arrow(dom,rng,_)) -> Some rng
+				     | Some(Arrow(dom,rng,_)) ->
+                                       % let _ = writeLine("tt2*: "^printTerm term^"\n"^anyToString t1) in
+                                       (case rng of
+                                         | MetaTyVar(tv,_) -> 
+                                           let {name=_,uniqueId=_,link} = ! tv in
+                                           (case link
+                                              of None -> (writeLine("tt*: "^printTerm term^"\n"^anyToString t2);
+                                                          Some rng)
+                                               | _ -> Some rng)
+                                         | _ -> Some rng)
 				     | _ -> None)
 
      | Record     (fields,  a)  ->
@@ -510,9 +527,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
               (Some []) fields of
          | None -> None
          | Some fld_prs -> Some(Product (fld_prs, a)))
-     | Bind       (_,_,_,   a)  -> Some(Boolean a)
-     | Let        (_,term,  _)  -> maybeTermType term
-     | LetRec     (_,term,  _)  -> maybeTermType term
+     | Bind       (_,_,_,   a) -> Some(Boolean a)
+     | Let        (_,term,  _) -> maybeTermType term
+     | LetRec     (_,term,  _) -> maybeTermType term
      | Var        ((_,ty), _)  -> Some ty
      | Fun        (_,ty,   _)  -> Some ty
      | The        ((_,ty),_,_) -> Some ty
@@ -540,8 +557,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
        let tys = mapPartial maybeTermType tms in
        if tys = [] then None
          else Some(maybeAndType (tys,  a))
-     | Any                  a  -> None
-     | mystery -> None
+     | _ -> None
 
  def termInnerTerm tm =
    case tm of
