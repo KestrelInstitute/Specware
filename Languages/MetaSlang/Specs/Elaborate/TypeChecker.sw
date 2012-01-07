@@ -613,7 +613,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     resolveMetaTyVars trm
 
   def single_pass_elaborate_term (env, trm, term_type) =
-     % let _ = writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) in
+    % let _ = writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) in
     case trm of
       | Fun (OneName (id, fixity), srt, pos) ->
         (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
@@ -661,8 +661,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	   | None -> 
 	     %% If Qualified (id1, id2) does not refer to an op, check for field selection
 	     (case findVarOrOps (env, id1, pos) of
-		| [big_term] ->
+		| [big_term] ->      % Must be a projection
 		  %% unqualified id1 refers to big_term
+                  % let _ = writeLine("twonames: "^id1^"."^id2^" "^printTerm big_term) in
 		  let big_type = termType big_term in
 		  let big_type = checkType (env, big_type) in
 		  let 
@@ -673,8 +674,8 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			| (field_id, field_type) :: row -> 
 			  if id2 = field_id then
 			    let field_type = checkType (env, field_type) in
-			    let projector : MSTerm = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
-			    let projection = (ApplyN ([projector, big_term], pos)) : MSTerm in
+			    let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
+			    let projection = ApplyN ([projector, big_term], pos) in
 			    let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
 			    projection
 			  else
@@ -689,9 +690,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		    (case getProduct big_type of
 		       | Some row -> projectRow (big_term, big_type, row, id2)
 		       | _ ->
-		         %% Specware just reports an error here
+		         %% Specware gives up on type of field
 		         %% Accord checks to see if id2 refers to a function whose domain is big_type
-		         undeclared2 (env, trm, id1, id2, term_type, pos))
+                         ApplyN([Fun(Project id2, Arrow (big_type, freshMetaTyVar("Field", pos), pos), pos), big_term], pos))
 	        | [] -> 
 		  %% both id1.id2 id1 fail to refer to anything
 		  undeclared2 (env, trm, id1, id2, term_type, pos)
@@ -1024,7 +1025,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                   (t1, t2)
                 else (t1, t2)
               else
-                let alpha = case maybeTermType t2 of
+                let alpha = case maybeTermTypeEnv(env.internal, t2) of
                               | Some ty -> ty
                               | None -> freshMetaTyVar("ApplyN_Fun", pos)
                 in
