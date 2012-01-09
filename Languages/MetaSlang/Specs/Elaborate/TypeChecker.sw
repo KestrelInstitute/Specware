@@ -877,7 +877,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	    let (pat, env) = elaboratePattern (env, pat, alpha) in
 	    (Cons ((pat, bdy), decls), env)
           def maybeRedoDeclaration ((pat, bdy), decls) =
-            let new_bdy = if ambiguousTerm? bdy
+            let new_bdy = if false && ambiguousTerm? bdy
                            then single_pass_elaborate_term (env0, bdy, patternType pat)
                            else bdy
             in
@@ -1009,7 +1009,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	
       | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
         let (t1, t2) =
-            if env.firstPass?
+            if env.firstPass? && ~(embed? Lambda t2)
               then
                 let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
                 let ty    = Arrow (alpha, term_type, pos) in
@@ -1025,9 +1025,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                   (t1, t2)
                 else (t1, t2)
               else
-                let alpha = case maybeTermTypeEnv(env.internal, t2) of
-                              | Some ty -> ty
-                              | None -> freshMetaTyVar("ApplyN_Fun", pos)
+                let alpha = if env.firstPass?
+                             then freshMetaTyVar("ApplyN_Fun", pos)
+                             else case maybeTermTypeEnv(env.internal, t2) of
+                                    | Some ty -> ty
+                                    | None -> freshMetaTyVar("ApplyN_Fun", pos)
                 in
                 let ty    = Arrow (alpha, term_type, pos) in
                 let t1 = single_pass_elaborate_term_head (env, t1, ty, trm) in
