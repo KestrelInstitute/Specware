@@ -46,7 +46,8 @@ spec
 
   def foldi f e m = MapSTHashtable.STH_foldi(f,e,m)
 
-
+  op [Dom,Cod,a] foldMap (f: a -> Dom -> Cod -> a) (e: a) (m: Map(Dom,Cod)): a =
+    MapSTHashtable.STH_foldi(fn(key, val, e) -> f e key val, e, m)
 endspec
 
 M = morphism Simple -> SimpleAsSTHarray {}
