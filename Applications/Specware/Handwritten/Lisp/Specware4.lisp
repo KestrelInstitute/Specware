@@ -56,7 +56,7 @@
 
 #+sbcl    (progn
             ; (setq sb-ext:*derive-function-types* t) ; test
-	    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+	    ; (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
 	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
 					       sb-int:simple-style-warning
