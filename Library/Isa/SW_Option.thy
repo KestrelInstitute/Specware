@@ -11,10 +11,10 @@ consts Option__none_p :: "'a option \<Rightarrow> bool"
 defs Option__none_p_def [simp]: "Option__none_p x \<equiv> (x = None)"
 theorem Option__compare_Obligation_exhaustive: 
   "(\<exists>(x::'a) (y::'a). 
-      ((o1::'a option), (o2::'a option)) = (Some x, Some y)) 
-     \<or> ((\<exists>(zz__0::'a). (o1, o2) = (None, Some zz__0)) 
-      \<or> ((\<exists>(zz__0::'a). (o1, o2) = (Some zz__0, None)) 
-       \<or> (o1, o2) = (None, None)))"
+      (o1::'a option) = Some x \<and> (o2::'a option) = Some y) 
+     \<or> ((\<exists>(zz__0::'a). o1 = None \<and> o2 = Some zz__0) 
+      \<or> ((\<exists>(zz__0::'a). o1 = Some zz__0 \<and> o2 = None) 
+       \<or> o1 = None \<and> o2 = None))"
   by auto
 fun Option__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                         'a option \<times> 'a option \<Rightarrow> Compare__Comparison"
