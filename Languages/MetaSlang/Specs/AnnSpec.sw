@@ -409,6 +409,39 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                          | _ -> ops)
                   spc.ops spc.elements}
 
+op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
+  let def mapOpDef(qid as Qualified(q, id), refine_num, spc) =
+        case findTheOp(spc, qid) of
+          | Some opinfo | primaryOpName?(q, id, opinfo) ->
+            let (tvs, ty, full_term) = unpackTerm (opinfo.dfn) in
+            let tm = refinedTerm(full_term, refine_num) in
+            let new_tm = MetaSlang.mapTerm tsp tm in
+            if equalTerm?(tm, new_tm) then spc
+            else
+              let full_term = replaceNthTerm(full_term, refine_num, new_tm) in
+              let new_dfn = maybePiTerm(tvs, TypedTerm(full_term, ty, termAnn full_term)) in
+              spc << {ops = insertAQualifierMap(spc.ops, q, id, opinfo << {dfn = new_dfn})}                                       
+          | _ -> spc
+      def mapTypeDef(qid as Qualified(q, id), spc) =
+        case findTheType(spc, qid) of
+          | Some typeinfo | primaryTypeName?(q, id, typeinfo) ->
+            let (tvs, ty_dfn) = unpackType (typeinfo.dfn) in
+            let new_ty_dfn = MetaSlang.mapType tsp ty_dfn in
+            if equalType?(ty_dfn, new_ty_dfn) then spc
+            else
+              let new_ty_dfn = maybePiType(tvs, new_ty_dfn) in
+              spc << {types = insertAQualifierMap(spc.types, q, id, typeinfo << {dfn = new_ty_dfn})    }                                   
+          | _ -> spc
+  in
+ foldl (fn (spc, el) ->
+          case el of
+            | Op(qid, true, _) -> mapOpDef(qid, 0, spc)
+            | OpDef(qid, refine_num, _) -> mapOpDef(qid, refine_num, spc)
+            | TypeDef(qid, _) -> mapTypeDef(qid, spc)
+            | _ -> spc)
+   spc spc.elements
+
+
  %%% Only map over unqualified ops (for use in qualify)
  op  mapSpecUnqualified : TSP_Maps_St -> Spec -> Spec
  def mapSpecUnqualified tsp spc =
