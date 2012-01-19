@@ -62,10 +62,13 @@ TypeChecker qualifying spec
   def type_char   = charType
   def type_string = stringType
 
+  op debug?: Bool = false
+
+  
   %% ========================================================================
   %% The main type-checking function is elaboratePosSpec.
 
-  def elaboratePosSpec (given_spec, filename) = 
+  def elaboratePosSpec (given_spec0, filename) = 
     let _ = initializeMetaTyVarCounter () in
 
     %% ======================================================================
@@ -75,6 +78,8 @@ TypeChecker qualifying spec
     %% ---------- INITIALIZE SPEC (see ast-environment.sl) ----------
     %%   AstEnvironment.init adds default imports, etc.
     %%
+    %% 
+    let given_spec = resolveTypeNames given_spec0 in
     let initial_env  = initialEnv (given_spec, filename) in
     let {types     = given_types, 
 	 ops       = given_ops, 
@@ -189,7 +194,6 @@ TypeChecker qualifying spec
     let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
 
 
-
     %% Elaborate types of ops
     let elaborated_ops_0 = elaborate_local_op_types (given_ops,env_with_constrs) in
 
@@ -243,6 +247,18 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   %% ---- called inside TYPES : PASS 0  -----
   % ========================================================================
  
+  %%% Preliminary resolution
+  op resolveTypeNames(spc: Spec): Spec =
+    mapSpecLocals (id, fn ty ->
+                        case ty of
+                          | Base(qid as Qualified(Unqualified, id), ty_args, pos) ->
+                            (case findAllTypes(spc, qid) of
+                             | [type_info] -> Base(primaryTypeName type_info, ty_args, pos)
+                             | _ -> ty)
+                          | _ -> ty,
+                   id)
+      spc
+
   def TypeChecker.checkType (env, srt) =
     checkType1(env, srt, true)
 
@@ -613,509 +629,518 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     resolveMetaTyVars trm
 
   def single_pass_elaborate_term (env, trm, term_type) =
-    % let _ = writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) in
-    case trm of
-      | Fun (OneName (id, fixity), srt, pos) ->
-        (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
-	 %% resolve type from environment
-         % let _ = writeLine("Trying to resolve name "^id^": "^printType srt) in
-         case findVar(env, id, pos) of
-           | Some(term as Var ((id, srt), a)) ->
-             let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
-             Var ((id, srt), pos)
-           | None ->
-         case tryResolveNameFromType(env, trm, id, srt, pos) of
-           | Some t -> t
-           | _ -> 
-	 case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, srt, pos) of
-	   | terms as _::_ ->
-	     %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
-	     (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
-		| None -> trm
-		| Some term ->
-		  let srt = termType term in
-		  let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
-		  (case term of
-		     | Var ((id, _),          pos) -> Var ((id, srt),         pos)  % Now handled above
-		     | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
-		     | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
-                     | Fun (Embed _, _, _)         -> term
-		     | _ -> System.fail "Variable or constant expected"))
-	   | [] ->
-	     resolveNameFromType (env, trm, id, srt, pos))
+     let _ = if debug? then writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) else () in
+    let typed_term =
+          case trm of
+            | Fun (OneName (id, fixity), srt, pos) ->
+              (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
+               %% resolve type from environment
+               % let _ = writeLine("Trying to resolve name "^id^": "^printType srt) in
+               case findVar(env, id, pos) of
+                 | Some(term as Var ((id, srt), a)) ->
+                   let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
+                   Var ((id, srt), pos)
+                 | None ->
+               case tryResolveNameFromType(env, trm, id, srt, pos) of
+                 | Some t -> t
+                 | _ -> 
+               case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, srt, pos) of
+                 | terms as _::_ ->
+                   %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
+                   (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
+                      | None -> trm
+                      | Some term ->
+                        let srt = termType term in
+                        let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
+                        (case term of
+                           | Var ((id, _),          pos) -> Var ((id, srt),         pos)  % Now handled above
+                           | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
+                           | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
+                           | Fun (Embed _, _, _)         -> term
+                           | _ -> System.fail "Variable or constant expected"))
+                 | [] ->
+                   resolveNameFromType (env, trm, id, srt, pos))
 
-      | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
-	(let _ = elaborateCheckTypeForOpRef (env, trm, srt, term_type) in 
-	 %% Either Qualified (id1, id2) or field selection
-	 case findTheOp2 (env, id1, id2) of
-           | Some info -> 
-	     %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
-	     let Qualified (q, id) = primaryOpName info in
-	     let (tvs, srt, tm) = unpackFirstOpDef info in
-	     let (_, srt) = metafyType (Pi (tvs, srt, typeAnn srt)) in
-	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
-	     let srt = elaborateCheckTypeForOpRef (env, term, srt, term_type) in
-	     (case term of
-		| Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, srt, pos)
-		| _ -> System.fail ("Op expected for elaboration of "^id1^"."^id2^" as resolved to "^q^"."^id))
-	   | None -> 
-	     %% If Qualified (id1, id2) does not refer to an op, check for field selection
-	     (case findVarOrOps (env, id1, pos) of
-		| [big_term] ->      % Must be a projection
-		  %% unqualified id1 refers to big_term
-                  % let _ = writeLine("twonames: "^id1^"."^id2^" "^printTerm big_term) in
-		  let big_type = termType big_term in
-		  let big_type = checkType (env, big_type) in
-		  let 
-                    def projectRow (big_term, big_type, row, id2) =
-		      %% See if id2 is one of the field selectors for the big type.
-		      case row of
-			| [] -> undeclared2 (env, trm, id1, id2, term_type, pos)
-			| (field_id, field_type) :: row -> 
-			  if id2 = field_id then
-			    let field_type = checkType (env, field_type) in
-			    let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
-			    let projection = ApplyN ([projector, big_term], pos) in
-			    let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
-			    projection
-			  else
-			    projectRow (big_term, big_type, row, id2)
-		    def getProduct srt : Option (List (String * MSType)) = 
-		      (case unfoldType (env, srt) of
-			 | Product (row,       _) -> Some row
-			 | Subtype (srt, pred, _) -> getProduct srt
-			 | _ -> None)
-		  in          
-		    %% See if big_term is a product or a subtype of a product
-		    (case getProduct big_type of
-		       | Some row -> projectRow (big_term, big_type, row, id2)
-		       | _ ->
-		         %% Specware gives up on type of field
-		         %% Accord checks to see if id2 refers to a function whose domain is big_type
-                         ApplyN([Fun(Project id2, Arrow (big_type, freshMetaTyVar("Field", pos), pos), pos), big_term], pos))
-	        | [] -> 
-		  %% both id1.id2 id1 fail to refer to anything
-		  undeclared2 (env, trm, id1, id2, term_type, pos)
-		| big_terms ->
-		  %% id1 is ambiguous
-		  %% Specware just reports an error here
-		  %% Accord checks to see if id2 (id1) typechecks
-		  undeclared2 (env, trm, id1, id2, term_type, pos)))
+            | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
+              (let _ = elaborateCheckTypeForOpRef (env, trm, srt, term_type) in
+               %% Either Qualified (id1, id2) or field selection
+               case findTheOp2 (env, id1, id2) of
+                 | Some info -> 
+                   %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
+                   let Qualified (q, id) = primaryOpName info in
+                   let (tvs, d_srt, tm) = unpackFirstOpDef info in
+                   let (_, d_srt) = metafyType (Pi (tvs, d_srt, typeAnn d_srt)) in
+                   let term = Fun (TwoNames (q, id, info.fixity), d_srt, pos) in
+                   let d_srt = elaborateCheckTypeForOpRef (env, term, d_srt, srt) in
+                   (case term of
+                      | Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, d_srt, pos)
+                      | _ -> System.fail ("Op expected for elaboration of "^id1^"."^id2^" as resolved to "^q^"."^id))
+                 | None -> 
+                   %% If Qualified (id1, id2) does not refer to an op, check for field selection
+                   (case findVarOrOps (env, id1, pos) of
+                      | [big_term] ->      % Must be a projection
+                        %% unqualified id1 refers to big_term
+                        % let _ = writeLine("twonames: "^id1^"."^id2^" "^printTerm big_term) in
+                        let big_type = termType big_term in
+                        let big_type = checkType (env, big_type) in
+                        let 
+                          def projectRow (big_term, big_type, row, id2) =
+                            %% See if id2 is one of the field selectors for the big type.
+                            case row of
+                              | [] -> undeclared2 (env, trm, id1, id2, term_type, pos)
+                              | (field_id, field_type) :: row -> 
+                                if id2 = field_id then
+                                  let field_type = checkType (env, field_type) in
+                                  let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
+                                  let projection = ApplyN ([projector, big_term], pos) in
+                                  let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
+                                  projection
+                                else
+                                  projectRow (big_term, big_type, row, id2)
+                          def getProduct srt : Option (List (String * MSType)) = 
+                            (case unfoldType (env, srt) of
+                               | Product (row,       _) -> Some row
+                               | Subtype (srt, pred, _) -> getProduct srt
+                               | _ -> None)
+                        in          
+                          %% See if big_term is a product or a subtype of a product
+                          (case getProduct big_type of
+                             | Some row -> projectRow (big_term, big_type, row, id2)
+                             | _ ->
+                               %% Specware gives up on type of field
+                               %% Accord checks to see if id2 refers to a function whose domain is big_type
+                               ApplyN([Fun(Project id2, Arrow (big_type, freshMetaTyVar("Field", pos), pos), pos), big_term], pos))
+                      | [] -> 
+                        %% both id1.id2 id1 fail to refer to anything
+                        undeclared2 (env, trm, id1, id2, term_type, pos)
+                      | big_terms ->
+                        %% id1 is ambiguous
+                        %% Specware just reports an error here
+                        %% Accord checks to see if id2 (id1) typechecks
+                        undeclared2 (env, trm, id1, id2, term_type, pos)))
 
-      | Fun (Embed (id, _), srt, pos) -> 
-	let _  (* srt *) = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-	%% using term_type instead of srt in the following was cause of bug 110 : "[] read as bogus Nil"
-	resolveNameFromType (env, trm, id, srt, pos) 
+            | Fun (Embed (id, _), srt, pos) -> 
+              let _  (* srt *) = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
+              %% using term_type instead of srt in the following was cause of bug 110 : "[] read as bogus Nil"
+              resolveNameFromType (env, trm, id, srt, pos) 
 
-      | Fun (Project id,srt,pos) -> 
-	let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-	(case mkProject (env,id,srt,pos) of
-	   | Some term -> term
-	   | None -> undeclaredResolving (env,trm,id,term_type,pos))
+            | Fun (Project id,srt,pos) -> 
+              let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
+              (case mkProject (env,id,srt,pos) of
+                 | Some term -> term
+                 | None -> undeclaredResolving (env,trm,id,term_type,pos))
 
-    % | Fun (Select id,srt,pos) -> Fun (Select id,srt,pos)      (*** Not checked ***)
-      | Fun (Embedded id, srt, pos) ->
-	let a = freshMetaTyVar ("Embedded", pos) in
-	let ty = Arrow(a, type_bool, pos) in
-	(elaborateTypeForTerm (env, trm, ty, term_type);
-	 elaborateTypeForTerm (env, trm, srt, ty);
-	 (case unfoldType (env, srt) of
-	    | Arrow (dom, _, _) -> 
-	      (case isCoproduct (env, dom) of
-		 | Some fields -> 
-		   if exists? (fn (id2, _) -> id = id2) fields then
-		     ()
-		   else
-		     error (env, 
-			    "Name "^id^" is not among the constructors of "^ printType dom, 
-			    pos)
-		 | None -> 
-		   pass2Error (env, dom, 
-			       newLines ["Sum type with constructor "^id^" expected", 
-					 "found instead "^printType dom], 
-			       pos))
-	    | _ -> pass2Error (env, srt, "Function type expected ", pos));
-	 Fun (Embedded id, srt, pos))
+          % | Fun (Select id,srt,pos) -> Fun (Select id,srt,pos)      (*** Not checked ***)
+            | Fun (Embedded id, srt, pos) ->
+              let a = freshMetaTyVar ("Embedded", pos) in
+              let ty = Arrow(a, type_bool, pos) in
+              (elaborateTypeForTerm (env, trm, ty, term_type);
+               elaborateTypeForTerm (env, trm, srt, ty);
+               (case unfoldType (env, srt) of
+                  | Arrow (dom, _, _) -> 
+                    (case isCoproduct (env, dom) of
+                       | Some fields -> 
+                         if exists? (fn (id2, _) -> id = id2) fields then
+                           ()
+                         else
+                           error (env, 
+                                  "Name "^id^" is not among the constructors of "^ printType dom, 
+                                  pos)
+                       | None -> 
+                         pass2Error (env, dom, 
+                                     newLines ["Sum type with constructor "^id^" expected", 
+                                               "found instead "^printType dom], 
+                                     pos))
+                  | _ -> pass2Error (env, srt, "Function type expected ", pos));
+               Fun (Embedded id, srt, pos))
 
-      | Fun (PChoose qid, srt, pos) -> 
-	%% Has type:  {f: base_type -> result_type | fa(m,n) equiv(m,n) => f m = f n} -> quot_type -> result_type
-        %%   quot_type -- quotient type referenced by qid
-        %%   equiv     -- equivalence relation in definition of quot_type
-        (case findTheType (env.internal, qid) of
-           | Some info ->
-             (case unpackFirstTypeDef info of
-                | (tvs, Quotient (base_body, equiv, _)) ->
-                  %% In general, base_body and equiv will have free references to tvs
-                  let base_type             = Pi (tvs, base_body, noPos)                      in
-                  let (new_mtvs, base_type) = metafyType base_type                            in
-                  let base_body             = typeInnerType base_type                         in
-                  let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
-                  let quot_type             = Base (qid, new_type_args, noPos)                in
-                  let result_type           = freshMetaTyVar ("PChoose_result", pos)          in
-                  let high_arrow            = Arrow (quot_type, result_type, pos)             in
-                  %% --
-                  let low_arrow             = Arrow (base_type, result_type, pos)             in
-                  let fvar = ("f",low_arrow) in
-                  let mvar = ("m",base_type) in
-                  let nvar = ("n",base_type) in
-                  let lhs  = mkAppl (equiv, [mkVar mvar, mkVar nvar]) in % free refs to tvs
-                  let rhs  = mkEquality (result_type, 
-                                         mkApply (mkVar fvar, mkVar mvar),
-                                         mkApply (mkVar fvar, mkVar nvar)) 
+            | Fun (PChoose qid, srt, pos) -> 
+              %% Has type:  {f: base_type -> result_type | fa(m,n) equiv(m,n) => f m = f n} -> quot_type -> result_type
+              %%   quot_type -- quotient type referenced by qid
+              %%   equiv     -- equivalence relation in definition of quot_type
+              (case findTheType (env.internal, qid) of
+                 | Some info ->
+                   (case unpackFirstTypeDef info of
+                      | (tvs, Quotient (base_body, equiv, _)) ->
+                        %% In general, base_body and equiv will have free references to tvs
+                        let base_type             = Pi (tvs, base_body, noPos)                      in
+                        let (new_mtvs, base_type) = metafyType base_type                            in
+                        let base_body             = typeInnerType base_type                         in
+                        let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
+                        let quot_type             = Base (qid, new_type_args, noPos)                in
+                        let result_type           = freshMetaTyVar ("PChoose_result", pos)          in
+                        let high_arrow            = Arrow (quot_type, result_type, pos)             in
+                        %% --
+                        let low_arrow             = Arrow (base_type, result_type, pos)             in
+                        let fvar = ("f",low_arrow) in
+                        let mvar = ("m",base_type) in
+                        let nvar = ("n",base_type) in
+                        let lhs  = mkAppl (equiv, [mkVar mvar, mkVar nvar]) in % free refs to tvs
+                        let rhs  = mkEquality (result_type, 
+                                               mkApply (mkVar fvar, mkVar mvar),
+                                               mkApply (mkVar fvar, mkVar nvar)) 
+                        in
+                        let body = mkBind (Forall,[mvar, nvar], mkImplies (lhs, rhs)) in  % free refs to tvs
+                        let restricted_low_arrow  = Subtype (low_arrow, mkLambda (mkVarPat fvar, body), pos) in  % free refs to tvs
+                        %% --
+                        let lifting_arrow         = Arrow (restricted_low_arrow, high_arrow, pos)            in  % free refs to tvs
+                        (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
+                         elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
+                         %% now srt = term_type = lifting_arrow
+                         Fun (PChoose qid, srt, pos))
+
+                      | _ ->
+                        let ss = show qid in
+                        (error (env, 
+                                "In choose[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
+                                pos);
+                         Fun (PChoose qid, srt, pos)))
+                 | _ ->
+                   let ss = show qid in
+                   (error (env, 
+                           "In choose[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
+                           pos);
+                    Fun (PChoose qid, srt, pos)))
+
+
+            | Fun (PQuotient qid, srt, pos) ->  
+              %% Has type:   base_type -> Quotient(base_type, equiv)
+              %%   quot_type -- quotient type referenced by qid
+              %%   equiv     -- equivalence relation in definition of quot_type
+              (case findTheType (env.internal, qid) of
+                 | Some info ->
+                   (case unpackFirstTypeDef info of
+                      | (tvs, Quotient (base_body, equiv, _)) ->
+                        %% In general, base_body and equiv will have free references to the tvs
+                        let base_type             = Pi (tvs, base_body, noPos)                      in
+                        let (new_mtvs, base_type) = metafyType base_type                            in
+                        let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
+                        let quot_type             = Base (qid, new_type_args, noPos)                in              
+                        let lifting_arrow         = Arrow (base_type, quot_type, pos)               in
+                        (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
+                         elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
+                         %% now srt = term_type = lifting_arrow
+                         Fun (PQuotient qid, srt, pos))
+                      | _ ->
+                        let ss = show qid in
+                        (error (env, 
+                                "In quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
+                                pos);
+                         Fun (PQuotient qid, srt, pos)))
+                 | _ ->
+                   let ss = show qid in
+                   (error (env, 
+                           "In quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
+                           pos);
+                    Fun (PQuotient qid, srt, pos)))
+
+            | Fun (Bool b, srt, pos) -> 
+              (elaborateTypeForTerm (env, trm, type_bool, term_type) ; 
+               elaborateCheckTypeForTerm (env, trm, srt, type_bool);
+               Fun (Bool b, srt, pos))
+
+            | Fun (Nat n, srt, pos) ->  
+              (elaborateTypeForTerm (env, trm, type_nat, term_type);
+               elaborateCheckTypeForTerm (env, trm, srt, type_nat);
+               Fun (Nat n, srt, pos))
+
+            | Fun (String s, srt, pos) -> 
+              (elaborateTypeForTerm (env, trm, type_string, term_type);
+               elaborateCheckTypeForTerm (env, trm, srt, type_string);
+               Fun (String s, srt, pos))
+
+            | Fun (Char ch, srt, pos) -> 
+              (elaborateTypeForTerm (env, trm, type_char, term_type);
+               elaborateCheckTypeForTerm (env, trm, srt, type_char);
+               Fun (Char ch, srt, pos))
+
+            | Var ((id, srt), pos) -> 
+              let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
+              Var ((id, srt), pos)
+
+            | LetRec (decls, body, pos) -> 
+              let 
+                def declareFun (((id, srt), bdy), env) = 
+                  addVariable (env, id, srt)
+
+                def elaborateDecl env ((id, srt), bdy) = 
+                  let terms = findVarOrOps (env, id, pos) in
+                  let srt = checkType(env, srt) in
+                  let bdy = single_pass_elaborate_term (env, bdy, srt) in
+                  ((id, srt), bdy)
+              in
+              let env = foldr declareFun env decls in
+              let decls = map (elaborateDecl env) decls in
+              let bdy = single_pass_elaborate_term (env, body, term_type) in
+              LetRec (decls, bdy, pos)
+
+            | Let (decls, body, pos) -> 
+              let env0 = env in
+              let 
+                def doDeclaration ((pat, bdy), (decls, env)) = 
+                  let alpha = freshMetaTyVar ("Let", pos) in
+                  (* In case the pattern is has a type constraint, move
+                     this to the body such that the type constraint is 
+                     attatched to alpha.
+                     *)
+                  let (pat, bdy) = 
+                      case pat of
+                        | TypedPat (pat, srt, pos) -> 
+                          (pat, (TypedTerm (bdy, srt, pos)):MSTerm)
+                        | _ -> (pat, bdy)
+                  in             
+                  let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
+                  let (pat, env) = elaboratePattern (env, pat, alpha) in
+                  (Cons ((pat, bdy), decls), env)
+                def maybeRedoDeclaration ((pat, bdy), decls) =
+                  let new_bdy = if false && ambiguousTerm? bdy
+                                 then single_pass_elaborate_term (env0, bdy, patternType pat)
+                                 else bdy
                   in
-                  let body = mkBind (Forall,[mvar, nvar], mkImplies (lhs, rhs)) in  % free refs to tvs
-                  let restricted_low_arrow  = Subtype (low_arrow, mkLambda (mkVarPat fvar, body), pos) in  % free refs to tvs
-                  %% --
-                  let lifting_arrow         = Arrow (restricted_low_arrow, high_arrow, pos)            in  % free refs to tvs
-                  (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
-                   elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
-                   %% now srt = term_type = lifting_arrow
-                   Fun (PChoose qid, srt, pos))
+                  (pat, new_bdy) :: decls
+              in         
+              let (decls, body_env) = foldr doDeclaration ([], env) decls in
+              let body = single_pass_elaborate_term (body_env, body, term_type) in
+              let decls = foldr maybeRedoDeclaration [] decls in
+              Let (decls, body, pos)
 
-                | _ ->
-                  let ss = show qid in
-                  (error (env, 
-                          "In choose[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
-                          pos);
-                   Fun (PChoose qid, srt, pos)))
-           | _ ->
-             let ss = show qid in
-             (error (env, 
-                     "In choose[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
-                     pos);
-              Fun (PChoose qid, srt, pos)))
-              
+            | IfThenElse (test, thenTrm, elseTrm, pos) -> 
+              let test = single_pass_elaborate_term (env, test, type_bool) in
+              let thenTrm = single_pass_elaborate_term (env, thenTrm, term_type) in 
+              let elseTrm = single_pass_elaborate_term (env, elseTrm, term_type) in
+              IfThenElse (test, thenTrm, elseTrm, pos)
 
-      | Fun (PQuotient qid, srt, pos) ->  
-        %% Has type:   base_type -> Quotient(base_type, equiv)
-        %%   quot_type -- quotient type referenced by qid
-        %%   equiv     -- equivalence relation in definition of quot_type
-        (case findTheType (env.internal, qid) of
-           | Some info ->
-             (case unpackFirstTypeDef info of
-                | (tvs, Quotient (base_body, equiv, _)) ->
-                  %% In general, base_body and equiv will have free references to the tvs
-                  let base_type             = Pi (tvs, base_body, noPos)                      in
-                  let (new_mtvs, base_type) = metafyType base_type                            in
-                  let new_type_args         = map (fn mtv -> MetaTyVar (mtv, noPos)) new_mtvs in
-                  let quot_type             = Base (qid, new_type_args, noPos)                in              
-                  let lifting_arrow         = Arrow (base_type, quot_type, pos)               in
-                  (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
-                   elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
-                   %% now srt = term_type = lifting_arrow
-                   Fun (PQuotient qid, srt, pos))
-                | _ ->
-                  let ss = show qid in
-                  (error (env, 
-                          "In quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
-                          pos);
-                   Fun (PQuotient qid, srt, pos)))
-           | _ ->
-             let ss = show qid in
-             (error (env, 
-                     "In quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
-                     pos);
-              Fun (PQuotient qid, srt, pos)))
+            | Record (row, pos) -> 
+              let 
+                def unfoldConstraint (srt) = 
+                  (case unfoldType (env, srt) of
+                     | Product (rows, _) -> 
+                       (if ~(length (row) = length (rows)) then
+                          error (env, 
+                                 newLines [printTerm trm, "is incompatible with constraint", printType term_type], 
+                                 pos)
+                        else 
+                          ();
+                        rows)
+                     | MetaTyVar (mtv, _) ->
+                       let row = map (fn (id, _)-> (id, freshMetaTyVar ("Record", pos))) row in
+                       (linkMetaTyVar mtv ((Product (row, pos)));
+                        row)
 
-      | Fun (Bool b, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, type_bool, term_type) ; 
-	 elaborateCheckTypeForTerm (env, trm, srt, type_bool);
-	 Fun (Bool b, srt, pos))
-	
-      | Fun (Nat n, srt, pos) ->  
-	(elaborateTypeForTerm (env, trm, type_nat, term_type);
-	 elaborateCheckTypeForTerm (env, trm, srt, type_nat);
-	 Fun (Nat n, srt, pos))
-	
-      | Fun (String s, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, type_string, term_type);
-	 elaborateCheckTypeForTerm (env, trm, srt, type_string);
-	 Fun (String s, srt, pos))
-	
-      | Fun (Char ch, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, type_char, term_type);
-	 elaborateCheckTypeForTerm (env, trm, srt, type_char);
-	 Fun (Char ch, srt, pos))
-	
-      | Var ((id, srt), pos) -> 
-	let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-	Var ((id, srt), pos)
+                     | Subtype (srt, term, _) -> 
+                       unfoldConstraint (srt)        
 
-      | LetRec (decls, body, pos) -> 
-	let 
+                     | And (srt :: _, _) -> % TODO: be smarter about choosing among alternatives
+                       unfoldConstraint srt        
 
-          def declareFun (((id, srt), bdy), env) = 
-	    addVariable (env, id, srt)
-
-          def elaborateDecl env ((id, srt), bdy) = 
-	    let terms = findVarOrOps (env, id, pos) in
-	    let srt = checkType(env, srt) in
-	    let bdy = single_pass_elaborate_term (env, bdy, srt) in
-	    ((id, srt), bdy)
-	in
-	let env = foldr declareFun env decls in
-	let decls = map (elaborateDecl env) decls in
-	let bdy = single_pass_elaborate_term (env, body, term_type) in
-	LetRec (decls, bdy, pos)
-
-      | Let (decls, body, pos) -> 
-	let env0 = env in
-        let 
-          def doDeclaration ((pat, bdy), (decls, env)) = 
-	    let alpha = freshMetaTyVar ("Let", pos) in
-	    (* In case the pattern is has a type constraint, move
-	       this to the body such that the type constraint is 
-	       attatched to alpha.
-	       *)
-	    let (pat, bdy) = 
-	        case pat of
-		  | TypedPat (pat, srt, pos) -> 
-		    (pat, (TypedTerm (bdy, srt, pos)):MSTerm)
-		  | _ -> (pat, bdy)
-	    in             
-	    let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
-	    let (pat, env) = elaboratePattern (env, pat, alpha) in
-	    (Cons ((pat, bdy), decls), env)
-          def maybeRedoDeclaration ((pat, bdy), decls) =
-            let new_bdy = if false && ambiguousTerm? bdy
-                           then single_pass_elaborate_term (env0, bdy, patternType pat)
-                           else bdy
-            in
-            (pat, new_bdy) :: decls
-	in         
-	let (decls, body_env) = foldr doDeclaration ([], env) decls in
-	let body = single_pass_elaborate_term (body_env, body, term_type) in
-        let decls = foldr maybeRedoDeclaration [] decls in
-	Let (decls, body, pos)
-
-      | IfThenElse (test, thenTrm, elseTrm, pos) -> 
-	let test = single_pass_elaborate_term (env, test, type_bool) in
-	let thenTrm = single_pass_elaborate_term (env, thenTrm, term_type) in 
-	let elseTrm = single_pass_elaborate_term (env, elseTrm, term_type) in
-	IfThenElse (test, thenTrm, elseTrm, pos)
-
-      | Record (row, pos) -> 
-        let 
-	  def unfoldConstraint (srt) = 
-	    (case unfoldType (env, srt) of
-	       | Product (rows, _) -> 
-	         (if ~(length (row) = length (rows)) then
-		    error (env, 
-			   newLines [printTerm trm, "is incompatible with constraint", printType term_type], 
-			   pos)
-		  else 
-		    ();
-		  rows)
-	       | MetaTyVar (mtv, _) ->
-                 let row = map (fn (id, _)-> (id, freshMetaTyVar ("Record", pos))) row in
-		 (linkMetaTyVar mtv ((Product (row, pos)));
-		  row)
-                        
-	       | Subtype (srt, term, _) -> 
-		 unfoldConstraint (srt)        
-
-	       | And (srt :: _, _) -> % TODO: be smarter about choosing among alternatives
-		 unfoldConstraint srt        
-
-	       | sv -> 
-		 (pass2Error (env, 
-			      sv, 
-			      printTerm trm^" is constrained to be of an incompatible type "^newline^ printType term_type, 
-			      pos);
-		  map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
-	in
-	let tyrows = unfoldConstraint (term_type) in
-        if length tyrows ~= length row
-          then (error(env, "Mismatch in number of fields", pos);
-                Record (row, pos))
-        else
-	let trow = zip (row, tyrows) in 
-	let row = map (fn ((id, t), (id2, ty))->
-		       if id = id2 then
-			 (id, single_pass_elaborate_term (env, t, ty))
-		       else 
-			 (error (env, "Field-name "^id^
-				 " is not the one imposed by type constraint.  Expected field-name is: "^
-				 id2, pos);
-                          (id, t)))
-	              trow
-	in
-	  Record (row, pos)
-
-      | Lambda (rules, pos) -> 
-	let alpha = freshMetaTyVar ("Lambda_a", pos) in
-	let beta  = freshMetaTyVar ("Lambda_b", pos) in
-	let ty    = (Arrow (alpha, beta, pos)) in
-	let _     = elaborateType (env, ty, term_type) in 
-	Lambda (map (fn (pat, cond, term)->
-		     let (pat, env) = elaboratePattern (env, pat, alpha) in
-		     let term = single_pass_elaborate_term (env, term, beta) in
-		     let cond = single_pass_elaborate_term (env, cond, type_bool) in
-		     (pat, cond, term)) 
-		    rules,
-	       pos)
-
-      | The ((id,srt), term, pos) ->
-	let srt = checkType(env, srt) in
-        let env = addVariable (env,id,srt) in
-	let _ = elaborateType (env, srt, term_type) in
-	let term = single_pass_elaborate_term (env, term, type_bool) in
-	The ((id,srt), term, pos)
-
-      | Bind (bind, vars, term, pos) ->
-	let _ = elaborateType (env, term_type, type_bool) in
-	let (vars, env) = 
-	    foldl (fn ((vars, env), (id, srt)) ->
-		   let srt = checkType (env, srt) in
-		   (Cons ((id, srt), vars), 
-		    addVariable (env, id, srt)))
-	          ([], env) 
-		  vars 
-	in
-        let vars = reverse vars in
-	Bind (bind, vars, single_pass_elaborate_term (env, term, term_type), pos)
-
-      | TypedTerm (term, srt, _) ->
-        let srt  = elaborateType (env, srt, term_type) in
-	let term = single_pass_elaborate_term (env, term, srt) in
-	term
-
-      | Seq (terms, pos) -> 
-	let
-          def elab ts = 
-	    case ts of
-	      | [] -> []
-	      | [t] -> [single_pass_elaborate_term (env, t, term_type)]
-	      | (t::ts) -> 
-	        let alpha = freshMetaTyVar ("Seq", pos) in
-		let t = single_pass_elaborate_term (env, t, alpha) in
-		Cons (t, elab ts)
-	in
-	  Seq (elab terms, pos)
-
-      | ApplyN ([t1 as Fun (Embedded _, _, _), t2], pos) -> 
-        let alpha = freshMetaTyVar ("ApplyN_Embedded", pos) in
-	let ty    = Arrow (alpha, term_type, pos) in
-	let t2    = single_pass_elaborate_term (env, t2, alpha) in
-	let t1    = single_pass_elaborate_term (env, t1, ty) in
-	ApplyN ([t1, t2], pos)
-
-      | ApplyN ([t1 as Fun (Project _, _, _), t2], pos) -> 
-	let alpha = freshMetaTyVar ("ApplyN_Project", pos) in
-	let ty    = Arrow (alpha, term_type, pos) in
-	let t2    = single_pass_elaborate_term (env, t2, alpha) in
-	let t1    = single_pass_elaborate_term (env, t1, ty) in
-	ApplyN ([t1, t2], pos)
-	
-      | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
-        let (t1, t2) =
-            if env.firstPass? && ~(embed? Lambda t2)
-              then
-                let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
-                let ty    = Arrow (alpha, term_type, pos) in
-                let t2    = single_pass_elaborate_term (env, t2, alpha) in
-                let t1    = single_pass_elaborate_term_head (env, t1, ty, trm) in
-                %% Repeated for help in overload resolution once argument type is known
-                if false && ambiguousTerm? t2 then
-                  let t2 = single_pass_elaborate_term (env, t2, alpha) in
-                  %let t1  = case t1 of
-                  %             | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
-                  %             | _ -> t1
-                  % in
-                  (t1, t2)
-                else (t1, t2)
+                     | sv -> 
+                       (pass2Error (env, 
+                                    sv, 
+                                    printTerm trm^" is constrained to be of an incompatible type "^newline^ printType term_type, 
+                                    pos);
+                        map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
+              in
+              let tyrows = unfoldConstraint (term_type) in
+              if length tyrows ~= length row
+                then (error(env, "Mismatch in number of fields", pos);
+                      Record (row, pos))
               else
-                let alpha = if env.firstPass?
-                             then freshMetaTyVar("ApplyN_Fun", pos)
-                             else case maybeTermTypeEnv(env.internal, t2) of
-                                    | Some ty -> ty
-                                    | None -> freshMetaTyVar("ApplyN_Fun", pos)
-                in
-                let ty    = Arrow (alpha, term_type, pos) in
-                let t1 = single_pass_elaborate_term_head (env, t1, ty, trm) in
-                let t2 = single_pass_elaborate_term      (env, t2, alpha) in
-                (t1, t2)
-        in
-	%% This is same effect as old code, but restructured
-	%% so it's easier to intercept the XML references
-	if env.firstPass? then
-	  ApplyN ([t1, t2], pos)
-	else if f1 = Equals then
-	  %let t1 = adjustEqualityType (env, s1, t1, t2) in
-	  ApplyN ([t1, t2], pos)
-	else if f1 = NotEquals then
-	  %let t1 = adjustEqualityType (env, s1, t1, t2) in
-	  ApplyN ([t1, t2], pos)
-	else if typeCognizantOperator? f1 then
-	  addTypeAsLastTerm (env, 
-			     trm,
-			     ApplyN ([t1, t2], pos),
-			     term_type)
-        else
-	  ApplyN ([t1, t2], pos)
+              let trow = zip (row, tyrows) in 
+              let row = map (fn ((id, t), (id2, ty))->
+                             if id = id2 then
+                               (id, single_pass_elaborate_term (env, t, ty))
+                             else 
+                               (error (env, "Field-name "^id^
+                                       " is not the one imposed by type constraint.  Expected field-name is: "^
+                                       id2, pos);
+                                (id, t)))
+                            trow
+              in
+                Record (row, pos)
 
-      | ApplyN ([t1, t2], pos) ->
-	let alpha = freshMetaTyVar ("ApplyN_2", pos) in
-	let ty    = Arrow (alpha, term_type, pos) in
-	let t2    = single_pass_elaborate_term (env, t2, alpha) in
-	let t1    = single_pass_elaborate_term (env, t1, ty) in
-	ApplyN ([t1, t2], pos)
+            | Lambda (rules, pos) -> 
+              let alpha = freshMetaTyVar ("Lambda_a", pos) in
+              let beta  = freshMetaTyVar ("Lambda_b", pos) in
+              let ty    = (Arrow (alpha, beta, pos)) in
+              let _     = elaborateType (env, ty, term_type) in 
+              Lambda (map (fn (pat, cond, term)->
+                           let (pat, env) = elaboratePattern (env, pat, alpha) in
+                           let term = single_pass_elaborate_term (env, term, beta) in
+                           let cond = single_pass_elaborate_term (env, cond, type_bool) in
+                           (pat, cond, term)) 
+                          rules,
+                     pos)
 
-      %% Allow for partially type-checked terms
-      | Apply(t1, t2, pos) -> single_pass_elaborate_term (env, ApplyN ([t1, t2], pos), term_type)
+            | The ((id,srt), term, pos) ->
+              let srt = checkType(env, srt) in
+              let env = addVariable (env,id,srt) in
+              let _ = elaborateType (env, srt, term_type) in
+              let term = single_pass_elaborate_term (env, term, type_bool) in
+              The ((id,srt), term, pos)
 
-      | ApplyN (terms, pos) ->
-	let 
-          def tagTermWithInfixInfo (term : MSTerm) : FixatedTerm =
-	    case term of
-	      | Fun (OneName (_,  Nonfix),  _, pos) -> Nonfix term
-	      | Fun (OneName (_,  Infix p), _, pos) -> Infix (term, p)
-              | Fun (OneName ("Cons",  _), _, pos) -> Infix(term, (Right, 24))
-	      | Fun (OneName (id, _),       _, pos) ->
-	        (case consistentTag (findVarOrOps (env, id, pos)) of
-		   | (true, (Some p)) -> Infix (term, p)
-		   | (true, _)      -> Nonfix term
-		   | _ ->
-		     (error (env, "Inconsistent infix information for overloaded op: " ^ id,
-			     pos);
-		      Nonfix term))
-	      | Fun (TwoNames (_ , _, Nonfix),  _, pos) -> Nonfix term
-	      | Fun (TwoNames (_ , _, Infix p), _, pos) -> Infix (term, p)
-	      | Fun (TwoNames (id1, id2, _),    _, pos) ->
-		%% If, due to union semantics, findOps always returns 0 or 1 hits for Q.Id, 
-		%% then consistentTag will necessarily return (true, priority).
-		(case findTheOp2 (env, id1, id2) of
-		   | Some info ->
-		     (case info.fixity of
-			| Infix p -> Infix  (term, p)
-			| _ -> Nonfix term)
-		   | _                    -> Nonfix term)
-	      | Fun (And,       _, _) -> Infix (term, (Right, 15))
-	      | Fun (Or,        _, _) -> Infix (term, (Right, 14))
-	      | Fun (Implies,   _, _) -> Infix (term, (Right, 13))
-	      | Fun (Iff,       _, _) -> Infix (term, (Right, 12))
-	      | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
-	      | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
-	      | Fun (RecordMerge,_,_) -> Infix (term, (Left, 25))
-	      | _ -> Nonfix term
-	in 
-	let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in
-	let new = single_pass_elaborate_term (env, term, term_type) in
-	new
+            | Bind (bind, vars, term, pos) ->
+              let _ = elaborateType (env, term_type, type_bool) in
+              let (vars, env) = 
+                  foldl (fn ((vars, env), (id, srt)) ->
+                         let srt = checkType (env, srt) in
+                         (Cons ((id, srt), vars), 
+                          addVariable (env, id, srt)))
+                        ([], env) 
+                        vars 
+              in
+              let vars = reverse vars in
+              Bind (bind, vars, single_pass_elaborate_term (env, term, term_type), pos)
 
-      %% These should only appear as the head of an apply (see one of the ApplyN cases above):
-      | Fun (Not,       srt, pos) -> (error (env, cantuse "~",   pos); trm)
-      | Fun (And,       srt, pos) -> (error (env, cantuse "&&",  pos); trm)
-      | Fun (Or,        srt, pos) -> (error (env, cantuse "||",  pos); trm)
-      | Fun (Implies,   srt, pos) -> (error (env, cantuse "=>",  pos); trm)
-      | Fun (Iff,       srt, pos) -> (error (env, cantuse "<=>", pos); trm)
-      | Fun (Equals,    srt, pos) -> (error (env, cantuse "=",   pos); trm)
-      | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
-       
-      | And (tms, pos) -> And (map (fn tm -> single_pass_elaborate_term(env, tm, term_type)) tms, pos)
-	
-      | term -> (%System.print term;
-		 term)
+            | TypedTerm (term, srt, _) ->
+              let srt  = elaborateType (env, srt, term_type) in
+              let term = single_pass_elaborate_term (env, term, srt) in
+              term
+
+            | Seq (terms, pos) -> 
+              let
+                def elab ts = 
+                  case ts of
+                    | [] -> []
+                    | [t] -> [single_pass_elaborate_term (env, t, term_type)]
+                    | (t::ts) -> 
+                      let alpha = freshMetaTyVar ("Seq", pos) in
+                      let t = single_pass_elaborate_term (env, t, alpha) in
+                      Cons (t, elab ts)
+              in
+                Seq (elab terms, pos)
+
+            | ApplyN ([t1 as Fun (Embedded _, _, _), t2], pos) -> 
+              let alpha = freshMetaTyVar ("ApplyN_Embedded", pos) in
+              let ty    = Arrow (alpha, term_type, pos) in
+              let t2    = single_pass_elaborate_term (env, t2, alpha) in
+              let t1    = single_pass_elaborate_term (env, t1, ty) in
+              ApplyN ([t1, t2], pos)
+
+            | ApplyN ([t1 as Fun (Project _, _, _), t2], pos) -> 
+              let alpha = freshMetaTyVar ("ApplyN_Project", pos) in
+              let ty    = Arrow (alpha, term_type, pos) in
+              let t2    = single_pass_elaborate_term (env, t2, alpha) in
+              let t1    = single_pass_elaborate_term (env, t1, ty) in
+              ApplyN ([t1, t2], pos)
+
+            | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
+              let (t1, t2) =
+                  if env.firstPass? && ~(embed? Lambda t2)
+                    then
+                      let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
+                      let ty    = Arrow (alpha, term_type, pos) in
+                      let t2    = single_pass_elaborate_term (env, t2, alpha) in
+                      let t1    = if embed? Arrow (unlinkType alpha)
+                                    then let term_ty = Arrow (freshMetaTyVar("ApplyN_HOFun", pos), term_type, pos) in
+                                         let t1 = single_pass_elaborate_term_head (env, t1, term_ty, trm) in
+                                         let _ = elaborateTypeForTerm(env, t1, ty, term_ty) in
+                                         t1
+                                    else single_pass_elaborate_term_head (env, t1, ty, trm)
+                      in
+                      %% Repeated for help in overload resolution once argument type is known
+                      if false && ambiguousTerm? t2 then
+                        let t2 = single_pass_elaborate_term (env, t2, alpha) in
+                        %let t1  = case t1 of
+                        %             | Fun(OneName _,_,_) -> single_pass_elaborate_term (env, t1, ty)
+                        %             | _ -> t1
+                        % in
+                        (t1, t2)
+                      else (t1, t2)
+                    else
+                      let alpha = if env.firstPass?
+                                   then freshMetaTyVar("ApplyN_Fun", pos)
+                                   else case maybeTermTypeEnv(env.internal, t2) of
+                                          | Some ty -> ty
+                                          | None -> freshMetaTyVar("ApplyN_Fun", pos)
+                      in
+                      let ty    = Arrow (alpha, term_type, pos) in
+                      let t1 = single_pass_elaborate_term_head (env, t1, ty, trm) in
+                      let t2 = single_pass_elaborate_term      (env, t2, alpha) in
+                      (t1, t2)
+              in
+              %% This is same effect as old code, but restructured
+              %% so it's easier to intercept the XML references
+              if env.firstPass? then
+                ApplyN ([t1, t2], pos)
+              else if f1 = Equals then
+                %let t1 = adjustEqualityType (env, s1, t1, t2) in
+                ApplyN ([t1, t2], pos)
+              else if f1 = NotEquals then
+                %let t1 = adjustEqualityType (env, s1, t1, t2) in
+                ApplyN ([t1, t2], pos)
+              else if typeCognizantOperator? f1 then
+                addTypeAsLastTerm (env, 
+                                   trm,
+                                   ApplyN ([t1, t2], pos),
+                                   term_type)
+              else
+                ApplyN ([t1, t2], pos)
+
+            | ApplyN ([t1, t2], pos) ->
+              let alpha = freshMetaTyVar ("ApplyN_2", pos) in
+              let ty    = Arrow (alpha, term_type, pos) in
+              let t2    = single_pass_elaborate_term (env, t2, alpha) in
+              let t1    = single_pass_elaborate_term (env, t1, ty) in
+              ApplyN ([t1, t2], pos)
+
+            %% Allow for partially type-checked terms
+            | Apply(t1, t2, pos) -> single_pass_elaborate_term (env, ApplyN ([t1, t2], pos), term_type)
+
+            | ApplyN (terms, pos) ->
+              let 
+                def tagTermWithInfixInfo (term : MSTerm) : FixatedTerm =
+                  case term of
+                    | Fun (OneName (_,  Nonfix),  _, pos) -> Nonfix term
+                    | Fun (OneName (_,  Infix p), _, pos) -> Infix (term, p)
+                    | Fun (OneName ("Cons",  _), _, pos) -> Infix(term, (Right, 24))
+                    | Fun (OneName (id, _),       _, pos) ->
+                      (case consistentTag (findVarOrOps (env, id, pos)) of
+                         | (true, (Some p)) -> Infix (term, p)
+                         | (true, _)      -> Nonfix term
+                         | _ ->
+                           (error (env, "Inconsistent infix information for overloaded op: " ^ id,
+                                   pos);
+                            Nonfix term))
+                    | Fun (TwoNames (_ , _, Nonfix),  _, pos) -> Nonfix term
+                    | Fun (TwoNames (_ , _, Infix p), _, pos) -> Infix (term, p)
+                    | Fun (TwoNames (id1, id2, _),    _, pos) ->
+                      %% If, due to union semantics, findOps always returns 0 or 1 hits for Q.Id, 
+                      %% then consistentTag will necessarily return (true, priority).
+                      (case findTheOp2 (env, id1, id2) of
+                         | Some info ->
+                           (case info.fixity of
+                              | Infix p -> Infix  (term, p)
+                              | _ -> Nonfix term)
+                         | _                    -> Nonfix term)
+                    | Fun (And,       _, _) -> Infix (term, (Right, 15))
+                    | Fun (Or,        _, _) -> Infix (term, (Right, 14))
+                    | Fun (Implies,   _, _) -> Infix (term, (Right, 13))
+                    | Fun (Iff,       _, _) -> Infix (term, (Right, 12))
+                    | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
+                    | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
+                    | Fun (RecordMerge,_,_) -> Infix (term, (Left, 25))
+                    | _ -> Nonfix term
+              in 
+              let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in
+              let new = single_pass_elaborate_term (env, term, term_type) in
+              new
+
+            %% These should only appear as the head of an apply (see one of the ApplyN cases above):
+            | Fun (Not,       srt, pos) -> (error (env, cantuse "~",   pos); trm)
+            | Fun (And,       srt, pos) -> (error (env, cantuse "&&",  pos); trm)
+            | Fun (Or,        srt, pos) -> (error (env, cantuse "||",  pos); trm)
+            | Fun (Implies,   srt, pos) -> (error (env, cantuse "=>",  pos); trm)
+            | Fun (Iff,       srt, pos) -> (error (env, cantuse "<=>", pos); trm)
+            | Fun (Equals,    srt, pos) -> (error (env, cantuse "=",   pos); trm)
+            | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
+
+            | And (tms, pos) -> And (map (fn tm -> single_pass_elaborate_term(env, tm, term_type)) tms, pos)
+
+            | term -> (%System.print term;
+                       term)
+    in
+    let _ = if debug? then writeLine("-->\n"^printTermWithTypes typed_term) else () in
+    typed_term
 
   def cantuse inbuilt = "Can't use inbuilt operator '"^inbuilt^"' as an expression -- use '("^inbuilt^")' instead."
 
@@ -1265,7 +1290,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			  (foldl (fn (str, tm) -> str ^
 				  (case tm of
 				     | Fun (OneName  (     id2, _), _, _) -> " "^id2
-				     | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+				     | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
+                                     | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
+                                     | _ -> " "^printTerm tm))
 				 " : "
 				 terms),
 			  pos);
@@ -1309,7 +1336,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 				    (foldl (fn (str, tm) -> str ^
 					    (case tm of
 					       | Fun (OneName  (     id2, _), _, _) -> " "^id2
-					       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+					       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
+                                               | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
+                                               | _ -> " "^printTerm tm))
 				           " : "
 					   consistent_terms),
 				    pos);
