@@ -158,7 +158,8 @@ SpecCalc qualifying spec
                                     ops       = newOps,
                                     elements  = newElements,
                                     qualifier = Some new_q};
-             new_spec    <- return (removeVarOpCaptures new_spec);
+            %% Qualification cannot introduce a var op capture!
+            %% new_spec    <- return (removeVarOpCaptures new_spec);
              new_spec    <- return (compressDefs        new_spec);
              new_spec    <- complainIfAmbiguous new_spec pos;
              raise_any_pending_exceptions;
