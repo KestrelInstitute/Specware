@@ -556,7 +556,6 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	       else spc
     in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
-    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
     let spc = removeSubTypes spc coercions stp_tbl in
@@ -572,11 +571,23 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addTypeDefs spc opaque_type_map in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
-    prLinesCat 0 [[prString "theory ", prString (thyName c.thy_name)],
-		  [prString "imports ", ppImports c spc.elements],
-		  [prString "begin"],
-		  [ppSpecElements c spc (filter elementFilter spc.elements)],
-		  [prString "end"]]
+    prLinesCat 0 ([[prString "theory ", prString (thyName c.thy_name)],
+                   [prString "imports ", ppImports c spc.elements],
+                   [prString "begin"]]
+                  ++
+                  (if specHasSorryProof? spc then [[], [prString "ML {* quick_and_dirty := true; *}"], []] else [])
+                  ++
+		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
+		  [ prString "end"]])
+
+  op specHasSorryProof?(spc: Spec): Bool =
+    exists? (fn elt ->
+               case elt of
+                 | Pragma("proof", prag_str, "end-proof", _) | isaPragma? prag_str ->
+                   %% Ignores that "sorry" might be in a comment
+                   some?(search("sorry", prag_str))
+                 |  _ -> false)
+      spc.elements
 
   op  isaElement?: SpecElement -> Bool
   def isaElement? elt =
