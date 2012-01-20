@@ -231,9 +231,13 @@
   #'(lambda (x2) #'(lambda (x3) (Script::specQIdTransformFunction-1-1-1 (cons q id) x2 x3))))
 
 (defun Script::specTransformFn?-2 (q id)
+  ;; This is a bit sketchy
   (let ((sym (find-symbol (Specware::fixCase id)
                           (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
-    (fboundp sym)))
+    (and (fboundp sym)
+         (if (eq q MetaSlang::unQualified)
+             (not (fboundp (find-symbol (Specware::fixCase id) :cl)))
+             t))))
 
 (defun apply-spec-command (qid-str constr-fn kind)
   (finish-previous-multi-command)
