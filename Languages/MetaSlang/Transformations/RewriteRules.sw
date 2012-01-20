@@ -1,9 +1,9 @@
 (* Conditional rewrite rules
 
 Convert an axiom of the form
-\[
-   \forall \vec{x} \vec{M} \ = \ \vec{N} \Rightarrow M = N
-\]
+
+   fa (x) p x => M x = N x
+
 to a rewrite rule in the internal representation, turning 
 universally quantified variables into meta variables.
 Equalities are not directed in other ways than their representation.
@@ -148,9 +148,10 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
  op equalToSomeArg?(tm: MSTerm, apply_tm: MSTerm): Bool =
    case apply_tm of
-     | Apply(_, arg_tm, _) ->
+     | Apply(fn_tm, arg_tm, _) ->
        equalTerm?(tm, arg_tm)
          || equalToSomeArg?(tm, arg_tm)
+         || equalToSomeArg?(tm, fn_tm)   % For curried args
      | Record(flds, _ ) ->
        exists? (fn (_,fld) -> equalTerm?(tm, fld)) flds
      | _ -> false
@@ -159,8 +160,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
    if equalTerm?(old_tm, apply_tm) then new_tm
    else
    case apply_tm of
-     | Apply(f, arg_tm, _) ->
-       mkApply(f, replaceArg(old_tm, new_tm, arg_tm))
+     | Apply(fn_tm, arg_tm, _) ->
+       mkApply(replaceArg(old_tm, new_tm, fn_tm), replaceArg(old_tm, new_tm, arg_tm))
      | Record(flds, _ ) ->
        mkRecord (map (fn (id,fld) -> (id, replaceArg(old_tm, new_tm, fld))) flds)
      | _ -> apply_tm
@@ -168,7 +169,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
  op deleteLambdaFromRule (context: Context) (includeAll?: Bool)
      : List RewriteRule * List RewriteRule -> List RewriteRule = 
      fn ([], old) -> old
-      | (rule::rules, old) -> 
+      | (rule::rules, old) ->
+        % let _ = writeLine("del_lam: "^printTerm rule.rhs) in
         (case rule.rhs
            of Lambda(matches, _) | disjointMatches matches ->
               let new_rule = freshRule(context, rule) in
@@ -193,10 +195,12 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      : List RewriteRule = 
      case matches
        of [] -> deleteLambdaFromRule context includeAll? (rules,old)
-	| (pat,cond,body)::r_matches -> 
+	| (pat,cond,body)::r_matches ->
+     % let _ = writeLine("deleteMatches: "^printPattern pat) in
      case patternToTerm(context,pat,[],[])
        of None -> []
-        | Some (patternTerm,vars,S) -> 
+        | Some (patternTerm,vars,S) ->
+          % let _ = writeLine("patternTerm: "^printTerm patternTerm) in
           let cond = substitute(cond,S) in
           let body = substitute(body,S) in
           let rule1 = 
