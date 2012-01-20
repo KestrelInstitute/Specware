@@ -488,6 +488,7 @@ Utilities qualifying spec
    substitute2(M,sub,freeNames)
  
  op substitute2(M: MSTerm, sub: VarSubst, freeNames: StringSet.Set): MSTerm = 
+   % let _ = writeLine("subst: "^printTerm M) in
    % let _ = writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sub in	
    let
@@ -550,9 +551,9 @@ Utilities qualifying spec
 
 	def substRule (pat,cond,term) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	  if empty? sub then
-	    (pat, cond, term) 
-	  else
+	  % if empty? sub && freeNames = empty then
+	  %   (pat, cond, term) 
+	  % else
 	    (pat,
 	     substitute2(cond,sub,freeNames),
 	     substitute2(term,sub,freeNames)) 
