@@ -1,5 +1,5 @@
 PrFunctions qualifying spec
-  axiom id_def is fa (x) id x = x
+  axiom id_def is [a] fa (x:a) id x = x
 
   axiom compose_def is [a,b,c] fa (f: b -> c, g: a -> b, x: a) (o(f, g)) x = f(g(x))
 
