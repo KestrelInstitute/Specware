@@ -540,16 +540,18 @@ spec
            | The  (var,  bod, _) -> cto?(bod, boolType)
            | Let (decls, bdy, _) ->
              cto?(bdy, d_ty)
-               && forall? (fn (pat, trm) -> cto?(trm, patternType pat))
+               && forall? (fn (pat, trm) -> cto?(trm, patternType pat) && ~(nonOpaquePattern? pat))
                     decls
            | LetRec (decls, bdy, _) ->
              cto?(bdy, d_ty)
                && forall? (fn ((_, lr_ty), trm) -> cto?(trm, lr_ty))
                     decls
            | Lambda (match, _) ->
-             let ran = range(spc, d_ty) in
+             let (dom, ran) = arrow(spc, d_ty) in
              forall? (fn (pat, condn, bod) ->
-                    cto?(condn, boolType) && cto?(bod, ran))
+                        opacityPreserved?(dom, patternType pat)
+                         && ~(nonOpaquePattern? pat)
+                         && cto?(condn, boolType) && cto?(bod, ran))
                match
            | IfThenElse (t1, t2, t3, _) ->
              cto?(t1, boolType) && cto?(t2, d_ty) && cto?(t3, d_ty)
@@ -560,6 +562,11 @@ spec
                && forall? (fn trm -> cto?(trm, mkProduct [])) pre_trms
            | TypedTerm (trm, srt, _) -> cto?(trm, srt)
            | _ -> true)
+      def nonOpaquePattern? pat =
+        existsPattern? (fn EmbedPat _ -> true
+                           | QuotientPat _ -> true
+                           | _ -> false)
+          pat
       def recordTy? ty =
         case productOpt(spc, ty) of
           | None -> false
@@ -936,7 +943,7 @@ spec
            let Some info = findTheOp(spc, qid) in
            let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
              type_opaque_in_term? <- return(checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc));
-             op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
+             op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty;
              % qid_pr <- makeFreshQId spc qid;
              (dfn_pr, transformQIds) <-
                if type_opaque_in_term? then
@@ -946,14 +953,14 @@ spec
                   return(dfn_pr, qid_pr :: transformQIds)};
              if type_opaque_in_term? then {
                print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
-               when (nm = "andd")
+               when (nm = "anddd")
                  (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
                   print (printTermWithTypes dfn ^ "\n"
                            ^ printTermWithTypes prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
              }
              else
                {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
-                when (nm = "andd") (print(printTermWithTypes dfn^"\n"))};
+                when (nm = "nnnot") (print(printTermWithTypes dfn^"\n"))};
              if qid = qid_pr
                then    % refine def instead of generating new one
                return ((addRefinedDefToOpinfo(info, dfn_pr),
