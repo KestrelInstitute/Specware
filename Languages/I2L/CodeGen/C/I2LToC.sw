@@ -426,9 +426,11 @@ I2LToC qualifying spec
     case prim of
       | I_Bool   -> C_Int8
       | I_Nat    -> % let _ = writeLine ("I2LToC Unbounded Nat treated as unsigned 32 bits") in 
-                    C_UInt32  % unbounded -- to be avoided
+                    let _ = writeLine ("I2LToC Warning: unbound Nat, using C_UInt32") in
+                    C_UInt32
       | I_Int    -> % let _ = writeLine ("I2LToC Unbounded Int treated as signed 32 bits")   in 
-                    C_Int32  % unbounded -- to be avoided
+                    let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int32") in
+                    C_Int32
       | I_Char   -> C_Char
       | I_String -> C_String
       | I_Float  -> C_Float
