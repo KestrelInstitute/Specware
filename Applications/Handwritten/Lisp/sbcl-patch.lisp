@@ -278,7 +278,7 @@
          exp)))))
 |#
 
-(defun interactive-eval (form)
+(defun interactive-eval (form &key (eval #'eval))
   "Evaluate FORM, returning whatever it returns and adjusting ***, **, *,
    +++, ++, +, ///, //, /, and -."
   (setf - form)
@@ -287,7 +287,7 @@
 	     (multiple-value-list
 	      (if (and (fboundp 'cl::commandp) (funcall 'cl::commandp form))
 		  (funcall 'cl::invoke-command-interactive form)
-		(eval form)))))
+		(funcall eval form)))))
 	(setf /// //
 	      // /
 	      / results
