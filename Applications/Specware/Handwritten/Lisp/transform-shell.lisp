@@ -209,7 +209,7 @@
 (defun Script::specTransformFunction-2 (q id)
   (let ((f (find-symbol (Specware::fixCase id)
                         (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
-    (format t "specTransformFunction: ~a,~a" q id)
+    ;(format t "specTransformFunction: ~a.~a" q id)
     (if (fboundp f) f
         (error "~a not a function" (MetaSlang::printQualifierDotId-2 q id)))))
 
