@@ -877,7 +877,7 @@ AnnSpecPrinter qualifying spec
        enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, ppPattern context ([0]++ path, true, false) pat), 
-			    (0, string  " : "), 
+			    (0, string  ": "), 
 			    (0, ppType context ([1]++ path, Top : ParentType) srt)]))
      | AliasPat (pat1, pat2, _) -> 
        enclose (enclose?, pp,
@@ -1110,8 +1110,7 @@ AnnSpecPrinter qualifying spec
             [(4, blockNone (0, [(0, string ":"), 
                                 (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
                                                    (0, string " "), 
-                                                   (4, ppType context ([index, opIndex], Top) srt)])),
-                                (0, string " ")]))]
+                                                   (4, ppType context ([index, opIndex], Top) srt)]))]))]
            ++
            ppDefAux (context, [index, defIndex], None, tm)
 
@@ -1135,13 +1134,13 @@ AnnSpecPrinter qualifying spec
                                                 | Nonfix         -> string ""
                                                 | Unspecified    -> string ""
                                                 | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                                                | Infix (Right, i) -> string (" infixr "^Nat.show i)), 
+                                                | Infix (Right, i) -> string (" infixr "^Nat.show i))
                                           % (0, string " :"), 
                                           % (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
                                           %                      (0, string " "), 
                                           %                    (4, ppType context
                                           %                          ([index, opIndex], Top) srt)])),
-                                          (0, string " ")]))]
+                                        ]))]
                        ++
                        ppDefAux (context, [index, defIndex], Some srt, tm)
                  else
@@ -1170,7 +1169,7 @@ AnnSpecPrinter qualifying spec
                       ppPattern context ([0, 0] ++ path, true, false) pat
            in
  	   let body = ppDefAux (context, [2, 0] ++ path, opt_rng, body) in
- 	   let prettys = [(4, blockNone (0, [(0, pat), (0, string " ")]))] ++ body in
+ 	   let prettys = [(4, blockNone (0, [(0, pat)]))] ++ body in
  	   if markSubterm? context then
  	     let num = State.! context.markNumber in
  	     let table = State.! context.markTable in
@@ -1214,8 +1213,7 @@ AnnSpecPrinter qualifying spec
                                             then [(0, ppForallTyVars pp tvs),
                                                   (0, string " ")]
                                           else [])
-                                      ++ [(0, ppOpName (primaryOpName info)),
-                                          (0, string " ")]
+                                      ++ [(0, ppOpName (primaryOpName info))]
 				     ))]
                       ++ prettys))
    in
