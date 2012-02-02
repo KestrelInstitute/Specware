@@ -163,6 +163,15 @@ AnnSpecPrinter qualifying spec
 	  | _              -> Nonfix)
      | _ -> Nonfix
  
+ op escapeString(s: String): String =
+   if exists? (fn c -> c = #\\ || c = #\" || c = #\n || c = #\t) s
+     then translate (fn #\\ -> "\\\\"
+                      | #\" -> "\\\""
+                      | #\n -> "\\n"
+                      | #\t -> "\\t"
+                      | c -> show c)
+            s
+     else s
 
 %def mkAEquals (srt,pos) = Fun (Equals, srt, pos)
 
@@ -176,12 +185,12 @@ AnnSpecPrinter qualifying spec
      | Op          (idInfo, _) -> pp.ppOpId (idInfo)
      | Bool        b           -> pp.fromString (Bool.show b)
      | Nat         n           -> pp.fromString (Nat.show n)
-     | String      s           -> pp.fromString ("\""^s^"\"")          % "abc"
-     | Char        c           -> pp.fromString ("\#" ^ (Char.show c))  % \ to appease emacs
+     | String      s           -> pp.fromString ("\""^escapeString s^"\"")   % "abc"
+     | Char        c           -> pp.fromString ("\#"^escapeString(show c))  % \ to appease emacs
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
      | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
-     | Embedded    s           -> pp.fromString ("embed?("^s^")")
+     | Embedded    s           -> pp.fromString ("embed? "^s)
      | Quotient    qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
      | Choose      qid         -> pp.fromString ("choose["   ^ show qid ^ "] ")
      | PQuotient   qid         -> pp.fromString ("quotient[" ^ show qid ^ "] ")
@@ -325,14 +334,18 @@ AnnSpecPrinter qualifying spec
 	 | _ -> 
 	   blockLinear (0, 
                         [(0, prettysNone([ppTerm context ([0] ++ path, Nonfix) t1]
-                                           ++ (if embed? Var t2 || (case t1 of
-                                                                      | Fun(f, _, _) ->
-                                                                        (case f of
-                                                                           | Not -> false
-                                                                           | Op _ -> false
-                                                                           | Embed _ -> false
-                                                                           | _ -> true)
-                                                                      | _ -> true)
+                                           ++ (if embed? Var t2
+                                                 || (case t2 of
+                                                       | Fun(f, _, _) -> true 
+                                                       | _ -> false)
+                                                 || (case t1 of
+                                                       | Fun(f, _, _) ->
+                                                         (case f of
+                                                            | Not -> false
+                                                            | Op _ -> false
+                                                            | Embed _ -> false
+                                                            | _ -> true)
+                                                       | _ -> true)
                                                  then [string " "] else []))), 
                          (2, blockNone (0, 
                                         (case t2 of
@@ -345,10 +358,14 @@ AnnSpecPrinter qualifying spec
                                              else 
                                                [(0, ppTerm context ([1] ++ path, Top) t2)]
                                            | Var _ -> 
-                                             [% (0, string " "), 
-                                                (0, ppTerm context ([1] ++ path, Top) t2)
-                                              (*, (0, string " ")*)
-                                              ]
+                                             [(0, ppTerm context ([1] ++ path, Top) t2)]
+                                           | Fun(f, _, _) ->
+                                             (case f of
+                                              | Op(Qualified(q,id), Infix _) ->
+                                                [(0, enclose(true, pp,
+                                                             if id = "*" then string " * "
+                                                             else ppTerm context ([1] ++ path, Top) t2))]
+                                              | _ -> [(0, ppTerm context ([1] ++ path, Top) t2)])
                                            | _ -> 
                                              [(0, pp.LP), 
                                               (0, ppTerm context ([1] ++ path, Top) t2), 
@@ -365,7 +382,7 @@ AnnSpecPrinter qualifying spec
 	    if printType? context then
 	      blockFill (0, 
 			 [(0, printOp (context, pp, top, srt, a)), 
-			  (0, string " : "), 
+			  (0, string ": "), 
 			  (2, ppType context ([0] ++ path, Top) srt)])
 	    else 
 	      printOp (context, pp, top, srt, a)
@@ -373,7 +390,7 @@ AnnSpecPrinter qualifying spec
 	    if printType? context then
 	      blockFill (0, 
 			 [(0, pp.fromString id), 
-			  (0, string " : "), 
+			  (0, string ": "), 
 			  (0, ppType context ([0] ++ path, Top) srt)])
 	    else 
 	      pp.fromString id
@@ -498,7 +515,7 @@ AnnSpecPrinter qualifying spec
 			   [pp.The,
 			    pp.LP,
 			    pp.fromString id, 
-			    string " : ", 
+			    string ": ", 
 			    ppType context ([2] ++ path, Top) srt,
 			    pp.RP, string " "
 			   ]), 
@@ -513,7 +530,7 @@ AnnSpecPrinter qualifying spec
 	    let 
 	      def ppBound (index, (id, srt)) =
 		(prettys [pp.fromString id, 
-			  string " : ", 
+			  string ": ", 
 			  ppType context ([index]++ path, Top) srt])
 	    in
 	      enclose(case parentTerm of
@@ -677,7 +694,7 @@ AnnSpecPrinter qualifying spec
 	  def ppEntry (path, (id, s)) = 
 	    blockFill (0, 
 		       [(0, pp.fromString  id), 
-			(0, string  " : "), 
+			(0, string  ": "), 
 			(0, ppType context (path, Top) s)])
 	in
 	  AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly)  row
@@ -702,7 +719,7 @@ AnnSpecPrinter qualifying spec
       prettysNone [pp.LCurly,
                    blockFill (0, 
                               [(0, ppPattern context ([0, 0, 1] ++ path, true, false) pat), 
-                               (0, string " : "), 
+                               (0, string ": "), 
                                (0, ppType    context ([0]       ++ path, Subtype) s), 
                                (0, pp.Bar), 
                                (0, ppTerm    context ([2, 0, 1] ++ path, Top) t)]),
@@ -799,17 +816,17 @@ AnnSpecPrinter qualifying spec
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
-     | BoolPat   (b, _) -> string (Bool.show b)
-     | NatPat    (n, _) -> string (Nat.show     n)
-     | StringPat (s, _) -> pp.fromString ("\""^s^"\"")               % "abc"
-     | CharPat   (c, _) -> pp.fromString ("\#" ^ (Char.show c))      % \ to appease emacs 
+     | BoolPat   (b, _) -> string (show b)
+     | NatPat    (n, _) -> string (show n)
+     | StringPat (s, _) -> pp.fromString ("\""^escapeString s^"\"")         % "abc"
+     | CharPat   (c, _) -> pp.fromString ("\#"^escapeString(show c))      % \ to appease emacs 
 
      | VarPat    ((id, srt), _) -> 
        if printType? context then
 	 enclose (enclose?, pp,
                   blockFill (0, 
                              [(0, pp.fromString id), 
-                              (0, string " : "), 
+                              (0, string ": "), 
                               (2, ppType context ([0] ++ path, Top : ParentType) srt)]))
        else 
 	 pp.fromString id
@@ -836,7 +853,7 @@ AnnSpecPrinter qualifying spec
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_(* Qualified ("List", "List") *), [_], _), _) -> 
        enclose (enclose?, pp, 
-		prettysFill [ppPattern context ([0]++ path, false, false) p1, 
+		prettysFill [ppPattern context ([0]++ path, true, false) p1, 
 			     string " :: ", 
 			     ppPattern context ([1]++ path, false, false) p2])
  %  | EmbedPat ("Cons", 
@@ -865,7 +882,8 @@ AnnSpecPrinter qualifying spec
      | AliasPat (pat1, pat2, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, ppPattern context ([0]++ path, true, false) pat1), 
+			   [(0, let context = context << {printType = false} in
+                                ppPattern context ([0]++ path, true, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, true, false) pat2)]))
      | QuotientPat (pat, qid, _) -> 
@@ -1089,7 +1107,7 @@ AnnSpecPrinter qualifying spec
               | Infix (Left, i)  -> [(4, string (" infixl "^Nat.show i))]
               | Infix (Right, i) -> [(4, string (" infixr "^Nat.show i))])
            ++
-            [(4, blockNone (0, [(0, string " :"), 
+            [(4, blockNone (0, [(0, string ":"), 
                                 (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
                                                    (0, string " "), 
                                                    (4, ppType context ([index, opIndex], Top) srt)])),
@@ -1132,7 +1150,7 @@ AnnSpecPrinter qualifying spec
                                     | Unspecified    -> string ""
                                     | Infix (Left, i)  -> string (" infixl "^Nat.show i)
                                     | Infix (Right, i) -> string (" infixr "^Nat.show i)),
-                    (4, prConcat [string " :",
+                    (4, prConcat [string ":",
                                   if empty? tvs then string "" else string " ",
                                   ppForallTyVars pp tvs,
                                   string " ",
@@ -1191,14 +1209,13 @@ AnnSpecPrinter qualifying spec
 				      [(0, button1), 
 				       (0, button2)]
                                       ++ (if refine_num > 0 then [(0, pp.Refine)] else [])
-                                      ++
-				      [(0, pp.Def), 
-				       (if printType? context then
-					  (0, ppForallTyVars pp tvs) 
-					else 
-					  (0, string "")), 
-					  (0, ppOpName (primaryOpName info)),
-					  (0, string " ")]
+                                      ++ [(0, pp.Def)]
+                                      ++ (if tvs ~= []
+                                            then [(0, ppForallTyVars pp tvs),
+                                                  (0, string " ")]
+                                          else [])
+                                      ++ [(0, ppOpName (primaryOpName info)),
+                                          (0, string " ")]
 				     ))]
                       ++ prettys))
    in
