@@ -711,6 +711,9 @@ spec
      ((new_typed_term, _), tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
      return(new_typed_term, tracing?)}
 
+  op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
+    run(interpretTerm(spc, script, def_term, top_ty, qid, tracing?))
+
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
       | Some _ -> return qid
