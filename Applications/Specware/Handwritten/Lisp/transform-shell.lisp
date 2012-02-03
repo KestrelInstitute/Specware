@@ -185,7 +185,8 @@
 (defun Script::metaRuleFunction-2 (q id)
   (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "MetaRule" q)))))
     (if (fboundp f) f
-        (error "~a not a function" (MetaSlang::printQualifierDotId q id)))))
+        (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
+               #'(lambda (x) x)))))
 
 (defun interpret-command (command)
   (if (null *transform-term*)
@@ -211,7 +212,8 @@
                         (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
     ;(format t "specTransformFunction: ~a.~a" q id)
     (if (fboundp f) f
-        (error "~a not a function" (MetaSlang::printQualifierDotId-2 q id)))))
+        (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
+               #'(lambda (x) x)))))
 
 (defun Script::specTransformFunction-1-1 (qid_pr spc)
   (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) spc))
@@ -221,7 +223,8 @@
                         (Specware::fixCase (if (eq q MetaSlang::unQualified) "SpecTransform" q)))))
     ; (format t "specQIdTransformFunction: ~a,~a" q id)
     (if (fboundp f) f
-        (error "~a not a function" (MetaSlang::printQualifierDotId-2 q id)))))
+        (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
+               #'(lambda (x) x)))))
 
 (defun Script::specQIdTransformFunction-1-1-1 (qid_pr spc_qid_rls yyy-1)
   ; (format t "specQIdTransformFunction: ~a~%" qid_pr)
