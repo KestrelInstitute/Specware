@@ -1135,18 +1135,18 @@ spec
     %}}}
     %{{{  find complex isos
     (* It may be that the spec provides ops that lift bijections to
-    higher types.  For example, given isomorphic types A <-> B, then
-    the map operator can lift the iso to an isomorphism to List A <->
-    List B Later look to generate such liftings *)
+       higher types.  For example, given isomorphic types A <-> B, then
+       the map operator can lift the iso to an isomorphism to List A <->
+       List B Later look to generate such liftings *)
     iso_fn_info <- return (findComplexIsoFns spc);
     %}}}
 
     (* For each type T in the spec that depends on one or more types,
-    X_i, in the domain of an op in the iso pairs f_i:X_i <-> Y_i:g_i,
-    extend the spec with new 'primed' type T' with each X_i replaced with
-    Y_i. Also add placeholders for ops that witness the isomorphism T <->
-    T'. Return the new spec plus an additional collection of iso_infos
-    for the new types. No theorems for the iso's are added *)
+       X_i, in the domain of an op in the iso pairs f_i:X_i <-> Y_i:g_i,
+       extend the spec with new 'primed' type T' with each X_i replaced with
+       Y_i. Also add placeholders for ops that witness the isomorphism T <->
+       T'. Return the new spec plus an additional collection of iso_infos
+       for the new types. No theorems for the iso's are added *)
     (prime_type_iso_info, spc) <- newPrimedTypes(spc, base_iso_info, iso_fn_info); 
 
     iso_info <- return (base_iso_info ++ prime_type_iso_info);
@@ -1377,7 +1377,7 @@ spec
                     % The names generated here (copies of instantiated polymorphic
                     % functions) serve a different purpose from those generated
                     % as a result of applying the isomorphism transformation
-                    newQId <- return (mkQualifiedId (qual ^ "*",id));
+                    newQId <- return (mkQualifiedId (qual ^ "_*",id));
                     if ~found then {
                       %{{{  create a new op and replace this reference
                       % But first we must recursively transform the body of the new op
@@ -1602,9 +1602,9 @@ spec
     let new_defs = filter (fn (opinfo,opinfo_pr) -> head opinfo.names ~= head opinfo_pr.names) new_defs in
     let recursive_ops = recursiveOps spc in
     (* Now construct a script to remove the ops defined in terms of
-    the old types, create references to the new ops and simplify (eg
-    replacing (osi (iso x)) with x). Note that we are not generating the
-    rules here - rather a script of what rewrites and unfolds to apply *)
+       the old types, create references to the new ops and simplify (eg
+       replacing (osi (iso x)) with x). Note that we are not generating the
+       rules here - rather a script of what rewrites and unfolds to apply *)
     let rewrite_old = map (fn (opinfo,_) -> Rewrite(head opinfo.names)) new_defs in
     let unfold_old  = map (fn (opinfo,_) -> Unfold (head opinfo.names)) new_defs in
     let iso_osi_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
