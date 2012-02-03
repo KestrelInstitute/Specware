@@ -1024,7 +1024,7 @@ AnnSpecPrinter qualifying spec
 		  else 
 		    string "")
    in
-     (1, blockFill (0, [(0, button1), 
+     (0, blockFill (0, [(0, button1), 
 			(0, button2), 
 			(0, case (pt:PropertyType) of
 			      | Theorem    -> pp.Theorem 
@@ -1115,7 +1115,7 @@ AnnSpecPrinter qualifying spec
            ppDefAux (context, [index, defIndex], None, tm)
 
      def ppDecl (tvs, srt, tm) =
-       (1, blockFill
+       (0, blockFill
              (0, 
               [(0, blockFill
                     (0, [(0, pp.Op)] ++ 
@@ -1184,14 +1184,14 @@ AnnSpecPrinter qualifying spec
               | Some ty -> [(0, string ": "),
                             (4, blockNone (0, [%(0, string " "), 
                                                (4, ppType context
-                                                  ([index, opIndex], Top) ty)]))])
+                                                     ([index, opIndex], Top) ty)]))])
 	 | _ ->
            (case opt_ty of
               | None -> []
               | Some ty -> [(0, string ": "),
                             (4, blockNone (0, [%(0, string " "), 
                                                (4, ppType context
-                                                  ([index, opIndex], Top) ty)]))])
+                                                     ([index, opIndex], Top) ty)]))])
            ++ 
            [(1, blockNone (1, [(0, string " "),
                                (0, pp.DefEquals), 
@@ -1203,7 +1203,7 @@ AnnSpecPrinter qualifying spec
        % let _ = writeLine("ppDef:\n"^printTerm tm^":: "^printType ty) in
        let prettys = ppDefAux (context, [index, defIndex], Some ty, tm)
        in
-       (1, blockFill (0, 
+       (0, blockFill (0, 
 		      [(0, blockFill (0, 
 				      [(0, button1), 
 				       (0, button2)]
@@ -1269,12 +1269,12 @@ AnnSpecPrinter qualifying spec
        
      def ppDecl srt =
        let (tvs, srt) = unpackType srt in
-       (1, blockFill (0, 
+       (0, blockFill (0, 
 		      (ppLHS tvs))) 
        
      def ppDef srt =
        let (tvs, srt) = unpackType srt in
-       (1, blockFill (0, 
+       (0, blockFill (0, 
 		      (ppLHS tvs) 
 		      ++
 		      [(0, string " "), 
@@ -1384,13 +1384,13 @@ AnnSpecPrinter qualifying spec
 	     | NotSpec ign_specs ->
 	       if im_sp in? ign_specs then result
 	       else (index,
-		     Cons((1, blockFill (0,
+		     Cons((0, blockFill (0,
 					 [(0, context.pp.Import), 
 					  (2, ppImportTerm context import_directions im_sp_tm)])),
 			  ppResult))
 	     | Verbose ->
 	       (index,
-		Cons((2, blockFill (0, 
+		Cons((0, blockFill (0, 
 				    [(0, context.pp.Import),
 				     (2, ppImportTerm context import_directions im_sp_tm),
 				     (2, string " |-> "), 
@@ -1450,7 +1450,7 @@ AnnSpecPrinter qualifying spec
 	 | Pragma (prefix, body, postfix, pos) ->
 	   if printPragmas?
              then (index+1,
-                   (0, string " ") :: Cons ((1, string (prefix ^ body ^ postfix)),
+                   (0, string " ") :: Cons ((0, string (prefix ^ body ^ postfix)),
                                             ppResult))
              else result
 
@@ -1506,7 +1506,7 @@ AnnSpecPrinter qualifying spec
 	     | NotSpec ign_specs ->
 	       if im_sp in? ign_specs then result
 	       else (index,
-		     Cons((1, prettysFill [context.pp.Import, 
+		     Cons((0, prettysFill [context.pp.Import, 
 					   %% TODO: indenting this way isn't quite right,
 					   %% since it will indent inside string literals
 					   %% But pretty printers make it inordinately 
@@ -1573,7 +1573,7 @@ AnnSpecPrinter qualifying spec
 	 | Pragma (prefix, body, postfix, pos) \_rightarrow
            if printPragmas?
              then (index+1,
-                   Cons ((1, string (prefix ^ body ^ postfix)),
+                   Cons ((0, string (prefix ^ body ^ postfix)),
                          ppResult))
              else result
 
