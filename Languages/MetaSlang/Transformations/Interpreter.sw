@@ -156,7 +156,7 @@ spec
 	      | Bool false -> evalRec(N,sb,spc,depth+1,trace?)
 	      | Unevaluated nP -> Unevaluated (IfThenElse(nP,M,N,a))
 	      | _ -> Unevaluated t)
-	  | Lambda(match,_) -> Closure(match,sb)
+	  | Lambda(match,_) -> Closure(match, sb)
 	  | Seq(tms,_) -> (map (fn s -> evalRec(s,sb,spc,depth+1,trace?)) tms) @ (length tms - 1)
 	  | Let(decls, body, a) ->
 	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1,trace?))) decls in
@@ -437,8 +437,10 @@ spec
   op  extendLetRecSubst: Subst * Subst * List Id -> Subst
   %% storedSb has all the environment except for the letrec vars which we get from dynSb
   def extendLetRecSubst(dynSb,storedSb,letrecIds) =
+    % let _ = writeLine("extendLetRecSubst: "^anyToString letrecIds^"\n"^printSubst dynSb^"\n\n"^printSubst storedSb) in
     if letrecEnv?(dynSb,storedSb,letrecIds)
       then dynSb
+      else if dynSb = [] then []
       else extendLetRecSubst(tail dynSb,storedSb,letrecIds)
 
   def letrecEnv?(dynSb,storedSb,letrecIds) =
@@ -869,9 +871,26 @@ spec
   def stringValue v =
     PrettyPrint.toString(format(80,ppValue (initialize(asciiPrinter,false)) v))
 
+  op printSubst (sb: Subst): String =
+     PrettyPrint.toString(format(80,ppSubst (initialize(asciiPrinter,false)) sb))
+
+  op printSubsts?: Bool = true
+
+  op ppSubst (ctxt: PrContext) (sb: Subst): Pretty =
+    if printSubsts? then
+      let sb = trimSubst sb in
+      prettysFill (addSeparator (string ", ")
+                     (map (fn (id,x) ->
+                             blockLinear
+                             (0,
+                              [(0,string  id),
+                               (0,string  " -> "),
+                               (0,ppValue ctxt x)]))
+                        sb))
+    else prEmpty
 
   op  ppValue: PrContext -> MSIValue -> Pretty
-  def ppValue context v =
+  def ppValue ctxt v =
     case v of
       | Int         n  -> string (show n)
       | Char        c  -> string ("\#"^show c)
@@ -881,7 +900,7 @@ spec
         if tupleFields? rm
 	  then prettysNone [string "(",
 			    prettysFill(addSeparator (string ", ")
-					 (map (fn (_,x) -> ppValue context x) rm)),
+					 (map (fn (_,x) -> ppValue ctxt x) rm)),
 			    string ")"]
 	  else prettysNone [string "{",
 			    prettysFill(addSeparator (string ", ")
@@ -890,7 +909,7 @@ spec
 						   (0,
 						    [(0,string  id),
 						     (0,string  " = "),
-						     (0,ppValue context x)]))
+						     (0,ppValue ctxt x)]))
 					       rm)),
 			    string "}"]
       | Constructor("Cons",arg as RecordVal[(_,_),(_,_)],_) ->
@@ -898,42 +917,29 @@ spec
 	   | Some listVals ->
 	     prettysNone [string "[",
 			  prettysFill(addSeparator (string ", ")
-					(map (ppValue context) listVals)),
+					(map (ppValue ctxt) listVals)),
 			  string "]"]
-	   | None -> prettysFill[string "Cons",string " ",ppValue context arg])
-      | Constructor (id,arg,_) -> prettysFill [string id,string " ",ppValue context arg]
+	   | None -> prettysFill[string "Cons",string " ",ppValue ctxt arg])
+      | Constructor (id,arg,_) -> prettysFill [string id,string " ",ppValue ctxt arg]
       | Constant        (id,_) -> string id
       | QuotientVal (f,arg,srt_id)  -> prettysFill [string "quotient[",
                                                     string (printQualifiedId srt_id), string "] ",
-                                                    ppValue context arg]
+                                                    ppValue ctxt arg]
       | ChooseClosure(cl,_,srt_id)  ->
 	prettysFill [string "choose[",string (printQualifiedId srt_id), string "] "]
-      | Closure(_,sb)  -> prettysNone[string "<Closure {",
-				      prettysFill(addSeparator (string ", ")
-					(map (fn (id,x) ->
-					      blockLinear
-					        (0,
-						 [(0,string  id),
-						  (0,string  " -> "),
-						  (0,ppValue context x)]))
-					 sb)),
-				      string "}>"]
+      | Closure(_,sb)  ->
+        prettysNone[string "<Closure {",
+                    ppSubst ctxt sb,
+                    string "}>"]
       | RecClosure(_,sb,ids)  -> 
 	prettysNone[string "<Closure {",
-		    prettysFill(addSeparator (string ", ")
-				  (map (fn (id,x) ->
-					blockLinear
-					  (0,
-					   [(0,string  id),
-					    (0,string  " -> "),
-					    (0,ppValue context x)]))
-				   sb)),
+		    ppSubst ctxt sb,
 		    string "}, ",
 		    string "{",
 		    prettysFill(addSeparator (string ", ") (map (fn id -> string id) ids)),
 		    string "}>"]
       | Unevaluated t  -> prettysNone[string "<Unev: ",
-				      ppTerm context ([],Top:ParentTerm) t,
+				      ppTerm ctxt ([],Top:ParentTerm) t,
 				      string ">"]
 
   op  valueToList: MSIValue -> Option(List MSIValue)
@@ -1008,6 +1014,17 @@ spec
 
  op reduceSubTerms(term: MSTerm, spc: Spec): MSTerm =
    mapTerm (fn t -> reduceTerm(t,spc), id, id) term
+
+ op trimSubst(sb: Subst): Subst =
+   let def trim(sb, seen) =
+         case sb of
+           | [] -> []
+           | (k, v) :: r_sb ->
+             if k in? seen
+               then trim(r_sb, seen)
+               else (k, v) :: trim(r_sb, k :: seen)
+   in
+   trim(sb, [])
 
 end-spec
 %%% 
