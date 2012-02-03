@@ -302,6 +302,9 @@
 (defparameter *move-alist* '(("f" :|First|) ("l" :|Last|) ("n" :|Next|) ("p" :|Prev|)
 			     ("w" :|Widen|) ("a" :|All|) ("t" :|All|)
 			     ("s" . :|Search|) ("r" . :|ReverseSearch|)
+                             ("first" :|First|) ("last" :|Last|) ("next" :|Next|) ("prev" :|Prev|)
+			     ("widen" :|Widen|) ("all" :|All|) ("t" :|All|)
+			     ("search" . :|Search|) ("reverse-search" . :|ReverseSearch|)
                              ("post" :|Post|)))
 
 (defun move-command (moves)
@@ -359,7 +362,8 @@
 	   (at                 (at-command (parse-qid argstr 'op)))
            ((at-t at-theorem)  (at-theorem-command (parse-qid argstr 'theorem)))
 	   ((move m)           (move-command (String-Spec::split argstr)))
-	   ((f l n p w a s r post)
+	   ((f l n p w a s r post
+             first last next prev widen all search reverse-search)
                                (move-command (cons (string-downcase (string command))
 						   (String-Spec::split argstr))))
 	   ((simplify simp)    (simplify-command argstr))
