@@ -83,7 +83,7 @@ SpecCalc qualifying spec {
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
-    PrettyPrint.toString (format(80, 
+    PrettyPrint.toString (format(100, 
  				ppSpecHidingImportedStuff
  				  (initialize(asciiPrinter,false))
 				  base_spec
@@ -93,7 +93,7 @@ SpecCalc qualifying spec {
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
-    PrettyPrint.toString (format(80, 
+    PrettyPrint.toString (format(100, 
  				ppSpecHidingImportedStuff
  				  (initialize(XSymbolPrinter,false))
 				  base_spec
