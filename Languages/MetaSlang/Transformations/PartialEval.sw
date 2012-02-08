@@ -1,7 +1,7 @@
 spec
 import Script
 
-  op traceSpecializeSpec?: Bool = true
+  op traceSpecializeSpec?: Bool = false
   op ignoreBaseSpec?: Bool = true
 
   op specializeSpec (specialFn: Spec -> MSTerm -> Option(MSTerm * QualifiedId * QualifiedIds * QualifiedIds))
@@ -112,7 +112,7 @@ import Script
   op constantConstructorArg (spc: Spec) (tm: MSTerm)
        : Option(MSTerm * QualifiedId * QualifiedIds * QualifiedIds) =
     case tm of
-      | Apply(f as Fun(Op(qid, _), ty, _), arg, _ ) ->
+      | Apply(f as Fun(Op(qid, _), ty, _), arg, _ ) | ~(ignoreBaseSpec? && some?(findTheOp(getBaseSpec(), qid))) ->
         let args = termToList arg in
         (case findLeftmost (constructorTerm? spc) args of
          | Some stm ->
