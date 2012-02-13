@@ -99,6 +99,26 @@ SliceSpec qualifying spec
   in
   sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_subtypes?, chase_theorems?)
 
+ op [a] foldJustTerms (f : a -> MSTerm -> a) (acc: a) (term : MSTerm) : a =
+  let foldOfChildren = 
+     case term of
+       | Let        (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm) acc decls) bdy
+       | LetRec     (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm) acc decls) bdy
+       | Record     (row,        _) -> foldl (fn (acc, (id,tm)) -> foldJustTerms f acc tm) acc row
+       | IfThenElse (t1, t2, t3, _) -> foldJustTerms f (foldJustTerms f (foldJustTerms f acc t1) t2) t3
+       | Lambda     (match,      _) -> foldl (fn (acc,(_,cond,tm)) -> foldJustTerms f (foldJustTerms f acc cond) tm) acc match
+       | Bind       (_, _, tm,   _) -> foldJustTerms f acc tm
+       | The        (_, tm,      _) -> foldJustTerms f acc tm
+       | Apply      (t1, t2,     _) -> foldJustTerms f (foldJustTerms f acc t1) t2
+       | Seq        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
+       | ApplyN     (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
+       | TypedTerm  (tm, _,      _) -> foldJustTerms f acc tm
+       | Pi         (_, tm,      _) -> foldJustTerms f acc tm
+       | And        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
+       | _ -> acc
+  in
+  f foldOfChildren term
+
  op sliceSpecInfo (spc             : Spec, 
                    root_ops        : QualifiedIds, 
                    root_types      : QualifiedIds, 
@@ -111,56 +131,83 @@ SliceSpec qualifying spec
     def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
       
     def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-      foldTerm (fn opids -> fn tm ->
-                  case tm of
-                    | Fun (Op (qid,_), funtype, _) ->
-                      % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                      if cut_op? qid then
-                        opids
-                      else if qid nin? opids  && qid nin? op_set then
-                        qid :: opids
-                      else
-                        opids
-                    | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
-                      let eq_qid = eq_op_qid type_qid in
-                      % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
-                      if cut_op? eq_qid then
-                        opids
-                      else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
-                        eq_qid :: opids
-                      else
-                        opids
-                    | _ -> opids,
-                fn result -> fn _ -> result,
-                fn result -> fn _ -> result)
-               newopids 
-               tm
+      if chase_subtypes? then
+        foldTerm (fn opids -> fn tm ->
+                    case tm of
+                      | Fun (Op (qid,_), funtype, _) ->
+                        % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                        if cut_op? qid then
+                          opids
+                        else if qid nin? opids  && qid nin? op_set then
+                          qid :: opids
+                             else
+                               opids
+                      | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
+                        let eq_qid = eq_op_qid type_qid in
+                        % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
+                        if cut_op? eq_qid then
+                          opids
+                        else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
+                          eq_qid :: opids
+                        else
+                          opids
+                      | _ -> opids,
+                  fn result -> fn _ -> result,
+                  fn result -> fn _ -> result)
+                 newopids 
+                 tm
+      else
+        foldJustTerms (fn opids -> fn tm ->
+                         case tm of
+                           | Fun (Op (qid,_), funtype, _) ->
+                             % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                             if cut_op? qid then
+                               opids
+                             else if qid nin? opids  && qid nin? op_set then
+                               qid :: opids
+                             else
+                               opids
+                           | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
+                             let eq_qid = eq_op_qid type_qid in
+                             % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
+                             if cut_op? eq_qid then
+                               opids
+                             else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
+                               eq_qid :: opids
+                             else
+                               opids
+                           | _ -> opids)
+                      newopids 
+                      tm
 
     def newOpsInType (ty : MSType, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-      foldType (fn opids -> fn tm ->
-                  case tm of
-                    | Fun (Op (qid,_), funtype, _) ->
-                      % let _ = writeLine("new_ops_in_type: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                      if cut_op? qid then
-                        opids
-                      else if qid nin? opids && qid nin? op_set then
-                        qid :: opids
-                      else
-                        opids
-                    | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
-                      let eq_qid = eq_op_qid type_qid in
-                      % let _ = writeLine("new_ops_in_type: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
-                      if cut_op? eq_qid then
-                        opids
-                      else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
-                        eq_qid :: opids
-                      else
-                        opids
-                    | _ -> opids,
-                fn result -> fn _ -> result,
-                fn result -> fn _ -> result)
-               newopids 
-               ty
+      if chase_subtypes? then
+        foldType (fn opids -> fn tm ->
+                    case tm of
+                      | Fun (Op (qid,_), funtype, _) ->
+                        % let _ = writeLine("new_ops_in_type: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
+                        if cut_op? qid then
+                          opids
+                        else if qid nin? opids && qid nin? op_set then
+                          qid :: opids
+                             else
+                               opids
+                      | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
+                        let eq_qid = eq_op_qid type_qid in
+                        % let _ = writeLine("new_ops_in_type: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
+                        if cut_op? eq_qid then
+                          opids
+                        else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
+                          eq_qid :: opids
+                        else
+                          opids
+                      | _ -> opids,
+                  fn result -> fn _ -> result,
+                  fn result -> fn _ -> result)
+                 newopids 
+                 ty
+      else
+        newopids
 
     def newTypesInTerm (tm : MSTerm, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
       foldTerm (fn result -> fn _ -> result,
@@ -215,7 +262,10 @@ SliceSpec qualifying spec
                        newopids
                      else
                        case findTheOp (spc, qid) of
-                         | Some opinfo -> newOpsInTerm (opinfo.dfn, newopids, op_set)
+                         | Some opinfo -> 
+                           % let _ = writeLine("Scanning ops in op: " ^ show (primaryOpName opinfo)) in
+                           % let _ = writeLine("               dfn: " ^ printTerm opinfo.dfn) in
+                           newOpsInTerm (opinfo.dfn, newopids, op_set)
                          | None -> newopids)
                   [] 
                   new_ops
@@ -228,7 +278,9 @@ SliceSpec qualifying spec
                          newopids
                        else
                          case findTheType (spc, qid) of
-                           | Some typeinfo -> newOpsInType(typeinfo.dfn, newopids, op_set)
+                           | Some typeinfo -> 
+                             % let _ = writeLine("Scanning ops in type: " ^ show (primaryTypeName typeinfo)) in
+                             newOpsInType(typeinfo.dfn, newopids, op_set)
                            | None -> newopids)
                     new_ops_in_ops
                     new_types
@@ -242,7 +294,9 @@ SliceSpec qualifying spec
                        newtypeids
                      else
                        case findTheOp (spc, qid) of
-                         | Some opinfo -> newTypesInTerm (opinfo.dfn, newtypeids, type_set)
+                         | Some opinfo -> 
+                           % let _ = writeLine("Scanning types in op: " ^ show (primaryOpName opinfo)) in
+                           newTypesInTerm (opinfo.dfn, newtypeids, type_set)
                          | None -> newtypeids)
                   [] 
                   new_ops
@@ -254,7 +308,9 @@ SliceSpec qualifying spec
                        newtypeids
                      else
                        case findTheType (spc, qid) of
-                         | Some typeinfo -> newTypesInType (typeinfo.dfn, newtypeids, type_set)
+                         | Some typeinfo -> 
+                           % let _ = writeLine("Scanning types in type: " ^ show (primaryTypeName typeinfo)) in
+                           newTypesInType (typeinfo.dfn, newtypeids, type_set)
                          | None -> newtypeids)
                   new_types_in_ops
                   new_types
@@ -278,14 +334,22 @@ SliceSpec qualifying spec
   let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                         in
   sliced_spc
 
- op sliceSpecForCode (spc             : Spec, 
-                      root_ops        : QualifiedIds,        % include these and things they recursively mention
-                      root_types      : QualifiedIds,        % include these and things they recursively mention
-                      cut_op?         : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                      cut_type?       : QualifiedId -> Bool) % stop recursion at these, and do not include them
+ op sliceSpecForCode (spc        : Spec, 
+                      root_ops   : QualifiedIds,        % include these and things they recursively mention
+                      root_types : QualifiedIds,        % include these and things they recursively mention
+                      cut_op?    : QualifiedId -> Bool, % stop recursion at these, and do not include them
+                      cut_type?  : QualifiedId -> Bool) % stop recursion at these, and do not include them
   : Spec =
   let chase_subtypes? = false in  % do not recur through subtype predicates and quotient relations
   let chase_theorems? = false in  % do not recur through axioms and theorems that mention included types and ops
   sliceSpec (spc, root_ops, root_types, cut_op?, cut_type?, chase_subtypes?, chase_theorems?)
-  
+
+ op sliceSpecForCodeM (spc        : Spec, 
+                       root_ops   : QualifiedIds,        % include these and things they recursively mention
+                       root_types : QualifiedIds,        % include these and things they recursively mention
+                       cut_op?    : QualifiedId -> Bool, % stop recursion at these, and do not include them
+                       cut_type?  : QualifiedId -> Bool, % stop recursion at these, and do not include them
+                       tracing?   : Bool)
+  : Env (Spec * Bool) =
+  return (sliceSpecForCode (spc, root_ops, root_types, cut_op?, cut_type?), tracing?)
 }
