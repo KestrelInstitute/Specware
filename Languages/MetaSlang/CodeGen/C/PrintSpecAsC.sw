@@ -26,7 +26,7 @@ CPrinter qualifying spec
 
  op refersToCTarget? (term : SCTerm) : Bool =
   case term.1 of
-    | UnitId (SpecPath_Relative {hashSuffix = None, path = ["Library", "C", "CTarget"]}) -> 
+    | UnitId (SpecPath_Relative {hashSuffix = None, path = ["Library", "CGen", "CTarget"]}) -> 
       let _ = writeLine("spec refers to CTarget") in
       true
     | _ -> false

@@ -21,6 +21,8 @@ CG qualifying spec
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
  import /Languages/I2L/CodeGen/C/I2LToC              % I2L       =codegen=> C
 
+ import /Languages/MetaSlang/CodeGen/C/PrintSpecAsC
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% Debugging support...
 
@@ -151,6 +153,9 @@ CG qualifying spec
   in
 
   let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in % fetch early, to avoid including anything accidentally added at toplevel by transforms
+  let _ = writeLine "----" in
+  let _ = writeLine (anyToString top_ops) in
+  let _ = writeLine "----" in
 
   let _ = showSpc "Original"                      spc in %  (0)
   
@@ -305,7 +310,13 @@ CG qualifying spec
                    spc          : Spec, 
                    opt_filename : Option String)
   : () =
-  let cspec = generateCSpec app_name spc in 
-  printToFile (app_name, cspec, opt_filename)
-
+  if importsCTarget? spc then
+    let filename = case opt_filename of 
+                     | Some filename -> filename 
+                     | _ -> "testing" 
+    in
+    printSpecAsCToFile (filename, spc)
+  else
+    let cspec = generateCSpec app_name spc in 
+    printToFile (app_name, cspec, opt_filename)
 }
