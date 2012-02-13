@@ -3068,7 +3068,11 @@ proof Isa unflatten_subtype_constr
 end-proof
 
 proof Isa unflatten_length_result [simp]
-sorry
+  apply (simp add: List__unflatten_def list_all_length
+                   List__unflattenL_def)
+  apply (rule the1I2,
+         frule List__unflatten_Obligation_subtype, simp_all,
+         cut_tac List__unflattenL_Obligation_the, simp_all)
 end-proof
 
 proof Isa noRepetitions_p__def
