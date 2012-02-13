@@ -131,9 +131,9 @@ defs FSet__e_bsl_fsl__stp_def:
 theorem FSet__e_dsh_dsh_Obligation_subtype: 
   "finite (FSet__fromFSet s1 - FSet__fromFSet s2)"
    by (rule finite_Diff, simp add: FSet__fromFSet_finite)
-consts e_dsh_dsh_fs :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a FSet__FSet"	(infixl "--'_fs" 65)
-defs e_dsh_dsh_fs_def: 
-  "(s1 --_fs s2)
+consts FSet__e_dsh_dsh :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet \<Rightarrow> 'a FSet__FSet"	(infixl "--" 65)
+defs FSet__e_dsh_dsh_def: 
+  "(s1 -- s2)
      \<equiv> FSet__toFSet (FSet__fromFSet s1 - FSet__fromFSet s2)"
 consts FSet__e_dsh_dsh__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                                 'a FSet__FSet \<times> 'a FSet__FSet \<Rightarrow> 'a FSet__FSet"
@@ -161,19 +161,28 @@ defs FSet__e_ast__stp_def:
                (FSet__fromFSet__stp P__a s1 
                   <*> FSet__fromFSet__stp P__b s2))"
 theorem FSet__power_Obligation_subtype: 
-  "finite (image FSet__toFSet (Pow (FSet__fromFSet s)))"
-  by (simp add: FSet__fromFSet_finite finite_Pow_iff)
+  "Set_P finite (Pow (FSet__fromFSet s))"
+  by (metis FSet__fromFSet_finite PowD Set_P_unfold rev_finite_subset)
+theorem FSet__power_Obligation_subtype0: 
+  "finite
+      (Set__map__stp finite FSet__toFSet (Pow (FSet__fromFSet s)))"
+   apply (simp add: Set__map__stp_def)
+   apply (cut_tac s=s in FSet__fromFSet_finite)
+   apply (drule finite_Collect_subsets)
+   apply (drule_tac f=FSet__toFSet in finite_image_set)
+   apply (rule finite_subset, auto simp add: mem_def)
+  done
 consts FSet__power :: "'a FSet__FSet \<Rightarrow> 'a FSet__FSet FSet__FSet"
 defs FSet__power_def: 
   "FSet__power s
      \<equiv> FSet__toFSet
-          (image FSet__toFSet (Pow (FSet__fromFSet s)))"
+          (Set__map__stp finite FSet__toFSet (Pow (FSet__fromFSet s)))"
 consts FSet__power__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                             'a FSet__FSet \<Rightarrow> 'a FSet__FSet FSet__FSet"
 defs FSet__power__stp_def: 
   "FSet__power__stp P__a s
      \<equiv> FSet__toFSet
-          (image FSet__toFSet
+          (Set__map__stp (Set_P P__a &&& Set__finite_p__stp P__a) FSet__toFSet
               (Set__power__stp P__a (FSet__fromFSet__stp P__a s)))"
 theorem FSet__empty_Obligation_subtype: 
   "finite {}"
@@ -242,9 +251,9 @@ defs FSet__e_lt_bar__stp_def:
 theorem FSet__e_dsh_Obligation_subtype: 
   "finite (FSet__fromFSet s less (x::'a))"
    by (simp add: FSet__fromFSet_finite)
-consts e_dsh_fset_p :: "'a FSet__FSet \<Rightarrow> 'a \<Rightarrow> 'a FSet__FSet"	(infixl "-'_fset?" 65)
-defs e_dsh_fset_p_def: 
-  "(s -_fset? (x::'a)) \<equiv> FSet__toFSet (FSet__fromFSet s less x)"
+consts FSet__e_dsh :: "'a FSet__FSet \<Rightarrow> 'a \<Rightarrow> 'a FSet__FSet"	(infixl "-" 65)
+defs FSet__e_dsh_def: 
+  "(s - (x::'a)) \<equiv> FSet__toFSet (FSet__fromFSet s less x)"
 consts FSet__e_dsh__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 
                             'a FSet__FSet \<times> 'a \<Rightarrow> 'a FSet__FSet"
 defs FSet__e_dsh__stp_def: 
@@ -301,7 +310,7 @@ defs FSet__foldable_p__stp_def:
             Set__foldable_p__stp(P__a, P__b)
               (c, f, FSet__fromFSet__stp P__a s))"
 theorem FSet__fold_Obligation_subtype: 
-  "\<lbrakk>FSet__foldable_p(c, f, s); finite (FSet__fromFSet s)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FSet__foldable_p(c, f, s)\<rbrakk> \<Longrightarrow> 
    Set__foldable_p(c, f, FSet__fromFSet s)"
    by (simp add: FSet__foldable_p_def)
 consts FSet__fold :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a FSet__FSet \<Rightarrow> 'b"

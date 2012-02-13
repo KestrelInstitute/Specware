@@ -1,5 +1,5 @@
 theory SW_Set
-imports "$SPECWARE4/Library/Isa/Base" Set
+imports Base Set
 begin
 
 lemma Set_Set_P_converse: "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
@@ -905,9 +905,7 @@ theorem Set__fold_Obligation_subtype3:
    finite (s less x)"
   by auto
 theorem Set__fold_Obligation_subtype4: 
-  "\<lbrakk>finite s; 
-    Set__foldable_p(c_1, f_1, insert (x::'a) s); 
-    finite (s less x)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>finite s; Set__foldable_p(c_1, f_1, insert (x::'a) s)\<rbrakk> \<Longrightarrow> 
    Set__foldable_p(c_1, f_1, s less x)"
   by auto
 consts Set__fold :: "'b \<times> ('b \<times> 'a \<Rightarrow> 'b) \<times> 'a Set__FiniteSet \<Rightarrow> 'b"

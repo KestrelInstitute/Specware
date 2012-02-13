@@ -1,9 +1,6 @@
 theory SW_List
 imports SW_Option SW_Integer List
 begin
-
-ML {* quick_and_dirty := true; *}
-
 theorem List__List_P__def: 
   "list_all P_a (Cons x0 x1) 
      = (list_all P_a x1 \<and> P_a x0)"
@@ -2952,7 +2949,12 @@ theorem List__unflatten_subtype_constr:
 theorem List__unflatten_length_result [simp]: 
   "\<lbrakk>n > 0; int n zdvd int (length l)\<rbrakk> \<Longrightarrow> 
    list_all (\<lambda> (s::'a list). length s = n) (List__unflatten(l, n))"
-  sorry
+  apply (simp add: List__unflatten_def list_all_length
+                   List__unflattenL_def)
+  apply (rule the1I2,
+         frule List__unflatten_Obligation_subtype, simp_all,
+         cut_tac List__unflattenL_Obligation_the, simp_all)
+  done
 theorem List__noRepetitions_p__def: 
   "distinct l 
      = (\<forall>(i::nat) (j::nat). 

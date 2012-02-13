@@ -129,9 +129,7 @@ defs FMap__undefinedAt__stp_def:
             MapAC__undefinedAt__stp P__b
               (FMap__fromFMap__stp(P__a, P__b) m, x))"
 theorem FMap__e_at_Obligation_subtype: 
-  "\<lbrakk>m definedAt_fm (x::'a); 
-    Relation__functional_p (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
-   FMap__fromFMap m definedAt x"
+  "\<lbrakk>m definedAt_fm (x::'a)\<rbrakk> \<Longrightarrow> FMap__fromFMap m definedAt x"
    by (simp add: definedAt_fm_def)
 consts e_at_fm :: " ('a, 'b)FMap__FMap \<Rightarrow> 'a \<Rightarrow> 'b"	(infixl "@'_fm" 70)
 defs e_at_fm_def: "(m @_fm (x::'a)) \<equiv> (FMap__fromFMap m @_m x)"
@@ -758,7 +756,7 @@ defs FMap__foldable_p__stp_def:
                   (\<lambda> ((x_1::'a), (x_2::'b)). P__a x_1 \<and> P__b x_2)
                   (FMap__fromFMap__stp(P__a, P__b) m)))"
 theorem FMap__fold_Obligation_subtype: 
-  "\<lbrakk>FMap__foldable_p(c, f, m); finite (FMap__fromFMap m)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>FMap__foldable_p(c, f, m)\<rbrakk> \<Longrightarrow> 
    Set__foldable_p(c, f, FMap__fromFMap m)"
    by (simp add: FMap__foldable_p_def)
 consts FMap__fold :: "'c \<times> ('c \<times> ('a \<times> 'b) \<Rightarrow> 'c) \<times>  ('a, 'b)FMap__FMap \<Rightarrow> 'c"
