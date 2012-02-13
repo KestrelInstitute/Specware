@@ -175,11 +175,11 @@ CPrinter qualifying spec
       let decl_prettys = ppOpInfoToH (qid, opt_info) in
       let decl_lines   = map (fn pretty : Pretty -> (0, pretty)) decl_prettys in
       [blockAll (0,
-                 [(0, blockFill (0, decl_lines ++ [(0, string " {")]))]
-                 ++
-                 [(0, printTermAsC info.dfn)]
-                 ++
-                 [(0, blockFill (0, [(0, string "}")]))])]
+                 [(0, blockFill (0, decl_lines ++ [(0, string " {")])),
+                  (0, blockFill (0, [(0, string "  return "),
+                                     (0, printTermAsC info.dfn),
+                                     (0, string ";")])),
+                  (0, blockFill (0, [(0, string "}")]))])]
     | _ -> 
       [string ("<missing definition for " ^ printQualifiedId qid ^ ">")]
 
