@@ -206,6 +206,14 @@ proof Isa power_Obligation_subtype
   by (metis FSet__fromFSet_finite PowD Set_P_unfold rev_finite_subset)
 end-proof
 
+proof Isa FSet__power_Obligation_subtype0
+   apply (simp add: Set__map__stp_def)
+   apply (cut_tac s=s in FSet__fromFSet_finite)
+   apply (drule finite_Collect_subsets)
+   apply (drule_tac f=FSet__toFSet in finite_image_set)
+   apply (rule finite_subset, auto simp add: mem_def)
+end-proof
+
 proof Isa empty -> empty_fset_p end-proof
 proof Isa onlyMemberOf -> onlyMemberOf_fs end-proof
 proof Isa <| -> with_fs [simp] end-proof
