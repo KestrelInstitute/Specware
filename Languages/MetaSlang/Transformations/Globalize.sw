@@ -322,7 +322,7 @@ Globalize qualifying spec
               if argTypeMatches? (old_ptype, gtype_name) then
                 case old_body of
                   | Lambda ([(old_pat2, old_cond2, old_body2)], _) ->
-                    let new_pat  = old_pat2                in
+                    let new_pat  = RecordPat ([], pos)     in
                     let new_cond = old_cond2               in
                     let new_body = remove_var id old_body2 in
                     (new_pat, new_cond, new_body)
