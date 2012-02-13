@@ -152,7 +152,8 @@ MetaSlang qualifying spec
     | SCTerm       SCTerm                                     * a
     | Item         String * ATransformExpr a                  * a  % e.g. unfold map
 
-    | Globalize    TypeName * OpName * Option OpName          * a  
+    | Slice        OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
+    | Globalize    TypeName  * OpName  * Option OpName        * a  
       % Change all local vars of given type into references to named global var, 
       % which is initialized by the optional named op, or by a unique source op 
       % if the initializer is left unspecified.

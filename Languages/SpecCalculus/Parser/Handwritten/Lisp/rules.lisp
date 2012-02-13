@@ -1669,6 +1669,16 @@ If we want the precedence to be optional:
    ((:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) (2 :TRANSFORM-EXPR))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
 
+   ;; slice (spec, ops, types)
+   ((:tuple "slice" 
+            (:optional (:tuple "from"
+                               (:tuple "{" (1 (:repeat* :QUALIFIABLE-OP-NAME   ",")) "}")
+                               (:tuple "{" (2 (:repeat* :QUALIFIABLE-TYPE-NAME ",")) "}")))
+            (:optional (:tuple "stopping_at"
+                               (:tuple "{" (3 (:repeat* :QUALIFIABLE-OP-NAME   ",")) "}")
+                               (:tuple "{" (4 (:repeat* :QUALIFIABLE-TYPE-NAME ",")) "}"))))
+    (make-transform-slice 1 2 3 4 ':left-lcb ':right-lcb))
+
    ;; globalize (type, global-var-name, op-that-initializes-global)
    ((:tuple "globalize" "(" (1 ::QUALIFIABLE-TYPE-NAME) "," (2 :QUALIFIABLE-OP-NAME) 
             (:optional (:tuple "," (3 :QUALIFIABLE-OP-NAME)))

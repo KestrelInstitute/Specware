@@ -183,9 +183,14 @@ spec
          return(Trace on?)}
       | Name("print",_) -> return Print
 
+      | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
+        return (Slice (root_ops, root_types, cut_op?, cut_type?))
+
       | Globalize (typ, gvar, opt_init, _) -> return (Globalize (typ, gvar, opt_init))
 
-      | _ -> raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
+      | _ -> 
+        let _ = writeLine ("oops: " ^ anyToString trans) in
+        raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
         
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of

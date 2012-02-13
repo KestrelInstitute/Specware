@@ -412,41 +412,47 @@ SpecCalc qualifying spec
                   | _ -> last_qid)
          (head qids) spc.elements
 
+ op topSortElements (spc: Spec, elements : SpecElements): SpecElements =
+  let 
+    def refsToElements(op_ids, ty_ids) =
+      if op_ids = [] && ty_ids = [] then 
+        []
+      else
+        %% Inefficient, but good enough?
+        filter (fn | Op(op_id, _, _)   -> op_id in? op_ids
+                   | Type(ty_id, _)    -> ty_id in? ty_ids
+                   | TypeDef(ty_id, _) -> ty_id in? ty_ids
+                   | _ -> false)
+               spc.elements
+    def body_refs op_id =
+      case findTheOp(spc, op_id) of
+        | Some info -> refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
+        | None -> (writeLine("Warning! Missing op in adjustElementOrder: "
+                               ^printQualifiedId op_id);
+                   [])
+    def element_refs el =
+      case el of
+        | Op(op_id, _, _)    -> body_refs op_id
+        | OpDef(op_id, _, _) -> body_refs op_id
+        | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
+        | TypeDef(ty_id, _) ->
+          (case findTheType(spc, ty_id) of
+             | Some info ->
+               %% make sure types are early until have better circularity resolution mechanism
+               refsToElements([],    % opsInType info.dfn, 
+                              typesInType info.dfn)
+             | _ -> (writeLine("Warning! Missing type in adjustElementOrder: "
+                                 ^printQualifiedId ty_id);
+                     []))
+          
+        | _ -> []
+  in
+  topSort (EQUAL, element_refs, elements)
+
  (* Adjust order of top-level ops to avoid forward references except for mutual recursion *)
  op adjustElementOrder(spc: Spec): Spec =
-   let def refsToElements(op_ids, ty_ids) =
-             if op_ids = [] && ty_ids = [] then []
-             else
-             %% Inefficient, but good enough?
-             filter (fn | Op(op_id, _, _)   -> op_id in? op_ids
-                        | Type(ty_id, _)    -> ty_id in? ty_ids
-                        | TypeDef(ty_id, _) -> ty_id in? ty_ids
-                        | _ -> false)
-               spc.elements
-       def body_refs op_id =
-         case findTheOp(spc, op_id) of
-           | Some info -> refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
-           | None -> (writeLine("Warning! Missing op in adjustElementOrder: "
-                                  ^printQualifiedId op_id);
-                      [])
-       def element_refs el =
-         case el of
-           | Op(op_id, _, _)    -> body_refs op_id
-           | OpDef(op_id, _, _) -> body_refs op_id
-           | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
-           | TypeDef(ty_id, _) ->
-             (case findTheType(spc, ty_id) of
-               | Some info ->
-                 %% make sure types are early until have better circularity resolution mechanism
-                 refsToElements([],    % opsInType info.dfn, 
-                                typesInType info.dfn)
-               | _ -> (writeLine("Warning! Missing type in adjustElementOrder: "
-                                  ^printQualifiedId ty_id);
-                      []))
+  setElements(spc, topSortElements (spc, spc.elements))
 
-           | _ -> []
-   in
-   setElements(spc, topSort(EQUAL, element_refs, spc.elements))
 
 % op adjustOpOrder(spc: Spec): Spec =
 %   let def moveIfForwardRefs(ref_ops, el, seen_ops, spc) =

@@ -519,6 +519,8 @@ SpecCalc qualifying spec
  op mkTransformSCTerm       (sc_tm: SCTerm,                                            pos: Position) : TransformExpr = SCTerm       (sc_tm,          pos)
  op mkTransformQual         (q:     String,        name: String,                       pos: Position) : TransformExpr = Qual         (q, name,        pos)
  op mkTransformItem         (mod:   String,        te:   TransformExpr,                pos: Position) : TransformExpr = Item         (mod, te,        pos)
+ op mkTransformSlice        (root_ops: OpNames,    root_types: TypeNames, 
+                             cut_op? : OpName -> Bool, cut_type? : TypeName -> Bool,   pos: Position) : TransformExpr = Slice        (root_ops, root_types, cut_op?, cut_type?, pos)
  op mkTransformGlobalize    (typ:   TypeName,      var:  OpName, init : Option OpName, pos: Position) : TransformExpr = Globalize    (typ, var, init, pos)
  op mkTransformApply        (head:  TransformExpr, args: TransformExprs,               pos: Position) : TransformExpr = Apply        (head, args,     pos)
  op mkTransformApplyOptions (head:  TransformExpr, args: TransformExprs,               pos: Position) : TransformExpr = ApplyOptions (head, args,     pos)
