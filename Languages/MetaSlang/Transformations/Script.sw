@@ -1,7 +1,7 @@
 Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
-         RedundantErrorCorrecting, Globalize
+         RedundantErrorCorrecting, Globalize, SliceSpec
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -53,7 +53,8 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
-    | Globalize (TypeName * OpName * Option OpName)
+    | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
+    | Globalize (TypeName  * OpName  * Option OpName)
     | Trace Bool
     | Print
 
@@ -832,6 +833,7 @@ spec
       | RedundantErrorCorrecting(morphs, opt_qual, restart?) ->
         redundantErrorCorrecting spc morphs opt_qual restart? tracing?
       | Globalize (gtype, gvar, opt_ginit) -> globalizeSingleThreadedType (spc, gtype, gvar, opt_ginit, tracing?)
+      | Slice     (root_ops, root_types, cut_op?, cut_type?) -> sliceSpecForCodeM (spc, root_ops, root_types, cut_op?, cut_type?, tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
 
