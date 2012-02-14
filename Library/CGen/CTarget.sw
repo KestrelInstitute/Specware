@@ -33,7 +33,7 @@ structured comments:
 
 - each (sub)section starts with "%section", "%subsection", "%subsubsection",
 etc. (recall that "%" starts a line comment) in column 0, followed by a title
-between the Metaslang symbols for block comments (which we do repeat here
+between the Metaslang symbols for block comments (which we do not repeat here
 otherwise we would be closing this comment!);
 
 - each paragraph of comments is a single block comment in Metaslang, with each
@@ -64,7 +64,7 @@ spec CTargetParameters. The definitions in that spec can be easily changed to
 accommodate different target C implementations. Constraints over those
 parameters are expressed as theorems in this spec. If the definitions of the
 parameters in spec CTargetParameters are changed, it must be ensured that such
-theorems still holds.
+theorems still hold.
 
 The explicitly defined parameters and their constraining theorems are explained
 in this spec. We keep spec CTargetParameters as simple and short as possible, to
@@ -91,7 +91,7 @@ used by the refined spec to the corresponding C types. *)
 (* The number of bits that comprise a byte [ISO 3.6] is expressed by CHAR_BIT
 [ISO 5.2.4.2.1/1], which must be at least 8. (Note that the notion of byte in C
 may not coincide, although it often does, with the notion of byte in the
-Specware library, which defines a bit to always consist of 8 bits. However,
+Specware library, which defines a byte to always consist of 8 bits. However,
 given our definition of CHAR_BIT as 8, the two notions coincide.) *)
 
 % In spec CTargetParameters:
@@ -109,7 +109,7 @@ op UCHAR_MAX : Nat = 2 ** CHAR_BIT - 1
 pure binary notation, i.e. to range from 0 to 2^CHAR_BIT-1. Thus, unsigned char
 objects are always bytes in C, and every object (of any type) consists of one or
 more bytes [ISO 6.2.6.1/4]. This leads to the following type definition. We
-"interpose" the uchar constructor between the list of CHAR_BIT bits an the
+"interpose" the uchar constructor between the list of CHAR_BIT bits and the
 corresponding value of type Uchar in order to keep all the C types separate
 (i.e. with no values in common) -- we use such constructors for the other C
 types below. This may ease refinements, but experience will tell. *)
@@ -119,7 +119,7 @@ type Uchar = | uchar (Bits | ofLength? CHAR_BIT)
 (* The bits that constitute an unsigned char can be interpreted in big endian or
 little endian, to denote a "mathematical integer". Since a byte is always
 addressed as a unit, the exact choice is unimportant. We choose big endian (as
-implied by the use op toNat). *)
+implied by the use of toNat). *)
 
 op mathIntOfUchar (uchar bs : Uchar) : Nat = toNat bs
 
@@ -148,9 +148,9 @@ of parameters of the C language that are implicitly defined by our
 formalization. As with unsigned chars, we choose a big endian interpretation for
 signed chars. *)
 
-op mathIntOfSchar (schar bs : Schar) : Nat = toInt bs
+op mathIntOfSchar (schar bs : Schar) : Int = toInt bs
 
-op SCHAR_MIN : Int = - 2 ** (CHAR_BIT - 1)
+op SCHAR_MIN : Int = - (2 ** (CHAR_BIT - 1))
 op SCHAR_MAX : Nat = 2 ** (CHAR_BIT - 1) - 1
 
 op rangeOfSchar : FiniteSet Int = fn i:Int -> SCHAR_MIN <= i && i <= SCHAR_MAX
@@ -181,7 +181,7 @@ op plainCharsAreUnsigned : Bool = ~ plainCharsAreSigned
 type Char = | char (Bits | ofLength? CHAR_BIT)
 
 op mathIntOfChar (char bs : Char) : Int =
-  if plainCharsAreSigned then toNat bs else toInt bs
+  if plainCharsAreSigned then toInt bs else toNat bs
 
 op CHAR_MIN : Int = if plainCharsAreSigned then SCHAR_MIN else 0
 op CHAR_MAX : Nat = if plainCharsAreSigned then SCHAR_MAX else UCHAR_MAX
@@ -318,10 +318,10 @@ type   Sint = | sint   (Bits | ofLength?   int_bits)
 type  Slong = | slong  (Bits | ofLength?  long_bits)
 type Sllong = | sllong (Bits | ofLength? llong_bits)
 
-op mathIntOfSshort (sshort bs : Sshort) : Nat = toInt bs
-op mathIntOfSint   (sint   bs : Sint)   : Nat = toInt bs
-op mathIntOfSlong  (slong  bs : Slong)  : Nat = toInt bs
-op mathIntOfSllong (sllong bs : Sllong) : Nat = toInt bs
+op mathIntOfSshort (sshort bs : Sshort) : Int = toInt bs
+op mathIntOfSint   (sint   bs : Sint)   : Int = toInt bs
+op mathIntOfSlong  (slong  bs : Slong)  : Int = toInt bs
+op mathIntOfSllong (sllong bs : Sllong) : Int = toInt bs
 
 op rangeOfSshort : FiniteSet Int = fn i:Int ->  SHRT_MIN <= i && i <=  SHRT_MAX
 op rangeOfSint   : FiniteSet Int = fn i:Int ->   INT_MIN <= i && i <=   INT_MAX
@@ -1366,7 +1366,7 @@ op +_1_uint   (x:Uint  ) : Uint   = x
 op +_1_ulong  (x:Ulong ) : Ulong  = x
 op +_1_ullong (x:Ullong) : Ullong = x
 
-(* The unary operator - [ISO 6.5.3.3/3] returns the negative of its promoted
+(* The unary - operator [ISO 6.5.3.3/3] returns the negative of its promoted
 operand. Analogously to unary +, we only define ops for sint/uint and higher
 ranks.
 
@@ -1383,11 +1383,11 @@ op -_1_sllong (x:Sllong | - mathIntOfSllong x in? rangeOfSllong) : Sllong =
   sllongOfMathInt (- mathIntOfSllong x)
 
 op -_1_uint   (x:Uint  ) : Uint   =
-    uintOfMathInt (- mathIntOfUint   x modF (1 +   UINT_MAX))
+    uintOfMathInt ((- mathIntOfUint   x) modF (1 +   UINT_MAX))
 op -_1_ulong  (x:Ulong ) : Ulong  =
-   ulongOfMathInt (- mathIntOfUlong  x modF (1 +  ULONG_MAX))
+   ulongOfMathInt ((- mathIntOfUlong  x) modF (1 +  ULONG_MAX))
 op -_1_ullong (x:Ullong) : Ullong =
-  ullongOfMathInt (- mathIntOfUllong x modF (1 + ULLONG_MAX))
+  ullongOfMathInt ((- mathIntOfUllong x) modF (1 + ULLONG_MAX))
 
 (* The ~ operator [ISO 6.5.3.3/4] promotes its operand and returns its bitwise
 complement. Analogously to unary + and -, we only define ops for sint/uint and
@@ -1404,8 +1404,8 @@ op ~_ullong (ullong bs : Ullong) : Ullong = ullong (not bs)
 whether the operator compares equal or unequal to 0. This operator performs no
 promotion, so we define an op for every integer type. *)
 
-op sint0 : Sint = sint (bits (0, int_bits))
-op sint1 : Sint = sint (bits (1, int_bits))
+op sint0 : Sint = sintOfMathInt 0
+op sint1 : Sint = sintOfMathInt 1
 
 op !_char   (char   bs : Char  ) : Sint = if zero? bs then sint1 else sint0
 op !_schar  (uchar  bs : Uchar ) : Sint = if zero? bs then sint1 else sint0
@@ -1419,7 +1419,692 @@ op !_ulong  (ulong  bs : Ulong ) : Sint = if zero? bs then sint1 else sint0
 op !_sllong (sllong bs : Sllong) : Sint = if zero? bs then sint1 else sint0
 op !_ullong (ullong bs : Ullong) : Sint = if zero? bs then sint1 else sint0
 
-(* TO DO: add binary operators *)
+(* The binary *, /, %, +, and - operators perform the usual arithmetic
+conversions on the operands [ISO 6.5.5/3, 6.5.6/4] and return their product [ISO
+6.5.5/4], quotient (truncated toward 0) [ISO 6.5.5/5, 6.5.5/6], remainder [ISO
+6.5.5/5, 6.5.5/6], sum [ISO 6.5.6/5], and difference [ISO 6.5.6/6]. Since the
+usual arithmetic conversions [ISO 6.3.1.8] promote the operands and convert them
+to a common type, we only need to define versions of these 5 operations for
+sint/uint and types of higher rank. The C code generator should not generate
+casts for conversion ops that carry out the needed usual arithmetic conversions.
+
+If the operands are unsigned, we follow the laws of arithmetic modulo one plus
+the maximum of the type of the operands [ISO 6.2.5/9]. If the operands are
+signed, the ops are defined only if the product of the operands can be
+represented in the type, because otherwise the behavior is undefined [ISO
+6.5/5].
+
+There are 30 ops (5 operators times 6 integer types). We factor commonalities of
+(subsets of) the 30 ops into a few parameterized ops that are suitably
+instantiated to define the 30 ops. A key parameter is the mathematical
+computation carried out by each of the 5 operators. We define one instantiation
+of this parameter for each of the 5 operators. If the second operand of the / or
+% operator is 0, we just return 0 as an arbitrary value (which is never used
+eventually, as explained later).
+
+Note that we cannot use "_%" in an op name because "%" starts an end-of-line
+comment in Metaslang. So we use "//" instead. *)
+
+type ArithOp = Int -> Int -> Int
+
+op aop_*  (i:Int) (j:Int) : Int =                i  *   j
+op aop_/  (i:Int) (j:Int) : Int = if j ~= 0 then i divT j else 0
+op aop_// (i:Int) (j:Int) : Int = if j ~= 0 then i modT j else 0
+op aop_+  (i:Int) (j:Int) : Int =                i  +   j
+op aop_-  (i:Int) (j:Int) : Int =                i  -   j
+
+(* Given such a mathematical computation and two signed integers of the same
+type, we can determine whether the result is representable in the signed integer
+of the same type. If it is, we can return the result. *)
+
+op fitsSint? (aop:ArithOp, x:Sint, y:Sint) : Bool =
+  let (x',y') = (mathIntOfSint x, mathIntOfSint y) in
+  aop x' y' in? rangeOfSint
+
+op fitsSlong? (aop:ArithOp, x:Slong, y:Slong) : Bool =
+  let (x',y') = (mathIntOfSlong x, mathIntOfSlong y) in
+  aop x' y' in? rangeOfSlong
+
+op fitsSllong? (aop:ArithOp, x:Sllong, y:Sllong) : Bool =
+  let (x',y') = (mathIntOfSllong x, mathIntOfSllong y) in
+  aop x' y' in? rangeOfSllong
+
+op applySint
+   (aop:ArithOp, x:Sint, y:Sint | fitsSint? (aop, x, y)) : Sint =
+  sintOfMathInt (aop (mathIntOfSint x) (mathIntOfSint y))
+
+op applySlong
+   (aop:ArithOp, x:Slong, y:Slong | fitsSlong? (aop, x, y)) : Slong =
+  slongOfMathInt (aop (mathIntOfSlong x) (mathIntOfSlong y))
+
+op applySllong
+   (aop:ArithOp, x:Sllong, y:Sllong | fitsSllong? (aop, x, y)) : Sllong =
+  sllongOfMathInt (aop (mathIntOfSllong x) (mathIntOfSllong y))
+
+(* Given the same kind of mathematical computation as above, we can return the
+result of applying it to two unsigned integers of the same type. *)
+
+op applyUint (aop:ArithOp, x:Uint, y:Uint) : Uint =
+  uintOfMathInt
+   (aop (mathIntOfUint x) (mathIntOfUint y) modF (1 + UINT_MAX))
+
+op applyUlong (aop:ArithOp, x:Ulong, y:Ulong) : Ulong =
+  ulongOfMathInt
+   (aop (mathIntOfUlong x) (mathIntOfUlong y) modF (1 + ULONG_MAX))
+
+op applyUllong (aop:ArithOp, x:Ullong, y:Ullong) : Ullong =
+  ullongOfMathInt
+   (aop (mathIntOfUllong x) (mathIntOfUllong y) modF (1 + ULLONG_MAX))
+
+(* With the above generic ops in hand, we can define the 30 ops for the 5
+operators for each of the 6 integer types. Note that the ops for / and % include
+the condition that the second operand is not 0. Thus, the 0 result that ops
+aop_/ and aop_// return in that case is not really used, as mentioned
+earlier. *)
+
+% operator *
+
+op *_sint
+   (x:Sint, y:Sint | fitsSint? (aop_*, x, y)) infixl 111 : Sint =
+  applySint (aop_*, x, y)
+
+op *_slong
+   (x:Slong, y:Slong | fitsSlong? (aop_*, x, y)) infixl 111 : Slong =
+  applySlong (aop_*, x, y)
+
+op *_sllong
+   (x:Sllong, y:Sllong | fitsSllong? (aop_*, x, y)) infixl 111 : Sllong =
+  applySllong (aop_*, x, y)
+
+op *_uint (x:Uint, y:Uint) infixl 111 : Uint =
+  applyUint (aop_*, x, y)
+
+op *_ulong (x:Ulong, y:Ulong) infixl 111 : Ulong =
+  applyUlong (aop_*, x, y)
+
+op *_ullong (x:Ullong, y:Ullong) infixl 111 : Ullong =
+  applyUllong (aop_*, x, y)
+
+% operator /
+
+op /_sint
+   (x:Sint, y:Sint | fitsSint? (aop_/, x, y) && y ~= sintOfMathInt 0)
+   infixl 111 : Sint =
+  applySint (aop_/, x, y)
+
+op /_slong
+   (x:Slong, y:Slong | fitsSlong? (aop_/, x, y) && y ~= slongOfMathInt 0)
+   infixl 111 : Slong =
+  applySlong (aop_/, x, y)
+
+op /_sllong
+   (x:Sllong, y:Sllong | fitsSllong? (aop_/, x, y) && y ~= sllongOfMathInt 0)
+   infixl 111 : Sllong =
+  applySllong (aop_/, x, y)
+
+op /_uint
+   (x:Uint, y:Uint | y ~= uintOfMathInt 0) infixl 111 : Uint =
+  applyUint (aop_/, x, y)
+
+op /_ulong
+   (x:Ulong, y:Ulong | y ~= ulongOfMathInt 0) infixl 111 : Ulong =
+  applyUlong (aop_/, x, y)
+
+op /_ullong
+   (x:Ullong, y:Ullong | y ~= ullongOfMathInt 0) infixl 111 : Ullong =
+  applyUllong (aop_/, x, y)
+
+% operator %
+
+op //_sint
+   (x:Sint, y:Sint | fitsSint? (aop_//, x, y) && y ~= sintOfMathInt 0)
+   infixl 111 : Sint =
+  applySint (aop_//, x, y)
+
+op //_slong
+   (x:Slong, y:Slong | fitsSlong? (aop_//, x, y) && y ~= slongOfMathInt 0)
+   infixl 111 : Slong =
+  applySlong (aop_//, x, y)
+
+op //_sllong
+   (x:Sllong, y:Sllong | fitsSllong? (aop_//, x, y) && y ~= sllongOfMathInt 0)
+   infixl 111 : Sllong =
+  applySllong (aop_//, x, y)
+
+op //_uint
+   (x:Uint, y:Uint | y ~= uintOfMathInt 0) infixl 111 : Uint =
+  applyUint (aop_//, x, y)
+
+op //_ulong
+   (x:Ulong, y:Ulong | y ~= ulongOfMathInt 0) infixl 111 : Ulong =
+  applyUlong (aop_//, x, y)
+
+op //_ullong
+   (x:Ullong, y:Ullong | y ~= ullongOfMathInt 0) infixl 111 : Ullong =
+  applyUllong (aop_//, x, y)
+
+% operator +
+
+op +_sint
+   (x:Sint, y:Sint | fitsSint? (aop_+, x, y)) infixl 110 : Sint =
+  applySint (aop_+, x, y)
+
+op +_slong
+   (x:Slong, y:Slong | fitsSlong? (aop_+, x, y)) infixl 110 : Slong =
+  applySlong (aop_+, x, y)
+
+op +_sllong
+   (x:Sllong, y:Sllong | fitsSllong? (aop_+, x, y)) infixl 110 : Sllong =
+  applySllong (aop_+, x, y)
+
+op +_uint (x:Uint, y:Uint) infixl 110 : Uint =
+  applyUint (aop_+, x, y)
+
+op +_ulong (x:Ulong, y:Ulong) infixl 110 : Ulong =
+  applyUlong (aop_+, x, y)
+
+op +_ullong (x:Ullong, y:Ullong) infixl 110 : Ullong =
+  applyUllong (aop_+, x, y)
+
+% operator -
+
+op -_sint
+   (x:Sint, y:Sint | fitsSint? (aop_-, x, y)) infixl 110 : Sint =
+  applySint (aop_-, x, y)
+
+op -_slong
+   (x:Slong, y:Slong | fitsSlong? (aop_-, x, y)) infixl 110 : Slong =
+  applySlong (aop_-, x, y)
+
+op -_sllong
+   (x:Sllong, y:Sllong | fitsSllong? (aop_-, x, y)) infixl 110 : Sllong =
+  applySllong (aop_-, x, y)
+
+op -_uint (x:Uint, y:Uint) infixl 110 : Uint =
+  applyUint (aop_-, x, y)
+
+op -_ulong (x:Ulong, y:Ulong) infixl 110 : Ulong =
+  applyUlong (aop_-, x, y)
+
+op -_ullong (x:Ullong, y:Ullong) infixl 110 : Ullong =
+  applyUllong (aop_-, x, y)
+
+(* The binary << operator requires integer operands [ISO 6.5.7/2], promotes
+them, and left-shifts the first operand E1 by the number of positions E2
+indicated by the second operand, filling the vacated bits with 0 [ISO
+6.5.7/4]. If E2 is negative or greater than or equal to the size of E1, the
+behavior is undefined [ISO 6.5.7/3].
+
+If E1 is unsigned, the result of the left-shift is E1 * 2^E2 modulo MAX+1 (where
+MAX is the maximum integer representable in E1's type) [ISO 6.5.7/4].
+
+If E1 is signed, there are two cases: (i) if E1 is non-negative and E1 * 2^E2 is
+representable in E1's type, that is the resulting value; (ii) otherwise (i.e. E1
+is negative or E1 * 2^E2 is not representable), the behavior is undefined [ISO
+6.5.7/4].
+
+Since the two operands are promoted, we only need to define ops for sint/uint
+and integer types of higher rank. The C code generator should not generate casts
+for conversion ops that carry out the needed promotions. Since the two operands
+are promoted independently (as opposed to the usual arithmetic conversion on
+other binary operators, which bring both operands to a common type), we need to
+define ops that correspond to all possible combinations of operand types. The
+ops are only defined when the result of << is well defined. *)
+
+% 1st operand sint:
+
+op <<_sint_sint
+   (x:Sint, y:Sint | let (x',y') = (mathIntOfSint x, mathIntOfSint y) in
+                     0 <= y' && y' < int_bits &&
+                     x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfSint y))
+
+op <<_sint_slong
+   (x:Sint, y:Slong | let (x',y') = (mathIntOfSint x, mathIntOfSlong y) in
+                      0 <= y' && y' < int_bits &&
+                      x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfSlong y))
+
+op <<_sint_sllong
+   (x:Sint, y:Sllong | let (x',y') = (mathIntOfSint x, mathIntOfSllong y) in
+                       0 <= y' && y' < int_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfSllong y))
+
+op <<_sint_uint
+   (x:Sint, y:Uint | let (x',y') = (mathIntOfSint x, mathIntOfUint y) in
+                     y' < int_bits &&
+                     x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfUint y))
+
+op <<_sint_ulong
+   (x:Sint, y:Ulong | let (x',y') = (mathIntOfSint x, mathIntOfUlong y) in
+                      y' < int_bits &&
+                      x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfUlong y))
+
+op <<_sint_ullong
+   (x:Sint, y:Ullong | let (x',y') = (mathIntOfSint x, mathIntOfUllong y) in
+                       y' < int_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSint)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x * 2**(mathIntOfUllong y))
+
+% 1st operand slong:
+
+op <<_slong_sint
+   (x:Slong, y:Sint | let (x',y') = (mathIntOfSlong x, mathIntOfSint y) in
+                      0 <= y' && y' < long_bits &&
+                      x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfSint y))
+
+op <<_slong_slong
+   (x:Slong, y:Slong | let (x',y') = (mathIntOfSlong x, mathIntOfSlong y) in
+                       0 <= y' && y' < long_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfSlong y))
+
+op <<_slong_sllong
+   (x:Slong, y:Sllong | let (x',y') = (mathIntOfSlong x, mathIntOfSllong y) in
+                        0 <= y' && y' < long_bits &&
+                        x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfSllong y))
+
+op <<_slong_uint
+   (x:Slong, y:Uint | let (x',y') = (mathIntOfSlong x, mathIntOfUint y) in
+                      y' < long_bits &&
+                      x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfUint y))
+
+op <<_slong_ulong
+   (x:Slong, y:Ulong | let (x',y') = (mathIntOfSlong x, mathIntOfUlong y) in
+                       y' < long_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfUlong y))
+
+op <<_slong_ullong
+   (x:Slong, y:Ullong | let (x',y') = (mathIntOfSlong x, mathIntOfUllong y) in
+                        y' < long_bits &&
+                        x' >= 0 && x' * 2**y' in? rangeOfSlong)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x * 2**(mathIntOfUllong y))
+
+% 1st operand sllong:
+
+op <<_sllong_sint
+   (x:Sllong, y:Sint | let (x',y') = (mathIntOfSllong x, mathIntOfSint y) in
+                       0 <= y' && y' < llong_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfSint y))
+
+op <<_sllong_slong
+   (x:Sllong, y:Slong | let (x',y') = (mathIntOfSllong x, mathIntOfSlong y) in
+                        0 <= y' && y' < llong_bits &&
+                        x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfSlong y))
+
+op <<_sllong_sllong
+   (x:Sllong, y:Sllong | let (x',y') = (mathIntOfSllong x, mathIntOfSllong y) in
+                         0 <= y' && y' < llong_bits &&
+                         x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfSllong y))
+
+op <<_sllong_uint
+   (x:Sllong, y:Uint | let (x',y') = (mathIntOfSllong x, mathIntOfUint y) in
+                       y' < llong_bits &&
+                       x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfUint y))
+
+op <<_sllong_ulong
+   (x:Sllong, y:Ulong | let (x',y') = (mathIntOfSllong x, mathIntOfUlong y) in
+                        y' < llong_bits &&
+                        x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfUlong y))
+
+op <<_sllong_ullong
+   (x:Sllong, y:Ullong | let (x',y') = (mathIntOfSllong x, mathIntOfUllong y) in
+                         y' < llong_bits &&
+                         x' >= 0 && x' * 2**y' in? rangeOfSllong)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x * 2**(mathIntOfUllong y))
+
+% 1st operand uint:
+
+op <<_uint_sint
+   (x:Uint, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfSint y)) modF (1 + UINT_MAX))
+
+op <<_uint_slong
+   (x:Uint, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfSlong y)) modF (1 + UINT_MAX))
+
+op <<_uint_sllong
+   (x:Uint, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfSllong y)) modF (1 + UINT_MAX))
+
+op <<_uint_uint
+   (x:Uint, y:Uint | mathIntOfUint y < int_bits) infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfUint y)) modF (1 + UINT_MAX))
+
+op <<_uint_ulong
+   (x:Uint, y:Ulong | mathIntOfUlong y < int_bits) infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfUlong y)) modF (1 + UINT_MAX))
+
+op <<_uint_ullong
+   (x:Uint, y:Ullong | mathIntOfUllong y < int_bits) infixl 109 : Uint =
+  uintOfMathInt ((mathIntOfUint x * 2**(mathIntOfUllong y)) modF (1 + UINT_MAX))
+
+% 1st operand ulong:
+
+op <<_ulong_sint
+   (x:Ulong, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfSint y)) modF (1 + ULONG_MAX))
+
+op <<_ulong_slong
+   (x:Ulong, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfSlong y)) modF (1 + ULONG_MAX))
+
+op <<_ulong_sllong
+   (x:Ulong, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfSllong y)) modF (1 + ULONG_MAX))
+
+op <<_ulong_uint
+   (x:Ulong, y:Uint | mathIntOfUint y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfUint y)) modF (1 + ULONG_MAX))
+
+op <<_ulong_ulong
+   (x:Ulong, y:Ulong | mathIntOfUlong y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfUlong y)) modF (1 + ULONG_MAX))
+
+op <<_ulong_ullong
+   (x:Ulong, y:Ullong | mathIntOfUllong y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt
+    ((mathIntOfUlong x * 2**(mathIntOfUllong y)) modF (1 + ULONG_MAX))
+
+% 1st operand ullong:
+
+op <<_ullong_sint
+   (x:Ullong, y:Sint |
+    0 <= mathIntOfSint y && mathIntOfSint y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfSint y)) modF (1 + ULLONG_MAX))
+
+op <<_ullong_slong
+   (x:Ullong, y:Slong |
+    0 <= mathIntOfSlong y && mathIntOfSlong y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfSlong y)) modF (1 + ULLONG_MAX))
+
+op <<_ullong_sllong
+   (x:Ullong, y:Sllong |
+    0 <= mathIntOfSllong y && mathIntOfSllong y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfSllong y)) modF (1 + ULLONG_MAX))
+
+op <<_ullong_uint
+   (x:Ullong, y:Uint | mathIntOfUint y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfUint y)) modF (1 + ULLONG_MAX))
+
+op <<_ullong_ulong
+   (x:Ullong, y:Ulong | mathIntOfUlong y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfUlong y)) modF (1 + ULLONG_MAX))
+
+op <<_ullong_ullong
+   (x:Ullong, y:Ullong | mathIntOfUllong y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt
+    ((mathIntOfUllong x * 2**(mathIntOfUllong y)) modF (1 + ULLONG_MAX))
+
+(* The >> operator requires integer operands [ISO 6.5.7/2], promotes them, and
+right-shifts the first operand E1 by the number of positions E2 indicated by the
+second operand [ISO 6.5.7/5]. If E2 is negative or greater than or equal to the
+size of E1, the behavior is undefined [ISO 6.5.7/3].
+
+If E1 is unsigned, or if it signed and non-negative, the result is the integral
+part of the quotient E1 / 2^E2 [ISO 6.5.7/5]. Otherwise, the result is
+implementation-dependent [ISO 6.5.7/5].
+
+Since the two operands are promoted, we only need to define ops for sint/uint
+and integer types of higher rank. The C code generator should not generate casts
+for conversion ops that carry out the needed promotions. Since the two operands
+are promoted independently (as opposed to the usual arithmetic conversion on
+other binary operators, which bring both operands to a common type), we need to
+define ops that correspond to all possible combinations of operand types. The
+ops are only defined when the result of >> is well defined. *)
+
+% 1st operand sint:
+
+op >>_sint_sint
+   (x:Sint, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < int_bits &&
+                     mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfSint y))
+
+op >>_sint_slong
+   (x:Sint, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < int_bits &&
+                      mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfSlong y))
+
+op >>_sint_sllong
+   (x:Sint, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < int_bits &&
+                       mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfSllong y))
+
+op >>_sint_uint
+   (x:Sint, y:Uint | mathIntOfUint y < int_bits && mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfUint y))
+
+op >>_sint_ulong
+   (x:Sint, y:Ulong | mathIntOfUlong y < int_bits && mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfUlong y))
+
+op >>_sint_ullong
+   (x:Sint, y:Ullong | mathIntOfUllong y < int_bits && mathIntOfSint x >= 0)
+   infixl 109 : Sint =
+  sintOfMathInt (mathIntOfSint x divT 2**(mathIntOfUllong y))
+
+% 1st operand slong:
+
+op >>_slong_sint
+   (x:Slong, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < long_bits
+                   && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfSint y))
+
+op >>_slong_slong
+   (x:Slong, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < long_bits
+                    && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfSlong y))
+
+op >>_slong_sllong
+   (x:Slong, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < long_bits
+                     && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfSllong y))
+
+op >>_slong_uint
+   (x:Slong, y:Uint | mathIntOfUint y < long_bits && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfUint y))
+
+op >>_slong_ulong
+   (x:Slong, y:Ulong | mathIntOfUlong y < long_bits && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfUlong y))
+
+op >>_slong_ullong
+   (x:Slong, y:Ullong | mathIntOfUllong y < long_bits && mathIntOfSlong x >= 0)
+   infixl 109 : Slong =
+  slongOfMathInt (mathIntOfSlong x divT 2**(mathIntOfUllong y))
+
+% 1st operand sllong:
+
+op >>_sllong_sint
+   (x:Sllong, y:Sint |
+    0 <= mathIntOfSint y && mathIntOfSint y < llong_bits &&
+    mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfSint y))
+
+op >>_sllong_slong
+   (x:Sllong, y:Slong |
+    0 <= mathIntOfSlong y && mathIntOfSlong y < llong_bits &&
+    mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfSlong y))
+
+op >>_sllong_sllong
+   (x:Sllong, y:Sllong |
+    0 <= mathIntOfSllong y && mathIntOfSllong y < llong_bits &&
+    mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfSllong y))
+
+op >>_sllong_uint
+   (x:Sllong, y:Uint |
+    mathIntOfUint y < llong_bits && mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfUint y))
+
+op >>_sllong_ulong
+   (x:Sllong, y:Ulong |
+    mathIntOfUlong y < llong_bits && mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfUlong y))
+
+op >>_sllong_ullong
+   (x:Sllong, y:Ullong |
+    mathIntOfUllong y < llong_bits && mathIntOfSllong x >= 0)
+   infixl 109 : Sllong =
+  sllongOfMathInt (mathIntOfSllong x divT 2**(mathIntOfUllong y))
+
+% 1st operand uint:
+
+op >>_uint_sint
+   (x:Uint, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfSint y))
+
+op >>_uint_slong
+   (x:Uint, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfSlong y))
+
+op >>_uint_sllong
+   (x:Uint, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < int_bits)
+   infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfSllong y))
+
+op >>_uint_uint
+   (x:Uint, y:Uint | mathIntOfUint y < int_bits) infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfUint y))
+
+op >>_uint_ulong
+   (x:Uint, y:Ulong | mathIntOfUlong y < int_bits) infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfUlong y))
+
+op >>_uint_ullong
+   (x:Uint, y:Ullong | mathIntOfUllong y < int_bits) infixl 109 : Uint =
+  uintOfMathInt (mathIntOfUint x divT 2**(mathIntOfUllong y))
+
+% 1st operand ulong:
+
+op >>_ulong_sint
+   (x:Ulong, y:Sint | 0 <= mathIntOfSint y && mathIntOfSint y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfSint y))
+
+op >>_ulong_slong
+   (x:Ulong, y:Slong | 0 <= mathIntOfSlong y && mathIntOfSlong y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfSlong y))
+
+op >>_ulong_sllong
+   (x:Ulong, y:Sllong | 0 <= mathIntOfSllong y && mathIntOfSllong y < long_bits)
+   infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfSllong y))
+
+op >>_ulong_uint
+   (x:Ulong, y:Uint | mathIntOfUint y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfUint y))
+
+op >>_ulong_ulong
+   (x:Ulong, y:Ulong | mathIntOfUlong y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfUlong y))
+
+op >>_ulong_ullong
+   (x:Ulong, y:Ullong | mathIntOfUllong y < long_bits) infixl 109 : Ulong =
+  ulongOfMathInt (mathIntOfUlong x divT 2**(mathIntOfUllong y))
+
+% 1st operand ullong:
+
+op >>_ullong_sint
+   (x:Ullong, y:Sint |
+    0 <= mathIntOfSint y && mathIntOfSint y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfSint y))
+
+op >>_ullong_slong
+   (x:Ullong, y:Slong |
+    0 <= mathIntOfSlong y && mathIntOfSlong y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfSlong y))
+
+op >>_ullong_sllong
+   (x:Ullong, y:Sllong |
+    0 <= mathIntOfSllong y && mathIntOfSllong y < llong_bits)
+   infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfSllong y))
+
+op >>_ullong_uint
+   (x:Ullong, y:Uint | mathIntOfUint y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfUint y))
+
+op >>_ullong_ulong
+   (x:Ullong, y:Ulong | mathIntOfUlong y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfUlong y))
+
+op >>_ullong_ullong
+   (x:Ullong, y:Ullong | mathIntOfUllong y < llong_bits) infixl 109 : Ullong =
+  ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfUllong y))
+
+(* TO DO: add < > <= >= == != & ^ | *)
+(* TO DO: && || correspond to Metaslang ops *)
 
 
 %subsection (* Array operators *)
