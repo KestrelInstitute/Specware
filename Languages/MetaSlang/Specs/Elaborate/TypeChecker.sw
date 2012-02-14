@@ -64,7 +64,6 @@ TypeChecker qualifying spec
 
   op debug?: Bool = false
 
-  
   %% ========================================================================
   %% The main type-checking function is elaboratePosSpec.
 
@@ -1457,7 +1456,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   def mkEmbed1 (env, srt, trm, id, pos) = 
     case isArrowCoProduct (env, srt) of
-      | Some (sum_type, row) ->
+      | Some (dom_type, coprod_ty, row) ->
         let 
 	  %% This checks that a sum-type constructor is given the proper type
           def findId ls = 
@@ -1465,13 +1464,13 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	      | [] -> None   % Some (undeclaredName (env, trm, id, srt, pos))
 	      | (constructor_id, Some constructor_dom_type) :: row -> 
 	        if id = constructor_id then
-		  %%  let _ = String.writeLine ("coprod: "^printType (Arrow (s, CoProduct (row, pos0)), pos0)) in
-		  %%  let _ = String.writeLine ("srt:  "^printType srt) in
-		  %%  let _ = String.writeLine ("srt1: "^printType found_type) in
-		  %%  let _ = String.writeLine ("dom:  "^printType (sum_type, pos)) in
+		    %let _ = writeLine ("srt:  "^printType srt) in
+		    %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
 		  let constructor_dom_type = checkType (env, constructor_dom_type) in
-		  let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (sum_type, pos)) in
-		  Some (Fun (Embed (id, true), checkType (env, srt), pos))
+                  let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
+		  let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
+                  let _ = elaborateType(env, constr_ty, srt) in
+		  Some (Fun (Embed (id, true), constr_ty, pos))
 		else 
 		  findId row
 	      | _ :: row -> findId row
@@ -1479,11 +1478,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	  findId row
       | _ -> None
 
-  def isArrowCoProduct (env, srt) : Option (MSType * List (Id * Option MSType)) =
+  def isArrowCoProduct (env, srt) : Option (MSType * MSType * List (Id * Option MSType)) =
     case unfoldType (env, srt) of
       | Arrow (dom, rng, _) -> 
         (case isCoproduct (env, rng) of
-	   | Some row -> Some (dom, row)
+	   | Some row -> Some (dom, rng, row)
 	   | None -> None)
       | _ -> None
 
