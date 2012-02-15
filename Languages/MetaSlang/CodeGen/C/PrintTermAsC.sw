@@ -221,7 +221,7 @@ AnnSpecPrinter qualifying spec
             | Nat     n  -> show n
             | Char    c  -> show c
             | String  s  -> s
-            | Bool    b  -> if b then "TRUE" else "FALSE"
+           %| Bool    b  -> if b then "(0 == 0)" else "(0 != 0)"
 
             | Project f  -> "." ^ f
 
@@ -290,16 +290,21 @@ AnnSpecPrinter qualifying spec
          | (Constant ctype, [n, radix]) -> 
            let postfix = case ctype of
                            | SInt   -> ""
-                           | SLong  -> "LS"
-                           | SLLong -> "LLS"
-                           | UInt   -> ""
-                           | ULong  -> "LU"
-                           | ULLong -> "LLU"
+                           | SLong  -> "l"
+                           | SLLong -> "ll"
+                           | UInt   -> "u"
+                           | ULong  -> "ul"
+                           | ULLong -> "ull"
            in
            (case radix of
               | Fun (Embed ("hex", _), _, _) -> 
                 blockFill (0, 
                            [(0, string "0x"),
+                            (0, printTermAsC n),
+                            (0, string postfix)])
+              | Fun (Embed ("oct", _), _, _) -> 
+                blockFill (0, 
+                           [(0, string "0"),
                             (0, printTermAsC n),
                             (0, string postfix)])
               | _ -> 
