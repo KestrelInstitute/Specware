@@ -91,15 +91,16 @@ SliceSpec qualifying spec
                           root_ops   : QualifiedIds, 
                           root_types : QualifiedIds) 
   : QualifierSet * QualifierSet =
-  let chase_subtypes? = false in
-  let chase_theorems? = false in
+  let chase_terms_in_types? = false in
+  let chase_theorems?       = false in
   let 
     def cut_op?   (qid : QualifiedId) : Bool = false
     def cut_type? (qid : QualifiedId) : Bool = false
   in
-  sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_subtypes?, chase_theorems?)
+  sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?)
 
  op [a] foldJustTerms (f : a -> MSTerm -> a) (acc: a) (term : MSTerm) : a =
+  %% foldTerm recurs into term within types and patterns: subtypes, quotients, etc.
   let foldOfChildren = 
      case term of
        | Let        (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm) acc decls) bdy
@@ -119,19 +120,19 @@ SliceSpec qualifying spec
   in
   f foldOfChildren term
 
- op sliceSpecInfo (spc             : Spec, 
-                   root_ops        : QualifiedIds, 
-                   root_types      : QualifiedIds, 
-                   cut_op?         : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                   cut_type?       : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                   chase_subtypes? : Bool, 
-                   chase_theorems? : Bool)
+ op sliceSpecInfo (spc                   : Spec, 
+                   root_ops              : QualifiedIds, 
+                   root_types            : QualifiedIds, 
+                   cut_op?               : QualifiedId -> Bool, % stop recursion at these, and do not include them
+                   cut_type?             : QualifiedId -> Bool, % stop recursion at these, and do not include them
+                   chase_terms_in_types? : Bool, 
+                   chase_theorems?       : Bool)
   : QualifierSet * QualifierSet =
   let 
     def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
       
     def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-      if chase_subtypes? then
+      if chase_terms_in_types? then
         foldTerm (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
@@ -181,7 +182,7 @@ SliceSpec qualifying spec
                       tm
 
     def newOpsInType (ty : MSType, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-      if chase_subtypes? then
+      if chase_terms_in_types? then
         foldType (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
@@ -271,7 +272,7 @@ SliceSpec qualifying spec
                   new_ops
         in
         let new_ops_in_ops_or_types = 
-            if chase_subtypes? then 
+            if chase_terms_in_types? then 
               foldl (fn (newopids, qid) ->
                        % let _ = writeLine("new_ops_in_types: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
                        if cut_type? qid then
@@ -322,15 +323,15 @@ SliceSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op sliceSpec (spc             : Spec, 
-               root_ops        : QualifiedIds,        % include these and things they recursively mention
-               root_types      : QualifiedIds,        % include these and things they recursively mention
-               cut_op?         : QualifiedId -> Bool, % stop recursion at these, and do not include them
-               cut_type?       : QualifiedId -> Bool, % stop recursion at these, and do not include them
-               chase_subtypes? : Bool,                % recur through subtype predicates and quotient relations
-               chase_theorems? : Bool)                % recur through axioms and theorems that mention included types and ops
+ op sliceSpec (spc                   : Spec, 
+               root_ops              : QualifiedIds,        % include these and things they recursively mention
+               root_types            : QualifiedIds,        % include these and things they recursively mention
+               cut_op?               : QualifiedId -> Bool, % stop recursion at these, and do not include them
+               cut_type?             : QualifiedId -> Bool, % stop recursion at these, and do not include them
+               chase_terms_in_types? : Bool,                % recur through subtype predicates and quotient relations
+               chase_theorems?       : Bool)                % recur through axioms and theorems that mention included types and ops
   : Spec =
-  let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_subtypes?, chase_theorems?) in
+  let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?) in
   let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                         in
   sliced_spc
 
@@ -340,9 +341,9 @@ SliceSpec qualifying spec
                       cut_op?    : QualifiedId -> Bool, % stop recursion at these, and do not include them
                       cut_type?  : QualifiedId -> Bool) % stop recursion at these, and do not include them
   : Spec =
-  let chase_subtypes? = false in  % do not recur through subtype predicates and quotient relations
-  let chase_theorems? = false in  % do not recur through axioms and theorems that mention included types and ops
-  sliceSpec (spc, root_ops, root_types, cut_op?, cut_type?, chase_subtypes?, chase_theorems?)
+  let chase_terms_in_types? = false in  % do not recur through subtype predicates and quotient relations
+  let chase_theorems?       = false in  % do not recur through axioms and theorems that mention included types and ops
+  sliceSpec (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?)
 
  op sliceSpecForCodeM (spc        : Spec, 
                        root_ops   : QualifiedIds,        % include these and things they recursively mention
