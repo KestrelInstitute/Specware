@@ -153,6 +153,7 @@ AnnSpecPrinter qualifying spec
 	  | Op (_, fixity) -> (case fixity of
 				 | Unspecified -> Nonfix
 				 | _ -> fixity)
+          | Embed("Cons", true) -> Infix (Right, 24)
 	  | And            -> Infix (Right, 15) 
 	  | Or             -> Infix (Right, 14) 
 	  | Implies        -> Infix (Right, 13) 
@@ -229,6 +230,7 @@ AnnSpecPrinter qualifying spec
  op [a] stripQual (tm: ATerm a): ATerm a =
    case tm of
      | Fun(Op(Qualified(_,opName),fx),s,a) -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
+     | Fun(Embed("Cons", true), s, a) -> Fun(Embed("::", true), s, a)
      | _ -> tm
 
  def printLambda (context, path, marker, match, enclose?, case?) = 
@@ -261,6 +263,20 @@ AnnSpecPrinter qualifying spec
 		     (ListUtilities.mapWithIndex (fn (i, rule) -> prRule pp.Bar (i + 1, rule) Nonfix) 
 		                                 rules))
  
+ op [a] ppMonadContents (context: PrContext) (path: Path) (term: ATerm a) (i: Nat): Prettys =
+   case term of
+     | Apply(Fun (Op(Qualified(_, "monadBind"), _), _, _),
+             Record([(_, t1), (_, Lambda([(pat, Fun (Bool true, _, _), t2)], _))], _), _) ->
+       let r_prettys = ppMonadContents context path t2 (i+1) in
+       (case pat of
+        | WildPat _ -> ppTerm context (i :: path, Top) t1
+        | _ -> blockFill (0, [(0, ppPattern context ([0, i] ++ path, false, false) pat),
+                              (1, string " <- "),
+                              (2, ppTerm context ([1, i] ++ path, Top) t1)]))
+       
+        :: r_prettys
+     | _ -> [ppTerm context (i :: path, Top) term]
+
  def ppTermScheme context parent (tvs, term) = 
    let pp1 = ppForallTyVars context.pp tvs in
    let pp2 = ppTerm context parent term in
@@ -331,6 +347,12 @@ AnnSpecPrinter qualifying spec
 			  ppTerm context (path, parentTerm) tm, 
 			  string ").", 
 			  pp.fromString p]
+         | (Fun (Op(Qualified(_, "monadBind"), _), _, _),
+            Record([(_, t1), (_, Lambda([(pat, Fun (Bool true, _, _), t2)], _))], _)) ->
+           %% {pat <- t1; t2}
+           prettysNone [pp.LCurly,
+                        prettysAll (addSeparator (string ";") (ppMonadContents context path term 0)),
+                        pp.RCurly]
 	 | _ -> 
 	   blockLinear (0, 
                         [(0, prettysNone([ppTerm context ([0] ++ path, Nonfix) t1]
@@ -372,10 +394,8 @@ AnnSpecPrinter qualifying spec
                                               (0, pp.RP)])))])
    in
    case isFiniteList term of
-     | Some terms -> 
-       AnnTermPrinter.ppListPath path
-                                 (fn (path, term) -> ppTerm context (path, Top) term)
-				 (pp.LBrack, pp.Comma, pp.RBrack)  terms
+     | Some terms -> ppListPath path (fn (path, term) -> ppTerm context (path, Top) term)
+                       (pp.LBrack, pp.Comma, pp.RBrack)  terms
      | None -> 
        (case term of
 	  | Fun (top, srt, a) -> 
@@ -811,8 +831,8 @@ AnnSpecPrinter qualifying spec
      prettysNone [pp.LP, pretty, pp.RP]
    else
      pretty 
-        
- def ppPattern context (path, enclose?, case?) pattern = 
+
+  def ppPattern context (path, enclose?, case?) pattern = 
    let pp : ATermPrinter = context.pp in
    case pattern of
      | WildPat   (_(* srt *), _) -> pp.Underscore
@@ -830,8 +850,7 @@ AnnSpecPrinter qualifying spec
                               (2, ppType context ([0] ++ path, Top : ParentType) srt)]))
        else 
 	 pp.fromString id
-     | EmbedPat  ("Nil", None, Base (Qualified ("List",      "List"), [_], _), _) -> string "[]"
-     | EmbedPat  ("Nil", None, Base (Qualified (UnQualified, "List"), [_], _), _) -> string "[]" % ???
+     | EmbedPat  ("Nil", None, ty, _) | listType?(ty) -> string "[]"
      | EmbedPat  (id, None, _(* srt *), _) -> pp.fromString id
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
@@ -851,11 +870,15 @@ AnnSpecPrinter qualifying spec
 	   AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
      | EmbedPat ("Cons", 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
-		 Base (_(* Qualified ("List", "List") *), [_], _), _) -> 
-       enclose (enclose?, pp, 
-		prettysFill [ppPattern context ([0]++ path, true, false) p1, 
-			     string " :: ", 
-			     ppPattern context ([1]++ path, false, false) p2])
+		 Base (_, [_], _), _) ->
+       (case isFiniteListPat pattern of
+          | Some pats -> ppListPath path (fn (path, term) -> ppPattern context (path, false, false) term)
+                           (pp.LBrack, pp.Comma, pp.RBrack) pats
+          | None ->
+            enclose (enclose?, pp, 
+                     prettysFill [ppPattern context ([0]++ path, true, false) p1, 
+                                  string " :: ", 
+                                  ppPattern context ([1]++ path, false, false) p2]))
  %  | EmbedPat ("Cons", 
  %             Some (RecordPat ([("1", p1), ("2", p2)], _)), 
  %              PBase (_(* Qualified ("List", "List") *), [_], _), _) -> 
@@ -871,7 +894,7 @@ AnnSpecPrinter qualifying spec
                                         (2, ppPattern context ([0]++ path, true, false) pat)]
                                      else
                                        [(2, prettysNone[pp.LP, 
-                                                        ppPattern context ([0]++ path, false, false) pat, 
+                                                        ppPattern context ([0]++ path, false, false) pat,
                                                         pp.RP])]))))
      | TypedPat (pat, srt, _) -> 
        enclose (enclose?, pp,
