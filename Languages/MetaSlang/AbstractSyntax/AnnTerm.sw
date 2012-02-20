@@ -1845,35 +1845,46 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
  def mkTrueA  a = Fun (Bool true,  Boolean a, a)
  def mkFalseA a = Fun (Bool false, Boolean a, a)
 
+ op [a] listType?(ty: AType a): Bool =
+   case ty of
+     | Base (Qualified ("List",      "List"), [_], _) -> true
+     | Base (Qualified (UnQualified, "List"), [_], _) -> true
+     | Base (Qualified ("List",      "List1"), [_], _) -> true
+     | Base (Qualified (UnQualified, "List1"), [_], _) -> true
+     | Subtype (sty, _, _) -> listType? sty
+     | _ -> false
 
  op [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
    case term of
-     | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) -> Some []
+     | Fun (Embed ("Nil", false), ty, _) | listType? ty -> Some []
      | Apply (Fun (Embed("Cons", true), 
-		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				   _),
-			  _,
-			  _),
-		   _),
-	      Record ([(_, t1), (_, t2)], _),
-	      _)
-       -> 
-       (case isFiniteList t2 of
-	  | Some terms -> Some (Cons (t1, terms))
-	  | _ ->  None)
+		   Arrow (Product ([("1", _), ("2", ty)], _), _, _), _),
+	      Record ([(_, t1), (_, t2)], _), _)
+       | listType? ty
+       -> (case isFiniteList t2 of
+             | Some terms -> Some (t1 :: terms)
+             | _ ->  None)
      | ApplyN ([Fun (Embed ("Cons", true), 
-		     Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
-				     _),
-			    Base (Qualified("List", "List1"), _, _),
-			    _),
-		     _),
-		Record ([(_, t1), (_, t2)], _),
-		_],
-	       _) 
+		     Arrow (Product ([("1", _), ("2",  ty1)], _),
+			    ty2, _), _),
+		Record ([(_, t1), (_, t2)], _), _], _)
+       | listType? ty1 && listType? ty2
+       -> (case isFiniteList t2 of
+             | Some terms -> Some (t1 :: terms)
+             | _  ->  None)
+     | _ -> None
+
+ op [a] isFiniteListPat (pattern : APattern a) : Option (List (APattern a)) =  
+   case pattern of
+     | EmbedPat ("Nil", None, ty, _) -> Some []
+     | EmbedPat ("Cons", 
+		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
+		 ty, _)
+       | listType? ty
        -> 
-       (case isFiniteList t2 of
-	  | Some terms -> Some (Cons (t1, terms))
-	  | _  ->  None)
+       (case isFiniteListPat p2 of
+	  | Some patterns -> Some (p1 :: patterns)
+	  | _ ->  None)
      | _ -> None
 
 
