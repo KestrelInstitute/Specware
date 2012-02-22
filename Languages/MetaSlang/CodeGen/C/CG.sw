@@ -212,12 +212,6 @@ CG qualifying spec
   
   spc
 
- op topLevelOpsAndTypesExcludingBaseSubsts (spc : Spec) : QualifiedIds * QualifiedIds =
-  let (base_subst_ops, base_subst_types) = substBaseSpecOpsAndTypes () in
-  let ops   = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelOps   spc) in
-  let types = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelTypes spc) in
-  (ops, types)
-  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Generate the C_Spec for the given spec. 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

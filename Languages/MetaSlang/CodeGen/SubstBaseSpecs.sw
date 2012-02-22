@@ -2,6 +2,7 @@ SubstBaseSpecs qualifying spec
 
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Languages/SpecCalculus/Semantics/Value
+ import /Languages/MetaSlang/Specs/Utilities
 
  op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap, which imports this spec
 
@@ -12,6 +13,12 @@ SubstBaseSpecs qualifying spec
  op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable", "/Library/Base/Integer_Executable"]
  op baseExecutableSpecNamesJ : List String = ["/Library/Base/List_Executable"]
  
+ op topLevelOpsAndTypesExcludingBaseSubsts (spc : Spec) : QualifiedIds * QualifiedIds =
+  let (base_subst_ops, base_subst_types) = substBaseSpecOpsAndTypes () in
+  let ops   = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelOps   spc) in
+  let types = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelTypes spc) in
+  (ops, types)
+  
  op substBaseSpecOpsAndTypes () : QualifiedIds * QualifiedIds =
   %% used during code generation to avoid miscontruing these as "toplevel" ops and types
   foldl (fn ((ops, types), exec_spec_name) ->
