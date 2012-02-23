@@ -55,8 +55,12 @@ spec
 	     let (tvs, fsrt) = unpackFirstTypeDef info in
 	     case fsrt of
 	       | CoProduct _ -> srt
-	       | _ -> 
-	       let ssrt = substType (zip (tvs, srts), fsrt) in
+	       | _ ->
+                 if length tvs ~= length srts
+                   then % let _ = writeLine("Ill-formed type: "^printType srt) in
+                        srt
+                 else
+                 let ssrt = substType (zip (tvs, srts), fsrt) in
 		 unfoldBeforeCoProduct (sp, ssrt)
 	   else
 	     srt)
