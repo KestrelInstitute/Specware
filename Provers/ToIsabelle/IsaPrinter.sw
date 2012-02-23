@@ -152,19 +152,22 @@ IsaTermPrinter qualifying spec
 
   op printValueIfNeeded
        (c: Context, val: Value, thy_nm: String, fil_nm: String, hash_ext: String, uid: UnitId): String =
-    let thy_fil_nm = fil_nm ^ hash_ext ^ ".thy" in
+    let full_thy_nm = if fil_nm = hash_ext then fil_nm else fil_nm ^ hash_ext in
+    let thy_fil_nm = full_thy_nm ^ ".thy" in
     let sw_fil_nm = fil_nm ^ ".sw" in
     let _ = if fileOlder?(sw_fil_nm, thy_fil_nm)
               then ()
             else toFile(thy_fil_nm,
-                        showValue(val, c.recursive?, Some uid, Some (thy_nm ^ hash_ext)))
+                        showValue(val, c.recursive?, Some uid, Some (full_thy_nm)))
     in thy_nm
 
   op  uidNamesForValue: Value -> Option (String * String * UnitId)
   def uidNamesForValue val =
     case uidStringPairForValue val of
       | None -> None
-      | Some((thynm, filnm, hash), uid) -> Some(thynm ^ hash, filnm ^ hash, uid)
+      | Some((thynm, filnm, hash), uid) ->
+        Some(if thynm = hash then (thynm, filnm, uid)
+             else (thynm ^ hash, filnm ^ hash, uid))
 
   op  uidStringPairForValue: Value -> Option ((String * String * String) * UnitId)
   def uidStringPairForValue val =
@@ -177,7 +180,7 @@ IsaTermPrinter qualifying spec
 
   op unitIdToIsaString(uid: UnitId): (String * String * String) =
     case uid.hashSuffix of
-      | Some loc_nm -> (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
+      | Some loc_nm | loc_nm ~= last uid.path -> (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
       | _ ->           (last uid.path, uidToIsaName uid, "")
 
   op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun",
@@ -203,9 +206,13 @@ IsaTermPrinter qualifying spec
              Some((thyName thynm, sw_file, thyName thy_file ^ ".thy"),
                   val, uid))
       | Some((thynm, filnm, hash), uid) ->
-        Some((thyName(thynm ^ hash),
-              uidToFullPath uid ^ ".sw",
-              thyName(filnm ^ hash) ^ ".thy"),
+        Some(if thynm = hash
+               then (thyName(thynm),
+                     uidToFullPath uid ^ ".sw",
+                     thyName(filnm) ^ ".thy")
+               else (thyName(thynm ^ hash),
+                     uidToFullPath uid ^ ".sw",
+                     thyName(filnm ^ hash) ^ ".thy"),
              val, uid)
 
   op uidStringPairForTerm(c: Context, sc_tm: SCTerm): Option((String * String * String) * UnitId) =
@@ -223,9 +230,13 @@ IsaTermPrinter qualifying spec
           | None -> None
           | Some(val, uid) ->
             let (thynm, filnm, hash) = unitIdToIsaString uid in
-            Some((thynm ^ hash,
-                  uidToFullPath uid ^ ".sw",
-                  filnm ^ hash),
+            Some(if thynm = hash
+                   then (thynm,
+                         uidToFullPath uid ^ ".sw",
+                         filnm)
+                   else (thynm ^ hash,
+                         uidToFullPath uid ^ ".sw",
+                         filnm ^ hash),
                  uid))
       | _ -> None
 
@@ -287,7 +298,8 @@ IsaTermPrinter qualifying spec
   op  showValue : Value * Bool * Option UnitId * Option String -> Text
   def showValue (value, recursive?, uid, opt_nm) =
     let (thy_nm, val_uid) = case uidStringPairForValue value of
-                             | Some ((thy_nm, _, hash_nm), uid) -> (thy_nm ^ hash_nm, Some uid)
+                             | Some ((thy_nm, _, hash_nm), uid) ->
+                               (if thy_nm = hash_nm then thy_nm else thy_nm ^ hash_nm, Some uid)
                              | _ -> ("", None)
     in
     let main_pp_val = ppValue {printTypes? = false,
@@ -1642,12 +1654,19 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                %&&
                (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
                      | [(lhs, rhs)] ->
+                       %let _ = writeLine("defToFunCases: "^printTerm lhs^"\n = "^printTerm rhs) in
                        (case lhs of
                         | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
                         | _ ->
                         case fixity of
                         | Infix _ ->
-                          (foldSubTerms (fn (tm, count) -> if embed? Record tm then count + 1 else count)
+                          (foldSubTerms (fn (tm, count) ->
+                                           case tm of
+                                             | Var _ -> count
+                                             | Apply _ -> count
+                                             | Record _ -> count
+                                             | _ -> %let _ = writeLine (printTerm tm) in
+                                                    count + 1)
                              0 lhs)
                            > 1
                         | _ -> containsRefToOp?(rhs, mainId) )
@@ -2448,14 +2467,15 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %           in
 %           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
 %                                       [mkNat 0, term2]))
-        | (Fun(Op(qid,Infix _),_,a), term2) ->
+        | (Fun(Op(qid,Infix _),f_ty,a), term2) ->
           let spc = getSpec c in
           ppTerm c parentTerm
             (case productTypes(spc, inferType (spc, term2)) of
                | [t1,t2] ->
                  MS.mkLet([(MS.mkTuplePat[MS.mkVarPat("x",t1), MS.mkVarPat("y",t2)], term2)],
                           mkAppl(term1, [mkVar("x",t1), mkVar("y",t2)]))
-               | _ -> fail("Can't get argument types of infix operator: "^ printTerm term))
+               | _ -> (warn("Can't get argument types of infix operator: "^ printTerm term);
+                       mkApply(Fun(Op(qid,Nonfix),f_ty,a), term2)))
         %%  embed? foo x  -->  case x of foo _ -> true | _ -> false
         | (Fun(Embedded id,ty,a), term2) ->
           let spc = getSpec c in
