@@ -30,8 +30,8 @@ sequencing operator but that might preclude one from refining it.
 
   axiom non_binding_sequence is [a]
     fa (f :Monad a, g: Monad a)
-      {f; g} = {_ <- f; g}
-   (* monadSeq (f, g) = monadBind (f, fn _ -> g) *)
+     (* {f; g} = {_ <- f; g}  *)
+    monadSeq (f, g) = monadBind (f, fn _ -> g) 
 
 #translate Haskell -morphism
   type Monad.Monad -> Monad
