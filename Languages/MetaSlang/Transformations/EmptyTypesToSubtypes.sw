@@ -17,7 +17,9 @@ spec
 
   op knownNonEmptyType?(qid: QualifiedId, spc: Spec): Bool =
     qid in? knownNonEmptyBaseTypes
-      || (let Some info = findTheType(spc, qid) in
+      || (case findTheType(spc, qid) of
+            | None -> false
+            | Some info ->
           let (tvs, dfn) = unpackFirstTypeDef info in
           ~(tvs = [] && embed? Any dfn)
             || existsOpWithType?(mkBase(qid,[]), spc)
