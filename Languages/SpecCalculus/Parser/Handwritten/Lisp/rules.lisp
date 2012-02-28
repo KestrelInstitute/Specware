@@ -94,6 +94,8 @@
    ((:tuple "*")            "*")
    ((:tuple "\\_times")     "\\_times")
    ((:tuple "UID")          "UID")
+  ;((:tuple "slice")        "slice")
+  ;((:tuple "globalize")    "globalize")
    ((:tuple (1 :SYMBOL))    (common-lisp::symbol-name (quote 1)))
    ))
 
@@ -1680,10 +1682,12 @@ If we want the precedence to be optional:
     (make-transform-slice 1 2 3 4 ':left-lcb ':right-lcb))
 
    ;; globalize (type, global-var-name, op-that-initializes-global)
-   ((:tuple "globalize" "(" (1 ::QUALIFIABLE-TYPE-NAME) "," (2 :QUALIFIABLE-OP-NAME) 
-            (:optional (:tuple "," (3 :QUALIFIABLE-OP-NAME)))
-            ")")
-    (make-transform-globalize 1 2 3 ':left-lcb ':right-lcb))
+   ((:tuple "globalize" "(" (1 :QUALIFIABLE-OP-NAMES) ","  ; roots
+                            (2 :QUALIFIABLE-TYPE-NAME) "," ; global type
+                            (3 :QUALIFIABLE-OP-NAME)       ; global var of global type
+                            (:optional (:tuple "," (4 :QUALIFIABLE-OP-NAME))) ; possibly named initializer
+                        ")")
+    (make-transform-globalize 1 2 3 4 ':left-lcb ':right-lcb))
 
    ((:tuple (1 :TRANSFORM-EXPR)
 	    "(" (2 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")

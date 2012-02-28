@@ -54,7 +54,7 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
     | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
-    | Globalize (TypeName  * OpName  * Option OpName)
+    | Globalize (OpNames * TypeName  * OpName  * Option OpName)
     | Trace Bool
     | Print
 
@@ -832,7 +832,8 @@ spec
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?, recovery_fns), tracing?)
       | RedundantErrorCorrecting(morphs, opt_qual, restart?) ->
         redundantErrorCorrecting spc morphs opt_qual restart? tracing?
-      | Globalize (gtype, gvar, opt_ginit) -> globalizeSingleThreadedType (spc, gtype, gvar, opt_ginit, tracing?)
+      | Globalize (root_ops, gtype, gvar, opt_ginit) -> 
+        globalizeSingleThreadedType (spc, root_ops, gtype, gvar, opt_ginit, tracing?)
       | Slice     (root_ops, root_types, cut_op?, cut_type?) -> sliceSpecForCodeM (spc, root_ops, root_types, cut_op?, cut_type?, tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))

@@ -14,7 +14,7 @@ spec
       | Qual(_,_,p) -> p
       | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
-      | Globalize(_,_,_,p) -> p
+      | Globalize(_,_,_,_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
       | Apply(_,_,p) -> p
@@ -186,7 +186,7 @@ spec
       | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
         return (Slice (root_ops, root_types, cut_op?, cut_type?))
 
-      | Globalize (typ, gvar, opt_init, _) -> return (Globalize (typ, gvar, opt_init))
+      | Globalize (roots, typ, gvar, opt_init, _) -> return (Globalize (roots, typ, gvar, opt_init))
 
       | _ -> 
         let _ = writeLine ("oops: " ^ anyToString trans) in
