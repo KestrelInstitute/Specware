@@ -1215,7 +1215,7 @@ SpecsToI2L qualifying spec
              % (constructor name followed by var patterns) or (wildpat)
              let
 
-               def getUnionCase (pat, _, tm) =
+               def getUnionCase (pat, cond, tm) =
                  let exp = term2expression (tm, ctxt, spc) in
                  case pat of
 
@@ -1253,6 +1253,7 @@ SpecsToI2L qualifying spec
                    | CharPat (c,_)        -> I_CharCase   (c,        exp)
                    | VarPat  ((id,typ),_) -> let ityp = type2itype([], typ, unsetToplevel ctxt, spc) in
                                              I_VarCase    (id, ityp, exp)
+                   | RestrictedPat (pat, _, _) -> getUnionCase (pat, cond, tm) % cond will be ignored, is just a filler 
                    | _ -> 
                      fail (mkInOpStr ctxt ^ "unsupported feature: pattern not supported, use embed or wildcard pattern instead:\n"
                              ^ " pattern = " ^ printPattern pat ^ " = " ^ anyToString pat ^ "\n inside term = " ^ printTerm outer_tm ^ " = " ^ anyToString outer_tm ^ "\n")
