@@ -717,7 +717,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
       | None ->
         let thy_ext = show(!c.anon_thy_count) in
         let thy_nm = c.thy_name ^ thy_ext in
-        let thy_fil_nm = "/tmp/??.thy" in
+        let thy_fil_nm = "/tmp/" ^ thy_nm ^ ".thy" in   % thy_nm was "??", which crashed as an illegal filename
         (%writeLine("ppI0: "^thy_nm^" "^uidToFullPath(getCurrentUID c));
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
