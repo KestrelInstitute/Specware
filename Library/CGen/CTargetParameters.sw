@@ -1,3 +1,7 @@
+%% NOTE: The following files should be kept in sync:
+%% Specware4/Library/CGen/CTargetParameters.sw
+%% vTPM/CTargetParameters.sw
+
 C qualifying spec
 
 import Library/All
