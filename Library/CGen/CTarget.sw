@@ -1,3 +1,7 @@
+%% NOTE: The following files should be kept in sync:
+%% Specware4/Library/CGen/CTarget.sw
+%% vTPM/CTarget.sw
+
 C qualifying spec
 
 import CTargetParameters
@@ -381,7 +385,7 @@ op [a] ofLength? (n:Nat) (arr:Array a) : Bool =
 given lengths (an array type includes the number of elements [ISO 6.2.5/20]),
 e.g.
  (Array Sint | ofLength? 5)                         for   int[5]
- (Array (Array Char | ofLength? 2) | ofLength? 4)   for   char[2][4]
+ (Array (Array Char | ofLength? 4) | ofLength? 2)   for   char[2][4]
 *)
 
 
@@ -395,8 +399,8 @@ work around this mismatch by having the code generator map Metaslang fields like
 "_a_first", "_b_second", "_c_third", "_d_fourth", etc. to C fields like "first",
 "second", "third", "fourth", etc.
 
-In order to represent a C structure type, a Metaslang record type must have all
-all fields whose Metaslang types correspond to C types, e.g.
+In order to represent a C structure type, a Metaslang record type must have only
+fields whose Metaslang types correspond to C types, e.g.
  {x:Sint, y:Sint}   for   struct {int x, int y}
 *)
 
@@ -451,7 +455,7 @@ op uintConstant (n:Nat | n in? rangeOfUint) (base:IntConstBase) : Uint =
 op ulongConstant (n:Nat | n in? rangeOfUlong) (base:IntConstBase) : Ulong =
   ulongOfMathInt n
 
-op ullongConstant (n:Nat | n in? rangeOfSllong) (base:IntConstBase) : Ullong =
+op ullongConstant (n:Nat | n in? rangeOfUllong) (base:IntConstBase) : Ullong =
   ullongOfMathInt n
 
 
@@ -484,14 +488,16 @@ the char type has the same behavior as either signed or unsigned char, and this
 choice is captured by ops plainCharsAreSigned and plainCharsAreUnsigned,
 introduced earlier.
 
-If the new type is unsigned, we apply the (flooring) modulo operation, with
-argument one plus the maximum representable integer in the type. This is
-equivalent to the repeated subtraction or addition mentioned in [ISO 6.3.1.3/2].
+If the new type is unsigned but cannot represent the mathematical value of the
+integer, we apply the (flooring) modulo operation, with argument one plus the
+maximum representable integer in the type. This is equivalent to the repeated
+subtraction or addition mentioned in [ISO 6.3.1.3/2].
 
-If the new type is signed, the outcome is non-standard [ISO 6.3.1.3/3]. We use
-subtype constraints to ensure that the results of the conversions is always
-standard and well-defined; in other words, we disallow conversions when the
-outcome is non-standard.
+If the new type is signed but cannot represent the mathematical value of the
+integer, the outcome is non-standard [ISO 6.3.1.3/3]. We use subtype
+constraints to ensure that the results of the conversions are always standard
+and well-defined; in other words, we disallow conversions when the outcome is
+non-standard.
 
 There are 11 integer types:
  uchar ushort uint ulong ullong
@@ -1443,9 +1449,10 @@ type ArithOp = Int * Int -> Int
 
 (* The Metaslang ops +, -, and * have type ArithOp and can be used to
 instantiate the ArithOp parameter. The Metaslang ops divT and modT do not have
-type ArithOp due to the subtype restriction that the divisor is 0. Thus, we
-define two versions that return 0 (an arbitrary value) when the divisor is 0.
-As defined later, the divisor is never 0 when these ops are actually used. *)
+type ArithOp due to the subtype restriction that the divisor is not 0. Thus,
+we define two versions that return 0 (an arbitrary value) when the divisor is
+0.  As defined later, the divisor is never 0 when these ops are actually
+used. *)
 
 op divT0 (i:Int, j:Int) : Int = if j ~= 0 then i divT j else 0
 op modT0 (i:Int, j:Int) : Int = if j ~= 0 then i modT j else 0
@@ -2332,7 +2339,7 @@ expressions (i.e. "." operator) in C. *)
 %section (* Function definitions *)
 
 (* A Metaslang function of type T1 * ... * Tn -> T, where n >= 0 and the Ti's
-and T are all Metaslang types that correspond to C types, correspond to a C
+and T are all Metaslang types that correspond to C types, corresponds to a C
 function [ISO 6.7.5.3, 6.9.1] with the corresponding argument and result
 types. The Metaslang function must have explicit argument names and its body
 must only use Metaslang operators (defined above) that correspond to C
