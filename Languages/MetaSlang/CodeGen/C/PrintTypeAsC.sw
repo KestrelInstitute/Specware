@@ -9,7 +9,42 @@ PrintTypeAsC qualifying spec
 
  import /Languages/SpecCalculus/Semantics/Environment
 
- op legalId? (id : String) : Bool =
+ type CGenOptions = {plainCharsAreSigned? : Bool,
+                     printPragmas?        : Bool}
+
+ op init_cgen_options (spc : Spec) : CGenOptions = 
+  let plain_chars_are_signed? =
+      case findTheOp (spc, Qualified ("C", "plainCharsAreSigned")) of
+        | Some opinfo ->
+          let 
+            def true? tm =
+              case tm of
+                | Fun (Bool b, _, _) -> b
+                | TypedTerm (tm, _, _) -> true? tm
+                | _ -> 
+                  let _ = writeLine ("plainCharsAreSigned has unrecognized definition: " ^ printTerm tm 
+                                       ^ ", defaulting to false") 
+                  in
+                  false
+          in
+          let signed? = true? opinfo.dfn in
+          signed?
+        | _ ->
+          let _ = writeLine ("could not find plainCharsAreSigned, defaulting to false") in
+          false
+  in
+
+  let _ = writeLine ("printPragmas? is hardwired to false for now") in
+  let print_pragmas? = false in
+
+  let _ = writeLine ("plainCharsAreSigned? = " ^ show plain_chars_are_signed?) in
+  let _ = writeLine ("printPragmas?        = " ^ show print_pragmas?)          in
+  let _ = writeLine ("") in
+  {plainCharsAreSigned? = plain_chars_are_signed?,
+   printPragmas?        = print_pragmas?}
+
+ op legal_C_Id? (id : String) : Bool =
+  %% TODO: look for name clashes
   let 
     def legal_C_char? char =
       isAlphaNum char || char = #_
@@ -18,8 +53,8 @@ PrintTypeAsC qualifying spec
     | hd :: tail -> (isAlpha hd || hd = #_) && (forall? legal_C_char? tail)
     | _ -> false
 
- op printTypeAsC (typ : MSType) : Option Pretty =
-   case printTypeAsC_split typ of
+ op printTypeAsC (cgen_options : CGenOptions) (typ : MSType) : Option Pretty =
+   case printTypeAsC_split cgen_options typ of
      | Some (pretty_type, index_lines) ->
        Some (case index_lines of
                | [] -> pretty_type
@@ -27,7 +62,7 @@ PrintTypeAsC qualifying spec
      | _ ->
        None
 
- op printTypeAsC_split (typ : MSType) : Option (Pretty * List (Nat * Pretty)) =
+ op printTypeAsC_split (cgen_options : CGenOptions) (typ : MSType) : Option (Pretty * List (Nat * Pretty)) =
   case typ of
 
     | Base (Qualified (q, id), [], _) -> 
@@ -46,29 +81,34 @@ PrintTypeAsC qualifying spec
               | "Slong"  -> Some "long"
               | "Sllong" -> Some "long long"
               | _        -> 
-                let _ = writeLine ("printTypeAsC: unknown C type: " ^ id) in
+                let _ = writeLine ("Error in printTypeAsC: unknown C type: " ^ id) in
                 None
-          else if legalId? id then
-            Some id % TODO: look for bad chars
-          else
-            let _ = writeLine ("printTypeAsC: bad name for C type: " ^ id) in
-            None
+          else 
+            %% TODO: look for name clashes
+            if legal_C_Id? id then
+              let _ = writeLine("Type not mentioned in C: " ^ id) in
+              Some id
+            else
+              let _ = writeLine ("Error in printTypeAsC: bad name for C type: " ^ id) in
+              None
       in
       (case opt_id of
-         | Some id -> Some (string id, [])
+         | Some id -> 
+           Some (string id, [])
          | _ -> None)
 
     | Product ([], _) -> 
       Some (string "{}", [])
 
     | Product (row, _) -> 
-      let opt_blocks = foldl (fn (opt_blocks, (id, typ)) ->
-                               case (opt_blocks, printTypeAsC typ) of
-                                 | (Some blocks, Some line) ->
+      let opt_blocks : Option Prettys = foldl (fn (opt_blocks, (id, typ)) ->
+                               case (opt_blocks, printTypeAsC cgen_options typ) of
+                                 | (Some blocks, Some pretty_field_type) ->
                                    Some (blocks ++
-                                           [blockFill (0, [(0, line),
+                                           [blockNone (0, [(0, pretty_field_type),
                                                            (0, string " "),
-                                                           (0, string id)])])
+                                                           (0, string id),
+                                                           (0, string "; ")])])
                                  | _ ->
                                    None)
                             (Some [])
@@ -76,9 +116,12 @@ PrintTypeAsC qualifying spec
       in
       (case opt_blocks of
          | Some blocks ->
-           Some (AnnTermPrinter.ppList (fn block -> block)
-                                       (PrettyPrint.string "{", PrettyPrint.string "; ", PrettyPrint.string "}")
-                                       blocks,
+           Some (blockFill (0, 
+                            [(0, string "{")]
+                            ++
+                            (List.map (fn block -> (0, block)) blocks)
+                            ++
+                            [(0, string "}")]),
                  [])
          | _ ->
            None)
@@ -111,7 +154,7 @@ PrintTypeAsC qualifying spec
                        _)
               -> 
               if n = 0 then
-                let _ = writeLine ("printTypeAsC: array size = 0") in
+                let _ = writeLine ("Error in printTypeAsC: array size = 0") in
                 None
               else
                 let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
@@ -125,7 +168,7 @@ PrintTypeAsC qualifying spec
       in
       (case split_apart_limits (typ, []) of
          | Some (typ, limits) ->
-           (case printTypeAsC_split typ of 
+           (case printTypeAsC_split cgen_options typ of 
               | Some (pretty_type, []) ->
                 Some (pretty_type, limits)
               | _ ->
@@ -133,7 +176,7 @@ PrintTypeAsC qualifying spec
          | _ ->
            None)
     | _ -> 
-      let _ = writeLine ("printTypeAsC_split: unrecognized type: " ^ printType typ) in
+      let _ = writeLine ("Error in printTypeAsC_split: unrecognized type: " ^ printType typ) in
       None
       
 endspec

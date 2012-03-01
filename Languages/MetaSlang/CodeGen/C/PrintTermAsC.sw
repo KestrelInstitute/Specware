@@ -7,9 +7,7 @@ PrintTermAsC qualifying spec
  import /Library/Legacy/DataStructures/NatMapSplay    % markTable's
 
  import /Languages/SpecCalculus/Semantics/Environment
- import PrintTypeAsC  % just to get legalId?
-
- op printPragmas?: Bool = true
+ import PrintTypeAsC  % just to get legal_C_Id?
 
  %% ========================================================================
 
@@ -48,509 +46,509 @@ PrintTermAsC qualifying spec
                 | ArrayAccess 
                 | Unknown
 
- %% TODO: extract from environment
- op plainCharsAreSigned?   : Bool = false
- op plainCharsAreUnsigned? : Bool = ~ plainCharsAreSigned?
+ op cfixity (cgen_options : CGenOptions) (tm : MSTerm) : Option CFixity =
+  let plainCharsAreSigned? = cgen_options.plainCharsAreSigned? in
+  case tm of 
+    | Fun (fun, _, _) -> 
+      (case fun of
+         | And         -> Some (Infix "&&")
+         | Or          -> Some (Infix "||")
+         | Equals      -> Some (Infix "==")  % for non integer values
+         | NotEquals   -> Some (Infix "!=")  % for non integer values
+         | Project   f -> 
+           if legal_C_Id? f then
+             Some (Postfix ("." ^ f))
+           else
+             let _ = writeLine ("Error in cfixity: name of projection is not legal C id: " ^ f) in
+             None
+         | Op (Qualified ("C", id), _) ->
+           (case id of
+              
+              %% ============================================================
+              %% Constant operators
+              %% ============================================================
+              
+              | "sintConstant"    -> Some (Constant "")
+              | "slongConstant"   -> Some (Constant "l")
+              | "sllongConstant"  -> Some (Constant "ll")
+                
+              | "uintConstant"    -> Some (Constant "u")
+              | "ulongConstant"   -> Some (Constant "lu")
+              | "ullongConstant"  -> Some (Constant "llu")
+                
+              %% ============================================================
+              %% Prefix operators: unary +, unary -, ~, !
+              %% ============================================================
+              
+              %% unary +
+              | "+_1_sint"        -> Some (PrefixNoParens "+")
+              | "+_1_slong"       -> Some (PrefixNoParens "+")
+              | "+_1_sllong"      -> Some (PrefixNoParens "+")
+              | "+_1_uint"        -> Some (PrefixNoParens "+")
+              | "+_1_ulong"       -> Some (PrefixNoParens "+")
+              | "+_1_ullong"      -> Some (PrefixNoParens "+")
+                
+              %% unary -
+              | "-_1_sint"        -> Some (PrefixNoParens "-")
+              | "-_1_slong"       -> Some (PrefixNoParens "-")
+              | "-_1_sllong"      -> Some (PrefixNoParens "-")
+              | "-_1_uint"        -> Some (PrefixNoParens "-")
+              | "-_1_ulong"       -> Some (PrefixNoParens "-")
+              | "-_1_ullong"      -> Some (PrefixNoParens "-")
+                
+              %% ~
+              | "~_1_sint"        -> Some (PrefixNoParens "~")
+              | "~_1_slong"       -> Some (PrefixNoParens "~")
+              | "~_1_sllong"      -> Some (PrefixNoParens "~")
+              | "~_1_uint"        -> Some (PrefixNoParens "~")
+              | "~_1_ulong"       -> Some (PrefixNoParens "~")
+              | "~_1_ullong"      -> Some (PrefixNoParens "~")
+                
+              %% !
+              | "!_1_char"        -> Some (PrefixNoParens "!")
+              | "!_1_schar"       -> Some (PrefixNoParens "!")
+              | "!_1_uchar"       -> Some (PrefixNoParens "!")
+              | "!_1_sint"        -> Some (PrefixNoParens "!")
+              | "!_1_uint"        -> Some (PrefixNoParens "!")
+              | "!_1_slong"       -> Some (PrefixNoParens "!")
+              | "!_1_ulong"       -> Some (PrefixNoParens "!")
+              | "!_1_sllong"      -> Some (PrefixNoParens "!")
+              | "!_1_ullong"      -> Some (PrefixNoParens "!")
 
- op cfixity (tm : MSTerm) : Option CFixity =
-    case tm of 
-      | Fun (fun, _, _) -> 
-        (case fun of
-           | And         -> Some (Infix "&&")
-           | Or          -> Some (Infix "||")
-           | Equals      -> Some (Infix "==")  % for non integer values
-           | NotEquals   -> Some (Infix "!=")  % for non integer values
-           | Project   f -> 
-             if legalId? f then
-               Some (Postfix ("." ^ f))
-             else
-               let _ = writeLine ("PrintTermAsC: name of projection is not legal C id: " ^ f) in
-               None
-           | Op (Qualified ("C", id), _) ->
-             (case id of
+              %% ============================================================
+              %% Postfix operators
+              %% ============================================================
 
-                %% ============================================================
-                %% Constant operators
-                %% ============================================================
+              %% ============================================================
+              %% Infix operators: arithmetic, comparison, bitwise, logical
+              %% ============================================================
 
-                | "sintConstant"    -> Some (Constant "")
-                | "slongConstant"   -> Some (Constant "l")
-                | "sllongConstant"  -> Some (Constant "ll")
+              %% ---------------------------------------------------
+              %% Infix arithmetic operations: *, /, %, +, -, <<, >>
+              %% ---------------------------------------------------
 
-                | "uintConstant"    -> Some (Constant "u")
-                | "ulongConstant"   -> Some (Constant "lu")
-                | "ullongConstant"  -> Some (Constant "llu")
+              %% *
+              | "*_sint"           -> Some (Infix "*")
+              | "*_slong"          -> Some (Infix "*")
+              | "*_sllong"         -> Some (Infix "*")
+              | "*_uint"           -> Some (Infix "*")
+              | "*_ulong"          -> Some (Infix "*")
+              | "*_ullong"         -> Some (Infix "*")
 
-                %% ============================================================
-                %% Prefix operators: unary +, unary -, ~, !
-                %% ============================================================
+              %% /
+              | "/_sint"           -> Some (Infix "/")
+              | "/_slong"          -> Some (Infix "/")
+              | "/_sllong"         -> Some (Infix "/")
+              | "/_uint"           -> Some (Infix "/")
+              | "/_ulong"          -> Some (Infix "/")
+              | "/_ullong"         -> Some (Infix "/")
 
-                %% unary +
-                | "+_1_sint"        -> Some (PrefixNoParens "+")
-                | "+_1_slong"       -> Some (PrefixNoParens "+")
-                | "+_1_sllong"      -> Some (PrefixNoParens "+")
-                | "+_1_uint"        -> Some (PrefixNoParens "+")
-                | "+_1_ulong"       -> Some (PrefixNoParens "+")
-                | "+_1_ullong"      -> Some (PrefixNoParens "+")
+              %% %
+              | "//_sint"          -> Some (Infix "%")
+              | "//_slong"         -> Some (Infix "%")
+              | "//_sllong"        -> Some (Infix "%")
+              | "//_uint"          -> Some (Infix "%")
+              | "//_ulong"         -> Some (Infix "%")
+              | "//_ullong"        -> Some (Infix "%")
 
-                %% unary -
-                | "-_1_sint"        -> Some (PrefixNoParens "-")
-                | "-_1_slong"       -> Some (PrefixNoParens "-")
-                | "-_1_sllong"      -> Some (PrefixNoParens "-")
-                | "-_1_uint"        -> Some (PrefixNoParens "-")
-                | "-_1_ulong"       -> Some (PrefixNoParens "-")
-                | "-_1_ullong"      -> Some (PrefixNoParens "-")
+              %% +
+              | "+_sint"           -> Some (Infix "+")
+              | "+_slong"          -> Some (Infix "+")
+              | "+_sllong"         -> Some (Infix "+")
+              | "+_uint"           -> Some (Infix "+")
+              | "+_ulong"          -> Some (Infix "+")
+              | "+_ullong"         -> Some (Infix "+")
 
-                %% ~
-                | "~_1_sint"        -> Some (PrefixNoParens "~")
-                | "~_1_slong"       -> Some (PrefixNoParens "~")
-                | "~_1_sllong"      -> Some (PrefixNoParens "~")
-                | "~_1_uint"        -> Some (PrefixNoParens "~")
-                | "~_1_ulong"       -> Some (PrefixNoParens "~")
-                | "~_1_ullong"      -> Some (PrefixNoParens "~")
+              %% -
+              | "-_sint"           -> Some (Infix "-")
+              | "-_slong"          -> Some (Infix "-")
+              | "-_sllong"         -> Some (Infix "-")
+              | "-_uint"           -> Some (Infix "-")
+              | "-_ulong"          -> Some (Infix "-")
+              | "-_ullong"         -> Some (Infix "-")
 
-                %% !
-                | "!_1_char"        -> Some (PrefixNoParens "!")
-                | "!_1_schar"       -> Some (PrefixNoParens "!")
-                | "!_1_uchar"       -> Some (PrefixNoParens "!")
-                | "!_1_sint"        -> Some (PrefixNoParens "!")
-                | "!_1_uint"        -> Some (PrefixNoParens "!")
-                | "!_1_slong"       -> Some (PrefixNoParens "!")
-                | "!_1_ulong"       -> Some (PrefixNoParens "!")
-                | "!_1_sllong"      -> Some (PrefixNoParens "!")
-                | "!_1_ullong"      -> Some (PrefixNoParens "!")
+              %% << (6*6 versions)
+              | "<<_sint_sint"     -> Some (Infix "<<")
+              | "<<_sint_slong"    -> Some (Infix "<<")
+              | "<<_sint_sllong"   -> Some (Infix "<<")
+              | "<<_sint_uint"     -> Some (Infix "<<")
+              | "<<_sint_ulong"    -> Some (Infix "<<")
+              | "<<_sint_ullong"   -> Some (Infix "<<")
 
-                %% ============================================================
-                %% Postfix operators
-                %% ============================================================
+              | "<<_slong_sint"    -> Some (Infix "<<")
+              | "<<_slong_slong"   -> Some (Infix "<<")
+              | "<<_slong_sllong"  -> Some (Infix "<<")
+              | "<<_slong_uint"    -> Some (Infix "<<")
+              | "<<_slong_ulong"   -> Some (Infix "<<")
+              | "<<_slong_ullong"  -> Some (Infix "<<")
 
-                %% ============================================================
-                %% Infix operators: arithmetic, comparison, bitwise, logical
-                %% ============================================================
+              | "<<_sllong_sint"   -> Some (Infix "<<")
+              | "<<_sllong_slong"  -> Some (Infix "<<")
+              | "<<_sllong_sllong" -> Some (Infix "<<")
+              | "<<_sllong_uint"   -> Some (Infix "<<")
+              | "<<_sllong_ulong"  -> Some (Infix "<<")
+              | "<<_sllong_ullong" -> Some (Infix "<<")
 
-                %% ---------------------------------------------------
-                %% Infix arithmetic operations: *, /, %, +, -, <<, >>
-                %% ---------------------------------------------------
+              | "<<_uint_sint"     -> Some (Infix "<<")
+              | "<<_uint_slong"    -> Some (Infix "<<")
+              | "<<_uint_sllong"   -> Some (Infix "<<")
+              | "<<_uint_uint"     -> Some (Infix "<<")
+              | "<<_uint_ulong"    -> Some (Infix "<<")
+              | "<<_uint_ullong"   -> Some (Infix "<<")
 
-                %% *
-                | "*_sint"           -> Some (Infix "*")
-                | "*_slong"          -> Some (Infix "*")
-                | "*_sllong"         -> Some (Infix "*")
-                | "*_uint"           -> Some (Infix "*")
-                | "*_ulong"          -> Some (Infix "*")
-                | "*_ullong"         -> Some (Infix "*")
+              | "<<_ulong_sint"    -> Some (Infix "<<")
+              | "<<_ulong_slong"   -> Some (Infix "<<")
+              | "<<_ulong_sllong"  -> Some (Infix "<<")
+              | "<<_ulong_uint"    -> Some (Infix "<<")
+              | "<<_ulong_ulong"   -> Some (Infix "<<")
+              | "<<_ulong_ullong"  -> Some (Infix "<<")
 
-                %% /
-                | "/_sint"           -> Some (Infix "/")
-                | "/_slong"          -> Some (Infix "/")
-                | "/_sllong"         -> Some (Infix "/")
-                | "/_uint"           -> Some (Infix "/")
-                | "/_ulong"          -> Some (Infix "/")
-                | "/_ullong"         -> Some (Infix "/")
+              | "<<_ullong_sint"   -> Some (Infix "<<")
+              | "<<_ullong_slong"  -> Some (Infix "<<")
+              | "<<_ullong_sllong" -> Some (Infix "<<")
+              | "<<_ullong_uint"   -> Some (Infix "<<")
+              | "<<_ullong_ulong"  -> Some (Infix "<<")
+              | "<<_ullong_ullong" -> Some (Infix "<<")
 
-                %% %
-                | "//_sint"          -> Some (Infix "%")
-                | "//_slong"         -> Some (Infix "%")
-                | "//_sllong"        -> Some (Infix "%")
-                | "//_uint"          -> Some (Infix "%")
-                | "//_ulong"         -> Some (Infix "%")
-                | "//_ullong"        -> Some (Infix "%")
+              %% >> (6*6 versions)
+              | ">>_sint_sint"     -> Some (Infix ">>")
+              | ">>_sint_slong"    -> Some (Infix ">>")
+              | ">>_sint_sllong"   -> Some (Infix ">>")
+              | ">>_sint_uint"     -> Some (Infix ">>")
+              | ">>_sint_ulong"    -> Some (Infix ">>")
+              | ">>_sint_ullong"   -> Some (Infix ">>")
 
-                %% +
-                | "+_sint"           -> Some (Infix "+")
-                | "+_slong"          -> Some (Infix "+")
-                | "+_sllong"         -> Some (Infix "+")
-                | "+_uint"           -> Some (Infix "+")
-                | "+_ulong"          -> Some (Infix "+")
-                | "+_ullong"         -> Some (Infix "+")
+              | ">>_slong_sint"    -> Some (Infix ">>")
+              | ">>_slong_slong"   -> Some (Infix ">>")
+              | ">>_slong_sllong"  -> Some (Infix ">>")
+              | ">>_slong_uint"    -> Some (Infix ">>")
+              | ">>_slong_ulong"   -> Some (Infix ">>")
+              | ">>_slong_ullong"  -> Some (Infix ">>")
 
-                %% -
-                | "-_sint"           -> Some (Infix "-")
-                | "-_slong"          -> Some (Infix "-")
-                | "-_sllong"         -> Some (Infix "-")
-                | "-_uint"           -> Some (Infix "-")
-                | "-_ulong"          -> Some (Infix "-")
-                | "-_ullong"         -> Some (Infix "-")
+              | ">>_sllong_sint"   -> Some (Infix ">>")
+              | ">>_sllong_slong"  -> Some (Infix ">>")
+              | ">>_sllong_sllong" -> Some (Infix ">>")
+              | ">>_sllong_uint"   -> Some (Infix ">>")
+              | ">>_sllong_ulong"  -> Some (Infix ">>")
+              | ">>_sllong_ullong" -> Some (Infix ">>")
 
-                %% << (6*6 versions)
-                | "<<_sint_sint"     -> Some (Infix "<<")
-                | "<<_sint_slong"    -> Some (Infix "<<")
-                | "<<_sint_sllong"   -> Some (Infix "<<")
-                | "<<_sint_uint"     -> Some (Infix "<<")
-                | "<<_sint_ulong"    -> Some (Infix "<<")
-                | "<<_sint_ullong"   -> Some (Infix "<<")
+              | ">>_uint_sint"     -> Some (Infix ">>")
+              | ">>_uint_slong"    -> Some (Infix ">>")
+              | ">>_uint_sllong"   -> Some (Infix ">>")
+              | ">>_uint_uint"     -> Some (Infix ">>")
+              | ">>_uint_ulong"    -> Some (Infix ">>")
+              | ">>_uint_ullong"   -> Some (Infix ">>")
 
-                | "<<_slong_sint"    -> Some (Infix "<<")
-                | "<<_slong_slong"   -> Some (Infix "<<")
-                | "<<_slong_sllong"  -> Some (Infix "<<")
-                | "<<_slong_uint"    -> Some (Infix "<<")
-                | "<<_slong_ulong"   -> Some (Infix "<<")
-                | "<<_slong_ullong"  -> Some (Infix "<<")
+              | ">>_ulong_sint"    -> Some (Infix ">>")
+              | ">>_ulong_slong"   -> Some (Infix ">>")
+              | ">>_ulong_sllong"  -> Some (Infix ">>")
+              | ">>_ulong_uint"    -> Some (Infix ">>")
+              | ">>_ulong_ulong"   -> Some (Infix ">>")
+              | ">>_ulong_ullong"  -> Some (Infix ">>")
 
-                | "<<_sllong_sint"   -> Some (Infix "<<")
-                | "<<_sllong_slong"  -> Some (Infix "<<")
-                | "<<_sllong_sllong" -> Some (Infix "<<")
-                | "<<_sllong_uint"   -> Some (Infix "<<")
-                | "<<_sllong_ulong"  -> Some (Infix "<<")
-                | "<<_sllong_ullong" -> Some (Infix "<<")
+              | ">>_ullong_sint"   -> Some (Infix ">>")
+              | ">>_ullong_slong"  -> Some (Infix ">>")
+              | ">>_ullong_sllong" -> Some (Infix ">>")
+              | ">>_ullong_uint"   -> Some (Infix ">>")
+              | ">>_ullong_ulong"  -> Some (Infix ">>")
+              | ">>_ullong_ullong" -> Some (Infix ">>")
 
-                | "<<_uint_sint"     -> Some (Infix "<<")
-                | "<<_uint_slong"    -> Some (Infix "<<")
-                | "<<_uint_sllong"   -> Some (Infix "<<")
-                | "<<_uint_uint"     -> Some (Infix "<<")
-                | "<<_uint_ulong"    -> Some (Infix "<<")
-                | "<<_uint_ullong"   -> Some (Infix "<<")
+              %% ---------------------------------------------------
+              %% Infix arithmetic comparisons: <, >, <=, >=, ==, !=
+              %% ---------------------------------------------------
 
-                | "<<_ulong_sint"    -> Some (Infix "<<")
-                | "<<_ulong_slong"   -> Some (Infix "<<")
-                | "<<_ulong_sllong"  -> Some (Infix "<<")
-                | "<<_ulong_uint"    -> Some (Infix "<<")
-                | "<<_ulong_ulong"   -> Some (Infix "<<")
-                | "<<_ulong_ullong"  -> Some (Infix "<<")
+              %% <
+              | "<_sint"     -> Some (Infix "<")
+              | "<_slong"    -> Some (Infix "<")
+              | "<_sllong"   -> Some (Infix "<")
+              | "<_uint"     -> Some (Infix "<")
+              | "<_ulong"    -> Some (Infix "<")
+              | "<_ullong"   -> Some (Infix "<")
 
-                | "<<_ullong_sint"   -> Some (Infix "<<")
-                | "<<_ullong_slong"  -> Some (Infix "<<")
-                | "<<_ullong_sllong" -> Some (Infix "<<")
-                | "<<_ullong_uint"   -> Some (Infix "<<")
-                | "<<_ullong_ulong"  -> Some (Infix "<<")
-                | "<<_ullong_ullong" -> Some (Infix "<<")
+              %% >
+              | ">_sint"     -> Some (Infix ">")
+              | ">_slong"    -> Some (Infix ">")
+              | ">_sllong"   -> Some (Infix ">")
+              | ">_uint"     -> Some (Infix ">")
+              | ">_ulong"    -> Some (Infix ">")
+              | ">_ullong"   -> Some (Infix ">")
 
-                %% >> (6*6 versions)
-                | ">>_sint_sint"     -> Some (Infix ">>")
-                | ">>_sint_slong"    -> Some (Infix ">>")
-                | ">>_sint_sllong"   -> Some (Infix ">>")
-                | ">>_sint_uint"     -> Some (Infix ">>")
-                | ">>_sint_ulong"    -> Some (Infix ">>")
-                | ">>_sint_ullong"   -> Some (Infix ">>")
+              %% <=
+              | "<=_sint"     -> Some (Infix "<=")
+              | "<=_slong"    -> Some (Infix "<=")
+              | "<=_sllong"   -> Some (Infix "<=")
+              | "<=_uint"     -> Some (Infix "<=")
+              | "<=_ulong"    -> Some (Infix "<=")
+              | "<=_ullong"   -> Some (Infix "<=")
 
-                | ">>_slong_sint"    -> Some (Infix ">>")
-                | ">>_slong_slong"   -> Some (Infix ">>")
-                | ">>_slong_sllong"  -> Some (Infix ">>")
-                | ">>_slong_uint"    -> Some (Infix ">>")
-                | ">>_slong_ulong"   -> Some (Infix ">>")
-                | ">>_slong_ullong"  -> Some (Infix ">>")
+              %% >=
+              | ">=_sint"     -> Some (Infix ">=")
+              | ">=_slong"    -> Some (Infix ">=")
+              | ">=_sllong"   -> Some (Infix ">=")
+              | ">=_uint"     -> Some (Infix ">=")
+              | ">=_ulong"    -> Some (Infix ">=")
+              | ">=_ullong"   -> Some (Infix ">=")
 
-                | ">>_sllong_sint"   -> Some (Infix ">>")
-                | ">>_sllong_slong"  -> Some (Infix ">>")
-                | ">>_sllong_sllong" -> Some (Infix ">>")
-                | ">>_sllong_uint"   -> Some (Infix ">>")
-                | ">>_sllong_ulong"  -> Some (Infix ">>")
-                | ">>_sllong_ullong" -> Some (Infix ">>")
+              %% ==
+              | "==_sint"     -> Some (Infix "==")
+              | "==_slong"    -> Some (Infix "==")
+              | "==_sllong"   -> Some (Infix "==")
+              | "==_uint"     -> Some (Infix "==")
+              | "==_ulong"    -> Some (Infix "==")
+              | "==_ullong"   -> Some (Infix "==")
 
-                | ">>_uint_sint"     -> Some (Infix ">>")
-                | ">>_uint_slong"    -> Some (Infix ">>")
-                | ">>_uint_sllong"   -> Some (Infix ">>")
-                | ">>_uint_uint"     -> Some (Infix ">>")
-                | ">>_uint_ulong"    -> Some (Infix ">>")
-                | ">>_uint_ullong"   -> Some (Infix ">>")
+              %% !=
+              | "!=_sint"     -> Some (Infix "!=")
+              | "!=_slong"    -> Some (Infix "!=")
+              | "!=_sllong"   -> Some (Infix "!=")
+              | "!=_uint"     -> Some (Infix "!=")
+              | "!=_ulong"    -> Some (Infix "!=")
+              | "!=_ullong"   -> Some (Infix "!=")
 
-                | ">>_ulong_sint"    -> Some (Infix ">>")
-                | ">>_ulong_slong"   -> Some (Infix ">>")
-                | ">>_ulong_sllong"  -> Some (Infix ">>")
-                | ">>_ulong_uint"    -> Some (Infix ">>")
-                | ">>_ulong_ulong"   -> Some (Infix ">>")
-                | ">>_ulong_ullong"  -> Some (Infix ">>")
+              %% ---------------------------------------------------
+              %% Infix bitwise operations: &, ^, |
+              %% ---------------------------------------------------
 
-                | ">>_ullong_sint"   -> Some (Infix ">>")
-                | ">>_ullong_slong"  -> Some (Infix ">>")
-                | ">>_ullong_sllong" -> Some (Infix ">>")
-                | ">>_ullong_uint"   -> Some (Infix ">>")
-                | ">>_ullong_ulong"  -> Some (Infix ">>")
-                | ">>_ullong_ullong" -> Some (Infix ">>")
+              %% &
+              | "&_sint"      -> Some (Infix "&")
+              | "&_slong"     -> Some (Infix "&")
+              | "&_sllong"    -> Some (Infix "&")
+              | "&_uint"      -> Some (Infix "&")
+              | "&_ulong"     -> Some (Infix "&")
+              | "&_ullong"    -> Some (Infix "&")
 
-                %% ---------------------------------------------------
-                %% Infix arithmetic comparisons: <, >, <=, >=, ==, !=
-                %% ---------------------------------------------------
+              %% ^
+              | "^_sint"      -> Some (Infix "^")
+              | "^_slong"     -> Some (Infix "^")
+              | "^_sllong"    -> Some (Infix "^")
+              | "^_uint"      -> Some (Infix "^")
+              | "^_ulong"     -> Some (Infix "^")
+              | "^_ullong"    -> Some (Infix "^")
 
-                %% <
-                | "<_sint"     -> Some (Infix "<")
-                | "<_slong"    -> Some (Infix "<")
-                | "<_sllong"   -> Some (Infix "<")
-                | "<_uint"     -> Some (Infix "<")
-                | "<_ulong"    -> Some (Infix "<")
-                | "<_ullong"   -> Some (Infix "<")
+              %% |
+              | "|_sint"      -> Some (Infix "|")
+              | "|_slong"     -> Some (Infix "|")
+              | "|_sllong"    -> Some (Infix "|")
+              | "|_uint"      -> Some (Infix "|")
+              | "|_ulong"     -> Some (Infix "|")
+              | "|_ullong"    -> Some (Infix "|")
 
-                %% >
-                | ">_sint"     -> Some (Infix ">")
-                | ">_slong"    -> Some (Infix ">")
-                | ">_sllong"   -> Some (Infix ">")
-                | ">_uint"     -> Some (Infix ">")
-                | ">_ulong"    -> Some (Infix ">")
-                | ">_ullong"   -> Some (Infix ">")
+              %% ---------------------------------------------------
+              %% Infix logical operations: &&, ||
+              %% ---------------------------------------------------
 
-                %% <=
-                | "<=_sint"     -> Some (Infix "<=")
-                | "<=_slong"    -> Some (Infix "<=")
-                | "<=_sllong"   -> Some (Infix "<=")
-                | "<=_uint"     -> Some (Infix "<=")
-                | "<=_ulong"    -> Some (Infix "<=")
-                | "<=_ullong"   -> Some (Infix "<=")
+              %% && -- primitive MetaSlang operator -- see above
+              %% || -- primitive MetaSlang operator -- see above
 
-                %% >=
-                | ">=_sint"     -> Some (Infix ">=")
-                | ">=_slong"    -> Some (Infix ">=")
-                | ">=_sllong"   -> Some (Infix ">=")
-                | ">=_uint"     -> Some (Infix ">=")
-                | ">=_ulong"    -> Some (Infix ">=")
-                | ">=_ullong"   -> Some (Infix ">=")
+              %% ============================================================
+              %% Array access
+              %% ============================================================
 
-                %% ==
-                | "==_sint"     -> Some (Infix "==")
-                | "==_slong"    -> Some (Infix "==")
-                | "==_sllong"   -> Some (Infix "==")
-                | "==_uint"     -> Some (Infix "==")
-                | "==_ulong"    -> Some (Infix "==")
-                | "==_ullong"   -> Some (Infix "==")
+              | "@_char"          -> Some (ArrayAccess)
+              | "@_schar"         -> Some (ArrayAccess)
+              | "@_uchar"         -> Some (ArrayAccess)
 
-                %% !=
-                | "!=_sint"     -> Some (Infix "!=")
-                | "!=_slong"    -> Some (Infix "!=")
-                | "!=_sllong"   -> Some (Infix "!=")
-                | "!=_uint"     -> Some (Infix "!=")
-                | "!=_ulong"    -> Some (Infix "!=")
-                | "!=_ullong"   -> Some (Infix "!=")
+              | "@_sshort"        -> Some (ArrayAccess)
+              | "@_ushort"        -> Some (ArrayAccess)
 
-                %% ---------------------------------------------------
-                %% Infix bitwise operations: &, ^, |
-                %% ---------------------------------------------------
+              | "@_sint"          -> Some (ArrayAccess)
+              | "@_uint"          -> Some (ArrayAccess)
 
-                | "&_sint"      -> Some (Infix "&")
-                | "&_slong"     -> Some (Infix "&")
-                | "&_sllong"    -> Some (Infix "&")
-                | "&_uint"      -> Some (Infix "&")
-                | "&_ulong"     -> Some (Infix "&")
-                | "&_ullong"    -> Some (Infix "&")
+              | "@_slong"         -> Some (ArrayAccess)
+              | "@_ulong"         -> Some (ArrayAccess)
 
-                %% ^
-                | "^_sint"      -> Some (Infix "^")
-                | "^_slong"     -> Some (Infix "^")
-                | "^_sllong"    -> Some (Infix "^")
-                | "^_uint"      -> Some (Infix "^")
-                | "^_ulong"     -> Some (Infix "^")
-                | "^_ullong"    -> Some (Infix "^")
+              | "@_sllong"        -> Some (ArrayAccess)
+              | "@_ullong"        -> Some (ArrayAccess)
 
-                %% |
-                | "|_sint"      -> Some (Infix "|")
-                | "|_slong"     -> Some (Infix "|")
-                | "|_sllong"    -> Some (Infix "|")
-                | "|_uint"      -> Some (Infix "|")
-                | "|_ulong"     -> Some (Infix "|")
-                | "|_ullong"    -> Some (Infix "|")
+              %% ============================================================
+              %% Structure operators
+              %% ============================================================
 
-                %% ---------------------------------------------------
-                %% Infix logical operations: &&, ||
-                %% ---------------------------------------------------
+              %% ============================================================
+              %% Conversion operators among the 11 integer types:
+              %%    char, uchar, schar, ushort, sshort, uint, sint, ulong, slong, ullong, sllong
+              %%    110 operators (11 types * 10 other types)
+              %% ============================================================
 
-                %% && -- primitive MetaSlang operator -- see above
-                %% || -- primitive MetaSlang operator -- see above
+              %% cast to char
+              | "charOfUChar"     -> Some (Cast (if plainCharsAreSigned? then " (char) " else ""))
+              | "charOfUshort"    -> Some (Cast " (char) ")
+              | "charOfUint"      -> Some (Cast " (char) ")
+              | "charOfUlong"     -> Some (Cast " (char) ")
+              | "charOfUllong"    -> Some (Cast " (char) ")
+              | "charOfSchar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (char) "))
+              | "charOfSshort"    -> Some (Cast " (char) ")
+              | "charOfSint"      -> Some (Cast " (char) ")
+              | "charOfSlong"     -> Some (Cast " (char) ")
+              | "charOfSllong"    -> Some (Cast " (char) ")
 
-                %% ============================================================
-                %% Array access
-                %% ============================================================
+              %% cast to unsigned char
+              | "ucharOfChar"     -> Some (Cast (if plainCharsAreSigned? then " (unsigned char) " else ""))
+              | "ucharOfUshort"   -> Some (Cast " (unsigned char) ")
+              | "ucharOfUint"     -> Some (Cast " (unsigned char) ")
+              | "ucharOfUlong"    -> Some (Cast " (unsigned char) ")
+              | "ucharOfUllong"   -> Some (Cast " (unsigned char) ")
+              | "ucharOfSchar"    -> Some (Cast " (unsigned char) ")
+              | "ucharOfSshort"   -> Some (Cast " (unsigned char) ")
+              | "ucharOfSint"     -> Some (Cast " (unsigned char) ")
+              | "ucharOfSlong"    -> Some (Cast " (unsigned char) ")
+              | "ucharOfSllong"   -> Some (Cast " (unsigned char) ")
 
-                | "@_char"          -> Some (ArrayAccess)
-                | "@_schar"         -> Some (ArrayAccess)
-                | "@_uchar"         -> Some (ArrayAccess)
+              %% cast to unsigned short
+              | "ushortOfChar"    -> Some (Cast (if plainCharsAreSigned? then " (unsigned short) " else ""))
+              | "ushortOfUChar"   -> Some (Cast ""        )
+              | "ushortOfUint"    -> Some (Cast " (unsigned short) ")
+              | "ushortOfUlong"   -> Some (Cast " (unsigned short) ")
+              | "ushortOfUllong"  -> Some (Cast " (unsigned short) ")
+              | "ushortOfSchar"   -> Some (Cast " (unsigned short) ")
+              | "ushortOfSshort"  -> Some (Cast " (unsigned short) ")
+              | "ushortOfSint"    -> Some (Cast " (unsigned short) ")
+              | "ushortOfSlong"   -> Some (Cast " (unsigned short) ")
+              | "ushortOfSllong"  -> Some (Cast " (unsigned short) ")
 
-                | "@_sshort"        -> Some (ArrayAccess)
-                | "@_ushort"        -> Some (ArrayAccess)
+              %% cast to unsigned int
+              | "uintOfChar"      -> Some (Cast (if plainCharsAreSigned? then " (unsigned int) " else ""))
+              | "uintOfUChar"     -> Some (Cast "" )
+              | "uintOfUshort"    -> Some (Cast "" )
+              | "uintOfUlong"     -> Some (Cast " (unsigned int) " )
+              | "uintOfUllong"    -> Some (Cast " (unsigned int) ")
+              | "uintOfSchar"     -> Some (Cast " (unsigned int) ")
+              | "uintOfSshort"    -> Some (Cast " (unsigned int) ")
+              | "uintOfSint"      -> Some (Cast " (unsigned int) ")
+              | "uintOfSlong"     -> Some (Cast " (unsigned int) ")
+              | "uintOfSllong"    -> Some (Cast " (unsigned int) ")
 
-                | "@_sint"          -> Some (ArrayAccess)
-                | "@_uint"          -> Some (ArrayAccess)
-
-                | "@_slong"         -> Some (ArrayAccess)
-                | "@_ulong"         -> Some (ArrayAccess)
-
-                | "@_sllong"        -> Some (ArrayAccess)
-                | "@_ullong"        -> Some (ArrayAccess)
-
-                %% ============================================================
-                %% Structure operators
-                %% ============================================================
-
-                %% ============================================================
-                %% Conversion operators among the 11 integer types:
-                %%    char, uchar, schar, ushort, sshort, uint, sint, ulong, slong, ullong, sllong
-                %%    110 operators (11 types * 10 other types)
-                %% ============================================================
-
-                %% cast to char
-                | "charOfUChar"     -> Some (Cast (if plainCharsAreUnsigned? then "" else " (char) "))
-                | "charOfUshort"    -> Some (Cast " (char) ")
-                | "charOfUint"      -> Some (Cast " (char) ")
-                | "charOfUlong"     -> Some (Cast " (char) ")
-                | "charOfUllong"    -> Some (Cast " (char) ")
-                | "charOfSchar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (char) "))
-                | "charOfSshort"    -> Some (Cast " (char) ")
-                | "charOfSint"      -> Some (Cast " (char) ")
-                | "charOfSlong"     -> Some (Cast " (char) ")
-                | "charOfSllong"    -> Some (Cast " (char) ")
-
-                %% cast to unsigned char
-                | "ucharOfChar"     -> Some (Cast (if plainCharsAreUnsigned? then "" else " (unsigned char) "))
-                | "ucharOfUshort"   -> Some (Cast " (unsigned char) ")
-                | "ucharOfUint"     -> Some (Cast " (unsigned char) ")
-                | "ucharOfUlong"    -> Some (Cast " (unsigned char) ")
-                | "ucharOfUllong"   -> Some (Cast " (unsigned char) ")
-                | "ucharOfSchar"    -> Some (Cast " (unsigned char) ")
-                | "ucharOfSshort"   -> Some (Cast " (unsigned char) ")
-                | "ucharOfSint"     -> Some (Cast " (unsigned char) ")
-                | "ucharOfSlong"    -> Some (Cast " (unsigned char) ")
-                | "ucharOfSllong"   -> Some (Cast " (unsigned char) ")
-
-                %% cast to unsigned short
-                | "ushortOfChar"    -> Some (Cast (if plainCharsAreUnsigned? then "" else " (unsigned short) "))
-                | "ushortOfUChar"   -> Some (Cast ""        )
-                | "ushortOfUint"    -> Some (Cast " (unsigned short) ")
-                | "ushortOfUlong"   -> Some (Cast " (unsigned short) ")
-                | "ushortOfUllong"  -> Some (Cast " (unsigned short) ")
-                | "ushortOfSchar"   -> Some (Cast " (unsigned short) ")
-                | "ushortOfSshort"  -> Some (Cast " (unsigned short) ")
-                | "ushortOfSint"    -> Some (Cast " (unsigned short) ")
-                | "ushortOfSlong"   -> Some (Cast " (unsigned short) ")
-                | "ushortOfSllong"  -> Some (Cast " (unsigned short) ")
-
-                %% cast to unsigned int
-                | "uintOfChar"      -> Some (Cast (if plainCharsAreUnsigned? then "" else " (unsigned int) "))
-                | "uintOfUChar"     -> Some (Cast "" )
-                | "uintOfUshort"    -> Some (Cast "" )
-                | "uintOfUlong"     -> Some (Cast " (unsigned int) " )
-                | "uintOfUllong"    -> Some (Cast " (unsigned int) ")
-                | "uintOfSchar"     -> Some (Cast " (unsigned int) ")
-                | "uintOfSshort"    -> Some (Cast " (unsigned int) ")
-                | "uintOfSint"      -> Some (Cast " (unsigned int) ")
-                | "uintOfSlong"     -> Some (Cast " (unsigned int) ")
-                | "uintOfSllong"    -> Some (Cast " (unsigned int) ")
-
-                %% cast to unsigned long
-                | "ulongOfChar"     -> Some (Cast (if plainCharsAreUnsigned? then "" else " (unsigned long) "))
-                | "ulongOfUChar"    -> Some (Cast "" )
-                | "ulongOfUshort"   -> Some (Cast "")
-                | "ulongOfUint"     -> Some (Cast "")
-                | "ulongOfUllong"   -> Some (Cast " (unsigned long) ")
-                | "ulongOfSchar"    -> Some (Cast " (unsigned long) ")
-                | "ulongOfSshort"   -> Some (Cast " (unsigned long) ")
-                | "ulongOfSint"     -> Some (Cast " (unsigned long) ")
-                | "ulongOfSlong"    -> Some (Cast " (unsigned long) ")
-                | "ulongOfSllong"   -> Some (Cast " (unsigned long) ")
+              %% cast to unsigned long
+              | "ulongOfChar"     -> Some (Cast (if plainCharsAreSigned? then " (unsigned long) " else ""))
+              | "ulongOfUChar"    -> Some (Cast "" )
+              | "ulongOfUshort"   -> Some (Cast "")
+              | "ulongOfUint"     -> Some (Cast "")
+              | "ulongOfUllong"   -> Some (Cast " (unsigned long) ")
+              | "ulongOfSchar"    -> Some (Cast " (unsigned long) ")
+              | "ulongOfSshort"   -> Some (Cast " (unsigned long) ")
+              | "ulongOfSint"     -> Some (Cast " (unsigned long) ")
+              | "ulongOfSlong"    -> Some (Cast " (unsigned long) ")
+              | "ulongOfSllong"   -> Some (Cast " (unsigned long) ")
  
-                %% cast to unsigned long long
-                | "ullongOfChar"    -> Some (Cast (if plainCharsAreUnsigned? then "" else " (unsigned long long) "))
-                | "ullongOfUChar"   -> Some (Cast "")
-                | "ullongOfUshort"  -> Some (Cast "")
-                | "ullongOfUint"    -> Some (Cast "")
-                | "ullongOfUlong"   -> Some (Cast "")
-                | "ullongOfSchar"   -> Some (Cast " (unsigned long long) ")
-                | "ullongOfSshort"  -> Some (Cast " (unsigned long long) ")
-                | "ullongOfSint"    -> Some (Cast " (unsigned long long) ")
-                | "ullongOfSlong"   -> Some (Cast " (unsigned long long) ")
-                | "ullongOfSllong"  -> Some (Cast " (unsigned long long) ")
+              %% cast to unsigned long long
+              | "ullongOfChar"    -> Some (Cast (if plainCharsAreSigned? then " (unsigned long long) " else ""))
+              | "ullongOfUChar"   -> Some (Cast "")
+              | "ullongOfUshort"  -> Some (Cast "")
+              | "ullongOfUint"    -> Some (Cast "")
+              | "ullongOfUlong"   -> Some (Cast "")
+              | "ullongOfSchar"   -> Some (Cast " (unsigned long long) ")
+              | "ullongOfSshort"  -> Some (Cast " (unsigned long long) ")
+              | "ullongOfSint"    -> Some (Cast " (unsigned long long) ")
+              | "ullongOfSlong"   -> Some (Cast " (unsigned long long) ")
+              | "ullongOfSllong"  -> Some (Cast " (unsigned long long) ")
 
-                %% cast to signed char
-                | "scharOfChar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (signed char) "))
-                | "scharOfUChar"    -> Some (Cast " (signed char) ")
-                | "scharOfUshort"   -> Some (Cast " (signed char) ")
-                | "scharOfUint"     -> Some (Cast " (signed char) ")
-                | "scharOfUlong"    -> Some (Cast " (signed char) ")
-                | "scharOfUllong"   -> Some (Cast " (signed char) ")
-                | "scharOfSshort"   -> Some (Cast " (signed char) ")
-                | "scharOfSint"     -> Some (Cast " (signed char) ")
-                | "scharOfSlong"    -> Some (Cast " (signed char) ")
-                | "scharOfSllong"   -> Some (Cast " (signed char) ")
+              %% cast to signed char
+              | "scharOfChar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (signed char) "))
+              | "scharOfUChar"    -> Some (Cast " (signed char) ")
+              | "scharOfUshort"   -> Some (Cast " (signed char) ")
+              | "scharOfUint"     -> Some (Cast " (signed char) ")
+              | "scharOfUlong"    -> Some (Cast " (signed char) ")
+              | "scharOfUllong"   -> Some (Cast " (signed char) ")
+              | "scharOfSshort"   -> Some (Cast " (signed char) ")
+              | "scharOfSint"     -> Some (Cast " (signed char) ")
+              | "scharOfSlong"    -> Some (Cast " (signed char) ")
+              | "scharOfSllong"   -> Some (Cast " (signed char) ")
 
-                %% cast to signed short
-                | "sshortOfChar"    -> Some (Cast (if plainCharsAreSigned? then "" else " (signed short) "))
-                | "sshortOfUChar"   -> Some (Cast " (short) ")
-                | "sshortOfUshort"  -> Some (Cast " (short) ")
-                | "sshortOfUint"    -> Some (Cast " (short) ")
-                | "sshortOfUlong"   -> Some (Cast " (short) ")
-                | "sshortOfUllong"  -> Some (Cast " (short) ")
-                | "sshortOfSchar"   -> Some (Cast "")
-                | "sshortOfSint"    -> Some (Cast " (short) ")
-                | "sshortOfSlong"   -> Some (Cast " (short) ")
-                | "sshortOfSllong"  -> Some (Cast " (short) ")
+              %% cast to signed short
+              | "sshortOfChar"    -> Some (Cast (if plainCharsAreSigned? then "" else " (signed short) "))
+              | "sshortOfUChar"   -> Some (Cast " (short) ")
+              | "sshortOfUshort"  -> Some (Cast " (short) ")
+              | "sshortOfUint"    -> Some (Cast " (short) ")
+              | "sshortOfUlong"   -> Some (Cast " (short) ")
+              | "sshortOfUllong"  -> Some (Cast " (short) ")
+              | "sshortOfSchar"   -> Some (Cast "")
+              | "sshortOfSint"    -> Some (Cast " (short) ")
+              | "sshortOfSlong"   -> Some (Cast " (short) ")
+              | "sshortOfSllong"  -> Some (Cast " (short) ")
 
-                %% cast to signed int
-                | "sintOfChar"      -> Some (Cast (if plainCharsAreSigned? then "" else " (signed int) "))
-                | "sintOfUChar"     -> Some (Cast " (signed int) ")
-                | "sintOfUshort"    -> Some (Cast " (signed int) ")
-                | "sintOfUint"      -> Some (Cast " (signed int) ")
-                | "sintOfUlong"     -> Some (Cast " (signed int) ")
-                | "sintOfUllong"    -> Some (Cast " (signed int) ")
-                | "sintOfSchar"     -> Some (Cast "")
-                | "sintOfSshort"    -> Some (Cast "")
-                | "sintOfSlong"     -> Some (Cast " (signed int) ")
-                | "sintOfSllong"    -> Some (Cast " (signed int) ")
+              %% cast to signed int
+              | "sintOfChar"      -> Some (Cast (if plainCharsAreSigned? then "" else " (signed int) "))
+              | "sintOfUChar"     -> Some (Cast " (signed int) ")
+              | "sintOfUshort"    -> Some (Cast " (signed int) ")
+              | "sintOfUint"      -> Some (Cast " (signed int) ")
+              | "sintOfUlong"     -> Some (Cast " (signed int) ")
+              | "sintOfUllong"    -> Some (Cast " (signed int) ")
+              | "sintOfSchar"     -> Some (Cast "")
+              | "sintOfSshort"    -> Some (Cast "")
+              | "sintOfSlong"     -> Some (Cast " (signed int) ")
+              | "sintOfSllong"    -> Some (Cast " (signed int) ")
  
-                %% cast to signed long
-                | "slongOfChar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (unsigned long) "))
-                | "slongOfUChar"    -> Some (Cast " (unsigned long) ")
-                | "slongOfUshort"   -> Some (Cast " (unsigned long) ")
-                | "slongOfUint"     -> Some (Cast " (unsigned long) ")
-                | "slongOfUlong"    -> Some (Cast " (unsigned long) ")
-                | "slongOfUllong"   -> Some (Cast " (unsigned long) ")
-                | "slongOfSchar"    -> Some (Cast "")
-                | "slongOfSshort"   -> Some (Cast "")
-                | "slongOfSint"     -> Some (Cast "")
-                | "slongOfSllong"   -> Some (Cast " (unsigned long) ")
+              %% cast to signed long
+              | "slongOfChar"     -> Some (Cast (if plainCharsAreSigned? then "" else " (unsigned long) "))
+              | "slongOfUChar"    -> Some (Cast " (unsigned long) ")
+              | "slongOfUshort"   -> Some (Cast " (unsigned long) ")
+              | "slongOfUint"     -> Some (Cast " (unsigned long) ")
+              | "slongOfUlong"    -> Some (Cast " (unsigned long) ")
+              | "slongOfUllong"   -> Some (Cast " (unsigned long) ")
+              | "slongOfSchar"    -> Some (Cast "")
+              | "slongOfSshort"   -> Some (Cast "")
+              | "slongOfSint"     -> Some (Cast "")
+              | "slongOfSllong"   -> Some (Cast " (unsigned long) ")
 
-                %% cast to signed long long
-                | "sllongOfChar"    -> Some (Cast (if plainCharsAreSigned? then "" else " (signed long long) "))
-                | "sllongOfUChar"   -> Some (Cast " (signed long long) ")
-                | "sllongOfUshort"  -> Some (Cast " (signed long long) ")
-                | "sllongOfUint"    -> Some (Cast " (signed long long) ")
-                | "sllongOfUlong"   -> Some (Cast " (signed long long) ")
-                | "sllongOfUllong"  -> Some (Cast " (signed long long) ")
-                | "sllongOfSchar"   -> Some (Cast "")
-                | "sllongOfSshort"  -> Some (Cast "")
-                | "sllongOfSint"    -> Some (Cast "")
-                | "sllongOfSlong"   -> Some (Cast "")
+              %% cast to signed long long
+              | "sllongOfChar"    -> Some (Cast (if plainCharsAreSigned? then "" else " (signed long long) "))
+              | "sllongOfUChar"   -> Some (Cast " (signed long long) ")
+              | "sllongOfUshort"  -> Some (Cast " (signed long long) ")
+              | "sllongOfUint"    -> Some (Cast " (signed long long) ")
+              | "sllongOfUlong"   -> Some (Cast " (signed long long) ")
+              | "sllongOfUllong"  -> Some (Cast " (signed long long) ")
+              | "sllongOfSchar"   -> Some (Cast "")
+              | "sllongOfSshort"  -> Some (Cast "")
+              | "sllongOfSint"    -> Some (Cast "")
+              | "sllongOfSlong"   -> Some (Cast "")
 
-             (*
-              * These should not appear in final spec to be printed.
-              *
-              * | "mathIntOfChar"   -> Some (Cast MathInt  )
-              * | "mathIntOfUchar"  -> Some (Cast MathInt)
-              * | "mathIntOfUshort" -> Some (Cast MathInt  )
-              * | "mathIntOfUint"   -> Some (Cast MathInt  )
-              * | "mathIntOfUlong"  -> Some (Cast MathInt  )
-              * | "mathIntOfUllong" -> Some (Cast MathInt  )
-              * | "mathIntOfSchar"  -> Some (Cast MathInt  )
-              * | "mathIntOfSshort" -> Some (Cast MathInt  )
-              * | "mathIntOfSint"   -> Some (Cast MathInt  )
-              * | "mathIntOfSlong"  -> Some (Cast MathInt  )
-              * | "mathIntOfSllong" -> Some (Cast MathInt  )
-              *
-              * | "charOfMathInt"   -> Some (Cast " (char) "     )
-              * | "ucharOfMathInt"  -> Some (Cast " (unsigned char) "    )
-              * | "ushortOfMathInt" -> Some (Cast " (unsigned short) "   )
-              * | "uintOfMathInt"   -> Some (Cast " (unsigned int) "     )
-              * | "ulongOfMathInt"  -> Some (Cast " (unsigned long) "    )
-              * | "ullongOfMathInt" -> Some (Cast " (unsigned long long) "   )
-              * | "scharOfMathInt"  -> Some (Cast " (signed char) "    )
-              * | "sshortOfMathInt" -> Some (Cast " (short) "   )
-              * | "sintOfMathInt"   -> Some (Cast " (signed int) "     )
-              * | "slongOfMathInt"  -> Some (Cast " (unsigned long) "    )
-              * | "sllongOfMathInt" -> Some (Cast " (signed long long) "   )
-              *)
+           (*
+            * These should not appear in final spec to be printed.
+            *
+            * | "mathIntOfChar"   -> Some (Cast MathInt  )
+            * | "mathIntOfUchar"  -> Some (Cast MathInt)
+            * | "mathIntOfUshort" -> Some (Cast MathInt  )
+            * | "mathIntOfUint"   -> Some (Cast MathInt  )
+            * | "mathIntOfUlong"  -> Some (Cast MathInt  )
+            * | "mathIntOfUllong" -> Some (Cast MathInt  )
+            * | "mathIntOfSchar"  -> Some (Cast MathInt  )
+            * | "mathIntOfSshort" -> Some (Cast MathInt  )
+            * | "mathIntOfSint"   -> Some (Cast MathInt  )
+            * | "mathIntOfSlong"  -> Some (Cast MathInt  )
+            * | "mathIntOfSllong" -> Some (Cast MathInt  )
+            *
+            * | "charOfMathInt"   -> Some (Cast " (char) "     )
+            * | "ucharOfMathInt"  -> Some (Cast " (unsigned char) "    )
+            * | "ushortOfMathInt" -> Some (Cast " (unsigned short) "   )
+            * | "uintOfMathInt"   -> Some (Cast " (unsigned int) "     )
+            * | "ulongOfMathInt"  -> Some (Cast " (unsigned long) "    )
+            * | "ullongOfMathInt" -> Some (Cast " (unsigned long long) "   )
+            * | "scharOfMathInt"  -> Some (Cast " (signed char) "    )
+            * | "sshortOfMathInt" -> Some (Cast " (short) "   )
+            * | "sintOfMathInt"   -> Some (Cast " (signed int) "     )
+            * | "slongOfMathInt"  -> Some (Cast " (unsigned long) "    )
+            * | "sllongOfMathInt" -> Some (Cast " (signed long long) "   )
+            *)
  
-                | _  -> 
-                  if legalId? id then
-                    Some (Prefix id)
-                  else
-                    let _ = writeLine ("PrintTermAsC: illegal id: " ^ id) in
-                    None)
-           | Op (Qualified(q,id), _) ->
-             if legalId? id then
-               Some (Prefix (if q in? [UnQualified, "C"] then id else id)) % q ^ "_" ^ id
-             else
-               let _ = writeLine ("PrintTermAsC: illegal id: " ^ id) in
-               None)
-      | _ -> 
-        Some Unknown
+              | _  -> 
+                %% TODO: look for name clashes
+                if legal_C_Id? id then
+                  Some (Prefix id)
+                else
+                  let _ = writeLine ("Error 2 in cfixity: illegal id: " ^ id) in
+                  None)
+         | Op (Qualified(q,id), _) ->
+           %% TODO: look for name clashes
+           if legal_C_Id? id then
+             Some (Prefix (if q in? [UnQualified, "C"] then id else id)) % q ^ "_" ^ id
+           else
+             let _ = writeLine ("Error 3 in cfixity: illegal id: " ^ id) in
+             None)
+    | _ -> 
+      Some Unknown
         
 
- op printFunAsC (fun : MSFun) : Option Pretty =
+ op printFunAsC (cgen_options : CGenOptions) (fun : MSFun) : Option Pretty =
   case fun of
     | Nat     n  -> Some (string (show n))
     | Char    c  -> Some (string (show c))
@@ -562,35 +560,92 @@ PrintTermAsC qualifying spec
    %| Op (Qualified (q,   id), _) -> Some (string (q ^ "_" ^ id)) %% TODO: can this happen?
 
     | _ -> 
-      let _ = writeLine ("printFunAsC: unrecognized fun: " ^ anyToString fun) in
+      let _ = writeLine ("Error in printFunAsC: unrecognized fun: " ^ anyToString fun) in
       None
 
- op get_nat_value (tm : MSTerm) : Option Nat =
-   case tm of
-     | Fun (Nat n, _, _) -> Some n
-     | _ -> None
+ op printConstantAsC (suffix : String) (tm : MSTerm) (radix : MSTerm) : Option Pretty = 
+  let
 
- op printTermAsC (tm : MSTerm) : Option Pretty = 
+    def get_nat_value (tm : MSTerm) : Option Nat =
+      case tm of
+        | Fun (Nat n, _, _) -> Some n
+        | _ -> None
+
+    def digit n =
+      case n of
+        |  0 -> #0
+        |  1 -> #1
+        |  2 -> #2
+        |  3 -> #3
+        |  4 -> #4
+        |  5 -> #5
+        |  6 -> #6
+        |  7 -> #7
+        |  8 -> #8
+        |  9 -> #9
+        | 10 -> #A
+        | 11 -> #B
+        | 12 -> #C
+        | 13 -> #D
+        | 14 -> #E
+        | 15 -> #F
+          
+    def digitize prefix n base suffix =
+      let
+        def aux digits n =
+          if n < base then
+            implode ([digit n] ++ digits)
+          else
+            let i = n div base in
+            let j = n - (base * i) in
+            aux ([digit j] ++ digits) i
+      in
+      let suffix = 
+          %% TODO: what are the correct rules for dropping suffix?
+          case suffix of
+            | "u" | n <= 0x7FFF -> ""
+            | _ -> suffix
+      in
+      prefix ^ (aux [] n) ^ suffix
+      
+    def hex n suffix = digitize "0x" n 16 suffix
+    def oct n suffix = digitize "0"  n 8  suffix
+    def dec n suffix = digitize ""   n 10 suffix
+
+  in
+  case get_nat_value tm of
+    | Some n ->
+      % type IntConstBase = | dec | hex | oct
+      Some (string (case radix of
+                      | Fun (Embed ("hex", _), _, _) -> hex n suffix
+                      | Fun (Embed ("oct", _), _, _) -> oct n suffix
+                      | Fun (Embed ("dec", _), _, _) -> dec n suffix
+                      | _                            -> dec n suffix)) % default to dec
+    | _ ->
+      None
+
+ op printTermAsC (cgen_options : CGenOptions) (tm : MSTerm) : Option Pretty = 
   case tm of
     | Var       ((id,  _), _) -> 
-      if legalId? id then
+      if legal_C_Id? id then
+      %% TODO: look for name clashes
         Some (string id)
       else
-        let _ = writeLine ("PrintTermAsC: illegal var name: " ^ id) in
+        let _ = writeLine ("Error in printTermAsC: illegal var name: " ^ id) in
         None
-    | Fun       (fun, _,   _) -> printFunAsC fun
-    | TypedTerm (t1, _,    _) -> printTermAsC t1
+    | Fun       (fun, _,   _) -> printFunAsC  cgen_options fun
+    | TypedTerm (t1, _,    _) -> printTermAsC cgen_options t1
     | Apply     (t1, t2,   _) -> 
       (let {f, args} = uncurry (t1, [t2]) in
        let args =  unpackRecordArgs args in
-       case cfixity f of
+       case cfixity cgen_options f of
          | Some fixity ->
            (case (fixity, args) of
 
               | (Prefix c_str, args) ->
                 let opt_blocks =
                     foldl (fn (opt_blocks, arg) ->
-                             case (opt_blocks, printTermAsC arg) of
+                             case (opt_blocks, printTermAsC cgen_options arg) of
                                | (Some blocks, Some block) ->
                                  Some (blocks ++ [block])
                                | _ ->
@@ -612,7 +667,7 @@ PrintTermAsC qualifying spec
                      None)
 
               | (PrefixNoParens c_str, [arg]) ->
-                (case printTermAsC arg of
+                (case printTermAsC cgen_options arg of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -620,16 +675,16 @@ PrintTermAsC qualifying spec
                    | _ ->
                      None)
               | (Postfix c_str, [arg]) ->
-                (case printTermAsC arg of
+                (case printTermAsC cgen_options arg of
                    | Some pretty ->
                      Some (blockNone (0, 
-                                      [(0, string c_str),
-                                       (0, pretty)]))
+                                      [(0, pretty),
+                                       (0, string c_str)]))                                      
                    | _ ->
                      None)
 
               | (Infix c_str, [arg1, arg2]) ->
-                (case (printTermAsC arg1, printTermAsC arg2) of
+                (case (printTermAsC cgen_options arg1, printTermAsC cgen_options arg2) of
                    | (Some p1, Some p2) ->
                      Some (blockFill (0, 
                                       [(0, p1),
@@ -639,7 +694,7 @@ PrintTermAsC qualifying spec
                      None)
 
               | (Cast c_str, [arg]) ->
-                (case printTermAsC arg of
+                (case printTermAsC cgen_options arg of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -648,34 +703,12 @@ PrintTermAsC qualifying spec
                      None)
 
               | (Constant suffix, [tm, radix]) -> 
-                (case get_nat_value tm of
-                   | Some n ->
-                     (case radix of
-                        % type IntConstBase = | dec | hex | oct
-                        | Fun (Embed ("hex", _), _, _) -> 
-                          Some (blockNone (0, 
-                                           [(0, string "0x"),
-                                            (0, string (show n)),  % TODO: print as hex
-                                            (0, string suffix)]))
-                        | Fun (Embed ("oct", _), _, _) -> 
-                          Some (blockNone (0, 
-                                           [(0, string "0"),
-                                            (0, string (show n)),  % TODO: print as octal
-                                            (0, string suffix)]))
-                        | Fun (Embed ("dec", _), _, _) -> 
-                          Some (blockNone (0, 
-                                           [(0, string (show n)),
-                                            (0, string suffix)]))
-                        | _ -> % default to dec
-                          Some (blockNone (0, 
-                                           [(0, string (show n)),
-                                            (0, string suffix)])))
-                   | _ ->
-                     None)
+                printConstantAsC suffix tm radix
+
               | (ArrayAccess, array :: indices) ->
                 let opt_blocks = 
                 foldl (fn (opt_blocks, index) ->
-                         case (opt_blocks, printTermAsC index) of
+                         case (opt_blocks, printTermAsC cgen_options index) of
                            | (Some blocks, Some block) ->
                              Some (blocks ++ [block])
                            | _ ->
@@ -683,7 +716,7 @@ PrintTermAsC qualifying spec
                       (Some [])
                       (reverse indices)
                 in
-                (case (opt_blocks, printTermAsC array) of
+                (case (opt_blocks, printTermAsC cgen_options array) of
                    | (Some blocks, Some pretty_array_name) ->
                      let pretty_indices =
                          AnnTermPrinter.ppList (fn block -> block)
@@ -695,13 +728,13 @@ PrintTermAsC qualifying spec
                                        (0, pretty_indices)]))
                    | _ ->
                      None)
-             | (Unknown, _) ->
-               let _ = writeLine ("printTermAsC: unknown fixity for " ^ printTerm f) in
-               None)
+              | (Unknown, _) ->
+                let _ = writeLine ("Error in printTermAsC: unknown fixity for " ^ printTerm f) in
+                None)
          | _ ->
            None)
     | _ -> 
-      let _ = writeLine ("printTermAsC: unrecognized term: " ^ printTerm tm) in
+      let _ = writeLine ("Error in printTermAsC: unrecognized term: " ^ printTerm tm) in
       None
 
  %% ========================================================================
