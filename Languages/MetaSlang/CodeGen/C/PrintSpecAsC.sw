@@ -181,9 +181,9 @@ PrintTermAsC qualifying spec
                                           foldl (fn (opt_x, (_, pat)) ->
                                                    case pat of
                                                      | VarPat ((id, typ), _) ->
-                                                       case opt_x of
-                                                         | Some pairs -> Some (pairs ++ [(id, typ)])
-                                                         | _ -> None
+                                                       (case opt_x of
+                                                          | Some pairs -> Some (pairs ++ [(id, typ)])
+                                                          | _ -> None)
                                                      | _ ->
                                                        let _ = writeLine ("ppOpInfoToH: arg not a var: " ^ printPattern pat) in
                                                        None)
