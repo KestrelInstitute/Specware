@@ -305,6 +305,7 @@ CG qualifying spec
                    opt_filename : Option String)
   : () =
   if importsCTarget? spc then
+    let _ = writeLine("Spec refers to CTarget, will use new C generator.") in
     let filename = case opt_filename of 
                      | Some filename -> filename 
                      | _ -> "testing" 

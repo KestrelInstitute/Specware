@@ -26,9 +26,7 @@ PrintTermAsC qualifying spec
 
  op refersToCTarget? (term : SCTerm) : Bool =
   case term.1 of
-    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> 
-      let _ = writeLine("Spec refers to CTarget, will use new C generator.") in
-      true
+    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> true
     | _ -> false
 
  op refersToBase? (term : SCTerm) : Bool =
@@ -55,11 +53,17 @@ PrintTermAsC qualifying spec
                  | TypeDef _ -> all_elements ++ [element]
                  | Op      _ -> all_elements ++ [element]
                  | OpDef   _ -> all_elements ++ [element]
-                 | Import (term, _, imported_elements, _) -> 
+                 | Import (term, spc, imported_elements, _) -> 
+                   %% TODO: the choice of specs whose elements should be included needs some thought
                    if refersToCTarget? term || refersToBase? term then
+                     %% ignore CTarget and base specs
                      all_elements
-                   else
+                   else if importsCTarget? spc then
+                     %% include specs that (recursively) import CTarget 
                      aux all_elements imported_elements
+                   else
+                     %% ignore specs that don't import CTarget 
+                     all_elements
                  | _ -> all_elements)
             all_elements            
             current_elements
