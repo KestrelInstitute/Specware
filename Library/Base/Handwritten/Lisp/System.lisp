@@ -1,3 +1,6 @@
+... this is not loaded into Specware builds ...
+... instead, see ./Library/Legacy/Utilities/Handwritten/Lisp/System.lisp ...
+
 (defpackage :System-Spec)
 (in-package :System-Spec)
 
