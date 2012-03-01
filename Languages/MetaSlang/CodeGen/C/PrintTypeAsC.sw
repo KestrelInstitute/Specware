@@ -13,7 +13,7 @@ PrintTypeAsC qualifying spec
   let 
     def legal_C_char? char =
       isAlphaNum char || char = #_
-
+  in
   case explode id of
     | hd :: tail -> (isAlpha hd || hd = #_) && (forall? legal_C_char? tail)
     | _ -> false
