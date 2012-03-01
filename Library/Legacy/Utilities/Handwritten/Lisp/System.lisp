@@ -128,6 +128,15 @@
 ;;; op internalRunTime () : Nat
 (defun internalRunTime-0 () (GET-INTERNAL-RUN-TIME))
 
+(defun system-spec::userName-0 () 
+  (COMMON-LISP-USER::USER-NAME))
+
+(defun system-spec::currentTimeAndDate-0 ()
+  (multiple-value-bind (sec min hour day month year)
+      (DECODE-UNIVERSAL-TIME (GET-UNIVERSAL-TIME))
+    (format nil "~2D:~2,'0D:~2,'0D ~2,'0D/~2,'0D/~4D"
+            hour min sec month day year)))
+
 (defun |!random| (n) (random n))
 
 ;;; #-Lispworks

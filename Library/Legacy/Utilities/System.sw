@@ -22,6 +22,9 @@ System qualifying spec
   op internalRunTime () : Nat
   op random: Nat -> Nat
 
+  op System.userName ()           : String % calls cl::user-name
+  op System.currentTimeAndDate () : String % formats call to DECODE-UNIVERSAL-TIME of GET-UNIVERSAL-TIME
+
 (*
   The following retrieves a UNIX / Windows environment variable. Other
   operators listed in this file have corresponding implementations in
