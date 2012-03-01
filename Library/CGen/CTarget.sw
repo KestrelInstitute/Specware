@@ -134,6 +134,12 @@ theorem uchar_range is fa(x:Uchar) mathIntOfUchar x in? rangeOfUchar
 op ucharOfMathInt (i:Int | i in? rangeOfUchar) : Uchar =
   the(x:Uchar) mathIntOfUchar x = i
 
+theorem ucharOfMathInt_mathIntOfUchar is
+  fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
+
+theorem mathIntOfUchar_ucharOfMathInt is
+  fa(i:Int) i in? rangeOfUchar => mathIntOfUchar (ucharOfMathInt i) = i
+
 
 %subsection (* The signed char type *)
 
@@ -163,6 +169,12 @@ theorem schar_range is fa(x:Schar) mathIntOfSchar x in? rangeOfSchar
 
 op scharOfMathInt (i:Int | i in? rangeOfSchar) : Schar =
   the(x:Schar) mathIntOfSchar x = i
+
+theorem scharOfMathInt_mathIntOfSchar is
+  fa(x:Schar) scharOfMathInt (mathIntOfSchar x) = x
+
+theorem mathIntOfSchar_scharOfMathInt is
+  fa(i:Int) i in? rangeOfSchar => mathIntOfSchar (scharOfMathInt i) = i
 
 (* The constraint that SCHAR_MAX is at least +127 [ISO 5.2.4.2.1/1] is
 satisfied. *)
@@ -196,6 +208,12 @@ theorem char_range is fa(x:Char) mathIntOfChar x in? rangeOfChar
 
 op charOfMathInt (i:Int | i in? rangeOfChar) : Char =
   the(x:Char) mathIntOfChar x = i
+
+theorem charOfMathInt_mathIntOfChar is
+  fa(x:Char) charOfMathInt (mathIntOfChar x) = x
+
+theorem mathIntOfChar_charOfMathInt is
+  fa(i:Int) i in? rangeOfChar => mathIntOfChar (charOfMathInt i) = i
 
 
 %subsection (* The other integer types *)
@@ -287,6 +305,30 @@ op ulongOfMathInt (i:Int | i in? rangeOfUlong) : Ulong  =
 op ullongOfMathInt (i:Int | i in? rangeOfUllong) : Ullong =
   the(x:Ullong) mathIntOfUllong x = i
 
+theorem ushortOfMathInt_mathIntOfUshort is
+  fa(x:Ushort) ushortOfMathInt (mathIntOfUshort x) = x
+
+theorem mathIntOfUshort_ushortOfMathInt is
+  fa(i:Int) i in? rangeOfUshort => mathIntOfUshort (ushortOfMathInt i) = i
+
+theorem uintOfMathInt_mathIntOfUint is
+  fa(x:Uint) uintOfMathInt (mathIntOfUint x) = x
+
+theorem mathIntOfUint_uintOfMathInt is
+  fa(i:Int) i in? rangeOfUint => mathIntOfUint (uintOfMathInt i) = i
+
+theorem ulongOfMathInt_mathIntOfUlong is
+  fa(x:Ulong) ulongOfMathInt (mathIntOfUlong x) = x
+
+theorem mathIntOfUlong_ulongOfMathInt is
+  fa(i:Int) i in? rangeOfUlong => mathIntOfUlong (ulongOfMathInt i) = i
+
+theorem ullongOfMathInt_mathIntOfUllong is
+  fa(x:Ullong) ullongOfMathInt (mathIntOfUllong x) = x
+
+theorem mathIntOfUllong_ullongOfMathInt is
+  fa(i:Int) i in? rangeOfUllong => mathIntOfUllong (ullongOfMathInt i) = i
+
 (* The signed integer types use the same amount of storage as their unsigned
 counterparts [ISO 6.2.5/6]. Thus, the sizeof_... and ..._bits constants above
 also apply to the signed integer types, not only the unsigned ones -- note that
@@ -348,6 +390,30 @@ op slongOfMathInt (i:Int | i in? rangeOfSlong) : Slong  =
 
 op sllongOfMathInt (i:Int | i in? rangeOfSllong) : Sllong =
   the(x:Sllong) mathIntOfSllong x = i
+
+theorem sshortOfMathInt_mathIntOfSshort is
+  fa(x:Sshort) sshortOfMathInt (mathIntOfSshort x) = x
+
+theorem mathIntOfSshort_sshortOfMathInt is
+  fa(i:Int) i in? rangeOfSshort => mathIntOfSshort (sshortOfMathInt i) = i
+
+theorem sintOfMathInt_mathIntOfSint is
+  fa(x:Sint) sintOfMathInt (mathIntOfSint x) = x
+
+theorem mathIntOfSint_sintOfMathInt is
+  fa(i:Int) i in? rangeOfSint => mathIntOfSint (sintOfMathInt i) = i
+
+theorem slongOfMathInt_mathIntOfSlong is
+  fa(x:Slong) slongOfMathInt (mathIntOfSlong x) = x
+
+theorem mathIntOfSlong_slongOfMathInt is
+  fa(i:Int) i in? rangeOfSlong => mathIntOfSlong (slongOfMathInt i) = i
+
+theorem sllongOfMathInt_mathIntOfSllong is
+  fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
+
+theorem mathIntOfSllong_sllongOfMathInt is
+  fa(i:Int) i in? rangeOfSllong => mathIntOfSllong (sllongOfMathInt i) = i
 
 (* There are inclusion constraints among the ranges of the integer types [ISO
 6.2.5/8], determined by the integer conversion ranks [ISO 6.3.1.1/1]. Given our
