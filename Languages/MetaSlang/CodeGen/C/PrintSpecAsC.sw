@@ -37,122 +37,120 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppTypeInfoToH (status                  : CGenStatus)
-                  (qid as Qualified (q,id) : QualifiedId) 
-                  (opt_info                : Option TypeInfo)
+ op ppTypeInfoToH (status: CGenStatus) (qid : QualifiedId) (opt_info : Option TypeInfo)
   : Option (Prettys * CGenStatus) =
   case opt_info of
     | Some info -> 
       (case printTypeAsC_split status info.dfn of
          | Some (pretty_base_type, index_lines, status) ->
-           if legal_C_Id? id then
-             Some ([string (case info.dfn of
-                              | Product _ -> "typedef struct "
-                              | _         -> "typedef "),
-                    pretty_base_type,
-                    string " ",
-                    string (if q in? [UnQualified, "C"] then id else id), %% q ^ "_" ^ id
-                    blockNone (0, index_lines)],
-                   status)
-           else
-             let _ = writeLine ("Error in ppTypeInfoToH: illegal name for type: " ^ show qid) in
-             None
+           (case addNewType qid status of
+              | Some (c_type_name, status) ->
+                Some ([string (case info.dfn of
+                                 | Product _ -> "typedef struct "
+                                 | _         -> "typedef "),
+                       pretty_base_type,
+                       string " ",
+                       string c_type_name,
+                       blockNone (0, index_lines)],
+                      status)
+              | - ->
+                None)
          | _ ->
            None)
     | _ -> 
       let _ = writeLine ("Error in ppTypeInfoToH: no definition for type " ^ show qid) in
       None
 
- op ppOpInfoToH (status                     : CGenStatus)
-                (qid as Qualified (q,op_id) : QualifiedId) 
-                (opt_info                   : Option OpInfo) 
+ op ppOpInfoSig (status : CGenStatus) (qid : QualifiedId) (c_function_name : Id) (opt_info : Option OpInfo) 
   : Option (Prettys * CGenStatus) =
-  if legal_C_Id? op_id then
-    case opt_info of
-      | Some info -> 
-        (case termType info.dfn of
-           | Arrow (dom, rng, _) -> 
-             (case printTypeAsC status rng of
-                | Some (pretty_rng, status) ->
-                  let opt_pat = case info.dfn of
-                                  | Lambda ([(pat,_,_)], _) -> Some pat
-                                  | TypedTerm (Lambda ([(pat,_,_)], _), _, _) -> Some pat
-                                  | _ -> 
-                                    let _ = writeLine ("Error in ppOpInfoToH: definition not a lambda: " ^ printTerm info.dfn) in
-                                    None
-                  in
-                  let opt_args = case opt_pat of
-                                   | Some (VarPat ((id, typ), _)) -> 
-                                     if legal_C_Id? id then
-                                       Some [(id, typ)]
-                                     else
-                                       let _ = writeLine ("Error in ppTypeInfoToH: illegal var name: " ^ id) in
-                                       None
-                                   | Some (RecordPat ([],        _)) -> Some []
-                                   | Some (pat as (RecordPat (id_pats,   _))) -> 
-                                     (case id_pats of
-                                        | ("1", _) :: _ ->
-                                          foldl (fn (opt_x, (_, pat)) ->
-                                                   case pat of
-                                                     | VarPat ((id, typ), _) ->
-                                                       (case opt_x of
-                                                          | Some pairs -> Some (pairs ++ [(id, typ)])
-                                                          | _ -> None)
-                                                     | _ ->
-                                                       let _ = writeLine ("Error in ppOpInfoToH: arg not a var: " ^ printPattern pat) in
-                                                       None)
-                                                (Some [])
-                                                id_pats
-                                        | _ ->
-                                          let _ = writeLine ("Error in ppOpInfoToH: args not a tuple: " ^ printPattern pat) in
-                                          None)
-                                   | _ ->
-                                     None
-                  in
-                  let opt_blocks = 
-                      case opt_args of
-                        | Some args ->
-                          foldl (fn (opt_blocks, (id, typ)) -> 
-                                   case opt_blocks of
-                                     | Some blocks ->
-                                       (case printTypeAsC status typ of
-                                          | Some (pretty, status) ->
-                                            Some (blocks ++ [blockNone (0, [(0, pretty),
-                                                                            (0, string " "),
-                                                                            (0, string id)])])
-                                          | _ ->
-                                            None)
-                                     | _ ->
-                                       None)
-                                (Some [])
-                                args
-                        | _ ->
-                          None
-                  in
-                  case opt_blocks of
-                    | Some blocks ->
-                      let pretty_args =
-                          AnnTermPrinter.ppList (fn block -> block)
-                                                (string "(", string ", ", string ")")
-                                                blocks
-                      in
-                      Some ([pretty_rng,
-                             string " ",
-                             string op_id,
-                             string " ",
-                             pretty_args],
-                            status)
-                    | _ ->
-                      None)
-           | _ ->
-             let _ = writeLine ("Error in ppOpInfoToH: " ^ printQualifiedId qid ^ " does not have an arrow type") in
-             None)
-      | _ ->
-        let _ = writeLine ("Error in ppOpInfoToH: no definition for op " ^ printQualifiedId qid) in
-        None
-  else
-    let _ = writeLine ("Error in ppOpInfoToH: name of op is illegal for C: " ^ op_id) in
-    None
+  case opt_info of
+    | Some info -> 
+      (case termType info.dfn of
+         | Arrow (dom, rng, _) -> 
+           (case printTypeAsC status rng of
+              | Some (pretty_rng, status) ->
+                let opt_pat = 
+                case info.dfn of
+                  | Lambda ([(pat,_,_)], _) -> Some pat
+                  | TypedTerm (Lambda ([(pat,_,_)], _), _, _) -> Some pat
+                  | _ -> 
+                    let _ = writeLine ("Error in ppOpInfoSig: definition not a lambda: " ^ printTerm info.dfn) in
+                    None
+                in
+                let opt_args = 
+                case opt_pat of
+                  | Some (VarPat ((id, typ), _)) -> 
+                    if legal_C_Id? id then
+                      Some [(id, typ)]
+                    else
+                      let _ = writeLine ("Error in ppTypeInfoToH: illegal var name: " ^ id) in
+                      None
+                  | Some (RecordPat ([],        _)) -> Some []
+                  | Some (pat as (RecordPat (id_pats,   _))) -> 
+                    (case id_pats of
+                       | ("1", _) :: _ ->
+                         foldl (fn (opt_x, (_, pat)) ->
+                                  case pat of
+                                    | VarPat ((id, typ), _) ->
+                                      (case opt_x of
+                                         | Some pairs -> Some (pairs ++ [(id, typ)])
+                                         | _ -> None)
+                                    | _ ->
+                                      let _ = writeLine ("Error in ppOpInfoSig: arg not a var: " ^ printPattern pat) in
+                                      None)
+                         (Some [])
+                         id_pats
+                                    | _ ->
+                                      let _ = writeLine ("Error in ppOpInfoSig: args not a tuple: " ^ printPattern pat) in
+                                      None)
+                  | _ ->
+                    None
+                in
+                let opt_blocks = 
+                case opt_args of
+                  | Some args ->
+                    foldl (fn (opt_blocks, (id, typ)) -> 
+                             case opt_blocks of
+                               | Some blocks ->
+                                 (case printTypeAsC status typ of
+                                    | Some (pretty, status) ->
+                                      Some (blocks ++ [blockNone (0, [(0, pretty),
+                                                                      (0, string " "),
+                                                                      (0, string id)])])
+                                    | _ ->
+                                      None)
+                               | _ ->
+                                 None)
+                    (Some [])
+                    args
+                               | _ ->
+                                 None
+                in
+                case opt_blocks of
+                  | Some blocks ->
+                    let pretty_args =
+                    AnnTermPrinter.ppList (fn block -> block)
+                    (string "(", string ", ", string ")")
+                    blocks
+                    in
+                    Some ([pretty_rng, string " ", string c_function_name, string " ", pretty_args],
+                          status)
+                  | _ ->
+                    None)
+         | _ ->
+           let _ = writeLine ("Error in ppOpInfoSig: " ^ printQualifiedId qid ^ " does not have an arrow type") in
+           None)
+    | _ ->
+      let _ = writeLine ("Error in ppOpInfoSig: no definition for op " ^ printQualifiedId qid) in
+      None
+
+ op ppOpInfoToH (status : CGenStatus) (qid : QualifiedId) (opt_info : Option OpInfo) 
+  : Option (Prettys * CGenStatus) =
+  case addNewOp qid status of
+    | Some (c_function_name, status) ->
+      ppOpInfoSig status qid c_function_name opt_info
+    | _ ->
+      None
 
  op ppInfoToH (status : CGenStatus) (info : CInfo) : Option (Prettys * CGenStatus) =
   let opt_prettys_and_status =
@@ -195,9 +193,9 @@ PrintAsC qualifying spec
 
  op ppOpInfoToC (status : CGenStatus) (qid : QualifiedId, opt_info : Option OpInfo) 
   : Option (Prettys * CGenStatus) =
-  case opt_info of
-    | Some info -> 
-      (case ppOpInfoToH status qid opt_info of
+  case (opt_info, getCFunctionName qid status) of
+    | (Some info, Some c_function_name) -> 
+      (case ppOpInfoSig status qid c_function_name opt_info of
          | Some (decl_prettys, status) ->
            let decl_lines   = map (fn pretty : Pretty -> (0, pretty)) decl_prettys in
            let 
@@ -241,9 +239,7 @@ PrintAsC qualifying spec
                            | [] -> opt_prettys_and_status
                            | _ -> Some (prettys ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) 
                                                                  new_prettys)],
-                                        status)
-                           | _ ->
-                             None)
+                                        status))
                       | _ ->
                         None)
                  | _ ->
@@ -269,8 +265,8 @@ PrintAsC qualifying spec
         | #c :: #. :: tail -> implode (reverse tail)
         | _ -> filename
   in
-  let h_file = basename ^ ".h" in
-  let c_file = basename ^ ".c" in
+  let h_file = "C/" ^ basename ^ ".h" in
+  let c_file = "C/" ^ basename ^ ".c" in
 
   case init_cgen_status spc of  % options and status
     | Some status ->
