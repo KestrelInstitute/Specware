@@ -1,41 +1,12 @@
-PrintTermAsC qualifying spec 
- import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
- import /Languages/MetaSlang/AbstractSyntax/PrinterSig % printTerm, printType, printPattern
- import /Languages/MetaSlang/AbstractSyntax/Printer
- import /Languages/MetaSlang/Specs/AnnSpec
- import /Library/Legacy/DataStructures/IntSetSplay    % indicesToDisable
- import /Library/Legacy/DataStructures/NatMapSplay    % markTable's
+PrintAsC qualifying spec 
 
- import /Languages/SpecCalculus/Semantics/Environment
- import PrintTypeAsC  % just to get legal_C_Id?
+ import PrintAsCUtils
 
  %% ========================================================================
-
- type MSFun = AFun Position
-
- type CFunCall = {f : MSTerm, args : MSTerms}
-
- op unpackRecordArgs (args : MSTerms) : MSTerms =
-  foldl (fn (args, arg) ->
-           case arg of
-             | Record (("1", arg1) :: pairs, _) ->
-               args ++ [arg1] ++ (map (fn (_, arg) -> arg) pairs)
-             | _ ->
-               args ++ [arg])
-        []
-        args
-             
- op uncurry (t1 : MSTerm, args : MSTerms) : CFunCall =
-  case t1 of
-    | Apply (t2, t3, _) -> uncurry (t2, [t3] ++ args)
-    | _ -> {f = t1, args = args}
-
- type CType = | UChar | SChar | Char 
-              | UShort | UInt | ULong | ULLong 
-              | SShort | SInt | SLong | SLLong 
-              | Int | MathInt
-              | Array CType
-             %| Structure
+ %%  CFixity describes the pattern and keyword for a term to be applied.
+ %%  If the operator is clearly illegal, we report that and return None.
+ %%  If the term is complex (not a Fun) we punt and return Some Unknown.
+ %% ========================================================================
 
  type CFixity = | Prefix         String   % 
                 | PrefixNoParens String
@@ -548,22 +519,29 @@ PrintTermAsC qualifying spec
       Some Unknown
         
 
+ %% ========================================================================
+ %% Implicit constants (Nat, Char, String)
+ %% ========================================================================
+
  op printFunAsC (cgen_options : CGenOptions) (fun : MSFun) : Option Pretty =
   case fun of
     | Nat     n  -> Some (string (show n))
     | Char    c  -> Some (string (show c))
     | String  s  -> Some (string s)
-   %| Bool    b  -> Some (string (if b then "(0 == 0)" else "(0 != 0)")) % Boolean TRUE and FALSE are not part of the core C language
-
-   %| Project f  -> Some (string ("." ^ f))                       %% TODO: can this happen?
-   %| Op (Qualified ("C", id), _) -> Some (string id)             %% TODO: can this happen?
-   %| Op (Qualified (q,   id), _) -> Some (string (q ^ "_" ^ id)) %% TODO: can this happen?
-
+   %| Bool    b  -> Some (string (if b then "(0 == 0)" else "(0 != 0)")) %% Boolean TRUE and FALSE are not part of the core C language
+   %| Project f  -> Some (string ("." ^ f))                              %% TODO: can this happen?
+   %| Op (Qualified ("C", id), _) -> Some (string id)                    %% TODO: can this happen?
+   %| Op (Qualified (q,   id), _) -> Some (string (q ^ "_" ^ id))        %% TODO: can this happen?
     | _ -> 
       let _ = writeLine ("Error in printFunAsC: unrecognized fun: " ^ anyToString fun) in
       None
 
- op printConstantAsC (suffix : String) (tm : MSTerm) (radix : MSTerm) : Option Pretty = 
+ %% ========================================================================
+ %% Explicit numeric constants (Hex, Oct, Dec)
+ %% ========================================================================
+
+ op printNumericConstantAsC (suffix : String) (tm : MSTerm) (radix : MSTerm) 
+  : Option Pretty = 
   let
 
     def get_nat_value (tm : MSTerm) : Option Nat =
@@ -624,11 +602,55 @@ PrintTermAsC qualifying spec
     | _ ->
       None
 
+ %% ========================================================================
+ %% Main print routine for terms.
+ %%
+ %%  For vars, prints name (if legal)
+ %%
+ %%  For typed terms, recurs into untyped term
+ %%
+ %%  For primitive terms (Fun's):
+ %%    Prints implicit Nat/Char/String constants using printFunAsC.
+ %%    TODO:  Should Nat constants be handled that implicitly?
+ %%
+ %%  For applications:
+ %%
+ %%    First uncurries and flattens tuple arguments, e.g. 
+ %%      foo a (b, c) (d, e)
+ %%       =>
+ %%      foo (a, (b, c), (d, e))
+ %%       =>
+ %%      foo (a, b, c, d, e)
+ %%
+ %%    Then calls cfixity to get pattern for operator.
+ %%    Then prints according to that pattern.
+ %%     (If pattern cannot be found, returns None.)
+ %%
+ %%  For other terms, returns None.
+ %%
+ %% ========================================================================
+
+
+ op uncurry (t1 : MSTerm, args : MSTerms) : CFunCall =
+  case t1 of
+    | Apply (t2, t3, _) -> uncurry (t2, [t3] ++ args)
+    | _ -> {f = t1, args = args}
+
+ op flattenRecordArgs (args : MSTerms) : MSTerms =
+  foldl (fn (args, arg) ->
+           case arg of
+             | Record (("1", arg1) :: pairs, _) ->
+               args ++ [arg1] ++ (map (fn (_, arg) -> arg) pairs)
+             | _ ->
+               args ++ [arg])
+        []
+        args
+             
  op printTermAsC (cgen_options : CGenOptions) (tm : MSTerm) : Option Pretty = 
   case tm of
     | Var       ((id,  _), _) -> 
       if legal_C_Id? id then
-      %% TODO: look for name clashes
+        %% TODO: look for name clashes
         Some (string id)
       else
         let _ = writeLine ("Error in printTermAsC: illegal var name: " ^ id) in
@@ -637,7 +659,7 @@ PrintTermAsC qualifying spec
     | TypedTerm (t1, _,    _) -> printTermAsC cgen_options t1
     | Apply     (t1, t2,   _) -> 
       (let {f, args} = uncurry (t1, [t2]) in
-       let args =  unpackRecordArgs args in
+       let args =  flattenRecordArgs args in
        case cfixity cgen_options f of
          | Some fixity ->
            (case (fixity, args) of
@@ -703,7 +725,7 @@ PrintTermAsC qualifying spec
                      None)
 
               | (Constant suffix, [tm, radix]) -> 
-                printConstantAsC suffix tm radix
+                printNumericConstantAsC suffix tm radix
 
               | (ArrayAccess, array :: indices) ->
                 let opt_blocks = 

@@ -1,38 +1,24 @@
-PrintTermAsC qualifying spec 
- import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
- import /Languages/MetaSlang/AbstractSyntax/Printer
- import /Languages/MetaSlang/Specs/MSTerm
- import /Languages/MetaSlang/Specs/AnnSpec
- import /Languages/SpecCalculus/Semantics/Environment
+PrintAsC qualifying spec 
+
+ import PrintAsCUtils
  import PrintTypeAsC
  import PrintTermAsC
- import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % topSortElements
 
- %% type NatStrings = List (Nat * String)     % List (Length * String)
- %% type Text  = List (Nat * NatStrings)      % List (Indent * NatStrings)
- %% type Pretty = Nat * (Nat * Text -> Text)
- %% type Line  = Nat * Pretty
- %% type Lines = List (Line)
- %% type Prettys = List (Pretty)
-
- type FileName = String
- type Indent   = Nat
-
- type Info = 
-   | Type QualifiedId * Option TypeInfo
-   | Op   QualifiedId * Option OpInfo
-
- type Infos = List Info
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%% Code to find slice of elements that are both at-or-below top-level spec 
+ %%% and also above CTarget.sw
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op refersToCTarget? (term : SCTerm) : Bool =
   case term.1 of
     | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> true
     | _ -> false
 
- op refersToBase? (term : SCTerm) : Bool =
-  case term.1 of
-    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "Base"]}) -> true
-    | _ -> false
+ % superfluous
+ % op refersToBase? (term : SCTerm) : Bool =
+ %  case term.1 of
+ %    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "Base"]}) -> true
+ %    | _ -> false
 
  op importsCTarget? (spc : Spec) : Bool =
   let 
@@ -55,14 +41,14 @@ PrintTermAsC qualifying spec
                  | OpDef   _ -> all_elements ++ [element]
                  | Import (term, spc, imported_elements, _) -> 
                    %% TODO: the choice of specs whose elements should be included needs some thought
-                   if refersToCTarget? term || refersToBase? term then
-                     %% ignore CTarget and base specs
+                   if refersToCTarget? term then  
+                     %% ignore CTarget itself
                      all_elements
                    else if importsCTarget? spc then
-                     %% include specs that (recursively) import CTarget 
+                     %% but include specs that (recursively) import CTarget 
                      aux all_elements imported_elements
                    else
-                     %% ignore specs that don't import CTarget 
+                     %% ignore specs that don't import CTarget (this include base specs)
                      all_elements
                  | _ -> all_elements)
             all_elements            
@@ -70,101 +56,7 @@ PrintTermAsC qualifying spec
   in
   aux [] spc.elements 
 
- op printSpecAsCToFile (filename : FileName, spc : Spec) : () = 
-
-  let basename =
-      case reverse (explode filename) of
-        | #c :: #. :: tail -> implode (reverse tail)
-        | _ -> filename
-  in
-  let h_file = basename ^ ".h" in
-  let c_file = basename ^ ".c" in
-
-  let elements = findCSliceFrom spc in
-  let elements = topSortElements (spc, elements) in
-
-  let cgen_options = init_cgen_options spc in
-
-  let infos = reverse (foldl (fn (infos, element) ->
-                                case element of
-                                  | Type    (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
-                                  | TypeDef (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
-                                  | Op      (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
-                                  | OpDef   (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
-                                  | _ -> infos)
-                             []
-                             elements)
-  in
-  case (ppInfosToH cgen_options basename infos, 
-        ppInfosToC cgen_options basename infos) 
-    of
-    | (Some h_prettys, Some c_prettys) ->
-      let h_lines   = map (fn (pretty : Pretty) -> (0, pretty)) h_prettys in
-      let c_lines   = map (fn (pretty : Pretty) -> (0, pretty)) c_prettys in
-      let h_text    = format (80, blockAll (0, h_lines)) in
-      let c_text    = format (80, blockAll (0, c_lines)) in
-      let _ = writeLine("Writing " ^ h_file) in
-      let _ = toFile (h_file, h_text) in
-      let _ = writeLine("Writing " ^ c_file) in
-      let _ = toFile (c_file, c_text) in
-      ()
-    | _ ->
-      let _ = writeLine("Due to errors above, not printing .c (or .h) file : " ^ c_file) in
-      ()
-
- op ppInfosToH (cgen_options : CGenOptions) (basename : FileName) (infos : Infos) : Option Prettys =
-  let opt_prettys =
-      foldl (fn (all_prettys, info) -> 
-               case (all_prettys, ppInfoToH cgen_options info) of
-                 | (Some all_prettys, Some new_prettys) ->
-                   Some (all_prettys  ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) new_prettys)])
-                 | _ ->
-                   None)
-            (Some [])
-            infos
-  in
-  case opt_prettys of
-    | Some prettys ->
-      let header_pretty = string ("/* " ^ basename ^ ".h by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */") in
-      Some ([header_pretty] ++ prettys)
-    | _ ->
-      None
-
- op ppInfosToC (cgen_options : CGenOptions) (basename : FileName) (infos : Infos) : Option Prettys =
-  let opt_prettys =
-      foldl (fn (opt_all_prettys, info) -> 
-               case (opt_all_prettys, ppInfoToC cgen_options info) of
-                 | (Some all_prettys, Some new_prettys) ->
-                   (case new_prettys of
-                      | [] -> opt_all_prettys
-                      | _ -> Some (all_prettys ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) new_prettys)]))
-                 | _ ->
-                   None)
-            (Some [])
-            infos
-  in
-  case opt_prettys of
-    | Some prettys -> 
-      let header_pretty  = string ("/* " ^ basename ^ ".c by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */") in
-      let include_pretty = string ("#include \"" ^ basename ^ ".h\"") in
-      Some ([header_pretty, include_pretty, string ""] ++ prettys)
-    | _ ->
-      None
-
- op ppInfoToH (cgen_options : CGenOptions) (info : Info) : Option Prettys =
-  let opt_prettys =
-      case info of
-        | Type (qid, opt_info) -> ppTypeInfoToH cgen_options (qid, opt_info)
-        | Op   (qid, opt_info) -> ppOpInfoToH   cgen_options (qid, opt_info)
-  in
-  case opt_prettys of
-    | Some prettys -> Some (prettys ++ [string ";"])
-    | _ -> None
-
- op ppInfoToC (cgen_options : CGenOptions) (info : Info) : Option Prettys =
-  case info of
-    | Type (qid, opt_info) -> ppTypeInfoToC cgen_options (qid, opt_info)
-    | Op   (qid, opt_info) -> ppOpInfoToC   cgen_options (qid, opt_info)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op ppTypeInfoToH (cgen_options : CGenOptions) (qid as Qualified (q,id) : QualifiedId, opt_info : Option TypeInfo) 
   : Option Prettys =
@@ -188,9 +80,6 @@ PrintTermAsC qualifying spec
     | _ -> 
       let _ = writeLine ("Error in ppTypeInfoToH: no definition for type " ^ show qid) in
       None
-
- op ppTypeInfoToC (cgen_options : CGenOptions) (qid : QualifiedId, opt_info : Option TypeInfo) : Option Prettys =
-  Some []
 
  op ppOpInfoToH (cgen_options : CGenOptions) (qid as Qualified (q,op_id) : QualifiedId, opt_info : Option OpInfo) 
   : Option Prettys =
@@ -280,6 +169,65 @@ PrintTermAsC qualifying spec
     let _ = writeLine ("Error in ppOpInfoToH: name of op is illegal for C: " ^ op_id) in
     None
 
+ op ppInfoToH (cgen_options : CGenOptions) (info : CInfo) : Option Prettys =
+  let opt_prettys =
+      case info of
+        | Type (qid, opt_info) -> ppTypeInfoToH cgen_options (qid, opt_info)
+        | Op   (qid, opt_info) -> ppOpInfoToH   cgen_options (qid, opt_info)
+  in
+  case opt_prettys of
+    | Some prettys -> Some (prettys ++ [string ";"])
+    | _ -> None
+
+ op ppInfosToH (cgen_options : CGenOptions) (basename : FileName) (infos : CInfos) : Option Prettys =
+  let opt_prettys =
+      foldl (fn (all_prettys, info) -> 
+               case (all_prettys, ppInfoToH cgen_options info) of
+                 | (Some all_prettys, Some new_prettys) ->
+                   Some (all_prettys  ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) new_prettys)])
+                 | _ ->
+                   None)
+            (Some [])
+            infos
+  in
+  case opt_prettys of
+    | Some prettys ->
+      let header_pretty = string ("/* " ^ basename ^ ".h by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */") in
+      Some ([header_pretty] ++ prettys)
+    | _ ->
+      None
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op ppInfoToC (cgen_options : CGenOptions) (info : CInfo) : Option Prettys =
+  case info of
+    | Type (qid, opt_info) -> ppTypeInfoToC cgen_options (qid, opt_info)
+    | Op   (qid, opt_info) -> ppOpInfoToC   cgen_options (qid, opt_info)
+
+ op ppInfosToC (cgen_options : CGenOptions) (basename : FileName) (infos : CInfos) : Option Prettys =
+  let opt_prettys =
+      foldl (fn (opt_all_prettys, info) -> 
+               case (opt_all_prettys, ppInfoToC cgen_options info) of
+                 | (Some all_prettys, Some new_prettys) ->
+                   (case new_prettys of
+                      | [] -> opt_all_prettys
+                      | _ -> Some (all_prettys ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) new_prettys)]))
+                 | _ ->
+                   None)
+            (Some [])
+            infos
+  in
+  case opt_prettys of
+    | Some prettys -> 
+      let header_pretty  = string ("/* " ^ basename ^ ".c by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */") in
+      let include_pretty = string ("#include \"" ^ basename ^ ".h\"") in
+      Some ([header_pretty, include_pretty, string ""] ++ prettys)
+    | _ ->
+      None
+
+ op ppTypeInfoToC (cgen_options : CGenOptions) (qid : QualifiedId, opt_info : Option TypeInfo) : Option Prettys =
+  Some []
+
  op ppOpInfoToC (cgen_options : CGenOptions) (qid : QualifiedId, opt_info : Option OpInfo) : Option Prettys =
   case opt_info of
     | Some info -> 
@@ -308,5 +256,57 @@ PrintTermAsC qualifying spec
     | _ -> 
       let _ = writeLine ("Error in ppOpInfoToC: No definition for " ^ printQualifiedId qid) in
       None
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op printSpecAsCToFile (filename : FileName, spc : Spec) : () = 
+
+  let basename =
+      case reverse (explode filename) of
+        | #c :: #. :: tail -> implode (reverse tail)
+        | _ -> filename
+  in
+  let h_file = basename ^ ".h" in
+  let c_file = basename ^ ".c" in
+
+  let elements = findCSliceFrom spc in
+  % let _ = writeLine "=Before=========================================================================" in
+  % let _ = map (fn e -> writeLine ("Element (1): " ^ anyToString e)) elements in
+  % let _ = writeLine "================================================================================" in
+  let elements = topSortElements (spc, elements) in
+  % let _ = writeLine "=After==========================================================================" in
+  % let _ = map (fn e -> writeLine ("Element (2): " ^ anyToString e)) elements in
+  % let _ = writeLine "================================================================================" in
+
+  let cgen_options = init_cgen_options spc in
+
+  let infos = reverse (foldl (fn (infos, element) ->
+                                case element of
+                                  | Type    (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
+                                  | TypeDef (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
+                                  | Op      (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
+                                  | OpDef   (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
+                                  | _ -> infos)
+                             []
+                             elements)
+  in
+  case (ppInfosToH cgen_options basename infos, 
+        ppInfosToC cgen_options basename infos) 
+    of
+    | (Some h_prettys, Some c_prettys) ->
+      let h_lines   = map (fn (pretty : Pretty) -> (0, pretty)) h_prettys in
+      let c_lines   = map (fn (pretty : Pretty) -> (0, pretty)) c_prettys in
+      let h_text    = format (80, blockAll (0, h_lines)) in
+      let c_text    = format (80, blockAll (0, c_lines)) in
+      let _ = writeLine("Writing " ^ h_file) in
+      let _ = toFile (h_file, h_text) in
+      let _ = writeLine("Writing " ^ c_file) in
+      let _ = toFile (c_file, c_text) in
+      ()
+    | _ ->
+      let _ = writeLine("Due to errors above, not printing .c (or .h) file : " ^ c_file) in
+      ()
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 endspec
