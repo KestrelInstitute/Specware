@@ -15,41 +15,16 @@ PrintAsC qualifying spec
  %% 
  %% ========================================================================
 
- op printTypeAsC_split (status : CGenStatus) (typ : MSType) 
+ op printTypeAsC_split (status : CGenStatus, typ : MSType) 
   : Option (Pretty * List (Nat * Pretty) * CGenStatus) =
   case typ of
 
-    | Base (Qualified (q, id), [], _) -> 
-      let opt_id =
-          if q = "C" then
-            case id of
-              | "Uchar"  -> Some "unsigned char"
-              | "Schar"  -> Some "signed char"
-              | "Char"   -> Some "char"
-              | "Ushort" -> Some "unsigned short"
-              | "Uint"   -> Some "unsigned int"
-              | "Ulong"  -> Some "unsigned long"
-              | "Ullong" -> Some "unsigned long long"
-              | "Sshort" -> Some "short"
-              | "Sint"   -> Some "int"
-              | "Slong"  -> Some "long"
-              | "Sllong" -> Some "long long"
-              | _        -> 
-                let _ = writeLine ("Error in printTypeAsC: unknown C type: " ^ id) in
-                None
-          else 
-            %% TODO: look for name clashes
-            if legal_C_Id? id then
-              let _ = writeLine("Type not mentioned in C: " ^ id) in
-              Some id
-            else
-              let _ = writeLine ("Error in printTypeAsC: bad name for C type: " ^ id) in
-              None
-      in
-      (case opt_id of
-         | Some id -> 
-           Some (string id, [], status)
-         | _ -> None)
+    | Base (qid as Qualified (q, id), [], _) -> 
+      (case getCTypeName (qid, status) of
+         | Some c_type_name -> Some (string c_type_name, [], status)
+         | _ ->
+           let _ = writeLine ("Error in printTypeAsC: no C type for: " ^ show qid) in
+           None)
 
     | Product ([], _) -> 
       Some (string "{}", [], status)
@@ -59,7 +34,7 @@ PrintAsC qualifying spec
           foldl (fn (opt_blocks_and_status, (id, typ)) ->
                    case opt_blocks_and_status of
                      | Some (blocks, status) ->
-                       (case printTypeAsC status typ of
+                       (case printTypeAsC (status, typ) of
                           | Some (pretty_field_type, status) ->
                             Some (blocks ++
                                     [blockNone (0, [(0, pretty_field_type),
@@ -129,7 +104,7 @@ PrintAsC qualifying spec
       in
       (case split_apart_limits (typ, []) of
          | Some (typ, limits) ->
-           (case printTypeAsC_split status typ of 
+           (case printTypeAsC_split (status, typ) of 
               | Some (pretty_type, [], status) ->
                 Some (pretty_type, limits, status)
               | _ ->
@@ -137,15 +112,15 @@ PrintAsC qualifying spec
          | _ ->
            None)
     | _ -> 
-      let _ = writeLine ("Error in printTypeAsC_split: unrecognized type: " ^ printType typ) in
+      let _ = writeLine ("Error in printTypeAsC_split: unrecognized kind of type: " ^ printType typ) in
       None
       
  %% ========================================================================
  %% Print routine for types when we don't need to deal with typedef nonsense.
  %% ========================================================================
 
- op printTypeAsC (status : CGenStatus) (typ : MSType) : Option (Pretty * CGenStatus) =
-   case printTypeAsC_split status typ of
+ op printTypeAsC (status : CGenStatus, typ : MSType) : Option (Pretty * CGenStatus) =
+   case printTypeAsC_split (status, typ) of
      | Some (pretty_type, index_lines, status) ->
        let pretty = 
            case index_lines of

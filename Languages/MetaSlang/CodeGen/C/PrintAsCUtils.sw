@@ -95,25 +95,45 @@ PrintAsC qualifying spec
       let defined_ops   = [] in
       Some {plainCharsAreSigned? = plain_chars_are_signed?,
             printPragmas?        = print_pragmas?,
-            defined_types        = [],
+            defined_types        = ["char", "short", "int", "long"], % "unsigned char" can't possibly be a user type
             defined_ops          = []}
     | _ ->
       let _ = writeLine ("?? huh?:  CTarget no longer imported?") in
       None
 
-  op addNewType (qid as Qualified(_,id) : QualifiedId) (status : CGenStatus) 
-   : Option (Id * CGenStatus) =
-   let defined_types = status.defined_types in
-   if id in? defined_types then
-     let _ = writeLine("Error: addNewType: attempting to redefine: " ^ id) in
-     None
-   else if legal_C_Id? id then
-     Some (id, status << {defined_types = id :: defined_types})
-   else
-     let _ = writeLine("Error: addNewType: id is not legal C type name: " ^ id) in
+ op addNewType (qid as Qualified(_,id) : QualifiedId, status : CGenStatus) 
+  : Option (Id * CGenStatus) =
+  let defined_types = status.defined_types in
+  if id in? defined_types then
+    let _ = writeLine("Error: addNewType: attempting to redefine: " ^ id) in
+    None
+  else if legal_C_Id? id then
+    Some (id, status << {defined_types = id :: defined_types})
+  else
+    let _ = writeLine("Error: addNewType: id is not legal C type name: " ^ id) in
+    None
+
+ op getCTypeName (qid as Qualified (q,id) : QualifiedId, status : CGenStatus) : Option Id =
+  if q = "C" then
+     case id of
+       | "Uchar"  -> Some "unsigned char"
+       | "Schar"  -> Some "signed char"
+       | "Char"   -> Some "char"
+       | "Ushort" -> Some "unsigned short"
+       | "Uint"   -> Some "unsigned int"
+       | "Ulong"  -> Some "unsigned long"
+       | "Ullong" -> Some "unsigned long long"
+       | "Sshort" -> Some "short"
+       | "Sint"   -> Some "int"
+       | "Slong"  -> Some "long"
+       | "Sllong" -> Some "long long"
+       | _        -> None
+   else if id in? status.defined_types then
+     Some id
+   else 
      None
 
-  op addNewOp (qid as Qualified (_,id) : QualifiedId) (status : CGenStatus) 
+  op addNewOp (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) 
    : Option (Id * CGenStatus) =
    let defined_ops = status.defined_ops in
    if id in? defined_ops then
@@ -142,12 +162,6 @@ PrintAsC qualifying spec
     | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> true
     | _ -> false
 
- % superfluous
- % op refersToBase? (term : SCTerm) : Bool =
- %  case term.1 of
- %    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "Base"]}) -> true
- %    | _ -> false
-
  op importsCTarget? (spc : Spec) : Bool =
   let 
     def aux elements =
@@ -162,8 +176,8 @@ PrintAsC qualifying spec
   let 
     def aux elements =
       case elements of 
-        | (Import (term, spc, imported_elements, _)) :: tail ->
-          if refersToCTarget? term then
+        | (Import (scterm, spc, imported_elements, _)) :: tail ->
+          if refersToCTarget? scterm then
             Some (spc, imported_elements)
           else 
             (case aux imported_elements of  % search recursively

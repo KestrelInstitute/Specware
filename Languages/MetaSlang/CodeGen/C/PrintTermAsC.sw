@@ -17,7 +17,7 @@ PrintAsC qualifying spec
                 | ArrayAccess 
                 | Unknown
 
- op cfixity (status : CGenStatus) (tm : MSTerm) : Option CFixity =
+ op cfixity (status : CGenStatus, tm : MSTerm) : Option CFixity =
   let plainCharsAreSigned? = status.plainCharsAreSigned? in
   case tm of 
     | Fun (fun, _, _) -> 
@@ -40,12 +40,12 @@ PrintAsC qualifying spec
               %% ============================================================
               
               | "sintConstant"    -> Some (Constant "")
-              | "slongConstant"   -> Some (Constant "l")
-              | "sllongConstant"  -> Some (Constant "ll")
+              | "slongConstant"   -> Some (Constant "L")
+              | "sllongConstant"  -> Some (Constant "LL")
                 
-              | "uintConstant"    -> Some (Constant "u")
-              | "ulongConstant"   -> Some (Constant "lu")
-              | "ullongConstant"  -> Some (Constant "llu")
+              | "uintConstant"    -> Some (Constant "U")
+              | "ulongConstant"   -> Some (Constant "UL")
+              | "ullongConstant"  -> Some (Constant "ULL")
                 
               %% ============================================================
               %% Prefix operators: unary +, unary -, ~, !
@@ -523,7 +523,7 @@ PrintAsC qualifying spec
  %% Implicit constants (Nat, Char, String)
  %% ========================================================================
 
- op printFunAsC (status : CGenStatus) (fun : MSFun) : Option Pretty =
+ op printFunAsC (status : CGenStatus, fun : MSFun) : Option Pretty =
   case fun of
     | Nat     n  -> Some (string (show n))
     | Char    c  -> Some (string (show c))
@@ -540,11 +540,10 @@ PrintAsC qualifying spec
  %% Explicit numeric constants (Hex, Oct, Dec)
  %% ========================================================================
 
- op printNumericConstantAsC (suffix : String) (tm : MSTerm) (radix : MSTerm) 
-  : Option Pretty = 
+ op printNumericConstantAsC (suffix : String, tm : MSTerm, radix : MSTerm) : Option Pretty = 
   let
 
-    def get_nat_value (tm : MSTerm) : Option Nat =
+    def get_nat_value tm =
       case tm of
         | Fun (Nat n, _, _) -> Some n
         | _ -> None
@@ -568,15 +567,15 @@ PrintAsC qualifying spec
         | 14 -> #E
         | 15 -> #F
           
-    def digitize prefix n base suffix =
+    def digitize (prefix, n, base, suffix) =
       let
-        def aux digits n =
+        def aux (digits, n) =
           if n < base then
             implode ([digit n] ++ digits)
           else
             let i = n div base in
             let j = n - (base * i) in
-            aux ([digit j] ++ digits) i
+            aux ([digit j] ++ digits, i)
       in
       let suffix = 
           %% TODO: what are the correct rules for dropping suffix?
@@ -584,21 +583,21 @@ PrintAsC qualifying spec
             | "u" | n <= 0x7FFF -> ""
             | _ -> suffix
       in
-      prefix ^ (aux [] n) ^ suffix
+      prefix ^ (aux ([], n)) ^ suffix
       
-    def hex n suffix = digitize "0x" n 16 suffix
-    def oct n suffix = digitize "0"  n 8  suffix
-    def dec n suffix = digitize ""   n 10 suffix
+    def oct (n, suffix) = digitize ("0" , n,  8, suffix)
+    def dec (n, suffix) = digitize (""  , n, 10, suffix)
+    def hex (n, suffix) = digitize ("0x", n, 16, suffix)
 
   in
   case get_nat_value tm of
     | Some n ->
       % type IntConstBase = | dec | hex | oct
       Some (string (case radix of
-                      | Fun (Embed ("hex", _), _, _) -> hex n suffix
-                      | Fun (Embed ("oct", _), _, _) -> oct n suffix
-                      | Fun (Embed ("dec", _), _, _) -> dec n suffix
-                      | _                            -> dec n suffix)) % default to dec
+                      | Fun (Embed ("hex", _), _, _) -> hex (n, suffix)
+                      | Fun (Embed ("oct", _), _, _) -> oct (n, suffix)
+                      | Fun (Embed ("dec", _), _, _) -> dec (n, suffix)
+                      | _                            -> dec (n, suffix))) % default to dec
     | _ ->
       None
 
@@ -646,7 +645,7 @@ PrintAsC qualifying spec
         []
         args
              
- op printTermAsC (status : CGenStatus) (tm : MSTerm) : Option Pretty = 
+ op printTermAsC (status : CGenStatus, tm : MSTerm) : Option Pretty = 
   case tm of
     | Var       ((id,  _), _) -> 
       if legal_C_Id? id then
@@ -655,19 +654,19 @@ PrintAsC qualifying spec
       else
         let _ = writeLine ("Error in printTermAsC: illegal var name: " ^ id) in
         None
-    | Fun       (fun, _,   _) -> printFunAsC  status fun
-    | TypedTerm (t1, _,    _) -> printTermAsC status t1
+    | Fun       (fun, _,   _) -> printFunAsC  (status, fun)
+    | TypedTerm (t1, _,    _) -> printTermAsC (status, t1)
     | Apply     (t1, t2,   _) -> 
       (let {f, args} = uncurry (t1, [t2]) in
        let args =  flattenRecordArgs args in
-       case cfixity status f of
+       case cfixity (status, f) of
          | Some fixity ->
            (case (fixity, args) of
 
               | (Prefix c_str, args) ->
                 let opt_blocks =
                     foldl (fn (opt_blocks, arg) ->
-                             case (opt_blocks, printTermAsC status arg) of
+                             case (opt_blocks, printTermAsC (status, arg)) of
                                | (Some blocks, Some block) ->
                                  Some (blocks ++ [block])
                                | _ ->
@@ -689,7 +688,7 @@ PrintAsC qualifying spec
                      None)
 
               | (PrefixNoParens c_str, [arg]) ->
-                (case printTermAsC status arg of
+                (case printTermAsC (status, arg) of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -697,7 +696,7 @@ PrintAsC qualifying spec
                    | _ ->
                      None)
               | (Postfix c_str, [arg]) ->
-                (case printTermAsC status arg of
+                (case printTermAsC (status, arg) of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, pretty),
@@ -706,7 +705,9 @@ PrintAsC qualifying spec
                      None)
 
               | (Infix c_str, [arg1, arg2]) ->
-                (case (printTermAsC status arg1, printTermAsC status arg2) of
+                (case (printTermAsC (status, arg1), 
+                       printTermAsC (status, arg2)) 
+                   of
                    | (Some p1, Some p2) ->
                      Some (blockFill (0, 
                                       [(0, p1),
@@ -716,7 +717,7 @@ PrintAsC qualifying spec
                      None)
 
               | (Cast c_str, [arg]) ->
-                (case printTermAsC status arg of
+                (case printTermAsC (status, arg) of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -725,12 +726,12 @@ PrintAsC qualifying spec
                      None)
 
               | (Constant suffix, [tm, radix]) -> 
-                printNumericConstantAsC suffix tm radix
+                printNumericConstantAsC (suffix, tm, radix)
 
               | (ArrayAccess, array :: indices) ->
                 let opt_blocks = 
                 foldl (fn (opt_blocks, index) ->
-                         case (opt_blocks, printTermAsC status index) of
+                         case (opt_blocks, printTermAsC (status, index)) of
                            | (Some blocks, Some block) ->
                              Some (blocks ++ [block])
                            | _ ->
@@ -738,7 +739,7 @@ PrintAsC qualifying spec
                       (Some [])
                       (reverse indices)
                 in
-                (case (opt_blocks, printTermAsC status array) of
+                (case (opt_blocks, printTermAsC (status, array)) of
                    | (Some blocks, Some pretty_array_name) ->
                      let pretty_indices =
                          AnnTermPrinter.ppList (fn block -> block)

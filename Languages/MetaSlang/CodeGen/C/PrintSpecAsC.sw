@@ -11,7 +11,7 @@ PrintAsC qualifying spec
 
  op findCSliceFrom (spc : Spec) : SpecElements =
   let
-    def aux all_elements current_elements =
+    def aux (all_elements, current_elements) =
       foldl (fn (all_elements, element) ->
                case element of
                  | Type    _ -> all_elements ++ [element]
@@ -21,29 +21,26 @@ PrintAsC qualifying spec
                  | Import (term, spc, imported_elements, _) -> 
                    %% TODO: the choice of specs whose elements should be included needs some thought
                    if refersToCTarget? term then  
-                     %% ignore CTarget itself
-                     all_elements
+                     all_elements                          % ignore CTarget itself
                    else if importsCTarget? spc then
-                     %% but include specs that (recursively) import CTarget 
-                     aux all_elements imported_elements
+                     aux (all_elements, imported_elements) % include specs that (recursively) import CTarget 
                    else
-                     %% ignore specs that don't import CTarget (this include base specs)
-                     all_elements
+                     all_elements                          % ignore specs that don't (this includes the base specs)
                  | _ -> all_elements)
             all_elements            
             current_elements
   in
-  aux [] spc.elements 
+  aux ([], spc.elements)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppTypeInfoToH (status: CGenStatus) (qid : QualifiedId) (opt_info : Option TypeInfo)
+ op ppTypeInfoToH (status: CGenStatus, qid : QualifiedId, opt_info : Option TypeInfo)
   : Option (Prettys * CGenStatus) =
   case opt_info of
     | Some info -> 
-      (case printTypeAsC_split status info.dfn of
+      (case printTypeAsC_split (status, info.dfn) of
          | Some (pretty_base_type, index_lines, status) ->
-           (case addNewType qid status of
+           (case addNewType (qid, status) of
               | Some (c_type_name, status) ->
                 Some ([string (case info.dfn of
                                  | Product _ -> "typedef struct "
@@ -61,13 +58,16 @@ PrintAsC qualifying spec
       let _ = writeLine ("Error in ppTypeInfoToH: no definition for type " ^ show qid) in
       None
 
- op ppOpInfoSig (status : CGenStatus) (qid : QualifiedId) (c_function_name : Id) (opt_info : Option OpInfo) 
+ op ppOpInfoSig (status          : CGenStatus, 
+                 qid             : QualifiedId, 
+                 c_function_name : Id, 
+                 opt_info        : Option OpInfo) 
   : Option (Prettys * CGenStatus) =
   case opt_info of
     | Some info -> 
       (case termType info.dfn of
          | Arrow (dom, rng, _) -> 
-           (case printTypeAsC status rng of
+           (case printTypeAsC (status, rng) of
               | Some (pretty_rng, status) ->
                 let opt_pat = 
                 case info.dfn of
@@ -112,7 +112,7 @@ PrintAsC qualifying spec
                     foldl (fn (opt_blocks, (id, typ)) -> 
                              case opt_blocks of
                                | Some blocks ->
-                                 (case printTypeAsC status typ of
+                                 (case printTypeAsC (status, typ) of
                                     | Some (pretty, status) ->
                                       Some (blocks ++ [blockNone (0, [(0, pretty),
                                                                       (0, string " "),
@@ -144,30 +144,31 @@ PrintAsC qualifying spec
       let _ = writeLine ("Error in ppOpInfoSig: no definition for op " ^ printQualifiedId qid) in
       None
 
- op ppOpInfoToH (status : CGenStatus) (qid : QualifiedId) (opt_info : Option OpInfo) 
+ op ppOpInfoToH (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) 
   : Option (Prettys * CGenStatus) =
-  case addNewOp qid status of
+  case addNewOp (qid, status) of
     | Some (c_function_name, status) ->
-      ppOpInfoSig status qid c_function_name opt_info
+      ppOpInfoSig (status, qid, c_function_name, opt_info)
     | _ ->
       None
 
- op ppInfoToH (status : CGenStatus) (info : CInfo) : Option (Prettys * CGenStatus) =
+ op ppInfoToH (status : CGenStatus, info : CInfo) : Option (Prettys * CGenStatus) =
   let opt_prettys_and_status =
       case info of
-        | Type (qid, opt_info) -> ppTypeInfoToH status qid opt_info
-        | Op   (qid, opt_info) -> ppOpInfoToH   status qid opt_info
+        | Type (qid, opt_info) -> ppTypeInfoToH (status, qid, opt_info)
+        | Op   (qid, opt_info) -> ppOpInfoToH   (status, qid, opt_info)
   in
   case opt_prettys_and_status of
     | Some (prettys, status) -> Some (prettys ++ [string ";"], status)
     | _ -> None
 
- op ppInfosToH (status : CGenStatus) (basename : FileName) (infos : CInfos) : Option (Prettys * CGenStatus) =
+ op ppInfosToH (status : CGenStatus, basename : FileName, infos : CInfos) 
+  : Option (Prettys * CGenStatus) =
   let opt_prettys_and_status =
       foldl (fn (opt_prettys_and_status, info) -> 
                case opt_prettys_and_status of
                  | Some (prettys, status) ->
-                   (case ppInfoToH status info of
+                   (case ppInfoToH (status, info) of
                       | Some (new_prettys, status) ->
                         Some (prettys  ++ [blockFill (0, map (fn pretty : Pretty -> (0, pretty)) new_prettys)],
                               status)
@@ -187,15 +188,15 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppTypeInfoToC (status : CGenStatus) (qid : QualifiedId, opt_info : Option TypeInfo)
+ op ppTypeInfoToC (status : CGenStatus, qid : QualifiedId, opt_info : Option TypeInfo)
   : Option (Prettys * CGenStatus) =
   Some ([], status)
 
- op ppOpInfoToC (status : CGenStatus) (qid : QualifiedId, opt_info : Option OpInfo) 
+ op ppOpInfoToC (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) 
   : Option (Prettys * CGenStatus) =
   case (opt_info, getCFunctionName qid status) of
     | (Some info, Some c_function_name) -> 
-      (case ppOpInfoSig status qid c_function_name opt_info of
+      (case ppOpInfoSig (status, qid, c_function_name, opt_info) of
          | Some (decl_prettys, status) ->
            let decl_lines   = map (fn pretty : Pretty -> (0, pretty)) decl_prettys in
            let 
@@ -206,7 +207,7 @@ PrintAsC qualifying spec
                  | _ -> fail("ppOpInfoToC: definition of " ^ printQualifiedId qid ^ " is not a lambda term" 
                                ^ printTerm tm)
            in
-           (case printTermAsC status (bodyOf info.dfn) of
+           (case printTermAsC (status, bodyOf info.dfn) of
               | Some pretty_body ->
                 Some ([blockAll (0,
                                  [(0, blockFill (0, decl_lines ++ [(0, string " {")])),
@@ -223,17 +224,18 @@ PrintAsC qualifying spec
       let _ = writeLine ("Error in ppOpInfoToC: No definition for " ^ printQualifiedId qid) in
       None
 
- op ppInfoToC (status : CGenStatus) (info : CInfo) : Option (Prettys * CGenStatus) =
+ op ppInfoToC (status : CGenStatus, info : CInfo) : Option (Prettys * CGenStatus) =
   case info of
-    | Type (qid, opt_info) -> ppTypeInfoToC status (qid, opt_info)
-    | Op   (qid, opt_info) -> ppOpInfoToC   status (qid, opt_info)
+    | Type (qid, opt_info) -> ppTypeInfoToC (status, qid, opt_info)
+    | Op   (qid, opt_info) -> ppOpInfoToC   (status, qid, opt_info)
 
- op ppInfosToC (status : CGenStatus) (basename : FileName) (infos : CInfos) : Option (Prettys * CGenStatus) =
+ op ppInfosToC (status : CGenStatus, basename : FileName, infos : CInfos) 
+  : Option (Prettys * CGenStatus) =
   let opt_prettys_and_status =
       foldl (fn (opt_prettys_and_status, info) -> 
                case opt_prettys_and_status of
                  | Some (prettys, status) ->
-                   (case ppInfoToC status info of
+                   (case ppInfoToC (status, info) of
                       | Some (new_prettys, status) ->
                         (case new_prettys of
                            | [] -> opt_prettys_and_status
@@ -283,9 +285,9 @@ PrintAsC qualifying spec
                                  []
                                  elements)
       in
-      (case ppInfosToH status basename infos of
+      (case ppInfosToH (status, basename, infos) of
          | Some (h_prettys, status) ->
-           (case ppInfosToC status basename infos of
+           (case ppInfosToC (status, basename, infos) of
               | Some (c_prettys, status) ->
                 let h_lines   = map (fn (pretty : Pretty) -> (0, pretty)) h_prettys in
                 let c_lines   = map (fn (pretty : Pretty) -> (0, pretty)) c_prettys in
