@@ -53,13 +53,15 @@ PrintAsC qualifying spec
     | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %% Options for C generation
+ %% Options and Status for C generation
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type CGenOptions = {plainCharsAreSigned? : Bool,
-                     printPragmas?        : Bool}
+ type CGenStatus = {plainCharsAreSigned? : Bool,             % Option
+                    printPragmas?        : Bool,             % Option
+                    defined_types        : List QualifiedId, % Status
+                    defined_ops          : List QualifiedId} % Status
 
- op init_cgen_options (spc : Spec) : CGenOptions = 
+ op init_cgen_status (spc : Spec) : Option CGenStatus = 
   let plain_chars_are_signed? =
       case findTheOp (spc, Qualified ("C", "plainCharsAreSigned")) of
         | Some opinfo ->
@@ -87,7 +89,66 @@ PrintAsC qualifying spec
   let _ = writeLine ("plainCharsAreSigned? = " ^ show plain_chars_are_signed?) in
   let _ = writeLine ("printPragmas?        = " ^ show print_pragmas?)          in
   let _ = writeLine ("") in
-  {plainCharsAreSigned? = plain_chars_are_signed?,
-   printPragmas?        = print_pragmas?}
+
+  case findCTarget spc of
+    | Some (ctarget_spec, ctarget_elements) ->
+      let defined_types = [] in
+      let defined_ops   = [] in
+      Some {plainCharsAreSigned? = plain_chars_are_signed?,
+            printPragmas?        = print_pragmas?,
+            defined_types        = [],
+            defined_ops          = []}
+    | _ ->
+      let _ = writeLine ("?? huh?:  CTarget no longer imported?") in
+      None
+
+
+
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% Utilities related to CTarget.sw
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op refersToCTarget? (term : SCTerm) : Bool =
+  case term.1 of
+    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> true
+    | _ -> false
+
+ % superfluous
+ % op refersToBase? (term : SCTerm) : Bool =
+ %  case term.1 of
+ %    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "Base"]}) -> true
+ %    | _ -> false
+
+ op importsCTarget? (spc : Spec) : Bool =
+  let 
+    def aux elements =
+      case elements of 
+        | (Import (term, spc, _, _)) :: tail ->
+          (refersToCTarget? term) || (aux tail)
+        | _ -> false
+  in
+  aux spc.elements
+
+ op findCTarget (spc : Spec) : Option (Spec * SpecElements) =
+  let 
+    def aux elements =
+      case elements of 
+        | (Import (term, spc, imported_elements, _)) :: tail ->
+          if refersToCTarget? term then
+            Some (spc, imported_elements)
+          else 
+            (case aux imported_elements of  % search recursively
+               | Some pair -> Some pair     % stopping if we found it
+               | _ -> aux tail)             % else continue search at this level
+        | _ -> None
+  in
+  aux spc.elements
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% Status of C generation
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 end-spec

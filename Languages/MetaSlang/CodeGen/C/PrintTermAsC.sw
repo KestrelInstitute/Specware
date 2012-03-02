@@ -17,8 +17,8 @@ PrintAsC qualifying spec
                 | ArrayAccess 
                 | Unknown
 
- op cfixity (cgen_options : CGenOptions) (tm : MSTerm) : Option CFixity =
-  let plainCharsAreSigned? = cgen_options.plainCharsAreSigned? in
+ op cfixity (status : CGenStatus) (tm : MSTerm) : Option CFixity =
+  let plainCharsAreSigned? = status.plainCharsAreSigned? in
   case tm of 
     | Fun (fun, _, _) -> 
       (case fun of
@@ -523,7 +523,7 @@ PrintAsC qualifying spec
  %% Implicit constants (Nat, Char, String)
  %% ========================================================================
 
- op printFunAsC (cgen_options : CGenOptions) (fun : MSFun) : Option Pretty =
+ op printFunAsC (status : CGenStatus) (fun : MSFun) : Option Pretty =
   case fun of
     | Nat     n  -> Some (string (show n))
     | Char    c  -> Some (string (show c))
@@ -646,7 +646,7 @@ PrintAsC qualifying spec
         []
         args
              
- op printTermAsC (cgen_options : CGenOptions) (tm : MSTerm) : Option Pretty = 
+ op printTermAsC (status : CGenStatus) (tm : MSTerm) : Option Pretty = 
   case tm of
     | Var       ((id,  _), _) -> 
       if legal_C_Id? id then
@@ -655,19 +655,19 @@ PrintAsC qualifying spec
       else
         let _ = writeLine ("Error in printTermAsC: illegal var name: " ^ id) in
         None
-    | Fun       (fun, _,   _) -> printFunAsC  cgen_options fun
-    | TypedTerm (t1, _,    _) -> printTermAsC cgen_options t1
+    | Fun       (fun, _,   _) -> printFunAsC  status fun
+    | TypedTerm (t1, _,    _) -> printTermAsC status t1
     | Apply     (t1, t2,   _) -> 
       (let {f, args} = uncurry (t1, [t2]) in
        let args =  flattenRecordArgs args in
-       case cfixity cgen_options f of
+       case cfixity status f of
          | Some fixity ->
            (case (fixity, args) of
 
               | (Prefix c_str, args) ->
                 let opt_blocks =
                     foldl (fn (opt_blocks, arg) ->
-                             case (opt_blocks, printTermAsC cgen_options arg) of
+                             case (opt_blocks, printTermAsC status arg) of
                                | (Some blocks, Some block) ->
                                  Some (blocks ++ [block])
                                | _ ->
@@ -689,7 +689,7 @@ PrintAsC qualifying spec
                      None)
 
               | (PrefixNoParens c_str, [arg]) ->
-                (case printTermAsC cgen_options arg of
+                (case printTermAsC status arg of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -697,7 +697,7 @@ PrintAsC qualifying spec
                    | _ ->
                      None)
               | (Postfix c_str, [arg]) ->
-                (case printTermAsC cgen_options arg of
+                (case printTermAsC status arg of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, pretty),
@@ -706,7 +706,7 @@ PrintAsC qualifying spec
                      None)
 
               | (Infix c_str, [arg1, arg2]) ->
-                (case (printTermAsC cgen_options arg1, printTermAsC cgen_options arg2) of
+                (case (printTermAsC status arg1, printTermAsC status arg2) of
                    | (Some p1, Some p2) ->
                      Some (blockFill (0, 
                                       [(0, p1),
@@ -716,7 +716,7 @@ PrintAsC qualifying spec
                      None)
 
               | (Cast c_str, [arg]) ->
-                (case printTermAsC cgen_options arg of
+                (case printTermAsC status arg of
                    | Some pretty ->
                      Some (blockNone (0, 
                                       [(0, string c_str),
@@ -730,7 +730,7 @@ PrintAsC qualifying spec
               | (ArrayAccess, array :: indices) ->
                 let opt_blocks = 
                 foldl (fn (opt_blocks, index) ->
-                         case (opt_blocks, printTermAsC cgen_options index) of
+                         case (opt_blocks, printTermAsC status index) of
                            | (Some blocks, Some block) ->
                              Some (blocks ++ [block])
                            | _ ->
@@ -738,7 +738,7 @@ PrintAsC qualifying spec
                       (Some [])
                       (reverse indices)
                 in
-                (case (opt_blocks, printTermAsC cgen_options array) of
+                (case (opt_blocks, printTermAsC status array) of
                    | (Some blocks, Some pretty_array_name) ->
                      let pretty_indices =
                          AnnTermPrinter.ppList (fn block -> block)

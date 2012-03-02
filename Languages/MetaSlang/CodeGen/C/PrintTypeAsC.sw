@@ -15,7 +15,8 @@ PrintAsC qualifying spec
  %% 
  %% ========================================================================
 
- op printTypeAsC_split (cgen_options : CGenOptions) (typ : MSType) : Option (Pretty * List (Nat * Pretty)) =
+ op printTypeAsC_split (status : CGenStatus) (typ : MSType) 
+  : Option (Pretty * List (Nat * Pretty) * CGenStatus) =
   case typ of
 
     | Base (Qualified (q, id), [], _) -> 
@@ -47,36 +48,42 @@ PrintAsC qualifying spec
       in
       (case opt_id of
          | Some id -> 
-           Some (string id, [])
+           Some (string id, [], status)
          | _ -> None)
 
     | Product ([], _) -> 
-      Some (string "{}", [])
+      Some (string "{}", [], status)
 
     | Product (row, _) -> 
-      let opt_blocks = 
-          foldl (fn (opt_blocks, (id, typ)) ->
-                   case (opt_blocks, printTypeAsC cgen_options typ) of
-                     | (Some blocks, Some pretty_field_type) ->
-                       Some (blocks ++
-                             [blockNone (0, [(0, pretty_field_type),
-                                             (0, string " "),
-                                             (0, string id),
-                                             (0, string "; ")])])
+      let opt_blocks_and_status = 
+          foldl (fn (opt_blocks_and_status, (id, typ)) ->
+                   case opt_blocks_and_status of
+                     | Some (blocks, status) ->
+                       (case printTypeAsC status typ of
+                          | Some (pretty_field_type, status) ->
+                            Some (blocks ++
+                                    [blockNone (0, [(0, pretty_field_type),
+                                                    (0, string " "),
+                                                    (0, string id),
+                                                    (0, string "; ")])],
+                                  status)
+                          | _ ->
+                            None)
                      | _ ->
                        None)
-                (Some [])
+                (Some ([], status))
                 row
       in
-      (case opt_blocks of
-         | Some blocks ->
+      (case opt_blocks_and_status of
+         | Some (blocks, status) ->
            Some (blockFill (0, 
                             [(0, string "{")]
                             ++
                             (List.map (fn block -> (0, block)) blocks)
                             ++
                             [(0, string "}")]),
-                 [])
+                 [],
+                 status)
          | _ ->
            None)
 
@@ -122,9 +129,9 @@ PrintAsC qualifying spec
       in
       (case split_apart_limits (typ, []) of
          | Some (typ, limits) ->
-           (case printTypeAsC_split cgen_options typ of 
-              | Some (pretty_type, []) ->
-                Some (pretty_type, limits)
+           (case printTypeAsC_split status typ of 
+              | Some (pretty_type, [], status) ->
+                Some (pretty_type, limits, status)
               | _ ->
                 None)
          | _ ->
@@ -137,12 +144,15 @@ PrintAsC qualifying spec
  %% Print routine for types when we don't need to deal with typedef nonsense.
  %% ========================================================================
 
- op printTypeAsC (cgen_options : CGenOptions) (typ : MSType) : Option Pretty =
-   case printTypeAsC_split cgen_options typ of
-     | Some (pretty_type, index_lines) ->
-       Some (case index_lines of
-               | [] -> pretty_type
-               | _ -> blockNone (0, [(0, pretty_type)] ++ index_lines))
+ op printTypeAsC (status : CGenStatus) (typ : MSType) : Option (Pretty * CGenStatus) =
+   case printTypeAsC_split status typ of
+     | Some (pretty_type, index_lines, status) ->
+       let pretty = 
+           case index_lines of
+             | [] -> pretty_type
+             | _ -> blockNone (0, [(0, pretty_type)] ++ index_lines)
+       in
+       Some (pretty, status)
      | _ ->
        None
 
