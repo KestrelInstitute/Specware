@@ -2175,6 +2175,17 @@ op >>_ullong_ullong
    (x:Ullong, y:Ullong | mathIntOfUllong y < llong_bits) infixl 109 : Ullong =
   ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfUllong y))
 
+(* Conversions between Bool and Sint *)
+
+op boolOfSint (x:Sint) : Bool = (x ~= sint0) 
+op sintOfBool (x:Bool) : Sint = if x then sint1 else sint0
+
+theorem boolOfSint_sintOfBool is
+  fa(x:Bool) boolOfSint (sintOfBool x) = x
+
+%% This op will be used to wrap the condition of each if-then-else operation:
+op test : Sint -> Bool = boolOfSint
+
 (* The binary <, >, <=, >=, ==, and != operators perform the usual arithmetic
 conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
 the comparison is true or false [ISO 6.5.8/6].
