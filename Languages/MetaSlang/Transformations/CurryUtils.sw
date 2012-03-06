@@ -45,6 +45,14 @@ CurryUtils qualifying spec
            | _ -> None
   in aux(t, 0, [])
 
+  op getArgs(term: MSTerm): MSTerms =
+    case getCurryArgs term of
+      | Some(_, args) -> args
+      | None ->
+     case term of
+      | Apply(_, a1, _) -> termToList a1
+      | _ -> []
+
   op mkCurriedLambda(params, body): MSTerm =
     case params of
       | [] -> body
