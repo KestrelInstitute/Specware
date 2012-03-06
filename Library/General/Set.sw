@@ -49,10 +49,9 @@ op [a] > (s1:Set a, s2:Set a) infixl 20 : Bool = (s2 < s1)
 
 proof Isa -verbatim
 lemma Set_Set_P_subsets_equiv:
-"Set_P P__a A \_Longrightarrow 
- (Set__e_lt_eq__stp P__a ((A::'a set),(B::'a set)) = (A \_subseteq B))" 
-by (auto simp add: Set__e_lt_eq__stp_def 
-                   Set__e_lt_eq__def Set_P_def )
+  "Set_P P__a A \_Longrightarrow 
+    (Set__e_lt_eq__stp P__a ((A::'a set),(B::'a set)) = (A \_subseteq B))" 
+  by (auto simp add: Set__e_lt_eq__stp_def Set__e_lt_eq__def Set_P_def )
 end-proof
 
 % complement, intersection, and union (lift `~', `&&', and `||' to sets):
@@ -111,13 +110,11 @@ type Set1 a = (Set a | nonEmpty?)
 
 proof Isa -verbatim
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
-"Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
-by (auto simp add:Set__nonEmpty_p__stp_def 
-                  Set__nonEmpty_p_def mem_def)
+  "Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
+  by (auto simp add:Set__nonEmpty_p__stp_def Set__nonEmpty_p_def mem_def)
 lemma Set__nonEmpty_p_stp_EX_x_t:
-"\_lbrakk Set_P P__a s; Set__nonEmpty_p__stp P__a (s::'a set)\_rbrakk \_Longrightarrow
- (\_exists (x::'a) (t::'a set) .
-  P__a x \_and x \_notin t \_and (s = insert x t))"
+  "\_lbrakk Set_P P__a s; Set__nonEmpty_p__stp P__a (s::'a set)\_rbrakk \_Longrightarrow
+    (\_exists (x::'a) (t::'a set). P__a x \_and x \_notin t \_and (s = insert x t))"
 proof(cases "s = {}")
  assume "Set_P P__a s" "Set__nonEmpty_p__stp P__a s" "s = {}"
  from this show ?thesis by(auto simp:Set__nonEmpty_p__stp_def mem_def)
@@ -141,12 +138,10 @@ op full : [a] Set a = fn _ -> true
 op [a] full? (s:Set a) : Bool = (s = full)
 
 proof Isa -verbatim
-lemma Set__full_apply[simp]:
-"UNIV x = True"
-by (auto simp add:Set__full__def)
-lemma Set__full_stp_apply:
-"\_lbrakkP__a x; Set__full_p__stp P__a s\_rbrakk \_Longrightarrow x \_in s"  
-by (auto simp add:Set__full_p__stp_def)
+lemma Set__full_apply[simp]:  "UNIV x = True"
+  by (auto simp add:Set__full__def)
+lemma Set__full_stp_apply:    "\_lbrakkP__a x; Set__full_p__stp P__a s\_rbrakk \_Longrightarrow x \_in s"  
+  by (auto simp add:Set__full_p__stp_def)
 end-proof
 
 % sets with exactly one element:
@@ -159,29 +154,21 @@ op [a] onlyMemberOf (x:a, s:Set a) infixl 20 : Bool =
   single? s && x in? s
 
 proof Isa -verbatim
-lemma Set_single_simp [simp]:
-"Set__single x = {x}"
- by (rule set_eqI, simp, simp add: mem_def Set__single_def)
-lemma Set_single_simp_app1:
-"{x} x = True"
-by(simp del:Set_single_simp 
-        add:Set_single_simp[symmetric] Set__single_def)
-lemma Set_single_simp_app2:
-"{x} y = (x = y)"
-by(simp del:Set_single_simp 
-        add:Set_single_simp[symmetric] Set__single_def eq_ac)
-lemma Set_Pa_Set_P_single:
-"P__a (x::'a) \_Longrightarrow Set_P P__a (Set__single x)"
-by(auto simp:Set_P_def)
-lemma Set_Pa_RSet_single[simp]:
-"P__a (x::'a)\_Longrightarrow RSet P__a (Set__single x) = Set__single x"
-by(auto simp:Set_P_def)
-lemma Set_single_single_stp:
-"\_lbrakk P__a x; x \_in s; Set__single_p s\_rbrakk \_Longrightarrow Set__single_p__stp P__a s"
-by (auto simp:Set__single_p__stp_def Set__single_p_def)
-lemma Set_single_stp_single:
-"\_lbrakkx \_in s; Set__single_p__stp P__a s\_rbrakk \_Longrightarrow Set__single_p s"
-by (auto simp:Set__single_p__stp_def Set__single_p_def)
+lemma Set_single_simp [simp]:   "Set__single x = {x}"
+   by (rule set_eqI, simp, simp add: mem_def Set__single_def)
+lemma Set_single_simp_app1:     "{x} x = True"
+   by(simp del:Set_single_simp add:Set_single_simp[symmetric] Set__single_def)
+lemma Set_single_simp_app2:     "{x} y = (x = y)"
+  by(simp del:Set_single_simp  
+          add:Set_single_simp[symmetric] Set__single_def eq_ac)
+lemma Set_Pa_Set_P_single:      "P__a (x::'a) \_Longrightarrow Set_P P__a (Set__single x)"
+  by(auto simp:Set_P_def)
+lemma Set_Pa_RSet_single[simp]: "P__a (x::'a)\_Longrightarrow RSet P__a (Set__single x) = Set__single x"
+  by(auto simp:Set_P_def)
+lemma Set_single_single_stp:    "\_lbrakk P__a x; x \_in s; Set__single_p s\_rbrakk \_Longrightarrow Set__single_p__stp P__a s"
+  by (auto simp:Set__single_p__stp_def Set__single_p_def)
+lemma Set_single_stp_single:    "\_lbrakkx \_in s; Set__single_p__stp P__a s\_rbrakk \_Longrightarrow Set__single_p s"
+  by (auto simp:Set__single_p__stp_def Set__single_p_def)
 end-proof
 
 type Singleton a = (Set a | single?)
@@ -194,57 +181,50 @@ op [a] <| (s:Set a, x:a) infixl 25 : Set a = s \/ single x
 
 proof Isa -verbatim
 lemma Set__RSet_insert_simp[simp]:  
-"\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk  
- \_Longrightarrow  (RSet P__a (insert x s) = (insert x s))"
-by (auto simp add:Set_P_def)
+  "\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow  (RSet P__a (insert x s) = (insert x s))"
+  by (auto simp add:Set_P_def)
 lemma Set__Set_P_insert:
-"\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk
- \_Longrightarrow Set_P P__a (insert x s)"
-by (auto simp add:Set_P_def)
+  "\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Set_P P__a (insert x s)"
+  by (auto simp add:Set_P_def)
 lemma Set__Fun_PD_insert:
-"\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk
- \_Longrightarrow Fun_PD P__a (insert x s)"
-proof(rule Set_Set_P_Fun_PD)
- assume "Fun_PD P__a (s::'a set)"
-        "P__a x" 
- thus "Set_P P__a (insert x s)"
-by (simp add:Set_Fun_PD_Set_P Set__Set_P_insert)
-qed
+  "\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Fun_PD P__a (insert x s)"
+  proof(rule Set_Set_P_Fun_PD)
+   assume "Fun_PD P__a (s::'a set)"  "P__a x" 
+   thus "Set_P P__a (insert x s)"
+     by (simp add:Set_Fun_PD_Set_P Set__Set_P_insert)
+  qed
 lemma Set_P_Set_P_insert2: 
-"Set_P P__a (insert x s) \_Longrightarrow Set_P P__a s"
-by (auto simp: Set_P_def)
+  "Set_P P__a (insert x s) \_Longrightarrow Set_P P__a s"
+  by (auto simp: Set_P_def)
 lemma Set_P_insert_Pa_x:
-"Set_P P__a (insert x s) \_Longrightarrow P__a x"
-by (auto simp: Set_P_def)
+  "Set_P P__a (insert x s) \_Longrightarrow P__a x"
+  by (auto simp: Set_P_def)
 end-proof
 
 % remove member from set:
 
 op [a] - (s:Set a, x:a) infixl 25 : Set a = s -- single x
-proof Isa - -> less [simp] end-proof
+proof Isa -> less [simp] end-proof
 
 proof Isa -verbatim
 lemma Set__RSet_less_simp[simp]:  
-"\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk  
- \_Longrightarrow  (RSet P__a (s less x)) = (s less x)"
-by (auto simp add:Set_P_def)
+  "\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow  (RSet P__a (s less x)) = (s less x)"
+  by (auto simp add:Set_P_def)
 lemma Set__SetP_less:
-"Set_P P__a s \_Longrightarrow Set_P P__a (s less x)"
-by(auto simp add:Set_P_def)
+  "Set_P P__a s \_Longrightarrow Set_P P__a (s less x)"
+  by(auto simp add:Set_P_def)
 lemma Set_P_Set_P_Less2: 
-"\_lbrakk Set_P P__a (s less x); P__a (x::'a)\_rbrakk \_Longrightarrow 
- Set_P P__a s"
-by (auto simp: Set_P_def) 
+  "\_lbrakk Set_P P__a (s less x); P__a (x::'a)\_rbrakk \_Longrightarrow Set_P P__a s"
+  by (auto simp: Set_P_def) 
 lemma Set_Fun_PD_less:
-"\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk
- \_Longrightarrow Fun_PD P__a (s less x)"
-proof(rule Set_Set_P_Fun_PD)
- assume "Fun_PD P__a (s::'a set)"
-        "P__a x"
- from this have "Set_P P__a s" by(simp add: Set_Fun_PD_Set_P) 
- from this show "Set_P P__a (s less x)"
- by (rule_tac s=s and P__a=P__a in Set__SetP_less)
-qed
+  "\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Fun_PD P__a (s less x)"
+  proof(rule Set_Set_P_Fun_PD)
+   assume "Fun_PD P__a (s::'a set)"
+          "P__a x"
+   from this have "Set_P P__a s" by(simp add: Set_Fun_PD_Set_P) 
+   from this show "Set_P P__a (s less x)"
+   by (rule_tac s=s and P__a=P__a in Set__SetP_less)
+  qed
 end-proof
 
 % map (partial) function over set:
@@ -268,14 +248,14 @@ op [a,b] setGeneratedBy (f: a -> b) : Set b = map f full
 
 proof Isa -verbatim
 lemma finite_nat_seg:
-"finite (s::'a set) \_Longrightarrow (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
+  "finite (s::'a set) \_Longrightarrow (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
         \_forall(x::'a). (x \_in s) = (\_exists(i::nat). i < n \_and f i = x))"
-by(auto simp add: finite_conv_nat_seg_image)
+  by(auto simp add: finite_conv_nat_seg_image)
 lemma nat_seq_finite:
-"(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-  \_forall(x::'a). (x \_in (s::'a set)) = (\_exists(i::nat). i < n \_and f i = x)) 
- \_Longrightarrow finite s"
-by(elim exE, rule nat_seg_image_imp_finite, auto)
+  "(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
+      \_forall(x::'a). (x \_in (s::'a set)) = (\_exists(i::nat). i < n \_and f i = x)) 
+   \_Longrightarrow finite s"
+  by(elim exE, rule nat_seg_image_imp_finite, auto)
 end-proof
 
 % finite sets:
@@ -294,34 +274,33 @@ op [a] finite? (s:Set a) : Bool =
 
 % **** Lemmas for subtyped predicate + finite 
 
-
 proof Isa -verbatim
 lemma finite_stp_nat_seg:
-"Set__finite_p__stp (P__a::'a\_Rightarrow bool) (s::'a set) \_Longrightarrow
- (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-        (\_forall(x::'a). P__a x  \_longrightarrow (x \_in s) = (\_exists(i::nat). i < n \_and f i = x)))"
-proof (simp only:Set__finite_p__stp_def, erule disjE)
- fix s
- assume "Set__empty_p__stp P__a s"
- from this have "s = {}" by(simp add:Set__empty_p__stp_def)
- obtain f n where "(f::nat\_Rightarrow'a) = (\_lambda i. default_val)" 
-              and "(n::nat)=(0::nat)" by auto
- from `s = {}` show "(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-   (\_forall(x::'a). P__a x  \_longrightarrow (x \_in s) = (\_exists(i::nat). i < n \_and f i = x)))"
-  by auto
-next
- fix P__a s
- assume " \_exists(f::nat \_Rightarrow 'a) n::nat.
-       Fun_PR P__a f \_and
-       ( \_forall  x\_Colon'a.
-           P__a x \_longrightarrow
-           (x \_in s) =
-           (\_exists i<n. f i = x))"
- thus "\_exists(f::nat \_Rightarrow 'a) n::nat.
-        \_forall x\_Colon'a.
-          P__a x \_longrightarrow
-          (x \_in s) = (\_exists i<n. f i = x)" by auto
-qed
+  "Set__finite_p__stp (P__a::'a\_Rightarrow bool) (s::'a set) \_Longrightarrow
+   (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
+          (\_forall(x::'a). P__a x  \_longrightarrow (x \_in s) = (\_exists(i::nat). i < n \_and f i = x)))"
+  proof (simp only:Set__finite_p__stp_def, erule disjE)
+   fix s
+   assume "Set__empty_p__stp P__a s"
+   from this have "s = {}" by(simp add:Set__empty_p__stp_def)
+   obtain f n where "(f::nat\_Rightarrow'a) = (\_lambda i. default_val)" 
+                and "(n::nat)=(0::nat)" by auto
+   from `s = {}` show "(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
+     (\_forall(x::'a). P__a x  \_longrightarrow (x \_in s) = (\_exists(i::nat). i < n \_and f i = x)))"
+    by auto
+  next
+   fix P__a s
+   assume " \_exists(f::nat \_Rightarrow 'a) n::nat.
+         Fun_PR P__a f \_and
+         ( \_forall  x\_Colon'a.
+             P__a x \_longrightarrow
+             (x \_in s) =
+             (\_exists i<n. f i = x))"
+   thus "\_exists(f::nat \_Rightarrow 'a) n::nat.
+          \_forall x\_Colon'a.
+            P__a x \_longrightarrow
+            (x \_in s) = (\_exists i<n. f i = x)" by auto
+  qed
 end-proof
 
 type FiniteSet a = (Set a | finite?)
@@ -702,6 +681,9 @@ op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b =
          fold (c, f, s <| x) = f (fold (c, f, s - x), x))
 
 
+% convert list to finite set:
+
+op [a] toSet (l:List a) : FiniteSet a = fn x:a -> x in? l
 
 % finite powerset:
 
@@ -743,7 +725,6 @@ type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
 op [a] min (ss: SetOfSetsWithMin a) : Set a = the(s) s isMinIn ss
 
 
-
 op [a] isMaxIn (s:Set a, ss:Set (Set a)) infixl 20 : Bool =
   s in? ss && (fa(s1) s1 in? ss => s >= s1)
 proof Isa -> isMaxIn_s end-proof
@@ -754,8 +735,44 @@ type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
 
+% ------------------------------------------------------------------------------
+% ------------------ Theory Morphisms ------------------------------------------
+% ------------------------------------------------------------------------------
 
-% Isabelle pragmas
+% mapping to Isabelle:
+
+proof Isa Thy_Morphism Set 
+  type Set.Set -> set (id,id)
+  Set.Set_P -> Set_P
+  Set.in? -> \<in> Left 50
+  Set.nin? -> \<notin> Left 50
+  Set.<= -> \<subseteq> Left 50
+  Set.< -> \<subset> Left 50
+  Set.>= -> \<subseteq> Left 50 reversed
+  Set.> -> \<subset> Left 50 reversed
+  Set.<| -> insert curried reversed
+  Set.~~ -> -
+  Set./\ -> \<inter> Left 70
+  Set.//\\ -> \<Inter>
+  Set.\/ -> \<union> Left 65 
+  Set.\\// -> \<Union>
+  Set.-- -> - Left 65
+  Set.* -> <*> Left 67
+  Set.map   -> image
+  Set.power -> Pow
+  Set.empty -> {}
+  Set.full  -> UNIV
+  Set.finite? -> finite
+  Set.size -> card
+  Set.theMember -> the_elem
+  Set.min -> Inter
+  Set.max -> Union
+end-proof
+
+
+% ------------------------------------------------------------------------------
+% ------------------ The proofs ------------------------------------------------
+% ------------------------------------------------------------------------------
 
 proof Isa Set_P__def
   by (simp add: Set_P_def)
@@ -779,7 +796,7 @@ proof Isa single? [simp] end-proof
 
 proof Isa onlyMemberOf [simp] end-proof
 
-proof Isa finite?__def
+proof Isa  finite?__def
 proof
  assume "finite (s::'a set)"
  thus "Set__empty_p s \_or 
@@ -915,6 +932,10 @@ proof Isa fold_Obligation_the
          in fold_insert, simp_all add: fun_left_comm_on_def)
 end-proof
 
+proof Isa Set__toSet_Obligation_subtype
+  by (simp add: mem_def)
+end-proof
+
 proof Isa  Set__min_Obligation_the
   apply(auto simp add: Set__hasMin_p_def isMinIn_s_def)
 end-proof
@@ -935,35 +956,5 @@ proof Isa  Set__max__def
   apply (auto simp add: isMaxIn_s_def)
 end-proof
 
-
-% mapping to Isabelle:
-
-proof Isa Thy_Morphism Set 
-  type Set.Set -> set (id,id)
-  Set.Set_P -> Set_P
-  Set.in? -> \<in> Left 50
-  Set.nin? -> \<notin> Left 50
-  Set.<= -> \<subseteq> Left 50
-  Set.< -> \<subset> Left 50
-  Set.>= -> \<subseteq> Left 50 reversed
-  Set.> -> \<subset> Left 50 reversed
-  Set.<| -> insert curried reversed
-  Set.~~ -> -
-  Set./\ -> \<inter> Left 70
-  Set.//\\ -> \<Inter>
-  Set.\/ -> \<union> Left 65 
-  Set.\\// -> \<Union>
-  Set.-- -> - Left 65
-  Set.* -> <*> Left 67
-  Set.map   -> image
-  Set.power -> Pow
-  Set.empty -> {}
-  Set.full  -> UNIV
-  Set.finite? -> finite
-  Set.size -> card
-  Set.theMember -> the_elem
-  Set.min -> Inter
-  Set.max -> Union
-end-proof
 
 endspec
