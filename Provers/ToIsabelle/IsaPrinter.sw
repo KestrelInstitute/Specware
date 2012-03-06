@@ -1657,6 +1657,17 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                        %let _ = writeLine("defToFunCases: "^printTerm lhs^"\n = "^printTerm rhs) in
                        (case lhs of
                         | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
+                        | Apply _ | exists? (fn arg ->
+                                               case arg of
+                                                 | Apply(Fun(Embed _, _, _), _, _) -> true
+                                                 | Fun(Embed _, _, _) -> true
+                                                 | Fun(Nat _, _, _) -> true
+                                                 | Fun(Char _, _, _) -> true
+                                                 | Fun(String _, _, _) -> true
+                                                 | Fun(Bool _, _, _) -> true
+                                                 | _ -> false)
+                                      (getArgs lhs) ->
+                          true
                         | _ ->
                         case fixity of
                         | Infix _ ->
