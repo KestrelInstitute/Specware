@@ -58,10 +58,9 @@ defs Set__e_gt__stp_def:
      \<equiv> (\<lambda> ((s1::'a set), (s2::'a set)). Set__e_lt__stp P__a(s2, s1))"
 
 lemma Set_Set_P_subsets_equiv:
-"Set_P P__a A \<Longrightarrow> 
- (Set__e_lt_eq__stp P__a ((A::'a set),(B::'a set)) = (A \<subseteq> B))" 
-by (auto simp add: Set__e_lt_eq__stp_def 
-                   Set__e_lt_eq__def Set_P_def )
+  "Set_P P__a A \<Longrightarrow> 
+    (Set__e_lt_eq__stp P__a ((A::'a set),(B::'a set)) = (A \<subseteq> B))" 
+  by (auto simp add: Set__e_lt_eq__stp_def Set__e_lt_eq__def Set_P_def )
 
 theorem Set__e_tld_tld__def: 
   "((x::'a) \<in> - s) = (x \<notin> s)"
@@ -117,13 +116,11 @@ defs Set__nonEmpty_p__stp_def:
 type_synonym 'a Set__Set1 = "'a set"
 
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
-"Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
-by (auto simp add:Set__nonEmpty_p__stp_def 
-                  Set__nonEmpty_p_def mem_def)
+  "Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
+  by (auto simp add:Set__nonEmpty_p__stp_def Set__nonEmpty_p_def mem_def)
 lemma Set__nonEmpty_p_stp_EX_x_t:
-"\<lbrakk> Set_P P__a s; Set__nonEmpty_p__stp P__a (s::'a set)\<rbrakk> \<Longrightarrow>
- (\<exists> (x::'a) (t::'a set) .
-  P__a x \<and> x \<notin> t \<and> (s = insert x t))"
+  "\<lbrakk> Set_P P__a s; Set__nonEmpty_p__stp P__a (s::'a set)\<rbrakk> \<Longrightarrow>
+    (\<exists> (x::'a) (t::'a set). P__a x \<and> x \<notin> t \<and> (s = insert x t))"
 proof(cases "s = {}")
  assume "Set_P P__a s" "Set__nonEmpty_p__stp P__a s" "s = {}"
  from this show ?thesis by(auto simp:Set__nonEmpty_p__stp_def mem_def)
@@ -148,12 +145,10 @@ consts Set__full_p__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a set \<Right
 defs Set__full_p__stp_def: 
   "Set__full_p__stp P__a s \<equiv> (s = RSet P__a UNIV)"
 
-lemma Set__full_apply[simp]:
-"UNIV x = True"
-by (auto simp add:Set__full__def)
-lemma Set__full_stp_apply:
-"\<lbrakk>P__a x; Set__full_p__stp P__a s\<rbrakk> \<Longrightarrow> x \<in> s"  
-by (auto simp add:Set__full_p__stp_def)
+lemma Set__full_apply[simp]:  "UNIV x = True"
+  by (auto simp add:Set__full__def)
+lemma Set__full_stp_apply:    "\<lbrakk>P__a x; Set__full_p__stp P__a s\<rbrakk> \<Longrightarrow> x \<in> s"  
+  by (auto simp add:Set__full_p__stp_def)
 
 consts Set__single :: "'a \<Rightarrow> 'a set"
 defs Set__single_def: "Set__single x \<equiv> (\<lambda> (y::'a). y = x)"
@@ -173,29 +168,21 @@ defs Set__onlyMemberOf__stp_def:
      \<equiv> (\<lambda> ((x::'a), (s::'a set)). 
           Set__single_p__stp P__a s \<and> x \<in> s)"
 
-lemma Set_single_simp [simp]:
-"Set__single x = {x}"
- by (rule set_eqI, simp, simp add: mem_def Set__single_def)
-lemma Set_single_simp_app1:
-"{x} x = True"
-by(simp del:Set_single_simp 
-        add:Set_single_simp[symmetric] Set__single_def)
-lemma Set_single_simp_app2:
-"{x} y = (x = y)"
-by(simp del:Set_single_simp 
-        add:Set_single_simp[symmetric] Set__single_def eq_ac)
-lemma Set_Pa_Set_P_single:
-"P__a (x::'a) \<Longrightarrow> Set_P P__a (Set__single x)"
-by(auto simp:Set_P_def)
-lemma Set_Pa_RSet_single[simp]:
-"P__a (x::'a)\<Longrightarrow> RSet P__a (Set__single x) = Set__single x"
-by(auto simp:Set_P_def)
-lemma Set_single_single_stp:
-"\<lbrakk> P__a x; x \<in> s; Set__single_p s\<rbrakk> \<Longrightarrow> Set__single_p__stp P__a s"
-by (auto simp:Set__single_p__stp_def Set__single_p_def)
-lemma Set_single_stp_single:
-"\<lbrakk>x \<in> s; Set__single_p__stp P__a s\<rbrakk> \<Longrightarrow> Set__single_p s"
-by (auto simp:Set__single_p__stp_def Set__single_p_def)
+lemma Set_single_simp [simp]:   "Set__single x = {x}"
+   by (rule set_eqI, simp, simp add: mem_def Set__single_def)
+lemma Set_single_simp_app1:     "{x} x = True"
+   by(simp del:Set_single_simp add:Set_single_simp[symmetric] Set__single_def)
+lemma Set_single_simp_app2:     "{x} y = (x = y)"
+  by(simp del:Set_single_simp  
+          add:Set_single_simp[symmetric] Set__single_def eq_ac)
+lemma Set_Pa_Set_P_single:      "P__a (x::'a) \<Longrightarrow> Set_P P__a (Set__single x)"
+  by(auto simp:Set_P_def)
+lemma Set_Pa_RSet_single[simp]: "P__a (x::'a)\<Longrightarrow> RSet P__a (Set__single x) = Set__single x"
+  by(auto simp:Set_P_def)
+lemma Set_single_single_stp:    "\<lbrakk> P__a x; x \<in> s; Set__single_p s\<rbrakk> \<Longrightarrow> Set__single_p__stp P__a s"
+  by (auto simp:Set__single_p__stp_def Set__single_p_def)
+lemma Set_single_stp_single:    "\<lbrakk>x \<in> s; Set__single_p__stp P__a s\<rbrakk> \<Longrightarrow> Set__single_p s"
+  by (auto simp:Set__single_p__stp_def Set__single_p_def)
 
 type_synonym 'a Set__Singleton = "'a set"
 theorem Set__theMember_Obligation_the: 
@@ -212,53 +199,46 @@ theorem Set__e_lt_bar__def:
   by auto
 
 lemma Set__RSet_insert_simp[simp]:  
-"\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk>  
- \<Longrightarrow>  (RSet P__a (insert x s) = (insert x s))"
-by (auto simp add:Set_P_def)
+  "\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk> \<Longrightarrow>  (RSet P__a (insert x s) = (insert x s))"
+  by (auto simp add:Set_P_def)
 lemma Set__Set_P_insert:
-"\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk>
- \<Longrightarrow> Set_P P__a (insert x s)"
-by (auto simp add:Set_P_def)
+  "\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk> \<Longrightarrow> Set_P P__a (insert x s)"
+  by (auto simp add:Set_P_def)
 lemma Set__Fun_PD_insert:
-"\<lbrakk> Fun_PD P__a s; P__a (x::'a)\<rbrakk>
- \<Longrightarrow> Fun_PD P__a (insert x s)"
-proof(rule Set_Set_P_Fun_PD)
- assume "Fun_PD P__a (s::'a set)"
-        "P__a x" 
- thus "Set_P P__a (insert x s)"
-by (simp add:Set_Fun_PD_Set_P Set__Set_P_insert)
-qed
+  "\<lbrakk> Fun_PD P__a s; P__a (x::'a)\<rbrakk> \<Longrightarrow> Fun_PD P__a (insert x s)"
+  proof(rule Set_Set_P_Fun_PD)
+   assume "Fun_PD P__a (s::'a set)"  "P__a x" 
+   thus "Set_P P__a (insert x s)"
+     by (simp add:Set_Fun_PD_Set_P Set__Set_P_insert)
+  qed
 lemma Set_P_Set_P_insert2: 
-"Set_P P__a (insert x s) \<Longrightarrow> Set_P P__a s"
-by (auto simp: Set_P_def)
+  "Set_P P__a (insert x s) \<Longrightarrow> Set_P P__a s"
+  by (auto simp: Set_P_def)
 lemma Set_P_insert_Pa_x:
-"Set_P P__a (insert x s) \<Longrightarrow> P__a x"
-by (auto simp: Set_P_def)
+  "Set_P P__a (insert x s) \<Longrightarrow> P__a x"
+  by (auto simp: Set_P_def)
 
 consts less :: "'a set \<Rightarrow> 'a \<Rightarrow> 'a set"	(infixl "less" 65)
 defs less_def [simp]: "(s less x) \<equiv> (s - Set__single x)"
 
 lemma Set__RSet_less_simp[simp]:  
-"\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk>  
- \<Longrightarrow>  (RSet P__a (s less x)) = (s less x)"
-by (auto simp add:Set_P_def)
+  "\<lbrakk> Set_P P__a s; P__a (x::'a)\<rbrakk> \<Longrightarrow>  (RSet P__a (s less x)) = (s less x)"
+  by (auto simp add:Set_P_def)
 lemma Set__SetP_less:
-"Set_P P__a s \<Longrightarrow> Set_P P__a (s less x)"
-by(auto simp add:Set_P_def)
+  "Set_P P__a s \<Longrightarrow> Set_P P__a (s less x)"
+  by(auto simp add:Set_P_def)
 lemma Set_P_Set_P_Less2: 
-"\<lbrakk> Set_P P__a (s less x); P__a (x::'a)\<rbrakk> \<Longrightarrow> 
- Set_P P__a s"
-by (auto simp: Set_P_def) 
+  "\<lbrakk> Set_P P__a (s less x); P__a (x::'a)\<rbrakk> \<Longrightarrow> Set_P P__a s"
+  by (auto simp: Set_P_def) 
 lemma Set_Fun_PD_less:
-"\<lbrakk> Fun_PD P__a s; P__a (x::'a)\<rbrakk>
- \<Longrightarrow> Fun_PD P__a (s less x)"
-proof(rule Set_Set_P_Fun_PD)
- assume "Fun_PD P__a (s::'a set)"
-        "P__a x"
- from this have "Set_P P__a s" by(simp add: Set_Fun_PD_Set_P) 
- from this show "Set_P P__a (s less x)"
- by (rule_tac s=s and P__a=P__a in Set__SetP_less)
-qed
+  "\<lbrakk> Fun_PD P__a s; P__a (x::'a)\<rbrakk> \<Longrightarrow> Fun_PD P__a (s less x)"
+  proof(rule Set_Set_P_Fun_PD)
+   assume "Fun_PD P__a (s::'a set)"
+          "P__a x"
+   from this have "Set_P P__a s" by(simp add: Set_Fun_PD_Set_P) 
+   from this show "Set_P P__a (s less x)"
+   by (rule_tac s=s and P__a=P__a in Set__SetP_less)
+  qed
 
 theorem Set__map__def: 
   "((y::'b) \<in> image f s) 
@@ -289,14 +269,14 @@ defs Set__setGeneratedBy__stp_def:
   "Set__setGeneratedBy__stp P__a f \<equiv> Set__map__stp P__a f UNIV"
 
 lemma finite_nat_seg:
-"finite (s::'a set) \<Longrightarrow> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+  "finite (s::'a set) \<Longrightarrow> (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
         \<forall>(x::'a). (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x))"
-by(auto simp add: finite_conv_nat_seg_image)
+  by(auto simp add: finite_conv_nat_seg_image)
 lemma nat_seq_finite:
-"(\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-  \<forall>(x::'a). (x \<in> (s::'a set)) = (\<exists>(i::nat). i < n \<and> f i = x)) 
- \<Longrightarrow> finite s"
-by(elim exE, rule nat_seg_image_imp_finite, auto)
+  "(\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+      \<forall>(x::'a). (x \<in> (s::'a set)) = (\<exists>(i::nat). i < n \<and> f i = x)) 
+   \<Longrightarrow> finite s"
+  by(elim exE, rule nat_seg_image_imp_finite, auto)
 
 theorem Set__finite_p__def: 
   "finite s 
@@ -333,31 +313,31 @@ defs Set__finite_p__stp_def:
                               = (\<exists>(i::nat). i < n \<and> f i = x))))"
 
 lemma finite_stp_nat_seg:
-"Set__finite_p__stp (P__a::'a\<Rightarrow> bool) (s::'a set) \<Longrightarrow>
- (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-        (\<forall>(x::'a). P__a x  \<longrightarrow> (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x)))"
-proof (simp only:Set__finite_p__stp_def, erule disjE)
- fix s
- assume "Set__empty_p__stp P__a s"
- from this have "s = {}" by(simp add:Set__empty_p__stp_def)
- obtain f n where "(f::nat\<Rightarrow>'a) = (\<lambda> i. default_val)" 
-              and "(n::nat)=(0::nat)" by auto
- from `s = {}` show "(\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
-   (\<forall>(x::'a). P__a x  \<longrightarrow> (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x)))"
-  by auto
-next
- fix P__a s
- assume " \<exists>(f::nat \<Rightarrow> 'a) n::nat.
-       Fun_PR P__a f \<and>
-       ( \<forall>  x\<Colon>'a.
-           P__a x \<longrightarrow>
-           (x \<in> s) =
-           (\<exists> i<n. f i = x))"
- thus "\<exists>(f::nat \<Rightarrow> 'a) n::nat.
-        \<forall> x\<Colon>'a.
-          P__a x \<longrightarrow>
-          (x \<in> s) = (\<exists> i<n. f i = x)" by auto
-qed
+  "Set__finite_p__stp (P__a::'a\<Rightarrow> bool) (s::'a set) \<Longrightarrow>
+   (\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+          (\<forall>(x::'a). P__a x  \<longrightarrow> (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x)))"
+  proof (simp only:Set__finite_p__stp_def, erule disjE)
+   fix s
+   assume "Set__empty_p__stp P__a s"
+   from this have "s = {}" by(simp add:Set__empty_p__stp_def)
+   obtain f n where "(f::nat\<Rightarrow>'a) = (\<lambda> i. default_val)" 
+                and "(n::nat)=(0::nat)" by auto
+   from `s = {}` show "(\<exists>(f::nat \<Rightarrow> 'a) (n::nat). 
+     (\<forall>(x::'a). P__a x  \<longrightarrow> (x \<in> s) = (\<exists>(i::nat). i < n \<and> f i = x)))"
+    by auto
+  next
+   fix P__a s
+   assume " \<exists>(f::nat \<Rightarrow> 'a) n::nat.
+         Fun_PR P__a f \<and>
+         ( \<forall>  x\<Colon>'a.
+             P__a x \<longrightarrow>
+             (x \<in> s) =
+             (\<exists> i<n. f i = x))"
+   thus "\<exists>(f::nat \<Rightarrow> 'a) n::nat.
+          \<forall> x\<Colon>'a.
+            P__a x \<longrightarrow>
+            (x \<in> s) = (\<exists> i<n. f i = x)" by auto
+  qed
 
 type_synonym 'a Set__FiniteSet = "'a set"
 
@@ -970,6 +950,14 @@ defs Set__fold__stp_def:
                              (c, f, RFun P__a (insert x s))))))) 
                     \<longrightarrow> fold__v(c, f, insert x s) 
                           = f(fold__v(c, f, s less x), x)))))"
+theorem Set__toSet_Obligation_subtype: 
+  "finite (\<lambda> (x::'a). x mem (l::'a list))"
+  by (simp add: mem_def)
+consts Set__toSet :: "'a list \<Rightarrow> 'a Set__FiniteSet"
+defs Set__toSet_def: "Set__toSet l \<equiv> (\<lambda> (x::'a). x mem l)"
+consts Set__toSet__stp :: "('a \<Rightarrow> bool) \<Rightarrow> 'a list \<Rightarrow> 'a set"
+defs Set__toSet__stp_def: 
+  "Set__toSet__stp P__a l \<equiv> (\<lambda> (x::'a). List__in_p__stp P__a(x, l))"
 consts Set__powerf :: "'a set \<Rightarrow> 'a Set__FiniteSet set"
 defs Set__powerf_def: 
   "Set__powerf s
