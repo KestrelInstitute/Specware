@@ -15,52 +15,39 @@ PrintAsC qualifying spec
  %% 
  %% ========================================================================
 
- op printTypeAsC_split (status : CGenStatus, typ : MSType) 
-  : Option (Pretty * List (Nat * Pretty) * CGenStatus) =
+ op getPartsForCType (status : CGenStatus, typ : MSType) : Pretty * List (Nat * Pretty) * CGenStatus =
   case typ of
 
     | Base (qid as Qualified (q, id), [], _) -> 
       (case getCTypeName (qid, status) of
-         | Some c_type_name -> Some (string c_type_name, [], status)
+         | Some c_type_name -> (string c_type_name, [], status)
          | _ ->
-           let _ = writeLine ("Error in printTypeAsC: no C type for: " ^ show qid) in
-           None)
+           (string id, [], reportError ("printTypeAsC", "no C type for: " ^ show qid, status)))
 
     | Product ([], _) -> 
-      Some (string "{}", [], status)
+      (string "{}", [], status)
 
     | Product (row, _) -> 
-      let opt_blocks_and_status = 
-          foldl (fn (opt_blocks_and_status, (id, typ)) ->
-                   case opt_blocks_and_status of
-                     | Some (blocks, status) ->
-                       (case printTypeAsC (status, typ) of
-                          | Some (pretty_field_type, status) ->
-                            Some (blocks ++
-                                    [blockNone (0, [(0, pretty_field_type),
-                                                    (0, string " "),
-                                                    (0, string id),
-                                                    (0, string "; ")])],
-                                  status)
-                          | _ ->
-                            None)
-                     | _ ->
-                       None)
-                (Some ([], status))
+      let (blocks, status) =
+          foldl (fn ((blocks, status), (id, typ)) ->
+                   let (pretty_field_type, status) = printTypeAsC (status, typ) in
+                   (blocks ++
+                    [blockNone (0, [(0, pretty_field_type),
+                                    (0, string " "),
+                                    (0, string id),
+                                    (0, string "; ")])],
+                    status))
+                ([], status)
                 row
       in
-      (case opt_blocks_and_status of
-         | Some (blocks, status) ->
-           Some (blockFill (0, 
-                            [(0, string "{")]
-                            ++
-                            (List.map (fn block -> (0, block)) blocks)
-                            ++
-                            [(0, string "}")]),
-                 [],
-                 status)
-         | _ ->
-           None)
+      (blockFill (0, 
+                  [(0, string "{")]
+                    ++
+                    (List.map (fn block -> (0, block)) blocks)
+                    ++
+                    [(0, string "}")]),
+       [],
+       status)
 
     | Subtype _ ->
       %% Bletch:
@@ -89,46 +76,33 @@ PrintAsC qualifying spec
                               _),
                        _)
               -> 
-              if n = 0 then
-                let _ = writeLine ("Error in printTypeAsC: array size = 0") in
-                None
-              else
-                let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
-                (case split_apart_limits (element_type, limits) of
-                   | Some (base_type, inner_limit_lines) ->
-                     Some (base_type, outer_limit_lines ++ inner_limit_lines)
-                   | _ ->
-                    None)
+              let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
+              let (base_type, inner_limit_lines, status) = split_apart_limits (element_type, limits) in
+              let status = if n = 0 then reportError ("printTypeAsC", "array size = 0", status) else status in
+              (base_type, outer_limit_lines ++ inner_limit_lines, status)
             | _ ->
-              Some (typ, limits)
+              (typ, limits, status)
       in
-      (case split_apart_limits (typ, []) of
-         | Some (typ, limits) ->
-           (case printTypeAsC_split (status, typ) of 
-              | Some (pretty_type, [], status) ->
-                Some (pretty_type, limits, status)
-              | _ ->
-                None)
-         | _ ->
-           None)
+      let (typ, limits, status) = split_apart_limits (typ, []) in
+      let (pretty, _, status) = getPartsForCType (status, typ) in
+      (pretty, limits, status)
+
     | _ -> 
-      let _ = writeLine ("Error in printTypeAsC_split: unrecognized kind of type: " ^ printType typ) in
-      None
+      (string "",
+       [],
+       reportError ("printTypeAsC_split", "unrecognized kind of type: " ^ printType typ, status))
       
  %% ========================================================================
  %% Print routine for types when we don't need to deal with typedef nonsense.
  %% ========================================================================
 
- op printTypeAsC (status : CGenStatus, typ : MSType) : Option (Pretty * CGenStatus) =
-   case printTypeAsC_split (status, typ) of
-     | Some (pretty_type, index_lines, status) ->
-       let pretty = 
-           case index_lines of
-             | [] -> pretty_type
-             | _ -> blockNone (0, [(0, pretty_type)] ++ index_lines)
-       in
-       Some (pretty, status)
-     | _ ->
-       None
+ op printTypeAsC (status : CGenStatus, typ : MSType) : Pretty * CGenStatus =
+  let (pretty_type, index_lines, status) = getPartsForCType(status, typ) in
+  let pretty = 
+      case index_lines of
+        | [] -> pretty_type
+        | _ -> blockNone (0, [(0, pretty_type)] ++ index_lines)
+  in
+  (pretty, status)
 
 endspec

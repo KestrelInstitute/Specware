@@ -55,10 +55,14 @@ PrintAsC qualifying spec
  %% Options and Status for C generation
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type CGenStatus = {plainCharsAreSigned? : Bool,    % Option
-                    printPragmas?        : Bool,    % Option
-                    defined_types        : List Id, % Status % QualifieId ?
-                    defined_ops          : List Id} % Status % QualifieId ?
+ type CGenStatus = {plainCharsAreSigned? : Bool,        % Option
+                    printPragmas?        : Bool,        % Option
+                    defined_types        : List Id,     % Status % QualifieId ?
+                    defined_ops          : List Id,     % Status % QualifieId ?
+                    h_prettys            : Prettys,
+                    c_prettys            : Prettys,
+                    warning_msgs         : List String,
+                    error_msgs           : List String}
 
  op init_cgen_status (spc : Spec) : Option CGenStatus = 
   let plain_chars_are_signed? =
@@ -96,22 +100,23 @@ PrintAsC qualifying spec
       Some {plainCharsAreSigned? = plain_chars_are_signed?,
             printPragmas?        = print_pragmas?,
             defined_types        = ["char", "short", "int", "long"], % "unsigned char" can't possibly be a user type
-            defined_ops          = []}
+            defined_ops          = [],
+            h_prettys            = [],
+            c_prettys            = [],
+            warning_msgs         = [],
+            error_msgs           = []}
     | _ ->
-      let _ = writeLine ("?? huh?:  CTarget no longer imported?") in
+      let _ = writeLine ("Confusion in C generation:  CTarget suddenly no longer imported?") in
       None
 
- op addNewType (qid as Qualified(_,id) : QualifiedId, status : CGenStatus) 
-  : Option (Id * CGenStatus) =
+ op addNewType (status : CGenStatus, qid as Qualified(_,id) : QualifiedId) : Id * CGenStatus =
   let defined_types = status.defined_types in
   if id in? defined_types then
-    let _ = writeLine("Error: addNewType: attempting to redefine: " ^ id) in
-    None
+    (id, reportError ("addNewType", "attempting to redefine: " ^ id, status))
   else if legal_C_Id? id then
-    Some (id, status << {defined_types = id :: defined_types})
+    (id, status << {defined_types = id :: defined_types})
   else
-    let _ = writeLine("Error: addNewType: id is not legal C type name: " ^ id) in
-    None
+    (id, reportError("addNewType", "id is not a legal C type name: " ^ id, status))
 
  op getCTypeName (qid as Qualified (q,id) : QualifiedId, status : CGenStatus) : Option Id =
   if q = "C" then
@@ -133,25 +138,26 @@ PrintAsC qualifying spec
    else 
      None
 
-  op addNewOp (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) 
-   : Option (Id * CGenStatus) =
-   let defined_ops = status.defined_ops in
-   if id in? defined_ops then
-     let _ = writeLine("Error: addNewOp: attempting to redefine: " ^ id) in
-     None
-   else if legal_C_Id? id then
-     Some (id, status << {defined_ops = id :: defined_ops})
-   else
-     let _ = writeLine("Error: addNewOp: id is not legal C function name: " ^ id) in
-     None
+ op addNewOp (status : CGenStatus, qid as Qualified (_,id) : QualifiedId) : Id * CGenStatus =
+  let defined_ops = status.defined_ops in
+  if id in? defined_ops then
+    (id, reportError ("addNewOp", "attempting to redefine: " ^ id, status))
+  else if legal_C_Id? id then
+    (id, status << {defined_ops = id :: defined_ops})
+  else
+    (id, reportError ("addNewOp", "id is not a legal C function name: " ^ id, status))
 
-  op getCFunctionName (qid as Qualified (_,id) : QualifiedId) (status : CGenStatus) 
-   : Option Id =
-   let defined_ops = status.defined_ops in
-   if id in? defined_ops then
-     Some id
-   else 
-     None
+ op getCFunctionName (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) : Option Id =
+  let defined_ops = status.defined_ops in
+  if id in? defined_ops then
+    Some id
+  else 
+    None
+
+ op reportError (location : String, msg : String, status : CGenStatus) : CGenStatus =
+  let error_msg = "CGen error at " ^ location ^ " : " ^ msg in
+  let _ = writeLine error_msg in
+  status << {error_msgs = status.error_msgs ++ [error_msg]}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Utilities related to CTarget.sw
@@ -191,5 +197,16 @@ PrintAsC qualifying spec
  %% Status of C generation
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op addPretty (status : CGenStatus, pretty : Pretty, to_h_file? : Bool) : CGenStatus =
+  if to_h_file? then
+    addHPretty (status, pretty)
+  else
+    addCPretty (status, pretty)
+
+ op addHPretty (status : CGenStatus, pretty : Pretty) : CGenStatus =
+  status << {h_prettys = status.h_prettys ++ [pretty]} 
+
+ op addCPretty (status : CGenStatus, pretty : Pretty) : CGenStatus =
+  status << {c_prettys = status.c_prettys ++ [pretty]} 
 
 end-spec
