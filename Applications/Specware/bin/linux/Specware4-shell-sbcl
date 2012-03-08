@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Some machines require the dynamic space size to be smaller (e.g. 800)
+# On those, preset SBCL_SIZE before invoking this script.
+export SBCL_SIZE="${SBCL_SIZE:=1200}"
+
 act='launch Specware'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
@@ -63,4 +67,4 @@ export BIN_DIR=$SPECWARE_BIN
 
 LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4."$EXECUTABLE_EXTENSION"
 
-"$LISP_EXECUTABLE" --dynamic-space-size 1200 --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (sb-unix:unix-exit 0))"
+"$LISP_EXECUTABLE" --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::specware-shell t) (sb-unix:unix-exit 0))"
