@@ -447,6 +447,34 @@ SpecNorm qualifying spec
                    Subtype(Product(bare_flds,a),
                            mkLambda(mkRecordPat arg_id_vars, pred), a)
               else ty
+          | CoProduct(constrs, a) ->
+            %% Lifting a CoProduct is dangerous in that it makes the CoProduct not be at the top level, 
+            %% but at the point it is done it may be benign.
+            let constrs = map (fn (constr_id, opt_ty) -> (constr_id, mapOption (fn ty -> raiseSubtypeFn(ty, spc)) opt_ty)) constrs in
+            if exists? (fn (_,opt_tyi) -> case opt_tyi of
+                                            | Some(Subtype _) -> true
+                                            | _ -> false)
+                 constrs
+              then
+                let (bare_constrs, cases) =
+                    List.foldl (fn ((bare_constrs, cases), (constr_id, opt_tyi)) ->
+                             case opt_tyi of
+                               | Some(Subtype(t,p,_)) ->
+                                 let v = ("x_"^constr_id, t)  in
+                                 (bare_constrs ++ [(constr_id, Some t)],
+                                  cases ++ [(EmbedPat(constr_id, Some(mkVarPat v), ty, a), trueTerm, simplifiedApply(p, mkVar v, spc))])
+                               | Some tyi -> (bare_constrs ++ [(constr_id, opt_tyi)],
+                                              cases ++ [(EmbedPat(constr_id, Some(mkWildPat tyi), ty, a), trueTerm, trueTerm)])
+                               | _ -> (bare_constrs ++ [(constr_id, opt_tyi)],
+                                       cases ++ [(EmbedPat(constr_id, None, ty, a), trueTerm, trueTerm)]))
+                      ([],[]) constrs
+                   in
+                   let lifted_ty = Subtype(CoProduct(bare_constrs, a),
+                                           Lambda(cases, a), a)
+                   in
+                   % let _ = writeLine("Raising coproduct:\n"^printType ty^"\n  -->\n"^printType lifted_ty) in
+                   lifted_ty
+              else ty
           | Arrow(dom, rng ,a) ->
             (case mkSubtypeFnPredicate(raiseSubtypeFn(dom,spc), raiseSubtypeFn(rng,spc), ty) of
                | Some pred -> Subtype(ty, pred, a)
