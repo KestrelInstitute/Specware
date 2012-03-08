@@ -432,6 +432,9 @@ defs sign_def:                   "sign i \<equiv> (if i=0 then 0 else if 0<i the
 consts zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
 defs zpower_def [simp]: "x ** y \<equiv> x ^ y"
 
+consts power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
+defs power_def [simp]: "x *** y \<equiv> x ^ y"
+
 (**************** and a few insights **********************)
    
 lemma nat_le_abs [simp]:         "nat \<bar>i\<bar> \<le> nat \<bar>j\<bar> = (\<bar>i\<bar> \<le> \<bar>j\<bar>)"
@@ -1798,9 +1801,9 @@ fun oinsert :: "nat => nat list => nat list" where
    "oinsert x [] = [x]"
  |  "oinsert x (y # ys) = (if x \<le> y then x # y # ys else y # oinsert x ys)"
 
-fun sort :: "nat list => nat list" where 
-   "sort [] = []"
- | "sort (x # xs) = oinsert x (sort xs)"
+fun type :: "nat list => nat list" where 
+   "type [] = []"
+ | "type (x # xs) = oinsert x (type xs)"
 
 subsection {* Alternative Definitions *}
 
@@ -1895,19 +1898,19 @@ lemma primel_nempty_g_one:
 lemma primel_prod_gz: "primel xs ==> 0 < prod xs"
   by (induct xs, auto simp: primel_def prime_def)
 
-subsection {* Sorting *}
+subsection {* Typeing *}
 
 lemma nondec_oinsert: "nondec xs \<Longrightarrow> nondec (oinsert x xs)"
   by (induct xs, simp,
       case_tac xs, simp_all cong del: list.weak_case_cong)
 
-lemma nondec_sort: "nondec (sort xs)"
+lemma nondec_type: "nondec (type xs)"
   by (induct xs, simp_all, erule nondec_oinsert)
 
 lemma x_less_y_oinsert: "x \<le> y ==> l = y # ys ==> x # l = oinsert x l"
   by simp_all
 
-lemma nondec_sort_eq [rule_format]: "nondec xs \<longrightarrow> xs = sort xs"
+lemma nondec_type_eq [rule_format]: "nondec xs \<longrightarrow> xs = type xs"
   apply (induct xs, safe, simp_all)
   apply (case_tac xs, simp_all)
   apply (case_tac xs, simp, 
@@ -1933,17 +1936,17 @@ lemma perm_subst_oinsert: "xs <~~> ys ==> oinsert a xs <~~> oinsert a ys"
 lemma perm_oinsert: "x # xs <~~> oinsert x xs"
   by (induct xs, auto)
 
-lemma perm_sort: "xs <~~> sort xs"
+lemma perm_type: "xs <~~> type xs"
   by (induct xs, auto intro: perm_oinsert elim: perm_subst_oinsert)
 
-lemma perm_sort_eq: "xs <~~> ys ==> sort xs = sort ys"
+lemma perm_type_eq: "xs <~~> ys ==> type xs = type ys"
   by (induct set: perm, simp_all add: oinsert_x_y)
 
 subsection {* Existence of a unique prime factorization*}
 
 lemma ex_nondec_lemma:
   "primel xs ==> \<exists>ys. primel ys \<and> nondec ys \<and> prod ys = prod xs"
-  by (blast intro: nondec_sort perm_prod perm_primel perm_sort perm_sym)
+  by (blast intro: nondec_type perm_prod perm_primel perm_type perm_sym)
 
 lemma not_prime_ex_mk:
   "Suc 0 < n \<and> \<not> prime n ==>
@@ -2020,7 +2023,7 @@ lemma factor_unique [rule_format]:
 
 lemma perm_nondec_unique:
     "xs <~~> ys ==> nondec xs ==> nondec ys ==> xs = ys"
-  by (metis nondec_sort_eq perm_sort_eq)
+  by (metis nondec_type_eq perm_type_eq)
 
 theorem unique_prime_factorization [rule_format]:
     "\<forall>n. Suc 0 < n --> (\<exists>!l. primel l \<and> nondec l \<and> prod l = n)"

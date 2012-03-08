@@ -444,6 +444,9 @@ defs sign_def:                   "sign i \_equiv (if i=0 then 0 else if 0<i then
 consts zpower :: "int \_Rightarrow nat \_Rightarrow int" (infixr "**" 80)
 defs zpower_def [simp]: "x ** y \_equiv x ^ y"
 
+consts power :: "nat \_Rightarrow nat \_Rightarrow nat" (infixr "***" 80)
+defs power_def [simp]: "x ** y \_equiv x ^ y"
+
 (**************** and a few insights **********************)
    
 lemma nat_le_abs [simp]:         "nat \_bari\_bar \_le nat \_barj\_bar = (\_bari\_bar \_le \_barj\_bar)"

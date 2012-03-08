@@ -1302,9 +1302,10 @@ proof Isa Thy_Morphism Presburger
  Integer.modR     -> modR  Left 70
  Integer.modE     -> modE  Left 70
  Integer.mod      -> mod   Left 70
- Integer.**        -> **        Left 70
- Integer.min      -> min           curried
- Integer.max      -> max           curried
+ Integer.**       -> **    Left 70
+ Integer.***      -> ***   Left 70
+ Integer.min      -> min   curried
+ Integer.max      -> max   curried
  Integer.divides  -> zdvd  Left 70 
  Integer.gcd      -> igcd
  Integer.lcm      -> ilcm
