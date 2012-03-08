@@ -109,14 +109,30 @@ PrintAsC qualifying spec
       let _ = writeLine ("Confusion in C generation:  CTarget suddenly no longer imported?") in
       None
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op reportWarning (msg : String, status : CGenStatus) : CGenStatus =
+  % let _ = writeLine warning_msg in
+  status << {warning_msgs = status.warning_msgs ++ [msg]}
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op reportError (msg : String, status : CGenStatus) : CGenStatus =
+  % let _ = writeLine error_msg in
+  status << {error_msgs = status.error_msgs ++ [msg]}
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
  op addNewType (status : CGenStatus, qid as Qualified(_,id) : QualifiedId) : Id * CGenStatus =
   let defined_types = status.defined_types in
   if id in? defined_types then
-    (id, reportError ("addNewType", "attempting to redefine: " ^ id, status))
+    (id, reportError ("attempting to redefine: " ^ id, status))
   else if legal_C_Id? id then
     (id, status << {defined_types = id :: defined_types})
   else
-    (id, reportError("addNewType", "id is not a legal C type name: " ^ id, status))
+    (id, reportError ("illegal C type name: " ^ id, status))
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op getCTypeName (qid as Qualified (q,id) : QualifiedId, status : CGenStatus) : Option Id =
   if q = "C" then
@@ -138,14 +154,18 @@ PrintAsC qualifying spec
    else 
      None
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
  op addNewOp (status : CGenStatus, qid as Qualified (_,id) : QualifiedId) : Id * CGenStatus =
   let defined_ops = status.defined_ops in
   if id in? defined_ops then
-    (id, reportError ("addNewOp", "attempting to redefine: " ^ id, status))
+    (id, reportError ("attempting to redefine: " ^ id, status))
   else if legal_C_Id? id then
     (id, status << {defined_ops = id :: defined_ops})
   else
-    (id, reportError ("addNewOp", "id is not a legal C function name: " ^ id, status))
+    (id, reportError ("illegal C function name: " ^ id, status))
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op getCFunctionName (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) : Option Id =
   let defined_ops = status.defined_ops in
@@ -153,11 +173,6 @@ PrintAsC qualifying spec
     Some id
   else 
     None
-
- op reportError (location : String, msg : String, status : CGenStatus) : CGenStatus =
-  let error_msg = "CGen error at " ^ location ^ " : " ^ msg in
-  let _ = writeLine error_msg in
-  status << {error_msgs = status.error_msgs ++ [error_msg]}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Utilities related to CTarget.sw

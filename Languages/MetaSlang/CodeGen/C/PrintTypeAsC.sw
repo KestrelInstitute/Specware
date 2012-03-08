@@ -22,7 +22,7 @@ PrintAsC qualifying spec
       (case getCTypeName (qid, status) of
          | Some c_type_name -> (string c_type_name, [], status)
          | _ ->
-           (string id, [], reportError ("printTypeAsC", "no C type for: " ^ show qid, status)))
+           (string id, [], reportError ("no C type for: " ^ show qid, status)))
 
     | Product ([], _) -> 
       (string "{}", [], status)
@@ -78,7 +78,7 @@ PrintAsC qualifying spec
               -> 
               let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
               let (base_type, inner_limit_lines, status) = split_apart_limits (element_type, limits) in
-              let status = if n = 0 then reportError ("printTypeAsC", "array size = 0", status) else status in
+              let status = if n = 0 then reportError ("array size = 0", status) else status in
               (base_type, outer_limit_lines ++ inner_limit_lines, status)
             | _ ->
               (typ, limits, status)
@@ -90,7 +90,7 @@ PrintAsC qualifying spec
     | _ -> 
       (string "",
        [],
-       reportError ("printTypeAsC_split", "unrecognized kind of type: " ^ printType typ, status))
+       reportError ("unrecognized kind of type: " ^ printType typ, status))
       
  %% ========================================================================
  %% Print routine for types when we don't need to deal with typedef nonsense.

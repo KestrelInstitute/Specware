@@ -34,7 +34,7 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op getPattern (status : CGenStatus, tm : MSTerm) : Option MSPattern * CGenStatus =
+ op getPattern (status : CGenStatus, qid : QualifiedId, tm : MSTerm) : Option MSPattern * CGenStatus =
   let
     def aux tm1 =
       case tm1 of
@@ -42,7 +42,8 @@ PrintAsC qualifying spec
         | TypedTerm (tm2, _,   _) -> aux tm2
         | _ -> 
           (None,
-           reportError ("ppOpInfoSig", "definition not a lambda: " ^ printTerm tm, status))
+           reportError ("definition for " ^ show qid ^ " is not a lambda: " ^ printTerm tm, 
+                        status))
   in
   aux tm
 
@@ -55,7 +56,7 @@ PrintAsC qualifying spec
            if legal_C_Id? id then
              (Some [(id, typ)], status)
            else
-             (None, reportError ("ppTypeInfoToH", "illegal var name: " ^ id, status))
+             (None, reportError ("illegal C variable name: " ^ id, status))
          | RecordPat ([],        _) -> (Some [], status)
          | RecordPat (id_pats,   _) -> 
            (case id_pats of
@@ -68,14 +69,12 @@ PrintAsC qualifying spec
                                 | _ -> (None, status))
                            | _ ->
                              (None,
-                              reportError ("ppOpInfoSig", "arg not a var: " ^ printPattern pat, status)))
+                              reportError ("parameter is not a variable: " ^ printPattern pat, status)))
                       (Some [], status)
                       id_pats
               | _ ->
-                (None, reportError ("ppOpInfoSig", "args not a tuple: " ^ printPattern pat, status)))
-         | _ -> (None, reportError ("ppOpInfoSig",
-                                    "unknown argument pattern: " ^ printPattern pat,
-                                    status)))
+                (None, reportError ("parameters are not a tuple: " ^ printPattern pat, status)))
+         | _ -> (None, reportError ("unrecognized parameter pattern: " ^ printPattern pat, status)))
     | _ -> (None, status)
 
  op ppOpInfoSig (status          : CGenStatus, 
@@ -88,9 +87,9 @@ PrintAsC qualifying spec
     | Some info -> 
       (case termType info.dfn of
          | Arrow (dom, rng, _) -> 
-           let (pretty_rng, status) = printTypeAsC (status, rng) in
-           let (opt_pat,    status) = getPattern   (status, info.dfn) in
-           let (opt_vars,   status) = getVars      (status, opt_pat)  in
+           let (pretty_rng, status) = printTypeAsC (status, rng)           in
+           let (opt_pat,    status) = getPattern   (status, qid, info.dfn) in
+           let (opt_vars,   status) = getVars      (status, opt_pat)       in
            let opt_blocks = 
                case opt_vars of
                   | Some vars ->
@@ -125,9 +124,9 @@ PrintAsC qualifying spec
              | _ ->
                status)
          | _ ->
-           reportError ("ppOpInfoSig", printQualifiedId qid ^ " does not have an arrow type", status))
+           reportError (printQualifiedId qid ^ " does not have an arrow type", status))
     | _ ->
-      reportError ("ppOpInfoSig", "no definition for op " ^ printQualifiedId qid, status)
+      reportError ("no definition at all for " ^ printQualifiedId qid, status)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -149,8 +148,7 @@ PrintAsC qualifying spec
       in
       addHPretty (status, p)
     | _ ->
-      reportError ("ppTypeInfoToH", "no definition for type " ^ show qid,
-                   status)
+      reportError ("no definition for type " ^ show qid, status)
 
  op ppOpInfoToH (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) : CGenStatus =
   let (c_function_name, status) = addNewOp (status, qid) in
@@ -180,6 +178,7 @@ PrintAsC qualifying spec
     | Some info ->
       (case getCFunctionName (qid, status) of
         | Some c_function_name ->
+          let status = addCPretty  (status, string "") in
           let status = ppOpInfoSig (status, qid, c_function_name, opt_info, false) in
           let 
             def bodyOf tm =
@@ -191,12 +190,12 @@ PrintAsC qualifying spec
           in
           let (pretty_body, has_return?, status) = printTermAsC (status, bodyOf info.dfn, Statement) in
           let pretty_body = if has_return? then pretty_body else wrapReturn pretty_body in
-          let pretty_body = blockLinear (0, [(1, string "{"), (2, pretty_body), (1, string "}")]) in
+          let pretty_body = blockLinear (0, [(0, string " {"), (2, pretty_body), (1, string "}")]) in
           addCPretty (status, pretty_body)
         | _ -> 
-          reportError ("ppOpInfoToC", "?? no declaration for " ^ printQualifiedId qid, status))
+          reportError ("?? No declaration for " ^ printQualifiedId qid, status))
     | _ -> 
-      reportError ("ppOpInfoToC", "No definition for " ^ printQualifiedId qid, status)
+      reportWarning ("No definition for " ^ printQualifiedId qid, status)
 
  op ppInfoToC (status : CGenStatus, info : CInfo) : CGenStatus =
   case info of
@@ -241,6 +240,7 @@ PrintAsC qualifying spec
       let status = ppInfosToC (status, basename, infos) in
       (case status.error_msgs of
          | [] ->
+           let _ = app (fn msg -> writeLine ("CGen warning: " ^ msg)) status.warning_msgs in
            let h_lines = map (fn (pretty : Pretty) -> (0, pretty)) status.h_prettys in
            let c_lines = map (fn (pretty : Pretty) -> (0, pretty)) status.c_prettys in
            let h_lines = h_lines ++ [(0, string "")] in
@@ -252,7 +252,9 @@ PrintAsC qualifying spec
            let _ = writeLine("Writing " ^ c_file) in
            let _ = toFile (c_file, c_text) in
            ()
-         | _ ->
+         | msgs ->
+           let _ = app (fn msg -> writeLine ("CGen error: " ^ msg)) status.error_msgs in
+           let _ = app (fn msg -> writeLine ("CGen warning: " ^ msg)) status.warning_msgs in
            let _ = writeLine("Due to errors above, not printing .c (or .h) file : " ^ c_file) in
            ())
     | _ ->
