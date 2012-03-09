@@ -824,9 +824,9 @@ theorem Integer__e_ast_ast__def1:
 theorem Integer__e_ast_ast_ast_Obligation_subtype: 
   "int base ** (exp__v::nat) \<ge> 0"
   by auto
-consts Integer__e_ast_ast_ast :: "nat \<Rightarrow> nat \<Rightarrow> nat"	(infixl "***" 70)
-defs Integer__e_ast_ast_ast_def: 
-  "(base *** exp_v) \<equiv> nat (int base ** exp_v)"
+theorem Integer__e_ast_ast_ast__def: 
+  "base *** exp__v = nat (int base ** exp__v)"
+  by (simp add: zpower_int)
 theorem Integer__min__def: 
   "\<lbrakk>(i::int) < (j::int)\<rbrakk> \<Longrightarrow> (min i j) = i"
   by auto
