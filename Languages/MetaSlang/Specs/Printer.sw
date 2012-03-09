@@ -293,7 +293,7 @@ AnnSpecPrinter qualifying spec
    else 
      pretty
 
- op printLocalDefTypes?: Bool = false
+ op printLocalDefTypes?: Bool = true
 
  def [a] ppTerm1 context (path, parentTerm) (term: ATerm a) : Pretty =
    let pp : ATermPrinter = context.pp in
@@ -464,19 +464,21 @@ AnnSpecPrinter qualifying spec
             let
               def ppD (path, ((id, srt), trm)) =
                 (case trm of
-		   | Lambda ([(pat, Fun (Bool true, _, _), body)], _) -> 
+		   | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
 		     blockLinear (0, 
-				  [(0, prettysNone [pp.Def, 
-						    pp.fromString id, 
-						    string " ", 
-						    ppPattern context ([1, 0] ++ path, true, false)
-                                                      (case srt of
-                                                         | Arrow(dom,rng, apos) | printLocalDefTypes? ->
-                                                           TypedPat(pat, dom, apos)
-                                                         | _ -> pat), 
-						    string " ", 
-						    pp.Equals, 
-						    string " "]), 
+				  [(0, prettysNone ([pp.Def, 
+                                                     pp.fromString id, 
+                                                     string " ",
+                                                     let context = context << {printType = printLocalDefTypes?} in
+                                                     ppPattern context ([1, 0] ++ path, true, false) pat]
+                                                 ++ (case srt of
+                                                       | Arrow(dom,rng, apos) | printLocalDefTypes? ->
+                                                         [string ": ", 
+                                                          ppType context ([1] ++ path, Top) rng]
+                                                       | _ -> [])
+                                                 ++ [string " ", 
+                                                     pp.Equals, 
+                                                     string " "])), 
 				   (2, ppTerm context ([2, 0] ++ path, Top)
 				    body)])
 		   | _ -> 
