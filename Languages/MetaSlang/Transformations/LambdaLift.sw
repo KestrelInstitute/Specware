@@ -29,6 +29,7 @@ LambdaLift qualifying spec
 		  closure  : MSTerm,     % Expression corresponding to name(freeVars)
 		  pattern  : MSPattern,  % Pattern.
                   domain   : MSType,     % Type of pattern (including subtype)
+                  range    : MSType,     % Type of op (including subtype)
 		  body     : MSTerm      % Body of lambda lifted expression.
 		 }
  %
@@ -294,7 +295,7 @@ def patternVars (pat:MSPattern): List Var =
 	 let srt1 = termTypeEnv (getSpecEnv env, prod) in
 	 let oper = mkOp (qualname, mkArrow (mkProduct [srt1, dom], rng)) in
 	 mkApply (makeClosureOp (), 
-		  mkTuple[oper, ArityNormalize.mkArityTuple (env.spc, prod)])	
+		  mkTuple[oper, ArityNormalize.mkArityTuple (getSpecEnv env, prod)])	
 
  op makeLiftInfo (env: LLEnv, id: String, name: String, pat: MSPattern, body: MSTerm,
                   dom: MSType, rng: MSType, vars: FreeVars): LiftInfo = 
@@ -304,6 +305,7 @@ def patternVars (pat:MSPattern): List Var =
     closure  = makeClosureApplication (env, name, vars, pat, dom, rng), 
     pattern  = pat, 
     domain   = dom,
+    range    = rng,
     body     = body}
 
  def insertOper (liftInfo:LiftInfo, env) =
@@ -381,7 +383,7 @@ def patternVars (pat:MSPattern): List Var =
        in
 	 let (infos2, t2) = lambdaLiftTerm (env, t) in
 	 (infos1 ++ infos2, 
-	  Apply (Lambda (match, lpos), t2, pos))
+	  simplifiedApply (Lambda (match, lpos), t2, getSpecEnv env))
 	 
 (*
 Let:
@@ -433,7 +435,7 @@ Given let definition:
 	       let vars = actualFreeVars (env, vars) in
 	       let oper = makeLiftInfo (env, id, name, pat2, body,
                                         domain (getSpecEnv env, srt),
-                                        termTypeEnv (getSpecEnv env, body),
+                                        range (getSpecEnv env, srt),
                                         vars)
                in
 	       let env  = insertOper (oper, env) in
@@ -527,14 +529,10 @@ in
 
 % Step 3.
        let
-	 def liftDecl ((realBody, {ident, name, pattern, domain, closure, body, freeVars}), opers) = 
+	 def liftDecl ((realBody, {ident, name, pattern, domain, range, closure, body, freeVars}), opers) = 
 	   let (opers2, body) = lambdaLiftTerm (env1, realBody) in
-	   let oper = makeLiftInfo (env, ident, name, pattern, body,
-                                    domain,
-				    termTypeEnv (getSpecEnv (env), body), 
-				    freeVars)
-	   in
-	      oper::opers ++ opers2
+	   let oper = makeLiftInfo (env, ident, name, pattern, body, domain, range, freeVars) in
+           oper::opers ++ opers2
        in
        let opers1 = List.foldr liftDecl [] tmpOpers in
 
@@ -648,10 +646,10 @@ in
 	      (case t1 of
 		 | (Var (id, srt), _, _) ->
 		    (case Map.apply (env.opers, id) of
-		       | Some {ident, name, freeVars, closure, pattern, domain, body} ->
+		       | Some {ident, name, freeVars, closure, pattern, domain, range, body} ->
 		         let oldArgs = termToList nt2 in
 			 let newArgs = map mkVar freeVars in
-			 (opers, mkApply (nt1, mkTuple (oldArgs ++ newArgs)))
+			 (opers, simplifiedApply (nt1, mkTuple (oldArgs ++ newArgs), getSpecEnv env))
 		       | _ -> 
 			 (opers, mkApply (nt1, nt2)))
 		 | _ -> 
@@ -661,7 +659,7 @@ in
 
 	  | _ ->
 	    if ~simulateClosures? then
-	      (opers, mkApply (nt1, nt2))
+	      (opers, simplifiedApply (nt1, nt2, getSpecEnv env))
 	    else 
 	      let argument = mkTuple [nt1, toAny (nt2)] in
 	      let alpha    = mkTyVar "alpha" in
@@ -752,15 +750,13 @@ def toAny     = Term `TranslationBasic.toAny`
      let srt   = mkArrow (alpha, any) in
      mkApply (mkOp (Qualified ("TranslationBuiltIn", "toAny"), srt), t)
 
- op  abstractName: LLEnv * String * FreeVars * MSPattern * MSType * MSTerm -> OpInfo
- def abstractName (env, name, freeVars, pattern, domain, body) =
+ op  abstractName: LLEnv * String * FreeVars * MSPattern * MSType * MSType * MSTerm -> OpInfo
+ def abstractName (env, name, freeVars, pattern, domain, range, body) =
    if ~simulateClosures? then
      let oldPatLst = patternToList pattern in
      let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in
      let domType = addSubtypeInfo(newPattern,pattern,domain,getSpecEnv env) in
-     let new_type = mkArrow (domType, 
-			     termTypeEnv (getSpecEnv (env), body)) 
-     in
+     let new_type = mkArrow (domType, range) in
      let pos = termAnn(body) in
      let new_term = withAnnT(mkLambda (newPattern, body), pos) in
      let tvs = freeTyVars new_type in
@@ -803,7 +799,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	       mkLet (decls, body)
      in
      let new_type = mkArrow (patternType newPattern, 
-			     termTypeEnv (getSpecEnv env, body))
+			     range)
      in
      let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
      {names  = [], % TODO: Real names
@@ -853,8 +849,8 @@ def toAny     = Term `TranslationBasic.toAny`
      def insertOpers (opers, q, r_elts, r_ops) =
        case opers of
 	 | [] -> (r_elts, r_ops)
-	 | {name = id, ident, pattern, domain, freeVars, body, closure}::m_opers -> 
-	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, body) in
+	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
+	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, range, body) in
 	   % TODO: Real names
 	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, noPos) in
 	   insertOpers (m_opers, q, r_elts, r_ops)
