@@ -385,6 +385,21 @@ IsaTermPrinter qualifying spec
               id, id)
        dfn)
 
+  op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, spc: Spec): MSTerm =
+    let def mk_equality(ty, t1, t2, v_names) =
+          case arrowOpt(spc, ty) of
+            | Some(dom, rng) | v_names ~= [] ->
+              let v_name :: v_names = v_names in
+              let arg_tys = productTypes(spc, dom) in
+              let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
+              mk_equality(rng, mkAppl(t1, vs), mkAppl(t2, vs), v_names)
+            | _ -> mkEquality(ty, t1, t2)
+    in
+    let equality = mk_equality(ty, t1, t2, ["x", "y", "z"]) in
+    case freeVars equality of
+      | [] -> equality
+      | fvs -> mkBind(Forall, fvs, equality)
+
   op addRefineObligations(spc: Spec): Spec =
     %% Add equality obligations for refined ops
     let (newelements, ops) =
@@ -404,14 +419,14 @@ IsaTermPrinter qualifying spec
                      in
                      let ops = insertAQualifierMap (ops, q, id, new_opinfo) in
                      %% Make equality obligations
-                     let eq_tm = mkEquality(ty, mkOp(mainId, ty), mkOp(refId, ty)) in
+                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), spc) in
                      let thm_name = nm^"__"^"obligation_refine_def" in
                      let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
                      (el::eq_oblig::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
-    spc \_guillemotleft {elements = newelements,
+    spc << {elements = newelements,
            ops      = ops}
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
