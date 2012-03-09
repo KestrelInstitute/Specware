@@ -1003,9 +1003,11 @@ spec
       | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
+ op assumeNoSideEffects?: Bool = true
 
  op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
-   if ~(constantTerm? term) && freeVarsRec term = [] && sideEffectFree term
+   if ~(constantTerm? term) && freeVarsRec term = []
+     && (~assumeNoSideEffects? => sideEffectFree term)
      then let v = eval(term,spc) in
        if fullyReduced? v
          then valueToTerm v
