@@ -90,39 +90,37 @@ PrintAsC qualifying spec
            let (pretty_rng, status) = printTypeAsC (status, rng)           in
            let (opt_pat,    status) = getPattern   (status, qid, info.dfn) in
            let (opt_vars,   status) = getVars      (status, opt_pat)       in
-           let opt_blocks = 
+           let (arg_lines, _, status) = 
                case opt_vars of
                   | Some vars ->
-                    foldl (fn (opt_blocks, (id, typ)) -> 
-                             case opt_blocks of
-                               | Some blocks ->
-                                 let (pretty, status) = printTypeAsC (status, typ) in
-                                 Some (blocks ++ [blockNone (0, [(0, pretty),
-                                                                 (0, string " "),
-                                                                 (0, string id)])])
-                               | _ ->
-                                 None)
-                    (Some [])
-                    vars
+                    foldl (fn ((lines, first?, status), (id, typ)) -> 
+                             let (pretty_type, status) = printTypeAsC (status, typ) in
+                             let pretty_parameter =
+                                 blockNone (0,
+                                            if first? then
+                                              [(0, pretty_type), L0_space, (0, string id)]
+                                            else
+                                              [(0, pretty_type), L0_space, (0, string id), L0_comma_space])
+                             in
+                             (lines ++ [(0, pretty_parameter)], false, status))
+                          ([], true, status)
+                          vars
+                  | _ -> 
+                    ([], true, status)
            in
-           (case opt_blocks of
-             | Some blocks ->
-               let pretty_args =
-                   AnnTermPrinter.ppList (fn block -> block)
-                                         (string "(", string ", ", string ")")
-                                         blocks
-               in
-               addPretty (status,
-                          blockNone (0, [(0, pretty_rng), 
-                                         (0, string " "), 
-                                         (0, string c_function_name), 
-                                         (0, string " "), 
-                                         (0, pretty_args)]
-                                        ++
-                                        (if to_h_file? then [(0, string ";")] else [])),
-                          to_h_file?)
-             | _ ->
-               status)
+           let pretty_args =
+               case arg_lines of
+                 | [] -> string "(void)"
+                 | _ -> blockNone (0, [L0_lparen, (0, blockLinear (0, arg_lines)), L0_rparen])
+           in
+           let lines = [(0, pretty_rng), L0_space, (0, string c_function_name), L0_space, (0, pretty_args)]
+                       ++ (if to_h_file? then [L0_semicolon] else [])
+           in
+           let pretty = blockNone (0, lines) in
+           if to_h_file? then
+             ppToH (status, pretty)
+           else
+             ppToC (status, pretty)
          | _ ->
            reportError (printQualifiedId qid ^ " does not have an arrow type", status))
     | _ ->
@@ -141,12 +139,12 @@ PrintAsC qualifying spec
                                         | Product _ -> "typedef struct "
                                         | _         -> "typedef ")),
                               (0, pretty_base_type),
-                              (0, string " "),
+                              L0_space,
                               (0, string c_type_name),
                               (0, blockNone (0, index_lines)),
-                              (0, string ";")])
+                              L0_semicolon])
       in
-      addHPretty (status, p)
+      ppToH (status, p)
     | _ ->
       reportError ("no definition for type " ^ show qid, status)
 
@@ -161,7 +159,7 @@ PrintAsC qualifying spec
 
  op ppInfosToH (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
   let hdr = "/* " ^ basename ^ ".h by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
-  let status = addHPretty (status, string hdr) in
+  let status = ppToH (status, string hdr) in
   foldl ppInfoToH status infos
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -178,7 +176,7 @@ PrintAsC qualifying spec
     | Some info ->
       (case getCFunctionName (qid, status) of
         | Some c_function_name ->
-          let status = addCPretty  (status, string "") in
+          let status = ppToC (status, string "") in
           let status = ppOpInfoSig (status, qid, c_function_name, opt_info, false) in
           let 
             def bodyOf tm =
@@ -188,10 +186,10 @@ PrintAsC qualifying spec
                 | _ -> fail("ppOpInfoToC: definition of " ^ printQualifiedId qid ^ " is not a lambda term" 
                               ^ printTerm tm)
           in
-          let (pretty_body, has_return?, status) = printTermAsC (status, bodyOf info.dfn, Statement) in
+          let (pretty_body, has_return?, status) = printTermAsC (status, bodyOf info.dfn, CPrecedence_NO_PARENS, Statement) in
           let pretty_body = if has_return? then pretty_body else wrapReturn pretty_body in
           let pretty_body = blockLinear (0, [(0, string " {"), (2, pretty_body), (1, string "}")]) in
-          addCPretty (status, pretty_body)
+          ppToC (status, pretty_body)
         | _ -> 
           reportError ("?? No declaration for " ^ printQualifiedId qid, status))
     | _ -> 
@@ -205,8 +203,8 @@ PrintAsC qualifying spec
  op ppInfosToC (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
   let hdr_msg     = "/* " ^ basename ^ ".c by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
   let include_msg = "#include \"" ^ basename ^ ".h\"" in
-  let status = addCPretty (status, string hdr_msg) in
-  let status = addCPretty (status, string include_msg) in
+  let status = ppToC (status, string hdr_msg) in
+  let status = ppToC (status, string include_msg) in
   foldl ppInfoToC status infos
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -243,8 +241,8 @@ PrintAsC qualifying spec
            let _ = app (fn msg -> writeLine ("CGen warning: " ^ msg)) status.warning_msgs in
            let h_lines = map (fn (pretty : Pretty) -> (0, pretty)) status.h_prettys in
            let c_lines = map (fn (pretty : Pretty) -> (0, pretty)) status.c_prettys in
-           let h_lines = h_lines ++ [(0, string "")] in
-           let c_lines = c_lines ++ [(0, string "")] in
+           let h_lines = h_lines ++ [L0_null] in
+           let c_lines = c_lines ++ [L0_null] in
            let h_text  = format (80, blockAll (0, h_lines)) in
            let c_text  = format (80, blockAll (0, c_lines)) in
            let _ = writeLine("Writing " ^ h_file) in

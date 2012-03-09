@@ -7,6 +7,17 @@ PrintAsC qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % topSortElements
  import /Languages/MetaSlang/AbstractSyntax/Printer                     % Pretty, format, etc.
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% useful things that probably should be in AnnSpec, etc.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ type FileName = String
+ type Indent   = Nat
+ type MSFun    = AFun Position
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% Misc printer stuff
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% crib notes for Printer:
 
  %%  type NatStrings = List (Nat * String)         % List (Length * String)
@@ -18,13 +29,22 @@ PrintAsC qualifying spec
  %%  type Line       = Nat * Pretty                % ??
  %%  type Lines      = List Line
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %% useful things that probably should be in AnnSpec, etc.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ op L0_null        : Line = (0, string "")
 
- type FileName = String
- type Indent   = Nat
- type MSFun    = AFun Position
+ op L0_lparen      : Line = (0, string "(")  
+ op L0_rparen      : Line = (0, string ")")
+ op L0_lsquare     : Line = (0, string "[")
+ op L0_rsquare     : Line = (0, string "]")
+ op L0_lbracket    : Line = (0, string "{")
+ op L0_rbracket    : Line = (0, string "}")
+ op L0_space       : Line = (0, string " ")
+ op L0_semicolon   : Line = (0, string ";")
+
+ op L0_comma_space : Line = (0, string ", ")
+ op L0_if          : Line = (0, string "if ")
+ op L0_else        : Line = (0, string "else ")
+ op L0_expr_then   : Line = (0, string " ? ")
+ op L0_expr_else   : Line = (0, string " : ")
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Local structures for C generation
@@ -212,16 +232,17 @@ PrintAsC qualifying spec
  %% Status of C generation
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addPretty (status : CGenStatus, pretty : Pretty, to_h_file? : Bool) : CGenStatus =
+(*
+ op ppForC (status : CGenStatus, pretty : Pretty, to_h_file? : Bool) : CGenStatus =
   if to_h_file? then
-    addHPretty (status, pretty)
+    ppToHFile (status, pretty)
   else
-    addCPretty (status, pretty)
-
- op addHPretty (status : CGenStatus, pretty : Pretty) : CGenStatus =
+    ppToCFile (status, pretty)
+*)
+ op ppToH (status : CGenStatus, pretty : Pretty) : CGenStatus =
   status << {h_prettys = status.h_prettys ++ [pretty]} 
 
- op addCPretty (status : CGenStatus, pretty : Pretty) : CGenStatus =
+ op ppToC (status : CGenStatus, pretty : Pretty) : CGenStatus =
   status << {c_prettys = status.c_prettys ++ [pretty]} 
 
 end-spec

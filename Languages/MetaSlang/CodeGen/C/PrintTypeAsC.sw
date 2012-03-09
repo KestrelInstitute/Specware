@@ -28,26 +28,20 @@ PrintAsC qualifying spec
       (string "{}", [], status)
 
     | Product (row, _) -> 
-      let (blocks, status) =
-          foldl (fn ((blocks, status), (id, typ)) ->
+      let (lines, status) =
+          foldl (fn ((lines, status), (id, typ)) ->
                    let (pretty_field_type, status) = printTypeAsC (status, typ) in
-                   (blocks ++
-                    [blockNone (0, [(0, pretty_field_type),
-                                    (0, string " "),
-                                    (0, string id),
-                                    (0, string "; ")])],
+                   (lines ++
+                    [(0, blockNone (0, [(0, pretty_field_type),
+                                        L0_space,
+                                        (0, string id),
+                                        (0, string "; ")]))],
                     status))
                 ([], status)
                 row
       in
-      (blockFill (0, 
-                  [(0, string "{")]
-                    ++
-                    (List.map (fn block -> (0, block)) blocks)
-                    ++
-                    [(0, string "}")]),
-       [],
-       status)
+      let lines = [L0_lbracket] ++ lines ++ [L0_rbracket] in
+      (blockFill (0, lines), [], status)
 
     | Subtype _ ->
       %% Bletch:

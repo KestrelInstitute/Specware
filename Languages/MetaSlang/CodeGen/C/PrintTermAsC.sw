@@ -3,23 +3,61 @@ PrintAsC qualifying spec
  import PrintAsCUtils
 
  %% ========================================================================
- %%  CFixity describes the pattern and keyword for a term to be applied.
- %%  If the operator is clearly illegal, we report that and return None.
- %%  If the term is complex (not a Fun) we punt and return Some Unknown.
+ %%  CLevel controls the printing of IfThenElse as statement vs. expression.
  %% ========================================================================
 
  type CLevel = | Statement
                | Expression
 
- type CFixity = | Prefix         String   % 
-                | PrefixNoParens String
-                | Postfix        String
-                | Infix          String
-                | Cast           String   % prefix, could be ""
-                | Constant       String   % suffix, could be ""
-                | ArrayAccess 
-                | NoOp
-                | Illegal        String
+ %% ========================================================================
+ %%  We wrap parens around a sub-term if its precedence is less than the 
+ %%  expected precdence,
+ %% ========================================================================
+
+ type CPrecedence = {n : Nat | 0 <= n && n <= 17}
+
+ op CPrecedence_NO_PARENS      : CPrecedence =  0 % if this is passed to PrintTermAsC, no parens will be added
+ op CPrecedence_EXPR           : CPrecedence =  1
+ op CPrecedence_COND           : CPrecedence =  2
+ op CPrecedence_LOR            : CPrecedence =  3
+ op CPrecedence_LAND           : CPrecedence =  4
+ op CPrecedence_IOR            : CPrecedence =  5
+ op CPrecedence_XOR            : CPrecedence =  6
+ op CPrecedence_AND            : CPrecedence =  7
+ op CPrecedence_EQ             : CPrecedence =  8
+ op CPrecedence_REL            : CPrecedence =  9
+ op CPrecedence_SHIFT          : CPrecedence = 10
+ op CPrecedence_ADD            : CPrecedence = 11
+ op CPrecedence_MUL            : CPrecedence = 12
+ op CPrecedence_CAST           : CPrecedence = 13
+ op CPrecedence_UNARY          : CPrecedence = 14
+ op CPrecedence_POST           : CPrecedence = 15
+ op CPrecedence_PRIMARY        : CPrecedence = 16
+ op CPrecedence_REQUIRE_PARENS : CPrecedence = 17 % if this is passed to PrintTermAsC, parens will be added
+ 
+ %% ========================================================================
+ %%  CFixity describes the pattern and keyword for a term to be applied.
+ %%  If the operator is clearly illegal, we report that and return None.
+ %%  If the term is complex (not a Fun) we punt and return Some Unknown.
+ %% ========================================================================
+
+ type InfixData   = {operator : String, result: CPrecedence, left:  CPrecedence, right: CPrecedence}
+ type PrefixData  = {operator : String, result: CPrecedence,                     right: CPrecedence}
+ type PostfixData = {operator : String, result: CPrecedence, left:  CPrecedence}
+
+ type CFixity  = | Prefix      PrefixData
+                 | Cast        String      % could use Prefix, but this is simpler
+                 | Call        String      % could use Prefix, but this is simpler
+                 | Postfix     PostfixData
+                 | Infix       InfixData
+                 | Constant    String
+                 | ArrayAccess 
+                 | NoOp
+                 | Illegal     String
+
+ %% ========================================================================
+ %% Many Ops qualified by "C" have special meanings...
+ %% ========================================================================
 
  op cfixityForCOp (status : CGenStatus, id : Id) : CFixity =
   %% Qualifier is "C"
@@ -36,270 +74,282 @@ PrintAsC qualifying spec
     %% Constant operators
     %% =========================================================================
               
-    | "sintConstant"    -> Constant ""
-    | "slongConstant"   -> Constant "L"
-    | "sllongConstant"  -> Constant "LL"
+    | "sintConstant"     -> Constant ""
+    | "slongConstant"    -> Constant "L"
+    | "sllongConstant"   -> Constant "LL"
       
-    | "uintConstant"    -> Constant "U"
-    | "ulongConstant"   -> Constant "UL"
-    | "ullongConstant"  -> Constant "ULL"
+    | "uintConstant"     -> Constant "U"
+    | "ulongConstant"    -> Constant "UL"
+    | "ullongConstant"   -> Constant "ULL"
       
     %% =========================================================================
-    %% Prefix operators: unary +, unary -, ~, !
+    %% Prefix unary operators: +, -, ~, !
     %% =========================================================================
       
     %% unary +
-    | "+_1_sint"        -> PrefixNoParens "+"
-    | "+_1_slong"       -> PrefixNoParens "+"
-    | "+_1_sllong"      -> PrefixNoParens "+"
-    | "+_1_uint"        -> PrefixNoParens "+"
-    | "+_1_ulong"       -> PrefixNoParens "+"
-    | "+_1_ullong"      -> PrefixNoParens "+"
+    | "+_1_sint"         -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "+_1_slong"        -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "+_1_sllong"       -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "+_1_uint"         -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "+_1_ulong"        -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "+_1_ullong"       -> Prefix {operator = "+",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
       
     %% unary -
-    | "-_1_sint"        -> PrefixNoParens "-"
-    | "-_1_slong"       -> PrefixNoParens "-"
-    | "-_1_sllong"      -> PrefixNoParens "-"
-    | "-_1_uint"        -> PrefixNoParens "-"
-    | "-_1_ulong"       -> PrefixNoParens "-"
-    | "-_1_ullong"      -> PrefixNoParens "-"
+    | "-_1_sint"         -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "-_1_slong"        -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "-_1_sllong"       -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "-_1_uint"         -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "-_1_ulong"        -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "-_1_ullong"       -> Prefix {operator = "-",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
                 
       %% ~
-    | "~_1_sint"        -> PrefixNoParens "~"
-    | "~_1_slong"       -> PrefixNoParens "~"
-    | "~_1_sllong"      -> PrefixNoParens "~"
-    | "~_1_uint"        -> PrefixNoParens "~"
-    | "~_1_ulong"       -> PrefixNoParens "~"
-    | "~_1_ullong"      -> PrefixNoParens "~"
+    | "~_1_sint"         -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "~_1_slong"        -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "~_1_sllong"       -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "~_1_uint"         -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "~_1_ulong"        -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "~_1_ullong"       -> Prefix {operator = "~",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
       
       %% !
-    | "!_1_char"        -> PrefixNoParens "!"
-    | "!_1_schar"       -> PrefixNoParens "!"
-    | "!_1_uchar"       -> PrefixNoParens "!"
-    | "!_1_sint"        -> PrefixNoParens "!"
-    | "!_1_uint"        -> PrefixNoParens "!"
-    | "!_1_slong"       -> PrefixNoParens "!"
-    | "!_1_ulong"       -> PrefixNoParens "!"
-    | "!_1_sllong"      -> PrefixNoParens "!"
-    | "!_1_ullong"      -> PrefixNoParens "!"
+    | "!_1_char"         -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_schar"        -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_uchar"        -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_sint"         -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_uint"         -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_slong"        -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_ulong"        -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_sllong"       -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
+    | "!_1_ullong"       -> Prefix {operator = "!",  result = CPrecedence_UNARY,  right = CPrecedence_UNARY} 
       
     %% =========================================================================
     %% Postfix operators
     %% =========================================================================
       
     %% =========================================================================
-    %% Infix operators: arithmetic, comparison, bitwise, logical
+    %% Infix operators: arithmetic,  comparison,  bitwise,  logical
     %% =========================================================================
       
     %% ---------------------------------------------------
-    %% Infix arithmetic operations: *, /, %, +, -, <<, >>
+    %% Infix arithmetic "multiply" operations: *,  /,  %
     %% ---------------------------------------------------
       
     %% *
-    | "*_sint"           -> Infix "*"
-    | "*_slong"          -> Infix "*"
-    | "*_sllong"         -> Infix "*"
-    | "*_uint"           -> Infix "*"
-    | "*_ulong"          -> Infix "*"
-    | "*_ullong"         -> Infix "*"
+    | "*_sint"           -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "*_slong"          -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "*_sllong"         -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "*_uint"           -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "*_ulong"          -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "*_ullong"         -> Infix {operator = "*",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
       
     %% /
-    | "/_sint"           -> Infix "/"
-    | "/_slong"          -> Infix "/"
-    | "/_sllong"         -> Infix "/"
-    | "/_uint"           -> Infix "/"
-    | "/_ulong"          -> Infix "/"
-    | "/_ullong"         -> Infix "/"
+    | "/_sint"           -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "/_slong"          -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "/_sllong"         -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "/_uint"           -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "/_ulong"          -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "/_ullong"         -> Infix {operator = "/",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
       
     %% %
-    | "//_sint"          -> Infix "%"
-    | "//_slong"         -> Infix "%"
-    | "//_sllong"        -> Infix "%"
-    | "//_uint"          -> Infix "%"
-    | "//_ulong"         -> Infix "%"
-    | "//_ullong"        -> Infix "%"
-      
-    %% +
-    | "+_sint"           -> Infix "+"
-    | "+_slong"          -> Infix "+"
-    | "+_sllong"         -> Infix "+"
-    | "+_uint"           -> Infix "+"
-    | "+_ulong"          -> Infix "+"
-    | "+_ullong"         -> Infix "+"
-      
-    %% -
-    | "-_sint"           -> Infix "-"
-    | "-_slong"          -> Infix "-"
-    | "-_sllong"         -> Infix "-"
-    | "-_uint"           -> Infix "-"
-    | "-_ulong"          -> Infix "-"
-    | "-_ullong"         -> Infix "-"
-      
-    %% << (6*6 versions)
-    | "<<_sint_sint"     -> Infix "<<"
-    | "<<_sint_slong"    -> Infix "<<"
-    | "<<_sint_sllong"   -> Infix "<<"
-    | "<<_sint_uint"     -> Infix "<<"
-    | "<<_sint_ulong"    -> Infix "<<"
-    | "<<_sint_ullong"   -> Infix "<<"
-      
-    | "<<_slong_sint"    -> Infix "<<"
-    | "<<_slong_slong"   -> Infix "<<"
-    | "<<_slong_sllong"  -> Infix "<<"
-    | "<<_slong_uint"    -> Infix "<<"
-    | "<<_slong_ulong"   -> Infix "<<"
-    | "<<_slong_ullong"  -> Infix "<<"
-      
-    | "<<_sllong_sint"   -> Infix "<<"
-    | "<<_sllong_slong"  -> Infix "<<"
-    | "<<_sllong_sllong" -> Infix "<<"
-    | "<<_sllong_uint"   -> Infix "<<"
-    | "<<_sllong_ulong"  -> Infix "<<"
-    | "<<_sllong_ullong" -> Infix "<<"
-      
-    | "<<_uint_sint"     -> Infix "<<"
-    | "<<_uint_slong"    -> Infix "<<"
-    | "<<_uint_sllong"   -> Infix "<<"
-    | "<<_uint_uint"     -> Infix "<<"
-    | "<<_uint_ulong"    -> Infix "<<"
-    | "<<_uint_ullong"   -> Infix "<<"
-      
-    | "<<_ulong_sint"    -> Infix "<<"
-    | "<<_ulong_slong"   -> Infix "<<"
-    | "<<_ulong_sllong"  -> Infix "<<"
-    | "<<_ulong_uint"    -> Infix "<<"
-    | "<<_ulong_ulong"   -> Infix "<<"
-    | "<<_ulong_ullong"  -> Infix "<<"
-      
-    | "<<_ullong_sint"   -> Infix "<<"
-    | "<<_ullong_slong"  -> Infix "<<"
-    | "<<_ullong_sllong" -> Infix "<<"
-    | "<<_ullong_uint"   -> Infix "<<"
-    | "<<_ullong_ulong"  -> Infix "<<"
-    | "<<_ullong_ullong" -> Infix "<<"
-      
-    %% >> (6*6 versions)
-    | ">>_sint_sint"     -> Infix ">>"
-    | ">>_sint_slong"    -> Infix ">>"
-    | ">>_sint_sllong"   -> Infix ">>"
-    | ">>_sint_uint"     -> Infix ">>"
-    | ">>_sint_ulong"    -> Infix ">>"
-    | ">>_sint_ullong"   -> Infix ">>"
-      
-    | ">>_slong_sint"    -> Infix ">>"
-    | ">>_slong_slong"   -> Infix ">>"
-    | ">>_slong_sllong"  -> Infix ">>"
-    | ">>_slong_uint"    -> Infix ">>"
-    | ">>_slong_ulong"   -> Infix ">>"
-    | ">>_slong_ullong"  -> Infix ">>"
-      
-    | ">>_sllong_sint"   -> Infix ">>"
-    | ">>_sllong_slong"  -> Infix ">>"
-    | ">>_sllong_sllong" -> Infix ">>"
-    | ">>_sllong_uint"   -> Infix ">>"
-    | ">>_sllong_ulong"  -> Infix ">>"
-    | ">>_sllong_ullong" -> Infix ">>"
-      
-    | ">>_uint_sint"     -> Infix ">>"
-    | ">>_uint_slong"    -> Infix ">>"
-    | ">>_uint_sllong"   -> Infix ">>"
-    | ">>_uint_uint"     -> Infix ">>"
-    | ">>_uint_ulong"    -> Infix ">>"
-    | ">>_uint_ullong"   -> Infix ">>"
-      
-    | ">>_ulong_sint"    -> Infix ">>"
-    | ">>_ulong_slong"   -> Infix ">>"
-    | ">>_ulong_sllong"  -> Infix ">>"
-    | ">>_ulong_uint"    -> Infix ">>"
-    | ">>_ulong_ulong"   -> Infix ">>"
-    | ">>_ulong_ullong"  -> Infix ">>"
-      
-    | ">>_ullong_sint"   -> Infix ">>"
-    | ">>_ullong_slong"  -> Infix ">>"
-    | ">>_ullong_sllong" -> Infix ">>"
-    | ">>_ullong_uint"   -> Infix ">>"
-    | ">>_ullong_ulong"  -> Infix ">>"
-    | ">>_ullong_ullong" -> Infix ">>"
+    | "//_sint"          -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "//_slong"         -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "//_sllong"        -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "//_uint"          -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "//_ulong"         -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
+    | "//_ullong"        -> Infix {operator = "%",   result = CPrecedence_MUL,    left = CPrecedence_MUL,    right = CPrecedence_CAST}
       
     %% ---------------------------------------------------
-    %% Infix arithmetic comparisons: <, >, <=, >=, ==, !=
+    %% Infix arithmetic "add" operations: +,  -
+    %% ---------------------------------------------------
+
+    %% +
+    | "+_sint"           -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "+_slong"          -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "+_sllong"         -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "+_uint"           -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "+_ulong"          -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "+_ullong"         -> Infix {operator = "+",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+      
+    %% -
+    | "-_sint"           -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "-_slong"          -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "-_sllong"         -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "-_uint"           -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "-_ulong"          -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+    | "-_ullong"         -> Infix {operator = "-",   result = CPrecedence_ADD,    left = CPrecedence_ADD,    right = CPrecedence_MUL}
+      
+    %% ---------------------------------------------------
+    %% Infix arithmetic shifts: <<,  >>
+    %% ---------------------------------------------------
+
+    %% << (6*6 versions)
+    | "<<_sint_sint"     -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sint_slong"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sint_sllong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sint_uint"     -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sint_ulong"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sint_ullong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | "<<_slong_sint"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_slong_slong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_slong_sllong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_slong_uint"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_slong_ulong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_slong_ullong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | "<<_sllong_sint"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sllong_slong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sllong_sllong" -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sllong_uint"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sllong_ulong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_sllong_ullong" -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | "<<_uint_sint"     -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_uint_slong"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_uint_sllong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_uint_uint"     -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_uint_ulong"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_uint_ullong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | "<<_ulong_sint"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ulong_slong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ulong_sllong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ulong_uint"    -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ulong_ulong"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ulong_ullong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | "<<_ullong_sint"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ullong_slong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ullong_sllong" -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ullong_uint"   -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ullong_ulong"  -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | "<<_ullong_ullong" -> Infix {operator = "<<",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    %% >> (6*6 versions)
+    | ">>_sint_sint"     -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sint_slong"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sint_sllong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sint_uint"     -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sint_ulong"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sint_ullong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | ">>_slong_sint"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_slong_slong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_slong_sllong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_slong_uint"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_slong_ulong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_slong_ullong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | ">>_sllong_sint"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sllong_slong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sllong_sllong" -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sllong_uint"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sllong_ulong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_sllong_ullong" -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | ">>_uint_sint"     -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_uint_slong"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_uint_sllong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_uint_uint"     -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_uint_ulong"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_uint_ullong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | ">>_ulong_sint"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ulong_slong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ulong_sllong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ulong_uint"    -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ulong_ulong"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ulong_ullong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    | ">>_ullong_sint"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ullong_slong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ullong_sllong" -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ullong_uint"   -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ullong_ulong"  -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+    | ">>_ullong_ullong" -> Infix {operator = ">>",  result = CPrecedence_SHIFT,  left = CPrecedence_SHIFT,  right = CPrecedence_ADD}
+      
+    %% ---------------------------------------------------
+    %% Infix arithmetic relations: <,  >,  <=,  >=
     %% ---------------------------------------------------
       
     %% <
-    | "<_sint"     -> Infix "<"
-    | "<_slong"    -> Infix "<"
-    | "<_sllong"   -> Infix "<"
-    | "<_uint"     -> Infix "<"
-    | "<_ulong"    -> Infix "<"
-    | "<_ullong"   -> Infix "<"
+    | "<_sint"          -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<_slong"         -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<_sllong"        -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<_uint"          -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<_ulong"         -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<_ullong"        -> Infix {operator = "<",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
       
     %% >
-    | ">_sint"     -> Infix ">"
-    | ">_slong"    -> Infix ">"
-    | ">_sllong"   -> Infix ">"
-    | ">_uint"     -> Infix ">"
-    | ">_ulong"    -> Infix ">"
-    | ">_ullong"   -> Infix ">"
+    | ">_sint"          -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">_slong"         -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">_sllong"        -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">_uint"          -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">_ulong"         -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">_ullong"        -> Infix {operator = ">",    result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
       
     %% <=
-    | "<=_sint"     -> Infix "<="
-    | "<=_slong"    -> Infix "<="
-    | "<=_sllong"   -> Infix "<="
-    | "<=_uint"     -> Infix "<="
-    | "<=_ulong"    -> Infix "<="
-    | "<=_ullong"   -> Infix "<="
+    | "<=_sint"         -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<=_slong"        -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<=_sllong"       -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<=_uint"         -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<=_ulong"        -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | "<=_ullong"       -> Infix {operator = "<=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
       
     %% >=
-    | ">=_sint"     -> Infix ">="
-    | ">=_slong"    -> Infix ">="
-    | ">=_sllong"   -> Infix ">="
-    | ">=_uint"     -> Infix ">="
-    | ">=_ulong"    -> Infix ">="
-    | ">=_ullong"   -> Infix ">="
-      
-    %% ==
-    | "==_sint"     -> Infix "=="
-    | "==_slong"    -> Infix "=="
-    | "==_sllong"   -> Infix "=="
-    | "==_uint"     -> Infix "=="
-    | "==_ulong"    -> Infix "=="
-    | "==_ullong"   -> Infix "=="
-      
-    %% !=
-    | "!=_sint"     -> Infix "!="
-    | "!=_slong"    -> Infix "!="
-    | "!=_sllong"   -> Infix "!="
-    | "!=_uint"     -> Infix "!="
-    | "!=_ulong"    -> Infix "!="
-    | "!=_ullong"   -> Infix "!="
+    | ">=_sint"         -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">=_slong"        -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">=_sllong"       -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">=_uint"         -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">=_ulong"        -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
+    | ">=_ullong"       -> Infix {operator = ">=",   result = CPrecedence_REL,    left = CPrecedence_REL,    right = CPrecedence_SHIFT}
       
     %% ---------------------------------------------------
-    %% Infix bitwise operations: &, ^, |
+    %% Infix arithmetic equalities: ==,  !=
+    %% ---------------------------------------------------
+
+    %% ==
+    | "==_sint"         -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "==_slong"        -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "==_sllong"       -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "==_uint"         -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "==_ulong"        -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "==_ullong"       -> Infix {operator = "==",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+      
+    %% !=
+    | "!=_sint"         -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "!=_slong"        -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "!=_sllong"       -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "!=_uint"         -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "!=_ulong"        -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+    | "!=_ullong"       -> Infix {operator = "!=",   result = CPrecedence_EQ,     left = CPrecedence_EQ,     right = CPrecedence_REL}
+      
+    %% ---------------------------------------------------
+    %% Infix bitwise operations: &,  ^,  |
     %% ---------------------------------------------------
       
     %% &
-    | "&_sint"      -> Infix "&"
-    | "&_slong"     -> Infix "&"
-    | "&_sllong"    -> Infix "&"
-    | "&_uint"      -> Infix "&"
-    | "&_ulong"     -> Infix "&"
-    | "&_ullong"    -> Infix "&"
+    | "&_sint"          -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
+    | "&_slong"         -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
+    | "&_sllong"        -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
+    | "&_uint"          -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
+    | "&_ulong"         -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
+    | "&_ullong"        -> Infix {operator = "&",    result = CPrecedence_AND,    left = CPrecedence_AND,    right = CPrecedence_EQ}
       
     %% ^
-    | "^_sint"      -> Infix "^"
-    | "^_slong"     -> Infix "^"
-    | "^_sllong"    -> Infix "^"
-    | "^_uint"      -> Infix "^"
-    | "^_ulong"     -> Infix "^"
-    | "^_ullong"    -> Infix "^"
+    | "^_sint"          -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
+    | "^_slong"         -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
+    | "^_sllong"        -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
+    | "^_uint"          -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
+    | "^_ulong"         -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
+    | "^_ullong"        -> Infix {operator = "^",    result = CPrecedence_XOR,    left = CPrecedence_XOR,    right = CPrecedence_AND}
       
     %% |
-    | "|_sint"      -> Infix "|"
-    | "|_slong"     -> Infix "|"
-    | "|_sllong"    -> Infix "|"
-    | "|_uint"      -> Infix "|"
-    | "|_ulong"     -> Infix "|"
-    | "|_ullong"    -> Infix "|"
+    | "|_sint"          -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
+    | "|_slong"         -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
+    | "|_sllong"        -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
+    | "|_uint"          -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
+    | "|_ulong"         -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
+    | "|_ullong"        -> Infix {operator = "|",    result = CPrecedence_IOR,    left = CPrecedence_IOR,    right = CPrecedence_XOR}
       
     %% ---------------------------------------------------
     %% Infix logical operations: &&, ||
@@ -312,21 +362,21 @@ PrintAsC qualifying spec
     %% Array access
     %% =========================================================================
       
-    | "@_char"          -> ArrayAccess
-    | "@_schar"         -> ArrayAccess
-    | "@_uchar"         -> ArrayAccess
+    | "@_char"   -> ArrayAccess
+    | "@_schar"  -> ArrayAccess
+    | "@_uchar"  -> ArrayAccess
       
-    | "@_sshort"        -> ArrayAccess
-    | "@_ushort"        -> ArrayAccess
+    | "@_sshort" -> ArrayAccess
+    | "@_ushort" -> ArrayAccess
       
-    | "@_sint"          -> ArrayAccess
-    | "@_uint"          -> ArrayAccess
+    | "@_sint"   -> ArrayAccess
+    | "@_uint"   -> ArrayAccess
       
-    | "@_slong"         -> ArrayAccess
-    | "@_ulong"         -> ArrayAccess
+    | "@_slong"  -> ArrayAccess
+    | "@_ulong"  -> ArrayAccess
       
-    | "@_sllong"        -> ArrayAccess
-    | "@_ullong"        -> ArrayAccess
+    | "@_sllong" -> ArrayAccess
+    | "@_ullong" -> ArrayAccess
       
     %% =========================================================================
     %% Structure operators
@@ -339,136 +389,136 @@ PrintAsC qualifying spec
     %% =========================================================================
       
     %% cast to char
-    | "charOfUChar"     -> Cast (if plainCharsAreSigned? then " (char) " else "")
-    | "charOfUshort"    -> Cast " (char) "
-    | "charOfUint"      -> Cast " (char) "
-    | "charOfUlong"     -> Cast " (char) "
-    | "charOfUllong"    -> Cast " (char) "
-    | "charOfSchar"     -> Cast (if plainCharsAreSigned? then "" else " (char) ")
-    | "charOfSshort"    -> Cast " (char) "
-    | "charOfSint"      -> Cast " (char) "
-    | "charOfSlong"     -> Cast " (char) "
-    | "charOfSllong"    -> Cast " (char) "
+    | "charOfUChar"     -> if plainCharsAreSigned? then Cast "(char) " else NoOp
+    | "charOfUshort"    -> Cast "(char) "
+    | "charOfUint"      -> Cast "(char) "
+    | "charOfUlong"     -> Cast "(char) "
+    | "charOfUllong"    -> Cast "(char) "
+    | "charOfSchar"     -> if plainCharsAreSigned? then NoOp else Cast "(char) "
+    | "charOfSshort"    -> Cast "(char) "
+    | "charOfSint"      -> Cast "(char) "
+    | "charOfSlong"     -> Cast "(char) "
+    | "charOfSllong"    -> Cast "(char) "
       
     %% cast to unsigned char
-    | "ucharOfChar"     -> Cast (if plainCharsAreSigned? then " (unsigned char) " else "")
-    | "ucharOfUshort"   -> Cast " (unsigned char) "
-    | "ucharOfUint"     -> Cast " (unsigned char) "
-    | "ucharOfUlong"    -> Cast " (unsigned char) "
-    | "ucharOfUllong"   -> Cast " (unsigned char) "
-    | "ucharOfSchar"    -> Cast " (unsigned char) "
-    | "ucharOfSshort"   -> Cast " (unsigned char) "
-    | "ucharOfSint"     -> Cast " (unsigned char) "
-    | "ucharOfSlong"    -> Cast " (unsigned char) "
-    | "ucharOfSllong"   -> Cast " (unsigned char) "
+    | "ucharOfChar"     -> if plainCharsAreSigned? then Cast "(unsigned char) " else NoOp
+    | "ucharOfUshort"   -> Cast "(unsigned char) "
+    | "ucharOfUint"     -> Cast "(unsigned char) "
+    | "ucharOfUlong"    -> Cast "(unsigned char) "
+    | "ucharOfUllong"   -> Cast "(unsigned char) "
+    | "ucharOfSchar"    -> Cast "(unsigned char) "
+    | "ucharOfSshort"   -> Cast "(unsigned char) "
+    | "ucharOfSint"     -> Cast "(unsigned char) "
+    | "ucharOfSlong"    -> Cast "(unsigned char) "
+    | "ucharOfSllong"   -> Cast "(unsigned char) "
       
     %% cast to unsigned short
-    | "ushortOfChar"    -> Cast (if plainCharsAreSigned? then " (unsigned short) " else "")
-    | "ushortOfUChar"   -> Cast ""        
-    | "ushortOfUint"    -> Cast " (unsigned short) "
-    | "ushortOfUlong"   -> Cast " (unsigned short) "
-    | "ushortOfUllong"  -> Cast " (unsigned short) "
-    | "ushortOfSchar"   -> Cast " (unsigned short) "
-    | "ushortOfSshort"  -> Cast " (unsigned short) "
-    | "ushortOfSint"    -> Cast " (unsigned short) "
-    | "ushortOfSlong"   -> Cast " (unsigned short) "
-    | "ushortOfSllong"  -> Cast " (unsigned short) "
+    | "ushortOfChar"    -> if plainCharsAreSigned? then Cast "(unsigned short) " else NoOp
+    | "ushortOfUChar"   -> NoOp
+    | "ushortOfUint"    -> Cast "(unsigned short) "
+    | "ushortOfUlong"   -> Cast "(unsigned short) "
+    | "ushortOfUllong"  -> Cast "(unsigned short) "
+    | "ushortOfSchar"   -> Cast "(unsigned short) "
+    | "ushortOfSshort"  -> Cast "(unsigned short) "
+    | "ushortOfSint"    -> Cast "(unsigned short) "
+    | "ushortOfSlong"   -> Cast "(unsigned short) "
+    | "ushortOfSllong"  -> Cast "(unsigned short) "
       
     %% cast to unsigned int
-    | "uintOfChar"      -> Cast (if plainCharsAreSigned? then " (unsigned int) " else "")
-    | "uintOfUChar"     -> Cast "" 
-    | "uintOfUshort"    -> Cast "" 
-    | "uintOfUlong"     -> Cast " (unsigned int) " 
-    | "uintOfUllong"    -> Cast " (unsigned int) "
-    | "uintOfSchar"     -> Cast " (unsigned int) "
-    | "uintOfSshort"    -> Cast " (unsigned int) "
-    | "uintOfSint"      -> Cast " (unsigned int) "
-    | "uintOfSlong"     -> Cast " (unsigned int) "
-    | "uintOfSllong"    -> Cast " (unsigned int) "
+    | "uintOfChar"      -> if plainCharsAreSigned? then Cast "(unsigned int) " else NoOp
+    | "uintOfUChar"     -> NoOp
+    | "uintOfUshort"    -> NoOp
+    | "uintOfUlong"     -> Cast "(unsigned int) "
+    | "uintOfUllong"    -> Cast "(unsigned int) "
+    | "uintOfSchar"     -> Cast "(unsigned int) "
+    | "uintOfSshort"    -> Cast "(unsigned int) "
+    | "uintOfSint"      -> Cast "(unsigned int) "
+    | "uintOfSlong"     -> Cast "(unsigned int) "
+    | "uintOfSllong"    -> Cast "(unsigned int) "
       
     %% cast to unsigned long
-    | "ulongOfChar"     -> Cast (if plainCharsAreSigned? then " (unsigned long) " else "")
-    | "ulongOfUChar"    -> Cast "" 
-    | "ulongOfUshort"   -> Cast ""
-    | "ulongOfUint"     -> Cast ""
-    | "ulongOfUllong"   -> Cast " (unsigned long) "
-    | "ulongOfSchar"    -> Cast " (unsigned long) "
-    | "ulongOfSshort"   -> Cast " (unsigned long) "
-    | "ulongOfSint"     -> Cast " (unsigned long) "
-    | "ulongOfSlong"    -> Cast " (unsigned long) "
-    | "ulongOfSllong"   -> Cast " (unsigned long) "
+    | "ulongOfChar"     -> if plainCharsAreSigned? then Cast "(unsigned long) " else NoOp
+    | "ulongOfUChar"    -> NoOp
+    | "ulongOfUshort"   -> NoOp
+    | "ulongOfUint"     -> NoOp
+    | "ulongOfUllong"   -> Cast "(unsigned long) "
+    | "ulongOfSchar"    -> Cast "(unsigned long) "
+    | "ulongOfSshort"   -> Cast "(unsigned long) "
+    | "ulongOfSint"     -> Cast "(unsigned long) "
+    | "ulongOfSlong"    -> Cast "(unsigned long) "
+    | "ulongOfSllong"   -> Cast "(unsigned long) "
       
     %% cast to unsigned long long
-    | "ullongOfChar"    -> Cast (if plainCharsAreSigned? then " (unsigned long long) " else "")
-    | "ullongOfUChar"   -> Cast ""
-    | "ullongOfUshort"  -> Cast ""
-    | "ullongOfUint"    -> Cast ""
-    | "ullongOfUlong"   -> Cast ""
-    | "ullongOfSchar"   -> Cast " (unsigned long long) "
-    | "ullongOfSshort"  -> Cast " (unsigned long long) "
-    | "ullongOfSint"    -> Cast " (unsigned long long) "
-    | "ullongOfSlong"   -> Cast " (unsigned long long) "
-    | "ullongOfSllong"  -> Cast " (unsigned long long) "
+    | "ullongOfChar"    -> if plainCharsAreSigned? then Cast "(unsigned long long) " else NoOp
+    | "ullongOfUChar"   -> NoOp
+    | "ullongOfUshort"  -> NoOp
+    | "ullongOfUint"    -> NoOp
+    | "ullongOfUlong"   -> NoOp
+    | "ullongOfSchar"   -> Cast "(unsigned long long) "
+    | "ullongOfSshort"  -> Cast "(unsigned long long) "
+    | "ullongOfSint"    -> Cast "(unsigned long long) "
+    | "ullongOfSlong"   -> Cast "(unsigned long long) "
+    | "ullongOfSllong"  -> Cast "(unsigned long long) "
       
     %% cast to signed char
-    | "scharOfChar"     -> Cast (if plainCharsAreSigned? then "" else " (signed char) ")
-    | "scharOfUChar"    -> Cast " (signed char) "
-    | "scharOfUshort"   -> Cast " (signed char) "
-    | "scharOfUint"     -> Cast " (signed char) "
-    | "scharOfUlong"    -> Cast " (signed char) "
-    | "scharOfUllong"   -> Cast " (signed char) "
-    | "scharOfSshort"   -> Cast " (signed char) "
-    | "scharOfSint"     -> Cast " (signed char) "
-    | "scharOfSlong"    -> Cast " (signed char) "
-    | "scharOfSllong"   -> Cast " (signed char) "
+    | "scharOfChar"     -> if plainCharsAreSigned? then NoOp else Cast "(signed char) "
+    | "scharOfUChar"    -> Cast "(signed char) "
+    | "scharOfUshort"   -> Cast "(signed char) "
+    | "scharOfUint"     -> Cast "(signed char) "
+    | "scharOfUlong"    -> Cast "(signed char) "
+    | "scharOfUllong"   -> Cast "(signed char) "
+    | "scharOfSshort"   -> Cast "(signed char) "
+    | "scharOfSint"     -> Cast "(signed char) "
+    | "scharOfSlong"    -> Cast "(signed char) "
+    | "scharOfSllong"   -> Cast "(signed char) "
       
     %% cast to signed short
-    | "sshortOfChar"    -> Cast (if plainCharsAreSigned? then "" else " (signed short) ")
-    | "sshortOfUChar"   -> Cast " (short) "
-    | "sshortOfUshort"  -> Cast " (short) "
-    | "sshortOfUint"    -> Cast " (short) "
-    | "sshortOfUlong"   -> Cast " (short) "
-    | "sshortOfUllong"  -> Cast " (short) "
-    | "sshortOfSchar"   -> Cast ""
-    | "sshortOfSint"    -> Cast " (short) "
-    | "sshortOfSlong"   -> Cast " (short) "
-    | "sshortOfSllong"  -> Cast " (short) "
+    | "sshortOfChar"    -> if plainCharsAreSigned? then NoOp else Cast "(signed short) "
+    | "sshortOfUChar"   -> Cast "(signed short) "
+    | "sshortOfUshort"  -> Cast "(signed short) "
+    | "sshortOfUint"    -> Cast "(signed short) "
+    | "sshortOfUlong"   -> Cast "(signed short) "
+    | "sshortOfUllong"  -> Cast "(signed short) "
+    | "sshortOfSchar"   -> NoOp
+    | "sshortOfSint"    -> Cast "(signed short) "
+    | "sshortOfSlong"   -> Cast "(signed short) "
+    | "sshortOfSllong"  -> Cast "(signed short) "
       
     %% cast to signed int
-    | "sintOfChar"      -> Cast (if plainCharsAreSigned? then "" else " (signed int) ")
-    | "sintOfUChar"     -> Cast " (signed int) "
-    | "sintOfUshort"    -> Cast " (signed int) "
-    | "sintOfUint"      -> Cast " (signed int) "
-    | "sintOfUlong"     -> Cast " (signed int) "
-    | "sintOfUllong"    -> Cast " (signed int) "
-    | "sintOfSchar"     -> Cast ""
-    | "sintOfSshort"    -> Cast ""
-    | "sintOfSlong"     -> Cast " (signed int) "
-    | "sintOfSllong"    -> Cast " (signed int) "
+    | "sintOfChar"      -> if plainCharsAreSigned? then NoOp else Cast "(signed int) "
+    | "sintOfUChar"     -> Cast "(signed int) "
+    | "sintOfUshort"    -> Cast "(signed int) "
+    | "sintOfUint"      -> Cast "(signed int) "
+    | "sintOfUlong"     -> Cast "(signed int) "
+    | "sintOfUllong"    -> Cast "(signed int) "
+    | "sintOfSchar"     -> NoOp
+    | "sintOfSshort"    -> NoOp
+    | "sintOfSlong"     -> Cast "(signed int) "
+    | "sintOfSllong"    -> Cast "(signed int) "
       
     %% cast to signed long
-    | "slongOfChar"     -> Cast (if plainCharsAreSigned? then "" else " (unsigned long) ")
-    | "slongOfUChar"    -> Cast " (unsigned long) "
-    | "slongOfUshort"   -> Cast " (unsigned long) "
-    | "slongOfUint"     -> Cast " (unsigned long) "
-    | "slongOfUlong"    -> Cast " (unsigned long) "
-    | "slongOfUllong"   -> Cast " (unsigned long) "
-    | "slongOfSchar"    -> Cast ""
-    | "slongOfSshort"   -> Cast ""
-    | "slongOfSint"     -> Cast ""
-    | "slongOfSllong"   -> Cast " (unsigned long) "
+    | "slongOfChar"     -> if plainCharsAreSigned? then NoOp else Cast "(signed long) "
+    | "slongOfUChar"    -> Cast "(signed long) "
+    | "slongOfUshort"   -> Cast "(signed long) "
+    | "slongOfUint"     -> Cast "(signed long) "
+    | "slongOfUlong"    -> Cast "(signed long) "
+    | "slongOfUllong"   -> Cast "(signed long) "
+    | "slongOfSchar"    -> NoOp
+    | "slongOfSshort"   -> NoOp
+    | "slongOfSint"     -> NoOp
+    | "slongOfSllong"   -> Cast "(signed long) "
       
     %% cast to signed long long
-    | "sllongOfChar"    -> Cast (if plainCharsAreSigned? then "" else " (signed long long) ")
-    | "sllongOfUChar"   -> Cast " (signed long long) "
-    | "sllongOfUshort"  -> Cast " (signed long long) "
-    | "sllongOfUint"    -> Cast " (signed long long) "
-    | "sllongOfUlong"   -> Cast " (signed long long) "
-    | "sllongOfUllong"  -> Cast " (signed long long) "
-    | "sllongOfSchar"   -> Cast ""
-    | "sllongOfSshort"  -> Cast ""
-    | "sllongOfSint"    -> Cast ""
-    | "sllongOfSlong"   -> Cast ""
+    | "sllongOfChar"    -> if plainCharsAreSigned? then NoOp else Cast "(signed long long) "
+    | "sllongOfUChar"   -> Cast "(signed long long) "
+    | "sllongOfUshort"  -> Cast "(signed long long) "
+    | "sllongOfUint"    -> Cast "(signed long long) "
+    | "sllongOfUlong"   -> Cast "(signed long long) "
+    | "sllongOfUllong"  -> Cast "(signed long long) "
+    | "sllongOfSchar"   -> NoOp
+    | "sllongOfSshort"  -> NoOp
+    | "sllongOfSint"    -> NoOp
+    | "sllongOfSlong"   -> NoOp
       
     %% =========================================================================
     %% These C ops should not appear in final spec to be printed.
@@ -504,7 +554,7 @@ PrintAsC qualifying spec
 
     | _  -> 
       if legal_C_Id? id then
-        Prefix (id ^ " ")
+        Call id
       else
         Illegal ("illegal id for C op: " ^ id)
 
@@ -512,15 +562,14 @@ PrintAsC qualifying spec
   case tm of 
     | Fun (fun, _, _) -> 
       (case fun of
-
-         | And       -> Infix "&&"
-         | Or        -> Infix "||"
-         | Equals    -> Infix "=="  % for non integer values
-         | NotEquals -> Infix "!="  % for non integer values
+         | And       -> Infix {operator = "&&", result = CPrecedence_LAND, left = CPrecedence_LAND, right = CPrecedence_IOR}
+         | Or        -> Infix {operator = "||", result = CPrecedence_LOR,  left = CPrecedence_LOR,  right = CPrecedence_LAND}
+         | Equals    -> Infix {operator = "==", result = CPrecedence_EQ,   left = CPrecedence_EQ,   right = CPrecedence_REL}  % for non integer values
+         | NotEquals -> Infix {operator = "!=", result = CPrecedence_EQ,   left = CPrecedence_EQ,   right = CPrecedence_REL}  % for non integer values
 
          | Project f -> 
            if legal_C_Id? f then
-             Postfix ("." ^ f)
+             Postfix {operator = "." ^ f, result = CPrecedence_POST, left = CPrecedence_POST} 
            else
              Illegal ("illegal id for projection: " ^ f)
 
@@ -528,8 +577,7 @@ PrintAsC qualifying spec
 
          | Op (qid as Qualified (q,   id), _) -> 
            if legal_C_Id? id then
-             let id = if q = UnQualified then id else id in  % q ^ "_" ^ id
-             Prefix (id ^ " ")
+             Call id  % for now, we ignore q
            else
              Illegal ("illegal id for non-C op: " ^ show qid))
 
@@ -666,94 +714,111 @@ PrintAsC qualifying spec
  op wrapReturn (pretty : Pretty) : Pretty = 
   blockNone (0, [(0, string "return "), (0, pretty), (0, string "; ")])
 
- op printTermAsCExp (status : CGenStatus, tm : MSTerm) : Pretty * CGenStatus = 
-  let (p, _, status) = printTermAsC (status : CGenStatus, tm : MSTerm, Expression) in
+ op printTermAsCExp (status : CGenStatus, tm : MSTerm, expected : CPrecedence) 
+  : Pretty * CGenStatus = 
+  let (p, _, status) = printTermAsC (status, tm, expected, Expression) in
   (p, status)
 
- op printTermAsC (status : CGenStatus, tm : MSTerm, level : CLevel) : Pretty * Bool * CGenStatus = 
+ op printTermsAsCList (status       : CGenStatus, 
+                       pretty_open  : Line,
+                       terms        : MSTerms,
+                       pretty_close : Line)
+  : Lines * CGenStatus =
+  let (lines, _, status) =
+      foldl (fn ((lines, first?, status), tm) ->
+               let (block, status) = printTermAsCExp (status, tm, CPrecedence_NO_PARENS) in
+               let line = (0, block) in
+               let lines = lines ++ (if first? then [line] else [line, L0_comma_space]) in
+               (lines, false, status))
+            ([pretty_open], true, status)
+            terms
+  in
+  (lines ++ [pretty_close], status)
+
+ op printTermAsC (status   : CGenStatus,
+                  tm       : MSTerm, 
+                  expected : CPrecedence, 
+                  level    : CLevel) 
+  : Pretty * Bool * CGenStatus = 
+  %% if precedence of term is less than expected precedence, wrap parens
   case tm of
 
-    | Var       ((id,  _), _) -> 
+    | Var ((id, _), _) -> 
       if legal_C_Id? id then
         (string id, false, status)
       else
         (string "", false, reportError ("illegal C variable name: " ^ id, status))
 
-    | Fun        (fun, _,     _) -> 
+    | Fun (fun, _, _) -> 
       let (pretty, status) = printFunAsC  (status, fun) in
       (pretty, false, status)
 
-    | TypedTerm  (t1, _,      _) -> 
-      printTermAsC (status, t1, level)
+    | TypedTerm  (t1, _, _) -> 
+      printTermAsC (status, t1, expected, level)
 
     | IfThenElse (t1, t2, t3, _) -> 
-      let (p1, _,            status) = printTermAsC (status, t1, Expression) in
-      let p1                         = blockNone (0, [(0, string "("), (0, p1), (0, string ")")]) in
-      let (p2, p2hasreturn?, status) = printTermAsC (status, t2, level) in
-      let (p3, p3hasreturn?, status) = printTermAsC (status, t3, level) in
+      let (p1, _,            status) = printTermAsC (status, t1, CPrecedence_REQUIRE_PARENS, Expression) in
+      let (p2, p2hasreturn?, status) = printTermAsC (status, t2, CPrecedence_NO_PARENS,      level)      in
+      let (p3, p3hasreturn?, status) = printTermAsC (status, t3, CPrecedence_NO_PARENS,      level)      in
       if level = Statement then
         let p2 = if p2hasreturn? then p2 else wrapReturn p2 in
         let p3 = if p3hasreturn? then p3 else wrapReturn p3 in
-        (blockAll (0, [(0, blockNone (0, [(0, string "if "), (0, p1), (0, string " ")])),
+        (blockAll (0, [(0, blockNone (0, [L0_if, (0, p1), L0_space])),
                        (2, p2), 
-                       (0, string "else "), 
+                       L0_else,
                        (2, p3)]),
          true,
          status)
       else
         (blockLinear (0, [(0, p1), 
-                          (2, blockNone (0, [(0, string " ? "), (0, p2)])), 
-                          (2, blockNone (0, [(0, string " : "), (0, p3)]))]),
+                          (2, blockNone (0, [L0_expr_then, (0, p2)])), 
+                          (2, blockNone (0, [L0_expr_else, (0, p3)]))]),
          false,
          status)
 
-    | Apply      (t1, t2,     _) -> 
+    | Apply (t1, t2, _) -> 
       (let {f, args} = uncurry (t1, [t2]) in
        let args   = flattenRecordArgs args in
        let fixity = cfixity (status, f)    in
        case (fixity, args) of
 
-         | (Prefix c_str, args) ->
-           let (blocks, status) =
-               foldl (fn ((blocks, status), arg) ->
-                        let (block, status) = printTermAsCExp (status, arg) in
-                        (blocks ++ [block], status))
-                     ([], status)
-                     args
-           in
-           let pretty_args = 
-               AnnTermPrinter.ppList (fn block -> block)
-                                     (string "(", string ", ", string ")")
-                                     blocks
-           in
-           (blockNone (0, [(0, string c_str), (0, pretty_args)]),
-            false,
-            status)
+         | (Call fname, args) ->
+           let (lines, status) = printTermsAsCList (status, L0_lparen, args, L0_rparen) in
+           let lines = [(0, string fname)] ++ lines in
+           (blockNone (0, lines), false, status)
            
-         | (PrefixNoParens c_str, [arg]) ->
-           let (p1, status) = printTermAsCExp (status, arg) in
-           (blockNone (0, [(0, string c_str), (0, p1)]),
-            false,
-            status)
-           
-         | (Postfix c_str, [arg]) ->
-           let (p1, status) = printTermAsCExp (status, arg) in
-           (blockNone (0, [(0, p1), (0, string c_str)]),
-            false,
-            status)
-           
-         | (Infix c_str, [arg1, arg2]) ->
-           let (p1, status) = printTermAsCExp (status, arg1) in
-           let (p2, status) = printTermAsCExp (status, arg2) in
-           (blockLinear (0, [(0, blockNone (0, [(0, p1),           (0, string " ")])),
-                             (0, blockNone (0, [(0, string c_str), (0, string " ")])),
-                             (0, p2)]),
-            false,
-            status)
-           
+         | (Prefix fixity, [arg]) ->
+           let (p1, status) = printTermAsCExp (status, arg, fixity.right) in
+           let lines = [(0, string fixity.operator), (0, p1)] in
+           (blockNone (0, lines), false, status)
+
          | (Cast c_str, [arg]) ->
-           let (p1, status) = printTermAsCExp (status, arg) in
-           (blockNone (0, [(0, string c_str), (0, p1)]),
+           let (p1, status) = printTermAsCExp (status, arg, CPrecedence_CAST) in
+           let lines = [(0, string c_str), (0, p1)] in
+           (blockNone (0, lines), false, status)
+           
+         | (Postfix fixity, [arg]) ->
+           let (p1, status) = printTermAsCExp (status, arg, fixity.left) in
+           let lines = [(0, p1), (0, string fixity.operator)] in
+           (blockNone (0, lines), false, status)
+           
+         | (Infix fixity, [arg1, arg2]) ->
+           let (p1, status) = printTermAsCExp (status, arg1, fixity.left)  in
+           let (p2, status) = printTermAsCExp (status, arg2, fixity.right) in
+           let prefix  = if fixity.result < expected then
+                           [L0_lparen, (0, p1), L0_space]
+                         else
+                           [(0, p1), L0_space]
+           in
+           let middle  = [(0, string fixity.operator), L0_space] in
+           let postfix = if fixity.result < expected then
+                           [(0, p2), L0_rparen]
+                         else
+                           [(0, p2)]
+           in
+           (blockLinear (0, [(0, blockNone (0, prefix)),
+                             (0, blockNone (0, middle)),
+                             (0, blockNone (0, postfix))]),
             false,
             status)
            
@@ -761,25 +826,13 @@ PrintAsC qualifying spec
            printNumericConstantAsC (status, suffix, tm, radix)
            
          | (ArrayAccess, array :: indices) ->
-           let (blocks, status) = 
-               foldl (fn ((blocks, status), index) ->
-                        let (block, status) = printTermAsCExp (status, index) in
-                        (blocks ++ [block], status))
-                     ([], status)
-                     (reverse indices)
-           in
-           let (pretty_array_name, status) = printTermAsCExp (status, array) in
-           let pretty_indices =
-               AnnTermPrinter.ppList (fn block -> block)
-                                     (string "[", string ", ", string "]")
-                                     blocks
-           in
-           (blockNone (0, [(0, pretty_array_name), (0, pretty_indices)]),
-            false,
-            status)
+           let (pretty_array_name, status) = printTermAsCExp (status, array, CPrecedence_EXPR) in
+           let (lines, status) = printTermsAsCList (status, L0_lsquare, reverse indices, L0_rsquare) in
+           let lines = [(0, pretty_array_name)] ++ lines in
+           (blockNone (0, lines), false, status)
            
          | (NoOp, [t1]) ->
-           let (p1, status) = printTermAsCExp (status, t1) in
+           let (p1, status) = printTermAsCExp (status, t1, expected) in
            (p1, false, status)
 
          | (Illegal error_msg, _) ->
