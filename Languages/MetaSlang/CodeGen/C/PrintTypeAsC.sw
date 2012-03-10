@@ -7,7 +7,7 @@ PrintAsC qualifying spec
  %% 
  %% C Types and typedefs print very strangely, with component information 
  %% moved around and reordered in arbitrary ways that are inconsistent with
- %% with a simple recursive depiction.
+ %% a simple recursive depiction.
  %% 
  %% Instead, we need to split the information about a MetaSlang type into
  %% two components (one for base type name and another for array arguments).

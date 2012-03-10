@@ -100,7 +100,7 @@ PrintAsC qualifying spec
                                             if first? then
                                               [(0, pretty_type), L0_space, (0, string id)]
                                             else
-                                              [(0, pretty_type), L0_space, (0, string id), L0_comma_space])
+                                              [L0_comma_space, (0, pretty_type), L0_space, (0, string id)])
                              in
                              (lines ++ [(0, pretty_parameter)], false, status))
                           ([], true, status)
@@ -118,8 +118,10 @@ PrintAsC qualifying spec
            in
            let pretty = blockNone (0, lines) in
            if to_h_file? then
+             %% function prototype
              ppToH (status, pretty)
            else
+             %% beginning of function definition
              ppToC (status, pretty)
          | _ ->
            reportError (printQualifiedId qid ^ " does not have an arrow type", status))
@@ -150,6 +152,7 @@ PrintAsC qualifying spec
 
  op ppOpInfoToH (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) : CGenStatus =
   let (c_function_name, status) = addNewOp (status, qid) in
+  %% C prototype
   ppOpInfoSig (status, qid, c_function_name, opt_info, true)
   
  op ppInfoToH (status : CGenStatus, info : CInfo) : CGenStatus =
