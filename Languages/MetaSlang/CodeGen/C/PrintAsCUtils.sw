@@ -46,6 +46,8 @@ PrintAsC qualifying spec
  op L0_expr_then   : Line = (0, string " ? ")
  op L0_expr_else   : Line = (0, string " : ")
 
+ op L0_space_equal_space : Line = (0, string " = ")  
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Local structures for C generation
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,8 +55,8 @@ PrintAsC qualifying spec
  type CFunCall = {f : MSTerm, args : MSTerms}
 
  type CInfo = 
-   | Type QualifiedId * Option TypeInfo
-   | Op   QualifiedId * Option OpInfo
+   | Type QualifiedId * TypeInfo
+   | Op   QualifiedId * OpInfo
 
  type CInfos = List CInfo
 
@@ -143,6 +145,12 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op reportConfusion (msg : String, status : CGenStatus) : CGenStatus =
+  % let _ = writeLine error_msg in
+  status << {error_msgs = status.error_msgs ++ ["?? Internal confusion: " ^ msg]}
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
  op addNewType (status : CGenStatus, qid as Qualified(_,id) : QualifiedId) : Id * CGenStatus =
   let defined_types = status.defined_types in
   if id in? defined_types then
@@ -187,7 +195,7 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op getCFunctionName (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) : Option Id =
+ op getCOpName (qid as Qualified (_,id) : QualifiedId, status : CGenStatus) : Option Id =
   let defined_ops = status.defined_ops in
   if id in? defined_ops then
     Some id

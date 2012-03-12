@@ -74,134 +74,161 @@ PrintAsC qualifying spec
                       id_pats
               | _ ->
                 (None, reportError ("parameters are not a tuple: " ^ printPattern pat, status)))
-         | _ -> (None, reportError ("unrecognized parameter pattern: " ^ printPattern pat, status)))
-    | _ -> (None, status)
+         | _ -> 
+           (None, reportError ("unrecognized parameter pattern: " ^ printPattern pat, status)))
+    | _ -> 
+      (None, status)
 
- op ppOpInfoSig (status          : CGenStatus, 
-                 qid             : QualifiedId, 
-                 c_function_name : Id, 
-                 opt_info        : Option OpInfo,
-                 to_h_file?      : Bool)
-  : CGenStatus =
-  case opt_info of
-    | Some info -> 
-      (case termType info.dfn of
-         | Arrow (dom, rng, _) -> 
-           let (pretty_rng, status) = printTypeAsC (status, rng)           in
-           let (opt_pat,    status) = getPattern   (status, qid, info.dfn) in
-           let (opt_vars,   status) = getVars      (status, opt_pat)       in
-           let (arg_lines, _, status) = 
-               case opt_vars of
-                  | Some vars ->
-                    foldl (fn ((lines, first?, status), (id, typ)) -> 
-                             let (pretty_type, status) = printTypeAsC (status, typ) in
-                             let pretty_parameter =
-                                 blockNone (0,
-                                            if first? then
-                                              [(0, pretty_type), L0_space, (0, string id)]
-                                            else
-                                              [L0_comma_space, (0, pretty_type), L0_space, (0, string id)])
-                             in
-                             (lines ++ [(0, pretty_parameter)], false, status))
-                          ([], true, status)
-                          vars
-                  | _ -> 
-                    ([], true, status)
-           in
-           let pretty_args =
-               case arg_lines of
-                 | [] -> string "(void)"
-                 | _ -> blockNone (0, [L0_lparen, (0, blockLinear (0, arg_lines)), L0_rparen])
-           in
-           let lines = [(0, pretty_rng), L0_space, (0, string c_function_name), L0_space, (0, pretty_args)]
-                       ++ (if to_h_file? then [L0_semicolon] else [])
-           in
-           let pretty = blockNone (0, lines) in
-           if to_h_file? then
-             %% function prototype
-             ppToH (status, pretty)
-           else
-             %% beginning of function definition
-             ppToC (status, pretty)
-         | _ ->
-           reportError (printQualifiedId qid ^ " does not have an arrow type", status))
-    | _ ->
-      reportError ("no definition at all for " ^ printQualifiedId qid, status)
+ op ppOpInfoSig (status : CGenStatus, qid : QualifiedId, c_name : Id, info : OpInfo)
+  : Bool * Lines * CGenStatus =
+  let
+    def defined? tm =
+      case tm of
+        | TypedTerm (t1, _,        _) -> defined? t1
+        | Pi        (_, t1,        _) -> defined? t1 
+        | And       (t1 :: _,      _) -> defined? t1
+        | Lambda    ([(_,_,body)], _) -> defined? body
+        | Any       _                 -> false
+        | _ -> true
+  in
+  let (function?, lines, status) =
+      case termType info.dfn of
+        | Arrow (dom, rng, _) -> 
+          let (pretty_rng, status) = printTypeAsC (status, rng)           in
+          let (opt_pat,    status) = getPattern   (status, qid, info.dfn) in
+          let (opt_vars,   status) = getVars      (status, opt_pat)       in
+          let (arg_lines, _, status) = 
+              case opt_vars of
+                | Some vars ->
+                  foldl (fn ((lines, first?, status), (id, typ)) -> 
+                           let (pretty_type, status) = printTypeAsC (status, typ) in
+                           let pretty_parameter =
+                           blockNone (0,
+                                      if first? then
+                                        [(0, pretty_type), L0_space, (0, string id)]
+                                      else
+                                        [L0_comma_space, (0, pretty_type), L0_space, (0, string id)])
+                           in
+                           (lines ++ [(0, pretty_parameter)], false, status))
+                        ([], true, status)
+                        vars
+                | _ -> 
+                  ([], true, status)
+          in
+          let pretty_args =
+              case arg_lines of
+                | [] -> string "(void)"
+                | _ -> blockNone (0, [L0_lparen, (0, blockLinear (0, arg_lines)), L0_rparen])
+          in
+          (true, 
+           [(0, pretty_rng), L0_space, (0, string c_name), L0_space, (0, pretty_args)],
+           status)
+        | typ ->
+          let (pretty_type, status) = printTypeAsC (status, typ) in
+          (false, [(0, pretty_type), L0_space, (0, string c_name)], status)
+  in
+  (function?,
+   if defined? info.dfn then lines else [(0, string "extern ")] ++ lines,
+   status)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppTypeInfoToH (status: CGenStatus, qid : QualifiedId, opt_info : Option TypeInfo) : CGenStatus =
-  case opt_info of
-    | Some info -> 
-      let (pretty_base_type, index_lines, status) = getPartsForCType (status, info.dfn) in
-      let (c_type_name,                   status) = addNewType       (status, qid)      in
-      let p : Pretty =
-                blockFill (0, 
-                             [(0, string (case info.dfn of
-                                        | Product _ -> "typedef struct "
-                                        | _         -> "typedef ")),
-                              (0, pretty_base_type),
-                              L0_space,
-                              (0, string c_type_name),
-                              (0, blockNone (0, index_lines)),
-                              L0_semicolon])
-      in
-      ppToH (status, p)
-    | _ ->
-      reportError ("no definition for type " ^ show qid, status)
+ op ppTypeInfoToH (status: CGenStatus, qid : QualifiedId, info : TypeInfo) : CGenStatus =
+  let (pretty_base_type, index_lines, status) = getPartsForCType (status, info.dfn) in
+  let (c_type_name,                   status) = addNewType       (status, qid)      in
+  let lines = 
+      [(0, string (case info.dfn of
+                     | Product _ -> "typedef struct "
+                     | _         -> "typedef ")),
+       (0, pretty_base_type),
+       L0_space,
+       (0, string c_type_name),
+       (0, blockNone (0, index_lines)),
+       L0_semicolon]
+  in
+  ppToH (status, blockFill (0, lines))
 
- op ppOpInfoToH (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) : CGenStatus =
-  let (c_function_name, status) = addNewOp (status, qid) in
+ op ppOpInfoToH (status : CGenStatus, qid : QualifiedId, info : OpInfo) : CGenStatus =
+  let (c_name, status) = addNewOp (status, qid) in
   %% C prototype
-  ppOpInfoSig (status, qid, c_function_name, opt_info, true)
+  let (_, lines, status) = ppOpInfoSig (status, qid, c_name, info) in
+  let pretty = blockNone (0, lines ++ [L0_semicolon]) in
+  ppToH (status, pretty)   % prototype
   
  op ppInfoToH (status : CGenStatus, info : CInfo) : CGenStatus =
   case info of
-    | Type (qid, opt_info) -> ppTypeInfoToH (status, qid, opt_info)
-    | Op   (qid, opt_info) -> ppOpInfoToH   (status, qid, opt_info)
+    | Type (qid, info) -> ppTypeInfoToH (status, qid, info)
+    | Op   (qid, info) -> ppOpInfoToH   (status, qid, info)
 
  op ppInfosToH (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
   let hdr = "/* " ^ basename ^ ".h by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
   let status = ppToH (status, string hdr) in
+  let status = ppToH (status, string "") in
   foldl ppInfoToH status infos
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppTypeInfoToC (status : CGenStatus, qid : QualifiedId, opt_info : Option TypeInfo) 
+ op ppTypeInfoToC (status : CGenStatus, qid : QualifiedId, info : TypeInfo) 
   : CGenStatus =
   status
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op ppOpInfoToC (status : CGenStatus, qid : QualifiedId, opt_info : Option OpInfo) 
+ op ppOpInfoToC (status : CGenStatus, qid : QualifiedId, info : OpInfo) 
   : CGenStatus =
-  case opt_info of
-    | Some info ->
-      (case getCFunctionName (qid, status) of
-        | Some c_function_name ->
-          let status = ppToC (status, string "") in
-          let status = ppOpInfoSig (status, qid, c_function_name, opt_info, false) in
-          let 
-            def bodyOf tm =
-              case tm of
-                | Lambda ([(_,_,body)], _) -> body
-                | TypedTerm (t1, _, _) -> bodyOf t1
-                | _ -> fail("ppOpInfoToC: definition of " ^ printQualifiedId qid ^ " is not a lambda term" 
-                              ^ printTerm tm)
-          in
-          let (pretty_body, has_return?, status) = printTermAsC (status, bodyOf info.dfn, CPrecedence_NO_PARENS, Statement) in
-          let pretty_body = if has_return? then pretty_body else wrapReturn pretty_body in
-          let pretty_body = blockLinear (0, [(0, string " {"), (2, pretty_body), (1, string "}")]) in
-          ppToC (status, pretty_body)
-        | _ -> 
-          reportError ("?? No declaration for " ^ printQualifiedId qid, status))
+  let 
+    def inner tm =
+      case tm of
+        %% strip away type information
+        | TypedTerm (t1, _,        _) -> inner t1
+        | Pi        (_, t1,        _) -> inner t1 
+        | And       (t1 :: _,      _) -> inner t1
+        | Any       _                 -> None
+        | _ -> Some tm  % TODO: could this be a lambda not typed as a function?
+
+    def lambdaBodyOf tm =
+      case tm of
+        %% strip away type information, and proceed to body of lambda
+        | Lambda    ([(_,_,body)], _) -> Some body
+        | TypedTerm (t1, _,        _) -> lambdaBodyOf t1
+        | Pi        (_, t1,        _) -> lambdaBodyOf t1 
+        | And       (t1 :: _,      _) -> lambdaBodyOf t1
+        | _ -> None
+  in
+  case getCOpName (qid, status) of
+    | Some c_name ->
+      let status = ppToC (status, string "") in
+      let (typed_as_function?, sig_lines, status) = ppOpInfoSig (status, qid, c_name, info) in
+      let sig_pretty = blockNone (0, sig_lines) in
+      if typed_as_function? then
+        case lambdaBodyOf info.dfn of
+          | Some body ->
+            (case inner body of
+               | Some body ->
+                 let (pretty_body, inner_level, status) = printTermAsC (status, body, CPrecedence_NO_PARENS, Statement) in
+                 let pretty_body = if inner_level = Expression then wrapReturn pretty_body else pretty_body in
+                 let lines = [(0, sig_pretty), (0, string " { "), (2, pretty_body), (1, string "}")] in
+                 ppToC (status, blockLinear (0, lines))
+               | _ ->
+                 status)
+          | _->
+            reportConfusion ("Non-lambda definition for function?: " ^ show qid, status)
+      else 
+        (case inner info.dfn of
+           | Some tm ->
+             let (pretty_value, _, status) = printTermAsC (status, tm, CPrecedence_NO_PARENS, Statement) in
+             let lines = [(0, sig_pretty), L0_space_equal_space, (0, pretty_value), L0_semicolon] in
+             ppToC (status, blockNone (0, lines))
+           | _ ->
+             status)
     | _ -> 
-      reportWarning ("No definition for " ^ printQualifiedId qid, status)
+      %% this should not be possible
+      reportConfusion ("No prototype for " ^ printQualifiedId qid, status)
 
  op ppInfoToC (status : CGenStatus, info : CInfo) : CGenStatus =
   case info of
-    | Type (qid, opt_info) -> ppTypeInfoToC (status, qid, opt_info)
-    | Op   (qid, opt_info) -> ppOpInfoToC   (status, qid, opt_info)
+    | Type (qid, info) -> ppTypeInfoToC (status, qid, info)
+    | Op   (qid, info) -> ppOpInfoToC   (status, qid, info)
 
  op ppInfosToC (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
   let hdr_msg     = "/* " ^ basename ^ ".c by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
@@ -212,6 +239,46 @@ PrintAsC qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op collectCInfos (status : CGenStatus, spc : Spec) : CInfos * CGenStatus =
+  %% TODO: what about Type followed by TypeDef ?                
+  %% TODO: what about Op followed by opDef ?                
+  %% TODO: what about multiple opDefs (refinements) ?                
+  let elements = findCSliceFrom spc in
+  let elements = topSortElements (spc, elements) in
+  foldl (fn ((infos, status), element) ->
+           case element of
+             | Type    (qid,    _) -> 
+               (case findTheType (spc, qid) of
+                  | Some info ->
+                    (infos ++ [Type (qid, info)], status)
+                  | _ ->
+                    %% Something is messed up with spec...
+                    (infos, reportConfusion ("No type info for " ^ show qid, status)))
+             | TypeDef (qid,    _) -> 
+               (case findTheType (spc, qid) of
+                  | Some info ->
+                    (infos ++ [Type (qid, info)], status)
+                  | _ ->
+                    %% Something is messed up with spec...
+                    (infos, reportConfusion ("No type info for " ^ show qid, status)))
+             | Op      (qid, _, _) -> 
+               (case findTheOp (spc, qid) of
+                  | Some info ->
+                    (infos ++ [Op (qid, info)], status)
+                  | _ ->
+                    %% Something is messed up with spec...
+                    (infos, reportConfusion ("No op info for " ^ show qid, status)))
+             | OpDef   (qid, _, _) -> 
+               (case findTheOp (spc, qid) of
+                  | Some info ->
+                    (infos ++ [Op (qid, info)], status)
+                  | _ ->
+                    %% Something is messed up with spec...
+                    (infos, reportConfusion ("No op info for " ^ show qid, status)))
+             | _ -> (infos, status))
+        ([], status)
+        elements
+  
  op printSpecAsCToFile (filename : FileName, spc : Spec) : () = 
 
   let basename =
@@ -224,21 +291,12 @@ PrintAsC qualifying spec
 
   case init_cgen_status spc of  % options and status
     | Some status ->
-      let elements = findCSliceFrom spc in
-      let elements = topSortElements (spc, elements) in
-
-      let infos = reverse (foldl (fn (infos, element) ->
-                                    case element of
-                                      | Type    (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
-                                      | TypeDef (qid,    _) -> [Type (qid, findTheType (spc, qid))] ++ infos
-                                      | Op      (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
-                                      | OpDef   (qid, _, _) -> [Op   (qid, findTheOp   (spc, qid))] ++ infos
-                                      | _ -> infos)
-                                 []
-                                 elements)
-      in
-      let status = ppInfosToH (status, basename, infos) in
-      let status = ppInfosToC (status, basename, infos) in
+      let (cinfos, status) = collectCInfos (status, spc) in
+      %% TODO: Is this the right decision?
+      %% Do all of the H prototypes first, to make all of them available when printing terms for the C file.
+      %% (As opposed to printing the H and C forms in parallel for each info.)
+      let status = ppInfosToH (status, basename, cinfos) in  
+      let status = ppInfosToC (status, basename, cinfos) in
       (case status.error_msgs of
          | [] ->
            let _ = app (fn msg -> writeLine ("CGen warning: " ^ msg)) status.warning_msgs in

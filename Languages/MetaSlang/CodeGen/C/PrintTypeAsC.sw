@@ -82,9 +82,8 @@ PrintAsC qualifying spec
       (pretty, limits, status)
 
     | _ -> 
-      (string "",
-       [],
-       reportError ("unrecognized kind of type: " ^ printType typ, status))
+      %% Some kind of type not handled (yet?):
+      (string "", [], reportError ("unrecognized kind of type: " ^ printType typ, status))
       
  %% ========================================================================
  %% Print routine for types when we don't need to deal with typedef nonsense.

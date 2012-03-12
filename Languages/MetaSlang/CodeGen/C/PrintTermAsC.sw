@@ -39,6 +39,7 @@ PrintAsC qualifying spec
 
  %% ========================================================================
  %%  CLevel controls the printing of IfThenElse as statement vs. expression.
+ %%  It is also used to control printing of 'return' before expressions.
  %% ========================================================================
 
  type CLevel = | Statement
@@ -716,47 +717,11 @@ PrintAsC qualifying spec
     %% ==============================================================================
               
     %% =========================================================================
-    %% These C ops should not appear in final spec to be printed.
+    %% Other C ops should not appear in final spec to be printed.
     %% =========================================================================
-
-    | "mathIntOfChar"   -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfUchar"  -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfUshort" -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfUint"   -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfUlong"  -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfUllong" -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfSchar"  -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfSshort" -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfSint"   -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfSlong"  -> Illegal ("should have been removed: " ^ id)
-    | "mathIntOfSllong" -> Illegal ("should have been removed: " ^ id)
-
-    | "charOfMathInt"   -> Illegal ("should have been removed: " ^ id)
-    | "ucharOfMathInt"  -> Illegal ("should have been removed: " ^ id)
-    | "ushortOfMathInt" -> Illegal ("should have been removed: " ^ id)
-    | "uintOfMathInt"   -> Illegal ("should have been removed: " ^ id)
-    | "ulongOfMathInt"  -> Illegal ("should have been removed: " ^ id)
-    | "ullongOfMathInt" -> Illegal ("should have been removed: " ^ id)
-    | "scharOfMathInt"  -> Illegal ("should have been removed: " ^ id)
-    | "sshortOfMathInt" -> Illegal ("should have been removed: " ^ id)
-    | "sintOfMathInt"   -> Illegal ("should have been removed: " ^ id)
-    | "slongOfMathInt"  -> Illegal ("should have been removed: " ^ id)
-    | "sllongOfMathInt" -> Illegal ("should have been removed: " ^ id)
-
-    %% =========================================================================
-    %% All other C ops are treated as normal ops -- treat as error instead??
-    %% =========================================================================
-
-    %% ------------------------------------------------------------
-    %% [C99 6.5.2.2  "Function calls"]
-    %% ------------------------------------------------------------
 
     | _  -> 
-
-      if legal_C_Id? id then
-        Call
-      else
-        Illegal ("illegal id for C op: " ^ id)
+      Illegal ("Op not in legal subset for translation to C: C." ^ id)
 
 
  op cfixity (status : CGenStatus, tm : MSTerm) : CFixity =
@@ -799,21 +764,16 @@ PrintAsC qualifying spec
            else
              Illegal ("illegal id for projection: " ^ f)
 
-         %% ------------------------------------------------------------
-         %% Many special cases for built-in C operators
-         %% ------------------------------------------------------------
-
-         | Op (qid as Qualified ("C", id), _) -> cfixityForCOp (status, id)  
-
-         %% ------------------------------------------------------------
-         %% [C99 6.5.2.2  "Function calls"]
-         %% ------------------------------------------------------------
-
-         | Op (qid as Qualified (q,   id), _) -> 
-           if legal_C_Id? id then
-             Call
+         | Op (qid as Qualified (q, id), _) -> 
+           if q = "C" then
+             cfixityForCOp (status, id)  % special cases for built-in C operators
+           else if legal_C_Id? id then
+             %% ------------------------------------------------------------
+             %% [C99 6.5.2.2  "Function calls"]
+             %% ------------------------------------------------------------
+             Call 
            else
-             Illegal ("illegal id for non-C op: " ^ show qid)
+             Illegal ("illegal id for C function: " ^ show qid)
 
          | _ -> 
            Illegal ("unknown fixity for " ^ printTerm tm))
@@ -835,13 +795,18 @@ PrintAsC qualifying spec
     | String  s  -> (string s,        status)
 
     | Op (qid as Qualified (q, id), _) -> 
-      if legal_C_Id? id then
+      if q = "C" then
+        (string "??", reportError ("Op not in legal subset for translation to C: C." ^ id, status))
+      else if legal_C_Id? id then
         (string id, status)
       else
         (string id, reportError ("illegal C id: " ^ id, status))
 
     | _ -> 
-      (string "??", reportError ("unrecognized fun: " ^ anyToString fun, status))
+      %% Some kind of term we don't handle (yet?)
+      (string "??", 
+       reportError ("Unrecognized kind of primitive term: " ^ anyToString fun, 
+                    status))
 
  %% ========================================================================
  %% Explicit numeric constants (Hex, Oct, Dec)
@@ -907,7 +872,8 @@ PrintAsC qualifying spec
                  | Fun (Embed ("dec", _), _, _) -> dec (n, suffix)
                  | _                            -> dec (n, suffix)), % default to dec ??
        status)
-    | _ -> % ?? can this happen?
+    | _ -> 
+      %% ?? can this happen?
       (CPrecedence_PRIMARY, string "??", reportError ("no Nat value for " ^ printTerm tm, status))
 
  %% ========================================================================
@@ -982,21 +948,27 @@ PrintAsC qualifying spec
                   tm       : MSTerm, 
                   expected : CPrecedence, 
                   level    : CLevel) 
-  : Pretty * Bool * CGenStatus = 
-  %% if precedence of term is less than expected precedence, wrap parens
+  : Pretty * CLevel * CGenStatus = 
+  %% If precedence of term is less than expected precedence, wrap parens.
   case tm of
 
     | Var ((id, _), _) -> 
       if legal_C_Id? id then
-        (string id, false, status)
+        (string id, Expression, status)
       else
-        (string "", false, reportError ("illegal C variable name: " ^ id, status))
+        (string "", Expression, reportError ("illegal C variable name: " ^ id, status))
 
     | Fun (fun, _, _) -> 
       let (pretty, status) = printPrimitiveAsC  (status, fun) in
-      (pretty, false, status)
+      (pretty, Expression, status)
 
     | TypedTerm  (t1, _, _) -> 
+      printTermAsC (status, t1, expected, level)
+
+    | Pi (_, t1, _) -> 
+      printTermAsC (status, t1, expected, level)
+
+    | And (t1 :: _, _) -> 
       printTermAsC (status, t1, expected, level)
 
     | IfThenElse (t1, t2, t3, _) -> 
@@ -1007,20 +979,20 @@ PrintAsC qualifying spec
         %% [C99 6.8.4.1 "The if statement"]
         %% ==============================================================================
 
-        let (p1, _,            status) = printTermAsC (status, t1, CPrecedence_REQUIRE_PARENS, Expression) in
-        let (p2, p2hasreturn?, status) = printTermAsC (status, t2, CPrecedence_NO_PARENS,      Statement)  in
-        let (p3, p3hasreturn?, status) = printTermAsC (status, t3, CPrecedence_NO_PARENS,      Statement)  in
+        let (p1, _,      status) = printTermAsC (status, t1, CPrecedence_REQUIRE_PARENS, Expression) in
+        let (p2, level2, status) = printTermAsC (status, t2, CPrecedence_NO_PARENS,      Statement)  in
+        let (p3, level3, status) = printTermAsC (status, t3, CPrecedence_NO_PARENS,      Statement)  in
 
-        %% For now all the leaf statements in an 'if' statmement must be returns.
-        %% But avoid return of a statement, which will already have return.
+        %% For now, all the leaf statements in an 'if' statmement must be returns.
+        %% But avoid return of a statement, which will already have a return.
 
-        let p2 = if p2hasreturn? then p2 else wrapReturn p2 in
-        let p3 = if p3hasreturn? then p3 else wrapReturn p3 in
+        let p2 = if level2 = Statement then p2 else wrapReturn p2 in
+        let p3 = if level3 = Statement then p3 else wrapReturn p3 in
         (blockAll (0, [(0, blockNone (0, [L0_if, (0, p1), L0_space])),
                        (2, p2), 
                        L0_else,
                        (2, p3)]),
-         true,   % we have already included any necessary returns
+         Statement, 
          status)
 
       else
@@ -1036,7 +1008,7 @@ PrintAsC qualifying spec
         (blockLinear (0, [(0, p1), 
                           (2, blockNone (0, [L0_expr_then, (0, p2)])), 
                           (2, blockNone (0, [L0_expr_else, (0, p3)]))]),
-         false,   % we have not yet included any returns
+         Expression,   % we have not yet included any returns
          status)
 
     | Apply (t1, t2, _) -> 
@@ -1138,6 +1110,7 @@ PrintAsC qualifying spec
               (CPrecedence_NO_PARENS, string "??", reportError (error_msg, status))
 
             | _ ->
+              %% This should be impossible.
               (CPrecedence_NO_PARENS, string "impossible", reportError ("impossible", status))
       in
       let pretty = 
@@ -1146,9 +1119,10 @@ PrintAsC qualifying spec
           else
             pretty
       in
-      (pretty, false, status)
+      (pretty, Expression, status)
 
-   | _ -> 
-      (string "??", false, reportError ("unrecognized term: " ^ printTerm tm, status))
+    | _ -> 
+      %% Some kind of term not handled (yet?):
+      (string "??", Expression, reportError ("unrecognized term: " ^ printTerm tm, status))
 
 endspec
