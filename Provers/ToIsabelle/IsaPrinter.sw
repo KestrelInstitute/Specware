@@ -1448,7 +1448,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
             then foldl (\_lambda (cases, (pati, _, bodi)) ->
                         case patToTerm(pati, "",  c) of
                           | Some pati_tm ->
-                            let pati_tm = expandNatToSucc pati_tm in
+                            let pati_tm = mapTerm (expandNatToSucc, id, id) pati_tm in
                             let sbst = [(v, pati_tm)] in
                             let s_bodi = if hasVarNameConflict?(pati_tm, [v]) then bodi
                                           else substitute(bodi, sbst)
@@ -2707,7 +2707,12 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                  ppPattern c pattern (Some ""),
                                prString ". "],
                               [ppTerm c Top term]])
-     | Lambda (match,_) -> ppMatch c match
+     | Lambda (match,_) ->
+       let spc = getSpec c in
+       let lam_ty = inferType(spc, term) in
+       let eta_var = ("xx", domain(spc, lam_ty)) in
+       let eta_tm = mkLambda(mkVarPat eta_var, mkApply(term, mkVar eta_var)) in
+       ppTerm c parentTerm eta_tm
      | IfThenElse (pred,term1,term2,_) -> 
        enclose?(infix? parentTerm,
                 blockLinear (0,[(0,prConcat [prString "if ",
