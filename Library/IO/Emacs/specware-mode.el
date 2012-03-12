@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 4.2.12")
+  "specware-mode, Version 4.2.14")
 
 (provide 'specware-mode)
 
@@ -2429,9 +2429,11 @@ With an argument, it doesn't convert imports."
        :properties `(height ,(widget-logical-to-character-height 12)
                             width ,(widget-logical-to-character-width 39)))
     ;; Gnu Emacs
-    (let ((last-non-menu-event nil)     ; gnu emacs
+    (let ((last-nonmenu-event nil)      ; gnu emacs
+          (use-dialog-box t)            ; gnu emacs
           (force-dialog-box-use t)      ; xemacs
           )
+      (sit-for 0.1)
       (setq sw:license-accepted (yes-or-no-p "Accept License? "))
       (if sw:license-accepted
           (make-frame-invisible *license-frame*)
