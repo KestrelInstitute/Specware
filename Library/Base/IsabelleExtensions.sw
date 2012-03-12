@@ -445,7 +445,7 @@ consts zpower :: "int \_Rightarrow nat \_Rightarrow int" (infixr "**" 80)
 defs zpower_def [simp]: "x ** y \_equiv x ^ y"
 
 consts power :: "nat \_Rightarrow nat \_Rightarrow nat" (infixr "***" 80)
-defs power_def [simp]: "x ** y \_equiv x ^ y"
+defs power_def [simp]: "x *** y \_equiv x ^ y"
 
 (**************** and a few insights **********************)
    
