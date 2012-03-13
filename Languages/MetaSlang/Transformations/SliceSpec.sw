@@ -131,6 +131,16 @@ SliceSpec qualifying spec
   let 
     def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
       
+    def findQuotientOpsIn typ =
+      foldType (fn result -> fn _ -> result,
+                fn result -> fn typ -> 
+                  case typ of
+                    | Quotient (_, Fun (Op (qid, _), _, _), _) -> result ++ [qid]
+                    | _ -> result,
+                fn result -> fn _ -> result)
+               []
+               typ
+
     def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
       if chase_terms_in_types? then
         foldTerm (fn opids -> fn tm ->
@@ -141,8 +151,8 @@ SliceSpec qualifying spec
                           opids
                         else if qid nin? opids  && qid nin? op_set then
                           qid :: opids
-                             else
-                               opids
+                        else
+                          opids
                       | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
                         let eq_qid = eq_op_qid type_qid in
                         % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
@@ -168,6 +178,17 @@ SliceSpec qualifying spec
                                qid :: opids
                              else
                                opids
+                           | Fun  (Quotient typename, typ, _) -> 
+                             (case findTheType (spc, typename) of
+                                | Some typeinfo -> 
+                                  %% quotient functions may be needed at runtime...
+                                  let quotients = findQuotientOpsIn typeinfo.dfn in
+                                  % let _ = writeLine("For type " ^ show typename ^ " : " ^ anyToString typeinfo) in
+                                  % let _ = writeLine("Quotients = " ^ anyToString quotients) in
+                                  quotients ++ opids
+                                | _ ->
+                                  % let _ = writeLine("For type " ^ show typename ^ " : no typeinfo") in
+                                  opids)
                            | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
                              let eq_qid = eq_op_qid type_qid in
                              % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
