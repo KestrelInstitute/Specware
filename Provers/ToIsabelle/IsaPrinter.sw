@@ -71,7 +71,7 @@ IsaTermPrinter qualifying spec
  op prSymString(s: String): Pretty =
    if testSubseqEqual?("\\<", s, 0, 0)
      then lengthString(1, s)
-     else prString s
+     else prString(infixId s)
 
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
