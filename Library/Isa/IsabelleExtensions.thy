@@ -435,7 +435,6 @@ translations "x ** y" => "x ^ y"
 syntax power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
 translations "x *** y" => "x ^ y"
 
-
 (**************** and a few insights **********************)
    
 lemma nat_le_abs [simp]:         "nat \<bar>i\<bar> \<le> nat \<bar>j\<bar> = (\<bar>i\<bar> \<le> \<bar>j\<bar>)"
