@@ -1905,7 +1905,7 @@ lemma prime_g_zero: "prime (p::nat) ==> 0 < p"
 
 lemma primel_nempty_g_one:
   "primel xs \<Longrightarrow> xs \<noteq> [] \<Longrightarrow> Suc 0 < prod xs"
-  by (induct xs, simp, fastsimp simp: primel_def prime_def elim: one_less_mult)
+  by (induct xs, simp, fastforce simp: primel_def prime_def elim: one_less_mult)
 
 lemma primel_prod_gz: "primel xs ==> 0 < prod xs"
   by (induct xs, auto simp: primel_def prime_def)
