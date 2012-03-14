@@ -368,34 +368,26 @@ Globalize qualifying spec
                      (field_name : Id)
                      (field_type : MSType) 
   : MSTerm =
-  let global_type  = Base  (context.global_type_name, [],                      noPos) in
-  let global_var   = Fun   (Op (context.global_var_name, Nonfix), global_type, noPos) in
-  let project_type = Arrow (global_type, field_type,                           noPos) in
-  let projection   = Fun   (Project field_name, project_type,                  noPos) in
-  Apply (projection, global_var, noPos)
-
- op globalSetterInfo (global_type_name : TypeName) : MSType * QualifiedId * MSType =
-  let global_type = Base (global_type_name, [], noPos) in
-  let setter_name = Qualified ("System", "set") in
-  let setter_type = Arrow (Product ([("1", global_type), ("2", global_type)], noPos),
-                           Product ([], noPos),
-                           noPos)
-  in
-  (global_type, setter_name, setter_type)
+  let project_type = Arrow (context.global_type, field_type,  noPos) in
+  let projection   = Fun   (Project field_name, project_type, noPos) in
+  Apply (projection, context.global_var, noPos)
 
  op makeGlobalUpdate (context    : Context)
                      (merger     : MSTerm)  % RecordMerge
                      (new_fields : MSTerm)  % record of fields to update
   : MSTerm =
-  let (global_type, setter_name, setter_type) = globalSetterInfo context.global_type_name in
-  let setter      = Fun    (Op (setter_name,             Nonfix), setter_type, noPos) in
-  let global_var  = Fun    (Op (context.global_var_name, Nonfix), global_type, noPos) in
-  let merge_args  = Record ([("1", global_var), ("2", new_fields)],            noPos) in
-  let merge       = Apply  (merger, merge_args,                                noPos) in
-  let set_args    = Record ([("1", global_var), ("2", merge)],                 noPos) in
-  let new_tm      = Apply  (setter, set_args,                                  noPos) in
-  new_tm
-  
+  let 
+    def make_field_update (id, new_value) =
+      let Some (_, lhs, setter) = findLeftmost (fn (x,_,_) -> x = id) context.global_field_setters in
+      Apply (setter, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
+  in
+  let updates = 
+      case new_fields of
+        | Record (fields, _) -> map make_field_update fields
+        | _ -> []
+  in
+  Seq (updates, noPos)
+
  op applyHeadType (tm : MSTerm, context : Context) : MSType =
   case tm of
     | Apply (t1, t2, _) -> applyHeadType (t1, context)
@@ -483,9 +475,7 @@ Globalize qualifying spec
                      %% (f x y ...)  where x has global type, but domain of f is NOT global type (presumably is polymorphic)
                      %%   =>
                      %% (f gvar y ...)
-                     let global_type = Base (context.global_type_name, [],                      noPos) in
-                     let global_var  = Fun  (Op (context.global_var_name, Nonfix), global_type, noPos) in
-                     Apply (new_t1, global_var, pos)
+                     Apply (new_t1, context.global_var, pos)
                  | _ ->
                    %% (f(x))  where x has global type, domain of f is global type
                    %%   =>
@@ -598,9 +588,7 @@ Globalize qualifying spec
       let opt_new_body =
           case globalizeTerm context vars_to_remove body of
             | Some (Var ((id, _), _)) | id in? vars_to_remove -> 
-              let global_type = Base (context.global_type_name, [],                      noPos) in
-              let global_var  = Fun  (Op (context.global_var_name, Nonfix), global_type, noPos) in
-              Some global_var
+              Some context.global_var
             | opt_new_body -> opt_new_body
       in
       case new_vars_to_remove of
@@ -950,6 +938,15 @@ Globalize qualifying spec
   in
   return (new_spec, context.tracing?)
 
+ op globalSetterInfo (global_type_name : TypeName) : MSType * QualifiedId * MSType =
+  let global_type = Base (global_type_name, [], noPos) in
+  let setter_name = Qualified ("System", "set") in
+  let setter_type = Arrow (Product ([("1", global_type), ("2", global_type)], noPos),
+                           Product ([], noPos),
+                           noPos)
+  in
+  (global_type, setter_name, setter_type)
+
  op globalizeSingleThreadedType (spc              : Spec, 
                                  root_ops         : OpNames,
                                  global_type_name : TypeName, 
@@ -1001,10 +998,10 @@ Globalize qualifying spec
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
                             addOp names Nonfix refine? dfn spc_with_ginit noPos);
 
-   spc_with_gset    <- let (_, setter_name, setter_type) = globalSetterInfo global_type_name in
-                       let names   = [setter_name]                             in
-                       let refine? = false                                     in
-                       let dfn     = TypedTerm (Any noPos, setter_type, noPos) in
+   spc_with_gset    <- let (_, global_var_setter_name, global_var_setter_type) = globalSetterInfo global_type_name in
+                       let names   = [global_var_setter_name]                             in
+                       let refine? = false                                                in
+                       let dfn     = TypedTerm (Any noPos, global_var_setter_type, noPos) in
                        addOp names Nonfix refine? dfn spc_with_gvar noPos;
 
    let global_field_setters = [] 
