@@ -44,7 +44,7 @@ spec
     | PartialEval
     | AbstractCommonExpressions
     | SpecTransform QualifiedId
-    | SpecQIdTransform(QualifiedId * QualifiedIds* RuleSpecs)
+    | SpecQIdTransform(QualifiedId * QualifiedIds * RuleSpecs)
     | IsoMorphism(List(QualifiedId * QualifiedId) * RuleSpecs * Option Qualifier)
     | Implement(QualifiedIds * RuleSpecs)
     | Maintain(QualifiedIds * RuleSpecs)
