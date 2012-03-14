@@ -1270,10 +1270,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
           || qid.2 in? knownSideEffectFreeFns
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
+
+ op assumeNoSideEffects?: Bool = false
       
  op  sideEffectFree: MSTerm -> Bool
- def sideEffectFree(term) = 
-     case term
+ def sideEffectFree(term) =
+   assumeNoSideEffects? ||
+     (case term
        of Var _ -> true
 	| Record(fields,_) -> forall? (fn(_,t)-> sideEffectFree t) fields
 	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f && sideEffectFree t
@@ -1282,7 +1285,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 		(sideEffectFree t1) 
 	      && (sideEffectFree t2) 
 	      && (sideEffectFree t3)
-	| _ -> false 
+	| _ -> false)
 
  op  evalBinary: [a] (a * a -> Fun) * (List(Id * MSTerm) -> List a)
                       * List(Id * MSTerm) * MSType
