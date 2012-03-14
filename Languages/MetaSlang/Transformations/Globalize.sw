@@ -36,11 +36,11 @@ Globalize qualifying spec
  type Context = {spc                  : Spec, 
                  root_ops             : OpNames,
                  global_var_name      : OpName,
-                 global_var           : MSTerm,
                  global_type_name     : TypeName,
                  global_type          : MSType,
-                 global_var_setter    : MSTerm,
-                 global_field_setters : List (String * MSTerm * MSTerm), % LHS and setter
+                 global_var           : MSTerm,                 % if global type is not a product
+                 global_var_map       : List (String * MSTerm), % if global type has product fields
+                 global_init_name     : QualifiedId,
                  tracing?             : Bool}
                    
  op nullTerm : MSTerm    = Record  ([], noPos)
@@ -57,6 +57,19 @@ Globalize qualifying spec
   q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String"]
 
  op myTrue : MSTerm = Fun (Bool true, Boolean noPos, noPos)
+
+ op XXX : MSType
+
+ op setqType : MSType =
+  Arrow (Product ([("1", TyVar ("A", noPos)), 
+                   ("2", TyVar ("A", noPos))], 
+                  noPos), 
+         Product ([], noPos),
+         noPos)
+
+ op setqOp : MSTerm = Fun (Op (Qualified ("System", "setq"), Nonfix), 
+                           setqType, 
+                           noPos)
 
  %% ================================================================================
  %% Verify that the suggested global type actually exists
@@ -191,12 +204,12 @@ Globalize qualifying spec
         raise (Fail ("Op " ^ show ginit ^ " for producing initial global " ^ show gtype ^ " is undefined."))
           
 
- op globalizeInitOp (spc               : Spec, 
-                     global_var        : MSTerm,
-                     global_type       : MSType,
-                     global_init_name  : OpName,
-                     global_var_setter : MSTerm,
-                     tracing?          : Bool)
+ op globalizeInitOp (spc              : Spec, 
+                     global_type      : MSType,
+                     global_var       : MSTerm,
+                     global_var_map   : List (String * MSTerm),
+                     global_init_name : OpName,
+                     tracing?         : Bool)
   : Option OpInfo =
   %% modify init fn to set global variable rather than return value
   let Some info = findTheOp (spc, global_init_name) in
@@ -206,10 +219,25 @@ Globalize qualifying spec
       case tm of
 
         | Lambda (rules, _) ->
-          let new_rules = map (fn (pat, cond, body) -> 
-                                 let set_args = Record ([("1", global_var), ("2", body)], noPos) in
-                                 let new_tm   = Apply  (global_var_setter, set_args, noPos) in
-                                 (pat, cond, new_tm))
+          let new_rules = map (fn (fn_pat, cond, fn_body) -> 
+                                 let let_pat      = VarPat (("x", global_type), noPos) in
+                                 let let_var      = Var    (("x", global_type), noPos) in
+                                 let let_bindings = [(let_pat, fn_body)] in
+                                 let updates      = map (fn (field_id, field_var as Fun (_, field_type, _)) ->
+                                                           Apply (setqOp, Record ([("1", field_var), 
+                                                                                   ("2", Apply (Fun (Project field_id, 
+                                                                                                     Arrow (global_type, field_type, noPos),
+                                                                                                     noPos),
+                                                                                                let_var,
+                                                                                                noPos))],
+                                                                                  noPos), 
+                                                                  noPos))
+                                                        global_var_map
+                                 in
+                                 let new_let = Let (let_bindings, Seq(updates, noPos), noPos) in
+                                 % let setq_args = Record ([("1", global_var), ("2", body)], noPos) in
+                                 % let new_tm   = Apply  (setqOp, setq_args, noPos) in
+                                 (fn_pat, cond, new_let))
                               rules
           in
           let new_dfn = Lambda (new_rules, noPos) in
@@ -368,18 +396,17 @@ Globalize qualifying spec
                      (field_name : Id)
                      (field_type : MSType) 
   : MSTerm =
-  let project_type = Arrow (context.global_type, field_type,  noPos) in
-  let projection   = Fun   (Project field_name, project_type, noPos) in
-  Apply (projection, context.global_var, noPos)
+  case findLeftmost (fn (id, _) -> id = field_name) context.global_var_map of
+    | Some (_, var) -> var
 
- op makeGlobalUpdate (context    : Context)
-                     (merger     : MSTerm)  % RecordMerge
-                     (new_fields : MSTerm)  % record of fields to update
+ op makeGlobalFieldUpdates (context    : Context)
+                           (merger     : MSTerm)  % RecordMerge
+                           (new_fields : MSTerm)  % record of fields to update
   : MSTerm =
   let 
     def make_field_update (id, new_value) =
-      let Some (_, lhs, setter) = findLeftmost (fn (x,_,_) -> x = id) context.global_field_setters in
-      Apply (setter, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
+      let Some (_, lhs) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
+      Apply (setqOp, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
   in
   let updates = 
       case new_fields of
@@ -427,7 +454,7 @@ Globalize qualifying spec
                      | Some new_t3 -> new_t3
                      | _ -> t3
       in
-      let new_tm = makeGlobalUpdate context t1 new_t3 in
+      let new_tm = makeGlobalFieldUpdates context t1 new_t3 in
       Some new_tm
    | _ ->
      let opt_new_t1 = globalizeTerm context vars_to_remove t1 in
@@ -880,13 +907,18 @@ Globalize qualifying spec
   in
   let new_ops =
       foldriAQualifierMap (fn (q, id, x, pending_ops) ->
-                             case findTheOp (spc, Qualified (q, id)) of
-                               | Some info -> 
-                                 let new_info = globalizeOpInfo (context, info) in
-                                 insertAQualifierMap (pending_ops, q, id, new_info)
-                               | _ -> 
-                                 let _ = writeLine("??? Globalize could not find op " ^ q ^ "." ^ id) in
-                                 pending_ops)
+                             let qid = Qualified (q, id) in
+                             if context.global_init_name = qid then
+                               let _ = writeLine("Not revising init op " ^ q ^ "." ^ id) in
+                               pending_ops
+                             else
+                               case findTheOp (spc, qid) of
+                                 | Some info -> 
+                                   let new_info = globalizeOpInfo (context, info) in
+                                   insertAQualifierMap (pending_ops, q, id, new_info)
+                                 | _ -> 
+                                   let _ = writeLine("??? Globalize could not find op " ^ q ^ "." ^ id) in
+                                   pending_ops)
                           base_ops
                           ops_to_revise
   in
@@ -954,19 +986,26 @@ Globalize qualifying spec
                           | Some ginit -> checkGlobalInitOp (spc, ginit, global_type_name)
                           | _ -> findInitOp (spc, global_type_name));
 
-   global_var_setter_name <- return (Qualified ("System", "set"));
-   global_var_setter_type <- return (Arrow (Product ([("1", global_type), ("2", global_type)], noPos),
-                                            Product ([], noPos),
-                                            noPos));
-   global_var_setter      <- return (Fun (Op (global_var_setter_name, Nonfix), global_var_setter_type, noPos));
+   global_var_map   <- return (case findTheType (spc, global_type_name) of
+                                 | Some info -> 
+                                   (case info.dfn of
+                                      | Product (pairs, _) ->
+                                        map (fn (field_id, field_type) ->
+                                               let Qualified (_, global_id) = global_type_name in
+                                               let global_var_id = Qualified ("Global", field_id) in
+                                               let global_var = Fun (Op (global_var_id, Nonfix), field_type, noPos) in
+                                               (field_id, global_var))
+                                            pairs
+                                      | _ -> empty)
+                                 | _ -> []);
 
    spc_with_ginit   <- return (case findTheOp (spc, global_init_name) of
                                  | Some info ->
                                    (case globalizeInitOp (spc,
-                                                          global_var, 
                                                           global_type, 
+                                                          global_var, 
+                                                          global_var_map,
                                                           global_init_name,
-                                                          global_var_setter,
                                                           tracing?)
                                       of
                                       | Some new_info ->
@@ -989,45 +1028,28 @@ Globalize qualifying spec
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
                             addOp names Nonfix refine? dfn spc_with_ginit noPos);
 
-   spc_with_gset    <- let names   = [global_var_setter_name]                             in
-                       let refine? = false                                                in
-                       let dfn     = TypedTerm (Any noPos, global_var_setter_type, noPos) in
-                       addOp names Nonfix refine? dfn spc_with_gvar noPos;
+   spc_with_gvars   <- foldM (fn spc -> fn (_, global_field_var) ->
+                                let Fun (Op (name, _), gtype, _) = global_field_var in
+                                let refine? = false                                 in
+                                let dfn     = TypedTerm (Any noPos, gtype, noPos)   in
+                                addOp [name] Nonfix refine? dfn spc noPos)
+                             spc_with_gvar
+                             global_var_map;
+                             
+   spc_with_gset    <- let names   = [Qualified("System","Setq")]           in
+                       let refine? = false                                  in
+                       let dfn     = TypedTerm (Any noPos, setqType, noPos) in
+                       addOp names Nonfix refine? dfn spc_with_gvars noPos;
 
-   let global_field_setters = case findTheType (spc_with_gset, global_type_name) of
-                                | Some info -> 
-                                  let 
-                                    def makeGlobalFieldSetter (field_name, field_type) =
-                                      let lhs = 
-                                          Apply (Fun (Project field_name, Arrow (global_type, field_type, noPos), noPos),
-                                                 global_var,
-                                                 noPos)
-                                      in
-                                      let setter =
-                                          let setter_name = Qualified ("System", "set") in
-                                          let setter_type = Arrow (Product ([("1", field_type), ("2", field_type)], noPos),
-                                                                   Product ([], noPos),
-                                                                   noPos)
-                                          in
-                                          Fun (Op (setter_name, Nonfix), setter_type, noPos) 
-                                      in
-                                      (field_name, lhs, setter)
-                                  in
-                                  (case info.dfn of
-                                     | Product (pairs, _) ->
-                                       map makeGlobalFieldSetter pairs
-                                     | _ -> empty)
-                                | _ -> empty
-   in
-   let context = {spc                  = spc_with_gset,
-                  root_ops             = root_ops,
-                  global_var_name      = global_var_name,
-                  global_var           = global_var,
-                  global_type_name     = global_type_name,
-                  global_type          = global_type,
-                  global_var_setter    = global_var_setter,
-                  global_field_setters = global_field_setters,
-                  tracing?             = tracing?}
+   let context = {spc              = spc_with_gset,
+                  root_ops         = root_ops,
+                  global_var_name  = global_var_name,
+                  global_type_name = global_type_name,
+                  global_type      = global_type,
+                  global_var       = global_var,     % if global type does not have fields
+                  global_init_name = global_init_name,
+                  global_var_map   = global_var_map, % if global type has fields
+                  tracing?         = tracing?}
    in
    replaceLocalsWithGlobalRefs context
    }
