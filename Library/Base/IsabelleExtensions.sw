@@ -441,11 +441,11 @@ defs zabs_def [simp]:            "zabs i \_equiv nat (\_bari\_bar)"
 consts sign :: "int \_Rightarrow  int"
 defs sign_def:                   "sign i \_equiv (if i=0 then 0 else if 0<i then 1 else - 1)"
 
-consts zpower :: "int \_Rightarrow nat \_Rightarrow int" (infixr "**" 80)
-defs zpower_def [simp]: "x ** y \_equiv x ^ y"
+syntax zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
+translations "x ** y" => "x ^ y"
 
-consts power :: "nat \_Rightarrow nat \_Rightarrow nat" (infixr "***" 80)
-defs power_def [simp]: "x *** y \_equiv x ^ y"
+syntax power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
+translations "x *** y" => "x ^ y"
 
 (**************** and a few insights **********************)
    

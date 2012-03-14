@@ -429,11 +429,12 @@ defs zabs_def [simp]:            "zabs i \<equiv> nat (\<bar>i\<bar>)"
 consts sign :: "int \<Rightarrow>  int"
 defs sign_def:                   "sign i \<equiv> (if i=0 then 0 else if 0<i then 1 else - 1)"
 
-consts zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
-defs zpower_def [simp]: "x ** y \<equiv> x ^ y"
+syntax zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
+translations "x ** y" => "x ^ y"
 
-consts power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
-defs power_def [simp]: "x *** y \<equiv> x ^ y"
+syntax power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
+translations "x *** y" => "x ^ y"
+
 
 (**************** and a few insights **********************)
    
