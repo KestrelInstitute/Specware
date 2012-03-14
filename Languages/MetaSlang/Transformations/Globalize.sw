@@ -28,16 +28,20 @@ Globalize qualifying spec
    in
      implode (compress (explode s, true))
 
- type OpTypes = AQualifierMap MSType
- type MSRule  = MSPattern * MSTerm * MSTerm
- type MSVar   = AVar Position
+ type OpTypes  = AQualifierMap MSType
+ type MSRule   = MSPattern * MSTerm * MSTerm
+ type MSVar    = AVar Position
  type VarNames = List Id
 
- type Context = {spc              : Spec, 
-                 root_ops         : OpNames,
-                 global_type_name : TypeName, 
-                 global_var_name  : OpName, 
-                 tracing?         : Bool}
+ type Context = {spc                  : Spec, 
+                 root_ops             : OpNames,
+                 global_var_name      : OpName,
+                 global_var           : MSTerm,
+                 global_type_name     : TypeName,
+                 global_type          : MSType,
+                 global_var_setter    : MSTerm,
+                 global_field_setters : List (String * MSTerm * MSTerm), % LHS and setter
+                 tracing?             : Bool}
                    
  op nullTerm : MSTerm    = Record  ([], noPos)
  op nullType : MSType    = Product ([], noPos)
@@ -187,18 +191,16 @@ Globalize qualifying spec
         raise (Fail ("Op " ^ show ginit ^ " for producing initial global " ^ show gtype ^ " is undefined."))
           
 
- op globalizeInitOp (spc              : Spec, 
-                     global_type_name : TypeName,
-                     global_var_name  : OpName,
-                     global_init_name : OpName,
-                     tracing?         : Bool)
+ op globalizeInitOp (spc               : Spec, 
+                     global_var        : MSTerm,
+                     global_type       : MSType,
+                     global_init_name  : OpName,
+                     global_var_setter : MSTerm,
+                     tracing?          : Bool)
   : Option OpInfo =
   %% modify init fn to set global variable rather than return value
-  let (global_type, setter_name, setter_type) = globalSetterInfo global_type_name in
-  let setter     = Fun (Op (setter_name,     Nonfix), setter_type, noPos) in
-  let global_var = Fun (Op (global_var_name, Nonfix), global_type, noPos) in
-  let Some info  = findTheOp (spc, global_init_name) in
-  let old_dfn    = info.dfn in
+  let Some info = findTheOp (spc, global_init_name) in
+  let old_dfn   = info.dfn in
   let 
     def aux tm =
       case tm of
@@ -206,7 +208,7 @@ Globalize qualifying spec
         | Lambda (rules, _) ->
           let new_rules = map (fn (pat, cond, body) -> 
                                  let set_args = Record ([("1", global_var), ("2", body)], noPos) in
-                                 let new_tm   = Apply  (setter, set_args,                 noPos) in
+                                 let new_tm   = Apply  (global_var_setter, set_args, noPos) in
                                  (pat, cond, new_tm))
                               rules
           in
@@ -317,7 +319,7 @@ Globalize qualifying spec
 
  op globalType? (context : Context) (typ : MSType) : Bool =
   case typ of
-    | Base     (nm, [], _) -> nm = context.global_type_name 
+    | Base     (nm, [], _) -> nm = context.global_type_name
     | Subtype  (typ, _, _) -> globalType? context typ
     | Quotient (typ, _, _) -> globalType? context typ  %% TODO??
     | _ -> false
@@ -958,16 +960,25 @@ Globalize qualifying spec
   {
    global_type_name <- checkGlobalType (spc, global_type_name);
    global_var_name  <- checkGlobalVar  (spc, global_var_name, global_type_name);
+   global_type      <- return (Base (global_type_name, [], noPos));
+   global_var       <- return (Fun (Op (global_var_name, Nonfix), global_type, noPos));
    global_init_name <- (case opt_ginit of
                           | Some ginit -> checkGlobalInitOp (spc, ginit, global_type_name)
                           | _ -> findInitOp (spc, global_type_name));
 
+   global_var_setter_name <- return (Qualified ("System", "set"));
+   global_var_setter_type <- return (Arrow (Product ([("1", global_type), ("2", global_type)], noPos),
+                                            Product ([], noPos),
+                                            noPos));
+   global_var_setter      <- return (Fun (Op (global_var_setter_name, Nonfix), global_var_setter_type, noPos));
+
    spc_with_ginit   <- return (case findTheOp (spc, global_init_name) of
                                  | Some info ->
                                    (case globalizeInitOp (spc,
-                                                          global_type_name, 
-                                                          global_var_name, 
+                                                          global_var, 
+                                                          global_type, 
                                                           global_init_name,
+                                                          global_var_setter,
                                                           tracing?)
                                       of
                                       | Some new_info ->
@@ -996,11 +1007,17 @@ Globalize qualifying spec
                        let dfn     = TypedTerm (Any noPos, setter_type, noPos) in
                        addOp names Nonfix refine? dfn spc_with_gvar noPos;
 
-   let context = {spc              = spc_with_gset,
-                  root_ops         = root_ops,
-                  global_type_name = global_type_name, 
-                  global_var_name  = global_var_name,
-                  tracing?         = tracing?}
+   let global_field_setters = [] 
+   in
+   let context = {spc                  = spc_with_gset,
+                  root_ops             = root_ops,
+                  global_var_name      = global_var_name,
+                  global_var           = global_var,
+                  global_type_name     = global_type_name,
+                  global_type          = global_type,
+                  global_var_setter    = global_var_setter,
+                  global_field_setters = global_field_setters,
+                  tracing?             = tracing?}
    in
    replaceLocalsWithGlobalRefs context
    }
