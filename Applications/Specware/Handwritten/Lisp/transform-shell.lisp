@@ -21,7 +21,7 @@
 				   ("lr" . "[thm] Applies theorem as a rewrite in left-to-right direction")
 				   ("rl" . "[thm] Applies theorem as a rewrite in right-to-left direction")
 				   ("weaken" . "[thm] Applies implication theorem as a weakening rewrite")
-                                   ("apply" . "[rule] Applies rule")
+                                   ("apply" . "[meta-rule] Applies meta-rule")
 				   ("simp-standard" . "Applies standard simplifier")
 				   ("ss" . "Applies standard simplifier")
 				   ("partial-eval" . "Evaluate closed sub-expressions")
@@ -333,11 +333,13 @@
   (let* ((words (and argstr
 		     (String-Spec::removeEmpty (String-Spec::splitStringAt-2 argstr " "))))
 	 (rules (loop for tl on words by #'cddr
-		      collect (funcall (Script::ruleConstructor (first tl))
-				       (if (null (cdr tl))
-					   nil
+		      collect (if (null (cdr tl))
+                                  nil
+                                  (funcall (Script::ruleConstructor (first tl))
 					   (parse-qid (second tl) (command-kind (first tl))))))))
-    (interpret-command (Script::mkSimplify rules))))
+    (if (member nil rules)
+        (progn (warn "Illegal rewrite rules spec") (values))
+      (interpret-command (Script::mkSimplify rules)))))
 
 (defun finish-transform-session ()
   (finish-previous-multi-command)
