@@ -938,15 +938,6 @@ Globalize qualifying spec
   in
   return (new_spec, context.tracing?)
 
- op globalSetterInfo (global_type_name : TypeName) : MSType * QualifiedId * MSType =
-  let global_type = Base (global_type_name, [], noPos) in
-  let setter_name = Qualified ("System", "set") in
-  let setter_type = Arrow (Product ([("1", global_type), ("2", global_type)], noPos),
-                           Product ([], noPos),
-                           noPos)
-  in
-  (global_type, setter_name, setter_type)
-
  op globalizeSingleThreadedType (spc              : Spec, 
                                  root_ops         : OpNames,
                                  global_type_name : TypeName, 
@@ -998,13 +989,35 @@ Globalize qualifying spec
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
                             addOp names Nonfix refine? dfn spc_with_ginit noPos);
 
-   spc_with_gset    <- let (_, global_var_setter_name, global_var_setter_type) = globalSetterInfo global_type_name in
-                       let names   = [global_var_setter_name]                             in
+   spc_with_gset    <- let names   = [global_var_setter_name]                             in
                        let refine? = false                                                in
                        let dfn     = TypedTerm (Any noPos, global_var_setter_type, noPos) in
                        addOp names Nonfix refine? dfn spc_with_gvar noPos;
 
-   let global_field_setters = [] 
+   let global_field_setters = case findTheType (spc_with_gset, global_type_name) of
+                                | Some info -> 
+                                  let 
+                                    def makeGlobalFieldSetter (field_name, field_type) =
+                                      let lhs = 
+                                          Apply (Fun (Project field_name, Arrow (global_type, field_type, noPos), noPos),
+                                                 global_var,
+                                                 noPos)
+                                      in
+                                      let setter =
+                                          let setter_name = Qualified ("System", "set") in
+                                          let setter_type = Arrow (Product ([("1", field_type), ("2", field_type)], noPos),
+                                                                   Product ([], noPos),
+                                                                   noPos)
+                                          in
+                                          Fun (Op (setter_name, Nonfix), setter_type, noPos) 
+                                      in
+                                      (field_name, lhs, setter)
+                                  in
+                                  (case info.dfn of
+                                     | Product (pairs, _) ->
+                                       map makeGlobalFieldSetter pairs
+                                     | _ -> empty)
+                                | _ -> empty
    in
    let context = {spc                  = spc_with_gset,
                   root_ops             = root_ops,
