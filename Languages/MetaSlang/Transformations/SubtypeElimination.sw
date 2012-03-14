@@ -484,6 +484,9 @@ SpecNorm qualifying spec
      % let _ = writeLine("rstf> "^printType result) in
      result
  
+  op encapsulateSubtypePred?(pred: MSTerm, sup_ty: MSType): Bool =
+    termSize pred < Prover.unfoldSizeThreshold && ~(embed? CoProduct sup_ty)
+
   op raiseNamedTypes(spc: Spec): Spec =
     let def raiseTypeDefs(elts: SpecElements, spc: Spec, sbst: TermSubst)
               : SpecElements * Spec * TermSubst =
@@ -503,7 +506,7 @@ SpecNorm qualifying spec
                          %                   printType ty^"\n-->\n"^printTerm pred) in
                          let Qualified(q, ty_name) = qid in
                          let pred = termSubst(pred, sbst) in
-                         if termSize pred < Prover.unfoldSizeThreshold
+                         if encapsulateSubtypePred?(pred, sup_ty)
                            then let sup_ty = if equalType?(ty, r_ty) then sup_ty
                                              else case ty of
                                                     | Subtype(s_ty, _, _) -> s_ty
