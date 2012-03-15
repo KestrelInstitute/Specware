@@ -908,13 +908,15 @@ Globalize qualifying spec
   let new_ops =
       foldriAQualifierMap (fn (q, id, x, pending_ops) ->
                              let qid = Qualified (q, id) in
-                             if context.global_init_name = qid then
-                               let _ = writeLine("Not revising init op " ^ q ^ "." ^ id) in
-                               pending_ops
-                             else
                                case findTheOp (spc, qid) of
                                  | Some info -> 
-                                   let new_info = globalizeOpInfo (context, info) in
+                                   let new_info = 
+                                       if context.global_init_name = qid then
+                                         let _ = writeLine("Not revising init op " ^ q ^ "." ^ id) in
+                                         info
+                                       else
+                                         globalizeOpInfo (context, info) 
+                                   in
                                    insertAQualifierMap (pending_ops, q, id, new_info)
                                  | _ -> 
                                    let _ = writeLine("??? Globalize could not find op " ^ q ^ "." ^ id) in
