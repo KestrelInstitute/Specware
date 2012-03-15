@@ -1393,8 +1393,12 @@ op addList(S: StringSet, l: List String): StringSet =
 		new_defs ++ defs)
              defs
 	     (case opInfoDefs info of
-              | main_def :: _ -> [main_def]
-              | _ -> [])
+                | main_def :: _ -> [main_def]
+                | _ -> 
+                  if q = "Global" then
+                    [Record([],noPos)]  % to get (defvar Global.xxx nil)
+                  else
+                    [])
    in
      let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
      let _    = warn_about_non_constructive_defs defs   in
