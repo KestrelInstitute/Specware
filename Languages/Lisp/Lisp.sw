@@ -326,6 +326,7 @@ ListADT qualifying spec
 	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
 	streamWriter(stream,";;; Definitions\n\n");
+        streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
         if length defs < maxDefsPerFile
           then app (fn ldef -> ppDefToStream(ldef,stream)) defs
         else
