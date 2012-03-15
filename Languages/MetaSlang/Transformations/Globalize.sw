@@ -5,28 +5,28 @@ Globalize qualifying spec
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
-  op compressWhiteSpace (s : String) : String =
-   let 
-     def whitespace? char = 
-       char = #\s || char = #\n || char = #\t
+ op compressWhiteSpace (s : String) : String =
+  let 
+    def whitespace? char = 
+      char = #\s || char = #\n || char = #\t
 
-     def compress (chars, have_whitespace?) =
-       %% avoid deep recursions...
-       let (chars, _) = 
-           foldl (fn ((chars, have_whitespace?), char) ->
-                    if whitespace? char then
-                      if have_whitespace? then
-                        (chars, have_whitespace?)
-                      else
-                        ([#\s] ++ chars, true)
-                    else
-                      ([char] ++ chars, false))
-                 ([], true)
-                 chars
-       in
-         reverse chars
-   in
-     implode (compress (explode s, true))
+    def compress (chars, have_whitespace?) =
+      %% avoid deep recursions...
+      let (chars, _) = 
+          foldl (fn ((chars, have_whitespace?), char) ->
+                   if whitespace? char then
+                     if have_whitespace? then
+                       (chars, have_whitespace?)
+                     else
+                       ([#\s] ++ chars, true)
+                   else
+                     ([char] ++ chars, false))
+                ([], true)
+                chars
+      in
+      reverse chars
+  in
+  implode (compress (explode s, true))
 
  type OpTypes  = AQualifierMap MSType
  type MSRule   = MSPattern * MSTerm * MSTerm
@@ -58,18 +58,16 @@ Globalize qualifying spec
 
  op myTrue : MSTerm = Fun (Bool true, Boolean noPos, noPos)
 
- op XXX : MSType
 
- op setqType : MSType =
-  Arrow (Product ([("1", TyVar ("A", noPos)), 
-                   ("2", TyVar ("A", noPos))], 
-                  noPos), 
-         Product ([], noPos),
-         noPos)
+ op setqQid  : QualifiedId = Qualified ("System", "setq")
+ op setqType : MSType      = Arrow (Product ([("1", TyVar ("A", noPos)), 
+                                              ("2", TyVar ("A", noPos))], 
+                                             noPos), 
+                                    Product ([], noPos),
+                                    noPos)
 
- op setqOp : MSTerm = Fun (Op (Qualified ("System", "setq"), Nonfix), 
-                           setqType, 
-                           noPos)
+ op setqDef : MSTerm       = TypedTerm (Any noPos, setqType, noPos) 
+ op setqRef : MSTerm       = Fun (Op (setqQid, Nonfix), setqType, noPos)
 
  %% ================================================================================
  %% Verify that the suggested global type actually exists
@@ -224,19 +222,19 @@ Globalize qualifying spec
                                  let let_var      = Var    (("x", global_type), noPos) in
                                  let let_bindings = [(let_pat, fn_body)] in
                                  let updates      = map (fn (field_id, field_var as Fun (_, field_type, _)) ->
-                                                           Apply (setqOp, Record ([("1", field_var), 
-                                                                                   ("2", Apply (Fun (Project field_id, 
-                                                                                                     Arrow (global_type, field_type, noPos),
-                                                                                                     noPos),
-                                                                                                let_var,
-                                                                                                noPos))],
-                                                                                  noPos), 
+                                                           Apply (setqRef, Record ([("1", field_var), 
+                                                                                    ("2", Apply (Fun (Project field_id, 
+                                                                                                      Arrow (global_type, field_type, noPos),
+                                                                                                      noPos),
+                                                                                                 let_var,
+                                                                                                 noPos))],
+                                                                                   noPos), 
                                                                   noPos))
                                                         global_var_map
                                  in
                                  let new_let = Let (let_bindings, Seq(updates, noPos), noPos) in
                                  % let setq_args = Record ([("1", global_var), ("2", body)], noPos) in
-                                 % let new_tm   = Apply  (setqOp, setq_args, noPos) in
+                                 % let new_tm   = Apply  (setqRef, setq_args, noPos) in
                                  (fn_pat, cond, new_let))
                               rules
           in
@@ -406,7 +404,7 @@ Globalize qualifying spec
   let 
     def make_field_update (id, new_value) =
       let Some (_, lhs) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
-      Apply (setqOp, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
+      Apply (setqRef, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
   in
   let updates = 
       case new_fields of
@@ -1002,9 +1000,22 @@ Globalize qualifying spec
                                       | _ -> empty)
                                  | _ -> []);
 
-   spec_with_ginit  <- return (case findTheOp (spc, global_init_name) of
+   %% This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
+   spec_with_gset   <- addOp [setqQid] Nonfix false setqDef spc noPos;
+
+   %% Add global vars for the fields before running replaceLocalsWithGlobalRefs,
+   %% to avoid complaints about unknown ops.
+   spec_with_gvars  <- foldM (fn spc -> fn (_, global_field_var) ->
+                                let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
+                                let refine? = false                                 in
+                                let dfn     = TypedTerm (Any noPos, gtype, noPos)   in
+                                addOp [global_field_var_name] Nonfix refine? dfn spc noPos)
+                             spec_with_gset
+                             global_var_map;
+                             
+   spec_with_ginit  <- return (case findTheOp (spec_with_gvars, global_init_name) of
                                  | Some info ->
-                                   (case globalizeInitOp (spc,
+                                   (case globalizeInitOp (spec_with_gvars,
                                                           global_type, 
                                                           global_var, 
                                                           global_var_map,
@@ -1013,14 +1024,14 @@ Globalize qualifying spec
                                       of
                                       | Some new_info ->
                                         let Qualified (q,id) = global_init_name in
-                                        let new_ops  = insertAQualifierMap (spc.ops, q, id, new_info) in
-                                        spc << {ops = new_ops}
+                                        let new_ops  = insertAQualifierMap (spec_with_gvars.ops, q, id, new_info) in
+                                        spec_with_gvars << {ops = new_ops}
                                       | _ ->
                                         let _ = writeLine ("??? Globalize could not revise init op " ^ show global_init_name) in
-                                        spc)
+                                        spec_with_gvars)
                                  | _ -> 
                                    let _ = writeLine ("??? Op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
-                                   spc);
+                                   spec_with_gvars);
 
    (globalized_spec, tracing?) <- let context = {spc              = spec_with_ginit,
                                                  root_ops         = root_ops,
@@ -1034,6 +1045,8 @@ Globalize qualifying spec
                                   in
                                   replaceLocalsWithGlobalRefs context;
 
+   %% Add the main global var after calling replaceLocalsWithGlobalRefs, 
+   %% since that would prune it away before any references were introduced.
    spec_with_gvar   <- (case findTheOp (globalized_spec, global_var_name) of
                           | Some _ -> return globalized_spec
                           | _ -> 
@@ -1042,20 +1055,7 @@ Globalize qualifying spec
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
                             addOp [global_var_name] Nonfix refine? dfn globalized_spec noPos);
 
-   spec_with_gvars  <- foldM (fn spc -> fn (_, global_field_var) ->
-                                let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
-                                let refine? = false                                 in
-                                let dfn     = TypedTerm (Any noPos, gtype, noPos)   in
-                                addOp [global_field_var_name] Nonfix refine? dfn spc noPos)
-                             spec_with_gvar
-                             global_var_map;
-                             
-   spec_with_gset    <- let names   = [Qualified("System","Setq")]           in
-                        let refine? = false                                  in
-                        let dfn     = TypedTerm (Any noPos, setqType, noPos) in
-                        addOp names Nonfix refine? dfn spec_with_gvars noPos;
-
-   return (spec_with_gset, tracing?)
+   return (spec_with_gvar, tracing?)
    }
 
  %% ================================================================================
