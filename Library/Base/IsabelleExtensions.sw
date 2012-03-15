@@ -442,10 +442,10 @@ consts sign :: "int \_Rightarrow  int"
 defs sign_def:                   "sign i \_equiv (if i=0 then 0 else if 0<i then 1 else - 1)"
 
 syntax zpower :: "int \<Rightarrow> nat \<Rightarrow> int" (infixr "**" 80)
-translations "x ** y" => "x ^ y"
+translations "x ** y" => "(x::int) ^ (y::nat)"
 
 syntax power :: "nat \<Rightarrow> nat \<Rightarrow> nat" (infixr "***" 80)
-translations "x *** y" => "x ^ y"
+translations "x *** y" => "(x::nat) ^ (y::nat)"
 
 (**************** and a few insights **********************)
    
