@@ -1684,7 +1684,7 @@ If we want the precedence to be optional:
    ;; globalize (type, global-var-name, op-that-initializes-global)
    ((:tuple "globalize" "(" (1 :QUALIFIABLE-OP-NAMES) ","  ; roots
                             (2 :QUALIFIABLE-TYPE-NAME) "," ; global type
-                            (3 :QUALIFIABLE-OP-NAME)       ; global var of global type
+                            (3 :OP-NAME)                   ; global var of global type
                             (:optional (:tuple "," (4 :QUALIFIABLE-OP-NAME))) ; possibly named initializer
                         ")")
     (make-transform-globalize 1 2 3 4 ':left-lcb ':right-lcb))

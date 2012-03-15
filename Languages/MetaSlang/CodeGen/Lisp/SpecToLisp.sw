@@ -1305,7 +1305,7 @@ op addList(S: StringSet, l: List String): StringSet =
    %          of x :: r -> (x, r)
    %           | [] -> (defaultSpecwarePackage, [])
    let
-     def mkLOpDef (q, id, info, defs) = % ???
+     def mkLOpDef (q, id, info, defs) = 
        foldl (fn (defs, dfn) -> 
 	      let (tvs, srt, term) = unpackFirstTerm dfn in
               % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in

@@ -54,7 +54,7 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
     | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
-    | Globalize (OpNames * TypeName  * OpName  * Option OpName)
+    | Globalize (OpNames * TypeName  * Id * Option OpName)
     | Trace Bool
     | Print
 

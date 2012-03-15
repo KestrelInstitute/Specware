@@ -116,7 +116,7 @@ spec
  op SCParser.mkTransformSCTerm	     (uid   : SCTerm,                                   left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm       (uid,                    mkRegion left right)
  op SCParser.mkTransformQual	     (q     : Qualifier,     id       : Id,             left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual         (q, id,                  mkRegion left right)
  op SCParser.mkTransformItem         (mod   : String,        expr     : TransformExpr,  left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformItem         (mod,  expr,             mkRegion left right)
- op SCParser.mkTransformGlobalize    (roots : OpNames, typ : TypeName, gvar : OpName, init : Option OpName,   
+ op SCParser.mkTransformGlobalize    (roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName,   
                                                                                         left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformGlobalize    (roots, typ, gvar, init, mkRegion left right)
  op SCParser.mkTransformApply        (head  : TransformExpr, args     : TransformExprs, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformApply        (head, args,             mkRegion left right)
  op SCParser.mkTransformApplyRecord  (head  : TransformExpr, recpairs : TransformExprs, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformApply        (head, recpairs,         mkRegion left right)

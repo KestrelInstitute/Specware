@@ -153,7 +153,7 @@ MetaSlang qualifying spec
     | Item         String * ATransformExpr a                  * a  % e.g. unfold map
 
     | Slice        OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
-    | Globalize    OpNames * TypeName  * OpName  * Option OpName        * a  
+    | Globalize    OpNames * TypeName  * Id * Option OpName   * a  % name of global var will be Global.<id> 
       % Change all local vars of given type into references to named global var, 
       % which is initialized by the optional named op, or by a unique source op 
       % if the initializer is left unspecified.

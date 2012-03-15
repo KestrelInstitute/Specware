@@ -975,10 +975,11 @@ Globalize qualifying spec
  op globalizeSingleThreadedType (spc              : Spec, 
                                  root_ops         : OpNames,
                                  global_type_name : TypeName, 
-                                 global_var_name  : OpName, 
+                                 global_var_id    : String,
                                  opt_ginit        : Option OpName,
                                  tracing?         : Boolean)
   : SpecCalc.Env (Spec * Bool) =
+  let global_var_name = Qualified ("Global", global_var_id) in
   {
    global_type_name <- checkGlobalType (spc, global_type_name);
    global_var_name  <- checkGlobalVar  (spc, global_var_name, global_type_name);
@@ -1001,7 +1002,7 @@ Globalize qualifying spec
                                       | _ -> empty)
                                  | _ -> []);
 
-   spc_with_ginit   <- return (case findTheOp (spc, global_init_name) of
+   spec_with_ginit  <- return (case findTheOp (spc, global_init_name) of
                                  | Some info ->
                                    (case globalizeInitOp (spc,
                                                           global_type, 
@@ -1021,39 +1022,40 @@ Globalize qualifying spec
                                    let _ = writeLine ("??? Op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
                                    spc);
 
-   spc_with_gvar    <- (case findTheOp (spc_with_ginit, global_var_name) of
-                          | Some _ -> return spc_with_ginit
+   (globalized_spec, tracing?) <- let context = {spc              = spec_with_ginit,
+                                                 root_ops         = root_ops,
+                                                 global_var_name  = global_var_name,
+                                                 global_type_name = global_type_name,
+                                                 global_type      = global_type,
+                                                 global_var       = global_var,     % if global type does not have fields
+                                                 global_init_name = global_init_name,
+                                                 global_var_map   = global_var_map, % if global type has fields
+                                                 tracing?         = tracing?}
+                                  in
+                                  replaceLocalsWithGlobalRefs context;
+
+   spec_with_gvar   <- (case findTheOp (globalized_spec, global_var_name) of
+                          | Some _ -> return globalized_spec
                           | _ -> 
-                            let names   = [global_var_name]                   in
                             let refine? = false                               in
                             let gtype   = Base (global_type_name, [],  noPos) in
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
-                            addOp names Nonfix refine? dfn spc_with_ginit noPos);
+                            addOp [global_var_name] Nonfix refine? dfn globalized_spec noPos);
 
-   spc_with_gvars   <- foldM (fn spc -> fn (_, global_field_var) ->
-                                let Fun (Op (name, _), gtype, _) = global_field_var in
+   spec_with_gvars  <- foldM (fn spc -> fn (_, global_field_var) ->
+                                let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
                                 let refine? = false                                 in
                                 let dfn     = TypedTerm (Any noPos, gtype, noPos)   in
-                                addOp [name] Nonfix refine? dfn spc noPos)
-                             spc_with_gvar
+                                addOp [global_field_var_name] Nonfix refine? dfn spc noPos)
+                             spec_with_gvar
                              global_var_map;
                              
-   spc_with_gset    <- let names   = [Qualified("System","Setq")]           in
-                       let refine? = false                                  in
-                       let dfn     = TypedTerm (Any noPos, setqType, noPos) in
-                       addOp names Nonfix refine? dfn spc_with_gvars noPos;
+   spec_with_gset    <- let names   = [Qualified("System","Setq")]           in
+                        let refine? = false                                  in
+                        let dfn     = TypedTerm (Any noPos, setqType, noPos) in
+                        addOp names Nonfix refine? dfn spec_with_gvars noPos;
 
-   let context = {spc              = spc_with_gset,
-                  root_ops         = root_ops,
-                  global_var_name  = global_var_name,
-                  global_type_name = global_type_name,
-                  global_type      = global_type,
-                  global_var       = global_var,     % if global type does not have fields
-                  global_init_name = global_init_name,
-                  global_var_map   = global_var_map, % if global type has fields
-                  tracing?         = tracing?}
-   in
-   replaceLocalsWithGlobalRefs context
+   return (spec_with_gset, tracing?)
    }
 
  %% ================================================================================
