@@ -397,10 +397,10 @@ Globalize qualifying spec
   case findLeftmost (fn (id, _) -> id = field_name) context.global_var_map of
     | Some (_, var) -> var
 
- op makeGlobalFieldUpdates (context        : Context)
-                           (vars_to_remove : VarNames) % vars of global type, remove on sight
-                           (merger         : MSTerm)   % RecordMerge
-                           (tm             : MSTerm)   % record of fields to update
+ op makeGlobalFieldUpdates (context           : Context)
+                           (vars_to_remove    : VarNames) % vars of global type, remove on sight
+                           (merger            : MSTerm)   % RecordMerge
+                           (Record (fields,_) : MSTerm)   % record of fields to update
   : MSTerm =
   let 
     def wrap_lets (fields, innermost_body) = 
@@ -427,12 +427,19 @@ Globalize qualifying spec
       Apply (setqRef, Record ([("1", global_var_op), ("2", var)], noPos), noPos)
 
   in
-  case tm of
-    | Record (fields, _) -> 
+  case fields of
+    | [(id,value)] ->
+      %% no need to sequentialize with let vars when updating a single field
+      let Some (_, global_var_op) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
+      let new_value = case globalizeTerm context vars_to_remove value of
+                        | Some new_value -> new_value
+                        | _ -> value
+      in
+      Apply (setqRef, Record ([("1", global_var_op), ("2", new_value)], noPos), noPos)
+    | _ ->
+      %% make assignments in parallel: assign values to temp vars, then set global vars from temp vars
       let body = Seq (map make_setq fields, noPos) in
       wrap_lets (fields, body)
-    | _ -> 
-      tm
 
  op applyHeadType (tm : MSTerm, context : Context) : MSType =
   case tm of
