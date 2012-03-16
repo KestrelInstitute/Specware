@@ -397,21 +397,42 @@ Globalize qualifying spec
   case findLeftmost (fn (id, _) -> id = field_name) context.global_var_map of
     | Some (_, var) -> var
 
- op makeGlobalFieldUpdates (context    : Context)
-                           (merger     : MSTerm)  % RecordMerge
-                           (new_fields : MSTerm)  % record of fields to update
+ op makeGlobalFieldUpdates (context        : Context)
+                           (vars_to_remove : VarNames) % vars of global type, remove on sight
+                           (merger         : MSTerm)   % RecordMerge
+                           (tm             : MSTerm)   % record of fields to update
   : MSTerm =
   let 
-    def make_field_update (id, new_value) =
-      let Some (_, lhs) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
-      Apply (setqRef, Record ([("1", lhs), ("2", new_value)], noPos), noPos)
+    def wrap_lets (fields, innermost_body) = 
+      case fields of
+        | (id, value) :: fields ->
+          let let_body = wrap_lets (fields, innermost_body) in
+          let Some (_, global_var_op) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
+          let Fun (_, field_type, _) = global_var_op in
+          let pat = VarPat (("temp_" ^ id, field_type), noPos) in
+          let new_value = case globalizeTerm context vars_to_remove value of
+                            | Some new_value -> new_value
+                            | _ -> value
+          in
+          %%  let temp_var = new_value in
+          Let ([(pat, new_value)], let_body, noPos)
+        | _ -> 
+          innermost_body
+
+    def make_setq (id, new_value) =
+      let Some (_, global_var_op) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
+      let Fun (_, field_type, _) = global_var_op in
+      let var = Var (("temp_" ^ id, field_type), noPos) in
+      %%  global_xxx = temp_var
+      Apply (setqRef, Record ([("1", global_var_op), ("2", var)], noPos), noPos)
+
   in
-  let updates = 
-      case new_fields of
-        | Record (fields, _) -> map make_field_update fields
-        | _ -> []
-  in
-  Seq (updates, noPos)
+  case tm of
+    | Record (fields, _) -> 
+      let body = Seq (map make_setq fields, noPos) in
+      wrap_lets (fields, body)
+    | _ -> 
+      tm
 
  op applyHeadType (tm : MSTerm, context : Context) : MSType =
   case tm of
@@ -452,7 +473,7 @@ Globalize qualifying spec
                      | Some new_t3 -> new_t3
                      | _ -> t3
       in
-      let new_tm = makeGlobalFieldUpdates context t1 new_t3 in
+      let new_tm = makeGlobalFieldUpdates context vars_to_remove t1 new_t3 in
       Some new_tm
    | _ ->
      let opt_new_t1 = globalizeTerm context vars_to_remove t1 in
@@ -518,27 +539,40 @@ Globalize qualifying spec
                     (vars_to_remove       : VarNames)  % vars of global type, remove on sight
                     (Record (fields, pos) : MSTerm)
   : Option MSTerm = 
-  let (revised?, new_fields) = 
-      foldl (fn ((revised?, new_fields), (id, old_tm)) -> 
-               case old_tm of
-                 | Var ((id, _), _) | id in? vars_to_remove -> 
-                   (true, new_fields)
-                 | _ -> 
+  let (revised?, new_fields, opt_prefix) = 
+      foldl (fn ((revised?, new_fields, opt_prefix), (id, old_tm)) -> 
+               let (revised?, new_tm) = 
                    case globalizeTerm context vars_to_remove old_tm of
-                     | Some new_tm -> (true,     new_fields ++ [(id, new_tm)])
-                     | _           -> (revised?, new_fields ++ [(id, old_tm)]))
-            (false, [])
+                     | Some new_tm -> (true, new_tm)
+                     | _ -> (revised?, old_tm)
+               in
+               if globalType? context (termType old_tm) then
+                 (true, 
+                  new_fields,
+                  case new_tm of
+                    | Var _ -> opt_prefix % no need for prefix if just a variable
+                    | _     -> Some new_tm)
+               else
+                 (revised?, 
+                  new_fields ++ [(id, new_tm)], 
+                  opt_prefix))
+            (false, [], None)
             fields 
   in
   if revised? then
-    Some (case new_fields of
-            | [(lbl, tm)] | natConvertible lbl -> 
-              % If a var x is removed from 2-element record '(x, y)' 
-              %  simplify resulting singleton record '(y)' down to 'y'.
-              % But don't simplify a 1-element record with an explicitly named 
-              %  field such as {a = x}
-              tm  
-            | _ -> Record (renumber new_fields, pos))
+    let new_result =
+        case new_fields of
+          | [(lbl, tm)] | natConvertible lbl -> 
+            % If a var x is removed from 2-element record '(x, y)' 
+            %  simplify resulting singleton record '(y)' down to 'y'.
+            % But don't simplify a 1-element record with an explicitly named 
+            %  field such as {a = x}
+            tm  
+          | _ -> Record (renumber new_fields, pos)
+    in
+    Some (case opt_prefix of
+            | Some prefix -> Seq ([prefix, new_result], noPos)
+            | _ -> new_result)
   else 
     % term is unchanged
     None
