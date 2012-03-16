@@ -33,15 +33,15 @@ Globalize qualifying spec
  type MSVar    = AVar Position
  type VarNames = List Id
 
- type Context = {spc                  : Spec, 
-                 root_ops             : OpNames,
-                 global_var_name      : OpName,
-                 global_type_name     : TypeName,
-                 global_type          : MSType,
-                 global_var           : MSTerm,                 % if global type is not a product
-                 global_var_map       : List (String * MSTerm), % if global type has product fields
-                 global_init_name     : QualifiedId,
-                 tracing?             : Bool}
+ type Context = {spc              : Spec, 
+                 root_ops         : OpNames,
+                 global_var_name  : OpName,
+                 global_type_name : TypeName,
+                 global_type      : MSType,
+                 global_var       : MSTerm,                 % if global type is not a product
+                 global_var_map   : List (String * MSTerm), % if global type has product fields
+                 global_init_name : QualifiedId,
+                 tracing?         : Bool}
                    
  op nullTerm : MSTerm    = Record  ([], noPos)
  op nullType : MSType    = Product ([], noPos)
@@ -57,7 +57,6 @@ Globalize qualifying spec
   q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String"]
 
  op myTrue : MSTerm = Fun (Bool true, Boolean noPos, noPos)
-
 
  op setqQid  : QualifiedId = Qualified ("System", "setq")
  op setqType : MSType      = Arrow (Product ([("1", TyVar ("A", noPos)), 
@@ -217,26 +216,28 @@ Globalize qualifying spec
       case tm of
 
         | Lambda (rules, _) ->
-          let new_rules = map (fn (fn_pat, cond, fn_body) -> 
-                                 let let_pat      = VarPat (("x", global_type), noPos) in
-                                 let let_var      = Var    (("x", global_type), noPos) in
-                                 let let_bindings = [(let_pat, fn_body)] in
-                                 let updates      = map (fn (field_id, field_var as Fun (_, field_type, _)) ->
-                                                           Apply (setqRef, Record ([("1", field_var), 
-                                                                                    ("2", Apply (Fun (Project field_id, 
-                                                                                                      Arrow (global_type, field_type, noPos),
-                                                                                                      noPos),
-                                                                                                 let_var,
-                                                                                                 noPos))],
-                                                                                   noPos), 
-                                                                  noPos))
-                                                        global_var_map
-                                 in
-                                 let new_let = Let (let_bindings, Seq(updates, noPos), noPos) in
-                                 % let setq_args = Record ([("1", global_var), ("2", body)], noPos) in
-                                 % let new_tm   = Apply  (setqRef, setq_args, noPos) in
-                                 (fn_pat, cond, new_let))
-                              rules
+          let new_rules = 
+              map (fn (fn_pat, cond, fn_body) -> 
+                     let let_pat      = VarPat (("x", global_type), noPos) in
+                     let let_var      = Var    (("x", global_type), noPos) in
+                     let let_bindings = [(let_pat, fn_body)] in
+                     let updates      = map (fn (field_id, field_var as Fun (_, field_type, _)) ->
+                                               Apply (setqRef, 
+                                                      Record ([("1", field_var), 
+                                                               ("2", Apply (Fun (Project field_id, 
+                                                                                 Arrow (global_type, field_type, noPos),
+                                                                                 noPos),
+                                                                            let_var,
+                                                                            noPos))],
+                                                              noPos), 
+                                                      noPos))
+                                            global_var_map
+                     in
+                     let new_let = Let (let_bindings, Seq(updates, noPos), noPos) in
+                     % let setq_args = Record ([("1", global_var), ("2", body)], noPos) in
+                     % let new_tm   = Apply  (setqRef, setq_args, noPos) in
+                     (fn_pat, cond, new_let))
+                  rules
           in
           let new_dfn = Lambda (new_rules, noPos) in
           let _ = if tracing? then
@@ -815,6 +816,22 @@ Globalize qualifying spec
                                   fields
            in
            CoProduct (new_fields, noPos)
+
+         | Quotient (typ, tm, pos) -> 
+           let new_typ = nullify_global typ in
+           let new_tm = 
+               case globalizeTerm context vars_to_remove tm of
+                 | Some new_tm -> new_tm
+                 | _ -> tm
+           in
+           Quotient (new_typ, new_tm, pos)
+
+         | Subtype (typ, _, _) -> nullify_global typ
+
+         | Pi (tvs, typ, pos) -> Pi (tvs, nullify_global typ, pos)
+
+         | And (tm :: _, _) -> nullify_global tm
+
          | _ -> typ
 
   in
@@ -892,15 +909,15 @@ Globalize qualifying spec
       | Some new_dfn -> 
         let new_info = old_info << {dfn = new_dfn} in
         let _ = if context.tracing? then
-              let _ = writeLine ""                          in
-              let _ = writeLine ("Globalizing " ^ show qid) in
-              let _ = writeLine (printTerm old_dfn)         in
-              let _ = writeLine "  => "                     in
-              let _ = writeLine (printTerm new_dfn)         in
-              let _ = writeLine ""                          in
-              ()
-            else
-              ()
+                  let _ = writeLine ""                          in
+                  let _ = writeLine ("Globalizing " ^ show qid) in
+                  let _ = writeLine (printTerm old_dfn)         in
+                  let _ = writeLine "  => "                     in
+                  let _ = writeLine (printTerm new_dfn)         in
+                  let _ = writeLine ""                          in
+                  ()
+                else
+                  ()
         in
         new_info
       | _ -> 
@@ -951,7 +968,7 @@ Globalize qualifying spec
                                  | Some info -> 
                                    let new_info = 
                                        if context.global_init_name = qid then
-                                         let _ = writeLine("Not revising init op " ^ q ^ "." ^ id) in
+                                         % let _ = writeLine("Not revising init op " ^ q ^ "." ^ id) in
                                          info
                                        else
                                          globalizeOpInfo (context, info) 
