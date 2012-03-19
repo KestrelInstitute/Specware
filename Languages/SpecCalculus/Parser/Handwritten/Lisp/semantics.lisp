@@ -84,8 +84,13 @@
 (defun freshMetaTypeVar (left right)
   (Utilities::freshMetaTyVar-2 "parser" (make-pos left right)))
 
+;;; These are for instantiations of type variables. E.g. the type variable for the type of equality.
+;;; They are treated specially by type inference. See
+(defun freshPolyMetaTypeVar (left right)
+  (Utilities::freshMetaTyVar-2 "parser-poly" (make-pos left right)))
+
 (defun make-equality-fun (op l r)
-  (let ((tyvar (freshMetaTypeVar l r))
+  (let ((tyvar (freshPolyMetaTypeVar l r))
 	(pos (make-pos l r)))
     (cons :|Fun|
 	  (vector op 
@@ -782,7 +787,7 @@ If we want the precedence to be optional:
 (defun make-list-display (expressions l r)
   (StandardSpec::mkList-3 expressions
 			  (make-pos l r)
-			  (freshMetaTypeVar l r)))
+			  (freshPolyMetaTypeVar l r)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  STRUCTOR
@@ -945,8 +950,8 @@ If we want the precedence to be optional:
 (defun make-char-pattern       (char             l r) (cons :|CharPat|       (cons   char                                               (make-pos l r))))
 (defun make-string-pattern     (str              l r) (cons :|StringPat|     (cons   str                                                (make-pos l r))))
 
-(defun make-cons-pattern       (pattern patterns l r) (StandardSpec::mkConsPattern-4 pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
-(defun make-list-pattern       (patterns         l r) (StandardSpec::mkListPattern-3 patterns         (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-cons-pattern       (pattern patterns l r) (StandardSpec::mkConsPattern-4 pattern patterns (make-pos l r) (freshPolyMetaTypeVar l r)))
+(defun make-list-pattern       (patterns         l r) (StandardSpec::mkListPattern-3 patterns         (make-pos l r) (freshPolyMetaTypeVar l r)))
 
 (defun make-tuple-pattern      (patterns         l r)
   (if (= (length patterns) 1)
