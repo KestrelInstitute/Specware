@@ -8,7 +8,7 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " op  f infixl 22 : [a] List(a) * a -> Integer"
+	    " op [a] f infixl 22 : List(a) * a -> Integer"
 	    (:optional "")
 	    " op i : Nat = 123"
 	    (:optional "")
@@ -25,7 +25,7 @@
 	    "Errors in $TESTDIR/QuantifiedAxiom.sw"
             (:alternatives
 
-             ("13.16-13.22	: Incomplete type for f (3) = 0:"
+             ("13.16-13.22	: Incomplete type for f 3 = 0:"
               "mtv%metafy%*"
               "13.18-13.18	: Could not match type constraint"
               "                   3 of type Nat"
@@ -48,11 +48,11 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " op  f infixl 22 : [a] a -> Integer"
+	    " op [a] f infixl 22 : a -> Integer"
 	    (:optional "")
 	    " op  i : Nat = 123"
 	    (:optional "")
-	    " axiom A is [i] f(3) = 0"
+	    " axiom A is [i] f 3 = 0"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
