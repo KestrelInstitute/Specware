@@ -10,9 +10,14 @@
 	    (:optional "")
 	    "spec  "
 	    (:optional "")
-	    " op  X.fubaz : Nat = 12345"
+            (:alternatives
+             "op  X.fubaz: Nat = 12345"
+             "op  X.fubaz : Nat = 12345"
+             )
 	    (:optional "")
-	    " op  Y.fubaz : Nat = 12345"
+            (:alternatives
+             " op  Y.fubaz : Nat = 12345"
+             " op  Y.fubaz: Nat = 12345")
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")

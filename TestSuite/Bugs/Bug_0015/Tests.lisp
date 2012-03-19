@@ -12,19 +12,31 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " import B"
-	    (:optional "")
-	    " type Interval = {start : Integer, stop : Integer}"
-	    (:optional "")
-	    " op  isEmptyInterval? : Interval -> Bool"
+	    "import B"
 	    (:optional "")
             (:alternatives
-             " def isEmptyInterval? {start = x, stop = y} = x = y"
-             " def isEmptyInterval? {start = x : Integer, stop = y : Integer} = x = y"
-             (" def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool ="
-              " x = y")
-             (" def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool"
-              " = x = y"))
+             "type Interval = {start: Integer, stop: Integer}"
+             "type Interval = {start : Integer, stop : Integer}"
+             )
+	    (:optional "")
+	    "op  isEmptyInterval?: Interval -> Bool"
+	    (:optional "")
+            (:alternatives
+             "def isEmptyInterval?{start = x, stop = y} = x = y"
+             "def isEmptyInterval? {start = x, stop = y} = x = y"
+             "def isEmptyInterval?{start = x: Integer, stop = y: Integer} = x = y"
+             "def isEmptyInterval? {start = x : Integer, stop = y : Integer} = x = y"
+             "def isEmptyInterval?{start = x: Integer, stop = y: Integer}: Bool = x = y"
+             "def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool = x = y"
+             ("def isEmptyInterval?{start = x: Integer, stop = y: Integer}: Bool ="
+              "x = y")
+             ("def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool ="
+              "x = y")
+             ("def isEmptyInterval?{start = x: Integer, stop = y: Integer}: Bool"
+              "= x = y")
+             ("def isEmptyInterval? {start = x : Integer, stop = y : Integer} : Bool"
+              "= x = y")
+             )
 	    (:optional "")
 	    (:alternatives "endspec" "end-spec")
 	    (:optional "")

@@ -8,8 +8,12 @@
             (:optional "")
             "spec"
             (:optional "")
-            " op  f : Nat"
             (:alternatives
+             "op  f: Nat"
+             "op  f : Nat"
+             )
+            (:alternatives
+             " def f: Nat = 3"
              " def f : Nat = 3"
              " def f = 3")
             (:optional "")

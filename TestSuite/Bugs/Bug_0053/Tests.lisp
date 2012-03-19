@@ -14,12 +14,18 @@
             (:optional "")
 	    " import B"
             (:optional "")
-	    " type Interval = {start : Nat, stop : Nat}"
-            (:optional "")
-	    " op  isEmptyInterval? : Interval -> Bool"
             (:alternatives
-             " def isEmptyInterval? {start = x, stop = y} = x = y"
-             " def isEmptyInterval? {start = x : Nat, stop = y : Nat} : Bool = x = y")
+             "type Interval = {start: Nat, stop: Nat}"
+             "type Interval = {start : Nat, stop : Nat}")
+            (:optional "")
+            (:alternatives
+             "op  isEmptyInterval?: Interval -> Bool"
+             "op  isEmptyInterval? : Interval -> Bool")
+            (:alternatives
+             "def isEmptyInterval?{start = x, stop = y} = x = y"
+             "def isEmptyInterval? {start = x, stop = y} = x = y"
+             "def isEmptyInterval?{start = x: Nat, stop = y: Nat}: Bool = x = y"
+             "def isEmptyInterval? {start = x : Nat, stop = y : Nat} : Bool = x = y")
 	    (:alternatives "endspec" "end-spec")
             (:optional "")
             (:optional "")))

@@ -16,6 +16,11 @@
             (:optional "")
 	    "spec"
             (:optional "")
+            (:optional "")
+            (:alternatives 
+             "import Foo"
+             "type Foo(x) = List(x * x)")
+            (:optional "")
             (:optional " type {A, B, C}")
             (:optional " type {A, C, B}")
             (:optional " type {B, A, C}")
@@ -36,10 +41,6 @@
              " type {C, A, B} = Foo(Nat)"
              " type {C, B, A} = List(Nat * Nat)"
              " type {C, B, A} = Foo(Nat)")
-            (:optional "")
-            (:alternatives 
-             " import Foo"
-             "type Foo(x) = List(x * x)")
             (:optional "")
 	    (:alternatives "endspec" "end-spec")
             (:optional "")
