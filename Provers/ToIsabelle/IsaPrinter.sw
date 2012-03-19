@@ -691,11 +691,11 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let specware4 = splitStringAt(Specware4, "/") in
     let sw4_len = length specware4 in
     let red_p = if length p >= sw4_len && subFromTo(p, 0, sw4_len) = specware4
-                  then let rem_p = case subFromTo(p, sw4_len, length p) of
-                                     | "Library" :: _ ->
-                                       ["Library"]
-                                     | rem_p -> rem_p
-                       in
+                  then  let rem_p = subFromTo(p, sw4_len, length p) in
+                       %               | "Library" :: _ ->
+                       %                 ["Library"]
+                       %               | rem_p -> rem_p
+                       % in
                        "$SPECWARE4" :: rem_p
                   else abbreviatedPath p
     in
@@ -746,7 +746,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
         (%writeLine("ppI: "^thy_nm^" "^sw_fil_nm^" "^thy_fil_nm);
          if c.recursive?
            then
-             if fileOlder?(sw_fil_nm, thy_fil_nm) || spc = getBaseSpec()
+             if fileOlder?(sw_fil_nm, thy_fil_nm) %|| spc = getBaseSpec()
                then ()
              else toFile(thy_fil_nm,
                          showValue(val, c.recursive?, Some uid, Some thy_nm))
@@ -758,44 +758,49 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let
       %op  ppSpecElementsAux: Context -> Spec -> SpecElements -> Prettys
       def aux c spc r_elems =
-	case r_elems of
-	  | [] -> []
-	  | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst | unnamedPragma? prag ->
-	    Cons(ppProperty c prop c_str elems (Some prag),
-		 aux c spc rst)
-%	  | (Pragma(_, c_str, _, _)) :: (Property prop) :: (Pragma prag) :: rst ->
-%	    Cons(ppProperty c prop c_str (Some prag),
-%		 aux c spc rst)
-%	  | (Property prop) :: (Pragma prag) :: rst ->
-%	    Cons(ppProperty c prop "" (Some prag),
-%		 aux c spc rst)
+        let prettys =
+            (case r_elems of
+               | [] -> []
+               | (Comment (c_str,_)) :: (Property prop) :: (Pragma prag) :: rst | unnamedPragma? prag ->
+                 Cons(ppProperty c prop c_str elems (Some prag),
+                      aux c spc rst)
+                 %	  | (Pragma(_, c_str, _, _)) :: (Property prop) :: (Pragma prag) :: rst ->
+                 %	    Cons(ppProperty c prop c_str (Some prag),
+                 %		 aux c spc rst)
+                 %	  | (Property prop) :: (Pragma prag) :: rst ->
+                 %	    Cons(ppProperty c prop "" (Some prag),
+                 %		 aux c spc rst)
           
-          | (el as Op(qid, true, _)) :: rst | defHasForwardRef?(qid, rst, spc) ->
-            let (op_qids, pre_els, mrec_els, m_rst) = findMutuallyRecursiveElts(qid, rst, spc) in
-            if pre_els = []
-              then ppMutuallyRecursiveOpElts c op_qids (el :: mrec_els) elems
+               | (el as Op(qid, true, _)) :: rst | defHasForwardRef?(qid, rst, spc) ->
+                 let (op_qids, pre_els, mrec_els, m_rst) = findMutuallyRecursiveElts(qid, rst, spc) in
+                 if pre_els = []
+                   then ppMutuallyRecursiveOpElts c op_qids (el :: mrec_els) elems
                      :: (aux c spc m_rst)
-              else  %% After printing pre_els, this will redo analysis, but this is cheap
-                aux c spc (pre_els ++ (el :: mrec_els) ++ m_rst)
-          | (el as Property(_, _, _, term, _)) :: rst | hasForwardRef?(term, rst) ->
-            let new_els = moveAfterOp(el, rst) in
-            aux c spc new_els
-          | (el as TypeDef (qid,_)) :: rst | hasForwardCoProductTypeRef?(qid, rst, spc) ->
-            let (mrec_els, m_rst) = findMutuallyRecursiveCoProductElts(qid, rst, spc) in
-            ppMutuallyRecursiveCoProductElts c (el :: mrec_els)
-              ++ aux c spc m_rst
-	  | el :: (rst as (Pragma prag) :: _) | unnamedPragma? prag ->
-	    let pretty1 = ppSpecElement c spc el (Some prag) elems in
-	    let prettyr = aux c spc rst in
-	    if pretty1 = prEmpty
-	      then prettyr
-	      else pretty1::prettyr
-	  | el :: rst ->
-	    let pretty1 = ppSpecElement c spc el None elems in
-	    let prettyr = aux c spc rst in
-	    if pretty1 = prEmpty
-	      then prettyr
-	      else pretty1::prettyr
+                 else  %% After printing pre_els, this will redo analysis, but this is cheap
+                   aux c spc (pre_els ++ (el :: mrec_els) ++ m_rst)
+               | (el as Property(_, _, _, term, _)) :: rst | hasForwardRef?(term, rst) ->
+                 let new_els = moveAfterOp(el, rst) in
+                 aux c spc new_els
+               | (el as TypeDef (qid,_)) :: rst | hasForwardCoProductTypeRef?(qid, rst, spc) ->
+                 let (mrec_els, m_rst) = findMutuallyRecursiveCoProductElts(qid, rst, spc) in
+                 ppMutuallyRecursiveCoProductElts c (el :: mrec_els)
+                 ++ aux c spc m_rst
+               | el :: (rst as (Pragma prag) :: _) | unnamedPragma? prag ->
+                 let pretty1 = ppSpecElement c spc el (Some prag) elems in
+                 let prettyr = aux c spc rst in
+                 if pretty1 = prEmpty
+                   then prettyr
+                 else pretty1::prettyr
+               | el :: rst ->
+                 let pretty1 = ppSpecElement c spc el None elems in
+                 let prettyr = aux c spc rst in
+                 if pretty1 = prEmpty
+                   then prettyr
+                 else pretty1::prettyr)
+          in
+          case prettys of
+            | pr :: _ | pr = prEmpty -> prettys
+            | _ -> prEmpty :: prettys
     in
     prLines 0 (aux c spc elems)
 
@@ -1182,6 +1187,21 @@ removeSubTypes can introduce subtype conditions that require addCoercions
         in
         prLines 0 [prString verbatim_str]
 	   
+      | Pragma("proof", mid_str, "end-proof", pos) | hookPragma? mid_str ->
+        (case controlPragmaString mid_str of
+          | Some(_ :: hook_name :: _) ->
+            (case findPragmaNamed1(elems, hook_name) of
+              | Some("proof", mid_str, "end-proof", pos) ->
+                let verbatim_str = case search("\n", mid_str) of
+                                     | None -> ""
+                                     | Some n -> specwareToIsaString(subFromTo(mid_str, n, length mid_str))
+                in
+                prLines 0 [prString verbatim_str]
+              | None -> (warn("Hook "^hook_name^" not found!");
+                         prEmpty))
+          | _ -> (warn("Unnamed hook!");
+                  prEmpty))
+
       | Comment (str,_) ->
 	prConcat [prString "(*",
 		  prString str,
