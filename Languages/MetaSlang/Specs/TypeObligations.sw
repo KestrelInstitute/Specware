@@ -18,7 +18,7 @@ spec
 
  op simplifyObligations?: Bool = true
  op simplifyFalseObligations?: Bool = false
- op removeExcessAssumptions?: Bool = true
+ op removeExcessAssumptions?: Bool = false
  %% These two should be false for Isabelle conversion
  op generateTerminationConditions? : Bool = true
  op generateExhaustivityConditions?: Bool = true
