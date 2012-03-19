@@ -44,6 +44,13 @@ op namedPragma?(p: Pragma): Bool =
      | Some(str::_) -> str = verbatimIdString
      | _ -> false
 
+ op hookIdString: String = "-hook"
+
+ op hookPragma?(s: String): Bool =
+   case controlPragmaString s of
+     | Some(str::_) -> str = hookIdString
+     | _ -> false
+
  op splitNameFromPragmaStr(prag_str: String): Option(String * String) =
    let line1 = stripOuterSpaces(getFirstLine prag_str) in
    case splitAtStr(line1, " ") of
