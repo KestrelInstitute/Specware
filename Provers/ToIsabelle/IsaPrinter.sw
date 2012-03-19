@@ -585,9 +585,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
-     let _ = writeLine("9:\n"^printSpec spc) in
+    % let _ = writeLine("9:\n"^printSpec spc) in
     let spc = removeSubTypes spc coercions stp_tbl in
-     let _ = writeLine("10:\n"^printSpec spc) in
+    % let _ = writeLine("10:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let spc = exploitOverloading coercions true spc in
     %% Second round of simplification could be avoided with smarter construction
@@ -599,7 +599,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     in
     let spc = addTypeDefs spc opaque_type_map in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
-     let _ = writeLine("n:\n"^printSpec spc) in
+    % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 ([[prString "theory ", prString (thyName c.thy_name)],
                    [prString "imports ", ppImports c spc.elements],
                    [prString "begin"]]
