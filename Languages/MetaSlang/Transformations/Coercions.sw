@@ -16,7 +16,8 @@ spec
 
   op lifterFuns: List(QualifiedId * QualifiedId) =
     [(Qualified("List", "List"), Qualified("List", "map")),
-     (Qualified("Option", "Option"), Qualified("Option", "mapOption"))]
+     (Qualified("Option", "Option"), Qualified("Option", "mapOption")),
+     (Qualified("Set", "Set"), Qualified("Set", "map"))]
     
   op needsCoercion?(ctxt_ty: MSType, gen_ty: MSType, coercions: TypeCoercionTable, tm: MSTerm, spc: Spec)
      : Option(Bool * TypeCoercionInfo * List(QualifiedId * QualifiedId)) =
