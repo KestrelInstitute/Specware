@@ -325,7 +325,7 @@ AnnSpec qualifying spec
    ||
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as similar
-    unifyTypes env true s1 s2 )
+    unifyTypes env Ignore s1 s2)
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

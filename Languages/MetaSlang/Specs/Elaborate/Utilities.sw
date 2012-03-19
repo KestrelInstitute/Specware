@@ -415,24 +415,24 @@ Utilities qualifying spec
  type Unification = | NotUnify  MSType * MSType 
                     | Unify List (MSType * MSType)
 
+ type SubtypeMode = | Ignore | Ignore1 | Ignore2 | DontIgnore
+
   op unifyL : [a] LocalEnv * MSType * MSType * 
                   List a * List a * 
-                  List (MSType * MSType) * Bool * 
-                  (LocalEnv * a * a *  List (MSType * MSType) * Bool -> Unification)
+                  List (MSType * MSType) * SubtypeMode * Nat *
+                  (LocalEnv * a * a *  List (MSType * MSType) * SubtypeMode * Nat -> Unification)
 		  -> Unification
- def unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubtypes?, unify) : Unification = 
-   %% ignoreSubtypes? really should be called ignoreSubtypePreds? 
+ def unifyL (env, srt1, srt2, l1, l2, pairs, subtype_mode, dom_count, unify) : Unification = 
    case (l1, l2) of
      | ([], []) -> Unify pairs
      | (e1 :: l1, e2 :: l2) -> 
-       (case unify (env, e1, e2, pairs, ignoreSubtypes?) of
-	  | Unify pairs -> unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubtypes?, unify)
+       (case unify (env, e1, e2, pairs, subtype_mode, dom_count) of
+	  | Unify pairs -> unifyL (env, srt1, srt2, l1, l2, pairs, subtype_mode, dom_count, unify)
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
-  op unifyTypes : LocalEnv -> Bool -> MSType -> MSType -> Bool
- def unifyTypes env ignoreSubtypes? s1 s2 =
-   %% ignoreSubtypes? really should be called ignoreSubtypePreds? 
+  op unifyTypes : LocalEnv -> SubtypeMode -> MSType -> MSType -> Boolean
+ def unifyTypes env subtype_mode s1 s2 =
 
    (* Unify possibly recursive types s1 and s2.
       The auxiliary list "pairs" is a list of pairs of 
@@ -459,204 +459,245 @@ Utilities qualifying spec
 
       *)
 
-   case unify (env, s1, s2, [], ignoreSubtypes?) of
+   case unify (env, s1, s2, [], subtype_mode, 0) of
      | Unify     _       -> true
      | NotUnify (s1, s2) -> false
 
   op unifyCP : LocalEnv * MSType * MSType * 
                List (Id * Option MSType) * List (Id * Option MSType) * 
-	       List (MSType * MSType) * Bool
+	       List (MSType * MSType) * SubtypeMode * Nat
 	       -> Unification
- def unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?) = 
-   unifyL (env,srt1, srt2, r1, r2, pairs,ignoreSubtypes?,
-	   fn (env, (id1, s1), (id2, s2), pairs, ignoreSubtypes?) -> 
+ def unifyCP (env, srt1, srt2, r1, r2, pairs, subtype_mode, dom_count) = 
+   unifyL (env,srt1, srt2, r1, r2, pairs, subtype_mode, dom_count,
+	   fn (env, (id1, s1), (id2, s2), pairs, subtype_mode, dom_count) -> 
 	   if id1 = id2 then
 	     case (s1, s2) of
 	       | (None,    None)    -> Unify pairs 
-	       | (Some s1, Some s2) -> unify (env, s1, s2, pairs, ignoreSubtypes?)
+	       | (Some s1, Some s2) -> unify (env, s1, s2, pairs, subtype_mode, dom_count)
 	       | _                  -> NotUnify (srt1, srt2)
 	   else
 	     NotUnify (srt1, srt2))
 
   op unifyP : LocalEnv * MSType * MSType * 
               List (Id * MSType) * List (Id * MSType) * 
-              List (MSType * MSType) * Bool
+              List (MSType * MSType) * SubtypeMode * Nat
 	      -> Unification
- def unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?) = 
-     unifyL (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?,
-	     fn (env, (id1, s1), (id2, s2), pairs, ignoreSubtypes?) -> 
+ def unifyP (env, srt1, srt2, r1, r2, pairs, subtype_mode, dom_count) = 
+     unifyL (env, srt1, srt2, r1, r2, pairs, subtype_mode, dom_count,
+	     fn (env, (id1, s1), (id2, s2), pairs, subtype_mode, dom_count) -> 
 	     if id1 = id2 then
-	       unify (env, s1, s2, pairs, ignoreSubtypes?)
+	       unify (env, s1, s2, pairs, subtype_mode, dom_count)
 	     else 
 	       NotUnify (srt1, srt2))
 
  op debugUnify?: Bool = false
 
-  op unify : LocalEnv * MSType * MSType * List (MSType * MSType) * Bool -> Unification
- def unify (env, s1, s2, pairs, ignoreSubtypes?) = 
+  op unify : LocalEnv * MSType * MSType * List (MSType * MSType) * SubtypeMode * Nat -> Unification
+ def unify (env, s1, s2, pairs, subtype_mode, dom_count) = 
    let _ = if debugUnify? then writeLine("Unifying "^printType s1^" with "^printType s2) else () in
    let spc  = env.internal in
    let pos1 = typeAnn s1  in
    let pos2 = typeAnn s2  in
-   let srt1 = withAnnS (unlinkType s1, pos1) in % ? DerivedFrom pos1 ?
-   let srt2 = withAnnS (unlinkType s2, pos2) in % ? DerivedFrom pos2 ?
-   if equalType? (srt1, srt2) then 
-     Unify pairs 
+   let unlnk_srt1 = withAnnS (unlinkType s1, pos1) in % ? DerivedFrom pos1 ?
+   let unlnk_srt2 = withAnnS (unlinkType s2, pos2) in % ? DerivedFrom pos2 ?
+   let result =
+       if equalType? (unlnk_srt1, unlnk_srt2) then 
+         Unify pairs 
+       else
+         case (s1, s2) of
+            | (MetaTyVar (mtv1, _), _) ->
+              (case (! mtv1).link of
+                 | Some srt1 -> % unify (env, srt1, s2, pairs, subtype_mode, dom_count)
+                   maybeUpdateLink(unify (env, srt1, s2, pairs, subtype_mode, dom_count), s1, srt1, s2, dom_count, env)
+                 | _ ->
+               let s3 = unfoldType (env, unlnk_srt2) in  % s2 ?
+               let s4 = unlinkType s3 in
+               if equalType? (s4, s1) then
+                 Unify pairs
+               else if occurs (mtv1, s4) then
+                 NotUnify (unlnk_srt1, unlnk_srt2)
+               else 
+                 (linkMetaTyVar mtv1 (withAnnS (s2, pos2)); 
+                  Unify pairs))
+
+            | (_, MetaTyVar (mtv2, _)) ->
+              (case (! mtv2).link of
+                 | Some srt2 -> unify(env, s1, srt2, pairs, subtype_mode, dom_count)
+                   %maybeUpdateLink(unify (env, s1, srt2, pairs, subtype_mode, dom_count), s2, srt2, s1, env)
+                 | _ ->
+               let s4 = unfoldType (env, s1) in
+               let s5 = unlinkType s4 in
+               if equalType? (s5, s2) then
+                 Unify pairs
+               else if occurs (mtv2, s5) then
+                 NotUnify (unlnk_srt1, unlnk_srt2)
+               else
+                 (linkMetaTyVar mtv2 (withAnnS (s1, pos1)); 
+                  Unify pairs))
+
+           | (And (srts1, _), _) ->
+             foldl (fn (result,ss1) ->
+                    case result of
+                      | Unify _ -> result
+                      | _ -> unify (env, ss1, s2, pairs, subtype_mode, dom_count))
+                   (NotUnify (unlnk_srt1, unlnk_srt2))
+                   srts1
+
+           | (_, And (srts2, _)) ->
+             foldl (fn (result,ss2) ->
+                    case result of
+                      | Unify _ -> result
+                      | _ -> unify (env, s1, ss2, pairs, subtype_mode, dom_count))
+                   (NotUnify (unlnk_srt1, unlnk_srt2))
+                   srts2
+
+           | (CoProduct (r1, _), CoProduct (r2, _)) -> 
+             unifyCP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
+
+           | (Product (r1, _), Product (r2, _)) -> 
+             unifyP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
+
+           | (Arrow (t1, t2, _), Arrow (s1, s2, _)) ->
+             let _ = if debugUnify? then writeLine("dom_count: "^show dom_count) else () in
+             (case unify (env, t1, s1, pairs, subtype_mode, dom_count + 1) of
+                | Unify pairs -> unify (env, t2, s2, pairs, subtype_mode, if dom_count = 0 then 0 else dom_count + 1)
+                | notUnify -> notUnify)
+
+           | (Quotient (ty, trm, _), Quotient (ty2, trm2, _)) ->
+             if equalTermStruct? (trm, trm2) then
+               unify (env, ty, ty2, pairs, subtype_mode, dom_count)
+             else 
+               NotUnify (unlnk_srt1, unlnk_srt2)
+
+               %                 if trm = trm_ then
+               %                   unify (ty, ty2, pairs, subtype_mode, dom_count) 
+               %                 else 
+               %                   NotUnify (unlnk_srt1, unlnk_srt2)
+               %               | (Subtype (ty, trm, _), Subtype (ty2, trm2, _)) -> 
+               %                  if trm = trm_ then
+               %                    unify (ty, ty_, pairs) 
+               %                  else 
+               %                    NotUnify (unlnk_srt1, unlnk_srt2)
+
+            | (Boolean _, Boolean _) -> Unify pairs
+
+            | (TyVar (id1, _), TyVar (id2, _)) -> 
+              if id1 = id2 then
+                Unify pairs
+              else 
+                NotUnify (unlnk_srt1, unlnk_srt2)
+
+            | (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
+              if exists? (fn (p1, p2) -> 
+                            %% p = (unlnk_srt1, unlnk_srt2) 
+                            %% need predicate that chases metavar links
+                            equalType? (p1, s1) &&
+                            equalType? (p2, s2))
+                        pairs 
+                then
+                  Unify pairs
+              else if id = id2 then
+                unifyL (env, s1, s2, ts, ts2, pairs, subtype_mode, dom_count, unify)
+              else 
+                let s1x = unfoldType (env, s1) in
+                let s2x = unfoldType (env, s2) in
+                if equalType? (s1, s1x) && equalType? (s2x, s2) then
+                  NotUnify  (unlnk_srt1, unlnk_srt2)
+                else 
+                  unify (env, withAnnS (s1x, pos1), 
+                         withAnnS (s2x, pos2), 
+                         (s1, s2) :: pairs, 
+                         subtype_mode, dom_count)
+
+            % TODO: alpha equivalence...
+            % | (Pi _, Pi _) -> alpha equivalence directly
+            % or convert callers of unify to convert TyVars to MetaTyVars??
+
+            | (Pi _, _) ->
+              % TODO: or perhaps alpha equivalence by converting vars to meta-ty-vars here...
+              unify (env, typeInnerType s1, s2, pairs, subtype_mode, dom_count)
+
+            | (_, Pi _) ->
+              unify (env, s1, typeInnerType s2, pairs, subtype_mode, dom_count)
+
+            | (Any _, _) -> Unify pairs
+            | (_, Any _) -> Unify pairs
+
+            | _ ->
+          case (s1, s2) of
+            | (Subtype (ss1, p1, _), Subtype (ss2, p2, _)) ->
+              if subtype_mode = Ignore || unifyTerm? env.internal (p1, p2) then 
+                unify (env, ss1, ss2, pairs, subtype_mode, dom_count)
+              else
+                (case subtype_mode of
+                   | Ignore1 -> unify (env, ss1, s2, pairs, subtype_mode, dom_count)
+                   | Ignore2 -> unify (env, s1, ss2, pairs, subtype_mode, dom_count)
+                   | DontIgnore -> NotUnify (unlnk_srt1, unlnk_srt2))
+            | (Subtype (ss1, p1, _), _) | subtype_mode = Ignore || subtype_mode = Ignore1 ->
+              unify (env, ss1, s2, pairs, subtype_mode, dom_count)
+            | (_, Subtype (ss2, p2, _)) | subtype_mode = Ignore || subtype_mode = Ignore2 ->
+              unify (env, s1, ss2, pairs, subtype_mode, dom_count)
+            | (Base _, _) -> 
+              let s1x = unfoldType (env, s1) in
+              if equalType? (s1, s1x) then
+                NotUnify (unlnk_srt1, unlnk_srt2)
+              else 
+                unify (env, s1x, s2, pairs, subtype_mode, dom_count)
+            | (_, Base _) ->
+              let s2x = unfoldType (env, s2) in
+              if equalType? (s2, s2x) then
+                NotUnify (unlnk_srt1, unlnk_srt2)
+              else 
+                unify (env, s1, s2x, pairs, subtype_mode, dom_count)
+            | _ -> NotUnify (unlnk_srt1, unlnk_srt2)
+  in
+  let _ = if debugUnify? then writeLine(if embed? Unify result then "Succeeded!" else "Failed!") else () in
+  result
+
+(*
+ op subtypeOfEnv?(ty1: MSType, ty2: MSType, env: LocalEnv): Bool =
+   if equalType?(ty1, ty2) then true
    else
-     case (srt1, srt2) of
+   % let _ = if debugUnify? then writeLine(printType ty1^" <= "^printType ty2) else () in
+   case ty1 of
+     | Subtype(sty1, _, _) -> subtypeOfEnv?(sty1, ty2, env)
+     | Base _ -> let ty1x = unfoldType(env, ty1) in
+                 if equalType?(ty1x, ty1) then false
+                   else subtypeOfEnv?(ty1x, ty2, env)
+     | MetaTyVar(mtv1, _) ->
+       (case (! mtv1).link of
+          | Some ty1l -> subtypeOfEnv?(ty1l, ty2, env)
+          | _ -> false)
+     | _ -> false
+*)
 
-       | (And (srts1, _), _) ->
-         foldl (fn (result,s1) ->
-		case result of
-		  | Unify _ -> result
-		  | _ -> unify (env, s1, srt2, pairs, ignoreSubtypes?))
-	       (NotUnify (srt1, srt2))
-	       srts1
-       
-       | (_, And (srts2, _)) ->
-         foldl (fn (result,s2) ->
-		case result of
-		  | Unify _ -> result
-		  | _ -> unify (env, srt1, s2, pairs, ignoreSubtypes?))
-	       (NotUnify (srt1, srt2))
-	       srts2
-       
-       | (CoProduct (r1, _), CoProduct (r2, _)) -> 
-         unifyCP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?)
+ op tyVarInstantiationNames: List String = ["metafy", "parser-poly"]
 
-       | (Product (r1, _), Product (r2, _)) -> 
-	 unifyP (env, srt1, srt2, r1, r2, pairs, ignoreSubtypes?)
+ op fromTyVar?(ty: MSType): Bool =
+   case ty of
+     | MetaTyVar(mtv, _) -> (!mtv).name in? tyVarInstantiationNames
+     | _ -> false
 
-       | (Arrow (t1, t2, _), Arrow (s1, s2, _)) -> 
-	 (case unify (env, t1, s1, pairs, ignoreSubtypes?) of
-	    | Unify pairs -> unify (env, t2, s2, pairs, ignoreSubtypes?)
-	    | notUnify -> notUnify)
+ op maybeUpdateLink(result: Unification, mtv_srt: MSType, old_srt: MSType, new_srt: MSType, dom_count: Nat, env: LocalEnv): Unification =
+   if embed? NotUnify result
+       || (%let _ = if debugUnify? then writeLine(show dom_count^" "^printType old_srt^" <?= "^printType new_srt) else () in
+           dom_count ~= 1)
+       || equalType?(new_srt, old_srt)
+       || ~(fromTyVar? mtv_srt)
+       || ~(subtypeOf? env old_srt (unlinkType new_srt))
+     then result
+   else
+   let _ = if debugUnify? then writeLine("Relinking!"^" "^show dom_count) else () in
+   case mtv_srt of
+   | MetaTyVar (mtv, pos) -> 
+     (linkMetaTyVar mtv (withAnnS(new_srt, pos));
+      result)
+   | _ -> result 
 
-       | (Quotient (ty, trm, _), Quotient (ty2, trm2, _)) ->
-	 if equalTermStruct? (trm, trm2) then
-	   unify (env, ty, ty2, pairs, ignoreSubtypes?)
-	 else 
-	   NotUnify (srt1, srt2)
-
-	   %                 if trm = trm_ then
-	   %                   unify (ty, ty2, pairs, ignoreSubtypes?) 
-	   %                 else 
-	   %                   NotUnify (srt1, srt2)
-	   %               | (Subtype (ty, trm, _), Subtype (ty2, trm2, _)) -> 
-	   %                  if trm = trm_ then
-	   %                    unify (ty, ty_, pairs) 
-	   %                  else 
-	   %                    NotUnify (srt1, srt2)
-
-	| (Boolean _, Boolean _) -> Unify pairs
-
-	| (TyVar (id1, _), TyVar (id2, _)) -> 
-	  if id1 = id2 then
-	    Unify pairs
-	  else 
-	    NotUnify (srt1, srt2)
-
-	| (MetaTyVar (mtv, _), _) -> 
-	   let s3 = unfoldType (env, srt2) in
-	   let s4 = unlinkType s3 in
-	   if equalType? (s4, s1) then
-	     Unify pairs
-	   else if occurs (mtv, s4) then
-	     NotUnify (srt1, srt2)
-	   else 
-	     (linkMetaTyVar mtv (withAnnS (s2, pos2)); 
-	      Unify pairs)
-
-	| (s3, MetaTyVar (mtv, _)) -> 
-	  let s4 = unfoldType (env, s3) in
-	  let s5 = unlinkType s4 in
-	  if equalType? (s5, s2) then
-	    Unify pairs
-	  else if occurs (mtv, s5) then
-	    NotUnify (srt1, srt2)
-	  else
-	    (linkMetaTyVar mtv (withAnnS (s1, pos1)); 
-	     Unify pairs)
-
-	| (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
-	  if exists? (fn (p1, p2) -> 
-                        %% p = (srt1, srt2) 
-                        %% need predicate that chases metavar links
-                        equalType? (p1, srt1) &&
-                        equalType? (p2, srt2))
-	            pairs 
-	    then
-	      Unify pairs
-	  else if id = id2 then
-	    unifyL (env, srt1, srt2, ts, ts2, pairs, ignoreSubtypes?, unify)
-	  else 
-	    let s1x = unfoldType (env, srt1) in
-	    let s2x = unfoldType (env, srt2) in
-	    if equalType? (s1, s1x) && equalType? (s2x, s2) then
-	      NotUnify  (srt1, srt2)
-	    else 
-	      unify (env, withAnnS (s1x, pos1), 
-		     withAnnS (s2x, pos2), 
-		     Cons ((s1, s2), pairs), 
-		     ignoreSubtypes?)
-
-	% TODO: alpha equivalence...
-	% | (Pi _, Pi _) -> alpha equivalence directly
-        % or convert callers of unify to convert TyVars to MetaTyVars??
-
-	| (Pi _, _) ->
-	  % TODO: or perhaps alpha equivalence by converting vars to meta-ty-vars here...
-	  unify (env, typeInnerType srt1, srt2, pairs, ignoreSubtypes?)
-
-	| (_, Pi _) ->
-	  unify (env, srt1, typeInnerType srt2, pairs, ignoreSubtypes?)
-
-	| (Any _, _) -> Unify pairs
-	| (_, Any _) -> Unify pairs
-
-	| _ ->
-	  if ignoreSubtypes? then
-	    case (srt1, srt2) of
-	      | (Subtype (ty, _, _), ty2) -> unify (env, ty, ty2, pairs, ignoreSubtypes?)
-	      | (ty, Subtype (ty2, _, _)) -> unify (env, ty, ty2, pairs, ignoreSubtypes?)
-	      | (Base _, _) -> 
-	        let s1x = unfoldType (env, srt1) in
-		if equalType? (s1, s1x) then
-		  NotUnify (srt1, srt2)
-		else 
-		  unify (env, s1x, s2, pairs, ignoreSubtypes?)
-	      | (_, Base _) ->
-		let s3 = unfoldType (env, srt2) in
-		if equalType? (s2, s3) then
-		  NotUnify (srt1, srt2)
-		else 
-		  unify (env, s1, s3, pairs, ignoreSubtypes?)
-	      | _ -> NotUnify (srt1, srt2)
-	  else 
-	    case (srt1, srt2) of
-	      | (Subtype (s1, p1, _), Subtype (s2, p2, _)) ->
-		if unifyTerm? env.internal (p1, p2) then 
-		  unify (env, s1, s2, pairs, ignoreSubtypes?)
-		else
-		  NotUnify (srt1, srt2)
-	      | (Base _, _) -> 
-	        let  s3 = unfoldType (env, srt1) in
-		if equalType? (s1, s3) then 
-		  NotUnify (srt1, srt2)
-		else 
-		  unify (env, s3, s2, pairs, ignoreSubtypes?)
-	      | (_, Base _) ->
-		let s3 = unfoldType (env, srt2) in
-		if equalType? (s2, s3) then
-		  NotUnify (srt1, srt2)
-		else 
-		  unify (env, s1, s3, pairs, ignoreSubtypes?)
-	      | _ -> NotUnify (srt1, srt2)
-
-  op consistentTypes? : LocalEnv * MSType * MSType * Bool -> Bool
- def consistentTypes? (env, srt1, srt2, ignoreSubtypes?) =
+  op consistentTypes? : LocalEnv * MSType * MSType * SubtypeMode -> Boolean
+ def consistentTypes? (env, srt1, srt2, subtype_mode) =
    let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
-   let val = (unifyTypes env ignoreSubtypes? srt1 srt2) in
+   let val = (unifyTypes env subtype_mode srt1 srt2) in
    (clearMetaTyVarLinks free_mtvs;
     val)
 
@@ -730,7 +771,7 @@ Utilities qualifying spec
   op linkMetaTyVar : MS.MetaTyVar -> MSType -> ()
  def linkMetaTyVar (mtv : MS.MetaTyVar) tm = 
    let cell = ! mtv in
-   (if debugUnify? then writeLine ("Linking "^cell.name^Nat.show cell.uniqueId^" with "^printType tm) else ();
+   (if debugUnify? then writeLine ("Linking "^cell.name^"%"^Nat.show cell.uniqueId^" with "^printType tm) else ();
     if embed? CoProduct tm then break("copr") else ();
     mtv := cell << {link = Some tm})
 
@@ -746,13 +787,17 @@ Utilities qualifying spec
  %% Don't do any unification, to avoid coercing undeclared x to bogus type.
   op Accord.subtypeOf? : LocalEnv -> MSType -> MSType -> Bool
  def Accord.subtypeOf? env x y =
-   let spc = env.internal in
+   % let _ = if debugUnify? then writeLine(printType x^" <?= "^printType y) else () in
    let 
      def aux x =
        equalType? (x, y) ||
        (let x = unfoldType (env, x) in
         case x of
-	  | Subtype (x, _, _) -> aux x 
+	  | Subtype (x, _, _) -> aux x
+          | MetaTyVar(mtv1, _) ->
+            (case (! mtv1).link of
+               | Some ty1l -> subtypeOf? env ty1l y
+               | _ -> false)
 	  | _ -> false)
    in
      aux x

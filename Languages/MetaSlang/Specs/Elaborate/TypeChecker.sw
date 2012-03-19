@@ -628,7 +628,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     resolveMetaTyVars trm
 
   def single_pass_elaborate_term (env, trm, term_type) =
-     let _ = if debug? then writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) else () in
+    let _ = if debug? then writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) else () in
     let typed_term =
           case trm of
             | Fun (OneName (id, fixity), srt, pos) ->
@@ -1134,7 +1134,6 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
             | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
 
             | And (tms, pos) -> And (map (fn tm -> single_pass_elaborate_term(env, tm, term_type)) tms, pos)
-
             | term -> (%System.print term;
                        term)
     in
@@ -1298,7 +1297,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		   None))
 	  | rtype ->
 	    let srtPos = typeAnn srt in
-	    (case filter (consistentTypeOp? (env, withAnnS (rtype, srtPos),true)) terms of
+	    (case filter (consistentTypeOp? (env, withAnnS (rtype, srtPos),Ignore)) terms of
 	       | [] -> (error (env,
 			       "No matches for op " ^ id ^ " of " ^ (printMaybeAndType srt),
 			       pos);
@@ -1309,13 +1308,19 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		   None
 		 else
 		   (let consistent_terms_with_exactly_matching_subtypes = 
-		        filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), false)) 
+		        filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
 			       consistent_terms
 		    in
-		    let plausible_terms = if consistent_terms_with_exactly_matching_subtypes = [] then 
-		                            consistent_terms 
-					  else 
-					    consistent_terms_with_exactly_matching_subtypes 
+		    let plausible_terms = if consistent_terms_with_exactly_matching_subtypes ~= [] 
+		                            then consistent_terms_with_exactly_matching_subtypes 
+					  else
+                                          let consistent_terms_with_subtype_of = []
+                                             % filter (consistentSortOp? (env, withAnnS (rsort, srtPos), Ignore1)) 
+                                             %   consistent_terms
+                                          in
+                                          if consistent_terms_with_subtype_of ~= []
+                                            then consistent_terms_with_subtype_of
+					    else consistent_terms 
 		    in
 		    case plausible_terms of
 		      %% If only one term matches including subtypes, choose it
@@ -1352,9 +1357,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | _ ->
 	"type " ^ (printType srt) 
 
-  def consistentTypeOp? (env, srt1, ignoreSubtypes?) (Fun (_, srt2, _)) =
+  def consistentTypeOp? (env, srt1, subtype_mode) (Fun (_, srt2, _)) =
    %% calls unifyTypes, but then resets metatyvar links to None...
-   consistentTypes? (env, srt1, srt2, ignoreSubtypes?)
+   consistentTypes? (env, srt1, srt2, subtype_mode)
 
   % ========================================================================
 
@@ -1368,7 +1373,8 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   def elaborateTypeForTerm (env, term, givenType, expectedType) = 
     %% unifyTypes has side effect of modifying metaTyVar links
-    let success = unifyTypes env true givenType expectedType in
+    let _ = if debugUnify? then writeLine("Typing term "^printTerm term^": "^printType givenType^" with "^printType expectedType) else () in
+    let success = unifyTypes env Ignore givenType expectedType in
     ((if success || env.firstPass? then
 	()
       else
@@ -1405,7 +1411,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
     let givenTypeChecked = checkType (env, givenType) in
     %% unifyTypes has side effect of modifying metatyvar links
-    let success = unifyTypes env true givenTypeChecked expectedType in
+    let success = unifyTypes env Ignore givenTypeChecked expectedType in
     ((if success then
 	()
       else             
@@ -1418,7 +1424,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   def elaborateType (env, s1, s2) = 
     let s1Checked = checkType (env, s1) in
     %% unifyTypes has side effect of modifying metatyvar links
-    let success = unifyTypes env true s1Checked s2 in
+    let success = unifyTypes env Ignore s1Checked s2 in
     ((if success then
 	()
       else             
