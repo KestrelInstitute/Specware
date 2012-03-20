@@ -9,20 +9,20 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " op  xx : Nat"
+	    "op xx: Nat"
 	    (:optional "")
-	    " op  ww : Nat -> Nat"
+	    "op ww: Nat -> Nat"
 	    (:optional "")
-	    " op  ff (xx0 : Nat) : Int = xx0 + xx"
+	    "op ff (xx0: Nat): Int = xx0 + xx"
 	    (:optional "")
-	    " axiom foo is fa(xx0 : Nat) xx0 = xx0 + xx"
+	    "axiom foo is fa(xx0: Nat) xx0 = xx0 + xx"
 	    (:optional "")
-	    " op  g (n : Nat) : Int = let xx0 = n in "
-	    "                             xx0 + xx"
+	    "op g (n: Nat): Int = let xx0 = n in "
+	    "xx0 + xx"
 	    (:optional "")
-	    " op  h (n : Nat) : Int  = let def ww0 n = n"
-	    "                                  in"
-	    "                                  ww0 n + ww n"
+	    "op h (n: Nat): Int = let def ww0 (n: Nat): Nat = n"
+	    "in"
+	    "ww0 n + ww n"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -35,20 +35,20 @@
 	    (:optional "")
 	    "spec  "
 	    (:optional "")
-	    " op  aa : Nat"
+	    "op aa: Nat"
 	    (:optional "")
-	    " op  bb : Nat -> Nat"
+	    "op bb: Nat -> Nat"
 	    (:optional "")
-	    " op  ff (xx0 : Nat) : Int = xx0 + aa"
+	    "op ff (xx0: Nat): Int = xx0 + aa"
 	    (:optional "")
-	    " axiom foo is fa(xx0 : Nat) xx0 = xx0 + aa"
+	    "axiom foo is fa(xx0: Nat) xx0 = xx0 + aa"
 	    (:optional "")
-	    " op  g (n : Nat) : Int = let xx0 = n in "
-	    "                             xx0 + aa"
+	    "op g (n: Nat): Int = let xx0 = n in "
+	    "xx0 + aa"
 	    (:optional "")
-	    " op  h (n : Nat) : Int = let def ww0 n = n"
-	    "                                 in"
-	    "                                 ww0 n + bb n"
+            "op h (n: Nat): Int = let def ww0 (n: Nat): Nat = n"
+	    "in"
+	    "ww0 n + bb n"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")

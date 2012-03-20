@@ -9,31 +9,31 @@
 	    (:optional "") 
 	    "spec  "
 	    (:optional "") 
-	    " type AA"
+	    "type AA"
 	    (:optional "") 
-	    " axiom foo1 is fa(x : AA) x = x"
+	    "axiom foo1 is fa(x: AA) x = x"
 	    (:optional "") 
-	    " type BB"
+	    "type BB"
 	    (:optional "") 
-	    " axiom foo2 is fa(x : BB) x = x"
+	    "axiom foo2 is fa(x: BB) x = x"
 	    (:optional "") 
-	    " axiom foo3 is fa(x : BB) x = x"
+	    "axiom foo3 is fa(x: BB) x = x"
 	    (:optional "") 
-	    " type CC"
+	    "type CC"
 	    (:optional "") 
-	    " type Q.C"
+	    "type Q.C"
 	    (:optional "") 
-	    " axiom foo4 is fa(x : CC) x = x"
+	    "axiom foo4 is fa(x: CC) x = x"
 	    (:optional "") 
-	    " axiom foo5 is fa(x : Q.C) x = x"
+	    "axiom foo5 is fa(x: Q.C) x = x"
 	    (:optional "") 
-	    " type DD"
+	    "type DD"
 	    (:optional "") 
-	    " type Q2.D"
+	    "type Q2.D"
 	    (:optional "") 
-	    " axiom foo6 is fa(x : DD) x = x"
+	    "axiom foo6 is fa(x: DD) x = x"
 	    (:optional "") 
-	    " axiom foo7 is fa(x : Q2.D) x = x"
+	    "axiom foo7 is fa(x: Q2.D) x = x"
             (:alternatives "endspec" "end-spec")
 	    (:optional "") 
 	    (:optional "") 
