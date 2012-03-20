@@ -10,12 +10,14 @@
     "spec"
     (:optional "")
     (:alternatives
-     " op b : Nat -> String = show"
-     " def b : Nat -> String = show"
-     (" op  b : Nat -> String"
-      " def b : Nat -> String = show")
-     (" op  b : Nat -> String"
-      " def b = show"))
+     "op b : Nat -> String = show"
+     "def b : Nat -> String = show"
+     ("op  b: Nat -> String"
+      "def b: Nat -> String = show")
+     ("op  b : Nat -> String"
+      "def b : Nat -> String = show")
+     ("op  b : Nat -> String"
+      "def b = show"))
     (:optional "")
     (:alternatives "endspec" "end-spec")
     (:optional "")

@@ -6,41 +6,41 @@
   :show   "DeclsRequired"
   :output '(";;; Elaborating spec at $TESTDIR/DeclsRequired"
 	    (:optional "")
-	    "spec  "
+	    "spec"
 	    (:optional "")
-	    " type YesNo =  | No | Yes"
+	    "type YesNo = | No | Yes"
 	    (:optional "")
-	    " type Affirm =  | Ok | Sure | Yes"
+	    "type Affirm = | Ok | Sure | Yes"
 	    (:optional "")
-	    " op  f : Integer"
+	    "op f: Integer"
 	    (:optional "")
-	    " op  g : Nat"
+	    "op g: Nat"
 	    (:optional "")
-	    " op  x : List(Char)"
+	    "op x: List(Char)"
 	    (:optional "")
-	    " op  y : List(String)"
+	    "op y: List(String)"
 	    (:optional "")
-	    " op  z : Affirm"
-	    (:optional "")
-	    (:alternatives
-             " def f = 3"
-             " def f : Integer = 3")
+	    "op z: Affirm"
 	    (:optional "")
 	    (:alternatives
-             " def g = 3"
-             " def g : Nat = 3")
+             "def f = 3"
+             "def f: Integer = 3")
 	    (:optional "")
 	    (:alternatives
-             " def x = []"
-             " def x : List(Char) = []")
+             "def g = 3"
+             "def g: Nat = 3")
 	    (:optional "")
 	    (:alternatives
-             " def y = []"
-             " def y : List(String) = []")
+             "def x = []"
+             "def x: List(Char) = []")
 	    (:optional "")
 	    (:alternatives
-             " def z = Yes"
-             " def z : Affirm = Yes")
+             "def y = []"
+             "def y: List(String) = []")
+	    (:optional "")
+	    (:alternatives
+             "def z = Yes"
+             "def z: Affirm = Yes")
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")

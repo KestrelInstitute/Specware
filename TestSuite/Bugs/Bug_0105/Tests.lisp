@@ -8,9 +8,9 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " op [a] f infixl 22 : List(a) * a -> Integer"
+	    " op [a] f infixl 22: List(a) * a -> Integer"
 	    (:optional "")
-	    " op i : Nat = 123"
+	    " op i: Nat = 123"
 	    (:optional "")
 	    " axiom A is [i] f 3 = 0"
             (:alternatives "endspec" "end-spec")
@@ -34,7 +34,7 @@
              ("13.16-13.16	: Could not match type constraint"
               "                   f of type List(mtv%metafy%7) * mtv%metafy%7 -> Integer"
               "          with expected type Nat -> Integer"
-              "13.16-13.22	: Incomplete type for f (3) = 0:"
+              "13.16-13.22	: Incomplete type for f 3 = 0:"
               "mtv%metafy%7")
 
              )
@@ -48,9 +48,9 @@
 	    (:optional "")
 	    "spec"
 	    (:optional "")
-	    " op [a] f infixl 22 : a -> Integer"
+	    " op [a] f infixl 22: a -> Integer"
 	    (:optional "")
-	    " op  i : Nat = 123"
+	    " op i: Nat = 123"
 	    (:optional "")
 	    " axiom A is [i] f 3 = 0"
             (:alternatives "endspec" "end-spec")
