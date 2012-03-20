@@ -560,7 +560,8 @@ Utilities qualifying spec
            | (Arrow (t1, t2, _), Arrow (s1, s2, _)) ->
              let _ = if debugUnify? then writeLine("dom_count: "^show dom_count) else () in
              (case unify (env, t1, s1, pairs, subtype_mode, dom_count + 1) of
-                | Unify pairs -> unify (env, t2, s2, pairs, subtype_mode, if dom_count = 0 then 0 else dom_count + 1)
+                | Unify pairs -> unify (env, t2, s2, pairs, subtype_mode, 2  %if dom_count = 0 then 0 else dom_count + 1
+                                        )
                 | notUnify -> notUnify)
 
            | (Quotient (ty, trm, _), Quotient (ty2, trm2, _)) ->
