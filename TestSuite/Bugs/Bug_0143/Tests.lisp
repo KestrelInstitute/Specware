@@ -8,12 +8,12 @@
 	    (:optional "")
 	    "spec  "
 	    (:optional "")
-	    " axiom A is (ex(x : Bool) x) => false"
+	    "axiom A is (ex(x: Bool) x) => false"
 	    (:optional "")
-	    " axiom B is (let zero = 1 in "
+	    "axiom B is (let zero = 1 in "
 	    "             zero) = zero"
 	    (:optional "")
-	    " axiom C is (if true then 1 else 2) + 3 = 4"
+	    "axiom C is (if true then 1 else 2) + 3 = 4"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
