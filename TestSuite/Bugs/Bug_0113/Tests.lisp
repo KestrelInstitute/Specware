@@ -95,27 +95,27 @@
   :show   "Collision#Ok1"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok1"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Y"
+	    "type Y"
             (:optional "")
-	    " type Z"
+	    "type Z"
 	    (:optional "")
-	    " op  f : Y"
+	    " op  f: Y"
             (:optional "")
-	    " op  g : Y"
+	    " op  g: Y"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " op  q : Z"
+	    " op  q: Z"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Z"
+	    " op  D.m: Z"
             (:optional "")
-	    " op  E.m : Z"
+	    " op  E.m: Z"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -124,27 +124,27 @@
   :show   "Collision#Ok2"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok2"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Y"
+	    "type Y"
             (:optional "")
-	    " type Z"
+	    "type Z"
 	    (:optional "")
-	    " op  f : Y"
+	    " op  f: Y"
             (:optional "")
-	    " op  g : Y"
+	    " op  g: Y"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " op  q : Z"
+	    " op  q: Z"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Z"
+	    " op  D.m: Z"
             (:optional "")
-	    " op  E.m : Z"
+	    " op  E.m: Z"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -153,27 +153,27 @@
   :show   "Collision#Ok3"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok3"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Y"
+	    "type Y"
             (:optional "")
-	    " type X"
+	    "type X"
 	    (:optional "")
-	    " op  f : Y"
+	    " op  f: Y"
             (:optional "")
-	    " op  g : Y"
+	    " op  g: Y"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : X"
+	    " op  D.m: X"
             (:optional "")
-	    " op  E.m : X"
+	    " op  E.m: X"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -182,27 +182,27 @@
   :show   "Collision#Ok4"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok4"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Y"
+	    "type Y"
             (:optional "")
-	    " type X"
+	    "type X"
 	    (:optional "")
-	    " op  f : Y"
+	    " op  f: Y"
             (:optional "")
-	    " op  g : Y"
+	    " op  g: Y"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : X"
+	    " op  D.m: X"
             (:optional "")
-	    " op  E.m : X"
+	    " op  E.m: X"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -211,27 +211,27 @@
   :show   "Collision#Ok5"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok5"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type X"
+	    "type X"
             (:optional "")
-	    " type Y"
+	    "type Y"
 	    (:optional "")
-	    " op  f : X"
+	    " op  f: X"
             (:optional "")
-	    " op  g : X"
+	    " op  g: X"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " op  r : Y"
+	    " op  r: Y"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Y"
+	    " op  D.m: Y"
             (:optional "")
-	    " op  E.m : Y"
+	    " op  E.m: Y"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -240,27 +240,27 @@
   :show   "Collision#Ok6"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok6"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type X"
+	    "type X"
             (:optional "")
-	    " type Y"
+	    "type Y"
 	    (:optional "")
-	    " op  f : X"
+	    " op  f: X"
             (:optional "")
-	    " op  g : X"
+	    " op  g: X"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " op  r : Y"
+	    " op  r: Y"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Y"
+	    " op  D.m: Y"
             (:optional "")
-	    " op  E.m : Y"
+	    " op  E.m: Y"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -269,27 +269,27 @@
   :show   "Collision#Ok7"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok7"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type X"
+	    "type X"
             (:optional "")
-	    " type Y"
+	    "type Y"
 	    (:optional "")
-	    " op  f : X"
+	    " op  f: X"
             (:optional "")
-	    " op  g : X"
+	    " op  g: X"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Y"
+	    " op  D.m: Y"
             (:optional "")
-	    " op  E.m : Y"
+	    " op  E.m: Y"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -298,27 +298,27 @@
   :show   "Collision#Ok8"
   :output '(";;; Elaborating spec-translation at $TESTDIR/Collision#Ok8"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type X"
+	    "type X"
             (:optional "")
-	    " type Y"
+	    "type Y"
 	    (:optional "")
-	    " op  f : X"
+	    " op  f: X"
             (:optional "")
-	    " op  g : X"
+	    " op  g: X"
             (:optional "")
-	    " op  q : X"
+	    " op  q: X"
             (:optional "")
-	    " op  p : Y"
+	    " op  p: Y"
             (:optional "")
-	    " type A.T"
+	    "type A.T"
             (:optional "")
-	    " type B.T"
+	    "type B.T"
 	    (:optional "")
-	    " op  D.m : Y"
+	    " op  D.m: Y"
             (:optional "")
-	    " op  E.m : Y"
+	    " op  E.m: Y"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")))
@@ -335,15 +335,15 @@
 	    ";;; Elaborating spec-morphism at $TESTDIR/TypeColimits#D"
 	    ";;; Elaborating spec at $TESTDIR/TypeColimits#T"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -353,15 +353,15 @@
   :show "TypeColimits#T_XX_YY_ZZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XX_YY_ZZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {XX, YY, ZZ}")
-	     (" type {XX, ZZ, YY}")
-	     (" type {YY, XX, ZZ}")
-	     (" type {YY, ZZ, XX}")
-	     (" type {ZZ, XX, YY}")
-	     (" type {ZZ, YY, XX}"))
+	     ("type {XX, YY, ZZ}")
+	     ("type {XX, ZZ, YY}")
+	     ("type {YY, XX, ZZ}")
+	     ("type {YY, ZZ, XX}")
+	     ("type {ZZ, XX, YY}")
+	     ("type {ZZ, YY, XX}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -371,11 +371,11 @@
   :show "TypeColimits#T_XY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -385,11 +385,11 @@
   :show "TypeColimits#T_XZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -399,11 +399,11 @@
   :show "TypeColimits#T_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -413,11 +413,11 @@
   :show "TypeColimits#T_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -427,11 +427,11 @@
   :show "TypeColimits#T_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y}")
-	     (" type {Y, X}"))
+	     ("type {X, Y}")
+	     ("type {Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -441,11 +441,11 @@
   :show "TypeColimits#T_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y}")
-	     (" type {Y, X}"))
+	     ("type {X, Y}")
+	     ("type {Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -455,15 +455,15 @@
   :show "TypeColimits#T_XY_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -473,11 +473,11 @@
   :show "TypeColimits#T_XY_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -487,15 +487,15 @@
   :show "TypeColimits#T_XY_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y, Z}")
-	     (" type {P, Z, Y}")
-	     (" type {Y, P, Z}")
-	     (" type {Y, Z, P}")
-	     (" type {Z, P, Y}")
-	     (" type {Z, Y, P}"))
+	     ("type {P, Y, Z}")
+	     ("type {P, Z, Y}")
+	     ("type {Y, P, Z}")
+	     ("type {Y, Z, P}")
+	     ("type {Z, P, Y}")
+	     ("type {Z, Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -505,11 +505,11 @@
   :show "TypeColimits#T_XY_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y}")
-	     (" type {Y, X}"))
+	     ("type {X, Y}")
+	     ("type {Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -519,9 +519,9 @@
   :show "TypeColimits#T_XY_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Y"
+	    "type Y"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -531,11 +531,11 @@
   :show "TypeColimits#T_XY_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -545,11 +545,11 @@
   :show "TypeColimits#T_XZ_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -559,9 +559,9 @@
   :show "TypeColimits#T_XZ_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type Z"
+	    "type Z"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -571,11 +571,11 @@
   :show "TypeColimits#T_XZ_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Z}")
-	     (" type {Z, P}"))
+	     ("type {P, Z}")
+	     ("type {Z, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -585,15 +585,15 @@
   :show "TypeColimits#T_XZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -603,11 +603,11 @@
   :show "TypeColimits#T_XZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -617,15 +617,15 @@
   :show "TypeColimits#T_XZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y, Z}")
-	     (" type {P, Z, Y}")
-	     (" type {Y, P, Z}")
-	     (" type {Y, Z, P}")
-	     (" type {Z, P, Y}")
-	     (" type {Z, Y, P}"))
+	     ("type {P, Y, Z}")
+	     ("type {P, Z, Y}")
+	     ("type {Y, P, Z}")
+	     ("type {Y, Z, P}")
+	     ("type {Z, P, Y}")
+	     ("type {Z, Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -635,15 +635,15 @@
   :show "TypeColimits#T_XP_YX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Z}")
-	     (" type {P, Z, X}")
-	     (" type {X, P, Z}")
-	     (" type {X, Z, P}")
-	     (" type {Z, P, X}")
-	     (" type {Z, X, P}"))
+	     ("type {P, X, Z}")
+	     ("type {P, Z, X}")
+	     ("type {X, P, Z}")
+	     ("type {X, Z, P}")
+	     ("type {Z, P, X}")
+	     ("type {Z, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -653,11 +653,11 @@
   :show "TypeColimits#T_XP_YZ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Z}")
-	     (" type {Z, P}"))
+	     ("type {P, Z}")
+	     ("type {Z, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -667,11 +667,11 @@
   :show "TypeColimits#T_XP_YP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Z}")
-	     (" type {Z, P}"))
+	     ("type {P, Z}")
+	     ("type {Z, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -681,15 +681,15 @@
   :show "TypeColimits#T_XP_YQ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q, Z}")
-	     (" type {P, Z, Q}")
-	     (" type {Q, P, Z}")
-	     (" type {Q, Z, P}")
-	     (" type {Z, P, Q}")
-	     (" type {Z, Q, P}"))
+	     ("type {P, Q, Z}")
+	     ("type {P, Z, Q}")
+	     ("type {Q, P, Z}")
+	     ("type {Q, Z, P}")
+	     ("type {Z, P, Q}")
+	     ("type {Z, Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -699,15 +699,15 @@
   :show "TypeColimits#T_XP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Y}")
-	     (" type {P, Y, X}")
-	     (" type {X, P, Y}")
-	     (" type {X, Y, P}")
-	     (" type {Y, P, X}")
-	     (" type {Y, X, P}"))
+	     ("type {P, X, Y}")
+	     ("type {P, Y, X}")
+	     ("type {X, P, Y}")
+	     ("type {X, Y, P}")
+	     ("type {Y, P, X}")
+	     ("type {Y, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -717,11 +717,11 @@
   :show "TypeColimits#T_XP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -731,11 +731,11 @@
   :show "TypeColimits#T_XP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives 
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -745,15 +745,15 @@
   :show "TypeColimits#T_XP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, Y}")
-	     (" type {P, Y, R}")
-	     (" type {R, P, Y}")
-	     (" type {R, Y, P}")
-	     (" type {Y, P, R}")
-	     (" type {Y, R, P}"))
+	     ("type {P, R, Y}")
+	     ("type {P, Y, R}")
+	     ("type {R, P, Y}")
+	     ("type {R, Y, P}")
+	     ("type {Y, P, R}")
+	     ("type {Y, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -763,9 +763,9 @@
   :show "TypeColimits#T_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type X"
+	    "type X"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -775,11 +775,11 @@
   :show "TypeColimits#T_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y}")
-	     (" type {Y, X}"))
+	     ("type {X, Y}")
+	     ("type {Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -789,11 +789,11 @@
   :show "TypeColimits#T_YX_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YX_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -803,11 +803,11 @@
   :show "TypeColimits#T_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives 
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -817,15 +817,15 @@
   :show "TypeColimits#T_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -835,15 +835,15 @@
   :show "TypeColimits#T_YZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YZ_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Z}")
-	     (" type {P, Z, X}")
-	     (" type {X, P, Z}")
-	     (" type {X, Z, P}")
-	     (" type {Z, P, X}")
-	     (" type {Z, X, P}"))
+	     ("type {P, X, Z}")
+	     ("type {P, Z, X}")
+	     ("type {X, P, Z}")
+	     ("type {X, Z, P}")
+	     ("type {Z, P, X}")
+	     ("type {Z, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -853,11 +853,11 @@
   :show "TypeColimits#T_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -867,15 +867,15 @@
   :show "TypeColimits#T_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Y}")
-	     (" type {P, Y, X}")
-	     (" type {X, P, Y}")
-	     (" type {X, Y, P}")
-	     (" type {Y, P, X}")
-	     (" type {Y, X, P}"))
+	     ("type {P, X, Y}")
+	     ("type {P, Y, X}")
+	     ("type {X, P, Y}")
+	     ("type {X, Y, P}")
+	     ("type {Y, P, X}")
+	     ("type {Y, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -885,11 +885,11 @@
   :show "TypeColimits#T_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -899,15 +899,15 @@
   :show "TypeColimits#T_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_YP_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, X}")
-	     (" type {P, X, R}")
-	     (" type {R, P, X}")
-	     (" type {R, X, P}")
-	     (" type {X, P, R}")
-	     (" type {X, R, P}"))
+	     ("type {P, R, X}")
+	     ("type {P, X, R}")
+	     ("type {R, P, X}")
+	     ("type {R, X, P}")
+	     ("type {X, P, R}")
+	     ("type {X, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -917,11 +917,11 @@
   :show "TypeColimits#T_XY_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, X}")
-	     (" type {X, Y}"))
+	     ("type {Y, X}")
+	     ("type {X, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -931,11 +931,11 @@
   :show "TypeColimits#T_XY_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y}")
-	     (" type {Y, X}"))
+	     ("type {X, Y}")
+	     ("type {Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -945,15 +945,15 @@
   :show "TypeColimits#T_XY_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YX_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {R, X, Y}")
-	     (" type {R, Y, X}")
-	     (" type {X, R, Y}")
-	     (" type {X, Y, R}")
-	     (" type {Y, R, X}")
-	     (" type {Y, X, R}"))
+	     ("type {R, X, Y}")
+	     ("type {R, Y, X}")
+	     ("type {X, R, Y}")
+	     ("type {X, Y, R}")
+	     ("type {Y, R, X}")
+	     ("type {Y, X, R}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -963,15 +963,15 @@
   :show "TypeColimits#T_XY_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -981,11 +981,11 @@
   :show "TypeColimits#T_XY_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -995,15 +995,15 @@
   :show "TypeColimits#T_XY_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YZ_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {R, Y, Z}")
-	     (" type {R, Z, Y}")
-	     (" type {Y, R, Z}")
-	     (" type {Y, Z, R}")
-	     (" type {Z, R, Y}")
-	     (" type {Z, Y, R}"))
+	     ("type {R, Y, Z}")
+	     ("type {R, Z, Y}")
+	     ("type {Y, R, Z}")
+	     ("type {Y, Z, R}")
+	     ("type {Z, R, Y}")
+	     ("type {Z, Y, R}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1013,15 +1013,15 @@
   :show "TypeColimits#T_XY_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Y}")
-	     (" type {P, Y, X}")
-	     (" type {X, P, Y}")
-	     (" type {X, Y, P}")
-	     (" type {Y, P, X}")
-	     (" type {Y, X, P}"))
+	     ("type {P, X, Y}")
+	     ("type {P, Y, X}")
+	     ("type {X, P, Y}")
+	     ("type {X, Y, P}")
+	     ("type {Y, P, X}")
+	     ("type {Y, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1031,11 +1031,11 @@
   :show "TypeColimits#T_XY_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1045,11 +1045,11 @@
   :show "TypeColimits#T_XY_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1059,15 +1059,15 @@
   :show "TypeColimits#T_XY_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XY_YP_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, Y}")
-	     (" type {P, Y, R}")
-	     (" type {R, P, Y}")
-	     (" type {R, Y, P}")
-	     (" type {Y, P, R}")
-	     (" type {Y, R, P}"))
+	     ("type {P, R, Y}")
+	     ("type {P, Y, R}")
+	     ("type {R, P, Y}")
+	     ("type {R, Y, P}")
+	     ("type {Y, P, R}")
+	     ("type {Y, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1077,11 +1077,11 @@
   :show "TypeColimits#T_XZ_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1091,15 +1091,15 @@
   :show "TypeColimits#T_XZ_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Y, Z}")
-	     (" type {X, Z, Y}")
-	     (" type {Y, X, Z}")
-	     (" type {Y, Z, X}")
-	     (" type {Z, X, Y}")
-	     (" type {Z, Y, X}"))
+	     ("type {X, Y, Z}")
+	     ("type {X, Z, Y}")
+	     ("type {Y, X, Z}")
+	     ("type {Y, Z, X}")
+	     ("type {Z, X, Y}")
+	     ("type {Z, Y, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1109,15 +1109,15 @@
   :show "TypeColimits#T_XZ_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YX_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {R, X, Z}")
-	     (" type {R, Z, X}")
-	     (" type {X, R, Z}")
-	     (" type {X, Z, R}")
-	     (" type {Z, R, X}")
-	     (" type {Z, X, R}"))
+	     ("type {R, X, Z}")
+	     ("type {R, Z, X}")
+	     ("type {X, R, Z}")
+	     ("type {X, Z, R}")
+	     ("type {Z, R, X}")
+	     ("type {Z, X, R}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1127,11 +1127,11 @@
   :show "TypeColimits#T_XZ_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {X, Z}")
-	     (" type {Z, X}"))
+	     ("type {X, Z}")
+	     ("type {Z, X}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1141,11 +1141,11 @@
   :show "TypeColimits#T_XZ_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {Y, Z}")
-	     (" type {Z, Y}"))
+	     ("type {Y, Z}")
+	     ("type {Z, Y}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1155,11 +1155,11 @@
   :show "TypeColimits#T_XZ_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YZ_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {R, Z}")
-	     (" type {Z, R}"))
+	     ("type {R, Z}")
+	     ("type {Z, R}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1169,15 +1169,15 @@
   :show "TypeColimits#T_XZ_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Z}")
-	     (" type {P, Z, X}")
-	     (" type {X, P, Z}")
-	     (" type {X, Z, P}")
-	     (" type {Z, P, X}")
-	     (" type {Z, X, P}"))
+	     ("type {P, X, Z}")
+	     ("type {P, Z, X}")
+	     ("type {X, P, Z}")
+	     ("type {X, Z, P}")
+	     ("type {Z, P, X}")
+	     ("type {Z, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1187,15 +1187,15 @@
   :show "TypeColimits#T_XZ_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y, Z}")
-	     (" type {P, Z, Y}")
-	     (" type {Y, P, Z}")
-	     (" type {Y, Z, P}")
-	     (" type {Z, P, Y}")
-	     (" type {Z, Y, P}"))
+	     ("type {P, Y, Z}")
+	     ("type {P, Z, Y}")
+	     ("type {Y, P, Z}")
+	     ("type {Y, Z, P}")
+	     ("type {Z, P, Y}")
+	     ("type {Z, Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1205,11 +1205,11 @@
   :show "TypeColimits#T_XZ_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Z}")
-	     (" type {Z, P}"))
+	     ("type {P, Z}")
+	     ("type {Z, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1219,15 +1219,15 @@
   :show "TypeColimits#T_XZ_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XZ_YP_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, Z}")
-	     (" type {P, Z, R}")
-	     (" type {R, P, Z}")
-	     (" type {R, Z, P}")
-	     (" type {Z, P, R}")
-	     (" type {Z, R, P}"))
+	     ("type {P, R, Z}")
+	     ("type {P, Z, R}")
+	     ("type {R, P, Z}")
+	     ("type {R, Z, P}")
+	     ("type {Z, P, R}")
+	     ("type {Z, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1237,11 +1237,11 @@
   :show "TypeColimits#T_XP_YX_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1251,15 +1251,15 @@
   :show "TypeColimits#T_XP_YX_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Y}")
-	     (" type {P, Y, X}")
-	     (" type {X, P, Y}")
-	     (" type {X, Y, P}")
-	     (" type {Y, P, X}")
-	     (" type {Y, X, P}"))
+	     ("type {P, X, Y}")
+	     ("type {P, Y, X}")
+	     ("type {X, P, Y}")
+	     ("type {X, Y, P}")
+	     ("type {Y, P, X}")
+	     ("type {Y, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1269,11 +1269,11 @@
   :show "TypeColimits#T_XP_YX_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1283,15 +1283,15 @@
   :show "TypeColimits#T_XP_YX_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YX_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, X}")
-	     (" type {P, X, R}")
-	     (" type {R, P, X}")
-	     (" type {R, X, P}")
-	     (" type {X, P, R}")
-	     (" type {X, R, P}"))
+	     ("type {P, R, X}")
+	     ("type {P, X, R}")
+	     ("type {R, P, X}")
+	     ("type {R, X, P}")
+	     ("type {X, P, R}")
+	     ("type {X, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1301,15 +1301,15 @@
   :show "TypeColimits#T_XP_YZ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X, Z}")
-	     (" type {P, Z, X}")
-	     (" type {X, P, Z}")
-	     (" type {X, Z, P}")
-	     (" type {Z, P, X}")
-	     (" type {Z, X, P}"))
+	     ("type {P, X, Z}")
+	     ("type {P, Z, X}")
+	     ("type {X, P, Z}")
+	     ("type {X, Z, P}")
+	     ("type {Z, P, X}")
+	     ("type {Z, X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1319,15 +1319,15 @@
   :show "TypeColimits#T_XP_YZ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y, Z}")
-	     (" type {P, Z, Y}")
-	     (" type {Y, P, Z}")
-	     (" type {Y, Z, P}")
-	     (" type {Z, P, Y}")
-	     (" type {Z, Y, P}"))
+	     ("type {P, Y, Z}")
+	     ("type {P, Z, Y}")
+	     ("type {Y, P, Z}")
+	     ("type {Y, Z, P}")
+	     ("type {Z, P, Y}")
+	     ("type {Z, Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1337,11 +1337,11 @@
   :show "TypeColimits#T_XP_YZ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Z}")
-	     (" type {Z, P}"))
+	     ("type {P, Z}")
+	     ("type {Z, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1351,15 +1351,15 @@
   :show "TypeColimits#T_XP_YZ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YZ_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R, Z}")
-	     (" type {P, Z, R}")
-	     (" type {R, P, Z}")
-	     (" type {R, Z, P}")
-	     (" type {Z, P, R}")
-	     (" type {Z, R, P}"))
+	     ("type {P, R, Z}")
+	     ("type {P, Z, R}")
+	     ("type {R, P, Z}")
+	     ("type {R, Z, P}")
+	     ("type {Z, P, R}")
+	     ("type {Z, R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1369,11 +1369,11 @@
   :show "TypeColimits#T_XP_YP_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, X}")
-	     (" type {X, P}"))
+	     ("type {P, X}")
+	     ("type {X, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1383,11 +1383,11 @@
   :show "TypeColimits#T_XP_YP_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Y}")
-	     (" type {Y, P}"))
+	     ("type {P, Y}")
+	     ("type {Y, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1397,9 +1397,9 @@
   :show "TypeColimits#T_XP_YP_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
-	    " type P"
+	    "type P"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1409,11 +1409,11 @@
   :show "TypeColimits#T_XP_YP_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YP_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, R}")
-	     (" type {R, P}"))
+	     ("type {P, R}")
+	     ("type {R, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1423,15 +1423,15 @@
   :show "TypeColimits#T_XP_YQ_ZX"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZX"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q, X}")
-	     (" type {P, X, Q}")
-	     (" type {Q, P, X}")
-	     (" type {Q, X, P}")
-	     (" type {X, P, Q}")
-	     (" type {X, Q, P}"))
+	     ("type {P, Q, X}")
+	     ("type {P, X, Q}")
+	     ("type {Q, P, X}")
+	     ("type {Q, X, P}")
+	     ("type {X, P, Q}")
+	     ("type {X, Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1441,15 +1441,15 @@
   :show "TypeColimits#T_XP_YQ_ZY"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZY"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q, Y}")
-	     (" type {P, Y, Q}")
-	     (" type {Q, P, Y}")
-	     (" type {Q, Y, P}")
-	     (" type {Y, P, Q}")
-	     (" type {Y, Q, P}"))
+	     ("type {P, Q, Y}")
+	     ("type {P, Y, Q}")
+	     ("type {Q, P, Y}")
+	     ("type {Q, Y, P}")
+	     ("type {Y, P, Q}")
+	     ("type {Y, Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1459,11 +1459,11 @@
   :show "TypeColimits#T_XP_YQ_ZP"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZP"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q}")
-	     (" type {Q, P}"))
+	     ("type {P, Q}")
+	     ("type {Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1473,11 +1473,11 @@
   :show "TypeColimits#T_XP_YQ_ZQ"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZQ"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q}")
-	     (" type {Q, P}"))
+	     ("type {P, Q}")
+	     ("type {Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
@@ -1487,15 +1487,15 @@
   :show "TypeColimits#T_XP_YQ_ZR"
   :output '(";;; Elaborating spec-translation at $TESTDIR/TypeColimits#T_XP_YQ_ZR"
 	    (:optional "")
-	    "spec  "
+	    "spec"
             (:optional "")
 	    (:alternatives
-	     (" type {P, Q, R}")
-	     (" type {P, R, Q}")
-	     (" type {Q, P, R}")
-	     (" type {Q, R, P}")
-	     (" type {R, P, Q}")
-	     (" type {R, Q, P}"))
+	     ("type {P, Q, R}")
+	     ("type {P, R, Q}")
+	     ("type {Q, P, R}")
+	     ("type {Q, R, P}")
+	     ("type {R, P, Q}")
+	     ("type {R, Q, P}"))
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional ""))
