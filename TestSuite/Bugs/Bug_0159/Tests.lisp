@@ -21,7 +21,7 @@
 	    (:optional "")
 	    " type Y"
 	    (:optional "")
-	    " op  bar : B -> B"
+	    " op  bar: B -> B"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -35,23 +35,23 @@
 	    (:optional "")
 	    " type A1"
 	    (:optional "")
-	    " op  foo : List(Nat) -> List(Bool)"
+	    " op  foo: List(Nat) -> List(Bool)"
             (:alternatives
              " def foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def foo nats = "
-              "  map((fn n : Nat -> if n = 0 then false else true)) nats")
-             (" def foo (nats : List(Nat)) : List(Bool)"
-              "  = map(fn (n : Nat) -> if n = 0 then false else true) nats"))
+              "  map((fn n: Nat -> if n = 0 then false else true)) nats")
+             (" def foo(nats: List(Nat)): List(Bool)"
+              "  = map(fn (n: Nat) -> if n = 0 then false else true) nats"))
 	    (:optional "")
 	    " type B"
 	    (:optional "")
-	    " op  baz : List(Nat) -> List(Bool)"
+	    " op  baz: List(Nat) -> List(Bool)"
             (:alternatives
              " def baz nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def baz nats = "
-              "   map((fn n : Nat -> if n = 0 then false else true)) nats")
-             (" def baz (nats : List(Nat)) : List(Bool)"
-              "   = map(fn (n : Nat) -> if n = 0 then false else true) nats"))
+              "   map((fn n: Nat -> if n = 0 then false else true)) nats")
+             (" def baz(nats: List(Nat)): List(Bool)"
+              "   = map(fn (n: Nat) -> if n = 0 then false else true) nats"))
 	    (:optional "")
 	    " type Z"
 	    (:optional "")
@@ -61,7 +61,7 @@
 	    (:optional "")
 	    " type Y"
 	    (:optional "")
-	    " op  bar : B -> B"
+	    " op  bar: B -> B"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -85,7 +85,7 @@
 	    (:optional "")
 	    " type Y"
 	    (:optional "")
-	    " op  bar : A2 -> A2"
+	    " op  bar: A2 -> A2"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -99,13 +99,13 @@
 	    (:optional "")
 	    " type A2"
 	    (:optional "")
-	    " op  foo : List(Nat) -> List(Bool)"
+	    " op  foo: List(Nat) -> List(Bool)"
             (:alternatives
              " def foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def foo nats = "
-              "   map((fn n : Nat -> if n = 0 then false else true)) nats")
-             (" def foo (nats : List(Nat)) : List(Bool)"
-              "   = map(fn (n : Nat) -> if n = 0 then false else true) nats"))
+              "   map((fn n: Nat -> if n = 0 then false else true)) nats")
+             (" def foo(nats: List(Nat)): List(Bool)"
+              "   = map(fn (n: Nat) -> if n = 0 then false else true) nats"))
 	    (:optional "")
 	    " type B"
 	    (:optional "")
@@ -117,7 +117,7 @@
 	    (:optional "")
 	    " type Y"
 	    (:optional "")
-	    " op  bar : A2 -> A2"
+	    " op  bar: A2 -> A2"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -141,7 +141,7 @@
 	    (:optional "")
 	    " type Q.Y"
 	    (:optional "")
-	    " op  Q.bar : Q.A -> Q.A"
+	    " op  Q.bar: Q.A -> Q.A"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
@@ -155,14 +155,14 @@
 	    (:optional "")
 	    " type Q.A"
 	    (:optional "")
-	    " op  Q.foo : List(Nat) -> List(Bool)"
+	    " op  Q.foo: List(Nat) -> List(Bool)"
 	    (:optional "")
             (:alternatives
              " def Q.foo nats = map((fn n -> if n = 0 then false else true)) nats"
              (" def Q.foo nats = "
-              "  map((fn n : Nat -> if n = 0 then false else true)) nats")
-             ("def Q.foo (nats : List(Nat)) : List(Bool)"
-              "  = map(fn (n : Nat) -> if n = 0 then false else true) nats"))
+              "  map((fn n: Nat -> if n = 0 then false else true)) nats")
+             ("def Q.foo(nats: List(Nat)): List(Bool)"
+              "  = map(fn (n: Nat) -> if n = 0 then false else true) nats"))
 	    (:optional "")
 	    " type Q.B"
 	    (:optional "")
@@ -174,7 +174,7 @@
 	    (:optional "")
 	    " type Q.Y"
 	    (:optional "")
-	    " op  Q.bar : Q.A -> Q.A"
+	    " op  Q.bar: Q.A -> Q.A"
 	    (:optional "")
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
