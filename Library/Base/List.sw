@@ -46,68 +46,7 @@ op list : [a] Bijection (ListFunction a, List a) =
     | None   -> Nil
     | Some x ->  x :: (list (fn i:Nat -> f (i+1)))
 
-proof Isa -verbatim
-lemma list_last_elem:
-"\<And>f n. f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
-            List__list f =
-            List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
-proof -
- fix f n
- assume "f definedOnInitialSegmentOfLength (Suc n)"
- thus "List__list f =
-       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
- proof (induct n arbitrary: f)
- case 0
-  then obtain x where "f 0 = Some x"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence "the (f 0) = x" by auto
-  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def f' \<equiv> "\<lambda>i. f (i + 1)"
-  with 0 have f'_None: "f' = (\<lambda>i. None)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'_None have "List__list f' = []" by auto
-  with f'_def `f 0 = Some x` fseg
-   have "List__list f = [x]" by auto
-  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
-  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  from g_def have "g = (\<lambda>i. None)" by auto
-  with gseg have "List__list g = []" by auto
-  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
-  with g_def `List__list f = [x]` show ?case by auto
- next
- case (Suc n)
-  then obtain h where f0: "f 0 = Some h"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def g \<equiv> "\<lambda>i. f (i + 1)"
-  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
-  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  then obtain x where "g n = Some x"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence "the (g n) = x" by auto
-  with g_def have "the (f (Suc n)) = x" by auto
-  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
-  with Suc.hyps g_suc_n `the (g n) = x`
-   have Lg: "List__list g = List__list g' @ [x]" by auto
-  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
-  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
-  from f'_def f0 have f'0: "f' 0 = Some h" by auto
-  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
-  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
-  with Lg have "List__list f' @ [x] = h # List__list g" by auto
-  with Lf have "List__list f = List__list f' @ [x]" by auto
-  with f'_def `the (f (Suc n)) = x` show ?case by auto
- qed
-qed
-end-proof
+proof Isa -hook list_last_elem end-proof
 
 op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
@@ -1226,6 +1165,69 @@ case (Suc n)
   have "length (List__list (\<lambda>i. f (i + 1))) = n" by auto
  hence "length (Cons x (List__list (\<lambda>i. f (i + 1)))) = Suc n" by auto
  with prems show ?case by auto
+qed
+end-proof
+
+proof Isa list_last_elem
+lemma list_last_elem:
+"\<And>f n. f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
+            List__list f =
+            List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+proof -
+ fix f n
+ assume "f definedOnInitialSegmentOfLength (Suc n)"
+ thus "List__list f =
+       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+ proof (induct n arbitrary: f)
+ case 0
+  then obtain x where "f 0 = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence "the (f 0) = x" by auto
+  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def f' \<equiv> "\<lambda>i. f (i + 1)"
+  with 0 have f'_None: "f' = (\<lambda>i. None)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'_None have "List__list f' = []" by auto
+  with f'_def `f 0 = Some x` fseg
+   have "List__list f = [x]" by auto
+  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
+  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  from g_def have "g = (\<lambda>i. None)" by auto
+  with gseg have "List__list g = []" by auto
+  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
+  with g_def `List__list f = [x]` show ?case by auto
+ next
+ case (Suc n)
+  then obtain h where f0: "f 0 = Some h"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def g \<equiv> "\<lambda>i. f (i + 1)"
+  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
+  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  then obtain x where "g n = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence "the (g n) = x" by auto
+  with g_def have "the (f (Suc n)) = x" by auto
+  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
+  with Suc.hyps g_suc_n `the (g n) = x`
+   have Lg: "List__list g = List__list g' @ [x]" by auto
+  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
+  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
+  from f'_def f0 have f'0: "f' 0 = Some h" by auto
+  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
+  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
+  with Lg have "List__list f' @ [x] = h # List__list g" by auto
+  with Lf have "List__list f = List__list f' @ [x]" by auto
+  with f'_def `the (f (Suc n)) = x` show ?case by auto
+ qed
 qed
 end-proof
 
