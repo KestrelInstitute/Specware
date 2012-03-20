@@ -109,17 +109,15 @@
 	    (:optional "")
 	    " type T = (T0 | truep)"
 	    (:optional "")
-	    " type T1 = {x : T0 | true}"
+	    " type T1 = {x: T0 | true}"
 	    (:optional "")
 	    " type T2 = ((T * T1) | truep)"
 	    (:optional "")
-	    " op  truep : [a] a -> Bool"
+	    " op [a] truep: a -> Bool"
 	    (:optional "")
 	    " axiom List.induction1 is [a] "
-	    "    fa(p : List(a) -> Bool) "
-	    "     p ([]) "
-	    "     && (fa(x : a, l : List(a)) "
-	    "          (p l => p (Cons(x, l)) => (fa(l : List(a)) p l)))"
+	    "    fa(p: List(a) -> Bool) "
+            "   p [] && (fa(x: a, l: List(a)) (p l => p (x :: l) => (fa(l: List(a)) p l)))"
             (:alternatives "endspec" "end-spec")
 	    (:optional "")
 	    (:optional "")
