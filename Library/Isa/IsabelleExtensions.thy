@@ -4,6 +4,7 @@ imports Main "~~/src/HOL/Library/Char_nat" "~~/src/HOL/Library/Permutation"
 begin
 
 
+
 (*************************************************************
  * Define simple projections 
  *************************************************************)
@@ -2060,6 +2061,7 @@ lemma sym_symcl: "sym (r^s)"
 abbreviation
   equivcl :: "('a \<times> 'a) set => ('a \<times> 'a) set"  ("(_^\<equiv>)" [1000] 999) where
   "r^\<equiv> == (r^s)^*"
+
 
 
 end

@@ -1,9 +1,11 @@
 theory Compare
 imports Boolean
 begin
+
 datatype Compare__Comparison = Equal
                              | Greater
                              | Less
+
 consts Compare__compare :: "Compare__Comparison \<times> Compare__Comparison \<Rightarrow> 
                             Compare__Comparison"
 defs Compare__compare_def: 
@@ -16,6 +18,7 @@ defs Compare__compare_def:
               Less
             else 
               Greater)"
+
 consts Bool__compare :: "bool \<times> bool \<Rightarrow> Compare__Comparison"
 defs Bool__compare_def: 
   "Bool__compare
@@ -24,4 +27,5 @@ defs Bool__compare_def:
             Equal
           else 
             if x = True then Greater else Less)"
+
 end

@@ -1,14 +1,18 @@
 theory SW_Option
 imports Compare Function
 begin
+
 fun Option__Option_P :: "('a \<Rightarrow> bool) \<Rightarrow> 'a option \<Rightarrow> bool"
 where
    "Option__Option_P P_a None = True"
  | "Option__Option_P P_a (Some x0) = P_a x0"
+
 consts Option__some_p :: "'a option \<Rightarrow> bool"
 defs Option__some_p_def [simp]: "Option__some_p x \<equiv> (x \<noteq> None)"
+
 consts Option__none_p :: "'a option \<Rightarrow> bool"
 defs Option__none_p_def [simp]: "Option__none_p x \<equiv> (x = None)"
+
 theorem Option__compare_Obligation_exhaustive: 
   "(\<exists>(x::'a) (y::'a). 
       (o1::'a option) = Some x \<and> (o2::'a option) = Some y) 
@@ -16,6 +20,7 @@ theorem Option__compare_Obligation_exhaustive:
       \<or> ((\<exists>(zz__0::'a). o1 = Some zz__0 \<and> o2 = None) 
        \<or> o1 = None \<and> o2 = None))"
   by auto
+
 fun Option__compare :: "('a \<times> 'a \<Rightarrow> Compare__Comparison) \<Rightarrow> 
                         'a option \<times> 'a option \<Rightarrow> Compare__Comparison"
 where
@@ -24,21 +29,26 @@ where
  | "Option__compare comp_v(None, Some zzz_3) = Less"
  | "Option__compare comp_v(Some zzz_4, None) = Greater"
  | "Option__compare comp_v(None, None) = Equal"
+
 theorem Option__mapOption_subtype_constr: 
   "\<lbrakk>Fun_PR P__b f\<rbrakk> \<Longrightarrow> 
    Option__Option_P P__b (Option.map f xx)"
   by (cases xx, auto)
+
 theorem Option__mapOption__def: 
   "Option.map f None = None"
   by auto
+
 theorem Option__mapOption__def1: 
   "Option.map f (Some x) = Some (f x)"
   by auto
+
 consts Option__isoOption :: " ('a, 'b)Function__Bijection \<Rightarrow> 
                               ('a option, 'b option)Function__Bijection"
 defs Option__isoOption_def: 
   "Option__isoOption
      \<equiv> (\<lambda> (iso_elem:: ('a, 'b)Function__Bijection). Option.map iso_elem)"
+
 theorem Option__isoOption_subtype_constr: 
   "\<lbrakk>bij iso_elem\<rbrakk> \<Longrightarrow> bij (Option__isoOption iso_elem)"
    apply(auto simp add: Option__isoOption_def bij_def
@@ -48,6 +58,7 @@ theorem Option__isoOption_subtype_constr:
           simp,
           drule_tac x = "a" in spec, auto)
   done
+
 theorem Option__isoOption_subtype_constr1: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
     Fun_P(P__a, P__b) iso_elem; 
@@ -57,6 +68,7 @@ theorem Option__isoOption_subtype_constr1:
   apply(simp add: Option__isoOption_def, auto)
   apply (rule_tac P="x = None" in case_split, auto)
   done
+
 theorem Option__isoOption_subtype_constr2: 
   "\<lbrakk>Function__bijective_p__stp(P__a, P__b) iso_elem; 
     Fun_P(P__a, P__b) iso_elem; 
@@ -78,4 +90,5 @@ theorem Option__isoOption_subtype_constr2:
  apply (drule_tac x = "ya" in  bspec, auto simp add: mem_def)
  apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
   done
+
 end

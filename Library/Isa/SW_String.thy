@@ -1,71 +1,92 @@
 theory SW_String
 imports Character SW_List
 begin
+
 theorem String__implode_subtype_constr: 
   "bij id"
   by auto
+
 theorem String__explode__def: 
   "id = inv id"
   by auto
+
 theorem String__length__def: 
   "length s = length (id s)"
   by auto
+
 theorem String__e_at_Obligation_subtype: 
   "\<lbrakk>(i::nat) < length s\<rbrakk> \<Longrightarrow> i < length (id s)"
   by auto
+
 theorem String__e_at__def: 
   "\<lbrakk>i < length s\<rbrakk> \<Longrightarrow> s ! i = id s ! i"
   by auto
+
 theorem String__subFromTo_Obligation_subtype: 
   "\<lbrakk>(i::nat) \<le> (j::nat); j \<le> length s\<rbrakk> \<Longrightarrow> 
    j \<le> length (id s)"
   by auto
+
 consts String__subFromTo :: "string \<times> nat \<times> nat \<Rightarrow> string"
 defs String__subFromTo_def: 
   "String__subFromTo
      \<equiv> (\<lambda> ((s::string), (i::nat), (j::nat)). 
           id (List__subFromTo(id s, i, j)))"
+
 theorem String__e_crt__def: 
   "s1 @ s2 = id (id s1 @ id s2)"
   by auto
+
 theorem String__forall_p__def: 
   "list_all p s = list_all p (id s)"
   by auto
+
 theorem String__exists_p__def: 
   "list_ex p s = list_ex p (id s)"
   by auto
+
 theorem String__map__def: 
   "map f s = id (map f (id s))"
   by auto
+
 consts String__flatten :: "string list \<Rightarrow> string"
 defs String__flatten_def: 
   "String__flatten ss \<equiv> id (concat (map id ss))"
+
 consts String__translate :: "(char \<Rightarrow> string) \<Rightarrow> string \<Rightarrow> string"
 defs String__translate_def: 
   "String__translate subst s
      \<equiv> String__flatten (map subst (id s))"
+
 consts String__compare :: "string \<times> string \<Rightarrow> Compare__Comparison"
 defs String__compare_def: 
   "String__compare
      \<equiv> (\<lambda> ((s1::string), (s2::string)). 
           List__compare Char__compare(id s1, id s2))"
+
 consts e_lt_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<'_s" 60)
 defs e_lt_s_def: 
   "(s1 <_s s2) \<equiv> (String__compare(s1, s2) = Less)"
+
 consts e_lt_eq_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl "<='_s" 60)
 defs e_lt_eq_s_def: 
   "((s1::string) <=_s (s2::string)) \<equiv> (s1 <_s s2 \<or> s1 = s2)"
+
 consts e_gt_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">'_s" 60)
 defs e_gt_s_def: "((s1::string) >_s (s2::string)) \<equiv> (s2 <_s s1)"
+
 consts e_gt_eq_s :: "string \<Rightarrow> string \<Rightarrow> bool"	(infixl ">='_s" 60)
 defs e_gt_eq_s_def: 
   "((s1::string) >=_s (s2::string)) \<equiv> (s2 <=_s s1)"
+
 consts String__newline :: "string"
 defs String__newline_def: "String__newline \<equiv> ''
 ''"
+
 consts Bool__show :: "bool \<Rightarrow> string"
 defs Bool__show_def: 
   "Bool__show x \<equiv> (if x then ''true'' else ''false'')"
+
 theorem Nat__digitToString_Obligation_exhaustive: 
   "\<lbrakk>(d::nat) < 10\<rbrakk> \<Longrightarrow> 
    d = 0 
@@ -73,6 +94,7 @@ theorem Nat__digitToString_Obligation_exhaustive:
       \<or> (d = 2 
        \<or> (d = 3 \<or> (d = 4 \<or> (d = 5 \<or> (d = 6 \<or> (d = 7 \<or> (d = 8 \<or> d = 9))))))))"
   by auto
+
 fun Nat__digitToString :: "nat \<Rightarrow> string"
 where
    "Nat__digitToString 0 = ''0''"
@@ -94,6 +116,7 @@ where
  | "Nat__digitToString
        (Suc (Suc (Suc (Suc (Suc (Suc (Suc (Suc (Suc 0))))))))) 
       = ''9''"
+
 
 lemma Nat__digitToString_singleton:
  "x<10 \<Longrightarrow> \<exists>(a::char). Nat__digitToString x = [a]"
@@ -156,9 +179,11 @@ lemma Nat__digitToString_injective [simp]:
   apply (drule sym, simp)+
 done
 
+
 theorem Nat__natToString_Obligation_subtype: 
   "\<lbrakk>\<not> ((x::nat) < 10)\<rbrakk> \<Longrightarrow> x mod 10 < 10"
   by auto
+
 fun Nat__natToString :: "nat \<Rightarrow> string"
 where
    "Nat__natToString x 
@@ -167,6 +192,7 @@ where
          else 
            Nat__natToString (x div 10) 
              @ Nat__digitToString (x mod 10))"
+
 
 
 lemma Nat__natToString_small: 
@@ -203,11 +229,14 @@ lemma Nat__natToString_no_sign2 [simp]:
 "((CHR ''-'' # s) = Nat__natToString x) = False"
   by (simp add: not_sym)
 
+
 consts Nat__show :: "nat \<Rightarrow> string"
 defs Nat__show_def: "Nat__show \<equiv> Nat__natToString"
+
 consts Nat__natConvertible :: "string \<Rightarrow> bool"
 defs Nat__natConvertible_def: 
   "Nat__natConvertible s \<equiv> (\<exists>(x::nat). Nat__natToString x = s)"
+
 theorem Nat__stringToNat_Obligation_the: 
   "\<lbrakk>Nat__natConvertible s\<rbrakk> \<Longrightarrow> 
    \<exists>!(x::nat). Nat__natToString x = s"
@@ -248,12 +277,15 @@ theorem Nat__stringToNat_Obligation_the:
   apply (simp, rule sym, rule mod_div_equality2, rule sym,
          rule mod_div_equality2)
   done
+
 consts Nat__stringToNat :: "string \<Rightarrow> nat"
 defs Nat__stringToNat_def: 
   "Nat__stringToNat s \<equiv> (THE (x::nat). Nat__natToString x = s)"
+
 theorem Integer__intToString_Obligation_subtype: 
   "\<lbrakk>\<not> ((x::int) \<ge> 0)\<rbrakk> \<Longrightarrow> - x \<ge> 0"
   by auto
+
 consts Integer__intToString :: "int \<Rightarrow> string"
 defs Integer__intToString_def: 
   "Integer__intToString x
@@ -261,12 +293,15 @@ defs Integer__intToString_def:
           Nat__natToString (nat x)
         else 
           ''-'' @ Nat__natToString (nat (- x)))"
+
 consts Integer__show :: "int \<Rightarrow> string"
 defs Integer__show_def: "Integer__show \<equiv> Integer__intToString"
+
 consts Integer__intConvertible :: "string \<Rightarrow> bool"
 defs Integer__intConvertible_def: 
   "Integer__intConvertible s
      \<equiv> (\<exists>(x::int). Integer__intToString x = s)"
+
 theorem Integer__stringToInt_Obligation_the: 
   "\<lbrakk>Integer__intConvertible s\<rbrakk> \<Longrightarrow> 
    \<exists>!(x::int). Integer__intToString x = s"
@@ -288,24 +323,30 @@ theorem Integer__stringToInt_Obligation_the:
                    Nat__natToString (nat (- x))",
          auto)
   done
+
 consts Integer__stringToInt :: "string \<Rightarrow> int"
 defs Integer__stringToInt_def: 
   "Integer__stringToInt s \<equiv> (THE (x::int). Integer__intToString x = s)"
+
 consts Char__show :: "char \<Rightarrow> string"
 defs Char__show_def: "Char__show c \<equiv> id ([c])"
+
 fun Compare__show :: "Compare__Comparison \<Rightarrow> string"
 where
    "Compare__show Greater = ''Greater''"
  | "Compare__show Equal = ''Equal''"
  | "Compare__show Less = ''Less''"
+
 fun Option__show :: "('a \<Rightarrow> string) \<Rightarrow> 'a option \<Rightarrow> string"
 where
    "Option__show shw None = ''None''"
  | "Option__show shw (Some x) = (''(Some '' @ shw x) @ '')''"
+
 fun List__show :: "string \<Rightarrow> string list \<Rightarrow> string"
 where
    "List__show sep [] = ''''"
  | "List__show sep ([hd_v]) = hd_v"
  | "List__show sep (Cons hd_v tl_v) 
       = (hd_v @ sep) @ List__show sep tl_v"
+
 end
