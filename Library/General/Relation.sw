@@ -79,7 +79,7 @@ type SurjectiveRelation(a,b) = (Relation(a,b) | surjective?)
 op [a,b] functional? (r: Relation(a,b)) : Bool =
   fa(x) (single? \/ empty?) (apply r x)
 
-type Map(a,b) = (Relation(a,b) | functional?)
+type FunctionalRelation(a,b) = (Relation(a,b) | functional?)
 
 % at most one domain value for every range value:
 

@@ -4,9 +4,9 @@ refine FiniteMap by {
   type FMap.FMap(a,b) = (FSet (a * b) | (functional? o fromFSet))
 
   op FMap.toFMap : [a,b] Bijection (FiniteMap(a,b), FMap(a,b)) =
-    fn finiteMap: FiniteMap(a,b) -> toFSet finiteMap  % not executable
+    fn finiteMap: FiniteMap(a,b) -> toFMap finiteMap  % not executable
 
-  op [a,b] FMap.fromFMap (m: FMap(a,b)) : FiniteMap(a,b) = fromFSet m
+  op [a,b] FMap.fromFMap (m: FMap(a,b)) : FiniteMap(a,b) = fromFMap m
 
   op [a,b] FMap.maps? (m: FMap(a,b)) (x:a) (y:b) : Bool = (x,y) in? m
 
