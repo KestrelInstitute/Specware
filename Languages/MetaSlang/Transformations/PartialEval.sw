@@ -52,33 +52,40 @@ import Script
               let full_dfn = maybePiTerm(tvs, TypedTerm(new_dfn, ty, termAnn new_dfn)) in
               let spc = spc << {ops = insertAQualifierMap(spc.ops, q, id, info << {dfn = full_dfn})} in
               simplifyNewSpecializedFns(r_qids, spc, rls, uf_qids, rw_rules)
-          
+        def iterate1(spc) =
+          let (spc, rls, uf_qids, rw_qids) =
+              foldOpInfos (fn (info, result as (spc, rls, uf_qids, rw_qids)) ->
+                           let qid = primaryOpName info in
+                           if ignoreBaseSpec? && some?(findTheOp(base_spec, qid)) then result
+                           else
+                           let (tvs, ty, init_dfn) = unpackFirstTerm info.dfn in
+                           let tr_dfn =
+                               if rls = user_rules || anyTerm? init_dfn then init_dfn
+                                else applyExistingSpecializations(init_dfn, spc, rls, ty, qid)
+                           in
+                           let (spc, rls, tr_dfn2, uf_qids, rw_qids)
+                              = findNewSpecialization(tr_dfn, spc, rls, ty, qid, uf_qids, rw_qids) in
+                           if equalTerm?(tr_dfn2, init_dfn) || equalTerm?(tr_dfn2, mkTypedTerm(init_dfn, ty))
+                             then result
+                             else
+                             let _ = writeLine("Refining "^show qid^"\n"^printTerm init_dfn^"\nto\n"^printTerm tr_dfn2) in
+                             let spc = addRefinedDef(spc, info, maybePiTerm(tvs, tr_dfn2)) in
+                             (spc, rls, uf_qids, rw_qids)
+                           )
+                (spc, user_rules, [], [])
+                spc.ops
+          in
+          let rw_rules = map Rewrite (uf_qids ++ rw_qids) in
+          let spc = simplifyNewSpecializedFns(map (fn Fold qid -> qid) rls, spc, rls, uf_qids, rw_rules) in
+          (spc, uf_qids)
+        def iterate spc =
+          let (spc, uf_qids) = iterate1 spc in
+          let _ = writeLine("Iterate: "^anyToString uf_qids) in
+          if uf_qids = []
+            then spc
+            else iterate spc
     in
-    let (spc, rls, uf_qids, rw_qids) =
-        foldOpInfos (fn (info, result as (spc, rls, uf_qids, rw_qids)) ->
-                     let qid = primaryOpName info in
-                     if ignoreBaseSpec? && some?(findTheOp(base_spec, qid)) then result
-                     else
-                     let (tvs, ty, init_dfn) = unpackFirstTerm info.dfn in
-                     let tr_dfn =
-                         if rls = [] || anyTerm? init_dfn then init_dfn
-                          else applyExistingSpecializations(init_dfn, spc, rls, ty, qid)
-                     in
-                     let (spc, rls, tr_dfn2, uf_qids, rw_qids)
-                        = findNewSpecialization(tr_dfn, spc, rls, ty, qid, uf_qids, rw_qids) in
-                     if equalTerm?(tr_dfn2, init_dfn) || equalTerm?(tr_dfn2, mkTypedTerm(init_dfn, ty))
-                       then result
-                       else
-                       let _ = writeLine("Refining "^show qid^"\n"^printTerm init_dfn^"\nto\n"^printTerm tr_dfn2) in
-                       let spc = addRefinedDef(spc, info, maybePiTerm(tvs, tr_dfn2)) in
-                       (spc, rls, uf_qids, rw_qids)
-                     )
-          (spc, user_rules, [], [])
-          spc.ops
-    in
-    let rw_rules = map Rewrite (uf_qids ++ rw_qids) in
-    let spc = simplifyNewSpecializedFns(map (fn Fold qid -> qid) rls, spc, rls, uf_qids, rw_rules) in
-    spc
+    iterate(spc)
 
   op [a] findSubTerm (f: MSTerm -> Option a) (tm: MSTerm): Option a =
     foldSubTerms (fn (stm, r) ->
