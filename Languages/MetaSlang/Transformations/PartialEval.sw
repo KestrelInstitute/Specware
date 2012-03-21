@@ -76,7 +76,8 @@ import Script
                 spc.ops
           in
           let rw_rules = map Rewrite (uf_qids ++ rw_qids) in
-          let spc = simplifyNewSpecializedFns(map (fn Fold qid -> qid) rls, spc, rls, uf_qids, rw_rules) in
+          let spc = simplifyNewSpecializedFns(mapPartial (fn Fold qid -> Some qid | _ -> None) rls,
+                                              spc, rls, uf_qids, rw_rules) in
           (spc, uf_qids)
         def iterate spc =
           let (spc, uf_qids) = iterate1 spc in
