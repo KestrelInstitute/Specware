@@ -43,7 +43,7 @@ spec
     | SimpStandard
     | PartialEval
     | AbstractCommonExpressions
-    | SpecTransform QualifiedId
+    | SpecTransform(QualifiedId * RuleSpecs)
     | SpecQIdTransform(QualifiedId * QualifiedIds * RuleSpecs)
     | IsoMorphism(List(QualifiedId * QualifiedId) * RuleSpecs * Option Qualifier)
     | Implement(QualifiedIds * RuleSpecs)
@@ -141,7 +141,10 @@ spec
       | SimpStandard -> ppString "SimpStandard"
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | SpecTransform(qid as Qualified(q,id)) -> if q = "SpecTransform" then ppString id else ppQid qid
+      | SpecTransform(qid as Qualified(q,id), rls) ->
+        ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
+                 if rls = [] then ppNil
+                   else ppRls rls]
       | SpecQIdTransform(qid as Qualified(q,id), qids, rls) ->
         ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
                  ppQIds qids,
@@ -235,7 +238,7 @@ spec
  op mkPartialEval (): Script = PartialEval
  op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
  op mkMove(l: List Movement): Script = Move l
- op mkSpecTransform(qid: QualifiedId): Script = SpecTransform qid
+ op mkSpecTransform(qid: QualifiedId, rls: RuleSpecs): Script = SpecTransform(qid, rls)
  op mkSpecQIdTransform(qid: QualifiedId, qids: QualifiedIds, rls: RuleSpecs): Script = SpecQIdTransform(qid, qids, rls)
 
  %% For convenience calling from lisp
@@ -318,10 +321,10 @@ spec
       then None
       else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
 
-  op specTransformFunction:  String * String -> Spec -> Spec                   % defined in transform-shell.lisp
-  op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec                   % defined in transform-shell.lisp
+  op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
+  op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
   op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
-  op specTransformFn?:  String * String -> Bool                                % defined in transform-shell.lisp
+  op specTransformFn?:  String * String -> Bool                              % defined in transform-shell.lisp
 
   op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
     {name     = show qid,
@@ -814,9 +817,9 @@ spec
       | Implement(qids, rls) -> {
         result <- implementOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
-      | SpecTransform(Qualified(q, id)) ->
+      | SpecTransform(Qualified(q, id), rls) ->
         {trans_fn <- return(specTransformFunction(q, id));
-         return (trans_fn spc, tracing?)}
+         return (trans_fn(spc, rls), tracing?)}
       | SpecQIdTransform(Qualified(q, id), qids, rls) ->
         {trans_fn <- return(specQIdTransformFunction(q, id));
          new_spc <- trans_fn(spc, qids, rls);

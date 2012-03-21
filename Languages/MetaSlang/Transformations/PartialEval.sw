@@ -4,8 +4,9 @@ import Script
   op traceSpecializeSpec?: Bool = false
   op ignoreBaseSpec?: Bool = true
 
-  op specializeSpec (specialFn: Spec -> MSTerm -> Option(MSTerm * QualifiedId * QualifiedIds * QualifiedIds))
-                    (spc: Spec): Spec =
+  op specializeSpec0 (specialFn: Spec -> MSTerm -> Option(MSTerm * QualifiedId * QualifiedIds * QualifiedIds))
+                     (spc: Spec)
+                     (user_rules: RuleSpecs): Spec =
     let base_spec = getBaseSpec() in
     let def applyExistingSpecializations(init_dfn, spc, rls, ty, qid) =
           let (tr_dfn, _) = interpretTerm0(spc, mkSimplify rls, init_dfn,
@@ -14,7 +15,8 @@ import Script
             then init_dfn
           else
             %% Do transform without specialization rules to make sure simplification depended on them
-            let (tr_dfn0, _) = interpretTerm0(spc, mkSimplify [], init_dfn, ty, qid, traceSpecializeSpec?) in
+            let (tr_dfn0, _) = interpretTerm0(spc, mkSimplify user_rules, init_dfn,
+                                              ty, qid, traceSpecializeSpec?) in
             if equalTerm?(tr_dfn, tr_dfn0)
               then init_dfn
             else tr_dfn
@@ -71,7 +73,7 @@ import Script
                        let spc = addRefinedDef(spc, info, maybePiTerm(tvs, tr_dfn2)) in
                        (spc, rls, uf_qids, rw_qids)
                      )
-          (spc, [], [], [])
+          (spc, user_rules, [], [])
           spc.ops
     in
     let rw_rules = map Rewrite (uf_qids ++ rw_qids) in
@@ -85,8 +87,8 @@ import Script
                       | None -> f stm)
       None tm
 
-  op SpecTransform.specializeSpecCA (spc: Spec): Spec =
-    specializeSpec constantConstructorArg spc
+  op SpecTransform.specializeSpec (spc: Spec, user_rules: RuleSpecs): Spec =
+    specializeSpec0 constantConstructorArg spc user_rules
 
   op constructorTerm? (spc: Spec) (tm: MSTerm): Bool =
     some?(constructorTerm spc tm)
