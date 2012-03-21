@@ -2,7 +2,7 @@ AQualifierMapType =
 spec
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
  import /Library/Structures/Data/Maps/SimpleAsAlist
- type AQualifierMap b  = STHMap.Map(String,Map.Map(String,b))   
+ type AQualifierMap b  = STHMap.Map(String, MapL.Map(String,b))   
 endspec
 
 QualifierMapAsSTHTable2 =
@@ -18,38 +18,38 @@ spec
  def emptyAQualifierMap  = emptyMap       % 
  def findAQualifierMap    (qm, x, y)    =
    case STHMap.apply  (qm, y) of
-     | Some im -> Map.apply(im,x)
+     | Some im -> MapL.apply(im,x)
      | None -> None
  def removeAQualifierMap  (qm, x, y)    =
    case STHMap.apply  (qm, y) of
      | Some im ->
-       let new_im = Map.remove (im, x) in
-       if new_im = Map.emptyMap
+       let new_im = MapL.remove (im, x) in
+       if new_im = MapL.emptyMap
 	 then STHMap.remove (qm, y)
        else if new_im = im then qm
 	 else STHMap.update(qm,y,new_im)
      | None ->qm
  def insertAQualifierMap (qm, x, y, v) =
    case STHMap.apply  (qm, y) of
-     | Some im -> STHMap.update(qm,y,Map.update (im, x, v))
-     | None -> STHMap.update(qm,y,Map.update(Map.emptyMap,x,v))
+     | Some im -> STHMap.update(qm,y, MapL.update (im, x, v))
+     | None -> STHMap.update(qm,y, MapL.update(MapL.emptyMap,x,v))
  def mapAQualifierMap f m =
    STHMap.map (fn im -> map f im) m
  def mapiAQualifierMap f m =
-   STHMap.mapi (fn (id,im) -> Map.mapi (fn (q,v) -> f(q,id,v)) im) m
+   STHMap.mapi (fn (id,im) -> MapL.mapi (fn (q,v) -> f(q,id,v)) im) m
  def mapiPartialAQualifierMap f m =
    STHMap.mapiPartial (fn (id,im) ->
-		       let new_im = Map.mapiPartial (fn (q,v) -> f(q,id,v)) im in
-		       if new_im = Map.emptyMap then None
+		       let new_im = MapL.mapiPartial (fn (q,v) -> f(q,id,v)) im in
+		       if new_im = MapL.emptyMap then None
 			 else Some new_im)
      m
  def appAQualifierMap f m =
-   STHMap.app (fn im -> Map.app f im) m
+   STHMap.app (fn im -> MapL.app f im) m
  def appiAQualifierMap  f m =
-   STHMap.appi (fn (id,im) -> Map.appi (fn (q,v) -> f(q,id,v)) im) m
+   STHMap.appi (fn (id,im) -> MapL.appi (fn (q,v) -> f(q,id,v)) im) m
  def qualifiers m =
    STHMap.foldi (fn(_,im,quals) ->
-		 Map.foldi (fn (qname,_,quals) ->
+		 MapL.foldi (fn (qname,_,quals) ->
 			    if qname in? quals
 			      then quals
 			      else Cons(qname,quals))
@@ -76,6 +76,6 @@ spec
 
  def wildFindUnQualified (qm, id) =
    case STHMap.apply  (qm, id) of
-     | Some im -> Map.imageToList im
+     | Some im -> MapL.imageToList im
      | None -> []
 endspec

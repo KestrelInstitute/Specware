@@ -1,7 +1,7 @@
 MSToFM qualifying spec
 
   import FourierMotzkin
-  import translate /Library/Structures/Data/Maps/SimpleAsAlist by {Map._ +-> FMMap._}
+  import translate /Library/Structures/Data/Maps/SimpleAsAlist by {MapL._ +-> FMMap._}
   %import FMMap#FMMap
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/Specs/StandardSpec

@@ -281,7 +281,7 @@ spec
      (fn newMap -> fn id -> 
        let qualMap = STHMap.eval (ops,id) in
          foldM (fn newMap -> fn q ->
-           let info = Map.eval (qualMap,q) in
+           let info = eval (qualMap,q) in
              if primaryOpName? (q, id, info) then {
                %% When access is via a primary alias, update the info and
                %% record that (identical) new value for all the aliases.

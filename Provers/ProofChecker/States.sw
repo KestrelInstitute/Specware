@@ -16,7 +16,7 @@ spec
   functions with similar names defined in Monad. *)
 
   type State =
-    {Memo: Map.Map(Proof, Judgement)}
+    {Memo: MapL.Map(Proof, Judgement)}
            % from /Library/Structures/Data/Maps/SimpleAsAlist
 
   op initialState: State

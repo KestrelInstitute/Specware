@@ -6,7 +6,7 @@ spec
 endspec
 
 SimpleAsAlist =
-Map qualifying
+MapL qualifying
 spec
   import Simple[morphism Simple#Map -> MapList {}]
   import /Library/Legacy/Utilities/System
@@ -38,7 +38,7 @@ spec
              eval (tl, x)
 
   % op update : [key,a] Map (key,a) -> key -> a -> Map (key,a)
-  def update (map, x, y) =
+  def [key,a] update (map: Map(key,a), x: key, y: a): Map(key,a) =
     let def memb(key,m) =
           case m of
 	    [] -> []

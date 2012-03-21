@@ -66,13 +66,13 @@ Utilities qualifying spec
 
  %% create a copy of srt, but replace type vars by meta type vars
   op metafyType : MSType -> MetaTypeScheme
- def metafyType srt =
-   let (tvs, srt) = unpackType srt in
-   if empty? tvs then
+ def metafyType srt0 =
+   let (tvs0, srt) = unpackType srt0 in
+   if empty? tvs0 then
      ([],srt)
    else
      let mtvar_position = Internal "metafyType" in
-     let tv_map = List.map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs in
+     let tv_map = map (fn tv -> (tv, freshMetaTyVar ("metafy", mtvar_position))) tvs0 in
      let
         def mapTyVar (tv, tvs, pos) : MSType = 
 	  case tvs of
@@ -86,7 +86,7 @@ Utilities qualifying spec
 	    | srt -> srt
      in
      let srt = mapType (id, cp, id) srt in
-     let mtvs = List.map (fn (_, (MetaTyVar (y, _))) -> y) tv_map in
+     let mtvs = map (fn (_, (MetaTyVar (y, _))) -> y) tv_map in
      (mtvs, srt)
 
  op metafyBaseType(qid: QualifiedId, ty: MSType, pos: Position): MSType * MSType =

@@ -598,20 +598,20 @@ Haskell qualifying spec
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
-    Map.foldi (fn (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
-               case opt_coerc of
-                 | None -> val
-                 | Some(toSuper, toSub) ->
-	       let srtDef = typeDef(subty, spc) in
-               let superty = getSuperType srtDef in
-               Cons({subtype = subty,
-                     supertype = superty,
-                     coerceToSuper = mkOp(Qualified(toHaskellQual, toSuper),
-                                          mkArrow(mkBase(subty, []), superty)),
-                     coerceToSub   = mkOp(Qualified(toHaskellQual, toSub),
-                                          mkArrow(superty, mkBase(subty, []))),
-                     overloadedOps = overloadedOps},
-                    val))
+    foldi (fn (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
+           case opt_coerc of
+             | None -> val
+             | Some(toSuper, toSub) ->
+           let srtDef = typeDef(subty, spc) in
+           let superty = getSuperType srtDef in
+           Cons({subtype = subty,
+                 supertype = superty,
+                 coerceToSuper = mkOp(Qualified(toHaskellQual, toSuper),
+                                      mkArrow(mkBase(subty, []), superty)),
+                 coerceToSub   = mkOp(Qualified(toHaskellQual, toSub),
+                                      mkArrow(superty, mkBase(subty, []))),
+                 overloadedOps = overloadedOps},
+                val))
       [] trans_info.type_map
 
   op exportedOps (c: Context) (spc: Spec): QualifiedIds =

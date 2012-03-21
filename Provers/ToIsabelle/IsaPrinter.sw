@@ -644,20 +644,20 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
-    Map.foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
-               case opt_coerc of
-                 | None -> val
-                 | Some(toSuper, toSub) ->
-	       let srtDef = typeDef(subty, spc) in
-               let superty = getSuperType srtDef in
-               Cons({subtype = subty,
-                     supertype = superty,
-                     coerceToSuper = mkOp(Qualified(toIsaQual, toSuper),
-                                          mkArrow(mkBase(subty, []), srtDef)),
-                     coerceToSub   = mkOp(Qualified(toIsaQual, toSub),
-                                          mkArrow(srtDef, mkBase(subty, []))),
-                     overloadedOps = overloadedOps},
-                    val))
+    foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
+           case opt_coerc of
+             | None -> val
+             | Some(toSuper, toSub) ->
+           let srtDef = typeDef(subty, spc) in
+           let superty = getSuperType srtDef in
+           Cons({subtype = subty,
+                 supertype = superty,
+                 coerceToSuper = mkOp(Qualified(toIsaQual, toSuper),
+                                      mkArrow(mkBase(subty, []), srtDef)),
+                 coerceToSub   = mkOp(Qualified(toIsaQual, toSub),
+                                      mkArrow(srtDef, mkBase(subty, []))),
+                 overloadedOps = overloadedOps},
+                val))
       [] trans_info.type_map
 
   def baseSpecName = "Empty"

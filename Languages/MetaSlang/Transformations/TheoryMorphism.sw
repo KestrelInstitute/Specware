@@ -10,8 +10,8 @@ type OpTransInfo = String * Option(Associativity * Nat) * Bool * Bool * Bool
                   (* type     coercion fns              Overloaded ops *)
 type TypeTransInfo = String * Option(String * String) * List String * Bool
 
-type OpMap   = Map.Map (QualifiedId, OpTransInfo)
-type TypeMap = Map.Map (QualifiedId, TypeTransInfo)
+type OpMap   = MapL.Map (QualifiedId, OpTransInfo)
+type TypeMap = MapL.Map (QualifiedId, TypeTransInfo)
 
 type TransInfo =
   {op_map:   OpMap,
