@@ -215,7 +215,7 @@
         (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
                #'(lambda (x y) x)))))
 
-(defun Script::specTransformFunction-1-1-1 (qid_pr spc-rls)
+(defun Script::specTransformFunction-1-1 (qid_pr spc-rls)
   (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) (car spc-rls) (cdr spc-rls)))
 
 (defun Script::specQIdTransformFunction-name (q id)
