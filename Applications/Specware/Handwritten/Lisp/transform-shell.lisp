@@ -216,7 +216,7 @@
                #'(lambda (x y) x)))))
 
 (defun Script::specTransformFunction-1-1 (qid_pr spc-rls)
-  (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) (car spc-rls) (cdr spc-rls)))
+  (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) spc-rls))
 
 (defun Script::specQIdTransformFunction-name (q id)
   (let ((f (find-symbol (Specware::fixCase (concatenate 'string id "-1-1"))
