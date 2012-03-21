@@ -1132,10 +1132,8 @@ AnnSpecPrinter qualifying spec
               | Infix (Left, i)  -> [(4, string (" infixl "^Nat.show i))]
               | Infix (Right, i) -> [(4, string (" infixr "^Nat.show i))])
            ++
-            [(4, blockNone (0, [(0, string ":"), 
-                                (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
-                                                   (0, string " "), 
-                                                   (4, ppType context ([index, opIndex], Top) srt)]))]))]
+           [(4, blockNone (0, [(0, string ": "), 
+                               (4, ppType context ([index, opIndex], Top) srt)]))]
            ++
            ppDefAux (context, [index, defIndex], None, tm)
 
@@ -1144,8 +1142,7 @@ AnnSpecPrinter qualifying spec
              (0, 
               [(0, blockFill
                     (0, [(0, pp.Op)] ++ 
-                       %(0, string " "),
-                       (if printOpWithDef? && tvs ~= []
+                       (if tvs ~= []
                           then [(0, ppForallTyVars pp tvs), (0, string " ")]
                         else []) ++
                        [(0, ppOpNames ())]))]
@@ -1155,17 +1152,11 @@ AnnSpecPrinter qualifying spec
                      | (Lambda _, Arrow _) ->
                        ppDeclWithArgs ([], srt, tm)
                      | _ ->
-                       [(0, blockFill(0, [(0, case info.fixity of
-                                                | Nonfix         -> string ""
-                                                | Unspecified    -> string ""
-                                                | Infix (Left, i)  -> string (" infixl "^Nat.show i)
-                                                | Infix (Right, i) -> string (" infixr "^Nat.show i))
-                                          % (0, string " :"), 
-                                          % (0, blockNone (0, [%(0, ppForallTyVars pp tvs), 
-                                          %                      (0, string " "), 
-                                          %                    (4, ppType context
-                                          %                          ([index, opIndex], Top) srt)])),
-                                        ]))]
+                       [(0, case info.fixity of
+                              | Nonfix         -> string ""
+                              | Unspecified    -> string ""
+                              | Infix (Left, i)  -> string (" infixl "^Nat.show i)
+                              | Infix (Right, i) -> string (" infixr "^Nat.show i))]
                        ++
                        ppDefAux (context, [index, defIndex], Some srt, tm)
                  else
@@ -1174,10 +1165,7 @@ AnnSpecPrinter qualifying spec
                                     | Unspecified    -> string ""
                                     | Infix (Left, i)  -> string (" infixl "^Nat.show i)
                                     | Infix (Right, i) -> string (" infixr "^Nat.show i)),
-                    (4, prConcat [string ":",
-                                  if empty? tvs then string "" else string " ",
-                                  ppForallTyVars pp tvs,
-                                  string " ",
+                    (4, prConcat [string ": ",
                                   ppType context ([index, opIndex], Top) srt])])))
 
      %def ppDeclWithDef(context, path, term, ty) =
