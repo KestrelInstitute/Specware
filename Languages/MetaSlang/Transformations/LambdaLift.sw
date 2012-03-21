@@ -64,7 +64,7 @@ efficiently, but cmulisp may do better with local functions.
  op  simulateClosures?: Bool		% If false just use lambdas with free vars
  def simulateClosures? = false
 
- type Ops   = Map.Map (String, LiftInfo)
+ type Ops   = MapL.Map (String, LiftInfo)
  type LLEnv = {spc 	 : Spec, 
 	       opers     : Ops, 
 	       opName    : String, 
@@ -309,7 +309,7 @@ def patternVars (pat:MSPattern): List Var =
     body     = body}
 
  def insertOper (liftInfo:LiftInfo, env) =
-   env << {opers = Map.update (env.opers, liftInfo.ident, liftInfo)}
+   env << {opers = update (env.opers, liftInfo.ident, liftInfo)}
 
  op  freshName: Id * LLEnv -> Id
  def freshName (name, env) =
@@ -322,7 +322,7 @@ def patternVars (pat:MSPattern): List Var =
  def actualFreeVars ({qName, opName, opers, counter, usedNames, spc}:LLEnv, vars) =
    let
      def lookup (v as (id, _)) = 
-       case Map.apply (opers, id) of
+       case apply (opers, id) of
 	 | None -> [v]
 	 | Some info -> info.freeVars
    in 
@@ -541,7 +541,7 @@ in
        (opers1 ++ opers2, body) 
 
      | Var (id, srt) ->
-       (case Map.apply (env.opers, id) of
+       (case apply (env.opers, id) of
 	  | Some liftInfo -> 
 	    let liftInfoClosure = ensureClosure liftInfo.closure in
 	    ([], liftInfoClosure)
@@ -645,7 +645,7 @@ in
 	    if ~simulateClosures? then
 	      (case t1 of
 		 | (Var (id, srt), _, _) ->
-		    (case Map.apply (env.opers, id) of
+		    (case apply (env.opers, id) of
 		       | Some {ident, name, freeVars, closure, pattern, domain, range, body} ->
 		         let oldArgs = termToList nt2 in
 			 let newArgs = map mkVar freeVars in
@@ -843,7 +843,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	qName     = qname, 
 	spc       = spc, 
 	counter   = counter, 
-	opers     = Map.emptyMap, 
+	opers     = emptyMap, 
 	usedNames = Ref empty} 
 
      def insertOpers (opers, q, r_elts, r_ops) =
