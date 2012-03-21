@@ -28,7 +28,7 @@ import Script
                let proto_dfn = if fvs = [] then proto_tm
                                else mkLambda(mkTuplePat(map mkVarPat fvs), proto_tm)
                in
-               let _ = writeLine(show new_qid^":\n"^printTerm proto_dfn) in
+               % let _ = writeLine(show new_qid^":\n"^printTerm proto_dfn) in
                let spc = addOpDef(spc, new_qid, Nonfix,
                                   mkTypedTerm(proto_dfn, inferType(spc, proto_dfn))) in
                let rls = Fold new_qid :: rls in
@@ -68,7 +68,7 @@ import Script
                            if equalTerm?(tr_dfn2, init_dfn) || equalTerm?(tr_dfn2, mkTypedTerm(init_dfn, ty))
                              then result
                              else
-                             let _ = writeLine("Refining "^show qid^"\n"^printTerm init_dfn^"\nto\n"^printTerm tr_dfn2) in
+                             % let _ = writeLine("Refining "^show qid^"\n"^printTerm init_dfn^"\nto\n"^printTerm tr_dfn2) in
                              let spc = addRefinedDef(spc, info, maybePiTerm(tvs, tr_dfn2)) in
                              (spc, rls, uf_qids, rw_qids)
                            )
@@ -81,7 +81,7 @@ import Script
           (spc, uf_qids)
         def iterate spc =
           let (spc, uf_qids) = iterate1 spc in
-          let _ = writeLine("Iterate: "^anyToString uf_qids) in
+          let _ = writeLine("Iterate") in
           if uf_qids = []
             then spc
             else iterate spc
@@ -121,7 +121,7 @@ import Script
           let qid = Qualified(q, if i = 0 then base_id else base_id^show i) in
           case findTheOp(spc, qid) of
             | None -> qid
-            | Some _ -> let _ = writeLine("Already have "^show qid) in
+            | Some _ -> %let _ = writeLine("Already have "^show qid) in
               findUnused(i+1)
     in
     findUnused 0
@@ -140,7 +140,7 @@ import Script
                                                else mkVar("xx"^show i, inferType(spc, arg)))
            in
            let proto_tm = mkApply(f, mkTuple proto_args) in
-           let _ = writeLine("Specializing "^printTerm proto_tm^"\n"^printTerm tm) in
+           let _ = writeLine("Specializing "^printTerm proto_tm) in
            Some(proto_tm, mkUniqueName(qid, constr_id, spc), [qid], rw_qids)
          | None -> None)
       | _ -> None
