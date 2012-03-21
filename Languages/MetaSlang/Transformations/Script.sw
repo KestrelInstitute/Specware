@@ -115,6 +115,11 @@ spec
                                                     ppSep(ppString ", ") (map ppRuleSpec rls),
                                                     ppString ")"]
 
+ op ppOptionRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
+                                            else ppConcat[ppString "[",
+                                                          ppSep(ppString ", ") (map ppRuleSpec rls),
+                                                          ppString "]"]
+
  op ppScript(scr: Script): WLPretty =
     case scr of
       | Steps steps ->
@@ -143,8 +148,7 @@ spec
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
       | SpecTransform(qid as Qualified(q,id), rls) ->
         ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
-                 if rls = [] then ppNil
-                   else ppRls rls]
+                 ppOptionRls rls]
       | SpecQIdTransform(qid as Qualified(q,id), qids, rls) ->
         ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
                  ppQIds qids,
@@ -819,6 +823,7 @@ spec
         return (result, tracing?)}
       | SpecTransform(Qualified(q, id), rls) ->
         {trans_fn <- return(specTransformFunction(q, id));
+         % print (scriptToString script^"\n "^anyToString trans_fn^"\n");
          return (trans_fn(spc, rls), tracing?)}
       | SpecQIdTransform(Qualified(q, id), qids, rls) ->
         {trans_fn <- return(specQIdTransformFunction(q, id));
