@@ -6,6 +6,7 @@ spec
   % import Spec
   import /Languages/MetaSlang/Transformations/IsoMorphism
   import /Languages/MetaSlang/Transformations/Coalgebraic
+  import /Languages/MetaSlang/Transformations/PartialEval
 
   def posOf(tr: TransformExpr): Position =
     case tr of
@@ -376,11 +377,16 @@ spec
                           else (top_result, Trace on? :: sub_result))}
                | Str("print",_) ->
                  return (top_result, Print :: sub_result)
-               | Item("applyToSpec",opid,_) -> {qid <- extractQId opid;
-                                                return (mkSpecTransform qid :: sub_result ++ top_result, [])}
+               | Item("applyToSpec",opid,_) ->
+                 {qid <- extractQId opid;
+                  return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
                | Name(nm, pos) | nm nin? commands ->
                  {qid <- extractQId te;
-                  return (mkSpecTransform qid :: sub_result ++ top_result, [])}
+                  return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
+               | ApplyOptions(fn_nm as Name(nm, pos), rl_tms, _) | nm nin? commands ->
+                 {qid <- extractQId fn_nm;
+                  rls <- mapM makeRuleRef rl_tms;
+                  return (mkSpecTransform(qid, rls) :: sub_result ++ top_result, [])}
                | Apply(fn_nm as Name(nm, pos), qid_tms, _) | nm nin? commands ->
                  {qid <- extractQId fn_nm;
                   qids <- mapM extractQId qid_tms;
@@ -391,11 +397,10 @@ spec
                   rls <- mapM makeRuleRef rl_tms;
                   return (mkSpecQIdTransform(qid, qids, rls) :: sub_result ++ top_result, [])}
                | Qual _ -> {qid <- extractQId te;
-                            return (mkSpecTransform qid :: sub_result ++ top_result, [])}
+                            return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
                | _ ->
                  {sstep <- makeScript1 te;
                   return (top_result, sstep :: sub_result)})
       ([], []) trans_steps
              
-
 endspec
