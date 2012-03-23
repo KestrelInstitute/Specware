@@ -1,5 +1,5 @@
 theory SW_Set
-imports "../../Isa/Base" Set
+imports Base Set
 begin
 
 
