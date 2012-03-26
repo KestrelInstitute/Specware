@@ -20,7 +20,7 @@ PosSpecToSpec qualifying spec
                             of Subtype (s1', _, _) -> subtype? (s1', ty2')
                              | _ -> false)
             in
-            % let _ = writeLine("  = "^toString result) in
+            % let _ = writeLine("  = "^show result) in
             result
           def commonAnc (s1', s2') =
             % let _ = writeLine("commonAnc("^printType s1'^", "^printType s2'^")") in
@@ -68,10 +68,10 @@ PosSpecToSpec qualifying spec
      def convertPTerm term =
            % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
            case term of
-             % | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
-             %   correctEqualityType(spc, eq_or_neq, ty, t2, pos)
-             % | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
-             %   correctMapType(m, l, ty, spc, fx, a)
+              | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
+                correctEqualityType(spc, eq_or_neq, ty, t2, pos)
+              | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
+                correctMapType(m, l, ty, spc, fx, a)
 	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
 	     | ApplyN (t1::t2::terms,pos) -> 
 	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))

@@ -1443,7 +1443,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | _   -> None
         
   def lookupEmbedId (env, id, srt) = 
-    case unfoldType (env, srt) of
+    case unfoldTypeCoProd (env, srt) of
       | CoProduct(row, _) -> 
         let def lookup row =
 	      case row of
@@ -1493,7 +1493,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | _ -> None
 
   def isCoproduct (env, srt)  = 
-    case unfoldType (env, srt) of
+    case unfoldTypeCoProd (env, srt) of
       | CoProduct (row, _)    -> Some row
       | Subtype   (srt, _, _) -> isCoproduct (env, srt)
       | _ -> None

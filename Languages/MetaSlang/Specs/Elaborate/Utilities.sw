@@ -282,9 +282,12 @@ Utilities qualifying spec
 
  %% sjw: Replace base srt by its instantiated definition
  def unfoldType (env,srt) = 
-   unfoldTypeRec (env, srt, SplaySet.empty compareQId) 
+   unfoldTypeRec (env, srt, false, SplaySet.empty compareQId) 
+
+ op unfoldTypeCoProd (env: LocalEnv, srt: MSType): MSType = 
+   unfoldTypeRec (env, srt, true, SplaySet.empty compareQId) 
    
- def unfoldTypeRec (env, srt, qids) : MSType = 
+ op unfoldTypeRec (env: LocalEnv, srt: MSType, coprod?: Bool, qids: SplaySet.Set TypeName) : MSType = 
    let unlinked_type = unlinkType srt in
    case unlinked_type of
     | Base (qid, ts, pos) -> 
@@ -325,13 +328,16 @@ Utilities qualifying spec
 		 case base_defs of
 		   | [] ->
 		     let dfn = maybeAndType (defs, typeAnn info.dfn) in
-		     instantiateScheme (env, pos, ts, dfn)
+                     % let _ = if debugUnify? then writeLine("dfn: "^printType dfn) else () in
+                     if ~coprod? && coproduct?(dfn) then unlinked_type
+		       else instantiateScheme (env, pos, ts, dfn)
 		   | _ ->
 		     %% A base type can be defined in terms of other base types.
    		     %% So we unfold recursively here.
 		     let dfn = maybeAndType (base_defs, typeAnn info.dfn) in
 		     unfoldTypeRec (env,
 				    instantiateScheme (env, pos, ts, dfn),
+                                    coprod?,
 				    %% Watch for self-references, even via aliases: 
 				    foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
 				          qids
@@ -341,6 +347,13 @@ Utilities qualifying spec
 	     unlinked_type))
    %| Boolean is the same as default case
     | s -> s 
+
+ op coproduct?(ty: MSType): Bool =
+   case ty of
+     | CoProduct _ -> true
+     | Pi(_, s_ty, _) -> coproduct? s_ty
+     | And(s_ty :: _, _) -> coproduct? s_ty
+     | _ -> false
 
  %% sjw: Returns srt with all  type variables dereferenced
  def unlinkRec srt = 
@@ -551,9 +564,6 @@ Utilities qualifying spec
                    (NotUnify (unlnk_srt1, unlnk_srt2))
                    srts2
 
-           | (CoProduct (r1, _), CoProduct (r2, _)) -> 
-             unifyCP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
-
            | (Product (r1, _), Product (r2, _)) -> 
              unifyP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
 
@@ -588,6 +598,9 @@ Utilities qualifying spec
               else 
                 NotUnify (unlnk_srt1, unlnk_srt2)
 
+            | (CoProduct (r1, _), CoProduct (r2, _)) -> 
+              unifyCP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
+
             | (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
               if exists? (fn (p1, p2) -> 
                             %% p = (unlnk_srt1, unlnk_srt2) 
@@ -602,11 +615,13 @@ Utilities qualifying spec
               else 
                 let s1x = unfoldType (env, s1) in
                 let s2x = unfoldType (env, s2) in
+                let _ = if debugUnify? then writeLine("s1x: "^printType s1x^"  s2x: "^printType s2x) else () in
                 if equalType? (s1, s1x) && equalType? (s2x, s2) then
                   NotUnify  (unlnk_srt1, unlnk_srt2)
-                else 
-                  unify (env, withAnnS (s1x, pos1), 
-                         withAnnS (s2x, pos2), 
+                else
+                  unify (env,
+                         withAnnS(s1x, pos1), 
+                         withAnnS(s2x, pos2), 
                          (s1, s2) :: pairs, 
                          subtype_mode, dom_count)
 
@@ -788,19 +803,21 @@ Utilities qualifying spec
  %% Don't do any unification, to avoid coercing undeclared x to bogus type.
   op Accord.subtypeOf? : LocalEnv -> MSType -> MSType -> Bool
  def Accord.subtypeOf? env x y =
-   % let _ = if debugUnify? then writeLine(printType x^" <?= "^printType y) else () in
+   let _ = if debugUnify? then writeLine(printType x^" <?= "^printType y) else () in
    let 
      def aux x =
+       let _ = if debugUnify? then writeLine(printType x) else () in
        equalType? (x, y) ||
-       (let x = unfoldType (env, x) in
-        case x of
-	  | Subtype (x, _, _) -> aux x
+       (let uf_x = unfoldType (env, x) in
+        case uf_x of
+	  | Subtype (sx, _, _) -> aux sx
           | MetaTyVar(mtv1, _) ->
             (case (! mtv1).link of
                | Some ty1l -> subtypeOf? env ty1l y
                | _ -> false)
-	  | _ -> false)
+	  | _ -> if equalType?(uf_x, x) then false else aux uf_x)
    in
-     aux x
-
+     let result = aux x in
+     let _ = if debugUnify? then writeLine(show result) else () in
+     result
 endspec
