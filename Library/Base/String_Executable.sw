@@ -27,4 +27,38 @@ spec
 
  refine def implode(char_list: List Char): String =
    foldl (fn (s, c) -> s ^ show c) "" char_list      % Hopefully code generators will provide a more efficient version
+
+
+proof isa Nat__natConvertible__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Integer__intConvertible__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa explodedStringToNat_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__stringToInt__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Nat__stringToNat__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa String__explode__1_Obligation_subtype
+sorry
+end-proof
+
+proof isa String__explode__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa String__implode__1__obligation_refine_def
+sorry
+end-proof
+
 endspec

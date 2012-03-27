@@ -18,4 +18,30 @@ refine def modE (i:Int, j:Int0): Int =
 refine def divT (i:Int, j:Int0): Int =
   (abs i) divF (abs j) * sign i
 
+proof isa Integer__divides__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Integer__divR__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Integer__divE__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Integer__modE__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa Integer__divT__1_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__divT__1__obligation_refine_def
+sorry
+end-proof
+
+
+
 endspec

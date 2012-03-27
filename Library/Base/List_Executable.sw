@@ -347,7 +347,7 @@ refine def allEqualElements? : [a] List a -> Bool = fn
 
 refine def [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
   let len = length l in
-  if n = len then l else Cons (x, extendLeft (l, x, n-1))
+  if n <= len then l else Cons (x, extendLeft (l, x, n-1))
 
 refine def [a] unflattenL
        (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
@@ -498,5 +498,512 @@ refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
   | x::l1' -> (case deleteOne (x, l2) of
               | Some l2' -> l1' permutationOf l2'
               | None     -> false)
+
+proof isa list__1_Obligation_subtype
+sorry
+end-proof
+
+proof isa List__list__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__list_1__1_Obligation_subtype0
+sorry
+end-proof
+
+proof isa List__list_1__1_Obligation_subtype
+sorry
+end-proof
+
+proof isa List__list_1__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__tabulate__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__e_at__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__e_at__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__e_at__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__e_at__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__e_at_at__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__empty_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__nonEmpty_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__theElement__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__in_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__nin_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__subFromLong__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__subFromLong__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__subFromLong__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__prefix__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__prefix__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__prefix__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__suffix__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__suffix__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__suffix__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__removePrefix__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__removePrefix__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__removePrefix__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__head__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__last__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__last__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__tail__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__butLast__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__butLast__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__e_pls_pls__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__e_bar_gt__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__e_lt_bar__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__update__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__update__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__update__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__forall_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__exists_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__exists1_p__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__foralli_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__filter__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__zip__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__zip__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__zip__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__zip__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__zip3__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__zip3__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__zip3__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__zip3__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__unzip__1_Obligation_subtype
+sorry
+end-proof
+
+proof isa List__unzip__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__unzip3__1_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__unzip3__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__map__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__map2__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__map2__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__map2__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__map2__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__map3__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__map3__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__map3__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__map3__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__removeNones__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__removeNones__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__matchingOptionLists_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__mapPartial__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__mapPartial2__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__mapPartial2__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__mapPartial2__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__mapPartial2__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__mapPartial3__1_Obligation_exhaustive 
+sorry
+end-proof
+
+proof isa List__mapPartial3__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__mapPartial3__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__mapPartial3__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__reverse__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__repeat__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__allEqualElements_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__extendLeft__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__extendLeft__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__extendLeft__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__unflattenL__1_Obligation_subtype1
+sorry
+end-proof
+
+proof isa List__unflattenL__1_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__unflattenL__1_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__unflattenL__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__unflattenL__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__unflattenL__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__unflatten__1_Obligation_subtype1 
+sorry
+end-proof
+
+proof isa List__unflatten__1_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__unflatten__1_Obligation_subtype 
+sorry
+end-proof
+
+proof Isa List__unflatten__1 ()
+sorry
+termination
+sorry
+end-proof
+
+proof isa List__unflatten__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa List__unflatten__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__unflatten__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__noRepetitions_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__increasingNats_p__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__increasingNats_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__positionsSuchThat__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__leftmostPositionSuchThat__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__rightmostPositionSuchThat__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__positionOf__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__positionOf__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__positionOf__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__sublistAt_p__1_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__sublistAt_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__positionsOfSublist__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__leftmostPositionOfSublistAndFollowing__1__loop_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__leftmostPositionOfSublistAndFollowing__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__rightmostPositionOfSublistAndPreceding__1_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__rightmostPositionOfSublistAndPreceding__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__findLeftmost__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__findRightmost__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__delete__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__diff__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__longestCommonPrefix__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__permutation_p__1__obligation_refine_def 
+sorry
+end-proof
+
+proof isa List__permute__1_Obligation_subtype1 
+sorry
+end-proof
+
+proof isa List__permute__1_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__permute__1_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__permute__1__obligation_refine_def_Obligation_subtype 
+sorry
+end-proof
+
+proof isa List__permute__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa List__permute__1__obligation_refine_def
+sorry
+end-proof
+
+proof isa List__permutationOf__1__obligation_refine_def 
+sorry
+end-proof
+
 
 endspec
