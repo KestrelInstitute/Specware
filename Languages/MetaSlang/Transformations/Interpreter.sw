@@ -675,9 +675,10 @@ spec
                                                                         listCharType)))
                                    (Constant("Nil",listCharType)) (explode s)
        | ("toScreen",String s)  -> let _ = toScreen  s in RecordVal []
+       | ("print",String s)     -> let _ = System.print  s in RecordVal []
        | ("writeLine",String s) -> let _ = writeLine s in RecordVal []
 
-       | ("implode",arg)      ->
+       | ("implode",arg)        ->
          if metaList? arg
 	   then String(foldr (fn(Char c,rs) -> (show c)^rs) "" (metaListToList arg))
 	   else default()
