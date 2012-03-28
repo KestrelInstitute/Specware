@@ -44,7 +44,12 @@ end-proof
 
 %%TODO generialize these lemmas (way to recognize the constant?):
 
+
+%%TODO does the simp del below also apply to files that import this file?
 proof isa -verbatim
+
+declare Nat__digitToString_injective [simp del]
+
 
 theorem nat_less256 [simp]:
   "((nat i) < (256::nat)) = (i < 256)"
@@ -148,15 +153,32 @@ theorem int_lesseq170141183460469231731687303715884105727 [simp]:
   done
 
 
+theorem int_lesseq127 [simp]:
+  "((int n) <= (127::int)) = (n <= nat 127)"
+  apply(auto)
+  done
+
+
+
 (* rephrase? *)
 theorem not_empty_from_length [simp]:
   "\<lbrakk>length x > 0\<rbrakk> \<Longrightarrow> (x \<noteq> [])"
   apply(auto)
 done
+
 theorem int_injective:
   "(int n = int m) = (m = n)"
   apply auto
   done
+
+
+theorem nat_injective:
+  "\<lbrakk> n \<ge> 0 ; m \<ge> 0\<rbrakk> \<Longrightarrow> (nat n = nat m) = (m = n)"
+  apply auto
+  done
+
+
+
 
 theorem toint_lower_bound:
   "\<lbrakk>bs \<noteq> []\<rbrakk> \<Longrightarrow> (- (2 ^ ((length bs) - 1))) \<le> TwosComplement__toInt bs"
@@ -230,7 +252,102 @@ theorem toNat_bound_chained_int_version_2 [simp]:
 done
 *)
 
-end-proof
+
+
+theorem mod_upper_bound_chained:
+ "\<lbrakk> (n::int) > 0 ; k \<ge> n - 1 \<rbrakk> \<Longrightarrow> (m::int) mod n \<le> k"
+  apply(cut_tac a=m and b=n in Divides.pos_mod_bound)
+  apply(force)
+  apply(simp del: Divides.pos_mod_bound)
+  done
+
+theorem mod_lower_bound_chained:
+ "\<lbrakk> (n::int) > 0 ; k \<le> 0\<rbrakk> \<Longrightarrow> k \<le> (m::int) mod n"
+  apply(cut_tac a=m and b=n in Divides.pos_mod_sign)
+  apply(force)
+  apply(simp del: Divides.pos_mod_sign)
+  done
+
+theorem mod_minus_dividend [simp]:
+  "(m - n) mod (n::int) = m mod n"
+  apply(cut_tac a="m - n" and b = n in Divides.semiring_div_class.mod_add_self2)
+  apply(force)
+  done
+
+theorem not_negative_from_bound:
+  "\<lbrakk>length bs = (8\<Colon>nat); toNat bs \<le> (127\<Colon>nat)\<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p bs"
+  apply(cut_tac b = "(hd bs)" and bs = "(tl bs)" in Bits__toNat_induct, force)
+  apply(case_tac "(hd bs)")
+  apply(cut_tac x = bs in TwosComplement__nonNegative_p_alt_def, force)
+  apply(simp add: TwosComplement__sign_def)
+  apply(simp)
+  done
+
+
+theorem mod_does_nothing_rewrite [simp]:
+  "\<lbrakk> x \<ge> 0 ; y > 0\<rbrakk> \<Longrightarrow> ((x::int) mod y = x) = (x < y)"
+  apply(auto)
+  defer 1
+  apply(rule Divides.mod_pos_pos_trivial, force, force)
+  apply(cut_tac a=x and b=y in Divides.pos_mod_bound, force)
+  apply(arith)
+  done
+
+
+theorem not_negative_from_bound_gen_helper:
+  "\<lbrakk>length bs > 1 ; toNat bs < 2 ^ ((length bs) - 1)\<rbrakk> \<Longrightarrow> hd bs = B0"
+  apply(cut_tac b = "(hd bs)" and bs = "(tl bs)" in Bits__toNat_induct, force)
+  apply(auto)
+  done
+
+theorem not_negative_from_bound_gen:
+  "\<lbrakk>length bs > 1 ; toNat bs < 2 ^ ((length bs) - 1)\<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p bs"
+  apply(cut_tac bs=bs in not_negative_from_bound_gen_helper, force, force)
+  apply(cut_tac x = bs in TwosComplement__nonNegative_p_alt_def, force)
+  apply(simp add: TwosComplement__sign_def)
+  done
+
+(* prove length of extendleft *)
+theorem length_zeroExtend [simp]:
+  "\<lbrakk> n \<ge> length bs\<rbrakk> \<Longrightarrow> length (Bits__zeroExtend(bs, (n::nat))) = n"
+  apply(simp add: Bits__zeroExtend_def List__extendLeft_def)
+  done
+
+
+theorem mod_of_toInt65536 [simp]:
+  "\<lbrakk> length bs = 16 \<rbrakk> \<Longrightarrow> 
+   (TwosComplement__toInt bs) mod (65536\<Colon>int) = int (toNat bs)"
+  apply(simp add: TwosComplement__toInt_def)
+  done
+
+theorem mod_of_toInt4294967296 [simp]:
+  "\<lbrakk> length bs = 32 \<rbrakk> \<Longrightarrow> 
+   (TwosComplement__toInt bs) mod (4294967296\<Colon>int) = int (toNat bs)"
+  apply(simp add: TwosComplement__toInt_def)
+  done
+
+theorem mod_of_toInt18446744073709551616 [simp]:
+  "\<lbrakk> length bs = 64 \<rbrakk> \<Longrightarrow> 
+   (TwosComplement__toInt bs) mod (18446744073709551616) = int (toNat bs)"
+  apply(simp add: TwosComplement__toInt_def)
+  done
+
+theorem mod_of_toInt340282366920938463463374607431768211456 [simp]:
+  "\<lbrakk> length bs = 128 \<rbrakk> \<Longrightarrow> 
+   (TwosComplement__toInt bs) mod (340282366920938463463374607431768211456) = int (toNat bs)"
+  apply(simp add: TwosComplement__toInt_def)
+  done
+
+theorem toBits_toNat_extend: 
+  "\<lbrakk>length bs > 0 ; length bs < 16\<rbrakk> \<Longrightarrow> toBits (toNat bs, 16) = Bits__zeroExtend (bs, 16)"
+  apply(simp add:Bits__zeroExtend_def List__extendLeft_def)
+  apply(cut_tac k="16 - length bs" and bs=bs in Bits__extendLeft_toNat_B0, force)
+  apply(cut_tac bs="(replicate (16 - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
+  apply(simp)
+  done
+
+
+end-proof %%end large verbatim block
 
 
 endspec

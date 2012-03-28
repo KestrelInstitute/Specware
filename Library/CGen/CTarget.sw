@@ -139,6 +139,9 @@ op mathIntOfUchar (uchar bs : Uchar) : Nat = toNat bs
 theorem mathIntOfUchar_injective is
   fa(x:Uchar, y:Uchar) (mathIntOfUchar x = mathIntOfUchar y) = (x = y)
 
+theorem mathIntOfUchar_injective_fw is
+  fa(x:Uchar, y:Uchar) (mathIntOfUchar x = mathIntOfUchar y) => (x = y)
+
 op rangeOfUchar : FiniteSet Int = fn i:Int -> 0 <= i && i <= UCHAR_MAX
 
 %% TODO must currently add an int around the element to get the Isabelle theorem to type-check
@@ -195,6 +198,9 @@ op mathIntOfSchar (schar bs : Schar) : Int = toInt bs
 
 theorem mathIntOfSchar_injective is
   fa(x:Schar, y:Schar) (mathIntOfSchar x = mathIntOfSchar y) = (x = y)
+
+theorem mathIntOfSchar_injective_fw is
+  fa(x:Schar, y:Schar) (mathIntOfSchar x = mathIntOfSchar y) => (x = y)
 
 op SCHAR_MIN : Int = - (2 ** (CHAR_BIT - 1))
 proof isa [simp] end-proof
@@ -258,6 +264,9 @@ op mathIntOfChar (char bs : Char) : Int =
 
 theorem mathIntOfChar_injective is
   fa(x:Char, y:Char) (mathIntOfChar x = mathIntOfChar y) = (x = y)
+
+theorem mathIntOfChar_injective_fw is
+  fa(x:Char, y:Char) (mathIntOfChar x = mathIntOfChar y) => (x = y)
 
 op rangeOfChar : FiniteSet Int = fn i:Int -> CHAR_MIN <= i && i <= CHAR_MAX
 
@@ -351,6 +360,7 @@ theorem min_int_bits   is   int_bits >= 16
 theorem min_long_bits  is  long_bits >= 32
 theorem min_llong_bits is llong_bits >= 64
 
+%%TODO change back to mention SHRT
 op USHORT_MAX : Nat = 2 ** short_bits - 1
 op   UINT_MAX : Nat = 2 **   int_bits - 1
 op  ULONG_MAX : Nat = 2 **  long_bits - 1
@@ -380,27 +390,28 @@ op mathIntOfUllong (ullong bs : Ullong) : Nat = toNat bs
 
 theorem mathIntOfUshort_injective is
   fa(x:Ushort, y:Ushort) (mathIntOfUshort x = mathIntOfUshort y) = (x = y)
-proof isa [simp]
-  apply(case_tac x, case_tac y, simp)
-end-proof
 
 theorem mathIntOfUint_injective is
   fa(x:Uint, y:Uint) (mathIntOfUint x = mathIntOfUint y) = (x = y)
-proof isa [simp]
-  apply(case_tac x, case_tac y, simp)
-end-proof
 
 theorem mathIntOfUlong_injective is
   fa(x:Ulong, y:Ulong) (mathIntOfUlong x = mathIntOfUlong y) = (x = y)
-proof isa [simp]
-  apply(case_tac x, case_tac y, simp)
-end-proof
 
 theorem mathIntOfUllong_injective is
   fa(x:Ullong, y:Ullong) (mathIntOfUllong x = mathIntOfUllong y) = (x = y)
-proof isa [simp]
-  apply(case_tac x, case_tac y, simp)
-end-proof
+
+
+theorem mathIntOfUshort_injective_fw is
+  fa(x:Ushort, y:Ushort) (mathIntOfUshort x = mathIntOfUshort y) => (x = y)
+
+theorem mathIntOfUint_injective_fw is
+  fa(x:Uint, y:Uint) (mathIntOfUint x = mathIntOfUint y) => (x = y)
+
+theorem mathIntOfUlong_injective_fw is
+  fa(x:Ulong, y:Ulong) (mathIntOfUlong x = mathIntOfUlong y) => (x = y)
+
+theorem mathIntOfUllong_injective_fw is
+  fa(x:Ullong, y:Ullong) (mathIntOfUllong x = mathIntOfUllong y) => (x = y)
 
 op rangeOfUshort : FiniteSet Int = fn i:Int -> 0 <= i && i <= USHORT_MAX
 op rangeOfUint   : FiniteSet Int = fn i:Int -> 0 <= i && i <= UINT_MAX
@@ -437,6 +448,7 @@ theorem mathIntOfUlong_ulongOfMathInt is
 theorem mathIntOfUllong_ullongOfMathInt is
   fa(i:Int) i in? rangeOfUllong => mathIntOfUllong (ullongOfMathInt i) = i
 
+%TODO why verbatim?
 proof isa -verbatim
 theorem C__mathIntOfUshort_ushortOfMathInt_2: 
   "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
@@ -580,6 +592,16 @@ theorem mathIntOfSlong_injective is
   fa(x:Slong, y:Slong) (mathIntOfSlong x = mathIntOfSlong y) = (x = y)
 theorem mathIntOfSllong_injective is
   fa(x:Sllong, y:Sllong) (mathIntOfSllong x = mathIntOfSllong y) = (x = y)
+
+
+theorem mathIntOfSshort_injective_fw is
+  fa(x:Sshort, y:Sshort) (mathIntOfSshort x = mathIntOfSshort y) => (x = y)
+theorem mathIntOfSint_injective_fw is
+  fa(x:Sint, y:Sint) (mathIntOfSint x = mathIntOfSint y) => (x = y)
+theorem mathIntOfSlong_injective_fw is
+  fa(x:Slong, y:Slong) (mathIntOfSlong x = mathIntOfSlong y) => (x = y)
+theorem mathIntOfSllong_injective_fw is
+  fa(x:Sllong, y:Sllong) (mathIntOfSllong x = mathIntOfSllong y) => (x = y)
 
 op rangeOfSshort : FiniteSet Int = fn i:Int ->  SSHORT_MIN <= i && i <=  SSHORT_MAX
 op rangeOfSint   : FiniteSet Int = fn i:Int ->   SINT_MIN <= i && i <=   SINT_MAX
@@ -1201,15 +1223,33 @@ op charOfUllong (x:Ullong |
   if plainCharsAreSigned then charOfMathInt (mathIntOfUllong x)
   else charOfMathInt (mathIntOfUllong x modF (1 + UCHAR_MAX))
 
-%%TODO issue with obligation?
+%%TODO issue with obligation
 op charOfSchar (x:Schar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfSchar x)
   else charOfMathInt (mathIntOfSchar x modF (1 + UCHAR_MAX))
+
+proof isa charOfSchar_Obligation_subtype 
+sorry
+end-proof
+
+proof isa charOfSchar_Obligation_subtype1
+  apply(case_tac "x")
+  apply(simp add: mod_upper_bound_chained mod_lower_bound_chained)
+end-proof
 
 op charOfSshort (x:Sshort |
    plainCharsAreSigned => mathIntOfSshort x in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfSshort x)
   else charOfMathInt (mathIntOfSshort x modF (1 + UCHAR_MAX))
+
+proof isa C__charOfSshort_Obligation_subtype0
+sorry end-proof
+proof isa C__charOfSint_Obligation_subtype0
+sorry end-proof
+proof isa C__charOfSlong_Obligation_subtype0
+sorry end-proof
+proof isa C__charOfSllong_Obligation_subtype0
+sorry end-proof
 
 op charOfSint (x:Sint |
    plainCharsAreSigned => mathIntOfSint x in? rangeOfChar) : Char =
@@ -1229,6 +1269,10 @@ op charOfSllong (x:Sllong |
 (* Converting between integer types with the same integer conversion rank [ISO
 6.3.1.1/1] leaves the bits unchanged. *)
 
+proof isa -verbatim
+declare fun_Compl_def [simp]
+end-proof
+
 theorem ucharOfSchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ucharOfSchar (schar bs) = uchar bs
@@ -1239,7 +1283,7 @@ theorem ucharOfChar_bits is
 
 theorem scharOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT && ((toNat bs):Int) in? rangeOfSchar =>
-    ucharOfSchar (schar bs) = uchar bs
+    scharOfUchar (uchar bs) = schar bs
 
 theorem scharOfChar_bits is
   fa(bs:Bits) length bs = CHAR_BIT &&
@@ -1289,10 +1333,33 @@ theorem sllongOfUllong_bits is
 (* Converting from a signed or unsigned integer type to an unsigned integer type
 of higher rank amounts to zero-extending the bits. *)
 
+refine def ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort = ushort (bits(i,16))
+
+proof isa C__ushortOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__ushortOfMathInt x0)" and y="C__Ushort__ushort (toBits(nat x0,16::nat))" in C__mathIntOfUshort_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2 C__ushortOfMathInt__1_def)
+end-proof
+
+%TODO move up and use more
+%TODO kill if the refine def works
+proof isa -verbatim
+theorem C__ushortOfMathInt_alt_def: 
+  "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
+   (C__ushortOfMathInt i) = C__Ushort__ushort (toBits(nat i,16::nat))"
+  apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i,16::nat))" in C__mathIntOfUshort_injective)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2)
+  done
+end-proof
+
 theorem ushortOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ushortOfUchar (uchar bs) = ushort (zeroExtend (bs, short_bits))
 
+%%TODO not sure about this one
 theorem ushortOfSchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ushortOfSchar (schar bs) = ushort (zeroExtend (bs, short_bits))
@@ -2751,10 +2818,6 @@ proof isa ucharOfMathInt_mathIntOfUchar_Obligation_subtype
   by (rule C__uchar_range)
 end-proof
 
-proof isa ushortOfMathInt_mathIntOfUshort_Obligation_subtype
-  by (rule C__ushort_range)
-end-proof
-
 proof isa uintOfMathInt_mathIntOfUint_Obligation_subtype
   by (rule C__uint_range)
 end-proof
@@ -2790,7 +2853,6 @@ end-proof
 proof isa charOfMathInt_mathIntOfChar_Obligation_subtype 
   by (rule C__char_range)
 end-proof
-
 
 
 proof isa mathIntOfUchar_injective [simp]
@@ -3141,126 +3203,294 @@ proof isa charOfMathInt_mathIntOfChar [simp]
   apply(auto simp add: C__mathIntOfChar_charOfMathInt)
   end-proof
 
-proof isa C__ushortOfUchar_Obligation_subtype
+proof isa ushortOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__uintOfUchar_Obligation_subtype
+proof isa uintOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__uintOfUshort_Obligation_subtype
+proof isa uintOfUshort_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ulongOfUchar_Obligation_subtype
+proof isa ulongOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ulongOfUshort_Obligation_subtype
+proof isa ulongOfUshort_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ulongOfUint_Obligation_subtype
+proof isa ulongOfUint_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ullongOfUchar_Obligation_subtype
+proof isa ullongOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ullongOfUshort_Obligation_subtype
+proof isa ullongOfUshort_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ullongOfUint_Obligation_subtype
+proof isa ullongOfUint_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__ullongOfUlong_Obligation_subtype
+proof isa ullongOfUlong_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sshortOfUchar_Obligation_subtype
+proof isa sshortOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sshortOfSchar_Obligation_subtype
+proof isa sshortOfSchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sshortOfChar_Obligation_subtype
+proof isa sshortOfChar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sintOfUchar_Obligation_subtype
+proof isa sintOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sintOfSchar_Obligation_subtype
+proof isa sintOfSchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sintOfSshort_Obligation_subtype
+proof isa sintOfSshort_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sintOfChar_Obligation_subtype
+proof isa sintOfChar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__slongOfUchar_Obligation_subtype
+proof isa slongOfUchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__slongOfSchar_Obligation_subtype
+proof isa slongOfSchar_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__slongOfSshort_Obligation_subtype
+proof isa slongOfSshort_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__slongOfSint_Obligation_subtype 
+proof isa slongOfSint_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__slongOfChar_Obligation_subtype 
+proof isa slongOfChar_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sllongOfUchar_Obligation_subtype 
+proof isa sllongOfUchar_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sllongOfSchar_Obligation_subtype 
+proof isa sllongOfSchar_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sllongOfSshort_Obligation_subtype 
+proof isa sllongOfSshort_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sllongOfSint_Obligation_subtype 
+proof isa sllongOfSint_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
 
-proof isa C__sllongOfSlong_Obligation_subtype 
+proof isa sllongOfSlong_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__sllongOfChar_Obligation_subtype 
+proof isa sllongOfChar_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
 
-proof isa C__charOfUshort_Obligation_subtype
+proof isa charOfUshort_Obligation_subtype
   apply(case_tac "x", auto)
 end-proof
 
-proof isa C__charOfSchar_Obligation_subtype
+proof isa charOfSchar_Obligation_subtype
   apply(case_tac "x", auto)
 end-proof
+
+
+
+proof isa ucharOfSchar_bits
+  apply(simp add: C__ucharOfSchar_def)
+  apply(rule C__mathIntOfUchar_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(cut_tac a="int (toNat bs)" and b = 256 in Divides.mod_pos_pos_trivial)
+  apply(force, force)
+  apply(simp del: mod_does_nothing_rewrite)
+end-proof
+
+proof isa ucharOfChar_bits
+  apply(simp add: C__ucharOfChar_def)
+  apply(auto)
+  apply(rule C__mathIntOfUchar_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(cut_tac a="int (toNat bs)" and b = 256 in Divides.mod_pos_pos_trivial)
+  apply(force, force)
+  apply(simp del: mod_does_nothing_rewrite)
+  apply(rule C__mathIntOfUchar_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(cut_tac a="int (toNat bs)" and b = 256 in Divides.mod_pos_pos_trivial)
+  apply(force, force)
+  apply(simp del: mod_does_nothing_rewrite)
+end-proof
+
+proof isa mathIntOfUshort_injective [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+proof isa mathIntOfUint_injective [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+proof isa mathIntOfUlong_injective [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+proof isa mathIntOfUllong_injective [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+proof isa C__scharOfUchar_bits
+  apply(simp add: C__scharOfUchar_def)
+  apply(rule C__mathIntOfSchar_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def TwosComplement__nonNegative_p_def)
+  apply(cut_tac bs=bs in not_negative_from_bound, force, force)
+  apply(simp add:TwosComplement__nonNegative_p_def)
+end-proof
+
+proof isa C__scharOfChar_bits 
+  apply(simp add: C__scharOfChar_def)
+  apply(case_tac C__plainCharsAreSigned)
+  apply(simp) 
+  apply(rule C__mathIntOfSchar_injective_fw, force, force)
+  apply(force)
+  apply(simp)
+  apply(rule C__mathIntOfSchar_injective_fw, force, force)
+  apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
+  apply(cut_tac bs=bs in not_negative_from_bound, force, force, force)
+end-proof     
+
+proof isa C__charOfUchar_bits 
+  apply(simp add: C__charOfUchar_def)
+  apply(case_tac C__plainCharsAreSigned)
+  apply(simp) 
+  apply(rule C__mathIntOfChar_injective_fw, force, force)
+  apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
+  apply(cut_tac bs=bs in not_negative_from_bound, force, force, force)  
+  apply(simp)
+  apply(rule C__mathIntOfChar_injective_fw, force, force)
+  apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
+end-proof  
+
+proof isa C__charOfSchar_bits 
+  apply(simp add: C__charOfSchar_def)
+  apply(case_tac C__plainCharsAreSigned)
+  apply(simp) 
+  apply(rule C__mathIntOfChar_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(simp)
+  apply(rule C__mathIntOfChar_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
+  end-proof
+
+proof isa C__ushortOfSshort_bits 
+  apply(simp add: C__ushortOfSshort_def)
+  apply(rule C__mathIntOfUshort_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(cut_tac i = "(TwosComplement__toInt bs mod (65536\<Colon>int))" in C__mathIntOfUshort_ushortOfMathInt, force)
+  apply(cut_tac n = "int (C__mathIntOfUshort (C__ushortOfMathInt (TwosComplement__toInt bs mod (65536\<Colon>int))))" and m = "TwosComplement__toInt bs mod (65536\<Colon>int)" in nat_injective, force, force)
+  apply(simp del: nat_injective C__mathIntOfUshort_ushortOfMathInt)
+end-proof  
+
+proof isa C__sshortOfUshort_bits 
+  apply(simp add: C__sshortOfUshort_def)
+  apply(rule C__mathIntOfSshort_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(rule not_negative_from_bound_gen, force, force)
+end-proof  
+
+proof isa C__uintOfSint_bits 
+  apply(simp add: C__uintOfSint_def)
+  apply(rule C__mathIntOfUint_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(cut_tac i = "(TwosComplement__toInt bs mod (4294967296\<Colon>int))" in C__mathIntOfUint_uintOfMathInt, force)
+  apply(cut_tac n = "int (C__mathIntOfUint (C__uintOfMathInt (TwosComplement__toInt bs mod (4294967296\<Colon>int))))" and m = "TwosComplement__toInt bs mod (4294967296\<Colon>int)" in nat_injective, force, force)
+  apply(simp del: nat_injective C__mathIntOfUint_uintOfMathInt)
+end-proof  
+
+proof isa C__sintOfUint_bits 
+  apply(simp add: C__sintOfUint_def)
+  apply(rule C__mathIntOfSint_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(rule not_negative_from_bound_gen, force, force)
+end-proof  
+
+proof isa C__ulongOfSlong_bits 
+  apply(simp add: C__ulongOfSlong_def)
+  apply(rule C__mathIntOfUlong_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(cut_tac i = "(TwosComplement__toInt bs mod (2::int)^C__long_bits)" in C__mathIntOfUlong_ulongOfMathInt, force)
+  apply(cut_tac n = "int (C__mathIntOfUlong (C__ulongOfMathInt (TwosComplement__toInt bs mod (2::int)^C__long_bits)))" and m = "TwosComplement__toInt bs mod (2::int)^C__long_bits" in nat_injective, force, force)
+  apply(simp del: nat_injective C__mathIntOfUlong_ulongOfMathInt)
+end-proof  
+
+proof isa C__slongOfUlong_bits 
+  apply(simp add: C__slongOfUlong_def)
+  apply(rule C__mathIntOfSlong_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(rule not_negative_from_bound_gen, force, force)
+end-proof  
+
+proof isa C__ullongOfSllong_bits 
+  apply(simp add: C__ullongOfSllong_def)
+  apply(rule C__mathIntOfUllong_injective_fw, force, force)
+  apply(simp del:C__mathIntOfChar_injective)
+  apply(cut_tac i = "(TwosComplement__toInt bs mod (2::int)^C__llong_bits)" in C__mathIntOfUllong_ullongOfMathInt, force)
+  apply(cut_tac n = "int (C__mathIntOfUllong (C__ullongOfMathInt (TwosComplement__toInt bs mod (2::int)^C__llong_bits)))" and m = "TwosComplement__toInt bs mod (2::int)^C__llong_bits" in nat_injective, force, force)
+  apply(simp del: nat_injective C__mathIntOfUllong_ullongOfMathInt)
+end-proof  
+
+proof isa C__sllongOfUllong_bits 
+  apply(simp add: C__sllongOfUllong_def)
+  apply(rule C__mathIntOfSllong_injective_fw)
+  apply(force, force)
+  apply(simp add:TwosComplement__toInt_def)
+  apply(rule not_negative_from_bound_gen, force, force)
+end-proof  
+
+proof isa  
+  apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt_alt_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ushortOfUchar_bits 
+  apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt_alt_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
 
 endspec
 
