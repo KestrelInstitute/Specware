@@ -1,14 +1,17 @@
 %% NOTE: The following files should be kept in sync:
-%% Specware4/Library/CGen/CTargetParameters.sw
+%% Specware/Library/CGen/CTargetParameters.sw
 %% vTPM/CTargetParameters.sw
 
 C qualifying spec
 
-import Library/All
+%% import /Library/General/TwosComplementNumber
+%% import /Library/General/FunctionExt
+%% import /Library/General/OptionExt
 
 (* See spec CTarget for an explanation of the following items. *)
 
 op CHAR_BIT : Nat = 8
+proof Isa [simp] end-proof
 
 op plainCharsAreSigned : Bool = false
 

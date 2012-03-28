@@ -1,11 +1,16 @@
 %% NOTE: The following files should be kept in sync:
-%% Specware4/Library/CGen/CTarget.sw
+%% Specware/Library/CGen/CTarget.sw
 %% vTPM/CTarget.sw
 
 C qualifying spec
 
 import CTargetParameters
+import Library
 
+proof isa -verbatim
+declare List__ofLength_p_def [simp]
+declare List__nonEmpty_p_def [simp]
+end-proof
 
 %section (* Introduction *)
 
@@ -103,11 +108,15 @@ given our definition of CHAR_BIT as 8, the two notions coincide.) *)
 % op CHAR_BIT : Nat
 
 theorem min_CHAR_BIT is CHAR_BIT >= 8
+proof isa [simp]
+  by (auto)
+end-proof
 
 (* [ISO 5.2.4.2.1/2] constrains UCHAR_MAX [ISO 5.2.4.2.1/1] to be
 2^CHAR_BIT-1. *)
 
 op UCHAR_MAX : Nat = 2 ** CHAR_BIT - 1
+proof isa [simp] end-proof
 
 (* [ISO 6.2.6.1/3] constrains unsigned char objects to be represented using a
 pure binary notation, i.e. to range from 0 to 2^CHAR_BIT-1. Thus, unsigned char
@@ -127,18 +136,42 @@ implied by the use of toNat). *)
 
 op mathIntOfUchar (uchar bs : Uchar) : Nat = toNat bs
 
+theorem mathIntOfUchar_injective is
+  fa(x:Uchar, y:Uchar) (mathIntOfUchar x = mathIntOfUchar y) = (x = y)
+
 op rangeOfUchar : FiniteSet Int = fn i:Int -> 0 <= i && i <= UCHAR_MAX
 
-theorem uchar_range is fa(x:Uchar) mathIntOfUchar x in? rangeOfUchar
+%% TODO must currently add an int around the element to get the Isabelle theorem to type-check
+theorem uchar_range is fa(x:Uchar) ((mathIntOfUchar x):Int) in? rangeOfUchar
 
 op ucharOfMathInt (i:Int | i in? rangeOfUchar) : Uchar =
   the(x:Uchar) mathIntOfUchar x = i
 
-theorem ucharOfMathInt_mathIntOfUchar is
-  fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
-
 theorem mathIntOfUchar_ucharOfMathInt is
   fa(i:Int) i in? rangeOfUchar => mathIntOfUchar (ucharOfMathInt i) = i
+
+%% helper lemma that moves the int on one side to be a nat on the other side
+proof isa -verbatim
+theorem C__mathIntOfUchar_ucharOfMathInt_2 [simp]: 
+  "\<lbrakk>i \<in> C__rangeOfUchar\<rbrakk> \<Longrightarrow> 
+   (C__mathIntOfUchar (C__ucharOfMathInt i)) = nat i"
+  apply (cut_tac i=i in C__mathIntOfUchar_ucharOfMathInt)
+  apply(auto simp del:C__mathIntOfUchar_ucharOfMathInt)
+  done
+
+theorem C__Uchar__subtype_pred_ucharOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfUchar\<rbrakk> \<Longrightarrow>
+  C__Uchar__subtype_pred (C__ucharOfMathInt i)"
+  apply(simp add: C__ucharOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Uchar) . (C__Uchar__subtype_pred x \<and> int (C__mathIntOfUchar x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfUchar_injective)
+  apply(cut_tac i=i in C__ucharOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+theorem ucharOfMathInt_mathIntOfUchar is
+  fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
 
 
 %subsection (* The signed char type *)
@@ -160,8 +193,14 @@ signed chars. *)
 
 op mathIntOfSchar (schar bs : Schar) : Int = toInt bs
 
+theorem mathIntOfSchar_injective is
+  fa(x:Schar, y:Schar) (mathIntOfSchar x = mathIntOfSchar y) = (x = y)
+
 op SCHAR_MIN : Int = - (2 ** (CHAR_BIT - 1))
+proof isa [simp] end-proof
+
 op SCHAR_MAX : Nat = 2 ** (CHAR_BIT - 1) - 1
+proof isa [simp] end-proof
 
 op rangeOfSchar : FiniteSet Int = fn i:Int -> SCHAR_MIN <= i && i <= SCHAR_MAX
 
@@ -170,11 +209,24 @@ theorem schar_range is fa(x:Schar) mathIntOfSchar x in? rangeOfSchar
 op scharOfMathInt (i:Int | i in? rangeOfSchar) : Schar =
   the(x:Schar) mathIntOfSchar x = i
 
+theorem mathIntOfSchar_scharOfMathInt is
+  fa(i:Int) i in? rangeOfSchar => mathIntOfSchar (scharOfMathInt i) = i
+
+proof isa -verbatim
+theorem C__Schar__subtype_pred_scharOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfSchar\<rbrakk> \<Longrightarrow>
+  C__Schar__subtype_pred (C__scharOfMathInt i)"
+  apply(simp add: C__scharOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Schar) . (C__Schar__subtype_pred x \<and> (C__mathIntOfSchar x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfSchar_injective)
+  apply(cut_tac i=i in C__scharOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
 theorem scharOfMathInt_mathIntOfSchar is
   fa(x:Schar) scharOfMathInt (mathIntOfSchar x) = x
 
-theorem mathIntOfSchar_scharOfMathInt is
-  fa(i:Int) i in? rangeOfSchar => mathIntOfSchar (scharOfMathInt i) = i
 
 (* The constraint that SCHAR_MAX is at least +127 [ISO 5.2.4.2.1/1] is
 satisfied. *)
@@ -194,26 +246,51 @@ consist of CHAR_BIT bits. However, their range of value differs. *)
 
 op plainCharsAreUnsigned : Bool = ~ plainCharsAreSigned
 
+op CHAR_MIN : Int = if plainCharsAreSigned then SCHAR_MIN else 0
+proof isa [simp] end-proof
+op CHAR_MAX : Nat = if plainCharsAreSigned then SCHAR_MAX else UCHAR_MAX
+proof isa [simp] end-proof
+
 type Char = | char (Bits | ofLength? CHAR_BIT)
 
 op mathIntOfChar (char bs : Char) : Int =
   if plainCharsAreSigned then toInt bs else toNat bs
 
-op CHAR_MIN : Int = if plainCharsAreSigned then SCHAR_MIN else 0
-op CHAR_MAX : Nat = if plainCharsAreSigned then SCHAR_MAX else UCHAR_MAX
+theorem mathIntOfChar_injective is
+  fa(x:Char, y:Char) (mathIntOfChar x = mathIntOfChar y) = (x = y)
 
 op rangeOfChar : FiniteSet Int = fn i:Int -> CHAR_MIN <= i && i <= CHAR_MAX
 
+%%proof should apply regardless of whether chars are signed
 theorem char_range is fa(x:Char) mathIntOfChar x in? rangeOfChar
 
 op charOfMathInt (i:Int | i in? rangeOfChar) : Char =
   the(x:Char) mathIntOfChar x = i
 
-theorem charOfMathInt_mathIntOfChar is
-  fa(x:Char) charOfMathInt (mathIntOfChar x) = x
-
 theorem mathIntOfChar_charOfMathInt is
   fa(i:Int) i in? rangeOfChar => mathIntOfChar (charOfMathInt i) = i
+proof isa [simp]
+  apply (auto simp add:C__charOfMathInt_def)
+  apply(cut_tac i=i in C__charOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Char) . (C__Char__subtype_pred x \<and> (C__mathIntOfChar x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa -verbatim
+theorem C__Char__subtype_pred_charOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfChar\<rbrakk> \<Longrightarrow>
+  C__Char__subtype_pred (C__charOfMathInt i)"
+  apply(simp add: C__charOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Char) . (C__Char__subtype_pred x \<and> (C__mathIntOfChar x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfChar_injective)
+  apply(cut_tac i=i in C__charOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+theorem charOfMathInt_mathIntOfChar is
+  fa(x:Char) charOfMathInt (mathIntOfChar x) = x
 
 
 %subsection (* The other integer types *)
@@ -253,6 +330,17 @@ op   int_bits : Nat = sizeof_int   * CHAR_BIT
 op  long_bits : Nat = sizeof_long  * CHAR_BIT
 op llong_bits : Nat = sizeof_llong * CHAR_BIT
 
+proof isa -verbatim
+declare C__short_bits_def [simp]
+declare C__int_bits_def [simp]
+declare C__long_bits_def [simp]
+declare C__llong_bits_def [simp]
+declare C__sizeof_short_def [simp]
+declare C__sizeof_int_def [simp]
+declare C__sizeof_long_def [simp]
+declare C__sizeof_llong_def [simp]
+end-proof
+
 theorem min_sizeof_short is sizeof_short >= 2
 theorem min_sizeof_int   is sizeof_int   >= 2
 theorem min_sizeof_long  is sizeof_long  >= 4
@@ -263,12 +351,19 @@ theorem min_int_bits   is   int_bits >= 16
 theorem min_long_bits  is  long_bits >= 32
 theorem min_llong_bits is llong_bits >= 64
 
-op  USHRT_MAX : Nat = 2 ** short_bits - 1
+op USHORT_MAX : Nat = 2 ** short_bits - 1
 op   UINT_MAX : Nat = 2 **   int_bits - 1
 op  ULONG_MAX : Nat = 2 **  long_bits - 1
 op ULLONG_MAX : Nat = 2 ** llong_bits - 1
 
-theorem min_USHRT_MAX  is  USHRT_MAX  >= 2 ** 16 - 1
+proof isa -verbatim
+declare C__USHORT_MAX_def [simp]
+declare C__UINT_MAX_def [simp]
+declare C__ULONG_MAX_def [simp]
+declare C__ULLONG_MAX_def [simp]
+end-proof
+
+theorem min_USHORT_MAX  is  USHORT_MAX  >= 2 ** 16 - 1
 theorem min_UINT_MAX   is  UINT_MAX   >= 2 ** 16 - 1
 theorem min_ULONG_MAX  is  ULONG_MAX  >= 2 ** 32 - 1
 theorem min_ULLONG_MAX is  ULLONG_MAX >= 2 ** 64 - 1
@@ -283,15 +378,39 @@ op mathIntOfUint   (uint   bs : Uint)   : Nat = toNat bs
 op mathIntOfUlong  (ulong  bs : Ulong)  : Nat = toNat bs
 op mathIntOfUllong (ullong bs : Ullong) : Nat = toNat bs
 
-op rangeOfUshort : FiniteSet Int = fn i:Int -> 0 <= i && i <= USHRT_MAX
+theorem mathIntOfUshort_injective is
+  fa(x:Ushort, y:Ushort) (mathIntOfUshort x = mathIntOfUshort y) = (x = y)
+proof isa [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+theorem mathIntOfUint_injective is
+  fa(x:Uint, y:Uint) (mathIntOfUint x = mathIntOfUint y) = (x = y)
+proof isa [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+theorem mathIntOfUlong_injective is
+  fa(x:Ulong, y:Ulong) (mathIntOfUlong x = mathIntOfUlong y) = (x = y)
+proof isa [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+theorem mathIntOfUllong_injective is
+  fa(x:Ullong, y:Ullong) (mathIntOfUllong x = mathIntOfUllong y) = (x = y)
+proof isa [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+op rangeOfUshort : FiniteSet Int = fn i:Int -> 0 <= i && i <= USHORT_MAX
 op rangeOfUint   : FiniteSet Int = fn i:Int -> 0 <= i && i <= UINT_MAX
 op rangeOfUlong  : FiniteSet Int = fn i:Int -> 0 <= i && i <= ULONG_MAX
 op rangeOfUllong : FiniteSet Int = fn i:Int -> 0 <= i && i <= ULLONG_MAX
 
-theorem ushort_range is fa(x:Ushort) mathIntOfUshort x in? rangeOfUshort
-theorem   uint_range is fa(x:Uint)   mathIntOfUint   x in? rangeOfUint
-theorem  ulong_range is fa(x:Ulong)  mathIntOfUlong  x in? rangeOfUlong
-theorem ullong_range is fa(x:Ullong) mathIntOfUllong x in? rangeOfUllong
+theorem ushort_range is fa(x:Ushort) ((mathIntOfUshort x):Int) in? rangeOfUshort
+theorem uint_range is fa(x:Uint)   ((mathIntOfUint   x):Int) in? rangeOfUint
+theorem ulong_range is fa(x:Ulong)  ((mathIntOfUlong  x):Int) in? rangeOfUlong
+theorem ullong_range is fa(x:Ullong) ((mathIntOfUllong x):Int) in? rangeOfUllong
 
 op ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort =
   the(x:Ushort) mathIntOfUshort x = i
@@ -305,29 +424,101 @@ op ulongOfMathInt (i:Int | i in? rangeOfUlong) : Ulong  =
 op ullongOfMathInt (i:Int | i in? rangeOfUllong) : Ullong =
   the(x:Ullong) mathIntOfUllong x = i
 
-theorem ushortOfMathInt_mathIntOfUshort is
-  fa(x:Ushort) ushortOfMathInt (mathIntOfUshort x) = x
 
 theorem mathIntOfUshort_ushortOfMathInt is
   fa(i:Int) i in? rangeOfUshort => mathIntOfUshort (ushortOfMathInt i) = i
 
-theorem uintOfMathInt_mathIntOfUint is
-  fa(x:Uint) uintOfMathInt (mathIntOfUint x) = x
-
 theorem mathIntOfUint_uintOfMathInt is
   fa(i:Int) i in? rangeOfUint => mathIntOfUint (uintOfMathInt i) = i
-
-theorem ulongOfMathInt_mathIntOfUlong is
-  fa(x:Ulong) ulongOfMathInt (mathIntOfUlong x) = x
 
 theorem mathIntOfUlong_ulongOfMathInt is
   fa(i:Int) i in? rangeOfUlong => mathIntOfUlong (ulongOfMathInt i) = i
 
-theorem ullongOfMathInt_mathIntOfUllong is
-  fa(x:Ullong) ullongOfMathInt (mathIntOfUllong x) = x
-
 theorem mathIntOfUllong_ullongOfMathInt is
   fa(i:Int) i in? rangeOfUllong => mathIntOfUllong (ullongOfMathInt i) = i
+
+proof isa -verbatim
+theorem C__mathIntOfUshort_ushortOfMathInt_2: 
+  "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
+   (C__mathIntOfUshort (C__ushortOfMathInt i)) = nat i"
+  apply (cut_tac i=i in C__mathIntOfUshort_ushortOfMathInt)
+  apply(auto simp del:C__mathIntOfUshort_ushortOfMathInt)
+  done
+
+theorem C__mathIntOfUint_uintOfMathInt_2: 
+  "\<lbrakk>i \<in> C__rangeOfUint\<rbrakk> \<Longrightarrow> 
+   (C__mathIntOfUint (C__uintOfMathInt i)) = nat i"
+  apply (cut_tac i=i in C__mathIntOfUint_uintOfMathInt)
+  apply(auto simp del:C__mathIntOfUint_uintOfMathInt)
+  done
+
+theorem C__mathIntOfUlong_ulongOfMathInt_2: 
+  "\<lbrakk>i \<in> C__rangeOfUlong\<rbrakk> \<Longrightarrow> 
+   (C__mathIntOfUlong (C__ulongOfMathInt i)) = nat i"
+  apply (cut_tac i=i in C__mathIntOfUlong_ulongOfMathInt)
+  apply(auto simp del:C__mathIntOfUlong_ulongOfMathInt)
+  done
+
+theorem C__mathIntOfUllong_ullongOfMathInt_2: 
+  "\<lbrakk>i \<in> C__rangeOfUllong\<rbrakk> \<Longrightarrow> 
+   (C__mathIntOfUllong (C__ullongOfMathInt i)) = nat i"
+  apply (cut_tac i=i in C__mathIntOfUllong_ullongOfMathInt)
+  apply(auto simp del:C__mathIntOfUllong_ullongOfMathInt)
+  done
+
+
+theorem C__Ushort__subtype_pred_ushortOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow>
+  C__Ushort__subtype_pred (C__ushortOfMathInt i)"
+  apply(simp add: C__ushortOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Ushort) . (C__Ushort__subtype_pred x \<and> int (C__mathIntOfUshort x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfUshort_injective)
+  apply(cut_tac i=i in C__ushortOfMathInt_Obligation_the)
+  apply(auto)
+  done
+
+theorem C__Uint__subtype_pred_uintOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfUint\<rbrakk> \<Longrightarrow>
+  C__Uint__subtype_pred (C__uintOfMathInt i)"
+  apply(simp add: C__uintOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Uint) . (C__Uint__subtype_pred x \<and> int (C__mathIntOfUint x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfUint_injective)
+  apply(cut_tac i=i in C__uintOfMathInt_Obligation_the)
+  apply(auto)
+  done
+
+theorem C__Ulong__subtype_pred_ulongOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfUlong\<rbrakk> \<Longrightarrow>
+  C__Ulong__subtype_pred (C__ulongOfMathInt i)"
+  apply(simp add: C__ulongOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Ulong) . (C__Ulong__subtype_pred x \<and> int (C__mathIntOfUlong x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfUlong_injective)
+  apply(cut_tac i=i in C__ulongOfMathInt_Obligation_the)
+  apply(auto)
+  done
+
+theorem C__Ullong__subtype_pred_ullongOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfUllong\<rbrakk> \<Longrightarrow>
+  C__Ullong__subtype_pred (C__ullongOfMathInt i)"
+  apply(simp add: C__ullongOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Ullong) . (C__Ullong__subtype_pred x \<and> int (C__mathIntOfUllong x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfUllong_injective)
+  apply(cut_tac i=i in C__ullongOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+theorem ushortOfMathInt_mathIntOfUshort is
+  fa(x:Ushort) ushortOfMathInt (mathIntOfUshort x) = x
+
+theorem uintOfMathInt_mathIntOfUint is
+  fa(x:Uint) uintOfMathInt (mathIntOfUint x) = x
+
+theorem ulongOfMathInt_mathIntOfUlong is
+  fa(x:Ulong) ulongOfMathInt (mathIntOfUlong x) = x
+
+theorem ullongOfMathInt_mathIntOfUllong is
+  fa(x:Ullong) ullongOfMathInt (mathIntOfUllong x) = x
 
 (* The signed integer types use the same amount of storage as their unsigned
 counterparts [ISO 6.2.5/6]. Thus, the sizeof_... and ..._bits constants above
@@ -339,25 +530,37 @@ use a two's complement representation with no padding bits. Thus, the
 sizeof_... constants determine the values below for the ..._MIN and ..._MAX
 limits of the signed integer types [ISO 5.2.4.2.1/1]. *)
 
-op  SHRT_MIN : Int = - (2 ** (short_bits - 1))
-op   INT_MIN : Int = - (2 ** (  int_bits - 1))
-op  LONG_MIN : Int = - (2 ** ( long_bits - 1))
-op LLONG_MIN : Int = - (2 ** (llong_bits - 1))
+op SSHORT_MIN : Int = - (2 ** (short_bits - 1))
+op   SINT_MIN : Int = - (2 ** (  int_bits - 1))
+op  SLONG_MIN : Int = - (2 ** ( long_bits - 1))
+op SLLONG_MIN : Int = - (2 ** (llong_bits - 1))
 
-op  SHRT_MAX : Nat =   2 ** (short_bits - 1) - 1
-op   INT_MAX : Nat =   2 ** (  int_bits - 1) - 1
-op  LONG_MAX : Nat =   2 ** ( long_bits - 1) - 1
-op LLONG_MAX : Nat =   2 ** (llong_bits - 1) - 1
+op SSHORT_MAX : Nat =   2 ** (short_bits - 1) - 1
+op   SINT_MAX : Nat =   2 ** (  int_bits - 1) - 1
+op  SLONG_MAX : Nat =   2 ** ( long_bits - 1) - 1
+op SLLONG_MAX : Nat =   2 ** (llong_bits - 1) - 1
 
-theorem min_SHRT_MIN  is   SHRT_MIN <= - (2 ** 15)
-theorem min_INT_MIN   is    INT_MIN <= - (2 ** 15)
-theorem min_LONG_MIN  is   LONG_MIN <= - (2 ** 31)
-theorem min_LLONG_MIN is  LLONG_MIN <= - (2 ** 63)
+proof isa -verbatim
+declare C__SSHORT_MIN_def [simp]
+declare C__SINT_MIN_def [simp]
+declare C__SLONG_MIN_def [simp]
+declare C__SLLONG_MIN_def [simp]
 
-theorem min_SHRT_MAX  is   SHRT_MAX >=    2 ** 15 - 1
-theorem min_INT_MAX   is    INT_MAX >=    2 ** 15 - 1
-theorem min_LONG_MAX  is   LONG_MAX >=    2 ** 31 - 1
-theorem min_LLONG_MAX is  LLONG_MAX >=    2 ** 63 - 1
+declare C__SSHORT_MAX_def [simp]
+declare C__SINT_MAX_def [simp]
+declare C__SLONG_MAX_def [simp]
+declare C__SLLONG_MAX_def [simp]
+end-proof
+
+theorem min_SSHORT_MIN  is   SSHORT_MIN <= - (2 ** 15)
+theorem min_SINT_MIN   is    SINT_MIN <= - (2 ** 15)
+theorem min_SLONG_MIN  is   SLONG_MIN <= - (2 ** 31)
+theorem min_SLLONG_MIN is  SLLONG_MIN <= - (2 ** 63)
+
+theorem min_SSHORT_MAX  is   SSHORT_MAX >=    2 ** 15 - 1
+theorem min_SINT_MAX   is    SINT_MAX >=    2 ** 15 - 1
+theorem min_SLONG_MAX  is   SLONG_MAX >=    2 ** 31 - 1
+theorem min_SLLONG_MAX is  SLLONG_MAX >=    2 ** 63 - 1
 
 type Sshort = | sshort (Bits | ofLength? short_bits)
 type   Sint = | sint   (Bits | ofLength?   int_bits)
@@ -369,10 +572,19 @@ op mathIntOfSint   (sint   bs : Sint)   : Int = toInt bs
 op mathIntOfSlong  (slong  bs : Slong)  : Int = toInt bs
 op mathIntOfSllong (sllong bs : Sllong) : Int = toInt bs
 
-op rangeOfSshort : FiniteSet Int = fn i:Int ->  SHRT_MIN <= i && i <=  SHRT_MAX
-op rangeOfSint   : FiniteSet Int = fn i:Int ->   INT_MIN <= i && i <=   INT_MAX
-op rangeOfSlong  : FiniteSet Int = fn i:Int ->  LONG_MIN <= i && i <=  LONG_MAX
-op rangeOfSllong : FiniteSet Int = fn i:Int -> LLONG_MIN <= i && i <= LLONG_MAX
+theorem mathIntOfSshort_injective is
+  fa(x:Sshort, y:Sshort) (mathIntOfSshort x = mathIntOfSshort y) = (x = y)
+theorem mathIntOfSint_injective is
+  fa(x:Sint, y:Sint) (mathIntOfSint x = mathIntOfSint y) = (x = y)
+theorem mathIntOfSlong_injective is
+  fa(x:Slong, y:Slong) (mathIntOfSlong x = mathIntOfSlong y) = (x = y)
+theorem mathIntOfSllong_injective is
+  fa(x:Sllong, y:Sllong) (mathIntOfSllong x = mathIntOfSllong y) = (x = y)
+
+op rangeOfSshort : FiniteSet Int = fn i:Int ->  SSHORT_MIN <= i && i <=  SSHORT_MAX
+op rangeOfSint   : FiniteSet Int = fn i:Int ->   SINT_MIN <= i && i <=   SINT_MAX
+op rangeOfSlong  : FiniteSet Int = fn i:Int ->  SLONG_MIN <= i && i <=  SLONG_MAX
+op rangeOfSllong : FiniteSet Int = fn i:Int -> SLLONG_MIN <= i && i <= SLLONG_MAX
 
 theorem sshort_range is fa(x:Sshort) mathIntOfSshort x in? rangeOfSshort
 theorem   sint_range is fa(x:Sint)   mathIntOfSint   x in? rangeOfSint
@@ -391,29 +603,80 @@ op slongOfMathInt (i:Int | i in? rangeOfSlong) : Slong  =
 op sllongOfMathInt (i:Int | i in? rangeOfSllong) : Sllong =
   the(x:Sllong) mathIntOfSllong x = i
 
-theorem sshortOfMathInt_mathIntOfSshort is
-  fa(x:Sshort) sshortOfMathInt (mathIntOfSshort x) = x
 
 theorem mathIntOfSshort_sshortOfMathInt is
   fa(i:Int) i in? rangeOfSshort => mathIntOfSshort (sshortOfMathInt i) = i
 
-theorem sintOfMathInt_mathIntOfSint is
-  fa(x:Sint) sintOfMathInt (mathIntOfSint x) = x
-
 theorem mathIntOfSint_sintOfMathInt is
   fa(i:Int) i in? rangeOfSint => mathIntOfSint (sintOfMathInt i) = i
-
-theorem slongOfMathInt_mathIntOfSlong is
-  fa(x:Slong) slongOfMathInt (mathIntOfSlong x) = x
 
 theorem mathIntOfSlong_slongOfMathInt is
   fa(i:Int) i in? rangeOfSlong => mathIntOfSlong (slongOfMathInt i) = i
 
-theorem sllongOfMathInt_mathIntOfSllong is
-  fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
-
 theorem mathIntOfSllong_sllongOfMathInt is
   fa(i:Int) i in? rangeOfSllong => mathIntOfSllong (sllongOfMathInt i) = i
+
+
+proof isa -verbatim
+theorem C__Sshort__subtype_pred_sshortOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfSshort\<rbrakk> \<Longrightarrow>
+  C__Sshort__subtype_pred (C__sshortOfMathInt i)"
+  apply(simp add: C__sshortOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Sshort) . (C__Sshort__subtype_pred x \<and> (C__mathIntOfSshort x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfSshort_injective)
+  apply(cut_tac i=i in C__sshortOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+proof isa -verbatim
+theorem C__Sint__subtype_pred_sintOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfSint\<rbrakk> \<Longrightarrow>
+  C__Sint__subtype_pred (C__sintOfMathInt i)"
+  apply(simp add: C__sintOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Sint) . (C__Sint__subtype_pred x \<and> (C__mathIntOfSint x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfSint_injective)
+  apply(cut_tac i=i in C__sintOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+proof isa -verbatim
+theorem C__Slong__subtype_pred_slongOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfSlong\<rbrakk> \<Longrightarrow>
+  C__Slong__subtype_pred (C__slongOfMathInt i)"
+  apply(simp add: C__slongOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Slong) . (C__Slong__subtype_pred x \<and> (C__mathIntOfSlong x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfSlong_injective)
+  apply(cut_tac i=i in C__slongOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+proof isa -verbatim
+theorem C__Sllong__subtype_pred_sllongOfMathInt [simp]:
+  "\<lbrakk>(i::int) \<in> C__rangeOfSllong\<rbrakk> \<Longrightarrow>
+  C__Sllong__subtype_pred (C__sllongOfMathInt i)"
+  apply(simp add: C__sllongOfMathInt_def)
+  apply(cut_tac P="\<lambda> (x::C__Sllong) . (C__Sllong__subtype_pred x \<and> (C__mathIntOfSllong x) = i)" in theI')
+  apply(auto simp add:C__mathIntOfSllong_injective)
+  apply(cut_tac i=i in C__sllongOfMathInt_Obligation_the)
+  apply(auto)
+  done
+end-proof
+
+
+theorem sshortOfMathInt_mathIntOfSshort is
+  fa(x:Sshort) sshortOfMathInt (mathIntOfSshort x) = x
+
+theorem sintOfMathInt_mathIntOfSint is
+  fa(x:Sint) sintOfMathInt (mathIntOfSint x) = x
+
+theorem slongOfMathInt_mathIntOfSlong is
+  fa(x:Slong) slongOfMathInt (mathIntOfSlong x) = x
+
+theorem sllongOfMathInt_mathIntOfSllong is
+  fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
 
 (* There are inclusion constraints among the ranges of the integer types [ISO
 6.2.5/8], determined by the integer conversion ranks [ISO 6.3.1.1/1]. Given our
@@ -506,24 +769,31 @@ so that the C code generator can generate, from the following ops, constants in
 the desired base. In addition, the C code generator must generate appropriate U,
 L, and LL suffixes. *)
 
-op sintConstant (n:Nat | n in? rangeOfSint) (base:IntConstBase) : Sint =
+op sintConstant (n:Nat | (n:Int) in? rangeOfSint) (base:IntConstBase) : Sint =
   sintOfMathInt n
 
-op slongConstant (n:Nat | n in? rangeOfSlong) (base:IntConstBase) : Slong =
+op slongConstant (n:Nat | (n:Int) in? rangeOfSlong) (base:IntConstBase) : Slong =
   slongOfMathInt n
 
-op sllongConstant (n:Nat | n in? rangeOfSllong) (base:IntConstBase) : Sllong =
+op sllongConstant (n:Nat | (n:Int) in? rangeOfSllong) (base:IntConstBase) : Sllong =
   sllongOfMathInt n
 
-op uintConstant (n:Nat | n in? rangeOfUint) (base:IntConstBase) : Uint =
+op uintConstant (n:Nat | (n:Int) in? rangeOfUint) (base:IntConstBase) : Uint =
   uintOfMathInt n
 
-op ulongConstant (n:Nat | n in? rangeOfUlong) (base:IntConstBase) : Ulong =
+op ulongConstant (n:Nat | (n:Int) in? rangeOfUlong) (base:IntConstBase) : Ulong =
   ulongOfMathInt n
 
-op ullongConstant (n:Nat | n in? rangeOfUllong) (base:IntConstBase) : Ullong =
+op ullongConstant (n:Nat | (n:Int) in? rangeOfUllong) (base:IntConstBase) : Ullong =
   ullongOfMathInt n
 
+%% TODO How to restrict this to only apply only when n is a constant?
+%% TODO Do we need the hypothesis?
+theorem introduce_uintConstant is
+  fa(n:Nat) ((n:Int) in? rangeOfUint) => (uintOfMathInt n) = (uintConstant n dec)
+proof isa
+  apply(simp add: C__uintConstant_def)
+end-proof
 
 %subsection (* Other constants *)
 
@@ -571,6 +841,21 @@ There are 11 integer types:
  char
 Thus, there are 11 * 11 - 11 = 110 conversion ops. *)
 
+proof isa -verbatim
+declare C__rangeOfUchar_def [simp]
+declare C__rangeOfUshort_def [simp]
+declare C__rangeOfUint_def [simp]
+declare C__rangeOfUlong_def [simp]
+declare C__rangeOfUllong_def [simp]
+declare C__rangeOfSchar_def [simp]
+declare C__rangeOfSshort_def [simp]
+declare C__rangeOfSint_def [simp]
+declare C__rangeOfSlong_def [simp]
+declare C__rangeOfSllong_def [simp]
+declare C__rangeOfChar_def [simp]
+declare mem_def [simp]
+end-proof
+
 % ucharOf...:
 
 op ucharOfUshort (x:Ushort) : Uchar =
@@ -609,31 +894,31 @@ op ushortOfUchar (x:Uchar) : Ushort =
   ushortOfMathInt (mathIntOfUchar x)
 
 op ushortOfUint (x:Uint) : Ushort =
-  ushortOfMathInt (mathIntOfUint x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfUint x modF (1 + USHORT_MAX))
 
 op ushortOfUlong (x:Ulong) : Ushort =
-  ushortOfMathInt (mathIntOfUlong x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfUlong x modF (1 + USHORT_MAX))
 
 op ushortOfUllong (x:Ullong) : Ushort =
-  ushortOfMathInt (mathIntOfUllong x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfUllong x modF (1 + USHORT_MAX))
 
 op ushortOfSchar (x:Schar) : Ushort =
-  ushortOfMathInt (mathIntOfSchar x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfSchar x modF (1 + USHORT_MAX))
 
 op ushortOfSshort (x:Sshort) : Ushort =
-  ushortOfMathInt (mathIntOfSshort x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfSshort x modF (1 + USHORT_MAX))
 
 op ushortOfSint (x:Sint) : Ushort =
-  ushortOfMathInt (mathIntOfSint x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfSint x modF (1 + USHORT_MAX))
 
 op ushortOfSlong (x:Slong) : Ushort =
-  ushortOfMathInt (mathIntOfSlong x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfSlong x modF (1 + USHORT_MAX))
 
 op ushortOfSllong (x:Sllong) : Ushort =
-  ushortOfMathInt (mathIntOfSllong x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfSllong x modF (1 + USHORT_MAX))
 
 op ushortOfChar (x:Char) : Ushort =
-  ushortOfMathInt (mathIntOfChar x modF (1 + USHRT_MAX))
+  ushortOfMathInt (mathIntOfChar x modF (1 + USHORT_MAX))
 
 % uintOf ...:
 
@@ -733,19 +1018,19 @@ op ullongOfChar (x:Char) : Ullong =
 
 % scharOf...:
 
-op scharOfUchar (x:Uchar | mathIntOfUchar x in? rangeOfSchar) : Schar =
+op scharOfUchar (x:Uchar | ((mathIntOfUchar x):Int) in? rangeOfSchar) : Schar =
   scharOfMathInt (mathIntOfUchar x)
 
-op scharOfUshort (x:Ushort | mathIntOfUshort x in? rangeOfSchar) : Schar =
+op scharOfUshort (x:Ushort | ((mathIntOfUshort x):Int) in? rangeOfSchar) : Schar =
   scharOfMathInt (mathIntOfUshort x)
 
-op scharOfUint (x:Uint | mathIntOfUint x in? rangeOfSchar) : Schar =
+op scharOfUint (x:Uint | ((mathIntOfUint x):Int) in? rangeOfSchar) : Schar =
   scharOfMathInt (mathIntOfUint x)
 
-op scharOfUlong (x:Ulong | mathIntOfUlong x in? rangeOfSchar) : Schar =
+op scharOfUlong (x:Ulong | ((mathIntOfUlong x):Int) in? rangeOfSchar) : Schar =
   scharOfMathInt (mathIntOfUlong x)
 
-op scharOfUllong (x:Ullong | mathIntOfUllong x in? rangeOfSchar) : Schar =
+op scharOfUllong (x:Ullong | ((mathIntOfUllong x):Int) in? rangeOfSchar) : Schar =
   scharOfMathInt (mathIntOfUllong x)
 
 op scharOfSshort (x:Sshort | mathIntOfSshort x in? rangeOfSchar) : Schar =
@@ -768,16 +1053,16 @@ op scharOfChar (x:Char | mathIntOfChar x in? rangeOfSchar) : Schar =
 op sshortOfUchar (x:Uchar) : Sshort =
   sshortOfMathInt (mathIntOfUchar x)
 
-op sshortOfUshort (x:Ushort | mathIntOfUshort x in? rangeOfSshort) : Sshort =
+op sshortOfUshort (x:Ushort | ((mathIntOfUshort x):Int) in? rangeOfSshort) : Sshort =
   sshortOfMathInt (mathIntOfUshort x)
 
-op sshortOfUint (x:Uint | mathIntOfUint x in? rangeOfSshort) : Sshort =
+op sshortOfUint (x:Uint | ((mathIntOfUint x):Int) in? rangeOfSshort) : Sshort =
   sshortOfMathInt (mathIntOfUint x)
 
-op sshortOfUlong (x:Ulong | mathIntOfUlong x in? rangeOfSshort) : Sshort =
+op sshortOfUlong (x:Ulong | ((mathIntOfUlong x):Int) in? rangeOfSshort) : Sshort =
   sshortOfMathInt (mathIntOfUlong x)
 
-op sshortOfUllong (x:Ullong | mathIntOfUllong x in? rangeOfSshort) : Sshort =
+op sshortOfUllong (x:Ullong | ((mathIntOfUllong x):Int) in? rangeOfSshort) : Sshort =
   sshortOfMathInt (mathIntOfUllong x)
 
 op sshortOfSchar (x:Schar) : Sshort =
@@ -800,16 +1085,16 @@ op sshortOfChar (x:Char) : Sshort =
 op sintOfUchar (x:Uchar) : Sint =
   sintOfMathInt (mathIntOfUchar x)
 
-op sintOfUshort (x:Ushort | mathIntOfUshort x in? rangeOfSint) : Sint =
+op sintOfUshort (x:Ushort | ((mathIntOfUshort x):Int) in? rangeOfSint) : Sint =
   sintOfMathInt (mathIntOfUshort x)
 
-op sintOfUint (x:Uint | mathIntOfUint x in? rangeOfSint) : Sint =
+op sintOfUint (x:Uint | ((mathIntOfUint x):Int) in? rangeOfSint) : Sint =
   sintOfMathInt (mathIntOfUint x)
 
-op sintOfUlong (x:Ulong | mathIntOfUlong x in? rangeOfSint) : Sint =
+op sintOfUlong (x:Ulong | ((mathIntOfUlong x):Int) in? rangeOfSint) : Sint =
   sintOfMathInt (mathIntOfUlong x)
 
-op sintOfUllong (x:Ullong | mathIntOfUllong x in? rangeOfSint) : Sint =
+op sintOfUllong (x:Ullong | ((mathIntOfUllong x):Int) in? rangeOfSint) : Sint =
   sintOfMathInt (mathIntOfUllong x)
 
 op sintOfSchar (x:Schar) : Sint =
@@ -832,16 +1117,16 @@ op sintOfChar (x:Char) : Sint =
 op slongOfUchar (x:Uchar) : Slong =
   slongOfMathInt (mathIntOfUchar x)
 
-op slongOfUshort (x:Ushort | mathIntOfUshort x in? rangeOfSlong) : Slong =
+op slongOfUshort (x:Ushort | ((mathIntOfUshort x):Int) in? rangeOfSlong) : Slong =
   slongOfMathInt (mathIntOfUshort x)
 
-op slongOfUint (x:Uint | mathIntOfUint x in? rangeOfSlong) : Slong =
+op slongOfUint (x:Uint | ((mathIntOfUint x):Int) in? rangeOfSlong) : Slong =
   slongOfMathInt (mathIntOfUint x)
 
-op slongOfUlong (x:Ulong | mathIntOfUlong x in? rangeOfSlong) : Slong =
+op slongOfUlong (x:Ulong | ((mathIntOfUlong x):Int) in? rangeOfSlong) : Slong =
   slongOfMathInt (mathIntOfUlong x)
 
-op slongOfUllong (x:Ullong | mathIntOfUllong x in? rangeOfSlong) : Slong =
+op slongOfUllong (x:Ullong | ((mathIntOfUllong x):Int) in? rangeOfSlong) : Slong =
   slongOfMathInt (mathIntOfUllong x)
 
 op slongOfSchar (x:Schar) : Slong =
@@ -864,16 +1149,16 @@ op slongOfChar (x:Char) : Slong =
 op sllongOfUchar (x:Uchar) : Sllong =
   sllongOfMathInt (mathIntOfUchar x)
 
-op sllongOfUshort (x:Ushort | mathIntOfUshort x in? rangeOfSllong) : Sllong =
+op sllongOfUshort (x:Ushort | ((mathIntOfUshort x):Int) in? rangeOfSllong) : Sllong =
   sllongOfMathInt (mathIntOfUshort x)
 
-op sllongOfUint (x:Uint | mathIntOfUint x in? rangeOfSllong) : Sllong =
+op sllongOfUint (x:Uint | ((mathIntOfUint x):Int) in? rangeOfSllong) : Sllong =
   sllongOfMathInt (mathIntOfUint x)
 
-op sllongOfUlong (x:Ulong | mathIntOfUlong x in? rangeOfSllong) : Sllong =
+op sllongOfUlong (x:Ulong | ((mathIntOfUlong x):Int) in? rangeOfSllong) : Sllong =
   sllongOfMathInt (mathIntOfUlong x)
 
-op sllongOfUllong (x:Ullong | mathIntOfUllong x in? rangeOfSllong) : Sllong =
+op sllongOfUllong (x:Ullong | ((mathIntOfUllong x):Int) in? rangeOfSllong) : Sllong =
   sllongOfMathInt (mathIntOfUllong x)
 
 op sllongOfSchar (x:Schar) : Sllong =
@@ -893,29 +1178,30 @@ op sllongOfChar (x:Char) : Sllong =
 
 % charOf...:
 
-op charOfUchar (x:Uchar | mathIntOfUchar x in? rangeOfChar) : Char =
+op charOfUchar (x:Uchar | ((mathIntOfUchar x):Int) in? rangeOfChar) : Char =
   charOfMathInt (mathIntOfUchar x)
 
 op charOfUshort (x:Ushort |
-   plainCharsAreSigned => mathIntOfUshort x in? rangeOfChar) : Char =
+   plainCharsAreSigned => ((mathIntOfUshort x):Int) in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfUshort x)
   else charOfMathInt (mathIntOfUshort x modF (1 + UCHAR_MAX))
 
 op charOfUint (x:Uint |
-   plainCharsAreSigned => mathIntOfUint x in? rangeOfChar) : Char =
+   plainCharsAreSigned => ((mathIntOfUint x):Int) in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfUint x)
   else charOfMathInt (mathIntOfUint x modF (1 + UCHAR_MAX))
 
 op charOfUlong (x:Ulong |
-   plainCharsAreSigned => mathIntOfUlong x in? rangeOfChar) : Char =
+   plainCharsAreSigned => ((mathIntOfUlong x):Int) in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfUlong x)
   else charOfMathInt (mathIntOfUlong x modF (1 + UCHAR_MAX))
 
 op charOfUllong (x:Ullong |
-   plainCharsAreSigned => mathIntOfUllong x in? rangeOfChar) : Char =
+   plainCharsAreSigned => ((mathIntOfUllong x):Int) in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfUllong x)
   else charOfMathInt (mathIntOfUllong x modF (1 + UCHAR_MAX))
 
+%%TODO issue with obligation?
 op charOfSchar (x:Schar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfSchar x)
   else charOfMathInt (mathIntOfSchar x modF (1 + UCHAR_MAX))
@@ -952,7 +1238,7 @@ theorem ucharOfChar_bits is
     ucharOfChar (char bs) = uchar bs
 
 theorem scharOfUchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT && toNat bs in? rangeOfSchar =>
+  fa(bs:Bits) length bs = CHAR_BIT && ((toNat bs):Int) in? rangeOfSchar =>
     ucharOfSchar (schar bs) = uchar bs
 
 theorem scharOfChar_bits is
@@ -961,11 +1247,11 @@ theorem scharOfChar_bits is
     scharOfChar (char bs) = schar bs
 
 theorem charOfUchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT && toNat bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = CHAR_BIT && ((toNat bs):Int) in? rangeOfChar =>
     charOfUchar (uchar bs) = char bs
 
 theorem charOfSchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT && toInt bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = CHAR_BIT && ((toInt bs):Int) in? rangeOfChar =>
     charOfSchar (schar bs) = char bs
 
 theorem ushortOfSshort_bits is
@@ -973,7 +1259,7 @@ theorem ushortOfSshort_bits is
     ushortOfSshort (sshort bs) = ushort bs
 
 theorem sshortOfUshort_bits is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfSshort =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSshort =>
     sshortOfUshort (ushort bs) = sshort bs
 
 theorem uintOfSint_bits is
@@ -981,7 +1267,7 @@ theorem uintOfSint_bits is
     uintOfSint (sint bs) = uint bs
 
 theorem sintOfUint_bits is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfSint =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSint =>
     sintOfUint (uint bs) = sint bs
 
 theorem ulongOfSlong_bits is
@@ -989,7 +1275,7 @@ theorem ulongOfSlong_bits is
     ulongOfSlong (slong bs) = ulong bs
 
 theorem slongOfUlong_bits is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfSlong =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSlong =>
     slongOfUlong (ulong bs) = slong bs
 
 theorem ullongOfSllong_bits is
@@ -997,7 +1283,7 @@ theorem ullongOfSllong_bits is
     ullongOfSllong (sllong bs) = ullong bs
 
 theorem sllongOfUllong_bits is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfSllong =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUllong (ullong bs) = sllong bs
 
 (* Converting from a signed or unsigned integer type to an unsigned integer type
@@ -1121,7 +1407,7 @@ theorem sintOfChar_bits_unsigned is
      sintOfChar (char bs) = sint (zeroExtend (bs, int_bits)))
 
 theorem sintOfUshort_bits is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfSint =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSint =>
     sintOfUshort (ushort bs) = sint (zeroExtend (bs, int_bits))
 
 theorem slongOfUchar_bits is
@@ -1134,11 +1420,11 @@ theorem slongOfChar_bits_unsigned is
      slongOfChar (char bs) = slong (zeroExtend (bs, long_bits)))
 
 theorem slongOfUshort_bits is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfSlong =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSlong =>
     slongOfUshort (ushort bs) = slong (zeroExtend (bs, long_bits))
 
 theorem slongOfUint_bits is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfSlong =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSlong =>
     slongOfUint (uint bs) = slong (zeroExtend (bs, long_bits))
 
 theorem sllongOfUchar_bits is
@@ -1151,15 +1437,15 @@ theorem sllongOfChar_bits_unsigned is
      sllongOfChar (char bs) = sllong (zeroExtend (bs, llong_bits)))
 
 theorem sllongOfUshort_bits is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfSllong =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUshort (ushort bs) = sllong (zeroExtend (bs, llong_bits))
 
 theorem sllongOfUint_bits is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfSllong =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUint (uint bs) = sllong (zeroExtend (bs, llong_bits))
 
 theorem sllongOfUlong_bits is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfSllong =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUlong (ulong bs) = sllong (zeroExtend (bs, llong_bits))
 
 (* Converting from a signed integer type to a signed integer type of higher rank
@@ -1309,19 +1595,19 @@ theorem ulongOfSllong_bit is
     ulongOfSllong (sllong bs) = ulong (suffix (bs, CHAR_BIT))
 
 theorem scharOfUshort_bit is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfSchar =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSchar =>
     scharOfUshort (ushort bs) = schar (suffix (bs, CHAR_BIT))
 
 theorem scharOfUint_bit is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfSchar =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSchar =>
     scharOfUint (uint bs) = schar (suffix (bs, CHAR_BIT))
 
 theorem scharOfUlong_bit is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfSchar =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSchar =>
     scharOfUlong (ulong bs) = schar (suffix (bs, CHAR_BIT))
 
 theorem scharOfUllong_bit is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfSchar =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSchar =>
     scharOfUllong (ullong bs) = schar (suffix (bs, CHAR_BIT))
 
 theorem scharOfSshort_bit is
@@ -1341,15 +1627,15 @@ theorem scharOfSllong_bit is
     scharOfSllong (sllong bs) = schar (suffix (bs, CHAR_BIT))
 
 theorem sshortOfUint_bit is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfSshort =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSshort =>
     sshortOfUint (uint bs) = sshort (suffix (bs, CHAR_BIT))
 
 theorem sshortOfUlong_bit is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfSshort =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSshort =>
     sshortOfUlong (ulong bs) = sshort (suffix (bs, CHAR_BIT))
 
 theorem sshortOfUllong_bit is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfSshort =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSshort =>
     sshortOfUllong (ullong bs) = sshort (suffix (bs, CHAR_BIT))
 
 theorem sshortOfSint_bit is
@@ -1365,11 +1651,11 @@ theorem sshortOfSllong_bit is
     sshortOfSllong (sllong bs) = sshort (suffix (bs, CHAR_BIT))
 
 theorem sintOfUlong_bit is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfSint =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSint =>
     sintOfUlong (ulong bs) = sint (suffix (bs, CHAR_BIT))
 
 theorem sintOfUllong_bit is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfSint =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSint =>
     sintOfUllong (ullong bs) = sint (suffix (bs, CHAR_BIT))
 
 theorem sintOfSlong_bit is
@@ -1381,7 +1667,7 @@ theorem sintOfSllong_bit is
     sintOfSllong (sllong bs) = sint (suffix (bs, CHAR_BIT))
 
 theorem slongOfUllong_bit is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfSlong =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSlong =>
     slongOfUllong (ullong bs) = slong (suffix (bs, CHAR_BIT))
 
 theorem slongOfSllong_bit is
@@ -1389,19 +1675,19 @@ theorem slongOfSllong_bit is
     slongOfSllong (sllong bs) = slong (suffix (bs, CHAR_BIT))
 
 theorem charOfUshort_bit is
-  fa(bs:Bits) length bs = short_bits && toNat bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfChar =>
     charOfUshort (ushort bs) = char (suffix (bs, CHAR_BIT))
 
 theorem charOfUint_bit is
-  fa(bs:Bits) length bs = int_bits && toNat bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfChar =>
     charOfUint (uint bs) = char (suffix (bs, CHAR_BIT))
 
 theorem charOfUlong_bit is
-  fa(bs:Bits) length bs = long_bits && toNat bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfChar =>
     charOfUlong (ulong bs) = char (suffix (bs, CHAR_BIT))
 
 theorem charOfUllong_bit is
-  fa(bs:Bits) length bs = llong_bits && toNat bs in? rangeOfChar =>
+  fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfChar =>
     charOfUllong (ullong bs) = char (suffix (bs, CHAR_BIT))
 
 theorem charOfSshort_bit is
@@ -2186,6 +2472,21 @@ theorem boolOfSint_sintOfBool is
 %% This op will be used to wrap the condition of each if-then-else operation:
 op test : Sint -> Bool = boolOfSint
 
+%% TODO How can I restrict the application of this theorem to ifs for which the
+%% condition is not already wrapped in a call to test (and also is not a call to
+%% || or &&)?
+theorem fixup_if_condition is [a]
+  fa(condition:Bool, thenpart:a, elsepart:a)
+    (if condition then thenpart else elsepart) = 
+    (if test (sintOfBool condition) then thenpart else elsepart)
+
+theorem sintOfBool_<= is
+  fa(i:Int, j:Int) (i in? rangeOfUint && j in? rangeOfUint) => 
+    (sintOfBool (i <= j)) = 
+    ((uintOfMathInt i) <=_uint (uintOfMathInt j))
+
+  
+
 (* The binary <, >, <=, >=, ==, and != operators perform the usual arithmetic
 conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
 the comparison is true or false [ISO 6.5.8/6].
@@ -2439,4 +2740,527 @@ the return type of the function (a long) as if by assignment [ISO 6.8.6.4/3].
 Generating the cast would be correct, but makes the code less readable. *)
 
 
+
+(*************************************************************************)
+
+(* START OF PROOFS *)
+
+(*************************************************************************)
+
+proof isa ucharOfMathInt_mathIntOfUchar_Obligation_subtype
+  by (rule C__uchar_range)
+end-proof
+
+proof isa ushortOfMathInt_mathIntOfUshort_Obligation_subtype
+  by (rule C__ushort_range)
+end-proof
+
+proof isa uintOfMathInt_mathIntOfUint_Obligation_subtype
+  by (rule C__uint_range)
+end-proof
+
+proof isa ulongOfMathInt_mathIntOfUlong_Obligation_subtype
+  by (rule C__ulong_range)
+end-proof
+
+proof isa ullongOfMathInt_mathIntOfUllong_Obligation_subtype
+  by (rule C__ullong_range)
+end-proof
+
+proof isa scharOfMathInt_mathIntOfSchar_Obligation_subtype
+  by (rule C__schar_range)
+end-proof
+
+proof isa sshortOfMathInt_mathIntOfSshort_Obligation_subtype
+  by (rule C__sshort_range)
+end-proof
+
+proof isa sintOfMathInt_mathIntOfSint_Obligation_subtype
+  by (rule C__sint_range)
+end-proof
+
+proof isa slongOfMathInt_mathIntOfSlong_Obligation_subtype
+  by (rule C__slong_range)
+end-proof
+
+proof isa sllongOfMathInt_mathIntOfSllong_Obligation_subtype
+  by (rule C__sllong_range)
+end-proof
+
+proof isa charOfMathInt_mathIntOfChar_Obligation_subtype 
+  by (rule C__char_range)
+end-proof
+
+
+
+proof isa mathIntOfUchar_injective [simp]
+  apply(case_tac x, case_tac y, simp)
+end-proof
+
+proof isa mathIntOfSchar_injective [simp]
+  apply(auto simp add: C__mathIntOfSchar.simps)
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(simp)
+end-proof
+
+proof isa mathIntOfSshort_injective [simp]
+  apply(auto simp add: C__mathIntOfSshort.simps)
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(simp)
+end-proof
+
+proof isa mathIntOfSint_injective [simp]
+  apply(auto simp add: C__mathIntOfSint.simps)
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(simp)
+end-proof
+
+proof isa mathIntOfSlong_injective [simp]
+  apply(auto simp add: C__mathIntOfSlong.simps)
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(simp)
+end-proof
+
+proof isa mathIntOfSllong_injective [simp]
+  apply(auto simp add: C__mathIntOfSllong.simps)
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(simp)
+end-proof
+
+proof isa mathIntOfChar_injective [simp]
+  apply(case_tac x)
+  apply(case_tac y)
+  apply(auto simp add: C__mathIntOfChar.simps)
+end-proof
+
+
+proof isa uchar_range [simp]
+   apply(simp add: C__rangeOfUchar_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa ushort_range [simp]
+   apply(simp add: C__rangeOfUshort_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa uint_range isa [simp]
+   apply(simp add: C__rangeOfUint_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa ulong_range [simp]
+   apply(simp add: C__rangeOfUlong_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa ullong_range [simp]
+   apply(simp add: C__rangeOfUllong_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa schar_range [simp]
+   apply(simp add: C__rangeOfSchar_def mem_def C__SCHAR_MIN_def C__SCHAR_MAX_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa sshort_range [simp]
+   apply(simp add: C__rangeOfSshort_def mem_def C__SSHORT_MIN_def C__SSHORT_MAX_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa sint_range [simp]
+   apply(simp add: C__rangeOfSint_def mem_def C__SINT_MIN_def C__SINT_MAX_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa slong_range [simp]
+   apply(simp add: C__rangeOfSlong_def mem_def C__SLONG_MIN_def C__SLONG_MAX_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa sllong_range [simp]
+   apply(simp add: C__rangeOfSllong_def mem_def C__SLLONG_MIN_def C__SLLONG_MAX_def)
+   apply(case_tac "x", simp)
+end-proof
+
+proof isa char_range [simp]
+   apply(simp add: C__rangeOfChar_def mem_def)
+   apply(case_tac "x", simp)
+end-proof
+
+
+proof isa mathIntOfUchar_Obligation_subtype
+  apply (auto simp add: List__ofLength_p_def List__nonEmpty_p_def C__CHAR_BIT_def) 
+end-proof
+
+
+
+proof isa ucharOfMathInt_Obligation_the
+  apply(auto)
+  apply(rule exI [of _ "C__Uchar__uchar (toBits ((nat i), C__CHAR_BIT))"])
+  apply(simp add:C__rangeOfUchar_def)
+  apply(cut_tac n="nat i" and len="C__CHAR_BIT" in Bits__inverse_toNat_bits)
+  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+end-proof
+
+proof isa ushortOfMathInt_Obligation_the
+  apply(auto)
+  apply(rule exI [of _ "C__Ushort__ushort (toBits ((nat i), C__short_bits))"])
+  apply(simp add:C__rangeOfUshort_def)
+  apply(cut_tac n="nat i" and len="C__short_bits" in Bits__inverse_toNat_bits)
+  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+end-proof
+
+proof isa uintOfMathInt_Obligation_the
+  apply(auto)
+  apply(rule exI [of _ "C__Uint__uint (toBits ((nat i), C__int_bits))"])
+  apply(simp add:C__rangeOfUint_def)
+  apply(cut_tac n="nat i" and len="C__int_bits" in Bits__inverse_toNat_bits)
+  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+end-proof
+
+proof isa ulongOfMathInt_Obligation_the
+  apply(auto)
+  apply(rule exI [of _ "C__Ulong__ulong (toBits ((nat i), C__long_bits))"])
+  apply(simp add:C__rangeOfUlong_def)
+  apply(cut_tac n="nat i" and len="C__long_bits" in Bits__inverse_toNat_bits)
+  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+end-proof
+
+proof isa ullongOfMathInt_Obligation_the
+  apply(auto)
+  apply(rule exI [of _ "C__Ullong__ullong (toBits ((nat i), C__llong_bits))"])
+  apply(simp add:C__rangeOfUllong_def)
+  apply(cut_tac n="nat i" and len="C__llong_bits" in Bits__inverse_toNat_bits)
+  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+end-proof
+
+proof isa scharOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Schar__schar (TwosComplement__tcNumber (i, C__CHAR_BIT))"])
+  apply (simp add:C__rangeOfSchar_def)
+  apply (cut_tac len="C__CHAR_BIT" and n="(nat i)" in Bits__inverse_toNat_bits)
+  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+  apply(rule TwosComplement__toInt_tcNumber_reduce)
+  apply(simp)
+  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+end-proof
+
+proof isa sshortOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Sshort__sshort (TwosComplement__tcNumber (i, C__short_bits))"])
+  apply (simp add:C__rangeOfSshort_def)
+  apply (cut_tac len="C__short_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
+  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+  apply(rule TwosComplement__toInt_tcNumber_reduce)
+  apply(simp)
+  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+end-proof
+
+proof isa sintOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Sint__sint (TwosComplement__tcNumber (i, C__int_bits))"])
+  apply (simp add:C__rangeOfSint_def)
+  apply (cut_tac len="C__int_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
+  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+  apply(rule TwosComplement__toInt_tcNumber_reduce)
+  apply(simp)
+  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+end-proof
+
+proof isa slongOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Slong__slong (TwosComplement__tcNumber (i, C__long_bits))"])
+  apply (simp add:C__rangeOfSlong_def)
+  apply (cut_tac len="C__long_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
+  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+  apply(rule TwosComplement__toInt_tcNumber_reduce)
+  apply(simp)
+  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+end-proof
+
+proof isa sllongOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Sllong__sllong (TwosComplement__tcNumber (i, C__llong_bits))"])
+  apply (simp add:C__rangeOfSllong_def)
+  apply (cut_tac len="C__llong_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
+  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
+  apply(rule TwosComplement__toInt_tcNumber_reduce)
+  apply(simp)
+  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+end-proof
+
+proof isa charOfMathInt_Obligation_the 
+  apply (auto)
+  apply (rule exI [of _ "C__Char__char (if C__plainCharsAreSigned then  (TwosComplement__tcNumber (i, C__CHAR_BIT)) else (toBits ((nat i), C__CHAR_BIT)))"])
+  apply (case_tac "C__plainCharsAreSigned")
+  apply (simp add:C__rangeOfChar_def TwosComplement__tcNumber_length TwosComplement__rangeForLength_def mem_def TwosComplement__toInt_tcNumber_reduce TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def mem_def)
+  apply (simp add:C__rangeOfChar_def mem_def TwosComplement__toInt_tcNumber_reduce mem_def)
+end-proof
+
+
+proof isa mathIntOfUchar_ucharOfMathInt [simp]
+  apply (auto simp add:C__ucharOfMathInt_def)
+  apply(cut_tac i=i in C__ucharOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Uchar) . (C__Uchar__subtype_pred x \<and> int (C__mathIntOfUchar x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfUshort_ushortOfMathInt [simp]
+  apply (auto simp add:C__ushortOfMathInt_def)
+  apply(cut_tac i=i in C__ushortOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Ushort) . (C__Ushort__subtype_pred x \<and> int (C__mathIntOfUshort x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfUint_uintOfMathInt [simp]
+  apply (auto simp add:C__uintOfMathInt_def)
+  apply(cut_tac i=i in C__uintOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Uint) . (C__Uint__subtype_pred x \<and> int (C__mathIntOfUint x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfUlong_ulongOfMathInt [simp]
+  apply (auto simp add:C__ulongOfMathInt_def)
+  apply(cut_tac i=i in C__ulongOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Ulong) . (C__Ulong__subtype_pred x \<and> int (C__mathIntOfUlong x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfUllong_ullongOfMathInt [simp]
+  apply (auto simp add:C__ullongOfMathInt_def)
+  apply(cut_tac i=i in C__ullongOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Ullong) . (C__Ullong__subtype_pred x \<and> int (C__mathIntOfUllong x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfSchar_scharOfMathInt [simp]
+  apply (auto simp add:C__scharOfMathInt_def)
+  apply(cut_tac i=i in C__scharOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Schar) . (C__Schar__subtype_pred x \<and> (C__mathIntOfSchar x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfSshort_sshortOfMathInt [simp]
+  apply (auto simp add:C__sshortOfMathInt_def)
+  apply(cut_tac i=i in C__sshortOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Sshort) . (C__Sshort__subtype_pred x \<and> (C__mathIntOfSshort x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfSint_sintOfMathInt [simp]
+  apply (auto simp add:C__sintOfMathInt_def)
+  apply(cut_tac i=i in C__sintOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Sint) . (C__Sint__subtype_pred x \<and> (C__mathIntOfSint x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfSlong_slongOfMathInt [simp]
+  apply (auto simp add:C__slongOfMathInt_def)
+  apply(cut_tac i=i in C__slongOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Slong) . (C__Slong__subtype_pred x \<and> (C__mathIntOfSlong x) = i)" in theI')
+  apply(auto)
+end-proof
+
+proof isa mathIntOfSllong_sllongOfMathInt [simp]
+  apply (auto simp add:C__sllongOfMathInt_def)
+  apply(cut_tac i=i in C__sllongOfMathInt_Obligation_the)
+  apply(simp)
+  apply(cut_tac P="\<lambda> (x::C__Sllong) . (C__Sllong__subtype_pred x \<and> (C__mathIntOfSllong x) = i)" in theI')
+  apply(auto)
+end-proof
+
+
+proof isa ucharOfMathInt_mathIntOfUchar [simp]
+  apply(cut_tac x = "C__ucharOfMathInt (int (C__mathIntOfUchar x))" and y = x in C__mathIntOfUchar_injective)
+  apply(auto simp add: C__mathIntOfUchar_ucharOfMathInt_2)
+end-proof
+
+proof isa ushortOfMathInt_mathIntOfUshort [simp]
+  apply(cut_tac x = "C__ushortOfMathInt (int (C__mathIntOfUshort x))" and y = x in C__mathIntOfUshort_injective)
+  apply(auto simp add: C__mathIntOfUshort_ushortOfMathInt_2)
+end-proof
+
+proof isa uintOfMathInt_mathIntOfUint [simp]
+  apply(cut_tac x = "C__uintOfMathInt (int (C__mathIntOfUint x))" and y = x in C__mathIntOfUint_injective)
+  apply(auto simp add: C__mathIntOfUint_uintOfMathInt_2)
+end-proof
+
+proof isa ulongOfMathInt_mathIntOfUlong [simp]
+  apply(cut_tac x = "C__ulongOfMathInt (int (C__mathIntOfUlong x))" and y = x in C__mathIntOfUlong_injective)
+  apply(auto simp add: C__mathIntOfUlong_ulongOfMathInt_2)
+end-proof
+
+proof isa ullongOfMathInt_mathIntOfUllong [simp]
+  apply(cut_tac x = "C__ullongOfMathInt (int (C__mathIntOfUllong x))" and y = x in C__mathIntOfUllong_injective)
+  apply(auto simp add: C__mathIntOfUllong_ullongOfMathInt_2)
+end-proof
+
+proof isa scharOfMathInt_mathIntOfSchar [simp]
+  apply(cut_tac x = "C__scharOfMathInt (C__mathIntOfSchar x)" and y = x in C__mathIntOfSchar_injective)
+  apply(auto simp add: C__mathIntOfSchar_scharOfMathInt)
+end-proof
+
+proof isa sshortOfMathInt_mathIntOfSshort [simp]
+  apply(cut_tac x = "C__sshortOfMathInt (C__mathIntOfSshort x)" and y = x in C__mathIntOfSshort_injective)
+  apply(auto simp add: C__mathIntOfSshort_sshortOfMathInt)
+end-proof
+
+proof isa sintOfMathInt_mathIntOfSint [simp]
+  apply(cut_tac x = "C__sintOfMathInt (C__mathIntOfSint x)" and y = x in C__mathIntOfSint_injective)
+  apply(auto simp add: C__mathIntOfSint_sintOfMathInt)
+end-proof
+
+proof isa slongOfMathInt_mathIntOfSlong [simp]
+  apply(cut_tac x = "C__slongOfMathInt (C__mathIntOfSlong x)" and y = x in C__mathIntOfSlong_injective)
+  apply(auto simp add: C__mathIntOfSlong_slongOfMathInt)
+end-proof
+
+proof isa sllongOfMathInt_mathIntOfSllong [simp]
+  apply(cut_tac x = "C__sllongOfMathInt (C__mathIntOfSllong x)" and y = x in C__mathIntOfSllong_injective)
+  apply(auto simp add: C__mathIntOfSllong_sllongOfMathInt)
+end-proof
+
+proof isa charOfMathInt_mathIntOfChar [simp]
+  apply(cut_tac x = "C__charOfMathInt (C__mathIntOfChar x)" and y = x in C__mathIntOfChar_injective)
+  apply(auto simp add: C__mathIntOfChar_charOfMathInt)
+  end-proof
+
+proof isa C__ushortOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__uintOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__uintOfUshort_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ulongOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ulongOfUshort_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ulongOfUint_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ullongOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ullongOfUshort_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ullongOfUint_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__ullongOfUlong_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sshortOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sshortOfSchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sshortOfChar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sintOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sintOfSchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sintOfSshort_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sintOfChar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__slongOfUchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__slongOfSchar_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__slongOfSshort_Obligation_subtype
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__slongOfSint_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__slongOfChar_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sllongOfUchar_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sllongOfSchar_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sllongOfSshort_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sllongOfSint_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+
+proof isa C__sllongOfSlong_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__sllongOfChar_Obligation_subtype 
+  apply(case_tac "x", simp)
+end-proof
+
+proof isa C__charOfUshort_Obligation_subtype
+  apply(case_tac "x", auto)
+end-proof
+
+proof isa C__charOfSchar_Obligation_subtype
+  apply(case_tac "x", auto)
+end-proof
+
 endspec
+
