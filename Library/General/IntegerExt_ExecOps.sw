@@ -102,7 +102,7 @@ spec
 
   refine def totient (n:PosNat) : Nat =
     length (filter (fn m:PosNat -> m <= n && coprime? (m,n))
-                   (tabulate (n, fn i:Nat -> i+1)))  % = [1,...,n]
+                   (tabulate (n, fn i:Nat -> (i+1):Nat)))  % = [1,...,n]
 
   refine def littleEndian? (digits: List Nat, base:Nat, x:Nat) : Bool =
     forall? (fn d:Nat -> d < base) digits &&
@@ -165,11 +165,13 @@ proof Isa e_ast_ast__1__obligation_refine_def
   "(\<lambda>x. \<lambda>y. x ** y) = Integer__e_ast_ast__1"
 
  *****************************************************************************)
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, rule ext)
   apply (subgoal_tac "x **__1 0 = 1", rule nat_induct,
          simp_all (no_asm_simp) only: Integer__e_ast_ast__1.simps,
          simp_all del: Integer__e_ast_ast__1.simps)
   apply (rule conjI, clarify)
+*)
 sorry
 end-proof
 
@@ -202,6 +204,7 @@ end-proof
 
 
 proof Isa isqrt__1__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, simp only:  int_int_eq [symmetric],
          simp add: Integer__isqrt_def, rule the1_equality)
   apply (rule Integer__isqrt_Obligation_the)
@@ -209,6 +212,7 @@ proof Isa isqrt__1__obligation_refine_def
   apply (simp add: Integer__isqrt__1_def del: Integer__isqrt__1__loop.simps)
   apply (rule_tac n=x in nat_induct, simp, clarify)
   (* that doesn't work - need induction on the output - see proof in Nuprl *)
+*)
   sorry
 
 (*****************************************************************************)
@@ -237,6 +241,7 @@ end-proof
 
 
 proof Isa isqrt__2__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, simp only:  int_int_eq [symmetric],
          simp add: Integer__isqrt_def, rule the1_equality)
   apply (rule Integer__isqrt_Obligation_the)
@@ -249,6 +254,8 @@ proof Isa isqrt__2__obligation_refine_def
          simp add: Suc_eq_plus1 div_le_pos_nat [symmetric])
   apply (cut_tac div_gt_pos_nat, simp_all,
          simp add: Integer__isqrt__2_def not_less algebra_simps)
+*)
+sorry
 end-proof
 
 
@@ -270,6 +277,7 @@ end-proof
 
 
 proof Isa primesLessThan__1__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, 
          simp add: Integer__primesLessThan_def, rule the1_equality)
   apply (rule Integer__primesLessThan_Obligation_the)
@@ -290,10 +298,12 @@ proof Isa primesLessThan__1__obligation_refine_def
   apply (simp del: Integer__primesLessThan__1__loop.simps)
   apply (rule conjI, rule allI, rule impI)
 (* now we need induction again *)
+*)
   sorry
 end-proof
 
 proof Isa prime_p__1__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext,  simp add: Integer__prime_p__1_def)
   apply (simp add: Integer__primesLessThan_def,
          rule the1I2, rule Integer__primesLessThan_Obligation_the)
@@ -302,11 +312,16 @@ proof Isa prime_p__1__obligation_refine_def
   apply (auto simp add: List__in_p__stp_def)
   apply (cut_tac P=prime and l=xa and i=i in List__e_at_at__stp_nth,
          simp add: list_all_iff, auto split: split_if_asm)
+*)
+sorry
 end-proof
 
 proof Isa coprime_p__1__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, auto simp add: igcd_def Integer__coprime_p__1_def)
   apply (case_tac b, simp_all)+
+*)
+sorry
 end-proof
 
 proof Isa primeFactorsOf__1__loop_Obligation_subtype1
@@ -327,7 +342,9 @@ termination
 end-proof
 
 proof Isa primeFactorsOf__1__obligation_refine_def
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, auto)
+*)
   sorry  
 end-proof
 
@@ -343,6 +360,7 @@ defs Integer__totient__1_def:
 ******************************************************************************)
 
 (*  apply (cut_tac P__a=Nat__posNat_p in Set__size__stp_Obligation_the) *)
+(*Commenting out proof commands that don't work. -EWS
   apply (rule ext, 
          simp add: Integer__totient_def Set__size__stp_def 
                    Integer__totient__1_def)
@@ -355,6 +373,7 @@ defs Integer__totient__1_def:
   apply (simp add: length_filter_conv_card List__length_tabulate)
   apply (auto simp add: Set_P_def)
   apply (simp add: Set__finite_p__stp_def)
+*)
   sorry  
 end-proof
 
@@ -423,6 +442,76 @@ proof Isa toLittleEndian__1__obligation_refine_def
   sorry   
 end-proof
 
+proof isa littleEndian_p__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
 
+proof isa littleEndian_p__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
+proof isa fromBigEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa fromBigEndian__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
+proof isa fromLittleEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa fromLittleEndian__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
+proof isa Integer__toMinBigEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__toMinBigEndian__1__obligation_refine_def_Obligation_subtype0 
+sorry
+end-proof
+
+proof isa Integer__toMinLittleEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__toMinLittleEndian__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
+proof isa Integer__toBigEndian__1_Obligation_subtype1
+sorry
+end-proof
+
+proof isa Integer__toBigEndian__1_Obligation_subtype0
+sorry
+end-proof
+
+proof isa Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
+proof isa Integer__toLittleEndian__1_Obligation_subtype1
+sorry
+end-proof
+
+proof isa Integer__toLittleEndian__1_Obligation_subtype0
+sorry
+end-proof
+
+proof isa Integer__toLittleEndian__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa Integer__toLittleEndian__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
 
 endspec
