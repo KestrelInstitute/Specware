@@ -355,6 +355,12 @@ Utilities qualifying spec
      | And(s_ty :: _, _) -> coproduct? s_ty
      | _ -> false
 
+ op equalTypeIds?(env: LocalEnv, qid1 as Qualified(q1,id1): QualifiedId, qid2 as Qualified(q2,id2)): Bool =
+   id1 = id2
+     && (q1 = q2
+           || (q1 = UnQualified && length(findAllTypes(env.internal, qid1)) = 1)
+           || (q2 = UnQualified && length(findAllTypes(env.internal, qid2)) = 1))
+
  %% sjw: Returns srt with all  type variables dereferenced
  def unlinkRec srt = 
    mapType (fn x -> x, 
@@ -610,7 +616,7 @@ Utilities qualifying spec
                         pairs 
                 then
                   Unify pairs
-              else if id = id2 then
+              else if equalTypeIds?(env, id, id2) then
                 unifyL (env, s1, s2, ts, ts2, pairs, subtype_mode, dom_count, unify)
               else 
                 let s1x = unfoldType (env, s1) in
@@ -667,7 +673,9 @@ Utilities qualifying spec
                 unify (env, s1, s2x, pairs, subtype_mode, dom_count)
             | _ -> NotUnify (unlnk_srt1, unlnk_srt2)
   in
-  let _ = if debugUnify? then writeLine(if embed? Unify result then "Succeeded!" else "Failed!") else () in
+  let _ = if debugUnify? then writeLine(if embed? Unify result then "Succeeded!"
+                                        else printType unlnk_srt1^" <~> "^printType unlnk_srt2)
+           else () in
   result
 
 (*
