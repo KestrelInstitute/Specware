@@ -1357,9 +1357,10 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | _ ->
 	"type " ^ (printType srt) 
 
-  def consistentTypeOp? (env, srt1, subtype_mode) (Fun (_, srt2, _)) =
+  def consistentTypeOp? (env, ty1, subtype_mode) (tm as (Fun (_, ty2, _))) =
    %% calls unifyTypes, but then resets metatyvar links to None...
-   consistentTypes? (env, srt1, srt2, subtype_mode)
+   let _ = if debugUnify? then writeLine("Consistent type?: "^printTermWithTypes tm^"\n with "^printType ty1) else () in
+   consistentTypes? (env, ty1, ty2, subtype_mode)
 
   % ========================================================================
 
