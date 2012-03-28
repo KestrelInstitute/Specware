@@ -93,18 +93,21 @@ AnnTermPrinter qualifying spec
 
   %% ========================================================================
 
+  op alwaysPrintQualifiers?: Bool = false
+
   def ppAsciiId (Qualified (qualifier, id) : QualifiedId) = 
-   string (if qualifier = UnQualified  ||
-              %% TODO:  What if there is an unqualified Nat as well as Nat.Nat ?
-              %%        Perhaps that should be disallowed. (It is now).
-              qualifier = "Nat"        || 
-              qualifier = "String"     ||
-              qualifier = "Integer"    ||
-	      qualifier = "IntegerAux" || 
-              qualifier = "General"    ||
-              qualifier = "Char"       ||
-              qualifier = "List"       ||
-              qualifier = "Bool"
+   string (if ~alwaysPrintQualifiers?
+             && (qualifier = UnQualified  ||
+                   %% TODO:  What if there is an unqualified Nat as well as Nat.Nat ?
+                   %%        Perhaps that should be disallowed. (It is now).
+                   qualifier = "Nat"        || 
+                   qualifier = "String"     ||
+                   qualifier = "Integer"    ||
+                   qualifier = "IntegerAux" || 
+                   qualifier = "General"    ||
+                   qualifier = "Char"       ||
+                   qualifier = "List"       ||
+                   qualifier = "Bool")
              then 
                id
            else
