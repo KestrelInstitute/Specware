@@ -51,4 +51,12 @@ proof Isa tcNumber__1__obligation_refine_def
   sorry   
 end-proof
 
+proof isa tcNumber__1__obligation_refine_def_Obligation_subtype
+sorry
+end-proof
+
+proof isa TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype0
+sorry
+end-proof
+
 endspec

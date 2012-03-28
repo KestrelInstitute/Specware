@@ -1,5 +1,7 @@
 FSet qualifying spec
 
+%% The quotient below currently prevents Isabelle from processing the .thy file for this spec.  -EWS
+
   import Set
 
   % sets as equivalence classes of lists without repeated elements:
@@ -142,5 +144,190 @@ FSet qualifying spec
  op [a] List.//\\ (ls: List1 (FSet a)) : FSet a = foldl (/\) (head ls) (tail ls)
 
  op [a] List.\\// (ls: List (FSet a)) : FSet a = foldl (\/) empty ls
+
+
+proof isa List__permutationOf_transitive
+sorry
+end-proof
+
+proof isa List__permutationOf_symmetric
+sorry
+end-proof
+
+proof isa List__permutationOf_reflexive
+sorry
+end-proof
+
+proof isa FSet__toFSet_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__toFSet_Obligation_the
+sorry
+end-proof
+
+proof isa FSet__toFSet_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__fromFSet_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__fromFSet_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__in_p_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_lt_eq_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_lt_eq_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_fsl_bsl_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_fsl_bsl_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_fsl_bsl_Obligation_subtype1
+sorry
+end-proof
+
+proof isa FSet__e_bsl_fsl_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_bsl_fsl_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_bsl_fsl_Obligation_subtype1
+sorry
+end-proof
+
+proof isa FSet__e_dsh_dsh_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_dsh_dsh_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_dsh_dsh_Obligation_subtype1
+sorry
+end-proof
+
+proof isa FSet__single_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__single_p_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__theMember_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__theMember_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_lt_bar_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_dsh_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_dsh_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__map_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__map_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__mapPartial_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__mapPartial_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__size_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__fold_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_fsl_fsl_bsl_bsl_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__e_fsl_fsl_bsl_bsl_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__e_fsl_fsl_bsl_bsl_Obligation_subtype1
+sorry
+end-proof
+
+proof isa FSet__e_bsl_bsl_fsl_fsl_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__power_Obligation_subtype0
+sorry
+end-proof
+
+proof isa FSet__power_Obligation_subtype1
+sorry
+end-proof
+
+proof isa FSet__power_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__power_Obligation_subtype2
+sorry
+end-proof
+
+proof isa FSet__forall_p_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__exists_p_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__exists1_p_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__filter_Obligation_subtype
+sorry
+end-proof
+
+proof isa FSet__filter_Obligation_subtype0
+sorry
+end-proof
 
 endspec
