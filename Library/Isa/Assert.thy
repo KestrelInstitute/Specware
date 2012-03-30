@@ -1,5 +1,5 @@
 theory Assert
-imports Base
+imports "../../Isa/Base"
 begin
 
 consts Assert__assert :: "bool \<Rightarrow> unit"

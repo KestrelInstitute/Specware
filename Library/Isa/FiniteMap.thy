@@ -1114,7 +1114,9 @@ theorem FMap__fold_Obligation_subtype:
                  FMap__toFMap_subtype_constr Map__FiniteMap_def)
 
 theorem FMap__fold_Obligation_subtype0: 
-  "\<lbrakk>FMap__foldable_p(c_1, f_1, FMap__update m x y)\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>Fun_PD FMap__foldable_p fold__v; 
+    \<forall>(c::'c) (f::'c \<times> ('a \<times> 'b) \<Rightarrow> 'c). fold__v(c, f, empty_fm) = c; 
+    FMap__foldable_p(c_1, f_1, FMap__update m x y)\<rbrakk> \<Longrightarrow> 
    FMap__foldable_p(c_1, f_1, m less_fm x)"
    (*** change aux back to "p" if the translator provides new capabilities *)
    apply (simp add: FMap__foldable_aux_def FMap__update_def e_at_fm_def

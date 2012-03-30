@@ -1,5 +1,5 @@
 theory Base
-imports Empty SW_String
+imports "../Base/Isa/Empty" "../Base/Isa/SW_String"
 begin
 
 end
