@@ -229,7 +229,7 @@ AnnSpecPrinter qualifying spec
  
  op [a] stripQual (tm: ATerm a): ATerm a =
    case tm of
-     | Fun(Op(Qualified(_,opName),fx),s,a) -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
+     | Fun(Op(Qualified(_,opName),fx),s,a) | ~alwaysPrintQualifiers? -> Fun(Op(mkUnQualifiedId(opName),fx),s,a)
      | Fun(Embed("Cons", true), s, a) -> Fun(Embed("::", true), s, a)
      | _ -> tm
 
