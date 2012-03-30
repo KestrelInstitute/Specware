@@ -436,6 +436,13 @@ Utilities qualifying spec
 
  type SubtypeMode = | Ignore | Ignore1 | Ignore2 | DontIgnore
 
+ op showSubtypeMode(m: SubtypeMode): String =
+   case m of
+     | Ignore -> "Ignore"
+     | Ignore1 ->"Ignore1"
+     | Ignore2 -> "Ignore2"
+     | DontIgnore -> "DontIgnore"
+
   op unifyL : [a] LocalEnv * MSType * MSType * 
                   List a * List a * 
                   List (MSType * MSType) * SubtypeMode * Nat *
