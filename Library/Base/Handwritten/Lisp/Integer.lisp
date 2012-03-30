@@ -16,10 +16,14 @@
            "IntegerAux::|!-|"
            "Integer-Spec::|!+|"
            "Integer-Spec::+-2"
+           "Nat-Spec::|!+|"
+           "Nat-Spec::+-2"
            "Integer-Spec::|!-|"
            "Integer-Spec::--2"
            "Integer-Spec::|!*|"
            "Integer-Spec::*-2"
+           "Nat-Spec::|!*|"
+           "Nat-Spec::*-2"
            "Integer-Spec::|!**|"
            "Integer-Spec::**-2"
            "Integer-Spec::|!<|"
@@ -118,6 +122,17 @@
 (define-compiler-macro +-2 (x y)
  `(the-int (+ (the-int ,x) (the-int ,y))))
 
+(defun Nat-Spec::|!+| (xy)
+ (declare (cons xy))
+ (the-int (+ (the-int (car xy)) (the-int (cdr xy)))))
+
+(defun Nat-Spec::+-2 (x y)
+ (declare (integer x y))
+ (the-int (+ x y)))
+
+(define-compiler-macro Nat-Spec::+-2 (x y)
+ `(the-int (+ (the-int ,x) (the-int ,y))))
+
 (defun |!-| (xy)
  (declare (cons xy))
  (the-int (- (the-int (car xy)) (the-int (cdr xy)))))
@@ -138,6 +153,17 @@
  (the-int (* x y)))
 
 (define-compiler-macro *-2 (x y)
+ `(the-int (* (the-int ,x) (the-int ,y))))
+
+(defun Nat-Spec::|!*| (xy)
+ (declare (cons xy))
+ (the-int (* (the-int (car xy)) (the-int (cdr xy)))))
+
+(defun Nat-Spec::*-2 (x y)
+ (declare (integer x y))
+ (the-int (* x y)))
+
+(define-compiler-macro Nat-Spec::*-2 (x y)
  `(the-int (* (the-int ,x) (the-int ,y))))
 
 (defun |!**| (xy)
