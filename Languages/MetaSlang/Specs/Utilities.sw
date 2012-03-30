@@ -1654,12 +1654,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                               | Base (qid, srts, a) ->
                                                                 (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
-                                                                   | Some info -> writeLine(show qid^" defined"^"\n"^printTerm tm))
+                                                                   | Some info -> writeLine(show qid^" defined"^"\n"^printType info.dfn))
                                                               | _ -> writeLine("Not Base")
                                                     in
 						    System.fail ("inferType: Could not extract type for "
-                                                                   ^ printTermWithTypes tm
-                                                                   ^ " dom " ^ printType (unfoldBase(sp,t1_ty))))
+                                                                   ^ printTerm tm
+                                                                   ^ "\nfn type: " ^ printType (unfoldBase(sp,t1_ty))
+                                                                   ^ "\n" ^ printTermWithTypes t1))
      | Bind       _                         -> boolType
      | Record     (fields,               a) -> Product(map (fn (id, t) -> 
 							    (id, inferType (sp, t)))
