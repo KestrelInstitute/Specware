@@ -326,6 +326,9 @@ op dontUnfoldQualifiers: Ids = ["String"]
                  typ      : MSType,
                  ref_map  : RefMap)
    : Option DefInfo =
+   case body of
+     | Any _ -> None
+     | _ ->
    if recursiveCallsPreserveHOParameters? (body, qid, params, HOArgs?, curried?) then
      let patinds = indices_for params in
      % possibly useful to help debug current indexing error that happens with:  proc MatchingProofs
