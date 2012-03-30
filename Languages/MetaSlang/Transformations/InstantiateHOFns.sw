@@ -326,9 +326,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
                  typ      : MSType,
                  ref_map  : RefMap)
    : Option DefInfo =
-   case body of
-     | Any _ -> None
-     | _ ->
+   if anyTerm? body then None
+   else
    if recursiveCallsPreserveHOParameters? (body, qid, params, HOArgs?, curried?) then
      let patinds = indices_for params in
      % possibly useful to help debug current indexing error that happens with:  proc MatchingProofs
@@ -506,7 +505,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
 		      (case findAQualifierMap(unfold_map, q, id) of
 
 			 | Some (vs, defn, deftyp, fnIndices, curried?, recursive?) ->
-                           %let _ = writeLine("maybeUnfoldTerm:\n"^printTerm f) in
+                           % let _ = writeLine("maybeUnfoldTerm:\n"^printTerm f) in
 			   if curried? 
                               && (length args = length vs)
                               && exists? (fn i -> exploitableTerm? (args @ i, unfold_map))
@@ -572,7 +571,10 @@ op dontUnfoldQualifiers: Ids = ["String"]
                       curried?     : Bool,
                       spc          : Spec)
    : MSTerm =
-   % let _ = writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm) in
+   let _ = if outer_qid = Qualified("SomeQual","SomeId") then
+             writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm^
+                       "\nargs: "^foldr (fn (x,y) ->x^"  "^y) "" (map printTerm args))
+            else () in
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
@@ -611,16 +613,15 @@ op dontUnfoldQualifiers: Ids = ["String"]
          adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body)
      in
      let new_body             = simplifyTerm def_body                                           in
-     let new_body             = substitute (new_body, p_subst)                                  in
-
+     let (new_let, new_subst) = makeLet (remaining_params, remaining_args, new_body)            in
+     let new_let              = substitute (new_let, p_subst ++ new_subst)                      in
+ 
      %% The substitutions in p_subst only make sense in the body of the definition.
      %% Once they are done there, do not propagate them into makeLet.
      %%
      %% Instead, makeLet may create an entirely new set of substitutions to be applied to the body.
      %% Alternatively, it might just add the corrseponding let bindings.
 
-     let (new_let, new_subst) = makeLet (remaining_params, remaining_args, new_body)            in
-     let new_let              = substitute (new_let, new_subst)                                 in
      let new_tm               = simplifyTerm new_let                                            in
      let trans_new_tm         = unfoldInTerm (outer_qid, new_tm, unfold_map, simplifyTerm, spc) in
 
@@ -657,7 +658,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                            remaining_params  : MSPatterns,
                            remaining_args    : MSTerms,
                            remaining_indices : List Nat,
-                           param_subst       : List (Var * MSTerm),
+                           param_subst       : VarSubst,
                            curried?          : Bool,
                            numargs           : Nat,
                            unfold_map        : AQualifierMap DefInfo,
@@ -705,16 +706,10 @@ op dontUnfoldQualifiers: Ids = ["String"]
   let def_body          = unfoldInTerm (outer_qid, simplifyTerm def_body, unfold_map, simplifyTerm, spc) in
   let local_def_body    = mapSubTerms foldRecursiveCall def_body in
 
-  %% TODO: what is this all about?
-  let _ = if outer_qid = Qualified("<unqualified>","inferTypeOfExprs") then
-            writeLine ("loc_body:\n" ^ printTerm def_body ^ "\n\n" ^ printTerm local_def_body) 
-          else 
-            () 
-  in
-
   let new_params  = map (mapPattern (id, instantiateTyVars, id)) remaining_params in
   let new_lambda  = mkLambda (mkTuplePat new_params, local_def_body) in
   let local_def   = substitute (new_lambda, param_subst) in
+
   %% Need to repeat as substitution may have introduced new opportunities
   let local_def   = unfoldInTerm (outer_qid, simplifyTerm local_def, unfold_map, simplifyTerm, spc) in
   let new_letrec  = mkLetRec ([(local_fn, local_def)], 
