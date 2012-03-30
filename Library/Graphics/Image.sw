@@ -18,7 +18,7 @@ op put    : Image -> Coordinates -> Pixel -> ()
 op getregion (image: Image) (bottom : Row) (left : Column) (top: Row) (right: Column) : Image
 op putregion (image: Image) (bottom : Row) (left : Column) (region: Image) : Image
 
-op map (f : Pixel -> Pixel) (image: Image) : Image
+op map (f : Nat -> Nat) (image: Image) : Image
 
 op [a] foldl (f : a * Pixel -> a) (base: a) (image: Image) : a
 op [a] foldr (f : Pixel * a -> a) (base: a) (image: Image) : a
