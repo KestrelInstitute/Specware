@@ -118,10 +118,10 @@
 ;;; op readImageFile (filename : FileName) : Image
 ;;; op writeImageFile (filename : FileName) (image : Image) : ()
 
-(defun readImageFile (filename)
+(defun readImageFile-1-1 (kind filename)
   (read-image-file filename))
 
-(defun writeImageFile-1-1 (filename image)
+(defun writeImageFile-1-1-1 (kind filename image)
   (write-image-file filename image)
   ())
 

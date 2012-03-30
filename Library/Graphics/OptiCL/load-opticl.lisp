@@ -3,7 +3,8 @@
 (in-package :CL-USER)
 
 (defun loadOptiCL-0 () 
-  (load "/home/sfitzp/specware/Library/Graphics/OptiCL/QuickLisp/setup.lisp")  
+  (let ((specware4 (SPECWARE::GETENV "SPECWARE4")))
+    (load (concatenate 'string specware4 "/Library/QuickLisp/setup.lisp")))
   (funcall (find-symbol "QUICKLOAD" "QL") 'opticl)
   (load "OptiCL/sw-opticl"))
 
