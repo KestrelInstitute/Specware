@@ -89,6 +89,7 @@ TypeChecker qualifying spec
     let 
 
       def elaborate_local_op_types (ops, env) =
+        let _ = if debug? then writeLine "**elaborate_local_op_types" else () in
 	mapOpInfos (fn info ->
 		    if someOpAliasIsLocal? (info.names, given_spec) then
 		      let def elaborate_srt dfn =
@@ -97,7 +98,7 @@ TypeChecker qualifying spec
 			    let _ = checkTyVars (env, tvs, pos) in
                             let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
 			    let srt1 = checkType (env_s, srt) in
-                            % let _ = writeLine("elos "^show(head info.names)^": "^printType srt^"\n -->\n"^printType srt1) in
+                            let _ = if debug? then writeLine("elos "^show(head info.names)^": "^printType srt^"\n -->\n"^printType srt1) else () in
                             % let _ = writeLine(printTermWithTypes tm^"\n") in
 			    maybePiTerm (tvs, TypedTerm (tm, srt1, pos))
 		      in
@@ -110,6 +111,7 @@ TypeChecker qualifying spec
 	  ops
 
       def elaborate_local_types (types, env) =
+        let _ = if debug? then writeLine "**elaborate_local_types" else () in
 	if ~(hasLocalType? given_spec) then types
 	else
 	mapTypeInfos (fn info ->
@@ -129,6 +131,7 @@ TypeChecker qualifying spec
 	             types 
 
       def elaborate_local_ops (ops, env, poly?) =
+        let _ = if debug? then writeLine "\n\n**** elaborate_local_ops ****\n\n" else () in
 	foldl (fn (ops,el) ->
 	       case getQIdIfOp el of
 		 | None -> ops
@@ -137,12 +140,15 @@ TypeChecker qualifying spec
 		 | Some info ->
 		   let def elaborate_dfn dfn =
 			 let pos = termAnn dfn in
-                         % let _ = writeLine("elaborate_local_ops:\n"^printTermWithTypes dfn) in
 			 let (tvs, srt, tm) = unpackTerm dfn in
 			 if poly? = (tvs ~= []) then
+                           let _ = if debug? then writeLine("elaborate_local_ops:\n"^printTerm dfn) else () in
 			   let _ = checkTyVars (env, tvs, pos) in
+                           let _ = if debug? then writeLine("1: "^show(head info.names)) else () in
                            let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-			   let srt1 = checkType (env_s, srt) in
+                           let _ = if debug? then writeLine("2: "^show(head info.names)) else () in
+                           let srt1 = checkType1 (env_s, srt, false) in
+                           let _ = if debug? then writeLine("elo "^show(head info.names)^": "^printType srt^"\n -->\n"^printType srt1) else () in
 			   let xx = single_pass_elaborate_term_top (env, tm, srt1) in
 			   maybePiTerm (tvs, TypedTerm (xx, srt1, pos))
 			 else 
@@ -155,6 +161,7 @@ TypeChecker qualifying spec
 	   ops given_spec.elements
 
       def elaborate_local_props (elts, env, last_time?) =
+        let _ = if debug? then writeLine "**elaborate_local_props" else () in
 	map (fn el ->
 	     case el of
 	       | Property (prop_type, name, tvs, fm, a) ->
@@ -166,6 +173,7 @@ TypeChecker qualifying spec
 
 
       def reelaborate_local_ops (ops, env) =
+        let _ = if debug? then writeLine "**reelaborate_local_ops" else () in
 	foldl (fn (ops,el) ->
 	       case getQIdIfOp el of
 		 | None -> ops
@@ -470,7 +478,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   def resolveNameFromType(env, trm, id, srt, pos) =
     case mkEmbed0 (env, srt, id) of
-      | Some id -> Fun (Embed (id, false), checkType (env, srt), pos)
+      | Some id -> Fun (Embed (id, false), checkType1 (env, srt, false), pos)
       | None -> 
     case mkEmbed1 (env, srt, trm, id, pos) of
       | Some term -> term
@@ -484,7 +492,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): List MSTerm =
     case mkEmbed0 (env, ty, id) of
-      | Some id -> [Fun (Embed (id, false), checkType (env, ty), pos)]
+      | Some id -> [Fun (Embed (id, false), checkType1 (env, ty, false), pos)]
       | None -> 
     case mkEmbed1 (env, ty, trm, id, pos) of
       | Some term -> [term]
@@ -499,7 +507,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
     case mkEmbed0 (env, ty, id) of
-      | Some id -> Some(Fun (Embed (id, false), checkType (env, ty), pos))
+      | Some id -> Some(Fun (Embed (id, false), checkType1 (env, ty, false), pos))
       | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
  def checkOp (info, env) =
@@ -681,7 +689,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         %% unqualified id1 refers to big_term
                         % let _ = writeLine("twonames: "^id1^"."^id2^" "^printTerm big_term) in
                         let big_type = termType big_term in
-                        let big_type = checkType (env, big_type) in
+                        let big_type = checkType1 (env, big_type, false) in
                         let 
                           def projectRow (big_term, big_type, row, id2) =
                             %% See if id2 is one of the field selectors for the big type.
@@ -689,7 +697,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                               | [] -> undeclared2 (env, trm, id1, id2, term_type, pos)
                               | (field_id, field_type) :: row -> 
                                 if id2 = field_id then
-                                  let field_type = checkType (env, field_type) in
+                                  let field_type = checkType1 (env, field_type, false) in
                                   let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
                                   let projection = ApplyN ([projector, big_term], pos) in
                                   let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
@@ -1024,12 +1032,12 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
             | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
               let (t1, t2) =
-                  if env.firstPass? && ~(embed? Lambda t2)
+                  if env.firstPass? %&& ~(embed? Lambda t2)
                     then
                       let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
                       let ty    = Arrow (alpha, term_type, pos) in
                       let t2    = single_pass_elaborate_term (env, t2, alpha) in
-                      let t1    = if embed? Arrow (unlinkType alpha)
+                      let t1    = if false  %embed? Arrow (unlinkType alpha)
                                     then let term_ty = Arrow (freshMetaTyVar("ApplyN_HOFun", pos), term_type, pos) in
                                          let t1 = single_pass_elaborate_term_head (env, t1, term_ty, trm) in
                                          let _ = elaborateTypeForTerm(env, t1, ty, term_ty) in
@@ -1254,9 +1262,12 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
 
   % ========================================================================
+  op findSuperTypeDominatingTerm (env: LocalEnv) (tms: MSTerms): Option MSTerm =
+    case filter (fn ti -> forall? (fn tj -> consistentTypes?(env, termType ti, termType tj, Ignore2)) tms) tms of
+      | [dominating_term] -> Some dominating_term
+      | _ -> None
 
-  op  selectTermWithConsistentType: LocalEnv * Id * Position * List MSTerm * MSType -> Option MSTerm
-  def selectTermWithConsistentType (env, id, pos, terms, srt) =
+  op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MSTerms, srt: MSType): Option MSTerm =
     %% calls consistentTypeOp?, which calls unifyTypes 
     case terms of
       | [term] -> Some term
@@ -1304,49 +1315,51 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			None)
 	       | [term] -> Some term
 	       | consistent_terms ->
-	         if env.firstPass? then
-		   None
-		 else
-		   (let consistent_terms_with_exactly_matching_subtypes = 
-		        filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
-			       consistent_terms
-		    in
-		    let plausible_terms = if consistent_terms_with_exactly_matching_subtypes ~= [] 
-		                            then consistent_terms_with_exactly_matching_subtypes 
-					  else
-                                          let consistent_terms_with_subtype_of = []
-                                             % filter (consistentSortOp? (env, withAnnS (rsort, srtPos), Ignore1)) 
-                                             %   consistent_terms
-                                          in
-                                          if consistent_terms_with_subtype_of ~= []
-                                            then consistent_terms_with_subtype_of
-					    else consistent_terms 
-		    in
-		    case plausible_terms of
-		      %% If only one term matches including subtypes, choose it
-	              | [term] -> Some term
-		      | _ ->
-		        %% If there is a valid unqualified term then prefer that because you
-		        %% cannot explicitly qualify with unqualified!
-			case findUnqualified plausible_terms of
-			  | Some term -> Some term
-			  | None ->
-			    %% Specware just reports an error here
-			    %% Accord looks to see if there is a unique most-precise term,
-			    %% preferring f : A|p -> B to f : A -> B
-			    (error (env,
-				    "Several matches for overloaded op " ^ id ^ " of " ^
-				    (printMaybeAndType srt) ^
-				    (foldl (fn (str, tm) -> str ^
-					    (case tm of
-					       | Fun (OneName  (     id2, _), _, _) -> " "^id2
-					       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
-                                               | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
-                                               | _ -> " "^printTerm tm))
-				           " : "
-					   consistent_terms),
-				    pos);
-			     None)))
+                 (case findSuperTypeDominatingTerm env consistent_terms of
+                    | Some dominating_term ->
+                      let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term) else () in
+                      let consistent_terms_with_exactly_matching_subtypes = 
+                          filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
+                            consistent_terms
+                      in
+                      (case consistent_terms_with_exactly_matching_subtypes of
+                         %% If only one term matches including subtypes, choose it
+                         | [term] ->
+                           let _ = if debugUnify? then writeLine("Only plausible term: "^printTerm term) else () in
+                           Some term
+                         | _ :: _ | env.firstPass? -> None
+                         | _ -> Some dominating_term)
+                    | None ->
+                      if env.firstPass? then
+                        None
+                      else
+                      let consistent_terms_with_exactly_matching_subtypes = 
+                          filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
+                            consistent_terms
+                      in
+                      case consistent_terms_with_exactly_matching_subtypes of
+                         %% If only one term matches including subtypes, choose it
+                         | [term] -> Some term
+                         | _ ->
+                      case findUnqualified consistent_terms of
+                        | Some term -> Some term
+                        | None ->
+                          %% Specware just reports an error here
+                          %% Accord looks to see if there is a unique most-precise term,
+                          %% preferring f : A|p -> B to f : A -> B
+                          (error (env,
+                                  "Several matches for overloaded op " ^ id ^ " of " ^
+                                    (printMaybeAndType srt) ^
+                                    (foldl (fn (str, tm) -> str ^
+                                              (case tm of
+                                                 | Fun (OneName  (     id2, _), _, _) -> " "^id2
+                                                 | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
+                                                 | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
+                                                 | _ -> " "^printTerm tm))
+                                       " : "
+                                       consistent_terms),
+                                  pos);
+                           None)))
 
   def printMaybeAndType srt =
     case srt of
@@ -1359,13 +1372,16 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   def consistentTypeOp? (env, ty1, subtype_mode) (tm as (Fun (_, ty2, _))) =
    %% calls unifyTypes, but then resets metatyvar links to None...
-   let _ = if debugUnify? then writeLine("Consistent type?: "^printTermWithTypes tm^"\n with "^printType ty1) else () in
-   consistentTypes? (env, ty1, ty2, subtype_mode)
+   let _ = if debugUnify? then writeLine("Consistent type? ("^showSubtypeMode subtype_mode^"): "
+                                           ^printTermWithTypes tm^"\n with "^printType ty1) else () in
+   let result = consistentTypes? (env, ty1, ty2, subtype_mode) in
+   let _ = if debugUnify? then writeLine(show result) else () in
+   result
 
   % ========================================================================
 
   def elaborateCheckTypeForTerm (env, term, givenType, expectedType) = 
-   elaborateTypeForTerm (env, term, checkType (env, givenType), expectedType)
+   elaborateTypeForTerm (env, term, checkType1 (env, givenType, false), expectedType)
 
   op elaborateCheckTypeForOpRef (env: LocalEnv, term: MSTerm, givenType: MSType, expectedType: MSType): MSType =
     if allowDependentSubTypes? && ~env.firstPass?
@@ -1410,7 +1426,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
    %  this code!
 
   op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
-    let givenTypeChecked = checkType (env, givenType) in
+    let givenTypeChecked = checkType1 (env, givenType, true) in
     %% unifyTypes has side effect of modifying metatyvar links
     let success = unifyTypes env Ignore givenTypeChecked expectedType in
     ((if success then
@@ -1453,7 +1469,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		  if id = found_id then
 		    Some (case entry of
 			    | None   -> None
-			    | Some s -> Some (checkType (env, s)))
+			    | Some s -> Some (checkType1 (env, s, false)))
 		  else 
 		    lookup row
 	in
@@ -1473,7 +1489,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	        if id = constructor_id then
 		    %let _ = writeLine ("srt:  "^printType srt) in
 		    %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
-		  let constructor_dom_type = checkType (env, constructor_dom_type) in
+		  let constructor_dom_type = checkType1 (env, constructor_dom_type, false) in
                   let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
 		  let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
                   let _ = elaborateType(env, constr_ty, srt) in
@@ -1539,7 +1555,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                    | _ -> v_ty
     in
     (case mkEmbed0 (env, id_ty, id) of
-       | Some id -> Some (Fun (Embed (id, false), checkType (env, id_ty), pos))
+       | Some id -> Some (Fun (Embed (id, false), checkType1 (env, id_ty, false), pos))
        | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
   %% If id is the unique name of a constructor, use that constructor
@@ -1646,7 +1662,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op  elaboratePatternRec: LocalEnv * MSPattern * MSType * List Id -> MSPattern * LocalEnv *  List Id 
   def elaboratePatternRec (env, p, type1, seenVars) =
-    let type1 = checkType (env, type1) in
+    let type1 = checkType1 (env, type1, true) in
     let 
       def addSeenVar(id, seenVars, env, pos) =
 	if id in? seenVars then
@@ -1788,7 +1804,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
       | RestrictedPat (pat, term, pos) ->
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, type1, seenVars) in
-	let term = single_pass_elaborate_term (env, term,  type_bool) in
+	let term = single_pass_elaborate_term (env, term, type_bool) in
 	(RestrictedPat (pat, term, pos), env, seenVars)
 
       | p -> (System.print p; System.fail "Nonexhaustive")
