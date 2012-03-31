@@ -33,8 +33,8 @@ theorem length_subFromLong is [a]
   fa (s:Stream a, i:Nat, n:Nat) length (subFromLong (s, i, n)) = n
 proof Isa
 apply (simp add: Stream__subFromLong_def)
-  apply (rule List__length_is_SegmentLength )
-  apply (simp add: List__definedOnInitialSegmentOfLength_def)
+(*  apply (rule List__length_is_SegmentLength )
+  apply (simp add: List__definedOnInitialSegmentOfLength_def) *)
 end-proof
 
 % sublist from index i (inclusive) to index j (exclusive):
