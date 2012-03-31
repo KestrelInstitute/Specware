@@ -127,10 +127,12 @@ op IntegerAux.- : Bijection (Int, Int) = the(minus)
 
 % addition:
 
-op + infixl 25 : Int * Int -> Int = the(plus)
+op Integer.+ infixl 25 : Int * Int -> Int = the(plus)
   (fa(j)                  plus (zero, j) = j) &&
   (fa(i,j) positive? i => plus (i,    j) = isucc (plus (ipred i, j))) &&
   (fa(i,j) negative? i => plus (i,    j) = ipred (plus (isucc i, j)))
+
+op Nat.+ infixl 25 : Nat * Nat -> Nat = Integer.+
 
 % subtraction:
 
@@ -138,15 +140,12 @@ op - (i:Int, j:Int) infixl 25 : Int = i + (- j)
 
 % multiplication:
 
-op * infixl 27 : Int * Int -> Int = the(times)
+op Integer.* infixl 27 : Int * Int -> Int = the(times)
   (fa(j)                  times (zero, j) = zero) &&
   (fa(i,j) positive? i => times (i,    j) = times (ipred i, j) + j) &&
   (fa(i,j) negative? i => times (i,    j) = times (isucc i, j) - j)
-proof Isa e_ast__def
- apply(rule the1_equality [symmetric])
- apply(rule Integer__e_ast_Obligation_the)
- apply(auto simp add: ring_distribs)
-end-proof
+
+op Nat.* infixl 27 : Nat * Nat -> Nat = Integer.*
 
 % relational operators:
 
@@ -846,7 +845,7 @@ proof Isa e_dsh_subtype_constr
  apply(rule_tac x ="-y" in  exI, auto)
 end-proof
 
-proof Isa e_pls__def
+proof Isa Integer__e_pls__def
  apply(rule the1_equality [symmetric])
  apply(rule Integer__e_pls_Obligation_the)
  apply(auto)
@@ -857,6 +856,12 @@ proof Isa e_ast_Obligation_the
  apply(rule ext, auto simp add: split_paired_all)
  apply(rule_tac p="\<lambda>a. x (a,b)  = a*b" in Integer__induction, auto)
  apply(subgoal_tac "i=0 \<or> i<0 \<or> i>0", auto simp add: ring_distribs)+
+end-proof
+
+proof Isa Integer__e_ast__def
+ apply(rule the1_equality [symmetric])
+ apply(rule Integer__e_ast_Obligation_the)
+ apply(auto simp add: ring_distribs)
 end-proof
 
 proof Isa induction_naturals 
@@ -1281,8 +1286,10 @@ proof Isa Thy_Morphism Presburger
  Integer.isucc    -> succ
  IntegerAux.-     -> -
  Integer.+        -> +     Left 65
+ Nat.+            -> +     Left 65
  Integer.-        -> -     Left 65
  Integer.*        -> *     Left 70
+ Nat.*            -> *     Left 70
  Integer.<=       -> \<le> Left 50
  Integer.<        -> <     Left 50
  Integer.>=       -> \<ge> Left 50
@@ -1331,8 +1338,10 @@ end-proof
  Nat.pred         -> (-1 +)
  Nat.posNat?      -> (> 0)
  Integer.+        -> +     Left  6
+ Nat.+            -> +     Left  6
  Integer.-        -> -     Left  6
  Integer.*        -> *     Left  7
+ Nat.*            -> *     Left  7
  Integer.<=       -> <=    Infix 4
  Integer.<        -> <     Infix 4
  Integer.>=       -> >=    Infix 4
