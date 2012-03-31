@@ -64,7 +64,7 @@ spec
               % if they have no factor not exceeding isqrt(limit), then, since
               % they are all less than limit, they must be all prime
           else
-            loop (filter (fn x:Nat -> ~ (hd divides x)) tl,
+            loop (filter (fn x: PosNat -> ~ (hd divides x)) tl,
                     % only keep numbers that are not multiple of first number
                   hd :: primesSoFar)
                     % add hd to list of primes
@@ -102,7 +102,7 @@ spec
 
   refine def totient (n:PosNat) : Nat =
     length (filter (fn m:PosNat -> m <= n && coprime? (m,n))
-                   (tabulate (n, fn i:Nat -> (i+1):Nat)))  % = [1,...,n]
+                   (tabulate (n, fn i:Nat -> (i+1):PosNat)))  % = [1,...,n]
 
   refine def littleEndian? (digits: List Nat, base:Nat, x:Nat) : Bool =
     forall? (fn d:Nat -> d < base) digits &&
@@ -229,16 +229,12 @@ proof Isa isqrt__2__obligation_refine_def
 end-proof
 
 
-proof Isa primesLessThan__1_Obligation_subtype3
-  sorry
-end-proof
-
 proof Isa primesLessThan__1_Obligation_subtype2
   sorry
 end-proof
 
 proof Isa primesLessThan__1_Obligation_subtype1
- by (simp add: list_all_length List__length_tabulate List__element_of_tabulate)
+  sorry
 end-proof
 
 proof Isa primesLessThan__1_Obligation_subtype0
@@ -258,10 +254,10 @@ proof Isa primesLessThan__1__obligation_refine_def
          cut_tac l="[]" and P=prime and i=i in List__e_at_at__stp_nth2,
          simp, simp, erule ssubst, simp)
   (* Use the obligations we had *)
+  apply (frule Integer__primesLessThan__1_Obligation_subtype0)
   apply (frule Integer__primesLessThan__1_Obligation_subtype1)
-  apply (frule Integer__primesLessThan__1_Obligation_subtype2)
   defer 
-  apply (frule Integer__primesLessThan__1_Obligation_subtype3)
+  apply (frule Integer__primesLessThan__1_Obligation_subtype2)
   (* same goal as before *)
   defer
   apply (simp del: Integer__primesLessThan__1__loop.simps)
@@ -329,42 +325,12 @@ proof Isa littleEndian_p__1_Obligation_subtype
  by (simp add: list_all_length List__length_tabulate List__element_of_tabulate)
 end-proof
 
-proof isa littleEndian_p__1__obligation_refine_def_Obligation_subtype
-  (** something's wrong here ***)
-  sorry
-end-proof
-
-proof isa littleEndian_p__1__obligation_refine_def_Obligation_subtype0
-  by (rule Integer__littleEndian_p__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
-
-proof isa fromBigEndian__1__obligation_refine_def_Obligation_subtype
-  (** something's wrong here ***)
-sorry
-end-proof
-
-proof isa fromBigEndian__1__obligation_refine_def_Obligation_subtype0
-  (** equally wrong ***)
-  by (erule Integer__fromBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
 proof Isa littleEndian_p__1__obligation_refine_def
   sorry 
 end-proof
 
 proof Isa fromBigEndian__1__obligation_refine_def
   sorry 
-end-proof
-
-proof isa fromLittleEndian__1__obligation_refine_def_Obligation_subtype
-  (** equally wrong ***)
-  by (erule Integer__fromBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
-proof isa fromLittleEndian__1__obligation_refine_def_Obligation_subtype0
-  (** equally wrong ***)
-  by (erule Integer__fromBigEndian__1__obligation_refine_def_Obligation_subtype)
 end-proof
 
 proof Isa fromLittleEndian__1__obligation_refine_def 
@@ -380,15 +346,16 @@ proof Isa fromLittleEndian__1__obligation_refine_def
                 Integer__bigEndian_p_def)
 end-proof
 
-proof Isa toMinBigEndian__1__loop_Obligation_subtype
-  (** something's wrong here ***)
+proof Isa Integer__toMinBigEndian__1__loop_Obligation_subtype
+  (********* the information "base >= 2"  got lost **********)
   sorry 
 end-proof
 
-proof Isa toMinBigEndian__1__loop_Obligation_subtype0
-  (** equally wrong  ***)
-  by (erule Integer__toMinBigEndian__1__loop_Obligation_subtype)
+proof Isa Integer__toMinBigEndian__1__loop_Obligation_subtype0
+  (********* the information "base >= 2"  got lost **********)
+  sorry 
 end-proof
+
 
 proof Isa toMinBigEndian__1__loop ()
  by (auto, case_tac a, auto)
@@ -408,26 +375,6 @@ proof Isa toMinLittleEndian__1_Obligation_subtype
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-proof isa toMinBigEndian__1__obligation_refine_def_Obligation_subtype
-  (** something's wrong here ***)
-sorry
-end-proof
-
-proof isa toMinBigEndian__1__obligation_refine_def_Obligation_subtype0
-  (** equally wrong  ***)
-  by (rule Integer__toMinBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
-proof isa toMinLittleEndian__1__obligation_refine_def_Obligation_subtype
-  (** equally wrong  ***)
-  by (rule Integer__toMinBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
-proof isa toMinLittleEndian__1__obligation_refine_def_Obligation_subtype0
-  (** equally wrong  ***)
-  by (rule Integer__toMinBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
 proof Isa toMinLittleEndian__1__obligation_refine_def
   apply (simp add: Integer__toMinLittleEndian_def Integer__toMinBigEndian_def
                    Integer__toMinLittleEndian__1_def)
@@ -437,12 +384,8 @@ proof Isa toMinLittleEndian__1__obligation_refine_def
      If so, I need to add Integer__toMinBigEndian__1__obligation_refine_def
      to the simplification
   *****************************************************************************)
-  (** the assumption that the base is at least 2 is missing 
-      but stated in the above Obligation **)
-  apply (cut_tac 
-        Integer__toMinLittleEndian__1__obligation_refine_def_Obligation_subtype,
-        simp add: LeastM_def,
-        frule_tac  base=x1 and x=x0 in Integer__toMinBigEndian_exists)
+  apply (simp add: LeastM_def,
+         frule Integer__toMinBigEndian_exists)
   apply (rule someI2_ex, simp)
   apply (rule someI2_ex)
   apply (erule exE, rule_tac x="rev a" in exI, 
@@ -450,8 +393,8 @@ proof Isa toMinLittleEndian__1__obligation_refine_def
          rotate_tac 5, drule_tac x="rev y" in spec, simp)
   apply (rule Integer__toLittleEndian_p_equality, simp_all)
   apply (rotate_tac 5, 
-         drule_tac x="rev xa" in spec, simp,
-         drule_tac x="rev x" in spec,  simp)
+         drule_tac x="rev xaa" in spec, simp,
+         drule_tac x="rev xa" in spec,  simp)
 end-proof
 
 proof isa toBigEndian__1_Obligation_subtype1
@@ -477,24 +420,10 @@ proof isa toBigEndian__1_Obligation_subtype0
                         Integer__toLittleEndian_length)
 end-proof
 
-proof isa toBigEndian__1__obligation_refine_def_Obligation_subtype
-  (** something's wrong here ***)
-sorry
-end-proof
-
-proof isa toBigEndian__1__obligation_refine_def_Obligation_subtype0
-  (** equally wrong  ***)
-  by (erule Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
 proof Isa toBigEndian__1__obligation_refine_def
-  (** the assumption that the base is at least 2 is missing 
-      but stated in the quoted obligation **)
-  apply (cut_tac 
-        Integer__toMinLittleEndian__1__obligation_refine_def_Obligation_subtype,
-        simp add: Integer__toBigEndian__1_def Integer__toMinBigEndian_def 
-                  LeastM_def,
-        frule_tac base=x1 and x=x0 in Integer__toMinBigEndian_exists)
+  apply (simp add: Integer__toBigEndian__1_def Integer__toMinBigEndian_def 
+                   LeastM_def,
+        frule_tac base=base and x=x in Integer__toMinBigEndian_exists)
   apply (rule someI2_ex, simp, thin_tac "\<exists>a. ?P a", auto)
   apply (simp add: Integer__toBigEndian_def)
   apply (rule the1_equality,
