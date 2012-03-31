@@ -48,7 +48,10 @@ end-proof
 %%TODO does the simp del below also apply to files that import this file?
 proof isa -verbatim
 
+(* are these the same? *)
 declare Nat__digitToString_injective [simp del]
+declare SW_String.Nat__digitToString_injective [simp del]
+
 
 
 theorem nat_less256 [simp]:
@@ -166,6 +169,7 @@ theorem not_empty_from_length [simp]:
   apply(auto)
 done
 
+(* see Int.int_int_eq and Nat_Transfer.transfer_int_nat_relations*)
 theorem int_injective:
   "(int n = int m) = (m = n)"
   apply auto
@@ -314,6 +318,12 @@ theorem length_zeroExtend [simp]:
   done
 
 
+theorem length_signExtend [simp]:
+  "\<lbrakk> n \<ge> length bs\<rbrakk> \<Longrightarrow> length (TwosComplement__signExtend(bs, (n::nat))) = n"
+  apply(simp add: TwosComplement__signExtend_def List__extendLeft_def)
+  done
+	
+
 theorem mod_of_toInt65536 [simp]:
   "\<lbrakk> length bs = 16 \<rbrakk> \<Longrightarrow> 
    (TwosComplement__toInt bs) mod (65536\<Colon>int) = int (toNat bs)"
@@ -339,12 +349,73 @@ theorem mod_of_toInt340282366920938463463374607431768211456 [simp]:
   done
 
 theorem toBits_toNat_extend: 
-  "\<lbrakk>length bs > 0 ; length bs < 16\<rbrakk> \<Longrightarrow> toBits (toNat bs, 16) = Bits__zeroExtend (bs, 16)"
+  "\<lbrakk>length bs > 0 ; length bs < len\<rbrakk> \<Longrightarrow> toBits (toNat bs, len) = Bits__zeroExtend (bs, len)"
   apply(simp add:Bits__zeroExtend_def List__extendLeft_def)
-  apply(cut_tac k="16 - length bs" and bs=bs in Bits__extendLeft_toNat_B0, force)
-  apply(cut_tac bs="(replicate (16 - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
+  apply(cut_tac k="len - length bs" and bs=bs in Bits__extendLeft_toNat_B0, force)
+  apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
   apply(simp)
   done
+
+(* rename *)
+
+lemma Bits__extendLeft_toNat_B1_new: 
+  "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
+   \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
+  apply (simp add: TwosComplement__toInt_def)
+
+
+
+theorem toBits_toNat_extend: 
+  "\<lbrakk>length bs > 0 ; length bs < len ; hd bs = B1\<rbrakk> \<Longrightarrow> toBits (nat (TwosComplement__toInt bs mod 65536), 16) = TwosComplement__signExtend (bs, len)"
+  apply(simp add:TwosComplement__signExtend_def List__extendLeft_def)
+  apply(cut_tac k="len - length bs" and bs=bs in Bits__extendLeft_toNat_B1_new, force)
+  apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
+  apply(simp)
+  done
+
+
+theorem move_negated_addend:
+  "((a::int) - b = c) = (a = b + c)"
+  by(arith)
+
+theorem move_negated_addend_2:
+  "((a::int) = b - c) = (a + c = b)"
+  by(arith)
+
+theorem move_negated_addend_3:
+  "((a::int) - b + d = c) = (a + d = b + c)"
+  by(arith)
+
+
+theorem zadd_int_back:
+  "int (a + b) = int a + int b"
+  by auto
+
+(* drop a hyp? or allow    0 < k  OR   bs = B1 *)
+lemma toInt_replicate: 
+  "\<lbrakk>bs \<noteq> []; 0 < k; hd bs = B1 \<rbrakk>
+   \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
+  apply (simp add: TwosComplement__toInt_def TwosComplement__nonNegative_p_alt_def TwosComplement__sign_def List.hd_append)
+  apply(cut_tac bs=bs and k=k in Bits__extendLeft_toNat_B1, force, force)
+  apply(simp add: move_negated_addend move_negated_addend_2 move_negated_addend_3)
+  apply(cut_tac m="toNat (replicate k B1 @ bs) + 2 ^ length bs" and n="toNat bs + 2 ^ (k + length bs)" in int_injective)
+  by (metis convert_to_nat_2 int_power number_of_int number_of_is_id  zadd_commute zadd_int_back zero_power2)
+
+theorem nonNegative_p_replicate_B1:
+  "\<lbrakk> hd bs = B1 \<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p (replicate k B1 @ bs) = False"
+  apply(simp add: TwosComplement__nonNegative_p_def TwosComplement__negative_p_def TwosComplement__sign_def  List.hd_append) 
+  done
+
+theorem toBits_toInt_extend: 
+  "\<lbrakk>length bs > 0 ; length bs < len ; hd bs = B1\<rbrakk> \<Longrightarrow> toBits (nat (TwosComplement__toInt bs mod (2 ^ len)), len) = TwosComplement__signExtend (bs, len)"
+  apply(simp add:TwosComplement__signExtend_def List__extendLeft_def TwosComplement__sign_def) 
+  apply(cut_tac k="len - length bs" and bs=bs in toInt_replicate, force)
+  apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force, force, force)
+  apply(simp add: TwosComplement__toInt_def)
+  apply(case_tac "TwosComplement__nonNegative_p bs")
+  apply(simp_all)
+  done
+
 
 
 end-proof %%end large verbatim block

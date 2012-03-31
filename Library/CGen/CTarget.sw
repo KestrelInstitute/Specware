@@ -1330,123 +1330,128 @@ theorem sllongOfUllong_bits is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUllong (ullong bs) = sllong bs
 
-(* Converting from a signed or unsigned integer type to an unsigned integer type
-of higher rank amounts to zero-extending the bits. *)
+(* Converting from an unsigned integer type to an unsigned integer type
+of higher rank amounts to zero-extending the bits. 
+*)
 
-refine def ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort = ushort (bits(i,16))
+refine def ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort = ushort (bits(i,short_bits))
+refine def uintOfMathInt   (i:Int | i in? rangeOfUint  ) : Uint   = uint (bits(i,int_bits))
+refine def ulongOfMathInt  (i:Int | i in? rangeOfUlong ) : Ulong  = ulong (bits(i,long_bits))
+refine def ullongOfMathInt (i:Int | i in? rangeOfUllong) : Ullong = ullong (bits(i,llong_bits))
 
-proof isa C__ushortOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ushortOfMathInt x0)" and y="C__Ushort__ushort (toBits(nat x0,16::nat))" in C__mathIntOfUshort_injective, force)
-  apply(simp add: Bits__bits_length)
-  apply(simp)
-  apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2 C__ushortOfMathInt__1_def)
-end-proof
-
-%TODO move up and use more
-%TODO kill if the refine def works
-proof isa -verbatim
-theorem C__ushortOfMathInt_alt_def: 
-  "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
-   (C__ushortOfMathInt i) = C__Ushort__ushort (toBits(nat i,16::nat))"
-  apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i,16::nat))" in C__mathIntOfUshort_injective)
-  apply(simp add: Bits__bits_length)
-  apply(simp)
-  apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2)
-  done
-end-proof
+%% %TODO move up and use more
+%% %TODO kill use the refine def instead
+%% proof isa -verbatim
+%% theorem C__ushortOfMathInt_alt_def: 
+%%   "\<lbrakk>i \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow> 
+%%    (C__ushortOfMathInt i) = C__Ushort__ushort (toBits(nat i,16::nat))"
+%%   apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i,16::nat))" in C__mathIntOfUshort_injective)
+%%   apply(simp add: Bits__bits_length)
+%%   apply(simp)
+%%   apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2)
+%%   done
+%% end-proof
 
 theorem ushortOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ushortOfUchar (uchar bs) = ushort (zeroExtend (bs, short_bits))
 
-%%TODO not sure about this one
-theorem ushortOfSchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ushortOfSchar (schar bs) = ushort (zeroExtend (bs, short_bits))
-
-theorem ushortOfChar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ushortOfChar (char bs) = ushort (zeroExtend (bs, short_bits))
-
 theorem uintOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     uintOfUchar (uchar bs) = uint (zeroExtend (bs, int_bits))
-
-theorem uintOfSchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    uintOfSchar (schar bs) = uint (zeroExtend (bs, int_bits))
-
-theorem uintOfChar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    uintOfChar (char bs) = uint (zeroExtend (bs, int_bits))
 
 theorem uintOfUshort_bits is
   fa(bs:Bits) length bs = short_bits =>
     uintOfUshort (ushort bs) = uint (zeroExtend (bs, int_bits))
 
-theorem uintOfSshort_bits is
-  fa(bs:Bits) length bs = short_bits =>
-    uintOfSshort (sshort bs) = uint (zeroExtend (bs, int_bits))
-
 theorem ulongOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ulongOfUchar (uchar bs) = ulong (zeroExtend (bs, long_bits))
-
-theorem ulongOfSchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ulongOfSchar (schar bs) = ulong (zeroExtend (bs, long_bits))
-
-theorem ulongOfChar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ulongOfChar (char bs) = ulong (zeroExtend (bs, long_bits))
 
 theorem ulongOfUshort_bits is
   fa(bs:Bits) length bs = short_bits =>
     ulongOfUshort (ushort bs) = ulong (zeroExtend (bs, long_bits))
 
-theorem ulongOfSshort_bits is
-  fa(bs:Bits) length bs = short_bits =>
-    ulongOfSshort (sshort bs) = ulong (zeroExtend (bs, long_bits))
-
 theorem ulongOfUint_bits is
   fa(bs:Bits) length bs = int_bits =>
     ulongOfUint (uint bs) = ulong (zeroExtend (bs, long_bits))
-
-theorem ulongOfSint_bits is
-  fa(bs:Bits) length bs = int_bits =>
-    ulongOfSint (sint bs) = ulong (zeroExtend (bs, long_bits))
 
 theorem ullongOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     ullongOfUchar (uchar bs) = ullong (zeroExtend (bs, llong_bits))
 
-theorem ullongOfSchar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ullongOfSchar (schar bs) = ullong (zeroExtend (bs, llong_bits))
-
-theorem ullongOfChar_bits is
-  fa(bs:Bits) length bs = CHAR_BIT =>
-    ullongOfChar (char bs) = ullong (zeroExtend (bs, llong_bits))
-
 theorem ullongOfUshort_bits is
   fa(bs:Bits) length bs = short_bits =>
     ullongOfUshort (ushort bs) = ullong (zeroExtend (bs, llong_bits))
-
-theorem ullongOfSshort_bits is
-  fa(bs:Bits) length bs = short_bits =>
-    ullongOfSshort (sshort bs) = ullong (zeroExtend (bs, llong_bits))
 
 theorem ullongOfUint_bits is
   fa(bs:Bits) length bs = int_bits =>
     ullongOfUint (uint bs) = ullong (zeroExtend (bs, llong_bits))
 
-theorem ullongOfSint_bits is
-  fa(bs:Bits) length bs = int_bits =>
-    ullongOfSint (sint bs) = ullong (zeroExtend (bs, llong_bits))
-
 theorem ullongOfUlong_bits is
   fa(bs:Bits) length bs = long_bits =>
     ullongOfUlong (ulong bs) = ullong (zeroExtend (bs, llong_bits))
+
+(*
+Converting from a signed integer type to an unsigned integer type
+of higher rank amounts to sign-extending the bits. 
+*)
+
+
+theorem ushortOfSchar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ushortOfSchar (schar bs) = ushort (signExtend (bs, short_bits))
+
+theorem uintOfSchar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    uintOfSchar (schar bs) = uint (signExtend (bs, int_bits))
+
+theorem ulongOfSchar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ulongOfSchar (schar bs) = ulong (signExtend (bs, long_bits))
+
+theorem ullongOfSchar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ullongOfSchar (schar bs) = ullong (signExtend (bs, llong_bits))
+
+
+
+
+theorem ushortOfChar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ushortOfChar (char bs) = ushort (zeroExtend (bs, short_bits))
+
+theorem uintOfChar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    uintOfChar (char bs) = uint (zeroExtend (bs, int_bits))
+
+theorem uintOfSshort_bits is
+  fa(bs:Bits) length bs = short_bits =>
+    uintOfSshort (sshort bs) = uint (zeroExtend (bs, int_bits))
+
+theorem ulongOfChar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ulongOfChar (char bs) = ulong (zeroExtend (bs, long_bits))
+
+theorem ulongOfSshort_bits is
+  fa(bs:Bits) length bs = short_bits =>
+    ulongOfSshort (sshort bs) = ulong (zeroExtend (bs, long_bits))
+
+theorem ulongOfSint_bits is
+  fa(bs:Bits) length bs = int_bits =>
+    ulongOfSint (sint bs) = ulong (zeroExtend (bs, long_bits))
+
+theorem ullongOfChar_bits is
+  fa(bs:Bits) length bs = CHAR_BIT =>
+    ullongOfChar (char bs) = ullong (zeroExtend (bs, llong_bits))
+
+theorem ullongOfSshort_bits is
+  fa(bs:Bits) length bs = short_bits =>
+    ullongOfSshort (sshort bs) = ullong (zeroExtend (bs, llong_bits))
+
+theorem ullongOfSint_bits is
+  fa(bs:Bits) length bs = int_bits =>
+    ullongOfSint (sint bs) = ullong (zeroExtend (bs, llong_bits))
 
 theorem ullongOfSlong_bits is
   fa(bs:Bits) length bs = long_bits =>
@@ -2818,18 +2823,6 @@ proof isa ucharOfMathInt_mathIntOfUchar_Obligation_subtype
   by (rule C__uchar_range)
 end-proof
 
-proof isa uintOfMathInt_mathIntOfUint_Obligation_subtype
-  by (rule C__uint_range)
-end-proof
-
-proof isa ulongOfMathInt_mathIntOfUlong_Obligation_subtype
-  by (rule C__ulong_range)
-end-proof
-
-proof isa ullongOfMathInt_mathIntOfUllong_Obligation_subtype
-  by (rule C__ullong_range)
-end-proof
-
 proof isa scharOfMathInt_mathIntOfSchar_Obligation_subtype
   by (rule C__schar_range)
 end-proof
@@ -3482,15 +3475,88 @@ proof isa C__sllongOfUllong_bits
   apply(rule not_negative_from_bound_gen, force, force)
 end-proof  
 
-proof isa  
-  apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt_alt_def)
+
+proof isa C__ushortOfUchar_bits 
+  apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
 end-proof  
 
-proof isa C__ushortOfUchar_bits 
-  apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt_alt_def)
+proof isa C__uintOfUchar_bits 
+  apply(simp add: C__uintOfUchar_def C__uintOfMathInt__1__obligation_refine_def C__uintOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
 end-proof  
+
+proof isa C__ulongOfUchar_bits 
+  apply(simp add: C__ulongOfUchar_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ullongOfUchar_bits 
+  apply(simp add: C__ullongOfUchar_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+
+proof isa C__uintOfUshort_bits 
+  apply(simp add: C__uintOfUshort_def C__uintOfMathInt__1__obligation_refine_def C__uintOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ulongOfUshort_bits 
+  apply(simp add: C__ulongOfUshort_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ullongOfUshort_bits 
+  apply(simp add: C__ullongOfUshort_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+
+proof isa C__ulongOfUint_bits 
+  apply(simp add: C__ulongOfUint_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ullongOfUint_bits 
+  apply(simp add: C__ullongOfUint_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+proof isa C__ullongOfUlong_bits 
+  apply(simp add: C__ullongOfUlong_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
+  apply(rule toBits_toNat_extend, force, force)
+end-proof  
+
+%%%
+
+proof isa C__ushortOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__ushortOfMathInt x0)" and y="C__Ushort__ushort (toBits(nat x0, C__short_bits))" in C__mathIntOfUshort_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUshort_injective add:C__mathIntOfUshort_ushortOfMathInt_2 C__ushortOfMathInt__1_def)
+end-proof
+
+proof isa C__uintOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__uintOfMathInt x0)" and y="C__Uint__uint (toBits(nat x0, C__int_bits))" in C__mathIntOfUint_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUint_injective add:C__mathIntOfUint_uintOfMathInt_2 C__uintOfMathInt__1_def)
+end-proof
+
+proof isa C__ulongOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__ulongOfMathInt x0)" and y="C__Ulong__ulong (toBits(nat x0, C__long_bits))" in C__mathIntOfUlong_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUlong_injective add:C__mathIntOfUlong_ulongOfMathInt_2 C__ulongOfMathInt__1_def)
+end-proof
+
+proof isa C__ullongOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__ullongOfMathInt x0)" and y="C__Ullong__ullong (toBits(nat x0, C__llong_bits))" in C__mathIntOfUllong_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUllong_injective add:C__mathIntOfUllong_ullongOfMathInt_2 C__ullongOfMathInt__1_def)
+end-proof
 
 endspec
 
