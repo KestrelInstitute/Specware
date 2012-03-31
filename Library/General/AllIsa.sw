@@ -1,8 +1,6 @@
 spec
 
-%%Note:
-
-%% This spec imports all specs in this library for which we can generate Isabelle files.
+%% Note: This spec imports all specs in this library for which we can generate Isabelle files.
 
 import Order
 import FiniteMap
@@ -39,5 +37,14 @@ import FunctionExt
 
 import Bit
 import BitList
+
+%% these do not contain proofs yet:
+%% import Rational
+%% import Real
+
+%% Proofs for these three do not currently work:
+%% import Stream
+%% import Sequence
+%% import TimedTrace
 
 endspec

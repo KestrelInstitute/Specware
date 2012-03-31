@@ -29,4 +29,9 @@ import FiniteMapAsFiniteSetMorphism
 import Bit
 import BitList
 
+import Rational
+import Real
+import Sequence
+import Stream
+import TimedTrace
 endspec
