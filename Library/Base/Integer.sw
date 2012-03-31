@@ -132,7 +132,7 @@ op Integer.+ infixl 25 : Int * Int -> Int = the(plus)
   (fa(i,j) positive? i => plus (i,    j) = isucc (plus (ipred i, j))) &&
   (fa(i,j) negative? i => plus (i,    j) = ipred (plus (isucc i, j)))
 
-op Nat.+ infixl 25 : Nat * Nat -> Nat = Integer.+
+%op Nat.+ infixl 25 : Nat * Nat -> Nat = Integer.+
 
 % subtraction:
 
@@ -145,7 +145,7 @@ op Integer.* infixl 27 : Int * Int -> Int = the(times)
   (fa(i,j) positive? i => times (i,    j) = times (ipred i, j) + j) &&
   (fa(i,j) negative? i => times (i,    j) = times (isucc i, j) - j)
 
-op Nat.* infixl 27 : Nat * Nat -> Nat = Integer.*
+%op Nat.* infixl 27 : Nat * Nat -> Nat = Integer.*
 
 % relational operators:
 
