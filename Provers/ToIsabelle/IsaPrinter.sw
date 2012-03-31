@@ -385,17 +385,31 @@ IsaTermPrinter qualifying spec
               id, id)
        dfn)
 
+  op getArgVarsAndConstraints(spc: Spec, ty: MSType, v_name: Id): MSTerm * MSTerms =
+    case ty of
+      | Subtype(s_ty, Lambda ([(pat, _, pred)], _), _) ->
+        let (tm, conds, _) = patternToTermPlusExConds pat in
+        (tm, conds ++ getConjuncts pred)
+      | Subtype(s_ty, pred, _) ->
+        let (tm, preds) = getArgVarsAndConstraints(spc, s_ty, v_name) in
+        (tm, mkApply(pred, tm) :: preds)
+      | _ ->
+        let arg_tys = productTypes(spc, ty) in
+        let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
+        (mkTuple vs, [])
+
   op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, spc: Spec): MSTerm =
-    let def mk_equality(ty, t1, t2, v_names) =
+    let def mk_equality(ty, t1, t2, preds, v_names) =
           case arrowOpt(spc, ty) of
             | Some(dom, rng) | v_names ~= [] ->
               let v_name :: v_names = v_names in
-              let arg_tys = productTypes(spc, dom) in
-              let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
-              mk_equality(rng, mkAppl(t1, vs), mkAppl(t2, vs), v_names)
-            | _ -> mkEquality(ty, t1, t2)
+              let (vs, new_preds) = getArgVarsAndConstraints(spc, dom, v_name) in
+              % let arg_tys = productTypes(spc, dom) in
+              % let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
+              mk_equality(rng, mkApply(t1, vs), mkApply(t2, vs), preds ++ new_preds, v_names)
+            | _ -> mkSimpImplies(mkSimpConj preds, mkEquality(ty, t1, t2))
     in
-    let equality = mk_equality(ty, t1, t2, ["x", "y", "z"]) in
+    let equality = mk_equality(ty, t1, t2, [], ["x", "y", "z"]) in
     case freeVars equality of
       | [] -> equality
       | fvs -> mkBind(Forall, fvs, equality)
@@ -410,6 +424,7 @@ IsaTermPrinter qualifying spec
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
                      let (tvs, ty, full_dfn) = unpackTerm opinfo.dfn in
+                     % let _ = writeLine("addRefineObligations: "^show mainId^": "^printType ty^"\n"^printTerm full_dfn) in
                      let dfn = refinedTerm(full_dfn, refine_num) in
                      let (new_names, new_dfn) = renameRefinedDef(opinfo.names, dfn, refine_num) in
                      let full_dfn = replaceNthTerm(full_dfn, refine_num, new_dfn) in
