@@ -579,24 +579,16 @@ op jacobiSymbol (a:PosNat, n:PosNat | odd? n)
   %% The (1: Int) is to stop the type-checker from inferring Nat as the type of the foldl
   foldl ( * ) (1: Int) (map (fn f: (PrimeNat | odd?) -> legendreSymbol (a, f)) factors)
 
-%% NOTE: An upcoming change to the obligation generator might cause two obligations to again be generated for jacobiSymbol, in which case, consider replacing this proof with the two proofs commented out below. -EWS 3/26/12
 proof Isa jacobiSymbol_Obligation_subtype
+  by (frule Integer__primeFactorsOf_odd, auto)
+end-proof
+
+proof Isa jacobiSymbol_Obligation_subtype0
   apply (drule_tac a=a and factors="Integer__primeFactorsOf n" 
          in Integer__jacobiSymbol_Obligation_subtype0_aux)
   apply (simp add:  primes_iff, rule Integer__primeFactorsOf_primel, auto)
   apply (simp add: Integer__primeFactorsOf_odd)
 end-proof
-
-%% proof Isa jacobiSymbol_Obligation_subtype
-%%   by (frule Integer__primeFactorsOf_odd, auto)
-%% end-proof
-
-%% proof Isa jacobiSymbol_Obligation_subtype0
-%%   apply (drule_tac a=a and factors="Integer__primeFactorsOf n" 
-%%          in Integer__jacobiSymbol_Obligation_subtype0_aux)
-%%   apply (simp add:  primes_iff, rule Integer__primeFactorsOf_primel, auto)
-%%   apply (simp add: Integer__primeFactorsOf_odd)
-%% end-proof
 
 % min/max(imizers) (should be factored in a more general spec for orders):
 

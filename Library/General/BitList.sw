@@ -668,72 +668,45 @@ end-proof
 
 % ----------------------------------------
 
-
-%% If the obligations change, consider replacing this with the two proofs commented out just below. -EWS
 proof Isa minNibbles_Obligation_subtype
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+end-proof
+
+proof Isa minNibbles_Obligation_subtype0
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-%% proof Isa minNibbles_Obligation_subtype
-%%   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-%% end-proof
-
-%% proof Isa minNibbles_Obligation_subtype0
-%%   by (simp add: Integer__toMinBigEndian_nonnil)
-%% end-proof
-
-%% If the obligations change, consider replacing this with the two proofs commented out just below. -EWS
 proof Isa minBytes_Obligation_subtype
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+end-proof
+
+proof Isa minBytes_Obligation_subtype0
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-%% proof Isa minBytes_Obligation_subtype
-%%   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-%% end-proof
-
-%% proof Isa minBytes_Obligation_subtype0
-%%   by (simp add: Integer__toMinBigEndian_nonnil)
-%% end-proof
-
-%% If the obligations change, consider replacing this with the two proofs commented out just below. -EWS
 proof Isa minWord16s_Obligation_subtype
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+end-proof
+
+proof Isa minWord16s_Obligation_subtype0
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-%% proof Isa minWord16s_Obligation_subtype
-%%   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-%% end-proof
-
-%% proof Isa minWord16s_Obligation_subtype0
-%%   by (simp add: Integer__toMinBigEndian_nonnil)
-%% end-proof
-
-%% If the obligations change, consider replacing this with the two proofs commented out just below. -EWS
 proof Isa minWord32s_Obligation_subtype
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+end-proof
+
+proof Isa minWord32s_Obligation_subtype0
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-%% proof Isa minWord32s_Obligation_subtype
-%%   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-%% end-proof
-
-%% proof Isa minWord32s_Obligation_subtype0
-%%   by (simp add: Integer__toMinBigEndian_nonnil)
-%% end-proof
-
-%% If the obligations change, consider replacing this with the two proofs commented out just below. -EWS
 proof Isa minWord64s_Obligation_subtype
-  by (simp add: Integer__toMinBigEndian_nonnil)
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
-%% proof Isa minWord64s_Obligation_subtype
-%%   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-%% end-proof
-
-%% proof Isa minWord64s_Obligation_subtype0
-%%   by (simp add: Integer__toMinBigEndian_nonnil)
-%% end-proof
-
+proof Isa minWord64s_Obligation_subtype0
+  by (simp add: Integer__toMinBigEndian_nonnil)
+end-proof
 
 % ------------------------------------------------------------------------------
 % ---------- Part 6: verbatim Isabelle lemmas             ----------------------
