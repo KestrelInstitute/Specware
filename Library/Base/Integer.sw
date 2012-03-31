@@ -132,8 +132,6 @@ op Integer.+ infixl 25 : Int * Int -> Int = the(plus)
   (fa(i,j) positive? i => plus (i,    j) = isucc (plus (ipred i, j))) &&
   (fa(i,j) negative? i => plus (i,    j) = ipred (plus (isucc i, j)))
 
-%op Nat.+ infixl 25 : Nat * Nat -> Nat = Integer.+
-
 % subtraction:
 
 op - (i:Int, j:Int) infixl 25 : Int = i + (- j)
@@ -144,8 +142,6 @@ op Integer.* infixl 27 : Int * Int -> Int = the(times)
   (fa(j)                  times (zero, j) = zero) &&
   (fa(i,j) positive? i => times (i,    j) = times (ipred i, j) + j) &&
   (fa(i,j) negative? i => times (i,    j) = times (isucc i, j) - j)
-
-%op Nat.* infixl 27 : Nat * Nat -> Nat = Integer.*
 
 % relational operators:
 
@@ -169,6 +165,10 @@ type Nat and some related operations used to belong to a separate Nat spec,
 which has now been merged into the Integer spec. *)
 
 type Nat.Nat = {i:Int | i >= 0}
+
+op Nat.+ infixl 25 : Nat * Nat -> Nat = Integer.+
+
+op Nat.* infixl 27 : Nat * Nat -> Nat = Integer.*
 
 % induction principle on natural numbers:
 

@@ -2,7 +2,7 @@ Pixel qualifying spec
 
 op mostPositiveFixnum : Nat                          % implementation dependent  (2**29 for SBCL)
 
-type RGB  a = {red: a, green: a, blue: a}            % in progress: there might not be a MetaSlang type that corresponds to the actual lisp structure
+type RGB  a = a * a * a                              % in progress: there might not be a MetaSlang type that corresponds to the actual lisp structure
 type RGBA a = {red: a, green: a, blue: a, alpha : a} % in progress: there might not be a MetaSlang type that corresponds to the actual lisp structure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

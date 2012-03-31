@@ -78,8 +78,16 @@
 
 (defun map-1-1 (f old)
   (let ((new (copy-image old)))
+    ;; (format t "~%before~%")
     (set-pixels (y x) new
-      (funcall f (pixel old y x)))
+      ;; (format t "~%y: ~S~%" y)
+      ;; (format t "~%x: ~S~%" x)
+      (let ((old-pixel (pixel* old y x)))
+        ;; (format t "~%old pixel: ~S~%" old-pixel)
+        (let ((new-pixel (funcall f old-pixel)))
+          ;; (format t "~%new pixel: ~S~%" new-pixel)
+          new-pixel)))
+    ;; (format t "~%after~%")
     new))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
