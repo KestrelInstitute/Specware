@@ -297,6 +297,12 @@ theorem mod_does_nothing_rewrite [simp]:
   apply(arith)
   done
 
+theorem mod_does_nothing_rewrite_alt [simp]:
+  "\<lbrakk> x \<ge> 0 ; y > 0\<rbrakk> \<Longrightarrow> (x = (x::int) mod y) = (x < y)"
+  apply(cut_tac x=x and y=y in mod_does_nothing_rewrite)
+  apply(auto simp del:mod_does_nothing_rewrite)
+  done
+
 
 theorem not_negative_from_bound_gen_helper:
   "\<lbrakk>length bs > 1 ; toNat bs < 2 ^ ((length bs) - 1)\<rbrakk> \<Longrightarrow> hd bs = B0"
@@ -349,7 +355,7 @@ theorem mod_of_toInt340282366920938463463374607431768211456 [simp]:
   done
 
 theorem toBits_toNat_extend: 
-  "\<lbrakk>length bs > 0 ; length bs < len\<rbrakk> \<Longrightarrow> toBits (toNat bs, len) = Bits__zeroExtend (bs, len)"
+  "\<lbrakk>length bs > 0 ; length bs <= len\<rbrakk> \<Longrightarrow> toBits (toNat bs, len) = Bits__zeroExtend (bs, len)"
   apply(simp add:Bits__zeroExtend_def List__extendLeft_def)
   apply(cut_tac k="len - length bs" and bs=bs in Bits__extendLeft_toNat_B0, force)
   apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
@@ -358,10 +364,10 @@ theorem toBits_toNat_extend:
 
 (* rename *)
 
-lemma Bits__extendLeft_toNat_B1_new: 
-  "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
-   \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
-  apply (simp add: TwosComplement__toInt_def)
+(* lemma Bits__extendLeft_toNat_B1_new: 
+   "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
+    \<Longrightarrow>  TwosComplement__toInt (replicate k B1 @ bs) = TwosComplement__toInt bs"
+   apply (simp add: TwosComplement__toInt_def)
 
 
 
@@ -372,7 +378,7 @@ theorem toBits_toNat_extend:
   apply(cut_tac bs="(replicate (len - length bs) B0 @ bs)" in Bits__inverse_bits_toNat, force)
   apply(simp)
   done
-
+*)
 
 theorem move_negated_addend:
   "((a::int) - b = c) = (a = b + c)"
@@ -401,6 +407,8 @@ lemma toInt_replicate:
   apply(cut_tac m="toNat (replicate k B1 @ bs) + 2 ^ length bs" and n="toNat bs + 2 ^ (k + length bs)" in int_injective)
   by (metis convert_to_nat_2 int_power number_of_int number_of_is_id  zadd_commute zadd_int_back zero_power2)
 
+
+(*
 theorem nonNegative_p_replicate_B1:
   "\<lbrakk> hd bs = B1 \<rbrakk> \<Longrightarrow> TwosComplement__nonNegative_p (replicate k B1 @ bs) = False"
   apply(simp add: TwosComplement__nonNegative_p_def TwosComplement__negative_p_def TwosComplement__sign_def  List.hd_append) 
@@ -415,10 +423,102 @@ theorem toBits_toInt_extend:
   apply(case_tac "TwosComplement__nonNegative_p bs")
   apply(simp_all)
   done
+*)
 
+
+
+
+theorem extendLeft_equal_extendLeft [simp]:
+ "\<lbrakk> length lst1 = length lst2 ; length lst1 \<le> len \<rbrakk> \<Longrightarrow> 
+    ((List__extendLeft (lst1, val1, len) = List__extendLeft (lst2, val2, len))) = 
+     ((lst1 = lst2) & (if (length lst1 = len) then True else (val1 = val2)))"
+  apply(auto simp add: List__extendLeft_def)
+  done
+
+
+theorem zeroextend_equal_signextend [simp]:
+  "\<lbrakk> length bs \<le> len \<rbrakk> \<Longrightarrow> 
+  Bits__zeroExtend (bs, len) = TwosComplement__signExtend (bs, len) = (if (length bs = len) then True else TwosComplement__sign bs = B0)"
+  apply(auto simp add: TwosComplement__signExtend_def Bits__zeroExtend_def)
+  done
+
+theorem toBits_move:
+  "\<lbrakk> x < 2 *** len ; len > 0\<rbrakk> \<Longrightarrow> (toBits (x, len) = y) = ((x = toNat y) & (length y = len))"
+  apply(cut_tac n=x and len=len in Bits__inverse_toNat_bits, force, force)
+  apply(auto simp del: Bits__inverse_toNat_bits)
+  done
+
+theorem toNat__replicate_B1: 
+  "\<lbrakk>bs \<noteq> []; hd bs = B1\<rbrakk>
+   \<Longrightarrow>  toNat (replicate k B1 @ bs)  =
+       toNat bs + 2 ^ (k + length bs) - 2 ^ length bs"
+  apply(cut_tac bs=bs and k=k in Bits__extendLeft_toNat_B1, force, force)
+  apply(simp)
+  done
+
+theorem minus_plus_hack_for_nats [simp]:
+  " \<lbrakk> x \<ge> y\<rbrakk> \<Longrightarrow> (x::nat) - y + y = x"
+  by(arith)
+
+theorem toNat__signExtend_when_negative:
+  "\<lbrakk>bs \<noteq> []; hd bs = B1 ; len \<ge> length bs\<rbrakk>
+   \<Longrightarrow>  toNat (TwosComplement__signExtend(bs, len))  =
+       toNat bs + 2 *** len - 2 ^ length bs"
+  apply(cut_tac bs=bs and k="(len - length bs)" in toNat__replicate_B1, force, force)
+  apply(simp add: TwosComplement__signExtend_def List__extendLeft_def)
+  apply(simp add: TwosComplement__sign_def)
+  done
+
+theorem nat_move:
+  "\<lbrakk> x >= 0\<rbrakk> \<Longrightarrow> ((nat x = y) = (x = int y))"
+  apply(auto)
+  done
+
+theorem mod_known:
+ "[| y \<ge> (0::int) ;y < m ;  x mod m = y mod m |]  ==> x mod m = y"
+  apply(auto)
+  done
+
+theorem mod_same_lemma:
+  "\<lbrakk> ((x - y) mod m) = (0::int) \<rbrakk> \<Longrightarrow> (x mod m = y mod m)"
+  apply(auto simp add: move_negated_addend)
+  done
+
+
+theorem le_trans:
+  "\<lbrakk> (a::int) \<le> b ; b \<le> c\<rbrakk> \<Longrightarrow> a \<le> c"
+  by auto
+
+
+theorem int_move_le:
+  "\<lbrakk> y >= 0\<rbrakk> \<Longrightarrow> ((int x \<le> y) = (x \<le> nat y))"
+  apply(auto)
+  done
 
 
 end-proof %%end large verbatim block
+
+refine def tcNumber (i:Int, len:PosNat | i in? rangeForLength len) : TCNumber =
+  bits(i mod 2 ** len, len)
+
+proof isa TwosComplement__tcNumber__1__obligation_refine_def
+  apply(simp add: TwosComplement__tcNumber__1_def)
+  apply(case_tac "i \<ge> 0")
+  apply(simp add: TwosComplement_TC_toBits_pos2)
+  apply(simp add: TwosComplement__rangeForLength_def mem_def TwosComplement__maxForLength_def nat_injective)
+  apply(simp add: TwosComplement_TC_toBits_neg TwosComplement__rangeForLength_def mem_def TwosComplement__minForLength_def)
+  apply(cut_tac m = "(i mod 2 ^ len)" and n="(i + 2 ^ len)" in nat_injective)
+  defer 1
+  apply(force)
+  apply(cut_tac x=i and m="2 ^ len" and y = "i + 2 ^ len" in mod_known)
+  apply(auto)
+  apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+  apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+  apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+end-proof
 
 
 endspec
