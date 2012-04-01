@@ -92,17 +92,17 @@ TypeChecker qualifying spec
         let _ = if debug? then writeLine "**elaborate_local_op_types" else () in
 	mapOpInfos (fn info ->
 		    if someOpAliasIsLocal? (info.names, given_spec) then
-		      let def elaborate_srt dfn =
+		      let def elaborate_ty dfn =
 		            let pos = termAnn dfn in
-			    let (tvs, srt, tm) = unpackTerm dfn in
+			    let (tvs, ty, tm) = unpackTerm dfn in
 			    let _ = checkTyVars (env, tvs, pos) in
                             let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-			    let srt1 = checkType (env_s, srt) in
-                            let _ = if debug? then writeLine("elos "^show(head info.names)^": "^printType srt^"\n -->\n"^printType srt1) else () in
+			    let ty1 = checkType (env_s, ty) in
+                            let _ = if debug? then writeLine("elos "^show(head info.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
                             % let _ = writeLine(printTermWithTypes tm^"\n") in
-			    maybePiTerm (tvs, TypedTerm (tm, srt1, pos))
+			    maybePiTerm (tvs, TypedTerm (tm, ty1, pos))
 		      in
-			let new_defs = map elaborate_srt (opInfoAllDefs info) in
+			let new_defs = map elaborate_ty (opInfoAllDefs info) in
 			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
 			let new_info = info << {dfn = new_dfn} in
 			new_info
@@ -118,9 +118,9 @@ TypeChecker qualifying spec
 		      if someTypeAliasIsLocal? (info.names, given_spec) then
 			let
                           def elaborate_dfn dfn =
-			    let (tvs, srt) = unpackType dfn in
+			    let (tvs, ty) = unpackType dfn in
 			    let _ = checkTyVars (env, tvs, typeAnn dfn) in
-			    maybePiType (tvs, checkType (env, srt))
+			    maybePiType (tvs, checkType (env, ty))
 			in
 			let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
 			let new_defs = map elaborate_dfn old_defs in
@@ -140,17 +140,17 @@ TypeChecker qualifying spec
 		 | Some info ->
 		   let def elaborate_dfn dfn =
 			 let pos = termAnn dfn in
-			 let (tvs, srt, tm) = unpackTerm dfn in
+			 let (tvs, ty, tm) = unpackTerm dfn in
 			 if poly? = (tvs ~= []) then
                            let _ = if debug? then writeLine("elaborate_local_ops:\n"^printTerm dfn) else () in
 			   let _ = checkTyVars (env, tvs, pos) in
                            let _ = if debug? then writeLine("1: "^show(head info.names)) else () in
                            let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
                            let _ = if debug? then writeLine("2: "^show(head info.names)) else () in
-                           let srt1 = checkType1 (env_s, srt, false) in
-                           let _ = if debug? then writeLine("elo "^show(head info.names)^": "^printType srt^"\n -->\n"^printType srt1) else () in
-			   let xx = single_pass_elaborate_term_top (env, tm, srt1) in
-			   maybePiTerm (tvs, TypedTerm (xx, srt1, pos))
+                           let ty1 = checkType (env_s, ty) in
+                           let _ = if debug? then writeLine("elo "^show(head info.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
+			   let xx = single_pass_elaborate_term_top (env, tm, ty1) in
+			   maybePiTerm (tvs, TypedTerm (xx, ty1, pos))
 			 else 
 			   dfn
 		   in
@@ -266,21 +266,24 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                    id)
       spc
 
-  def TypeChecker.checkType (env, srt) =
-    checkType1(env, srt, true)
+  def TypeChecker.checkType (env, ty) =
+    checkType1(env, ty, true)
 
-  op checkType1(env: LocalEnv, srt: MSType, checkTerms?: Bool): MSType =
+  op checkType0(env: LocalEnv, ty: MSType): MSType =
+    checkType1(env, ty, false)
+
+  op checkType1(env: LocalEnv, ty: MSType, checkTerms?: Bool): MSType =
     %% checkType calls single_pass_elaborate_term, which calls checkType
-    case srt of
+    case ty of
 
-      | TyVar _ -> srt
+      | TyVar _ -> ty
 
       | MetaTyVar (v, _) ->
         (case ! v of
 	   | {link = Some other_type, uniqueId, name} -> checkType1 (env, other_type, checkTerms?)
-	   | _ -> srt)
+	   | _ -> ty)
 
-      | Boolean _ -> srt
+      | Boolean _ -> ty
 
       | Base (given_type_qid, instance_types, pos) ->
 	let 
@@ -309,7 +312,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		    %%       candidate will be first in the list (see comments for findAllTypes),
 		    %%       in which case choose it.
 		    if ((empty? other_infos) || exists? (fn alias -> alias = given_type_qid) info.names) then
-		      let (tvs, srt) = unpackFirstTypeDef info in
+		      let (tvs, ty) = unpackFirstTypeDef info in
 		      if length tvs ~= length instance_types then
 			let found_type_str =
 			    (printAliases info.names)
@@ -347,7 +350,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		       instance_types
 	       in
 		 if given_type_qid = new_type_qid && instance_types = new_instance_types then 
-		   srt
+		   ty
 		 else 
 		   Base (new_type_qid, new_instance_types, pos))
 		
@@ -357,14 +360,14 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                        fields
 	in
 	if nfields = fields then 
-	  srt
+	  ty
 	else 
 	  CoProduct (nfields, pos)
 
       | Product (fields, pos) ->
 	let nfields = map (fn (id, s) -> (id, checkType1 (env, s, checkTerms?))) fields in
         if nfields = fields then 
-	  srt
+	  ty
 	else 
 	  Product (nfields, pos)
 
@@ -381,7 +384,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                               else given_relation
         in
 	if given_base_type = new_base_type && given_relation = new_relation then 
-	  srt
+	  ty
 	else 
 	  Quotient (new_base_type, new_relation, pos)
 
@@ -393,7 +396,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                               else given_predicate
         in
 	if given_super_type = new_super_type && given_predicate = new_predicate then 
-	  srt
+	  ty
 	else 
 	  Subtype (new_super_type, new_predicate, pos)
 
@@ -401,25 +404,25 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	let nt1 = checkType1 (env, t1, checkTerms?) in
 	let nt2 = checkType1 (env, t2, checkTerms?) in
 	if t1 = nt1 && t2 = nt2 then 
-	  srt
+	  ty
 	else 
 	  Arrow (nt1, nt2, pos)
 
-      | And (srts, pos) ->
-	let (new_srts, changed?) =  
-            foldl (fn ((new_srts, changed?), srt) ->
-		   let new_srt = checkType1 (env, srt, checkTerms?) in
-		   (new_srts ++ [new_srt],
-		    changed? || (new_srt ~= srt)))
+      | And (tys, pos) ->
+	let (new_tys, changed?) =  
+            foldl (fn ((new_tys, changed?), ty) ->
+		   let new_ty = checkType1 (env, ty, checkTerms?) in
+		   (new_tys ++ [new_ty],
+		    changed? || (new_ty ~= ty)))
 	          ([], false)
-		  srts
+		  tys
 	in
 	if changed? then
-	  maybeAndType (new_srts, pos)
+	  maybeAndType (new_tys, pos)
 	else
-	  srt
+	  ty
 
-      | Any _ -> srt
+      | Any _ -> ty
 
       | mystery -> 
         let _ = toScreen ("\ncheckType, Unrecognized type: " ^ (anyToString mystery) ^ "\n") in
@@ -429,8 +432,8 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   %% ---- called inside OPS : PASS 0  -----
   % ========================================================================
 
-  def undeterminedType? srt =
-    case unlinkType srt of
+  def undeterminedType? ty =
+    case unlinkType ty of
       | MetaTyVar _ -> true
       | _           -> false
 
@@ -443,14 +446,14 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   % ========================================================================
 
   %op TypeChecker.resolveMetaTyVar: MSType -> MSType % see TypeToTerm
-  def TypeChecker.resolveMetaTyVar (srt : MSType) : MSType =
-    case srt of
+  def TypeChecker.resolveMetaTyVar (ty : MSType) : MSType =
+    case ty of
       | MetaTyVar(tv,_) -> 
         let {name=_,uniqueId=_,link} = ! tv in
 	(case link
-	   of None -> srt
-	    | Some ssrt -> resolveMetaTyVar ssrt)
-      | _ -> srt
+	   of None -> ty
+	    | Some sty -> resolveMetaTyVar sty)
+      | _ -> ty
 
   op resolveMetaTyVars: MSTerm -> MSTerm
   def resolveMetaTyVars trm =
@@ -476,23 +479,23 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
        | Unspecified -> q_id_fixity.3
        | _           -> explicit_fixity)
 
-  def resolveNameFromType(env, trm, id, srt, pos) =
-    case mkEmbed0 (env, srt, id) of
-      | Some id -> Fun (Embed (id, false), checkType1 (env, srt, false), pos)
+  def resolveNameFromType(env, trm, id, ty, pos) =
+    case mkEmbed0 (env, ty, id) of
+      | Some id -> Fun (Embed (id, false), checkType0 (env, ty), pos)
       | None -> 
-    case mkEmbed1 (env, srt, trm, id, pos) of
+    case mkEmbed1 (env, ty, trm, id, pos) of
       | Some term -> term
       | None ->
     case uniqueConstr (env, trm, id, pos) of
       | Some term -> term
       | _ ->
     case StringMap.find (env.constrs, id) of
-      | None -> undeclaredName (env, trm, id, srt, pos)
-      | _    -> ambiguousCons (env, trm, id, srt, pos)
+      | None -> undeclaredName (env, trm, id, ty, pos)
+      | _    -> ambiguousCons (env, trm, id, ty, pos)
 
   op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): List MSTerm =
     case mkEmbed0 (env, ty, id) of
-      | Some id -> [Fun (Embed (id, false), checkType1 (env, ty, false), pos)]
+      | Some id -> [Fun (Embed (id, false), checkType0 (env, ty), pos)]
       | None -> 
     case mkEmbed1 (env, ty, trm, id, pos) of
       | Some term -> [term]
@@ -507,7 +510,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos: Position): Option MSTerm =
     case mkEmbed0 (env, ty, id) of
-      | Some id -> Some(Fun (Embed (id, false), checkType1 (env, ty, false), pos))
+      | Some id -> Some(Fun (Embed (id, false), checkType0 (env, ty), pos))
       | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
  def checkOp (info, env) =
@@ -534,15 +537,15 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
  def checkOpDef (dfn, info, env) =
    % let _ = writeLine("checkOpDef:\n"^printTermWithTypes dfn) in
    let pos = termAnn dfn in
-   let (tvs, srt, tm) = unpackTerm dfn in
+   let (tvs, ty, tm) = unpackTerm dfn in
    let _ = checkTyVars (env, tvs, pos) in
    let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-   let srt = checkType (env_s, srt) in
-   let elaborated_tm = single_pass_elaborate_term_top (env, tm, srt) in
+   let ty = checkType (env_s, ty) in
+   let elaborated_tm = single_pass_elaborate_term_top (env, tm, ty) in
    %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
-   let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
+   let tvs_used = collectUsedTyVars (ty, info, dfn, env) in
    let _ = if  false % allowDependentSubTypes?
-             then writeLine("chk: "^printTerm elaborated_tm^"\n"^printTypeWithTypes srt) else ()
+             then writeLine("chk: "^printTerm elaborated_tm^"\n"^printTypeWithTypes ty) else ()
    in
    let new_tvs =
        if empty? tvs then
@@ -556,27 +559,27 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		 termAnn dfn);
 	  tvs)
    in
-     maybePiTerm (new_tvs, TypedTerm (elaborated_tm, srt, pos))
+     maybePiTerm (new_tvs, TypedTerm (elaborated_tm, ty, pos))
 
  %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
  op complainAboutImplicitPolymorphicOps?: Bool = true
 
- op collectUsedTyVars (srt: MSType, info: OpInfo, dfn: MSTerm, env: LocalEnv): List TyVar =
+ op collectUsedTyVars (ty: MSType, info: OpInfo, dfn: MSTerm, env: LocalEnv): List TyVar =
    let tv_cell = Ref [] : Ref TyVars in
    let 
    
      def insert tv = 
        tv_cell := ListUtilities.insert (tv, ! tv_cell) 
 
-     def scan srt = 
-       case srt of
+     def scan ty = 
+       case ty of
 	 | TyVar     (tv,      _) -> insert tv
 	 | Product   (fields,  _) -> app (fn (_, s)      -> scan s)           fields
 	 | CoProduct (fields,  _) -> app (fn (_, Some s) -> scan s | _ -> ()) fields
 	 | Subtype   (s, _,    _) -> scan s
 	 | Quotient  (s, _,    _) -> scan s
 	 | Arrow     (s1, s2,  _) -> (scan s1; scan s2)
-	 | Base      (_, srts, _) -> app scan srts
+	 | Base      (_, tys, _) -> app scan tys
 	 | Boolean              _ -> ()
 	 | MetaTyVar (mtv,     _) -> 
 	   (let {name = _, uniqueId, link} = ! mtv in
@@ -585,14 +588,14 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	      | None ->
                 if complainAboutImplicitPolymorphicOps? then
 	        error (env, 
-		       "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printType srt), 
+		       "Incomplete type for op " ^ (printQualifiedId (primaryOpName info)) ^ ":\n" ^(printType ty), 
 		       termAnn dfn)
                 else ())
-	 | And (srts, _) -> app scan srts
+	 | And (tys, _) -> app scan tys
 	 | Any _ -> ()
 
    in                        
-     let _ = scan srt in
+     let _ = scan ty in
      ! tv_cell
 
   op checkForUnboundMetaTyVars(tm: MSTerm, env: LocalEnv): () =
@@ -639,48 +642,48 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     let _ = if debug? then writeLine("tc"^(if env.firstPass? then "1: " else "2: ")^printType term_type^"\n"^printTerm trm) else () in
     let typed_term =
           case trm of
-            | Fun (OneName (id, fixity), srt, pos) ->
-              (let _ = elaborateCheckTypeForTerm (env, trm, srt, term_type) in 
+            | Fun (OneName (id, fixity), ty, pos) ->
+              (let _ = elaborateCheckTypeForTerm (env, trm, ty, term_type) in 
                %% resolve type from environment
-               % let _ = writeLine("Trying to resolve name "^id^": "^printType srt) in
+               % let _ = writeLine("Trying to resolve name "^id^": "^printType ty) in
                case findVar(env, id, pos) of
-                 | Some(term as Var ((id, srt), a)) ->
-                   let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
-                   Var ((id, srt), pos)
+                 | Some(term as Var ((id, ty), a)) ->
+                   let ty = elaborateCheckTypeForTerm (env, term, ty, term_type) in
+                   Var ((id, ty), pos)
                  | None ->
-               case tryResolveNameFromType(env, trm, id, srt, pos) of
+               case tryResolveNameFromType(env, trm, id, ty, pos) of
                  | Some t -> t
                  | _ -> 
-               case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, srt, pos) of
+               case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, ty, pos) of
                  | terms as _::_ ->
                    %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
                    (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
                       | None -> trm
                       | Some term ->
-                        let srt = termType term in
-                        let srt = elaborateCheckTypeForTerm (env, term, srt, term_type) in
+                        let ty = termType term in
+                        let ty = elaborateCheckTypeForTerm (env, term, ty, term_type) in
                         (case term of
-                           | Var ((id, _),          pos) -> Var ((id, srt),         pos)  % Now handled above
-                           | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), srt, pos)
-                           | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
+                           | Var ((id, _),          pos) -> Var ((id, ty),         pos)  % Now handled above
+                           | Fun (OneName  idf,  _, pos) -> Fun (OneName  (fixateOneName  (idf,  fixity)), ty, pos)
+                           | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), ty, pos)
                            | Fun (Embed _, _, _)         -> term
                            | _ -> System.fail "Variable or constant expected"))
                  | [] ->
-                   resolveNameFromType (env, trm, id, srt, pos))
+                   resolveNameFromType (env, trm, id, ty, pos))
 
-            | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
-              (let _ = elaborateCheckTypeForOpRef (env, trm, srt, term_type) in
+            | Fun (TwoNames (id1, id2, fixity), ty, pos) -> 
+              (let _ = elaborateCheckTypeForOpRef (env, trm, ty, term_type) in
                %% Either Qualified (id1, id2) or field selection
                case findTheOp2 (env, id1, id2) of
                  | Some info -> 
                    %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
                    let Qualified (q, id) = primaryOpName info in
-                   let (tvs, d_srt, tm) = unpackFirstOpDef info in
-                   let (_, d_srt) = metafyType (Pi (tvs, d_srt, typeAnn d_srt)) in
-                   let term = Fun (TwoNames (q, id, info.fixity), d_srt, pos) in
-                   let d_srt = elaborateCheckTypeForOpRef (env, term, d_srt, srt) in
+                   let (tvs, d_ty, tm) = unpackFirstOpDef info in
+                   let (_, d_ty) = metafyType (Pi (tvs, d_ty, typeAnn d_ty)) in
+                   let term = Fun (TwoNames (q, id, info.fixity), d_ty, pos) in
+                   let d_ty = elaborateCheckTypeForOpRef (env, term, d_ty, ty) in
                    (case term of
-                      | Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, d_srt, pos)
+                      | Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, d_ty, pos)
                       | _ -> System.fail ("Op expected for elaboration of "^id1^"."^id2^" as resolved to "^q^"."^id))
                  | None -> 
                    %% If Qualified (id1, id2) does not refer to an op, check for field selection
@@ -689,7 +692,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         %% unqualified id1 refers to big_term
                         % let _ = writeLine("twonames: "^id1^"."^id2^" "^printTerm big_term) in
                         let big_type = termType big_term in
-                        let big_type = checkType1 (env, big_type, false) in
+                        let big_type = checkType (env, big_type) in
                         let 
                           def projectRow (big_term, big_type, row, id2) =
                             %% See if id2 is one of the field selectors for the big type.
@@ -697,17 +700,17 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                               | [] -> undeclared2 (env, trm, id1, id2, term_type, pos)
                               | (field_id, field_type) :: row -> 
                                 if id2 = field_id then
-                                  let field_type = checkType1 (env, field_type, false) in
+                                  let field_type = checkType0 (env, field_type) in
                                   let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
                                   let projection = ApplyN ([projector, big_term], pos) in
                                   let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
                                   projection
                                 else
                                   projectRow (big_term, big_type, row, id2)
-                          def getProduct srt : Option (List (String * MSType)) = 
-                            (case unfoldType (env, srt) of
+                          def getProduct ty : Option (List (String * MSType)) = 
+                            (case unfoldType (env, ty) of
                                | Product (row,       _) -> Some row
-                               | Subtype (srt, pred, _) -> getProduct srt
+                               | Subtype (ty, pred, _) -> getProduct ty
                                | _ -> None)
                         in          
                           %% See if big_term is a product or a subtype of a product
@@ -726,24 +729,24 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         %% Accord checks to see if id2 (id1) typechecks
                         undeclared2 (env, trm, id1, id2, term_type, pos)))
 
-            | Fun (Embed (id, _), srt, pos) -> 
-              let _  (* srt *) = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-              %% using term_type instead of srt in the following was cause of bug 110 : "[] read as bogus Nil"
-              resolveNameFromType (env, trm, id, srt, pos) 
+            | Fun (Embed (id, _), ty, pos) -> 
+              let _  (* ty *) = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
+              %% using term_type instead of ty in the following was cause of bug 110 : "[] read as bogus Nil"
+              resolveNameFromType (env, trm, id, ty, pos) 
 
-            | Fun (Project id,srt,pos) -> 
-              let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-              (case mkProject (env,id,srt,pos) of
+            | Fun (Project id,ty,pos) -> 
+              let ty = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
+              (case mkProject (env,id,ty,pos) of
                  | Some term -> term
                  | None -> undeclaredResolving (env,trm,id,term_type,pos))
 
-          % | Fun (Select id,srt,pos) -> Fun (Select id,srt,pos)      (*** Not checked ***)
-            | Fun (Embedded id, srt, pos) ->
+          % | Fun (Select id,ty,pos) -> Fun (Select id,ty,pos)      (*** Not checked ***)
+            | Fun (Embedded id, ty, pos) ->
               let a = freshMetaTyVar ("Embedded", pos) in
               let ty = Arrow(a, type_bool, pos) in
               (elaborateTypeForTerm (env, trm, ty, term_type);
-               elaborateTypeForTerm (env, trm, srt, ty);
-               (case unfoldType (env, srt) of
+               elaborateTypeForTerm (env, trm, ty, ty);
+               (case unfoldType (env, ty) of
                   | Arrow (dom, _, _) -> 
                     (case isCoproduct (env, dom) of
                        | Some fields -> 
@@ -758,10 +761,10 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                                      newLines ["Sum type with constructor "^id^" expected", 
                                                "found instead "^printType dom], 
                                      pos))
-                  | _ -> pass2Error (env, srt, "Function type expected ", pos));
-               Fun (Embedded id, srt, pos))
+                  | _ -> pass2Error (env, ty, "Function type expected ", pos));
+               Fun (Embedded id, ty, pos))
 
-            | Fun (PChoose qid, srt, pos) -> 
+            | Fun (PChoose qid, ty, pos) -> 
               %% Has type:  {f: base_type -> result_type | fa(m,n) equiv(m,n) => f m = f n} -> quot_type -> result_type
               %%   quot_type -- quotient type referenced by qid
               %%   equiv     -- equivalence relation in definition of quot_type
@@ -792,25 +795,25 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         %% --
                         let lifting_arrow         = Arrow (restricted_low_arrow, high_arrow, pos)            in  % free refs to tvs
                         (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
-                         elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
-                         %% now srt = term_type = lifting_arrow
-                         Fun (PChoose qid, srt, pos))
+                         elaborateTypeForTerm (env, trm, ty,           lifting_arrow);
+                         %% now ty = term_type = lifting_arrow
+                         Fun (PChoose qid, ty, pos))
 
                       | _ ->
                         let ss = show qid in
                         (error (env, 
                                 "In choose[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                                 pos);
-                         Fun (PChoose qid, srt, pos)))
+                         Fun (PChoose qid, ty, pos)))
                  | _ ->
                    let ss = show qid in
                    (error (env, 
                            "In choose[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                            pos);
-                    Fun (PChoose qid, srt, pos)))
+                    Fun (PChoose qid, ty, pos)))
 
 
-            | Fun (PQuotient qid, srt, pos) ->  
+            | Fun (PQuotient qid, ty, pos) ->  
               %% Has type:   base_type -> Quotient(base_type, equiv)
               %%   quot_type -- quotient type referenced by qid
               %%   equiv     -- equivalence relation in definition of quot_type
@@ -825,56 +828,56 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         let quot_type             = Base (qid, new_type_args, noPos)                in              
                         let lifting_arrow         = Arrow (base_type, quot_type, pos)               in
                         (elaborateTypeForTerm (env, trm, lifting_arrow, term_type);
-                         elaborateTypeForTerm (env, trm, srt,           lifting_arrow);
-                         %% now srt = term_type = lifting_arrow
-                         Fun (PQuotient qid, srt, pos))
+                         elaborateTypeForTerm (env, trm, ty,           lifting_arrow);
+                         %% now ty = term_type = lifting_arrow
+                         Fun (PQuotient qid, ty, pos))
                       | _ ->
                         let ss = show qid in
                         (error (env, 
                                 "In quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                                 pos);
-                         Fun (PQuotient qid, srt, pos)))
+                         Fun (PQuotient qid, ty, pos)))
                  | _ ->
                    let ss = show qid in
                    (error (env, 
                            "In quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                            pos);
-                    Fun (PQuotient qid, srt, pos)))
+                    Fun (PQuotient qid, ty, pos)))
 
-            | Fun (Bool b, srt, pos) -> 
+            | Fun (Bool b, ty, pos) -> 
               (elaborateTypeForTerm (env, trm, type_bool, term_type) ; 
-               elaborateCheckTypeForTerm (env, trm, srt, type_bool);
-               Fun (Bool b, srt, pos))
+               elaborateCheckTypeForTerm (env, trm, ty, type_bool);
+               Fun (Bool b, ty, pos))
 
-            | Fun (Nat n, srt, pos) ->  
+            | Fun (Nat n, ty, pos) ->  
               (elaborateTypeForTerm (env, trm, type_nat, term_type);
-               elaborateCheckTypeForTerm (env, trm, srt, type_nat);
-               Fun (Nat n, srt, pos))
+               elaborateCheckTypeForTerm (env, trm, ty, type_nat);
+               Fun (Nat n, ty, pos))
 
-            | Fun (String s, srt, pos) -> 
+            | Fun (String s, ty, pos) -> 
               (elaborateTypeForTerm (env, trm, type_string, term_type);
-               elaborateCheckTypeForTerm (env, trm, srt, type_string);
-               Fun (String s, srt, pos))
+               elaborateCheckTypeForTerm (env, trm, ty, type_string);
+               Fun (String s, ty, pos))
 
-            | Fun (Char ch, srt, pos) -> 
+            | Fun (Char ch, ty, pos) -> 
               (elaborateTypeForTerm (env, trm, type_char, term_type);
-               elaborateCheckTypeForTerm (env, trm, srt, type_char);
-               Fun (Char ch, srt, pos))
+               elaborateCheckTypeForTerm (env, trm, ty, type_char);
+               Fun (Char ch, ty, pos))
 
-            | Var ((id, srt), pos) -> 
-              let srt = elaborateCheckTypeForTerm (env, trm, srt, term_type) in
-              Var ((id, srt), pos)
+            | Var ((id, ty), pos) -> 
+              let ty = elaborateCheckTypeForTerm (env, trm, ty, term_type) in
+              Var ((id, ty), pos)
 
             | LetRec (decls, body, pos) -> 
               let 
-                def declareFun (((id, srt), bdy), env) = 
-                  addVariable (env, id, srt)
+                def declareFun (((id, ty), bdy), env) = 
+                  addVariable (env, id, ty)
 
-                def elaborateDecl env ((id, srt), bdy) = 
+                def elaborateDecl env ((id, ty), bdy) = 
                   let terms = findVarOrOps (env, id, pos) in
-                  let srt = checkType(env, srt) in
-                  let bdy = single_pass_elaborate_term (env, bdy, srt) in
-                  ((id, srt), bdy)
+                  let ty = checkType(env, ty) in
+                  let bdy = single_pass_elaborate_term (env, bdy, ty) in
+                  ((id, ty), bdy)
               in
               let env = foldr declareFun env decls in
               let decls = map (elaborateDecl env) decls in
@@ -892,8 +895,8 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                      *)
                   let (pat, bdy) = 
                       case pat of
-                        | TypedPat (pat, srt, pos) -> 
-                          (pat, (TypedTerm (bdy, srt, pos)):MSTerm)
+                        | TypedPat (pat, ty, pos) -> 
+                          (pat, (TypedTerm (bdy, ty, pos)):MSTerm)
                         | _ -> (pat, bdy)
                   in             
                   let bdy = single_pass_elaborate_term (env0, bdy, alpha) in
@@ -919,8 +922,8 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
             | Record (row, pos) -> 
               let 
-                def unfoldConstraint (srt) = 
-                  (case unfoldType (env, srt) of
+                def unfoldConstraint (ty) = 
+                  (case unfoldType (env, ty) of
                      | Product (rows, _) -> 
                        (if ~(length (row) = length (rows)) then
                           error (env, 
@@ -934,11 +937,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                        (linkMetaTyVar mtv ((Product (row, pos)));
                         row)
 
-                     | Subtype (srt, term, _) -> 
-                       unfoldConstraint (srt)        
+                     | Subtype (ty, term, _) -> 
+                       unfoldConstraint (ty)        
 
-                     | And (srt :: _, _) -> % TODO: be smarter about choosing among alternatives
-                       unfoldConstraint srt        
+                     | And (ty :: _, _) -> % TODO: be smarter about choosing among alternatives
+                       unfoldConstraint ty        
 
                      | sv -> 
                        (pass2Error (env, 
@@ -978,29 +981,29 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                           rules,
                      pos)
 
-            | The ((id,srt), term, pos) ->
-              let srt = checkType(env, srt) in
-              let env = addVariable (env,id,srt) in
-              let _ = elaborateType (env, srt, term_type) in
+            | The ((id,ty), term, pos) ->
+              let ty = checkType(env, ty) in
+              let env = addVariable (env,id,ty) in
+              let _ = elaborateType (env, ty, term_type) in
               let term = single_pass_elaborate_term (env, term, type_bool) in
-              The ((id,srt), term, pos)
+              The ((id,ty), term, pos)
 
             | Bind (bind, vars, term, pos) ->
               let _ = elaborateType (env, term_type, type_bool) in
               let (vars, env) = 
-                  foldl (fn ((vars, env), (id, srt)) ->
-                         let srt = checkType (env, srt) in
-                         (Cons ((id, srt), vars), 
-                          addVariable (env, id, srt)))
+                  foldl (fn ((vars, env), (id, ty)) ->
+                         let ty = checkType (env, ty) in
+                         (Cons ((id, ty), vars), 
+                          addVariable (env, id, ty)))
                         ([], env) 
                         vars 
               in
               let vars = reverse vars in
               Bind (bind, vars, single_pass_elaborate_term (env, term, term_type), pos)
 
-            | TypedTerm (term, srt, _) ->
-              let srt  = elaborateType (env, srt, term_type) in
-              let term = single_pass_elaborate_term (env, term, srt) in
+            | TypedTerm (term, ty, _) ->
+              let ty  = elaborateType (env, ty, term_type) in
+              let term = single_pass_elaborate_term (env, term, ty) in
               term
 
             | Seq (terms, pos) -> 
@@ -1133,13 +1136,13 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
               new
 
             %% These should only appear as the head of an apply (see one of the ApplyN cases above):
-            | Fun (Not,       srt, pos) -> (error (env, cantuse "~",   pos); trm)
-            | Fun (And,       srt, pos) -> (error (env, cantuse "&&",  pos); trm)
-            | Fun (Or,        srt, pos) -> (error (env, cantuse "||",  pos); trm)
-            | Fun (Implies,   srt, pos) -> (error (env, cantuse "=>",  pos); trm)
-            | Fun (Iff,       srt, pos) -> (error (env, cantuse "<=>", pos); trm)
-            | Fun (Equals,    srt, pos) -> (error (env, cantuse "=",   pos); trm)
-            | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
+            | Fun (Not,       ty, pos) -> (error (env, cantuse "~",   pos); trm)
+            | Fun (And,       ty, pos) -> (error (env, cantuse "&&",  pos); trm)
+            | Fun (Or,        ty, pos) -> (error (env, cantuse "||",  pos); trm)
+            | Fun (Implies,   ty, pos) -> (error (env, cantuse "=>",  pos); trm)
+            | Fun (Iff,       ty, pos) -> (error (env, cantuse "<=>", pos); trm)
+            | Fun (Equals,    ty, pos) -> (error (env, cantuse "=",   pos); trm)
+            | Fun (NotEquals, ty, pos) -> (error (env, cantuse "~=",  pos); trm)
 
             | And (tms, pos) -> And (map (fn tm -> single_pass_elaborate_term(env, tm, term_type)) tms, pos)
             | term -> (%System.print term;
@@ -1150,51 +1153,51 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   def cantuse inbuilt = "Can't use inbuilt operator '"^inbuilt^"' as an expression -- use '("^inbuilt^")' instead."
 
-  def single_pass_elaborate_term_head (env, t1, ty, trm) =
+  def single_pass_elaborate_term_head (env, t1, ty0, trm) =
     case t1 of
-      | Fun (Not, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (Not, srt, pos))
+      | Fun (Not, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (Not, ty1, pos))
 
-      | Fun (And, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (And, srt, pos))
+      | Fun (And, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (And, ty1, pos))
 
-      | Fun (Or, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (Or, srt, pos))
+      | Fun (Or, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (Or, ty1, pos))
 
-      | Fun (Implies, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (Implies, srt, pos))
+      | Fun (Implies, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (Implies, ty1, pos))
 
-      | Fun (Iff, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (Iff, srt, pos))
+      | Fun (Iff, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (Iff, ty1, pos))
 
-      | Fun (Equals, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (Equals, srt, pos))
+      | Fun (Equals, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (Equals, ty1, pos))
 
-      | Fun (NotEquals, srt, pos) -> 
-	(elaborateTypeForTerm (env, trm, srt, ty);
-	 Fun (NotEquals, srt, pos))
+      | Fun (NotEquals, ty1, pos) -> 
+	(elaborateTypeForTerm (env, trm, ty1, ty0);
+	 Fun (NotEquals, ty1, pos))
 
-      | Fun (RecordMerge, srt, pos) ->
+      | Fun (RecordMerge, ty1, pos) ->
 	(let a = freshMetaTyVar ("RecordMerge_a", pos) in
 	 let b = freshMetaTyVar ("RecordMerge_b", pos) in
 	 let c = freshMetaTyVar ("RecordMerge_c", pos) in
 	 let fresh_merge_type = Arrow(Product ([("1", a), ("2", b)], pos), c, pos) in
-	 (elaborateTypeForTerm(env, trm, srt, fresh_merge_type);
-	  elaborateTypeForTerm(env, trm, fresh_merge_type, ty);
+	 (elaborateTypeForTerm(env, trm, ty1, fresh_merge_type);
+	  elaborateTypeForTerm(env, trm, fresh_merge_type, ty0);
 	  let def notEnoughInfo() =
 		if env.firstPass? then 
 		  t1
 		else 
-		  (error(env, "Can't determine suitable type for <<: " ^ printType srt, pos);
+		  (error(env, "Can't determine suitable type for <<: " ^ printType ty1, pos);
 		   t1)
 	  in
-	  case isArrow(env,srt) of
+	  case isArrow(env,ty1) of
 	    | Some (dom,rng) ->
 	      (case isProduct (env,dom) of
 		 | Some [("1",s1),("2",s2)] ->
@@ -1202,21 +1205,21 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		      | (Some row1,Some row2) ->
 			let merged_type = Product(mergeFields(env,row1,row2,pos),pos) in
 			(elaborateTypeForTerm(env,trm,rng,merged_type);
-			 Fun(RecordMerge, srt, pos))
+			 Fun(RecordMerge, ty1, pos))
 		      | _ -> notEnoughInfo())
 		 | _ -> notEnoughInfo())
 	    | None -> notEnoughInfo()))
 
       | _ ->
-	single_pass_elaborate_term (env, t1, ty)
+	single_pass_elaborate_term (env, t1, ty0)
 
    op makeEqualityType : MSType * Position -> MSType
-  def makeEqualityType (srt, pos) =
+  def makeEqualityType (ty, pos) =
     %% let a = freshMetaTyVar noPos in 
     %% parser has it's own sequence of metaTyVar's, which are distinguished
     %% from those produced by freshMetaTyVar:
     %% they will be named "#parser-xxx" instead of "#fresh-xxx"
-    Arrow (Product ([("1", srt), ("2", srt)], noPos), 
+    Arrow (Product ([("1", ty), ("2", ty)], noPos), 
 	   type_bool,
 	   pos)
 
@@ -1267,7 +1270,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | [dominating_term] -> Some dominating_term
       | _ -> None
 
-  op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MSTerms, srt: MSType): Option MSTerm =
+  op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MSTerms, ty: MSType): Option MSTerm =
     %% calls consistentTypeOp?, which calls unifyTypes 
     case terms of
       | [term] -> Some term
@@ -1285,7 +1288,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			 findUnqualified rtms
 		     | _ -> findUnqualified rtms)
 	in
-        case unlinkType srt of
+        case unlinkType ty of
 	  | MetaTyVar _ ->
 	    if env.firstPass? then 
 	      None
@@ -1295,7 +1298,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		| None ->
 	          (error (env,
 			  "Several matches for overloaded op " ^ id ^ " of " ^
-			  (printMaybeAndType srt) ^
+			  (printMaybeAndType ty) ^
 			  (foldl (fn (str, tm) -> str ^
 				  (case tm of
 				     | Fun (OneName  (     id2, _), _, _) -> " "^id2
@@ -1307,10 +1310,10 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			  pos);
 		   None))
 	  | rtype ->
-	    let srtPos = typeAnn srt in
-	    (case filter (consistentTypeOp? (env, withAnnS (rtype, srtPos),Ignore)) terms of
+	    let tyPos = typeAnn ty in
+	    (case filter (consistentTypeOp? (env, withAnnS (rtype, tyPos),Ignore)) terms of
 	       | [] -> (error (env,
-			       "No matches for op " ^ id ^ " of " ^ (printMaybeAndType srt),
+			       "No matches for op " ^ id ^ " of " ^ (printMaybeAndType ty),
 			       pos);
 			None)
 	       | [term] -> Some term
@@ -1319,7 +1322,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                     | Some dominating_term ->
                       let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term) else () in
                       let consistent_terms_with_exactly_matching_subtypes = 
-                          filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
+                          filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), DontIgnore)) 
                             consistent_terms
                       in
                       (case consistent_terms_with_exactly_matching_subtypes of
@@ -1334,7 +1337,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                         None
                       else
                       let consistent_terms_with_exactly_matching_subtypes = 
-                          filter (consistentTypeOp? (env, withAnnS (rtype, srtPos), DontIgnore)) 
+                          filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), DontIgnore)) 
                             consistent_terms
                       in
                       case consistent_terms_with_exactly_matching_subtypes of
@@ -1349,7 +1352,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                           %% preferring f : A|p -> B to f : A -> B
                           (error (env,
                                   "Several matches for overloaded op " ^ id ^ " of " ^
-                                    (printMaybeAndType srt) ^
+                                    (printMaybeAndType ty) ^
                                     (foldl (fn (str, tm) -> str ^
                                               (case tm of
                                                  | Fun (OneName  (     id2, _), _, _) -> " "^id2
@@ -1361,14 +1364,14 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                                   pos);
                            None)))
 
-  def printMaybeAndType srt =
-    case srt of
-      | And (srt :: srts, _) ->
-        foldl (fn (s, srt) -> s ^ " and type " ^ (printType srt) ^ "\n")
-	("type " ^ (printType srt) ^ "\n")
-	srts
+  def printMaybeAndType ty =
+    case ty of
+      | And (ty :: tys, _) ->
+        foldl (fn (s, ty) -> s ^ " and type " ^ (printType ty) ^ "\n")
+	("type " ^ (printType ty) ^ "\n")
+	tys
       | _ ->
-	"type " ^ (printType srt) 
+	"type " ^ (printType ty) 
 
   def consistentTypeOp? (env, ty1, subtype_mode) (tm as (Fun (_, ty2, _))) =
    %% calls unifyTypes, but then resets metatyvar links to None...
@@ -1381,11 +1384,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   % ========================================================================
 
   def elaborateCheckTypeForTerm (env, term, givenType, expectedType) = 
-   elaborateTypeForTerm (env, term, checkType1 (env, givenType, false), expectedType)
+   elaborateTypeForTerm (env, term, checkType (env, givenType), expectedType)
 
   op elaborateCheckTypeForOpRef (env: LocalEnv, term: MSTerm, givenType: MSType, expectedType: MSType): MSType =
     if allowDependentSubTypes? && ~env.firstPass?
-      then elaborateTypeForTerm(env, term, checkType1(env, givenType, false), expectedType)
+      then elaborateTypeForTerm(env, term, checkType(env, givenType), expectedType)
       else elaborateCheckTypeForTerm(env, term, givenType, expectedType)
 
   def elaborateTypeForTerm (env, term, givenType, expectedType) = 
@@ -1426,7 +1429,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
    %  this code!
 
   op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
-    let givenTypeChecked = checkType1 (env, givenType, true) in
+    let givenTypeChecked = checkType (env, givenType) in
     %% unifyTypes has side effect of modifying metatyvar links
     let success = unifyTypes env Ignore givenTypeChecked expectedType in
     ((if success then
@@ -1454,13 +1457,13 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
   % ========================================================================
   %% Called inside single_pass_elaborate_term 
 
-  def mkEmbed0 (env, srt, id) =
-    case lookupEmbedId (env, id, srt) of
+  def mkEmbed0 (env, ty, id) =
+    case lookupEmbedId (env, id, ty) of
       | Some None -> Some id
       | _   -> None
         
-  def lookupEmbedId (env, id, srt) = 
-    case unfoldTypeCoProd (env, srt) of
+  def lookupEmbedId (env, id, ty) = 
+    case unfoldTypeCoProd (env, ty) of
       | CoProduct(row, _) -> 
         let def lookup row =
 	      case row of
@@ -1469,30 +1472,30 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		  if id = found_id then
 		    Some (case entry of
 			    | None   -> None
-			    | Some s -> Some (checkType1 (env, s, false)))
+			    | Some s -> Some (checkType0 (env, s)))
 		  else 
 		    lookup row
 	in
 	  lookup row
-      | Subtype (srt, pred, _) -> lookupEmbedId (env, id, srt)
+      | Subtype (ty, pred, _) -> lookupEmbedId (env, id, ty)
       | _ -> None
 
-  def mkEmbed1 (env, srt, trm, id, pos) = 
-    case isArrowCoProduct (env, srt) of
+  def mkEmbed1 (env, ty, trm, id, pos) = 
+    case isArrowCoProduct (env, ty) of
       | Some (dom_type, coprod_ty, row) ->
         let 
 	  %% This checks that a sum-type constructor is given the proper type
           def findId ls = 
 	    case ls of
-	      | [] -> None   % Some (undeclaredName (env, trm, id, srt, pos))
+	      | [] -> None   % Some (undeclaredName (env, trm, id, ty, pos))
 	      | (constructor_id, Some constructor_dom_type) :: row -> 
 	        if id = constructor_id then
-		    %let _ = writeLine ("srt:  "^printType srt) in
+		    %let _ = writeLine ("ty:  "^printType ty) in
 		    %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
-		  let constructor_dom_type = checkType1 (env, constructor_dom_type, false) in
+		  let constructor_dom_type = checkType0 (env, constructor_dom_type) in
                   let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
 		  let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
-                  let _ = elaborateType(env, constr_ty, srt) in
+                  let _ = elaborateType(env, constr_ty, ty) in
 		  Some (Fun (Embed (id, true), constr_ty, pos))
 		else 
 		  findId row
@@ -1501,31 +1504,31 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	  findId row
       | _ -> None
 
-  def isArrowCoProduct (env, srt) : Option (MSType * MSType * List (Id * Option MSType)) =
-    case unfoldType (env, srt) of
+  def isArrowCoProduct (env, ty) : Option (MSType * MSType * List (Id * Option MSType)) =
+    case unfoldType (env, ty) of
       | Arrow (dom, rng, _) -> 
         (case isCoproduct (env, rng) of
 	   | Some row -> Some (dom, rng, row)
 	   | None -> None)
       | _ -> None
 
-  def isCoproduct (env, srt)  = 
-    case unfoldTypeCoProd (env, srt) of
+  def isCoproduct (env, ty)  = 
+    case unfoldTypeCoProd (env, ty) of
       | CoProduct (row, _)    -> Some row
-      | Subtype   (srt, _, _) -> isCoproduct (env, srt)
+      | Subtype   (ty, _, _) -> isCoproduct (env, ty)
       | _ -> None
 
   op  isProduct: LocalEnv * MSType -> Option(List (Id * MSType))
-  def isProduct (env, srt)  = 
-    case unfoldType (env, srt) of
+  def isProduct (env, ty)  = 
+    case unfoldType (env, ty) of
       | Product (fields, _) -> Some fields
-      | Subtype (srt, _, _) -> isProduct (env, srt)
+      | Subtype (ty, _, _) -> isProduct (env, ty)
       | _ -> None
 
-  def isArrow (env, srt): Option (MSType * MSType)  = 
-    case unfoldType (env, srt) of
+  def isArrow (env, ty): Option (MSType * MSType)  = 
+    case unfoldType (env, ty) of
       | Arrow (dom, rng, _) -> Some (dom, rng)
-      | Subtype(ssrt, _, _) -> isArrow (env, ssrt)
+      | Subtype(sty, _, _) -> isArrow (env, sty)
       | _ -> None
 
   def mergeFields(env,row1,row2,pos) =
@@ -1555,7 +1558,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                    | _ -> v_ty
     in
     (case mkEmbed0 (env, id_ty, id) of
-       | Some id -> Some (Fun (Embed (id, false), checkType1 (env, id_ty, false), pos))
+       | Some id -> Some (Fun (Embed (id, false), checkType0 (env, id_ty), pos))
        | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
   %% If id is the unique name of a constructor, use that constructor
@@ -1621,36 +1624,36 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 				 (false, None)))
       | _::tail -> consistentInfixMSTerms (tail, optional_priority)
        
-   def undeclaredName (env, trm, id, srt, pos) =
+   def undeclaredName (env, trm, id, ty, pos) =
     if env.firstPass? then %&& undeterminedType? s 
       trm
     else
       (error (env, "Name "^id^" could not be identified", pos);
        % raise (TypeCheck (pos, "Name "^id^" could not be identified"));
-       Fun (OneName (id, Nonfix), srt, pos))
+       Fun (OneName (id, Nonfix), ty, pos))
 
-  def ambiguousCons (env, trm, id, srt, pos) =
+  def ambiguousCons (env, trm, id, ty, pos) =
     if env.firstPass? then %&& undeterminedType? s 
       trm
     else
       (error (env, "Constructor "^id^" could not be disambiguated", pos);
-       Fun (OneName (id, Nonfix), srt, pos))
+       Fun (OneName (id, Nonfix), ty, pos))
 
-  def undeclared2 (env, trm, id1, id2, srt, pos) =
+  def undeclared2 (env, trm, id1, id2, ty, pos) =
     if env.firstPass? then %&& undeterminedType? s 
       trm
     else
       (error (env, id1^"."^id2^" has not been declared as a qualified name or as a field selection", pos);
        % raise (TypeCheck (pos, id1^"."^id2^" has not been declared as a qualified name or as a field selection"));
-       Fun (TwoNames (id1, id2, Nonfix), srt, pos))
+       Fun (TwoNames (id1, id2, Nonfix), ty, pos))
 
-  def undeclaredResolving (env, trm, id, srt, pos) = 
+  def undeclaredResolving (env, trm, id, ty, pos) = 
     if env.firstPass? then %&& undeterminedType? s
       trm
     else
-      (error (env, "Name "^id^" could not be identified; resolving with "^printType srt, pos);
-       % raise (TypeCheck (pos, "Name "^id^" could not be identified; resolving with "^printType srt));
-       (Fun (OneName (id, Nonfix), srt, pos)) : MSTerm)
+      (error (env, "Name "^id^" could not be identified; resolving with "^printType ty, pos);
+       % raise (TypeCheck (pos, "Name "^id^" could not be identified; resolving with "^printType ty));
+       (Fun (OneName (id, Nonfix), ty, pos)) : MSTerm)
 
   % ========================================================================
   %% Called inside single_pass_elaborate_term 
@@ -1662,7 +1665,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op  elaboratePatternRec: LocalEnv * MSPattern * MSType * List Id -> MSPattern * LocalEnv *  List Id 
   def elaboratePatternRec (env, p, type1, seenVars) =
-    let type1 = checkType1 (env, type1, true) in
+    let type1 = checkType0 (env, type1) in
     let 
       def addSeenVar(id, seenVars, env, pos) =
 	if id in? seenVars then
@@ -1677,30 +1680,30 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | NatPat    _ -> (elaborateTypeForPat (env, p, type_nat, type1);    (p, env, seenVars))
       | StringPat _ -> (elaborateTypeForPat (env, p, type_string, type1); (p, env, seenVars))
       | CharPat   _ -> (elaborateTypeForPat (env, p, type_char, type1);   (p, env, seenVars))
-      | VarPat ((id, srt), pos) -> 
-        let srt = elaborateTypeForPat (env, p, srt, type1)  in 
-	(case lookupEmbedId (env, id, srt) of
-	   | Some None -> (EmbedPat (id, None, srt, pos), env, seenVars)
+      | VarPat ((id, ty), pos) -> 
+        let ty = elaborateTypeForPat (env, p, ty, type1)  in 
+	(case lookupEmbedId (env, id, ty) of
+	   | Some None -> (EmbedPat (id, None, ty, pos), env, seenVars)
 	   | Some _ -> 
 	     (error (env, "Constructor "^id^" expects an argument, but was given none", pos);
 	      % raise (TypeCheck (pos, "Constructor "^id^" expects an argument, but was given none"));
-	      (VarPat ((id, srt), pos), env, seenVars))
+	      (VarPat ((id, ty), pos), env, seenVars))
 	   | None ->
-	     if undeterminedType? srt then
+	     if undeterminedType? ty then
 	       (case StringMap.find (env.constrs, id) of
 		  | None ->
 		    let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
-		    (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
-		  | Some [(qid, srt_info)] ->
-		    let (v_srt, c_srt) = metafyBaseType (qid,srt_info,pos) in
-		    (VarPat ((id, v_srt), pos), env, seenVars)
-		  | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
+		    (VarPat ((id, ty), pos), addVariable (env, id, ty), seenVars)
+		  | Some [(qid, ty_info)] ->
+		    let (v_ty, c_ty) = metafyBaseType (qid,ty_info,pos) in
+		    (VarPat ((id, v_ty), pos), env, seenVars)
+		  | Some _ -> (VarPat ((id, ty), pos), env, seenVars))
 	     else
 	       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
-	       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars))
-      | TypedPat (pat, srt, _) -> 
-	let srt = elaborateTypeForPat (env, p, srt, type1) in
-	let (p, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
+	       (VarPat ((id, ty), pos), addVariable (env, id, ty), seenVars))
+      | TypedPat (pat, ty, _) -> 
+	let ty = elaborateTypeForPat (env, p, ty, type1) in
+	let (p, env, seenVars) = elaboratePatternRec (env, pat, ty, seenVars) in
 	(p, env, seenVars)
       | AliasPat (pat1, pat2, pos) ->
 	let (pat1, env, seenVars) = elaboratePatternRec (env, pat1, type1, seenVars) in
@@ -1712,9 +1715,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	    if undeterminedType? type0 then
 	       %% See if there is only one constructor with this name
 	       (case StringMap.find (env.constrs, embedId) of
-		  | Some [(qid,srt_info)] ->
-		    let (v_srt, c_srt) = metafyBaseType (qid, srt_info, pos) in
-		    elaborateTypeForPat (env, p, v_srt, type1)
+		  | Some [(qid,ty_info)] ->
+		    let (v_ty, c_ty) = metafyBaseType (qid, ty_info, pos) in
+		    elaborateTypeForPat (env, p, v_ty, type1)
 		  | _ -> type0)
 	     else
 	       type0
@@ -1730,11 +1733,11 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	    in
 	    (EmbedPat (embedId, epat, type0, pos), env, seenVars)
 	  else
-	    let srt = lookupEmbedId (env, embedId, type0) in
+	    let ty = lookupEmbedId (env, embedId, type0) in
 	    let (env, pat, seenVars) = 
-	        (case (srt, pattern) of
-		   | (Some (Some srt), Some pat) -> 
-		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
+	        (case (ty, pattern) of
+		   | (Some (Some ty), Some pat) -> 
+		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, ty, seenVars) in
 		     (env, Some pat, seenVars)
 
 		   | (Some None, None) -> (env, None, seenVars)
@@ -1767,12 +1770,12 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	    in
 	      (EmbedPat (embedId, pat, type1, pos), env, seenVars)
       | RecordPat (row, pos) ->
-	let r = map (fn (id, srt)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
+	let r = map (fn (id, ty)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
 	let _ = elaborateTypeForPat (env, p, (Product (r, pos)), type1) in
 	let r = zip (r, row) in
 	let (r, env, seenVars) = 
-	    foldl (fn ((row, env, seenVars), ((id, srt), (_, p))) ->
-		   let (p, env, seenVars) = elaboratePatternRec (env, p, srt, seenVars) in
+	    foldl (fn ((row, env, seenVars), ((id, ty), (_, p))) ->
+		   let (p, env, seenVars) = elaboratePatternRec (env, p, ty, seenVars) in
 		   (Cons ((id, p), row), env, seenVars))
 	      ([], env, seenVars) r
 	in
