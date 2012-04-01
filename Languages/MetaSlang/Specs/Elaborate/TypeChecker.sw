@@ -270,7 +270,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     checkType1(env, ty, true)
 
   op checkType0(env: LocalEnv, ty: MSType): MSType =
-    checkType1(env, ty, false)
+    checkType1(env, ty, true)
 
   op checkType1(env: LocalEnv, ty: MSType, checkTerms?: Bool): MSType =
     %% checkType calls single_pass_elaborate_term, which calls checkType
@@ -743,9 +743,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
           % | Fun (Select id,ty,pos) -> Fun (Select id,ty,pos)      (*** Not checked ***)
             | Fun (Embedded id, ty, pos) ->
               let a = freshMetaTyVar ("Embedded", pos) in
-              let ty = Arrow(a, type_bool, pos) in
-              (elaborateTypeForTerm (env, trm, ty, term_type);
-               elaborateTypeForTerm (env, trm, ty, ty);
+              let ty1 = Arrow(a, type_bool, pos) in
+              (elaborateTypeForTerm (env, trm, ty1, term_type);
+               elaborateTypeForTerm (env, trm, ty, ty1);
                (case unfoldType (env, ty) of
                   | Arrow (dom, _, _) -> 
                     (case isCoproduct (env, dom) of
